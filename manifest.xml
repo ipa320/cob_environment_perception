@@ -1,0 +1,28 @@
+<package>
+  <description brief="cob_env_model">
+
+     cob_env_model
+
+  </description>
+  <author>Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de</author>
+  <license>LGPL</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://www.care-o-bot.org</url>
+
+	<depend package="roscpp"/>
+	<depend package="tf"/>
+	<depend package="sensor_msgs"/>
+	<depend package="cob3_msgs"/>
+	<depend package="opencv2"/>
+	<depend package="bfl"/>
+	<depend package="libwm4"/>
+	<depend package="tinyxml"/>
+	<depend package="cob_sensor_fusion"/>
+	<depend package="cob_vision_utils"/>
+
+	<rosdep name="boost"/>
+	<rosdep name="ann"/>
+	<rosdep name="glut"/>
+</package>
+
+

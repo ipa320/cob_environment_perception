@@ -1,0 +1,167 @@
+
+/****************************************************************
+ *
+ * Copyright (c) 2010
+ *
+ * Fraunhofer Institute for Manufacturing Engineering	
+ * and Automation (IPA)
+ *
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *
+ * Project name: care-o-bot
+ * ROS stack name: cob_vision
+ * ROS package name: cob_env_model
+ * Description:
+ *								
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *			
+ * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ * Supervised by: 
+ *
+ * Date of creation: 03/2010
+ * ToDo:
+ *
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the Fraunhofer Institute for Manufacturing 
+ *       Engineering and Automation (IPA) nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License LGPL as 
+ * published by the Free Software Foundation, either version 3 of the 
+ * License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License LGPL for more details.
+ * 
+ * You should have received a copy of the GNU Lesser General Public 
+ * License LGPL along with this program. 
+ * If not, see <http://www.gnu.org/licenses/>.
+ *
+ ****************************************************************/
+
+//##################
+//#### includes ####
+
+// standard includes
+//--
+
+// ROS includes
+#include <ros/ros.h>
+#include <tf/transform_listener.h>
+#include "cv_bridge/CvBridge.h"
+
+
+// ROS message includes
+#include <std_msgs/String.h>
+#include <cob3_msgs/ColoredPointCloud.h>
+
+
+// external includes
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
+#include "cob_sensor_fusion/ColoredPointCloud.h"
+
+
+//####################
+//#### node class ####
+class NodeClass
+{
+    //
+    public:
+	    // create a handle for this node, initialize node
+	    ros::NodeHandle n;
+                
+        // topics to publish
+        ros::Publisher topicPub_demoPublish;
+        
+	    // topics to subscribe, callback is called for new messages arriving
+        ros::Subscriber topicSub_coloredPointCloud;
+				tf::TransformListener listener;
+
+	//Matrix m_transformCam2Base;
+				ipa_SensorFusion::ColoredPointCloud m_ColoredPointCloud;
+	IplImage m_GreyImage;
+	sensor_msgs::CvBridge m_Bridge;
+
+        // service servers
+        //--
+            
+        // service clients
+        //--
+        
+        // global variables
+        //--
+
+        // Constructor
+        NodeClass()
+        {
+            topicPub_demoPublish = n.advertise<std_msgs::String>("demoPublish", 1);
+            topicSub_coloredPointCloud = n.subscribe("coloredPointCloud", 1, &NodeClass::topicCallback_coloredPointCloud, this);
+        }
+        
+        // Destructor
+        ~NodeClass() 
+        {
+        }
+
+        // topic callback functions 
+        // function will be called when a new message arrives on a topic
+        void topicCallback_coloredPointCloud(const cob3_msgs::ColoredPointCloud::ConstPtr& msg)
+        {
+					tf::StampedTransform transform;
+    			try{
+      			listener.lookupTransform("/cam", "/base", ros::Time(0), transform);
+    			}
+    			catch (tf::TransformException ex){
+      			ROS_ERROR("%s",ex.what());
+    			}
+				//transform in Matrix m_TransformCam2Base umwandeln	
+
+						//ColoredPointCloud Objekt füllen aus msg
+						EnvReconstruction::UpdateFilter;
+            ROS_INFO("this is topicCallback_demoSubscribe");
+        }
+
+	void UpdateColoredPointCloud(const cob3_msgs::ColoredPointCloud::ConstPtr& msg)
+	{
+		IplImage* colorImage = m_Bridge.imgMsgToCv((sensor_msgs::ImageConstPtr)(&(msg->colorImage)));
+		m_ColoredPointCloud.SetColorImage(colorImage);
+		IplImage* xyzImage = m_Bridge.imgMsgToCv((sensor_msgs::ImageConstPtr)(&(msg->pointCloud)));
+		m_ColoredPointCloud.SetXYZImage(xyzImage);
+	}
+
+};
+
+//#######################
+//#### main programm ####
+int main(int argc, char** argv)
+{
+    // initialize ROS, spezify name of node
+    ros::init(argc, argv, "node_name");
+    
+    NodeClass nodeClass;
+ 
+    while(nodeClass.n.ok())
+    {
+
+        ros::spinOnce();
+    }
+    
+//    ros::spin();
+
+    return 0;
+}
+
