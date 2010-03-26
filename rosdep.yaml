@@ -1,7 +1,0 @@
-ann:
-  ubuntu:
-    '9.10': libann-dev
-
-glut:
-  ubuntu:
-    '9.10': libglut3-dev
