@@ -61,7 +61,14 @@
 // ROS includes
 #include <ros/ros.h>
 #include <tf/transform_listener.h>
-#include "cv_bridge/CvBridge.h"
+#include <cv_bridge/CvBridge.h>
+
+#include <opencv/cv.h>
+#include <opencv/highgui.h>
+
+#include <cob_sensor_fusion/ColoredPointCloud.h>
+#include <model/analyticmeasurementmodel_gaussianuncertainty.h>
+#include <model/systemmodel.h>
 
 
 // ROS message includes
@@ -73,10 +80,7 @@
 
 
 // external includes
-#include <opencv/cv.h>
-#include <opencv/highgui.h>
-#include "cob_sensor_fusion/ColoredPointCloud.h"
-//#include "cob_env_model/CuiEnvReconstruction.h"
+
 
 
 //####################
@@ -110,6 +114,18 @@ class CobEnvModelNode
 
         void callColoredPointCloudService();
 
+    	///Create and initialize the system model of the robot
+    	/// @return Return code
+    	unsigned long CreateSystemModel();
+
+    	///Create and initialize the measurement model for the sensors
+    	/// @return Return code
+    	unsigned long CreateMeasurementModel();
+
+    	unsigned long GetRobotPose();
+
+    	unsigned long GetMeasurement();
+
 		// create a handle for this node, initialize node
 		ros::NodeHandle n;
 
@@ -127,12 +143,17 @@ class CobEnvModelNode
 
     protected:
 
+		//ROS
+		sensor_msgs::CvBridge m_Bridge;
+		cob_srvs::GetColoredPointCloud m_ColoredPointCloudSrv;
+
+
 		//Matrix m_transformCam2Base;
 		ipa_SensorFusion::ColoredPointCloud m_ColoredPointCloud;
 		IplImage* m_GreyImage;
-		sensor_msgs::CvBridge m_Bridge;
 
-		cob_srvs::GetColoredPointCloud m_ColoredPointCloudSrv;
+
+		AbstractDetector* m_FeatureDetector;
 
 };
 
@@ -140,20 +161,21 @@ class CobEnvModelNode
 CobEnvModelNode::CobEnvModelNode()
 {
     //topicPub_demoPublish = n.advertise<std_msgs::String>("demoPublish", 1);
-    topicSub_coloredPointCloud = n.subscribe("/sensor_fusion/ColoredPointCloud", 1, &CobEnvModelNode::topicCallback_coloredPointCloud, this);
+    //topicSub_coloredPointCloud = n.subscribe("/sensor_fusion/ColoredPointCloud", 1, &CobEnvModelNode::topicCallback_coloredPointCloud, this);
     srvClient_ColoredPointCloud = n.serviceClient<cob_srvs::GetColoredPointCloud>("GetColoredPointCloud");
     srvServer_Trigger = n.advertiseService("UpdateEnvModel", &CobEnvModelNode::srvCallback_UpdateEnvModel, this);
 }
 
 unsigned long CobEnvModelNode::Init()
 {
-	/*if (m_EnvReconstruction.Init() & ipa_Utils::RET_FAILED)
-	{
-		std::cerr << "ERROR - Main:" << std::endl;
-		std::cerr << "\t ... Error while initializing EnvReconstruction.\n";
-		return -1;
-	}*/
-	return 1;
+	m_FeatureDetector = new SURFDetector();
+	((SURFDetector*)m_FeatureDetector)->Init(500);
+	//m_FeatureDetector = new CalonderSTARDetector();
+
+	CreateMeasurementModel();
+	CreateSystemModel();
+
+	return ipa_Utils::RET_OK;
 }
 
 void CobEnvModelNode::topicCallback_coloredPointCloud(const cob_msgs::ColoredPointCloud::ConstPtr& msg)
@@ -196,7 +218,62 @@ bool CobEnvModelNode::srvCallback_UpdateEnvModel(cob_srvs::Trigger::Request &req
 	//UpdateColoredPointCloud(&(m_ColoredPointCloudSrv.response.ColoredPointCloud));
 }
 
-void CobEnvModelNode::callColoredPointCloudService()
+
+unsigned long EnvReconstructionControlFlow::CreateMeasurementModel()
+{
+	BFL::ColumnVector measNoise_Mu(2);
+  	measNoise_Mu(1) = 0.0;
+  	measNoise_Mu(2) = 0.0;
+
+  	BFL::SymmetricMatrix measNoise_Cov(2);
+  	measNoise_Cov(1,1) = pow(0.5,2);
+  	measNoise_Cov(1,2) = 0;
+  	measNoise_Cov(2,1) = 0;
+  	measNoise_Cov(2,2) = pow(0.5,2);
+  	BFL::Gaussian measurement_Uncertainty(measNoise_Mu, measNoise_Cov);
+
+  	/// create the model
+  	ipa_BayesianFilter::MeasPDF2DLandmark *meas_pdf = new ipa_BayesianFilter::MeasPDF2DLandmark(measurement_Uncertainty);
+
+  	m_MeasModel = new BFL::AnalyticMeasurementModelGaussianUncertainty(meas_pdf);
+
+
+	return ipa_Utils::RET_OK;
+}
+
+unsigned long EnvReconstructionControlFlow::CreateSystemModel()
+{
+	BFL::ColumnVector sysNoise_Mu(3);
+  	sysNoise_Mu(1) = 0.0;
+  	sysNoise_Mu(2) = 0.0;
+  	sysNoise_Mu(3) = 0.0;
+
+  	BFL::SymmetricMatrix sysNoise_Cov(3);
+  	sysNoise_Cov(1,1) = pow(0.01,2); //0.05
+  	sysNoise_Cov(1,2) = 0.0;
+  	sysNoise_Cov(1,3) = 0.0;
+  	sysNoise_Cov(2,1) = 0.0;
+  	sysNoise_Cov(2,2) = pow(0.01,2); //0.05
+  	sysNoise_Cov(2,3) = 0.0;
+  	sysNoise_Cov(3,1) = 0.0;
+  	sysNoise_Cov(3,2) = 0.0;
+  	//sysNoise_Cov(3,3) = pow(0.025,2);
+  	sysNoise_Cov(3,3) = pow(0.017,2);
+
+
+  	BFL::Gaussian system_Uncertainty(sysNoise_Mu, sysNoise_Cov);
+  	/// create the nonlinear system model
+  	ipa_BayesianFilter::SysPDF2DOdometry *sys_pdf = new ipa_BayesianFilter::SysPDF2DOdometry(system_Uncertainty);
+  	m_SysModel = new BFL::SystemModel<BFL::ColumnVector>(sys_pdf);
+  	return ipa_Utils::RET_OK;
+}
+
+unsigned long GetRobotPose()
+{
+	//TODO: ROS service call to platform
+}
+
+unsigned long GetMeasurement()
 {
 	srvClient_ColoredPointCloud.call(m_ColoredPointCloudSrv);
 	sensor_msgs::CvBridge cv_bridge_0_; ///< Converts ROS image messages to openCV IplImages
