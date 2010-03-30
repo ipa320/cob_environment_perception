@@ -161,8 +161,8 @@ class CobEnvModelNode
 CobEnvModelNode::CobEnvModelNode()
 {
     //topicPub_demoPublish = n.advertise<std_msgs::String>("demoPublish", 1);
-    //topicSub_coloredPointCloud = n.subscribe("/sensor_fusion/ColoredPointCloud", 1, &CobEnvModelNode::topicCallback_coloredPointCloud, this);
-    srvClient_ColoredPointCloud = n.serviceClient<cob_srvs::GetColoredPointCloud>("GetColoredPointCloud");
+    topicSub_coloredPointCloud = n.subscribe("/sensor_fusion/ColoredPointCloud", 1, &CobEnvModelNode::topicCallback_coloredPointCloud, this);
+    srvClient_ColoredPointCloud = n.serviceClient<cob_srvs::GetColoredPointCloud>("/sensor_fusion/ColoredPointCloud");
     srvServer_Trigger = n.advertiseService("UpdateEnvModel", &CobEnvModelNode::srvCallback_UpdateEnvModel, this);
 }
 
@@ -275,30 +275,45 @@ unsigned long GetRobotPose()
 
 unsigned long GetMeasurement()
 {
-	srvClient_ColoredPointCloud.call(m_ColoredPointCloudSrv);
+	ROS_INFO("[env_model_node] Colored point cloud service call.");
+	if(srvClient_ColoredPointCloud.call(m_ColoredPointCloudSrv))
+	{
+		ROS_INFO("[env_model_node] Colored point cloud service called [OK].");
+	}
+	else
+	{
+		ROS_ERROR("[env_model_node] Colored point cloud service called [FAILED].");
+	}
 	sensor_msgs::CvBridge cv_bridge_0_; ///< Converts ROS image messages to openCV IplImages
 	sensor_msgs::CvBridge cv_bridge_1_; ///< Converts ROS image messages to openCV IplImages
 	sensor_msgs::CvBridge cv_bridge_2_; ///< Converts ROS image messages to openCV IplImages
 	IplImage* color_image_8U3;
 	IplImage* xyz_image_32F3;
 	IplImage* grey_image_32F1;
+	sensor_msgs::ImageConstPtr colorImage(&(m_ColoredPointCloudSrv.response.colorImage));
+	sensor_msgs::ImageConstPtr xyzImage(&(m_ColoredPointCloudSrv.response.xyzImage));
+	sensor_msgs::ImageConstPtr greyImage(&(m_ColoredPointCloudSrv.response.confidenceMask));
     try
     {
-      color_image_8U3 = cvCloneImage(cv_bridge_0_.imgMsgToCv((sensor_msgs::ImageConstPtr)(&(m_ColoredPointCloudSrv.response.colorImage)), "passthrough"));
-      xyz_image_32F3 = cvCloneImage(cv_bridge_0_.imgMsgToCv((sensor_msgs::ImageConstPtr)(&(m_ColoredPointCloudSrv.response.xyzImage)), "passthrough"));
-      grey_image_32F1 = cvCloneImage(cv_bridge_2_.imgMsgToCv((sensor_msgs::ImageConstPtr)(&(m_ColoredPointCloudSrv.response.greyImage)), "passthrough"));
+      color_image_8U3 = cvCloneImage(cv_bridge_0_.imgMsgToCv(colorImage, "passthrough"));
+      xyz_image_32F3 = cvCloneImage(cv_bridge_1_.imgMsgToCv(xyzImage, "passthrough"));
+      grey_image_32F1 = cvCloneImage(cv_bridge_2_.imgMsgToCv(greyImage, "passthrough"));
+      //color_image_8U3 = cvCloneImage(cv_bridge_0_.imgMsgToCv((sensor_msgs::ImageConstPtr)(&(m_ColoredPointCloudSrv.response.colorImage)), "passthrough"));
+      //xyz_image_32F3 = cvCloneImage(cv_bridge_0_.imgMsgToCv((sensor_msgs::ImageConstPtr)(&(m_ColoredPointCloudSrv.response.xyzImage)), "passthrough"));
+      //grey_image_32F1 = cvCloneImage(cv_bridge_2_.imgMsgToCv((sensor_msgs::ImageConstPtr)(&(m_ColoredPointCloudSrv.response.greyImage)), "passthrough"));
     }
     catch (sensor_msgs::CvBridgeException& e)
     {
       ROS_ERROR("[tof_camera_viewer] Could not convert images by cv_bridge.");
     }
+		ROS_INFO("[env_model_node] Point cloud received.");
     try
     {
     	IplImage* grey_image_8U3 = cvCreateImage(cvGetSize(grey_image_32F1), IPL_DEPTH_8U, 3);
     	IplImage* xyz_image_8U3 = cvCreateImage(cvGetSize(xyz_image_32F3), IPL_DEPTH_8U, 3);
 
-    	ipa_Utils::ConvertToShowImage(grey_image_32F1, grey_image_8U3, 1, 0, 10000);
-    	ipa_Utils::ConvertToShowImage(xyz_image_32F3, xyz_image_8U3, 1, 0, 10000);
+    	ipa_Utils::ConvertToShowImage(grey_image_32F1, grey_image_8U3, 1);
+    	ipa_Utils::ConvertToShowImage(xyz_image_32F3, xyz_image_8U3, 1);
     	cvShowImage("grey data", grey_image_8U3);
     	cvShowImage("xyz data", xyz_image_8U3);
     	cvShowImage("color data", color_image_8U3);
@@ -322,6 +337,8 @@ int main(int argc, char** argv)
     while(cobEnvModelNode.n.ok())
     {
         ros::spinOnce();
+				cobEnvModelNode.callColoredPointCloudService();
+				
         /*if (cobEnvModelNode.m_EnvReconstruction.UI() & ipa_Utils::RET_FAILED)
         {
     		std::cerr << "ERROR - Main:" << std::endl;

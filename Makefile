@@ -1,6 +1,6 @@
 all: cob_env_model 
 
-SVN_REVISION = HEAD
+SVN_REVISION = 
 SVN_DIR = svntmp
 #SVN_URL = svn://cob-server.ipa.fhg.de/cob/cob3_sw/trunk/Source/SLAM svn://cob-server.ipa.fhg.de/cob/cob3_sw/trunk/Source/Vision
 SVN_URL = svn://cob-server.ipa.fhg.de/cob/cob3_sw/trunk/Source
