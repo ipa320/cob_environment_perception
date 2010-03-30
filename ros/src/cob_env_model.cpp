@@ -66,17 +66,17 @@
 
 // ROS message includes
 #include <std_msgs/String.h>
-#include <cob3_msgs/ColoredPointCloud.h>
+#include <cob_msgs/ColoredPointCloud.h>
 
-#include <cob3_srvs/GetColoredPointCloud.h>
-#include <cob3_srvs/Trigger.h>
+#include <cob_srvs/GetColoredPointCloud.h>
+#include <cob_srvs/Trigger.h>
 
 
 // external includes
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 #include "cob_sensor_fusion/ColoredPointCloud.h"
-#include "cob_env_model/CuiEnvReconstruction.h"
+//#include "cob_env_model/CuiEnvReconstruction.h"
 
 
 //####################
@@ -100,14 +100,15 @@ class CobEnvModelNode
 
         // topic callback functions 
         // function will be called when a new message arrives on a topic
-        void topicCallback_coloredPointCloud(const cob3_msgs::ColoredPointCloud::ConstPtr& msg);
+        void topicCallback_coloredPointCloud(const cob_msgs::ColoredPointCloud::ConstPtr& msg);
 
 
-        void UpdateColoredPointCloud(const cob3_msgs::ColoredPointCloud::ConstPtr& msg);
+        void UpdateColoredPointCloud(const cob_msgs::ColoredPointCloud::ConstPtr& msg);
 
-        bool srvCallback_UpdateEnvModel(cob3_srvs::Trigger::Request &req,
-										cob3_srvs::Trigger::Response &res);
+        bool srvCallback_UpdateEnvModel(cob_srvs::Trigger::Request &req,
+										cob_srvs::Trigger::Response &res);
 
+        void callColoredPointCloudService();
 
 		// create a handle for this node, initialize node
 		ros::NodeHandle n;
@@ -131,7 +132,7 @@ class CobEnvModelNode
 		IplImage* m_GreyImage;
 		sensor_msgs::CvBridge m_Bridge;
 
-		cob3_srvs::GetColoredPointCloud m_ColoredPointCloudSrv;
+		cob_srvs::GetColoredPointCloud m_ColoredPointCloudSrv;
 
 };
 
@@ -139,8 +140,8 @@ class CobEnvModelNode
 CobEnvModelNode::CobEnvModelNode()
 {
     //topicPub_demoPublish = n.advertise<std_msgs::String>("demoPublish", 1);
-    topicSub_coloredPointCloud = n.subscribe("coloredPointCloud", 1, &CobEnvModelNode::topicCallback_coloredPointCloud, this);
-    srvClient_ColoredPointCloud = n.serviceClient<cob3_srvs::GetColoredPointCloud>("GetColoredPointCloud");
+    topicSub_coloredPointCloud = n.subscribe("/sensor_fusion/ColoredPointCloud", 1, &CobEnvModelNode::topicCallback_coloredPointCloud, this);
+    srvClient_ColoredPointCloud = n.serviceClient<cob_srvs::GetColoredPointCloud>("GetColoredPointCloud");
     srvServer_Trigger = n.advertiseService("UpdateEnvModel", &CobEnvModelNode::srvCallback_UpdateEnvModel, this);
 }
 
@@ -152,11 +153,12 @@ unsigned long CobEnvModelNode::Init()
 		std::cerr << "\t ... Error while initializing EnvReconstruction.\n";
 		return -1;
 	}*/
+	return 1;
 }
 
-void CobEnvModelNode::topicCallback_coloredPointCloud(const cob3_msgs::ColoredPointCloud::ConstPtr& msg)
+void CobEnvModelNode::topicCallback_coloredPointCloud(const cob_msgs::ColoredPointCloud::ConstPtr& msg)
 {
-	tf::StampedTransform transform;
+	/*tf::StampedTransform transform;
 	try
 	{
 		listener.lookupTransform("/cam", "/base", ros::Time(0), transform);
@@ -164,8 +166,9 @@ void CobEnvModelNode::topicCallback_coloredPointCloud(const cob3_msgs::ColoredPo
 	catch (tf::TransformException ex)
 	{
 		ROS_ERROR("%s",ex.what());
-	}
+	}*/
 	//transform in Matrix m_TransformCam2Base umwandeln
+
 
 	//UpdateColoredPointCloud(msg);
 	//ColoredPointCloud Objekt füllen aus msg
@@ -173,7 +176,7 @@ void CobEnvModelNode::topicCallback_coloredPointCloud(const cob3_msgs::ColoredPo
     ROS_INFO("this is topicCallback_demoSubscribe");
 }
 
-void CobEnvModelNode::UpdateColoredPointCloud(const cob3_msgs::ColoredPointCloud::ConstPtr& msg)
+void CobEnvModelNode::UpdateColoredPointCloud(const cob_msgs::ColoredPointCloud::ConstPtr& msg)
 {
 	IplImage* colorImage = m_Bridge.imgMsgToCv((sensor_msgs::ImageConstPtr)(&(msg->colorImage)));
 	m_ColoredPointCloud.SetColorImage(colorImage);
@@ -182,12 +185,52 @@ void CobEnvModelNode::UpdateColoredPointCloud(const cob3_msgs::ColoredPointCloud
 	m_GreyImage = m_Bridge.imgMsgToCv((sensor_msgs::ImageConstPtr)(&(msg->greyImage)));
 }
 
-bool CobEnvModelNode::srvCallback_UpdateEnvModel(cob3_srvs::Trigger::Request &req,
-								cob3_srvs::Trigger::Response &res)
+bool CobEnvModelNode::srvCallback_UpdateEnvModel(cob_srvs::Trigger::Request &req,
+								cob_srvs::Trigger::Response &res)
 {
 	srvClient_ColoredPointCloud.call(m_ColoredPointCloudSrv);
+
+	return true;
+
 	//warten?
 	//UpdateColoredPointCloud(&(m_ColoredPointCloudSrv.response.ColoredPointCloud));
+}
+
+void CobEnvModelNode::callColoredPointCloudService()
+{
+	srvClient_ColoredPointCloud.call(m_ColoredPointCloudSrv);
+	sensor_msgs::CvBridge cv_bridge_0_; ///< Converts ROS image messages to openCV IplImages
+	sensor_msgs::CvBridge cv_bridge_1_; ///< Converts ROS image messages to openCV IplImages
+	sensor_msgs::CvBridge cv_bridge_2_; ///< Converts ROS image messages to openCV IplImages
+	IplImage* color_image_8U3;
+	IplImage* xyz_image_32F3;
+	IplImage* grey_image_32F1;
+    try
+    {
+      color_image_8U3 = cvCloneImage(cv_bridge_0_.imgMsgToCv((sensor_msgs::ImageConstPtr)(&(m_ColoredPointCloudSrv.response.colorImage)), "passthrough"));
+      xyz_image_32F3 = cvCloneImage(cv_bridge_0_.imgMsgToCv((sensor_msgs::ImageConstPtr)(&(m_ColoredPointCloudSrv.response.xyzImage)), "passthrough"));
+      grey_image_32F1 = cvCloneImage(cv_bridge_2_.imgMsgToCv((sensor_msgs::ImageConstPtr)(&(m_ColoredPointCloudSrv.response.greyImage)), "passthrough"));
+    }
+    catch (sensor_msgs::CvBridgeException& e)
+    {
+      ROS_ERROR("[tof_camera_viewer] Could not convert images by cv_bridge.");
+    }
+    try
+    {
+    	IplImage* grey_image_8U3 = cvCreateImage(cvGetSize(grey_image_32F1), IPL_DEPTH_8U, 3);
+    	IplImage* xyz_image_8U3 = cvCreateImage(cvGetSize(xyz_image_32F3), IPL_DEPTH_8U, 3);
+
+    	ipa_Utils::ConvertToShowImage(grey_image_32F1, grey_image_8U3, 1, 0, 10000);
+    	ipa_Utils::ConvertToShowImage(xyz_image_32F3, xyz_image_8U3, 1, 0, 10000);
+    	cvShowImage("grey data", grey_image_8U3);
+    	cvShowImage("xyz data", xyz_image_8U3);
+    	cvShowImage("color data", color_image_8U3);
+    	cvWaitKey();
+    }
+    catch (sensor_msgs::CvBridgeException& e)
+    {
+      ROS_ERROR("[sensor_fusion] Could not convert");
+    }
 }
 
 //#######################

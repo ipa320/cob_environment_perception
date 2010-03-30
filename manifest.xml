@@ -20,6 +20,9 @@
 	<depend package="tinyxml"/>
 	<depend package="cob_sensor_fusion"/>
 	<depend package="cob_vision_utils"/>
+	<depend package="cob_vision_ipa_utils"/>
+	<depend package="cob_vision_features"/>
+	<depend package="cob_vision_slam"/>
 
 	<rosdep name="boost"/>
 	<rosdep name="ann"/>

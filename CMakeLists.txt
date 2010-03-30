@@ -32,64 +32,19 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/common/lib)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
 
 # add project executable
-rosbuild_add_executable(cob_env_model common/src/EnvReconstructionMain.cpp
-	common/src/EnvReconstructionControlFlow.cpp
-	common/src/CuiEnvReconstruction.cpp
-	common/src/EKF2DLandmark.cpp
-	common/src/AbstractEKF.cpp
-	common/src/FastSLAMParticle.cpp
-	common/src/FastSLAM.cpp
-	common/src/MeasPDF2DLandmark.cpp
-	common/src/MeasModel2DLandmark.cpp
-	common/src/SysPDF2DOdometry.cpp
-	common/src/KdTreeDataAssociation.cpp
-	common/src/kdTree.cpp
-	common/src/RobotSim.cpp
-	common/src/CameraSensorsControlFlow.cpp
-	common/src/PointCloudRenderer.cpp
-	common/src/zpr.cpp
-	common/src/SURFDetector.cpp
-	common/src/AbstractFeatureVector.cpp
-	common/src/BlobFeatureVector.cpp
-	common/src/AbstractFeatureList.cpp
-	common/src/BlobFeatureList.cpp
-	common/src/AbstractFeature.cpp
-	common/src/BlobFeature.cpp)
+#rosbuild_add_executable(env_model common/src/EnvReconstructionMain.cpp
+#	common/src/EnvReconstructionControlFlow.cpp
+#	common/src/CuiEnvReconstruction.cpp)
 
-rosbuild_add_executable(cob_env_model_ros ros/src/cob_env_model.cpp
-	common/src/EnvReconstructionControlFlow.cpp
-	common/src/CuiEnvReconstruction.cpp
-	common/src/EKF2DLandmark.cpp
-	common/src/AbstractEKF.cpp
-	common/src/FastSLAMParticle.cpp
-	common/src/FastSLAM.cpp
-	common/src/MeasPDF2DLandmark.cpp
-	common/src/MeasModel2DLandmark.cpp
-	common/src/SysPDF2DOdometry.cpp
-	common/src/KdTreeDataAssociation.cpp
-	common/src/kdTree.cpp
-	common/src/RobotSim.cpp
-	common/src/CameraSensorsControlFlow.cpp
-	common/src/PointCloudRenderer.cpp
-	common/src/zpr.cpp
-	common/src/SURFDetector.cpp
-	common/src/AbstractFeatureVector.cpp
-	common/src/BlobFeatureVector.cpp
-	common/src/AbstractFeatureList.cpp
-	common/src/BlobFeatureList.cpp
-	common/src/AbstractFeature.cpp
-	common/src/BlobFeature.cpp)
+rosbuild_add_executable(env_model_node ros/src/cob_env_model.cpp)
 
 
 # add compile flag
-rosbuild_add_compile_flags(cob_env_model -D__LINUX__ -D__COB_ROS__)
-rosbuild_add_compile_flags(cob_env_model_ros -D__LINUX__ -D__COB_ROS__)
-#rosbuild_add_executable(swiss_ranger_show ros/src/swiss_ranger_show.cpp)
-#rosbuild_add_executable(color_camera ros/src/color_camera.cpp)
-#rosbuild_add_executable(color_camera_show ros/src/color_camera_show.cpp)
+#rosbuild_add_compile_flags(env_model -D__LINUX__ -D__COB_ROS__)
+rosbuild_add_compile_flags(env_model_node -D__LINUX__ -D__COB_ROS__)
+
 
 # add compile flag
-#rosbuild_add_compile_flags(swiss_ranger -D__LINUX__ -D__COB_ROS__)
-#rosbuild_add_compile_flags(SensorFusion -D__LINUX__ -D__COB_ROS__)
-target_link_libraries(cob_env_model ann glut mesasr)
-target_link_libraries(cob_env_model_ros ann glut mesasr)
+#target_link_libraries(env_model ann glut mesasr cob_vision_ipa_utils cob_vision_features cob_vision_sensor_fusion)
+target_link_libraries(env_model_node ann glut mesasr 
+	cob_vision_ipa_utils cob_vision_features cob_vision_sensor_fusion cob_vision_slam)
