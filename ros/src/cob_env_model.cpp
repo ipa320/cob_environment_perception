@@ -347,9 +347,10 @@ unsigned long CobEnvModelNode::GetMeasurement()
 
 	m_ColoredPointCloud.SetColorImage(color_image_8U3);
 	m_ColoredPointCloud.SetXYZImage(xyz_image_32F3);
+	m_ColoredPointCloud.SetGreyImage(grey_image_32F1);
 
 	ROS_INFO("[env_model_node] Colored point cloud object updated.");
-	//ipa_Utils::MaskImage2((*pc)->GetXYZImage(), (*pc)->GetXYZImage(), sharedGreyImage, sharedGreyImage, 100, 30000, 3);
+	ipa_Utils::MaskImage2(m_ColoredPointCloud.GetXYZImage(), m_ColoredPointCloud.GetXYZImage(), m_ColoredPointCloud.GetGreyImage(), m_ColoredPointCloud.GetGreyImage(), 200, 60000, 3);
 
     /*try
     {
@@ -372,11 +373,11 @@ unsigned long CobEnvModelNode::GetMeasurement()
 
 unsigned long CobEnvModelNode::DetectFeatures()
 {
+	ROS_INFO("[env_model_node] Detecting features");
 	//TODO: delete vector after filter update;
 	feature_vector_ = new BlobFeatureVector();
 	m_FeatureDetector->DetectFeatures(m_ColoredPointCloud.GetColorImage(), feature_vector_);
 	//TODO: use colorImage0 but transform u and v to sharedImageSize
-	//m_FeatureDetector->DetectFeatures(*colorImage0, afl);
 	AbstractFeatureVector::iterator It;
 	for (It=feature_vector_->begin(); It!=feature_vector_->end(); It++)
 	{
@@ -407,12 +408,8 @@ unsigned long CobEnvModelNode::InitializeFilter()
 	{
 		ColumnVector theta(3);
 		//TransformCameraToBase(*It);
-	//	cout<<(*It)->m_x <<" " <<(*It)->m_y <<std::endl;
 		(*It)->m_Id=-1;
 		m_FastSLAM.AddUnknownFeature(*m_MeasModel, *It, 0);
-		/*(*It)->m_x = m_FastSLAM.m_Particles[0].ValueGet()->GetMap()->find((*It)->m_Id)->second.operator->()->PostGet()->ExpectedValueGet()(1);
-		(*It)->m_y = m_FastSLAM.m_Particles[0].ValueGet()->GetMap()->find((*It)->m_Id)->second.operator->()->PostGet()->ExpectedValueGet()(2);
-		(*It)->m_z = ((EKF2DLandmark*)(m_FastSLAM.m_Particles[0].ValueGet()->GetMap()->find((*It)->m_Id)->second.get()))->m_Height;*/
 	}
 	m_DataAssociation.AddNewFeatures(feature_vector_, mask);
 	return ipa_Utils::RET_OK;
@@ -420,60 +417,31 @@ unsigned long CobEnvModelNode::InitializeFilter()
 
 unsigned long CobEnvModelNode::UpdateFilter()
 {
+	ROS_INFO("[env_model_node] Updating filter");
 	static int step = 1;
-	/*m_OldMap.clear();
-	multimap<int,boost::shared_ptr<AbstractEKF> >::iterator it;
-	for ( it=m_MapParticle->GetMap()->begin() ; it != m_MapParticle->GetMap()->end(); it++ )
-	{
-		m_OldMap.insert(*it);
-	}*/
 
-	//std::cout << ((BlobFeatureList*)afl)->Str() << std::endl;
-	//std::cout << "maxID: " << maxID << std::endl;
 	BFL::ColumnVector input(3);
 	input(1) = m_RobotPose(1);
 	input(2) = m_RobotPose(2);
 	input(3) = m_RobotPose(3);
 	m_FastSLAM.UpdatePosition(*m_SysModel, input);
 	int associationCtr = 0;
-	unsigned int ctrAssociations = 0;
+	unsigned int ctrAssociations;
 	m_DataAssociation.AssociateData(feature_vector_);
 
 	ColumnVector theta(3);
 	AbstractFeatureVector::iterator It;
 	for (It=feature_vector_->begin(); It!=feature_vector_->end(); It++)
 	{
-		//std::cout << (*It)-> m_Descriptor[0] << std::endl;
-		//Transformation from camera to robot coordinate system
 		//TransformCameraToBase(*It);
-		//std::cout << "Measured Landmark position (x,y,z): " << (*It)->m_x << ", " << (*It)->m_y << ", " << (*It)->m_z << std::endl;
 		if((*It)->m_Id != -1)
 		{
 			associationCtr++;
-			//std::cout << "maxID: " << maxID << std::endl;
-			//m_DataAssociation.AddFeature(*It);
 			m_FastSLAM.UpdateKnownFeature(*m_MeasModel, *m_SysModel, *It, ctrAssociations);
 		}
-		/*else
-		{
-			//m_DataAssociation.AddFeature(*It);
-			m_FastSLAM.UpdateUnknownFeature(*m_MeasModel, theta, (*It)->m_Id, height);
-		}*/
 	}
 
 	m_MapParticle = m_FastSLAM.Resample(ctrAssociations);
-	//m_MapParticle = m_FastSLAM.GetBestParticle();
-	/*m_CurFeatures = afl;
-	m_Map = m_MapParticle->GetMap();
-	m_Pose = m_MapParticle->GetPose();
-	m_RobotPath.push_back(*m_Pose);
-	m_RobotPathPtr = &m_RobotPath;
-	m_Map2 = m_FastSLAM.m_Particles[0].ValueGet()->GetMap();
-	//m_Pose2 = m_FastSLAM.m_Particles[0].ValueGet()->GetPose();
-	m_Pose2 = &m_RobotPose;
-	m_RobotPath2.push_back(*m_Pose2);
-	m_RobotPathPtr2 = &m_RobotPath2;*/
-
 
 
 	std::cout << "ctrAssociations: " << ctrAssociations << std::endl;
@@ -481,8 +449,9 @@ unsigned long CobEnvModelNode::UpdateFilter()
 	std::cout << associationCtr << " associated by descriptor" << std::endl;
 	std::cout << m_MapParticle->m_RejectedFeatures.size() << " rejected in particle" << std::endl;
 	std::cout << associationCtr - m_MapParticle->m_RejectedFeatures.size() << " remaining associations" << std::endl;
-	//std::cout << "map size: " << m_MapParticle->GetMap()->size() << std::endl;
+	std::cout << "map size: " << m_MapParticle->GetMap()->size() << std::endl;
 	std::cout << "Original robot pose: " << m_RobotPose << std::endl;
+	std::cout << "Corrected robot pose: " << *(m_MapParticle->GetPose()) << std::endl;
 
 	/// Remove class associations from rejected particles
 	for (unsigned int i=0; i<m_MapParticle->m_RejectedFeatures.size(); i++)
@@ -495,8 +464,6 @@ unsigned long CobEnvModelNode::UpdateFilter()
 	std::vector<int> mask(feature_vector_->size(),0);
 	for (It=feature_vector_->begin(), i=0; It!=feature_vector_->end(); It++, i++)
 	{
-		//TransformCameraToBase(*It);
-
 		/// Add new feature only if it is not masked
 		/// It is important that the features ID corresponds
 		/// to the position in the particle map
@@ -504,22 +471,12 @@ unsigned long CobEnvModelNode::UpdateFilter()
 		{
 			if ( mask[i] == 0) m_FastSLAM.AddUnknownFeature(*m_MeasModel, *It, step);
 		}
-//		multimap<int,boost::shared_ptr<AbstractEKF> >* map = m_MapParticle->GetMap();
-//		multimap<int,boost::shared_ptr<AbstractEKF> >::iterator bla;
-		/*(*It)->m_x = m_FastSLAM.m_Particles[0].ValueGet()->GetMap()->find((*It)->m_Id)->second->PostGet()->ExpectedValueGet()(1);
-		(*It)->m_y = m_FastSLAM.m_Particles[0].ValueGet()->GetMap()->find((*It)->m_Id)->second->PostGet()->ExpectedValueGet()(2);
-		(*It)->m_z = ((EKF2DLandmark*)(m_FastSLAM.m_Particles[0].ValueGet()->GetMap()->find((*It)->m_Id)->second.get()))->m_Height;*/
-
+		else mask[i]=1; //don't add known features to global list
 	}
-//	m_DataAssociation.AddNewFeatures(afl, mask);
-	//TransformPointCloud2(m_PointClouds, *m_MapParticle->GetPose());
-	//TransformPointCloud2(m_PointClouds2, m_RobotPose);
+	m_DataAssociation.AddNewFeatures(feature_vector_, mask);
 	step++;
 
-//	bool temp;
-//	cout<< "Enter any key to exit rendering function" << std::endl;
-//	cin>>temp;
-//	PointCloudRenderer::Exit();
+	delete feature_vector_;
 
 	return ipa_Utils::RET_OK;
 }
@@ -537,22 +494,7 @@ void RenderMap()
 		for ( It=m_Map->begin() ; It != m_Map->end(); It++ )
 		{
 			int step = ((EKF2DLandmark*)It->second.operator ->())->m_Step;
-			//std::cout << step << std::endl;
-			switch(step%4)
-			{
-			case 0:
-				glColor3f(0.0f,0.0f,1.0f);
-				break;
-			case 1:
-				glColor3f(0.0f,1.0f,0.0f);
-				break;
-			case 2:
-				glColor3f(1.0f,0.0f,0.0f);
-				break;
-			case 3:
-				glColor3f(0.0f,1.0f,1.0f);
-				break;
-			}
+			glColor3f(0.0f,0.0f,1.0f);
 			glPointSize(4.0f);
 			glBegin(GL_POINTS);
 			glVertex3f(((EKF2DLandmark*)It->second.operator ->())->PostGet()->ExpectedValueGet()(1),
@@ -565,51 +507,41 @@ void RenderMap()
 
 int main(int argc, char** argv)
 {
-    // initialize ROS, spezify name of node
+    // initialize ROS, specify name of node
     ros::init(argc, argv, "cobEnvModelNode");
     
     CobEnvModelNode cobEnvModelNode;
 
-
-		bool first = true;
-		int i=0;
+	bool first = true;
+	int i=0;
  
     ros::Rate r(0.5);
     while(cobEnvModelNode.n.ok() && i<5)
     {
-			ROS_INFO("spin");
-        //ros::spinOnce();
+        ros::spinOnce();
     	cobEnvModelNode.GetMeasurement();
-			cobEnvModelNode.GetRobotPose();
-			cobEnvModelNode.GetTransformationCam2Base();
-			cobEnvModelNode.DetectFeatures();
-			if(first)
-				cobEnvModelNode.InitializeFilter();
-			else
-				cobEnvModelNode.UpdateFilter();
-			first = false;
-			i++;
+		cobEnvModelNode.GetRobotPose();
+		cobEnvModelNode.GetTransformationCam2Base();
+		cobEnvModelNode.DetectFeatures();
+		if(first)
+			cobEnvModelNode.InitializeFilter();
+		else
+			cobEnvModelNode.UpdateFilter();
+		first = false;
+		i++;
     	r.sleep();
-				
-        /*if (cobEnvModelNode.m_EnvReconstruction.UI() & ipa_Utils::RET_FAILED)
-        {
-    		std::cerr << "ERROR - Main:" << std::endl;
-    		std::cerr << "\t ... Error in cobEnvModelNode.m_EnvReconstruction.UI().\n";
-        	break;
-        }*/
     }
-		m_Map = cobEnvModelNode.m_MapParticle->GetMap();
-		unsigned char cmd=0;
-		PointCloudRenderer::Init();
-		PointCloudRenderer::SetExternRenderFunc(&RenderMap);
-		PointCloudRenderer::SetKeyboardPointer(&cmd);
-		PointCloudRenderer::Run();
-		while(cmd!='q')
-		{
-			usleep(100);	
+	m_Map = cobEnvModelNode.m_MapParticle->GetMap();
+	unsigned char cmd=0;
+	PointCloudRenderer::Init();
+	PointCloudRenderer::SetExternRenderFunc(&RenderMap);
+	PointCloudRenderer::SetKeyboardPointer(&cmd);
+	PointCloudRenderer::Run();
+	while(cmd!='q')
+	{
+		usleep(100);
     }
 		PointCloudRenderer::Exit();
-//    ros::spin();
 
     return 0;
 }
