@@ -74,6 +74,7 @@
 #include <cob_vision_features/AbstractFeatureVector.h>
 #include <cob_vision_slam/MeasurementModels/MeasPDF2DLandmark.h>
 #include <cob_vision_slam/SystemModels/SysPDF2DOdometry.h>
+#include <cob_vision_slam/SystemModels/SysPDF2DLaserNav.h>
 #include <cob_vision_slam/Filters/FastSLAM.h>
 #include <cob_vision_slam/Filters/FastSLAMParticle.h>
 #include <cob_vision_slam/DataAssociation/KdTreeDataAssociation.h>
@@ -87,8 +88,12 @@
 #include <cob_srvs/Trigger.h>
 
 
+// GUI includes
+#include <cob_vision_ipa_utils/PointCloudRenderer.h>
+
 // external includes
 
+void deleter(sensor_msgs::Image* const) {}
 
 
 //####################
@@ -112,15 +117,15 @@ class CobEnvModelNode
 
         // topic callback functions 
         // function will be called when a new message arrives on a topic
-        void topicCallback_coloredPointCloud(const cob_msgs::ColoredPointCloud::ConstPtr& msg);
+        //void topicCallback_coloredPointCloud(const cob_msgs::ColoredPointCloud::ConstPtr& msg);
 
 
-        void UpdateColoredPointCloud(const cob_msgs::ColoredPointCloud::ConstPtr& msg);
+        //void UpdateColoredPointCloud(const cob_msgs::ColoredPointCloud::ConstPtr& msg);
 
         bool srvCallback_UpdateEnvModel(cob_srvs::Trigger::Request &req,
 										cob_srvs::Trigger::Response &res);
 
-        void callColoredPointCloudService();
+        //void callColoredPointCloudService();
 
     	///Create and initialize the system model of the robot
     	/// @return Return code
@@ -155,7 +160,7 @@ class CobEnvModelNode
 		ros::ServiceServer srvServer_Trigger;
 		ros::ServiceClient srvClient_ColoredPointCloud;
 
-		//CuiEnvReconstruction m_EnvReconstruction;
+		boost::shared_ptr<FastSLAMParticle> m_MapParticle;
 
     protected:
 
@@ -168,6 +173,9 @@ class CobEnvModelNode
 
 		IplImage* m_GreyImage;
 
+	sensor_msgs::CvBridge cv_bridge_0_; ///< Converts ROS image messages to openCV IplImages
+	sensor_msgs::CvBridge cv_bridge_1_; ///< Converts ROS image messages to openCV IplImages
+	sensor_msgs::CvBridge cv_bridge_2_; ///< Converts ROS image messages to openCV IplImages
 
 		AbstractDetector* m_FeatureDetector;
 		ipa_SensorFusion::ColoredPointCloud m_ColoredPointCloud;
@@ -175,10 +183,9 @@ class CobEnvModelNode
 		BFL::ColumnVector m_OldRobotPose;
 		BFL::AnalyticMeasurementModelGaussianUncertainty *m_MeasModel;
 		BFL::SystemModel<BFL::ColumnVector> *m_SysModel;
-		AbstractFeatureVector* afl;
+		AbstractFeatureVector* feature_vector_;
 		KdTreeDataAssociation m_DataAssociation;
 		FastSLAM m_FastSLAM;
-		boost::shared_ptr<FastSLAMParticle> m_MapParticle;
 
 };
 
@@ -187,8 +194,9 @@ CobEnvModelNode::CobEnvModelNode()
 	: m_RobotPose(3),
 	  m_FastSLAM(100,1)
 {
+		Init();
     //topicPub_demoPublish = n.advertise<std_msgs::String>("demoPublish", 1);
-    topicSub_coloredPointCloud = n.subscribe("/sensor_fusion/ColoredPointCloud", 1, &CobEnvModelNode::topicCallback_coloredPointCloud, this);
+    //topicSub_coloredPointCloud = n.subscribe("/sensor_fusion/ColoredPointCloud", 1, &CobEnvModelNode::topicCallback_coloredPointCloud, this);
     srvClient_ColoredPointCloud = n.serviceClient<cob_srvs::GetColoredPointCloud>("/sensor_fusion/ColoredPointCloud");
     srvServer_Trigger = n.advertiseService("UpdateEnvModel", &CobEnvModelNode::srvCallback_UpdateEnvModel, this);
 
@@ -206,9 +214,9 @@ unsigned long CobEnvModelNode::Init()
 	return ipa_Utils::RET_OK;
 }
 
-void CobEnvModelNode::topicCallback_coloredPointCloud(const cob_msgs::ColoredPointCloud::ConstPtr& msg)
+/*void CobEnvModelNode::topicCallback_coloredPointCloud(const cob_msgs::ColoredPointCloud::ConstPtr& msg)
 {
-	/*tf::StampedTransform transform;
+	tf::StampedTransform transform;
 	try
 	{
 		listener.lookupTransform("/cam", "/base", ros::Time(0), transform);
@@ -216,7 +224,7 @@ void CobEnvModelNode::topicCallback_coloredPointCloud(const cob_msgs::ColoredPoi
 	catch (tf::TransformException ex)
 	{
 		ROS_ERROR("%s",ex.what());
-	}*/
+	}
 	//transform in Matrix m_TransformCam2Base umwandeln
 
 
@@ -233,12 +241,11 @@ void CobEnvModelNode::UpdateColoredPointCloud(const cob_msgs::ColoredPointCloud:
 	IplImage* xyzImage = m_Bridge.imgMsgToCv((sensor_msgs::ImageConstPtr)(&(msg->pointCloud)));
 	m_ColoredPointCloud.SetXYZImage(xyzImage);
 	m_GreyImage = m_Bridge.imgMsgToCv((sensor_msgs::ImageConstPtr)(&(msg->greyImage)));
-}
+}*/
 
 bool CobEnvModelNode::srvCallback_UpdateEnvModel(cob_srvs::Trigger::Request &req,
 								cob_srvs::Trigger::Response &res)
 {
-	srvClient_ColoredPointCloud.call(m_ColoredPointCloudSrv);
 
 	return true;
 
@@ -299,6 +306,9 @@ unsigned long CobEnvModelNode::CreateSystemModel()
 unsigned long CobEnvModelNode::GetRobotPose()
 {
 	//TODO: ROS service call to platform
+	m_RobotPose(1) = 0;
+	m_RobotPose(2) = 0;
+	m_RobotPose(3) = 0;
 	return ipa_Utils::RET_OK;
 }
 
@@ -314,15 +324,12 @@ unsigned long CobEnvModelNode::GetMeasurement()
 	{
 		ROS_ERROR("[env_model_node] Colored point cloud service called [FAILED].");
 	}
-	sensor_msgs::CvBridge cv_bridge_0_; ///< Converts ROS image messages to openCV IplImages
-	sensor_msgs::CvBridge cv_bridge_1_; ///< Converts ROS image messages to openCV IplImages
-	sensor_msgs::CvBridge cv_bridge_2_; ///< Converts ROS image messages to openCV IplImages
 	IplImage* color_image_8U3;
 	IplImage* xyz_image_32F3;
 	IplImage* grey_image_32F1;
-	sensor_msgs::ImageConstPtr colorImage(&(m_ColoredPointCloudSrv.response.colorImage));
-	sensor_msgs::ImageConstPtr xyzImage(&(m_ColoredPointCloudSrv.response.xyzImage));
-	sensor_msgs::ImageConstPtr greyImage(&(m_ColoredPointCloudSrv.response.confidenceMask));
+	sensor_msgs::ImageConstPtr colorImage(&(m_ColoredPointCloudSrv.response.colorImage),deleter);
+	sensor_msgs::ImageConstPtr xyzImage(&(m_ColoredPointCloudSrv.response.xyzImage),deleter);
+	sensor_msgs::ImageConstPtr greyImage(&(m_ColoredPointCloudSrv.response.confidenceMask),deleter);
     try
     {
       color_image_8U3 = cvCloneImage(cv_bridge_0_.imgMsgToCv(colorImage, "passthrough"));
@@ -330,7 +337,7 @@ unsigned long CobEnvModelNode::GetMeasurement()
       grey_image_32F1 = cvCloneImage(cv_bridge_2_.imgMsgToCv(greyImage, "passthrough"));
       //color_image_8U3 = cvCloneImage(cv_bridge_0_.imgMsgToCv((sensor_msgs::ImageConstPtr)(&(m_ColoredPointCloudSrv.response.colorImage)), "passthrough"));
       //xyz_image_32F3 = cvCloneImage(cv_bridge_0_.imgMsgToCv((sensor_msgs::ImageConstPtr)(&(m_ColoredPointCloudSrv.response.xyzImage)), "passthrough"));
-      //grey_image_32F1 = cvCloneImage(cv_bridge_2_.imgMsgToCv((sensor_msgs::ImageConstPtr)(&(m_ColoredPointCloudSrv.response.greyImage)), "passthrough"));
+      //grey_image_32F1 = cvCloneImage(cv_bridge_2_.imgMsgToCv((sensor_msgs::ImageConstPtr)(&(m_ColoredPointCloudSrv.response.confidenceMask)), "passthrough"));
     }
     catch (sensor_msgs::CvBridgeException& e)
     {
@@ -341,6 +348,7 @@ unsigned long CobEnvModelNode::GetMeasurement()
 	m_ColoredPointCloud.SetColorImage(color_image_8U3);
 	m_ColoredPointCloud.SetXYZImage(xyz_image_32F3);
 
+	ROS_INFO("[env_model_node] Colored point cloud object updated.");
 	//ipa_Utils::MaskImage2((*pc)->GetXYZImage(), (*pc)->GetXYZImage(), sharedGreyImage, sharedGreyImage, 100, 30000, 3);
 
     /*try
@@ -352,28 +360,31 @@ unsigned long CobEnvModelNode::GetMeasurement()
     	ipa_Utils::ConvertToShowImage(xyz_image_32F3, xyz_image_8U3, 1);
     	cvShowImage("grey data", grey_image_8U3);
     	cvShowImage("xyz data", xyz_image_8U3);
-    	cvShowImage("color data", color_image_8U3);
+    	cvShowImage("color data", m_ColoredPointCloud.GetColorImage());
     	cvWaitKey();
     }
     catch (sensor_msgs::CvBridgeException& e)
     {
-      ROS_ERROR("[sensor_fusion] Could not convert");
+      ROS_ERROR("[env_model_node] Could not convert");
     }*/
 	return ipa_Utils::RET_OK;
 }
 
 unsigned long CobEnvModelNode::DetectFeatures()
 {
-	m_FeatureDetector->DetectFeatures(m_ColoredPointCloud.GetColorImage(), afl);
+	//TODO: delete vector after filter update;
+	feature_vector_ = new BlobFeatureVector();
+	m_FeatureDetector->DetectFeatures(m_ColoredPointCloud.GetColorImage(), feature_vector_);
 	//TODO: use colorImage0 but transform u and v to sharedImageSize
 	//m_FeatureDetector->DetectFeatures(*colorImage0, afl);
 	AbstractFeatureVector::iterator It;
-	for (It=afl->begin(); It!=afl->end(); It++)
+	for (It=feature_vector_->begin(); It!=feature_vector_->end(); It++)
 	{
 		unsigned char R,G,B;
 		m_ColoredPointCloud.GetData((*It)->m_u,(*It)->m_v,(*It)->m_x,(*It)->m_y,(*It)->m_z,R,G,B);
+		//ROS_INFO("[env_model_node] Feature Data: %f, %f, %f", (*It)->m_x, (*It)->m_y, (*It)->m_z);
 	}
-	((SURFDetector*)m_FeatureDetector)->FilterFeatures(afl, 5);
+	((SURFDetector*)m_FeatureDetector)->FilterFeatures(feature_vector_, 5);
 	return ipa_Utils::RET_OK;
 }
 
@@ -385,6 +396,25 @@ unsigned long CobEnvModelNode::GetTransformationCam2Base()
 
 unsigned long CobEnvModelNode::InitializeFilter()
 {
+	for (int i=0; i<m_FastSLAM.m_Particles.size(); i++)
+	{
+		m_FastSLAM.m_Particles[i].ValueGet()->SetPose(m_RobotPose);
+	}
+
+	AbstractFeatureVector::iterator It;
+	std::vector<int> mask(feature_vector_->size(),0);
+	for (It=feature_vector_->begin(); It!=feature_vector_->end(); It++)
+	{
+		ColumnVector theta(3);
+		//TransformCameraToBase(*It);
+	//	cout<<(*It)->m_x <<" " <<(*It)->m_y <<std::endl;
+		(*It)->m_Id=-1;
+		m_FastSLAM.AddUnknownFeature(*m_MeasModel, *It, 0);
+		/*(*It)->m_x = m_FastSLAM.m_Particles[0].ValueGet()->GetMap()->find((*It)->m_Id)->second.operator->()->PostGet()->ExpectedValueGet()(1);
+		(*It)->m_y = m_FastSLAM.m_Particles[0].ValueGet()->GetMap()->find((*It)->m_Id)->second.operator->()->PostGet()->ExpectedValueGet()(2);
+		(*It)->m_z = ((EKF2DLandmark*)(m_FastSLAM.m_Particles[0].ValueGet()->GetMap()->find((*It)->m_Id)->second.get()))->m_Height;*/
+	}
+	m_DataAssociation.AddNewFeatures(feature_vector_, mask);
 	return ipa_Utils::RET_OK;
 }
 
@@ -407,11 +437,11 @@ unsigned long CobEnvModelNode::UpdateFilter()
 	m_FastSLAM.UpdatePosition(*m_SysModel, input);
 	int associationCtr = 0;
 	unsigned int ctrAssociations = 0;
-	m_DataAssociation.AssociateData(afl);
+	m_DataAssociation.AssociateData(feature_vector_);
 
 	ColumnVector theta(3);
 	AbstractFeatureVector::iterator It;
-	for (It=afl->begin(); It!=afl->end(); It++)
+	for (It=feature_vector_->begin(); It!=feature_vector_->end(); It++)
 	{
 		//std::cout << (*It)-> m_Descriptor[0] << std::endl;
 		//Transformation from camera to robot coordinate system
@@ -447,7 +477,7 @@ unsigned long CobEnvModelNode::UpdateFilter()
 
 
 	std::cout << "ctrAssociations: " << ctrAssociations << std::endl;
-	std::cout << afl->size() << " features extracted" << std::endl;
+	std::cout << feature_vector_->size() << " features extracted" << std::endl;
 	std::cout << associationCtr << " associated by descriptor" << std::endl;
 	std::cout << m_MapParticle->m_RejectedFeatures.size() << " rejected in particle" << std::endl;
 	std::cout << associationCtr - m_MapParticle->m_RejectedFeatures.size() << " remaining associations" << std::endl;
@@ -462,8 +492,8 @@ unsigned long CobEnvModelNode::UpdateFilter()
 	}
 
 	unsigned int i = 0;
-	std::vector<int> mask(afl->size(),0);
-	for (It=afl->begin(), i=0; It!=afl->end(); It++, i++)
+	std::vector<int> mask(feature_vector_->size(),0);
+	for (It=feature_vector_->begin(), i=0; It!=feature_vector_->end(); It++, i++)
 	{
 		//TransformCameraToBase(*It);
 
@@ -496,18 +526,69 @@ unsigned long CobEnvModelNode::UpdateFilter()
 
 //#######################
 //#### main programm ####
+
+multimap<int,boost::shared_ptr<AbstractEKF> >* m_Map=0;
+
+void RenderMap()
+{
+	if(m_Map!=0)
+	{
+		multimap<int,boost::shared_ptr<AbstractEKF> >::iterator It;
+		for ( It=m_Map->begin() ; It != m_Map->end(); It++ )
+		{
+			int step = ((EKF2DLandmark*)It->second.operator ->())->m_Step;
+			//std::cout << step << std::endl;
+			switch(step%4)
+			{
+			case 0:
+				glColor3f(0.0f,0.0f,1.0f);
+				break;
+			case 1:
+				glColor3f(0.0f,1.0f,0.0f);
+				break;
+			case 2:
+				glColor3f(1.0f,0.0f,0.0f);
+				break;
+			case 3:
+				glColor3f(0.0f,1.0f,1.0f);
+				break;
+			}
+			glPointSize(4.0f);
+			glBegin(GL_POINTS);
+			glVertex3f(((EKF2DLandmark*)It->second.operator ->())->PostGet()->ExpectedValueGet()(1),
+					((EKF2DLandmark*)It->second.operator ->())->PostGet()->ExpectedValueGet()(2),
+					((EKF2DLandmark*)It->second.operator ->())->m_Height);
+			glEnd( );
+		}
+	}
+}
+
 int main(int argc, char** argv)
 {
     // initialize ROS, spezify name of node
     ros::init(argc, argv, "cobEnvModelNode");
     
     CobEnvModelNode cobEnvModelNode;
+
+
+		bool first = true;
+		int i=0;
  
     ros::Rate r(0.5);
-    while(cobEnvModelNode.n.ok())
+    while(cobEnvModelNode.n.ok() && i<5)
     {
+			ROS_INFO("spin");
         //ros::spinOnce();
-    	cobEnvModelNode.srvCallback_UpdateEnvModel();
+    	cobEnvModelNode.GetMeasurement();
+			cobEnvModelNode.GetRobotPose();
+			cobEnvModelNode.GetTransformationCam2Base();
+			cobEnvModelNode.DetectFeatures();
+			if(first)
+				cobEnvModelNode.InitializeFilter();
+			else
+				cobEnvModelNode.UpdateFilter();
+			first = false;
+			i++;
     	r.sleep();
 				
         /*if (cobEnvModelNode.m_EnvReconstruction.UI() & ipa_Utils::RET_FAILED)
@@ -517,7 +598,17 @@ int main(int argc, char** argv)
         	break;
         }*/
     }
-    
+		m_Map = cobEnvModelNode.m_MapParticle->GetMap();
+		unsigned char cmd=0;
+		PointCloudRenderer::Init();
+		PointCloudRenderer::SetExternRenderFunc(&RenderMap);
+		PointCloudRenderer::SetKeyboardPointer(&cmd);
+		PointCloudRenderer::Run();
+		while(cmd!='q')
+		{
+			usleep(100);	
+    }
+		PointCloudRenderer::Exit();
 //    ros::spin();
 
     return 0;
