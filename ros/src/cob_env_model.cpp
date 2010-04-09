@@ -85,6 +85,8 @@
 #include <cob_msgs/ColoredPointCloud.h>
 
 #include <cob_srvs/GetColoredPointCloud.h>
+#include <cob_srvs/GetPlatformPosition.h>
+#include <cob_srvs/GetTransformCamera2Base.h>
 #include <cob_srvs/Trigger.h>
 
 
@@ -159,6 +161,8 @@ class CobEnvModelNode
 
 		ros::ServiceServer srv_server_trigger_;
 		ros::ServiceClient srv_client_colored_point_cloud_;
+		ros::ServiceClient srv_client_platform_position_;
+		ros::ServiceClient srv_client_transform_camera2base_;
 
 		boost::shared_ptr<FastSLAMParticle> map_particle_;
 
@@ -166,6 +170,8 @@ class CobEnvModelNode
 
 		//ROS
 		cob_srvs::GetColoredPointCloud colored_point_cloud_srv_;
+		cob_srvs::GetPlatformPosition platform_position_srv_;
+		cob_srvs::GetTransformCamera2Base transform_camera2base_srv_;
 
 
 		//Matrix m_transformCam2Base;
@@ -183,6 +189,7 @@ class CobEnvModelNode
 		AbstractFeatureVector* feature_vector_;
 		KdTreeDataAssociation data_association_;
 		FastSLAM fast_SLAM_;
+		MatrixWrapper::Matrix transformation_camera2base_;
 
 };
 
@@ -195,6 +202,8 @@ CobEnvModelNode::CobEnvModelNode()
     //topicPub_demoPublish = n.advertise<std_msgs::String>("demoPublish", 1);
     //topicSub_coloredPointCloud = n.subscribe("/sensor_fusion/ColoredPointCloud", 1, &CobEnvModelNode::topicCallback_coloredPointCloud, this);
     srv_client_colored_point_cloud_ = n.serviceClient<cob_srvs::GetColoredPointCloud>("/sensor_fusion/ColoredPointCloud");
+    srv_client_platform_position_ = n.serviceClient<cob_srvs::GetPlatformPosition>("/get_platform_position");
+    srv_client_transform_camera2base_ = n.serviceClient<cob_srvs::GetTransformCamera2Base>("/transform_camera2base");
     srv_server_trigger_ = n.advertiseService("UpdateEnvModel", &CobEnvModelNode::srvCallback_UpdateEnvModel, this);
 
 }
@@ -303,9 +312,22 @@ unsigned long CobEnvModelNode::createSystemModel()
 unsigned long CobEnvModelNode::getRobotPose()
 {
 	//TODO: ROS service call to platform
-	robot_pose_(1) = 0;
-	robot_pose_(2) = 0;
-	robot_pose_(3) = 0;
+	if(srv_client_platform_position_.call(platform_position_srv_))
+	{
+		ROS_INFO("[env_model_node] Platform position service called [OK].");
+	}
+	else
+	{
+		ROS_ERROR("[env_model_node] Platform position service called [FAILED].");
+	}
+
+	ROS_INFO("[env_model_node] Platform position (x,y,theta): %f, %f, %f",
+			platform_position_srv_.response.platform_pose.x, platform_position_srv_.response.platform_pose.y,
+			platform_position_srv_.response.platform_pose.theta);
+
+	robot_pose_(1) = platform_position_srv_.response.platform_pose.x;
+	robot_pose_(2) = platform_position_srv_.response.platform_pose.y;
+	robot_pose_(3) = platform_position_srv_.response.platform_pose.theta;
 	return ipa_Utils::RET_OK;
 }
 
@@ -389,6 +411,37 @@ unsigned long CobEnvModelNode::detectFeatures()
 unsigned long CobEnvModelNode::getTransformationCam2Base()
 {
 	//TODO: ROS TF call to get neck angels or transformation
+	if(srv_client_transform_camera2base_.call(transform_camera2base_srv_))
+	{
+		ROS_INFO("[env_model_node] Transformation Camera2Base service called [OK].");
+	}
+	else
+	{
+		ROS_ERROR("[env_model_node] Transformation Camera2Base service called [FAILED].");
+	}
+	ROS_INFO("[env_model_node] Trnasformation Camera2Base (x,y,z,roll,pitch,yaw): %f, %f, %f, %f, %f, %f",
+				transform_camera2base_srv_.response.transformation.x, transform_camera2base_srv_.response.transformation.y,
+				transform_camera2base_srv_.response.transformation.z, transform_camera2base_srv_.response.transformation.roll,
+				transform_camera2base_srv_.response.transformation.pitch, transform_camera2base_srv_.response.transformation.yaw);
+	double yaw = transform_camera2base_srv_.response.transformation.yaw;
+	double pitch = transform_camera2base_srv_.response.transformation.pitch;
+	double roll = transform_camera2base_srv_.response.transformation.roll;
+	transformation_camera2base_(1,1) = cos(yaw)*cos(pitch);
+	transformation_camera2base_(1,2) = cos(yaw)*sin(pitch)*sin(roll)-sin(yaw)*sin(roll);
+	transformation_camera2base_(1,3) = cos(yaw)*sin(pitch)*cos(roll)+sin(yaw)*sin(roll);
+	transformation_camera2base_(1,4) = transform_camera2base_srv_.response.transformation.x;
+	transformation_camera2base_(2,1) = sin(yaw)*cos(pitch);
+	transformation_camera2base_(2,2) = sin(yaw)*sin(pitch)*sin(roll)+cos(yaw)*sin(roll);
+	transformation_camera2base_(2,3) = sin(yaw)*sin(pitch)*cos(roll)-cos(yaw)*sin(roll);
+	transformation_camera2base_(2,4) = transform_camera2base_srv_.response.transformation.y;
+	transformation_camera2base_(3,1) = -sin(pitch);
+	transformation_camera2base_(3,2) = cos(pitch)*sin(roll);
+	transformation_camera2base_(3,3) = cos(pitch)*cos(roll);
+	transformation_camera2base_(3,4) = transform_camera2base_srv_.response.transformation.z;
+	transformation_camera2base_(4,1) = 0;
+	transformation_camera2base_(4,2) = 0;
+	transformation_camera2base_(4,3) = 0;
+	transformation_camera2base_(4,4) = 1;
 	return ipa_Utils::RET_OK;
 }
 
@@ -473,6 +526,7 @@ unsigned long CobEnvModelNode::updateFilter()
 	return ipa_Utils::RET_OK;
 }
 
+
 //#######################
 //#### main programm ####
 
@@ -512,14 +566,14 @@ int main(int argc, char** argv)
     {
         ros::spinOnce();
     	cobEnvModelNode.getMeasurement();
-		cobEnvModelNode.getRobotPose();
+		//cobEnvModelNode.getRobotPose();
 		cobEnvModelNode.getTransformationCam2Base();
-		cobEnvModelNode.detectFeatures();
+		/*cobEnvModelNode.detectFeatures();
 		if(first)
 			cobEnvModelNode.initializeFilter();
 		else
 			cobEnvModelNode.updateFilter();
-		first = false;
+		first = false;*/
 		i++;
     	r.sleep();
     }

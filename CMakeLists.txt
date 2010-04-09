@@ -37,14 +37,19 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
 #	common/src/CuiEnvReconstruction.cpp)
 
 rosbuild_add_executable(env_model_node ros/src/cob_env_model.cpp)
+rosbuild_add_executable(data_acquisition_node ros/src/data_acquisition.cpp)
 
 
 # add compile flag
 #rosbuild_add_compile_flags(env_model -D__LINUX__ -D__COB_ROS__)
 rosbuild_add_compile_flags(env_model_node -D__LINUX__ -D__COB_ROS__)
+rosbuild_add_compile_flags(data_acquisition_node -D__LINUX__ -D__COB_ROS__)
 
 
 # add compile flag
 #target_link_libraries(env_model ann glut mesasr cob_vision_ipa_utils cob_vision_features cob_vision_sensor_fusion)
 target_link_libraries(env_model_node ann glut mesasr 
 	cob_vision_ipa_utils cob_vision_features cob_sensor_fusion cob_vision_slam)
+target_link_libraries(data_acquisition_node ann glut mesasr 
+	cob_vision_ipa_utils cob_vision_features cob_sensor_fusion cob_vision_slam)
+
