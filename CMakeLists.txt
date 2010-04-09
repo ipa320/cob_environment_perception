@@ -29,7 +29,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/common/lib)
 #rosbuild_add_executable(example examples/example.cpp)
 
 # add include search paths
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
+#INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
 
 # add project executable
 #rosbuild_add_executable(env_model common/src/EnvReconstructionMain.cpp
@@ -48,8 +48,5 @@ rosbuild_add_compile_flags(data_acquisition_node -D__LINUX__ -D__COB_ROS__)
 
 # add compile flag
 #target_link_libraries(env_model ann glut mesasr cob_vision_ipa_utils cob_vision_features cob_vision_sensor_fusion)
-target_link_libraries(env_model_node ann glut mesasr 
-	cob_vision_ipa_utils cob_vision_features cob_sensor_fusion cob_vision_slam)
-target_link_libraries(data_acquisition_node ann glut mesasr 
-	cob_vision_ipa_utils cob_vision_features cob_sensor_fusion cob_vision_slam)
+target_link_libraries(env_model_node glut)
 
