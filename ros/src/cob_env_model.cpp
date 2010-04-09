@@ -201,10 +201,10 @@ CobEnvModelNode::CobEnvModelNode()
 	init();
     //topicPub_demoPublish = n.advertise<std_msgs::String>("demoPublish", 1);
     //topicSub_coloredPointCloud = n.subscribe("/sensor_fusion/ColoredPointCloud", 1, &CobEnvModelNode::topicCallback_coloredPointCloud, this);
-    srv_client_colored_point_cloud_ = n.serviceClient<cob_srvs::GetColoredPointCloud>("/sensor_fusion/ColoredPointCloud");
-    srv_client_platform_position_ = n.serviceClient<cob_srvs::GetPlatformPosition>("/get_platform_position");
-    srv_client_transform_camera2base_ = n.serviceClient<cob_srvs::GetTransformCamera2Base>("/transform_camera2base");
-    srv_server_trigger_ = n.advertiseService("UpdateEnvModel", &CobEnvModelNode::srvCallback_UpdateEnvModel, this);
+    srv_client_colored_point_cloud_ = n.serviceClient<cob_srvs::GetColoredPointCloud>("get_colored_pc");
+    srv_client_platform_position_ = n.serviceClient<cob_srvs::GetPlatformPosition>("get_platform_position");
+    srv_client_transform_camera2base_ = n.serviceClient<cob_srvs::GetTransformCamera2Base>("transform_camera2base");
+    srv_server_trigger_ = n.advertiseService("update_env_model", &CobEnvModelNode::srvCallback_UpdateEnvModel, this);
 
 }
 
