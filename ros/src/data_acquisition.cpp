@@ -129,9 +129,9 @@ class CobDataAcquisitionNode
         {
 			shared_sub_sync_.connectInput(right_color_camera_image_sub_, tof_camera_xyz_image_sub_, tof_camera_grey_image_sub_);
 			shared_sub_sync_.registerCallback(boost::bind(&CobDataAcquisitionNode::sharedModeSrvCallback, this, _1, _2, _3));
-			right_color_camera_image_sub_.subscribe(image_transport_, "right/color_camera_stream/image_raw", 1);
-			tof_camera_xyz_image_sub_.subscribe(image_transport_, "xyz_data", 1);
-			tof_camera_grey_image_sub_.subscribe(image_transport_, "grey_data", 1);
+			right_color_camera_image_sub_.subscribe(image_transport_, "right/image_color", 1);
+			tof_camera_xyz_image_sub_.subscribe(image_transport_, "image_xyz", 1);
+			tof_camera_grey_image_sub_.subscribe(image_transport_, "image_grey", 1);
         	return ipa_Utils::RET_OK;
         }
 
