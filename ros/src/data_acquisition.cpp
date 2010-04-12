@@ -105,7 +105,8 @@ class CobDataAcquisitionNode
 			  right_color_image_8U3_(0),
 			  xyz_image_32F3_(0),
 			  grey_image_32F1_(0),
-			  robot_pose_(3)
+			  robot_pose_(3),
+				transformation_camera2base_(4,4)
 		{
 			init();
 		    //topicPub_demoPublish = n.advertise<std_msgs::String>("demoPublish", 1);
@@ -197,7 +198,7 @@ class CobDataAcquisitionNode
     			const sensor_msgs::ImageConstPtr& tof_camera_xyz_data,
     			const sensor_msgs::ImageConstPtr& tof_camera_grey_data)
     	{
-    		//ROS_INFO("[sensor_fusion] sharedModeSrvCallback");
+    		ROS_INFO("[data_acquisition] sharedModeSrvCallback");
     		// Convert ROS image messages to openCV IplImages
     		if(right_color_image_8U3_) cvReleaseImage(&right_color_image_8U3_);
     		if(xyz_image_32F3_) cvReleaseImage(&xyz_image_32F3_);
@@ -210,7 +211,7 @@ class CobDataAcquisitionNode
     		}
 			catch (sensor_msgs::CvBridgeException& e)
 			{
-			  ROS_ERROR("[tof_camera_viewer] Could not convert images by cv_bridge.");
+			  ROS_ERROR("[data_acquisition] Could not convert images by cv_bridge.");
 			}
 
     	}
@@ -292,13 +293,13 @@ int main(int argc, char** argv)
 	bool first = true;
 	int i=0;
 
-    ros::Rate r(0.1);
-    while(cobDataAcquisitionNode.n.ok() && i<5)
+    ros::Rate r(1);
+    while(cobDataAcquisitionNode.n.ok())
     {
         ros::spinOnce();
-	cobDataAcquisitionNode.save();
+        cobDataAcquisitionNode.getTransformationCam2Base();
+        cobDataAcquisitionNode.save();
         //cobDataAcquisitionNode.getRobotPose();
-        //cobDataAcquisitionNode.getTransformationCam2Base();
 		/*cobEnvModelNode.detectFeatures();
 		if(first)
 			cobEnvModelNode.initializeFilter();

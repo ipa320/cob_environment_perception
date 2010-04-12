@@ -196,7 +196,8 @@ class CobEnvModelNode
 
 CobEnvModelNode::CobEnvModelNode()
 	: robot_pose_(3),
-	  fast_SLAM_(100,1)
+	  fast_SLAM_(100,1),
+	  transformation_camera2base_(4,4)
 {
 	init();
     //topicPub_demoPublish = n.advertise<std_msgs::String>("demoPublish", 1);
