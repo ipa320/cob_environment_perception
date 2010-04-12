@@ -137,6 +137,7 @@ class CobEnvModelNode
     	/// @return Return code
     	unsigned long createMeasurementModel();
 
+    	///Call the service for the robot pose
     	unsigned long getRobotPose();
 
     	unsigned long getMeasurement();
@@ -148,6 +149,8 @@ class CobEnvModelNode
     	unsigned long initializeFilter();
 
     	unsigned long updateFilter();
+
+    	unsigned long TransformCameraToBase(boost::shared_ptr<AbstractFeature> af);
 
 		// create a handle for this node, initialize node
 		ros::NodeHandle n;
@@ -253,11 +256,71 @@ void CobEnvModelNode::UpdateColoredPointCloud(const cob_msgs::ColoredPointCloud:
 bool CobEnvModelNode::srvCallback_UpdateEnvModel(cob_srvs::Trigger::Request &req,
 								cob_srvs::Trigger::Response &res)
 {
-
+	ROS_INFO("srv command: %d",req.command);
+	if(req.command == 0)
+	{
+		if(getMeasurement() == ipa_Utils::RET_FAILED)
+		{
+			ROS_ERROR("Could not get measurement.");
+			return false;
+		}
+		if(getRobotPose() == ipa_Utils::RET_FAILED)
+		{
+			ROS_ERROR("Could not get robot pose.");
+			return false;
+		}
+		if(getTransformationCam2Base() == ipa_Utils::RET_FAILED)
+		{
+			ROS_ERROR("Could not get transformation camera2base.");
+			return false;
+		}
+		if(detectFeatures() == ipa_Utils::RET_FAILED)
+		{
+			ROS_ERROR("Could not detect features.");
+			return false;
+		}
+		if(initializeFilter() == ipa_Utils::RET_FAILED)
+		{
+			ROS_ERROR("Could not initialize filter.");
+			return false;
+		}
+	}
+	else if(req.command == 1)
+	{
+		if(getMeasurement() == ipa_Utils::RET_FAILED)
+		{
+			ROS_ERROR("Could not get measurement.");
+			return false;
+		}
+		if(getRobotPose() == ipa_Utils::RET_FAILED)
+		{
+			ROS_ERROR("Could not get robot pose.");
+			return false;
+		}
+		if(getTransformationCam2Base() == ipa_Utils::RET_FAILED)
+		{
+			ROS_ERROR("Could not get transformation camera2base.");
+			return false;
+		}
+		if(detectFeatures() == ipa_Utils::RET_FAILED)
+		{
+			ROS_ERROR("Could not detect features.");
+			return false;
+		}
+		if(updateFilter() == ipa_Utils::RET_FAILED)
+		{
+			ROS_ERROR("Could not update filter.");
+			return false;
+		}
+	}
+	else if(req.command == 2)
+	{
+		//TODO: send map to renderer or collision avoidance
+		ROS_INFO("Stopping environment modelling.");
+		n.shutdown();
+	}
+	res.success = 1;
 	return true;
-
-	//warten?
-	//UpdateColoredPointCloud(&(m_ColoredPointCloudSrv.response.ColoredPointCloud));
 }
 
 
@@ -320,6 +383,7 @@ unsigned long CobEnvModelNode::getRobotPose()
 	else
 	{
 		ROS_ERROR("[env_model_node] Platform position service called [FAILED].");
+		return ipa_Utils::RET_FAILED;
 	}
 
 	ROS_INFO("[env_model_node] Platform position (x,y,theta): %f, %f, %f",
@@ -343,10 +407,11 @@ unsigned long CobEnvModelNode::getMeasurement()
 	else
 	{
 		ROS_ERROR("[env_model_node] Colored point cloud service called [FAILED].");
+		return ipa_Utils::RET_FAILED;
 	}
-	IplImage* color_image_8U3;
-	IplImage* xyz_image_32F3;
-	IplImage* grey_image_32F1;
+	IplImage* color_image_8U3 = 0;
+	IplImage* xyz_image_32F3 = 0;
+	IplImage* grey_image_32F1 = 0;
 	sensor_msgs::ImageConstPtr color_image(&(colored_point_cloud_srv_.response.colorImage),deleter);
 	sensor_msgs::ImageConstPtr xyz_image(&(colored_point_cloud_srv_.response.xyzImage),deleter);
 	sensor_msgs::ImageConstPtr grey_image(&(colored_point_cloud_srv_.response.confidenceMask),deleter);
@@ -362,6 +427,7 @@ unsigned long CobEnvModelNode::getMeasurement()
     catch (sensor_msgs::CvBridgeException& e)
     {
       ROS_ERROR("[tof_camera_viewer] Could not convert images by cv_bridge.");
+      return ipa_Utils::RET_FAILED;
     }
 	ROS_INFO("[env_model_node] Point cloud received.");
 
@@ -394,18 +460,25 @@ unsigned long CobEnvModelNode::getMeasurement()
 unsigned long CobEnvModelNode::detectFeatures()
 {
 	ROS_INFO("[env_model_node] Detecting features");
-	//TODO: delete vector after filter update;
-	feature_vector_ = new BlobFeatureVector();
-	feature_detector_->DetectFeatures(colored_point_cloud_.GetColorImage(), feature_vector_);
-	//TODO: use colorImage0 but transform u and v to sharedImageSize
-	AbstractFeatureVector::iterator It;
-	for (It=feature_vector_->begin(); It!=feature_vector_->end(); It++)
+	if(colored_point_cloud_.GetColorImage()!=0)
 	{
-		unsigned char R,G,B;
-		colored_point_cloud_.GetData((*It)->m_u,(*It)->m_v,(*It)->m_x,(*It)->m_y,(*It)->m_z,R,G,B);
-		//ROS_INFO("[env_model_node] Feature Data: %f, %f, %f", (*It)->m_x, (*It)->m_y, (*It)->m_z);
+		feature_vector_ = new BlobFeatureVector();
+		feature_detector_->DetectFeatures(colored_point_cloud_.GetColorImage(), feature_vector_);
+		//TODO: use colorImage0 but transform u and v to sharedImageSize
+		AbstractFeatureVector::iterator It;
+		for (It=feature_vector_->begin(); It!=feature_vector_->end(); It++)
+		{
+			unsigned char R,G,B;
+			colored_point_cloud_.GetData((*It)->m_u,(*It)->m_v,(*It)->m_x,(*It)->m_y,(*It)->m_z,R,G,B);
+			//ROS_INFO("[env_model_node] Feature Data: %f, %f, %f", (*It)->m_x, (*It)->m_y, (*It)->m_z);
+		}
+		((SURFDetector*)feature_detector_)->FilterFeatures(feature_vector_, 5);
 	}
-	((SURFDetector*)feature_detector_)->FilterFeatures(feature_vector_, 5);
+	else
+	{
+		ROS_ERROR("Could not detect features, no color image in point cloud.");
+		return ipa_Utils::RET_FAILED;
+	}
 	return ipa_Utils::RET_OK;
 }
 
@@ -419,6 +492,7 @@ unsigned long CobEnvModelNode::getTransformationCam2Base()
 	else
 	{
 		ROS_ERROR("[env_model_node] Transformation Camera2Base service called [FAILED].");
+		return ipa_Utils::RET_FAILED;
 	}
 	ROS_INFO("[env_model_node] Trnasformation Camera2Base (x,y,z,roll,pitch,yaw): %f, %f, %f, %f, %f, %f",
 				transform_camera2base_srv_.response.transformation.x, transform_camera2base_srv_.response.transformation.y,
@@ -448,7 +522,7 @@ unsigned long CobEnvModelNode::getTransformationCam2Base()
 
 unsigned long CobEnvModelNode::initializeFilter()
 {
-	for (int i=0; i<fast_SLAM_.m_Particles.size(); i++)
+	for (unsigned int i=0; i<fast_SLAM_.m_Particles.size(); i++)
 	{
 		fast_SLAM_.m_Particles[i].ValueGet()->SetPose(robot_pose_);
 	}
@@ -458,7 +532,7 @@ unsigned long CobEnvModelNode::initializeFilter()
 	for (It=feature_vector_->begin(); It!=feature_vector_->end(); It++)
 	{
 		ColumnVector theta(3);
-		//TransformCameraToBase(*It);
+		TransformCameraToBase(*It);
 		(*It)->m_Id=-1;
 		fast_SLAM_.AddUnknownFeature(*meas_model_, *It, 0);
 	}
@@ -479,7 +553,7 @@ unsigned long CobEnvModelNode::updateFilter()
 	AbstractFeatureVector::iterator It;
 	for (It=feature_vector_->begin(); It!=feature_vector_->end(); It++)
 	{
-		//TransformCameraToBase(*It);
+		TransformCameraToBase(*It);
 		if((*It)->m_Id != -1)
 		{
 			associationCtr++;
@@ -527,6 +601,24 @@ unsigned long CobEnvModelNode::updateFilter()
 	return ipa_Utils::RET_OK;
 }
 
+unsigned long CobEnvModelNode::TransformCameraToBase(boost::shared_ptr<AbstractFeature> af)
+{
+	BFL::ColumnVector xyz_cam(4);
+	BFL::ColumnVector xyz_base(4);
+	xyz_cam(1) = af->m_x;
+	xyz_cam(2) = af->m_y;
+	xyz_cam(3) = af->m_z;
+	xyz_cam(4) = 1;
+
+	xyz_base = transformation_camera2base_*xyz_cam;
+
+	af->m_x = xyz_base(1);
+	af->m_y = xyz_base(2);
+	af->m_z = xyz_base(3);
+
+	return ipa_Utils::RET_OK;
+}
+
 
 //#######################
 //#### main programm ####
@@ -559,26 +651,25 @@ int main(int argc, char** argv)
     
     CobEnvModelNode cobEnvModelNode;
 
-	bool first = true;
 	int i=0;
  
     ros::Rate r(0.5);
     while(cobEnvModelNode.n.ok() && i<5)
     {
         ros::spinOnce();
-    	cobEnvModelNode.getMeasurement();
+    	/*cobEnvModelNode.getMeasurement();
 		//cobEnvModelNode.getRobotPose();
 		cobEnvModelNode.getTransformationCam2Base();
-		/*cobEnvModelNode.detectFeatures();
+		cobEnvModelNode.detectFeatures();
 		if(first)
 			cobEnvModelNode.initializeFilter();
 		else
 			cobEnvModelNode.updateFilter();
 		first = false;*/
-		i++;
+		//i++;
     	r.sleep();
     }
-    feature_map = cobEnvModelNode.map_particle_->GetMap();
+    /*feature_map = cobEnvModelNode.map_particle_->GetMap();
 	unsigned char cmd=0;
 	PointCloudRenderer::Init();
 	PointCloudRenderer::SetExternRenderFunc(&RenderMap);
@@ -588,7 +679,7 @@ int main(int argc, char** argv)
 	{
 		usleep(100);
     }
-		PointCloudRenderer::Exit();
+		PointCloudRenderer::Exit();*/
 
     return 0;
 }
