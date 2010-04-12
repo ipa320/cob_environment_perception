@@ -3,7 +3,7 @@
 
 	<!-- start data acquisition -->
 	<node pkg="cob_env_model" type="data_acquisition_node" name="data_acquisition" cwd="node" respawn="false" output="screen">
-		<remap from="right/image_color" to="prosilica/right/camera/image_raw"/>
+		<remap from="right/image_color" to="prosilica/right/image_color"/>
 		<remap from="image_xyz" to="sr4000/image_xyz"/>
 		<remap from="image_grey" to="sr4000/image_grey"/>
 	</node>
