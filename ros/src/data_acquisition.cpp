@@ -198,7 +198,11 @@ class CobDataAcquisitionNode
     			const sensor_msgs::ImageConstPtr& tof_camera_xyz_data,
     			const sensor_msgs::ImageConstPtr& tof_camera_grey_data)
     	{
+<<<<<<< HEAD:cob_vision/cob_env_model/ros/src/data_acquisition.cpp
     		ROS_INFO("[data_acquisition] sharedModeSrvCallback");
+=======
+    		ROS_INFO("[data_acquisition] receiving image data");
+>>>>>>> 386457fbdb66c2a1a510e8693d7b2a42355c3f6f:cob_vision/cob_env_model/ros/src/data_acquisition.cpp
     		// Convert ROS image messages to openCV IplImages
     		if(right_color_image_8U3_) cvReleaseImage(&right_color_image_8U3_);
     		if(xyz_image_32F3_) cvReleaseImage(&xyz_image_32F3_);
@@ -213,6 +217,7 @@ class CobDataAcquisitionNode
 			{
 			  ROS_ERROR("[data_acquisition] Could not convert images by cv_bridge.");
 			}
+    		ROS_INFO("OK");
 
     	}
 
@@ -306,9 +311,9 @@ int main(int argc, char** argv)
 		else
 			cobEnvModelNode.updateFilter();
 		first = false;*/
-		i++;
-    	r.sleep();
-    }
+		//i++;
+    	//r.sleep();
+    //}
 
     return 0;
 }
