@@ -292,12 +292,13 @@ int main(int argc, char** argv)
 	bool first = true;
 	int i=0;
 
-    ros::Rate r(0.5);
+    ros::Rate r(0.1);
     while(cobDataAcquisitionNode.n.ok() && i<5)
     {
         ros::spinOnce();
-        cobDataAcquisitionNode.getRobotPose();
-        cobDataAcquisitionNode.getTransformationCam2Base();
+	cobDataAcquisitionNode.save();
+        //cobDataAcquisitionNode.getRobotPose();
+        //cobDataAcquisitionNode.getTransformationCam2Base();
 		/*cobEnvModelNode.detectFeatures();
 		if(first)
 			cobEnvModelNode.initializeFilter();
