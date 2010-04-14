@@ -95,6 +95,8 @@
 
 // external includes
 
+multimap<int,boost::shared_ptr<AbstractEKF> >* feature_map=0;
+
 void deleter(sensor_msgs::Image* const) {}
 
 
@@ -144,13 +146,18 @@ class CobEnvModelNode
 
     	unsigned long detectFeatures();
 
+    	unsigned long calculateTransformationMatrix();
+
+    	///Calls the service for the transformation from right color camera to
+    	///manipulation robot base (which is rotated by 90° to the platform base)
     	unsigned long getTransformationCam2Base();
 
     	unsigned long initializeFilter();
 
     	unsigned long updateFilter();
 
-    	unsigned long TransformCameraToBase(boost::shared_ptr<AbstractFeature> af);
+    	///Transforms a feature point from tof to platform base
+    	unsigned long transformCameraToBase(boost::shared_ptr<AbstractFeature> af);
 
 		// create a handle for this node, initialize node
 		ros::NodeHandle n;
@@ -193,6 +200,8 @@ class CobEnvModelNode
 		KdTreeDataAssociation data_association_;
 		FastSLAM fast_SLAM_;
 		MatrixWrapper::Matrix transformation_camera2base_;
+		MatrixWrapper::Matrix transformation_tof2camera_;
+		MatrixWrapper::Matrix transformation_tof2base_pltf_;
 
 };
 
@@ -200,14 +209,16 @@ class CobEnvModelNode
 CobEnvModelNode::CobEnvModelNode()
 	: robot_pose_(3),
 	  fast_SLAM_(100,1),
-	  transformation_camera2base_(4,4)
+	  transformation_camera2base_(4,4),
+	  transformation_tof2camera_(4,4),
+	  transformation_tof2base_pltf_(4,4)
 {
 	init();
     //topicPub_demoPublish = n.advertise<std_msgs::String>("demoPublish", 1);
     //topicSub_coloredPointCloud = n.subscribe("/sensor_fusion/ColoredPointCloud", 1, &CobEnvModelNode::topicCallback_coloredPointCloud, this);
     srv_client_colored_point_cloud_ = n.serviceClient<cob_srvs::GetColoredPointCloud>("get_colored_pc");
-    srv_client_platform_position_ = n.serviceClient<cob_srvs::GetPlatformPosition>("get_platform_position");
-    srv_client_transform_camera2base_ = n.serviceClient<cob_srvs::GetTransformCamera2Base>("transform_camera2base");
+    srv_client_platform_position_ = n.serviceClient<cob_srvs::GetPlatformPosition>("/get_platform_position");
+    srv_client_transform_camera2base_ = n.serviceClient<cob_srvs::GetTransformCamera2Base>("/transform_camera2base");
     srv_server_trigger_ = n.advertiseService("update_env_model", &CobEnvModelNode::srvCallback_UpdateEnvModel, this);
 
 }
@@ -215,11 +226,52 @@ CobEnvModelNode::CobEnvModelNode()
 unsigned long CobEnvModelNode::init()
 {
 	feature_detector_ = new SURFDetector();
-	((SURFDetector*)feature_detector_)->Init(500);
+	((SURFDetector*)feature_detector_)->Init(/*500*/100);
 	//m_FeatureDetector = new CalonderSTARDetector();
 
 	createMeasurementModel();
 	createSystemModel();
+
+    XmlRpc::XmlRpcValue trafo_tof2cam;
+
+    if (n.hasParam("trafo_tof2cam"))
+    {
+        n.getParam("trafo_tof2cam", trafo_tof2cam);
+    }
+    else
+    {
+        ROS_ERROR("Parameter trafo_tof2cam not set");
+    }
+    for (int j = 0; j<trafo_tof2cam.size(); j++ ) // j-th point
+    {
+        for (int k = 0; k<trafo_tof2cam[j].size(); k++ ) // k-th value of pos
+        {
+            //ROS_INFO("      pos value %d of %d = %f",k,traj_param[i][j][0].size(),(double)traj_param[i][j][0][k]);
+            //ROS_INFO("      vel value %d of %d = %f",k,traj_param[i][j][1].size(),(double)traj_param[i][j][1][k]);
+        	transformation_tof2camera_(j+1,k+1) = (double)trafo_tof2cam[j][k];
+        }
+    }
+
+	transformation_camera2base_(1,1) = 1;
+	transformation_camera2base_(1,2) = 0;
+	transformation_camera2base_(1,3) = 0;
+	transformation_camera2base_(1,4) = 0;
+	transformation_camera2base_(2,1) = 0;
+	transformation_camera2base_(2,2) = 1;
+	transformation_camera2base_(2,3) = 0;
+	transformation_camera2base_(2,4) = 0;
+	transformation_camera2base_(3,1) = 0;
+	transformation_camera2base_(3,2) = 0;
+	transformation_camera2base_(3,3) = 1;
+	transformation_camera2base_(3,4) = 0;
+	transformation_camera2base_(4,1) = 0;
+	transformation_camera2base_(4,2) = 0;
+	transformation_camera2base_(4,3) = 0;
+	transformation_camera2base_(4,4) = 1;
+
+	robot_pose_(1) = 0;
+	robot_pose_(2) = 0;
+	robot_pose_(3) = 0;
 
 	return ipa_Utils::RET_OK;
 }
@@ -267,12 +319,12 @@ bool CobEnvModelNode::srvCallback_UpdateEnvModel(cob_srvs::Trigger::Request &req
 		if(getRobotPose() == ipa_Utils::RET_FAILED)
 		{
 			ROS_ERROR("Could not get robot pose.");
-			return false;
+			//return false;
 		}
 		if(getTransformationCam2Base() == ipa_Utils::RET_FAILED)
 		{
 			ROS_ERROR("Could not get transformation camera2base.");
-			return false;
+			//return false;
 		}
 		if(detectFeatures() == ipa_Utils::RET_FAILED)
 		{
@@ -295,12 +347,12 @@ bool CobEnvModelNode::srvCallback_UpdateEnvModel(cob_srvs::Trigger::Request &req
 		if(getRobotPose() == ipa_Utils::RET_FAILED)
 		{
 			ROS_ERROR("Could not get robot pose.");
-			return false;
+			//return false;
 		}
 		if(getTransformationCam2Base() == ipa_Utils::RET_FAILED)
 		{
 			ROS_ERROR("Could not get transformation camera2base.");
-			return false;
+			//return false;
 		}
 		if(detectFeatures() == ipa_Utils::RET_FAILED)
 		{
@@ -436,9 +488,9 @@ unsigned long CobEnvModelNode::getMeasurement()
 	colored_point_cloud_.SetGreyImage(grey_image_32F1);
 
 	ROS_INFO("[env_model_node] Colored point cloud object updated.");
-	ipa_Utils::MaskImage2(colored_point_cloud_.GetXYZImage(), colored_point_cloud_.GetXYZImage(), colored_point_cloud_.GetGreyImage(), colored_point_cloud_.GetGreyImage(), 200, 60000, 3);
+	//ipa_Utils::MaskImage2(colored_point_cloud_.GetXYZImage(), colored_point_cloud_.GetXYZImage(), colored_point_cloud_.GetGreyImage(), colored_point_cloud_.GetGreyImage(), 500, 60000, 3);
 
-    /*try
+    try
     {
     	IplImage* grey_image_8U3 = cvCreateImage(cvGetSize(grey_image_32F1), IPL_DEPTH_8U, 3);
     	IplImage* xyz_image_8U3 = cvCreateImage(cvGetSize(xyz_image_32F3), IPL_DEPTH_8U, 3);
@@ -453,7 +505,7 @@ unsigned long CobEnvModelNode::getMeasurement()
     catch (sensor_msgs::CvBridgeException& e)
     {
       ROS_ERROR("[env_model_node] Could not convert");
-    }*/
+    }
 	return ipa_Utils::RET_OK;
 }
 
@@ -517,6 +569,8 @@ unsigned long CobEnvModelNode::getTransformationCam2Base()
 	transformation_camera2base_(4,2) = 0;
 	transformation_camera2base_(4,3) = 0;
 	transformation_camera2base_(4,4) = 1;
+	std::cout << "transformation_camera2base_: " << transformation_camera2base_ << std::endl;
+	calculateTransformationMatrix();
 	return ipa_Utils::RET_OK;
 }
 
@@ -532,7 +586,7 @@ unsigned long CobEnvModelNode::initializeFilter()
 	for (It=feature_vector_->begin(); It!=feature_vector_->end(); It++)
 	{
 		ColumnVector theta(3);
-		TransformCameraToBase(*It);
+		transformCameraToBase(*It);
 		(*It)->m_Id=-1;
 		fast_SLAM_.AddUnknownFeature(*meas_model_, *It, 0);
 	}
@@ -553,7 +607,7 @@ unsigned long CobEnvModelNode::updateFilter()
 	AbstractFeatureVector::iterator It;
 	for (It=feature_vector_->begin(); It!=feature_vector_->end(); It++)
 	{
-		TransformCameraToBase(*It);
+		transformCameraToBase(*It);
 		if((*It)->m_Id != -1)
 		{
 			associationCtr++;
@@ -596,12 +650,33 @@ unsigned long CobEnvModelNode::updateFilter()
 	data_association_.AddNewFeatures(feature_vector_, mask);
 	step++;
 
+    feature_map = map_particle_->GetMap();
+
 	delete feature_vector_;
 
 	return ipa_Utils::RET_OK;
 }
 
-unsigned long CobEnvModelNode::TransformCameraToBase(boost::shared_ptr<AbstractFeature> af)
+unsigned long CobEnvModelNode::calculateTransformationMatrix()
+{
+	MatrixWrapper::Matrix manbase2pltfbase(4,4);
+	manbase2pltfbase = 0;
+	manbase2pltfbase(1,2) = 1;
+	manbase2pltfbase(2,1) = -1;
+	manbase2pltfbase(3,3) = 1;
+	manbase2pltfbase(4,4) = 1;
+	transformation_tof2base_pltf_ = manbase2pltfbase*transformation_camera2base_*transformation_tof2camera_;
+
+	for(int i=1; i<5; i++)
+	{
+		for(int j=1; j<5; j++)
+		{
+			if(fabs(transformation_tof2base_pltf_(i,j)) < 0.0001) transformation_tof2base_pltf_(i,j) = 0;
+		}
+	}
+	std::cout << "transformation matrix: " << transformation_tof2base_pltf_ << std::endl;
+}
+unsigned long CobEnvModelNode::transformCameraToBase(boost::shared_ptr<AbstractFeature> af)
 {
 	BFL::ColumnVector xyz_cam(4);
 	BFL::ColumnVector xyz_base(4);
@@ -610,7 +685,10 @@ unsigned long CobEnvModelNode::TransformCameraToBase(boost::shared_ptr<AbstractF
 	xyz_cam(3) = af->m_z;
 	xyz_cam(4) = 1;
 
-	xyz_base = transformation_camera2base_*xyz_cam;
+	//std::cout << manbase2pltfbase*transformation_camera2base_*transformation_tof2camera_ << std::endl;
+
+	xyz_base = transformation_tof2base_pltf_*xyz_cam;
+	//std::cout << xyz_base << std::endl;
 
 	af->m_x = xyz_base(1);
 	af->m_y = xyz_base(2);
@@ -623,7 +701,7 @@ unsigned long CobEnvModelNode::TransformCameraToBase(boost::shared_ptr<AbstractF
 //#######################
 //#### main programm ####
 
-multimap<int,boost::shared_ptr<AbstractEKF> >* feature_map=0;
+
 
 void RenderMap()
 {
@@ -642,6 +720,8 @@ void RenderMap()
 			glEnd( );
 		}
 	}
+	/*else
+		std::cout << "no map" << std::endl;*/
 }
 
 int main(int argc, char** argv)
@@ -652,6 +732,12 @@ int main(int argc, char** argv)
     CobEnvModelNode cobEnvModelNode;
 
 	int i=0;
+	unsigned char cmd=0;
+
+	PointCloudRenderer::Init();
+	PointCloudRenderer::SetExternRenderFunc(&RenderMap);
+	PointCloudRenderer::SetKeyboardPointer(&cmd);
+	PointCloudRenderer::Run();
  
     ros::Rate r(0.5);
     while(cobEnvModelNode.n.ok() && i<5)
@@ -667,19 +753,15 @@ int main(int argc, char** argv)
 			cobEnvModelNode.updateFilter();
 		first = false;*/
 		//i++;
+        //feature_map = cobEnvModelNode.map_particle_->GetMap();
     	r.sleep();
     }
-    /*feature_map = cobEnvModelNode.map_particle_->GetMap();
-	unsigned char cmd=0;
-	PointCloudRenderer::Init();
-	PointCloudRenderer::SetExternRenderFunc(&RenderMap);
-	PointCloudRenderer::SetKeyboardPointer(&cmd);
-	PointCloudRenderer::Run();
+
 	while(cmd!='q')
 	{
 		usleep(100);
     }
-		PointCloudRenderer::Exit();*/
+		PointCloudRenderer::Exit();
 
     return 0;
 }
