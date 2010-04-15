@@ -326,6 +326,7 @@ bool CobEnvModelNode::srvCallback_UpdateEnvModel(cob_srvs::Trigger::Request &req
 			ROS_ERROR("Could not get transformation camera2base.");
 			//return false;
 		}
+		calculateTransformationMatrix();
 		if(detectFeatures() == ipa_Utils::RET_FAILED)
 		{
 			ROS_ERROR("Could not detect features.");
@@ -354,6 +355,7 @@ bool CobEnvModelNode::srvCallback_UpdateEnvModel(cob_srvs::Trigger::Request &req
 			ROS_ERROR("Could not get transformation camera2base.");
 			//return false;
 		}
+		calculateTransformationMatrix();
 		if(detectFeatures() == ipa_Utils::RET_FAILED)
 		{
 			ROS_ERROR("Could not detect features.");
@@ -488,7 +490,7 @@ unsigned long CobEnvModelNode::getMeasurement()
 	colored_point_cloud_.SetGreyImage(grey_image_32F1);
 
 	ROS_INFO("[env_model_node] Colored point cloud object updated.");
-	//ipa_Utils::MaskImage2(colored_point_cloud_.GetXYZImage(), colored_point_cloud_.GetXYZImage(), colored_point_cloud_.GetGreyImage(), colored_point_cloud_.GetGreyImage(), 500, 60000, 3);
+	ipa_Utils::MaskImage2(colored_point_cloud_.GetXYZImage(), colored_point_cloud_.GetXYZImage(), colored_point_cloud_.GetGreyImage(), colored_point_cloud_.GetGreyImage(), 500, 60000, 3);
 
     try
     {
@@ -570,7 +572,6 @@ unsigned long CobEnvModelNode::getTransformationCam2Base()
 	transformation_camera2base_(4,3) = 0;
 	transformation_camera2base_(4,4) = 1;
 	std::cout << "transformation_camera2base_: " << transformation_camera2base_ << std::endl;
-	calculateTransformationMatrix();
 	return ipa_Utils::RET_OK;
 }
 
