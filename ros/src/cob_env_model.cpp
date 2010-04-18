@@ -314,7 +314,7 @@ bool CobEnvModelNode::srvCallback_UpdateEnvModel(cob_srvs::Trigger::Request &req
 		if(getMeasurement() == ipa_Utils::RET_FAILED)
 		{
 			ROS_ERROR("Could not get measurement.");
-			return false;
+			//return false;
 		}
 		if(getRobotPose() == ipa_Utils::RET_FAILED)
 		{
@@ -492,7 +492,7 @@ unsigned long CobEnvModelNode::getMeasurement()
 	ROS_INFO("[env_model_node] Colored point cloud object updated.");
 	ipa_Utils::MaskImage2(colored_point_cloud_.GetXYZImage(), colored_point_cloud_.GetXYZImage(), colored_point_cloud_.GetGreyImage(), colored_point_cloud_.GetGreyImage(), 500, 60000, 3);
 
-    try
+    /*try
     {
     	IplImage* grey_image_8U3 = cvCreateImage(cvGetSize(grey_image_32F1), IPL_DEPTH_8U, 3);
     	IplImage* xyz_image_8U3 = cvCreateImage(cvGetSize(xyz_image_32F3), IPL_DEPTH_8U, 3);
@@ -507,7 +507,7 @@ unsigned long CobEnvModelNode::getMeasurement()
     catch (sensor_msgs::CvBridgeException& e)
     {
       ROS_ERROR("[env_model_node] Could not convert");
-    }
+    }*/
 	return ipa_Utils::RET_OK;
 }
 
