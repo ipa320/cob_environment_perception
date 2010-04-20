@@ -217,7 +217,8 @@ CobEnvModelNode::CobEnvModelNode()
 	  fast_SLAM_(100,1),
 	  transformation_camera2base_(4,4),
 	  transformation_tof2camera_(4,4),
-	  transformation_tof2base_pltf_(4,4)
+	  transformation_tof2base_pltf_(4,4),
+	  map_particle_()
 {
 	init();
     //topicPub_demoPublish = n.advertise<std_msgs::String>("demoPublish", 1);
@@ -226,6 +227,7 @@ CobEnvModelNode::CobEnvModelNode()
     srv_client_platform_position_ = n.serviceClient<cob_srvs::GetPlatformPosition>("/get_platform_position");
     srv_client_transform_camera2base_ = n.serviceClient<cob_srvs::GetTransformCamera2Base>("/transform_camera2base");
     srv_server_trigger_ = n.advertiseService("update_env_model", &CobEnvModelNode::srvCallback_UpdateEnvModel, this);
+    srv_get_env_model_ = n.advertiseService("get_env_model", &CobEnvModelNode::srvCallback_GetEnvModel, this);
 
 }
 
@@ -386,15 +388,24 @@ bool CobEnvModelNode::srvCallback_UpdateEnvModel(cob_srvs::Trigger::Request &req
 bool CobEnvModelNode::srvCallback_GetEnvModel(cob_srvs::GetEnvModel::Request &req,
 					cob_srvs::GetEnvModel::Response &res)
 {
-	multimap<int,boost::shared_ptr<AbstractEKF> >* map = map_particle_->GetMap();
-	multimap<int,boost::shared_ptr<AbstractEKF> >::iterator It;
-	int i=0;
-	for(i=0, It=map->begin();It!=map->end();i++,It++)
+	ROS_INFO("GetEnvModel service called");
+	if(map_particle_.get()!=0)
 	{
-		res.data[i].x = ((EKF2DLandmark*)(It->second.get()))->PostGet()->ExpectedValueGet()(1);
-		res.data[i].y = ((EKF2DLandmark*)(It->second.get()))->PostGet()->ExpectedValueGet()(2);
-		res.data[i].z = ((EKF2DLandmark*)(It->second.get()))->m_Height;
+		multimap<int,boost::shared_ptr<AbstractEKF> >* map = map_particle_->GetMap();
+		multimap<int,boost::shared_ptr<AbstractEKF> >::iterator It;
+		int i = 0;
+		if(map != 0)
+		{
+			for(i=0, It=map->begin();It!=map->end();i++,It++)
+			{
+				res.data[i].x = ((EKF2DLandmark*)(It->second.get()))->PostGet()->ExpectedValueGet()(1);
+				res.data[i].y = ((EKF2DLandmark*)(It->second.get()))->PostGet()->ExpectedValueGet()(2);
+				res.data[i].z = ((EKF2DLandmark*)(It->second.get()))->m_Height;
+			}
+			return true;
+		}
 	}
+	return false;
 }
 
 
