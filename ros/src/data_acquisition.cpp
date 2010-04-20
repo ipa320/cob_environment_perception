@@ -237,16 +237,16 @@ unsigned long CobDataAcquisitionNode::getTransformationCam2Base()
 				transform_camera2base_srv_.response.transformation.x, transform_camera2base_srv_.response.transformation.y,
 				transform_camera2base_srv_.response.transformation.z, transform_camera2base_srv_.response.transformation.roll,
 				transform_camera2base_srv_.response.transformation.pitch, transform_camera2base_srv_.response.transformation.yaw);
-	double yaw = transform_camera2base_srv_.response.transformation.yaw;
-	double pitch = transform_camera2base_srv_.response.transformation.pitch;
 	double roll = transform_camera2base_srv_.response.transformation.roll;
+	double pitch = transform_camera2base_srv_.response.transformation.pitch;
+	double yaw = transform_camera2base_srv_.response.transformation.yaw;
 
 	transformation_camera2base_(1,1) = cos(yaw)*cos(pitch);
-	transformation_camera2base_(1,2) = cos(yaw)*sin(pitch)*sin(roll)-sin(yaw)*sin(roll);
+	transformation_camera2base_(1,2) = cos(yaw)*sin(pitch)*sin(roll)-sin(yaw)*cos(roll);
 	transformation_camera2base_(1,3) = cos(yaw)*sin(pitch)*cos(roll)+sin(yaw)*sin(roll);
 	transformation_camera2base_(1,4) = transform_camera2base_srv_.response.transformation.x;
 	transformation_camera2base_(2,1) = sin(yaw)*cos(pitch);
-	transformation_camera2base_(2,2) = sin(yaw)*sin(pitch)*sin(roll)+cos(yaw)*sin(roll);
+	transformation_camera2base_(2,2) = sin(yaw)*sin(pitch)*sin(roll)+cos(yaw)*cos(roll);
 	transformation_camera2base_(2,3) = sin(yaw)*sin(pitch)*cos(roll)-cos(yaw)*sin(roll);
 	transformation_camera2base_(2,4) = transform_camera2base_srv_.response.transformation.y;
 	transformation_camera2base_(3,1) = -sin(pitch);
@@ -342,12 +342,19 @@ unsigned long CobDataAcquisitionNode::save()
 		std::cout << "\t ... TOF grey Image saved to " + imageFileName << std::endl;
 		cvSave(imageFileName.c_str() , grey_image_32F1_);
 	}
-	std::string poseFileName = data_directory_ + std::string("/pose_and_trafo") + counterBuffer + ".txt";
+	std::string poseFileName = data_directory_ + std::string("/pose_") + counterBuffer + ".txt";
 	std::ofstream f(poseFileName.c_str(), std::fstream::out);
-	f << robot_pose_ << "\n";
-	f << transformation_camera2base_;
+	f << robot_pose_(1) << " " << robot_pose_(2) << " " << robot_pose_(3);
 	f.close();
-	std::cout << "\t ... Robot pose and transformation saved to " + poseFileName << std::endl;
+	std::cout << "\t ... Robot pose saved to " + poseFileName << std::endl;
+	std::string trafoFileName = data_directory_ + std::string("/trafo_") + counterBuffer + ".txt";
+	std::ofstream f1(trafoFileName.c_str(), std::fstream::out);
+	f1 << transformation_camera2base_(1,1) << " " << transformation_camera2base_(1,2) << " " << transformation_camera2base_(1,3) << " " << transformation_camera2base_(1,4) << "\n";
+	f1 << transformation_camera2base_(2,1) << " " << transformation_camera2base_(2,2) << " " << transformation_camera2base_(2,3) << " " << transformation_camera2base_(2,4) << "\n";
+	f1 << transformation_camera2base_(3,1) << " " << transformation_camera2base_(3,2) << " " << transformation_camera2base_(3,3) << " " << transformation_camera2base_(3,4) << "\n";
+	f1 << transformation_camera2base_(4,1) << " " << transformation_camera2base_(4,2) << " " << transformation_camera2base_(4,3) << " " << transformation_camera2base_(4,4) << "\n";
+	f1.close();
+	std::cout << "\t ... Transformation saved to " + trafoFileName << std::endl;
 	counter++;
 }
 

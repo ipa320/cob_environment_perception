@@ -88,6 +88,7 @@
 #include <cob_srvs/GetPlatformPosition.h>
 #include <cob_srvs/GetTransformCamera2Base.h>
 #include <cob_srvs/Trigger.h>
+#include <cob_srvs/GetEnvModel.h>
 
 
 // GUI includes
@@ -128,6 +129,9 @@ class CobEnvModelNode
 
         bool srvCallback_UpdateEnvModel(cob_srvs::Trigger::Request &req,
 										cob_srvs::Trigger::Response &res);
+
+        bool srvCallback_GetEnvModel(cob_srvs::GetEnvModel::Request &req,
+        										cob_srvs::GetEnvModel::Response &res);
 
         //void callColoredPointCloudService();
 
@@ -170,6 +174,7 @@ class CobEnvModelNode
 		tf::TransformListener transform_listener_;
 
 		ros::ServiceServer srv_server_trigger_;
+		ros::ServiceServer srv_get_env_model_;
 		ros::ServiceClient srv_client_colored_point_cloud_;
 		ros::ServiceClient srv_client_platform_position_;
 		ros::ServiceClient srv_client_transform_camera2base_;
@@ -182,6 +187,7 @@ class CobEnvModelNode
 		cob_srvs::GetColoredPointCloud colored_point_cloud_srv_;
 		cob_srvs::GetPlatformPosition platform_position_srv_;
 		cob_srvs::GetTransformCamera2Base transform_camera2base_srv_;
+		cob_srvs::GetEnvModel env_model_srv_;
 
 
 		//Matrix m_transformCam2Base;
@@ -377,6 +383,20 @@ bool CobEnvModelNode::srvCallback_UpdateEnvModel(cob_srvs::Trigger::Request &req
 	return true;
 }
 
+bool CobEnvModelNode::srvCallback_GetEnvModel(cob_srvs::GetEnvModel::Request &req,
+					cob_srvs::GetEnvModel::Response &res)
+{
+	multimap<int,boost::shared_ptr<AbstractEKF> >* map = map_particle_->GetMap();
+	multimap<int,boost::shared_ptr<AbstractEKF> >::iterator It;
+	int i=0;
+	for(i=0, It=map->begin();It!=map->end();i++,It++)
+	{
+		res.data[i].x = ((EKF2DLandmark*)(It->second.get()))->PostGet()->ExpectedValueGet()(1);
+		res.data[i].y = ((EKF2DLandmark*)(It->second.get()))->PostGet()->ExpectedValueGet()(2);
+		res.data[i].z = ((EKF2DLandmark*)(It->second.get()))->m_Height;
+	}
+}
+
 
 unsigned long CobEnvModelNode::createMeasurementModel()
 {
@@ -556,11 +576,11 @@ unsigned long CobEnvModelNode::getTransformationCam2Base()
 	double pitch = transform_camera2base_srv_.response.transformation.pitch;
 	double roll = transform_camera2base_srv_.response.transformation.roll;
 	transformation_camera2base_(1,1) = cos(yaw)*cos(pitch);
-	transformation_camera2base_(1,2) = cos(yaw)*sin(pitch)*sin(roll)-sin(yaw)*sin(roll);
+	transformation_camera2base_(1,2) = cos(yaw)*sin(pitch)*sin(roll)-sin(yaw)*cos(roll);
 	transformation_camera2base_(1,3) = cos(yaw)*sin(pitch)*cos(roll)+sin(yaw)*sin(roll);
 	transformation_camera2base_(1,4) = transform_camera2base_srv_.response.transformation.x;
 	transformation_camera2base_(2,1) = sin(yaw)*cos(pitch);
-	transformation_camera2base_(2,2) = sin(yaw)*sin(pitch)*sin(roll)+cos(yaw)*sin(roll);
+	transformation_camera2base_(2,2) = sin(yaw)*sin(pitch)*sin(roll)+cos(yaw)*cos(roll);
 	transformation_camera2base_(2,3) = sin(yaw)*sin(pitch)*cos(roll)-cos(yaw)*sin(roll);
 	transformation_camera2base_(2,4) = transform_camera2base_srv_.response.transformation.y;
 	transformation_camera2base_(3,1) = -sin(pitch);
