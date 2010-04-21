@@ -396,11 +396,14 @@ bool CobEnvModelNode::srvCallback_GetEnvModel(cob_srvs::GetEnvModel::Request &re
 		int i = 0;
 		if(map != 0)
 		{
+			res.data.resize(map->size());
 			for(i=0, It=map->begin();It!=map->end();i++,It++)
 			{
-				res.data[i].x = ((EKF2DLandmark*)(It->second.get()))->PostGet()->ExpectedValueGet()(1);
-				res.data[i].y = ((EKF2DLandmark*)(It->second.get()))->PostGet()->ExpectedValueGet()(2);
-				res.data[i].z = ((EKF2DLandmark*)(It->second.get()))->m_Height;
+				geometry_msgs::Point point;
+				point.x = ((EKF2DLandmark*)(It->second.get()))->PostGet()->ExpectedValueGet()(1);
+				point.y = ((EKF2DLandmark*)(It->second.get()))->PostGet()->ExpectedValueGet()(2);
+				point.z = ((EKF2DLandmark*)(It->second.get()))->m_Height;
+				res.data[i] = point;
 			}
 			return true;
 		}
@@ -521,7 +524,7 @@ unsigned long CobEnvModelNode::getMeasurement()
 	colored_point_cloud_.SetGreyImage(grey_image_32F1);
 
 	ROS_INFO("[env_model_node] Colored point cloud object updated.");
-	ipa_Utils::MaskImage2(colored_point_cloud_.GetXYZImage(), colored_point_cloud_.GetXYZImage(), colored_point_cloud_.GetGreyImage(), colored_point_cloud_.GetGreyImage(), 500, 60000, 3);
+	//ipa_Utils::MaskImage2(colored_point_cloud_.GetXYZImage(), colored_point_cloud_.GetXYZImage(), colored_point_cloud_.GetGreyImage(), colored_point_cloud_.GetGreyImage(), 500, 60000, 3);
 
     /*try
     {
@@ -564,6 +567,7 @@ unsigned long CobEnvModelNode::detectFeatures()
 		ROS_ERROR("Could not detect features, no color image in point cloud.");
 		return ipa_Utils::RET_FAILED;
 	}
+	ROS_INFO("OK");
 	return ipa_Utils::RET_OK;
 }
 
@@ -608,21 +612,21 @@ unsigned long CobEnvModelNode::getTransformationCam2Base()
 
 unsigned long CobEnvModelNode::initializeFilter()
 {
+	ROS_INFO("[env_model_node] Initializing filter");
 	for (unsigned int i=0; i<fast_SLAM_.m_Particles.size(); i++)
 	{
 		fast_SLAM_.m_Particles[i].ValueGet()->SetPose(robot_pose_);
 	}
-
 	AbstractFeatureVector::iterator It;
 	std::vector<int> mask(feature_vector_->size(),0);
 	for (It=feature_vector_->begin(); It!=feature_vector_->end(); It++)
 	{
-		ColumnVector theta(3);
 		transformCameraToBase(*It);
 		(*It)->m_Id=-1;
 		fast_SLAM_.AddUnknownFeature(*meas_model_, *It, 0);
 	}
 	data_association_.AddNewFeatures(feature_vector_, mask);
+	ROS_INFO("OK");
 	return ipa_Utils::RET_OK;
 }
 
@@ -717,10 +721,10 @@ unsigned long CobEnvModelNode::transformCameraToBase(boost::shared_ptr<AbstractF
 	xyz_cam(3) = af->m_z;
 	xyz_cam(4) = 1;
 
-	//std::cout << manbase2pltfbase*transformation_camera2base_*transformation_tof2camera_ << std::endl;
+	std::cout << transformation_tof2base_pltf_ << std::endl;
 
 	xyz_base = transformation_tof2base_pltf_*xyz_cam;
-	//std::cout << xyz_base << std::endl;
+	std::cout << xyz_base << std::endl;
 
 	af->m_x = xyz_base(1);
 	af->m_y = xyz_base(2);
