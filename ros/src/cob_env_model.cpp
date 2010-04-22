@@ -161,6 +161,8 @@ class CobEnvModelNode
 
     	unsigned long updateFilter();
 
+    	unsigned long resetFilter();
+
     	///Transforms a feature point from tof to platform base
     	unsigned long transformCameraToBase(boost::shared_ptr<AbstractFeature> af);
 
@@ -381,6 +383,11 @@ bool CobEnvModelNode::srvCallback_UpdateEnvModel(cob_srvs::Trigger::Request &req
 	}
 	else if(req.command == 2)
 	{
+		ROS_INFO("Resetting the filter.");
+		resetFilter();
+	}
+	else if(req.command == 3)
+	{
 		//TODO: send map to renderer or collision avoidance
 		ROS_INFO("Stopping environment modelling.");
 		n.shutdown();
@@ -528,7 +535,7 @@ unsigned long CobEnvModelNode::getMeasurement()
 	colored_point_cloud_.SetGreyImage(grey_image_32F1);
 
 	ROS_INFO("[env_model_node] Colored point cloud object updated.");
-	//ipa_Utils::MaskImage2(colored_point_cloud_.GetXYZImage(), colored_point_cloud_.GetXYZImage(), colored_point_cloud_.GetGreyImage(), colored_point_cloud_.GetGreyImage(), 500, 60000, 3);
+	ipa_Utils::MaskImage2(colored_point_cloud_.GetXYZImage(), colored_point_cloud_.GetXYZImage(), colored_point_cloud_.GetGreyImage(), colored_point_cloud_.GetGreyImage(), 500, 60000, 3);
 
     /*try
     {
@@ -635,6 +642,7 @@ unsigned long CobEnvModelNode::initializeFilter()
 	data_association_.AddNewFeatures(feature_vector_, mask);
 	map_particle_= fast_SLAM_.m_Particles[0].ValueGet();
 	feature_map = map_particle_->GetMap();
+	delete feature_vector_;
 	ROS_INFO("OK");
 	return ipa_Utils::RET_OK;
 }
@@ -698,6 +706,35 @@ unsigned long CobEnvModelNode::updateFilter()
     feature_map = map_particle_->GetMap();
 
 	delete feature_vector_;
+
+	return ipa_Utils::RET_OK;
+}
+
+unsigned long CobEnvModelNode::resetFilter()
+{
+	fast_SLAM_.Reset(100);
+	all_features.reset();
+	data_association_.Reset();
+	AbstractFeatureVector::iterator It;
+	for (It=data_association_.m_AllFeatures->begin();It!=data_association_.m_AllFeatures->end();It++)
+	{
+		(*It).reset();
+		//std::cout << (*It).get() << std::endl;
+	}
+	data_association_.m_AllFeatures.reset();
+	data_association_.m_AllFeatures = boost::shared_ptr<AbstractFeatureVector> (new BlobFeatureVector());
+	all_features = data_association_.m_AllFeatures;
+	//data_association_ = KdTreeDataAssociation();
+	/*all_features = data_association_.m_AllFeatures;
+	AbstractFeatureVector::iterator It;
+	for (It=data_association_.m_AllFeatures->begin();It!=data_association_.m_AllFeatures->end();It++)
+	{
+		//(*It).reset();
+		std::cout << (*It).get() << std::endl;
+	}
+	//data_association_.m_AllFeatures.reset();
+	std::cout << "data_association_ use count: " << data_association_.m_AllFeatures.use_count() << std::endl;
+	//data_association_.m_AllFeatures = boost::shared_ptr<AbstractFeatureVector> (new BlobFeatureVector());*/
 
 	return ipa_Utils::RET_OK;
 }
