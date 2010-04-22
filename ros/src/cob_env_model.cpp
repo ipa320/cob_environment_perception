@@ -97,6 +97,7 @@
 // external includes
 
 multimap<int,boost::shared_ptr<AbstractEKF> >* feature_map=0;
+boost::shared_ptr<AbstractFeatureVector> all_features;
 
 void deleter(sensor_msgs::Image* const) {}
 
@@ -109,7 +110,7 @@ class CobEnvModelNode
     public:
 
         // Constructor
-		CobEnvModelNode();
+		CobEnvModelNode(const ros::NodeHandle& nh);
 
         
         // Destructor
@@ -209,11 +210,13 @@ class CobEnvModelNode
 		MatrixWrapper::Matrix transformation_tof2camera_;
 		MatrixWrapper::Matrix transformation_tof2base_pltf_;
 
+
 };
 
 
-CobEnvModelNode::CobEnvModelNode()
-	: robot_pose_(3),
+CobEnvModelNode::CobEnvModelNode(const ros::NodeHandle& nh)
+	: n(nh),
+	  robot_pose_(3),
 	  fast_SLAM_(100,1),
 	  transformation_camera2base_(4,4),
 	  transformation_tof2camera_(4,4),
@@ -229,6 +232,7 @@ CobEnvModelNode::CobEnvModelNode()
     srv_server_trigger_ = n.advertiseService("update_env_model", &CobEnvModelNode::srvCallback_UpdateEnvModel, this);
     srv_get_env_model_ = n.advertiseService("get_env_model", &CobEnvModelNode::srvCallback_GetEnvModel, this);
 
+    all_features = data_association_.m_AllFeatures;
 }
 
 unsigned long CobEnvModelNode::init()
@@ -558,6 +562,9 @@ unsigned long CobEnvModelNode::detectFeatures()
 		{
 			unsigned char R,G,B;
 			colored_point_cloud_.GetData((*It)->m_u,(*It)->m_v,(*It)->m_x,(*It)->m_y,(*It)->m_z,R,G,B);
+			(*It)->m_Red = (unsigned int) R;
+			(*It)->m_Green = (unsigned int) G;
+			(*It)->m_Blue = (unsigned int) B;
 			//ROS_INFO("[env_model_node] Feature Data: %f, %f, %f", (*It)->m_x, (*It)->m_y, (*It)->m_z);
 		}
 		((SURFDetector*)feature_detector_)->FilterFeatures(feature_vector_, 5);
@@ -626,6 +633,7 @@ unsigned long CobEnvModelNode::initializeFilter()
 		fast_SLAM_.AddUnknownFeature(*meas_model_, *It, 0);
 	}
 	data_association_.AddNewFeatures(feature_vector_, mask);
+	map_particle_= fast_SLAM_.m_Particles[0].ValueGet();
 	ROS_INFO("OK");
 	return ipa_Utils::RET_OK;
 }
@@ -721,10 +729,10 @@ unsigned long CobEnvModelNode::transformCameraToBase(boost::shared_ptr<AbstractF
 	xyz_cam(3) = af->m_z;
 	xyz_cam(4) = 1;
 
-	std::cout << transformation_tof2base_pltf_ << std::endl;
+	//std::cout << transformation_tof2base_pltf_ << std::endl;
 
 	xyz_base = transformation_tof2base_pltf_*xyz_cam;
-	std::cout << xyz_base << std::endl;
+	//std::cout << xyz_base << std::endl;
 
 	af->m_x = xyz_base(1);
 	af->m_y = xyz_base(2);
@@ -747,7 +755,21 @@ void RenderMap()
 		for ( It=feature_map->begin() ; It != feature_map->end(); It++ )
 		{
 			int step = ((EKF2DLandmark*)It->second.operator ->())->m_Step;
-			glColor3f(0.0f,0.0f,1.0f);
+			unsigned int R=0;
+			unsigned int G=0;
+			unsigned int B=0;
+			AbstractFeatureVector::iterator It3;
+			for(It3=all_features->begin(); It3!=all_features->end(); It3++)
+			{
+				if((*It3)->m_Id==It->first)
+				{
+					R = (*It3)->m_Red;
+					G = (*It3)->m_Green;
+					B = (*It3)->m_Blue;
+				}
+			}
+			glColor3f((double)R/255,(double)G/255,(double)B/255);
+			//glColor3f(0.0f,0.0f,1.0f);
 			glPointSize(4.0f);
 			glBegin(GL_POINTS);
 			glVertex3f(((EKF2DLandmark*)It->second.operator ->())->PostGet()->ExpectedValueGet()(1),
@@ -765,15 +787,24 @@ int main(int argc, char** argv)
     // initialize ROS, specify name of node
     ros::init(argc, argv, "cobEnvModelNode");
     
-    CobEnvModelNode cobEnvModelNode;
+	/// Create a handle for this node, initialize node
+	ros::NodeHandle nh;
+
+    bool use_opengl = false;
+    nh.getParam("/cob_env_model/env_model/use_opengl", use_opengl);
+
+    CobEnvModelNode cobEnvModelNode(nh);
 
 	int i=0;
 	unsigned char cmd=0;
 
-	PointCloudRenderer::Init();
-	PointCloudRenderer::SetExternRenderFunc(&RenderMap);
-	PointCloudRenderer::SetKeyboardPointer(&cmd);
-	PointCloudRenderer::Run();
+	if(use_opengl)
+	{
+		PointCloudRenderer::Init();
+		PointCloudRenderer::SetExternRenderFunc(&RenderMap);
+		PointCloudRenderer::SetKeyboardPointer(&cmd);
+		PointCloudRenderer::Run();
+	}
  
     ros::Rate r(0.5);
     while(cobEnvModelNode.n.ok() && i<5)
@@ -793,11 +824,14 @@ int main(int argc, char** argv)
     	r.sleep();
     }
 
-	while(cmd!='q')
-	{
-		usleep(100);
-    }
+    if(use_opengl)
+    {
+    	while(cmd!='q')
+		{
+			usleep(100);
+		}
 		PointCloudRenderer::Exit();
+    }
 
     return 0;
 }
