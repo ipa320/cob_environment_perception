@@ -634,6 +634,7 @@ unsigned long CobEnvModelNode::initializeFilter()
 	}
 	data_association_.AddNewFeatures(feature_vector_, mask);
 	map_particle_= fast_SLAM_.m_Particles[0].ValueGet();
+	feature_map = map_particle_->GetMap();
 	ROS_INFO("OK");
 	return ipa_Utils::RET_OK;
 }
