@@ -96,8 +96,12 @@
 
 // external includes
 
-multimap<int,boost::shared_ptr<AbstractEKF> >* feature_map=0;
+using namespace ipa_Features;
+using namespace ipa_BayesianFilter;
+
+map<int,boost::shared_ptr<AbstractEKF> >* feature_map=0;
 boost::shared_ptr<AbstractFeatureVector> all_features;
+BFL::ColumnVector* robot_pose=0;
 
 void deleter(sensor_msgs::Image* const) {}
 
@@ -200,7 +204,7 @@ class CobEnvModelNode
 		sensor_msgs::CvBridge cv_bridge_1_; ///< Converts ROS image messages to openCV IplImages
 		sensor_msgs::CvBridge cv_bridge_2_; ///< Converts ROS image messages to openCV IplImages
 
-		AbstractDetector* feature_detector_;
+		AbstractLocalFeatureDetector* feature_detector_;
 		ipa_SensorFusion::ColoredPointCloud colored_point_cloud_;
 		BFL::ColumnVector robot_pose_;
 		BFL::AnalyticMeasurementModelGaussianUncertainty* meas_model_;
@@ -402,8 +406,8 @@ bool CobEnvModelNode::srvCallback_GetEnvModel(cob_srvs::GetEnvModel::Request &re
 	ROS_INFO("GetEnvModel service called");
 	if(map_particle_.get()!=0)
 	{
-		multimap<int,boost::shared_ptr<AbstractEKF> >* map = map_particle_->GetMap();
-		multimap<int,boost::shared_ptr<AbstractEKF> >::iterator It;
+		std::map<int, boost::shared_ptr<AbstractEKF> >* map = map_particle_->GetMap();
+		std::map<int,boost::shared_ptr<AbstractEKF> >::iterator It;
 		int i = 0;
 		if(map != 0)
 		{
@@ -492,6 +496,7 @@ unsigned long CobEnvModelNode::getRobotPose()
 	robot_pose_(1) = platform_position_srv_.response.platform_pose.x;
 	robot_pose_(2) = platform_position_srv_.response.platform_pose.y;
 	robot_pose_(3) = platform_position_srv_.response.platform_pose.theta;
+	robot_pose = &robot_pose_;
 	return ipa_Utils::RET_OK;
 }
 
@@ -568,10 +573,10 @@ unsigned long CobEnvModelNode::detectFeatures()
 		for (It=feature_vector_->begin(); It!=feature_vector_->end(); It++)
 		{
 			unsigned char R,G,B;
-			colored_point_cloud_.GetData((*It)->m_u,(*It)->m_v,(*It)->m_x,(*It)->m_y,(*It)->m_z,R,G,B);
-			(*It)->m_Red = (unsigned int) R;
-			(*It)->m_Green = (unsigned int) G;
-			(*It)->m_Blue = (unsigned int) B;
+			colored_point_cloud_.GetData((*It)->Get<double>(M_U),(*It)->Get<double>(M_V),(*It)->Get<double>(M_X),(*It)->Get<double>(M_Y),(*It)->Get<double>(M_Z),R,G,B);
+			(*It)->Get<double>(M_RED) = (double) R;
+			(*It)->Get<double>(M_GREEN) = (double) G;
+			(*It)->Get<double>(M_BLUE) = (double) B;
 			//ROS_INFO("[env_model_node] Feature Data: %f, %f, %f", (*It)->m_x, (*It)->m_y, (*It)->m_z);
 		}
 		((SURFDetector*)feature_detector_)->FilterFeatures(feature_vector_, 5);
@@ -636,7 +641,7 @@ unsigned long CobEnvModelNode::initializeFilter()
 	for (It=feature_vector_->begin(); It!=feature_vector_->end(); It++)
 	{
 		transformCameraToBase(*It);
-		(*It)->m_Id=-1;
+		(*It)->Get<int>(M_FEATUREID)=-1;
 		fast_SLAM_.AddUnknownFeature(*meas_model_, *It, 0);
 	}
 	data_association_.AddNewFeatures(feature_vector_, mask);
@@ -661,7 +666,7 @@ unsigned long CobEnvModelNode::updateFilter()
 	for (It=feature_vector_->begin(); It!=feature_vector_->end(); It++)
 	{
 		transformCameraToBase(*It);
-		if((*It)->m_Id != -1)
+		if((*It)->Get<int>(M_FEATUREID) != -1)
 		{
 			associationCtr++;
 			fast_SLAM_.UpdateKnownFeature(*meas_model_, *system_model_, *It, ctrAssociations);
@@ -684,7 +689,7 @@ unsigned long CobEnvModelNode::updateFilter()
 	for (unsigned int i=0; i<map_particle_->m_RejectedFeatures.size(); i++)
 	{
 		/// Remove class label if necessary
-		map_particle_->m_RejectedFeatures[i]->m_Id = -1;
+		map_particle_->m_RejectedFeatures[i]->Get<int>(M_FEATUREID) = -1;
 	}
 
 	unsigned int i = 0;
@@ -694,7 +699,7 @@ unsigned long CobEnvModelNode::updateFilter()
 		/// Add new feature only if it is not masked
 		/// It is important that the features ID corresponds
 		/// to the position in the particle map
-		if((*It)->m_Id == -1)
+		if((*It)->Get<int>(M_FEATUREID) == -1)
 		{
 			if ( mask[i] == 0) fast_SLAM_.AddUnknownFeature(*meas_model_, *It, step);
 		}
@@ -762,9 +767,9 @@ unsigned long CobEnvModelNode::transformCameraToBase(boost::shared_ptr<AbstractF
 {
 	BFL::ColumnVector xyz_cam(4);
 	BFL::ColumnVector xyz_base(4);
-	xyz_cam(1) = af->m_x;
-	xyz_cam(2) = af->m_y;
-	xyz_cam(3) = af->m_z;
+	xyz_cam(1) = af->Get<double>(M_X);
+	xyz_cam(2) = af->Get<double>(M_Y);
+	xyz_cam(3) = af->Get<double>(M_Z);
 	xyz_cam(4) = 1;
 
 	//std::cout << transformation_tof2base_pltf_ << std::endl;
@@ -772,9 +777,9 @@ unsigned long CobEnvModelNode::transformCameraToBase(boost::shared_ptr<AbstractF
 	xyz_base = transformation_tof2base_pltf_*xyz_cam;
 	//std::cout << xyz_base << std::endl;
 
-	af->m_x = xyz_base(1);
-	af->m_y = xyz_base(2);
-	af->m_z = xyz_base(3);
+	af->Get<double>(M_X) = xyz_base(1);
+	af->Get<double>(M_Y) = xyz_base(2);
+	af->Get<double>(M_Z) = xyz_base(3);
 
 	return ipa_Utils::RET_OK;
 }
@@ -787,6 +792,14 @@ unsigned long CobEnvModelNode::transformCameraToBase(boost::shared_ptr<AbstractF
 
 void RenderMap()
 {
+	if(robot_pose!=0)
+	{
+		glPointSize(20.0f);
+		glColor3f(1.0,0.0,0.0);
+		glBegin(GL_POINTS);
+		glVertex3f((*robot_pose)(1),(*robot_pose)(2),(*robot_pose)(3));
+		glEnd();
+	}
 	if(feature_map!=0)
 	{
 		multimap<int,boost::shared_ptr<AbstractEKF> >::iterator It;
@@ -799,11 +812,11 @@ void RenderMap()
 			AbstractFeatureVector::iterator It3;
 			for(It3=all_features->begin(); It3!=all_features->end(); It3++)
 			{
-				if((*It3)->m_Id==It->first)
+				if((*It3)->Get<int>(M_FEATUREID)==It->first)
 				{
-					R = (*It3)->m_Red;
-					G = (*It3)->m_Green;
-					B = (*It3)->m_Blue;
+					R = (*It3)->Get<double>(M_RED);
+					G = (*It3)->Get<double>(M_GREEN);
+					B = (*It3)->Get<double>(M_BLUE);
 				}
 			}
 			glColor3f((double)R/255,(double)G/255,(double)B/255);
