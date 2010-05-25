@@ -4,7 +4,7 @@
 	<!-- start environment modelling -->
 	<node pkg="cob_env_model" type="env_model_node" name="env_model" ns="cob_env_model" cwd="node" respawn="false" output="screen">
 		<remap from="get_colored_pc" to="/sensor_fusion/shared/get_colored_pc"/>
-		<param name="use_opengl" type="bool" value="true"/>
+		<param name="use_opengl" type="bool" value="false"/>
 	</node>
 
 	<rosparam command="load" ns="cob_env_model" file="$(find cob_env_model)/ros/launch/cob3-2_tof2cam.yaml"/>
