@@ -719,7 +719,7 @@ unsigned long CobEnvModelNode::resetFilter()
 {
 	fast_SLAM_.Reset(100);
 	all_features.reset();
-	data_association_.Reset();
+	//data_association_.Reset();
 	AbstractFeatureVector::iterator It;
 	for (It=data_association_.m_AllFeatures->begin();It!=data_association_.m_AllFeatures->end();It++)
 	{
