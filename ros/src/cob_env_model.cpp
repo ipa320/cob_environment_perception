@@ -540,7 +540,7 @@ unsigned long CobEnvModelNode::getMeasurement()
 	colored_point_cloud_.SetGreyImage(grey_image_32F1);
 
 	ROS_INFO("[env_model_node] Colored point cloud object updated.");
-	ipa_Utils::MaskImage2(colored_point_cloud_.GetXYZImage(), colored_point_cloud_.GetXYZImage(), colored_point_cloud_.GetGreyImage(), colored_point_cloud_.GetGreyImage(), 500, 60000, 3);
+	ipa_Utils::MaskImage2(colored_point_cloud_.GetXYZImage(), colored_point_cloud_.GetXYZImage(), colored_point_cloud_.GetGreyImage(), colored_point_cloud_.GetGreyImage(), 0, 500, 60000, 3);
 
     /*try
     {
