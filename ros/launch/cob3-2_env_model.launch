@@ -1,12 +1,18 @@
 <?xml version="1.0"?>
 <launch>
 
-	<!-- start environment modelling -->
-	<node pkg="cob_env_model" type="env_model_node" name="env_model" ns="cob_env_model" cwd="node" respawn="false" output="screen">
-		<remap from="get_colored_pc" to="/sensor_fusion/shared/get_colored_pc"/>
-		<param name="use_opengl" type="bool" value="true"/>
-	</node>
+  <group>
+    <machine name="pc2" address="192.168.0.102" user="goa" password="cob3" ros-root="$(env ROS_ROOT)" ros-package-path="$(env ROS_PACKAGE_PATH)" default="true"/>
 
-	<rosparam command="load" ns="cob_env_model" file="$(find cob_env_model)/ros/launch/cob3-2_tof2cam.yaml"/>
+    <!-- start cameras -->
+    <include file="$(find cob_camera_sensors)/ros/launch/cob3-2_all_cameras.launch" />
+		<!-- start sensor fusion -->
+    <include file="$(find cob_sensor_fusion)/ros/launch/cob3-2_sensor_fusion_shared.launch" />
+		<!-- start env model -->
+    <include file="$(find cob_env_model)/ros/launch/env_model.launch" />
+
+
+  </group>
+
 	
 </launch>
