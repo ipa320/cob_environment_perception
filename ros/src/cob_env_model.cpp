@@ -97,7 +97,7 @@
 // external includes
 
 using namespace ipa_Features;
-using namespace ipa_BayesianFilter;
+using namespace ipa_SLAM;
 
 map<int,boost::shared_ptr<AbstractEKF> >* feature_map=0;
 boost::shared_ptr<AbstractFeatureVector> all_features;
@@ -222,12 +222,12 @@ class CobEnvModelNode
 
 CobEnvModelNode::CobEnvModelNode(const ros::NodeHandle& nh)
 	: n(nh),
+	  map_particle_(),
 	  robot_pose_(3),
 	  fast_SLAM_(100,1),
 	  transformation_camera2base_(4,4),
 	  transformation_tof2camera_(4,4),
-	  transformation_tof2base_pltf_(4,4),
-	  map_particle_()
+	  transformation_tof2base_pltf_(4,4)
 {
 	init();
     //topicPub_demoPublish = n.advertise<std_msgs::String>("demoPublish", 1);
@@ -441,7 +441,7 @@ unsigned long CobEnvModelNode::createMeasurementModel()
   	BFL::Gaussian measurement_Uncertainty(measNoise_Mu, measNoise_Cov);
 
   	/// create the model
-  	ipa_BayesianFilter::MeasPDF2DLandmark *meas_pdf = new ipa_BayesianFilter::MeasPDF2DLandmark(measurement_Uncertainty);
+  	MeasPDF2DLandmark *meas_pdf = new MeasPDF2DLandmark(measurement_Uncertainty);
 
   	meas_model_ = new BFL::AnalyticMeasurementModelGaussianUncertainty(meas_pdf);
 
@@ -471,7 +471,7 @@ unsigned long CobEnvModelNode::createSystemModel()
 
   	BFL::Gaussian system_Uncertainty(sysNoise_Mu, sysNoise_Cov);
   	/// create the nonlinear system model
-  	ipa_BayesianFilter::SysPDF2DLaserNav *sys_pdf = new ipa_BayesianFilter::SysPDF2DLaserNav(system_Uncertainty);
+  	SysPDF2DLaserNav *sys_pdf = new SysPDF2DLaserNav(system_Uncertainty);
   	system_model_ = new BFL::SystemModel<BFL::ColumnVector>(sys_pdf);
   	return ipa_Utils::RET_OK;
 }
@@ -540,7 +540,7 @@ unsigned long CobEnvModelNode::getMeasurement()
 	colored_point_cloud_.SetGreyImage(grey_image_32F1);
 
 	ROS_INFO("[env_model_node] Colored point cloud object updated.");
-	ipa_Utils::MaskImage2(colored_point_cloud_.GetXYZImage(), colored_point_cloud_.GetXYZImage(), colored_point_cloud_.GetGreyImage(), colored_point_cloud_.GetGreyImage(), 0, 500, 60000, 3);
+	//ipa_Utils::MaskImage2(colored_point_cloud_.GetXYZImage(), colored_point_cloud_.GetXYZImage(), colored_point_cloud_.GetGreyImage(), colored_point_cloud_.GetGreyImage(), 0, 500, 60000, 3);
 
     /*try
     {
@@ -564,10 +564,10 @@ unsigned long CobEnvModelNode::getMeasurement()
 unsigned long CobEnvModelNode::detectFeatures()
 {
 	ROS_INFO("[env_model_node] Detecting features");
-	if(colored_point_cloud_.GetColorImage()!=0)
+	if(!colored_point_cloud_.GetColorImage().empty())
 	{
 		feature_vector_ = new BlobFeatureVector();
-		feature_detector_->DetectFeatures(colored_point_cloud_.GetColorImage(), feature_vector_);
+		feature_detector_->DetectFeatures(colored_point_cloud_.GetColorImage(), *feature_vector_);
 		//TODO: use colorImage0 but transform u and v to sharedImageSize
 		AbstractFeatureVector::iterator It;
 		for (It=feature_vector_->begin(); It!=feature_vector_->end(); It++)
@@ -762,7 +762,9 @@ unsigned long CobEnvModelNode::calculateTransformationMatrix()
 		}
 	}
 	std::cout << "transformation matrix: " << transformation_tof2base_pltf_ << std::endl;
+	return ipa_Utils::RET_OK;
 }
+
 unsigned long CobEnvModelNode::transformCameraToBase(boost::shared_ptr<AbstractFeature> af)
 {
 	BFL::ColumnVector xyz_cam(4);
@@ -805,7 +807,7 @@ void RenderMap()
 		multimap<int,boost::shared_ptr<AbstractEKF> >::iterator It;
 		for ( It=feature_map->begin() ; It != feature_map->end(); It++ )
 		{
-			int step = ((EKF2DLandmark*)It->second.operator ->())->m_Step;
+			//int step = ((EKF2DLandmark*)It->second.operator ->())->m_Step;
 			unsigned int R=0;
 			unsigned int G=0;
 			unsigned int B=0;
