@@ -9,24 +9,23 @@
   <review status="unreviewed" notes=""/>
   <url>http://www.care-o-bot.org</url>
 
-	<depend package="roscpp"/>
-	<depend package="tf"/>
-	<depend package="sensor_msgs"/>
-	<depend package="cob_msgs"/>
-	<depend package="cob_srvs"/>
-	<depend package="opencv2"/>
-	<depend package="bfl"/>
-	<depend package="libwm4"/>
-	<depend package="tinyxml"/>
-	<depend package="cob_sensor_fusion"/>
-	<depend package="cob_vision_utils"/>
-	<depend package="cob_vision_ipa_utils"/>
-	<depend package="cob_vision_features"/>
-	<depend package="cob_vision_slam"/>
+  <depend package="roscpp"/>
+  <depend package="tf"/>
+  <depend package="sensor_msgs"/>
+  <depend package="cob_msgs"/>
+  <depend package="cob_srvs"/>
+  <depend package="opencv2"/>
+  <depend package="bfl"/>
+  <depend package="libwm4"/>
+  <depend package="tinyxml"/>
+  <depend package="cob_sensor_fusion"/>
+  <depend package="cob_vision_utils"/>
+  <depend package="cob_vision_ipa_utils"/>
+  <depend package="cob_vision_features"/>
+  <depend package="cob_vision_slam"/>
 
-	<rosdep name="boost"/>
-	<rosdep name="ann"/>
-	<rosdep name="glut"/>
+  <rosdep name="boost"/>
+  <rosdep name="ann"/>
+  <rosdep name="glut"/>
+	
 </package>
-
-
