@@ -71,6 +71,8 @@
 #include <message_filters/sync_policies/approximate_time.h>
 #include <message_filters/synchronizer.h>
 
+#include <tf/transform_listener.h>
+
 #include <cob_vision_utils/GlobalDefines.h>
 
 #include <wrappers/matrix/matrix_wrapper.h>
@@ -150,6 +152,8 @@ class CobDataAcquisitionNode
 		MatrixWrapper::Matrix transformation_camera2base_;
 
 		std::string data_directory_;
+
+		tf::TransformListener tf_listener;
 };
 
 // Constructor
@@ -223,7 +227,7 @@ unsigned long CobDataAcquisitionNode::getRobotPose()
 	return ipa_Utils::RET_OK;
 }
 
-unsigned long CobDataAcquisitionNode::getTransformationCam2Base()
+/*unsigned long CobDataAcquisitionNode::getTransformationCam2Base()
 {
 	if(srv_client_transform_camera2base_.call(transform_camera2base_srv_))
 	{
@@ -257,6 +261,24 @@ unsigned long CobDataAcquisitionNode::getTransformationCam2Base()
 	transformation_camera2base_(4,2) = 0;
 	transformation_camera2base_(4,3) = 0;
 	transformation_camera2base_(4,4) = 1;
+	return ipa_Utils::RET_OK;
+}*/
+
+unsigned long CobDataAcquisitionNode::getTransformationCam2Base()
+{
+    tf::StampedTransform transform;
+    try{
+      tf_listener.lookupTransform("/torso_upper_neck_tilt_link", "/base_link",
+                               ros::Time(0), transform);
+    }
+    catch (tf::TransformException ex){
+      ROS_ERROR("%s",ex.what());
+    }
+    ROS_INFO("rotation: %f,%f,%f\n%f,%f,%f\n%f,%f,%f",transform.getBasis()[0][0],transform.getBasis()[0][1],transform.getBasis()[1][2],
+    		transform.getBasis()[1][0],transform.getBasis()[1][1],transform.getBasis()[1][2],
+    		transform.getBasis()[2][0],transform.getBasis()[2][1],transform.getBasis()[2][2]);
+    ROS_INFO("translation: %f,%f,%f",transform.getOrigin().x(),transform.getOrigin().y(),transform.getOrigin().z());
+
 	return ipa_Utils::RET_OK;
 }
 

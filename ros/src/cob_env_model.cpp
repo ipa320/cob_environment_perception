@@ -196,6 +196,7 @@ class CobEnvModelNode
 		cob_srvs::GetTransformCamera2Base transform_camera2base_srv_;
 		cob_srvs::GetEnvModel env_model_srv_;
 
+		tf::TransformListener tf_listener;
 
 		//Matrix m_transformCam2Base;
 
@@ -214,6 +215,7 @@ class CobEnvModelNode
 		FastSLAM fast_SLAM_;
 		MatrixWrapper::Matrix transformation_camera2base_;
 		MatrixWrapper::Matrix transformation_tof2camera_;
+		MatrixWrapper::Matrix transformation_camera2neck_;
 		MatrixWrapper::Matrix transformation_tof2base_pltf_;
 
 
@@ -227,6 +229,7 @@ CobEnvModelNode::CobEnvModelNode(const ros::NodeHandle& nh)
 	  fast_SLAM_(100,1),
 	  transformation_camera2base_(4,4),
 	  transformation_tof2camera_(4,4),
+	  transformation_camera2neck_(4,4),
 	  transformation_tof2base_pltf_(4,4)
 {
 	init();
@@ -269,6 +272,27 @@ unsigned long CobEnvModelNode::init()
         	transformation_tof2camera_(j+1,k+1) = (double)trafo_tof2cam[j][k];
         }
     }
+
+    XmlRpc::XmlRpcValue trafo_cam2neck;
+
+    if (n.hasParam("trafo_cam2neck"))
+    {
+        n.getParam("trafo_cam2neck", trafo_cam2neck);
+    }
+    else
+    {
+        ROS_ERROR("Parameter trafo_cam2neck not set");
+    }
+    for (int j = 0; j<trafo_cam2neck.size(); j++ ) // j-th point
+    {
+        for (int k = 0; k<trafo_cam2neck[j].size(); k++ ) // k-th value of pos
+        {
+            //ROS_INFO("      pos value %d of %d = %f",k,traj_param[i][j][0].size(),(double)traj_param[i][j][0][k]);
+            //ROS_INFO("      vel value %d of %d = %f",k,traj_param[i][j][1].size(),(double)traj_param[i][j][1][k]);
+        	transformation_camera2neck_(j+1,k+1) = (double)trafo_cam2neck[j][k];
+        }
+    }
+
 
 	transformation_camera2base_(1,1) = 1;
 	transformation_camera2base_(1,2) = 0;
@@ -329,7 +353,7 @@ bool CobEnvModelNode::srvCallback_UpdateEnvModel(cob_srvs::Trigger::Request &req
 	ROS_INFO("srv command: %d",req.command);
 	if(req.command == 0)
 	{
-		if(getMeasurement() == ipa_Utils::RET_FAILED)
+		/*if(getMeasurement() == ipa_Utils::RET_FAILED)
 		{
 			ROS_ERROR("Could not get measurement.");
 			//return false;
@@ -338,13 +362,13 @@ bool CobEnvModelNode::srvCallback_UpdateEnvModel(cob_srvs::Trigger::Request &req
 		{
 			ROS_ERROR("Could not get robot pose.");
 			//return false;
-		}
+		}*/
 		if(getTransformationCam2Base() == ipa_Utils::RET_FAILED)
 		{
 			ROS_ERROR("Could not get transformation camera2base.");
 			//return false;
 		}
-		calculateTransformationMatrix();
+		/*calculateTransformationMatrix();
 		if(detectFeatures() == ipa_Utils::RET_FAILED)
 		{
 			ROS_ERROR("Could not detect features.");
@@ -354,7 +378,7 @@ bool CobEnvModelNode::srvCallback_UpdateEnvModel(cob_srvs::Trigger::Request &req
 		{
 			ROS_ERROR("Could not initialize filter.");
 			return false;
-		}
+		}*/
 	}
 	else if(req.command == 1)
 	{
@@ -590,7 +614,7 @@ unsigned long CobEnvModelNode::detectFeatures()
 	return ipa_Utils::RET_OK;
 }
 
-unsigned long CobEnvModelNode::getTransformationCam2Base()
+/*unsigned long CobEnvModelNode::getTransformationCam2Base()
 {
 	//TODO: ROS TF call to get neck angels or transformation
 	if(srv_client_transform_camera2base_.call(transform_camera2base_srv_))
@@ -626,6 +650,47 @@ unsigned long CobEnvModelNode::getTransformationCam2Base()
 	transformation_camera2base_(4,3) = 0;
 	transformation_camera2base_(4,4) = 1;
 	std::cout << "transformation_camera2base_: " << transformation_camera2base_ << std::endl;
+	return ipa_Utils::RET_OK;
+}*/
+
+unsigned long CobEnvModelNode::getTransformationCam2Base()
+{
+    tf::StampedTransform transform;
+    try{
+      tf_listener.lookupTransform("/base_link", "/torso_upper_neck_tilt_link",
+                               ros::Time(0), transform);
+    }
+    catch (tf::TransformException ex){
+      ROS_ERROR("%s",ex.what());
+    }
+
+    /*ROS_INFO("rotation: %f,%f,%f\n%f,%f,%f\n%f,%f,%f",transform.getBasis()[0][0],transform.getBasis()[0][1],transform.getBasis()[1][2],
+    		transform.getBasis()[1][0],transform.getBasis()[1][1],transform.getBasis()[1][2],
+    		transform.getBasis()[2][0],transform.getBasis()[2][1],transform.getBasis()[2][2]);*/
+
+    MatrixWrapper::Matrix transformation_neck2base(4,4);
+    for(int i=0; i<3; i++)
+    {
+    	for(int j=0; j<3; j++)
+    	{
+    		transformation_neck2base(i+1,j+1) = transform.getBasis()[i][j];
+    	}
+    }
+    transformation_neck2base(1,4) = transform.getOrigin().x();
+    transformation_neck2base(2,4) = transform.getOrigin().y();
+    transformation_neck2base(3,4) = transform.getOrigin().z();
+    transformation_neck2base(4,1) = 0;
+    transformation_neck2base(4,2) = 0;
+    transformation_neck2base(4,3) = 0;
+    transformation_neck2base(4,4) = 1;
+
+    transformation_camera2base_ = transformation_camera2neck_*transformation_neck2base;
+
+    std::cout << "transformation_camera2neck_: " << transformation_camera2neck_ << std::endl;
+    std::cout << "transformation_neck2base: " << transformation_neck2base << std::endl;
+    std::cout << "transformation_camera2base_: " << transformation_camera2base_ << std::endl;
+    ROS_INFO("translation: %f,%f,%f",transform.getOrigin().x(),transform.getOrigin().y(),transform.getOrigin().z());
+
 	return ipa_Utils::RET_OK;
 }
 
