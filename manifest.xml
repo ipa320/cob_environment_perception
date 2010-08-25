@@ -23,6 +23,7 @@
   <depend package="cob_vision_ipa_utils"/>
   <depend package="cob_vision_features"/>
   <depend package="cob_vision_slam"/>
+  <depend package="pcl_ros"/>
 
   <rosdep name="boost"/>
   <rosdep name="ann"/>

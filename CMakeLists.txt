@@ -38,12 +38,14 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/common/lib)
 
 rosbuild_add_executable(env_model_node ros/src/cob_env_model.cpp)
 rosbuild_add_executable(data_acquisition_node ros/src/data_acquisition.cpp)
+rosbuild_add_executable(icp_registration_node ros/src/icp_registration.cpp)
 
 
 # add compile flag
 #rosbuild_add_compile_flags(env_model -D__LINUX__ -D__COB_ROS__)
 rosbuild_add_compile_flags(env_model_node -D__LINUX__ -D__COB_ROS__)
 rosbuild_add_compile_flags(data_acquisition_node -D__LINUX__ -D__COB_ROS__)
+rosbuild_add_compile_flags(icp_registration_node -D__LINUX__ -D__COB_ROS__)
 
 
 # add compile flag
