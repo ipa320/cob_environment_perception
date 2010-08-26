@@ -66,6 +66,7 @@
 #include <pcl_ros/subscriber.h>
 #include <pcl/ros/register_point_struct.h>
 #include "pcl/point_types.h"
+#include "pcl/io/pcd_io.h"
 
 
 #include <opencv/cv.h>
@@ -102,7 +103,7 @@ struct CPCPoint
 	float x;
 	float y;
 	float z;
-	uint32_t BGR;
+	uint32_t rgb;
 
 	float confidence;
 	uint8_t isFeature;
@@ -114,7 +115,7 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(
   (float, x, x)
   (float, y, y)
   (float, z, z)
-  (uint32_t, BGR, bgr)
+  (uint32_t, rgb, rgb)
   (float, confidence, confidence)
   (uint8_t, isFeature, features));
 
@@ -560,7 +561,9 @@ unsigned long CobEnvModelNode::getMeasurement()
 void CobEnvModelNode::topicCallback_ColoredPointCloud(const pcl::PointCloud<CPCPoint>::ConstPtr& cloud/*const sensor_msgs::PointCloud2ConstPtr& cloud*/)
 {
 	CPCPoint pt1 = {1.0, 1.0, 0.0, 12, 4.0, 1};
-	ROS_INFO("callback: %d", cloud->width);
+	for(int i=0; i<100;i++)
+		ROS_INFO("callback: %d", cloud->points[i].rgb);
+	pcl::io::savePCDFileASCII ("test_pcd.pcd", *cloud);
 	/*pcl::PointCloud<CPCPoint> cpc;
 	sensor_msgs::PointCloud2 = cloud.get();
 	pcl::fromROSMsg(cloud,cpc);*/
