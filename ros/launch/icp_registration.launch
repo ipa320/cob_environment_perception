@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+
+	<!-- start environment modelling -->
+	<node pkg="cob_env_model" type="icp_registration_node" name="icp" ns="cob_env_model" cwd="node" respawn="false" output="screen">
+		<remap from="get_colored_pc" to="/sensor_fusion/shared/get_colored_pc"/>
+		<remap from="point_cloud" to="/point_cloud"/>
+		<param name="use_opengl" type="bool" value="false"/>
+	</node>
+
+	<rosparam command="load" ns="cob_env_model" file="$(find cob_env_model)/ros/launch/cob3-2_tof2cam.yaml"/>
+	
+</launch>
+

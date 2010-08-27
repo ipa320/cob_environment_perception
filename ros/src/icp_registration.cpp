@@ -64,9 +64,13 @@
 #include <cv_bridge/CvBridge.h>
 #include <image_transport/image_transport.h>
 #include <pcl_ros/subscriber.h>
+#include <pcl_ros/publisher.h>
 #include <pcl/ros/register_point_struct.h>
 #include "pcl/point_types.h"
 #include "pcl/io/pcd_io.h"
+#include "pcl/filters/voxel_grid.h"
+
+#include <cob_vision_ipa_utils/cpc_point.h>
 
 
 #include <opencv/cv.h>
@@ -97,27 +101,6 @@
 
 // external includes
 #include <boost/timer.hpp>
-
-struct CPCPoint
-{
-	float x;
-	float y;
-	float z;
-	uint32_t rgb;
-
-	float confidence;
-	uint8_t isFeature;
-};
-
-
-POINT_CLOUD_REGISTER_POINT_STRUCT(
-  CPCPoint,
-  (float, x, x)
-  (float, y, y)
-  (float, z, z)
-  (uint32_t, rgb, rgb)
-  (float, confidence, confidence)
-  (uint8_t, isFeature, features));
 
 
 using namespace ipa_Features;
@@ -194,6 +177,8 @@ class CobEnvModelNode
 		// topics to subscribe, callback is called for new messages arriving
 		//pcl_ros::Subscriber<sensor_msgs::PointCloud2> topicSub_coloredPointCloud_;
 		pcl_ros::Subscriber<CPCPoint> topicSub_coloredPointCloud_;
+		pcl_ros::Publisher<CPCPoint> topicPub_filteredPointCloud_;
+
 		tf::TransformListener transform_listener_;
 
 		ros::ServiceServer srv_server_trigger_;
@@ -259,6 +244,7 @@ CobEnvModelNode::CobEnvModelNode(const ros::NodeHandle& nh)
 
 	//topicSub_coloredPointCloud_.subscribe(n,"point_cloud", 1, boost::bind(&CobEnvModelNode::topicCallback_ColoredPointCloud, this, _1));
 	topicSub_coloredPointCloud_.subscribe(n,"point_cloud", 1, boost::bind(&CobEnvModelNode::topicCallback_ColoredPointCloud, this, _1));
+	topicPub_filteredPointCloud_.advertise(n,"point_cloud_filtered", 1);
 }
 
 unsigned long CobEnvModelNode::init()
@@ -560,13 +546,29 @@ unsigned long CobEnvModelNode::getMeasurement()
 
 void CobEnvModelNode::topicCallback_ColoredPointCloud(const pcl::PointCloud<CPCPoint>::ConstPtr& cloud/*const sensor_msgs::PointCloud2ConstPtr& cloud*/)
 {
-	CPCPoint pt1 = {1.0, 1.0, 0.0, 12, 4.0, 1};
-	for(int i=0; i<100;i++)
-		ROS_INFO("callback: %d", cloud->points[i].rgb);
-	pcl::io::savePCDFileASCII ("test_pcd.pcd", *cloud);
-	/*pcl::PointCloud<CPCPoint> cpc;
-	sensor_msgs::PointCloud2 = cloud.get();
-	pcl::fromROSMsg(cloud,cpc);*/
+	pcl::io::savePCDFileASCII ("cloud_unfiltered.pcd", *cloud);
+	/*pcl::PointCloud<pcl::PointXYZ> input;
+	  pcl::PCDReader reader;
+	  reader.read ("cloud_unfiltered.pcd", input);*/
+
+	  ROS_INFO ("PointCloud before filtering: %d data points (%s).", cloud->width * cloud->height, pcl::getFieldsList(*cloud).c_str ());
+
+	pcl::PointCloud<CPCPoint> cloud_filtered;
+	/*pcl::VoxelGrid<pcl::PointXYZ> vox_filter;
+	vox_filter.setInputCloud(boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >(input));
+	vox_filter.setLeafSize(0.01, 0.01, 0.01);
+	vox_filter.filter(cloud_filtered);*/
+	pcl::VoxelGrid<CPCPoint> vox_filter;
+	vox_filter.setInputCloud(cloud);
+	vox_filter.setLeafSize(0.02, 0.02, 0.02);
+	//vox_filter.setDownsampleAllData(false);
+	boost::timer t;
+	vox_filter.filter(cloud_filtered);
+	ROS_INFO("[env_model_node] Pointcloud downsampled.");
+	ROS_INFO("\tTime: %f", t.elapsed());
+	ROS_INFO ("PointCloud after filtering: %d data points (%s).", cloud_filtered.width * cloud_filtered.height, pcl::getFieldsList (cloud_filtered).c_str ());
+	pcl::io::savePCDFileASCII ("cloud_filtered.pcd", cloud_filtered);
+	topicPub_filteredPointCloud_.publish(cloud_filtered);
 }
 
 unsigned long CobEnvModelNode::detectFeatures()
