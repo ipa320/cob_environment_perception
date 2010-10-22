@@ -69,6 +69,9 @@
 #include "pcl/point_types.h"
 #include "pcl/io/pcd_io.h"
 #include "pcl/filters/voxel_grid.h"
+#include "pcl/sample_consensus/method_types.h"
+#include "pcl/sample_consensus/model_types.h"
+#include "pcl/segmentation/sac_segmentation.h"
 
 #include <cob_vision_ipa_utils/cpc_point.h>
 
@@ -554,19 +557,15 @@ void CobEnvModelNode::topicCallback_ColoredPointCloud(const pcl::PointCloud<CPCP
 	  ROS_INFO ("PointCloud before filtering: %d data points (%s).", cloud->width * cloud->height, pcl::getFieldsList(*cloud).c_str ());
 
 	pcl::PointCloud<CPCPoint> cloud_filtered;
-	/*pcl::VoxelGrid<pcl::PointXYZ> vox_filter;
-	vox_filter.setInputCloud(boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >(input));
-	vox_filter.setLeafSize(0.01, 0.01, 0.01);
-	vox_filter.filter(cloud_filtered);*/
+	/*Voxelization
 	pcl::VoxelGrid<CPCPoint> vox_filter;
 	vox_filter.setInputCloud(cloud);
 	vox_filter.setLeafSize(0.02, 0.02, 0.02);
-	//vox_filter.setDownsampleAllData(false);
 	boost::timer t;
 	vox_filter.filter(cloud_filtered);
 	ROS_INFO("[env_model_node] Pointcloud downsampled.");
 	ROS_INFO("\tTime: %f", t.elapsed());
-	ROS_INFO ("PointCloud after filtering: %d data points (%s).", cloud_filtered.width * cloud_filtered.height, pcl::getFieldsList (cloud_filtered).c_str ());
+	ROS_INFO ("PointCloud after filtering: %d data points (%s).", cloud_filtered.width * cloud_filtered.height, pcl::getFieldsList (cloud_filtered).c_str ());*/
 	pcl::io::savePCDFileASCII ("cloud_filtered.pcd", cloud_filtered);
 	topicPub_filteredPointCloud_.publish(cloud_filtered);
 }
