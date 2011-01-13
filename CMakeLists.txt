@@ -36,19 +36,21 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/common/lib)
 #	common/src/EnvReconstructionControlFlow.cpp
 #	common/src/CuiEnvReconstruction.cpp)
 
-rosbuild_add_executable(env_model_node ros/src/cob_env_model.cpp)
-rosbuild_add_executable(data_acquisition_node ros/src/data_acquisition.cpp)
-rosbuild_add_executable(icp_registration_node ros/src/icp_registration.cpp)
+#rosbuild_add_executable(env_model_node ros/src/cob_env_model.cpp)
+#rosbuild_add_executable(data_acquisition_node ros/src/data_acquisition.cpp)
+#rosbuild_add_executable(icp_registration_node ros/src/icp_registration.cpp)
+rosbuild_add_executable(point_cloud_filter_node ros/src/point_cloud_filter.cpp)
 
 
 # add compile flag
 #rosbuild_add_compile_flags(env_model -D__LINUX__ -D__COB_ROS__)
-rosbuild_add_compile_flags(env_model_node -D__LINUX__ -D__COB_ROS__)
-rosbuild_add_compile_flags(data_acquisition_node -D__LINUX__ -D__COB_ROS__)
-rosbuild_add_compile_flags(icp_registration_node -D__LINUX__ -D__COB_ROS__)
+#rosbuild_add_compile_flags(env_model_node -D__LINUX__ -D__COB_ROS__)
+#rosbuild_add_compile_flags(data_acquisition_node -D__LINUX__ -D__COB_ROS__)
+#rosbuild_add_compile_flags(icp_registration_node -D__LINUX__ -D__COB_ROS__)
+rosbuild_add_compile_flags(point_cloud_filter_node -D__LINUX__ -D__COB_ROS__)
 
 
 # add compile flag
 #target_link_libraries(env_model ann glut mesasr cob_vision_ipa_utils cob_vision_features cob_vision_sensor_fusion)
-target_link_libraries(env_model_node glut)
+#target_link_libraries(env_model_node glut)
 
