@@ -40,6 +40,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/common/lib)
 #rosbuild_add_executable(data_acquisition_node ros/src/data_acquisition.cpp)
 #rosbuild_add_executable(icp_registration_node ros/src/icp_registration.cpp)
 rosbuild_add_executable(point_cloud_filter_node ros/src/point_cloud_filter.cpp)
+rosbuild_add_executable(aggregate_point_map_node ros/src/aggregate_point_map.cpp)
 
 
 # add compile flag

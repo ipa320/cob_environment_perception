@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+	<!-- start environment modelling -->
+	<node pkg="cob_env_model" type="aggregate_point_map_node" name="aggregate_point_map" ns="cob_env_model" cwd="node" respawn="false" output="screen">
+		<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
+	</node>
+</launch>
+
