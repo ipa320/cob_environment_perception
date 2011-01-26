@@ -91,6 +91,7 @@ public:
 	{
 		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &PointCloudFilter::PointCloudSubCallback, this);
 		point_cloud_pub_ = n_.advertise<sensor_msgs::PointCloud2>("point_cloud2_filtered",1);
+		filter_speckle_ = true;
 	}
 
 
@@ -118,7 +119,6 @@ public:
 
 		float* f_ptr = 0;
 		float* i_ptr = 0;
-		float* conf_ptr = 0;
 		int pc_msg_idx=0;
 		for (int row = 0; row < xyz_mat_32F3.rows; row++)
 		{
@@ -135,6 +135,7 @@ public:
 			if(filter_by_amplitude_) FilterByAmplitude(xyz_mat_32F3, intensity_mat_32F1);
 			if(filter_speckle_) FilterSpeckles(xyz_mat_32F3);
 			if(filter_tearoff_) FilterTearOffEdges(xyz_mat_32F3);
+			pc_msg_idx=0;
 			for (int row = 0; row < xyz_mat_32F3.rows; row++)
 			{
 				f_ptr = xyz_mat_32F3.ptr<float>(row);
