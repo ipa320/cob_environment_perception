@@ -19,8 +19,8 @@
  *
  * Date of creation: 01/2011
  * ToDo:
- * Create ROS parameters for filter
- * Write as nodelet
+ * Only update if new robot pose available
+ * Resample point cloud
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
@@ -62,8 +62,6 @@
 
 // ROS includes
 #include <ros/ros.h>
-#include <pcl_ros/subscriber.h>
-#include <pcl_ros/publisher.h>
 #include <pcl/io/io.h>
 #include <tf/transform_listener.h>
 
@@ -84,7 +82,8 @@ class AggregatePointMap
 public:
     // Constructor
 	AggregatePointMap(const ros::NodeHandle& nh)
-	  :	n_(nh)
+	  :	n_(nh),
+	   	first_(true)
 	{
 		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &AggregatePointMap::pointCloudSubCallback, this);
 		point_cloud_pub_ = n_.advertise<sensor_msgs::PointCloud2>("point_cloud2_map",1);
@@ -109,8 +108,14 @@ public:
     	catch (tf::TransformException ex){
     		ROS_ERROR("%s",ex.what());
     	}
-    	//TODO: get new version of PCL
-    	//pcl::concatenatePointCloud (map_, *(pc.get()), map_);
+    	if(first_)
+    	{
+    		map_ = *(pc.get());
+    		map_.header.frame_id="/map";
+    		first_ = false;
+    	}
+    	else
+    		pcl::concatenatePointCloud (map_, *(pc.get()), map_);
 
 		point_cloud_pub_.publish(map_);
     }
@@ -218,10 +223,8 @@ protected:
 
     sensor_msgs::PointCloud2 map_;
 
-    bool filter_by_amplitude_;
-    bool filter_tearoff_;
-    bool filter_speckle_;
-    bool filter_by_confidence_;
+    bool first_;
+
 };
 
 //#######################

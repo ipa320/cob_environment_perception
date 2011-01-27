@@ -24,7 +24,7 @@
   <depend package="cob_vision_features"/>
   <depend package="cob_vision_slam"/-->
   <depend package="pcl"/>
-  <depend package="pcl_ros"/>
+  <!--depend package="pcl_ros"/-->
   <depend package="eigen3"/>
 
   <rosdep name="boost"/>

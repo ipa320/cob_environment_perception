@@ -62,8 +62,6 @@
 
 // ROS includes
 #include <ros/ros.h>
-#include <pcl_ros/subscriber.h>
-#include <pcl_ros/publisher.h>
 
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
