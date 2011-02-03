@@ -176,16 +176,27 @@ public:
 					//pcl::VoxelGrid<CPCPoint> vox_filter;
 					icp.setInputCloud(boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >(pc_in));
 					icp.setInputTarget(boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >(pc_map));
-					icp.setMaximumIterations(2);
+					icp.setMaximumIterations(50);
 					icp.setMaxCorrespondenceDistance(0.1);
+					icp.setTransformationEpsilon (1e-6);
 					pcl::PointCloud<pcl::PointXYZ> pc_map_new;
 					icp.align(pc_map_new);
-					pcl::toROSMsg(pc_map_new, map_);
-					//pcl::concatenatePointCloud (map_, *(pc.get()), map_);
+					sensor_msgs::PointCloud2 pc_msg_map_new;
+					pcl::toROSMsg(pc_map_new, pc_msg_map_new);
+					ROS_INFO("Aligned PC has %d points", pc_msg_map_new.height*pc_msg_map_new.width);
+					ROS_INFO("Old map has %d points", map_.height*map_.width);
+					pcl::concatenatePointCloud (map_, pc_msg_map_new, map_);
+					pcl::fromROSMsg(map_, pc_map);
+					ROS_INFO("New map has %d points", map_.height*map_.width);
+					pcl::io::savePCDFileASCII ("cloud_in.pcd", pc_in);
+					pcl::io::savePCDFileASCII ("cloud_out.pcd", pc_map_new);
+					pcl::io::savePCDFileASCII ("map.pcd", pc_map);
 				}
 
 				point_cloud_pub_.publish(map_);
     		}
+    		else
+    			ROS_INFO("Skipped");
     	}
     	catch (tf::TransformException ex){
     		ROS_ERROR("%s",ex.what());

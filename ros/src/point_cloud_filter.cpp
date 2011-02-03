@@ -89,7 +89,7 @@ public:
 	{
 		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &PointCloudFilter::PointCloudSubCallback, this);
 		point_cloud_pub_ = n_.advertise<sensor_msgs::PointCloud2>("point_cloud2_filtered",1);
-		filter_speckle_ = true;
+		filter_by_amplitude_ = true;
 	}
 
 
