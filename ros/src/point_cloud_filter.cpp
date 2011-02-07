@@ -64,7 +64,6 @@
 #include <ros/ros.h>
 #include <pcl_ros/subscriber.h>
 #include <pcl_ros/publisher.h>
-
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 
@@ -74,7 +73,8 @@
 // external includes
 #include <boost/timer.hpp>
 #include <cob_vision_utils/VisionUtils.h>
-
+#include "pcl/filters/statistical_outlier_removal.h"
+ #include "pcl/point_types.h"
 
 //####################
 //#### node class ####
@@ -89,9 +89,20 @@ public:
 	    filter_speckle_(false),
 	    filter_by_confidence_(false)
 	{
-		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &PointCloudFilter::PointCloudSubCallback, this);
+		point_cloud_sub_ = n_.subsubscribe("point_cloud2", 1, &PointCloudFilter::PointCloudSubCallback, this);
 		point_cloud_pub_ = n_.advertise<sensor_msgs::PointCloud2>("point_cloud2_filtered",1);
-		filter_speckle_ = true;
+		//filter_speckle_ = true;
+		n_.getParam("/cob_env_model/point_cloud_filter/filter_by_amplitude", filter_by_amplitude_);
+		std::cout << "filter by amplitude: " << filter_by_amplitude_ << std::endl;
+		n_.getParam("/cob_env_model/point_cloud_filter/filter_tearoff", filter_tearoff_);
+		std::cout << "filter tearoff: " << filter_tearoff_<< std::endl;
+		n_.getParam("/cob_env_model/point_cloud_filter/filter_speckle", filter_speckle_);
+		std::cout << "filter speckle: " << filter_speckle_ << std::endl;
+		n_.getParam("/cob_env_model/point_cloud_filter/filter_by_confidence", filter_by_confidence_);
+		std::cout << "filter by confidence: " << filter_by_confidence_<< std::endl;
+		n_.getParam("/cob_env_model/point_cloud_filter/statistical_outlier_filter",statistical_filter_);
+		std::cout<<"Statistical Outlier Removal filter :"<<statistical_filter_<<std::endl;
+
 	}
 
 
@@ -130,6 +141,13 @@ public:
 				memcpy(&i_ptr[col], &pc->data[pc_msg_idx * pc->point_step + i_offset], sizeof(float));
 			}
 		}
+		///////////////////////////////////////////////////////////////////
+				std::cout<<" pc height::"<<pc->height;
+
+				std::cout<<" pc width ::"<<pc->width;
+				std::cout<<" pc ::"<<pc<<std::endl;
+				std::cout<<" pc data ::"<<(int)xyz_mat_32F3.flags<<std::endl;
+		////////////////////////////////////////////////////////////////////
 		if(filter_speckle_ || filter_by_amplitude_ || filter_tearoff_)
 		{
 			if(filter_by_amplitude_) FilterByAmplitude(xyz_mat_32F3, intensity_mat_32F1);
@@ -146,6 +164,7 @@ public:
 			}
 		}
 		if(filter_by_confidence_) FilterByConfidence(pc);
+		if(statistical_filter_) FilterStatisticalOutlierRemoval(xyz_mat_32F3);
 
 		point_cloud_pub_.publish(pc);
     }
@@ -153,18 +172,19 @@ public:
     void FilterSpeckles(cv::Mat xyz_mat_32F3)
     {
     	cv::Mat buf;
-    	ipa_Utils::FilterSpeckles(xyz_mat_32F3, 20, 0.01, buf);
+    	ipa_Utils::FilterSpeckles(xyz_mat_32F3, 50,0.1, buf);
     }
 
     void FilterByAmplitude(cv::Mat xyz_mat_32F3, cv::Mat intensity_mat_32F1)
     {
-    	ipa_Utils::FilterByAmplitude(xyz_mat_32F3, intensity_mat_32F1, 0, 0, 500, 60000);
+    	ipa_Utils::FilterByAmplitude(xyz_mat_32F3, intensity_mat_32F1, 0, 0, 3000, 60000);
     }
 
     void FilterTearOffEdges(cv::Mat xyz_mat_32F3)
     {
     	ipa_Utils::FilterTearOffEdges(xyz_mat_32F3, 0, 6);
     }
+
 
     void FilterByConfidence(const sensor_msgs::PointCloud2Ptr& pc)
     {
@@ -189,7 +209,41 @@ public:
 			}
 		}
     }
+    void FilterStatisticalOutlierRemoval(cv::Mat xyz_mat_32F3)
+    {
+    	int i;
+    	for(i=0;i<)
+    	pcl::StatisticalOutlierRemoval<xyz_mat_32F3>::applyFilter(PointCloud2 &  output);
 
+    	/*pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ> ()), cloud_filtered (new pcl::PointCloud<pcl::PointXYZ> ());
+
+    		  // Fill in the cloud data
+    		  pcl::PCDReader reader;
+    		  reader.read<pcl::PointXYZ> ("data/table_scene_lms400.pcd", *cloud);
+
+    		  std::cerr << "Cloud before filtering: " << std::endl;
+    		  std::cerr << *cloud << std::endl;
+
+    		  // Create the filtering object
+    		  pcl::StatisticalOutlierRemoval<sensor_msgs::PointCloud2>::applyFilter (PointCloud2 &output)
+
+    		  pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
+    		  sor.setInputCloud (cloud);
+    		  sor.setMeanK (50);
+    		  sor.setStddevMulThresh (1.0);
+    		  sor.filter (*cloud_filtered);
+
+    		  std::cerr << "Cloud after filtering: " << std::endl;
+    		  std::cerr << *cloud_filtered << std::endl;
+
+    		  pcl::PCDWriter writer;
+    		  writer.write<pcl::PointXYZ> ("table_scene_lms400_inliers.pcd", *cloud_filtered, false);
+
+    		  sor.setNegative (true);
+    		  sor.filter (*cloud_filtered);
+    		  writer.write<pcl::PointXYZ> ("table_scene_lms400_outliers.pcd", *cloud_filtered, false);
+*/
+    }
     ros::NodeHandle n_;
 
 
@@ -201,6 +255,7 @@ protected:
     bool filter_tearoff_;
     bool filter_speckle_;
     bool filter_by_confidence_;
+    bool statistical_filter_;
 };
 
 //#######################
@@ -220,4 +275,5 @@ int main(int argc, char** argv)
 
 	return 0;
 }
+
 
