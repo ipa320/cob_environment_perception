@@ -29,7 +29,8 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/common/lib)
 #rosbuild_add_executable(example examples/example.cpp)
 
 # add include search paths
-#INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include
+${PROJECT_SOURCE_DIR}/ros/include)
 
 # add project executable
 #rosbuild_add_executable(env_model common/src/EnvReconstructionMain.cpp

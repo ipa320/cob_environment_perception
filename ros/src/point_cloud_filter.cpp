@@ -114,7 +114,7 @@ public:
 
     void PointCloudSubCallback(const sensor_msgs::PointCloud2Ptr& pc)
     {
-    	ROS_INFO("PointCloudSubCallback");
+    	//ROS_INFO("PointCloudSubCallback");
 		cv::Mat xyz_mat_32F3 = cv::Mat(pc->height, pc->width, CV_32FC3);
 		cv::Mat intensity_mat_32F1 = cv::Mat(pc->height, pc->width, CV_32FC1);
 

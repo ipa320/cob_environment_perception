@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
 	<!-- load cob description -->
-  <include file="$(find cob_description)/ros/robots/upload_cob3.launch" />
+  <!--include file="$(find cob_description)/ros/robots/upload_cob3.launch" /-->
 	<!-- start map server -->
 	<node pkg="map_server" type="map_server" name="map_server" cwd="node" respawn="false" output="screen" args="$(find cob_2dnav)/common/maps/ipa_kitchen/map.yaml"/>
   <!-- start image processing nodes -->
