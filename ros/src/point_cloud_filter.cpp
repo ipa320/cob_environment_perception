@@ -156,7 +156,7 @@ public:
 
     void FilterByAmplitude(cv::Mat xyz_mat_32F3, cv::Mat intensity_mat_32F1)
     {
-    	ipa_Utils::FilterByAmplitude(xyz_mat_32F3, intensity_mat_32F1, 0, 0, 500, 60000);
+    	ipa_Utils::FilterByAmplitude(xyz_mat_32F3, intensity_mat_32F1, 0, 0, 1000, 60000);
     }
 
     void FilterTearOffEdges(cv::Mat xyz_mat_32F3)

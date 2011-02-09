@@ -125,8 +125,9 @@ public:
     			std::cout << "Registering new point cloud" << std::endl;
     			transform_old_ = transform;
 				//transformPointCloud("/map", transform, pc->header.stamp, *(pc.get()), *(pc.get()));
-    			pcl_ros::transformPointCloud(*(pc.get()), *(pc.get()), transform);
-    			pc->header.frame_id = "/map";
+    			pcl_ros::transformPointCloud ("/map", *(pc.get()), *(pc.get()), tf_listener_);
+    			//pcl_ros::transformPointCloud(*(pc.get()), *(pc.get()), transform);
+    			//pc->header.frame_id = "/map";
 				if(first_)
 				{
 					map_ = *(pc.get());
@@ -136,16 +137,8 @@ public:
 				else
 					map_ += *(pc.get());
 				//pcl::PointCloud<pcl::PointXYZ>::Ptr msg(&map_);
-				//point_cloud_pub_.publish(msg);
+				point_cloud_pub_.publish(map_);
 
-				//pcl::PointCloud<pcl::PointXYZ> pc_in;
-				//pcl::fromROSMsg(*(pc.get()), pc_in);
-				std::stringstream ss;
-				ss << "frame_" << frame_ctr << ".pcd";
-				pcl::io::savePCDFileASCII (ss.str(), *(pc.get()));
-				frame_ctr++;
-				//ROS_INFO("New map has %d points", map_.height*map_.width);
-				//pcl::io::savePCDFileASCII ("map.pcd", map_);
     		}
     		else
     			ROS_INFO("Skipped");
@@ -183,14 +176,7 @@ public:
 				}
 				else
 				{
-					//pcl::PointCloud<pcl::PointXYZ> pc_in, pc_map;
-					//pcl::PCDReader reader;
-					//reader.read ("/home/goa/git/cob3_intern/cob_sandbox/pcl_test/common/files/cob3-2/pcd_kitchen/kitchen_01_world.pcd", pc_in);
-					//reader.read ("/home/goa/git/cob3_intern/cob_sandbox/pcl_test/common/files/cob3-2/pcd_kitchen/kitchen_02_world.pcd", pc_map);
-					//pcl::fromROSMsg(*(pc.get()), pc_in);
-					//pcl::fromROSMsg(map_, pc_map);
 					pcl::IterativeClosestPoint<pcl::PointXYZ,pcl::PointXYZ> icp;
-					//pcl::VoxelGrid<CPCPoint> vox_filter;
 					icp.setInputCloud(pc);
 					icp.setInputTarget(map_.makeShared());
 					icp.setMaximumIterations(50);
@@ -200,19 +186,8 @@ public:
 					icp.align(pc_map_new);
 					map_ += pc_map_new;
 					ROS_INFO("Aligned PC has %d points", map_.size());
-					//sensor_msgs::PointCloud2 pc_msg_map_new;
-					//pcl::toROSMsg(pc_map, map_);
-					//ROS_INFO("Aligned PC has %d points", pc_msg_map_new.height*pc_msg_map_new.width);
-					//ROS_INFO("Old map has %d points", map_.height*map_.width);
-					//pcl::concatenatePointCloud (map_, pc_msg_map_new, map_);
-					//pcl::fromROSMsg(map_, pc_map);
-					//ROS_INFO("New map has %d points", map_.height*map_.width);
-					pcl::io::savePCDFileASCII ("cloud_in.pcd", *(pc.get()));
-					pcl::io::savePCDFileASCII ("cloud_out.pcd", pc_map_new);
-					pcl::io::savePCDFileASCII ("map.pcd", map_);
 				}
-
-				//point_cloud_pub_.publish(map_);
+				point_cloud_pub_.publish(map_);
     		}
     		else
     			ROS_INFO("Skipped");
