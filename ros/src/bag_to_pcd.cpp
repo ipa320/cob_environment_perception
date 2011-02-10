@@ -138,8 +138,8 @@ int
 		  std::stringstream ss;
 		  ss << output_dir << "/" << cloud_t.header.stamp << ".pcd";
 		  std::cerr << "Data saved to " << ss.str () << std::endl;
-		  pcl::io::savePCDFile (ss.str (), cloud_t, Eigen3::Vector4f::Zero (),
-								Eigen3::Quaternionf::Identity (), true);
+		  pcl::io::savePCDFile (ss.str (), cloud_t, Eigen::Vector4f::Zero (),
+								Eigen::Quaternionf::Identity (), true);
 		}
   	}
 	catch (tf::TransformException ex){
