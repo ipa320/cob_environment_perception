@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<launch>
+	<!-- start environment modelling -->
+	<node pkg="cob_env_model" type="aggregate_point_map_node" name="aggregate_point_map" ns="cob_env_model" cwd="node" respawn="false" output="screen">
+		<remap from="point_cloud2" to="point_cloud2_filtered"/>
+	</node>
+		<!-- start map server -->
+	<node pkg="map_server" type="map_server" name="map_server" cwd="node" respawn="false" output="screen" args="$(find cob_2dnav)/common/maps/ipa_kitchen/map.yaml"/>
+  <!-- start image processing nodes -->
+  <node ns="stereo/left" pkg="image_proc" type="image_proc" respawn="false" name="left_image_proc" />
+  <node ns="stereo/right" pkg="image_proc" type="image_proc" respawn="false" name="right_image_proc" />
+  <include file="$(find cob_env_model)/ros/launch/point_cloud_filter.launch" />
+  <node pkg="rosbag" type="play" name="rosbag_play" cwd="node" respawn="false" output="screen" args="/media/My\ Passport/Daten/20101216_bagfiles/pltf_neck_joystick_table.bag --pause"/>
+  <!--node pkg="rosbag" type="play" name="rosbag_play" cwd="node" respawn="false" output="screen" args="/home/goa/pltf_neck_joystick_kitchen.bag pause"/-->
+</launch>
+
