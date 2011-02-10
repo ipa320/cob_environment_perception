@@ -88,7 +88,7 @@ public:
 	    filter_speckle_(false),
 	    filter_by_confidence_(false)
 	{
-		point_cloud_sub_ = n_.subsubscribe("point_cloud2", 1, &PointCloudFilter::PointCloudSubCallback, this);
+		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &PointCloudFilter::PointCloudSubCallback, this);
 		point_cloud_pub_ = n_.advertise<sensor_msgs::PointCloud2>("point_cloud2_filtered",1);
 		//filter_speckle_ = true;
 		n_.getParam("/cob_env_model/point_cloud_filter/filter_by_amplitude", filter_by_amplitude_);
@@ -176,11 +176,7 @@ public:
 
     void FilterByAmplitude(cv::Mat xyz_mat_32F3, cv::Mat intensity_mat_32F1)
     {
-<<<<<<< HEAD
     	ipa_Utils::FilterByAmplitude(xyz_mat_32F3, intensity_mat_32F1, 0, 0, 1000, 60000);
-=======
-    	ipa_Utils::FilterByAmplitude(xyz_mat_32F3, intensity_mat_32F1, 0, 0, 3000, 60000);
->>>>>>> 0c7a28ad5c8c11b3b8e506033a62cb77c2d89f32
     }
 
     void FilterTearOffEdges(cv::Mat xyz_mat_32F3)
@@ -214,12 +210,11 @@ public:
     }
     void FilterStatisticalOutlierRemoval(cv::Mat xyz_mat_32F3)
     {
-    	int i;
+    	/*int i;
     	for(i=0;i<)
     	pcl::StatisticalOutlierRemoval<xyz_mat_32F3>::applyFilter(PointCloud2 &  output);
 
-    	/*pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ> ()), cloud_filtered (new pcl::PointCloud<pcl::PointXYZ> ());
-
+    	pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ> ()), cloud_filtered (new pcl::PointCloud<pcl::PointXYZ> ());
     		  // Fill in the cloud data
     		  pcl::PCDReader reader;
     		  reader.read<pcl::PointXYZ> ("data/table_scene_lms400.pcd", *cloud);
