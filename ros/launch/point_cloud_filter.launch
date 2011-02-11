@@ -7,7 +7,6 @@
 		<param name="filter_tearoff" type="bool" value="false"/>
 		<param name="filter_speckle" type="bool" value="false"/>
 		<param name="filter_by_confidence" type="bool" value="false"/>
-		<param name="statistical_outlier_filter" type="bool" value="true"/>
 	</node>
 </launch>
 											

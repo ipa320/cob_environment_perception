@@ -62,8 +62,6 @@
 
 // ROS includes
 #include <ros/ros.h>
-#include <pcl_ros/subscriber.h>
-#include <pcl_ros/publisher.h>
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 
@@ -73,8 +71,10 @@
 // external includes
 #include <boost/timer.hpp>
 #include <cob_vision_utils/VisionUtils.h>
-#include "pcl/filters/statistical_outlier_removal.h"
- #include "pcl/point_types.h"
+#include <pcl_ros/point_cloud.h>
+//#include <pcl/io/io.h>
+//#include "pcl/point_types.h"
+
 
 //####################
 //#### node class ####
@@ -88,10 +88,11 @@ public:
 	    filter_tearoff_(false),
 	    filter_speckle_(false),
 	    filter_by_confidence_(false)
+
 	{
-		point_cloud_sub_ = n_.subsubscribe("point_cloud2", 1, &PointCloudFilter::PointCloudSubCallback, this);
+		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &PointCloudFilter::PointCloudSubCallback, this);
 		point_cloud_pub_ = n_.advertise<sensor_msgs::PointCloud2>("point_cloud2_filtered",1);
-		//filter_speckle_ = true;
+
 		n_.getParam("/cob_env_model/point_cloud_filter/filter_by_amplitude", filter_by_amplitude_);
 		std::cout << "filter by amplitude: " << filter_by_amplitude_ << std::endl;
 		n_.getParam("/cob_env_model/point_cloud_filter/filter_tearoff", filter_tearoff_);
@@ -100,8 +101,6 @@ public:
 		std::cout << "filter speckle: " << filter_speckle_ << std::endl;
 		n_.getParam("/cob_env_model/point_cloud_filter/filter_by_confidence", filter_by_confidence_);
 		std::cout << "filter by confidence: " << filter_by_confidence_<< std::endl;
-		n_.getParam("/cob_env_model/point_cloud_filter/statistical_outlier_filter",statistical_filter_);
-		std::cout<<"Statistical Outlier Removal filter :"<<statistical_filter_<<std::endl;
 
 	}
 
@@ -111,63 +110,55 @@ public:
     {
     	/// void
     }
+    void PointCloudSubCallback(const sensor_msgs::PointCloud2Ptr pc)
+        {
+        	//ROS_INFO("PointCloudSubCallback");
 
-    void PointCloudSubCallback(const sensor_msgs::PointCloud2Ptr& pc)
-    {
-    	//ROS_INFO("PointCloudSubCallback");
-		cv::Mat xyz_mat_32F3 = cv::Mat(pc->height, pc->width, CV_32FC3);
-		cv::Mat intensity_mat_32F1 = cv::Mat(pc->height, pc->width, CV_32FC1);
+    		cv::Mat xyz_mat_32F3 = cv::Mat(pc->height, pc->width, CV_32FC3);
+    		cv::Mat intensity_mat_32F1 = cv::Mat(pc->height, pc->width, CV_32FC1);
 
-		//assumption: data order is always x->y->z in PC, datatype = float
-		int x_offset = 0, i_offset = 0;
-		for (size_t d = 0; d < pc->fields.size(); ++d)
-		{
-			if(pc->fields[d].name == "x")
-				x_offset = pc->fields[d].offset;
-			if(pc->fields[d].name == "intensity")
-				i_offset = pc->fields[d].offset;
-		}
+    		//assumption: data order is always x->y->z in PC, datatype = float
+    		int x_offset = 0, i_offset = 0;
+    		for (size_t d = 0; d < pc->fields.size(); ++d)
+    		{
+    			if(pc->fields[d].name == "x")
+    				x_offset = pc->fields[d].offset;
+    			if(pc->fields[d].name == "intensity")
+    				i_offset = pc->fields[d].offset;
+    		}
 
-		float* f_ptr = 0;
-		float* i_ptr = 0;
-		int pc_msg_idx=0;
-		for (int row = 0; row < xyz_mat_32F3.rows; row++)
-		{
-			f_ptr = xyz_mat_32F3.ptr<float>(row);
-			i_ptr = intensity_mat_32F1.ptr<float>(row);
-			for (int col = 0; col < xyz_mat_32F3.cols; col++, pc_msg_idx++)
-			{
-				memcpy(&f_ptr[3*col], &pc->data[pc_msg_idx * pc->point_step + x_offset], 3*sizeof(float));
-				memcpy(&i_ptr[col], &pc->data[pc_msg_idx * pc->point_step + i_offset], sizeof(float));
-			}
-		}
-		///////////////////////////////////////////////////////////////////
-				std::cout<<" pc height::"<<pc->height;
+    		float* f_ptr = 0;
+    		float* i_ptr = 0;
+    		int pc_msg_idx=0;
+    		for (int row = 0; row < xyz_mat_32F3.rows; row++)
+    		{
+    			f_ptr = xyz_mat_32F3.ptr<float>(row);
+    			i_ptr = intensity_mat_32F1.ptr<float>(row);
+    			for (int col = 0; col < xyz_mat_32F3.cols; col++, pc_msg_idx++)
+    			{
+    				memcpy(&f_ptr[3*col], &pc->data[pc_msg_idx * pc->point_step + x_offset], 3*sizeof(float));
+    				memcpy(&i_ptr[col], &pc->data[pc_msg_idx * pc->point_step + i_offset], sizeof(float));
+    			}
+    		}
+    		if(filter_speckle_ || filter_by_amplitude_ || filter_tearoff_)
+    		{
+    			if(filter_by_amplitude_) FilterByAmplitude(xyz_mat_32F3, intensity_mat_32F1);
+    			if(filter_speckle_) FilterSpeckles(xyz_mat_32F3);
+    			if(filter_tearoff_) FilterTearOffEdges(xyz_mat_32F3);
+    			pc_msg_idx=0;
+    			for (int row = 0; row < xyz_mat_32F3.rows; row++)
+    			{
+    				f_ptr = xyz_mat_32F3.ptr<float>(row);
+    				for (int col = 0; col < xyz_mat_32F3.cols; col++, pc_msg_idx++)
+    				{
+    					memcpy(&pc->data[pc_msg_idx * pc->point_step + x_offset], &f_ptr[3*col], 3*sizeof(float));
+    				}
+    			}
+    		}
+    		if(filter_by_confidence_) FilterByConfidence(pc);
+    		point_cloud_pub_.publish(pc);
 
-				std::cout<<" pc width ::"<<pc->width;
-				std::cout<<" pc ::"<<pc<<std::endl;
-				std::cout<<" pc data ::"<<(int)xyz_mat_32F3.flags<<std::endl;
-		////////////////////////////////////////////////////////////////////
-		if(filter_speckle_ || filter_by_amplitude_ || filter_tearoff_)
-		{
-			if(filter_by_amplitude_) FilterByAmplitude(xyz_mat_32F3, intensity_mat_32F1);
-			if(filter_speckle_) FilterSpeckles(xyz_mat_32F3);
-			if(filter_tearoff_) FilterTearOffEdges(xyz_mat_32F3);
-			pc_msg_idx=0;
-			for (int row = 0; row < xyz_mat_32F3.rows; row++)
-			{
-				f_ptr = xyz_mat_32F3.ptr<float>(row);
-				for (int col = 0; col < xyz_mat_32F3.cols; col++, pc_msg_idx++)
-				{
-					memcpy(&pc->data[pc_msg_idx * pc->point_step + x_offset], &f_ptr[3*col], 3*sizeof(float));
-				}
-			}
-		}
-		if(filter_by_confidence_) FilterByConfidence(pc);
-		if(statistical_filter_) FilterStatisticalOutlierRemoval(xyz_mat_32F3);
-
-		point_cloud_pub_.publish(pc);
-    }
+        }
 
     void FilterSpeckles(cv::Mat xyz_mat_32F3)
     {
@@ -200,7 +191,7 @@ public:
 		float c_ptr;
 		float f_ptr[3];
 		f_ptr[0] = f_ptr[1] = f_ptr[2] = 0;
-		for (int pc_msg_idx = 0; pc_msg_idx < pc->height*pc->width; pc_msg_idx++)
+		for ( unsigned int pc_msg_idx = 0; pc_msg_idx < pc->height*pc->width; pc_msg_idx++)
 		{
 			memcpy(&c_ptr, &pc->data[pc_msg_idx * pc->point_step + c_offset], sizeof(float));
 			if(*(float*)&pc->data[pc_msg_idx * pc->point_step + c_offset] < 55000)
@@ -209,41 +200,7 @@ public:
 			}
 		}
     }
-    void FilterStatisticalOutlierRemoval(cv::Mat xyz_mat_32F3)
-    {
-    	int i;
-    	for(i=0;i<)
-    	pcl::StatisticalOutlierRemoval<xyz_mat_32F3>::applyFilter(PointCloud2 &  output);
 
-    	/*pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ> ()), cloud_filtered (new pcl::PointCloud<pcl::PointXYZ> ());
-
-    		  // Fill in the cloud data
-    		  pcl::PCDReader reader;
-    		  reader.read<pcl::PointXYZ> ("data/table_scene_lms400.pcd", *cloud);
-
-    		  std::cerr << "Cloud before filtering: " << std::endl;
-    		  std::cerr << *cloud << std::endl;
-
-    		  // Create the filtering object
-    		  pcl::StatisticalOutlierRemoval<sensor_msgs::PointCloud2>::applyFilter (PointCloud2 &output)
-
-    		  pcl::StatisticalOutlierRemoval<pcl::PointXYZ> sor;
-    		  sor.setInputCloud (cloud);
-    		  sor.setMeanK (50);
-    		  sor.setStddevMulThresh (1.0);
-    		  sor.filter (*cloud_filtered);
-
-    		  std::cerr << "Cloud after filtering: " << std::endl;
-    		  std::cerr << *cloud_filtered << std::endl;
-
-    		  pcl::PCDWriter writer;
-    		  writer.write<pcl::PointXYZ> ("table_scene_lms400_inliers.pcd", *cloud_filtered, false);
-
-    		  sor.setNegative (true);
-    		  sor.filter (*cloud_filtered);
-    		  writer.write<pcl::PointXYZ> ("table_scene_lms400_outliers.pcd", *cloud_filtered, false);
-*/
-    }
     ros::NodeHandle n_;
 
 
@@ -255,7 +212,7 @@ protected:
     bool filter_tearoff_;
     bool filter_speckle_;
     bool filter_by_confidence_;
-    bool statistical_filter_;
+
 };
 
 //#######################
