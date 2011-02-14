@@ -45,6 +45,8 @@ rosbuild_add_executable(aggregate_point_map_node ros/src/aggregate_point_map.cpp
 rosbuild_add_executable(extract_features_node ros/src/extract_features.cpp)
 rosbuild_add_executable(test_icp ros/src/test_icp.cpp)
 rosbuild_add_executable(bag_to_pcd ros/src/bag_to_pcd.cpp)
+rosbuild_add_executable(sor_filter_node ros/src/sor_filter.cpp)
+
 
 
 # add compile flag
