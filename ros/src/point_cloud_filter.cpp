@@ -160,20 +160,28 @@ public:
 
         }
 
+
+
     void FilterSpeckles(cv::Mat xyz_mat_32F3)
     {
     	cv::Mat buf;
     	ipa_Utils::FilterSpeckles(xyz_mat_32F3, 50,0.1, buf);
+    	ROS_INFO("\tTime (FilterSpeckles) : %f", t.elapsed());
+    	t.restart();
     }
 
     void FilterByAmplitude(cv::Mat xyz_mat_32F3, cv::Mat intensity_mat_32F1)
     {
     	ipa_Utils::FilterByAmplitude(xyz_mat_32F3, intensity_mat_32F1, 0, 0, 3000, 60000);
+    	ROS_INFO("\tTime (FilterByAmplitude) : %f", t.elapsed());
+    	t.restart();
     }
 
     void FilterTearOffEdges(cv::Mat xyz_mat_32F3)
     {
     	ipa_Utils::FilterTearOffEdges(xyz_mat_32F3, 0, 6);
+    	ROS_INFO("\tTime (FilterTearOffEdges) : %f", t.elapsed());
+    	t.restart();
     }
 
 
@@ -199,10 +207,12 @@ public:
 				memcpy(&pc->data[pc_msg_idx * pc->point_step + x_offset], &f_ptr, 3*sizeof(float));
 			}
 		}
+		ROS_INFO("\tTime (FilterByConfidence) : %f", t.elapsed());
+		t.restart();
     }
 
     ros::NodeHandle n_;
-
+    boost::timer t;
 
 protected:
     ros::Subscriber point_cloud_sub_;
