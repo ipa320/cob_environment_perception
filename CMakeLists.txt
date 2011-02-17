@@ -42,17 +42,21 @@ ${PROJECT_SOURCE_DIR}/ros/include)
 #rosbuild_add_executable(icp_registration_node ros/src/icp_registration.cpp)
 rosbuild_add_executable(point_cloud_filter_node ros/src/point_cloud_filter.cpp)
 rosbuild_add_executable(aggregate_point_map_node ros/src/aggregate_point_map.cpp)
+rosbuild_add_executable(extract_features_node ros/src/extract_features.cpp)
+rosbuild_add_executable(test_icp ros/src/test_icp.cpp)
+rosbuild_add_executable(bag_to_pcd ros/src/bag_to_pcd.cpp)
 
 
 # add compile flag
 #rosbuild_add_compile_flags(env_model -D__LINUX__ -D__COB_ROS__)
 #rosbuild_add_compile_flags(env_model_node -D__LINUX__ -D__COB_ROS__)
-#rosbuild_add_compile_flags(data_acquisition_node -D__LINUX__ -D__COB_ROS__)
+#rosbuild_add_compile_flags(data_acquisition_node -D__LINUX__)
 #rosbuild_add_compile_flags(icp_registration_node -D__LINUX__ -D__COB_ROS__)
 rosbuild_add_compile_flags(point_cloud_filter_node -D__LINUX__ -D__COB_ROS__)
+rosbuild_add_compile_flags(extract_features_node -D__LINUX__ -D__COB_ROS__)
 
 
 # add compile flag
-#target_link_libraries(env_model ann glut mesasr cob_vision_ipa_utils cob_vision_features cob_vision_sensor_fusion)
+#target_link_libraries(env_model ann glut mesasr)
 #target_link_libraries(env_model_node glut)
 
