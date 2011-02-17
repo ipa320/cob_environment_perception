@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+<launch>
+	<!-- start environment modelling -->
+	<node pkg="cob_env_model" type="sor_filter_node" name="sor_filter" ns="cob_env_model" cwd="node" respawn="false" output="screen">
+		<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
+		<param name="statistical_outlier_filter" type="bool" value="true"/>
+	</node>
+</launch>
+				
