@@ -63,15 +63,29 @@
 
 // ROS includes
 #include <ros/ros.h>
+#include <pluginlib/class_list_macros.h>
+#include <pcl_ros/pcl_nodelet.h>
 #include <pcl/io/io.h>
 #include <pcl/point_types.h>
 #include <pcl/registration/icp.h>
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_kdl.h>
-#include <cob_vision_ipa_utils/cpc_point.h>
-#include "pcl/filters/voxel_grid.h"
 #include <pcl_ros/transforms.h>
 #include <pcl_ros/point_cloud.h>
+#include <visualization_msgs/Marker.h>
+
+#include "pcl/point_types.h"
+#include "pcl/ModelCoefficients.h"
+#include "pcl/sample_consensus/method_types.h"
+#include "pcl/sample_consensus/model_types.h"
+#include "pcl/segmentation/sac_segmentation.h"
+#include "pcl/filters/extract_indices.h"
+#include "pcl/features/normal_3d_omp.h"
+#include "pcl/kdtree/kdtree.h"
+#include "pcl/filters/project_inliers.h"
+#include "pcl/surface/convex_hull.h"
+#include <pcl/segmentation/extract_clusters.h>
+
 
 // ROS message includes
 //#include <sensor_msgs/PointCloud2.h>
@@ -85,15 +99,12 @@ using namespace tf;
 
 //####################
 //#### nodelet class ####
-class DetectTables : pcl::PCLNodelet
+class DetectTables : public pcl_ros::PCLNodelet
 {
 public:
     // Constructor
-	DetectTables(const ros::NodeHandle& nh)
-	  :	n_(nh)
+	DetectTables()
 	{
-		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &AggregatePointMap::pointCloudSubCallback, this);
-		table_marker_pub_ = n_.advertise<visualization_msgs::Marker>("table_marker",100);
 	}
 
     // Destructor
@@ -101,6 +112,17 @@ public:
     {
     	/// void
     }
+
+
+    void onInit()
+    {
+    	PCLNodelet::onInit();
+    	n_ = getNodeHandle();
+
+		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &DetectTables::pointCloudSubCallback, this);
+		table_marker_pub_ = n_.advertise<visualization_msgs::Marker>("table_marker",100);
+    }
+
 
     //input should be point cloud that is amplitude filetered, stqatistical outlier filtered, voxel filtered and the floor cut, coordinate system should be /map
 	void pointCloudSubCallback(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud)
@@ -212,7 +234,45 @@ public:
 
 			ROS_INFO ("Convex hull has: %zu data points.", cloud_hull->points.size ());
 
-			//TODO: create triangle marker from convex hull and publish
+			visualization_msgs::Marker marker;
+			marker.action = visualization_msgs::Marker::ADD;
+			marker.type = visualization_msgs::Marker::TRIANGLE_LIST;
+			marker.lifetime = ros::Duration();
+			marker.header.frame_id = cloud->header.frame_id;
+
+			//create the marker in the table reference frame
+			//the caller is responsible for setting the pose of the marker to match
+
+			marker.scale.x = 1;
+			marker.scale.y = 1;
+			marker.scale.z = 1;
+
+			geometry_msgs::Point pt1, pt2, pt3;
+			pt1.x = cloud_hull->points[0].x;
+			pt1.y = cloud_hull->points[0].y;
+			pt1.z = cloud_hull->points[0].z;
+
+			for(unsigned int i = 1; i < cloud_hull->points.size()-1; ++i)
+			{
+				pt2.x = cloud_hull->points[i].x;
+				pt2.y = cloud_hull->points[i].y;
+				pt2.z = cloud_hull->points[i].z;
+
+				pt3.x = cloud_hull->points[i+1].x;
+				pt3.y = cloud_hull->points[i+1].y;
+				pt3.z = cloud_hull->points[i+1].z;
+
+				marker.points.push_back(pt1);
+				marker.points.push_back(pt2);
+				marker.points.push_back(pt3);
+			}
+
+			marker.color.r = 0.0;
+			marker.color.g = 1.0;
+			marker.color.b = 0.0;
+			marker.color.a = 1.0;
+
+			table_marker_pub_.publish(marker);
 
 		}
 		return;
@@ -228,3 +288,5 @@ protected:
     TransformListener tf_listener_;
 
 };
+
+PLUGINLIB_DECLARE_CLASS(cob_env_model, DetectTables, DetectTables, nodelet::Nodelet)

@@ -1,0 +1,7 @@
+<library path="ros/lib/libcob_env_model">
+  <class name="cob_env_model/DetectTables" type="DetectTables" base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet for table detection
+  </description>
+  </class>
+</library>

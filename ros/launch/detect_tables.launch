@@ -1,0 +1,6 @@
+<launch>
+  <node pkg="nodelet" type="nodelet" name="pcl_manager"  args="manager" output="screen"/>
+
+  <node pkg="nodelet" type="nodelet" name="detect_tables" args="load cob_env_model/DetectTables pcl_manager" output="screen">
+  </node>                 
+</launch>

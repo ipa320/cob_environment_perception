@@ -14,7 +14,7 @@ rosbuild_init()
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/ros/bin)
 #set the default path for built libraries to the "lib" directory
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/common/lib)
+set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/ros/lib)
 
 #uncomment if you have defined messages
 #rosbuild_genmsg()
@@ -45,7 +45,7 @@ rosbuild_add_executable(aggregate_point_map_node ros/src/aggregate_point_map.cpp
 rosbuild_add_executable(extract_features_node ros/src/extract_features.cpp)
 rosbuild_add_executable(test_icp ros/src/test_icp.cpp)
 rosbuild_add_executable(bag_to_pcd ros/src/bag_to_pcd.cpp)
-rosbuild_add_executable(detect_tables ros/src/detect_tables.cpp)
+rosbuild_add_library(cob_env_model ros/src/detect_tables.cpp)
 
 
 # add compile flag
