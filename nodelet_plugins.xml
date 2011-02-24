@@ -4,6 +4,12 @@
   Nodelet for table detection
   </description>
   </class>
+  
+  <class name="cob_env_model/AggregatePointMap" type="AggregatePointMap" base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet for point map aggregation
+  </description>
+  </class>
 </library>
 
 <library path="ros/lib/libnodelet_cpc_publisher">

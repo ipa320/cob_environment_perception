@@ -72,6 +72,8 @@
 #include "pcl/filters/voxel_grid.h"
 #include <pcl_ros/transforms.h>
 #include <pcl_ros/point_cloud.h>
+#include <pluginlib/class_list_macros.h>
+#include <pcl_ros/pcl_nodelet.h>
 
 // ROS message includes
 //#include <sensor_msgs/PointCloud2.h>
@@ -85,16 +87,13 @@ using namespace tf;
 
 //####################
 //#### node class ####
-class AggregatePointMap
+class AggregatePointMap : public pcl_ros::PCLNodelet
 {
 public:
     // Constructor
-	AggregatePointMap(const ros::NodeHandle& nh)
-	  :	n_(nh),
-	   	first_(true)
+	AggregatePointMap()
+	   : first_(true)
 	{
-		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &AggregatePointMap::pointCloudSubCallback, this);
-		point_cloud_pub_ = n_.advertise<pcl::PointCloud<pcl::PointXYZ> >("point_cloud2_map",1);
 	}
 
 
@@ -102,6 +101,15 @@ public:
     ~AggregatePointMap()
     {
     	/// void
+    }
+
+    void onInit()
+    {
+    	PCLNodelet::onInit();
+    	n_ = getNodeHandle();
+
+		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &AggregatePointMap::pointCloudSubCallback, this);
+		point_cloud_pub_ = n_.advertise<pcl::PointCloud<pcl::PointXYZ> >("point_cloud2_map",1);
     }
 
     void pointCloudSubCallback(const pcl::PointCloud<pcl::PointXYZ>::Ptr& pc)
@@ -125,9 +133,9 @@ public:
     			std::cout << "Registering new point cloud" << std::endl;
     			transform_old_ = transform;
 				//transformPointCloud("/map", transform, pc->header.stamp, *(pc.get()), *(pc.get()));
-    			pcl_ros::transformPointCloud ("/map", *(pc.get()), *(pc.get()), tf_listener_);
-    			//pcl_ros::transformPointCloud(*(pc.get()), *(pc.get()), transform);
-    			//pc->header.frame_id = "/map";
+    			//pcl_ros::transformPointCloud ("/map", *(pc.get()), *(pc.get()), tf_listener_);
+    			pcl_ros::transformPointCloud(*(pc.get()), *(pc.get()), transform);
+    			pc->header.frame_id = "/map";
 				if(first_)
 				{
 					map_ = *(pc.get());
@@ -305,21 +313,5 @@ protected:
 
 };
 
-//#######################
-//#### main programm ####
-int main(int argc, char** argv)
-{
-	/// initialize ROS, specify name of node
-	ros::init(argc, argv, "point_cloud_filter");
-
-	/// Create a handle for this node, initialize node
-	ros::NodeHandle nh;
-
-	/// Create camera node class instance
-	AggregatePointMap aggregate_point_map(nh);
-
-	ros::spin();
-
-	return 0;
-}
+PLUGINLIB_DECLARE_CLASS(cob_env_model, AggregatePointMap, AggregatePointMap, nodelet::Nodelet)
 

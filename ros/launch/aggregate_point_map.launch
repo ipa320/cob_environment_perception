@@ -1,16 +1,21 @@
 <?xml version="1.0"?>
 <launch>
-	<!-- start environment modelling -->
-	<node pkg="cob_env_model" type="aggregate_point_map_node" name="aggregate_point_map" ns="cob_env_model" cwd="node" respawn="false" output="screen">
+  <!-- start environment modelling -->
+  <node pkg="nodelet" type="nodelet" name="pcl_manager"  args="manager" output="screen"/>
+
+  <node pkg="nodelet" type="nodelet" name="aggregate_point_map" args="load cob_env_model/AggregatePointMap pcl_manager" output="screen">
+  	<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
+  </node>  
+	<!--node pkg="cob_env_model" type="aggregate_point_map_node" name="aggregate_point_map" ns="cob_env_model" cwd="node" respawn="false" output="screen">
 		<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
-	</node>
+	</node-->
 		<!-- start map server -->
-	<node pkg="map_server" type="map_server" name="map_server" cwd="node" respawn="false" output="screen" args="$(find cob_2dnav)/common/maps/ipa_kitchen/map.yaml"/>
+	<node pkg="map_server" type="map_server" name="map_server" cwd="node" respawn="false" output="screen" args="$(find cob_default_config)/envs/$(env ROBOT_ENV)/map.yaml"/>
   <!-- start image processing nodes -->
   <node ns="stereo/left" pkg="image_proc" type="image_proc" respawn="false" name="left_image_proc" />
   <node ns="stereo/right" pkg="image_proc" type="image_proc" respawn="false" name="right_image_proc" />
-  <include file="$(find cob_env_model)/ros/launch/point_cloud_filter.launch" />
-  <node pkg="rosbag" type="play" name="rosbag_play" cwd="node" respawn="false" output="screen" args="/media/My\ Passport/Daten/20101216_bagfiles/pltf_neck_joystick_kitchen.bag --pause"/>
+  <!--include file="$(find cob_env_model)/ros/launch/point_cloud_filter.launch" /-->
+  <node pkg="rosbag" type="play" name="rosbag_play" cwd="node" respawn="false" output="screen" args="/media/My\ Passport/Daten/20101216_bagfiles/fixed_pltf_neck_joystick_kitchen.bag --pause -k"/>
   <!--node pkg="rosbag" type="play" name="rosbag_play" cwd="node" respawn="false" output="screen" args="/home/goa/pltf_neck_joystick_kitchen.bag pause"/-->
 </launch>
 
