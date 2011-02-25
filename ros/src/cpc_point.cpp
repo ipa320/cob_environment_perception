@@ -5,5 +5,5 @@
  *      Author: goa
  */
 
-#include <cob_vision_ipa_utils/cpc_point.h>
+#include <cob_env_model/cpc_point.h>
 

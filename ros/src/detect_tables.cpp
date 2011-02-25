@@ -152,10 +152,13 @@ public:
 			extract.setIndices (boost::make_shared<const pcl::PointIndices> (table_clusters[i]));
 			extract.setNegative (false);
 			extract.filter (table_cluster);
+			std::stringstream ss1;
+			ss1 << "/home/goa/pcl_daten/cluster_" << i << ".pcd";
+			pcl::io::savePCDFileASCII (ss1.str(), table_cluster);
 
 			pcl::PointCloud<pcl::PointXYZ>::ConstPtr table_cluster_ptr = boost::make_shared<const pcl::PointCloud<pcl::PointXYZ> > (table_cluster);
 
-			if (table_cluster_ptr->points.size() < (unsigned int)1000)
+			if (table_cluster_ptr->points.size() < (unsigned int)300)
 			{
 				ROS_INFO("Table cluster only has %d points, skipping cluster", (int)table_cluster_ptr->points.size());
 				continue;
@@ -192,9 +195,9 @@ public:
 				ROS_INFO("Failed to detect table in scan, skipping cluster");
 				continue;
 			}
-			if ( inliers_plane->indices.size() < (unsigned int)1000)
+			if ( inliers_plane->indices.size() < (unsigned int)200)
 			{
-				ROS_INFO("Plane detection has %d inliers, below min threshold of %d, skipping cluster", (int)inliers_plane->indices.size(), 1000);
+				ROS_INFO("Plane detection has %d inliers, below min threshold of %d, skipping cluster", (int)inliers_plane->indices.size(), 200);
 				continue;
 			}
 			if(fabs(coefficients_plane->values[0]) > 0.1 || fabs(coefficients_plane->values[1]) > 0.1 || fabs(coefficients_plane->values[2]) < 0.9)
@@ -223,7 +226,7 @@ public:
 			proj.filter (*cloud_projected);
 
 			std::stringstream ss;
-			ss << "plane_" << i << ".pcd";
+			ss << "/home/goa/pcl_daten/plane_" << i << ".pcd";
 			pcl::io::savePCDFileASCII (ss.str(), *cloud_projected);
 
 			// Create a Convex Hull representation of the projected inliers

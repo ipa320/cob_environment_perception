@@ -10,6 +10,12 @@
   Nodelet for point map aggregation
   </description>
   </class>
+  
+  <class name="cob_env_model/PointCloudFilter" type="PointCloudFilter" base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet for point cloud filtering (amplitude, confidence, tear-off, speckle)
+  </description>
+  </class>
 </library>
 
 <library path="ros/lib/libnodelet_cpc_publisher">

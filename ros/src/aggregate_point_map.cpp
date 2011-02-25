@@ -68,7 +68,7 @@
 #include <pcl/registration/icp.h>
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_kdl.h>
-#include <cob_vision_ipa_utils/cpc_point.h>
+#include <cob_env_model/cpc_point.h>
 #include "pcl/filters/voxel_grid.h"
 #include <pcl_ros/transforms.h>
 #include <pcl_ros/point_cloud.h>
@@ -108,7 +108,7 @@ public:
     	PCLNodelet::onInit();
     	n_ = getNodeHandle();
 
-		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &AggregatePointMap::pointCloudSubCallback, this);
+		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &AggregatePointMap::pointCloudSubCallbackICP, this);
 		point_cloud_pub_ = n_.advertise<pcl::PointCloud<pcl::PointXYZ> >("point_cloud2_map",1);
     }
 
@@ -127,8 +127,8 @@ public:
     		frame_KDL.M.GetRPY(r,p,y);
     		double r_old,p_old,y_old;
     		frame_KDL_old.M.GetRPY(r_old,p_old,y_old);
-    		if(fabs(r-r_old) > 0.05 || fabs(p-p_old) > 0.05 || fabs(y-y_old) > 0.05 ||
-    				transform.getOrigin().distance(transform_old_.getOrigin()) > 0.1)
+    		if(fabs(r-r_old) > 0.1 || fabs(p-p_old) > 0.1 || fabs(y-y_old) > 0.1 ||
+    				transform.getOrigin().distance(transform_old_.getOrigin()) > 0.3)
     		{
     			std::cout << "Registering new point cloud" << std::endl;
     			transform_old_ = transform;
@@ -158,8 +158,8 @@ public:
 
     void pointCloudSubCallbackICP(const pcl::PointCloud<pcl::PointXYZ>::Ptr& pc)
     {
+    	static int i;
     	//ROS_INFO("PointCloudSubCallback");
-
     	StampedTransform transform;
     	try{
     		tf_listener_.lookupTransform("/map", pc->header.frame_id, ros::Time(0), transform);
@@ -170,12 +170,14 @@ public:
     		frame_KDL.M.GetRPY(r,p,y);
     		double r_old,p_old,y_old;
     		frame_KDL_old.M.GetRPY(r_old,p_old,y_old);
-    		if(fabs(r-r_old) > 0.05 || fabs(p-p_old) > 0.05 || fabs(y-y_old) > 0.05 ||
-    				transform.getOrigin().distance(transform_old_.getOrigin()) > 0.1)
+    		if(fabs(r-r_old) > 0.1 || fabs(p-p_old) > 0.1 || fabs(y-y_old) > 0.1 ||
+    				transform.getOrigin().distance(transform_old_.getOrigin()) > 0.3)
     		{
+    	    	boost::timer t;
     			std::cout << "Registering new point cloud using ICP" << std::endl;
     			transform_old_ = transform;
     			pcl_ros::transformPointCloud(*(pc.get()), *(pc.get()), transform);
+    			pc->header.frame_id = "/map";
 				if(first_)
 				{
 					map_ = *(pc.get());
@@ -193,12 +195,18 @@ public:
 					pcl::PointCloud<pcl::PointXYZ> pc_map_new;
 					icp.align(pc_map_new);
 					map_ += pc_map_new;
+					std::cout << "Fitness score: " << icp.getFitnessScore() << std::endl;
 					ROS_INFO("Aligned PC has %d points", map_.size());
+			    	ROS_INFO("\tTime: %f", t.elapsed());
 				}
 				point_cloud_pub_.publish(map_);
+				std::stringstream ss;
+				ss << "/home/goa/pcl_daten/pc_" << i << ".pcd";
+				pcl::io::savePCDFileASCII (ss.str(), map_);
+				i++;
     		}
-    		else
-    			ROS_INFO("Skipped");
+    		//else
+    		//	ROS_INFO("Skipped");
     	}
     	catch (tf::TransformException ex){
     		ROS_ERROR("%s",ex.what());
