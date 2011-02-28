@@ -133,7 +133,7 @@ int
 		  }
 		  // Transform it
 		  tf::StampedTransform transform;
-		  tf_listener.lookupTransform("/base_link", "/head_tof_link", ros::Time(0), transform);
+		  tf_listener.lookupTransform("/head_tof_link", "/head_tof_link", ros::Time(0), transform);
 		  Eigen::Matrix4f out_mat;
 		  pcl_ros::transformAsMatrix (transform, out_mat);
 		  //pcl_ros::transformPointCloud ("/head_axis_link", *cloud, cloud_t, tf_listener);

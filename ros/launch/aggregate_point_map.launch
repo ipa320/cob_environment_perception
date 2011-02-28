@@ -44,7 +44,7 @@
   </node>  
   
   <!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
-  <!--node pkg="nodelet" type="nodelet" name="voxel_grid2" args="load pcl/VoxelGrid pcl_manager" output="screen">
+  <node pkg="nodelet" type="nodelet" name="voxel_grid2" args="load pcl/VoxelGrid pcl_manager" output="screen">
     <remap from="~input" to="/aggregate_point_map/output" />
     <rosparam>
       filter_field_name: z
@@ -53,7 +53,7 @@
       filter_limit_negative: False
       leaf_size: 0.05
     </rosparam>
-  </node-->
+  </node>
   
 
 		<!-- start map server -->

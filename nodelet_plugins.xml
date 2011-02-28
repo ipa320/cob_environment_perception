@@ -16,6 +16,12 @@
   Nodelet for point cloud filtering (amplitude, confidence, tear-off, speckle)
   </description>
   </class>
+  
+  <class name="cob_env_model/SegmentFieldOfView" type="SegmentFieldOfView" base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet for field of view segmentation
+  </description>
+  </class>
 </library>
 
 <library path="ros/lib/libnodelet_cpc_publisher">
