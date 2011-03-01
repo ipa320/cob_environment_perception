@@ -62,6 +62,7 @@
 
 // ROS includes
 #include <ros/ros.h>
+
 #include <opencv/cv.h>
 #include <opencv/highgui.h>
 
@@ -113,6 +114,9 @@ public:
     void PointCloudSubCallback(const sensor_msgs::PointCloud2Ptr pc)
         {
         	//ROS_INFO("PointCloudSubCallback");
+    		pcl::PointCloud<CPCPoint>::Ptr pc_out(new pcl::PointCloud<CPCPoint>());
+    		pc_out->points.resize(pc->points.size());
+    		pc_out->header = pc->header;
 
     		cv::Mat xyz_mat_32F3 = cv::Mat(pc->height, pc->width, CV_32FC3);
     		cv::Mat intensity_mat_32F1 = cv::Mat(pc->height, pc->width, CV_32FC1);
@@ -155,6 +159,7 @@ public:
     				}
     			}
     		}
+			if(filter_by_amplitude_) FilterByAmplitude(pc, pc_out);
     		if(filter_by_confidence_) FilterByConfidence(pc);
     		point_cloud_pub_.publish(pc);
 
@@ -222,6 +227,10 @@ protected:
     bool filter_tearoff_;
     bool filter_speckle_;
     bool filter_by_confidence_;
+    bool statistical_filter_;
+
+    int amplitude_min_threshold_;
+    int amplitude_max_threshold_;
 
 };
 

@@ -14,10 +14,10 @@ rosbuild_init()
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/ros/bin)
 #set the default path for built libraries to the "lib" directory
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/common/lib)
+set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/ros/lib)
 
 #uncomment if you have defined messages
-#rosbuild_genmsg()
+rosbuild_genmsg()
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
@@ -40,20 +40,38 @@ ${PROJECT_SOURCE_DIR}/ros/include)
 #rosbuild_add_executable(env_model_node ros/src/cob_env_model.cpp)
 #rosbuild_add_executable(data_acquisition_node ros/src/data_acquisition.cpp)
 #rosbuild_add_executable(icp_registration_node ros/src/icp_registration.cpp)
-rosbuild_add_executable(point_cloud_filter_node ros/src/point_cloud_filter.cpp)
-rosbuild_add_executable(sor_filter_node ros/src/sor_filter.cpp)
-#rosbuild_add_executable(aggregate_point_map_node ros/src/aggregate_point_map.cpp)
+#rosbuild_add_executable(point_cloud_filter_node ros/src/point_cloud_filter.cpp)
+#rosbuild_add_executable(extract_features_node ros/src/extract_features.cpp)
+rosbuild_add_executable(test_icp ros/src/test_icp.cpp)
+rosbuild_add_executable(bag_to_pcd ros/src/bag_to_pcd.cpp)
+rosbuild_add_library(cob_env_model ros/src/detect_tables.cpp
+	ros/src/aggregate_point_map.cpp
+	ros/src/point_cloud_filter.cpp
+	ros/src/segment_field_of_view.cpp
+	ros/src/cpc_point.cpp)
+rosbuild_add_executable(test_fov common/src/test_fov.cpp)
+#rosbuild_add_library(nodelet_cpc_publisher ros/src/cpc_publisher.cpp
+#	ros/src/cpc_visualizer.cpp)
+#rosbuild_add_executable(test_cpc_visualizer ros/src/test_cpc_visualizer.cpp)
+#rosbuild_add_executable(cpc_publisher ros/src/cpc_publisher_main.cpp)
+#rosbuild_add_executable(cpc_visualizer ros/src/cpc_visualizer_main.cpp)
+
 
 
 # add compile flag
 #rosbuild_add_compile_flags(env_model -D__LINUX__ -D__COB_ROS__)
 #rosbuild_add_compile_flags(env_model_node -D__LINUX__ -D__COB_ROS__)
-#rosbuild_add_compile_flags(data_acquisition_node -D__LINUX__ -D__COB_ROS__)
+#rosbuild_add_compile_flags(data_acquisition_node -D__LINUX__)
 #rosbuild_add_compile_flags(icp_registration_node -D__LINUX__ -D__COB_ROS__)
-rosbuild_add_compile_flags(point_cloud_filter_node -D__LINUX__ -D__COB_ROS__)
+rosbuild_add_compile_flags(cob_env_model -D__LINUX__ -D__COB_ROS__)
+#rosbuild_add_compile_flags(extract_features_node -D__LINUX__ -D__COB_ROS__)
 
 
 # add compile flag
-#target_link_libraries(env_model ann glut mesasr cob_vision_ipa_utils cob_vision_features cob_vision_sensor_fusion)
+target_link_libraries(test_fov cob_env_model)
+#target_link_libraries(env_model ann glut mesasr)
 #target_link_libraries(env_model_node glut)
+#target_link_libraries(cpc_publisher nodelet_cpc_publisher)
+#target_link_libraries(test_cpc_visualizer nodelet_cpc_publisher)
+#target_link_libraries(cpc_visualizer nodelet_cpc_publisher)
 

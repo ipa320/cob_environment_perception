@@ -1,0 +1,95 @@
+<launch>
+  <!--node pkg="pcl_ros" type="pcd_to_pointcloud" name="pcd_to_pointcloud" args="$(find pcl_tutorials)/data/table_scene_mug_stereo_textured.pcd 1" output="screen">
+    <remap from="/cloud_pcd" to="/scene_pointcloud2" />
+  </node-->
+  <node pkg="pcl_ros" type="pcd_to_pointcloud" name="pcd_to_pointcloud" args="/media/My\ Passport/Daten/20101216_bagfiles/pltf_neck_joystick_table_pc/1292497055.305354834.pcd 3" output="screen">
+    <remap from="/cloud_pcd" to="/scene_pointcloud2" />
+  </node>
+  
+  <node pkg="nodelet" type="nodelet" name="pcl_manager" args="manager" output="screen" />
+
+  <!-- Run a passthrough filter to clean NaNs -->
+  <!--node pkg="nodelet" type="nodelet" name="passthrough" args="load pcl/PassThrough pcl_manager" output="screen">
+    <remap from="~input" to="/scene_pointcloud2" />
+    <rosparam>
+      filter_field_name: z
+      filter_limit_min: 0.05
+      filter_limit_max: 1.5
+      filter_limit_negative: False
+    </rosparam>
+  </node-->
+  
+  
+  
+   <node pkg="cob_env_model" type="point_cloud_filter_node" name="point_cloud_filter" ns="cob_env_model" cwd="node" respawn="false" output="screen">
+		<remap from="point_cloud2" to="/scene_pointcloud2"/>
+		<param name="filter_by_amplitude" type="bool" value="true"/>
+		<param name="filter_tearoff" type="bool" value="false"/>
+		<param name="filter_speckle" type="bool" value="false"/>
+		<param name="filter_by_confidence" type="bool" value="false"/>
+	</node>
+  
+
+  <!-- Run a StatisticalOutlierRemoval filter -->
+  <node pkg="nodelet" type="nodelet" name="outlier_removal" args="load pcl/StatisticalOutlierRemoval pcl_manager" output="screen">
+    <remap from="~input" to="/cob_env_model/point_cloud2_filtered" />
+    <rosparam>
+      mean_k: 50
+      stddev: 1.0
+      negative: False
+    </rosparam>
+  </node>
+  
+      <!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
+  <node pkg="nodelet" type="nodelet" name="voxel_grid" args="load pcl/VoxelGrid pcl_manager" output="screen">
+    <remap from="~input" to="/outlier_removal/output" />
+    <rosparam>
+      filter_field_name: z
+      filter_limit_min: 0.05
+      filter_limit_max: 1.5
+      filter_limit_negative: False
+      leaf_size: 0.01
+    </rosparam>
+  </node>
+
+  
+  
+    <!-- Estimate point normals -->
+  <node pkg="nodelet" type="nodelet" name="normal_estimation" args="load pcl/NormalEstimation pcl_manager" output="screen">
+    <remap from="~input" to="/outlier_removal/output" />
+    <rosparam>
+      # -[ Mandatory parameters
+      k_search: 30
+      radius_search: 0
+      # Set the spatial locator. Possible values are: 0 (ANN), 1 (FLANN), 2 (organized)
+      spatial_locator: 0
+    </rosparam>
+  </node>
+  
+    <!-- Segment the table plane -->
+  <node pkg="nodelet" type="nodelet" name="planar_segmentation" args="load pcl/SACSegmentationFromNormals pcl_manager" output="screen">
+    <remap from="~input"   to="/outlier_removal/output" />
+    <remap from="~normals" to="/normal_estimation/output" />
+    <rosparam>
+      # -[ Mandatory parameters
+      model_type: 11
+      distance_threshold: 0.03
+      max_iterations: 1000
+      method_type: 0
+      #optimize_coefficients: true
+      #normal_distance_weight: 0.1
+      #eps_angle: 0.09
+    </rosparam>
+  </node>
+  
+  <node pkg="nodelet" type="nodelet" name="extract_plane_indices" args="load pcl/ExtractIndices pcl_manager" output="screen">
+    <remap from="~input"   to="/outlier_removal/output" />
+    <remap from="~indices" to="/planar_segmentation/inliers" />
+    <rosparam>
+      negative: false
+    </rosparam>
+  </node>
+  
+
+
+</launch>
