@@ -4,7 +4,8 @@
   <!--node pkg="nodelet" type="nodelet" name="pcl_manager"  args="manager" output="screen"/-->
   
   <node pkg="nodelet" type="nodelet" name="segment_field_of_view" args="load cob_env_model/SegmentFieldOfView pcl_manager" output="screen">
-  	<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
+  	<!--remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/-->
+  	<remap from="point_cloud2" to="/aggregate_point_map/output"/>
   </node>  
   
 

@@ -75,7 +75,7 @@ namespace ipa_env_model
 			void computeFieldOfView(double fovHorizontal, double fovVertical, double maxRange,
 					Eigen::Vector3d &n_up, Eigen::Vector3d &n_down, Eigen::Vector3d &n_right, Eigen::Vector3d &n_left);
 			void segment(pcl::PointIndices &indices,
-					Eigen::Vector3d &n_up, Eigen::Vector3d &n_down, Eigen::Vector3d &n_right, Eigen::Vector3d &n_left, double maxRange);
+					Eigen::Vector3d &n_up, Eigen::Vector3d &n_down, Eigen::Vector3d &n_right, Eigen::Vector3d &n_left, Eigen::Vector3d &n_origin, double maxRange);
 		protected:
 			using pcl::PCLBase<PointT>::input_;
 
@@ -90,12 +90,6 @@ namespace ipa_env_model
 		Eigen::Vector3d vec_b;
 		Eigen::Vector3d vec_c;
 		Eigen::Vector3d vec_d;
-
-		/*Eigen::Vector3d n_up;
-		Eigen::Vector3d n_down;
-		Eigen::Vector3d n_right;
-		Eigen::Vector3d n_left;
-		Eigen::Vector3d n_front;*/
 
 		double fovHorFrac = fovHorizontal/2;
 		double fovVerFrac = fovVertical/2;
@@ -156,18 +150,27 @@ namespace ipa_env_model
 
 	template <typename PointT>
 	void FieldOfViewSegmentation<PointT>::segment(pcl::PointIndices &indices,
-			Eigen::Vector3d &n_up, Eigen::Vector3d &n_down, Eigen::Vector3d &n_right, Eigen::Vector3d &n_left, double maxRange)
+			Eigen::Vector3d &n_up, Eigen::Vector3d &n_down, Eigen::Vector3d &n_right, Eigen::Vector3d &n_left, Eigen::Vector3d &n_origin, double maxRange)
 	{
 		indices.header = input_->header;
 		for(unsigned int i = 0; i<input_->points.size(); i++)
 		{
 			const PointT* curPoint = &input_->points[i];
-			if(curPoint->y*n_up(1)+curPoint->z*n_up(2)<0 &&
+			/*if(curPoint->y*n_up(1)+curPoint->z*n_up(2)<0 /*&&
 					curPoint->y*n_down(1)+curPoint->z*n_down(2)<0 &&
 					curPoint->x*n_right(0)+curPoint->z*n_right(2)<0 &&
 					curPoint->x*n_left(0)+curPoint->z*n_left(2)<0 &&
-					curPoint->z < maxRange)
+					curPoint->z < maxRange)*/
+			//if(n_up(0)*(curPoint->x-n_origin(0))+n_up(1)*(curPoint->y-n_origin(1))+n_up(2)*(curPoint->z-n_origin(2)))
+			//if(n_down(0)*(curPoint->x-n_origin(0))+n_down(1)*(curPoint->y-n_origin(1))+n_down(2)*(curPoint->z-n_origin(2)))
+			if(n_up(0)*(curPoint->x-n_origin(0))+n_up(1)*(curPoint->y-n_origin(1))+n_up(2)*(curPoint->z-n_origin(2)) < 0 &&
+					n_down(0)*(curPoint->x-n_origin(0))+n_down(1)*(curPoint->y-n_origin(1))+n_down(2)*(curPoint->z-n_origin(2)) < 0 &&
+					n_right(0)*(curPoint->x-n_origin(0))+n_right(1)*(curPoint->y-n_origin(1))+n_right(2)*(curPoint->z-n_origin(2)) < 0 &&
+					n_left(0)*(curPoint->x-n_origin(0))+n_left(1)*(curPoint->y-n_origin(1))+n_left(2)*(curPoint->z-n_origin(2)) < 0)
+			{
 				indices.indices.push_back(i);
+				//std::cout << "Point "  << *curPoint << " is in FOV" << std::endl;
+			}
 		}
 	}
 

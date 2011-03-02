@@ -231,7 +231,7 @@ public:
 
 			// Create a Convex Hull representation of the projected inliers
 			pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_hull (new pcl::PointCloud<pcl::PointXYZ> ());
-			pcl::ConvexHull2D<pcl::PointXYZ> chull;
+			pcl::ConvexHull<pcl::PointXYZ> chull;
 			chull.setInputCloud (cloud_projected);
 			chull.reconstruct (*cloud_hull);
 
