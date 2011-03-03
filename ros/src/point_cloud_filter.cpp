@@ -255,11 +255,6 @@ public:
 			{
 				memcpy(&pc->data[pc_msg_idx * pc->point_step + x_offset], &f_ptr, 3*sizeof(float));
 			}
-<<<<<<< HEAD
-		}
-		ROS_INFO("\tTime (FilterByConfidence) : %f", t.elapsed());
-		t.restart();
-=======
 		}*/
     }
 
