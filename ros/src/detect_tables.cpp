@@ -195,9 +195,9 @@ public:
 				ROS_INFO("Failed to detect table in scan, skipping cluster");
 				continue;
 			}
-			if ( inliers_plane->indices.size() < (unsigned int)200)
+			if ( inliers_plane->indices.size() < (unsigned int)150)
 			{
-				ROS_INFO("Plane detection has %d inliers, below min threshold of %d, skipping cluster", (int)inliers_plane->indices.size(), 200);
+				ROS_INFO("Plane detection has %d inliers, below min threshold of %d, skipping cluster", (int)inliers_plane->indices.size(), 150);
 				continue;
 			}
 			if(fabs(coefficients_plane->values[0]) > 0.1 || fabs(coefficients_plane->values[1]) > 0.1 || fabs(coefficients_plane->values[2]) < 0.9)

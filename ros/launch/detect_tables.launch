@@ -15,7 +15,7 @@
   </node>
 
   <node pkg="nodelet" type="nodelet" name="detect_tables" args="load cob_env_model/DetectTables pcl_manager" output="screen">
-  	<!--remap from="point_cloud2" to="voxel_grid2/output"/-->
   	<remap from="point_cloud2" to="voxel_grid2/output"/>
+  	<!--remap from="point_cloud2" to="/aggregate_point_map/output"/-->
   </node>                 
 </launch>

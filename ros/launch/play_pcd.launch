@@ -1,0 +1,6 @@
+<launch>
+  <node pkg="pcl_ros" type="pcd_to_pointcloud" name="pcd_to_pointcloud" args="/home/goa/pcl_daten/pc_22.pcd 3" output="screen">
+    <remap from="/cloud_pcd" to="/voxel_grid2/output" />
+    <param name="frame_id" type="string" value="/map" />
+  </node>
+  </launch>

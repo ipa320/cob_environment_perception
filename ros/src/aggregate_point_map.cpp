@@ -122,7 +122,7 @@ public:
 
     	StampedTransform transform;
     	try{
-    		tf_listener_.lookupTransform("/map", pc->header.frame_id, ros::Time(0), transform);
+    		tf_listener_.lookupTransform("/map", pc->header.frame_id, pc->header.stamp/*ros::Time(0)*/, transform);
     		KDL::Frame frame_KDL, frame_KDL_old;
     		tf::TransformTFToKDL(transform, frame_KDL);
     		tf::TransformTFToKDL(transform_old_, frame_KDL_old);
