@@ -3,35 +3,35 @@
 
   <node pkg="nodelet" type="nodelet" name="pcl_manager"  args="manager" output="screen"/>
  
-  <!-- Run amplitude filter -->
+  <!-- Run amplitude filter 
   <node pkg="nodelet" type="nodelet" name="amplitude_filter_nodelet" args="load cob_env_model/AmplitudeFilter pcl_manager" output="screen">
   	<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
   	<remap from="point_cloud2_filtered" to="/cob_env_model/point_cloud2_filtered"/>
   	<param name="filter_by_amplitude" type="bool" value="true"/>
 	<param name="amplitude_min_threshold" type="double" value="4000"/>
 	<param name="amplitude_max_threshold" type="double" value="70000"/>
-  </node>  
+  </node>  -->
   
   <!-- Run speckle filter -->
   <node pkg="nodelet" type="nodelet" name="speckle_filter_nodelet" args="load cob_env_model/SpeckleFilter pcl_manager" output="screen">
   	<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
   	<remap from="point_cloud2_filtered" to="/cob_env_model/point_cloud2_filtered"/>
-  	<param name="filter_speckle_" type="bool" value="false"/>
+    <param name="filter_speckle" type="bool" value="true"/> 
   </node>  
   
- <!-- Run tearoff edges filter --> 
+ <!-- Run tearoff edges filter 
   <node pkg="nodelet" type="nodelet" name="tearoff_filter_nodelet" args="load cob_env_model/TearoffFilter pcl_manager" output="screen">
   	<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
   	<remap from="point_cloud2_filtered" to="/cob_env_model/point_cloud2_filtered"/>
 	<param name="filter_tearoff" type="bool" value="false"/>
-  </node> 
+  </node> --> 
   
-  <!-- Run confidence filter --> 
+  <!-- Run confidence filter 
   <node pkg="nodelet" type="nodelet" name="confidence_filter_nodelet" args="load cob_env_model/ConfidenceFilter pcl_manager" output="screen">
   	<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
   	<remap from="point_cloud2_filtered" to="/cob_env_model/point_cloud2_filtered"/>
 	<param name="filter_by_confidence_" type="bool" value="false"/>
-  </node> 
+  </node> --> 
   
   <!-- Run StatisticalOutlierRemoval filter -->
   <node pkg="nodelet" type="nodelet" name="outlier_removal" args="load pcl/StatisticalOutlierRemoval pcl_manager" output="screen">
@@ -41,6 +41,6 @@
       stddev: 0.5
       negative: False
     </rosparam>
-  </node>
+  </node> 
 
 </launch>

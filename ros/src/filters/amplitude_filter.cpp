@@ -54,7 +54,7 @@ public:
 		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &AmplitudeFilter::PointCloudSubCallback, this);
 		point_cloud_pub_ = n_.advertise<sensor_msgs::PointCloud2>("point_cloud2_filtered",1);
 
-		n_.param("/filter_nodelets/filter_by_amplitude", filter_by_amplitude_, false);
+		n_.param("filter_by_amplitude", filter_by_amplitude_, false);
 		std::cout << "filter by amplitude: " << filter_by_amplitude_ << std::endl;
 		n_.param("/filter_nodelets/amplitude_min_threshold", amplitude_min_threshold_, 1000);
 		std::cout << "amplitude_min_threshold: " << amplitude_min_threshold_<< std::endl;
