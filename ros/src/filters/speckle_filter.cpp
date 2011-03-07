@@ -15,7 +15,7 @@
 #include <ros/ros.h>
 
 #include <opencv/cv.h>
-#include <opencv/highgui.h>
+//#include <opencv/highgui.h>
 
 // ROS message includes
 #include <sensor_msgs/PointCloud2.h>
@@ -29,7 +29,7 @@
 #include <cob_env_model/cpc_point.h>
 
 //####################
-//#### node class ####
+//#### nodelet class ####
 class SpeckleFilter : public pcl_ros::PCLNodelet
 {
 public:
@@ -93,14 +93,14 @@ public:
 			}
 		}
 		point_cloud_pub_.publish(pc);
+		ROS_INFO("\tTime (FilterSpeckles) : %f", t.elapsed());
+		t.restart();
 	}
 
     void FilterSpeckles(cv::Mat xyz_mat_32F3)
     {
     	cv::Mat buf;
     	ipa_Utils::FilterSpeckles(xyz_mat_32F3, 50,0.1, buf);
-    	ROS_INFO("\tTime (FilterSpeckles) : %f", t.elapsed());
-    	t.restart();
     }
 
     ros::NodeHandle n_;

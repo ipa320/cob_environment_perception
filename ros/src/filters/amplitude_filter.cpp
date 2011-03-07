@@ -1,5 +1,5 @@
 /*
- * point_cloud_filter_nodelet.cpp
+ * amplitude_filter.cpp
  *
  *  Created on: Mar 02, 2011
  *      Author: goa-wq
@@ -15,26 +15,25 @@
 #include <ros/ros.h>
 
 #include <opencv/cv.h>
-#include <opencv/highgui.h>
+//#include <opencv/highgui.h>
 
 // ROS message includes
 #include <sensor_msgs/PointCloud2.h>
 
 // external includes
 #include <boost/timer.hpp>
-#include <cob_vision_utils/VisionUtils.h>
-#include "pcl/filters/statistical_outlier_removal.h"
-#include "pcl/point_types.h"
+//#include <cob_vision_utils/VisionUtils.h>
+//#include "pcl/point_types.h"
 #include <pluginlib/class_list_macros.h>
 #include <pcl_ros/pcl_nodelet.h>
 #include <cob_env_model/cpc_point.h>
 
 //####################
-//#### nodelet ####
+//#### nodelet class####
 class AmplitudeFilter : public pcl_ros::PCLNodelet
 {
 public:
-    // Constructor
+ /*   // Constructor
 	AmplitudeFilter()
 	  :	filter_by_amplitude_(false)
 	{
@@ -45,7 +44,7 @@ public:
     {
     	/// void
     }
-
+*/
     void onInit()
     {
     	PCLNodelet::onInit();
@@ -54,11 +53,12 @@ public:
 		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &AmplitudeFilter::PointCloudSubCallback, this);
 		point_cloud_pub_ = n_.advertise<sensor_msgs::PointCloud2>("point_cloud2_filtered",1);
 
-		n_.param("filter_by_amplitude", filter_by_amplitude_, false);
-		std::cout << "filter by amplitude: " << filter_by_amplitude_ << std::endl;
-		n_.param("/filter_nodelets/amplitude_min_threshold", amplitude_min_threshold_, 1000);
+		//n_.param("filter_by_amplitude", filter_by_amplitude_, false);
+		//std::cout << "filter by amplitude: " << filter_by_amplitude_ << std::endl;
+		ROS_INFO("Applying Amplitude Filter");
+		n_.param("/amplitude_filter_nodelet/amplitude_min_threshold", amplitude_min_threshold_, 1000);
 		std::cout << "amplitude_min_threshold: " << amplitude_min_threshold_<< std::endl;
-		n_.param("/filter_nodelets/amplitude_max_threshold", amplitude_max_threshold_, 60000);
+		n_.param("/amplitude_filter_nodelet/amplitude_max_threshold", amplitude_max_threshold_, 60000);
 		std::cout << "amplitude_max_threshold: " << amplitude_max_threshold_<< std::endl;
     }
 
@@ -98,8 +98,11 @@ public:
 			}
 		}
 
-		if(filter_by_amplitude_) FilterByAmplitude(pc, pc_out);
+		//if(filter_by_amplitude_)
+		FilterByAmplitude(pc, pc_out);
 		point_cloud_pub_.publish(pc_out);
+		ROS_INFO("\tTime elapsed (AmplitudeFilter) : %f", t.elapsed());
+		t.restart();
 
 	}
 
@@ -149,7 +152,7 @@ protected:
     ros::Subscriber point_cloud_sub_;
     ros::Publisher point_cloud_pub_;
 
-    bool filter_by_amplitude_;
+    //bool filter_by_amplitude_;
 
     int amplitude_min_threshold_;
     int amplitude_max_threshold_;

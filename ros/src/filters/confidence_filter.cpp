@@ -1,5 +1,5 @@
 /*
- * confidence.cpp
+ * confidence_filter.cpp
  *
  *  Created on: Mar 3, 2011
  *      Author: goa-wq
@@ -15,16 +15,15 @@
 #include <ros/ros.h>
 
 #include <opencv/cv.h>
-#include <opencv/highgui.h>
+//#include <opencv/highgui.h>
 
 // ROS message includes
 #include <sensor_msgs/PointCloud2.h>
 
 // external includes
 #include <boost/timer.hpp>
-#include <cob_vision_utils/VisionUtils.h>
-#include "pcl/filters/statistical_outlier_removal.h"
-#include "pcl/point_types.h"
+//#include <cob_vision_utils/VisionUtils.h>
+//#include "pcl/point_types.h"
 #include <pluginlib/class_list_macros.h>
 #include <pcl_ros/pcl_nodelet.h>
 #include <cob_env_model/cpc_point.h>
@@ -34,7 +33,7 @@ class ConfidenceFilter : public pcl_ros::PCLNodelet
 {
 public:
     // Constructor
-	ConfidenceFilter()
+/*	ConfidenceFilter()
 	  :filter_by_confidence_(false)
 	{
 	}
@@ -44,7 +43,7 @@ public:
     {
     	/// void
     }
-
+*/
     void onInit()
     {
     	PCLNodelet::onInit();
@@ -52,8 +51,9 @@ public:
 
 		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &ConfidenceFilter::PointCloudSubCallback, this);
 		point_cloud_pub_ = n_.advertise<sensor_msgs::PointCloud2>("point_cloud2_filtered",1);
-		n_.param("/filter_nodelets/filter_by_confidence", filter_by_confidence_, false);
-		std::cout << "filter by confidence: " << filter_by_confidence_<< std::endl;
+
+		//n_.param("/filter_nodelets/filter_by_confidence", filter_by_confidence_, false);
+		//std::cout << "filter by confidence: " << filter_by_confidence_<< std::endl;
     }
 
     void PointCloudSubCallback(const pcl::PointCloud<CPCPoint>::Ptr& pc)
@@ -80,10 +80,11 @@ public:
     			}
     		}
 
-    		if(filter_by_confidence_) FilterByConfidence(pc);
-
+    		//if(filter_by_confidence_)
+    		FilterByConfidence(pc);
     		point_cloud_pub_.publish(pc);
-
+    		ROS_INFO("\tTime elapsed (AmplitudeFilter) : %f", t.elapsed());
+    		t.restart();
         }
 
     void FilterByConfidence(const pcl::PointCloud<CPCPoint>::Ptr& pc)
@@ -117,7 +118,7 @@ protected:
     ros::Subscriber point_cloud_sub_;
     ros::Publisher point_cloud_pub_;
 
-    bool filter_by_confidence_;
+    //bool filter_by_confidence_;
 
 };
 
