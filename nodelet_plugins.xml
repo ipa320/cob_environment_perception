@@ -11,9 +11,9 @@
   </description>
   </class>
   
-  <class name="cob_env_model/AmplitudeFilter" type="AmplitudeFilter" base_class_type="nodelet::Nodelet">
+  <class name="cob_env_model/AmplitudeConfidenceFilter" type="AmplitudeConfidenceFilter" base_class_type="nodelet::Nodelet">
   <description>
-  Nodelet for point cloud filtering (amplitude)
+  Nodelet for point cloud filtering (by amplitude and confidence)
   </description>
   </class>
   
@@ -26,12 +26,6 @@
   <class name="cob_env_model/TearoffFilter" type="TearoffFilter" base_class_type="nodelet::Nodelet">
   <description>
   Nodelet for point cloud filtering (tearoff edges)
-  </description>
-  </class>
-
-  <class name="cob_env_model/ConfidenceFilter" type="ConfidenceFilter" base_class_type="nodelet::Nodelet">
-  <description>
-  Nodelet for point cloud filtering (confidence)
   </description>
   </class>
   

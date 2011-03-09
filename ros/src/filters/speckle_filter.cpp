@@ -33,11 +33,11 @@
 class SpeckleFilter : public pcl_ros::PCLNodelet
 {
 public:
-	/*
     // Constructor
 	SpeckleFilter()
 	  //:	filter_speckle_(false)
 	{
+		t_check=1;
 	}
 
     // Destructor
@@ -45,7 +45,7 @@ public:
     {
     	/// void
     }
-*/
+
     void onInit()
     {
     	PCLNodelet::onInit();
@@ -56,17 +56,20 @@ public:
 		//n_.param("/speckle_filter_nodelet/filter_speckle", filter_speckle_,false);
 		//std::cout << " filter speckle: " << filter_speckle_ << std::endl;
 		ROS_INFO("Applying Speckles Filter");
+
     }
 
     void PointCloudSubCallback(const pcl::PointCloud<CPCPoint>::Ptr& pc)
     {
 		//ROS_INFO("PointCloudSubCallback");
+/*
 		pcl::PointCloud<CPCPoint>::Ptr pc_out(new pcl::PointCloud<CPCPoint>());
 		pc_out->points.resize(pc->points.size());
 		pc_out->header = pc->header;
-
+*/
 		cv::Mat xyz_mat_32F3 = cv::Mat(pc->height, pc->width, CV_32FC3);
 		cv::Mat intensity_mat_32F1 = cv::Mat(pc->height, pc->width, CV_32FC1);
+
 		float* f_ptr = 0;
 		float* i_ptr = 0;
 		int pc_msg_idx=0;
@@ -83,6 +86,7 @@ public:
 
 		//if(filter_speckle_)
 		FilterSpeckles(xyz_mat_32F3);
+
 		pc_msg_idx=0;
 		for (int row = 0; row < xyz_mat_32F3.rows; row++)
 		{
@@ -92,9 +96,14 @@ public:
 				memcpy(&pc->points[pc_msg_idx].x, &f_ptr[3*col], 3*sizeof(float));
 			}
 		}
+
 		point_cloud_pub_.publish(pc);
-		ROS_INFO("\tTime (FilterSpeckles) : %f", t.elapsed());
-		t.restart();
+		if (t_check==1)
+		{
+			ROS_INFO("\tTime elapsed(FilterSpeckles) : %f", t.elapsed());
+			t.restart();
+			t_check=0;
+		}
 	}
 
     void FilterSpeckles(cv::Mat xyz_mat_32F3)
@@ -105,6 +114,7 @@ public:
 
     ros::NodeHandle n_;
     boost::timer t;
+    bool t_check;
 
 protected:
     ros::Subscriber point_cloud_sub_;

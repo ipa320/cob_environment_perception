@@ -30,36 +30,42 @@
 
 //####################
 //#### nodelet class####
-class AmplitudeFilter : public pcl_ros::PCLNodelet
+class AmplitudeConfidenceFilter : public pcl_ros::PCLNodelet
 {
 public:
- /*   // Constructor
-	AmplitudeFilter()
-	  :	filter_by_amplitude_(false)
+    // Constructor
+	 AmplitudeConfidenceFilter()
+	  :	filter_by_amplitude_(false),
+	   	filter_by_confidence_(false)
 	{
+		t_check=1;
+		filter_info=1;
 	}
 
     // Destructor
-    ~AmplitudeFilter()
+    ~ AmplitudeConfidenceFilter()
     {
     	/// void
     }
-*/
+
     void onInit()
     {
     	PCLNodelet::onInit();
     	n_ = getNodeHandle();
 
-		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &AmplitudeFilter::PointCloudSubCallback, this);
-		point_cloud_pub_ = n_.advertise<sensor_msgs::PointCloud2>("point_cloud2_filtered",1);
+		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, & AmplitudeConfidenceFilter::PointCloudSubCallback, this);
+		point_cloud_pub_= n_.advertise<sensor_msgs::PointCloud2>("point_cloud2_filtered",1);
 
-		//n_.param("filter_by_amplitude", filter_by_amplitude_, false);
-		//std::cout << "filter by amplitude: " << filter_by_amplitude_ << std::endl;
-		ROS_INFO("Applying Amplitude Filter");
-		n_.param("/amplitude_filter_nodelet/amplitude_min_threshold", amplitude_min_threshold_, 1000);
+		n_.param("/amplitude_confidence_filter_nodelet/filter_by_amplitude", filter_by_amplitude_, false);
+	//	std::cout << "filter_by_amplitude: " << filter_by_amplitude_<< std::endl;
+		n_.param("/amplitude_confidence_filter_nodelet/filter_by_confidence", filter_by_confidence_, false);
+	//	std::cout << "filter_by_confidence: " << filter_by_confidence_<< std::endl;
+		n_.param("/amplitude_confidence_filter_nodelet/amplitude_min_threshold", amplitude_min_threshold_, 1000);
 		std::cout << "amplitude_min_threshold: " << amplitude_min_threshold_<< std::endl;
-		n_.param("/amplitude_filter_nodelet/amplitude_max_threshold", amplitude_max_threshold_, 60000);
+		n_.param("/amplitude_confidence_filter_nodelet/amplitude_max_threshold", amplitude_max_threshold_, 60000);
 		std::cout << "amplitude_max_threshold: " << amplitude_max_threshold_<< std::endl;
+		n_.param("/amplitude_confidence_filter_nodelet/confidence_threshold", confidence_threshold_, 60000);
+		std::cout << "confidence_threshold: " << confidence_threshold_<< std::endl;
     }
 
     void PointCloudSubCallback(const pcl::PointCloud<CPCPoint>::Ptr& pc)
@@ -98,12 +104,17 @@ public:
 			}
 		}
 
-		//if(filter_by_amplitude_)
-		FilterByAmplitude(pc, pc_out);
-		point_cloud_pub_.publish(pc_out);
-		ROS_INFO("\tTime elapsed (AmplitudeFilter) : %f", t.elapsed());
-		t.restart();
-
+		if(filter_by_amplitude_ || filter_by_confidence_)
+		{
+			FilterByAmplitude(pc, pc_out);
+			point_cloud_pub_.publish(pc_out);
+			if (t_check==1)
+			{
+				ROS_INFO("\tTime elapsed (Amplitude_Confidence_Filter) : %f", t.elapsed());
+				t.restart();
+				t_check=0;
+			}
+		}
 	}
 
     void FilterByAmplitude(const pcl::PointCloud<CPCPoint>::Ptr& pc, const pcl::PointCloud<CPCPoint>::Ptr& pc_out)
@@ -119,13 +130,47 @@ public:
 				c_offset = pc->fields[d].offset;
 		}*/
 		int nr_p = 0;
-    	for( unsigned int i = 0; i < pc->points.size(); i++)
-    	{
-    		if( pc->points[i].intensity > amplitude_min_threshold_ && pc->points[i].intensity < amplitude_max_threshold_ && pc->points[i].confidence > 64000)
-    		{
-    			pc_out->points[nr_p++] = pc->points[i];
-    		}
+
+		if(filter_by_amplitude_==true && filter_by_confidence_==true)
+		{
+			if (filter_info==1)
+			{
+				ROS_INFO("Applying Amplitude and confidence Filter");
+			    filter_info=0;
+			}
+			for( unsigned int i = 0; i < pc->points.size(); i++)
+			{
+				if( pc->points[i].intensity > amplitude_min_threshold_ && pc->points[i].intensity < amplitude_max_threshold_ && pc->points[i].confidence > confidence_threshold_)
+				pc_out->points[nr_p++] = pc->points[i];
+			}
+		}
+
+		if(filter_by_amplitude_==true && filter_by_confidence_==false)
+		{
+			if (filter_info==1)
+			{
+				ROS_INFO("Applying Amplitude Filter");
+				filter_info=0;
+			}
+			for( unsigned int i = 0; i < pc->points.size(); i++)
+			{
+				if( pc->points[i].intensity > amplitude_min_threshold_ && pc->points[i].intensity < amplitude_max_threshold_)
+				pc_out->points[nr_p++] = pc->points[i];
+			}
     	}
+		if(filter_by_amplitude_==false && filter_by_confidence_==true)
+		{
+			if (filter_info==1)
+			{
+				ROS_INFO("Applying confidence Filter");
+				filter_info=0;
+			}
+			for( unsigned int i = 0; i < pc->points.size(); i++)
+			{
+				if( pc->points[i].confidence > confidence_threshold_)
+				pc_out->points[nr_p++] = pc->points[i];
+			}
+		}
 		/*float c_ptr;
 		float f_ptr[3];
 		f_ptr[0] = f_ptr[1] = 0;
@@ -147,15 +192,19 @@ public:
 
     ros::NodeHandle n_;
     boost::timer t;
+    bool t_check;
+    bool filter_info;
 
 protected:
     ros::Subscriber point_cloud_sub_;
     ros::Publisher point_cloud_pub_;
 
-    //bool filter_by_amplitude_;
+    bool filter_by_amplitude_;
+    bool filter_by_confidence_;
 
     int amplitude_min_threshold_;
     int amplitude_max_threshold_;
+    int confidence_threshold_;
 
 };
 
@@ -177,6 +226,6 @@ protected:
 //	return 0;
 //}
 
-PLUGINLIB_DECLARE_CLASS(cob_env_model, AmplitudeFilter, AmplitudeFilter, nodelet::Nodelet)
+PLUGINLIB_DECLARE_CLASS(cob_env_model,  AmplitudeConfidenceFilter,  AmplitudeConfidenceFilter, nodelet::Nodelet)
 
 

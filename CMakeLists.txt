@@ -46,10 +46,9 @@ ${PROJECT_SOURCE_DIR}/ros/include)
 #rosbuild_add_executable(bag_to_pcd ros/src/bag_to_pcd.cpp)
 rosbuild_add_library(cob_env_model ros/src/detect_tables.cpp
 	ros/src/aggregate_point_map.cpp
-	ros/src/filters/amplitude_filter.cpp
+	ros/src/filters/amplitude_confidence_filter.cpp
 	ros/src/filters/speckle_filter.cpp
 	ros/src/filters/tearoff_filter.cpp
-	ros/src/filters/confidence_filter.cpp
 	ros/src/segment_field_of_view.cpp
 	ros/src/cpc_point.cpp)
 rosbuild_add_executable(test_fov common/src/test_fov.cpp)
