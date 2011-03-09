@@ -186,10 +186,14 @@ public:
 
         }
 
+
+
     void FilterSpeckles(cv::Mat xyz_mat_32F3)
     {
     	cv::Mat buf;
     	ipa_Utils::FilterSpeckles(xyz_mat_32F3, 50,0.1, buf);
+    	ROS_INFO("\tTime (FilterSpeckles) : %f", t.elapsed());
+    	t.restart();
     }
 
     void FilterByAmplitude(const pcl::PointCloud<CPCPoint>::Ptr& pc, const pcl::PointCloud<CPCPoint>::Ptr& pc_out)
@@ -383,7 +387,7 @@ public:
     }
 
     ros::NodeHandle n_;
-
+    boost::timer t;
 
 protected:
     ros::Subscriber point_cloud_sub_;
