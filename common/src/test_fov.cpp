@@ -34,7 +34,7 @@ int main()
 	seg.computeFieldOfView(fovHor,fovVer,maxRange,n_up,n_down,n_right,n_left);
 	std::cout << "compute FOV: " << t.elapsed() << std::endl;
 	t.restart();
-	seg.segment(indices,n_up,n_down,n_right,n_left,maxRange);
+	//seg.segment(indices,n_up,n_down,n_right,n_left,maxRange);
 	std::cout << "segment: " << t.elapsed() << std::endl;
 
 	pcl::PointCloud<pcl::PointXYZ> frustum;
