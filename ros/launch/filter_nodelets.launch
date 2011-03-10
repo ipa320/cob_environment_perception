@@ -3,7 +3,7 @@
 
   <node pkg="nodelet" type="nodelet" name="pcl_manager"  args="manager" output="screen"/>
  
-  <!-- Run amplitude filter --> 
+  <!-- Run amplitude filter 
   <node pkg="nodelet" type="nodelet" name="amplitude_confidence_filter_nodelet" args="load cob_env_model/AmplitudeConfidenceFilter pcl_manager" output="screen">
   	<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
   	<remap from="point_cloud2_filtered" to="/cob_env_model/point_cloud2_filtered"/>
@@ -12,7 +12,7 @@
 	<param name="amplitude_min_threshold" type="double" value="3000"/>
 	<param name="amplitude_max_threshold" type="double" value="70000"/>
 	<param name="confidence_threshold" type="double" value="62000" />
-  </node>  
+  </node>  --> 
   
   <!-- Run speckle filter -->
   <node pkg="nodelet" type="nodelet" name="speckle_filter_nodelet" args="load cob_env_model/SpeckleFilter pcl_manager" output="screen">

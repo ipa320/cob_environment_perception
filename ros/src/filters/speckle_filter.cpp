@@ -23,7 +23,7 @@
 // external includes
 #include <boost/timer.hpp>
 #include <cob_vision_utils/VisionUtils.h>
-//#include "pcl/point_types.h"
+#include "pcl/point_types.h"
 #include <pluginlib/class_list_macros.h>
 #include <pcl_ros/pcl_nodelet.h>
 #include <cob_env_model/cpc_point.h>
@@ -68,19 +68,20 @@ public:
 		pc_out->header = pc->header;
 */
 		cv::Mat xyz_mat_32F3 = cv::Mat(pc->height, pc->width, CV_32FC3);
-		cv::Mat intensity_mat_32F1 = cv::Mat(pc->height, pc->width, CV_32FC1);
+	  //cv::Mat intensity_mat_32F1 = cv::Mat(pc->height, pc->width, CV_32FC1);
 
 		float* f_ptr = 0;
-		float* i_ptr = 0;
+	  //float* i_ptr = 0;
 		int pc_msg_idx=0;
 		for (int row = 0; row < xyz_mat_32F3.rows; row++)
 		{
 			f_ptr = xyz_mat_32F3.ptr<float>(row);
-			i_ptr = intensity_mat_32F1.ptr<float>(row);
+			//i_ptr = intensity_mat_32F1.ptr<float>(row);
 			for (int col = 0; col < xyz_mat_32F3.cols; col++, pc_msg_idx++)
 			{
 				memcpy(&f_ptr[3*col], &pc->points[pc_msg_idx].x, 3*sizeof(float));
-				memcpy(&i_ptr[col], &pc->points[pc_msg_idx].intensity, sizeof(float));
+				std::cout << " pc->points[pc_msg_idx].data: " << pc->points[pc_msg_idx].x << std::endl;
+			  //memcpy(&i_ptr[col], &pc->points[pc_msg_idx].intensity, sizeof(float));
 			}
 		}
 

@@ -19,7 +19,7 @@
 // external includes
 #include <boost/timer.hpp>
 #include <cob_vision_utils/VisionUtils.h>
-//#include "pcl/point_types.h"
+#include "pcl/point_types.h"
 #include <pluginlib/class_list_macros.h>
 #include <pcl_ros/pcl_nodelet.h>
 #include <cob_env_model/cpc_point.h>
