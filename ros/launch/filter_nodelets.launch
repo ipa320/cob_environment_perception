@@ -16,26 +16,26 @@
   
   <!-- Run speckle filter -->
   <node pkg="nodelet" type="nodelet" name="speckle_filter_nodelet" args="load cob_env_model/SpeckleFilter pcl_manager" output="screen">
-  	<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
-  	<remap from="point_cloud2_filtered_speckle" to="/cob_env_model/point_cloud2_filtered_speckle"/>
+  	<remap from="point_cloud2" to="/cob_env_model/point_cloud2_filtered_amp"/>
+  	<remap from="point_cloud2_filtered" to="/cob_env_model/point_cloud2_filtered_speckle"/>
     <param name="filter_speckle" type="bool" value="true"/> 
   </node>  
   
  <!-- Run tearoff edges filter  -->
   <node pkg="nodelet" type="nodelet" name="tearoff_filter_nodelet" args="load cob_env_model/TearoffFilter pcl_manager" output="screen">
-  	<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
-  	<remap from="point_cloud2_filtered_tearoff" to="/cob_env_model/point_cloud2_filtered_tearoff"/>
+  	<remap from="point_cloud2" to="/cob_env_model/point_cloud2_filtered_speckle"/>
+  	<remap from="point_cloud2_filtered" to="/cob_env_model/point_cloud2_filtered_tearoff"/>
 	<param name="filter_tearoff" type="bool" value="false"/>
   </node> 
   
-  <!-- Run StatisticalOutlierRemoval filter 
+  <!-- Run StatisticalOutlierRemoval filter -->
   <node pkg="nodelet" type="nodelet" name="outlier_removal" args="load pcl/StatisticalOutlierRemoval pcl_manager" output="screen">
-    <remap from="~input" to="/swissranger/pointcloud2_raw"/>
+    <remap from="~input" to="/cob_env_model/point_cloud2_filtered_tearoff"/>
     <rosparam>
       mean_k: 30
       stddev: 0.5
       negative: False
     </rosparam> 
-  </node> -->
+  </node>
 
 </launch>

@@ -51,8 +51,8 @@ public:
     	PCLNodelet::onInit();
     	n_ = getNodeHandle();
 
-		point_cloud_sub_ = n_.subscribe("/cob_env_model/point_cloud2_filtered_amp", 1, &SpeckleFilter::PointCloudSubCallback, this);
-		point_cloud_pub_ = n_.advertise<sensor_msgs::PointCloud2>("point_cloud2_filtered_speckle",1);
+		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &SpeckleFilter::PointCloudSubCallback, this);
+		point_cloud_pub_ = n_.advertise<sensor_msgs::PointCloud2>("point_cloud2_filtered",1);
 		//n_.param("/speckle_filter_nodelet/filter_speckle", filter_speckle_,false);
 		//std::cout << " filter speckle: " << filter_speckle_ << std::endl;
 		ROS_INFO("Applying Speckles Filter");
