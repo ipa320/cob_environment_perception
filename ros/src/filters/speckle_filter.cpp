@@ -51,8 +51,8 @@ public:
     	PCLNodelet::onInit();
     	n_ = getNodeHandle();
 
-		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &SpeckleFilter::PointCloudSubCallback, this);
-		point_cloud_pub_ = n_.advertise<sensor_msgs::PointCloud2>("point_cloud2_filtered",1);
+		point_cloud_sub_ = n_.subscribe("/cob_env_model/point_cloud2_filtered_amp", 1, &SpeckleFilter::PointCloudSubCallback, this);
+		point_cloud_pub_ = n_.advertise<sensor_msgs::PointCloud2>("point_cloud2_filtered_speckle",1);
 		//n_.param("/speckle_filter_nodelet/filter_speckle", filter_speckle_,false);
 		//std::cout << " filter speckle: " << filter_speckle_ << std::endl;
 		ROS_INFO("Applying Speckles Filter");
@@ -80,7 +80,6 @@ public:
 			for (int col = 0; col < xyz_mat_32F3.cols; col++, pc_msg_idx++)
 			{
 				memcpy(&f_ptr[3*col], &pc->points[pc_msg_idx].x, 3*sizeof(float));
-				std::cout << " pc->points[pc_msg_idx].data: " << pc->points[pc_msg_idx].x << std::endl;
 			  //memcpy(&i_ptr[col], &pc->points[pc_msg_idx].intensity, sizeof(float));
 			}
 		}
@@ -101,7 +100,7 @@ public:
 		point_cloud_pub_.publish(pc);
 		if (t_check==1)
 		{
-			ROS_INFO("\tTime elapsed(FilterSpeckles) : %f", t.elapsed());
+			ROS_INFO("Time elapsed(FilterSpeckles) : %f", t.elapsed());
 			t.restart();
 			t_check=0;
 		}

@@ -75,45 +75,13 @@ public:
 		pc_out->points.resize(pc->points.size());
 		pc_out->header = pc->header;
 
-		cv::Mat xyz_mat_32F3 = cv::Mat(pc->height, pc->width, CV_32FC3);
-		cv::Mat intensity_mat_32F1 = cv::Mat(pc->height, pc->width, CV_32FC1);
-
-		//assumption: data order is always x->y->z in PC, datatype = float
-		/*int x_offset = 0, i_offset = 0;
-		for (size_t d = 0; d < pc->fields.size(); ++d)
+		FilterByAmplitude(pc, pc_out);
+		point_cloud_pub_.publish(pc_out);
+		if (t_check==1)
 		{
-			if(pc->fields[d].name == "x")
-				x_offset = pc->fields[d].offset;
-			if(pc->fields[d].name == "intensity")
-				i_offset = pc->fields[d].offset;
-		}*/
-
-		float* f_ptr = 0;
-		float* i_ptr = 0;
-		int pc_msg_idx=0;
-		for (int row = 0; row < xyz_mat_32F3.rows; row++)
-		{
-			f_ptr = xyz_mat_32F3.ptr<float>(row);
-			i_ptr = intensity_mat_32F1.ptr<float>(row);
-			for (int col = 0; col < xyz_mat_32F3.cols; col++, pc_msg_idx++)
-			{
-				//memcpy(&f_ptr[3*col], &pc->data[pc_msg_idx * pc->point_step + x_offset], 3*sizeof(float));
-				//memcpy(&i_ptr[col], &pc->data[pc_msg_idx * pc->point_step + i_offset], sizeof(float));
-				memcpy(&f_ptr[3*col], &pc->points[pc_msg_idx].x, 3*sizeof(float));
-				memcpy(&i_ptr[col], &pc->points[pc_msg_idx].intensity, sizeof(float));
-			}
-		}
-
-		if(filter_by_amplitude_ || filter_by_confidence_)
-		{
-			FilterByAmplitude(pc, pc_out);
-			point_cloud_pub_.publish(pc_out);
-			if (t_check==1)
-			{
-				ROS_INFO("\tTime elapsed (Amplitude_Confidence_Filter) : %f", t.elapsed());
-				t.restart();
-				t_check=0;
-			}
+			ROS_INFO("Time elapsed (Amplitude_Confidence_Filter) : %f", t.elapsed());
+			t.restart();
+			t_check=0;
 		}
 	}
 
