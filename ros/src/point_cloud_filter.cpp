@@ -181,7 +181,7 @@ public:
     		//if(filter_by_confidence_) FilterByConfidence(pc);
 
 
-			std::cout << pc_out2->size() << " points in pc_out" << std::endl;
+			//std::cout << pc_out2->size() << " points in pc_out" << std::endl;
     		point_cloud_pub_.publish(pc_out2);
 
         }
@@ -348,13 +348,13 @@ public:
     			continue;
     		}
     	}
-		std::cout << points_to_remove->indices.size() << " points filtered" << std::endl;
+		//std::cout << points_to_remove->indices.size() << " points filtered" << std::endl;
 		pcl::ExtractIndices<CPCPoint> extractIndices;
 		extractIndices.setInputCloud(pc);
 		extractIndices.setIndices(points_to_remove);
 		extractIndices.setNegative(true);
 		extractIndices.filter(*(pc_out.get()));
-		std::cout << "Jump edge filter time: " << t.elapsed() << std::endl;
+		//std::cout << "Jump edge filter time: " << t.elapsed() << std::endl;
 		/*pc_out->width = nr_p;
 		pc_out->height = 1;
 		pc_out->points.resize(nr_p);

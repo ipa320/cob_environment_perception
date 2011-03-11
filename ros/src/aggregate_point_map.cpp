@@ -112,6 +112,7 @@ public:
 		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &AggregatePointMap::pointCloudSubCallbackInput, this);
 		point_cloud_sub_fov_ = n_.subscribe("point_cloud2_fov", 1, &AggregatePointMap::pointCloudSubCallbackICP, this);
 		point_cloud_pub_ = n_.advertise<pcl::PointCloud<pcl::PointXYZ> >("point_cloud2_map",1);
+		point_cloud_pub_aligned_ = n_.advertise<pcl::PointCloud<pcl::PointXYZ> >("point_cloud2_aligned",1);
 		trigger_srv_client_ = n_.serviceClient<cob_env_model::TriggerStamped>("trigger_stamped");
     }
 
@@ -215,6 +216,7 @@ public:
 
 	void pointCloudSubCallbackICP(const pcl::PointCloud<pcl::PointXYZ>::Ptr& pc)
 	{
+		static int i = 0;
 		StampedTransform transform;
 		try{
 			boost::timer t;
@@ -227,18 +229,28 @@ public:
 			icp.setMaximumIterations(50);
 			icp.setMaxCorrespondenceDistance(0.1);
 			icp.setTransformationEpsilon (1e-6);
-			pcl::PointCloud<pcl::PointXYZ> pc_map_new;
-			icp.align(pc_map_new);
-			map_ += pc_map_new;
+			pcl::PointCloud<pcl::PointXYZ> pc_aligned;
+			icp.align(pc_aligned);
+			point_cloud_pub_aligned_.publish(pc_aligned);
+			std::stringstream ss1;
+			ss1 << "/home/goa/pcl_daten/icp_fov/map_" << i << ".pcd";
+			//pcl::io::savePCDFileASCII (ss1.str(), map_);
+			map_ += pc_aligned;
 			std::cout << "Fitness score: " << icp.getFitnessScore() << std::endl;
 			ROS_INFO("Aligned PC has %d points", map_.size());
 			ROS_INFO("\tTime: %f", t.elapsed());
 
 			point_cloud_pub_.publish(map_);
-			/*std::stringstream ss;
-			ss << "/home/goa/pcl_daten/pc_" << i << ".pcd";
-			pcl::io::savePCDFileASCII (ss.str(), map_);
-			i++;*/
+			std::stringstream ss;
+			ss << "/home/goa/pcl_daten/icp_fov/pc_aligned_" << i << ".pcd";
+			//pcl::io::savePCDFileASCII (ss.str(), pc_aligned);
+			std::stringstream ss2;
+			ss2 << "/home/goa/pcl_daten/icp_fov/pc_" << i << ".pcd";
+			//pcl::io::savePCDFileASCII (ss2.str(), pc_);
+			std::stringstream ss3;
+			ss3 << "/home/goa/pcl_daten/icp_fov/map_fov_" << i << ".pcd";
+			//pcl::io::savePCDFileASCII (ss3.str(), *(pc.get()));
+			i++;
     		//else
     		//	ROS_INFO("Skipped");
     	}
@@ -257,6 +269,7 @@ protected:
     ros::Subscriber point_cloud_sub_;
     ros::Subscriber point_cloud_sub_fov_;
     ros::Publisher point_cloud_pub_;
+    ros::Publisher point_cloud_pub_aligned_;
     ros::ServiceClient trigger_srv_client_;
 
     TransformListener tf_listener_;

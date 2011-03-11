@@ -17,9 +17,9 @@
  * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 02/2011
+ * Date of creation: 03/2011
  * ToDo:
- * Nodelet code
+ *
  *
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -67,24 +67,10 @@
 #include <pcl_ros/pcl_nodelet.h>
 #include <pcl/io/io.h>
 #include <pcl/point_types.h>
-#include <pcl/registration/icp.h>
-#include <tf/transform_listener.h>
-#include <tf_conversions/tf_kdl.h>
 #include <pcl_ros/transforms.h>
 #include <pcl_ros/point_cloud.h>
-#include <visualization_msgs/Marker.h>
 
-#include "pcl/point_types.h"
-#include "pcl/ModelCoefficients.h"
-#include "pcl/sample_consensus/method_types.h"
-#include "pcl/sample_consensus/model_types.h"
-#include "pcl/segmentation/sac_segmentation.h"
-#include "pcl/filters/extract_indices.h"
-#include "pcl/features/normal_3d_omp.h"
-#include "pcl/kdtree/kdtree.h"
-#include "pcl/filters/project_inliers.h"
 #include "pcl/surface/convex_hull.h"
-#include <pcl/segmentation/extract_clusters.h>
 
 
 // ROS message includes
@@ -92,23 +78,20 @@
 
 // external includes
 #include <boost/timer.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
 
-
-using namespace tf;
 
 //####################
 //#### nodelet class ####
-class DetectTables : public pcl_ros::PCLNodelet
+class FeatureMap : public pcl_ros::PCLNodelet
 {
 public:
     // Constructor
-	DetectTables()
+	FeatureMap()
 	{
 	}
 
     // Destructor
-    ~DetectTables()
+    ~FeatureMap()
     {
     	/// void
     }
@@ -119,15 +102,40 @@ public:
     	PCLNodelet::onInit();
     	n_ = getNodeHandle();
 
-		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &DetectTables::pointCloudSubCallback, this);
-		table_marker_pub_ = n_.advertise<visualization_msgs::Marker>("table_marker",100);
-		convex_hull_pub_ = n_.advertise<pcl::PointCloud<pcl::PointXYZ> >("table_hull",1);
+    	convex_hull_sub_ = n_.subscribe("table_hull", 1, &FeatureMap::subCallback, this);
+		map_pub_ = n_.advertise<pcl::PointCloud<pcl::PointXYZ> >("feature_map",1);
     }
 
 
     //input should be point cloud that is amplitude filetered, statistical outlier filtered, voxel filtered and the floor cut, coordinate system should be /map
-	void pointCloudSubCallback(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud)
+	void subCallback(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud)
 	{
+		//Test if hull intersects with one already in map, if yes => merge, if no => add
+		for(unsigned int i=0; i < map_.size(); i++)
+		{
+			pcl::PointCloud<pcl::PointXYZ>::Ptr map_feature = map_[i].makeShared();
+			for(unsigned int j=0; j<map_feature->points.size(); j++)
+			{
+				pcl::PointXYZ g;
+				if(j<map_feature->size()-1)
+				{
+					g.x = map_feature.points[j+1].x - map_feature.points[j].x;
+					g.y = map_feature.points[j+1].y - map_feature.points[j].y;
+				}
+				else
+				{
+					g.x = map_feature.points[0].x - map_feature.points[j].x;
+					g.y = map_feature.points[0].y - map_feature.points[j].y;
+				}
+				for(unsigned int k=0; k<cloud->points.size(); k++)
+				{
+
+				}
+			}
+		}
+
+
+
 		static int ctr = 0;
 		pcl::KdTree<pcl::PointXYZ>::Ptr clusters_tree;
 		clusters_tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZ> > ();
@@ -227,22 +235,16 @@ public:
 			proj.setModelCoefficients (coefficients_plane);
 			proj.filter (*cloud_projected);
 
-			/*std::stringstream ss;
+			std::stringstream ss;
 			ss << "/home/goa/pcl_daten/table_detection/plane_" << ctr << ".pcd";
-			pcl::io::savePCDFileASCII (ss.str(), *cloud_projected);
-			ctr++;*/
+			//pcl::io::savePCDFileASCII (ss.str(), *cloud_projected);
+			ctr++;
 
 			// Create a Convex Hull representation of the projected inliers
 			pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_hull (new pcl::PointCloud<pcl::PointXYZ> ());
-			std::vector< pcl::Vertices > hull_polygon;
 			pcl::ConvexHull<pcl::PointXYZ> chull;
 			chull.setInputCloud (cloud_projected);
-			chull.reconstruct (*cloud_hull, hull_polygon);
-
-			std::stringstream ss;
-			ss << "/home/goa/pcl_daten/table_detection/hull_" << ctr << ".pcd";
-			pcl::io::savePCDFileASCII (ss.str(), *cloud_hull);
-			ctr++;
+			chull.reconstruct (*cloud_hull);
 
 			ROS_INFO ("Convex hull has: %zu data points.", cloud_hull->points.size ());
 
@@ -296,12 +298,12 @@ public:
 
 
 protected:
-    ros::Subscriber point_cloud_sub_;
-    ros::Publisher table_marker_pub_;
-    ros::Publisher convex_hull_pub_;
+    ros::Subscriber convex_hull_sub_;
+    ros::Publisher map_pub_;
 
-    TransformListener tf_listener_;
+    std::vector<pcl::PointCloud<pcl::PointXYZ> > map_;
 
 };
 
-PLUGINLIB_DECLARE_CLASS(cob_env_model, DetectTables, DetectTables, nodelet::Nodelet)
+PLUGINLIB_DECLARE_CLASS(cob_env_model, FeatureMap, FeatureMap, nodelet::Nodelet)
+

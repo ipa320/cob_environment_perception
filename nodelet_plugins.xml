@@ -5,6 +5,12 @@
   </description>
   </class>
   
+  <class name="cob_env_model/PointCloudFilter" type="PointCloudFilter" base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet for point cloud filter
+  </description>
+  </class>
+  
   <class name="cob_env_model/AggregatePointMap" type="AggregatePointMap" base_class_type="nodelet::Nodelet">
   <description>
   Nodelet for point map aggregation
