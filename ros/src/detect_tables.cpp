@@ -162,7 +162,7 @@ public:
 
 			if (table_cluster_ptr->points.size() < (unsigned int)300)
 			{
-				ROS_INFO("Table cluster only has %d points, skipping cluster", (int)table_cluster_ptr->points.size());
+				//ROS_INFO("Table cluster only has %d points, skipping cluster", (int)table_cluster_ptr->points.size());
 				continue;
 			}
 
@@ -190,21 +190,21 @@ public:
 			pcl::PointIndices::Ptr inliers_plane (new pcl::PointIndices ());
 			pcl::ModelCoefficients::Ptr coefficients_plane (new pcl::ModelCoefficients ());
 			seg.segment (*inliers_plane, *coefficients_plane);
-			std::cerr << "Plane coefficients: " << *coefficients_plane << std::endl;
+			//std::cerr << "Plane coefficients: " << *coefficients_plane << std::endl;
 
 			if (coefficients_plane->values.size () <=3)
 			{
-				ROS_INFO("Failed to detect table in scan, skipping cluster");
+				//ROS_INFO("Failed to detect table in scan, skipping cluster");
 				continue;
 			}
 			if ( inliers_plane->indices.size() < (unsigned int)150)
 			{
-				ROS_INFO("Plane detection has %d inliers, below min threshold of %d, skipping cluster", (int)inliers_plane->indices.size(), 150);
+				//ROS_INFO("Plane detection has %d inliers, below min threshold of %d, skipping cluster", (int)inliers_plane->indices.size(), 150);
 				continue;
 			}
 			if(fabs(coefficients_plane->values[0]) > 0.1 || fabs(coefficients_plane->values[1]) > 0.1 || fabs(coefficients_plane->values[2]) < 0.9)
 			{
-				ROS_INFO("Detected plane not perpendicular to z axis, skipping cluster");
+				//ROS_INFO("Detected plane not perpendicular to z axis, skipping cluster");
 				continue;
 			}
 
@@ -216,7 +216,7 @@ public:
 			extractIndices.filter(dominant_plane);
 			//extractIndices.setNegative(true);
 			//extractIndices.filter(cloud);
-			ROS_INFO("Plane has %d inliers", (int)inliers_plane->indices.size());
+			//ROS_INFO("Plane has %d inliers", (int)inliers_plane->indices.size());
 			//ROS_INFO("Saved plane to %s", ss.str());
 
 			  // Project the model inliers
