@@ -104,193 +104,104 @@ public:
 
     	convex_hull_sub_ = n_.subscribe("table_hull", 1, &FeatureMap::subCallback, this);
 		map_pub_ = n_.advertise<pcl::PointCloud<pcl::PointXYZ> >("feature_map",1);
+
+    	pcl::PointCloud<pcl::PointXYZ> map_feature;
+    	map_feature.points.resize(3);
+    	map_feature.points[0].x = 0;
+    	map_feature.points[0].y = 0;
+    	map_feature.points[1].x = 1;
+    	map_feature.points[1].y = 0.5;
+    	map_feature.points[2].x = 0;
+    	map_feature.points[2].y = 1;
+    	map_.push_back(map_feature);
     }
 
 
-    //input should be point cloud that is amplitude filetered, statistical outlier filtered, voxel filtered and the floor cut, coordinate system should be /map
-	void subCallback(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud)
+    void subCallback(const pcl::PointCloud<pcl::PointXYZ>::Ptr& hull)
 	{
+    	hull->points.resize(3);
+    	hull->points[0].x = 4;
+    	hull->points[0].y = 4;
+    	hull->points[1].x = 5;
+    	hull->points[1].y = 5;
+    	hull->points[2].x = 4;
+    	hull->points[2].y = 5;
+		bool polygon_intersecting = true;
 		//Test if hull intersects with one already in map, if yes => merge, if no => add
 		for(unsigned int i=0; i < map_.size(); i++)
 		{
 			pcl::PointCloud<pcl::PointXYZ>::Ptr map_feature = map_[i].makeShared();
 			for(unsigned int j=0; j<map_feature->points.size(); j++)
 			{
+				double max_x1 = 0, max_y1 = 0;
+				double min_x1 = 1000, min_y1 = 1000;
+				double max_x2 = 0, max_y2 = 0;
+				double min_x2 = 1000, min_y2 = 1000;
 				pcl::PointXYZ g;
-				if(j<map_feature->size()-1)
+				pcl::PointXYZ a;
+				a.x = map_feature->points[j].x;
+				a.y = map_feature->points[j].y;
+				if(j<map_feature->points.size()-1)
 				{
-					g.x = map_feature.points[j+1].x - map_feature.points[j].x;
-					g.y = map_feature.points[j+1].y - map_feature.points[j].y;
+					g.x = -(map_feature->points[j+1].y - map_feature->points[j].y);
+					g.y = map_feature->points[j+1].x - map_feature->points[j].x;
 				}
 				else
 				{
-					g.x = map_feature.points[0].x - map_feature.points[j].x;
-					g.y = map_feature.points[0].y - map_feature.points[j].y;
+					g.x = -(map_feature->points[0].y - map_feature->points[j].y);
+					g.y = map_feature->points[0].x - map_feature->points[j].x;
 				}
-				for(unsigned int k=0; k<cloud->points.size(); k++)
+				std::cout << "a: " << a.x << ", " << a.y << std::endl;
+				std::cout << "g: " << g.x << ", " << g.y << std::endl;
+				for(unsigned int l=0; l<map_feature->points.size(); l++)
 				{
-
+					pcl::PointXYZ p = map_feature->points[l];
+					double m = (p.x*g.x+p.y*g.y-a.x*g.x-a.y*g.y)/(g.x*g.x+g.y*g.y);
+					double x = a.x + m*g.x;
+					double y = a.y + m*g.y;
+					if(x > max_x1)
+					{
+						max_x1 = x;
+						max_y1 = y;
+					}
+					if(x < min_x1)
+					{
+						min_x1 = x;
+						min_y1 = y;
+					}
+				}
+				for(unsigned int k=0; k<hull->points.size(); k++)
+				{
+					pcl::PointXYZ p = hull->points[k];
+					double m = (p.x*g.x+p.y*g.y-a.x*g.x-a.y*g.y)/(g.x*g.x+g.y*g.y);
+					double x = a.x + m*g.x;
+					double y = a.y + m*g.y;
+					if(x > max_x2)
+					{
+						max_x2 = x;
+						max_y2 = y;
+					}
+					if(x < min_x2)
+					{
+						min_x2 = x;
+						min_y2 = y;
+					}
+				}
+				std::cout << "x1,y1; max/min:" << max_x1 << ", " << max_y1 << "; " << min_x1 << ", " << min_y1 << std::endl;
+				std::cout << "x2,y2; max/min:" << max_x2 << ", " << max_y2 << "; " << min_x2 << ", " << min_y2 << std::endl;
+				//Test if intersection occurs
+				if((max_x2-min_x1)/(max_x1-max_x2) <0 || (min_x2-min_x1)/(max_x1-min_x2) <0 ||
+						(max_y2-min_y1)/(max_y1-max_y2) <0 || (min_y2-min_y1)/(max_y1-min_y2) <0) //äußerer Teilpunkt, separating line found
+				{
+					polygon_intersecting = false;
+					std::cout << polygon_intersecting << std::endl;
+					break;
 				}
 			}
+			std::cout << polygon_intersecting << std::endl;
+			//Do the same the other way round.
 		}
 
-
-
-		static int ctr = 0;
-		pcl::KdTree<pcl::PointXYZ>::Ptr clusters_tree;
-		clusters_tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZ> > ();
-		pcl::EuclideanClusterExtraction<pcl::PointXYZ> cluster;
-
-		// Table clustering parameters
-		cluster.setClusterTolerance (0.06);
-		cluster.setMinClusterSize (300);
-		cluster.setSearchMethod (clusters_tree);
-
-		// Cluster potential table points
-		std::vector<pcl::PointIndices> table_clusters;
-		cluster.setInputCloud (cloud);
-		cluster.extract (table_clusters);
-
-		ROS_INFO ("Number of table clusters found: %d", (int)table_clusters.size ());
-
-		pcl::ExtractIndices<pcl::PointXYZ> extract;
-
-		for(unsigned int i = 0; i < table_clusters.size(); ++i)
-		{
-			pcl::PointCloud<pcl::PointXYZ> table_cluster;
-			extract.setInputCloud (cloud);
-			extract.setIndices (boost::make_shared<const pcl::PointIndices> (table_clusters[i]));
-			extract.setNegative (false);
-			extract.filter (table_cluster);
-			std::stringstream ss1;
-			ss1 << "/home/goa/pcl_daten/table_detection/cluster_" << i << ".pcd";
-			//pcl::io::savePCDFileASCII (ss1.str(), table_cluster);
-
-			pcl::PointCloud<pcl::PointXYZ>::ConstPtr table_cluster_ptr = boost::make_shared<const pcl::PointCloud<pcl::PointXYZ> > (table_cluster);
-
-			if (table_cluster_ptr->points.size() < (unsigned int)300)
-			{
-				ROS_INFO("Table cluster only has %d points, skipping cluster", (int)table_cluster_ptr->points.size());
-				continue;
-			}
-
-			pcl::NormalEstimation<pcl::PointXYZ,pcl::Normal> normalEstimator;
-			normalEstimator.setInputCloud(table_cluster_ptr);
-			pcl::KdTreeFLANN<pcl::PointXYZ>::Ptr tree (new pcl::KdTreeFLANN<pcl::PointXYZ> ());
-			normalEstimator.setSearchMethod(tree);
-			normalEstimator.setKSearch(30);
-			//normalEstimator.setNumberOfThreads(4);
-			pcl::PointCloud<pcl::Normal>::Ptr cloud_normals(new pcl::PointCloud<pcl::Normal> ());
-			normalEstimator.compute(*cloud_normals);
-
-			pcl::SACSegmentationFromNormals<pcl::PointXYZ, pcl::Normal> seg;
-
-			// Create the segmentation object for the planar model and set all the parameters
-			seg.setOptimizeCoefficients (true);
-			seg.setModelType (pcl::SACMODEL_NORMAL_PLANE);
-			seg.setNormalDistanceWeight (0.1);
-			seg.setMethodType (pcl::SAC_RANSAC);
-			seg.setMaxIterations (100);
-			seg.setDistanceThreshold (0.03);
-			seg.setInputCloud (table_cluster_ptr);
-			seg.setInputNormals (cloud_normals);
-			// Obtain the plane inliers and coefficients
-			pcl::PointIndices::Ptr inliers_plane (new pcl::PointIndices ());
-			pcl::ModelCoefficients::Ptr coefficients_plane (new pcl::ModelCoefficients ());
-			seg.segment (*inliers_plane, *coefficients_plane);
-			std::cerr << "Plane coefficients: " << *coefficients_plane << std::endl;
-
-			if (coefficients_plane->values.size () <=3)
-			{
-				ROS_INFO("Failed to detect table in scan, skipping cluster");
-				continue;
-			}
-			if ( inliers_plane->indices.size() < (unsigned int)150)
-			{
-				ROS_INFO("Plane detection has %d inliers, below min threshold of %d, skipping cluster", (int)inliers_plane->indices.size(), 150);
-				continue;
-			}
-			if(fabs(coefficients_plane->values[0]) > 0.1 || fabs(coefficients_plane->values[1]) > 0.1 || fabs(coefficients_plane->values[2]) < 0.9)
-			{
-				ROS_INFO("Detected plane not perpendicular to z axis, skipping cluster");
-				continue;
-			}
-
-
-			pcl::PointCloud<pcl::PointXYZ> dominant_plane;
-			pcl::ExtractIndices<pcl::PointXYZ> extractIndices;
-			extractIndices.setInputCloud(table_cluster_ptr);
-			extractIndices.setIndices(inliers_plane);
-			extractIndices.filter(dominant_plane);
-			//extractIndices.setNegative(true);
-			//extractIndices.filter(cloud);
-			ROS_INFO("Plane has %d inliers", (int)inliers_plane->indices.size());
-			//ROS_INFO("Saved plane to %s", ss.str());
-
-			  // Project the model inliers
-			pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_projected (new pcl::PointCloud<pcl::PointXYZ> ());
-			pcl::ProjectInliers<pcl::PointXYZ> proj;
-			proj.setModelType (pcl::SACMODEL_PLANE);
-			proj.setInputCloud (table_cluster_ptr);
-			proj.setModelCoefficients (coefficients_plane);
-			proj.filter (*cloud_projected);
-
-			std::stringstream ss;
-			ss << "/home/goa/pcl_daten/table_detection/plane_" << ctr << ".pcd";
-			//pcl::io::savePCDFileASCII (ss.str(), *cloud_projected);
-			ctr++;
-
-			// Create a Convex Hull representation of the projected inliers
-			pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_hull (new pcl::PointCloud<pcl::PointXYZ> ());
-			pcl::ConvexHull<pcl::PointXYZ> chull;
-			chull.setInputCloud (cloud_projected);
-			chull.reconstruct (*cloud_hull);
-
-			ROS_INFO ("Convex hull has: %zu data points.", cloud_hull->points.size ());
-
-			visualization_msgs::Marker marker;
-			marker.action = visualization_msgs::Marker::ADD;
-			marker.type = visualization_msgs::Marker::TRIANGLE_LIST;
-			marker.lifetime = ros::Duration();
-			marker.header.frame_id = cloud->header.frame_id;
-
-			convex_hull_pub_.publish(cloud_hull);
-
-			//create the marker in the table reference frame
-			//the caller is responsible for setting the pose of the marker to match
-
-			marker.scale.x = 1;
-			marker.scale.y = 1;
-			marker.scale.z = 1;
-
-			geometry_msgs::Point pt1, pt2, pt3;
-			pt1.x = cloud_hull->points[0].x;
-			pt1.y = cloud_hull->points[0].y;
-			pt1.z = cloud_hull->points[0].z;
-
-			for(unsigned int i = 1; i < cloud_hull->points.size()-1; ++i)
-			{
-				pt2.x = cloud_hull->points[i].x;
-				pt2.y = cloud_hull->points[i].y;
-				pt2.z = cloud_hull->points[i].z;
-
-				pt3.x = cloud_hull->points[i+1].x;
-				pt3.y = cloud_hull->points[i+1].y;
-				pt3.z = cloud_hull->points[i+1].z;
-
-				marker.points.push_back(pt1);
-				marker.points.push_back(pt2);
-				marker.points.push_back(pt3);
-			}
-
-			marker.color.r = 0.0;
-			marker.color.g = 1.0;
-			marker.color.b = 0.0;
-			marker.color.a = 1.0;
-
-			table_marker_pub_.publish(marker);
-
-		}
 		return;
 	}
 

@@ -40,6 +40,12 @@
   Nodelet for field of view segmentation
   </description>
   </class>
+  
+  <class name="cob_env_model/FeatureMap" type="FeatureMap" base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet for feature map
+  </description>
+  </class>
 </library>
 
 <library path="ros/lib/libnodelet_cpc_publisher">
