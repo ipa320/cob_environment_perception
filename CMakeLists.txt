@@ -62,12 +62,12 @@ rosbuild_add_executable(test_fov common/src/test_fov.cpp)
 
 
 # add compile flag
-#rosbuild_add_compile_flags(env_model -D__LINUX__ -D__COB_ROS__)
-#rosbuild_add_compile_flags(env_model_node -D__LINUX__ -D__COB_ROS__)
+#rosbuild_add_compile_flags(env_model -D__LINUX__ -D__LINUX__)
+#rosbuild_add_compile_flags(env_model_node -D__LINUX__ -D__LINUX__)
 #rosbuild_add_compile_flags(data_acquisition_node -D__LINUX__)
-#rosbuild_add_compile_flags(icp_registration_node -D__LINUX__ -D__COB_ROS__)
-rosbuild_add_compile_flags(cob_env_model -D__LINUX__ -D__COB_ROS__)
-#rosbuild_add_compile_flags(extract_features_node -D__LINUX__ -D__COB_ROS__)
+#rosbuild_add_compile_flags(icp_registration_node -D__LINUX__ -D__LINUX__)
+rosbuild_add_compile_flags(point_cloud_filter_node -D__LINUX__ -D__LINUX__)
+rosbuild_add_compile_flags(extract_features_node -D__LINUX__ -D__LINUX__)
 
 
 # add compile flag
