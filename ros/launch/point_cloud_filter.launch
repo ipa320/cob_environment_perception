@@ -1,13 +1,28 @@
 <?xml version="1.0"?>
 <launch>
-	<!-- start environment modelling -->
-	<node pkg="cob_env_model" type="point_cloud_filter_node" name="point_cloud_filter" ns="cob_env_model" cwd="node" respawn="false" output="screen">
-		<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
-		<param name="filter_by_amplitude" type="bool" value="true"/>
-		<param name="filter_tearoff" type="bool" value="false"/>
-		<param name="filter_speckle" type="bool" value="false"/>
-		<param name="filter_by_confidence" type="bool" value="false"/>
-		<param name="statistical_outlier_filter" type="bool" value="true"/>
-	</node>
+
+  <node pkg="nodelet" type="nodelet" name="pcl_manager"  args="manager" output="screen"/>
+  
+  <node pkg="nodelet" type="nodelet" name="point_cloud_filter" args="load cob_env_model/PointCloudFilter pcl_manager" output="screen">
+  	<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
+  	<remap from="point_cloud2_filtered" to="/cob_env_model/point_cloud2_filtered"/>
+  	<param name="filter_by_amplitude" type="bool" value="true"/>
+	<param name="filter_tearoff" type="bool" value="true"/>
+	<param name="filter_speckle" type="bool" value="false"/>
+	<param name="filter_by_confidence" type="bool" value="false"/>
+	<param name="amplitude_min_threshold" type="double" value="4000"/>
+	<param name="amplitude_max_threshold" type="double" value="70000"/>
+  </node>  
+  
+  <!-- Run a StatisticalOutlierRemoval filter -->
+  <node pkg="nodelet" type="nodelet" name="outlier_removal" args="load pcl/StatisticalOutlierRemoval pcl_manager" output="screen">
+    <remap from="~input" to="/cob_env_model/point_cloud2_filtered" />
+    <rosparam>
+      mean_k: 50
+      stddev: 0.5
+      negative: False
+    </rosparam>
+  </node>
+
 </launch>
 											
