@@ -50,6 +50,7 @@ Cloud Data) format.
 #include <rosbag/view.h>
 #include "pcl/io/io.h"
 #include "pcl/io/pcd_io.h"
+#include "pcl/ros/conversions.h"
 #include "pcl_ros/transforms.h"
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
@@ -131,7 +132,12 @@ int
 			continue;
 		  }
 		  // Transform it
-		  pcl_ros::transformPointCloud ("/head_tof_link", *cloud, cloud_t, tf_listener);
+		  tf::StampedTransform transform;
+		  tf_listener.lookupTransform("/head_tof_link", "/head_tof_link", ros::Time(0), transform);
+		  Eigen::Matrix4f out_mat;
+		  pcl_ros::transformAsMatrix (transform, out_mat);
+		  //pcl_ros::transformPointCloud ("/head_axis_link", *cloud, cloud_t, tf_listener);
+		  pcl_ros::transformPointCloud (out_mat, *cloud, cloud_t);
 
 		  std::cerr << "Got " << cloud_t.width * cloud_t.height << " data points in frame " << cloud_t.header.frame_id << " with the following fields: " << pcl::getFieldsList (cloud_t) << std::endl;
 

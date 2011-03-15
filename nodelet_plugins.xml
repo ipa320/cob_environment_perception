@@ -1,0 +1,63 @@
+<library path="ros/lib/libcob_env_model">
+  <class name="cob_env_model/DetectTables" type="DetectTables" base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet for table detection
+  </description>
+  </class>
+  
+  <class name="cob_env_model/PointCloudFilter" type="PointCloudFilter" base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet for point cloud filter
+  </description>
+  </class>
+  
+  <class name="cob_env_model/AggregatePointMap" type="AggregatePointMap" base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet for point map aggregation
+  </description>
+  </class>
+  
+  <class name="cob_env_model/AmplitudeConfidenceFilter" type="AmplitudeConfidenceFilter" base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet for point cloud filtering (by amplitude and confidence)
+  </description>
+  </class>
+  
+  <class name="cob_env_model/SpeckleFilter" type="SpeckleFilter" base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet for point cloud filtering (speckles)
+  </description>
+  </class>
+
+  <class name="cob_env_model/TearoffFilter" type="TearoffFilter" base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet for point cloud filtering (tearoff edges)
+  </description>
+  </class>
+  
+  <class name="cob_env_model/SegmentFieldOfView" type="SegmentFieldOfView" base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet for field of view segmentation
+  </description>
+  </class>
+  
+  <class name="cob_env_model/FeatureMap" type="FeatureMap" base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet for feature map
+  </description>
+  </class>
+</library>
+
+<library path="ros/lib/libnodelet_cpc_publisher">
+  <class name="cob_env_model/PcPublisher" type="PcPublisher" base_class_type="nodelet::Nodelet">
+    <description>
+      A nodelet to convert an ipa_PointCloud to a ROS_PointCloud2 an republish.
+    </description>
+  </class>
+
+  <class name="cob_env_model/CPCVisualizer" type="CPCVisualizer" base_class_type="nodelet::Nodelet">
+    <description>
+      A nodelet to visualize a custom ROS_PointCloud2.
+    </description>
+  </class>
+</library>
