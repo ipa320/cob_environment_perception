@@ -1,16 +1,68 @@
 <?xml version="1.0"?>
 <launch>
-	<!-- start environment modelling -->
-	<node pkg="cob_env_model" type="aggregate_point_map_node" name="aggregate_point_map" ns="cob_env_model" cwd="node" respawn="false" output="screen">
-		<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
-	</node>
+  <!-- start environment modelling -->
+  <node pkg="nodelet" type="nodelet" name="pcl_manager"  args="manager" output="screen"/>
+  
+  <!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
+  <!--node pkg="nodelet" type="nodelet" name="voxel_grid1" args="load pcl/VoxelGrid pcl_manager" output="screen">
+    <remap from="~input" to="/swissranger/pointcloud2_raw" />
+    <rosparam>
+      filter_field_name: z
+      filter_limit_min: -0.1
+      filter_limit_max: 6
+      filter_limit_negative: False
+      leaf_size: 0.05
+    </rosparam>
+  </node-->
+  
+  <node pkg="nodelet" type="nodelet" name="point_cloud_filter" args="load cob_env_model/PointCloudFilter pcl_manager" output="screen">
+  	<!--remap from="point_cloud2" to="/voxel_grid1/output"/-->
+  	<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
+  	<remap from="point_cloud2_filtered" to="/cob_env_model/point_cloud2_filtered"/>
+  	<param name="filter_by_amplitude" type="bool" value="true"/>
+	<param name="filter_tearoff" type="bool" value="true"/>
+	<param name="filter_speckle" type="bool" value="false"/>
+	<param name="filter_by_confidence" type="bool" value="false"/>
+	<param name="amplitude_min_threshold" type="double" value="4000"/>
+	<param name="amplitude_max_threshold" type="double" value="70000"/>
+  </node>  
+  
+  <!-- Run a StatisticalOutlierRemoval filter -->
+  <node pkg="nodelet" type="nodelet" name="outlier_removal" args="load pcl/StatisticalOutlierRemoval pcl_manager" output="screen">
+    <remap from="~input" to="/cob_env_model/point_cloud2_filtered" />
+    <!--remap from="~input" to="/voxel_grid1/output"/-->
+    <rosparam>
+      mean_k: 50
+      stddev: 1.0
+      negative: False
+    </rosparam>
+  </node>
+
+  <node pkg="nodelet" type="nodelet" name="aggregate_point_map" args="load cob_env_model/AggregatePointMap pcl_manager" output="screen">
+  	<remap from="point_cloud2" to="/outlier_removal/output"/>
+  	<remap from="point_cloud2_map" to="/aggregate_point_map/map"/>
+  	<remap from="point_cloud2_aligned" to="/aggregate_point_map/pc_aligned"/>
+  </node>  
+  
+  <!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
+  <!--node pkg="nodelet" type="nodelet" name="voxel_grid2" args="load pcl/VoxelGrid pcl_manager" output="screen">
+    <remap from="~input" to="/aggregate_point_map/map" />
+    <rosparam>
+      filter_field_name: z
+      filter_limit_min: -0.1
+      filter_limit_max: 2
+      filter_limit_negative: False
+      leaf_size: 0.05
+    </rosparam>
+  </node-->
+  
+
 		<!-- start map server -->
-	<node pkg="map_server" type="map_server" name="map_server" cwd="node" respawn="false" output="screen" args="$(find cob_2dnav)/common/maps/ipa_kitchen/map.yaml"/>
+	<node pkg="map_server" type="map_server" name="map_server" cwd="node" respawn="false" output="screen" args="$(find cob_default_config)/envs/$(env ROBOT_ENV)/map.yaml"/>
   <!-- start image processing nodes -->
   <node ns="stereo/left" pkg="image_proc" type="image_proc" respawn="false" name="left_image_proc" />
   <node ns="stereo/right" pkg="image_proc" type="image_proc" respawn="false" name="right_image_proc" />
-  <include file="$(find cob_env_model)/ros/launch/point_cloud_filter.launch" />
-  <node pkg="rosbag" type="play" name="rosbag_play" cwd="node" respawn="false" output="screen" args="/media/My\ Passport/Daten/20101216_bagfiles/pltf_neck_joystick_kitchen.bag --pause"/>
+  <node pkg="rosbag" type="play" name="rosbag_play" cwd="node" respawn="false" output="screen" args="/home/goa/pltf_neck_joystick_table.bag --pause -k -q"/>
   <!--node pkg="rosbag" type="play" name="rosbag_play" cwd="node" respawn="false" output="screen" args="/home/goa/pltf_neck_joystick_kitchen.bag pause"/-->
 </launch>
 
