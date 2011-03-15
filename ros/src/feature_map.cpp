@@ -106,7 +106,7 @@ public:
     	convex_hull_sub_ = n_.subscribe("table_hull", 1, &FeatureMap::subCallback, this);
 		map_pub_ = n_.advertise<pcl::PointCloud<pcl::PointXYZ> >("feature_map",1);
 
-    	pcl::PointCloud<pcl::PointXYZ> map_feature;
+    	/*pcl::PointCloud<pcl::PointXYZ> map_feature;
     	map_feature.points.resize(3);
     	map_feature.points[0].x = 0;
     	map_feature.points[0].y = 0;
@@ -117,7 +117,8 @@ public:
     	map_feature.points[2].x = 0;
     	map_feature.points[2].y = 1;
     	map_feature.points[2].z = 0;
-    	map_feature.header.frame_id="/head_tof_link";
+    	map_feature.header.frame_id="/head_tof_link";*/
+    	//pcl::io::loadPCDFile("/home/goa/pcl_daten/table_detection/hull_0.pcd", map_feature);
     	//map_.push_back(map_feature);
     }
 
@@ -139,6 +140,9 @@ public:
 		hull->points[3].x = 0.5;
 		hull->points[3].y = 1.5;
 		hull->points[3].z = 0;*/
+		/*std::stringstream ss2;
+		ss2 << "/home/goa/pcl_daten/table_detection/hull_" << ctr << ".pcd";
+		pcl::io::loadPCDFile(ss2.str(), *(hull.get()));*/
     	if(first_)
     	{
     		first_ = false;
@@ -219,10 +223,11 @@ public:
 					//std::cout << "x1,y1; max/min:" << max_x1 << ", " << max_y1 << "; " << min_x1 << ", " << min_y1 << std::endl;
 					//std::cout << "x2,y2; max/min:" << max_x2 << ", " << max_y2 << "; " << min_x2 << ", " << min_y2 << std::endl;
 					//Test if intersection occurs
-					if((max_x2-min_x1)/(max_x1-max_x2) <0 && (min_x2-min_x1)/(max_x1-min_x2) <0 &&
+					/*if((max_x2-min_x1)/(max_x1-max_x2) <0 && (min_x2-min_x1)/(max_x1-min_x2) <0 &&
 							(max_y2-min_y1)/(max_y1-max_y2) <0 && (min_y2-min_y1)/(max_y1-min_y2) <0 &&
 							(max_x1-min_x2)/(max_x2-max_x1) <0 && (min_x1-min_x2)/(max_x2-min_x1) <0 &&
-							(max_y1-min_y2)/(max_y2-max_y1) <0 && (min_y1-min_y2)/(max_y2-min_y1) <0) //min 1 inner point
+							(max_y1-min_y2)/(max_y2-max_y1) <0 && (min_y1-min_y2)/(max_y2-min_y1) <0) //min 1 inner point*/
+					if(lambda2_min > lambda1_max || lambda1_min > lambda2_max)
 					{
 						polygon_intersecting = false;
 						//std::cout << polygon_intersecting << std::endl;
@@ -300,10 +305,11 @@ public:
 						//std::cout << "x1,y1; max/min:" << max_x1 << ", " << max_y1 << "; " << min_x1 << ", " << min_y1 << std::endl;
 						//std::cout << "x2,y2; max/min:" << max_x2 << ", " << max_y2 << "; " << min_x2 << ", " << min_y2 << std::endl;
 						//Test if intersection occurs
-						if((max_x2-min_x1)/(max_x1-max_x2) <0 && (min_x2-min_x1)/(max_x1-min_x2) <0 &&
+						/*if((max_x2-min_x1)/(max_x1-max_x2) <0 && (min_x2-min_x1)/(max_x1-min_x2) <0 &&
 								(max_y2-min_y1)/(max_y1-max_y2) <0 && (min_y2-min_y1)/(max_y1-min_y2) <0 &&
 								(max_x1-min_x2)/(max_x2-max_x1) <0 && (min_x1-min_x2)/(max_x2-min_x1) <0 &&
-								(max_y1-min_y2)/(max_y2-max_y1) <0 && (min_y1-min_y2)/(max_y2-min_y1) <0) //min 1 inner point
+								(max_y1-min_y2)/(max_y2-max_y1) <0 && (min_y1-min_y2)/(max_y2-min_y1) <0) //min 1 inner point*/
+						if(lambda2_min > lambda1_max || lambda1_min > lambda2_max)
 						{
 							polygon_intersecting = false;
 							//std::cout << polygon_intersecting << std::endl;
@@ -317,8 +323,14 @@ public:
 					map_[i] += *(hull.get());
 					// Create a Convex Hull representation of the projected inliers
 					pcl::ConvexHull<pcl::PointXYZ> chull;
-					chull.setInputCloud (map_[i].makeShared());
-					chull.reconstruct (map_[i]);
+					pcl::PointCloud<pcl::PointXYZ> hull_old;
+					//pcl::io::loadPCDFile("/home/goa/pcl_daten/feature_map/map_1_f0.pcd", hull_old);
+					pcl::PointCloud<pcl::PointXYZ> hull_new;
+					//chull.setInputCloud (hull_old/*map_[i]*/.makeShared());
+					//chull.reconstruct (hull_new/*map_[i]*/);
+					std::stringstream ss1;
+					ss1 << "/home/goa/pcl_daten/feature_map/hull_new_" << ctr << ".pcd";
+					//pcl::io::savePCDFileASCII (ss1.str(), hull_new/*map_[i]*/);
 					/*for(unsigned int v=0; v<map_[i].points.size(); v++)
 					{
 						std::cout << map_[i].points[v] << ", ";
@@ -333,9 +345,7 @@ public:
 				std::cout << "appending" << std::endl;
 			}
     	}
-		std::stringstream ss1;
-		ss1 << "/home/goa/pcl_daten/feature_map/hull_" << ctr << ".pcd";
-		pcl::io::savePCDFileASCII (ss1.str(), *(hull.get()));
+
 		for(unsigned int i=0; i<map_.size(); i++)
 		{
 			std::stringstream ss;
