@@ -2,14 +2,7 @@
 <launch>
 
   <node pkg="nodelet" type="nodelet" name="pcl_manager"  args="manager" output="screen"/>
- 
- <!-- Run CloudToCloud2Converter -->
-  <node pkg="nodelet" type="nodelet" name="CloudToCloud2Converter" args="load cob_env_model/CloudToCloud2Converter pcl_manager" output="screen">
-  	<remap from="point_cloud1" to="/full_cloud"/>
-  	<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
-  	
-  </node>  
- 
+  
   <!-- Run amplitude filter --> 
   <node pkg="nodelet" type="nodelet" name="amplitude_confidence_filter_nodelet" args="load cob_env_model/AmplitudeConfidenceFilter pcl_manager" output="screen">
   	<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
