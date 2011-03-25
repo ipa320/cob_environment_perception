@@ -28,7 +28,7 @@ void onInit()
     	PCLNodelet::onInit();
     	n_ = getNodeHandle();
 
-		point_cloud_sub_ = n_.subscribe("point_cloud1",&CloudToCloud2Converter::Converter(), 1,this);
+		point_cloud_sub_ = n_.subscribe("point_cloud1",&CloudToCloud2Converter::Converter, 1,this);
 		point_cloud_pub_= n_.advertise<sensor_msgs::PointCloud2>("point_cloud2",1);
 
 
@@ -36,7 +36,7 @@ void onInit()
     }
 
 
-void Converter(const sensor_msgs::PointCloud & pc1 ,sensor_msgs::PointCloud2 pc2)
+void Converter(const sensor_msgs::PointCloud & pc1 )
 {
 	sensor_msgs::convertPointCloudToPointCloud2(sensor_msgs::PointCloud & pc1 ,sensor_msgs::PointCloud2 & pc2);
 	point_cloud_pub_.publish(pc2);
