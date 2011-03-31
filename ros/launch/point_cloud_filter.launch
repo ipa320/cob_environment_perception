@@ -4,7 +4,8 @@
   <node pkg="nodelet" type="nodelet" name="pcl_manager"  args="manager" output="screen"/>
   
   <node pkg="nodelet" type="nodelet" name="point_cloud_filter" args="load cob_env_model/PointCloudFilter pcl_manager" output="screen">
-  	<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
+  	<!--remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/-->
+  	<remap from="point_cloud2" to="/sensor_fusion/shared/colored_point_cloud"/>
   	<remap from="point_cloud2_filtered" to="/cob_env_model/point_cloud2_filtered"/>
   	<param name="filter_by_amplitude" type="bool" value="true"/>
 	<param name="filter_tearoff" type="bool" value="true"/>
