@@ -64,7 +64,7 @@
 
 // ROS includes
 #include <ros/ros.h>
-#include <pcl/io/io.h>
+#include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/registration/icp.h>
 #include <tf/transform_listener.h>
@@ -115,12 +115,11 @@ public:
     	n_ = getNodeHandle();
 
 		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &AggregatePointMap::pointCloudSubCallback, this);
-		//point_cloud_sub_fov_ = n_.subscribe("point_cloud2_fov", 1, &AggregatePointMap::pointCloudSubCallbackICP_FOV, this);
 		point_cloud_pub_ = n_.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("point_cloud2_map",1);
 		point_cloud_pub_aligned_ = n_.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("point_cloud2_aligned",1);
-		trigger_srv_client_ = n_.serviceClient<cob_env_model::TriggerStamped>("trigger_stamped");
 		fov_marker_pub_ = n_.advertise<visualization_msgs::Marker>("fov_marker",10);
 
+		//TODO: move to separate class, set as parameter
 		sensor_fov_hor_ = 40*M_PI/180;
 		sensor_fov_ver_ = 40*M_PI/180;
 		sensor_max_range_ = 5;
@@ -130,10 +129,9 @@ public:
     void pointCloudSubCallback(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc)
     {
     	//ROS_INFO("PointCloudSubCallback");
-    	//static int ctr=0;
-
     	StampedTransform transform;
-    	try{
+    	try
+    	{
     		tf_listener_.lookupTransform("/map", pc->header.frame_id, pc->header.stamp/*ros::Time(0)*/, transform);
     		KDL::Frame frame_KDL, frame_KDL_old;
     		tf::TransformTFToKDL(transform, frame_KDL);
@@ -154,7 +152,6 @@ public:
 				std::stringstream ss2;
 				ss2 << "/home/goa/pcl_daten/table/icp_no/pc_" << ctr_ << ".pcd";
 				pcl::io::savePCDFileASCII (ss2.str(), *(pc.get()));
-				//ctr++;
 				if(first_)
 				{
 					map_ = *(pc.get());
@@ -167,8 +164,8 @@ public:
 				}
 				else
 				{
-					pointCloudSubCallbackICP_FOV_Compl(pc);
-					//pointCloudSubCallbackICP(pc);
+					doFOVICP(pc);
+					//doICP(pc);
 					//map3_ += *(pc.get());
 				}
 				std::stringstream ss1;
@@ -188,301 +185,125 @@ public:
     		//else
     		//	ROS_INFO("Skipped");
     	}
-    	catch (tf::TransformException ex){
+    	catch (tf::TransformException ex)
+    	{
     		ROS_ERROR("%s",ex.what());
     	}
     }
 
 
-    void pointCloudSubCallbackICP_FOV_Compl(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc)
+    void doFOVICP(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc)
     {
-    	//static int i = 0;
+    	//setup IO stuff
 		std::fstream filestr;
 		filestr.open("/home/goa/pcl_daten/table/icp_fov/meas.csv", std::fstream::in | std::fstream::out | std::fstream::app);
-    	//stamp_ = pc->header.stamp;
-    	//ROS_INFO("PointCloudSubCallbackInput");
-    	/*StampedTransform transform;
-    	try{
-    		tf_listener_.lookupTransform("/map", pc->header.frame_id, pc->header.stamp, transform);
-    		KDL::Frame frame_KDL, frame_KDL_old;
-    		tf::TransformTFToKDL(transform, frame_KDL);
-    		tf::TransformTFToKDL(transform_old_, frame_KDL_old);
-    		double r,p,y;
-    		frame_KDL.M.GetRPY(r,p,y);
-    		double r_old,p_old,y_old;
-    		frame_KDL_old.M.GetRPY(r_old,p_old,y_old);*/
-			visualization_msgs::Marker marker = generateMarker(sensor_fov_hor_,sensor_fov_ver_,sensor_max_range_, map_.header.frame_id, pc->header.stamp);
-			fov_marker_pub_.publish(marker);
-			/*if(first_)
-			{
-    			pcl_ros::transformPointCloud(*(pc.get()), pc_, transform);
-    			pc_.header.frame_id = "/map";
-    			transform_old_ = transform;
-				map_ = pc_;
-				map_.header.frame_id="/map";
-				first_ = false;
-				point_cloud_pub_.publish(map_);
-			}
-			else
-			{
-				if(fabs(r-r_old) > 0.1 || fabs(p-p_old) > 0.1 || fabs(y-y_old) > 0.1 ||
-						transform.getOrigin().distance(transform_old_.getOrigin()) > 0.3)
-				{
-					pcl_ros::transformPointCloud(*(pc.get()), pc_, transform);
-					pc_.header.frame_id = "/map";
-					transform_old_ = transform;*/
-					seg_.setInputCloud(map_.makeShared());
-					transformNormals(map_.header.frame_id, pc->header.stamp);
-					pcl::PointIndices indices;
-					seg_.segment(indices, n_up_t_, n_down_t_, n_right_t_, n_left_t_, n_origin_t_, sensor_max_range_);
-					pcl::PointCloud<pcl::PointXYZRGB> frustum;
-					pcl::ExtractIndices<pcl::PointXYZRGB> extractIndices;
-					extractIndices.setInputCloud(map_.makeShared());
-					extractIndices.setIndices(boost::make_shared<pcl::PointIndices>(indices));
-					extractIndices.filter(frustum);
-					double time_seg = 0;//t.elapsed();
-					//std::cout << "Time needed for index extraction: " << t.elapsed() << std::endl;
 
-					boost::timer t;
-					pcl::IterativeClosestPoint<pcl::PointXYZRGB,pcl::PointXYZRGB> icp;
-					icp.setInputCloud(pc->makeShared());
-					boost::timer t1;
-					icp.setInputTarget(frustum.makeShared());
-					double time1 = t1.elapsed();
-					t1.restart();
-					icp.setMaximumIterations(70);
-					icp.setMaxCorrespondenceDistance(0.1);
-					icp.setTransformationEpsilon (1e-6);
-					pcl::PointCloud<pcl::PointXYZRGB> pc_aligned;
-					icp.align(pc_aligned);
-					//std::cout << "Registration takes" << t1.elapsed() << std::endl;
-					t1.restart();
-					map_ += pc_aligned;
-					double time = t.elapsed();
-					std::cout << "Aligning pc with " << pc->size() << " to map_fov with " << frustum.size() << std::endl;
-					std::cout << "ICP has converged:" << icp.hasConverged() << std::endl;
-					std::cout << "Concatenation takes " << t1.elapsed() << std::endl;
-					std::cout << "Fitness score: " << icp.getFitnessScore() << std::endl;
-					ROS_INFO("Aligned PC has %d points", map_.size());
-					filestr << ctr_ <<";" << pc_aligned.size()<<";"<<map_.size() <<";"<<time<<";"<<time_seg<<";"<<icp.getFitnessScore()<<std::endl;
-					ROS_INFO("\tTime: %f", time);
-					std::stringstream ss1;
-					ss1 << "/home/goa/pcl_daten/table/icp_fov/map_" << ctr_ << ".pcd";
-					pcl::io::savePCDFileASCII (ss1.str(), map_);
+		//generate marker for FOV visualization in RViz
+		visualization_msgs::Marker marker = generateMarker(sensor_fov_hor_,sensor_fov_ver_,sensor_max_range_, map_.header.frame_id, pc->header.stamp);
+		fov_marker_pub_.publish(marker);
 
-					/*pcl::VoxelGrid<pcl::PointXYZRGB> vox_filter;
-					vox_filter.setInputCloud(map_.makeShared());
-					vox_filter.setLeafSize(0.03, 0.03, 0.03);
-					vox_filter.filter(map_);*/
+		//segment FOV
+		//TODO: move to separate class
+		seg_.setInputCloud(map_.makeShared());
+		transformNormals(map_.header.frame_id, pc->header.stamp);
+		pcl::PointIndices indices;
+		seg_.segment(indices, n_up_t_, n_down_t_, n_right_t_, n_left_t_, n_origin_t_, sensor_max_range_);
+		pcl::PointCloud<pcl::PointXYZRGB> frustum;
+		pcl::ExtractIndices<pcl::PointXYZRGB> extractIndices;
+		extractIndices.setInputCloud(map_.makeShared());
+		extractIndices.setIndices(boost::make_shared<pcl::PointIndices>(indices));
+		extractIndices.filter(frustum);
 
-					point_cloud_pub_.publish(map_);
-					point_cloud_pub_aligned_.publish(pc_aligned);
-					std::stringstream ss;
-					ss << "/home/goa/pcl_daten/table/icp_fov/pc_aligned_" << ctr_ << ".pcd";
-					pcl::io::savePCDFileASCII (ss.str(), pc_aligned);
-					std::stringstream ss2;
-					ss2 << "/home/goa/pcl_daten/table/icp_fov/pc_" << ctr_ << ".pcd";
-					pcl::io::savePCDFileASCII (ss2.str(), *(pc.get()));
-					std::stringstream ss3;
-					ss3 << "/home/goa/pcl_daten/table/icp_fov/map_fov_" << ctr_ << ".pcd";
-					pcl::io::savePCDFileASCII (ss3.str(), frustum);
-					//i++;
-				/*}
-			}
-    	}
-    	catch (tf::TransformException ex){
-    		ROS_ERROR("%s",ex.what());
-    	}*/
+		//do ICP
+		boost::timer t;
+		pcl::IterativeClosestPoint<pcl::PointXYZRGB,pcl::PointXYZRGB> icp;
+		icp.setInputCloud(pc->makeShared());
+		icp.setInputTarget(frustum.makeShared());
+		//TODO: set as parameters
+		icp.setMaximumIterations(70);
+		icp.setMaxCorrespondenceDistance(0.1);
+		icp.setTransformationEpsilon (1e-6);
+		pcl::PointCloud<pcl::PointXYZRGB> pc_aligned;
+		icp.align(pc_aligned);
+		map_ += pc_aligned;
+
+		//do logging
+		double time = t.elapsed();
+		std::cout << "Aligning pc with " << pc->size() << " to map_fov with " << frustum.size() << std::endl;
+		std::cout << "ICP has converged:" << icp.hasConverged() << std::endl;
+		std::cout << "Fitness score: " << icp.getFitnessScore() << std::endl;
+		ROS_INFO("Aligned PC has %d points", map_.size());
+		filestr << ctr_ <<";" << pc_aligned.size()<<";"<<map_.size() <<";"<<time<<";"<<icp.getFitnessScore()<<std::endl;
+		ROS_INFO("\tTime: %f", time);
+		std::stringstream ss1;
+		ss1 << "/home/goa/pcl_daten/table/icp_fov/map_" << ctr_ << ".pcd";
+		pcl::io::savePCDFileASCII (ss1.str(), map_);
+
+		/*pcl::VoxelGrid<pcl::PointXYZRGB> vox_filter;
+		vox_filter.setInputCloud(map_.makeShared());
+		vox_filter.setLeafSize(0.03, 0.03, 0.03);
+		vox_filter.filter(map_);*/
+
+		point_cloud_pub_.publish(map_);
+		point_cloud_pub_aligned_.publish(pc_aligned);
+		std::stringstream ss;
+		ss << "/home/goa/pcl_daten/table/icp_fov/pc_aligned_" << ctr_ << ".pcd";
+		pcl::io::savePCDFileASCII (ss.str(), pc_aligned);
+		std::stringstream ss2;
+		ss2 << "/home/goa/pcl_daten/table/icp_fov/pc_" << ctr_ << ".pcd";
+		pcl::io::savePCDFileASCII (ss2.str(), *(pc.get()));
+		std::stringstream ss3;
+		ss3 << "/home/goa/pcl_daten/table/icp_fov/map_fov_" << ctr_ << ".pcd";
+		pcl::io::savePCDFileASCII (ss3.str(), frustum);
+
     	filestr.close();
     }
 
-/*    void pointCloudSubCallbackInput(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc)
+
+    void doICP(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc)
     {
-    	stamp_ = pc->header.stamp;
-    	//ROS_INFO("PointCloudSubCallbackInput");
-    	StampedTransform transform;
-    	try{
-    		tf_listener_.lookupTransform("/map", pc->header.frame_id, pc->header.stamp, transform);
-    		KDL::Frame frame_KDL, frame_KDL_old;
-    		tf::TransformTFToKDL(transform, frame_KDL);
-    		tf::TransformTFToKDL(transform_old_, frame_KDL_old);
-    		double r,p,y;
-    		frame_KDL.M.GetRPY(r,p,y);
-    		double r_old,p_old,y_old;
-    		frame_KDL_old.M.GetRPY(r_old,p_old,y_old);
-			if(first_)
-			{
-    			pcl_ros::transformPointCloud(*(pc.get()), pc_, transform);
-    			pc_.header.frame_id = "/map";
-    			transform_old_ = transform;
-				map_ = pc_;
-				map_.header.frame_id="/map";
-				first_ = false;
-				point_cloud_pub_.publish(map_);
-			}
-			else
-			{
-				if(fabs(r-r_old) > 0.1 || fabs(p-p_old) > 0.1 || fabs(y-y_old) > 0.1 ||
-						transform.getOrigin().distance(transform_old_.getOrigin()) > 0.3)
-				{
-					pcl_ros::transformPointCloud(*(pc.get()), pc_, transform);
-					pc_.header.frame_id = "/map";
-					transform_old_ = transform;
-					ROS_INFO("Trigger");
-					cob_env_model::TriggerStamped trigger_req;
-					trigger_req.request.stamp = pc->header.stamp;
-					//pc_ = pc;
-					if(trigger_srv_client_.call(trigger_req))
-					{
-						ROS_INFO("Trigger service called [OK].");
-					}
-					else
-					{
-						ROS_ERROR("Trigger service called [FAILED].");
-					}
-				}
-			}
-    	}
-    	catch (tf::TransformException ex){
-    		ROS_ERROR("%s",ex.what());
-    	}
-
-    }
-
-
-	void pointCloudSubCallbackICP_FOV(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc)
-	{
-		static int i = 0;
-		StampedTransform transform;
-		std::fstream filestr;
-		filestr.open("/home/goa/pcl_daten/table/icp_fov/meas.txt", std::fstream::in | std::fstream::out | std::fstream::app);
-		try{
-			boost::timer t;
-			std::cout << "Registering new point cloud using ICP" << std::endl;
-
-			pcl::IterativeClosestPoint<pcl::PointXYZRGB,pcl::PointXYZRGB> icp;
-			//pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc_ptr(&pc_);
-			icp.setInputCloud(pc_.makeShared());
-			boost::timer t1;
-			icp.setInputTarget(pc);
-			double time1 = t1.elapsed();
-			t1.restart();
-			icp.setMaximumIterations(50);
-			icp.setMaxCorrespondenceDistance(0.1);
-			icp.setTransformationEpsilon (1e-3);
-			pcl::PointCloud<pcl::PointXYZRGB> pc_aligned;
-			icp.align(pc_aligned);
-			std::cout << "Registration takes" << t1.elapsed() << std::endl;
-			t1.restart();
-			point_cloud_pub_aligned_.publish(pc_aligned);
-			map_ += pc_aligned;
-			std::cout << "Concatenation takes " << t1.elapsed() << std::endl;
-			std::cout << "Fitness score: " << icp.getFitnessScore() << std::endl;
-			ROS_INFO("Aligned PC has %d points", map_.size());
-			filestr << i <<";" << pc_aligned.size()<<";"<<map_.size() <<";"<<t.elapsed()<<";"<<time1<<";"<<icp.getFitnessScore()<<std::endl;
-			ROS_INFO("\tTime: %f", t.elapsed());
-			std::stringstream ss1;
-			ss1 << "/home/goa/pcl_daten/table/icp_fov/map_" << i << ".pcd";
-			pcl::io::savePCDFileASCII (ss1.str(), map_);
-
-			pcl::VoxelGrid<pcl::PointXYZRGB> vox_filter;
-			vox_filter.setInputCloud(map_.makeShared());
-			vox_filter.setLeafSize(0.03, 0.03, 0.03);
-			vox_filter.filter(map_);
-
-			point_cloud_pub_.publish(map_);
-			std::stringstream ss;
-			ss << "/home/goa/pcl_daten/table/icp_fov/pc_aligned_" << i << ".pcd";
-			pcl::io::savePCDFileASCII (ss.str(), pc_aligned);
-			std::stringstream ss2;
-			ss2 << "/home/goa/pcl_daten/table/icp_fov/pc_" << i << ".pcd";
-			pcl::io::savePCDFileASCII (ss2.str(), pc_);
-			std::stringstream ss3;
-			ss3 << "/home/goa/pcl_daten/table/icp_fov/map_fov_" << i << ".pcd";
-			pcl::io::savePCDFileASCII (ss3.str(), *(pc.get()));
-			i++;
-    		//else
-    		//	ROS_INFO("Skipped");
-    	}
-    	catch (tf::TransformException ex){
-    		ROS_ERROR("%s",ex.what());
-    	}
-    	filestr.close();
-    }*/
-
-    void pointCloudSubCallbackICP(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc)
-    {
-    	//static int ctr=0;
+    	//TODO: change map2_ to map_, flag for IO operations, publish to callback
+    	//Open file for timer log
 		std::fstream filestr;
 		filestr.open("/home/goa/pcl_daten/table/icp/meas.csv", std::fstream::in | std::fstream::out | std::fstream::app);
+		boost::timer t;
 
+		//Perform ICP
+		pcl::IterativeClosestPoint<pcl::PointXYZRGB,pcl::PointXYZRGB> icp;
+		icp.setInputCloud(pc);
+		icp.setInputTarget(map2_.makeShared());
+		//TODO: set parameter
+		icp.setMaximumIterations(50);
+		icp.setMaxCorrespondenceDistance(0.1);
+		icp.setTransformationEpsilon (1e-6);
+		pcl::PointCloud<pcl::PointXYZRGB> pc_aligned;
+		icp.align(pc_aligned);
+		map2_ += pc_aligned;
 
-    	/*StampedTransform transform;
-    	try{
-    		tf_listener_.lookupTransform("/map", pc->header.frame_id, pc->header.stamp, transform);
-    		KDL::Frame frame_KDL, frame_KDL_old;
-    		tf::TransformTFToKDL(transform, frame_KDL);
-    		tf::TransformTFToKDL(transform_old_, frame_KDL_old);
-    		double r,p,y;
-    		frame_KDL.M.GetRPY(r,p,y);
-    		double r_old,p_old,y_old;
-    		frame_KDL_old.M.GetRPY(r_old,p_old,y_old);
-    		if(fabs(r-r_old) > 0.1 || fabs(p-p_old) > 0.1 || fabs(y-y_old) > 0.1 ||
-    				transform.getOrigin().distance(transform_old_.getOrigin()) > 0.3)
-    		{
-    			std::cout << "Registering new point cloud" << std::endl;
-    			transform_old_ = transform;
-				//transformPointCloud("/map", transform, pc->header.stamp, *(pc.get()), *(pc.get()));
-    			//pcl_ros::transformPointCloud ("/map", *(pc.get()), *(pc.get()), tf_listener_);
-    			pcl_ros::transformPointCloud(*(pc.get()), *(pc.get()), transform);
-    			pc->header.frame_id = "/map";
-				if(first_)
-				{
-					map_ = *(pc.get());
-					map_.header.frame_id="/map";
-					first_ = false;
-				}
-				else*/
-				{
-	    			boost::timer t;
-					pcl::IterativeClosestPoint<pcl::PointXYZRGB,pcl::PointXYZRGB> icp;
-					icp.setInputCloud(pc);
-					boost::timer t1;
-					icp.setInputTarget(map2_.makeShared());
-					double time1 = t1.elapsed();
-					icp.setMaximumIterations(50);
-					icp.setMaxCorrespondenceDistance(0.1);
-					icp.setTransformationEpsilon (1e-6);
-					pcl::PointCloud<pcl::PointXYZRGB> pc_aligned;
-					icp.align(pc_aligned);
-					map2_ += pc_aligned;
-					double time = t.elapsed();
-					std::cout << "Aligning pc with " << pc->size() << " to map with " << map2_.size() << std::endl;
-					std::cout << "ICP has converged:" << icp.hasConverged() << std::endl;
-					std::cout << "Fitness score: " << ctr_ << "," << icp.getFitnessScore() << std::endl;
-					ROS_INFO("Aligned PC has %d points", map2_.size());
-					filestr << ctr_ <<";" << pc_aligned.size()<<";"<<map2_.size() <<";"<<time<<";"<<time1<<";"<<icp.getFitnessScore()<<std::endl;
-					ROS_INFO("\tTime: %f", time);
+		//TODO: output as ROS_DEBUG
+		double time = t.elapsed();
+		std::cout << "Aligning pc with " << pc->size() << " to map with " << map2_.size() << std::endl;
+		std::cout << "ICP has converged:" << icp.hasConverged() << std::endl;
+		std::cout << "Fitness score: " << ctr_ << "," << icp.getFitnessScore() << std::endl;
+		ROS_INFO("Aligned PC has %d points", map2_.size());
+		filestr << ctr_ <<";" << pc_aligned.size()<<";"<<map2_.size() <<";"<<time<<";"<<icp.getFitnessScore()<<std::endl;
+		ROS_INFO("\tTime: %f", time);
 
-				}
-				/*pcl::VoxelGrid<pcl::PointXYZRGB> vox_filter;
-				vox_filter.setInputCloud(map_.makeShared());
-				vox_filter.setLeafSize(0.03, 0.03, 0.03);
-				vox_filter.filter(map_);*/
-				std::stringstream ss1;
-				ss1 << "/home/goa/pcl_daten/table/icp/map_" << ctr_ << ".pcd";
-				pcl::io::savePCDFileASCII (ss1.str(), map2_);
-				point_cloud_pub_.publish(map2_);
-				//ctr++;
-    		/*}
-    	}
-    	catch (tf::TransformException ex){
-    		ROS_ERROR("%s",ex.what());
-    	}*/
+		//TODO: parameter for file path
+		std::stringstream ss1;
+		ss1 << "/home/goa/pcl_daten/table/icp/map_" << ctr_ << ".pcd";
+		pcl::io::savePCDFileASCII (ss1.str(), map2_);
+
+		/*pcl::VoxelGrid<pcl::PointXYZRGB> vox_filter;
+		vox_filter.setInputCloud(map_.makeShared());
+		vox_filter.setLeafSize(0.03, 0.03, 0.03);
+		vox_filter.filter(map2_);*/
+		point_cloud_pub_.publish(map2_);
+
     	filestr.close();
     }
 
-
+    //TODO: move to separate class
 	void transformNormals(std::string& target_frame, ros::Time& stamp)
 	{
 		tf::Point n_up(n_up_(0),n_up_(1),n_up_(2));
@@ -665,20 +486,17 @@ public:
 
 
 protected:
-    ros::Subscriber point_cloud_sub_;
-    ros::Subscriber point_cloud_sub_fov_;
-    ros::Publisher point_cloud_pub_;
-    ros::Publisher point_cloud_pub_aligned_;
-    ros::ServiceClient trigger_srv_client_;
-    ros::Publisher fov_marker_pub_;
+    ros::Subscriber point_cloud_sub_;		//subscriber for input pc
+    ros::Publisher point_cloud_pub_;		//publisher for map
+    ros::Publisher point_cloud_pub_aligned_;//publisher for aligned pc
+    ros::Publisher fov_marker_pub_;			//publisher for FOV marker
 
     TransformListener tf_listener_;
     StampedTransform transform_old_;
 
-    pcl::PointCloud<pcl::PointXYZRGB> map_;
-    pcl::PointCloud<pcl::PointXYZRGB> map2_;
-    pcl::PointCloud<pcl::PointXYZRGB> map3_;
-    pcl::PointCloud<pcl::PointXYZRGB> pc_;
+    pcl::PointCloud<pcl::PointXYZRGB> map_;	//FOV ICP map
+    pcl::PointCloud<pcl::PointXYZRGB> map2_;//ICP map
+    pcl::PointCloud<pcl::PointXYZRGB> map3_;//no ICP map
 
     bool first_;
 
@@ -699,7 +517,6 @@ protected:
 
 	ipa_env_model::FieldOfViewSegmentation<pcl::PointXYZRGB> seg_;
 
-	bool use_fov_;
 	int ctr_;
 
 };
