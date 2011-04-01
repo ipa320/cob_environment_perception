@@ -17,10 +17,17 @@ using namespace pcl;
 struct CPCPoint
 {
 	PCL_ADD_POINT4D;
-	//uint32_t rgb;
+	union
+	{
+		struct
+		{
+			float rgb;
+			float confidence;
+			float intensity;
+		};
+		float data_c[4];
+	};
 
-	float confidence;
-	float intensity;
 	//uint8_t isFeature;
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 } EIGEN_ALIGN16;
@@ -31,7 +38,7 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(
   (float, x, x)
   (float, y, y)
   (float, z, z)
-  //(uint32_t, rgb, rgb)
+  (float, rgb, rgb)
   (float, confidence, confidence)
   (float, intensity, intensity));
   //(uint8_t, isFeature, features));

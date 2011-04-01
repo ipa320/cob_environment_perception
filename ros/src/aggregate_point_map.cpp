@@ -116,8 +116,8 @@ public:
 
 		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &AggregatePointMap::pointCloudSubCallback, this);
 		//point_cloud_sub_fov_ = n_.subscribe("point_cloud2_fov", 1, &AggregatePointMap::pointCloudSubCallbackICP_FOV, this);
-		point_cloud_pub_ = n_.advertise<pcl::PointCloud<pcl::PointXYZ> >("point_cloud2_map",1);
-		point_cloud_pub_aligned_ = n_.advertise<pcl::PointCloud<pcl::PointXYZ> >("point_cloud2_aligned",1);
+		point_cloud_pub_ = n_.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("point_cloud2_map",1);
+		point_cloud_pub_aligned_ = n_.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("point_cloud2_aligned",1);
 		trigger_srv_client_ = n_.serviceClient<cob_env_model::TriggerStamped>("trigger_stamped");
 		fov_marker_pub_ = n_.advertise<visualization_msgs::Marker>("fov_marker",10);
 
@@ -127,7 +127,7 @@ public:
 		seg_.computeFieldOfView(sensor_fov_hor_,sensor_fov_ver_,sensor_max_range_,n_up_,n_down_,n_right_,n_left_);
     }
 
-    void pointCloudSubCallback(const pcl::PointCloud<pcl::PointXYZ>::Ptr& pc)
+    void pointCloudSubCallback(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc)
     {
     	//ROS_INFO("PointCloudSubCallback");
     	//static int ctr=0;
@@ -168,14 +168,14 @@ public:
 				else
 				{
 					pointCloudSubCallbackICP_FOV_Compl(pc);
-					pointCloudSubCallbackICP(pc);
-					map3_ += *(pc.get());
+					//pointCloudSubCallbackICP(pc);
+					//map3_ += *(pc.get());
 				}
 				std::stringstream ss1;
 				ss1 << "/home/goa/pcl_daten/table/icp_no/map_" << ctr_ << ".pcd";
 				pcl::io::savePCDFileASCII (ss1.str(), map3_);
 				ctr_++;
-				/*pcl::VoxelGrid<pcl::PointXYZ> vox_filter;
+				/*pcl::VoxelGrid<pcl::PointXYZRGB> vox_filter;
 				vox_filter.setInputCloud(map_.makeShared());
 				vox_filter.setLeafSize(0.02, 0.02, 0.02);
 				vox_filter.filter(map_);
@@ -194,7 +194,7 @@ public:
     }
 
 
-    void pointCloudSubCallbackICP_FOV_Compl(const pcl::PointCloud<pcl::PointXYZ>::Ptr& pc)
+    void pointCloudSubCallbackICP_FOV_Compl(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc)
     {
     	//static int i = 0;
 		std::fstream filestr;
@@ -235,8 +235,8 @@ public:
 					transformNormals(map_.header.frame_id, pc->header.stamp);
 					pcl::PointIndices indices;
 					seg_.segment(indices, n_up_t_, n_down_t_, n_right_t_, n_left_t_, n_origin_t_, sensor_max_range_);
-					pcl::PointCloud<pcl::PointXYZ> frustum;
-					pcl::ExtractIndices<pcl::PointXYZ> extractIndices;
+					pcl::PointCloud<pcl::PointXYZRGB> frustum;
+					pcl::ExtractIndices<pcl::PointXYZRGB> extractIndices;
 					extractIndices.setInputCloud(map_.makeShared());
 					extractIndices.setIndices(boost::make_shared<pcl::PointIndices>(indices));
 					extractIndices.filter(frustum);
@@ -244,16 +244,16 @@ public:
 					//std::cout << "Time needed for index extraction: " << t.elapsed() << std::endl;
 
 					boost::timer t;
-					pcl::IterativeClosestPoint<pcl::PointXYZ,pcl::PointXYZ> icp;
+					pcl::IterativeClosestPoint<pcl::PointXYZRGB,pcl::PointXYZRGB> icp;
 					icp.setInputCloud(pc->makeShared());
 					boost::timer t1;
 					icp.setInputTarget(frustum.makeShared());
 					double time1 = t1.elapsed();
 					t1.restart();
-					icp.setMaximumIterations(50);
+					icp.setMaximumIterations(70);
 					icp.setMaxCorrespondenceDistance(0.1);
 					icp.setTransformationEpsilon (1e-6);
-					pcl::PointCloud<pcl::PointXYZ> pc_aligned;
+					pcl::PointCloud<pcl::PointXYZRGB> pc_aligned;
 					icp.align(pc_aligned);
 					//std::cout << "Registration takes" << t1.elapsed() << std::endl;
 					t1.restart();
@@ -270,7 +270,7 @@ public:
 					ss1 << "/home/goa/pcl_daten/table/icp_fov/map_" << ctr_ << ".pcd";
 					pcl::io::savePCDFileASCII (ss1.str(), map_);
 
-					/*pcl::VoxelGrid<pcl::PointXYZ> vox_filter;
+					/*pcl::VoxelGrid<pcl::PointXYZRGB> vox_filter;
 					vox_filter.setInputCloud(map_.makeShared());
 					vox_filter.setLeafSize(0.03, 0.03, 0.03);
 					vox_filter.filter(map_);*/
@@ -296,7 +296,7 @@ public:
     	filestr.close();
     }
 
-/*    void pointCloudSubCallbackInput(const pcl::PointCloud<pcl::PointXYZ>::Ptr& pc)
+/*    void pointCloudSubCallbackInput(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc)
     {
     	stamp_ = pc->header.stamp;
     	//ROS_INFO("PointCloudSubCallbackInput");
@@ -350,7 +350,7 @@ public:
     }
 
 
-	void pointCloudSubCallbackICP_FOV(const pcl::PointCloud<pcl::PointXYZ>::Ptr& pc)
+	void pointCloudSubCallbackICP_FOV(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc)
 	{
 		static int i = 0;
 		StampedTransform transform;
@@ -360,8 +360,8 @@ public:
 			boost::timer t;
 			std::cout << "Registering new point cloud using ICP" << std::endl;
 
-			pcl::IterativeClosestPoint<pcl::PointXYZ,pcl::PointXYZ> icp;
-			//pcl::PointCloud<pcl::PointXYZ>::Ptr pc_ptr(&pc_);
+			pcl::IterativeClosestPoint<pcl::PointXYZRGB,pcl::PointXYZRGB> icp;
+			//pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc_ptr(&pc_);
 			icp.setInputCloud(pc_.makeShared());
 			boost::timer t1;
 			icp.setInputTarget(pc);
@@ -370,7 +370,7 @@ public:
 			icp.setMaximumIterations(50);
 			icp.setMaxCorrespondenceDistance(0.1);
 			icp.setTransformationEpsilon (1e-3);
-			pcl::PointCloud<pcl::PointXYZ> pc_aligned;
+			pcl::PointCloud<pcl::PointXYZRGB> pc_aligned;
 			icp.align(pc_aligned);
 			std::cout << "Registration takes" << t1.elapsed() << std::endl;
 			t1.restart();
@@ -385,7 +385,7 @@ public:
 			ss1 << "/home/goa/pcl_daten/table/icp_fov/map_" << i << ".pcd";
 			pcl::io::savePCDFileASCII (ss1.str(), map_);
 
-			pcl::VoxelGrid<pcl::PointXYZ> vox_filter;
+			pcl::VoxelGrid<pcl::PointXYZRGB> vox_filter;
 			vox_filter.setInputCloud(map_.makeShared());
 			vox_filter.setLeafSize(0.03, 0.03, 0.03);
 			vox_filter.filter(map_);
@@ -410,7 +410,7 @@ public:
     	filestr.close();
     }*/
 
-    void pointCloudSubCallbackICP(const pcl::PointCloud<pcl::PointXYZ>::Ptr& pc)
+    void pointCloudSubCallbackICP(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc)
     {
     	//static int ctr=0;
 		std::fstream filestr;
@@ -445,7 +445,7 @@ public:
 				else*/
 				{
 	    			boost::timer t;
-					pcl::IterativeClosestPoint<pcl::PointXYZ,pcl::PointXYZ> icp;
+					pcl::IterativeClosestPoint<pcl::PointXYZRGB,pcl::PointXYZRGB> icp;
 					icp.setInputCloud(pc);
 					boost::timer t1;
 					icp.setInputTarget(map2_.makeShared());
@@ -453,7 +453,7 @@ public:
 					icp.setMaximumIterations(50);
 					icp.setMaxCorrespondenceDistance(0.1);
 					icp.setTransformationEpsilon (1e-6);
-					pcl::PointCloud<pcl::PointXYZ> pc_aligned;
+					pcl::PointCloud<pcl::PointXYZRGB> pc_aligned;
 					icp.align(pc_aligned);
 					map2_ += pc_aligned;
 					double time = t.elapsed();
@@ -465,7 +465,7 @@ public:
 					ROS_INFO("\tTime: %f", time);
 
 				}
-				/*pcl::VoxelGrid<pcl::PointXYZ> vox_filter;
+				/*pcl::VoxelGrid<pcl::PointXYZRGB> vox_filter;
 				vox_filter.setInputCloud(map_.makeShared());
 				vox_filter.setLeafSize(0.03, 0.03, 0.03);
 				vox_filter.filter(map_);*/
@@ -675,10 +675,10 @@ protected:
     TransformListener tf_listener_;
     StampedTransform transform_old_;
 
-    pcl::PointCloud<pcl::PointXYZ> map_;
-    pcl::PointCloud<pcl::PointXYZ> map2_;
-    pcl::PointCloud<pcl::PointXYZ> map3_;
-    pcl::PointCloud<pcl::PointXYZ> pc_;
+    pcl::PointCloud<pcl::PointXYZRGB> map_;
+    pcl::PointCloud<pcl::PointXYZRGB> map2_;
+    pcl::PointCloud<pcl::PointXYZRGB> map3_;
+    pcl::PointCloud<pcl::PointXYZRGB> pc_;
 
     bool first_;
 
@@ -697,12 +697,13 @@ protected:
 	Eigen::Vector3d n_left_t_;
 	Eigen::Vector3d n_origin_t_;
 
-	ipa_env_model::FieldOfViewSegmentation<pcl::PointXYZ> seg_;
+	ipa_env_model::FieldOfViewSegmentation<pcl::PointXYZRGB> seg_;
 
 	bool use_fov_;
 	int ctr_;
 
 };
+
 
 PLUGINLIB_DECLARE_CLASS(cob_env_model, AggregatePointMap, AggregatePointMap, nodelet::Nodelet)
 
