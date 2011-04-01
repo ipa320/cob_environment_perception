@@ -71,10 +71,12 @@
 #include <pcl_ros/point_cloud.h>
 
 #include "pcl/surface/convex_hull.h"
-
+#include "pcl/filters/project_inliers.h"
 
 // ROS message includes
 //#include <sensor_msgs/PointCloud2.h>
+#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
 
 // external includes
 #include <boost/timer.hpp>
@@ -105,6 +107,7 @@ public:
 
     	convex_hull_sub_ = n_.subscribe("table_hull", 1, &FeatureMap::subCallback, this);
 		map_pub_ = n_.advertise<pcl::PointCloud<pcl::PointXYZ> >("feature_map",1);
+		marker_pub_ = n_.advertise<visualization_msgs::Marker>("feature_marker",100);
 
     	/*pcl::PointCloud<pcl::PointXYZ> map_feature;
     	map_feature.points.resize(3);
@@ -125,6 +128,7 @@ public:
 
     void subCallback(const pcl::PointCloud<pcl::PointXYZ>::Ptr& hull)
 	{
+    	boost::timer t;
 		static int ctr = 0;
 		bool polygon_intersecting = true;
 		/*hull->points.resize(4);
@@ -234,7 +238,7 @@ public:
 						break;
 					}
 				}
-				if(!polygon_intersecting)
+				if(polygon_intersecting)
 				{
 					for(unsigned int j=0; j<hull->points.size(); j++)
 					{
@@ -321,13 +325,27 @@ public:
 				{
 					std::cout << "Polygon intersecting: " << polygon_intersecting << std::endl;
 					map_[i] += *(hull.get());
+
+				   // Create a set of planar coefficients with X=Y=0,Z=1
+				   pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients ());
+				   coefficients->values.resize (4);
+				   coefficients->values[0] = coefficients->values[1] = 0;
+				   coefficients->values[2] = 1.0;
+				   coefficients->values[3] = -hull->points[0].z;
+
+					pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_projected (new pcl::PointCloud<pcl::PointXYZ> ());
+					pcl::ProjectInliers<pcl::PointXYZ> proj;
+					proj.setModelType (pcl::SACMODEL_PLANE);
+					proj.setInputCloud (map_[i].makeShared());
+					proj.setModelCoefficients (coefficients);
+					proj.filter (*cloud_projected);
 					// Create a Convex Hull representation of the projected inliers
 					pcl::ConvexHull<pcl::PointXYZ> chull;
 					pcl::PointCloud<pcl::PointXYZ> hull_old;
 					//pcl::io::loadPCDFile("/home/goa/pcl_daten/feature_map/map_1_f0.pcd", hull_old);
 					pcl::PointCloud<pcl::PointXYZ> hull_new;
-					//chull.setInputCloud (hull_old/*map_[i]*/.makeShared());
-					//chull.reconstruct (hull_new/*map_[i]*/);
+					chull.setInputCloud (cloud_projected);
+					chull.reconstruct (map_[i]);
 					std::stringstream ss1;
 					ss1 << "/home/goa/pcl_daten/feature_map/hull_new_" << ctr << ".pcd";
 					//pcl::io::savePCDFileASCII (ss1.str(), hull_new/*map_[i]*/);
@@ -349,13 +367,68 @@ public:
 		for(unsigned int i=0; i<map_.size(); i++)
 		{
 			std::stringstream ss;
-			ss << "/home/goa/pcl_daten/feature_map/map_" << ctr << "_f" << i << ".pcd";
+			ss << "/home/goa/pcl_daten/table/feature_map/map_" << ctr << "_f" << i << ".pcd";
 			pcl::io::savePCDFileASCII (ss.str(), map_[i]);
     	}
 		ctr++;
 
+		std::cout << "time: " << t.elapsed() << std::endl;
+		publishMarker();
+
 		return;
 	}
+
+    void publishMarker()
+    {
+    	static int ctr;
+    	visualization_msgs::MarkerArray marker_array;
+    	marker_array.markers.resize(map_.size());
+    	//std::cout << "map size:" << map_.size() << std::endl;
+    	for(unsigned int j=0; j<map_.size();j++)
+    	{
+			visualization_msgs::Marker marker;
+			marker.action = visualization_msgs::Marker::ADD;
+			marker.type = visualization_msgs::Marker::TRIANGLE_LIST;
+			marker.lifetime = ros::Duration(0);
+			marker.header.frame_id = map_[j].header.frame_id;
+			marker.header.stamp = ros::Time::now();
+			marker.id = ctr++;
+
+			marker.scale.x = 1;
+			marker.scale.y = 1;
+			marker.scale.z = 1;
+
+			geometry_msgs::Point pt1, pt2, pt3;
+			pt1.x = map_[j].points[0].x;
+			pt1.y = map_[j].points[0].y;
+			pt1.z = map_[j].points[0].z;
+			//std::cout << j << std::endl;
+
+			for(unsigned int i = 1; i < map_[j].points.size()-1; i++)
+			{
+				pt2.x = map_[j].points[i].x;
+				pt2.y = map_[j].points[i].y;
+				pt2.z = map_[j].points[i].z;
+
+				pt3.x = map_[j].points[i+1].x;
+				pt3.y = map_[j].points[i+1].y;
+				pt3.z = map_[j].points[i+1].z;
+
+				marker.points.push_back(pt1);
+				marker.points.push_back(pt2);
+				marker.points.push_back(pt3);
+			}
+			//std::cout << "marker size: " << marker.points.size() << std::endl;
+
+			marker.color.r = 0.0;
+			marker.color.g = 1.0;
+			marker.color.b = 0.0;
+			marker.color.a = 1.0;
+			marker_array.markers[j]=marker;
+			marker_pub_.publish(marker);
+    	}
+		//marker_pub_.publish(marker_array);
+    }
 
     ros::NodeHandle n_;
 
@@ -363,6 +436,7 @@ public:
 protected:
     ros::Subscriber convex_hull_sub_;
     ros::Publisher map_pub_;
+    ros::Publisher marker_pub_;
 
     std::vector<pcl::PointCloud<pcl::PointXYZ> > map_;
 

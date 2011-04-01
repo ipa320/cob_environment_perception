@@ -60,6 +60,7 @@
 // standard includes
 //--
 #include <sstream>
+#include <fstream>
 
 // ROS includes
 #include <ros/ros.h>
@@ -128,6 +129,9 @@ public:
     //input should be point cloud that is amplitude filetered, statistical outlier filtered, voxel filtered and the floor cut, coordinate system should be /map
 	void pointCloudSubCallback(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud)
 	{
+		std::fstream filestr;
+		filestr.open("/home/goa/pcl_daten/table/table_detection/meas.csv", std::fstream::in | std::fstream::out | std::fstream::app);
+		boost::timer t;
 		static int ctr = 0;
 		pcl::KdTree<pcl::PointXYZ>::Ptr clusters_tree;
 		clusters_tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZ> > ();
@@ -143,7 +147,7 @@ public:
 		cluster.setInputCloud (cloud);
 		cluster.extract (table_clusters);
 
-		ROS_INFO ("Number of table clusters found: %d", (int)table_clusters.size ());
+		//ROS_INFO ("Number of table clusters found: %d", (int)table_clusters.size ());
 
 		pcl::ExtractIndices<pcl::PointXYZ> extract;
 
@@ -154,9 +158,9 @@ public:
 			extract.setIndices (boost::make_shared<const pcl::PointIndices> (table_clusters[i]));
 			extract.setNegative (false);
 			extract.filter (table_cluster);
-			std::stringstream ss1;
+			/*std::stringstream ss1;
 			ss1 << "/home/goa/pcl_daten/table_detection/cluster_" << i << ".pcd";
-			//pcl::io::savePCDFileASCII (ss1.str(), table_cluster);
+			pcl::io::savePCDFileASCII (ss1.str(), table_cluster);*/
 
 			pcl::PointCloud<pcl::PointXYZ>::ConstPtr table_cluster_ptr = boost::make_shared<const pcl::PointCloud<pcl::PointXYZ> > (table_cluster);
 
@@ -239,12 +243,12 @@ public:
 			chull.setInputCloud (cloud_projected);
 			chull.reconstruct (*cloud_hull, hull_polygon);
 
-			std::stringstream ss;
+			/*std::stringstream ss;
 			ss << "/home/goa/pcl_daten/table_detection/hull_" << ctr << ".pcd";
 			pcl::io::savePCDFileASCII (ss.str(), *cloud_hull);
-			ctr++;
+			ctr++;*/
 
-			ROS_INFO ("Convex hull has: %zu data points.", cloud_hull->points.size ());
+			//ROS_INFO ("Convex hull has: %zu data points.", cloud_hull->points.size ());
 
 			visualization_msgs::Marker marker;
 			marker.action = visualization_msgs::Marker::ADD;
@@ -289,6 +293,8 @@ public:
 			table_marker_pub_.publish(marker);
 
 		}
+		filestr << t.elapsed()<<std::endl;
+		filestr.close();
 		return;
 	}
 
