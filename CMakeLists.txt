@@ -17,7 +17,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/ros/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/common/lib)
 
 #uncomment if you have defined messages
-#rosbuild_genmsg()
+rosbuild_genmsg()
 #uncomment if you have defined services
 rosbuild_gensrv()
 
@@ -48,15 +48,15 @@ rosbuild_add_library(cob_env_model ros/src/detect_tables.cpp
 	ros/src/aggregate_point_map.cpp
 	ros/src/filters/amplitude_confidence_filter.cpp
 	ros/src/filters/speckle_filter.cpp
-	ros/src/filters/tearoff_filter.cpp
-	ros/src/segment_field_of_view.cpp
+	ros/src/filters/jump_edge_filter.cpp
 	ros/src/cpc_point.cpp
 	ros/src/point_cloud_filter.cpp
-	ros/src/feature_map.cpp)
+	ros/src/feature_map.cpp
+	common/src/field_of_view_segmentation.cpp)
 rosbuild_add_executable(test_fov common/src/test_fov.cpp)
 #rosbuild_add_library(nodelet_cpc_publisher ros/src/cpc_publisher.cpp
 #ros/src/cpc_visualizer.cpp)
-#rosbuild_add_executable(test_cpc_visualizer ros/src/test_cpc_visualizer.cpp)
+rosbuild_add_executable(field_of_view_node ros/src/field_of_view.cpp)
 #rosbuild_add_executable(cpc_publisher ros/src/cpc_publisher_main.cpp)
 #rosbuild_add_executable(cpc_visualizer ros/src/cpc_visualizer_main.cpp)
 
