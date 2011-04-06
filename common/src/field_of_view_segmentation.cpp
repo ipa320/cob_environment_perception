@@ -51,36 +51,12 @@
  *
  ****************************************************************/
 
-#ifndef FIELDOFVIEWSEGMENTATION_H_
-#define FIELDOFVIEWSEGMENTATION_H_
+#include "pcl/impl/instantiate.hpp"
+#include "pcl/point_types.h"
+#include "cob_env_model/cpc_point.h"
+#include "cob_env_model/field_of_view_segmentation.h"
+#include "cob_env_model/field_of_view_segmentation.hpp"
 
-//##################
-//#### includes ####
 
-// standard includes
-//--
-
-// PCL includes
-#include <pcl/pcl_base.h>
-
-#include <Eigen/Core>
-
-namespace ipa_env_model
-{
-	template <typename PointT>
-	class FieldOfViewSegmentation: public pcl::PCLBase<PointT> {
-		public:
-			FieldOfViewSegmentation() {};
-			//virtual ~FieldOfViewSegmentation();
-			void computeFieldOfView(double fovHorizontal, double fovVertical, double maxRange,
-					Eigen::Vector3d &n_up, Eigen::Vector3d &n_down, Eigen::Vector3d &n_right, Eigen::Vector3d &n_left);
-			void segment(pcl::PointIndices &indices,
-					Eigen::Vector3d &n_up, Eigen::Vector3d &n_down, Eigen::Vector3d &n_right, Eigen::Vector3d &n_left, Eigen::Vector3d &n_origin, double maxRange);
-		protected:
-			using pcl::PCLBase<PointT>::input_;
-
-	};
-
-} // end namespace ipa_env_model
-
-#endif /* FIELDOFVIEWSEGMENTATION_H_ */
+PCL_INSTANTIATE(FieldOfViewSegmentation, PCL_XYZ_POINT_TYPES);
+PCL_INSTANTIATE(FieldOfViewSegmentation, (CPCPoint));
