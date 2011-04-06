@@ -85,6 +85,7 @@ class FieldOfView
 			sensor_fov_hor_ = 40*M_PI/180;
 			sensor_fov_ver_ = 40*M_PI/180;
 			sensor_max_range_ = 5;
+			camera_frame_ = std::string("/head_tof_link");
 			computeFieldOfView();
 		}
 
@@ -140,15 +141,15 @@ class FieldOfView
 
 		}
 
-		void transformNormals()
+		void transformFOV(std::string target_frame)
 		{
-			std::string target_frame = std::string("/map");
+			//std::string target_frame = std::string("/map");
 			StampedTransform transform;
 	    	try
 	    	{
-				tf_listener_.lookupTransform(target_frame, "/head_tof_link", ros::Time(0), transform);
+				tf_listener_.lookupTransform(target_frame, camera_frame_, ros::Time(0), transform);
 				//tf::Point n_up(n_up_(0),n_up_(1),n_up_(2));
-				tf::Stamped<tf::Point> stamped_n_up(n_up_,transform.stamp_,"/head_tof_link");
+				tf::Stamped<tf::Point> stamped_n_up(n_up_,transform.stamp_,camera_frame_);
 				tf::Stamped<tf::Point> stamped_n_up_t;
 				try{
 					tf_listener_.transformPoint(target_frame,stamped_n_up, stamped_n_up_t);
@@ -161,7 +162,7 @@ class FieldOfView
 				n_up_t_[2] = stamped_n_up_t.z();
 
 				//tf::Point n_down(n_down_(0),n_down_(1),n_down_(2));
-				tf::Stamped<tf::Point> stamped_n_down(n_down_,transform.stamp_,"/head_tof_link");
+				tf::Stamped<tf::Point> stamped_n_down(n_down_,transform.stamp_,camera_frame_);
 				tf::Stamped<tf::Point> stamped_n_down_t;
 				try{
 					tf_listener_.transformPoint(target_frame,stamped_n_down, stamped_n_down_t);
@@ -174,7 +175,7 @@ class FieldOfView
 				n_down_t_[2] = stamped_n_down_t.z();
 
 				//tf::Point n_right(n_right_(0),n_right_(1),n_right_(2));
-				tf::Stamped<tf::Point> stamped_n_right(n_right_,transform.stamp_,"/head_tof_link");
+				tf::Stamped<tf::Point> stamped_n_right(n_right_,transform.stamp_,camera_frame_);
 				tf::Stamped<tf::Point> stamped_n_right_t;
 				try{
 					tf_listener_.transformPoint(target_frame,stamped_n_right, stamped_n_right_t);
@@ -187,7 +188,7 @@ class FieldOfView
 				n_right_t_[2] = stamped_n_right_t.z();
 
 				//tf::Point n_left(n_left_(0),n_left_(1),n_left_(2));
-				tf::Stamped<tf::Point> stamped_n_left(n_left_,transform.stamp_,"/head_tof_link");
+				tf::Stamped<tf::Point> stamped_n_left(n_left_,transform.stamp_,camera_frame_);
 				tf::Stamped<tf::Point> stamped_n_left_t;
 				try{
 					tf_listener_.transformPoint(target_frame,stamped_n_left, stamped_n_left_t);
@@ -200,7 +201,7 @@ class FieldOfView
 				n_left_t_[2] = stamped_n_left_t.z();
 
 				tf::Point n_origin(0,0,0);
-				tf::Stamped<tf::Point> stamped_n_origin(n_origin,transform.stamp_,"/head_tof_link");
+				tf::Stamped<tf::Point> stamped_n_origin(n_origin,transform.stamp_,camera_frame_);
 				tf::Stamped<tf::Point> stamped_n_origin_t;
 				try{
 					tf_listener_.transformPoint(target_frame,stamped_n_origin, stamped_n_origin_t);
@@ -224,7 +225,7 @@ class FieldOfView
 		visualization_msgs::Marker generateMarker(std::string& target_frame, ros::Time& stamp)
 		{
 			tf::Pose marker_pose(btMatrix3x3(1,0,0,0,1,0,0,0,1));
-			tf::Stamped<tf::Pose> stamped_marker_pose(marker_pose, stamp, "/head_tof_link");
+			tf::Stamped<tf::Pose> stamped_marker_pose(marker_pose, stamp, camera_frame_);
 			tf::Stamped<tf::Pose> stamped_marker_pose_t;
 			try{
 				tf_listener_.transformPose(target_frame, stamped_marker_pose, stamped_marker_pose_t);
@@ -322,7 +323,18 @@ class FieldOfView
 				cob_env_model::GetFieldOfView::Response &res)
 		{
 			ROS_INFO("FieldOfView Trigger");
-			//res.fov.points.push_back(tf::Stamped<tf::Point>(n_up_,ros::Time(0),"/map"));
+			transformFOV(req.target_frame);
+			geometry_msgs::Point n_msg;
+			pointTFToMsg(n_up_t_, n_msg);
+			res.fov.points.push_back(n_msg);
+			pointTFToMsg(n_down_t_, n_msg);
+			res.fov.points.push_back(n_msg);
+			pointTFToMsg(n_right_t_, n_msg);
+			res.fov.points.push_back(n_msg);
+			pointTFToMsg(n_left_t_, n_msg);
+			res.fov.points.push_back(n_msg);
+			pointTFToMsg(n_origin_t_, n_msg);
+			res.fov.points.push_back(n_msg);
 		}
 
 	protected:
@@ -338,6 +350,7 @@ class FieldOfView
 		double sensor_fov_hor_;
 		double sensor_fov_ver_;
 		double sensor_max_range_;
+		std::string camera_frame_;
 
 		Eigen::Vector3d vec_a_;
 		Eigen::Vector3d vec_b_;
@@ -368,7 +381,7 @@ int main (int argc, char** argv)
   while (ros::ok())
   {
 	  ros::spinOnce ();
-	  fov.transformNormals();
+	  //fov.transformNormals();
 	  loop_rate.sleep();
   }
 }

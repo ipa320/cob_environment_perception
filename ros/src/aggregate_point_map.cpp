@@ -75,13 +75,13 @@
 #include <pcl_ros/point_cloud.h>
 #include <pluginlib/class_list_macros.h>
 #include <pcl_ros/pcl_nodelet.h>
-#include <cob_env_model/TriggerStamped.h>
 #include <cob_env_model/field_of_view_segmentation.hpp>
 #include <pcl/filters/extract_indices.h>
 #include <visualization_msgs/Marker.h>
 
 // ROS message includes
 //#include <sensor_msgs/PointCloud2.h>
+#include <cob_env_model/GetFieldOfView.h>
 
 // external includes
 #include <boost/timer.hpp>
@@ -118,6 +118,7 @@ public:
 		point_cloud_pub_ = n_.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("point_cloud2_map",1);
 		point_cloud_pub_aligned_ = n_.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("point_cloud2_aligned",1);
 		fov_marker_pub_ = n_.advertise<visualization_msgs::Marker>("fov_marker",10);
+		get_fov_srv_client_ = n_.serviceClient<cob_env_model::GetFieldOfView>("get_fov");
 
     }
 
@@ -196,12 +197,42 @@ public:
 		//generate marker for FOV visualization in RViz
 		//visualization_msgs::Marker marker = generateMarker(sensor_fov_hor_,sensor_fov_ver_,sensor_max_range_, map_.header.frame_id, pc->header.stamp);
 		//fov_marker_pub_.publish(marker);
+		cob_env_model::GetFieldOfView get_fov_srv;
+		get_fov_srv.request.target_frame = std::string("/map");
+		if(get_fov_srv_client_.call(get_fov_srv))
+		{
+			ROS_INFO("[aggregate_point_map] FOV service called [OK].");
+		}
+		else
+		{
+			ROS_ERROR("[aggregate_point_map] FOV service called [FAILED].");
+			return;
+		}
+		n_up_t_(0) = get_fov_srv.response.fov.points[0].x;
+		n_up_t_(1) = get_fov_srv.response.fov.points[0].y;
+		n_up_t_(2) = get_fov_srv.response.fov.points[0].z;
+		n_down_t_(0) = get_fov_srv.response.fov.points[1].x;
+		n_down_t_(1) = get_fov_srv.response.fov.points[1].y;
+		n_down_t_(2) = get_fov_srv.response.fov.points[1].z;
+		n_right_t_(0) = get_fov_srv.response.fov.points[2].x;
+		n_right_t_(1) = get_fov_srv.response.fov.points[2].y;
+		n_right_t_(2) = get_fov_srv.response.fov.points[2].z;
+		n_left_t_(0) = get_fov_srv.response.fov.points[3].x;
+		n_left_t_(1) = get_fov_srv.response.fov.points[3].y;
+		n_left_t_(2) = get_fov_srv.response.fov.points[3].z;
+		n_origin_t_(0) = get_fov_srv.response.fov.points[4].x;
+		n_origin_t_(1) = get_fov_srv.response.fov.points[4].y;
+		n_origin_t_(2) = get_fov_srv.response.fov.points[4].z;
+		n_max_range_t_(0) = get_fov_srv.response.fov.points[5].x;
+		n_max_range_t_(1) = get_fov_srv.response.fov.points[5].y;
+		n_max_range_t_(2) = get_fov_srv.response.fov.points[5].z;
+
 
 		//segment FOV
 		seg_.setInputCloud(map_.makeShared());
 		//transformNormals(map_.header.frame_id, pc->header.stamp);
 		pcl::PointIndices indices;
-		//seg_.segment(indices, n_up_t_, n_down_t_, n_right_t_, n_left_t_, n_origin_t_, sensor_max_range_);
+		seg_.segment(indices, n_up_t_, n_down_t_, n_right_t_, n_left_t_, n_origin_t_, n_max_range_t_);
 		pcl::PointCloud<pcl::PointXYZRGB> frustum;
 		pcl::ExtractIndices<pcl::PointXYZRGB> extractIndices;
 		extractIndices.setInputCloud(map_.makeShared());
@@ -239,7 +270,7 @@ public:
 		vox_filter.filter(map_);*/
 
 		point_cloud_pub_.publish(map_);
-		point_cloud_pub_aligned_.publish(pc_aligned);
+		point_cloud_pub_aligned_.publish(frustum);
 		std::stringstream ss;
 		ss << "/home/goa/pcl_daten/table/icp_fov/pc_aligned_" << ctr_ << ".pcd";
 		pcl::io::savePCDFileASCII (ss.str(), pc_aligned);
@@ -308,6 +339,7 @@ protected:
     ros::Publisher point_cloud_pub_;		//publisher for map
     ros::Publisher point_cloud_pub_aligned_;//publisher for aligned pc
     ros::Publisher fov_marker_pub_;			//publisher for FOV marker
+    ros::ServiceClient get_fov_srv_client_;
 
     TransformListener tf_listener_;
     StampedTransform transform_old_;
@@ -323,6 +355,7 @@ protected:
 	Eigen::Vector3d n_right_t_;
 	Eigen::Vector3d n_left_t_;
 	Eigen::Vector3d n_origin_t_;
+	Eigen::Vector3d n_max_range_t_;
 
 	ipa_env_model::FieldOfViewSegmentation<pcl::PointXYZRGB> seg_;
 

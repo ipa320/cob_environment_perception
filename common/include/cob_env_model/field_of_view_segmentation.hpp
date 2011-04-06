@@ -60,17 +60,17 @@
 
 template <typename PointT>
 void ipa_env_model::FieldOfViewSegmentation<PointT>::segment(pcl::PointIndices &indices,
-		Eigen::Vector3d &n_up, Eigen::Vector3d &n_down, Eigen::Vector3d &n_right, Eigen::Vector3d &n_left, Eigen::Vector3d &n_origin, double maxRange)
+		Eigen::Vector3d &n_up, Eigen::Vector3d &n_down, Eigen::Vector3d &n_right, Eigen::Vector3d &n_left, Eigen::Vector3d &n_origin, Eigen::Vector3d &n_max_range)
 {
 	indices.header = input_->header;
 	for(unsigned int i = 0; i<input_->points.size(); i++)
 	{
 		const PointT* curPoint = &input_->points[i];
-		//TODO: check for max range
 		if(n_up(0)*(curPoint->x-n_origin(0))+n_up(1)*(curPoint->y-n_origin(1))+n_up(2)*(curPoint->z-n_origin(2)) < 0 &&
 				n_down(0)*(curPoint->x-n_origin(0))+n_down(1)*(curPoint->y-n_origin(1))+n_down(2)*(curPoint->z-n_origin(2)) < 0 &&
 				n_right(0)*(curPoint->x-n_origin(0))+n_right(1)*(curPoint->y-n_origin(1))+n_right(2)*(curPoint->z-n_origin(2)) < 0 &&
-				n_left(0)*(curPoint->x-n_origin(0))+n_left(1)*(curPoint->y-n_origin(1))+n_left(2)*(curPoint->z-n_origin(2)) < 0)
+				n_left(0)*(curPoint->x-n_origin(0))+n_left(1)*(curPoint->y-n_origin(1))+n_left(2)*(curPoint->z-n_origin(2)) < 0 /*&&
+				n_max_range(0)*(curPoint->x-n_origin(0))+n_max_range(1)*(curPoint->y-n_origin(1))+n_max_range(2)*(curPoint->z-n_origin(2)) < 0*/)
 		{
 			indices.indices.push_back(i);
 			//std::cout << "Point "  << *curPoint << " is in FOV" << std::endl;
