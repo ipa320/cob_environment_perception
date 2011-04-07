@@ -61,11 +61,11 @@ public:
 		n_.param("/amplitude_confidence_filter_nodelet/filter_by_confidence", filter_by_confidence_, false);
 	//	std::cout << "filter_by_confidence: " << filter_by_confidence_<< std::endl;
 		n_.param("/amplitude_confidence_filter_nodelet/amplitude_min_threshold", amplitude_min_threshold_, 1000);
-		std::cout << "amplitude_min_threshold: " << amplitude_min_threshold_<< std::endl;
+		//std::cout << "amplitude_min_threshold: " << amplitude_min_threshold_<< std::endl;
 		n_.param("/amplitude_confidence_filter_nodelet/amplitude_max_threshold", amplitude_max_threshold_, 60000);
-		std::cout << "amplitude_max_threshold: " << amplitude_max_threshold_<< std::endl;
+		//std::cout << "amplitude_max_threshold: " << amplitude_max_threshold_<< std::endl;
 		n_.param("/amplitude_confidence_filter_nodelet/confidence_threshold", confidence_threshold_, 60000);
-		std::cout << "confidence_threshold: " << confidence_threshold_<< std::endl;
+		//std::cout << "confidence_threshold: " << confidence_threshold_<< std::endl;
     }
 
     void PointCloudSubCallback(const pcl::PointCloud<CPCPoint>::Ptr& pc)
@@ -88,15 +88,6 @@ public:
     void FilterByAmplitude(const pcl::PointCloud<CPCPoint>::Ptr& pc, const pcl::PointCloud<CPCPoint>::Ptr& pc_out)
     {
     	//ROS_INFO("Filter by amplitude");
-		//assumption: data order is always x->y->z in PC, datatype = float
-		/*int x_offset = 0, c_offset = 0;
-		for (size_t d = 0; d < pc->fields.size(); ++d)
-		{
-			if(pc->fields[d].name == "x")
-				x_offset = pc->fields[d].offset;
-			if(pc->fields[d].name == "intensity")
-				c_offset = pc->fields[d].offset;
-		}*/
 		int nr_p = 0;
 
 		if(filter_by_amplitude_==true && filter_by_confidence_==true)
@@ -139,19 +130,7 @@ public:
 				pc_out->points[nr_p++] = pc->points[i];
 			}
 		}
-		/*float c_ptr;
-		float f_ptr[3];
-		f_ptr[0] = f_ptr[1] = 0;
-		f_ptr[2] = -5;
-		for ( unsigned int pc_msg_idx = 0; pc_msg_idx < pc->height*pc->width; pc_msg_idx++)
-		{
-			//memcpy(&c_ptr, &pc->data[pc_msg_idx * pc->point_step + c_offset], sizeof(float));
-			if(*(float*)&pc->data[pc_msg_idx * pc->point_step + c_offset] > 1000 && *(float*)&pc->data[pc_msg_idx * pc->point_step + c_offset] < 60000)
-			{
-				memcpy(&pc_out->data[pc_msg_idx * pc->point_step], &pc->data[pc_msg_idx * pc->point_step], 3*sizeof(float));
-				nr_p++;
-			}
-		}*/
+
 		pc_out->width = nr_p;
 		pc_out->height = 1;
 		pc_out->points.resize(nr_p);
@@ -176,23 +155,6 @@ protected:
 
 };
 
-//#######################
-//#### main programm ####
-//int main(int argc, char** argv)
-//{
-//	/// initialize ROS, specify name of node
-//	ros::init(argc, argv, "point_cloud_filter");
-//
-//	/// Create a handle for this node, initialize node
-//	ros::NodeHandle nh;
-//
-//	/// Create camera node class instance
-//	PointCloudFilter point_cloud_filter(nh);
-//
-//	ros::spin();
-//
-//	return 0;
-//}
 
 PLUGINLIB_DECLARE_CLASS(cob_env_model,  AmplitudeConfidenceFilter,  AmplitudeConfidenceFilter, nodelet::Nodelet)
 
