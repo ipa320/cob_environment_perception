@@ -70,6 +70,7 @@
     </rosparam>
   </node>
   
+  <node pkg="cob_env_model" type="field_of_view_node" name="field_of_view_node" output="screen"/>
 
 		<!-- start map server -->
 	<node pkg="map_server" type="map_server" name="map_server" cwd="node" respawn="false" output="screen" args="$(find cob_default_config)/envs/$(env ROBOT_ENV)/map.yaml"/>
@@ -77,6 +78,7 @@
   <node ns="stereo/left" pkg="image_proc" type="image_proc" respawn="false" name="left_image_proc" />
   <node ns="stereo/right" pkg="image_proc" type="image_proc" respawn="false" name="right_image_proc" />
   <include file="$(find cob_description)/ros/robots/upload_robot.launch" />
+  <!--include file="$(find interaid_description)/ros/robots/upload_robot.launch" /-->
   <node pkg="rosbag" type="play" name="rosbag_play" cwd="node" respawn="false" output="screen" args="/home/goa/pcl_daten/table/fixed_pltf_neck_joystick_table.bag -k -q --pause"/>
   <!--node pkg="rosbag" type="play" name="rosbag_play" cwd="node" respawn="false" output="screen" args="/home/goa/pcl_daten/kitchen/pltf_neck_joystick_kitchen_trans.bag -k -q"/-->
   
