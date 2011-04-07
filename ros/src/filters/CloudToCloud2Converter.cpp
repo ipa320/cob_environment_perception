@@ -27,7 +27,7 @@ class CloudToCloud2Converter : public pcl_ros::PCLNodelet
 {
 
 public:
-void onInit()
+	void onInit()
     {
     	PCLNodelet::onInit();
     	n_ = getNodeHandle();
@@ -40,15 +40,15 @@ void onInit()
     }
 
 
-void PointCloudSubCallback(const sensor_msgs::PointCloud &pc1 )
-{
+	void PointCloudSubCallback(const sensor_msgs::PointCloud &pc1 )
+	{
 
-	sensor_msgs::PointCloud2 pc2;
+		sensor_msgs::PointCloud2 pc2;
 
 
-	sensor_msgs::convertPointCloudToPointCloud2(pc1 ,pc2);
-	point_cloud_pub_.publish(pc2);
-}
+		sensor_msgs::convertPointCloudToPointCloud2(pc1 ,pc2);
+		point_cloud_pub_.publish(pc2);
+	}
 
 
 	ros::NodeHandle n_ ;
