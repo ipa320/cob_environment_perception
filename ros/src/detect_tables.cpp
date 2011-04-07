@@ -86,6 +86,7 @@
 #include "pcl/filters/project_inliers.h"
 #include "pcl/surface/convex_hull.h"
 #include <pcl/segmentation/extract_clusters.h>
+#include <pcl/segmentation/extract_polygonal_prism_data.h>
 
 
 // ROS message includes
@@ -123,6 +124,7 @@ public:
 		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &DetectTables::pointCloudSubCallback, this);
 		table_marker_pub_ = n_.advertise<visualization_msgs::Marker>("table_marker",100);
 		convex_hull_pub_ = n_.advertise<pcl::PointCloud<pcl::PointXYZ> >("table_hull",1);
+		object_cluster_pub_ = n_.advertise<pcl::PointCloud<pcl::PointXYZ> >("object_cluster",1);
     }
 
 
@@ -243,6 +245,24 @@ public:
 			chull.setInputCloud (cloud_projected);
 			chull.reconstruct (*cloud_hull, hull_polygon);
 
+			pcl::ExtractPolygonalPrismData<pcl::PointXYZ> prism;
+			// Consider only objects in a given layer above the table
+			prism.setHeightLimits (-0.5, -0.05);
+			// ---[ Get the objects on top of the table
+			pcl::PointIndices cloud_object_indices;
+			prism.setInputCloud (table_cluster_ptr);
+			prism.setInputPlanarHull (cloud_hull);
+			prism.segment (cloud_object_indices);
+
+			pcl::PointCloud<pcl::PointXYZ> cloud_objects;
+			pcl::ExtractIndices<pcl::PointXYZ> extract_object_indices;
+			extract_object_indices.setInputCloud (table_cluster_ptr);
+			extract_object_indices.setIndices (boost::make_shared<const pcl::PointIndices> (cloud_object_indices));
+			extract_object_indices.filter (cloud_objects);
+			pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud_objects_ptr = cloud_objects.makeShared();
+			object_cluster_pub_.publish(cloud_objects);
+
+
 			/*std::stringstream ss;
 			ss << "/home/goa/pcl_daten/table_detection/hull_" << ctr << ".pcd";
 			pcl::io::savePCDFileASCII (ss.str(), *cloud_hull);
@@ -305,6 +325,7 @@ protected:
     ros::Subscriber point_cloud_sub_;
     ros::Publisher table_marker_pub_;
     ros::Publisher convex_hull_pub_;
+    ros::Publisher object_cluster_pub_;
 
     TransformListener tf_listener_;
 

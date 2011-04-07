@@ -82,10 +82,10 @@ class FieldOfView
 		{
 			fov_marker_pub_ = n_.advertise<visualization_msgs::Marker>("fov_marker",10);
 			get_fov_srv_ = n_.advertiseService("get_fov", &FieldOfView::srvCallback_GetFieldOfView, this);
-			sensor_fov_hor_ = 40*M_PI/180;
-			sensor_fov_ver_ = 40*M_PI/180;
+			sensor_fov_hor_ = /*63*/40*M_PI/180;
+			sensor_fov_ver_ = /*54*/40*M_PI/180;
 			sensor_max_range_ = 5;
-			camera_frame_ = std::string("/head_tof_link");
+			camera_frame_ = std::string(/*"/base_kinect_rear_link"*/"/head_tof_link");
 			computeFieldOfView();
 		}
 
@@ -224,21 +224,21 @@ class FieldOfView
 
 		visualization_msgs::Marker generateMarker(std::string& target_frame, ros::Time& stamp)
 		{
-			tf::Pose marker_pose(btMatrix3x3(1,0,0,0,1,0,0,0,1));
+			tf::Pose marker_pose(btQuaternion(0,0,0,1),btVector3(0,0.5,0));
 			tf::Stamped<tf::Pose> stamped_marker_pose(marker_pose, stamp, camera_frame_);
 			tf::Stamped<tf::Pose> stamped_marker_pose_t;
-			try{
+			/*try{
 				tf_listener_.transformPose(target_frame, stamped_marker_pose, stamped_marker_pose_t);
 			}
 			catch (tf::TransformException ex){
 				ROS_ERROR("%s",ex.what());
-			}
+			}*/
 			visualization_msgs::Marker marker;
-			marker.header.frame_id = target_frame;
+			marker.header.frame_id = camera_frame_;//target_frame;
 			marker.header.stamp = stamp;
 			geometry_msgs::Pose pose_msg;
 			tf::poseTFToMsg(stamped_marker_pose_t, pose_msg);
-			marker.pose = pose_msg;
+			//marker.pose = pose_msg;
 			marker.action = visualization_msgs::Marker::ADD;
 			marker.type = visualization_msgs::Marker::LINE_LIST;
 			marker.lifetime = ros::Duration();

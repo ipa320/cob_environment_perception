@@ -115,19 +115,20 @@ public:
     	n_ = getNodeHandle();
 
 		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &AggregatePointMap::pointCloudSubCallback, this);
-		point_cloud_pub_ = n_.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("point_cloud2_map",1);
-		point_cloud_pub_aligned_ = n_.advertise<pcl::PointCloud<pcl::PointXYZRGB> >("point_cloud2_aligned",1);
+		point_cloud_pub_ = n_.advertise<pcl::PointCloud<pcl::PointXYZ> >("point_cloud2_map",1);
+		point_cloud_pub_aligned_ = n_.advertise<pcl::PointCloud<pcl::PointXYZ> >("point_cloud2_aligned",1);
 		fov_marker_pub_ = n_.advertise<visualization_msgs::Marker>("fov_marker",10);
 		get_fov_srv_client_ = n_.serviceClient<cob_env_model::GetFieldOfView>("get_fov");
 
     }
 
-    void pointCloudSubCallback(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc)
+    void pointCloudSubCallback(const pcl::PointCloud<pcl::PointXYZ>::Ptr& pc)
     {
     	//ROS_INFO("PointCloudSubCallback");
     	StampedTransform transform;
     	try
     	{
+    		tf_listener_.waitForTransform("/map", pc->header.frame_id, pc->header.stamp, ros::Duration(3.0));
     		tf_listener_.lookupTransform("/map", pc->header.frame_id, pc->header.stamp/*ros::Time(0)*/, transform);
     		KDL::Frame frame_KDL, frame_KDL_old;
     		tf::TransformTFToKDL(transform, frame_KDL);
@@ -168,7 +169,7 @@ public:
 				ss1 << "/home/goa/pcl_daten/table/icp_no/map_" << ctr_ << ".pcd";
 				pcl::io::savePCDFileASCII (ss1.str(), map3_);
 				ctr_++;
-				/*pcl::VoxelGrid<pcl::PointXYZRGB> vox_filter;
+				/*pcl::VoxelGrid<pcl::PointXYZ> vox_filter;
 				vox_filter.setInputCloud(map_.makeShared());
 				vox_filter.setLeafSize(0.02, 0.02, 0.02);
 				vox_filter.filter(map_);
@@ -188,11 +189,11 @@ public:
     }
 
 
-    void doFOVICP(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc)
+    void doFOVICP(const pcl::PointCloud<pcl::PointXYZ>::Ptr& pc)
     {
     	//setup IO stuff
 		std::fstream filestr;
-		filestr.open("/home/goa/pcl_daten/table/icp_fov/meas.csv", std::fstream::in | std::fstream::out | std::fstream::app);
+		//filestr.open("/home/goa/pcl_daten/table/icp_fov/meas.csv", std::fstream::in | std::fstream::out | std::fstream::app);
 
 		//generate marker for FOV visualization in RViz
 		//visualization_msgs::Marker marker = generateMarker(sensor_fov_hor_,sensor_fov_ver_,sensor_max_range_, map_.header.frame_id, pc->header.stamp);
@@ -233,22 +234,22 @@ public:
 		//transformNormals(map_.header.frame_id, pc->header.stamp);
 		pcl::PointIndices indices;
 		seg_.segment(indices, n_up_t_, n_down_t_, n_right_t_, n_left_t_, n_origin_t_, n_max_range_t_);
-		pcl::PointCloud<pcl::PointXYZRGB> frustum;
-		pcl::ExtractIndices<pcl::PointXYZRGB> extractIndices;
+		pcl::PointCloud<pcl::PointXYZ> frustum;
+		pcl::ExtractIndices<pcl::PointXYZ> extractIndices;
 		extractIndices.setInputCloud(map_.makeShared());
 		extractIndices.setIndices(boost::make_shared<pcl::PointIndices>(indices));
 		extractIndices.filter(frustum);
 
 		//do ICP
 		boost::timer t;
-		pcl::IterativeClosestPoint<pcl::PointXYZRGB,pcl::PointXYZRGB> icp;
+		pcl::IterativeClosestPoint<pcl::PointXYZ,pcl::PointXYZ> icp;
 		icp.setInputCloud(pc->makeShared());
 		icp.setInputTarget(frustum.makeShared());
 		//TODO: set as parameters
 		icp.setMaximumIterations(70);
 		icp.setMaxCorrespondenceDistance(0.1);
 		icp.setTransformationEpsilon (1e-6);
-		pcl::PointCloud<pcl::PointXYZRGB> pc_aligned;
+		pcl::PointCloud<pcl::PointXYZ> pc_aligned;
 		icp.align(pc_aligned);
 		map_ += pc_aligned;
 
@@ -262,16 +263,17 @@ public:
 		ROS_INFO("\tTime: %f", time);
 		std::stringstream ss1;
 		ss1 << "/home/goa/pcl_daten/table/icp_fov/map_" << ctr_ << ".pcd";
-		pcl::io::savePCDFileASCII (ss1.str(), map_);
+		//pcl::io::savePCDFileASCII (ss1.str(), map_);
 
-		/*pcl::VoxelGrid<pcl::PointXYZRGB> vox_filter;
+		/*pcl::VoxelGrid<pcl::PointXYZ> vox_filter;
 		vox_filter.setInputCloud(map_.makeShared());
 		vox_filter.setLeafSize(0.03, 0.03, 0.03);
 		vox_filter.filter(map_);*/
 
 		point_cloud_pub_.publish(map_);
-		point_cloud_pub_aligned_.publish(frustum);
-		std::stringstream ss;
+		//TODO: publish frustum part of map to table detection (voxel filter before)
+		point_cloud_pub_aligned_.publish(pc_aligned);
+		/*std::stringstream ss;
 		ss << "/home/goa/pcl_daten/table/icp_fov/pc_aligned_" << ctr_ << ".pcd";
 		pcl::io::savePCDFileASCII (ss.str(), pc_aligned);
 		std::stringstream ss2;
@@ -279,13 +281,13 @@ public:
 		pcl::io::savePCDFileASCII (ss2.str(), *(pc.get()));
 		std::stringstream ss3;
 		ss3 << "/home/goa/pcl_daten/table/icp_fov/map_fov_" << ctr_ << ".pcd";
-		pcl::io::savePCDFileASCII (ss3.str(), frustum);
+		pcl::io::savePCDFileASCII (ss3.str(), frustum);*/
 
-    	filestr.close();
+    	//filestr.close();
     }
 
 
-    void doICP(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc)
+    void doICP(const pcl::PointCloud<pcl::PointXYZ>::Ptr& pc)
     {
     	//TODO: change map2_ to map_, flag for IO operations, publish to callback
     	//Open file for timer log
@@ -294,14 +296,14 @@ public:
 		boost::timer t;
 
 		//Perform ICP
-		pcl::IterativeClosestPoint<pcl::PointXYZRGB,pcl::PointXYZRGB> icp;
+		pcl::IterativeClosestPoint<pcl::PointXYZ,pcl::PointXYZ> icp;
 		icp.setInputCloud(pc);
 		icp.setInputTarget(map2_.makeShared());
 		//TODO: set parameter
 		icp.setMaximumIterations(50);
 		icp.setMaxCorrespondenceDistance(0.1);
 		icp.setTransformationEpsilon (1e-6);
-		pcl::PointCloud<pcl::PointXYZRGB> pc_aligned;
+		pcl::PointCloud<pcl::PointXYZ> pc_aligned;
 		icp.align(pc_aligned);
 		map2_ += pc_aligned;
 
@@ -319,7 +321,7 @@ public:
 		ss1 << "/home/goa/pcl_daten/table/icp/map_" << ctr_ << ".pcd";
 		pcl::io::savePCDFileASCII (ss1.str(), map2_);
 
-		/*pcl::VoxelGrid<pcl::PointXYZRGB> vox_filter;
+		/*pcl::VoxelGrid<pcl::PointXYZ> vox_filter;
 		vox_filter.setInputCloud(map_.makeShared());
 		vox_filter.setLeafSize(0.03, 0.03, 0.03);
 		vox_filter.filter(map2_);*/
@@ -344,9 +346,9 @@ protected:
     TransformListener tf_listener_;
     StampedTransform transform_old_;
 
-    pcl::PointCloud<pcl::PointXYZRGB> map_;	//FOV ICP map
-    pcl::PointCloud<pcl::PointXYZRGB> map2_;//ICP map
-    pcl::PointCloud<pcl::PointXYZRGB> map3_;//no ICP map
+    pcl::PointCloud<pcl::PointXYZ> map_;	//FOV ICP map
+    pcl::PointCloud<pcl::PointXYZ> map2_;//ICP map
+    pcl::PointCloud<pcl::PointXYZ> map3_;//no ICP map
 
     bool first_;
 
@@ -357,7 +359,7 @@ protected:
 	Eigen::Vector3d n_origin_t_;
 	Eigen::Vector3d n_max_range_t_;
 
-	ipa_env_model::FieldOfViewSegmentation<pcl::PointXYZRGB> seg_;
+	ipa_env_model::FieldOfViewSegmentation<pcl::PointXYZ> seg_;
 
 	int ctr_;
 
