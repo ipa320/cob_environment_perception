@@ -51,34 +51,34 @@
  *
  ****************************************************************/
 
-#ifndef FIELDOFVIEWSEGMENTATION_H_
-#define FIELDOFVIEWSEGMENTATION_H_
+#ifndef IMPL_FIELDOFVIEWSEGMENTATION_H_
+#define IMPL_FIELDOFVIEWSEGMENTATION_H_
 
-//##################
-//#### includes ####
+#include <cob_env_model/field_of_view_segmentation.h>
 
-// standard includes
-//--
 
-// PCL includes
-#include <pcl/pcl_base.h>
 
-#include <Eigen/Core>
-
-namespace ipa_env_model
+template <typename PointT>
+void ipa_env_model::FieldOfViewSegmentation<PointT>::segment(pcl::PointIndices &indices,
+		Eigen::Vector3d &n_up, Eigen::Vector3d &n_down, Eigen::Vector3d &n_right, Eigen::Vector3d &n_left, Eigen::Vector3d &n_origin, Eigen::Vector3d &n_max_range)
 {
-	template <typename PointT>
-	class FieldOfViewSegmentation: public pcl::PCLBase<PointT> {
-		public:
-			FieldOfViewSegmentation() {};
-			//virtual ~FieldOfViewSegmentation();
-			void segment(pcl::PointIndices &indices,
-					Eigen::Vector3d &n_up, Eigen::Vector3d &n_down, Eigen::Vector3d &n_right, Eigen::Vector3d &n_left, Eigen::Vector3d &n_origin, Eigen::Vector3d &n_max_range);
-		protected:
-			using pcl::PCLBase<PointT>::input_;
+	indices.header = input_->header;
+	for(unsigned int i = 0; i<input_->points.size(); i++)
+	{
+		const PointT* curPoint = &input_->points[i];
+		if(n_up(0)*(curPoint->x-n_origin(0))+n_up(1)*(curPoint->y-n_origin(1))+n_up(2)*(curPoint->z-n_origin(2)) < 0 &&
+				n_down(0)*(curPoint->x-n_origin(0))+n_down(1)*(curPoint->y-n_origin(1))+n_down(2)*(curPoint->z-n_origin(2)) < 0 &&
+				n_right(0)*(curPoint->x-n_origin(0))+n_right(1)*(curPoint->y-n_origin(1))+n_right(2)*(curPoint->z-n_origin(2)) < 0 &&
+				n_left(0)*(curPoint->x-n_origin(0))+n_left(1)*(curPoint->y-n_origin(1))+n_left(2)*(curPoint->z-n_origin(2)) < 0 /*&&
+				n_max_range(0)*(curPoint->x-n_origin(0))+n_max_range(1)*(curPoint->y-n_origin(1))+n_max_range(2)*(curPoint->z-n_origin(2)) < 0*/)
+		{
+			indices.indices.push_back(i);
+			//std::cout << "Point "  << *curPoint << " is in FOV" << std::endl;
+		}
+	}
+}
 
-	};
 
-} // end namespace ipa_env_model
+#define PCL_INSTANTIATE_FieldOfViewSegmentation(T) template class ipa_env_model::FieldOfViewSegmentation<T>;
 
-#endif /* FIELDOFVIEWSEGMENTATION_H_ */
+#endif /* IMPL_FIELDOFVIEWSEGMENTATION_H_ */

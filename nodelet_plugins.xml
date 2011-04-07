@@ -29,9 +29,9 @@
   </description>
   </class>
 
-  <class name="cob_env_model/TearoffFilter" type="TearoffFilter" base_class_type="nodelet::Nodelet">
+  <class name="cob_env_model/JumpEdgeFilter" type="JumpEdgeFilter" base_class_type="nodelet::Nodelet">
   <description>
-  Nodelet for point cloud filtering (tearoff edges)
+  Nodelet for point cloud filtering (jump edges)
   </description>
   </class>
   
