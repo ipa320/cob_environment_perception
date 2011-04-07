@@ -27,6 +27,7 @@ class CloudToCloud2Converter : public pcl_ros::PCLNodelet
 {
 
 public:
+
 	void onInit()
     {
     	PCLNodelet::onInit();
@@ -40,7 +41,7 @@ public:
     }
 
 
-	void PointCloudSubCallback(const sensor_msgs::PointCloud &pc1 )
+	void PointCloudSubCallback(const sensor_msgs::PointCloud pc1 )
 	{
 
 		sensor_msgs::PointCloud2 pc2;
