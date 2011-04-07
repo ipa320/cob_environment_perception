@@ -77,8 +77,8 @@
   <node ns="stereo/left" pkg="image_proc" type="image_proc" respawn="false" name="left_image_proc" />
   <node ns="stereo/right" pkg="image_proc" type="image_proc" respawn="false" name="right_image_proc" />
   <include file="$(find cob_description)/ros/robots/upload_robot.launch" />
-  <node pkg="rosbag" type="play" name="rosbag_play" cwd="node" respawn="false" output="screen" args="/home/goa/pcl_daten/table/fixed_pltf_neck_joystick_table.bag -k -q --pause"/>
-  <!--node pkg="rosbag" type="play" name="rosbag_play" cwd="node" respawn="false" output="screen" args="/home/goa/pcl_daten/kitchen/pltf_neck_joystick_kitchen_trans.bag -k -q"/-->
+  <node pkg="rosbag" type="play" name="rosbag_play" cwd="node" respawn="false" output="screen" args="/home/goa-hh/bag_Files/pltf_neck_joystick_table.bag -k -q --pause"/>
+  <!--node pkg="rosbag" type="play" name="rosbag_play" cwd="node" respawn="false" output="screen" args="/home/goa-hh/bag_Files/pltf_neck_joystick_kitchen_trans.bag -k -q"/-->
   
   <!--node pkg="pcl_ros" type="pointcloud_to_pcd" name="pointcloud_to_pcd" cwd="node" respawn="false" output="screen">
   	<remap from="input" to="/outlier_removal/output"/>
