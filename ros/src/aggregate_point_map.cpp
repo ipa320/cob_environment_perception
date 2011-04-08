@@ -98,7 +98,15 @@ public:
     // Constructor
 	AggregatePointMap()
 	   : first_(true),
-	     ctr_(0)
+	     ctr_(0),
+	     setMaximumIterations_FOV(70),
+	     setMaxCorrespondenceDistance_FOV(0.1),
+	     setTransformationEpsilon_FOV(1e-6),
+	     setMaximumIterations(50),
+	 	 setMaxCorrespondenceDistance(0.1),
+	 	 setTransformationEpsilon(1e-6),
+	     file_path("/home/goa/pcl_daten/table/icp/map_")
+
 	{
 	}
 
@@ -245,10 +253,10 @@ public:
 		pcl::IterativeClosestPoint<pcl::PointXYZ,pcl::PointXYZ> icp;
 		icp.setInputCloud(pc->makeShared());
 		icp.setInputTarget(frustum.makeShared());
-		//TODO: set as parameters
-		icp.setMaximumIterations(70);
-		icp.setMaxCorrespondenceDistance(0.1);
-		icp.setTransformationEpsilon (1e-6);
+		//TODO: set as parameters erledigt
+		icp.setMaximumIterations(setMaximumIterations_FOV);
+		icp.setMaxCorrespondenceDistance(setMaxCorrespondenceDistance_FOV);
+		icp.setTransformationEpsilon (setTransformationEpsilon_FOV);
 		pcl::PointCloud<pcl::PointXYZ> pc_aligned;
 		icp.align(pc_aligned);
 		map_ += pc_aligned;
@@ -304,10 +312,10 @@ public:
 		pcl::IterativeClosestPoint<pcl::PointXYZ,pcl::PointXYZ> icp;
 		icp.setInputCloud(pc);
 		icp.setInputTarget(map2_.makeShared());
-		//TODO: set parameter
-		icp.setMaximumIterations(50);
-		icp.setMaxCorrespondenceDistance(0.1);
-		icp.setTransformationEpsilon (1e-6);
+		//TODO: set parameter erledigt
+		icp.setMaximumIterations(setMaximumIterations);
+		icp.setMaxCorrespondenceDistance(setMaxCorrespondenceDistance);
+		icp.setTransformationEpsilon (setTransformationEpsilon);
 		pcl::PointCloud<pcl::PointXYZ> pc_aligned;
 		icp.align(pc_aligned);
 		map2_ += pc_aligned;
@@ -321,9 +329,9 @@ public:
 		filestr << ctr_ <<";" << pc_aligned.size()<<";"<<map2_.size() <<";"<<time<<";"<<icp.getFitnessScore()<<std::endl;
 		ROS_INFO("\tTime: %f", time);
 
-		//TODO: parameter for file path
+		//TODO: parameter for file path erledigt
 		std::stringstream ss1;
-		ss1 << "/home/goa/pcl_daten/table/icp/map_" << ctr_ << ".pcd";
+		ss1 << file_path << ctr_ << ".pcd";
 		pcl::io::savePCDFileASCII (ss1.str(), map2_);
 
 		/*pcl::VoxelGrid<pcl::PointXYZ> vox_filter;
@@ -356,6 +364,15 @@ protected:
     pcl::PointCloud<pcl::PointXYZ> map3_;//no ICP map
 
     bool first_;
+    int setMaximumIterations;
+    double setMaxCorrespondenceDistance;
+    double setTransformationEpsilon;
+    int setMaximumIterations_FOV;
+    double setMaxCorrespondenceDistance_FOV;
+    double setTransformationEpsilon_FOV;
+    std::stringstream file_path;
+
+
 
 	Eigen::Vector3d n_up_t_;
 	Eigen::Vector3d n_down_t_;
