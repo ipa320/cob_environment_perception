@@ -272,7 +272,12 @@ public:
 
 		point_cloud_pub_.publish(map_);
 		//TODO: publish frustum part of map to table detection (voxel filter before)
-		point_cloud_pub_aligned_.publish(pc_aligned);
+		frustum += pc_aligned;
+		pcl::VoxelGrid<pcl::PointXYZ> vox_filter;
+		vox_filter.setInputCloud(frustum.makeShared());
+		vox_filter.setLeafSize(0.005, 0.005, 0.005);
+		vox_filter.filter(frustum);
+		point_cloud_pub_aligned_.publish(frustum);
 		/*std::stringstream ss;
 		ss << "/home/goa/pcl_daten/table/icp_fov/pc_aligned_" << ctr_ << ".pcd";
 		pcl::io::savePCDFileASCII (ss.str(), pc_aligned);
