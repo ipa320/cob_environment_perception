@@ -247,7 +247,7 @@ public:
 
 			pcl::ExtractPolygonalPrismData<pcl::PointXYZ> prism;
 			// Consider only objects in a given layer above the table
-			prism.setHeightLimits (-0.5, -0.05);
+			prism.setHeightLimits (-0.5, -0.03);
 			// ---[ Get the objects on top of the table
 			pcl::PointIndices cloud_object_indices;
 			prism.setInputCloud (table_cluster_ptr);
