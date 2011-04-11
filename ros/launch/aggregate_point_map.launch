@@ -62,7 +62,7 @@
   	<param name="setMaximumIterations" type="int" value="50"/>
   	<param name="setMaxCorrespondenceDistance" type="double" value="0.1"/>
   	<param name="setTransformationEpsilon" type="double" value="1e-6"/>
-  	 <param name="file_path" type="std::stringstream" value="/home/goa/pcl_daten/table/icp/map_"/>
+  	 <param name="file_path" type="string" value="/home/goa/pcl_daten/table/icp/map_"/>
   	
   </node>  
   
