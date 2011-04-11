@@ -19,8 +19,11 @@
  *
  * Date of creation: 01/2011
  * ToDo:
- * Only update if new robot pose available
- * Resample point cloud
+ * switch all console outputs to ROS_DEBUG
+ * set flag to say whether pointclouds should be saved to files or not
+ * rename variables according to coding guidelines:
+ * 	see http://pointclouds.org/documentation/advanced/pcl_style_guide.php#variables
+ * add comments to explain functionality
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
@@ -100,7 +103,14 @@ public:
     // Constructor
 	AggregatePointMap()
 	   : first_(true),
-	     ctr_(0)
+	     ctr_(0),
+	     setMaximumIterations_FOV(70),
+	     setMaxCorrespondenceDistance_FOV(0.1),
+	     setTransformationEpsilon_FOV(1e-6),
+	     setMaximumIterations(50),
+	     setMaxCorrespondenceDistance(0.1),
+	     setTransformationEpsilon(1e-6),
+	     file_path("/home/goa/pcl_daten/table/icp/map_")
 	{
 	}
 
@@ -121,6 +131,7 @@ public:
 		point_cloud_pub_aligned_ = n_.advertise<pcl::PointCloud<Point> >("point_cloud2_aligned",1);
 		fov_marker_pub_ = n_.advertise<visualization_msgs::Marker>("fov_marker",10);
 		get_fov_srv_client_ = n_.serviceClient<cob_env_model::GetFieldOfView>("get_fov");
+		//TODO: Read parameters from launch file
 
     }
 
@@ -237,9 +248,9 @@ public:
 		icp.setInputCloud(pc->makeShared());
 		icp.setInputTarget(frustum.makeShared());
 		//TODO: set as parameters
-		icp.setMaximumIterations(70);
-		icp.setMaxCorrespondenceDistance(0.1);
-		icp.setTransformationEpsilon (1e-6);
+		icp.setMaximumIterations(setMaximumIterations_FOV);
+		icp.setMaxCorrespondenceDistance(setMaxCorrespondenceDistance_FOV);
+		icp.setTransformationEpsilon (setTransformationEpsilon_FOV);
 		pcl::PointCloud<Point> pc_aligned;
 		icp.align(pc_aligned);
 		map_ += pc_aligned;
@@ -289,9 +300,9 @@ public:
 		icp.setInputCloud(pc);
 		icp.setInputTarget(map_.makeShared());
 		//TODO: set parameter
-		icp.setMaximumIterations(50);
-		icp.setMaxCorrespondenceDistance(0.1);
-		icp.setTransformationEpsilon (1e-6);
+		icp.setMaximumIterations(setMaximumIterations);
+		icp.setMaxCorrespondenceDistance(setMaxCorrespondenceDistance);
+		icp.setTransformationEpsilon (setTransformationEpsilon);
 		pcl::PointCloud<Point> pc_aligned;
 		icp.align(pc_aligned);
 		map_ += pc_aligned;
@@ -307,7 +318,7 @@ public:
 
 		//TODO: parameter for file path
 		std::stringstream ss1;
-		ss1 << "/home/goa/pcl_daten/table/icp/map_" << ctr_ << ".pcd";
+		ss1 << file_path << ctr_ << ".pcd";
 		pcl::io::savePCDFileASCII (ss1.str(), map_);
 
 		/*pcl::VoxelGrid<Point> vox_filter;
@@ -351,6 +362,13 @@ protected:
     pcl::PointCloud<Point> map_;	//FOV ICP map
 
     bool first_;
+    int setMaximumIterations;
+    double setMaxCorrespondenceDistance;
+    double setTransformationEpsilon;
+    int setMaximumIterations_FOV;
+    double setMaxCorrespondenceDistance_FOV;
+    double setTransformationEpsilon_FOV;
+    std::stringstream file_path;
 
 	Eigen::Vector3d n_up_t_;
 	Eigen::Vector3d n_down_t_;
