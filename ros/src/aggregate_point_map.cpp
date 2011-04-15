@@ -118,7 +118,9 @@ public:
 	     save_icp_fov_pc_(true),
 	     map_fov_(true),
 	     save_icp_map_(true),
-	     vox_filter_setleafsize(0.02,0.02,0.02)
+	     vox_filter_setleafsize1(0.02),
+		 vox_filter_setleafsize2(0.02),
+		 vox_filter_setleafsize3(0.02)
 	{
 	}
 
@@ -367,7 +369,7 @@ public:
 		pcl::VoxelGrid<Point> vox_filter;
 		vox_filter.setInputCloud(map_.makeShared());
 		//TODO: launchfile parameter
-		vox_filter.setLeafSize(vox_filter_setleafsize[0],vox_filter_setleafsize[1],vox_filter_setleafsize[2]);
+		vox_filter.setLeafSize(vox_filter_setleafsize1,vox_filter_setleafsize2,vox_filter_setleafsize3);
 		vox_filter.filter(map_);
     }
 
@@ -397,7 +399,9 @@ protected:
     double set_maxcorrespondencedistance_FOV_;
     double set_transformationepsilon_FOV_;
 
-    float vox_filter_setleafsize[3];
+    float vox_filter_setleafsize1;
+    float vox_filter_setleafsize2;
+    float vox_filter_setleafsize3;
 
     bool ros_debug;
     std::stringstream file_path;
