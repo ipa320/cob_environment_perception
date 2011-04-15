@@ -69,6 +69,7 @@
   	<param name="save_pc_aligned" type="bool" value="false"/>
   	<param name="save_icp_fov_pc_" type="bool" value="false"/>
   	<param name="map_fov_" type="bool" value="false"/>
+  	<param name="save_icp_map_" type="bool" value="true"/>
   	<param name="vox_filter_setleafsize" type="float" value="0.02,0.02,0.02" />
   </node>  
   
