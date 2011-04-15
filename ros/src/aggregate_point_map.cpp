@@ -114,7 +114,7 @@ public:
 	     ros_debug(true),
 	     save_pc_(true),
 	     save_icp_fov_map_(true),
-	     save_pc_aligned(true),
+	     save_pc_aligned_(true),
 	     save_icp_fov_pc_(true),
 	     map_fov_(true),
 	     save_icp_map_(true),
@@ -143,7 +143,7 @@ public:
 		get_fov_srv_client_ = n_.serviceClient<cob_env_model::GetFieldOfView>("get_fov");
 		//TODO: Read parameters from launch file
 
-		n_.param("aggregate_point_map/set_maxiterations_FOV_", set_maxiterations_FOV_, 70);
+		n_.param("aggregate_point_map/set_maxiterations_FOV_", set_maximumiterations_FOV_, 70);
 		n_.param("aggregate_point_map/set_maxcorrespondencedistance_FOV_", set_maxcorrespondencedistance_FOV_ ,0.1);
 		n_.param("aggregate_point_map/set_transformationepsilon_FOV_",set_transformationepsilon_FOV_ ,1e-6);
 		n_.param("aggregate_point_map/set_maximumiterations_" ,set_maximumiterations_ ,50);
@@ -152,7 +152,7 @@ public:
 		n_.param("aggregate_point_map/file_path" ,file_path ,"/home/goa/pcl_daten/table/icp/map_");
 		n_.param("aggregate_point_map/ros_debug" ,ros_debug ,true);
 		n_.param("aggregate_point_map/save_pc_",save_pc_ , true);
-		n_.param("aggregate_point_map/save_map_",save_map_ ,false);
+		n_.param("aggregate_point_map/save_icp_fov_map_",save_icp_fov_map_ ,false);
 		n_.param("aggregate_point_map/save_pc_aligned",save_pc_aligned_,false);
 		n_.param("aggregate_point_map/save_icp_fov_pc_" ,save_icp_fov_pc_,"false");
 		n_.param("aggregate_point_map/map_fov_" ,map_fov_,false);
@@ -311,7 +311,7 @@ public:
 		vox_filter.filter(frustum);
 		point_cloud_pub_aligned_.publish(frustum);
 
-		if(save_pc_aligned==true)
+		if(save_pc_aligned_==true)
 		{
 			std::stringstream ss;
 			ss << "/home/goa/pcl_daten/table/icp_fov/pc_aligned_" << ctr_ << ".pcd";
@@ -428,7 +428,7 @@ protected:
     //Speichervariablen
     bool save_pc_;
     bool save_icp_fov_map_;
-    bool save_pc_aligned;
+    bool save_pc_aligned_;
     bool save_icp_fov_pc_;
     bool map_fov_;
     bool save_icp_map_;
