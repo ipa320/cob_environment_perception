@@ -56,14 +56,20 @@
   	<remap from="point_cloud2" to="/passthrough/output"/>
   	<remap from="point_cloud2_map" to="/aggregate_point_map/map"/>
   	<remap from="point_cloud2_aligned" to="/aggregate_point_map/pc_aligned"/>
-  	<param name="setMaximumIterations_FOV" type="int" value="70"/>
-  	<param name="setMaxCorrespondenceDistance_FOV" type="double" value="0.1"/>
-  	<param name="setTransformationEpsilon_FOV" type="double" value="1e-6"/>
-  	<param name="setMaximumIterations" type="int" value="50"/>
-  	<param name="setMaxCorrespondenceDistance" type="double" value="0.1"/>
-  	<param name="setTransformationEpsilon" type="double" value="1e-6"/>
-  	 <param name="file_path" type="string" value="/home/goa/pcl_daten/table/icp/map_"/>
-  	
+  	<param name="set_maximumiterations_FOV_" type="int" value="70"/>
+  	<param name="set_maxcorrespondencedistance_FOV_" type="double" value="0.1"/>
+  	<param name="set_transformationepsilon_FOV_" type="double" value="1e-6"/>
+  	<param name="set_maximumiterations_" type="int" value="50"/>
+  	<param name="set_maxcorrespondencedistance_" type="double" value="0.1"/>
+  	<param name="set_transformationepsilon_" type="double" value="1e-6"/>
+  	<param name="file_path" type="string" value="/home/goa/pcl_daten/table/icp/map_"/>
+  	<param name="ros_debug" type="bool" value="true"/>
+  	<param name="save_pc_" type="bool" value="true"/>
+  	<param name="save_map_" type="bool" value="false"/>
+  	<param name="save_pc_aligned" type="bool" value="false"/>
+  	<param name="save_icp_fov_pc_" type="bool" value="false"/>
+  	<param name="map_fov_" type="bool" value="false"/>
+  	<param name="vox_filter_setleafsize" type="float" value="0.02,0.02,0.02" />
   </node>  
   
   <!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
