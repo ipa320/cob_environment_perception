@@ -143,6 +143,24 @@ public:
 		get_fov_srv_client_ = n_.serviceClient<cob_env_model::GetFieldOfView>("get_fov");
 		//TODO: Read parameters from launch file
 
+		n_.param("aggregate_point_map/set_maxiterations_FOV_", set_maxiterations_FOV_, 70);
+		n_.param("aggregate_point_map/set_maxcorrespondencedistance_FOV_", set_maxcorrespondencedistance_FOV_ ,0.1);
+		n_.param("aggregate_point_map/set_transformationepsilon_FOV_",set_transformationepsilon_FOV_ ,1e-6);
+		n_.param("aggregate_point_map/set_maximumiterations_" ,set_maximumiterations_ ,50);
+		n_.param("aggregate_point_map/set_maxcorrespondencedistance_" ,set_maxcorrespondencedistance_,0.1);
+		n_.param("aggregate_point_map/set_transformationepsilon_" ,set_transformationepsilon_,1e-6);
+		n_.param("aggregate_point_map/file_path" ,file_path ,"/home/goa/pcl_daten/table/icp/map_");
+		n_.param("aggregate_point_map/ros_debug" ,ros_debug ,true);
+		n_.param("aggregate_point_map/save_pc_",save_pc_ , true);
+		n_.param("aggregate_point_map/save_map_",save_map_ ,false);
+		n_.param("aggregate_point_map/save_pc_aligned",save_pc_aligned_,false);
+		n_.param("aggregate_point_map/save_icp_fov_pc_" ,save_icp_fov_pc_,"false");
+		n_.param("aggregate_point_map/map_fov_" ,map_fov_,false);
+		n_.param("aggregate_point_map/save_icp_map_" ,save_icp_map_,true);
+		n_.param("aggregate_point_map/vox_filter_setleafsize1" ,vox_filter_setleafsize1 , 0.02);
+		n_.param("aggregate_point_map/vox_filter_setleafsize2" ,vox_filter_setleafsize2 , 0.02);
+		n_.param("aggregate_point_map/vox_filter_setleafsize3" ,vox_filter_setleafsize3 , 0.02);
+
 
     }
 
@@ -172,10 +190,11 @@ public:
     			pcl_ros::transformPointCloud(*(pc.get()), *(pc.get()), transform);
     			ROS_DEBUG_STREAM_COND(ros_debug ,  "frame_id " << pc->header.frame_id << std::endl);
     			pc->header.frame_id = "/map";
-				std::stringstream ss2;
-				ss2 << "/home/goa/pcl_daten/table/icp_no/pc_" << ctr_ << ".pcd";
+
 				if(save_pc_==true)
 					{
+						std::stringstream ss2;
+						ss2 << "/home/goa/pcl_daten/table/icp_no/pc_" << ctr_ << ".pcd";
 						pcl::io::savePCDFileASCII (ss2.str(), *(pc.get()));
 					}
 					if(first_)
