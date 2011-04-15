@@ -113,10 +113,11 @@ public:
 	     file_path("/home/goa/pcl_daten/table/icp/map_"),
 	     ros_debug(true),
 	     save_pc_(true),
-	     save_map_(true),
+	     save_icp_fov_map_(true),
 	     save_pc_aligned(true),
 	     save_icp_fov_pc_(true),
 	     map_fov_(true),
+	     save_icp_map_(true),
 	     vox_filter_setleafsize(0.02,0.02,0.02)
 	{
 	}
@@ -276,7 +277,7 @@ public:
 		ROS_INFO("\tTime: %f", time);
 
 
-		if(save_map_ ==true)
+		if(save_icp_fov_map_ ==true)
 			{
 				std::stringstream ss1;
 				ss1 << "/home/goa/pcl_daten/table/icp_fov/map_" << ctr_ << ".pcd";
@@ -341,10 +342,12 @@ public:
 		ROS_INFO("\tTime: %f", time);
 
 		//TODO: parameter for file path
-		std::stringstream ss1;
-		ss1 << file_path << ctr_ << ".pcd";
-		pcl::io::savePCDFileASCII (ss1.str(), map_);
-
+		if(save_icp_map_==true)
+		{
+			std::stringstream ss1;
+			ss1 << file_path << ctr_ << ".pcd";
+			pcl::io::savePCDFileASCII (ss1.str(), map_);
+		}
 		/*pcl::VoxelGrid<Point> vox_filter;
 		vox_filter.setInputCloud(map_.makeShared());
 		vox_filter.setLeafSize(0.03, 0.03, 0.03);
@@ -401,10 +404,11 @@ protected:
 
     //Speichervariablen
     bool save_pc_;
-    bool save_map_;
+    bool save_icp_fov_map_;
     bool save_pc_aligned;
     bool save_icp_fov_pc_;
     bool map_fov_;
+    bool save_icp_map_;
 
 	Eigen::Vector3d n_up_t_;
 	Eigen::Vector3d n_down_t_;
