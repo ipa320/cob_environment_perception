@@ -260,7 +260,31 @@ public:
 			extract_object_indices.setIndices (boost::make_shared<const pcl::PointIndices> (cloud_object_indices));
 			extract_object_indices.filter (cloud_objects);
 			pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud_objects_ptr = cloud_objects.makeShared();
-			object_cluster_pub_.publish(cloud_objects);
+
+			pcl::KdTree<pcl::PointXYZ>::Ptr obj_clusters_tree;
+			obj_clusters_tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZ> > ();
+
+			pcl::EuclideanClusterExtraction<pcl::PointXYZ> cluster_obj;
+
+			// Table clustering parameters
+			cluster_obj.setClusterTolerance (0.06);
+			cluster_obj.setMinClusterSize (100);
+			cluster_obj.setSearchMethod (clusters_tree);
+
+			// Cluster potential table points
+			std::vector<pcl::PointIndices> object_clusters;
+			cluster_obj.setInputCloud (cloud_objects.makeShared());
+			cluster_obj.extract (object_clusters);
+
+			for(unsigned int i = 0; i < object_clusters.size(); ++i)
+			{
+				pcl::PointCloud<pcl::PointXYZ> object;
+				extract.setInputCloud (cloud_objects.makeShared());
+				extract.setIndices (boost::make_shared<const pcl::PointIndices> (object_clusters[i]));
+				extract.setNegative (false);
+				extract.filter (object);
+				object_cluster_pub_.publish(object);
+			}
 
 
 			/*std::stringstream ss;
