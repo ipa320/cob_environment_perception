@@ -4,20 +4,33 @@
   <!-- start environment modelling -->
   <node pkg="nodelet" type="nodelet" name="pcl_manager"  args="manager" output="screen"/>
 
+  <!-- Start point cloud converter -->
+<node pkg="point_cloud_converter" type="point_cloud_converter" name="converter_mug" output="screen">
+ 	 <remap from="/points_in" to="/full_cloud" />
+ 	 <remap from="/points2_out" to="/converter_out" />
+</node>
+  	
+  
+  <node pkg="cob_env_model" type="field_of_view_node" name="field_of_view_node" output="screen"/>
+
+
+
+  <!-- Start aggregate point map -->
+
 <node pkg="nodelet" type="nodelet" name="aggregate_point_map" args="load cob_env_model/AggregatePointMap pcl_manager" output="screen">
-  	<remap from="point_cloud2" to="/passthrough/output"/>
+  	<remap from="point_cloud2" to="/converter_out"/>
   	<remap from="point_cloud2_map" to="/aggregate_point_map/map"/>
   	<remap from="point_cloud2_aligned" to="/aggregate_point_map/pc_aligned"/>
   	<param name="set_maximumiterations_" type="int" value="50"/>
   	<param name="set_maxcorrespondencedistance_" type="double" value="0.1"/>
   	<param name="set_transformationepsilon_" type="double" value="1e-6"/>
-  	<param name="file_path" type="string" value="/home/goa/pcl_daten/table/icp/map_"/>
+  	<param name="file_path" type="string" value="/home/goa-hh/pcl_daten/table/icp/map_"/>
   	<param name="ros_debug" type="bool" value="true"/>
   	<param name="save_pc_" type="bool" value="true"/>
   	<param name="save_icp_fov_map_" type="bool" value="false"/>
   	<param name="save_pc_aligned_" type="bool" value="false"/>
   	<param name="save_icp_fov_pc_" type="bool" value="false"/>
-  	<param name="map_fov_" type="bool" value="false"/>
+  	<param name="save_map_fov_" type="bool" value="false"/>
   	<param name="save_icp_map_" type="bool" value="true"/>
   	<param name="vox_filter_setleafsize1" type="double" value="0.02" />
   	<param name="vox_filter_setleafsize2" type="double" value="0.02" />
@@ -28,7 +41,6 @@
   	<param name="distance_limit_" type="double" value="0.3"/>
   </node>  
   
-  	<!-- start map server -->
-	<node pkg="map_server" type="map_server" name="map_server" cwd="node" respawn="false" output="screen" args="$(find cob_default_config)/envs/$(env ROBOT_ENV)/map.yaml"/>
   
+  	
   </launch>

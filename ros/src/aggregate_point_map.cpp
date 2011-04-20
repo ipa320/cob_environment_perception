@@ -116,7 +116,7 @@ public:
 	     save_icp_fov_map_(true),
 	     save_pc_aligned_(true),
 	     save_icp_fov_pc_(true),
-	     map_fov_(true),
+	     save_map_fov_(true),
 	     save_icp_map_(true),
 	     vox_filter_setleafsize1(0.02),
 		 vox_filter_setleafsize2(0.02),
@@ -159,7 +159,7 @@ public:
 		n_.param("aggregate_point_map/save_icp_fov_map_",save_icp_fov_map_ ,false);
 		n_.param("aggregate_point_map/save_pc_aligned",save_pc_aligned_,false);
 		n_.param("aggregate_point_map/save_icp_fov_pc_" ,save_icp_fov_pc_,true);
-		n_.param("aggregate_point_map/map_fov_" ,map_fov_,false);
+		n_.param("aggregate_point_map/save_map_fov_" ,save_map_fov_,false);
 		n_.param("aggregate_point_map/save_icp_map_" ,save_icp_map_,true);
 		n_.param("aggregate_point_map/vox_filter_setleafsize1" ,vox_filter_setleafsize1, 0.02);
 		n_.param("aggregate_point_map/vox_filter_setleafsize2" ,vox_filter_setleafsize2, 0.02);
@@ -176,7 +176,7 @@ public:
     	StampedTransform transform;
     	try
     	{
-    		tf_listener_.waitForTransform("/map", pc->header.frame_id, pc->header.stamp, ros::Duration(3.0));
+       		tf_listener_.waitForTransform("/map", pc->header.frame_id, pc->header.stamp, ros::Duration(3));
     		tf_listener_.lookupTransform("/map", pc->header.frame_id, pc->header.stamp/*ros::Time(0)*/, transform);
     		KDL::Frame frame_KDL, frame_KDL_old;
     		tf::TransformTFToKDL(transform, frame_KDL);
@@ -200,7 +200,7 @@ public:
 				if(save_pc_==true)
 					{
 						std::stringstream ss2;
-						ss2 << "/home/goa/pcl_daten/table/icp_no/pc_" << ctr_ << ".pcd";
+						ss2 << "/home/goa-hh/pcl_daten/table/icp_no/pc_" << ctr_ << ".pcd";
 						pcl::io::savePCDFileASCII (ss2.str(), *(pc.get()));
 					}
 					if(first_)
@@ -329,7 +329,7 @@ public:
 			ss2 << "/home/goa/pcl_daten/table/icp_fov/pc_" << ctr_ << ".pcd";
 			pcl::io::savePCDFileASCII (ss2.str(), *(pc.get()));
 		}
-		if (map_fov_==true)
+		if (save_map_fov_==true)
 		{
 			std::stringstream ss3;
 			ss3 << "/home/goa/pcl_daten/table/icp_fov/map_fov_" << ctr_ << ".pcd";
@@ -436,7 +436,7 @@ protected:
     bool save_icp_fov_map_;
     bool save_pc_aligned_;
     bool save_icp_fov_pc_;
-    bool map_fov_;
+    bool save_map_fov_;
     bool save_icp_map_;
 
 
