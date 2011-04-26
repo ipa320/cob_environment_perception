@@ -153,7 +153,7 @@ public:
 		n_.param("aggregate_point_map/set_maximumiterations_" ,set_maximumiterations_ ,50);
 		n_.param("aggregate_point_map/set_maxcorrespondencedistance_" ,set_maxcorrespondencedistance_,0.1);
 		n_.param("aggregate_point_map/set_transformationepsilon_" ,set_transformationepsilon_,1e-6);
-		n_.param("aggregate_point_map/file_path" ,file_path ,"/home/goa/pcl_daten/table/icp/map_");
+		n_.param("aggregate_point_map/file_path" ,file_path ,std::string("/home/goa/pcl_daten/table/icp/map_"));
 		n_.param("aggregate_point_map/ros_debug" ,ros_debug ,true);
 		n_.param("aggregate_point_map/save_pc_",save_pc_ , true);
 		n_.param("aggregate_point_map/save_icp_fov_map_",save_icp_fov_map_ ,false);
