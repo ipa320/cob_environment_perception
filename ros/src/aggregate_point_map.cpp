@@ -155,19 +155,19 @@ public:
 		n_.param("aggregate_point_map/set_transformationepsilon_" ,set_transformationepsilon_,1e-6);
 		n_.param("aggregate_point_map/file_path" ,file_path ,std::string("/home/goa/pcl_daten/table/icp/map_"));
 		n_.param("aggregate_point_map/ros_debug" ,ros_debug ,true);
-		n_.param("aggregate_point_map/save_pc_",save_pc_ , true);
+		n_.param("aggregate_point_map/save_pc_",save_pc_ , false);
 		n_.param("aggregate_point_map/save_icp_fov_map_",save_icp_fov_map_ ,false);
 		n_.param("aggregate_point_map/save_pc_aligned",save_pc_aligned_,false);
-		n_.param("aggregate_point_map/save_icp_fov_pc_" ,save_icp_fov_pc_,true);
+		n_.param("aggregate_point_map/save_icp_fov_pc_" ,save_icp_fov_pc_,false);
 		n_.param("aggregate_point_map/save_map_fov_" ,save_map_fov_,false);
-		n_.param("aggregate_point_map/save_icp_map_" ,save_icp_map_,true);
+		n_.param("aggregate_point_map/save_icp_map_" ,save_icp_map_,false);
 		n_.param("aggregate_point_map/vox_filter_setleafsize1" ,vox_filter_setleafsize1, 0.02);
 		n_.param("aggregate_point_map/vox_filter_setleafsize2" ,vox_filter_setleafsize2, 0.02);
 		n_.param("aggregate_point_map/vox_filter_setleafsize3" ,vox_filter_setleafsize3, 0.02);
-		n_.param("aggregate_point_map/r_limit_",r_limit_,0.01);
-		n_.param("aggregate_point_map/y_limit_",y_limit_,0.01);
-	    n_.param("aggregate_point_map/p_limit_",p_limit_,0.01);
-	    n_.param("aggregate_point_map/distance_limit_",distance_limit_,0.03);
+		n_.param("aggregate_point_map/r_limit_",r_limit_,0.1);
+		n_.param("aggregate_point_map/y_limit_",y_limit_,0.1);
+	    n_.param("aggregate_point_map/p_limit_",p_limit_,0.1);
+	    n_.param("aggregate_point_map/distance_limit_",distance_limit_,0.3);
     }
 
     void pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc)
