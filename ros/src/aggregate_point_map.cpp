@@ -143,6 +143,7 @@ public:
 		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &AggregatePointMap::pointCloudSubCallback, this);
 		point_cloud_pub_ = n_.advertise<pcl::PointCloud<Point> >("point_cloud2_map",1);
 		point_cloud_pub_aligned_ = n_.advertise<pcl::PointCloud<Point> >("point_cloud2_aligned",1);
+		point_cloud_pub_aligned2_ = n_.advertise<pcl::PointCloud<Point> >("pc_aligned_and_boundary",1);
 		fov_marker_pub_ = n_.advertise<visualization_msgs::Marker>("fov_marker",10);
 		get_fov_srv_client_ = n_.serviceClient<cob_env_model::GetFieldOfView>("get_fov");
 		//TODO: Read parameters from launch file
@@ -157,7 +158,7 @@ public:
 		n_.param("aggregate_point_map/ros_debug" ,ros_debug ,true);
 		n_.param("aggregate_point_map/save_pc_",save_pc_ , false);
 		n_.param("aggregate_point_map/save_icp_fov_map_",save_icp_fov_map_ ,false);
-		n_.param("aggregate_point_map/save_pc_aligned",save_pc_aligned_,false);
+		n_.param("aggregate_point_map/save_pc_aligned_",save_pc_aligned_,false);
 		n_.param("aggregate_point_map/save_icp_fov_pc_" ,save_icp_fov_pc_,false);
 		n_.param("aggregate_point_map/save_map_fov_" ,save_map_fov_,false);
 		n_.param("aggregate_point_map/save_icp_map_" ,save_icp_map_,false);
@@ -316,9 +317,11 @@ public:
 		vox_filter.setLeafSize(0.005, 0.005, 0.005);
 		vox_filter.filter(frustum);
 		point_cloud_pub_aligned_.publish(frustum);
+		point_cloud_pub_aligned2_.publish(frustum);
 
 		if(save_pc_aligned_==true)
 		{
+			ROS_INFO("Saving pc_aligned.");
 			std::stringstream ss;
 			ss << "/home/goa/pcl_daten/table/icp_fov/pc_aligned_" << ctr_ << ".pcd";
 			pcl::io::savePCDFileASCII (ss.str(), pc_aligned);
@@ -407,6 +410,7 @@ protected:
     ros::Subscriber point_cloud_sub_;		//subscriber for input pc
     ros::Publisher point_cloud_pub_;		//publisher for map
     ros::Publisher point_cloud_pub_aligned_;//publisher for aligned pc
+    ros::Publisher point_cloud_pub_aligned2_;//publisher for aligned pc
     ros::Publisher fov_marker_pub_;			//publisher for FOV marker
     ros::ServiceClient get_fov_srv_client_;
 

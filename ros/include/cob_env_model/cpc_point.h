@@ -21,7 +21,7 @@ struct CPCPoint
 	{
 		struct
 		{
-			float rgb;
+			//float rgb;
 			float confidence;
 			float intensity;
 		};
@@ -38,7 +38,7 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(
   (float, x, x)
   (float, y, y)
   (float, z, z)
-  (float, rgb, rgb)
+  //(float, rgb, rgb)
   (float, confidence, confidence)
   (float, intensity, intensity));
   //(uint8_t, isFeature, features));
