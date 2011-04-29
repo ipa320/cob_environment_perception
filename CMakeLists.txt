@@ -44,6 +44,7 @@ ${PROJECT_SOURCE_DIR}/ros/include)
 #rosbuild_add_executable(extract_features_node ros/src/extract_features.cpp)
 #rosbuild_add_executable(test_icp ros/src/test_icp.cpp)
 #rosbuild_add_executable(bag_to_pcd ros/src/bag_to_pcd.cpp)
+rosbuild_add_executable(pointcloud_to_pcd ros/src/pointcloud_to_pcd.cpp)
 rosbuild_add_library(cob_env_model ros/src/detect_tables.cpp
 	ros/src/aggregate_point_map.cpp
 	ros/src/filters/amplitude_confidence_filter.cpp
@@ -58,6 +59,7 @@ rosbuild_add_library(cob_env_model ros/src/detect_tables.cpp
 #rosbuild_add_library(nodelet_cpc_publisher ros/src/cpc_publisher.cpp
 #ros/src/cpc_visualizer.cpp)
 rosbuild_add_executable(field_of_view_node ros/src/field_of_view.cpp)
+rosbuild_add_executable(concat_fields_node ros/src/concat_fields.cpp)
 #rosbuild_add_executable(cpc_publisher ros/src/cpc_publisher_main.cpp)
 #rosbuild_add_executable(cpc_visualizer ros/src/cpc_visualizer_main.cpp)
 
