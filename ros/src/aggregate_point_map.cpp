@@ -65,8 +65,10 @@
 #include <sstream>
 #include <fstream>
 
+
 // ROS includes
 #include <ros/ros.h>
+#include <ros/console.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/registration/icp.h>
@@ -102,29 +104,28 @@ class AggregatePointMap : public pcl_ros::PCLNodelet
 public:
     // Constructor
 	AggregatePointMap()
+
 	   : first_(true),
 	     ctr_(0),
-	     /*set_maximumiterations_FOV_(70),
-	     set_maxcorrespondencedistance_FOV_(0.1),
-	     set_transformationepsilon_FOV_(1e-6),*/
-	     set_maximumiterations_(50),
-	     set_maxcorrespondencedistance_(0.1),
-	     set_transformationepsilon_(1e-6),
+	     set_maximumiterations(50),
+	     set_maxcorrespondencedistance(0.1),
+	     set_transformationepsilon(1e-6),
 	     file_path("/home/goa/pcl_daten/table/icp/map_"),
 	     ros_debug(true),
-	     save_pc_(true),
-	     save_icp_fov_map_(true),
-	     save_pc_aligned_(true),
-	     save_icp_fov_pc_(true),
-	     save_map_fov_(true),
-	     save_icp_map_(true),
+	     save_pc(true),
+	     save_icp_fov_map(true),
+	     save_pc_aligned(true),
+	     save_icp_fov_pc(true),
+	     save_map_fov(true),
+	     save_icp_map(true),
 	     vox_filter_setleafsize1(0.02),
 		 vox_filter_setleafsize2(0.02),
 		 vox_filter_setleafsize3(0.02),
-		 r_limit_(0.1),
-		 y_limit_(0.1),
-		 p_limit_(0.1),
-		 distance_limit_(0.3)
+		 r_limit(0.1),
+		 y_limit(0.1),
+		 p_limit(0.1),
+		 distance_limit(0.3),
+		 mode(0)
 	{
 	}
 
@@ -145,38 +146,37 @@ public:
 		point_cloud_pub_aligned_ = n_.advertise<pcl::PointCloud<Point> >("point_cloud2_aligned",1);
 		fov_marker_pub_ = n_.advertise<visualization_msgs::Marker>("fov_marker",10);
 		get_fov_srv_client_ = n_.serviceClient<cob_env_model::GetFieldOfView>("get_fov");
-		//TODO: Read parameters from launch file
 
-	/*	n_.param("aggregate_point_map/set_maxiterations_FOV_", set_maximumiterations_FOV_, 70);
-		n_.param("aggregate_point_map/set_maxcorrespondencedistance_FOV_", set_maxcorrespondencedistance_FOV_ ,0.1);
-		n_.param("aggregate_point_map/set_transformationepsilon_FOV_",set_transformationepsilon_FOV_ ,1e-6); */
-		n_.param("aggregate_point_map/set_maximumiterations_" ,set_maximumiterations_ ,50);
-		n_.param("aggregate_point_map/set_maxcorrespondencedistance_" ,set_maxcorrespondencedistance_,0.1);
-		n_.param("aggregate_point_map/set_transformationepsilon_" ,set_transformationepsilon_,1e-6);
-		n_.param("aggregate_point_map/file_path" ,file_path ,"/home/goa/pcl_daten/table/icp/map_");
+		n_.param("aggregate_point_map/set_maximumiterations" ,set_maximumiterations ,50);
+		n_.param("aggregate_point_map/set_maxcorrespondencedistance" ,set_maxcorrespondencedistance,0.1);
+		n_.param("aggregate_point_map/set_transformationepsilon" ,set_transformationepsilon,1e-6);
+
 		n_.param("aggregate_point_map/ros_debug" ,ros_debug ,true);
-		n_.param("aggregate_point_map/save_pc_",save_pc_ , true);
-		n_.param("aggregate_point_map/save_icp_fov_map_",save_icp_fov_map_ ,false);
-		n_.param("aggregate_point_map/save_pc_aligned",save_pc_aligned_,false);
-		n_.param("aggregate_point_map/save_icp_fov_pc_" ,save_icp_fov_pc_,true);
-		n_.param("aggregate_point_map/save_map_fov_" ,save_map_fov_,false);
-		n_.param("aggregate_point_map/save_icp_map_" ,save_icp_map_,true);
+		n_.param("aggregate_point_map/save_pc",save_pc , true);
+		n_.param("aggregate_point_map/save_icp_fov_map",save_icp_fov_map ,false);
+		n_.param("aggregate_point_map/save_pc_aligned",save_pc_aligned,false);
+		n_.param("aggregate_point_map/save_icp_fov_pc" ,save_icp_fov_pc,true);
+		n_.param("aggregate_point_map/save_map_fov" ,save_map_fov,false);
+		n_.param("aggregate_point_map/save_icp_map" ,save_icp_map,true);
 		n_.param("aggregate_point_map/vox_filter_setleafsize1" ,vox_filter_setleafsize1, 0.02);
 		n_.param("aggregate_point_map/vox_filter_setleafsize2" ,vox_filter_setleafsize2, 0.02);
 		n_.param("aggregate_point_map/vox_filter_setleafsize3" ,vox_filter_setleafsize3, 0.02);
-		n_.param("aggregate_point_map/r_limit_",r_limit_,0.01);
-		n_.param("aggregate_point_map/y_limit_",y_limit_,0.01);
-	    n_.param("aggregate_point_map/p_limit_",p_limit_,0.01);
-	    n_.param("aggregate_point_map/distance_limit_",distance_limit_,0.03);
+		n_.param("aggregate_point_map/r_limit",r_limit,0.01);
+		n_.param("aggregate_point_map/y_limit",y_limit,0.01);
+	    n_.param("aggregate_point_map/p_limit",p_limit,0.01);
+	    n_.param("aggregate_point_map/distance_limit",distance_limit,0.03);
+	    n_.param("aggregate_point_map/mode",mode,1);
+
     }
 
     void pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc)
     {
-    	//ROS_INFO("PointCloudSubCallback");
+
     	StampedTransform transform;
     	try
     	{
-       		tf_listener_.waitForTransform("/map", pc->header.frame_id, pc->header.stamp, ros::Duration(3));
+
+       		tf_listener_.waitForTransform("/map", pc->header.frame_id, /*ros::Time(0)*/pc->header.stamp, ros::Duration(3));
     		tf_listener_.lookupTransform("/map", pc->header.frame_id, pc->header.stamp/*ros::Time(0)*/, transform);
     		KDL::Frame frame_KDL, frame_KDL_old;
     		tf::TransformTFToKDL(transform, frame_KDL);
@@ -185,9 +185,8 @@ public:
     		frame_KDL.M.GetRPY(r,p,y);
     		double r_old,p_old,y_old;
     		frame_KDL_old.M.GetRPY(r_old,p_old,y_old);
-    		//TODO: launch file parameters
-    		if(fabs(r-r_old) > r_limit_ || fabs(p-p_old) > p_limit_ || fabs(y-y_old) > y_limit_ ||
-    				transform.getOrigin().distance(transform_old_.getOrigin()) > distance_limit_)
+    		if(fabs(r-r_old) > r_limit || fabs(p-p_old) > p_limit || fabs(y-y_old) > y_limit ||
+    				transform.getOrigin().distance(transform_old_.getOrigin()) > distance_limit)
     		{
     			ROS_DEBUG_STREAM_COND(ros_debug ,  "Registering new point cloud" << std::endl);
     			transform_old_ = transform;
@@ -197,11 +196,14 @@ public:
     			ROS_DEBUG_STREAM_COND(ros_debug ,  "frame_id " << pc->header.frame_id << std::endl);
     			pc->header.frame_id = "/map";
 
-				if(save_pc_==true)
+
+
+
+				if(save_pc==true)
 					{
 						std::stringstream ss2;
-						ss2 << "/home/goa-hh/pcl_daten/table/icp_no/pc_" << ctr_ << ".pcd";
-						pcl::io::savePCDFileASCII (ss2.str(), *(pc.get()));
+						ss2 << "/home/goa-hh/pcl_daten/table/pc_" << ctr_ << ".pcd";
+						pcl::io::savePCDFileASCII (ss2.str(), *pc);
 					}
 					if(first_)
 				{
@@ -211,12 +213,17 @@ public:
 				}
 				else
 				{
-					doFOVICP(pc);
-					//doICP(pc);
-					//addToMap(pc);
+					switch (mode)
+					{
+					case 1 : doFOVICP(pc);
+					case 2 : doICP(pc);
+					case 3 : addToMap(pc);
+					}
+
 				}
 				ctr_++;
 				//downsampleMap();
+
 				point_cloud_pub_.publish(map_);
 
     		}
@@ -232,6 +239,7 @@ public:
 
     void doFOVICP(const pcl::PointCloud<Point>::Ptr& pc)
     {
+
     	//setup IO stuff
 		std::fstream filestr;
 		//filestr.open("/home/goa/pcl_daten/table/icp_fov/meas.csv", std::fstream::in | std::fstream::out | std::fstream::app);
@@ -241,8 +249,10 @@ public:
 		//fov_marker_pub_.publish(marker);
 		cob_env_model::GetFieldOfView get_fov_srv;
 		get_fov_srv.request.target_frame = std::string("/map");
-		if(get_fov_srv_client_.call(get_fov_srv))
+		if(get_fov_srv_client_.call(get_fov_srv)==true)  // war kein vergleich bei if?
 		{
+
+
 			ROS_DEBUG_STREAM_COND(ros_debug ,"[aggregate_point_map] FOV service called [OK].");
 		}
 		else
@@ -287,29 +297,34 @@ public:
 		icp.setInputCloud(pc->makeShared());
 		icp.setInputTarget(frustum.makeShared());
 		//TODO: set as parameters
-		icp.setMaximumIterations(set_maximumiterations_);
-		icp.setMaxCorrespondenceDistance(set_maxcorrespondencedistance_);
-		icp.setTransformationEpsilon (set_transformationepsilon_);
+		icp.setMaximumIterations(set_maximumiterations);
+		icp.setMaxCorrespondenceDistance(set_maxcorrespondencedistance);
+		icp.setTransformationEpsilon (set_transformationepsilon);
 		pcl::PointCloud<Point> pc_aligned;
 		icp.align(pc_aligned);
-		map_ += pc_aligned;
+		map_ += pc_aligned; // map filtern
 
 		//do logging
 		double time = t.elapsed();
-		ROS_DEBUG_STREAM_COND(ros_debug ,"Aligning pc with " << pc->size() << " to map_fov with " << frustum.size() << std::endl);
-		ROS_DEBUG_STREAM_COND(ros_debug ,"ICP has converged:" << icp.hasConverged() << std::endl);
-		ROS_DEBUG_STREAM_COND(ros_debug ,"Fitness score: " << icp.getFitnessScore() << std::endl);
+		pcl::io::savePCDFileASCII ("/home/goa-hh/pcl_daten/table/icp_fov/map_test.pcd", map_);
+		ROS_DEBUG_STREAM_COND(ros_debug ,"Aligning pc with " << pc->size() << " to map_fov with " << frustum.size());
+		ROS_DEBUG_STREAM_COND(ros_debug ,"ICP has converged:" << icp.hasConverged());
+		ROS_DEBUG_STREAM_COND(ros_debug ,"Fitness score: " << icp.getFitnessScore());
 		ROS_DEBUG_STREAM_COND(ros_debug ,"Aligned PC has %d points" << map_.size());
 		filestr << ctr_ <<";" << pc_aligned.size()<<";"<<map_.size() <<";"<<time<<";"<<icp.getFitnessScore()<<std::endl;
 		ROS_DEBUG_STREAM_COND(ros_debug ,"\tTime: %f"<< time);
 
 
-		if(save_icp_fov_map_ ==true)
+
+
+
+		if(save_icp_fov_map ==true)
 			{
 				std::stringstream ss1;
-				ss1 << "/home/goa/pcl_daten/table/icp_fov/map_" << ctr_ << ".pcd";
+				ss1 << "/home/goa-hh/pcl_daten/table/icp_fov/map_" << ctr_ << ".pcd";
 				pcl::io::savePCDFileASCII (ss1.str(), map_);
 			}
+
 		frustum += pc_aligned;
 		pcl::VoxelGrid<Point> vox_filter;
 		vox_filter.setInputCloud(frustum.makeShared());
@@ -317,19 +332,19 @@ public:
 		vox_filter.filter(frustum);
 		point_cloud_pub_aligned_.publish(frustum);
 
-		if(save_pc_aligned_==true)
+		if(save_pc_aligned==true)
 		{
 			std::stringstream ss;
-			ss << "/home/goa/pcl_daten/table/icp_fov/pc_aligned_" << ctr_ << ".pcd";
+			ss << "/home/goa-hh/pcl_daten/table/icp_fov/pc_aligned_" << ctr_ << ".pcd";
 			pcl::io::savePCDFileASCII (ss.str(), pc_aligned);
 		}
-		if(save_icp_fov_pc_==true)
+		if(save_icp_fov_pc==true)
 		{
 			std::stringstream ss2;
-			ss2 << "/home/goa/pcl_daten/table/icp_fov/pc_" << ctr_ << ".pcd";
+			ss2 << "/home/goa-hh/pcl_daten/table/icp_fov/pc_" << ctr_ << ".pcd";
 			pcl::io::savePCDFileASCII (ss2.str(), *(pc.get()));
 		}
-		if (save_map_fov_==true)
+		if (save_map_fov==true)
 		{
 			std::stringstream ss3;
 			ss3 << "/home/goa/pcl_daten/table/icp_fov/map_fov_" << ctr_ << ".pcd";
@@ -352,9 +367,9 @@ public:
 		icp.setInputCloud(pc);
 		icp.setInputTarget(map_.makeShared());
 		//TODO: set parameter
-		icp.setMaximumIterations(set_maximumiterations_);
-		icp.setMaxCorrespondenceDistance(set_maxcorrespondencedistance_);
-		icp.setTransformationEpsilon (set_transformationepsilon_);
+		icp.setMaximumIterations(set_maximumiterations);
+		icp.setMaxCorrespondenceDistance(set_maxcorrespondencedistance);
+		icp.setTransformationEpsilon (set_transformationepsilon);
 		pcl::PointCloud<Point> pc_aligned;
 		icp.align(pc_aligned);
 		map_ += pc_aligned;
@@ -369,7 +384,7 @@ public:
 		ROS_DEBUG_STREAM_COND(ros_debug ,"\tTime: %f"<< time);
 
 		//TODO: parameter for file path
-		if(save_icp_map_==true)
+		if(save_icp_map==true)
 		{
 			std::stringstream ss1;
 			ss1 << file_path << ctr_ << ".pcd";
@@ -415,15 +430,13 @@ protected:
 
     pcl::PointCloud<Point> map_;	//FOV ICP map
 
-    bool first_;
-    int set_maximumiterations_;
-    double set_maxcorrespondencedistance_;
-    double set_transformationepsilon_;
-/*
-    int set_maximumiterations_FOV_;
-    double set_maxcorrespondencedistance_FOV_;
-    double set_transformationepsilon_FOV_;
-*/
+    bool first_ ;
+    int ctr_;
+
+    int set_maximumiterations ;
+    double set_maxcorrespondencedistance;
+    double set_transformationepsilon;
+
     double vox_filter_setleafsize1;
     double vox_filter_setleafsize2;
     double vox_filter_setleafsize3;
@@ -432,18 +445,18 @@ protected:
     std::string file_path;
 
     //Speichervariablen
-    bool save_pc_;
-    bool save_icp_fov_map_;
-    bool save_pc_aligned_;
-    bool save_icp_fov_pc_;
-    bool save_map_fov_;
-    bool save_icp_map_;
+    bool save_pc;
+    bool save_icp_fov_map;
+    bool save_pc_aligned;
+    bool save_icp_fov_pc;
+    bool save_map_fov;
+    bool save_icp_map;
 
 
-    double y_limit_;
-    double distance_limit_;
-    double r_limit_;
-    double p_limit_;
+    double y_limit;
+    double distance_limit;
+    double r_limit;
+    double p_limit;
 
 	Eigen::Vector3d n_up_t_;
 	Eigen::Vector3d n_down_t_;
@@ -454,7 +467,8 @@ protected:
 
 	ipa_env_model::FieldOfViewSegmentation<Point> seg_;
 
-	int ctr_;
+
+	int mode;
 
 };
 

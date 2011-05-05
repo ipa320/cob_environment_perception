@@ -82,7 +82,7 @@ class FieldOfView
 		{
 			fov_marker_pub_ = n_.advertise<visualization_msgs::Marker>("fov_marker",10);
 			get_fov_srv_ = n_.advertiseService("get_fov", &FieldOfView::srvCallback_GetFieldOfView, this);
-			sensor_fov_hor_ = /*63*/40*M_PI/180;
+			sensor_fov_hor_ = /*63*/40*M_PI/180; //launchfile
 			sensor_fov_ver_ = /*54*/40*M_PI/180;
 			sensor_max_range_ = 5;
 			camera_frame_ = std::string(/*"/base_kinect_rear_link"*/"/head_tof_link");
@@ -96,6 +96,26 @@ class FieldOfView
 			/// void
 		}
 
+	/*	void onInit()
+		    {
+		    	PCLNodelet::onInit();
+		    	n_ = getNodeHandle();
+
+				fov_marker_pub_ = n_.advertise<visualization_msgs::Marker>("fov_marker",10);
+				get_fov_srv_ = n_.advertiseService("get_fov", &FieldOfView::srvCallback_GetFieldOfView, this);
+
+				n_.param("field_of_view/sensor_fov_ver" ,sensor_fov_ver ,40*M_PI/180);
+				n_.param("field_of_view/sensor_fov_ver" ,sensor_fov_ver,40*M_PI/180);
+				n_.param("field_of_view/sensor_max_range" ,sensor_max_range,5);
+
+				camera_frame_ = std::string(/*"/base_kinect_rear_link"*//*"/head_tof_link");
+				computeFieldOfView();
+
+
+
+
+		    }
+		*/
 		void computeFieldOfView()
 		{
 			double fovHorFrac = sensor_fov_hor_/2;
