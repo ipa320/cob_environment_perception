@@ -1,5 +1,11 @@
 <?xml version="1.0"?>
+
+
 <launch>
+<!-- Includes -->
+
+  <include file="$(find cob_env_model)/ros/launch/field_of_view.launch" />
+
 
   <!-- start environment modelling -->
   <node pkg="nodelet" type="nodelet" name="pcl_manager"  args="manager" output="screen"/>
@@ -11,9 +17,9 @@
 </node>
   	
   
- #<node pkg="cob_env_model" type="field_of_view_node" name="field_of_view_node" output="screen"/>
 
-<include file="$(find cob_env_model)/ros/launch/field_of_view.launch" />
+   
+  
 
 
   <!-- Start aggregate point map -->
@@ -47,3 +53,5 @@
   
   	
   </launch>
+  
+  

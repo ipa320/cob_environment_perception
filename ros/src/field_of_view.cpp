@@ -65,6 +65,9 @@
 #include <visualization_msgs/Marker.h>
 #include <cob_env_model/GetFieldOfView.h>
 #include <Eigen/Core>
+#include <pcl_ros/pcl_nodelet.h>
+#include <pluginlib/class_list_macros.h>
+
 
 // external includes
 #include <boost/timer.hpp>
@@ -74,19 +77,24 @@ using namespace tf;
 
 //####################
 //#### node class ####
-class FieldOfView
+class FieldOfView : public pcl_ros::PCLNodelet
+
 {
 	public:
 		// Constructor
-		FieldOfView()
+	FieldOfView()
+		:
+			sensor_fov_ver(40*M_PI/180),
+			sensor_fov_hor(40*M_PI/180),
+			sensor_max_range(5)
 		{
-			fov_marker_pub_ = n_.advertise<visualization_msgs::Marker>("fov_marker",10);
-			get_fov_srv_ = n_.advertiseService("get_fov", &FieldOfView::srvCallback_GetFieldOfView, this);
-			sensor_fov_hor_ = /*63*/40*M_PI/180; //launchfile
-			sensor_fov_ver_ = /*54*/40*M_PI/180;
-			sensor_max_range_ = 5;
-			camera_frame_ = std::string(/*"/base_kinect_rear_link"*/"/head_tof_link");
-			computeFieldOfView();
+		//	fov_marker_pub_ = n_.advertise<visualization_msgs::Marker>("fov_marker",10);
+		//	get_fov_srv_ = n_.advertiseService("get_fov", &FieldOfView::srvCallback_GetFieldOfView, this);
+		//	sensor_fov_hor_ = /*63*/40*M_PI/180; //launchfile
+		//	sensor_fov_ver_ = /*54*/40*M_PI/180;
+		//	sensor_max_range_ = 5;
+		//	camera_frame_ = std::string(/*"/base_kinect_rear_link"*/"/head_tof_link");
+		//	computeFieldOfView();
 		}
 
 
@@ -96,26 +104,27 @@ class FieldOfView
 			/// void
 		}
 
-	/*	void onInit()
-		    {
+		void onInit()
+		{
+
 		    	PCLNodelet::onInit();
 		    	n_ = getNodeHandle();
+				ROS_INFO("testfov");
 
 				fov_marker_pub_ = n_.advertise<visualization_msgs::Marker>("fov_marker",10);
 				get_fov_srv_ = n_.advertiseService("get_fov", &FieldOfView::srvCallback_GetFieldOfView, this);
 
-				n_.param("field_of_view/sensor_fov_ver" ,sensor_fov_ver ,40*M_PI/180);
+				n_.param("field_of_view/sensor_fov_hor" ,sensor_fov_hor ,40*M_PI/180);
 				n_.param("field_of_view/sensor_fov_ver" ,sensor_fov_ver,40*M_PI/180);
 				n_.param("field_of_view/sensor_max_range" ,sensor_max_range,5);
 
-				camera_frame_ = std::string(/*"/base_kinect_rear_link"*//*"/head_tof_link");
-				computeFieldOfView();
+
 
 
 
 
 		    }
-		*/
+
 		void computeFieldOfView()
 		{
 			double fovHorFrac = sensor_fov_hor_/2;
@@ -343,6 +352,8 @@ class FieldOfView
 				cob_env_model::GetFieldOfView::Response &res)
 		{
 			ROS_INFO("FieldOfView Trigger");
+
+
 			transformFOV(req.target_frame);
 			geometry_msgs::Point n_msg;
 			pointTFToMsg(n_up_t_, n_msg);
@@ -387,14 +398,21 @@ class FieldOfView
 		tf::Point n_right_t_;
 		tf::Point n_left_t_;
 		tf::Point n_origin_t_;
+		int sensor_max_range;
+		double sensor_fov_hor;
+		double sensor_fov_ver;
+
 
 };
+
+
+
 
 
 int main (int argc, char** argv)
 {
   ros::init (argc, argv, "field_of_view");
-
+  ROS_INFO("testfov2");
   FieldOfView fov;
 
   ros::Rate loop_rate(10);
@@ -407,4 +425,4 @@ int main (int argc, char** argv)
 }
 
 
-
+PLUGINLIB_DECLARE_CLASS(cob_env_model, FieldOfView, FieldOfView, nodelet::Nodelet)
