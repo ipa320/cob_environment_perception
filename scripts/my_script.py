@@ -32,14 +32,14 @@ class MyScript(script):
      	self.sss.move("arm","overtray")
         self.sss.move("torso","back")
        # self.sss.move("torso","home")
-        self.sss.move("base",[-2.2, -1.7, 0])
+        self.sss.move("base",[-2.2, -1.6, 0])
        # self.sss.move("torso","back")
        # self.sss.move("base",[-2, -1, 0])
       # self.sss.move("base",[-2, 0, 0])
 	  #  self.sss.move("torso","home")
    #     self.sss.move("base",[-2, 0, 0])
        # self.sss.move("base",[-2, 0, 0])
-        self.sss.move("base",[-2.2, 1.7, 0])
+        self.sss.move("base",[-2.2, 1.8, 0])
         self.sss.move("base",[0, 0, 0])
         
 

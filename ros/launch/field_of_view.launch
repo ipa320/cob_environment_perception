@@ -1,6 +1,12 @@
+ <launch>
  
- <node pkg="cob_env_model" type="field_of_view_node" name="field_of_view_node" output="screen"/>
-		<param name="sensor_fov_hor" type="bool" value="40*M_PI7180"/>
-		<param name="sensor_fov_ver" type="bool" value="40*M_PI/180"/>
+
+ <node pkg="cob_env_model" type="field_of_view_node" name="field_of_view" output="screen">
+ 
+		<param name="sensor_fov_hor" type="double" value="0.222222222"/>
+		<param name="sensor_fov_ver" type="double" value="0.222222222"/>
 		<param name="sensor_max_range" type="int" value="5"/>
 		</node>
+		
+		
+</launch>		

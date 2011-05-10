@@ -249,8 +249,8 @@ public:
 		//fov_marker_pub_.publish(marker);
 		cob_env_model::GetFieldOfView get_fov_srv;
 		get_fov_srv.request.target_frame = std::string("/map");
-		if(get_fov_srv_client_.call(get_fov_srv)==true)  // war kein vergleich bei if?
-		{
+		ROS_INFO("testhier");
+		if(get_fov_srv_client_.call(get_fov_srv))  {
 
 
 			ROS_DEBUG_STREAM_COND(ros_debug ,"[aggregate_point_map] FOV service called [OK].");
@@ -303,6 +303,13 @@ public:
 		pcl::PointCloud<Point> pc_aligned;
 		icp.align(pc_aligned);
 		map_ += pc_aligned; // map filtern
+
+		pcl::VoxelGrid<Point> vox_filter2;
+		vox_filter2.setInputCloud(map_.makeShared());
+		vox_filter2.setLeafSize(0.005, 0.005, 0.005);
+		vox_filter2.filter(map_);
+
+
 
 		//do logging
 		double time = t.elapsed();
