@@ -1,7 +1,7 @@
  <launch>
  
 
- <node pkg="cob_env_model" type="field_of_view_node" name="field_of_view" output="screen">
+<node pkg="nodelet" type="nodelet" name="field_of_view" args="load cob_env_model/FieldOfView pcl_manager" output="screen">
  
 		<param name="sensor_fov_hor" type="double" value="0.222222222"/>
 		<param name="sensor_fov_ver" type="double" value="0.222222222"/>
