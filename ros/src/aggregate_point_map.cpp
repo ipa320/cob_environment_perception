@@ -171,11 +171,12 @@ public:
 
     void pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc)
     {
-
+    	ROS_INFO("callback");
+    	ROS_DEBUG_STREAM_COND(ros_debug ,"debug");
     	StampedTransform transform;
     	try
     	{
-
+    		ROS_INFO("TRANSFORM");
        		tf_listener_.waitForTransform("/map", pc->header.frame_id, /*ros::Time(0)*/pc->header.stamp, ros::Duration(3));
     		tf_listener_.lookupTransform("/map", pc->header.frame_id, pc->header.stamp/*ros::Time(0)*/, transform);
     		KDL::Frame frame_KDL, frame_KDL_old;
@@ -188,7 +189,7 @@ public:
     		if(fabs(r-r_old) > r_limit || fabs(p-p_old) > p_limit || fabs(y-y_old) > y_limit ||
     				transform.getOrigin().distance(transform_old_.getOrigin()) > distance_limit)
     		{
-    			ROS_DEBUG_STREAM_COND(ros_debug ,  "Registering new point cloud" << std::endl);
+    			ROS_INFO( "Registering new point cloud" );
     			transform_old_ = transform;
 				//transformPointCloud("/map", transform, pc->header.stamp, *(pc.get()), *(pc.get()));
     			//pcl_ros::transformPointCloud ("/map", *(pc.get()), *(pc.get()), tf_listener_);
@@ -205,7 +206,7 @@ public:
 						ss2 << "/home/goa-hh/pcl_daten/table/pc_" << ctr_ << ".pcd";
 						pcl::io::savePCDFileASCII (ss2.str(), *pc);
 					}
-					if(first_)
+					if(first_==true)
 				{
 					map_ = *(pc.get());
 					map_.header.frame_id="/map";
@@ -215,7 +216,8 @@ public:
 				{
 					switch (mode)
 					{
-					case 1 : doFOVICP(pc);
+					case 1 : ROS_INFO("doit");
+							 doFOVICP(pc);
 					case 2 : doICP(pc);
 					case 3 : addToMap(pc);
 					}
@@ -252,14 +254,16 @@ public:
 		ROS_INFO("testhier");
 		if(get_fov_srv_client_.call(get_fov_srv))  {
 
-
-			ROS_DEBUG_STREAM_COND(ros_debug ,"[aggregate_point_map] FOV service called [OK].");
+			ROS_INFO("ja");
+			ROS_DEBUG_STREAM_COND(true ,"[aggregate_point_map] FOV service called [OK].");
 		}
 		else
 		{
+			ROS_INFO("NEIN");
 			ROS_ERROR("[aggregate_point_map] FOV service called [FAILED].");
 			return;
 		}
+		ROS_INFO("schleifenende");
 		n_up_t_(0) = get_fov_srv.response.fov.points[0].x;
 		n_up_t_(1) = get_fov_srv.response.fov.points[0].y;
 		n_up_t_(2) = get_fov_srv.response.fov.points[0].z;
@@ -290,13 +294,12 @@ public:
 		extractIndices.setInputCloud(map_.makeShared());
 		extractIndices.setIndices(boost::make_shared<pcl::PointIndices>(indices));
 		extractIndices.filter(frustum);
-
+		ROS_INFO("nach filter");
 		//do ICP
 		boost::timer t;
 		pcl::IterativeClosestPoint<Point,Point> icp;
 		icp.setInputCloud(pc->makeShared());
 		icp.setInputTarget(frustum.makeShared());
-		//TODO: set as parameters
 		icp.setMaximumIterations(set_maximumiterations);
 		icp.setMaxCorrespondenceDistance(set_maxcorrespondencedistance);
 		icp.setTransformationEpsilon (set_transformationepsilon);
@@ -304,16 +307,17 @@ public:
 		icp.align(pc_aligned);
 		map_ += pc_aligned; // map filtern
 
-		pcl::VoxelGrid<Point> vox_filter2;
+		/*pcl::VoxelGrid<Point> vox_filter2;
 		vox_filter2.setInputCloud(map_.makeShared());
 		vox_filter2.setLeafSize(0.005, 0.005, 0.005);
 		vox_filter2.filter(map_);
-
+*/
 
 
 		//do logging
 		double time = t.elapsed();
 		pcl::io::savePCDFileASCII ("/home/goa-hh/pcl_daten/table/icp_fov/map_test.pcd", map_);
+		ROS_INFO("vor ausgabe");
 		ROS_DEBUG_STREAM_COND(ros_debug ,"Aligning pc with " << pc->size() << " to map_fov with " << frustum.size());
 		ROS_DEBUG_STREAM_COND(ros_debug ,"ICP has converged:" << icp.hasConverged());
 		ROS_DEBUG_STREAM_COND(ros_debug ,"Fitness score: " << icp.getFitnessScore());
@@ -331,13 +335,14 @@ public:
 				ss1 << "/home/goa-hh/pcl_daten/table/icp_fov/map_" << ctr_ << ".pcd";
 				pcl::io::savePCDFileASCII (ss1.str(), map_);
 			}
-
+		ROS_INFO("frustum");
 		frustum += pc_aligned;
 		pcl::VoxelGrid<Point> vox_filter;
 		vox_filter.setInputCloud(frustum.makeShared());
 		vox_filter.setLeafSize(0.005, 0.005, 0.005);
 		vox_filter.filter(frustum);
 		point_cloud_pub_aligned_.publish(frustum);
+		ROS_INFO("frustum ok");
 
 		if(save_pc_aligned==true)
 		{
@@ -358,6 +363,7 @@ public:
 			pcl::io::savePCDFileASCII (ss3.str(), frustum);
 		}
     	//filestr.close();
+		ROS_INFO("ende");
     }
 
 

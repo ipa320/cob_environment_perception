@@ -109,7 +109,12 @@ class FieldOfView : public pcl_ros::PCLNodelet
 
 		    	PCLNodelet::onInit();
 		    	n_ = getNodeHandle();
-				ROS_INFO("testfov");
+
+		        FieldOfView fov;
+		        camera_frame_ = std::string(/*"/base_kinect_rear_link"*/"/head_tof_link");
+		        computeFieldOfView();
+
+
 
 				fov_marker_pub_ = n_.advertise<visualization_msgs::Marker>("fov_marker",10);
 				get_fov_srv_ = n_.advertiseService("get_fov", &FieldOfView::srvCallback_GetFieldOfView, this);
@@ -123,10 +128,13 @@ class FieldOfView : public pcl_ros::PCLNodelet
 
 
 
+
+
 		    }
 
 		void computeFieldOfView()
 		{
+			ROS_INFO("computing");
 			double fovHorFrac = sensor_fov_hor_/2;
 			double fovVerFrac = sensor_fov_ver_/2;
 
@@ -354,18 +362,23 @@ class FieldOfView : public pcl_ros::PCLNodelet
 			ROS_INFO("FieldOfView Trigger");
 
 
+
 			transformFOV(req.target_frame);
+
 			geometry_msgs::Point n_msg;
+
 			pointTFToMsg(n_up_t_, n_msg);
 			res.fov.points.push_back(n_msg);
 			pointTFToMsg(n_down_t_, n_msg);
 			res.fov.points.push_back(n_msg);
+
 			pointTFToMsg(n_right_t_, n_msg);
 			res.fov.points.push_back(n_msg);
 			pointTFToMsg(n_left_t_, n_msg);
 			res.fov.points.push_back(n_msg);
 			pointTFToMsg(n_origin_t_, n_msg);
 			res.fov.points.push_back(n_msg);
+
 		}
 
 	protected:
@@ -408,7 +421,7 @@ class FieldOfView : public pcl_ros::PCLNodelet
 
 
 
-
+/*
 int main (int argc, char** argv)
 {
   ros::init (argc, argv, "field_of_view");
@@ -422,7 +435,7 @@ int main (int argc, char** argv)
 	  //fov.transformNormals();
 	  loop_rate.sleep();
   }
-}
+}*/
 
 
 PLUGINLIB_DECLARE_CLASS(cob_env_model, FieldOfView, FieldOfView, nodelet::Nodelet)
