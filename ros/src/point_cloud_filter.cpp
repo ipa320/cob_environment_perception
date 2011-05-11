@@ -80,6 +80,7 @@
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/impl/extract_indices.hpp>
 #include "pcl/impl/instantiate.hpp"
+#include <pcl/io/pcd_io.h>
 
 //####################
 //#### node class ####
@@ -125,66 +126,74 @@ public:
     }
 
     void PointCloudSubCallback(const pcl::PointCloud<CPCPoint>::Ptr& pc)
-        {
-        	//ROS_INFO("PointCloudSubCallback");
-    		pcl::PointCloud<CPCPoint>::Ptr pc_out(new pcl::PointCloud<CPCPoint>());
-    		pcl::PointCloud<CPCPoint>::Ptr pc_out2(new pcl::PointCloud<CPCPoint>());
-    		//pcl::PointCloud<pcl::PointXYZ>::Ptr pc_out(new pcl::PointCloud<pcl::PointXYZ>());
-    		pc_out2->points.resize(pc->points.size());
-    		pc_out2->header = pc->header;
+    {
+		/*std::stringstream ss2;
+		ss2 << "/home/goa/pcl_daten/raw_data/tof_" << pc->header.stamp << ".pcd";
+		pcl::io::savePCDFileASCII (ss2.str(), *(pc.get()));*/
+    	//ROS_INFO("PointCloudSubCallback");
+		pcl::PointCloud<CPCPoint>::Ptr pc_out(new pcl::PointCloud<CPCPoint>());
+		pcl::PointCloud<CPCPoint>::Ptr pc_out2(new pcl::PointCloud<CPCPoint>());
+		//pcl::PointCloud<pcl::PointXYZ>::Ptr pc_out(new pcl::PointCloud<pcl::PointXYZ>());
+		pc_out2->points.resize(pc->points.size());
+		pc_out2->header = pc->header;
 
-    		cv::Mat xyz_mat_32F3 = cv::Mat(pc->height, pc->width, CV_32FC3);
-    		cv::Mat intensity_mat_32F1 = cv::Mat(pc->height, pc->width, CV_32FC1);
+		//cv::Mat xyz_mat_32F3 = cv::Mat(pc->height, pc->width, CV_32FC3);
+		//cv::Mat intensity_mat_32F1 = cv::Mat(pc->height, pc->width, CV_32FC1);
 
-    		//assumption: data order is always x->y->z in PC, datatype = float
-    		/*int x_offset = 0, i_offset = 0;
-    		for (size_t d = 0; d < pc->fields.size(); ++d)
-    		{
-    			if(pc->fields[d].name == "x")
-    				x_offset = pc->fields[d].offset;
-    			if(pc->fields[d].name == "intensity")
-    				i_offset = pc->fields[d].offset;
-    		}*/
+		//assumption: data order is always x->y->z in PC, datatype = float
+		/*int x_offset = 0, i_offset = 0;
+		for (size_t d = 0; d < pc->fields.size(); ++d)
+		{
+			if(pc->fields[d].name == "x")
+				x_offset = pc->fields[d].offset;
+			if(pc->fields[d].name == "intensity")
+				i_offset = pc->fields[d].offset;
+		}*/
 
-    		float* f_ptr = 0;
-    		float* i_ptr = 0;
-    		int pc_msg_idx=0;
-    		for (int row = 0; row < xyz_mat_32F3.rows; row++)
-    		{
-    			f_ptr = xyz_mat_32F3.ptr<float>(row);
-    			i_ptr = intensity_mat_32F1.ptr<float>(row);
-    			for (int col = 0; col < xyz_mat_32F3.cols; col++, pc_msg_idx++)
-    			{
-    				//memcpy(&f_ptr[3*col], &pc->data[pc_msg_idx * pc->point_step + x_offset], 3*sizeof(float));
-    				//memcpy(&i_ptr[col], &pc->data[pc_msg_idx * pc->point_step + i_offset], sizeof(float));
-    				//memcpy(&f_ptr[3*col], &pc->points[pc_msg_idx].x, 3*sizeof(float));
-    				//memcpy(&i_ptr[col], &pc->points[pc_msg_idx].intensity, sizeof(float));
-    			}
-    		}
+		/*float* f_ptr = 0;
+		float* i_ptr = 0;
+		int pc_msg_idx=0;
+		for (int row = 0; row < xyz_mat_32F3.rows; row++)
+		{
+			f_ptr = xyz_mat_32F3.ptr<float>(row);
+			i_ptr = intensity_mat_32F1.ptr<float>(row);
+			for (int col = 0; col < xyz_mat_32F3.cols; col++, pc_msg_idx++)
+			{
+				//memcpy(&f_ptr[3*col], &pc->data[pc_msg_idx * pc->point_step + x_offset], 3*sizeof(float));
+				//memcpy(&i_ptr[col], &pc->data[pc_msg_idx * pc->point_step + i_offset], sizeof(float));
+				//memcpy(&f_ptr[3*col], &pc->points[pc_msg_idx].x, 3*sizeof(float));
+				//memcpy(&i_ptr[col], &pc->points[pc_msg_idx].intensity, sizeof(float));
+			}
+		}*/
 
-    		if(filter_speckle_ || filter_tearoff_)
-    		{
-    			if(filter_speckle_) FilterSpeckles(xyz_mat_32F3);
-    			//if(filter_tearoff_) FilterTearOffEdges(xyz_mat_32F3);
-    			if(filter_tearoff_) FilterTearOffEdges(pc, pc_out);
-    			pc_msg_idx=0;
-    			for (int row = 0; row < xyz_mat_32F3.rows; row++)
-    			{
-    				f_ptr = xyz_mat_32F3.ptr<float>(row);
-    				for (int col = 0; col < xyz_mat_32F3.cols; col++, pc_msg_idx++)
-    				{
-    					memcpy(&pc->points[pc_msg_idx].x, &f_ptr[3*col], 3*sizeof(float));
-    				}
-    			}
-    		}
-			if(filter_by_amplitude_) FilterByAmplitude(pc_out, pc_out2);
-    		//if(filter_by_confidence_) FilterByConfidence(pc);
+		if(filter_speckle_ || filter_tearoff_)
+		{
+			//if(filter_speckle_) FilterSpeckles(xyz_mat_32F3);
+			//if(filter_tearoff_) FilterTearOffEdges(xyz_mat_32F3);
+			if(filter_tearoff_) FilterTearOffEdges(pc, pc_out);
+			/*pc_msg_idx=0;
+			for (int row = 0; row < xyz_mat_32F3.rows; row++)
+			{
+				f_ptr = xyz_mat_32F3.ptr<float>(row);
+				for (int col = 0; col < xyz_mat_32F3.cols; col++, pc_msg_idx++)
+				{
+					memcpy(&pc->points[pc_msg_idx].x, &f_ptr[3*col], 3*sizeof(float));
+				}
+			}*/
+		}
+		std::stringstream ss;
+		ss << "/home/goa/pcl_daten/filter/jump_edge_" << pc->header.stamp << ".pcd";
+		//pcl::io::savePCDFileASCII (ss.str(), *(pc_out.get()));
+		if(filter_by_amplitude_) FilterByAmplitude(pc_out, pc_out2);
+		//if(filter_by_confidence_) FilterByConfidence(pc);
+		std::stringstream ss1;
+		ss1 << "/home/goa/pcl_daten/filter/amplitude_" << pc->header.stamp << ".pcd";
+		//pcl::io::savePCDFileASCII (ss1.str(), *(pc_out2.get()));
 
 
-			//std::cout << pc_out2->size() << " points in pc_out" << std::endl;
-    		point_cloud_pub_.publish(pc_out2);
-
-        }
+		//std::cout << pc_out2->size() << " points in pc_out" << std::endl;
+		point_cloud_pub_.publish(pc_out2);
+	}
 
 
 
@@ -211,7 +220,7 @@ public:
 		int nr_p = 0;
     	for( unsigned int i = 0; i < pc->points.size(); i++)
     	{
-    		if( pc->points[i].intensity > amplitude_min_threshold_ && pc->points[i].intensity < amplitude_max_threshold_ && pc->points[i].confidence > 64000)
+    		if( pc->points[i].intensity > amplitude_min_threshold_ && pc->points[i].intensity < amplitude_max_threshold_ /*&& pc->points[i].confidence > 64000*/)
     		{
     			pc_out->points[nr_p++] = pc->points[i];
     		}
@@ -249,116 +258,84 @@ public:
     		if(i< pc->width || i%pc->width==0 || i%pc->width==3 || i>pc->width*(pc->height-1)) continue; //skip border points
     		Eigen::Vector3f v_m(pc->points[i].x,pc->points[i].y,pc->points[i].z);
     		Eigen::Vector3f v_m_n = v_m.normalized();
-    		//if(i==21037)std::cout << "v_m: " << v_m << std::endl;
     		int index = i-pc->width-1;
-    		//if(i==21037)std::cout << "v_ul: " << pc->points[index].x << "," << pc->points[index].y << "," << pc->points[index].z << std::endl;
     		Eigen::Vector3f vd_ul(v_m(0)-pc->points[index].x, v_m(1)-pc->points[index].y, v_m(2)-pc->points[index].z);
-    		//if(i==21037)std::cout << "vd_ul: " << vd_ul << std::endl;
     		vd_ul.normalize();
     		double angle = std::acos(v_m_n.dot(vd_ul));
-    		//if(i==21037)std::cout << "\na: " << angle*180/M_PI << std::endl;
     		if(angle > upper_angle_thresh || angle < lower_angle_thresh)
     		{
     			points_to_remove->indices.push_back(i);
-        		//if(i==24660) std::cout << i << " a: " << angle << ", xyz: " << v_m <<  ", xyz_ul: " << pc->points[index].x << "," << pc->points[index].y << "," << pc->points[index].z << std::endl;
-    			continue;
+        		continue;
     		}
     		index = i-pc->width;
     		Eigen::Vector3f vd_u(v_m(0)-pc->points[index].x, v_m(1)-pc->points[index].y, v_m(2)-pc->points[index].z);
-    		//if(i==21037)std::cout << "v_u: " << pc->points[index].x << "," << pc->points[index].y << "," << pc->points[index].z << std::endl;
     		vd_u.normalize();
     		angle = std::acos(v_m_n.dot(vd_u));
-    		//if(i==21037)std::cout << "a: " << angle*180/M_PI << std::endl;
     		if(angle > upper_angle_thresh || angle < lower_angle_thresh)
     		{
     			points_to_remove->indices.push_back(i);
-        		//std::cout << i << " angle: " << angle << std::endl;
     			continue;
     		}
     	    index = i-pc->width+1;
     		Eigen::Vector3f vd_ur(v_m(0)-pc->points[index].x, v_m(1)-pc->points[index].y, v_m(2)-pc->points[index].z);
-    		//if(i==21037)std::cout << "v_ur: " << pc->points[index].x << "," << pc->points[index].y << "," << pc->points[index].z << std::endl;
     		vd_ur.normalize();
     		angle = std::acos(v_m_n.dot(vd_ur));
-    		//if(i==21037)std::cout << "a: " << angle*180/M_PI << std::endl;
     		if(angle > upper_angle_thresh || angle < lower_angle_thresh)
     		{
     			points_to_remove->indices.push_back(i);
-        		//std::cout << i << " angle: " << angle << std::endl;
-    			continue;
+        		continue;
     		}
     	    index = i-1;
     		Eigen::Vector3f vd_l(v_m(0)-pc->points[index].x, v_m(1)-pc->points[index].y, v_m(2)-pc->points[index].z);
-    		//if(i==21037)std::cout << "v_l: " << pc->points[index].x << "," << pc->points[index].y << "," << pc->points[index].z << std::endl;
     		vd_l.normalize();
     		angle = std::acos(v_m_n.dot(vd_l));
-    		//if(i==21037)std::cout << "a: " << angle*180/M_PI << std::endl;
     		if(angle > upper_angle_thresh || angle < lower_angle_thresh)
     		{
     			points_to_remove->indices.push_back(i);
-        		//std::cout << i << " angle: " << angle << std::endl;
-    			continue;
+        		continue;
     		}
     	    index = i+1;
     		Eigen::Vector3f vd_r(v_m(0)-pc->points[index].x, v_m(1)-pc->points[index].y, v_m(2)-pc->points[index].z);
-    		//if(i==21037)std::cout << "v_r: " << pc->points[index].x << "," << pc->points[index].y << "," << pc->points[index].z << std::endl;
     		vd_r.normalize();
     		angle = std::acos(v_m_n.dot(vd_r));
-    		//if(i==21037)std::cout << "a: " << angle*180/M_PI << std::endl;
     		if(angle > upper_angle_thresh || angle < lower_angle_thresh)
     		{
     			points_to_remove->indices.push_back(i);
-        		//std::cout << i << " angle: " << angle << std::endl;
-    			continue;
+        		continue;
     		}
     	    index = i+pc->width-1;
     		Eigen::Vector3f vd_ll(v_m(0)-pc->points[index].x, v_m(1)-pc->points[index].y, v_m(2)-pc->points[index].z);
-    		//if(i==21037)std::cout << "v_ll: " << pc->points[index].x << "," << pc->points[index].y << "," << pc->points[index].z << std::endl;
     		vd_ll.normalize();
     		angle = std::acos(v_m_n.dot(vd_ll));
-    		//if(i==21037)std::cout << "a: " << angle*180/M_PI << std::endl;
     		if(angle > upper_angle_thresh || angle < lower_angle_thresh)
     		{
     			points_to_remove->indices.push_back(i);
-        		//std::cout << i << " angle: " << angle << std::endl;
-    			continue;
+        		continue;
     		}
     	    index = i+pc->width;
     		Eigen::Vector3f vd_lo(v_m(0)-pc->points[index].x, v_m(1)-pc->points[index].y, v_m(2)-pc->points[index].z);
-    		//if(i==21037)std::cout << "v_lo: " << pc->points[index].x << "," << pc->points[index].y << "," << pc->points[index].z << std::endl;
     		vd_lo.normalize();
     		angle = std::acos(v_m_n.dot(vd_lo));
-    		//if(i==21037)std::cout << "a: " << angle*180/M_PI << std::endl;
     		if(angle > upper_angle_thresh || angle < lower_angle_thresh)
     		{
     			points_to_remove->indices.push_back(i);
-        		//std::cout << i << " angle: " << angle << std::endl;
-    			continue;
+        		continue;
     		}
     	    index = i+pc->width+1;
     		Eigen::Vector3f vd_lr(v_m(0)-pc->points[index].x, v_m(1)-pc->points[index].y, v_m(2)-pc->points[index].z);
-    		//if(i==21037)std::cout << "v_lr: " << pc->points[index].x << "," << pc->points[index].y << "," << pc->points[index].z << std::endl;
     		vd_lr.normalize();
     		angle = std::acos(v_m_n.dot(vd_lr));
-    		//if(i==21037)std::cout << "a: " << angle*180/M_PI << std::endl;
     		if(angle > upper_angle_thresh || angle < lower_angle_thresh)
     		{
     			points_to_remove->indices.push_back(i);
-        		//std::cout << i << " angle: " << angle << std::endl;
-    			continue;
+        		continue;
     		}
     	}
-		//std::cout << points_to_remove->indices.size() << " points filtered" << std::endl;
 		pcl::ExtractIndices<CPCPoint> extractIndices;
 		extractIndices.setInputCloud(pc);
 		extractIndices.setIndices(points_to_remove);
 		extractIndices.setNegative(true);
 		extractIndices.filter(*(pc_out.get()));
-		//std::cout << "Jump edge filter time: " << t.elapsed() << std::endl;
-		/*pc_out->width = nr_p;
-		pc_out->height = 1;
-		pc_out->points.resize(nr_p);
-		pc_out->is_dense = true;*/
     }
 
 

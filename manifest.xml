@@ -34,6 +34,7 @@
   <rosdep name="glut"/>
   
   <export>
+  	<cpp cflags="-I${prefix}/common/include -I${prefix}/ros/include" lflags="-Wl,-rpath,${prefix}/ros/lib -L${prefix}/ros/lib -lcob_env_model"/>
   	<nodelet plugin="${prefix}/nodelet_plugins.xml" />
   </export>
   

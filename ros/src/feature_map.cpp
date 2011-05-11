@@ -71,10 +71,12 @@
 #include <pcl_ros/point_cloud.h>
 
 #include "pcl/surface/convex_hull.h"
-
+#include "pcl/filters/project_inliers.h"
 
 // ROS message includes
 //#include <sensor_msgs/PointCloud2.h>
+#include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
 
 // external includes
 #include <boost/timer.hpp>
@@ -105,8 +107,9 @@ public:
 
     	convex_hull_sub_ = n_.subscribe("table_hull", 1, &FeatureMap::subCallback, this);
 		map_pub_ = n_.advertise<pcl::PointCloud<pcl::PointXYZ> >("feature_map",1);
+		marker_pub_ = n_.advertise<visualization_msgs::Marker>("feature_marker",100);
 
-    	pcl::PointCloud<pcl::PointXYZ> map_feature;
+    	/*pcl::PointCloud<pcl::PointXYZ> map_feature;
     	map_feature.points.resize(3);
     	map_feature.points[0].x = 0;
     	map_feature.points[0].y = 0;
@@ -117,13 +120,15 @@ public:
     	map_feature.points[2].x = 0;
     	map_feature.points[2].y = 1;
     	map_feature.points[2].z = 0;
-    	map_feature.header.frame_id="/head_tof_link";
+    	map_feature.header.frame_id="/head_tof_link";*/
+    	//pcl::io::loadPCDFile("/home/goa/pcl_daten/table_detection/hull_0.pcd", map_feature);
     	//map_.push_back(map_feature);
     }
 
 
     void subCallback(const pcl::PointCloud<pcl::PointXYZ>::Ptr& hull)
 	{
+    	boost::timer t;
 		static int ctr = 0;
 		bool polygon_intersecting = true;
 		/*hull->points.resize(4);
@@ -139,6 +144,9 @@ public:
 		hull->points[3].x = 0.5;
 		hull->points[3].y = 1.5;
 		hull->points[3].z = 0;*/
+		/*std::stringstream ss2;
+		ss2 << "/home/goa/pcl_daten/table_detection/hull_" << ctr << ".pcd";
+		pcl::io::loadPCDFile(ss2.str(), *(hull.get()));*/
     	if(first_)
     	{
     		first_ = false;
@@ -219,17 +227,18 @@ public:
 					//std::cout << "x1,y1; max/min:" << max_x1 << ", " << max_y1 << "; " << min_x1 << ", " << min_y1 << std::endl;
 					//std::cout << "x2,y2; max/min:" << max_x2 << ", " << max_y2 << "; " << min_x2 << ", " << min_y2 << std::endl;
 					//Test if intersection occurs
-					if((max_x2-min_x1)/(max_x1-max_x2) <0 && (min_x2-min_x1)/(max_x1-min_x2) <0 &&
+					/*if((max_x2-min_x1)/(max_x1-max_x2) <0 && (min_x2-min_x1)/(max_x1-min_x2) <0 &&
 							(max_y2-min_y1)/(max_y1-max_y2) <0 && (min_y2-min_y1)/(max_y1-min_y2) <0 &&
 							(max_x1-min_x2)/(max_x2-max_x1) <0 && (min_x1-min_x2)/(max_x2-min_x1) <0 &&
-							(max_y1-min_y2)/(max_y2-max_y1) <0 && (min_y1-min_y2)/(max_y2-min_y1) <0) //min 1 inner point
+							(max_y1-min_y2)/(max_y2-max_y1) <0 && (min_y1-min_y2)/(max_y2-min_y1) <0) //min 1 inner point*/
+					if(lambda2_min > lambda1_max || lambda1_min > lambda2_max)
 					{
 						polygon_intersecting = false;
 						//std::cout << polygon_intersecting << std::endl;
 						break;
 					}
 				}
-				if(!polygon_intersecting)
+				if(polygon_intersecting)
 				{
 					for(unsigned int j=0; j<hull->points.size(); j++)
 					{
@@ -300,10 +309,11 @@ public:
 						//std::cout << "x1,y1; max/min:" << max_x1 << ", " << max_y1 << "; " << min_x1 << ", " << min_y1 << std::endl;
 						//std::cout << "x2,y2; max/min:" << max_x2 << ", " << max_y2 << "; " << min_x2 << ", " << min_y2 << std::endl;
 						//Test if intersection occurs
-						if((max_x2-min_x1)/(max_x1-max_x2) <0 && (min_x2-min_x1)/(max_x1-min_x2) <0 &&
+						/*if((max_x2-min_x1)/(max_x1-max_x2) <0 && (min_x2-min_x1)/(max_x1-min_x2) <0 &&
 								(max_y2-min_y1)/(max_y1-max_y2) <0 && (min_y2-min_y1)/(max_y1-min_y2) <0 &&
 								(max_x1-min_x2)/(max_x2-max_x1) <0 && (min_x1-min_x2)/(max_x2-min_x1) <0 &&
-								(max_y1-min_y2)/(max_y2-max_y1) <0 && (min_y1-min_y2)/(max_y2-min_y1) <0) //min 1 inner point
+								(max_y1-min_y2)/(max_y2-max_y1) <0 && (min_y1-min_y2)/(max_y2-min_y1) <0) //min 1 inner point*/
+						if(lambda2_min > lambda1_max || lambda1_min > lambda2_max)
 						{
 							polygon_intersecting = false;
 							//std::cout << polygon_intersecting << std::endl;
@@ -315,10 +325,30 @@ public:
 				{
 					std::cout << "Polygon intersecting: " << polygon_intersecting << std::endl;
 					map_[i] += *(hull.get());
+
+				   // Create a set of planar coefficients with X=Y=0,Z=1
+				   pcl::ModelCoefficients::Ptr coefficients (new pcl::ModelCoefficients ());
+				   coefficients->values.resize (4);
+				   coefficients->values[0] = coefficients->values[1] = 0;
+				   coefficients->values[2] = 1.0;
+				   coefficients->values[3] = -hull->points[0].z;
+
+					pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_projected (new pcl::PointCloud<pcl::PointXYZ> ());
+					pcl::ProjectInliers<pcl::PointXYZ> proj;
+					proj.setModelType (pcl::SACMODEL_PLANE);
+					proj.setInputCloud (map_[i].makeShared());
+					proj.setModelCoefficients (coefficients);
+					proj.filter (*cloud_projected);
 					// Create a Convex Hull representation of the projected inliers
 					pcl::ConvexHull<pcl::PointXYZ> chull;
-					chull.setInputCloud (map_[i].makeShared());
+					pcl::PointCloud<pcl::PointXYZ> hull_old;
+					//pcl::io::loadPCDFile("/home/goa/pcl_daten/feature_map/map_1_f0.pcd", hull_old);
+					pcl::PointCloud<pcl::PointXYZ> hull_new;
+					chull.setInputCloud (cloud_projected);
 					chull.reconstruct (map_[i]);
+					std::stringstream ss1;
+					ss1 << "/home/goa/pcl_daten/feature_map/hull_new_" << ctr << ".pcd";
+					//pcl::io::savePCDFileASCII (ss1.str(), hull_new/*map_[i]*/);
 					/*for(unsigned int v=0; v<map_[i].points.size(); v++)
 					{
 						std::cout << map_[i].points[v] << ", ";
@@ -333,19 +363,72 @@ public:
 				std::cout << "appending" << std::endl;
 			}
     	}
-		std::stringstream ss1;
-		ss1 << "/home/goa/pcl_daten/feature_map/hull_" << ctr << ".pcd";
-		pcl::io::savePCDFileASCII (ss1.str(), *(hull.get()));
+
 		for(unsigned int i=0; i<map_.size(); i++)
 		{
 			std::stringstream ss;
-			ss << "/home/goa/pcl_daten/feature_map/map_" << ctr << "_f" << i << ".pcd";
+			ss << "/home/goa/pcl_daten/table/feature_map/map_" << ctr << "_f" << i << ".pcd";
 			pcl::io::savePCDFileASCII (ss.str(), map_[i]);
     	}
 		ctr++;
 
+		std::cout << "time: " << t.elapsed() << std::endl;
+		publishMarker();
+
 		return;
 	}
+
+    void publishMarker()
+    {
+    	static int ctr;
+    	visualization_msgs::MarkerArray marker_array;
+    	marker_array.markers.resize(map_.size());
+    	//std::cout << "map size:" << map_.size() << std::endl;
+    	for(unsigned int j=0; j<map_.size();j++)
+    	{
+			visualization_msgs::Marker marker;
+			marker.action = visualization_msgs::Marker::ADD;
+			marker.type = visualization_msgs::Marker::TRIANGLE_LIST;
+			marker.lifetime = ros::Duration(0);
+			marker.header.frame_id = map_[j].header.frame_id;
+			marker.header.stamp = ros::Time::now();
+			marker.id = ctr++;
+
+			marker.scale.x = 1;
+			marker.scale.y = 1;
+			marker.scale.z = 1;
+
+			geometry_msgs::Point pt1, pt2, pt3;
+			pt1.x = map_[j].points[0].x;
+			pt1.y = map_[j].points[0].y;
+			pt1.z = map_[j].points[0].z;
+			//std::cout << j << std::endl;
+
+			for(unsigned int i = 1; i < map_[j].points.size()-1; i++)
+			{
+				pt2.x = map_[j].points[i].x;
+				pt2.y = map_[j].points[i].y;
+				pt2.z = map_[j].points[i].z;
+
+				pt3.x = map_[j].points[i+1].x;
+				pt3.y = map_[j].points[i+1].y;
+				pt3.z = map_[j].points[i+1].z;
+
+				marker.points.push_back(pt1);
+				marker.points.push_back(pt2);
+				marker.points.push_back(pt3);
+			}
+			//std::cout << "marker size: " << marker.points.size() << std::endl;
+
+			marker.color.r = 0.0;
+			marker.color.g = 1.0;
+			marker.color.b = 0.0;
+			marker.color.a = 1.0;
+			marker_array.markers[j]=marker;
+			marker_pub_.publish(marker);
+    	}
+		//marker_pub_.publish(marker_array);
+    }
 
     ros::NodeHandle n_;
 
@@ -353,6 +436,7 @@ public:
 protected:
     ros::Subscriber convex_hull_sub_;
     ros::Publisher map_pub_;
+    ros::Publisher marker_pub_;
 
     std::vector<pcl::PointCloud<pcl::PointXYZ> > map_;
 
