@@ -31,7 +31,7 @@ int main()
 	pcl::PointIndices indices;
 	seg.setInputCloud(cloud);
 	boost::timer t;
-	seg.computeFieldOfView(fovHor,fovVer,maxRange,n_up,n_down,n_right,n_left);
+	seg.computeFieldOfView();
 	std::cout << "compute FOV: " << t.elapsed() << std::endl;
 	t.restart();
 	//seg.segment(indices,n_up,n_down,n_right,n_left,maxRange);

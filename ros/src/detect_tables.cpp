@@ -60,6 +60,7 @@
 // standard includes
 //--
 #include <sstream>
+#include <fstream>
 
 // ROS includes
 #include <ros/ros.h>
@@ -85,6 +86,7 @@
 #include "pcl/filters/project_inliers.h"
 #include "pcl/surface/convex_hull.h"
 #include <pcl/segmentation/extract_clusters.h>
+#include <pcl/segmentation/extract_polygonal_prism_data.h>
 
 
 // ROS message includes
@@ -122,12 +124,16 @@ public:
 		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &DetectTables::pointCloudSubCallback, this);
 		table_marker_pub_ = n_.advertise<visualization_msgs::Marker>("table_marker",100);
 		convex_hull_pub_ = n_.advertise<pcl::PointCloud<pcl::PointXYZ> >("table_hull",1);
+		object_cluster_pub_ = n_.advertise<pcl::PointCloud<pcl::PointXYZ> >("object_cluster",1);
     }
 
 
     //input should be point cloud that is amplitude filetered, statistical outlier filtered, voxel filtered and the floor cut, coordinate system should be /map
 	void pointCloudSubCallback(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud)
 	{
+		std::fstream filestr;
+		filestr.open("/home/goa/pcl_daten/table/table_detection/meas.csv", std::fstream::in | std::fstream::out | std::fstream::app);
+		boost::timer t;
 		static int ctr = 0;
 		pcl::KdTree<pcl::PointXYZ>::Ptr clusters_tree;
 		clusters_tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZ> > ();
@@ -143,7 +149,7 @@ public:
 		cluster.setInputCloud (cloud);
 		cluster.extract (table_clusters);
 
-		ROS_INFO ("Number of table clusters found: %d", (int)table_clusters.size ());
+		//ROS_INFO ("Number of table clusters found: %d", (int)table_clusters.size ());
 
 		pcl::ExtractIndices<pcl::PointXYZ> extract;
 
@@ -154,9 +160,9 @@ public:
 			extract.setIndices (boost::make_shared<const pcl::PointIndices> (table_clusters[i]));
 			extract.setNegative (false);
 			extract.filter (table_cluster);
-			std::stringstream ss1;
+			/*std::stringstream ss1;
 			ss1 << "/home/goa/pcl_daten/table_detection/cluster_" << i << ".pcd";
-			//pcl::io::savePCDFileASCII (ss1.str(), table_cluster);
+			pcl::io::savePCDFileASCII (ss1.str(), table_cluster);*/
 
 			pcl::PointCloud<pcl::PointXYZ>::ConstPtr table_cluster_ptr = boost::make_shared<const pcl::PointCloud<pcl::PointXYZ> > (table_cluster);
 
@@ -239,12 +245,30 @@ public:
 			chull.setInputCloud (cloud_projected);
 			chull.reconstruct (*cloud_hull, hull_polygon);
 
-			std::stringstream ss;
+			pcl::ExtractPolygonalPrismData<pcl::PointXYZ> prism;
+			// Consider only objects in a given layer above the table
+			prism.setHeightLimits (-0.5, -0.03);
+			// ---[ Get the objects on top of the table
+			pcl::PointIndices cloud_object_indices;
+			prism.setInputCloud (table_cluster_ptr);
+			prism.setInputPlanarHull (cloud_hull);
+			prism.segment (cloud_object_indices);
+
+			pcl::PointCloud<pcl::PointXYZ> cloud_objects;
+			pcl::ExtractIndices<pcl::PointXYZ> extract_object_indices;
+			extract_object_indices.setInputCloud (table_cluster_ptr);
+			extract_object_indices.setIndices (boost::make_shared<const pcl::PointIndices> (cloud_object_indices));
+			extract_object_indices.filter (cloud_objects);
+			pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud_objects_ptr = cloud_objects.makeShared();
+			object_cluster_pub_.publish(cloud_objects);
+
+
+			/*std::stringstream ss;
 			ss << "/home/goa/pcl_daten/table_detection/hull_" << ctr << ".pcd";
 			pcl::io::savePCDFileASCII (ss.str(), *cloud_hull);
-			ctr++;
+			ctr++;*/
 
-			ROS_INFO ("Convex hull has: %zu data points.", cloud_hull->points.size ());
+			//ROS_INFO ("Convex hull has: %zu data points.", cloud_hull->points.size ());
 
 			visualization_msgs::Marker marker;
 			marker.action = visualization_msgs::Marker::ADD;
@@ -289,6 +313,8 @@ public:
 			table_marker_pub_.publish(marker);
 
 		}
+		filestr << t.elapsed()<<std::endl;
+		filestr.close();
 		return;
 	}
 
@@ -299,6 +325,7 @@ protected:
     ros::Subscriber point_cloud_sub_;
     ros::Publisher table_marker_pub_;
     ros::Publisher convex_hull_pub_;
+    ros::Publisher object_cluster_pub_;
 
     TransformListener tf_listener_;
 
