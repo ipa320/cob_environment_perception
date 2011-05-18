@@ -307,11 +307,11 @@ public:
 		icp.align(pc_aligned);
 		map_ += pc_aligned; // map filtern
 
-		/*pcl::VoxelGrid<Point> vox_filter2;
+		pcl::VoxelGrid<Point> vox_filter2;
 		vox_filter2.setInputCloud(map_.makeShared());
 		vox_filter2.setLeafSize(0.005, 0.005, 0.005);
 		vox_filter2.filter(map_);
-*/
+
 
 
 		//do logging
