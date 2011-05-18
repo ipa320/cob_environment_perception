@@ -29,7 +29,7 @@ class MyScript(script):
 
     def Run(self):
         rospy.loginfo("Running script...")
-     #	self.sss.move("arm","overtray")
+     	self.sss.move("arm","overtray")
         self.sss.move("torso","back")
        # self.sss.move("torso","home")
         self.sss.move("base",[-2.2, -1.6, 0])
