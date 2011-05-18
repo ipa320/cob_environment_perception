@@ -81,11 +81,14 @@ class FieldOfView : public pcl_ros::PCLNodelet
 
 {
 	public:
+
 		// Constructor
 	FieldOfView()
 		:
 			sensor_fov_ver(40*M_PI/180),
 			sensor_fov_hor(40*M_PI/180),
+			sensor_fov_ver_angel(40*M_PI/180),
+			sensor_fov_hor_angel(40*M_PI/180),
 			sensor_max_range(5)
 		{
 		//	fov_marker_pub_ = n_.advertise<visualization_msgs::Marker>("fov_marker",10);
@@ -110,18 +113,21 @@ class FieldOfView : public pcl_ros::PCLNodelet
 		    	PCLNodelet::onInit();
 		    	n_ = getNodeHandle();
 
-		        FieldOfView fov;
-		        camera_frame_ = std::string(/*"/base_kinect_rear_link"*/"/head_tof_link");
-		        computeFieldOfView();
-
-
 
 				fov_marker_pub_ = n_.advertise<visualization_msgs::Marker>("fov_marker",10);
 				get_fov_srv_ = n_.advertiseService("get_fov", &FieldOfView::srvCallback_GetFieldOfView, this);
 
-				n_.param("field_of_view/sensor_fov_hor" ,sensor_fov_hor ,40*M_PI/180);
-				n_.param("field_of_view/sensor_fov_ver" ,sensor_fov_ver,40*M_PI/180);
+				n_.param("field_of_view/sensor_fov_hor_angel" ,sensor_fov_hor_angel ,40.0);
+				n_.param("field_of_view/sensor_fov_ver_angel" ,sensor_fov_ver_angel ,40.0);
+				sensor_fov_hor_=sensor_fov_hor_angel*M_PI/180;
+				sensor_fov_ver_=sensor_fov_ver_angel*M_PI/180;
 				n_.param("field_of_view/sensor_max_range" ,sensor_max_range,5);
+
+			    FieldOfView fov;
+				camera_frame_ = std::string(/*"/base_kinect_rear_link"*/"/head_tof_link");
+				computeFieldOfView();
+
+
 
 
 
@@ -393,7 +399,10 @@ class FieldOfView : public pcl_ros::PCLNodelet
 
 		double sensor_fov_hor_;
 		double sensor_fov_ver_;
+		double sensor_fov_hor_angel;
+		double sensor_fov_ver_angel;
 		double sensor_max_range_;
+
 		std::string camera_frame_;
 
 		Eigen::Vector3d vec_a_;
@@ -435,7 +444,7 @@ int main (int argc, char** argv)
 	  //fov.transformNormals();
 	  loop_rate.sleep();
   }
-}*/
-
+}
+*/
 
 PLUGINLIB_DECLARE_CLASS(cob_env_model, FieldOfView, FieldOfView, nodelet::Nodelet)
