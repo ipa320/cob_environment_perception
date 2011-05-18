@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<launch>
+
+  <node pkg="nodelet" type="nodelet" name="pcl_manager"  args="manager" output="screen"/>
+ 
+  <!-- Run confidence filter --> 
+  <node pkg="nodelet" type="nodelet" name="confidence_filter_nodelet" args="load cob_env_model/ConfidenceFilter pcl_manager" output="screen">
+  	<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
+  	<!-- remap from="point_cloud2" to="/cob_env_model/point_cloud2_filtered_jumpedge"/ -->
+  	<remap from="point_cloud2_filtered" to="/cob_env_model/point_cloud2_filtered_conf"/>
+	<param name="confidence_threshold" type="double" value="68000" />
+  </node>  
+  
+  <node pkg="rosbag" type="play" name="bag_play" args="/home/goa-wq/fixed_no_move_table.bag -l" output="screen" />
+  <node pkg="rviz" type="rviz" respawn="false" name="rviz" />
+
+</launch>
