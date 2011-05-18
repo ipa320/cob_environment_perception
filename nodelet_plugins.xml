@@ -17,11 +17,7 @@
   </description>
   </class>
   
-   <class name="cob_env_model/FieldOfView" type="FieldOfView" base_class_type="nodelet::Nodelet">
-  <description>
-  Nodelet for FieldOfView
-  </description>
-  </class>
+ 
   
   <class name="cob_env_model/AmplitudeConfidenceFilter" type="AmplitudeConfidenceFilter" base_class_type="nodelet::Nodelet">
   <description>
