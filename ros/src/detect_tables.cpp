@@ -134,7 +134,7 @@ public:
 		std::fstream filestr;
 		filestr.open("/home/goa/pcl_daten/table/table_detection/meas.csv", std::fstream::in | std::fstream::out | std::fstream::app);
 		boost::timer t;
-		static int ctr = 0;
+		//static int ctr = 0;
 		pcl::KdTree<pcl::PointXYZ>::Ptr clusters_tree;
 		clusters_tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZ> > ();
 		pcl::EuclideanClusterExtraction<pcl::PointXYZ> cluster;
