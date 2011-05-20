@@ -47,10 +47,7 @@ ${PROJECT_SOURCE_DIR}/ros/include)
 rosbuild_add_executable(pointcloud_to_pcd ros/src/pointcloud_to_pcd.cpp)
 rosbuild_add_library(cob_env_model ros/src/detect_tables.cpp
 	ros/src/aggregate_point_map.cpp
-	ros/src/filters/amplitude_confidence_filter.cpp
-	ros/src/filters/speckle_filter.cpp
 	ros/src/filters/CloudToCloud2Converter.cpp
-	ros/src/filters/jump_edge_filter.cpp
 	ros/src/cpc_point.cpp
 	ros/src/feature_map.cpp
 	ros/src/cob_env_model_ros/cob_filters/amplitude_filter.cpp
