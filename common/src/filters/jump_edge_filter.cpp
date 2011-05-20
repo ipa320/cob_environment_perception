@@ -61,8 +61,8 @@
 
 // cob_env_model includes
 #include "cob_env_model/cpc_point.h"
-#include "cob_env_model/cob_filters/jump_edge_filter.h"
-#include "cob_env_model/cob_filters/impl/jump_edge_filter.hpp"
+#include "cob_env_model/filters/jump_edge_filter.h"
+#include "cob_env_model/filters/impl/jump_edge_filter.hpp"
 
 void
 cob_env_model::JumpEdgeFilter<sensor_msgs::PointCloud2>::applyFilter (PointCloud2 &pc_out)

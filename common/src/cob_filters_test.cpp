@@ -6,20 +6,20 @@
  */
 
 //AmplitudeFilter
-#include <cob_env_model/cob_filters/amplitude_filter.h>
-#include <cob_env_model/cob_filters/impl/amplitude_filter.hpp>
+#include <cob_env_model/filters/amplitude_filter.h>
+#include <cob_env_model/filters/impl/amplitude_filter.hpp>
 
 //ConfidenceFilter
-#include <cob_env_model/cob_filters/confidence_filter.h>
-#include <cob_env_model/cob_filters/impl/confidence_filter.hpp>
+#include <cob_env_model/filters/confidence_filter.h>
+#include <cob_env_model/filters/impl/confidence_filter.hpp>
 
 //JumpEdgeFilter
-#include <cob_env_model/cob_filters/jump_edge_filter.h>
-#include <cob_env_model/cob_filters/impl/jump_edge_filter.hpp>
+#include <cob_env_model/filters/jump_edge_filter.h>
+#include <cob_env_model/filters/impl/jump_edge_filter.hpp>
 
 //SpeckleFilter
-#include <cob_env_model/cob_filters/speckle_filter.h>
-#include <cob_env_model/cob_filters/impl/speckle_filter.hpp>
+#include <cob_env_model/filters/speckle_filter.h>
+#include <cob_env_model/filters/impl/speckle_filter.hpp>
 
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>

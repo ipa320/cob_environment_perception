@@ -61,8 +61,8 @@
 #include <pcl/filters/impl/extract_indices.hpp>
 
 // cob_env_model includes
-#include "cob_env_model/cob_filters/jump_edge_filter.h"
-#include <cob_env_model/cpc_point.h>
+#include "cob_env_model/filters/jump_edge_filter.h"
+//#include <cob_env_model/cpc_point.h>
 
 template <typename PointT> void
  cob_env_model::JumpEdgeFilter<PointT>::applyFilter (PointCloud &pc_out)
@@ -154,7 +154,7 @@ template <typename PointT> void
       continue;
     }
   }
-  pcl::ExtractIndices<CPCPoint> extractIndices;
+  pcl::ExtractIndices<PointT> extractIndices;
   extractIndices.setInputCloud(input_);
   extractIndices.setIndices(points_to_remove);
   extractIndices.setNegative(true);

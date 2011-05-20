@@ -71,8 +71,8 @@
 
 // cob_env_model includes
 #include <cob_env_model/cpc_point.h>
-#include <cob_env_model/cob_filters/confidence_filter.h>
-#include <cob_env_model/cob_filters/impl/confidence_filter.hpp>
+#include <cob_env_model/filters/confidence_filter.h>
+#include <cob_env_model/filters/impl/confidence_filter.hpp>
 
 //######################
 //#### nodelet class####

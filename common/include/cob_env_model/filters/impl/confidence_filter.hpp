@@ -47,50 +47,59 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
-#ifndef SPECKLE_FILTER_HPP_
-#define SPECKLE_FILTER_HPP_
+#ifndef CONFIDENCE_FILTER_HPP_
+#define CONFIDENCE_FILTER_HPP_
 
 //##################
 //#### includes ####
 
 // cob_env_model includes
-#include "cob_env_model/cob_filters/speckle_filter.h"
+#include "cob_env_model/filters/confidence_filter.h"
 
-template<typename PointT>
-  void
-  cob_env_model::SpeckleFilter<PointT>::applyFilter (PointCloud &pc_out)
+template <typename PointT> void
+cob_env_model::ConfidenceFilter<PointT>::applyFilter (PointCloud &pc_out)
+{
+  // set the parameters for output poincloud (pc_out)
+  pc_out.points.resize(input_->points.size());
+  pc_out.header = input_->header;
+  int nr_p = 0;
+
+  //Go through all points and discard points with confidence value above filter limit
+  for (unsigned int i = 0; i < input_->points.size(); i++)
   {
-    //std::cout << " Entered apply filter method " << std::endl;
-    cv::Mat xyz_mat_32F3 = cv::Mat (input_->height, input_->width, CV_32FC3);
-    pc_out.points.resize(input_->points.size());
-    pc_out.header = input_->header;
-
-    for (unsigned int i = 0; i < input_->points.size(); i++)
-      pc_out.points[i] = input_->points[i];
-
-    float* f_ptr = 0;
-    int pc_msg_idx = 0;
-    for (int row = 0; row < xyz_mat_32F3.rows; row++)
-    {
-      f_ptr = xyz_mat_32F3.ptr<float> (row);
-      for (int col = 0; col < xyz_mat_32F3.cols; col++, pc_msg_idx++)
-      {
-        memcpy (&f_ptr[3 * col], &input_->points[pc_msg_idx].x, 3 * sizeof(float));
-      }
-    }
-
-    cv::Mat buf;
-    ipa_Utils::FilterSpeckles (xyz_mat_32F3, speckle_size_, speckle_range_, buf);
-    pc_msg_idx = 0;
-    for (int row = 0; row < xyz_mat_32F3.rows; row++)
-    {
-      f_ptr = xyz_mat_32F3.ptr<float> (row);
-      for (int col = 0; col < xyz_mat_32F3.cols; col++, pc_msg_idx++)
-      {
-        memcpy (&pc_out.points[pc_msg_idx].x, &f_ptr[3 * col], 3 * sizeof(float));
-      }
-    }
+    if( input_->points[i].confidence < confidence_threshold_)
+    pc_out.points[nr_p++] = input_->points[i];
   }
 
-#define PCL_INSTANTIATE_SpeckleFilter(T) template class cob_env_model::SpeckleFilter<T>;
-#endif /* SPECKLE_FILTER_HPP_ */
+  //resize pc_out according to filtered points
+  pc_out.width = nr_p;
+  pc_out.height = 1;
+  pc_out.points.resize(nr_p);
+  pc_out.is_dense = true;
+}
+
+template <typename PointT> void
+cob_env_model::ConfidenceFilter<PointT>::negativeApplyFilter (PointCloud &pc_out)
+{
+  // set the parameters for output poincloud (pc_out)
+  pc_out.points.resize(input_->points.size());
+  pc_out.header = input_->header;
+  int nr_p = 0;
+
+  //Go through all points and discard points with confidence value below filter limit
+  for (unsigned int i = 0; i < input_->points.size(); i++)
+  {
+          if (input_->points[i].confidence > confidence_threshold_)
+          pc_out.points[nr_p++] = input_->points[i];
+  }
+
+  //resize pc_out according to filtered points
+  pc_out.width = nr_p;
+  pc_out.height = 1;
+  pc_out.points.resize(nr_p);
+  pc_out.is_dense = true;
+
+}
+
+#define PCL_INSTANTIATE_ConfidenceFilter(T) template class cob_env_model::ConfidenceFilter<T>;
+#endif /* CONFIDENCE_FILTER_HPP_ */
