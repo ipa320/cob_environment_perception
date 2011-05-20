@@ -70,7 +70,7 @@
 #include <pcl/io/pcd_io.h>
 
 // cob_env_model includes
-#include <cob_env_model/cpc_point.h>
+#include <cob_env_model/point_types.h>
 #include <cob_env_model/filters/speckle_filter.h>
 #include <cob_env_model/filters/impl/speckle_filter.hpp>
 
@@ -108,11 +108,11 @@ public:
   }
 
   void
-   PointCloudSubCallback (const pcl::PointCloud<CPCPoint>::Ptr pc)
+   PointCloudSubCallback (const pcl::PointCloud<pcl::PointXYZ>::Ptr pc)
    {
      //ROS_INFO("PointCloudSubCallback");
-     cob_env_model::SpeckleFilter<CPCPoint> filter;
-     pcl::PointCloud<CPCPoint>::Ptr cloud_filtered (new pcl::PointCloud<CPCPoint> ());
+     cob_env_model::SpeckleFilter<pcl::PointXYZ> filter;
+     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZ> ());
      filter.setInputCloud (pc);
      filter.setFilterParam(speckle_size_,speckle_range_);
      //std::cout<< " SR : "<<filter.getSpeckleRange()<<std::endl;

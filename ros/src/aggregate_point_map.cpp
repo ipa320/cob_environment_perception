@@ -72,7 +72,7 @@
 #include <pcl/registration/icp.h>
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_kdl.h>
-#include <cob_env_model/cpc_point.h>
+#include <cob_env_model/point_types.h>
 #include "pcl/filters/voxel_grid.h"
 #include <pcl_ros/transforms.h>
 #include <pcl_ros/point_cloud.h>

@@ -65,11 +65,11 @@ template<typename PointT>
     pc_out.header = input_->header;
     int nr_p = 0;
 
-    //Go through all points and discard points with intensity outside filter limits
+    //Go through all points and discard points with amplitude outside filter limits
     for (unsigned int i = 0; i < input_->points.size (); i++)
     {
-      if (input_->points[i].intensity > amplitude_min_threshold_ &&
-          input_->points[i].intensity < amplitude_max_threshold_)
+      if (input_->points[i].amplitude > amplitude_min_threshold_ &&
+          input_->points[i].amplitude < amplitude_max_threshold_)
         pc_out.points[nr_p++] = input_->points[i];
     }
 
@@ -89,11 +89,11 @@ template<typename PointT>
     pc_out.header = input_->header;
     int nr_p = 0;
 
-    //Go through all points and discard points with intensity inside filter limits
+    //Go through all points and discard points with amplitude inside filter limits
     for (unsigned int i = 0; i < input_->points.size (); i++)
     {
-      if (input_->points[i].intensity <= amplitude_min_threshold_ ||
-          input_->points[i].intensity >= amplitude_max_threshold_)
+      if (input_->points[i].amplitude <= amplitude_min_threshold_ ||
+          input_->points[i].amplitude >= amplitude_max_threshold_)
         pc_out.points[nr_p++] = input_->points[i];
     }
 
