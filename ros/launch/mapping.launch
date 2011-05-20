@@ -18,8 +18,8 @@
   
   <node pkg="nodelet" type="nodelet" name="point_cloud_filter" args="load cob_env_model/PointCloudFilter pcl_manager" output="screen">
   	<!--remap from="point_cloud2" to="/voxel_grid1/output"/-->
-  	<!--remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/-->
-  	<remap from="point_cloud2" to="/sensor_fusion/shared/colored_point_cloud"/>
+  	<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
+  	<!--remap from="point_cloud2" to="/sensor_fusion/shared/colored_point_cloud"/-->
   	<remap from="point_cloud2_filtered" to="/cob_env_model/point_cloud2_filtered"/>
   	<param name="filter_by_amplitude" type="bool" value="true"/>
 	<param name="filter_tearoff" type="bool" value="true"/>
@@ -56,17 +56,18 @@
   	<remap from="point_cloud2" to="/passthrough/output"/>
   	<remap from="point_cloud2_map" to="/aggregate_point_map/map"/>
   	<remap from="point_cloud2_aligned" to="/aggregate_point_map/pc_aligned"/>
+  	<remap from="pc_aligned_and_boundary" to="/pc_aligned_and_normals" />
   	<param name="set_maximumiterations_" type="int" value="50"/>
   	<param name="set_maxcorrespondencedistance_" type="double" value="0.1"/>
   	<param name="set_transformationepsilon_" type="double" value="1e-6"/>
   	<param name="file_path" type="string" value="/home/goa/pcl_daten/table/icp/map_"/>
   	<param name="ros_debug" type="bool" value="true"/>
   	<param name="save_pc_" type="bool" value="true"/>
-  	<param name="save_icp_fov_map_" type="bool" value="false"/>
-  	<param name="save_pc_aligned_" type="bool" value="false"/>
-  	<param name="save_icp_fov_pc_" type="bool" value="false"/>
+  	<param name="save_icp_fov_map_" type="bool" value="true"/>
+  	<param name="save_pc_aligned_" type="bool" value="true"/>
+  	<param name="save_icp_fov_pc_" type="bool" value="true"/>
   	<param name="map_fov_" type="bool" value="false"/>
-  	<param name="save_icp_map_" type="bool" value="true"/>
+  	<param name="save_icp_map_" type="bool" value="false"/>
   	<param name="vox_filter_setleafsize1" type="double" value="0.02" />
   	<param name="vox_filter_setleafsize2" type="double" value="0.02" />
   	<param name="vox_filter_setleafsize3" type="double" value="0.02" />
