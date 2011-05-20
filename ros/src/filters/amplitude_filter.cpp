@@ -14,7 +14,7 @@
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
- * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ * Author: Waqas Tanveer, email:waqas.informatik@googlemail.com
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
  * Date of creation: 05/2011
@@ -63,63 +63,67 @@
 // external includes
 #include <boost/timer.hpp>
 
-//pludinlib includes
-#include <pluginlib/class_list_macros.h>
-
 // pcl includes
 #include <pcl/point_types.h>
+#include <pluginlib/class_list_macros.h>
 #include <pcl_ros/pcl_nodelet.h>
 #include <pcl/io/pcd_io.h>
 
 // cob_env_model includes
 #include <cob_env_model/cpc_point.h>
-#include <cob_env_model/filters/jump_edge_filter.h>
-#include <cob_env_model/filters/impl/jump_edge_filter.hpp>
+#include <cob_env_model/filters/amplitude_filter.h>
+#include <cob_env_model/filters/impl/amplitude_filter.hpp>
 
 //######################
 //#### nodelet class####
-class JumpEdgeFilter : public pcl_ros::PCLNodelet
+class AmplitudeFilter : public pcl_ros::PCLNodelet
 {
-  public:
+public:
   // Constructor
-  JumpEdgeFilter()
-   :t_check(0)
-  {}
+  AmplitudeFilter () :
+    t_check (0)
+  {
+    //
+  }
 
   // Destructor
-  ~ JumpEdgeFilter()
+  ~ AmplitudeFilter ()
   {
     /// void
   }
 
-  void onInit()
+  void
+  onInit ()
   {
-    PCLNodelet::onInit();
-    n_ = getNodeHandle();
+    PCLNodelet::onInit ();
+    n_ = getNodeHandle ();
 
-    point_cloud_sub_ = n_.subscribe("point_cloud2", 1, & JumpEdgeFilter::PointCloudSubCallback, this);
-    point_cloud_pub_= n_.advertise<sensor_msgs::PointCloud2>("point_cloud2_filtered",1);
+    point_cloud_sub_ = n_.subscribe ("point_cloud2", 1, &AmplitudeFilter::PointCloudSubCallback, this);
+    point_cloud_pub_ = n_.advertise<sensor_msgs::PointCloud2> ("point_cloud2_filtered", 1);
 
-    n_.param("/jump_edge_filter_nodelet/upper_angle_deg", upper_angle_, 170.0);
-    //std::cout << "upper_angle_deg: " << upper_angle_<< std::endl;
+    n_.param ("/amplitude_filter_nodelet/amplitude_min_threshold", lim_min_, 2000);
+    //std::cout << "amplitude_min_threshold: " << lim_min_<< std::endl;
+    n_.param ("/amplitude_filter_nodelet/amplitude_max_threshold", lim_max_, 60000);
+    //std::cout << "amplitude_max_threshold: " << lim_max_<< std::endl;
   }
 
-  void PointCloudSubCallback(const pcl::PointCloud<CPCPoint>::Ptr pc)
+  void
+  PointCloudSubCallback (const pcl::PointCloud<CPCPoint>::Ptr pc)
   {
     //ROS_INFO("PointCloudSubCallback");
-    cob_env_model::JumpEdgeFilter<CPCPoint> filter;
-    pcl::PointCloud<CPCPoint>::Ptr cloud_filtered(new pcl::PointCloud<CPCPoint> ());
-
-    filter.setInputCloud(pc);
-    filter.setUpperAngle(upper_angle_);
-    //std::cout << "  Upper angle threshold in degrees : "<<filter.getUpperAngle()  << std::endl;
-    filter.applyFilter(*cloud_filtered);
-    point_cloud_pub_.publish(cloud_filtered);
-    if(t_check==0)
+    cob_env_model::AmplitudeFilter<CPCPoint> filter;
+    pcl::PointCloud<CPCPoint>::Ptr cloud_filtered (new pcl::PointCloud<CPCPoint> ());
+    filter.setInputCloud (pc);
+    filter.setFilterLimits (lim_min_, lim_max_);
+    //std::cout<<" min_limit :"<<filter.getFilterMinLimit()<<std::endl;
+    //std::cout<<" max_limit :"<<filter.getFilterMaxLimit()<<std::endl;
+    filter.applyFilter (*cloud_filtered);
+    point_cloud_pub_.publish (cloud_filtered);
+    if (t_check == 0)
     {
-      ROS_INFO("Time elapsed (JumpEdgeFilter) : %f", t.elapsed());
-      t.restart();
-      t_check=1;
+      ROS_INFO("Time elapsed (Amplitude_Filter) : %f", t.elapsed());
+      t.restart ();
+      t_check = 1;
     }
   }
 
@@ -129,16 +133,17 @@ class JumpEdgeFilter : public pcl_ros::PCLNodelet
   PointCloudSubCallback (sensor_msgs::PointCloud2::ConstPtr pc)
   {
     //ROS_INFO("PointCloudSubCallback");
-    cob_env_model::JumpEdgeFilter<sensor_msgs::PointCloud2> filter;
+    cob_env_model::AmplitudeFilter<sensor_msgs::PointCloud2> filter;
     sensor_msgs::PointCloud2::Ptr cloud_filtered (new sensor_msgs::PointCloud2 ());
-
     filter.setInputCloud (pc);
-    filter.setUpperAngle(upper_angle_);
+    filter.setFilterLimits (lim_min_, lim_max_);
+    //std::cout<<" min_limit :"<<filter.getFilterMinLimit()<<std::endl;
+    //std::cout<<" max_limit :"<<filter.getFilterMaxLimit()<<std::endl;
     filter.applyFilter (*cloud_filtered);
     point_cloud_pub_.publish (cloud_filtered);
     if (t_check == 0)
     {
-      ROS_INFO("Time elapsed (JumpEdgeFilter) : %f", t.elapsed());
+      ROS_INFO("Time elapsed (Amplitude_Filter) : %f", t.elapsed());
       t.restart ();
       t_check = 1;
     }
@@ -147,14 +152,14 @@ class JumpEdgeFilter : public pcl_ros::PCLNodelet
   ros::NodeHandle n_;
   boost::timer t;
 
-  protected:
-    ros::Subscriber point_cloud_sub_;
-    ros::Publisher point_cloud_pub_;
+protected:
+  ros::Subscriber point_cloud_sub_;
+  ros::Publisher point_cloud_pub_;
 
-    double upper_angle_;
-    bool t_check;
-  };
+  int lim_min_;
+  int lim_max_;
+  bool t_check;
+};
 
-PLUGINLIB_DECLARE_CLASS(cob_env_model,  JumpEdgeFilter,  JumpEdgeFilter, nodelet::Nodelet)
-
+PLUGINLIB_DECLARE_CLASS(cob_env_model, AmplitudeFilter, AmplitudeFilter, nodelet::Nodelet)
 
