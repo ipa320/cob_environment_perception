@@ -59,8 +59,6 @@
 #include "cob_env_model/filters/amplitude_filter.h"
 #include "cob_env_model/filters/impl/amplitude_filter.hpp"
 
-//#include <cob_vision_utils/VisionUtils.h>
-//#include <opencv/cv.h>
 
 void
 cob_env_model::AmplitudeFilter<sensor_msgs::PointCloud2>::applyFilter (PointCloud2 &pc_out)
@@ -103,4 +101,4 @@ cob_env_model::AmplitudeFilter<sensor_msgs::PointCloud2>::applyFilter (PointClou
 }
 
 using namespace pcl;
-PCL_INSTANTIATE(AmplitudeFilter, (CPCPoint));
+PCL_INSTANTIATE(AmplitudeFilter, (CPCPoint)(PointXYZI)(PointXYZINormal));

@@ -201,4 +201,6 @@ cob_env_model::JumpEdgeFilter<sensor_msgs::PointCloud2>::applyFilter (PointCloud
 
 using namespace pcl;
 PCL_INSTANTIATE(ExtractIndices, (CPCPoint));
+PCL_INSTANTIATE(ExtractIndices, PCL_XYZ_POINT_TYPES);
 PCL_INSTANTIATE(JumpEdgeFilter, (CPCPoint));
+PCL_INSTANTIATE(JumpEdgeFilter, PCL_XYZ_POINT_TYPES);
