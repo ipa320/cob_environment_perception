@@ -59,4 +59,4 @@
 
 
 PCL_INSTANTIATE(FieldOfViewSegmentation, PCL_XYZ_POINT_TYPES);
-PCL_INSTANTIATE(FieldOfViewSegmentation, (CPCPoint));
+//PCL_INSTANTIATE(FieldOfViewSegmentation, (CPCPoint));

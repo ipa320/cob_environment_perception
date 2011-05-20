@@ -70,7 +70,7 @@
 #include <pcl/io/pcd_io.h>
 
 // cob_env_model includes
-#include <cob_env_model/cpc_point.h>
+#include <cob_env_model/point_types.h>
 #include <cob_env_model/filters/amplitude_filter.h>
 #include <cob_env_model/filters/impl/amplitude_filter.hpp>
 
@@ -107,7 +107,7 @@ public:
     //std::cout << "amplitude_max_threshold: " << lim_max_<< std::endl;
   }
 
-  void
+/*  void
   PointCloudSubCallback (const pcl::PointCloud<CPCPoint>::Ptr pc)
   {
     //ROS_INFO("PointCloudSubCallback");
@@ -125,10 +125,10 @@ public:
       t.restart ();
       t_check = 1;
     }
-  }
+  }*/
 
   // Test specialized template for sensor_msgs::PointCloud2 point_type
-/*
+
   void
   PointCloudSubCallback (sensor_msgs::PointCloud2::ConstPtr pc)
   {
@@ -148,7 +148,7 @@ public:
       t_check = 1;
     }
   }
-*/
+
   ros::NodeHandle n_;
   boost::timer t;
 
