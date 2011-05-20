@@ -52,9 +52,15 @@ rosbuild_add_library(cob_env_model ros/src/detect_tables.cpp
 	ros/src/filters/CloudToCloud2Converter.cpp
 	ros/src/filters/jump_edge_filter.cpp
 	ros/src/cpc_point.cpp
-	ros/src/point_cloud_filter.cpp
 	ros/src/feature_map.cpp
-	common/src/field_of_view_segmentation.cpp)
+	ros/src/cob_env_model_ros/cob_filters/amplitude_filter.cpp
+	ros/src/cob_env_model_ros/cob_filters/confidence_filter.cpp
+	ros/src/cob_env_model_ros/cob_filters/jump_edge_filter.cpp
+	ros/src/cob_env_model_ros/cob_filters/speckle_filter.cpp
+	common/src/field_of_view_segmentation.cpp
+	common/src/cob_env_model/cob_filters/amplitude_filter.cpp
+	common/src/cob_env_model/cob_filters/confidence_filter.cpp
+	common/src/cob_env_model/cob_filters/jump_edge_filter.cpp)
 #rosbuild_add_executable(test_fov common/src/test_fov.cpp)
 #rosbuild_add_library(nodelet_cpc_publisher ros/src/cpc_publisher.cpp
 #ros/src/cpc_visualizer.cpp)
@@ -62,11 +68,12 @@ rosbuild_add_executable(field_of_view_node ros/src/field_of_view.cpp)
 rosbuild_add_executable(concat_fields_node ros/src/concat_fields.cpp)
 #rosbuild_add_executable(cpc_publisher ros/src/cpc_publisher_main.cpp)
 #rosbuild_add_executable(cpc_visualizer ros/src/cpc_visualizer_main.cpp)
-
+rosbuild_add_executable(test_cob_filters common/src/cob_filters_test.cpp)
+#rosbuild_add_executable(planar_segmentation common/src/planar_segmentation.cpp)
 
 
 # add compile flag
-#rosbuild_add_compile_flags(env_model -D__LINUX__ -D__LINUX__)
+rosbuild_add_compile_flags(cob_env_model -D__LINUX__)
 #rosbuild_add_compile_flags(env_model_node -D__LINUX__ -D__LINUX__)
 #rosbuild_add_compile_flags(data_acquisition_node -D__LINUX__)
 #rosbuild_add_compile_flags(icp_registration_node -D__LINUX__ -D__COB_ROS__)
@@ -76,6 +83,8 @@ rosbuild_add_compile_flags(cob_env_model -D__LINUX__)
 
 
 # add compile flag
+target_link_libraries(test_cob_filters cob_env_model)
+#target_link_libraries (planar_segmentation ${PCL_IO_LIBRARY} ${PCL_FILTERS_LIBRARY} ${PCL_SEGMENTATION_LIBRARY})
 #target_link_libraries(test_fov cob_env_model)
 #target_link_libraries(env_model ann glut mesasr)
 #target_link_libraries(env_model_node glut)

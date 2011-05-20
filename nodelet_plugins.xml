@@ -16,7 +16,19 @@
   Nodelet for point map aggregation
   </description>
   </class>
-  
+
+  <class name="cob_env_model/AmplitudeFilter" type="AmplitudeFilter" base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet for point cloud filtering (by amplitude)
+  </description>
+  </class>
+	
+  <class name="cob_env_model/ConfidenceFilter" type="ConfidenceFilter" base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet for point cloud filtering (by confidence)
+  </description>
+  </class>
+
   <class name="cob_env_model/AmplitudeConfidenceFilter" type="AmplitudeConfidenceFilter" base_class_type="nodelet::Nodelet">
   <description>
   Nodelet for point cloud filtering (by amplitude and confidence)
