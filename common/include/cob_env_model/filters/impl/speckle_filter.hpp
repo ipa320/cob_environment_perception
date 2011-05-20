@@ -47,60 +47,50 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
+#ifndef SPECKLE_FILTER_HPP_
+#define SPECKLE_FILTER_HPP_
+
 //##################
 //#### includes ####
 
-// PCL includes
-#include "pcl/point_types.h"
-#include "pcl/impl/instantiate.hpp"
-#include <cob_env_model/cpc_point.h>
-
 // cob_env_model includes
-#include "cob_env_model/cob_filters/amplitude_filter.h"
-#include "cob_env_model/cob_filters/impl/amplitude_filter.hpp"
+#include "cob_env_model/filters/speckle_filter.h"
 
-//#include <cob_vision_utils/VisionUtils.h>
-//#include <opencv/cv.h>
-
-void
-cob_env_model::AmplitudeFilter<sensor_msgs::PointCloud2>::applyFilter (PointCloud2 &pc_out)
-{
-  pc_out.header = input_->header;
-  pc_out.fields = input_->fields;
-  pc_out.point_step = input_->point_step;
-  pc_out.data.resize (input_->data.size());
-
-  int x_offset = 0, i_offset = 0;
-  for (size_t d = 0; d < input_->fields.size(); ++d)
+template<typename PointT>
+  void
+  cob_env_model::SpeckleFilter<PointT>::applyFilter (PointCloud &pc_out)
   {
-    if(input_->fields[d].name == "x")
-      x_offset = input_->fields[d].offset;
-    if(input_->fields[d].name == "intensity")
-      i_offset = input_->fields[d].offset;
-  }
-  //std::cout<<" x_offset: "<<x_offset<<std::endl;
-  //std::cout<<" i_offset: "<<i_offset<<std::endl;
+    //std::cout << " Entered apply filter method " << std::endl;
+    cv::Mat xyz_mat_32F3 = cv::Mat (input_->height, input_->width, CV_32FC3);
+    pc_out.points.resize(input_->points.size());
+    pc_out.header = input_->header;
 
-    int nr_p = 0;
-    float intensity;
-    const unsigned int total_points = input_->width*input_->height;
+    for (unsigned int i = 0; i < input_->points.size(); i++)
+      pc_out.points[i] = input_->points[i];
 
-    for ( unsigned int pc_msg_idx = 0; pc_msg_idx < total_points; pc_msg_idx++)
+    float* f_ptr = 0;
+    int pc_msg_idx = 0;
+    for (int row = 0; row < xyz_mat_32F3.rows; row++)
     {
-      intensity = *(float*)&input_->data[pc_msg_idx * input_->point_step + i_offset];
-      if(intensity > amplitude_min_threshold_  && intensity < amplitude_max_threshold_ )
+      f_ptr = xyz_mat_32F3.ptr<float> (row);
+      for (int col = 0; col < xyz_mat_32F3.cols; col++, pc_msg_idx++)
       {
-        memcpy(&pc_out.data[nr_p * pc_out.point_step], &input_->data[pc_msg_idx * pc_out.point_step],pc_out.point_step);
-        nr_p++;
+        memcpy (&f_ptr[3 * col], &input_->points[pc_msg_idx].x, 3 * sizeof(float));
       }
     }
 
-    pc_out.width = nr_p;
-    pc_out.height = 1;
-    pc_out.data.resize(nr_p*pc_out.point_step);
-    pc_out.is_dense = true;
+    cv::Mat buf;
+    ipa_Utils::FilterSpeckles (xyz_mat_32F3, speckle_size_, speckle_range_, buf);
+    pc_msg_idx = 0;
+    for (int row = 0; row < xyz_mat_32F3.rows; row++)
+    {
+      f_ptr = xyz_mat_32F3.ptr<float> (row);
+      for (int col = 0; col < xyz_mat_32F3.cols; col++, pc_msg_idx++)
+      {
+        memcpy (&pc_out.points[pc_msg_idx].x, &f_ptr[3 * col], 3 * sizeof(float));
+      }
+    }
+  }
 
-}
-
-using namespace pcl;
-PCL_INSTANTIATE(AmplitudeFilter, (CPCPoint));
+#define PCL_INSTANTIATE_SpeckleFilter(T) template class cob_env_model::SpeckleFilter<T>;
+#endif /* SPECKLE_FILTER_HPP_ */

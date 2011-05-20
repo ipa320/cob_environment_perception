@@ -71,8 +71,8 @@
 
 // cob_env_model includes
 #include <cob_env_model/cpc_point.h>
-#include <cob_env_model/cob_filters/amplitude_filter.h>
-#include <cob_env_model/cob_filters/impl/amplitude_filter.hpp>
+#include <cob_env_model/filters/amplitude_filter.h>
+#include <cob_env_model/filters/impl/amplitude_filter.hpp>
 
 //######################
 //#### nodelet class####

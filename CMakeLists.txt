@@ -47,17 +47,16 @@ ${PROJECT_SOURCE_DIR}/ros/include)
 rosbuild_add_executable(pointcloud_to_pcd ros/src/pointcloud_to_pcd.cpp)
 rosbuild_add_library(cob_env_model ros/src/detect_tables.cpp
 	ros/src/aggregate_point_map.cpp
-	ros/src/filters/CloudToCloud2Converter.cpp
 	ros/src/cpc_point.cpp
 	ros/src/feature_map.cpp
-	ros/src/cob_env_model_ros/cob_filters/amplitude_filter.cpp
-	ros/src/cob_env_model_ros/cob_filters/confidence_filter.cpp
-	ros/src/cob_env_model_ros/cob_filters/jump_edge_filter.cpp
-	ros/src/cob_env_model_ros/cob_filters/speckle_filter.cpp
+	ros/src/filters/amplitude_filter.cpp
+	ros/src/filters/confidence_filter.cpp
+	ros/src/filters/jump_edge_filter.cpp
+	ros/src/filters/speckle_filter.cpp
 	common/src/field_of_view_segmentation.cpp
-	common/src/cob_env_model/cob_filters/amplitude_filter.cpp
-	common/src/cob_env_model/cob_filters/confidence_filter.cpp
-	common/src/cob_env_model/cob_filters/jump_edge_filter.cpp)
+	common/src/filters/amplitude_filter.cpp
+	common/src/filters/confidence_filter.cpp
+	common/src/filters/jump_edge_filter.cpp)
 #rosbuild_add_executable(test_fov common/src/test_fov.cpp)
 #rosbuild_add_library(nodelet_cpc_publisher ros/src/cpc_publisher.cpp
 #ros/src/cpc_visualizer.cpp)

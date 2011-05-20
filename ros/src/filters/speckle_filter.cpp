@@ -71,8 +71,8 @@
 
 // cob_env_model includes
 #include <cob_env_model/cpc_point.h>
-#include <cob_env_model/cob_filters/speckle_filter.h>
-#include <cob_env_model/cob_filters/impl/speckle_filter.hpp>
+#include <cob_env_model/filters/speckle_filter.h>
+#include <cob_env_model/filters/impl/speckle_filter.hpp>
 
 //######################
 //#### nodelet class####
