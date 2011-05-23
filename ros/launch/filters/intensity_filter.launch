@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<launch>
+
+  <node pkg="nodelet" type="nodelet" name="pcl_manager"  args="manager" output="screen"/>
+ 
+  <!-- Run confidence filter --> 
+  <node pkg="nodelet" type="nodelet" name="intensity_filter_nodelet" args="load cob_env_model/IntensityFilter pcl_manager" output="screen">
+  	<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
+  	<!-- remap from="point_cloud2" to="/cob_env_model/point_cloud2_filtered_jumpedge"/ -->
+  	<remap from="point_cloud2_filtered" to="/cob_env_model/point_cloud2_filtered_conf"/>
+  	<param name="intensity_min_threshold" type="double" value="2000" />
+	<param name="intensity_max_threshold" type="double" value="60000" />
+  </node>  
+  
+  <node pkg="rosbag" type="play" name="bag_play" args="/home/goa/pcl_daten/table/fixed_pltf_neck_joystick_table.bag -l" output="screen" />
+  <node pkg="rviz" type="rviz" respawn="false" name="rviz" />
+
+</launch>

@@ -1,6 +1,6 @@
 /****************************************************************
  *
- * Copyright (c) 2010
+ * Copyright (c) 2011
  *
  * Fraunhofer Institute for Manufacturing Engineering
  * and Automation (IPA)
@@ -15,13 +15,10 @@
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
  * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
- * Supervised by:
+ * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 02/2011
- * ToDo:
- *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
+ * Date of creation: 04/2011
+
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -50,13 +47,53 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
+//##################
+//#### includes ####
 
-#include "pcl/impl/instantiate.hpp"
+// PCL includes
 #include "pcl/point_types.h"
-#include "cob_env_model/cpc_point.h"
-#include "cob_env_model/field_of_view_segmentation.h"
-#include "cob_env_model/field_of_view_segmentation.hpp"
+#include "pcl/impl/instantiate.hpp"
+#include <cob_env_model/point_types.h>
 
+// cob_env_model includes
+#include "cob_env_model/filters/intensity_filter.h"
+#include "cob_env_model/filters/impl/intensity_filter.hpp"
 
-PCL_INSTANTIATE(FieldOfViewSegmentation, PCL_XYZ_POINT_TYPES);
-//PCL_INSTANTIATE(FieldOfViewSegmentation, (CPCPoint));
+void
+cob_env_model::IntensityFilter<sensor_msgs::PointCloud2>::applyFilter (PointCloud2 &pc_out)
+{
+  pc_out.header = input_->header;
+  pc_out.fields = input_->fields;
+  pc_out.point_step = input_->point_step;
+  pc_out.data.resize (input_->data.size());
+
+  //assumption: data order is always x->y->z in PC, datatype = float
+  int c_offset = 0;
+  for (size_t d = 0; d < input_->fields.size (); ++d)
+  {
+    if (input_->fields[d].name == "intensity")
+      c_offset = input_->fields[d].offset;
+  }
+
+  int nr_p = 0;
+  float intensity;
+  const unsigned int total_points = input_->width*input_->height;
+
+  for (unsigned int pc_msg_idx = 0; pc_msg_idx < total_points; pc_msg_idx++)
+  {
+    intensity = *(float*)&input_->data[pc_msg_idx * input_->point_step + c_offset];
+    if(intensity > intensity_min_threshold_  && intensity < intensity_max_threshold_ )
+    {
+      memcpy(&pc_out.data[nr_p * pc_out.point_step], &input_->data[pc_msg_idx * pc_out.point_step],pc_out.point_step);
+      nr_p++;
+    }
+  }
+
+  pc_out.width = nr_p;
+  pc_out.height = 1;
+  pc_out.data.resize (nr_p*pc_out.point_step);
+  pc_out.is_dense = true;
+}
+
+using namespace pcl;
+PCL_INSTANTIATE(IntensityFilter, (PointXYZCI)(PointXYZI)(PointXYZINormal));
