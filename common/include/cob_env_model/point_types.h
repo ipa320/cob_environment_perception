@@ -18,6 +18,8 @@ struct PointXYZCI;
 
 struct PointXYZA;
 
+struct PointXYZRGBF;
+
 #include "cob_env_model/impl/point_types.hpp"
 
 //Point obtained from Swissranger devices, confidence only used for SR2
@@ -36,5 +38,13 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(
   (float, y, y)
   (float, z, z)
   (float, amplitude, amplitude));
+
+POINT_CLOUD_REGISTER_POINT_STRUCT(
+	PointXYZRGBF,
+  (float, x, x)
+  (float, y, y)
+  (float, z, z)
+  (float, rgb, rgb)
+  (uint8_t, isF, isF));
 
 #endif /* IPA_POINT_TYPES_H_ */

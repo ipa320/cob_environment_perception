@@ -42,6 +42,21 @@ struct PointXYZA
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 } EIGEN_ALIGN16;
 
+struct PointXYZRGBF
+{
+	PCL_ADD_POINT4D;
+	union
+	{
+		struct
+		{
+			float rgb;
+			uint8_t isF;
+		};
+		float data_c[4];
+	};
+	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+} EIGEN_ALIGN16;
+
 
 
 #endif /* IPA_POINT_TYPES_HPP_ */
