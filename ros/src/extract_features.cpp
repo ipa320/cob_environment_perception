@@ -66,8 +66,13 @@
 #include <pcl/point_types.h>
 #include <tf_conversions/tf_kdl.h>
 #include <pcl_ros/point_cloud.h>
-#include <cob_vision_ipa_utils/cpc_point.h>
 #include <opencv2/core/core.hpp>
+#include <cv.h>
+#include <highgui.h>
+#include "pcl/io/pcd_io.h"
+#include "pcl/features/normal_3d_omp.h"
+#include "pcl/features/normal_3d.h"
+#include <pcl/features/boundary.h>
 
 // ROS message includes
 //#include <sensor_msgs/PointCloud2.h>
@@ -79,6 +84,8 @@
 #include <cob_vision_features/AbstractFeatureVector.h>
 
 
+typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloud;
+
 
 //####################
 //#### node class ####
@@ -89,7 +96,7 @@ public:
 	ExtractFeatures(const ros::NodeHandle& nh)
 	  :	n_(nh)
 	{
-		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &ExtractFeatures::pointCloudSubCallback, this);
+		//point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &ExtractFeatures::extractLines, this);
 		point_cloud_pub_ = n_.advertise<pcl::PointCloud<pcl::PointXYZ> >("point_cloud2_featured",1);
 	}
 
@@ -99,7 +106,7 @@ public:
     	/// void
     }
 
-    void pointCloudSubCallback(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc)
+    /*void pointCloudSubCallback(const pcl::PointCloud<pcl::PointXYZRGB>::Ptr& pc)
 	{
     	ROS_INFO("[env_model_node] Detecting features");
 
@@ -138,7 +145,162 @@ public:
     		}
     	}
     	point_cloud_pub_.publish(pc);
+	}*/
+
+	void estimatePointNormals(PointCloud& cloud, pcl::PointCloud<pcl::PointXYZRGBNormal>& cloud_n)
+	{
+		//pcl::PointCloud<pcl::PointXYZ> cloud;
+		//pcl::PCDReader reader;
+		//reader.read ("/home/goa/pcl_daten/table/icp_fov/pc_aligned_1.pcd", cloud);
+		//std::cout << "Input cloud has " << cloud.size() << " data points" << std::endl;
+
+		pcl::NormalEstimation<pcl::PointXYZRGB,pcl::Normal> normalEstimator;
+		normalEstimator.setInputCloud(boost::make_shared<PointCloud >(cloud));
+		pcl::KdTreeFLANN<pcl::PointXYZRGB>::Ptr tree (new pcl::KdTreeFLANN<pcl::PointXYZRGB> ());
+		normalEstimator.setSearchMethod(tree);
+		//normalEstimator.setKSearch(50);
+		normalEstimator.setRadiusSearch(0.03);
+		//normalEstimator.setNumberOfThreads(8);
+		pcl::PointCloud<pcl::Normal> cloud_normal;
+		boost::timer t;
+		normalEstimator.compute(cloud_normal);
+
+		ROS_INFO("Time elapsed for normal estimation: %f", t.elapsed());
+		pcl::concatenateFields (cloud, cloud_normal, cloud_n);
+		return;
 	}
+
+    void extractEdgesCanny(PointCloud::Ptr& pc, PointCloud& pc_out, pcl::PointCloud<pcl::Boundary>& pc_edge)
+	{
+    	ROS_INFO("[env_model_node] Detecting features");
+    	//PointCloud pc_out;
+        pc_out.points.resize (pc->points.size ());
+        pc_out.header = pc->header;
+        pc_edge.points.resize (pc->points.size ());
+        pc_edge.header = pc->header;
+        pc_edge.width = pc->width;
+        pc_edge.height = pc->height;
+        pc_edge.is_dense = true;
+        int nr_p = 0;
+
+        boost::timer t;
+    	cv::Mat color_image(pc->height,pc->width,CV_8UC3);
+    	unsigned char* c_ptr = 0;
+    	int pc_pt_idx=0;
+    	for (int row = 0; row < color_image.rows; row++)
+    	{
+    		c_ptr = color_image.ptr<unsigned char>(row);
+    		for (int col = 0; col < color_image.cols; col++, pc_pt_idx++)
+    		{
+    			memcpy(&c_ptr[3*col], &pc->points[pc_pt_idx].rgb, 3*sizeof(unsigned char));
+    		}
+    	}
+    	ROS_INFO("Time elapsed for image conversion: %f", t.elapsed());
+    	t.restart();
+    	cv::Mat grey_image;
+    	cvtColor( color_image, grey_image, CV_RGB2GRAY );
+    	cv::imshow("Color Image", color_image);
+    	//cv::imshow("Grey Image", grey_image);
+    	//cv::waitKey();
+    	cv::Mat canny_image, color_canny_image;
+        Canny( grey_image, canny_image, 50, 200, 3 );
+    	ROS_INFO("Time elapsed for canny edge: %f", t.elapsed());
+    	t.restart();
+        //cvtColor( canny_image, color_canny_image, CV_GRAY2BGR );
+        c_ptr = 0;
+        int pt_idx=0;
+    	for (int row = 0; row < canny_image.rows; row++)
+    	{
+    		c_ptr = canny_image.ptr<unsigned char>(row);
+    		for (int col = 0; col < canny_image.cols; col++, pt_idx++)
+    		{
+    			if(c_ptr[col]==255)
+    			{
+    				pc_edge.points[pt_idx].boundary_point = 1;
+    				pc_out.points[nr_p++] = pc->points[pt_idx];
+    			}
+    		}
+    	}
+        //resize pc_out according to filtered points
+        pc_out.width = nr_p;
+        pc_out.height = 1;
+        pc_out.points.resize (nr_p);
+        pc_out.is_dense = true;
+        //cv::imshow("Canny Image", canny_image);
+
+        /*vector<cv::Vec4i> lines;
+        HoughLinesP( canny_image, lines, 1, CV_PI/180, 80, 30, 10 );
+        for( size_t i = 0; i < lines.size(); i++ )
+        {
+            line( color_canny_image, cv::Point(lines[i][0], lines[i][1]),
+                cv::Point(lines[i][2], lines[i][3]), cv::Scalar(0,0,255), 3, 8 );
+
+        }*/
+        //cv::imshow("Color Canny Image", color_canny_image);
+    	//cv::waitKey();
+
+	}
+
+	void extractEdgesBoundary(PointCloud::Ptr& cloud_in, PointCloud& cloud_out, pcl::PointCloud<pcl::Boundary>& pc_edge)
+	{
+		pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud_n (new pcl::PointCloud<pcl::PointXYZRGBNormal> ());
+		pcl::PointCloud<pcl::Boundary>::Ptr boundary_pts (new pcl::PointCloud<pcl::Boundary> ());
+		estimatePointNormals(*cloud_in, *cloud_n);
+
+		boost::timer t;
+		pcl::KdTree<pcl::PointXYZRGBNormal>::Ptr tree;
+		tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZRGBNormal> > ();
+		pcl::BoundaryEstimation<pcl::PointXYZRGBNormal,pcl::PointXYZRGBNormal,pcl::Boundary> boundary;
+		boundary.setSearchMethod(tree);
+		boundary.setInputCloud(cloud_n);
+		//boundary.setSearchSurface (cloud);
+		boundary.setRadiusSearch(0.05);
+		boundary.setInputNormals(cloud_n);
+		//boundary.angle_threshold_ = M_PI/4;
+		boundary.compute(*boundary_pts);
+		//pcl::PointCloud<pcl::PointXYZRGBNormal> boundary_cloud;
+		cloud_out.points.resize(cloud_n->points.size());
+		cloud_out.header = cloud_n->header;
+		int nr_p = 0;
+		for( unsigned int i = 0; i < cloud_in->points.size(); i++)
+		{
+			if( boundary_pts->points[i].boundary_point == 1)
+			{
+				pc_edge.points[i].boundary_point++;
+				cloud_out.points[nr_p++] = cloud_in->points[i];
+			}
+		}
+		cloud_out.width = nr_p;
+		cloud_out.height = 1;
+		cloud_out.points.resize(nr_p);
+		cloud_out.is_dense = true;
+		ROS_INFO("Time elapsed for boundary estimation: %f", t.elapsed());
+	}
+
+	void extractEdgesCurvature(PointCloud::Ptr& cloud_in, PointCloud& cloud_out)
+	{
+		pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud_n (new pcl::PointCloud<pcl::PointXYZRGBNormal> ());
+		estimatePointNormals(*cloud_in, *cloud_n);
+
+		boost::timer t;
+		cloud_out.points.resize(cloud_n->points.size());
+		cloud_out.header = cloud_n->header;
+
+		int nr_p = 0;
+		for( unsigned int i = 0; i < cloud_n->points.size(); i++)
+		{
+			if( cloud_n->points[i].curvature > 0.2)
+				cloud_out.points[nr_p++] = cloud_in->points[i];
+		}
+
+		cloud_out.width = nr_p;
+		cloud_out.height = 1;
+		cloud_out.points.resize(nr_p);
+		cloud_out.is_dense = true;
+		ROS_INFO("Time elapsed for boundary estimation (curvature): %f", t.elapsed());
+	}
+
+
 
     ros::NodeHandle n_;
 
@@ -153,15 +315,52 @@ protected:
 int main(int argc, char** argv)
 {
 	/// initialize ROS, specify name of node
-	ros::init(argc, argv, "extract features");
+	ros::init(argc, argv, "extract_features");
 
 	/// Create a handle for this node, initialize node
 	ros::NodeHandle nh;
 
 	/// Create camera node class instance
-	ExtractFeatures extract_features(nh);
+	ExtractFeatures ef(nh);
 
-	ros::spin();
+	 pcl::PointCloud<pcl::Boundary> pc_edge;
+
+	std::string directory("/home/goa/pcl_daten/kitchen_sf/");
+	PointCloud::Ptr cloud_in = PointCloud::Ptr (new PointCloud);
+	pcl::io::loadPCDFile(directory+"1303291800.731377681.pcd", *cloud_in);
+	std::cout << "cloud_in has " << cloud_in->size() << " points." << std::endl;
+	PointCloud::Ptr cloud_out = PointCloud::Ptr (new PointCloud);
+	ef.extractEdgesCanny(cloud_in, *cloud_out, pc_edge);
+	pcl::io::savePCDFileASCII (directory+"/edges/edges_canny.pcd", *cloud_out);
+
+	cloud_out = PointCloud::Ptr (new PointCloud);
+	ef.extractEdgesBoundary(cloud_in, *cloud_out, pc_edge);
+	pcl::io::savePCDFileASCII (directory+"/edges/edges_boundary.pcd", *cloud_out);
+	pcl::io::savePCDFileASCII (directory+"/edges/edge_map.pcd", pc_edge);
+
+	PointCloud cloud_out_marked;
+	cloud_out_marked.header = cloud_in->header;
+	cloud_out_marked.points.resize(cloud_in->points.size());
+	int nr_p = 0;
+	for (int i=0; i<cloud_in->size(); i++)
+	{
+		if(pc_edge.points[i].boundary_point >= 2)
+			cloud_out_marked.points[nr_p++] = cloud_in->points[i];
+	}
+	cloud_out_marked.width = nr_p;
+	cloud_out_marked.height = 1;
+	cloud_out_marked.points.resize(nr_p);
+	cloud_out_marked.is_dense = true;
+	pcl::io::savePCDFileASCII (directory+"/edges/edge_map.pcd", cloud_out_marked);
+
+	/*cloud_out = PointCloud::Ptr (new PointCloud);
+	ef.extractEdgesCurvature(cloud_in, *cloud_out);
+	pcl::io::savePCDFileASCII (directory+"/edges/edges_curvature.pcd", *cloud_out);*/
+
+	pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_n_out;
+	ef.estimatePointNormals(*cloud_in, cloud_n_out);
+	pcl::io::savePCDFileASCII (directory+"/normals.pcd", cloud_n_out);
+	//ros::spin();
 
 	return 0;
 }
