@@ -73,9 +73,10 @@
 #include "pcl/features/normal_3d_omp.h"
 #include "pcl/features/normal_3d.h"
 #include <pcl/features/boundary.h>
-#include <pcl/range_image/range_image.h>
-#include <pcl_visualization/cloud_viewer.h>
+//#include <pcl/range_image/range_image.h>
+//#include <pcl_visualization/cloud_viewer.h>
 #include <pcl/features/range_image_border_extractor.h>
+#include <cob_env_model/ipa_range_image.h>
 
 // ROS message includes
 //#include <sensor_msgs/PointCloud2.h>
@@ -88,6 +89,7 @@
 
 
 typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloud;
+
 
 
 //####################
@@ -314,7 +316,7 @@ public:
 		cloud_out.points.resize(cloud_n->points.size());
 		cloud_out.header = cloud_n->header;
 		int nr_p = 0;
-		border_image = cv::Mat(cloud_in->height, cloud_in->width, CV_8UC1);
+
 		for( unsigned int i = 0; i < cloud_in->points.size(); i++)
 		{
 			if( boundary_pts->points[i].boundary_point == 1)
@@ -328,6 +330,7 @@ public:
 		cloud_out.points.resize(nr_p);
 		cloud_out.is_dense = true;
 
+		border_image = cv::Mat(cloud_in->height, cloud_in->width, CV_8UC1);
 		int pt_idx=0;
 		for(unsigned int row=0; row<border_image.rows; row++)
 		{
@@ -367,7 +370,7 @@ public:
 		ROS_INFO("Time elapsed for boundary estimation (curvature): %f", t.elapsed());
 	}
 
-	void extractEdgesRangeImage(PointCloud::Ptr& cloud_in, pcl::RangeImage& cloud_out)
+	void extractEdgesRangeImage(PointCloud::Ptr& cloud_in, pcl::RangeImage& cloud_out, cv::Mat& border_image)
 	{
 
 		//pcl::RangeImage range_image;
@@ -380,23 +383,54 @@ public:
 		  pcl::PointCloud<pcl::BorderDescription> border_descriptions;
 		  border_extractor.compute(border_descriptions);
 
+
 		  // ----------------------------------
 		  // -----Show points in 3D viewer-----
 		  // ----------------------------------
 		  pcl::PointCloud<pcl::PointWithRange> border_points, veil_points, shadow_points;
+		  pcl::PointCloud<pcl::Boundary>::Ptr boundary_pts (new pcl::PointCloud<pcl::Boundary> ());
+		  //boundary_pts->points.resize(cloud_in->size());
 		  for (int y=0; y<(int)cloud_out.height; ++y)
 		  {
 		    for (int x=0; x<(int)cloud_out.width; ++x)
 		    {
-		      if (border_descriptions.points[y*cloud_out.width + x].traits[pcl::BORDER_TRAIT__OBSTACLE_BORDER])
+		      if (border_descriptions.points[y*cloud_out.width + x].traits[pcl::BORDER_TRAIT__OBSTACLE_BORDER] ||
+		    		  border_descriptions.points[y*cloud_out.width + x].traits[pcl::BORDER_TRAIT__SHADOW_BORDER] )
+		      {
 		        border_points.points.push_back(cloud_out.points[y*cloud_out.width + x]);
-		      if (border_descriptions.points[y*cloud_out.width + x].traits[pcl::BORDER_TRAIT__VEIL_POINT])
-		        veil_points.points.push_back(cloud_out.points[y*cloud_out.width + x]);
-		      if (border_descriptions.points[y*cloud_out.width + x].traits[pcl::BORDER_TRAIT__SHADOW_BORDER])
-		        shadow_points.points.push_back(cloud_out.points[y*cloud_out.width + x]);
+		        pcl::Boundary p;
+		        p.boundary_point = 1;
+		        boundary_pts->points.push_back(p);
+		      }
+		      else
+		      {
+			        pcl::Boundary p;
+			        p.boundary_point = 0;
+			        boundary_pts->points.push_back(p);
+		      }
+		      //else if (border_descriptions.points[y*cloud_out.width + x].traits[pcl::BORDER_TRAIT__VEIL_POINT])
+		      //  veil_points.points.push_back(cloud_out.points[y*cloud_out.width + x]);
 		    }
 		  }
-			pcl_visualization::PCLVisualizer viewer("3D Viewer");
+		  std::string directory("/home/goa/pcl_daten/kitchen_kinect/");
+		  pcl::io::savePCDFileASCII (directory+"/edges/ri_border_pts.pcd", border_points);
+
+			border_image = cv::Mat(cloud_out.height, cloud_out.width, CV_8UC1);
+			int pt_idx=0;
+			for(unsigned int row=0; row<border_image.rows; row++)
+			{
+				for(unsigned int col=0; col<border_image.cols; col++, pt_idx++)
+				{
+					if( boundary_pts->points[pt_idx].boundary_point == 1)
+						border_image.at<unsigned char>(row,col) = 255;
+					else
+						border_image.at<unsigned char>(row,col) = 0;
+				}
+			}
+			cv::imshow("boundary image", border_image);
+			cv::waitKey();
+
+		/*	pcl_visualization::PCLVisualizer viewer("3D Viewer");
 			  viewer.addCoordinateSystem(1.0f);
 			  viewer.addPointCloud(cloud_out, "original point cloud");
 		  viewer.addPointCloud(border_points, "border points");
@@ -405,20 +439,124 @@ public:
 		  viewer.setPointCloudRenderingProperties(pcl_visualization::PCL_VISUALIZER_POINT_SIZE, 1, "veil points");
 		  viewer.addPointCloud(shadow_points, "shadow points");
 		  viewer.setPointCloudRenderingProperties(pcl_visualization::PCL_VISUALIZER_POINT_SIZE, 1, "shadow points");
+*/
+		  /*std::string directory("/home/goa/pcl_daten/kitchen_sf/");
+			pcl::io::savePCDFileASCII (directory+"/edges/ri_border_pts.pcd", border_points);
+			pcl::io::savePCDFileASCII (directory+"/edges/ri_shadow_pts.pcd", shadow_points);*/
+
+	/*	  while(!viewer.wasStopped())
+		  {
+		    viewer.spinOnce(100);
+		    usleep(100000);
+		  }*/
+	}
+
+	void extractEdgesRangeImage2(PointCloud::Ptr& cloud_in, IPARangeImage& cloud_out, cv::Mat& border_image)
+	{
+
+		//pcl::RangeImage range_image;
+		Eigen::Affine3f sensorPose =
+		  (Eigen::Affine3f)Eigen::Translation3f(0.0f, 0.0f, 0.0f);
+
+		cloud_out.createFromPointCloud2 (*cloud_in, pcl::deg2rad(0.089f), pcl::deg2rad(360.0f), pcl::deg2rad(180.0f), sensorPose);
+		/*cloud_out.header = cloud_in->header;
+		cloud_out.width = cloud_in->width;
+		cloud_out.height = cloud_in->height;
+		cloud_out.is_dense = false;
+		for(int i = 0; i<cloud_in->size(); i++)
+		{
+			pcl::PointWithRange p;
+
+			//p.range = sqrt(cloud_in->points[i].x*cloud_in->points[i].x+cloud_in->points[i].y*cloud_in->points[i].y+cloud_in->points[i].z*cloud_in->points[i].z);
+			if(cloud_in->points[i].x!=cloud_in->points[i].x || cloud_in->points[i].y!=cloud_in->points[i].y || cloud_in->points[i].z!=cloud_in->points[i].z)
+			{
+				p.x = p.y = p.z = 0;//std::numeric_limits<float>::quiet_NaN();
+				p.range=0;//-std::numeric_limits<float>::infinity();
+			}
+			else
+			{
+				p.x = cloud_in->points[i].x;
+				p.y = cloud_in->points[i].y;
+				p.z = cloud_in->points[i].z;
+				p.range = sqrt(point_cloud.points[i].x*point_cloud.points[i].x+point_cloud.points[i].y*point_cloud.points[i].y+point_cloud.points[i].z*point_cloud.points[i].z);
+			}
+			cloud_out.points.push_back(p);
+		}*/
+		std::string directory("/home/goa/pcl_daten/kitchen_kinect/");
+		pcl::io::savePCDFileASCII (directory+"/range_image2.pcd", cloud_out);
+
+		  pcl::RangeImageBorderExtractor border_extractor(&cloud_out);
+		  pcl::PointCloud<pcl::BorderDescription> border_descriptions;
+		  border_extractor.compute(border_descriptions);
+
+
+		  // ----------------------------------
+		  // -----Show points in 3D viewer-----
+		  // ----------------------------------
+		  pcl::PointCloud<pcl::PointWithRange> border_points, veil_points, shadow_points;
+		  pcl::PointCloud<pcl::Boundary>::Ptr boundary_pts (new pcl::PointCloud<pcl::Boundary> ());
+		  //boundary_pts->points.resize(cloud_in->size());
+		  for (int y=0; y<(int)cloud_out.height; ++y)
+		  {
+		    for (int x=0; x<(int)cloud_out.width; ++x)
+		    {
+		      if (border_descriptions.points[y*cloud_out.width + x].traits[pcl::BORDER_TRAIT__OBSTACLE_BORDER] ||
+		    		  border_descriptions.points[y*cloud_out.width + x].traits[pcl::BORDER_TRAIT__SHADOW_BORDER] )
+		      {
+		        border_points.points.push_back(cloud_out.points[y*cloud_out.width + x]);
+		        pcl::Boundary p;
+		        p.boundary_point = 1;
+		        boundary_pts->points.push_back(p);
+		      }
+		      else
+		      {
+			        pcl::Boundary p;
+			        p.boundary_point = 0;
+			        boundary_pts->points.push_back(p);
+		      }
+		      //else if (border_descriptions.points[y*cloud_out.width + x].traits[pcl::BORDER_TRAIT__VEIL_POINT])
+		      //  veil_points.points.push_back(cloud_out.points[y*cloud_out.width + x]);
+		    }
+		  }
+		  //std::string directory("/home/goa/pcl_daten/kitchen_kinect/");
+		  pcl::io::savePCDFileASCII (directory+"/edges/ri_border_pts.pcd", border_points);
+
+			border_image = cv::Mat(cloud_out.height, cloud_out.width, CV_8UC1);
+			int pt_idx=0;
+			for(unsigned int row=0; row<border_image.rows; row++)
+			{
+				for(unsigned int col=0; col<border_image.cols; col++, pt_idx++)
+				{
+					if( boundary_pts->points[pt_idx].boundary_point == 1)
+						border_image.at<unsigned char>(row,col) = 255;
+					else
+						border_image.at<unsigned char>(row,col) = 0;
+				}
+			}
+			cv::imshow("boundary image", border_image);
+			cv::waitKey();
+
+		/*	pcl_visualization::PCLVisualizer viewer("3D Viewer");
+			  viewer.addCoordinateSystem(1.0f);
+			  viewer.addPointCloud(cloud_out, "original point cloud");
+		  viewer.addPointCloud(border_points, "border points");
+		  viewer.setPointCloudRenderingProperties(pcl_visualization::PCL_VISUALIZER_POINT_SIZE, 1, "border points");
+		  viewer.addPointCloud(veil_points, "veil points");
+		  viewer.setPointCloudRenderingProperties(pcl_visualization::PCL_VISUALIZER_POINT_SIZE, 1, "veil points");
+		  viewer.addPointCloud(shadow_points, "shadow points");
+		  viewer.setPointCloudRenderingProperties(pcl_visualization::PCL_VISUALIZER_POINT_SIZE, 1, "shadow points");*/
 
 		  /*std::string directory("/home/goa/pcl_daten/kitchen_sf/");
 			pcl::io::savePCDFileASCII (directory+"/edges/ri_border_pts.pcd", border_points);
 			pcl::io::savePCDFileASCII (directory+"/edges/ri_shadow_pts.pcd", shadow_points);*/
 
-		  while(!viewer.wasStopped())
+		 /* while(!viewer.wasStopped())
 		  {
 		    viewer.spinOnce(100);
 		    usleep(100000);
-		  }
-
-
-
+		  }*/
 	}
+
 
 
 
@@ -445,14 +583,17 @@ int main(int argc, char** argv)
 
 	 pcl::PointCloud<pcl::Boundary> pc_edge;
 
-	std::string directory("/home/goa/pcl_daten/kitchen_kinect/");
+	std::string directory("/home/goa/pcl_daten/test/");
 	PointCloud::Ptr cloud_in = PointCloud::Ptr (new PointCloud);
-	pcl::io::loadPCDFile(directory+"shelves_close.pcd", *cloud_in);
+	sensor_msgs::PointCloud2 cloud_blob;
+	pcl::io::loadPCDFile(directory+"frame_0.000000000.pcd", cloud_blob);
+	pcl::fromROSMsg (cloud_blob, *cloud_in);
+	//pcl::io::savePCDFile (directory+"/shelves_close_2.pcd", *cloud_in);
 	std::cout << "cloud_in has " << cloud_in->size() << " points." << std::endl;
 	PointCloud::Ptr cloud_out = PointCloud::Ptr (new PointCloud);
 	cv::Mat canny_image;
 	ef.extractEdgesCanny(cloud_in, *cloud_out, canny_image);
-	pcl::io::savePCDFileASCII (directory+"/edges/edges_canny.pcd", *cloud_out);
+	//pcl::io::savePCDFileASCII (directory+"/edges/edges_canny.pcd", *cloud_out);
 
 	/*cloud_out = PointCloud::Ptr (new PointCloud);
 	cv::Mat border_image;
@@ -487,9 +628,10 @@ int main(int argc, char** argv)
 	ef.estimatePointNormals(*cloud_in, cloud_n_out);
 	pcl::io::savePCDFileASCII (directory+"/shelves_close_n.pcd", cloud_n_out);*/
 
-	pcl::RangeImage range_image;
-	ef.extractEdgesRangeImage(cloud_in, range_image);
-	pcl::io::savePCDFileASCII (directory+"/range_image.pcd", range_image);
+	cv::Mat border_image;
+	IPARangeImage range_image;
+	ef.extractEdgesRangeImage2(cloud_in, range_image, border_image);
+	//pcl::io::savePCDFileASCII (directory+"/range_image.pcd", range_image);
 	//ros::spin();
 
 	return 0;
