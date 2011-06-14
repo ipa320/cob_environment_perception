@@ -1,6 +1,6 @@
 /****************************************************************
  *
- * Copyright (c) 2010
+ * Copyright (c) 2011
  *
  * Fraunhofer Institute for Manufacturing Engineering
  * and Automation (IPA)
@@ -14,14 +14,11 @@
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
- * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
- * Supervised by:
+ * Author: Waqas Tanveer, email:waqas.informatik@googlemail.com
+ * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 02/2011
- * ToDo:
- *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
+ * Date of creation: 05/2011
+
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -50,13 +47,60 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
+#ifndef INTENSITY_FILTER_HPP_
+#define INTENSITY_FILTER_HPP_
 
-#include "pcl/impl/instantiate.hpp"
-#include "pcl/point_types.h"
-#include "cob_env_model/cpc_point.h"
-#include "cob_env_model/field_of_view_segmentation.h"
-#include "cob_env_model/field_of_view_segmentation.hpp"
+//##################
+//#### includes ####
 
+// cob_env_model includes
+#include "cob_env_model/filters/intensity_filter.h"
 
-PCL_INSTANTIATE(FieldOfViewSegmentation, PCL_XYZ_POINT_TYPES);
-//PCL_INSTANTIATE(FieldOfViewSegmentation, (CPCPoint));
+template <typename PointT> void
+cob_env_model::IntensityFilter<PointT>::applyFilter (PointCloud &pc_out)
+{
+  // set the parameters for output poincloud (pc_out)
+  pc_out.points.resize(input_->points.size());
+  pc_out.header = input_->header;
+  int nr_p = 0;
+
+  //Go through all points and discard points with intensity value above filter limit
+  for (unsigned int i = 0; i < input_->points.size(); i++)
+  {
+	  if (input_->points[i].intensity > intensity_min_threshold_ &&
+		  input_->points[i].intensity < intensity_max_threshold_)
+    pc_out.points[nr_p++] = input_->points[i];
+  }
+
+  //resize pc_out according to filtered points
+  pc_out.width = nr_p;
+  pc_out.height = 1;
+  pc_out.points.resize(nr_p);
+  pc_out.is_dense = true;
+}
+
+template <typename PointT> void
+cob_env_model::IntensityFilter<PointT>::negativeApplyFilter (PointCloud &pc_out)
+{
+  // set the parameters for output poincloud (pc_out)
+  pc_out.points.resize(input_->points.size());
+  pc_out.header = input_->header;
+  int nr_p = 0;
+
+  //Go through all points and discard points with intensity value below filter limit
+  for (unsigned int i = 0; i < input_->points.size(); i++)
+  {
+	  if (input_->points[i].intensity > intensity_max_threshold_ || input_->points[i].intensity < intensity_min_threshold_)
+          pc_out.points[nr_p++] = input_->points[i];
+  }
+
+  //resize pc_out according to filtered points
+  pc_out.width = nr_p;
+  pc_out.height = 1;
+  pc_out.points.resize(nr_p);
+  pc_out.is_dense = true;
+
+}
+
+#define PCL_INSTANTIATE_IntensityFilter(T) template class cob_env_model::IntensityFilter<T>;
+#endif /* INTENSITY_FILTER_HPP_ */

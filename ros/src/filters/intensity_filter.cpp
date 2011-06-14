@@ -1,6 +1,6 @@
 /****************************************************************
  *
- * Copyright (c) 2010
+ * Copyright (c) 2011
  *
  * Fraunhofer Institute for Manufacturing Engineering
  * and Automation (IPA)
@@ -14,7 +14,7 @@
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
- * Author: Waqas Tanveer, email:waqas.informatik@googlemail.com
+ * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
  * Date of creation: 05/2011
@@ -71,23 +71,23 @@
 
 // cob_env_model includes
 #include <cob_env_model/point_types.h>
-#include <cob_env_model/filters/speckle_filter.h>
-#include <cob_env_model/filters/impl/speckle_filter.hpp>
+#include <cob_env_model/filters/intensity_filter.h>
+#include <cob_env_model/filters/impl/intensity_filter.hpp>
 
 //######################
 //#### nodelet class####
-class SpeckleFilter : public pcl_ros::PCLNodelet
+class IntensityFilter : public pcl_ros::PCLNodelet
 {
 public:
   // Constructor
-  SpeckleFilter () :
+  IntensityFilter () :
     t_check (0)
   {
     //
   }
 
   // Destructor
-  ~ SpeckleFilter ()
+  ~ IntensityFilter ()
   {
     /// void
   }
@@ -98,46 +98,67 @@ public:
     PCLNodelet::onInit ();
     n_ = getNodeHandle ();
 
-    point_cloud_sub_ = n_.subscribe ("point_cloud2", 1, &SpeckleFilter::PointCloudSubCallback, this);
+    point_cloud_sub_ = n_.subscribe ("point_cloud2", 1, &IntensityFilter::PointCloudSubCallback, this);
     point_cloud_pub_ = n_.advertise<sensor_msgs::PointCloud2> ("point_cloud2_filtered", 1);
 
-    n_.param ("/speckle_filter_nodelet/speckle_size", speckle_size_, 50);
-    //std::cout << "speckle_size: " << speckle_size_<< std::endl;
-    n_.param ("/speckle_filter_nodelet/speckle_range", speckle_range_, 0.1);
-    std::cout << "speckle_range: " << speckle_range_<< std::endl;
+    n_.param ("/intensity_filter_nodelet/intensity_min_threshold", lim_min_, 2000);
+    //std::cout << "intensity_min_threshold: " << lim_min_<< std::endl;
+    n_.param ("/intensity_filter_nodelet/intensity_max_threshold", lim_max_, 60000);
+    //std::cout << "intensity_threshold: " << lim_<< std::endl;
+
   }
 
+/*  void
+  PointCloudSubCallback (const pcl::PointCloud<CPCPoint>::Ptr pc)
+  {
+    //ROS_INFO("PointCloudSubCallback");
+    cob_env_model::IntensityFilter<CPCPoint> filter;
+    pcl::PointCloud<CPCPoint>::Ptr cloud_filtered (new pcl::PointCloud<CPCPoint> ());
+    filter.setInputCloud (pc);
+    filter.setFilterLimit (lim_);
+    //std::cout << "  Filter Limit: "<<filter.getFilterLimit()<< std::endl;
+    filter.applyFilter (*cloud_filtered);
+
+    point_cloud_pub_.publish (cloud_filtered);
+    if (t_check == 0)
+    {
+      ROS_INFO("Time elapsed (Intensity_Filter) : %f", t.elapsed());
+      t.restart ();
+      t_check = 1;
+    }
+  }*/
+  // Test specialized template for sensor_msgs::PointCloud2 point_type
+
   void
-   PointCloudSubCallback (const pcl::PointCloud<pcl::PointXYZ>::Ptr pc)
-   {
-     //ROS_INFO("PointCloudSubCallback");
-     cob_env_model::SpeckleFilter<pcl::PointXYZ> filter;
-     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZ> ());
-     filter.setInputCloud (pc);
-     filter.setFilterParam(speckle_size_,speckle_range_);
-     //std::cout<< " SR : "<<filter.getSpeckleRange()<<std::endl;
-     //std::cout<< " SS : "<<filter.getSpeckleSize()<<std::endl;
-     filter.applyFilter (*cloud_filtered);
-     point_cloud_pub_.publish (cloud_filtered);
-     if (t_check == 0)
-     {
-       ROS_INFO("Time elapsed (SpeckleFilter) : %f", t.elapsed());
-       t.restart ();
-       t_check = 1;
-     }
-   }
+  PointCloudSubCallback (sensor_msgs::PointCloud2::ConstPtr pc)
+  {
+    //ROS_INFO("PointCloudSubCallback");
+    cob_env_model::IntensityFilter<sensor_msgs::PointCloud2> filter;
+    sensor_msgs::PointCloud2::Ptr cloud_filtered (new sensor_msgs::PointCloud2 ());
+    filter.setInputCloud (pc);
+    filter.setFilterLimits (lim_min_, lim_max_);
+    //std::cout << "  Filter Limit: "<<filter.getFilterLimit()<< std::endl;
+    filter.applyFilter (*cloud_filtered);
+
+    point_cloud_pub_.publish (cloud_filtered);
+    if (t_check == 0)
+    {
+      ROS_INFO("Time elapsed (Intensity_Filter) : %f", t.elapsed());
+      t.restart ();
+      t_check = 1;
+    }
+  }
 
   ros::NodeHandle n_;
   boost::timer t;
-  bool t_check;
 
 protected:
   ros::Subscriber point_cloud_sub_;
   ros::Publisher point_cloud_pub_;
 
-  int speckle_size_;
-  double speckle_range_;
+  int lim_min_, lim_max_;
+  bool t_check;
 };
 
-PLUGINLIB_DECLARE_CLASS(cob_env_model, SpeckleFilter, SpeckleFilter, nodelet::Nodelet)
+PLUGINLIB_DECLARE_CLASS(cob_env_model, IntensityFilter, IntensityFilter, nodelet::Nodelet)
 
