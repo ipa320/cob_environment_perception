@@ -41,27 +41,26 @@ ${PROJECT_SOURCE_DIR}/ros/include)
 #rosbuild_add_executable(data_acquisition_node ros/src/data_acquisition.cpp)
 #rosbuild_add_executable(icp_registration_node ros/src/icp_registration.cpp)
 #rosbuild_add_executable(point_cloud_filter_node ros/src/point_cloud_filter.cpp)
-#rosbuild_add_executable(extract_features_node ros/src/extract_features.cpp)
+rosbuild_add_executable(extract_features_node ros/src/extract_features.cpp
+	ros/src/ipa_range_image.cpp)
 #rosbuild_add_executable(test_icp ros/src/test_icp.cpp)
-#rosbuild_add_executable(bag_to_pcd ros/src/bag_to_pcd.cpp)
-rosbuild_add_executable(pointcloud_to_pcd ros/src/pointcloud_to_pcd.cpp)
+#rosbuild_add_executable(bag_to_pcd ros/src/tools/bag_to_pcd.cpp)
+rosbuild_add_executable(pointcloud_to_pcd ros/src/tools/pointcloud_to_pcd.cpp)
 rosbuild_add_library(cob_env_model ros/src/detect_tables.cpp
 	ros/src/aggregate_point_map.cpp
-	ros/src/cpc_point.cpp
 	ros/src/feature_map.cpp
 	ros/src/filters/amplitude_filter.cpp
-	ros/src/filters/confidence_filter.cpp
+	ros/src/filters/intensity_filter.cpp
 	ros/src/filters/jump_edge_filter.cpp
 	ros/src/filters/speckle_filter.cpp
-	common/src/field_of_view_segmentation.cpp
 	common/src/filters/amplitude_filter.cpp
-	common/src/filters/confidence_filter.cpp
+	common/src/filters/intensity_filter.cpp
 	common/src/filters/jump_edge_filter.cpp)
 #rosbuild_add_executable(test_fov common/src/test_fov.cpp)
 #rosbuild_add_library(nodelet_cpc_publisher ros/src/cpc_publisher.cpp
 #ros/src/cpc_visualizer.cpp)
 rosbuild_add_executable(field_of_view_node ros/src/field_of_view.cpp)
-rosbuild_add_executable(concat_fields_node ros/src/concat_fields.cpp)
+rosbuild_add_executable(concat_fields_node ros/src/tools/concat_fields.cpp)
 #rosbuild_add_executable(cpc_publisher ros/src/cpc_publisher_main.cpp)
 #rosbuild_add_executable(cpc_visualizer ros/src/cpc_visualizer_main.cpp)
 rosbuild_add_executable(test_cob_filters common/src/cob_filters_test.cpp)
@@ -74,7 +73,7 @@ rosbuild_add_compile_flags(cob_env_model -D__LINUX__)
 #rosbuild_add_compile_flags(data_acquisition_node -D__LINUX__)
 #rosbuild_add_compile_flags(icp_registration_node -D__LINUX__ -D__COB_ROS__)
 rosbuild_add_compile_flags(cob_env_model -D__LINUX__)
-#rosbuild_add_compile_flags(extract_features_node -D__LINUX__ -D__COB_ROS__)
+rosbuild_add_compile_flags(extract_features_node -D__LINUX__)
 #rosbuild_add_compile_flags(point_cloud_filter_node -D__LINUX__ -D__LINUX__)
 
 

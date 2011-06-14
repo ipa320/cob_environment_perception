@@ -48,8 +48,8 @@
  *
  ****************************************************************/
 
-#ifndef CONFIDENCE_FILTER_H_
-#define CONFIDENCE_FILTER_H_
+#ifndef INTENSITY_FILTER_H_
+#define INTENSITY_FILTER_H_
 
 //##################
 //#### includes ####
@@ -62,10 +62,10 @@
 namespace cob_env_model
 {
   /**
-   * \Confidence Filter uses confidence values of points to filter out pointcloud data
+   * \Intensity Filter uses Intensity values of points to filter out pointcloud data
    */
   template <typename PointT>
-  class ConfidenceFilter : public pcl::Filter<PointT>
+  class IntensityFilter : public pcl::Filter<PointT>
   {
     using pcl::Filter<PointT>::input_;
 
@@ -75,45 +75,55 @@ namespace cob_env_model
       typedef typename PointCloud::ConstPtr PointCloudConstPtr;
 
       /** \constructor */
-      ConfidenceFilter()
-      : confidence_threshold_ (68000)
+      IntensityFilter()
+      : intensity_max_threshold_ (65000),
+        intensity_min_threshold_ (0)
       {};
 
-      //virtual ~ConfidenceFilter();
+      //virtual ~IntensityFilter();
 
       /** \sets the filter limit */
       inline void
-      setFilterLimit (double lim)
+      setFilterLimits (double lim_min,double lim_max)
       {
-        confidence_threshold_ = lim;
+        intensity_min_threshold_ = lim_min;
+        intensity_max_threshold_ = lim_max;
       }
 
-      /** \gets the filter limit */
+      /** \gets the filter minimum limit */
       inline double
-      getFilterLimit ()
+      getFilterMinLimit ()
       {
-        return confidence_threshold_;
+        return intensity_min_threshold_;
       }
 
-      /** \Points with confidence values above the filter limit will be discarded
-       *  \Points with confidence values below the filter limit will be the output PointCloud
+      /** \gets the filter maximum limit */
+      inline double
+      getFilterMaxLimit ()
+      {
+        return intensity_max_threshold_;
+      }
+
+      /** \Points with Intensity values above the filter limit will be discarded
+       *  \Points with Intensity values below the filter limit will be the output PointCloud
        */
       void
       applyFilter (PointCloud &output);
 
-      /** \Points with confidence values below the filter limit will be discarded
-       *  \Points with confidence values above the filter limit will be the output PointCloud
+      /** \Points with Intensity values below the filter limit will be discarded
+       *  \Points with Intensity values above the filter limit will be the output PointCloud
        */
       void
       negativeApplyFilter (PointCloud &output);
 
     protected:
       /** \filter limit */
-      int confidence_threshold_;
+      int intensity_max_threshold_;
+      int intensity_min_threshold_;
   };
 
   template <>
-  class ConfidenceFilter<sensor_msgs::PointCloud2> : public pcl::Filter<sensor_msgs::PointCloud2>
+  class IntensityFilter<sensor_msgs::PointCloud2> : public pcl::Filter<sensor_msgs::PointCloud2>
   {
     typedef sensor_msgs::PointCloud2 PointCloud2;
     typedef PointCloud2::Ptr PointCloud2Ptr;
@@ -121,42 +131,52 @@ namespace cob_env_model
 
     public:
       /** \constructor */
-      ConfidenceFilter()
-      : confidence_threshold_(68000)
+      IntensityFilter()
+      : intensity_max_threshold_ (65000),
+        intensity_min_threshold_ (0)
       { };
 
-      //virtual ~ConfidenceFilter();
+      //virtual ~IntensityFilter();
 
       /** \sets the filter limit */
       inline void
-      setFilterLimit (double lim)
+      setFilterLimits (double lim_min,double lim_max)
       {
-        confidence_threshold_ = lim;
+        intensity_min_threshold_ = lim_min;
+        intensity_max_threshold_ = lim_max;
       }
 
-      /** \gets the filter limit */
+      /** \gets the filter minimum limit */
       inline double
-      getFilterLimit ()
+      getFilterMinLimit ()
       {
-        return confidence_threshold_;
+        return intensity_min_threshold_;
       }
 
-      /** \Points with confidence values above the filter limit will be discarded
-       *  \Points with confidence values below the filter limit will be the output PointCloud
+      /** \gets the filter maximum limit */
+      inline double
+      getFilterMaxLimit ()
+      {
+        return intensity_max_threshold_;
+      }
+
+      /** \Points with Intensity values above the filter limit will be discarded
+       *  \Points with Intensity values below the filter limit will be the output PointCloud
        */
       void
       applyFilter (PointCloud2 &output);
 
-      /** \Points with confidence values below the filter limit will be discarded
-       *  \Points with confidence values above the filter limit will be the output PointCloud
+      /** \Points with Intensity values below the filter limit will be discarded
+       *  \Points with Intensity values above the filter limit will be the output PointCloud
        */
       void
       negativeApplyFilter (PointCloud2 &output);
 
     protected:
       /** \filter limit */
-      int confidence_threshold_;
+      int intensity_max_threshold_;
+      int intensity_min_threshold_;
   };
 } // end namespace cob_env_model
 
-#endif /* CONFIDENCE_FILTER_H_ */
+#endif /* INTENSITY_FILTER_H_ */

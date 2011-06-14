@@ -60,7 +60,7 @@
 #include <pcl/filters/impl/extract_indices.hpp>
 
 // cob_env_model includes
-#include "cob_env_model/cpc_point.h"
+#include "cob_env_model/point_types.h"
 #include "cob_env_model/filters/jump_edge_filter.h"
 #include "cob_env_model/filters/impl/jump_edge_filter.hpp"
 
@@ -200,7 +200,7 @@ cob_env_model::JumpEdgeFilter<sensor_msgs::PointCloud2>::applyFilter (PointCloud
 }
 
 using namespace pcl;
-PCL_INSTANTIATE(ExtractIndices, (CPCPoint));
+PCL_INSTANTIATE(ExtractIndices, (PointXYZCI));
 PCL_INSTANTIATE(ExtractIndices, PCL_XYZ_POINT_TYPES);
-PCL_INSTANTIATE(JumpEdgeFilter, (CPCPoint));
+PCL_INSTANTIATE(JumpEdgeFilter, (PointXYZCI));
 PCL_INSTANTIATE(JumpEdgeFilter, PCL_XYZ_POINT_TYPES);

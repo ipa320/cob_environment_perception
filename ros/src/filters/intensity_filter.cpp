@@ -70,24 +70,24 @@
 #include <pcl/io/pcd_io.h>
 
 // cob_env_model includes
-#include <cob_env_model/cpc_point.h>
-#include <cob_env_model/filters/confidence_filter.h>
-#include <cob_env_model/filters/impl/confidence_filter.hpp>
+#include <cob_env_model/point_types.h>
+#include <cob_env_model/filters/intensity_filter.h>
+#include <cob_env_model/filters/impl/intensity_filter.hpp>
 
 //######################
 //#### nodelet class####
-class ConfidenceFilter : public pcl_ros::PCLNodelet
+class IntensityFilter : public pcl_ros::PCLNodelet
 {
 public:
   // Constructor
-  ConfidenceFilter () :
+  IntensityFilter () :
     t_check (0)
   {
     //
   }
 
   // Destructor
-  ~ ConfidenceFilter ()
+  ~ IntensityFilter ()
   {
     /// void
   }
@@ -98,19 +98,21 @@ public:
     PCLNodelet::onInit ();
     n_ = getNodeHandle ();
 
-    point_cloud_sub_ = n_.subscribe ("point_cloud2", 1, &ConfidenceFilter::PointCloudSubCallback, this);
+    point_cloud_sub_ = n_.subscribe ("point_cloud2", 1, &IntensityFilter::PointCloudSubCallback, this);
     point_cloud_pub_ = n_.advertise<sensor_msgs::PointCloud2> ("point_cloud2_filtered", 1);
 
-    n_.param ("/confidence_filter_nodelet/confidence_threshold", lim_, 60000);
-    //std::cout << "confidence_threshold: " << lim_<< std::endl;
+    n_.param ("/intensity_filter_nodelet/intensity_min_threshold", lim_min_, 2000);
+    //std::cout << "intensity_min_threshold: " << lim_min_<< std::endl;
+    n_.param ("/intensity_filter_nodelet/intensity_max_threshold", lim_max_, 60000);
+    //std::cout << "intensity_threshold: " << lim_<< std::endl;
 
   }
 
-  void
+/*  void
   PointCloudSubCallback (const pcl::PointCloud<CPCPoint>::Ptr pc)
   {
     //ROS_INFO("PointCloudSubCallback");
-    cob_env_model::ConfidenceFilter<CPCPoint> filter;
+    cob_env_model::IntensityFilter<CPCPoint> filter;
     pcl::PointCloud<CPCPoint>::Ptr cloud_filtered (new pcl::PointCloud<CPCPoint> ());
     filter.setInputCloud (pc);
     filter.setFilterLimit (lim_);
@@ -120,33 +122,33 @@ public:
     point_cloud_pub_.publish (cloud_filtered);
     if (t_check == 0)
     {
-      ROS_INFO("Time elapsed (Confidence_Filter) : %f", t.elapsed());
+      ROS_INFO("Time elapsed (Intensity_Filter) : %f", t.elapsed());
       t.restart ();
       t_check = 1;
     }
-  }
+  }*/
   // Test specialized template for sensor_msgs::PointCloud2 point_type
-/*
+
   void
   PointCloudSubCallback (sensor_msgs::PointCloud2::ConstPtr pc)
   {
     //ROS_INFO("PointCloudSubCallback");
-    cob_env_model::ConfidenceFilter<sensor_msgs::PointCloud2> filter;
+    cob_env_model::IntensityFilter<sensor_msgs::PointCloud2> filter;
     sensor_msgs::PointCloud2::Ptr cloud_filtered (new sensor_msgs::PointCloud2 ());
     filter.setInputCloud (pc);
-    filter.setFilterLimit (lim_);
+    filter.setFilterLimits (lim_min_, lim_max_);
     //std::cout << "  Filter Limit: "<<filter.getFilterLimit()<< std::endl;
     filter.applyFilter (*cloud_filtered);
 
     point_cloud_pub_.publish (cloud_filtered);
     if (t_check == 0)
     {
-      ROS_INFO("Time elapsed (Confidence_Filter) : %f", t.elapsed());
+      ROS_INFO("Time elapsed (Intensity_Filter) : %f", t.elapsed());
       t.restart ();
       t_check = 1;
     }
   }
-*/
+
   ros::NodeHandle n_;
   boost::timer t;
 
@@ -154,9 +156,9 @@ protected:
   ros::Subscriber point_cloud_sub_;
   ros::Publisher point_cloud_pub_;
 
-  int lim_;
+  int lim_min_, lim_max_;
   bool t_check;
 };
 
-PLUGINLIB_DECLARE_CLASS(cob_env_model, ConfidenceFilter, ConfidenceFilter, nodelet::Nodelet)
+PLUGINLIB_DECLARE_CLASS(cob_env_model, IntensityFilter, IntensityFilter, nodelet::Nodelet)
 
