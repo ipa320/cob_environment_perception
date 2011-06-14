@@ -14,10 +14,10 @@
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
- * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ * Author: Waqas Tanveer, email:waqas.informatik@googlemail.com
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 04/2011
+ * Date of creation: 05/2011
 
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
@@ -47,53 +47,60 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
+#ifndef INTENSITY_FILTER_HPP_
+#define INTENSITY_FILTER_HPP_
+
 //##################
 //#### includes ####
 
-// PCL includes
-#include "pcl/point_types.h"
-#include "pcl/impl/instantiate.hpp"
-#include <cob_env_model/cpc_point.h>
-
 // cob_env_model includes
-#include "cob_env_model/filters/confidence_filter.h"
-#include "cob_env_model/filters/impl/confidence_filter.hpp"
+#include "cob_env_model/filters/intensity_filter.h"
 
-void
-cob_env_model::ConfidenceFilter<sensor_msgs::PointCloud2>::applyFilter (PointCloud2 &pc_out)
+template <typename PointT> void
+cob_env_model::IntensityFilter<PointT>::applyFilter (PointCloud &pc_out)
 {
+  // set the parameters for output poincloud (pc_out)
+  pc_out.points.resize(input_->points.size());
   pc_out.header = input_->header;
-  pc_out.fields = input_->fields;
-  pc_out.point_step = input_->point_step;
-  pc_out.data.resize (input_->data.size());
-
-  //assumption: data order is always x->y->z in PC, datatype = float
-  int c_offset = 0;
-  for (size_t d = 0; d < input_->fields.size (); ++d)
-  {
-    if (input_->fields[d].name == "confidence")
-      c_offset = input_->fields[d].offset;
-  }
-
   int nr_p = 0;
-  float confidence;
-  const unsigned int total_points = input_->width*input_->height;
 
-  for (unsigned int pc_msg_idx = 0; pc_msg_idx < total_points; pc_msg_idx++)
+  //Go through all points and discard points with intensity value above filter limit
+  for (unsigned int i = 0; i < input_->points.size(); i++)
   {
-    confidence = *(float*)&input_->data[pc_msg_idx * input_->point_step + c_offset];
-    if ( confidence < confidence_threshold_)
-    {
-      memcpy(&pc_out.data[nr_p * pc_out.point_step], &input_->data[pc_msg_idx * pc_out.point_step],pc_out.point_step);
-      nr_p++;
-    }
+	  if (input_->points[i].intensity > intensity_min_threshold_ &&
+		  input_->points[i].intensity < intensity_max_threshold_)
+    pc_out.points[nr_p++] = input_->points[i];
   }
 
+  //resize pc_out according to filtered points
   pc_out.width = nr_p;
   pc_out.height = 1;
-  pc_out.data.resize (nr_p*pc_out.point_step);
+  pc_out.points.resize(nr_p);
   pc_out.is_dense = true;
 }
 
-using namespace pcl;
-PCL_INSTANTIATE(ConfidenceFilter, (CPCPoint));
+template <typename PointT> void
+cob_env_model::IntensityFilter<PointT>::negativeApplyFilter (PointCloud &pc_out)
+{
+  // set the parameters for output poincloud (pc_out)
+  pc_out.points.resize(input_->points.size());
+  pc_out.header = input_->header;
+  int nr_p = 0;
+
+  //Go through all points and discard points with intensity value below filter limit
+  for (unsigned int i = 0; i < input_->points.size(); i++)
+  {
+	  if (input_->points[i].intensity > intensity_max_threshold_ || input_->points[i].intensity < intensity_min_threshold_)
+          pc_out.points[nr_p++] = input_->points[i];
+  }
+
+  //resize pc_out according to filtered points
+  pc_out.width = nr_p;
+  pc_out.height = 1;
+  pc_out.points.resize(nr_p);
+  pc_out.is_dense = true;
+
+}
+
+#define PCL_INSTANTIATE_IntensityFilter(T) template class cob_env_model::IntensityFilter<T>;
+#endif /* INTENSITY_FILTER_HPP_ */

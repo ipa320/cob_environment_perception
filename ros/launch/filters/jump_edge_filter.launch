@@ -10,7 +10,7 @@
   	<param name = "upper_angle_deg" type="double" value="170.0"/>
   </node> 
   
-  <node pkg="rosbag" type="play" name="bag_play" args="/home/goa-wq/fixed_no_move_table.bag -l" output="screen" />
+  <node pkg="rosbag" type="play" name="bag_play" args="/home/goa/pcl_daten/table/fixed_pltf_neck_joystick_table.bag -l" output="screen" />
   <node pkg="rviz" type="rviz" respawn="false" name="rviz" />
 
 </launch>

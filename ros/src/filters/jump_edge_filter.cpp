@@ -72,7 +72,7 @@
 #include <pcl/io/pcd_io.h>
 
 // cob_env_model includes
-#include <cob_env_model/cpc_point.h>
+#include <cob_env_model/point_types.h>
 #include <cob_env_model/filters/jump_edge_filter.h>
 #include <cob_env_model/filters/impl/jump_edge_filter.hpp>
 
@@ -104,7 +104,7 @@ class JumpEdgeFilter : public pcl_ros::PCLNodelet
     //std::cout << "upper_angle_deg: " << upper_angle_<< std::endl;
   }
 
-  void PointCloudSubCallback(const pcl::PointCloud<CPCPoint>::Ptr pc)
+/*  void PointCloudSubCallback(const pcl::PointCloud<CPCPoint>::Ptr pc)
   {
     //ROS_INFO("PointCloudSubCallback");
     cob_env_model::JumpEdgeFilter<CPCPoint> filter;
@@ -121,10 +121,10 @@ class JumpEdgeFilter : public pcl_ros::PCLNodelet
       t.restart();
       t_check=1;
     }
-  }
+  }*/
 
   // Test specialized template for sensor_msgs::PointCloud2 point_type
-/*
+
   void
   PointCloudSubCallback (sensor_msgs::PointCloud2::ConstPtr pc)
   {
@@ -143,7 +143,7 @@ class JumpEdgeFilter : public pcl_ros::PCLNodelet
       t_check = 1;
     }
   }
-*/
+
   ros::NodeHandle n_;
   boost::timer t;
 

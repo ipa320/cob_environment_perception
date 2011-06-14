@@ -23,18 +23,13 @@
   </description>
   </class>
 	
-  <class name="cob_env_model/ConfidenceFilter" type="ConfidenceFilter" base_class_type="nodelet::Nodelet">
+  <class name="cob_env_model/IntensityFilter" type="IntensityFilter" base_class_type="nodelet::Nodelet">
   <description>
-  Nodelet for point cloud filtering (by confidence)
+  Nodelet for point cloud filtering (by intensity)
   </description>
   </class>
 
-  <class name="cob_env_model/AmplitudeConfidenceFilter" type="AmplitudeConfidenceFilter" base_class_type="nodelet::Nodelet">
-  <description>
-  Nodelet for point cloud filtering (by amplitude and confidence)
-  </description>
-  </class>
-  
+ 
   <class name="cob_env_model/SpeckleFilter" type="SpeckleFilter" base_class_type="nodelet::Nodelet">
   <description>
   Nodelet for point cloud filtering (speckles)

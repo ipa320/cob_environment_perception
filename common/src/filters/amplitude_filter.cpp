@@ -53,7 +53,7 @@
 // PCL includes
 #include "pcl/point_types.h"
 #include "pcl/impl/instantiate.hpp"
-#include <cob_env_model/cpc_point.h>
+#include <cob_env_model/point_types.h>
 
 // cob_env_model includes
 #include "cob_env_model/filters/amplitude_filter.h"
@@ -73,20 +73,20 @@ cob_env_model::AmplitudeFilter<sensor_msgs::PointCloud2>::applyFilter (PointClou
   {
     if(input_->fields[d].name == "x")
       x_offset = input_->fields[d].offset;
-    if(input_->fields[d].name == "intensity")
+    if(input_->fields[d].name == "amplitude")
       i_offset = input_->fields[d].offset;
   }
   //std::cout<<" x_offset: "<<x_offset<<std::endl;
   //std::cout<<" i_offset: "<<i_offset<<std::endl;
 
     int nr_p = 0;
-    float intensity;
+    float amplitude;
     const unsigned int total_points = input_->width*input_->height;
 
     for ( unsigned int pc_msg_idx = 0; pc_msg_idx < total_points; pc_msg_idx++)
     {
-      intensity = *(float*)&input_->data[pc_msg_idx * input_->point_step + i_offset];
-      if(intensity > amplitude_min_threshold_  && intensity < amplitude_max_threshold_ )
+      amplitude = *(float*)&input_->data[pc_msg_idx * input_->point_step + i_offset];
+      if(amplitude > amplitude_min_threshold_  && amplitude < amplitude_max_threshold_ )
       {
         memcpy(&pc_out.data[nr_p * pc_out.point_step], &input_->data[pc_msg_idx * pc_out.point_step],pc_out.point_step);
         nr_p++;
@@ -101,4 +101,4 @@ cob_env_model::AmplitudeFilter<sensor_msgs::PointCloud2>::applyFilter (PointClou
 }
 
 using namespace pcl;
-PCL_INSTANTIATE(AmplitudeFilter, (CPCPoint)(PointXYZI)(PointXYZINormal));
+PCL_INSTANTIATE(AmplitudeFilter, (PointXYZA));
