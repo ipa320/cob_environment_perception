@@ -1,6 +1,6 @@
 /****************************************************************
  *
- * Copyright (c) 2010
+ * Copyright (c) 2011
  *
  * Fraunhofer Institute for Manufacturing Engineering
  * and Automation (IPA)
@@ -14,14 +14,11 @@
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
- * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
- * Supervised by:
+ * Author: Waqas Tanveer, email:waqas.informatik@googlemail.com
+ * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 02/2011
- * ToDo:
- *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
+ * Date of creation: 05/2011
+
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -50,13 +47,50 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
+#ifndef SPECKLE_FILTER_HPP_
+#define SPECKLE_FILTER_HPP_
 
-#include "pcl/impl/instantiate.hpp"
-#include "pcl/point_types.h"
-#include "cob_env_model/cpc_point.h"
-#include "cob_env_model/field_of_view_segmentation.h"
-#include "cob_env_model/field_of_view_segmentation.hpp"
+//##################
+//#### includes ####
 
+// cob_env_model includes
+#include "cob_env_model/filters/speckle_filter.h"
 
-PCL_INSTANTIATE(FieldOfViewSegmentation, PCL_XYZ_POINT_TYPES);
-//PCL_INSTANTIATE(FieldOfViewSegmentation, (CPCPoint));
+template<typename PointT>
+  void
+  cob_env_model::SpeckleFilter<PointT>::applyFilter (PointCloud &pc_out)
+  {
+    //std::cout << " Entered apply filter method " << std::endl;
+    cv::Mat xyz_mat_32F3 = cv::Mat (input_->height, input_->width, CV_32FC3);
+    pc_out.points.resize(input_->points.size());
+    pc_out.header = input_->header;
+
+    for (unsigned int i = 0; i < input_->points.size(); i++)
+      pc_out.points[i] = input_->points[i];
+
+    float* f_ptr = 0;
+    int pc_msg_idx = 0;
+    for (int row = 0; row < xyz_mat_32F3.rows; row++)
+    {
+      f_ptr = xyz_mat_32F3.ptr<float> (row);
+      for (int col = 0; col < xyz_mat_32F3.cols; col++, pc_msg_idx++)
+      {
+        memcpy (&f_ptr[3 * col], &input_->points[pc_msg_idx].x, 3 * sizeof(float));
+      }
+    }
+
+    cv::Mat buf;
+    ipa_Utils::FilterSpeckles (xyz_mat_32F3, speckle_size_, speckle_range_, buf);
+    pc_msg_idx = 0;
+    for (int row = 0; row < xyz_mat_32F3.rows; row++)
+    {
+      f_ptr = xyz_mat_32F3.ptr<float> (row);
+      for (int col = 0; col < xyz_mat_32F3.cols; col++, pc_msg_idx++)
+      {
+        memcpy (&pc_out.points[pc_msg_idx].x, &f_ptr[3 * col], 3 * sizeof(float));
+      }
+    }
+  }
+
+#define PCL_INSTANTIATE_SpeckleFilter(T) template class cob_env_model::SpeckleFilter<T>;
+#endif /* SPECKLE_FILTER_HPP_ */
