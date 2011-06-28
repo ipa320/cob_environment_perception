@@ -1,184 +1,160 @@
-/*
- * JumpEdge_filter.cpp
+/****************************************************************
  *
- *  Created on: Mar 2, 2011
- *      Author: goa-wq
- */
+ * Copyright (c) 2010
+ *
+ * Fraunhofer Institute for Manufacturing Engineering
+ * and Automation (IPA)
+ *
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *
+ * Project name: care-o-bot
+ * ROS stack name: cob_vision
+ * ROS package name: cob_env_model
+ * Description:
+ *
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *
+ * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ *
+ * Date of creation: 05/2011
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the Fraunhofer Institute for Manufacturing
+ *       Engineering and Automation (IPA) nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License LGPL as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License LGPL for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License LGPL along with this program.
+ * If not, see <http://www.gnu.org/licenses/>.
+ *
+ ****************************************************************/
+
+//##################
+//#### includes ####
+
 // standard includes
 //--
 
 // ROS includes
 #include <ros/ros.h>
 
-#include <opencv/cv.h>
-//#include <opencv/highgui.h>
-
 // ROS message includes
 #include <sensor_msgs/PointCloud2.h>
 
 // external includes
 #include <boost/timer.hpp>
-#include "pcl/point_types.h"
+
+//pludinlib includes
 #include <pluginlib/class_list_macros.h>
+
+// pcl includes
+#include <pcl/point_types.h>
 #include <pcl_ros/pcl_nodelet.h>
-#include <cob_env_model/cpc_point.h>
+#include <pcl/io/pcd_io.h>
 
-#include <pcl/filters/extract_indices.h>
-#include <pcl/filters/impl/extract_indices.hpp>
+// cob_env_model includes
+#include <cob_env_model/point_types.h>
+#include <cob_env_model/filters/jump_edge_filter.h>
+#include <cob_env_model/filters/impl/jump_edge_filter.hpp>
 
-#include "pcl/impl/instantiate.hpp"
-
-//#######################
-//#### nodelet class ####
+//######################
+//#### nodelet class####
 class JumpEdgeFilter : public pcl_ros::PCLNodelet
 {
-public:
-	// Constructor
-	JumpEdgeFilter()
-	{
-		t_check=1;
-	}
+  public:
+  // Constructor
+  JumpEdgeFilter()
+   :t_check(0)
+  {}
 
-	// Destructor
-	~JumpEdgeFilter()
-	{
-		/// void
-	}
+  // Destructor
+  ~ JumpEdgeFilter()
+  {
+    /// void
+  }
 
-	void onInit()
-	{
-		PCLNodelet::onInit();
-		n_ = getNodeHandle();
+  void onInit()
+  {
+    PCLNodelet::onInit();
+    n_ = getNodeHandle();
 
-		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &JumpEdgeFilter::PointCloudSubCallback, this);
-		point_cloud_pub_ = n_.advertise<sensor_msgs::PointCloud2>("point_cloud2_filtered",1);
+    point_cloud_sub_ = n_.subscribe("point_cloud2", 1, & JumpEdgeFilter::PointCloudSubCallback, this);
+    point_cloud_pub_= n_.advertise<sensor_msgs::PointCloud2>("point_cloud2_filtered",1);
 
-		ROS_INFO("Applying JumpEdgeEdges Filter");
-		//n_.param("/JumpEdge_filter_nodelet/filter_JumpEdge", filter_JumpEdge_,false);
-		//std::cout << "filter JumpEdge: " << filter_JumpEdge_<< std::endl;
-	}
+    n_.param("/jump_edge_filter_nodelet/upper_angle_deg", upper_angle_, 170.0);
+    //std::cout << "upper_angle_deg: " << upper_angle_<< std::endl;
+  }
 
-	void PointCloudSubCallback(const pcl::PointCloud<CPCPoint>::Ptr& pc)
-	{
-		//ROS_INFO("PointCloudSubCallback");
-		pcl::PointCloud<CPCPoint>::Ptr pc_out(new pcl::PointCloud<CPCPoint>());
-		pc_out->points.resize(pc->points.size());
-		pc_out->header = pc->header;
+/*  void PointCloudSubCallback(const pcl::PointCloud<CPCPoint>::Ptr pc)
+  {
+    //ROS_INFO("PointCloudSubCallback");
+    cob_env_model::JumpEdgeFilter<CPCPoint> filter;
+    pcl::PointCloud<CPCPoint>::Ptr cloud_filtered(new pcl::PointCloud<CPCPoint> ());
 
-		FilterJumpEdges(pc, pc_out);
-
-		point_cloud_pub_.publish(pc_out);
-		if (t_check==1)
-		{
-			ROS_INFO("Time elapsed (JumpEdgeEdges_Filter) : %f", t.elapsed());
-			t.restart();
-			t_check=0;
-		}
-	}
-
-    void FilterJumpEdges(const pcl::PointCloud<CPCPoint>::Ptr& pc, const pcl::PointCloud<CPCPoint>::Ptr& pc_out)
+    filter.setInputCloud(pc);
+    filter.setUpperAngle(upper_angle_);
+    //std::cout << "  Upper angle threshold in degrees : "<<filter.getUpperAngle()  << std::endl;
+    filter.applyFilter(*cloud_filtered);
+    point_cloud_pub_.publish(cloud_filtered);
+    if(t_check==0)
     {
-    	pcl::PointIndices::Ptr points_to_remove (new pcl::PointIndices ());
-    	double upper_angle_thresh = 170.0/180*M_PI;
-    	double lower_angle_thresh = (180-170.0)/180*M_PI;
-    	for( unsigned int i = 0; i < pc->points.size(); i++)
-    	{
-    		if(i< pc->width || i%pc->width==0 || i%pc->width==3 || i>pc->width*(pc->height-1)) continue; //skip border points
-    		Eigen::Vector3f v_m(pc->points[i].x,pc->points[i].y,pc->points[i].z);
-    		Eigen::Vector3f v_m_n = v_m.normalized();
-    		int index = i-pc->width-1;
-    		Eigen::Vector3f vd_ul(v_m(0)-pc->points[index].x, v_m(1)-pc->points[index].y, v_m(2)-pc->points[index].z);
-    		vd_ul.normalize();
-    		double angle = std::acos(v_m_n.dot(vd_ul));
-    		if(angle > upper_angle_thresh || angle < lower_angle_thresh)
-    		{
-    			points_to_remove->indices.push_back(i);
-        		continue;
-    		}
-    		index = i-pc->width;
-    		Eigen::Vector3f vd_u(v_m(0)-pc->points[index].x, v_m(1)-pc->points[index].y, v_m(2)-pc->points[index].z);
-    		vd_u.normalize();
-    		angle = std::acos(v_m_n.dot(vd_u));
-    		if(angle > upper_angle_thresh || angle < lower_angle_thresh)
-    		{
-    			points_to_remove->indices.push_back(i);
-    			continue;
-    		}
-    	    index = i-pc->width+1;
-    		Eigen::Vector3f vd_ur(v_m(0)-pc->points[index].x, v_m(1)-pc->points[index].y, v_m(2)-pc->points[index].z);
-    		vd_ur.normalize();
-    		angle = std::acos(v_m_n.dot(vd_ur));
-    		if(angle > upper_angle_thresh || angle < lower_angle_thresh)
-    		{
-    			points_to_remove->indices.push_back(i);
-        		continue;
-    		}
-    	    index = i-1;
-    		Eigen::Vector3f vd_l(v_m(0)-pc->points[index].x, v_m(1)-pc->points[index].y, v_m(2)-pc->points[index].z);
-    		vd_l.normalize();
-    		angle = std::acos(v_m_n.dot(vd_l));
-    		if(angle > upper_angle_thresh || angle < lower_angle_thresh)
-    		{
-    			points_to_remove->indices.push_back(i);
-        		continue;
-    		}
-    	    index = i+1;
-    		Eigen::Vector3f vd_r(v_m(0)-pc->points[index].x, v_m(1)-pc->points[index].y, v_m(2)-pc->points[index].z);
-    		vd_r.normalize();
-    		angle = std::acos(v_m_n.dot(vd_r));
-    		if(angle > upper_angle_thresh || angle < lower_angle_thresh)
-    		{
-    			points_to_remove->indices.push_back(i);
-        		continue;
-    		}
-    	    index = i+pc->width-1;
-    		Eigen::Vector3f vd_ll(v_m(0)-pc->points[index].x, v_m(1)-pc->points[index].y, v_m(2)-pc->points[index].z);
-    		vd_ll.normalize();
-    		angle = std::acos(v_m_n.dot(vd_ll));
-    		if(angle > upper_angle_thresh || angle < lower_angle_thresh)
-    		{
-    			points_to_remove->indices.push_back(i);
-        		continue;
-    		}
-    	    index = i+pc->width;
-    		Eigen::Vector3f vd_lo(v_m(0)-pc->points[index].x, v_m(1)-pc->points[index].y, v_m(2)-pc->points[index].z);
-    		vd_lo.normalize();
-    		angle = std::acos(v_m_n.dot(vd_lo));
-    		if(angle > upper_angle_thresh || angle < lower_angle_thresh)
-    		{
-    			points_to_remove->indices.push_back(i);
-        		continue;
-    		}
-    	    index = i+pc->width+1;
-    		Eigen::Vector3f vd_lr(v_m(0)-pc->points[index].x, v_m(1)-pc->points[index].y, v_m(2)-pc->points[index].z);
-    		vd_lr.normalize();
-    		angle = std::acos(v_m_n.dot(vd_lr));
-    		if(angle > upper_angle_thresh || angle < lower_angle_thresh)
-    		{
-    			points_to_remove->indices.push_back(i);
-        		continue;
-    		}
-    	}
-		pcl::ExtractIndices<CPCPoint> extractIndices;
-		extractIndices.setInputCloud(pc);
-		extractIndices.setIndices(points_to_remove);
-		extractIndices.setNegative(true);
-		extractIndices.filter(*(pc_out.get()));
+      ROS_INFO("Time elapsed (JumpEdgeFilter) : %f", t.elapsed());
+      t.restart();
+      t_check=1;
     }
+  }*/
 
-	ros::NodeHandle n_;
-	boost::timer t;
-	bool t_check;
+  // Test specialized template for sensor_msgs::PointCloud2 point_type
 
-protected:
-	ros::Subscriber point_cloud_sub_;
-	ros::Publisher point_cloud_pub_;
+  void
+  PointCloudSubCallback (sensor_msgs::PointCloud2::ConstPtr pc)
+  {
+    //ROS_INFO("PointCloudSubCallback");
+    cob_env_model::JumpEdgeFilter<sensor_msgs::PointCloud2> filter;
+    sensor_msgs::PointCloud2::Ptr cloud_filtered (new sensor_msgs::PointCloud2 ());
 
-	//bool filter_JumpEdge_;
-};
+    filter.setInputCloud (pc);
+    filter.setUpperAngle(upper_angle_);
+    filter.applyFilter (*cloud_filtered);
+    point_cloud_pub_.publish (cloud_filtered);
+    if (t_check == 0)
+    {
+      ROS_INFO("Time elapsed (JumpEdgeFilter) : %f", t.elapsed());
+      t.restart ();
+      t_check = 1;
+    }
+  }
 
-using namespace pcl;
-PCL_INSTANTIATE(ExtractIndices, (CPCPoint));
+  ros::NodeHandle n_;
+  boost::timer t;
 
-PLUGINLIB_DECLARE_CLASS(cob_env_model, JumpEdgeFilter, JumpEdgeFilter, nodelet::Nodelet)
+  protected:
+    ros::Subscriber point_cloud_sub_;
+    ros::Publisher point_cloud_pub_;
+
+    double upper_angle_;
+    bool t_check;
+  };
+
+PLUGINLIB_DECLARE_CLASS(cob_env_model,  JumpEdgeFilter,  JumpEdgeFilter, nodelet::Nodelet)
+
 

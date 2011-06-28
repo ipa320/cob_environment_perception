@@ -16,6 +16,7 @@
   <depend package="cob_msgs"/>
   <depend package="cob_srvs"/>
   <depend package="opencv2"/>
+
   <depend package="cob_vision_utils"/>
   <!--depend package="cob_vision_features"/-->
   <depend package="pcl"/>

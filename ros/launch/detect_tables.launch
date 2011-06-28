@@ -10,7 +10,7 @@
       filter_limit_min: 0.2
       filter_limit_max: 2
       filter_limit_negative: False
-      leaf_size: 0.01
+      leaf_size: 0.005
     </rosparam>
   </node>
 
@@ -18,5 +18,16 @@
   	<!--remap from="point_cloud2" to="/aggregate_point_map/pc_aligned"/-->
   	<!--remap from="point_cloud2" to="/aggregate_point_map/map"/-->
   	<remap from="point_cloud2" to="/voxel_grid2/output"/>
-  </node>                 
+  </node>    
+  
+  <!--node pkg="nodelet" type="nodelet" name="tabletop_objects_clusters" args="load pcl/EuclideanClusterExtraction pcl_manager" output="screen">
+    <remap from="~input"   to="/object_cluster" />
+    <rosparam>
+      cluster_tolerance: 0.06
+      cluster_min_size: 30
+      max_clusters: 10
+      spatial_locator: 1
+    </rosparam>
+  </node-->
+               
 </launch>
