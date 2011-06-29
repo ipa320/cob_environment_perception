@@ -73,12 +73,14 @@
 #include "pcl/features/normal_3d_omp.h"
 #include "pcl/features/normal_3d.h"
 #include <pcl/features/boundary.h>
-//#include <pcl/range_image/range_image.h>
+//#include <pcl/range_image/range_image.h>+
 #include <pcl/visualization/cloud_viewer.h>
+
+
 #include <pcl/features/range_image_border_extractor.h>
 #include <pcl/PointIndices.h>
 #include "pcl/filters/extract_indices.h"
-#include <cob_env_model/ipa_range_image.h>
+
 
 // ROS message includes
 //#include <sensor_msgs/PointCloud2.h>
@@ -333,7 +335,7 @@ public:
 		  }*/
 	}
 
-	void extractEdgesRangeImage2(PointCloud::Ptr& cloud_in, IPARangeImage& cloud_out, cv::Mat& border_image)
+/*	void extractEdgesRangeImage2(PointCloud::Ptr& cloud_in, IPARangeImage& cloud_out, cv::Mat& border_image)
 	{
 
 		//pcl::RangeImage range_image;
@@ -356,7 +358,7 @@ public:
 				p.range=0;//-std::numeric_limits<float>::infinity();
 			}
 			else*/
-			{
+/*			{
 				p.x = cloud_in->points[i].x;
 				p.y = cloud_in->points[i].y;
 				p.z = cloud_in->points[i].z;
@@ -452,7 +454,7 @@ public:
 		    viewer.spinOnce(100);
 		    usleep(100000);
 		  }*/
-	}
+//	}
 
 	void segmentByEdgeImage(cv::Mat& color_image, cv::Mat& edge_image, cv::Mat& markers)
 	{
@@ -779,7 +781,7 @@ int main(int argc, char** argv)
 
 	 pcl::PointCloud<pcl::Boundary> pc_edge;
 
-	std::string directory("/home/goa/pcl_daten/test/");
+	std::string directory("/home/goa-hh/pcl_daten/test/");
 	PointCloud::Ptr cloud_in = PointCloud::Ptr (new PointCloud);
 	sensor_msgs::PointCloud2 cloud_blob;
 	pcl::io::loadPCDFile(directory+"frame_0.000000000_bin.pcd", *cloud_in);
@@ -839,8 +841,8 @@ int main(int argc, char** argv)
 	pcl::io::savePCDFileASCII (directory+"/frame_normals.pcd", cloud_n_out);
 
 	cv::Mat border_image;
-	IPARangeImage range_image;
-	ef.extractEdgesRangeImage2(cloud_in, range_image, border_image);
+	/*IPARangeImage range_image;
+	ef.extractEdgesRangeImage2(cloud_in, range_image, border_image);*/
 	cv::Mat combined_edge_image = canny_image | border_image;
 	cv::imshow("combined edge image", combined_edge_image);
 	cv::waitKey();
