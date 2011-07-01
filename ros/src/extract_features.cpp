@@ -158,8 +158,18 @@ public:
         boost::timer t;
     	cv::Mat grey_image;
     	cvtColor( color_image, grey_image, CV_RGB2GRAY );
+        cv::Mat opening_image;
+        cv::Mat element=cv::Mat::ones(3,3, CV_32F);
+        double m[9][9]={{0,0,0,1,1,1,0,0,0},{0,0,0,1,1,1,0,0,0},{0,0,0,1,1,1,0,0,0},{1,1,1,1,1,1,1,1,1},{1,1,1,1,1,1,1,1,1},{1,1,1,1,1,1,1,1,1},{0,0,0,1,1,1,0,0,0},{0,0,0,1,1,1,0,0,0},{0,0,0,1,1,1,0,0,0}};
+        cv::Mat edges=cv::Mat(9,9,CV_64F,m).inv();
+        cv::Point anchor(-1,-1);
+        int borderType=cv::BORDER_CONSTANT;
+        cv::Scalar borderValue=cv::morphologyDefaultBorderValue();
+        cv::erode(grey_image, grey_image,element,anchor,1,borderType,borderValue);
+        //cv::dilate(grey_image, grey_image,element,anchor,4,borderType,borderValue);
+
     	cv::Mat color_canny_image;
-        Canny( grey_image, canny_image, 50, 150, 3 );
+        Canny( grey_image, canny_image, 25, 150, 3 );
     	ROS_INFO("Time elapsed for canny edge: %f", t.elapsed());
 	}
 
@@ -215,6 +225,14 @@ public:
 		}
 		//cv::imshow("boundary image", border_image);
 		//cv::waitKey();
+
+
+
+
+	        //cv::erode(border_image,border_image,element,anchor,1,borderType,borderValue);
+
+
+
 		ROS_INFO("Time elapsed for boundary estimation: %f", t.elapsed());
 	}
 
@@ -333,17 +351,35 @@ public:
 	{
 		/// apply closing to connect edge segments, not working very well
 		cv::Mat edge_morph;
+
+		//cv::morphologyEx(edge_image, edge_morph, cv::MORPH_OPEN, cv::getStructuringElement(cv::MORPH_RECT,cv::Size(3,3)), cv::Point(-1,-1), 1);
 		cv::morphologyEx(edge_image, edge_morph, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_RECT,cv::Size(3,3)), cv::Point(-1,-1), 1);
 		cv::imshow("Edge morph", edge_morph);
 		/// find contours in edge image
 		vector<vector<cv::Point> > contours;
-		cv::findContours(edge_image, contours, CV_RETR_LIST,CV_CHAIN_APPROX_NONE);
+        vector<vector<cv::Point> > big_contours;
+
+        // all contours
+		cv::findContours(edge_morph, contours, CV_RETR_LIST,CV_CHAIN_APPROX_NONE);
+		//only extrem contours
+		//cv::findContours(edge_morph, contours, CV_RETR_EXTERNAL,CV_CHAIN_APPROX_NONE);
+
 		markers = cv::Mat::zeros(edge_image.size(), CV_32S);
-		std::cout << "num contours: " << contours.size() << std::endl;
-		for(int idx=0; idx<contours.size(); idx++)
-		cv::drawContours(markers, contours, idx, cv::Scalar(idx+1));
+
+
+		for(int i=0; i<contours.size();i++){
+                  if (contours[i].size()>25){
+                    vector<cv::Point> inside;
+                    contours[i].swap(inside);
+                    big_contours.push_back(inside) ;
+                  }
+                }
+
+		for(int idx=0; idx<big_contours.size(); idx++)
+
+		cv::drawContours(markers, big_contours, idx, cv::Scalar(idx+1));
 		vector<cv::Vec3b> colorTab;
-		for(int i = 0; i < contours.size(); i++ )
+		for(int i = 0; i < big_contours.size(); i++ )
 		{
 			int b = cv::theRNG().uniform(0, 255);
 			int g = cv::theRNG().uniform(0, 255);
@@ -456,9 +492,9 @@ int main(int argc, char** argv)
 	ExtractFeatures ef;
 
 	/// Load PCD file as input; better use binary PCD files, ascii files seem to generate corrupt point clouds
-	std::string directory("/home/goa/pcl_daten/test/");
+	std::string directory("/home/goa-hh/pcl_daten/test/");
 	PointCloud::Ptr cloud_in = PointCloud::Ptr (new PointCloud);
-	pcl::io::loadPCDFile(directory+"frame_0.000000000_bin.pcd", *cloud_in);
+	pcl::io::loadPCDFile(directory+"karton.pcd", *cloud_in);
 
 	/// Extract edges on the color image
 	cv::Mat color_image(cloud_in->height,cloud_in->width,CV_8UC3);
@@ -466,8 +502,8 @@ int main(int argc, char** argv)
 	cv::imshow("Color Image", color_image);
 	cv::Mat canny_image;
 	ef.extractEdgesCanny(color_image, canny_image);
-    cv::imshow("Canny Image", canny_image);
-    cv::waitKey();
+        cv::imshow("Canny Image", canny_image);
+        cv::waitKey();
 
 	PointCloud cloud_out;
 	cv::Mat border_image;
@@ -476,14 +512,29 @@ int main(int argc, char** argv)
 	/*ef.extractEdgesCurvature(cloud_in, cloud_out);
 	pcl::io::savePCDFileASCII (directory+"/edges/edges_curvature.pcd", cloud_out);*/
 
-	/// Extract edges using boundary estimation
-	/*ef.extractEdgesBoundary(cloud_in, cloud_out, border_image);
-	pcl::io::savePCDFileASCII (directory+"/edges/edges_boundary.pcd", cloud_out);*/
+	 //Extract edges using boundary estimation
+//	ef.extractEdgesBoundary(cloud_in, cloud_out, border_image);
+//	pcl::io::savePCDFileASCII (directory+"/edges/edges_boundary.pcd", cloud_out);
 
-	/// Extract edges using range image border extraction
+//	/// Extract edges using range image border extraction
 	pcl::RangeImage range_image_out;
 	ef.extractEdgesRangeImage(cloud_in, range_image_out, border_image);
-	pcl::io::savePCDFileASCII (directory+"/edges/edges_range_border.pcd", range_image_out);
+
+	 cv::Mat element=cv::Mat::ones(3,3, CV_32F);
+	                cv::Mat border_image2;
+	                cv::Point anchor(-1,-1);
+	                int borderType=cv::BORDER_CONSTANT;
+	                cv::Scalar borderValue=cv::morphologyDefaultBorderValue();
+	               cv::erode(border_image, border_image,element,anchor,4,borderType,borderValue);
+
+        // cv::dilate(border_image, border_image,element,anchor,1,borderType,borderValue);
+          //cv::erode(border_image, border_image,element,anchor,1,borderType,borderValue);
+
+
+        cv::imshow("border_image", border_image);
+
+
+	/*pcl::io::savePCDFileASCII (directory+"/edges/edges_range_border.pcd", range_image_out);
 	pcl::visualization::PCLVisualizer viewer("3D Viewer");
 	viewer.addCoordinateSystem(1.0f);
 	viewer.addPointCloud<pcl::PointXYZRGB>(cloud_in, "original point cloud");
@@ -492,7 +543,7 @@ int main(int argc, char** argv)
 	{
 	    viewer.spinOnce(100);
 	    usleep(100000);
-	}
+	}*/
 
 	/// Combine two edge images
 	cv::Mat combined_edge_image = canny_image | border_image;
@@ -501,7 +552,14 @@ int main(int argc, char** argv)
 
 	/// Segment color image using canny edge image (can also be done with combined edge image)
 	cv::Mat wshed_canny;
+	cv::Mat wshed_range_image;
+
 	ef.segmentByEdgeImage(color_image, canny_image, wshed_canny);
+	ef.segmentByEdgeImage(color_image, border_image, wshed_range_image);
+
+	//cv::Mat combined_wshed_image=wshed_canny | wshed_range_image;
+	cv::imshow("combined wshed image", wshed_canny);
+	cv::waitKey();
 
 	/// Cluster point cloud according to color image segmentation
 	std::vector<pcl::PointIndices> cluster_indices;
