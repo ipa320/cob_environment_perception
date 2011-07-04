@@ -347,7 +347,7 @@ public:
 	/**Segments a color image using an edge image and the watershed algorithm
 	 *
 	 */
-	void segmentByEdgeImage(cv::Mat& color_image, cv::Mat& edge_image, cv::Mat& markers)
+	void segmentByEdgeImage(cv::Mat& color_image, cv::Mat& edge_image, cv::Mat& markers,vector<vector<cv::Point> >& big_contours)
 	{
 		/// apply closing to connect edge segments, not working very well
 		cv::Mat edge_morph;
@@ -357,7 +357,8 @@ public:
 		cv::imshow("Edge morph", edge_morph);
 		/// find contours in edge image
 		vector<vector<cv::Point> > contours;
-        vector<vector<cv::Point> > big_contours;
+		//vector<vector<cv::Point> > big_contours;
+
 
         // all contours
 		cv::findContours(edge_morph, contours, CV_RETR_LIST,CV_CHAIN_APPROX_NONE);
@@ -365,7 +366,6 @@ public:
 		//cv::findContours(edge_morph, contours, CV_RETR_EXTERNAL,CV_CHAIN_APPROX_NONE);
 
 		markers = cv::Mat::zeros(edge_image.size(), CV_32S);
-
 
 		for(int i=0; i<contours.size();i++){
                   if (contours[i].size()>25){
@@ -417,6 +417,7 @@ public:
 		}
 		cv::imshow("wshed image", wshed_image);
 		cv::waitKey();
+	//	markers=vis_markers;
 
 		//cvtColor( canny_image, color_canny_image, CV_GRAY2BGR );
 		/*c_ptr = 0;
@@ -553,12 +554,44 @@ int main(int argc, char** argv)
 	/// Segment color image using canny edge image (can also be done with combined edge image)
 	cv::Mat wshed_canny;
 	cv::Mat wshed_range_image;
+	vector<vector<cv::Point> > big_contours_canny;
+	vector<vector<cv::Point> > big_contours_range;
 
-	ef.segmentByEdgeImage(color_image, canny_image, wshed_canny);
-	ef.segmentByEdgeImage(color_image, border_image, wshed_range_image);
+	ef.segmentByEdgeImage(color_image, canny_image, wshed_canny,big_contours_canny );
+	ef.segmentByEdgeImage(color_image, border_image, wshed_range_image,big_contours_range);
 
-	//cv::Mat combined_wshed_image=wshed_canny | wshed_range_image;
-	cv::imshow("combined wshed image", wshed_canny);
+	cv::Mat combined_wshed_image=wshed_canny | wshed_range_image;
+	cv::watershed(color_image, combined_wshed_image);
+
+
+	vector<cv::Vec3b> colorTab;
+
+	for(int i = 0; i < big_contours_canny.size()+big_contours_range.size(); i++ )
+	{
+		int b = cv::theRNG().uniform(0, 255);
+		int g = cv::theRNG().uniform(0, 255);
+		int r = cv::theRNG().uniform(0, 255);
+
+		colorTab.push_back(cv::Vec3b((uchar)b, (uchar)g, (uchar)r));
+	}
+	cv::Mat wshed_image=cv::Mat(combined_wshed_image.size(), CV_8UC3);
+	for(int i = 0; i < combined_wshed_image.rows; i++ )
+	{
+		for(int j = 0; j < combined_wshed_image.cols; j++ )
+		{
+			int idx = combined_wshed_image.at<int>(i,j);
+			if( idx == -1 )
+				wshed_image.at<cv::Vec3b>(i,j) = cv::Vec3b(255,255,255);
+			else
+				wshed_image.at<cv::Vec3b>(i,j) = colorTab[idx - 1];
+		}
+	}
+	cv::imshow("wshed image", wshed_image);
+
+
+
+
+	cv::imshow("combined wshed image", combined_wshed_image);
 	cv::waitKey();
 
 	/// Cluster point cloud according to color image segmentation
