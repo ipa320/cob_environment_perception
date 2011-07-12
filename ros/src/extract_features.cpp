@@ -122,7 +122,7 @@ void estimatePointNormals(PointCloud& cloud, pcl::PointCloud<pcl::PointXYZRGBNor
 //std::cout << "Input cloud has " << cloud.size() << " data points" << std::endl;
 
 pcl::NormalEstimation<pcl::PointXYZRGB,pcl::Normal> normalEstimator;
-normalEstimator.setInputCloud(boost::make_shared<PointCloud >(cloud));
+normalEstimator.setInputCloud(cloud.makeShared());
 pcl::KdTreeFLANN<pcl::PointXYZRGB>::Ptr tree (new pcl::KdTreeFLANN<pcl::PointXYZRGB> ());
 normalEstimator.setSearchMethod(tree);
 //normalEstimator.setKSearch(50);
@@ -223,8 +223,8 @@ else
 border_image.at<unsigned char>(row,col) = 0;
 }
 }
-//cv::imshow("boundary image", border_image);
-//cv::waitKey();
+cv::imshow("boundary image", border_image);
+cv::waitKey();
 
 
 
@@ -499,7 +499,7 @@ int key=0;
 std::cout <<"Bitte wähle den Speicherslot 1,2 oder 3"<<std::endl;
 std:cin >>key;
 switch(key){
-case 1 : pcl::io::loadPCDFile(directory+"karton.pcd", *cloud_in);break;
+case 1 : pcl::io::loadPCDFile(directory+"karton_bin.pcd", *cloud_in);break;
 case 2 : pcl::io::loadPCDFile(directory+"eingang.pcd", *cloud_in);break;
 case 3 : pcl::io::loadPCDFile(directory+"schreibtisch.pcd", *cloud_in);break;
 }
