@@ -458,7 +458,7 @@ int main(int argc, char** argv)
 	/// Load PCD file as input; better use binary PCD files, ascii files seem to generate corrupt point clouds
 	std::string directory("/home/goa/pcl_daten/test/");
 	PointCloud::Ptr cloud_in = PointCloud::Ptr (new PointCloud);
-	pcl::io::loadPCDFile(directory+"frame_0.000000000_bin.pcd", *cloud_in);
+	pcl::io::loadPCDFile(directory+"karton_bin.pcd", *cloud_in);
 
 	/// Extract edges on the color image
 	cv::Mat color_image(cloud_in->height,cloud_in->width,CV_8UC3);
@@ -486,7 +486,7 @@ int main(int argc, char** argv)
 	pcl::io::savePCDFileASCII (directory+"/edges/edges_range_border.pcd", range_image_out);
 	pcl::visualization::PCLVisualizer viewer("3D Viewer");
 	viewer.addCoordinateSystem(1.0f);
-	viewer.addPointCloud<pcl::PointXYZRGB>(cloud_in, "original point cloud");
+	viewer.addPointCloud<PointT>(cloud_in, "original point cloud");
 	viewer.addPointCloud<pcl::PointWithRange>(range_image_out.makeShared(), "border points");
 	while(!viewer.wasStopped())
 	{
@@ -506,12 +506,12 @@ int main(int argc, char** argv)
 	/// Cluster point cloud according to color image segmentation
 	std::vector<pcl::PointIndices> cluster_indices;
 	ef.getClusterIndices(cloud_in, wshed_canny, cluster_indices);
-	pcl::ExtractIndices<pcl::PointXYZRGB> extract;
+	pcl::ExtractIndices<PointT> extract;
 	for(unsigned int i = 0; i < cluster_indices.size(); i++)
 	{
 		if(cluster_indices[i].indices.size()>100)
 		{
-			pcl::PointCloud<pcl::PointXYZRGB> cluster;
+			pcl::PointCloud<PointT> cluster;
 			extract.setInputCloud (cloud_in);
 			extract.setIndices (boost::make_shared<const pcl::PointIndices> (cluster_indices[i]));
 			extract.setNegative (false);
