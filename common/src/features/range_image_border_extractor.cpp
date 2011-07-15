@@ -712,7 +712,7 @@ void RangeImageBorderExtractor::calculateBorderDirections()
           weight_sum += 1.0f;
         }
       }
-      if (pcl_lrint (weight_sum) < minimum_weight)
+      if (lrint (weight_sum) < minimum_weight)
       {
         delete average_border_direction;
         average_border_direction=NULL;
