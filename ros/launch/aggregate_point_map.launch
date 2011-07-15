@@ -41,6 +41,5 @@
   	<param name="distance_limit_" type="double" value="0.3"/>
   </node>  
   
-  <node pkg="cob_env_model" type="field_of_view_node" name="field_of_view_node" output="screen"/>
-  	
+  
   </launch>
