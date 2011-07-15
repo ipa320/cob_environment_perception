@@ -173,11 +173,12 @@ public:
 
     void pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc)
     {
+	boost::timer t;
     	ROS_INFO("PointCloudSubCallback");
     	StampedTransform transform;
     	try
     	{
-       		tf_listener_.waitForTransform("/map", pc->header.frame_id, pc->header.stamp, ros::Duration(3));
+       		tf_listener_.waitForTransform("/map", pc->header.frame_id, pc->header.stamp, ros::Duration(10));
     		tf_listener_.lookupTransform("/map", pc->header.frame_id, pc->header.stamp/*ros::Time(0)*/, transform);
     		KDL::Frame frame_KDL, frame_KDL_old;
     		tf::TransformTFToKDL(transform, frame_KDL);
@@ -228,6 +229,7 @@ public:
     	{
     		ROS_ERROR("%s",ex.what());
     	}
+	std::cout << t.elapsed() << std::endl;
     }
 
 
