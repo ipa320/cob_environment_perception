@@ -162,9 +162,9 @@ public:
 		n_.param("aggregate_point_map/save_icp_fov_pc_" ,save_icp_fov_pc_,false);
 		n_.param("aggregate_point_map/save_map_fov_" ,save_map_fov_,false);
 		n_.param("aggregate_point_map/save_icp_map_" ,save_icp_map_,false);
-		n_.param("aggregate_point_map/vox_filter_setleafsize1" ,vox_filter_setleafsize1, 0.02);
-		n_.param("aggregate_point_map/vox_filter_setleafsize2" ,vox_filter_setleafsize2, 0.02);
-		n_.param("aggregate_point_map/vox_filter_setleafsize3" ,vox_filter_setleafsize3, 0.02);
+		n_.param("aggregate_point_map/vox_filter_setleafsize1" ,vox_filter_setleafsize1, 0.001);
+		n_.param("aggregate_point_map/vox_filter_setleafsize2" ,vox_filter_setleafsize2, 0.001);
+		n_.param("aggregate_point_map/vox_filter_setleafsize3" ,vox_filter_setleafsize3, 0.001);
 		n_.param("aggregate_point_map/r_limit_",r_limit_,0.1);
 		n_.param("aggregate_point_map/y_limit_",y_limit_,0.1);
 	    n_.param("aggregate_point_map/p_limit_",p_limit_,0.1);
@@ -173,7 +173,7 @@ public:
 
     void pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc)
     {
-    	//ROS_INFO("PointCloudSubCallback");
+    	ROS_INFO("PointCloudSubCallback");
     	StampedTransform transform;
     	try
     	{
@@ -217,7 +217,7 @@ public:
 					//addToMap(pc);
 				}
 				ctr_++;
-				//downsampleMap();
+				downsampleMap();
 				point_cloud_pub_.publish(map_);
 
     		}
@@ -294,6 +294,7 @@ public:
 		pcl::PointCloud<Point> pc_aligned;
 		icp.align(pc_aligned);
 		map_ += pc_aligned;
+		//TODO: voxel filter for map
 
 		//do logging
 		double time = t.elapsed();
