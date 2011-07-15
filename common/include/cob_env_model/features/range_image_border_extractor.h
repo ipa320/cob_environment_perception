@@ -53,7 +53,7 @@ namespace ipa_features
     * \author Bastian Steder
     * \ingroup features
     */
-  class PCL_EXPORTS RangeImageBorderExtractor : public pcl::Feature<pcl::PointWithRange,pcl::BorderDescription>
+  class RangeImageBorderExtractor : public pcl::Feature<pcl::PointWithRange,pcl::BorderDescription>
   {
     public:
       // =====TYPEDEFS=====
