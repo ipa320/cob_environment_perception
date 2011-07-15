@@ -456,9 +456,9 @@ int main(int argc, char** argv)
 	ExtractFeatures ef;
 
 	/// Load PCD file as input; better use binary PCD files, ascii files seem to generate corrupt point clouds
-	std::string directory("/home/goa/pcl_daten/test/");
+	std::string directory("/home/goa/pcl_daten/interaid/washing_machine/box/");
 	PointCloud::Ptr cloud_in = PointCloud::Ptr (new PointCloud);
-	pcl::io::loadPCDFile(directory+"karton_bin.pcd", *cloud_in);
+	pcl::io::loadPCDFile(directory+"box.pcd", *cloud_in);
 
 	/// Extract edges on the color image
 	cv::Mat color_image(cloud_in->height,cloud_in->width,CV_8UC3);
@@ -473,12 +473,12 @@ int main(int argc, char** argv)
 	cv::Mat border_image;
 
     /// Extract edges using curvature
-	/*ef.extractEdgesCurvature(cloud_in, cloud_out);
-	pcl::io::savePCDFileASCII (directory+"/edges/edges_curvature.pcd", cloud_out);*/
+	ef.extractEdgesCurvature(cloud_in, cloud_out);
+	pcl::io::savePCDFileASCII (directory+"/edges/edges_curvature.pcd", cloud_out);
 
 	/// Extract edges using boundary estimation
-	/*ef.extractEdgesBoundary(cloud_in, cloud_out, border_image);
-	pcl::io::savePCDFileASCII (directory+"/edges/edges_boundary.pcd", cloud_out);*/
+	ef.extractEdgesBoundary(cloud_in, cloud_out, border_image);
+	pcl::io::savePCDFileASCII (directory+"/edges/edges_boundary.pcd", cloud_out);
 
 	/// Extract edges using range image border extraction
 	pcl::RangeImage range_image_out;
@@ -495,7 +495,7 @@ int main(int argc, char** argv)
 	}
 
 	/// Combine two edge images
-	cv::Mat combined_edge_image = canny_image | border_image;
+	/*cv::Mat combined_edge_image = canny_image | border_image;
 	cv::imshow("combined edge image", combined_edge_image);
 	cv::waitKey();
 
@@ -520,7 +520,7 @@ int main(int argc, char** argv)
 			ss << directory << "/cluster/cluster_" << i << ".pcd";//add number to the stream
 			pcl::io::savePCDFileASCII (ss.str(), cluster);
 		}
-	}
+	}*/
 
 	return 0;
 }
