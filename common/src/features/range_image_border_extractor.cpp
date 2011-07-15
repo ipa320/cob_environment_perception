@@ -457,7 +457,7 @@ void RangeImageBorderExtractor::classifyBorders()
       border_description.x = x;
       border_description.y = y;
       BorderTraits& border_traits = border_description.traits;
-      
+
       //get shadow border info calculated by findAndEvaluateShadowBorders()
       /*ShadowBorderIndices* shadow_border_indices = shadow_border_informations_[index];
       if (shadow_border_indices == NULL)
@@ -468,6 +468,7 @@ void RangeImageBorderExtractor::classifyBorders()
       {
         BorderTraits& shadow_traits = border_descriptions_->points[/*shadow_border_*/index].traits;
         border_traits[BORDER_TRAIT__OBSTACLE_BORDER] = border_traits[BORDER_TRAIT__OBSTACLE_BORDER_LEFT] = true;
+        //std::cout << x << "," << y << ": l: " << border_scores_left_[index] << std::endl;
         //shadow_traits[BORDER_TRAIT__SHADOW_BORDER] = shadow_traits[BORDER_TRAIT__SHADOW_BORDER_RIGHT] = true;
         /*for (int index3=index-1; index3>shadow_border_index; --index3)
         {
@@ -481,6 +482,7 @@ void RangeImageBorderExtractor::classifyBorders()
       {
         BorderTraits& shadow_traits = border_descriptions_->points[/*shadow_border_*/index].traits;
         border_traits[BORDER_TRAIT__OBSTACLE_BORDER] = border_traits[BORDER_TRAIT__OBSTACLE_BORDER_RIGHT] = true;
+        //std::cout << x << "," << y << ": r: " << border_scores_right_[index] << std::endl;
         /*shadow_traits[BORDER_TRAIT__SHADOW_BORDER] = shadow_traits[BORDER_TRAIT__SHADOW_BORDER_LEFT] = true;
         for (int index3=index+1; index3<shadow_border_index; ++index3)
         {
@@ -494,6 +496,7 @@ void RangeImageBorderExtractor::classifyBorders()
       {
         BorderTraits& shadow_traits = border_descriptions_->points[/*shadow_border_*/index].traits;
         border_traits[BORDER_TRAIT__OBSTACLE_BORDER] = border_traits[BORDER_TRAIT__OBSTACLE_BORDER_TOP] = true;
+        //std::cout << x << "," << y << ": t: " << border_scores_top_[index] << std::endl;
         /*shadow_traits[BORDER_TRAIT__SHADOW_BORDER] = shadow_traits[BORDER_TRAIT__SHADOW_BORDER_BOTTOM] = true;
         for (int index3=index-width; index3>shadow_border_index; index3-=width)
         {
@@ -508,6 +511,7 @@ void RangeImageBorderExtractor::classifyBorders()
       {
         BorderTraits& shadow_traits = border_descriptions_->points[/*shadow_border_*/index].traits;
         border_traits[BORDER_TRAIT__OBSTACLE_BORDER] = border_traits[BORDER_TRAIT__OBSTACLE_BORDER_BOTTOM] = true;
+        //std::cout << x << "," << y << ": b: " << border_scores_bottom_[index] << std::endl;
         /*shadow_traits[BORDER_TRAIT__SHADOW_BORDER] = shadow_traits[BORDER_TRAIT__SHADOW_BORDER_TOP] = true;
         for (int index3=index+width; index3<shadow_border_index; index3+=width)
         {
