@@ -31,14 +31,14 @@
   	<param name="save_pc_aligned_" type="bool" value="false"/>
   	<param name="save_icp_fov_pc_" type="bool" value="false"/>
   	<param name="save_map_fov_" type="bool" value="false"/>
-  	<param name="save_icp_map_" type="bool" value="true"/>
+  	<param name="save_icp_map_" type="bool" value="false"/>
   	<param name="vox_filter_setleafsize1" type="double" value="0.02" />
   	<param name="vox_filter_setleafsize2" type="double" value="0.02" />
   	<param name="vox_filter_setleafsize3" type="double" value="0.02" />
-  	<param name="r_limit_" type="double" value="0.1" />
-  	<param name="p_limit_" type="double" value="0.1" />
-  	<param name="y_limit" type="double" value="0.1" />
-  	<param name="distance_limit_" type="double" value="0.3"/>
+  	<param name="r_limit_" type="double" value="0.05" />
+  	<param name="p_limit_" type="double" value="0.05" />
+  	<param name="y_limit" type="double" value="0.05" />
+  	<param name="distance_limit_" type="double" value="0.2"/>
   </node>  
   
   
