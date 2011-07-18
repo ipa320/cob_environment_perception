@@ -339,7 +339,7 @@ return;
 	/**Segments a color image using an edge image and the watershed algorithm
 	 *
 	 */
-	void segmentByEdgeImage(cv::Mat& color_image, cv::Mat& edge_image, cv::Mat& markers)
+	void segmentByEdgeImage(cv::Mat& color_image, cv::Mat& edge_image, cv::Mat& markers )
 	{
 		/// apply closing to connect edge segments, not working very well
 		cv::Mat edge_morph;
@@ -488,16 +488,11 @@ ef.extractEdgesCanny(color_image, canny_image);
 PointCloud cloud_out;
 cv::Mat border_image;
 
-<<<<<<< HEAD
     /// Extract edges using curvature
 /*ef.extractEdgesCurvature(cloud_in, cloud_out);
 pcl::io::savePCDFileASCII (directory+"/edges/edges_curvature.pcd", cloud_out);*/
-=======
-	/// Load PCD file as input; better use binary PCD files, ascii files seem to generate corrupt point clouds
-	std::string directory("/home/goa/pcl_daten/interaid/washing_machine/box/");
-	PointCloud::Ptr cloud_in = PointCloud::Ptr (new PointCloud);
-	pcl::io::loadPCDFile(directory+"box.pcd", *cloud_in);
->>>>>>> review-goa
+
+
 
 //Extract edges using boundary estimation
 // ef.extractEdgesBoundary(cloud_in, cloud_out, border_image);
@@ -507,7 +502,7 @@ pcl::io::savePCDFileASCII (directory+"/edges/edges_curvature.pcd", cloud_out);*/
 pcl::RangeImage range_image_out;
 ef.extractEdgesRangeImage(cloud_in, range_image_out, border_image);
 
-<<<<<<< HEAD
+
 cv::Mat element=cv::Mat::ones(3,3, CV_32F);
 cv::Mat border_image2;
 cv::Point anchor(-1,-1);
@@ -544,8 +539,8 @@ cv::Mat wshed_range_image;
 vector<vector<cv::Point> > big_contours_canny;
 vector<vector<cv::Point> > big_contours_range;
 
-ef.segmentByEdgeImage(color_image, canny_image, wshed_canny,big_contours_canny );
-ef.segmentByEdgeImage(color_image, border_image, wshed_range_image,big_contours_range);
+ef.segmentByEdgeImage(color_image, canny_image, wshed_canny );
+ef.segmentByEdgeImage(color_image, border_image, wshed_range_image);
 
 cv::Mat combined_wshed_image=wshed_canny | wshed_range_image;
 cv::watershed(color_image, combined_wshed_image);
@@ -572,7 +567,7 @@ wshed_image.at<cv::Vec3b>(i,j) = cv::Vec3b(255,255,255);
 else
 wshed_image.at<cv::Vec3b>(i,j) = colorTab[idx - 1];
 }
-=======
+
     /// Extract edges using curvature
 	ef.extractEdgesCurvature(cloud_in, cloud_out);
 	pcl::io::savePCDFileASCII (directory+"/edges/edges_curvature.pcd", cloud_out);
@@ -624,7 +619,7 @@ wshed_image.at<cv::Vec3b>(i,j) = colorTab[idx - 1];
 	}*/
 
 	return 0;
->>>>>>> review-goa
+
 }
 cv::imshow("wshed image", wshed_image);
 
