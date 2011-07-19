@@ -332,98 +332,122 @@ return;
 						border_image.at<unsigned char>(row,col) = 0;
 				}
 			}
-			//cv::imshow("range border image", border_image);
-			//cv::waitKey();
+			cv::imshow("range border image", border_image);
+			cv::waitKey();
 	}
 
 	/**Segments a color image using an edge image and the watershed algorithm
 	 *
 	 */
-	void segmentByEdgeImage(cv::Mat& color_image, cv::Mat& edge_image, cv::Mat& markers )
-	{
-		/// apply closing to connect edge segments, not working very well
-		cv::Mat edge_morph;
-		cv::morphologyEx(edge_image, edge_morph, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_RECT,cv::Size(3,3)), cv::Point(-1,-1), 1);
-		cv::imshow("Edge morph", edge_morph);
-		/// find contours in edge image
-		vector<vector<cv::Point> > contours;
-		cv::findContours(edge_image, contours, CV_RETR_LIST,CV_CHAIN_APPROX_NONE);
-		markers = cv::Mat::zeros(edge_image.size(), CV_32S);
-		std::cout << "num contours: " << contours.size() << std::endl;
-		for(int idx=0; idx<contours.size(); idx++)
-		cv::drawContours(markers, contours, idx, cv::Scalar(idx+1));
-		vector<cv::Vec3b> colorTab;
-		for(int i = 0; i < contours.size(); i++ )
-		{
-			int b = cv::theRNG().uniform(0, 255);
-			int g = cv::theRNG().uniform(0, 255);
-			int r = cv::theRNG().uniform(0, 255);
+	void segmentByEdgeImage(cv::Mat& color_image, cv::Mat& edge_image, cv::Mat& markers,vector<vector<cv::Point> >& big_contours)
+	    {
+	        /// apply closing to connect edge segments, not working very well
+	        cv::Mat edge_morph;
 
-			colorTab.push_back(cv::Vec3b((uchar)b, (uchar)g, (uchar)r));
-		}
-		cv::Mat vis_markers(markers.size(), CV_8UC3);
-		for(int i = 0; i < markers.rows; i++ )
-		{
-			for(int j = 0; j < markers.cols; j++ )
-			{
-				int idx = markers.at<int>(i,j);
-				if( idx == 0 )
-					vis_markers.at<cv::Vec3b>(i,j) = cv::Vec3b(0,0,0);
-				else
-					vis_markers.at<cv::Vec3b>(i,j) = colorTab[idx - 1];
-			}
-		}
-		cv::imshow("Contours", vis_markers);
-		cv::waitKey();
-		/// apply watershed algorithm
-		cv::watershed(color_image, markers);
-		cv::Mat wshed_image=cv::Mat(markers.size(), CV_8UC3);
-		for(int i = 0; i < markers.rows; i++ )
-		{
-			for(int j = 0; j < markers.cols; j++ )
-			{
-				int idx = markers.at<int>(i,j);
-				if( idx == -1 )
-					wshed_image.at<cv::Vec3b>(i,j) = cv::Vec3b(255,255,255);
-				else
-					wshed_image.at<cv::Vec3b>(i,j) = colorTab[idx - 1];
-			}
-		}
-		cv::imshow("wshed image", wshed_image);
-		cv::waitKey();
+	        //cv::morphologyEx(edge_image, edge_morph, cv::MORPH_OPEN, cv::getStructuringElement(cv::MORPH_RECT,cv::Size(3,3)), cv::Point(-1,-1), 1);
+	        cv::morphologyEx(edge_image, edge_morph, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_RECT,cv::Size(3,3)), cv::Point(-1,-1), 1);
+	        cv::imshow("Edge morph", edge_morph);
+	        /// find contours in edge image
+	        vector<vector<cv::Point> > contours;
+	        //vector<vector<cv::Point> > big_contours;
 
-		//cvtColor( canny_image, color_canny_image, CV_GRAY2BGR );
-		/*c_ptr = 0;
-		int pt_idx=0;
-		for (int row = 0; row < canny_image.rows; row++)
-		{
-			c_ptr = canny_image.ptr<unsigned char>(row);
-			for (int col = 0; col < canny_image.cols; col++, pt_idx++)
-			{
-				if(c_ptr[col]==255)
-				{
-					//pc_edge.points[pt_idx].boundary_point = 1;
-					pc_out.points[nr_p++] = pc->points[pt_idx];
-				}
-			}
-		}
-		//resize pc_out according to filtered points
-		pc_out.width = nr_p;
-		pc_out.height = 1;
-		pc_out.points.resize (nr_p);
-		pc_out.is_dense = true;*/
-		//cv::imshow("Canny Image", canny_image);
 
-		/*vector<cv::Vec4i> lines;
-		HoughLinesP( canny_image, lines, 1, CV_PI/180, 80, 30, 10 );
-		for( size_t i = 0; i < lines.size(); i++ )
-		{
-			line( color_canny_image, cv::Point(lines[i][0], lines[i][1]),
-				cv::Point(lines[i][2], lines[i][3]), cv::Scalar(0,0,255), 3, 8 );
+	        // all contours
+	        cv::findContours(edge_morph, contours, CV_RETR_LIST,CV_CHAIN_APPROX_NONE);
+	        //only extrem contours
+	        //cv::findContours(edge_morph, contours, CV_RETR_EXTERNAL,CV_CHAIN_APPROX_NONE);
 
-		}*/
+	        markers = cv::Mat::zeros(edge_image.size(), CV_32S);
 
-	}
+	        for(int i=0; i<contours.size();i++){
+	                  if (contours[i].size()>25){
+	                    vector<cv::Point> inside;
+	                    contours[i].swap(inside);
+	                    big_contours.push_back(inside) ;
+	                  }
+	                }
+
+	        for(int idx=0; idx<big_contours.size(); idx++)
+
+	        cv::drawContours(markers, big_contours, idx, cv::Scalar(idx+1));
+	        vector<cv::Vec3b> colorTab;
+	        for(int i = 0; i < big_contours.size(); i++ )
+	        {
+	            int b = cv::theRNG().uniform(0, 255);
+	            int g = cv::theRNG().uniform(0, 255);
+	            int r = cv::theRNG().uniform(0, 255);
+
+	            colorTab.push_back(cv::Vec3b((uchar)b, (uchar)g, (uchar)r));
+	        }
+	        cv::Mat vis_markers(markers.size(), CV_8UC3);
+	        for(int i = 0; i < markers.rows; i++ )
+	        {
+	            for(int j = 0; j < markers.cols; j++ )
+	            {
+	                int idx = markers.at<int>(i,j);
+	                if( idx == 0 )
+	                    vis_markers.at<cv::Vec3b>(i,j) = cv::Vec3b(0,0,0);
+	                else
+	                    vis_markers.at<cv::Vec3b>(i,j) = colorTab[idx - 1];
+	            }
+	        }
+	        ROS_INFO("ja ist da ");
+	        cv::imshow("Contours", vis_markers);
+	        cv::waitKey();
+	        /// apply watershed algorithm
+	        cv::watershed(color_image, markers);
+	               ROS_INFO("ja ist da ");
+
+	        cv::Mat wshed_image=cv::Mat(markers.size(), CV_8UC3);
+	        for(int i = 0; i < markers.rows; i++ )
+	        {
+	            for(int j = 0; j < markers.cols; j++ )
+	            {
+	                int idx = markers.at<int>(i,j);
+	                if( idx == -1 )
+	                    wshed_image.at<cv::Vec3b>(i,j) = cv::Vec3b(255,255,255);
+	                else
+	                    wshed_image.at<cv::Vec3b>(i,j) = colorTab[idx - 1];
+	            }
+	        }
+	        cv::imshow("wshed image", wshed_image);
+	        cv::waitKey();
+	    //    markers=vis_markers;
+
+	        //cvtColor( canny_image, color_canny_image, CV_GRAY2BGR );
+	        /*c_ptr = 0;
+	        int pt_idx=0;
+	        for (int row = 0; row < canny_image.rows; row++)
+	        {
+	            c_ptr = canny_image.ptr<unsigned char>(row);
+	            for (int col = 0; col < canny_image.cols; col++, pt_idx++)
+	            {
+	                if(c_ptr[col]==255)
+	                {
+	                    //pc_edge.points[pt_idx].boundary_point = 1;
+	                    pc_out.points[nr_p++] = pc->points[pt_idx];
+	                }
+	            }
+	        }
+	        //resize pc_out according to filtered points
+	        pc_out.width = nr_p;
+	        pc_out.height = 1;
+	        pc_out.points.resize (nr_p);
+	        pc_out.is_dense = true;*/
+	        //cv::imshow("Canny Image", canny_image);
+
+	        /*vector<cv::Vec4i> lines;
+	        HoughLinesP( canny_image, lines, 1, CV_PI/180, 80, 30, 10 );
+	        for( size_t i = 0; i < lines.size(); i++ )
+	        {
+	            line( color_canny_image, cv::Point(lines[i][0], lines[i][1]),
+	                cv::Point(lines[i][2], lines[i][3]), cv::Scalar(0,0,255), 3, 8 );
+
+	        }*/
+
+	    }
+
+
 
 	/**Segments a point cloud using a watershed image
 	 * returns clusters of points belonging together
@@ -466,15 +490,15 @@ int main(int argc, char** argv)
 ExtractFeatures ef;
 
 /// Load PCD file as input; better use binary PCD files, ascii files seem to generate corrupt point clouds
-std::string directory("/home/goa-hh/pcl_daten/test/");
+std::string directory("/home/heiko/pcl_daten/test/");
 PointCloud::Ptr cloud_in = PointCloud::Ptr (new PointCloud);
 int key=0;
 std::cout <<"Bitte wähle den Speicherslot 1,2 oder 3"<<std::endl;
 std:cin >>key;
 switch(key){
-case 1 : pcl::io::loadPCDFile(directory+"karton_bin.pcd", *cloud_in);break;
-case 2 : pcl::io::loadPCDFile(directory+"eingang.pcd", *cloud_in);break;
-case 3 : pcl::io::loadPCDFile(directory+"schreibtisch.pcd", *cloud_in);break;
+case 1 : pcl::io::loadPCDFile(directory+"karton2_bin.pcd", *cloud_in);break;
+case 2 : pcl::io::loadPCDFile(directory+"eingang_bin.pcd", *cloud_in);break;
+case 3 : pcl::io::loadPCDFile(directory+"schreibtisch_bin.pcd", *cloud_in);break;
 }
 /// Extract edges on the color image
 cv::Mat color_image(cloud_in->height,cloud_in->width,CV_8UC3);
@@ -508,7 +532,7 @@ cv::Mat border_image2;
 cv::Point anchor(-1,-1);
 int borderType=cv::BORDER_CONSTANT;
 cv::Scalar borderValue=cv::morphologyDefaultBorderValue();
-cv::erode(border_image, border_image,element,anchor,4,borderType,borderValue);
+cv::erode(border_image, border_image,element,anchor,2,borderType,borderValue);
 
         // cv::dilate(border_image, border_image,element,anchor,1,borderType,borderValue);
           //cv::erode(border_image, border_image,element,anchor,1,borderType,borderValue);
@@ -539,8 +563,9 @@ cv::Mat wshed_range_image;
 vector<vector<cv::Point> > big_contours_canny;
 vector<vector<cv::Point> > big_contours_range;
 
-ef.segmentByEdgeImage(color_image, canny_image, wshed_canny );
-ef.segmentByEdgeImage(color_image, border_image, wshed_range_image);
+ef.segmentByEdgeImage(color_image, canny_image, wshed_canny,big_contours_canny );
+ef.segmentByEdgeImage(color_image, border_image, wshed_range_image,big_contours_range);
+ROS_INFO("jo");
 
 cv::Mat combined_wshed_image=wshed_canny | wshed_range_image;
 cv::watershed(color_image, combined_wshed_image);
@@ -568,57 +593,7 @@ else
 wshed_image.at<cv::Vec3b>(i,j) = colorTab[idx - 1];
 }
 
-    /// Extract edges using curvature
-	ef.extractEdgesCurvature(cloud_in, cloud_out);
-	pcl::io::savePCDFileASCII (directory+"/edges/edges_curvature.pcd", cloud_out);
 
-	/// Extract edges using boundary estimation
-	ef.extractEdgesBoundary(cloud_in, cloud_out, border_image);
-	pcl::io::savePCDFileASCII (directory+"/edges/edges_boundary.pcd", cloud_out);
-
-	/// Extract edges using range image border extraction
-	pcl::RangeImage range_image_out;
-	ef.extractEdgesRangeImage(cloud_in, range_image_out, border_image);
-	pcl::io::savePCDFileASCII (directory+"/edges/edges_range_border.pcd", range_image_out);
-	pcl::visualization::PCLVisualizer viewer("3D Viewer");
-	viewer.addCoordinateSystem(1.0f);
-	viewer.addPointCloud<PointT>(cloud_in, "original point cloud");
-	viewer.addPointCloud<pcl::PointWithRange>(range_image_out.makeShared(), "border points");
-	while(!viewer.wasStopped())
-	{
-	    viewer.spinOnce(100);
-	    usleep(100000);
-	}
-
-	/// Combine two edge images
-	/*cv::Mat combined_edge_image = canny_image | border_image;
-	cv::imshow("combined edge image", combined_edge_image);
-	cv::waitKey();
-
-	/// Segment color image using canny edge image (can also be done with combined edge image)
-	cv::Mat wshed_canny;
-	ef.segmentByEdgeImage(color_image, canny_image, wshed_canny);
-
-	/// Cluster point cloud according to color image segmentation
-	std::vector<pcl::PointIndices> cluster_indices;
-	ef.getClusterIndices(cloud_in, wshed_canny, cluster_indices);
-	pcl::ExtractIndices<PointT> extract;
-	for(unsigned int i = 0; i < cluster_indices.size(); i++)
-	{
-		if(cluster_indices[i].indices.size()>100)
-		{
-			pcl::PointCloud<PointT> cluster;
-			extract.setInputCloud (cloud_in);
-			extract.setIndices (boost::make_shared<const pcl::PointIndices> (cluster_indices[i]));
-			extract.setNegative (false);
-			extract.filter (cluster);
-			stringstream ss; //create a stringstream
-			ss << directory << "/cluster/cluster_" << i << ".pcd";//add number to the stream
-			pcl::io::savePCDFileASCII (ss.str(), cluster);
-		}
-	}*/
-
-	return 0;
 
 }
 cv::imshow("wshed image", wshed_image);
@@ -631,6 +606,7 @@ cv::waitKey();
 
 /// Cluster point cloud according to color image segmentation
 std::vector<pcl::PointIndices> cluster_indices;
+ROS_INFO("test");
 ef.getClusterIndices(cloud_in, wshed_canny, cluster_indices);
 pcl::ExtractIndices<pcl::PointXYZRGB> extract;
 for(unsigned int i = 0; i < cluster_indices.size(); i++)
@@ -643,8 +619,8 @@ extract.setIndices (boost::make_shared<const pcl::PointIndices> (cluster_indices
 extract.setNegative (false);
 extract.filter (cluster);
 stringstream ss; //create a stringstream
-ss << directory << "/cluster/cluster_" << i << ".pcd";//add number to the stream
-pcl::io::savePCDFileASCII (ss.str(), cluster);
+//ss << directory << "/cluster/cluster_" << i << ".pcd";//add number to the stream
+//pcl::io::savePCDFileASCII (ss.str(), cluster);
 }
 }
 
