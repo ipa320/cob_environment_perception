@@ -85,8 +85,8 @@ namespace ipa_features
        */
       struct Parameters
       {
-        Parameters () : pixel_radius_borders (5/*3*/), pixel_radius_plane_extraction (2), pixel_radius_border_direction (2),
-                       minimum_border_probability (0.9/*0.8*/), pixel_radius_principal_curvature (2) {}
+        Parameters () : pixel_radius_borders (3/*3*/), pixel_radius_plane_extraction (2), pixel_radius_border_direction (2),
+                       minimum_border_probability (0.775/*0.8*/), pixel_radius_principal_curvature (2) {}
         int pixel_radius_borders;
         int pixel_radius_plane_extraction;
         int pixel_radius_border_direction;

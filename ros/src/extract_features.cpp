@@ -345,73 +345,76 @@ return;
 	        cv::Mat edge_morph;
 
 	        //cv::morphologyEx(edge_image, edge_morph, cv::MORPH_OPEN, cv::getStructuringElement(cv::MORPH_RECT,cv::Size(3,3)), cv::Point(-1,-1), 1);
-	        cv::morphologyEx(edge_image, edge_morph, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_RECT,cv::Size(3,3)), cv::Point(-1,-1), 1);
-	        cv::imshow("Edge morph", edge_morph);
+	        //cv::morphologyEx(edge_image, edge_morph, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_RECT,cv::Size(3,3)), cv::Point(-1,-1), 1);
+	       // cv::imshow("Edge morph", edge_morph);
 	        /// find contours in edge image
 	        vector<vector<cv::Point> > contours;
 	        //vector<vector<cv::Point> > big_contours;
 
 
 	        // all contours
-	        cv::findContours(edge_morph, contours, CV_RETR_LIST,CV_CHAIN_APPROX_NONE);
+	        cv::findContours(edge_image, contours, CV_RETR_LIST,CV_CHAIN_APPROX_NONE);
 	        //only extrem contours
 	        //cv::findContours(edge_morph, contours, CV_RETR_EXTERNAL,CV_CHAIN_APPROX_NONE);
-
 	        markers = cv::Mat::zeros(edge_image.size(), CV_32S);
 
+
 	        for(int i=0; i<contours.size();i++){
-	                  if (contours[i].size()>25){
+	                  if (contours[i].size()>50){
 	                    vector<cv::Point> inside;
 	                    contours[i].swap(inside);
 	                    big_contours.push_back(inside) ;
 	                  }
 	                }
+	        ExtractFeatures ef;
+	        int contours_size=big_contours.size();
+	        ef.vis_markers(big_contours, markers);
+	        ef.watershed(color_image,markers, contours_size);
 
-	        for(int idx=0; idx<big_contours.size(); idx++)
 
-	        cv::drawContours(markers, big_contours, idx, cv::Scalar(idx+1));
-	        vector<cv::Vec3b> colorTab;
-	        for(int i = 0; i < big_contours.size(); i++ )
-	        {
-	            int b = cv::theRNG().uniform(0, 255);
-	            int g = cv::theRNG().uniform(0, 255);
-	            int r = cv::theRNG().uniform(0, 255);
-
-	            colorTab.push_back(cv::Vec3b((uchar)b, (uchar)g, (uchar)r));
-	        }
-	        cv::Mat vis_markers(markers.size(), CV_8UC3);
-	        for(int i = 0; i < markers.rows; i++ )
-	        {
-	            for(int j = 0; j < markers.cols; j++ )
-	            {
-	                int idx = markers.at<int>(i,j);
-	                if( idx == 0 )
-	                    vis_markers.at<cv::Vec3b>(i,j) = cv::Vec3b(0,0,0);
-	                else
-	                    vis_markers.at<cv::Vec3b>(i,j) = colorTab[idx - 1];
-	            }
-	        }
-	        ROS_INFO("ja ist da ");
-	        cv::imshow("Contours", vis_markers);
-	        cv::waitKey();
+//	        for(int idx=0; idx<big_contours.size(); idx++)
+//
+//	        cv::drawContours(markers, big_contours, idx, cv::Scalar(idx+1));
+//	        vector<cv::Vec3b> colorTab;
+//	        for(int i = 0; i < big_contours.size(); i++ )
+//	        {
+//	            int b = cv::theRNG().uniform(0, 255);
+//	            int g = cv::theRNG().uniform(0, 255);
+//	            int r = cv::theRNG().uniform(0, 255);
+//
+//	            colorTab.push_back(cv::Vec3b((uchar)b, (uchar)g, (uchar)r));
+//	        }
+//	        cv::Mat vis_markers(markers.size(), CV_8UC3);
+//	        for(int i = 0; i < markers.rows; i++ )
+//	        {
+//	            for(int j = 0; j < markers.cols; j++ )
+//	            {
+//	                int idx = markers.at<int>(i,j);
+//	                if( idx == 0 )
+//	                    vis_markers.at<cv::Vec3b>(i,j) = cv::Vec3b(0,0,0);
+//	                else
+//	                    vis_markers.at<cv::Vec3b>(i,j) = colorTab[idx - 1];
+//	            }
+//	        }
+//	        cv::imshow("Contours", vis_markers);
+//	        cv::waitKey();
 	        /// apply watershed algorithm
-	        cv::watershed(color_image, markers);
-	               ROS_INFO("ja ist da ");
-
-	        cv::Mat wshed_image=cv::Mat(markers.size(), CV_8UC3);
-	        for(int i = 0; i < markers.rows; i++ )
-	        {
-	            for(int j = 0; j < markers.cols; j++ )
-	            {
-	                int idx = markers.at<int>(i,j);
-	                if( idx == -1 )
-	                    wshed_image.at<cv::Vec3b>(i,j) = cv::Vec3b(255,255,255);
-	                else
-	                    wshed_image.at<cv::Vec3b>(i,j) = colorTab[idx - 1];
-	            }
-	        }
-	        cv::imshow("wshed image", wshed_image);
-	        cv::waitKey();
+//	        cv::watershed(color_image, markers);
+//
+//	        cv::Mat wshed_image=cv::Mat(markers.size(), CV_8UC3);
+//	        for(int i = 0; i < markers.rows; i++ )
+//	        {
+//	            for(int j = 0; j < markers.cols; j++ )
+//	            {
+//	                int idx = markers.at<int>(i,j);
+//	                if( idx == -1 )
+//	                    wshed_image.at<cv::Vec3b>(i,j) = cv::Vec3b(255,255,255);
+//	                else
+//	                    wshed_image.at<cv::Vec3b>(i,j) = colorTab[idx - 1];
+//	            }
+//	        }
+//	        cv::imshow("wshed image", wshed_image);
+//	        cv::waitKey();
 	    //    markers=vis_markers;
 
 	        //cvtColor( canny_image, color_canny_image, CV_GRAY2BGR );
@@ -478,6 +481,87 @@ return;
 	}
 
 
+
+
+void watershed(cv::Mat &color_image , cv::Mat &combined_wshed_image , int &contours_size ){
+
+    cv::watershed(color_image, combined_wshed_image);
+
+	vector<cv::Vec3b> colorTab;
+
+	for(int i = 0; i < contours_size; i++ )
+	{
+	int b = cv::theRNG().uniform(0, 255);
+	int g = cv::theRNG().uniform(0, 255);
+	int r = cv::theRNG().uniform(0, 255);
+
+	colorTab.push_back(cv::Vec3b((uchar)b, (uchar)g, (uchar)r));
+	}
+	cv::Mat wshed_image=cv::Mat(combined_wshed_image.size(), CV_8UC3);
+	for(int i = 0; i < combined_wshed_image.rows; i++ )
+	{
+	for(int j = 0; j < combined_wshed_image.cols; j++ )
+	{
+	int idx = combined_wshed_image.at<int>(i,j);
+	if( idx == -1 )
+	wshed_image.at<cv::Vec3b>(i,j) = cv::Vec3b(255,255,255);
+	else
+	wshed_image.at<cv::Vec3b>(i,j) = colorTab[idx - 1];
+	}
+
+
+
+	}
+	cv::imshow("wshed image", wshed_image);
+
+
+
+
+	cv::waitKey();
+
+}
+
+void vis_markers(vector<vector<cv::Point> > big_contours ,cv::Mat &markers ){
+
+
+    for(int idx=0; idx<big_contours.size(); idx++)
+
+    cv::drawContours(markers, big_contours, idx, cv::Scalar(idx+1));
+    vector<cv::Vec3b> colorTab;
+    for(int i = 0; i < big_contours.size(); i++ )
+    {
+        int b = cv::theRNG().uniform(0, 255);
+        int g = cv::theRNG().uniform(0, 255);
+        int r = cv::theRNG().uniform(0, 255);
+
+        colorTab.push_back(cv::Vec3b((uchar)b, (uchar)g, (uchar)r));
+    }
+    cv::Mat vis_markers(markers.size(), CV_8UC3);
+    for(int i = 0; i < markers.rows; i++ )
+    {
+        for(int j = 0; j < markers.cols; j++ )
+        {
+            int idx = markers.at<int>(i,j);
+            if( idx == 0 )
+                vis_markers.at<cv::Vec3b>(i,j) = cv::Vec3b(0,0,0);
+            else
+                vis_markers.at<cv::Vec3b>(i,j) = colorTab[idx - 1];
+        }
+    }
+    cv::imshow("Contours", vis_markers);
+    cv::waitKey();
+}
+
+void add2contours(vector<vector<cv::Point> > &input_contour1 ,vector<vector<cv::Point> > &input_contour2 , vector<vector<cv::Point> > &output_contour)
+{
+	for(int i=0 ; i<input_contour1.size();i++){
+
+	output_contour.push_back(input_contour1[i]);
+	}
+	for(int i=0 ; i<input_contour2.size();i++){
+	output_contour.push_back(input_contour2[i]);
+	}
+}
 };
 
 
@@ -490,7 +574,7 @@ int main(int argc, char** argv)
 ExtractFeatures ef;
 
 /// Load PCD file as input; better use binary PCD files, ascii files seem to generate corrupt point clouds
-std::string directory("/home/heiko/pcl_daten/test/");
+std::string directory("/home/goa-hh/pcl_daten/test/");
 PointCloud::Ptr cloud_in = PointCloud::Ptr (new PointCloud);
 int key=0;
 std::cout <<"Bitte wähle den Speicherslot 1,2 oder 3"<<std::endl;
@@ -532,7 +616,8 @@ cv::Mat border_image2;
 cv::Point anchor(-1,-1);
 int borderType=cv::BORDER_CONSTANT;
 cv::Scalar borderValue=cv::morphologyDefaultBorderValue();
-cv::erode(border_image, border_image,element,anchor,2,borderType,borderValue);
+//cv::dilate(border_image, border_image,element,anchor,1,borderType,borderValue);
+cv::erode(border_image, border_image,element,anchor,1,borderType,borderValue);
 
         // cv::dilate(border_image, border_image,element,anchor,1,borderType,borderValue);
           //cv::erode(border_image, border_image,element,anchor,1,borderType,borderValue);
@@ -560,53 +645,64 @@ cv::waitKey();
 /// Segment color image using canny edge image (can also be done with combined edge image)
 cv::Mat wshed_canny;
 cv::Mat wshed_range_image;
+cv::Mat wshed_combined_image;
+
 vector<vector<cv::Point> > big_contours_canny;
 vector<vector<cv::Point> > big_contours_range;
+vector<vector<cv::Point> > big_contours_combined;
 
 ef.segmentByEdgeImage(color_image, canny_image, wshed_canny,big_contours_canny );
 ef.segmentByEdgeImage(color_image, border_image, wshed_range_image,big_contours_range);
-ROS_INFO("jo");
+ef.segmentByEdgeImage(color_image, combined_edge_image, wshed_combined_image,big_contours_combined );
+
 
 cv::Mat combined_wshed_image=wshed_canny | wshed_range_image;
-cv::watershed(color_image, combined_wshed_image);
+cv::Mat all_image = canny_image | border_image;
+int contours_size=big_contours_canny.size()+big_contours_range.size();
 
+vector<vector<cv::Point> > all_contours;
+cv::Mat markers2 = cv::Mat::zeros(all_image.size(), CV_32S);
 
-vector<cv::Vec3b> colorTab;
-
-for(int i = 0; i < big_contours_canny.size()+big_contours_range.size(); i++ )
-{
-int b = cv::theRNG().uniform(0, 255);
-int g = cv::theRNG().uniform(0, 255);
-int r = cv::theRNG().uniform(0, 255);
-
-colorTab.push_back(cv::Vec3b((uchar)b, (uchar)g, (uchar)r));
-}
-cv::Mat wshed_image=cv::Mat(combined_wshed_image.size(), CV_8UC3);
-for(int i = 0; i < combined_wshed_image.rows; i++ )
-{
-for(int j = 0; j < combined_wshed_image.cols; j++ )
-{
-int idx = combined_wshed_image.at<int>(i,j);
-if( idx == -1 )
-wshed_image.at<cv::Vec3b>(i,j) = cv::Vec3b(255,255,255);
-else
-wshed_image.at<cv::Vec3b>(i,j) = colorTab[idx - 1];
-}
-
-
-
-}
-cv::imshow("wshed image", wshed_image);
-
-
-
-
-cv::imshow("combined wshed image", combined_wshed_image);
-cv::waitKey();
+ef.add2contours(big_contours_canny , big_contours_range , all_contours);
+ef.vis_markers(all_contours,markers2);
+ef.watershed(color_image , markers2 , contours_size);
+//cv::watershed(color_image, combined_wshed_image);
+//
+//
+//vector<cv::Vec3b> colorTab;
+//
+//for(int i = 0; i < big_contours_canny.size()+big_contours_range.size(); i++ )
+//{
+//int b = cv::theRNG().uniform(0, 255);
+//int g = cv::theRNG().uniform(0, 255);
+//int r = cv::theRNG().uniform(0, 255);
+//
+//colorTab.push_back(cv::Vec3b((uchar)b, (uchar)g, (uchar)r));
+//}
+//cv::Mat wshed_image=cv::Mat(combined_wshed_image.size(), CV_8UC3);
+//for(int i = 0; i < combined_wshed_image.rows; i++ )
+//{
+//for(int j = 0; j < combined_wshed_image.cols; j++ )
+//{
+//int idx = combined_wshed_image.at<int>(i,j);
+//if( idx == -1 )
+//wshed_image.at<cv::Vec3b>(i,j) = cv::Vec3b(255,255,255);
+//else
+//wshed_image.at<cv::Vec3b>(i,j) = colorTab[idx - 1];
+//}
+//
+//
+//
+//}
+//cv::imshow("wshed image", wshed_image);
+//
+//
+//
+//
+//cv::waitKey();
 
 /// Cluster point cloud according to color image segmentation
 std::vector<pcl::PointIndices> cluster_indices;
-ROS_INFO("test");
 ef.getClusterIndices(cloud_in, wshed_canny, cluster_indices);
 pcl::ExtractIndices<pcl::PointXYZRGB> extract;
 for(unsigned int i = 0; i < cluster_indices.size(); i++)
