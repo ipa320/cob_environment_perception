@@ -1,6 +1,6 @@
 /****************************************************************
  *
- * Copyright (c) 2010
+ * Copyright (c) 2011
  *
  * Fraunhofer Institute for Manufacturing Engineering
  * and Automation (IPA)
@@ -14,14 +14,11 @@
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
- * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
- * Supervised by:
+ * Author: Waqas Tanveer, email:waqas.informatik@googlemail.com
+ * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 02/2011
- * ToDo:
- *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
+ * Date of creation: 05/2011
+
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
@@ -50,13 +47,58 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
+//##################
+//#### includes ####
 
-#include "pcl/impl/instantiate.hpp"
+// PCL includes
 #include "pcl/point_types.h"
-#include "cob_env_model/cpc_point.h"
-#include "cob_env_model/field_of_view_segmentation.h"
-#include "cob_env_model/field_of_view_segmentation.hpp"
+#include "pcl/impl/instantiate.hpp"
+#include <cob_env_model/point_types.h>
+
+// cob_env_model includes
+#include "cob_env_model/filters/amplitude_filter.h"
+#include "cob_env_model/filters/impl/amplitude_filter.hpp"
 
 
-PCL_INSTANTIATE(FieldOfViewSegmentation, PCL_XYZ_POINT_TYPES);
-//PCL_INSTANTIATE(FieldOfViewSegmentation, (CPCPoint));
+void
+cob_env_model::AmplitudeFilter<sensor_msgs::PointCloud2>::applyFilter (PointCloud2 &pc_out)
+{
+  pc_out.header = input_->header;
+  pc_out.fields = input_->fields;
+  pc_out.point_step = input_->point_step;
+  pc_out.data.resize (input_->data.size());
+
+  int x_offset = 0, i_offset = 0;
+  for (size_t d = 0; d < input_->fields.size(); ++d)
+  {
+    if(input_->fields[d].name == "x")
+      x_offset = input_->fields[d].offset;
+    if(input_->fields[d].name == "amplitude")
+      i_offset = input_->fields[d].offset;
+  }
+  //std::cout<<" x_offset: "<<x_offset<<std::endl;
+  //std::cout<<" i_offset: "<<i_offset<<std::endl;
+
+    int nr_p = 0;
+    float amplitude;
+    const unsigned int total_points = input_->width*input_->height;
+
+    for ( unsigned int pc_msg_idx = 0; pc_msg_idx < total_points; pc_msg_idx++)
+    {
+      amplitude = *(float*)&input_->data[pc_msg_idx * input_->point_step + i_offset];
+      if(amplitude > amplitude_min_threshold_  && amplitude < amplitude_max_threshold_ )
+      {
+        memcpy(&pc_out.data[nr_p * pc_out.point_step], &input_->data[pc_msg_idx * pc_out.point_step],pc_out.point_step);
+        nr_p++;
+      }
+    }
+
+    pc_out.width = nr_p;
+    pc_out.height = 1;
+    pc_out.data.resize(nr_p*pc_out.point_step);
+    pc_out.is_dense = true;
+
+}
+
+using namespace pcl;
+PCL_INSTANTIATE(AmplitudeFilter, (PointXYZA));
