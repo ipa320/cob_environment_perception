@@ -626,7 +626,7 @@ cv::erode(border_image, border_image,element,anchor,1,borderType,borderValue);
         cv::imshow("border_image", border_image);
 
 
-/*pcl::io::savePCDFileASCII (directory+"/edges/edges_range_border.pcd", range_image_out);
+pcl::io::savePCDFileASCII (directory+"/edges/edges_range_border.pcd", range_image_out);
 pcl::visualization::PCLVisualizer viewer("3D Viewer");
 viewer.addCoordinateSystem(1.0f);
 viewer.addPointCloud<pcl::PointXYZRGB>(cloud_in, "original point cloud");
@@ -635,7 +635,7 @@ while(!viewer.wasStopped())
 {
 viewer.spinOnce(100);
 usleep(100000);
-}*/
+}
 
 /// Combine two edge images
 cv::Mat combined_edge_image = canny_image | border_image;

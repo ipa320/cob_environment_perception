@@ -47,6 +47,8 @@ ${PROJECT_SOURCE_DIR}/ros/include)
 #rosbuild_add_executable(icp_registration_node ros/src/icp_registration.cpp)
 #rosbuild_add_executable(point_cloud_filter_node ros/src/point_cloud_filter.cpp)
 rosbuild_add_executable(extract_features_node ros/src/extract_features.cpp)
+rosbuild_add_executable(test_range ros/src/test_range_edges.cpp)
+
 #rosbuild_add_executable(test_icp ros/src/test_icp.cpp)
 #rosbuild_add_executable(bag_to_pcd ros/src/tools/bag_to_pcd.cpp)
 rosbuild_add_executable(pointcloud_to_pcd ros/src/tools/pointcloud_to_pcd.cpp)
@@ -84,6 +86,8 @@ rosbuild_add_compile_flags(extract_features_node -D__LINUX__)
 
 
 # add compile flag
+target_link_libraries(test_range cob_env_model)
+
 target_link_libraries(test_cob_filters cob_env_model)
 target_link_libraries(extract_features_node cob_env_model)
 #target_link_libraries (planar_segmentation ${PCL_IO_LIBRARY} ${PCL_FILTERS_LIBRARY} ${PCL_SEGMENTATION_LIBRARY})
