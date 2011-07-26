@@ -1,0 +1,44 @@
+<?xml version="1.0"?>
+<launch>
+
+  <node pkg="nodelet" type="nodelet" name="pcl_manager"  args="manager" output="screen"/>
+ 
+  <!-- Run amplitude filter --> 
+  
+  <node pkg="nodelet" type="nodelet" name="amplitude_filter_nodelet" args="load cob_env_model/AmplitudeFilter pcl_manager" output="screen">
+  	<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
+  	<remap from="point_cloud2_filtered" to="/cob_env_model/point_cloud2_filtered_amp"/>
+	<param name="amplitude_min_threshold" type="double" value="2000"/>
+	<param name="amplitude_max_threshold" type="double" value="60000"/>
+  </node>  
+  
+  <!-- Run confidence filter 
+  <node pkg="nodelet" type="nodelet" name="confidence_filter_nodelet" args="load cob_env_model/ConfidenceFilter pcl_manager" output="screen">
+  	<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
+  	<remap from="point_cloud2_filtered" to="/cob_env_model/point_cloud2_filtered_conf"/>
+	<param name="confidence_threshold" type="double" value="68000" />
+  </node -->  
+  
+  <!-- Run jump edges filter  -->
+  <node pkg="nodelet" type="nodelet" name="jump_edge_filter_nodelet" args="load cob_env_model/JumpEdgeFilter pcl_manager" output="screen">
+  	<!--remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/-->
+  	<remap from="point_cloud2" to="/cob_env_model/point_cloud2_filtered_amp"/>
+  	<remap from="point_cloud2_filtered" to="/cob_env_model/point_cloud2_filtered_jumpedge"/>
+  	<param name = "upper_angle_deg" type="double" value="170.0"/>
+  </node> 
+  
+  <!-- Run StatisticalOutlierRemoval filter -->  
+  <node pkg="nodelet" type="nodelet" name="outlier_removal" args="load pcl/StatisticalOutlierRemoval pcl_manager" output="screen">
+    <!-- remap from="~input" to="point_cloud2_filtered_jumpedge"/-->
+    <remap from="~input" to="/cob_env_model/point_cloud2_filtered_jumpedge"/>
+    <rosparam>
+      mean_k: 30
+      stddev: 0.5
+      negative: False
+    </rosparam> 
+  </node> 
+  
+  <node pkg="rosbag" type="play" name="bag_play" args="/home/goa-wq/fixed_no_move_table.bag -l" output="screen" />
+  <node pkg="rviz" type="rviz" respawn="false" name="rviz" />
+  
+</launch>
