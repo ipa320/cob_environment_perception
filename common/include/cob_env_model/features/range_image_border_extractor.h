@@ -85,8 +85,8 @@ namespace ipa_features
        */
       struct Parameters
       {
-        Parameters () : pixel_radius_borders (3/*3*/), pixel_radius_plane_extraction (2), pixel_radius_border_direction (2),
-                       minimum_border_probability (0.775/*0.8*/), pixel_radius_principal_curvature (2) {}
+        Parameters () : pixel_radius_borders (5/*3*/), pixel_radius_plane_extraction (2), pixel_radius_border_direction (2),
+                       minimum_border_probability (0.7/*0.8*/), pixel_radius_principal_curvature (2) {}
         int pixel_radius_borders;
         int pixel_radius_plane_extraction;
         int pixel_radius_border_direction;
@@ -111,6 +111,11 @@ namespace ipa_features
       /** \brief Provide a pointer to the range image
         * \param range_image a pointer to the range_image
         */
+      void
+      setPixelRradiusBorders(int radius){parameters_.pixel_radius_borders=radius; }
+      void
+      setMinimumBorderProbability(float border){parameters_.minimum_border_probability=border; }
+
       void
       setRangeImage (const pcl::RangeImage* range_image);
       
