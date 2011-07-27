@@ -86,7 +86,7 @@ float RangeImageBorderExtractor::getNeighborDistanceChangeScore(
   }
   
   float neighbor_distance_squared = squaredEuclideanDistance(neighbor, point);
-  //cout << "dist_squared: " << local_surface.max_neighbor_distance_squared << ", " << neighbor_distance_squared << std::endl;
+  //cout << x << "," << y << ": dist_squared: " << local_surface.max_neighbor_distance_squared << ", " << neighbor_distance_squared << std::endl;
   //neighbour distance smaller than maximum neighbour distance on that surface patch
   if (neighbor_distance_squared <= local_surface.max_neighbor_distance_squared)
     return 0.0f;
