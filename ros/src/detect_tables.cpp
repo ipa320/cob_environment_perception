@@ -131,6 +131,7 @@ public:
     //input should be point cloud that is amplitude filetered, statistical outlier filtered, voxel filtered and the floor cut, coordinate system should be /map
 	void pointCloudSubCallback(const pcl::PointCloud<pcl::PointXYZ>::Ptr& cloud)
 	{
+		std::cout << "Detect table callback" << std::endl;
 		std::fstream filestr;
 		filestr.open("/home/goa/pcl_daten/table/table_detection/meas.csv", std::fstream::in | std::fstream::out | std::fstream::app);
 		boost::timer t;
@@ -149,7 +150,7 @@ public:
 		cluster.setInputCloud (cloud);
 		cluster.extract (table_clusters);
 
-		//ROS_INFO ("Number of table clusters found: %d", (int)table_clusters.size ());
+		ROS_INFO ("Number of table clusters found: %d", (int)table_clusters.size ());
 
 		pcl::ExtractIndices<pcl::PointXYZ> extract;
 
@@ -164,7 +165,7 @@ public:
 			ss1 << "/home/goa/pcl_daten/table_detection/cluster_" << i << ".pcd";
 			pcl::io::savePCDFileASCII (ss1.str(), table_cluster);*/
 
-			pcl::PointCloud<pcl::PointXYZ>::ConstPtr table_cluster_ptr = boost::make_shared<const pcl::PointCloud<pcl::PointXYZ> > (table_cluster);
+			pcl::PointCloud<pcl::PointXYZ>::ConstPtr table_cluster_ptr = table_cluster.makeShared();
 
 			if (table_cluster_ptr->points.size() < (unsigned int)300)
 			{
@@ -200,17 +201,17 @@ public:
 
 			if (coefficients_plane->values.size () <=3)
 			{
-				//ROS_INFO("Failed to detect table in scan, skipping cluster");
+				ROS_INFO("Failed to detect table in scan, skipping cluster");
 				continue;
 			}
 			if ( inliers_plane->indices.size() < (unsigned int)150)
 			{
-				//ROS_INFO("Plane detection has %d inliers, below min threshold of %d, skipping cluster", (int)inliers_plane->indices.size(), 150);
+				ROS_INFO("Plane detection has %d inliers, below min threshold of %d, skipping cluster", (int)inliers_plane->indices.size(), 150);
 				continue;
 			}
 			if(fabs(coefficients_plane->values[0]) > 0.1 || fabs(coefficients_plane->values[1]) > 0.1 || fabs(coefficients_plane->values[2]) < 0.9)
 			{
-				//ROS_INFO("Detected plane not perpendicular to z axis, skipping cluster");
+				ROS_INFO("Detected plane not perpendicular to z axis, skipping cluster");
 				continue;
 			}
 
@@ -222,7 +223,7 @@ public:
 			extractIndices.filter(dominant_plane);
 			//extractIndices.setNegative(true);
 			//extractIndices.filter(cloud);
-			//ROS_INFO("Plane has %d inliers", (int)inliers_plane->indices.size());
+			ROS_INFO("Plane has %d inliers", (int)inliers_plane->indices.size());
 			//ROS_INFO("Saved plane to %s", ss.str());
 
 			  // Project the model inliers

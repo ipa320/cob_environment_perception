@@ -97,7 +97,7 @@ using namespace tf;
 //#### node class ####
 class AggregatePointMap : public pcl_ros::PCLNodelet
 {
-	typedef pcl::PointXYZ Point;
+	typedef pcl::PointXYZRGB Point;
 
 public:
     // Constructor
@@ -143,7 +143,7 @@ public:
 		point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &AggregatePointMap::pointCloudSubCallback, this);
 		point_cloud_pub_ = n_.advertise<pcl::PointCloud<Point> >("point_cloud2_map",1);
 		point_cloud_pub_aligned_ = n_.advertise<pcl::PointCloud<Point> >("point_cloud2_aligned",1);
-		point_cloud_pub_aligned2_ = n_.advertise<pcl::PointCloud<Point> >("pc_aligned_and_boundary",1);
+		//point_cloud_pub_aligned2_ = n_.advertise<pcl::PointCloud<Point> >("pc_aligned_and_boundary",1);
 		fov_marker_pub_ = n_.advertise<visualization_msgs::Marker>("fov_marker",10);
 		get_fov_srv_client_ = n_.serviceClient<cob_env_model::GetFieldOfView>("get_fov");
 		//TODO: Read parameters from launch file
@@ -174,7 +174,7 @@ public:
     void pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc)
     {
 	boost::timer t;
-    	ROS_INFO("PointCloudSubCallback");
+    	//ROS_INFO("PointCloudSubCallback");
     	StampedTransform transform;
     	try
     	{
@@ -229,7 +229,7 @@ public:
     	{
     		ROS_ERROR("%s",ex.what());
     	}
-	std::cout << t.elapsed() << std::endl;
+	//std::cout << t.elapsed() << std::endl;
     }
 
 
@@ -314,13 +314,14 @@ public:
 				ss1 << "/home/goa/pcl_daten/table/icp_fov/map_" << ctr_ << ".pcd";
 				pcl::io::savePCDFileASCII (ss1.str(), map_);
 			}
-		frustum += pc_aligned;
-		pcl::VoxelGrid<Point> vox_filter;
+		//frustum += pc_aligned;
+		/*pcl::VoxelGrid<Point> vox_filter;
 		vox_filter.setInputCloud(frustum.makeShared());
 		vox_filter.setLeafSize(0.005, 0.005, 0.005);
-		vox_filter.filter(frustum);
-		point_cloud_pub_aligned_.publish(frustum);
-		point_cloud_pub_aligned2_.publish(frustum);
+		vox_filter.filter(frustum);*/
+		pc_aligned.header.frame_id = "/map";
+		point_cloud_pub_aligned_.publish(pc_aligned);
+		//point_cloud_pub_aligned2_.publish(frustum);
 
 		if(save_pc_aligned_==true)
 		{
