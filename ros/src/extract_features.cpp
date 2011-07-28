@@ -72,13 +72,15 @@
 #include "pcl/io/pcd_io.h"
 #include "pcl/features/normal_3d_omp.h"
 #include "pcl/features/normal_3d.h"
-#include <pcl/features/boundary.h>
+#include <cob_env_model/features/boundary.h>
+#include <pcl/features/principal_curvatures.h>
 //#include <pcl/range_image/range_image.h>
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/PointIndices.h>
 #include "pcl/filters/extract_indices.h"
 #include <pcl/range_image/range_image.h>
 #include <cob_env_model/features/range_image_border_extractor.h>
+#include <pcl/features/integral_image_normal.h>
 
 // ROS message includes
 //#include <sensor_msgs/PointCloud2.h>
@@ -116,6 +118,20 @@ public:
     /**Estimates the point normals for cloud and returns cloud_n*/
 	void estimatePointNormals(PointCloud& cloud, pcl::PointCloud<pcl::PointXYZRGBNormal>& cloud_n)
 	{
+
+		boost::timer t;
+		   // Estimate normals
+		   /*pcl::IntegralImageNormalEstimation<PointT,pcl::Normal> ne;
+
+		   pcl::PointCloud<pcl::Normal> cloud_normal;
+
+		   ne.setNormalEstimationMethod (ne.COVARIANCE_MATRIX);
+		   //ne.setMaxDepthChangeFactor(0.02f);
+		   ne.setRectSize(10,10);
+		   ne.setNormalSmoothingSize(10.0f);
+		   ne.setInputCloud(cloud.makeShared());
+		   ne.compute(cloud_normal);*/
+
 		//pcl::PointCloud<pcl::PointXYZ> cloud;
 		//pcl::PCDReader reader;
 		//reader.read ("/home/goa/pcl_daten/table/icp_fov/pc_aligned_1.pcd", cloud);
@@ -123,13 +139,13 @@ public:
 
 		pcl::NormalEstimation<pcl::PointXYZRGB,pcl::Normal> normalEstimator;
 		normalEstimator.setInputCloud(boost::make_shared<PointCloud >(cloud));
-		pcl::KdTreeFLANN<pcl::PointXYZRGB>::Ptr tree (new pcl::KdTreeFLANN<pcl::PointXYZRGB> ());
+		//pcl::KdTreeFLANN<pcl::PointXYZRGB>::Ptr tree (new pcl::KdTreeFLANN<pcl::PointXYZRGB> ());
+		pcl::OrganizedDataIndex<pcl::PointXYZRGB>::Ptr tree (new pcl::OrganizedDataIndex<pcl::PointXYZRGB> ());
 		normalEstimator.setSearchMethod(tree);
 		//normalEstimator.setKSearch(50);
 		normalEstimator.setRadiusSearch(0.05);
 		//normalEstimator.setNumberOfThreads(8);
 		pcl::PointCloud<pcl::Normal> cloud_normal;
-		boost::timer t;
 		normalEstimator.compute(cloud_normal);
 
 		ROS_INFO("Time elapsed for normal estimation: %f", t.elapsed());
@@ -173,20 +189,23 @@ public:
 		estimatePointNormals(*cloud_in, *cloud_n);
 
 		boost::timer t;
-		pcl::KdTree<pcl::PointXYZRGBNormal>::Ptr tree;
-		tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZRGBNormal> > ();
-		pcl::BoundaryEstimation<pcl::PointXYZRGBNormal,pcl::PointXYZRGBNormal,pcl::Boundary> boundary;
+		//pcl::KdTree<pcl::PointXYZRGBNormal>::Ptr tree;
+		pcl::OrganizedDataIndex<pcl::PointXYZRGBNormal>::Ptr tree (new pcl::OrganizedDataIndex<pcl::PointXYZRGBNormal> ());
+		//tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZRGBNormal> > ();
+		ipa_features::BoundaryEstimation<pcl::PointXYZRGBNormal,pcl::PointXYZRGBNormal,pcl::Boundary> boundary;
 		boundary.setSearchMethod(tree);
 		boundary.setInputCloud(cloud_n);
 		//boundary.setSearchSurface (cloud);
-		boundary.setRadiusSearch(0.05);
+		boundary.setRadiusSearch(0.02);
 		boundary.setInputNormals(cloud_n);
-		//boundary.angle_threshold_ = M_PI/4;
+		boundary.angle_threshold_ = 0.03; //increase to get more border points
 		boundary.compute(*boundary_pts);
 		//pcl::PointCloud<pcl::PointXYZRGBNormal> boundary_cloud;
 		cloud_out.points.resize(cloud_n->points.size());
 		cloud_out.header = cloud_n->header;
 		int nr_p = 0;
+
+		std::cout << "size: " << boundary_pts->size() << std::endl;
 
 		for( unsigned int i = 0; i < cloud_in->points.size(); i++)
 		{
@@ -217,6 +236,7 @@ public:
 		//cv::waitKey();
 		ROS_INFO("Time elapsed for boundary estimation: %f", t.elapsed());
 	}
+
 
 	/*Calculates the point curvature of a point cloud and thresholds to mark edges.
 	 * Curvature seems to be a weak indicator for edges.
@@ -324,6 +344,51 @@ public:
 			}
 			//cv::imshow("range border image", border_image);
 			//cv::waitKey();
+	}
+
+    /**Uses the PCL BoundaryEstimation to find edges in a point cloud. Uses an angle criterion to detect edges
+     * Unfortunately marks the outline of a point cloud as edge; needs normal estimation
+     */
+	void extractPrincipalCurvature(PointCloud::Ptr& cloud_in, PointCloud& cloud_out)
+	{
+		pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud_n (new pcl::PointCloud<pcl::PointXYZRGBNormal> ());
+		pcl::PointCloud<pcl::PrincipalCurvatures>::Ptr curv_pts (new pcl::PointCloud<pcl::PrincipalCurvatures> ());
+		estimatePointNormals(*cloud_in, *cloud_n);
+
+		boost::timer t;
+		//pcl::KdTree<pcl::PointXYZRGBNormal>::Ptr tree;
+		pcl::OrganizedDataIndex<pcl::PointXYZRGBNormal>::Ptr tree (new pcl::OrganizedDataIndex<pcl::PointXYZRGBNormal> ());
+		//tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZRGBNormal> > ();
+		pcl::PrincipalCurvaturesEstimation<pcl::PointXYZRGBNormal,pcl::PointXYZRGBNormal,pcl::PrincipalCurvatures> pce;
+		pce.setSearchMethod(tree);
+		pce.setInputCloud(cloud_n);
+		//boundary.setSearchSurface (cloud);
+		pce.setRadiusSearch(0.05);
+		pce.setInputNormals(cloud_n);
+		pce.compute(*curv_pts);
+		//pcl::PointCloud<pcl::PointXYZRGBNormal> boundary_cloud;
+		cloud_out.points.resize(cloud_n->points.size());
+		cloud_out.header = cloud_n->header;
+		int nr_p = 0;
+
+		for( unsigned int i = 0; i < curv_pts->height; i++)
+		{
+			for( unsigned int j = 0; j < curv_pts->width; j++)
+			{
+				std::cout << i << "," << j << ": x,y,z,pc1,pc2: " << curv_pts->points[i*curv_pts->width+j].principal_curvature_x << "," <<
+						curv_pts->points[i*curv_pts->width+j].principal_curvature_y << "," <<
+						curv_pts->points[i*curv_pts->width+j].principal_curvature_z << "," <<
+						curv_pts->points[i*curv_pts->width+j].pc1 << "," <<
+						curv_pts->points[i*curv_pts->width+j].pc2 << std::endl;
+			}
+		}
+		cloud_out.width = nr_p;
+		cloud_out.height = 1;
+		cloud_out.points.resize(nr_p);
+		cloud_out.is_dense = true;
+
+
+		ROS_INFO("Time elapsed for boundary estimation: %f", t.elapsed());
 	}
 
 	/**Segments a color image using an edge image and the watershed algorithm
@@ -456,9 +521,9 @@ int main(int argc, char** argv)
 	ExtractFeatures ef;
 
 	/// Load PCD file as input; better use binary PCD files, ascii files seem to generate corrupt point clouds
-	std::string directory("/home/goa/pcl_daten/interaid/washing_machine/box/");
+	std::string directory("/home/goa/pcl_daten/corner/");
 	PointCloud::Ptr cloud_in = PointCloud::Ptr (new PointCloud);
-	pcl::io::loadPCDFile(directory+"box.pcd", *cloud_in);
+	pcl::io::loadPCDFile(directory+"corner_close.pcd", *cloud_in);
 
 	/// Extract edges on the color image
 	cv::Mat color_image(cloud_in->height,cloud_in->width,CV_8UC3);
@@ -472,13 +537,21 @@ int main(int argc, char** argv)
 	PointCloud cloud_out;
 	cv::Mat border_image;
 
-    /// Extract edges using curvature
-	ef.extractEdgesCurvature(cloud_in, cloud_out);
-	pcl::io::savePCDFileASCII (directory+"/edges/edges_curvature.pcd", cloud_out);
+	/*pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud_n (new pcl::PointCloud<pcl::PointXYZRGBNormal> ());
+	ef.estimatePointNormals(*cloud_in, *cloud_n);
+	pcl::io::savePCDFileASCII (directory+"/frame_n.pcd", *cloud_n);*/
 
+    /// Extract edges using curvature
+	//ef.extractEdgesCurvature(cloud_in, cloud_out);
+	//pcl::io::savePCDFileASCII (directory+"/edges/edges_curvature.pcd", cloud_out);
+
+	//ef.extractPrincipalCurvature(cloud_in, cloud_out);
+	//return 0;
 	/// Extract edges using boundary estimation
 	ef.extractEdgesBoundary(cloud_in, cloud_out, border_image);
 	pcl::io::savePCDFileASCII (directory+"/edges/edges_boundary.pcd", cloud_out);
+
+	return 0;
 
 	/// Extract edges using range image border extraction
 	pcl::RangeImage range_image_out;

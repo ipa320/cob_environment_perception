@@ -111,6 +111,7 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::isEdgePoint (
       const std::vector<int> &indices,
       const Eigen::Vector3f &n, const float &threshold)
 {
+	//TODO: choose threshold according to viewpoint distance (noise)
   if (indices.size () < 3)
     return (false);
   float nd_dot;
@@ -121,8 +122,9 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::isEdgePoint (
   // Compute the angles between each neighboring point and the query point itself
   std::vector<float> angles;
   angles.reserve (indices.size ());
-  //int nn_ctr=0;
+  int nn_ctr=0;
   //int b_ctr=0;
+  //std::cout << "d: ";
   for (size_t i = 0; i < indices.size (); ++i)
   {
     delta[0] = cloud.points[indices[i]].x - q_point.x;
@@ -132,16 +134,16 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::isEdgePoint (
 
     nd_dot = n_norm.dot (delta);
 
+    double nd_dot_sum;
+
     if(nd_dot==nd_dot)
     {
-    	/*nn_ctr++;
-    	if(nd_dot > c_ang_thresh || nd_dot < -c_ang_thresh) //is border point
+    	nn_ctr++;
+    	/*if(nd_dot > c_ang_thresh || nd_dot < -c_ang_thresh) //is border point
     		b_ctr++;*/
+    	//std::cout << nd_dot << ",";
     	angles.push_back (fabs(nd_dot)); // the angles are fine between -PI and PI too
-    }
-    else
-    {
-    	//std::cout << "NaN" << ": " << cloud.points[indices[i]].x << "," << q_point.x << std::endl;
+    	nd_dot_sum += fabs(nd_dot);
     }
   }
   /*float border_prob = (float)b_ctr/nn_ctr;
@@ -150,6 +152,7 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::isEdgePoint (
 	  return true;
   else
 	  return false;*/
+  //double nd_dot_av = nd_dot_sum/nn_ctr;
   std::sort (angles.begin (), angles.end ());
 
   float max_angle = angles.back();
@@ -157,16 +160,75 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::isEdgePoint (
 
   if(max_angle>threshold)
   {
-	  //std::cout << "false" << std::endl;
+	  //std::cout << "true";
 	  return (true);
   }
   else
   {
-	  //std::cout << "true" << std::endl;
+	  //std::cout << "false";
 	  return (false);
   }
 
 }
+
+/*template <typename PointInT, typename PointNT, typename PointOutT> int
+	ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::searchForNeighbors (
+			int index,
+			double radius,
+			std::vector<int>& indices,
+			std::vector<float>& distances)
+{
+	indices.clear();
+	distances.clear();
+	const PointInT& p = input_->points[index];
+
+
+	double dx = 0;
+	int idx = index+1;
+	//search in horizontal direction right
+	while(dx < radius && idx%input_->width!=0)
+	{
+		dx = fabs(p.x-input_->points[idx].x);
+		indices.push_back(idx);
+		idx++;
+		//break at end of line
+		//if(idx%input_->width==0) break;
+	}
+	dx = 0;
+	idx = index-1;
+	//search in horizontal direction left
+	while(dx < radius && (idx+1)%input_->width!=0)
+	{
+		dx = fabs(p.x-input_->points[idx].x);
+		indices.push_back(idx);
+		idx--;
+		//break at beginning of line
+		//if((idx-1)%input_->width==0) break;
+	}
+	//search in vertical direction up
+	double dy = 0;
+	idx = index-input_->width;
+	while(idx >= 0 && dy < radius)
+	{
+		dy = fabs(p.y-input_->points[idx].y);
+		indices.push_back(idx);
+		idx-=input_->width;
+		//break at top of image
+		//if(idx<0) break;
+	}
+	//search in vertical direction down
+	dy = 0;
+	idx = index+input_->width;
+	while(idx < input_->size() && dy < radius)
+	{
+		dy = fabs(p.y-input_->points[idx].y);
+		indices.push_back(idx);
+		idx+=input_->width;
+		//break at top of image
+		//if(idx >= input_->size()) break;
+	}
+	return 0;
+}*/
 
 template <typename PointInT, typename PointNT, typename PointOutT> int
 	ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::searchForNeighbors (
@@ -178,51 +240,83 @@ template <typename PointInT, typename PointNT, typename PointOutT> int
 	indices.clear();
 	distances.clear();
 	const PointInT& p = input_->points[index];
-	double dx = 0;
+	int idx_x = index%input_->width;
+	int idx_y = index/input_->width;
+	int v=2;
+
+	//TODO: choose search radius according to viewpoint distance
+	//TODO: NaN tests
+	//TODO: handle border points
+	if(idx_x<v || idx_x>=input_->width-v || idx_y<v || idx_y>=input_->height-v)
+		return 0;
+
+	//get approximate x-y-resolution for p
+	double r_x = fabs((input_->points[idx_y*input_->width+idx_x+v].x-input_->points[idx_y*input_->width+idx_x-v].x)/(2*v+1));
+	double r_y = fabs((input_->points[(idx_y+v)*input_->width+idx_x].y-input_->points[(idx_y-v)*input_->width+idx_x].y)/(2*v+1));
+	//double res = (r_x+r_y)/2;
+
+	int step_x = radius/r_x;
+	int step_y = radius/r_y;
+	//std::cout << idx_x << "," << idx_y <<  " step: " << step << std::endl;
+	//std::cout << idx_x << "," << idx_y << ": ";
+	//TODO: Adjust stepping according to resolution (if resolution low, increase stepping)
+	for (int i=idx_x-step_x; i<=idx_x+step_x; i++)
+	{
+		if(i>=input_->width) break;
+		for (int j=idx_y-step_y; j<=idx_y+step_y; j++)
+		{
+			if(j>=input_->height) break;
+			indices.push_back(i+j*input_->width);
+			//std::cout << "(" << i << "," << j << ")";
+		}
+	}
+	//std::cout << std::endl;
+
+	/*double dx = 0;
 	int idx = index+1;
 	//search in horizontal direction right
-	while(dx < radius)
+	while(dx < radius && idx%input_->width!=0)
 	{
 		dx = fabs(p.x-input_->points[idx].x);
 		indices.push_back(idx);
 		idx++;
 		//break at end of line
-		if(idx%input_->width==0) break;
+		//if(idx%input_->width==0) break;
 	}
 	dx = 0;
 	idx = index-1;
 	//search in horizontal direction left
-	while(dx < radius)
+	while(dx < radius && (idx+1)%input_->width!=0)
 	{
 		dx = fabs(p.x-input_->points[idx].x);
 		indices.push_back(idx);
 		idx--;
 		//break at beginning of line
-		if((idx-1)%input_->width==0) break;
+		//if((idx-1)%input_->width==0) break;
 	}
 	//search in vertical direction up
 	double dy = 0;
 	idx = index-input_->width;
-	while(idx > 0 && dy < radius)
+	while(idx >= 0 && dy < radius)
 	{
 		dy = fabs(p.y-input_->points[idx].y);
 		indices.push_back(idx);
 		idx-=input_->width;
 		//break at top of image
-		if(idx<0) break;
+		//if(idx<0) break;
 	}
 	//search in vertical direction down
 	dy = 0;
 	idx = index+input_->width;
-	while(idx < input_->size()-1 && dy < radius)
+	while(idx < input_->size() && dy < radius)
 	{
 		dy = fabs(p.y-input_->points[idx].y);
 		indices.push_back(idx);
 		idx+=input_->width;
 		//break at top of image
-		if(idx >= input_->size()) break;
-	}
-	return 0;
+		//if(idx >= input_->size()) break;
+	}*/
+	return 1;
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////
@@ -240,27 +334,29 @@ template <typename PointInT, typename PointNT, typename PointOutT> void
   for (size_t idx = 0; idx < indices_->size (); ++idx)
   {
 	  //TODO: test nn search
-    this->searchForNeighbors ((*indices_)[idx], search_parameter_, nn_indices, nn_dists);
-    if(idx==50)
+    if(this->searchForNeighbors ((*indices_)[idx], search_parameter_, nn_indices, nn_dists))
     {
+
+		/*std::cout << idx << ": ";
 		for (int i=0; i<nn_indices.size(); i++)
 		{
 			std::cout << nn_indices[i] << ",";
-		}
-		std::cout << std::endl;
+		}*/
+
+
+		// Obtain a coordinate system on the least-squares plane
+		getCoordinateSystemOnPlane (normals_->points[(*indices_)[idx]], u, v);
+
+		Eigen::Vector3f normal;
+		normal[0] = normals_->points[(*indices_)[idx]].normal_x;
+		normal[1] = normals_->points[(*indices_)[idx]].normal_y;
+		normal[2] = normals_->points[(*indices_)[idx]].normal_z;
+		// Estimate whether the point is lying on a boundary surface or not
+		//std::cout << idx << "," << idx%input_->width << ":";
+		//TODO: test edge detection
+		output.points[idx].boundary_point = isEdgePoint (*surface_, input_->points[(*indices_)[idx]], nn_indices, normal, angle_threshold_);
     }
-
-    // Obtain a coordinate system on the least-squares plane
-    getCoordinateSystemOnPlane (normals_->points[(*indices_)[idx]], u, v);
-
-    Eigen::Vector3f normal;
-    normal[0] = normals_->points[(*indices_)[idx]].normal_x;
-    normal[1] = normals_->points[(*indices_)[idx]].normal_y;
-    normal[2] = normals_->points[(*indices_)[idx]].normal_z;
-    // Estimate whether the point is lying on a boundary surface or not
-    //std::cout << idx << "," << idx%input_->width << ":";
-    //TODO: test edge detection
-    output.points[idx].boundary_point = isEdgePoint (*surface_, input_->points[(*indices_)[idx]], nn_indices, normal, angle_threshold_);
+    //std::cout << std::endl;
   }
 }
 
