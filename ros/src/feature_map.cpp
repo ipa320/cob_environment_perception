@@ -347,7 +347,7 @@ public:
 					chull.setInputCloud (cloud_projected);
 					chull.reconstruct (map_[i]);
 					std::stringstream ss1;
-					ss1 << "/home/goa/pcl_daten/feature_map/hull_new_" << ctr << ".pcd";
+					//ss1 << "/home/goa/pcl_daten/feature_map/hull_new_" << ctr << ".pcd";
 					//pcl::io::savePCDFileASCII (ss1.str(), hull_new/*map_[i]*/);
 					/*for(unsigned int v=0; v<map_[i].points.size(); v++)
 					{
@@ -364,12 +364,12 @@ public:
 			}
     	}
 
-		for(unsigned int i=0; i<map_.size(); i++)
+		/*for(unsigned int i=0; i<map_.size(); i++)
 		{
 			std::stringstream ss;
 			ss << "/home/goa/pcl_daten/table/feature_map/map_" << ctr << "_f" << i << ".pcd";
 			pcl::io::savePCDFileASCII (ss.str(), map_[i]);
-    	}
+    	}*/
 		ctr++;
 
 		std::cout << "time: " << t.elapsed() << std::endl;
