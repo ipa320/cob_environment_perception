@@ -4,7 +4,7 @@
   <node pkg="nodelet" type="nodelet" name="pcl_manager"  args="manager" output="screen"/>
   
   <include file="$(find cob_env_model)/ros/launch/launch_filters/jump_edge_filter.launch" />
-  <include file="$(find cob_env_model)/ros/launch/launch_filters/amp_conf_filter.launch" />  
+  <include file="$(find cob_env_model)/ros/launch/launch_filters/amplitude_filter.launch" />  
   <include file="$(find cob_env_model)/ros/launch/launch_filters/speckle_filter.launch" />
   <include file="$(find cob_env_model)/ros/launch/launch_filters/sor_filter.launch" />
   
