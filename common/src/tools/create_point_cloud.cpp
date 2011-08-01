@@ -78,8 +78,33 @@
 	pcl::io::savePCDFileASCII ("/home/goa/pcl_daten/corner/corner_sim.pcd", cloud);
 }*/
 
-//create horizontal corner
+//create edge cloud
 int main(int argc, char** argv)
+{
+	pcl::PointCloud<pcl::Boundary>::Ptr cloud = pcl::PointCloud<pcl::Boundary>::Ptr (new pcl::PointCloud<pcl::Boundary>);
+	//cloud.points.resize(40000);
+	cloud->height=20;
+	cloud->width=20;
+	cloud->resize(20*20);
+	for(unsigned int i=0; i<cloud->height; i++)
+	{
+		for(unsigned int j=0; j<cloud->width; j++)
+		{
+			if(i==4)
+				cloud->points[i*cloud->width+j].boundary_point = 1;
+			else if(i==12)
+				cloud->points[i*cloud->width+j].boundary_point = 1;
+			else
+			{
+				cloud->points[i*cloud->width+j].boundary_point = 0;
+			}
+		}
+	}
+	pcl::io::savePCDFile ("/home/goa/pcl_daten/corner/contour_sim.pcd", *cloud, true);
+}
+
+//create horizontal corner
+/*int main(int argc, char** argv)
 {
 	pcl::PointCloud<pcl::PointXYZRGBNormal> cloud;
 	//cloud.points.resize(40000);
@@ -103,8 +128,6 @@ int main(int argc, char** argv)
 		n_x = 0;
 		for(int j=0; j<cloud.width; j++, x+=0.01, pt_ctr++)
 		{
-			/*else
-				z += 0.01;*/
 
 			pcl::PointXYZRGBNormal p;
 			p.x = x;
@@ -121,4 +144,4 @@ int main(int argc, char** argv)
 		}
 	}
 	pcl::io::savePCDFileASCII ("/home/goa/pcl_daten/corner/corner_sim_h.pcd", cloud);
-}
+}*/
