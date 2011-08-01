@@ -120,9 +120,9 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::isEdgePoint (
   Eigen::Vector3f delta;
   delta.setZero ();
   // Compute the angles between each neighboring point and the query point itself
-  std::vector<float> angles;
-  angles.reserve (indices.size ());
-  int nn_ctr=0;
+  //std::vector<float> angles;
+  //angles.reserve (indices.size ());
+  int nn_ctr=0, nan_ctr=0;
   int b_ctr=0;
   //std::cout << "d: ";
   for (size_t i = 0; i < indices.size (); ++i)
@@ -142,28 +142,29 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::isEdgePoint (
     	if(fabs(nd_dot) > threshold) //is border point
     		b_ctr++;
     	//std::cout << nd_dot << ",";
-    	angles.push_back (fabs(nd_dot)); // the angles are fine between -PI and PI too
+    	//angles.push_back (fabs(nd_dot)); // the angles are fine between -PI and PI too
     	//nd_dot_sum += fabs(nd_dot);
     }
     else
     {
-    	b_ctr++;
-    	nn_ctr++;
+    	nan_ctr++;
     }
   }
   float edge_prob = (float)b_ctr/nn_ctr;
+  float boundary_prob = (float)nan_ctr/indices.size();
   /*std::cout << border_prob << std::endl;
   if(border_prob >0.00001)
 	  return true;
   else
 	  return false;*/
   //double nd_dot_av = nd_dot_sum/nn_ctr;
-  std::sort (angles.begin (), angles.end ());
+  //std::sort (angles.begin (), angles.end ());
 
-  float max_angle = angles.back();
+  //float max_angle = angles.back();
   //std::cout << max_angle << "," << acos(max_angle) << std::endl;
 
-  if(/*max_angle>threshold*/edge_prob>0.1)
+  //TODO: mark NaNs
+  if(/*max_angle>threshold*/edge_prob>0.1 || boundary_prob>0.2)
   {
 	  //std::cout << "true";
 	  return (true);
@@ -260,8 +261,12 @@ template <typename PointInT, typename PointNT, typename PointOutT> int
 	double r_y = fabs((input_->points[(idx_y+v)*input_->width+idx_x].y-input_->points[(idx_y-v)*input_->width+idx_x].y)/(2*v+1));
 	//double res = (r_x+r_y)/2;
 
+	int num_nn = 4;
 	int step_x = radius/r_x;
 	int step_y = radius/r_y;
+	//TODO: limit number of neighbors
+	int incr_x = step_x/(num_nn-1);
+	int incr_y = step_y/(num_nn-1);
 	//std::cout << idx_x << "," << idx_y <<  " step: " << step << std::endl;
 	//std::cout << idx_x << "," << idx_y << ": ";
 	//TODO: Adjust stepping according to resolution (if resolution low, increase stepping)
@@ -270,6 +275,7 @@ template <typename PointInT, typename PointNT, typename PointOutT> int
 		if(i>=input_->width) break;
 		for (int j=idx_y-step_y; j<=idx_y+step_y; j++)
 		{
+			if(i==idx_x && j==idx_y) continue; //skip p itself
 			if(j>=input_->height) break;
 			indices.push_back(i+j*input_->width);
 			//std::cout << "(" << i << "," << j << ")";

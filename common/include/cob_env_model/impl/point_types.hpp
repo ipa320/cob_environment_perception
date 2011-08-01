@@ -57,6 +57,11 @@ struct PointXYZRGBF
 	EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 } EIGEN_ALIGN16;
 
+struct PointLabel
+{
+	int label;
+};
+
 
 
 #endif /* IPA_POINT_TYPES_HPP_ */
