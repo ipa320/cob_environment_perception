@@ -41,8 +41,7 @@ ${PROJECT_SOURCE_DIR}/ros/include)
 #rosbuild_add_executable(data_acquisition_node ros/src/data_acquisition.cpp)
 #rosbuild_add_executable(icp_registration_node ros/src/icp_registration.cpp)
 #rosbuild_add_executable(point_cloud_filter_node ros/src/point_cloud_filter.cpp)
-rosbuild_add_executable(extract_features_node ros/src/extract_features.cpp
-	ros/src/ipa_range_image.cpp)
+rosbuild_add_executable(extract_features_node ros/src/extract_features.cpp)
 #rosbuild_add_executable(test_icp ros/src/test_icp.cpp)
 #rosbuild_add_executable(bag_to_pcd ros/src/tools/bag_to_pcd.cpp)
 rosbuild_add_executable(pointcloud_to_pcd ros/src/tools/pointcloud_to_pcd.cpp)
@@ -55,7 +54,9 @@ rosbuild_add_library(cob_env_model ros/src/detect_tables.cpp
 	ros/src/filters/speckle_filter.cpp
 	common/src/filters/amplitude_filter.cpp
 	common/src/filters/intensity_filter.cpp
-	common/src/filters/jump_edge_filter.cpp)
+	common/src/filters/jump_edge_filter.cpp
+	common/src/features/range_image_border_extractor.cpp
+	common/src/features/boundary.cpp)
 #rosbuild_add_executable(test_fov common/src/test_fov.cpp)
 #rosbuild_add_library(nodelet_cpc_publisher ros/src/cpc_publisher.cpp
 #ros/src/cpc_visualizer.cpp)
@@ -63,7 +64,7 @@ rosbuild_add_executable(field_of_view_node ros/src/field_of_view.cpp)
 rosbuild_add_executable(concat_fields_node ros/src/tools/concat_fields.cpp)
 #rosbuild_add_executable(cpc_publisher ros/src/cpc_publisher_main.cpp)
 #rosbuild_add_executable(cpc_visualizer ros/src/cpc_visualizer_main.cpp)
-rosbuild_add_executable(test_cob_filters common/src/cob_filters_test.cpp)
+rosbuild_add_executable(create_point_cloud common/src/tools/create_point_cloud.cpp)
 #rosbuild_add_executable(planar_segmentation common/src/planar_segmentation.cpp)
 
 
@@ -78,7 +79,7 @@ rosbuild_add_compile_flags(extract_features_node -D__LINUX__)
 
 
 # add compile flag
-target_link_libraries(test_cob_filters cob_env_model)
+target_link_libraries(extract_features_node cob_env_model)
 #target_link_libraries (planar_segmentation ${PCL_IO_LIBRARY} ${PCL_FILTERS_LIBRARY} ${PCL_SEGMENTATION_LIBRARY})
 #target_link_libraries(test_fov cob_env_model)
 #target_link_libraries(env_model ann glut mesasr)
