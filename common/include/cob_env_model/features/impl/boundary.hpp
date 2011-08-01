@@ -123,7 +123,7 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::isEdgePoint (
   std::vector<float> angles;
   angles.reserve (indices.size ());
   int nn_ctr=0;
-  //int b_ctr=0;
+  int b_ctr=0;
   //std::cout << "d: ";
   for (size_t i = 0; i < indices.size (); ++i)
   {
@@ -134,20 +134,25 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::isEdgePoint (
 
     nd_dot = n_norm.dot (delta);
 
-    double nd_dot_sum;
+    //double nd_dot_sum;
 
     if(nd_dot==nd_dot)
     {
     	nn_ctr++;
-    	/*if(nd_dot > c_ang_thresh || nd_dot < -c_ang_thresh) //is border point
-    		b_ctr++;*/
+    	if(fabs(nd_dot) > threshold) //is border point
+    		b_ctr++;
     	//std::cout << nd_dot << ",";
     	angles.push_back (fabs(nd_dot)); // the angles are fine between -PI and PI too
-    	nd_dot_sum += fabs(nd_dot);
+    	//nd_dot_sum += fabs(nd_dot);
+    }
+    else
+    {
+    	b_ctr++;
+    	nn_ctr++;
     }
   }
-  /*float border_prob = (float)b_ctr/nn_ctr;
-  std::cout << border_prob << std::endl;
+  float edge_prob = (float)b_ctr/nn_ctr;
+  /*std::cout << border_prob << std::endl;
   if(border_prob >0.00001)
 	  return true;
   else
@@ -158,7 +163,7 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::isEdgePoint (
   float max_angle = angles.back();
   //std::cout << max_angle << "," << acos(max_angle) << std::endl;
 
-  if(max_angle>threshold)
+  if(/*max_angle>threshold*/edge_prob>0.1)
   {
 	  //std::cout << "true";
 	  return (true);

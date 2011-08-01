@@ -196,9 +196,9 @@ public:
 		boundary.setSearchMethod(tree);
 		boundary.setInputCloud(cloud_n);
 		//boundary.setSearchSurface (cloud);
-		boundary.setRadiusSearch(0.02);
+		boundary.setRadiusSearch(0.03);
 		boundary.setInputNormals(cloud_n);
-		boundary.angle_threshold_ = 0.03; //increase to get more border points
+		boundary.angle_threshold_ = 0.02; //increase to get more border points
 		boundary.compute(*boundary_pts);
 		//pcl::PointCloud<pcl::PointXYZRGBNormal> boundary_cloud;
 		cloud_out.points.resize(cloud_n->points.size());
