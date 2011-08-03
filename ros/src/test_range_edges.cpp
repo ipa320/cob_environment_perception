@@ -36,6 +36,7 @@
 
 typedef pcl::PointCloud<pcl::PointXYZ> PointCloud;
 typedef pcl::PointXYZRGB PointT;
+typedef pcl::PointXYZ PointType;
 
 class TestRange
 {
@@ -147,25 +148,47 @@ public:
 		range_image.width = cloud_in.width;
 		range_image.height = cloud_in.height;
 		range_image.is_dense = false;
-		for(int i = 0; i<cloud_in.size(); i++)
-		{
-			pcl::PointWithRange p;
 
-			//p.range = sqrt(cloud_in->points[i].x*cloud_in->points[i].x+cloud_in->points[i].y*cloud_in->points[i].y+cloud_in->points[i].z*cloud_in->points[i].z);
-			/*if(cloud_in->points[i].x!=cloud_in->points[i].x || cloud_in->points[i].y!=cloud_in->points[i].y || cloud_in->points[i].z!=cloud_in->points[i].z)
-			{
-				p.x = p.y = p.z = 0;//std::numeric_limits<float>::quiet_NaN();
-				p.range=0;//-std::numeric_limits<float>::infinity();
-			}
-			else*/
-			{
-				p.x = cloud_in.points[i].x;
-				p.y = cloud_in.points[i].y;
-				p.z = cloud_in.points[i].z;
-				p.range = sqrt(cloud_in.points[i].x*cloud_in.points[i].x+cloud_in.points[i].y*cloud_in.points[i].y+cloud_in.points[i].z*cloud_in.points[i].z);
-			}
-			range_image.points.push_back(p);
-		}
+		  bool setUnseenToMaxRange = false;
+		  float noise_level = 0.0;
+		  float min_range = 0.0f;
+		  int border_size = 1;
+		  float angular_resolution = 0.5f;
+		  Eigen::Affine3f scene_sensor_pose (Eigen::Affine3f::Identity ());
+		  pcl::RangeImage::CoordinateFrame coordinate_frame = pcl::RangeImage::CAMERA_FRAME;
+		  pcl::PointCloud<pcl::PointWithViewpoint> far_ranges;
+
+		  scene_sensor_pose = Eigen::Affine3f (Eigen::Translation3f (cloud_in.sensor_origin_[0],
+																		cloud_in.sensor_origin_[1],
+		                                                               cloud_in.sensor_origin_[2])) *
+		                        Eigen::Affine3f (cloud_in.sensor_orientation_);
+
+		 range_image.createFromPointCloud (cloud_in, angular_resolution, pcl::deg2rad (360.0f), pcl::deg2rad (180.0f),
+		                                   scene_sensor_pose, coordinate_frame, noise_level, min_range, border_size);
+		  range_image.integrateFarRanges (far_ranges);
+		  if (setUnseenToMaxRange)
+		    range_image.setUnseenToMaxRange ();
+
+
+//		for(int i = 0; i<cloud_in.size(); i++)
+//		{
+//			pcl::PointWithRange p;
+//
+//			//p.range = sqrt(cloud_in->points[i].x*cloud_in->points[i].x+cloud_in->points[i].y*cloud_in->points[i].y+cloud_in->points[i].z*cloud_in->points[i].z);
+//			/*if(cloud_in->points[i].x!=cloud_in->points[i].x || cloud_in->points[i].y!=cloud_in->points[i].y || cloud_in->points[i].z!=cloud_in->points[i].z)
+//			{
+//				p.x = p.y = p.z = 0;//std::numeric_limits<float>::quiet_NaN();
+//				p.range=0;//-std::numeric_limits<float>::infinity();
+//			}
+//			else*/
+//			{
+//				p.x = cloud_in.points[i].x;
+//				p.y = cloud_in.points[i].y;
+//				p.z = cloud_in.points[i].z;
+//				p.range = sqrt(cloud_in.points[i].x*cloud_in.points[i].x+cloud_in.points[i].y*cloud_in.points[i].y+cloud_in.points[i].z*cloud_in.points[i].z);
+//			}
+//			range_image.points.push_back(p);
+//		}
 		//std::string directory("/home/goa/pcl_daten/test/");
 		//pcl::io::savePCDFileASCII (directory+"/range_image.pcd", range_image);
 
@@ -178,6 +201,44 @@ public:
 
 
 		  border_extractor.compute(border_descriptions);
+
+//		  pcl::visualization::PCLVisualizer viewer ("3D Viewer");
+//		  viewer.setBackgroundColor (1, 1, 1);
+//		  viewer.addCoordinateSystem (1.0f);
+//
+//
+//		  pcl::PointCloud<pcl::PointWithRange>::Ptr border_points_ptr(new pcl::PointCloud<pcl::PointWithRange>),
+//		                                              veil_points_ptr(new pcl::PointCloud<pcl::PointWithRange>),
+//		                                              shadow_points_ptr(new pcl::PointCloud<pcl::PointWithRange>);
+//		    pcl::PointCloud<pcl::PointWithRange>& border_points = *border_points_ptr,
+//		                                        & veil_points = * veil_points_ptr,
+//		                                        & shadow_points = *shadow_points_ptr;
+//		    for (int y=0; y< (int)range_image.height; ++y)
+//		    {
+//		      for (int x=0; x< (int)range_image.width; ++x)
+//		      {
+//		        if (border_descriptions.points[y*range_image.width + x].traits[pcl::BORDER_TRAIT__OBSTACLE_BORDER])
+//		          border_points.points.push_back (range_image.points[y*range_image.width + x]);
+//		        if (border_descriptions.points[y*range_image.width + x].traits[pcl::BORDER_TRAIT__VEIL_POINT])
+//		          veil_points.points.push_back (range_image.points[y*range_image.width + x]);
+//		        if (border_descriptions.points[y*range_image.width + x].traits[pcl::BORDER_TRAIT__SHADOW_BORDER])
+//		          shadow_points.points.push_back (range_image.points[y*range_image.width + x]);
+//		      }
+//		    }
+//		    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointWithRange> border_points_color_handler (border_points_ptr, 0, 255, 0);
+//		    viewer.addPointCloud<pcl::PointWithRange> (border_points_ptr, border_points_color_handler, "border points");
+//		    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 7, "border points");
+//		    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointWithRange> veil_points_color_handler (veil_points_ptr, 255, 0, 0);
+//		    viewer.addPointCloud<pcl::PointWithRange> (veil_points_ptr, veil_points_color_handler, "veil points");
+//		    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 7, "veil points");
+//		    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointWithRange> shadow_points_color_handler (shadow_points_ptr, 0, 255, 255);
+//		    viewer.addPointCloud<pcl::PointWithRange> (shadow_points_ptr, shadow_points_color_handler, "shadow points");
+//		    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 7, "shadow points");
+//		    while(!viewer.wasStopped())
+//		    	    	{
+//		    	    	viewer.spinOnce(100);
+//		    	    	usleep(100000);
+//		    	    	}
 
 
 		  pcl::PointCloud<pcl::Boundary>::Ptr boundary_pts (new pcl::PointCloud<pcl::Boundary> ());
@@ -236,21 +297,37 @@ public:
     	PointCloud input_cloud;
         PointCloud output_cloud;
         PointCloud output2_cloud;
+        PointCloud output3_cloud;
 
+        pcl::PointCloud<PointType>::Ptr point_cloud_ptr (new pcl::PointCloud<PointType>);
+        pcl::PointCloud<PointType>& point_cloud = *point_cloud_ptr;
 
     	TestRange tr;
     	pcl::PointXYZ starting_point(0,0,2);
         pcl::PointXYZ starting_point2(1,0,1);
+        pcl::PointXYZ starting_point3(0.5,0.5,0.5);
+
+        for (float x=-0.5f; x<=0.5f; x+=0.01f)
+        {
+          for (float y=-0.5f; y<=0.5f; y+=0.01f)
+          {
+            PointType point;  point.x = x;  point.y = y;  point.z = 2.0f - y;
+            point_cloud.points.push_back (point);
+          }
+        }
+        point_cloud.width = point_cloud.points.size ();  point_cloud.height = 1;
+
 
     	//tr.parallelPlan(0.2 , input_cloud);
     	tr.addNewPlane(input_cloud, output_cloud ,starting_point , 100, 100,0.01);
     	tr.addNewPlane(output_cloud,output2_cloud, starting_point2,100, 100 ,0.01);
+    	tr.addNewPlane(output2_cloud,output3_cloud, starting_point3,100, 100 ,0.01);
 
     	cv::Mat border_image;
     	pcl::PointCloud<pcl::PointWithRange> cloud_out;
 
-    	tr.extractEdgesRangeImage(output2_cloud , cloud_out ,border_image , 1 , 0.2);
-    	tr.extractEdgesRangeImage(output2_cloud , cloud_out ,border_image , 3 , 0.5);
+    	tr.extractEdgesRangeImage(point_cloud , cloud_out ,border_image , 1 , 0.2);
+    	tr.extractEdgesRangeImage(output3_cloud , cloud_out ,border_image , 3 , 0.5);
 
 
 
