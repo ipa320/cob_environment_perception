@@ -16,6 +16,12 @@
   Nodelet for point map aggregation
   </description>
   </class>
+  
+    <class name="cob_env_model/AggregateRangeImageMap" type="AggregateRangeImageMap" base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet for point map aggregation (using range images)
+  </description>
+  </class>
 
   <class name="cob_env_model/AmplitudeFilter" type="AmplitudeFilter" base_class_type="nodelet::Nodelet">
   <description>
