@@ -51,7 +51,39 @@ public:
     {
     	/// void
     }
+/*  add to actual pointcloud a new plane
+ * of starting point x right an y up
+ */
+    void addNewPlane(PointCloud &cloud_in ,PointCloud &cloud_out , pcl::PointXYZ starting_point_xyz , int high , int width ,double distance )
+    {
+      cloud_out.resize(high * width + cloud_in.size());
+      for(int i=0; i<cloud_in.size();i++)
+      {
+        cloud_out.points[i]=cloud_in.points[i];
+      }
+      int counter=cloud_in.size();
+      double k = 0.0;
+      double l = 0.0;
+      for (int i=0; i<high;i++)
+      {
+        for(int j=0; j<width;j++)
+        {
+          if (counter<cloud_out.size()){
+         cloud_out.points[counter].y=starting_point_xyz.y+l;
+         cloud_out.points[counter].x=starting_point_xyz.x+ k;
+         cloud_out.points[counter].z=starting_point_xyz.z;
+         counter++;
 
+
+          }
+
+
+         k=k+distance;
+        }
+        k=0;
+        l=l+distance;
+      }
+    }
     void parallelPlan(double distance , PointCloud &cloud)
     {
 
@@ -202,14 +234,23 @@ public:
     int main(int argc, char** argv)
     {
     	PointCloud input_cloud;
+        PointCloud output_cloud;
+        PointCloud output2_cloud;
+
+
     	TestRange tr;
-    	tr.parallelPlan(0.2 , input_cloud);
+    	pcl::PointXYZ starting_point(0,0,2);
+        pcl::PointXYZ starting_point2(1,0,1);
+
+    	//tr.parallelPlan(0.2 , input_cloud);
+    	tr.addNewPlane(input_cloud, output_cloud ,starting_point , 100, 100,0.01);
+    	tr.addNewPlane(output_cloud,output2_cloud, starting_point2,100, 100 ,0.01);
 
     	cv::Mat border_image;
     	pcl::PointCloud<pcl::PointWithRange> cloud_out;
 
-    	tr.extractEdgesRangeImage(input_cloud , cloud_out ,border_image , 5 , 0.7);
-    	tr.extractEdgesRangeImage(input_cloud , cloud_out ,border_image , 3 , 0.5);
+    	tr.extractEdgesRangeImage(output2_cloud , cloud_out ,border_image , 1 , 0.2);
+    	tr.extractEdgesRangeImage(output2_cloud , cloud_out ,border_image , 3 , 0.5);
 
 
 
