@@ -82,8 +82,8 @@ class FieldOfView
 		{
 			fov_marker_pub_ = n_.advertise<visualization_msgs::Marker>("fov_marker",10);
 			get_fov_srv_ = n_.advertiseService("get_fov", &FieldOfView::srvCallback_GetFieldOfView, this);
-			sensor_fov_hor_ = /*63*/40*M_PI/180;
-			sensor_fov_ver_ = /*54*/40*M_PI/180;
+			sensor_fov_hor_ = /*57*/65*M_PI/180;
+			sensor_fov_ver_ = /*43*/47*M_PI/180;
 			sensor_max_range_ = 5;
 			camera_frame_ = std::string(/*"/base_kinect_rear_link"*/"/head_cam3d_link");
 			computeFieldOfView();
@@ -141,13 +141,13 @@ class FieldOfView
 
 		}
 
-		void transformFOV(std::string target_frame)
+		void transformFOV(ros::Time stamp, std::string target_frame)
 		{
 			//std::string target_frame = std::string("/map");
 			StampedTransform transform;
 	    	try
 	    	{
-				tf_listener_.lookupTransform(target_frame, camera_frame_, ros::Time(0), transform);
+				tf_listener_.lookupTransform(target_frame, camera_frame_, stamp/*ros::Time(0)*/, transform);
 				//tf::Point n_up(n_up_(0),n_up_(1),n_up_(2));
 				tf::Stamped<tf::Point> stamped_n_up(n_up_,transform.stamp_,camera_frame_);
 				tf::Stamped<tf::Point> stamped_n_up_t;
@@ -323,7 +323,7 @@ class FieldOfView
 				cob_env_model::GetFieldOfView::Response &res)
 		{
 			ROS_INFO("FieldOfView Trigger");
-			transformFOV(req.target_frame);
+			transformFOV(req.stamp, req.target_frame);
 			geometry_msgs::Point n_msg;
 			pointTFToMsg(n_up_t_, n_msg);
 			res.fov.points.push_back(n_msg);

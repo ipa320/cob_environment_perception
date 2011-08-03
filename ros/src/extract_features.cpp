@@ -210,7 +210,7 @@ public:
 		//boundary.setSearchSurface (cloud);
 		boundary.setRadiusSearch(0.03);
 		boundary.setInputNormals(cloud_n);
-		boundary.angle_threshold_ = 0.02; //increase to get more border points
+		boundary.dist_threshold_ = 0.02; //increase to get more border points
 		boundary.compute(cloud_out);
 		//pcl::PointCloud<pcl::PointXYZRGBNormal> boundary_cloud;
 		//cloud_out.points.resize(cloud_n->points.size());
@@ -250,73 +250,65 @@ public:
 	}
 
 
-	void propagateWavefront(pcl::PointCloud<pcl::Boundary>::Ptr& cloud_in/*, std::vector<pcl::PointIndices> segments*/)
+	void propagateWavefront(pcl::PointCloud<PointLabel>::Ptr& cloud_in)
 	{
+		//TODO: unlabel small cluster, change pixel step?
+		boost::timer t;
 	    int width = cloud_in->width, height = cloud_in->height;
 	    std::vector<pcl::Boundary*> wave;
 	    std::vector<Coords> wave_coords;
-	    /*pcl::PointCloud<pcl::Boundary> cloud_l;
-	    cloud_l.height = input_->height;
-	    cloud_l.width = input_->width;
-	    cloud_l.reserve(cloud_l.height*cloud_l.width);
-	    for(int ctr = 0; ctr<cloud_l.size(); ctr++)
-	    {
-	    	cloud_l.points[ctr]=0;
-	    }*/
-	    /*size_t bufSize = npixels*(int)(sizeof(cv::Point_<short>) + sizeof(int) + sizeof(uchar));
-	    if( !_buf.isContinuous() || !_buf.data || _buf.cols*_buf.rows*_buf.elemSize() < bufSize )
-	        _buf.create(1, bufSize, CV_8U);
 
-	    uchar* buf = _buf.data;
-	    int i, j, dstep = img.step/sizeof(cv::Vec3f);
-	    int* labels = (int*)buf;
-	    buf += npixels*sizeof(labels[0]);
-	    cv::Point_<short>* wbuf = (cv::Point_<short>*)buf;
-	    buf += npixels*sizeof(wbuf[0]);
-	    uchar* rtype = (uchar*)buf;*/
-	    uint8_t cur_label = 1;
+	    int cur_label = 2;
+	    /*uint8_t region_size[256];
+	    for (int i=0; i<256; i++)
+	    {
+	    	region_size[i] = 0;
+	    }*/
 
 
 	    for(int i = 0; i < height; i++ )
 	    {
 	        for(int j = 0; j < width; j++ )
 	        {
-	        	if(cloud_in->points[i*width+j].boundary_point == 0)
+	        	//std::cout << i << "," << j << ":" << cur_label << std::endl;
+	        	if(cloud_in->points[i*width+j].label == 0)
 	        	{
-	        		cur_label++;
-	        		pcl::Boundary* p = &cloud_in->points[i*width+j];
-	        		p->boundary_point = cur_label;
+        			cur_label++;
+	        		PointLabel* p = &cloud_in->points[i*width+j];
+	        		p->label = cur_label;
 	        		//Eigen::Vector2d uv(j,i);
 	        		Coords c(j,i);
 
+	        		//int count = 0;
 	        		bool is_wave = true;
 	        		while(is_wave)
 	        		{
+	        			//count++;
 	        			int pt_ctr = c.u+c.v/*uv(0)+uv(1)*/*width;
-	        			if( c.u/*uv(0)*/ < width-1 && cloud_in->points[pt_ctr+1].boundary_point==0)
+	        			if( c.u/*uv(0)*/ < width-1 && cloud_in->points[pt_ctr+1].label==0)
 	        			{
-	        				cloud_in->points[pt_ctr+1].boundary_point = cur_label;
+	        				cloud_in->points[pt_ctr+1].label = cur_label;
 	        				//wave.push_back(&cloud_in->points[pt_ctr+1]);
 	        				wave_coords.push_back(Coords(c.u+1,c.v)/*Eigen::Vector2d(uv(0)+1,uv(1))*/);
 	        			}
-	        			if( c.u/*uv(0)*/ > 0 && cloud_in->points[pt_ctr-1].boundary_point==0)
+	        			if( c.u/*uv(0)*/ > 0 && cloud_in->points[pt_ctr-1].label==0)
 	        			{
-	        				cloud_in->points[pt_ctr-1].boundary_point = cur_label;
+	        				cloud_in->points[pt_ctr-1].label = cur_label;
 	        				//wave.push_back(&cloud_in->points[pt_ctr-1]);
 	        				wave_coords.push_back(Coords(c.u-1,c.v)/*Eigen::Vector2d(uv(0)-1,uv(1))*/);
 	        			}
 	        			//std::cout << pt_ctr+width << ": "<< (int)(cloud_in->points[pt_ctr+width].boundary_point) << std::endl;
-	        			if(c.v/*uv(1)*/ < height-1 && cloud_in->points[pt_ctr+width].boundary_point==0)
+	        			if(c.v/*uv(1)*/ < height-1 && cloud_in->points[pt_ctr+width].label==0)
 	        			{
-	        				cloud_in->points[pt_ctr+width].boundary_point = cur_label;
+	        				cloud_in->points[pt_ctr+width].label = cur_label;
 	        				//wave.push_back(&cloud_in->points[pt_ctr+width]);
 	        				wave_coords.push_back(Coords(c.u,c.v+1)/*Eigen::Vector2d(uv(0),uv(1)+1)*/);
 	        			}
-	        			if(c.v/*uv(1)*/ > 0 && cloud_in->points[pt_ctr-width].boundary_point==0)
+	        			if(c.v/*uv(1)*/ > 0 && cloud_in->points[pt_ctr-width].label==0)
 	        			{
-	        				cloud_in->points[pt_ctr-width].boundary_point = cur_label;
+	        				cloud_in->points[pt_ctr-width].label = cur_label;
 	        				//wave.push_back(&cloud_in->points[pt_ctr-width]);
-	        				wave_coords.push_back(Coords(c.u,c.v+1)/*Eigen::Vector2d(uv(0),uv(1)-1)*/);
+	        				wave_coords.push_back(Coords(c.u,c.v-1)/*Eigen::Vector2d(uv(0),uv(1)-1)*/);
 	        			}
 	        			//p = wave.back();
 	        			if(wave_coords.size()>0)
@@ -324,14 +316,29 @@ public:
 	        				//wave.pop_back();
 		        			c = wave_coords.back();
 	        				wave_coords.pop_back();
+	        				//std::cout << wave_coords.size() << std::endl;
 	        			}
 	        			else
 	        				is_wave = false;
 	        		}
+	        		/*if(count <= maxSize)
+	        		{
+	        			region_size[cloud_in->points[i*width+j].boundary_point]=1;
+	        		}
+	        		else
+	        		{
+	        			region_size[cloud_in->points[i*width+j].boundary_point]=2;
+	        		}*/
 	        	}
+	        	/*else
+	        	{
+	        		if(region_size[cloud_in->points[i*width+j].boundary_point]==1)
+	        			cloud_in->points[i*width+j].boundary_point = 0;
+	        	}*/
 	        }
 
 	    }
+	    std::cout << "Time elapsed for wavefront propagation: " << t.elapsed() << std::endl;
 		return;
 	}
 
@@ -606,40 +613,40 @@ public:
 		}
 	}
 
-	void getClusterIndices(pcl::PointCloud<pcl::Boundary>::Ptr& cloud_in, std::vector<pcl::PointIndices>& cluster_indices, cv::Mat& seg_img)
+	void getClusterIndices(pcl::PointCloud<PointLabel>::Ptr& cloud_in, std::vector<pcl::PointIndices>& cluster_indices, cv::Mat& seg_img)
 	{
 		int max_idx=0;
 		int i=0;
 		for(i = 0; i < cloud_in->size(); i++ )
 		{
-			if(cloud_in->points[i].boundary_point>max_idx) max_idx=cloud_in->points[i].boundary_point;
+			if(cloud_in->points[i].label>max_idx) max_idx=cloud_in->points[i].label;
 		}
 		for(int k=0; k<=max_idx; k++)
 		{
 			pcl::PointIndices cluster;
 			for(i = 0; i < cloud_in->size(); i++ )
 			{
-				if(cloud_in->points[i].boundary_point==k)
+				if(cloud_in->points[i].label==k)
 					cluster.indices.push_back(i);
 			}
 			cluster_indices.push_back(cluster);
 		}
-		seg_img = cv::Mat(cv::Size(cloud_in->height,cloud_in->width), CV_8UC3);
+		seg_img = cv::Mat(cloud_in->height,cloud_in->width, CV_8UC3);
+		vector<cv::Vec3b> colorTab;
+		for(int i = 0; i < 256; i++ )
+		{
+			int b = cv::theRNG().uniform(0, 255);
+			int g = cv::theRNG().uniform(0, 255);
+			int r = cv::theRNG().uniform(0, 255);
+
+			colorTab.push_back(cv::Vec3b((uchar)b, (uchar)g, (uchar)r));
+		}
 		for(int i = 0; i < seg_img.rows; i++ )
 		{
 			for(int j = 0; j < seg_img.cols; j++ )
 			{
-				int label = (int)(cloud_in->points[i*cloud_in->width+j].boundary_point);
-				if( label == 0 )
-					seg_img.at<cv::Vec3b>(i,j) = cv::Vec3b(0,0,0);
-				else if( label == 1 )
-					seg_img.at<cv::Vec3b>(i,j) = cv::Vec3b(255,0,0);
-				else if( label == 2 )
-					seg_img.at<cv::Vec3b>(i,j) = cv::Vec3b(0,255,0);
-				else if( label == 3 )
-					seg_img.at<cv::Vec3b>(i,j) = cv::Vec3b(255,255,0);
-				else
-					seg_img.at<cv::Vec3b>(i,j) = cv::Vec3b(0,0,255);
+				int label = cloud_in->points[i*cloud_in->width+j].label;
+				seg_img.at<cv::Vec3b>(i,j) = colorTab[label];
 			}
 		}
 
@@ -699,7 +706,7 @@ int main(int argc, char** argv)
 	/// Load PCD file as input; better use binary PCD files, ascii files seem to generate corrupt point clouds
 	std::string directory("/home/goa/pcl_daten/corner/");
 	PointCloudT::Ptr cloud_in = PointCloudT::Ptr (new PointCloudT);
-	pcl::io::loadPCDFile(directory+"corner_close.pcd", *cloud_in);
+	pcl::io::loadPCDFile(directory+"corner.pcd", *cloud_in);
 
 	/// Extract edges on the color image
 	/*cv::Mat color_image(cloud_in->height,cloud_in->width,CV_8UC3);
@@ -714,9 +721,9 @@ int main(int argc, char** argv)
 	pcl::PointCloud<pcl::Boundary>::Ptr cloud_out = pcl::PointCloud<pcl::Boundary>::Ptr (new pcl::PointCloud<pcl::Boundary>);
 	cv::Mat border_image;
 
-	/*pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud_n (new pcl::PointCloud<pcl::PointXYZRGBNormal> ());
+	pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud_n (new pcl::PointCloud<pcl::PointXYZRGBNormal> ());
 	ef.estimatePointNormals(*cloud_in, *cloud_n);
-	pcl::io::savePCDFileASCII (directory+"/frame_n.pcd", *cloud_n);*/
+	pcl::io::savePCDFileASCII (directory+"/corner_n.pcd", *cloud_n);
 
     /// Extract edges using curvature
 	//ef.extractEdgesCurvature(cloud_in, cloud_out);
@@ -729,26 +736,37 @@ int main(int argc, char** argv)
 	cv::imshow("Edges", border_image);
 	cv::waitKey();
 
+	pcl::PointCloud<PointLabel>::Ptr cloud_out2 = pcl::PointCloud<PointLabel>::Ptr (new pcl::PointCloud<PointLabel>);
+	cloud_out2->height = cloud_out->height;
+	cloud_out2->width = cloud_out->width;
+	cloud_out2->points.resize(cloud_out2->height*cloud_out2->width);
+	for (int i=0; i<cloud_out->points.size(); i++)
+	{
+		cloud_out2->points[i].label = (int)(cloud_out->points[i].boundary_point);
+	}
 
-	ef.propagateWavefront(cloud_out);
+	ef.propagateWavefront(cloud_out2);
 
 	std::vector<pcl::PointIndices> clusters;
 	cv::Mat seg_img;
-	ef.getClusterIndices(cloud_out, clusters, seg_img);
+	ef.getClusterIndices(cloud_out2, clusters, seg_img);
 
 	pcl::ExtractIndices<pcl::PointXYZRGB> extract;
 	for (int i = 0; i<clusters.size(); i++)
 	{
-		pcl::PointCloud<pcl::PointXYZRGB> cluster;
-		extract.setInputCloud (cloud_in);
-		extract.setIndices (boost::make_shared<const pcl::PointIndices> (clusters[i]));
-		extract.setNegative (false);
-		extract.filter (cluster);
-		std::stringstream ss;
-		ss << i;
-		pcl::io::savePCDFileASCII (directory+"/cluster/cluster_"+ss.str()+".pcd", cluster);
+		if(clusters[i].indices.size() > 100)
+		{
+			pcl::PointCloud<pcl::PointXYZRGB> cluster;
+			extract.setInputCloud (cloud_in);
+			extract.setIndices (boost::make_shared<const pcl::PointIndices> (clusters[i]));
+			extract.setNegative (false);
+			extract.filter (cluster);
+			std::stringstream ss;
+			ss << i;
+			pcl::io::savePCDFileASCII (directory+"/cluster/cluster_"+ss.str()+".pcd", cluster);
+		}
 	}
-	cv::namedWindow("seg",CV_WINDOW_NORMAL);
+	//cv::namedWindow("seg",CV_WINDOW_NORMAL);
 	cv::imshow("seg",seg_img);
 	cv::waitKey();
 	//pcl::io::savePCDFileASCII (directory+"/edges/edges_boundary.pcd", cloud_out);
