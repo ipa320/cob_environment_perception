@@ -115,7 +115,6 @@ namespace ipa_features
       setPixelRradiusBorders(int radius){parameters_.pixel_radius_borders=radius; }
       void
       setMinimumBorderProbability(float border){parameters_.minimum_border_probability=border; }
-
       void
       setRangeImage (const pcl::RangeImage* range_image);
       
