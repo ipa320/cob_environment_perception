@@ -89,7 +89,7 @@ public:
     	    			  if(counter<400){
     	    			  cloud.points[counter].x=l;
     	    			  cloud.points[counter].y=k;
-    	    			  cloud.points[counter].z=1+distance;
+    	    			  cloud.points[counter].z=1;//+distance;
     	    			  l=l+0.001;
     	    			  counter++;}
     	    			  else{}
