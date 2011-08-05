@@ -155,7 +155,7 @@ public:
 		n_.param("aggregate_point_map/file_path" ,file_path_ ,std::string("/home/goa/pcl_daten/table/icp/map_"));
 		n_.param("aggregate_point_map/ros_debug" ,ros_debug ,true);
 		n_.param("aggregate_point_map/save_pc_",save_pc_ , false);
-		n_.param("aggregate_point_map/save_icp_fov_map_",save_icp_fov_map_ ,false);
+		n_.param("aggregate_point_map/save_map_",save_map_ ,false);
 		n_.param("aggregate_point_map/save_pc_aligned_",save_pc_aligned_,false);
 		n_.param("aggregate_point_map/save_icp_fov_pc_" ,save_icp_fov_pc_,false);
 		n_.param("aggregate_point_map/save_map_fov_" ,save_map_fov_,false);
@@ -171,18 +171,13 @@ public:
 
     void pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc_in)
     {
-    	pcl::VoxelGrid<Point> voxel;
-    	//pass.setKeepOrganized(true);
-    	voxel.setInputCloud(pc_in);
-    	voxel.setLeafSize(vox_filter_setleafsize1,vox_filter_setleafsize2,vox_filter_setleafsize3);
     	pcl::PointCloud<Point>::Ptr pc = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>);
-    	voxel.filter(*pc);
     	//ROS_INFO("PointCloudSubCallback");
     	StampedTransform transform;
     	try
     	{
        		//tf_listener_.waitForTransform("/map", pc->header.frame_id, pc->header.stamp, ros::Duration(2));
-    		tf_listener_.lookupTransform("/map", pc->header.frame_id, pc->header.stamp/*ros::Time(0)*/, transform);
+    		tf_listener_.lookupTransform("/map", pc_in->header.frame_id, pc_in->header.stamp/*ros::Time(0)*/, transform);
     		KDL::Frame frame_KDL, frame_KDL_old;
     		tf::TransformTFToKDL(transform, frame_KDL);
     		tf::TransformTFToKDL(transform_old_, frame_KDL_old);
@@ -193,26 +188,42 @@ public:
 
 			if(first_)
 			{
-				pcl_ros::transformPointCloud(*(pc.get()), *(pc.get()), transform);
-				map_ = *(pc.get());
+				if(save_pc_==true)
+				{
+					std::stringstream ss2;
+					ss2 << file_path_ << "/pc_" << ctr_ << ".pcd";
+					pcl::io::savePCDFileASCII (ss2.str(), *pc_in);
+				}
+				pcl_ros::transformPointCloud(*pc_in, *pc, transform);
+				pc->header.frame_id = "/map";
+				pcl::copyPointCloud(*pc, map_);
 				map_.header.frame_id="/map";
-				point_cloud_pub_aligned_.publish(map_);
+				point_cloud_pub_aligned_.publish(pc);
 				downsampleMap();
 				point_cloud_pub_.publish(map_);
 				first_ = false;
-				ctr_++;
 			}
 			else
 			{
 				if(fabs(r-r_old) > r_limit_ || fabs(p-p_old) > p_limit_ || fabs(y-y_old) > y_limit_ ||
 						transform.getOrigin().distance(transform_old_.getOrigin()) > distance_limit_)
 				{
+					if(save_pc_==true)
+					{
+						std::stringstream ss2;
+						ss2 << file_path_ << "/pc_" << ctr_ << ".pcd";
+						pcl::io::savePCDFileASCII (ss2.str(), *pc_in);
+					}
+			    	pcl::VoxelGrid<Point> voxel;
+			    	voxel.setInputCloud(pc_in);
+			    	voxel.setLeafSize(vox_filter_setleafsize1,vox_filter_setleafsize2,vox_filter_setleafsize3);
+			    	voxel.filter(*pc);
 			    	boost::timer t;
 					ROS_DEBUG_STREAM_COND(ros_debug ,  "Registering new point cloud" << std::endl);
 					transform_old_ = transform;
 					//transformPointCloud("/map", transform, pc->header.stamp, *(pc.get()), *(pc.get()));
 					//pcl_ros::transformPointCloud ("/map", *(pc.get()), *(pc.get()), tf_listener_);
-					pcl_ros::transformPointCloud(*(pc.get()), *(pc.get()), transform);
+					pcl_ros::transformPointCloud(*pc, *pc, transform);
 					//ROS_DEBUG_STREAM_COND(ros_debug ,  "frame_id " << pc->header.frame_id << std::endl);
 					pc->header.frame_id = "/map";
 
@@ -228,32 +239,26 @@ public:
 					pc->header.frame_id = "/map";
 					point_cloud_pub_aligned_.publish(pc);
 			    	 ROS_INFO("ICP took %f s", t.elapsed());
-					if(save_pc_==true)
-					{
-						std::stringstream ss2;
-						ss2 << file_path_ << "/pc_" << ctr_ << ".pcd";
-						pcl::io::savePCDFileASCII (ss2.str(), *(pc.get()));
-					}
-					if(save_icp_fov_map_ ==true)
-						{
-							std::stringstream ss1;
-							ss1 << file_path_ << "/map_" << ctr_ << ".pcd";
-							pcl::io::savePCDFileASCII (ss1.str(), map_);
-						}
-					if(save_pc_aligned_==true)
-					{
-						ROS_INFO("Saving pc_aligned.");
-						std::stringstream ss;
-						ss << file_path_ << "/pc_aligned_" << ctr_ << ".pcd";
-						pcl::io::savePCDFileASCII (ss.str(), pc_aligned);
-					}
-					ctr_++;
 				}
 			}
+			if(save_map_ ==true)
+			{
+				std::stringstream ss1;
+				ss1 << file_path_ << "/map_" << ctr_ << ".pcd";
+				pcl::io::savePCDFileASCII (ss1.str(), map_);
+			}
+			if(save_pc_aligned_==true)
+			{
+				ROS_INFO("Saving pc_aligned.");
+				std::stringstream ss;
+				ss << file_path_ << "/pc_aligned_" << ctr_ << ".pcd";
+				pcl::io::savePCDFileASCII (ss.str(), *pc);
+			}
+			ctr_++;
     	}
     	catch (tf::TransformException ex)
     	{
-    		ROS_ERROR("%s",ex.what());
+    		ROS_ERROR("AggregatePointMap::pointCloudSubCallback: %s",ex.what());
     	}
     }
 
@@ -434,7 +439,7 @@ protected:
 
     //Speichervariablen
     bool save_pc_;
-    bool save_icp_fov_map_;
+    bool save_map_;
     bool save_pc_aligned_;
     bool save_icp_fov_pc_;
     bool save_map_fov_;
