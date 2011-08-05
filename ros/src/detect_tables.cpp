@@ -93,6 +93,7 @@
 
 // ROS message includes
 //#include <sensor_msgs/PointCloud2.h>
+#include <cob_env_model/PolygonArray.h>
 #include <geometry_msgs/PolygonStamped.h>
 
 // external includes
@@ -132,6 +133,7 @@ public:
 		chull_pub_ = n_.advertise<pcl::PointCloud<Point> >("chull",1);
 		object_cluster_pub_ = n_.advertise<pcl::PointCloud<Point> >("object_cluster",1);
 		polygon_pub_ = n_.advertise<geometry_msgs::PolygonStamped>("polygons",1);
+		polygon_array_pub_ = n_.advertise<cob_env_model::PolygonArray>("polygon_array",1);
     }
 
 
@@ -224,7 +226,7 @@ public:
 					g=1;
 
 				}
-				else if(/*fabs(coefficients_plane->values[0]) < 0.9 && fabs(coefficients_plane->values[1]) < 0.9 &&*/ fabs(coefficients_plane->values[2]) < 0.1)
+				else if(/*fabs(coefficients_plane->values[0]) < 0.9 && fabs(coefficients_plane->values[1]) < 0.9 &&*/ fabs(coefficients_plane->values[2]) < 0.15)
 				{
 					ROS_INFO("Detected plane parallel to z axis");
 					b=1;
@@ -232,6 +234,7 @@ public:
 				else
 				{
 					ROS_INFO("Detected plane not parallel to z axis or perpendicular to z axis");
+					std::cout << "Plane coefficients: " << *coefficients_plane << std::endl;
 					break;
 				}
 
@@ -251,7 +254,8 @@ public:
 				pcl::PointCloud<Point>::Ptr cloud_projected (new pcl::PointCloud<Point> ());
 				pcl::ProjectInliers<Point> proj;
 				proj.setModelType (pcl::SACMODEL_PLANE);
-				proj.setInputCloud (table_cluster_ptr);
+				proj.setInputCloud (dominant_plane.makeShared()/*table_cluster_ptr*/);
+				//proj.setIndices(inliers_plane);
 				proj.setModelCoefficients (coefficients_plane);
 				proj.filter (*cloud_projected);
 
@@ -266,20 +270,43 @@ public:
 
 				// Create a Convex Hull representation of the projected inliers
 				pcl::PointCloud<Point>::Ptr cloud_hull (new pcl::PointCloud<Point> ());
-				std::vector< pcl::Vertices > hull_polygon;
+				std::vector< pcl::Vertices > hull_polygons;
 				pcl::ConcaveHull<Point> chull;
 				chull.setInputCloud (cloud_projected);
 				chull.setAlpha (0.1);
-				chull.reconstruct (*cloud_hull, hull_polygon);
+				chull.reconstruct (*cloud_hull, hull_polygons);
+				cob_env_model::PolygonArray p;
+				p.polygons.resize(hull_polygons.size());
+				p.header = pc_in->header;
+				p.normal.x = fabs(coefficients_plane->values[0]);
+				p.normal.y = fabs(coefficients_plane->values[1]);
+				p.normal.z = fabs(coefficients_plane->values[2]);
+				p.d.data = fabs(coefficients_plane->values[3]);
+				for(int j=0; j<hull_polygons.size(); j++)
+				{
+					p.polygons[j].points.resize(hull_polygons[j].vertices.size());
+					for(int k=0; k<hull_polygons[j].vertices.size(); k++)
+					{
+						int idx = hull_polygons[j].vertices[k];
+						p.polygons[j].points[k].x = cloud_hull->points[idx].x;
+						p.polygons[j].points[k].y = cloud_hull->points[idx].y;
+						p.polygons[j].points[k].z = cloud_hull->points[idx].z;
+					}
+					polygon_array_pub_.publish(p);
+				}
 				chull_pub_.publish(cloud_hull);
 				std::stringstream ss2;
 				ss2 << "/home/goa/pcl_daten/kitchen_kinect/planes/hull_" << ctr_ << ".pcd";
 				pcl::io::savePCDFileASCII (ss2.str(), *cloud_hull);
+				std::stringstream ss3;
+				ss3 << "/home/goa/pcl_daten/kitchen_kinect/planes/plane_pr_" << ctr_ << ".pcd";
+				pcl::io::savePCDFileASCII (ss3.str(), *cloud_projected);
+
 				ctr_++;
 
 				//publishMarker(*cloud_hull, cloud->header.frame_id);
-				//publishPolygons(*cloud_hull, cloud->header.frame_id, cloud->header.stamp);
-				publishMarker2(*cloud_hull, cloud->header.frame_id, cloud->header.stamp);
+				publishPolygons(*cloud_hull, cloud->header.frame_id, cloud->header.stamp);
+				publishMarker2(*cloud_hull, cloud->header.frame_id, cloud->header.stamp, r, g, b);
 
 				/*pcl::ExtractPolygonalPrismData<Point> prism;
 				// Consider only objects in a given layer above the table
@@ -401,11 +428,11 @@ public:
 		table_marker_pub_.publish(marker);
 	}
 
-	void publishMarker2(pcl::PointCloud<Point>& cloud_hull, std::string& frame_id, ros::Time stamp)
+	void publishMarker2(pcl::PointCloud<Point>& cloud_hull, std::string& frame_id, ros::Time stamp, float r, float g, float b)
 	{
 		visualization_msgs::Marker marker;
 		marker.action = visualization_msgs::Marker::ADD;
-		marker.type = visualization_msgs::Marker::LINE_STRIP;
+		marker.type = visualization_msgs::Marker::POINTS;
 		marker.lifetime = ros::Duration();
 		marker.header.frame_id = frame_id;
 		marker.header.stamp = stamp;
@@ -415,8 +442,8 @@ public:
 		//create the marker in the table reference frame
 		//the caller is responsible for setting the pose of the marker to match
 
-		marker.scale.x = 0.02;
-		marker.scale.y = 1;
+		marker.scale.x = 0.05;
+		marker.scale.y = 0.05;
 		marker.scale.z = 1;
 
 		geometry_msgs::Point pt;
@@ -429,10 +456,15 @@ public:
 
 			marker.points.push_back(pt);
 		}
+		pt.x = cloud_hull.points[0].x;
+		pt.y = cloud_hull.points[0].y;
+		pt.z = cloud_hull.points[0].z;
 
-		marker.color.r = 0;
-		marker.color.g = 0;
-		marker.color.b = 1;
+		//marker.points.push_back(pt);
+
+		marker.color.r = r;
+		marker.color.g = g;
+		marker.color.b = b;
 		marker.color.a = 1.0;
 
 		table_marker_pub_.publish(marker);
@@ -446,6 +478,7 @@ protected:
     ros::Publisher table_marker_pub_;
     ros::Publisher chull_pub_;
     ros::Publisher object_cluster_pub_;
+    ros::Publisher polygon_array_pub_;
     ros::Publisher polygon_pub_;
 
     TransformListener tf_listener_;
