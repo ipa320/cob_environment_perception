@@ -202,94 +202,87 @@ public:
 
 		  border_extractor.compute(border_descriptions);
 
-//		  pcl::visualization::PCLVisualizer viewer ("3D Viewer");
-//		  viewer.setBackgroundColor (1, 1, 1);
-//		  viewer.addCoordinateSystem (1.0f);
-//
-//
-//		  pcl::PointCloud<pcl::PointWithRange>::Ptr border_points_ptr(new pcl::PointCloud<pcl::PointWithRange>),
-//		                                              veil_points_ptr(new pcl::PointCloud<pcl::PointWithRange>),
-//		                                              shadow_points_ptr(new pcl::PointCloud<pcl::PointWithRange>);
-//		    pcl::PointCloud<pcl::PointWithRange>& border_points = *border_points_ptr,
-//		                                        & veil_points = * veil_points_ptr,
-//		                                        & shadow_points = *shadow_points_ptr;
-//		    for (int y=0; y< (int)range_image.height; ++y)
-//		    {
-//		      for (int x=0; x< (int)range_image.width; ++x)
-//		      {
-//		        if (border_descriptions.points[y*range_image.width + x].traits[pcl::BORDER_TRAIT__OBSTACLE_BORDER])
-//		          border_points.points.push_back (range_image.points[y*range_image.width + x]);
-//		        if (border_descriptions.points[y*range_image.width + x].traits[pcl::BORDER_TRAIT__VEIL_POINT])
-//		          veil_points.points.push_back (range_image.points[y*range_image.width + x]);
-//		        if (border_descriptions.points[y*range_image.width + x].traits[pcl::BORDER_TRAIT__SHADOW_BORDER])
-//		          shadow_points.points.push_back (range_image.points[y*range_image.width + x]);
-//		      }
-//		    }
-//		    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointWithRange> border_points_color_handler (border_points_ptr, 0, 255, 0);
-//		    viewer.addPointCloud<pcl::PointWithRange> (border_points_ptr, border_points_color_handler, "border points");
-//		    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 7, "border points");
-//		    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointWithRange> veil_points_color_handler (veil_points_ptr, 255, 0, 0);
-//		    viewer.addPointCloud<pcl::PointWithRange> (veil_points_ptr, veil_points_color_handler, "veil points");
-//		    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 7, "veil points");
-//		    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointWithRange> shadow_points_color_handler (shadow_points_ptr, 0, 255, 255);
-//		    viewer.addPointCloud<pcl::PointWithRange> (shadow_points_ptr, shadow_points_color_handler, "shadow points");
-//		    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 7, "shadow points");
-//		    while(!viewer.wasStopped())
-//		    	    	{
-//		    	    	viewer.spinOnce(100);
-//		    	    	usleep(100000);
-//		    	    	}
+		  pcl::visualization::PCLVisualizer viewer ("3D Viewer");
+		  viewer.setBackgroundColor (0, 0, 0);
+		  viewer.addCoordinateSystem (1.0f);
 
 
-		  pcl::PointCloud<pcl::Boundary>::Ptr boundary_pts (new pcl::PointCloud<pcl::Boundary> ());
-		  //boundary_pts.points.resize(cloud_in.size());
-		  for (int y=0; y<(int)range_image.height; ++y)
-		  {
-		    for (int x=0; x<(int)range_image.width; ++x)
+		  pcl::PointCloud<pcl::PointWithRange>::Ptr border_points_ptr(new pcl::PointCloud<pcl::PointWithRange>);
+
+		    pcl::PointCloud<pcl::PointWithRange>& border_points = *border_points_ptr;
+
+
+		    for (int y=0; y< (int)range_image.height; ++y)
 		    {
-		      if (border_descriptions.points[y*range_image.width + x].traits[pcl::BORDER_TRAIT__OBSTACLE_BORDER])
+		      for (int x=0; x< (int)range_image.width; ++x)
 		      {
-		        cloud_out.points.push_back(range_image.points[y*range_image.width + x]);
-		        pcl::Boundary p;
-		        p.boundary_point = 1;
-		        boundary_pts->points.push_back(p);
-		      }
-		      else
-		      {
-			        pcl::Boundary p;
-			        p.boundary_point = 0;
-			        boundary_pts->points.push_back(p);
+		        if (border_descriptions.points[y*range_image.width + x].traits[pcl::BORDER_TRAIT__OBSTACLE_BORDER])
+		          border_points.points.push_back (range_image.points[y*range_image.width + x]);
+
 		      }
 		    }
-		  }
+		    pcl::visualization::PointCloudColorHandlerCustom<pcl::PointWithRange> border_points_color_handler (border_points_ptr, 0, 255, 0);
+		    viewer.addPointCloud<pcl::PointXYZ>(cloud_in.makeShared(), "input cloud");
+		    viewer.addPointCloud<pcl::PointWithRange> (border_points_ptr, border_points_color_handler, "border points");
+		    viewer.setPointCloudRenderingProperties (pcl::visualization::PCL_VISUALIZER_POINT_SIZE, 7, "border points");
+		    ROS_INFO_STREAM("Kanten" << border_points.size());
 
-			border_image = cv::Mat(range_image.height, range_image.width, CV_8UC1);
-			int pt_idx=0;
-			for(int row=0; row<border_image.rows; row++)
-			{
-				for(int col=0; col<border_image.cols; col++, pt_idx++)
-				{
-					if( boundary_pts->points[pt_idx].boundary_point == 1)
-						border_image.at<unsigned char>(row,col) = 255;
-					else
-						border_image.at<unsigned char>(row,col) = 0;
-				}
-			}
-	    	ROS_INFO_STREAM("size" << cloud_in.size());
+		    while(!viewer.wasStopped())
+		    	    	{
+		    	    	viewer.spinOnce(100);
+		    	    	usleep(100000);
+		    	    	}
 
-	    	ROS_INFO_STREAM("size" << cloud_out.size());
 
-	    	pcl::visualization::PCLVisualizer viewer("3D Viewer");
-	    	viewer.addCoordinateSystem(0.5f);
-	    	viewer.addPointCloud<pcl::PointXYZ>(cloud_in.makeShared(), "input cloud");
-	        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointWithRange> single_color(cloud_out.makeShared(), 0, 255, 0);
-	    	viewer.addPointCloud<pcl::PointWithRange>(cloud_out.makeShared(),single_color, "output cloud");
-
-	    	while(!viewer.wasStopped())
-	    	{
-	    	viewer.spinOnce(100);
-	    	usleep(100000);
-	    	}
+//		  pcl::PointCloud<pcl::Boundary>::Ptr boundary_pts (new pcl::PointCloud<pcl::Boundary> ());
+//		  //boundary_pts.points.resize(cloud_in.size());
+//		  for (int y=0; y<(int)range_image.height; ++y)
+//		  {
+//		    for (int x=0; x<(int)range_image.width; ++x)
+//		    {
+//		      if (border_descriptions.points[y*range_image.width + x].traits[pcl::BORDER_TRAIT__OBSTACLE_BORDER])
+//		      {
+//		        cloud_out.points.push_back(range_image.points[y*range_image.width + x]);
+//		        pcl::Boundary p;
+//		        p.boundary_point = 1;
+//		        boundary_pts->points.push_back(p);
+//		      }
+//		      else
+//		      {
+//			        pcl::Boundary p;
+//			        p.boundary_point = 0;
+//			        boundary_pts->points.push_back(p);
+//		      }
+//		    }
+//		  }
+//
+//			border_image = cv::Mat(range_image.height, range_image.width, CV_8UC1);
+//			int pt_idx=0;
+//			for(int row=0; row<border_image.rows; row++)
+//			{
+//				for(int col=0; col<border_image.cols; col++, pt_idx++)
+//				{
+//					if( boundary_pts->points[pt_idx].boundary_point == 1)
+//						border_image.at<unsigned char>(row,col) = 255;
+//					else
+//						border_image.at<unsigned char>(row,col) = 0;
+//				}
+//			}
+//	    	ROS_INFO_STREAM("size" << cloud_in.size());
+//
+//	    	ROS_INFO_STREAM("size" << cloud_out.size());
+//
+//	    	pcl::visualization::PCLVisualizer viewer("3D Viewer");
+//	    	viewer.addCoordinateSystem(0.5f);
+//	    	viewer.addPointCloud<pcl::PointXYZ>(cloud_in.makeShared(), "input cloud");
+//	        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointWithRange> single_color(cloud_out.makeShared(), 0, 255, 0);
+//	    	viewer.addPointCloud<pcl::PointWithRange>(cloud_out.makeShared(),single_color, "output cloud");
+//
+//	    	while(!viewer.wasStopped())
+//	    	{
+//	    	viewer.spinOnce(100);
+//	    	usleep(100000);
+//	    	}
 	}
 };
     int main(int argc, char** argv)
@@ -304,8 +297,8 @@ public:
 
     	TestRange tr;
     	pcl::PointXYZ starting_point(0,0,2);
-        pcl::PointXYZ starting_point2(1,0,1);
-        pcl::PointXYZ starting_point3(0.5,0.5,0.5);
+        pcl::PointXYZ starting_point2(0.1,0,1);
+        pcl::PointXYZ starting_point3(0.05,0.5,0.5);
 
         for (float x=-0.5f; x<=0.5f; x+=0.01f)
         {
@@ -326,9 +319,8 @@ public:
     	cv::Mat border_image;
     	pcl::PointCloud<pcl::PointWithRange> cloud_out;
 
-    	tr.extractEdgesRangeImage(point_cloud , cloud_out ,border_image , 1 , 0.2);
-    	tr.extractEdgesRangeImage(output3_cloud , cloud_out ,border_image , 3 , 0.5);
-
+    	tr.extractEdgesRangeImage(point_cloud , cloud_out ,border_image , 3 , 0.5);
+    	tr.extractEdgesRangeImage(output3_cloud , cloud_out ,border_image , 4 , 0.8);
 
 
 
