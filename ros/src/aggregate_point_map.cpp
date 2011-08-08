@@ -160,6 +160,7 @@ public:
 		n_.param("aggregate_point_map/save_icp_fov_pc_" ,save_icp_fov_pc_,false);
 		n_.param("aggregate_point_map/save_map_fov_" ,save_map_fov_,false);
 		n_.param("aggregate_point_map/save_icp_map_" ,save_icp_map_,false);
+		n_.param("aggregate_point_map/save_pc_trans" ,save_pc_trans_,false);
 		n_.param("aggregate_point_map/vox_filter_setleafsize1" ,vox_filter_setleafsize1, 0.001);
 		n_.param("aggregate_point_map/vox_filter_setleafsize2" ,vox_filter_setleafsize2, 0.001);
 		n_.param("aggregate_point_map/vox_filter_setleafsize3" ,vox_filter_setleafsize3, 0.001);
@@ -176,6 +177,7 @@ public:
     	StampedTransform transform;
     	try
     	{
+          std::stringstream ss2;
        		//tf_listener_.waitForTransform("/map", pc->header.frame_id, pc->header.stamp, ros::Duration(2));
     		tf_listener_.lookupTransform("/map", pc_in->header.frame_id, pc_in->header.stamp/*ros::Time(0)*/, transform);
     		KDL::Frame frame_KDL, frame_KDL_old;
@@ -190,7 +192,6 @@ public:
 			{
 				if(save_pc_==true)
 				{
-					std::stringstream ss2;
 					ss2 << file_path_ << "/pc_" << ctr_ << ".pcd";
 					pcl::io::savePCDFileASCII (ss2.str(), *pc_in);
 				}
@@ -202,6 +203,13 @@ public:
 				downsampleMap();
 				point_cloud_pub_.publish(map_);
 				first_ = false;
+                                if(save_pc_trans_==true)
+                                {
+                                        ss2.str("");
+                                        ss2.clear();
+                                        ss2 << file_path_ << "/pc_trans_" << ctr_ << ".pcd";
+                                        pcl::io::savePCDFileASCII (ss2.str(), map_);
+                                }
 			}
 			else
 			{
@@ -226,6 +234,13 @@ public:
 					pcl_ros::transformPointCloud(*pc, *pc, transform);
 					//ROS_DEBUG_STREAM_COND(ros_debug ,  "frame_id " << pc->header.frame_id << std::endl);
 					pc->header.frame_id = "/map";
+	                                if(save_pc_trans_==true)
+	                                {
+	                                        ss2.str("");
+	                                        ss2.clear();
+	                                        ss2 << file_path_ << "/pc_trans_" << ctr_ << ".pcd";
+	                                        pcl::io::savePCDFileASCII (ss2.str(), *pc);
+	                                }
 
 					pcl::PointCloud<Point> pc_aligned;
 					Eigen::Matrix4f icp_transform;
@@ -444,6 +459,7 @@ protected:
     bool save_icp_fov_pc_;
     bool save_map_fov_;
     bool save_icp_map_;
+    bool save_pc_trans_;
 
 
     double y_limit_;

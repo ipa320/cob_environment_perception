@@ -278,10 +278,10 @@ public:
 				cob_env_model::PolygonArray p;
 				p.polygons.resize(hull_polygons.size());
 				p.header = pc_in->header;
-				p.normal.x = fabs(coefficients_plane->values[0]);
-				p.normal.y = fabs(coefficients_plane->values[1]);
-				p.normal.z = fabs(coefficients_plane->values[2]);
-				p.d.data = fabs(coefficients_plane->values[3]);
+				p.normal.x = coefficients_plane->values[0];
+				p.normal.y = coefficients_plane->values[1];
+				p.normal.z = coefficients_plane->values[2];
+				p.d.data = coefficients_plane->values[3];
 				for(int j=0; j<hull_polygons.size(); j++)
 				{
 					p.polygons[j].points.resize(hull_polygons[j].vertices.size());

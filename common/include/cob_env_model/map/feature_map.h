@@ -82,6 +82,7 @@ public:
     Eigen::Vector3f normal;
     double d;
     Eigen::Affine3f transform_from_world_to_plane;
+    unsigned int merged;
   };
 
   /*inline std::ostream& operator << (std::ostream& os, const MapEntry& m)
@@ -95,7 +96,7 @@ public:
 
   // Constructor
   FeatureMap()
-  :entry_ctr_(0)
+  :new_id_(0)
   {
     /// void
   }
@@ -113,10 +114,21 @@ public:
   getGpcStructure(MapEntry& p, gpc_polygon* gpc_p);
 
   void
+  getGpcStructureUsingMap(FeatureMap::MapEntry& p,
+                          Eigen::Affine3f& transform_from_world_to_plane,
+                          gpc_polygon* gpc_p);
+
+  void
   printMapEntry(MapEntry& p);
 
   void
   printGpcStructure(gpc_polygon* p);
+
+  void
+  saveMapEntry(std::string path, int ctr, FeatureMap::MapEntry& p);
+
+  void
+  saveMap(std::string path);
 
   void
   getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
@@ -137,7 +149,7 @@ public:
 
 protected:
   std::vector<MapEntryPtr> map_;
-  unsigned int entry_ctr_;
+  unsigned int new_id_;
 
 };
 
