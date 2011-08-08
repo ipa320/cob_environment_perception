@@ -103,7 +103,7 @@ public:
   FeatureMapNode()
   {
     //convex_hull_sub_ = n_.subscribe("table_hull", 1, &FeatureMap::subCallback, this);
-    polygon_sub_ = n_.subscribe("polygons", 10, &FeatureMapNode::polygonCallback, this);
+    polygon_sub_ = n_.subscribe("polygon_array", 10, &FeatureMapNode::polygonCallback, this);
     map_pub_ = n_.advertise<geometry_msgs::PolygonStamped>("feature_map",1);
     marker_pub_ = n_.advertise<visualization_msgs::Marker>("feature_marker",100);
   }
@@ -133,6 +133,7 @@ public:
     map_entry.normal(0) = p.normal.x;
     map_entry.normal(1) = p.normal.y;
     map_entry.normal(2) = p.normal.z;
+    map_entry.merged = 0;
     //map_entry.polygon_world.resize(p.polygons.size());
     for(unsigned int i=0; i<p.polygons.size(); i++)
     {
@@ -235,10 +236,9 @@ public:
             visualization_msgs::Marker marker;
             marker.action = visualization_msgs::Marker::ADD;
             marker.type = visualization_msgs::Marker::POINTS;
-            marker.lifetime = ros::Duration(4);
+            marker.lifetime = ros::Duration();
             marker.header.frame_id = "/map";
             //marker.header.stamp = stamp;
-            //marker.id = ctr_;
 
 
 
@@ -258,17 +258,45 @@ public:
             for(int i=0; i<map->size(); i++)
             {
               FeatureMap::MapEntry& pm = *(map->at(i));
+              //if(pm.merged/*pm.normal(2)<0.1*/)
+              {
+              marker.id = pm.id;
+              /*if(pm.merged==1)
+              {
+                marker.color.r = 1;
+                marker.color.b = 0;
+              }
+              else if(pm.merged==2)
+              {
+                marker.color.r = 0;
+                marker.color.g = 1;
+                marker.color.b = 0;
+              }
+              else if(pm.merged>=3)
+              {
+                marker.color.r = 0;
+                marker.color.g = 1;
+                marker.color.b = 1;
+              }*/
+              marker.points.resize(1000);
+              unsigned int num_pts=0;
               for(int j=0; j<pm.polygon_world.size(); j++)
               {
                 for(int k=0; k<pm.polygon_world[j].size(); k++)
                 {
-                  pt.x = pm.polygon_world[j][k](0);
+                  /*pt.x = pm.polygon_world[j][k](0);
                   pt.y = pm.polygon_world[j][k](1);
-                  pt.z = pm.polygon_world[j][k](2);
-                  marker.points.push_back(pt);
+                  pt.z = pm.polygon_world[j][k](2);*/
+                  marker.points[num_pts].x = pm.polygon_world[j][k](0);
+                  marker.points[num_pts].y = pm.polygon_world[j][k](1);
+                  marker.points[num_pts].z = pm.polygon_world[j][k](2);
+                  num_pts++;
+                  //marker.points.push_back(pt);
                 }
               }
+              marker.points.resize(num_pts);
               marker_pub_.publish(marker);
+              }
             }
     }
 
