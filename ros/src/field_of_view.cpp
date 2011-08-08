@@ -85,7 +85,7 @@ class FieldOfView
 			sensor_fov_hor_ = /*63*/40*M_PI/180;
 			sensor_fov_ver_ = /*54*/40*M_PI/180;
 			sensor_max_range_ = 5;
-			camera_frame_ = std::string(/*"/base_kinect_rear_link"*/"/head_tof_link");
+			camera_frame_ = std::string(/*"/base_kinect_rear_link"*/"/head_cam3d_link");
 			computeFieldOfView();
 		}
 
