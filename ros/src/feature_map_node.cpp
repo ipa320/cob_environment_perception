@@ -214,13 +214,13 @@ public:
     geometry_msgs::PolygonStamped p;
     p.header.frame_id = "/map";
     boost::shared_ptr<std::vector<FeatureMap::MapEntryPtr> > map = feature_map_.getMap();
-    for(int i=0; i<map->size(); i++)
+    for(unsigned int i=0; i<map->size(); i++)
     {
       FeatureMap::MapEntry& pm = *(map->at(i));
-      for(int j=0; j<pm.polygon_world.size(); j++)
+      for(unsigned int j=0; j<pm.polygon_world.size(); j++)
       {
         p.polygon.points.resize(pm.polygon_world[j].size());
-        for(int k=0; k<pm.polygon_world[j].size(); k++)
+        for(unsigned int k=0; k<pm.polygon_world[j].size(); k++)
         {
           p.polygon.points[k].x = pm.polygon_world[j][k](0);
           p.polygon.points[k].y = pm.polygon_world[j][k](1);
@@ -256,34 +256,54 @@ public:
     geometry_msgs::Point pt;
     boost::shared_ptr<std::vector<FeatureMap::MapEntryPtr> > map = feature_map_.getMap();
     int ctr=0;
-    for(int i=0; i<map->size(); i++)
+    for(unsigned int i=0; i<map->size(); i++)
     {
       FeatureMap::MapEntry& pm = *(map->at(i));
       //if(pm.merged/*pm.normal(2)<0.1*/)
       {
         //marker.id = pm.id;
-        /*if(pm.merged==1)
-              {
-                marker.color.r = 1;
-                marker.color.b = 0;
-              }
-              else if(pm.merged==2)
-              {
-                marker.color.r = 0;
-                marker.color.g = 1;
-                marker.color.b = 0;
-              }
-              else if(pm.merged>=3)
-              {
-                marker.color.r = 0;
-                marker.color.g = 1;
-                marker.color.b = 1;
-              }*/
-        for(int j=0; j<pm.polygon_world.size(); j++)
+        if(i==0)
         {
+          marker.color.r = 1;
+          marker.color.g = 0;
+          marker.color.b = 0;
+        }
+        else if(i==1)
+        {
+          marker.color.r = 0;
+          marker.color.g = 1;
+          marker.color.b = 0;
+        }
+        else if(i==2)
+        {
+          marker.color.r = 0;
+          marker.color.g = 1;
+          marker.color.b = 1;
+        }
+        else if(i==3)
+        {
+          marker.color.r = 1;
+          marker.color.g = 1;
+          marker.color.b = 0;
+        }
+        else if(i==4)
+        {
+          marker.color.r = 1;
+          marker.color.g = 0;
+          marker.color.b = 1;
+        }
+        else
+        {
+          marker.color.r = 0;
+          marker.color.g = 0;
+          marker.color.b = 1;
+        }
+        for(unsigned int j=0; j<pm.polygon_world.size(); j++)
+        {
+          //TODO: this is a workaround as the marker can't display more than one contour
           marker.id = ctr;
           ctr++;
-          for(int k=0; k<pm.polygon_world[j].size(); k++)
+          for(unsigned int k=0; k<pm.polygon_world[j].size(); k++)
           {
             marker.points.resize(pm.polygon_world[j].size()+1);
             /*pt.x = pm.polygon_world[j][k](0);

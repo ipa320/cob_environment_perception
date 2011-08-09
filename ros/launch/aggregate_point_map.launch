@@ -21,15 +21,15 @@
   	<param name="icp_max_iterations" type="int" value="50"/>
   	<param name="icp_max_corr_dist" type="double" value="0.1"/>
   	<param name="icp_trf_epsilon" type="double" value="1e-6"/>
-  	<param name="file_path" type="string" value="/home/goa/pcl_daten/kitchen_kinect/pc_aligned/"/>
-  	<param name="save_pc" type="bool" value="true"/>
-  	<param name="save_map" type="bool" value="true"/>
-  	<param name="save_pcaligned_" type="bool" value="true"/>
+  	<param name="file_path" type="string" value="/home/goa/pcl_daten/kitchen_kinect2/icp/"/>
+  	<param name="save_pc" type="bool" value="false"/>
+  	<param name="save_map" type="bool" value="false"/>
+  	<param name="save_pc_aligned" type="bool" value="false"/>
   	<param name="save_map_fov" type="bool" value="false"/>
-  	<param name="save_pc_trans" type="bool" value="true"/>
-  	<param name="voxel_leafsize_x" type="double" value="0.02" />
-  	<param name="voxel_leafsize_y" type="double" value="0.02" />
-  	<param name="voxel_leafsize_z" type="double" value="0.02" />
+  	<param name="save_pc_trans" type="bool" value="false"/>
+  	<param name="voxel_leafsize_x" type="double" value="0.03" />
+  	<param name="voxel_leafsize_y" type="double" value="0.03" />
+  	<param name="voxel_leafsize_z" type="double" value="0.03" />
   	<param name="r_limit_" type="double" value="0.03" />
   	<param name="p_limit_" type="double" value="0.03" />
   	<param name="y_limit" type="double" value="0.03" />

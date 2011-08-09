@@ -181,7 +181,7 @@ public:
 
 			pcl::PointCloud<Point>::Ptr table_cluster_ptr = table_cluster.makeShared();
 			pcl::PointIndices::Ptr inliers_plane (new pcl::PointIndices ());
-			while(table_cluster_ptr->size()-inliers_plane->indices.size()>min_cluster_size_)
+			while(table_cluster_ptr->size()>min_cluster_size_)
 			{
 				pcl::NormalEstimation<Point,pcl::Normal> normalEstimator;
 				normalEstimator.setInputCloud(table_cluster_ptr);
@@ -211,24 +211,24 @@ public:
 				float r=0, g=0, b=0;
 				if (coefficients_plane->values.size () <=3)
 				{
-					ROS_INFO("Failed to detect table in scan, skipping cluster");
+					//ROS_INFO("Failed to detect table in scan, skipping cluster");
 					break;
 				}
 				if ( inliers_plane->indices.size() < (unsigned int)150)
 				{
-					ROS_INFO("Plane detection has %d inliers, below min threshold of %d, skipping cluster", (int)inliers_plane->indices.size(), 150);
+					//ROS_INFO("Plane detection has %d inliers, below min threshold of %d, skipping cluster", (int)inliers_plane->indices.size(), 150);
 					break;
 				}
 				if(fabs(coefficients_plane->values[0]) < 0.1 && fabs(coefficients_plane->values[1]) < 0.1 && fabs(coefficients_plane->values[2]) > 0.9)
 				{
-					ROS_INFO("Detected plane perpendicular to z axis");
+					//ROS_INFO("Detected plane perpendicular to z axis");
 					std::cout << "Plane coefficients: " << *coefficients_plane << std::endl;
 					g=1;
 
 				}
 				else if(/*fabs(coefficients_plane->values[0]) < 0.9 && fabs(coefficients_plane->values[1]) < 0.9 &&*/ fabs(coefficients_plane->values[2]) < 0.15)
 				{
-					ROS_INFO("Detected plane parallel to z axis");
+					//ROS_INFO("Detected plane parallel to z axis");
 					b=1;
 				}
 				else
@@ -238,14 +238,12 @@ public:
 					break;
 				}
 
+                                ROS_INFO("Plane has %d inliers", (int)inliers_plane->indices.size());
 				pcl::PointCloud<Point> dominant_plane;
 				pcl::ExtractIndices<Point> extractIndices;
 				extractIndices.setInputCloud(table_cluster_ptr);
 				extractIndices.setIndices(inliers_plane);
 				extractIndices.filter(dominant_plane);
-				//extractIndices.setNegative(true);
-				//extractIndices.filter(cloud);
-				ROS_INFO("Plane has %d inliers", (int)inliers_plane->indices.size());
 				//ROS_INFO("Saved plane to %s", ss.str());
 
 
@@ -273,7 +271,7 @@ public:
 				std::vector< pcl::Vertices > hull_polygons;
 				pcl::ConcaveHull<Point> chull;
 				chull.setInputCloud (cloud_projected);
-				chull.setAlpha (0.1);
+				chull.setAlpha (0.2);
 				chull.reconstruct (*cloud_hull, hull_polygons);
 				cob_env_model::PolygonArray p;
 				p.polygons.resize(hull_polygons.size());
@@ -296,10 +294,10 @@ public:
 				}
 				chull_pub_.publish(cloud_hull);
 				std::stringstream ss2;
-				ss2 << "/home/goa/pcl_daten/kitchen_kinect/planes/hull_" << ctr_ << ".pcd";
-			//	pcl::io::savePCDFileASCII (ss2.str(), *cloud_hull);
+				ss2 << "/home/goa/pcl_daten/kitchen_kinect2/planes/hull_" << ctr_ << ".pcd";
+				pcl::io::savePCDFileASCII (ss2.str(), *cloud_hull);
 				std::stringstream ss3;
-				ss3 << "/home/goa/pcl_daten/kitchen_kinect/planes/plane_pr_" << ctr_ << ".pcd";
+				ss3 << "/home/goa/pcl_daten/kitchen_kinect2/planes/plane_pr_" << ctr_ << ".pcd";
 			//	pcl::io::savePCDFileASCII (ss3.str(), *cloud_projected);
 
 				ctr_++;
@@ -442,8 +440,8 @@ public:
 		//create the marker in the table reference frame
 		//the caller is responsible for setting the pose of the marker to match
 
-		marker.scale.x = 0.05;
-		marker.scale.y = 0.05;
+		marker.scale.x = 0.02;
+		marker.scale.y = 0.02;
 		marker.scale.z = 1;
 
 		geometry_msgs::Point pt;

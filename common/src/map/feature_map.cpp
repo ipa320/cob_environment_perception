@@ -100,26 +100,57 @@ FeatureMap::addMapEntry(FeatureMap::MapEntryPtr p_ptr)
   {
     //std::cout << "loop" << std::endl;
     MapEntry& p_map = *(map_[i]);
+    printMapEntry(p_map);
+    printMapEntry(p);
     Eigen::Vector3f n2(p.normal(0), p.normal(1), p.normal(2));
     n2.normalize();
     //double angle = fabs(std::acos(p_map.normal.dot(n2)));
-    if(fabs(p_map.normal.dot(n2))>0.97 && fabs(fabs(p_map.d)-fabs(p.d))<0.01) //0.97 = 14 degree
+    if(fabs(p_map.normal.dot(n2))>0.95 && fabs(fabs(p_map.d)-fabs(p.d))<0.15) //0.97 = 14 degree; 0.1
     //if(angle<0.05 && fabs(p_map.d-p.d)<0.08) //planes can be merged
     {
       gpc_polygon gpc_result;
       gpc_polygon gpc_p_merge;
       gpc_polygon gpc_p_map;
-      getGpcStructureUsingMap(p, p_map.transform_from_world_to_plane, &gpc_p_merge);
+      double d_p = p.d;
+      if(p_map.normal.dot(n2)<-0.95) {n2 = -n2, d_p=-d_p;}
+      Eigen::Vector3f n_map = (p_map.normal + n2)/2;
+      /*n_map(0) = (p_map.normal(0) + n2(0))/2;
+      n_map(1) = (p_map.normal(1) + n2(1))/2;
+      n_map(2) = (p_map.normal(2) + n2(2))/2;*/
+      double d_map = (p_map.d + d_p)/2;
+      Eigen::Vector3f ft_pt;
+      if(fabs(n_map(2))>0.01)
+        ft_pt << 0, 0, -d_map/n_map(2);
+      else if(fabs(n_map(0))>0.01)
+        ft_pt << -d_map/n_map(0), 0, 0;
+      else if(fabs(n_map(1))>0.01)
+        ft_pt << 0, -d_map/n_map(1), 0;
+      Eigen::Affine3f transformation_from_plane_to_world;
+      Eigen::Affine3f transformation_from_world_to_plane;
+      getTransformationFromPlaneToWorld(n_map, ft_pt, transformation_from_plane_to_world);
+      transformation_from_world_to_plane = transformation_from_plane_to_world.inverse();
+      getGpcStructureUsingMap(p, transformation_from_world_to_plane, &gpc_p_merge);
       //std::cout <<  p.transform_from_world_to_plane.matrix() << std::endl;
       //printGpcStructure(&gpc_p_merge);
       //getGpcStructure(p, &gpc_p_merge);
       //std::cout <<  p.transform_from_world_to_plane.matrix() << std::endl;
       //printGpcStructure(&gpc_p_merge);
-      getGpcStructure(p_map, &gpc_p_map);
+      getGpcStructureUsingMap(p_map, transformation_from_world_to_plane, &gpc_p_map);
       //printGpcStructure(&gpc_p_map);
+      printGpcStructure(&gpc_p_merge);
+      printGpcStructure(&gpc_p_map);
       gpc_polygon_clip(GPC_UNION, &gpc_p_merge, &gpc_p_map, &gpc_result);
       if(gpc_result.num_contours == 0) //merge failed
+      {
+        std::cout << "merge failed" << std::endl;
         continue;
+      }
+      else if(gpc_result.num_contours >= gpc_p_map.num_contours + gpc_p_merge.num_contours)
+      {
+        std::cout << "merge failed" << std::endl;
+        std::cout << "feature id: " << i << std::endl;
+        continue;
+      }
       else
       {
         /*if(fabs(p_map.normal(1))>0.8)
@@ -128,6 +159,10 @@ FeatureMap::addMapEntry(FeatureMap::MapEntryPtr p_ptr)
           std::cout << "Trafo from plane to world: " << std::endl;
           std::cout <<  p_map.transform_from_world_to_plane.inverse().matrix() << std::endl;
         }*/
+        //gpc_result = gpc_p_map;
+        p_map.transform_from_world_to_plane = transformation_from_world_to_plane;
+        p_map.normal = n_map;
+        p_map.d = d_map;
         p_map.polygon_world.resize(gpc_result.num_contours);
         /*for(int j=0; j<gpc_p_merge.num_contours; j++)
         {
@@ -153,13 +188,14 @@ FeatureMap::addMapEntry(FeatureMap::MapEntryPtr p_ptr)
             //TODO: update normal, d, transformation...?
           }
         }
-        std::cout << "feature merged" << std::endl;
+        std::cout << i << ": feature merged" << std::endl;
         /*if(fabs(p_map.normal(1))>0.8)
         {
           printGpcStructure(&gpc_result);
           printMapEntry(p_map);
         }*/
         merged = true;
+        printMapEntry(p_map);
         p_map.merged++;
         break;
       }
@@ -182,7 +218,7 @@ FeatureMap::addMapEntry(FeatureMap::MapEntryPtr p_ptr)
   }
   //printGpcStructure(&gpc_p);
   //gpc_free_polygon(&gpc_p);
-  //saveMap("/home/goa/pcl_daten/kitchen_kinect/map");
+  //saveMap("/home/goa/pcl_daten/kitchen_kinect2/map");
 
 }
 
@@ -208,6 +244,7 @@ FeatureMap::getGpcStructure(FeatureMap::MapEntry& p, gpc_polygon* gpc_p)
       Eigen::Vector3f point_trans = p.transform_from_world_to_plane*p.polygon_world[j][k];
       gpc_p->contour[j].vertex[k].x = point_trans(0);
       gpc_p->contour[j].vertex[k].y = point_trans(1);
+      if(fabs(point_trans(2))>0.01) std::cout << "z: " << point_trans(2) << std::endl;
       //std::cout << k << ":" << gpc_p->contour[j].vertex[k].x << "," << gpc_p->contour[j].vertex[k].y <<std::endl;
     }
   }
@@ -254,6 +291,7 @@ FeatureMap::getGpcStructureUsingMap(FeatureMap::MapEntry& p, Eigen::Affine3f& tr
       Eigen::Vector3f point_trans = transform_from_world_to_plane*p.polygon_world[j][k];
       gpc_p->contour[j].vertex[k].x = point_trans(0);
       gpc_p->contour[j].vertex[k].y = point_trans(1);
+      //if(point_trans(2)>0.02) std::cout << "z: " << point_trans(2) << std::endl;
       //std::cout << k << ":" << gpc_p->contour[j].vertex[k].x << "," << gpc_p->contour[j].vertex[k].y <<std::endl;
     }
   }
@@ -292,6 +330,7 @@ FeatureMap::saveMapEntry(std::string path, int ctr, FeatureMap::MapEntry& p)
       pt.z = p.polygon_world[i][j](2);
       pc.points.push_back(pt);
     }
+    std::cout << ss.str() << std::endl;
     pcl::io::savePCDFileASCII (ss.str(), pc);
     ss.str("");
     ss.clear();
@@ -304,10 +343,9 @@ FeatureMap::saveMap(std::string path)
   static int ctr=0;
   std::stringstream ss;
   ss << path << "/" << ctr << "_";
-  std::cout << "Saving map with " << map_.size() << " entries..." << std::endl;
+  std::cout << ctr << " Saving map with " << map_.size() << " entries..." << std::endl;
   for(size_t i=0; i< map_.size(); i++)
   {
-    if (map_[i]->merged >0)
       saveMapEntry(ss.str(), i, *map_[i]);
   }
   ctr++;
@@ -348,7 +386,7 @@ FeatureMap::getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,
   transformation = transformation.inverse();
 }
 
-int main (int argc, char** argv)
+/*int main (int argc, char** argv)
  {
 
   FeatureMap fm;
@@ -389,6 +427,61 @@ int main (int argc, char** argv)
 
   }
   fm.saveMap("/home/goa/pcl_daten/kitchen_kinect/map");
+}*/
+
+int main (int argc, char** argv)
+ {
+
+  FeatureMap fm;
+  FeatureMap::MapEntryPtr m_p = FeatureMap::MapEntryPtr(new FeatureMap::MapEntry());
+  m_p->id = 0;
+  m_p->normal << 0,0,1;
+  m_p->d = -1;
+  std::vector<Eigen::Vector3f> vv;
+  Eigen::Vector3f v;
+  v << 1,0,1;
+  vv.push_back(v);
+  v << 1,1,1;
+  vv.push_back(v);
+  v << 0,1,1;
+  vv.push_back(v);
+  v << 0,0,1;
+  vv.push_back(v);
+  m_p->polygon_world.push_back(vv);
+  fm.addMapEntry(m_p);
+
+  m_p = FeatureMap::MapEntryPtr(new FeatureMap::MapEntry());
+  m_p->id = 1;
+  m_p->normal << 0,0,1;
+  m_p->d = -1;
+  vv.clear();
+  v << 2,2,1;
+  vv.push_back(v);
+  v << 2,3,1;
+  vv.push_back(v);
+  v << 3,3,1;
+  vv.push_back(v);
+  v << 3,2,1;
+  vv.push_back(v);
+  m_p->polygon_world.push_back(vv);
+  fm.addMapEntry(m_p);
+
+  m_p = FeatureMap::MapEntryPtr(new FeatureMap::MapEntry());
+  m_p->id = 1;
+  m_p->normal << 0,0,-1;
+  m_p->d = -1;
+  vv.clear();
+  v << 2,2,1;
+  vv.push_back(v);
+  v << 2,3,1;
+  vv.push_back(v);
+  v << 3,3,1;
+  vv.push_back(v);
+  v << 3,2,1;
+  vv.push_back(v);
+  m_p->polygon_world.push_back(vv);
+  fm.addMapEntry(m_p);
+  fm.saveMap("/home/goa/pcl_daten/merge_test/");
 }
 
 
