@@ -75,6 +75,7 @@ class FeatureMap
 public:
   struct MapEntry
   {
+    //needed for 32-bit systems: see http://eigen.tuxfamily.org/dox/TopicStructHavingEigenMembers.html
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     unsigned int id;
     std::vector<std::vector<Eigen::Vector3f> > polygon_world;
