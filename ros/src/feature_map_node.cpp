@@ -232,36 +232,37 @@ public:
   }
 
   void publishMapMarker()
+  {
+    visualization_msgs::Marker marker;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.type = visualization_msgs::Marker::LINE_STRIP;
+    marker.lifetime = ros::Duration();
+    marker.header.frame_id = "/map";
+    //marker.header.stamp = stamp;
+
+
+
+    //create the marker in the table reference frame
+    //the caller is responsible for setting the pose of the marker to match
+
+    marker.scale.x = 0.02;
+    marker.scale.y = 0.02;
+    marker.scale.z = 1;
+    marker.color.r = 0;
+    marker.color.g = 0;
+    marker.color.b = 1;
+    marker.color.a = 1.0;
+
+    geometry_msgs::Point pt;
+    boost::shared_ptr<std::vector<FeatureMap::MapEntryPtr> > map = feature_map_.getMap();
+    int ctr=0;
+    for(int i=0; i<map->size(); i++)
     {
-            visualization_msgs::Marker marker;
-            marker.action = visualization_msgs::Marker::ADD;
-            marker.type = visualization_msgs::Marker::POINTS;
-            marker.lifetime = ros::Duration();
-            marker.header.frame_id = "/map";
-            //marker.header.stamp = stamp;
-
-
-
-            //create the marker in the table reference frame
-            //the caller is responsible for setting the pose of the marker to match
-
-            marker.scale.x = 0.05;
-            marker.scale.y = 0.05;
-            marker.scale.z = 1;
-            marker.color.r = 0;
-            marker.color.g = 0;
-            marker.color.b = 1;
-            marker.color.a = 1.0;
-
-            geometry_msgs::Point pt;
-            boost::shared_ptr<std::vector<FeatureMap::MapEntryPtr> > map = feature_map_.getMap();
-            for(int i=0; i<map->size(); i++)
-            {
-              FeatureMap::MapEntry& pm = *(map->at(i));
-              //if(pm.merged/*pm.normal(2)<0.1*/)
-              {
-              marker.id = pm.id;
-              /*if(pm.merged==1)
+      FeatureMap::MapEntry& pm = *(map->at(i));
+      //if(pm.merged/*pm.normal(2)<0.1*/)
+      {
+        //marker.id = pm.id;
+        /*if(pm.merged==1)
               {
                 marker.color.r = 1;
                 marker.color.b = 0;
@@ -278,27 +279,29 @@ public:
                 marker.color.g = 1;
                 marker.color.b = 1;
               }*/
-              marker.points.resize(1000);
-              unsigned int num_pts=0;
-              for(int j=0; j<pm.polygon_world.size(); j++)
-              {
-                for(int k=0; k<pm.polygon_world[j].size(); k++)
-                {
-                  /*pt.x = pm.polygon_world[j][k](0);
+        for(int j=0; j<pm.polygon_world.size(); j++)
+        {
+          marker.id = ctr;
+          ctr++;
+          for(int k=0; k<pm.polygon_world[j].size(); k++)
+          {
+            marker.points.resize(pm.polygon_world[j].size()+1);
+            /*pt.x = pm.polygon_world[j][k](0);
                   pt.y = pm.polygon_world[j][k](1);
                   pt.z = pm.polygon_world[j][k](2);*/
-                  marker.points[num_pts].x = pm.polygon_world[j][k](0);
-                  marker.points[num_pts].y = pm.polygon_world[j][k](1);
-                  marker.points[num_pts].z = pm.polygon_world[j][k](2);
-                  num_pts++;
-                  //marker.points.push_back(pt);
-                }
-              }
-              marker.points.resize(num_pts);
-              marker_pub_.publish(marker);
-              }
-            }
+            marker.points[k].x = pm.polygon_world[j][k](0);
+            marker.points[k].y = pm.polygon_world[j][k](1);
+            marker.points[k].z = pm.polygon_world[j][k](2);
+            //marker.points.push_back(pt);
+          }
+          marker.points[pm.polygon_world[j].size()].x = pm.polygon_world[j][0](0);
+          marker.points[pm.polygon_world[j].size()].y = pm.polygon_world[j][0](1);
+          marker.points[pm.polygon_world[j].size()].z = pm.polygon_world[j][0](2);
+          marker_pub_.publish(marker);
+        }
+      }
     }
+  }
 
   //    void subCallback(const pcl::PointCloud<pcl::PointXYZ>::Ptr& hull)
   //	{
@@ -588,7 +591,7 @@ protected:
 };
 
 int main (int argc, char** argv)
- {
+{
   ros::init (argc, argv, "feature_map_node");
 
   FeatureMapNode fmn;
