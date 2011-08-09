@@ -261,11 +261,11 @@ public:
 
 				std::stringstream ss1;
 				ss1 << "/home/goa/pcl_daten/kitchen_kinect/planes/cluster_" << ctr_ << ".pcd";
-				pcl::io::savePCDFileASCII (ss1.str(), table_cluster);
+			//	pcl::io::savePCDFileASCII (ss1.str(), table_cluster);
 
 				std::stringstream ss;
 				ss << "/home/goa/pcl_daten/kitchen_kinect/planes/plane_" << ctr_ << ".pcd";
-				pcl::io::savePCDFileASCII (ss.str(), dominant_plane);
+			//	pcl::io::savePCDFileASCII (ss.str(), dominant_plane);
 
 
 				// Create a Convex Hull representation of the projected inliers
@@ -297,10 +297,10 @@ public:
 				chull_pub_.publish(cloud_hull);
 				std::stringstream ss2;
 				ss2 << "/home/goa/pcl_daten/kitchen_kinect/planes/hull_" << ctr_ << ".pcd";
-				pcl::io::savePCDFileASCII (ss2.str(), *cloud_hull);
+			//	pcl::io::savePCDFileASCII (ss2.str(), *cloud_hull);
 				std::stringstream ss3;
 				ss3 << "/home/goa/pcl_daten/kitchen_kinect/planes/plane_pr_" << ctr_ << ".pcd";
-				pcl::io::savePCDFileASCII (ss3.str(), *cloud_projected);
+			//	pcl::io::savePCDFileASCII (ss3.str(), *cloud_projected);
 
 				ctr_++;
 

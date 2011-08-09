@@ -47,7 +47,6 @@ rosbuild_add_executable(extract_features_node ros/src/extract_features.cpp)
 rosbuild_add_executable(pointcloud_to_pcd ros/src/tools/pointcloud_to_pcd.cpp)
 rosbuild_add_library(cob_env_model ros/src/detect_tables.cpp
 	ros/src/aggregate_point_map.cpp
-	ros/src/aggregate_range_image_map.cpp
 	ros/src/filters/amplitude_filter.cpp
 	ros/src/filters/intensity_filter.cpp
 	ros/src/filters/jump_edge_filter.cpp

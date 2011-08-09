@@ -140,7 +140,7 @@ FeatureMap::addMapEntry(FeatureMap::MapEntryPtr p_ptr)
             //TODO: update normal, d, transformation...?
           }
         }*/
-        printGpcStructure(&gpc_result);
+        //printGpcStructure(&gpc_result);
         for(int j=0; j<gpc_result.num_contours; j++)
         {
           p_map.polygon_world[j].resize(gpc_result.contour[j].num_vertices);
@@ -182,7 +182,7 @@ FeatureMap::addMapEntry(FeatureMap::MapEntryPtr p_ptr)
   }
   //printGpcStructure(&gpc_p);
   //gpc_free_polygon(&gpc_p);
-  saveMap("/home/goa/pcl_daten/kitchen_kinect/map");
+  //saveMap("/home/goa/pcl_daten/kitchen_kinect/map");
 
 }
 
