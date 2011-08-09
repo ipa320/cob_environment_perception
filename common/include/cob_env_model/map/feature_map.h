@@ -75,6 +75,7 @@ class FeatureMap
 public:
   struct MapEntry
   {
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     unsigned int id;
     std::vector<std::vector<Eigen::Vector3f> > polygon_world;
     //cob_env_model::PolygonArray polygon_world;
