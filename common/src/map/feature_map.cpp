@@ -86,6 +86,8 @@ FeatureMap::addMapEntry(FeatureMap::MapEntryPtr p_ptr)
   FeatureMap::MapEntry& p = *p_ptr;
   //ROS_INFO("polygonCallback");
   bool merged = false;
+  p.d = p.d/p.normal.norm();
+  p.normal.normalize();
   //gpc_polygon gpc_p;
   //getGpcStructure(p, &gpc_p);
   /*printGpcStructure(&gpc_p);
@@ -100,12 +102,17 @@ FeatureMap::addMapEntry(FeatureMap::MapEntryPtr p_ptr)
   {
     //std::cout << "loop" << std::endl;
     MapEntry& p_map = *(map_[i]);
-    printMapEntry(p_map);
-    printMapEntry(p);
     Eigen::Vector3f n2(p.normal(0), p.normal(1), p.normal(2));
-    n2.normalize();
+    //n2.normalize();
     //double angle = fabs(std::acos(p_map.normal.dot(n2)));
-    if(fabs(p_map.normal.dot(n2))>0.95 && fabs(fabs(p_map.d)-fabs(p.d))<0.15) //0.97 = 14 degree; 0.1
+    if(n2(0)>0.9 || n2(0)<-0.9)
+    {
+      std::cout << "x axis" << std::endl;
+      std::cout << "n:" << n2 << std::endl;
+      std::cout << "n_map:" << p_map.normal << std::endl;
+      std::cout << "d, d_map:" << p.d << "," << p_map.d << std::endl;
+    }
+    if(fabs(p_map.normal.dot(n2))>0.95 && fabs(fabs(p_map.d)-fabs(p.d))<0.25) //0.97 = 14 degree; 0.95,0.15
     //if(angle<0.05 && fabs(p_map.d-p.d)<0.08) //planes can be merged
     {
       gpc_polygon gpc_result;
@@ -114,10 +121,12 @@ FeatureMap::addMapEntry(FeatureMap::MapEntryPtr p_ptr)
       double d_p = p.d;
       if(p_map.normal.dot(n2)<-0.95) {n2 = -n2, d_p=-d_p;}
       Eigen::Vector3f n_map = (p_map.normal + n2)/2;
+      double d_map = (p_map.d + d_p)/2;
+      d_map = d_map/n_map.norm();
+      n_map.normalize();
       /*n_map(0) = (p_map.normal(0) + n2(0))/2;
       n_map(1) = (p_map.normal(1) + n2(1))/2;
       n_map(2) = (p_map.normal(2) + n2(2))/2;*/
-      double d_map = (p_map.d + d_p)/2;
       Eigen::Vector3f ft_pt;
       if(fabs(n_map(2))>0.01)
         ft_pt << 0, 0, -d_map/n_map(2);
@@ -137,8 +146,6 @@ FeatureMap::addMapEntry(FeatureMap::MapEntryPtr p_ptr)
       //printGpcStructure(&gpc_p_merge);
       getGpcStructureUsingMap(p_map, transformation_from_world_to_plane, &gpc_p_map);
       //printGpcStructure(&gpc_p_map);
-      printGpcStructure(&gpc_p_merge);
-      printGpcStructure(&gpc_p_map);
       gpc_polygon_clip(GPC_UNION, &gpc_p_merge, &gpc_p_map, &gpc_result);
       if(gpc_result.num_contours == 0) //merge failed
       {
@@ -195,7 +202,6 @@ FeatureMap::addMapEntry(FeatureMap::MapEntryPtr p_ptr)
           printMapEntry(p_map);
         }*/
         merged = true;
-        printMapEntry(p_map);
         p_map.merged++;
         break;
       }
