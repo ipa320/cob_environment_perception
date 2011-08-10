@@ -181,8 +181,10 @@ public:
 
 			pcl::PointCloud<Point>::Ptr table_cluster_ptr = table_cluster.makeShared();
 			pcl::PointIndices::Ptr inliers_plane (new pcl::PointIndices ());
-			while(table_cluster_ptr->size()>min_cluster_size_)
+			int ctr = 0;
+			while(table_cluster_ptr->size()>min_cluster_size_ && ctr<6)
 			{
+				ctr++;
 				pcl::NormalEstimation<Point,pcl::Normal> normalEstimator;
 				normalEstimator.setInputCloud(table_cluster_ptr);
 				pcl::KdTreeFLANN<Point>::Ptr tree (new pcl::KdTreeFLANN<Point> ());
@@ -253,8 +255,8 @@ public:
 				pcl::PointCloud<Point>::Ptr cloud_projected (new pcl::PointCloud<Point> ());
 				pcl::ProjectInliers<Point> proj;
 				proj.setModelType (pcl::SACMODEL_PLANE);
-				proj.setInputCloud (dominant_plane.makeShared()/*table_cluster_ptr*/);
-				//proj.setIndices(inliers_plane);
+				proj.setInputCloud (table_cluster_ptr);
+				proj.setIndices(inliers_plane);
 				proj.setModelCoefficients (coefficients_plane);
 				proj.filter (*cloud_projected);
 
@@ -296,7 +298,7 @@ public:
 				chull_pub_.publish(cloud_hull);
 				std::stringstream ss2;
 				ss2 << "/home/goa/pcl_daten/kitchen_kinect2/planes/hull_" << ctr_ << ".pcd";
-				pcl::io::savePCDFileASCII (ss2.str(), *cloud_hull);
+				//pcl::io::savePCDFileASCII (ss2.str(), *cloud_hull);
 				std::stringstream ss3;
 				ss3 << "/home/goa/pcl_daten/kitchen_kinect2/planes/plane_pr_" << ctr_ << ".pcd";
 			//	pcl::io::savePCDFileASCII (ss3.str(), *cloud_projected);
@@ -358,6 +360,7 @@ public:
 
 				extractIndices.setNegative(true);
 				extractIndices.filter(*table_cluster_ptr);
+				ROS_INFO("Cluster size: %d", table_cluster_ptr->size());
 			}
 		}
 
