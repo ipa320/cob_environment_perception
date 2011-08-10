@@ -20,7 +20,7 @@
   <!--depend package="cob_vision_features"/-->
   <depend package="pcl"/>
   <depend package="pcl_ros"/>
-  <depend package="pcl_visualization"/>
+  <!--depend package="pcl_visualization"/-->
   <depend package="eigen"/>
   <depend package="visualization_msgs"/>
   <depend package="nodelet"/>

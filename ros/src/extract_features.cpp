@@ -506,13 +506,13 @@ public:
 		cv::morphologyEx(edge_image, edge_morph, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_RECT,cv::Size(3,3)), cv::Point(-1,-1), 1);
 		cv::imshow("Edge morph", edge_morph);
 		/// find contours in edge image
-		vector<vector<cv::Point> > contours;
+		std::vector<std::vector<cv::Point> > contours;
 		cv::findContours(edge_image, contours, CV_RETR_LIST,CV_CHAIN_APPROX_NONE);
 		markers = cv::Mat::zeros(edge_image.size(), CV_32S);
 		std::cout << "num contours: " << contours.size() << std::endl;
 		for(int idx=0; idx<contours.size(); idx++)
 		cv::drawContours(markers, contours, idx, cv::Scalar(idx+1));
-		vector<cv::Vec3b> colorTab;
+		std::vector<cv::Vec3b> colorTab;
 		for(int i = 0; i < contours.size(); i++ )
 		{
 			int b = cv::theRNG().uniform(0, 255);
@@ -632,7 +632,7 @@ public:
 			cluster_indices.push_back(cluster);
 		}
 		seg_img = cv::Mat(cloud_in->height,cloud_in->width, CV_8UC3);
-		vector<cv::Vec3b> colorTab;
+		std::vector<cv::Vec3b> colorTab;
 		for(int i = 0; i < 256; i++ )
 		{
 			int b = cv::theRNG().uniform(0, 255);
