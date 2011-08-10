@@ -73,7 +73,7 @@ rosbuild_add_executable(create_point_cloud common/src/tools/create_point_cloud.c
 
 
 # add compile flag
-#rosbuild_add_compile_flags(env_model_node -D__LINUX__ -D__LINUX__)
+rosbuild_add_compile_flags(extract_features_node -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
 
 
 # add compile flag
