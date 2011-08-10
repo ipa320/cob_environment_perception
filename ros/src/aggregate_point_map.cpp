@@ -176,7 +176,7 @@ public:
     try
     {
       std::stringstream ss2;
-      //tf_listener_.waitForTransform("/map", pc->header.frame_id, pc->header.stamp, ros::Duration(1));
+      tf_listener_.waitForTransform("/map", pc->header.frame_id, pc->header.stamp, ros::Duration(0.2));
       tf_listener_.lookupTransform("/map", pc_in->header.frame_id, pc_in->header.stamp/*ros::Time(0)*/, transform);
       KDL::Frame frame_KDL, frame_KDL_old;
       tf::TransformTFToKDL(transform, frame_KDL);
@@ -270,6 +270,8 @@ public:
           }
           else
             ROS_INFO("FOV not successful");
+    
+	  ROS_INFO("[aggregate_point_map] ICP took %f s", t.elapsed());
 
           if(save_map_ ==true)
           {
@@ -292,7 +294,6 @@ public:
     {
       ROS_ERROR("[aggregate_point_map] : %s",ex.what());
     }
-    ROS_INFO("[aggregate_point_map] Callback took %f s", t.elapsed());
   }
 
 
