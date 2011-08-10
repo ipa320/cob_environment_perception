@@ -105,13 +105,13 @@ FeatureMap::addMapEntry(FeatureMap::MapEntryPtr p_ptr)
     Eigen::Vector3f n2(p.normal(0), p.normal(1), p.normal(2));
     //n2.normalize();
     //double angle = fabs(std::acos(p_map.normal.dot(n2)));
-    if(n2(0)>0.9 || n2(0)<-0.9)
+    /*if(n2(0)>0.9 || n2(0)<-0.9)
     {
       std::cout << "x axis" << std::endl;
       std::cout << "n:" << n2 << std::endl;
       std::cout << "n_map:" << p_map.normal << std::endl;
       std::cout << "d, d_map:" << p.d << "," << p_map.d << std::endl;
-    }
+    }*/
     if(fabs(p_map.normal.dot(n2))>0.95 && fabs(fabs(p_map.d)-fabs(p.d))<0.25) //0.97 = 14 degree; 0.95,0.15
     //if(angle<0.05 && fabs(p_map.d-p.d)<0.08) //planes can be merged
     {
