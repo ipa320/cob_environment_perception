@@ -238,6 +238,7 @@ public:
 					break;
 				}
 
+
                                 ROS_INFO("Plane has %d inliers", (int)inliers_plane->indices.size());
 				pcl::PointCloud<Point> dominant_plane;
 				pcl::ExtractIndices<Point> extractIndices;
