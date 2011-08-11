@@ -149,46 +149,46 @@ public:
 		range_image.height = cloud_in.height;
 		range_image.is_dense = false;
 
-		  bool setUnseenToMaxRange = false;
-		  float noise_level = 0.0;
-		  float min_range = 0.0f;
-		  int border_size = 1;
-		  float angular_resolution = 0.5f;
-		  Eigen::Affine3f scene_sensor_pose (Eigen::Affine3f::Identity ());
-		  pcl::RangeImage::CoordinateFrame coordinate_frame = pcl::RangeImage::CAMERA_FRAME;
-		  pcl::PointCloud<pcl::PointWithViewpoint> far_ranges;
-
-		  scene_sensor_pose = Eigen::Affine3f (Eigen::Translation3f (cloud_in.sensor_origin_[0],
-																		cloud_in.sensor_origin_[1],
-		                                                               cloud_in.sensor_origin_[2])) *
-		                        Eigen::Affine3f (cloud_in.sensor_orientation_);
-
-		 range_image.createFromPointCloud (cloud_in, angular_resolution, pcl::deg2rad (360.0f), pcl::deg2rad (180.0f),
-		                                   scene_sensor_pose, coordinate_frame, noise_level, min_range, border_size);
-		  range_image.integrateFarRanges (far_ranges);
-		  if (setUnseenToMaxRange)
-		    range_image.setUnseenToMaxRange ();
-
-
-//		for(int i = 0; i<cloud_in.size(); i++)
-//		{
-//			pcl::PointWithRange p;
+//		  bool setUnseenToMaxRange = false;
+//		  float noise_level = 0.0;
+//		  float min_range = 0.0f;
+//		  int border_size = 1;
+//		  float angular_resolution = 0.5f;
+//		  Eigen::Affine3f scene_sensor_pose (Eigen::Affine3f::Identity ());
+//		  pcl::RangeImage::CoordinateFrame coordinate_frame = pcl::RangeImage::CAMERA_FRAME;
+//		  pcl::PointCloud<pcl::PointWithViewpoint> far_ranges;
 //
-//			//p.range = sqrt(cloud_in->points[i].x*cloud_in->points[i].x+cloud_in->points[i].y*cloud_in->points[i].y+cloud_in->points[i].z*cloud_in->points[i].z);
-//			/*if(cloud_in->points[i].x!=cloud_in->points[i].x || cloud_in->points[i].y!=cloud_in->points[i].y || cloud_in->points[i].z!=cloud_in->points[i].z)
-//			{
-//				p.x = p.y = p.z = 0;//std::numeric_limits<float>::quiet_NaN();
-//				p.range=0;//-std::numeric_limits<float>::infinity();
-//			}
-//			else*/
-//			{
-//				p.x = cloud_in.points[i].x;
-//				p.y = cloud_in.points[i].y;
-//				p.z = cloud_in.points[i].z;
-//				p.range = sqrt(cloud_in.points[i].x*cloud_in.points[i].x+cloud_in.points[i].y*cloud_in.points[i].y+cloud_in.points[i].z*cloud_in.points[i].z);
-//			}
-//			range_image.points.push_back(p);
-//		}
+//		  scene_sensor_pose = Eigen::Affine3f (Eigen::Translation3f (cloud_in.sensor_origin_[0],
+//																		cloud_in.sensor_origin_[1],
+//		                                                               cloud_in.sensor_origin_[2])) *
+//		                        Eigen::Affine3f (cloud_in.sensor_orientation_);
+//
+//		 range_image.createFromPointCloud (cloud_in, angular_resolution, pcl::deg2rad (360.0f), pcl::deg2rad (180.0f),
+//		                                   scene_sensor_pose, coordinate_frame, noise_level, min_range, border_size);
+//		  range_image.integrateFarRanges (far_ranges);
+//		  if (setUnseenToMaxRange)
+//		    range_image.setUnseenToMaxRange ();
+
+
+		for(int i = 0; i<cloud_in.size(); i++)
+		{
+			pcl::PointWithRange p;
+
+			//p.range = sqrt(cloud_in->points[i].x*cloud_in->points[i].x+cloud_in->points[i].y*cloud_in->points[i].y+cloud_in->points[i].z*cloud_in->points[i].z);
+			/*if(cloud_in->points[i].x!=cloud_in->points[i].x || cloud_in->points[i].y!=cloud_in->points[i].y || cloud_in->points[i].z!=cloud_in->points[i].z)
+			{
+				p.x = p.y = p.z = 0;//std::numeric_limits<float>::quiet_NaN();
+				p.range=0;//-std::numeric_limits<float>::infinity();
+			}
+			else*/
+			{
+				p.x = cloud_in.points[i].x;
+				p.y = cloud_in.points[i].y;
+				p.z = cloud_in.points[i].z;
+				p.range = sqrt(cloud_in.points[i].x*cloud_in.points[i].x+cloud_in.points[i].y*cloud_in.points[i].y+cloud_in.points[i].z*cloud_in.points[i].z);
+			}
+			range_image.points.push_back(p);
+		}
 		//std::string directory("/home/goa/pcl_daten/test/");
 		//pcl::io::savePCDFileASCII (directory+"/range_image.pcd", range_image);
 
@@ -234,8 +234,8 @@ public:
 		    	    	}
 
 
-//		  pcl::PointCloud<pcl::Boundary>::Ptr boundary_pts (new pcl::PointCloud<pcl::Boundary> ());
-//		  //boundary_pts.points.resize(cloud_in.size());
+		  pcl::PointCloud<pcl::Boundary>::Ptr boundary_pts (new pcl::PointCloud<pcl::Boundary> ());
+		  //boundary_pts.points.resize(cloud_in.size());
 //		  for (int y=0; y<(int)range_image.height; ++y)
 //		  {
 //		    for (int x=0; x<(int)range_image.width; ++x)
@@ -268,14 +268,13 @@ public:
 //						border_image.at<unsigned char>(row,col) = 0;
 //				}
 //			}
-//	    	ROS_INFO_STREAM("size" << cloud_in.size());
 //
-//	    	ROS_INFO_STREAM("size" << cloud_out.size());
+//	    	ROS_INFO_STREAM("Kanten georg " << cloud_out.size());
 //
 //	    	pcl::visualization::PCLVisualizer viewer("3D Viewer");
 //	    	viewer.addCoordinateSystem(0.5f);
 //	    	viewer.addPointCloud<pcl::PointXYZ>(cloud_in.makeShared(), "input cloud");
-//	        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointWithRange> single_color(cloud_out.makeShared(), 0, 255, 0);
+//	        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointWithRange> single_color(cloud_out.makeShared(), 0, 0, 255);
 //	    	viewer.addPointCloud<pcl::PointWithRange>(cloud_out.makeShared(),single_color, "output cloud");
 //
 //	    	while(!viewer.wasStopped())
@@ -296,9 +295,9 @@ public:
         pcl::PointCloud<PointType>& point_cloud = *point_cloud_ptr;
 
     	TestRange tr;
-    	pcl::PointXYZ starting_point(0,0,2);
-        pcl::PointXYZ starting_point2(0.1,0,1);
-        pcl::PointXYZ starting_point3(0.05,0.5,0.5);
+    	pcl::PointXYZ starting_point(0,0,1.5);
+        pcl::PointXYZ starting_point2(1,0,1);
+        pcl::PointXYZ starting_point3(0,1,1.25);
 
         for (float x=-0.5f; x<=0.5f; x+=0.01f)
         {
@@ -318,9 +317,10 @@ public:
 
     	cv::Mat border_image;
     	pcl::PointCloud<pcl::PointWithRange> cloud_out;
+    	pcl::PointCloud<pcl::PointWithRange> cloud_out2;
 
-    	tr.extractEdgesRangeImage(point_cloud , cloud_out ,border_image , 3 , 0.5);
-    	tr.extractEdgesRangeImage(output3_cloud , cloud_out ,border_image , 4 , 0.8);
+    	tr.extractEdgesRangeImage(point_cloud , cloud_out ,border_image , 5 , 0.2);
+    	tr.extractEdgesRangeImage(output3_cloud , cloud_out2 ,border_image , 6 , 0.2);
 
 
 

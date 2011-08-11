@@ -48,6 +48,8 @@ ${PROJECT_SOURCE_DIR}/ros/include)
 #rosbuild_add_executable(point_cloud_filter_node ros/src/point_cloud_filter.cpp)
 rosbuild_add_executable(extract_features_node ros/src/extract_features.cpp)
 rosbuild_add_executable(test_range ros/src/test_range_edges.cpp)
+rosbuild_add_executable(norm_time ros/src/norm_time.cpp)
+
 
 #rosbuild_add_executable(test_icp ros/src/test_icp.cpp)
 #rosbuild_add_executable(bag_to_pcd ros/src/tools/bag_to_pcd.cpp)
