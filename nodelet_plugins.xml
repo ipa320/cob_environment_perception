@@ -1,7 +1,7 @@
 <library path="ros/lib/libcob_env_model">
-  <class name="cob_env_model/DetectTables" type="DetectTables" base_class_type="nodelet::Nodelet">
+  <class name="cob_env_model/PlaneExtractionNodelet" type="PlaneExtractionNodelet" base_class_type="nodelet::Nodelet">
   <description>
-  Nodelet for table detection
+  Nodelet for plane extraction
   </description>
   </class>
   

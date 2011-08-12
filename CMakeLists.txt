@@ -45,7 +45,7 @@ rosbuild_add_executable(extract_features_node ros/src/extract_features.cpp)
 #rosbuild_add_executable(test_icp ros/src/test_icp.cpp)
 #rosbuild_add_executable(bag_to_pcd ros/src/tools/bag_to_pcd.cpp)
 rosbuild_add_executable(pointcloud_to_pcd ros/src/tools/pointcloud_to_pcd.cpp)
-rosbuild_add_library(cob_env_model ros/src/detect_tables.cpp
+rosbuild_add_library(cob_env_model ros/src/plane_extraction_nodelet.cpp
 	ros/src/aggregate_point_map.cpp
 	ros/src/filters/amplitude_filter.cpp
 	ros/src/filters/intensity_filter.cpp
@@ -57,7 +57,8 @@ rosbuild_add_library(cob_env_model ros/src/detect_tables.cpp
 	common/src/features/range_image_border_extractor.cpp
 	common/src/features/boundary.cpp
 	common/src/map/gpc.c
-	common/src/map/feature_map.cpp)
+	common/src/map/feature_map.cpp
+	common/src/features/plane_extraction.cpp)
 #rosbuild_add_library(gpc common/src/gpc.c)
 #rosbuild_add_executable(test_fov common/src/test_fov.cpp)
 #rosbuild_add_library(nodelet_cpc_publisher ros/src/cpc_publisher.cpp
