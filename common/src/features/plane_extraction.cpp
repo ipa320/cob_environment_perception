@@ -1,0 +1,353 @@
+/****************************************************************
+ *
+ * Copyright (c) 2011
+ *
+ * Fraunhofer Institute for Manufacturing Engineering
+ * and Automation (IPA)
+ *
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *
+ * Project name: care-o-bot
+ * ROS stack name: cob_vision
+ * ROS package name: cob_env_model
+ * Description:
+ *
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *
+ * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ *
+ * Date of creation: 02/2011
+ * ToDo:
+ *
+ *
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the Fraunhofer Institute for Manufacturing
+ *       Engineering and Automation (IPA) nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License LGPL as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License LGPL for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License LGPL along with this program.
+ * If not, see <http://www.gnu.org/licenses/>.
+ *
+ ****************************************************************/
+
+
+//##################
+//#### includes ####
+
+// standard includes
+//--
+#include <sstream>
+
+// ROS includes
+#include <pcl/io/pcd_io.h>
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/segmentation/extract_clusters.h>
+#include <pcl/kdtree/kdtree.h>
+#include <pcl/features/normal_3d_omp.h>
+#include <pcl/ModelCoefficients.h>
+#include <pcl/sample_consensus/method_types.h>
+#include <pcl/sample_consensus/model_types.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/filters/extract_indices.h>
+#include <pcl/filters/project_inliers.h>
+#include <pcl/surface/concave_hull.h>
+
+// external includes
+#include <boost/timer.hpp>
+
+// internal includes
+#include "cob_env_model/features/plane_extraction.h"
+
+
+PlaneExtraction::PlaneExtraction()
+{
+  ctr_ = 0;
+  min_cluster_size_ = 300;
+  file_path_ = "/home/goa/pcl_daten/kitchen_kinect2/planes/";
+  save_to_file_ = false;
+}
+
+//input should be point cloud that is amplitude filetered, statistical outlier filtered, voxel filtered and the floor cut, coordinate system should be /map
+void PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in)
+{
+  ROS_INFO("Extract plane callback");
+  boost::timer t;
+  std::stringstream ss;
+
+  // Downsample input
+  pcl::VoxelGrid<Point> voxel;
+  voxel.setInputCloud(pc_in);
+  voxel.setLeafSize(0.02,0.02,0.02);
+  //voxel.setFilterFieldName("z");
+  //voxel.setFilterLimits(0.2,3);
+  pcl::PointCloud<Point>::Ptr cloud = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>);
+  voxel.filter(*cloud);
+
+  // Extract Eucledian clusters
+  pcl::KdTree<Point>::Ptr clusters_tree;
+  clusters_tree = boost::make_shared<pcl::KdTreeFLANN<Point> > ();
+  pcl::EuclideanClusterExtraction<Point> cluster;
+  // Table clustering parameters
+  // TODO: parameter
+  cluster.setClusterTolerance (0.06);
+  cluster.setMinClusterSize (min_cluster_size_);
+  cluster.setSearchMethod (clusters_tree);
+  std::vector<pcl::PointIndices> clusters;
+  cluster.setInputCloud (cloud);
+  cluster.extract (clusters);
+  ROS_INFO ("Number of clusters found: %d", (int)clusters.size ());
+
+  // Go through all clusters and search for planes
+  pcl::ExtractIndices<Point> extract;
+  for(unsigned int i = 0; i < clusters.size(); ++i)
+  {
+    ROS_INFO("Processing cluster no. %u", i);
+    // Extract cluster points
+    pcl::PointCloud<Point> cluster;
+    extract.setInputCloud (cloud);
+    extract.setIndices (boost::make_shared<const pcl::PointIndices> (clusters[i]));
+    extract.setNegative (false);
+    extract.filter (cluster);
+    pcl::PointCloud<Point>::Ptr cluster_ptr = cluster.makeShared();
+    if(save_to_file_)
+    {
+      ss.str();
+      ss.clear();
+      ss << file_path_ << "/cluster_" << ctr_ << ".pcd";
+      pcl::io::savePCDFileASCII (ss.str(), cluster);
+    }
+
+    // Estimate point normals
+    pcl::NormalEstimation<Point,pcl::Normal> normalEstimator;
+    normalEstimator.setInputCloud(cluster_ptr);
+    pcl::KdTreeFLANN<Point>::Ptr tree (new pcl::KdTreeFLANN<Point> ());
+    normalEstimator.setSearchMethod(tree);
+    //TODO: parameter
+    normalEstimator.setRadiusSearch(0.1);
+    //normalEstimator.setNumberOfThreads(4);
+    pcl::PointCloud<pcl::Normal>::Ptr cloud_normals(new pcl::PointCloud<pcl::Normal> ());
+    normalEstimator.compute(*cloud_normals);
+
+    // Find plane
+    pcl::PointIndices::Ptr inliers_plane (new pcl::PointIndices ());
+    pcl::PointIndices::Ptr consider_in_cluster(new pcl::PointIndices ());
+    for(unsigned int idx_ctr=0; idx_ctr < cluster_ptr->size(); idx_ctr++)
+      consider_in_cluster->indices.push_back(idx_ctr);
+    int ctr = 0;
+    // iterate over cluster to find all planes until cluster is too small
+    while(consider_in_cluster->indices.size()>min_cluster_size_ /*&& ctr<6*/)
+    {
+      ROS_INFO("Cluster size: %d", (int)consider_in_cluster->indices.size());
+      ctr++;
+
+      // Do SAC plane segmentation
+      pcl::SACSegmentationFromNormals<Point, pcl::Normal> seg;
+      // Create the segmentation object for the planar model and set all the parameters
+      seg.setOptimizeCoefficients (true);
+      seg.setModelType (pcl::SACMODEL_NORMAL_PLANE);
+      //seg.setAxis(Eigen::Vector3f(0,0,1));
+      //TODO: parameter
+      seg.setNormalDistanceWeight (0.05);
+      seg.setMethodType (pcl::SAC_RANSAC);
+      seg.setMaxIterations (100);
+      seg.setDistanceThreshold (0.03);
+      seg.setInputCloud (cluster_ptr);
+      seg.setIndices(consider_in_cluster);
+      seg.setInputNormals (cloud_normals);
+      // Obtain the plane inliers and coefficients
+      pcl::ModelCoefficients::Ptr coefficients_plane (new pcl::ModelCoefficients ());
+      seg.segment (*inliers_plane, *coefficients_plane);
+
+      // Evaluate plane
+      float g=0, b=0;
+      if (coefficients_plane->values.size () <=3)
+      {
+        //ROS_INFO("Failed to detect plane in scan, skipping cluster");
+        break;
+      }
+      if ( inliers_plane->indices.size() < (unsigned int)50)
+      {
+        //std::cout << "Plane coefficients: " << *coefficients_plane << std::endl;
+        //ROS_INFO("Plane detection has %d inliers, below min threshold of %d, skipping cluster", (int)inliers_plane->indices.size(), 150);
+        break;
+      }
+      if(fabs(coefficients_plane->values[0]) < 0.1 && fabs(coefficients_plane->values[1]) < 0.1 && fabs(coefficients_plane->values[2]) > 0.9)
+      {
+        //ROS_INFO("Detected plane perpendicular to z axis");
+        //std::cout << "Plane coefficients: " << *coefficients_plane << std::endl;
+        g=1;
+      }
+      else if(fabs(coefficients_plane->values[2]) < 0.15) //18 degrees
+      {
+        //ROS_INFO("Detected plane parallel to z axis");
+        //std::cout << "Plane coefficients: " << *coefficients_plane << std::endl;
+        b=1;
+      }
+      /*else
+        {
+          ROS_INFO("Detected plane not parallel to z axis or perpendicular to z axis");
+          //std::cout << "Plane coefficients: " << *coefficients_plane << std::endl;
+          break;
+        }*/
+
+      // Extract plane points, only needed for storing bag file
+      ROS_INFO("Plane has %d inliers", (int)inliers_plane->indices.size());
+      pcl::PointCloud<Point> dominant_plane;
+      pcl::ExtractIndices<Point> extractIndices;
+      extractIndices.setInputCloud(cluster_ptr);
+      extractIndices.setIndices(inliers_plane);
+      extractIndices.filter(dominant_plane);
+      //ROS_INFO("Saved plane to %s", ss.str());
+      if(save_to_file_)
+      {
+        ss.str("");
+        ss.clear();
+        ss << file_path_ << "/plane_" << ctr_ << ".pcd";
+        pcl::io::savePCDFileASCII (ss.str(), dominant_plane);
+      }
+
+      // Project the model inliers
+      pcl::PointCloud<Point>::Ptr cloud_projected (new pcl::PointCloud<Point> ());
+      pcl::ProjectInliers<Point> proj;
+      proj.setModelType (pcl::SACMODEL_PLANE);
+      proj.setInputCloud (cluster_ptr);
+      proj.setIndices(inliers_plane);
+      proj.setModelCoefficients (coefficients_plane);
+      proj.filter (*cloud_projected);
+
+      // Create a Convex Hull representation of the projected inliers
+      pcl::PointCloud<Point>::Ptr cloud_hull (new pcl::PointCloud<Point> ());
+      std::vector< pcl::Vertices > hull_polygons;
+      pcl::ConcaveHull<Point> chull;
+      chull.setInputCloud (cloud_projected);
+      //TODO: parameter
+      chull.setAlpha (0.2);
+      chull.reconstruct (*cloud_hull, hull_polygons);
+
+
+      if(save_to_file_)
+      {
+        saveHulls(cloud_hull, hull_polygons);
+        ss.str("");
+        ss.clear();
+        ss << file_path_ << "/plane_pr_" << ctr_ << ".pcd";
+        pcl::io::savePCDFileASCII (ss.str(), *cloud_projected);
+      }
+
+      // Remove plane inliers from indices list
+      for(unsigned int idx_ctr1=0; idx_ctr1 < consider_in_cluster->indices.size(); idx_ctr1++)
+      {
+        for(unsigned int idx_ctr2=0; idx_ctr2 < inliers_plane->indices.size(); idx_ctr2++)
+        {
+          if(consider_in_cluster->indices[idx_ctr1] == inliers_plane->indices[idx_ctr2])
+            consider_in_cluster->indices.erase(consider_in_cluster->indices.begin()+idx_ctr1);
+        }
+      }
+      ctr_++;
+    }
+    if(consider_in_cluster->indices.size()>0)
+    {
+      if(save_to_file_)
+      {
+        ss.str("");
+        ss.clear();
+        ss << file_path_ << "/rem_pts_" << ctr_ << ".pcd";
+      }
+      if(consider_in_cluster->indices.size() == cluster_ptr->size())
+        pcl::io::savePCDFileASCII (ss.str(), *cluster_ptr);
+      else
+      {
+        pcl::PointCloud<Point> remaining_pts;
+        extract.setInputCloud (cluster_ptr);
+        extract.setIndices (consider_in_cluster);
+        extract.filter (remaining_pts);
+        pcl::io::savePCDFileASCII (ss.str(), remaining_pts);
+      }
+    }
+  }
+  ROS_INFO("Plane extraction took %f", t.elapsed());
+  return;
+}
+
+void
+PlaneExtraction::saveHulls(pcl::PointCloud<Point>::Ptr& cloud_hull,
+          std::vector< pcl::Vertices >& hull_polygons)
+{
+  pcl::PointCloud<Point> hull_part;
+  for(unsigned int i=0; i<hull_polygons.size(); i++)
+  {
+    for(unsigned int j=0; j<hull_polygons[i].vertices.size(); j++)
+    {
+      int idx = hull_polygons[i].vertices[j];
+      hull_part.points.push_back(cloud_hull->points[idx]);
+    }
+    std::stringstream ss;
+    ss << file_path_ << "/hull_" << ctr_ << "_" << i << ".pcd";
+    pcl::io::savePCDFileASCII (ss.str(), hull_part);
+  }
+}
+
+//TODO: move to separate class => table cluster
+/*pcl::ExtractPolygonalPrismData<Point> prism;
+                          // Consider only objects in a given layer above the table
+                          prism.setHeightLimits (-0.5, -0.03);
+                          // ---[ Get the objects on top of the table
+                          pcl::PointIndices cloud_object_indices;
+                          prism.setInputCloud (table_cluster_ptr);
+                          prism.setInputPlanarHull (cloud_hull);
+                          prism.segment (cloud_object_indices);
+
+                          pcl::PointCloud<Point> cloud_objects;
+                          pcl::ExtractIndices<Point> extract_object_indices;
+                          extract_object_indices.setInputCloud (table_cluster_ptr);
+                          extract_object_indices.setIndices (boost::make_shared<const pcl::PointIndices> (cloud_object_indices));
+                          extract_object_indices.filter (cloud_objects);
+                          pcl::PointCloud<Point>::ConstPtr cloud_objects_ptr = cloud_objects.makeShared();
+
+                          pcl::KdTree<Point>::Ptr obj_clusters_tree;
+                          obj_clusters_tree = boost::make_shared<pcl::KdTreeFLANN<Point> > ();
+
+                          pcl::EuclideanClusterExtraction<Point> cluster_obj;
+
+                          // Table clustering parameters
+                          cluster_obj.setClusterTolerance (0.06);
+                          cluster_obj.setMinClusterSize (100);
+                          cluster_obj.setSearchMethod (clusters_tree);
+
+                          // Cluster potential table points
+                          std::vector<pcl::PointIndices> object_clusters;
+                          cluster_obj.setInputCloud (cloud_objects.makeShared());
+                          cluster_obj.extract (object_clusters);
+
+                          for(unsigned int i = 0; i < object_clusters.size(); ++i)
+                          {
+                                  pcl::PointCloud<Point> object;
+                                  extract.setInputCloud (cloud_objects.makeShared());
+                                  extract.setIndices (boost::make_shared<const pcl::PointIndices> (object_clusters[i]));
+                                  extract.setNegative (false);
+                                  extract.filter (object);
+                                  object_cluster_pub_.publish(object);
+                          }*/
+
