@@ -54,9 +54,8 @@ rosbuild_add_executable(norm_time ros/src/norm_time.cpp)
 #rosbuild_add_executable(test_icp ros/src/test_icp.cpp)
 #rosbuild_add_executable(bag_to_pcd ros/src/tools/bag_to_pcd.cpp)
 rosbuild_add_executable(pointcloud_to_pcd ros/src/tools/pointcloud_to_pcd.cpp)
-rosbuild_add_library(cob_env_model ros/src/detect_tables.cpp
+rosbuild_add_library(cob_env_model ros/src/plane_extraction_nodelet.cpp
 	ros/src/aggregate_point_map.cpp
-	ros/src/feature_map.cpp
 	ros/src/filters/amplitude_filter.cpp
 	ros/src/filters/intensity_filter.cpp
 	ros/src/filters/jump_edge_filter.cpp
@@ -64,34 +63,34 @@ rosbuild_add_library(cob_env_model ros/src/detect_tables.cpp
 	common/src/filters/amplitude_filter.cpp
 	common/src/filters/intensity_filter.cpp
 	common/src/filters/jump_edge_filter.cpp
-	common/src/features/range_image_border_extractor.cpp)
+	common/src/features/range_image_border_extractor.cpp
+	common/src/features/boundary.cpp
+	common/src/map/gpc.c
+	common/src/map/feature_map.cpp
+	common/src/features/plane_extraction.cpp)
+#rosbuild_add_library(gpc common/src/gpc.c)
 #rosbuild_add_executable(test_fov common/src/test_fov.cpp)
 #rosbuild_add_library(nodelet_cpc_publisher ros/src/cpc_publisher.cpp
 #ros/src/cpc_visualizer.cpp)
 rosbuild_add_executable(field_of_view_node ros/src/field_of_view.cpp)
 rosbuild_add_executable(concat_fields_node ros/src/tools/concat_fields.cpp)
+rosbuild_add_executable(feature_map_node ros/src/feature_map_node.cpp)
+rosbuild_add_executable(feature_map common/src/map/feature_map.cpp)
 #rosbuild_add_executable(cpc_publisher ros/src/cpc_publisher_main.cpp)
 #rosbuild_add_executable(cpc_visualizer ros/src/cpc_visualizer_main.cpp)
-rosbuild_add_executable(test_cob_filters common/src/cob_filters_test.cpp)
-rosbuild_add_executable(create_point_cloud common/src/create_point_cloud.cpp)
+rosbuild_add_executable(create_point_cloud common/src/tools/create_point_cloud.cpp)
 #rosbuild_add_executable(planar_segmentation common/src/planar_segmentation.cpp)
 
 
 # add compile flag
-rosbuild_add_compile_flags(cob_env_model -D__LINUX__)
-#rosbuild_add_compile_flags(env_model_node -D__LINUX__ -D__LINUX__)
-#rosbuild_add_compile_flags(data_acquisition_node -D__LINUX__)
-#rosbuild_add_compile_flags(icp_registration_node -D__LINUX__ -D__COB_ROS__)
-rosbuild_add_compile_flags(cob_env_model -D__LINUX__)
-rosbuild_add_compile_flags(extract_features_node -D__LINUX__)
-#rosbuild_add_compile_flags(point_cloud_filter_node -D__LINUX__ -D__LINUX__)
+rosbuild_add_compile_flags(extract_features_node -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
 
 
 # add compile flag
-target_link_libraries(test_range cob_env_model)
-
-target_link_libraries(test_cob_filters cob_env_model)
+#target_link_libraries(cob_env_model gpc)
 target_link_libraries(extract_features_node cob_env_model)
+target_link_libraries(feature_map cob_env_model)
+target_link_libraries(feature_map_node cob_env_model)
 #target_link_libraries (planar_segmentation ${PCL_IO_LIBRARY} ${PCL_FILTERS_LIBRARY} ${PCL_SEGMENTATION_LIBRARY})
 #target_link_libraries(test_fov cob_env_model)
 #target_link_libraries(env_model ann glut mesasr)

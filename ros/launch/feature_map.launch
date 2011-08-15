@@ -1,9 +1,6 @@
+<?xml version="1.0"?>
 <launch>
-  <!--node pkg="nodelet" type="nodelet" name="pcl_manager"  args="manager" output="screen"/-->
-  
-  
-
-  <node pkg="nodelet" type="nodelet" name="feature_map" args="load cob_env_model/FeatureMap pcl_manager" output="screen">
+  <node pkg="cob_env_model" type="feature_map_node" name="feature_map_node" output="screen">
   	<!--remap from="table_hull" to="/swissranger/pointcloud2_raw"/-->
   </node>                 
 </launch>
