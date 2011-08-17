@@ -52,61 +52,54 @@
  *
  ****************************************************************/
 
-#ifndef __PLANE_EXTRACTION_H__
-#define __PLANE_EXTRACTION_H__
+#include "cob_env_model/table_roi_extraction.h"
 
-//##################
-//#### includes ####
+#include <pcl/segmentation/extract_polygonal_prism_data.h>
+#include <pcl/filters/extract_indices.h>
 
-// standard includes
-//--
-
-// ROS includes
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
-
-
-enum PlaneConstraint {NONE, HORIZONTAL, VERTICAL};
-
-//####################
-//#### nodelet class ####
-class PlaneExtraction
+void
+TableRoiExtraction::extractTableRoi(pcl::PointCloud<Point>::Ptr& pc_in,
+                                    pcl::PointCloud<Point>::Ptr& hull,
+                                    pcl::PointCloud<Point>& pc_roi)
 {
-public:
-  typedef pcl::PointXYZRGB Point;
-  // Constructor
-  PlaneExtraction(bool save_to_file);
+  pcl::ExtractPolygonalPrismData<Point> prism;
+  // Consider only objects in a given layer above the table
+  prism.setHeightLimits(-0.5, -0.03);
+  // ---[ Get the objects on top of the table
+  pcl::PointIndices roi_indices;
+  prism.setInputCloud(pc_in);
+  prism.setInputPlanarHull(hull);
+  prism.segment(roi_indices);
 
-  // Destructor
-  ~PlaneExtraction()
+  //pcl::PointCloud<Point> cloud_objects;
+  pcl::ExtractIndices<Point> extract_roi;
+  extract_roi.setInputCloud (pc_in);
+  extract_roi.setIndices (boost::make_shared<const pcl::PointIndices> (roi_indices));
+  extract_roi.filter (pc_roi);
+  //pcl::PointCloud<Point>::ConstPtr pc_roi_ptr = pc_roi.makeShared();
+
+  /*pcl::KdTree<Point>::Ptr clusters_tree;
+  clusters_tree = boost::make_shared<pcl::KdTreeFLANN<Point> > ();
+
+  pcl::EuclideanClusterExtraction<Point> cluster_obj;
+
+  // Table clustering parameters
+  cluster_obj.setClusterTolerance (0.06);
+  cluster_obj.setMinClusterSize (100);
+  cluster_obj.setSearchMethod (clusters_tree);
+
+  // Cluster potential table points
+  std::vector<pcl::PointIndices> object_clusters;
+  cluster_obj.setInputCloud (cloud_objects.makeShared());
+  cluster_obj.extract (object_clusters);
+
+  for(unsigned int i = 0; i < object_clusters.size(); ++i)
   {
-    /// void
-  }
-
-  void
-  extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
-                std::vector<pcl::PointCloud<Point> >& v_cloud_hull,
-                std::vector<std::vector<pcl::Vertices> >& v_hull_polygons,
-                std::vector<pcl::ModelCoefficients>& v_coefficients_plane);
-
-  void
-  saveHulls(pcl::PointCloud<Point>& cloud_hull,
-            std::vector< pcl::Vertices >& hull_polygons);
-
-  void
-  setPlaneConstraint(PlaneConstraint constr)
-  {
-    plane_constraint_ = constr;
-  }
-
-
-protected:
-  int ctr_;
-  unsigned int min_cluster_size_;
-  std::string file_path_;
-  bool save_to_file_;
-  PlaneConstraint plane_constraint_;
-
-};
-
-#endif //__PLANE_EXTRACTION_H__
+    pcl::PointCloud<Point> object;
+    extract.setInputCloud (cloud_objects.makeShared());
+    extract.setIndices (boost::make_shared<const pcl::PointIndices> (object_clusters[i]));
+    extract.setNegative (false);
+    extract.filter (object);
+    object_cluster_pub_.publish(object);
+  }*/
+}

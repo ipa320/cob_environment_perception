@@ -112,11 +112,13 @@ public:
   typedef pcl::PointXYZRGB Point;
   // Constructor
   PlaneExtractionNodelet()
+    : pe(true)
   {
     ctr_ = 0;
     min_cluster_size_ = 300;
-    file_path_ = "/home/goa/pcl_daten/kitchen_kinect2/planes/";
-    save_to_file_ = false;
+    //file_path_ = "/home/goa/pcl_daten/kitchen_kinect2/planes/";
+    //save_to_file_ = false;
+    pe.setPlaneConstraint(HORIZONTAL);
   }
 
   // Destructor
@@ -140,22 +142,32 @@ public:
   }
 
 
-  //input should be point cloud that is amplitude filetered, statistical outlier filtered, voxel filtered and the floor cut, coordinate system should be /map
+  // pc_in should be in a coordinate system with z pointing upwards
   void pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc_in)
   {
     ROS_INFO("Extract plane callback");
-    pe.extractPlanes(pc_in);
+    //TODO: transform to /base_link or /map
+    std::vector<pcl::PointCloud<Point> > v_cloud_hull;
+    std::vector<std::vector<pcl::Vertices> > v_hull_polygons;
+    std::vector<pcl::ModelCoefficients> v_coefficients_plane;
+    pe.extractPlanes(pc_in, v_cloud_hull, v_hull_polygons, v_coefficients_plane);
 
-    /*publishPolygonArray(cloud_hull, hull_polygons, coefficients_plane, pc_in->header);
-    publishPolygons(*cloud_hull, pc_in->header);
-    publishMarker(*cloud_hull, pc_in->header, r, g, b);*/
+    for(unsigned int i = 0; i < v_cloud_hull.size(); i++)
+    {
+      publishPolygonArray(v_cloud_hull[i], v_hull_polygons[i], v_coefficients_plane[i], pc_in->header);
+      publishPolygons(v_cloud_hull[i], pc_in->header);
+      publishMarker(v_cloud_hull[i], pc_in->header, 0, 0, 1);
+      ctr_++;
+      //ROS_INFO("%d planes published so far", ctr_);
+    }
 
     return;
   }
 
 
   void
-  publishPolygons(pcl::PointCloud<Point>& cloud_hull, std_msgs::Header header)
+  publishPolygons(pcl::PointCloud<Point>& cloud_hull,
+                  std_msgs::Header header)
   {
     geometry_msgs::PolygonStamped polygon;
     polygon.header = header;
@@ -170,27 +182,27 @@ public:
   }
 
   void
-  publishPolygonArray(pcl::PointCloud<Point>::Ptr& cloud_hull,
+  publishPolygonArray(pcl::PointCloud<Point>& cloud_hull,
                            std::vector< pcl::Vertices >& hull_polygons,
-                           pcl::ModelCoefficients::Ptr& coefficients_plane,
+                           pcl::ModelCoefficients& coefficients_plane,
                            std_msgs::Header header)
   {
     cob_env_model::PolygonArray p;
     p.polygons.resize(hull_polygons.size());
     p.header = header;
-    p.normal.x = coefficients_plane->values[0];
-    p.normal.y = coefficients_plane->values[1];
-    p.normal.z = coefficients_plane->values[2];
-    p.d.data = coefficients_plane->values[3];
+    p.normal.x = coefficients_plane.values[0];
+    p.normal.y = coefficients_plane.values[1];
+    p.normal.z = coefficients_plane.values[2];
+    p.d.data = coefficients_plane.values[3];
     for(unsigned int i=0; i<hull_polygons.size(); i++)
     {
       p.polygons[i].points.resize(hull_polygons[i].vertices.size());
       for(unsigned int j=0; j<hull_polygons[i].vertices.size(); j++)
       {
         int idx = hull_polygons[i].vertices[j];
-        p.polygons[i].points[j].x = cloud_hull->points[idx].x;
-        p.polygons[i].points[j].y = cloud_hull->points[idx].y;
-        p.polygons[i].points[j].z = cloud_hull->points[idx].z;
+        p.polygons[i].points[j].x = cloud_hull.points[idx].x;
+        p.polygons[i].points[j].y = cloud_hull.points[idx].y;
+        p.polygons[i].points[j].z = cloud_hull.points[idx].z;
       }
       polygon_array_pub_.publish(p);
     }
@@ -198,16 +210,14 @@ public:
 
   void
   publishMarker(pcl::PointCloud<Point>& cloud_hull,
-                     std::string& frame_id,
-                     ros::Time stamp,
+                std_msgs::Header header,
                      float r, float g, float b)
   {
     visualization_msgs::Marker marker;
     marker.action = visualization_msgs::Marker::ADD;
     marker.type = visualization_msgs::Marker::POINTS;
     marker.lifetime = ros::Duration();
-    marker.header.frame_id = frame_id;
-    marker.header.stamp = stamp;
+    marker.header = header;
     marker.id = ctr_;
 
 

@@ -16,7 +16,7 @@
     </rosparam>
   </node-->
 
-  <node pkg="nodelet" type="nodelet" name="detect_tables" args="load cob_env_model/DetectTables pcl_manager" output="screen">
+  <node pkg="nodelet" type="nodelet" name="detect_tables" args="load cob_env_model/PlaneExtractionNodelet pcl_manager" output="screen">
   	<remap from="point_cloud2" to="/aggregate_point_map/pc_aligned"/>
   	<!--remap from="point_cloud2" to="/aggregate_point_map/map"/-->
   	<!--remap from="point_cloud2" to="/voxel_grid2/output"/-->
