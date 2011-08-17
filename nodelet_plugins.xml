@@ -1,4 +1,4 @@
-<library path="ros/lib/libcob_env_model">
+<library path="ros/lib/libcob_env_model_nodelets">
   <class name="cob_env_model/PlaneExtractionNodelet" type="PlaneExtractionNodelet" base_class_type="nodelet::Nodelet">
   <description>
   Nodelet for plane extraction
