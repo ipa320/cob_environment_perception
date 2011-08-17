@@ -76,7 +76,7 @@ class PointCloudToPCD
       std::string prefix;
       nh_.getParam ("prefix", prefix);
 
-      ss << prefix << cloud->header.stamp << ".pcd";
+      ss << "/home/goa-hh/pcl_daten/test/" << cloud->header.stamp << ".pcd";
       ROS_INFO ("Data saved to %s", ss.str ().c_str ());
 
       pcl::io::savePCDFile (ss.str (), *cloud, Eigen::Vector4f::Zero (),
@@ -86,7 +86,7 @@ class PointCloudToPCD
     ////////////////////////////////////////////////////////////////////////////////
     PointCloudToPCD ()
     {
-      cloud_topic_ = "input";
+      cloud_topic_ = "/openni_rgb_optical_frame";
 
       sub_ = nh_.subscribe (cloud_topic_, 1,  &PointCloudToPCD::cloud_cb, this);
       ROS_INFO ("Listening for incoming data on topic %s", nh_.resolveName (cloud_topic_).c_str ());

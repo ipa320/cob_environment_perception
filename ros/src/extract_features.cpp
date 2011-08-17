@@ -1,57 +1,57 @@
 /****************************************************************
- *
- * Copyright (c) 2010
- *
- * Fraunhofer Institute for Manufacturing Engineering
- * and Automation (IPA)
- *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
- * Project name: care-o-bot
- * ROS stack name: cob_vision
- * ROS package name: cob_env_model
- * Description:
- *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
- * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
- * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
- *
- * Date of creation: 01/2011
- * ToDo:
- * Only update if new robot pose available
- * Resample point cloud
- *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Fraunhofer Institute for Manufacturing
- *       Engineering and Automation (IPA) nor the names of its
- *       contributors may be used to endorse or promote products derived from
- *       this software without specific prior written permission.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License LGPL as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License LGPL for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License LGPL along with this program.
- * If not, see <http://www.gnu.org/licenses/>.
- *
- ****************************************************************/
+*
+* Copyright (c) 2010
+*
+* Fraunhofer Institute for Manufacturing Engineering
+* and Automation (IPA)
+*
+* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+*
+* Project name: care-o-bot
+* ROS stack name: cob_vision
+* ROS package name: cob_env_model
+* Description:
+*
+* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+*
+* Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+* Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+*
+* Date of creation: 01/2011
+* ToDo:
+* Only update if new robot pose available
+* Resample point cloud
+*
+* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
+*
+* * Redistributions of source code must retain the above copyright
+* notice, this list of conditions and the following disclaimer.
+* * Redistributions in binary form must reproduce the above copyright
+* notice, this list of conditions and the following disclaimer in the
+* documentation and/or other materials provided with the distribution.
+* * Neither the name of the Fraunhofer Institute for Manufacturing
+* Engineering and Automation (IPA) nor the names of its
+* contributors may be used to endorse or promote products derived from
+* this software without specific prior written permission.
+*
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU Lesser General Public License LGPL as
+* published by the Free Software Foundation, either version 3 of the
+* License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU Lesser General Public License LGPL for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License LGPL along with this program.
+* If not, see <http://www.gnu.org/licenses/>.
+*
+****************************************************************/
 
 
 //##################
@@ -180,16 +180,26 @@ public:
     	}
 	}
 
-	/**Extracts edges from a color image using the canny algorithm*/
+/**Extracts edges from a color image using the canny algorithm*/
     void extractEdgesCanny(cv::Mat& color_image, cv::Mat& canny_image)
-	{
+{
         boost::timer t;
-    	cv::Mat grey_image;
-    	cvtColor( color_image, grey_image, CV_RGB2GRAY );
-    	cv::Mat color_canny_image;
-        Canny( grey_image, canny_image, 50, 150, 3 );
-    	ROS_INFO("Time elapsed for canny edge: %f", t.elapsed());
-	}
+     cv::Mat grey_image;
+     cvtColor( color_image, grey_image, CV_RGB2GRAY );
+        cv::Mat opening_image;
+        cv::Mat element=cv::Mat::ones(3,3, CV_32F);
+        double m[9][9]={{0,0,0,1,1,1,0,0,0},{0,0,0,1,1,1,0,0,0},{0,0,0,1,1,1,0,0,0},{1,1,1,1,1,1,1,1,1},{1,1,1,1,1,1,1,1,1},{1,1,1,1,1,1,1,1,1},{0,0,0,1,1,1,0,0,0},{0,0,0,1,1,1,0,0,0},{0,0,0,1,1,1,0,0,0}};
+        cv::Mat edges=cv::Mat(9,9,CV_64F,m).inv();
+        cv::Point anchor(-1,-1);
+        int borderType=cv::BORDER_CONSTANT;
+        cv::Scalar borderValue=cv::morphologyDefaultBorderValue();
+        cv::erode(grey_image, grey_image,element,anchor,1,borderType,borderValue);
+        //cv::dilate(grey_image, grey_image,element,anchor,4,borderType,borderValue);
+
+     cv::Mat color_canny_image;
+        Canny( grey_image, canny_image, 25, 150, 3 );
+     ROS_INFO("Time elapsed for canny edge: %f", t.elapsed());
+}
 
     /**Uses the PCL BoundaryEstimation to find edges in a point cloud. Uses an angle criterion to detect edges
      * Unfortunately marks the outline of a point cloud as edge; needs normal estimation
@@ -447,8 +457,8 @@ public:
 						border_image.at<unsigned char>(row,col) = 0;
 				}
 			}
-			//cv::imshow("range border image", border_image);
-			//cv::waitKey();
+			cv::imshow("range border image", border_image);
+			cv::waitKey();
 	}
 
     /**Uses the PCL BoundaryEstimation to find edges in a point cloud. Uses an angle criterion to detect edges
@@ -499,91 +509,118 @@ public:
 	/**Segments a color image using an edge image and the watershed algorithm
 	 *
 	 */
-	void segmentByEdgeImage(cv::Mat& color_image, cv::Mat& edge_image, cv::Mat& markers)
-	{
-		/// apply closing to connect edge segments, not working very well
-		cv::Mat edge_morph;
-		cv::morphologyEx(edge_image, edge_morph, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_RECT,cv::Size(3,3)), cv::Point(-1,-1), 1);
-		cv::imshow("Edge morph", edge_morph);
-		/// find contours in edge image
-		std::vector<std::vector<cv::Point> > contours;
-		cv::findContours(edge_image, contours, CV_RETR_LIST,CV_CHAIN_APPROX_NONE);
-		markers = cv::Mat::zeros(edge_image.size(), CV_32S);
-		std::cout << "num contours: " << contours.size() << std::endl;
-		for(int idx=0; idx<contours.size(); idx++)
-		cv::drawContours(markers, contours, idx, cv::Scalar(idx+1));
-		std::vector<cv::Vec3b> colorTab;
-		for(int i = 0; i < contours.size(); i++ )
-		{
-			int b = cv::theRNG().uniform(0, 255);
-			int g = cv::theRNG().uniform(0, 255);
-			int r = cv::theRNG().uniform(0, 255);
+	void segmentByEdgeImage(cv::Mat& color_image, cv::Mat& edge_image, cv::Mat& markers,vector<vector<cv::Point> >& big_contours)
+	    {
+	        /// apply closing to connect edge segments, not working very well
+	        cv::Mat edge_morph;
 
-			colorTab.push_back(cv::Vec3b((uchar)b, (uchar)g, (uchar)r));
-		}
-		cv::Mat vis_markers(markers.size(), CV_8UC3);
-		for(int i = 0; i < markers.rows; i++ )
-		{
-			for(int j = 0; j < markers.cols; j++ )
-			{
-				int idx = markers.at<int>(i,j);
-				if( idx == 0 )
-					vis_markers.at<cv::Vec3b>(i,j) = cv::Vec3b(0,0,0);
-				else
-					vis_markers.at<cv::Vec3b>(i,j) = colorTab[idx - 1];
-			}
-		}
-		cv::imshow("Contours", vis_markers);
-		cv::waitKey();
-		/// apply watershed algorithm
-		cv::watershed(color_image, markers);
-		cv::Mat wshed_image=cv::Mat(markers.size(), CV_8UC3);
-		for(int i = 0; i < markers.rows; i++ )
-		{
-			for(int j = 0; j < markers.cols; j++ )
-			{
-				int idx = markers.at<int>(i,j);
-				if( idx == -1 )
-					wshed_image.at<cv::Vec3b>(i,j) = cv::Vec3b(255,255,255);
-				else
-					wshed_image.at<cv::Vec3b>(i,j) = colorTab[idx - 1];
-			}
-		}
-		cv::imshow("wshed image", wshed_image);
-		cv::waitKey();
+	        //cv::morphologyEx(edge_image, edge_morph, cv::MORPH_OPEN, cv::getStructuringElement(cv::MORPH_RECT,cv::Size(3,3)), cv::Point(-1,-1), 1);
+	        //cv::morphologyEx(edge_image, edge_morph, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_RECT,cv::Size(3,3)), cv::Point(-1,-1), 1);
+	       // cv::imshow("Edge morph", edge_morph);
+	        /// find contours in edge image
+	        vector<vector<cv::Point> > contours;
+	        //vector<vector<cv::Point> > big_contours;
 
-		//cvtColor( canny_image, color_canny_image, CV_GRAY2BGR );
-		/*c_ptr = 0;
-		int pt_idx=0;
-		for (int row = 0; row < canny_image.rows; row++)
-		{
-			c_ptr = canny_image.ptr<unsigned char>(row);
-			for (int col = 0; col < canny_image.cols; col++, pt_idx++)
-			{
-				if(c_ptr[col]==255)
-				{
-					//pc_edge.points[pt_idx].boundary_point = 1;
-					pc_out.points[nr_p++] = pc->points[pt_idx];
-				}
-			}
-		}
-		//resize pc_out according to filtered points
-		pc_out.width = nr_p;
-		pc_out.height = 1;
-		pc_out.points.resize (nr_p);
-		pc_out.is_dense = true;*/
-		//cv::imshow("Canny Image", canny_image);
 
-		/*vector<cv::Vec4i> lines;
-		HoughLinesP( canny_image, lines, 1, CV_PI/180, 80, 30, 10 );
-		for( size_t i = 0; i < lines.size(); i++ )
-		{
-			line( color_canny_image, cv::Point(lines[i][0], lines[i][1]),
-				cv::Point(lines[i][2], lines[i][3]), cv::Scalar(0,0,255), 3, 8 );
+	        // all contours
+	        cv::findContours(edge_image, contours, CV_RETR_LIST,CV_CHAIN_APPROX_NONE);
+	        //only extrem contours
+	        //cv::findContours(edge_morph, contours, CV_RETR_EXTERNAL,CV_CHAIN_APPROX_NONE);
+	        markers = cv::Mat::zeros(edge_image.size(), CV_32S);
 
-		}*/
 
-	}
+	        for(int i=0; i<contours.size();i++){
+	                  if (contours[i].size()>50){
+	                    vector<cv::Point> inside;
+	                    contours[i].swap(inside);
+	                    big_contours.push_back(inside) ;
+	                  }
+	                }
+	        ExtractFeatures ef;
+	        int contours_size=big_contours.size();
+	        ef.vis_markers(big_contours, markers);
+	        ef.watershed(color_image,markers, contours_size);
+
+
+//	        for(int idx=0; idx<big_contours.size(); idx++)
+//
+//	        cv::drawContours(markers, big_contours, idx, cv::Scalar(idx+1));
+//	        vector<cv::Vec3b> colorTab;
+//	        for(int i = 0; i < big_contours.size(); i++ )
+//	        {
+//	            int b = cv::theRNG().uniform(0, 255);
+//	            int g = cv::theRNG().uniform(0, 255);
+//	            int r = cv::theRNG().uniform(0, 255);
+//
+//	            colorTab.push_back(cv::Vec3b((uchar)b, (uchar)g, (uchar)r));
+//	        }
+//	        cv::Mat vis_markers(markers.size(), CV_8UC3);
+//	        for(int i = 0; i < markers.rows; i++ )
+//	        {
+//	            for(int j = 0; j < markers.cols; j++ )
+//	            {
+//	                int idx = markers.at<int>(i,j);
+//	                if( idx == 0 )
+//	                    vis_markers.at<cv::Vec3b>(i,j) = cv::Vec3b(0,0,0);
+//	                else
+//	                    vis_markers.at<cv::Vec3b>(i,j) = colorTab[idx - 1];
+//	            }
+//	        }
+//	        cv::imshow("Contours", vis_markers);
+//	        cv::waitKey();
+	        /// apply watershed algorithm
+//	        cv::watershed(color_image, markers);
+//
+//	        cv::Mat wshed_image=cv::Mat(markers.size(), CV_8UC3);
+//	        for(int i = 0; i < markers.rows; i++ )
+//	        {
+//	            for(int j = 0; j < markers.cols; j++ )
+//	            {
+//	                int idx = markers.at<int>(i,j);
+//	                if( idx == -1 )
+//	                    wshed_image.at<cv::Vec3b>(i,j) = cv::Vec3b(255,255,255);
+//	                else
+//	                    wshed_image.at<cv::Vec3b>(i,j) = colorTab[idx - 1];
+//	            }
+//	        }
+//	        cv::imshow("wshed image", wshed_image);
+//	        cv::waitKey();
+	    //    markers=vis_markers;
+
+	        //cvtColor( canny_image, color_canny_image, CV_GRAY2BGR );
+	        /*c_ptr = 0;
+	        int pt_idx=0;
+	        for (int row = 0; row < canny_image.rows; row++)
+	        {
+	            c_ptr = canny_image.ptr<unsigned char>(row);
+	            for (int col = 0; col < canny_image.cols; col++, pt_idx++)
+	            {
+	                if(c_ptr[col]==255)
+	                {
+	                    //pc_edge.points[pt_idx].boundary_point = 1;
+	                    pc_out.points[nr_p++] = pc->points[pt_idx];
+	                }
+	            }
+	        }
+	        //resize pc_out according to filtered points
+	        pc_out.width = nr_p;
+	        pc_out.height = 1;
+	        pc_out.points.resize (nr_p);
+	        pc_out.is_dense = true;*/
+	        //cv::imshow("Canny Image", canny_image);
+
+	        /*vector<cv::Vec4i> lines;
+	        HoughLinesP( canny_image, lines, 1, CV_PI/180, 80, 30, 10 );
+	        for( size_t i = 0; i < lines.size(); i++ )
+	        {
+	            line( color_canny_image, cv::Point(lines[i][0], lines[i][1]),
+	                cv::Point(lines[i][2], lines[i][3]), cv::Scalar(0,0,255), 3, 8 );
+
+	        }*/
+
+	    }
+
+
 
 	/**Segments a point cloud using a watershed image
 	 * returns clusters of points belonging together
@@ -652,6 +689,87 @@ public:
 
 	}
 
+
+
+void watershed(cv::Mat &color_image , cv::Mat &combined_wshed_image , int &contours_size ){
+
+    cv::watershed(color_image, combined_wshed_image);
+
+	vector<cv::Vec3b> colorTab;
+
+	for(int i = 0; i < contours_size; i++ )
+	{
+	int b = cv::theRNG().uniform(0, 255);
+	int g = cv::theRNG().uniform(0, 255);
+	int r = cv::theRNG().uniform(0, 255);
+
+	colorTab.push_back(cv::Vec3b((uchar)b, (uchar)g, (uchar)r));
+	}
+	cv::Mat wshed_image=cv::Mat(combined_wshed_image.size(), CV_8UC3);
+	for(int i = 0; i < combined_wshed_image.rows; i++ )
+	{
+	for(int j = 0; j < combined_wshed_image.cols; j++ )
+	{
+	int idx = combined_wshed_image.at<int>(i,j);
+	if( idx == -1 )
+	wshed_image.at<cv::Vec3b>(i,j) = cv::Vec3b(255,255,255);
+	else
+	wshed_image.at<cv::Vec3b>(i,j) = colorTab[idx - 1];
+	}
+
+
+
+	}
+	cv::imshow("wshed image", wshed_image);
+
+
+
+
+	cv::waitKey();
+
+}
+
+void vis_markers(vector<vector<cv::Point> > big_contours ,cv::Mat &markers ){
+
+
+    for(int idx=0; idx<big_contours.size(); idx++)
+
+    cv::drawContours(markers, big_contours, idx, cv::Scalar(idx+1));
+    vector<cv::Vec3b> colorTab;
+    for(int i = 0; i < big_contours.size(); i++ )
+    {
+        int b = cv::theRNG().uniform(0, 255);
+        int g = cv::theRNG().uniform(0, 255);
+        int r = cv::theRNG().uniform(0, 255);
+
+        colorTab.push_back(cv::Vec3b((uchar)b, (uchar)g, (uchar)r));
+    }
+    cv::Mat vis_markers(markers.size(), CV_8UC3);
+    for(int i = 0; i < markers.rows; i++ )
+    {
+        for(int j = 0; j < markers.cols; j++ )
+        {
+            int idx = markers.at<int>(i,j);
+            if( idx == 0 )
+                vis_markers.at<cv::Vec3b>(i,j) = cv::Vec3b(0,0,0);
+            else
+                vis_markers.at<cv::Vec3b>(i,j) = colorTab[idx - 1];
+        }
+    }
+    cv::imshow("Contours", vis_markers);
+    cv::waitKey();
+}
+
+void add2contours(vector<vector<cv::Point> > &input_contour1 ,vector<vector<cv::Point> > &input_contour2 , vector<vector<cv::Point> > &output_contour)
+{
+	for(int i=0 ; i<input_contour1.size();i++){
+
+	output_contour.push_back(input_contour1[i]);
+	}
+	for(int i=0 ; i<input_contour2.size();i++){
+	output_contour.push_back(input_contour2[i]);
+	}
+}
 };
 
 /*int main(int argc, char** argv)
@@ -700,125 +818,166 @@ public:
 int main(int argc, char** argv)
 {
 
-	/// Create extract features  class instance
-	ExtractFeatures ef;
+/// Create extract features class instance
+ExtractFeatures ef;
 
-	/// Load PCD file as input; better use binary PCD files, ascii files seem to generate corrupt point clouds
-	std::string directory("/home/goa/pcl_daten/corner/");
-	PointCloudT::Ptr cloud_in = PointCloudT::Ptr (new PointCloudT);
-	pcl::io::loadPCDFile(directory+"corner.pcd", *cloud_in);
+/// Load PCD file as input; better use binary PCD files, ascii files seem to generate corrupt point clouds
+std::string directory("/home/goa-hh/pcl_daten/test/");
+PointCloud::Ptr cloud_in = PointCloud::Ptr (new PointCloud);
+int key=0;
+std::cout <<"Bitte wähle den Speicherslot 1,2 oder 3"<<std::endl;
+std:cin >>key;
+switch(key){
+case 1 : pcl::io::loadPCDFile(directory+"karton2_bin.pcd", *cloud_in);break;
+case 2 : pcl::io::loadPCDFile(directory+"eingang_bin.pcd", *cloud_in);break;
+case 3 : pcl::io::loadPCDFile(directory+"schreibtisch_bin.pcd", *cloud_in);break;
+}
+/// Extract edges on the color image
+cv::Mat color_image(cloud_in->height,cloud_in->width,CV_8UC3);
+ef.getColorImage(cloud_in, color_image);
+cv::imshow("Color Image", color_image);
+cv::Mat canny_image;
+ef.extractEdgesCanny(color_image, canny_image);
+        cv::imshow("Canny Image", canny_image);
+        cv::waitKey();
 
-	/// Extract edges on the color image
-	/*cv::Mat color_image(cloud_in->height,cloud_in->width,CV_8UC3);
-	ef.getColorImage(cloud_in, color_image);
-	cv::imshow("Color Image", color_image);
-	cv::Mat canny_image;
-	ef.extractEdgesCanny(color_image, canny_image);
-    cv::imshow("Canny Image", canny_image);
-    cv::waitKey();*/
+PointCloud cloud_out;
+cv::Mat border_image;
 
-	//pcl::PointCloud<pcl::Boundary> cloud_out;
-	pcl::PointCloud<pcl::Boundary>::Ptr cloud_out = pcl::PointCloud<pcl::Boundary>::Ptr (new pcl::PointCloud<pcl::Boundary>);
-	cv::Mat border_image;
+    /// Extract edges using curvature
+/*ef.extractEdgesCurvature(cloud_in, cloud_out);
+pcl::io::savePCDFileASCII (directory+"/edges/edges_curvature.pcd", cloud_out);*/
 
 	pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud_n (new pcl::PointCloud<pcl::PointXYZRGBNormal> ());
 	ef.estimatePointNormals(*cloud_in, *cloud_n);
 	pcl::io::savePCDFileASCII (directory+"/corner_n.pcd", *cloud_n);
-
     /// Extract edges using curvature
-	//ef.extractEdgesCurvature(cloud_in, cloud_out);
-	//pcl::io::savePCDFileASCII (directory+"/edges/edges_curvature.pcd", cloud_out);
-
-	//ef.extractPrincipalCurvature(cloud_in, cloud_out);
-	//return 0;
-	/// Extract edges using boundary estimation
-	ef.extractEdgesBoundary(cloud_in, *cloud_out, border_image);
-	cv::imshow("Edges", border_image);
-	cv::waitKey();
-
-	pcl::PointCloud<PointLabel>::Ptr cloud_out2 = pcl::PointCloud<PointLabel>::Ptr (new pcl::PointCloud<PointLabel>);
-	cloud_out2->height = cloud_out->height;
-	cloud_out2->width = cloud_out->width;
-	cloud_out2->points.resize(cloud_out2->height*cloud_out2->width);
-	for (int i=0; i<cloud_out->points.size(); i++)
-	{
-		cloud_out2->points[i].label = (int)(cloud_out->points[i].boundary_point);
-	}
-
-	ef.propagateWavefront(cloud_out2);
-
-	std::vector<pcl::PointIndices> clusters;
-	cv::Mat seg_img;
-	ef.getClusterIndices(cloud_out2, clusters, seg_img);
-
-	pcl::ExtractIndices<pcl::PointXYZRGB> extract;
-	for (int i = 0; i<clusters.size(); i++)
-	{
-		if(clusters[i].indices.size() > 100)
-		{
-			pcl::PointCloud<pcl::PointXYZRGB> cluster;
-			extract.setInputCloud (cloud_in);
-			extract.setIndices (boost::make_shared<const pcl::PointIndices> (clusters[i]));
-			extract.setNegative (false);
-			extract.filter (cluster);
-			std::stringstream ss;
-			ss << i;
-			pcl::io::savePCDFileASCII (directory+"/cluster/cluster_"+ss.str()+".pcd", cluster);
-		}
-	}
-	//cv::namedWindow("seg",CV_WINDOW_NORMAL);
-	cv::imshow("seg",seg_img);
-	cv::waitKey();
-	//pcl::io::savePCDFileASCII (directory+"/edges/edges_boundary.pcd", cloud_out);
+/*ef.extractEdgesCurvature(cloud_in, cloud_out);
+pcl::io::savePCDFileASCII (directory+"/edges/edges_curvature.pcd", cloud_out);*/
 
 
 
-	return 0;
+//Extract edges using boundary estimation
+// ef.extractEdgesBoundary(cloud_in, cloud_out, border_image);
+// pcl::io::savePCDFileASCII (directory+"/edges/edges_boundary.pcd", cloud_out);
 
-	/// Extract edges using range image border extraction
-	pcl::RangeImage range_image_out;
-	ef.extractEdgesRangeImage(cloud_in, range_image_out, border_image);
-	pcl::io::savePCDFileASCII (directory+"/edges/edges_range_border.pcd", range_image_out);
-	pcl::visualization::PCLVisualizer viewer("3D Viewer");
-	viewer.addCoordinateSystem(1.0f);
-	viewer.addPointCloud<PointT>(cloud_in, "original point cloud");
-	viewer.addPointCloud<pcl::PointWithRange>(range_image_out.makeShared(), "border points");
-	while(!viewer.wasStopped())
-	{
-	    viewer.spinOnce(100);
-	    usleep(100000);
-	}
+// /// Extract edges using range image border extraction
+pcl::RangeImage range_image_out;
+ef.extractEdgesRangeImage(cloud_in, range_image_out, border_image);
 
-	/// Combine two edge images
-	/*cv::Mat combined_edge_image = canny_image | border_image;
-	cv::imshow("combined edge image", combined_edge_image);
-	cv::waitKey();
 
-	/// Segment color image using canny edge image (can also be done with combined edge image)
-	cv::Mat wshed_canny;
-	ef.segmentByEdgeImage(color_image, canny_image, wshed_canny);
+cv::Mat element=cv::Mat::ones(3,3, CV_32F);
+cv::Mat border_image2;
+cv::Point anchor(-1,-1);
+int borderType=cv::BORDER_CONSTANT;
+cv::Scalar borderValue=cv::morphologyDefaultBorderValue();
+//cv::dilate(border_image, border_image,element,anchor,1,borderType,borderValue);
+cv::erode(border_image, border_image,element,anchor,1,borderType,borderValue);
 
-	/// Cluster point cloud according to color image segmentation
-	std::vector<pcl::PointIndices> cluster_indices;
-	ef.getClusterIndices(cloud_in, wshed_canny, cluster_indices);
-	pcl::ExtractIndices<PointT> extract;
-	for(unsigned int i = 0; i < cluster_indices.size(); i++)
-	{
-		if(cluster_indices[i].indices.size()>100)
-		{
-			pcl::PointCloud<PointT> cluster;
-			extract.setInputCloud (cloud_in);
-			extract.setIndices (boost::make_shared<const pcl::PointIndices> (cluster_indices[i]));
-			extract.setNegative (false);
-			extract.filter (cluster);
-			stringstream ss; //create a stringstream
-			ss << directory << "/cluster/cluster_" << i << ".pcd";//add number to the stream
-			pcl::io::savePCDFileASCII (ss.str(), cluster);
-		}
-	}*/
+        // cv::dilate(border_image, border_image,element,anchor,1,borderType,borderValue);
+          //cv::erode(border_image, border_image,element,anchor,1,borderType,borderValue);
 
-	return 0;
+
+        cv::imshow("border_image", border_image);
+
+
+pcl::io::savePCDFileASCII (directory+"/edges/edges_range_border.pcd", range_image_out);
+pcl::visualization::PCLVisualizer viewer("3D Viewer");
+viewer.addCoordinateSystem(1.0f);
+viewer.addPointCloud<pcl::PointXYZRGB>(cloud_in, "original point cloud");
+viewer.addPointCloud<pcl::PointWithRange>(range_image_out.makeShared(), "border points");
+while(!viewer.wasStopped())
+{
+viewer.spinOnce(100);
+usleep(100000);
 }
+
+/// Combine two edge images
+cv::Mat combined_edge_image = canny_image | border_image;
+cv::imshow("combined edge image", combined_edge_image);
+cv::waitKey();
+
+/// Segment color image using canny edge image (can also be done with combined edge image)
+cv::Mat wshed_canny;
+cv::Mat wshed_range_image;
+cv::Mat wshed_combined_image;
+
+vector<vector<cv::Point> > big_contours_canny;
+vector<vector<cv::Point> > big_contours_range;
+vector<vector<cv::Point> > big_contours_combined;
+
+ef.segmentByEdgeImage(color_image, canny_image, wshed_canny,big_contours_canny );
+ef.segmentByEdgeImage(color_image, border_image, wshed_range_image,big_contours_range);
+ef.segmentByEdgeImage(color_image, combined_edge_image, wshed_combined_image,big_contours_combined );
+
+
+cv::Mat combined_wshed_image=wshed_canny | wshed_range_image;
+cv::Mat all_image = canny_image | border_image;
+int contours_size=big_contours_canny.size()+big_contours_range.size();
+
+vector<vector<cv::Point> > all_contours;
+cv::Mat markers2 = cv::Mat::zeros(all_image.size(), CV_32S);
+
+ef.add2contours(big_contours_canny , big_contours_range , all_contours);
+ef.vis_markers(all_contours,markers2);
+ef.watershed(color_image , markers2 , contours_size);
+//cv::watershed(color_image, combined_wshed_image);
+//
+//
+//vector<cv::Vec3b> colorTab;
+//
+//for(int i = 0; i < big_contours_canny.size()+big_contours_range.size(); i++ )
+//{
+//int b = cv::theRNG().uniform(0, 255);
+//int g = cv::theRNG().uniform(0, 255);
+//int r = cv::theRNG().uniform(0, 255);
+//
+//colorTab.push_back(cv::Vec3b((uchar)b, (uchar)g, (uchar)r));
+//}
+//cv::Mat wshed_image=cv::Mat(combined_wshed_image.size(), CV_8UC3);
+//for(int i = 0; i < combined_wshed_image.rows; i++ )
+//{
+//for(int j = 0; j < combined_wshed_image.cols; j++ )
+//{
+//int idx = combined_wshed_image.at<int>(i,j);
+//if( idx == -1 )
+//wshed_image.at<cv::Vec3b>(i,j) = cv::Vec3b(255,255,255);
+//else
+//wshed_image.at<cv::Vec3b>(i,j) = colorTab[idx - 1];
+//}
+//
+//
+//
+//}
+//cv::imshow("wshed image", wshed_image);
+//
+//
+//
+//
+//cv::waitKey();
+
+/// Cluster point cloud according to color image segmentation
+std::vector<pcl::PointIndices> cluster_indices;
+ef.getClusterIndices(cloud_in, wshed_canny, cluster_indices);
+pcl::ExtractIndices<pcl::PointXYZRGB> extract;
+for(unsigned int i = 0; i < cluster_indices.size(); i++)
+{
+if(cluster_indices[i].indices.size()>100)
+{
+pcl::PointCloud<pcl::PointXYZRGB> cluster;
+extract.setInputCloud (cloud_in);
+extract.setIndices (boost::make_shared<const pcl::PointIndices> (cluster_indices[i]));
+extract.setNegative (false);
+extract.filter (cluster);
+stringstream ss; //create a stringstream
+//ss << directory << "/cluster/cluster_" << i << ".pcd";//add number to the stream
+//pcl::io::savePCDFileASCII (ss.str(), cluster);
+}
+}
+
+return 0;
+}
+
 
 
 

@@ -1,5 +1,10 @@
 <?xml version="1.0"?>
+
+
 <launch>
+<!-- Includes -->
+
+
 
   <!-- start nodelet manager -->
   <!--node pkg="nodelet" type="nodelet" name="pcl_manager"  args="manager" output="screen"/-->

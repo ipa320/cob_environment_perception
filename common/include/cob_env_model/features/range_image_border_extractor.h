@@ -112,6 +112,10 @@ namespace ipa_features
         * \param range_image a pointer to the range_image
         */
       void
+      setPixelRradiusBorders(int radius){parameters_.pixel_radius_borders=radius; }
+      void
+      setMinimumBorderProbability(float border){parameters_.minimum_border_probability=border; }
+      void
       setRangeImage (const pcl::RangeImage* range_image);
       
       /** \brief Erase all data calculated for the current range image */
