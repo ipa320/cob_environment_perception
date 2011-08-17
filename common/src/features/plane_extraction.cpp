@@ -81,18 +81,24 @@
 #include "cob_env_model/features/plane_extraction.h"
 
 
-PlaneExtraction::PlaneExtraction()
+PlaneExtraction::PlaneExtraction(bool save_to_file)
 {
   ctr_ = 0;
   min_cluster_size_ = 300;
   file_path_ = "/home/goa/pcl_daten/kitchen_kinect2/planes/";
-  save_to_file_ = false;
+  save_to_file_ = save_to_file;
+  plane_constraint_ = NONE;
 }
 
 //input should be point cloud that is amplitude filetered, statistical outlier filtered, voxel filtered and the floor cut, coordinate system should be /map
-void PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in)
+void
+PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
+                               std::vector<pcl::PointCloud<Point> >& v_cloud_hull,
+                               std::vector<std::vector<pcl::Vertices> >& v_hull_polygons,
+                               std::vector<pcl::ModelCoefficients>& v_coefficients_plane)
 {
   ROS_INFO("Extract plane callback");
+  ROS_INFO("Saving files: %d", save_to_file_);
   boost::timer t;
   std::stringstream ss;
 
@@ -133,7 +139,7 @@ void PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in)
     pcl::PointCloud<Point>::Ptr cluster_ptr = cluster.makeShared();
     if(save_to_file_)
     {
-      ss.str();
+      ss.str("");
       ss.clear();
       ss << file_path_ << "/cluster_" << ctr_ << ".pcd";
       pcl::io::savePCDFileASCII (ss.str(), cluster);
@@ -159,7 +165,7 @@ void PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in)
     // iterate over cluster to find all planes until cluster is too small
     while(consider_in_cluster->indices.size()>min_cluster_size_ /*&& ctr<6*/)
     {
-      ROS_INFO("Cluster size: %d", (int)consider_in_cluster->indices.size());
+      //ROS_INFO("Cluster size: %d", (int)consider_in_cluster->indices.size());
       ctr++;
 
       // Do SAC plane segmentation
@@ -177,12 +183,13 @@ void PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in)
       seg.setIndices(consider_in_cluster);
       seg.setInputNormals (cloud_normals);
       // Obtain the plane inliers and coefficients
-      pcl::ModelCoefficients::Ptr coefficients_plane (new pcl::ModelCoefficients ());
-      seg.segment (*inliers_plane, *coefficients_plane);
+      pcl::ModelCoefficients coefficients_plane;
+      seg.segment (*inliers_plane, coefficients_plane);
 
       // Evaluate plane
-      float g=0, b=0;
-      if (coefficients_plane->values.size () <=3)
+      float g=1, b=0;
+      bool invalidPlane = false;
+      if (coefficients_plane.values.size () <=3)
       {
         //ROS_INFO("Failed to detect plane in scan, skipping cluster");
         break;
@@ -193,67 +200,89 @@ void PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in)
         //ROS_INFO("Plane detection has %d inliers, below min threshold of %d, skipping cluster", (int)inliers_plane->indices.size(), 150);
         break;
       }
-      if(fabs(coefficients_plane->values[0]) < 0.1 && fabs(coefficients_plane->values[1]) < 0.1 && fabs(coefficients_plane->values[2]) > 0.9)
+      if(plane_constraint_ == HORIZONTAL)
       {
-        //ROS_INFO("Detected plane perpendicular to z axis");
-        //std::cout << "Plane coefficients: " << *coefficients_plane << std::endl;
-        g=1;
-      }
-      else if(fabs(coefficients_plane->values[2]) < 0.15) //18 degrees
-      {
-        //ROS_INFO("Detected plane parallel to z axis");
-        //std::cout << "Plane coefficients: " << *coefficients_plane << std::endl;
-        b=1;
-      }
-      /*else
+        if(fabs(coefficients_plane.values[0]) > 0.1 || fabs(coefficients_plane.values[1]) > 0.1 || fabs(coefficients_plane.values[2]) < 0.9)
         {
-          ROS_INFO("Detected plane not parallel to z axis or perpendicular to z axis");
-          //std::cout << "Plane coefficients: " << *coefficients_plane << std::endl;
-          break;
-        }*/
-
-      // Extract plane points, only needed for storing bag file
-      ROS_INFO("Plane has %d inliers", (int)inliers_plane->indices.size());
-      pcl::PointCloud<Point> dominant_plane;
-      pcl::ExtractIndices<Point> extractIndices;
-      extractIndices.setInputCloud(cluster_ptr);
-      extractIndices.setIndices(inliers_plane);
-      extractIndices.filter(dominant_plane);
-      //ROS_INFO("Saved plane to %s", ss.str());
-      if(save_to_file_)
+          std::cout << "Plane is not horizontal: " << coefficients_plane << std::endl;
+          invalidPlane = true;
+        }
+      }
+      else if(plane_constraint_ == VERTICAL)
       {
-        ss.str("");
-        ss.clear();
-        ss << file_path_ << "/plane_" << ctr_ << ".pcd";
-        pcl::io::savePCDFileASCII (ss.str(), dominant_plane);
+        if(fabs(coefficients_plane.values[2]) > 0.1)
+          invalidPlane = true;
+      }
+      else
+      {
+        if(fabs(coefficients_plane.values[0]) < 0.1 && fabs(coefficients_plane.values[1]) < 0.1 && fabs(coefficients_plane.values[2]) > 0.9)
+        {
+          //ROS_INFO("Detected plane perpendicular to z axis");
+          //std::cout << "Plane coefficients: " << *coefficients_plane << std::endl;
+          g=1;
+        }
+        else if(fabs(coefficients_plane.values[2]) < 0.15) //18 degrees
+        {
+          //ROS_INFO("Detected plane parallel to z axis");
+          //std::cout << "Plane coefficients: " << *coefficients_plane << std::endl;
+          b=1;
+        }
+        /*else
+          {
+            ROS_INFO("Detected plane not parallel to z axis or perpendicular to z axis");
+            //std::cout << "Plane coefficients: " << *coefficients_plane << std::endl;
+            break;
+          }*/
       }
 
-      // Project the model inliers
-      pcl::PointCloud<Point>::Ptr cloud_projected (new pcl::PointCloud<Point> ());
-      pcl::ProjectInliers<Point> proj;
-      proj.setModelType (pcl::SACMODEL_PLANE);
-      proj.setInputCloud (cluster_ptr);
-      proj.setIndices(inliers_plane);
-      proj.setModelCoefficients (coefficients_plane);
-      proj.filter (*cloud_projected);
-
-      // Create a Convex Hull representation of the projected inliers
-      pcl::PointCloud<Point>::Ptr cloud_hull (new pcl::PointCloud<Point> ());
-      std::vector< pcl::Vertices > hull_polygons;
-      pcl::ConcaveHull<Point> chull;
-      chull.setInputCloud (cloud_projected);
-      //TODO: parameter
-      chull.setAlpha (0.2);
-      chull.reconstruct (*cloud_hull, hull_polygons);
-
-
-      if(save_to_file_)
+      if(!invalidPlane)
       {
-        saveHulls(cloud_hull, hull_polygons);
-        ss.str("");
-        ss.clear();
-        ss << file_path_ << "/plane_pr_" << ctr_ << ".pcd";
-        pcl::io::savePCDFileASCII (ss.str(), *cloud_projected);
+        // Extract plane points, only needed for storing bag file
+        ROS_INFO("Plane has %d inliers", (int)inliers_plane->indices.size());
+        pcl::PointCloud<Point> dominant_plane;
+        pcl::ExtractIndices<Point> extractIndices;
+        extractIndices.setInputCloud(cluster_ptr);
+        extractIndices.setIndices(inliers_plane);
+        extractIndices.filter(dominant_plane);
+        if(save_to_file_)
+        {
+          ss.str("");
+          ss.clear();
+          ss << file_path_ << "/plane_" << ctr_ << ".pcd";
+          pcl::io::savePCDFileASCII (ss.str(), dominant_plane);
+          std::cout << ss << std::endl;
+        }
+
+        // Project the model inliers
+        pcl::PointCloud<Point>::Ptr cloud_projected (new pcl::PointCloud<Point> ());
+        pcl::ProjectInliers<Point> proj;
+        proj.setModelType (pcl::SACMODEL_PLANE);
+        proj.setInputCloud (cluster_ptr);
+        proj.setIndices(inliers_plane);
+        proj.setModelCoefficients (boost::make_shared<pcl::ModelCoefficients>(coefficients_plane));
+        proj.filter (*cloud_projected);
+
+        // Create a Convex Hull representation of the projected inliers
+        pcl::PointCloud<Point> cloud_hull;
+        std::vector< pcl::Vertices > hull_polygons;
+        pcl::ConcaveHull<Point> chull;
+        chull.setInputCloud (cloud_projected);
+        //TODO: parameter
+        chull.setAlpha (0.2);
+        chull.reconstruct (cloud_hull, hull_polygons);
+        v_cloud_hull.push_back(cloud_hull);
+        v_hull_polygons.push_back(hull_polygons);
+        v_coefficients_plane.push_back(coefficients_plane);
+
+
+        if(save_to_file_)
+        {
+          saveHulls(cloud_hull, hull_polygons);
+          ss.str("");
+          ss.clear();
+          ss << file_path_ << "/plane_pr_" << ctr_ << ".pcd";
+          pcl::io::savePCDFileASCII (ss.str(), *cloud_projected);
+        }
       }
 
       // Remove plane inliers from indices list
@@ -274,16 +303,16 @@ void PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in)
         ss.str("");
         ss.clear();
         ss << file_path_ << "/rem_pts_" << ctr_ << ".pcd";
-      }
-      if(consider_in_cluster->indices.size() == cluster_ptr->size())
-        pcl::io::savePCDFileASCII (ss.str(), *cluster_ptr);
-      else
-      {
-        pcl::PointCloud<Point> remaining_pts;
-        extract.setInputCloud (cluster_ptr);
-        extract.setIndices (consider_in_cluster);
-        extract.filter (remaining_pts);
-        pcl::io::savePCDFileASCII (ss.str(), remaining_pts);
+        if(consider_in_cluster->indices.size() == cluster_ptr->size())
+          pcl::io::savePCDFileASCII (ss.str(), *cluster_ptr);
+        else
+        {
+          pcl::PointCloud<Point> remaining_pts;
+          extract.setInputCloud (cluster_ptr);
+          extract.setIndices (consider_in_cluster);
+          extract.filter (remaining_pts);
+          pcl::io::savePCDFileASCII (ss.str(), remaining_pts);
+        }
       }
     }
   }
@@ -292,7 +321,7 @@ void PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in)
 }
 
 void
-PlaneExtraction::saveHulls(pcl::PointCloud<Point>::Ptr& cloud_hull,
+PlaneExtraction::saveHulls(pcl::PointCloud<Point>& cloud_hull,
           std::vector< pcl::Vertices >& hull_polygons)
 {
   pcl::PointCloud<Point> hull_part;
@@ -301,7 +330,7 @@ PlaneExtraction::saveHulls(pcl::PointCloud<Point>::Ptr& cloud_hull,
     for(unsigned int j=0; j<hull_polygons[i].vertices.size(); j++)
     {
       int idx = hull_polygons[i].vertices[j];
-      hull_part.points.push_back(cloud_hull->points[idx]);
+      hull_part.points.push_back(cloud_hull.points[idx]);
     }
     std::stringstream ss;
     ss << file_path_ << "/hull_" << ctr_ << "_" << i << ".pcd";
@@ -309,45 +338,5 @@ PlaneExtraction::saveHulls(pcl::PointCloud<Point>::Ptr& cloud_hull,
   }
 }
 
-//TODO: move to separate class => table cluster
-/*pcl::ExtractPolygonalPrismData<Point> prism;
-                          // Consider only objects in a given layer above the table
-                          prism.setHeightLimits (-0.5, -0.03);
-                          // ---[ Get the objects on top of the table
-                          pcl::PointIndices cloud_object_indices;
-                          prism.setInputCloud (table_cluster_ptr);
-                          prism.setInputPlanarHull (cloud_hull);
-                          prism.segment (cloud_object_indices);
 
-                          pcl::PointCloud<Point> cloud_objects;
-                          pcl::ExtractIndices<Point> extract_object_indices;
-                          extract_object_indices.setInputCloud (table_cluster_ptr);
-                          extract_object_indices.setIndices (boost::make_shared<const pcl::PointIndices> (cloud_object_indices));
-                          extract_object_indices.filter (cloud_objects);
-                          pcl::PointCloud<Point>::ConstPtr cloud_objects_ptr = cloud_objects.makeShared();
-
-                          pcl::KdTree<Point>::Ptr obj_clusters_tree;
-                          obj_clusters_tree = boost::make_shared<pcl::KdTreeFLANN<Point> > ();
-
-                          pcl::EuclideanClusterExtraction<Point> cluster_obj;
-
-                          // Table clustering parameters
-                          cluster_obj.setClusterTolerance (0.06);
-                          cluster_obj.setMinClusterSize (100);
-                          cluster_obj.setSearchMethod (clusters_tree);
-
-                          // Cluster potential table points
-                          std::vector<pcl::PointIndices> object_clusters;
-                          cluster_obj.setInputCloud (cloud_objects.makeShared());
-                          cluster_obj.extract (object_clusters);
-
-                          for(unsigned int i = 0; i < object_clusters.size(); ++i)
-                          {
-                                  pcl::PointCloud<Point> object;
-                                  extract.setInputCloud (cloud_objects.makeShared());
-                                  extract.setIndices (boost::make_shared<const pcl::PointIndices> (object_clusters[i]));
-                                  extract.setNegative (false);
-                                  extract.filter (object);
-                                  object_cluster_pub_.publish(object);
-                          }*/
 

@@ -52,61 +52,27 @@
  *
  ****************************************************************/
 
-#ifndef __PLANE_EXTRACTION_H__
-#define __PLANE_EXTRACTION_H__
+#ifndef __TABLE_ROI_EXTRACTION_H__
+#define __TABLE_ROI_EXTRACTION_H__
 
-//##################
-//#### includes ####
-
-// standard includes
-//--
-
-// ROS includes
+// PCL includes
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 
 
-enum PlaneConstraint {NONE, HORIZONTAL, VERTICAL};
-
-//####################
-//#### nodelet class ####
-class PlaneExtraction
+class TableRoiExtraction
 {
 public:
   typedef pcl::PointXYZRGB Point;
-  // Constructor
-  PlaneExtraction(bool save_to_file);
 
-  // Destructor
-  ~PlaneExtraction()
-  {
-    /// void
-  }
+  TableRoiExtraction() {};
+  ~TableRoiExtraction() {};
 
   void
-  extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
-                std::vector<pcl::PointCloud<Point> >& v_cloud_hull,
-                std::vector<std::vector<pcl::Vertices> >& v_hull_polygons,
-                std::vector<pcl::ModelCoefficients>& v_coefficients_plane);
-
-  void
-  saveHulls(pcl::PointCloud<Point>& cloud_hull,
-            std::vector< pcl::Vertices >& hull_polygons);
-
-  void
-  setPlaneConstraint(PlaneConstraint constr)
-  {
-    plane_constraint_ = constr;
-  }
-
-
-protected:
-  int ctr_;
-  unsigned int min_cluster_size_;
-  std::string file_path_;
-  bool save_to_file_;
-  PlaneConstraint plane_constraint_;
+  extractTableRoi(pcl::PointCloud<Point>::Ptr& pc_in,
+                  pcl::PointCloud<Point>::Ptr& hull,
+                  pcl::PointCloud<Point>& pc_roi);
 
 };
 
-#endif //__PLANE_EXTRACTION_H__
+#endif /* __TABLE_ROI_EXTRACTION_H__ */
