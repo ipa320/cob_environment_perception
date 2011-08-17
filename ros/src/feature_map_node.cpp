@@ -102,6 +102,7 @@ public:
   // Constructor
   FeatureMapNode()
   {
+    ctr_ = 0;
     //convex_hull_sub_ = n_.subscribe("table_hull", 1, &FeatureMap::subCallback, this);
     polygon_sub_ = n_.subscribe("polygon_array", 10, &FeatureMapNode::polygonCallback, this);
     map_pub_ = n_.advertise<geometry_msgs::PolygonStamped>("feature_map",1);
@@ -123,6 +124,8 @@ public:
     //dumpPolygonToFile(*map_entry_ptr);
     feature_map_.addMapEntry(map_entry_ptr);
     publishMapMarker();
+    ctr_++;
+    //ROS_INFO("%d polygons received so far", ctr_);
   }
 
   void
@@ -607,7 +610,7 @@ protected:
 
   FeatureMap feature_map_;
 
-
+  unsigned int ctr_;
 };
 
 int main (int argc, char** argv)
