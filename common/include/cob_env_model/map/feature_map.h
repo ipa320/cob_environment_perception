@@ -155,4 +155,4 @@ protected:
 
 };
 
-#endif __FEATURE_MAP_H__
+#endif //__FEATURE_MAP_H__

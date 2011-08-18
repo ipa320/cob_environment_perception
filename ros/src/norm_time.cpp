@@ -121,7 +121,7 @@ public:
     												}
 */
 
-    }
+    //}
     void surfaceNormalsFast(PointCloud &cloud, pcl::PointCloud<pcl::Normal> &cloud_normals)
     {
 
