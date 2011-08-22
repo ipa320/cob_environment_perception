@@ -46,8 +46,8 @@ ${PROJECT_SOURCE_DIR}/ros/include)
 #rosbuild_add_executable(data_acquisition_node ros/src/data_acquisition.cpp)
 #rosbuild_add_executable(icp_registration_node ros/src/icp_registration.cpp)
 #rosbuild_add_executable(point_cloud_filter_node ros/src/point_cloud_filter.cpp)
-rosbuild_add_executable(extract_features_node ros/src/extract_features.cpp)
-rosbuild_add_executable(test_range ros/src/test_range_edges.cpp)
+#rosbuild_add_executable(extract_features_node ros/src/extract_features.cpp)
+#rosbuild_add_executable(test_range ros/src/test_range_edges.cpp)
 rosbuild_add_executable(norm_time ros/src/norm_time.cpp)
 
 
@@ -83,12 +83,12 @@ rosbuild_add_executable(create_point_cloud common/src/tools/create_point_cloud.c
 
 
 # add compile flag
-rosbuild_add_compile_flags(extract_features_node -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
+#rosbuild_add_compile_flags(extract_features_node -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
 
 
 # add compile flag
 #target_link_libraries(cob_env_model gpc)
-target_link_libraries(extract_features_node cob_env_model)
+#target_link_libraries(extract_features_node cob_env_model)
 target_link_libraries(feature_map cob_env_model)
 target_link_libraries(feature_map_node cob_env_model)
 #target_link_libraries (planar_segmentation ${PCL_IO_LIBRARY} ${PCL_FILTERS_LIBRARY} ${PCL_SEGMENTATION_LIBRARY})
@@ -98,4 +98,4 @@ target_link_libraries(feature_map_node cob_env_model)
 #target_link_libraries(cpc_publisher nodelet_cpc_publisher)
 #target_link_libraries(test_cpc_visualizer nodelet_cpc_publisher)
 #target_link_libraries(cpc_visualizer nodelet_cpc_publisher)
-
+target_link_libraries(norm_time cob_env_model)
