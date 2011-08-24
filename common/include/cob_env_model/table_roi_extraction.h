@@ -10,7 +10,7 @@
  * Project name: care-o-bot
  * ROS stack name: cob_vision
  * ROS package name: cob_env_model
- * Description: Feature Map for storing and handling geometric features
+ * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
@@ -19,7 +19,6 @@
  *
  * Date of creation: 08/2011
  * ToDo:
- *
  *
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -53,106 +52,27 @@
  *
  ****************************************************************/
 
-#ifndef __FEATURE_MAP_H__
-#define __FEATURE_MAP_H__
+#ifndef __TABLE_ROI_EXTRACTION_H__
+#define __TABLE_ROI_EXTRACTION_H__
 
-//##################
-//#### includes ####
-
-// external includes
-#include <Eigen/Core>
-#include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
-
-// internal includes
-extern "C" {
-#include "cob_env_model/map/gpc.h"
-}
+// PCL includes
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
 
 
-class FeatureMap
+class TableRoiExtraction
 {
 public:
-  struct MapEntry
-  {
-    //needed for 32-bit systems: see http://eigen.tuxfamily.org/dox/TopicStructHavingEigenMembers.html
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    unsigned int id;
-    std::vector<std::vector<Eigen::Vector3f> > polygon_world;
-    //cob_env_model::PolygonArray polygon_world;
-    //gpc_polygon polygon_plane;
-    Eigen::Vector3f normal;
-    double d;
-    Eigen::Affine3f transform_from_world_to_plane;
-    unsigned int merged;
-  };
+  typedef pcl::PointXYZRGB Point;
 
-  /*inline std::ostream& operator << (std::ostream& os, const MapEntry& m)
-  {
-    os << "(" << m.d << "," << m.normal << "," << ")";
-    return (os);
-  }*/
-
-
-  typedef boost::shared_ptr<MapEntry> MapEntryPtr;
-
-  // Constructor
-  FeatureMap()
-  :new_id_(0)
-  {
-    /// void
-  }
-
-  // Destructor
-  ~FeatureMap()
-  {
-    /// void
-  }
+  TableRoiExtraction() {};
+  ~TableRoiExtraction() {};
 
   void
-  addMapEntry(MapEntryPtr p);
-
-  void
-  getGpcStructure(MapEntry& p, gpc_polygon* gpc_p);
-
-  void
-  getGpcStructureUsingMap(FeatureMap::MapEntry& p,
-                          Eigen::Affine3f& transform_from_world_to_plane,
-                          gpc_polygon* gpc_p);
-
-  void
-  printMapEntry(MapEntry& p);
-
-  void
-  printGpcStructure(gpc_polygon* p);
-
-  void
-  saveMapEntry(std::string path, int ctr, FeatureMap::MapEntry& p);
-
-  void
-  saveMap(std::string path);
-
-  void
-  getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
-                             Eigen::Vector3f &u,
-                             Eigen::Vector3f &v);
-
-  void
-  getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,
-                                    const Eigen::Vector3f &origin,
-                                    Eigen::Affine3f &transformation);
-
-  boost::shared_ptr<std::vector<MapEntryPtr> >
-  getMap()
-  {
-    return boost::make_shared<std::vector<MapEntryPtr> >(map_);
-  }
-
-
-protected:
-  std::vector<MapEntryPtr> map_;
-  unsigned int new_id_;
+  extractTableRoi(pcl::PointCloud<Point>::Ptr& pc_in,
+                  pcl::PointCloud<Point>::Ptr& hull,
+                  pcl::PointCloud<Point>& pc_roi);
 
 };
 
-#endif //__FEATURE_MAP_H__
+#endif /* __TABLE_ROI_EXTRACTION_H__ */
