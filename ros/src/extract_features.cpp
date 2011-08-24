@@ -150,7 +150,7 @@ public:
                 //std::cout << "Input cloud has " << cloud.size() << " data points" << std::endl;
 
                 pcl::NormalEstimation<pcl::PointXYZRGB,pcl::Normal> normalEstimator;
-                normalEstimator.setInputCloud(boost::make_shared<PointCloudT >(cloud));
+                normalEstimator.setInputCloud(cloud.makeShared());
                 //pcl::KdTreeFLANN<pcl::PointXYZRGB>::Ptr tree (new pcl::KdTreeFLANN<pcl::PointXYZRGB> ());
                 pcl::OrganizedDataIndex<pcl::PointXYZRGB>::Ptr tree (new pcl::OrganizedDataIndex<pcl::PointXYZRGB> ());
                 normalEstimator.setSearchMethod(tree);
@@ -164,6 +164,45 @@ public:
                 pcl::concatenateFields (cloud, cloud_normal, cloud_n);
                 return;
         }
+       void integralEstimatePointNormals(PointCloudT& cloud, pcl::PointCloud<pcl::PointXYZRGBNormal>& cloud_n)
+       {
+   		pcl::IntegralImageNormalEstimation<pcl::PointXYZRGB, pcl::Normal> ne;
+
+
+   		ne.setNormalEstimationMethod (ne.AVERAGE_DEPTH_CHANGE);
+   		ne.setMaxDepthChangeFactor(0.02f);
+   		ne.setNormalSmoothingSize(10.0f);
+   		ne.setInputCloud(cloud.makeShared());
+   		boost::timer ti;
+        pcl::PointCloud<pcl::Normal> cloud_normal;
+
+   		ne.compute(cloud_normal);
+
+   		double time = ti.elapsed();
+   		for (int i=0;i<cloud_normal.size();i++)
+   	 				{
+   	 					double length=sqrt(cloud_normal.points[i].normal[0]*cloud_normal.points[i].normal[0]+cloud_normal.points[i].normal[1]*cloud_normal.points[i].normal[1]+cloud_normal.points[i].normal[2]*cloud_normal.points[i].normal[2]);
+   	 					cloud_normal.points[i].normal[0]=cloud_normal.points[i].normal[0]/length;
+   	 					cloud_normal.points[i].normal[1]=cloud_normal.points[i].normal[1]/length;
+   	 					cloud_normal.points[i].normal[2]=cloud_normal.points[i].normal[2]/length;
+   	 				}
+   		double all=0;
+   		int counter=0;
+   		for (int i=0;i<cloud_normal.size();i++)
+   		{
+   			if (!isnan(cloud_normal.points[i].normal[0])){
+   			double length=sqrt(cloud_normal.points[i].normal[0]*cloud_normal.points[i].normal[0]+cloud_normal.points[i].normal[1]*cloud_normal.points[i].normal[1]+cloud_normal.points[i].normal[2]*cloud_normal.points[i].normal[2]);
+   		    all +=length;
+   		    counter++;
+   		}
+
+   		}
+        pcl::concatenateFields (cloud, cloud_normal, cloud_n);
+
+   		ROS_INFO_STREAM("Integrate time " <<time << " average normal length " << all/counter );
+       }
+
+
 
         /**Stores the color field of a PointCloud to cv::Mat*/
         void getColorImage(PointCloudT::Ptr& pc, cv::Mat& color_image)
@@ -196,11 +235,14 @@ public:
      */
         void extractEdgesBoundary(PointCloudT::Ptr& cloud_in, pcl::PointCloud<pcl::Boundary>& cloud_out, cv::Mat& border_image)
         {
+
                 pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud_n (new pcl::PointCloud<pcl::PointXYZRGBNormal> ());
                 //pcl::PointCloud<pcl::Boundary>::Ptr boundary_pts (new pcl::PointCloud<pcl::Boundary> ());
-                estimatePointNormals(*cloud_in, *cloud_n);
+               integralEstimatePointNormals(*cloud_in, *cloud_n);
 
+               // estimatePointNormals(*cloud_in, *cloud_n);
                 boost::timer t;
+
                 //pcl::KdTree<pcl::PointXYZRGBNormal>::Ptr tree;
                 pcl::OrganizedDataIndex<pcl::PointXYZRGBNormal>::Ptr tree (new pcl::OrganizedDataIndex<pcl::PointXYZRGBNormal> ());
                 //tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZRGBNormal> > ();
@@ -210,8 +252,11 @@ public:
                 //boundary.setSearchSurface (cloud);
                 boundary.setRadiusSearch(0.03);
                 boundary.setInputNormals(cloud_n);
+
                 boundary.dist_threshold_ = 0.02; //increase to get more border points
+
                 boundary.compute(cloud_out);
+
                 //pcl::PointCloud<pcl::PointXYZRGBNormal> boundary_cloud;
                 //cloud_out.points.resize(cloud_n->points.size());
                 //cloud_out.header = cloud_n->header;
@@ -704,9 +749,9 @@ int main(int argc, char** argv)
         ExtractFeatures ef;
 
         /// Load PCD file as input; better use binary PCD files, ascii files seem to generate corrupt point clouds
-        std::string directory("/home/goa/pcl_daten/corner/");
+        std::string directory("/home/goa-hh/pcl_daten/corner/");
         PointCloudT::Ptr cloud_in = PointCloudT::Ptr (new PointCloudT);
-        pcl::io::loadPCDFile(directory+"corner.pcd", *cloud_in);
+        pcl::io::loadPCDFile(directory+"corner2.pcd", *cloud_in);
 
         /// Extract edges on the color image
         /*cv::Mat color_image(cloud_in->height,cloud_in->width,CV_8UC3);
@@ -722,17 +767,20 @@ int main(int argc, char** argv)
         cv::Mat border_image;
 
         pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud_n (new pcl::PointCloud<pcl::PointXYZRGBNormal> ());
-        ef.estimatePointNormals(*cloud_in, *cloud_n);
-        pcl::io::savePCDFileASCII (directory+"/corner_n.pcd", *cloud_n);
+        pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud_ni (new pcl::PointCloud<pcl::PointXYZRGBNormal> ());
+      //  ef.estimatePointNormals(*cloud_in, *cloud_n);
 
+       ef.integralEstimatePointNormals(*cloud_in, *cloud_n);
+        pcl::io::savePCDFileASCII (directory+"/corner_ni.pcd", *cloud_n);
     /// Extract edges using curvature
         //ef.extractEdgesCurvature(cloud_in, cloud_out);
         //pcl::io::savePCDFileASCII (directory+"/edges/edges_curvature.pcd", cloud_out);
-
         //ef.extractPrincipalCurvature(cloud_in, cloud_out);
         //return 0;
         /// Extract edges using boundary estimation
+
         ef.extractEdgesBoundary(cloud_in, *cloud_out, border_image);
+
         cv::imshow("Edges", border_image);
         cv::waitKey();
 
