@@ -88,12 +88,12 @@ rosbuild_add_executable(create_point_cloud common/src/tools/create_point_cloud.c
 
 
 # add compile flag
-rosbuild_add_compile_flags(extract_features_node -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
+#rosbuild_add_compile_flags(extract_features_node -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
 
 
 # add compile flag
 #target_link_libraries(cob_env_model gpc)
-target_link_libraries(extract_features_node cob_env_model)
+#target_link_libraries(extract_features_node cob_env_model)
 target_link_libraries(feature_map cob_env_model)
 target_link_libraries(feature_map_node cob_env_model)
 target_link_libraries(cob_env_model_nodelets cob_env_model)
@@ -104,4 +104,4 @@ target_link_libraries(cob_env_model_nodelets cob_env_model)
 #target_link_libraries(cpc_publisher nodelet_cpc_publisher)
 #target_link_libraries(test_cpc_visualizer nodelet_cpc_publisher)
 #target_link_libraries(cpc_visualizer nodelet_cpc_publisher)
-
+target_link_libraries(norm_time cob_env_model)
