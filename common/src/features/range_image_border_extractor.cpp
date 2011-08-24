@@ -153,6 +153,7 @@ void RangeImageBorderExtractor::extractLocalSurfaceStructure()
       }
  //     else
  //   	  std::cout << x << "," << y<< "\n" << local_surface->normal_no_jumps << std::endl;
+
       /** max_neighbor_distance_squared: maximum squared neighbour distance in the surface patch
        *  normal_no_jumps: normal vector optained using PCA, only taking into account close neighbours (2*max_closest_neighbor_distance_squared)
        *  neighborhood_mean_no_jumps: mean vector of close neighbours

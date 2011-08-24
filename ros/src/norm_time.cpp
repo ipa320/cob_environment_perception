@@ -82,7 +82,36 @@ public:
       ROS_INFO_STREAM("Difference of " << cord_char << " is " <<  (value_sum/counter)/target );
       }
     }
+   void getPointCloud (PointCloud &cloud)
+   {
+   	cloud.height=480;
+   	cloud.width = 640;
+   	cloud.points.resize (cloud.width * cloud.height);
+   	double  x_val=-1 , y_val=-1 , z_val=3;
+   	for (int i=0; i<cloud.height;i++){
+   		for (int j=0 ; j<cloud.width ;j++)
+   		{
+   			if (x_val<3)
+   			{
+   				cloud.points[i*cloud.width+j].x=x_val;
+   				cloud.points[i*cloud.width+j].y=y_val;
+   				cloud.points[i*cloud.width+j].z=z_val;
+   				x_val += 0.01;
+   			}
+   			else  {
+										cloud.points[i*cloud.width+j].x=x_val;
+   				    				cloud.points[i*cloud.width+j].y=y_val;
+   				    				cloud.points[i*cloud.width+j].z=z_val;
+   				    				z_val -= 0.01;
+   			}
+   		}
+   		x_val=-1;
+   		z_val=3;
+   		y_val+=0.01;
+   	}
 
+
+   }
 
 void extractRangeImage (PointCloud &cloud, pcl::PointCloud<pcl::Normal> &cloud_normals)
     {
@@ -105,45 +134,48 @@ void extractRangeImage (PointCloud &cloud, pcl::PointCloud<pcl::Normal> &cloud_n
     			}
 
     			  ipa_features::RangeImageBorderExtractor border_extractor(&range_image);
+    		      boost::timer ti;
 
     			  ipa_features::RangeImageBorderExtractor::LocalSurface **ls = border_extractor.getSurfaceStructure();
-    			  int size =sizeof(ls); // sizeof(ls->normal[0]);
-    		      ROS_INFO_STREAM("größe array   " << size);
-    		    //  ROS_INFO_STREAM("normal  " << ls[1000000000]->normal);
+    			     double time = ti.elapsed();
+
+    			  cloud_normals.resize(range_image.size());
+    			  for (int i=0;i<range_image.size();i++)
+    			  {
+    				  cloud_normals.points[i].normal[0]=range_image.points[i].x;
+    				  cloud_normals.points[i].normal[1]=range_image.points[i].y;
+    				  cloud_normals.points[i].normal[2]=range_image.points[i].z;
+
+    			  }
+    			  //normalization
+    				for (int i=0;i<cloud_normals.size();i++)
+    			 				{
+    			 					double length=sqrt(cloud_normals.points[i].normal[0]*cloud_normals.points[i].normal[0]+cloud_normals.points[i].normal[1]*cloud_normals.points[i].normal[1]+cloud_normals.points[i].normal[2]*cloud_normals.points[i].normal[2]);
+    			 					cloud_normals.points[i].normal[0]=cloud_normals.points[i].normal[0]/length;
+    			 					cloud_normals.points[i].normal[1]=cloud_normals.points[i].normal[1]/length;
+    			 					cloud_normals.points[i].normal[2]=cloud_normals.points[i].normal[2]/length;
+    			 				}
+ 				 double all=0;
+ 				 int counter=0;
+ 				for (int i=0;i<cloud_normals.size();i++)
+ 				{
+ 					if (!isnan(cloud_normals.points[i].normal[0])){
+ 								double length=sqrt(cloud_normals.points[i].normal[0]*cloud_normals.points[i].normal[0]+cloud_normals.points[i].normal[1]*cloud_normals.points[i].normal[1]+cloud_normals.points[i].normal[2]*cloud_normals.points[i].normal[2]);
+ 							    all +=length;
+ 							    counter++;
+							}
+ 				}
+ 			     ROS_INFO_STREAM("Range image time " <<time <<" average normal length " << all/counter);
+ 			    pcl::PointCloud<pcl::PointXYZRGBNormal> cloud_n;
+ 			     pcl::concatenateFields (cloud, cloud_normals, cloud_n);
+
+ 			     pcl::io::savePCDFileASCII ("/home/goa-hh/pcl_daten/extractrangenormals.pcd", cloud_n);
+
+ 			    }
 
 
-    }
-
-    void getPointCloud (PointCloud &cloud)
-    {
-    	cloud.height=480;
-    	cloud.width = 640;
-    	cloud.points.resize (cloud.width * cloud.height);
-    	double  x_val=-1 , y_val=-1 , z_val=3;
-    	for (int i=0; i<cloud.height;i++){
-    		for (int j=0 ; j<cloud.width ;j++)
-    		{
-    			if (x_val<3)
-    			{
-    				cloud.points[i*cloud.width+j].x=x_val;
-    				cloud.points[i*cloud.width+j].y=y_val;
-    				cloud.points[i*cloud.width+j].z=z_val;
-    				x_val += 0.01;
-    			}
-    			else  {
-										cloud.points[i*cloud.width+j].x=x_val;
-    				    				cloud.points[i*cloud.width+j].y=y_val;
-    				    				cloud.points[i*cloud.width+j].z=z_val;
-    				    				z_val -= 0.01;
-    			}
-    		}
-    		x_val=-1;
-    		z_val=3;
-    		y_val+=0.01;
-    	}
 
 
-    }
     void surfaceNormalsFast(PointCloud &cloud, pcl::PointCloud<pcl::Normal> &cloud_normals)
     {
 
@@ -167,8 +199,17 @@ void extractRangeImage (PointCloud &cloud, pcl::PointCloud<pcl::Normal> &cloud_n
 
       ne.compute (cloud_normals);
      double time = ti.elapsed();
-
-     ROS_INFO_STREAM("surface fast Time " <<time);
+	 double all=0;
+	 int counter=0;
+	for (int i=0;i<cloud_normals.size();i++)
+	{
+		if (!isnan(cloud_normals.points[i].normal[0])){
+		 								double length=sqrt(cloud_normals.points[i].normal[0]*cloud_normals.points[i].normal[0]+cloud_normals.points[i].normal[1]*cloud_normals.points[i].normal[1]+cloud_normals.points[i].normal[2]*cloud_normals.points[i].normal[2]);
+		 							    all +=length;
+		 							    counter++;
+									}
+	}
+     ROS_INFO_STREAM("surface fast time " <<time <<" average normal length " << all/counter);
 
 
     }
@@ -183,10 +224,27 @@ void   IntergralImage(PointCloud &cloud, pcl::PointCloud<pcl::Normal> &cloud_nor
 		ne.setInputCloud(cloud.makeShared());
 		boost::timer ti;
 		ne.compute(cloud_normals);
+
 		double time = ti.elapsed();
+		for (int i=0;i<cloud_normals.size();i++)
+	 				{
+	 					double length=sqrt(cloud_normals.points[i].normal[0]*cloud_normals.points[i].normal[0]+cloud_normals.points[i].normal[1]*cloud_normals.points[i].normal[1]+cloud_normals.points[i].normal[2]*cloud_normals.points[i].normal[2]);
+	 					cloud_normals.points[i].normal[0]=cloud_normals.points[i].normal[0]/length;
+	 					cloud_normals.points[i].normal[1]=cloud_normals.points[i].normal[1]/length;
+	 					cloud_normals.points[i].normal[2]=cloud_normals.points[i].normal[2]/length;
+	 				}
+		double all=0;
+		int counter=0;
+		for (int i=0;i<cloud_normals.size();i++)
+		{
+			if (!isnan(cloud_normals.points[i].normal[0])){
+			double length=sqrt(cloud_normals.points[i].normal[0]*cloud_normals.points[i].normal[0]+cloud_normals.points[i].normal[1]*cloud_normals.points[i].normal[1]+cloud_normals.points[i].normal[2]*cloud_normals.points[i].normal[2]);
+		    all +=length;
+		    counter++;
+		}
 
-		ROS_INFO_STREAM("Integrate Time " <<time);
-
+		}
+		ROS_INFO_STREAM("Integrate time " <<time << " average normal length " << all/counter );
 
 }
 void surfaceNormals(PointCloud &cloud,pcl::PointCloud<pcl::Normal> &cloud_normals)
@@ -217,7 +275,17 @@ void surfaceNormals(PointCloud &cloud,pcl::PointCloud<pcl::Normal> &cloud_normal
  pcl::concatenateFields (cloud, cloud_normals, cloud_n);
 
  pcl::io::savePCDFileASCII ("/home/goa-hh/pcl_daten/surfaceNormals.pcd", cloud_n);*/
- ROS_INFO_STREAM("surface Time " <<time);
+ double all=0;
+ int counter=0;
+for (int i=0;i<cloud_normals.size();i++)
+{
+	if (!isnan(cloud_normals.points[i].normal[0])){
+	 								double length=sqrt(cloud_normals.points[i].normal[0]*cloud_normals.points[i].normal[0]+cloud_normals.points[i].normal[1]*cloud_normals.points[i].normal[1]+cloud_normals.points[i].normal[2]*cloud_normals.points[i].normal[2]);
+	 							    all +=length;
+	 							    counter++;
+								}
+}
+ ROS_INFO_STREAM("surface time " <<time << " average normal length " << all/counter);
 
 
 }
@@ -233,15 +301,20 @@ void surfaceNormals(PointCloud &cloud,pcl::PointCloud<pcl::Normal> &cloud_normal
     	//x=0,422618262
     	//z=0,906307787
 
+    	bool kinect_cloud=true;
+
 			std::string directory("/home/goa-hh/pcl_daten/");
 			PointCloud cloud_in;
-			pcl::io::loadPCDFile(directory+"simple_planes.pcd", cloud_in);
+			if(kinect_cloud){
+				ROS_INFO("use kinect cloud");
+				pcl::io::loadPCDFile(directory+"simple_planes.pcd", cloud_in);}
 
 
 			NormTime nt;
-		//	nt.getPointCloud(cloud_in);
+			if(!kinect_cloud){
+			ROS_INFO("Use simulation cloud");
+			nt.getPointCloud(cloud_in);}
 			pcl::io::savePCDFileASCII ("/home/goa-hh/pcl_daten/cloud_in.pcd", cloud_in);
-
 			pcl::PointCloud<pcl::Normal> cloud_normals_surface;
 			pcl::PointCloud<pcl::Normal> cloud_normals_surface_fast;
 			pcl::PointCloud<pcl::Normal> cloud_normals_integral;
@@ -255,7 +328,7 @@ void surfaceNormals(PointCloud &cloud,pcl::PointCloud<pcl::Normal> &cloud_normal
 
 
 			// kinect cloud
-			if(true){
+			if(kinect_cloud){
 			ROS_INFO("Surface  right wall");
 			nt.calcDeviation(cloud_normals_surface , 0.906307787 ,'x');
 			nt.calcDeviation(cloud_normals_surface , 0.0 ,'y');
@@ -285,6 +358,7 @@ void surfaceNormals(PointCloud &cloud,pcl::PointCloud<pcl::Normal> &cloud_normal
 			nt.calcDeviation(cloud_normals_integral , 0.422618262 ,'x');
 			nt.calcDeviation(cloud_normals_integral , 0.0 ,'y');
 			nt.calcDeviation(cloud_normals_integral , 0.906307787 ,'z');
+			ROS_INFO("--------------------------------------");
 			ROS_INFO("Range  right wall");
 			nt.calcDeviation(cloud_normals_range , 0.906307787 ,'x');
 			nt.calcDeviation(cloud_normals_range , 0.0 ,'y');
@@ -296,7 +370,7 @@ void surfaceNormals(PointCloud &cloud,pcl::PointCloud<pcl::Normal> &cloud_normal
 			nt.calcDeviation(cloud_normals_range , 0.906307787 ,'z');
 			}
 			//simulation cloud
-			if(false){
+			if(!kinect_cloud){
 			ROS_INFO("Surface  right wall");
 			nt.calcDeviation(cloud_normals_surface , 1.0 ,'x');
 			nt.calcDeviation(cloud_normals_surface , 0.0 ,'y');
@@ -326,6 +400,7 @@ void surfaceNormals(PointCloud &cloud,pcl::PointCloud<pcl::Normal> &cloud_normal
 			nt.calcDeviation(cloud_normals_integral , 0.0 ,'x');
 			nt.calcDeviation(cloud_normals_integral , 0.0 ,'y');
 			nt.calcDeviation(cloud_normals_integral , 1.0 ,'z');
+			ROS_INFO("--------------------------------------");
 			ROS_INFO("Range  right wall");
 			nt.calcDeviation(cloud_normals_range , 1.0 ,'x');
 			nt.calcDeviation(cloud_normals_range , 0.0 ,'y');
