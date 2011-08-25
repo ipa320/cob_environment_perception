@@ -73,7 +73,7 @@ enum PlaneConstraint {NONE, HORIZONTAL, VERTICAL};
 class PlaneExtraction
 {
 public:
-  typedef pcl::PointXYZRGB Point;
+  typedef pcl::PointXYZ Point;
   // Constructor
   PlaneExtraction(bool save_to_file);
 
