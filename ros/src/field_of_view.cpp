@@ -83,7 +83,7 @@ public:
     //TODO: launch parameter
     fov_marker_pub_ = n_.advertise<visualization_msgs::Marker>("fov_marker",10);
     get_fov_srv_ = n_.advertiseService("get_fov", &FieldOfView::srvCallback_GetFieldOfView, this);
-    sensor_fov_hor_ = /*57*/65*M_PI/180;
+    sensor_fov_hor_ = /*57*//*65*/80*M_PI/180;
     sensor_fov_ver_ = /*43*/47*M_PI/180;
     sensor_max_range_ = 5;
     camera_frame_ = std::string(/*"/base_kinect_rear_link"*/"/head_cam3d_link");
@@ -148,6 +148,7 @@ public:
     StampedTransform transform;
     try
     {
+      tf_listener_.waitForTransform(target_frame, camera_frame_, stamp, ros::Duration(0.1));
       tf_listener_.lookupTransform(target_frame, camera_frame_, stamp/*ros::Time(0)*/, transform);
       //tf::Point n_up(n_up_(0),n_up_(1),n_up_(2));
       tf::Stamped<tf::Point> stamped_n_up(n_up_,transform.stamp_,camera_frame_);

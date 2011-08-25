@@ -109,7 +109,7 @@ using namespace tf;
 class PlaneExtractionNodelet : public pcl_ros::PCLNodelet
 {
 public:
-  typedef pcl::PointXYZRGB Point;
+  typedef pcl::PointXYZ Point;
   // Constructor
   PlaneExtractionNodelet()
     : pe(true)
@@ -118,7 +118,7 @@ public:
     min_cluster_size_ = 300;
     //file_path_ = "/home/goa/pcl_daten/kitchen_kinect2/planes/";
     //save_to_file_ = false;
-    pe.setPlaneConstraint(HORIZONTAL);
+    //pe.setPlaneConstraint(HORIZONTAL);
   }
 
   // Destructor

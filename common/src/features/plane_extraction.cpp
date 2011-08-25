@@ -105,9 +105,9 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
   // Downsample input
   pcl::VoxelGrid<Point> voxel;
   voxel.setInputCloud(pc_in);
-  voxel.setLeafSize(0.02,0.02,0.02);
-  //voxel.setFilterFieldName("z");
-  //voxel.setFilterLimits(0.2,3);
+  voxel.setLeafSize(0.03,0.03,0.03);
+  voxel.setFilterFieldName("z");
+  voxel.setFilterLimits(0,3);
   pcl::PointCloud<Point>::Ptr cloud = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>);
   voxel.filter(*cloud);
 
@@ -194,7 +194,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
         //ROS_INFO("Failed to detect plane in scan, skipping cluster");
         break;
       }
-      if ( inliers_plane->indices.size() < (unsigned int)50)
+      if ( inliers_plane->indices.size() < (unsigned int)150)
       {
         //std::cout << "Plane coefficients: " << *coefficients_plane << std::endl;
         //ROS_INFO("Plane detection has %d inliers, below min threshold of %d, skipping cluster", (int)inliers_plane->indices.size(), 150);

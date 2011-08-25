@@ -78,6 +78,7 @@ rosbuild_add_executable(concat_fields_node ros/src/tools/concat_fields.cpp)
 rosbuild_add_executable(feature_map_node ros/src/feature_map_node.cpp)
 rosbuild_add_executable(feature_map common/src/map/feature_map.cpp)
 rosbuild_add_executable(create_point_cloud common/src/tools/create_point_cloud.cpp)
+rosbuild_add_executable(create_kitchen_point_cloud common/src/tools/create_kitchen_point_cloud.cpp)
 #rosbuild_add_library(gpc common/src/gpc.c)
 #rosbuild_add_executable(test_fov common/src/test_fov.cpp)
 #rosbuild_add_library(nodelet_cpc_publisher ros/src/cpc_publisher.cpp
@@ -88,12 +89,12 @@ rosbuild_add_executable(create_point_cloud common/src/tools/create_point_cloud.c
 
 
 # add compile flag
-#rosbuild_add_compile_flags(extract_features_node -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
+rosbuild_add_compile_flags(extract_features_node -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
 
 
 # add compile flag
 #target_link_libraries(cob_env_model gpc)
-#target_link_libraries(extract_features_node cob_env_model)
+target_link_libraries(extract_features_node cob_env_model)
 target_link_libraries(feature_map cob_env_model)
 target_link_libraries(feature_map_node cob_env_model)
 target_link_libraries(cob_env_model_nodelets cob_env_model)
