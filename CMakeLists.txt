@@ -8,6 +8,9 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  RelWithDebInfo : w/ debug symbols, w/ optimization
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
 #set(ROS_BUILD_TYPE RelWithDebInfo)
+rosbuild_find_ros_package(actionlib_msgs)
+include(${actionlib_msgs_PACKAGE_PATH}/cmake/actionbuild.cmake)
+genaction()
 
 rosbuild_init()
 
@@ -20,6 +23,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/ros/lib)
 rosbuild_genmsg()
 #uncomment if you have defined services
 rosbuild_gensrv()
+
 
 include_directories(${PCL_INCLUDE_DIRS})
 link_directories(${PCL_LIBRARY_DIRS})
@@ -63,9 +67,10 @@ rosbuild_add_library(cob_env_model
 	common/src/map/gpc.c
 	common/src/map/feature_map.cpp
 	common/src/features/plane_extraction.cpp
-	common/src/table_roi_extraction.cpp)
+	common/src/table_object_cluster.cpp)
 
 rosbuild_add_library(cob_env_model_nodelets
+    ros/src/table_object_cluster_nodelet.cpp
 	ros/src/plane_extraction_nodelet.cpp
 	ros/src/aggregate_point_map.cpp
 	ros/src/filters/amplitude_filter.cpp
@@ -79,6 +84,8 @@ rosbuild_add_executable(feature_map_node ros/src/feature_map_node.cpp)
 rosbuild_add_executable(feature_map common/src/map/feature_map.cpp)
 rosbuild_add_executable(create_point_cloud common/src/tools/create_point_cloud.cpp)
 rosbuild_add_executable(create_kitchen_point_cloud common/src/tools/create_kitchen_point_cloud.cpp)
+rosbuild_add_executable(plane_extraction_action_client ros/src/plane_extraction_action_client.cpp)
+rosbuild_add_executable(table_object_cluster_action_client ros/src/table_object_cluster_action_client.cpp)
 #rosbuild_add_library(gpc common/src/gpc.c)
 #rosbuild_add_executable(test_fov common/src/test_fov.cpp)
 #rosbuild_add_library(nodelet_cpc_publisher ros/src/cpc_publisher.cpp

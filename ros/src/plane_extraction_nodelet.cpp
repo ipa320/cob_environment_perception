@@ -74,6 +74,7 @@
 #include <pcl_ros/transforms.h>
 #include <pcl_ros/point_cloud.h>
 #include <visualization_msgs/Marker.h>
+#include <actionlib/server/simple_action_server.h>
 
 #include "pcl/point_types.h"
 #include "pcl/ModelCoefficients.h"
@@ -92,6 +93,7 @@
 
 // ROS message includes
 //#include <sensor_msgs/PointCloud2.h>
+#include <cob_env_model/GetPlane.h>
 #include <cob_env_model/PolygonArray.h>
 #include <geometry_msgs/PolygonStamped.h>
 
@@ -100,6 +102,7 @@
 #include <boost/numeric/ublas/matrix.hpp>
 
 #include "cob_env_model/features/plane_extraction.h"
+#include "cob_env_model/PlaneExtractionAction.h"
 
 
 using namespace tf;
@@ -112,19 +115,22 @@ public:
   typedef pcl::PointXYZ Point;
   // Constructor
   PlaneExtractionNodelet()
-    : pe(true)
+  : as_(0),
+    pe(true),
+    mode_action_(true)
   {
     ctr_ = 0;
     min_cluster_size_ = 300;
     //file_path_ = "/home/goa/pcl_daten/kitchen_kinect2/planes/";
     //save_to_file_ = false;
-    //pe.setPlaneConstraint(HORIZONTAL);
+    pe.setPlaneConstraint(HORIZONTAL);
   }
 
   // Destructor
   ~PlaneExtractionNodelet()
   {
     /// void
+    if(as_) delete as_;
   }
 
 
@@ -139,29 +145,116 @@ public:
     object_cluster_pub_ = n_.advertise<pcl::PointCloud<Point> >("object_cluster",1);
     polygon_pub_ = n_.advertise<geometry_msgs::PolygonStamped>("polygons",1);
     polygon_array_pub_ = n_.advertise<cob_env_model::PolygonArray>("polygon_array",1);
+
+    as_= new actionlib::SimpleActionServer<cob_env_model::PlaneExtractionAction>(n_, "plane_extraction", boost::bind(&PlaneExtractionNodelet::actionCallback, this, _1), false);
+    as_->start();
+
+    get_plane_ = n_.advertiseService("get_plane", &PlaneExtractionNodelet::srvCallback, this);
   }
 
+  void extractPlane(const pcl::PointCloud<Point>::Ptr& pc_in,
+                    std::vector<pcl::PointCloud<Point> >& v_cloud_hull,
+                    std::vector<std::vector<pcl::Vertices> >& v_hull_polygons,
+                    std::vector<pcl::ModelCoefficients>& v_coefficients_plane)
+  {
+    //std::cout << "pc frame:" << pc_in->header.frame_id << std::endl;
+    //pcl::io::savePCDFileASCII ("/home/goa/tmp/before_trans.pcd", *pc_in);
+    //pcl::io::savePCDFileASCII ("/home/goa/tmp/after_trans.pcd", *pc_in);
+    //std::cout << "pc frame:" << pc_in->header.frame_id << std::endl;
+    // Downsample input
+    pcl::VoxelGrid<Point> voxel;
+    voxel.setInputCloud(pc_in);
+    voxel.setLeafSize(0.03,0.03,0.03);
+    voxel.setFilterFieldName("z");
+    voxel.setFilterLimits(0.2,3);
+    pcl::PointCloud<Point>::Ptr pc_vox = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>);
+    voxel.filter(*pc_vox);
+    //pcl::io::savePCDFileASCII ("/home/goa/tmp/after_voxel.pcd", *pc_vox);
+    //ROS_INFO("pc size after voxel: %d", pc_vox->size());
+    //TODO: transform to /base_link or /map
+    pe.extractPlanes(pc_vox, v_cloud_hull, v_hull_polygons, v_coefficients_plane);
 
+
+  }
   // pc_in should be in a coordinate system with z pointing upwards
-  void pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc_in)
+  void
+  pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc_in)
   {
     ROS_INFO("Extract plane callback");
-    //TODO: transform to /base_link or /map
+    boost::mutex::scoped_try_lock lock(mutex_);
+    if(!lock)
+    //if(!lock.owns_lock())
+    {
+      //ROS_INFO(" pointCloudSubCallback not owning lock");
+      return;
+    }
+    pcl::PointCloud<Point> pc_trans;
+    //if(pc_in->header.frame_id!="/map")
+    {
+      //ROS_INFO("transforming pc");
+      pcl_ros::transformPointCloud ("/map", pc_in->header.stamp, *pc_in, "/map", pc_trans, tf_listener_);
+    }
+    /*else
+      ROS_INFO(" pointCloudSubCallback owns lock");*/
+    //TODO: mode action or topic
+    //extractPlane(pc_in);
+    if(mode_action_)
+      pcl::copyPointCloud(pc_trans, pc_cur_);
+    else
+    {
+      std::vector<pcl::PointCloud<Point> > v_cloud_hull;
+      std::vector<std::vector<pcl::Vertices> > v_hull_polygons;
+      std::vector<pcl::ModelCoefficients> v_coefficients_plane;
+      extractPlane(pc_trans.makeShared(), v_cloud_hull, v_hull_polygons, v_coefficients_plane);
+      for(unsigned int i = 0; i < v_cloud_hull.size(); i++)
+      {
+        publishPolygonArray(v_cloud_hull[i], v_hull_polygons[i], v_coefficients_plane[i], pc_in->header);
+        publishPolygons(v_cloud_hull[i], pc_in->header);
+        publishMarker(v_cloud_hull[i], pc_in->header, 0, 0, 1);
+        ctr_++;
+        //ROS_INFO("%d planes published so far", ctr_);
+      }
+    }
+
+  }
+
+  void
+  actionCallback(const cob_env_model::PlaneExtractionGoalConstPtr &goal)
+  {
+    ROS_INFO("action callback");
+    //TODO: use scoped_lock
+    boost::mutex::scoped_lock lock(mutex_);
+    /*if(!lock)
+    //if(!lock.owns_lock())
+    {
+      ROS_INFO(" actionCallback not owning lock");
+      return;
+    }
+    else
+      ROS_INFO(" actionCallback owns lock");*/
+    feedback_.currentStep.data = std::string("plane extraction");
     std::vector<pcl::PointCloud<Point> > v_cloud_hull;
     std::vector<std::vector<pcl::Vertices> > v_hull_polygons;
     std::vector<pcl::ModelCoefficients> v_coefficients_plane;
-    pe.extractPlanes(pc_in, v_cloud_hull, v_hull_polygons, v_coefficients_plane);
+    extractPlane(pc_cur_.makeShared(), v_cloud_hull, v_hull_polygons, v_coefficients_plane);
+    pcl::copyPointCloud(pc_cur_, pc_plane_);
+    // only save dominant plane
+    ROS_INFO("Hull size: %d", v_cloud_hull[0].size());
+    pcl::copyPointCloud(v_cloud_hull[0], hull_);
+    as_->setSucceeded(result_);
+  }
 
-    for(unsigned int i = 0; i < v_cloud_hull.size(); i++)
-    {
-      publishPolygonArray(v_cloud_hull[i], v_hull_polygons[i], v_coefficients_plane[i], pc_in->header);
-      publishPolygons(v_cloud_hull[i], pc_in->header);
-      publishMarker(v_cloud_hull[i], pc_in->header, 0, 0, 1);
-      ctr_++;
-      //ROS_INFO("%d planes published so far", ctr_);
-    }
-
-    return;
+  bool
+  srvCallback(cob_env_model::GetPlane::Request &req, cob_env_model::GetPlane::Response &res)
+  {
+    boost::mutex::scoped_lock lock(mutex_);
+    sensor_msgs::PointCloud2 pc_out, hull_out;
+    pcl::toROSMsg(pc_plane_, pc_out);
+    pcl::toROSMsg(hull_, hull_out);
+    res.pc = pc_out;
+    res.hull = hull_out;
+    ROS_INFO("Hull size: %d", res.hull.width*res.hull.height);
+    return true;
   }
 
 
@@ -183,9 +276,9 @@ public:
 
   void
   publishPolygonArray(pcl::PointCloud<Point>& cloud_hull,
-                           std::vector< pcl::Vertices >& hull_polygons,
-                           pcl::ModelCoefficients& coefficients_plane,
-                           std_msgs::Header header)
+                      std::vector< pcl::Vertices >& hull_polygons,
+                      pcl::ModelCoefficients& coefficients_plane,
+                      std_msgs::Header header)
   {
     cob_env_model::PolygonArray p;
     p.polygons.resize(hull_polygons.size());
@@ -211,7 +304,7 @@ public:
   void
   publishMarker(pcl::PointCloud<Point>& cloud_hull,
                 std_msgs::Header header,
-                     float r, float g, float b)
+                float r, float g, float b)
   {
     visualization_msgs::Marker marker;
     marker.action = visualization_msgs::Marker::ADD;
@@ -263,13 +356,26 @@ protected:
   ros::Publisher polygon_array_pub_;
   ros::Publisher polygon_pub_;
 
+  ros::ServiceServer get_plane_;
+
+  actionlib::SimpleActionServer<cob_env_model::PlaneExtractionAction>* as_;
+  std::string action_name_;
+  // create messages that are used to published feedback/result
+  cob_env_model::PlaneExtractionFeedback feedback_;
+  cob_env_model::PlaneExtractionResult result_;
+  boost::mutex mutex_;
+
   PlaneExtraction pe;
+  pcl::PointCloud<Point> pc_cur_;
+  pcl::PointCloud<Point> pc_plane_;
+  pcl::PointCloud<Point> hull_;
 
   TransformListener tf_listener_;
   int ctr_;
   unsigned int min_cluster_size_;
   std::string file_path_;
   bool save_to_file_;
+  bool mode_action_;
 
 };
 

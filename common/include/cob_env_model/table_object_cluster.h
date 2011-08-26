@@ -52,54 +52,36 @@
  *
  ****************************************************************/
 
-#include "cob_env_model/table_roi_extraction.h"
+#ifndef __TABLE_OBJECT_CLUSTER_H__
+#define __TABLE_OBJECT_CLUSTER_H__
 
-#include <pcl/segmentation/extract_polygonal_prism_data.h>
-#include <pcl/filters/extract_indices.h>
+// PCL includes
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
 
-void
-TableRoiExtraction::extractTableRoi(pcl::PointCloud<Point>::Ptr& pc_in,
-                                    pcl::PointCloud<Point>::Ptr& hull,
-                                    pcl::PointCloud<Point>& pc_roi)
+
+class TableObjectCluster
 {
-  pcl::ExtractPolygonalPrismData<Point> prism;
-  // Consider only objects in a given layer above the table
-  prism.setHeightLimits(-0.5, -0.03);
-  // ---[ Get the objects on top of the table
-  pcl::PointIndices roi_indices;
-  prism.setInputCloud(pc_in);
-  prism.setInputPlanarHull(hull);
-  prism.segment(roi_indices);
+public:
+  typedef pcl::PointXYZ Point;
 
-  //pcl::PointCloud<Point> cloud_objects;
-  pcl::ExtractIndices<Point> extract_roi;
-  extract_roi.setInputCloud (pc_in);
-  extract_roi.setIndices (boost::make_shared<const pcl::PointIndices> (roi_indices));
-  extract_roi.filter (pc_roi);
-  //pcl::PointCloud<Point>::ConstPtr pc_roi_ptr = pc_roi.makeShared();
+  TableObjectCluster() {};
+  ~TableObjectCluster() {};
 
-  /*pcl::KdTree<Point>::Ptr clusters_tree;
-  clusters_tree = boost::make_shared<pcl::KdTreeFLANN<Point> > ();
+  void
+  extractTableRoi(pcl::PointCloud<Point>::Ptr& pc_in,
+                  pcl::PointCloud<Point>::Ptr& hull,
+                  pcl::PointCloud<Point>& pc_roi);
 
-  pcl::EuclideanClusterExtraction<Point> cluster_obj;
+  void
+  removeKnownObjects(pcl::PointCloud<Point>::Ptr& pc_roi,
+                     std::vector<pcl::PointCloud<pcl::PointXYZ> >& bounding_boxes,
+                     pcl::PointCloud<Point>& pc_roi_red);
 
-  // Table clustering parameters
-  cluster_obj.setClusterTolerance (0.06);
-  cluster_obj.setMinClusterSize (100);
-  cluster_obj.setSearchMethod (clusters_tree);
+  void
+  calculateBoundingBoxes(pcl::PointCloud<Point>::Ptr& pc_roi_red,
+                     std::vector<pcl::PointCloud<pcl::PointXYZ> >& bounding_boxes);
 
-  // Cluster potential table points
-  std::vector<pcl::PointIndices> object_clusters;
-  cluster_obj.setInputCloud (cloud_objects.makeShared());
-  cluster_obj.extract (object_clusters);
+};
 
-  for(unsigned int i = 0; i < object_clusters.size(); ++i)
-  {
-    pcl::PointCloud<Point> object;
-    extract.setInputCloud (cloud_objects.makeShared());
-    extract.setIndices (boost::make_shared<const pcl::PointIndices> (object_clusters[i]));
-    extract.setNegative (false);
-    extract.filter (object);
-    object_cluster_pub_.publish(object);
-  }*/
-}
+#endif /* __TABLE_OBJECT_CLUSTER_H__ */
