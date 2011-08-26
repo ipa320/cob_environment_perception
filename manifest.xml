@@ -16,18 +16,16 @@
   <depend package="sensor_msgs"/>
   <depend package="opencv2"/>
 
-  <!--depend package="cob_srvs"/-->
   <depend package="cob_vision_utils"/>
-  <!--depend package="cob_vision_features"/-->
   <depend package="pcl"/>
   <depend package="pcl_ros"/>
-  <!--depend package="pcl_visualization"/-->
   <depend package="eigen"/>
   <depend package="visualization_msgs"/>
   <depend package="nodelet"/>
+  <depend package="actionlib"/>
+  <depend package="actionlib_msgs"/>
 
   <rosdep name="boost"/>
-  <!--rosdep name="ann"/-->
   <rosdep name="glut"/>
   
   <export>

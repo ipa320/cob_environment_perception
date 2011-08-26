@@ -85,7 +85,7 @@ PlaneExtraction::PlaneExtraction(bool save_to_file)
 {
   ctr_ = 0;
   min_cluster_size_ = 300;
-  file_path_ = "/home/goa/pcl_daten/kitchen_kinect2/planes/";
+  file_path_ = "/media/GOADaten/Daten/20110822_bagfiles/table_static_close/plane/";
   save_to_file_ = save_to_file;
   plane_constraint_ = NONE;
 }
@@ -97,19 +97,11 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
                                std::vector<std::vector<pcl::Vertices> >& v_hull_polygons,
                                std::vector<pcl::ModelCoefficients>& v_coefficients_plane)
 {
-  ROS_INFO("Extract plane callback");
+  ROS_INFO("Extract planes");
   ROS_INFO("Saving files: %d", save_to_file_);
+  //ROS_INFO("pc_in size: %d" , pc_in->size());
   boost::timer t;
   std::stringstream ss;
-
-  // Downsample input
-  pcl::VoxelGrid<Point> voxel;
-  voxel.setInputCloud(pc_in);
-  voxel.setLeafSize(0.03,0.03,0.03);
-  voxel.setFilterFieldName("z");
-  voxel.setFilterLimits(0,3);
-  pcl::PointCloud<Point>::Ptr cloud = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>);
-  voxel.filter(*cloud);
 
   // Extract Eucledian clusters
   pcl::KdTree<Point>::Ptr clusters_tree;
@@ -121,7 +113,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
   cluster.setMinClusterSize (min_cluster_size_);
   cluster.setSearchMethod (clusters_tree);
   std::vector<pcl::PointIndices> clusters;
-  cluster.setInputCloud (cloud);
+  cluster.setInputCloud (pc_in);
   cluster.extract (clusters);
   ROS_INFO ("Number of clusters found: %d", (int)clusters.size ());
 
@@ -132,7 +124,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
     ROS_INFO("Processing cluster no. %u", i);
     // Extract cluster points
     pcl::PointCloud<Point> cluster;
-    extract.setInputCloud (cloud);
+    extract.setInputCloud (pc_in);
     extract.setIndices (boost::make_shared<const pcl::PointIndices> (clusters[i]));
     extract.setNegative (false);
     extract.filter (cluster);
@@ -207,6 +199,8 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
           std::cout << "Plane is not horizontal: " << coefficients_plane << std::endl;
           invalidPlane = true;
         }
+        else
+          std::cout << "Plane is horizontal: " << coefficients_plane << std::endl;
       }
       else if(plane_constraint_ == VERTICAL)
       {
@@ -273,6 +267,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
         v_cloud_hull.push_back(cloud_hull);
         v_hull_polygons.push_back(hull_polygons);
         v_coefficients_plane.push_back(coefficients_plane);
+        ROS_INFO("v_cloud_hull size: %d", v_cloud_hull.size());
 
 
         if(save_to_file_)
@@ -317,6 +312,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
     }
   }
   ROS_INFO("Plane extraction took %f", t.elapsed());
+  ROS_INFO("v_cloud_hull size: %d", v_cloud_hull.size());
   return;
 }
 
