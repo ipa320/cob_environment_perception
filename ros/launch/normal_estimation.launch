@@ -1,0 +1,15 @@
+<?xml version="1.0"?>
+<launch>
+<!--node pkg="nodelet" type="nodelet" name="pcl_manager"  args="manager" output="screen"/-->
+  <node pkg="nodelet" type="nodelet" name="normal_estimation" args="load pcl/NormalEstimation pcl_manager" output="screen">
+    <remap from="~input" to="/aggregate_point_map/pc_aligned" />
+    <remap from="~output" to="/normals" />
+    <rosparam>
+      # -[ Mandatory parameters
+      k_search: 0
+      radius_search: 0.03
+      # Set the spatial locator. Possible values are: 0 (ANN), 1 (FLANN), 2 (organized)
+      spatial_locator: 0
+    </rosparam>
+  </node>
+</launch>

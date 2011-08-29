@@ -147,7 +147,7 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::isEdgePoint (
     }
     else
     {
-    	nan_ctr++;
+    	//nan_ctr++;
     }
   }
   float edge_prob = (float)b_ctr/nn_ctr;
@@ -243,37 +243,59 @@ template <typename PointInT, typename PointNT, typename PointOutT> int
 			std::vector<int>& indices,
 			std::vector<float>& distances)
 {
+	//NaN test
+	if(input_->points[index].x != input_->points[index].x) return 0;
+
 	indices.clear();
 	distances.clear();
-	const PointInT& p = input_->points[index];
+	//const PointInT& p = input_->points[index];
 	int idx_x = index%input_->width;
 	int idx_y = index/input_->width;
 	int v=2;
+	double r_x, r_y;
 
 	//TODO: choose search radius according to viewpoint distance
-	//TODO: NaN tests
-	//TODO: handle border points
-	if(idx_x<v || idx_x>=input_->width-v || idx_y<v || idx_y>=input_->height-v)
-		return 0;
-
-	//get approximate x-y-resolution for p
-	double r_x = fabs((input_->points[idx_y*input_->width+idx_x+v].x-input_->points[idx_y*input_->width+idx_x-v].x)/(2*v+1));
-	double r_y = fabs((input_->points[(idx_y+v)*input_->width+idx_x].y-input_->points[(idx_y-v)*input_->width+idx_x].y)/(2*v+1));
-	//double res = (r_x+r_y)/2;
+	if(idx_x<v) //border points
+	{
+		r_x = fabs((input_->points[idx_y*input_->width+idx_x+v].x-input_->points[idx_y*input_->width+idx_x].x)/(v+1));
+		r_y = fabs((input_->points[(idx_y+v)*input_->width+idx_x].y-input_->points[(idx_y-v)*input_->width+idx_x].y)/(2*v+1));
+	}
+	else if(idx_x>=input_->width-v)
+	{
+		r_x = fabs((input_->points[idx_y*input_->width+idx_x].x-input_->points[idx_y*input_->width+idx_x-v].x)/(v+1));
+		r_y = fabs((input_->points[(idx_y+v)*input_->width+idx_x].y-input_->points[(idx_y-v)*input_->width+idx_x].y)/(2*v+1));
+	}
+	else if(idx_y<v)
+	{
+		r_x = fabs((input_->points[idx_y*input_->width+idx_x+v].x-input_->points[idx_y*input_->width+idx_x-v].x)/(2*v+1));
+		r_y = fabs((input_->points[(idx_y+v)*input_->width+idx_x].y-input_->points[(idx_y)*input_->width+idx_x].y)/(v+1));
+	}
+	else if(idx_y>=input_->height-v)
+	{
+		r_x = fabs((input_->points[idx_y*input_->width+idx_x+v].x-input_->points[idx_y*input_->width+idx_x-v].x)/(2*v+1));
+		r_y = fabs((input_->points[(idx_y)*input_->width+idx_x].y-input_->points[(idx_y-v)*input_->width+idx_x].y)/(v+1));
+	}
+	else
+	{
+		//get approximate x-y-resolution for p
+		r_x = fabs((input_->points[idx_y*input_->width+idx_x+v].x-input_->points[idx_y*input_->width+idx_x-v].x)/(2*v+1));
+		r_y = fabs((input_->points[(idx_y+v)*input_->width+idx_x].y-input_->points[(idx_y-v)*input_->width+idx_x].y)/(2*v+1));
+		//double res = (r_x+r_y)/2;
+	}
 
 	int num_nn = 4;
 	int step_x = radius/r_x;
 	int step_y = radius/r_y;
 	//TODO: limit number of neighbors
-	int incr_x = step_x/(num_nn-1);
-	int incr_y = step_y/(num_nn-1);
+	int incr_x = std::max(step_x/(num_nn-1),1);
+	int incr_y = std::max(step_y/(num_nn-1),1);
 	//std::cout << idx_x << "," << idx_y <<  " step: " << step << std::endl;
 	//std::cout << idx_x << "," << idx_y << ": ";
 	//TODO: Adjust stepping according to resolution (if resolution low, increase stepping)
-	for (int i=idx_x-step_x; i<=idx_x+step_x; i++)
+	for (int i=idx_x-step_x; i<=idx_x+step_x; i+=incr_x)
 	{
 		if(i>=input_->width) break;
-		for (int j=idx_y-step_y; j<=idx_y+step_y; j++)
+		for (int j=idx_y-step_y; j<=idx_y+step_y; j+=incr_y)
 		{
 			if(i==idx_x && j==idx_y) continue; //skip p itself
 			if(j>=input_->height) break;
@@ -281,52 +303,6 @@ template <typename PointInT, typename PointNT, typename PointOutT> int
 			//std::cout << "(" << i << "," << j << ")";
 		}
 	}
-	//std::cout << std::endl;
-
-	/*double dx = 0;
-	int idx = index+1;
-	//search in horizontal direction right
-	while(dx < radius && idx%input_->width!=0)
-	{
-		dx = fabs(p.x-input_->points[idx].x);
-		indices.push_back(idx);
-		idx++;
-		//break at end of line
-		//if(idx%input_->width==0) break;
-	}
-	dx = 0;
-	idx = index-1;
-	//search in horizontal direction left
-	while(dx < radius && (idx+1)%input_->width!=0)
-	{
-		dx = fabs(p.x-input_->points[idx].x);
-		indices.push_back(idx);
-		idx--;
-		//break at beginning of line
-		//if((idx-1)%input_->width==0) break;
-	}
-	//search in vertical direction up
-	double dy = 0;
-	idx = index-input_->width;
-	while(idx >= 0 && dy < radius)
-	{
-		dy = fabs(p.y-input_->points[idx].y);
-		indices.push_back(idx);
-		idx-=input_->width;
-		//break at top of image
-		//if(idx<0) break;
-	}
-	//search in vertical direction down
-	dy = 0;
-	idx = index+input_->width;
-	while(idx < input_->size() && dy < radius)
-	{
-		dy = fabs(p.y-input_->points[idx].y);
-		indices.push_back(idx);
-		idx+=input_->width;
-		//break at top of image
-		//if(idx >= input_->size()) break;
-	}*/
 	return 1;
 }
 
@@ -365,8 +341,10 @@ template <typename PointInT, typename PointNT, typename PointOutT> void
 		// Estimate whether the point is lying on a boundary surface or not
 		//std::cout << idx << "," << idx%input_->width << ":";
 		//TODO: test edge detection
-		output.points[idx].boundary_point = isEdgePoint (*surface_, input_->points[(*indices_)[idx]], nn_indices, normal, angle_threshold_);
+		output.points[idx].boundary_point = isEdgePoint (*surface_, input_->points[(*indices_)[idx]], nn_indices, normal, dist_threshold_);
     }
+    else
+    	output.points[idx].boundary_point = 2;
     //std::cout << std::endl;
   }
 }

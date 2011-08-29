@@ -121,9 +121,10 @@ void RangeImageBorderExtractor::extractLocalSurfaceStructure()
       height = range_image_->height,
       array_size = width*height;
   surface_structure_ = new LocalSurface*[array_size];
+  //?? max of 1 or 1? pixel_radius_plane_extraction=2
   int step_size = (std::max)(1, parameters_.pixel_radius_plane_extraction/2);
   //cout << PVARN(step_size);
-  int no_of_nearest_neighbors = pow ((double)(parameters_.pixel_radius_plane_extraction/step_size + 1), 2.0);
+  int no_of_nearest_neighbors = pow ((double)(parameters_.pixel_radius_plane_extraction/step_size + 1), 2.0); //=3
 # if USE_OMP
 //#   pragma omp parallel for default(shared) schedule(dynamic, 10)
 #   pragma omp parallel for default(shared)
@@ -150,8 +151,9 @@ void RangeImageBorderExtractor::extractLocalSurfaceStructure()
         delete local_surface;
         local_surface = NULL;
       }
-      else
-    	  std::cout << x << "," << y<< "\n" << local_surface->normal_no_jumps << std::endl;
+ //     else
+ //   	  std::cout << x << "," << y<< "\n" << local_surface->normal_no_jumps << std::endl;
+
       /** max_neighbor_distance_squared: maximum squared neighbour distance in the surface patch
        *  normal_no_jumps: normal vector optained using PCA, only taking into account close neighbours (2*max_closest_neighbor_distance_squared)
        *  neighborhood_mean_no_jumps: mean vector of close neighbours
@@ -231,7 +233,7 @@ void RangeImageBorderExtractor::extractBorderScoreImages()
         left=right=top=bottom = 0.0f;
         continue;
       }
-      
+      //calculate score for neighbor || radius for calculating average 3D position in this direction
       left   = getNeighborDistanceChangeScore(*local_surface_ptr, x, y, -1,  0, parameters_.pixel_radius_borders);
       right  = getNeighborDistanceChangeScore(*local_surface_ptr, x, y,  1,  0, parameters_.pixel_radius_borders);
       top    = getNeighborDistanceChangeScore(*local_surface_ptr, x, y,  0, -1, parameters_.pixel_radius_borders);
@@ -428,6 +430,7 @@ void RangeImageBorderExtractor::classifyBorders()
   extractLocalSurfaceStructure();
   
   // Get scores for every point, describing how probable a border in that direction is
+  //need?
   extractBorderScoreImages();
   
   // Propagate values to neighboring pixels
