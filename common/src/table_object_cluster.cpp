@@ -108,6 +108,7 @@ void
 TableObjectCluster::calculateBoundingBoxes(pcl::PointCloud<Point>::Ptr& pc_roi_red,
                    std::vector<pcl::PointCloud<pcl::PointXYZ> >& bounding_boxes)
 {
+  ROS_INFO("Calculate bb");
   pcl::KdTree<Point>::Ptr clusters_tree;
   clusters_tree = boost::make_shared<pcl::KdTreeFLANN<Point> > ();
 
@@ -120,6 +121,7 @@ TableObjectCluster::calculateBoundingBoxes(pcl::PointCloud<Point>::Ptr& pc_roi_r
   std::vector<pcl::PointIndices> object_clusters;
   cluster_obj.setInputCloud (pc_roi_red);
   cluster_obj.extract (object_clusters);
+  ROS_INFO("%d object clusters found", object_clusters.size());
   for(unsigned int i = 0; i < object_clusters.size(); ++i)
   {
     pcl::PointCloud<pcl::PointXYZ> bb;

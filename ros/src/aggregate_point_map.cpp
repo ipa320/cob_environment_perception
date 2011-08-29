@@ -126,7 +126,7 @@ public:
 		 p_limit_(0.1),
 		 distance_limit_(0.3)*/
   {
-    pcl::io::loadPCDFile("/home/goa/pcl_daten/kitchen_gt.pcd", ref_map_);
+    pcl::io::loadPCDFile("/home/goa/pcl_daten/kitchen_ground_truth/whole_kitchen.pcd", ref_map_);
   }
 
 
@@ -168,6 +168,9 @@ public:
     n_.param("aggregate_point_map/y_limit",y_limit_,0.1);
     n_.param("aggregate_point_map/p_limit",p_limit_,0.1);
     n_.param("aggregate_point_map/distance_limit",distance_limit_,0.3);
+    std::stringstream ss;
+    ss << file_path_ << "/gt.pcd";
+    pcl::io::savePCDFileASCII (ss.str(), ref_map_);
   }
 
   void pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc_in)
@@ -179,7 +182,7 @@ public:
     try
     {
       std::stringstream ss2;
-      tf_listener_.waitForTransform("/map", pc->header.frame_id, pc->header.stamp, ros::Duration(0.1));
+      tf_listener_.waitForTransform("/map", pc_in->header.frame_id, pc_in->header.stamp, ros::Duration(0.1));
       tf_listener_.lookupTransform("/map", pc_in->header.frame_id, pc_in->header.stamp/*ros::Time(0)*/, transform);
       KDL::Frame frame_KDL, frame_KDL_old;
       tf::TransformTFToKDL(transform, frame_KDL);
@@ -252,14 +255,19 @@ public:
           pcl_ros::transformPointCloud(*pc, *pc, transform);
           pcl_ros::transformPointCloud(*pc_in, *pc_in, transform);
           pc->header.frame_id = "/map";
-          shiftCloud(pc);
-          shiftCloud(pc_in);
+          pc_in->header.frame_id = "/map";
+          //shiftCloud(pc);
+          //shiftCloud(pc_in);
           if(save_pc_trans_==true)
           {
             ss2.str("");
             ss2.clear();
             ss2 << file_path_ << "/pc_trans_" << ctr_ << ".pcd";
             pcl::io::savePCDFileASCII (ss2.str(), *pc);
+            ss2.str("");
+            ss2.clear();
+            ss2 << file_path_ << "/pc_in_trans_" << ctr_ << ".pcd";
+            pcl::io::savePCDFileASCII (ss2.str(), *pc_in);
           }
 
           pcl::PointCloud<Point> pc_aligned;
@@ -458,6 +466,7 @@ public:
     final_transformation = icp.getFinalTransformation();
 
     //TODO: check if converged, check fitness score; if not => don't use pc
+    ROS_INFO("[aggregate_point_map] ICP params (max_it, corr_dist, eps): %d,%f,%f\n", icp_max_iterations_, icp_max_corr_dist_, icp_trf_epsilon_);
     ROS_INFO("[aggregate_point_map] ICP has converged: %d\n", icp.hasConverged());
     ROS_INFO("[aggregate_point_map] Fitness score: %f", icp.getFitnessScore());
     return true;
@@ -517,7 +526,8 @@ public:
   void shiftCloud(const pcl::PointCloud<Point>::Ptr& pc)
   {
     for(int i=0; i<pc->size(); i++)
-      pc->points[i].z+=0.2;
+      pc->points[i].y+=0.15;
+      //pc->points[i].z+=0.2;
   }
 
 

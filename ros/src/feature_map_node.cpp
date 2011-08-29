@@ -107,6 +107,10 @@ public:
     polygon_sub_ = n_.subscribe("polygon_array", 10, &FeatureMapNode::polygonCallback, this);
     map_pub_ = n_.advertise<geometry_msgs::PolygonStamped>("feature_map",1);
     marker_pub_ = n_.advertise<visualization_msgs::Marker>("feature_marker",100);
+    n_.param("feature_map/file_path" ,file_path_ ,std::string("/home/goa/tmp/"));
+    n_.param("feature_map/save_to_file" ,save_to_file_ ,false);
+    feature_map_.setFilePath(file_path_);
+    feature_map_.setSaveToFile(save_to_file_);
   }
 
   // Destructor
@@ -611,6 +615,8 @@ protected:
   FeatureMap feature_map_;
 
   unsigned int ctr_;
+  std::string file_path_;
+  bool save_to_file_;
 };
 
 int main (int argc, char** argv)
