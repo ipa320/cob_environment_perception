@@ -380,7 +380,7 @@ FeatureMap::addMapEntry(FeatureMap::MapEntryPtr p_ptr)
   }
   //printGpcStructure(&gpc_p);
   //gpc_free_polygon(&gpc_p);
-  saveMap("/home/goa/tmp/map/map");
+  if(save_to_file_) saveMap(file_path_);
 
 }
 
@@ -481,6 +481,13 @@ void
 FeatureMap::saveMapEntry(std::string path, int ctr, FeatureMap::MapEntry& p)
 {
   std::stringstream ss;
+  ss << path << "polygon_" << ctr << ".pl";
+  std::ofstream plane_file;
+  plane_file.open (ss.str().c_str());
+  plane_file << p.normal(0) << " " << p.normal(1) << " " << p.normal(2) << " " << p.d;
+  ss.str("");
+  ss.clear();
+  plane_file.close();
   for(int i=0; i< p.polygon_world.size(); i++)
   {
     pcl::PointCloud<pcl::PointXYZ> pc;

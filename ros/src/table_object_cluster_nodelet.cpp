@@ -137,9 +137,32 @@ public:
     pcl::io::savePCDFileASCII ("/home/goa/tmp/pc.pcd", *pc);
     pcl::io::savePCDFileASCII ("/home/goa/tmp/hull.pcd", *hull);
 
-    pcl::PointCloud<Point> pc_roi;
-    toc.extractTableRoi(pc, hull, pc_roi);
-    pcl::io::savePCDFileASCII ("/home/goa/tmp/table_roi.pcd", pc_roi);
+    pcl::PointCloud<Point>::Ptr pc_roi = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>());
+    toc.extractTableRoi(pc, hull, *pc_roi);
+    pcl::io::savePCDFileASCII ("/home/goa/tmp/table_roi.pcd", *pc_roi);
+    std::vector<pcl::PointCloud<Point> > known_objs;
+    pcl::PointCloud<Point> obj;
+    Point p;
+    p.x = -1.5012188;
+    p.y = 0.069459468;
+    p.z = 0.88345075;
+    obj.points.push_back(p);
+    p.x = -1.4262178;
+    p.y = 0.18113546;
+    p.z = 1.0654262;
+    obj.points.push_back(p);
+    known_objs.push_back(obj);
+    pcl::PointCloud<Point>::Ptr pc_roi_red = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>());
+    toc.removeKnownObjects(pc_roi, known_objs, *pc_roi_red);
+    pcl::io::savePCDFileASCII ("/home/goa/tmp/table_roi_red.pcd", *pc_roi_red);
+    std::vector<pcl::PointCloud<Point> > bounding_boxes;
+    toc.calculateBoundingBoxes(pc_roi_red,bounding_boxes);
+    for(unsigned int i=0; i< bounding_boxes.size(); i++)
+    {
+      std::stringstream ss;
+      ss << "/home/goa/tmp/bb_" << i << ".pcd";
+      pcl::io::savePCDFileASCII (ss.str(), bounding_boxes[i]);
+    }
 
     /*if(!lock)
     //if(!lock.owns_lock())
