@@ -1,7 +1,13 @@
-<library path="ros/lib/libcob_env_model">
-  <class name="cob_env_model/DetectTables" type="DetectTables" base_class_type="nodelet::Nodelet">
+<library path="ros/lib/libcob_env_model_nodelets">
+  <class name="cob_env_model/PlaneExtractionNodelet" type="PlaneExtractionNodelet" base_class_type="nodelet::Nodelet">
   <description>
-  Nodelet for table detection
+  Nodelet for plane extraction
+  </description>
+  </class>
+  
+  <class name="cob_env_model/TableObjectClusterNodelet" type="TableObjectClusterNodelet" base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet for table object cluster
   </description>
   </class>
   
@@ -14,6 +20,12 @@
   <class name="cob_env_model/AggregatePointMap" type="AggregatePointMap" base_class_type="nodelet::Nodelet">
   <description>
   Nodelet for point map aggregation
+  </description>
+  </class>
+  
+    <class name="cob_env_model/AggregateRangeImageMap" type="AggregateRangeImageMap" base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet for point map aggregation (using range images)
   </description>
   </class>
 

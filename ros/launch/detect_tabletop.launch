@@ -1,0 +1,14 @@
+<launch>
+  <node pkg="nodelet" type="nodelet" name="cam3d_nodelet_manager"  args="manager" output="screen"/>
+  
+  
+
+
+  <node pkg="nodelet" type="nodelet" name="detect_tables" args="load cob_env_model/PlaneExtractionNodelet cam3d_nodelet_manager" output="screen">
+  	<remap from="point_cloud2" to="/cam3d/rgb/points"/>
+  	<!--remap from="point_cloud2" to="/aggregate_point_map/map"/-->
+  	<!--remap from="point_cloud2" to="/voxel_grid2/output"/-->
+  </node>    
+  
+               
+</launch>

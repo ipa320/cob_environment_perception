@@ -155,6 +155,6 @@ class JumpEdgeFilter : public pcl_ros::PCLNodelet
     bool t_check;
   };
 
-PLUGINLIB_DECLARE_CLASS(cob_env_model,  JumpEdgeFilter,  JumpEdgeFilter, nodelet::Nodelet)
+PLUGINLIB_DECLARE_CLASS(cob_env_model_nodele,  JumpEdgeFilter,  JumpEdgeFilter, nodelet::Nodelet)
 
 

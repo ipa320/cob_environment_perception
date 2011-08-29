@@ -3,24 +3,26 @@
   
   
    <!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
-  <node pkg="nodelet" type="nodelet" name="voxel_grid2" args="load pcl/VoxelGrid pcl_manager" output="screen">
+  <!--node pkg="nodelet" type="nodelet" name="voxel_grid2" args="load pcl/VoxelGrid cam3d_nodelet_manager" output="screen">
     <remap from="~input" to="/aggregate_point_map/pc_aligned"/>
     <rosparam>
       filter_field_name: z
-      filter_limit_min: 0.75
-      filter_limit_max: 1
+      filter_limit_min: 0.2
+      filter_limit_max: 3
       filter_limit_negative: False
       leaf_size: 0.02
+      input_frame: "/map"
+      output_frame: "/map"
     </rosparam>
-  </node>
+  </node-->
 
-  <node pkg="nodelet" type="nodelet" name="detect_tables" args="load cob_env_model/DetectTables pcl_manager" output="screen">
-  	<!--remap from="point_cloud2" to="/aggregate_point_map/pc_aligned"/-->
+  <node pkg="nodelet" type="nodelet" name="detect_tables" args="load cob_env_model/PlaneExtractionNodelet cam3d_nodelet_manager" output="screen">
+  	<remap from="point_cloud2" to="/aggregate_point_map/pc_aligned"/>
   	<!--remap from="point_cloud2" to="/aggregate_point_map/map"/-->
-  	<remap from="point_cloud2" to="/voxel_grid2/output"/>
+  	<!--remap from="point_cloud2" to="/voxel_grid2/output"/-->
   </node>    
   
-  <!--node pkg="nodelet" type="nodelet" name="tabletop_objects_clusters" args="load pcl/EuclideanClusterExtraction pcl_manager" output="screen">
+  <!--node pkg="nodelet" type="nodelet" name="tabletop_objects_clusters" args="load pcl/EuclideanClusterExtraction cam3d_nodelet_manager" output="screen">
     <remap from="~input"   to="/object_cluster" />
     <rosparam>
       cluster_tolerance: 0.06
