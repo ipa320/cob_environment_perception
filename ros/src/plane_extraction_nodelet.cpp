@@ -94,8 +94,8 @@
 
 // ROS message includes
 //#include <sensor_msgs/PointCloud2.h>
-#include <cob_env_model/GetPlane.h>
-#include <cob_env_model/PolygonArray.h>
+#include <cob_env_model_msgs/GetPlane.h>
+#include <cob_env_model_msgs/PolygonArray.h>
 #include <geometry_msgs/PolygonStamped.h>
 
 // external includes
@@ -103,7 +103,7 @@
 #include <boost/numeric/ublas/matrix.hpp>
 
 #include "cob_env_model/features/plane_extraction.h"
-#include "cob_env_model/PlaneExtractionAction.h"
+#include "cob_env_model_msgs/PlaneExtractionAction.h"
 
 
 using namespace tf;
@@ -141,9 +141,9 @@ public:
     chull_pub_ = n_.advertise<pcl::PointCloud<Point> >("chull",1);
     object_cluster_pub_ = n_.advertise<pcl::PointCloud<Point> >("object_cluster",1);
     polygon_pub_ = n_.advertise<geometry_msgs::PolygonStamped>("polygons",1);
-    polygon_array_pub_ = n_.advertise<cob_env_model::PolygonArray>("polygon_array",1);
+    polygon_array_pub_ = n_.advertise<cob_env_model_msgs::PolygonArray>("polygon_array",1);
 
-    as_= new actionlib::SimpleActionServer<cob_env_model::PlaneExtractionAction>(n_, "plane_extraction", boost::bind(&PlaneExtractionNodelet::actionCallback, this, _1), false);
+    as_= new actionlib::SimpleActionServer<cob_env_model_msgs::PlaneExtractionAction>(n_, "plane_extraction", boost::bind(&PlaneExtractionNodelet::actionCallback, this, _1), false);
     as_->start();
 
     get_plane_ = n_.advertiseService("get_plane", &PlaneExtractionNodelet::srvCallback, this);
@@ -224,7 +224,7 @@ public:
   }
 
   void
-  actionCallback(const cob_env_model::PlaneExtractionGoalConstPtr &goal)
+  actionCallback(const cob_env_model_msgs::PlaneExtractionGoalConstPtr &goal)
   {
     ROS_INFO("action callback");
     //TODO: use scoped_lock
@@ -262,7 +262,7 @@ public:
   }
 
   bool
-  srvCallback(cob_env_model::GetPlane::Request &req, cob_env_model::GetPlane::Response &res)
+  srvCallback(cob_env_model_msgs::GetPlane::Request &req, cob_env_model_msgs::GetPlane::Response &res)
   {
     boost::mutex::scoped_lock lock(mutex_);
     sensor_msgs::PointCloud2 pc_out, hull_out;
@@ -297,7 +297,7 @@ public:
                       pcl::ModelCoefficients& coefficients_plane,
                       std_msgs::Header header)
   {
-    cob_env_model::PolygonArray p;
+    cob_env_model_msgs::PolygonArray p;
     p.polygons.resize(hull_polygons.size());
     p.header = header;
     p.normal.x = coefficients_plane.values[0];
@@ -375,11 +375,11 @@ protected:
 
   ros::ServiceServer get_plane_;
 
-  actionlib::SimpleActionServer<cob_env_model::PlaneExtractionAction>* as_;
+  actionlib::SimpleActionServer<cob_env_model_msgs::PlaneExtractionAction>* as_;
   std::string action_name_;
   // create messages that are used to published feedback/result
-  cob_env_model::PlaneExtractionFeedback feedback_;
-  cob_env_model::PlaneExtractionResult result_;
+  cob_env_model_msgs::PlaneExtractionFeedback feedback_;
+  cob_env_model_msgs::PlaneExtractionResult result_;
   boost::mutex mutex_;
 
   PlaneExtraction pe;

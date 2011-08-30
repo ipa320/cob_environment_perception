@@ -83,7 +83,7 @@
 //#include <sensor_msgs/PointCloud2.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
-#include <cob_env_model/PolygonArray.h>
+#include <cob_env_model_msgs/PolygonArray.h>
 #include <geometry_msgs/PolygonStamped.h>
 
 // external includes
@@ -121,7 +121,7 @@ public:
 
 
   void
-  polygonCallback(const cob_env_model::PolygonArray::ConstPtr p)
+  polygonCallback(const cob_env_model_msgs::PolygonArray::ConstPtr p)
   {
     FeatureMap::MapEntryPtr map_entry_ptr = FeatureMap::MapEntryPtr(new FeatureMap::MapEntry());
     convertFromROSMsg(*p, *map_entry_ptr);
@@ -133,7 +133,7 @@ public:
   }
 
   void
-  convertFromROSMsg(const cob_env_model::PolygonArray& p, FeatureMap::MapEntry& map_entry)
+  convertFromROSMsg(const cob_env_model_msgs::PolygonArray& p, FeatureMap::MapEntry& map_entry)
   {
     map_entry.id = 0;
     map_entry.d = p.d.data;
@@ -163,7 +163,7 @@ public:
   }
 
   void
-  convertToROSMsg(const FeatureMap::MapEntry& map_entry, cob_env_model::PolygonArray& p)
+  convertToROSMsg(const FeatureMap::MapEntry& map_entry, cob_env_model_msgs::PolygonArray& p)
   {
     p.d.data = map_entry.d;
     p.normal.x = map_entry.normal(0);
