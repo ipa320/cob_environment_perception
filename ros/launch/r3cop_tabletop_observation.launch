@@ -7,6 +7,7 @@
   	<param name="file_path" type="string" value="/media/GOADaten/Daten/20110825_sim_kitchen/kitchen_sim_objects/plane/"/>
   	<param name="save_to_file" type="bool" value="false"/>
   	<param name="plane_constraint" type="int" value="0"/>
+  	<param name="mode_action" type="bool" value="true"/>
   	<remap from="point_cloud2" to="/cam3d/depth_registered/points"/>
   </node>  
 	<include file="$(find cob_env_model)/ros/launch/tabletop_object_cluster.launch" />
