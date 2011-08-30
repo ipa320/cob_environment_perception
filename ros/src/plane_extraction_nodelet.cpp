@@ -189,7 +189,7 @@ public:
     if(!lock)
     //if(!lock.owns_lock())
     {
-      ROS_INFO(" pointCloudSubCallback not owning lock");
+      //ROS_INFO(" pointCloudSubCallback not owning lock");
       return;
     }
     pcl::PointCloud<Point> pc_trans;
