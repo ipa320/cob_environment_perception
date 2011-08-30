@@ -150,6 +150,7 @@ public:
     n_.param("plane_extraction/file_path" ,file_path_ ,std::string("/home/goa/tmp/"));
     n_.param("plane_extraction/save_to_file" ,save_to_file_ ,false);
     n_.param("plane_extraction/plane_constraint", plane_constraint_ ,0);
+    n_.param("plane_extraction/mode_action", mode_action_ ,false);
     pe.setFilePath(file_path_);
     pe.setSaveToFile(save_to_file_);
     pe.setPlaneConstraint((PlaneConstraint)plane_constraint_);
