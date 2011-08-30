@@ -87,7 +87,7 @@
 
 // ROS message includes
 //#include <sensor_msgs/PointCloud2.h>
-#include <cob_env_model/GetFieldOfView.h>
+#include <cob_env_model_msgs/GetFieldOfView.h>
 
 // external includes
 #include <boost/timer.hpp>
@@ -146,7 +146,7 @@ public:
     point_cloud_pub_aligned_ = n_.advertise<pcl::PointCloud<Point> >("point_cloud2_aligned",1);
     //point_cloud_pub_aligned2_ = n_.advertise<pcl::PointCloud<Point> >("pc_aligned_and_boundary",1);
     fov_marker_pub_ = n_.advertise<visualization_msgs::Marker>("fov_marker",10);
-    get_fov_srv_client_ = n_.serviceClient<cob_env_model::GetFieldOfView>("get_fov");
+    get_fov_srv_client_ = n_.serviceClient<cob_env_model_msgs::GetFieldOfView>("get_fov");
     //TODO: Read parameters from launch file
 
     /*	n_.param("aggregate_point_map/set_maxiterations_FOV_", icp_max_iterations_FOV_, 70);
@@ -328,7 +328,7 @@ public:
            Eigen::Matrix4f& final_transformation)
   {
 
-    cob_env_model::GetFieldOfView get_fov_srv;
+    cob_env_model_msgs::GetFieldOfView get_fov_srv;
     get_fov_srv.request.target_frame = std::string("/map");
     get_fov_srv.request.stamp = pc->header.stamp;
     if(get_fov_srv_client_.call(get_fov_srv))
