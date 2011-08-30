@@ -128,8 +128,8 @@ public:
       as_->setAborted();
       return;
     }
-    pcl::PointCloud<Point>::Ptr pc = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>());
-    pcl::PointCloud<Point>::Ptr hull = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>());
+    pcl::PointCloud<Point>::Ptr pc(new pcl::PointCloud<Point>);
+    pcl::PointCloud<Point>::Ptr hull(new pcl::PointCloud<Point>);
     ROS_INFO("Hull size: %d", srv.response.hull.width*srv.response.hull.height);
     pcl::fromROSMsg(srv.response.pc, *pc);
     pcl::fromROSMsg(srv.response.hull, *hull);
@@ -137,7 +137,7 @@ public:
     pcl::io::savePCDFileASCII ("/home/goa/tmp/pc.pcd", *pc);
     pcl::io::savePCDFileASCII ("/home/goa/tmp/hull.pcd", *hull);
 
-    pcl::PointCloud<Point>::Ptr pc_roi = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>());
+    pcl::PointCloud<Point>::Ptr pc_roi(new pcl::PointCloud<Point>);
     toc.extractTableRoi(pc, hull, *pc_roi);
     pcl::io::savePCDFileASCII ("/home/goa/tmp/table_roi.pcd", *pc_roi);
     std::vector<pcl::PointCloud<Point> > known_objs;
@@ -152,7 +152,7 @@ public:
     p.z = 1.0654262;
     obj.points.push_back(p);
     known_objs.push_back(obj);
-    pcl::PointCloud<Point>::Ptr pc_roi_red = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>());
+    pcl::PointCloud<Point>::Ptr pc_roi_red(new pcl::PointCloud<Point>);
     toc.removeKnownObjects(pc_roi, known_objs, *pc_roi_red);
     pcl::io::savePCDFileASCII ("/home/goa/tmp/table_roi_red.pcd", *pc_roi_red);
     std::vector<pcl::PointCloud<Point> > bounding_boxes;
