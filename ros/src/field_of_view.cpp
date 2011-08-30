@@ -63,7 +63,7 @@
 #include <ros/ros.h>
 #include <tf/transform_listener.h>
 #include <visualization_msgs/Marker.h>
-#include <cob_env_model/GetFieldOfView.h>
+#include <cob_env_model_msgs/GetFieldOfView.h>
 #include <Eigen/Core>
 
 // external includes
@@ -321,8 +321,8 @@ public:
   }
 
 
-  bool srvCallback_GetFieldOfView(cob_env_model::GetFieldOfView::Request &req,
-                                  cob_env_model::GetFieldOfView::Response &res)
+  bool srvCallback_GetFieldOfView(cob_env_model_msgs::GetFieldOfView::Request &req,
+                                  cob_env_model_msgs::GetFieldOfView::Response &res)
   {
     ROS_INFO("FieldOfView Trigger");
     transformFOV(req.stamp, req.target_frame);

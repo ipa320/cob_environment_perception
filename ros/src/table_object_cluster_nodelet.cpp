@@ -77,14 +77,15 @@
 
 // ROS message includes
 //#include <sensor_msgs/PointCloud2.h>
-#include <cob_env_model/GetPlane.h>
+#include <cob_env_model_msgs/GetPlane.h>
+#include <cob_env_model_msgs/GetBoundingBoxes.h>
 
 // external includes
 #include <boost/timer.hpp>
 #include <Eigen/StdVector>
 
 #include "cob_env_model/table_object_cluster.h"
-#include "cob_env_model/TableObjectClusterAction.h"
+#include "cob_env_model_msgs/TableObjectClusterAction.h"
 
 
 //####################
@@ -112,17 +113,18 @@ public:
     PCLNodelet::onInit();
     n_ = getNodeHandle();
 
-    get_plane_client_ = n_.serviceClient<cob_env_model::GetPlane>("get_plane");
-    as_= new actionlib::SimpleActionServer<cob_env_model::TableObjectClusterAction>(n_, "table_object_cluster", boost::bind(&TableObjectClusterNodelet::actionCallback, this, _1), false);
+    get_plane_client_ = n_.serviceClient<cob_env_model_msgs::GetPlane>("get_plane");
+    get_bb_client_ = n_.serviceClient<cob_env_model_msgs::GetBoundingBoxes>("get_known_objects");
+    as_= new actionlib::SimpleActionServer<cob_env_model_msgs::TableObjectClusterAction>(n_, "table_object_cluster", boost::bind(&TableObjectClusterNodelet::actionCallback, this, _1), false);
     as_->start();
   }
 
 
   void
-  actionCallback(const cob_env_model::TableObjectClusterGoalConstPtr &goal)
+  actionCallback(const cob_env_model_msgs::TableObjectClusterGoalConstPtr &goal)
   {
     ROS_INFO("action callback");
-    cob_env_model::GetPlane srv;
+    cob_env_model_msgs::GetPlane srv;
     if(!get_plane_client_.call(srv))
     {
       ROS_ERROR("Failed to call service get_plane");
@@ -142,7 +144,7 @@ public:
     toc.extractTableRoi(pc, hull, *pc_roi);
     pcl::io::savePCDFileASCII ("/home/goa/tmp/table_roi.pcd", *pc_roi);
     std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > > known_objs;
-    pcl::PointCloud<Point> obj;
+    /*pcl::PointCloud<Point> obj;
     Point p;
     p.x = -1.5012188;
     p.y = 0.069459468;
@@ -152,7 +154,7 @@ public:
     p.y = 0.18113546;
     p.z = 1.0654262;
     obj.points.push_back(p);
-    known_objs.push_back(obj);
+    known_objs.push_back(obj);*/
     pcl::PointCloud<Point>::Ptr pc_roi_red(new pcl::PointCloud<Point>);
     toc.removeKnownObjects(pc_roi, known_objs, *pc_roi_red);
     pcl::io::savePCDFileASCII ("/home/goa/tmp/table_roi_red.pcd", *pc_roi_red);
@@ -191,12 +193,12 @@ public:
 
 
 protected:
-  actionlib::SimpleActionServer<cob_env_model::TableObjectClusterAction>* as_;
+  actionlib::SimpleActionServer<cob_env_model_msgs::TableObjectClusterAction>* as_;
   ros::ServiceClient get_plane_client_;
   ros::ServiceClient get_bb_client_;
   // create messages that are used to published feedback/result
-  cob_env_model::TableObjectClusterFeedback feedback_;
-  cob_env_model::TableObjectClusterResult result_;
+  cob_env_model_msgs::TableObjectClusterFeedback feedback_;
+  cob_env_model_msgs::TableObjectClusterResult result_;
   boost::mutex mutex_;
 
   TableObjectCluster toc;
