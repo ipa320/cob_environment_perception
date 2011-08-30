@@ -81,6 +81,7 @@
 
 // external includes
 #include <boost/timer.hpp>
+#include <Eigen/StdVector>
 
 #include "cob_env_model/table_object_cluster.h"
 #include "cob_env_model/TableObjectClusterAction.h"
@@ -140,7 +141,7 @@ public:
     pcl::PointCloud<Point>::Ptr pc_roi(new pcl::PointCloud<Point>);
     toc.extractTableRoi(pc, hull, *pc_roi);
     pcl::io::savePCDFileASCII ("/home/goa/tmp/table_roi.pcd", *pc_roi);
-    std::vector<pcl::PointCloud<Point> > known_objs;
+    std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > > known_objs;
     pcl::PointCloud<Point> obj;
     Point p;
     p.x = -1.5012188;
@@ -155,7 +156,7 @@ public:
     pcl::PointCloud<Point>::Ptr pc_roi_red(new pcl::PointCloud<Point>);
     toc.removeKnownObjects(pc_roi, known_objs, *pc_roi_red);
     pcl::io::savePCDFileASCII ("/home/goa/tmp/table_roi_red.pcd", *pc_roi_red);
-    std::vector<pcl::PointCloud<Point> > bounding_boxes;
+    std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > > bounding_boxes;
     toc.calculateBoundingBoxes(pc_roi_red,bounding_boxes);
     for(unsigned int i=0; i< bounding_boxes.size(); i++)
     {
