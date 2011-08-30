@@ -75,7 +75,7 @@ class PlaneExtraction
 public:
   typedef pcl::PointXYZ Point;
   // Constructor
-  PlaneExtraction(bool save_to_file);
+  PlaneExtraction();
 
   // Destructor
   ~PlaneExtraction()
@@ -98,6 +98,24 @@ public:
   {
     plane_constraint_ = constr;
   }
+
+  void
+  setFilePath(std::string file_path)
+  {
+    file_path_ = file_path;
+  }
+
+  void
+  setSaveToFile(bool save_to_file)
+  {
+    save_to_file_ = save_to_file;
+  }
+
+  void
+  findClosestTable(std::vector<pcl::PointCloud<Point> >& v_cloud_hull,
+                   std::vector<pcl::ModelCoefficients>& v_coefficients_plane,
+                   Eigen::Vector3f& robot_pose,
+                   unsigned int& idx);
 
 
 protected:

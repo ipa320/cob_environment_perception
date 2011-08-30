@@ -81,12 +81,12 @@
 #include "cob_env_model/features/plane_extraction.h"
 
 
-PlaneExtraction::PlaneExtraction(bool save_to_file)
+PlaneExtraction::PlaneExtraction()
 {
   ctr_ = 0;
   min_cluster_size_ = 300;
-  file_path_ = "/media/GOADaten/Daten/20110822_bagfiles/table_static_close/plane/";
-  save_to_file_ = save_to_file;
+  file_path_ = "/home/goa/tmp/";
+  save_to_file_ = false;
   plane_constraint_ = NONE;
 }
 
@@ -97,12 +97,18 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
                                std::vector<std::vector<pcl::Vertices> >& v_hull_polygons,
                                std::vector<pcl::ModelCoefficients>& v_coefficients_plane)
 {
-  ROS_INFO("Extract planes");
-  ROS_INFO("Saving files: %d", save_to_file_);
-  //ROS_INFO("pc_in size: %d" , pc_in->size());
   boost::timer t;
   std::stringstream ss;
-
+  ROS_INFO("Extract planes");
+  ROS_INFO("Saving files: %d", save_to_file_);
+  if(save_to_file_)
+  {
+    ss.str("");
+    ss.clear();
+    ss << file_path_ << "/pc_" << ctr_ << ".pcd";
+    pcl::io::savePCDFileASCII (ss.str(), *pc_in);
+  }
+  //ROS_INFO("pc_in size: %d" , pc_in->size());
   // Extract Eucledian clusters
   pcl::KdTree<Point>::Ptr clusters_tree;
   clusters_tree = boost::make_shared<pcl::KdTreeFLANN<Point> > ();
@@ -194,7 +200,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
       }
       if(plane_constraint_ == HORIZONTAL)
       {
-        if(fabs(coefficients_plane.values[0]) > 0.1 || fabs(coefficients_plane.values[1]) > 0.1 || fabs(coefficients_plane.values[2]) < 0.9)
+        if(fabs(coefficients_plane.values[0]) > 0.12 || fabs(coefficients_plane.values[1]) > 0.12 || fabs(coefficients_plane.values[2]) < 0.9)
         {
           std::cout << "Plane is not horizontal: " << coefficients_plane << std::endl;
           invalidPlane = true;
@@ -331,6 +337,39 @@ PlaneExtraction::saveHulls(pcl::PointCloud<Point>& cloud_hull,
     std::stringstream ss;
     ss << file_path_ << "/hull_" << ctr_ << "_" << i << ".pcd";
     pcl::io::savePCDFileASCII (ss.str(), hull_part);
+  }
+}
+
+void
+PlaneExtraction::findClosestTable(std::vector<pcl::PointCloud<Point> >& v_cloud_hull,
+                                  std::vector<pcl::ModelCoefficients>& v_coefficients_plane,
+                                  Eigen::Vector3f& robot_pose,
+                                  unsigned int& idx)
+{
+  std::vector<unsigned int> table_candidates;
+  for(unsigned int i=0; i<v_cloud_hull.size(); i++)
+  {
+    if(fabs(v_coefficients_plane[i].values[3])>0.5 && fabs(v_coefficients_plane[i].values[3])<1.2)
+      table_candidates.push_back(i);
+  }
+  if(table_candidates.size()>0)
+  {
+    for(unsigned int i=0; i<table_candidates.size(); i++)
+    {
+      double d;
+      double d_min = 1000;
+      for(unsigned int j=0; j<v_cloud_hull[i].size(); j++)
+      {
+        Eigen::Vector3f p = v_cloud_hull[i].points[j].getVector3fMap();
+        d += fabs((p-robot_pose).norm());
+      }
+      d /= v_cloud_hull[i].size();
+      if(d<d_min)
+      {
+        d_min = d;
+        idx = table_candidates[i];
+      }
+    }
   }
 }
 
