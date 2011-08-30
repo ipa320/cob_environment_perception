@@ -98,7 +98,9 @@ public:
 
   // Constructor
   FeatureMap()
-  :new_id_(0)
+  :new_id_(0),
+   file_path_("./"),
+   save_to_file_(false)
   {
     /// void
   }
@@ -148,10 +150,24 @@ public:
     return boost::make_shared<std::vector<MapEntryPtr> >(map_);
   }
 
+  void
+  setFilePath(std::string file_path)
+  {
+    file_path_ = file_path;
+  }
+
+  void
+  setSaveToFile(bool save_to_file)
+  {
+    save_to_file_ = save_to_file;
+  }
+
 
 protected:
   std::vector<MapEntryPtr> map_;
   unsigned int new_id_;
+  std::string file_path_;
+  bool save_to_file_;
 
 };
 

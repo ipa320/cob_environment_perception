@@ -116,14 +116,10 @@ public:
   // Constructor
   PlaneExtractionNodelet()
   : as_(0),
-    pe(true),
-    mode_action_(true)
+    mode_action_(false)
   {
     ctr_ = 0;
     min_cluster_size_ = 300;
-    //file_path_ = "/home/goa/pcl_daten/kitchen_kinect2/planes/";
-    //save_to_file_ = false;
-    pe.setPlaneConstraint(HORIZONTAL);
   }
 
   // Destructor
@@ -150,6 +146,13 @@ public:
     as_->start();
 
     get_plane_ = n_.advertiseService("get_plane", &PlaneExtractionNodelet::srvCallback, this);
+
+    n_.param("plane_extraction/file_path" ,file_path_ ,std::string("/home/goa/tmp/"));
+    n_.param("plane_extraction/save_to_file" ,save_to_file_ ,false);
+    n_.param("plane_extraction/plane_constraint", plane_constraint_ ,0);
+    pe.setFilePath(file_path_);
+    pe.setSaveToFile(save_to_file_);
+    pe.setPlaneConstraint((PlaneConstraint)plane_constraint_);
   }
 
   void extractPlane(const pcl::PointCloud<Point>::Ptr& pc_in,
@@ -166,7 +169,7 @@ public:
     voxel.setInputCloud(pc_in);
     voxel.setLeafSize(0.03,0.03,0.03);
     voxel.setFilterFieldName("z");
-    voxel.setFilterLimits(0.2,3);
+    voxel.setFilterLimits(-0.1,3);
     pcl::PointCloud<Point>::Ptr pc_vox = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>);
     voxel.filter(*pc_vox);
     //pcl::io::savePCDFileASCII ("/home/goa/tmp/after_voxel.pcd", *pc_vox);
@@ -237,10 +240,22 @@ public:
     std::vector<std::vector<pcl::Vertices> > v_hull_polygons;
     std::vector<pcl::ModelCoefficients> v_coefficients_plane;
     extractPlane(pc_cur_.makeShared(), v_cloud_hull, v_hull_polygons, v_coefficients_plane);
+    if(v_cloud_hull.size() == 0)
+    {
+      as_->setAborted();
+      return;
+    }
     pcl::copyPointCloud(pc_cur_, pc_plane_);
     // only save dominant plane
-    ROS_INFO("Hull size: %d", v_cloud_hull[0].size());
-    pcl::copyPointCloud(v_cloud_hull[0], hull_);
+    StampedTransform transform;
+    tf_listener_.waitForTransform("/map", "/base_link", pc_cur_.header.stamp, ros::Duration(0.5));
+    tf_listener_.lookupTransform("/map", "/base_link", pc_cur_.header.stamp, transform);
+    btVector3 bt_rob_pose = transform.getOrigin();
+    Eigen::Vector3f rob_pose(bt_rob_pose.x(),bt_rob_pose.y(),bt_rob_pose.z());
+    unsigned int idx = 0;
+    pe.findClosestTable(v_cloud_hull, v_coefficients_plane, rob_pose, idx);
+    ROS_INFO("Hull %d size: %d", idx, v_cloud_hull[idx].size());
+    pcl::copyPointCloud(v_cloud_hull[idx], hull_);
     as_->setSucceeded(result_);
   }
 
@@ -376,6 +391,7 @@ protected:
   std::string file_path_;
   bool save_to_file_;
   bool mode_action_;
+  int plane_constraint_;
 
 };
 
