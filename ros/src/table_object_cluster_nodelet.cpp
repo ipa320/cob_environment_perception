@@ -124,6 +124,8 @@ public:
   actionCallback(const cob_env_model_msgs::TableObjectClusterGoalConstPtr &goal)
   {
     ROS_INFO("action callback");
+    cob_env_model_msgs::TableObjectClusterFeedback feedback;
+    cob_env_model_msgs::TableObjectClusterResult result;
     cob_env_model_msgs::GetPlane srv;
     if(!get_plane_client_.call(srv))
     {
@@ -180,7 +182,7 @@ public:
       pcl::io::savePCDFileASCII (ss.str(), bounding_boxes[i]);
       sensor_msgs::PointCloud2 bb;
       pcl::toROSMsg(bounding_boxes[i], bb);
-      result_.bounding_boxes.push_back(bb);
+      result.bounding_boxes.push_back(bb);
     }
     /*if(!lock)
     //if(!lock.owns_lock())
@@ -198,7 +200,7 @@ public:
     pcl::copyPointCloud(pc_cur_, pc_plane_);
     // only save dominant plane
     pcl::copyPointCloud(v_cloud_hull[0], hull_);*/
-    as_->setSucceeded(result_);
+    as_->setSucceeded(result);
   }
 
 
@@ -210,8 +212,6 @@ protected:
   ros::ServiceClient get_plane_client_;
   ros::ServiceClient get_bb_client_;
   // create messages that are used to published feedback/result
-  cob_env_model_msgs::TableObjectClusterFeedback feedback_;
-  cob_env_model_msgs::TableObjectClusterResult result_;
   boost::mutex mutex_;
 
   TableObjectCluster toc;
