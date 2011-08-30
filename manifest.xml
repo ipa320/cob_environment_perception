@@ -1,0 +1,19 @@
+<package>
+  <description brief="cob_env_model_msgs">
+
+     cob_env_model_msgs
+
+  </description>
+  <author>Georg Arbeiter</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/cob_env_model_msgs</url>
+
+	<depend package="geometry_msgs"/>
+	<depend package="sensor_msgs"/>
+	<depend package="std_msgs"/>
+	<depend package="actionlib_msgs"/>
+
+</package>
+
+
