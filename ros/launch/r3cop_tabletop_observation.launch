@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- start environment modelling -->
+  <node pkg="nodelet" type="nodelet" name="cam3d_nodelet_manager"  args="manager" output="screen"/>
+  
+	<include file="$(find cob_env_model)/ros/launch/extract_planes.launch" >
+		<remap from="point_cloud2" to="/cam3d/depth_registered/points"/>
+	</include>
+	<include file="$(find cob_env_model)/ros/launch/tabletop_object_cluster.launch" />
+
+</launch>
+
