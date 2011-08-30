@@ -254,7 +254,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
         }
 
         // Project the model inliers
-        pcl::PointCloud<Point>::Ptr cloud_projected (new pcl::PointCloud<Point> ());
+        pcl::PointCloud<Point>::Ptr cloud_projected (new pcl::PointCloud<Point>);
         pcl::ProjectInliers<Point> proj;
         proj.setModelType (pcl::SACMODEL_PLANE);
         proj.setInputCloud (cluster_ptr);
