@@ -93,7 +93,7 @@ PlaneExtraction::PlaneExtraction()
 //input should be point cloud that is amplitude filetered, statistical outlier filtered, voxel filtered and the floor cut, coordinate system should be /map
 void
 PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
-                               std::vector<pcl::PointCloud<Point> >& v_cloud_hull,
+                               std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > >& v_cloud_hull,
                                std::vector<std::vector<pcl::Vertices> >& v_hull_polygons,
                                std::vector<pcl::ModelCoefficients>& v_coefficients_plane)
 {
@@ -341,7 +341,7 @@ PlaneExtraction::saveHulls(pcl::PointCloud<Point>& cloud_hull,
 }
 
 void
-PlaneExtraction::findClosestTable(std::vector<pcl::PointCloud<Point> >& v_cloud_hull,
+PlaneExtraction::findClosestTable(std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > >& v_cloud_hull,
                                   std::vector<pcl::ModelCoefficients>& v_coefficients_plane,
                                   Eigen::Vector3f& robot_pose,
                                   unsigned int& idx)

@@ -64,6 +64,7 @@
 // ROS includes
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
+#include <Eigen/StdVector>
 
 
 enum PlaneConstraint {NONE, HORIZONTAL, VERTICAL};
@@ -85,7 +86,7 @@ public:
 
   void
   extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
-                std::vector<pcl::PointCloud<Point> >& v_cloud_hull,
+                std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > >& v_cloud_hull,
                 std::vector<std::vector<pcl::Vertices> >& v_hull_polygons,
                 std::vector<pcl::ModelCoefficients>& v_coefficients_plane);
 
@@ -112,7 +113,7 @@ public:
   }
 
   void
-  findClosestTable(std::vector<pcl::PointCloud<Point> >& v_cloud_hull,
+  findClosestTable(std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > >& v_cloud_hull,
                    std::vector<pcl::ModelCoefficients>& v_coefficients_plane,
                    Eigen::Vector3f& robot_pose,
                    unsigned int& idx);

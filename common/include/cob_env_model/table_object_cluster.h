@@ -58,6 +58,7 @@
 // PCL includes
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
+#include <Eigen/StdVector>
 
 
 class TableObjectCluster
@@ -75,12 +76,12 @@ public:
 
   void
   removeKnownObjects(pcl::PointCloud<Point>::Ptr& pc_roi,
-                     std::vector<pcl::PointCloud<pcl::PointXYZ> >& bounding_boxes,
+                     std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > >& bounding_boxes,
                      pcl::PointCloud<Point>& pc_roi_red);
 
   void
   calculateBoundingBoxes(pcl::PointCloud<Point>::Ptr& pc_roi_red,
-                     std::vector<pcl::PointCloud<pcl::PointXYZ> >& bounding_boxes);
+                     std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > >& bounding_boxes);
 
 };
 
