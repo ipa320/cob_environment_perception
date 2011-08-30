@@ -24,6 +24,7 @@
   <depend package="nodelet"/>
   <depend package="actionlib"/>
   <depend package="actionlib_msgs"/>
+  <depend package="cob_env_model_msgs"/>
 
   <rosdep name="boost"/>
   <rosdep name="glut"/>
