@@ -163,8 +163,10 @@ public:
       std::stringstream ss;
       ss << "/home/goa/tmp/bb_" << i << ".pcd";
       pcl::io::savePCDFileASCII (ss.str(), bounding_boxes[i]);
+      sensor_msgs::PointCloud2 bb;
+      pcl::toROSMsg(bounding_boxes[i], bb);
+      result_.bounding_boxes.push_back(bb);
     }
-
     /*if(!lock)
     //if(!lock.owns_lock())
     {
