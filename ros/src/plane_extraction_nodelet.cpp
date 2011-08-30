@@ -89,6 +89,7 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/segmentation/extract_polygonal_prism_data.h>
 #include "pcl/filters/voxel_grid.h"
+#include <Eigen/StdVector>
 
 
 // ROS message includes
@@ -157,7 +158,7 @@ public:
   }
 
   void extractPlane(const pcl::PointCloud<Point>::Ptr& pc_in,
-                    std::vector<pcl::PointCloud<Point> >& v_cloud_hull,
+                    std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > >& v_cloud_hull,
                     std::vector<std::vector<pcl::Vertices> >& v_hull_polygons,
                     std::vector<pcl::ModelCoefficients>& v_coefficients_plane)
   {
@@ -206,7 +207,7 @@ public:
       pcl::copyPointCloud(pc_trans, pc_cur_);
     else
     {
-      std::vector<pcl::PointCloud<Point> > v_cloud_hull;
+      std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > > v_cloud_hull;
       std::vector<std::vector<pcl::Vertices> > v_hull_polygons;
       std::vector<pcl::ModelCoefficients> v_coefficients_plane;
       extractPlane(pc_trans.makeShared(), v_cloud_hull, v_hull_polygons, v_coefficients_plane);
@@ -237,7 +238,7 @@ public:
     else
       ROS_INFO(" actionCallback owns lock");*/
     feedback_.currentStep.data = std::string("plane extraction");
-    std::vector<pcl::PointCloud<Point> > v_cloud_hull;
+    std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > > v_cloud_hull;
     std::vector<std::vector<pcl::Vertices> > v_hull_polygons;
     std::vector<pcl::ModelCoefficients> v_coefficients_plane;
     extractPlane(pc_cur_.makeShared(), v_cloud_hull, v_hull_polygons, v_coefficients_plane);
