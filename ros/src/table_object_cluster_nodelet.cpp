@@ -138,6 +138,7 @@ public:
       as_->setAborted();
       return;
     }
+    //TODO: proceed also if no bbs are sent
     cob_env_model_msgs::GetBoundingBoxes srv2;
     if(!get_bb_client_.call(srv2))
     {
