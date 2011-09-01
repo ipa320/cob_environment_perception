@@ -252,8 +252,15 @@ public:
     pcl::copyPointCloud(pc_cur_, pc_plane_);
     // only save dominant plane
     StampedTransform transform;
-    tf_listener_.waitForTransform("/map", "/base_link", pc_cur_.header.stamp, ros::Duration(0.5));
-    tf_listener_.lookupTransform("/map", "/base_link", pc_cur_.header.stamp, transform);
+    try
+    {
+      tf_listener_.waitForTransform("/map", "/base_link", pc_cur_.header.stamp, ros::Duration(0.5));
+      tf_listener_.lookupTransform("/map", "/base_link", pc_cur_.header.stamp, transform);
+    }
+    catch (tf::TransformException ex)
+    {
+      ROS_ERROR("[plane_extraction] : %s",ex.what());
+    }
     btVector3 bt_rob_pose = transform.getOrigin();
     Eigen::Vector3f rob_pose(bt_rob_pose.x(),bt_rob_pose.y(),bt_rob_pose.z());
     unsigned int idx = 0;
