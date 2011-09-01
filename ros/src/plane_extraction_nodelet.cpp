@@ -152,6 +152,7 @@ public:
     n_.param("plane_extraction/save_to_file" ,save_to_file_ ,false);
     n_.param("plane_extraction/plane_constraint", plane_constraint_ ,0);
     n_.param("plane_extraction/mode_action", mode_action_ ,false);
+    n_.param("plane_extraction/target_frame" ,target_frame_ ,std::string("/map"));
     pe.setFilePath(file_path_);
     pe.setSaveToFile(save_to_file_);
     pe.setPlaneConstraint((PlaneConstraint)plane_constraint_);
@@ -197,7 +198,8 @@ public:
     //if(pc_in->header.frame_id!="/map")
     {
       //ROS_INFO("transforming pc");
-      pcl_ros::transformPointCloud ("/map", pc_in->header.stamp, *pc_in, "/map", pc_trans, tf_listener_);
+      //pcl_ros::transformPointCloud ("/map", pc_in->header.stamp, *pc_in, "/map", pc_trans, tf_listener_);
+      pcl_ros::transformPointCloud (target_frame_, *pc_in, pc_trans, tf_listener_);
     }
     /*else
       ROS_INFO(" pointCloudSubCallback owns lock");*/
@@ -394,6 +396,7 @@ protected:
   bool save_to_file_;
   bool mode_action_;
   int plane_constraint_;
+  std::string target_frame_;
 
 };
 

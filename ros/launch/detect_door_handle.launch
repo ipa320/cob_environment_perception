@@ -7,6 +7,7 @@
   	<param name="save_to_file" type="bool" value="false"/>
   	<param name="plane_constraint" type="int" value="2"/>
   	<param name="mode_action" type="bool" value="true"/>
+  	<param name="target_frame" type="string" value="/base_link"/>
   	<remap from="point_cloud2" to="/cam3d/depth_registered/points"/>
   </node>  
 	<node pkg="nodelet" type="nodelet" name="table_object_cluster" args="load cob_env_model/TableObjectClusterNodelet cam3d_nodelet_manager2" output="screen">
