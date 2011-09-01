@@ -69,7 +69,7 @@ TableObjectCluster::extractTableRoi(pcl::PointCloud<Point>::Ptr& pc_in,
   pcl::ExtractPolygonalPrismData<Point> prism;
   // Consider only objects in a given layer above the table
   //TODO: check if valid values
-  prism.setHeightLimits(-0.5, -0.03);
+  prism.setHeightLimits(height_min_, height_max_);
   // ---[ Get the objects on top of the table
   pcl::PointIndices roi_indices;
   prism.setInputCloud(pc_in);
@@ -115,8 +115,8 @@ TableObjectCluster::calculateBoundingBoxes(pcl::PointCloud<Point>::Ptr& pc_roi_r
   pcl::EuclideanClusterExtraction<Point> cluster_obj;
 
   // Table clustering parameters
-  cluster_obj.setClusterTolerance (0.03);
-  cluster_obj.setMinClusterSize (30);
+  cluster_obj.setClusterTolerance (cluster_tolerance_);
+  cluster_obj.setMinClusterSize (min_cluster_size_);
   cluster_obj.setSearchMethod (clusters_tree);
   std::vector<pcl::PointIndices> object_clusters;
   cluster_obj.setInputCloud (pc_roi_red);
