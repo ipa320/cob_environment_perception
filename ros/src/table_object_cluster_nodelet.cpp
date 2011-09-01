@@ -144,44 +144,45 @@ public:
       as_->setAborted();
       return;
     }
-    //TODO: proceed also if no bbs are sent
-    cob_env_model_msgs::GetBoundingBoxes srv2;
-    if(!get_bb_client_.call(srv2))
-    {
-      ROS_ERROR("Failed to call service get_bounding_boxes");
-      as_->setAborted();
-      return;
-    }
     pcl::PointCloud<Point>::Ptr pc(new pcl::PointCloud<Point>);
     pcl::PointCloud<Point>::Ptr hull(new pcl::PointCloud<Point>);
     pcl::fromROSMsg(srv.response.pc, *pc);
     pcl::fromROSMsg(srv.response.hull, *hull);
     ROS_INFO("Hull size: %d", hull->size());
 
-
     pcl::PointCloud<Point>::Ptr pc_roi(new pcl::PointCloud<Point>);
     toc.extractTableRoi(pc, hull, *pc_roi);
-
-    std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > > known_objs;
-    for(unsigned int i=0; i<srv2.response.bounding_boxes.size(); i++)
-    {
-      pcl::PointCloud<Point> obj;
-      pcl::fromROSMsg(srv2.response.bounding_boxes[i], obj);
-      known_objs.push_back(obj);
-    }
-    /*pcl::PointCloud<Point> obj;
-    Point p;
-    p.x = -1.5012188;
-    p.y = 0.069459468;
-    p.z = 0.88345075;
-    obj.points.push_back(p);
-    p.x = -1.4262178;
-    p.y = 0.18113546;
-    p.z = 1.0654262;
-    obj.points.push_back(p);
-    known_objs.push_back(obj);*/
+    //TODO: proceed also if no bbs are sent
     pcl::PointCloud<Point>::Ptr pc_roi_red(new pcl::PointCloud<Point>);
-    toc.removeKnownObjects(pc_roi, known_objs, *pc_roi_red);
+    cob_env_model_msgs::GetBoundingBoxes srv2;
+    if(get_bb_client_.call(srv2))
+    {
+      std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > > known_objs;
+      for(unsigned int i=0; i<srv2.response.bounding_boxes.size(); i++)
+      {
+        pcl::PointCloud<Point> obj;
+        pcl::fromROSMsg(srv2.response.bounding_boxes[i], obj);
+        known_objs.push_back(obj);
+      }
+      /*pcl::PointCloud<Point> obj;
+      Point p;
+      p.x = -1.5012188;
+      p.y = 0.069459468;
+      p.z = 0.88345075;
+      obj.points.push_back(p);
+      p.x = -1.4262178;
+      p.y = 0.18113546;
+      p.z = 1.0654262;
+      obj.points.push_back(p);
+      known_objs.push_back(obj);*/
+      toc.removeKnownObjects(pc_roi, known_objs, *pc_roi_red);
+    }
+    else
+    {
+      ROS_WARN("Failed to call service get_bounding_boxes");
+      pc_roi_red = pc_roi;
+    }
+
     std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > > bounding_boxes;
     toc.calculateBoundingBoxes(pc_roi_red,bounding_boxes);
     for(unsigned int i=0; i< bounding_boxes.size(); i++)
