@@ -66,7 +66,14 @@ class TableObjectCluster
 public:
   typedef pcl::PointXYZ Point;
 
-  TableObjectCluster() {};
+  TableObjectCluster()
+  {
+    height_min_ = -0.5;
+    height_max_ = -0.03;
+    min_cluster_size_ = 30;
+    cluster_tolerance_ = 0.03;
+
+  };
   ~TableObjectCluster() {};
 
   void
@@ -82,6 +89,26 @@ public:
   void
   calculateBoundingBoxes(pcl::PointCloud<Point>::Ptr& pc_roi_red,
                      std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > >& bounding_boxes);
+
+  void
+  setPrismHeight(double height_min, double height_max)
+  {
+    height_min_ = height_min;
+    height_max_ = height_max;
+  }
+
+  void
+  setClusterParams(int min_cluster_size, double cluster_tolerance)
+  {
+    min_cluster_size_ = min_cluster_size;
+    cluster_tolerance_ = cluster_tolerance;
+  }
+
+protected:
+  double height_min_;
+  double height_max_;
+  int min_cluster_size_;
+  double cluster_tolerance_;
 
 };
 
