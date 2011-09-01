@@ -122,6 +122,12 @@ public:
 
     n_.param("plane_extraction/file_path" ,file_path_ ,std::string("/home/goa/tmp/"));
     n_.param("table_object_cluster/save_to_file" ,save_to_file_ ,false);
+    n_.setParam("table_object_cluster/height_min" ,height_min_);
+    n_.setParam("table_object_cluster/height_max" ,height_min_);
+    n_.setParam("table_object_cluster/min_cluster_size", min_cluster_size_);
+    n_.setParam("table_object_clustercluster_tolerance", cluster_tolerance_);
+    toc.setPrismHeight(height_min_, height_max_);
+    toc.setClusterParams(min_cluster_size_, cluster_tolerance_);
   }
 
 
@@ -229,6 +235,10 @@ protected:
 
   bool save_to_file_;
   std::string file_path_;
+  double height_min_;
+  double height_max_;
+  int min_cluster_size_;
+  double cluster_tolerance_;
 
 };
 
