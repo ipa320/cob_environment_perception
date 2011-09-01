@@ -120,7 +120,7 @@ public:
     as_= new actionlib::SimpleActionServer<cob_env_model_msgs::TableObjectClusterAction>(n_, "table_object_cluster", boost::bind(&TableObjectClusterNodelet::actionCallback, this, _1), false);
     as_->start();
 
-    n_.param("plane_extraction/file_path" ,file_path_ ,std::string("/home/goa/tmp/"));
+    n_.param("table_object_cluster/file_path" ,file_path_ ,std::string("/home/goa/tmp/"));
     n_.param("table_object_cluster/save_to_file" ,save_to_file_ ,false);
     n_.setParam("table_object_cluster/height_min" ,height_min_);
     n_.setParam("table_object_cluster/height_max" ,height_min_);
