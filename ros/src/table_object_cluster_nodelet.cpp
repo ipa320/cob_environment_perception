@@ -122,10 +122,11 @@ public:
 
     n_.param("table_object_cluster/file_path" ,file_path_ ,std::string("/home/goa/tmp/"));
     n_.param("table_object_cluster/save_to_file" ,save_to_file_ ,false);
-    n_.setParam("table_object_cluster/height_min" ,height_min_);
-    n_.setParam("table_object_cluster/height_max" ,height_min_);
-    n_.setParam("table_object_cluster/min_cluster_size", min_cluster_size_);
-    n_.setParam("table_object_clustercluster_tolerance", cluster_tolerance_);
+    n_.getParam("table_object_cluster/height_min" ,height_min_);
+    n_.getParam("table_object_cluster/height_max" ,height_max_);
+    n_.getParam("table_object_cluster/min_cluster_size", min_cluster_size_);
+    n_.getParam("table_object_cluster/cluster_tolerance", cluster_tolerance_);
+    ROS_INFO("cluster: %d,%f", min_cluster_size_, cluster_tolerance_);
     toc.setPrismHeight(height_min_, height_max_);
     toc.setClusterParams(min_cluster_size_, cluster_tolerance_);
   }
@@ -148,10 +149,16 @@ public:
     pcl::PointCloud<Point>::Ptr hull(new pcl::PointCloud<Point>);
     pcl::fromROSMsg(srv.response.pc, *pc);
     pcl::fromROSMsg(srv.response.hull, *hull);
+    Eigen::Vector4f plane_coeffs(srv.response.plane_coeffs[0].data,
+                                 srv.response.plane_coeffs[1].data,
+                                 srv.response.plane_coeffs[2].data,
+                                 srv.response.plane_coeffs[3].data);
     ROS_INFO("Hull size: %d", hull->size());
 
     pcl::PointCloud<Point>::Ptr pc_roi(new pcl::PointCloud<Point>);
     toc.extractTableRoi(pc, hull, *pc_roi);
+    //toc.extractTableRoi2(pc, hull, plane_coeffs, *pc_roi);
+    ROS_INFO("ROI size: %d", pc_roi->size());
     //TODO: proceed also if no bbs are sent
     pcl::PointCloud<Point>::Ptr pc_roi_red(new pcl::PointCloud<Point>);
     cob_env_model_msgs::GetBoundingBoxes srv2;
@@ -213,7 +220,7 @@ public:
       ss.clear();
       for(unsigned int i=0; i< bounding_boxes.size(); i++)
       {
-        ss << "/home/goa/tmp/bb_" << i << ".pcd";
+        ss << file_path_ << "/bb_" << i << ".pcd";
         pcl::io::savePCDFileASCII (ss.str(), bounding_boxes[i]);
         ss.str("");
         ss.clear();

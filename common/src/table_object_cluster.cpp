@@ -60,6 +60,9 @@
 #include <pcl/common/common.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/segmentation/extract_clusters.h>
+#include <pcl/sample_consensus/sac_model_plane.h>
+#include <pcl/surface/convex_hull.h>
+#include <pcl/io/pcd_io.h>
 
 void
 TableObjectCluster::extractTableRoi(pcl::PointCloud<Point>::Ptr& pc_in,
@@ -69,16 +72,59 @@ TableObjectCluster::extractTableRoi(pcl::PointCloud<Point>::Ptr& pc_in,
   pcl::ExtractPolygonalPrismData<Point> prism;
   // Consider only objects in a given layer above the table
   //TODO: check if valid values
+  //TODO: does not work for planes other than horizontal, PrismExtraction has to be modified
+  ROS_INFO("height limits: %f, %f ", height_min_, height_max_);
   prism.setHeightLimits(height_min_, height_max_);
   // ---[ Get the objects on top of the table
   pcl::PointIndices roi_indices;
   prism.setInputCloud(pc_in);
   prism.setInputPlanarHull(hull);
   prism.segment(roi_indices);
+  //ROS_INFO("Number of ROI inliers: %d", roi_indices.indices.size());
 
   pcl::ExtractIndices<Point> extract_roi;
   extract_roi.setInputCloud (pc_in);
   extract_roi.setIndices (boost::make_shared<const pcl::PointIndices> (roi_indices));
+  extract_roi.filter (pc_roi);
+}
+
+void
+TableObjectCluster::extractTableRoi2(pcl::PointCloud<Point>::Ptr& pc_in,
+                                    pcl::PointCloud<Point>::Ptr& hull,
+                                    Eigen::Vector4f& plane_coeffs,
+                                    pcl::PointCloud<Point>& pc_roi)
+{
+  pcl::PointIndices indices;
+  for(unsigned int i=0; i<pc_in->size(); i++)
+    indices.indices.push_back(i);
+  // Project all points
+  pcl::PointCloud<Point> projected_points;
+  pcl::SampleConsensusModelPlane<Point> sacmodel (pc_in);
+  //Eigen::Vector4f e_plane_coeffs(plane_coeffs.values[0],plane_coeffs.values[1],plane_coeffs.values[2],plane_coeffs.values[3]);
+  sacmodel.projectPoints (indices.indices, plane_coeffs, projected_points, false);
+  pcl::io::savePCDFileASCII ("/home/goa/tmp/proj.pcd", projected_points);
+  pcl::io::savePCDFileASCII ("/home/goa/tmp/hull.pcd", *hull);
+  pcl::PointIndices inliers;
+  std::cout << "Coeffs:" << plane_coeffs << std::endl;
+  int ctr=0, ctr2=0;
+  for(unsigned int i=0; i<pc_in->size(); i++)
+  {
+    double distance = pcl::pointToPlaneDistanceSigned (pc_in->points[i], plane_coeffs);
+    if (distance < height_min_ || distance > height_max_)
+         continue;
+    ctr++;
+    if (!pcl::isXYPointIn2DXYPolygon (projected_points.points[i], *hull))
+      continue;
+    ctr2++;
+    ROS_INFO("Point is in polygon");
+    inliers.indices.push_back(i);
+  }
+  ROS_INFO("Pts in height: %d", ctr);
+  ROS_INFO("Pts in poly: %d", ctr2);
+
+  pcl::ExtractIndices<Point> extract_roi;
+  extract_roi.setInputCloud (pc_in);
+  extract_roi.setIndices (boost::make_shared<const pcl::PointIndices> (inliers));
   extract_roi.filter (pc_roi);
 }
 

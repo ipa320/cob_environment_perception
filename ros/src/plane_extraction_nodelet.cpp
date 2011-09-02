@@ -263,10 +263,12 @@ public:
     }
     btVector3 bt_rob_pose = transform.getOrigin();
     Eigen::Vector3f rob_pose(bt_rob_pose.x(),bt_rob_pose.y(),bt_rob_pose.z());
+    ROS_INFO("Rob pose: (%f,%f,%f)", bt_rob_pose.x(),bt_rob_pose.y(),bt_rob_pose.z());
     unsigned int idx = 0;
     pe.findClosestTable(v_cloud_hull, v_coefficients_plane, rob_pose, idx);
     ROS_INFO("Hull %d size: %d", idx, v_cloud_hull[idx].size());
     pcl::copyPointCloud(v_cloud_hull[idx], hull_);
+    plane_coeffs_ = v_coefficients_plane[idx];
     as_->setSucceeded(result_);
   }
 
@@ -279,6 +281,11 @@ public:
     pcl::toROSMsg(hull_, hull_out);
     res.pc = pc_out;
     res.hull = hull_out;
+    res.plane_coeffs.resize(4);
+    res.plane_coeffs[0].data = plane_coeffs_.values[0];
+    res.plane_coeffs[1].data = plane_coeffs_.values[1];
+    res.plane_coeffs[2].data = plane_coeffs_.values[2];
+    res.plane_coeffs[3].data = plane_coeffs_.values[3];
     ROS_INFO("Hull size: %d", res.hull.width*res.hull.height);
     return true;
   }
@@ -395,6 +402,7 @@ protected:
   pcl::PointCloud<Point> pc_cur_;
   pcl::PointCloud<Point> pc_plane_;
   pcl::PointCloud<Point> hull_;
+  pcl::ModelCoefficients plane_coeffs_;
 
   TransformListener tf_listener_;
   int ctr_;
