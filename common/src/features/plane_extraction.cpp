@@ -349,21 +349,22 @@ PlaneExtraction::findClosestTable(std::vector<pcl::PointCloud<Point>, Eigen::ali
   std::vector<unsigned int> table_candidates;
   for(unsigned int i=0; i<v_cloud_hull.size(); i++)
   {
-    if(fabs(v_coefficients_plane[i].values[3])>0.5 && fabs(v_coefficients_plane[i].values[3])<1.2)
+    //if(fabs(v_coefficients_plane[i].values[3])>0.5 && fabs(v_coefficients_plane[i].values[3])<1.2)
       table_candidates.push_back(i);
   }
   if(table_candidates.size()>0)
   {
     for(unsigned int i=0; i<table_candidates.size(); i++)
     {
-      double d;
       double d_min = 1000;
+      double d = d_min;
       for(unsigned int j=0; j<v_cloud_hull[i].size(); j++)
       {
         Eigen::Vector3f p = v_cloud_hull[i].points[j].getVector3fMap();
         d += fabs((p-robot_pose).norm());
       }
       d /= v_cloud_hull[i].size();
+      ROS_INFO("d: %f", d);
       if(d<d_min)
       {
         d_min = d;
