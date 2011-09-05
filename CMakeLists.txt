@@ -115,3 +115,8 @@ target_link_libraries(cob_env_model_nodelets cob_env_model)
 #target_link_libraries(test_cpc_visualizer nodelet_cpc_publisher)
 #target_link_libraries(cpc_visualizer nodelet_cpc_publisher)
 target_link_libraries(norm_time cob_env_model)
+
+# add dynamic reconfigure api
+rosbuild_find_ros_package(dynamic_reconfigure)
+include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
+gencfg()

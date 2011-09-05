@@ -74,6 +74,10 @@
 #include <pcl_ros/transforms.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl/common/transform.h>
+#include <dynamic_reconfigure/server.h>
+
+
+#include <cob_env_model/feature_map_nodeConfig.h>
 
 #include "pcl/surface/convex_hull.h"
 #include "pcl/filters/project_inliers.h"
@@ -102,6 +106,10 @@ public:
   // Constructor
   FeatureMapNode()
   {
+    //setup for dynamic reconfigure
+    static dynamic_reconfigure::Server<cob_env_model::feature_map_nodeConfig> srv;
+    dynamic_reconfigure::Server<cob_env_model::feature_map_nodeConfig>::CallbackType f;
+
     ctr_ = 0;
     //convex_hull_sub_ = n_.subscribe("table_hull", 1, &FeatureMap::subCallback, this);
     polygon_sub_ = n_.subscribe("polygon_array", 10, &FeatureMapNode::polygonCallback, this);
@@ -111,12 +119,27 @@ public:
     n_.param("feature_map/save_to_file" ,save_to_file_ ,false);
     feature_map_.setFilePath(file_path_);
     feature_map_.setSaveToFile(save_to_file_);
+
+    f = boost::bind(&callback, this, _1, _2);
+    srv.setCallback(f);
   }
 
   // Destructor
   ~FeatureMapNode()
   {
     /// void
+  }
+
+  // callback for dynamic reconfigure
+  static void callback(FeatureMapNode *fmn, cob_env_model::feature_map_nodeConfig &config, uint32_t level)
+  {
+    //TODO: not multithreading safe
+
+    if(!fmn)
+      return;
+
+    fmn->feature_map_.setSaveToFile( config.save_to_file );
+    fmn->feature_map_.setFilePath( config.file_path );
   }
 
 

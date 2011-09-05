@@ -11,6 +11,7 @@
 
  
   <depend package="roscpp"/>
+  <depend package="rospy"/>
   <depend package="tf"/>
   <depend package="tf_conversions"/>
   <depend package="sensor_msgs"/>
@@ -24,6 +25,7 @@
   <depend package="nodelet"/>
   <depend package="actionlib"/>
   <depend package="actionlib_msgs"/>
+  <depend package="dynamic_reconfigure" />
   <depend package="cob_env_model_msgs"/>
 	<depend package="smach"/>
 	<depend package="smach_ros"/>
