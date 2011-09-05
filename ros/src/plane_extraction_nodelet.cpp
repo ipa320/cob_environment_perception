@@ -188,7 +188,7 @@ public:
   void
   pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc_in)
   {
-    ROS_INFO("Extract plane callback");
+    //ROS_INFO("Extract plane callback");
     boost::mutex::scoped_try_lock lock(mutex_);
     if(!lock)
     //if(!lock.owns_lock())
@@ -256,8 +256,8 @@ public:
     StampedTransform transform;
     try
     {
-      tf_listener_.waitForTransform("/map", "/base_link", pc_cur_.header.stamp, ros::Duration(0.5));
-      tf_listener_.lookupTransform("/map", "/base_link", pc_cur_.header.stamp, transform);
+      tf_listener_.waitForTransform("/map", "/head_cam3d_link", pc_cur_.header.stamp, ros::Duration(2));
+      tf_listener_.lookupTransform("/map", "/head_cam3d_link", pc_cur_.header.stamp, transform);
     }
     catch (tf::TransformException ex)
     {
