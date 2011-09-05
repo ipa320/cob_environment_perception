@@ -249,8 +249,8 @@ public:
           pcl_ros::transformPointCloud(*pc_in, *pc_in, transform);
           pc->header.frame_id = "/map";
           pc_in->header.frame_id = "/map";
-          //shiftCloud(pc);
-          //shiftCloud(pc_in);
+          shiftCloud(pc);
+          shiftCloud(pc_in);
           if(save_pc_trans_==true)
           {
             ss2.str("");
