@@ -358,12 +358,16 @@ PlaneExtraction::findClosestTable(std::vector<pcl::PointCloud<Point>, Eigen::ali
     {
       double d_min = 1000;
       double d = d_min;
-      for(unsigned int j=0; j<v_cloud_hull[i].size(); j++)
-      {
-        Eigen::Vector3f p = v_cloud_hull[i].points[j].getVector3fMap();
-        d += fabs((p-robot_pose).norm());
-      }
-      d /= v_cloud_hull[i].size();
+	Eigen::Vector4f centroid;
+	pcl::compute3DCentroid(v_cloud_hull[i], centroid);
+      //for(unsigned int j=0; j<v_cloud_hull[i].size(); j++)
+      //{
+      //  Eigen::Vector3f p = v_cloud_hull[i].points[j].getVector3fMap();
+      //  d += fabs((p-robot_pose).norm());
+      //}
+      //d /= v_cloud_hull[i].size();
+	Eigen::Vector3f centroid3 = centroid.head(3);
+	d = fabs((centroid3-robot_pose).norm());
       ROS_INFO("d: %f", d);
       if(d<d_min)
       {
