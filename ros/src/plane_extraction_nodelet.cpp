@@ -153,6 +153,8 @@ public:
     n_.param("plane_extraction/plane_constraint", plane_constraint_ ,0);
     n_.param("plane_extraction/mode_action", mode_action_ ,false);
     n_.param("plane_extraction/target_frame" ,target_frame_ ,std::string("/map"));
+    n_.param("plane_extraction/passthrough_min_z" ,passthrough_min_z_,-0.1);
+    n_.param("plane_extraction/passthrough_max_z" ,passthrough_max_z_,2.0);
     pe.setFilePath(file_path_);
     pe.setSaveToFile(save_to_file_);
     pe.setPlaneConstraint((PlaneConstraint)plane_constraint_);
@@ -172,7 +174,7 @@ public:
     voxel.setInputCloud(pc_in);
     voxel.setLeafSize(0.03,0.03,0.03);
     voxel.setFilterFieldName("z");
-    voxel.setFilterLimits(-0.1,3);
+    voxel.setFilterLimits(passthrough_min_z_, passthrough_max_z_);
     pcl::PointCloud<Point>::Ptr pc_vox = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>);
     voxel.filter(*pc_vox);
     //pcl::io::savePCDFileASCII ("/home/goa/tmp/after_voxel.pcd", *pc_vox);
@@ -412,6 +414,8 @@ protected:
   bool mode_action_;
   int plane_constraint_;
   std::string target_frame_;
+  double passthrough_min_z_;
+  double passthrough_max_z_;
 
 };
 
