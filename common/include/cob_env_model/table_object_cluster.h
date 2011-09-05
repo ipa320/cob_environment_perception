@@ -59,6 +59,7 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <Eigen/StdVector>
+#include <pcl/ModelCoefficients.h>
 
 
 class TableObjectCluster
@@ -80,6 +81,12 @@ public:
   extractTableRoi(pcl::PointCloud<Point>::Ptr& pc_in,
                   pcl::PointCloud<Point>::Ptr& hull,
                   pcl::PointCloud<Point>& pc_roi);
+
+  void
+  extractTableRoi2(pcl::PointCloud<Point>::Ptr& pc_in,
+                                      pcl::PointCloud<Point>::Ptr& hull,
+                                      Eigen::Vector4f& plane_coeffs,
+                                      pcl::PointCloud<Point>& pc_roi);
 
   void
   removeKnownObjects(pcl::PointCloud<Point>::Ptr& pc_roi,
