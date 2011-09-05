@@ -199,7 +199,7 @@ public:
    		}
         pcl::concatenateFields (cloud, cloud_normal, cloud_n);
 
-   		ROS_INFO_STREAM("Integrate time " <<time << " average normal length " << all/counter );
+   	//	ROS_INFO_STREAM("Integrate time " <<time << " average normal length " << all/counter );
        }
 
 
@@ -233,7 +233,7 @@ public:
     /**Uses the PCL BoundaryEstimation to find edges in a point cloud. Uses an angle criterion to detect edges
      * Unfortunately marks the outline of a point cloud as edge; needs normal estimation
      */
-        void extractEdgesBoundary(PointCloudT::Ptr& cloud_in, pcl::PointCloud<pcl::Boundary>& cloud_out, cv::Mat& border_image)
+        void extractEdgesBoundary(PointCloudT::Ptr& cloud_in, pcl::PointCloud<pcl::Boundary>& cloud_out, cv::Mat& border_image ,double threshold)
         {
 
                 pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud_n (new pcl::PointCloud<pcl::PointXYZRGBNormal> ());
@@ -253,8 +253,8 @@ public:
                 boundary.setRadiusSearch(0.03);
                 boundary.setInputNormals(cloud_n);
 
-                boundary.dist_threshold_ = 0.02; //increase to get more border points
-
+                //boundary.dist_threshold_ = 0.03; //increase to get more border points
+                boundary.dist_threshold_=threshold;
                 boundary.compute(cloud_out);
 
                 //pcl::PointCloud<pcl::PointXYZRGBNormal> boundary_cloud;
@@ -292,6 +292,8 @@ public:
                 //cv::imshow("boundary image", border_image);
                 //cv::waitKey();
                 ROS_INFO("Time elapsed for boundary estimation: %f", t.elapsed());
+                cv::imshow("Edges" , border_image);
+                cv::waitKey();
         }
 
 
@@ -751,7 +753,8 @@ int main(int argc, char** argv)
         /// Load PCD file as input; better use binary PCD files, ascii files seem to generate corrupt point clouds
         std::string directory("/home/goa-hh/pcl_daten/corner/");
         PointCloudT::Ptr cloud_in = PointCloudT::Ptr (new PointCloudT);
-        pcl::io::loadPCDFile(directory+"corner2.pcd", *cloud_in);
+
+        pcl::io::loadPCDFile(directory+"corner_close.pcd", *cloud_in);
 
         /// Extract edges on the color image
         /*cv::Mat color_image(cloud_in->height,cloud_in->width,CV_8UC3);
@@ -771,18 +774,20 @@ int main(int argc, char** argv)
       //  ef.estimatePointNormals(*cloud_in, *cloud_n);
 
        ef.integralEstimatePointNormals(*cloud_in, *cloud_n);
-        pcl::io::savePCDFileASCII (directory+"/corner_ni.pcd", *cloud_n);
+        pcl::io::savePCDFileASCII (directory+"/corner_n.pcd", *cloud_n);
     /// Extract edges using curvature
         //ef.extractEdgesCurvature(cloud_in, cloud_out);
         //pcl::io::savePCDFileASCII (directory+"/edges/edges_curvature.pcd", cloud_out);
         //ef.extractPrincipalCurvature(cloud_in, cloud_out);
         //return 0;
         /// Extract edges using boundary estimation
+        ef.extractEdgesBoundary(cloud_in, *cloud_out, border_image,0.025);
+        ef.extractEdgesBoundary(cloud_in, *cloud_out, border_image,0.027);
+        ef.extractEdgesBoundary(cloud_in, *cloud_out, border_image,0.031);
+        ef.extractEdgesBoundary(cloud_in, *cloud_out, border_image,0.034);
 
-        ef.extractEdgesBoundary(cloud_in, *cloud_out, border_image);
-
-        cv::imshow("Edges", border_image);
-        cv::waitKey();
+//        cv::imshow("Edges", border_image);
+//        cv::waitKey();
 
         pcl::PointCloud<PointLabel>::Ptr cloud_out2 = pcl::PointCloud<PointLabel>::Ptr (new pcl::PointCloud<PointLabel>);
         cloud_out2->height = cloud_out->height;

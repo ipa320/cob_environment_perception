@@ -70,6 +70,7 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::isBoundaryPoint 
   angles.reserve (indices.size ());
   for (size_t i = 0; i < indices.size (); ++i)
   {
+
     delta[0] = cloud.points[indices[i]].x - q_point.x;
     delta[1] = cloud.points[indices[i]].y - q_point.y;
     delta[2] = cloud.points[indices[i]].z - q_point.z;
@@ -308,7 +309,7 @@ template <typename PointInT, typename PointNT, typename PointOutT> int
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointInT, typename PointNT, typename PointOutT> void
-	ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::computeFeature (PointCloudOut &output)
+ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::computeFeature (PointCloudOut &output)
 {
   // Allocate enough space to hold the results
   // \note This resize is irrelevant for a radiusSearch ().
@@ -316,6 +317,8 @@ template <typename PointInT, typename PointNT, typename PointOutT> void
   std::vector<float> nn_dists (k_);
 
   Eigen::Vector3f u, v;
+ // dist_threshold_=calc_dist_threshold(*surface_);
+ // ROS_INFO_STREAM("threshold " << dist_threshold_);
 
   // Iterating over the entire index vector
   for (size_t idx = 0; idx < indices_->size (); ++idx)
@@ -348,6 +351,29 @@ template <typename PointInT, typename PointNT, typename PointOutT> void
     //std::cout << std::endl;
   }
 }
+template <typename PointInT, typename PointNT, typename PointOutT> float
+	ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::calc_dist_threshold (const pcl::PointCloud<PointInT> &cloud)
+	{
+
+	double z_points_;
+	int counter=0;
+	for (int i=0;i<cloud.size();i++)
+	{	if(cloud.points[i].z != cloud.points[i].z){
+	}
+	else {
+		z_points_ += cloud.points[i].z;
+		counter++;}
+	}
+
+
+		float avg_z_point_=z_points_/counter;
+		ROS_INFO_STREAM("avg z distance is  " << avg_z_point_);
+		//float threshold=20/100;
+		//threshold=1361/43000;//3/430*avg_z_point_;//+1361/43000;
+		//ROS_INFO_STREAM("thress" <<threshold );
+		return 1;
+	}
+
 
 #define PCL_INSTANTIATE_BoundaryEstimation(PointInT,PointNT,PointOutT) template class PCL_EXPORTS ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>;
 
