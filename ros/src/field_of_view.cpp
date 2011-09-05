@@ -65,6 +65,8 @@
 #include <visualization_msgs/Marker.h>
 #include <cob_env_model_msgs/GetFieldOfView.h>
 #include <Eigen/Core>
+#include <dynamic_reconfigure/server.h>
+#include <cob_env_model/field_of_viewConfig.h>
 
 // external includes
 #include <boost/timer.hpp>
@@ -80,14 +82,21 @@ public:
   // Constructor
   FieldOfView()
   {
+    //setup for dynamic reconfigure
+    static dynamic_reconfigure::Server<cob_env_model::field_of_viewConfig> srv;
+    dynamic_reconfigure::Server<cob_env_model::field_of_viewConfig>::CallbackType f;
+
     //TODO: launch parameter
     fov_marker_pub_ = n_.advertise<visualization_msgs::Marker>("fov_marker",10);
     get_fov_srv_ = n_.advertiseService("get_fov", &FieldOfView::srvCallback_GetFieldOfView, this);
-    sensor_fov_hor_ = /*57*//*65*/80*M_PI/180;
-    sensor_fov_ver_ = /*43*/47*M_PI/180;
-    sensor_max_range_ = 5;
+    setSensorFoV_hor(cob_env_model::field_of_viewConfig::__getDefault__().sensor_fov_hor_angel);
+    setSensorFoV_ver(cob_env_model::field_of_viewConfig::__getDefault__().sensor_fov_ver_angel);
+    setSensorMaxRange(cob_env_model::field_of_viewConfig::__getDefault__().sensor_max_range);
     camera_frame_ = std::string(/*"/base_kinect_rear_link"*/"/head_cam3d_link");
     computeFieldOfView();
+
+    f = boost::bind(&callback, this, _1, _2);
+    srv.setCallback(f);
   }
 
 
@@ -95,6 +104,37 @@ public:
   ~FieldOfView()
   {
     /// void
+  }
+
+  // callback for dynamic reconfigure
+  static void callback(FieldOfView *fov, cob_env_model::field_of_viewConfig &config, uint32_t level)
+  {
+    //TODO: not multithreading safe
+
+    if(!fov)
+      return;
+
+    if(level&1) //hor changed
+      fov->setSensorFoV_hor(config.sensor_fov_hor_angel);
+    if(level&2) //ver changed
+      fov->setSensorFoV_ver(config.sensor_fov_ver_angel);
+    if(level&4) //range changed
+      fov->setSensorMaxRange(config.sensor_max_range);
+
+    //new settings -> recalculate
+    fov->computeFieldOfView();
+  }
+
+  void setSensorFoV_hor(double val) {
+    sensor_fov_hor_ = val*M_PI/180;
+  }
+
+  void setSensorFoV_ver(double val) {
+    sensor_fov_ver_ = val*M_PI/180;
+  }
+
+  void setSensorMaxRange(double val) {
+    sensor_max_range_ = val;
   }
 
   void computeFieldOfView()
