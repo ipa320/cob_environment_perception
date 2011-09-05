@@ -8,6 +8,9 @@
   	<param name="save_to_file" type="bool" value="false"/>
   	<param name="plane_constraint" type="int" value="1"/>
   	<param name="mode_action" type="bool" value="true"/>
+  	<param name="target_frame" type="string" value="/map"/>
+  	<param name="passthrough_min_z" type="double" value="0.2"/>
+  	<param name="passthrough_max_z" type="double" value="2.0"/>
   	<remap from="point_cloud2" to="/cam3d/depth_registered/points"/>
   </node>  
 
