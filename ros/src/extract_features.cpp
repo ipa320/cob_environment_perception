@@ -233,7 +233,7 @@ public:
     /**Uses the PCL BoundaryEstimation to find edges in a point cloud. Uses an angle criterion to detect edges
      * Unfortunately marks the outline of a point cloud as edge; needs normal estimation
      */
-        void extractEdgesBoundary(PointCloudT::Ptr& cloud_in, pcl::PointCloud<pcl::Boundary>& cloud_out, cv::Mat& border_image ,double threshold)
+        void extractEdgesBoundary(PointCloudT::Ptr& cloud_in, pcl::PointCloud<pcl::Boundary>& cloud_out, cv::Mat& border_image )
         {
 
                 pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud_n (new pcl::PointCloud<pcl::PointXYZRGBNormal> ());
@@ -254,7 +254,7 @@ public:
                 boundary.setInputNormals(cloud_n);
 
                 //boundary.dist_threshold_ = 0.03; //increase to get more border points
-                boundary.dist_threshold_=threshold;
+                //boundary.dist_threshold_=threshold;
                 boundary.compute(cloud_out);
 
                 //pcl::PointCloud<pcl::PointXYZRGBNormal> boundary_cloud;
@@ -754,7 +754,7 @@ int main(int argc, char** argv)
         std::string directory("/home/goa-hh/pcl_daten/corner/");
         PointCloudT::Ptr cloud_in = PointCloudT::Ptr (new PointCloudT);
 
-        pcl::io::loadPCDFile(directory+"corner_close.pcd", *cloud_in);
+        pcl::io::loadPCDFile(directory+"corner.pcd", *cloud_in);
 
         /// Extract edges on the color image
         /*cv::Mat color_image(cloud_in->height,cloud_in->width,CV_8UC3);
@@ -781,10 +781,8 @@ int main(int argc, char** argv)
         //ef.extractPrincipalCurvature(cloud_in, cloud_out);
         //return 0;
         /// Extract edges using boundary estimation
-        ef.extractEdgesBoundary(cloud_in, *cloud_out, border_image,0.025);
-        ef.extractEdgesBoundary(cloud_in, *cloud_out, border_image,0.027);
-        ef.extractEdgesBoundary(cloud_in, *cloud_out, border_image,0.031);
-        ef.extractEdgesBoundary(cloud_in, *cloud_out, border_image,0.034);
+        ef.extractEdgesBoundary(cloud_in, *cloud_out, border_image);
+
 
 //        cv::imshow("Edges", border_image);
 //        cv::waitKey();

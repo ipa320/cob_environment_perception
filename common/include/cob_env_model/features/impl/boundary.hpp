@@ -317,7 +317,8 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::computeFeature (
   std::vector<float> nn_dists (k_);
 
   Eigen::Vector3f u, v;
- // dist_threshold_=calc_dist_threshold(*surface_);
+
+  dist_threshold_=calc_dist_threshold(*surface_);
  // ROS_INFO_STREAM("threshold " << dist_threshold_);
 
   // Iterating over the entire index vector
@@ -366,12 +367,12 @@ template <typename PointInT, typename PointNT, typename PointOutT> float
 	}
 
 
-		float avg_z_point_=z_points_/counter;
-		ROS_INFO_STREAM("avg z distance is  " << avg_z_point_);
-		//float threshold=20/100;
-		//threshold=1361/43000;//3/430*avg_z_point_;//+1361/43000;
-		//ROS_INFO_STREAM("thress" <<threshold );
-		return 1;
+		float avg_z_point_=static_cast< float >(z_points_)/counter;
+	//	float threshold=static_cast< float >(20)/100;
+		float threshold=static_cast< float >(-3)/static_cast< float >(430)*avg_z_point_+static_cast< float >(1361)/43000;
+		ROS_INFO_STREAM("avg z distance is  " << avg_z_point_ << "   threshold is " <<threshold );
+
+		return threshold;
 	}
 
 
