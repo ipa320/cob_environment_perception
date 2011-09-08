@@ -152,7 +152,9 @@ public:
     boost::mutex::scoped_lock l2(inst->m_mutex_pointCloudSubCallback);
 
     inst->point_map_.setICP_maxIterations(config.icp_max_iterations);
+    inst->point_map_.setICP_maxCorrDist(config.icp_max_first_corr_dist);
     inst->point_map_.setICP_maxCorrDist(config.icp_max_corr_dist);
+    inst->point_map_.setReuse(config.reuse);
     inst->point_map_.setICP_trfEpsilon(config.icp_trf_epsilon);
     inst->file_path_ = config.file_path;
     inst->save_pc_ = inst->save_map_fov_ = inst->save_map_ = config.save;
@@ -201,7 +203,7 @@ public:
     n_.param("aggregate_point_map/icp_max_first_corr_dist" ,icp_max_first_corr_dist,0.3);
     n_.param("aggregate_point_map/icp_trf_epsilon" ,icp_trf_epsilon,0.0005);
     n_.param("aggregate_point_map/use_reference_map",use_reference_map,false);
-    n_.param("aggregate_point_map/use_reference_map",reuse,true);
+    n_.param("aggregate_point_map/reuse",reuse,true);
     point_map_.setICP_maxIterations(icp_max_iterations);
     point_map_.setICP_maxCorrDist(icp_max_corr_dist);
     point_map_.setICP_maxFirstCorrDist(icp_max_first_corr_dist);
