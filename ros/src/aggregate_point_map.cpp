@@ -97,30 +97,76 @@
 #include <boost/timer.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 
+#include "cob_env_model/point_map.h"
+
+#include "reconfigureable_node.h"
+#include <cob_env_model/aggregate_point_mapConfig.h>
+
+// ROS message includes
+//#include <sensor_msgs/PointCloud2.h>
+#include <cob_env_model_msgs/GetFieldOfView.h>
+#include "cob_env_model_msgs/TriggerMappingAction.h"
+#include <cob_env_model_msgs/SetReferenceMap.h>
+#include <cob_srvs/Trigger.h>
+
+// external includes
+#include <boost/timer.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+
 
 using namespace tf;
 
 //####################
 //#### node class ####
-class AggregatePointMap : public pcl_ros::PCLNodelet
+class AggregatePointMap : public pcl_ros::PCLNodelet, protected Reconfigurable_Node<cob_env_model::aggregate_point_mapConfig>
 {
   typedef pcl::PointXYZ Point;
 
 public:
   // Constructor
   AggregatePointMap()
-  : first_(true),
+  : Reconfigurable_Node<cob_env_model::aggregate_point_mapConfig>("AggregatePointMap"),
+    point_map_(&ctr_),
     ctr_(0),
     is_running_(false)
-  {
-    pcl::io::loadPCDFile("/home/goa/pcl_daten/kitchen_ground_truth/whole_kitchen.pcd", ref_map_);
-  }
+    {
+    pcl::io::loadPCDFile("~/pcl_daten/kitchen_ground_truth/whole_kitchen.pcd", *point_map_.getRefMap());
+
+    setReconfigureCallback(boost::bind(&callback, this, _1, _2));
+    }
 
 
   // Destructor
   ~AggregatePointMap()
   {
     /// void
+  }
+
+  // callback for dynamic reconfigure
+  static void callback(AggregatePointMap *inst, cob_env_model::aggregate_point_mapConfig &config, uint32_t level)
+  {
+    if(!inst)
+      return;
+
+    boost::mutex::scoped_lock l1(inst->m_mutex_actionCallback);
+    boost::mutex::scoped_lock l2(inst->m_mutex_pointCloudSubCallback);
+
+    inst->point_map_.setICP_maxIterations(config.icp_max_iterations);
+    inst->point_map_.setICP_maxCorrDist(config.icp_max_corr_dist);
+    inst->point_map_.setICP_trfEpsilon(config.icp_trf_epsilon);
+    inst->file_path_ = config.file_path;
+    inst->save_pc_ = inst->save_map_fov_ = inst->save_map_ = config.save;
+    inst->save_pc_aligned_ = config.save_pc_aligned;
+    inst->save_pc_trans_ = config.save_pc_trans;
+    inst->voxel_leafsize_x_ = config.voxel_leafsize_x;
+    inst->voxel_leafsize_y_ = config.voxel_leafsize_y;
+    inst->voxel_leafsize_z_ = config.voxel_leafsize_z;
+    inst->r_limit_ = config.r_limit;
+    inst->p_limit_ = config.p_limit;
+    inst->y_limit_ = config.y_limit;
+    inst->distance_limit_ = config.distance_limit;
+    inst->point_map_.setUseReferenceMap(config.use_reference_map);
+
   }
 
   void
@@ -143,23 +189,40 @@ public:
     /*	n_.param("aggregate_point_map/set_maxiterations_FOV_", icp_max_iterations_FOV_, 70);
 		n_.param("aggregate_point_map/icp_max_corr_dist_FOV_", icp_max_corr_dist_FOV_ ,0.1);
 		n_.param("aggregate_point_map/icp_trf_epsilon_FOV_",icp_trf_epsilon_FOV_ ,1e-6); */
-    n_.param("aggregate_point_map/icp_max_iterations" ,icp_max_iterations_ ,50);
-    n_.param("aggregate_point_map/icp_max_corr_dist" ,icp_max_corr_dist_,0.1);
-    n_.param("aggregate_point_map/icp_trf_epsilon" ,icp_trf_epsilon_,1e-6);
-    n_.param("aggregate_point_map/file_path" ,file_path_ ,std::string("/home/goa/pcl_daten/table/icp/map_"));
+
+    int icp_max_iterations;
+    double icp_max_corr_dist;
+    double icp_max_first_corr_dist;
+    double icp_trf_epsilon;
+    bool use_reference_map, reuse;
+
+    n_.param("aggregate_point_map/icp_max_iterations" ,icp_max_iterations ,50);
+    n_.param("aggregate_point_map/icp_max_corr_dist" ,icp_max_corr_dist,0.05);;
+    n_.param("aggregate_point_map/icp_max_first_corr_dist" ,icp_max_first_corr_dist,0.3);
+    n_.param("aggregate_point_map/icp_trf_epsilon" ,icp_trf_epsilon,0.0005);
+    n_.param("aggregate_point_map/use_reference_map",use_reference_map,false);
+    n_.param("aggregate_point_map/use_reference_map",reuse,true);
+    point_map_.setICP_maxIterations(icp_max_iterations);
+    point_map_.setICP_maxCorrDist(icp_max_corr_dist);
+    point_map_.setICP_maxFirstCorrDist(icp_max_first_corr_dist);
+    point_map_.setICP_trfEpsilon(icp_trf_epsilon);
+    point_map_.setUseReferenceMap(use_reference_map);
+    point_map_.setReuse(reuse);
+
+
+    n_.param("aggregate_point_map/file_path" ,file_path_ ,std::string("~/pcl_daten/table/icp/map_"));
     n_.param("aggregate_point_map/save_pc",save_pc_ , false);
     n_.param("aggregate_point_map/save_map",save_map_ ,false);
     n_.param("aggregate_point_map/save_pc_aligned",save_pc_aligned_,false);
     n_.param("aggregate_point_map/save_map_fov" ,save_map_fov_,false);
     n_.param("aggregate_point_map/save_pc_trans" ,save_pc_trans_,false);
-    n_.param("aggregate_point_map/voxel_leafsize_x" ,voxel_leafsize_x_, 0.01);
-    n_.param("aggregate_point_map/voxel_leafsize_y" ,voxel_leafsize_y_, 0.01);
-    n_.param("aggregate_point_map/voxel_leafsize_z" ,voxel_leafsize_z_, 0.01);
+    n_.param("aggregate_point_map/voxel_leafsize_x" ,voxel_leafsize_x_, 0.05);
+    n_.param("aggregate_point_map/voxel_leafsize_y" ,voxel_leafsize_y_, 0.05);
+    n_.param("aggregate_point_map/voxel_leafsize_z" ,voxel_leafsize_z_, 0.05);
     n_.param("aggregate_point_map/r_limit",r_limit_,0.1);
     n_.param("aggregate_point_map/y_limit",y_limit_,0.1);
     n_.param("aggregate_point_map/p_limit",p_limit_,0.1);
     n_.param("aggregate_point_map/distance_limit",distance_limit_,0.3);
-    n_.param("aggregate_point_map/use_reference_map",use_reference_map_,false);
     std::stringstream ss;
     ss << file_path_ << "/gt.pcd";
     //pcl::io::savePCDFileASCII (ss.str(), ref_map_);
@@ -168,6 +231,8 @@ public:
   void
   pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc_in)
   {
+    boost::mutex::scoped_lock l(m_mutex_pointCloudSubCallback);
+
     boost::timer t;
     pcl::PointCloud<Point>::Ptr pc = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>);
     //ROS_INFO("PointCloudSubCallback");
@@ -179,7 +244,7 @@ public:
       tf_listener_.lookupTransform("/map", pc_in->header.frame_id, pc_in->header.stamp/*ros::Time(0)*/, transform);
       KDL::Frame frame_KDL, frame_KDL_old;
       tf::TransformTFToKDL(transform, frame_KDL);
-      tf::TransformTFToKDL(transform_old_, frame_KDL_old);
+      tf::TransformTFToKDL(point_map_.getOldTransform(), frame_KDL_old);
       double r,p,y;
       frame_KDL.M.GetRPY(r,p,y);
       double r_old,p_old,y_old;
@@ -229,8 +294,8 @@ public:
       }
       else*/
       {
-        if(first_ || fabs(r-r_old) > r_limit_ || fabs(p-p_old) > p_limit_ || fabs(y-y_old) > y_limit_ ||
-            transform.getOrigin().distance(transform_old_.getOrigin()) > distance_limit_)
+        if(point_map_.isFirst() || fabs(r-r_old) > r_limit_ || fabs(p-p_old) > p_limit_ || fabs(y-y_old) > y_limit_ ||
+            transform.getOrigin().distance(point_map_.getOldTransform().getOrigin()) > distance_limit_)
         {
           if(save_pc_==true)
           {
@@ -243,14 +308,9 @@ public:
           voxel.setLeafSize(voxel_leafsize_x_,voxel_leafsize_y_,voxel_leafsize_z_);
           voxel.filter(*pc);
           ROS_DEBUG("Registering new point cloud");
-          //transformPointCloud("/map", transform, pc->header.stamp, *(pc.get()), *(pc.get()));
-          //pcl_ros::transformPointCloud ("/map", *(pc.get()), *(pc.get()), tf_listener_);
-          pcl_ros::transformPointCloud(*pc, *pc, transform);
-          pcl_ros::transformPointCloud(*pc_in, *pc_in, transform);
-          pc->header.frame_id = "/map";
-          pc_in->header.frame_id = "/map";
-          //shiftCloud(pc);
-          //shiftCloud(pc_in);
+
+          point_map_.transform(pc_in, pc, transform);
+
           if(save_pc_trans_==true)
           {
             ss2.str("");
@@ -263,44 +323,37 @@ public:
             pcl::io::savePCDFileASCII (ss2.str(), *pc_in);
           }
 
-          pcl::PointCloud<Point> pc_aligned;
-          Eigen::Matrix4f icp_transform;
-          bool ret=false;
-          if(use_reference_map_)
-            ret = doFOVICPUsingReference(pc, pc_aligned, icp_transform);
-          else
-            ret = doFOVICP(pc, pc_aligned, icp_transform);
-          if(ret)
-          {
-            std::cout << "icp_transform: " << icp_transform << std::endl;
-            transform_old_ = transform;
-            pcl::transformPointCloud(*pc_in,*pc_in,icp_transform);
-            pc_in->header.frame_id = "/map";
-            if(first_)
+          cob_env_model_msgs::GetFieldOfView get_fov_srv;
+          if(!point_map_.getUseReferenceMap()) {
+            get_fov_srv.request.target_frame = std::string("/map");
+            get_fov_srv.request.stamp = pc->header.stamp;
+            if(get_fov_srv_client_.call(get_fov_srv))
             {
-              pcl::copyPointCloud(pc_aligned, map_);
-              map_.header.frame_id="/map";
-              first_ = false;
+              ROS_DEBUG("FOV service called [OK].");
             }
             else
-              map_ += pc_aligned;
-              //map_ += *pc_in;
-            //doICP(pc);
+            {
+              ROS_WARN("FOV service called [FAILED].");
+              return;
+            }
+          }
+
+          if(point_map_.compute(pc_in, pc, transform, &get_fov_srv)) {
             downsampleMap();
-            point_cloud_pub_.publish(map_);
+            point_cloud_pub_.publish(*point_map_.getMap());
             //pc->header.frame_id = "/map";
             point_cloud_pub_aligned_.publish(pc_in);
           }
           else
             ROS_INFO("FOV not successful");
-    
-	  ROS_INFO("[aggregate_point_map] ICP took %f s", t.elapsed());
+
+          ROS_INFO("[aggregate_point_map] ICP took %f s", t.elapsed());
 
           if(save_map_ ==true)
           {
             std::stringstream ss1;
             ss1 << file_path_ << "/map_" << ctr_ << ".pcd";
-            pcl::io::savePCDFileASCII (ss1.str(), map_);
+            pcl::io::savePCDFileASCII (ss1.str(), *point_map_.getMap());
           }
           if(save_pc_aligned_==true)
           {
@@ -319,205 +372,11 @@ public:
     }
   }
 
-
-  bool
-  doFOVICP(const pcl::PointCloud<Point>::Ptr& pc,
-           pcl::PointCloud<Point>& pc_aligned,
-           Eigen::Matrix4f& final_transformation)
-  {
-
-    if(first_)
-    {
-      pcl::copyPointCloud(*pc, pc_aligned);
-      final_transformation = Eigen::Matrix4f::Identity();
-      return true;
-    }
-    cob_env_model_msgs::GetFieldOfView get_fov_srv;
-    get_fov_srv.request.target_frame = std::string("/map");
-    get_fov_srv.request.stamp = pc->header.stamp;
-    if(get_fov_srv_client_.call(get_fov_srv))
-    {
-      ROS_DEBUG("FOV service called [OK].");
-    }
-    else
-    {
-      ROS_WARN("FOV service called [FAILED].");
-      return false;
-    }
-    n_up_t_(0) = get_fov_srv.response.fov.points[0].x;
-    n_up_t_(1) = get_fov_srv.response.fov.points[0].y;
-    n_up_t_(2) = get_fov_srv.response.fov.points[0].z;
-    n_down_t_(0) = get_fov_srv.response.fov.points[1].x;
-    n_down_t_(1) = get_fov_srv.response.fov.points[1].y;
-    n_down_t_(2) = get_fov_srv.response.fov.points[1].z;
-    n_right_t_(0) = get_fov_srv.response.fov.points[2].x;
-    n_right_t_(1) = get_fov_srv.response.fov.points[2].y;
-    n_right_t_(2) = get_fov_srv.response.fov.points[2].z;
-    n_left_t_(0) = get_fov_srv.response.fov.points[3].x;
-    n_left_t_(1) = get_fov_srv.response.fov.points[3].y;
-    n_left_t_(2) = get_fov_srv.response.fov.points[3].z;
-    n_origin_t_(0) = get_fov_srv.response.fov.points[4].x;
-    n_origin_t_(1) = get_fov_srv.response.fov.points[4].y;
-    n_origin_t_(2) = get_fov_srv.response.fov.points[4].z;
-    n_max_range_t_(0) = get_fov_srv.response.fov.points[5].x;
-    n_max_range_t_(1) = get_fov_srv.response.fov.points[5].y;
-    n_max_range_t_(2) = get_fov_srv.response.fov.points[5].z;
-
-
-    //segment FOV
-    seg_.setInputCloud(map_.makeShared());
-    //transformNormals(map_.header.frame_id, pc->header.stamp);
-    pcl::PointIndices indices;
-    seg_.segment(indices, n_up_t_, n_down_t_, n_right_t_, n_left_t_, n_origin_t_, n_max_range_t_);
-    pcl::PointCloud<Point> frustum;
-    pcl::ExtractIndices<Point> extractIndices;
-    extractIndices.setInputCloud(map_.makeShared());
-    extractIndices.setIndices(boost::make_shared<pcl::PointIndices>(indices));
-    extractIndices.filter(frustum);
-    ROS_DEBUG("[aggregate_point_map] Frustum size: %d", (int)frustum.size());
-    if (save_map_fov_==true)
-    {
-      std::stringstream ss;
-      ss << file_path_ << "/map_fov_" << ctr_ << ".pcd";
-      pcl::io::savePCDFileASCII (ss.str(), frustum);
-    }
-
-    //do ICP
-    pcl::IterativeClosestPoint<Point,Point> icp;
-    icp.setInputCloud(pc->makeShared());
-    //icp.setIndices(boost::make_shared<pcl::PointIndices>(indices));
-    icp.setInputTarget(frustum.makeShared());
-    icp.setMaximumIterations(icp_max_iterations_);
-    icp.setMaxCorrespondenceDistance(icp_max_corr_dist_);
-    icp.setTransformationEpsilon (icp_trf_epsilon_);
-    //pcl::PointCloud<Point> pc_aligned;
-    icp.align(pc_aligned);
-    final_transformation = icp.getFinalTransformation();
-
-    //TODO: check if converged, check fitness score; if not => don't use pc
-    ROS_INFO("[aggregate_point_map] ICP has converged: %d\n", icp.hasConverged());
-    ROS_INFO("[aggregate_point_map] Fitness score: %f", icp.getFitnessScore());
-    return true;
-  }
-
-
-  bool
-  doFOVICPUsingReference(const pcl::PointCloud<Point>::Ptr& pc,
-           pcl::PointCloud<Point>& pc_aligned,
-           Eigen::Matrix4f& final_transformation)
-  {
-
-    /*cob_env_model::GetFieldOfView get_fov_srv;
-    get_fov_srv.request.target_frame = std::string("/map");
-    get_fov_srv.request.stamp = pc->header.stamp;
-    if(get_fov_srv_client_.call(get_fov_srv))
-    {
-      ROS_DEBUG("FOV service called [OK].");
-    }
-    else
-    {
-      ROS_WARN("FOV service called [FAILED].");
-      return false;
-    }
-    n_up_t_(0) = get_fov_srv.response.fov.points[0].x;
-    n_up_t_(1) = get_fov_srv.response.fov.points[0].y;
-    n_up_t_(2) = get_fov_srv.response.fov.points[0].z;
-    n_down_t_(0) = get_fov_srv.response.fov.points[1].x;
-    n_down_t_(1) = get_fov_srv.response.fov.points[1].y;
-    n_down_t_(2) = get_fov_srv.response.fov.points[1].z;
-    n_right_t_(0) = get_fov_srv.response.fov.points[2].x;
-    n_right_t_(1) = get_fov_srv.response.fov.points[2].y;
-    n_right_t_(2) = get_fov_srv.response.fov.points[2].z;
-    n_left_t_(0) = get_fov_srv.response.fov.points[3].x;
-    n_left_t_(1) = get_fov_srv.response.fov.points[3].y;
-    n_left_t_(2) = get_fov_srv.response.fov.points[3].z;
-    n_origin_t_(0) = get_fov_srv.response.fov.points[4].x;
-    n_origin_t_(1) = get_fov_srv.response.fov.points[4].y;
-    n_origin_t_(2) = get_fov_srv.response.fov.points[4].z;
-    n_max_range_t_(0) = get_fov_srv.response.fov.points[5].x;
-    n_max_range_t_(1) = get_fov_srv.response.fov.points[5].y;
-    n_max_range_t_(2) = get_fov_srv.response.fov.points[5].z;
-
-
-    //segment FOV
-    seg_.setInputCloud(ref_map_.makeShared());
-    //transformNormals(map_.header.frame_id, pc->header.stamp);
-    pcl::PointIndices indices;
-    seg_.segment(indices, n_up_t_, n_down_t_, n_right_t_, n_left_t_, n_origin_t_, n_max_range_t_);
-    pcl::PointCloud<Point> frustum;
-    pcl::ExtractIndices<Point> extractIndices;
-    extractIndices.setInputCloud(ref_map_.makeShared());
-    extractIndices.setIndices(boost::make_shared<pcl::PointIndices>(indices));
-    extractIndices.filter(frustum);
-    ROS_DEBUG("[aggregate_point_map] Frustum size: %d", (int)frustum.size());
-    if (save_map_fov_==true)
-    {
-      std::stringstream ss;
-      ss << file_path_ << "/map_fov_" << ctr_ << ".pcd";
-      pcl::io::savePCDFileASCII (ss.str(), frustum);
-    }*/
-
-    //do ICP
-    pcl::IterativeClosestPoint<Point,Point> icp;
-    icp.setInputCloud(pc->makeShared());
-    //icp.setIndices(boost::make_shared<pcl::PointIndices>(indices));
-    icp.setInputTarget(ref_map_.makeShared());
-    icp.setMaximumIterations(icp_max_iterations_);
-    icp.setMaxCorrespondenceDistance(icp_max_corr_dist_);
-    icp.setTransformationEpsilon (icp_trf_epsilon_);
-    //pcl::PointCloud<Point> pc_aligned;
-    icp.align(pc_aligned);
-    final_transformation = icp.getFinalTransformation();
-
-    //TODO: check if converged, check fitness score; if not => don't use pc
-    ROS_INFO("[aggregate_point_map] ICP params (max_it, corr_dist, eps): %d,%f,%f\n", icp_max_iterations_, icp_max_corr_dist_, icp_trf_epsilon_);
-    ROS_INFO("[aggregate_point_map] ICP has converged: %d\n", icp.hasConverged());
-    ROS_INFO("[aggregate_point_map] Fitness score: %f", icp.getFitnessScore());
-    return true;
-  }
-
-
-  void
-  doICP(const pcl::PointCloud<Point>::Ptr& pc)
-  {
-    //TODO: change map2_ to map_, flag for IO operations, publish to callback
-    //Open file for timer log
-    boost::timer t;
-
-    //Perform ICP
-    pcl::IterativeClosestPoint<Point,Point> icp;
-    icp.setInputCloud(pc);
-    icp.setInputTarget(map_.makeShared());
-    icp.setMaximumIterations(icp_max_iterations_);
-    icp.setMaxCorrespondenceDistance(icp_max_corr_dist_);
-    icp.setTransformationEpsilon (icp_trf_epsilon_);
-    pcl::PointCloud<Point> pc_aligned;
-    icp.align(pc_aligned);
-    map_ += pc_aligned;
-
-    //TODO: output as ROS_DEBUG
-    double time = t.elapsed();
-    ROS_DEBUG("ICP has converged: %d\n", icp.hasConverged());
-    ROS_DEBUG("Fitness score: %f", icp.getFitnessScore());
-    ROS_DEBUG("\tTime: %f", time);
-
-    //TODO: parameter for file path
-    if(save_icp_map_==true)
-    {
-      std::stringstream ss1;
-      ss1 << file_path_ << ctr_ << ".pcd";
-      pcl::io::savePCDFileASCII (ss1.str(), map_);
-    }
-    /*pcl::VoxelGrid<Point> vox_filter;
-		vox_filter.setInputCloud(map_.makeShared());
-		vox_filter.setLeafSize(0.03, 0.03, 0.03);
-		vox_filter.filter(map2_);*/
-    //point_cloud_pub_.publish(map2_);
-  }
-
   void
   actionCallback(const cob_env_model_msgs::TriggerMappingGoalConstPtr &goal)
   {
+    boost::mutex::scoped_lock l(m_mutex_actionCallback);
+
     cob_env_model_msgs::TriggerMappingResult result;
     if(goal->start && !is_running_)
     {
@@ -533,26 +392,13 @@ public:
     as_->setSucceeded(result);
   }
 
-
-  void
-  downsampleMap()
-  {
-    pcl::VoxelGrid<Point> vox_filter;
-    vox_filter.setInputCloud(map_.makeShared());
-    vox_filter.setLeafSize(voxel_leafsize_x_,voxel_leafsize_y_,voxel_leafsize_z_);
-    vox_filter.filter(map_);
-  }
-
   bool
   clearMap(cob_srvs::Trigger::Request &req,
            cob_srvs::Trigger::Response &res)
   {
     //TODO: add mutex
     ROS_INFO("Clearing point map...");
-    map_.points.clear();
-    map_.width = 0;
-    map_.height = 0;
-    first_ = true;
+    point_map_.clearMap();
     return true;
   }
 
@@ -560,16 +406,16 @@ public:
   setReferenceMap(cob_env_model_msgs::SetReferenceMap::Request &req,
                   cob_env_model_msgs::SetReferenceMap::Response &res)
   {
-    pcl::fromROSMsg(req.map, ref_map_);
+    pcl::fromROSMsg(req.map, *point_map_.getRefMap());
     return true;
   }
 
-  void
-  shiftCloud(const pcl::PointCloud<Point>::Ptr& pc)
+  void downsampleMap()
   {
-    for(unsigned int i=0; i<pc->size(); i++)
-      pc->points[i].y+=0.15;
-      //pc->points[i].z+=0.2;
+    pcl::VoxelGrid<Point> vox_filter;
+    vox_filter.setInputCloud(point_map_.getMap()->makeShared());
+    vox_filter.setLeafSize(voxel_leafsize_x_,voxel_leafsize_y_,voxel_leafsize_z_);
+    vox_filter.filter(*point_map_.getMap());
   }
 
 
@@ -588,18 +434,10 @@ protected:
   actionlib::SimpleActionServer<cob_env_model_msgs::TriggerMappingAction>* as_;
 
   TransformListener tf_listener_;
-  StampedTransform transform_old_;
 
-  pcl::PointCloud<Point> map_;	//FOV ICP map
-  pcl::PointCloud<Point> ref_map_;  //reference map
+  PointMap point_map_;
 
-  bool first_;
   bool is_running_;
-
-  // Parameters for ICP
-  int icp_max_iterations_;
-  double icp_max_corr_dist_;
-  double icp_trf_epsilon_;
 
   double voxel_leafsize_x_;
   double voxel_leafsize_y_;
@@ -612,7 +450,6 @@ protected:
   bool save_pc_aligned_;
   bool save_icp_fov_pc_;
   bool save_map_fov_;
-  bool save_icp_map_;
   bool save_pc_trans_;
 
   double y_limit_;
@@ -620,21 +457,149 @@ protected:
   double r_limit_;
   double p_limit_;
 
-  bool use_reference_map_;
-
-  Eigen::Vector3d n_up_t_;
-  Eigen::Vector3d n_down_t_;
-  Eigen::Vector3d n_right_t_;
-  Eigen::Vector3d n_left_t_;
-  Eigen::Vector3d n_origin_t_;
-  Eigen::Vector3d n_max_range_t_;
-
-  ipa_env_model::FieldOfViewSegmentation<Point> seg_;
-
   int ctr_;
+
+  boost::mutex m_mutex_pointCloudSubCallback, m_mutex_actionCallback;
 
 };
 
+double testPointMap(pcl::PointCloud<pcl::PointXYZ> pc, pcl::PointCloud<pcl::PointXYZ> _pc_in, const pcl::PointCloud<pcl::PointXYZ> * const ref_map, int max_it, double max_dist, double trf, bool reset, const std::string &fn_out, double &time) {
+  pcl::PointCloud<pcl::PointXYZ>::Ptr pc_in = _pc_in.makeShared();
 
-PLUGINLIB_DECLARE_CLASS(cob_env_model, AggregatePointMap, AggregatePointMap, nodelet::Nodelet)
+  setVerbosityLevel(pcl::console::L_DEBUG);
+
+  static PointMap point_map_(0);
+
+  if(reset)
+    point_map_ = PointMap(0);
+
+  if(!point_map_.getUseReferenceMap()) {
+    *point_map_.getRefMap() = *ref_map;
+    point_map_.setUseReferenceMap(true);
+
+    point_map_.setICP_maxIterations(max_it);
+    point_map_.setICP_maxCorrDist(max_dist);
+    point_map_.setICP_maxFirstCorrDist(0.3);
+    point_map_.setICP_trfEpsilon(trf);
+    point_map_.setReuse(true);
+  }
+
+  /*{
+    pcl::VoxelGrid<pcl::PointXYZ> vox_filter;
+    vox_filter.setInputCloud(pc_in);
+    vox_filter.setLeafSize(0.05,0.05,0.05);
+    vox_filter.filter(_pc_in);
+  }*/
+  {
+    pcl::VoxelGrid<pcl::PointXYZ> vox_filter;
+    vox_filter.setInputCloud(pc.makeShared());
+    vox_filter.setLeafSize(0.05,0.05,0.05);
+    vox_filter.filter(pc);
+  }
+
+  StampedTransform transform;
+  if(point_map_.compute(pc_in, pc.makeShared(), transform, NULL)) {
+
+    if(fn_out.size()>0) {
+      pcl::VoxelGrid<pcl::PointXYZ> vox_filter;
+      vox_filter.setInputCloud(point_map_.getMap()->makeShared());
+      vox_filter.setLeafSize(0.05,0.05,0.05);
+      vox_filter.filter(*point_map_.getMap());
+
+      pcl::io::savePCDFileASCII (fn_out.c_str(), *point_map_.getMap());
+    }
+
+    //ROS_INFO("Success");
+  }
+
+  time=point_map_.getComputionTime();
+
+  return point_map_.getFitness();
+}
+
+
+int main (int argc, char** argv)
+{
+  ros::init (argc, argv, "aggregate_point_map");
+
+  AggregatePointMap apm;
+
+  //preload files
+  std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> files,files_in;
+  pcl::PointCloud<pcl::PointXYZ> ref_map;
+
+  pcl::io::loadPCDFile("/home/goa-jh/bagfiles/kitchen_real_empty/icp/pc_in_trans_0.pcd", ref_map);
+  for(int loopCount=0; loopCount<9; loopCount++) {
+    std::stringstream ss1;
+    ss1 << "/home/goa-jh/bagfiles/kitchen_real_empty/icp/pc_trans_" << loopCount << ".pcd";
+    std::stringstream ss2;
+    ss2 << "/home/goa-jh/bagfiles/kitchen_real_empty/icp/pc_in_trans_" << loopCount << ".pcd";
+
+    pcl::PointCloud<pcl::PointXYZ> _pc_in, _pc;
+    pcl::io::loadPCDFile(ss2.str().c_str(), _pc_in);
+    files_in.push_back(_pc_in.makeShared());
+
+    pcl::io::loadPCDFile(ss1.str().c_str(), _pc);
+    files.push_back(_pc.makeShared());
+  }
+/*
+  {
+    pcl::VoxelGrid<pcl::PointXYZ> vox_filter;
+    vox_filter.setInputCloud(ref_map.makeShared());
+    vox_filter.setLeafSize(0.5,0.5,0.5);
+    vox_filter.filter(ref_map);
+  }*/
+
+
+  int max_it=50;
+  double max_dist=0.05, trf=0.0005;//1e-6;
+
+  ros::Rate loop_rate(10);
+  while (ros::ok())
+  {
+    ros::spinOnce ();
+    loop_rate.sleep();
+
+    FILE *f=fopen("/home/goa-jh/log_apm_real_reuse.txt","w");
+    //for(max_it=50; max_it<1000; max_it+=10)
+    {
+      //for(max_dist=0.05; max_dist<1.6; max_dist+=0.1) {
+      //for(max_dist=0.1; max_dist<1.3; max_dist+=0.2)
+      {
+        //for(trf=1e-8; trf<1e-4; trf*=10)
+        {
+
+          double res=0;
+          double time=0.;
+          for(int loopCount=0; loopCount<files.size(); loopCount++) {
+            double t=0.;
+
+            std::stringstream ss3;
+            ss3 << "/home/goa-jh/bagfiles/myown/mapo_"<<max_it<<"_"<<max_dist<<"_" << loopCount << ".pcd";
+
+            res+=testPointMap(*files[loopCount],*files_in[loopCount], &ref_map, max_it, max_dist, trf, loopCount==0,ss3.str(),t);
+            time+=t;
+
+            if(!ros::ok())
+               return 0;
+          }
+
+          std::stringstream ss;
+          ss<<max_it<<"\t"<<max_dist<<"\t"<<trf<<"\t"<<time<<"\t"<<res<<"\r\n";
+          fputs(ss.str().c_str(), f);
+
+        }
+
+        fflush(f);
+      }
+
+    }
+    fclose(f);
+
+    return 0;
+
+  }
+}
+
+//PLUGINLIB_DECLARE_CLASS(cob_env_model, AggregatePointMap, AggregatePointMap, nodelet::Nodelet)
 

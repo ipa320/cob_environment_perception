@@ -74,7 +74,7 @@
 #include <pcl_ros/transforms.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl/common/transform.h>
-#include <dynamic_reconfigure/server.h>
+#include "reconfigureable_node.h"
 
 
 #include <cob_env_model/feature_map_nodeConfig.h>
@@ -99,17 +99,14 @@
 
 //####################
 //#### nodelet class ####
-class FeatureMapNode : public pcl_ros::PCLNodelet
+class FeatureMapNode : public pcl_ros::PCLNodelet, protected Reconfigurable_Node<cob_env_model::feature_map_nodeConfig>
 {
 public:
 
   // Constructor
   FeatureMapNode()
+  : Reconfigurable_Node<cob_env_model::feature_map_nodeConfig>("FeatureMapNode")
   {
-    //setup for dynamic reconfigure
-    static dynamic_reconfigure::Server<cob_env_model::feature_map_nodeConfig> srv;
-    dynamic_reconfigure::Server<cob_env_model::feature_map_nodeConfig>::CallbackType f;
-
     ctr_ = 0;
     //convex_hull_sub_ = n_.subscribe("table_hull", 1, &FeatureMap::subCallback, this);
     polygon_sub_ = n_.subscribe("polygon_array", 10, &FeatureMapNode::polygonCallback, this);
@@ -120,8 +117,7 @@ public:
     feature_map_.setFilePath(file_path_);
     feature_map_.setSaveToFile(save_to_file_);
 
-    f = boost::bind(&callback, this, _1, _2);
-    srv.setCallback(f);
+    setReconfigureCallback(boost::bind(&callback, this, _1, _2));
   }
 
   // Destructor

@@ -72,9 +72,8 @@
 #include <pcl_ros/point_cloud.h>
 #include <actionlib/server/simple_action_server.h>
 #include <pcl/point_types.h>
-#include <dynamic_reconfigure/server.h>
 
-
+#include "reconfigureable_node.h"
 #include <cob_env_model/table_object_cluster_nodeletConfig.h>
 
 
@@ -94,23 +93,19 @@
 
 //####################
 //#### nodelet class ####
-class TableObjectClusterNodelet : public pcl_ros::PCLNodelet
+class TableObjectClusterNodelet : public pcl_ros::PCLNodelet, protected Reconfigurable_Node<cob_env_model::table_object_cluster_nodeletConfig>
 {
 public:
   typedef pcl::PointXYZ Point;
   // Constructor
   TableObjectClusterNodelet()
-  : as_(0)
+  : Reconfigurable_Node<cob_env_model::table_object_cluster_nodeletConfig>("TableObjectClusterNodelet"),
+    as_(0)
   {
-    //setup for dynamic reconfigure
-    static dynamic_reconfigure::Server<cob_env_model::table_object_cluster_nodeletConfig> srv;
-    dynamic_reconfigure::Server<cob_env_model::table_object_cluster_nodeletConfig>::CallbackType f;
-
     save_to_file_ = cob_env_model::table_object_cluster_nodeletConfig::__getDefault__().save_to_file;
     file_path_ = cob_env_model::table_object_cluster_nodeletConfig::__getDefault__().file_path;
 
-    f = boost::bind(&callback, this, _1, _2);
-    srv.setCallback(f);
+    setReconfigureCallback(boost::bind(&callback, this, _1, _2));
   }
 
   // Destructor
