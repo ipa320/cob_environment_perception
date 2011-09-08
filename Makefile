@@ -174,6 +174,19 @@ ROSBUILD_gensrv_lisp/fast:
 .PHONY : ROSBUILD_gensrv_lisp/fast
 
 #=============================================================================
+# Target rules for targets named aggregate_point_map
+
+# Build rule for target.
+aggregate_point_map: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 aggregate_point_map
+.PHONY : aggregate_point_map
+
+# fast build rule for target.
+aggregate_point_map/fast:
+	$(MAKE) -f CMakeFiles/aggregate_point_map.dir/build.make CMakeFiles/aggregate_point_map.dir/build
+.PHONY : aggregate_point_map/fast
+
+#=============================================================================
 # Target rules for targets named clean-test-results
 
 # Build rule for target.
@@ -687,6 +700,24 @@ common/src/map/gpc.s:
 .PHONY : common/src/map/gpc.s
 
 # target to build an object file
+common/src/point_map.o:
+	$(MAKE) -f CMakeFiles/aggregate_point_map.dir/build.make CMakeFiles/aggregate_point_map.dir/common/src/point_map.o
+	$(MAKE) -f CMakeFiles/cob_env_model.dir/build.make CMakeFiles/cob_env_model.dir/common/src/point_map.o
+.PHONY : common/src/point_map.o
+
+# target to preprocess a source file
+common/src/point_map.i:
+	$(MAKE) -f CMakeFiles/aggregate_point_map.dir/build.make CMakeFiles/aggregate_point_map.dir/common/src/point_map.i
+	$(MAKE) -f CMakeFiles/cob_env_model.dir/build.make CMakeFiles/cob_env_model.dir/common/src/point_map.i
+.PHONY : common/src/point_map.i
+
+# target to generate assembly for a file
+common/src/point_map.s:
+	$(MAKE) -f CMakeFiles/aggregate_point_map.dir/build.make CMakeFiles/aggregate_point_map.dir/common/src/point_map.s
+	$(MAKE) -f CMakeFiles/cob_env_model.dir/build.make CMakeFiles/cob_env_model.dir/common/src/point_map.s
+.PHONY : common/src/point_map.s
+
+# target to build an object file
 common/src/table_object_cluster.o:
 	$(MAKE) -f CMakeFiles/cob_env_model.dir/build.make CMakeFiles/cob_env_model.dir/common/src/table_object_cluster.o
 .PHONY : common/src/table_object_cluster.o
@@ -748,16 +779,19 @@ common/src/tools/eval_mapping.s:
 
 # target to build an object file
 ros/src/aggregate_point_map.o:
+	$(MAKE) -f CMakeFiles/aggregate_point_map.dir/build.make CMakeFiles/aggregate_point_map.dir/ros/src/aggregate_point_map.o
 	$(MAKE) -f CMakeFiles/cob_env_model_nodelets.dir/build.make CMakeFiles/cob_env_model_nodelets.dir/ros/src/aggregate_point_map.o
 .PHONY : ros/src/aggregate_point_map.o
 
 # target to preprocess a source file
 ros/src/aggregate_point_map.i:
+	$(MAKE) -f CMakeFiles/aggregate_point_map.dir/build.make CMakeFiles/aggregate_point_map.dir/ros/src/aggregate_point_map.i
 	$(MAKE) -f CMakeFiles/cob_env_model_nodelets.dir/build.make CMakeFiles/cob_env_model_nodelets.dir/ros/src/aggregate_point_map.i
 .PHONY : ros/src/aggregate_point_map.i
 
 # target to generate assembly for a file
 ros/src/aggregate_point_map.s:
+	$(MAKE) -f CMakeFiles/aggregate_point_map.dir/build.make CMakeFiles/aggregate_point_map.dir/ros/src/aggregate_point_map.s
 	$(MAKE) -f CMakeFiles/cob_env_model_nodelets.dir/build.make CMakeFiles/cob_env_model_nodelets.dir/ros/src/aggregate_point_map.s
 .PHONY : ros/src/aggregate_point_map.s
 
@@ -998,6 +1032,7 @@ help:
 	@echo "... ROSBUILD_genmsg_lisp"
 	@echo "... ROSBUILD_gensrv_cpp"
 	@echo "... ROSBUILD_gensrv_lisp"
+	@echo "... aggregate_point_map"
 	@echo "... clean-test-results"
 	@echo "... cob_env_model"
 	@echo "... cob_env_model_nodelets"
@@ -1054,6 +1089,9 @@ help:
 	@echo "... common/src/map/gpc.o"
 	@echo "... common/src/map/gpc.i"
 	@echo "... common/src/map/gpc.s"
+	@echo "... common/src/point_map.o"
+	@echo "... common/src/point_map.i"
+	@echo "... common/src/point_map.s"
 	@echo "... common/src/table_object_cluster.o"
 	@echo "... common/src/table_object_cluster.i"
 	@echo "... common/src/table_object_cluster.s"

@@ -91,6 +91,9 @@
 #include "pcl/filters/voxel_grid.h"
 #include <Eigen/StdVector>
 
+#include <reconfigureable_node.h>
+#include <cob_env_model/plane_extraction_nodeletConfig.h>
+
 
 // ROS message includes
 //#include <sensor_msgs/PointCloud2.h>
@@ -110,17 +113,20 @@ using namespace tf;
 
 //####################
 //#### nodelet class ####
-class PlaneExtractionNodelet : public pcl_ros::PCLNodelet
+class PlaneExtractionNodelet : public pcl_ros::PCLNodelet, protected Reconfigurable_Node<cob_env_model::plane_extraction_nodeletConfig>
 {
 public:
   typedef pcl::PointXYZ Point;
   // Constructor
   PlaneExtractionNodelet()
   : as_(0),
-    mode_action_(false)
+    mode_action_(false),
+    Reconfigurable_Node<cob_env_model::plane_extraction_nodeletConfig>("PlaneExtractionNodelet")
   {
     ctr_ = 0;
     min_cluster_size_ = 300;
+
+    setReconfigureCallback(boost::bind(&callback, this, _1, _2));
   }
 
   // Destructor
@@ -128,6 +134,26 @@ public:
   {
     /// void
     if(as_) delete as_;
+  }
+
+  // callback for dynamic reconfigure
+  static void callback(PlaneExtractionNodelet *inst, cob_env_model::plane_extraction_nodeletConfig &config, uint32_t level)
+  {
+    if(!inst)
+      return;
+
+    boost::mutex::scoped_lock l1(inst->m_mutex_actionCallback);
+    boost::mutex::scoped_lock l2(inst->m_mutex_pointCloudSubCallback);
+
+    inst->file_path_ = config.file_path;
+    inst->save_to_file_ = config.save_to_file;
+    inst->plane_constraint_ = config.plane_constraint;
+    inst->mode_action_ = config.mode_action;
+    inst->target_frame_ = config.target_frame;
+
+    inst->pe.setFilePath(inst->file_path_);
+    inst->pe.setSaveToFile(inst->save_to_file_);
+    inst->pe.setPlaneConstraint((PlaneConstraint)inst->plane_constraint_);
   }
 
 
@@ -186,6 +212,8 @@ public:
   void
   pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc_in)
   {
+    boost::mutex::scoped_lock l2(m_mutex_pointCloudSubCallback);
+
     ROS_INFO("Extract plane callback");
     boost::mutex::scoped_try_lock lock(mutex_);
     if(!lock)
@@ -228,6 +256,8 @@ public:
   void
   actionCallback(const cob_env_model_msgs::PlaneExtractionGoalConstPtr &goal)
   {
+    boost::mutex::scoped_lock l1(m_mutex_actionCallback);
+
     ROS_INFO("action callback");
     //TODO: use scoped_lock
     boost::mutex::scoped_lock lock(mutex_);
@@ -412,6 +442,8 @@ protected:
   bool mode_action_;
   int plane_constraint_;
   std::string target_frame_;
+
+  boost::mutex m_mutex_pointCloudSubCallback, m_mutex_actionCallback;
 
 };
 
