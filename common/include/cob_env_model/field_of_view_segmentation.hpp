@@ -60,7 +60,7 @@
 
 template <typename PointT>
 void ipa_env_model::FieldOfViewSegmentation<PointT>::segment(pcl::PointIndices &indices,
-		Eigen::Vector3d &n_up, Eigen::Vector3d &n_down, Eigen::Vector3d &n_right, Eigen::Vector3d &n_left, Eigen::Vector3d &n_origin, Eigen::Vector3d &n_max_range)
+		const Eigen::Vector3d &n_up, const Eigen::Vector3d &n_down, const Eigen::Vector3d &n_right, const Eigen::Vector3d &n_left, const Eigen::Vector3d &n_origin, const Eigen::Vector3d &n_max_range)
 {
 	indices.header = input_->header;
 	for(unsigned int i = 0; i<input_->points.size(); i++)

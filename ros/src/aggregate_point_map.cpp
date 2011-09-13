@@ -142,7 +142,17 @@ public:
     /// void
   }
 
-  // callback for dynamic reconfigure
+  /**
+   * @brief callback for dynamic reconfigure
+   *
+   * everytime the dynamic reconfiguration changes this function will be called
+   *
+   * @param inst instance of AggregatePointMap which parameters should be changed
+   * @param config data of configuration
+   * @param level bit descriptor which notifies which parameter changed
+   *
+   * @return nothing
+   */
   static void callback(AggregatePointMap *inst, cob_env_model::aggregate_point_mapConfig &config, uint32_t level)
   {
     if(!inst)
@@ -171,6 +181,14 @@ public:
 
   }
 
+
+  /**
+   * @brief initializes parameters
+   *
+   * initializes parameters
+   *
+   * @return nothing
+   */
   void
   onInit()
   {
@@ -230,6 +248,19 @@ public:
     //pcl::io::savePCDFileASCII (ss.str(), ref_map_);
   }
 
+  /**
+   * @brief callback for point cloud subroutine
+   *
+   * callback for point cloud subroutine which loads in the first step
+   * the unexact transformation from the laser sensors and calibrates the
+   * input cloud from the 3d camera. This already transformed data will be
+   * used to build a 3d map either aligned to the first frame or to an
+   * existing map. Additionally debug output to *.pcd files are possible.
+   *
+   * @param pc_in  new point cloud
+   *
+   * @return nothing
+   */
   void
   pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc_in)
   {
@@ -374,6 +405,16 @@ public:
     }
   }
 
+
+  /**
+   * @brief action callback
+   *
+   * default action callback to start or stop node
+   *
+   * @param goal settings
+   *
+   * @return nothing
+   */
   void
   actionCallback(const cob_env_model_msgs::TriggerMappingGoalConstPtr &goal)
   {
@@ -394,6 +435,16 @@ public:
     as_->setSucceeded(result);
   }
 
+  /**
+   * @brief clears map
+   *
+   * deletes 3d map of the environment
+   *
+   * @param req not needed
+   * @param res not needed
+   *
+   * @return nothing
+   */
   bool
   clearMap(cob_srvs::Trigger::Request &req,
            cob_srvs::Trigger::Response &res)
@@ -404,6 +455,16 @@ public:
     return true;
   }
 
+  /**
+   * @brief sets reference map
+   *
+   * sets the 3d map representing the environment which is used to align new frames
+   *
+   * @param req containing reference map
+   * @param res not needed
+   *
+   * @return nothing
+   */
   bool
   setReferenceMap(cob_env_model_msgs::SetReferenceMap::Request &req,
                   cob_env_model_msgs::SetReferenceMap::Response &res)
@@ -412,6 +473,14 @@ public:
     return true;
   }
 
+
+  /**
+   * @brief downsamples the map
+   *
+   * downsamples the map using the voxel_lefsize parameters to voxelize
+   *
+   * @return nothing
+   */
   void downsampleMap()
   {
     pcl::VoxelGrid<Point> vox_filter;
@@ -486,6 +555,7 @@ double testPointMap(pcl::PointCloud<pcl::PointXYZ> pc, pcl::PointCloud<pcl::Poin
     point_map_.setReuse(true);
   }
 
+  double voxel=0.05;
   /*{
     pcl::VoxelGrid<pcl::PointXYZ> vox_filter;
     vox_filter.setInputCloud(pc_in);
@@ -495,7 +565,7 @@ double testPointMap(pcl::PointCloud<pcl::PointXYZ> pc, pcl::PointCloud<pcl::Poin
   {
     pcl::VoxelGrid<pcl::PointXYZ> vox_filter;
     vox_filter.setInputCloud(pc.makeShared());
-    vox_filter.setLeafSize(0.05,0.05,0.05);
+    vox_filter.setLeafSize(voxel,voxel,voxel);
     vox_filter.filter(pc);
   }
 
@@ -505,7 +575,7 @@ double testPointMap(pcl::PointCloud<pcl::PointXYZ> pc, pcl::PointCloud<pcl::Poin
     if(fn_out.size()>0) {
       pcl::VoxelGrid<pcl::PointXYZ> vox_filter;
       vox_filter.setInputCloud(point_map_.getMap()->makeShared());
-      vox_filter.setLeafSize(0.05,0.05,0.05);
+      vox_filter.setLeafSize(voxel,voxel,voxel);
       vox_filter.filter(*point_map_.getMap());
 
       pcl::io::savePCDFileASCII (fn_out.c_str(), *point_map_.getMap());
@@ -530,7 +600,8 @@ int main (int argc, char** argv)
   std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> files,files_in;
   pcl::PointCloud<pcl::PointXYZ> ref_map;
 
-  pcl::io::loadPCDFile("/home/goa-jh/bagfiles/kitchen_real_empty/icp/pc_in_trans_0.pcd", ref_map);
+  //pcl::io::loadPCDFile("/home/goa-jh/bagfiles/kitchen_real_empty/icp/pc_in_trans_0.pcd", ref_map);
+  pcl::io::loadPCDFile("/home/goa-jh/bagfiles/kitchen_sim_empty_n0/icp/map_28.pcd", ref_map);
   for(int loopCount=0; loopCount<9; loopCount++) {
     std::stringstream ss1;
     ss1 << "/home/goa-jh/bagfiles/kitchen_real_empty/icp/pc_trans_" << loopCount << ".pcd";

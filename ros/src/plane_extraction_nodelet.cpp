@@ -136,7 +136,17 @@ public:
     if(as_) delete as_;
   }
 
-  // callback for dynamic reconfigure
+  /**
+   * @brief callback for dynamic reconfigure
+   *
+   * everytime the dynamic reconfiguration changes this function will be called
+   *
+   * @param inst instance of PlaneExtractionNodelet which parameters should be changed
+   * @param config data of configuration
+   * @param level bit descriptor which notifies which parameter changed
+   *
+   * @return nothing
+   */
   static void callback(PlaneExtractionNodelet *inst, cob_env_model::plane_extraction_nodeletConfig &config, uint32_t level)
   {
     if(!inst)
@@ -157,6 +167,13 @@ public:
   }
 
 
+  /**
+   * @brief initializes parameters
+   *
+   * initializes parameters
+   *
+   * @return nothing
+   */
   void onInit()
   {
     PCLNodelet::onInit();
@@ -184,6 +201,19 @@ public:
     pe.setPlaneConstraint((PlaneConstraint)plane_constraint_);
   }
 
+
+  /**
+   * @brief extracts planes from a point cloud
+   *
+   * extracts planes from a point cloud
+   *
+   * @param pc_in input point cloud
+   * @param v_cloud_hull output point cloud with points lying inside the plane
+   * @param v_hull_polygons output polygons which describes the plane
+   * @param v_coefficients_plane coefficients of the plane calculated by the segmentation of the inliers
+   *
+   * @return nothing
+   */
   void extractPlane(const pcl::PointCloud<Point>::Ptr& pc_in,
                     std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > >& v_cloud_hull,
                     std::vector<std::vector<pcl::Vertices> >& v_hull_polygons,
@@ -208,7 +238,16 @@ public:
 
 
   }
-  // pc_in should be in a coordinate system with z pointing upwards
+
+  /**
+   * @brief extracts planes from a point cloud
+   *
+   * point cloud will be transformed and then extracted if mode_action is false
+   *
+   * @param pc_in input point cloud, should be in a coordinate system with z pointing upwards
+   *
+   * @return nothing
+   */
   void
   pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc_in)
   {
@@ -253,6 +292,15 @@ public:
 
   }
 
+  /**
+   * @brief extracts planes from a point cloud and saves coefficients of nearest table
+   *
+   * extracts planes from a point cloud and saves coefficients of nearest table
+   *
+   * @param goal unused
+   *
+   * @return nothing
+   */
   void
   actionCallback(const cob_env_model_msgs::PlaneExtractionGoalConstPtr &goal)
   {
@@ -302,6 +350,16 @@ public:
     as_->setSucceeded(result_);
   }
 
+  /**
+   * @brief publishes nearest table
+   *
+   * publishes nearest table
+   *
+   * @param req unused
+   * @param res result with coefficients
+   *
+   * @return nothing
+   */
   bool
   srvCallback(cob_env_model_msgs::GetPlane::Request &req, cob_env_model_msgs::GetPlane::Response &res)
   {
@@ -320,7 +378,16 @@ public:
     return true;
   }
 
-
+  /**
+   * @brief creates polygon from point cloud and publish it
+   *
+   * creates polygon from point cloud and publish it
+   *
+   * @param cloud_hull point cloud
+   * @param header header of published polygons
+   *
+   * @return nothing
+   */
   void
   publishPolygons(pcl::PointCloud<Point>& cloud_hull,
                   std_msgs::Header header)
@@ -337,6 +404,18 @@ public:
     polygon_pub_.publish(polygon);
   }
 
+  /**
+   * @brief creates polygon from parameters and publish it
+   *
+   * creates polygon from parameters and publish it
+   *
+   * @param cloud_hull point cloud
+   * @param hull_polygons polygons
+   * @param coefficients_plane coefficients
+   * @param header header of published polygons
+   *
+   * @return nothing
+   */
   void
   publishPolygonArray(pcl::PointCloud<Point>& cloud_hull,
                       std::vector< pcl::Vertices >& hull_polygons,
@@ -364,6 +443,19 @@ public:
     }
   }
 
+  /**
+   * @brief publish markers
+   *
+   * publish markers
+   *
+   * @param cloud_hull point cloud
+   * @param header header of published polygons
+   * @param r red
+   * @param g green
+   * @param b blue
+   *
+   * @return nothing
+   */
   void
   publishMarker(pcl::PointCloud<Point>& cloud_hull,
                 std_msgs::Header header,

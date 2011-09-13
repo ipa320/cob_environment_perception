@@ -101,7 +101,17 @@ public:
     /// void
   }
 
-  // callback for dynamic reconfigure
+  /**
+   * @brief callback for dynamic reconfigure
+   *
+   * everytime the dynamic reconfiguration changes this function will be called
+   *
+   * @param inst instance of FieldOfView which parameters should be changed
+   * @param config data of configuration
+   * @param level bit descriptor which notifies which parameter changed
+   *
+   * @return nothing
+   */
   static void callback(FieldOfView *fov, cob_env_model::field_of_viewConfig &config, uint32_t level)
   {
     if(!fov)
@@ -132,6 +142,13 @@ public:
     sensor_max_range_ = val;
   }
 
+  /**
+   * @brief calculates coordinate system from parameters
+   *
+   * calculates coordinate system from parameters
+   *
+   * @return nothing
+   */
   void computeFieldOfView()
   {
     //don't lock
@@ -178,6 +195,17 @@ public:
 
   }
 
+
+  /**
+   * @brief uses global transformation (of the robot) to recalculate the field of view
+   *
+   * uses global transformation (of the robot) to recalculate the field of view (all vectors)
+   *
+   * @param stamp timestamp indicating used frame
+   * @param target_frame targetframe
+   *
+   * @return nothing
+   */
   void transformFOV(ros::Time stamp, std::string target_frame)
   {
     //std::string target_frame = std::string("/map");
@@ -260,6 +288,17 @@ public:
     }
   }
 
+
+  /**
+   * @brief generates markers to visualize field of view vectors
+   *
+   * generates markers to visualize field of view vectors
+   *
+   * @param stamp timestamp indicating used frame
+   * @param target_frame targetframe
+   *
+   * @return markers
+   */
   visualization_msgs::Marker generateMarker(std::string& target_frame, ros::Time& stamp)
   {
     tf::Pose marker_pose(btQuaternion(0,0,0,1),btVector3(0,0.5,0));
@@ -357,6 +396,17 @@ public:
   }
 
 
+
+  /**
+   * @brief request to recalculate the field of view
+   *
+   * request to recalculate the field of view
+   *
+   * @param req parameters
+   * @param res containing field of view vectors
+   *
+   * @return nothing
+   */
   bool srvCallback_GetFieldOfView(cob_env_model_msgs::GetFieldOfView::Request &req,
                                   cob_env_model_msgs::GetFieldOfView::Response &res)
   {
