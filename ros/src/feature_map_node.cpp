@@ -126,7 +126,17 @@ public:
     /// void
   }
 
-  // callback for dynamic reconfigure
+  /**
+   * @brief callback for dynamic reconfigure
+   *
+   * everytime the dynamic reconfiguration changes this function will be called
+   *
+   * @param inst instance of AggregatePointMap which parameters should be changed
+   * @param config data of configuration
+   * @param level bit descriptor which notifies which parameter changed
+   *
+   * @return nothing
+   */
   static void callback(FeatureMapNode *fmn, cob_env_model::feature_map_nodeConfig &config, uint32_t level)
   {
     //TODO: not multithreading safe
@@ -139,6 +149,15 @@ public:
   }
 
 
+  /**
+   * @brief callback for adding polygons to feature map and publishing them
+   *
+   * callback for adding polygons to feature map and publishing them
+   *
+   * @param p ros message containing feature map
+   *
+   * @return nothing
+   */
   void
   polygonCallback(const cob_env_model_msgs::PolygonArray::ConstPtr p)
   {
@@ -151,6 +170,16 @@ public:
     //ROS_INFO("%d polygons received so far", ctr_);
   }
 
+  /**
+   * @brief reading a ros message to convert it to a feature map
+   *
+   * reading a ros message to convert it to a feature map
+   *
+   * @param p ros message containing polygons
+   * @param map_entry output to feature map
+   *
+   * @return nothing
+   */
   void
   convertFromROSMsg(const cob_env_model_msgs::PolygonArray& p, FeatureMap::MapEntry& map_entry)
   {
@@ -181,6 +210,16 @@ public:
     }
   }
 
+  /**
+   * @brief writing to a ros message to convert a feature map
+   *
+   * writing to a ros message to convert a feature map
+   *
+   * @param p ros message containing polygons
+   * @param map_entry input as feature map
+   *
+   * @return nothing
+   */
   void
   convertToROSMsg(const FeatureMap::MapEntry& map_entry, cob_env_model_msgs::PolygonArray& p)
   {
@@ -201,6 +240,15 @@ public:
     }
   }
 
+  /**
+   * @brief output featuremap to dump file
+   *
+   * output featuremap to dump file, path is hard coded
+   *
+   * @param m feature map
+   *
+   * @return nothing
+   */
   void dumpPolygonToFile(FeatureMap::MapEntry& m)
   {
     static int ctr=0;
@@ -235,6 +283,14 @@ public:
     }*/
   }
 
+
+  /**
+   * @brief publishes the last polygon of every feature
+   *
+   * publishes the last polygon of every feature
+   *
+   * @return nothing
+   */
   void publishMapPolygons()
   {
     geometry_msgs::PolygonStamped p;
@@ -257,6 +313,13 @@ public:
     }
   }
 
+  /**
+   * @brief publishes the contour of the polygons
+   *
+   * publishes the contour of the polygons
+   *
+   * @return nothing
+   */
   void publishMapMarker()
   {
     visualization_msgs::Marker marker;

@@ -1,9 +1,9 @@
 /*
- * point_map.cpp
- *
- *  Created on: Sep 6, 2011
- *      Author: goa-jh
- */
+* point_map.cpp
+*
+* Created on: Sep 6, 2011
+* Author: goa-jh
+*/
 
 #include "cob_env_model/table_object_cluster.h"
 
@@ -125,12 +125,12 @@ bool PointMap::doFOVICP(const pcl::PointCloud<Point>::Ptr& pc,
   ROS_DEBUG("[aggregate_point_map] Frustum size: %d", (int)frustum.size());
 
   /*TODO:
-   * if (save_map_fov_==true)
-  {
-    std::stringstream ss;
-    ss << file_path_ << "/map_fov_" << ctr_ << ".pcd";
-    pcl::io::savePCDFileASCII (ss.str(), frustum);
-  }*/
+* if (save_map_fov_==true)
+{
+std::stringstream ss;
+ss << file_path_ << "/map_fov_" << ctr_ << ".pcd";
+pcl::io::savePCDFileASCII (ss.str(), frustum);
+}*/
 
   //do ICP
   pcl::IterativeClosestPoint<Point,Point> icp;
@@ -161,54 +161,54 @@ bool PointMap::doFOVICPUsingReference(const pcl::PointCloud<Point>::Ptr& pc,
 {
 
   /*cob_env_model::GetFieldOfView get_fov_srv;
-  get_fov_srv->request.target_frame = std::string("/map");
-  get_fov_srv->request.stamp = pc->header.stamp;
-  if(get_fov_srv_client_.call(get_fov_srv))
-  {
-    ROS_DEBUG("FOV service called [OK].");
-  }
-  else
-  {
-    ROS_WARN("FOV service called [FAILED].");
-    return false;
-  }
-  n_up_t_(0) = get_fov_srv->response.fov.points[0].x;
-  n_up_t_(1) = get_fov_srv->response.fov.points[0].y;
-  n_up_t_(2) = get_fov_srv->response.fov.points[0].z;
-  n_down_t_(0) = get_fov_srv->response.fov.points[1].x;
-  n_down_t_(1) = get_fov_srv->response.fov.points[1].y;
-  n_down_t_(2) = get_fov_srv->response.fov.points[1].z;
-  n_right_t_(0) = get_fov_srv->response.fov.points[2].x;
-  n_right_t_(1) = get_fov_srv->response.fov.points[2].y;
-  n_right_t_(2) = get_fov_srv->response.fov.points[2].z;
-  n_left_t_(0) = get_fov_srv->response.fov.points[3].x;
-  n_left_t_(1) = get_fov_srv->response.fov.points[3].y;
-  n_left_t_(2) = get_fov_srv->response.fov.points[3].z;
-  n_origin_t_(0) = get_fov_srv->response.fov.points[4].x;
-  n_origin_t_(1) = get_fov_srv->response.fov.points[4].y;
-  n_origin_t_(2) = get_fov_srv->response.fov.points[4].z;
-  n_max_range_t_(0) = get_fov_srv->response.fov.points[5].x;
-  n_max_range_t_(1) = get_fov_srv->response.fov.points[5].y;
-  n_max_range_t_(2) = get_fov_srv->response.fov.points[5].z;
+get_fov_srv->request.target_frame = std::string("/map");
+get_fov_srv->request.stamp = pc->header.stamp;
+if(get_fov_srv_client_.call(get_fov_srv))
+{
+ROS_DEBUG("FOV service called [OK].");
+}
+else
+{
+ROS_WARN("FOV service called [FAILED].");
+return false;
+}
+n_up_t_(0) = get_fov_srv->response.fov.points[0].x;
+n_up_t_(1) = get_fov_srv->response.fov.points[0].y;
+n_up_t_(2) = get_fov_srv->response.fov.points[0].z;
+n_down_t_(0) = get_fov_srv->response.fov.points[1].x;
+n_down_t_(1) = get_fov_srv->response.fov.points[1].y;
+n_down_t_(2) = get_fov_srv->response.fov.points[1].z;
+n_right_t_(0) = get_fov_srv->response.fov.points[2].x;
+n_right_t_(1) = get_fov_srv->response.fov.points[2].y;
+n_right_t_(2) = get_fov_srv->response.fov.points[2].z;
+n_left_t_(0) = get_fov_srv->response.fov.points[3].x;
+n_left_t_(1) = get_fov_srv->response.fov.points[3].y;
+n_left_t_(2) = get_fov_srv->response.fov.points[3].z;
+n_origin_t_(0) = get_fov_srv->response.fov.points[4].x;
+n_origin_t_(1) = get_fov_srv->response.fov.points[4].y;
+n_origin_t_(2) = get_fov_srv->response.fov.points[4].z;
+n_max_range_t_(0) = get_fov_srv->response.fov.points[5].x;
+n_max_range_t_(1) = get_fov_srv->response.fov.points[5].y;
+n_max_range_t_(2) = get_fov_srv->response.fov.points[5].z;
 
 
-  //segment FOV
-  seg_.setInputCloud(ref_map_.makeShared());Call the regist
-  //transformNormals(map_.header.frame_id, pc->header.stamp);
-  pcl::PointIndices indices;
-  seg_.segment(indices, n_up_t_, n_down_t_, n_right_t_, n_left_t_, n_origin_t_, n_max_range_t_);
-  pcl::PointCloud<Point> frustum;
-  pcl::ExtractIndices<Point> extractIndices;
-  extractIndices.setInputCloud(ref_map_.makeShared());
-  extractIndices.setIndices(boost::make_shared<pcl::PointIndices>(indices));
-  extractIndices.filter(frustum);
-  ROS_DEBUG("[aggregate_point_map] Frustum size: %d", (int)frustum.size());
-  if (save_map_fov_==true)
-  {
-    std::stringstream ss;
-    ss << file_path_ << "/map_fov_" << ctr_ << ".pcd";
-    pcl::io::savePCDFileASCII (ss.str(), frustum);
-  }*/
+//segment FOV
+seg_.setInputCloud(ref_map_.makeShared());Call the regist
+//transformNormals(map_.header.frame_id, pc->header.stamp);
+pcl::PointIndices indices;
+seg_.segment(indices, n_up_t_, n_down_t_, n_right_t_, n_left_t_, n_origin_t_, n_max_range_t_);
+pcl::PointCloud<Point> frustum;
+pcl::ExtractIndices<Point> extractIndices;
+extractIndices.setInputCloud(ref_map_.makeShared());
+extractIndices.setIndices(boost::make_shared<pcl::PointIndices>(indices));
+extractIndices.filter(frustum);
+ROS_DEBUG("[aggregate_point_map] Frustum size: %d", (int)frustum.size());
+if (save_map_fov_==true)
+{
+std::stringstream ss;
+ss << file_path_ << "/map_fov_" << ctr_ << ".pcd";
+pcl::io::savePCDFileASCII (ss.str(), frustum);
+}*/
 
   //do ICP
   MyIterativeClosestPoint icp;
@@ -224,11 +224,11 @@ bool PointMap::doFOVICPUsingReference(const pcl::PointCloud<Point>::Ptr& pc,
   //pcl::PointCloud<Point> pc_aligned;
 
   /*std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > > v_cloud_hull;
-  pcl::PointCloud< std::string > tt,tt2;
-  tt.insert(tt.begin(),std::string("hi"));
-  std::string key="test";
-  icp.setSourceFeature< std::string >(tt.makeShared(),key);
-  icp.setTargetFeature< std::string >(tt2.makeShared(),key);*/
+pcl::PointCloud< std::string > tt,tt2;
+tt.insert(tt.begin(),std::string("hi"));
+std::string key="test";
+icp.setSourceFeature< std::string >(tt.makeShared(),key);
+icp.setTargetFeature< std::string >(tt2.makeShared(),key);*/
 
   //icp.align(pc_aligned, old_icp_transform_);
   if(first_||!use_reuse_)
@@ -238,7 +238,7 @@ bool PointMap::doFOVICPUsingReference(const pcl::PointCloud<Point>::Ptr& pc,
 
   final_transformation = icp.getFinalTransformation();
 
-  //std::cout<<tt2.size();
+//std::cout<<tt2.size();
 
 #if POINT_MAP_FITNESS_TEST
   fitness_=icp.getFitnessScore(10.);
@@ -286,9 +286,9 @@ void PointMap::doICP(const pcl::PointCloud<Point>::Ptr& pc)
     pcl::io::savePCDFileASCII (ss1.str(), map_);
   }
   /*pcl::VoxelGrid<Point> vox_filter;
-              vox_filter.setInputCloud(map_.makeShared());
-              vox_filter.setLeafSize(0.03, 0.03, 0.03);
-              vox_filter.filter(map2_);*/
+vox_filter.setInputCloud(map_.makeShared());
+vox_filter.setLeafSize(0.03, 0.03, 0.03);
+vox_filter.filter(map2_);*/
   //point_cloud_pub_.publish(map2_);
 }
 

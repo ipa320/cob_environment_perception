@@ -77,26 +77,81 @@ public:
   };
   ~TableObjectCluster() {};
 
+  /**
+   * @brief extracts objects at top of a plane
+   *
+   * extracts objects at top of a plane using a prism
+   *
+   * @param pc_in input point cloud
+   * @param hull hull describing plane
+   * @param pc_roi output point cloud containing extracted objects
+   *
+   * @return nothing
+   */
   void
   extractTableRoi(pcl::PointCloud<Point>::Ptr& pc_in,
                   pcl::PointCloud<Point>::Ptr& hull,
                   pcl::PointCloud<Point>& pc_roi);
 
+  /**
+   * @brief extracts objects at top of a plane
+   *
+   * extracts objects at top of a plane using distance
+   *
+   * @param pc_in input point cloud
+   * @param hull hull describing plane
+   * @param plane_coeffs coefficients describing plane
+   * @param pc_roi output point cloud containing extracted objects
+   *
+   * @return nothing
+   */
   void
   extractTableRoi2(pcl::PointCloud<Point>::Ptr& pc_in,
                                       pcl::PointCloud<Point>::Ptr& hull,
                                       Eigen::Vector4f& plane_coeffs,
                                       pcl::PointCloud<Point>& pc_roi);
 
+  /**
+   * @brief removes known objects by bounding box
+   *
+   * removes known objects by bounding box
+   *
+   * @param pc_roi input point cloud with objects
+   * @param bounding_boxes bounding boxes of known objects
+   * @param pc_roi_red output point cloud without known objects
+   *
+   * @return nothing
+   */
   void
   removeKnownObjects(pcl::PointCloud<Point>::Ptr& pc_roi,
                      std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > >& bounding_boxes,
                      pcl::PointCloud<Point>& pc_roi_red);
 
+  /**
+   * @brief removes known objects by bounding box
+   *
+   * removes known objects by bounding box
+   *
+   * @param pc_roi input point cloud with objects
+   * @param bounding_boxes bounding boxes of known objects
+   * @param pc_roi_red output point cloud without known objects
+   *
+   * @return nothing
+   */
   void
   calculateBoundingBoxes(pcl::PointCloud<Point>::Ptr& pc_roi_red,
                      std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > >& bounding_boxes);
 
+  /**
+   * @brief sets parameters for filtering
+   *
+   * sets parameters for filtering
+   *
+   * @param height_min
+   * @param height_max
+   *
+   * @return nothing
+   */
   void
   setPrismHeight(double height_min, double height_max)
   {
@@ -104,6 +159,16 @@ public:
     height_max_ = height_max;
   }
 
+  /**
+   * @brief sets parameters for filtering
+   *
+   * sets parameters for filtering
+   *
+   * @param min_cluster_size
+   * @param cluster_tolerance
+   *
+   * @return nothing
+   */
   void
   setClusterParams(int min_cluster_size, double cluster_tolerance)
   {
