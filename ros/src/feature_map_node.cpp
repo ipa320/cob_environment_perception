@@ -309,7 +309,7 @@ public:
           p.polygon.points[k].z = pm.polygon_world[j][k](2);
         }
       }
-      map_pub_.publish(p);
+      map_pub_.publish(p);      //TODO: check -> right place?
     }
   }
 

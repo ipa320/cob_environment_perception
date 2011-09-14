@@ -130,7 +130,7 @@ public:
     ctr_(0),
     is_running_(false)
     {
-    pcl::io::loadPCDFile("~/pcl_daten/kitchen_ground_truth/whole_kitchen.pcd", *point_map_.getRefMap());
+    pcl::io::loadPCDFile("/home/goa-jh/bagfiles/kitchen_ground_truth/whole_kitchen.pcd", *point_map_.getRefMap());
 
     setReconfigureCallback(boost::bind(&callback, this, _1, _2));
     }
@@ -590,7 +590,7 @@ double testPointMap(pcl::PointCloud<pcl::PointXYZ> pc, pcl::PointCloud<pcl::Poin
 }
 
 
-int main (int argc, char** argv)
+/*int main (int argc, char** argv)
 {
   ros::init (argc, argv, "aggregate_point_map");
 
@@ -600,8 +600,8 @@ int main (int argc, char** argv)
   std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> files,files_in;
   pcl::PointCloud<pcl::PointXYZ> ref_map;
 
-  //pcl::io::loadPCDFile("/home/goa-jh/bagfiles/kitchen_real_empty/icp/pc_in_trans_0.pcd", ref_map);
-  pcl::io::loadPCDFile("/home/goa-jh/bagfiles/kitchen_sim_empty_n0/icp/map_28.pcd", ref_map);
+  pcl::io::loadPCDFile("/home/goa-jh/bagfiles/kitchen_real_empty/icp/pc_in_trans_0.pcd", ref_map);
+  //pcl::io::loadPCDFile("/home/goa-jh/bagfiles/kitchen_sim_empty_n0/icp/map_28.pcd", ref_map);
   for(int loopCount=0; loopCount<9; loopCount++) {
     std::stringstream ss1;
     ss1 << "/home/goa-jh/bagfiles/kitchen_real_empty/icp/pc_trans_" << loopCount << ".pcd";
@@ -621,7 +621,7 @@ int main (int argc, char** argv)
     vox_filter.setInputCloud(ref_map.makeShared());
     vox_filter.setLeafSize(0.5,0.5,0.5);
     vox_filter.filter(ref_map);
-  }*/
+  }
 
 
   int max_it=50;
@@ -672,7 +672,7 @@ int main (int argc, char** argv)
     return 0;
 
   }
-}
+}*/
 
-//PLUGINLIB_DECLARE_CLASS(cob_env_model, AggregatePointMap, AggregatePointMap, nodelet::Nodelet)
+PLUGINLIB_DECLARE_CLASS(cob_env_model, AggregatePointMap, AggregatePointMap, nodelet::Nodelet)
 
