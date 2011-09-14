@@ -85,8 +85,8 @@ public:
   {
     fov_marker_pub_ = n_.advertise<visualization_msgs::Marker>("fov_marker",10);
     get_fov_srv_ = n_.advertiseService("get_fov", &FieldOfView::srvCallback_GetFieldOfView, this);
-    setSensorFoV_hor(cob_env_model::field_of_viewConfig::__getDefault__().sensor_fov_hor_angel);
-    setSensorFoV_ver(cob_env_model::field_of_viewConfig::__getDefault__().sensor_fov_ver_angel);
+    setSensorFoV_hor(cob_env_model::field_of_viewConfig::__getDefault__().sensor_fov_hor_angle);
+    setSensorFoV_ver(cob_env_model::field_of_viewConfig::__getDefault__().sensor_fov_ver_angle);
     setSensorMaxRange(cob_env_model::field_of_viewConfig::__getDefault__().sensor_max_range);
     camera_frame_ = std::string(/*"/base_kinect_rear_link"*/"/head_cam3d_link");
     computeFieldOfView();
@@ -120,9 +120,9 @@ public:
     boost::mutex::scoped_lock l(fov->m_mutex);
 
     if(level&1) //hor changed
-      fov->setSensorFoV_hor(config.sensor_fov_hor_angel);
+      fov->setSensorFoV_hor(config.sensor_fov_hor_angle);
     if(level&2) //ver changed
-      fov->setSensorFoV_ver(config.sensor_fov_ver_angel);
+      fov->setSensorFoV_ver(config.sensor_fov_ver_angle);
     if(level&4) //range changed
       fov->setSensorMaxRange(config.sensor_max_range);
 
@@ -437,28 +437,28 @@ protected:
 
   TransformListener tf_listener_;
 
-  double sensor_fov_hor_;
-  double sensor_fov_ver_;
-  double sensor_max_range_;
+  double sensor_fov_hor_;       /// horizontal angle of sensor
+  double sensor_fov_ver_;       /// vertical angle of sensor
+  double sensor_max_range_;     /// maximum range of sensor
   std::string camera_frame_;
 
-  Eigen::Vector3d vec_a_;
-  Eigen::Vector3d vec_b_;
-  Eigen::Vector3d vec_c_;
-  Eigen::Vector3d vec_d_;
+  Eigen::Vector3d vec_a_;       /// part of view frustum
+  Eigen::Vector3d vec_b_;       /// part of view frustum
+  Eigen::Vector3d vec_c_;       /// part of view frustum
+  Eigen::Vector3d vec_d_;       /// part of view frustum
 
-  tf::Point n_up_;
-  tf::Point n_down_;
-  tf::Point n_right_;
-  tf::Point n_left_;
+  tf::Point n_up_;              /// field of view vector
+  tf::Point n_down_;            /// field of view vector
+  tf::Point n_right_;           /// field of view vector
+  tf::Point n_left_;            /// field of view vector
 
-  tf::Point n_up_t_;
-  tf::Point n_down_t_;
-  tf::Point n_right_t_;
-  tf::Point n_left_t_;
+  tf::Point n_up_t_;              /// transformed field of view vector
+  tf::Point n_down_t_;            /// transformed field of view vector
+  tf::Point n_right_t_;           /// transformed field of view vector
+  tf::Point n_left_t_;            /// transformed field of view vector
   tf::Point n_origin_t_;
 
-  boost::mutex m_mutex;
+  boost::mutex m_mutex;         /// mutex to synchronize compution with dynamic reconfigure
 
 };
 
