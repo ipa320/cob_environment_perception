@@ -18,6 +18,7 @@ int main(int argc, char** argv)
   double incr = 0.02;
   pcl::PointCloud<pcl::PointXYZRGB> whole_kitchen;
   pcl::PointCloud<pcl::PointXYZRGB> kitchen;
+  pcl::PointCloud<pcl::PointXYZRGB> front;
   //left shelf
   double x_start = -3.201 - 0.33;
   double x_end = -3.201 + 0.33;
@@ -80,6 +81,7 @@ int main(int argc, char** argv)
     }
   }
   whole_kitchen+=kitchen;
+  pcl::copyPointCloud(kitchen, front);
   pcl::io::savePCDFile ("/home/goa/pcl_daten/kitchen_ground_truth/kitchen_lf.pcd", kitchen, true);
   kitchen.points.clear();
   std::ofstream plane_file;
@@ -120,7 +122,7 @@ int main(int argc, char** argv)
   pcl::io::savePCDFile ("/home/goa/pcl_daten/kitchen_ground_truth/kitchen_lr.pcd", kitchen, true);
   kitchen.points.clear();
   plane_file.open ("/home/goa/pcl_daten/kitchen_ground_truth/kitchen_lr.pl");
-  plane_file << 0 << " " << 1 << " " << 0 << " " << -y_end;
+  plane_file << 0 << " " << -1 << " " << 0 << " " << y_end;
   plane_file.close();
 
   //right shelf
@@ -185,6 +187,7 @@ int main(int argc, char** argv)
     }
   }
   whole_kitchen+=kitchen;
+  front+=kitchen;
   pcl::io::savePCDFile ("/home/goa/pcl_daten/kitchen_ground_truth/kitchen_rf.pcd", kitchen, true);
   kitchen.points.clear();
   plane_file.open ("/home/goa/pcl_daten/kitchen_ground_truth/kitchen_rf.pl");
@@ -206,7 +209,7 @@ int main(int argc, char** argv)
   pcl::io::savePCDFile ("/home/goa/pcl_daten/kitchen_ground_truth/kitchen_rl.pcd", kitchen, true);
   kitchen.points.clear();
   plane_file.open ("/home/goa/pcl_daten/kitchen_ground_truth/kitchen_rl.pl");
-  plane_file << 0 << " " << -1 << " " << 0 << " " << y_start;
+  plane_file << 0 << " " << 1 << " " << 0 << " " << -y_start;
   plane_file.close();
   //right
   for(double z = z_start; z <= z_end; z+=incr)
@@ -291,6 +294,7 @@ int main(int argc, char** argv)
       kitchen.push_back(p);
     }
   }
+  front+=kitchen;
   whole_kitchen+=kitchen;
   pcl::io::savePCDFile ("/home/goa/pcl_daten/kitchen_ground_truth/kitchen_mf.pcd", kitchen, true);
   kitchen.points.clear();
@@ -331,12 +335,13 @@ int main(int argc, char** argv)
   z_end = 2.5;
   y_start = -2.1;
   y_end = 2.316;
+  x_end = -3.531;
   for(double z = z_start; z <= z_end; z+=incr)
   {
     for(double y = y_start; y <= y_end; y+=incr)
     {
       pcl::PointXYZRGB p;
-      p.x = -3.531;
+      p.x = x_end;
       p.y = y;
       p.z = z;
       kitchen.push_back(p);
@@ -354,13 +359,14 @@ int main(int argc, char** argv)
   z_end = 2.5;
   x_start = -3.531;
   x_end = -2;
+  y_start = 2.281;
   for(double z = z_start; z <= z_end; z+=incr)
   {
     for(double x = x_start; x <= x_end; x+=incr)
     {
       pcl::PointXYZRGB p;
       p.x = x;
-      p.y = 2.316;
+      p.y = y_start;
       p.z = z;
       kitchen.push_back(p);
     }
@@ -368,8 +374,8 @@ int main(int argc, char** argv)
   whole_kitchen+=kitchen;
   pcl::io::savePCDFile ("/home/goa/pcl_daten/kitchen_ground_truth/kitchen_wr.pcd", kitchen, true);
   kitchen.points.clear();
-  plane_file.open ("/home/goa/pcl_daten/kitchen_ground_truth/kitchen_wl.pl");
-  plane_file << 0 << " " << -1 << " " << 0 << " " << y_start;
+  plane_file.open ("/home/goa/pcl_daten/kitchen_ground_truth/kitchen_wr.pl");
+  plane_file << 0 << " " << 1 << " " << 0 << " " << -y_start;
   plane_file.close();
 
   //floor
@@ -392,7 +398,7 @@ int main(int argc, char** argv)
   pcl::io::savePCDFile ("/home/goa/pcl_daten/kitchen_ground_truth/kitchen_f.pcd", kitchen, true);
   kitchen.points.clear();
   plane_file.open ("/home/goa/pcl_daten/kitchen_ground_truth/kitchen_f.pl");
-  plane_file << 1 << " " << 0 << " " << 0 << " " << -x_end;
+  plane_file << 0 << " " << 0 << " " << 1 << " " << -x_end;
   plane_file.close();
   pcl::VoxelGrid<pcl::PointXYZRGB> voxel;
   voxel.setInputCloud(whole_kitchen.makeShared());
@@ -400,5 +406,9 @@ int main(int argc, char** argv)
   pcl::PointCloud<pcl::PointXYZRGB> whole_kitchen_vox;
   voxel.filter(whole_kitchen_vox);
   pcl::io::savePCDFile ("/home/goa/pcl_daten/kitchen_ground_truth/whole_kitchen.pcd", whole_kitchen_vox, true);
+  pcl::io::savePCDFile ("/home/goa/pcl_daten/kitchen_ground_truth/kitchen_front.pcd", front, true);
+  plane_file.open ("/home/goa/pcl_daten/kitchen_ground_truth/kitchen_front.pl");
+  plane_file << 1 << " " << 0 << " " << 0 << " " << 2.871;
+  plane_file.close();
 }
 

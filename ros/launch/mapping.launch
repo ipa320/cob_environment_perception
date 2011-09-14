@@ -38,8 +38,8 @@
   </node-->
   
 	<include file="$(find cob_env_model)/ros/launch/aggregate_point_map.launch" />
-	<!-- include file="$(find cob_env_model)/ros/launch/detect_tables.launch" />
-	<include file="$(find cob_env_model)/ros/launch/feature_map.launch" /-->
+	<include file="$(find cob_env_model)/ros/launch/extract_planes.launch" />
+	<include file="$(find cob_env_model)/ros/launch/feature_map.launch" />
   
 
 
