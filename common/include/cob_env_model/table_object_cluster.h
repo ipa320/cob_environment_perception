@@ -177,10 +177,10 @@ public:
   }
 
 protected:
-  double height_min_;
-  double height_max_;
-  int min_cluster_size_;
-  double cluster_tolerance_;
+  double height_min_;           /// paramter for object detection
+  double height_max_;           /// paramter for object detection
+  int min_cluster_size_;        /// paramter for object detection
+  double cluster_tolerance_;    /// paramter for object detection
 
 };
 

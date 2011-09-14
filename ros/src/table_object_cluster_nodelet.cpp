@@ -291,14 +291,14 @@ protected:
   ros::ServiceClient get_bb_client_;
   boost::mutex mutex_;
 
-  TableObjectCluster toc;
+  TableObjectCluster toc;       /// class for actual calculation
 
   bool save_to_file_;
   std::string file_path_;
-  double height_min_;
-  double height_max_;
-  int min_cluster_size_;
-  double cluster_tolerance_;
+  double height_min_;           /// paramter for object detection
+  double height_max_;           /// paramter for object detection
+  int min_cluster_size_;        /// paramter for object detection
+  double cluster_tolerance_;    /// paramter for object detection
 
 };
 

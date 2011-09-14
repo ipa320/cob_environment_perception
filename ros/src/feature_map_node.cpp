@@ -694,9 +694,9 @@ protected:
   ros::Publisher map_pub_;
   ros::Publisher marker_pub_;
 
-  FeatureMap feature_map_;
+  FeatureMap feature_map_;      /// map containing features (polygons)
 
-  unsigned int ctr_;
+  unsigned int ctr_;            /// counter how many polygons are received
   std::string file_path_;
   bool save_to_file_;
 };

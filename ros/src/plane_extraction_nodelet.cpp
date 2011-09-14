@@ -520,19 +520,19 @@ protected:
   cob_env_model_msgs::PlaneExtractionResult result_;
   boost::mutex mutex_;
 
-  PlaneExtraction pe;
-  pcl::PointCloud<Point> pc_cur_;
-  pcl::PointCloud<Point> pc_plane_;
-  pcl::PointCloud<Point> hull_;
-  pcl::ModelCoefficients plane_coeffs_;
+  PlaneExtraction pe;                   /// class for actual calculation
+  pcl::PointCloud<Point> pc_cur_;       /// point cloud
+  pcl::PointCloud<Point> pc_plane_;     /// point cloud for plane
+  pcl::PointCloud<Point> hull_;         /// hull
+  pcl::ModelCoefficients plane_coeffs_; /// coefficients
 
   TransformListener tf_listener_;
-  int ctr_;
-  unsigned int min_cluster_size_;
+  int ctr_;                             /// counter for published planes, also used as id
+  unsigned int min_cluster_size_;       /// parameter for cluster size
   std::string file_path_;
   bool save_to_file_;
   bool mode_action_;
-  int plane_constraint_;
+  int plane_constraint_;                /// constraint parameter for PlaneExtraction (pe)
   std::string target_frame_;
 
   boost::mutex m_mutex_pointCloudSubCallback, m_mutex_actionCallback;
