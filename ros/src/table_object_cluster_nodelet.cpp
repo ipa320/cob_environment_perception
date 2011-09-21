@@ -73,6 +73,9 @@
 #include <actionlib/server/simple_action_server.h>
 #include <pcl/point_types.h>
 
+#include "reconfigureable_node.h"
+#include <cob_env_model/table_object_cluster_nodeletConfig.h>
+
 
 
 // ROS message includes
@@ -90,16 +93,19 @@
 
 //####################
 //#### nodelet class ####
-class TableObjectClusterNodelet : public pcl_ros::PCLNodelet
+class TableObjectClusterNodelet : public pcl_ros::PCLNodelet, protected Reconfigurable_Node<cob_env_model::table_object_cluster_nodeletConfig>
 {
 public:
   typedef pcl::PointXYZ Point;
   // Constructor
   TableObjectClusterNodelet()
-  : as_(0)
+  : Reconfigurable_Node<cob_env_model::table_object_cluster_nodeletConfig>("TableObjectClusterNodelet"),
+    as_(0)
   {
-    save_to_file_ = false;
-    file_path_ = "";
+    save_to_file_ = cob_env_model::table_object_cluster_nodeletConfig::__getDefault__().save_to_file;
+    file_path_ = cob_env_model::table_object_cluster_nodeletConfig::__getDefault__().file_path;
+
+    setReconfigureCallback(boost::bind(&callback, this, _1, _2));
   }
 
   // Destructor
@@ -107,6 +113,27 @@ public:
   {
     /// void
     if(as_) delete as_;
+  }
+
+  // callback for dynamic reconfigure
+  static void callback(TableObjectClusterNodelet *tocn, cob_env_model::table_object_cluster_nodeletConfig &config, uint32_t level)
+  {
+    //TODO: not multithreading safe
+
+    if(!tocn)
+      return;
+
+    tocn->save_to_file_ = config.save_to_file;
+    tocn->file_path_ = config.file_path;
+
+    /*
+    n_.getParam("table_object_cluster/height_min" ,height_min_);
+    n_.getParam("table_object_cluster/height_max" ,height_max_);
+    n_.getParam("table_object_cluster/min_cluster_size", min_cluster_size_);
+    n_.getParam("table_object_cluster/cluster_tolerance", cluster_tolerance_);
+    toc.setPrismHeight(height_min_, height_max_);
+    toc.setClusterParams(min_cluster_size_, cluster_tolerance_);
+    */
   }
 
 
