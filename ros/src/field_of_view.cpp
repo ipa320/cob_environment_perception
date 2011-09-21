@@ -65,6 +65,8 @@
 #include <visualization_msgs/Marker.h>
 #include <cob_env_model_msgs/GetFieldOfView.h>
 #include <Eigen/Core>
+#include "reconfigureable_node.h"
+#include <cob_env_model/field_of_viewConfig.h>
 
 // external includes
 #include <boost/timer.hpp>
@@ -74,20 +76,22 @@ using namespace tf;
 
 //####################
 //#### node class ####
-class FieldOfView
+class FieldOfView : protected Reconfigurable_Node<cob_env_model::field_of_viewConfig>
 {
 public:
   // Constructor
   FieldOfView()
+  : Reconfigurable_Node<cob_env_model::field_of_viewConfig>("FieldOfView")
   {
-    //TODO: launch parameter
     fov_marker_pub_ = n_.advertise<visualization_msgs::Marker>("fov_marker",10);
     get_fov_srv_ = n_.advertiseService("get_fov", &FieldOfView::srvCallback_GetFieldOfView, this);
-    sensor_fov_hor_ = /*57*//*65*/80*M_PI/180;
-    sensor_fov_ver_ = /*43*/47*M_PI/180;
-    sensor_max_range_ = 5;
+    setSensorFoV_hor(cob_env_model::field_of_viewConfig::__getDefault__().sensor_fov_hor_angel);
+    setSensorFoV_ver(cob_env_model::field_of_viewConfig::__getDefault__().sensor_fov_ver_angel);
+    setSensorMaxRange(cob_env_model::field_of_viewConfig::__getDefault__().sensor_max_range);
     camera_frame_ = std::string(/*"/base_kinect_rear_link"*/"/head_cam3d_link");
     computeFieldOfView();
+
+    setReconfigureCallback(boost::bind(&callback, this, _1, _2));
   }
 
 
@@ -97,8 +101,40 @@ public:
     /// void
   }
 
+  // callback for dynamic reconfigure
+  static void callback(FieldOfView *fov, cob_env_model::field_of_viewConfig &config, uint32_t level)
+  {
+    if(!fov)
+      return;
+
+    boost::mutex::scoped_lock l(fov->m_mutex);
+
+    if(level&1) //hor changed
+      fov->setSensorFoV_hor(config.sensor_fov_hor_angel);
+    if(level&2) //ver changed
+      fov->setSensorFoV_ver(config.sensor_fov_ver_angel);
+    if(level&4) //range changed
+      fov->setSensorMaxRange(config.sensor_max_range);
+
+    //new settings -> recalculate
+    fov->computeFieldOfView();
+  }
+
+  void setSensorFoV_hor(double val) {
+    sensor_fov_hor_ = val*M_PI/180;
+  }
+
+  void setSensorFoV_ver(double val) {
+    sensor_fov_ver_ = val*M_PI/180;
+  }
+
+  void setSensorMaxRange(double val) {
+    sensor_max_range_ = val;
+  }
+
   void computeFieldOfView()
   {
+    //don't lock
     double fovHorFrac = sensor_fov_hor_/2;
     double fovVerFrac = sensor_fov_ver_/2;
 
@@ -324,6 +360,8 @@ public:
   bool srvCallback_GetFieldOfView(cob_env_model_msgs::GetFieldOfView::Request &req,
                                   cob_env_model_msgs::GetFieldOfView::Response &res)
   {
+    boost::mutex::scoped_lock l(m_mutex);
+
     ROS_INFO("FieldOfView Trigger");
     transformFOV(req.stamp, req.target_frame);
     geometry_msgs::Point n_msg;
@@ -369,6 +407,8 @@ protected:
   tf::Point n_right_t_;
   tf::Point n_left_t_;
   tf::Point n_origin_t_;
+
+  boost::mutex m_mutex;
 
 };
 
