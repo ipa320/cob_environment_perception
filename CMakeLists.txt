@@ -79,9 +79,9 @@ rosbuild_add_library(cob_env_model_nodelets
 	ros/src/filters/jump_edge_filter.cpp
 	ros/src/filters/speckle_filter.cpp)
 
-rosbuild_add_executable(aggregate_point_map
-	ros/src/aggregate_point_map.cpp
-	common/src/point_map.cpp)
+#rosbuild_add_executable(aggregate_point_map
+#	ros/src/aggregate_point_map.cpp
+#	common/src/point_map.cpp)
 rosbuild_add_executable(field_of_view_node ros/src/field_of_view.cpp)
 rosbuild_add_executable(concat_fields_node ros/src/tools/concat_fields.cpp)
 rosbuild_add_executable(feature_map_node ros/src/feature_map_node.cpp)

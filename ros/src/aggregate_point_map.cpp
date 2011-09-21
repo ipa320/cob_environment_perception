@@ -18,7 +18,7 @@
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
  * Date of creation: 01/2011
- * ToDo:
+ * ToDo: add documentation
  * switch all console outputs to ROS_DEBUG erledigt
  * set flag to say whether pointclouds should be saved to files or not erledigt
  * rename variables according to coding guidelines: erledigt
@@ -130,7 +130,7 @@ public:
     ctr_(0),
     is_running_(false)
     {
-    //TODO: remove, get ref map by service, check if map loaded
+    //TODO: remove, get ref map by service, write client, check if map loaded
     pcl::io::loadPCDFile("~/pcl_daten/kitchen_ground_truth/whole_kitchen.pcd", *point_map_.getRefMap());
 
     setReconfigureCallback(boost::bind(&callback, this, _1, _2));
@@ -188,16 +188,13 @@ public:
     as_= new actionlib::SimpleActionServer<cob_env_model_msgs::TriggerMappingAction>(n_, "trigger_mapping", boost::bind(&AggregatePointMap::actionCallback, this, _1), false);
     as_->start();
 
-    /*	n_.param("aggregate_point_map/set_maxiterations_FOV_", icp_max_iterations_FOV_, 70);
-		n_.param("aggregate_point_map/icp_max_corr_dist_FOV_", icp_max_corr_dist_FOV_ ,0.1);
-		n_.param("aggregate_point_map/icp_trf_epsilon_FOV_",icp_trf_epsilon_FOV_ ,1e-6); */
-
     int icp_max_iterations;
     double icp_max_corr_dist;
     double icp_max_first_corr_dist;
     double icp_trf_epsilon;
     bool use_reference_map, reuse;
 
+    //TODO: values in launch file are not shown in reconfigure_gui; define bounds in gui for realistic values
     n_.param("aggregate_point_map/icp_max_iterations" ,icp_max_iterations ,50);
     n_.param("aggregate_point_map/icp_max_corr_dist" ,icp_max_corr_dist,0.05);;
     n_.param("aggregate_point_map/icp_max_first_corr_dist" ,icp_max_first_corr_dist,0.3);
@@ -253,97 +250,50 @@ public:
       double r_old,p_old,y_old;
       frame_KDL_old.M.GetRPY(r_old,p_old,y_old);
 
-      /*if(first_)
+      if(point_map_.isFirst() || fabs(r-r_old) > r_limit_ || fabs(p-p_old) > p_limit_ || fabs(y-y_old) > y_limit_ ||
+          transform.getOrigin().distance(point_map_.getOldTransform().getOrigin()) > distance_limit_)
       {
         if(save_pc_==true)
         {
+          std::stringstream ss2;
           ss2 << file_path_ << "/pc_" << ctr_ << ".pcd";
           pcl::io::savePCDFileASCII (ss2.str(), *pc_in);
         }
-        //transform.setOrigin(btVector3(-1.3, 1.09, 3.14));
+        pcl_ros::transformPointCloud(*pc_in, *pc_in, transform);
+        pc_in->header.frame_id = "/map";
         pcl::VoxelGrid<Point> voxel;
         voxel.setInputCloud(pc_in);
         voxel.setLeafSize(voxel_leafsize_x_,voxel_leafsize_y_,voxel_leafsize_z_);
         voxel.filter(*pc);
-        pcl_ros::transformPointCloud(*pc, *pc, transform);
-        pc->header.frame_id = "/map";
-        pcl::copyPointCloud(*pc, map_);
-        map_.header.frame_id="/map";
-        point_cloud_pub_aligned_.publish(pc);
-        //downsampleMap();
-        point_cloud_pub_.publish(map_);
-        first_ = false;
+        ROS_DEBUG("Registering new point cloud");
+        //transformPointCloud("/map", transform, pc->header.stamp, *(pc.get()), *(pc.get()));
+        //pcl_ros::transformPointCloud ("/map", *(pc.get()), *(pc.get()), tf_listener_);
+        //shiftCloud(pc);
+        //shiftCloud(pc_in);
         if(save_pc_trans_==true)
         {
           ss2.str("");
           ss2.clear();
           ss2 << file_path_ << "/pc_trans_" << ctr_ << ".pcd";
           pcl::io::savePCDFileASCII (ss2.str(), *pc);
+          ss2.str("");
+          ss2.clear();
+          ss2 << file_path_ << "/pc_in_trans_" << ctr_ << ".pcd";
+          pcl::io::savePCDFileASCII (ss2.str(), *pc_in);
         }
-        if(save_map_ ==true)
-        {
-          std::stringstream ss1;
-          ss1 << file_path_ << "/map_" << ctr_ << ".pcd";
-          pcl::io::savePCDFileASCII (ss1.str(), map_);
-        }
-        if(save_pc_aligned_==true)
-        {
-          ROS_INFO("Saving pc_aligned.");
-          std::stringstream ss;
-          ss << file_path_ << "/pc_aligned_" << ctr_ << ".pcd";
-          pcl::io::savePCDFileASCII (ss.str(), *pc);
-        }
-        ctr_++;
-      }
-      else*/
-      {
-        if(point_map_.isFirst() || fabs(r-r_old) > r_limit_ || fabs(p-p_old) > p_limit_ || fabs(y-y_old) > y_limit_ ||
-            transform.getOrigin().distance(point_map_.getOldTransform().getOrigin()) > distance_limit_)
-        {
-          if(save_pc_==true)
-          {
-            std::stringstream ss2;
-            ss2 << file_path_ << "/pc_" << ctr_ << ".pcd";
-            pcl::io::savePCDFileASCII (ss2.str(), *pc_in);
-          }
-          pcl::VoxelGrid<Point> voxel;
-          voxel.setInputCloud(pc_in);
-          voxel.setLeafSize(voxel_leafsize_x_,voxel_leafsize_y_,voxel_leafsize_z_);
-          voxel.filter(*pc);
-          ROS_DEBUG("Registering new point cloud");
-          //transformPointCloud("/map", transform, pc->header.stamp, *(pc.get()), *(pc.get()));
-          //pcl_ros::transformPointCloud ("/map", *(pc.get()), *(pc.get()), tf_listener_);
-          pcl_ros::transformPointCloud(*pc, *pc, transform);
-          pcl_ros::transformPointCloud(*pc_in, *pc_in, transform);
-          pc->header.frame_id = "/map";
-          pc_in->header.frame_id = "/map";
-          //shiftCloud(pc);
-          //shiftCloud(pc_in);
-          if(save_pc_trans_==true)
-          {
-            ss2.str("");
-            ss2.clear();
-            ss2 << file_path_ << "/pc_trans_" << ctr_ << ".pcd";
-            pcl::io::savePCDFileASCII (ss2.str(), *pc);
-            ss2.str("");
-            ss2.clear();
-            ss2 << file_path_ << "/pc_in_trans_" << ctr_ << ".pcd";
-            pcl::io::savePCDFileASCII (ss2.str(), *pc_in);
-          }
 
-          cob_env_model_msgs::GetFieldOfView get_fov_srv;
-          if(!point_map_.getUseReferenceMap()) {
-            get_fov_srv.request.target_frame = std::string("/map");
-            get_fov_srv.request.stamp = pc->header.stamp;
-            if(get_fov_srv_client_.call(get_fov_srv))
-            {
-              ROS_DEBUG("FOV service called [OK].");
-            }
-            else
-            {
-              ROS_WARN("FOV service called [FAILED].");
-              return;
-            }
+        cob_env_model_msgs::GetFieldOfView get_fov_srv;
+        if(!point_map_.getUseReferenceMap()) {
+          get_fov_srv.request.target_frame = std::string("/map");
+          get_fov_srv.request.stamp = pc->header.stamp;
+          if(get_fov_srv_client_.call(get_fov_srv))
+          {
+            ROS_DEBUG("FOV service called [OK].");
+          }
+          else
+          {
+            ROS_WARN("FOV service called [FAILED].");
+            return;
           }
 
           if(point_map_.compute(pc_in, pc, transform, &get_fov_srv)) {
@@ -539,7 +489,7 @@ double testPointMap(pcl::PointCloud<pcl::PointXYZRGB> pc, pcl::PointCloud<pcl::P
 }
 
 
-int main (int argc, char** argv)
+/*int main (int argc, char** argv)
 {
   ros::init (argc, argv, "aggregate_point_map");
 
@@ -569,7 +519,7 @@ int main (int argc, char** argv)
     vox_filter.setInputCloud(ref_map.makeShared());
     vox_filter.setLeafSize(0.5,0.5,0.5);
     vox_filter.filter(ref_map);
-  }*/
+  }
 
 
   int max_it=50;
@@ -620,7 +570,7 @@ int main (int argc, char** argv)
     return 0;
 
   }
-}
+}*/
 
-//PLUGINLIB_DECLARE_CLASS(cob_env_model, AggregatePointMap, AggregatePointMap, nodelet::Nodelet)
+PLUGINLIB_DECLARE_CLASS(cob_env_model, AggregatePointMap, AggregatePointMap, nodelet::Nodelet)
 
