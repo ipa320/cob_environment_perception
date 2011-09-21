@@ -79,7 +79,7 @@ public:
       plane_file >> coeffs(3);
       plane_file.close();
       v_coeffs.push_back(coeffs);
-      if(i==6)
+      /*if(i==6)
       {
         ss.str("");
         ss.clear();
@@ -87,7 +87,7 @@ public:
         pcl::io::loadPCDFile(ss.str(), pc);
         pcs.push_back(pc);
         v_coeffs.push_back(coeffs);
-      }
+      }*/
     }
     std::cout << pcs.size() << " map planes loaded" << std::endl;
   }
@@ -104,27 +104,52 @@ public:
 
   void associatePlanes(std::vector<pcl::PointCloud<Point> >& pcs_gt, std::vector<pcl::PointCloud<Point> >& pcs, std::vector<Eigen::Vector4f>& coeffs_gt, std::vector<Eigen::Vector4f>& coeffs, std::vector<std::pair<int,int> >& associations)
   {
-    double thresh = 0.1;
+    double thresh = 0.5;
     for(unsigned int i=0; i<coeffs.size(); i++)
     {
-      std::cout << coeffs[i](0) << "," << coeffs[i](1) << "," << coeffs[i](2) << "," << coeffs[i](3) << std::endl << std::endl;
+      std::cout << i << std::endl;
+      std::cout << coeffs[i](0) << "," << coeffs[i](1) << "," << coeffs[i](2) << "," << coeffs[i](3) << std::endl;
       double assoc_min=10;
       std::pair<int,int> assoc;
+      Eigen::Vector4f centroid;
+      pcl::compute3DCentroid(pcs[i], centroid);
       for(unsigned int j=0; j<coeffs_gt.size(); j++)
       {
         std::cout << j << ": " << file_list_[j] << std::endl;
         std::cout << coeffs_gt[j](0) << "," << coeffs_gt[j](1) << "," << coeffs_gt[j](2) << "," << coeffs_gt[j](3) << std::endl;
+        Eigen::Vector4f centroid_gt;
+        pcl::compute3DCentroid(pcs_gt[j], centroid_gt);
+        double dist = fabs((centroid-centroid_gt).norm());
+        //calculate hull
+        /*pcl::PointCloud<Point> cloud_hull;
+        pcl::ConvexHull<Point> chull;
+        chull.setInputCloud (pcs_gt[j].makeShared());
+        chull.reconstruct (cloud_hull);
+        int sum =0;
+        for(unsigned int k=0; k<pcs[i].size(); k++)
+        {
+          bool isIn = pcl::isPointIn2DPolygon(pcs[i].points[k], cloud_hull);
+          if(!isIn) sum++;
+        }*/
+        std::cout << "dist: " << dist << std::endl;
         //std::cout << coeffs_gt[i] - coeffs[j] << std::endl;
         //std::cout << (coeffs_gt[i] - coeffs[j]).norm() << std::endl;
-        if(fabs((coeffs_gt[j] - coeffs[i]).norm()) < thresh && fabs((coeffs_gt[j] - coeffs[i]).norm()) < assoc_min)
+        if(fabs((coeffs_gt[j] - coeffs[i]).norm()) < thresh && fabs((coeffs_gt[j] - coeffs[i]).norm()) < assoc_min &&i!=1 && i!=11/*&& dist < 0.8*/)
         {
           assoc.first = i;
           assoc.second = j;
           assoc_min = fabs((coeffs_gt[j] - coeffs[i]).norm());
         }
       }
+      std::cout << "assoc min: " << assoc_min << std::endl;
+      if(assoc_min==10) continue;
+      /*if(i==13)
+      {
+        assoc.first = i;
+        assoc.second = 0;
+      }*/
       associations.push_back(assoc);
-      std::cout << "map plane " << assoc.first << " associated with gt plane " << assoc.second << std::endl;
+      std::cout << "map plane " << assoc.first << " associated with gt plane " << assoc.second << std::endl << std::endl;
     }
   }
 
@@ -235,12 +260,12 @@ int main(int argc, char** argv)
   typedef pcl::PointXYZ Point;
   EvalMapping em;
   std::string file_path_gt = "/media/GOADaten/Daten/kitchen_ground_truth/";
-  std::string file_path = "/media/GOADaten/Daten/20110825_sim_kitchen/kitchen_sim_empty_n005/map/";
+  std::string file_path = "/media/GOADaten/Daten/20110823_bagfiles/kitchen_empty/map/";
   em.file_path_ = file_path;
   //load all files in directory
   std::vector<pcl::PointCloud<Point> > pcs;
   std::vector<Eigen::Vector4f> coeffs;
-  em.loadMap(file_path, 7, 41, pcs, coeffs);
+  em.loadMap(file_path, 14, 39, pcs, coeffs);
   std::vector<pcl::PointCloud<Point> > pcs_gt;
   std::vector<Eigen::Vector4f> coeffs_gt;
   em.loadGroundTruth(file_path_gt, pcs_gt, coeffs_gt);
@@ -252,4 +277,9 @@ int main(int argc, char** argv)
   return 0;
 }
 
+// for kitchen_2tables_objects: num_planes=12, idx=20
+// for kitchen_empty: num_planes=15, idx=40
+// for kitchen_sim_objects2: num_planes=7, idx=84
+// for kitchen_sim_empty_n02: num_planes=22, idx=104
+// for kitchen_sim_empty_n005: num_planes=7, idx=41
 // for kitchen_sim_empty_n0: num_planes=7, idx=108
