@@ -104,7 +104,7 @@ using namespace tf;
 //#### node class ####
 class AggregatePointMap : public pcl_ros::PCLNodelet
 {
-  typedef pcl::PointXYZ Point;
+  typedef pcl::PointXYZRGB Point;
 
 public:
   // Constructor
@@ -249,8 +249,8 @@ public:
           pcl_ros::transformPointCloud(*pc_in, *pc_in, transform);
           pc->header.frame_id = "/map";
           pc_in->header.frame_id = "/map";
-          shiftCloud(pc);
-          shiftCloud(pc_in);
+          //shiftCloud(pc);
+          //shiftCloud(pc_in);
           if(save_pc_trans_==true)
           {
             ss2.str("");
@@ -568,8 +568,12 @@ public:
   shiftCloud(const pcl::PointCloud<Point>::Ptr& pc)
   {
     for(unsigned int i=0; i<pc->size(); i++)
-      pc->points[i].y+=0.15;
-      //pc->points[i].z+=0.2;
+    {
+      //pc->points[i].y+=0.15;
+      pc->points[i].z+=0.2;
+      pc->points[i].x-=0.25;
+      //if(ctr_==0 || ctr_==1) pc->points[i].x-=0.25;
+    }
   }
 
 

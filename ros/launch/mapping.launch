@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
   <!-- start environment modelling -->
-  <node pkg="nodelet" type="nodelet" name="cam3d_nodelet_manager"  args="manager" output="screen"/>
+  <node pkg="nodelet" type="nodelet" name="cam3d_nodelet_manager2"  args="manager" output="screen"/>
   
   <!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
   <!--node pkg="nodelet" type="nodelet" name="voxel_grid1" args="load pcl/VoxelGrid pcl_manager" output="screen">
