@@ -484,8 +484,8 @@ protected:
 };
 
 //TODO: move to common/src
-double testPointMap(pcl::PointCloud<pcl::PointXYZ> pc, pcl::PointCloud<pcl::PointXYZ> _pc_in, const pcl::PointCloud<pcl::PointXYZ> * const ref_map, int max_it, double max_dist, double trf, bool reset, const std::string &fn_out, double &time) {
-  pcl::PointCloud<pcl::PointXYZ>::Ptr pc_in = _pc_in.makeShared();
+double testPointMap(pcl::PointCloud<pcl::PointXYZRGB> pc, pcl::PointCloud<pcl::PointXYZRGB> _pc_in, const pcl::PointCloud<pcl::PointXYZRGB> * const ref_map, int max_it, double max_dist, double trf, bool reset, const std::string &fn_out, double &time) {
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr pc_in = _pc_in.makeShared();
 
   setVerbosityLevel(pcl::console::L_DEBUG);
 
@@ -512,7 +512,7 @@ double testPointMap(pcl::PointCloud<pcl::PointXYZ> pc, pcl::PointCloud<pcl::Poin
     vox_filter.filter(_pc_in);
   }*/
   {
-    pcl::VoxelGrid<pcl::PointXYZ> vox_filter;
+    pcl::VoxelGrid<pcl::PointXYZRGB> vox_filter;
     vox_filter.setInputCloud(pc.makeShared());
     vox_filter.setLeafSize(0.05,0.05,0.05);
     vox_filter.filter(pc);
@@ -522,7 +522,7 @@ double testPointMap(pcl::PointCloud<pcl::PointXYZ> pc, pcl::PointCloud<pcl::Poin
   if(point_map_.compute(pc_in, pc.makeShared(), transform, NULL)) {
 
     if(fn_out.size()>0) {
-      pcl::VoxelGrid<pcl::PointXYZ> vox_filter;
+      pcl::VoxelGrid<pcl::PointXYZRGB> vox_filter;
       vox_filter.setInputCloud(point_map_.getMap()->makeShared());
       vox_filter.setLeafSize(0.05,0.05,0.05);
       vox_filter.filter(*point_map_.getMap());
@@ -546,8 +546,8 @@ int main (int argc, char** argv)
   AggregatePointMap apm;
 
   //preload files
-  std::vector<pcl::PointCloud<pcl::PointXYZ>::Ptr> files,files_in;
-  pcl::PointCloud<pcl::PointXYZ> ref_map;
+  std::vector<pcl::PointCloud<pcl::PointXYZRGB>::Ptr> files,files_in;
+  pcl::PointCloud<pcl::PointXYZRGB> ref_map;
 
   pcl::io::loadPCDFile("/home/goa-jh/bagfiles/kitchen_real_empty/icp/pc_in_trans_0.pcd", ref_map);
   for(int loopCount=0; loopCount<9; loopCount++) {
@@ -556,7 +556,7 @@ int main (int argc, char** argv)
     std::stringstream ss2;
     ss2 << "/home/goa-jh/bagfiles/kitchen_real_empty/icp/pc_in_trans_" << loopCount << ".pcd";
 
-    pcl::PointCloud<pcl::PointXYZ> _pc_in, _pc;
+    pcl::PointCloud<pcl::PointXYZRGB> _pc_in, _pc;
     pcl::io::loadPCDFile(ss2.str().c_str(), _pc_in);
     files_in.push_back(_pc_in.makeShared());
 
