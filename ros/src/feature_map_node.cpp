@@ -288,13 +288,13 @@ public:
       //if(pm.merged/*pm.normal(2)<0.1*/)
       {
         //marker.id = pm.id;
-        if(i==0)
+        //if(i==0)
         {
-          marker.color.r = 1;
+          marker.color.r = 0;
           marker.color.g = 0;
-          marker.color.b = 0;
+          marker.color.b = 1;
         }
-        else if(i==1)
+        /*else if(i==1)
         {
           marker.color.r = 0;
           marker.color.g = 1;
@@ -323,7 +323,7 @@ public:
           marker.color.r = 0;
           marker.color.g = 0;
           marker.color.b = 1;
-        }
+        }*/
         for(unsigned int j=0; j<pm.polygon_world.size(); j++)
         {
           //TODO: this is a workaround as the marker can't display more than one contour

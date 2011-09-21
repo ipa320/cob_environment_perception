@@ -120,7 +120,7 @@ using namespace tf;
 //#### node class ####
 class AggregatePointMap : public pcl_ros::PCLNodelet, protected Reconfigurable_Node<cob_env_model::aggregate_point_mapConfig>
 {
-  typedef pcl::PointXYZ Point;
+  typedef pcl::PointXYZRGB Point;
 
 public:
   // Constructor
@@ -130,6 +130,7 @@ public:
     ctr_(0),
     is_running_(false)
     {
+    //TODO: remove, get ref map by service, check if map loaded
     pcl::io::loadPCDFile("~/pcl_daten/kitchen_ground_truth/whole_kitchen.pcd", *point_map_.getRefMap());
 
     setReconfigureCallback(boost::bind(&callback, this, _1, _2));
@@ -186,7 +187,6 @@ public:
     set_reference_map_server_ = n_.advertiseService("set_reference_map", &AggregatePointMap::setReferenceMap, this);
     as_= new actionlib::SimpleActionServer<cob_env_model_msgs::TriggerMappingAction>(n_, "trigger_mapping", boost::bind(&AggregatePointMap::actionCallback, this, _1), false);
     as_->start();
-    //TODO: Read parameters from launch file
 
     /*	n_.param("aggregate_point_map/set_maxiterations_FOV_", icp_max_iterations_FOV_, 70);
 		n_.param("aggregate_point_map/icp_max_corr_dist_FOV_", icp_max_corr_dist_FOV_ ,0.1);
@@ -238,6 +238,7 @@ public:
     boost::timer t;
     pcl::PointCloud<Point>::Ptr pc = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>);
     //ROS_INFO("PointCloudSubCallback");
+    //TODO: make separate node for key frame selection, trigger registration
     StampedTransform transform;
     try
     {
@@ -316,8 +317,8 @@ public:
           pcl_ros::transformPointCloud(*pc_in, *pc_in, transform);
           pc->header.frame_id = "/map";
           pc_in->header.frame_id = "/map";
-          shiftCloud(pc);
-          shiftCloud(pc_in);
+          //shiftCloud(pc);
+          //shiftCloud(pc_in);
           if(save_pc_trans_==true)
           {
             ss2.str("");
@@ -425,6 +426,18 @@ public:
     vox_filter.filter(*point_map_.getMap());
   }
 
+  void
+  shiftCloud(const pcl::PointCloud<Point>::Ptr& pc)
+  {
+    for(unsigned int i=0; i<pc->size(); i++)
+    {
+      //pc->points[i].y+=0.15;
+      pc->points[i].z+=0.2;
+      pc->points[i].x-=0.25;
+      //if(ctr_==0 || ctr_==1) pc->points[i].x-=0.25;
+    }
+  }
+
 
   ros::NodeHandle n_;
   ros::Time stamp_;
@@ -470,6 +483,7 @@ protected:
 
 };
 
+//TODO: move to common/src
 double testPointMap(pcl::PointCloud<pcl::PointXYZ> pc, pcl::PointCloud<pcl::PointXYZ> _pc_in, const pcl::PointCloud<pcl::PointXYZ> * const ref_map, int max_it, double max_dist, double trf, bool reset, const std::string &fn_out, double &time) {
   pcl::PointCloud<pcl::PointXYZ>::Ptr pc_in = _pc_in.makeShared();
 
