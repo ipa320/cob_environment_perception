@@ -141,8 +141,13 @@ namespace ipa_features
   			std::vector<int>& indices,
   			std::vector<float>& distances);
 
+      /**calculate threshold with average distance of the points **/
+      float
+      calc_dist_threshold(const pcl::PointCloud<PointInT> &cloud , int idx);
+
       /** \brief The decision boundary (angle threshold) that marks points as boundary or regular. (default \f$\pi / 2.0\f$) */
       float dist_threshold_;
+
 
     protected:
 
