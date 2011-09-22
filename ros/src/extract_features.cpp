@@ -253,7 +253,7 @@ public:
                 boundary.setRadiusSearch(0.03);
                 boundary.setInputNormals(cloud_n);
 
-                //boundary.dist_threshold_ = 0.03; //increase to get more border points
+               // boundary.dist_threshold_ = 0.04; //increase to get more border points
                 //boundary.dist_threshold_=threshold;
                 boundary.compute(cloud_out);
 
@@ -292,6 +292,7 @@ public:
                 //cv::imshow("boundary image", border_image);
                 //cv::waitKey();
                 ROS_INFO("Time elapsed for boundary estimation: %f", t.elapsed());
+
                 cv::imshow("Edges" , border_image);
                 cv::waitKey();
         }
@@ -754,8 +755,16 @@ int main(int argc, char** argv)
         std::string directory("/home/goa-hh/pcl_daten/corner/");
         PointCloudT::Ptr cloud_in = PointCloudT::Ptr (new PointCloudT);
 
-        pcl::io::loadPCDFile(directory+"corner.pcd", *cloud_in);
+        pcl::io::loadPCDFile(directory+"downcorner.pcd", *cloud_in);
+    	double z_sum=0;
+            	int counter=0;
+        for(int i=0; i<cloud_in->size();i++)
+        {
 
+        	if (cloud_in->points[i].z == cloud_in->points[i].z){
+        	z_sum += cloud_in->points[i].z;
+        	counter ++;}
+        }
         /// Extract edges on the color image
         /*cv::Mat color_image(cloud_in->height,cloud_in->width,CV_8UC3);
         ef.getColorImage(cloud_in, color_image);
@@ -782,6 +791,7 @@ int main(int argc, char** argv)
         //return 0;
         /// Extract edges using boundary estimation
         ef.extractEdgesBoundary(cloud_in, *cloud_out, border_image);
+
 
 
 //        cv::imshow("Edges", border_image);
