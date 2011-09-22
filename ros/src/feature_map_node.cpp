@@ -285,9 +285,9 @@ public:
 
 
   /**
-   * @brief publishes the last polygon of every feature
+   * @brief publishes the polygon of every feature
    *
-   * publishes the last polygon of every feature
+   * publishes the polygon of every feature
    *
    * @return nothing
    */
@@ -308,8 +308,8 @@ public:
           p.polygon.points[k].y = pm.polygon_world[j][k](1);
           p.polygon.points[k].z = pm.polygon_world[j][k](2);
         }
+        map_pub_.publish(p);
       }
-      map_pub_.publish(p);      //TODO: check -> right place?
     }
   }
 

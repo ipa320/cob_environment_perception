@@ -99,6 +99,7 @@ rosbuild_add_executable(eval_mapping common/src/tools/eval_mapping.cpp)
 #rosbuild_add_executable(cpc_publisher ros/src/cpc_publisher_main.cpp)
 #rosbuild_add_executable(cpc_visualizer ros/src/cpc_visualizer_main.cpp)
 #rosbuild_add_executable(planar_segmentation common/src/planar_segmentation.cpp)
+rosbuild_add_executable(test_point_map common/src/point_map.cpp common/src/features/plane_extraction.cpp common/src/point_map_test.cpp)
 
 
 # add compile flag

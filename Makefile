@@ -538,6 +538,19 @@ test-results-run/fast:
 .PHONY : test-results-run/fast
 
 #=============================================================================
+# Target rules for targets named test_point_map
+
+# Build rule for target.
+test_point_map: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 test_point_map
+.PHONY : test_point_map
+
+# fast build rule for target.
+test_point_map/fast:
+	$(MAKE) -f CMakeFiles/test_point_map.dir/build.make CMakeFiles/test_point_map.dir/build
+.PHONY : test_point_map/fast
+
+#=============================================================================
 # Target rules for targets named tests
 
 # Build rule for target.
@@ -581,16 +594,19 @@ common/src/features/boundary.s:
 # target to build an object file
 common/src/features/plane_extraction.o:
 	$(MAKE) -f CMakeFiles/cob_env_model.dir/build.make CMakeFiles/cob_env_model.dir/common/src/features/plane_extraction.o
+	$(MAKE) -f CMakeFiles/test_point_map.dir/build.make CMakeFiles/test_point_map.dir/common/src/features/plane_extraction.o
 .PHONY : common/src/features/plane_extraction.o
 
 # target to preprocess a source file
 common/src/features/plane_extraction.i:
 	$(MAKE) -f CMakeFiles/cob_env_model.dir/build.make CMakeFiles/cob_env_model.dir/common/src/features/plane_extraction.i
+	$(MAKE) -f CMakeFiles/test_point_map.dir/build.make CMakeFiles/test_point_map.dir/common/src/features/plane_extraction.i
 .PHONY : common/src/features/plane_extraction.i
 
 # target to generate assembly for a file
 common/src/features/plane_extraction.s:
 	$(MAKE) -f CMakeFiles/cob_env_model.dir/build.make CMakeFiles/cob_env_model.dir/common/src/features/plane_extraction.s
+	$(MAKE) -f CMakeFiles/test_point_map.dir/build.make CMakeFiles/test_point_map.dir/common/src/features/plane_extraction.s
 .PHONY : common/src/features/plane_extraction.s
 
 # target to build an object file
@@ -689,17 +705,35 @@ common/src/map/gpc.s:
 # target to build an object file
 common/src/point_map.o:
 	$(MAKE) -f CMakeFiles/cob_env_model.dir/build.make CMakeFiles/cob_env_model.dir/common/src/point_map.o
+	$(MAKE) -f CMakeFiles/test_point_map.dir/build.make CMakeFiles/test_point_map.dir/common/src/point_map.o
 .PHONY : common/src/point_map.o
 
 # target to preprocess a source file
 common/src/point_map.i:
 	$(MAKE) -f CMakeFiles/cob_env_model.dir/build.make CMakeFiles/cob_env_model.dir/common/src/point_map.i
+	$(MAKE) -f CMakeFiles/test_point_map.dir/build.make CMakeFiles/test_point_map.dir/common/src/point_map.i
 .PHONY : common/src/point_map.i
 
 # target to generate assembly for a file
 common/src/point_map.s:
 	$(MAKE) -f CMakeFiles/cob_env_model.dir/build.make CMakeFiles/cob_env_model.dir/common/src/point_map.s
+	$(MAKE) -f CMakeFiles/test_point_map.dir/build.make CMakeFiles/test_point_map.dir/common/src/point_map.s
 .PHONY : common/src/point_map.s
+
+# target to build an object file
+common/src/point_map_test.o:
+	$(MAKE) -f CMakeFiles/test_point_map.dir/build.make CMakeFiles/test_point_map.dir/common/src/point_map_test.o
+.PHONY : common/src/point_map_test.o
+
+# target to preprocess a source file
+common/src/point_map_test.i:
+	$(MAKE) -f CMakeFiles/test_point_map.dir/build.make CMakeFiles/test_point_map.dir/common/src/point_map_test.i
+.PHONY : common/src/point_map_test.i
+
+# target to generate assembly for a file
+common/src/point_map_test.s:
+	$(MAKE) -f CMakeFiles/test_point_map.dir/build.make CMakeFiles/test_point_map.dir/common/src/point_map_test.s
+.PHONY : common/src/point_map_test.s
 
 # target to build an object file
 common/src/table_object_cluster.o:
@@ -1043,6 +1077,7 @@ help:
 	@echo "... test-future"
 	@echo "... test-results"
 	@echo "... test-results-run"
+	@echo "... test_point_map"
 	@echo "... tests"
 	@echo "... trigger_mapping_action_client"
 	@echo "... common/src/features/boundary.o"
@@ -1072,6 +1107,9 @@ help:
 	@echo "... common/src/point_map.o"
 	@echo "... common/src/point_map.i"
 	@echo "... common/src/point_map.s"
+	@echo "... common/src/point_map_test.o"
+	@echo "... common/src/point_map_test.i"
+	@echo "... common/src/point_map_test.s"
 	@echo "... common/src/table_object_cluster.o"
 	@echo "... common/src/table_object_cluster.i"
 	@echo "... common/src/table_object_cluster.s"
