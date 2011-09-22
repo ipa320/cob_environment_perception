@@ -85,6 +85,9 @@
 #include <pcl/filters/passthrough.h>
 #include <pcl/range_image/range_image.h>
 
+#include "reconfigureable_node.h"
+#include <cob_env_model/aggregate_range_image_mapConfig.h>
+
 // ROS message includes
 //#include <sensor_msgs/PointCloud2.h>
 #include <cob_env_model/GetFieldOfView.h>
@@ -98,14 +101,15 @@ using namespace tf;
 
 //####################
 //#### node class ####
-class AggregateRangeImageMap : public pcl_ros::PCLNodelet
+class AggregateRangeImageMap : public pcl_ros::PCLNodelet, protected Reconfigurable_Node<cob_env_model::aggregate_range_image_mapConfig>
 {
 	typedef pcl::PointXYZRGB Point;
 
 public:
     // Constructor
 	AggregateRangeImageMap()
-	   : first_(true),
+	   : Reconfigurable_Node<cob_env_model::aggregate_range_image_mapConfig>("AggregateRangeImageMap"),
+	     first_(true),
 	     ctr_(0)//,
 	     /*set_maximumiterations_(50),
 	     set_maxcorrespondencedistance_(0.1),
@@ -126,6 +130,7 @@ public:
 		 p_limit_(0.1),
 		 distance_limit_(0.3)*/
 	{
+	    setReconfigureCallback(boost::bind(&callback, this, _1, _2));
 	}
 
 
@@ -133,6 +138,35 @@ public:
     ~AggregateRangeImageMap()
     {
     	/// void
+    }
+
+    // callback for dynamic reconfigure
+    static void callback(AggregatePointMap *inst, cob_env_model::aggregate_range_image_mapConfig &config, uint32_t level)
+    {
+      if(!inst)
+        return;
+
+      boost::mutex::scoped_lock l(inst->m_mutex_point_reconf_);
+
+      inst->set_maximumiterations_ = config.set_maximumiterations;
+      inst->set_maxcorrespondencedistance_ = config.set_maxcorrespondencedistance;
+      inst->set_transformationepsilon_ = config.set_transformationepsilon;
+      inst->file_path_ = config.file_path;
+      inst->save_pc_ = config.save_pc;
+      inst->ros_debug = config.ros_debug;
+      inst->save_icp_fov_map_ = config.save_icp_fov_map;
+      inst->save_pc_aligned_ = config.save_pc_aligned;
+      inst->save_icp_fov_pc_ = config.save_icp_fov_pc;
+      inst->save_map_fov_ = config.save_map_fov;
+      inst->save_icp_map_ = config.save_icp_map;
+      inst->vox_filter_setleafsize1 = config.vox_filter_setleafsize1;
+      inst->vox_filter_setleafsize2 = config.vox_filter_setleafsize2;
+      inst->vox_filter_setleafsize3 = config.vox_filter_setleafsize3;
+      inst->r_limit_ = config.r_limit;
+      inst->p_limit_ = config.p_limit;
+      inst->y_limit_ = config.y_limit;
+      inst->distance_limit_ = config.distance_limit;
+
     }
 
     void onInit()
@@ -173,6 +207,8 @@ public:
 
     void pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc)
     {
+        boost::mutex::scoped_lock l(m_mutex_point_reconf_);
+
     	pcl::RangeImage::Ptr ri = pcl::RangeImage::Ptr(new pcl::RangeImage);
     	ri->height = pc->height;
     	ri->width = pc->width;
@@ -448,6 +484,8 @@ protected:
 	ipa_env_model::FieldOfViewSegmentation<PointWithRange> seg_;
 
 	int ctr_;
+
+	boost::mutex m_mutex_point_reconf_;
 
 };
 
