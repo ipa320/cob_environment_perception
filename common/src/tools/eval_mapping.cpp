@@ -9,6 +9,9 @@
 #include <pcl/point_types.h>
 #include "pcl/io/pcd_io.h"
 #include <fstream>
+#include <pcl/sample_consensus/sac_model_plane.h>
+#include <pcl/segmentation/extract_polygonal_prism_data.h>
+#include <pcl/surface/convex_hull.h>
 
 class EvalMapping
 {
@@ -18,14 +21,12 @@ public:
   EvalMapping()
   {
     file_list_.push_back(std::string("/kitchen_f"));
-    file_list_.push_back(std::string("/kitchen_lf"));
-    file_list_.push_back(std::string("/kitchen_ll"));
+    file_list_.push_back(std::string("/kitchen_front"));
+    //file_list_.push_back(std::string("/kitchen_ll"));
     file_list_.push_back(std::string("/kitchen_lr"));
-    file_list_.push_back(std::string("/kitchen_mf"));
     file_list_.push_back(std::string("/kitchen_mt"));
-    file_list_.push_back(std::string("/kitchen_rf"));
     file_list_.push_back(std::string("/kitchen_rl"));
-    file_list_.push_back(std::string("/kitchen_rr"));
+    //file_list_.push_back(std::string("/kitchen_rr"));
     file_list_.push_back(std::string("/kitchen_wb"));
     file_list_.push_back(std::string("/kitchen_wr"));
   }
@@ -54,6 +55,7 @@ public:
       plane_file.close();
       coeffs_gt.push_back(coeffs);
     }
+    std::cout << pcs_gt.size() << " gt planes loaded" << std::endl;
   }
 
   void loadMap(std::string file_path, int num_planes, int idx, std::vector<pcl::PointCloud<Point> >& pcs, std::vector<Eigen::Vector4f>& v_coeffs)
@@ -77,7 +79,17 @@ public:
       plane_file >> coeffs(3);
       plane_file.close();
       v_coeffs.push_back(coeffs);
+      if(i==6)
+      {
+        ss.str("");
+        ss.clear();
+        ss << file_path << idx << "_polygon_" << i << "_1.pcd";
+        pcl::io::loadPCDFile(ss.str(), pc);
+        pcs.push_back(pc);
+        v_coeffs.push_back(coeffs);
+      }
     }
+    std::cout << pcs.size() << " map planes loaded" << std::endl;
   }
 
   void compareCoeffs(Eigen::Vector4f& coeffs_gt, Eigen::Vector4f& coeffs, double error)
@@ -93,37 +105,151 @@ public:
   void associatePlanes(std::vector<pcl::PointCloud<Point> >& pcs_gt, std::vector<pcl::PointCloud<Point> >& pcs, std::vector<Eigen::Vector4f>& coeffs_gt, std::vector<Eigen::Vector4f>& coeffs, std::vector<std::pair<int,int> >& associations)
   {
     double thresh = 0.1;
-    for(unsigned int i=0; i<coeffs_gt.size(); i++)
+    for(unsigned int i=0; i<coeffs.size(); i++)
     {
+      std::cout << coeffs[i](0) << "," << coeffs[i](1) << "," << coeffs[i](2) << "," << coeffs[i](3) << std::endl << std::endl;
       double assoc_min=10;
       std::pair<int,int> assoc;
-      for(unsigned int j=0; j<coeffs.size(); j++)
+      for(unsigned int j=0; j<coeffs_gt.size(); j++)
       {
-        if(fabs((coeffs_gt[i] - coeffs[i]).norm()) < thresh && fabs((coeffs_gt[i] - coeffs[i]).norm()) < assoc_min)
+        std::cout << j << ": " << file_list_[j] << std::endl;
+        std::cout << coeffs_gt[j](0) << "," << coeffs_gt[j](1) << "," << coeffs_gt[j](2) << "," << coeffs_gt[j](3) << std::endl;
+        //std::cout << coeffs_gt[i] - coeffs[j] << std::endl;
+        //std::cout << (coeffs_gt[i] - coeffs[j]).norm() << std::endl;
+        if(fabs((coeffs_gt[j] - coeffs[i]).norm()) < thresh && fabs((coeffs_gt[j] - coeffs[i]).norm()) < assoc_min)
         {
           assoc.first = i;
           assoc.second = j;
+          assoc_min = fabs((coeffs_gt[j] - coeffs[i]).norm());
         }
       }
       associations.push_back(assoc);
+      std::cout << "map plane " << assoc.first << " associated with gt plane " << assoc.second << std::endl;
     }
   }
 
-  void evaluate(std::vector<pcl::PointCloud<Point> >& pcs_gt, std::vector<pcl::PointCloud<Point> >& pcs, std::vector<Eigen::Vector4f>& coeffs_gt, std::vector<Eigen::Vector4f>& coeffs, std::vector<std::pair<int,int> >& associations)
+  void
+  evaluate(std::vector<pcl::PointCloud<Point> >& pcs_gt,
+           std::vector<pcl::PointCloud<Point> >& pcs,
+           std::vector<Eigen::Vector4f>& coeffs_gt,
+           std::vector<Eigen::Vector4f>& coeffs,
+           std::vector<std::pair<int,int> >& associations)
   {
+    std::vector<double> coeff_errors;
+    std::vector<double> angle_errors;
+    std::vector<double> dist_errors;
+    std::vector<double> perc_fps;
+    std::vector<double> mean_pt_errors;
+    std::vector<double> rms_errors;
+    double rms_whole = 0;
+    for(unsigned int i=0; i<associations.size(); i++)
+    {
+      double coeff_error = (coeffs_gt[associations[i].second]-coeffs[associations[i].first]).norm();
+      coeff_errors.push_back(coeff_error);
+      std::cout << "coeff error " << i << ": " << coeff_error << std::endl;
+      Eigen::Vector3f normal_gt = coeffs_gt[associations[i].second].head(3);
+      Eigen::Vector3f normal = coeffs[associations[i].first].head(3);
+      normal_gt.normalize();
+      normal.normalize();
+      double angle_error = acos(normal_gt.dot(normal));
+      double dist_error = coeffs_gt[associations[i].second](3) - coeffs[associations[i].first](3);
+      angle_errors.push_back(angle_error);
+      dist_errors.push_back(dist_error);
+      std::cout << "angle and dist error: " << angle_error << "," << dist_error << std::endl;
 
+      //false positives (overlap)
+      //TODO: rather calculate distance of outliers
+      int sum_fp=0;
+      for(unsigned int j=0; j<pcs[associations[i].first].size(); j++)
+      {
+        Point p = pcs[associations[i].first].points[j];
+
+        //calculate hull
+        pcl::PointCloud<Point> cloud_hull;
+        pcl::ConvexHull<Point> chull;
+        chull.setInputCloud (pcs_gt[associations[i].second].makeShared());
+        chull.reconstruct (cloud_hull);
+        bool isIn = pcl::isPointIn2DPolygon(p, cloud_hull);
+        if(!isIn) sum_fp++;
+      }
+      double perc_fp = sum_fp/pcs[associations[i].first].size();
+      perc_fps.push_back(perc_fp);
+      std::cout << "perc_fp: " << perc_fp << std::endl;
+
+      //distance errors
+      double std_dev_qu = 0;
+      double err_sum=0;
+      for(unsigned int j=0; j<pcs[associations[i].first].size(); j++)
+      {
+        Point p = pcs[associations[i].first].points[j];
+        double dist = pcl::pointToPlaneDistance(p, coeffs_gt[associations[i].second]);
+        std_dev_qu += dist*dist;
+        err_sum += dist;
+      }
+      std_dev_qu /= pcs[associations[i].first].size();
+      double rms = sqrt(std_dev_qu);
+      rms_whole += rms*rms;
+      double err_mean = err_sum/pcs[associations[i].first].size();
+      mean_pt_errors.push_back(err_mean);
+      rms_errors.push_back(rms);
+      std::cout << "err_mean " << i << ": " << err_mean << std::endl;
+      std::cout << "rms " << i << ": " << rms << std::endl;
+
+    }
+    rms_whole = sqrt(rms_whole/associations.size());
+    std::cout << "rms_whole: " << rms_whole << std::endl;
+
+    std::ofstream eval_file;
+    std::stringstream ss;
+    ss << file_path_ << "/../eval.txt";
+    eval_file.open(ss.str().c_str());
+    eval_file << "coeff_errors\n";
+    for(unsigned int i=0; i<coeff_errors.size(); i++)
+      eval_file << coeff_errors[i] << " ";
+    eval_file << "\nangle_errors\n";
+    for(unsigned int i=0; i<angle_errors.size(); i++)
+      eval_file << angle_errors[i] << " ";
+    eval_file << "\ndist_errors\n";
+    for(unsigned int i=0; i<dist_errors.size(); i++)
+      eval_file << dist_errors[i] << " ";
+    eval_file << "\nperc_fps\n";
+    for(unsigned int i=0; i<perc_fps.size(); i++)
+      eval_file << perc_fps[i] << " ";
+    eval_file << "\nmean_pt_errors\n";
+    for(unsigned int i=0; i<mean_pt_errors.size(); i++)
+      eval_file << mean_pt_errors[i] << " ";
+    eval_file << "\nrms_errors\n";
+    for(unsigned int i=0; i<rms_errors.size(); i++)
+      eval_file << rms_errors[i] << " ";
+    eval_file << "\nwhole_rms\n";
+    eval_file <<rms_whole;
+    eval_file.close();
   }
 
   std::vector<std::string> file_list_;
+  std::string file_path_;
 };
 
 int main(int argc, char** argv)
 {
+  typedef pcl::PointXYZ Point;
   EvalMapping em;
-  std::string file_path_gt = "/home/goa/pcl_daten/kitchen_ground_truth/";
-  std::string file_path = "/media/GOADaten/Daten/20110825_sim_kitchen/kitchen_sim_empty_n0/map/";
+  std::string file_path_gt = "/media/GOADaten/Daten/kitchen_ground_truth/";
+  std::string file_path = "/media/GOADaten/Daten/20110825_sim_kitchen/kitchen_sim_empty_n005/map/";
+  em.file_path_ = file_path;
   //load all files in directory
+  std::vector<pcl::PointCloud<Point> > pcs;
+  std::vector<Eigen::Vector4f> coeffs;
+  em.loadMap(file_path, 7, 41, pcs, coeffs);
+  std::vector<pcl::PointCloud<Point> > pcs_gt;
+  std::vector<Eigen::Vector4f> coeffs_gt;
+  em.loadGroundTruth(file_path_gt, pcs_gt, coeffs_gt);
   //associate
+  std::vector<std::pair<int,int> > associations;
+  em.associatePlanes(pcs_gt, pcs, coeffs_gt, coeffs, associations);
   //evaluate
+  em.evaluate(pcs_gt, pcs, coeffs_gt, coeffs, associations);
   return 0;
 }
+
+// for kitchen_sim_empty_n0: num_planes=7, idx=108
