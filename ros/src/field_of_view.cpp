@@ -65,7 +65,7 @@
 #include <visualization_msgs/Marker.h>
 #include <cob_env_model_msgs/GetFieldOfView.h>
 #include <Eigen/Core>
-#include <dynamic_reconfigure/server.h>
+#include "reconfigureable_node.h"
 #include <cob_env_model/field_of_viewConfig.h>
 
 // external includes
@@ -76,17 +76,13 @@ using namespace tf;
 
 //####################
 //#### node class ####
-class FieldOfView
+class FieldOfView : protected Reconfigurable_Node<cob_env_model::field_of_viewConfig>
 {
 public:
   // Constructor
   FieldOfView()
+  : Reconfigurable_Node<cob_env_model::field_of_viewConfig>("FieldOfView")
   {
-    //setup for dynamic reconfigure
-    static dynamic_reconfigure::Server<cob_env_model::field_of_viewConfig> srv;
-    dynamic_reconfigure::Server<cob_env_model::field_of_viewConfig>::CallbackType f;
-
-    //TODO: launch parameter
     fov_marker_pub_ = n_.advertise<visualization_msgs::Marker>("fov_marker",10);
     get_fov_srv_ = n_.advertiseService("get_fov", &FieldOfView::srvCallback_GetFieldOfView, this);
     setSensorFoV_hor(cob_env_model::field_of_viewConfig::__getDefault__().sensor_fov_hor_angel);
@@ -95,8 +91,7 @@ public:
     camera_frame_ = std::string(/*"/base_kinect_rear_link"*/"/head_cam3d_link");
     computeFieldOfView();
 
-    f = boost::bind(&callback, this, _1, _2);
-    srv.setCallback(f);
+    setReconfigureCallback(boost::bind(&callback, this, _1, _2));
   }
 
 
@@ -109,10 +104,10 @@ public:
   // callback for dynamic reconfigure
   static void callback(FieldOfView *fov, cob_env_model::field_of_viewConfig &config, uint32_t level)
   {
-    //TODO: not multithreading safe
-
     if(!fov)
       return;
+
+    boost::mutex::scoped_lock l(fov->m_mutex);
 
     if(level&1) //hor changed
       fov->setSensorFoV_hor(config.sensor_fov_hor_angel);
@@ -139,6 +134,7 @@ public:
 
   void computeFieldOfView()
   {
+    //don't lock
     double fovHorFrac = sensor_fov_hor_/2;
     double fovVerFrac = sensor_fov_ver_/2;
 
@@ -364,6 +360,8 @@ public:
   bool srvCallback_GetFieldOfView(cob_env_model_msgs::GetFieldOfView::Request &req,
                                   cob_env_model_msgs::GetFieldOfView::Response &res)
   {
+    boost::mutex::scoped_lock l(m_mutex);
+
     ROS_INFO("FieldOfView Trigger");
     transformFOV(req.stamp, req.target_frame);
     geometry_msgs::Point n_msg;
@@ -409,6 +407,8 @@ protected:
   tf::Point n_right_t_;
   tf::Point n_left_t_;
   tf::Point n_origin_t_;
+
+  boost::mutex m_mutex;
 
 };
 

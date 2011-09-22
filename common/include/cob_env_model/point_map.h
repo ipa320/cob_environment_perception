@@ -33,7 +33,7 @@ using namespace tf;
 
 class PointMap {
 public:
-  typedef pcl::PointXYZ Point;
+  typedef pcl::PointXYZRGB Point;
 
   PointMap(int *pctr):
   first_(true), use_reference_map_(false), fitness_(0.), compution_time_(0.), pctr_(pctr), save_icp_map_(false), use_reuse_(true)
