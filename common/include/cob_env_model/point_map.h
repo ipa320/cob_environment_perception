@@ -257,6 +257,8 @@ public:
    */
   double getComputionTime() {return compution_time_;}
 
+  void setReferenceMap(pcl::PointCloud<Point> &rmap);
+
 private:
   pcl::PointCloud<Point> map_;  /// FOV ICP map
   pcl::PointCloud<Point> ref_map_;  /// reference map
