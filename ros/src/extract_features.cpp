@@ -202,8 +202,6 @@ public:
     ROS_INFO_STREAM("Integrate time " <<time << " average normal length " << all/counter );
   }
 
-
-
   /**Stores the color field of a PointCloud to cv::Mat*/
   void getColorImage(PointCloudT::Ptr& pc, cv::Mat& color_image)
   {

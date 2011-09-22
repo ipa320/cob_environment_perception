@@ -70,6 +70,7 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::isBoundaryPoint 
   angles.reserve (indices.size ());
   for (size_t i = 0; i < indices.size (); ++i)
   {
+
     delta[0] = cloud.points[indices[i]].x - q_point.x;
     delta[1] = cloud.points[indices[i]].y - q_point.y;
     delta[2] = cloud.points[indices[i]].z - q_point.z;
@@ -251,7 +252,7 @@ template <typename PointInT, typename PointNT, typename PointOutT> int
 	//const PointInT& p = input_->points[index];
 	int idx_x = index%input_->width;
 	int idx_y = index/input_->width;
-	int v=2;
+	double v=2;
 	double r_x, r_y;
 
 	//TODO: choose search radius according to viewpoint distance
@@ -308,7 +309,7 @@ template <typename PointInT, typename PointNT, typename PointOutT> int
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointInT, typename PointNT, typename PointOutT> void
-	ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::computeFeature (PointCloudOut &output)
+ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::computeFeature (PointCloudOut &output)
 {
   // Allocate enough space to hold the results
   // \note This resize is irrelevant for a radiusSearch ().
@@ -320,6 +321,11 @@ template <typename PointInT, typename PointNT, typename PointOutT> void
   // Iterating over the entire index vector
   for (size_t idx = 0; idx < indices_->size (); ++idx)
   {
+	  dist_threshold_=calc_dist_threshold(*surface_ ,(*indices_)[idx]);
+	//  ROS_INFO_STREAM("threshold" << dist_threshold_);
+
+
+
 	  //TODO: test nn search
     if(this->searchForNeighbors ((*indices_)[idx], search_parameter_, nn_indices, nn_dists))
     {
@@ -348,6 +354,30 @@ template <typename PointInT, typename PointNT, typename PointOutT> void
     //std::cout << std::endl;
   }
 }
+template <typename PointInT, typename PointNT, typename PointOutT> float
+	ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::calc_dist_threshold (const pcl::PointCloud<PointInT> &cloud , int idx)
+	{
+	//  if(input_->points[idx].z != input_->points[idx].z) return 0;
+
+
+	/*double z_points_;
+	int counter=0;
+	for (int i=0;i<cloud.size();i++)
+	{	if(cloud.points[i].z != cloud.points[i].z){
+	}
+	else {
+		z_points_ += cloud.points[i].z;
+		counter++;}
+	}
+
+
+		float avg_z_point_=static_cast< float >(z_points_)/counter;*/
+		float threshold=static_cast< float >(-3)/static_cast< float >(430)*cloud.points[idx].z+static_cast< float >(1361)/43000;
+	//	ROS_INFO_STREAM("avg z distance is  " << avg_z_point_ << "   threshold is " <<threshold );
+
+		return threshold;
+	}
+
 
 #define PCL_INSTANTIATE_BoundaryEstimation(PointInT,PointNT,PointOutT) template class PCL_EXPORTS ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>;
 
