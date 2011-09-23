@@ -26,20 +26,10 @@
 
 #include <pcl/registration/icp.h>
 
-void PointMap::transform(const pcl::PointCloud<Point>::Ptr& pc_in, const pcl::PointCloud<Point>::Ptr& pc, const StampedTransform &transform) {
-  //transformPointCloud("/map", transform, pc->header.stamp, *(pc.get()), *(pc.get()));
-  //pcl_ros::transformPointCloud ("/map", *(pc.get()), *(pc.get()), tf_listener_);
-  pcl_ros::transformPointCloud(*pc, *pc, transform);
-  pcl_ros::transformPointCloud(*pc_in, *pc_in, transform);
-  pc->header.frame_id = "/map";
-  pc_in->header.frame_id = "/map";
-  //shiftCloud(pc);
-  //shiftCloud(pc_in);
-}
-
-bool PointMap::compute(const pcl::PointCloud<Point>::Ptr& pc_in, const pcl::PointCloud<Point>::Ptr& pc, const StampedTransform &transform, const cob_env_model_msgs::GetFieldOfView *get_fov_srv) {
+bool PointMap::compute(const pcl::PointCloud<Point>::Ptr& pc_in, const pcl::PointCloud<Point>::Ptr& pc) {
   boost::timer t;
 
+  ROS_INFO("size %d %d", pc_in->size(), this->ref_map_.size());
 
   pcl::PointCloud<Point> pc_aligned;
   Eigen::Matrix4f icp_transform;
@@ -47,11 +37,10 @@ bool PointMap::compute(const pcl::PointCloud<Point>::Ptr& pc_in, const pcl::Poin
   if(use_reference_map_)
     ret = doFOVICPUsingReference(pc, pc_aligned, icp_transform);
   else
-    ret = doFOVICP(pc, pc_aligned, icp_transform, get_fov_srv);
+    ret = doFOVICP(pc, pc_aligned, icp_transform);
   if(ret)
   {
     std::cout << "icp_transform: " << icp_transform << std::endl;
-    transform_old_ = transform;
     old_icp_transform_ = icp_transform;
     pcl::transformPointCloud(*pc_in,*pc_in,icp_transform);
     pc_aligned.header.frame_id = "/map";
@@ -68,7 +57,7 @@ bool PointMap::compute(const pcl::PointCloud<Point>::Ptr& pc_in, const pcl::Poin
     //doICP(pc);
   }
   else
-    ROS_INFO("FOV not successful");
+    ROS_INFO("ICP not successful");
 
   compution_time_=t.elapsed();
 
@@ -79,7 +68,7 @@ bool PointMap::compute(const pcl::PointCloud<Point>::Ptr& pc_in, const pcl::Poin
 
 bool PointMap::doFOVICP(const pcl::PointCloud<Point>::Ptr& pc,
          pcl::PointCloud<Point>& pc_aligned,
-         Eigen::Matrix4f& final_transformation, const cob_env_model_msgs::GetFieldOfView *get_fov_srv)
+         Eigen::Matrix4f& final_transformation)
 {
 
   if(first_)
@@ -88,29 +77,6 @@ bool PointMap::doFOVICP(const pcl::PointCloud<Point>::Ptr& pc,
     final_transformation = Eigen::Matrix4f::Identity();
     return true;
   }
-
-  if(!get_fov_srv)
-    return false;
-
-  n_up_t_(0) = get_fov_srv->response.fov.points[0].x;
-  n_up_t_(1) = get_fov_srv->response.fov.points[0].y;
-  n_up_t_(2) = get_fov_srv->response.fov.points[0].z;
-  n_down_t_(0) = get_fov_srv->response.fov.points[1].x;
-  n_down_t_(1) = get_fov_srv->response.fov.points[1].y;
-  n_down_t_(2) = get_fov_srv->response.fov.points[1].z;
-  n_right_t_(0) = get_fov_srv->response.fov.points[2].x;
-  n_right_t_(1) = get_fov_srv->response.fov.points[2].y;
-  n_right_t_(2) = get_fov_srv->response.fov.points[2].z;
-  n_left_t_(0) = get_fov_srv->response.fov.points[3].x;
-  n_left_t_(1) = get_fov_srv->response.fov.points[3].y;
-  n_left_t_(2) = get_fov_srv->response.fov.points[3].z;
-  n_origin_t_(0) = get_fov_srv->response.fov.points[4].x;
-  n_origin_t_(1) = get_fov_srv->response.fov.points[4].y;
-  n_origin_t_(2) = get_fov_srv->response.fov.points[4].z;
-  n_max_range_t_(0) = get_fov_srv->response.fov.points[5].x;
-  n_max_range_t_(1) = get_fov_srv->response.fov.points[5].y;
-  n_max_range_t_(2) = get_fov_srv->response.fov.points[5].z;
-
 
   //segment FOV
   seg_.setInputCloud(map_.makeShared());
