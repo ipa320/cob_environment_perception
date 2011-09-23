@@ -7,7 +7,7 @@
 
 // ROS includes
 #include <ros/ros.h>
-#include <cob_vision_ipa_utils/cpc_publisher.h>
+#include <cob_env_model/cpc_publisher.h>
 
 // ROS service includes
 //--

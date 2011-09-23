@@ -97,6 +97,7 @@ rosbuild_add_executable(plane_extraction_action_client ros/src/plane_extraction_
 rosbuild_add_executable(table_object_cluster_action_client ros/src/table_object_cluster_action_client.cpp)
 rosbuild_add_executable(trigger_mapping_action_client ros/src/trigger_mapping_action_client.cpp)
 rosbuild_add_executable(eval_mapping common/src/tools/eval_mapping.cpp)
+rosbuild_add_executable(create_colored_point_cloud ros/src/tools/create_colored_point_cloud.cpp)
 #rosbuild_add_library(gpc common/src/gpc.c)
 #rosbuild_add_executable(test_fov common/src/test_fov.cpp)
 #rosbuild_add_library(nodelet_cpc_publisher ros/src/cpc_publisher.cpp
