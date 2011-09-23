@@ -26,35 +26,10 @@
 
 #include <pcl/registration/icp.h>
 
-#include <pcl/registration/ia_ransac.h>
-#include <pcl/filters/voxel_grid.h>
-
-#include <pcl/filters/conditional_removal.h>
-
-#include <pcl/filters/statistical_outlier_removal.h>
-
-class TestCondition2 : public pcl::ConditionOr<PointMap::Point> {
-public:
-  virtual bool evaluate (const PointMap::Point &point) const {
-    ROS_INFO("%f\n",point.x);
-    return point.x<-3;//&&point.x>-3.3;
-  }
-};
-
-void PointMap::transform(const pcl::PointCloud<Point>::Ptr& pc_in, const pcl::PointCloud<Point>::Ptr& pc, const StampedTransform &transform) {
-  //transformPointCloud("/map", transform, pc->header.stamp, *(pc.get()), *(pc.get()));
-  //pcl_ros::transformPointCloud ("/map", *(pc.get()), *(pc.get()), tf_listener_);
-  pcl_ros::transformPointCloud(*pc, *pc, transform);
-  pcl_ros::transformPointCloud(*pc_in, *pc_in, transform);
-  pc->header.frame_id = "/map";
-  pc_in->header.frame_id = "/map";
-  //shiftCloud(pc);
-  //shiftCloud(pc_in);
-}
-
-bool PointMap::compute(const pcl::PointCloud<Point>::Ptr& pc_in, const pcl::PointCloud<Point>::Ptr& pc, const StampedTransform &transform, const cob_env_model_msgs::GetFieldOfView *get_fov_srv) {
+bool PointMap::compute(const pcl::PointCloud<Point>::Ptr& pc_in, const pcl::PointCloud<Point>::Ptr& pc) {
   boost::timer t;
 
+  ROS_INFO("size %d %d", pc_in->size(), this->ref_map_.size());
 
   pcl::PointCloud<Point> pc_aligned;
   Eigen::Matrix4f icp_transform;
@@ -62,11 +37,10 @@ bool PointMap::compute(const pcl::PointCloud<Point>::Ptr& pc_in, const pcl::Poin
   if(use_reference_map_)
     ret = doFOVICPUsingReference(pc, pc_aligned, icp_transform);
   else
-    ret = doFOVICP(pc, pc_aligned, icp_transform, get_fov_srv);
+    ret = doFOVICP(pc, pc_aligned, icp_transform);
   if(ret)
   {
     std::cout << "icp_transform: " << icp_transform << std::endl;
-    transform_old_ = transform;
     old_icp_transform_ = icp_transform;
     pcl::transformPointCloud(*pc_in,*pc_in,icp_transform);
     pc_aligned.header.frame_id = "/map";
@@ -83,7 +57,7 @@ bool PointMap::compute(const pcl::PointCloud<Point>::Ptr& pc_in, const pcl::Poin
     //doICP(pc);
   }
   else
-    ROS_INFO("FOV not successful");
+    ROS_INFO("ICP not successful");
 
   compution_time_=t.elapsed();
 
@@ -93,8 +67,8 @@ bool PointMap::compute(const pcl::PointCloud<Point>::Ptr& pc_in, const pcl::Poin
 }
 
 bool PointMap::doFOVICP(const pcl::PointCloud<Point>::Ptr& pc,
-                        pcl::PointCloud<Point>& pc_aligned,
-                        Eigen::Matrix4f& final_transformation, const cob_env_model_msgs::GetFieldOfView *get_fov_srv)
+         pcl::PointCloud<Point>& pc_aligned,
+         Eigen::Matrix4f& final_transformation)
 {
 
   if(first_)
@@ -103,29 +77,6 @@ bool PointMap::doFOVICP(const pcl::PointCloud<Point>::Ptr& pc,
     final_transformation = Eigen::Matrix4f::Identity();
     return true;
   }
-
-  if(!get_fov_srv)
-    return false;
-
-  n_up_t_(0) = get_fov_srv->response.fov.points[0].x;
-  n_up_t_(1) = get_fov_srv->response.fov.points[0].y;
-  n_up_t_(2) = get_fov_srv->response.fov.points[0].z;
-  n_down_t_(0) = get_fov_srv->response.fov.points[1].x;
-  n_down_t_(1) = get_fov_srv->response.fov.points[1].y;
-  n_down_t_(2) = get_fov_srv->response.fov.points[1].z;
-  n_right_t_(0) = get_fov_srv->response.fov.points[2].x;
-  n_right_t_(1) = get_fov_srv->response.fov.points[2].y;
-  n_right_t_(2) = get_fov_srv->response.fov.points[2].z;
-  n_left_t_(0) = get_fov_srv->response.fov.points[3].x;
-  n_left_t_(1) = get_fov_srv->response.fov.points[3].y;
-  n_left_t_(2) = get_fov_srv->response.fov.points[3].z;
-  n_origin_t_(0) = get_fov_srv->response.fov.points[4].x;
-  n_origin_t_(1) = get_fov_srv->response.fov.points[4].y;
-  n_origin_t_(2) = get_fov_srv->response.fov.points[4].z;
-  n_max_range_t_(0) = get_fov_srv->response.fov.points[5].x;
-  n_max_range_t_(1) = get_fov_srv->response.fov.points[5].y;
-  n_max_range_t_(2) = get_fov_srv->response.fov.points[5].z;
-
 
   //segment FOV
   seg_.setInputCloud(map_.makeShared());
@@ -170,134 +121,11 @@ public:
   int getNeededIterations() {return nr_iterations_;}
 };
 
-class TestCondition : public pcl::ConditionOr<PointMap::Point> {
-  PointMap::Point center;
-public:
-  TestCondition(PointMap::Point center):center(center)
-  {}
-
-  virtual bool evaluate (const PointMap::Point &point) const {
-    PointMap::Point p;
-    p.x = point.x-center.x;
-    p.y = point.y-center.y;
-    p.z = point.z-center.z;
-    float lq=p.x*p.x + p.y*p.y + p.z*p.z;
-
-    return lq<1.5;
-  }
-};
-
-#include <pcl/Vertices.h>
-#include "cob_env_model/features/plane_extraction.h"
-#include "cob_env_model_msgs/PlaneExtractionAction.h"
-#include <vector>
-
-void extractPlane(const pcl::PointCloud<pcl::PointXYZ>::Ptr& pc_in,
-                  std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > >& v_cloud_hull,
-                  std::vector<std::vector<pcl::Vertices> >& v_hull_polygons,
-                  std::vector<pcl::ModelCoefficients>& v_coefficients_plane)
-{
-  PlaneExtraction pe;
-  pe.extractPlanes(pc_in, v_cloud_hull, v_hull_polygons, v_coefficients_plane);
-}
 
 bool PointMap::doFOVICPUsingReference(const pcl::PointCloud<Point>::Ptr& pc,
                                       pcl::PointCloud<Point>& pc_aligned,
                                       Eigen::Matrix4f& final_transformation)
 {
-  pcl::PointCloud<Point> pc2;
-
-
-    std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > > v_cloud_hull;
-    std::vector<std::vector<pcl::Vertices> > v_hull_polygons;
-    std::vector<pcl::ModelCoefficients> v_coefficients_plane;
-    extractPlane(pc->makeShared(), v_cloud_hull, v_hull_polygons, v_coefficients_plane);
-    for(unsigned int i = 0; i < v_cloud_hull.size(); i++)
-    {
-      float o=0,g=0;
-      int n=0;
-      Eigen::Vector3f v;
-      for(int j=0; j<v_cloud_hull[i].size()-2; j++) {
-        Eigen::Vector3f v1(v_cloud_hull[i][j+0].x, v_cloud_hull[i][j+0].y, v_cloud_hull[i][j+0].z);
-        Eigen::Vector3f v2(v_cloud_hull[i][j+1].x, v_cloud_hull[i][j+1].y, v_cloud_hull[i][j+1].z);
-        Eigen::Vector3f v3(v_cloud_hull[i][j+2].x, v_cloud_hull[i][j+2].y, v_cloud_hull[i][j+2].z),a,b;
-        a=v2-v1;
-        b=v3-v2;
-        v+=v1;
-        a.normalize();
-        b.normalize();
-        ++n;
-        float f=a.dot(b);
-        //g+=cosf(f);
-        g+=v1(0)*v1(0) + v1(1)*v1(1) + v1(2)*v1(2);
-        if(o*f<0) {
-          //ROS_INFO("%d dot",n);
-          n=0;
-        }
-        o=f;
-      }
-
-      Eigen::Vector4f min_pt, max_pt;
-      pcl::PointXYZ center;
-      pcl::getMinMax3D(v_cloud_hull[i], min_pt, max_pt);
-      center.x = (min_pt(0)+max_pt(0))/2;
-      center.y = (min_pt(1)+max_pt(1))/2;
-      center.z = (min_pt(2)+max_pt(2))/2;
-
-      pcl::PointXYZ a,b;
-      a.x=min_pt(0);
-      a.y=min_pt(1);
-      a.z=min_pt(2);
-      b.x=max_pt(0);
-      b.y=max_pt(1);
-      b.z=max_pt(2);
-      /*pc2.insert(pc2.end(),a);
-      pc2.insert(pc2.end(),b);
-      pc2.insert(pc2.end(),center);*/
-
-      pc2+=v_cloud_hull[i];
-
-      v/=v_cloud_hull[i].size()-2;
-      ROS_INFO("%f %f %f %f pos",center.x,center.y,center.z, (max_pt-min_pt).norm());//v(0),v(1),v(2));
-      ROS_INFO("%f ges",g);
-      //ROS_INFO("%d points\n",v_cloud_hull[i].size());
-      //ROS_INFO("%d planes published so far", i);
-    }
-
-  {
-    ROS_INFO("%d %d LLLLL",pc2.size(), ref_map_.size());
-
-  //do ICP
-  MyIterativeClosestPoint icp;
-  icp.setInputCloud(pc2.makeShared());
-  //icp.setIndices(boost::make_shared<pcl::PointIndices>(indices));
-  icp.setInputTarget(ref_map_.makeShared());
-  icp.setMaximumIterations(icp_max_iterations_);
-  icp.setRANSACOutlierRejectionThreshold(0.8);
-  if(first_)
-    icp.setMaxCorrespondenceDistance(icp_max_corr_dist_on_first_);
-  else
-    icp.setMaxCorrespondenceDistance(icp_max_corr_dist_);
-  icp.setTransformationEpsilon (icp_trf_epsilon_);
-
-  //icp.align(pc_aligned, old_icp_transform_);
-  if(first_||!use_reuse_)
-    icp.align(pc_aligned);
-  else
-    icp.align(pc_aligned, old_icp_transform_);
-
-  final_transformation = icp.getFinalTransformation();
-
-  pc_aligned.clear();
-  for(unsigned int i = 0; i < v_cloud_hull.size(); i++) {
-    pcl::transformPointCloud(v_cloud_hull[i],v_cloud_hull[i], final_transformation);
-    pc_aligned+=v_cloud_hull[i];
-  }
-
-  ROS_INFO("[aggregate_point_map] ICP iterations: %d\n", icp.getNeededIterations());
-
-  return icp.getMaximumIterations()!=icp.getNeededIterations()&&icp.getNeededIterations()>0;
-  }
   /*cob_env_model::GetFieldOfView get_fov_srv;
 get_fov_srv->request.target_frame = std::string("/map");
 get_fov_srv->request.stamp = pc->header.stamp;
@@ -483,65 +311,6 @@ void PointMap::clearMap()
   map_.points.clear();
   map_.width = 0;
   map_.height = 0;
-}
-
-bool PointMap::setReferenceMap(cob_env_model_msgs::SetReferenceMap::Request &req)
-{
-  pcl::PointCloud<Point> rmap;
-  pcl::fromROSMsg(req.map, rmap);
-  setReferenceMap(rmap);
-  return true;
-}
-
-void PointMap::setReferenceMap(pcl::PointCloud<Point> &rmap)
-{
-  ref_map_.clear();
-
-  std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > > v_cloud_hull;
-  std::vector<std::vector<pcl::Vertices> > v_hull_polygons;
-  std::vector<pcl::ModelCoefficients> v_coefficients_plane;
-  extractPlane(rmap.makeShared(), v_cloud_hull, v_hull_polygons, v_coefficients_plane);
-  for(unsigned int i = 0; i < v_cloud_hull.size(); i++)
-  {
-    float o=0,g=0;
-    int n=0;
-    Eigen::Vector3f v;
-    for(int j=0; j<v_cloud_hull[i].size()-2; j++) {
-      Eigen::Vector3f v1(v_cloud_hull[i][j+0].x, v_cloud_hull[i][j+0].y, v_cloud_hull[i][j+0].z);
-      Eigen::Vector3f v2(v_cloud_hull[i][j+1].x, v_cloud_hull[i][j+1].y, v_cloud_hull[i][j+1].z);
-      Eigen::Vector3f v3(v_cloud_hull[i][j+2].x, v_cloud_hull[i][j+2].y, v_cloud_hull[i][j+2].z),a,b;
-      a=v2-v1;
-      b=v3-v2;
-      v+=v1;
-      a.normalize();
-      b.normalize();
-      ++n;
-      float f=a.dot(b);
-      //g+=cosf(f);
-      g+=v1(0)*v1(0) + v1(1)*v1(1) + v1(2)*v1(2);
-      if(o*f<0) {
-        //ROS_INFO("%d dot",n);
-        n=0;
-      }
-      o=f;
-    }
-
-    Eigen::Vector4f min_pt, max_pt;
-    pcl::PointXYZ center;
-    pcl::getMinMax3D(v_cloud_hull[i], min_pt, max_pt);
-    center.x = (min_pt(0)+max_pt(0))/2;
-    center.y = (min_pt(1)+max_pt(1))/2;
-    center.z = (min_pt(2)+max_pt(2))/2;
-
-    //ref_map_.insert(ref_map_.end(),center);
-    ref_map_+=v_cloud_hull[i];
-
-    v/=v_cloud_hull[i].size()-2;
-    ROS_INFO("%f %f %f %f pos",center.x,center.y,center.z, (max_pt-min_pt).norm());//v(0),v(1),v(2));
-    ROS_INFO("%f ges",g);
-    //ROS_INFO("%d points\n",v_cloud_hull[i].size());
-    //ROS_INFO("%d planes published so far", i);
-  }
 }
 
 void PointMap::shiftCloud(const pcl::PointCloud<Point>::Ptr& pc)

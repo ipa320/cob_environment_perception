@@ -91,7 +91,7 @@ public:
     camera_frame_ = std::string(/*"/base_kinect_rear_link"*/"/head_cam3d_link");
     computeFieldOfView();
 
-    setReconfigureCallback(boost::bind(&callback, this, _1, _2));
+    setReconfigureCallback2(boost::bind(&callback, this, _1, _2), boost::bind(&callback_get, this, _1));
   }
 
 
@@ -128,6 +128,19 @@ public:
 
     //new settings -> recalculate
     fov->computeFieldOfView();
+  }
+
+  // callback for dynamic reconfigure
+  static void callback_get(FieldOfView *fov, cob_env_model::field_of_viewConfig &config)
+  {
+    if(!fov)
+      return;
+
+    boost::mutex::scoped_lock l(fov->m_mutex);
+
+    config.sensor_fov_hor_angle = fov->sensor_fov_hor_;
+    config.sensor_fov_ver_angle = fov->sensor_fov_ver_;
+    config.sensor_max_range = fov->sensor_max_range_;
   }
 
   void setSensorFoV_hor(double val) {
