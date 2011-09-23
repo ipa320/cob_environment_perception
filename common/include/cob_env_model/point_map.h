@@ -33,27 +33,13 @@ using namespace tf;
 
 class PointMap {
 public:
-  typedef pcl::PointXYZ Point;
+  typedef pcl::PointXYZRGB Point;
 
   PointMap(int *pctr):
     use_reference_map_(false), first_(true), fitness_(0.), compution_time_(0.), pctr_(pctr), save_icp_map_(false), use_reuse_(true)
   {
     old_icp_transform_ = Eigen::Matrix4f::Identity();
   }
-
-
-  /**
-   * @brief transforms two cloud points with one transformation
-   *
-   * transforms two cloud points with one transformation
-   *
-   * @param pc_in point cloud one
-   * @param pc point cloud tow
-   * @param tranform transformation
-   *
-   * @return nothing
-   */
-  void transform(const pcl::PointCloud<Point>::Ptr& pc_in, const pcl::PointCloud<Point>::Ptr& pc, const StampedTransform &transform);
 
   /**
    * @brief computes the new 3d map using a new point cloud as input
@@ -64,12 +50,12 @@ public:
    *
    * @param pc_in point cloud one
    * @param pc point cloud two (downsampled from point cloud one)
-   * @param tranform transformation (optional, can be NULL if not needed)
+   * @param transform transformation (optional, can be NULL if not needed)
    *
    * @return nothing
    */
-  bool compute(const pcl::PointCloud<Point>::Ptr& pc_in, const pcl::PointCloud<Point>::Ptr& pc, const StampedTransform &transform, const cob_env_model_msgs::GetFieldOfView *get_fov_srv);
 
+  bool compute(const pcl::PointCloud<Point>::Ptr& pc_in, const pcl::PointCloud<Point>::Ptr& pc);
 
   /**
    * @brief clears map
@@ -212,15 +198,6 @@ public:
   void setReuse(const bool b) {use_reuse_=b;}
 
   /**
-   * @brief gets the last transformation matrix
-   *
-   * gets the last transformation matrix
-   *
-   * @return last transformation
-   */
-  const StampedTransform &getOldTransform() {return transform_old_;}
-
-  /**
    * @brief checks wether it is the first computation
    *
    * checks wether it is the first computation
@@ -257,7 +234,29 @@ public:
    */
   double getComputionTime() {return compution_time_;}
 
-  void setReferenceMap(pcl::PointCloud<Point> &rmap);
+  int getICP_maxIterations() {return icp_max_iterations_;}
+  double getICP_maxFirstCorrDist() {return icp_max_corr_dist_on_first_;}
+  double getICP_maxCorrDist() {return icp_max_corr_dist_;}
+  double getICP_trfEpsilon() {return icp_trf_epsilon_;}
+  bool getSaveICPMap() {return save_icp_map_;}
+  std::string getFilePath() {return file_path_;}
+  bool getReuse() {return use_reuse_;}
+
+  void setFOV(
+      Eigen::Vector3d n_up_t,
+      Eigen::Vector3d n_down_t,
+      Eigen::Vector3d n_right_t,
+      Eigen::Vector3d n_left_t,
+      Eigen::Vector3d n_origin_t,
+      Eigen::Vector3d n_max_range_t
+      ) {
+    n_up_t_=n_up_t;
+    n_down_t_=n_down_t;
+    n_right_t_=n_right_t;
+    n_left_t_=n_left_t;
+    n_origin_t_=n_origin_t;
+    n_max_range_t_=n_max_range_t;
+  }
 
 private:
   pcl::PointCloud<Point> map_;  /// FOV ICP map
@@ -279,9 +278,7 @@ private:
           icp_max_corr_dist_on_first_;          /// maximum correspondence distance until first is false (icp)
   double icp_trf_epsilon_;                      /// epsilon parameter of icp
 
-  StampedTransform transform_old_;      /// last transformation (this won't be reused)
-
-  ipa_env_model::FieldOfViewSegmentation<Point> seg_;           /// segmentationo for field of view culling
+  ipa_env_model::FieldOfViewSegmentation<Point> seg_;
 
   Eigen::Vector3d n_up_t_;
   Eigen::Vector3d n_down_t_;
@@ -297,7 +294,7 @@ private:
 
   bool doFOVICP(const pcl::PointCloud<Point>::Ptr& pc,
            pcl::PointCloud<Point>& pc_aligned,
-           Eigen::Matrix4f& final_transformation, const cob_env_model_msgs::GetFieldOfView *get_fov_srv);
+           Eigen::Matrix4f& final_transformation);
   bool doFOVICPUsingReference(const pcl::PointCloud<Point>::Ptr& pc,
            pcl::PointCloud<Point>& pc_aligned,
            Eigen::Matrix4f& final_transformation);

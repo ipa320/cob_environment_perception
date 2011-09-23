@@ -83,6 +83,7 @@ rosbuild_add_library(cob_env_model_nodelets
 #	ros/src/aggregate_point_map.cpp
 #	common/src/point_map.cpp)
 rosbuild_add_executable(field_of_view_node ros/src/field_of_view.cpp)
+rosbuild_add_executable(keyframe_detector_node ros/src/keyframe_detector.cpp)
 rosbuild_add_executable(concat_fields_node ros/src/tools/concat_fields.cpp)
 rosbuild_add_executable(feature_map_node ros/src/feature_map_node.cpp)
 rosbuild_add_executable(feature_map common/src/map/feature_map.cpp)
@@ -91,6 +92,7 @@ rosbuild_add_executable(create_kitchen_point_cloud common/src/tools/create_kitch
 rosbuild_add_executable(plane_extraction_action_client ros/src/plane_extraction_action_client.cpp)
 rosbuild_add_executable(table_object_cluster_action_client ros/src/table_object_cluster_action_client.cpp)
 rosbuild_add_executable(trigger_mapping_action_client ros/src/trigger_mapping_action_client.cpp)
+rosbuild_add_executable(set_reference_map_client ros/src/set_reference_map.cpp)
 rosbuild_add_executable(eval_mapping common/src/tools/eval_mapping.cpp)
 #rosbuild_add_library(gpc common/src/gpc.c)
 #rosbuild_add_executable(test_fov common/src/test_fov.cpp)

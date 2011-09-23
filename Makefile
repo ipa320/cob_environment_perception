@@ -317,6 +317,19 @@ field_of_view_node/fast:
 .PHONY : field_of_view_node/fast
 
 #=============================================================================
+# Target rules for targets named keyframe_detector_node
+
+# Build rule for target.
+keyframe_detector_node: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 keyframe_detector_node
+.PHONY : keyframe_detector_node
+
+# fast build rule for target.
+keyframe_detector_node/fast:
+	$(MAKE) -f CMakeFiles/keyframe_detector_node.dir/build.make CMakeFiles/keyframe_detector_node.dir/build
+.PHONY : keyframe_detector_node/fast
+
+#=============================================================================
 # Target rules for targets named norm_time
 
 # Build rule for target.
@@ -471,6 +484,19 @@ rospack_gensrv_all: cmake_check_build_system
 rospack_gensrv_all/fast:
 	$(MAKE) -f CMakeFiles/rospack_gensrv_all.dir/build.make CMakeFiles/rospack_gensrv_all.dir/build
 .PHONY : rospack_gensrv_all/fast
+
+#=============================================================================
+# Target rules for targets named set_reference_map_client
+
+# Build rule for target.
+set_reference_map_client: cmake_check_build_system
+	$(MAKE) -f CMakeFiles/Makefile2 set_reference_map_client
+.PHONY : set_reference_map_client
+
+# fast build rule for target.
+set_reference_map_client/fast:
+	$(MAKE) -f CMakeFiles/set_reference_map_client.dir/build.make CMakeFiles/set_reference_map_client.dir/build
+.PHONY : set_reference_map_client/fast
 
 #=============================================================================
 # Target rules for targets named table_object_cluster_action_client
@@ -916,6 +942,21 @@ ros/src/filters/speckle_filter.s:
 .PHONY : ros/src/filters/speckle_filter.s
 
 # target to build an object file
+ros/src/keyframe_detector.o:
+	$(MAKE) -f CMakeFiles/keyframe_detector_node.dir/build.make CMakeFiles/keyframe_detector_node.dir/ros/src/keyframe_detector.o
+.PHONY : ros/src/keyframe_detector.o
+
+# target to preprocess a source file
+ros/src/keyframe_detector.i:
+	$(MAKE) -f CMakeFiles/keyframe_detector_node.dir/build.make CMakeFiles/keyframe_detector_node.dir/ros/src/keyframe_detector.i
+.PHONY : ros/src/keyframe_detector.i
+
+# target to generate assembly for a file
+ros/src/keyframe_detector.s:
+	$(MAKE) -f CMakeFiles/keyframe_detector_node.dir/build.make CMakeFiles/keyframe_detector_node.dir/ros/src/keyframe_detector.s
+.PHONY : ros/src/keyframe_detector.s
+
+# target to build an object file
 ros/src/norm_time.o:
 	$(MAKE) -f CMakeFiles/norm_time.dir/build.make CMakeFiles/norm_time.dir/ros/src/norm_time.o
 .PHONY : ros/src/norm_time.o
@@ -959,6 +1000,21 @@ ros/src/plane_extraction_nodelet.i:
 ros/src/plane_extraction_nodelet.s:
 	$(MAKE) -f CMakeFiles/cob_env_model_nodelets.dir/build.make CMakeFiles/cob_env_model_nodelets.dir/ros/src/plane_extraction_nodelet.s
 .PHONY : ros/src/plane_extraction_nodelet.s
+
+# target to build an object file
+ros/src/set_reference_map.o:
+	$(MAKE) -f CMakeFiles/set_reference_map_client.dir/build.make CMakeFiles/set_reference_map_client.dir/ros/src/set_reference_map.o
+.PHONY : ros/src/set_reference_map.o
+
+# target to preprocess a source file
+ros/src/set_reference_map.i:
+	$(MAKE) -f CMakeFiles/set_reference_map_client.dir/build.make CMakeFiles/set_reference_map_client.dir/ros/src/set_reference_map.i
+.PHONY : ros/src/set_reference_map.i
+
+# target to generate assembly for a file
+ros/src/set_reference_map.s:
+	$(MAKE) -f CMakeFiles/set_reference_map_client.dir/build.make CMakeFiles/set_reference_map_client.dir/ros/src/set_reference_map.s
+.PHONY : ros/src/set_reference_map.s
 
 # target to build an object file
 ros/src/table_object_cluster_action_client.o:
@@ -1059,6 +1115,7 @@ help:
 	@echo "... feature_map"
 	@echo "... feature_map_node"
 	@echo "... field_of_view_node"
+	@echo "... keyframe_detector_node"
 	@echo "... norm_time"
 	@echo "... plane_extraction_action_client"
 	@echo "... pointcloud_to_pcd"
@@ -1072,6 +1129,7 @@ help:
 	@echo "... rospack_genmsg_libexe"
 	@echo "... rospack_gensrv"
 	@echo "... rospack_gensrv_all"
+	@echo "... set_reference_map_client"
 	@echo "... table_object_cluster_action_client"
 	@echo "... test"
 	@echo "... test-future"
@@ -1146,6 +1204,9 @@ help:
 	@echo "... ros/src/filters/speckle_filter.o"
 	@echo "... ros/src/filters/speckle_filter.i"
 	@echo "... ros/src/filters/speckle_filter.s"
+	@echo "... ros/src/keyframe_detector.o"
+	@echo "... ros/src/keyframe_detector.i"
+	@echo "... ros/src/keyframe_detector.s"
 	@echo "... ros/src/norm_time.o"
 	@echo "... ros/src/norm_time.i"
 	@echo "... ros/src/norm_time.s"
@@ -1155,6 +1216,9 @@ help:
 	@echo "... ros/src/plane_extraction_nodelet.o"
 	@echo "... ros/src/plane_extraction_nodelet.i"
 	@echo "... ros/src/plane_extraction_nodelet.s"
+	@echo "... ros/src/set_reference_map.o"
+	@echo "... ros/src/set_reference_map.i"
+	@echo "... ros/src/set_reference_map.s"
 	@echo "... ros/src/table_object_cluster_action_client.o"
 	@echo "... ros/src/table_object_cluster_action_client.i"
 	@echo "... ros/src/table_object_cluster_action_client.s"
