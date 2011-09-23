@@ -97,7 +97,7 @@
 #include <boost/timer.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 
-#include "cob_env_model/point_map.h"
+#include "cob_env_model/map/point_map.h"
 
 #include "reconfigureable_node.h"
 #include <cob_env_model/aggregate_point_mapConfig.h>
