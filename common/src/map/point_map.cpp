@@ -12,7 +12,7 @@
 #include <visualization_msgs/Marker.h>
 #include <cob_env_model_msgs/GetFieldOfView.h>
 #include <Eigen/Core>
-#include "cob_env_model/point_map.h"
+#include "cob_env_model/map/point_map.h"
 
 
 #include <pcl/segmentation/extract_polygonal_prism_data.h>

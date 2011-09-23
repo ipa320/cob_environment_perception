@@ -50,25 +50,30 @@ ${PROJECT_SOURCE_DIR}/ros/include)
 #rosbuild_add_executable(data_acquisition_node ros/src/data_acquisition.cpp)
 #rosbuild_add_executable(icp_registration_node ros/src/icp_registration.cpp)
 #rosbuild_add_executable(point_cloud_filter_node ros/src/point_cloud_filter.cpp)
-rosbuild_add_executable(extract_features_node ros/src/extract_features.cpp)
+rosbuild_add_executable(extract_features ros/src/extract_features.cpp)
 #rosbuild_add_executable(test_range ros/src/test_range_edges.cpp)
 rosbuild_add_executable(norm_time ros/src/norm_time.cpp)
 
 
 #rosbuild_add_executable(test_icp ros/src/test_icp.cpp)
-#rosbuild_add_executable(bag_to_pcd ros/src/tools/bag_to_pcd.cpp)
+rosbuild_add_executable(bag_to_pcd ros/src/tools/bag_to_pcd.cpp)
 rosbuild_add_executable(pointcloud_to_pcd ros/src/tools/pointcloud_to_pcd.cpp)
-rosbuild_add_library(cob_env_model 
+
+rosbuild_add_library(cob_env_model_filters
 	common/src/filters/amplitude_filter.cpp
 	common/src/filters/intensity_filter.cpp
-	common/src/filters/jump_edge_filter.cpp
-	common/src/features/range_image_border_extractor.cpp
-	common/src/features/boundary.cpp
+	common/src/filters/jump_edge_filter.cpp)
+	
+rosbuild_add_library(cob_env_model_map	
 	common/src/map/gpc.c
 	common/src/map/feature_map.cpp
+	common/src/map/point_map.cpp)
+	
+rosbuild_add_library(cob_env_model 
+	common/src/features/range_image_border_extractor.cpp
+	common/src/features/boundary.cpp
 	common/src/features/plane_extraction.cpp
-	common/src/table_object_cluster.cpp
-	common/src/point_map.cpp)
+	common/src/table_object_cluster.cpp)
 
 rosbuild_add_library(cob_env_model_nodelets
     ros/src/table_object_cluster_nodelet.cpp
@@ -98,19 +103,18 @@ rosbuild_add_executable(eval_mapping common/src/tools/eval_mapping.cpp)
 #ros/src/cpc_visualizer.cpp)
 #rosbuild_add_executable(cpc_publisher ros/src/cpc_publisher_main.cpp)
 #rosbuild_add_executable(cpc_visualizer ros/src/cpc_visualizer_main.cpp)
-#rosbuild_add_executable(planar_segmentation common/src/planar_segmentation.cpp)
 
 
 # add compile flag
-rosbuild_add_compile_flags(extract_features_node -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
+rosbuild_add_compile_flags(extract_features -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
 
 
 # add compile flag
 #target_link_libraries(cob_env_model gpc)
-target_link_libraries(extract_features_node cob_env_model)
-target_link_libraries(feature_map cob_env_model)
-target_link_libraries(feature_map_node cob_env_model)
-target_link_libraries(cob_env_model_nodelets cob_env_model)
+target_link_libraries(extract_features cob_env_model)
+target_link_libraries(feature_map cob_env_model_map)
+target_link_libraries(feature_map_node cob_env_model_map)
+target_link_libraries(cob_env_model_nodelets cob_env_model cob_env_model_filters cob_env_model_map)
 #target_link_libraries (planar_segmentation ${PCL_IO_LIBRARY} ${PCL_FILTERS_LIBRARY} ${PCL_SEGMENTATION_LIBRARY})
 #target_link_libraries(test_fov cob_env_model)
 #target_link_libraries(env_model ann glut mesasr)

@@ -747,9 +747,9 @@ int main(int argc, char** argv)
   ExtractFeatures ef;
 
   /// Load PCD file as input; better use binary PCD files, ascii files seem to generate corrupt point clouds
-  std::string directory("/home/goa/pcl_daten/corner/");
+  std::string directory("/home/goa/pcl_daten/kitchen_ground_truth/");
   PointCloudT::Ptr cloud_in = PointCloudT::Ptr (new PointCloudT);
-  pcl::io::loadPCDFile(directory+"corner2.pcd", *cloud_in);
+  pcl::io::loadPCDFile(directory+"whole_kitchen.pcd", *cloud_in);
 
   /// Extract edges on the color image
   /*cv::Mat color_image(cloud_in->height,cloud_in->width,CV_8UC3);
