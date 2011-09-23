@@ -44,8 +44,7 @@ public:
                           0, 0, 0, 1;
   }
 
-  void transform(const pcl::PointCloud<Point>::Ptr& pc_in, const pcl::PointCloud<Point>::Ptr& pc, const StampedTransform &transform);
-  bool compute(const pcl::PointCloud<Point>::Ptr& pc_in, const pcl::PointCloud<Point>::Ptr& pc, const StampedTransform &transform, const cob_env_model_msgs::GetFieldOfView *get_fov_srv);
+  bool compute(const pcl::PointCloud<Point>::Ptr& pc_in, const pcl::PointCloud<Point>::Ptr& pc);
 
   void clearMap();
   bool setReferenceMap(cob_env_model_msgs::SetReferenceMap::Request &req);
@@ -63,11 +62,34 @@ public:
   void setFilePath(std::string fp) {file_path_=fp;}
   void setReuse(const bool b) {use_reuse_=b;}
 
-  const StampedTransform &getOldTransform() {return transform_old_;}
   bool isFirst() {return first_;}
   bool getUseReferenceMap() {return use_reference_map_;}
   double getFitness() {return fitness_;}
   double getComputionTime() {return compution_time_;}
+
+  int getICP_maxIterations() {return icp_max_iterations_;}
+  double getICP_maxFirstCorrDist() {return icp_max_corr_dist_on_first_;}
+  double getICP_maxCorrDist() {return icp_max_corr_dist_;}
+  double getICP_trfEpsilon() {return icp_trf_epsilon_;}
+  bool getSaveICPMap() {return save_icp_map_;}
+  std::string getFilePath() {return file_path_;}
+  bool getReuse() {return use_reuse_;}
+
+  void setFOV(
+      Eigen::Vector3d n_up_t,
+      Eigen::Vector3d n_down_t,
+      Eigen::Vector3d n_right_t,
+      Eigen::Vector3d n_left_t,
+      Eigen::Vector3d n_origin_t,
+      Eigen::Vector3d n_max_range_t
+      ) {
+    n_up_t_=n_up_t;
+    n_down_t_=n_down_t;
+    n_right_t_=n_right_t;
+    n_left_t_=n_left_t;
+    n_origin_t_=n_origin_t;
+    n_max_range_t_=n_max_range_t;
+  }
 
 private:
   pcl::PointCloud<Point> map_;  //FOV ICP map
@@ -88,8 +110,6 @@ private:
   double icp_max_corr_dist_,icp_max_corr_dist_on_first_;
   double icp_trf_epsilon_;
 
-  StampedTransform transform_old_;
-
   ipa_env_model::FieldOfViewSegmentation<Point> seg_;
 
   Eigen::Vector3d n_up_t_;
@@ -106,7 +126,7 @@ private:
 
   bool doFOVICP(const pcl::PointCloud<Point>::Ptr& pc,
            pcl::PointCloud<Point>& pc_aligned,
-           Eigen::Matrix4f& final_transformation, const cob_env_model_msgs::GetFieldOfView *get_fov_srv);
+           Eigen::Matrix4f& final_transformation);
   bool doFOVICPUsingReference(const pcl::PointCloud<Point>::Ptr& pc,
            pcl::PointCloud<Point>& pc_aligned,
            Eigen::Matrix4f& final_transformation);
