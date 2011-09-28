@@ -68,14 +68,14 @@ using namespace tf;
 
 //####################
 //#### node class ####
-class KeyframeDetector : protected Reconfigurable_Node<cob_env_model::aggregate_point_mapConfig>
+class KeyframeDetector : protected Reconfigurable_Node<cob_env_model::keyframe_detectorConfig>
 {
   typedef pcl::PointXYZRGB Point;
 
 public:
   // Constructor
   KeyframeDetector()
-  : Reconfigurable_Node<cob_env_model::aggregate_point_mapConfig>("KeyframeDetector"),
+  : Reconfigurable_Node<cob_env_model::keyframe_detectorConfig>("KeyframeDetector"),
     first_(true)
     {
     point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &KeyframeDetector::pointCloudSubCallback, this);
@@ -97,7 +97,7 @@ public:
   }
 
   // callback for dynamic reconfigure
-  static void callback(KeyframeDetector *inst, cob_env_model::aggregate_point_mapConfig &config, uint32_t level)
+  static void callback(KeyframeDetector *inst, cob_env_model::keyframe_detectorConfig &config, uint32_t level)
   {
     if(!inst)
       return;
