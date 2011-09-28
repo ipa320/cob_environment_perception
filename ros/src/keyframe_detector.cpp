@@ -50,7 +50,7 @@
 #include "cob_env_model/point_map.h"
 
 #include "reconfigureable_node.h"
-#include <cob_env_model/aggregate_point_mapConfig.h>
+#include <cob_env_model/keyframe_detectorConfig.h>
 
 // ROS message includes
 //#include <sensor_msgs/PointCloud2.h>
