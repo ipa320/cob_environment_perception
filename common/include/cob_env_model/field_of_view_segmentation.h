@@ -73,7 +73,7 @@ namespace ipa_env_model
 			FieldOfViewSegmentation() {};
 			//virtual ~FieldOfViewSegmentation();
 			void segment(pcl::PointIndices &indices,
-					Eigen::Vector3d &n_up, Eigen::Vector3d &n_down, Eigen::Vector3d &n_right, Eigen::Vector3d &n_left, Eigen::Vector3d &n_origin, Eigen::Vector3d &n_max_range);
+			             const Eigen::Vector3d &n_up, const Eigen::Vector3d &n_down, const Eigen::Vector3d &n_right, const Eigen::Vector3d &n_left, const Eigen::Vector3d &n_origin, const Eigen::Vector3d &n_max_range);
 		protected:
 			using pcl::PCLBase<PointT>::input_;
 

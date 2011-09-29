@@ -21,36 +21,42 @@
 
 /* Methods for testing filters */
 
-double TestProcessingTime(unsigned int cloud_size)
+double TestProcessingTime(unsigned int width, unsigned int height)
 {
     pcl::StatisticalOutlierRemoval<PointXYZ> filter;
     pcl::PointCloud<PointXYZ>::Ptr cloud(new pcl::PointCloud<PointXYZ> ());
     pcl::PointCloud<PointXYZ>::Ptr cloud_out(new pcl::PointCloud<PointXYZ> ());
     filter.setStddevMulThresh(0.5);
-    filter.setMeanK (10);
+    filter.setMeanK (50);
 
-    cloud->points.resize(cloud_size);
-    cloud->width = sqrt(cloud_size);
-    cloud->height = sqrt(cloud_size);
-    for(unsigned int i=0; i<cloud_size; i++)
+    cloud->width = width;
+    cloud->height = height;
+    double x=0, y=0;
+    for(unsigned int i=0; i<cloud->width; i++, y+=0.01)
     {
-      PointXYZ pt;
-      pt.x = pt.y = pt.z = 1;
-      cloud->points[i] = pt;
+      x=0;
+      for(unsigned int j=0; j<cloud->height; j++, x+=0.01)
+      {
+        PointXYZ pt;
+        pt.x = x;
+        pt.y = y;
+        pt.z = 1;
+        cloud->points.push_back(pt);
+      }
     }
+    //pcl::io::savePCDFileASCII("/home/goa/tmp/filter_pc.pcd", *cloud);
     filter.setInputCloud(cloud);
     //boost::timer t;
     double time=0;
-    for(unsigned int i=0; i<1; i++)
+    for(unsigned int i=0; i<100; i++)
     {
       PrecisionStopWatch sw;
       sw.precisionStart();
       filter.filter(*cloud_out);
       time += sw.precisionStop();
-      std::cout << i << std::endl;
     }
-    time /= 1;
-    std::cout << "Cloud size " << cloud_size << ": " << time << " s" << std::endl;
+    time /= 100;
+    std::cout << "Cloud size " << cloud->size() << ": " << time << " s" << std::endl;
     return time;
 }
 
@@ -60,10 +66,12 @@ int main()
   std::ofstream file;
   file.open("/home/goa/tmp/statistical_outlier_removal_filter_timing.dat");
   file << "#No. of points\ttime (s)\n";
-  for(unsigned int cloud_size = 40000; cloud_size <= 400000; cloud_size += 40000)
+  file << "0\t0\n";
+  unsigned int height = 200;
+  for(unsigned int width = 200; width <= 2000; width += 200)
   {
-    double time = TestProcessingTime(cloud_size);
-    file << cloud_size << "\t" << time << "\n";
+    double time = TestProcessingTime(width, height);
+    file << width*height << "\t" << time << "\n";
   }
   file.close();
 
