@@ -63,7 +63,7 @@
 #include <cob_env_model/cpc_point.h>
 
 #include <opencv/cv.h>
-#include <cob_vision_utils/VisionUtils.h>
+//#include <cob_vision_utils/VisionUtils.h>
 
 void
 cob_env_model::SpeckleFilter<sensor_msgs::PointCloud2>::applyFilter (PointCloud2 &pc_out)

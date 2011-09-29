@@ -17,7 +17,7 @@
   <depend package="sensor_msgs"/>
   <depend package="opencv2"/>
 
-  <depend package="cob_vision_utils"/>
+  <!-- depend package="cob_vision_utils"/-->
   <depend package="pcl"/>
   <depend package="pcl_ros"/>
   <depend package="eigen"/>

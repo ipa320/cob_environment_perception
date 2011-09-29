@@ -60,8 +60,8 @@
 #include <pcl/filters/filter.h>
 
 #include <opencv/cv.h>
-#define __LINUX__
-#include <cob_vision_utils/VisionUtils.h>
+//#define __LINUX__
+//#include <cob_vision_utils/VisionUtils.h>
 
 namespace cob_env_model
 {
@@ -106,6 +106,9 @@ namespace cob_env_model
       void
       applyFilter (PointCloud &output);
 
+      void
+      filterSpeckles(cv::Mat& img, int maxSpeckleSize, double maxDiff, cv::Mat& _buf );
+
     protected:
       int speckle_size_;
       int speckle_range_;
@@ -148,6 +151,7 @@ namespace cob_env_model
 
       void
       applyFilter (PointCloud2 &output);
+
 
     protected:
       int speckle_size_;
