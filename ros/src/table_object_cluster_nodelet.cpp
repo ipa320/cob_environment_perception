@@ -115,7 +115,17 @@ public:
     if(as_) delete as_;
   }
 
-  // callback for dynamic reconfigure
+  /**
+   * @brief callback for dynamic reconfigure
+   *
+   * everytime the dynamic reconfiguration changes this function will be called
+   *
+   * @param inst instance of PlaneExtractionNodelet which parameters should be changed
+   * @param config data of configuration
+   * @param level bit descriptor which notifies which parameter changed
+   *
+   * @return nothing
+   */
   static void callback(TableObjectClusterNodelet *tocn, cob_env_model::table_object_cluster_nodeletConfig &config, uint32_t level)
   {
     //TODO: not multithreading safe
@@ -136,7 +146,13 @@ public:
     */
   }
 
-
+  /**
+   * @brief initializes parameters
+   *
+   * initializes parameters
+   *
+   * @return nothing
+   */
   void onInit()
   {
     PCLNodelet::onInit();
@@ -159,6 +175,15 @@ public:
   }
 
 
+  /**
+   * @brief detects objects on table and recognizes them
+   *
+   * detects objects on table and recognizes them
+   *
+   * @param goal unused
+   *
+   * @return nothing
+   */
   void
   actionCallback(const cob_env_model_msgs::TableObjectClusterGoalConstPtr &goal)
   {
@@ -266,14 +291,14 @@ protected:
   ros::ServiceClient get_bb_client_;
   boost::mutex mutex_;
 
-  TableObjectCluster toc;
+  TableObjectCluster toc;       /// class for actual calculation
 
   bool save_to_file_;
   std::string file_path_;
-  double height_min_;
-  double height_max_;
-  int min_cluster_size_;
-  double cluster_tolerance_;
+  double height_min_;           /// paramter for object detection
+  double height_max_;           /// paramter for object detection
+  int min_cluster_size_;        /// paramter for object detection
+  double cluster_tolerance_;    /// paramter for object detection
 
 };
 
