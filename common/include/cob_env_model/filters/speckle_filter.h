@@ -66,94 +66,96 @@
 namespace cob_env_model
 {
   template<typename PointT>
-    class SpeckleFilter : public pcl::Filter<PointT>
+  class SpeckleFilter : public pcl::Filter<PointT>
+  {
+    using pcl::Filter<PointT>::input_;
+
+  public:
+    typedef typename pcl::Filter<PointT>::PointCloud PointCloud;
+    typedef typename PointCloud::Ptr PointCloudPtr;
+    typedef typename PointCloud::ConstPtr PointCloudConstPtr;
+
+    SpeckleFilter () :
+      speckle_size_ (40), speckle_range_ (0.2)
     {
-      using pcl::Filter<PointT>::input_;
+      //
+    }
+    ;
 
-    public:
-      typedef typename pcl::Filter<PointT>::PointCloud PointCloud;
-      typedef typename PointCloud::Ptr PointCloudPtr;
-      typedef typename PointCloud::ConstPtr PointCloudConstPtr;
+    //virtual ~SpeckleFilter();
 
-      SpeckleFilter () :
-        speckle_size_ (40), speckle_range_ (0.2)
-      {
-        //
-      }
-      ;
+    inline void
+    setFilterParam (int speckle_s, float speckle_r)
+    {
+      speckle_size_ = speckle_s;
+      speckle_range_ = speckle_r;
+    }
 
-      //virtual ~SpeckleFilter();
+    inline int
+    getSpeckleSize ()
+    {
+      return speckle_size_;
+    }
 
-      inline void
-      setFilterParam (int speckle_s, float speckle_r)
-      {
-        speckle_size_ = speckle_s;
-        speckle_range_ = speckle_r;
-      }
+    inline int
+    getSpeckleRange ()
+    {
+      return speckle_range_;
+    }
 
-      inline int
-      getSpeckleSize ()
-      {
-        return speckle_size_;
-      }
+  protected:
 
-      inline int
-      getSpeckleRange ()
-      {
-        return speckle_range_;
-      }
+    void
+    applyFilter (PointCloud &output);
 
-      void
-      applyFilter (PointCloud &output);
-
-    protected:
-      int speckle_size_;
-      int speckle_range_;
-    };
+    int speckle_size_;
+    int speckle_range_;
+  };
 
   template<>
-    class SpeckleFilter<sensor_msgs::PointCloud2> : public pcl::Filter<sensor_msgs::PointCloud2>
+  class SpeckleFilter<sensor_msgs::PointCloud2> : public pcl::Filter<sensor_msgs::PointCloud2>
+  {
+    typedef sensor_msgs::PointCloud2 PointCloud2;
+    typedef PointCloud2::Ptr PointCloud2Ptr;
+    typedef PointCloud2::ConstPtr PointCloud2ConstPtr;
+
+  public:
+    SpeckleFilter () :
+      speckle_size_ (40), speckle_range_ (0.2)
     {
-      typedef sensor_msgs::PointCloud2 PointCloud2;
-      typedef PointCloud2::Ptr PointCloud2Ptr;
-      typedef PointCloud2::ConstPtr PointCloud2ConstPtr;
+      //
+    }
+    ;
+    //virtual ~SpeckleFilter();
 
-    public:
-      SpeckleFilter () :
-        speckle_size_ (40), speckle_range_ (0.2)
-      {
-        //
-      }
-      ;
-      //virtual ~SpeckleFilter();
+    inline void
+    setFilterParam (int speckle_s, float speckle_r)
+    {
+      speckle_size_ = speckle_s;
+      speckle_range_ = speckle_r;
+    }
 
-      inline void
-      setFilterParam (int speckle_s, float speckle_r)
-      {
-        speckle_size_ = speckle_s;
-        speckle_range_ = speckle_r;
-      }
+    inline int
+    getSpeckleSize ()
+    {
+      return speckle_size_;
+    }
 
-      inline int
-      getSpeckleSize ()
-      {
-        return speckle_size_;
-      }
+    inline int
+    getSpeckleRange ()
+    {
+      return speckle_range_;
+    }
 
-      inline int
-      getSpeckleRange ()
-      {
-        return speckle_range_;
-      }
+  protected:
 
-      void
-      applyFilter (PointCloud2 &output);
+    void
+    applyFilter (PointCloud2 &output);
 
-    protected:
-      int speckle_size_;
-      double speckle_range_;
+    int speckle_size_;
+    double speckle_range_;
 
-    };
+  };
 } // end namespace cob_env_model
 
 #endif /* SPECKLE_FILTER_H_ */
