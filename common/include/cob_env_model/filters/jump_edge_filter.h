@@ -69,40 +69,41 @@ namespace cob_env_model
   {
     using pcl::Filter<PointT>::input_;
 
-    public:
+  public:
     typedef typename pcl::Filter<PointT>::PointCloud PointCloud;
     typedef typename PointCloud::Ptr PointCloudPtr;
     typedef typename PointCloud::ConstPtr PointCloudConstPtr;
 
-      /** \constructor */
-      JumpEdgeFilter ()
-      : upper_angle_deg_ (170.0)
-      { };
+    /** \constructor */
+    JumpEdgeFilter ()
+    : upper_angle_deg_ (170.0)
+    { };
 
-      //virtual ~JumpEdgeFilter();
+    //virtual ~JumpEdgeFilter();
 
-      /** \sets upper angle threshold  */
-      inline void
-      setUpperAngle (double angle)
-      {
-        upper_angle_deg_ = angle;
-      }
+    /** \sets upper angle threshold  */
+    inline void
+    setUpperAngle (double angle)
+    {
+      upper_angle_deg_ = angle;
+    }
 
-      /** \gets upper angle threshold  */
-      inline double
-      getUpperAngle ()
-      {
-        return upper_angle_deg_;
-      }
-
-      /** \Apply filter   */
-      void
-      applyFilter (PointCloud &output);
+    /** \gets upper angle threshold  */
+    inline double
+    getUpperAngle ()
+    {
+      return upper_angle_deg_;
+    }
 
 
-    protected:
-      /** \upper angle threshold in degrees  */
-      double upper_angle_deg_;
+  protected:
+
+    /** \Apply filter   */
+    void
+    applyFilter (PointCloud &output);
+
+    /** \upper angle threshold in degrees  */
+    double upper_angle_deg_;
   };
 
   template <>
@@ -112,36 +113,37 @@ namespace cob_env_model
     typedef PointCloud2::Ptr PointCloud2Ptr;
     typedef PointCloud2::ConstPtr PointCloud2ConstPtr;
 
-    public:
-      /** \constructor */
-      JumpEdgeFilter ()
-      : upper_angle_deg_ (170.0)
-       { };
+  public:
+    /** \constructor */
+    JumpEdgeFilter ()
+    : upper_angle_deg_ (170.0)
+    { };
 
-      //virtual ~JumpEdgeFilter();
+    //virtual ~JumpEdgeFilter();
 
-      /** \sets upper angle threshold  */
-      inline void
-      setUpperAngle (double angle)
-      {
-        upper_angle_deg_ = angle;
-      }
+    /** \sets upper angle threshold  */
+    inline void
+    setUpperAngle (double angle)
+    {
+      upper_angle_deg_ = angle;
+    }
 
-      /** \gets upper angle threshold  */
-      inline double
-      getUpperAngle ()
-      {
-        return upper_angle_deg_;
-      }
-
-      /** \Apply filter   */
-      void
-      applyFilter (PointCloud2 &output);
+    /** \gets upper angle threshold  */
+    inline double
+    getUpperAngle ()
+    {
+      return upper_angle_deg_;
+    }
 
 
-    protected:
-      /** \upper angle threshold in degrees  */
-      double upper_angle_deg_;
+  protected:
+
+    /** \Apply filter   */
+    void
+    applyFilter (PointCloud2 &output);
+
+    /** \upper angle threshold in degrees  */
+    double upper_angle_deg_;
   };
 } // end namespace cob_env_model
 
