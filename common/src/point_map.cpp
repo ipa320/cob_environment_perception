@@ -27,17 +27,21 @@
 #include <pcl/registration/icp.h>
 
 bool PointMap::compute(const pcl::PointCloud<Point>::Ptr& pc_in, const pcl::PointCloud<Point>::Ptr& pc) {
-  boost::timer t;
 
-  ROS_INFO("size %d %d", pc_in->size(), this->ref_map_.size());
+  if(pc->size()<1||map_to_registrate_->size()<1) {
+    ROS_WARN("[point_map] no input data given; canceling");
+    return false;
+  }
+
+  boost::timer t;
 
   pcl::PointCloud<Point> pc_aligned;
   Eigen::Matrix4f icp_transform;
   bool ret=false;
-  if(use_reference_map_)
-    ret = doFOVICPUsingReference(pc, pc_aligned, icp_transform);
-  else
-    ret = doFOVICP(pc, pc_aligned, icp_transform);
+  //if(use_reference_map_)
+    ret = doICPUsingReference(pc, pc_aligned, icp_transform);
+  //else
+  //  ret = doFOVICP(pc, pc_aligned, icp_transform);
   if(ret)
   {
     std::cout << "icp_transform: " << icp_transform << std::endl;
@@ -66,6 +70,7 @@ bool PointMap::compute(const pcl::PointCloud<Point>::Ptr& pc_in, const pcl::Poin
   return ret;
 }
 
+#if 0
 bool PointMap::doFOVICP(const pcl::PointCloud<Point>::Ptr& pc,
          pcl::PointCloud<Point>& pc_aligned,
          Eigen::Matrix4f& final_transformation)
@@ -78,17 +83,6 @@ bool PointMap::doFOVICP(const pcl::PointCloud<Point>::Ptr& pc,
     return true;
   }
 
-  //segment FOV
-  seg_.setInputCloud(map_.makeShared());
-  //transformNormals(map_.header.frame_id, pc->header.stamp);
-  pcl::PointIndices indices;
-  seg_.segment(indices, n_up_t_, n_down_t_, n_right_t_, n_left_t_, n_origin_t_, n_max_range_t_);
-  pcl::PointCloud<Point> frustum;
-  pcl::ExtractIndices<Point> extractIndices;
-  extractIndices.setInputCloud(map_.makeShared());
-  extractIndices.setIndices(boost::make_shared<pcl::PointIndices>(indices));
-  extractIndices.filter(frustum);
-  ROS_DEBUG("[aggregate_point_map] Frustum size: %d", (int)frustum.size());
 
   /*TODO:
    * if (save_map_fov_==true)
@@ -115,6 +109,7 @@ pcl::io::savePCDFileASCII (ss.str(), frustum);
   ROS_INFO("[aggregate_point_map] Fitness score: %f", icp.getFitnessScore());
   return true;
 }
+#endif
 
 class MyIterativeClosestPoint : public pcl::IterativeClosestPoint<PointMap::Point,PointMap::Point> {
 public:
@@ -122,7 +117,7 @@ public:
 };
 
 
-bool PointMap::doFOVICPUsingReference(const pcl::PointCloud<Point>::Ptr& pc,
+bool PointMap::doICPUsingReference(const pcl::PointCloud<Point>::Ptr& pc,
                                       pcl::PointCloud<Point>& pc_aligned,
                                       Eigen::Matrix4f& final_transformation)
 {
@@ -226,7 +221,7 @@ pcl::io::savePCDFileASCII (ss.str(), frustum);
   MyIterativeClosestPoint icp;
   icp.setInputCloud(pc->makeShared());
   //icp.setIndices(boost::make_shared<pcl::PointIndices>(indices));
-  icp.setInputTarget(ref_map_.makeShared());
+  icp.setInputTarget(map_to_registrate_);
   icp.setMaximumIterations(icp_max_iterations_);
   icp.setRANSACOutlierRejectionThreshold(0.3);
   if(first_)
