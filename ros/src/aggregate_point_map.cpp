@@ -296,6 +296,8 @@ public:
   bool onKeyframeCallback(cob_srvs::Trigger::Request &req,
                           cob_srvs::Trigger::Response &res)
   {
+    res.success.data = false;
+
     if(!is_running_)
       return true;
 
@@ -341,6 +343,9 @@ public:
         pcl::io::savePCDFileASCII (ss2.str(), pc_in_);
       }
 
+      cob_env_model_msgs::GetFieldOfView get_fov_srv;
+      if(use_fov_) {
+
       Eigen::Vector3d n_up;
       Eigen::Vector3d n_down;
       Eigen::Vector3d n_right;
@@ -348,8 +353,6 @@ public:
       Eigen::Vector3d n_origin;
       Eigen::Vector3d n_max_range;
 
-      cob_env_model_msgs::GetFieldOfView get_fov_srv;
-      if(!point_map_.getUseReferenceMap()) {
         get_fov_srv.request.target_frame = std::string("/map");
         get_fov_srv.request.stamp = pc->header.stamp;
         if(get_fov_srv_client_.call(get_fov_srv))
@@ -375,9 +378,21 @@ public:
           n_max_range(1) = get_fov_srv.response.fov.points[5].y;
           n_max_range(2) = get_fov_srv.response.fov.points[5].z;
 
-          point_map_.setFOV(n_up, n_down,
-                            n_right, n_left,
-                            n_origin, n_max_range);
+          //segment FOV
+          ipa_env_model::FieldOfViewSegmentation<Point> seg_;
+
+          seg_.setInputCloud(point_map_.getUsedMap());
+          //transformNormals(map_.header.frame_id, pc->header.stamp);
+          pcl::PointIndices indices;
+          seg_.segment(indices, n_up, n_down, n_right, n_left, n_origin, n_max_range);
+          pcl::PointCloud<Point>::Ptr frustum = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>);
+          pcl::ExtractIndices<Point> extractIndices;
+          extractIndices.setInputCloud(point_map_.getUsedMap());
+          extractIndices.setIndices(boost::make_shared<pcl::PointIndices>(indices));
+          extractIndices.filter(*frustum);
+          ROS_DEBUG("[aggregate_point_map] Frustum size: %d", (int)frustum->size());
+
+          point_map_.setUsedMapToRegistrate(frustum);
         }
         else
         {
@@ -385,6 +400,8 @@ public:
           return false;
         }
       }
+      else
+        point_map_.setUsedMapToRegistrate(point_map_.getUsedMap());
 
       if(point_map_.compute(pc_in_.makeShared(), pc)) {
         downsampleMap();
@@ -418,6 +435,7 @@ public:
       return false;
     }
 
+    res.success.data = true;
     return true;
   }
 
@@ -538,6 +556,7 @@ protected:
   PointMap point_map_;
 
   bool is_running_;
+  bool use_fov_;               /// if map should be cut by frustum (reduce input information)
 
   double voxel_leafsize_x_;
   double voxel_leafsize_y_;

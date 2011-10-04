@@ -242,25 +242,17 @@ public:
   std::string getFilePath() {return file_path_;}
   bool getReuse() {return use_reuse_;}
 
-  void setFOV(
-      Eigen::Vector3d n_up_t,
-      Eigen::Vector3d n_down_t,
-      Eigen::Vector3d n_right_t,
-      Eigen::Vector3d n_left_t,
-      Eigen::Vector3d n_origin_t,
-      Eigen::Vector3d n_max_range_t
-      ) {
-    n_up_t_=n_up_t;
-    n_down_t_=n_down_t;
-    n_right_t_=n_right_t;
-    n_left_t_=n_left_t;
-    n_origin_t_=n_origin_t;
-    n_max_range_t_=n_max_range_t;
+  void setUsedMapToRegistrate(const pcl::PointCloud<Point>::ConstPtr map_to_registrate) {map_to_registrate_ = map_to_registrate;}
+  const pcl::PointCloud<Point>::ConstPtr getUsedMap() const {
+      if(use_reference_map_)
+        return ref_map_.makeShared();
+      return map_.makeShared();
   }
 
 private:
   pcl::PointCloud<Point> map_;  /// FOV ICP map
   pcl::PointCloud<Point> ref_map_;  /// reference map
+  pcl::PointCloud<Point>::ConstPtr map_to_registrate_; /// pointer to map which should be registered against
 
   bool use_reference_map_; /// wether use reference map
   bool first_; /// false if icp succeeded
@@ -268,6 +260,8 @@ private:
 
   bool save_icp_map_; /// save map data from icp
   std::string file_path_; /// filepath to save data
+
+  Eigen::Matrix4f old_icp_transform_;   /// last transformation of icp (which can be reused)
 
   double compution_time_; /// time needed to compute
 
@@ -278,24 +272,14 @@ private:
           icp_max_corr_dist_on_first_;          /// maximum correspondence distance until first is false (icp)
   double icp_trf_epsilon_;                      /// epsilon parameter of icp
 
-  ipa_env_model::FieldOfViewSegmentation<Point> seg_;
-
-  Eigen::Vector3d n_up_t_;
-  Eigen::Vector3d n_down_t_;
-  Eigen::Vector3d n_right_t_;
-  Eigen::Vector3d n_left_t_;
-  Eigen::Vector3d n_origin_t_;
-  Eigen::Vector3d n_max_range_t_;
-  Eigen::Matrix4f old_icp_transform_;   /// last transformation of icp (which can be reused)
-
   //debug infos
   double fitness_;      /// fitness level
 
 
-  bool doFOVICP(const pcl::PointCloud<Point>::Ptr& pc,
+  /*bool doFOVICP(const pcl::PointCloud<Point>::Ptr& pc,
            pcl::PointCloud<Point>& pc_aligned,
-           Eigen::Matrix4f& final_transformation);
-  bool doFOVICPUsingReference(const pcl::PointCloud<Point>::Ptr& pc,
+           Eigen::Matrix4f& final_transformation);*/
+  bool doICPUsingReference(const pcl::PointCloud<Point>::Ptr& pc,
            pcl::PointCloud<Point>& pc_aligned,
            Eigen::Matrix4f& final_transformation);
   void doICP(const pcl::PointCloud<Point>::Ptr& pc);

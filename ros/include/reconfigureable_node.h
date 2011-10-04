@@ -28,8 +28,6 @@ protected:
     dynamic_reconfigure::Config msg;
     config_.__toMessage__(msg);
     update_pub_.publish(msg);
-
-    ROS_INFO("updateConfig");
   }
 
   // callback for dynamic reconfigure
