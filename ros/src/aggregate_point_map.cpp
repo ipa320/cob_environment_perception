@@ -173,6 +173,7 @@ public:
     inst->voxel_leafsize_y_ = config.voxel_leafsize_y;
     inst->voxel_leafsize_z_ = config.voxel_leafsize_z;
     inst->point_map_.setUseReferenceMap(config.use_reference_map);
+    inst->use_fov_ = config.use_fov;
 
     ROS_INFO("callback");
   }
@@ -196,6 +197,7 @@ public:
     config.voxel_leafsize_y = inst->voxel_leafsize_y_;
     config.voxel_leafsize_z = inst->voxel_leafsize_z_;
     config.use_reference_map=inst->point_map_.getUseReferenceMap();
+    config.use_fov = inst->use_fov_;
 
   }
 
@@ -236,6 +238,7 @@ public:
     n_.param("aggregate_point_map/icp_max_first_corr_dist" ,icp_max_first_corr_dist,0.3);
     n_.param("aggregate_point_map/icp_trf_epsilon" ,icp_trf_epsilon,0.0005);
     n_.param("aggregate_point_map/use_reference_map",use_reference_map,false);
+    n_.param("aggregate_point_map/use_fov",use_fov_,false);
     n_.param("aggregate_point_map/reuse",reuse,true);
     point_map_.setICP_maxIterations(icp_max_iterations);
     point_map_.setICP_maxCorrDist(icp_max_corr_dist);
