@@ -86,7 +86,6 @@
 
 #include <pcl/features/boundary.h>
 
-#include <cob_env_model/cpc_point.h>
 #include <sensor_msgs/PointCloud2.h>
 
 #include <boost/timer.hpp>
@@ -200,7 +199,7 @@ class PCLTest
 
 				std::cerr << "Model inliers: " << inliers.indices.size () << std::endl;
 
-				extractIndices.setInputCloud(boost::make_shared<pcl::PointCloud<CPCPoint> >(cloud));
+				extractIndices.setInputCloud(boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >(cloud));
 				extractIndices.setIndices(boost::make_shared<pcl::PointIndices>(inliers));
 				extractIndices.setNegative(false);
 				extractIndices.filter(dominant_plane);
@@ -386,39 +385,41 @@ class PCLTest
 
 		}
 
-		void VoxelFilter()
+		void VoxelFilter(int idx, double leaf_size_x, double leaf_size_y, double leaf_size_z)
 		{
-			pcl::PointCloud<pcl::PointXYZ> cloud;
-			pcl::PointCloud<pcl::PointXYZ> cloud_out;
+			pcl::PointCloud<pcl::PointXYZRGB> cloud;
+			pcl::PointCloud<pcl::PointXYZRGB> cloud_out;
 			pcl::PCDReader reader;
-			reader.read ("/home/goa/pcl_daten/shelf/raw_kinect/shelf_0.pcd", cloud);
+			reader.read ("/home/goa/tmp/office_rgb.pcd", cloud);
 			std::cout << "Input cloud has " << cloud.size() << " data points" << std::endl;
-			pcl::VoxelGrid<pcl::PointXYZ> vox_filter;
+			pcl::VoxelGrid<pcl::PointXYZRGB> vox_filter;
 			vox_filter.setInputCloud(cloud.makeShared());
-			vox_filter.setLeafSize(0.01, 0.01, 0.01);
+			vox_filter.setLeafSize(leaf_size_x, leaf_size_y, leaf_size_z);
 			boost::timer t;
 			vox_filter.filter(cloud_out);
 			ROS_INFO("[env_model_node] Pointcloud downsampled.");
 			ROS_INFO("\tTime: %f", t.elapsed());
 			ROS_INFO ("PointCloud after filtering: %d data points (%s).", cloud_out.width * cloud_out.height, pcl::getFieldsList (cloud_out).c_str ());
-			pcl::io::savePCDFileASCII ("/home/goa/pcl_daten/shelf/raw_kinect/shelf_0_voxel.pcd", cloud_out);
+                        std::stringstream ss;
+                        ss << "/home/goa/tmp/voxel_" << idx << ".pcd";
+			pcl::io::savePCDFileASCII (ss.str(), cloud_out);
 			return;
 		}
 
 		void RegisterICP()
 		{
-			/*pcl::PointCloud<CPCPoint> cloud_source; // the pc to register
-			pcl::PointCloud<CPCPoint> cloud_target; // the map
+			/*pcl::PointCloud<pcl::PointXYZ> cloud_source; // the pc to register
+			pcl::PointCloud<pcl::PointXYZ> cloud_target; // the map
 			pcl::PCDReader reader;
 			reader.read ("common/files/cob3-2/pcd_kitchen/kitchen_01_world.pcd", cloud_target);
 			reader.read ("common/files/cob3-2/pcd_kitchen/kitchen_02_world.pcd", cloud_source);
 
-			pcl::IterativeClosestPoint<CPCPoint,CPCPoint> icp;
-			icp.setInputCloud(boost::make_shared<pcl::PointCloud<CPCPoint> >(cloud_source));
-			icp.setInputTarget(boost::make_shared<pcl::PointCloud<CPCPoint> >(cloud_target));
+			pcl::IterativeClosestPoint<pcl::PointXYZ,pcl::PointXYZ> icp;
+			icp.setInputCloud(boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >(cloud_source));
+			icp.setInputTarget(boost::make_shared<pcl::PointCloud<pcl::PointXYZ> >(cloud_target));
 			icp.setMaximumIterations(2);
 			icp.setMaxCorrespondenceDistance(0.1);
-			pcl::PointCloud<CPCPoint> cloud_source_aligned;
+			pcl::PointCloud<pcl::PointXYZ> cloud_source_aligned;
 			boost::timer t;
 			//icp.align(cloud_source_aligned);
 			ROS_INFO("\tTime: %f", t.elapsed());
@@ -426,7 +427,7 @@ class PCLTest
 			pcl::io::savePCDFileASCII ("common/files/cob3-2/pcd_kitchen/kitchen_02_aligned_world.pcd", cloud_source_aligned);*/
 		}
 
-		void TransformCam2World(pcl::PointCloud<CPCPoint>& cloud, Eigen::Matrix4d& trafo)
+		void TransformCam2World(pcl::PointCloud<pcl::PointXYZ>& cloud, Eigen::Matrix4d& trafo)
 		{
 			for (int i=0; i<cloud.size(); i++)
 			{
@@ -441,7 +442,7 @@ class PCLTest
 		void ResamplePointCloud()
 		{
 			  // Load input file into a PointCloud<T> with an appropriate type
-			  PointCloud<pcl::PointXYZ>::Ptr cloud (new PointCloud<pcl::PointXYZ> ());
+			  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ> ());
 
 			pcl::PCDReader reader;
 			reader.read ("/home/goa/pcl_daten/shelf/raw_kinect/shelf_0.pcd", *cloud);
@@ -678,14 +679,19 @@ int main(int argc, char** argv)
 
 	//pclTest.PlaneSegmentation();
 	//pclTest.PlaneSegmentationNormals();
-    //pclTest.VoxelFilter();
+    pclTest.VoxelFilter(0, 0.01, 0.01, 0.01);
+    pclTest.VoxelFilter(1, 0.03, 0.03, 0.03);
+    pclTest.VoxelFilter(2, 0.05, 0.05, 0.05);
+
+    pclTest.VoxelFilter(3, 0.03, 0.01, 0.01);
+    pclTest.VoxelFilter(4, 0.05, 0.01, 0.01);
     //pclTest.EstimatePointNormals();
 	//pclTest.RegisterICP();
 	//pclTest.ResamplePointCloud();
 	//pclTest.StatisticalOutlierRemoval();
 	//pclTest.ConvexHull();
     //pclTest.ExtractEdge();
-	pclTest.BoundaryEstimation();
+	//pclTest.BoundaryEstimation();
 	//pclTest.ExtractBoundary();
    // pclTest.ConcatNormals();
 

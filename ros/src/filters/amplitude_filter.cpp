@@ -101,9 +101,9 @@ public:
     point_cloud_sub_ = n_.subscribe ("point_cloud2", 1, &AmplitudeFilter::PointCloudSubCallback, this);
     point_cloud_pub_ = n_.advertise<sensor_msgs::PointCloud2> ("point_cloud2_filtered", 1);
 
-    n_.param ("/amplitude_filter_nodelet/amplitude_min_threshold", lim_min_, 2000);
+    n_.param ("/amplitude_filter_nodelet/amplitude_min_threshold", lim_min_, 2000.0);
     //std::cout << "amplitude_min_threshold: " << lim_min_<< std::endl;
-    n_.param ("/amplitude_filter_nodelet/amplitude_max_threshold", lim_max_, 60000);
+    n_.param ("/amplitude_filter_nodelet/amplitude_max_threshold", lim_max_, 60000.0);
     //std::cout << "amplitude_max_threshold: " << lim_max_<< std::endl;
   }
 
@@ -156,8 +156,8 @@ protected:
   ros::Subscriber point_cloud_sub_;
   ros::Publisher point_cloud_pub_;
 
-  int lim_min_;
-  int lim_max_;
+  double lim_min_;
+  double lim_max_;
   bool t_check;
 };
 
