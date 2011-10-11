@@ -76,15 +76,17 @@ public:
   // Constructor
   KeyframeDetector()
   : Reconfigurable_Node<cob_env_model::keyframe_detectorConfig>("KeyframeDetector"),
-    first_(true)
+    first_(true), trigger_always_(false)
     {
     point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &KeyframeDetector::pointCloudSubCallback, this);
+    transform_sub_ = n_.subscribe("/tf", 1, &KeyframeDetector::transformSubCallback, this);
     keyframe_trigger_client_ = n_.serviceClient<cob_srvs::Trigger>("trigger_keyframe");
 
     n_.param("aggregate_point_map/r_limit",r_limit_,0.1);
     n_.param("aggregate_point_map/y_limit",y_limit_,0.1);
     n_.param("aggregate_point_map/p_limit",p_limit_,0.1);
     n_.param("aggregate_point_map/distance_limit",distance_limit_,0.3);
+    n_.param("aggregate_point_map/trigger_always",trigger_always_,false);
 
     setReconfigureCallback(boost::bind(&callback, this, _1, _2));
     }
@@ -108,23 +110,42 @@ public:
     inst->p_limit_ = config.p_limit;
     inst->y_limit_ = config.y_limit;
     inst->distance_limit_ = config.distance_limit;
+    inst->trigger_always_ = config.trigger_always;
 
   }
 
   void
   pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc_in)
   {
+    frame_id_ = pc_in->header.frame_id;
+    point_cloud_sub_.shutdown();
+  }
+
+  void
+  transformSubCallback(const tf::tfMessageConstPtr& msg)
+  {
     boost::mutex::scoped_lock l(m_mutex_pointCloudSubCallback);
 
     boost::timer t;
-    pcl::PointCloud<Point>::Ptr pc = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>);
+    //pcl::PointCloud<Point>::Ptr pc = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>);
 
     StampedTransform transform;
+    /*
+          std::string mapped_src = assert_resolved(tf_prefix_, source_frame);
+
+          if (mapped_tgt == mapped_src) {
+                  transform.setIdentity();
+                  transform.child_frame_id_ = mapped_src;
+                  transform.frame_id_       = mapped_tgt;
+                  transform.stamp_          = now();
+                  return;
+          }
+          */
     try
     {
       std::stringstream ss2;
-      tf_listener_.waitForTransform("/map", pc_in->header.frame_id, pc_in->header.stamp, ros::Duration(0.1));
-      tf_listener_.lookupTransform("/map", pc_in->header.frame_id, pc_in->header.stamp/*ros::Time(0)*/, transform);
+      //tf_listener_.waitForTransform("/map", msg->>header.frame_id, msg->header.stamp, ros::Duration(0.1));
+      tf_listener_.lookupTransform("/map", frame_id_, ros::Time(0), transform);
       KDL::Frame frame_KDL, frame_KDL_old;
       tf::TransformTFToKDL(transform, frame_KDL);
       tf::TransformTFToKDL(transform_old_, frame_KDL_old);
@@ -133,12 +154,13 @@ public:
       double r_old,p_old,y_old;
       frame_KDL_old.M.GetRPY(r_old,p_old,y_old);
 
-      if(first_ || fabs(r-r_old) > r_limit_ || fabs(p-p_old) > p_limit_ || fabs(y-y_old) > y_limit_ ||
+      if(trigger_always_ || first_ || fabs(r-r_old) > r_limit_ || fabs(p-p_old) > p_limit_ || fabs(y-y_old) > y_limit_ ||
           transform.getOrigin().distance(transform_old_.getOrigin()) > distance_limit_)
       {
-        transform_old_ = transform;
-        first_=false;
-        triggerKeyFrame();
+        if(triggerKeyFrame()) {
+          transform_old_ = transform;
+          first_=false;
+        }
       }
     }
     catch (tf::TransformException ex)
@@ -150,7 +172,7 @@ public:
   ros::NodeHandle n_;
   ros::Time stamp_;
 
-  void triggerKeyFrame() {
+  bool triggerKeyFrame() {
     cob_srvs::Trigger::Request req;
     cob_srvs::Trigger::Response res;
     if(keyframe_trigger_client_.call(req,res))
@@ -159,20 +181,25 @@ public:
     }
     else
     {
-      ROS_WARN("KeyFrame service called [FAILED].");
-      return;
+      ROS_WARN("KeyFrame service called [FAILED].", res.success.data);
+      return false;
     }
+
+    return res.success.data;
   }
 
 
 protected:
-  ros::Subscriber point_cloud_sub_;             //subscriber for input pc
-  ros::ServiceClient keyframe_trigger_client_;
+  ros::Subscriber point_cloud_sub_, transform_sub_;             //subscriber for input pc
   TransformListener tf_listener_;
+  ros::ServiceClient keyframe_trigger_client_;
 
   bool first_;
+  bool trigger_always_;
 
   StampedTransform transform_old_;
+
+  std::string frame_id_;
 
 
   double y_limit_;
