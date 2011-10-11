@@ -26,6 +26,7 @@
 
 #include <pcl/registration/icp.h>
 
+//TODO: not finished?
 bool PointMap::compute(const pcl::PointCloud<Point>::Ptr& pc_in, const pcl::PointCloud<Point>::Ptr& pc) {
 
   if(pc->size()<1||map_to_registrate_->size()<1) {

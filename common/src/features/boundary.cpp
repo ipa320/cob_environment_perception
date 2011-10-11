@@ -41,5 +41,6 @@
 #include "cob_env_model/features/impl/boundary.hpp"
 
 // Instantiations of specific point types
-PCL_INSTANTIATE_PRODUCT(BoundaryEstimation, (PCL_XYZ_POINT_TYPES)(PCL_NORMAL_POINT_TYPES)((pcl::Boundary)));
+//PCL_INSTANTIATE_PRODUCT(BoundaryEstimation, (PCL_XYZ_POINT_TYPES)(PCL_NORMAL_POINT_TYPES)((pcl::Boundary)));
+PCL_INSTANTIATE_BoundaryEstimation(pcl::PointXYZRGB,pcl::PointXYZRGBNormal,pcl::Boundary)
 

@@ -43,7 +43,7 @@ double TestProcessingTime(unsigned int cloud_size)
     {
       PrecisionStopWatch sw;
       sw.precisionStart();
-      filter.applyFilter(*cloud_out);
+      filter.filter(*cloud_out);
       time += sw.precisionStop();
     }
     time /= 1000;

@@ -60,8 +60,8 @@
 #include <pcl/filters/filter.h>
 
 #include <opencv/cv.h>
-#define __LINUX__
-#include <cob_vision_utils/VisionUtils.h>
+//#define __LINUX__
+//#include <cob_vision_utils/VisionUtils.h>
 
 namespace cob_env_model
 {

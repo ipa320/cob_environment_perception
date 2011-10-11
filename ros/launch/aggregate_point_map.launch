@@ -44,7 +44,8 @@
   	<param name="voxel_leafsize_x" type="double" value="0.03" />
   	<param name="voxel_leafsize_y" type="double" value="0.03" />
   	<param name="voxel_leafsize_z" type="double" value="0.03" />
-  	<param name="use_reference_map" type="bool" value="false"/>
+  	<param name="use_reference_map" type="bool" value="true"/>
+  	<param name="use_fov" type="bool" value="false"/>
   </node>  
   
   </launch>

@@ -262,7 +262,7 @@ public:
     if(use_reference_map)
     {
       std::string ref_map_path;
-      n_.param("aggregate_point_map/file_path" ,ref_map_path ,std::string("home/goa/pcl_daten/kitchen_ground_truth/whole_kitchen.pcd"));
+      n_.param("aggregate_point_map/file_path_ref_map" ,ref_map_path ,std::string("/home/goa/pcl_daten/kitchen_ground_truth/whole_kitchen.pcd"));
       pcl::io::loadPCDFile(ref_map_path, *point_map_.getRefMap());
     }
   }
@@ -348,12 +348,12 @@ public:
       cob_env_model_msgs::GetFieldOfView get_fov_srv;
       if(use_fov_) {
 
-      Eigen::Vector3d n_up;
-      Eigen::Vector3d n_down;
-      Eigen::Vector3d n_right;
-      Eigen::Vector3d n_left;
-      Eigen::Vector3d n_origin;
-      Eigen::Vector3d n_max_range;
+        Eigen::Vector3d n_up;
+        Eigen::Vector3d n_down;
+        Eigen::Vector3d n_right;
+        Eigen::Vector3d n_left;
+        Eigen::Vector3d n_origin;
+        Eigen::Vector3d n_max_range;
 
         get_fov_srv.request.target_frame = std::string("/map");
         get_fov_srv.request.stamp = pc->header.stamp;
@@ -412,7 +412,7 @@ public:
         point_cloud_pub_aligned_.publish(pc_in_);
       }
       else
-        ROS_WARN("FOV not successful");
+        ROS_WARN("ICP not successful");
 
       ROS_DEBUG("[aggregate_point_map] ICP took %f s", t.elapsed());
 
