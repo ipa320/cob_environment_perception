@@ -139,7 +139,7 @@ public:
     filter.setFilterLimits (lim_min_, lim_max_);
     //std::cout<<" min_limit :"<<filter.getFilterMinLimit()<<std::endl;
     //std::cout<<" max_limit :"<<filter.getFilterMaxLimit()<<std::endl;
-    filter.applyFilter (*cloud_filtered);
+    filter.filter (*cloud_filtered);
     point_cloud_pub_.publish (cloud_filtered);
     if (t_check == 0)
     {

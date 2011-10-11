@@ -134,7 +134,7 @@ class JumpEdgeFilter : public pcl_ros::PCLNodelet
 
     filter.setInputCloud (pc);
     filter.setUpperAngle(upper_angle_);
-    filter.applyFilter (*cloud_filtered);
+    filter.filter (*cloud_filtered);
     point_cloud_pub_.publish (cloud_filtered);
     if (t_check == 0)
     {

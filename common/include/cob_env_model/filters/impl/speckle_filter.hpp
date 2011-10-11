@@ -56,57 +56,21 @@
 // cob_env_model includes
 #include "cob_env_model/filters/speckle_filter.h"
 
+
+
 template<typename PointT>
 void
 cob_env_model::SpeckleFilter<PointT>::applyFilter (PointCloud &pc_out)
 {
-  //std::cout << " Entered apply filter method " << std::endl;
-  cv::Mat xyz_mat_32F3 = cv::Mat (input_->height, input_->width, CV_32FC3);
   pc_out.points.resize(input_->points.size());
   pc_out.header = input_->header;
 
-  for (unsigned int i = 0; i < input_->points.size(); i++)
-    pc_out.points[i] = input_->points[i];
-
-  float* f_ptr = 0;
-  int pc_msg_idx = 0;
-  for (int row = 0; row < xyz_mat_32F3.rows; row++)
-  {
-    f_ptr = xyz_mat_32F3.ptr<float> (row);
-    for (int col = 0; col < xyz_mat_32F3.cols; col++, pc_msg_idx++)
-    {
-      memcpy (&f_ptr[3 * col], &input_->points[pc_msg_idx].x, 3 * sizeof(float));
-    }
-  }
-
-  cv::Mat buf;
-  this->filterSpeckles(xyz_mat_32F3, speckle_size_, speckle_range_, buf);
-  pc_msg_idx = 0;
-  for (int row = 0; row < xyz_mat_32F3.rows; row++)
-  {
-    f_ptr = xyz_mat_32F3.ptr<float> (row);
-    for (int col = 0; col < xyz_mat_32F3.cols; col++, pc_msg_idx++)
-    {
-      memcpy (&pc_out.points[pc_msg_idx].x, &f_ptr[3 * col], 3 * sizeof(float));
-    }
-  }
-}
-
-template<typename PointT>
-void
-cob_env_model::SpeckleFilter<PointT>::filterSpeckles(cv::Mat& img, int maxSpeckleSize, double maxDiff, cv::Mat& _buf )
-{
-  CV_Assert( img.type() == CV_32FC3 );
-
-
   float newVal = 0;
-  int width = img.cols, height = img.rows, npixels = width*height;
+  int width = input_->width, height = input_->height, npixels = width*height;
   size_t bufSize = npixels*(int)(sizeof(cv::Point_<short>) + sizeof(int) + sizeof(uchar));
-  if( !_buf.isContinuous() || !_buf.data || _buf.cols*_buf.rows*_buf.elemSize() < bufSize )
-    _buf.create(1, bufSize, CV_8U);
 
-  uchar* buf = _buf.data;
-  int i, j, dstep = img.step/sizeof(cv::Vec3f);
+  uchar* buf =new uchar[bufSize];
+  int i, j, dstep = input_->width;
   int* labels = (int*)buf;
   buf += npixels*sizeof(labels[0]);
   cv::Point_<short>* wbuf = (cv::Point_<short>*)buf;
@@ -119,20 +83,21 @@ cob_env_model::SpeckleFilter<PointT>::filterSpeckles(cv::Mat& img, int maxSpeckl
 
   for( i = 0; i < height; i++ )
   {
-    cv::Vec3f* ds = img.ptr<cv::Vec3f>(i);
+    const PointT * const ds = &input_->points[i*input_->width];
+    PointT *outp = &pc_out.points[i*pc_out.width];
     int* ls = labels + width*i;
 
     for( j = 0; j < width; j++ )
     {
-      if( ds[j][2] != newVal )    // not a bad disparity
-          {
+      if( ds[j].y != newVal )    // not a bad disparity
+      {
         if( ls[j] )             // has a label, check for bad label
         {
           if( rtype[ls[j]] ) // small region, zero out disparity
           {
-            ds[j][0] = (float)newVal;
-            ds[j][1] = (float)newVal;
-            ds[j][2] = (float)newVal;
+            outp[j].x = (float)newVal;
+            outp[j].y = (float)newVal;
+            outp[j].z = (float)newVal;
           }
         }
         // no label, assign and propagate
@@ -149,29 +114,31 @@ cob_env_model::SpeckleFilter<PointT>::filterSpeckles(cv::Mat& img, int maxSpeckl
           {
             count++;
             // put neighbors onto wavefront
-            cv::Vec3f* dpp = &img.at<cv::Vec3f>(p.y, p.x);
-            cv::Vec3f dp = *dpp;
+            const PointT * const dpp = &input_->points[p.x+p.y*input_->width];
+            const PointT dp = *dpp;
+            //cv::Vec3f* dpp = &img.at<cv::Vec3f>(p.y, p.x);
+            //cv::Vec3f dp = *dpp;
             int* lpp = labels + width*p.y + p.x;
 
-            if( p.x < width-1 && !lpp[+1] && dpp[+1][2] != newVal && std::abs(dp[2] - dpp[+1][2]) <= maxDiff )
+            if( p.x < width-1 && !lpp[+1] && dpp[+1].z != newVal && std::abs(dp.z - dpp[+1].z) <= speckle_range_ )
             {
               lpp[+1] = curlabel;
               *ws++ = cv::Point_<short>(p.x+1, p.y);
             }
 
-            if( p.x > 0 && !lpp[-1] && dpp[-1][2] != newVal && std::abs(dp[2] - dpp[-1][2]) <= maxDiff )
+            if( p.x > 0 && !lpp[-1] && dpp[-1].z != newVal && std::abs(dp.z - dpp[-1].z) <= speckle_range_ )
             {
               lpp[-1] = curlabel;
               *ws++ = cv::Point_<short>(p.x-1, p.y);
             }
 
-            if( p.y < height-1 && !lpp[+width] && dpp[+dstep][2] != newVal && std::abs(dp[2] - dpp[+dstep][2]) <= maxDiff )
+            if( p.y < height-1 && !lpp[+width] && dpp[+dstep].z != newVal && std::abs(dp.z - dpp[+dstep].z) <= speckle_range_ )
             {
               lpp[+width] = curlabel;
               *ws++ = cv::Point_<short>(p.x, p.y+1);
             }
 
-            if( p.y > 0 && !lpp[-width] && dpp[-dstep][2] != newVal && std::abs(dp[2] - dpp[-dstep][2]) <= maxDiff )
+            if( p.y > 0 && !lpp[-width] && dpp[-dstep].z != newVal && std::abs(dp.z - dpp[-dstep].z) <= speckle_range_ )
             {
               lpp[-width] = curlabel;
               *ws++ = cv::Point_<short>(p.x, p.y-1);
@@ -183,20 +150,22 @@ cob_env_model::SpeckleFilter<PointT>::filterSpeckles(cv::Mat& img, int maxSpeckl
           }
 
           // assign label type
-          if( count <= maxSpeckleSize )       // speckle region
+          if( count <= speckle_size_ )       // speckle region
           {
             rtype[ls[j]] = 1;       // small region label
-            ds[j][0] = (float)newVal;
-            ds[j][1] = (float)newVal;
-            ds[j][2] = (float)newVal;
+            outp[j].x = (float)newVal;
+            outp[j].y = (float)newVal;
+            outp[j].z = (float)newVal;
           }
           else
             rtype[ls[j]] = 0;       // large region label
         }
-          }
+      }
     }
   }
-  return;
+
+  delete [] buf;
+
 }
 
 #define PCL_INSTANTIATE_SpeckleFilter(T) template class cob_env_model::SpeckleFilter<T>;

@@ -117,7 +117,7 @@ public:
      filter.setFilterParam(speckle_size_,speckle_range_);
      //std::cout<< " SR : "<<filter.getSpeckleRange()<<std::endl;
      //std::cout<< " SS : "<<filter.getSpeckleSize()<<std::endl;
-     filter.applyFilter (*cloud_filtered);
+     filter.filter (*cloud_filtered);
      point_cloud_pub_.publish (cloud_filtered);
      if (t_check == 0)
      {
