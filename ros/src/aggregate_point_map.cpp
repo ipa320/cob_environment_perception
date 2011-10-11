@@ -256,10 +256,12 @@ public:
     /*std::stringstream ss;
     ss << file_path_ << "/gt.pcd";
     /pcl::io::savePCDFileASCII (ss.str(), ref_map_);*/
-
-    std::string ref_map_path;
-    n_.param("aggregate_point_map/file_path" ,ref_map_path ,std::string("home/goa/pcl_daten/kitchen_ground_truth/whole_kitchen.pcd"));
-    pcl::io::loadPCDFile(ref_map_path, *point_map_.getRefMap());
+    if(use_reference_map)
+    {
+      std::string ref_map_path;
+      n_.param("aggregate_point_map/file_path" ,ref_map_path ,std::string("home/goa/pcl_daten/kitchen_ground_truth/whole_kitchen.pcd"));
+      pcl::io::loadPCDFile(ref_map_path, *point_map_.getRefMap());
+    }
   }
 
   /**

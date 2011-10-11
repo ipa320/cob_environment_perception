@@ -105,6 +105,7 @@ rosbuild_add_executable(test_intensity_filter common/src/test/test_intensity_fil
 rosbuild_add_executable(test_jump_edge_filter common/src/test/test_jump_edge_filter.cpp)
 rosbuild_add_executable(test_speckle_filter common/src/test/test_speckle_filter.cpp)
 rosbuild_add_executable(test_statisitcal_outlier_removal_filter common/src/test/test_statistical_outlier_removal_filter.cpp)
+rosbuild_add_executable(pcl_test common/src/test/pcl_test.cpp)
 #rosbuild_add_library(gpc common/src/gpc.c)
 #rosbuild_add_executable(test_fov common/src/test_fov.cpp)
 #rosbuild_add_library(nodelet_cpc_publisher ros/src/cpc_publisher.cpp
