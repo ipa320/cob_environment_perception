@@ -51,6 +51,9 @@ ${PROJECT_SOURCE_DIR}/ros/include)
 #rosbuild_add_executable(icp_registration_node ros/src/icp_registration.cpp)
 #rosbuild_add_executable(point_cloud_filter_node ros/src/point_cloud_filter.cpp)
 rosbuild_add_executable(extract_features ros/src/extract_features.cpp)
+rosbuild_add_executable(test_edge_extraction common/src/test/test_edge_extraction.cpp
+	common/src/features/range_image_border_extractor.cpp
+	common/src/features/boundary.cpp)
 #rosbuild_add_executable(test_range ros/src/test_range_edges.cpp)
 rosbuild_add_executable(norm_time ros/src/norm_time.cpp)
 
@@ -118,6 +121,7 @@ rosbuild_add_executable(test_point_map common/src/map/point_map.cpp common/src/f
 
 # add compile flag
 rosbuild_add_compile_flags(extract_features -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
+rosbuild_add_compile_flags(test_edge_extraction -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
 
 
 # add compile flag

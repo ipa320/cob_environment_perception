@@ -114,11 +114,12 @@ public:
 
   }
 
+  //TODO: better listen to camera_info
   void
   pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc_in)
   {
     frame_id_ = pc_in->header.frame_id;
-    point_cloud_sub_.shutdown();
+    //point_cloud_sub_.shutdown();
   }
 
   void
@@ -143,8 +144,9 @@ public:
           */
     try
     {
+      //ROS_INFO("%s", frame_id_.c_str());
       std::stringstream ss2;
-      //tf_listener_.waitForTransform("/map", msg->>header.frame_id, msg->header.stamp, ros::Duration(0.1));
+      tf_listener_.waitForTransform("/map", frame_id_, ros::Time(0), ros::Duration(0.1));
       tf_listener_.lookupTransform("/map", frame_id_, ros::Time(0), transform);
       KDL::Frame frame_KDL, frame_KDL_old;
       tf::TransformTFToKDL(transform, frame_KDL);
