@@ -1,0 +1,17 @@
+<package>
+  <description brief="cob_env_model_gazebo">
+
+     cob_env_model_gazebo
+
+  </description>
+  <author>Georg Arbeiter</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/cob_env_model_gazebo</url>
+
+	<depend package="cob_gazebo"/>
+	<depend package="cob_script_server"/>
+
+</package>
+
+
