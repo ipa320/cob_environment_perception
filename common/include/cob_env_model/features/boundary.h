@@ -129,7 +129,7 @@ namespace ipa_features
                        const std::vector<int> &indices, 
                        const Eigen::Vector3f &u, const Eigen::Vector3f &v, float angle_threshold);
 
-      bool
+      double
       isEdgePoint (
             const pcl::PointCloud<PointInT> &cloud, const PointInT &q_point,
             const std::vector<int> &indices,
