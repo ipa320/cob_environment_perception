@@ -21,7 +21,7 @@
 
 /* Methods for testing filters */
 
-double TestProcessingTime(unsigned int cloud_size)
+double TestProcessingTimeOnce(unsigned int cloud_size)
 {
     cob_env_model::AmplitudeFilter<PointXYZA> filter;
     pcl::PointCloud<PointXYZA>::Ptr cloud(new pcl::PointCloud<PointXYZA> ());
@@ -51,18 +51,36 @@ double TestProcessingTime(unsigned int cloud_size)
     return time;
 }
 
-
-int main()
+void TestProcessingTime()
 {
   std::ofstream file;
   file.open("/home/goa/tmp/amplitude_filter_timing.dat");
   file << "#No. of points\ttime (s)\n";
   for(unsigned int cloud_size = 40000; cloud_size <= 400000; cloud_size += 40000)
   {
-    double time = TestProcessingTime(cloud_size);
+    double time = TestProcessingTimeOnce(cloud_size);
     file << cloud_size << "\t" << time << "\n";
   }
   file.close();
+}
+
+void DoSampleRun()
+{
+  cob_env_model::AmplitudeFilter<PointXYZA> filter;
+  pcl::PointCloud<PointXYZA>::Ptr cloud(new pcl::PointCloud<PointXYZA> ());
+  pcl::PointCloud<PointXYZA>::Ptr cloud_out(new pcl::PointCloud<PointXYZA> ());
+  pcl::io::loadPCDFile("/home/goa/smbhome/Studenten/Hampp, Joshua/results/CamCube/jump_edge/cc_je_input_1318310715.049279022.pcd", *cloud);
+  filter.setFilterLimits(0.05,1);
+  filter.setInputCloud(cloud);
+  filter.filter(*cloud_out);
+  pcl::io::savePCDFileASCII("/home/goa/smbhome/Studenten/Hampp, Joshua/results/CamCube/amplitude/amplitude_filtered.pcd", *cloud_out);
+}
+
+
+int main()
+{
+  //TestProcessingTime();
+  DoSampleRun();
 }
 
 

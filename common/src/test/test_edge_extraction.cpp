@@ -166,12 +166,14 @@ public:
   }
   void integralEstimatePointNormals(PointCloudT& cloud, pcl::PointCloud<pcl::PointXYZRGBNormal>& cloud_n)
   {
+
     pcl::IntegralImageNormalEstimation<pcl::PointXYZRGB, pcl::Normal> ne;
 
 
     ne.setNormalEstimationMethod (ne.AVERAGE_DEPTH_CHANGE);
     ne.setMaxDepthChangeFactor(0.02f);
     ne.setNormalSmoothingSize(10.0f);
+    ne.setDepthDependentSmoothing(true);
     ne.setInputCloud(cloud.makeShared());
     boost::timer ti;
     pcl::PointCloud<pcl::Normal> cloud_normal;
@@ -179,7 +181,7 @@ public:
     ne.compute(cloud_normal);
 
     double time = ti.elapsed();
-    for (int i=0;i<cloud_normal.size();i++)
+    /*for (int i=0;i<cloud_normal.size();i++)
     {
       double length=sqrt(cloud_normal.points[i].normal[0]*cloud_normal.points[i].normal[0]+cloud_normal.points[i].normal[1]*cloud_normal.points[i].normal[1]+cloud_normal.points[i].normal[2]*cloud_normal.points[i].normal[2]);
       cloud_normal.points[i].normal[0]=cloud_normal.points[i].normal[0]/length;
@@ -196,10 +198,10 @@ public:
         counter++;
       }
 
-    }
+    }*/
     pcl::concatenateFields (cloud, cloud_normal, cloud_n);
 
-    ROS_INFO_STREAM("Integrate time " <<time << " average normal length " << all/counter );
+    ROS_INFO("Integrate time %f",time);
   }
 
   /**Stores the color field of a PointCloud to cv::Mat*/
@@ -260,16 +262,16 @@ public:
   void extractEdgesLaPlace(cv::Mat& color_image, cv::Mat& laplace_image)
   {
     boost::timer t;
-    cv::Mat grey_image;
-    cvtColor( color_image, grey_image, CV_RGB2GRAY );
-    cv::Laplacian(grey_image, laplace_image, CV_32FC1, 1);
+    //cv::Mat grey_image;
+    //cvtColor( color_image, grey_image, CV_RGB2GRAY );
+    cv::Laplacian(color_image, laplace_image, CV_32FC1, 1);
     ROS_INFO("Time elapsed for la place: %f", t.elapsed());
   }
 
   /**Uses the PCL BoundaryEstimation to find edges in a point cloud. Uses an angle criterion to detect edges
    * Unfortunately marks the outline of a point cloud as edge; needs normal estimation
    */
-  void extractEdgesBoundary(PointCloudT::Ptr& cloud_in, pcl::PointCloud<pcl::Boundary>& cloud_out, cv::Mat& border_image)
+  void extractEdgesBoundary(PointCloudT::Ptr& cloud_in, pcl::PointCloud<pcl::InterestPoint>& cloud_out, cv::Mat& border_image)
   {
 
     pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud_n (new pcl::PointCloud<pcl::PointXYZRGBNormal> ());
@@ -282,7 +284,7 @@ public:
     //pcl::KdTree<pcl::PointXYZRGBNormal>::Ptr tree;
     pcl::OrganizedDataIndex<pcl::PointXYZRGBNormal>::Ptr tree (new pcl::OrganizedDataIndex<pcl::PointXYZRGBNormal> ());
     //tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZRGBNormal> > ();
-    ipa_features::BoundaryEstimation<pcl::PointXYZRGBNormal,pcl::PointXYZRGBNormal,pcl::Boundary> boundary;
+    ipa_features::BoundaryEstimation<pcl::PointXYZRGBNormal,pcl::PointXYZRGBNormal,pcl::InterestPoint> boundary;
     boundary.setSearchMethod(tree);
     boundary.setInputCloud(cloud_n);
     //boundary.setSearchSurface (cloud);
@@ -313,16 +315,17 @@ public:
                 cloud_out.points.resize(nr_p);
                 cloud_out.is_dense = true;*/
 
-    border_image = cv::Mat(cloud_in->height, cloud_in->width, CV_8UC1);
+    border_image = cv::Mat(cloud_in->height, cloud_in->width, CV_32FC1);
     int pt_idx=0;
     for(unsigned int row=0; row<border_image.rows; row++)
     {
       for(unsigned int col=0; col<border_image.cols; col++, pt_idx++)
       {
-        if( cloud_out.points[pt_idx].boundary_point == 1)
+        border_image.at<float>(row,col) = cloud_out.points[pt_idx].strength;
+        /*if( cloud_out.points[pt_idx].boundary_point == 1)
           border_image.at<unsigned char>(row,col) = 255;
         else
-          border_image.at<unsigned char>(row,col) = 0;
+          border_image.at<unsigned char>(row,col) = 0;*/
       }
     }
     //cv::imshow("boundary image", border_image);
@@ -787,7 +790,7 @@ int main(int argc, char** argv)
   /// Load PCD file as input; better use binary PCD files, ascii files seem to generate corrupt point clouds
   std::string directory("/home/goa/pcl_daten/sim_segmentation/");
   PointCloudT::Ptr cloud_in = PointCloudT::Ptr (new PointCloudT);
-  pcl::io::loadPCDFile(directory+"dcorner_25.pcd", *cloud_in);
+  pcl::io::loadPCDFile(directory+"dcorner_35.pcd", *cloud_in);
 
   cv::Mat range_image(cloud_in->height,cloud_in->width,CV_32FC1);
   ef.getRangeImage(cloud_in, range_image);
@@ -820,15 +823,28 @@ int main(int argc, char** argv)
     sobel_imgs[0] += sobel_imgs[i];
   }
   cv::normalize(sobel_imgs[0], sobel_imgs[0], 0,1,cv::NORM_MINMAX);
+  //cv::threshold(sobel_imgs[0],sobel_imgs[0],0.01,1,cv::THRESH_BINARY);
+  //cv::normalize(sobel_imgs[0], sobel_imgs[0], 0,1,cv::NORM_MINMAX);
   cv::imshow("Sobel Image", sobel_imgs[0]);
-  cv::Mat laplace_image;
-  ef.extractEdgesLaPlace(color_image, laplace_image);
-  cv::normalize(laplace_image, laplace_image, 0,1,cv::NORM_MINMAX);
-  cv::imshow("LaPlace Image", laplace_image);
+
+
+  std::vector<cv::Mat> laplace_imgs;
+  for(int i=0; i<3; i++)
+  {
+    cv::Mat image;
+    ef.extractEdgesLaPlace(img_channels[i], image);
+    laplace_imgs.push_back(image);
+  }
+  for(int i=1; i<3; i++)
+  {
+    laplace_imgs[0] += laplace_imgs[i];
+  }
+  cv::normalize(laplace_imgs[0], laplace_imgs[0], 0,1,cv::NORM_MINMAX);
+  cv::imshow("LaPlace Image", laplace_imgs[0]);
   cv::waitKey();
 
   //pcl::PointCloud<pcl::Boundary> cloud_out;
-  pcl::PointCloud<pcl::Boundary>::Ptr cloud_out = pcl::PointCloud<pcl::Boundary>::Ptr (new pcl::PointCloud<pcl::Boundary>);
+  pcl::PointCloud<pcl::InterestPoint>::Ptr cloud_out = pcl::PointCloud<pcl::InterestPoint>::Ptr (new pcl::PointCloud<pcl::InterestPoint>);
   cv::Mat border_image;
 
   pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud_n (new pcl::PointCloud<pcl::PointXYZRGBNormal> ());
@@ -849,13 +865,20 @@ int main(int argc, char** argv)
   cv::imshow("Edges", border_image);
   cv::waitKey();
 
+  border_image += sobel_imgs[0];
+  //cv::normalize(border_image, border_image, 0,1,cv::NORM_MINMAX);
+
+  cv::imshow("Combined Edges", border_image);
+  cv::waitKey();
+
   pcl::PointCloud<PointLabel>::Ptr cloud_out2 = pcl::PointCloud<PointLabel>::Ptr (new pcl::PointCloud<PointLabel>);
   cloud_out2->height = cloud_out->height;
   cloud_out2->width = cloud_out->width;
   cloud_out2->points.resize(cloud_out2->height*cloud_out2->width);
   for (int i=0; i<cloud_out->points.size(); i++)
   {
-    cloud_out2->points[i].label = (int)(cloud_out->points[i].boundary_point);
+    if(cloud_out->points[i].strength > 0.1)
+      cloud_out2->points[i].label = 1;//(int)(cloud_out->points[i].boundary_point);
   }
 
   ef.propagateWavefront(cloud_out2);

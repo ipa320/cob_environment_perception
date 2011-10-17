@@ -106,7 +106,7 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::isBoundaryPoint 
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////
-template <typename PointInT, typename PointNT, typename PointOutT> bool
+template <typename PointInT, typename PointNT, typename PointOutT> double
 ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::isEdgePoint (
     const pcl::PointCloud<PointInT> &cloud, const PointInT &q_point,
     const std::vector<int> &indices,
@@ -115,7 +115,7 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::isEdgePoint (
   //TODO: choose threshold according to viewpoint distance (noise)
   if (indices.size () < 3)
   {
-    return true;
+    return false;
   }
   float nd_dot;
   //float c_ang_thresh = cos(ang_threshold);
@@ -155,6 +155,7 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::isEdgePoint (
   }
   float edge_prob = (float)b_ctr/nn_ctr;
   float boundary_prob = (float)nan_ctr/indices.size();
+  return edge_prob*2;
   /*std::cout << border_prob << std::endl;
   if(border_prob >0.00001)
 	  return true;
@@ -276,10 +277,11 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::searchForNeighbo
 
 
   int num_nn = 3; //num_nn increments desired in each direction (-x, +x, -y, +y)
-  int radius_x_pix = radius/r_x;
-  int radius_y_pix = radius/r_y;
-  int incr_x = std::max(radius_x_pix/(2*num_nn+1),1);
-  int incr_y = std::max(radius_y_pix/(2*num_nn+1),1);
+  int radius_x_pix = 15;//radius/r_x;
+  int radius_y_pix = 15;//radius/r_y;
+  //std::cout << radius_x_pix << "," << radius_y_pix << std::endl;
+  int incr_x = 1;//std::max(radius_x_pix/(2*num_nn+1),1);
+  int incr_y = 1;//std::max(radius_y_pix/(2*num_nn+1),1);
   //std::cout << idx_x << "," << idx_y <<  " step: " << step << std::endl;
   //std::cout << idx_x << "," << idx_y << ": ";
   for (int i=idx_x-radius_x_pix; i<=idx_x+radius_x_pix; i+=incr_x)
@@ -341,11 +343,11 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::computeFeature (
       // Estimate whether the point is lying on a boundary surface or not
       //std::cout << idx << "," << idx%input_->width << ":";
       //TODO: test edge detection
-      output.points[idx].boundary_point = isEdgePoint (*surface_, input_->points[(*indices_)[idx]], nn_indices, normal, dist_threshold_);
+      output.points[idx].strength = isEdgePoint (*surface_, input_->points[(*indices_)[idx]], nn_indices, normal, dist_threshold_);
     }
     else
     {
-      output.points[idx].boundary_point = 2;
+      output.points[idx].strength = 2;
       //std::cout << "point is NAN" << std::endl;
     }
     //std::cout << std::endl;
