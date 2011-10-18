@@ -1,0 +1,29 @@
+<?xml version="1.0"?>
+<launch>
+  <!--node pkg="nodelet" type="nodelet" name="pcl_manager"  args="manager" output="screen"/-->
+  
+  
+   <!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
+  <!--node pkg="nodelet" type="nodelet" name="voxel_grid2" args="load pcl/VoxelGrid cam3d_nodelet_manager" output="screen">
+    <remap from="~input" to="/aggregate_point_map/pc_aligned"/>
+    <rosparam>
+      filter_field_name: z
+      filter_limit_min: 0.2
+      filter_limit_max: 3
+      filter_limit_negative: False
+      leaf_size: 0.02
+      input_frame: "/map"
+      output_frame: "/map"
+    </rosparam>
+  </node-->
+
+  <node pkg="nodelet" type="nodelet" name="plane_extraction" args="load cob_env_model/PlaneExtractionNodelet cam3d_nodelet_manager2" output="screen">
+  	<remap from="point_cloud2" to="/aggregate_point_map/pc_aligned"/>
+  	<!--remap from="point_cloud2" to="/aggregate_point_map/map"/-->
+  	<!--remap from="point_cloud2" to="/voxel_grid2/output"/-->
+  	<param name="file_path" type="string" value="/media/GOADaten/Daten/20110823_bagfiles/kitchen_empty/plane/"/>
+  	<param name="save_to_file" type="bool" value="false"/>
+  	<param name="plane_constraint" type="int" value="0"/>
+  </node>    
+               
+</launch>
