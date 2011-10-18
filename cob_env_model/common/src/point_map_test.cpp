@@ -1,4 +1,309 @@
 #if 1
+/*
+ * keyframe_detector.cpp
+ *
+ *  Created on: Sep 22, 2011
+ *      Author: goa-jh
+ */
+
+
+
+//##################
+//#### includes ####
+
+// standard includes
+//--
+#include <sstream>
+#include <fstream>
+
+
+// ROS includes
+#include <ros/ros.h>
+#include <ros/console.h>
+#include <actionlib/server/simple_action_server.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
+#include <pcl/registration/icp.h>
+#include <tf/transform_listener.h>
+#include <tf_conversions/tf_kdl.h>
+#include <cob_env_model/point_types.h>
+#include "pcl/filters/voxel_grid.h"
+#include <pcl_ros/transforms.h>
+#include <pcl_ros/point_cloud.h>
+#include <pluginlib/class_list_macros.h>
+#include <pcl_ros/pcl_nodelet.h>
+#include <cob_env_model/field_of_view_segmentation.hpp>
+#include <pcl/filters/extract_indices.h>
+#include <visualization_msgs/Marker.h>
+#include <pcl/filters/voxel_grid.h>
+#include <pcl/filters/statistical_outlier_removal.h>
+
+
+// ROS message includes
+#include <sensor_msgs/PointCloud2.h>
+#include <cob_env_model_msgs/GetFieldOfView.h>
+#include "cob_env_model_msgs/TriggerMappingAction.h"
+#include <cob_env_model_msgs/SetReferenceMap.h>
+#include <cob_srvs/Trigger.h>
+
+// external includes
+#include <boost/timer.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+
+#include "cob_env_model/map/point_map.h"
+
+#include "reconfigureable_node.h"
+#include <cob_env_model/keyframe_detectorConfig.h>
+
+// ROS message includes
+//#include <sensor_msgs/PointCloud2.h>
+#include <cob_env_model_msgs/GetFieldOfView.h>
+#include "cob_env_model_msgs/TriggerMappingAction.h"
+#include <cob_env_model_msgs/SetReferenceMap.h>
+#include <cob_srvs/Trigger.h>
+
+// external includes
+#include <boost/timer.hpp>
+#include <boost/numeric/ublas/matrix.hpp>
+
+//#include "cob_env_model/filters/amplitude_filter.h"
+#include "cob_env_model/filters/impl/jump_edge_filter.hpp"
+#include "cob_env_model/filters/impl/amplitude_filter.hpp"
+#include "cob_env_model/filters/impl/speckle_filter.hpp"
+#include <sstream>
+
+using namespace tf;
+
+//####################
+//#### node class ####
+class KeyframeDetector
+{
+  typedef pcl::PointXYZRGB Point;
+
+public:
+  // Constructor
+  KeyframeDetector()
+  {
+    point_cloud_pub1_ = n_.advertise<pcl::PointCloud<Point> >("point_cloud2_cut",1);
+    point_cloud_pub2_ = n_.advertise<pcl::PointCloud<Point> >("point_cloud2_filtered",1);
+    point_cloud_sub_ = n_.subscribe("/tof/point_cloud2", 1, &KeyframeDetector::pointCloudSubCallback, this);
+  }
+
+
+  // Destructor
+  ~KeyframeDetector()
+  {
+    /// void
+  }
+  /*void
+  pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc_in)
+  {
+    ROS_INFO("%d %d", pc_in->width, pc_in->height);
+
+    for(int x=0; x<pc_in->width; x++) {
+      for(int y=0; y<pc_in->height; y++) {
+
+        Point &p = pc_in->points[((x)+(y)*pc_in->width)];
+
+        //ROS_INFO("%f %f %f", p.x, p.y, p.z);
+
+        if(p.z>2.3||p.x>0.35)
+          p.z = INFINITY;
+
+      }
+    }
+
+    point_cloud_pub_.publish(*pc_in);*/
+
+#define TEST_FILTER 2
+  void
+  pointCloudSubCallback (sensor_msgs::PointCloud2::ConstPtr pc)
+  {
+    static int ctr=0;
+    ctr++;
+#if TEST_FILTER==1
+    std::string name="speckle";
+    {int p1=50;//for(int p1=10; p1<=70; p1+=20) {
+    {double p2=0.1;//for(double p2=0.01; p2<0.5; p2+=0.05) {
+    cob_env_model::SpeckleFilter<sensor_msgs::PointCloud2> filter;
+    filter.setFilterParam(p1,p2);
+#elif TEST_FILTER==2
+
+    std::string name="jump_edge";
+    for(int p1=0; p1<=0; p1+=20) {
+      {double p2=167;//for(double p2=50; p2<=189; p2+=9) {
+    cob_env_model::JumpEdgeFilter<sensor_msgs::PointCloud2> filter;
+    filter.setUpperAngle(p2);
+#elif TEST_FILTER==3
+
+    std::string name="amplitude";
+    {double p1=0.001;//for(double p1=0.001; p1<=0.095; p1+=0.01) {
+      //for(double p2=0.02; p2<0.2; p2+=0.02) {
+      for(double p2=1.; p2<1.2; p2+=1.02) {
+    cob_env_model::AmplitudeFilter<sensor_msgs::PointCloud2> filter;
+    filter.setFilterLimits (p1, 1);
+#elif TEST_FILTER==4
+
+    std::string name="sor";
+    pcl::StatisticalOutlierRemoval<pcl::PointXYZ> filter;
+
+    int p1=70;{//for(int p1=10; p1<=70; p1+=20) {
+      {double p2=0.02;//for(double p2=0.01; p2<0.2; p2+=0.01) {
+    filter.setMeanK(p1);
+    filter.setStddevMulThresh(p2);
+
+#endif
+
+#if TEST_FILTER==4
+    pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZ> ());
+    pcl::PointCloud<pcl::PointXYZ> pc2;
+    pcl::fromROSMsg(*pc,pc2);
+    filter.setInputCloud (pc2.makeShared());
+#else
+    sensor_msgs::PointCloud2::Ptr cloud_filtered (new sensor_msgs::PointCloud2 ());
+    filter.setInputCloud (pc);
+#endif
+    //std::cout<<" min_limit :"<<filter.getFilterMinLimit()<<std::endl;
+    //std::cout<<" max_limit :"<<filter.getFilterMaxLimit()<<std::endl;
+
+    boost::timer t;
+#if TEST_FILTER==4
+    filter.filter (*cloud_filtered);
+#else
+    filter.filter (*cloud_filtered);
+#endif
+    ROS_INFO("[point_map] ICP took %f s", t.elapsed());
+
+    ROS_INFO("%d %d", cloud_filtered->width, cloud_filtered->height);
+
+    //*cloud_filtered = *pc;
+
+    point_cloud_pub2_.publish (cloud_filtered);
+
+    char fn[128];
+    std::ostringstream of;
+    {
+      of<<name<<"/"<<p1<<"/"<<p2;
+      system((std::string("mkdir -p ")+of.str()).c_str());
+      of<<"/output"<<ctr<<".dat";
+      FILE *fp = fopen(of.str().c_str(), "w");
+
+      fputs("[",fp);
+      for(int x=0; x<pc->width; x++) {
+        if(x==0)
+          fputs("[",fp);
+        else
+          fputs(",[",fp);
+        for(int y=0; y<pc->height; y++) {
+
+          float a,b,c=-100000.f;
+          a=*(float*)&pc->data[(x+y*pc->width) * pc->point_step + 0];
+          b=*(float*)&pc->data[(x+y*pc->width) * pc->point_step + 4];
+
+#if TEST_FILTER==4
+          for(int i=0; i<cloud_filtered->points.size(); i++) {
+            if( *(float*)&pc->data[(x+y*pc->width) * pc->point_step + 0]==cloud_filtered->points[i].x &&
+                *(float*)&pc->data[(x+y*pc->width) * pc->point_step + 4]==cloud_filtered->points[i].y) {
+              c = cloud_filtered->points[i].z;
+            }
+          }
+#else
+          for(int i=0; i<cloud_filtered->data.size()/pc->point_step; i++) {
+            if( *(float*)&pc->data[(x+y*pc->width) * pc->point_step + 0]==*(float*)&cloud_filtered->data[i * pc->point_step + 0] &&
+                *(float*)&pc->data[(x+y*pc->width) * pc->point_step + 4]==*(float*)&cloud_filtered->data[i * pc->point_step + 4]) {
+              c = *(float*)&cloud_filtered->data[i * pc->point_step + 8];
+            }
+          }
+#endif
+
+          if(y==0)
+            sprintf(fn,"%f",c);
+          else
+            sprintf(fn,",%f",c);
+          fputs(fn,fp);
+        }
+
+        fputs("]",fp);
+      }
+      fputs("]",fp);
+      fclose(fp);
+    }
+      }
+    }
+
+    {
+      char fn[128];
+      sprintf(fn,"original%d.dat",ctr);
+      FILE *fp = fopen(fn, "w");
+
+      fputs("[",fp);
+      for(int x=0; x<pc->width; x++) {
+        if(x==0)
+          fputs("[",fp);
+        else
+          fputs(",[",fp);
+        for(int y=0; y<pc->height; y++) {
+
+          float a,b,c=-100000.f;
+          a=*(float*)&pc->data[(x+y*pc->width) * pc->point_step + 0];
+          b=*(float*)&pc->data[(x+y*pc->width) * pc->point_step + 4];
+          c=*(float*)&pc->data[(x+y*pc->width) * pc->point_step + 8];
+
+          if(y==0)
+            sprintf(fn,"%f",c);
+          else
+            sprintf(fn,",%f",c);
+          fputs(fn,fp);
+        }
+
+        fputs("]",fp);
+      }
+      fputs("]",fp);
+      fclose(fp);
+    }
+  }
+
+
+  ros::NodeHandle n_;
+  ros::Time stamp_;
+
+
+protected:
+  ros::Subscriber point_cloud_sub_;             //subscriber for input pc
+  ros::Publisher point_cloud_pub1_, point_cloud_pub2_;              //publisher for map
+
+  StampedTransform transform_old_;
+
+  std::string frame_id_;
+
+
+  double y_limit_;
+  double distance_limit_;
+  double r_limit_;
+  double p_limit_;
+
+  boost::mutex m_mutex_pointCloudSubCallback;
+
+};
+
+
+int main (int argc, char** argv)
+{
+  ros::init (argc, argv, "keyframe_detector");
+
+  KeyframeDetector kd;
+
+  ros::Rate loop_rate(10);
+  while (ros::ok())
+  {
+    ros::spinOnce ();
+    //fov.transformNormals();
+    loop_rate.sleep();
+  }
+}
+
+
+#elif 2
 
 #include "cob_env_model/table_object_cluster.h"
 

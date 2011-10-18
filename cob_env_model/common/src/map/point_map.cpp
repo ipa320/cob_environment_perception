@@ -29,6 +29,13 @@
 //TODO: not finished?
 bool PointMap::compute(const pcl::PointCloud<Point>::Ptr& pc_in, const pcl::PointCloud<Point>::Ptr& pc) {
 
+  if(first_ && !use_reference_map_)
+  {
+    pcl::copyPointCloud(*pc, map_);
+    first_=false;
+    return true;
+  }
+
   if(pc->size()<1||map_to_registrate_->size()<1) {
     ROS_WARN("[point_map] no input data given; canceling");
     return false;
@@ -122,6 +129,7 @@ bool PointMap::doICPUsingReference(const pcl::PointCloud<Point>::Ptr& pc,
                                       pcl::PointCloud<Point>& pc_aligned,
                                       Eigen::Matrix4f& final_transformation)
 {
+
   /*cob_env_model::GetFieldOfView get_fov_srv;
 get_fov_srv->request.target_frame = std::string("/map");
 get_fov_srv->request.stamp = pc->header.stamp;

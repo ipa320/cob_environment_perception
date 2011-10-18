@@ -47,8 +47,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
-#ifndef SPECKLE_FILTER_HPP_
-#define SPECKLE_FILTER_HPP_
 
 //##################
 //#### includes ####
@@ -60,24 +58,37 @@
 // cob_env_model includes
 #include "cob_env_model/filters/speckle_filter.h"
 #include "cob_env_model/filters/impl/speckle_filter.hpp"
-#include <cob_env_model/cpc_point.h>
+#include "cob_env_model/point_types.h"
 
-#include <opencv/cv.h>
-//#include <cob_vision_utils/VisionUtils.h>
+#include <pcl/filters/extract_indices.h>
+#include <pcl/filters/impl/extract_indices.hpp>
 
 void
 cob_env_model::SpeckleFilter<sensor_msgs::PointCloud2>::applyFilter (PointCloud2 &pc_out)
 {
   pcl::PointCloud<pcl::PointXYZ> pc;
-  pcl::fromROSMsg(pc_out,pc);
+  pcl::fromROSMsg(*input_,pc);
 
-  cob_env_model::SpeckleFilter<pcl::PointXYZ>::applyFilter(pc);
+  for(size_t i=0; i<pc.size(); i++)
+    *((int*)&pc.points[i].data[3]) = i;
 
-  for(size_t i=0; i<pc.size(); i++) {
-    memcpy (&pc_out->points[i].x, &pc.points[i].x, 3 * sizeof(float));
-  }
+  cob_env_model::SpeckleFilter<pcl::PointXYZ> filter;
+
+  filter.setFilterParam(speckle_size_, speckle_range_);
+  filter.setInputCloud(pc.makeShared());
+
+  // Apply the actual filter
+  pcl::PointIndices::Ptr points_to_remove (new pcl::PointIndices ());
+  filter.applyFilter (points_to_remove);
+
+  pcl::ExtractIndices<sensor_msgs::PointCloud2> extractIndices;
+  extractIndices.setInputCloud (input_);
+  extractIndices.setNegative(true);
+  extractIndices.setIndices ( points_to_remove );
+  extractIndices.filter (pc_out);
 
 }
 
 using namespace pcl;
-PCL_INSTANTIATE(SpeckleFilter, (CPCPoint));
+PCL_INSTANTIATE(SpeckleFilter, (PointXYZCI));
+PCL_INSTANTIATE(SpeckleFilter, PCL_XYZ_POINT_TYPES);

@@ -116,7 +116,7 @@ rosbuild_add_executable(pcl_test common/src/test/pcl_test.cpp)
 #rosbuild_add_executable(cpc_publisher ros/src/cpc_publisher_main.cpp)
 #rosbuild_add_executable(cpc_visualizer ros/src/cpc_visualizer_main.cpp)
 #rosbuild_add_executable(planar_segmentation common/src/planar_segmentation.cpp)
-rosbuild_add_executable(test_point_map common/src/map/point_map.cpp common/src/features/plane_extraction.cpp common/src/point_map_test.cpp)
+#rosbuild_add_executable(test_point_map common/src/map/point_map.cpp common/src/features/plane_extraction.cpp common/src/point_map_test.cpp)
 
 
 # add compile flag
@@ -131,6 +131,7 @@ target_link_libraries(feature_map cob_env_model_map)
 target_link_libraries(feature_map_node cob_env_model_map)
 target_link_libraries(cob_env_model_nodelets cob_env_model cob_env_model_filters cob_env_model_map)
 #target_link_libraries (planar_segmentation ${PCL_IO_LIBRARY} ${PCL_FILTERS_LIBRARY} ${PCL_SEGMENTATION_LIBRARY})
+#target_link_libraries (test_point_map cob_env_model)
 #target_link_libraries(test_fov cob_env_model)
 #target_link_libraries(env_model ann glut mesasr)
 #target_link_libraries(env_model_node glut)
