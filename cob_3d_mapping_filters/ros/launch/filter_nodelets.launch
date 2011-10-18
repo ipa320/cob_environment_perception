@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+  
+  <node pkg="nodelet" type="nodelet" name="pcl_manager"  args="manager" output="screen"/>
+  
+  <include file="$(find cob_3d_mapping_filters)/ros/launch/launch_filters/jump_edge_filter.launch" />
+  <include file="$(find cob_3d_mapping_filters)/ros/launch/launch_filters/amplitude_filter.launch" />  
+  <include file="$(find cob_3d_mapping_filters)/ros/launch/launch_filters/speckle_filter.launch" />
+  <include file="$(find cob_3d_mapping_filters)/ros/launch/launch_filters/sor_filter.launch" />
+  
+  <node pkg="rosbag" type="play" name="bag_play" args="/home/goa-wq/fixed_no_move_table.bag -l" output="screen" />
+  <node pkg="rviz" type="rviz" respawn="false" name="rviz" />
+   
+</launch>

@@ -1,0 +1,25 @@
+<library path="lib/libcob_3d_mapping_filter_nodelets">
+  <class name="cob_3d_mapping_filters/AmplitudeFilter" type="AmplitudeFilter" base_class_type="nodelet::Nodelet">
+  	<description>
+  		Nodelet for point cloud filtering (by amplitude)
+  	</description>
+  </class>
+	
+  <class name="cob_3d_mapping_filters/IntensityFilter" type="IntensityFilter" base_class_type="nodelet::Nodelet">
+  	<description>
+  		Nodelet for point cloud filtering (by intensity)
+  	</description>
+  </class>
+
+  <class name="cob_3d_mapping_filters/SpeckleFilter" type="SpeckleFilter" base_class_type="nodelet::Nodelet">
+  	<description>
+  		Nodelet for point cloud filtering (speckles)
+  	</description>
+  </class>
+
+  <class name="cob_3d_mapping_filters/JumpEdgeFilter" type="JumpEdgeFilter" base_class_type="nodelet::Nodelet">
+  	<description>
+  		Nodelet for point cloud filtering (jump edges)
+  	</description>
+  </class>
+</library>

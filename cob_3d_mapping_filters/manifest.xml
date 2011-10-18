@@ -1,0 +1,27 @@
+<package>
+  <description brief="cob_3d_mapping_filters">
+
+     cob_3d_mapping_filters
+
+  </description>
+  <author>Georg Arbeiter</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/cob_3d_mapping_filters</url>
+
+	<depend package="roscpp"/>
+	<depend package="pcl"/>
+	<depend package="pcl_ros"/>
+	<depend package="nodelet"/>
+	<depend package="dynamic_reconfigure"/>
+	<depend package="cob_3d_mapping_common"/>
+	<depend package="opencv2"/>
+
+  <export>
+  	<cpp cflags="-I${prefix}/common/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcob_3d_mapping_filters"/>
+  	<nodelet plugin="${prefix}/nodelet_plugins.xml" />
+  </export>
+
+</package>
+
+

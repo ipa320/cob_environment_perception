@@ -1,0 +1,22 @@
+<package>
+  <description brief="cob_3d_mapping_geometry_map">
+
+     cob_3d_mapping_geometry_map
+
+  </description>
+  <author>Georg Arbeiter</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/cob_3d_mapping_geometry_map</url>
+  
+  <depend package="roscpp"/>
+  <depend package="pcl"/>
+  <depend package="pcl_ros"/>
+  <depend package="dynamic_reconfigure" />
+  <depend package="visualization_msgs"/>
+  <depend package="cob_3d_mapping_msgs"/>
+  <depend package="cob_3d_mapping_common"/>
+
+</package>
+
+

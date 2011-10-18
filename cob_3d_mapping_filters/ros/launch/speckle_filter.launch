@@ -1,0 +1,17 @@
+<?xml version="1.0"?>
+<launch>
+
+  <node pkg="nodelet" type="nodelet" name="pcl_manager"  args="manager" output="screen"/>
+  
+  <!-- Run speckle filter -->
+  <node pkg="nodelet" type="nodelet" name="speckle_filter_nodelet" args="load cob_3d_mapping_filters/SpeckleFilter pcl_manager" output="screen">
+  	<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
+  	<remap from="point_cloud2_filtered" to="/cob_3d_mapping_filters/point_cloud2_filtered_speckle"/>
+  	<param name = "speckle_size" type="int" value="50"/>
+  	<param name = "speckle_range" type="double" value="0.2"/>
+  </node>  
+	
+  <node pkg="rosbag" type="play" name="bag_play" args="/home/goa-wq/fixed_no_move_table.bag -l" output="screen" />
+  <node pkg="rviz" type="rviz" respawn="false" name="rviz" />
+  
+</launch>
