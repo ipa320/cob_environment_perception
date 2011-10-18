@@ -1,0 +1,6 @@
+<launch>
+	<node pkg="cob_env_model" type="concat_fields_node" name="concat_normals" output="screen">
+    <remap from="input" to="/aggregate_point_map/pc_aligned" />
+    <remap from="input2" to="/normals" />
+  </node>
+</launch>

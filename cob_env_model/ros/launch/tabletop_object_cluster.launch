@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- start environment modelling -->
+  <!--node pkg="nodelet" type="nodelet" name="cam3d_nodelet_manager"  args="manager" output="screen"/-->
+  
+	
+	<node pkg="nodelet" type="nodelet" name="table_object_cluster" args="load cob_env_model/TableObjectClusterNodelet cam3d_nodelet_manager2" output="screen">
+		<param name="file_path" type="string" value="/home/goa/tmp/"/>
+  	<param name="save_to_file" type="bool" value="false"/>
+  </node>
+
+
+</launch>
+

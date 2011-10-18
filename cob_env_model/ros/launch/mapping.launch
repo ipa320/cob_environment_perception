@@ -1,0 +1,50 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- start environment modelling -->
+  <node pkg="nodelet" type="nodelet" name="cam3d_nodelet_manager2"  args="manager" output="screen"/>
+  
+  <!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
+  <!--node pkg="nodelet" type="nodelet" name="voxel_grid1" args="load pcl/VoxelGrid pcl_manager" output="screen">
+    <remap from="~input" to="/outlier_removal/output" />
+    <rosparam>
+      filter_field_name: z
+      filter_limit_min: -0.1
+      filter_limit_max: 6
+      filter_limit_negative: False
+      leaf_size: 0.05
+    </rosparam>
+  </node-->
+  
+  
+  <!--node pkg="nodelet" type="nodelet" name="point_cloud_filter" args="load cob_env_model/PointCloudFilter pcl_manager" output="screen">
+  	<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
+  	<remap from="point_cloud2_filtered" to="/cob_env_model/point_cloud2_filtered"/>
+  	<param name="filter_by_amplitude" type="bool" value="true"/>
+	<param name="filter_tearoff" type="bool" value="true"/>
+	<param name="filter_speckle" type="bool" value="false"/>
+	<param name="filter_by_confidence" type="bool" value="false"/>
+	<param name="amplitude_min_threshold" type="double" value="4000"/>
+	<param name="amplitude_max_threshold" type="double" value="70000"/>
+  </node-->  
+  
+  
+    <!--node pkg="nodelet" type="nodelet" name="pass_through" args="load pcl/PassThrough pcl_manager" output="screen">
+    <remap from="~input" to="/cam3d/rgb/points" />
+    <rosparam>
+      filter_field_name: z
+      filter_limit_min: -10
+      filter_limit_max: 10
+    </rosparam>
+  </node-->
+  
+	<include file="$(find cob_env_model)/ros/launch/aggregate_point_map.launch" />
+	<include file="$(find cob_env_model)/ros/launch/extract_planes.launch" />
+	<include file="$(find cob_env_model)/ros/launch/feature_map.launch" />
+  
+
+
+  <!--node pkg="rosbag" type="play" name="rosbag_play" cwd="node" respawn="false" output="screen" args="/home/goa/pcl_daten/table/fixed_pltf_neck_joystick_table.bag -k -q pause"/>
+  	<remap from="input" to="/outlier_removal/output"/>
+  </node-->
+</launch>
+
