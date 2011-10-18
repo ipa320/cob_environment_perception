@@ -1,0 +1,25 @@
+<package>
+  <description brief="cob_3d_mapping_common">
+
+     cob_3d_mapping_common
+
+  </description>
+  <author>Georg Arbeiter</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/cob_3d_mapping_common</url>
+  
+  <depend package="roscpp"/>
+  <depend package="pcl"/>
+  <depend package="dynamic_reconfigure"/>
+  <depend package="tf"/>
+  <depend package="visualization_msgs"/>
+  <depend package="cob_3d_mapping_msgs"/>
+  
+  <export>
+  	<cpp cflags="-I${prefix}/common/include -I${prefix}/ros/include"/>
+  </export>
+
+</package>
+
+
