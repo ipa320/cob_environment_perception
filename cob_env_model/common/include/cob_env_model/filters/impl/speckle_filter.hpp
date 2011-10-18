@@ -57,19 +57,23 @@
 #include "cob_env_model/filters/speckle_filter.h"
 
 
+#include "pcl/point_types.h"
+#include "pcl/impl/instantiate.hpp"
+
+#include <pcl/filters/extract_indices.h>
+#include <pcl/filters/impl/extract_indices.hpp>
+#include "cob_env_model/point_types.h"
 
 template<typename PointT>
 void
-cob_env_model::SpeckleFilter<PointT>::applyFilter (PointCloud &pc_out)
+cob_env_model::SpeckleFilter<PointT>::applyFilter (pcl::PointIndices::Ptr points_to_remove)
 {
-  pc_out.points.resize(input_->points.size());
-  pc_out.header = input_->header;
-
   float newVal = 0;
   int width = input_->width, height = input_->height, npixels = width*height;
   size_t bufSize = npixels*(int)(sizeof(cv::Point_<short>) + sizeof(int) + sizeof(uchar));
 
   uchar* buf =new uchar[bufSize];
+  uchar* rem_buf = buf;
   int i, j, dstep = input_->width;
   int* labels = (int*)buf;
   buf += npixels*sizeof(labels[0]);
@@ -84,7 +88,7 @@ cob_env_model::SpeckleFilter<PointT>::applyFilter (PointCloud &pc_out)
   for( i = 0; i < height; i++ )
   {
     const PointT * const ds = &input_->points[i*input_->width];
-    PointT *outp = &pc_out.points[i*pc_out.width];
+    //PointT *outp = &pc_out.points[i*pc_out.width];
     int* ls = labels + width*i;
 
     for( j = 0; j < width; j++ )
@@ -95,9 +99,10 @@ cob_env_model::SpeckleFilter<PointT>::applyFilter (PointCloud &pc_out)
         {
           if( rtype[ls[j]] ) // small region, zero out disparity
           {
-            outp[j].x = (float)newVal;
+            points_to_remove->indices.push_back(j+i*input_->width);
+            /*outp[j].x = (float)newVal;
             outp[j].y = (float)newVal;
-            outp[j].z = (float)newVal;
+            outp[j].z = (float)newVal;*/
           }
         }
         // no label, assign and propagate
@@ -147,15 +152,17 @@ cob_env_model::SpeckleFilter<PointT>::applyFilter (PointCloud &pc_out)
             // pop most recent and propagate
             // NB: could try least recent, maybe better convergence
             p = *--ws;
+
           }
 
           // assign label type
           if( count <= speckle_size_ )       // speckle region
           {
+            points_to_remove->indices.push_back(j+i*input_->width);
             rtype[ls[j]] = 1;       // small region label
-            outp[j].x = (float)newVal;
+            /*outp[j].x = (float)newVal;
             outp[j].y = (float)newVal;
-            outp[j].z = (float)newVal;
+            outp[j].z = (float)newVal;*/
           }
           else
             rtype[ls[j]] = 0;       // large region label
@@ -164,7 +171,25 @@ cob_env_model::SpeckleFilter<PointT>::applyFilter (PointCloud &pc_out)
     }
   }
 
-  delete [] buf;
+  delete [] rem_buf;
+}
+
+template<typename PointT>
+void
+cob_env_model::SpeckleFilter<PointT>::applyFilter (PointCloud &pc_out)
+{
+  pc_out.points.resize(input_->points.size());
+  pc_out.header = input_->header;
+
+  pcl::PointIndices::Ptr points_to_remove (new pcl::PointIndices ());
+
+  applyFilter(points_to_remove);
+
+  pcl::ExtractIndices< PointT > extractIndices;
+  extractIndices.setInputCloud (input_ );
+  extractIndices.setIndices ( points_to_remove );
+  extractIndices.setNegative(true);
+  extractIndices.filter (pc_out);
 
 }
 

@@ -236,6 +236,7 @@ public:
       catch (tf::TransformException ex){
         ROS_ERROR("%s",ex.what());
       }
+
       n_up_t_[0] = stamped_n_up_t.x();
       n_up_t_[1] = stamped_n_up_t.y();
       n_up_t_[2] = stamped_n_up_t.z();
@@ -317,12 +318,12 @@ public:
     tf::Pose marker_pose(btQuaternion(0,0,0,1),btVector3(0,0.5,0));
     tf::Stamped<tf::Pose> stamped_marker_pose(marker_pose, stamp, camera_frame_);
     tf::Stamped<tf::Pose> stamped_marker_pose_t;
-    /*try{
+    try{
 				tf_listener_.transformPose(target_frame, stamped_marker_pose, stamped_marker_pose_t);
 			}
 			catch (tf::TransformException ex){
 				ROS_ERROR("%s",ex.what());
-			}*/
+			}
     visualization_msgs::Marker marker;
     marker.header.frame_id = camera_frame_;//target_frame;
     marker.header.stamp = stamp;
@@ -425,7 +426,7 @@ public:
   {
     boost::mutex::scoped_lock l(m_mutex);
 
-    ROS_INFO("FieldOfView Trigger");
+    //ROS_INFO("FieldOfView Trigger");
     transformFOV(req.stamp, req.target_frame);
     geometry_msgs::Point n_msg;
     pointTFToMsg(n_up_t_, n_msg);
@@ -438,6 +439,8 @@ public:
     res.fov.points.push_back(n_msg);
     pointTFToMsg(n_origin_t_, n_msg);
     res.fov.points.push_back(n_msg);
+
+    return true;
   }
 
 protected:

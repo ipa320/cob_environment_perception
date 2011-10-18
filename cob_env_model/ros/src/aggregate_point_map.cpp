@@ -238,6 +238,7 @@ public:
     n_.param("aggregate_point_map/icp_trf_epsilon" ,icp_trf_epsilon,0.0005);
     n_.param("aggregate_point_map/use_reference_map",use_reference_map,false);
     n_.param("aggregate_point_map/use_fov",use_fov_,false);
+    use_fov_=true;
     n_.param("aggregate_point_map/reuse",reuse,true);
     point_map_.setICP_maxIterations(icp_max_iterations);
     point_map_.setICP_maxCorrDist(icp_max_corr_dist);

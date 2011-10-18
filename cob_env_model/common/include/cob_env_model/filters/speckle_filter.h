@@ -85,7 +85,7 @@ namespace cob_env_model
     //virtual ~SpeckleFilter();
 
     inline void
-    setFilterParam (int speckle_s, float speckle_r)
+    setFilterParam (int speckle_s, double speckle_r)
     {
       speckle_size_ = speckle_s;
       speckle_range_ = speckle_r;
@@ -97,11 +97,13 @@ namespace cob_env_model
       return speckle_size_;
     }
 
-    inline int
+    inline double
     getSpeckleRange ()
     {
       return speckle_range_;
     }
+
+    void applyFilter (pcl::PointIndices::Ptr points_to_remove);
 
   protected:
 
@@ -109,7 +111,7 @@ namespace cob_env_model
     applyFilter (PointCloud &output);
 
     int speckle_size_;
-    int speckle_range_;
+    double speckle_range_;
   };
 
   template<>

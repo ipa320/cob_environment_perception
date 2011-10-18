@@ -37,7 +37,7 @@
 #include <pcl/filters/voxel_grid.h>
 
 // ROS message includes
-//#include <sensor_msgs/PointCloud2.h>
+#include <sensor_msgs/CameraInfo.h>
 #include <cob_env_model_msgs/GetFieldOfView.h>
 #include "cob_env_model_msgs/TriggerMappingAction.h"
 #include <cob_env_model_msgs/SetReferenceMap.h>
@@ -78,7 +78,7 @@ public:
   : Reconfigurable_Node<cob_env_model::keyframe_detectorConfig>("KeyframeDetector"),
     first_(true), trigger_always_(false)
     {
-    point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &KeyframeDetector::pointCloudSubCallback, this);
+    point_cloud_sub_ = n_.subscribe("camera_info", 1, &KeyframeDetector::pointCloudSubCallback, this);
     transform_sub_ = n_.subscribe("/tf", 1, &KeyframeDetector::transformSubCallback, this);
     keyframe_trigger_client_ = n_.serviceClient<cob_srvs::Trigger>("trigger_keyframe");
 
@@ -116,7 +116,7 @@ public:
 
   //TODO: better listen to camera_info
   void
-  pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc_in)
+  pointCloudSubCallback(sensor_msgs::CameraInfo::ConstPtr pc_in)
   {
     frame_id_ = pc_in->header.frame_id;
     //point_cloud_sub_.shutdown();
@@ -126,6 +126,11 @@ public:
   transformSubCallback(const tf::tfMessageConstPtr& msg)
   {
     boost::mutex::scoped_lock l(m_mutex_pointCloudSubCallback);
+
+    if(frame_id_.size()<1) {
+      ROS_WARN("frame id is missing");
+      return;
+    }
 
     boost::timer t;
     //pcl::PointCloud<Point>::Ptr pc = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>);
