@@ -9,15 +9,15 @@
 #include <ros/ros.h>
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
-#include <cob_env_model_msgs/TriggerMappingAction.h>
+#include <cob_3d_mapping_msgs/TableObjectClusterAction.h>
 
 int main (int argc, char **argv)
 {
-  ros::init(argc, argv, "test_plane_extraction");
+  ros::init(argc, argv, "test_table_object_cluster");
 
   // create the action client
   // true causes the client to spin its own thread
-  actionlib::SimpleActionClient<cob_env_model_msgs::TriggerMappingAction> ac("trigger_mapping", true);
+  actionlib::SimpleActionClient<cob_3d_mapping_msgs::TableObjectClusterAction> ac("table_object_cluster", true);
 
   ROS_INFO("Waiting for action server to start.");
   // wait for the action server to start
@@ -25,8 +25,7 @@ int main (int argc, char **argv)
 
   ROS_INFO("Action server started, sending goal.");
   // send a goal to the action
-  cob_env_model_msgs::TriggerMappingGoal goal;
-  goal.start = true;
+  cob_3d_mapping_msgs::TableObjectClusterGoal goal;
   ac.sendGoal(goal);
 
   //wait for the action to return

@@ -21,15 +21,20 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
+
 #uncomment if you have defined messages
 #rosbuild_genmsg()
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/ros/include)
+rosbuild_add_library(cob_table_object_cluster 
+	common/src/table_object_cluster.cpp)
+rosbuild_add_library(cob_table_object_cluster_nodelets 
+	ros/src/table_object_cluster_nodelet.cpp)
+	
+rosbuild_add_executable(table_object_cluster_action_client ros/src/table_object_cluster_action_client.cpp)
 
-rosbuild_add_executable(field_of_view_node ros/src/field_of_view.cpp)
-rosbuild_add_executable(keyframe_detector_node ros/src/keyframe_detector.cpp)
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
 #target_link_libraries(${PROJECT_NAME} another_library)

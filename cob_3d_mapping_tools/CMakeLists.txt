@@ -11,11 +11,6 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
 rosbuild_init()
 
-# add dynamic reconfigure api
-rosbuild_find_ros_package(dynamic_reconfigure)
-include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
-gencfg()
-
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
@@ -26,10 +21,14 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/ros/include)
+rosbuild_add_executable(transform_pointcloud ros/src/transform_pointcloud.cpp)
+rosbuild_add_executable(concat_fields_node ros/src/concat_fields.cpp)
+rosbuild_add_executable(bag_to_pcd ros/src/bag_to_pcd.cpp)
+rosbuild_add_executable(pointcloud_to_pcd ros/src/pointcloud_to_pcd.cpp)
 
-rosbuild_add_executable(field_of_view_node ros/src/field_of_view.cpp)
-rosbuild_add_executable(keyframe_detector_node ros/src/keyframe_detector.cpp)
+rosbuild_add_executable(create_point_cloud common/src/create_point_cloud.cpp)
+rosbuild_add_executable(create_kitchen_point_cloud common/src/create_kitchen_point_cloud.cpp)
+
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
 #target_link_libraries(${PROJECT_NAME} another_library)

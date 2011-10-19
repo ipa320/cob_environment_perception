@@ -1,0 +1,18 @@
+<package>
+  <description brief="cob_3d_mapping_tools">
+
+     cob_3d_mapping_tools
+
+  </description>
+  <author>Georg Arbeiter</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/cob_3d_mapping_tools</url>
+  
+  <depend package="rosbag"/>
+  <depend package="pcl"/>
+  <depend package="pcl_ros"/>
+
+</package>
+
+

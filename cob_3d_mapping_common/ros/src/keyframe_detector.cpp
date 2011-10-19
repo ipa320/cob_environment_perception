@@ -1,3 +1,5 @@
+//TODO: header, adjust subscriber and other variable names
+
 /*
  * keyframe_detector.cpp
  *
@@ -12,70 +14,35 @@
 
 // standard includes
 //--
-#include <sstream>
-#include <fstream>
 
 
 // ROS includes
 #include <ros/ros.h>
-#include <ros/console.h>
-#include <actionlib/server/simple_action_server.h>
-#include <pcl/io/pcd_io.h>
-#include <pcl/point_types.h>
-#include <pcl/registration/icp.h>
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_kdl.h>
-#include <cob_env_model/point_types.h>
-#include "pcl/filters/voxel_grid.h"
-#include <pcl_ros/transforms.h>
-#include <pcl_ros/point_cloud.h>
-#include <pluginlib/class_list_macros.h>
-#include <pcl_ros/pcl_nodelet.h>
-#include <cob_env_model/field_of_view_segmentation.hpp>
-#include <pcl/filters/extract_indices.h>
-#include <visualization_msgs/Marker.h>
-#include <pcl/filters/voxel_grid.h>
 
 // ROS message includes
 #include <sensor_msgs/CameraInfo.h>
-#include <cob_env_model_msgs/GetFieldOfView.h>
-#include "cob_env_model_msgs/TriggerMappingAction.h"
-#include <cob_env_model_msgs/SetReferenceMap.h>
 #include <cob_srvs/Trigger.h>
 
-// external includes
-#include <boost/timer.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
 
-#include "cob_env_model/map/point_map.h"
+#include "cob_3d_mapping_common/reconfigureable_node.h"
+#include <cob_3d_mapping_common/keyframe_detectorConfig.h>
 
-#include "reconfigureable_node.h"
-#include <cob_env_model/keyframe_detectorConfig.h>
-
-// ROS message includes
-//#include <sensor_msgs/PointCloud2.h>
-#include <cob_env_model_msgs/GetFieldOfView.h>
-#include "cob_env_model_msgs/TriggerMappingAction.h"
-#include <cob_env_model_msgs/SetReferenceMap.h>
-#include <cob_srvs/Trigger.h>
-
-// external includes
-#include <boost/timer.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
 
 
 using namespace tf;
+using namespace cob_3d_mapping_common;
 
 //####################
 //#### node class ####
-class KeyframeDetector : protected Reconfigurable_Node<cob_env_model::keyframe_detectorConfig>
+class KeyframeDetector : protected Reconfigurable_Node<keyframe_detectorConfig>
 {
-  typedef pcl::PointXYZRGB Point;
 
 public:
   // Constructor
   KeyframeDetector()
-  : Reconfigurable_Node<cob_env_model::keyframe_detectorConfig>("KeyframeDetector"),
+  : Reconfigurable_Node<keyframe_detectorConfig>("KeyframeDetector"),
     first_(true), trigger_always_(false)
     {
     point_cloud_sub_ = n_.subscribe("camera_info", 1, &KeyframeDetector::pointCloudSubCallback, this);
@@ -99,7 +66,7 @@ public:
   }
 
   // callback for dynamic reconfigure
-  static void callback(KeyframeDetector *inst, cob_env_model::keyframe_detectorConfig &config, uint32_t level)
+  static void callback(KeyframeDetector *inst, keyframe_detectorConfig &config, uint32_t level)
   {
     if(!inst)
       return;
@@ -132,7 +99,6 @@ public:
       return;
     }
 
-    boost::timer t;
     //pcl::PointCloud<Point>::Ptr pc = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>);
 
     StampedTransform transform;

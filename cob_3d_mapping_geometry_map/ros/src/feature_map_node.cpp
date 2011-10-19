@@ -72,7 +72,7 @@
 #include <pcl_ros/transforms.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl/common/transform.h>
-#include "reconfigureable_node.h"
+#include <cob_3d_mapping_common/reconfigureable_node.h>
 
 
 #include <cob_3d_mapping_geometry_map/feature_map_nodeConfig.h>

@@ -10,10 +10,10 @@
 #include <ros/ros.h>
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
-#include <cob_env_model_msgs/SetReferenceMap.h>
+#include <cob_3d_mapping_msgs/SetReferenceMap.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
-#include "cob_env_model/map/point_map.h"
+#include "cob_3d_mapping_point_map/point_map.h"
 
 int main (int argc, char **argv)
 {
@@ -32,7 +32,7 @@ int main (int argc, char **argv)
   ROS_INFO("Server started, sending map.");
 
   //build message
-  cob_env_model_msgs::SetReferenceMapRequest req;
+  cob_3d_mapping_msgs::SetReferenceMapRequest req;
 
   pcl::PointCloud<PointMap::Point> map;
   if(pcl::io::loadPCDFile(argv[1], map)!=0) {
@@ -42,7 +42,7 @@ int main (int argc, char **argv)
 
   pcl::toROSMsg(map,req.map);
 
-  cob_env_model_msgs::SetReferenceMapResponse resp;
+  cob_3d_mapping_msgs::SetReferenceMapResponse resp;
 
   if (ros::service::call("set_reference_map", req,resp))
   {

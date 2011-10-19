@@ -13,7 +13,9 @@
   <depend package="pcl"/>
   <depend package="dynamic_reconfigure"/>
   <depend package="tf"/>
+  <depend package="tf_conversions"/>
   <depend package="visualization_msgs"/>
+  <depend package="cob_srvs"/>
   <depend package="cob_3d_mapping_msgs"/>
   
   <export>

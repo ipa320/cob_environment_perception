@@ -110,10 +110,11 @@
 
 
 using namespace tf;
+using namespace cob_3d_mapping_features;
 
 //####################
 //#### nodelet class ####
-class PlaneExtractionNodelet : public pcl_ros::PCLNodelet, protected Reconfigurable_Node<cob_3d_mapping_features::plane_extraction_nodeletConfig>
+class PlaneExtractionNodelet : public pcl_ros::PCLNodelet, protected Reconfigurable_Node<plane_extraction_nodeletConfig>
 {
 public:
   typedef pcl::PointXYZ Point;
@@ -121,7 +122,7 @@ public:
   PlaneExtractionNodelet()
   : as_(0),
     mode_action_(false),
-    Reconfigurable_Node<cob_3d_mapping_features::plane_extraction_nodeletConfig>("PlaneExtractionNodelet")
+    Reconfigurable_Node<plane_extraction_nodeletConfig>("PlaneExtractionNodelet")
   {
     ctr_ = 0;
     min_cluster_size_ = 300;

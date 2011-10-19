@@ -52,7 +52,7 @@
  *
  ****************************************************************/
 
-#include "cob_env_model/table_object_cluster.h"
+#include "cob_table_object_cluster/table_object_cluster.h"
 
 #include <pcl/segmentation/extract_polygonal_prism_data.h>
 #include <pcl/filters/extract_indices.h>
