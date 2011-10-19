@@ -29,6 +29,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/ros/include)
 
 rosbuild_add_executable(field_of_view_node ros/src/field_of_view.cpp)
+rosbuild_add_executable(keyframe_detector_node ros/src/keyframe_detector.cpp)
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
 #target_link_libraries(${PROJECT_NAME} another_library)
