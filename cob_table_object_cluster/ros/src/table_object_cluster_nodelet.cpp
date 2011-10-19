@@ -73,37 +73,39 @@
 #include <actionlib/server/simple_action_server.h>
 #include <pcl/point_types.h>
 
-#include "reconfigureable_node.h"
-#include <cob_env_model/table_object_cluster_nodeletConfig.h>
+#include <cob_3d_mapping_common/reconfigureable_node.h>
+#include <cob_table_object_cluster/table_object_cluster_nodeletConfig.h>
 
 
 
 // ROS message includes
 //#include <sensor_msgs/PointCloud2.h>
-#include <cob_env_model_msgs/GetPlane.h>
-#include <cob_env_model_msgs/GetBoundingBoxes.h>
+#include <cob_3d_mapping_msgs/GetPlane.h>
+#include <cob_3d_mapping_msgs/GetBoundingBoxes.h>
 
 // external includes
 #include <boost/timer.hpp>
 #include <Eigen/StdVector>
 
-#include "cob_env_model/table_object_cluster.h"
-#include "cob_env_model_msgs/TableObjectClusterAction.h"
+#include "cob_table_object_cluster/table_object_cluster.h"
+#include "cob_3d_mapping_msgs/TableObjectClusterAction.h"
+
+using namespace cob_table_object_cluster;
 
 
 //####################
 //#### nodelet class ####
-class TableObjectClusterNodelet : public pcl_ros::PCLNodelet, protected Reconfigurable_Node<cob_env_model::table_object_cluster_nodeletConfig>
+class TableObjectClusterNodelet : public pcl_ros::PCLNodelet, protected Reconfigurable_Node<table_object_cluster_nodeletConfig>
 {
 public:
   typedef pcl::PointXYZ Point;
   // Constructor
   TableObjectClusterNodelet()
-  : Reconfigurable_Node<cob_env_model::table_object_cluster_nodeletConfig>("TableObjectClusterNodelet"),
+  : Reconfigurable_Node<table_object_cluster_nodeletConfig>("TableObjectClusterNodelet"),
     as_(0)
   {
-    save_to_file_ = cob_env_model::table_object_cluster_nodeletConfig::__getDefault__().save_to_file;
-    file_path_ = cob_env_model::table_object_cluster_nodeletConfig::__getDefault__().file_path;
+    save_to_file_ = table_object_cluster_nodeletConfig::__getDefault__().save_to_file;
+    file_path_ = table_object_cluster_nodeletConfig::__getDefault__().file_path;
 
     setReconfigureCallback(boost::bind(&callback, this, _1, _2));
   }
@@ -126,7 +128,7 @@ public:
    *
    * @return nothing
    */
-  static void callback(TableObjectClusterNodelet *tocn, cob_env_model::table_object_cluster_nodeletConfig &config, uint32_t level)
+  static void callback(TableObjectClusterNodelet *tocn, table_object_cluster_nodeletConfig &config, uint32_t level)
   {
     //TODO: not multithreading safe
 
@@ -158,9 +160,9 @@ public:
     PCLNodelet::onInit();
     n_ = getNodeHandle();
 
-    get_plane_client_ = n_.serviceClient<cob_env_model_msgs::GetPlane>("get_plane");
-    get_bb_client_ = n_.serviceClient<cob_env_model_msgs::GetBoundingBoxes>("get_known_objects");
-    as_= new actionlib::SimpleActionServer<cob_env_model_msgs::TableObjectClusterAction>(n_, "table_object_cluster", boost::bind(&TableObjectClusterNodelet::actionCallback, this, _1), false);
+    get_plane_client_ = n_.serviceClient<cob_3d_mapping_msgs::GetPlane>("get_plane");
+    get_bb_client_ = n_.serviceClient<cob_3d_mapping_msgs::GetBoundingBoxes>("get_known_objects");
+    as_= new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TableObjectClusterAction>(n_, "table_object_cluster", boost::bind(&TableObjectClusterNodelet::actionCallback, this, _1), false);
     as_->start();
 
     n_.param("table_object_cluster/file_path" ,file_path_ ,std::string("/home/goa/tmp/"));
@@ -185,12 +187,12 @@ public:
    * @return nothing
    */
   void
-  actionCallback(const cob_env_model_msgs::TableObjectClusterGoalConstPtr &goal)
+  actionCallback(const cob_3d_mapping_msgs::TableObjectClusterGoalConstPtr &goal)
   {
     ROS_INFO("action callback");
-    cob_env_model_msgs::TableObjectClusterFeedback feedback;
-    cob_env_model_msgs::TableObjectClusterResult result;
-    cob_env_model_msgs::GetPlane srv;
+    cob_3d_mapping_msgs::TableObjectClusterFeedback feedback;
+    cob_3d_mapping_msgs::TableObjectClusterResult result;
+    cob_3d_mapping_msgs::GetPlane srv;
     if(!get_plane_client_.call(srv))
     {
       ROS_ERROR("Failed to call service get_plane");
@@ -213,7 +215,7 @@ public:
     ROS_INFO("ROI size: %d", pc_roi->size());
     //TODO: proceed also if no bbs are sent
     pcl::PointCloud<Point>::Ptr pc_roi_red(new pcl::PointCloud<Point>);
-    cob_env_model_msgs::GetBoundingBoxes srv2;
+    cob_3d_mapping_msgs::GetBoundingBoxes srv2;
     if(get_bb_client_.call(srv2))
     {
       std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > > known_objs;
@@ -286,7 +288,7 @@ public:
 
 
 protected:
-  actionlib::SimpleActionServer<cob_env_model_msgs::TableObjectClusterAction>* as_;
+  actionlib::SimpleActionServer<cob_3d_mapping_msgs::TableObjectClusterAction>* as_;
   ros::ServiceClient get_plane_client_;
   ros::ServiceClient get_bb_client_;
   boost::mutex mutex_;

@@ -62,7 +62,7 @@ import smach
 import smach_ros
 import actionlib
 
-from cob_env_model_msgs.msg import *
+from cob_3d_mapping_msgs.msg import *
 
 from simple_script_server import *
 sss = simple_script_server()
