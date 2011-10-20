@@ -72,7 +72,7 @@
 #include "pcl/io/pcd_io.h"
 #include "pcl/features/normal_3d_omp.h"
 #include "pcl/features/normal_3d.h"
-#include <cob_3d_mapping_features/boundary.h>
+#include <cob_3d_mapping_features/edge_estimation.h>
 #include <pcl/features/principal_curvatures.h>
 //#include <pcl/range_image/range_image.h>
 #include <pcl/visualization/cloud_viewer.h>
@@ -170,8 +170,8 @@ public:
     pcl::IntegralImageNormalEstimation<pcl::PointXYZRGB, pcl::Normal> ne;
 
 
-    ne.setNormalEstimationMethod (ne.AVERAGE_DEPTH_CHANGE);
-    ne.setMaxDepthChangeFactor(0.02f);
+    ne.setNormalEstimationMethod (ne.COVARIANCE_MATRIX);
+    ne.setMaxDepthChangeFactor(0.2f);
     ne.setNormalSmoothingSize(10.0f);
     ne.setDepthDependentSmoothing(true);
     ne.setInputCloud(cloud.makeShared());
@@ -271,7 +271,7 @@ public:
   /**Uses the PCL BoundaryEstimation to find edges in a point cloud. Uses an angle criterion to detect edges
    * Unfortunately marks the outline of a point cloud as edge; needs normal estimation
    */
-  void extractEdgesBoundary(PointCloudT::Ptr& cloud_in, pcl::PointCloud<pcl::InterestPoint>& cloud_out, cv::Mat& border_image)
+  void extractEdges3D(PointCloudT::Ptr& cloud_in, pcl::PointCloud<pcl::InterestPoint>& cloud_out, cv::Mat& border_image)
   {
 
     pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud_n (new pcl::PointCloud<pcl::PointXYZRGBNormal> ());
@@ -284,7 +284,7 @@ public:
     //pcl::KdTree<pcl::PointXYZRGBNormal>::Ptr tree;
     pcl::OrganizedDataIndex<pcl::PointXYZRGBNormal>::Ptr tree (new pcl::OrganizedDataIndex<pcl::PointXYZRGBNormal> ());
     //tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZRGBNormal> > ();
-    ipa_features::BoundaryEstimation<pcl::PointXYZRGBNormal,pcl::PointXYZRGBNormal,pcl::InterestPoint> boundary;
+    ipa_features::EdgeEstimation<pcl::PointXYZRGBNormal,pcl::PointXYZRGBNormal,pcl::InterestPoint> boundary;
     boundary.setSearchMethod(tree);
     boundary.setInputCloud(cloud_n);
     //boundary.setSearchSurface (cloud);
@@ -430,10 +430,10 @@ public:
   /*Calculates the point curvature of a point cloud and thresholds to mark edges.
    * Curvature seems to be a weak indicator for edges.
    */
-  void extractEdgesCurvature(PointCloudT::Ptr& cloud_in, PointCloudT& cloud_out)
+  void extractEdgesCurvature(PointCloudT::Ptr& cloud_in, pcl::PointCloud<pcl::InterestPoint>& cloud_out, cv::Mat& curvature_image)
   {
     pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud_n (new pcl::PointCloud<pcl::PointXYZRGBNormal> ());
-    estimatePointNormals(*cloud_in, *cloud_n);
+    integralEstimatePointNormals(*cloud_in, *cloud_n);
 
     boost::timer t;
     cloud_out.points.resize(cloud_n->points.size());
@@ -442,15 +442,26 @@ public:
     int nr_p = 0;
     for( unsigned int i = 0; i < cloud_n->points.size(); i++)
     {
-      if( cloud_n->points[i].curvature > 0.05)
-        cloud_out.points[nr_p++] = cloud_in->points[i];
+      cloud_out.points[i].strength = cloud_n->points[i].curvature;
+      //if( cloud_n->points[i].curvature > 0.05)
+      //  cloud_out.points[nr_p++] = cloud_in->points[i];
     }
 
-    cloud_out.width = nr_p;
+    curvature_image = cv::Mat(cloud_in->height, cloud_in->width, CV_32FC1);
+    int pt_idx=0;
+    for(unsigned int row=0; row<curvature_image.rows; row++)
+    {
+      for(unsigned int col=0; col<curvature_image.cols; col++, pt_idx++)
+      {
+        curvature_image.at<float>(row,col) = cloud_out.points[pt_idx].strength;
+      }
+    }
+
+    /*cloud_out.width = nr_p;
     cloud_out.height = 1;
     cloud_out.points.resize(nr_p);
-    cloud_out.is_dense = true;
-    ROS_INFO("Time elapsed for boundary estimation (curvature): %f", t.elapsed());
+    cloud_out.is_dense = true;*/
+    ROS_INFO("Time elapsed for curvature estimation : %f", t.elapsed());
   }
 
   /*Finds edges in a range image using the RangeImageBorderExtractor
@@ -538,11 +549,11 @@ public:
   /**Uses the PCL BoundaryEstimation to find edges in a point cloud. Uses an angle criterion to detect edges
    * Unfortunately marks the outline of a point cloud as edge; needs normal estimation
    */
-  void extractPrincipalCurvature(PointCloudT::Ptr& cloud_in, PointCloudT& cloud_out)
+  void extractPrincipalCurvature(PointCloudT::Ptr& cloud_in, pcl::PointCloud<pcl::InterestPoint>& cloud_out, cv::Mat& curvature_image)
   {
     pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud_n (new pcl::PointCloud<pcl::PointXYZRGBNormal> ());
     pcl::PointCloud<pcl::PrincipalCurvatures>::Ptr curv_pts (new pcl::PointCloud<pcl::PrincipalCurvatures> ());
-    estimatePointNormals(*cloud_in, *cloud_n);
+    integralEstimatePointNormals(*cloud_in, *cloud_n);
 
     boost::timer t;
     //pcl::KdTree<pcl::PointXYZRGBNormal>::Ptr tree;
@@ -575,6 +586,16 @@ public:
     cloud_out.height = 1;
     cloud_out.points.resize(nr_p);
     cloud_out.is_dense = true;
+
+    curvature_image = cv::Mat(cloud_in->height, cloud_in->width, CV_32FC1);
+    int pt_idx=0;
+    for(unsigned int row=0; row<curvature_image.rows; row++)
+    {
+      for(unsigned int col=0; col<curvature_image.cols; col++, pt_idx++)
+      {
+        curvature_image.at<float>(row,col) = cloud_out.points[pt_idx].strength;
+      }
+    }
 
 
     ROS_INFO("Time elapsed for boundary estimation: %f", t.elapsed());
@@ -788,9 +809,9 @@ int main(int argc, char** argv)
   ExtractFeatures ef;
 
   /// Load PCD file as input; better use binary PCD files, ascii files seem to generate corrupt point clouds
-  std::string directory("/home/goa/pcl_daten/sim_segmentation/");
+  std::string directory("/home/goa/pcl_daten/corner/");
   PointCloudT::Ptr cloud_in = PointCloudT::Ptr (new PointCloudT);
-  pcl::io::loadPCDFile(directory+"dcorner_35.pcd", *cloud_in);
+  pcl::io::loadPCDFile(directory+"pc_0.pcd", *cloud_in);
 
   cv::Mat range_image(cloud_in->height,cloud_in->width,CV_32FC1);
   ef.getRangeImage(cloud_in, range_image);
@@ -839,8 +860,10 @@ int main(int argc, char** argv)
   {
     laplace_imgs[0] += laplace_imgs[i];
   }
-  cv::normalize(laplace_imgs[0], laplace_imgs[0], 0,1,cv::NORM_MINMAX);
-  cv::imshow("LaPlace Image", laplace_imgs[0]);
+  laplace_imgs[0] = laplace_imgs[0] - 0.5;
+  cv::Mat laplace_image = cv::abs(laplace_imgs[0]);
+  cv::normalize(laplace_image, laplace_image, 0,1,cv::NORM_MINMAX);
+  cv::imshow("LaPlace Image", laplace_image);
   cv::waitKey();
 
   //pcl::PointCloud<pcl::Boundary> cloud_out;
@@ -849,25 +872,34 @@ int main(int argc, char** argv)
 
   pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud_n (new pcl::PointCloud<pcl::PointXYZRGBNormal> ());
   pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud_ni (new pcl::PointCloud<pcl::PointXYZRGBNormal> ());
-  //  ef.estimatePointNormals(*cloud_in, *cloud_n);
+  //ef.estimatePointNormals(*cloud_in, *cloud_n);
 
   ef.integralEstimatePointNormals(*cloud_in, *cloud_n);
   pcl::io::savePCDFileASCII (directory+"/output/corner_ni.pcd", *cloud_n);
   /// Extract edges using curvature
-  //ef.extractEdgesCurvature(cloud_in, cloud_out);
+  /*pcl::PointCloud<pcl::InterestPoint>::Ptr cloud_curv(new pcl::PointCloud<pcl::InterestPoint>);
+  cv::Mat curvature_image;
+  //ef.extractEdgesCurvature(cloud_in, *cloud_curv, curvature_image);
+  ef.extractPrincipalCurvature(cloud_in, *cloud_curv, curvature_image);
+  cv::imshow("Curvature", curvature_image);
+  cv::waitKey();*/
   //pcl::io::savePCDFileASCII (directory+"/edges/edges_curvature.pcd", cloud_out);
-  //ef.extractPrincipalCurvature(cloud_in, cloud_out);
   //return 0;
   /// Extract edges using boundary estimation
 
-  ef.extractEdgesBoundary(cloud_in, *cloud_out, border_image);
+  ef.extractEdges3D(cloud_in, *cloud_out, border_image);
 
   cv::imshow("Edges", border_image);
   cv::waitKey();
 
   border_image += sobel_imgs[0];
+  border_image += laplace_image;
   //cv::normalize(border_image, border_image, 0,1,cv::NORM_MINMAX);
 
+  cv::Mat bin_border_image;
+  cv::threshold(border_image, bin_border_image, 0.1, 1, cv::THRESH_BINARY);
+
+  cv::imshow("Bin Edges", bin_border_image);
   cv::imshow("Combined Edges", border_image);
   cv::waitKey();
 
@@ -875,10 +907,18 @@ int main(int argc, char** argv)
   cloud_out2->height = cloud_out->height;
   cloud_out2->width = cloud_out->width;
   cloud_out2->points.resize(cloud_out2->height*cloud_out2->width);
-  for (int i=0; i<cloud_out->points.size(); i++)
+  for (int i=0; i<cloud_out->height; i++)
   {
-    if(cloud_out->points[i].strength > 0.1)
-      cloud_out2->points[i].label = 1;//(int)(cloud_out->points[i].boundary_point);
+    for (int j=0; j<cloud_out->width; j++)
+    {
+    if(border_image.at<float>(i,j) > 0.1)
+    //if(cloud_out->points[i].strength > 0.1)
+      cloud_out2->points[i*cloud_out->width+j].label = 1;//(int)(cloud_out->points[i].boundary_point);
+    /*if(cloud_out->points[i].strength == 2)
+      cloud_out2->points[i].label = 2;
+    if(cloud_out->points[i].strength == 3)
+      cloud_out2->points[i].label = 3;*/
+    }
   }
 
   ef.propagateWavefront(cloud_out2);

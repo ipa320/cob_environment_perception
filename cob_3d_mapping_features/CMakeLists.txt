@@ -30,18 +30,18 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
 
 rosbuild_add_library(cob_3d_mapping_features 
 	common/src/range_image_border_extractor.cpp
-	common/src/boundary.cpp
+	common/src/edge_estimation.cpp
 	common/src/plane_extraction.cpp)
 	
 rosbuild_add_library(cob_3d_mapping_feature_nodelets
 	ros/src/plane_extraction_nodelet.cpp)
 
-rosbuild_add_executable(test_edge_extraction common/test/test_edge_extraction.cpp
-	common/src/range_image_border_extractor.cpp
-	common/src/boundary.cpp)
+rosbuild_add_executable(test_edge_extraction common/test/test_edge_extraction.cpp)
 rosbuild_add_executable(plane_extraction_action_client ros/src/plane_extraction_action_client.cpp)
 
 rosbuild_add_compile_flags(test_edge_extraction -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
+
+target_link_libraries(test_edge_extraction cob_3d_mapping_features)
 
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
