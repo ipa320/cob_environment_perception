@@ -1,42 +1,59 @@
-/*
- * Software License Agreement (BSD License)
+/****************************************************************
  *
- *  Copyright (c) 2009, Willow Garage, Inc.
- *  All rights reserved.
+ * Copyright (c) 2011
  *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
+ * Fraunhofer Institute for Manufacturing Engineering
+ * and Automation (IPA)
  *
- *   * Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above
- *     copyright notice, this list of conditions and the following
- *     disclaimer in the documentation and/or other materials provided
- *     with the distribution.
- *   * Neither the name of Willow Garage, Inc. nor the names of its
- *     contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission.
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- *  POSSIBILITY OF SUCH DAMAGE.
+ * Project name: care-o-bot
+ * ROS stack name: cob_environment_perception_intern
+ * ROS package name: cob_3d_mapping_features
+ * Description:
  *
- * $Id: boundary.h 1370 2011-06-19 01:06:01Z jspricke $
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
- */
+ * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ *
+ * Date of creation: 10/2011
+ * ToDo:
+ *
+ *
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the Fraunhofer Institute for Manufacturing
+ *       Engineering and Automation (IPA) nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License LGPL as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License LGPL for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License LGPL along with this program.
+ * If not, see <http://www.gnu.org/licenses/>.
+ *
+ ****************************************************************/
 
-#ifndef PCL_BOUNDARY_H_
-#define PCL_BOUNDARY_H_
+#ifndef __EDGE_ESTIMATION_H__
+#define __EDGE_ESTIMATION_H__
 
 #include <pcl/features/feature.h>
 #include <Eigen/Geometry>
@@ -56,7 +73,7 @@ namespace ipa_features
   }
 
   ////////////////////////////////////////////////////////////////////////////////////////////
-  /** \brief @b BoundaryEstimation estimates whether a set of points is lying on surface boundaries using an angle
+  /** \brief @b EdgeEstimation estimates whether a set of points is lying on surface boundaries using an angle
     * criterion. The code makes use of the estimated surface normals at each point in the input dataset.
     *
     * @note The code is stateful as we do not expect this class to be multicore parallelized. Please look at
@@ -65,7 +82,7 @@ namespace ipa_features
     * \ingroup features
     */
   template <typename PointInT, typename PointNT, typename PointOutT>
-  class BoundaryEstimation: public pcl::FeatureFromNormals<PointInT, PointNT, PointOutT>
+  class EdgeEstimation: public pcl::FeatureFromNormals<PointInT, PointNT, PointOutT>
   {
     public:
       using pcl::Feature<PointInT, PointOutT>::feature_name_;
@@ -81,7 +98,7 @@ namespace ipa_features
 
     public:
       /** \brief Empty constructor. */
-      BoundaryEstimation () : dist_threshold_ (0.05)
+      EdgeEstimation () : dist_threshold_ (0.05), search_radius_ (20)
       {
         feature_name_ = "EdgeEstimation";
       };
@@ -109,10 +126,10 @@ namespace ipa_features
         * \param v the v direction
         * \param angle_threshold the threshold angle (default \f$\pi / 2.0\f$)
         */
-      bool 
+      /*bool
       isBoundaryPoint (const pcl::PointCloud<PointInT> &cloud, 
                        int q_idx, const std::vector<int> &indices, 
-                       const Eigen::Vector3f &u, const Eigen::Vector3f &v, float angle_threshold);
+                       const Eigen::Vector3f &u, const Eigen::Vector3f &v, float angle_threshold);*/
 
       /** \brief Check whether a point is a boundary point in a planar patch of projected points given by indices.
         * \note A coordinate system u-v-n must be computed a-priori using \a getCoordinateSystemOnPlane
@@ -123,11 +140,11 @@ namespace ipa_features
         * \param v the v direction
         * \param angle_threshold the threshold angle (default \f$\pi / 2.0\f$)
         */
-      bool 
+      /*bool
       isBoundaryPoint (const pcl::PointCloud<PointInT> &cloud, 
                        const PointInT &q_point, 
                        const std::vector<int> &indices, 
-                       const Eigen::Vector3f &u, const Eigen::Vector3f &v, float angle_threshold);
+                       const Eigen::Vector3f &u, const Eigen::Vector3f &v, float angle_threshold);*/
 
       double
       isEdgePoint (
@@ -135,7 +152,8 @@ namespace ipa_features
             const std::vector<int> &indices,
             const Eigen::Vector3f &n, const float &ang_threshold);
 
-      int searchForNeighbors (
+      int
+      searchForNeighbors (
   			int index,
   			double radius,
   			std::vector<int>& indices,
@@ -147,6 +165,7 @@ namespace ipa_features
 
       /** \brief The decision boundary (angle threshold) that marks points as boundary or regular. (default \f$\pi / 2.0\f$) */
       float dist_threshold_;
+      float search_radius_;
 
 
     protected:
@@ -161,8 +180,8 @@ namespace ipa_features
   };
 }
 
-#include "cob_3d_mapping_features/impl/boundary.hpp"
+#include "cob_3d_mapping_features/impl/edge_estimation.hpp"
 
-#endif  //#ifndef PCL_BOUNDARY_H_
+#endif  //#ifndef __EDGE_ESTIMATION_H__
 
 
