@@ -189,7 +189,6 @@ GeometryMapVisualisation::showPolygon(GeometryMap::MapEntryPtr polygon , int id)
 	double l = -polygon->d/(polygon->polygon_world[id][0][0]+polygon->polygon_world[id][0][1]+polygon->polygon_world[id][0][2]); // warum minus ?
 	ft_pt << l,l,l;
 	getTransformationFromPlaneToWorld(polygon->normal, ft_pt, transform_from_world_to_plane);
-
 	pcl::transformPointCloud(pc ,pc , transform_from_world_to_plane);
 	//pcl::transformPointCloud(pc , pc , transform_from_world_to_plane);
 	pcl::visualization::PCLVisualizer viewer ("3D viewer");
