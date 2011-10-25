@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
-  <node pkg="cob_env_model" type="feature_map_node" name="feature_map" output="screen">
+  <node pkg="cob_env_model" type="geometry_map_node" name="geometry_map" output="screen">
   	<!--remap from="table_hull" to="/swissranger/pointcloud2_raw"/-->
   	<param name="file_path" type="string" value="/media/GOADaten/Daten/20110823_bagfiles/kitchen_empty/map/"/>
   	<param name="save_to_file" type="bool" value="false"/>

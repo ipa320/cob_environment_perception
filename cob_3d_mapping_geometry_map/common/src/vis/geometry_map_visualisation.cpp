@@ -77,11 +77,11 @@
 //#include <pcl/common/impl/transform.hpp>
 
 
-#include "cob_env_model/map/feature_map_visualisation.h"
+#include "cob_3d_mapping_geometry_map/vis/geometry_map_visualisation.h"
 
 
 void
-FeatureMapVisualisation::showPolygon(FeatureMap::MapEntryPtr polygon , int id)
+GeometryMapVisualisation::showPolygon(GeometryMap::MapEntryPtr polygon , int id)
 {
 	int number_of_points_ = polygon->polygon_world[id].size();
 	pcl::PointCloud<pcl::PointXYZ>::Ptr pc_ptr (new pcl::PointCloud<pcl::PointXYZ>);
@@ -210,7 +210,7 @@ FeatureMapVisualisation::showPolygon(FeatureMap::MapEntryPtr polygon , int id)
 
 }
 void
-FeatureMapVisualisation::getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,
+GeometryMapVisualisation::getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,
                                                    const Eigen::Vector3f &origin, Eigen::Affine3f &transformation)
 {
   Eigen::Vector3f u, v;
@@ -220,7 +220,7 @@ FeatureMapVisualisation::getTransformationFromPlaneToWorld(const Eigen::Vector3f
 }
 
 void
-FeatureMapVisualisation::getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
+GeometryMapVisualisation::getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
                                             Eigen::Vector3f &u, Eigen::Vector3f &v)
 {
   v = normal.unitOrthogonal ();
@@ -230,8 +230,8 @@ FeatureMapVisualisation::getCoordinateSystemOnPlane(const Eigen::Vector3f &norma
 
 int main (int argc, char** argv)
 {
-          FeatureMapVisualisation fmv;
-	  FeatureMap::MapEntryPtr m_p = FeatureMap::MapEntryPtr(new FeatureMap::MapEntry());
+          GeometryMapVisualisation gmv;
+	  GeometryMap::MapEntryPtr m_p = GeometryMap::MapEntryPtr(new GeometryMap::MapEntry());
 	  m_p->id = 0;
 	  m_p->normal << 0,0,1;
 	  m_p->d = -1;
@@ -255,7 +255,7 @@ int main (int argc, char** argv)
 //	  vv.push_back(v);
 
 	  m_p->polygon_world.push_back(vv);
-	  fmv.showPolygon(m_p,0);
+	  gmv.showPolygon(m_p,0);
 }
 
 

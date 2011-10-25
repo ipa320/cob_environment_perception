@@ -1,5 +1,5 @@
-#ifndef __FEATURE_MAP_VISUALISATION_H__
-#define __FEATURE_MAP_VISUALISATION_H__
+#ifndef __GEOMETRY_MAP_VISUALISATION_H__
+#define __GEOMETRY_MAP_VISUALISATION_H__
 
 
 //--
@@ -11,10 +11,10 @@
 
 
 
-#include "cob_env_model/map/feature_map.h"
+#include "cob_3d_mapping_geometry_map/geometry_map.h"
 
 
-class FeatureMapVisualisation
+class GeometryMapVisualisation
 {
 
 
@@ -22,17 +22,17 @@ class FeatureMapVisualisation
 public:
 
 // Constructor
-FeatureMapVisualisation()
+GeometryMapVisualisation()
 {
 	//void
 }
 // Destructor
-~FeatureMapVisualisation()
+~GeometryMapVisualisation()
 {
 	//void
 }
 void
-showPolygon(FeatureMap::MapEntryPtr polygon , int id);
+showPolygon(GeometryMap::MapEntryPtr polygon , int id);
 
 
 void
@@ -48,4 +48,4 @@ private:
 };
 
 
-#endif //__FEATURE_MAP_H__
+#endif //__GEOMETRY_MAP_H__
