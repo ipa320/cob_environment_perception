@@ -75,7 +75,7 @@
 #include <cob_3d_mapping_common/reconfigureable_node.h>
 
 
-#include <cob_3d_mapping_geometry_map/feature_map_nodeConfig.h>
+#include <cob_3d_mapping_geometry_map/geometry_map_nodeConfig.h>
 
 #include "pcl/surface/convex_hull.h"
 #include "pcl/filters/project_inliers.h"
@@ -92,34 +92,34 @@
 #include <boost/timer.hpp>
 
 // internal includes
-#include "cob_3d_mapping_geometry_map/feature_map.h"
+#include "cob_3d_mapping_geometry_map/geometry_map.h"
 
 
 //####################
 //#### nodelet class ####
-class FeatureMapNode : protected Reconfigurable_Node<cob_3d_mapping_geometry_map::feature_map_nodeConfig>
+class GeometryMapNode : protected Reconfigurable_Node<cob_3d_mapping_geometry_map::geometry_map_nodeConfig>
 {
 public:
 
   // Constructor
-  FeatureMapNode()
-  : Reconfigurable_Node<cob_3d_mapping_geometry_map::feature_map_nodeConfig>("FeatureMapNode")
+	GeometryMapNode()
+  : Reconfigurable_Node<cob_3d_mapping_geometry_map::geometry_map_nodeConfig>("GeometryMapNode")
   {
     ctr_ = 0;
     //convex_hull_sub_ = n_.subscribe("table_hull", 1, &FeatureMap::subCallback, this);
-    polygon_sub_ = n_.subscribe("polygon_array", 10, &FeatureMapNode::polygonCallback, this);
-    map_pub_ = n_.advertise<geometry_msgs::PolygonStamped>("feature_map",1);
-    marker_pub_ = n_.advertise<visualization_msgs::Marker>("feature_marker",100);
-    n_.param("feature_map/file_path" ,file_path_ ,std::string("/home/goa/tmp/"));
-    n_.param("feature_map/save_to_file" ,save_to_file_ ,false);
-    feature_map_.setFilePath(file_path_);
-    feature_map_.setSaveToFile(save_to_file_);
+    polygon_sub_ = n_.subscribe("polygon_array", 10, &GeometryMapNode::polygonCallback, this);
+    map_pub_ = n_.advertise<geometry_msgs::PolygonStamped>("geometry_map",1);
+    marker_pub_ = n_.advertise<visualization_msgs::Marker>("geometry_marker",100);
+    n_.param("geometry_map/file_path" ,file_path_ ,std::string("/home/goa/tmp/"));
+    n_.param("geometry_map/save_to_file" ,save_to_file_ ,false);
+    geometry_map_.setFilePath(file_path_);
+    geometry_map_.setSaveToFile(save_to_file_);
 
     setReconfigureCallback(boost::bind(&callback, this, _1, _2));
   }
 
   // Destructor
-  ~FeatureMapNode()
+  ~GeometryMapNode()
   {
     /// void
   }
@@ -135,15 +135,15 @@ public:
    *
    * @return nothing
    */
-  static void callback(FeatureMapNode *fmn, cob_3d_mapping_geometry_map::feature_map_nodeConfig &config, uint32_t level)
+  static void callback(GeometryMapNode *gmn, cob_3d_mapping_geometry_map::geometry_map_nodeConfig &config, uint32_t level)
   {
     //TODO: not multithreading safe
 
-    if(!fmn)
+    if(!gmn)
       return;
 
-    fmn->feature_map_.setSaveToFile( config.save_to_file );
-    fmn->feature_map_.setFilePath( config.file_path );
+    gmn->geometry_map_.setSaveToFile( config.save_to_file );
+    gmn->geometry_map_.setFilePath( config.file_path );
   }
 
 
@@ -159,27 +159,27 @@ public:
   void
   polygonCallback(const cob_3d_mapping_msgs::PolygonArray::ConstPtr p)
   {
-    FeatureMap::MapEntryPtr map_entry_ptr = FeatureMap::MapEntryPtr(new FeatureMap::MapEntry());
+	GeometryMap::MapEntryPtr map_entry_ptr = GeometryMap::MapEntryPtr(new GeometryMap::MapEntry());
     convertFromROSMsg(*p, *map_entry_ptr);
     //dumpPolygonToFile(*map_entry_ptr);
-    feature_map_.addMapEntry(map_entry_ptr);
+    geometry_map_.addMapEntry(map_entry_ptr);
     publishMapMarker();
     ctr_++;
     //ROS_INFO("%d polygons received so far", ctr_);
   }
 
   /**
-   * @brief reading a ros message to convert it to a feature map
+   * @brief reading a ros message to convert it to a geometry map
    *
-   * reading a ros message to convert it to a feature map
+   * reading a ros message to convert it to a geometry map
    *
    * @param p ros message containing polygons
-   * @param map_entry output to feature map
+   * @param map_entry output to geometry map
    *
    * @return nothing
    */
   void
-  convertFromROSMsg(const cob_3d_mapping_msgs::PolygonArray& p, FeatureMap::MapEntry& map_entry)
+  convertFromROSMsg(const cob_3d_mapping_msgs::PolygonArray& p, GeometryMap::MapEntry& map_entry)
   {
     map_entry.id = 0;
     map_entry.d = p.d.data;
@@ -209,17 +209,17 @@ public:
   }
 
   /**
-   * @brief writing to a ros message to convert a feature map
+   * @brief writing to a ros message to convert a geometry map
    *
-   * writing to a ros message to convert a feature map
+   * writing to a ros message to convert a geometry map
    *
    * @param p ros message containing polygons
-   * @param map_entry input as feature map
+   * @param map_entry input as geometry map
    *
    * @return nothing
    */
   void
-  convertToROSMsg(const FeatureMap::MapEntry& map_entry, cob_3d_mapping_msgs::PolygonArray& p)
+  convertToROSMsg(const GeometryMap::MapEntry& map_entry, cob_3d_mapping_msgs::PolygonArray& p)
   {
     p.d.data = map_entry.d;
     p.normal.x = map_entry.normal(0);
@@ -239,19 +239,19 @@ public:
   }
 
   /**
-   * @brief output featuremap to dump file
+   * @brief output geometrymap to dump file
    *
-   * output featuremap to dump file, path is hard coded
+   * output geometrymap to dump file, path is hard coded
    *
-   * @param m feature map
+   * @param m geometry map
    *
    * @return nothing
    */
-  void dumpPolygonToFile(FeatureMap::MapEntry& m)
+  void dumpPolygonToFile(GeometryMap::MapEntry& m)
   {
     static int ctr=0;
     std::stringstream ss;
-    ss << "/home/goa/pcl_daten/kitchen_kinect/polygons/polygon_" << ctr << ".txt";
+    ss << "/home/goa-hh/pcl_daten/kitchen_kinect/polygons/polygon_" << ctr << ".txt";
     std::ofstream myfile;
     myfile.open (ss.str().c_str());
     myfile << m.id << "\n";
@@ -283,9 +283,9 @@ public:
 
 
   /**
-   * @brief publishes the polygon of every feature
+   * @brief publishes the polygon of every geometry
    *
-   * publishes the polygon of every feature
+   * publishes the polygon of every geometry
    *
    * @return nothing
    */
@@ -293,10 +293,10 @@ public:
   {
     geometry_msgs::PolygonStamped p;
     p.header.frame_id = "/map";
-    boost::shared_ptr<std::vector<FeatureMap::MapEntryPtr> > map = feature_map_.getMap();
+    boost::shared_ptr<std::vector<GeometryMap::MapEntryPtr> > map = geometry_map_.getMap();
     for(unsigned int i=0; i<map->size(); i++)
     {
-      FeatureMap::MapEntry& pm = *(map->at(i));
+    	GeometryMap::MapEntry& pm = *(map->at(i));
       for(unsigned int j=0; j<pm.polygon_world.size(); j++)
       {
         p.polygon.points.resize(pm.polygon_world[j].size());
@@ -341,11 +341,11 @@ public:
     marker.color.a = 1.0;
 
     geometry_msgs::Point pt;
-    boost::shared_ptr<std::vector<FeatureMap::MapEntryPtr> > map = feature_map_.getMap();
+    boost::shared_ptr<std::vector<GeometryMap::MapEntryPtr> > map = geometry_map_.getMap();
     int ctr=0;
     for(unsigned int i=0; i<map->size(); i++)
     {
-      FeatureMap::MapEntry& pm = *(map->at(i));
+    	GeometryMap::MapEntry& pm = *(map->at(i));
       //if(pm.merged/*pm.normal(2)<0.1*/)
       {
         //marker.id = pm.id;
@@ -426,8 +426,8 @@ public:
   //			//Test if hull intersects with one already in map, if yes => merge, if no => add
   //			for(unsigned int i=0; i < map_.size(); i++)
   //			{
-  //				pcl::PointCloud<pcl::PointXYZ>::Ptr map_feature = map_[i].makeShared();
-  //				for(unsigned int j=0; j<map_feature->points.size(); j++)
+  //				pcl::PointCloud<pcl::PointXYZ>::Ptr map_geometry = map_[i].makeShared();
+  //				for(unsigned int j=0; j<map_geometry->points.size(); j++)
   //				{
   //					double max_x1 = 0, max_y1 = 0;
   //					double min_x1 = 0, min_y1 = 0;
@@ -437,21 +437,21 @@ public:
   //					double lambda2_min = 1000, lambda2_max = -1000;
   //					pcl::PointXYZ g;
   //					pcl::PointXYZ a;
-  //					a.x = map_feature->points[j].x;
-  //					a.y = map_feature->points[j].y;
-  //					if(j<map_feature->points.size()-1)
+  //					a.x = map_geometry->points[j].x;
+  //					a.y = map_geometry->points[j].y;
+  //					if(j<map_geometry->points.size()-1)
   //					{
-  //						g.x = -(map_feature->points[j+1].y - map_feature->points[j].y);
-  //						g.y = map_feature->points[j+1].x - map_feature->points[j].x;
+  //						g.x = -(map_geometry->points[j+1].y - map_geometry->points[j].y);
+  //						g.y = map_geometry->points[j+1].x - map_geometry->points[j].x;
   //					}
   //					else
   //					{
-  //						g.x = -(map_feature->points[0].y - map_feature->points[j].y);
-  //						g.y = map_feature->points[0].x - map_feature->points[j].x;
+  //						g.x = -(map_geometry->points[0].y - map_geometry->points[j].y);
+  //						g.y = map_geometry->points[0].x - map_geometry->points[j].x;
   //					}
   //					//std::cout << "a: " << a.x << ", " << a.y << std::endl;
   //					//std::cout << "g: " << g.x << ", " << g.y << std::endl;
-  //					for(unsigned int l=0; l<map_feature->points.size(); l++)
+  //					for(unsigned int l=0; l<map_geometry->points.size(); l++)
   //					{
   //						pcl::PointXYZ p = map_feature->points[l];
   //						double m = (p.x*g.x+p.y*g.y-a.x*g.x-a.y*g.y)/(g.x*g.x+g.y*g.y);
@@ -551,9 +551,9 @@ public:
   //								min_y1 = a.y + m*g.y;//y;
   //							}
   //						}
-  //						for(unsigned int k=0; k<map_feature->points.size(); k++)
+  //						for(unsigned int k=0; k<map_geometry->points.size(); k++)
   //						{
-  //							pcl::PointXYZ p = map_feature->points[k];
+  //							pcl::PointXYZ p = map_geometry->points[k];
   //							double m = (p.x*g.x+p.y*g.y-a.x*g.x-a.y*g.y)/(g.x*g.x+g.y*g.y);
   //							//double x = a.x + m*g.x;
   //							//double y = a.y + m*g.y;
@@ -605,12 +605,12 @@ public:
   //					// Create a Convex Hull representation of the projected inliers
   //					pcl::ConvexHull<pcl::PointXYZ> chull;
   //					pcl::PointCloud<pcl::PointXYZ> hull_old;
-  //					//pcl::io::loadPCDFile("/home/goa/pcl_daten/feature_map/map_1_f0.pcd", hull_old);
+  //					//pcl::io::loadPCDFile("/home/goa/pcl_daten/geometry_map/map_1_f0.pcd", hull_old);
   //					pcl::PointCloud<pcl::PointXYZ> hull_new;
   //					chull.setInputCloud (cloud_projected);
   //					chull.reconstruct (map_[i]);
   //					std::stringstream ss1;
-  //					//ss1 << "/home/goa/pcl_daten/feature_map/hull_new_" << ctr << ".pcd";
+  //					//ss1 << "/home/goa/pcl_daten/geometry_map/hull_new_" << ctr << ".pcd";
   //					//pcl::io::savePCDFileASCII (ss1.str(), hull_new/*map_[i]*/);
   //
   //					break;
@@ -692,7 +692,7 @@ protected:
   ros::Publisher map_pub_;
   ros::Publisher marker_pub_;
 
-  FeatureMap feature_map_;      /// map containing features (polygons)
+  GeometryMap geometry_map_;      /// map containing geometrys (polygons)
 
   unsigned int ctr_;            /// counter how many polygons are received
   std::string file_path_;
@@ -701,9 +701,9 @@ protected:
 
 int main (int argc, char** argv)
 {
-  ros::init (argc, argv, "feature_map_node");
+  ros::init (argc, argv, "geometry_map_node");
 
-  FeatureMapNode fmn;
+  GeometryMapNode gmn;
 
   ros::Rate loop_rate(10);
   while (ros::ok())

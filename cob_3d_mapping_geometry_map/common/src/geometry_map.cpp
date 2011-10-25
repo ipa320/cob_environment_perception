@@ -76,14 +76,15 @@
 #include <pcl/point_cloud.h>
 //#include <pcl/common/impl/transform.hpp>
 
-#include "cob_3d_mapping_geometry_map/feature_map.h"
+#include "cob_3d_mapping_geometry_map/geometry_map.h"
+#include "cob_3d_mapping_geometry_map/vis/geometry_map_visualisation.h"
 
 
 
 //void
-//FeatureMap::addMapEntry(FeatureMap::MapEntryPtr p_ptr)
+//GeometryMap::addMapEntry(GeometryMap::MapEntryPtr p_ptr)
 //{
-//  FeatureMap::MapEntry& p = *p_ptr;
+//  GeometryMap::MapEntry& p = *p_ptr;
 //  //ROS_INFO("polygonCallback");
 //  bool merged = false;
 //  p.d = p.d/p.normal.norm();
@@ -229,9 +230,9 @@
 //}
 
 void
-FeatureMap::addMapEntry(FeatureMap::MapEntryPtr p_ptr)
+GeometryMap::addMapEntry(GeometryMap::MapEntryPtr p_ptr)
 {
-  FeatureMap::MapEntry& p = *p_ptr;
+  GeometryMap::MapEntry& p = *p_ptr;
   //ROS_INFO("polygonCallback");
   bool merged = false;
   //p.d = p.d/p.normal.norm();
@@ -401,7 +402,7 @@ FeatureMap::addMapEntry(FeatureMap::MapEntryPtr p_ptr)
 
 
 void
-FeatureMap::getGpcStructure(FeatureMap::MapEntry& p, gpc_polygon* gpc_p)
+GeometryMap::getGpcStructure(GeometryMap::MapEntry& p, gpc_polygon* gpc_p)
 {
   //printMapEntry(p);
   gpc_p->num_contours = p.polygon_world.size();
@@ -445,7 +446,7 @@ FeatureMap::getGpcStructure(FeatureMap::MapEntry& p, gpc_polygon* gpc_p)
 }
 
 void
-FeatureMap::getGpcStructureUsingMap(FeatureMap::MapEntry& p, Eigen::Affine3f& transform_from_world_to_plane, gpc_polygon* gpc_p)
+GeometryMap::getGpcStructureUsingMap(GeometryMap::MapEntry& p, Eigen::Affine3f& transform_from_world_to_plane, gpc_polygon* gpc_p)
 {
   //Eigen::Affine3f transformation_from_plane_to_world;
   //getTransformationFromPlaneToWorld(p.normal, p.polygon_world[0][0], transformation_from_plane_to_world);
@@ -475,7 +476,7 @@ FeatureMap::getGpcStructureUsingMap(FeatureMap::MapEntry& p, Eigen::Affine3f& tr
 }
 
 void
-FeatureMap::printMapEntry(FeatureMap::MapEntry& p)
+GeometryMap::printMapEntry(GeometryMap::MapEntry& p)
 {
   std::cout << "Polygon:\n";
   for(int i=0; i< p.polygon_world.size(); i++)
@@ -492,7 +493,7 @@ FeatureMap::printMapEntry(FeatureMap::MapEntry& p)
 }
 
 void
-FeatureMap::saveMapEntry(std::string path, int ctr, FeatureMap::MapEntry& p)
+GeometryMap::saveMapEntry(std::string path, int ctr, GeometryMap::MapEntry& p)
 {
   std::stringstream ss;
   ss << path << "polygon_" << ctr << ".pl";
@@ -522,7 +523,7 @@ FeatureMap::saveMapEntry(std::string path, int ctr, FeatureMap::MapEntry& p)
 }
 
 void
-FeatureMap::saveMap(std::string path)
+GeometryMap::saveMap(std::string path)
 {
   static int ctr=0;
   std::stringstream ss;
@@ -536,7 +537,7 @@ FeatureMap::saveMap(std::string path)
 }
 
 void
-FeatureMap::printGpcStructure(gpc_polygon* p)
+GeometryMap::printGpcStructure(gpc_polygon* p)
 {
   std::cout << "GPC Structure: " << std::endl;
   std::cout << "Num Contours: " << p->num_contours << std::endl;
@@ -553,7 +554,7 @@ FeatureMap::printGpcStructure(gpc_polygon* p)
 }
 
 void
-FeatureMap::getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
+GeometryMap::getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
                                             Eigen::Vector3f &u, Eigen::Vector3f &v)
 {
   v = normal.unitOrthogonal ();
@@ -561,7 +562,7 @@ FeatureMap::getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
 }
 
 void
-FeatureMap::getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,
+GeometryMap::getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,
                                                    const Eigen::Vector3f &origin, Eigen::Affine3f &transformation)
 {
   Eigen::Vector3f u, v;
@@ -573,10 +574,10 @@ FeatureMap::getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,
 /*int main (int argc, char** argv)
  {
 
-  FeatureMap fm;
+  GeometryMap fm;
   for(int j=0; j<46; j++)
   {
-    FeatureMap::MapEntryPtr m_p = FeatureMap::MapEntryPtr(new FeatureMap::MapEntry());
+    GeometryMap::MapEntryPtr m_p = GeometryMap::MapEntryPtr(new GeometryMap::MapEntry());
     std::stringstream ss;
     ss << "/home/goa/pcl_daten/kitchen_kinect/polygons/polygon_" << j << ".txt";
     std::ifstream myfile;
@@ -616,8 +617,8 @@ FeatureMap::getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,
 int main (int argc, char** argv)
  {
 
-  FeatureMap fm;
-  FeatureMap::MapEntryPtr m_p = FeatureMap::MapEntryPtr(new FeatureMap::MapEntry());
+  GeometryMap gm;
+  GeometryMap::MapEntryPtr m_p = GeometryMap::MapEntryPtr(new GeometryMap::MapEntry());
   m_p->id = 0;
   m_p->normal << 0,0,1;
   m_p->d = -1;
@@ -632,9 +633,9 @@ int main (int argc, char** argv)
   v << 0,0,1;
   vv.push_back(v);
   m_p->polygon_world.push_back(vv);
-  fm.addMapEntry(m_p);
+  gm.addMapEntry(m_p);
 
-  m_p = FeatureMap::MapEntryPtr(new FeatureMap::MapEntry());
+  m_p = GeometryMap::MapEntryPtr(new GeometryMap::MapEntry());
   m_p->id = 1;
   m_p->normal << 0,0,4;
   m_p->d = 4;
@@ -648,9 +649,9 @@ int main (int argc, char** argv)
   v << 0,0,-1;
   vv.push_back(v);
   m_p->polygon_world.push_back(vv);
-  fm.addMapEntry(m_p);
+  gm.addMapEntry(m_p);
 
-  /*m_p = FeatureMap::MapEntryPtr(new FeatureMap::MapEntry());
+  /*m_p = GeometryMap::MapEntryPtr(new GeometryMap::MapEntry());
   m_p->id = 1;
   m_p->normal << 0,0,-1;
   m_p->d = -1;
@@ -664,8 +665,8 @@ int main (int argc, char** argv)
   v << 3,2,1;
   vv.push_back(v);
   m_p->polygon_world.push_back(vv);
-  fm.addMapEntry(m_p);*/
-  fm.saveMap("/home/goa/pcl_daten/merge_test/");
+  gm.addMapEntry(m_p);*/
+  gm.saveMap("/home/goa/pcl_daten/merge_test/");
 }
 
 

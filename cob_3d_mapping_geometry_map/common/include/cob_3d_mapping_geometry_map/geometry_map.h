@@ -53,8 +53,8 @@
  *
  ****************************************************************/
 
-#ifndef __FEATURE_MAP_H__
-#define __FEATURE_MAP_H__
+#ifndef __GEOMETRY_MAP_H__
+#define __GEOMETRY_MAP_H__
 
 //##################
 //#### includes ####
@@ -70,7 +70,7 @@ extern "C" {
 }
 
 
-class FeatureMap
+class GeometryMap
 {
 public:
   struct MapEntry
@@ -97,7 +97,7 @@ public:
   typedef boost::shared_ptr<MapEntry> MapEntryPtr;
 
   // Constructor
-  FeatureMap()
+  GeometryMap()
   :new_id_(0),
    file_path_("./"),
    save_to_file_(false)
@@ -106,7 +106,7 @@ public:
   }
 
   // Destructor
-  ~FeatureMap()
+  ~GeometryMap()
   {
     /// void
   }
@@ -118,7 +118,7 @@ public:
   getGpcStructure(MapEntry& p, gpc_polygon* gpc_p);
 
   void
-  getGpcStructureUsingMap(FeatureMap::MapEntry& p,
+  getGpcStructureUsingMap(GeometryMap::MapEntry& p,
                           Eigen::Affine3f& transform_from_world_to_plane,
                           gpc_polygon* gpc_p);
 
@@ -129,7 +129,7 @@ public:
   printGpcStructure(gpc_polygon* p);
 
   void
-  saveMapEntry(std::string path, int ctr, FeatureMap::MapEntry& p);
+  saveMapEntry(std::string path, int ctr, GeometryMap::MapEntry& p);
 
   void
   saveMap(std::string path);
@@ -171,4 +171,4 @@ protected:
 
 };
 
-#endif //__FEATURE_MAP_H__
+#endif //__GEOMETRY_MAP_H__
