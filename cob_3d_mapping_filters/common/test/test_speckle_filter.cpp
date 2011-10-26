@@ -66,9 +66,21 @@ void TestProcessingTime()
 
 }
 
+void DoSampleRun()
+{
+  cob_3d_mapping_filters::SpeckleFilter<PointXYZA> filter;
+  pcl::PointCloud<PointXYZA>::Ptr cloud(new pcl::PointCloud<PointXYZA> ());
+  pcl::PointCloud<PointXYZA>::Ptr cloud_out(new pcl::PointCloud<PointXYZA> ());
+  pcl::io::loadPCDFile("/home/goa/Ubuntu One/diss/images/raw/filter_sequence_amplitude2.pcd", *cloud);
+  filter.setInputCloud(cloud);
+  filter.filter(*cloud_out);
+  pcl::io::savePCDFileASCII("/home/goa/Ubuntu One/diss/images/raw/filter_sequence_speckle2.pcd", *cloud_out);
+}
+
 int main()
 {
-  TestProcessingTimeOnce(10000, 1);
+  DoSampleRun();
+  //TestProcessingTimeOnce(10000, 1);
 }
 
 
