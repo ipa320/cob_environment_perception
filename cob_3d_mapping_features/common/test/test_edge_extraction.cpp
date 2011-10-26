@@ -275,7 +275,7 @@ public:
   {
 
     pcl::PointCloud<pcl::PointXYZRGBNormal>::Ptr cloud_n (new pcl::PointCloud<pcl::PointXYZRGBNormal> ());
-    //pcl::PointCloud<pcl::Boundary>::Ptr boundary_pts (new pcl::PointCloud<pcl::Boundary> ());
+    //pcl::PointCloud<pcl::Boundary>::Ptr edge_estimation_pts (new pcl::PointCloud<pcl::Boundary> ());
     integralEstimatePointNormals(*cloud_in, *cloud_n);
 
     // estimatePointNormals(*cloud_in, *cloud_n);
@@ -284,29 +284,29 @@ public:
     //pcl::KdTree<pcl::PointXYZRGBNormal>::Ptr tree;
     pcl::OrganizedDataIndex<pcl::PointXYZRGBNormal>::Ptr tree (new pcl::OrganizedDataIndex<pcl::PointXYZRGBNormal> ());
     //tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZRGBNormal> > ();
-    ipa_features::EdgeEstimation<pcl::PointXYZRGBNormal,pcl::PointXYZRGBNormal,pcl::InterestPoint> boundary;
-    boundary.setSearchMethod(tree);
-    boundary.setInputCloud(cloud_n);
-    //boundary.setSearchSurface (cloud);
-    boundary.setRadiusSearch(0.04);
-    boundary.setInputNormals(cloud_n);
+    ipa_features::EdgeEstimation<pcl::PointXYZRGBNormal,pcl::PointXYZRGBNormal,pcl::InterestPoint> edge_estimation;
+    edge_estimation.setSearchMethod(tree);
+    edge_estimation.setInputCloud(cloud_n);
+    //edge_estimation.setSearchSurface (cloud);
+    edge_estimation.setRadiusSearch(0.04); //parameter not used, must be set to prevent crash
+    edge_estimation.setInputNormals(cloud_n);
 
-    boundary.dist_threshold_ = 0.02; //increase to get more border points
+    edge_estimation.dist_threshold_ = 0.02; //increase to get more border points
 
-    boundary.compute(cloud_out);
+    edge_estimation.compute(cloud_out);
 
-    //pcl::PointCloud<pcl::PointXYZRGBNormal> boundary_cloud;
+    //pcl::PointCloud<pcl::PointXYZRGBNormal> edge_estimation_cloud;
     //cloud_out.points.resize(cloud_n->points.size());
     //cloud_out.header = cloud_n->header;
     //int nr_p = 0;
 
-    //std::cout << "size: " << boundary_pts->size() << std::endl;
+    //std::cout << "size: " << edge_estimation_pts->size() << std::endl;
 
     /*for( unsigned int i = 0; i < cloud_in->points.size(); i++)
                 {
-                        if( cloud_out.points[i].boundary_point == 1)
+                        if( cloud_out.points[i].edge_estimation_point == 1)
                         {
-                                //pc_edge.points[i].boundary_point++;
+                                //pc_edge.points[i].edge_estimation_point++;
                                 cloud_out.points[nr_p++] = cloud_in->points[i];
                         }
                 }
@@ -321,8 +321,11 @@ public:
     {
       for(unsigned int col=0; col<border_image.cols; col++, pt_idx++)
       {
-        border_image.at<float>(row,col) = cloud_out.points[pt_idx].strength;
-        /*if( cloud_out.points[pt_idx].boundary_point == 1)
+        if(cloud_out.points[pt_idx].strength < 2)
+          border_image.at<float>(row,col) = cloud_out.points[pt_idx].strength;
+        else
+          border_image.at<float>(row,col) = 0;
+        /*if( cloud_out.points[pt_idx].edge_estimation_point == 1)
           border_image.at<unsigned char>(row,col) = 255;
         else
           border_image.at<unsigned char>(row,col) = 0;*/
@@ -342,7 +345,7 @@ public:
     std::vector<pcl::Boundary*> wave;
     std::vector<Coords> wave_coords;
 
-    int cur_label = 2;
+    int cur_label = 3;
     /*uint8_t region_size[256];
             for (int i=0; i<256; i++)
             {
@@ -393,6 +396,250 @@ public:
               cloud_in->points[pt_ctr-width].label = cur_label;
               //wave.push_back(&cloud_in->points[pt_ctr-width]);
               wave_coords.push_back(Coords(c.u,c.v-1)/*Eigen::Vector2d(uv(0),uv(1)-1)*/);
+            }
+            //p = wave.back();
+            if(wave_coords.size()>0)
+            {
+              //wave.pop_back();
+              c = wave_coords.back();
+              wave_coords.pop_back();
+              //std::cout << wave_coords.size() << std::endl;
+            }
+            else
+              is_wave = false;
+          }
+          /*if(count <= maxSize)
+                                {
+                                        region_size[cloud_in->points[i*width+j].boundary_point]=1;
+                                }
+                                else
+                                {
+                                        region_size[cloud_in->points[i*width+j].boundary_point]=2;
+                                }*/
+        }
+        /*else
+                        {
+                                if(region_size[cloud_in->points[i*width+j].boundary_point]==1)
+                                        cloud_in->points[i*width+j].boundary_point = 0;
+                        }*/
+      }
+
+    }
+    std::cout << "Time elapsed for wavefront propagation: " << t.elapsed() << std::endl;
+    return;
+  }
+
+
+  int
+  searchForNeighbors (
+      pcl::PointCloud<PointLabel>::Ptr& cloud_in,
+      int col, int row,
+      double radius,
+      std::vector<int>& indices_ul,
+      std::vector<int>& indices_ur,
+      std::vector<int>& indices_lr,
+      std::vector<int>& indices_ll,
+      bool gap_l, bool gap_r, bool gap_a, bool gap_d)
+  {
+    //NaN test
+    //TODO: use PCL function for that
+    //if(cloud_in->points[index].x != cloud_in->points[index].x) return 0;
+
+    gap_l=gap_r=gap_a=gap_d=false;
+    indices_ul.clear();
+    indices_ur.clear();
+    indices_lr.clear();
+    indices_ll.clear();
+
+    int idx_x = col;
+    int idx_y = row;
+
+    int gap_l_ctr = 0;
+    int gap_a_ctr = 0;
+    for (int i=idx_x-radius; i<=idx_x; i++)
+    {
+      if(i>=cloud_in->width) break;
+      if(i<0) continue;
+      for (int j=idx_y-radius+1; j<=idx_y; j++)
+      {
+        if(j<0) continue;
+        if(i==idx_x && j==idx_y) continue; //skip p itself
+        if(j>=cloud_in->height) break;
+        indices_ul.push_back(i+j*cloud_in->width);
+        if(j==idx_y && cloud_in->points[i+j*cloud_in->width].label!=1) gap_l_ctr++;
+        if(i==idx_x && cloud_in->points[i+j*cloud_in->width].label!=1) gap_a_ctr++;
+        //std::cout << "(" << i << "," << j << ")";
+      }
+    }
+    if(gap_l_ctr==0) gap_l = true;
+    if(gap_a_ctr==0) gap_a = true;
+
+    int gap_r_ctr = 0;
+    int gap_d_ctr = 0;
+    for (int i=idx_x; i<idx_x+radius; i++)
+    {
+      if(i>=cloud_in->width) break;
+      if(i<0) continue;
+      for (int j=idx_y-radius; j<=idx_y; j++)
+      {
+        if(j<0) continue;
+        if(i==idx_x && j==idx_y) continue; //skip p itself
+        if(j>=cloud_in->height) break;
+        indices_ur.push_back(i+j*cloud_in->width);
+        if(j==idx_y && cloud_in->points[i+j*cloud_in->width].label!=1) gap_r_ctr++;
+        if(i==idx_x && cloud_in->points[i+j*cloud_in->width].label!=1) gap_d_ctr++;
+        //std::cout << "(" << i << "," << j << ")";
+      }
+    }
+    if(gap_r_ctr==0) gap_r = true;
+    if(gap_d_ctr==0) gap_d = true;
+    for (int i=idx_x; i<idx_x+radius; i++)
+    {
+      if(i>=cloud_in->width) break;
+      if(i<0) continue;
+      for (int j=idx_y; j<=idx_y+radius; j++)
+      {
+        if(j<0) continue;
+        if(i==idx_x && j==idx_y) continue; //skip p itself
+        if(j>=cloud_in->height) break;
+        indices_lr.push_back(i+j*cloud_in->width);
+        //std::cout << "(" << i << "," << j << ")";
+      }
+    }
+    for (int i=idx_x-radius+1; i<=idx_x; i++)
+    {
+      if(i>=cloud_in->width) break;
+      if(i<0) continue;
+      for (int j=idx_y; j<=idx_y+radius; j++)
+      {
+        if(j<0) continue;
+        if(i==idx_x && j==idx_y) continue; //skip p itself
+        if(j>=cloud_in->height) break;
+        indices_ll.push_back(i+j*cloud_in->width);
+        //std::cout << "(" << i << "," << j << ")";
+      }
+    }
+    return 1;
+  }
+
+  bool isStopperInNeighbors(pcl::PointCloud<PointLabel>::Ptr& cloud_in, std::vector<int>& indices)
+  {
+    for(unsigned int i=0; i< indices.size(); i++)
+    {
+      if(cloud_in->points[indices[i]].label == 1)
+        return true;
+    }
+    return false;
+  }
+
+
+  void propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_in)
+  {
+    //TODO: unlabel small cluster, change pixel step?
+    boost::timer t;
+    int width = cloud_in->width, height = cloud_in->height;
+    std::vector<pcl::Boundary*> wave;
+    std::vector<Coords> wave_coords;
+
+    int cur_label = 3;
+    int px_range = 5;
+    std::vector<int> indices_ul;
+    std::vector<int> indices_ur;
+    std::vector<int> indices_lr;
+    std::vector<int> indices_ll;
+
+    for(int i = 0; i < height; i++ )
+    {
+      for(int j = 0; j < width; j++ )
+      {
+        //std::cout << i << "," << j << ":" << cur_label << std::endl;
+        if(cloud_in->points[i*width+j].label == 0)
+        {
+          cur_label++;
+          PointLabel* p = &cloud_in->points[i*width+j];
+          p->label = cur_label;
+          Coords c(j,i);
+
+          //int count = 0;
+          bool gap_l=false, gap_r=false, gap_a=false, gap_d=false;
+          bool is_wave = true;
+          while(is_wave)
+          {
+            //count++;
+            int pt_ctr = c.u+c.v*width;
+            if( c.u < width-1 && cloud_in->points[pt_ctr+1].label==0)
+            {
+              searchForNeighbors (cloud_in,c.u,c.v,px_range,
+                  indices_ul, indices_ur,
+                  indices_lr, indices_ll,
+                  gap_l, gap_r, gap_a, gap_d);
+              if(c.u = 320 && c.v == 240)
+              {
+                std::cout << c.u << "," << c.v << " --> " << pt_ctr << std::endl;
+                std::cout << "UL: ";
+                for(unsigned int i=0; i<indices_ul.size(); i++)
+                  std::cout << indices_ul[i] << ", ";
+                std::cout << std::endl;
+                std::cout << "UR: ";
+                for(unsigned int i=0; i<indices_ur.size(); i++)
+                  std::cout << indices_ur[i] << ", ";
+                std::cout << std::endl;
+                std::cout << "LR: ";
+                for(unsigned int i=0; i<indices_lr.size(); i++)
+                  std::cout << indices_lr[i] << ", ";
+                std::cout << std::endl;
+                std::cout << "LL: ";
+                for(unsigned int i=0; i<indices_ll.size(); i++)
+                  std::cout << indices_ll[i] << ", ";
+                std::cout << std::endl;
+              }
+              cloud_in->points[pt_ctr+1].label = cur_label;
+              if(!(isStopperInNeighbors(cloud_in, indices_ul) && isStopperInNeighbors(cloud_in, indices_ll) && gap_l))
+              ///if(!isStopperInNeighbors(cloud_in, indices_ur) || !isStopperInNeighbors(cloud_in, indices_lr))
+                wave_coords.push_back(Coords(c.u+1,c.v));
+            }
+            if( c.u > 0 && cloud_in->points[pt_ctr-1].label==0)
+            {
+              searchForNeighbors (cloud_in,c.u,c.v,px_range,
+                  indices_ul, indices_ur,
+                  indices_lr, indices_ll,
+                  gap_l, gap_r, gap_a, gap_d);
+
+              cloud_in->points[pt_ctr-1].label = cur_label;
+              if(!(isStopperInNeighbors(cloud_in, indices_ur) && isStopperInNeighbors(cloud_in, indices_lr) && gap_r))
+              //if(!((isStopperInNeighbors(cloud_in, indices_ur) || isStopperInNeighbors(cloud_in, indices_ul)) &&
+              //    (isStopperInNeighbors(cloud_in, indices_lr) || isStopperInNeighbors(cloud_in, indices_ll))))
+              //if(!isStopperInNeighbors(cloud_in, indices_ul) || !isStopperInNeighbors(cloud_in, indices_ll))
+                wave_coords.push_back(Coords(c.u-1,c.v));
+            }
+            //std::cout << pt_ctr+width << ": "<< (int)(cloud_in->points[pt_ctr+width].boundary_point) << std::endl;
+            if(c.v < height-1 && cloud_in->points[pt_ctr+width].label==0)
+            {
+              searchForNeighbors (cloud_in,c.u,c.v,px_range,
+                  indices_ul, indices_ur,
+                  indices_lr, indices_ll,
+                  gap_l, gap_r, gap_a, gap_d);
+
+              cloud_in->points[pt_ctr+width].label = cur_label;
+              if(!(isStopperInNeighbors(cloud_in, indices_ur) && isStopperInNeighbors(cloud_in, indices_ul) && gap_a))
+              //if(!((isStopperInNeighbors(cloud_in, indices_ur) || isStopperInNeighbors(cloud_in, indices_lr)) &&
+              //    (isStopperInNeighbors(cloud_in, indices_ul) || isStopperInNeighbors(cloud_in, indices_ll))))
+              //if(!isStopperInNeighbors(cloud_in, indices_lr) || !isStopperInNeighbors(cloud_in, indices_ll))
+                wave_coords.push_back(Coords(c.u,c.v+1));
+            }
+            if(c.v > 0 && cloud_in->points[pt_ctr-width].label==0)
+            {
+              searchForNeighbors (cloud_in,c.u,c.v,px_range,
+                  indices_ul, indices_ur,
+                  indices_lr, indices_ll,
+                  gap_l, gap_r, gap_a, gap_d);
+
+              cloud_in->points[pt_ctr-width].label = cur_label;
+              if(!(isStopperInNeighbors(cloud_in, indices_lr) && isStopperInNeighbors(cloud_in, indices_ll) && gap_d))
+              //if(!((isStopperInNeighbors(cloud_in, indices_ur) || isStopperInNeighbors(cloud_in, indices_lr)) &&
+              //    (isStopperInNeighbors(cloud_in, indices_ul) || isStopperInNeighbors(cloud_in, indices_ll))))
+              //if(!isStopperInNeighbors(cloud_in, indices_ur) || !isStopperInNeighbors(cloud_in, indices_ul))
+                wave_coords.push_back(Coords(c.u,c.v-1));
             }
             //p = wave.back();
             if(wave_coords.size()>0)
@@ -606,10 +853,6 @@ public:
    */
   void segmentByEdgeImage(cv::Mat& color_image, cv::Mat& edge_image, cv::Mat& markers)
   {
-    /// apply closing to connect edge segments, not working very well
-    cv::Mat edge_morph;
-    cv::morphologyEx(edge_image, edge_morph, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_RECT,cv::Size(3,3)), cv::Point(-1,-1), 1);
-    cv::imshow("Edge morph", edge_morph);
     /// find contours in edge image
     std::vector<std::vector<cv::Point> > contours;
     cv::findContours(edge_image, contours, CV_RETR_LIST,CV_CHAIN_APPROX_NONE);
@@ -860,10 +1103,18 @@ int main(int argc, char** argv)
   {
     laplace_imgs[0] += laplace_imgs[i];
   }
-  laplace_imgs[0] = laplace_imgs[0] - 0.5;
+  double min, max;
+  cv::minMaxLoc(laplace_imgs[0], &min, &max);
+  //laplace_imgs[0] = laplace_imgs[0] - 0.5;
   cv::Mat laplace_image = cv::abs(laplace_imgs[0]);
+  std::cout << "minmax laplace: " << min << ", " << max << std::endl;
   cv::normalize(laplace_image, laplace_image, 0,1,cv::NORM_MINMAX);
   cv::imshow("LaPlace Image", laplace_image);
+  cv::threshold(laplace_image, laplace_image, 0.1, 1, cv::THRESH_TOZERO);
+  cv::imshow("LaPlace Image Th1", laplace_image);
+  laplace_image *= 2;
+  cv::threshold(laplace_image, laplace_image, 1, 1, cv::THRESH_TRUNC);
+  cv::imshow("LaPlace Image Th2", laplace_image);
   cv::waitKey();
 
   //pcl::PointCloud<pcl::Boundary> cloud_out;
@@ -896,12 +1147,17 @@ int main(int argc, char** argv)
   border_image += laplace_image;
   //cv::normalize(border_image, border_image, 0,1,cv::NORM_MINMAX);
 
-  cv::Mat bin_border_image;
-  cv::threshold(border_image, bin_border_image, 0.1, 1, cv::THRESH_BINARY);
+  cv::Mat thr_border_image, bin_border_image;
+  cv::threshold(border_image, thr_border_image, 0.1, 1, cv::THRESH_BINARY);
+  thr_border_image.convertTo(bin_border_image, CV_8UC1, 255);
 
   cv::imshow("Bin Edges", bin_border_image);
   cv::imshow("Combined Edges", border_image);
+  cv::Mat edge_morph;
+  cv::morphologyEx(bin_border_image, edge_morph, cv::MORPH_CLOSE, cv::getStructuringElement(cv::MORPH_RECT,cv::Size(3,3)), cv::Point(-1,-1), 1);
+  cv::imshow("Edge morph", edge_morph);
   cv::waitKey();
+
 
   pcl::PointCloud<PointLabel>::Ptr cloud_out2 = pcl::PointCloud<PointLabel>::Ptr (new pcl::PointCloud<PointLabel>);
   cloud_out2->height = cloud_out->height;
@@ -911,9 +1167,13 @@ int main(int argc, char** argv)
   {
     for (int j=0; j<cloud_out->width; j++)
     {
-    if(border_image.at<float>(i,j) > 0.1)
+    if(/*edge_morph.at<unsigned char>(i,j)*/border_image.at<float>(i,j) > 0.1)
     //if(cloud_out->points[i].strength > 0.1)
       cloud_out2->points[i*cloud_out->width+j].label = 1;//(int)(cloud_out->points[i].boundary_point);
+    else if(cloud_out->points[i*cloud_out->width+j].strength >= 2)
+      cloud_out2->points[i*cloud_out->width+j].label = cloud_out->points[i*cloud_out->width+j].strength;
+    else
+      cloud_out2->points[i*cloud_out->width+j].label = 0;
     /*if(cloud_out->points[i].strength == 2)
       cloud_out2->points[i].label = 2;
     if(cloud_out->points[i].strength == 3)
@@ -921,13 +1181,14 @@ int main(int argc, char** argv)
     }
   }
 
-  ef.propagateWavefront(cloud_out2);
+  pcl::io::savePCDFileASCII (directory+"/output/edge_cloud.pcd", *cloud_out2);
+  ef.propagateWavefront2(cloud_out2);
 
   std::vector<pcl::PointIndices> clusters;
   cv::Mat seg_img;
   ef.getClusterIndices(cloud_out2, clusters, seg_img);
 
-  pcl::ExtractIndices<pcl::PointXYZRGB> extract;
+  /*pcl::ExtractIndices<pcl::PointXYZRGB> extract;
   for (int i = 0; i<clusters.size(); i++)
   {
     if(clusters[i].indices.size() > 100)
@@ -941,13 +1202,21 @@ int main(int argc, char** argv)
       ss << i;
       pcl::io::savePCDFileASCII (directory+"/output/cluster_"+ss.str()+".pcd", cluster);
     }
-  }
+  }*/
   //cv::namedWindow("seg",CV_WINDOW_NORMAL);
+  cv::imshow("seg2",seg_img);
+  cv::waitKey();
+
+  clusters.clear();
+  ef.propagateWavefront(cloud_out2);
+  ef.getClusterIndices(cloud_out2, clusters, seg_img);
   cv::imshow("seg",seg_img);
   cv::waitKey();
   //pcl::io::savePCDFileASCII (directory+"/edges/edges_boundary.pcd", cloud_out);
 
 
+  cv::Mat markers;
+  ef.segmentByEdgeImage(color_image, bin_border_image, markers);
 
   return 0;
 
