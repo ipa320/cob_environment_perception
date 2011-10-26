@@ -69,17 +69,18 @@ void DoSampleRun()
   cob_3d_mapping_filters::AmplitudeFilter<PointXYZA> filter;
   pcl::PointCloud<PointXYZA>::Ptr cloud(new pcl::PointCloud<PointXYZA> ());
   pcl::PointCloud<PointXYZA>::Ptr cloud_out(new pcl::PointCloud<PointXYZA> ());
-  pcl::io::loadPCDFile("/home/goa/smbhome/Studenten/Hampp, Joshua/results/CamCube/jump_edge/cc_je_input_1318310715.049279022.pcd", *cloud);
+  pcl::io::loadPCDFile("/home/goa/Ubuntu One/diss/images/raw/filter_sequence_jumpedge2.pcd", *cloud);
   filter.setFilterLimits(0.05,1);
   filter.setInputCloud(cloud);
   filter.filter(*cloud_out);
-  pcl::io::savePCDFileASCII("/home/goa/smbhome/Studenten/Hampp, Joshua/results/CamCube/amplitude/amplitude_filtered.pcd", *cloud_out);
+  pcl::io::savePCDFileASCII("/home/goa/Ubuntu One/diss/images/raw/filter_sequence_amplitude2.pcd", *cloud_out);
 }
 
 
 int main()
 {
-  TestProcessingTimeOnce(10000,1);
+  DoSampleRun();
+  //TestProcessingTimeOnce(10000,1);
 }
 
 
