@@ -21,7 +21,7 @@
 
 /* Methods for testing filters */
 
-double TestProcessingTime(unsigned int cloud_size)
+double TestProcessingTimeOnce(unsigned int cloud_size, unsigned int iterations)
 {
   cob_3d_mapping_filters::SpeckleFilter<PointXYZ> filter;
     pcl::PointCloud<PointXYZ>::Ptr cloud(new pcl::PointCloud<PointXYZ> ());
@@ -39,34 +39,49 @@ double TestProcessingTime(unsigned int cloud_size)
     filter.setInputCloud(cloud);
     //boost::timer t;
     double time=0;
-    for(unsigned int i=0; i<1000; i++)
+    for(unsigned int i=0; i<iterations; i++)
     {
       PrecisionStopWatch sw;
       sw.precisionStart();
       filter.filter(*cloud_out);
       time += sw.precisionStop();
     }
-    time /= 1000;
+    time /= iterations;
     std::cout << "Cloud size " << cloud_size << ": " << time << " s" << std::endl;
     return time;
 }
 
 
-int main()
+void TestProcessingTime()
 {
   std::ofstream file;
   file.open("/home/goa/tmp/speckle_filter_timing.dat");
   file << "#No. of points\ttime (s)\n";
   for(unsigned int cloud_size = 40000; cloud_size <= 400000; cloud_size += 40000)
   {
-    double time = TestProcessingTime(cloud_size);
+    double time = TestProcessingTimeOnce(cloud_size, 1000);
     file << cloud_size << "\t" << time << "\n";
   }
   file.close();
 
 }
 
+void DoSampleRun()
+{
+  cob_3d_mapping_filters::SpeckleFilter<PointXYZA> filter;
+  pcl::PointCloud<PointXYZA>::Ptr cloud(new pcl::PointCloud<PointXYZA> ());
+  pcl::PointCloud<PointXYZA>::Ptr cloud_out(new pcl::PointCloud<PointXYZA> ());
+  pcl::io::loadPCDFile("/home/goa/Ubuntu One/diss/images/raw/filter_sequence_amplitude2.pcd", *cloud);
+  filter.setInputCloud(cloud);
+  filter.filter(*cloud_out);
+  pcl::io::savePCDFileASCII("/home/goa/Ubuntu One/diss/images/raw/filter_sequence_speckle2.pcd", *cloud_out);
+}
 
+int main()
+{
+  DoSampleRun();
+  //TestProcessingTimeOnce(10000, 1);
+}
 
 
 
