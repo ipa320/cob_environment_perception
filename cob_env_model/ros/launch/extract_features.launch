@@ -1,8 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-	<!-- start environment modelling -->
-	<node pkg="cob_env_model" type="extract_features_node" name="extract_features" ns="cob_env_model" cwd="node" respawn="false" output="screen">
-		<remap from="point_cloud2" to="/camera/rgb/points"/>
-	</node>
-</launch>
-
