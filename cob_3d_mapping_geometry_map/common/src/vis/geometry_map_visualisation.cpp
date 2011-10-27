@@ -76,14 +76,98 @@
 #include <pcl/visualization/cloud_viewer.h>
 //#include <pcl/common/impl/transform.hpp>
 #include "pcl_ros/transforms.h"
-
-// TO DO
-// trafo stimmt nicht
-// ansicht bei schrägen eben stimmt au nicht muss wurzel nehmen
-
 #include "cob_3d_mapping_geometry_map/vis/geometry_map_visualisation.h"
 
 
+void
+GeometryMapVisualisation::showPolygon2(GeometryMap::MapEntryPtr polygon , int id)
+{
+  int number_of_points_ = polygon->polygon_world[id].size();
+    pcl::PointCloud<pcl::PointXYZ>::Ptr pc_ptr (new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>& pc=*pc_ptr;
+    Eigen::Vector3d point_;//
+    point_[0]=polygon->polygon_world[id][0][0];
+    point_[1]=polygon->polygon_world[id][0][1];
+    point_[2]=polygon->polygon_world[id][0][2];
+    int counter=0;
+    for (int i =0  ;i<number_of_points_ ; i++)
+    {
+      if (i+1 < number_of_points_)
+      {
+        Eigen::Vector3d increase;
+        increase[0]=polygon->polygon_world[id][i+1][0]-polygon->polygon_world[id][i][0];
+        increase[1]=polygon->polygon_world[id][i+1][1]-polygon->polygon_world[id][i][1];
+        increase[2]=polygon->polygon_world[id][i+1][2]-polygon->polygon_world[id][i][2];
+
+
+        double vector_length_=sqrt(increase[0]*increase[0]+increase[1]*increase[1]+increase[2]*increase[2]);
+
+        increase[0]=increase[0]*0.01/vector_length_;
+        increase[1]=increase[1]*0.01/vector_length_;
+        increase[2]=increase[2]*0.01/vector_length_;
+
+         for (int j =0 ; j < vector_length_/ 0.01;j++)
+        {
+
+          pc.resize(counter+1);
+
+          pc.points[counter].x=point_[0];
+          pc.points[counter].y=point_[1];
+          pc.points[counter].z=point_[2];
+
+          point_[0] += increase[0];
+          point_[1] += increase[1];
+          point_[2] += increase[2];
+          counter++;
+
+        }
+      }
+      else
+      {
+        Eigen::Vector3d increase;
+        increase[0]=polygon->polygon_world[id][0][0]-polygon->polygon_world[id][i][0];
+        increase[1]=polygon->polygon_world[id][0][1]-polygon->polygon_world[id][i][1];
+        increase[2]=polygon->polygon_world[id][0][2]-polygon->polygon_world[id][i][2];
+
+        double vector_length_=sqrt(increase[0]*increase[0]+increase[1]*increase[1]+increase[2]*increase[2]);
+
+        increase[0]=increase[0]*0.01/vector_length_;
+        increase[1]=increase[1]*0.01/vector_length_;
+        increase[2]=increase[2]*0.01/vector_length_;
+
+        for (int j =0 ; j < vector_length_/ 0.01;j++)
+        {
+
+          pc.resize(counter+1);
+          pc.points[counter].x=point_[0];
+          pc.points[counter].y=point_[1];
+          pc.points[counter].z=point_[2];
+
+          point_[0] += increase[0];
+          point_[1] += increase[1];
+          point_[2] += increase[2];
+
+          counter++;
+        }
+      }
+    }
+
+
+    pcl::visualization::PCLVisualizer viewer ("3D viewer");
+        viewer.setBackgroundColor(1,1,1);
+        viewer.addCoordinateSystem(1.0f);
+        pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> pc_col (pc_ptr, 0, 255, 0);
+        viewer.addPointCloud<pcl::PointXYZ>(pc_ptr,pc_col,"pc");
+          while (!viewer.wasStopped ())
+          {
+            viewer.spinOnce (100);
+          }
+
+
+          pcl::io::savePCDFile ("/home/goa-hh/pcl_daten/test.pcd", pc, true);
+}
+
+/*
 void
 GeometryMapVisualisation::showPolygon(GeometryMap::MapEntryPtr polygon , int id)
 {
@@ -186,8 +270,7 @@ GeometryMapVisualisation::showPolygon(GeometryMap::MapEntryPtr polygon , int id)
 	pc.width=1;
 	Eigen::Vector3f ft_pt;
 	Eigen::Affine3f transform_from_world_to_plane;
-	double l = -polygon->d/(polygon->polygon_world[id][0][0]+polygon->polygon_world[id][0][1]+polygon->polygon_world[id][0][2]); // warum minus ?
-	ft_pt << l,l,l;
+	ft_pt << 0.5,0.5,1;//polygon->polygon_world[id][1][0],polygon->polygon_world[id][1][1],polygon->polygon_world[id][1][2];
 	getTransformationFromPlaneToWorld(polygon->normal, ft_pt, transform_from_world_to_plane);
 	pcl::transformPointCloud(pc ,pc , transform_from_world_to_plane);
 	//pcl::transformPointCloud(pc , pc , transform_from_world_to_plane);
@@ -231,13 +314,13 @@ GeometryMapVisualisation::getCoordinateSystemOnPlane(const Eigen::Vector3f &norm
   u = normal.cross (v);
 }
 
-
+*/
 int main (int argc, char** argv)
 {
           GeometryMapVisualisation gmv;
 	  GeometryMap::MapEntryPtr m_p = GeometryMap::MapEntryPtr(new GeometryMap::MapEntry());
 	  m_p->id = 0;
-	  m_p->normal << 0,0,1;
+	  m_p->normal << 0,1,0;
 	  m_p->d = -1;
 	  std::vector<Eigen::Vector3f> vv;
 	  Eigen::Vector3f v;
@@ -253,13 +336,13 @@ int main (int argc, char** argv)
 //	  vv.push_back(v);
 //	  v << 1,1,1;
 //	  vv.push_back(v);
-//	  v << 0,1,1;
+//	  v << 1,2,1;
 //	  vv.push_back(v);
-//	  v << 0,0,1;
+//	  v << 1,1,1;
 //	  vv.push_back(v);
 
 	  m_p->polygon_world.push_back(vv);
-	  gmv.showPolygon(m_p,0);
+	  gmv.showPolygon2(m_p,0);
 }
 
 
