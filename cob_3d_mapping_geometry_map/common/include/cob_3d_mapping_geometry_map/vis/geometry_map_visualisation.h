@@ -34,7 +34,8 @@ GeometryMapVisualisation()
 void
 showPolygon(GeometryMap::MapEntryPtr polygon , int id);
 
-
+void
+showPolygon2(GeometryMap::MapEntryPtr polygon , int id);
 void
 getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,
                                                    const Eigen::Vector3f &origin, Eigen::Affine3f &transformation);
