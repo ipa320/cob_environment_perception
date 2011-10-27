@@ -1,49 +1,67 @@
-/*
- * Software License Agreement (BSD License)
+/****************************************************************
  *
- *  Copyright (c) 2009, Willow Garage, Inc.
- *  All rights reserved.
+ * Copyright (c) 2011
  *
- *  Redistribution and use in source and binary forms, with or without
- *  modification, are permitted provided that the following conditions
- *  are met:
+ * Fraunhofer Institute for Manufacturing Engineering
+ * and Automation (IPA)
  *
- *   * Redistributions of source code must retain the above copyright
- *     notice, this list of conditions and the following disclaimer.
- *   * Redistributions in binary form must reproduce the above
- *     copyright notice, this list of conditions and the following
- *     disclaimer in the documentation and/or other materials provided
- *     with the distribution.
- *   * Neither the name of Willow Garage, Inc. nor the names of its
- *     contributors may be used to endorse or promote products derived
- *     from this software without specific prior written permission.
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
- *  FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
- *  COPYRIGHT OWNER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
- *  INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING,
- *  BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- *  LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
- *  CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
- *  LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- *  ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
- *  POSSIBILITY OF SUCH DAMAGE.
+ * Project name: care-o-bot
+ * ROS stack name: cob_environment_perception_intern
+ * ROS package name: cob_3d_mapping_features
+ * Description:
  *
- * $Id: boundary.hpp 1667 2011-07-10 22:44:00Z rusu $
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
- */
+ * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ *
+ * Date of creation: 10/2011
+ * ToDo:
+ *
+ *
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the Fraunhofer Institute for Manufacturing
+ *       Engineering and Automation (IPA) nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License LGPL as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License LGPL for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License LGPL along with this program.
+ * If not, see <http://www.gnu.org/licenses/>.
+ *
+ ****************************************************************/
 
-#ifndef PCL_FEATURES_IMPL_BOUNDARY_H_
-#define PCL_FEATURES_IMPL_BOUNDARY_H_
+#ifndef __IMPL_EDGE_ESTIMATION_H__
+#define __IMPL_EDGE_ESTIMATION_H__
 
-#include "cob_3d_mapping_features/boundary.h"
+#include "cob_3d_mapping_features/edge_estimation.h"
 #include <cfloat>
+#include "cob_3d_mapping_common/stop_watch.h"
 
 //////////////////////////////////////////////////////////////////////////////////////////////
-template <typename PointInT, typename PointNT, typename PointOutT> bool
-ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::isBoundaryPoint (
+/*template <typename PointInT, typename PointNT, typename PointOutT> bool
+ipa_features::EdgeEstimation<PointInT, PointNT, PointOutT>::isBoundaryPoint (
     const pcl::PointCloud<PointInT> &cloud, int q_idx,
     const std::vector<int> &indices,
     const Eigen::Vector3f &u, const Eigen::Vector3f &v,
@@ -54,7 +72,7 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::isBoundaryPoint 
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointInT, typename PointNT, typename PointOutT> bool
-ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::isBoundaryPoint (
+ipa_features::EdgeEstimation<PointInT, PointNT, PointOutT>::isBoundaryPoint (
     const pcl::PointCloud<PointInT> &cloud, const PointInT &q_point,
     const std::vector<int> &indices,
     const Eigen::Vector3f &u, const Eigen::Vector3f &v,
@@ -102,40 +120,40 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::isBoundaryPoint 
     return (true);
   else
     return (false);
-    }
+    }*/
 
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointInT, typename PointNT, typename PointOutT> double
-ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::isEdgePoint (
+ipa_features::EdgeEstimation<PointInT, PointNT, PointOutT>::isEdgePoint (
     const pcl::PointCloud<PointInT> &cloud, const PointInT &q_point,
     const std::vector<int> &indices,
     const Eigen::Vector3f &n, const float &threshold)
     {
-  //TODO: choose threshold according to viewpoint distance (noise)
   if (indices.size () < 3)
   {
-    return false;
+    return 0.0;
   }
   float nd_dot;
   //float c_ang_thresh = cos(ang_threshold);
-  Eigen::Vector3f n_norm = n.normalized();
+  //Eigen::Vector3f n_norm = n.normalized();
   Eigen::Vector3f delta;
-  delta.setZero ();
+  //delta.setZero ();
   // Compute the angles between each neighboring point and the query point itself
   //std::vector<float> angles;
   //angles.reserve (indices.size ());
-  int nn_ctr=0, nan_ctr=0;
+  int nn_ctr=0;//, nan_ctr=0;
   int b_ctr=0;
   //std::cout << "d: ";
   for (size_t i = 0; i < indices.size (); ++i)
   {
-    delta[0] = cloud.points[indices[i]].x - q_point.x;
+    /*delta[0] = cloud.points[indices[i]].x - q_point.x;
     delta[1] = cloud.points[indices[i]].y - q_point.y;
-    delta[2] = cloud.points[indices[i]].z - q_point.z;
+    delta[2] = cloud.points[indices[i]].z - q_point.z;*/
+    delta = cloud.points[indices[i]].getVector3fMap() - q_point.getVector3fMap();
     //delta = delta.normalized();
 
-    nd_dot = n_norm.dot (delta);
+    nd_dot = n.dot (delta);
 
     //double nd_dot_sum;
 
@@ -153,9 +171,9 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::isEdgePoint (
       //nan_ctr++;
     }
   }
-  float edge_prob = (float)b_ctr/nn_ctr;
-  float boundary_prob = (float)nan_ctr/indices.size();
-  return edge_prob*2;
+  //float edge_prob = (float)b_ctr/nn_ctr;
+  //float boundary_prob = (float)nan_ctr/indices.size();
+  return (float)b_ctr/nn_ctr;
   /*std::cout << border_prob << std::endl;
   if(border_prob >0.00001)
 	  return true;
@@ -182,67 +200,9 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::isEdgePoint (
 
     }
 
-/*template <typename PointInT, typename PointNT, typename PointOutT> int
-	ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::searchForNeighbors (
-			int index,
-			double radius,
-			std::vector<int>& indices,
-			std::vector<float>& distances)
-{
-	indices.clear();
-	distances.clear();
-	const PointInT& p = input_->points[index];
-
-
-	double dx = 0;
-	int idx = index+1;
-	//search in horizontal direction right
-	while(dx < radius && idx%input_->width!=0)
-	{
-		dx = fabs(p.x-input_->points[idx].x);
-		indices.push_back(idx);
-		idx++;
-		//break at end of line
-		//if(idx%input_->width==0) break;
-	}
-	dx = 0;
-	idx = index-1;
-	//search in horizontal direction left
-	while(dx < radius && (idx+1)%input_->width!=0)
-	{
-		dx = fabs(p.x-input_->points[idx].x);
-		indices.push_back(idx);
-		idx--;
-		//break at beginning of line
-		//if((idx-1)%input_->width==0) break;
-	}
-	//search in vertical direction up
-	double dy = 0;
-	idx = index-input_->width;
-	while(idx >= 0 && dy < radius)
-	{
-		dy = fabs(p.y-input_->points[idx].y);
-		indices.push_back(idx);
-		idx-=input_->width;
-		//break at top of image
-		//if(idx<0) break;
-	}
-	//search in vertical direction down
-	dy = 0;
-	idx = index+input_->width;
-	while(idx < input_->size() && dy < radius)
-	{
-		dy = fabs(p.y-input_->points[idx].y);
-		indices.push_back(idx);
-		idx+=input_->width;
-		//break at top of image
-		//if(idx >= input_->size()) break;
-	}
-	return 0;
-}*/
 
 template <typename PointInT, typename PointNT, typename PointOutT> int
-ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::searchForNeighbors (
+ipa_features::EdgeEstimation<PointInT, PointNT, PointOutT>::searchForNeighbors (
     int index,
     double radius,
     std::vector<int>& indices,
@@ -277,8 +237,8 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::searchForNeighbo
 
 
   int num_nn = 3; //num_nn increments desired in each direction (-x, +x, -y, +y)
-  int radius_x_pix = 15;//radius/r_x;
-  int radius_y_pix = 15;//radius/r_y;
+  int radius_x_pix = search_radius_;//radius/r_x;
+  int radius_y_pix = search_radius_;//radius/r_y;
   //std::cout << radius_x_pix << "," << radius_y_pix << std::endl;
   int incr_x = 1;//std::max(radius_x_pix/(2*num_nn+1),1);
   int incr_y = 1;//std::max(radius_y_pix/(2*num_nn+1),1);
@@ -307,7 +267,7 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::searchForNeighbo
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointInT, typename PointNT, typename PointOutT> void
-ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::computeFeature (PointCloudOut &output)
+ipa_features::EdgeEstimation<PointInT, PointNT, PointOutT>::computeFeature (PointCloudOut &output)
 {
   // Allocate enough space to hold the results
   // \note This resize is irrelevant for a radiusSearch ().
@@ -316,14 +276,23 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::computeFeature (
 
   Eigen::Vector3f u, v;
 
+  double time_nn=0, time_edge=0;
+  PrecisionStopWatch sw_nn;
+  PrecisionStopWatch sw_edge;
   // Iterating over the entire index vector
   for (size_t idx = 0; idx < indices_->size (); ++idx)
   {
-    dist_threshold_=0.03;//calc_dist_threshold(*surface_ ,(*indices_)[idx]);
+    //dist_threshold_=0.05;//calc_dist_threshold(*surface_ ,(*indices_)[idx]);
+    Eigen::Vector3f p = input_->points[(*indices_)[idx]].getVector3fMap();
+    double range = p.norm();
+    dist_threshold_ = 0.0015544*search_radius_*range;
     //  ROS_INFO_STREAM("threshold" << dist_threshold_);
 
+   if (isnan(normals_->points[(*indices_)[idx]].normal[0]))
+     output.points[idx].strength=2;
+
     //TODO: test nn search
-    if(this->searchForNeighbors ((*indices_)[idx], search_parameter_, nn_indices, nn_dists))
+   else if(this->searchForNeighbors ((*indices_)[idx], search_parameter_, nn_indices, nn_dists))
     {
 
       /*std::cout << idx << ": ";
@@ -343,11 +312,13 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::computeFeature (
       // Estimate whether the point is lying on a boundary surface or not
       //std::cout << idx << "," << idx%input_->width << ":";
       //TODO: test edge detection
+      sw_edge.precisionStart();
       output.points[idx].strength = isEdgePoint (*surface_, input_->points[(*indices_)[idx]], nn_indices, normal, dist_threshold_);
+      time_edge += sw_edge.precisionStop();
     }
     else
     {
-      output.points[idx].strength = 2;
+      output.points[idx].strength = 3;
       //std::cout << "point is NAN" << std::endl;
     }
     //std::cout << std::endl;
@@ -356,16 +327,19 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::computeFeature (
   {
     for(unsigned int j = 0; j < input_->width; j++)
     {
-      if(i==0 || i==1) output.points[i*input_->width+j].boundary_point = true;
-      if(i==input_->height-1 || i==input_->height-2) output.points[i*input_->width+j].boundary_point = true;
-      if(j==0 || j==1) output.points[i*input_->width+j].boundary_point = true;
-      if(j==input_->width-1 || j==input_->width-2) output.points[i*input_->width+j].boundary_point = true;
+      if(j==100)
+      {
+        std::cout << input_->points[i*input_->width+j].x << "," << input_->points[i*input_->width+j].y << ","<< input_->points[i*input_->width+j].z << std::endl;
+        std::cout << normals_->points[i*input_->width+j].normal[0] << "," << normals_->points[i*input_->width+j].normal[1] << ","<< normals_->points[i*input_->width+j].normal[2] << std::endl << std::endl;
+      }
     }
   }*/
-
+  std::cout << "time for edges: " << time_edge << std::endl;
 }
+
+
 template <typename PointInT, typename PointNT, typename PointOutT> float
-ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::calc_dist_threshold (const pcl::PointCloud<PointInT> &cloud , int idx)
+ipa_features::EdgeEstimation<PointInT, PointNT, PointOutT>::calc_dist_threshold (const pcl::PointCloud<PointInT> &cloud , int idx)
 {
   //  if(input_->points[idx].z != input_->points[idx].z) return 0;
 
@@ -389,7 +363,7 @@ ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>::calc_dist_thresh
 }
 
 
-#define PCL_INSTANTIATE_BoundaryEstimation(PointInT,PointNT,PointOutT) template class PCL_EXPORTS ipa_features::BoundaryEstimation<PointInT, PointNT, PointOutT>;
+#define PCL_INSTANTIATE_EdgeEstimation(PointInT,PointNT,PointOutT) template class PCL_EXPORTS ipa_features::EdgeEstimation<PointInT, PointNT, PointOutT>;
 
-#endif    // PCL_FEATURES_IMPL_BOUNDARY_H_ 
+#endif    // __IMPL_EDGE_ESTIMATION_H__
 

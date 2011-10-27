@@ -1,6 +1,6 @@
 /****************************************************************
  *
- * Copyright (c) 2010
+ * Copyright (c) 2011
  *
  * Fraunhofer Institute for Manufacturing Engineering
  * and Automation (IPA)
@@ -8,16 +8,18 @@
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
  * Project name: care-o-bot
- * ROS stack name: cob_vision
- * ROS package name: cob_vision_ipa_utils
+ * ROS stack name: cob_environment_perception_intern
+ * ROS package name: cob_3d_mapping_features
+ * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
  * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: Aug 2010
+ * Date of creation: 10/2011
  * ToDo:
+ *
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
@@ -49,43 +51,13 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
-#ifndef CPC_VISUALIZER_H_
-#define CPC_VISUALIZER_H_
 
-//#include <pcl_visualization/pcl_visualizer.h>
-#include <cob_vision_ipa_utils/cpc_point.h>
+#include "pcl/point_types.h"
+#include "pcl/impl/instantiate.hpp"
+#include "cob_3d_mapping_features/edge_estimation.h"
+#include "cob_3d_mapping_features/impl/edge_estimation.hpp"
 
-#include <pluginlib/class_list_macros.h>
-#include <pcl_ros/pcl_nodelet.h>
+// Instantiations of specific point types
+//PCL_INSTANTIATE_PRODUCT(BoundaryEstimation, (PCL_XYZ_POINT_TYPES)(PCL_NORMAL_POINT_TYPES)((pcl::Boundary)));
+PCL_INSTANTIATE_EdgeEstimation(pcl::PointXYZRGB,pcl::PointXYZRGBNormal,pcl::InterestPoint)
 
-
-class CPCVisualizer : public pcl_ros::PCLNodelet
-{
-private:
-	ros::NodeHandle n_; ///< ROS node handle
-
-	ros::Subscriber topicSub_coloredPointCloud_;
-	ros::Subscriber topicSub_filteredPointCloud_;
-
-	int feature_ctr_;
-
-public:
-	CPCVisualizer();
-
-    virtual ~CPCVisualizer();
-
-    virtual void onInit();
-
-    void initNode();
-
-    void runVis();
-
-    void topicCallback_ColoredPointCloud(const pcl::PointCloud<CPCPoint>::ConstPtr& cloud);
-    void topicCallback_FilteredPointCloud(const pcl::PointCloud<CPCPoint>::ConstPtr& cloud);
-
-	//pcl_visualization::PCLVisualizer visualizer_;
-
-};
-
-
-#endif

@@ -21,7 +21,7 @@
 
 /* Methods for testing filters */
 
-double TestProcessingTime(unsigned int width, unsigned int height)
+double TestProcessingTimeOnce(unsigned int width, unsigned int height)
 {
     pcl::StatisticalOutlierRemoval<PointXYZ> filter;
     pcl::PointCloud<PointXYZ>::Ptr cloud(new pcl::PointCloud<PointXYZ> ());
@@ -60,8 +60,7 @@ double TestProcessingTime(unsigned int width, unsigned int height)
     return time;
 }
 
-
-int main()
+void TestProcessingTime()
 {
   std::ofstream file;
   file.open("/home/goa/tmp/statistical_outlier_removal_filter_timing.dat");
@@ -70,10 +69,29 @@ int main()
   unsigned int height = 200;
   for(unsigned int width = 200; width <= 2000; width += 200)
   {
-    double time = TestProcessingTime(width, height);
+    double time = TestProcessingTimeOnce(width, height);
     file << width*height << "\t" << time << "\n";
   }
   file.close();
+}
+
+void DoSampleRun()
+{
+  pcl::StatisticalOutlierRemoval<PointXYZA> filter;
+  pcl::PointCloud<PointXYZA>::Ptr cloud(new pcl::PointCloud<PointXYZA> ());
+  pcl::PointCloud<PointXYZA>::Ptr cloud_out(new pcl::PointCloud<PointXYZA> ());
+  pcl::io::loadPCDFile("/home/goa/Ubuntu One/diss/images/raw/filter_sequence_amplitude2.pcd", *cloud);
+  filter.setInputCloud(cloud);
+  filter.setStddevMulThresh(0.5);
+  filter.setMeanK (50);
+  filter.filter(*cloud_out);
+  pcl::io::savePCDFileASCII("/home/goa/Ubuntu One/diss/images/raw/filter_sequence_sor2.pcd", *cloud_out);
+}
+
+
+int main()
+{
+  DoSampleRun();
 
 }
 
