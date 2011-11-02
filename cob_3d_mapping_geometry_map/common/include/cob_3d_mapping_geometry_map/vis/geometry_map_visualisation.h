@@ -10,9 +10,10 @@
 #include <fstream>
 
 
+#ifndef __MAP_ENTRY_H__
+#include "cob_3d_mapping_geometry_map/map_entry.h"
 
-#include "cob_3d_mapping_geometry_map/geometry_map.h"
-
+#endif
 
 class GeometryMapVisualisation
 {
@@ -24,18 +25,21 @@ public:
 // Constructor
 GeometryMapVisualisation()
 {
-	//void
+//void
 }
 // Destructor
 ~GeometryMapVisualisation()
 {
-	//void
+//void
 }
 void
-showPolygon(GeometryMap::MapEntryPtr polygon , int id);
+showPolygon(MapEntryPtr polygon , int id);
 
-void
-showPolygon2(GeometryMap::MapEntryPtr polygon , int id);
+void test()
+{
+	int i=0;
+}
+
 void
 getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,
                                                    const Eigen::Vector3f &origin, Eigen::Affine3f &transformation);

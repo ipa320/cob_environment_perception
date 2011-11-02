@@ -76,8 +76,9 @@
 #include <pcl/point_cloud.h>
 //#include <pcl/common/impl/transform.hpp>
 
+
 #include "cob_3d_mapping_geometry_map/geometry_map.h"
-#include "cob_3d_mapping_geometry_map/vis/geometry_map_visualisation.h"
+//#include "cob_3d_mapping_geometry_map/vis/geometry_map_visualisation.h"
 
 
 
@@ -230,9 +231,9 @@
 //}
 
 void
-GeometryMap::addMapEntry(GeometryMap::MapEntryPtr p_ptr)
+GeometryMap::addMapEntry(MapEntryPtr p_ptr)
 {
-  GeometryMap::MapEntry& p = *p_ptr;
+  MapEntry& p = *p_ptr;
   //ROS_INFO("polygonCallback");
   bool merged = false;
   //p.d = p.d/p.normal.norm();
@@ -250,7 +251,7 @@ GeometryMap::addMapEntry(GeometryMap::MapEntryPtr p_ptr)
   for(size_t i=0; i< map_.size(); i++)
   {
     //std::cout << "loop" << std::endl;
-    MapEntry& p_map = *(map_[i]);
+	  MapEntry& p_map = *(map_[i]);
     //Eigen::Vector3f n2(p.normal(0), p.normal(1), p.normal(2));
     //n2.normalize();
     //double angle = fabs(std::acos(p_map.normal.dot(n2)));
@@ -402,7 +403,7 @@ GeometryMap::addMapEntry(GeometryMap::MapEntryPtr p_ptr)
 
 
 void
-GeometryMap::getGpcStructure(GeometryMap::MapEntry& p, gpc_polygon* gpc_p)
+GeometryMap::getGpcStructure(MapEntry& p, gpc_polygon* gpc_p)
 {
   //printMapEntry(p);
   gpc_p->num_contours = p.polygon_world.size();
@@ -446,7 +447,7 @@ GeometryMap::getGpcStructure(GeometryMap::MapEntry& p, gpc_polygon* gpc_p)
 }
 
 void
-GeometryMap::getGpcStructureUsingMap(GeometryMap::MapEntry& p, Eigen::Affine3f& transform_from_world_to_plane, gpc_polygon* gpc_p)
+GeometryMap::getGpcStructureUsingMap(MapEntry& p, Eigen::Affine3f& transform_from_world_to_plane, gpc_polygon* gpc_p)
 {
   //Eigen::Affine3f transformation_from_plane_to_world;
   //getTransformationFromPlaneToWorld(p.normal, p.polygon_world[0][0], transformation_from_plane_to_world);
@@ -476,7 +477,7 @@ GeometryMap::getGpcStructureUsingMap(GeometryMap::MapEntry& p, Eigen::Affine3f& 
 }
 
 void
-GeometryMap::printMapEntry(GeometryMap::MapEntry& p)
+GeometryMap::printMapEntry(MapEntry& p)
 {
   std::cout << "Polygon:\n";
   for(int i=0; i< p.polygon_world.size(); i++)
@@ -493,7 +494,7 @@ GeometryMap::printMapEntry(GeometryMap::MapEntry& p)
 }
 
 void
-GeometryMap::saveMapEntry(std::string path, int ctr, GeometryMap::MapEntry& p)
+GeometryMap::saveMapEntry(std::string path, int ctr, MapEntry& p)
 {
   std::stringstream ss;
   ss << path << "polygon_" << ctr << ".pl";
@@ -618,7 +619,8 @@ int main (int argc, char** argv)
  {
 
   GeometryMap gm;
-  GeometryMap::MapEntryPtr m_p = GeometryMap::MapEntryPtr(new GeometryMap::MapEntry());
+  GeometryMapVisualisation gmv;
+  MapEntryPtr m_p = MapEntryPtr(new MapEntry());
   m_p->id = 0;
   m_p->normal << 0,0,1;
   m_p->d = -1;
@@ -635,7 +637,10 @@ int main (int argc, char** argv)
   m_p->polygon_world.push_back(vv);
   gm.addMapEntry(m_p);
 
-  m_p = GeometryMap::MapEntryPtr(new GeometryMap::MapEntry());
+
+  gmv.showPolygon(m_p,0);
+
+  m_p = MapEntryPtr(new MapEntry());
   m_p->id = 1;
   m_p->normal << 0,0,4;
   m_p->d = 4;
@@ -651,7 +656,7 @@ int main (int argc, char** argv)
   m_p->polygon_world.push_back(vv);
   gm.addMapEntry(m_p);
 
-  /*m_p = GeometryMap::MapEntryPtr(new GeometryMap::MapEntry());
+  /*m_p = MapEntryPtr(new MapEntry());
   m_p->id = 1;
   m_p->normal << 0,0,-1;
   m_p->d = -1;
