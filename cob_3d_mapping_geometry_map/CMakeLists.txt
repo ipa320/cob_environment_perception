@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
-# Set the build type.  Options are:
-#  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
-#  Debug          : w/ debug symbols, w/o optimization
-#  Release        : w/o debug symbols, w/ optimization
-#  RelWithDebInfo : w/ debug symbols, w/ optimization
-#  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
+# Set the build type. Options are:
+# Coverage : w/ debug symbols, w/o optimization, w/ code-coverage
+# Debug : w/ debug symbols, w/o optimization
+# Release : w/o debug symbols, w/ optimization
+# RelWithDebInfo : w/ debug symbols, w/ optimization
+# MinSizeRel : w/o debug symbols, w/ optimization, stripped binaries
 #set(ROS_BUILD_TYPE RelWithDebInfo)
 
 rosbuild_init()
@@ -31,13 +31,15 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
 rosbuild_add_library(gpc common/src/gpc.c)
 rosbuild_add_library(geometry_map_lib common/src/geometry_map.cpp)
 rosbuild_add_library(geometry_map_vis_lib common/src/vis/geometry_map_visualisation.cpp)
-rosbuild_add_executable(geometry_map_visualisation common/src/vis/geometry_map_visualisation.cpp)
+#rosbuild_add_executable(geometry_map_visualisation common/src/vis/geometry_map_visualisation.cpp)
 rosbuild_add_executable(geometry_map common/src/geometry_map.cpp)
 rosbuild_add_executable(geometry_map_node ros/src/geometry_map_node.cpp)
 rosbuild_add_executable(eval_feature_map common/test/eval_mapping.cpp)
 
-target_link_libraries(geometry_map_node gpc geometry_map_lib)
-target_link_libraries(geometry_map gpc)
+target_link_libraries(geometry_map_node gpc geometry_map_lib geometry_map_vis_lib)
+target_link_libraries(geometry_map gpc geometry_map_vis_lib )
+#target_link_libraries(geometry_map_visualisation gpc geometry_map_lib)
+
 
 
 #common commands for building c++ executables and libraries

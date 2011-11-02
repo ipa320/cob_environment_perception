@@ -93,6 +93,7 @@
 
 // internal includes
 #include "cob_3d_mapping_geometry_map/geometry_map.h"
+#include "cob_3d_mapping_geometry_map/map_entry.h"
 
 
 //####################
@@ -159,7 +160,7 @@ public:
   void
   polygonCallback(const cob_3d_mapping_msgs::PolygonArray::ConstPtr p)
   {
-	GeometryMap::MapEntryPtr map_entry_ptr = GeometryMap::MapEntryPtr(new GeometryMap::MapEntry());
+	MapEntryPtr map_entry_ptr = MapEntryPtr(new MapEntry());
     convertFromROSMsg(*p, *map_entry_ptr);
     //dumpPolygonToFile(*map_entry_ptr);
     geometry_map_.addMapEntry(map_entry_ptr);
@@ -179,7 +180,7 @@ public:
    * @return nothing
    */
   void
-  convertFromROSMsg(const cob_3d_mapping_msgs::PolygonArray& p, GeometryMap::MapEntry& map_entry)
+  convertFromROSMsg(const cob_3d_mapping_msgs::PolygonArray& p, MapEntry& map_entry)
   {
     map_entry.id = 0;
     map_entry.d = p.d.data;
@@ -219,7 +220,7 @@ public:
    * @return nothing
    */
   void
-  convertToROSMsg(const GeometryMap::MapEntry& map_entry, cob_3d_mapping_msgs::PolygonArray& p)
+  convertToROSMsg(const MapEntry& map_entry, cob_3d_mapping_msgs::PolygonArray& p)
   {
     p.d.data = map_entry.d;
     p.normal.x = map_entry.normal(0);
@@ -247,7 +248,7 @@ public:
    *
    * @return nothing
    */
-  void dumpPolygonToFile(GeometryMap::MapEntry& m)
+  void dumpPolygonToFile(MapEntry& m)
   {
     static int ctr=0;
     std::stringstream ss;
@@ -293,10 +294,10 @@ public:
   {
     geometry_msgs::PolygonStamped p;
     p.header.frame_id = "/map";
-    boost::shared_ptr<std::vector<GeometryMap::MapEntryPtr> > map = geometry_map_.getMap();
+    boost::shared_ptr<std::vector<MapEntryPtr> > map = geometry_map_.getMap();
     for(unsigned int i=0; i<map->size(); i++)
     {
-    	GeometryMap::MapEntry& pm = *(map->at(i));
+    	MapEntry& pm = *(map->at(i));
       for(unsigned int j=0; j<pm.polygon_world.size(); j++)
       {
         p.polygon.points.resize(pm.polygon_world[j].size());
@@ -341,11 +342,11 @@ public:
     marker.color.a = 1.0;
 
     geometry_msgs::Point pt;
-    boost::shared_ptr<std::vector<GeometryMap::MapEntryPtr> > map = geometry_map_.getMap();
+    boost::shared_ptr<std::vector<MapEntryPtr> > map = geometry_map_.getMap();
     int ctr=0;
     for(unsigned int i=0; i<map->size(); i++)
     {
-    	GeometryMap::MapEntry& pm = *(map->at(i));
+    	MapEntry& pm = *(map->at(i));
       //if(pm.merged/*pm.normal(2)<0.1*/)
       {
         //marker.id = pm.id;

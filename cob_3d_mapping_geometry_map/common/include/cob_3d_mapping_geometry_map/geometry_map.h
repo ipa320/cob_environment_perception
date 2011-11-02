@@ -68,24 +68,34 @@
 extern "C" {
 #include "cob_3d_mapping_geometry_map/gpc.h"
 }
+//#ifndef __GEOMETRY_MAP_VISUALISATION_H__
+#include "cob_3d_mapping_geometry_map/vis/geometry_map_visualisation.h"
+
+#include "cob_3d_mapping_geometry_map/map_entry.h"
+
+
+
+//#endif
+//#include "cob_3d_mapping_geometry_map/vis/TestPlanes.h"
+
 
 
 class GeometryMap
 {
 public:
-  struct MapEntry
-  {
-    //needed for 32-bit systems: see http://eigen.tuxfamily.org/dox/TopicStructHavingEigenMembers.html
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    unsigned int id;
-    std::vector<std::vector<Eigen::Vector3f> > polygon_world;
-    //cob_env_model::PolygonArray polygon_world;
-    //gpc_polygon polygon_plane;
-    Eigen::Vector3f normal;
-    double d;
-    Eigen::Affine3f transform_from_world_to_plane;
-    unsigned int merged;
-  };
+//  struct MapEntry
+//  {
+//    //needed for 32-bit systems: see http://eigen.tuxfamily.org/dox/TopicStructHavingEigenMembers.html
+//    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+//    unsigned int id;
+//    std::vector<std::vector<Eigen::Vector3f> > polygon_world;
+//    //cob_env_model::PolygonArray polygon_world;
+//    //gpc_polygon polygon_plane;
+//    Eigen::Vector3f normal;
+//    double d;
+//    Eigen::Affine3f transform_from_world_to_plane;
+//    unsigned int merged;
+//  };
 
   /*inline std::ostream& operator << (std::ostream& os, const MapEntry& m)
   {
@@ -94,7 +104,7 @@ public:
   }*/
 
 
-  typedef boost::shared_ptr<MapEntry> MapEntryPtr;
+//  typedef boost::shared_ptr<MapEntry> MapEntryPtr;
 
   // Constructor
   GeometryMap()
@@ -118,7 +128,7 @@ public:
   getGpcStructure(MapEntry& p, gpc_polygon* gpc_p);
 
   void
-  getGpcStructureUsingMap(GeometryMap::MapEntry& p,
+  getGpcStructureUsingMap(MapEntry& p,
                           Eigen::Affine3f& transform_from_world_to_plane,
                           gpc_polygon* gpc_p);
 
@@ -129,7 +139,7 @@ public:
   printGpcStructure(gpc_polygon* p);
 
   void
-  saveMapEntry(std::string path, int ctr, GeometryMap::MapEntry& p);
+  saveMapEntry(std::string path, int ctr, MapEntry& p);
 
   void
   saveMap(std::string path);
