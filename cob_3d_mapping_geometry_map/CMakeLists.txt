@@ -31,13 +31,19 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
 rosbuild_add_library(gpc common/src/gpc.c)
 rosbuild_add_library(geometry_map_lib common/src/geometry_map.cpp)
 rosbuild_add_library(geometry_map_vis_lib common/src/vis/geometry_map_visualisation.cpp)
+rosbuild_add_library(test_planes common/src/vis/TestPlanes.cpp)
+
 #rosbuild_add_executable(geometry_map_visualisation common/src/vis/geometry_map_visualisation.cpp)
 rosbuild_add_executable(geometry_map common/src/geometry_map.cpp)
 rosbuild_add_executable(geometry_map_node ros/src/geometry_map_node.cpp)
 rosbuild_add_executable(eval_feature_map common/test/eval_mapping.cpp)
+rosbuild_add_executable(geometry_test_map common/test/geometry_map_test.cpp)
+
 
 target_link_libraries(geometry_map_node gpc geometry_map_lib geometry_map_vis_lib)
 target_link_libraries(geometry_map gpc geometry_map_vis_lib )
+target_link_libraries(geometry_test_map  geometry_map_vis_lib geometry_map_lib test_planes gpc)
+
 #target_link_libraries(geometry_map_visualisation gpc geometry_map_lib)
 
 
