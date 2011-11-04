@@ -35,19 +35,8 @@ GeometryMapVisualisation()
 void
 showPolygon(MapEntryPtr polygon , int id);
 
-void test()
-{
-	int i=0;
-}
-
-void
-getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,
-                                                   const Eigen::Vector3f &origin, Eigen::Affine3f &transformation);
 
 
-void
-getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
-                                            Eigen::Vector3f &u, Eigen::Vector3f &v);
 private:
 
 };

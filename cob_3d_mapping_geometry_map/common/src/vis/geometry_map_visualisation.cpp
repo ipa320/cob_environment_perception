@@ -79,6 +79,7 @@
 #include "cob_3d_mapping_geometry_map/vis/geometry_map_visualisation.h"
 
 
+
 void
 GeometryMapVisualisation::showPolygon(MapEntryPtr polygon , int id)
 {

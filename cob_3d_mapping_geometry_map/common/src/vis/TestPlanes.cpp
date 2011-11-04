@@ -17,7 +17,7 @@ TestPlanes::~TestPlanes() {
 }
 
 void
-TestPlanes::plane_1(GeometryMap::MapEntry& m_p)
+TestPlanes::plane_1(MapEntryPtr m_p)
 {
 	  m_p->id = 0;
 	  m_p->normal << 0,1,0;
@@ -37,7 +37,7 @@ TestPlanes::plane_1(GeometryMap::MapEntry& m_p)
 }
 
 void
-TestPlanes::plane_2(GeometryMap::MapEntry& m_p)
+TestPlanes::plane_2(MapEntryPtr m_p)
 {
 	  m_p->id = 0;
 	  m_p->normal << 0,1,0;
@@ -54,4 +54,38 @@ TestPlanes::plane_2(GeometryMap::MapEntry& m_p)
 	  vv.push_back(v);
 	  m_p->polygon_world.push_back(vv);
 
+}
+
+void
+TestPlanes::overlap(MapEntryPtr m_p , MapEntryPtr m_p2 , double x)
+{
+	  m_p->id = 0;
+	  m_p->normal << 0,0,1;
+	  m_p->d = 1;
+	  std::vector<Eigen::Vector3f> vv;
+	  Eigen::Vector3f v;
+	  v << 0,0,1;
+	  vv.push_back(v);
+	  v << 0,2,1;
+	  vv.push_back(v);
+	  v << -2,2,1;
+	  vv.push_back(v);
+	  v << -2,0,1;
+	  vv.push_back(v);
+	  m_p->polygon_world.push_back(vv);
+
+	  m_p2->id = 0;
+	  m_p2->normal << 0,0,1;
+	  m_p2->d = 1;
+	  std::vector<Eigen::Vector3f> vv2;
+	  Eigen::Vector3f v2;
+	  v2 << 0,0+x,1;
+	  vv2.push_back(v);
+	  v2 << 0,2+x,1;
+	  vv2.push_back(v);
+	  v2 << -2,2+x,1;
+	  vv2.push_back(v);
+	  v2 << -2,0+x,1;
+	  vv2.push_back(v);
+	  m_p->polygon_world.push_back(vv2);
 }

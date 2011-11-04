@@ -64,13 +64,15 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 
+#include <Eigen/Eigenvalues>
+#include <Eigen/Geometry>
+
 // internal includes
 extern "C" {
 #include "cob_3d_mapping_geometry_map/gpc.h"
 }
 //#ifndef __GEOMETRY_MAP_VISUALISATION_H__
 #include "cob_3d_mapping_geometry_map/vis/geometry_map_visualisation.h"
-
 #include "cob_3d_mapping_geometry_map/map_entry.h"
 
 
@@ -171,7 +173,6 @@ public:
   {
     save_to_file_ = save_to_file;
   }
-
 
 protected:
   std::vector<MapEntryPtr> map_;
