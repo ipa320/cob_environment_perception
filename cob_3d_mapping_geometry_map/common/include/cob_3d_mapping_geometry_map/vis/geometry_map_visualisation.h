@@ -35,6 +35,11 @@ GeometryMapVisualisation()
 void
 showPolygon(MapEntryPtr polygon , int id);
 
+void
+showPolygon(MapEntryPtr polygon );
+
+void
+showMap(boost::shared_ptr<std::vector<MapEntryPtr> > map);
 
 
 private:

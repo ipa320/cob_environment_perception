@@ -28,6 +28,16 @@ public:
 
 	void
 	overlap(MapEntryPtr m_p , MapEntryPtr m_p2 , double x);
+
+	void
+	moveplane(MapEntryPtr m_p , MapEntryPtr m_p2 , double x_1 , double x_2 , double x_3);
+
+	void
+	moveX1X2(MapEntryPtr m_p , double x_1 , double x_2 , double x_3);
+
+	void
+	figure_1(MapEntryPtr m_p , MapEntryPtr m_p2 ,MapEntryPtr m_p3 , MapEntryPtr m_p4 ,MapEntryPtr m_p5 );
+
 };
 
 #endif /* TESTPLANES_H_ */

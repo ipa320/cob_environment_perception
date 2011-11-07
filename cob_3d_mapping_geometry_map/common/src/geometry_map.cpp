@@ -231,11 +231,11 @@
 //}
 
 void
-GeometryMap::addMapEntry(MapEntryPtr p_ptr)
+GeometryMap::addMapEntry(MapEntryPtr p_ptr , bool& merged)
 {
   MapEntry& p = *p_ptr;
   //ROS_INFO("polygonCallback");
-  bool merged = false;
+  merged = false;
   //p.d = p.d/p.normal.norm();
   //p.normal.normalize();
   //gpc_polygon gpc_p;
@@ -375,6 +375,7 @@ GeometryMap::addMapEntry(MapEntryPtr p_ptr)
         }*/
         merged = true;
         p_map.merged++;
+
         break;
       }
       gpc_free_polygon(&gpc_result);
@@ -393,6 +394,7 @@ GeometryMap::addMapEntry(MapEntryPtr p_ptr)
     new_id_++;
     std::cout << "feature added" << std::endl;
     //ROS_INFO("added new feature");
+
   }
   //printGpcStructure(&gpc_p);
   //gpc_free_polygon(&gpc_p);
@@ -621,6 +623,7 @@ int main (int argc, char** argv)
   GeometryMap gm;
   GeometryMapVisualisation gmv;
   MapEntryPtr m_p = MapEntryPtr(new MapEntry());
+  bool merged;
   m_p->id = 0;
   m_p->normal << 0,0,1;
   m_p->d = -1;
@@ -635,7 +638,7 @@ int main (int argc, char** argv)
   v << 0,0,1;
   vv.push_back(v);
   m_p->polygon_world.push_back(vv);
-  gm.addMapEntry(m_p);
+  gm.addMapEntry(m_p,merged);
 
 
   gmv.showPolygon(m_p,0);
@@ -654,7 +657,7 @@ int main (int argc, char** argv)
   v << 0,0,-1;
   vv.push_back(v);
   m_p->polygon_world.push_back(vv);
-  gm.addMapEntry(m_p);
+  gm.addMapEntry(m_p,merged);
 
   /*m_p = MapEntryPtr(new MapEntry());
   m_p->id = 1;
