@@ -37,33 +37,39 @@ int main (int argc, char** argv)
 
 
 	bool merged=true;
-	//tp.plane_1(m_p2);
+//	//tp.plane_1(m_p2);
+//
+////	while (merged){
+//	tp.figure_1(m_p,m_p2,m_p3,m_p4,m_p5);
+//	//tp.moveplane(m_p,m_p2,0.5,0.5,0);
+//	//tp.overlap(m_p,m_p2,1.9999);
+//	//x +=0.1;
+//	//gmv.showPolygon(m_p);
+//	//gmv.showPolygon(m_p4);
+//
+//
+//	gm.addMapEntry(m_p,merged);
+//	gm.addMapEntry(m_p2,merged);
+//	gm.addMapEntry(m_p3,merged);
+//	gm.addMapEntry(m_p4,merged);
+//	gm.addMapEntry(m_p5,merged);
+//
+//	tp.moveX1X2(m_p6 ,0.5,0.5,1);
+//	gmv.showPolygon(m_p6);
+//
+//	gm.addMapEntry(m_p6,merged);
+//
+//	m_p7 = (*gm.getMap())[1];
+//
+//	gmv.showPolygon(m_p7);
+	tp.moveX1X2(m_p ,0,0,1);
+	tp.moveX1X2(m_p2 ,0.5,0,1);
+	tp.moveX1X2(m_p3 ,1,0,1);
 
-//	while (merged){
-	tp.figure_1(m_p,m_p2,m_p3,m_p4,m_p5);
-	//tp.moveplane(m_p,m_p2,0.5,0.5,0);
-	//tp.overlap(m_p,m_p2,1.9999);
-	//x +=0.1;
-	//gmv.showPolygon(m_p);
-	//gmv.showPolygon(m_p4);
+	gm.addMapEntry(m_p);
+	gm.addMapEntry(m_p3);
+	gm.addMapEntry(m_p2);
 
-//	std::cout << " x " << x << std::endl;
-
-	gm.addMapEntry(m_p,merged);
-	gm.addMapEntry(m_p2,merged);
-	gm.addMapEntry(m_p3,merged);
-	gm.addMapEntry(m_p4,merged);
-	gm.addMapEntry(m_p5,merged);
-
-	tp.moveX1X2(m_p6 ,0.5,0.5,1);
-	//gmv.showPolygon(m_p6);
-
-	gm.addMapEntry(m_p6,merged);
-
-//	std::cout << "merge2 " << merged << std::endl;
-	m_p7 = (*gm.getMap())[1];
-
-	gmv.showPolygon(m_p7);
 	gmv.showMap(gm.getMap());
 //	}
 }
