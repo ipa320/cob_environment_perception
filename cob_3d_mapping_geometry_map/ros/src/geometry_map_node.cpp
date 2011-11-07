@@ -162,9 +162,8 @@ public:
   {
 	MapEntryPtr map_entry_ptr = MapEntryPtr(new MapEntry());
     convertFromROSMsg(*p, *map_entry_ptr);
-    bool merged;
     //dumpPolygonToFile(*map_entry_ptr);
-    geometry_map_.addMapEntry(map_entry_ptr ,merged);
+    geometry_map_.addMapEntry(map_entry_ptr);
     publishMapMarker();
     ctr_++;
     //ROS_INFO("%d polygons received so far", ctr_);

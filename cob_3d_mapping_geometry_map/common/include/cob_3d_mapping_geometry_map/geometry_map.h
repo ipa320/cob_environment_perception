@@ -124,7 +124,7 @@ public:
   }
 
   void
-  addMapEntry(MapEntryPtr p , bool& merged);
+  addMapEntry(MapEntryPtr p);
 
   void
   getGpcStructure(MapEntry& p, gpc_polygon* gpc_p);
