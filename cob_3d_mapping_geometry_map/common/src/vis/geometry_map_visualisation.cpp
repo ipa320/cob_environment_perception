@@ -168,6 +168,193 @@ GeometryMapVisualisation::showPolygon(MapEntryPtr polygon , int id)
           pcl::io::savePCDFile ("/home/goa-hh/pcl_daten/test.pcd", pc, true);
 }
 
+
+void
+GeometryMapVisualisation::showPolygon(MapEntryPtr polygon )
+{
+	int counter=0;
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pc_ptr (new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::PointCloud<pcl::PointXYZ>& pc=*pc_ptr;
+	for (int m=0 ; m<polygon ->polygon_world.size();m++ )
+	{
+		int number_of_points_ = polygon->polygon_world[m].size();
+
+		Eigen::Vector3d point_;//
+		point_[0]=polygon->polygon_world[m][0][0];
+		point_[1]=polygon->polygon_world[m][0][1];
+		point_[2]=polygon->polygon_world[m][0][2];
+		for (int i =0 ;i<number_of_points_ ; i++)
+		{
+		  if (i+1 < number_of_points_)
+		  {
+			Eigen::Vector3d increase;
+			increase[0]=polygon->polygon_world[m][i+1][0]-polygon->polygon_world[m][i][0];
+			increase[1]=polygon->polygon_world[m][i+1][1]-polygon->polygon_world[m][i][1];
+			increase[2]=polygon->polygon_world[m][i+1][2]-polygon->polygon_world[m][i][2];
+
+
+			double vector_length_=sqrt(increase[0]*increase[0]+increase[1]*increase[1]+increase[2]*increase[2]);
+
+			increase[0]=increase[0]*0.01/vector_length_;
+			increase[1]=increase[1]*0.01/vector_length_;
+			increase[2]=increase[2]*0.01/vector_length_;
+
+			 for (int j =0 ; j < vector_length_/ 0.01;j++)
+			{
+
+			  pc.resize(counter+1);
+
+			  pc.points[counter].x=point_[0];
+			  pc.points[counter].y=point_[1];
+			  pc.points[counter].z=point_[2];
+
+			  point_[0] += increase[0];
+			  point_[1] += increase[1];
+			  point_[2] += increase[2];
+			  counter++;
+
+			}
+		  }
+		  else
+		  {
+			Eigen::Vector3d increase;
+			increase[0]=polygon->polygon_world[m][0][0]-polygon->polygon_world[m][i][0];
+			increase[1]=polygon->polygon_world[m][0][1]-polygon->polygon_world[m][i][1];
+			increase[2]=polygon->polygon_world[m][0][2]-polygon->polygon_world[m][i][2];
+
+			double vector_length_=sqrt(increase[0]*increase[0]+increase[1]*increase[1]+increase[2]*increase[2]);
+
+			increase[0]=increase[0]*0.01/vector_length_;
+			increase[1]=increase[1]*0.01/vector_length_;
+			increase[2]=increase[2]*0.01/vector_length_;
+
+			for (int j =0 ; j < vector_length_/ 0.01;j++)
+			{
+
+			  pc.resize(counter+1);
+			  pc.points[counter].x=point_[0];
+			  pc.points[counter].y=point_[1];
+			  pc.points[counter].z=point_[2];
+
+			  point_[0] += increase[0];
+			  point_[1] += increase[1];
+			  point_[2] += increase[2];
+
+			  counter++;
+			}
+		  }
+		}
+
+
+	}
+
+	pcl::visualization::PCLVisualizer viewer ("3D viewer");
+		viewer.setBackgroundColor(1,1,1);
+		viewer.addCoordinateSystem(1.0f);
+		pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> pc_col (pc_ptr, 0, 255, 0);
+		viewer.addPointCloud<pcl::PointXYZ>(pc_ptr,pc_col,"pc");
+		  while (!viewer.wasStopped ())
+		  {
+			viewer.spinOnce (100);
+		  }
+
+
+		  pcl::io::savePCDFile ("/home/goa-hh/pcl_daten/test.pcd", pc, true);
+}
+void
+GeometryMapVisualisation::showMap(boost::shared_ptr<std::vector<MapEntryPtr> > map)
+{
+	int counter=0;
+	pcl::PointCloud<pcl::PointXYZ>::Ptr pc_ptr (new pcl::PointCloud<pcl::PointXYZ>);
+	pcl::PointCloud<pcl::PointXYZ>& pc=*pc_ptr;
+	for (int n=0; n<map->size();n++)
+	{
+		for (int m=0 ; m< (*map)[n]->polygon_world.size();m++ )
+		{
+			int number_of_points_ = (*map)[n]->polygon_world[m].size();
+
+			Eigen::Vector3d point_;//
+			point_[0]=(*map)[n]->polygon_world[m][0][0];
+			point_[1]=(*map)[n]->polygon_world[m][0][1];
+			point_[2]=(*map)[n]->polygon_world[m][0][2];
+			for (int i =0 ;i<number_of_points_ ; i++)
+			{
+			  if (i+1 < number_of_points_)
+			  {
+				Eigen::Vector3d increase;
+				increase[0]=(*map)[n]->polygon_world[m][i+1][0]-(*map)[n]->polygon_world[m][i][0];
+				increase[1]=(*map)[n]->polygon_world[m][i+1][1]-(*map)[n]->polygon_world[m][i][1];
+				increase[2]=(*map)[n]->polygon_world[m][i+1][2]-(*map)[n]->polygon_world[m][i][2];
+
+
+				double vector_length_=sqrt(increase[0]*increase[0]+increase[1]*increase[1]+increase[2]*increase[2]);
+
+				increase[0]=increase[0]*0.01/vector_length_;
+				increase[1]=increase[1]*0.01/vector_length_;
+				increase[2]=increase[2]*0.01/vector_length_;
+
+				 for (int j =0 ; j < vector_length_/ 0.01;j++)
+				{
+
+				  pc.resize(counter+1);
+
+				  pc.points[counter].x=point_[0];
+				  pc.points[counter].y=point_[1];
+				  pc.points[counter].z=point_[2];
+
+				  point_[0] += increase[0];
+				  point_[1] += increase[1];
+				  point_[2] += increase[2];
+				  counter++;
+
+				}
+			  }
+			  else
+			  {
+				Eigen::Vector3d increase;
+				increase[0]=(*map)[n]->polygon_world[m][0][0]-(*map)[n]->polygon_world[m][i][0];
+				increase[1]=(*map)[n]->polygon_world[m][0][1]-(*map)[n]->polygon_world[m][i][1];
+				increase[2]=(*map)[n]->polygon_world[m][0][2]-(*map)[n]->polygon_world[m][i][2];
+
+				double vector_length_=sqrt(increase[0]*increase[0]+increase[1]*increase[1]+increase[2]*increase[2]);
+
+				increase[0]=increase[0]*0.01/vector_length_;
+				increase[1]=increase[1]*0.01/vector_length_;
+				increase[2]=increase[2]*0.01/vector_length_;
+
+				for (int j =0 ; j < vector_length_/ 0.01;j++)
+				{
+
+				  pc.resize(counter+1);
+				  pc.points[counter].x=point_[0];
+				  pc.points[counter].y=point_[1];
+				  pc.points[counter].z=point_[2];
+
+				  point_[0] += increase[0];
+				  point_[1] += increase[1];
+				  point_[2] += increase[2];
+
+				  counter++;
+				}
+			  }
+			}
+
+
+		}
+	}
+	pcl::visualization::PCLVisualizer viewer ("3D viewer");
+		viewer.setBackgroundColor(1,1,1);
+		viewer.addCoordinateSystem(1.0f);
+		pcl::visualization::PointCloudColorHandlerCustom<pcl::PointXYZ> pc_col (pc_ptr, 0, 255, 0);
+		viewer.addPointCloud<pcl::PointXYZ>(pc_ptr,pc_col,"pc");
+		  while (!viewer.wasStopped ())
+		  {
+			viewer.spinOnce (100);
+		  }
+
+
+		  pcl::io::savePCDFile ("/home/goa-hh/pcl_daten/test.pcd", pc, true);
+}
 /*
 void
 GeometryMapVisualisation::showPolygon(GeometryMap::MapEntryPtr polygon , int id)
