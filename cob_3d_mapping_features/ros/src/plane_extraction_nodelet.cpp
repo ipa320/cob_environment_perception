@@ -117,7 +117,7 @@ using namespace cob_3d_mapping_features;
 class PlaneExtractionNodelet : public pcl_ros::PCLNodelet, protected Reconfigurable_Node<plane_extraction_nodeletConfig>
 {
 public:
-  typedef pcl::PointXYZ Point;
+  typedef pcl::PointXYZRGB Point;
   // Constructor
   PlaneExtractionNodelet()
   : as_(0),
