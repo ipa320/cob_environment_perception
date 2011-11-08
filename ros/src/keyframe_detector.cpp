@@ -96,7 +96,8 @@ public:
 
     if(frame_id_.size()<1) {
       ROS_WARN("frame id is missing");
-      return;
+	frame_id_="head_cam3d_link";
+      //return;
     }
 
     //pcl::PointCloud<Point>::Ptr pc = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>);
