@@ -44,6 +44,7 @@ rosbuild_add_executable(plane_extraction_action_client ros/src/plane_extraction_
 rosbuild_add_compile_flags(test_edge_extraction -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
 
 target_link_libraries(test_edge_extraction cob_3d_mapping_features)
+target_link_libraries(cob_3d_mapping_feature_nodelets cob_3d_mapping_features)
 
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)

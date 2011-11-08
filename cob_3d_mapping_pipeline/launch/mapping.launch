@@ -37,9 +37,9 @@
     </rosparam>
   </node-->
   
-	<include file="$(find cob_env_model)/ros/launch/aggregate_point_map.launch" />
-	<include file="$(find cob_env_model)/ros/launch/extract_planes.launch" />
-	<include file="$(find cob_env_model)/ros/launch/feature_map.launch" />
+	<include file="$(find cob_3d_mapping_point_map)/ros/launch/aggregate_point_map.launch" />
+	<include file="$(find cob_3d_mapping_features)/ros/launch/extract_planes.launch" />
+	<include file="$(find cob_3d_mapping_geometry_map)/ros/launch/feature_map.launch" />
   
 
 
