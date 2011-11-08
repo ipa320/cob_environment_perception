@@ -38,6 +38,7 @@ rosbuild_add_library(cob_3d_mapping_feature_nodelets
 
 rosbuild_add_executable(test_edge_extraction common/test/test_edge_extraction.cpp)
 rosbuild_add_executable(test_segmentation common/src/segmentation.cpp)
+rosbuild_add_executable(test_plane_extraction common/src/plane_extraction.cpp)
 rosbuild_add_executable(plane_extraction_action_client ros/src/plane_extraction_action_client.cpp)
 
 rosbuild_add_compile_flags(test_edge_extraction -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
