@@ -17,7 +17,7 @@
     </rosparam>
   </node-->
 
-  <node pkg="nodelet" type="nodelet" name="plane_extraction" args="load cob_env_model/PlaneExtractionNodelet cam3d_nodelet_manager2" output="screen">
+  <node pkg="nodelet" type="nodelet" name="plane_extraction" args="load cob_3d_mapping_features/PlaneExtractionNodelet cam3d_nodelet_manager2" output="screen">
   	<remap from="point_cloud2" to="/aggregate_point_map/pc_aligned"/>
   	<!--remap from="point_cloud2" to="/aggregate_point_map/map"/-->
   	<!--remap from="point_cloud2" to="/voxel_grid2/output"/-->
