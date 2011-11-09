@@ -385,6 +385,7 @@ GeometryMap::addMapEntry(MapEntryPtr p_ptr)
 
 
 
+
 		}
 
 
@@ -408,7 +409,21 @@ GeometryMap::addMapEntry(MapEntryPtr p_ptr)
 
 }
 
+void
+GeometryMap::removeMapEntry(int id)
+{
 
+
+	map_.erase(map_.begin()+id);
+
+	for (int i=id ;i< map_.size();i++)
+	{
+		map_[i]->id=map_[i]->id-1;
+	}
+
+
+
+}
 
 void
 GeometryMap::getGpcStructure(MapEntry& p, gpc_polygon* gpc_p)
