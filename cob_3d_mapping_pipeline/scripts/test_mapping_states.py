@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-PKG = 'cob_env_model'
+PKG = 'cob_3d_mapping_pipeline'
 import roslib; roslib.load_manifest(PKG)
 import rospy
 import smach
@@ -13,14 +13,15 @@ class TestStates:
 	def __init__(self, *args):
 		rospy.init_node('test_states')
 
-	def test_approach_pose(self):
+	def test_update_map(self):
 		# create a SMACH state machine
 		SM = smach.StateMachine(outcomes=['overall_succeeded','overall_failed'])
-		SM.userdata.pose = "home"
+		#SM.userdata.pose = "home"
+		SM.userdata.angle_range = 0.4
 
 		# open the container
 		with SM:
-			smach.StateMachine.add('INITIALIZE', initialize(),
+			smach.StateMachine.add('INITIALIZE', UpdateEnvMap(),
 				transitions={'succeeded':'overall_succeeded', 'failed':'overall_failed'})
 
 		try:
@@ -32,4 +33,4 @@ class TestStates:
 # main
 if __name__ == '__main__':
     test = TestStates()
-    test.test_approach_pose()
+    test.test_update_map()
