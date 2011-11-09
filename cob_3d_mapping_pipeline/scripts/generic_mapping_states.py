@@ -88,8 +88,12 @@ class UpdateEnvMap(smach.State):
 		#sss.move("base",scan_position)
 		goal = TriggerMappingGoal()
 		goal.start = True
+		if not self.client.wait_for_server():#rospy.Duration.from_sec(5.0)):
+			rospy.logerr('server not available')
+			return 'failed'
 		self.client.send_goal(goal)
-		self.client.wait_for_result(rospy.Duration.from_sec(5.0))
+		if not self.client.wait_for_result():#rospy.Duration.from_sec(5.0)):
+			return 'failed'
 		angle_start = -userdata.angle_range/2
 		angle_stop = userdata.angle_range/2
 		sss.move("torso",[[-0.1,angle_start,-0.1]])
@@ -104,7 +108,8 @@ class UpdateEnvMap(smach.State):
 		#get map
 
 		return 'succeeded'
-        
+ 
+"""experimental state, should be replaces by generic state for approach pose"""       
 class ApproachScanPose(smach.State):
 
     def __init__(self):
