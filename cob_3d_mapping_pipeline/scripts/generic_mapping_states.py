@@ -70,33 +70,55 @@ sss = simple_script_server()
 ## Initialize state
 #
 # This state will initialize all hardware drivers.
-class initialize(smach.State):
+class UpdateEnvMap(smach.State):
 
 	def __init__(self):
 
 		smach.State.__init__(
 			self,
-			outcomes=['succeeded', 'failed'])
+			outcomes=['succeeded', 'failed'],
+			input_keys=['angle_range']) #good angle value: 0.4
 		self.client = actionlib.SimpleActionClient('trigger_mapping', TriggerMappingAction)
 		
 	def execute(self, userdata):
-		scan_position = [-1.3, -1.0, 3.14]
-		sss.move("torso","home")
-		sss.move("head","front")
-		sss.move("tray","down")
-		sss.move("base",scan_position)
+		#scan_position = [-1.3, -1.0, 3.14]
+		#sss.move("torso","home")
+		#sss.move("head","front")
+		#sss.move("tray","down")
+		#sss.move("base",scan_position)
 		goal = TriggerMappingGoal()
 		goal.start = True
 		self.client.send_goal(goal)
 		self.client.wait_for_result(rospy.Duration.from_sec(5.0))
-		sss.move("torso",[[-0.1,0.0,-0.1]])
-		sss.move("torso",[[-0.1,0.2,-0.1]])
-		sss.move("torso",[[0,0.2,0]])
-		sss.move("torso","home")
+		angle_start = -userdata.angle_range/2
+		angle_stop = userdata.angle_range/2
+		sss.move("torso",[[-0.1,angle_start,-0.1]])
+		sss.move("torso",[[-0.1,angle_stop,-0.1]])
+		sss.move("torso",[[0,angle_stop,0]])
+		sss.move("torso",[[0,angle_start,0]])
 		goal.start = False
 		self.client.send_goal(goal)
 		self.client.wait_for_result(rospy.Duration.from_sec(5.0))
+		sss.move("torso","home")
 		#move neck/base
 		#get map
 
 		return 'succeeded'
+        
+class ApproachScanPose(smach.State):
+
+    def __init__(self):
+
+        smach.State.__init__(
+            self,
+            outcomes=['succeeded', 'failed'],
+            input_keys=['scan_pose']) #good angle value: 0.4
+        
+    def execute(self, userdata):
+        scan_pose = userdata.scan_pose #[-1.3, -1.0, 3.14]
+        sss.move("torso","home")
+        sss.move("head","front")
+        sss.move("tray","down")
+        sss.move("base",scan_pose)
+
+        return 'succeeded'
