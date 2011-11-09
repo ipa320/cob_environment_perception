@@ -127,6 +127,9 @@ public:
   addMapEntry(MapEntryPtr p);
 
   void
+  removeMapEntry(int id);
+
+  void
   getGpcStructure(MapEntry& p, gpc_polygon* gpc_p);
 
   void
