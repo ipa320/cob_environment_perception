@@ -33,8 +33,8 @@
   	<remap from="point_cloud2_aligned" to="/aggregate_point_map/pc_aligned"/>
   	  
   	<param name="icp_max_iterations" type="int" value="50"/>
-  	<param name="icp_max_corr_dist" type="double" value="0.2"/>
-  	<param name="icp_trf_epsilon" type="double" value="5e-6"/>
+  	<param name="icp_max_corr_dist" type="double" value="0.05"/>
+  	<param name="icp_trf_epsilon" type="double" value="5e-4"/>
   	<param name="file_path" type="string" value="/home/goa-jh/bagfiles/myown/"/>
   	<param name="save_pc" type="bool" value="false"/>
   	<param name="save_map" type="bool" value="false"/>

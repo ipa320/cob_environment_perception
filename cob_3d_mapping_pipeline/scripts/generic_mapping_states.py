@@ -81,10 +81,10 @@ class UpdateEnvMap(smach.State):
 		self.client = actionlib.SimpleActionClient('trigger_mapping', TriggerMappingAction)
 		
 	def execute(self, userdata):
-		#scan_position = [-1.3, -1.0, 3.14]
-		#sss.move("torso","home")
-		#sss.move("head","front")
-		#sss.move("tray","down")
+		scan_position = [-1.3, -1.0, 3.14]
+		sss.move("torso","home")
+		sss.move("head","front")
+		sss.move("tray","down")
 		#sss.move("base",scan_position)
 		goal = TriggerMappingGoal()
 		goal.start = True
