@@ -27,13 +27,13 @@ rosbuild_add_library(cob_3d_mapping_filters
 	common/src/intensity_filter.cpp
 	common/src/jump_edge_filter.cpp
 	common/src/speckle_filter.cpp)
-	
+
 rosbuild_add_library(cob_3d_mapping_filter_nodelets
 	ros/src/amplitude_filter.cpp
 	ros/src/intensity_filter.cpp
 	ros/src/jump_edge_filter.cpp
 	ros/src/speckle_filter.cpp)
-	
+
 rosbuild_add_executable(test_amplitude_filter common/test/test_amplitude_filter.cpp)
 rosbuild_add_executable(test_intensity_filter common/test/test_intensity_filter.cpp)
 rosbuild_add_executable(test_jump_edge_filter common/test/test_jump_edge_filter.cpp)
