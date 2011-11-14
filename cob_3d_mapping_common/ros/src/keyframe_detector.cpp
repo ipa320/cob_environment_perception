@@ -81,7 +81,6 @@ public:
 
   }
 
-  //TODO: better listen to camera_info
   void
   pointCloudSubCallback(sensor_msgs::CameraInfo::ConstPtr pc_in)
   {
@@ -96,6 +95,7 @@ public:
 
     if(frame_id_.size()<1) {
       ROS_WARN("frame id is missing");
+	//frame_id_="head_cam3d_link";
       return;
     }
 

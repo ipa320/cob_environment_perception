@@ -64,10 +64,10 @@ int
   main (int argc, char** argv)
 {
   ros::init (argc, argv, "bag_to_pcd");
-  if (argc < 4)
+  if (argc < 5)
   {
-    std::cerr << "Syntax is: " << argv[0] << " <file_in.bag> <topic> <output_directory>" << std::endl;
-    std::cerr << "Example: " << argv[0] << " data.bag /laser_tilt_cloud ./pointclouds" << std::endl;
+    std::cerr << "Syntax is: " << argv[0] << " <file_in.bag> <topic> <output_directory> <target_frame>" << std::endl;
+    std::cerr << "Example: " << argv[0] << " data.bag /laser_tilt_cloud ./pointclouds /base_link" << std::endl;
     return (-1);
   }
 
@@ -133,7 +133,7 @@ int
 		  }
 		  // Transform it
 		  tf::StampedTransform transform;
-		  tf_listener.lookupTransform("/head_tof_link", "/head_tof_link", ros::Time(0), transform);
+		  tf_listener.lookupTransform(cloud->header.frame_id, argv[4], cloud->header.stamp, transform);
 		  Eigen::Matrix4f out_mat;
 		  pcl_ros::transformAsMatrix (transform, out_mat);
 		  //pcl_ros::transformPointCloud ("/head_axis_link", *cloud, cloud_t, tf_listener);

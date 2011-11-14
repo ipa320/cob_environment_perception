@@ -39,6 +39,7 @@ rosbuild_add_library(cob_3d_mapping_feature_nodelets
 
 rosbuild_add_executable(test_edge_extraction common/test/test_edge_extraction.cpp)
 rosbuild_add_executable(test_segmentation common/src/segmentation.cpp)
+rosbuild_add_executable(test_plane_extraction common/src/plane_extraction.cpp)
 rosbuild_add_executable(plane_extraction_action_client ros/src/plane_extraction_action_client.cpp)
 rosbuild_add_executable(fpfh_svm_trainer common/test/fpfh_svm_trainer.cpp)
 rosbuild_add_executable(feature_evaluation common/test/feature_evaluation.cpp)
@@ -48,6 +49,7 @@ rosbuild_add_compile_flags(feature_evaluation -DEIGEN_YES_I_KNOW_SPARSE_MODULE_I
 
 target_link_libraries(test_edge_extraction cob_3d_mapping_features)
 target_link_libraries(feature_evaluation cob_3d_mapping_features)
+target_link_libraries(cob_3d_mapping_feature_nodelets cob_3d_mapping_features)
 
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
