@@ -74,7 +74,7 @@ enum PlaneConstraint {NONE, HORIZONTAL, VERTICAL};
 class PlaneExtraction
 {
 public:
-  typedef pcl::PointXYZ Point;
+  typedef pcl::PointXYZRGB Point;
   // Constructor
   PlaneExtraction();
 
@@ -92,7 +92,8 @@ public:
 
   void
   saveHulls(pcl::PointCloud<Point>& cloud_hull,
-            std::vector< pcl::Vertices >& hull_polygons);
+            std::vector< pcl::Vertices >& hull_polygons,
+            int plane_ctr);
 
   void
   setPlaneConstraint(PlaneConstraint constr)
