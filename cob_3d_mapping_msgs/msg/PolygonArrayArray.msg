@@ -1,0 +1,1 @@
+cob_3d_mapping_msgs/PolygonArray[] polygon_array
