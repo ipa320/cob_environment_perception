@@ -4,7 +4,7 @@
   <license>BSD,proprietary</license>  
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/cob_environment_perception_intern</url>
-  <depend stack="cob_apps" /> <!-- cob_script_server -->
+  <depend stack="cob_command_tools" /> <!-- cob_script_server -->
   <depend stack="cob_common" /> <!-- cob_srvs -->
   <depend stack="cob_environment_perception" /> <!-- cob_3d_mapping_msgs -->
   <depend stack="cob_simulation" /> <!-- cob_gazebo -->
