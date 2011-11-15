@@ -51,3 +51,6 @@ target_link_libraries(test_edge_extraction cob_3d_mapping_features)
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
+
+# rostest
+rosbuild_add_roslaunch_check(ros/launch)
