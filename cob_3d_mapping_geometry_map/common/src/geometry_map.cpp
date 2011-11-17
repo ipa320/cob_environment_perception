@@ -236,7 +236,7 @@ GeometryMap::addMapEntry(MapEntryPtr p_ptr)
 
   MapEntry& p = *p_ptr;
   //ROS_INFO("polygonCallback");
-  bool merged = false;
+ // bool merged = false;
   //p.d = p.d/p.normal.norm();
   //p.normal.normalize();
   //gpc_polygon gpc_p;
@@ -253,11 +253,11 @@ GeometryMap::addMapEntry(MapEntryPtr p_ptr)
    std::vector<int> intersections;
 
    searchIntersection(p_ptr , intersections);
-   std::cout << "intersections size " << intersections.size() << std::endl;
-   for (int i =0; i<intersections.size();i++)
-   {
-	   std::cout << "intersections " << intersections[i] << std::endl;
-   }
+//   std::cout << "intersections size " << intersections.size() << std::endl;
+//   for (int i =0; i<intersections.size();i++)
+//   {
+//	   std::cout << "intersections " << intersections[i] << std::endl;
+//   }
 
    if(intersections.size()>0){
    mergeWithMap(p_ptr , intersections);}
@@ -471,11 +471,11 @@ GeometryMap::searchIntersection(MapEntryPtr p_ptr,std::vector<int>& intersection
 // 		  	  std::cout << "num contours intersect: " << gpc_result.num_contours << std::endl;
 			  if(gpc_result.num_contours == 0)
 			  {
-				std::cout << "no 2 intersection" << std::endl;
-				std::cout << p.normal << std::endl;
+				std::cout << "no intersection with map " << i << std::endl;
+				//std::cout << p.normal << std::endl;
 				continue;
 			  }
-			  std::cout << "push back aktion";
+			  std::cout << "intersection with map " << i << std::endl;
 			  intersections.push_back(i);
 
 			}
@@ -526,6 +526,9 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 		if (counter==0)
 		{
 			p_map.transform_from_world_to_plane=transformation_from_world_to_plane;
+			p_map.d=average_d;
+			p_map.normal=average_normal;
+			p_map.merged=merge_counter;
 		}
 		getGpcStructureUsingMap(p_map, transformation_from_world_to_plane/*p_map.transform_from_world_to_plane*/, &gpc_p_map);
 		gpc_polygon_clip(GPC_UNION, &gpc_result, &gpc_p_map, &gpc_result);
