@@ -258,8 +258,21 @@ GeometryMap::addMapEntry(MapEntryPtr p_ptr)
    {
 	   std::cout << "intersections " << intersections[i] << std::endl;
    }
-   mergeWithMap(p_ptr , intersections);
 
+   if(intersections.size()>0){
+   mergeWithMap(p_ptr , intersections);}
+   else
+   {
+     Eigen::Affine3f transformation_from_plane_to_world;
+     getTransformationFromPlaneToWorld(p.normal, p.polygon_world[0][0], transformation_from_plane_to_world);
+     p.transform_from_world_to_plane = transformation_from_plane_to_world.inverse();
+     p.id = new_id_;
+     map_.push_back(p_ptr);
+     new_id_++;
+     std::cout << "feature added" << std::endl;
+     //ROS_INFO("added new feature");
+
+   }
 //  for(size_t i=0; i< map_.size(); i++)
 //  {
 //		//std::cout << "loop" << std::endl;
@@ -402,18 +415,8 @@ GeometryMap::addMapEntry(MapEntryPtr p_ptr)
 //
 //  }
   //new entry
-  if(!merged)
-  {
-    Eigen::Affine3f transformation_from_plane_to_world;
-    getTransformationFromPlaneToWorld(p.normal, p.polygon_world[0][0], transformation_from_plane_to_world);
-    p.transform_from_world_to_plane = transformation_from_plane_to_world.inverse();
-    p.id = new_id_;
-    map_.push_back(p_ptr);
-    new_id_++;
-    std::cout << "feature added" << std::endl;
-    //ROS_INFO("added new feature");
+//  if(!merged)
 
-  }
   //printGpcStructure(&gpc_p);
   //gpc_free_polygon(&gpc_p);
   if(save_to_file_) saveMap(file_path_);
@@ -503,7 +506,7 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 	average_normal.normalize();
 
 	Eigen::Vector3f ft_pt;
-	double x = -average_d/(average_normal(0)+average_normal(1)+average_normal(2));
+	double x = average_d/(average_normal(0)+average_normal(1)+average_normal(2));
 	ft_pt << x,x,x;
 
 	Eigen::Affine3f transformation_from_plane_to_world;
