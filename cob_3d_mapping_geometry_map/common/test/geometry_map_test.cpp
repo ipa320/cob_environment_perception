@@ -8,38 +8,61 @@
 #include "cob_3d_mapping_geometry_map/test/TestPlanes.h"
 #include "cob_3d_mapping_geometry_map/geometry_map.h"
 #include "cob_3d_mapping_geometry_map/map_entry.h"
+#include "cob_3d_mapping_geometry_map/test/geometry_map_test.h"
 
 
 
-class GeometryMapTest {
 
-public:
+GeometryMapTest::GeometryMapTest() {}
 
-	GeometryMapTest();
+GeometryMapTest::~GeometryMapTest() {}
 
-	~GeometryMapTest();
-};
+
+	void GeometryMapTest::fillingHole()
+	{
+		MapEntryPtr m_p = MapEntryPtr(new MapEntry());
+		MapEntryPtr m_p2 = MapEntryPtr(new MapEntry());
+		MapEntryPtr m_p3 = MapEntryPtr(new MapEntry());
+
+		tp.moveX1X2(m_p ,0,0,1);
+		tp.moveX1X2(m_p3 ,1.5,0,1);
+
+		gm.addMapEntry(m_p);
+		gm.addMapEntry(m_p3);
+
+		gmv.showMap(gm.getMap());
+		tp.moveX1X2(m_p2 ,0.7,0,1);
+
+		gm.addMapEntry(m_p2);
+
+		gmv.showMap(gm.getMap());
+	}
+
+
+
+
+
+
+
 
 int main (int argc, char** argv)
 {
-	TestPlanes tp;
-	GeometryMapVisualisation gmv;
-	GeometryMap gm;
+
+	GeometryMapTest gmt;
+//	TestPlanes tp;
+//	GeometryMapVisualisation gmv;
+//	GeometryMap gm;
 
 
-	MapEntryPtr m_p = MapEntryPtr(new MapEntry());
-	MapEntryPtr m_p2 = MapEntryPtr(new MapEntry());
-	MapEntryPtr m_p3 = MapEntryPtr(new MapEntry());
-	MapEntryPtr m_p4 = MapEntryPtr(new MapEntry());
-	MapEntryPtr m_p5 = MapEntryPtr(new MapEntry());
-	MapEntryPtr m_p6 = MapEntryPtr(new MapEntry());
-	MapEntryPtr m_p7 = MapEntryPtr(new MapEntry());
+//	MapEntryPtr m_p = MapEntryPtr(new MapEntry());
+//	MapEntryPtr m_p2 = MapEntryPtr(new MapEntry());
+//	MapEntryPtr m_p3 = MapEntryPtr(new MapEntry());
+//	MapEntryPtr m_p4 = MapEntryPtr(new MapEntry());
+//	MapEntryPtr m_p5 = MapEntryPtr(new MapEntry());
+//	MapEntryPtr m_p6 = MapEntryPtr(new MapEntry());
+//	MapEntryPtr m_p7 = MapEntryPtr(new MapEntry());
 
-	tp.circle(m_p,0,0,10);
-//	tp.circle(m_p2,0,0,25);
-//	tp.circle(m_p3,0,0,45);
-//	tp.circle(m_p4,0,0,90);
-//	tp.circle(m_p5,0,0,125);
+//	tp.rotate(m_p,0,0,10);
 
 
 //	//tp.plane_1(m_p2);
@@ -69,8 +92,7 @@ int main (int argc, char** argv)
 //	//gmv.showPolygon(m_p4);
 //
 //
-
-
+	gmt.fillingHole();
 
 //	gmv.showMap(gm.getMap());
 //
@@ -84,18 +106,18 @@ int main (int argc, char** argv)
 //	gmv.showPolygon(m_p7);
 
 
-	tp.moveX1X2(m_p ,0,0,1);
-	tp.moveX1X2(m_p3 ,1.5,0,1);
-
-	gm.addMapEntry(m_p);
-	gm.addMapEntry(m_p3);
-
-	gmv.showMap(gm.getMap());
-	tp.moveX1X2(m_p2 ,0.7,0,1);
-
-	gm.addMapEntry(m_p2);
-
-	gmv.showMap(gm.getMap());
+//	tp.moveX1X2(m_p ,0,0,1);
+//	tp.moveX1X2(m_p3 ,1.5,0,1);
+//
+//	gm.addMapEntry(m_p);
+//	gm.addMapEntry(m_p3);
+//
+//	gmv.showMap(gm.getMap());
+//	tp.moveX1X2(m_p2 ,0.7,0,1);
+//
+//	gm.addMapEntry(m_p2);
+//
+//	gmv.showMap(gm.getMap());
 
 //	gm.removeMapEntry(2);
 //	gmv.showMap(gm.getMap());
