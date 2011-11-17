@@ -442,33 +442,13 @@ GeometryMap::searchIntersection(MapEntryPtr p_ptr,std::vector<int>& intersection
 			  gpc_polygon gpc_result;
 			  gpc_polygon gpc_p_merge;
 			  gpc_polygon gpc_p_map;
-//			  std::cout << "Planes before merging:\n";
-//			  std::cout << "New f: " << p.normal(0) << "," << p.normal(1) << "," << p.normal(2) << "," << p.d << std::endl;
-//			  std::cout << "Map f: " << p_map.normal(0) << "," << p_map.normal(1) << "," << p_map.normal(2) << "," << p_map.d << std::endl;
-			  double d_p = p.d;
-			  Eigen::Vector3f normal_p(p.normal(0), p.normal(1), p.normal(2));
-			  if(p_map.normal.dot(normal_p)<-0.95) {normal_p = -normal_p, d_p=-d_p;}
-//			  std::cout << "dot: " << p_map.normal.dot(normal_p) << std::endl;
-			  Eigen::Vector3f n_map = p_map.normal + normal_p;
-			  double d_map = p_map.d + d_p;
-//			  std::cout << "d_map before norm: " << d_map << "," << n_map.norm() << std::endl;
-			  d_map = d_map/n_map.norm();
-			  n_map.normalize();
-			  Eigen::Vector3f ft_pt;
-			  double x = -d_map/(n_map(0)+n_map(1)+n_map(2));
-			  ft_pt << x,x,x;
 
-//			  std::cout << "Merged plane:\n";
-//			  std::cout << "Merged f: " << n_map(0) << "," << n_map(1) << "," << n_map(2) << "," << d_map << std::endl;
-//			  std::cout << "FP: " << ft_pt(0) << "," << ft_pt(1) << "," << ft_pt(2) << std::endl;
-			  Eigen::Affine3f transformation_from_plane_to_world;
 			  Eigen::Affine3f transformation_from_world_to_plane;
-			  getTransformationFromPlaneToWorld(n_map, ft_pt, transformation_from_plane_to_world);
-			 // transformation_from_world_to_plane = transformation_from_plane_to_world.inverse();
-			  transformation_from_world_to_plane = p_map.transform_from_world_to_plane;
-			  getGpcStructureUsingMap(p, transformation_from_world_to_plane/*p_map.transform_from_world_to_plane*/, &gpc_p_merge);
 
-			  getGpcStructureUsingMap(p_map, transformation_from_world_to_plane/*p_map.transform_from_world_to_plane*/, &gpc_p_map);
+			  transformation_from_world_to_plane = p_map.transform_from_world_to_plane;
+			  getGpcStructureUsingMap(p, transformation_from_world_to_plane, &gpc_p_merge);
+
+			  getGpcStructureUsingMap(p_map, transformation_from_world_to_plane, &gpc_p_map);
 			  gpc_polygon_clip(GPC_INT, &gpc_p_merge, &gpc_p_map, &gpc_result);
 // 		  	  std::cout << "num contours intersect: " << gpc_result.num_contours << std::endl;
 			  if(gpc_result.num_contours == 0)
