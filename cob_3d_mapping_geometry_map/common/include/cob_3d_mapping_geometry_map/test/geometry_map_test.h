@@ -23,6 +23,12 @@ public:
 	void
 	fillingHole();
 
+	void
+	box();
+
+	void
+	rotate();
+
 private:
 	TestPlanes tp;
 	GeometryMapVisualisation gmv;
