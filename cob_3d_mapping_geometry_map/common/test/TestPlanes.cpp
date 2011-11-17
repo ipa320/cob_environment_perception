@@ -5,7 +5,7 @@
  *      Author: goa-hh
  */
 
-#include "../../include/cob_3d_mapping_geometry_map/vis/TestPlanes.h"
+#include "cob_3d_mapping_geometry_map/test/TestPlanes.h"
 
 TestPlanes::TestPlanes() {
 	// TODO Auto-generated constructor stub
