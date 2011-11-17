@@ -235,3 +235,23 @@ TestPlanes::figure_1(MapEntryPtr m_p , MapEntryPtr m_p2 ,MapEntryPtr m_p3 , MapE
 	  m_p5->polygon_world.push_back(vv5);
 
 }
+
+void
+TestPlanes::rotate(MapEntryPtr m_p , double x_1 , double x_2 , double alpha )
+{
+	  double alpha_rad = alpha *M_PI / 180;
+	  m_p->id = 0;
+	  m_p->normal << cos(-alpha_rad),-sin(-alpha_rad),0;
+	  m_p->d = x_1*cos(-alpha_rad)-x_2*sin(-alpha_rad);
+	  std::vector<Eigen::Vector3f> vv;
+	  Eigen::Vector3f v;
+	  v << x_1,x_2,0;
+	  vv.push_back(v);
+	  v << x_1,x_2,1;
+	  vv.push_back(v);
+	  v << x_1-sin(alpha_rad),x_2+cos(alpha_rad),1;
+	  vv.push_back(v);
+	  v << x_1-sin(alpha_rad),x_2+cos(alpha_rad),0;
+	  vv.push_back(v);
+	  m_p->polygon_world.push_back(vv);
+}

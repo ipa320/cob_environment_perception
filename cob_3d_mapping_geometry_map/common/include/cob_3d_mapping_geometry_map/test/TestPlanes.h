@@ -38,6 +38,9 @@ public:
 	void
 	figure_1(MapEntryPtr m_p , MapEntryPtr m_p2 ,MapEntryPtr m_p3 , MapEntryPtr m_p4 ,MapEntryPtr m_p5 );
 
+	void
+	rotate(MapEntryPtr m_p , double x_1 , double x_2 , double alpha );
+
 };
 
 #endif /* TESTPLANES_H_ */

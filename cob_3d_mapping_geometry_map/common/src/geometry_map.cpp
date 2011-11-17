@@ -259,8 +259,10 @@ GeometryMap::addMapEntry(MapEntryPtr p_ptr)
 //	   std::cout << "intersections " << intersections[i] << std::endl;
 //   }
 
-   if(intersections.size()>0){
-   mergeWithMap(p_ptr , intersections);}
+   if(intersections.size()>0)
+   {
+   mergeWithMap(p_ptr , intersections);
+   }
    else
    {
      Eigen::Affine3f transformation_from_plane_to_world;
