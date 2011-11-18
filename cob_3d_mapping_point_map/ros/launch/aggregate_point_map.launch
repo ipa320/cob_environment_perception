@@ -27,10 +27,10 @@
   </node>
 
 	<!-- Start aggregate point map -->
-  <node pkg="nodelet" type="nodelet" name="aggregate_point_map" args="load cob_3d_mapping_point_map/AggregatePointMap pcl_manager" output="screen">
+  <node pkg="nodelet" type="nodelet" name="point_map_nodelet" args="load cob_3d_mapping_point_map/PointMapNodelet pcl_manager" output="screen">
   	<remap from="point_cloud2" to="/cam3d/rgb/points"/>
-  	<remap from="point_cloud2_map" to="/aggregate_point_map/map"/>
-  	<remap from="point_cloud2_aligned" to="/aggregate_point_map/pc_aligned"/>
+  	<remap from="point_cloud2_map" to="/point_map/map"/>
+  	<remap from="point_cloud2_aligned" to="/point_map/pc_aligned"/>
   	  
   	<param name="icp_max_iterations" type="int" value="50"/>
   	<param name="icp_max_corr_dist" type="double" value="0.05"/>
