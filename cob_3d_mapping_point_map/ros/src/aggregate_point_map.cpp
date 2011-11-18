@@ -91,6 +91,7 @@
 #include <cob_3d_mapping_msgs/GetFieldOfView.h>
 #include "cob_3d_mapping_msgs/TriggerMappingAction.h"
 #include <cob_3d_mapping_msgs/SetReferenceMap.h>
+#include <cob_3d_mapping_msgs/GetPointMap.h>
 #include <cob_srvs/Trigger.h>
 
 // external includes
@@ -213,6 +214,7 @@ public:
     clear_map_server_ = n_.advertiseService("clear_point_map", &AggregatePointMap::clearMap, this);
     keyframe_trigger_server_ = n_.advertiseService("trigger_keyframe", &AggregatePointMap::onKeyframeCallback, this);
     set_reference_map_server_ = n_.advertiseService("set_reference_map", &AggregatePointMap::setReferenceMap, this);
+    get_map_server_ = n_.advertiseService("get_point_map", &AggregatePointMap::getMap, this);
     as_= new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerMappingAction>(n_, "trigger_mapping", boost::bind(&AggregatePointMap::actionCallback, this, _1), false);
     as_->start();
 
@@ -229,7 +231,7 @@ public:
     n_.param("aggregate_point_map/icp_trf_epsilon" ,icp_trf_epsilon,0.0005);
     n_.param("aggregate_point_map/use_reference_map",use_reference_map,false);
     n_.param("aggregate_point_map/use_fov",use_fov_,false);
-    use_fov_=true;
+    //use_fov_=true;
     n_.param("aggregate_point_map/reuse",reuse,true);
     point_map_.setICP_maxIterations(icp_max_iterations);
     point_map_.setICP_maxCorrDist(icp_max_corr_dist);
@@ -483,6 +485,24 @@ public:
   }
 
   /**
+   * @brief service callback for GetPointMap service
+   *
+   * Fills the service response of the GetPointMap service with the current point map
+   *
+   * @param req request to send map
+   * @param res the current point map
+   *
+   * @return nothing
+   */
+  bool
+  getMap(cob_3d_mapping_msgs::GetPointMap::Request &req,
+         cob_3d_mapping_msgs::GetPointMap::Response &res)
+  {
+    pcl::toROSMsg(*(point_map_.getMap()), res.map);
+    return true;
+  }
+
+  /**
    * @brief sets reference map
    *
    * sets the 3d map representing the environment which is used to align new frames
@@ -543,12 +563,14 @@ protected:
   ros::ServiceServer clear_map_server_;
   ros::ServiceServer keyframe_trigger_server_;
   ros::ServiceServer set_reference_map_server_;
+  ros::ServiceServer get_map_server_;
   actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerMappingAction>* as_;
 
   TransformListener tf_listener_;
 
   PointMap point_map_;
 
+  int ctr_;
   bool is_running_;
   bool use_fov_;               /// if map should be cut by frustum (reduce input information)
 
@@ -565,7 +587,6 @@ protected:
   bool save_map_fov_;
   bool save_pc_trans_;
 
-  int ctr_;
 
   pcl::PointCloud<Point> pc_in_;
 

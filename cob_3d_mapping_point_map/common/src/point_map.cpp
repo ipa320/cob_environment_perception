@@ -313,6 +313,8 @@ void PointMap::clearMap()
   map_.points.clear();
   map_.width = 0;
   map_.height = 0;
+  first_ = true;
+  old_icp_transform_ = Eigen::Matrix4f::Identity();
 }
 
 void PointMap::shiftCloud(const pcl::PointCloud<Point>::Ptr& pc)
