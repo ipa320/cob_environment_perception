@@ -34,7 +34,7 @@ rosbuild_add_library(cob_3d_mapping_features
 	common/src/plane_extraction.cpp
 	common/src/knn_classifier.cpp)
 
-rosbuild_add_library(cob_3d_mapping_feature_nodelets
+rosbuild_add_library(cob_3d_mapping_features_nodelets
 	ros/src/plane_extraction_nodelet.cpp)
 
 rosbuild_add_executable(test_edge_extraction common/test/test_edge_extraction.cpp)
@@ -49,7 +49,7 @@ rosbuild_add_compile_flags(feature_evaluation -DEIGEN_YES_I_KNOW_SPARSE_MODULE_I
 
 target_link_libraries(test_edge_extraction cob_3d_mapping_features)
 target_link_libraries(feature_evaluation cob_3d_mapping_features)
-target_link_libraries(cob_3d_mapping_feature_nodelets cob_3d_mapping_features)
+target_link_libraries(cob_3d_mapping_features_nodelets cob_3d_mapping_features)
 
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)

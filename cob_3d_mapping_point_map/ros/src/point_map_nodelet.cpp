@@ -101,7 +101,7 @@
 #include "cob_3d_mapping_point_map/point_map.h"
 
 #include "cob_3d_mapping_common/reconfigureable_node.h"
-#include <cob_3d_mapping_point_map/aggregate_point_mapConfig.h>
+#include <cob_3d_mapping_point_map/point_map_nodeletConfig.h>
 
 
 
@@ -110,14 +110,14 @@ using namespace tf;
 
 //####################
 //#### node class ####
-class AggregatePointMap : public pcl_ros::PCLNodelet, protected Reconfigurable_Node<cob_3d_mapping_point_map::aggregate_point_mapConfig>
+class PointMapNodelet : public pcl_ros::PCLNodelet, protected Reconfigurable_Node<cob_3d_mapping_point_map::point_map_nodeletConfig>
 {
   typedef pcl::PointXYZRGB Point;
 
 public:
   // Constructor
-  AggregatePointMap()
-  : Reconfigurable_Node<cob_3d_mapping_point_map::aggregate_point_mapConfig>("AggregatePointMap"),
+  PointMapNodelet()
+  : Reconfigurable_Node<cob_3d_mapping_point_map::point_map_nodeletConfig>("PointMapNodelet"),
     point_map_(&ctr_),
     ctr_(0),
     is_running_(false)
@@ -128,7 +128,7 @@ public:
 
 
   // Destructor
-  ~AggregatePointMap()
+  ~PointMapNodelet()
   {
     /// void
   }
@@ -138,13 +138,13 @@ public:
    *
    * everytime the dynamic reconfiguration changes this function will be called
    *
-   * @param inst instance of AggregatePointMap which parameters should be changed
+   * @param inst instance of PointMapNodelet which parameters should be changed
    * @param config data of configuration
    * @param level bit descriptor which notifies which parameter changed
    *
    * @return nothing
    */
-  static void callback(AggregatePointMap *inst, cob_3d_mapping_point_map::aggregate_point_mapConfig &config, uint32_t level)
+  static void callback(PointMapNodelet *inst, cob_3d_mapping_point_map::point_map_nodeletConfig &config, uint32_t level)
   {
     if(!inst)
       return;
@@ -171,7 +171,7 @@ public:
   }
 
   // callback for dynamic reconfigure
-  static void callback_get(AggregatePointMap *inst, cob_3d_mapping_point_map::aggregate_point_mapConfig &config)
+  static void callback_get(PointMapNodelet *inst, cob_3d_mapping_point_map::point_map_nodeletConfig &config)
   {
     if(!inst)
       return;
@@ -211,11 +211,11 @@ public:
     point_cloud_pub_aligned_ = n_.advertise<pcl::PointCloud<Point> >("point_cloud2_aligned",1);
     //fov_marker_pub_ = n_.advertise<visualization_msgs::Marker>("fov_marker",10);
     get_fov_srv_client_ = n_.serviceClient<cob_3d_mapping_msgs::GetFieldOfView>("get_fov");
-    clear_map_server_ = n_.advertiseService("clear_point_map", &AggregatePointMap::clearMap, this);
-    keyframe_trigger_server_ = n_.advertiseService("trigger_keyframe", &AggregatePointMap::onKeyframeCallback, this);
-    set_reference_map_server_ = n_.advertiseService("set_reference_map", &AggregatePointMap::setReferenceMap, this);
-    get_map_server_ = n_.advertiseService("get_point_map", &AggregatePointMap::getMap, this);
-    as_= new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerMappingAction>(n_, "trigger_mapping", boost::bind(&AggregatePointMap::actionCallback, this, _1), false);
+    clear_map_server_ = n_.advertiseService("clear_point_map", &PointMapNodelet::clearMap, this);
+    keyframe_trigger_server_ = n_.advertiseService("trigger_keyframe", &PointMapNodelet::onKeyframeCallback, this);
+    set_reference_map_server_ = n_.advertiseService("set_reference_map", &PointMapNodelet::setReferenceMap, this);
+    get_map_server_ = n_.advertiseService("get_point_map", &PointMapNodelet::getMap, this);
+    as_= new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerMappingAction>(n_, "trigger_mapping", boost::bind(&PointMapNodelet::actionCallback, this, _1), false);
     as_->start();
 
     int icp_max_iterations;
@@ -452,7 +452,7 @@ public:
     cob_3d_mapping_msgs::TriggerMappingResult result;
     if(goal->start && !is_running_)
     {
-      point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &AggregatePointMap::pointCloudSubCallback, this);
+      point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &PointMapNodelet::pointCloudSubCallback, this);
       is_running_ = true;
     }
     else if(!goal->start && is_running_)
@@ -594,5 +594,5 @@ protected:
 
 };
 
-PLUGINLIB_DECLARE_CLASS(cob_3d_mapping_point_map, AggregatePointMap, AggregatePointMap, nodelet::Nodelet)
+PLUGINLIB_DECLARE_CLASS(cob_3d_mapping_point_map, PointMapNodelet, PointMapNodelet, nodelet::Nodelet)
 
