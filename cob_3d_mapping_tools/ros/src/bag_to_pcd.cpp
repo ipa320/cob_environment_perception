@@ -145,7 +145,7 @@ int
 		  ss << output_dir << "/" << cloud_t.header.stamp << ".pcd";
 		  std::cerr << "Data saved to " << ss.str () << std::endl;
 		  pcl::io::savePCDFile (ss.str (), cloud_t, Eigen::Vector4f::Zero (),
-								Eigen::Quaternionf::Identity (), true);
+								Eigen::Quaternionf::Identity (), false);
 		}
   	}
 	catch (tf::TransformException ex){

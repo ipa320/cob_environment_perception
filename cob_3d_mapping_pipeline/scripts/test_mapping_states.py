@@ -17,7 +17,7 @@ class TestStates:
 		# create a SMACH state machine
 		SM = smach.StateMachine(outcomes=['overall_succeeded','overall_failed'])
 		#SM.userdata.pose = "home"
-		SM.userdata.angle_range = 0.4
+		SM.userdata.angle_range = 0.6
 
 		# open the container
 		with SM:
