@@ -75,12 +75,46 @@ GeometryMapTest::~GeometryMapTest() {}
 			tp.rotate(m_p,0,0,125);
 			gm.addMapEntry(m_p);
 			//gmv.showMap(gm.getMap());
-			tp.rotate(m_p2,0,0,143.1);                                   // intersection wenn winkel kleiner wie 18.5crad
+			tp.rotate(m_p2,0,0,143.4);                                   // intersection wenn winkel kleiner wie 18.5crad
 			gm.addMapEntry(m_p2);
 			gmv.showMap(gm.getMap());
 
 
 
+	}
+
+	void GeometryMapTest::strongMerged()
+	{
+		MapEntryPtr m_p = MapEntryPtr(new MapEntry());
+		MapEntryPtr m_p2 = MapEntryPtr(new MapEntry());
+
+	//	tp.rotate(m_p,0,0,0);
+	//	gm.addMapEntry(m_p);
+
+		m_p->merged=10;
+
+		tp.rotate(m_p2,0,0,18.5);                                   // intersection wenn winkel kleiner wie 18.5crad
+		gm.addMapEntry(m_p2);
+		gmv.showMap(gm.getMap());
+	}
+
+	void GeometryMapTest::testnormaldirection()
+	{
+
+		MapEntryPtr m_p = MapEntryPtr(new MapEntry());
+		MapEntryPtr m_p2 = MapEntryPtr(new MapEntry());
+		MapEntryPtr m_p3 = MapEntryPtr(new MapEntry());
+
+		tp.moveX1X2(m_p ,0,0,1);
+		tp.moveX1X2(m_p3 ,0.5,0,1);
+
+		m_p3->normal << 0,0,-1;
+		m_p3->d=-1;
+
+		gm.addMapEntry(m_p3);
+		gm.addMapEntry(m_p);
+
+		gmv.showMap(gm.getMap());
 	}
 
 
@@ -89,12 +123,19 @@ int main (int argc, char** argv)
 {
 
 	GeometryMapTest gmt;
+	gmt.testnormaldirection();
 	//gmt.box();
 	//gmt.fillingHole();
-	gmt.rotate();
+	//gmt.rotate();
+	//gmt.strongMerged();
 //	TestPlanes tp;
 //	GeometryMapVisualisation gmv;
 //	GeometryMap gm;
+
+
+
+
+
 
 
 //	MapEntryPtr m_p = MapEntryPtr(new MapEntry());

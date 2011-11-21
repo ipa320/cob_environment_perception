@@ -434,10 +434,11 @@ GeometryMap::searchIntersection(MapEntryPtr p_ptr,std::vector<int>& intersection
 
 			  MapEntry& p_map = *(map_[i]);
 
-			if((p_map.normal.dot(p.normal)>0.95 && fabs(p_map.d-p.d)<0.1) ||
+			  if((p_map.normal.dot(p.normal)>0.95 && fabs(p_map.d-p.d)<0.1) ||
 				(p_map.normal.dot(p.normal)<-0.95 && fabs(p_map.d+p.d)<0.1))
 
 			{
+
 
 			  gpc_polygon gpc_result;
 			  gpc_polygon gpc_p_merge;
@@ -473,19 +474,24 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 	double average_d=p.d;
 	int merge_counter=1;
 
-	int counter =0;
 
 	for(int i=0 ; i<intersections.size();i++)
 	{
-		 MapEntry& p_map = *(map_[intersections[counter]]);
+		 MapEntry& p_map = *(map_[intersections[i]]);
+		 if(p.normal.dot(p_map.normal)<0){
+			 p_map.normal=-p_map.normal;
+			 p_map.d=-p_map.d;
+			 std::cout << "umgedreht" << std::endl;
+		 }
 		 average_normal += (p_map.merged+1)* p_map.normal;    // PROBLEM RICHTUNG
 		 average_d +=(p_map.merged+1)* p_map.d;
 		 merge_counter += p_map.merged+1;
-		 counter++;
 	}
 	average_normal=average_normal/merge_counter;
 	average_d=average_d/merge_counter;
 	average_normal.normalize();
+
+	std::cout << average_normal;
 
 	Eigen::Vector3f ft_pt;
 	double x = average_d/(average_normal(0)+average_normal(1)+average_normal(2));
@@ -496,7 +502,6 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 	getTransformationFromPlaneToWorld(average_normal, ft_pt, transformation_from_plane_to_world);
 	transformation_from_world_to_plane = transformation_from_plane_to_world.inverse();
 
-	counter=0;
 	gpc_polygon gpc_result;
 	gpc_polygon gpc_p_map;
 
@@ -504,8 +509,8 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 
 	for(int i=0 ; i<intersections.size();i++)
 	{
-		MapEntry& p_map = *(map_[intersections[counter]]);
-		if (counter==0)
+		MapEntry& p_map = *(map_[intersections[i]]);
+		if (i==0)
 		{
 			p_map.transform_from_world_to_plane=transformation_from_world_to_plane;
 			p_map.d=average_d;
@@ -514,11 +519,10 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 		}
 		getGpcStructureUsingMap(p_map, transformation_from_world_to_plane/*p_map.transform_from_world_to_plane*/, &gpc_p_map);
 		gpc_polygon_clip(GPC_UNION, &gpc_result, &gpc_p_map, &gpc_result);
-		if(!counter==0)
+		if(i!=0)
 		{
-			removeMapEntry(intersections[counter]);
+			removeMapEntry(intersections[i]);
 		}
-		counter++;
 	}
 	MapEntry& p_map = *(map_[intersections[0]]);
 
