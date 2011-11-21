@@ -29,6 +29,14 @@ public:
 	void
 	rotate();
 
+	void
+	strongMerged();
+
+	void
+	testnormaldirection();
+
+
+
 private:
 	TestPlanes tp;
 	GeometryMapVisualisation gmv;
