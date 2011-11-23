@@ -1,11 +1,20 @@
+// OpenCV:
+#include <opencv2/core/core.hpp>
+#include <cv.h>
+#include <highgui.h>
+
 #include <boost/program_options.hpp>
+// PCL:
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/point_cloud_handlers.h>
-#include <cob_3d_mapping_features/edge_estimation.h>
-#include <cob_3d_mapping_common/point_types.h>
+
+// Packages Includes:
+#include "cob_3d_mapping_features/edge_estimation_3d.h"
+#include "cob_3d_mapping_features/edge_estimation_2d.h"
+#include "cob_3d_mapping_common/point_types.h"
 
 using namespace std;
 using namespace pcl;
@@ -14,6 +23,8 @@ typedef visualization::PointCloudColorHandlerRGBField<PointXYZRGB> ColorHdlRGB;
 
 string file_points;
 float normal_radius;
+float edge_th;
+bool rgbEdges;
 
 void readOptions(int argc, char* argv[])
 {
@@ -24,6 +35,8 @@ void readOptions(int argc, char* argv[])
     ("in,i", value<string>(&file_points), "input pcd file")
     ("normal_radius,R", value<float>(&normal_radius)->default_value(0.01), 
      "radius normal estimation")
+    ("edgeth,e",value<float>(&edge_th)->default_value(0.5), "threshold edge")
+    ("rgbedges,c", value<bool>(&rgbEdges)->default_value(false), "calculate color edges")
     ;
 
   positional_options_description p_opt;
@@ -46,6 +59,7 @@ int main(int argc, char** argv)
   PointCloud<PointXYZRGB>::Ptr p(new PointCloud<PointXYZRGB>);
   PointCloud<Normal>::Ptr n(new PointCloud<Normal>);
   PointCloud<InterestPoint>::Ptr ip(new PointCloud<InterestPoint>);
+  PointCloud<InterestPoint>::Ptr ip2(new PointCloud<InterestPoint>);
 
   PCDReader r;
   if(r.read(file_points, *p) == -1) return(0);
@@ -57,8 +71,8 @@ int main(int argc, char** argv)
   ne.setInputCloud(p);
   ne.compute(*n);
 
-  OrganizedDataIndex<pcl::PointXYZRGB>::Ptr oTree (new OrganizedDataIndex<pcl::PointXYZRGB> );
-  ipa_features::EdgeEstimation<PointXYZRGB, Normal, InterestPoint> ee;
+  OrganizedDataIndex<PointXYZRGB>::Ptr oTree (new OrganizedDataIndex<PointXYZRGB> );
+  cob_3d_mapping_features::EdgeEstimation3D<PointXYZRGB, Normal, InterestPoint> ee;
   ee.setRadiusSearch(0.04);
   ee.setSearchMethod(oTree);
   ee.setInputCloud(p);
@@ -67,13 +81,48 @@ int main(int argc, char** argv)
   ee.compute(*ip);
   cout << "Done!" << endl;
 
-  for (size_t i = 0; i < ip->points.size(); i++)
+  if (rgbEdges)
   {
-    int color = max(0.0f, min(ip->points[i].strength*255, 255.0f) );
-    
+    cout << "Start 2D part" << endl;
+    cv::Mat sobel, laplace, combined, color;
+    cob_3d_mapping_features::EdgeEstimation2D<PointXYZRGB, InterestPoint> ee2;
+    ee2.setInputCloud(p);
+    ee2.getColorImage(color);
+    ee2.computeEdges(*ip2);
+    ee2.computeEdges(sobel, laplace, combined);
+    cv::imshow("Color", color);
+    cv::imshow("Combined", combined);
+    cv::imshow("Laplace", laplace);
+    cv::imshow("Sobel", sobel);
+    cv::waitKey();
+  }
+
+  for (size_t i = 0; i < ip2->points.size(); i++)
+  {
+    int color = max(0.0f, min(ip2->points[i].strength*255, 255.0f) );
     p->points[i].r = color;
     p->points[i].g = color;
     p->points[i].b = color;
+    /*
+    if (ip->points[i].strength >= 2 )
+    {
+      p->points[i].r = 255;
+      p->points[i].g = 0;
+      p->points[i].b = 0;
+    }
+    else if (ip->points[i].strength > edge_th)
+    {
+      p->points[i].r = 0;
+      p->points[i].g = 255;
+      p->points[i].b = 0;
+    }
+    else
+    {
+      p->points[i].r = 255;
+      p->points[i].g = 255;
+      p->points[i].b = 255;
+    }
+    */
   }
 
   boost::shared_ptr<visualization::PCLVisualizer> v;
