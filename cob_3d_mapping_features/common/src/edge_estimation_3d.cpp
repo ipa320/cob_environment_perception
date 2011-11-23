@@ -54,11 +54,11 @@
 
 #include "pcl/point_types.h"
 #include "pcl/impl/instantiate.hpp"
-#include "cob_3d_mapping_features/edge_estimation.h"
-#include "cob_3d_mapping_features/impl/edge_estimation.hpp"
+#include "cob_3d_mapping_features/edge_estimation_3d.h"
+#include "cob_3d_mapping_features/impl/edge_estimation_3d.hpp"
 
 // Instantiations of specific point types
 //PCL_INSTANTIATE_PRODUCT(BoundaryEstimation, (PCL_XYZ_POINT_TYPES)(PCL_NORMAL_POINT_TYPES)((pcl::Boundary)));
-PCL_INSTANTIATE_EdgeEstimation(pcl::PointXYZRGB,pcl::PointXYZRGBNormal,pcl::InterestPoint)
-PCL_INSTANTIATE_EdgeEstimation(pcl::PointXYZRGB,pcl::Normal,pcl::InterestPoint)
+PCL_INSTANTIATE_EdgeEstimation3D(pcl::PointXYZRGB,pcl::PointXYZRGBNormal,pcl::InterestPoint)
+PCL_INSTANTIATE_EdgeEstimation3D(pcl::PointXYZRGB,pcl::Normal,pcl::InterestPoint)
 
