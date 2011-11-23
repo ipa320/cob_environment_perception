@@ -536,6 +536,12 @@ FeatureMap::saveMap(std::string path)
 }
 
 void
+FeatureMap::clearMap()
+{
+  map_.clear();
+}
+
+void
 FeatureMap::printGpcStructure(gpc_polygon* p)
 {
   std::cout << "GPC Structure: " << std::endl;

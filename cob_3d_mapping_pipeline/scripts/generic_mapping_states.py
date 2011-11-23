@@ -96,8 +96,8 @@ class UpdateEnvMap(smach.State):
 			return 'failed'
 		angle_start = -userdata.angle_range/2
 		angle_stop = userdata.angle_range/2
-		sss.move("torso",[[-0.1,angle_start,-0.1]])
-		sss.move("torso",[[-0.1,angle_stop,-0.1]])
+		sss.move("torso",[[-0.2,angle_start,-0.1]])
+		sss.move("torso",[[-0.2,angle_stop,-0.1]])
 		sss.move("torso",[[0,angle_stop,0]])
 		sss.move("torso",[[0,angle_start,0]])
 		goal.start = False
