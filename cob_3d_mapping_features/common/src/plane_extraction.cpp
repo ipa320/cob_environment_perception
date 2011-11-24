@@ -100,7 +100,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
   boost::timer t;
   std::stringstream ss;
   ROS_INFO("Extract planes");
-  ROS_INFO("Saving files: %d", save_to_file_);
+  ROS_DEBUG("Saving files: %d", save_to_file_);
   if(save_to_file_)
   {
     ss.str("");
@@ -121,13 +121,13 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
   std::vector<pcl::PointIndices> clusters;
   cluster.setInputCloud (pc_in);
   cluster.extract (clusters);
-  ROS_INFO ("Number of clusters found: %d", (int)clusters.size ());
+  ROS_DEBUG ("Number of clusters found: %d", (int)clusters.size ());
 
   // Go through all clusters and search for planes
   pcl::ExtractIndices<Point> extract;
   for(unsigned int i = 0; i < clusters.size(); ++i)
   {
-    ROS_INFO("Processing cluster no. %u", i);
+    ROS_DEBUG("Processing cluster no. %u", i);
     // Extract cluster points
     pcl::PointCloud<Point> cluster;
     extract.setInputCloud (pc_in);
@@ -238,7 +238,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
       if(!invalidPlane)
       {
         // Extract plane points, only needed for storing bag file
-        ROS_INFO("Plane has %d inliers", (int)inliers_plane->indices.size());
+        ROS_DEBUG("Plane has %d inliers", (int)inliers_plane->indices.size());
         pcl::PointCloud<Point> dominant_plane;
         pcl::ExtractIndices<Point> extractIndices;
         extractIndices.setInputCloud(cluster_ptr);
@@ -273,7 +273,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
         v_cloud_hull.push_back(cloud_hull);
         v_hull_polygons.push_back(hull_polygons);
         v_coefficients_plane.push_back(coefficients_plane);
-        ROS_INFO("v_cloud_hull size: %d", v_cloud_hull.size());
+        ROS_DEBUG("v_cloud_hull size: %d", v_cloud_hull.size());
 
 
         if(save_to_file_)
