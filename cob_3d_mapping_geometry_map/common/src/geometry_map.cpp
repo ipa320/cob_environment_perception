@@ -234,6 +234,7 @@ void
 GeometryMap::addMapEntry(MapEntryPtr p_ptr)
 {
 
+	bool merged=false;
   MapEntry& p = *p_ptr;
   //ROS_INFO("polygonCallback");
  // bool merged = false;
@@ -249,15 +250,11 @@ GeometryMap::addMapEntry(MapEntryPtr p_ptr)
   //gpc_write_polygon(out, 0, &p.polygon_plane);
   //fclose(out);
   // Iterate over map
-
+if(true)
+{
    std::vector<int> intersections;
 
    searchIntersection(p_ptr , intersections);
-//   std::cout << "intersections size " << intersections.size() << std::endl;
-//   for (int i =0; i<intersections.size();i++)
-//   {
-//	   std::cout << "intersections " << intersections[i] << std::endl;
-//   }
 
    if(intersections.size()>0)
    {
@@ -272,154 +269,172 @@ GeometryMap::addMapEntry(MapEntryPtr p_ptr)
      map_.push_back(p_ptr);
      new_id_++;
      std::cout << "feature added" << std::endl;
-     //ROS_INFO("added new feature");
+
+
 
    }
-//  for(size_t i=0; i< map_.size(); i++)
-//  {
-//		//std::cout << "loop" << std::endl;
-//		  MapEntry& p_map = *(map_[i]);
-//		//Eigen::Vector3f n2(p.normal(0), p.normal(1), p.normal(2));
-//		//n2.normalize();
-//		//double angle = fabs(std::acos(p_map.normal.dot(n2)));
-//		/*if(n2(0)>0.9 || n2(0)<-0.9)
-//		{
-//		  std::cout << "x axis" << std::endl;
-//		  std::cout << "n:" << n2 << std::endl;
-//		  std::cout << "n_map:" << p_map.normal << std::endl;
-//		  std::cout << "d, d_map:" << p.d << "," << p_map.d << std::endl;
-//		}*/
-//		//std::cout << p_map_normal_d.dot(p_normal_d) << std::endl;
-//		if((p_map.normal.dot(p.normal)>0.95 && fabs(p_map.d-p.d)<0.1) ||
-//			(p_map.normal.dot(p.normal)<-0.95 && fabs(p_map.d+p.d)<0.1))
-//		//if(fabs(p_map.normal.dot(n2))>0.95 && fabs(fabs(p_map.d)-fabs(p.d))<0.25) //0.97 = 14 degree; 0.95,0.15
-//		//if(angle<0.05 && fabs(p_map.d-p.d)<0.08) //planes can be merged
-//		{
-//		  /*if(p.normal(2)>0.9)
-//		  {
-//			std::cout << "map: " << p_map.d << "," << p_map.normal << std::endl;
-//			std::cout << "new feature: " << p.d << "," << p.normal << std::endl;
-//		  }*/
-//		  gpc_polygon gpc_result;
-//		  gpc_polygon gpc_p_merge;
-//		  gpc_polygon gpc_p_map;
-////		  std::cout << "Planes before merging:\n";
-////		  std::cout << "New f: " << p.normal(0) << "," << p.normal(1) << "," << p.normal(2) << "," << p.d << std::endl;
-////		  std::cout << "Map f: " << p_map.normal(0) << "," << p_map.normal(1) << "," << p_map.normal(2) << "," << p_map.d << std::endl;
-//		  double d_p = p.d;
-//		  Eigen::Vector3f normal_p(p.normal(0), p.normal(1), p.normal(2));
-//		  if(p_map.normal.dot(normal_p)<-0.95) {normal_p = -normal_p, d_p=-d_p;}
-////		  std::cout << "dot: " << p_map.normal.dot(normal_p) << std::endl;
-//		  Eigen::Vector3f n_map = p_map.normal + normal_p;
-//		  double d_map = p_map.d + d_p;
-////		  std::cout << "d_map before norm: " << d_map << "," << n_map.norm() << std::endl;
-//		  d_map = d_map/n_map.norm();
-//		  n_map.normalize();
-//		  Eigen::Vector3f ft_pt;
-//		  double x = -d_map/(n_map(0)+n_map(1)+n_map(2));
-//		  ft_pt << x,x,x;
-//		  /*if(fabs(n_map(2))>0.01)
-//			ft_pt << 0, 0, -d_map/n_map(2);
-//		  else if(fabs(n_map(0))>0.01)
-//			ft_pt << -d_map/n_map(0), 0, 0;
-//		  else if(fabs(n_map(1))>0.01)
-//			ft_pt << 0, -d_map/n_map(1), 0;*/
-////		  std::cout << "Merged plane:\n";
-////		  std::cout << "Merged f: " << n_map(0) << "," << n_map(1) << "," << n_map(2) << "," << d_map << std::endl;
-////		  std::cout << "FP: " << ft_pt(0) << "," << ft_pt(1) << "," << ft_pt(2) << std::endl;
-//		  Eigen::Affine3f transformation_from_plane_to_world;
-//		  Eigen::Affine3f transformation_from_world_to_plane;
-//		  getTransformationFromPlaneToWorld(n_map, ft_pt, transformation_from_plane_to_world);
-//		  //transformation_from_world_to_plane = transformation_from_plane_to_world.inverse();
-//		  transformation_from_world_to_plane = p_map.transform_from_world_to_plane;
-//		  //std::cout << "Transform new feature" << std::endl;
-//		  getGpcStructureUsingMap(p, transformation_from_world_to_plane/*p_map.transform_from_world_to_plane*/, &gpc_p_merge);
-//		  //std::cout <<  p.transform_from_world_to_plane.matrix() << std::endl;
-//		  //printGpcStructure(&gpc_p_merge);
-//		  //getGpcStructure(p, &gpc_p_merge);
-//		  //std::cout <<  p.transform_from_world_to_plane.matrix() << std::endl;
-//		  //printGpcStructure(&gpc_p_merge);
-//		  //std::cout << "Transform map" << std::endl;
-//		  getGpcStructureUsingMap(p_map, transformation_from_world_to_plane/*p_map.transform_from_world_to_plane*/, &gpc_p_map);
-//		  //printGpcStructure(&gpc_p_map);
-//		  gpc_polygon_clip(GPC_INT, &gpc_p_merge, &gpc_p_map, &gpc_result);
-////        std::cout << "num contours intersect: " << gpc_result.num_contours << std::endl;
-//		  if(gpc_result.num_contours == 0)
-//		  {
-//			std::cout << "no intersection" << std::endl;
-//			std::cout << p.normal << std::endl;
-//			continue;
-//		  }
-//		  gpc_polygon_clip(GPC_UNION, &gpc_p_merge, &gpc_p_map, &gpc_result);
-//		  /*else if(gpc_result.num_contours >= gpc_p_map.num_contours + gpc_p_merge.num_contours)
-//		  {
-//			std::cout << "merge failed" << std::endl;
-//			std::cout << "feature id: " << i << std::endl;
-//			continue;
-//		  }*/
-//		  //else
-//		  {
-//			/*if(fabs(p_map.normal(1))>0.8)
-//			{
-//			  printMapEntry(p_map);
-//			  std::cout << "Trafo from plane to world: " << std::endl;
-//			  std::cout <<  p_map.transform_from_world_to_plane.inverse().matrix() << std::endl;
-//			}*/
-//			//gpc_result = gpc_p_map;
-//			/*p_map.transform_from_world_to_plane = transformation_from_world_to_plane;
-//			p_map.normal = n_map;
-//			p_map.d = d_map;*/
-//			p_map.polygon_world.resize(gpc_result.num_contours);
-//			/*for(int j=0; j<gpc_p_merge.num_contours; j++)
-//			{
-//			  p_map.polygon_world[j].resize(gpc_p_merge.contour[j].num_vertices);
-//			  for(int k=0; k<gpc_p_merge.contour[j].num_vertices; k++)
-//			  {
-//				//TODO: set z to something else?
-//				Eigen::Vector3f point(gpc_p_merge.contour[j].vertex[k].x, gpc_p_merge.contour[j].vertex[k].y, 0);
-//				p_map.polygon_world[j][k] = p_map.transform_from_world_to_plane.inverse()*point;
-//				//TODO: update normal, d, transformation...?
-//			  }
-//			}*/
-//			//printGpcStructure(&gpc_result);
-//			for(int j=0; j<gpc_result.num_contours; j++)
-//			{
-//			  p_map.polygon_world[j].resize(gpc_result.contour[j].num_vertices);
-//			  //std::cout << p_map.polygon_world[j].size() << std::endl;
-//			  for(int k=0; k<gpc_result.contour[j].num_vertices; k++)
-//			  {
-//				//TODO: set z to something else?
-//				Eigen::Vector3f point(gpc_result.contour[j].vertex[k].x, gpc_result.contour[j].vertex[k].y, 0);
-//				p_map.polygon_world[j][k] = p_map.transform_from_world_to_plane.inverse()*point;
-//				//TODO: update normal, d, transformation...?
-//			  }
-//			}
-//			std::cout << i << ": feature merged" << std::endl;
-//			/*if(fabs(p_map.normal(1))>0.8)
-//			{
-//			  printGpcStructure(&gpc_result);
-//			  printMapEntry(p_map);
-//			}*/
-//			merged = true;
-//			p_map.merged++;
-//
-//			break;
-//		  }
-//		  gpc_free_polygon(&gpc_result);
-//		  gpc_free_polygon(&gpc_p_merge);
-//		  gpc_free_polygon(&gpc_p_map);
-//
-//
-//
-//
-//		}
-//
-//
-//  }
-  //new entry
-//  if(!merged)
+}
+else
+{
 
-  //printGpcStructure(&gpc_p);
+  for(size_t i=0; i< map_.size(); i++)
+  {
+		//std::cout << "loop" << std::endl;
+		  MapEntry& p_map = *(map_[i]);
+		//Eigen::Vector3f n2(p.normal(0), p.normal(1), p.normal(2));
+		//n2.normalize();
+		//double angle = fabs(std::acos(p_map.normal.dot(n2)));
+		/*if(n2(0)>0.9 || n2(0)<-0.9)
+		{
+		  std::cout << "x axis" << std::endl;
+		  std::cout << "n:" << n2 << std::endl;
+		  std::cout << "n_map:" << p_map.normal << std::endl;
+		  std::cout << "d, d_map:" << p.d << "," << p_map.d << std::endl;
+		}*/
+		//std::cout << p_map_normal_d.dot(p_normal_d) << std::endl;
+		if((p_map.normal.dot(p.normal)>0.95 && fabs(p_map.d-p.d)<0.1) ||
+			(p_map.normal.dot(p.normal)<-0.95 && fabs(p_map.d+p.d)<0.1))
+		//if(fabs(p_map.normal.dot(n2))>0.95 && fabs(fabs(p_map.d)-fabs(p.d))<0.25) //0.97 = 14 degree; 0.95,0.15
+		//if(angle<0.05 && fabs(p_map.d-p.d)<0.08) //planes can be merged
+		{
+		  /*if(p.normal(2)>0.9)
+		  {
+			std::cout << "map: " << p_map.d << "," << p_map.normal << std::endl;
+			std::cout << "new feature: " << p.d << "," << p.normal << std::endl;
+		  }*/
+		  gpc_polygon gpc_result;
+		  gpc_polygon gpc_p_merge;
+		  gpc_polygon gpc_p_map;
+//		  std::cout << "Planes before merging:\n";
+//		  std::cout << "New f: " << p.normal(0) << "," << p.normal(1) << "," << p.normal(2) << "," << p.d << std::endl;
+//		  std::cout << "Map f: " << p_map.normal(0) << "," << p_map.normal(1) << "," << p_map.normal(2) << "," << p_map.d << std::endl;
+		  double d_p = p.d;
+		  Eigen::Vector3f normal_p(p.normal(0), p.normal(1), p.normal(2));
+		  if(p_map.normal.dot(normal_p)<-0.95) {normal_p = -normal_p, d_p=-d_p;}
+//		  std::cout << "dot: " << p_map.normal.dot(normal_p) << std::endl;
+		  Eigen::Vector3f n_map = p_map.normal + normal_p;
+		  double d_map = p_map.d + d_p;
+		//  std::cout << "d_map before norm: " << d_map << "," << n_map.norm() << std::endl;
+		  d_map = d_map/n_map.norm();
+		  n_map.normalize();
+		//  std::cout << "d map und normale " << d_map << " normale " << n_map << std::endl;
+		  Eigen::Vector3f ft_pt;
+		  double x = -d_map/(n_map(0)+n_map(1)+n_map(2));
+		  ft_pt << x,x,x;
+
+		  /*if(fabs(n_map(2))>0.01)
+			ft_pt << 0, 0, -d_map/n_map(2);
+		  else if(fabs(n_map(0))>0.01)
+			ft_pt << -d_map/n_map(0), 0, 0;
+		  else if(fabs(n_map(1))>0.01)
+			ft_pt << 0, -d_map/n_map(1), 0;*/
+//		  std::cout << "Merged plane:\n";
+//		  std::cout << "Merged f: " << n_map(0) << "," << n_map(1) << "," << n_map(2) << "," << d_map << std::endl;
+		  std::cout << "FP: " << ft_pt(0) << "," << ft_pt(1) << "," << ft_pt(2) << std::endl;
+		  Eigen::Affine3f transformation_from_plane_to_world;
+		  Eigen::Affine3f transformation_from_world_to_plane;
+		  getTransformationFromPlaneToWorld(n_map, ft_pt, transformation_from_plane_to_world);
+		  //transformation_from_world_to_plane = transformation_from_plane_to_world.inverse();
+		  transformation_from_world_to_plane = p_map.transform_from_world_to_plane;
+		  //std::cout << "Transform new feature" << std::endl;
+		  getGpcStructureUsingMap(p, transformation_from_world_to_plane/*p_map.transform_from_world_to_plane*/, &gpc_p_merge);
+		  //std::cout <<  p.transform_from_world_to_plane.matrix() << std::endl;
+		  //printGpcStructure(&gpc_p_merge);
+		  //getGpcStructure(p, &gpc_p_merge);
+		  //std::cout <<  p.transform_from_world_to_plane.matrix() << std::endl;
+		  //printGpcStructure(&gpc_p_merge);
+		  //std::cout << "Transform map" << std::endl;
+		  getGpcStructureUsingMap(p_map, transformation_from_world_to_plane/*p_map.transform_from_world_to_plane*/, &gpc_p_map);
+		  //printGpcStructure(&gpc_p_map);
+		  gpc_polygon_clip(GPC_INT, &gpc_p_merge, &gpc_p_map, &gpc_result);
+//        std::cout << "num contours intersect: " << gpc_result.num_contours << std::endl;
+		  if(gpc_result.num_contours == 0)
+		  {
+			std::cout << "no intersection" << std::endl;
+			std::cout << p.normal << std::endl;
+			continue;
+		  }
+		  gpc_polygon_clip(GPC_UNION, &gpc_p_merge, &gpc_p_map, &gpc_result);
+		  /*else if(gpc_result.num_contours >= gpc_p_map.num_contours + gpc_p_merge.num_contours)
+		  {
+			std::cout << "merge failed" << std::endl;
+			std::cout << "feature id: " << i << std::endl;
+			continue;
+		  }*/
+		  //else
+		  {
+			/*if(fabs(p_map.normal(1))>0.8)
+			{
+			  printMapEntry(p_map);
+			  std::cout << "Trafo from plane to world: " << std::endl;
+			  std::cout <<  p_map.transform_from_world_to_plane.inverse().matrix() << std::endl;
+			}*/
+			//gpc_result = gpc_p_map;
+			/*p_map.transform_from_world_to_plane = transformation_from_world_to_plane;
+			p_map.normal = n_map;
+			p_map.d = d_map;*/
+			p_map.polygon_world.resize(gpc_result.num_contours);
+			/*for(int j=0; j<gpc_p_merge.num_contours; j++)
+			{
+			  p_map.polygon_world[j].resize(gpc_p_merge.contour[j].num_vertices);
+			  for(int k=0; k<gpc_p_merge.contour[j].num_vertices; k++)
+			  {
+				//TODO: set z to something else?
+				Eigen::Vector3f point(gpc_p_merge.contour[j].vertex[k].x, gpc_p_merge.contour[j].vertex[k].y, 0);
+				p_map.polygon_world[j][k] = p_map.transform_from_world_to_plane.inverse()*point;
+				//TODO: update normal, d, transformation...?
+			  }
+			}*/
+			//printGpcStructure(&gpc_result);
+			for(int j=0; j<gpc_result.num_contours; j++)
+			{
+			  p_map.polygon_world[j].resize(gpc_result.contour[j].num_vertices);
+			  //std::cout << p_map.polygon_world[j].size() << std::endl;
+			  for(int k=0; k<gpc_result.contour[j].num_vertices; k++)
+			  {
+				//TODO: set z to something else?
+				Eigen::Vector3f point(gpc_result.contour[j].vertex[k].x, gpc_result.contour[j].vertex[k].y, 0);
+				p_map.polygon_world[j][k] = p_map.transform_from_world_to_plane.inverse()*point;
+				//TODO: update normal, d, transformation...?
+			  }
+			}
+			std::cout << i << ": feature merged" << std::endl;
+			/*if(fabs(p_map.normal(1))>0.8)
+			{
+			  printGpcStructure(&gpc_result);
+			  printMapEntry(p_map);
+			}*/
+			merged = true;
+			p_map.merged++;
+
+			break;
+		  }
+		  gpc_free_polygon(&gpc_result);
+		  gpc_free_polygon(&gpc_p_merge);
+		  gpc_free_polygon(&gpc_p_map);
+
+
+
+
+		}
+
+
+  }
+  //new entry
+  if(!merged)
+  {
+    Eigen::Affine3f transformation_from_plane_to_world;
+    getTransformationFromPlaneToWorld(p.normal, p.polygon_world[0][0], transformation_from_plane_to_world);
+    p.transform_from_world_to_plane = transformation_from_plane_to_world.inverse();
+    p.id = new_id_;
+    map_.push_back(p_ptr);
+    new_id_++;
+    std::cout << "feature added" << std::endl;
+    //ROS_INFO("added new feature");
+  }
+}
+
+ // printGpcStructure(&gpc_p);
   //gpc_free_polygon(&gpc_p);
   if(save_to_file_) saveMap(file_path_);
 
@@ -481,7 +496,6 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 		 if(p.normal.dot(p_map.normal)<0){
 			 p_map.normal=-p_map.normal;
 			 p_map.d=-p_map.d;
-			 std::cout << "umgedreht" << std::endl;
 		 }
 		 average_normal += (p_map.merged+1)* p_map.normal;    // PROBLEM RICHTUNG
 		 average_d +=(p_map.merged+1)* p_map.d;
@@ -491,11 +505,13 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 	average_d=average_d/merge_counter;
 	average_normal.normalize();
 
-	std::cout << average_normal;
+	std::cout << "average d " << average_d << std::endl;
 
 	Eigen::Vector3f ft_pt;
-	double x = average_d/(average_normal(0)+average_normal(1)+average_normal(2));
-	ft_pt << x,x,x;
+//	double x = -average_d/(average_normal(0)+average_normal(1)+average_normal(2));
+//	ft_pt << 1,1,-average_normal(0)/average_normal(2)-average_normal(1)/average_normal(2)+average_d/average_normal(2);
+	getPointOnPlane(average_normal,average_d,ft_pt);
+    std::cout << "FP: " << ft_pt(0) << "," << ft_pt(1) << "," << ft_pt(2) << std::endl;
 
 	Eigen::Affine3f transformation_from_plane_to_world;
 	Eigen::Affine3f transformation_from_world_to_plane;
@@ -505,7 +521,7 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 	gpc_polygon gpc_result;
 	gpc_polygon gpc_p_map;
 
-	getGpcStructureUsingMap(p, transformation_from_world_to_plane/*p_map.transform_from_world_to_plane*/, &gpc_result);
+	getGpcStructureUsingMap(p, transformation_from_world_to_plane, &gpc_result);
 
 	for(int i=0 ; i<intersections.size();i++)
 	{
@@ -730,6 +746,35 @@ GeometryMap::getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,
   transformation = transformation.inverse();
 }
 
+void
+GeometryMap::getPointOnPlane(const Eigen::Vector3f &normal,double d,Eigen::Vector3f &point)
+{
+	int counter=0;
+	std::vector<int> no_zero_direction;
+	for(int i=0 ;i<3;i++)
+	{
+		if(normal[i]==0)
+			counter++;
+		else
+		no_zero_direction.push_back(i);
+	}
+	if(counter==0)
+	{
+		point << 1,1,-normal(0)/normal(2)-normal(1)/normal(2)+d/normal(2);
+	}
+	if(counter==1)
+	{
+		point << 0,0,0;
+		point[no_zero_direction[0]]=1;
+		point[no_zero_direction[1]]=-normal(no_zero_direction[0])/normal(no_zero_direction[1])+d/normal(no_zero_direction[1]);
+	}
+	if(counter==2)
+	{
+		point << 0,0,0;
+		point(no_zero_direction[0])=d/normal(no_zero_direction[0]);
+	}
+}
+
 /*int main (int argc, char** argv)
  {
 
@@ -794,10 +839,10 @@ int main (int argc, char** argv)
   v << 0,0,1;
   vv.push_back(v);
   m_p->polygon_world.push_back(vv);
-  gm.addMapEntry(m_p);
+//  gm.addMapEntry(m_p);
 
 
-  gmv.showPolygon(m_p,0);
+//  gmv.showPolygon(m_p,0);
 
   m_p = MapEntryPtr(new MapEntry());
   m_p->id = 1;
@@ -813,7 +858,7 @@ int main (int argc, char** argv)
   v << 0,0,-1;
   vv.push_back(v);
   m_p->polygon_world.push_back(vv);
-  gm.addMapEntry(m_p);
+  //gm.addMapEntry(m_p);
 
   /*m_p = MapEntryPtr(new MapEntry());
   m_p->id = 1;
@@ -831,7 +876,14 @@ int main (int argc, char** argv)
   m_p->polygon_world.push_back(vv);
   gm.addMapEntry(m_p);*/
   gm.saveMap("/home/goa/pcl_daten/merge_test/");
-}
+
+/*  Eigen::Vector3f test;
+  Eigen::Vector3f result;
+  double d=1;
+  test << 1,1,1;
+  gm.getPointOnPlane(test,d,result);
+  std::cout << result(0) <<"," << result(1) <<","<< result(2);*/
+ }
 
 
 

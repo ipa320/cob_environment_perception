@@ -165,6 +165,9 @@ public:
                                     const Eigen::Vector3f &origin,
                                     Eigen::Affine3f &transformation);
 
+  void
+  getPointOnPlane(const Eigen::Vector3f &normal,double d,Eigen::Vector3f &point);
+
   boost::shared_ptr<std::vector<MapEntryPtr> >
   getMap()
   {

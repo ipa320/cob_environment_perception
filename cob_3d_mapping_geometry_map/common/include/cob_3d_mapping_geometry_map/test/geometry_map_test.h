@@ -30,6 +30,14 @@ public:
 	rotate();
 
 	void
+	curve();
+
+	void
+	easyplane();
+
+
+
+	void
 	strongMerged();
 
 	void
