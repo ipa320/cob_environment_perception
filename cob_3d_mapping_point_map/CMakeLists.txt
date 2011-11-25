@@ -32,10 +32,11 @@ rosbuild_add_library(cob_3d_mapping_point_map
 	common/src/point_map.cpp)
 	
 rosbuild_add_library(cob_3d_mapping_point_map_nodelets
-	ros/src/aggregate_point_map.cpp)
+	ros/src/point_map_nodelet.cpp)
 	
 rosbuild_add_executable(trigger_mapping_action_client ros/src/trigger_mapping_action_client.cpp)
 rosbuild_add_executable(set_reference_map_client ros/src/set_reference_map.cpp)
+rosbuild_add_executable(get_map_client ros/src/get_map_client.cpp)
 	
 target_link_libraries(cob_3d_mapping_point_map_nodelets cob_3d_mapping_point_map)
 #common commands for building c++ executables and libraries
