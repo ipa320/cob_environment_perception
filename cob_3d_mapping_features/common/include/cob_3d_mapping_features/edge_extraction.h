@@ -52,41 +52,47 @@
  *
  ****************************************************************/
 
-#ifndef __EDGE_ESTIMATION_2D_H__
-#define __EDGE_ESTIMATION_2D_H__
+#ifndef __EDGE_EXTRACTION_H__
+#define __EDGE_EXTRACTION_H__
 
 #include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <cv.h>
 
 namespace cob_3d_mapping_features
 {
-  template <typename PointInT, typename PointOutT> 
-  class EdgeEstimation2D
+  template <typename PointInT, typename PointOutT>
+  class EdgeExtraction
   {
   public:
-    EdgeEstimation2D () { };
-    ~EdgeEstimation2D () { };
+    EdgeExtraction () : threshold_(0.0)
+    { };
+    ~EdgeExtraction () { };
 
     typedef pcl::PointCloud<PointInT> PointCloudIn;
     typedef boost::shared_ptr<PointCloudIn> PointCloudInPtr;
     typedef boost::shared_ptr<const PointCloudIn> PointCloudInConstPtr;
     typedef pcl::PointCloud<PointOutT> PointCloudOut;
 
-    void setInputCloud (const PointCloudInConstPtr &cloud)
+    void setInput2DEdges (const PointCloudInConstPtr &cloud)
     {
-      input_ = cloud;
+      input_2d_ = cloud;
     }
 
-    void getColorImage(cv::Mat& color_image);
-    void extractEdgesSobel(std::vector<cv::Mat> &image_channels, cv::Mat& sobel_image);
-    void extractEdgesLaPlace(std::vector<cv::Mat> &image_channels, cv::Mat& laplace_image);
-    void computeEdges(PointCloudOut &output);
-    void computeEdges(cv::Mat &sobel_out, cv::Mat &laplace_out, cv::Mat &combined_out);
+    void setInput3DEdges (const PointCloudInConstPtr &cloud)
+    {
+      input_3d_ = cloud;
+    }
+
+    void setThreshold (const float &threshold)
+    {
+      threshold_ = threshold;
+    }
+    
+    void extractEdges (PointCloudOut &output);
 
   protected:
-    PointCloudInConstPtr input_;
-
+    PointCloudInConstPtr input_2d_;
+    PointCloudInConstPtr input_3d_;
+    float threshold_;
   };
 }
 

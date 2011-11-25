@@ -32,18 +32,16 @@ rosbuild_add_library(cob_3d_mapping_features
 	common/src/range_image_border_extractor.cpp
 	common/src/edge_estimation_3d.cpp
 	common/src/edge_estimation_2d.cpp
+	common/src/edge_extraction.cpp
+	common/src/segmentation.cpp
 	common/src/plane_extraction.cpp
 	common/src/knn_classifier.cpp)
 
 rosbuild_add_library(cob_3d_mapping_features_nodelets
 	ros/src/plane_extraction_nodelet.cpp)
 
-rosbuild_add_executable(test_edge_extraction 
-	common/src/segmentation.cpp
-	common/test/test_edge_extraction.cpp)
-rosbuild_add_executable(test_segmentation 
-	common/src/segmentation.cpp
-	common/test/test_segmentation.cpp)
+rosbuild_add_executable(test_edge_extraction common/test/test_edge_extraction.cpp)
+rosbuild_add_executable(test_segmentation common/test/test_new_segmentation.cpp)
 rosbuild_add_executable(test_plane_extraction common/src/plane_extraction.cpp)
 rosbuild_add_executable(plane_extraction_action_client ros/src/plane_extraction_action_client.cpp)
 rosbuild_add_executable(fpfh_svm_trainer common/test/fpfh_svm_trainer.cpp)
@@ -56,6 +54,7 @@ rosbuild_add_compile_flags(feature_evaluation -DEIGEN_YES_I_KNOW_SPARSE_MODULE_I
 
 target_link_libraries(test_edge_extraction cob_3d_mapping_features)
 target_link_libraries(test_edge_estimation cob_3d_mapping_features)
+target_link_libraries(test_segmentation cob_3d_mapping_features)
 target_link_libraries(feature_evaluation cob_3d_mapping_features)
 target_link_libraries(cob_3d_mapping_features_nodelets cob_3d_mapping_features)
 

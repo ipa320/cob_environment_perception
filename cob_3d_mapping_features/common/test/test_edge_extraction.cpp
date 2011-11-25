@@ -96,6 +96,7 @@
 
 typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloudT;
 typedef pcl::PointXYZRGB PointT;
+typedef cob_3d_mapping_features::Coords Coords;
 
 /*
 struct Coords
@@ -1189,7 +1190,7 @@ int main(int argc, char** argv)
   }
 
   pcl::io::savePCDFileASCII (directory+"/output/edge_cloud.pcd", *cloud_out2);
-  Segmentation seg;
+  cob_3d_mapping_features::Segmentation seg;
   seg.propagateWavefront2(cloud_out2);
 
   std::vector<pcl::PointIndices> clusters;

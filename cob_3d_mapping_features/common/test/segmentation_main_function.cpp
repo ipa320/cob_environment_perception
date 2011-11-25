@@ -4,7 +4,7 @@
 
 int main()
 {
-  Segmentation seg;
+  cob_3d_mapping_features::Segmentation seg;
   pcl::PointCloud<PointLabel>::Ptr cloud_in = pcl::PointCloud<PointLabel>::Ptr (new pcl::PointCloud<PointLabel>);
   cv::Mat seg_img;
   std::vector<pcl::PointIndices> cluster_indices;

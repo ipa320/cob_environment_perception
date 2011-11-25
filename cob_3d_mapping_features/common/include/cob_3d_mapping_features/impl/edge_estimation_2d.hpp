@@ -121,7 +121,7 @@ cob_3d_mapping_features::EdgeEstimation2D<PointInT,PointOutT>::extractEdgesLaPla
 
 template <typename PointInT, typename PointOutT> void
 cob_3d_mapping_features::EdgeEstimation2D<PointInT,PointOutT>::computeEdges(
-  pcl::PointCloud<PointOutT> &output)
+  PointCloudOut &output)
 {
   cv::Mat color_image(input_->height, input_->width, CV_8UC3);
   getColorImage(color_image);
@@ -131,17 +131,17 @@ cob_3d_mapping_features::EdgeEstimation2D<PointInT,PointOutT>::computeEdges(
   extractEdgesSobel(img_channels, img_sobel);
   extractEdgesLaPlace(img_channels, img_laplace);
 
-  cv::normalize(img_sobel, img_sobel, 0, 0.5, cv::NORM_MINMAX);
-  cv::normalize(img_laplace, img_laplace, 0, 0.5, cv::NORM_MINMAX);
   img_combined = img_sobel + img_laplace;
+  //cv::normalize(img_combined, img_combined, 0, 1, cv::NORM_MINMAX);
+  cv::threshold(img_combined, img_combined, 1, 1, cv::THRESH_TRUNC);
   
   output.height = input_->height;
   output.width = input_->width;
   output.points.resize(output.height * output.width);
   
-  for (int i=0; i < output.height; i++)
+  for (unsigned int i=0; i < output.height; i++)
   {
-    for (int j=0; j < output.width; j++)
+    for (unsigned int j=0; j < output.width; j++)
     {
       output.points[i*output.width+j].strength = img_combined.at<float>(i,j);
     }
@@ -156,12 +156,13 @@ cob_3d_mapping_features::EdgeEstimation2D<PointInT,PointOutT>::computeEdges(
   getColorImage(color_image);
   std::vector<cv::Mat> img_channels(3);
   cv::split(color_image, img_channels);
-  cv::Mat img_sobel, img_laplace, img_sobel2, img_laplace2, img_combined;
+  cv::Mat img_sobel, img_laplace, img_combined;
   extractEdgesSobel(img_channels, img_sobel);
   extractEdgesLaPlace(img_channels, img_laplace);
-  cv::normalize(img_sobel, img_sobel2, 0, 0.5, cv::NORM_MINMAX);
-  cv::normalize(img_laplace, img_laplace2, 0, 0.5, cv::NORM_MINMAX);
-  img_combined = img_sobel2 + img_laplace2;
+
+  img_combined = img_sobel + img_laplace;
+  //cv::normalize(img_combined, img_combined, 0, 1, cv::NORM_MINMAX);
+  cv::threshold(img_combined, img_combined, 1, 1, cv::THRESH_TRUNC);
 
   sobel_out = img_sobel;
   laplace_out = img_laplace;

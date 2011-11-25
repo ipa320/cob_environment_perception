@@ -180,7 +180,7 @@ namespace cob_3d_mapping_features
   };
 }
 
-#include "cob_3d_mapping_features/impl/edge_estimation_3d.hpp"
+//#include "cob_3d_mapping_features/impl/edge_estimation_3d.hpp"
 
 #endif  //#ifndef __EDGE_ESTIMATION_3D_H__
 
