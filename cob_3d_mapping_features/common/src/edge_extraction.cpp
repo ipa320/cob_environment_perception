@@ -52,42 +52,10 @@
  *
  ****************************************************************/
 
-#ifndef __EDGE_ESTIMATION_2D_H__
-#define __EDGE_ESTIMATION_2D_H__
-
-#include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <cv.h>
+#include <pcl/impl/instantiate.hpp>
+#include "cob_3d_mapping_common/point_types.h"
+#include "cob_3d_mapping_features/edge_extraction.h"
+#include "cob_3d_mapping_features/impl/edge_extraction.hpp"
 
-namespace cob_3d_mapping_features
-{
-  template <typename PointInT, typename PointOutT> 
-  class EdgeEstimation2D
-  {
-  public:
-    EdgeEstimation2D () { };
-    ~EdgeEstimation2D () { };
-
-    typedef pcl::PointCloud<PointInT> PointCloudIn;
-    typedef boost::shared_ptr<PointCloudIn> PointCloudInPtr;
-    typedef boost::shared_ptr<const PointCloudIn> PointCloudInConstPtr;
-    typedef pcl::PointCloud<PointOutT> PointCloudOut;
-
-    void setInputCloud (const PointCloudInConstPtr &cloud)
-    {
-      input_ = cloud;
-    }
-
-    void getColorImage(cv::Mat& color_image);
-    void extractEdgesSobel(std::vector<cv::Mat> &image_channels, cv::Mat& sobel_image);
-    void extractEdgesLaPlace(std::vector<cv::Mat> &image_channels, cv::Mat& laplace_image);
-    void computeEdges(PointCloudOut &output);
-    void computeEdges(cv::Mat &sobel_out, cv::Mat &laplace_out, cv::Mat &combined_out);
-
-  protected:
-    PointCloudInConstPtr input_;
-
-  };
-}
-
-#endif
+PCL_INSTANTIATE_EdgeExtraction(pcl::InterestPoint,PointLabel)

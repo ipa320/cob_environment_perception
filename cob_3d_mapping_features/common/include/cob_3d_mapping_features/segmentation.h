@@ -61,44 +61,42 @@
 #include <opencv2/core/core.hpp>
 #include <cob_3d_mapping_common/point_types.h>
 
-struct Coords
+namespace cob_3d_mapping_features
 {
-  int u;
-  int v;
 
-  Coords(int u_in, int v_in)
+  struct Coords
   {
-    u = u_in;
-    v=  v_in;
-  }
-};
+    int u;
+    int v;
+
+    Coords(int u_in, int v_in)
+      {
+	u = u_in;
+	v=  v_in;
+      }
+  };
 
   class Segmentation
   {
+  public:
+    /** \brief Empty constructor. */
+    Segmentation () { };
 
-
-    public:
-      /** \brief Empty constructor. */
-      Segmentation ()
-      {
-      };
-
-      int
-        searchForNeighbors (
-            pcl::PointCloud<PointLabel>::Ptr& cloud_in,
-            int col, int row,
-            double radius,
-            std::vector<int>& indices_ul,
-            std::vector<int>& indices_ur,
-            std::vector<int>& indices_lr,
-            std::vector<int>& indices_ll,
-            bool& gap_l, bool& gap_r, bool& gap_a, bool& gap_d);
-      bool isStopperInNeighbors(pcl::PointCloud<PointLabel>::Ptr& cloud_in, std::vector<int>& indices);
-      void propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_in);
-      void getClusterIndices(pcl::PointCloud<PointLabel>::Ptr& cloud_in, std::vector<pcl::PointIndices>& cluster_indices, cv::Mat& seg_img);
+    int searchForNeighbors (
+      pcl::PointCloud<PointLabel>::Ptr& cloud_in,
+      int col, int row,
+      double radius,
+      std::vector<int>& indices_ul,
+      std::vector<int>& indices_ur,
+      std::vector<int>& indices_lr,
+      std::vector<int>& indices_ll,
+      bool& gap_l, bool& gap_r, bool& gap_a, bool& gap_d);
+    bool isStopperInNeighbors(pcl::PointCloud<PointLabel>::Ptr& cloud_in, std::vector<int>& indices);
+    void propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_in);
+    void getClusterIndices(pcl::PointCloud<PointLabel>::Ptr& cloud_in, std::vector<pcl::PointIndices>& cluster_indices, cv::Mat& seg_img);
 
   };
-
+}
 
 #endif  //#ifndef __SEGMENTATION_H__
 
