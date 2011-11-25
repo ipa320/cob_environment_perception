@@ -1,6 +1,6 @@
 /****************************************************************
  *
- * Copyright (c) 2010
+ * Copyright (c) 2011
  *
  * Fraunhofer Institute for Manufacturing Engineering
  * and Automation (IPA)
@@ -8,16 +8,18 @@
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
  * Project name: care-o-bot
- * ROS stack name: cob_environment_perception
- * ROS package name: cob_3d_mapping_point_map
+ * ROS stack name: cob_environment_perception_intern
+ * ROS package name: cob_3d_mapping_tools
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
- * Author: Joshua Hampp, email:joshua.hampp@ipa.fhg.de
+ * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 09/2011
+ * Date of creation: 11/2011
+ * ToDo:
+ *
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
@@ -50,59 +52,49 @@
  *
  ****************************************************************/
 
-//##################
-//#### includes ####
+#ifndef COB_3D_MAPPING_TOOLS_IO_H_
+#define COB_3D_MAPPING_TOOLS_IO_H_
 
-// ROS includes
-#include <ros/ros.h>
-#include <actionlib/client/simple_action_client.h>
-#include <actionlib/client/terminal_state.h>
-
-// ROS message includes
-#include <cob_3d_mapping_msgs/SetReferenceMap.h>
-
-// PCL includes
-#include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
 
-// Other includes
-#include "cob_3d_mapping_point_map/point_map.h"
+#include <float.h>
 
-int main (int argc, char **argv)
+namespace cob_3d_mapping_tools
 {
-  if(argc<1) {
-    ROS_ERROR("Please specify path to map file\nrosrun cob_env_model set_reference_map myfile.pcd");
-    return -1;
-  }
-  ros::init(argc, argv, "set_reference_map");
-
-  ros::NodeHandle nh;
-
-  ROS_INFO("Waiting for service server to start.");
-  // wait for the server to start
-  ros::service::waitForService("set_reference_map"); //will wait for infinite time
-
-  ROS_INFO("Server started, sending map.");
-
-  //create message
-  cob_3d_mapping_msgs::SetReferenceMapRequest req;
-
-  pcl::PointCloud<PointMap::Point> map;
-  if(pcl::io::loadPCDFile(argv[1], map)!=0) {
-    ROS_ERROR("Couldn't open pcd file. Sorry.");
-    return -1;
-  }
-
-  pcl::toROSMsg(map,req.map);
-  cob_3d_mapping_msgs::SetReferenceMapResponse resp;
-
-  if (ros::service::call("set_reference_map", req,resp))
+  class PPMReader
   {
-    ROS_INFO("Service call finished.");
-  }
-  else
-    ROS_INFO("AService call failed.");
+  public:
+    PPMReader()
+    {
+    }
 
-  return 0;
+    int mapRGB (const std::string &file_name, pcl::PointCloud<pcl::PointXYZRGBA> &cloud);
+
+  };
+  
+  class PPMWriter
+  {
+  public:
+    PPMWriter()
+      : fixed_max_(false), fixed_min_(false), max_z_(FLT_MIN), min_z_(FLT_MAX)
+    {
+    }
+
+    int writeRGB (const std::string &file_name, const pcl::PointCloud<pcl::PointXYZRGBA> &cloud);
+
+    int writeDepth (const std::string &file_name, const pcl::PointCloud<pcl::PointXYZRGBA> &cloud);
+
+    void setMaxZ (const float &max);
+    void setMinZ (const float &min);
+
+    bool fixed_max_;
+    bool fixed_min_;
+    float max_z_;
+    float min_z_;
+  };
+
+  uint32_t getGradientColor(double position, uint8_t rgb[]);
 }
 
+#endif // #ifndef COB_3D_MAPPING_TOOLS_IO_H_

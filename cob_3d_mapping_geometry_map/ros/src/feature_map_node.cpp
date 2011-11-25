@@ -86,7 +86,9 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <cob_3d_mapping_msgs/PolygonArray.h>
+#include <cob_3d_mapping_msgs/PolygonArrayArray.h>
 #include <geometry_msgs/PolygonStamped.h>
+#include <cob_srvs/Trigger.h>
 
 // external includes
 #include <boost/timer.hpp>
@@ -109,7 +111,9 @@ public:
     //convex_hull_sub_ = n_.subscribe("table_hull", 1, &FeatureMap::subCallback, this);
     polygon_sub_ = n_.subscribe("polygon_array", 10, &FeatureMapNode::polygonCallback, this);
     map_pub_ = n_.advertise<geometry_msgs::PolygonStamped>("feature_map",1);
+    map_pub_2_ = n_.advertise<cob_3d_mapping_msgs::PolygonArrayArray>("feature_map_2",1);
     marker_pub_ = n_.advertise<visualization_msgs::Marker>("feature_marker",100);
+    clear_map_server_ = n_.advertiseService("clear_geometry_map", &FeatureMapNode::clearMap, this);
     n_.param("feature_map/file_path" ,file_path_ ,std::string("/home/goa/tmp/"));
     n_.param("feature_map/save_to_file" ,save_to_file_ ,false);
     feature_map_.setFilePath(file_path_);
@@ -164,8 +168,29 @@ public:
     //dumpPolygonToFile(*map_entry_ptr);
     feature_map_.addMapEntry(map_entry_ptr);
     publishMapMarker();
+    publishMap();
     ctr_++;
     //ROS_INFO("%d polygons received so far", ctr_);
+  }
+
+  /**
+   * @brief clears map
+   *
+   * deletes 3d map of the environment
+   *
+   * @param req not needed
+   * @param res not needed
+   *
+   * @return nothing
+   */
+  bool
+  clearMap(cob_srvs::Trigger::Request &req,
+           cob_srvs::Trigger::Response &res)
+  {
+    //TODO: add mutex
+    ROS_INFO("Clearing geometry map...");
+    feature_map_.clearMap();
+    return true;
   }
 
   /**
@@ -275,10 +300,16 @@ public:
 
   void publishMap()
   {
-    /*for(int i=0; i<map_.size(); i++)
+    boost::shared_ptr<std::vector<FeatureMap::MapEntryPtr> > map = feature_map_.getMap();
+    cob_3d_mapping_msgs::PolygonArrayArray map_msg;
+    for(unsigned int i=0; i<map->size(); i++)
     {
-      map_pub_.publish(map_[i].polygon_world);
-    }*/
+      FeatureMap::MapEntry& pm = *(map->at(i));
+      cob_3d_mapping_msgs::PolygonArray p;
+      convertToROSMsg(pm, p);
+      map_msg.polygon_array.push_back(p);
+    }
+    map_pub_2_.publish(map_msg);
   }
 
 
@@ -690,7 +721,9 @@ public:
 protected:
   ros::Subscriber polygon_sub_;
   ros::Publisher map_pub_;
+  ros::Publisher map_pub_2_;
   ros::Publisher marker_pub_;
+  ros::ServiceServer clear_map_server_;
 
   FeatureMap feature_map_;      /// map containing features (polygons)
 
