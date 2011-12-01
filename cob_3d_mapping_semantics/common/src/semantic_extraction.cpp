@@ -52,17 +52,134 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
-
+//internal include
 #include "cob_3d_mapping_semantics/semantic_extraction.h"
-//#include <vector.h>
-using namespace std;
 
-void
-SemanticExtraction::print()
+bool
+SemanticExtraction::isHorizontal (PolygonPtr p_ptr)
 {
-  std::cout<<" Entered common folder "<<std::endl;
+  //float norm = sqrt(pow(p_ptr->normal (0), 2) + pow(p_ptr->normal (1), 2) + pow(p_ptr->normal (2), 2));
+
+  /*
+   std::cout<<"\t%Nx: "<<p_ptr->normal(0)<<"----"<<norm<<std::endl;
+   std::cout<<"\t%Ny: "<<p_ptr->normal(1)<<std::endl;
+   std::cout<<"\t%Nz: "<<p_ptr->normal(2)<<std::endl;
+   */
+  if (p_ptr->normal (2) > 0.99 || p_ptr->normal (2) < -0.99)
+  {
+    if (p_ptr->normal (0) < 0.1 && p_ptr->normal (0) > -0.1)
+    {
+      if (p_ptr->normal (1) < 0.1 && p_ptr->normal (1) > -0.1)
+      {
+        return true;
+      }
+    }
+  }
+
+  else
+  {
+    return false;
+  }
 }
 
+bool
+SemanticExtraction::isHeightOk (PolygonPtr p_ptr)
+{
+  int count1 = 0;
+  int count2 = 0;
+  for (unsigned int i = 0; i < p_ptr->poly_points.size (); i++)
+  {
+    for (unsigned int j = 0; j < p_ptr->poly_points[i].size (); j++)
+    {
+      //std::cout<<"\t%x: "<<p_ptr->poly_points[i][j][0]<<std::endl;
+      //std::cout<<"\t%y: "<<p_ptr->poly_points[i][j][1]<<std::endl;
+      //std::cout<<"\t%z: "<<p_ptr->poly_points[i][j][2]<<std::endl;
+
+      if ((p_ptr->poly_points[i][j][2] < 1) && (p_ptr->poly_points[i][j][2] > 0.4))
+      {
+        count1++;
+        //std::cout<<" count1: "<<count1<<std::endl;
+        if (count1 > 10)
+        {
+          return true;
+          break;
+        }
+        else
+          continue;
+      }
+      else
+      {
+        count2++;
+        //std::cout<<" count2: "<<count2<<std::endl;
+        if (count2 > 10)
+        {
+          return false;
+          break;
+        }
+        else
+          continue;
+
+      }
+
+    }//end for inner
+  }//end for outer
+}
+
+bool
+SemanticExtraction::isSizeOk (PolygonPtr p_ptr)
+{
+
+  float xi, xi_1, yi, yi_1;
+  for (unsigned int i = 0; i < p_ptr->poly_points.size (); i++)
+  {
+    //std::cout << " p_ptr->poly_points[i].size----:" << p_ptr->poly_points.size () << std::endl;
+    float sum = 0;
+    float area = 0;
+    for (unsigned int j = 0; j < p_ptr->poly_points[i].size (); j++)
+    {
+      xi = p_ptr->poly_points[i][j][0];
+      yi = p_ptr->poly_points[i][j][1];
+      if (j == (p_ptr->poly_points[i].size ()) - 1)
+      {
+        xi_1 = p_ptr->poly_points[i][0][0];
+        yi_1 = p_ptr->poly_points[i][0][1];
+      }
+      else
+      {
+        xi_1 = p_ptr->poly_points[i][j + 1][0];
+        yi_1 = p_ptr->poly_points[i][j + 1][1];
+      }
+      sum = sum + (xi * yi_1 - xi_1 * yi);
+      /*
+       std::cout << " ---------------------------------------" << std::endl;
+       std::cout << " isSizeOk: xi-->" << xi << std::endl;
+       std::cout << " \t: xi_1-->" << xi_1 << std::endl;
+       std::cout << " \nisSizeOk: yi-->" << yi << std::endl;
+       std::cout << " \t: yi_1-->" << yi_1 << std::endl;
+       std::cout << " isSizeOk: sum-->" << sum << std::endl;
+       std::cout << " ++++++++++++++++++++++++++++++++++++++++" <<std::endl;
+       */
+
+    }
+    area = abs (sum / 0.5);
+
+    std::cout << "\n\t*** Area = "<< area<< std::endl;
+
+    if (area >= 1 && area <= 3)
+      return true;
+    else if(area<1)
+    {
+      std::cout << " Size is small "<< area<< std::endl;
+      return false;
+    }
+    else if(area>31)
+    {
+      std::cout << " Size is large "<< area<< std::endl;
+      return false;
+    }
+  }
+
+}
 /*
  int
  main ()

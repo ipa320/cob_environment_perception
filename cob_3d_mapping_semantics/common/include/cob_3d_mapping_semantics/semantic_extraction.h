@@ -59,8 +59,10 @@
 //##################
 //#### includes ####
 
+//standard includes
 #include <iostream>
 #include <vector>
+#include <math.h>
 #include <Eigen/Core>
 #include <boost/shared_ptr.hpp>
 
@@ -73,7 +75,7 @@ public:
     std::vector<std::vector<Eigen::Vector3f> > poly_points;
     Eigen::Vector3f normal;
     float d;
-  } poly1;
+  };
 
   typedef boost::shared_ptr<Polygon> PolygonPtr;
 
@@ -89,123 +91,19 @@ public:
     /// void
   }
 
-
+  // checks if the plane of the polygon is horizontal
   bool
-  isHorizontal (PolygonPtr p_ptr)
-  {
-      /*
-      std::cout<<"\t%Nx: "<<p_ptr->normal(0)<<std::endl;
-      std::cout<<"\t%Ny: "<<p_ptr->normal(1)<<std::endl;
-      std::cout<<"\t%Nz: "<<p_ptr->normal(2)<<std::endl;
-      */
-      if(p_ptr->normal(2)>0.99 || p_ptr->normal(2)<-0.99)
-      {
-        if(p_ptr->normal(0)<0.1 && p_ptr->normal(0)>-0.1)
-        {
-          if(p_ptr->normal(1)<0.1 && p_ptr->normal(1)>-0.1)
-          {
-            return true;
-          }
-        }
-      }
+  isHorizontal (PolygonPtr p_ptr);
 
-      else
-      {
-            return false;
-      }
-    }
-
+  // checks if the plane is high enough
   bool
-  isHeightOk (PolygonPtr p_ptr)
-  {
-    int count1 = 0;
-    int count2 = 0;
-    for (unsigned int i = 0; i < p_ptr->poly_points.size (); i++)
-    {
-      for (unsigned int j = 0; j < p_ptr->poly_points[i].size (); j++)
-      {
-        //std::cout<<"\t%x: "<<p_ptr->poly_points[i][j][0]<<std::endl;
-        //std::cout<<"\t%y: "<<p_ptr->poly_points[i][j][1]<<std::endl;
-        //std::cout<<"\t%z: "<<p_ptr->poly_points[i][j][2]<<std::endl;
+  isHeightOk (PolygonPtr p_ptr);
 
-        if((p_ptr->poly_points[i][j][2] < 1) && (p_ptr->poly_points[i][j][2] > 0.4))
-        {
-          count1++;
-          //std::cout<<" count1: "<<count1<<std::endl;
-          if(count1>10)
-          {
-            return true;
-            break;
-          }
-          else
-            continue;
-        }
-        else
-        {
-          count2++;
-          //std::cout<<" count2: "<<count2<<std::endl;
-          if(count2>10)
-          {
-            return false;
-            break;
-          }
-          else
-            continue;
-
-        }
-
-      }//end for inner
-    }//end for outer
-  }
-/*
+  // checks if the area of the plane is sufficient
   bool
-    isSizeOk (PolygonPtr p_ptr)
-    {
-      for (unsigned int i = 0; i < p_ptr->poly_points.size (); i++)
-      {
-        float area;
-        Eigen::Vector3f centroid;
-        for (unsigned int j = 0; j < p_ptr->poly_points[i].size (); j++)
-        {
-          //std::cout<<"\t%x: "<<p_ptr->poly_points[i][j][0]<<std::endl;
-          //std::cout<<"\t%y: "<<p_ptr->poly_points[i][j][1]<<std::endl;
-          //std::cout<<"\t%z: "<<p_ptr->poly_points[i][j][2]<<std::endl;
-          area = 0.5*
-          if((p_ptr->poly_points[i][j][2] < 1) && (p_ptr->poly_points[i][j][2] > 0.4))
-          {
-            count1++;
-            std::cout<<" count1: "<<count1<<std::endl;
-            if(count1>10)
-            {
-              return true;
-              break;
-            }
-            else
-              continue;
-          }
-          else
-          {
-            count2++;
-            std::cout<<" count2: "<<count2<<std::endl;
-            if(count2>10)
-            {
-              return false;
-              break;
-            }
-            else
-              continue;
+  isSizeOk (PolygonPtr p_ptr);
 
-          }
-
-        }//end for inner
-      }//end for outer
-    }
-*/
-  void
-  print (void);
-
-
-//protected:
+  //protected:
 
 };
 
