@@ -112,12 +112,12 @@ public:
   {
     ctr_ = 0;
     //convex_hull_sub_ = n_.subscribe("table_hull", 1, &FeatureMap::subCallback, this);
-    polygon_sub_ = n_.subscribe("polygon_array", 10, &FeatureMapNode::polygonCallback, this);
-    map_pub_ = n_.advertise<geometry_msgs::PolygonStamped>("feature_map",1);
-    map_pub_2_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("feature_map_2",1);
-    marker_pub_ = n_.advertise<visualization_msgs::Marker>("feature_marker",100);
-    clear_map_server_ = n_.advertiseService("clear_geometry_map", &FeatureMapNode::clearMap, this);
-    get_map_server_ = n_.advertiseService("get_geometry_map", &FeatureMapNode::getMap, this);
+    polygon_sub_ = n_.subscribe("polygon_array", 10, &GeometryMapNode::polygonCallback, this);
+    map_pub_ = n_.advertise<geometry_msgs::PolygonStamped>("geometry_map",1);
+    map_pub_2_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("geometry_map_2",1);
+    marker_pub_ = n_.advertise<visualization_msgs::Marker>("geometry_marker",100);
+    clear_map_server_ = n_.advertiseService("clear_geometry_map", &GeometryMapNode::clearMap, this);
+    get_map_server_ = n_.advertiseService("get_geometry_map", &GeometryMapNode::getMap, this);
     ros::param::param("~file_path" ,file_path_ ,std::string("/home/goa/tmp/"));
     ros::param::param("~save_to_file" ,save_to_file_ ,false);
     std::cout << file_path_ << std::endl;
@@ -212,10 +212,10 @@ public:
   getMap(cob_3d_mapping_msgs::GetGeometricMap::Request &req,
          cob_3d_mapping_msgs::GetGeometricMap::Response &res)
   {
-    boost::shared_ptr<std::vector<GeometryMap::MapEntryPtr> > map = feature_map_.getMap();
+    boost::shared_ptr<std::vector<MapEntryPtr> > map = geometry_map_.getMap();
     for(unsigned int i=0; i<map->size(); i++)
     {
-      GeometryMap::MapEntry& sm = *(map->at(i));
+      MapEntry& sm = *(map->at(i));
       cob_3d_mapping_msgs::Shape s;
       convertToROSMsg(sm,s);
       res.shapes.push_back(s);
@@ -371,12 +371,12 @@ public:
 
   void publishMap()
   {
-    boost::shared_ptr<std::vector<FeatureMap::MapEntryPtr> > map = feature_map_.getMap();
+    boost::shared_ptr<std::vector<MapEntryPtr> > map = geometry_map_.getMap();
     //cob_3d_mapping_msgs::PolygonArrayArray map_msg;
     cob_3d_mapping_msgs::ShapeArray map_msg;
     for(unsigned int i=0; i<map->size(); i++)
     {
-      FeatureMap::MapEntry& sm = *(map->at(i));
+      MapEntry& sm = *(map->at(i));
       //cob_3d_mapping_msgs::PolygonArray p;
       cob_3d_mapping_msgs::Shape s;
       convertToROSMsg(sm, s);
