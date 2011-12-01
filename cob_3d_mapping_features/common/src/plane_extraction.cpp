@@ -100,12 +100,12 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
   boost::timer t;
   std::stringstream ss;
   ROS_INFO("Extract planes");
-  ROS_INFO("Saving files: %d", save_to_file_);
+  ROS_DEBUG("Saving files: %d", save_to_file_);
   if(save_to_file_)
   {
     ss.str("");
     ss.clear();
-    ss << file_path_ << "/pc_" << ctr_ << ".pcd";
+    ss << file_path_ << "/planes/pc_" << ctr_ << ".pcd";
     pcl::io::savePCDFileASCII (ss.str(), *pc_in);
   }
   //ROS_INFO("pc_in size: %d" , pc_in->size());
@@ -121,13 +121,13 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
   std::vector<pcl::PointIndices> clusters;
   cluster.setInputCloud (pc_in);
   cluster.extract (clusters);
-  ROS_INFO ("Number of clusters found: %d", (int)clusters.size ());
+  ROS_DEBUG ("Number of clusters found: %d", (int)clusters.size ());
 
   // Go through all clusters and search for planes
   pcl::ExtractIndices<Point> extract;
   for(unsigned int i = 0; i < clusters.size(); ++i)
   {
-    ROS_INFO("Processing cluster no. %u", i);
+    ROS_DEBUG("Processing cluster no. %u", i);
     // Extract cluster points
     pcl::PointCloud<Point> cluster;
     extract.setInputCloud (pc_in);
@@ -139,7 +139,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
     {
       ss.str("");
       ss.clear();
-      ss << file_path_ << "/cluster_" << ctr_ << ".pcd";
+      ss << file_path_ << "/planes/cluster_" << ctr_ << ".pcd";
       pcl::io::savePCDFileASCII (ss.str(), cluster);
     }
 
@@ -238,7 +238,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
       if(!invalidPlane)
       {
         // Extract plane points, only needed for storing bag file
-        ROS_INFO("Plane has %d inliers", (int)inliers_plane->indices.size());
+        ROS_DEBUG("Plane has %d inliers", (int)inliers_plane->indices.size());
         pcl::PointCloud<Point> dominant_plane;
         pcl::ExtractIndices<Point> extractIndices;
         extractIndices.setInputCloud(cluster_ptr);
@@ -248,7 +248,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
         {
           ss.str("");
           ss.clear();
-          ss << file_path_ << "/plane_" << ctr_ << ".pcd";
+          ss << file_path_ << "/planes/plane_" << ctr_ << "_" << ctr << ".pcd";
           pcl::io::savePCDFileASCII (ss.str(), dominant_plane);
           std::cout << ss << std::endl;
         }
@@ -273,15 +273,15 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
         v_cloud_hull.push_back(cloud_hull);
         v_hull_polygons.push_back(hull_polygons);
         v_coefficients_plane.push_back(coefficients_plane);
-        ROS_INFO("v_cloud_hull size: %d", v_cloud_hull.size());
+        ROS_DEBUG("v_cloud_hull size: %d", v_cloud_hull.size());
 
 
         if(save_to_file_)
         {
-          saveHulls(cloud_hull, hull_polygons);
+          saveHulls(cloud_hull, hull_polygons, ctr);
           ss.str("");
           ss.clear();
-          ss << file_path_ << "/plane_pr_" << ctr_ << ".pcd";
+          ss << file_path_ << "/planes/plane_pr_" << ctr_ << "_" << ctr << ".pcd";
           pcl::io::savePCDFileASCII (ss.str(), *cloud_projected);
         }
       }
@@ -295,7 +295,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
             consider_in_cluster->indices.erase(consider_in_cluster->indices.begin()+idx_ctr1);
         }
       }
-      ctr_++;
+      //ctr_++;
     }
     if(consider_in_cluster->indices.size()>0)
     {
@@ -303,7 +303,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
       {
         ss.str("");
         ss.clear();
-        ss << file_path_ << "/rem_pts_" << ctr_ << ".pcd";
+        ss << file_path_ << "/planes/rem_pts_" << ctr_ << "_" << ctr << ".pcd";
         if(consider_in_cluster->indices.size() == cluster_ptr->size())
           pcl::io::savePCDFileASCII (ss.str(), *cluster_ptr);
         else
@@ -316,6 +316,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
         }
       }
     }
+    ctr_++;
   }
   ROS_INFO("Plane extraction took %f", t.elapsed());
   ROS_INFO("v_cloud_hull size: %d", v_cloud_hull.size());
@@ -324,7 +325,8 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
 
 void
 PlaneExtraction::saveHulls(pcl::PointCloud<Point>& cloud_hull,
-          std::vector< pcl::Vertices >& hull_polygons)
+          std::vector< pcl::Vertices >& hull_polygons,
+          int plane_ctr)
 {
   pcl::PointCloud<Point> hull_part;
   for(unsigned int i=0; i<hull_polygons.size(); i++)
@@ -335,7 +337,7 @@ PlaneExtraction::saveHulls(pcl::PointCloud<Point>& cloud_hull,
       hull_part.points.push_back(cloud_hull.points[idx]);
     }
     std::stringstream ss;
-    ss << file_path_ << "/hull_" << ctr_ << "_" << i << ".pcd";
+    ss << file_path_ << "/planes/hull_" << ctr_ << "_" << plane_ctr << "_" <<  i << ".pcd";
     pcl::io::savePCDFileASCII (ss.str(), hull_part);
   }
 }
@@ -378,5 +380,29 @@ PlaneExtraction::findClosestTable(std::vector<pcl::PointCloud<Point>, Eigen::ali
   }
 }
 
+
+int main()
+{
+  PlaneExtraction pe;
+  std::string file_path("/home/goa/pcl_daten/kitchen_kinect2/");
+  pe.setFilePath(file_path);
+  pe.setSaveToFile(true);
+  std::stringstream ss;
+  ss << file_path << "pointclouds/point_cloud.pcd";
+  pcl::PointCloud<pcl::PointXYZRGB> cloud;
+  pcl::io::loadPCDFile (ss.str(), cloud);
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr = cloud.makeShared();
+  std::cout << "Pointcloud of size " << cloud_ptr->size() << " loaded" << std::endl;
+  pcl::VoxelGrid<pcl::PointXYZRGB> voxel;
+  voxel.setInputCloud(cloud_ptr);
+  voxel.setLeafSize(0.03,0.03,0.03);
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_vox = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
+  voxel.filter(*cloud_vox);
+  std::vector<pcl::PointCloud<pcl::PointXYZRGB>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZRGB> > > v_cloud_hull;
+  std::vector<std::vector<pcl::Vertices> > v_hull_polygons;
+  std::vector<pcl::ModelCoefficients> v_coefficients_plane;
+  pe.extractPlanes(cloud_vox, v_cloud_hull, v_hull_polygons, v_coefficients_plane);
+  return 0;
+}
 
 

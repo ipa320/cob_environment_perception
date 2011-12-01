@@ -21,6 +21,13 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
+INCLUDE_DIRECTORIES(
+	${PROJECT_SOURCE_DIR}/common/include)
+
+rosbuild_add_library(cob_3d_mapping_tools 
+	common/src/cob_3d_mapping_tools/io.cpp
+	common/src/cob_3d_mapping_tools/point_generator.cpp)
+
 rosbuild_add_executable(transform_pointcloud ros/src/transform_pointcloud.cpp)
 rosbuild_add_executable(concat_fields_node ros/src/concat_fields.cpp)
 rosbuild_add_executable(bag_to_pcd ros/src/bag_to_pcd.cpp)
@@ -28,6 +35,21 @@ rosbuild_add_executable(pointcloud_to_pcd ros/src/pointcloud_to_pcd.cpp)
 
 rosbuild_add_executable(create_point_cloud common/src/create_point_cloud.cpp)
 rosbuild_add_executable(create_kitchen_point_cloud common/src/create_kitchen_point_cloud.cpp)
+
+rosbuild_add_executable(extract_feature_values common/src/extract_feature_values.cpp)
+rosbuild_add_executable(merge_knn_training_data common/src/merge_knn_training_data.cpp)
+rosbuild_add_executable(merge_fpfh_training_data common/src/merge_fpfh_training_data.cpp)
+rosbuild_add_executable(fpfh_primitives common/src/fpfh_primitives.cpp)
+rosbuild_add_executable(create_synthetic_scene common/src/create_synthetic_scene.cpp)
+rosbuild_add_executable(create_synthetic_radii_test common/src/create_synthetic_radii_test.cpp)
+rosbuild_add_executable(ppm_to_pcd common/src/ppm_to_pcd.cpp)
+rosbuild_add_executable(pcd_to_ppm common/src/pcd_to_ppm.cpp)
+
+target_link_libraries(ppm_to_pcd cob_3d_mapping_tools)
+target_link_libraries(pcd_to_ppm cob_3d_mapping_tools)
+target_link_libraries(fpfh_primitives cob_3d_mapping_tools)
+target_link_libraries(create_synthetic_scene cob_3d_mapping_tools)
+target_link_libraries(create_synthetic_radii_test cob_3d_mapping_tools)
 
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)

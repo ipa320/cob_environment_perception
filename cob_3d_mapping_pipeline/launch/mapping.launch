@@ -1,7 +1,8 @@
 <?xml version="1.0"?>
 <launch>
   <!-- start environment modelling -->
-  <node pkg="nodelet" type="nodelet" name="cam3d_nodelet_manager2"  args="manager" output="screen"/>
+  <arg name="mapping_manager" value="mapping_manager"/>
+  <node pkg="nodelet" type="nodelet" name="$(arg mapping_manager)"  args="manager" output="screen"/>
   
   <!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
   <!--node pkg="nodelet" type="nodelet" name="voxel_grid1" args="load pcl/VoxelGrid pcl_manager" output="screen">
@@ -15,19 +16,6 @@
     </rosparam>
   </node-->
   
-  
-  <!--node pkg="nodelet" type="nodelet" name="point_cloud_filter" args="load cob_env_model/PointCloudFilter pcl_manager" output="screen">
-  	<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
-  	<remap from="point_cloud2_filtered" to="/cob_env_model/point_cloud2_filtered"/>
-  	<param name="filter_by_amplitude" type="bool" value="true"/>
-	<param name="filter_tearoff" type="bool" value="true"/>
-	<param name="filter_speckle" type="bool" value="false"/>
-	<param name="filter_by_confidence" type="bool" value="false"/>
-	<param name="amplitude_min_threshold" type="double" value="4000"/>
-	<param name="amplitude_max_threshold" type="double" value="70000"/>
-  </node-->  
-  
-  
     <!--node pkg="nodelet" type="nodelet" name="pass_through" args="load pcl/PassThrough pcl_manager" output="screen">
     <remap from="~input" to="/cam3d/rgb/points" />
     <rosparam>
@@ -37,9 +25,15 @@
     </rosparam>
   </node-->
   
-	<include file="$(find cob_env_model)/ros/launch/aggregate_point_map.launch" />
-	<include file="$(find cob_env_model)/ros/launch/extract_planes.launch" />
-	<include file="$(find cob_env_model)/ros/launch/feature_map.launch" />
+	<include file="$(find cob_3d_mapping_point_map)/ros/launch/aggregate_point_map.launch">
+		<arg name="start_manager" value="false"/>
+		<arg name="nodelet_manager" value="$(arg mapping_manager)"/>
+	</include>
+	<include file="$(find cob_3d_mapping_features)/ros/launch/extract_planes.launch">
+		<arg name="start_manager" value="false"/>
+		<arg name="nodelet_manager" value="$(arg mapping_manager)"/>
+	</include>
+	<include file="$(find cob_3d_mapping_geometry_map)/ros/launch/feature_map.launch"/>
   
 
 

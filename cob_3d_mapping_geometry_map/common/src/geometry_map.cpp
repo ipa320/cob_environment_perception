@@ -712,6 +712,12 @@ GeometryMap::saveMap(std::string path)
 }
 
 void
+GeometryMap::clearMap()
+{
+  map_.clear();
+}
+
+void
 GeometryMap::printGpcStructure(gpc_polygon* p)
 {
   std::cout << "GPC Structure: " << std::endl;
