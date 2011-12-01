@@ -56,13 +56,21 @@
 //##################
 //#### includes ####
 
+
+//standard includes
+//#include <iostream>
+
 // ROS includes
 #include <ros/ros.h>
-#include <sensor_msgs/PointCloud2.h>
-//#include <iostream>
-#include <cob_3d_mapping_msgs/PolygonArrayArray.h>
 
+//ros message includes
+#include <cob_3d_mapping_msgs/PolygonArrayArray.h>
+#include <sensor_msgs/PointCloud.h>
+#include <visualization_msgs/Marker.h>
+
+//internal includes
 #include <cob_3d_mapping_semantics/semantic_extraction.h>
+
 class SemanticExtractionNode
 {
 public:
@@ -70,11 +78,10 @@ public:
   // Constructor
   SemanticExtractionNode ()
   {
-    //ROS_INFO("subscribing to point_cloud messages");
-    map_sub_ = n_.subscribe ("feature_map", 1, &SemanticExtractionNode::callback, this);
-    //pc_pub_ = n_.advertise<sensor_msgs::PointCloud2>("point_cloud",1);
-    pc_pub_ = n_.advertise<cob_3d_mapping_msgs::PolygonArrayArray> ("polygon_array", 1);
-
+    poly_sub_ = n_.subscribe ("feature_map", 1, &SemanticExtractionNode::callback, this);
+    //poly_pub_ = n_.advertise<cob_3d_mapping_msgs::PolygonArrayArray> ("polygon_array", 1);
+    marker_pub_ = n_.advertise<visualization_msgs::Marker> ("polygon_marker", 100);
+    pc_pub_ = n_.advertise<sensor_msgs::PointCloud> ("point_cloud", 10);
   }
 
   // Destructor
@@ -83,51 +90,94 @@ public:
     /// void
   }
 
+  /**
+   * @brief callback for publishing new PolygonArrayArray messages
+   *
+   * @param p ros message containing array of polygon_array messages
+   *
+   * @return nothing
+   */
   void
-
   callback (const cob_3d_mapping_msgs::PolygonArrayArray::ConstPtr p)
   {
-    ROS_INFO(" Entered callback method \n");
-    SemanticExtraction::PolygonPtr poly_ptr = SemanticExtraction::PolygonPtr(new SemanticExtraction::Polygon());
+    ROS_INFO("\n\t-------------------------------------\n"
+        "\t|       NEW MESSAGE RECEIVED        |\n"
+        "\t-------------------------------------\n");
 
-    cob_3d_mapping_msgs::PolygonArrayArray::ConstPtr p_array = cob_3d_mapping_msgs::PolygonArrayArray::ConstPtr(new cob_3d_mapping_msgs::PolygonArrayArray());
+    //cob_3d_mapping_msgs::PolygonArrayArray p_out;
 
-    std::cout<<" polygon_array size:  "<< p->polygon_array.size()<<std::endl;
-
-    for (unsigned int i = 0; i < p->polygon_array.size(); i++)
+    std::cout << " Total number of polygons:  " << p->polygon_array.size () << std::endl;
+    for (unsigned int i = 0; i < p->polygon_array.size (); i++)
     {
-       ROS_INFO(" Entered for loop \n");
+      std::cout << " polygon < " << i << " > passed for conversion  " << std::endl;
 
-       convertFromROSMsg(p->polygon_array[i], *poly_ptr);
-       SemanticExtraction sem_exn;
+      //ROS_INFO(" Entered for loop \n");
+      SemanticExtraction::PolygonPtr poly_ptr = SemanticExtraction::PolygonPtr (new SemanticExtraction::Polygon ());
+      sensor_msgs::PointCloudPtr pc_ptr (new sensor_msgs::PointCloud);
 
-       bool plane_horizontal, height_ok;
-         plane_horizontal = sem_exn.isHorizontal(poly_ptr);
-       if(plane_horizontal)
-       {
-         ROS_INFO(" Plane is h0rizontal \n");
-         height_ok = sem_exn.isHeightOk(poly_ptr);
+      SemanticExtraction sem_exn;
+      bool plane_horizontal, height_ok, size_ok;
 
-         if(height_ok)
+      convertFromROSMsg (p->polygon_array[i], *poly_ptr);
+
+      plane_horizontal = sem_exn.isHorizontal (poly_ptr);
+
+      //Check if the plane spanned by the polygon is horizontal or not
+      if (plane_horizontal)
+      {
+
+        ROS_INFO(" Plane is h0rizontal \n");
+        //publishPolygonMarker (*poly_ptr);
+        height_ok = sem_exn.isHeightOk (poly_ptr);
+
+        //Check if the height of the polygon is Ok or not
+        if (height_ok)
+        {
           ROS_INFO(" Height is ok \n");
-         else
-           ROS_INFO(" Height is not ok \n");
+          //publishPolygonMarker (*poly_ptr);
+          size_ok = sem_exn.isSizeOk (poly_ptr);
 
-       }
-       else
-         ROS_INFO(" Plane is not horizontal \n");
+          //Check if the area of the the polygon is ok or not
+          if (size_ok)
+          {
+            ROS_INFO(" Size is ok \n");
+            publishPolygonMarker (*poly_ptr); //publish marker messages to see visually on rviz
+            convertToPointCloudMsg (*poly_ptr, *pc_ptr);
+            pc_pub_.publish (*pc_ptr);
+          }
 
+          else
+          {
+            ROS_INFO(" Size is not ok \n");
+          }
 
-//      convertToROSMsg(*poly_ptr, p_array->polygon_array[i]);
+        }
+
+        else
+        {
+          ROS_INFO(" Height is not ok \n");
+        }
+
+      }
+
+      else
+      {
+        ROS_INFO(" Plane is not horizontal \n");
+      }
+
     }
-
-
-  //
-  //
-   pc_pub_.publish (p_array);
+    //poly_pub_.publish (p_out);
 
   }
 
+  /**
+   * @brief convert ros message to polygon struct
+   *
+   * @param p ros message to be converted
+   *
+   * @param poly polygon stuct
+   * @return nothing
+   */
   void
   convertFromROSMsg (const cob_3d_mapping_msgs::PolygonArray& p, SemanticExtraction::Polygon& poly)
   {
@@ -140,24 +190,22 @@ public:
 
     for (unsigned int i = 0; i < p.polygons.size (); i++)
     {
-      std::cout<<" polygons size : "<< p.polygons.size ()<<std::endl;
+      std::cout << "\tpolygon < " << i << " > size: " << p.polygons.size () << std::endl;
       if (p.polygons[i].points.size ())
       {
-        std::cout<<" polygons at i size: "<< p.polygons[i].points.size ()<<std::endl;
+        std::cout << "\tpoints in polygon < " << i << " >  : " << p.polygons[i].points.size () << std::endl;
 
         //std::vector<Eigen::Vector3f>  pts;
         //Eigen::Vector3f p3f;
 
-        std::vector<Eigen::Vector3f>  pts;
+        std::vector<Eigen::Vector3f> pts;
         pts.resize (p.polygons[i].points.size ());
 
         //std::cout<<" pts size : "<< pts.size()<<std::endl;
-
         //std::cout<<"\n\n_"<<i<<"_";
 
         for (unsigned int j = 0; j < p.polygons[i].points.size (); j++)
         {
-
           //std::cout<<"\n\t#"<<j<<"#";
 
           pts[j][0] = p.polygons[i].points[j].x;
@@ -169,75 +217,168 @@ public:
           //std::cout<<"\t\t%z = "<< pts[j][2]<<std::endl;
 
           /*
-          p3f[0] = p.polygons[i].points[j].x;
-          std::cout<<"\t\t%%x = "<< p3f[0]<<std::endl;
-          p3f[1] = p.polygons[i].points[j].y;
-          std::cout<<"\t\t%%x = "<< p3f[1]<<std::endl;
-          p3f[2] = p.polygons[i].points[j].z;
-          std::cout<<"\t\t%%x = "<< p3f[2]<<std::endl;
+           p3f[0] = p.polygons[i].points[j].x;
+           std::cout<<"\t\t%%x = "<< p3f[0]<<std::endl;
+           p3f[1] = p.polygons[i].points[j].y;
+           std::cout<<"\t\t%%x = "<< p3f[1]<<std::endl;
+           p3f[2] = p.polygons[i].points[j].z;
+           std::cout<<"\t\t%%x = "<< p3f[2]<<std::endl;
 
-          pts.push_back(p3f);
-          std::cout<<" pts point : "<< pts[j]<<std::endl;
+           pts.push_back(p3f);
+           std::cout<<" pts point : "<< pts[j]<<std::endl;
 
-          */
+           */
         }
 
         poly.poly_points.push_back (pts);
       }
     }
   }
-
   /*
+   void
+   convertToROSMsg (const SemanticExtraction::Polygon& poly, cob_3d_mapping_msgs::PolygonArray& p)
+   {
+   ROS_INFO(" converting to ROS msg \n");
+
+   p.normal.x = poly.normal (0);
+   p.normal.y = poly.normal (1);
+   p.normal.z = poly.normal (2);
+   p.d.data = poly.d;
+
+   //std::cout<<" -:--------------:"<<std::endl;
+   //std::cout<<" normal(0) :"<<p.normal.x<<std::endl;
+
+   //p.polygons.resize(poly.poly_points.size());
+   for (unsigned int i = 0; i < poly.poly_points.size (); i++)
+   {
+   std::cout << " poly size : " << poly.poly_points.size () << std::endl;
+   if (poly.poly_points.size ())
+   {
+   std::cout << " poly at i size: " << poly.poly_points[i].size () << std::endl;
+
+   //std::cout<<"\n\n_"<<i<<"_";
+
+   for (unsigned int j = 0; j < poly.poly_points[i].size (); j++)
+   {
+   //std::cout<<"\n\t#"<<j<<"#";
+
+   p.polygons[i].points[j].x = poly.poly_points[i][j][0];
+   p.polygons[i].points[j].y = poly.poly_points[i][j][1];
+   p.polygons[i].points[j].z = poly.poly_points[i][j][2];
+
+   //std::cout<<"\t%x = "<< pts[j][0]<<std::endl;
+   //std::cout<<"\t\t%y = "<< pts[j][1]<<std::endl;
+   //std::cout<<"\t\t%z = "<< pts[j][2]<<std::endl;
+   }
+
+   p.polygons.push_back (p.polygons[i]);
+   }
+   }
+
+   }
+   */
+  /**
+   * @brief convert polygon to PointCloud message
+   *
+   * @param poly polygon to be converted
+   *
+   * @param pc resultant point_cloud message
+   * @return nothing
+   */
   void
-  convertToROSMsg (SemanticExtraction::Polygon& poly ,const cob_3d_mapping_msgs::PolygonArray& p)
+  convertToPointCloudMsg (const SemanticExtraction::Polygon& poly, sensor_msgs::PointCloud& pc)
+  {
+    pc.header.frame_id = "/map";
+
+    for (unsigned int i = 0; i < poly.poly_points.size (); i++)
     {
-      ROS_INFO(" converting to ROS msg \n");
-
-      p.normal.x = poly.normal (0);
-      p.normal.y = poly.normal (1);
-      p.normal.z = poly.normal (2);
-      p.d.data = poly.d ;
-
-
-      //p.polygons.resize(poly.poly_points.size());
-      for (unsigned int i = 0; i < poly.poly_points.size(); i++)
+      std::cout << " poly size : " << poly.poly_points.size () << std::endl;
+      if (poly.poly_points.size ())
       {
-        std::cout<<" poly size : "<< poly.poly_points.size()<<std::endl;
-        if (poly.poly_points.size())
+        geometry_msgs::Point32 pts;
+        for (unsigned int j = 0; j < poly.poly_points[i].size (); j++)
         {
-          std::cout<<" poly at i size: "<< poly.poly_points[i].size()<<std::endl;
-
-         //std::cout<<"\n\n_"<<i<<"_";
-
-          for (unsigned int j = 0; j < poly.poly_points[i].size(); j++)
-          {
-
-            //std::cout<<"\n\t#"<<j<<"#";
-
-           p.polygons[i].points[j].x = poly.poly_points[i][j][0];
-           p.polygons[i].points[j].y = poly.poly_points[i][j][1];
-           p.polygons[i].points[j].z = poly.poly_points[i][j][2];
-
-            //std::cout<<"\t%x = "<< pts[j][0]<<std::endl;
-            //std::cout<<"\t\t%y = "<< pts[j][1]<<std::endl;
-            //std::cout<<"\t\t%z = "<< pts[j][2]<<std::endl;
-
-
-          }
-
-          p.polygons.push_back (p.polygons[i]);
+          //std::cout<<"\n\t#"<<j<<"#";
+          pts.x = poly.poly_points[i][j][0];
+          pts.y = poly.poly_points[i][j][1];
+          pts.z = poly.poly_points[i][j][2];
+          pc.points.push_back (pts);
         }
       }
-
     }
-*/
-  ros::NodeHandle n_;
-/*
+
+  }
+  /**
+   * @brief publishes markers to visualize polygon in rviz
+   *
+   * @param poly polygon to be seen visually
+   *
+   * @return nothing
+   */
   void
-  fill_polygon (msg, polygon)
-*/
+  publishPolygonMarker (const SemanticExtraction::Polygon& poly)
+  {
+
+    std::cout << " polygons size : " << poly.poly_points.size () << std::endl;
+    int ctr = 0;
+    visualization_msgs::Marker marker;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.type = visualization_msgs::Marker::LINE_STRIP;
+    marker.lifetime = ros::Duration ();
+    marker.header.frame_id = "/map";
+    marker.ns = "polygon_marker";
+    //marker.header.stamp = ros::Time::now();
+
+    marker.scale.x = 0.05;
+    marker.scale.y = 0.05;
+    marker.scale.z = 0;
+    marker.color.r = 0;
+    marker.color.g = 1;
+    marker.color.b = 0;
+    marker.color.a = 1.0;
+
+    for (unsigned int i = 0; i < poly.poly_points.size (); i++)
+    {
+      // std::cout<<" polygons in marker at i size : "<< poly.poly_points[i].size ()<<std::endl;
+      marker.color.r = 1;
+      marker.color.g = 0;
+      marker.color.b = 0;
+
+      marker.id = ctr;
+      ctr++;
+      //geometry_msgs::Point pt;
+      marker.points.resize (poly.poly_points[i].size () + 1);
+      for (unsigned int j = 0; j < poly.poly_points[i].size (); j++)
+      {
+        /*
+         pt.x= poly.poly_points[i][j](0);
+         pt.y= poly.poly_points[i][j](0);
+         pt.z= poly.poly_points[i][j](0);
+         */
+        marker.points[j].x = poly.poly_points[i][j] (0);
+        marker.points[j].y = poly.poly_points[i][j] (1);
+        marker.points[j].z = poly.poly_points[i][j] (2);
+
+        //marker.points.push_back(pt);
+
+      }
+
+      marker.points[poly.poly_points[i].size ()].x = poly.poly_points[i][0] (0);
+      marker.points[poly.poly_points[i].size ()].y = poly.poly_points[i][0] (1);
+      marker.points[poly.poly_points[i].size ()].z = poly.poly_points[i][0] (2);
+      //std::cout<<" ctr : "<<ctr<<std::endl;
+
+      marker_pub_.publish (marker);
+    }
+
+  }
+
+  ros::NodeHandle n_;
+
 protected:
-  ros::Subscriber map_sub_;
+  ros::Subscriber poly_sub_;
+  //ros::Publisher poly_pub_;
+  ros::Publisher marker_pub_;
   ros::Publisher pc_pub_;
 
 };
@@ -248,7 +389,7 @@ main (int argc, char** argv)
   ros::init (argc, argv, "semantic_extraction_node");
 
   SemanticExtractionNode sen;
-  ros::spin ();
+  //ros::spin ();
 
   ros::Rate loop_rate (10);
   while (ros::ok ())

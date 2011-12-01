@@ -28,7 +28,7 @@ rosbuild_add_library(cob_3d_mapping_semantics common/src/semantic_extraction.cpp
 #rosbuild_add_executable(semantic_extraction common/src/semantic_extraction.cpp)
 rosbuild_add_executable(semantic_extraction_node ros/src/semantic_extraction_node.cpp)
 
-#target_link_libraries(semantic_extraction_node cob_3d_mapping_semantics)
+target_link_libraries(semantic_extraction_node cob_3d_mapping_semantics)
 
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
