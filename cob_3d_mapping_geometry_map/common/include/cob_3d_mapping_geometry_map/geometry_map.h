@@ -156,6 +156,9 @@ public:
   saveMap(std::string path);
 
   void
+  clearMap();
+
+  void
   getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
                              Eigen::Vector3f &u,
                              Eigen::Vector3f &v);

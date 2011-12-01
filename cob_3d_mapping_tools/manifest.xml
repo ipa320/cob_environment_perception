@@ -12,6 +12,7 @@
   <depend package="rosbag"/>
   <depend package="pcl"/>
   <depend package="pcl_ros"/>
+  <depend package="cob_3d_mapping_common"/>
 
 </package>
 

@@ -147,9 +147,10 @@ ipa_features::EdgeEstimation<PointInT, PointNT, PointOutT>::isEdgePoint (
   //std::cout << "d: ";
   for (size_t i = 0; i < indices.size (); ++i)
   {
-    delta[0] = cloud.points[indices[i]].x - q_point.x;
+    /*delta[0] = cloud.points[indices[i]].x - q_point.x;
     delta[1] = cloud.points[indices[i]].y - q_point.y;
-    delta[2] = cloud.points[indices[i]].z - q_point.z;
+    delta[2] = cloud.points[indices[i]].z - q_point.z;*/
+    delta = cloud.points[indices[i]].getVector3fMap() - q_point.getVector3fMap();
     //delta = delta.normalized();
 
     nd_dot = n.dot (delta);
@@ -170,9 +171,9 @@ ipa_features::EdgeEstimation<PointInT, PointNT, PointOutT>::isEdgePoint (
       //nan_ctr++;
     }
   }
-  float edge_prob = (float)b_ctr/nn_ctr;
+  //float edge_prob = (float)b_ctr/nn_ctr;
   //float boundary_prob = (float)nan_ctr/indices.size();
-  return edge_prob;
+  return (float)b_ctr/nn_ctr;
   /*std::cout << border_prob << std::endl;
   if(border_prob >0.00001)
 	  return true;
@@ -288,7 +289,7 @@ ipa_features::EdgeEstimation<PointInT, PointNT, PointOutT>::computeFeature (Poin
     //  ROS_INFO_STREAM("threshold" << dist_threshold_);
 
    if (isnan(normals_->points[(*indices_)[idx]].normal[0]))
-     output.points[idx].strength=0;
+     output.points[idx].strength=2;
 
     //TODO: test nn search
    else if(this->searchForNeighbors ((*indices_)[idx], search_parameter_, nn_indices, nn_dists))
@@ -317,7 +318,7 @@ ipa_features::EdgeEstimation<PointInT, PointNT, PointOutT>::computeFeature (Poin
     }
     else
     {
-      output.points[idx].strength = 0;
+      output.points[idx].strength = 3;
       //std::cout << "point is NAN" << std::endl;
     }
     //std::cout << std::endl;
