@@ -23,6 +23,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
 
+
 #uncomment if you have defined messages
 #rosbuild_genmsg()
 #uncomment if you have defined services
@@ -46,3 +47,7 @@ target_link_libraries(cob_3d_mapping_point_map_nodelets cob_3d_mapping_point_map
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
+
+INSTALL(TARGETS cob_3d_mapping_point_map cob_3d_mapping_point_map_nodelets EXPORT cob_3d_mapping_point_map 
+   LIBRARY DESTINATION "${CMAKE_INSTALL_PREFIX}/cob_3d_mapping_point_map/lib"
+)
