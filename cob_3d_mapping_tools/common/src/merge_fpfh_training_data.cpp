@@ -94,7 +94,7 @@ void readOptions(int argc, char* argv[])
 
   if (vm.count("help") || !vm.count("in"))
   {
-    cout << "script to merge fpfh PCD files from multiple objects into a single file for each class."
+    cout << "Script to merge fpfh PCD files from multiple objects into a single file for each class."
 	 << endl;
     cout << "Searches for files containing the strings:" << endl;
     cout << "\t  \"plane\"" << endl;
