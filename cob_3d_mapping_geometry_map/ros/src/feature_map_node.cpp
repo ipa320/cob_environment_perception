@@ -116,8 +116,10 @@ public:
     map_pub_2_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("feature_map_2",1);
     marker_pub_ = n_.advertise<visualization_msgs::Marker>("feature_marker",100);
     clear_map_server_ = n_.advertiseService("clear_geometry_map", &FeatureMapNode::clearMap, this);
-    n_.param("feature_map/file_path" ,file_path_ ,std::string("/home/goa/tmp/"));
-    n_.param("feature_map/save_to_file" ,save_to_file_ ,false);
+    get_map_server_ = n_.advertiseService("get_geometry_map", &FeatureMapNode::getMap, this);
+    ros::param::param("~file_path" ,file_path_ ,std::string("/home/goa/tmp/"));
+    ros::param::param("~save_to_file" ,save_to_file_ ,false);
+    std::cout << file_path_ << std::endl;
     feature_map_.setFilePath(file_path_);
     feature_map_.setSaveToFile(save_to_file_);
 
@@ -209,6 +211,14 @@ public:
   getMap(cob_3d_mapping_msgs::GetGeometricMap::Request &req,
          cob_3d_mapping_msgs::GetGeometricMap::Response &res)
   {
+    boost::shared_ptr<std::vector<FeatureMap::MapEntryPtr> > map = feature_map_.getMap();
+    for(unsigned int i=0; i<map->size(); i++)
+    {
+      FeatureMap::MapEntry& sm = *(map->at(i));
+      cob_3d_mapping_msgs::Shape s;
+      convertToROSMsg(sm,s);
+      res.shapes.push_back(s);
+    }
     return true;
   }
 
@@ -513,6 +523,7 @@ protected:
   ros::Publisher map_pub_2_;
   ros::Publisher marker_pub_;
   ros::ServiceServer clear_map_server_;
+  ros::ServiceServer get_map_server_;
 
   FeatureMap feature_map_;      /// map containing features (polygons)
 
