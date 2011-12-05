@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import sys
 import roslib
-roslib.load_manifest('cob_env_model_gazebo')
+roslib.load_manifest('cob_3d_mapping_gazebo')
 
 import rospy
 import os
@@ -17,7 +17,7 @@ class MyScript(script):
 		# Move training table on top of gripper
 		srv_set_model_state = rospy.ServiceProxy('/gazebo/set_model_state', SetModelState)
 		req_set = SetModelStateRequest()
-		req_set.model_state.model_name = "cob3"
+		req_set.model_state.model_name = "robot"
 #		req_set.model_state.pose.position.x = -2.5
 #		req_set.model_state.pose.position.y = 0
 #		req_set.model_state.pose.position.z = 0
