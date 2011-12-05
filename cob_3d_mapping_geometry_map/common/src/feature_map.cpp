@@ -261,8 +261,8 @@ FeatureMap::addMapEntry(FeatureMap::MapEntryPtr p_ptr)
       std::cout << "d, d_map:" << p.d << "," << p_map.d << std::endl;
     }*/
     //std::cout << p_map_normal_d.dot(p_normal_d) << std::endl;
-    if((p_map.normal.dot(p.normal)>0.95 && fabs(p_map.d-p.d)<0.1) ||
-        (p_map.normal.dot(p.normal)<-0.95 && fabs(p_map.d+p.d)<0.1))
+    if((p_map.normal.dot(p.normal)>0.97 && fabs(p_map.d-p.d)<0.1) ||
+        (p_map.normal.dot(p.normal)<-0.97 && fabs(p_map.d+p.d)<0.1))
     //if(fabs(p_map.normal.dot(n2))>0.95 && fabs(fabs(p_map.d)-fabs(p.d))<0.25) //0.97 = 14 degree; 0.95,0.15
     //if(angle<0.05 && fabs(p_map.d-p.d)<0.08) //planes can be merged
     {
@@ -279,7 +279,7 @@ FeatureMap::addMapEntry(FeatureMap::MapEntryPtr p_ptr)
       std::cout << "Map f: " << p_map.normal(0) << "," << p_map.normal(1) << "," << p_map.normal(2) << "," << p_map.d << std::endl;
       double d_p = p.d;
       Eigen::Vector3f normal_p(p.normal(0), p.normal(1), p.normal(2));
-      if(p_map.normal.dot(normal_p)<-0.95) {normal_p = -normal_p, d_p=-d_p;}
+      if(p_map.normal.dot(normal_p)<-0.97) {normal_p = -normal_p, d_p=-d_p;}
       std::cout << "dot: " << p_map.normal.dot(normal_p) << std::endl;
       Eigen::Vector3f n_map = p_map.normal + normal_p;
       double d_map = p_map.d + d_p;
