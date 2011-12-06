@@ -1,0 +1,8 @@
+<?xml version="1.0"?>
+<launch>
+  <node pkg="cob_3d_mapping_semantics" type="semantic_extraction_node" name="semantic_extraction" output="screen">
+  	<!--remap from="map" to="/aggregate_point_map/map"/-->
+  	<remap from="feature_map" to="/feature_map_2"/>
+  	
+  </node>                 
+</launch>
