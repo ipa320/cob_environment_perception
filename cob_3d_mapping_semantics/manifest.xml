@@ -9,9 +9,13 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/cob_3d_mapping_semantics</url>
 
-	<depend package="cob_3d_mapping_msgs"/>
+	<depend package="roscpp"/>
 	<depend package="pcl"/>
+	<depend package="pcl_ros"/>
+	<depend package="visualization_msgs"/>
+	<depend package="cob_3d_mapping_msgs"/>
 
+	
 </package>
 
 
