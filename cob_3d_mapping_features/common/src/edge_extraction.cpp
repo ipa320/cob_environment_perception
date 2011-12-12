@@ -17,7 +17,7 @@
  * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 10/2011
+ * Date of creation: 11/2011
  * ToDo:
  *
  *
@@ -52,52 +52,10 @@
  *
  ****************************************************************/
 
-#ifndef __SEGMENTATION_H__
-#define __SEGMENTATION_H__
-
-#include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/PointIndices.h>
-#include <opencv2/core/core.hpp>
-#include <cob_3d_mapping_common/point_types.h>
+#include <pcl/impl/instantiate.hpp>
+#include "cob_3d_mapping_common/point_types.h"
+#include "cob_3d_mapping_features/edge_extraction.h"
+#include "cob_3d_mapping_features/impl/edge_extraction.hpp"
 
-namespace cob_3d_mapping_features
-{
-
-  struct Coords
-  {
-    int u;
-    int v;
-
-    Coords(int u_in, int v_in)
-      {
-	u = u_in;
-	v=  v_in;
-      }
-  };
-
-  class Segmentation
-  {
-  public:
-    /** \brief Empty constructor. */
-    Segmentation () { };
-
-    int searchForNeighbors (
-      pcl::PointCloud<PointLabel>::Ptr& cloud_in,
-      int col, int row,
-      double radius,
-      std::vector<int>& indices_ul,
-      std::vector<int>& indices_ur,
-      std::vector<int>& indices_lr,
-      std::vector<int>& indices_ll,
-      bool& gap_l, bool& gap_r, bool& gap_a, bool& gap_d);
-    bool isStopperInNeighbors(pcl::PointCloud<PointLabel>::Ptr& cloud_in, std::vector<int>& indices);
-    void propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_in);
-    void getClusterIndices(pcl::PointCloud<PointLabel>::Ptr& cloud_in, std::vector<pcl::PointIndices>& cluster_indices, cv::Mat& seg_img);
-
-  };
-}
-
-#endif  //#ifndef __SEGMENTATION_H__
-
-
+PCL_INSTANTIATE_EdgeExtraction(pcl::InterestPoint,PointLabel)

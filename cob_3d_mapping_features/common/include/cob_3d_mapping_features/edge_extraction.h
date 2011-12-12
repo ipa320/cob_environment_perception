@@ -52,52 +52,48 @@
  *
  ****************************************************************/
 
-#ifndef __SEGMENTATION_H__
-#define __SEGMENTATION_H__
+#ifndef __EDGE_EXTRACTION_H__
+#define __EDGE_EXTRACTION_H__
 
 #include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <pcl/PointIndices.h>
-#include <opencv2/core/core.hpp>
-#include <cob_3d_mapping_common/point_types.h>
 
 namespace cob_3d_mapping_features
 {
-
-  struct Coords
-  {
-    int u;
-    int v;
-
-    Coords(int u_in, int v_in)
-      {
-	u = u_in;
-	v=  v_in;
-      }
-  };
-
-  class Segmentation
+  template <typename PointInT, typename PointOutT>
+  class EdgeExtraction
   {
   public:
-    /** \brief Empty constructor. */
-    Segmentation () { };
+    EdgeExtraction () : threshold_(0.0)
+    { };
+    ~EdgeExtraction () { };
 
-    int searchForNeighbors (
-      pcl::PointCloud<PointLabel>::Ptr& cloud_in,
-      int col, int row,
-      double radius,
-      std::vector<int>& indices_ul,
-      std::vector<int>& indices_ur,
-      std::vector<int>& indices_lr,
-      std::vector<int>& indices_ll,
-      bool& gap_l, bool& gap_r, bool& gap_a, bool& gap_d);
-    bool isStopperInNeighbors(pcl::PointCloud<PointLabel>::Ptr& cloud_in, std::vector<int>& indices);
-    void propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_in);
-    void getClusterIndices(pcl::PointCloud<PointLabel>::Ptr& cloud_in, std::vector<pcl::PointIndices>& cluster_indices, cv::Mat& seg_img);
+    typedef pcl::PointCloud<PointInT> PointCloudIn;
+    typedef boost::shared_ptr<PointCloudIn> PointCloudInPtr;
+    typedef boost::shared_ptr<const PointCloudIn> PointCloudInConstPtr;
+    typedef pcl::PointCloud<PointOutT> PointCloudOut;
 
+    void setInput2DEdges (const PointCloudInConstPtr &cloud)
+    {
+      input_2d_ = cloud;
+    }
+
+    void setInput3DEdges (const PointCloudInConstPtr &cloud)
+    {
+      input_3d_ = cloud;
+    }
+
+    void setThreshold (const float &threshold)
+    {
+      threshold_ = threshold;
+    }
+    
+    void extractEdges (PointCloudOut &output);
+
+  protected:
+    PointCloudInConstPtr input_2d_;
+    PointCloudInConstPtr input_3d_;
+    float threshold_;
   };
 }
 
-#endif  //#ifndef __SEGMENTATION_H__
-
-
+#endif

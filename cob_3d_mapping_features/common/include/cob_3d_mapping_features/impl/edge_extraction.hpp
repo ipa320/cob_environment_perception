@@ -52,52 +52,43 @@
  *
  ****************************************************************/
 
-#ifndef __SEGMENTATION_H__
-#define __SEGMENTATION_H__
+#ifndef __IMPL_EDGE_EXTRACTION_H__
+#define __IMPL_EDGE_EXTRACTION_H__
 
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <pcl/PointIndices.h>
-#include <opencv2/core/core.hpp>
-#include <cob_3d_mapping_common/point_types.h>
+#include "cob_3d_mapping_common/point_types.h"
+#include "cob_3d_mapping_features/edge_extraction.h"
 
-namespace cob_3d_mapping_features
+template <typename PointInT, typename PointOutT> void
+cob_3d_mapping_features::EdgeExtraction<PointInT,PointOutT>::extractEdges(
+  PointCloudOut &output)
 {
+  output.height = input_3d_->height;
+  output.width = input_3d_->width;
+  output.points.resize(output.height * output.width);
 
-  struct Coords
+  float thresh = threshold_ * 2;
+  
+  for (size_t i=0; i < output.size(); i++)
   {
-    int u;
-    int v;
-
-    Coords(int u_in, int v_in)
-      {
-	u = u_in;
-	v=  v_in;
-      }
-  };
-
-  class Segmentation
-  {
-  public:
-    /** \brief Empty constructor. */
-    Segmentation () { };
-
-    int searchForNeighbors (
-      pcl::PointCloud<PointLabel>::Ptr& cloud_in,
-      int col, int row,
-      double radius,
-      std::vector<int>& indices_ul,
-      std::vector<int>& indices_ur,
-      std::vector<int>& indices_lr,
-      std::vector<int>& indices_ll,
-      bool& gap_l, bool& gap_r, bool& gap_a, bool& gap_d);
-    bool isStopperInNeighbors(pcl::PointCloud<PointLabel>::Ptr& cloud_in, std::vector<int>& indices);
-    void propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_in);
-    void getClusterIndices(pcl::PointCloud<PointLabel>::Ptr& cloud_in, std::vector<pcl::PointIndices>& cluster_indices, cv::Mat& seg_img);
-
-  };
+    if (input_3d_->points[i].strength > 1.0)
+    {
+      // set NANs to label 2:
+      output.points[i].label = 2;
+    }
+    else if ((input_3d_->points[i].strength + input_2d_->points[i].strength) > thresh)
+    {
+      // add normalized 2D and 3D strength values and apply threshold
+      // set edges to label 1:
+      output.points[i].label = 1;
+    }
+    else
+    {
+      // set remainders to label 0:
+      output.points[i].label = 0;
+    }
+  }
 }
 
-#endif  //#ifndef __SEGMENTATION_H__
+#define PCL_INSTANTIATE_EdgeExtraction(T,OutT) template class PCL_EXPORTS cob_3d_mapping_features::EdgeExtraction<T,OutT>;
 
-
+#endif
