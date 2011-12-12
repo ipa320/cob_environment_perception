@@ -52,10 +52,10 @@
  *
  ****************************************************************/
 
-#ifndef __IMPL_EDGE_ESTIMATION_H__
-#define __IMPL_EDGE_ESTIMATION_H__
+#ifndef __IMPL_EDGE_ESTIMATION_3D_H__
+#define __IMPL_EDGE_ESTIMATION_3D_H__
 
-#include "cob_3d_mapping_features/edge_estimation.h"
+#include "cob_3d_mapping_features/edge_estimation_3d.h"
 #include <cfloat>
 #include "cob_3d_mapping_common/stop_watch.h"
 
@@ -125,7 +125,7 @@ ipa_features::EdgeEstimation<PointInT, PointNT, PointOutT>::isBoundaryPoint (
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointInT, typename PointNT, typename PointOutT> double
-ipa_features::EdgeEstimation<PointInT, PointNT, PointOutT>::isEdgePoint (
+cob_3d_mapping_features::EdgeEstimation3D<PointInT, PointNT, PointOutT>::isEdgePoint (
     const pcl::PointCloud<PointInT> &cloud, const PointInT &q_point,
     const std::vector<int> &indices,
     const Eigen::Vector3f &n, const float &threshold)
@@ -202,7 +202,7 @@ ipa_features::EdgeEstimation<PointInT, PointNT, PointOutT>::isEdgePoint (
 
 
 template <typename PointInT, typename PointNT, typename PointOutT> int
-ipa_features::EdgeEstimation<PointInT, PointNT, PointOutT>::searchForNeighbors (
+cob_3d_mapping_features::EdgeEstimation3D<PointInT, PointNT, PointOutT>::searchForNeighbors (
     int index,
     double radius,
     std::vector<int>& indices,
@@ -267,7 +267,7 @@ ipa_features::EdgeEstimation<PointInT, PointNT, PointOutT>::searchForNeighbors (
 
 //////////////////////////////////////////////////////////////////////////////////////////////
 template <typename PointInT, typename PointNT, typename PointOutT> void
-ipa_features::EdgeEstimation<PointInT, PointNT, PointOutT>::computeFeature (PointCloudOut &output)
+cob_3d_mapping_features::EdgeEstimation3D<PointInT, PointNT, PointOutT>::computeFeature (PointCloudOut &output)
 {
   // Allocate enough space to hold the results
   // \note This resize is irrelevant for a radiusSearch ().
@@ -339,7 +339,7 @@ ipa_features::EdgeEstimation<PointInT, PointNT, PointOutT>::computeFeature (Poin
 
 
 template <typename PointInT, typename PointNT, typename PointOutT> float
-ipa_features::EdgeEstimation<PointInT, PointNT, PointOutT>::calc_dist_threshold (const pcl::PointCloud<PointInT> &cloud , int idx)
+cob_3d_mapping_features::EdgeEstimation3D<PointInT, PointNT, PointOutT>::calc_dist_threshold (const pcl::PointCloud<PointInT> &cloud , int idx)
 {
   //  if(input_->points[idx].z != input_->points[idx].z) return 0;
 
@@ -363,7 +363,7 @@ ipa_features::EdgeEstimation<PointInT, PointNT, PointOutT>::calc_dist_threshold 
 }
 
 
-#define PCL_INSTANTIATE_EdgeEstimation(PointInT,PointNT,PointOutT) template class PCL_EXPORTS ipa_features::EdgeEstimation<PointInT, PointNT, PointOutT>;
+#define PCL_INSTANTIATE_EdgeEstimation3D(PointInT,PointNT,PointOutT) template class PCL_EXPORTS cob_3d_mapping_features::EdgeEstimation3D<PointInT, PointNT, PointOutT>;
 
-#endif    // __IMPL_EDGE_ESTIMATION_H__
+#endif    // __IMPL_EDGE_ESTIMATION_3D_H__
 

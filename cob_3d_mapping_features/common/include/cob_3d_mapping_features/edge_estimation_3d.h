@@ -52,13 +52,13 @@
  *
  ****************************************************************/
 
-#ifndef __EDGE_ESTIMATION_H__
-#define __EDGE_ESTIMATION_H__
+#ifndef __EDGE_ESTIMATION_3D_H__
+#define __EDGE_ESTIMATION_3D_H__
 
 #include <pcl/features/feature.h>
 #include <Eigen/Geometry>
 
-namespace ipa_features
+namespace cob_3d_mapping_features
 {
   /** \brief Compute the angle in the [ 0, 2*PI ) interval of a point (direction) with a reference (0, 0) in 2D.
     * \param point a 2D point
@@ -82,7 +82,7 @@ namespace ipa_features
     * \ingroup features
     */
   template <typename PointInT, typename PointNT, typename PointOutT>
-  class EdgeEstimation: public pcl::FeatureFromNormals<PointInT, PointNT, PointOutT>
+  class EdgeEstimation3D: public pcl::FeatureFromNormals<PointInT, PointNT, PointOutT>
   {
     public:
       using pcl::Feature<PointInT, PointOutT>::feature_name_;
@@ -98,7 +98,7 @@ namespace ipa_features
 
     public:
       /** \brief Empty constructor. */
-      EdgeEstimation () : dist_threshold_ (0.05), search_radius_ (20)
+      EdgeEstimation3D () : dist_threshold_ (0.05), search_radius_ (20)
       {
         feature_name_ = "EdgeEstimation";
       };
@@ -180,8 +180,8 @@ namespace ipa_features
   };
 }
 
-#include "cob_3d_mapping_features/impl/edge_estimation.hpp"
+//#include "cob_3d_mapping_features/impl/edge_estimation_3d.hpp"
 
-#endif  //#ifndef __EDGE_ESTIMATION_H__
+#endif  //#ifndef __EDGE_ESTIMATION_3D_H__
 
 
