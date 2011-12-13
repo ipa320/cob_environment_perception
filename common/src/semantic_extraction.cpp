@@ -19,6 +19,7 @@
  *
  * Date of creation: 11/2011
  * ToDo:
+ * add comments in doxygen style
  *
  *
  *
@@ -65,6 +66,8 @@ SemanticExtraction::isHorizontal (PolygonPtr p_ptr)
    std::cout<<"\t%Ny: "<<p_ptr->normal(1)<<std::endl;
    std::cout<<"\t%Nz: "<<p_ptr->normal(2)<<std::endl;
    */
+  // TODO: define as parameters (declare member variable and set it from the node using ROS parameters)
+  // TODO: better use && instead of three if-conditions
   if (p_ptr->normal (2) > 0.99 || p_ptr->normal (2) < -0.99)
   {
     if (p_ptr->normal (0) < 0.1 && p_ptr->normal (0) > -0.1)
@@ -95,6 +98,8 @@ SemanticExtraction::isHeightOk (PolygonPtr p_ptr)
       //std::cout<<"\t%y: "<<p_ptr->poly_points[i][j][1]<<std::endl;
       //std::cout<<"\t%z: "<<p_ptr->poly_points[i][j][2]<<std::endl;
 
+      // TODO: parameters
+      // TODO: what is the purpose of the 2 counters? Shouldn't we better check the height of the centroid?
       if ((p_ptr->poly_points[i][j][2] < 1) && (p_ptr->poly_points[i][j][2] > 0.4))
       {
         count1++;
@@ -165,6 +170,7 @@ SemanticExtraction::isSizeOk (PolygonPtr p_ptr)
 
     std::cout << "\n\t*** Area = "<< area<< std::endl;
 
+    //TODO: parameters
     if (area >= 1 && area <= 3)
       return true;
     else if(area<1)
@@ -172,6 +178,7 @@ SemanticExtraction::isSizeOk (PolygonPtr p_ptr)
       std::cout << " Size is small "<< area<< std::endl;
       return false;
     }
+    //TODO: really 31?
     else if(area>31)
     {
       std::cout << " Size is large "<< area<< std::endl;
