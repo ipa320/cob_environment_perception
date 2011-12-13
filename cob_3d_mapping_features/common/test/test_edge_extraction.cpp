@@ -72,17 +72,18 @@
 #include "pcl/io/pcd_io.h"
 #include "pcl/features/normal_3d_omp.h"
 #include "pcl/features/normal_3d.h"
-#include <cob_3d_mapping_features/edge_estimation.h>
 #include <pcl/features/principal_curvatures.h>
 //#include <pcl/range_image/range_image.h>
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/PointIndices.h>
 #include "pcl/filters/extract_indices.h"
 #include <pcl/range_image/range_image.h>
-#include <cob_3d_mapping_features/range_image_border_extractor.h>
 #include <pcl/features/integral_image_normal.h>
+#include <cob_3d_mapping_features/edge_estimation_3d.h>
+#include <cob_3d_mapping_features/range_image_border_extractor.h>
 #include <cob_3d_mapping_common/point_types.h>
-#include "pcl/filters/extract_indices.h"
+#include <cob_3d_mapping_features/segmentation.h>
+
 // ROS message includes
 //#include <sensor_msgs/PointCloud2.h>
 
@@ -95,7 +96,9 @@
 
 typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloudT;
 typedef pcl::PointXYZRGB PointT;
+typedef cob_3d_mapping_features::Coords Coords;
 
+/*
 struct Coords
 {
   int u;
@@ -107,7 +110,7 @@ struct Coords
     v=  v_in;
   }
 };
-
+*/
 
 
 //####################
@@ -284,7 +287,7 @@ public:
     //pcl::KdTree<pcl::PointXYZRGBNormal>::Ptr tree;
     pcl::OrganizedDataIndex<pcl::PointXYZRGBNormal>::Ptr tree (new pcl::OrganizedDataIndex<pcl::PointXYZRGBNormal> ());
     //tree = boost::make_shared<pcl::KdTreeFLANN<pcl::PointXYZRGBNormal> > ();
-    ipa_features::EdgeEstimation<pcl::PointXYZRGBNormal,pcl::PointXYZRGBNormal,pcl::InterestPoint> edge_estimation;
+    cob_3d_mapping_features::EdgeEstimation3D<pcl::PointXYZRGBNormal,pcl::PointXYZRGBNormal,pcl::InterestPoint> edge_estimation;
     edge_estimation.setSearchMethod(tree);
     edge_estimation.setInputCloud(cloud_n);
     //edge_estimation.setSearchSurface (cloud);
@@ -1053,6 +1056,11 @@ int main(int argc, char** argv)
 
   /// Load PCD file as input; better use binary PCD files, ascii files seem to generate corrupt point clouds
   std::string directory("/home/goa/pcl_daten/corner/");
+  if (argc == 2)
+    directory = argv[1];
+  else
+    std::cout << "Selected default directory \" " << directory << "\"" << std::endl;
+
   PointCloudT::Ptr cloud_in = PointCloudT::Ptr (new PointCloudT);
   pcl::io::loadPCDFile(directory+"pc_0.pcd", *cloud_in);
 
@@ -1182,11 +1190,12 @@ int main(int argc, char** argv)
   }
 
   pcl::io::savePCDFileASCII (directory+"/output/edge_cloud.pcd", *cloud_out2);
-  ef.propagateWavefront2(cloud_out2);
+  cob_3d_mapping_features::Segmentation seg;
+  seg.propagateWavefront2(cloud_out2);
 
   std::vector<pcl::PointIndices> clusters;
   cv::Mat seg_img;
-  ef.getClusterIndices(cloud_out2, clusters, seg_img);
+  seg.getClusterIndices(cloud_out2, clusters, seg_img);
 
   /*pcl::ExtractIndices<pcl::PointXYZRGB> extract;
   for (int i = 0; i<clusters.size(); i++)
