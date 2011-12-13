@@ -250,7 +250,7 @@ GeometryMap::addMapEntry(MapEntryPtr p_ptr)
   //gpc_write_polygon(out, 0, &p.polygon_plane);
   //fclose(out);
   // Iterate over map
-if(true)
+if(false)
 {
    std::vector<int> intersections;
 
@@ -319,9 +319,10 @@ else
 		  n_map.normalize();
 		//  std::cout << "d map und normale " << d_map << " normale " << n_map << std::endl;
 		  Eigen::Vector3f ft_pt;
-		  double x = -d_map/(n_map(0)+n_map(1)+n_map(2));
-		  ft_pt << x,x,x;
+		 // double x = -d_map/(n_map(0)+n_map(1)+n_map(2));
+		//  ft_pt << x,x,x;
 
+		  getPointOnPlane(n_map,d_map,ft_pt);
 		  /*if(fabs(n_map(2))>0.01)
 			ft_pt << 0, 0, -d_map/n_map(2);
 		  else if(fabs(n_map(0))>0.01)
@@ -766,7 +767,7 @@ GeometryMap::getPointOnPlane(const Eigen::Vector3f &normal,double d,Eigen::Vecto
 	}
 	if(counter==0)
 	{
-		point << 1,1,-normal(0)/normal(2)-normal(1)/normal(2)+d/normal(2);
+		point << 0,0,d/normal(2);
 	}
 	if(counter==1)
 	{
@@ -777,7 +778,7 @@ GeometryMap::getPointOnPlane(const Eigen::Vector3f &normal,double d,Eigen::Vecto
 	if(counter==2)
 	{
 		point << 0,0,0;
-		point(no_zero_direction[0])=d/normal(no_zero_direction[0]);
+		point(0)=d/normal(no_zero_direction[0]);
 	}
 }
 
