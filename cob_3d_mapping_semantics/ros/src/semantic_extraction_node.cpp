@@ -19,6 +19,8 @@
  *
  * Date of creation: 11/2011
  * ToDo:
+ * ROS parameters for parameters in semantic_extraction class
+ * switch to ShapeArray message type for map
  *
  *
  *
@@ -90,6 +92,8 @@ public:
     /// void
   }
 
+
+  //TODO: get map by service not by topic
   /**
    * @brief callback for publishing new PolygonArrayArray messages
    *
@@ -142,6 +146,7 @@ public:
           {
             ROS_INFO(" Size is ok \n");
             publishPolygonMarker (*poly_ptr); //publish marker messages to see visually on rviz
+            //TODO: publish as ShapeArray, not as PointCloud
             convertToPointCloudMsg (*poly_ptr, *pc_ptr);
             pc_pub_.publish (*pc_ptr);
           }
@@ -319,6 +324,7 @@ public:
   publishPolygonMarker (const SemanticExtraction::Polygon& poly)
   {
 
+    //TODO: set unique ID for each new marker, remove old markers
     std::cout << " polygons size : " << poly.poly_points.size () << std::endl;
     int ctr = 0;
     visualization_msgs::Marker marker;

@@ -19,6 +19,7 @@
  *
  * Date of creation: 11/2011
  * ToDo:
+ * comments in doxygen style
  *
  *
  *
