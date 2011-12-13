@@ -1,3 +1,57 @@
+/****************************************************************
+ *
+ * Copyright (c) 2011
+ *
+ * Fraunhofer Institute for Manufacturing Engineering
+ * and Automation (IPA)
+ *
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *
+ * Project name: care-o-bot
+ * ROS stack name: cob_environment_perception_intern
+ * ROS package name: cob_3d_mapping_features
+ * Description:
+ *
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *
+ * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
+ * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ *
+ * Date of creation: 11/2011
+ * ToDo:
+ *
+ *
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the Fraunhofer Institute for Manufacturing
+ *       Engineering and Automation (IPA) nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License LGPL as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License LGPL for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License LGPL along with this program.
+ * If not, see <http://www.gnu.org/licenses/>.
+ *
+ ****************************************************************/
+
 /*
  * FPFH_SVM_trainer.cpp
  *
@@ -59,6 +113,15 @@ void readOptions(int argc, char* argv[])
 
   if (vm.count("help"))
   {
+    cout << "Reads files containing FPFH features and creates a SVM model" << endl;
+    cout << "The following files from the defined folder containing the strings are used:" << endl;
+    cout << "\t  \"plane\"" << endl;
+    cout << "\t  \"edge_convex_\"" << endl;
+    cout << "\t  \"edge_concave_\"" << endl;
+    cout << "\t  \"sphere_convex_\"" << endl;
+    cout << "\t  \"sphere_concave_\"" << endl;
+    cout << "\t  \"cylinder_convex_\"" << endl;
+    cout << "\t  \"cylinder_concave_\"" << endl;
     cout << cmd_line << endl;
     exit(0);
   }
@@ -222,8 +285,8 @@ int main(int argc, char** argv)
   params.svm_type = CvSVM::C_SVC;//NU_SVC;//C_SVC;
   params.kernel_type = CvSVM::RBF;
   params.nu = 0.5;
-  params.C = svm_c; //TODO !!!
-  params.gamma = svm_gamma; //TODO !!!
+  params.C = svm_c;
+  params.gamma = svm_gamma;
   // Define iteration termination criteria:
   params.term_crit.type = CV_TERMCRIT_ITER | CV_TERMCRIT_EPS;
   params.term_crit.max_iter = 200;
@@ -236,5 +299,5 @@ int main(int argc, char** argv)
   string file_xml = file_folder + "SVM_fpfh_rng_g_c.xml";
   svm.save(file_xml.c_str());
   //cout << "C: " << params.C << " - Gamma: " << svm_gamma << " / " << params.gamma << endl;
-  cout << "Training process complete." << endl;
+  cout << "Training process completed." << endl;
 }

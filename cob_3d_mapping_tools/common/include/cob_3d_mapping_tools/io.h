@@ -62,38 +62,91 @@
 
 namespace cob_3d_mapping_tools
 {
+  /*! @brief 2D image PPM file format reader.
+   */
   class PPMReader
   {
   public:
-    PPMReader()
-    {
-    }
+    /*! Empty constructor */
+    PPMReader() { }
+    /*! Empty destructor */
+    ~PPMReader() { }
 
+    /*! @brief Reads a 2D image from .ppm ASCII format and maps the RGB values on a PointCloud.
+     *
+     * @param[in] file_name the input path of the .ppm ASCII file
+     * @param[out] cloud the point cloud with RGB fields to which the .ppm is mapped
+     * @return < 0 (-1) on error, else 0
+     */
     int mapRGB (const std::string &file_name, pcl::PointCloud<pcl::PointXYZRGBA> &cloud);
 
   };
   
+  /*! @brief 2D image PPM file format writer.
+   */
   class PPMWriter
   {
   public:
+    /*! Empty constructor */
     PPMWriter()
       : fixed_max_(false), fixed_min_(false), max_z_(FLT_MIN), min_z_(FLT_MAX)
-    {
-    }
+    { }
+    /*! Empty destructor */
+    ~PPMWriter() { }
 
+    /*! @brief Writes the color information of a point cloud to an ASCII formated .ppm 2D image.
+     *
+     * @param[in] file_name the output .ppm filename
+     * @param[in] cloud the input organized point cloud providing RGB fields
+     * @return -1 for error, else 0
+     */
     int writeRGB (const std::string &file_name, const pcl::PointCloud<pcl::PointXYZRGBA> &cloud);
 
+    /*! @brief Writes the depth information of a point cloud to an ASCII formated .ppm 
+     *         2D color image
+     *
+     * The Z values of the point cloud are encoded as a color gradient with the minimum value defined
+     * by @a setMinZ as @a RGB(255,0,0) and the maximum value defined by @a setMaxZ as @a RGB(0,0,255).
+     * If no values are defined, the minimum and maximum values of the point cloud are determined 
+     * automatically.
+     *
+     * @param[in] file_name the output .ppm filename
+     * @param[in] cloud the input organized point cloud
+     * @return < 0 (-1) on error, else 0
+     */
     int writeDepth (const std::string &file_name, const pcl::PointCloud<pcl::PointXYZRGBA> &cloud);
 
+    /*! @brief Sets the maximum Z value for the color gradient
+     *
+     * @param[in] max the maximum Z value
+     */
     void setMaxZ (const float &max);
+    /*! @brief Sets the minimum Z value for the color gradient
+     *
+     * @param[in] min the minimum Z value
+     */
     void setMinZ (const float &min);
 
+    /*! @brief Flag whether a max value was defined manually */
     bool fixed_max_;
+    /*! @brief Flag whether a min value was defined manually */
     bool fixed_min_;
+    /*! @brief Holds the maximum Z value */
     float max_z_;
+    /*! @brief Holds the minimum Z value */
     float min_z_;
   };
 
+  /*! @brief Converts a normalized Z value into an RGB color value
+   *
+   * @param[in] position the normalized Z value to be represented as color 
+   *     (0.0 for red, 1 for blue)
+   * @param[out] the output rgb color value separated
+   *      - @a rgb[0]: red (0..255)
+   *      - @a rgb[1]: green (0..255)
+   *      - @a rgb[2]: blue (0..255)
+   * @return the rgb color value as combined integer
+   */
   uint32_t getGradientColor(double position, uint8_t rgb[]);
 }
 
