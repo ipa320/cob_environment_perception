@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<launch> 
+  <node pkg="nodelet" type="nodelet" name="" args="standalone cob_3d_mapping_point_map/DifferenceSegmentation " output="screen">
+  	<remap from="target" to="/point_map/map" />
+    <remap from="input" to="/point_map/pc_aligned_vox" />
+    <remap from="output" to="/point_map/map_diff" />
+    <rosparam>
+      distance_threshold: 0.1
+    </rosparam>
+  </node>
+</launch>
