@@ -74,6 +74,31 @@ cob_3d_mapping_features::EdgeEstimation2D<PointInT,PointOutT>::getColorImage(
   }
 }
 
+template <typename PointInT, typename PointOutT> void 
+cob_3d_mapping_features::EdgeEstimation2D<PointInT,PointOutT>::getRangeImage(
+  cv::Mat &range_image, const float &th_min=0.0f, const float &th_max=0.0f)
+{
+  range_image.create(input_->height, input_->width, CV_32FC1);
+  float* r_ptr = 0;
+  int pc_pt_idx=0;
+  for (int row = 0; row < range_image.rows; row++)
+  {
+    r_ptr = range_image.ptr<float>(row);
+    for (int col = 0; col < range_image.cols; col++, pc_pt_idx++)
+    {
+      memcpy(&r_ptr[col], &input_->points[pc_pt_idx].z, sizeof(float));
+    }
+  }
+  if(th_max != 0.0)
+    cv::threshold(range_image, range_image, th_max, th_max, cv::THRESH_TRUNC);
+  if(th_min != 0.0)
+  {
+    range_image = range_image - th_min;
+    cv::threshold(range_image, range_image, 0, 0, cv::THRESH_TOZERO);
+  }
+  cv::normalize(range_image, range_image, 0, 1, cv::NORM_MINMAX);
+}
+
 template <typename PointInT, typename PointOutT> void
 cob_3d_mapping_features::EdgeEstimation2D<PointInT,PointOutT>::extractEdgesSobel(
   std::vector<cv::Mat> &image_channels, 
@@ -99,6 +124,24 @@ cob_3d_mapping_features::EdgeEstimation2D<PointInT,PointOutT>::extractEdgesSobel
 }
 
 template <typename PointInT, typename PointOutT> void
+cob_3d_mapping_features::EdgeEstimation2D<PointInT,PointOutT>::extractEdgesSobel(
+  cv::Mat &image, 
+  cv::Mat &sobel_image)
+{
+  cv::Mat sobel_res;
+  cv::Mat tmp_x, tmp_y;
+
+  cv::Sobel(image, tmp_x, CV_32FC1, 1, 0, 1);
+  cv::pow(tmp_x,2,tmp_x);
+  cv::Sobel(image, tmp_y, CV_32FC1, 0, 1, 1);
+  cv::pow(tmp_y,2,tmp_y);
+  sobel_res = tmp_x + tmp_y;
+
+  cv::normalize(sobel_res, sobel_res, 0, 1, cv::NORM_MINMAX);
+  sobel_image = sobel_res;
+}
+
+template <typename PointInT, typename PointOutT> void
 cob_3d_mapping_features::EdgeEstimation2D<PointInT,PointOutT>::extractEdgesLaPlace(
   std::vector<cv::Mat> &image_channels, 
   cv::Mat &laplace_image)
@@ -114,6 +157,23 @@ cob_3d_mapping_features::EdgeEstimation2D<PointInT,PointOutT>::extractEdgesLaPla
   laplace_res = cv::abs(laplace_res);
   cv::normalize(laplace_res, laplace_res, 0, 1, cv::NORM_MINMAX);
   cv::threshold(laplace_res, laplace_res, 0.1, 1, cv::THRESH_TOZERO);
+  laplace_res *= 2;
+  cv::threshold(laplace_res, laplace_res, 1, 1, cv::THRESH_TRUNC);
+  laplace_image = laplace_res;
+}
+
+template <typename PointInT, typename PointOutT> void
+cob_3d_mapping_features::EdgeEstimation2D<PointInT,PointOutT>::extractEdgesLaPlace(
+  cv::Mat &image, 
+  cv::Mat &laplace_image)
+{
+  cv::Mat laplace_res;
+  
+  cv::Laplacian(image, laplace_res, CV_32FC1, 1);
+
+  laplace_res = cv::abs(laplace_res);
+  cv::normalize(laplace_res, laplace_res, 0, 1, cv::NORM_MINMAX);
+//  cv::threshold(laplace_res, laplace_res, 0.1, 1, cv::THRESH_TOZERO);
   laplace_res *= 2;
   cv::threshold(laplace_res, laplace_res, 1, 1, cv::THRESH_TRUNC);
   laplace_image = laplace_res;
@@ -162,6 +222,48 @@ cob_3d_mapping_features::EdgeEstimation2D<PointInT,PointOutT>::computeEdges(
 
   img_combined = img_sobel + img_laplace;
   //cv::normalize(img_combined, img_combined, 0, 1, cv::NORM_MINMAX);
+  cv::threshold(img_combined, img_combined, 1, 1, cv::THRESH_TRUNC);
+
+  sobel_out = img_sobel;
+  laplace_out = img_laplace;
+  combined_out = img_combined;
+}
+
+template <typename PointInT, typename PointOutT> void
+cob_3d_mapping_features::EdgeEstimation2D<PointInT,PointOutT>::computeEdgesFromRange(
+  PointCloudOut &output)
+{
+  cv::Mat range_image, img_sobel, img_laplace, img_combined;
+  getRangeImage(range_image);
+  extractEdgesSobel(range_image, img_sobel);
+  extractEdgesLaPlace(range_image, img_laplace);
+
+  img_combined = img_sobel + img_laplace;
+  cv::threshold(img_combined, img_combined, 1, 1, cv::THRESH_TRUNC);
+
+  output.height = input_->height;
+  output.width = input_->width;
+  output.points.resize(output.height * output.width);
+  
+  for (unsigned int i=0; i < output.height; i++)
+  {
+    for (unsigned int j=0; j < output.width; j++)
+    {
+      output.points[i*output.width+j].strength = img_combined.at<float>(i,j);
+    }
+  }
+}
+
+template <typename PointInT, typename PointOutT> void
+cob_3d_mapping_features::EdgeEstimation2D<PointInT,PointOutT>::computeEdgesFromRange(
+  cv::Mat &sobel_out, cv::Mat &laplace_out, cv::Mat &combined_out)
+{
+  cv::Mat range_image, img_sobel, img_laplace, img_combined;
+  getRangeImage(range_image);
+  extractEdgesSobel(range_image, img_sobel);
+  extractEdgesLaPlace(range_image, img_laplace);
+
+  img_combined = img_sobel + img_laplace;
   cv::threshold(img_combined, img_combined, 1, 1, cv::THRESH_TRUNC);
 
   sobel_out = img_sobel;

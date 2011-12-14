@@ -71,6 +71,7 @@
 
 // Package Includes:
 #include "cob_3d_mapping_common/point_types.h"
+#include "cob_3d_mapping_features/fast_edge_estimation_3d.h"
 #include "cob_3d_mapping_features/edge_estimation_3d.h"
 #include "cob_3d_mapping_features/edge_estimation_2d.h"
 #include "cob_3d_mapping_features/edge_extraction.h"
@@ -83,8 +84,8 @@ typedef visualization::PointCloudColorHandlerRGBField<PointXYZRGB> ColorHdlRGB;
 
 string file_;
 float rn_;
+int rfp_;
 float ex_th_;
-float e3d_th_;
 
 void readOptions(int argc, char* argv[])
 {
@@ -93,10 +94,10 @@ void readOptions(int argc, char* argv[])
   options.add_options()
     ("help", "produce help message")
     ("in,i", value<string>(&file_), "input pcd file")
-    ("normal,n", value<float>(&rn_)->default_value(0.025), 
+    ("normal,n", value<float>(&rn_)->default_value(0.025),
      "set normal estimation radius")
-    ("edge3d,e", value<float>(&e3d_th_)->default_value(0.02),
-     "set the distance threshold for 3D edge estimation")
+    ("feature,f", value<int>(&rfp_)->default_value(20),
+     "set 3d edge estimation radius")
     ("extraction_th,x", value<float>(&ex_th_)->default_value(0.1), 
       "set the strength threshold for edge extraction")
     ;
@@ -145,13 +146,10 @@ int main(int argc, char** argv)
   cout << t.elapsed() << "s\t for normal estimation" << endl;
 
   t.restart();
-  OrganizedDataIndex<PointXYZRGB>::Ptr oTree (new OrganizedDataIndex<PointXYZRGB> );
-  cob_3d_mapping_features::EdgeEstimation3D<PointXYZRGB, Normal, InterestPoint> ee3d;
-  ee3d.setRadiusSearch(0.04);
-  ee3d.setSearchMethod(oTree);
+  cob_3d_mapping_features::FastEdgeEstimation3D<PointXYZRGB, Normal, InterestPoint> ee3d;
+  ee3d.setPixelSearchRadius(rfp_,1,1);
   ee3d.setInputCloud(p);
   ee3d.setInputNormals(n);
-  ee3d.dist_threshold_ = e3d_th_;
   ee3d.compute(*ip3d);
   cout << t.elapsed() << "s\t for 3D edge estimation" << endl;
 
