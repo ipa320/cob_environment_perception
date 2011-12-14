@@ -55,6 +55,7 @@
 
 // ROS includes
 #include <ros/ros.h>
+#include <rosbag/bag.h>
 
 // ROS message includes
 #include <cob_3d_mapping_msgs/GetPointMap.h>
@@ -66,7 +67,7 @@
 int main (int argc, char **argv)
 {
   if(argc<1) {
-    ROS_ERROR("Please specify output file\nrosrun cob_3d_mapping_point_map get_map_client myfile.pcd");
+    ROS_ERROR("Please specify output file\nrosrun cob_3d_mapping_point_map get_map_client myfile.bag");
     return -1;
   }
   ros::init(argc, argv, "get_point_map");
@@ -92,9 +93,14 @@ int main (int argc, char **argv)
     return 0;
   }
 
-  pcl::PointCloud<pcl::PointXYZRGB> map;
+  /*pcl::PointCloud<pcl::PointXYZRGB> map;
   pcl::fromROSMsg(resp.map, map);
-  pcl::io::savePCDFile(argv[1],map,false);
+  pcl::io::savePCDFile(argv[1],map,false);*/
+  rosbag::Bag bag;
+  bag.open(argv[1], rosbag::bagmode::Write);
+  bag.write("point_map", resp.map.header.stamp, resp.map);
+
+  bag.close();
 
   //exit
   return 0;

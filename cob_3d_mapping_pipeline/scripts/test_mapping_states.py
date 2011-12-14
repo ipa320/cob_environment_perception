@@ -21,10 +21,10 @@ class TestStates:
 
 		# open the container
 		with SM:
-			#smach.StateMachine.add('UPDATE', UpdateEnvMap(),
-			#	transitions={'succeeded':'overall_succeeded', 'failed':'overall_failed'})
-			smach.StateMachine.add('UPDATE', Map360(),
+			smach.StateMachine.add('UPDATE', UpdateEnvMap(),
 				transitions={'succeeded':'overall_succeeded', 'failed':'overall_failed'})
+			#smach.StateMachine.add('UPDATE', Map360(),
+			#	transitions={'succeeded':'overall_succeeded', 'failed':'overall_failed'})
 		try:
 			SM.execute()
 		except:

@@ -212,12 +212,14 @@ public:
          cob_3d_mapping_msgs::GetGeometricMap::Response &res)
   {
     boost::shared_ptr<std::vector<FeatureMap::MapEntryPtr> > map = feature_map_.getMap();
+    res.map.header.stamp = ros::Time::now();
+    res.map.header.frame_id = "/map";
     for(unsigned int i=0; i<map->size(); i++)
     {
       FeatureMap::MapEntry& sm = *(map->at(i));
       cob_3d_mapping_msgs::Shape s;
       convertToROSMsg(sm,s);
-      res.shapes.push_back(s);
+      res.map.shapes.push_back(s);
     }
     return true;
   }

@@ -93,7 +93,7 @@ public:
   }
 
 
-  //TODO: get map by service not by topic
+  //TODO: get map also by service
   /**
    * @brief callback for publishing new PolygonArrayArray messages
    *
