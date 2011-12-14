@@ -79,10 +79,15 @@ namespace cob_3d_mapping_features
     }
 
     void getColorImage(cv::Mat& color_image);
+    void getRangeImage(cv::Mat& range_image, const float &th_min, const float &th_max);
     void extractEdgesSobel(std::vector<cv::Mat> &image_channels, cv::Mat& sobel_image);
+    void extractEdgesSobel(cv::Mat &image, cv::Mat& sobel_image);
     void extractEdgesLaPlace(std::vector<cv::Mat> &image_channels, cv::Mat& laplace_image);
+    void extractEdgesLaPlace(cv::Mat &image, cv::Mat& laplace_image);
     void computeEdges(PointCloudOut &output);
     void computeEdges(cv::Mat &sobel_out, cv::Mat &laplace_out, cv::Mat &combined_out);
+    void computeEdgesFromRange(PointCloudOut &output);
+    void computeEdgesFromRange(cv::Mat &sobel_out, cv::Mat &laplace_out, cv::Mat &combined_out);
 
   protected:
     PointCloudInConstPtr input_;
