@@ -1,0 +1,6 @@
+<?xml version="1.0"?>
+<launch>
+  <node ns="geometry_map" pkg="cob_3d_mapping_pipeline_fake" type="geometry_map_node" name="geometry_map" output="screen">
+  	<param name="file_path" type="string" value="$(find cob_3d_mapping_pipeline_fake)/files/geometry_map.bag"/>
+  </node>                 
+</launch>

@@ -10,6 +10,7 @@
   <url>http://ros.org/wiki/cob_3d_mapping_pipeline_fake</url>
   
   <depend package="actionlib"/>
+  <depend package="rosbag"/>
   <depend package="cob_3d_mapping_msgs"/>
 
 </package>
