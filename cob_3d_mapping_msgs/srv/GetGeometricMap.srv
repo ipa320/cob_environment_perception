@@ -1,2 +1,2 @@
 ---
-cob_3d_mapping_msgs/Shape[] shapes
+cob_3d_mapping_msgs/ShapeArray map
