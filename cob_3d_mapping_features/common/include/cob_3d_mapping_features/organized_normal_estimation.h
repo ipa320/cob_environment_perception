@@ -14,10 +14,10 @@
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
- * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 10/2011
+ * Date of creation: 12/2011
  * ToDo:
  *
  *
@@ -52,46 +52,65 @@
  *
  ****************************************************************/
 
-#ifndef __EDGE_ESTIMATION_2D_H__
-#define __EDGE_ESTIMATION_2D_H__
+#ifndef __ORGANIZED_NORMAL_ESTIMATION_H__
+#define __ORGANIZED_NORMAL_ESTIMATION_H__
 
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <cv.h>
+#include "cob_3d_mapping_features/organized_features.h"
 
 namespace cob_3d_mapping_features
 {
-  template <typename PointInT, typename PointOutT> 
-  class EdgeEstimation2D
+  template <typename PointInT, typename PointOutT, typename LabelOutT>
+    class OrganizedNormalEstimation : public OrganizedFeatures<PointInT,PointOutT>
   {
-  public:
-    EdgeEstimation2D () { };
-    ~EdgeEstimation2D () { };
+    public:
+
+    using OrganizedFeatures<PointInT,PointOutT>::pixel_search_radius_;
+    using OrganizedFeatures<PointInT,PointOutT>::pixel_steps_;
+    using OrganizedFeatures<PointInT,PointOutT>::circle_steps_;
+    using OrganizedFeatures<PointInT,PointOutT>::inv_width_;
+    using OrganizedFeatures<PointInT,PointOutT>::mask_;
+    using OrganizedFeatures<PointInT,PointOutT>::input_;
+    using OrganizedFeatures<PointInT,PointOutT>::indices_;
+    using OrganizedFeatures<PointInT,PointOutT>::surface_;
+    using OrganizedFeatures<PointInT,PointOutT>::distance_threshold_modifier_;
+    using OrganizedFeatures<PointInT,PointOutT>::feature_name_;
 
     typedef pcl::PointCloud<PointInT> PointCloudIn;
-    typedef boost::shared_ptr<PointCloudIn> PointCloudInPtr;
-    typedef boost::shared_ptr<const PointCloudIn> PointCloudInConstPtr;
+    typedef typename PointCloudIn::Ptr PointCloudInPtr;
+    typedef typename PointCloudIn::ConstPtr PointCloudInConstPtr;
+
     typedef pcl::PointCloud<PointOutT> PointCloudOut;
+    typedef typename PointCloudOut::Ptr PointCloudOutPtr;
+    typedef typename PointCloudOut::ConstPtr PointCloudOutConstPtr;
 
-    void setInputCloud (const PointCloudInConstPtr &cloud)
+    typedef pcl::PointCloud<LabelOutT> LabelCloudOut;
+    typedef typename LabelCloudOut::Ptr LabelCloudOutPtr;
+    typedef typename LabelCloudOut::ConstPtr LabelCloudOutConstPtr;
+
+    OrganizedNormalEstimation ()
     {
-      input_ = cloud;
-    }
+      feature_name_ = "OrganizedNormalEstimation";
+    };
 
-    void getColorImage(cv::Mat& color_image);
-    void getRangeImage(cv::Mat& range_image, const float &th_min, const float &th_max);
-    void extractEdgesSobel(std::vector<cv::Mat> &image_channels, cv::Mat& sobel_image);
-    void extractEdgesSobel(cv::Mat &image, cv::Mat& sobel_image);
-    void extractEdgesLaPlace(std::vector<cv::Mat> &image_channels, cv::Mat& laplace_image);
-    void extractEdgesLaPlace(cv::Mat &image, cv::Mat& laplace_image);
-    void computeEdges(PointCloudOut &output);
-    void computeEdges(cv::Mat &sobel_out, cv::Mat &laplace_out, cv::Mat &combined_out);
-    void computeEdgesFromRange(PointCloudOut &output);
-    void computeEdgesFromRange(cv::Mat &sobel_out, cv::Mat &laplace_out, cv::Mat &combined_out);
+    inline void
+      setOutputLabels(LabelCloudOutPtr labels) { labels_ = labels; }
 
-  protected:
-    PointCloudInConstPtr input_;
+    void
+      computePointNormal(
+	const PointCloudIn &cloud,
+	int index,
+	float &n_x,
+	float &n_y,
+	float &n_z,
+	int &label_out);
 
+    protected:
+
+    void
+      computeFeature (PointCloudOut &output);
+
+    LabelCloudOutPtr labels_;
+    
   };
 }
 

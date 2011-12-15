@@ -14,10 +14,10 @@
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
- * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 10/2011
+ * Date of creation: 12/2011
  * ToDo:
  *
  *
@@ -52,46 +52,36 @@
  *
  ****************************************************************/
 
-#ifndef __EDGE_ESTIMATION_2D_H__
-#define __EDGE_ESTIMATION_2D_H__
+#ifndef __ORGANIZED_NORMAL_ESTIMATION_OMP_H__
+#define __ORGANIZED_NORMAL_ESTIMATION_OMP_H__
 
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <cv.h>
+#include "cob_3d_mapping_features/organized_normal_estimation.h"
 
 namespace cob_3d_mapping_features
 {
-  template <typename PointInT, typename PointOutT> 
-  class EdgeEstimation2D
+  template <typename PointInT, typename PointOutT, typename LabelOutT>
+    class OrganizedNormalEstimationOMP : public OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>
   {
-  public:
-    EdgeEstimation2D () { };
-    ~EdgeEstimation2D () { };
+    public:
 
-    typedef pcl::PointCloud<PointInT> PointCloudIn;
-    typedef boost::shared_ptr<PointCloudIn> PointCloudInPtr;
-    typedef boost::shared_ptr<const PointCloudIn> PointCloudInConstPtr;
-    typedef pcl::PointCloud<PointOutT> PointCloudOut;
+    using OrganizedFeatures<PointInT,PointOutT>::input_;
+    using OrganizedFeatures<PointInT,PointOutT>::indices_;
+    using OrganizedFeatures<PointInT,PointOutT>::surface_;
+    using OrganizedFeatures<PointInT,PointOutT>::feature_name_;
+    using OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>::labels_;
 
-    void setInputCloud (const PointCloudInConstPtr &cloud)
+    typedef typename OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>::PointCloudOut PointCloudOut;
+
+    OrganizedNormalEstimationOMP ()
     {
-      input_ = cloud;
-    }
+      feature_name_ = "OrganizedNormalEstimationOMP";
+    };
 
-    void getColorImage(cv::Mat& color_image);
-    void getRangeImage(cv::Mat& range_image, const float &th_min, const float &th_max);
-    void extractEdgesSobel(std::vector<cv::Mat> &image_channels, cv::Mat& sobel_image);
-    void extractEdgesSobel(cv::Mat &image, cv::Mat& sobel_image);
-    void extractEdgesLaPlace(std::vector<cv::Mat> &image_channels, cv::Mat& laplace_image);
-    void extractEdgesLaPlace(cv::Mat &image, cv::Mat& laplace_image);
-    void computeEdges(PointCloudOut &output);
-    void computeEdges(cv::Mat &sobel_out, cv::Mat &laplace_out, cv::Mat &combined_out);
-    void computeEdgesFromRange(PointCloudOut &output);
-    void computeEdgesFromRange(cv::Mat &sobel_out, cv::Mat &laplace_out, cv::Mat &combined_out);
+    protected:
 
-  protected:
-    PointCloudInConstPtr input_;
-
+    void
+      computeFeature (PointCloudOut &output);
+    
   };
 }
 

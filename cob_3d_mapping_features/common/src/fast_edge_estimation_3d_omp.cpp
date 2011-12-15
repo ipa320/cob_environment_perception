@@ -17,7 +17,7 @@
  * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 10/2011
+ * Date of creation: 12/2011
  * ToDo:
  *
  *
@@ -52,47 +52,13 @@
  *
  ****************************************************************/
 
-#ifndef __EDGE_ESTIMATION_2D_H__
-#define __EDGE_ESTIMATION_2D_H__
+#include "pcl/point_types.h"
+#include "pcl/impl/instantiate.hpp"
+#include "cob_3d_mapping_features/fast_edge_estimation_3d_omp.h"
+#include "cob_3d_mapping_features/impl/fast_edge_estimation_3d_omp.hpp"
 
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <cv.h>
+// Instantiations of specific point types
+PCL_INSTANTIATE_FastEdgeEstimation3DOMP(pcl::PointXYZRGBNormal,pcl::PointXYZRGBNormal,pcl::InterestPoint)
+PCL_INSTANTIATE_FastEdgeEstimation3DOMP(pcl::PointXYZRGB,pcl::PointXYZRGBNormal,pcl::InterestPoint)
+PCL_INSTANTIATE_FastEdgeEstimation3DOMP(pcl::PointXYZRGB,pcl::Normal,pcl::InterestPoint)
 
-namespace cob_3d_mapping_features
-{
-  template <typename PointInT, typename PointOutT> 
-  class EdgeEstimation2D
-  {
-  public:
-    EdgeEstimation2D () { };
-    ~EdgeEstimation2D () { };
-
-    typedef pcl::PointCloud<PointInT> PointCloudIn;
-    typedef boost::shared_ptr<PointCloudIn> PointCloudInPtr;
-    typedef boost::shared_ptr<const PointCloudIn> PointCloudInConstPtr;
-    typedef pcl::PointCloud<PointOutT> PointCloudOut;
-
-    void setInputCloud (const PointCloudInConstPtr &cloud)
-    {
-      input_ = cloud;
-    }
-
-    void getColorImage(cv::Mat& color_image);
-    void getRangeImage(cv::Mat& range_image, const float &th_min, const float &th_max);
-    void extractEdgesSobel(std::vector<cv::Mat> &image_channels, cv::Mat& sobel_image);
-    void extractEdgesSobel(cv::Mat &image, cv::Mat& sobel_image);
-    void extractEdgesLaPlace(std::vector<cv::Mat> &image_channels, cv::Mat& laplace_image);
-    void extractEdgesLaPlace(cv::Mat &image, cv::Mat& laplace_image);
-    void computeEdges(PointCloudOut &output);
-    void computeEdges(cv::Mat &sobel_out, cv::Mat &laplace_out, cv::Mat &combined_out);
-    void computeEdgesFromRange(PointCloudOut &output);
-    void computeEdgesFromRange(cv::Mat &sobel_out, cv::Mat &laplace_out, cv::Mat &combined_out);
-
-  protected:
-    PointCloudInConstPtr input_;
-
-  };
-}
-
-#endif

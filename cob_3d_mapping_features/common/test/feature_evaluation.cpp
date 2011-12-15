@@ -1080,13 +1080,14 @@ int main(int argc, char** argv)
 
 
 
-    // --- Viewports: ---
-    //  1y 
-    //    | 1 | 3 |
-    // .5 ----+----
-    //    | 2 | 4 |
-    //  0    .5    1x
-    // 1:
+    /* --- Viewports: ---
+     *  1y 
+     *    | 1 | 3 |
+     * .5 ----+----
+     *    | 2 | 4 |
+     *  0    .5    1x
+     * 1:
+     */
     int v1(0);
     ColorHdlRGBA col_hdl1(p_rsd_ref);
     v->createViewPort(0.0, 0.5, 0.5, 1.0, v1);
