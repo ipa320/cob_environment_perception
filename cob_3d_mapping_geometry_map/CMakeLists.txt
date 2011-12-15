@@ -33,6 +33,7 @@ rosbuild_add_library(geometry_map common/src/feature_map.cpp)
 rosbuild_add_executable(feature_map common/src/feature_map.cpp)
 rosbuild_add_executable(feature_map_node ros/src/feature_map_node.cpp)
 rosbuild_add_executable(eval_feature_map common/test/eval_mapping.cpp)
+rosbuild_add_executable(get_map_client ros/src/get_map_client.cpp)
 
 target_link_libraries(feature_map_node gpc geometry_map)
 target_link_libraries(feature_map gpc)
