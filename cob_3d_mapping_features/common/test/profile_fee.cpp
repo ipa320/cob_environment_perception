@@ -17,7 +17,7 @@ int main(int argc, char** argv)
   PointCloud<Normal>::Ptr n(new PointCloud<Normal>);
   PointCloud<InterestPoint>::Ptr ip(new PointCloud<InterestPoint>);
   PrecisionStopWatch t;
-  std::string file_ = "/home/goa-sf/pcd_data/old_scenes/kitchen_top_raw.pcd";
+  std::string file_ = "/home/goa-sf/pcd_data/pc_0.pcd";
   PCDReader r;
   if (r.read(file_, *p) == -1) return(0);
 
@@ -31,12 +31,12 @@ int main(int argc, char** argv)
 
   t.precisionStart();
   cob_3d_mapping_features::FastEdgeEstimation3D<PointXYZRGB, Normal, InterestPoint> ee3d;
-  ee3d.setPixelSearchRadius(20,1,1);
+  ee3d.setPixelSearchRadius(16,2,4);
   ee3d.setInputCloud(p);
   ee3d.setInputNormals(n);
   ee3d.compute(*ip);
   std::cout << t.precisionStop() << "s\t for 3D edge estimation" << std::endl;
-/*
+
   for (size_t i = 0; i < ip->points.size(); i++)
   {
     int col = (ip->points[i].strength) * 255;
@@ -60,7 +60,7 @@ int main(int argc, char** argv)
     }
   }
 
-  visualization::PCLVisualizer v;
+  visualization::PCLVisualizer v("fast");
   ColorHdlRGB col_hdl(p);
   v.setBackgroundColor(0,127,127);
   v.addPointCloud<PointXYZRGB>(p,col_hdl, "segmented1");
@@ -70,6 +70,6 @@ int main(int argc, char** argv)
     v.spinOnce(100);
     usleep(100000);
   }
-*/
+
   return 0;
 }

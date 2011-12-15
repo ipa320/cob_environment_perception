@@ -56,8 +56,6 @@
 #define __IMPL_FAST_EDGE_ESTIMATION_3D_H__
 
 #include "cob_3d_mapping_features/fast_edge_estimation_3d.h"
-#include <cfloat>
-#include "cob_3d_mapping_common/stop_watch.h"
 
 template <typename PointInT, typename PointNT, typename PointOutT> void
 cob_3d_mapping_features::FastEdgeEstimation3D<PointInT, PointNT, PointOutT>::isEdgePoint (
@@ -97,14 +95,13 @@ cob_3d_mapping_features::FastEdgeEstimation3D<PointInT, PointNT, PointOutT>::com
   PointCloudOut &output)
 {
   std::vector<int> nn_indices;
-  size_t idx = 0;
   Eigen::Vector3f normal;
 
   // Iterating over the entire index vector
   for (std::vector<int>::iterator it = indices_->begin(); it != indices_->end(); ++it)
   {
     if (isnan(normals_->points[*it].normal[0]))
-      output.points[idx].strength=2;
+      output.points[*it].strength=2;
     else
     {
       this->searchForNeighbors (*surface_, *it, nn_indices);
@@ -114,9 +111,8 @@ cob_3d_mapping_features::FastEdgeEstimation3D<PointInT, PointNT, PointOutT>::com
       normal[2] = normals_->points[*it].normal_z;
       // Estimate whether the point is lying on a boundary surface or not
       isEdgePoint (*surface_, input_->points[*it], nn_indices, 
-		   normal, output.points[idx].strength);
+		   normal, output.points[*it].strength);
     }
-    idx++;
   }
 }
 
