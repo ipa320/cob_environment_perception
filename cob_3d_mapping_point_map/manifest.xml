@@ -11,7 +11,7 @@
   
   <depend package="roscpp"/>
   <depend package="nodelet"/>
-  <depend package="pcl"/>
+  <!-- depend package="pcl"/-->
   <depend package="pcl_ros"/>
   <depend package="actionlib"/>
   <depend package="actionlib_msgs"/>
@@ -21,6 +21,8 @@
   <depend package="tf"/>
   <depend package="tf_conversions"/>
   <depend package="cob_srvs"/>
+  
+  <rosdep name="pcl"/>
   
   <export>
   	<cpp cflags="-I${prefix}/common/include" lflags="-Wl,-rpath,${prefix}/lib -lcob_3d_mapping_point_map"/>
