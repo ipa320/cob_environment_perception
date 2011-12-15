@@ -6,7 +6,7 @@
 
 #include "cob_3d_mapping_common/stop_watch.h"
 #include "cob_3d_mapping_common/point_types.h"
-#include "cob_3d_mapping_features/edge_estimation_3d.h"
+#include "cob_3d_mapping_features/fast_edge_estimation_3d_omp.h"
 
 using namespace pcl;
 typedef visualization::PointCloudColorHandlerRGBField<PointXYZRGB> ColorHdlRGB;
@@ -17,7 +17,7 @@ int main(int argc, char** argv)
   PointCloud<Normal>::Ptr n(new PointCloud<Normal>);
   PointCloud<InterestPoint>::Ptr ip(new PointCloud<InterestPoint>);
   PrecisionStopWatch t;
-  std::string file_ = "/home/goa-sf/pcd_data/pc_0.pcd";
+  std::string file_ = "/home/goa-sf/pcd_data/old_scenes/objects_loose_raw.pcd";
   PCDReader r;
   if (r.read(file_, *p) == -1) return(0);
 
@@ -30,14 +30,11 @@ int main(int argc, char** argv)
   ne.compute(*n);
 
   t.precisionStart();
-  OrganizedDataIndex<PointXYZRGB>::Ptr oTree (new OrganizedDataIndex<PointXYZRGB> );
-  cob_3d_mapping_features::EdgeEstimation3D<PointXYZRGB, Normal, InterestPoint> ee;
-  ee.setRadiusSearch(0.04);
-  ee.setSearchMethod(oTree);
-  ee.setInputCloud(p);
-  ee.setInputNormals(n);
-  ee.dist_threshold_ = 0.02;
-  ee.compute(*ip);
+  cob_3d_mapping_features::FastEdgeEstimation3DOMP<PointXYZRGB, Normal, InterestPoint> ee3d;
+  ee3d.setPixelSearchRadius(16,2,4);
+  ee3d.setInputCloud(p);
+  ee3d.setInputNormals(n);
+  ee3d.compute(*ip);
   std::cout << t.precisionStop() << "s\t for 3D edge estimation" << std::endl;
 
   for (size_t i = 0; i < ip->points.size(); i++)
@@ -63,7 +60,7 @@ int main(int argc, char** argv)
     }
   }
 
-  visualization::PCLVisualizer v("slow");
+  visualization::PCLVisualizer v;
   ColorHdlRGB col_hdl(p);
   v.setBackgroundColor(0,127,127);
   v.addPointCloud<PointXYZRGB>(p,col_hdl, "segmented1");

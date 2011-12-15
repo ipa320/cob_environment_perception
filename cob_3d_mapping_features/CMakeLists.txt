@@ -45,7 +45,8 @@ rosbuild_add_library(cob_3d_mapping_features_nodelets
 
 rosbuild_add_library(cob_3d_mapping_features_omp
 	common/src/organized_curvature_estimation_omp.cpp
-	common/src/organized_normal_estimation_omp.cpp)
+	common/src/organized_normal_estimation_omp.cpp
+	common/src/fast_edge_estimation_3d_omp.cpp)
 
 rosbuild_add_openmp_flags(cob_3d_mapping_features_omp)
 
@@ -58,6 +59,7 @@ rosbuild_add_executable(fpfh_svm_trainer common/test/fpfh_svm_trainer.cpp)
 rosbuild_add_executable(feature_evaluation common/test/feature_evaluation.cpp)
 rosbuild_add_executable(test_edge_estimation common/test/test_edge_estimation.cpp)
 rosbuild_add_executable(test_surface_class_estimation common/test/test_surface_class_estimation.cpp)
+rosbuild_add_executable(profile_fee_omp common/test/profile_fee_omp.cpp)
 rosbuild_add_executable(profile_fee common/test/profile_fee.cpp)
 rosbuild_add_executable(profile_ee common/test/profile_ee.cpp)
 
@@ -75,6 +77,7 @@ target_link_libraries(cob_3d_mapping_features_nodelets cob_3d_mapping_features)
 target_link_libraries(test_surface_class_estimation 
 	cob_3d_mapping_features )
 #	cob_3d_mapping_features_omp)
+target_link_libraries(profile_fee_omp cob_3d_mapping_features cob_3d_mapping_features_omp)
 target_link_libraries(profile_fee cob_3d_mapping_features)
 target_link_libraries(profile_ee cob_3d_mapping_features)
 

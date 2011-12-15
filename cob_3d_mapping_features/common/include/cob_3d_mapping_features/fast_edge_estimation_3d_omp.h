@@ -52,62 +52,40 @@
  *
  ****************************************************************/
 
-#ifndef __FAST_EDGE_ESTIMATION_3D_H__
-#define __FAST_EDGE_ESTIMATION_3D_H__
+#ifndef __FAST_EDGE_ESTIMATION_3D_OMP_H__
+#define __FAST_EDGE_ESTIMATION_3D_OMP_H__
 
-#include "cob_3d_mapping_features/organized_features.h"
+#include "cob_3d_mapping_features/fast_edge_estimation_3d.h"
 
 namespace cob_3d_mapping_features
 {
   template <typename PointInT, typename PointNT, typename PointOutT>
-    class FastEdgeEstimation3D : public OrganizedFeatures<PointInT, PointOutT>
+    class FastEdgeEstimation3DOMP : public FastEdgeEstimation3D<PointInT,PointNT,PointOutT>
   {
     public:
 
-    using OrganizedFeatures<PointInT, PointOutT>::pixel_search_radius_;
-    using OrganizedFeatures<PointInT, PointOutT>::mask_;
     using OrganizedFeatures<PointInT, PointOutT>::input_;
     using OrganizedFeatures<PointInT, PointOutT>::indices_;
     using OrganizedFeatures<PointInT, PointOutT>::surface_;
     using OrganizedFeatures<PointInT, PointOutT>::feature_name_;
     using OrganizedFeatures<PointInT, PointOutT>::distance_threshold_modifier_;
-
-    typedef pcl::PointCloud<PointInT> PointCloudIn;
-    typedef typename PointCloudIn::Ptr PointCloudInPtr;
-    typedef typename PointCloudIn::ConstPtr PointCloudInConstPtr;
-
-    typedef pcl::PointCloud<PointNT> PointCloudN;
-    typedef typename PointCloudN::Ptr PointCloudNPtr;
-    typedef typename PointCloudN::ConstPtr PointCloudNConstPtr;
+    using FastEdgeEstimation3D<PointInT,PointNT,PointOutT>::normals_;
 
     typedef pcl::PointCloud<PointOutT> PointCloudOut;
 
     public:
       /** \brief Empty constructor. */
-    FastEdgeEstimation3D ()
+    FastEdgeEstimation3DOMP ()
       {
-	feature_name_ = "FastEdgeEstimation3D";
+	feature_name_ = "FastEdgeEstimation3DOMP";
 	distance_threshold_modifier_ = 0.0;
       };
-
-      inline void 
-	setInputNormals(PointCloudNConstPtr cloud) { normals_ = cloud; }
-
-      void
-	isEdgePoint (
-	  const pcl::PointCloud<PointInT> &cloud, 
-	  const PointInT &q_point,
-	  const std::vector<int> &indices,
-	  const Eigen::Vector3f &n,
-	  float &strength);
 
     protected:
 
       void 
 	computeFeature (PointCloudOut &output);
-
-      PointCloudNConstPtr normals_;
   };
 }
 
-#endif  //#ifndef __FAST_EDGE_ESTIMATION_3D_H__
+#endif  //#ifndef __FAST_EDGE_ESTIMATION_3D_OMP_H__
