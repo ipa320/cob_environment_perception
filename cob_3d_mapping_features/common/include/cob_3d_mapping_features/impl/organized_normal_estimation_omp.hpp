@@ -14,10 +14,10 @@
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
- * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 10/2011
+ * Date of creation: 12/2011
  * ToDo:
  *
  *
@@ -52,47 +52,35 @@
  *
  ****************************************************************/
 
-#ifndef __EDGE_ESTIMATION_2D_H__
-#define __EDGE_ESTIMATION_2D_H__
+#ifndef __IMPL_ORGANIZED_NORMAL_ESTIMATION_H__
+#define __IMPL_ORGANIZED_NORMAL_ESTIMATION_H__
 
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <cv.h>
+#include "cob_3d_mapping_features/organized_normal_estimation_omp.h"
 
-namespace cob_3d_mapping_features
+template <typename PointInT, typename PointOutT, typename LabelOutT> void
+cob_3d_mapping_features::OrganizedNormalEstimationOMP<PointInT,PointOutT,LabelOutT>::computeFeature (PointCloudOut &output)
 {
-  template <typename PointInT, typename PointOutT> 
-  class EdgeEstimation2D
+  if (labels_->points.size() != input_->size())
   {
-  public:
-    EdgeEstimation2D () { };
-    ~EdgeEstimation2D () { };
+    labels_->points.resize(input_->size());
+    labels_->height = input_->height;
+    labels_->width = input_->width;
+  }
 
-    typedef pcl::PointCloud<PointInT> PointCloudIn;
-    typedef boost::shared_ptr<PointCloudIn> PointCloudInPtr;
-    typedef boost::shared_ptr<const PointCloudIn> PointCloudInConstPtr;
-    typedef pcl::PointCloud<PointOutT> PointCloudOut;
+  int threadsize = 1;
 
-    void setInputCloud (const PointCloudInConstPtr &cloud)
-    {
-      input_ = cloud;
-    }
-
-    void getColorImage(cv::Mat& color_image);
-    void getRangeImage(cv::Mat& range_image, const float &th_min, const float &th_max);
-    void extractEdgesSobel(std::vector<cv::Mat> &image_channels, cv::Mat& sobel_image);
-    void extractEdgesSobel(cv::Mat &image, cv::Mat& sobel_image);
-    void extractEdgesLaPlace(std::vector<cv::Mat> &image_channels, cv::Mat& laplace_image);
-    void extractEdgesLaPlace(cv::Mat &image, cv::Mat& laplace_image);
-    void computeEdges(PointCloudOut &output);
-    void computeEdges(cv::Mat &sobel_out, cv::Mat &laplace_out, cv::Mat &combined_out);
-    void computeEdgesFromRange(PointCloudOut &output);
-    void computeEdgesFromRange(cv::Mat &sobel_out, cv::Mat &laplace_out, cv::Mat &combined_out);
-
-  protected:
-    PointCloudInConstPtr input_;
-
-  };
+#pragma omp parallel for schedule (dynamic, threadsize)
+  for (size_t i=0; i < indices_->size(); ++i)
+  {
+    computePointNormal(*surface_, (*indices_)[i], 
+		       output.points[(*indices_)[i]].normal[0],
+		       output.points[(*indices_)[i]].normal[1],
+		       output.points[(*indices_)[i]].normal[2],
+		       labels_->points[(*indices_)[i]].label);
+  }
 }
 
+#define PCL_INSTANTIATE_OrganizedNormalEstimationOMP(T,OutT,LabelT) template class PCL_EXPORTS cob_3d_mapping_features::OrganizedNormalEstimationOMP<T,OutT,LabelT>;
+
 #endif
+

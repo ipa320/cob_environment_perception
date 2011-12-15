@@ -52,47 +52,62 @@
  *
  ****************************************************************/
 
-#ifndef __EDGE_ESTIMATION_2D_H__
-#define __EDGE_ESTIMATION_2D_H__
+#ifndef __FAST_EDGE_ESTIMATION_3D_H__
+#define __FAST_EDGE_ESTIMATION_3D_H__
 
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <cv.h>
+#include "cob_3d_mapping_features/organized_features.h"
 
 namespace cob_3d_mapping_features
 {
-  template <typename PointInT, typename PointOutT> 
-  class EdgeEstimation2D
+  template <typename PointInT, typename PointNT, typename PointOutT>
+    class FastEdgeEstimation3D : public OrganizedFeatures<PointInT, PointOutT>
   {
-  public:
-    EdgeEstimation2D () { };
-    ~EdgeEstimation2D () { };
+    public:
+
+    using OrganizedFeatures<PointInT, PointOutT>::pixel_search_radius_;
+    using OrganizedFeatures<PointInT, PointOutT>::mask_;
+    using OrganizedFeatures<PointInT, PointOutT>::input_;
+    using OrganizedFeatures<PointInT, PointOutT>::indices_;
+    using OrganizedFeatures<PointInT, PointOutT>::surface_;
+    using OrganizedFeatures<PointInT, PointOutT>::feature_name_;
+    using OrganizedFeatures<PointInT, PointOutT>::distance_threshold_modifier_;
 
     typedef pcl::PointCloud<PointInT> PointCloudIn;
-    typedef boost::shared_ptr<PointCloudIn> PointCloudInPtr;
-    typedef boost::shared_ptr<const PointCloudIn> PointCloudInConstPtr;
+    typedef typename PointCloudIn::Ptr PointCloudInPtr;
+    typedef typename PointCloudIn::ConstPtr PointCloudInConstPtr;
+
+    typedef pcl::PointCloud<PointNT> PointCloudN;
+    typedef typename PointCloudN::Ptr PointCloudNPtr;
+    typedef typename PointCloudN::ConstPtr PointCloudNConstPtr;
+
     typedef pcl::PointCloud<PointOutT> PointCloudOut;
 
-    void setInputCloud (const PointCloudInConstPtr &cloud)
-    {
-      input_ = cloud;
-    }
+    public:
+      /** \brief Empty constructor. */
+    FastEdgeEstimation3D ()
+      {
+	feature_name_ = "FastEdgeEstimation3D";
+	distance_threshold_modifier_ = 0.0;
+      };
 
-    void getColorImage(cv::Mat& color_image);
-    void getRangeImage(cv::Mat& range_image, const float &th_min, const float &th_max);
-    void extractEdgesSobel(std::vector<cv::Mat> &image_channels, cv::Mat& sobel_image);
-    void extractEdgesSobel(cv::Mat &image, cv::Mat& sobel_image);
-    void extractEdgesLaPlace(std::vector<cv::Mat> &image_channels, cv::Mat& laplace_image);
-    void extractEdgesLaPlace(cv::Mat &image, cv::Mat& laplace_image);
-    void computeEdges(PointCloudOut &output);
-    void computeEdges(cv::Mat &sobel_out, cv::Mat &laplace_out, cv::Mat &combined_out);
-    void computeEdgesFromRange(PointCloudOut &output);
-    void computeEdgesFromRange(cv::Mat &sobel_out, cv::Mat &laplace_out, cv::Mat &combined_out);
+      inline void 
+	setInputNormals(PointCloudNConstPtr cloud) { normals_ = cloud; }
 
-  protected:
-    PointCloudInConstPtr input_;
+      void
+	isEdgePoint (
+	  const pcl::PointCloud<PointInT> &cloud, 
+	  const PointInT &q_point,
+	  const std::vector<int> &indices,
+	  const Eigen::Vector3f &n,
+	  float &strength);
 
+    protected:
+
+      void 
+	computeFeature (PointCloudOut &output);
+
+      PointCloudNConstPtr normals_;
   };
 }
 
-#endif
+#endif  //#ifndef __FAST_EDGE_ESTIMATION_3D_H__
