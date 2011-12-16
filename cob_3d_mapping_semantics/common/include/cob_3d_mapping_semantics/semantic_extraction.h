@@ -78,33 +78,139 @@ public:
     float d;
   };
 
+  struct Point
+  {
+    double x;
+    double y;
+    double z;
+  };
+
   typedef boost::shared_ptr<Polygon> PolygonPtr;
 
   // Constructor
   SemanticExtraction ()
   {
-
+      area_.resize(1) ;
   }
 
   // Destructor
   ~SemanticExtraction ()
   {
+
     /// void
   }
 
-  // checks if the plane of the polygon is horizontal
+  void
+  setNormXMin (double norm_x_min)
+  {
+    norm_x_min_ = norm_x_min;
+  }
+
+  void
+  setNormXMax (double norm_x_max)
+  {
+    norm_x_max_ = norm_x_max;
+  }
+
+  void
+  setNormYMin (double norm_y_min)
+  {
+    norm_y_min_ = norm_y_min;
+  }
+
+  void
+  setNormYMax (double norm_y_max)
+  {
+
+    norm_y_max_ = norm_y_max;
+  }
+
+  void
+  setNormZMin (double norm_z_min)
+  {
+    norm_z_min_ = norm_z_min;
+  }
+
+  void
+  setNormZMax (double norm_z_max)
+  {
+    norm_z_max_ = norm_z_max;
+  }
+
+  void
+  setHightMin(double height_min)
+  {
+    height_min_ = height_min;
+  }
+
+  void
+    setHightMax (double height_max)
+  {
+    height_max_ = height_max;
+  }
+
+  void
+  setAreaMin (double area_min)
+  {
+    area_min_ = area_min;
+  }
+
+  void
+  setAreaMax (double area_max)
+  {
+    area_max_ = area_max;
+  }
+  /**
+   * @brief checks if the plane of the polygon is horizontal or not
+   *
+   * @param p_ptr shared pointer to Polygon struct
+   *
+   * @return true or false
+   */
+
   bool
   isHorizontal (PolygonPtr p_ptr);
 
-  // checks if the plane is high enough
+  /**
+   * @brief checks if the plane is high enough or not
+   *
+   * @param p_ptr shared pointer to Polygon struct
+   *
+   * @return true or flase
+   */
+
   bool
   isHeightOk (PolygonPtr p_ptr);
 
-  // checks if the area of the plane is sufficient
+  /**
+   * @brief checks if the area of the plane is sufficient or not
+   *
+   * @param p_ptr shared pointer to Polygon struct
+   *
+   * @return true or flase
+   */
+
   bool
   isSizeOk (PolygonPtr p_ptr);
 
-  //protected:
+  void
+  calcPolyArea(PolygonPtr p_ptr);
+
+  void
+  calcPolyCentroid(PolygonPtr p_ptr);
+
+protected:
+
+  double norm_x_min_, norm_x_max_;
+  double norm_y_min_, norm_y_max_;
+  double norm_z_min_, norm_z_max_;
+
+  double height_min_, height_max_;
+
+  double area_min_, area_max_;
+
+  std::vector<double> area_;
+  std::vector<Point> centroid_;
 
 };
 

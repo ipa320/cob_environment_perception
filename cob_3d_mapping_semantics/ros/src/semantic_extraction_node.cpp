@@ -79,11 +79,55 @@ public:
 
   // Constructor
   SemanticExtractionNode ()
+  : norm_x_min_ (-0.1), norm_x_max_ (0.1),
+  norm_y_min_ (-0.1), norm_y_max_ (0.1),
+  norm_z_min_ (-0.99), norm_z_max_ (0.99),
+  height_min_(0.4),height_max_(1),
+  area_min_(1), area_max_(3)
   {
     poly_sub_ = n_.subscribe ("feature_map", 1, &SemanticExtractionNode::callback, this);
     //poly_pub_ = n_.advertise<cob_3d_mapping_msgs::PolygonArrayArray> ("polygon_array", 1);
     marker_pub_ = n_.advertise<visualization_msgs::Marker> ("polygon_marker", 100);
     pc_pub_ = n_.advertise<sensor_msgs::PointCloud> ("point_cloud", 10);
+
+
+    n_.getParam ("semantic_extraction/norm_x_min", norm_x_min_);
+    n_.getParam ("semantic_extraction/norm_x_max", norm_x_max_);
+    n_.getParam ("semantic_extraction/norm_y_min", norm_y_min_);
+    n_.getParam ("semantic_extraction/norm_y_max", norm_y_max_);
+    n_.getParam ("semantic_extraction/norm_z_min", norm_z_min_);
+    n_.getParam ("semantic_extraction/norm_z_max", norm_z_max_);
+
+    n_.getParam ("semantic_extraction/height_min", height_min_);
+    n_.getParam ("semantic_extraction/height_max", height_max_);
+
+    n_.getParam ("semantic_extraction/area_min", area_min_);
+    n_.getParam ("semantic_extraction/area_max", area_max_);
+
+    std::cout << "\n___________~~~~~~''ROS PARAMETERS''~~~~~~___________"<< std::endl;
+    std::cout << "\n\t*norm_x_min = " << norm_x_min_ << std::endl;
+    std::cout << "\n\t*norm_x_max = " << norm_x_max_ << std::endl;
+    std::cout << "\n\t*norm_y_min = " << norm_y_min_ << std::endl;
+    std::cout << "\n\t*norm_y_max = " << norm_y_max_ << std::endl;
+    std::cout << "\n\t*norm_z_min = " << norm_z_min_ << std::endl;
+    std::cout << "\n\t*norm_z_max = " << norm_z_max_ << std::endl;
+    std::cout << "\n\t*height_min = " << height_min_ << std::endl;
+    std::cout << "\n\t*height_max = " << height_max_ << std::endl;
+    std::cout << "\n\t*area_min = " << area_min_ << std::endl;
+    std::cout << "\n\t*area_min = " << area_max_ << std::endl;
+    std::cout << "\n___________~~~~~~******************~~~~~~___________"<< std::endl;
+
+    sem_exn_.setNormXMin (norm_x_min_);
+    sem_exn_.setNormXMax(norm_x_max_);
+    sem_exn_.setNormYMin (norm_y_min_);
+    sem_exn_.setNormYMax (norm_y_max_);
+    sem_exn_.setNormZMin (norm_z_min_);
+    sem_exn_.setNormZMax (norm_z_max_);
+    sem_exn_.setHightMin(height_min_);
+    sem_exn_.setHightMax(height_max_);
+    sem_exn_.setAreaMin(area_min_);
+    sem_exn_.setAreaMax(area_max_);
+
   }
 
   // Destructor
@@ -91,7 +135,6 @@ public:
   {
     /// void
   }
-
 
   //TODO: get map by service not by topic
   /**
@@ -119,33 +162,28 @@ public:
       SemanticExtraction::PolygonPtr poly_ptr = SemanticExtraction::PolygonPtr (new SemanticExtraction::Polygon ());
       sensor_msgs::PointCloudPtr pc_ptr (new sensor_msgs::PointCloud);
 
-      SemanticExtraction sem_exn;
-      bool plane_horizontal, height_ok, size_ok;
+      //SemanticExtraction sem_exn;
 
       convertFromROSMsg (p->polygon_array[i], *poly_ptr);
 
-      plane_horizontal = sem_exn.isHorizontal (poly_ptr);
-
       //Check if the plane spanned by the polygon is horizontal or not
-      if (plane_horizontal)
+      if (sem_exn_.isHorizontal (poly_ptr))
       {
 
         ROS_INFO(" Plane is h0rizontal \n");
-        //publishPolygonMarker (*poly_ptr);
-        height_ok = sem_exn.isHeightOk (poly_ptr);
+        publishPolygonMarker (*poly_ptr);
 
         //Check if the height of the polygon is Ok or not
-        if (height_ok)
+        if (sem_exn_.isHeightOk (poly_ptr))
         {
           ROS_INFO(" Height is ok \n");
           //publishPolygonMarker (*poly_ptr);
-          size_ok = sem_exn.isSizeOk (poly_ptr);
 
           //Check if the area of the the polygon is ok or not
-          if (size_ok)
+          if (sem_exn_.isSizeOk (poly_ptr))
           {
             ROS_INFO(" Size is ok \n");
-            publishPolygonMarker (*poly_ptr); //publish marker messages to see visually on rviz
+            //publishPolygonMarker (*poly_ptr); //publish marker messages to see visually on rviz
             //TODO: publish as ShapeArray, not as PointCloud
             convertToPointCloudMsg (*poly_ptr, *pc_ptr);
             pc_pub_.publish (*pc_ptr);
@@ -387,6 +425,15 @@ protected:
   ros::Publisher marker_pub_;
   ros::Publisher pc_pub_;
 
+  SemanticExtraction sem_exn_;
+
+  double norm_x_min_, norm_x_max_;
+  double norm_y_min_, norm_y_max_;
+  double norm_z_min_, norm_z_max_;
+
+  double height_min_, height_max_;
+
+  double area_min_, area_max_;
 };
 
 int
