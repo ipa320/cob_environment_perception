@@ -56,6 +56,7 @@
 #define __IMPL_EDGE_ESTIMATION_2D_H__
 
 #include "cob_3d_mapping_features/edge_estimation_2d.h"
+#include "highgui.h"
 
 template <typename PointInT, typename PointOutT> void 
 cob_3d_mapping_features::EdgeEstimation2D<PointInT,PointOutT>::getColorImage(
@@ -111,15 +112,43 @@ cob_3d_mapping_features::EdgeEstimation2D<PointInT,PointOutT>::extractEdgesSobel
   {
     cv::Mat tmp_x, tmp_y;
     cv::Sobel(image_channels[i], tmp_x, CV_32FC1, 1, 0, 3);
-    cv::pow(tmp_x,2,tmp_x);
+    cv::Mat test(cv::Size(640,480),CV_8UC1);
+    cv::Mat test3(cv::Size(640,480),CV_8UC1);
+    //cv::convertScaleAbs(tmp_x, test);
+    //cv::imshow("sobel_x", test);
+    //cv::pow(tmp_x,2,tmp_x);
+    //cv::convertScaleAbs(tmp_x, test);
+    tmp_x = abs(tmp_x);
+    //cv::imshow("sobel_x_2", test);
     cv::Sobel(image_channels[i], tmp_y, CV_32FC1, 0, 1, 3);
-    cv::pow(tmp_y,2,tmp_y);
+    //cv::convertScaleAbs(tmp_y, test);
+    //cv::imshow("sobel_y", test);
+    //cv::pow(tmp_y,2,tmp_y);
+    tmp_y = abs(tmp_y);
+    //cv::convertScaleAbs(tmp_y, test3);
+    //cv::imshow("sobel_y_2", test3);
     tmp[i] = tmp_x + tmp_y;
+    cv::convertScaleAbs(tmp[i], test);
+    cv::imshow("sobel_x_y", test);
+   // cv::waitKey();
   }
-  sobel_res = tmp[0] + tmp[1];
-  sobel_res += tmp[2];
+  sobel_res = tmp[0] + tmp[1] + tmp[2];
+  //sobel_res += tmp[2];
+
+  cv::Mat test2(cv::Size(640,480),CV_8UC1);
+  cv::convertScaleAbs(sobel_res, test2);
+  cv::imshow("test", test2);
+  cv::waitKey();
+
 
   cv::normalize(sobel_res, sobel_res, 0, 1, cv::NORM_MINMAX);
+  double minVal, maxVal;
+  cv::minMaxLoc(sobel_res, &minVal, &maxVal);
+  std::cout << minVal << "," << maxVal << std::endl;
+  cv::imshow("sobel_res", sobel_res);
+  /*cv::convertScaleAbs(sobel_res, test2);
+  cv::imshow("test2", test2);*/
+  cv::waitKey();
   sobel_image = sobel_res;
 }
 
@@ -187,11 +216,19 @@ cob_3d_mapping_features::EdgeEstimation2D<PointInT,PointOutT>::computeEdges(
   getColorImage(color_image);
   std::vector<cv::Mat> img_channels(3);
   cv::split(color_image, img_channels);
+  /*cv::imshow("R", img_channels[0]);
+  cv::imshow("G", img_channels[1]);
+  cv::imshow("B", img_channels[2]);
+  cv::waitKey();*/
   cv::Mat img_sobel, img_laplace, img_combined;
   extractEdgesSobel(img_channels, img_sobel);
+  cv::Mat test2(cv::Size(640,480),CV_8UC1);
+  cv::convertScaleAbs(img_sobel, test2);
+  cv::imshow("test", test2);
+  cv::waitKey();
   extractEdgesLaPlace(img_channels, img_laplace);
 
-  img_combined = img_sobel + img_laplace;
+  img_combined = img_sobel;// + img_laplace;
   //cv::normalize(img_combined, img_combined, 0, 1, cv::NORM_MINMAX);
   cv::threshold(img_combined, img_combined, 1, 1, cv::THRESH_TRUNC);
   
@@ -220,7 +257,7 @@ cob_3d_mapping_features::EdgeEstimation2D<PointInT,PointOutT>::computeEdges(
   extractEdgesSobel(img_channels, img_sobel);
   extractEdgesLaPlace(img_channels, img_laplace);
 
-  img_combined = img_sobel + img_laplace;
+  img_combined = img_sobel;// + img_laplace;
   //cv::normalize(img_combined, img_combined, 0, 1, cv::NORM_MINMAX);
   cv::threshold(img_combined, img_combined, 1, 1, cv::THRESH_TRUNC);
 
