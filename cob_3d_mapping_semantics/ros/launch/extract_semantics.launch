@@ -3,6 +3,17 @@
   <node pkg="cob_3d_mapping_semantics" type="semantic_extraction_node" name="semantic_extraction" output="screen">
   	<!--remap from="map" to="/aggregate_point_map/map"/-->
   	<remap from="feature_map" to="/feature_map_2"/>
+  	<param name="norm_x_min" type = "double" value= "-0.1" />
+  	<param name="norm_x_max" type = "double" value= "0.1" />
+  	<param name="norm_y_min" type = "double" value= "-0.1" />
+  	<param name="norm_y_max" type = "double" value= "0.1" />
+  	<param name="norm_z_min" type = "double" value= "-0.99" />
+  	<param name="norm_z_max" type = "double" value= "0.99" />
   	
+  	<param name="height_min" type = "double" value= "0.4"/>
+  	<param name="height_max" type = "double" value= "1.2" />
+  	
+  	<param name="area_min" type = "double" value= "1.0" />
+  	<param name="area_max" type = "double" value= "3.0" />
   </node>                 
 </launch>
