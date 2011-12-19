@@ -24,7 +24,7 @@ typedef visualization::PointCloudColorHandlerRGBField<PointXYZRGB> ColorHdlRGB;
 string file_points;
 float normal_radius;
 float edge_th;
-bool rgbEdges;
+bool rgbEdges, depthEdges;
 
 void readOptions(int argc, char* argv[])
 {
@@ -37,6 +37,7 @@ void readOptions(int argc, char* argv[])
      "radius normal estimation")
     ("edgeth,e",value<float>(&edge_th)->default_value(0.5), "threshold edge")
     ("rgbedges,c", value<bool>(&rgbEdges)->default_value(false), "calculate color edges")
+    ("depthedges,d", value<bool>(&depthEdges)->default_value(false), "calculate range image edges")
     ;
 
   positional_options_description p_opt;
@@ -91,6 +92,21 @@ int main(int argc, char** argv)
     ee2.computeEdges(*ip2);
     ee2.computeEdges(sobel, laplace, combined);
     cv::imshow("Color", color);
+    cv::imshow("Combined", combined);
+    cv::imshow("Laplace", laplace);
+    cv::imshow("Sobel", sobel);
+    cv::waitKey();
+  }
+
+  if (depthEdges)
+  {
+    cout << "Start depth part" << endl;
+    cv::Mat sobel, laplace, combined, range;
+    cob_3d_mapping_features::EdgeEstimation2D<PointXYZRGB, InterestPoint> ee3;
+    ee3.setInputCloud(p);
+    ee3.getRangeImage(range, 0.0, 0.0);
+    ee3.computeEdgesFromRange(sobel, laplace, combined);
+    cv::imshow("Range", range);
     cv::imshow("Combined", combined);
     cv::imshow("Laplace", laplace);
     cv::imshow("Sobel", sobel);

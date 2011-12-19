@@ -104,35 +104,19 @@ namespace cob_3d_mapping_features
     /**
      * @brief Extracts Sobel edges channel-wise
      *
-     * @param image_channels Vector of RGB channels (CV_8UC1).
+     * @param input_image The input color or grey image (CV_8UC3 or CV_8UC1).
      * @param sobel_image Sobel output image (CV_32FC1).
      */
     void
-    extractEdgesSobel(std::vector<cv::Mat> &image_channels, cv::Mat& sobel_image);
-    /**
-     * @brief Extracts Sobel edges from grey image.
-     *
-     * @param image The input grey image (CV_8UC1).
-     * @param sobel_image Sobel output image (CV_32FC1).
-     */
-    void
-    extractEdgesSobel(cv::Mat &image, cv::Mat& sobel_image);
-    /**
-     * @brief Extracts LaPlace edges channel-wise
-     *
-     * @param image_channels Vector of RGB channels (CV_8UC1).
-     * @param laplace_image La Place output image (CV_32FC1)
-     */
-    void
-    extractEdgesLaPlace(std::vector<cv::Mat> &image_channels, cv::Mat& laplace_image);
+    extractEdgesSobel(cv::Mat &input_image, cv::Mat& sobel_image);
     /**
      * @brief Extracts La Place edges from grey image.
      *
-     * @param image The input grey image (CV_8UC1).
+     * @param image The input color or grey image (CV_8UC3 or CV_8UC1).
      * @param laplace_image La Place output image (CV_32FC1).
      */
     void
-    extractEdgesLaPlace(cv::Mat &image, cv::Mat& laplace_image);
+    extractEdgesLaPlace(cv::Mat &input_image, cv::Mat& laplace_image);
     /**
      * @brief Computes 2D edges from a color image.
      *

@@ -17,7 +17,7 @@ int main(int argc, char** argv)
   PointCloud<Normal>::Ptr n(new PointCloud<Normal>);
   PointCloud<InterestPoint>::Ptr ip(new PointCloud<InterestPoint>);
   PrecisionStopWatch t;
-  std::string file_ = "/home/goa-sf/pcd_data/pc_0.pcd";
+  std::string file_ = "/home/goa/pcl_daten/corner/office_corner.pcd";
   PCDReader r;
   if (r.read(file_, *p) == -1) return(0);
 
