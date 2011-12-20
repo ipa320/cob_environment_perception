@@ -80,10 +80,10 @@ public:
   // Constructor
   SemanticExtractionNode ()
   : norm_x_min_ (-0.1), norm_x_max_ (0.1),
-  norm_y_min_ (-0.1), norm_y_max_ (0.1),
-  norm_z_min_ (-0.99), norm_z_max_ (0.99),
-  height_min_(0.4),height_max_(1),
-  area_min_(1), area_max_(3)
+    norm_y_min_ (-0.1), norm_y_max_ (0.1),
+    norm_z_min_ (-0.99), norm_z_max_ (0.99),
+    height_min_(0.4),height_max_(1),
+    area_min_(1), area_max_(3)
   {
     poly_sub_ = n_.subscribe ("feature_map", 1, &SemanticExtractionNode::callback, this);
     //poly_pub_ = n_.advertise<cob_3d_mapping_msgs::PolygonArrayArray> ("polygon_array", 1);
@@ -103,7 +103,7 @@ public:
 
     n_.getParam ("semantic_extraction/area_min", area_min_);
     n_.getParam ("semantic_extraction/area_max", area_max_);
-
+/*
     std::cout << "\n___________~~~~~~''ROS PARAMETERS''~~~~~~___________"<< std::endl;
     std::cout << "\n\t*norm_x_min = " << norm_x_min_ << std::endl;
     std::cout << "\n\t*norm_x_max = " << norm_x_max_ << std::endl;
@@ -115,7 +115,7 @@ public:
     std::cout << "\n\t*height_max = " << height_max_ << std::endl;
     std::cout << "\n\t*area_min = " << area_min_ << std::endl;
     std::cout << "\n\t*area_min = " << area_max_ << std::endl;
-    std::cout << "\n___________~~~~~~******************~~~~~~___________"<< std::endl;
+*/
 
     sem_exn_.setNormXMin (norm_x_min_);
     sem_exn_.setNormXMax(norm_x_max_);
@@ -147,16 +147,16 @@ public:
   void
   callback (const cob_3d_mapping_msgs::PolygonArrayArray::ConstPtr p)
   {
-    ROS_INFO("\n\t-------------------------------------\n"
-        "\t|       NEW MESSAGE RECEIVED        |\n"
-        "\t-------------------------------------\n");
+    ROS_INFO(  "\n\t-------------------------------------\n"
+                "\t|       NEW MESSAGE RECEIVED        |\n"
+                "\t-------------------------------------\n");
 
     //cob_3d_mapping_msgs::PolygonArrayArray p_out;
 
-    std::cout << " Total number of polygons:  " << p->polygon_array.size () << std::endl;
+    std::cout << "ROS_NODE: Total number of polygons:  " << p->polygon_array.size () << std::endl;
     for (unsigned int i = 0; i < p->polygon_array.size (); i++)
     {
-      std::cout << " polygon < " << i << " > passed for conversion  " << std::endl;
+      std::cout << "ROS_NODE: Polygon < " << i << " > passed for conversion  " << std::endl;
 
       //ROS_INFO(" Entered for loop \n");
       SemanticExtraction::PolygonPtr poly_ptr = SemanticExtraction::PolygonPtr (new SemanticExtraction::Polygon ());
@@ -177,13 +177,13 @@ public:
         if (sem_exn_.isHeightOk (poly_ptr))
         {
           ROS_INFO(" Height is ok \n");
-          //publishPolygonMarker (*poly_ptr);
+          publishPolygonMarker (*poly_ptr);
 
           //Check if the area of the the polygon is ok or not
           if (sem_exn_.isSizeOk (poly_ptr))
           {
             ROS_INFO(" Size is ok \n");
-            //publishPolygonMarker (*poly_ptr); //publish marker messages to see visually on rviz
+            publishPolygonMarker (*poly_ptr); //publish marker messages to see visually on rviz
             //TODO: publish as ShapeArray, not as PointCloud
             convertToPointCloudMsg (*poly_ptr, *pc_ptr);
             pc_pub_.publish (*pc_ptr);
@@ -233,10 +233,10 @@ public:
 
     for (unsigned int i = 0; i < p.polygons.size (); i++)
     {
-      std::cout << "\tpolygon < " << i << " > size: " << p.polygons.size () << std::endl;
+      std::cout << "\nROS_NODE: polygon < " << i << " > size: " << p.polygons.size () << std::endl;
       if (p.polygons[i].points.size ())
       {
-        std::cout << "\tpoints in polygon < " << i << " >  : " << p.polygons[i].points.size () << std::endl;
+        std::cout << "ROS_NODE: polygon < " << i << " > points : " << p.polygons[i].points.size () << std::endl;
 
         //std::vector<Eigen::Vector3f>  pts;
         //Eigen::Vector3f p3f;
@@ -335,7 +335,7 @@ public:
 
     for (unsigned int i = 0; i < poly.poly_points.size (); i++)
     {
-      std::cout << " poly size : " << poly.poly_points.size () << std::endl;
+      //std::cout << " poly size : " << poly.poly_points.size () << std::endl;
       if (poly.poly_points.size ())
       {
         geometry_msgs::Point32 pts;
@@ -363,7 +363,7 @@ public:
   {
 
     //TODO: set unique ID for each new marker, remove old markers
-    std::cout << " polygons size : " << poly.poly_points.size () << std::endl;
+    //std::cout << " polygons size : " << poly.poly_points.size () << std::endl;
     int ctr = 0;
     visualization_msgs::Marker marker;
     marker.action = visualization_msgs::Marker::ADD;
