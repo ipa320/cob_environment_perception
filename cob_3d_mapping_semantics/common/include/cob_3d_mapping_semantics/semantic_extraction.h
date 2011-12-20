@@ -62,8 +62,13 @@
 
 //standard includes
 #include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
 #include <vector>
 #include <math.h>
+
+//other includes
 #include <Eigen/Core>
 #include <boost/shared_ptr.hpp>
 
@@ -71,6 +76,9 @@ class SemanticExtraction
 {
 
 public:
+  /**
+   * @brief Contains polygon normal vector, d and polygon points
+   */
   struct Polygon
   {
     std::vector<std::vector<Eigen::Vector3f> > poly_points;
@@ -78,6 +86,9 @@ public:
     float d;
   };
 
+  /**
+   * @brief A 3D point
+   */
   struct Point
   {
     double x;
@@ -87,37 +98,65 @@ public:
 
   typedef boost::shared_ptr<Polygon> PolygonPtr;
 
-  // Constructor
+  /**
+   * @brief Constructor
+   */
   SemanticExtraction ()
   {
-      area_.resize(1) ;
+    area_.resize (1);
   }
 
-  // Destructor
+  /**
+   * @brief Destructor
+   */
   ~SemanticExtraction ()
   {
 
     /// void
   }
 
+  /**
+   * @brief Set Minimum threshold for x component of normal vector
+   *
+   * @param norm_x_min minimum threshold value
+   *
+   */
   void
   setNormXMin (double norm_x_min)
   {
     norm_x_min_ = norm_x_min;
   }
 
+  /**
+   * @brief Set Maximum threshold for x component of normal vector
+   *
+   * @param norm_x_max maximum threshold value
+   *
+   */
   void
   setNormXMax (double norm_x_max)
   {
     norm_x_max_ = norm_x_max;
   }
 
+  /**
+   * @brief Set Minimum threshold for y component of normal vector
+   *
+   * @param norm_y_min minimum threshold value
+   *
+   */
   void
   setNormYMin (double norm_y_min)
   {
     norm_y_min_ = norm_y_min;
   }
 
+  /**
+   * @brief Set Maximum threshold for y component of normal vector
+   *
+   * @param norm_y_max maximum threshold value
+   *
+   */
   void
   setNormYMax (double norm_y_max)
   {
@@ -125,36 +164,70 @@ public:
     norm_y_max_ = norm_y_max;
   }
 
+  /**
+   * @brief Set Minimum threshold for z component of normal vector
+   *
+   * @param norm_z_min minimum threshold value
+   *
+   */
   void
   setNormZMin (double norm_z_min)
   {
     norm_z_min_ = norm_z_min;
   }
 
+  /**
+   * @brief Set Maximum threshold for z component of normal vector
+   *
+   * @param norm_z_max maximum threshold value
+   *
+   */
   void
   setNormZMax (double norm_z_max)
   {
     norm_z_max_ = norm_z_max;
   }
-
+  /**
+   * @brief Set Minimum threshold for height
+   *
+   * @param height_min minimum threshold value
+   *
+   */
   void
-  setHightMin(double height_min)
+  setHightMin (double height_min)
   {
     height_min_ = height_min;
   }
 
+  /**
+   * @brief Set Maximum threshold for height
+   *
+   * @param height_man maximum threshold value
+   *
+   */
   void
-    setHightMax (double height_max)
+  setHightMax (double height_max)
   {
     height_max_ = height_max;
   }
-
+  /**
+   * @brief Set Minimum threshold for area of a polygon
+   *
+   * @param area_min minimum threshold value
+   *
+   */
   void
   setAreaMin (double area_min)
   {
     area_min_ = area_min;
   }
 
+  /**
+   * @brief Set Maximum threshold for area of a polygon
+   *
+   * @param area_max maximum threshold value
+   *
+   */
   void
   setAreaMax (double area_max)
   {
@@ -193,11 +266,25 @@ public:
   bool
   isSizeOk (PolygonPtr p_ptr);
 
+  /**
+   * @brief Calculates area of a polygon
+   *
+   * @param p_ptr shared pointer to the polygon
+   *
+   * @return nothing
+   */
   void
-  calcPolyArea(PolygonPtr p_ptr);
+  calcPolyArea (PolygonPtr p_ptr);
 
+  /**
+   * @brief Calculates centroid of a polygon
+   *
+   * @param p_ptr shared pointer to the polygon
+   *
+   * @return nothing
+   */
   void
-  calcPolyCentroid(PolygonPtr p_ptr);
+  calcPolyCentroid (PolygonPtr p_ptr);
 
 protected:
 
