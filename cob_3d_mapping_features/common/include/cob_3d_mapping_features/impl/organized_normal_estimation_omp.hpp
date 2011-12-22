@@ -1,6 +1,6 @@
 /****************************************************************
  *
- * Copyright (c) 2010
+ * Copyright (c) 2011
  *
  * Fraunhofer Institute for Manufacturing Engineering
  * and Automation (IPA)
@@ -8,16 +8,18 @@
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
  * Project name: care-o-bot
- * ROS stack name: cob_environment_perception
- * ROS package name: cob_3d_mapping_point_map
+ * ROS stack name: cob_environment_perception_intern
+ * ROS package name: cob_3d_mapping_features
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
- * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 11/2011
+ * Date of creation: 12/2011
+ * ToDo:
+ *
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
@@ -50,59 +52,35 @@
  *
  ****************************************************************/
 
-//##################
-//#### includes ####
+#ifndef __IMPL_ORGANIZED_NORMAL_ESTIMATION_H__
+#define __IMPL_ORGANIZED_NORMAL_ESTIMATION_H__
 
-// ROS includes
-#include <ros/ros.h>
-#include <rosbag/bag.h>
+#include "cob_3d_mapping_features/organized_normal_estimation_omp.h"
 
-// ROS message includes
-#include <cob_3d_mapping_msgs/GetPointMap.h>
-
-// PCL includes
-#include <pcl/io/pcd_io.h>
-#include <pcl/point_types.h>
-
-int main (int argc, char **argv)
+template <typename PointInT, typename PointOutT, typename LabelOutT> void
+cob_3d_mapping_features::OrganizedNormalEstimationOMP<PointInT,PointOutT,LabelOutT>::computeFeature (PointCloudOut &output)
 {
-  if(argc<1) {
-    ROS_ERROR("Please specify output file\nrosrun cob_3d_mapping_point_map get_map_client myfile.bag");
-    return -1;
-  }
-  ros::init(argc, argv, "get_point_map");
-
-  ros::NodeHandle nh;
-
-  ROS_INFO("Waiting for service server to start.");
-  ros::service::waitForService("get_point_map"); //will wait for infinite time
-
-  ROS_INFO("Server started, polling map.");
-
-  //build message
-  cob_3d_mapping_msgs::GetPointMapRequest req;
-  cob_3d_mapping_msgs::GetPointMapResponse resp;
-
-  if (ros::service::call("get_point_map", req,resp))
+  if (labels_->points.size() != input_->size())
   {
-    ROS_INFO("Service call finished.");
+    labels_->points.resize(input_->size());
+    labels_->height = input_->height;
+    labels_->width = input_->width;
   }
-  else
+
+  int threadsize = 1;
+
+#pragma omp parallel for schedule (dynamic, threadsize)
+  for (size_t i=0; i < indices_->size(); ++i)
   {
-    ROS_INFO("Service call failed.");
-    return 0;
+    computePointNormal(*surface_, (*indices_)[i], 
+		       output.points[(*indices_)[i]].normal[0],
+		       output.points[(*indices_)[i]].normal[1],
+		       output.points[(*indices_)[i]].normal[2],
+		       labels_->points[(*indices_)[i]].label);
   }
-
-  /*pcl::PointCloud<pcl::PointXYZRGB> map;
-  pcl::fromROSMsg(resp.map, map);
-  pcl::io::savePCDFile(argv[1],map,false);*/
-  rosbag::Bag bag;
-  bag.open(argv[1], rosbag::bagmode::Write);
-  bag.write("point_map", resp.map.header.stamp, resp.map);
-
-  bag.close();
-
-  //exit
-  return 0;
 }
+
+#define PCL_INSTANTIATE_OrganizedNormalEstimationOMP(T,OutT,LabelT) template class PCL_EXPORTS cob_3d_mapping_features::OrganizedNormalEstimationOMP<T,OutT,LabelT>;
+
+#endif
 
