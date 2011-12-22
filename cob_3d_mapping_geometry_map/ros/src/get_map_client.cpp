@@ -55,9 +55,11 @@
 
 // ROS includes
 #include <ros/ros.h>
+#include <rosbag/bag.h>
 
 // ROS message includes
 #include <cob_3d_mapping_msgs/GetGeometricMap.h>
+#include <cob_3d_mapping_msgs/ShapeArray.h>
 
 // PCL includes
 #include <pcl/io/pcd_io.h>
@@ -84,10 +86,10 @@ void writeToFile(cob_3d_mapping_msgs::Shape& s, std::ofstream& fs)
 
 int main (int argc, char **argv)
 {
-  /*if(argc<1) {
-    ROS_ERROR("Please specify output file\nrosrun cob_3d_mapping_geometry_map get_map_client myfile.txt");
+  if(argc<1) {
+    ROS_ERROR("Please specify output file\nrosrun cob_3d_mapping_geometry_map get_map_client myfile.bag");
     return -1;
-  }*/
+  }
   ros::init(argc, argv, "get_geoemtry_map");
 
   ros::NodeHandle nh;
@@ -111,7 +113,8 @@ int main (int argc, char **argv)
     return 0;
   }
 
-  for(unsigned int i=0; i<resp.shapes.size(); i++)
+  // maybe better dump to bag file?
+  /*for(unsigned int i=0; i<resp.shapes.size(); i++)
   {
     std::stringstream ss;
     ss << "shape_" << i << ".txt";
@@ -127,7 +130,20 @@ int main (int argc, char **argv)
       pcl::fromROSMsg(resp.shapes[i].points[j], map);
       pcl::io::savePCDFile(ss1.str(),map,false);
     }
-  }
+  }*/
+  //cob_3d_mapping_msgs::ShapeArray& sa;
+  //cob_3d_mapping_msgs::ShapeArray sa = resp.shapes.shapes;
+  //sa.header.stamp = ros::Time(1.0);
+  //std::cout << sa.header.stamp << std::endl;
+  //sa.header.frame_id = "/map";
+  /*for(unsigned int i=0; i<resp.shapes.size(); i++)
+    sa.shapes.push_back(resp.shapes[i]);*/
+
+  rosbag::Bag bag;
+  bag.open(argv[1], rosbag::bagmode::Write);
+  bag.write("geometry_map", resp.map.header.stamp, resp.map);
+
+  bag.close();
 
   //exit
   return 0;

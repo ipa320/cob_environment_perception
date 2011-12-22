@@ -73,16 +73,82 @@ namespace cob_3d_mapping_features
     typedef boost::shared_ptr<const PointCloudIn> PointCloudInConstPtr;
     typedef pcl::PointCloud<PointOutT> PointCloudOut;
 
-    void setInputCloud (const PointCloudInConstPtr &cloud)
+    /**
+     * @brief Sets the input cloud.
+     *
+     * @param cloud The cloud to set as input_.
+     */
+    void
+    setInputCloud (const PointCloudInConstPtr &cloud)
     {
       input_ = cloud;
     }
 
-    void getColorImage(cv::Mat& color_image);
-    void extractEdgesSobel(std::vector<cv::Mat> &image_channels, cv::Mat& sobel_image);
-    void extractEdgesLaPlace(std::vector<cv::Mat> &image_channels, cv::Mat& laplace_image);
-    void computeEdges(PointCloudOut &output);
-    void computeEdges(cv::Mat &sobel_out, cv::Mat &laplace_out, cv::Mat &combined_out);
+    /**
+     * @brief Creates color image from RGB channel of input_.
+     *
+     * @param color_image The color image returned.
+     */
+    void
+    getColorImage(cv::Mat& color_image);
+
+    /**
+     * @brief Creates range image from XYZ channels of input_.
+     *
+     * @param range_image The range image returned.
+     * @param th_min Minimum range threshold (default 0.0).
+     * @param th_max Maximum range threshold (default 0.0).
+     */
+    void
+    getRangeImage(cv::Mat& range_image, const float &th_min, const float &th_max);
+    /**
+     * @brief Extracts Sobel edges channel-wise
+     *
+     * @param input_image The input color or grey image (CV_8UC3 or CV_8UC1).
+     * @param sobel_image Sobel output image (CV_32FC1).
+     */
+    void
+    extractEdgesSobel(cv::Mat &input_image, cv::Mat& sobel_image);
+    /**
+     * @brief Extracts La Place edges from grey image.
+     *
+     * @param image The input color or grey image (CV_8UC3 or CV_8UC1).
+     * @param laplace_image La Place output image (CV_32FC1).
+     */
+    void
+    extractEdgesLaPlace(cv::Mat &input_image, cv::Mat& laplace_image);
+    /**
+     * @brief Computes 2D edges from a color image.
+     *
+     * @param output Edge point cloud.
+     */
+    void
+    computeEdges(PointCloudOut &output);
+    /**
+     * @brief Computes 2D edges from a color image.
+     *
+     * @param sobel_out Sobel output image (CV_32FC1).
+     * @param laplace_out La Place output image (CV_32FC1).
+     * @param combined_out Combined Sobel and La Place output image (CV_32FC1).
+     */
+    void
+    computeEdges(cv::Mat &sobel_out, cv::Mat &laplace_out, cv::Mat &combined_out);
+    /**
+     * @brief Computes 2D edges from a range image.
+     *
+     * @param output Edge point cloud.
+     */
+    void
+    computeEdgesFromRange(PointCloudOut &output);
+    /**
+     * @brief Computes 2D edges from a range image.
+     *
+     * @param sobel_out Sobel output image (CV_32FC1).
+     * @param laplace_out La Place output image (CV_32FC1).
+     * @param combined_out Combined Sobel and La Place output image (CV_32FC1).
+     */
+    void
+    computeEdgesFromRange(cv::Mat &sobel_out, cv::Mat &laplace_out, cv::Mat &combined_out);
 
   protected:
     PointCloudInConstPtr input_;
@@ -90,4 +156,4 @@ namespace cob_3d_mapping_features
   };
 }
 
-#endif
+#endif //__EDGE_ESTIMATION_2D_H__

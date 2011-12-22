@@ -1,6 +1,6 @@
 /****************************************************************
  *
- * Copyright (c) 2010
+ * Copyright (c) 2011
  *
  * Fraunhofer Institute for Manufacturing Engineering
  * and Automation (IPA)
@@ -8,16 +8,18 @@
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
  * Project name: care-o-bot
- * ROS stack name: cob_environment_perception
- * ROS package name: cob_3d_mapping_point_map
+ * ROS stack name: cob_environment_perception_intern
+ * ROS package name: cob_3d_mapping_features
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
- * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 11/2011
+ * Date of creation: 12/2011
+ * ToDo:
+ *
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
@@ -48,61 +50,15 @@
  * License LGPL along with this program.
  * If not, see <http://www.gnu.org/licenses/>.
  *
- ****************************************************************/
+****************************************************************/
 
-//##################
-//#### includes ####
-
-// ROS includes
-#include <ros/ros.h>
-#include <rosbag/bag.h>
-
-// ROS message includes
-#include <cob_3d_mapping_msgs/GetPointMap.h>
-
-// PCL includes
-#include <pcl/io/pcd_io.h>
+// external includes:
 #include <pcl/point_types.h>
+#include <pcl/impl/instantiate.hpp>
 
-int main (int argc, char **argv)
-{
-  if(argc<1) {
-    ROS_ERROR("Please specify output file\nrosrun cob_3d_mapping_point_map get_map_client myfile.bag");
-    return -1;
-  }
-  ros::init(argc, argv, "get_point_map");
+// package includes:
+#include "cob_3d_mapping_common/point_types.h"
+#include "cob_3d_mapping_features/organized_curvature_estimation_omp.h"
+#include "cob_3d_mapping_features/impl/organized_curvature_estimation_omp.hpp"
 
-  ros::NodeHandle nh;
-
-  ROS_INFO("Waiting for service server to start.");
-  ros::service::waitForService("get_point_map"); //will wait for infinite time
-
-  ROS_INFO("Server started, polling map.");
-
-  //build message
-  cob_3d_mapping_msgs::GetPointMapRequest req;
-  cob_3d_mapping_msgs::GetPointMapResponse resp;
-
-  if (ros::service::call("get_point_map", req,resp))
-  {
-    ROS_INFO("Service call finished.");
-  }
-  else
-  {
-    ROS_INFO("Service call failed.");
-    return 0;
-  }
-
-  /*pcl::PointCloud<pcl::PointXYZRGB> map;
-  pcl::fromROSMsg(resp.map, map);
-  pcl::io::savePCDFile(argv[1],map,false);*/
-  rosbag::Bag bag;
-  bag.open(argv[1], rosbag::bagmode::Write);
-  bag.write("point_map", resp.map.header.stamp, resp.map);
-
-  bag.close();
-
-  //exit
-  return 0;
-}
-
+PCL_INSTANTIATE_OrganizedCurvatureEstimationOMP(pcl::PointXYZRGB,pcl::Normal,PointLabel,pcl::PrincipalCurvatures)

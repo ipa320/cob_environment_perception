@@ -59,4 +59,15 @@
   	<param name="use_fov" type="bool" value="false"/>
   </node>  
   
+  <node pkg="nodelet" type="nodelet" name="voxel" args="standalone pcl/VoxelGrid " output="screen">
+    <remap from="~input" to="/point_map/pc_aligned" />
+    <remap from="~output" to="/point_map/pc_aligned_vox" />
+    <rosparam>
+      filter_field_name: z
+      filter_limit_min: -100.0
+      filter_limit_max: 100.0
+      leaf_size: 0.03
+    </rosparam>
+  </node>
+  
   </launch>

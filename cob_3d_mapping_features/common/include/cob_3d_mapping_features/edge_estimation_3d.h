@@ -100,7 +100,7 @@ namespace cob_3d_mapping_features
       /** \brief Empty constructor. */
       EdgeEstimation3D () : dist_threshold_ (0.05), search_radius_ (20)
       {
-        feature_name_ = "EdgeEstimation";
+        feature_name_ = "EdgeEstimation3D";
       };
 
       /** \brief Get a u-v-n coordinate system that lies on a plane defined by its normal

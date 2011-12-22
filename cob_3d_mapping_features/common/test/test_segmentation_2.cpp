@@ -123,13 +123,14 @@ int main(int argc, char** argv)
   // 3D point clouds
   PointCloud<PointXYZRGB>::Ptr p(new PointCloud<PointXYZRGB>);
   PointCloud<Normal>::Ptr n(new PointCloud<Normal>);
-  PointCloud<InterestPoint>::Ptr ip3d(new PointCloud<InterestPoint>);
-  PointCloud<InterestPoint>::Ptr ip2d(new PointCloud<InterestPoint>);
+  PointCloud<InterestPoint>::Ptr c_ip2d(new PointCloud<InterestPoint>);
+  PointCloud<InterestPoint>::Ptr r_ip2d(new PointCloud<InterestPoint>);
   PointCloud<PointLabel>::Ptr le(new PointCloud<PointLabel>);
   PointCloud<PointLabel>::Ptr lc(new PointCloud<PointLabel>);
 
   // 2D representation
-  cv::Mat color, sobel, laplace, edge_3d, combined_2d, combined_3d, segmented;
+  cv::Mat color, c_sobel, c_laplace, c_combined_2d, segmented;
+  cv::Mat range, r_sobel, r_laplace, r_combined_2d;
 
   vector<PointIndices> clusters;
 
@@ -146,21 +147,20 @@ int main(int argc, char** argv)
   cout << t.elapsed() << "s\t for normal estimation" << endl;
 
   t.restart();
-  cob_3d_mapping_features::FastEdgeEstimation3D<PointXYZRGB, Normal, InterestPoint> ee3d;
-  ee3d.setPixelSearchRadius(rfp_,1,1);
-  ee3d.setInputCloud(p);
-  ee3d.setInputNormals(n);
-  ee3d.compute(*ip3d);
-  cout << t.elapsed() << "s\t for 3D edge estimation" << endl;
-
-  t.restart();
   cob_3d_mapping_features::EdgeEstimation2D<PointXYZRGB, InterestPoint> ee2d;
   ee2d.setInputCloud(p);
   ee2d.getColorImage(color);
-  ee2d.computeEdges(*ip2d);
-  ee2d.computeEdges(sobel, laplace, combined_2d);
-  cout << t.elapsed() << "s\t for 2D edge estimation" << endl;
+  ee2d.computeEdges(*c_ip2d);
+  ee2d.computeEdges(c_sobel, c_laplace, c_combined_2d);
+  cout << t.elapsed() << "s\t for 2D edge estimation from color" << endl;
 
+  t.restart();
+  ee2d.getRangeImage(range, 0.5f, 2.0f);
+  ee2d.computeEdgesFromRange(*r_ip2d);
+  ee2d.computeEdgesFromRange(r_sobel, r_laplace, r_combined_2d);
+  cout << t.elapsed() << "s\t for 2D edge estimation from range" << endl;
+
+/*
   t.restart();
   cob_3d_mapping_features::EdgeExtraction<InterestPoint,PointLabel> eex;
   eex.setInput2DEdges(ip2d);
@@ -207,15 +207,17 @@ int main(int argc, char** argv)
       p->points[i].b = 0;
     }
   }
-
+*/
   cv::imshow("Color", color);
-  cv::imshow("sobel", sobel);
-  cv::imshow("laplace", laplace);
-  cv::imshow("combined2d", combined_2d);
-  cv::imshow("edge3d", edge_3d);
-  cv::imshow("segmented", segmented);
+  cv::imshow("Range", range);
+  cv::imshow("c_sobel", c_sobel);
+  cv::imshow("c_laplace", c_laplace);
+  cv::imshow("c_combined2d", c_combined_2d);
+  cv::imshow("r_sobel", r_sobel);
+  cv::imshow("r_laplace", r_laplace);
+  cv::imshow("r_combined2d", r_combined_2d);
   cv::waitKey();
-
+/*
   visualization::PCLVisualizer v;
   v.setBackgroundColor(0,127,127);
   ColorHdlRGB col_hdl(p);
@@ -226,5 +228,6 @@ int main(int argc, char** argv)
     v.spinOnce(100);
     usleep(100000);
   }
+*/
   return(0);
 }
