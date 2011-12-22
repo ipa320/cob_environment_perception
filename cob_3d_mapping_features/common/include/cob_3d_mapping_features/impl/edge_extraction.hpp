@@ -66,8 +66,8 @@ cob_3d_mapping_features::EdgeExtraction<PointInT,PointOutT>::extractEdges(
   output.width = input_3d_->width;
   output.points.resize(output.height * output.width);
 
-  float thresh = threshold_ * 2;
-  
+  float thresh = threshold_;// * 2;
+
   for (size_t i=0; i < output.size(); i++)
   {
     if (input_3d_->points[i].strength > 1.0)
@@ -75,7 +75,8 @@ cob_3d_mapping_features::EdgeExtraction<PointInT,PointOutT>::extractEdges(
       // set NANs to label 2:
       output.points[i].label = 2;
     }
-    else if ((input_3d_->points[i].strength + input_2d_->points[i].strength) > thresh)
+    //TODO: apply weight factor
+    else if (input_3d_->points[i].strength > thresh || (input_2d_->points[i].strength+0.1) > thresh)
     {
       // add normalized 2D and 3D strength values and apply threshold
       // set edges to label 1:
