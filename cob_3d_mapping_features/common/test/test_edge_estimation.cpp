@@ -33,7 +33,7 @@ void readOptions(int argc, char* argv[])
   options.add_options()
     ("help", "produce help message")
     ("in,i", value<string>(&file_points), "input pcd file")
-    ("normal_radius,R", value<float>(&normal_radius)->default_value(0.01), 
+    ("normal_radius,R", value<float>(&normal_radius)->default_value(0.01),
      "radius normal estimation")
     ("edgeth,e",value<float>(&edge_th)->default_value(0.5), "threshold edge")
     ("rgbedges,c", value<bool>(&rgbEdges)->default_value(false), "calculate color edges")
@@ -56,7 +56,7 @@ void readOptions(int argc, char* argv[])
 int main(int argc, char** argv)
 {
   readOptions(argc, argv);
-  
+
   PointCloud<PointXYZRGB>::Ptr p(new PointCloud<PointXYZRGB>);
   PointCloud<Normal>::Ptr n(new PointCloud<Normal>);
   PointCloud<InterestPoint>::Ptr ip(new PointCloud<InterestPoint>);
@@ -115,30 +115,29 @@ int main(int argc, char** argv)
 
   for (size_t i = 0; i < ip2->points.size(); i++)
   {
-    int color = max(0.0f, min(ip2->points[i].strength*255, 255.0f) );
+    /*int color = max(0.0f, min(ip2->points[i].strength*255, 255.0f) );
     p->points[i].r = color;
     p->points[i].g = color;
-    p->points[i].b = color;
-    /*
-    if (ip->points[i].strength >= 2 )
+    p->points[i].b = color;*/
+
+    if (ip->points[i].strength >= 0.3 && ip->points[i].strength <1.0)
     {
       p->points[i].r = 255;
       p->points[i].g = 0;
       p->points[i].b = 0;
     }
-    else if (ip->points[i].strength > edge_th)
+    /*else if (ip->points[i].strength > edge_th)
     {
       p->points[i].r = 0;
       p->points[i].g = 255;
       p->points[i].b = 0;
-    }
+    }*/
     else
     {
-      p->points[i].r = 255;
-      p->points[i].g = 255;
-      p->points[i].b = 255;
+      p->points[i].r = 0;
+      p->points[i].g = 0;
+      p->points[i].b = 0;
     }
-    */
   }
 
   boost::shared_ptr<visualization::PCLVisualizer> v;

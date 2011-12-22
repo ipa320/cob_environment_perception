@@ -28,7 +28,7 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
-rosbuild_add_library(cob_3d_mapping_features 
+rosbuild_add_library(cob_3d_mapping_features
 	common/src/range_image_border_extractor.cpp
 	common/src/fast_edge_estimation_3d.cpp
 	common/src/edge_estimation_3d.cpp
@@ -62,11 +62,13 @@ rosbuild_add_executable(test_surface_class_estimation common/test/test_surface_c
 rosbuild_add_executable(profile_fee_omp common/test/profile_fee_omp.cpp)
 rosbuild_add_executable(profile_fee common/test/profile_fee.cpp)
 rosbuild_add_executable(profile_ee common/test/profile_ee.cpp)
+rosbuild_add_executable(test_organized_curvature_estimation common/test/test_organized_curvature_estimation.cpp)
 
 
 rosbuild_add_compile_flags(test_edge_extraction -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
 rosbuild_add_compile_flags(test_edge_estimation -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
 rosbuild_add_compile_flags(feature_evaluation -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
+rosbuild_add_compile_flags(test_organized_curvature_estimation -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
 
 target_link_libraries(test_edge_extraction cob_3d_mapping_features)
 target_link_libraries(test_edge_estimation cob_3d_mapping_features)
@@ -74,12 +76,13 @@ target_link_libraries(test_segmentation cob_3d_mapping_features)
 target_link_libraries(test_segmentation_2 cob_3d_mapping_features)
 target_link_libraries(feature_evaluation cob_3d_mapping_features)
 target_link_libraries(cob_3d_mapping_features_nodelets cob_3d_mapping_features)
-target_link_libraries(test_surface_class_estimation 
+target_link_libraries(test_surface_class_estimation
 	cob_3d_mapping_features )
 #	cob_3d_mapping_features_omp)
 target_link_libraries(profile_fee_omp cob_3d_mapping_features cob_3d_mapping_features_omp)
 target_link_libraries(profile_fee cob_3d_mapping_features)
 target_link_libraries(profile_ee cob_3d_mapping_features)
+target_link_libraries(test_organized_curvature_estimation cob_3d_mapping_features cob_3d_mapping_features_omp)
 
 
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
