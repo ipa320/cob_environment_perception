@@ -72,7 +72,8 @@
 
 //internal includes
 #include <cob_3d_mapping_semantics/semantic_extraction.h>
-
+#include <cob_3d_mapping_msgs/GetGeometricMap.h>
+#include <cob_3d_mapping_msgs/ShapeArray.h>
 class SemanticExtractionNode
 {
 public:
@@ -86,9 +87,11 @@ public:
     area_min_(1), area_max_(3)
   {
     poly_sub_ = n_.subscribe ("feature_map", 1, &SemanticExtractionNode::callback, this);
-    //poly_pub_ = n_.advertise<cob_3d_mapping_msgs::PolygonArrayArray> ("polygon_array", 1);
-    marker_pub_ = n_.advertise<visualization_msgs::Marker> ("polygon_marker", 100);
+    poly_marker_pub_ = n_.advertise<visualization_msgs::Marker> ("polygon_marker", 100);
     pc_pub_ = n_.advertise<sensor_msgs::PointCloud> ("point_cloud", 10);
+
+    //clear_map_server_ = n_.adadvertiseService("clear_geometry_map", &SemanticExtractionNode::clearMap, this);
+    get_map_server_ = n_.advertiseService("get_geometry_map", &SemanticExtractionNode::getMap, this);
 
 
     n_.getParam ("semantic_extraction/norm_x_min", norm_x_min_);
@@ -103,8 +106,9 @@ public:
 
     n_.getParam ("semantic_extraction/area_min", area_min_);
     n_.getParam ("semantic_extraction/area_max", area_max_);
-/*
-    std::cout << "\n___________~~~~~~''ROS PARAMETERS''~~~~~~___________"<< std::endl;
+
+    //     ROS PARAMETERS
+    /*
     std::cout << "\n\t*norm_x_min = " << norm_x_min_ << std::endl;
     std::cout << "\n\t*norm_x_max = " << norm_x_max_ << std::endl;
     std::cout << "\n\t*norm_y_min = " << norm_y_min_ << std::endl;
@@ -115,7 +119,7 @@ public:
     std::cout << "\n\t*height_max = " << height_max_ << std::endl;
     std::cout << "\n\t*area_min = " << area_min_ << std::endl;
     std::cout << "\n\t*area_min = " << area_max_ << std::endl;
-*/
+     */
 
     sem_exn_.setNormXMin (norm_x_min_);
     sem_exn_.setNormXMax(norm_x_max_);
@@ -153,10 +157,10 @@ public:
 
     //cob_3d_mapping_msgs::PolygonArrayArray p_out;
 
-    std::cout << "ROS_NODE: Total number of polygons:  " << p->polygon_array.size () << std::endl;
+    ROS_INFO(" Total number of polygons: %d ", p->polygon_array.size ());
     for (unsigned int i = 0; i < p->polygon_array.size (); i++)
     {
-      std::cout << "ROS_NODE: Polygon < " << i << " > passed for conversion  " << std::endl;
+      ROS_INFO("Polygon < %d > passed for conversion ",i);
 
       //ROS_INFO(" Entered for loop \n");
       SemanticExtraction::PolygonPtr poly_ptr = SemanticExtraction::PolygonPtr (new SemanticExtraction::Polygon ());
@@ -165,7 +169,8 @@ public:
       //SemanticExtraction sem_exn;
 
       convertFromROSMsg (p->polygon_array[i], *poly_ptr);
-
+      convertToPointCloudMsg (*poly_ptr, *pc_ptr);
+                  pc_pub_.publish (*pc_ptr);
       //Check if the plane spanned by the polygon is horizontal or not
       if (sem_exn_.isHorizontal (poly_ptr))
       {
@@ -185,8 +190,8 @@ public:
             ROS_INFO(" Size is ok \n");
             publishPolygonMarker (*poly_ptr); //publish marker messages to see visually on rviz
             //TODO: publish as ShapeArray, not as PointCloud
-            convertToPointCloudMsg (*poly_ptr, *pc_ptr);
-            pc_pub_.publish (*pc_ptr);
+            //convertToPointCloudMsg (*poly_ptr, *pc_ptr);
+            //pc_pub_.publish (*pc_ptr);
           }
 
           else
@@ -214,6 +219,52 @@ public:
   }
 
   /**
+     * @brief clears map
+     *
+     * deletes 3d map of the environment
+     *
+     * @param req not needed
+     * @param res not needed
+     *
+     * @return nothing
+     /*
+    bool
+    clearMap(cob_srvs::Trigger::Request &req,
+             cob_srvs::Trigger::Response &res)
+    {
+      //TODO: add mutex
+      ROS_INFO("Clearing geometry map...");
+      feature_map_.clearMap();
+      return true;
+    }
+*/
+    /**
+     * @brief service callback for GetGeometricMap service
+     *
+     * Fills the service response of the GetGeometricMap service with the current point map
+     *
+     * @param req request to send map
+     * @param res the current geometric map
+     *
+     * @return nothing
+     */
+
+    bool
+    getMap(cob_3d_mapping_msgs::GetGeometricMap::Request &req,
+           cob_3d_mapping_msgs::GetGeometricMap::Response &res)
+    {
+      SemanticExtraction::PolygonPtr poly_ptr = SemanticExtraction::PolygonPtr (new SemanticExtraction::Polygon ());
+      boost::shared_ptr<std::vector<SemanticExtraction::Polygon> > map = feature_map_.getMap();
+      for(unsigned int i=0; i<map->size(); i++)
+      {
+        FeatureMap::MapEntry& sm = *(map->at(i));
+        cob_3d_mapping_msgs::Shape s;
+        convertToROSMsg(sm,s);
+        res.shapes.push_back(s);
+      }
+      return true;
+    }
+  /**
    * @brief convert ros message to polygon struct
    *
    * @param p ros message to be converted
@@ -233,10 +284,10 @@ public:
 
     for (unsigned int i = 0; i < p.polygons.size (); i++)
     {
-      std::cout << "\nROS_NODE: polygon < " << i << " > size: " << p.polygons.size () << std::endl;
+      ROS_INFO("polygon < %d > size: %d" , i,p.polygons.size ());
       if (p.polygons[i].points.size ())
       {
-        std::cout << "ROS_NODE: polygon < " << i << " > points : " << p.polygons[i].points.size () << std::endl;
+        ROS_INFO("polygon < %d > size: %d" , i, p.polygons[i].points.size ());
 
         //std::vector<Eigen::Vector3f>  pts;
         //Eigen::Vector3f p3f;
@@ -412,7 +463,7 @@ public:
       marker.points[poly.poly_points[i].size ()].z = poly.poly_points[i][0] (2);
       //std::cout<<" ctr : "<<ctr<<std::endl;
 
-      marker_pub_.publish (marker);
+      poly_marker_pub_.publish (marker);
     }
 
   }
@@ -421,10 +472,10 @@ public:
 
 protected:
   ros::Subscriber poly_sub_;
-  //ros::Publisher poly_pub_;
-  ros::Publisher marker_pub_;
+  ros::Publisher poly_marker_pub_;
   ros::Publisher pc_pub_;
-
+  ros::ServiceServer clear_map_server_;
+  ros::ServiceServer get_map_server_;
   SemanticExtraction sem_exn_;
 
   double norm_x_min_, norm_x_max_;
