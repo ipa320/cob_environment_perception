@@ -161,15 +161,16 @@ int main(int argc, char** argv)
   ne.setInputCloud(p);
   ne.compute(*n);
   cout << t.elapsed() << "s\t for normal estimation" << endl;
-  t.restart();
   cob_3d_mapping_features::OrganizedCurvatureEstimationOMP<PointXYZRGB, Normal, PointLabel, PrincipalCurvatures> oce;
   oce.setInputCloud(p);
   oce.setInputNormals(n);
   //KdTreeFLANN<PointXYZRGB>::Ptr tree(new KdTreeFLANN<PointXYZRGB>);
   //ne.setRadiusSearch(rn_);
   //ne.setSearchMethod(tree);
-  for(unsigned int i=2; i<indices.size(); i++)
+  for(unsigned int i=3; i<indices.size(); i++)
   {
+    cout << i << endl;
+    t.restart();
     boost::shared_ptr<PointIndices> ind_ptr = boost::make_shared<PointIndices>(indices[i]);
     oce.setIndices(ind_ptr);
     oce.setOutputLabels(l);
@@ -179,10 +180,10 @@ int main(int argc, char** argv)
     // colorize edges of 3d point cloud
     for (size_t i = 0; i < l->points.size(); i++)
     {
-      std::cout << l->points[i].label << std::endl;
+      //std::cout << l->points[i].label << std::endl;
       if (l->points[i].label == 0)
       {
-        p->points[i].r = 255;
+        p->points[i].r = 0;
         p->points[i].g = 0;
         p->points[i].b = 0;
       }
@@ -200,8 +201,20 @@ int main(int argc, char** argv)
       }
       else if (l->points[i].label == 3)
       {
-        p->points[i].r = 0;
+        p->points[i].r = 255;
+        p->points[i].g = 0;
+        p->points[i].b = 0;
+      }
+      else if (l->points[i].label == 4)
+      {
+        p->points[i].r = 255;
         p->points[i].g = 255;
+        p->points[i].b = 0;
+      }
+      else if (l->points[i].label == 5)
+      {
+        p->points[i].r = 255;
+        p->points[i].g = 0;
         p->points[i].b = 255;
       }
       else
@@ -211,18 +224,16 @@ int main(int argc, char** argv)
         p->points[i].b = 255;
       }
     }
+  }
+  visualization::PCLVisualizer v;
+  v.setBackgroundColor(0,127,127);
+  ColorHdlRGB col_hdl(p);
+  v.addPointCloud<PointXYZRGB>(p,col_hdl, "segmented");
 
-
-    visualization::PCLVisualizer v;
-    v.setBackgroundColor(0,127,127);
-    ColorHdlRGB col_hdl(p);
-    v.addPointCloud<PointXYZRGB>(p,col_hdl, "segmented");
-
-    while(!v.wasStopped())
-    {
-      v.spinOnce(100);
-      usleep(100000);
-    }
+  while(!v.wasStopped())
+  {
+    v.spinOnce(100);
+    usleep(100000);
   }
   return(0);
 }
