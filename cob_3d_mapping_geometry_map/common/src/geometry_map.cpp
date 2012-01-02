@@ -494,10 +494,13 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 	for(int i=0 ; i<intersections.size();i++)
 	{
 		 MapEntry& p_map = *(map_[intersections[i]]);
-		 if(p.normal.dot(p_map.normal)<0){
+
+	         if(p.normal.dot(p_map.normal)<-0.95) {p_map.normal=-p_map.normal, p_map.d=-p_map.d;}
+
+		 /*if(p.normal.dot(p_map.normal)<0){
 			 p_map.normal=-p_map.normal;
 			 p_map.d=-p_map.d;
-		 }
+		 }*/
 		 average_normal += (p_map.merged+1)* p_map.normal;    // PROBLEM RICHTUNG
 		 average_d +=(p_map.merged+1)* p_map.d;
 		 merge_counter += p_map.merged+1;
@@ -512,7 +515,6 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 //	double x = -average_d/(average_normal(0)+average_normal(1)+average_normal(2));
 //	ft_pt << 1,1,-average_normal(0)/average_normal(2)-average_normal(1)/average_normal(2)+average_d/average_normal(2);
 	getPointOnPlane(average_normal,average_d,ft_pt);
-    std::cout << "FP: " << ft_pt(0) << "," << ft_pt(1) << "," << ft_pt(2) << std::endl;
 
 	Eigen::Affine3f transformation_from_plane_to_world;
 	Eigen::Affine3f transformation_from_world_to_plane;
