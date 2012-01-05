@@ -103,18 +103,29 @@ SemanticExtraction::isHorizontal (PolygonPtr p_ptr)
   }
 }
 
-bool
+void
 SemanticExtraction::isHeightOk (PolygonPtr p_ptr)
 {
-  calcPolyCentroid (p_ptr);
+  poly_height_.resize(0);
+  //calcPolyCentroid (p_ptr);
+  computeCentroidPCL(p_ptr);
 
-  //check centroid's z component with threshold values for height
-  if (centroid_[0].z > height_min_ && centroid_[0].z < height_max_)
-    return true;
+  for(unsigned int i=0;i<p_ptr->poly_points.size();i++)
+  {
+    //check centroid's z component with threshold values for height
+    if (centroid_[i].z > height_min_ && centroid_[i].z < height_max_)
+    {
+      poly_height_.push_back(true);
+      //return true;
+    }
 
-  else
-    return false;
-
+    else
+    {
+      poly_height_.push_back(false);
+      //return false;
+    }
+  }
+  std::cout << "\n\t**poly_height_ = " << poly_height_.size() << std::endl;
   // for (unsigned int i = 0; i < p_ptr->poly_points.size (); i++)
   //  {
   //
@@ -165,29 +176,32 @@ SemanticExtraction::isHeightOk (PolygonPtr p_ptr)
    */
 }
 
-bool
+
+void
 SemanticExtraction::isSizeOk (PolygonPtr p_ptr)
 {
-  //float* area;
+  poly_size_.resize(0);
   calcPolyArea (p_ptr);
   //TODO: parameters
 
+  for(unsigned int i=0;i<p_ptr->poly_points.size();i++)
+   {
+      if (area_[i] >= area_min_ && area_[i] <= area_max_)
+        poly_size_.push_back(true);
+      else if (area_[i] < area_min_)
+      {
+        std::cout << "\tSize is small "<< std::endl;
+        poly_size_.push_back(false);
+      }
+      //TODO: really 31?
 
-  if (area_[0] >= area_min_ && area_[0] <= area_max_)
-    return true;
-  else if (area_[0] < area_min_)
-  {
-    std::cout << "\tSize is small "<< std::endl;
-    return false;
-  }
-  //TODO: really 31?
-  else if (area_[0] > area_max_)
-  {
-    std::cout << "\tSize is large "<< std::endl;
-    return false;
-  }
-  // }
-
+      else if (area_[i] > area_max_)
+      {
+        std::cout << "\tSize is large "<< std::endl;
+        poly_size_.push_back(false);
+      }
+    }
+  std::cout << "\n\t***poly_size_ = " << poly_size_.size() << std::endl;
 
 }
 
@@ -240,7 +254,7 @@ SemanticExtraction::calcPolyArea (PolygonPtr p_ptr)
 void
 SemanticExtraction::calcPolyCentroid (PolygonPtr p_ptr)
 {
-  static int ctr = 0;
+  //static int ctr = 0;
   double x0, y0, z0, xi, yi, zi, xi_1, yi_1, zi_1;
 
   double sum1, sum2, sum3, area;
@@ -253,6 +267,7 @@ SemanticExtraction::calcPolyCentroid (PolygonPtr p_ptr)
   centroid_.resize (p_ptr->poly_points.size ());
   for (unsigned int i = 0; i < p_ptr->poly_points.size (); i++)
   {
+    /*
     std::ofstream poly_file; //file to store the polygon points and its centroid
     std::stringstream ss;
     ss << "/home/goa-wq/polygon_semantics/poly_" << ctr << ".txt";
@@ -261,7 +276,7 @@ SemanticExtraction::calcPolyCentroid (PolygonPtr p_ptr)
     poly_file.open (ss.str ().c_str ());
     poly_file << "\n#\t*** polygon points\n\n";
     poly_file << "#\t'X'\t\t'Y'\t\t'Z'\n\n";
-
+  */
     //initialize variables
     sum1 = 0;
     sum2 = 0;
@@ -274,12 +289,14 @@ SemanticExtraction::calcPolyCentroid (PolygonPtr p_ptr)
     z0 = p_ptr->poly_points[i][0][2];
     for (unsigned int j = 1; j < (p_ptr->poly_points[i].size () - 1); j++)
     {
+      /*
       if (poly_file.is_open ())
       {
         poly_file << "\t" << p_ptr->poly_points[i][j][0];
         poly_file << "\t" << p_ptr->poly_points[i][j][1];
         poly_file << "\t\t" << p_ptr->poly_points[i][j][2] << "\n";
       }
+      */
       /*
        std::cout<<"\t"<<p_ptr->poly_points[i][j][0];//<<std::endl;
        std::cout<<"\t"<<p_ptr->poly_points[i][j][1];//<<std::endl;
@@ -325,48 +342,59 @@ SemanticExtraction::calcPolyCentroid (PolygonPtr p_ptr)
       sum2 = sum2 + (c_tri.y * tri_area);
       sum3 = sum3 + (c_tri.z * tri_area);
       area = area + tri_area;
-
       /*
        std::cout << "\n\t sum1 = " << sum1;// << std::endl;
        std::cout << "\n\t sum2 = " << sum2;// << std::endl;
        std::cout << "\n\t sum3 = " << sum3 << std::endl;
        */
-
     }
-
-    /*
-     if (area_[i] == 0)
-     {
-     centroid_[i].x = sum1;
-     centroid_[i].y = sum2;
-     centroid_[i].z = sum3;
-     }
-     else
-     {
-     centroid_[i].x = (sum1 / area_[i]);
-     centroid_[i].y = (sum2 / area_[i]);
-     centroid_[i].z = (sum3 / area_[i]);
-     }
-
-     */
     centroid_[i].x = (sum1 / area);
     centroid_[i].y = (sum2 / area);
     centroid_[i].z = (sum3 / area);
-
+    /*
     poly_file << "\n#\t*** Centroid of polygon\n";
     poly_file << "\t" << centroid_[i].x;
     poly_file << "\t" << centroid_[i].y;
     poly_file << "\t" << centroid_[i].z << "\n";
 
     poly_file.close ();
-
+    */
     std::cout << "\n\t*** Centroid of polygon ( " << i << " ) " << std::endl;
-    std::cout << "\tCx:" << centroid_[i].x;//<< std::endl;
-    std::cout << "\tCy:" << centroid_[i].y;// << std::endl;
+    std::cout << "\tCx:" << centroid_[i].x;
+    std::cout << "\tCy:" << centroid_[i].y;
     std::cout << "\tCz:" << centroid_[i].z << std::endl;
     std::cout << "\n\t*** Area of polygon ( " << i << " ) = "<< area << std::endl;
 
   }
 
+}
+
+void
+SemanticExtraction::computeCentroidPCL(PolygonPtr p_ptr)
+{
+  centroid_.resize(p_ptr->poly_points.size ());
+  for (unsigned int i = 0; i < p_ptr->poly_points.size (); i++)
+    {
+      pcl::PointCloud<pcl::PointXYZ> poly_cloud;
+      for (unsigned int j = 0; j < p_ptr->poly_points[i].size () ; j++)
+      {
+        pcl::PointXYZ p;
+        p.x = p_ptr->poly_points[i][j][0];
+        p.y = p_ptr->poly_points[i][j][1];
+        p.z = p_ptr->poly_points[i][j][2];
+        poly_cloud.push_back(p);
+      }
+      Eigen::Vector4f centroid;
+      pcl::compute3DCentroid(poly_cloud,centroid);
+
+      centroid_[i].x = centroid(0);
+      centroid_[i].y = centroid(1);
+      centroid_[i].z = centroid(2);
+
+      std::cout<<"\n\t#####ComputeCentroidPCL";
+      std::cout<<"\n centroid(x) = "<<centroid(0);
+      std::cout<<"\t centroid(y) = "<<centroid(1);
+      std::cout<<"\t centroid(z) = "<<centroid(2);
+    }
 }
 
