@@ -72,6 +72,11 @@
 #include <Eigen/Core>
 #include <boost/shared_ptr.hpp>
 
+#include "pcl/point_types.h"
+#include "pcl/common/centroid.h"
+#include "pcl/common/eigen.h"
+
+
 class SemanticExtraction
 {
 
@@ -97,13 +102,17 @@ public:
   };
 
   typedef boost::shared_ptr<Polygon> PolygonPtr;
+  std::vector<PolygonPtr>  PolygonMap;
 
   /**
    * @brief Constructor
    */
   SemanticExtraction ()
   {
-    area_.resize (1);
+    centroid_.resize(0);
+    area_.resize (0);
+    poly_height_.resize(0);
+    poly_size_.resize(0);
   }
 
   /**
@@ -233,6 +242,10 @@ public:
   {
     area_max_ = area_max;
   }
+
+
+
+
   /**
    * @brief checks if the plane of the polygon is horizontal or not
    *
@@ -252,7 +265,7 @@ public:
    * @return true or flase
    */
 
-  bool
+  void
   isHeightOk (PolygonPtr p_ptr);
 
   /**
@@ -263,7 +276,7 @@ public:
    * @return true or flase
    */
 
-  bool
+  void
   isSizeOk (PolygonPtr p_ptr);
 
   /**
@@ -286,6 +299,18 @@ public:
   void
   calcPolyCentroid (PolygonPtr p_ptr);
 
+  /**
+   * @brief Calculates centroid of a polygon using pcl library
+   *
+   * @param p_ptr shared pointer to the polygon
+   *
+   * @return nothing
+   */
+  void
+  computeCentroidPCL(PolygonPtr p_ptr);
+
+  std::vector<bool> poly_height_;
+  std::vector<bool> poly_size_;
 protected:
 
   double norm_x_min_, norm_x_max_;
@@ -295,6 +320,7 @@ protected:
   double height_min_, height_max_;
 
   double area_min_, area_max_;
+
 
   std::vector<double> area_;
   std::vector<Point> centroid_;
