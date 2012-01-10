@@ -18,9 +18,12 @@ class TestStates:
 		SM = smach.StateMachine(outcomes=['overall_succeeded','overall_failed'])
 		#SM.userdata.pose = "home"
 		SM.userdata.angle_range = 0.6
+		SM.userdata.scan_pose = [-1.3, -1.0, 3.14]
 
 		# open the container
 		with SM:
+			smach.StateMachine.add('APPROACH', ApproachScanPose(),
+				transitions={'succeeded':'UPDATE', 'failed':'overall_failed'})
 			smach.StateMachine.add('UPDATE', UpdateEnvMap(),
 				transitions={'succeeded':'overall_succeeded', 'failed':'overall_failed'})
 			#smach.StateMachine.add('UPDATE', Map360(),
