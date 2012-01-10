@@ -42,6 +42,8 @@
   	<remap from="point_cloud2" to="/pass_through/output"/>
   	<remap from="point_cloud2_map" to="point_map/map"/>
   	<remap from="point_cloud2_aligned" to="point_map/pc_aligned"/>
+  	<remap from="clear_point_map" to="point_map/clear_point_map"/>
+  	<remap from="get_point_map" to="point_map/get_point_map"/>
   	  
   	<param name="icp_max_iterations" type="int" value="50"/>
   	<param name="icp_max_corr_dist" type="double" value="0.05"/>
