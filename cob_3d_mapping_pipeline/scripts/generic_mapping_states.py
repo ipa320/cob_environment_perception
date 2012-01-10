@@ -56,7 +56,7 @@
 #################################################################
 
 import roslib
-roslib.load_manifest('cob_generic_states')
+roslib.load_manifest('cob_3d_mapping_pipeline')
 import rospy
 import smach
 import smach_ros
@@ -124,7 +124,7 @@ class ApproachScanPose(smach.State):
         scan_pose = userdata.scan_pose #[-1.3, -1.0, 3.14]
         sss.move("torso","home")
         sss.move("head","front")
-        sss.move("tray","down")
+        #sss.move("tray","down")
         sss.move("base",scan_pose)
 
         return 'succeeded'
