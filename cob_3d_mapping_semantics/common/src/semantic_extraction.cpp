@@ -59,38 +59,6 @@
 bool
 SemanticExtraction::isHorizontal (PolygonPtr p_ptr)
 {
-  /*
-   std::cout << "\n___________~~~~~~''ROS PARAMETERS''~~~~~~___________"<< std::endl;
-   std::cout << "\n\t*norm_x_min = " << norm_x_min_ << std::endl;
-   std::cout << "\n\t*norm_x_max = " << norm_x_max_ << std::endl;
-   std::cout << "\n\t*norm_y_min = " << norm_y_min_ << std::endl;
-   std::cout << "\n\t*norm_y_max = " << norm_y_max_ << std::endl;
-   std::cout << "\n\t*norm_z_min = " << norm_z_min_ << std::endl;
-   std::cout << "\n\t*norm_z_max = " << norm_z_max_ << std::endl;
-   std::cout << "\n___________~~~~~~''ROS PARAMETERS''~~~~~~___________"<< std::endl;
-   //float norm = sqrt(pow(p_ptr->normal (0), 2) + pow(p_ptr->normal (1), 2) + pow(p_ptr->normal (2), 2));
-   */
-  /*
-   std::cout<<"\t%Nx: "<<p_ptr->normal(0)<<"----"<<norm<<std::endl;
-   std::cout<<"\t%Ny: "<<p_ptr->normal(1)<<std::endl;
-   std::cout<<"\t%Nz: "<<p_ptr->normal(2)<<std::endl;
-   */
-  // TODO: define as parameters (declare member variable and set it from the node using ROS parameters)
-  // TODO: better use && instead of three if-conditions
-
-  /*
-   if (p_ptr->normal (2) > 0.99 || p_ptr->normal (2) < -0.99)
-   {
-   if (p_ptr->normal (0) < 0.1 && p_ptr->normal (0) > -0.1)
-   {
-   if (p_ptr->normal (1) < 0.1 && p_ptr->normal (1) > -0.1)
-   {
-   return true;
-   }
-   }
-   }
-   */
-
   //check components of normal vector with threshold values
   if ((p_ptr->normal (2) > norm_z_max_ || p_ptr->normal (2) < norm_z_min_) && (p_ptr->normal (0) < norm_x_max_
       && p_ptr->normal (0) > norm_x_min_) && (p_ptr->normal (1) < norm_y_max_ && p_ptr->normal (1) > norm_y_min_))
@@ -116,64 +84,14 @@ SemanticExtraction::isHeightOk (PolygonPtr p_ptr)
     if (centroid_[i].z > height_min_ && centroid_[i].z < height_max_)
     {
       poly_height_.push_back(true);
-      //return true;
     }
 
     else
     {
       poly_height_.push_back(false);
-      //return false;
     }
   }
   std::cout << "\n\t**poly_height_ = " << poly_height_.size() << std::endl;
-  // for (unsigned int i = 0; i < p_ptr->poly_points.size (); i++)
-  //  {
-  //
-  // }
-
-  /*
-   int count1 = 0;
-   int count2 = 0;
-   for (unsigned int i = 0; i < p_ptr->poly_points.size (); i++)
-   {
-   for (unsigned int j = 0; j < p_ptr->poly_points[i].size (); j++)
-   {
-   //std::cout<<"\t%x: "<<p_ptr->poly_points[i][j][0]<<std::endl;
-   //std::cout<<"\t%y: "<<p_ptr->poly_points[i][j][1]<<std::endl;
-   //std::cout<<"\t%z: "<<p_ptr->poly_points[i][j][2]<<std::endl;
-
-   // TODO: parameters
-   // TODO: what is the purpose of the 2 counters? Shouldn't we better check the height of the centroid?
-   if ((p_ptr->poly_points[i][j][2] < 1) && (p_ptr->poly_points[i][j][2] > 0.4))
-   {
-   count1++;
-   //std::cout<<" count1: "<<count1<<std::endl;
-   if (count1 > 10)
-   {
-   return true;
-   break;
-   }
-   else
-   continue;
-   }
-   else
-   {
-   count2++;
-   //std::cout<<" count2: "<<count2<<std::endl;
-   if (count2 > 10)
-   {
-   return false;
-   break;
-   }
-   else
-   continue;
-
-   }
-
-   }//end for inner
-   }//end for outer
-
-   */
 }
 
 
@@ -259,8 +177,8 @@ SemanticExtraction::calcPolyCentroid (PolygonPtr p_ptr)
 
   double sum1, sum2, sum3, area;
 
-  Point c_tri;
-  Point cross_p;
+  pcl::PointXYZ c_tri;
+  pcl::PointXYZ cross_p;
   double tri_area;
   double mag_cross_p;
 
@@ -283,7 +201,7 @@ SemanticExtraction::calcPolyCentroid (PolygonPtr p_ptr)
     sum3 = 0;
     area = 0;
 
-    Point v1, v2;
+    pcl::PointXYZ v1, v2;
     x0 = p_ptr->poly_points[i][0][0];
     y0 = p_ptr->poly_points[i][0][1];
     z0 = p_ptr->poly_points[i][0][2];
@@ -391,10 +309,10 @@ SemanticExtraction::computeCentroidPCL(PolygonPtr p_ptr)
       centroid_[i].y = centroid(1);
       centroid_[i].z = centroid(2);
 
-      std::cout<<"\n\t#####ComputeCentroidPCL";
-      std::cout<<"\n centroid(x) = "<<centroid(0);
-      std::cout<<"\t centroid(y) = "<<centroid(1);
-      std::cout<<"\t centroid(z) = "<<centroid(2);
+      std::cout<<"\n\t**ComputeCentroidPCL";
+      std::cout<<"\n\t C(x) = "<<centroid(0);
+      std::cout<<"\n\t C(y) = "<<centroid(1);
+      std::cout<<"\n\t C(z) = "<<centroid(2);
     }
 }
 

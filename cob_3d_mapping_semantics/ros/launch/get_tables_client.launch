@@ -3,9 +3,9 @@
   <node pkg="cob_3d_mapping_semantics" type="get_tables_client" name="client" output="screen">
   	
   	
-  	<param name="file_path" type = "string" value= "/home/goa-wq/polygon_semantics/" />
+  	<param name="file_path" type = "string" value= "/home/goa-wq/3D_Mapping_Semantics/polygon_semantics/" />
   	<param name="save_txt_file" type = "bool" value= "false"/>
-  	<param name="save_pcd_file" type = "boolean" value= "true"/>
+  	<param name="save_pcd_file" type = "boolean" value= "false"/>
   	<param name="save_bag_file" type = "boolean" value= "true"/>
  	
   </node>                 
