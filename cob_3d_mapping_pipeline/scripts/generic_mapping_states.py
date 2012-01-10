@@ -40,17 +40,17 @@
 #       this software without specific prior written permission. \n
 #
 # This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License LGPL as 
-# published by the Free Software Foundation, either version 3 of the 
+# it under the terms of the GNU Lesser General Public License LGPL as
+# published by the Free Software Foundation, either version 3 of the
 # License, or (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Lesser General Public License LGPL for more details.
-# 
-# You should have received a copy of the GNU Lesser General Public 
-# License LGPL along with this program. 
+#
+# You should have received a copy of the GNU Lesser General Public
+# License LGPL along with this program.
 # If not, see <http://www.gnu.org/licenses/>.
 #
 #################################################################
@@ -80,12 +80,12 @@ class UpdateEnvMap(smach.State):
 			outcomes=['succeeded', 'failed'],
 			input_keys=['angle_range']) #good angle value: 0.4
 		self.client = actionlib.SimpleActionClient('trigger_mapping', TriggerMappingAction)
-		
+
 	def execute(self, userdata):
-		scan_position = [-1.3, -1.0, 3.14]
-		sss.move("torso","home")
-		sss.move("head","front")
-		sss.move("tray","down")
+		#scan_position = [-1.3, -1.0, 3.14]
+		#sss.move("torso","home")
+		#sss.move("head","front")
+		#sss.move("tray","down")
 		#sss.move("base",scan_position)
 		goal = TriggerMappingGoal()
 		goal.start = True
@@ -109,8 +109,8 @@ class UpdateEnvMap(smach.State):
 		#get map
 
 		return 'succeeded'
- 
-"""experimental state, should be replaces by generic state for approach pose"""       
+
+"""experimental state, should be replaces by generic state for approach pose"""
 class ApproachScanPose(smach.State):
 
     def __init__(self):
@@ -119,7 +119,7 @@ class ApproachScanPose(smach.State):
             self,
             outcomes=['succeeded', 'failed'],
             input_keys=['scan_pose']) #good angle value: 0.4
-        
+
     def execute(self, userdata):
         scan_pose = userdata.scan_pose #[-1.3, -1.0, 3.14]
         sss.move("torso","home")
@@ -128,7 +128,7 @@ class ApproachScanPose(smach.State):
         sss.move("base",scan_pose)
 
         return 'succeeded'
-       
+
 class Map360(smach.State):
 
 	def __init__(self):
@@ -138,7 +138,7 @@ class Map360(smach.State):
 			outcomes=['succeeded', 'failed'],
 			input_keys=['angle_range']) #good angle value: 0.4
 		self.client = actionlib.SimpleActionClient('trigger_mapping', TriggerMappingAction)
-		
+
 	def execute(self, userdata):
 		scan_pose = [0, 0, 0]
 		sss.move("base",scan_pose)
@@ -162,7 +162,7 @@ class Map360(smach.State):
 			if operator.mod(ctr,2) == 0:
 				sss.move("torso",[[-0.2,0.0,-0.2]])
 			else:
-				sss.move("torso","home")				
+				sss.move("torso","home")
 			#sss.sleep(0.5)
 			i = i+0.2
 			ctr = ctr+1
