@@ -94,7 +94,7 @@ class UpdateEnvMap(smach.State):
 			resp1 = clear_point_map()
 		except rospy.ServiceException, e:
 			print "Service call failed: %s"%e
-		rospy.wait_for_service('geometry_map/clear_geoetry_map')
+		rospy.wait_for_service('geometry_map/clear_geometry_map')
 		try:
 			clear_geom_map = rospy.ServiceProxy('geometry_map/clear_geometry_map', Trigger)
 			resp1 = clear_geom_map()
