@@ -27,7 +27,7 @@
   <node pkg="cob_3d_mapping_common" type="field_of_view_node" name="field_of_view_node" output="screen" />
   
   <node pkg="cob_3d_mapping_common" type="keyframe_detector_node" name="keyframe_detector_node" output="screen">
-  	<remap from="camera_info" to="/cam3d/camera_info"/>
+  	<remap from="camera_info" to="/cam3d/depth/camera_info"/>
   	
   	<param name="r_limit_" type="double" value="0.03" />
   	<param name="p_limit_" type="double" value="0.03" />
@@ -59,7 +59,7 @@
   	<param name="use_fov" type="bool" value="false"/>
   </node>  
   
-  <node pkg="nodelet" type="nodelet" name="voxel" args="standalone pcl/VoxelGrid " output="screen">
+  <!--node pkg="nodelet" type="nodelet" name="voxel" args="standalone pcl/VoxelGrid " output="screen">
     <remap from="~input" to="/point_map/pc_aligned" />
     <remap from="~output" to="/point_map/pc_aligned_vox" />
     <rosparam>
@@ -68,6 +68,6 @@
       filter_limit_max: 100.0
       leaf_size: 0.03
     </rosparam>
-  </node>
+  </node-->
   
   </launch>
