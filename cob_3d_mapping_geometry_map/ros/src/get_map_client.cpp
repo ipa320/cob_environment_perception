@@ -95,7 +95,7 @@ int main (int argc, char **argv)
   ros::NodeHandle nh;
 
   ROS_INFO("Waiting for service server to start.");
-  ros::service::waitForService("get_geometry_map"); //will wait for infinite time
+  ros::service::waitForService("/geometry_map/get_geometry_map"); //will wait for infinite time
 
   ROS_INFO("Server started, polling map.");
 
