@@ -64,6 +64,7 @@ import actionlib
 import operator
 
 from cob_3d_mapping_msgs.msg import *
+from cob_srvs.srv import Trigger
 
 from simple_script_server import *
 sss = simple_script_server()
@@ -87,6 +88,18 @@ class UpdateEnvMap(smach.State):
 		#sss.move("head","front")
 		#sss.move("tray","down")
 		#sss.move("base",scan_position)
+		rospy.wait_for_service('point_map/clear_point_map')
+		try:
+			clear_point_map = rospy.ServiceProxy('point_map/clear_point_map', Trigger)
+			resp1 = clear_point_map()
+		except rospy.ServiceException, e:
+			print "Service call failed: %s"%e
+		rospy.wait_for_service('geometry_map/clear_geoetry_map')
+		try:
+			clear_geom_map = rospy.ServiceProxy('geometry_map/clear_geometry_map', Trigger)
+			resp1 = clear_geom_map()
+		except rospy.ServiceException, e:
+			print "Service call failed: %s"%e
 		goal = TriggerMappingGoal()
 		goal.start = True
 		if not self.client.wait_for_server():#rospy.Duration.from_sec(5.0)):
