@@ -137,16 +137,19 @@ public:
           object_file << "#Table Points\n";
           object_file << res.objects.shapes[i] << "\n";
           object_file.close ();
+          ROS_INFO("Text file saved");
         }
         if (save_pcd_file_ == true)
         {
           for (unsigned int j = 0; j < res.objects.shapes[i].points.size (); j++)
           {
+            ROS_INFO("Saving Table object: table_%d_%d",i,j);
             std::stringstream ss1;
             ss1 << file_path_ << "shape_" << i << "_" << j << ".pcd";
-            pcl::PointCloud<pcl::PointXYZ> map;
-            pcl::fromROSMsg (res.objects.shapes[i].points[j], map);
-            pcl::io::savePCDFile (ss1.str (), map, false);
+            pcl::PointCloud<pcl::PointXYZ> p;
+            pcl::fromROSMsg (res.objects.shapes[i].points[j], p);
+            pcl::io::savePCDFile (ss1.str (), p, false);
+            ROS_INFO("PCD file saved");
           }
         }
       }
@@ -161,37 +164,41 @@ public:
       for (unsigned int i = 0; i < res.objects.shapes.size (); i++)
       {
         sa.shapes.push_back (res.objects.shapes[i]);
-        /*
-        sensor_msgs::PointCloud2 pc2;
-        pc2 = res.objects.shapes[i].points[0];
-        pc2.header.frame_id = "/map";
-        while(1)
-        pc2_pub_.publish(pc2);
-        */
+
+        for (unsigned int j = 0; j < res.objects.shapes[i].points.size (); j++)
+        {
+          sensor_msgs::PointCloud2 pc2;
+          pc2 = res.objects.shapes[i].points[j];
+          pc2.header.frame_id = "/map";
+          pc2_pub_.publish(pc2);
+          ros::Duration(10).sleep();
+        }
+
       }
 
-      rosbag::Bag bag;
-      std::stringstream ss1;
-      ss1 << file_path_ << "table.bag";
-      bag.open (ss1.str().c_str(), rosbag::bagmode::Write);
-      //bag.write("shape_array",ros::Time::now(),sa);
-      bag.write ("/get_tables_client/shape_array", sa.header.stamp, sa);
-      bag.close ();
-      std::cout << sa.header.stamp << std::endl;
-    }
-
+    rosbag::Bag bag;
+    std::stringstream ss1;
+    ss1 << file_path_ << "table.bag";
+    bag.open (ss1.str().c_str(), rosbag::bagmode::Write);
+    //bag.write("shape_array",ros::Time::now(),sa);
+    bag.write ("/get_tables_client/shape_array", sa.header.stamp, sa);
+    bag.close ();
+    ROS_INFO("BAG file saved");
+    //std::cout << sa.header.stamp << std::endl;
   }
 
-  ros::NodeHandle nh;
+}
+
+ros::NodeHandle nh;
 
 protected:
-  ros::ServiceClient get_tables_client_;
-  ros::Publisher pc2_pub_;
+ros::ServiceClient get_tables_client_;
+ros::Publisher pc2_pub_;
 
-  std::string file_path_;
-  bool save_txt_file_;
-  bool save_pcd_file_;
-  bool save_bag_file_;
+std::string file_path_;
+bool save_txt_file_;
+bool save_pcd_file_;
+bool save_bag_file_;
 
 };
 
