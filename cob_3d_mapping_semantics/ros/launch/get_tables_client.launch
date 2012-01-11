@@ -6,7 +6,7 @@
   	<param name="file_path" type = "string" value= "/home/goa/tmp/" />
   	<param name="save_txt_file" type = "bool" value= "false"/>
   	<param name="save_pcd_file" type = "boolean" value= "false"/>
-  	<param name="save_bag_file" type = "boolean" value= "true"/>
+  	<param name="save_bag_file" type = "boolean" value= "false"/>
 
   </node>
 </launch>
