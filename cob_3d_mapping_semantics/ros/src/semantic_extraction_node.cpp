@@ -96,7 +96,7 @@ public:
     pc2_pub_ = n_.advertise<sensor_msgs::PointCloud2> ("shape_pointcloud2", 1);
     sa_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray> ("/semantic_extraction_node/shape_array", 10);
     sa_msg_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray> ("/semantic_extraction_node/shape_array_service", 10);
-    get_tables_server_ = n_.aadvertiseService ("get_objects_of_class", &SemanticExtractionNode::getTables, this);
+    get_tables_server_ = n_.advertiseService ("get_objects_of_class", &SemanticExtractionNode::getTables, this);
 
     n_.getParam ("semantic_extraction/norm_x_min", norm_x_min_);
     n_.getParam ("semantic_extraction/norm_x_max", norm_x_max_);
@@ -234,6 +234,7 @@ public:
     ROS_INFO("service get_objects_of_class started....");
 
     sa_.header.frame_id = "/map";
+    sa_.shapes.clear();
 
     if (getMap ())
     {

@@ -88,13 +88,13 @@ class UpdateEnvMap(smach.State):
 		#sss.move("head","front")
 		#sss.move("tray","down")
 		#sss.move("base",scan_position)
-		rospy.wait_for_service('point_map/clear_point_map')
+		rospy.wait_for_service('point_map/clear_point_map',10)
 		try:
 			clear_point_map = rospy.ServiceProxy('point_map/clear_point_map', Trigger)
 			resp1 = clear_point_map()
 		except rospy.ServiceException, e:
 			print "Service call failed: %s"%e
-		rospy.wait_for_service('geometry_map/clear_geometry_map')
+		rospy.wait_for_service('geometry_map/clear_geometry_map',10)
 		try:
 			clear_geom_map = rospy.ServiceProxy('geometry_map/clear_geometry_map', Trigger)
 			resp1 = clear_geom_map()
