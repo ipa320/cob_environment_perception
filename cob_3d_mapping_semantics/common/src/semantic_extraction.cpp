@@ -269,6 +269,7 @@ SemanticExtraction::calcPolyCentroid (PolygonPtr p_ptr)
     centroid_[i].x = (sum1 / area);
     centroid_[i].y = (sum2 / area);
     centroid_[i].z = (sum3 / area);
+    p_ptr->centroid = centroid_;
     /*
     poly_file << "\n#\t*** Centroid of polygon\n";
     poly_file << "\t" << centroid_[i].x;
@@ -308,6 +309,7 @@ SemanticExtraction::computeCentroidPCL(PolygonPtr p_ptr)
       centroid_[i].x = centroid(0);
       centroid_[i].y = centroid(1);
       centroid_[i].z = centroid(2);
+      p_ptr->centroid = centroid_;
 
       std::cout<<"\n\t**ComputeCentroidPCL";
       std::cout<<"\n\t C(x) = "<<centroid(0);

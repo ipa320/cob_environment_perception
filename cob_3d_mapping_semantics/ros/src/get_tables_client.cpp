@@ -104,11 +104,11 @@ public:
   {
     ROS_INFO("waiting for server to start");
     ros::service::waitForService ("get_objects_of_class");
-    ROS_INFO("Service call finished");
     //build message
     cob_3d_mapping_msgs::GetObjectsOfClassRequest req;
     cob_3d_mapping_msgs::GetObjectsOfClassResponse res;
     get_tables_client_.call (req, res);
+    ROS_INFO("Service call finished");
     saveTables (res);
   }
 
@@ -210,7 +210,7 @@ main (int argc, char **argv)
   TablesClient client;
   client.callService ();
 
-  ros::spin ();
+  //ros::spin ();
   return 0;
 }
 
