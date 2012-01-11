@@ -68,14 +68,14 @@
 #include <vector>
 #include <math.h>
 
-//other includes
-#include <Eigen/Core>
-#include <boost/shared_ptr.hpp>
-
+//PCL includes
 #include "pcl/point_types.h"
 #include "pcl/common/centroid.h"
 #include "pcl/common/eigen.h"
 
+//other includes
+#include <Eigen/Core>
+#include <boost/shared_ptr.hpp>
 
 class SemanticExtraction
 {
@@ -91,28 +91,21 @@ public:
     float d;
   };
 
-  /**
-   * @brief A 3D point
-   */
-  struct Point
-  {
-    double x;
-    double y;
-    double z;
-  };
-
+  //shared pointer to polygon struct
   typedef boost::shared_ptr<Polygon> PolygonPtr;
-  std::vector<PolygonPtr>  PolygonMap;
+  std::vector<PolygonPtr> PolygonMap;
 
   /**
    * @brief Constructor
    */
-  SemanticExtraction ()
+  SemanticExtraction () :
+    norm_x_min_ (-0.1), norm_x_max_ (0.1), norm_y_min_ (-0.1), norm_y_max_ (0.1), norm_z_min_ (-0.99),
+        norm_z_max_ (0.99), height_min_ (0.4), height_max_ (1), area_min_ (1), area_max_ (3)
   {
-    centroid_.resize(0);
+    centroid_.resize (0);
     area_.resize (0);
-    poly_height_.resize(0);
-    poly_size_.resize(0);
+    poly_height_.resize (0);
+    poly_size_.resize (0);
   }
 
   /**
@@ -243,13 +236,10 @@ public:
     area_max_ = area_max;
   }
 
-
-
-
   /**
-   * @brief checks if the plane of the polygon is horizontal or not
+   * @brief check if the plane of the polygon is horizontal or not
    *
-   * @param p_ptr shared pointer to Polygon struct
+   * @param p_ptr shared pointer to the polygon
    *
    * @return true or false
    */
@@ -258,29 +248,28 @@ public:
   isHorizontal (PolygonPtr p_ptr);
 
   /**
-   * @brief checks if the plane is high enough or not
+   * @brief check if the plane is high enough or not
    *
-   * @param p_ptr shared pointer to Polygon struct
+   * @param p_ptr shared pointer the polygon
    *
-   * @return true or flase
+   * @return nothing
    */
 
   void
   isHeightOk (PolygonPtr p_ptr);
 
   /**
-   * @brief checks if the area of the plane is sufficient or not
+   * @brief check if the area of the plane polygon is sufficient or not
    *
-   * @param p_ptr shared pointer to Polygon struct
+   * @param p_ptr shared pointer to the polygon
    *
-   * @return true or flase
+   * @return nothing
    */
-
   void
   isSizeOk (PolygonPtr p_ptr);
 
   /**
-   * @brief Calculates area of a polygon
+   * @brief Calculate area of a polygon
    *
    * @param p_ptr shared pointer to the polygon
    *
@@ -290,7 +279,7 @@ public:
   calcPolyArea (PolygonPtr p_ptr);
 
   /**
-   * @brief Calculates centroid of a polygon
+   * @brief Calculate centroid of a polygon
    *
    * @param p_ptr shared pointer to the polygon
    *
@@ -300,14 +289,14 @@ public:
   calcPolyCentroid (PolygonPtr p_ptr);
 
   /**
-   * @brief Calculates centroid of a polygon using pcl library
+   * @brief Compute centroid of a polygon using PCL library
    *
    * @param p_ptr shared pointer to the polygon
    *
    * @return nothing
    */
   void
-  computeCentroidPCL(PolygonPtr p_ptr);
+  computeCentroidPCL (PolygonPtr p_ptr);
 
   std::vector<bool> poly_height_;
   std::vector<bool> poly_size_;
@@ -321,9 +310,8 @@ protected:
 
   double area_min_, area_max_;
 
-
   std::vector<double> area_;
-  std::vector<Point> centroid_;
+  std::vector<pcl::PointXYZ> centroid_;
 
 };
 
