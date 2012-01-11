@@ -89,6 +89,7 @@ public:
     std::vector<std::vector<Eigen::Vector3f> > poly_points;
     Eigen::Vector3f normal;
     float d;
+    std::vector<pcl::PointXYZ> centroid;
   };
 
   //shared pointer to polygon struct
