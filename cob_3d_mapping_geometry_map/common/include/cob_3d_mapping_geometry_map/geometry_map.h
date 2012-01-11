@@ -127,7 +127,7 @@ public:
   addMapEntry(MapEntryPtr p);
 
   void
-  searchIntersection(MapEntryPtr p_ptr , std::vector<int>& intersections);
+  searchIntersection(MapEntry p , std::vector<int>& intersections);
 
   void
   mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections);

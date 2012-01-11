@@ -250,11 +250,18 @@ GeometryMap::addMapEntry(MapEntryPtr p_ptr)
   //gpc_write_polygon(out, 0, &p.polygon_plane);
   //fclose(out);
   // Iterate over map
-if(false)
+//	std::cout << "anfang normal " << std::endl << p.normal << std::endl ;
+
+if(true)
 {
+
+
    std::vector<int> intersections;
 
-   searchIntersection(p_ptr , intersections);
+   searchIntersection(p , intersections);
+	//std::cout << "zweite normal " << std::endl << p.normal << std::endl ;
+ //  std::cout << "intersections :" << intersections.size() << std::endl;
+
 
    if(intersections.size()>0)
    {
@@ -262,9 +269,14 @@ if(false)
    }
    else
    {
+		Eigen::Vector3f ft_pt;
+	//	double x = -average_d/(average_normal(0)+average_normal(1)+average_normal(2));
+	//	ft_pt << 1,1,-average_normal(0)/average_normal(2)-average_normal(1)/average_normal(2)+average_d/average_normal(2);
+	 getPointOnPlane(p.normal,p.d,ft_pt);
      Eigen::Affine3f transformation_from_plane_to_world;
-     getTransformationFromPlaneToWorld(p.normal, p.polygon_world[0][0], transformation_from_plane_to_world);
+     getTransformationFromPlaneToWorld(p.normal, ft_pt/*p.polygon_world[0][0]*/, transformation_from_plane_to_world);
      p.transform_from_world_to_plane = transformation_from_plane_to_world.inverse();
+     p.merged++;
      p.id = new_id_;
      map_.push_back(p_ptr);
      new_id_++;
@@ -320,7 +332,7 @@ else
 		//  std::cout << "d map und normale " << d_map << " normale " << n_map << std::endl;
 		  Eigen::Vector3f ft_pt;
 		 // double x = -d_map/(n_map(0)+n_map(1)+n_map(2));
-		//  ft_pt << x,x,x;
+		 // ft_pt << x,x,x;
 
 		  getPointOnPlane(n_map,d_map,ft_pt);
 		  /*if(fabs(n_map(2))>0.01)
@@ -335,8 +347,8 @@ else
 		  Eigen::Affine3f transformation_from_plane_to_world;
 		  Eigen::Affine3f transformation_from_world_to_plane;
 		  getTransformationFromPlaneToWorld(n_map, ft_pt, transformation_from_plane_to_world);
-		  //transformation_from_world_to_plane = transformation_from_plane_to_world.inverse();
-		  transformation_from_world_to_plane = p_map.transform_from_world_to_plane;
+		  transformation_from_world_to_plane = transformation_from_plane_to_world.inverse();
+	//	  transformation_from_world_to_plane = p_map.transform_from_world_to_plane;
 		  //std::cout << "Transform new feature" << std::endl;
 		  getGpcStructureUsingMap(p, transformation_from_world_to_plane/*p_map.transform_from_world_to_plane*/, &gpc_p_merge);
 		  //std::cout <<  p.transform_from_world_to_plane.matrix() << std::endl;
@@ -433,23 +445,30 @@ else
     std::cout << "feature added" << std::endl;
     //ROS_INFO("added new feature");
   }
+
 }
 
  // printGpcStructure(&gpc_p);
   //gpc_free_polygon(&gpc_p);
   if(save_to_file_) saveMap(file_path_);
 
+	GeometryMapVisualisation gmv;
+     //   gmv.showPolygon(map_[0]);
+	//	std::cout << "map 0 normal : " <<std::endl << map_[0]->normal << std::endl << " und d: " << map_[0]->d << std::endl;
+
+
 }
 
 void
-GeometryMap::searchIntersection(MapEntryPtr p_ptr,std::vector<int>& intersections)
+GeometryMap::searchIntersection(MapEntry p,std::vector<int>& intersections)
 {
-	  MapEntry& p = *p_ptr;
+	//  MapEntry& p = *p_ptr;
+
 	  for(size_t i=0; i< map_.size(); i++)
 	  {
 
 			  MapEntry& p_map = *(map_[i]);
-
+			//  std::cout << "berechnung " << p_map.normal.dot(p.normal);
 			  if((p_map.normal.dot(p.normal)>0.95 && fabs(p_map.d-p.d)<0.1) ||
 				(p_map.normal.dot(p.normal)<-0.95 && fabs(p_map.d+p.d)<0.1))
 
@@ -470,11 +489,11 @@ GeometryMap::searchIntersection(MapEntryPtr p_ptr,std::vector<int>& intersection
 // 		  	  std::cout << "num contours intersect: " << gpc_result.num_contours << std::endl;
 			  if(gpc_result.num_contours == 0)
 			  {
-				std::cout << "no intersection with map " << i << std::endl;
+				//std::cout << "no intersection with map " << i << std::endl;
 				//std::cout << p.normal << std::endl;
 				continue;
 			  }
-			  std::cout << "intersection with map " << i << std::endl;
+			 // std::cout << "intersection with map " << i << std::endl;
 			  intersections.push_back(i);
 
 			}
@@ -489,30 +508,42 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 	Eigen::Vector3f average_normal=p.normal;
 	double average_d=p.d;
 	int merge_counter=1;
+//	std::cout << "avg normal " << std::endl << average_normal << std::endl ;
+//	std::cout << "p merged " << std::endl << map_[0]->merged << std::endl ;
+//	std::cout << "p merged *normal  " << std::endl << map_[0]->merged*map_[0]->normal << std::endl ;
+
 
 
 	for(int i=0 ; i<intersections.size();i++)
 	{
 		 MapEntry& p_map = *(map_[intersections[i]]);
 		 if(p.normal.dot(p_map.normal)<0){
+	//	if (p.normal.dot(p_map.normal)<-0.95){
 			 p_map.normal=-p_map.normal;
 			 p_map.d=-p_map.d;
 		 }
-		 average_normal += (p_map.merged+1)* p_map.normal;    // PROBLEM RICHTUNG
-		 average_d +=(p_map.merged+1)* p_map.d;
-		 merge_counter += p_map.merged+1;
+	//	 std::cout << " add normal :" << std::endl << p_map.normal << std::endl;
+		 average_normal +=  p_map.merged* p_map.normal;
+		 average_d +=p_map.merged * p_map.d;
+		 merge_counter += p_map.merged;
 	}
+//	std::cout << "avg normal " << std::endl << average_normal << std::endl ;
+//	std::cout << "merge counter " << std::endl << merge_counter << std::endl ;
+
 	average_normal=average_normal/merge_counter;
 	average_d=average_d/merge_counter;
 	average_normal.normalize();
 
-	std::cout << "average d " << average_d << std::endl;
+//	std::cout << "avg normal " << std::endl << average_normal << std::endl ;
+//	std::cout << "avg d :"  << average_d << std::endl ;
+
 
 	Eigen::Vector3f ft_pt;
 //	double x = -average_d/(average_normal(0)+average_normal(1)+average_normal(2));
 //	ft_pt << 1,1,-average_normal(0)/average_normal(2)-average_normal(1)/average_normal(2)+average_d/average_normal(2);
 	getPointOnPlane(average_normal,average_d,ft_pt);
-    std::cout << "FP: " << ft_pt(0) << "," << ft_pt(1) << "," << ft_pt(2) << std::endl;
+//	if(intersections[0]==0){
+ //   std::cout << "FP: " << ft_pt(0) << "," << ft_pt(1) << "," << ft_pt(2) << std::endl;}
 
 	Eigen::Affine3f transformation_from_plane_to_world;
 	Eigen::Affine3f transformation_from_world_to_plane;
@@ -521,6 +552,9 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 
 	gpc_polygon gpc_result;
 	gpc_polygon gpc_p_map;
+
+//	 ROS_INFO_STREAM("merge trafo " << std::endl << transformation_from_world_to_plane.matrix());
+
 
 	getGpcStructureUsingMap(p, transformation_from_world_to_plane, &gpc_result);
 
@@ -533,9 +567,12 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 			p_map.d=average_d;
 			p_map.normal=average_normal;
 			p_map.merged=merge_counter;
+
 		}
+
 		getGpcStructureUsingMap(p_map, transformation_from_world_to_plane/*p_map.transform_from_world_to_plane*/, &gpc_p_map);
 		gpc_polygon_clip(GPC_UNION, &gpc_result, &gpc_p_map, &gpc_result);
+
 		if(i!=0)
 		{
 			removeMapEntry(intersections[i]);
@@ -561,6 +598,7 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 //	std::cout << "d average" << average_d << std::endl;
 
 }
+
 void
 GeometryMap::removeMapEntry(int id)
 {
@@ -749,6 +787,7 @@ GeometryMap::getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,
 {
   Eigen::Vector3f u, v;
   getCoordinateSystemOnPlane(normal, u, v);
+//  ROS_INFO_STREAM("u " << u << " v " << v << " origin " << origin <<  std::endl);
   pcl::getTransformationFromTwoUnitVectorsAndOrigin(v, normal,  origin, transformation);
   transformation = transformation.inverse();
 }
@@ -760,11 +799,13 @@ GeometryMap::getPointOnPlane(const Eigen::Vector3f &normal,double d,Eigen::Vecto
 	std::vector<int> no_zero_direction;
 	for(int i=0 ;i<3;i++)
 	{
-		if(normal[i]==0)
-			counter++;
+		if(normal[i]==0){
+			counter++;}
 		else
 		no_zero_direction.push_back(i);
 	}
+//	std::cout << " normal " <<std::endl<< normal << std::endl;
+//	std::cout << "counter " << counter;
 	if(counter==0)
 	{
 		point << 0,0,d/normal(2);
@@ -778,7 +819,7 @@ GeometryMap::getPointOnPlane(const Eigen::Vector3f &normal,double d,Eigen::Vecto
 	if(counter==2)
 	{
 		point << 0,0,0;
-		point(0)=d/normal(no_zero_direction[0]);
+		point(no_zero_direction[0])=d/normal(no_zero_direction[0]);
 	}
 }
 

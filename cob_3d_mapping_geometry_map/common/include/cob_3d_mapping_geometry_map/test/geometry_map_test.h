@@ -10,6 +10,7 @@
 
 #include <vector>
 #include <Eigen/Geometry>
+#include <math.h>
 
 
 #include "cob_3d_mapping_geometry_map/map_entry.h"
@@ -42,6 +43,14 @@ public:
 
 	void
 	testnormaldirection();
+
+	void
+	bugsearch();
+
+	void
+	threedirection();
+
+
 
 
 
