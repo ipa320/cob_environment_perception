@@ -41,6 +41,9 @@ public:
 	void
 	rotate(MapEntryPtr m_p , double x_1 , double x_2 , double alpha );
 
+	void
+	rotateTable(MapEntryPtr m_p ,  double alpha );
+
 };
 
 #endif /* TESTPLANES_H_ */

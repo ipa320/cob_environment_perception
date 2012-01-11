@@ -255,3 +255,23 @@ TestPlanes::rotate(MapEntryPtr m_p , double x_1 , double x_2 , double alpha )
 	  vv.push_back(v);
 	  m_p->polygon_world.push_back(vv);
 }
+
+void
+TestPlanes::rotateTable(MapEntryPtr m_p ,  double alpha )
+{
+	  m_p->id = 0;
+	  m_p->normal << 0,-cos((90.0-alpha)/180*3.1415926535),sin((90.0-alpha)/180*3.1415926535);
+	  m_p->d = 1;
+
+	  std::vector<Eigen::Vector3f> vv;
+	  Eigen::Vector3f v;
+	  v << 1,cos(alpha/180*3.1415926535),1+sin(alpha/180*3.1415926535);
+	  vv.push_back(v);
+	  v << -1,cos(alpha/180*3.1415926535),1+sin(alpha/180*3.1415926535);
+	  vv.push_back(v);
+	  v << -1,-cos(alpha/180*3.1415926535),1-sin(alpha/180*3.1415926535);
+	  vv.push_back(v);
+	  v << 1,-cos(alpha/180*3.1415926535),1-sin(alpha/180*3.1415926535);
+	  vv.push_back(v);
+	  m_p->polygon_world.push_back(vv);
+}
