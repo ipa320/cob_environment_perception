@@ -58,29 +58,27 @@
 //##################
 //#### includes ####
 
-
-//standard includes
-//#include <iostream>
-
 // ROS includes
 #include <ros/ros.h>
 #include <rosbag/bag.h>
-//ros message includes
-#include <cob_3d_mapping_msgs/PolygonArrayArray.h>
+
+// ros message includes
 #include <sensor_msgs/PointCloud.h>
 #include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
+#include <cob_3d_mapping_msgs/PolygonArrayArray.h>
 
-//#include <cob_srvs/Trigger.h>
-
+// PCL includes
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/ros/conversions.h>
 #include <pcl/io/pcd_io.h>
+
 //internal includes
-#include <cob_3d_mapping_semantics/semantic_extraction.h>
+#include <cob_3d_mapping_msgs/ShapeArray.h>
 #include <cob_3d_mapping_msgs/GetGeometricMap.h>
 #include <cob_3d_mapping_msgs/GetObjectsOfClass.h>
-#include <cob_3d_mapping_msgs/ShapeArray.h>
+#include <cob_3d_mapping_semantics/semantic_extraction.h>
 
 class SemanticExtractionNode
 {
@@ -91,12 +89,14 @@ public:
     norm_x_min_ (-0.1), norm_x_max_ (0.1), norm_y_min_ (-0.1), norm_y_max_ (0.1), norm_z_min_ (-0.99),
         norm_z_max_ (0.99), height_min_ (0.4), height_max_ (1), area_min_ (1), area_max_ (3)
   {
-    sa_sub_ = n_.subscribe ("feature_map", 1, &SemanticExtractionNode::callbackShapeArray, this);
-    poly_marker_pub_ = n_.advertise<visualization_msgs::Marker> ("polygon_marker", 100);
-    pc2_pub_ = n_.advertise<sensor_msgs::PointCloud2> ("shape_pointcloud2", 1);
+    sa_sub_ = n_.subscribe ("shape_array", 10, &SemanticExtractionNode::callbackShapeArray, this);
     sa_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray> ("/semantic_extraction_node/shape_array", 10);
-    sa_msg_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray> ("/semantic_extraction_node/shape_array_service", 10);
-    get_tables_server_ = n_.advertiseService ("get_objects_of_class", &SemanticExtractionNode::getTables, this);
+    //pc2_pub_ = n_.advertise<sensor_msgs::PointCloud2> ("shape_pointcloud2", 1);
+
+    s_marker_pub_ = n_.advertise<visualization_msgs::Marker> ("shape_marker", 100);
+    map_marker_pub_ = n_.advertise<visualization_msgs::MarkerArray> ("map_marker_array", 10);
+
+    get_tables_server_ = n_.advertiseService ("get_objects_of_class", &SemanticExtractionNode::getTablesService, this);
 
     n_.getParam ("semantic_extraction/norm_x_min", norm_x_min_);
     n_.getParam ("semantic_extraction/norm_x_max", norm_x_max_);
@@ -136,6 +136,7 @@ public:
     sem_exn_.setAreaMin (area_min_);
     sem_exn_.setAreaMax (area_max_);
 
+    marker_id_ = 0;
   }
 
   // Destructor
@@ -146,9 +147,9 @@ public:
 
   //TODO: get map also by service
   /**
-   * @brief callback for publishing new PolygonArrayArray messages
+   * @brief callback for ShapeArray messages
    *
-   * @param p ros message containing array of polygon_array messages
+   * @param sa_ptr pointer to the message
    *
    * @return nothing
    */
@@ -167,134 +168,223 @@ public:
     sa_msg.header.frame_id = "/map";
     for (unsigned int i = 0; i < sa_ptr->shapes.size (); i++)
     {
-      if (sa_ptr->shapes[i].type == 0)
+
+      ROS_INFO("Shape < %d > passed for conversion ",i);
+
+      //ROS_INFO(" Entered for loop \n");
+      SemanticExtraction::PolygonPtr poly_ptr = SemanticExtraction::PolygonPtr (new SemanticExtraction::Polygon ());
+
+      convertShapeToPolygon (sa_ptr->shapes[i], *poly_ptr);
+      ROS_INFO("sa_ptr->shapes[%d] converted to polygon",i );
+      //convertFromROSMsg (p->polygon_array[i], *poly_ptr);
+      //convertToPointCloudMsg (*poly_ptr, *pc_ptr);
+      //pc_pub_.publish (*pc_ptr);
+      if (isTableObject (poly_ptr) == true)
       {
-        ROS_INFO("Shape < %d > passed for conversion ",i);
+        ros::Duration (5).sleep ();
+        cob_3d_mapping_msgs::Shape s;
+        convertPolygonToShape (*poly_ptr, s);
+        publishShapeMarker(s);
+        sa_msg.shapes.push_back (s);
+      }
+      sa_ = sa_msg;
 
-        //ROS_INFO(" Entered for loop \n");
-        SemanticExtraction::PolygonPtr poly_ptr = SemanticExtraction::PolygonPtr (new SemanticExtraction::Polygon ());
+      /*
+       cob_3d_mapping_msgs::Shape s;
 
-        convertShapeToPolygon (sa_ptr->shapes[i], *poly_ptr);
-        //convertFromROSMsg (p->polygon_array[i], *poly_ptr);
-        //convertToPointCloudMsg (*poly_ptr, *pc_ptr);
-        //pc_pub_.publish (*pc_ptr);
+       //Check if the plane spanned by the polygon is horizontal or not
+       if (sem_exn_.isHorizontal (poly_ptr))
+       {
+       ROS_INFO(" Plane is h0rizontal \n");
+       publishPolygonMarker (*poly_ptr);
 
-        //Check if the plane spanned by the polygon is horizontal or not
-        if (sem_exn_.isHorizontal (poly_ptr))
-        {
-          ROS_INFO(" Plane is h0rizontal \n");
-          //publishPolygonMarker (*poly_ptr);
+       sem_exn_.isHeightOk (poly_ptr);
+       sem_exn_.isSizeOk (poly_ptr);
+       for (unsigned int j = 0; j < sem_exn_.poly_height_.size (); j++)
+       {
+       pc_index_.push_back(sem_exn_.poly_height_[j] && sem_exn_.poly_size_[j]);
 
+       //Check if the height of the polygon is Ok or not
+       if (sem_exn_.poly_height_[j])
+       {
+       ROS_INFO(" Height is ok \n");
+       //Check if the area of the the polygon is ok or not
+       if (sem_exn_.poly_size_[j])
+       {
+       ROS_INFO(" Size is ok \n");
+       //publishPolygonMarker (*poly_ptr); //publish marker messages to see visually on rviz
+       //TODO: publish as ShapeArray, not as PointCloud
+       }
 
-          for (unsigned int j = 0; j < sem_exn_.poly_height_.size (); j++)
-          {
-            //Check if the height of the polygon is Ok or not
-            if (sem_exn_.poly_height_[j])
-            {
-              ROS_INFO(" Height is ok \n");
+       else
+       {
+       ROS_INFO(" Size is not ok \n");
+       }
 
-              //Check if the area of the the polygon is ok or not
-              if (sem_exn_.poly_size_[j])
-              {
-                ROS_INFO(" Size is ok \n");
-                //publishPolygonMarker (*poly_ptr); //publish marker messages to see visually on rviz
-                //TODO: publish as ShapeArray, not as PointCloud
-                cob_3d_mapping_msgs::Shape s;
-                convertPolygonToShape (*poly_ptr, s);
-                sa_msg.shapes.push_back (s);
-                //pc_pub_.publish (*pc_ptr);
-              }
+       }
 
-              else
-              {
-                ROS_INFO(" Size is not ok \n");
-              }
+       else
+       {
+       ROS_INFO(" Height is not ok \n");
+       }
 
-            }
+       }
+       }
+       else
+       {
+       ROS_INFO(" Plane is not horizontal \n");
+       }
 
-            else
-            {
-              ROS_INFO(" Height is not ok \n");
-            }
-          }
-        }
-        else
-        {
-          ROS_INFO(" Plane is not horizontal \n");
-        }
+       convertPolygonToShape (*poly_ptr, s);
+       sa_msg.shapes.push_back (s);
+       */
+    }//end for
 
-      }//if 1st
-    }//for 1st
-    sa_msg_pub_.publish(sa_msg);
+    publishShapes();
   }
 
+  /**
+   * @brief check if the polygon is a table object candidate or not
+   *
+   * @param poly_ptr pointer to the polygon
+   *
+   * @return true or false
+   */
   bool
-  getTables (cob_3d_mapping_msgs::GetObjectsOfClassRequest &req, cob_3d_mapping_msgs::GetObjectsOfClassResponse &res)
+  isTableObject (SemanticExtraction::PolygonPtr poly_ptr)
+  {
+    bool flag_horizontal = false;
+    pc_index_.resize (0);
+    //Check if the plane spanned by the polygon is horizontal or not
+    if (sem_exn_.isHorizontal (poly_ptr))
+    {
+      flag_horizontal = true;
+      ROS_INFO(" Plane is h0rizontal \n");
+      //publishPolygonMarker (*poly_ptr);
+
+      sem_exn_.isHeightOk (poly_ptr);
+      sem_exn_.isSizeOk (poly_ptr);
+      for (unsigned int i = 0; i < sem_exn_.poly_height_.size (); i++)
+      {
+        pc_index_.push_back (sem_exn_.poly_height_[i] && sem_exn_.poly_size_[i]);
+      }
+
+      for (unsigned int j = 0; j < pc_index_.size (); j++)
+      {
+        if (flag_horizontal && pc_index_[j])
+        {
+          ROS_INFO("<___Table Object___>");
+          return true;
+          break;
+        }
+        else
+          continue;
+      }
+      return false;
+    }
+    else
+      return false;
+
+  }
+
+  /**
+   * @brief service offering table object candidates
+   *
+   * @param req request for objects of a class (table objects in this case)
+   * @param res response of the service which is possible table object candidates
+   *
+   * @return true if service successful
+   */
+  bool
+  getTablesService (cob_3d_mapping_msgs::GetObjectsOfClassRequest &req,
+                    cob_3d_mapping_msgs::GetObjectsOfClassResponse &res)
   {
     ROS_INFO("service get_objects_of_class started....");
 
     sa_.header.frame_id = "/map";
     sa_.shapes.clear();
 
-    if (getMap ())
+    if (getMapService ())
     {
+      cob_3d_mapping_msgs::ShapeArray sa_msg;
+      sa_msg.header.frame_id = "/map";
       for (unsigned int i = 0; i < sem_exn_.PolygonMap.size (); i++)
       {
-        if (sem_exn_.isHorizontal (sem_exn_.PolygonMap[i]))
+        //ROS_INFO("\n\tisTableObject....  : %d",isTableObject(sem_exn_.PolygonMap[i]));
+        if (isTableObject (sem_exn_.PolygonMap[i]))
         {
-
-          ROS_INFO(" Plane is h0rizontal \n");
-
-          //Check if the height of the polygon is Ok or not
-          sem_exn_.isHeightOk (sem_exn_.PolygonMap[i]);
-          sem_exn_.isSizeOk (sem_exn_.PolygonMap[i]);
-          for (unsigned int j = 0; j < sem_exn_.poly_height_.size (); j++)
-          {
-            if (sem_exn_.poly_height_[j])
-            {
-              ROS_INFO(" Height is ok \n");
-
-              //Check if the area of the the polygon is ok or not
-              if (sem_exn_.poly_size_[j])
-              {
-                ROS_INFO(" Size is ok \n");
-                //publishPolygonMarker (*poly_ptr); //publish marker messages to see visually on rviz
-                //TODO: publish as ShapeArray, not as PointCloud
-                //convertToPointCloudMsg (*poly_ptr, *pc_ptr);
-                //pc_pub_.publish (*pc_ptr);
-                cob_3d_mapping_msgs::Shape s;
-                convertPolygonToShape (*sem_exn_.PolygonMap[i], s);
-                res.objects.shapes.push_back (s);
-                sa_.shapes.push_back (s);
-              }
-
-              else
-              {
-                ROS_INFO(" Size is not ok \n");
-              }
-            }
-            else
-            {
-              ROS_INFO(" Height is not ok \n");
-            }
-          }
-
+          ros::Duration (10).sleep ();
+          cob_3d_mapping_msgs::Shape s;
+          convertPolygonToShape (*sem_exn_.PolygonMap[i], s);
+          publishShapeMarker (s);
+          ROS_INFO("getTablesService: Polygon[%d] converted to shape",i);
+          res.objects.shapes.push_back (s);
+          sa_msg.shapes.push_back (s);
         }
 
-        else
-        {
-          ROS_INFO(" Plane is not horizontal \n");
-        }
+        /*
+         if (sem_exn_.isHorizontal (sem_exn_.PolygonMap[i]))
+         {
+         ROS_INFO(" Plane is h0rizontal \n");
+
+         //Check if the height of the polygon is Ok or not
+         sem_exn_.isHeightOk (sem_exn_.PolygonMap[i]);
+
+         for (unsigned int j = 0; j < sem_exn_.poly_height_.size (); j++)
+         {
+         if (sem_exn_.poly_height_[j])
+         {
+         ROS_INFO(" Height is ok \n");
+         sem_exn_.isSizeOk (sem_exn_.PolygonMap[i]);
+         //Check if the area of the the polygon is ok or not
+         if (sem_exn_.poly_size_[j])
+         {
+         ROS_INFO(" Size is ok \n");
+         //publishPolygonMarker (*poly_ptr); //publish marker messages to see visually on rviz
+         //TODO: publish as ShapeArray, not as PointCloud
+         //convertToPointCloudMsg (*poly_ptr, *pc_ptr);
+         //pc_pub_.publish (*pc_ptr);
+         cob_3d_mapping_msgs::Shape s;
+         convertPolygonToShape (*sem_exn_.PolygonMap[i], s);
+         res.objects.shapes.push_back (s);
+         sa_.shapes.push_back (s);
+         }
+
+         else
+         {
+         ROS_INFO(" Size is not ok \n");
+         }
+         }
+         else
+         {
+         ROS_INFO(" Height is not ok \n");
+         }
+         }
+
+         }
+
+         else
+         {
+         ROS_INFO(" Plane is not horizontal \n");
+         }
+
+         */
       }
-
+      sa_ = sa_msg;
     }
     return true;
   }
+
+  /**
+   * @brief service offering geometry map of the scene
+   *
+   * @return true if service successful
+   */
   bool
-  getMap ()
+  getMapService ()
   {
     ROS_INFO("Waiting for service server to start.");
-    ros::service::waitForService ("/geometry_map/get_geometry_map",10); //will wait for infinite time
+    ros::service::waitForService ("/geometry_map/get_geometry_map", 10); //will wait for infinite time
 
     ROS_INFO("Server started, polling map.");
 
@@ -322,9 +412,18 @@ public:
       sem_exn_.PolygonMap.push_back (poly_ptr);
     }
     ROS_INFO(" sem_exn_.PolygonMap.size ()  = %d \n",sem_exn_.PolygonMap.size ());
+    publishMapMarker ();
     return true;
   }
 
+  /**
+   * @brief convert shape to a polygon
+   *
+   * @param s shape to be converted to polygon
+   * @param poly resultant polygon
+   *
+   * @return nothing
+   */
   void
   convertShapeToPolygon (const cob_3d_mapping_msgs::Shape& s, SemanticExtraction::Polygon& poly)
   {
@@ -337,13 +436,13 @@ public:
 
       poly.normal (0) = s.params[0];
       poly.normal (1) = s.params[1];
-
       poly.normal (2) = s.params[2];
       poly.d = s.params[3];
-      pcl::PointCloud<pcl::PointXYZ> cloud;
+
       ROS_INFO(" s.points.size  = %d \n",s.points.size ());
       for (unsigned int i = 0; i < s.points.size (); i++)
       {
+        pcl::PointCloud<pcl::PointXYZ> cloud;
         int cloud_size = s.points[i].height * s.points[i].width;
 
         // ROS_INFO(" cloud_size = %d \n",cloud_size);
@@ -353,6 +452,7 @@ public:
         //cloud.points.resize (cloud_size);
         //ROS_INFO("  cloud.points.size = %d \n", cloud.points.size());
         pcl::fromROSMsg (s.points[i], cloud);
+        ROS_INFO("s.points[%d] converted to pcl::PointCloud<pcl::PointXYZ>" ,i);
         /*
          while(1)
          {
@@ -375,14 +475,21 @@ public:
           p[j][0] = cloud.points[j].x;
           p[j][1] = cloud.points[j].y;
           p[j][2] = cloud.points[j].z;
-
         }
+        ROS_INFO("Poly pushed back ");
         poly.poly_points.push_back (p);
       }
     }
 
   }
-
+  /**
+   * @brief convert polygon to a shape
+   *
+   * @param poly polygon to be converted to shape
+   * @param s resultant shape
+   *
+   * @return nothing
+   */
   void
   convertPolygonToShape (const SemanticExtraction::Polygon& poly, cob_3d_mapping_msgs::Shape& s)
   {
@@ -395,40 +502,46 @@ public:
     s.params[1] = poly.normal (1);
     s.params[2] = poly.normal (2);
     s.params[3] = poly.d;
-    s.points.resize (poly.poly_points.size ());
+    s.points.resize (0);
     for (unsigned int i = 0; i < poly.poly_points.size (); i++)
     {
-      ROS_INFO(" poly.poly_points[i].size () = %d \n",poly.poly_points[i].size ());
-      sensor_msgs::PointCloud2 pc2;
-      pcl::PointCloud<pcl::PointXYZ> cloud;
-
-      pc2.height = 1;
-      pc2.width = poly.poly_points.size ();
-      for (unsigned int j = 0; j < poly.poly_points[i].size (); j++)
+      if (pc_index_[i] == true)
       {
-        pcl::PointXYZ pt;
+        ROS_INFO(" poly.poly_points[i].size () = %d \n",poly.poly_points[i].size ());
+        sensor_msgs::PointCloud2 pc2;
+        pcl::PointCloud<pcl::PointXYZ> cloud;
 
-        pt.x = poly.poly_points[i][j][0];
-        pt.y = poly.poly_points[i][j][1];
-        pt.z = poly.poly_points[i][j][2];
-        cloud.points.push_back (pt);
+        pc2.height = 1;
+        pc2.width = poly.poly_points[i].size ();
+        for (unsigned int j = 0; j < poly.poly_points[i].size (); j++)
+        {
+          pcl::PointXYZ pt;
+
+          pt.x = poly.poly_points[i][j][0];
+          pt.y = poly.poly_points[i][j][1];
+          pt.z = poly.poly_points[i][j][2];
+
+          cloud.points.push_back (pt);
+        }
+
+        pcl::toROSMsg (cloud, pc2);
+        s.points.push_back (pc2);
+        /* pc2.header.frame_id = "/map";
+         int k = 0;
+         while (k < 1000000)
+         {
+         pc2_pub_.publish (pc2);
+         k++;
+         }
+         */
       }
-
-      pcl::toROSMsg (cloud, pc2);
-      s.points[i] = pc2;
-
-      pc2.header.frame_id = "/map";
-      int k = 0;
-      while (k < 1000000)
-      {
-        pc2_pub_.publish (pc2);
-        k++;
-      }
-
     }
 
   }
 
+  /**
+   * @brief publish shape_array messages
+   */
   void
   publishShapes ()
   {
@@ -574,25 +687,25 @@ public:
 
   }
   /**
-   * @brief publishes markers to visualize polygon in rviz
+   * @brief publishe markers to visualize shape in rviz
    *
-   * @param poly polygon to be seen visually
+   * @param s shape to be seen visually
    *
    * @return nothing
    */
   void
-  publishPolygonMarker (const SemanticExtraction::Polygon& poly)
+  publishShapeMarker (const cob_3d_mapping_msgs::Shape& s)
   {
 
     //TODO: set unique ID for each new marker, remove old markers
-    //std::cout << " polygons size : " << poly.poly_points.size () << std::endl;
+
     int ctr = 0;
     visualization_msgs::Marker marker;
     marker.action = visualization_msgs::Marker::ADD;
     marker.type = visualization_msgs::Marker::LINE_STRIP;
-    marker.lifetime = ros::Duration ();
+    marker.lifetime = ros::Duration (60);
     marker.header.frame_id = "/map";
-    marker.ns = "polygon_marker";
+    marker.ns = "shape_marker";
     //marker.header.stamp = ros::Time::now();
 
     marker.scale.x = 0.05;
@@ -603,55 +716,115 @@ public:
     marker.color.b = 0;
     marker.color.a = 1.0;
 
-    for (unsigned int i = 0; i < poly.poly_points.size (); i++)
+    for (unsigned int i = 0; i < s.points.size (); i++)
     {
       // std::cout<<" polygons in marker at i size : "<< poly.poly_points[i].size ()<<std::endl;
       marker.color.r = 1;
       marker.color.g = 0;
       marker.color.b = 0;
 
-      marker.id = ctr;
+      marker.id = ctr + marker_id_;
       ctr++;
-      //geometry_msgs::Point pt;
-      marker.points.resize (poly.poly_points[i].size () + 1);
-      for (unsigned int j = 0; j < poly.poly_points[i].size (); j++)
+
+     // sensor_msgs::PointCloud2 pc2;
+      pcl::PointCloud<pcl::PointXYZ> cloud;
+      int cloud_size = s.points[i].height * s.points[i].width;
+
+      pcl::fromROSMsg (s.points[i], cloud);
+
+      marker.points.resize (cloud_size);
+      for (int j = 0; j < cloud_size; j++)
       {
-        /*
-         pt.x= poly.poly_points[i][j](0);
-         pt.y= poly.poly_points[i][j](0);
-         pt.z= poly.poly_points[i][j](0);
-         */
-        marker.points[j].x = poly.poly_points[i][j] (0);
-        marker.points[j].y = poly.poly_points[i][j] (1);
-        marker.points[j].z = poly.poly_points[i][j] (2);
 
-        //marker.points.push_back(pt);
-
+        marker.points[j].x = cloud[j].x;
+        marker.points[j].y = cloud[j].y;
+        marker.points[j].z = cloud[j].z;
       }
+      /*
+       marker.points[poly.poly_points[i].size ()].x = poly.poly_points[i][0] (0);
+       marker.points[poly.poly_points[i].size ()].y = poly.poly_points[i][0] (1);
+       marker.points[poly.poly_points[i].size ()].z = poly.poly_points[i][0] (2);
+       //std::cout<<" ctr : "<<ctr<<std::endl;
+       */
 
-      marker.points[poly.poly_points[i].size ()].x = poly.poly_points[i][0] (0);
-      marker.points[poly.poly_points[i].size ()].y = poly.poly_points[i][0] (1);
-      marker.points[poly.poly_points[i].size ()].z = poly.poly_points[i][0] (2);
-      //std::cout<<" ctr : "<<ctr<<std::endl;
-
-      poly_marker_pub_.publish (marker);
+      s_marker_pub_.publish (marker);
     }
 
+  }
+
+  /**
+   * @brief publish complete map of polygons
+   *
+   * @return nothing
+   */
+  void
+  publishMapMarker ()
+  {
+
+    int ctr = 0;
+    visualization_msgs::MarkerArray marker_arr;
+    //marker_arr.markers.resize (sem_exn_.PolygonMap.size ());
+    for (unsigned int k = 0; k < sem_exn_.PolygonMap.size (); k++)
+    {
+
+      visualization_msgs::Marker marker;
+      marker.action = visualization_msgs::Marker::ADD;
+      marker.type = visualization_msgs::Marker::LINE_STRIP;
+      marker.lifetime = ros::Duration (120);
+      marker.header.frame_id = "/map";
+      marker.ns = "map_marker_array";
+      //marker.header.stamp = ros::Time::now();
+
+      marker.scale.x = 0.02;
+      marker.scale.y = 0.02;
+      marker.scale.z = 0;
+      marker.color.r = 0;
+      marker.color.g = 1;
+      marker.color.b = 0;
+      marker.color.a = 1.0;
+
+      for (unsigned int i = 0; i < sem_exn_.PolygonMap[k]->poly_points.size (); i++)
+      {
+        // std::cout<<" polygons in marker at i size : "<< poly.poly_points[i].size ()<<std::endl;
+        marker.color.r = 0;
+        marker.color.g = 0;
+        marker.color.b = 1;
+
+        marker.id = ctr;
+        ctr++;
+        marker.points.resize (sem_exn_.PolygonMap[k]->poly_points[i].size ());
+        for (unsigned int j = 0; j < marker.points.size (); j++)
+        {
+
+          marker.points[j].x = sem_exn_.PolygonMap[k]->poly_points[i][j] (0);
+          marker.points[j].y = sem_exn_.PolygonMap[k]->poly_points[i][j] (1);
+          marker.points[j].z = sem_exn_.PolygonMap[k]->poly_points[i][j] (2);
+
+          //marker.points.push_back(pt);
+        }
+        marker_arr.markers.push_back (marker);
+      }
+
+    }
+    map_marker_pub_.publish (marker_arr);
   }
 
   ros::NodeHandle n_;
 
 protected:
   ros::Subscriber sa_sub_;
-  ros::Publisher sa_msg_pub_;
+  //ros::Publisher sa_msg_pub_;
   ros::Publisher sa_pub_;
   ros::Publisher pc2_pub_;
-  ros::Publisher poly_marker_pub_;
+  ros::Publisher s_marker_pub_;
+  ros::Publisher map_marker_pub_;
 
   ros::ServiceServer get_tables_server_;
 
   SemanticExtraction sem_exn_;
   cob_3d_mapping_msgs::ShapeArray sa_;
+  std::vector<bool> pc_index_;
+  int marker_id_;
 
   double norm_x_min_, norm_x_max_;
   double norm_y_min_, norm_y_max_;
@@ -674,7 +847,6 @@ main (int argc, char** argv)
   while (ros::ok ())
   {
     ros::spinOnce ();
-    sem_exn_node.publishShapes ();
     loop_rate.sleep ();
   }
 
