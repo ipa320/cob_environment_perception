@@ -76,7 +76,7 @@
 //other includes
 #include <Eigen/Core>
 #include <boost/shared_ptr.hpp>
-
+#include <boost/thread/mutex.hpp>
 class SemanticExtraction
 {
 
@@ -99,9 +99,9 @@ public:
   /**
    * @brief Constructor
    */
-  SemanticExtraction () :
-    norm_x_min_ (-0.1), norm_x_max_ (0.1), norm_y_min_ (-0.1), norm_y_max_ (0.1), norm_z_min_ (-0.99),
-        norm_z_max_ (0.99), height_min_ (0.4), height_max_ (1), area_min_ (1), area_max_ (3)
+  SemanticExtraction () //:
+    /*norm_x_min_ (-0.1), norm_x_max_ (0.1), norm_y_min_ (-0.1), norm_y_max_ (0.1), norm_z_min_ (-0.99),
+        norm_z_max_ (0.99), height_min_ (0.4), height_max_ (1), area_min_ (1), area_max_ (3)*/
   {
     centroid_.resize (0);
     area_.resize (0);
@@ -116,6 +116,27 @@ public:
   {
 
     /// void
+  }
+
+  void
+  setNormBounds (double tilt_angle)
+  {
+    static const double PI = 3.1415926;
+    double ang_rad = tilt_angle * (PI / 180.0);
+    double norm = cos ((PI/2)-ang_rad);
+    setNormXMin (-norm);
+    setNormXMax (norm);
+    setNormYMin (-norm);
+    setNormYMax (norm);
+    setNormZMin (-cos (ang_rad));
+    setNormZMax (cos (ang_rad));
+    std::cout << "\n\t*tilt_angle = " << tilt_angle << std::endl;
+    std::cout << "\n\t*norm_x_min = " << norm_x_min_ << std::endl;
+    std::cout << "\n\t*norm_x_max = " << norm_x_max_ << std::endl;
+    std::cout << "\n\t*norm_y_min = " << norm_y_min_ << std::endl;
+    std::cout << "\n\t*norm_y_max = " << norm_y_max_ << std::endl;
+    std::cout << "\n\t*norm_z_min = " << norm_z_min_ << std::endl;
+    std::cout << "\n\t*norm_z_max = " << norm_z_max_ << std::endl;
   }
 
   /**
