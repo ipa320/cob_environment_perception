@@ -77,6 +77,7 @@
 //#include <pcl/common/impl/transform.hpp>
 
 
+
 #include "cob_3d_mapping_geometry_map/geometry_map.h"
 //#include "cob_3d_mapping_geometry_map/vis/geometry_map_visualisation.h"
 
@@ -234,8 +235,18 @@ void
 GeometryMap::addMapEntry(MapEntryPtr p_ptr)
 {
 
+
 	bool merged=false;
   MapEntry& p = *p_ptr;
+
+
+
+	  outputFile << "-----------------------------------------------------------------------------" << std::endl ;
+	  outputFile << "new merge" <<std::endl;
+	  outputFile << "normal:" << std::endl << p.normal << std::endl << "d: " << p.d << std::endl;
+
+
+
   //ROS_INFO("polygonCallback");
  // bool merged = false;
   //p.d = p.d/p.normal.norm();
@@ -261,12 +272,17 @@ if(true)
    searchIntersection(p , intersections);
 	//std::cout << "zweite normal " << std::endl << p.normal << std::endl ;
  //  std::cout << "intersections :" << intersections.size() << std::endl;
-
+	outputFile << "after intersections" << std::endl;
+	outputFile << "normal:" << std::endl << p.normal << std::endl << "d: " << p.d << " size of intersections: " << intersections.size()<<std::endl;
 
    if(intersections.size()>0)
    {
    mergeWithMap(p_ptr , intersections);
+
+
+
    }
+
    else
    {
 		Eigen::Vector3f ft_pt;
@@ -281,6 +297,8 @@ if(true)
      map_.push_back(p_ptr);
      new_id_++;
      std::cout << "feature added" << std::endl;
+     outputFile <<"new entry " <<std::endl;
+     outputFile <<"ID: " << map_.size()-1 << "trafo " << std::endl << p.transform_from_world_to_plane.matrix() <<std::endl;
 
 
 
@@ -433,6 +451,8 @@ else
 
 
   }
+
+
   //new entry
   if(!merged)
   {
@@ -447,7 +467,7 @@ else
   }
 
 }
-
+outputFile << "-----------------------------------------------------------------------------" << std::endl ;
  // printGpcStructure(&gpc_p);
   //gpc_free_polygon(&gpc_p);
   if(save_to_file_) saveMap(file_path_);
@@ -513,10 +533,12 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 //	std::cout << "p merged *normal  " << std::endl << map_[0]->merged*map_[0]->normal << std::endl ;
 
 
+	outputFile <<"merging with maps:" <<std::endl;
 
 	for(int i=0 ; i<intersections.size();i++)
 	{
 		 MapEntry& p_map = *(map_[intersections[i]]);
+		 outputFile << "map: " << intersections[i] <<std::endl;
 		 if(p.normal.dot(p_map.normal)<0){
 	//	if (p.normal.dot(p_map.normal)<-0.95){
 			 p_map.normal=-p_map.normal;
@@ -526,6 +548,7 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 		 average_normal +=  p_map.merged* p_map.normal;
 		 average_d +=p_map.merged * p_map.d;
 		 merge_counter += p_map.merged;
+
 	}
 //	std::cout << "avg normal " << std::endl << average_normal << std::endl ;
 //	std::cout << "merge counter " << std::endl << merge_counter << std::endl ;
@@ -533,6 +556,9 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 	average_normal=average_normal/merge_counter;
 	average_d=average_d/merge_counter;
 	average_normal.normalize();
+
+	outputFile << "new System" <<std::endl;
+	outputFile <<"normal" <<std::endl << average_normal<<std::endl<<"d: " <<average_d<<std::endl;
 
 //	std::cout << "avg normal " << std::endl << average_normal << std::endl ;
 //	std::cout << "avg d :"  << average_d << std::endl ;
@@ -544,7 +570,7 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 	getPointOnPlane(average_normal,average_d,ft_pt);
 //	if(intersections[0]==0){
  //   std::cout << "FP: " << ft_pt(0) << "," << ft_pt(1) << "," << ft_pt(2) << std::endl;}
-
+	outputFile <<"ft_pt: "<< ft_pt <<std::endl;
 	Eigen::Affine3f transformation_from_plane_to_world;
 	Eigen::Affine3f transformation_from_world_to_plane;
 	getTransformationFromPlaneToWorld(average_normal, ft_pt, transformation_from_plane_to_world);
@@ -555,6 +581,8 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 
 //	 ROS_INFO_STREAM("merge trafo " << std::endl << transformation_from_world_to_plane.matrix());
 
+	outputFile << "new Trafo " << std::endl;
+	outputFile << transformation_from_world_to_plane.matrix();
 
 	getGpcStructureUsingMap(p, transformation_from_world_to_plane, &gpc_result);
 
@@ -795,34 +823,56 @@ GeometryMap::getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,
 void
 GeometryMap::getPointOnPlane(const Eigen::Vector3f &normal,double d,Eigen::Vector3f &point)
 {
-	int counter=0;
-	std::vector<int> no_zero_direction;
-	for(int i=0 ;i<3;i++)
-	{
-		if(normal[i]==0){
-			counter++;}
-		else
-		no_zero_direction.push_back(i);
-	}
-//	std::cout << " normal " <<std::endl<< normal << std::endl;
-//	std::cout << "counter " << counter;
-	if(counter==0)
-	{
-		point << 0,0,d/normal(2);
-	}
-	if(counter==1)
-	{
-		point << 0,0,0;
-		point[no_zero_direction[0]]=1;
-		point[no_zero_direction[1]]=-normal(no_zero_direction[0])/normal(no_zero_direction[1])+d/normal(no_zero_direction[1]);
-	}
-	if(counter==2)
-	{
-		point << 0,0,0;
-		point(no_zero_direction[0])=d/normal(no_zero_direction[0]);
-	}
+	float value=abs(normal(0));
+	int direction=0;
+	if(abs(normal(1))>value)
+	{direction=1;}
+	if(abs(normal(2))>value)
+	{direction=2;}
+	point << 0,0,0;
+	point(direction)=d/normal(direction);
+//	Eigen::Vector3f round_normal;
+//	round_normal[0]=rounding(normal[0]);
+//	round_normal[1]=rounding(normal[1]);
+//	round_normal[2]=rounding(normal[2]);
+//
+//	int counter=0;
+//	std::vector<int> no_zero_direction;
+//	for(int i=0 ;i<3;i++)
+//	{
+//		if(round_normal[i]==0){
+//			counter++;}
+//		else
+//		no_zero_direction.push_back(i);
+//	}
+////	std::cout << " normal " <<std::endl<< normal << std::endl;
+////	std::cout << "counter " << counter;
+//	if(counter==0)
+//	{
+//		point << 0,0,d/round_normal(2);
+//	}
+//	if(counter==1)
+//	{
+//		point << 0,0,0;
+//		point[no_zero_direction[0]]=1;
+//		point[no_zero_direction[1]]=-round_normal(no_zero_direction[0])/round_normal(no_zero_direction[1])+d/round_normal(no_zero_direction[1]);
+//	}
+//	if(counter==2)
+//	{
+//		point << 0,0,0;
+//		point(no_zero_direction[0])=d/round_normal(no_zero_direction[0]);
+//	}
 }
+float
+GeometryMap::rounding(float x)
 
+{
+x *= 1000;
+x += 0.5;
+x = floor(x); 5;
+x /= 1000;
+return x;
+}
 /*int main (int argc, char** argv)
  {
 
@@ -872,6 +922,9 @@ int main (int argc, char** argv)
   GeometryMap gm;
   GeometryMapVisualisation gmv;
   MapEntryPtr m_p = MapEntryPtr(new MapEntry());
+
+
+
 
   m_p->id = 0;
   m_p->normal << 0,0,1;
