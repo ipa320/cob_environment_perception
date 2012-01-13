@@ -218,7 +218,7 @@ public:
       MapEntry& sm = *(map->at(i));
       cob_3d_mapping_msgs::Shape s;
       convertToROSMsg(sm,s);
-      res.map.shapes.push_back(s);
+      res.shapes.push_back(s);
     }
     return true;
   }
