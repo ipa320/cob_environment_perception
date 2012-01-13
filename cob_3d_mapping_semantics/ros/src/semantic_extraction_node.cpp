@@ -86,25 +86,27 @@ public:
 
   // Constructor
   SemanticExtractionNode () :
-    norm_x_min_ (-0.1), norm_x_max_ (0.1), norm_y_min_ (-0.1), norm_y_max_ (0.1), norm_z_min_ (-0.99),
-        norm_z_max_ (0.99), height_min_ (0.4), height_max_ (1), area_min_ (1), area_max_ (3)
+    /*norm_x_min_ (-0.1), norm_x_max_ (0.1), norm_y_min_ (-0.1), norm_y_max_ (0.1), norm_z_min_ (-0.99),
+     norm_z_max_ (0.99)*/tilt_angle_ (3.0), height_min_ (0.4), height_max_ (1), area_min_ (1), area_max_ (3)
   {
     sa_sub_ = n_.subscribe ("shape_array", 10, &SemanticExtractionNode::callbackShapeArray, this);
-    sa_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray> ("/semantic_extraction_node/shape_array", 10);
+    sa_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_array_pub", 10);
     //pc2_pub_ = n_.advertise<sensor_msgs::PointCloud2> ("shape_pointcloud2", 1);
 
-    s_marker_pub_ = n_.advertise<visualization_msgs::Marker> ("shape_marker", 100);
-    map_marker_pub_ = n_.advertise<visualization_msgs::MarkerArray> ("map_marker_array", 10);
+    s_marker_pub_ = n_.advertise<visualization_msgs::Marker> ("marker", 100);
+    map_marker_pub_ = n_.advertise<visualization_msgs::MarkerArray> ("marker_array", 10);
 
     get_tables_server_ = n_.advertiseService ("get_objects_of_class", &SemanticExtractionNode::getTablesService, this);
 
-    n_.getParam ("semantic_extraction/norm_x_min", norm_x_min_);
-    n_.getParam ("semantic_extraction/norm_x_max", norm_x_max_);
-    n_.getParam ("semantic_extraction/norm_y_min", norm_y_min_);
-    n_.getParam ("semantic_extraction/norm_y_max", norm_y_max_);
-    n_.getParam ("semantic_extraction/norm_z_min", norm_z_min_);
-    n_.getParam ("semantic_extraction/norm_z_max", norm_z_max_);
-
+    n_.getParam ("semantic_extraction/tilt_angle", tilt_angle_);
+    /*
+     n_.getParam ("semantic_extraction/norm_x_min", norm_x_min_);
+     n_.getParam ("semantic_extraction/norm_x_max", norm_x_max_);
+     n_.getParam ("semantic_extraction/norm_y_min", norm_y_min_);
+     n_.getParam ("semantic_extraction/norm_y_max", norm_y_max_);
+     n_.getParam ("semantic_extraction/norm_z_min", norm_z_min_);
+     n_.getParam ("semantic_extraction/norm_z_max", norm_z_max_);
+     */
     n_.getParam ("semantic_extraction/height_min", height_min_);
     n_.getParam ("semantic_extraction/height_max", height_max_);
 
@@ -123,20 +125,21 @@ public:
      std::cout << "\n\t*height_max = " << height_max_ << std::endl;
      std::cout << "\n\t*area_min = " << area_min_ << std::endl;
      std::cout << "\n\t*area_min = " << area_max_ << std::endl;
-     */
 
-    sem_exn_.setNormXMin (norm_x_min_);
-    sem_exn_.setNormXMax (norm_x_max_);
-    sem_exn_.setNormYMin (norm_y_min_);
-    sem_exn_.setNormYMax (norm_y_max_);
-    sem_exn_.setNormZMin (norm_z_min_);
-    sem_exn_.setNormZMax (norm_z_max_);
+
+     sem_exn_.setNormXMin (norm_x_min_);
+     sem_exn_.setNormXMax (norm_x_max_);
+     sem_exn_.setNormYMin (norm_y_min_);
+     sem_exn_.setNormYMax (norm_y_max_);
+     sem_exn_.setNormZMin (norm_z_min_);
+     sem_exn_.setNormZMax (norm_z_max_);
+     */
+    sem_exn_.setNormBounds (tilt_angle_);
     sem_exn_.setHightMin (height_min_);
     sem_exn_.setHightMax (height_max_);
     sem_exn_.setAreaMin (area_min_);
     sem_exn_.setAreaMax (area_max_);
 
-    marker_id_ = 0;
   }
 
   // Destructor
@@ -166,6 +169,7 @@ public:
 
     cob_3d_mapping_msgs::ShapeArray sa_msg;
     sa_msg.header.frame_id = "/map";
+    //sem_exn_.PolygonMap.resize (0);
     for (unsigned int i = 0; i < sa_ptr->shapes.size (); i++)
     {
 
@@ -175,19 +179,19 @@ public:
       SemanticExtraction::PolygonPtr poly_ptr = SemanticExtraction::PolygonPtr (new SemanticExtraction::Polygon ());
 
       convertShapeToPolygon (sa_ptr->shapes[i], *poly_ptr);
+      //sem_exn_.PolygonMap.push_back (poly_ptr);
       ROS_INFO("sa_ptr->shapes[%d] converted to polygon",i );
       //convertFromROSMsg (p->polygon_array[i], *poly_ptr);
       //convertToPointCloudMsg (*poly_ptr, *pc_ptr);
       //pc_pub_.publish (*pc_ptr);
       if (isTableObject (poly_ptr) == true)
       {
-        ros::Duration (5).sleep ();
+        //ros::Duration (5).sleep ();
         cob_3d_mapping_msgs::Shape s;
         convertPolygonToShape (*poly_ptr, s);
-        publishShapeMarker(s);
+        //publishShapeMarker (s);
         sa_msg.shapes.push_back (s);
       }
-      sa_ = sa_msg;
 
       /*
        cob_3d_mapping_msgs::Shape s;
@@ -240,7 +244,8 @@ public:
        */
     }//end for
 
-    publishShapes();
+    sa_pub_.publish (sa_msg);
+    //publishMapMarker ();
   }
 
   /**
@@ -301,16 +306,12 @@ public:
   {
     ROS_INFO("service get_objects_of_class started....");
 
-    sa_.header.frame_id = "/map";
-    //sa_.shapes.clear();
-
     if (getMapService ())
     {
-      cob_3d_mapping_msgs::ShapeArray sa_msg;
-      sa_msg.header.frame_id = "/map";
+      sem_exn_.setNormBounds (tilt_angle_);
       for (unsigned int i = 0; i < sem_exn_.PolygonMap.size (); i++)
       {
-        //ROS_INFO("\n\tisTableObject....  : %d",isTableObject(sem_exn_.PolygonMap[i]));
+        //ROS_INFO("\n\tisTableObject....  : ");
         if (isTableObject (sem_exn_.PolygonMap[i]))
         {
           //ros::Duration (10).sleep ();
@@ -319,7 +320,6 @@ public:
           publishShapeMarker (s);
           ROS_INFO("getTablesService: Polygon[%d] converted to shape",i);
           res.objects.shapes.push_back (s);
-          sa_msg.shapes.push_back (s);
         }
 
         /*
@@ -370,7 +370,6 @@ public:
 
          */
       }
-      sa_ = sa_msg;
     }
     return true;
   }
@@ -384,7 +383,7 @@ public:
   getMapService ()
   {
     ROS_INFO("Waiting for service server to start.");
-    ros::service::waitForService ("/geometry_map/get_geometry_map", 10); //will wait for infinite time
+    ros::service::waitForService ("get_geometry_map", 10); //will wait for infinite time
 
     ROS_INFO("Server started, polling map.");
 
@@ -401,7 +400,7 @@ public:
       ROS_INFO("Service call failed.");
       return 0;
     }
-
+    sem_exn_.PolygonMap.resize (0);
     ROS_INFO(" res.map.shapes.size ()  = %d \n",res.map.shapes.size ());
     for (unsigned int i = 0; i < res.map.shapes.size (); i++)
     {
@@ -452,7 +451,7 @@ public:
         //cloud.points.resize (cloud_size);
         //ROS_INFO("  cloud.points.size = %d \n", cloud.points.size());
         pcl::fromROSMsg (s.points[i], cloud);
-        ROS_INFO("s.points[%d] converted to pcl::PointCloud<pcl::PointXYZ>" ,i);
+        // ROS_INFO("s.points[%d] converted to pcl::PointCloud<pcl::PointXYZ>" ,i);
         /*
          while(1)
          {
@@ -476,7 +475,7 @@ public:
           p[j][1] = cloud.points[j].y;
           p[j][2] = cloud.points[j].z;
         }
-        ROS_INFO("Poly pushed back ");
+        //ROS_INFO("Poly pushed back ");
         poly.poly_points.push_back (p);
       }
     }
@@ -496,16 +495,20 @@ public:
     ROS_INFO(" converting polygon to Shape\n");
     ROS_INFO(" poly.poly_points.size () = %d \n",poly.poly_points.size ());
 
-    s.params.resize (7);
+    //s.params.resize (7);
+    s.params.resize (4);
+
     s.type = 0;
     s.params[0] = poly.normal (0);
     s.params[1] = poly.normal (1);
     s.params[2] = poly.normal (2);
     s.params[3] = poly.d;
-    ROS_INFO("Centroid: %f,%f,%f",poly.centroid[0].x,poly.centroid[0].y,poly.centroid[0].z);
-    s.params[4] = poly.centroid[0].x;
-    s.params[5] = poly.centroid[0].y;
-    s.params[6] = poly.centroid[0].z;
+    /*
+     ROS_INFO("Centroid: %f,%f,%f",poly.centroid[0].x,poly.centroid[0].y,poly.centroid[0].z);
+     s.params[4] = poly.centroid[0].x;
+     s.params[5] = poly.centroid[0].y;
+     s.params[6] = poly.centroid[0].z;
+     */
     s.points.resize (0);
     for (unsigned int i = 0; i < poly.poly_points.size (); i++)
     {
@@ -546,12 +549,12 @@ public:
   /**
    * @brief publish shape_array messages
    */
-  void
-  publishShapes ()
-  {
-    sa_pub_.publish (sa_);
-  }
-
+  /*  void
+   publishShapes ()
+   {
+   sa_pub_.publish (sa_);
+   }
+   */
   /**
    * @brief convert ros message to polygon struct
    *
@@ -700,37 +703,31 @@ public:
   void
   publishShapeMarker (const cob_3d_mapping_msgs::Shape& s)
   {
-
+    int ctr = 0;
     //TODO: set unique ID for each new marker, remove old markers
 
-    int ctr = 0;
+
     visualization_msgs::Marker marker;
     marker.action = visualization_msgs::Marker::ADD;
     marker.type = visualization_msgs::Marker::LINE_STRIP;
-    marker.lifetime = ros::Duration (60);
+    marker.lifetime = ros::Duration (120);
     marker.header.frame_id = "/map";
     marker.ns = "shape_marker";
-    //marker.header.stamp = ros::Time::now();
+    marker.header.stamp = ros::Time::now ();
 
     marker.scale.x = 0.05;
     marker.scale.y = 0.05;
     marker.scale.z = 0;
-    marker.color.r = 0;
-    marker.color.g = 1;
+    marker.color.r = 1;
+    marker.color.g = 0;
     marker.color.b = 0;
     marker.color.a = 1.0;
-
     for (unsigned int i = 0; i < s.points.size (); i++)
     {
-      // std::cout<<" polygons in marker at i size : "<< poly.poly_points[i].size ()<<std::endl;
-      marker.color.r = 1;
-      marker.color.g = 0;
-      marker.color.b = 0;
-
-      marker.id = ctr + marker_id_;
+      marker.id = ctr;
       ctr++;
 
-     // sensor_msgs::PointCloud2 pc2;
+      // sensor_msgs::PointCloud2 pc2;
       pcl::PointCloud<pcl::PointXYZ> cloud;
       int cloud_size = s.points[i].height * s.points[i].width;
 
@@ -767,34 +764,42 @@ public:
 
     int ctr = 0;
     visualization_msgs::MarkerArray marker_arr;
+    visualization_msgs::Marker marker;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.type = visualization_msgs::Marker::LINE_STRIP;
+    marker.lifetime = ros::Duration ();
+    marker.header.frame_id = "/map";
+    marker.ns = "map_marker_array";
+    //marker.header.stamp = ros::Time::now();
+
+    marker.scale.x = 0.02;
+    marker.scale.y = 0.02;
+    marker.scale.z = 0;
+    marker.color.r = 0;
+    marker.color.g = 0;
+    marker.color.b = 1;
+    marker.color.a = 1.0;
     //marker_arr.markers.resize (sem_exn_.PolygonMap.size ());
     for (unsigned int k = 0; k < sem_exn_.PolygonMap.size (); k++)
     {
 
-      visualization_msgs::Marker marker;
-      marker.action = visualization_msgs::Marker::ADD;
-      marker.type = visualization_msgs::Marker::LINE_STRIP;
-      marker.lifetime = ros::Duration (120);
-      marker.header.frame_id = "/map";
-      marker.ns = "map_marker_array";
-      //marker.header.stamp = ros::Time::now();
-
-      marker.scale.x = 0.02;
-      marker.scale.y = 0.02;
-      marker.scale.z = 0;
-      marker.color.r = 0;
-      marker.color.g = 1;
-      marker.color.b = 0;
-      marker.color.a = 1.0;
-
       for (unsigned int i = 0; i < sem_exn_.PolygonMap[k]->poly_points.size (); i++)
       {
-        // std::cout<<" polygons in marker at i size : "<< poly.poly_points[i].size ()<<std::endl;
-        marker.color.r = 0;
-        marker.color.g = 0;
-        marker.color.b = 1;
+        if (ctr % 2 == 0)
+        {
+          marker.color.r = 0;
+          marker.color.g = 0;
+          marker.color.b = 1;
+        }
+        else
+        {
+          marker.color.r = 0;
+          marker.color.g = 1;
+          marker.color.b = 0;
+        }
 
         marker.id = ctr;
+        //ROS_INFO("marker.id = %d",marker.id);
         ctr++;
         marker.points.resize (sem_exn_.PolygonMap[k]->poly_points[i].size ());
         for (unsigned int j = 0; j < marker.points.size (); j++)
@@ -808,32 +813,31 @@ public:
         }
         marker_arr.markers.push_back (marker);
       }
-
+      map_marker_pub_.publish (marker_arr);
     }
-    map_marker_pub_.publish (marker_arr);
+
   }
 
   ros::NodeHandle n_;
 
 protected:
   ros::Subscriber sa_sub_;
-  //ros::Publisher sa_msg_pub_;
   ros::Publisher sa_pub_;
   ros::Publisher pc2_pub_;
   ros::Publisher s_marker_pub_;
   ros::Publisher map_marker_pub_;
-
   ros::ServiceServer get_tables_server_;
 
   SemanticExtraction sem_exn_;
-  cob_3d_mapping_msgs::ShapeArray sa_;
+
   std::vector<bool> pc_index_;
-  int marker_id_;
 
-  double norm_x_min_, norm_x_max_;
-  double norm_y_min_, norm_y_max_;
-  double norm_z_min_, norm_z_max_;
-
+  double tilt_angle_;
+  /*
+   double norm_x_min_, norm_x_max_;
+   double norm_y_min_, norm_y_max_;
+   double norm_z_min_, norm_z_max_;
+   */
   double height_min_, height_max_;
 
   double area_min_, area_max_;

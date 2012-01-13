@@ -60,7 +60,7 @@ bool
 SemanticExtraction::isHorizontal (PolygonPtr p_ptr)
 {
   //check components of normal vector with threshold values
-  if ((p_ptr->normal (2) > norm_z_max_ || p_ptr->normal (2) < norm_z_min_) && (p_ptr->normal (0) < norm_x_max_
+  if ((p_ptr->normal (2) >= norm_z_max_ || p_ptr->normal (2) <= norm_z_min_) && (p_ptr->normal (0) < norm_x_max_
       && p_ptr->normal (0) > norm_x_min_) && (p_ptr->normal (1) < norm_y_max_ && p_ptr->normal (1) > norm_y_min_))
   {
     return true;
