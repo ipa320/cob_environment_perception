@@ -105,6 +105,7 @@ public:
     return (os);
   }*/
 
+	  std::ofstream outputFile;
 
 //  typedef boost::shared_ptr<MapEntry> MapEntryPtr;
 
@@ -113,14 +114,15 @@ public:
   :new_id_(0),
    file_path_("./"),
    save_to_file_(false)
+
   {
-    /// void
+	  outputFile.open("/home/goa-hh/test.txt");
   }
 
   // Destructor
   ~GeometryMap()
   {
-    /// void
+	  //outputFile.close();
   }
 
   void
@@ -170,6 +172,9 @@ public:
 
   void
   getPointOnPlane(const Eigen::Vector3f &normal,double d,Eigen::Vector3f &point);
+
+  float
+  rounding(float x);
 
   boost::shared_ptr<std::vector<MapEntryPtr> >
   getMap()

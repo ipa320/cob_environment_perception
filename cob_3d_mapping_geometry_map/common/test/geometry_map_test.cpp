@@ -322,20 +322,32 @@ int main (int argc, char** argv)
 	GeometryMapTest gmt;
 	//gmt.testnormaldirection();
 	//gmt.box();
-	//gmt.fillingHole();
+	gmt.fillingHole();
 	//gmt.rotate();
 	//gmt.strongMerged();
 	//gmt.curve();
 	//gmt.easyplane();
 //	TestPlanes tp;
 //	GeometryMapVisualisation gmv;
-//	GeometryMap gm;
+	//GeometryMap gm;
 	//gmt.bugsearch();
-	gmt.threedirection();
+//	gmt.threedirection();
 
-
-
-
+/*	Eigen::Vector3f average_normal;
+	average_normal << 0.0169981,
+			-0.999855,
+			-0.000839981;
+	double average_d=-2.09951;
+	Eigen::Vector3f ft_pt;
+	gm.getPointOnPlane(average_normal,average_d,ft_pt);
+	std::cout << "erste " << std::endl << ft_pt;
+	average_normal << 0.0174804,
+			-0.999847,
+			-0.00058017;
+	average_d=-2.09861;
+	gm.getPointOnPlane(average_normal,average_d,ft_pt);
+	std::cout << "zweite " << std::endl << ft_pt;
+*/
 
 
 //	MapEntryPtr m_p = MapEntryPtr(new MapEntry());

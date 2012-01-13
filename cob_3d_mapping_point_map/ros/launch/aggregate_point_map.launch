@@ -20,10 +20,10 @@
   <node pkg="cob_3d_mapping_common" type="keyframe_detector_node" name="keyframe_detector_node" output="screen">
   	<remap from="camera_info" to="/cam3d/camera_info"/>
   	
-  	<param name="r_limit_" type="double" value="0.03" />
-  	<param name="p_limit_" type="double" value="0.03" />
-  	<param name="y_limit" type="double" value="0.03" />
-  	<param name="distance_limit_" type="double" value="0.05"/>
+  	<param name="r_limit_" type="double" value="0.08" />
+  	<param name="p_limit_" type="double" value="0.08" />
+  	<param name="y_limit" type="double" value="0.08" />
+  	<param name="distance_limit_" type="double" value="0.1"/>
   </node>
 
 	<!-- Start aggregate point map -->
