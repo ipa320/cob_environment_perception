@@ -78,7 +78,9 @@ namespace cob_3d_mapping_tools
      * @param[out] cloud the point cloud with RGB fields to which the .ppm is mapped
      * @return < 0 (-1) on error, else 0
      */
-    int mapRGB (const std::string &file_name, pcl::PointCloud<pcl::PointXYZRGBA> &cloud);
+    int mapRGB (const std::string &file_name, 
+		pcl::PointCloud<pcl::PointXYZRGB> &cloud, 
+		bool remove_undef_points = false);
 
   };
   
@@ -100,7 +102,7 @@ namespace cob_3d_mapping_tools
      * @param[in] cloud the input organized point cloud providing RGB fields
      * @return -1 for error, else 0
      */
-    int writeRGB (const std::string &file_name, const pcl::PointCloud<pcl::PointXYZRGBA> &cloud);
+    int writeRGB (const std::string &file_name, const pcl::PointCloud<pcl::PointXYZRGB> &cloud);
 
     /*! @brief Writes the depth information of a point cloud to an ASCII formated .ppm 
      *         2D color image
@@ -114,7 +116,16 @@ namespace cob_3d_mapping_tools
      * @param[in] cloud the input organized point cloud
      * @return < 0 (-1) on error, else 0
      */
-    int writeDepth (const std::string &file_name, const pcl::PointCloud<pcl::PointXYZRGBA> &cloud);
+    int 
+      writeDepth (
+	const std::string &file_name, 
+	const pcl::PointCloud<pcl::PointXYZRGB> &cloud);
+
+    
+    int 
+      writeDepthLinear (
+	const std::string &file_name, 
+	const pcl::PointCloud<pcl::PointXYZRGB> &cloud);
 
     /*! @brief Sets the maximum Z value for the color gradient
      *
