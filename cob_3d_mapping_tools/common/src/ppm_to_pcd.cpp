@@ -65,6 +65,7 @@ using namespace pcl;
 
 vector<string> file_i(2, "");
 string file_o = "";
+bool remove_undef = false;
 
 
 void readOptions(int argc, char* argv[])
@@ -73,6 +74,7 @@ void readOptions(int argc, char* argv[])
   options_description options("Options");
   options.add_options()
     ("help", "produce help message")
+    ("rm_undef,R", "remove points labeled as undefined from point cloud")
     ("in", value< vector<string> >(&file_i), "input files, first ppm, second pcd")
     ("out", value<string> (&file_o), "output pcd file")
     ;
@@ -88,6 +90,10 @@ void readOptions(int argc, char* argv[])
     cout << "Reads a .ppm image and maps the color values on a point cloud" << endl;
     cout << options << endl;
     exit(0);
+  }
+  if (vm.count("rm_undef"))
+  {
+    remove_undef = true;
   }
   if (file_o == "") 
   {
@@ -109,15 +115,15 @@ int main(int argc, char** argv)
   readOptions(argc, argv);
 
   PointCloud<PointXYZ>::Ptr p(new PointCloud<PointXYZ>());
-  PointCloud<PointXYZRGBA>::Ptr pc(new PointCloud<PointXYZRGBA>());
+  PointCloud<PointXYZRGB>::Ptr pc(new PointCloud<PointXYZRGB>());
 
   PCDReader r;
   if (r.read(file_i[1], *p) == -1) return(0);
-  copyPointCloud<PointXYZ, PointXYZRGBA>(*p, *pc);
+  copyPointCloud<PointXYZ, PointXYZRGB>(*p, *pc);
   pc->height = p->height;
   pc->width = p->width;
   cob_3d_mapping_tools::PPMReader ppmR;
-  if (ppmR.mapRGB(file_i[0], *pc) == -1)
+  if (ppmR.mapRGB(file_i[0], *pc, remove_undef) == -1)
   {
     cout << "Mapping error" << endl;
     return(0);

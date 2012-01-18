@@ -13,6 +13,7 @@
   <depend package="pcl"/>
   <depend package="pcl_ros"/>
   <depend package="cob_3d_mapping_common"/>
+  <depend package="cob_3d_mapping_features"/>
 
 </package>
 
