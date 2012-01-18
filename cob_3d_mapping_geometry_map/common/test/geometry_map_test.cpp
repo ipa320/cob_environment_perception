@@ -167,7 +167,7 @@ GeometryMapTest::~GeometryMapTest() {}
 		  vv.push_back(v);
 		  m_p->polygon_world.push_back(vv);
 		  gm.addMapEntry(m_p);
-
+		  std::cout << m_p->transform_from_world_to_plane.matrix();
 		  gmv.showMap(gm.getMap());
 
 	}
@@ -334,21 +334,22 @@ int main (int argc, char** argv)
 //	gmt.threedirection();
 
 /*	Eigen::Vector3f average_normal;
-	average_normal << 0.0169981,
-			-0.999855,
-			-0.000839981;
-	double average_d=-2.09951;
+	average_normal <<0.01857,
+			-0.999828,
+			0.000355565;
+
+	double average_d=-0.829225;
 	Eigen::Vector3f ft_pt;
 	gm.getPointOnPlane(average_normal,average_d,ft_pt);
 	std::cout << "erste " << std::endl << ft_pt;
-	average_normal << 0.0174804,
-			-0.999847,
-			-0.00058017;
-	average_d=-2.09861;
+	average_normal << 0.0185884,
+			-0.999827,
+			0.000322292;
+	average_d=-0.82914;
 	gm.getPointOnPlane(average_normal,average_d,ft_pt);
 	std::cout << "zweite " << std::endl << ft_pt;
-*/
 
+*/
 
 //	MapEntryPtr m_p = MapEntryPtr(new MapEntry());
 //	MapEntryPtr m_p2 = MapEntryPtr(new MapEntry());

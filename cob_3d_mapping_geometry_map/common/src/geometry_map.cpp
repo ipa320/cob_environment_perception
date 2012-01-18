@@ -272,8 +272,8 @@ if(true)
    searchIntersection(p , intersections);
 	//std::cout << "zweite normal " << std::endl << p.normal << std::endl ;
  //  std::cout << "intersections :" << intersections.size() << std::endl;
-	outputFile << "after intersections" << std::endl;
-	outputFile << "normal:" << std::endl << p.normal << std::endl << "d: " << p.d << " size of intersections: " << intersections.size()<<std::endl;
+//	outputFile << "after intersections" << std::endl;
+//	outputFile << "normal:" << std::endl << p.normal << std::endl << "d: " << p.d << std::endl << " size of intersections: " << intersections.size()<<std::endl;
 
    if(intersections.size()>0)
    {
@@ -290,7 +290,7 @@ if(true)
 	//	ft_pt << 1,1,-average_normal(0)/average_normal(2)-average_normal(1)/average_normal(2)+average_d/average_normal(2);
 	 getPointOnPlane(p.normal,p.d,ft_pt);
      Eigen::Affine3f transformation_from_plane_to_world;
-     getTransformationFromPlaneToWorld(p.normal, ft_pt/*p.polygon_world[0][0]*/, transformation_from_plane_to_world);
+     getTransformationFromPlaneToWorld(p.normal, p.polygon_world[0][0], transformation_from_plane_to_world);
      p.transform_from_world_to_plane = transformation_from_plane_to_world.inverse();
      p.merged++;
      p.id = new_id_;
@@ -299,6 +299,7 @@ if(true)
      std::cout << "feature added" << std::endl;
      outputFile <<"new entry " <<std::endl;
      outputFile <<"ID: " << map_.size()-1 << "trafo " << std::endl << p.transform_from_world_to_plane.matrix() <<std::endl;
+
 
 
 
@@ -557,7 +558,7 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 	average_d=average_d/merge_counter;
 	average_normal.normalize();
 
-	outputFile << "new System" <<std::endl;
+	outputFile << "new System2" <<std::endl;
 	outputFile <<"normal" <<std::endl << average_normal<<std::endl<<"d: " <<average_d<<std::endl;
 
 //	std::cout << "avg normal " << std::endl << average_normal << std::endl ;
@@ -565,12 +566,11 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 
 
 	Eigen::Vector3f ft_pt;
-//	double x = -average_d/(average_normal(0)+average_normal(1)+average_normal(2));
-//	ft_pt << 1,1,-average_normal(0)/average_normal(2)-average_normal(1)/average_normal(2)+average_d/average_normal(2);
+
 	getPointOnPlane(average_normal,average_d,ft_pt);
-//	if(intersections[0]==0){
- //   std::cout << "FP: " << ft_pt(0) << "," << ft_pt(1) << "," << ft_pt(2) << std::endl;}
 	outputFile <<"ft_pt: "<< ft_pt <<std::endl;
+
+
 	Eigen::Affine3f transformation_from_plane_to_world;
 	Eigen::Affine3f transformation_from_world_to_plane;
 	getTransformationFromPlaneToWorld(average_normal, ft_pt, transformation_from_plane_to_world);
@@ -599,6 +599,10 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 		}
 
 		getGpcStructureUsingMap(p_map, transformation_from_world_to_plane/*p_map.transform_from_world_to_plane*/, &gpc_p_map);
+		printGpcStructure(&gpc_result);
+		std::cout << "map" << std::endl;
+		printGpcStructure(&gpc_p_map);
+
 		gpc_polygon_clip(GPC_UNION, &gpc_result, &gpc_p_map, &gpc_result);
 
 		if(i!=0)
@@ -606,6 +610,8 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 			removeMapEntry(intersections[i]);
 		}
 	}
+	printGpcStructure(&gpc_result);
+
 	MapEntry& p_map = *(map_[intersections[0]]);
 
 	p_map.polygon_world.resize(gpc_result.num_contours);
@@ -823,14 +829,30 @@ GeometryMap::getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,
 void
 GeometryMap::getPointOnPlane(const Eigen::Vector3f &normal,double d,Eigen::Vector3f &point)
 {
-	float value=abs(normal(0));
+	// outputFile << "in getPointOnPlane" << std::endl;
+	// outputFile << "normal 0 " << normal(0) << "normal 1 " << normal(1)<< "normal 2 " << normal(2)<< std::endl;
+
+	float value=fabs(normal(0));
 	int direction=0;
-	if(abs(normal(1))>value)
-	{direction=1;}
-	if(abs(normal(2))>value)
-	{direction=2;}
+//	 outputFile << "abs normal 0 " << fabs(normal(0)) << "normal 1 " << fabs(normal(1))<< "normal 2 " << fabs(normal(2))<< std::endl;
+
+	if(fabs(normal(1))>value)
+	{
+
+		direction=1;
+		value=fabs(normal(1));
+	}
+
+
+	if(fabs(normal(2))>value)
+	{
+		direction=2;
+		value=fabs(normal(2));
+	}
 	point << 0,0,0;
 	point(direction)=d/normal(direction);
+//	 outputFile << "direction: " << direction << "  point " << std::endl << point << std::endl;
+
 //	Eigen::Vector3f round_normal;
 //	round_normal[0]=rounding(normal[0]);
 //	round_normal[1]=rounding(normal[1]);
