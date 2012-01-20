@@ -88,5 +88,8 @@
 #define I_EDGE  1
 #define I_SPH   2
 #define I_CYL   3
+#define I_COR   4
+#define I_EDGECORNER 5
+#define I_CURVED 6
 
 #endif
