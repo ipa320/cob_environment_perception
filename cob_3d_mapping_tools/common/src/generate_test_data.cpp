@@ -115,7 +115,7 @@ void readOptions(int argc, char* argv[])
   ifstream ifs(config_file_.c_str());
   if (!ifs)
   {
-    ifstream ifs2( (folder_ + "settings.cfg").c_str() );
+    ifstream ifs2( (folder_ + "generate_settings.cfg").c_str() );
     if (!ifs2)
     {
       cout << "cannot open config file!" << endl;

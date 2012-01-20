@@ -99,22 +99,14 @@ void readOptions(int argc, char* argv[])
   store(command_line_parser(argc, argv).options(options).positional(p_opt).run(), vm);
   notify(vm);
 
-  if (vm.count("help"))
+  if (vm.count("help") || !vm.count("in") || !vm.count("out"))
   {
+    cout << "Reads an raw organized point cloud and extracts \n"
+	 << "the principal curvatures as ppm file.\n"
+	 << "This ppm was used to label a point cloud manually" << endl;
     cout << options << endl;
     exit(0);
   }
-  if (file_in_ == "") 
-  {
-    cout << "no input and output file defined " << endl << options << endl;
-    exit(0);
-  }
-  if (file_out_[0] == "") 
-  {
-    cout << "no output file defined " << endl << options << endl;
-    exit(0);
-  }
-
   if (vm.count("max_pc"))
     fixed_max_ = true;
 

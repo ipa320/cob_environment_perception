@@ -847,6 +847,7 @@ void processPC(const PointCloud<PointXYZRGBA>::Ptr in,
   if (folder_out_ != "")
   {
     io::savePCDFileASCII(folder_out_ + "pc.pcd", *pc);
+    io::savePCDFileASCII(folder_out_ + "pc_out.pcd", *pc_out);
     io::savePCDFileASCII(folder_out_ + "pc_ref.pcd", *ref_out);
   }
   if (log_prefix_ != "")
@@ -1021,6 +1022,7 @@ void processRSD(const PointCloud<PointXYZRGBA>::Ptr in,
   stats.printAllToConsole("");
   if (folder_out_ != "")
   {
+    io::savePCDFileASCII(folder_out_ + "rsd_out.pcd", *rsd_out);
     io::savePCDFileASCII(folder_out_ + "rsd.pcd", *rsd);
     io::savePCDFileASCII(folder_out_ + "rsd_ref.pcd", *ref_out);
   }
