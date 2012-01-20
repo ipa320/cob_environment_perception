@@ -40,23 +40,23 @@
 #       this software without specific prior written permission. \n
 #
 # This program is free software: you can redistribute it and/or modify
-# it under the terms of the GNU Lesser General Public License LGPL as 
-# published by the Free Software Foundation, either version 3 of the 
+# it under the terms of the GNU Lesser General Public License LGPL as
+# published by the Free Software Foundation, either version 3 of the
 # License, or (at your option) any later version.
-# 
+#
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
 # MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
 # GNU Lesser General Public License LGPL for more details.
-# 
-# You should have received a copy of the GNU Lesser General Public 
-# License LGPL along with this program. 
+#
+# You should have received a copy of the GNU Lesser General Public
+# License LGPL along with this program.
 # If not, see <http://www.gnu.org/licenses/>.
 #
 #################################################################
 
 import roslib
-roslib.load_manifest('cob_generic_states')
+roslib.load_manifest('cob_3d_mapping_pipeline')
 import rospy
 import smach
 import smach_ros
@@ -64,6 +64,7 @@ import actionlib
 import operator
 
 from cob_3d_mapping_msgs.msg import *
+from cob_srvs.srv import Trigger
 
 from simple_script_server import *
 sss = simple_script_server()
@@ -80,13 +81,25 @@ class UpdateEnvMap(smach.State):
 			outcomes=['succeeded', 'failed'],
 			input_keys=['angle_range']) #good angle value: 0.4
 		self.client = actionlib.SimpleActionClient('trigger_mapping', TriggerMappingAction)
-		
+
 	def execute(self, userdata):
-		scan_position = [-1.3, -1.0, 3.14]
-		sss.move("torso","home")
-		sss.move("head","front")
-		sss.move("tray","down")
+		#scan_position = [-1.3, -1.0, 3.14]
+		#sss.move("torso","home")
+		#sss.move("head","front")
+		#sss.move("tray","down")
 		#sss.move("base",scan_position)
+		rospy.wait_for_service('point_map/clear_point_map',10)
+		try:
+			clear_point_map = rospy.ServiceProxy('point_map/clear_point_map', Trigger)
+			resp1 = clear_point_map()
+		except rospy.ServiceException, e:
+			print "Service call failed: %s"%e
+		rospy.wait_for_service('geometry_map/clear_geometry_map',10)
+		try:
+			clear_geom_map = rospy.ServiceProxy('geometry_map/clear_geometry_map', Trigger)
+			resp1 = clear_geom_map()
+		except rospy.ServiceException, e:
+			print "Service call failed: %s"%e
 		goal = TriggerMappingGoal()
 		goal.start = True
 		if not self.client.wait_for_server():#rospy.Duration.from_sec(5.0)):
@@ -109,8 +122,8 @@ class UpdateEnvMap(smach.State):
 		#get map
 
 		return 'succeeded'
- 
-"""experimental state, should be replaces by generic state for approach pose"""       
+
+"""experimental state, should be replaces by generic state for approach pose"""
 class ApproachScanPose(smach.State):
 
     def __init__(self):
@@ -119,16 +132,16 @@ class ApproachScanPose(smach.State):
             self,
             outcomes=['succeeded', 'failed'],
             input_keys=['scan_pose']) #good angle value: 0.4
-        
+
     def execute(self, userdata):
         scan_pose = userdata.scan_pose #[-1.3, -1.0, 3.14]
         sss.move("torso","home")
         sss.move("head","front")
-        sss.move("tray","down")
+        #sss.move("tray","down")
         sss.move("base",scan_pose)
 
         return 'succeeded'
-       
+
 class Map360(smach.State):
 
 	def __init__(self):
@@ -138,7 +151,7 @@ class Map360(smach.State):
 			outcomes=['succeeded', 'failed'],
 			input_keys=['angle_range']) #good angle value: 0.4
 		self.client = actionlib.SimpleActionClient('trigger_mapping', TriggerMappingAction)
-		
+
 	def execute(self, userdata):
 		scan_pose = [0, 0, 0]
 		sss.move("base",scan_pose)
@@ -162,7 +175,7 @@ class Map360(smach.State):
 			if operator.mod(ctr,2) == 0:
 				sss.move("torso",[[-0.2,0.0,-0.2]])
 			else:
-				sss.move("torso","home")				
+				sss.move("torso","home")
 			#sss.sleep(0.5)
 			i = i+0.2
 			ctr = ctr+1

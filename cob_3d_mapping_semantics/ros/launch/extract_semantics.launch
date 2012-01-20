@@ -1,8 +1,24 @@
 <?xml version="1.0"?>
 <launch>
-  <node pkg="cob_3d_mapping_semantics" type="semantic_extraction_node" name="semantic_extraction" output="screen">
-  	<!--remap from="map" to="/aggregate_point_map/map"/-->
-  	<remap from="feature_map" to="/feature_map_2"/>
-  	
-  </node>                 
+	<group>
+	  <node pkg="cob_3d_mapping_semantics" type="semantic_extraction_node" name="semantic_extraction" output="screen">
+	  	<!--remap from="map" to="/aggregate_point_map/map"/-->
+	  	<remap from="shape_array" to="/get_tables_client/shape_array"/>
+	  	<param name="norm_x_min" type = "double" value= "-0.10" />
+	  	<param name="norm_x_max" type = "double" value= "0.10" />
+	  	<param name="norm_y_min" type = "double" value= "-0.10" />
+	  	<param name="norm_y_max" type = "double" value= "0.10" />
+	  	<param name="norm_z_min" type = "double" value= "-0.98" />
+	  	<param name="norm_z_max" type = "double" value= "0.98" />
+
+	  	<param name="height_min" type = "double" value= "0.5"/>
+	  	<param name="height_max" type = "double" value= "4.0" />
+
+	  	<param name="area_min" type = "double" value= "0.5" />
+	  	<param name="area_max" type = "double" value= "3.0" />
+	  </node>
+	  <!-- node pkg="rviz" type="rviz" name="rviz" output="screen">
+	  </node>
+		<include file="$(find cob_3d_mapping_pipeline_fake)/launch/get_geometry_map.launch" /-->
+     </group>
 </launch>

@@ -28,7 +28,7 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
-rosbuild_add_library(cob_3d_mapping_features 
+rosbuild_add_library(cob_3d_mapping_features
 	common/src/range_image_border_extractor.cpp
 	common/src/fast_edge_estimation_3d.cpp
 	common/src/edge_estimation_3d.cpp
