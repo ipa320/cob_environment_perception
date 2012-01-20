@@ -17,7 +17,7 @@
  * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 11/2011
+ * Date of creation: 01/2012
  * ToDo:
  *
  *
@@ -54,7 +54,6 @@
 
 #include <fstream>
 #include <boost/program_options.hpp>
-#include <boost/lexical_cast.hpp>
 
 #include <pcl/io/pcd_io.h>
 #include <pcl/common/file_io.h>
@@ -63,12 +62,9 @@
 #include "cob_3d_mapping_common/label_defines.h"
 
 #define NUM_LBL 7
-#define TO_STR(a) boost::lexical_cast<string>(a)
 
 using namespace pcl;
 using namespace std;
-
-
 
 class SceneResults
 {

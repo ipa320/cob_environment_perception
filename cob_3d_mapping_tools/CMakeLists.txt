@@ -36,28 +36,40 @@ rosbuild_add_executable(pointcloud_to_pcd ros/src/pointcloud_to_pcd.cpp)
 rosbuild_add_executable(create_point_cloud common/src/create_point_cloud.cpp)
 rosbuild_add_executable(create_kitchen_point_cloud common/src/create_kitchen_point_cloud.cpp)
 
+# extracts fpfh, pc and rsd feature values from a scene into separated pcd files:
 rosbuild_add_executable(extract_feature_values common/src/extract_feature_values.cpp)
+
+# extracts pc from organized cloud and saves as ppm:
+rosbuild_add_executable(extract_organized_curvatures common/src/extract_organized_curvatures.cpp)
+target_link_libraries(extract_organized_curvatures cob_3d_mapping_tools cob_3d_mapping_features)
+
+# some tools for fpfh training:
 rosbuild_add_executable(merge_knn_training_data common/src/merge_knn_training_data.cpp)
 rosbuild_add_executable(merge_fpfh_training_data common/src/merge_fpfh_training_data.cpp)
 rosbuild_add_executable(fpfh_primitives common/src/fpfh_primitives.cpp)
-rosbuild_add_executable(create_synthetic_scene common/src/create_synthetic_scene.cpp)
-rosbuild_add_executable(create_synthetic_radii_test common/src/create_synthetic_radii_test.cpp)
-rosbuild_add_executable(ppm_to_pcd common/src/ppm_to_pcd.cpp)
-rosbuild_add_executable(pcd_to_ppm common/src/pcd_to_ppm.cpp)
-rosbuild_add_executable(label_edges common/src/label_edges.cpp)
-rosbuild_add_executable(label_curvatures common/src/label_curvatures.cpp)
+target_link_libraries(fpfh_primitives cob_3d_mapping_tools)
 
+# some tools for synthetic shape generation:
+rosbuild_add_executable(create_synthetic_scene common/src/create_synthetic_scene.cpp)
+target_link_libraries(create_synthetic_scene cob_3d_mapping_tools)
+rosbuild_add_executable(create_synthetic_radii_test common/src/create_synthetic_radii_test.cpp)
+target_link_libraries(create_synthetic_radii_test cob_3d_mapping_tools)
+
+# some tools to convert point clouds:
+rosbuild_add_executable(ppm_to_pcd common/src/ppm_to_pcd.cpp)
+target_link_libraries(ppm_to_pcd cob_3d_mapping_tools)
+rosbuild_add_executable(pcd_to_ppm common/src/pcd_to_ppm.cpp)
+target_link_libraries(pcd_to_ppm cob_3d_mapping_tools)
+rosbuild_add_executable(rgb_to_rgba common/src/rgb_to_rgba.cpp)
+rosbuild_add_executable(rgba_to_rgb common/src/rgba_to_rgb.cpp)
+
+# a test program for a new smoothing filter for kinect data :
 rosbuild_add_executable(sav_gol common/src/sav_gol_smoothing_filter.cpp)
+
+# some tools to generate fpfh, pc and rsd test data and evaluate various parameters
+rosbuild_add_executable(evaluate_test_data common/src/evaluate_test_data.cpp)
 rosbuild_add_executable(generate_test_data common/src/generate_test_data.cpp)
 rosbuild_add_compile_flags(generate_test_data -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
-
-target_link_libraries(ppm_to_pcd cob_3d_mapping_tools)
-target_link_libraries(pcd_to_ppm cob_3d_mapping_tools)
-target_link_libraries(label_edges cob_3d_mapping_tools)
-target_link_libraries(label_curvatures cob_3d_mapping_tools cob_3d_mapping_features)
-target_link_libraries(fpfh_primitives cob_3d_mapping_tools)
-target_link_libraries(create_synthetic_scene cob_3d_mapping_tools)
-target_link_libraries(create_synthetic_radii_test cob_3d_mapping_tools)
 
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)

@@ -9,7 +9,7 @@
  *
  * Project name: care-o-bot
  * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_tools
+ * ROS package name: cob_3d_mapping_features
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -17,7 +17,7 @@
  * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 11/2011
+ * Date of creation: 01/2012
  * ToDo:
  *
  *
@@ -52,44 +52,57 @@
  *
  ****************************************************************/
 
-/*! 
- * @brief Defines some commonly used labels for primitive geometrires
- *
- */
+#include <boost/program_options.hpp>
 
-#ifndef COB_3D_MAPPING_COMMON_LABEL_DEFINES_H_
-#define COB_3D_MAPPING_COMMON_LABEL_DEFINES_H_
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
 
+using namespace pcl;
+using namespace std;
 
-// --- define colors ---
-#define LBL_PLANE    0x00CCFF
-#define LBL_EDGE     0x7F0000
-#define LBL_EDGE_CVX 0xFF6600
-#define LBL_COR      0xFFCC00
-#define LBL_COR_CVX  0xFF00FF
-#define LBL_CYL      0x007F00
-#define LBL_CYL_CVX  0x00FF66
-#define LBL_SPH      0x00007F
-#define LBL_SPH_CVX  0x9900FF
-#define LBL_UNDEF    0x999999
+string in_, out_;
 
-// --- define SVM labels ---
-#define SVM_PLANE    0
-#define SVM_EDGE_CVX 1
-#define SVM_SPH_CVX  2
-#define SVM_CYL_CVX  3
+void readOptions(int argc, char* argv[])
+{
+  using namespace boost::program_options;
+  options_description options("Options");
+  options.add_options()
+    ("help", "produce help message")
+    ("in", value<string>(&in_), "input file rgba")
+    ("out",value<string>(&out_),"output file rgb")
+    ;
 
-#define SVM_EDGE_CAV 4
-#define SVM_SPH_CAV  5
-#define SVM_CYL_CAV  6
+  positional_options_description p_opt;
+  p_opt.add("in", 1).add("out",1);
+  variables_map vm;
+  store(command_line_parser(argc, argv).options(options).positional(p_opt).run(), vm);
+  notify(vm);
 
-// --- define integer labels ---
-#define I_PLANE 0
-#define I_EDGE  1
-#define I_SPH   2
-#define I_CYL   3
-#define I_COR   4
-#define I_EDGECORNER 5
-#define I_CURVED 6
+  if (vm.count("help") || !vm.count("in") || !vm.count("in"))
+  {
+    cout << options << endl;
+    exit(0);
+  }
+}
 
-#endif
+int main (int argc, char** argv)
+{
+  readOptions(argc, argv);
+  PointCloud<PointXYZRGBA>::Ptr p(new PointCloud<PointXYZRGBA>);
+  PointCloud<PointXYZRGB>::Ptr p2(new PointCloud<PointXYZRGB>);
+
+  io::loadPCDFile<PointXYZRGBA>(in_, *p);
+  p2->width = p->width;
+  p2->height = p->height;
+  p2->points.resize(p2->width * p2->height);
+  for (size_t i = 0; i < p->points.size(); i++)
+  {
+    p2->points[i].x = p->points[i].x;
+    p2->points[i].y = p->points[i].y;
+    p2->points[i].z = p->points[i].z;
+    p2->points[i].rgb = *reinterpret_cast<float*>(&p->points[i].rgba);
+  }
+  io::savePCDFileASCII<PointXYZRGB>(out_, *p2);
+
+  return 0;
+}
