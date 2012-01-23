@@ -710,7 +710,7 @@ public:
     visualization_msgs::Marker marker;
     marker.action = visualization_msgs::Marker::ADD;
     marker.type = visualization_msgs::Marker::LINE_STRIP;
-    marker.lifetime = ros::Duration (120);
+    marker.lifetime = ros::Duration ();
     marker.header.frame_id = "/map";
     marker.ns = "shape_marker";
     marker.header.stamp = ros::Time::now ();
