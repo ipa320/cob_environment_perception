@@ -322,34 +322,45 @@ int main (int argc, char** argv)
 	GeometryMapTest gmt;
 	//gmt.testnormaldirection();
 	//gmt.box();
-	gmt.fillingHole();
+//	gmt.fillingHole();
 	//gmt.rotate();
 	//gmt.strongMerged();
 	//gmt.curve();
 	//gmt.easyplane();
 //	TestPlanes tp;
 //	GeometryMapVisualisation gmv;
-	//GeometryMap gm;
+	GeometryMap gm;
 	//gmt.bugsearch();
 //	gmt.threedirection();
 
-/*	Eigen::Vector3f average_normal;
-	average_normal <<0.01857,
-			-0.999828,
-			0.000355565;
+	Eigen::Vector3f average_normal;
+	Eigen::Affine3f transformation;
+	Eigen::Affine3f transformation2;
 
-	double average_d=-0.829225;
+	average_normal <<-3.39285e-05,
+			0.000518291,
+			1;
+
+
+	double average_d=-0.910585;
 	Eigen::Vector3f ft_pt;
 	gm.getPointOnPlane(average_normal,average_d,ft_pt);
-	std::cout << "erste " << std::endl << ft_pt;
-	average_normal << 0.0185884,
-			-0.999827,
-			0.000322292;
-	average_d=-0.82914;
-	gm.getPointOnPlane(average_normal,average_d,ft_pt);
-	std::cout << "zweite " << std::endl << ft_pt;
+	gm.getTransformationFromPlaneToWorld(average_normal,ft_pt,transformation);
+	std::cout << "erste " << std::endl << ft_pt <<std::endl ;
+	std::cout << "erste  Matrix " << std::endl << transformation.matrix() <<std::endl ;
 
-*/
+	average_normal << -2.38335e-05,
+			0.000432893,
+			1;
+	average_d=-0.910604;
+
+	gm.getPointOnPlane(average_normal,average_d,ft_pt);
+	gm.getTransformationFromPlaneToWorld(average_normal,ft_pt,transformation2);
+
+	std::cout << "zweite " << std::endl << ft_pt << std::endl;
+	std::cout << "zweite  Matrix " << std::endl << transformation2.matrix() <<std::endl ;
+
+
 
 //	MapEntryPtr m_p = MapEntryPtr(new MapEntry());
 //	MapEntryPtr m_p2 = MapEntryPtr(new MapEntry());

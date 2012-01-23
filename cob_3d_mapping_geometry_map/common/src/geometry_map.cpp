@@ -241,9 +241,9 @@ GeometryMap::addMapEntry(MapEntryPtr p_ptr)
 
 
 
-	  outputFile << "-----------------------------------------------------------------------------" << std::endl ;
-	  outputFile << "new merge" <<std::endl;
-	  outputFile << "normal:" << std::endl << p.normal << std::endl << "d: " << p.d << std::endl;
+//	  outputFile << "-----------------------------------------------------------------------------" << std::endl ;
+//	  outputFile << "new merge" <<std::endl;
+//	  outputFile << "normal:" << std::endl << p.normal << std::endl << "d: " << p.d << std::endl;
 
 
 
@@ -297,13 +297,14 @@ if(true)
      map_.push_back(p_ptr);
      new_id_++;
      std::cout << "feature added" << std::endl;
-     outputFile <<"new entry " <<std::endl;
-     outputFile <<"ID: " << map_.size()-1 << "trafo " << std::endl << p.transform_from_world_to_plane.matrix() <<std::endl;
+  //   outputFile <<"new entry " <<std::endl;
+  //   outputFile <<"ID: " << map_.size()-1 << "trafo " << std::endl << p.transform_from_world_to_plane.matrix() <<std::endl;
 
 
 
 
    }
+  // printMap();
 }
 else
 {
@@ -468,7 +469,7 @@ else
   }
 
 }
-outputFile << "-----------------------------------------------------------------------------" << std::endl ;
+//outputFile << "-----------------------------------------------------------------------------" << std::endl ;
  // printGpcStructure(&gpc_p);
   //gpc_free_polygon(&gpc_p);
   if(save_to_file_) saveMap(file_path_);
@@ -534,12 +535,12 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 //	std::cout << "p merged *normal  " << std::endl << map_[0]->merged*map_[0]->normal << std::endl ;
 
 
-	outputFile <<"merging with maps:" <<std::endl;
+	//outputFile <<"merging with maps:" <<std::endl;
 
 	for(int i=0 ; i<intersections.size();i++)
 	{
 		 MapEntry& p_map = *(map_[intersections[i]]);
-		 outputFile << "map: " << intersections[i] <<std::endl;
+		// outputFile << "map: " << intersections[i] <<std::endl;
 		 if(p.normal.dot(p_map.normal)<0){
 	//	if (p.normal.dot(p_map.normal)<-0.95){
 			 p_map.normal=-p_map.normal;
@@ -558,8 +559,8 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 	average_d=average_d/merge_counter;
 	average_normal.normalize();
 
-	outputFile << "new System2" <<std::endl;
-	outputFile <<"normal" <<std::endl << average_normal<<std::endl<<"d: " <<average_d<<std::endl;
+//	outputFile << "new System2" <<std::endl;
+//	outputFile <<"normal" <<std::endl << average_normal<<std::endl<<"d: " <<average_d<<std::endl;
 
 //	std::cout << "avg normal " << std::endl << average_normal << std::endl ;
 //	std::cout << "avg d :"  << average_d << std::endl ;
@@ -568,7 +569,7 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 	Eigen::Vector3f ft_pt;
 
 	getPointOnPlane(average_normal,average_d,ft_pt);
-	outputFile <<"ft_pt: "<< ft_pt <<std::endl;
+//	outputFile <<"ft_pt: "<< ft_pt <<std::endl;
 
 
 	Eigen::Affine3f transformation_from_plane_to_world;
@@ -581,8 +582,8 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 
 //	 ROS_INFO_STREAM("merge trafo " << std::endl << transformation_from_world_to_plane.matrix());
 
-	outputFile << "new Trafo " << std::endl;
-	outputFile << transformation_from_world_to_plane.matrix();
+//	outputFile << "new Trafo " << std::endl;
+//	outputFile << transformation_from_world_to_plane.matrix();
 
 	getGpcStructureUsingMap(p, transformation_from_world_to_plane, &gpc_result);
 
@@ -599,9 +600,9 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 		}
 
 		getGpcStructureUsingMap(p_map, transformation_from_world_to_plane/*p_map.transform_from_world_to_plane*/, &gpc_p_map);
-		printGpcStructure(&gpc_result);
-		std::cout << "map" << std::endl;
-		printGpcStructure(&gpc_p_map);
+	//	printGpcStructure(&gpc_result);
+	//	std::cout << "map" << std::endl;
+	//	printGpcStructure(&gpc_p_map);
 
 		gpc_polygon_clip(GPC_UNION, &gpc_result, &gpc_p_map, &gpc_result);
 
@@ -610,7 +611,7 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 			removeMapEntry(intersections[i]);
 		}
 	}
-	printGpcStructure(&gpc_result);
+//	printGpcStructure(&gpc_result);
 
 	MapEntry& p_map = *(map_[intersections[0]]);
 
@@ -741,6 +742,39 @@ GeometryMap::printMapEntry(MapEntry& p)
 }
 
 void
+GeometryMap::printMap()
+{
+	std::stringstream ss;
+
+	//ss << "/home/goa-hh/map/outputfile_" << counter_output << ".txt";
+    std::ofstream outputFile2;
+    outputFile2.open(ss.str().c_str());
+
+
+	  for(int i=0; i< map_.size(); i++)
+	  {
+
+		  MapEntry& p =*map_[i];
+
+		     outputFile2 <<"ID: " << i-1 << "trafo " << std::endl <<  p.transform_from_world_to_plane.matrix() <<std::endl;
+			 outputFile2 << "normal:" << std::endl << p.normal << std::endl << "d: " << p.d << std::endl;
+			 outputFile2 << "Polygon:\n";
+			  for(int i=0; i< p.polygon_world.size(); i++)
+			  {
+				  outputFile2 << i << std::endl;
+			    for(int j=0; j< p.polygon_world[i].size(); j++)
+			    {
+			    	outputFile2 << "(" << p.polygon_world[i][j](0) << ", " << p.polygon_world[i][j](1) << ", " << p.polygon_world[i][j](2) << ")\n";
+			    }
+			  }
+			 outputFile2 << "----------------------------";
+
+	  }
+	  outputFile2.close();
+	//  counter_output++;
+}
+
+void
 GeometryMap::saveMapEntry(std::string path, int ctr, MapEntry& p)
 {
   std::stringstream ss;
@@ -820,6 +854,8 @@ GeometryMap::getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,
                                                    const Eigen::Vector3f &origin, Eigen::Affine3f &transformation)
 {
   Eigen::Vector3f u, v;
+
+
   getCoordinateSystemOnPlane(normal, u, v);
 //  ROS_INFO_STREAM("u " << u << " v " << v << " origin " << origin <<  std::endl);
   pcl::getTransformationFromTwoUnitVectorsAndOrigin(v, normal,  origin, transformation);
@@ -850,7 +886,7 @@ GeometryMap::getPointOnPlane(const Eigen::Vector3f &normal,double d,Eigen::Vecto
 		value=fabs(normal(2));
 	}
 	point << 0,0,0;
-	point(direction)=d/normal(direction);
+	point(direction)=-d/normal(direction);
 //	 outputFile << "direction: " << direction << "  point " << std::endl << point << std::endl;
 
 //	Eigen::Vector3f round_normal;
@@ -889,10 +925,10 @@ float
 GeometryMap::rounding(float x)
 
 {
-x *= 1000;
+x *= 10000;
 x += 0.5;
 x = floor(x); 5;
-x /= 1000;
+x /= 10000;
 return x;
 }
 /*int main (int argc, char** argv)
