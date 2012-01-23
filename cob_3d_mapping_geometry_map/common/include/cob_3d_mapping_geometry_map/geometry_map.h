@@ -105,18 +105,21 @@ public:
     return (os);
   }*/
 
-	  std::ofstream outputFile;
+	//  std::ofstream outputFile;
+	//  int counter_output;
 
 //  typedef boost::shared_ptr<MapEntry> MapEntryPtr;
 
   // Constructor
   GeometryMap()
   :new_id_(0),
+ //  counter_output(0),
    file_path_("./"),
    save_to_file_(false)
 
   {
-	  outputFile.open("/home/goa-hh/test.txt");
+	//  outputFile.open("/home/goa-hh/test.txt");
+
   }
 
   // Destructor
@@ -147,6 +150,10 @@ public:
 
   void
   printMapEntry(MapEntry& p);
+
+  void
+  printMap();
+
 
   void
   printGpcStructure(gpc_polygon* p);
