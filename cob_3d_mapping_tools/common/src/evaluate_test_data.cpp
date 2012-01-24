@@ -153,7 +153,7 @@ float r_r1_min, r_r1_max, r1_steps, r_r2_min, r_r2_max, r2_steps;
 
 void parseFileName(string file, string &rn, string &rf, bool &is_mls)
 {
-  string tmp = "0.";
+  string tmp = "";
   if (string::npos != file.rfind("rnmls_"))
   {
     is_mls = true;
@@ -285,8 +285,6 @@ int main (int argc, char** argv)
     cout << "Scene " << scenes_[i] << ": Found " << rsd_pcds.size() << " pcd files for RSD" << endl;
     cout << "Scene " << scenes_[i] << ": Found " << fpfh_pcds.size() << " pcd files for FPFH" << endl;
 
-    io::loadPCDFile<PointXYZRGB>(folder_+"normals/"+scenes_[i]+"/mls_"+scenes_[i]+"_020rn.pcd",*p);
-
     if (en_pc)
     {
       string logfile = folder_ + "results/" + scenes_[i] + "/res_pc_" + createTimestamp() + ".csv";
@@ -308,8 +306,13 @@ int main (int argc, char** argv)
 	bool is_mls;
 	string rn, rf;
 	parseFileName(pc_pcds[j], rn, rf, is_mls);
+	io::loadPCDFile<PointXYZRGB>(folder_+"normals/"+scenes_[i]+"/mls_"+scenes_[i]+
+				     "_"+rn+"rn.pcd",*p);
+	rn = "0."+rn;
+	rf = "0."+rf;
 	cout << scenes_[i] <<";"<< rn <<";"<< rf <<";"<< is_mls << endl;
 	io::loadPCDFile<PrincipalCurvatures>(folder_+"0_pc/"+scenes_[i]+"/"+pc_pcds[j], *pc);
+
 
 	int exp_rgb, pre_rgb;
 	float c_max,c_min;
@@ -336,7 +339,7 @@ int main (int argc, char** argv)
 		    pre_rgb = LBL_PLANE;
 		    if (exp_rgb != LBL_PLANE && exp_rgb != LBL_UNDEF) stats.fp[I_PLANE]++;
 		  }
-		  else if (c_min > c_high)
+		  else if (c_max > c_high)
 		  {
 		    if (c_max < c_r2 * c_min)
 		    {
@@ -426,7 +429,143 @@ int main (int argc, char** argv)
 
     if (en_rsd)
     {
+      string logfile = folder_ + "results/" + scenes_[i] + "/res_rsd_" + createTimestamp() + ".csv";
+      fstream f;
+      f.open(logfile.c_str(), fstream::out);
+      f << "rn;"<<"rf;"<<"mls;"<<"r_low;"<<"r_high;"<<"r_r1(cyl/sph);"<<"r_r2(cor/edge);"
+	<< "all;"<<"undef;"
+	<< "exp(Plane);"<<"TP;"<<"FP;"<<"FN;"<<"Prec.;"<<"Rec.;"<<"F1;"
+	<< "exp(Edge);"<<"TP;"<<"FP;"<<"FN;"<<"Prec.;"<<"Rec.;"<<"F1;"
+	<< "exp(Sphere);"<<"TP;"<<"FP;"<<"FN;"<<"Prec.;"<<"Rec.;"<<"F1;"
+	<< "exp(Cylinder);"<<"TP;"<<"FP;"<<"FN;"<<"Prec.;"<<"Rec.;"<<"F1;"
+	<< "exp(Corner);"<<"TP;"<<"FP;"<<"FN;"<<"Prec.;"<<"Rec.;"<<"F1;"
+	<< "exp(EdgeCorner);"<<"TP;"<<"FP;"<<"FN;"<<"Prec.;"<<"Rec.;"<<"F1;"
+	<< "exp(Curved);"<<"TP;"<<"FP;"<<"FN;"<<"Prec.;"<<"Rec.;"<<"F1;"<< endl;
+      f.close();
 
+      for (size_t j = 0; j < pc_pcds.size(); j++)
+      {
+	bool is_mls;
+	string rn, rf;
+	parseFileName(rsd_pcds[j], rn, rf, is_mls);
+	io::loadPCDFile<PointXYZRGB>(folder_+"normals/"+scenes_[i]+"/mls_"+scenes_[i]+
+				     "_"+rn+"rn.pcd",*p);
+	rn = "0."+rn;
+	rf = "0."+rf;
+	cout << scenes_[i] <<";"<< rn <<";"<< rf <<";"<< is_mls << endl;
+	io::loadPCDFile<PrincipalRadiiRSD>(folder_+"0_rsd/"+scenes_[i]+"/"+rsd_pcds[j], *rsd);
+
+	int exp_rgb, pre_rgb;
+	float r_max,r_min;
+
+	for (float r_low = r_low_min; r_low <= r_low_max; r_low += r_low_steps)
+	{
+	  for (float r_high = r_high_min; r_high <= r_high_max; r_high += r_high_steps)
+	  {
+	    for (float r_r1 = r_r1_min; r_r1 <= r_r1_max; r_r1 += r1_steps)
+	    {
+	      for (float r_r2 = r_r2_min; r_r2 <= r_r2_max; r_r2 += r2_steps)
+	      {
+		cout << r_low <<" | "<< r_high <<" | "<< r_r1 <<" | "<< r_r2 <<endl;
+		// new instance class for holding evaluation results:
+		SceneResults stats(rn,rf,is_mls);
+		for (size_t idx = 0; idx < p->points.size(); idx++)
+		{
+		  exp_rgb = *reinterpret_cast<int*>(&p->points[idx].rgb); // expected label
+		  r_max = rsd->points[idx].r_max;
+		  r_min = rsd->points[idx].r_min;
+		  
+		  if ( r_min > r_high )
+		  {
+		    pre_rgb = LBL_PLANE;
+		    if (exp_rgb != LBL_PLANE && exp_rgb != LBL_UNDEF) stats.fp[I_PLANE]++;
+		  }
+		  else if (r_min < r_low)
+		  {
+		    if (r_max < r_r2 * r_min)
+		    {
+		      pre_rgb = LBL_COR;
+		      if (exp_rgb != LBL_COR && exp_rgb != LBL_UNDEF) stats.fp[I_COR]++;
+		    }
+		    else
+		    {
+		      pre_rgb = LBL_EDGE;
+		      if (exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF) stats.fp[I_EDGE]++;
+		    }
+		    // special case:  combined class for corner and edge
+		    if (exp_rgb != LBL_COR && exp_rgb != LBL_EDGE) stats.fp[I_EDGECORNER]++;
+		  }
+		  else
+		  {
+		    if (r_max < r_r1 * r_min)
+		    {
+		      pre_rgb = LBL_SPH;
+		      if (exp_rgb != LBL_SPH && exp_rgb != LBL_UNDEF) stats.fp[I_SPH]++;
+		    }
+		    else
+		    {
+		      pre_rgb = LBL_CYL;
+		      if (exp_rgb != LBL_CYL && exp_rgb != LBL_UNDEF) stats.fp[I_CYL]++;
+		    }
+		    // special case:  combined class for sphere and cylinder
+		    if (exp_rgb != LBL_SPH && exp_rgb != LBL_CYL) stats.fp[I_CURVED]++;
+		  }
+
+		  switch(exp_rgb) 
+		  {
+		  case LBL_PLANE:
+		    if (pre_rgb != exp_rgb) stats.fn[I_PLANE]++;
+		    stats.exp[I_PLANE]++;
+		    break;
+		  case LBL_EDGE:
+		    if (pre_rgb != exp_rgb) 
+		    {
+		      stats.fn[I_EDGE]++;
+		      if (pre_rgb != LBL_COR) stats.fn[I_EDGECORNER]++;
+		    }
+		    stats.exp[I_EDGE]++;
+		    stats.exp[I_EDGECORNER]++;
+		    break;
+		  case LBL_COR:
+		    if (pre_rgb != exp_rgb)
+		    {
+		      stats.fn[I_COR]++;
+		      if (pre_rgb != LBL_EDGE) stats.fn[I_EDGECORNER]++;
+		    }
+		    stats.exp[I_COR]++;
+		    stats.exp[I_EDGECORNER]++;
+		    break;
+		  case LBL_SPH:
+		    if (pre_rgb != exp_rgb)
+		    {
+		      stats.fn[I_SPH]++;
+		      if (pre_rgb != LBL_CYL) stats.fn[I_CURVED]++;
+		    }
+		    stats.exp[I_SPH]++;
+		    stats.exp[I_CURVED]++;
+		    break;
+		  case LBL_CYL:
+		    if (pre_rgb != exp_rgb) 
+		    {
+		      stats.fn[I_CYL]++;
+		      if (pre_rgb != LBL_SPH) stats.fn[I_CURVED]++;
+		    }
+		    stats.exp[I_CYL]++;
+		    stats.exp[I_CURVED]++;
+		    break;
+		  default:
+		    stats.undef++;
+		    break;
+		  }
+		}
+
+		stats.calcResults();
+		stats.writeToFile(logfile, r_low, r_high, r_r1, r_r2);
+	      }
+	    }
+	  }
+	}
+      }
     }
 
     if (en_fpfh)
