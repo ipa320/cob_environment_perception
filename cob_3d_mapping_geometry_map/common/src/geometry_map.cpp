@@ -491,8 +491,8 @@ GeometryMap::searchIntersection(MapEntry p,std::vector<int>& intersections)
 
 			  MapEntry& p_map = *(map_[i]);
 			//  std::cout << "berechnung " << p_map.normal.dot(p.normal);
-			  if((p_map.normal.dot(p.normal)>0.95 && fabs(p_map.d-p.d)<0.1) ||
-				(p_map.normal.dot(p.normal)<-0.95 && fabs(p_map.d+p.d)<0.1))
+			  if((p_map.normal.dot(p.normal)>0.9 && fabs(p_map.d-p.d)<0.15) ||
+				(p_map.normal.dot(p.normal)<-0.9 && fabs(p_map.d+p.d)<0.15))
 
 			{
 
