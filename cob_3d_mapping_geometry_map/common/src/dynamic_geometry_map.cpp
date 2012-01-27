@@ -7,11 +7,14 @@
 
 #include "dynamic_geometry_map.h"
 
-dynamic_geometry_map::dynamic_geometry_map() {
+DynamicGeometryMap::DynamicGeometryMap() {
 	// TODO Auto-generated constructor stub
 
 }
 
-dynamic_geometry_map::~dynamic_geometry_map() {
+DynamicGeometryMap::~DynamicGeometryMap() {
 	// TODO Auto-generated destructor stub
 }
+
+void
+DynamicGeometryMap::addMapEntry(MapEntryPtr p_ptr)

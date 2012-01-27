@@ -73,13 +73,36 @@ geometryMapCallback(const cob_3d_mapping_msgs::ShapeArray& map)
 	cob_3d_mapping_msgs::GetFieldOfView get_fov_srv;
 
     get_fov_srv.request.target_frame = std::string("/map");
-   // get_fov_srv.request.stamp = pc->header.stamp;
+
+    Eigen::Vector3d n_up;
+    Eigen::Vector3d n_down;
+    Eigen::Vector3d n_right;
+    Eigen::Vector3d n_left;
+    Eigen::Vector3d n_origin;
+    Eigen::Vector3d n_max_range;
 
     if(get_fov_srv_client_.call(get_fov_srv))
     {
-    	std::cout <<"test";
-    }
+        n_up(0) = get_fov_srv.response.fov.points[0].x;
+        n_up(1) = get_fov_srv.response.fov.points[0].y;
+        n_up(2) = get_fov_srv.response.fov.points[0].z;
+        n_down(0) = get_fov_srv.response.fov.points[1].x;
+        n_down(1) = get_fov_srv.response.fov.points[1].y;
+        n_down(2) = get_fov_srv.response.fov.points[1].z;
+        n_right(0) = get_fov_srv.response.fov.points[2].x;
+        n_right(1) = get_fov_srv.response.fov.points[2].y;
+        n_right(2) = get_fov_srv.response.fov.points[2].z;
+        n_left(0) = get_fov_srv.response.fov.points[3].x;
+        n_left(1) = get_fov_srv.response.fov.points[3].y;
+        n_left(2) = get_fov_srv.response.fov.points[3].z;
+        n_origin(0) = get_fov_srv.response.fov.points[4].x;
+        n_origin(1) = get_fov_srv.response.fov.points[4].y;
+        n_origin(2) = get_fov_srv.response.fov.points[4].z;
+        n_max_range(0) = get_fov_srv.response.fov.points[5].x;
+        n_max_range(1) = get_fov_srv.response.fov.points[5].y;
+        n_max_range(2) = get_fov_srv.response.fov.points[5].z;
 
+    }
  }
 
 ros::NodeHandle n_;
