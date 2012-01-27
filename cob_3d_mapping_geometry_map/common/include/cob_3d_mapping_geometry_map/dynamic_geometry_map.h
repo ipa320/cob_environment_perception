@@ -8,10 +8,10 @@
 #ifndef DYNAMIC_GEOMETRY_MAP_H_
 #define DYNAMIC_GEOMETRY_MAP_H_
 
-class dynamic_geometry_map {
+class DynamicGeometryMap {
 public:
-	dynamic_geometry_map();
-	virtual ~dynamic_geometry_map();
+	DynamicGeometryMap();
+	virtual ~DynamicGeometryMap();
 };
 
 #endif /* DYNAMIC_GEOMETRY_MAP_H_ */

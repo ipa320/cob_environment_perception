@@ -241,9 +241,17 @@ GeometryMap::addMapEntry(MapEntryPtr p_ptr)
 
 
 
-//	  outputFile << "-----------------------------------------------------------------------------" << std::endl ;
-//	  outputFile << "new merge" <<std::endl;
-//	  outputFile << "normal:" << std::endl << p.normal << std::endl << "d: " << p.d << std::endl;
+	  outputFile << "-----------------------------------------------------------------------------" << std::endl ;
+	  outputFile << "new merge" <<std::endl;
+	  outputFile << "normal:" << std::endl << p.normal << std::endl << "d: " << p.d << std::endl;
+	  for(int i=0; i< p.polygon_world.size(); i++)
+	  {
+		  outputFile << i << std::endl;
+	    for(int j=0; j< p.polygon_world[i].size(); j++)
+	    {
+	    	outputFile << "(" << p.polygon_world[i][j](0) << ", " << p.polygon_world[i][j](1) << ", " << p.polygon_world[i][j](2) << ")\n";
+	    }
+	  }
 
 
 
@@ -290,21 +298,22 @@ if(true)
 	//	ft_pt << 1,1,-average_normal(0)/average_normal(2)-average_normal(1)/average_normal(2)+average_d/average_normal(2);
 	 getPointOnPlane(p.normal,p.d,ft_pt);
      Eigen::Affine3f transformation_from_plane_to_world;
-     getTransformationFromPlaneToWorld(p.normal, p.polygon_world[0][0], transformation_from_plane_to_world);
+     getTransformationFromPlaneToWorld(p.normal, ft_pt/*p.polygon_world[0][0]*/, transformation_from_plane_to_world);
      p.transform_from_world_to_plane = transformation_from_plane_to_world.inverse();
      p.merged++;
      p.id = new_id_;
      map_.push_back(p_ptr);
      new_id_++;
      std::cout << "feature added" << std::endl;
-  //   outputFile <<"new entry " <<std::endl;
-  //   outputFile <<"ID: " << map_.size()-1 << "trafo " << std::endl << p.transform_from_world_to_plane.matrix() <<std::endl;
+     outputFile <<"new entry " <<std::endl;
+     outputFile <<"ID: " << map_.size()-1 << "trafo " << std::endl << p.transform_from_world_to_plane.matrix() <<std::endl;
+     outputFile <<"fp " << ft_pt << std::endl;
 
 
 
 
    }
-  // printMap();
+   printMap();
 }
 else
 {
@@ -351,10 +360,10 @@ else
 		  n_map.normalize();
 		//  std::cout << "d map und normale " << d_map << " normale " << n_map << std::endl;
 		  Eigen::Vector3f ft_pt;
-		 // double x = -d_map/(n_map(0)+n_map(1)+n_map(2));
-		 // ft_pt << x,x,x;
+		  double x = -d_map/(n_map(0)+n_map(1)+n_map(2));
+		  ft_pt << x,x,x;
 
-		  getPointOnPlane(n_map,d_map,ft_pt);
+		//  getPointOnPlane(n_map,d_map,ft_pt);
 		  /*if(fabs(n_map(2))>0.01)
 			ft_pt << 0, 0, -d_map/n_map(2);
 		  else if(fabs(n_map(0))>0.01)
@@ -491,8 +500,8 @@ GeometryMap::searchIntersection(MapEntry p,std::vector<int>& intersections)
 
 			  MapEntry& p_map = *(map_[i]);
 			//  std::cout << "berechnung " << p_map.normal.dot(p.normal);
-			  if((p_map.normal.dot(p.normal)>0.9 && fabs(p_map.d-p.d)<0.15) ||
-				(p_map.normal.dot(p.normal)<-0.9 && fabs(p_map.d+p.d)<0.15))
+			  if((p_map.normal.dot(p.normal)>0.90 && fabs(p_map.d-p.d)<0.175) ||
+				(p_map.normal.dot(p.normal)<-0.90 && fabs(p_map.d+p.d)<0.175))
 
 			{
 
@@ -589,6 +598,10 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 
 	for(int i=0 ; i<intersections.size();i++)
 	{
+		if(intersections.size()>1)
+		{
+			std::cout << "nun";
+		}
 		MapEntry& p_map = *(map_[intersections[i]]);
 		if (i==0)
 		{
@@ -746,7 +759,7 @@ GeometryMap::printMap()
 {
 	std::stringstream ss;
 
-	//ss << "/home/goa-hh/map/outputfile_" << counter_output << ".txt";
+	ss << "/home/goa-hh/map/outputfile_" << counter_output << ".txt";
     std::ofstream outputFile2;
     outputFile2.open(ss.str().c_str());
 
@@ -756,7 +769,7 @@ GeometryMap::printMap()
 
 		  MapEntry& p =*map_[i];
 
-		     outputFile2 <<"ID: " << i-1 << "trafo " << std::endl <<  p.transform_from_world_to_plane.matrix() <<std::endl;
+		     outputFile2 <<"ID: " << i << "trafo " << std::endl <<  p.transform_from_world_to_plane.matrix() <<std::endl;
 			 outputFile2 << "normal:" << std::endl << p.normal << std::endl << "d: " << p.d << std::endl;
 			 outputFile2 << "Polygon:\n";
 			  for(int i=0; i< p.polygon_world.size(); i++)
@@ -771,7 +784,7 @@ GeometryMap::printMap()
 
 	  }
 	  outputFile2.close();
-	//  counter_output++;
+	  counter_output++;
 }
 
 void
