@@ -337,22 +337,23 @@ int main (int argc, char** argv)
 	Eigen::Affine3f transformation;
 	Eigen::Affine3f transformation2;
 
-	average_normal <<-3.39285e-05,
-			0.000518291,
-			1;
+	average_normal <<-0.0147822,
+			0.999891,
+			0.000356951;
 
 
-	double average_d=-0.910585;
+	double average_d=-1.09907;
 	Eigen::Vector3f ft_pt;
 	gm.getPointOnPlane(average_normal,average_d,ft_pt);
 	gm.getTransformationFromPlaneToWorld(average_normal,ft_pt,transformation);
 	std::cout << "erste " << std::endl << ft_pt <<std::endl ;
 	std::cout << "erste  Matrix " << std::endl << transformation.matrix() <<std::endl ;
 
-	average_normal << -2.38335e-05,
-			0.000432893,
-			1;
-	average_d=-0.910604;
+	average_normal << 0.0121769,
+			-0.996308,
+			0.0849869;
+
+	average_d=1.03737;
 
 	gm.getPointOnPlane(average_normal,average_d,ft_pt);
 	gm.getTransformationFromPlaneToWorld(average_normal,ft_pt,transformation2);
