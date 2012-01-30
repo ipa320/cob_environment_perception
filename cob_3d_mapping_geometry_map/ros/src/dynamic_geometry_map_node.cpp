@@ -18,6 +18,9 @@
 #include <pcl/common/transform.h>
 #include <cob_3d_mapping_common/reconfigureable_node.h>
 #include <cob_3d_mapping_msgs/GetFieldOfView.h>
+#include <tf/transform_listener.h>
+#include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
 
 
 #include <cob_3d_mapping_geometry_map/geometry_map_nodeConfig.h>
@@ -55,8 +58,8 @@ public:
   // Constructor
 	DynamicGeometryMapNode()
   {
-    polygon_sub_ = n_.subscribe("/geometry_map/geometry_map_2", 1, &DynamicGeometryMapNode::geometryMapCallback, this);
-    get_fov_srv_client_ = n_.serviceClient<cob_3d_mapping_msgs::GetFieldOfView>("get_fov");
+   // polygon_sub_ = n_.subscribe("/geometry_map/geometry_map_2", 1, &DynamicGeometryMapNode::geometryMapCallback, this);
+    //get_fov_srv_client_ = n_.serviceClient<cob_3d_mapping_msgs::GetFieldOfView>("get_fov");
 
   }
 
@@ -65,11 +68,10 @@ public:
   {
     /// void
   }
-
+/*
 void
 geometryMapCallback(const cob_3d_mapping_msgs::ShapeArray& map)
 {
-	std::cout << "drin " << std::endl;
 	cob_3d_mapping_msgs::GetFieldOfView get_fov_srv;
 
     get_fov_srv.request.target_frame = std::string("/map");
@@ -103,29 +105,89 @@ geometryMapCallback(const cob_3d_mapping_msgs::ShapeArray& map)
         n_max_range(2) = get_fov_srv.response.fov.points[5].z;
 
     }
- }
 
-ros::NodeHandle n_;
+ //   boost::shared_ptr<std::vector<MapEntryPtr> > map= geometry_map_.getMap();
+//
+//    for (int i=0 ; i<map->size();i++)
+//    {
+//    	MapEntry& pm = *(map->at(i));
+//    	Eigen::Vector3d normal=pm.normal;
+//    	double d=pm.d;
+
+//   	    Eigen::Vector3d intersec_up =normal.cross(n_up);
+//    	Eigen::Vector3fd intersec_down =normal.cross(n_down);
+//    	Eigen::Vector3f intersec_left =normal.cross(n_left);
+//    	Eigen::Vector3f intersec_right =normal.cross(n_right);
+//    	Eigen::Vector3f intersec_max_range =normal.cross(n_max_range);
+
+
+
+ }
+*/
+void
+calcIntersectionLine(Eigen::Vector3d n , Eigen::Vector3d origin ,Eigen::Vector3d normal , double d , Eigen::Vector3d& origin_line , Eigen::Vector3d& direction_line )
+{
+	direction_line = n.cross(normal);
+	if (direction_line(0)*direction_line(0)+direction_line(1)*direction_line(1)+direction_line(2)*direction_line(2)==0)
+	{
+		return;
+	}
+	double d_n=-n(0)*origin(0)-n(1)*origin(1)-n(2)*origin(2);
+	double max = n(0)+normal(0);
+	int direction=0;
+	if(n(1)+normal(1)>max)
+	{
+		max=n(1)+normal(1);
+		direction=1;
+	}
+	if(n(2)+normal(2)>max)
+	{
+		max=n(2)+normal(2);
+		direction=2;
+	}
+	origin_line << 0,0,0;
+	origin_line(direction)=(d-d_n)/(n(direction)-normal(direction));
+
+
+}
+
+//ros::NodeHandle n_;
 
 
 protected:
-  ros::Subscriber polygon_sub_;
-  ros::ServiceClient get_fov_srv_client_;
+//  ros::Subscriber polygon_sub_;
+//  ros::ServiceClient get_fov_srv_client_;
+
+  GeometryMap geometry_map_;
+
 
 };
 
 
 int main (int argc, char** argv)
 {
-  ros::init (argc, argv, "dynamic_geometry_map_node");
+ // ros::init (argc, argv, "dynamic_geometry_map_node");
 
   DynamicGeometryMapNode dgmn;
+  Eigen::Vector3d n;
+  n << 0,0,1;
+  Eigen::Vector3d origin;
+  origin << 0,0,0;
+  Eigen::Vector3d normal;
+  normal << 0,1,0;
+  double d=1;
 
-  ros::Rate loop_rate(10);
-  while (ros::ok())
-  {
-    ros::spinOnce ();
-    loop_rate.sleep();
+  Eigen::Vector3d origin_line , direction_line;
+std::cout<< "test";
+
+ dgmn.calcIntersectionLine(n,origin,normal,d,origin_line,direction_line);
+ std::cout << "origin:" << std::endl << origin_line << std::endl << "direction" << std::endl << direction_line;
+
+//  ros::Rate loop_rate(10);
+//  while (ros::ok())
+//  {
+//    ros::spinOnce ();
+//    loop_rate.sleep();
   }
-}
+
 
