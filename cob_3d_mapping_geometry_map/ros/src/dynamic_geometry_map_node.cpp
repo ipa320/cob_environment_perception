@@ -58,8 +58,8 @@ public:
   // Constructor
 	DynamicGeometryMapNode()
   {
-   // polygon_sub_ = n_.subscribe("/geometry_map/geometry_map_2", 1, &DynamicGeometryMapNode::geometryMapCallback, this);
-    //get_fov_srv_client_ = n_.serviceClient<cob_3d_mapping_msgs::GetFieldOfView>("get_fov");
+    polygon_sub_ = n_.subscribe("/geometry_map/geometry_map_2", 1, &DynamicGeometryMapNode::geometryMapCallback, this);
+    get_fov_srv_client_ = n_.serviceClient<cob_3d_mapping_msgs::GetFieldOfView>("get_fov");
 
   }
 
@@ -68,7 +68,7 @@ public:
   {
     /// void
   }
-/*
+
 void
 geometryMapCallback(const cob_3d_mapping_msgs::ShapeArray& map)
 {
@@ -123,7 +123,7 @@ geometryMapCallback(const cob_3d_mapping_msgs::ShapeArray& map)
 
 
  }
-*/
+
 void
 calcIntersectionLine(Eigen::Vector3d n , Eigen::Vector3d origin ,Eigen::Vector3d normal , double d , Eigen::Vector3d& origin_line , Eigen::Vector3d& direction_line )
 {
@@ -151,12 +151,71 @@ calcIntersectionLine(Eigen::Vector3d n , Eigen::Vector3d origin ,Eigen::Vector3d
 
 }
 
-//ros::NodeHandle n_;
+bool
+intersection2Lines(Eigen::Vector3d orgigin_ln1,Eigen::Vector3d ln1,Eigen::Vector3d orgigin_ln2,Eigen::Vector3d ln2,Eigen::Vector3d& intersection)
+{
+	Eigen::Matrix2d matrix;
+	Eigen::Vector2d vec;
+
+		if(ln1(0)==0 && ln2(0)==0)
+		{
+			matrix(0,0)=ln1(1);
+			matrix(1,0)=ln1(2);
+			matrix(0,1)=-ln2(1);
+			matrix(1,1)=-ln2(2);
+
+
+			vec << orgigin_ln2(1)-orgigin_ln1(1),orgigin_ln2(2)-orgigin_ln1(2);
+			Eigen::Vector3d x = matrix.colPivHouseholderQr().solve(vec);
+			//std::cout << "x" << x(0) << "," << x(1)  << std::endl;
+			if(abs(ln1(0)*x(0)+orgigin_ln1(0)-ln2(0)*x(1)-orgigin_ln2(0))<0.001)
+			{
+				intersection << ln1(0)*x(0)+orgigin_ln1(0),
+						ln1(1)*x(0)+orgigin_ln1(1),
+						ln1(2)*x(0)+orgigin_ln1(2);
+				return true;
+			}
+			return false;
+
+
+
+
+		}
+		else
+		{
+			std::cout << "ln1:" << ln1(2) << std::endl;
+
+			matrix(0,0)=ln1(0);
+			matrix(1,0)=ln1(1);
+			matrix(0,1)=-ln2(0);
+			matrix(1,1)=-ln2(1);
+
+
+			vec << orgigin_ln2(0)-orgigin_ln1(0),orgigin_ln2(1)-orgigin_ln1(1);
+			Eigen::Vector3d x = matrix.colPivHouseholderQr().solve(vec);
+			//std::cout << "x" << x(0) << "," << x(1)  << std::endl;
+			//std::cout << "term   " << ln1(2) * x(0)+orgigin_ln1(2)-ln2(2)*x(1)-orgigin_ln2(2) << std::endl;
+			if(abs(ln1(2) * x(0)+orgigin_ln1(2)-ln2(2)*x(1)-orgigin_ln2(2))<=0.001)
+			{
+				intersection << ln1(0)*x(0)+orgigin_ln1(0),
+						ln1(1)*x(0)+orgigin_ln1(1),
+						ln1(2)*x(0)+orgigin_ln1(2);
+				return true;
+			}
+			return false;
+
+
+		}
+
+
+
+}
+ros::NodeHandle n_;
 
 
 protected:
-//  ros::Subscriber polygon_sub_;
-//  ros::ServiceClient get_fov_srv_client_;
+  ros::Subscriber polygon_sub_;
+  ros::ServiceClient get_fov_srv_client_;
 
   GeometryMap geometry_map_;
 
@@ -166,7 +225,7 @@ protected:
 
 int main (int argc, char** argv)
 {
- // ros::init (argc, argv, "dynamic_geometry_map_node");
+  ros::init (argc, argv, "dynamic_geometry_map_node");
 
   DynamicGeometryMapNode dgmn;
   Eigen::Vector3d n;
@@ -174,14 +233,18 @@ int main (int argc, char** argv)
   Eigen::Vector3d origin;
   origin << 0,0,0;
   Eigen::Vector3d normal;
-  normal << 0,1,0;
-  double d=1;
+  normal << 0,1,1;
+  Eigen::Vector3d origin2;
+  origin2 << 0,1,1;
+  Eigen::Vector3d normal2;
+  normal2 << 0,2,4;
+  bool x;
+  Eigen::Vector3d inter;
 
-  Eigen::Vector3d origin_line , direction_line;
-std::cout<< "test";
 
- dgmn.calcIntersectionLine(n,origin,normal,d,origin_line,direction_line);
- std::cout << "origin:" << std::endl << origin_line << std::endl << "direction" << std::endl << direction_line;
+  x=dgmn.intersection2Lines(origin,normal,origin2,normal2,inter);
+  std::cout << inter << "intersec " << x;
+// dgmn.calcIntersectionLine(n,origin,normal,d,origin_line,direction_line);
 
 //  ros::Rate loop_rate(10);
 //  while (ros::ok())
