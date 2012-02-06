@@ -21,6 +21,8 @@
 #include <tf/transform_listener.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
+#include <pcl_ros/pcl_nodelet.h>
+
 
 
 #include <cob_3d_mapping_geometry_map/geometry_map_nodeConfig.h>
@@ -51,15 +53,15 @@
 
 
 
-class DynamicGeometryMapNode
+class DynamicGeometryMapNode: public pcl_ros::PCLNodelet
 {
 public:
 
   // Constructor
 	DynamicGeometryMapNode()
   {
-    polygon_sub_ = n_.subscribe("/geometry_map/geometry_map_2", 1, &DynamicGeometryMapNode::geometryMapCallback, this);
-    get_fov_srv_client_ = n_.serviceClient<cob_3d_mapping_msgs::GetFieldOfView>("get_fov");
+//    polygon_sub_ = n_.subscribe("/geometry_map/geometry_map", 1, &DynamicGeometryMapNode::geometryMapCallback, this);
+//    get_fov_srv_client_ = n_.serviceClient<cob_3d_mapping_msgs::GetFieldOfView>("get_fov");
 
   }
 
@@ -68,20 +70,32 @@ public:
   {
     /// void
   }
+  void
+    onInit()
+    {
+      PCLNodelet::onInit();
+      n_ = getNodeHandle();
+      polygon_sub_ = n_.subscribe("/geometry_map/geometry_map", 1, &DynamicGeometryMapNode::geometryMapCallback, this);
+      get_fov_srv_client_ = n_.serviceClient<cob_3d_mapping_msgs::GetFieldOfView>("get_fov");
+    }
+
 
 void
-geometryMapCallback(const cob_3d_mapping_msgs::ShapeArray& map)
+geometryMapCallback(const cob_3d_mapping_msgs::PolygonArray::ConstPtr p)
 {
-	cob_3d_mapping_msgs::GetFieldOfView get_fov_srv;
+	std::cout << "drin";
 
+	cob_3d_mapping_msgs::GetFieldOfView get_fov_srv;
     get_fov_srv.request.target_frame = std::string("/map");
 
-    Eigen::Vector3d n_up;
-    Eigen::Vector3d n_down;
-    Eigen::Vector3d n_right;
-    Eigen::Vector3d n_left;
+
+    Eigen::Vector3d n_up,n_up_inter_origin,n_up_inter;
+    Eigen::Vector3d n_down,n_down_inter_origin,n_down_inter;
+    Eigen::Vector3d n_right,n_right_inter_origin,n_right_inter;
+    Eigen::Vector3d n_left,n_left_inter_origin,n_left_inter;
     Eigen::Vector3d n_origin;
-    Eigen::Vector3d n_max_range;
+    Eigen::Vector3d n_max_range,n_max_range_inter_origin,n_max_range_inter;
+
 
     if(get_fov_srv_client_.call(get_fov_srv))
     {
@@ -106,30 +120,76 @@ geometryMapCallback(const cob_3d_mapping_msgs::ShapeArray& map)
 
     }
 
- //   boost::shared_ptr<std::vector<MapEntryPtr> > map= geometry_map_.getMap();
-//
-//    for (int i=0 ; i<map->size();i++)
-//    {
-//    	MapEntry& pm = *(map->at(i));
-//    	Eigen::Vector3d normal=pm.normal;
-//    	double d=pm.d;
 
-//   	    Eigen::Vector3d intersec_up =normal.cross(n_up);
-//    	Eigen::Vector3fd intersec_down =normal.cross(n_down);
-//    	Eigen::Vector3f intersec_left =normal.cross(n_left);
-//    	Eigen::Vector3f intersec_right =normal.cross(n_right);
-//    	Eigen::Vector3f intersec_max_range =normal.cross(n_max_range);
+	MapEntryPtr map_entry_ptr = MapEntryPtr(new MapEntry());
+    convertFromROSMsg(*p, *map_entry_ptr);
+
+    //deklarieren von normal und d über map_entry
+    std::cout << "n up" << n_up << std::endl;
+    std::cout << "p normal " << p->normal << std::endl;
+
+    double d;
+    Eigen::Vector3d normal;
+    std::vector<bool>  intersec;
+    std::vector<Eigen::Vector3f> inter_point;
+
+    intersec.resize(8);
+    inter_point.resize(8);
+
+    calcIntersectionLine(n_up ,n_origin,normal,d,n_up_inter_origin,n_up_inter);
+    calcIntersectionLine(n_down ,n_origin,normal,d,n_down_inter_origin,n_down_inter);
+    calcIntersectionLine(n_right ,n_origin,normal,d,n_right_inter_origin,n_right_inter);
+    calcIntersectionLine(n_left ,n_origin,normal,d,n_left_inter_origin,n_left_inter);
+    calcIntersectionLine(n_max_range ,n_origin,normal,d,n_max_range_inter_origin,n_max_range_inter); // Fehler n_origin stimmt nicht
+
+    intersec[0]=intersection2Lines(n_up_inter_origin,n_up_inter,n_left_inter_origin,n_left_inter,inter_point[0]);
+    intersec[1]=intersection2Lines(n_up_inter_origin,n_up_inter,n_max_range_inter_origin,n_max_range_inter,inter_point[1]);
+    intersec[2]=intersection2Lines(n_up_inter_origin,n_up_inter,n_right_inter_origin,n_right_inter,inter_point[2]);
+    intersec[3]=intersection2Lines(n_left_inter_origin,n_left_inter,n_max_range_inter_origin,n_max_range_inter,inter_point[3]);
+    intersec[4]=intersection2Lines(n_left_inter_origin,n_left_inter,n_down_inter_origin,n_down_inter,inter_point[4]);
+    intersec[5]=intersection2Lines(n_max_range_inter_origin,n_max_range_inter,n_down_inter_origin,n_down_inter,inter_point[5]);
+    intersec[6]=intersection2Lines(n_max_range_inter_origin,n_max_range_inter,n_right_inter_origin,n_right_inter,inter_point[6]);
+    intersec[7]=intersection2Lines(n_down_inter_origin,n_down_inter,n_right_inter_origin,n_right_inter,inter_point[7]);
+
+    int sum;
+    std::vector<int> intersections;
+	for (int i=0; i<8;i++)
+	{
+		sum +=intersec[i];
+		intersections.push_back(i);
+	}
+
+	MapEntry fovplan;
+	fovplan.polygon_world.resize(1);
 
 
+	switch (sum)
+	{
+	case 0: return;break;
+	case 3:	fovplan.polygon_world[0].resize(3);
+		    fovplan.polygon_world[0][0]=inter_point[intersections[0]];
+		    fovplan.polygon_world[0][1]=inter_point[intersections[1]];
+		    fovplan.polygon_world[0][2]=inter_point[intersections[2]];
 
+	case 4:	fovplan.polygon_world[0].resize(4);
+			fovplan.polygon_world[0][0]=inter_point[intersections[0]];
+			fovplan.polygon_world[0][1]=inter_point[intersections[1]];
+			fovplan.polygon_world[0][2]=inter_point[intersections[2]];
+			fovplan.polygon_world[0][3]=inter_point[intersections[3]];
+
+	default: std::cout << "error wrong number of intersections" << std::endl;
+
+	}
  }
 
 void
 calcIntersectionLine(Eigen::Vector3d n , Eigen::Vector3d origin ,Eigen::Vector3d normal , double d , Eigen::Vector3d& origin_line , Eigen::Vector3d& direction_line )
 {
 	direction_line = n.cross(normal);
+
 	if (direction_line(0)*direction_line(0)+direction_line(1)*direction_line(1)+direction_line(2)*direction_line(2)==0)
 	{
+		origin_line<<0,0,0;
 		return;
 	}
 	double d_n=-n(0)*origin(0)-n(1)*origin(1)-n(2)*origin(2);
@@ -152,7 +212,7 @@ calcIntersectionLine(Eigen::Vector3d n , Eigen::Vector3d origin ,Eigen::Vector3d
 }
 
 bool
-intersection2Lines(Eigen::Vector3d orgigin_ln1,Eigen::Vector3d ln1,Eigen::Vector3d orgigin_ln2,Eigen::Vector3d ln2,Eigen::Vector3d& intersection)
+intersection2Lines(Eigen::Vector3d orgigin_ln1,Eigen::Vector3d ln1,Eigen::Vector3d orgigin_ln2,Eigen::Vector3d ln2,Eigen::Vector3f& intersection)
 {
 	Eigen::Matrix2d matrix;
 	Eigen::Vector2d vec;
@@ -210,6 +270,38 @@ intersection2Lines(Eigen::Vector3d orgigin_ln1,Eigen::Vector3d ln1,Eigen::Vector
 
 
 }
+
+void
+  convertFromROSMsg(const cob_3d_mapping_msgs::PolygonArray& p, MapEntry& map_entry)
+  {
+    map_entry.id = 0;
+    map_entry.d = p.d.data;
+    map_entry.normal(0) = p.normal.x;
+    map_entry.normal(1) = p.normal.y;
+    map_entry.normal(2) = p.normal.z;
+    map_entry.merged = 0;
+    //map_entry.polygon_world.resize(p.polygons.size());
+    for(unsigned int i=0; i<p.polygons.size(); i++)
+    {
+      if(p.polygons[i].points.size())
+      {
+        std::vector<Eigen::Vector3f> pts;
+        pts.resize(p.polygons[i].points.size());
+        for(unsigned int j=0; j<p.polygons[i].points.size(); j++)
+        {
+          /*pts[j] = Eigen::Vector3f(p.polygons[i].points[j].x,
+                                   p.polygons[i].points[j].y,
+                                   p.polygons[i].points[j].z);*/
+          pts[j](0) = p.polygons[i].points[j].x;
+          pts[j](1) = p.polygons[i].points[j].y;
+          pts[j](2) = p.polygons[i].points[j].z;
+        }
+        map_entry.polygon_world.push_back(pts);
+      }
+    }
+  }
+
+
 ros::NodeHandle n_;
 
 
@@ -222,7 +314,7 @@ protected:
 
 };
 
-
+/*
 int main (int argc, char** argv)
 {
   ros::init (argc, argv, "dynamic_geometry_map_node");
@@ -252,5 +344,6 @@ int main (int argc, char** argv)
 //    ros::spinOnce ();
 //    loop_rate.sleep();
   }
+*/
 
-
+//PLUGINLIB_DECLARE_CLASS(cob_3d_mapping_geometry_map, DynamicGeometryMapNode, DynamicGeometryMapNode, nodelet::Nodelet)
