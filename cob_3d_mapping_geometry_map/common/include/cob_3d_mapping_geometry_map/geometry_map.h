@@ -105,7 +105,7 @@ public:
     return (os);
   }*/
 
-	  std::ofstream outputFile;
+	 // std::ofstream outputFile;
 	  int counter_output;
 
 //  typedef boost::shared_ptr<MapEntry> MapEntryPtr;
@@ -118,14 +118,14 @@ public:
    save_to_file_(false)
 
   {
-	  outputFile.open("/home/goa-hh/test.txt");
+	//  outputFile.open("/home/goa-hh/test.txt");
 
   }
 
   // Destructor
   ~GeometryMap()
   {
-	  outputFile.close();
+	  //outputFile.close();
   }
 
   void
