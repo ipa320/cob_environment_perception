@@ -52,12 +52,38 @@
  *
  ****************************************************************/
 
-#include "pcl/point_types.h"
-#include "pcl/impl/instantiate.hpp"
-#include "cob_3d_mapping_features/edge_estimation.h"
-#include "cob_3d_mapping_features/impl/edge_estimation.hpp"
+#ifndef __IMPL_FAST_EDGE_ESTIMATION_3D_OMP_H__
+#define __IMPL_FAST_EDGE_ESTIMATION_3D_OMP_H__
 
-// Instantiations of specific point types
-//PCL_INSTANTIATE_PRODUCT(BoundaryEstimation, (PCL_XYZ_POINT_TYPES)(PCL_NORMAL_POINT_TYPES)((pcl::Boundary)));
-PCL_INSTANTIATE_EdgeEstimation(pcl::PointXYZRGB,pcl::PointXYZRGBNormal,pcl::InterestPoint)
+#include "cob_3d_mapping_features/fast_edge_estimation_3d_omp.h"
 
+template <typename PointInT, typename PointNT, typename PointOutT> void
+cob_3d_mapping_features::FastEdgeEstimation3DOMP<PointInT, PointNT, PointOutT>::computeFeature (
+  PointCloudOut &output)
+{
+  int threadsize = 1;
+
+#pragma omp parallel for schedule (dynamic, threadsize)
+  for (size_t i=0; i < indices_->size(); ++i)
+  {
+    Eigen::Vector3f normal;
+    std::vector<int> nn_indices;
+    if (isnan(normals_->points[(*indices_)[i]].normal[0]))
+      output.points[(*indices_)[i]].strength=2;
+    else
+    {
+      this->searchForNeighbors (*surface_, (*indices_)[i], nn_indices);
+
+      normal[0] = normals_->points[(*indices_)[i]].normal_x;
+      normal[1] = normals_->points[(*indices_)[i]].normal_y;
+      normal[2] = normals_->points[(*indices_)[i]].normal_z;
+      // Estimate whether the point is lying on a boundary surface or not
+      isEdgePoint (*surface_, input_->points[(*indices_)[i]], nn_indices, 
+		   normal, output.points[(*indices_)[i]].strength);
+    }
+  }
+}
+
+#define PCL_INSTANTIATE_FastEdgeEstimation3DOMP(PointInT,PointNT,PointOutT) template class PCL_EXPORTS cob_3d_mapping_features::FastEdgeEstimation3DOMP<PointInT, PointNT, PointOutT>;
+
+#endif    // __IMPL_FAST_EDGE_ESTIMATION_3D_H__

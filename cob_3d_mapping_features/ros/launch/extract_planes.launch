@@ -21,7 +21,7 @@
   </node-->
 
   <node pkg="nodelet" type="nodelet" name="plane_extraction" args="load cob_3d_mapping_features/PlaneExtractionNodelet $(arg nodelet_manager)" output="screen">
-  	<remap from="point_cloud2" to="/cam3d/depth/points"/>
+  	<remap from="point_cloud2" to="point_map/pc_aligned"/>
   	<remap from="chull" to="plane_extraction/chull"/>
   	<remap from="plane_marker" to="plane_extraction/plane_marker"/>
   	<remap from="object_cluster" to="plane_extraction/object_cluster"/>
@@ -32,6 +32,7 @@
   	<param name="file_path" type="string" value="/home/goa-hh/bag_files/plane"/>
   	<param name="save_to_file" type="bool" value="false"/>
   	<param name="plane_constraint" type="int" value="0"/>
+  	<param name="passthrough_max_z" type="double" value="3.0"/>
   </node>    
                
 </launch>

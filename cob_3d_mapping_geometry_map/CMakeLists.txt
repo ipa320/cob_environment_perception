@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
-# Set the build type. Options are:
-# Coverage : w/ debug symbols, w/o optimization, w/ code-coverage
-# Debug : w/ debug symbols, w/o optimization
-# Release : w/o debug symbols, w/ optimization
-# RelWithDebInfo : w/ debug symbols, w/ optimization
-# MinSizeRel : w/o debug symbols, w/ optimization, stripped binaries
+# Set the build type.  Options are:
+#  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
+#  Debug          : w/ debug symbols, w/o optimization
+#  Release        : w/o debug symbols, w/ optimization
+#  RelWithDebInfo : w/ debug symbols, w/ optimization
+#  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
 #set(ROS_BUILD_TYPE RelWithDebInfo)
 
 rosbuild_init()
@@ -29,9 +29,11 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
 #rosbuild_gensrv()
 
 rosbuild_add_library(gpc common/src/gpc.c)
-rosbuild_add_library(geometry_map_lib common/src/geometry_map.cpp)
-rosbuild_add_library(geometry_map_vis_lib common/src/vis/geometry_map_visualisation.cpp)
-rosbuild_add_library(test_planes common/test/TestPlanes.cpp)
+rosbuild_add_library(geometry_map common/src/feature_map.cpp)
+rosbuild_add_executable(feature_map common/src/feature_map.cpp)
+rosbuild_add_executable(feature_map_node ros/src/feature_map_node.cpp)
+rosbuild_add_executable(eval_feature_map common/test/eval_mapping.cpp)
+rosbuild_add_executable(get_map_client ros/src/get_map_client.cpp)
 
 #rosbuild_add_executable(geometry_map_visualisation common/src/vis/geometry_map_visualisation.cpp)
 rosbuild_add_executable(geometry_map common/src/geometry_map.cpp)
@@ -39,7 +41,7 @@ rosbuild_add_executable(dynamic_geometry_map_node ros/src/dynamic_geometry_map_n
 rosbuild_add_executable(geometry_map_node ros/src/geometry_map_node.cpp)
 rosbuild_add_executable(eval_feature_map common/test/eval_mapping.cpp)
 rosbuild_add_executable(geometry_test_map common/test/geometry_map_test.cpp)
-
+rosbuild_add_executable(get_map_client ros/src/get_map_client.cpp)
 
 target_link_libraries(dynamic_geometry_map_node gpc geometry_map_lib geometry_map_vis_lib)
 target_link_libraries(geometry_map_node gpc geometry_map_lib geometry_map_vis_lib)

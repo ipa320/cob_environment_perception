@@ -9,15 +9,15 @@
  *
  * Project name: care-o-bot
  * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_tools
+ * ROS package name: cob_3d_mapping_features
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
- * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
+ * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 11/2011
+ * Date of creation: 10/2011
  * ToDo:
  *
  *
@@ -52,49 +52,62 @@
  *
  ****************************************************************/
 
-#ifndef COB_3D_MAPPING_TOOLS_IO_H_
-#define COB_3D_MAPPING_TOOLS_IO_H_
+#ifndef __FAST_EDGE_ESTIMATION_3D_H__
+#define __FAST_EDGE_ESTIMATION_3D_H__
 
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
+#include "cob_3d_mapping_features/organized_features.h"
 
-#include <float.h>
-
-namespace cob_3d_mapping_tools
+namespace cob_3d_mapping_features
 {
-  class PPMReader
+  template <typename PointInT, typename PointNT, typename PointOutT>
+    class FastEdgeEstimation3D : public OrganizedFeatures<PointInT, PointOutT>
   {
-  public:
-    PPMReader()
-    {
-    }
+    public:
 
-    int mapRGB (const std::string &file_name, pcl::PointCloud<pcl::PointXYZRGBA> &cloud);
+    using OrganizedFeatures<PointInT, PointOutT>::pixel_search_radius_;
+    using OrganizedFeatures<PointInT, PointOutT>::mask_;
+    using OrganizedFeatures<PointInT, PointOutT>::input_;
+    using OrganizedFeatures<PointInT, PointOutT>::indices_;
+    using OrganizedFeatures<PointInT, PointOutT>::surface_;
+    using OrganizedFeatures<PointInT, PointOutT>::feature_name_;
+    using OrganizedFeatures<PointInT, PointOutT>::distance_threshold_modifier_;
 
+    typedef pcl::PointCloud<PointInT> PointCloudIn;
+    typedef typename PointCloudIn::Ptr PointCloudInPtr;
+    typedef typename PointCloudIn::ConstPtr PointCloudInConstPtr;
+
+    typedef pcl::PointCloud<PointNT> PointCloudN;
+    typedef typename PointCloudN::Ptr PointCloudNPtr;
+    typedef typename PointCloudN::ConstPtr PointCloudNConstPtr;
+
+    typedef pcl::PointCloud<PointOutT> PointCloudOut;
+
+    public:
+      /** \brief Empty constructor. */
+    FastEdgeEstimation3D ()
+      {
+	feature_name_ = "FastEdgeEstimation3D";
+	distance_threshold_modifier_ = 0.0;
+      };
+
+      inline void 
+	setInputNormals(PointCloudNConstPtr cloud) { normals_ = cloud; }
+
+      void
+	isEdgePoint (
+	  const pcl::PointCloud<PointInT> &cloud, 
+	  const PointInT &q_point,
+	  const std::vector<int> &indices,
+	  const Eigen::Vector3f &n,
+	  float &strength);
+
+    protected:
+
+      void 
+	computeFeature (PointCloudOut &output);
+
+      PointCloudNConstPtr normals_;
   };
-  
-  class PPMWriter
-  {
-  public:
-    PPMWriter()
-      : fixed_max_(false), fixed_min_(false), max_z_(FLT_MIN), min_z_(FLT_MAX)
-    {
-    }
-
-    int writeRGB (const std::string &file_name, const pcl::PointCloud<pcl::PointXYZRGBA> &cloud);
-
-    int writeDepth (const std::string &file_name, const pcl::PointCloud<pcl::PointXYZRGBA> &cloud);
-
-    void setMaxZ (const float &max);
-    void setMinZ (const float &min);
-
-    bool fixed_max_;
-    bool fixed_min_;
-    float max_z_;
-    float min_z_;
-  };
-
-  uint32_t getGradientColor(double position, uint8_t rgb[]);
 }
 
-#endif // #ifndef COB_3D_MAPPING_TOOLS_IO_H_
+#endif  //#ifndef __FAST_EDGE_ESTIMATION_3D_H__

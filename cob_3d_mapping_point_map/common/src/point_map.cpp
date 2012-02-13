@@ -62,7 +62,9 @@ bool PointMap::compute(const pcl::PointCloud<Point>::Ptr& pc_in, const pcl::Poin
       first_ = false;
     }
     else
+    {
       map_ += pc_aligned;
+    }
     //map_ += *pc_in;
     //doICP(pc);
   }
