@@ -230,7 +230,7 @@ public:
     // Downsample input
     pcl::VoxelGrid<Point> voxel;
     voxel.setInputCloud(pc_in);
-    voxel.setLeafSize(0.03,0.03,0.03);
+    voxel.setLeafSize(0.04,0.04,0.04);
     voxel.setFilterFieldName("z");
     voxel.setFilterLimits(passthrough_min_z_, passthrough_max_z_);
     pcl::PointCloud<Point>::Ptr pc_vox = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>);

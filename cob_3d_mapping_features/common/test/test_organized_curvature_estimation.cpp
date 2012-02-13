@@ -172,6 +172,7 @@ int main(int argc, char** argv)
     cout << i << endl;
     t.restart();
     boost::shared_ptr<PointIndices> ind_ptr = boost::make_shared<PointIndices>(indices[i]);
+    std::cout << ind_ptr->indices[0] << std::endl;
     oce.setIndices(ind_ptr);
     oce.setOutputLabels(l);
     oce.compute(*pc);

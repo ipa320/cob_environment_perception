@@ -74,19 +74,19 @@ cob_3d_mapping_features::OrganizedFeatures<PointInT,PointOutT>::searchForNeighbo
   if (idx_y >= pixel_search_radius_ && idx_y < (int)cloud.height - pixel_search_radius_ &&
       idx_x >= pixel_search_radius_ && idx_x < (int)cloud.width - pixel_search_radius_)
   {
-    for (it_c = mask_.begin(); it_c != mask_.end(); it_c++) // iterate circles 
+    for (it_c = mask_.begin(); it_c != mask_.end(); it_c++) // iterate circles
     {
       for (it_ci = (*it_c).begin(); it_ci != (*it_c).end(); it_ci++) // iterate current circle
       {
 	idx = index + *it_ci;
-	if (pcl_isnan(cloud.points[idx].z) ) continue;	
+	if (pcl_isnan(cloud.points[idx].z) ) continue;
 	indices.push_back(idx);
       }
     }
   }
   else
   {
-    for (it_c = mask_.begin(); it_c != mask_.end(); it_c++) // iterate circles 
+    for (it_c = mask_.begin(); it_c != mask_.end(); it_c++) // iterate circles
     {
       for (it_ci = (*it_c).begin(); it_ci != (*it_c).end(); it_ci++) // iterate current circle
       {
@@ -97,7 +97,7 @@ cob_3d_mapping_features::OrganizedFeatures<PointInT,PointOutT>::searchForNeighbo
 	if (pcl_isnan(cloud.points[idx].z)) continue;
 	indices.push_back(idx);
       }
-    }    
+    }
   }
   return 1;
 }
@@ -124,22 +124,22 @@ cob_3d_mapping_features::OrganizedFeatures<PointInT,PointOutT>::searchForNeighbo
   if (idx_y >= pixel_search_radius_ && idx_y < (int)cloud.height - pixel_search_radius_ &&
       idx_x >= pixel_search_radius_ && idx_x < (int)cloud.width - pixel_search_radius_)
   {
-    for (it_c = mask_.begin(); it_c != mask_.end(); it_c++) // iterate circles 
+    for (it_c = mask_.begin(); it_c != mask_.end(); it_c++) // iterate circles
     {
       for (it_ci = (*it_c).begin(); it_ci != (*it_c).end(); it_ci++) // iterate current circle
       {
 	idx = index + *it_ci;
 	if ( pcl_isnan(cloud.points[idx].z) ) continue;
-	float d = fabs(cloud.points[idx].z - p.z); 
+	float d = fabs(cloud.points[idx].z - p.z);
 	if ( d > distance_threshold ) continue;
-	
+
 	indices.push_back(idx);
       }
     }
   }
   else
   {
-    for (it_c = mask_.begin(); it_c != mask_.end(); it_c++) // iterate circles 
+    for (it_c = mask_.begin(); it_c != mask_.end(); it_c++) // iterate circles
     {
       for (it_ci = (*it_c).begin(); it_ci != (*it_c).end(); it_ci++) // iterate current circle
       {
@@ -148,16 +148,16 @@ cob_3d_mapping_features::OrganizedFeatures<PointInT,PointOutT>::searchForNeighbo
 	int v = idx * inv_width_;
 	if (v < 0 || v >= (int)cloud.height) continue;
 	if ( pcl_isnan(cloud.points[idx].z) ) continue;
-	float d = fabs(cloud.points[idx].z - p.z); 
+	float d = fabs(cloud.points[idx].z - p.z);
 	if ( d > distance_threshold ) continue;
 
 	indices.push_back(idx);
       }
-    }    
+    }
   }
   if (indices.size() > 1)
     return 1;
-  else 
+  else
     return -1;
 }
 
@@ -197,7 +197,7 @@ cob_3d_mapping_features::OrganizedFeatures<PointInT,PointOutT>::initCompute()
 
   // Do a fast check to see if the search parameters are well defined
   if (pixel_search_radius_ == 0 || pixel_steps_ == 0 || circle_steps_ == 0)
-  {   
+  {
     PCL_ERROR ("[pcl::%s::compute] Radius not defined! ", getClassName ().c_str ());
     // Cleanup
     deinitCompute ();
@@ -213,7 +213,7 @@ cob_3d_mapping_features::OrganizedFeatures<PointInT,PointOutT>::initCompute()
     {
       int circle_size = pixel_search_radius_ - (circle*circle_steps_);
       int dy = circle_size * surface_->width;
-	
+
       std::vector<int> new_circle;
       for (int x = circle_size; x >= -circle_size; x -= pixel_steps_)
       {

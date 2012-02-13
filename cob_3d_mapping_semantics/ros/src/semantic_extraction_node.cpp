@@ -169,6 +169,7 @@ public:
 
     cob_3d_mapping_msgs::ShapeArray sa_msg;
     sa_msg.header.frame_id = "/map";
+    int table_ctr = 0;
     //sem_exn_.PolygonMap.resize (0);
     for (unsigned int i = 0; i < sa_ptr->shapes.size (); i++)
     {
@@ -186,6 +187,7 @@ public:
       //pc_pub_.publish (*pc_ptr);
       if (isTableObject (poly_ptr) == true)
       {
+        table_ctr++;
         //ros::Duration (5).sleep ();
         cob_3d_mapping_msgs::Shape s;
         convertPolygonToShape (*poly_ptr, s);
@@ -244,6 +246,7 @@ public:
        */
     }//end for
 
+    ROS_INFO("Found %d tables", table_ctr);
     sa_pub_.publish (sa_msg);
     //publishMapMarker ();
   }
@@ -264,7 +267,7 @@ public:
     if (sem_exn_.isHorizontal (poly_ptr))
     {
       flag_horizontal = true;
-      ROS_INFO(" Plane is h0rizontal \n");
+      ROS_INFO(" Plane is horizontal \n");
       //publishPolygonMarker (*poly_ptr);
 
       sem_exn_.isHeightOk (poly_ptr);
@@ -308,12 +311,14 @@ public:
 
     if (getMapService ())
     {
+      int table_ctr = 0;
       sem_exn_.setNormBounds (tilt_angle_);
       for (unsigned int i = 0; i < sem_exn_.PolygonMap.size (); i++)
       {
         //ROS_INFO("\n\tisTableObject....  : ");
         if (isTableObject (sem_exn_.PolygonMap[i]))
         {
+          table_ctr++;
           //ros::Duration (10).sleep ();
           cob_3d_mapping_msgs::Shape s;
           convertPolygonToShape (*sem_exn_.PolygonMap[i], s);
@@ -370,6 +375,7 @@ public:
 
          */
       }
+      ROS_INFO("Found %d tables", table_ctr);
     }
     return true;
   }
@@ -703,7 +709,7 @@ public:
   void
   publishShapeMarker (const cob_3d_mapping_msgs::Shape& s)
   {
-    int ctr = 0;
+    static int ctr = 0;
     //TODO: set unique ID for each new marker, remove old markers
 
 
@@ -715,6 +721,7 @@ public:
     marker.ns = "shape_marker";
     marker.header.stamp = ros::Time::now ();
 
+    marker.id = ctr;
     marker.scale.x = 0.05;
     marker.scale.y = 0.05;
     marker.scale.z = 0;
@@ -724,8 +731,6 @@ public:
     marker.color.a = 1.0;
     for (unsigned int i = 0; i < s.points.size (); i++)
     {
-      marker.id = ctr;
-      ctr++;
 
       // sensor_msgs::PointCloud2 pc2;
       pcl::PointCloud<pcl::PointXYZ> cloud;
@@ -747,9 +752,9 @@ public:
        marker.points[poly.poly_points[i].size ()].z = poly.poly_points[i][0] (2);
        //std::cout<<" ctr : "<<ctr<<std::endl;
        */
-
-      s_marker_pub_.publish (marker);
     }
+    s_marker_pub_.publish (marker);
+    ctr++;
 
   }
 

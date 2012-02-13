@@ -169,7 +169,7 @@ class Map360(smach.State):
 			return 'failed'
 		i = 0.2
 		ctr = 0
-		while i <= 6.2:
+		while i <= 8:#6.2:
 			scan_pose[2]=i
 			sss.move("base",scan_pose)
 			if operator.mod(ctr,2) == 0:

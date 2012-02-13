@@ -110,7 +110,7 @@ cob_3d_mapping_features::FastEdgeEstimation3D<PointInT, PointNT, PointOutT>::com
       normal[1] = normals_->points[*it].normal_y;
       normal[2] = normals_->points[*it].normal_z;
       // Estimate whether the point is lying on a boundary surface or not
-      isEdgePoint (*surface_, input_->points[*it], nn_indices, 
+      isEdgePoint (*surface_, input_->points[*it], nn_indices,
 		   normal, output.points[*it].strength);
     }
   }

@@ -94,6 +94,7 @@
 
 // external includes
 #include <boost/timer.hpp>
+#include "cob_3d_mapping_common/stop_watch.h"
 
 // internal includes
 #include "cob_3d_mapping_geometry_map/feature_map.h"
@@ -167,10 +168,19 @@ public:
   void
   polygonCallback(const cob_3d_mapping_msgs::PolygonArray::ConstPtr p)
   {
+    static int ctr=0;
+    static double time = 0;
+    PrecisionStopWatch t;
     FeatureMap::MapEntryPtr map_entry_ptr = FeatureMap::MapEntryPtr(new FeatureMap::MapEntry());
     convertFromROSMsg(*p, *map_entry_ptr);
     //dumpPolygonToFile(*map_entry_ptr);
+    t.precisionStart();
     feature_map_.addMapEntry(map_entry_ptr);
+    double step_time =t.precisionStop();
+    ROS_INFO("Adding feature took %f s", step_time);
+    time+=step_time;
+    ROS_INFO("[feature map] Accumulated time at step %d: %f s", ctr, time);
+    ctr++;
     publishMapMarker();
     publishMap();
     ctr_++;

@@ -27,6 +27,8 @@
 
 bool PointMap::compute(const pcl::PointCloud<Point>::Ptr& pc_in, const pcl::PointCloud<Point>::Ptr& pc) {
 
+  static int ctr=0;
+  static double time=0;
   if(first_ && !use_reference_map_)
   {
     pcl::copyPointCloud(*pc, map_);
@@ -73,7 +75,10 @@ bool PointMap::compute(const pcl::PointCloud<Point>::Ptr& pc_in, const pcl::Poin
 
   compution_time_=t.elapsed();
 
-  ROS_INFO("[point_map] ICP took %f s", t.elapsed());
+  time += compution_time_;
+  ROS_INFO("[point_map] ICP took %f s", compution_time_);
+  ROS_INFO("[point_map] Accumulated time at step %d: %f s", ctr,time);
+  ctr++;
 
   return ret;
 }
