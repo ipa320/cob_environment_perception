@@ -64,6 +64,12 @@
 // ROS includes
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/filters/extract_indices.h>
+#include <pcl/filters/project_inliers.h>
+#include <pcl/surface/concave_hull.h>
+#include <pcl/features/normal_3d_omp.h>
+#include <pcl/segmentation/extract_clusters.h>
 #include <Eigen/StdVector>
 
 
@@ -126,6 +132,13 @@ protected:
   std::string file_path_;
   bool save_to_file_;
   PlaneConstraint plane_constraint_;
+
+  pcl::EuclideanClusterExtraction<Point> cluster_;
+  pcl::SACSegmentationFromNormals<Point, pcl::Normal> seg_;
+  pcl::ExtractIndices<Point> extract_;
+  pcl::NormalEstimation<Point,pcl::Normal> normal_estimator_;
+  pcl::ProjectInliers<Point> proj_;
+  pcl::ConcaveHull<Point> chull_;
 
 };
 
