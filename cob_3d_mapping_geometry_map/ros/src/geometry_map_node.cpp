@@ -94,6 +94,7 @@
 
 // external includes
 #include <boost/timer.hpp>
+#include "cob_3d_mapping_common/stop_watch.h"
 
 // internal includes
 #include "cob_3d_mapping_geometry_map/geometry_map.h"
@@ -168,10 +169,19 @@ public:
   void
   polygonCallback(const cob_3d_mapping_msgs::PolygonArray::ConstPtr p)
   {
+    static int ctr=0;
+    static double time = 0;
+    PrecisionStopWatch t;
 	MapEntryPtr map_entry_ptr = MapEntryPtr(new MapEntry());
     convertFromROSMsg(*p, *map_entry_ptr);
     //dumpPolygonToFile(*map_entry_ptr);
+    t.precisionStart();
     geometry_map_.addMapEntry(map_entry_ptr);
+    double step_time =t.precisionStop();
+    ROS_INFO("Adding feature took %f s", step_time);
+    time+=step_time;
+    ROS_INFO("[feature map] Accumulated time at step %d: %f s", ctr, time);
+    ctr++;
     publishMapMarker();
     publishMap();
     ctr_++;
@@ -213,12 +223,14 @@ public:
          cob_3d_mapping_msgs::GetGeometricMap::Response &res)
   {
     boost::shared_ptr<std::vector<MapEntryPtr> > map = geometry_map_.getMap();
+    res.map.header.stamp = ros::Time::now();
+    res.map.header.frame_id = "/map";
     for(unsigned int i=0; i<map->size(); i++)
     {
       MapEntry& sm = *(map->at(i));
       cob_3d_mapping_msgs::Shape s;
       convertToROSMsg(sm,s);
-      res.shapes.push_back(s);
+      res.map.shapes.push_back(s);
     }
     return true;
   }
