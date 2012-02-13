@@ -193,7 +193,7 @@ public:
 
     get_plane_ = n_.advertiseService("get_plane", &PlaneExtractionNodelet::srvCallback, this);
 
-    n_.param("plane_extraction/file_path" ,file_path_ ,std::string("/home/goa/tmp/"));
+    n_.param("plane_extraction/file_path" ,file_path_ ,std::string("/home/goa-hh/"));
     n_.param("plane_extraction/save_to_file" ,save_to_file_ ,false);
     n_.param("plane_extraction/plane_constraint", plane_constraint_ ,0);
     n_.param("plane_extraction/mode_action", mode_action_ ,false);
