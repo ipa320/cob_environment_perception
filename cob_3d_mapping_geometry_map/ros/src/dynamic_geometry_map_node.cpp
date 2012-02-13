@@ -156,7 +156,8 @@ geometryMapCallback(const cob_3d_mapping_msgs::PolygonArray::ConstPtr p)
 	for (int i=0; i<8;i++)
 	{
 		sum +=intersec[i];
-		intersections.push_back(i);
+		if(intersec[i]==1){
+		intersections.push_back(i);}
 	}
 
 	MapEntry fovplan;
@@ -180,6 +181,41 @@ geometryMapCallback(const cob_3d_mapping_msgs::PolygonArray::ConstPtr p)
 	default: std::cout << "error wrong number of intersections" << std::endl;
 
 	}
+
+//	gpc_polygon gpc_fov_entry;
+//	gpc_polygon gpc_result;
+//	gpc_polygon gpc_p_map;
+//
+//	getGpcStructureUsingMap(fovplan, p_map.transformation_from_world_to_plane, &gpc_fov_entry);
+//	getGpcStructureUsingMap(p_map, p_map.transformation_from_world_to_plane, &gpc_p_map);
+//
+//
+//    gpc_polygon_clip(GPC_INT, &gpc_p_merge, &gpc_p_map, &gpc_result);
+//    if(gpc_result.num_contours == 0)
+//	  {
+//		continue;
+//	  }
+//
+//    gpc_polygon_clip(GPC_UNION, &gpc_fov_entry, &gpc_p_map, &gpc_result);
+//
+//    MapEntry& p_fov; //deklarieren von normale etc
+//
+//    p_fov.polygon_world.resize(gpc_result.num_contours);
+//
+//    	for(int j=0; j<gpc_result.num_contours; j++)
+//    	{
+//    		p_fov.polygon_world[j].resize(gpc_result.contour[j].num_vertices);
+//
+//    	  for(int k=0; k<gpc_result.contour[j].num_vertices; k++)
+//    	  {
+//    		//TODO: set z to something else?
+//    		Eigen::Vector3f point(gpc_result.contour[j].vertex[k].x, gpc_result.contour[j].vertex[k].y, 0);
+//    		p_fov.polygon_world[j][k] = p_fov.transform_from_world_to_plane.inverse()*point;
+//    		//TODO: update normal, d, transformation...?
+//    	  }
+//    	}
+//        fov_map_.push_back(p_fov);
+
  }
 
 void
@@ -308,6 +344,8 @@ ros::NodeHandle n_;
 protected:
   ros::Subscriber polygon_sub_;
   ros::ServiceClient get_fov_srv_client_;
+  std::vector<MapEntryPtr> fov_map_;
+
 
   GeometryMap geometry_map_;
 
