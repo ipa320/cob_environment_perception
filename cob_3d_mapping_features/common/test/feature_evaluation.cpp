@@ -1,3 +1,57 @@
+/****************************************************************
+ *
+ * Copyright (c) 2011
+ *
+ * Fraunhofer Institute for Manufacturing Engineering
+ * and Automation (IPA)
+ *
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *
+ * Project name: care-o-bot
+ * ROS stack name: cob_environment_perception_intern
+ * ROS package name: cob_3d_mapping_features
+ * Description:
+ *
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *
+ * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
+ * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ *
+ * Date of creation: 11/2011
+ * ToDo:
+ *
+ *
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the Fraunhofer Institute for Manufacturing
+ *       Engineering and Automation (IPA) nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License LGPL as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License LGPL for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License LGPL along with this program.
+ * If not, see <http://www.gnu.org/licenses/>.
+ *
+ ****************************************************************/
+
 /*
  * accuracy_evaluator.cpp
  *      Evaluation framework for RSD, PC and FPFH:
@@ -260,49 +314,53 @@ void readOptions(int argc, char* argv[])
     ("help", "produce help message")
     ("config,c", value<string>(&config_file)->default_value("config/accuracy_evaluator.cfg"),
      "name of a file for configuration.")
-    ("in,i", value<string>(&file_in_), "")
+    ("in,i", value<string>(&file_in_), "labeled input pcd file")
     ("out,o", value<string>(&folder_out_), "output folder, set to \"\" to disable output")
     ("svm_model,s", value<string>(&fpfh_svm_model_), "set svm to use svm")
     ("knn_k,k", value<int>(&fpfh_knn_k_)->default_value(1), "set k for knn")
     ("knn_values,n", value<string>(&fpfh_knn_values_), "set knn_values and knn_labels to use KNN")
     ("knn_labels,N", value<string>(&fpfh_knn_labels_), "set knn_values and knn_labels to use KNN")
-    ("log,l", value<string>(&log_prefix_), "")
+    ("log,l", value<string>(&log_prefix_), "define a logfile for time measurement")
     ("camera,C", value<string>(&camera_pos_), "specify a file for initial camera position");
   cfg.add_options()
-    ("vis.enable", value<bool>(&vis_enable_), "")
-    ("pass.depth", value<float>(&pass_depth_), "")
+    ("vis.enable", value<bool>(&vis_enable_), "enable visualization")
+    ("pass.depth", value<float>(&pass_depth_), "set depth of passthrough filter")
 
-    ("rsd.enabled", value<bool>(&rsd_enable_), "")
-    ("rsd.enable_mls", value<bool>(&rsd_mls_enable_), "enable surface smoothing")
-    ("rsd.enable_vox", value<bool>(&rsd_vox_enable_), "")
-    ("rsd.voxel_size", value<float>(&rsd_vox_), "")
-    ("rsd.normal_radius", value<float>(&rsd_normal_r_), "")
-    ("rsd.limit_rmax", value<float>(&rsd_r_max_), "")
-    ("rsd.radius", value<float>(&rsd_r_), "rsd search radius")
+    ("rsd.enabled", value<bool>(&rsd_enable_), "enable rsd estimation")
+    ("rsd.enable_mls", value<bool>(&rsd_mls_enable_), "enable surface smoothing for rsd")
+    ("rsd.enable_vox", value<bool>(&rsd_vox_enable_), "enable voxelgrid filtering for rsd")
+    ("rsd.voxel_size", value<float>(&rsd_vox_), "set a voxelgrid size for rsd")
+    ("rsd.normal_radius", value<float>(&rsd_normal_r_), "set the normal estimation radius for rsd")
+    ("rsd.limit_rmax", value<float>(&rsd_r_max_), "set the radius limit for rsd feature values")
+    ("rsd.radius", value<float>(&rsd_r_), "feature estimation radius for rsd")
     ("rsd.rmin_upper", value<float>(&rsd_r_min_th_upper_), "everything above is plane")
     ("rsd.rmin_cylinder_lower", value<float>(&rsd_r_min_th_cylinder_lower_), 
-     "everything below is edge")
+     "everything below is edge, should be the same value as rsd.rmin_sphere_lower")
     ("rsd.rmin_sphere_lower", value<float>(&rsd_r_min_th_sphere_lower_), 
-     "everything below is edge")
-    ("rsd.rmax_rmin_ratio", value<float>(&rsd_max_min_ratio_), "")
+     "everything below is edge, should be the same value as rsd.rmin_cylinder_lower")
+    ("rsd.rmax_rmin_ratio", value<float>(&rsd_max_min_ratio_), 
+     "ratio for rsd to differentiate between cylinder and sphere")
 
-    ("pc.enabled", value<bool>(&pc_enable_), "")
-    ("pc.enable_mls", value<bool>(&pc_mls_enable_), "enable surface smoothing")
-    ("pc.enable_vox", value<bool>(&pc_vox_enable_), "")
-    ("pc.voxel_size", value<float>(&pc_vox_), "")
-    ("pc.normal_radius", value<float>(&pc_normal_r_), "")
-    ("pc.radius", value<float>(&pc_r_), "pc search radius")
-    ("pc.cmax_cylinder_upper", value<float>(&pc_c_max_th_cylinder_upper_), "")
-    ("pc.cmax_sphere_upper", value<float>(&pc_c_max_th_sphere_upper_), "")
-    ("pc.cmax_lower", value<float>(&pc_c_max_th_lower_), "everything below is edge")
-    ("pc.cmax_cmin_ratio", value<float>(&pc_max_min_ratio_), "")
+    ("pc.enabled", value<bool>(&pc_enable_), "enable principal curvature estimation")
+    ("pc.enable_mls", value<bool>(&pc_mls_enable_), "enable surface smoothing for pc")
+    ("pc.enable_vox", value<bool>(&pc_vox_enable_), "enable voxelgrid filtering for pc")
+    ("pc.voxel_size", value<float>(&pc_vox_), "set a voxelgrid size for pc")
+    ("pc.normal_radius", value<float>(&pc_normal_r_), "set the normal estimation radius for pc")
+    ("pc.radius", value<float>(&pc_r_), "feature estimation radius for pc")
+    ("pc.cmax_cylinder_upper", value<float>(&pc_c_max_th_cylinder_upper_), 
+     "everything above is edge, should be the same value as pc.cmax_sphere_upper")
+    ("pc.cmax_sphere_upper", value<float>(&pc_c_max_th_sphere_upper_),
+     "everything above is edge, should be the same value as pc.cmax_cylinder_upper")
+    ("pc.cmax_lower", value<float>(&pc_c_max_th_lower_), "everything below is plane")
+    ("pc.cmax_cmin_ratio", value<float>(&pc_max_min_ratio_), 
+     "ratio for pc to differentiate between cylinder and sphere")
 
-    ("fpfh.enabled", value<bool>(&fpfh_enable_), "")
-    ("fpfh.enable_mls", value<bool>(&fpfh_mls_enable_), "enable surface smoothing")
-    ("fpfh.enable_vox", value<bool>(&fpfh_vox_enable_), "")
-    ("fpfh.voxel_size", value<float>(&fpfh_vox_), "")
-    ("fpfh.normal_radius", value<float>(&fpfh_normal_r_), "")
-    ("fpfh.radius", value<float>(&fpfh_r_), "fpfh search radius")
+    ("fpfh.enabled", value<bool>(&fpfh_enable_), "enable fpfh estimation")
+    ("fpfh.enable_mls", value<bool>(&fpfh_mls_enable_), "enable surface smoothing for fpfh")
+    ("fpfh.enable_vox", value<bool>(&fpfh_vox_enable_), "enable voxelgrid filtering for fpfh")
+    ("fpfh.voxel_size", value<float>(&fpfh_vox_), "set a voxelgrid size for fpfh")
+    ("fpfh.normal_radius", value<float>(&fpfh_normal_r_), "set the normal estimation radius for fpfh")
+    ("fpfh.radius", value<float>(&fpfh_r_), "feature estimation radius for fpfh")
     ;
 
   positional_options_description p_opt;
@@ -331,15 +389,24 @@ void readOptions(int argc, char* argv[])
   }
 }
 
+/*! @brief runs the whole processing pipeline for FPFH features
+ *
+ * @note At the moment the evaluation results will be printed to console.
+ *
+ * @param[in] in the labeled input point cloud
+ * @param[out] ref_out the reference point cloud after the preprocessing steps
+ * @param[out] fpfh_out the labeled point cloud after the classifing process
+ */
 void processFPFH(const PointCloud<PointXYZRGBA>::Ptr in,
 		 PointCloud<PointXYZRGBA>::Ptr ref_out,
 		 PointCloud<PointXYZRGBA>::Ptr fpfh_out)
 {
   PointCloud<Normal>::Ptr n(new PointCloud<Normal>());
   PointCloud<FPFHSignature33>::Ptr fpfh(new PointCloud<FPFHSignature33>());
-  EvalResults stats((char)RES_FPFH);
+  EvalResults stats((char)RES_FPFH); // create instance to hold FPFH results
   boost::timer t;
 
+  // Passthrough filtering (needs to be done to remove NaNs)
   cout << "FPFH: Pass (with " << in->points.size() << " points)" << endl;
   PassThrough<PointXYZRGBA> pass;
   pass.setInputCloud(in);
@@ -347,6 +414,7 @@ void processFPFH(const PointCloud<PointXYZRGBA>::Ptr in,
   pass.setFilterLimits(0.0f, pass_depth_);
   pass.filter(*ref_out);
 
+  // Optional voxelgrid filtering
   if (fpfh_vox_enable_)
   {
     cout << "FPFH: Voxel (with " << ref_out->points.size() << " points)" << endl;
@@ -359,10 +427,11 @@ void processFPFH(const PointCloud<PointXYZRGBA>::Ptr in,
   KdTree<PointXYZRGBA>::Ptr tree(new KdTreeFLANN<PointXYZRGBA>());
   tree->setInputCloud(ref_out);
 
+  // Optional surface smoothing
   if(fpfh_mls_enable_)
   {
     cout << "FPFH: MLS (with " << ref_out->points.size() << " points)" << endl;
-    t.restart();
+    t.restart(); // restart timer
     MovingLeastSquares<PointXYZRGBA, Normal> mls;
     mls.setInputCloud(ref_out);
     mls.setOutputNormals(n);
@@ -378,39 +447,41 @@ void processFPFH(const PointCloud<PointXYZRGBA>::Ptr in,
 				 n->points[i].normal[1],
 				 n->points[i].normal[2]);
     }
-    stats.t_normal_ = t.elapsed();
+    stats.t_normal_ = t.elapsed(); // save timer
   }
   else
   {
     cout << "FPFH: Normals (with " << ref_out->points.size() << " points)" << endl;
-    t.restart();
+    t.restart(); // restart timer
     NormalEstimation<PointXYZRGBA, Normal> norm;
     norm.setInputCloud(ref_out);
     norm.setSearchMethod(tree);
     norm.setRadiusSearch(fpfh_normal_r_);
     norm.compute(*n);
-    stats.t_normal_ = t.elapsed();
+    stats.t_normal_ = t.elapsed(); // save timer
   }
 
+  // FPFH estimation
   tree.reset(new KdTreeFLANN<PointXYZRGBA>());
   tree->setInputCloud(ref_out);
   cout << "FPFH: estimation (with " << ref_out->points.size() << " points)" << endl;
-  t.restart();
+  t.restart(); // restart timer
   FPFHEstimation<PointXYZRGBA, Normal, FPFHSignature33> fpfhE;
   fpfhE.setInputCloud(ref_out);
   fpfhE.setInputNormals(n);
   fpfhE.setSearchMethod(tree);
   fpfhE.setRadiusSearch(fpfh_r_);
   fpfhE.compute(*fpfh);
-  stats.t_feature_ = t.elapsed();
+  stats.t_feature_ = t.elapsed(); // save timer
   cout << "FPFH: classification " << endl;
   fpfh_out->width = ref_out->width;
   fpfh_out->height = ref_out->height;
   fpfh_out->points.resize(fpfh_out->width * fpfh_out->height);
 
+  // use KNN classifier if specified
   if (fpfh_knn_values_ != "" && fpfh_knn_labels_ != "")
   {
-    t.restart();
+    t.restart(); // restart timer
     cob_3d_mapping_features::KNNClassifier<FPFHSignature33> knn;
     knn.setKNeighbors(fpfh_knn_k_);
     knn.loadTrainingData(fpfh_knn_values_, fpfh_knn_labels_);
@@ -496,11 +567,12 @@ void processFPFH(const PointCloud<PointXYZRGBA>::Ptr in,
 	break;
       }
     }
-    stats.t_classifier_ = t.elapsed();
+    stats.t_classifier_ = t.elapsed(); // save timer
   }
+  // else use SVM classifier
   else
   {
-    t.restart();
+    t.restart(); // restart timer
     CvSVM svm;
     svm.load(fpfh_svm_model_.c_str());
     cv::Mat fpfh_histo(1, 33, CV_32FC1);
@@ -587,10 +659,11 @@ void processFPFH(const PointCloud<PointXYZRGBA>::Ptr in,
 	break;
       }
     }
-    stats.t_classifier_ = t.elapsed();
+    stats.t_classifier_ = t.elapsed(); // save timer
   }
   stats.points_ = fpfh_out->size();
 
+  // print results to console
   cout << "\n\t+-------------------------------------" << endl;
   cout << "[FPFH]--| " << stats.getLabel() << endl;
   cout << "\t+-------------------------------------" << endl;
@@ -606,15 +679,24 @@ void processFPFH(const PointCloud<PointXYZRGBA>::Ptr in,
     stats.writeTimerLog(log_prefix_ + "fpfh_timer.log");
 }
 
+/*! @brief runs the whole processing pipeline for PC features
+ *
+ * @note At the moment the evaluation results will be printed to console.
+ *
+ * @param[in] in the labeled input point cloud
+ * @param[out] ref_out the reference point cloud after the preprocessing steps
+ * @param[out] pc_out the labeled point cloud after the classifing process
+ */
 void processPC(const PointCloud<PointXYZRGBA>::Ptr in,
 	       PointCloud<PointXYZRGBA>::Ptr ref_out,
 	       PointCloud<PointXYZRGBA>::Ptr pc_out)
 {
   PointCloud<Normal>::Ptr n(new PointCloud<Normal>());
   PointCloud<PrincipalCurvatures>::Ptr pc(new PointCloud<PrincipalCurvatures>());
-  EvalResults stats((char)RES_PC);
+  EvalResults stats((char)RES_PC); // create an instance for PC results
   boost::timer t;
   
+  // passthrough filtering (needed to remove NaNs)
   cout << "PC: Pass (with " << in->points.size() << " points)" << endl;
   PassThrough<PointXYZRGBA> pass;
   pass.setInputCloud(in);
@@ -622,6 +704,7 @@ void processPC(const PointCloud<PointXYZRGBA>::Ptr in,
   pass.setFilterLimits(0.0f, pass_depth_);
   pass.filter(*ref_out);
 
+  // Optional voxelgrid filtering
   if (pc_vox_enable_)
   {
     cout << "PC: Voxel (with " << ref_out->points.size() << " points)" << endl;
@@ -634,10 +717,11 @@ void processPC(const PointCloud<PointXYZRGBA>::Ptr in,
   KdTree<PointXYZRGBA>::Ptr tree(new KdTreeFLANN<PointXYZRGBA>());
   tree->setInputCloud(ref_out);
 
+  // Optional surface smoothing
   if(pc_mls_enable_)
   {
     cout << "PC: MLS (with " << ref_out->points.size() << " points)" << endl;
-    t.restart();
+    t.restart(); // restart timer
     MovingLeastSquares<PointXYZRGBA, Normal> mls;
     mls.setInputCloud(ref_out);
     mls.setOutputNormals(n);
@@ -653,37 +737,40 @@ void processPC(const PointCloud<PointXYZRGBA>::Ptr in,
 				 n->points[i].normal[1],
 				 n->points[i].normal[2]);
     }
-    stats.t_normal_ = t.elapsed();
+    stats.t_normal_ = t.elapsed(); // save timer
   }
   else
   {
     cout << "PC: Normals (with " << ref_out->points.size() << " points)" << endl;
-    t.restart();
+    t.restart(); //restart timer
     NormalEstimation<PointXYZRGBA, Normal> norm;
     norm.setInputCloud(ref_out);
     norm.setSearchMethod(tree);
     norm.setRadiusSearch(pc_normal_r_);
     norm.compute(*n);
-    stats.t_normal_ = t.elapsed();
+    stats.t_normal_ = t.elapsed(); // save timer
   }
 
+  // estimate PC
   tree.reset(new KdTreeFLANN<PointXYZRGBA>());
   tree->setInputCloud(ref_out);
   cout << "PC: estimation (with " << ref_out->points.size() << " points)" << endl;
-  t.restart();
+  t.restart(); // restart timer
   PrincipalCurvaturesEstimation<PointXYZRGBA, Normal, PrincipalCurvatures> pcE;
   pcE.setInputCloud(ref_out);
   pcE.setInputNormals(n);
   pcE.setSearchMethod(tree);
   pcE.setRadiusSearch(pc_r_);
   pcE.compute(*pc);
-  stats.t_feature_ = t.elapsed();
+  stats.t_feature_ = t.elapsed(); // save timer
 
   cout << "PC: classification " << endl;
   pc_out->width = ref_out->width;
   pc_out->height = ref_out->height;
   pc_out->points.resize(pc_out->width * pc_out->height);
-  t.restart();
+
+  // apply rules to PC results
+  t.restart(); // restart timer
   for (size_t i = 0; i < ref_out->points.size(); i++)
   {
     pc_out->points[i].x = ref_out->points[i].x;
@@ -743,9 +830,10 @@ void processPC(const PointCloud<PointXYZRGBA>::Ptr in,
       break;
     }
   }
-  stats.t_classifier_ = t.elapsed();
+  stats.t_classifier_ = t.elapsed(); // save timer
   stats.points_ = pc_out->size();
 
+  // print results to console
   cout << "\n\t+-------------------------------------" << endl;
   cout<< "[PC]----| " << stats.getLabel() << endl;
   cout << "\t+-------------------------------------" << endl;
@@ -765,15 +853,24 @@ void processPC(const PointCloud<PointXYZRGBA>::Ptr in,
     stats.writeTimerLog(log_prefix_ + "pc_timer.log");
 }
 
+/*! @brief runs the whole processing pipeline for RSD features
+ *
+ * @note At the moment the evaluation results will be printed to console.
+ *
+ * @param[in] in the labeled input point cloud
+ * @param[out] ref_out the reference point cloud after the preprocessing steps
+ * @param[out] rsd_out the labeled point cloud after the classifing process
+ */
 void processRSD(const PointCloud<PointXYZRGBA>::Ptr in, 
 		PointCloud<PointXYZRGBA>::Ptr ref_out,
 		PointCloud<PointXYZRGBA>::Ptr rsd_out)
 {
   PointCloud<Normal>::Ptr n(new PointCloud<Normal>());
   PointCloud<PrincipalRadiiRSD>::Ptr rsd(new PointCloud<PrincipalRadiiRSD>());
-  EvalResults stats((char)RES_RSD);
+  EvalResults stats((char)RES_RSD); // create an instance for RSD results
   boost::timer t;
 
+  // passthrough filtering (needed to remove NaNs)
   cout << "RSD: Pass (with " << in->points.size() << " points)" << endl;
   PassThrough<PointXYZRGBA> pass;
   pass.setInputCloud(in);
@@ -781,6 +878,7 @@ void processRSD(const PointCloud<PointXYZRGBA>::Ptr in,
   pass.setFilterLimits(0.0f, pass_depth_);
   pass.filter(*ref_out);
 
+  // optional voxelgrid filtering
   if (rsd_vox_enable_)
   {
     cout << "RSD: Voxel (with " << ref_out->points.size() << " points)" << endl;
@@ -793,10 +891,11 @@ void processRSD(const PointCloud<PointXYZRGBA>::Ptr in,
   KdTree<PointXYZRGBA>::Ptr tree(new KdTreeFLANN<PointXYZRGBA>());
   tree->setInputCloud(ref_out);
 
+  // optional surface smoothing
   if(rsd_mls_enable_)
   {
     cout << "RSD: MLS (with " << ref_out->points.size() << " points)" << endl;
-    t.restart();
+    t.restart(); // restart timer
     MovingLeastSquares<PointXYZRGBA, Normal> mls;
     mls.setInputCloud(ref_out);
     mls.setOutputNormals(n);
@@ -812,24 +911,25 @@ void processRSD(const PointCloud<PointXYZRGBA>::Ptr in,
 				 n->points[i].normal[1],
 				 n->points[i].normal[2]);
     }
-    stats.t_normal_ = t.elapsed();
+    stats.t_normal_ = t.elapsed(); // save timer
   }
   else
   {
     cout << "RSD: Normals (with " << ref_out->points.size() << " points)" << endl;
-    t.restart();
+    t.restart(); // restart timer
     NormalEstimation<PointXYZRGBA, Normal> norm;
     norm.setInputCloud(ref_out);
     norm.setSearchMethod(tree);
     norm.setRadiusSearch(rsd_normal_r_);
     norm.compute(*n);
-    stats.t_normal_ = t.elapsed();
+    stats.t_normal_ = t.elapsed(); // save timer
   }
 
   tree->setInputCloud(ref_out);
 
+  // RSD estimation
   cout << "RSD: estimation (with " << ref_out->points.size() << " points)" << endl;
-  t.restart();
+  t.restart(); // restart timer
   RSDEstimation<PointXYZRGBA, Normal, PrincipalRadiiRSD> rsdE;
   rsdE.setInputCloud(ref_out);
   rsdE.setInputNormals(n);
@@ -837,14 +937,15 @@ void processRSD(const PointCloud<PointXYZRGBA>::Ptr in,
   rsdE.setPlaneRadius(rsd_r_max_);
   rsdE.setRadiusSearch(rsd_r_);
   rsdE.compute(*rsd);
-  stats.t_feature_ = t.elapsed();
+  stats.t_feature_ = t.elapsed(); // save timer
 
   cout << "RSD: classification " << endl;
   rsd_out->width = ref_out->width;
   rsd_out->height = ref_out->height;
   rsd_out->points.resize(rsd_out->width * rsd_out->height);
 
-  t.restart();
+  // apply RSD rules for classification
+  t.restart(); // restart timer
   for (size_t i = 0; i < ref_out->points.size(); i++)
   {
     rsd_out->points[i].x = ref_out->points[i].x;
@@ -904,9 +1005,10 @@ void processRSD(const PointCloud<PointXYZRGBA>::Ptr in,
       break;
     }
   }
-  stats.t_classifier_ = t.elapsed();
+  stats.t_classifier_ = t.elapsed(); // save timer
   stats.points_ = rsd_out->size();
 
+  // print results to console
   cout<< "\n\t+-------------------------------------" << endl;
   cout<< "[RSD]---| " << stats.getLabel() << endl;
   cout << "\t+-------------------------------------" << endl;
@@ -925,6 +1027,7 @@ void processRSD(const PointCloud<PointXYZRGBA>::Ptr in,
   if (log_prefix_ != "")
     stats.writeTimerLog(log_prefix_ + "rsd_timer.log");
 }
+
 
 int main(int argc, char** argv)
 {
@@ -977,13 +1080,14 @@ int main(int argc, char** argv)
 
 
 
-    // --- Viewports: ---
-    //  1y 
-    //    | 1 | 3 |
-    // .5 ----+----
-    //    | 2 | 4 |
-    //  0    .5    1x
-    // 1:
+    /* --- Viewports: ---
+     *  1y 
+     *    | 1 | 3 |
+     * .5 ----+----
+     *    | 2 | 4 |
+     *  0    .5    1x
+     * 1:
+     */
     int v1(0);
     ColorHdlRGBA col_hdl1(p_rsd_ref);
     v->createViewPort(0.0, 0.5, 0.5, 1.0, v1);

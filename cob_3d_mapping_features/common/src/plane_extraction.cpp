@@ -99,7 +99,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
 {
   boost::timer t;
   std::stringstream ss;
- // ROS_INFO("Extract planes");
+  ROS_INFO("Extract planes");
   ROS_DEBUG("Saving files: %d", save_to_file_);
   if(save_to_file_)
   {
@@ -318,8 +318,8 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
     }
     ctr_++;
   }
- // ROS_INFO("Plane extraction took %f", t.elapsed());
- // ROS_INFO("v_cloud_hull size: %d", v_cloud_hull.size());
+  ROS_INFO("Plane extraction took %f", t.elapsed());
+  ROS_INFO("v_cloud_hull size: %d", v_cloud_hull.size());
   return;
 }
 

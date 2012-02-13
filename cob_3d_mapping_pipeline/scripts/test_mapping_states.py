@@ -18,13 +18,17 @@ class TestStates:
 		SM = smach.StateMachine(outcomes=['overall_succeeded','overall_failed'])
 		#SM.userdata.pose = "home"
 		SM.userdata.angle_range = 0.6
+		#SM.userdata.scan_pose = [-1.3, -1.0, 3.14]
+                SM.userdata.scan_pose = [0.515, -0.614, 1.583]
 
 		# open the container
 		with SM:
-			#smach.StateMachine.add('UPDATE', UpdateEnvMap(),
-			# transitions={'succeeded':'overall_succeeded', 'failed':'overall_failed'})
-			smach.StateMachine.add('UPDATE', Map360(),
+			smach.StateMachine.add('APPROACH', ApproachScanPose(),
+				transitions={'succeeded':'UPDATE', 'failed':'overall_failed'})
+			smach.StateMachine.add('UPDATE', UpdateEnvMap(),
 				transitions={'succeeded':'overall_succeeded', 'failed':'overall_failed'})
+			#smach.StateMachine.add('UPDATE', Map360(),
+			#	transitions={'succeeded':'overall_succeeded', 'failed':'overall_failed'})
 		try:
 			SM.execute()
 		except:
@@ -35,5 +39,3 @@ class TestStates:
 if __name__ == '__main__':
     test = TestStates()
     test.test_update_map()
-
-
