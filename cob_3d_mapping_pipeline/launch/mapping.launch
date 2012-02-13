@@ -33,7 +33,7 @@
 		<arg name="start_manager" value="false"/>
 		<arg name="nodelet_manager" value="$(arg mapping_manager)"/>
 	</include>
-	<include file="$(find cob_3d_mapping_geometry_map)/ros/launch/feature_map.launch"/>
+	<include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch"/>
   
 
 

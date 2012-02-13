@@ -74,6 +74,7 @@ sss = simple_script_server()
 # This state will initialize all hardware drivers.
 class UpdateEnvMap(smach.State):
 
+
 	def __init__(self):
 
 		smach.State.__init__(
@@ -187,3 +188,7 @@ class Map360(smach.State):
 		#get map
 
 		return 'succeeded'
+
+
+
+

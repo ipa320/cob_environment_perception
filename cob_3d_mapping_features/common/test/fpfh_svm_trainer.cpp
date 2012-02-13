@@ -285,8 +285,13 @@ int main(int argc, char** argv)
   params.svm_type = CvSVM::C_SVC;//NU_SVC;//C_SVC;
   params.kernel_type = CvSVM::RBF;
   params.nu = 0.5;
+<<<<<<< HEAD
+  params.C = svm_c; //TODO !!!
+  params.gamma = svm_gamma; //TODO !!!
+=======
   params.C = svm_c;
   params.gamma = svm_gamma;
+>>>>>>> 034e04c7e3d082e12fdf9412e2ed9a6ba941d6f6
   // Define iteration termination criteria:
   params.term_crit.type = CV_TERMCRIT_ITER | CV_TERMCRIT_EPS;
   params.term_crit.max_iter = 200;
@@ -299,5 +304,9 @@ int main(int argc, char** argv)
   string file_xml = file_folder + "SVM_fpfh_rng_g_c.xml";
   svm.save(file_xml.c_str());
   //cout << "C: " << params.C << " - Gamma: " << svm_gamma << " / " << params.gamma << endl;
+<<<<<<< HEAD
+  cout << "Training process complete." << endl;
+=======
   cout << "Training process completed." << endl;
+>>>>>>> 034e04c7e3d082e12fdf9412e2ed9a6ba941d6f6
 }
