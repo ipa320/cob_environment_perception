@@ -99,6 +99,7 @@
 //#include <sensor_msgs/PointCloud2.h>
 #include <cob_3d_mapping_msgs/GetPlane.h>
 #include <cob_3d_mapping_msgs/PolygonArray.h>
+#include <cob_3d_mapping_msgs/ShapeArray.h>
 #include <geometry_msgs/PolygonStamped.h>
 
 // external includes
@@ -187,6 +188,7 @@ public:
     object_cluster_pub_ = n_.advertise<pcl::PointCloud<Point> >("object_cluster",1);
     polygon_pub_ = n_.advertise<geometry_msgs::PolygonStamped>("polygons",1);
     polygon_array_pub_ = n_.advertise<cob_3d_mapping_msgs::PolygonArray>("polygon_array",1);
+    shape_array_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("shape_array",1);
 
     as_= new actionlib::SimpleActionServer<cob_3d_mapping_msgs::PlaneExtractionAction>(n_, "plane_extraction", boost::bind(&PlaneExtractionNodelet::actionCallback, this, _1), false);
     as_->start();
@@ -284,10 +286,11 @@ public:
       std::vector<std::vector<pcl::Vertices> > v_hull_polygons;
       std::vector<pcl::ModelCoefficients> v_coefficients_plane;
       extractPlane(pc_trans.makeShared(), v_cloud_hull, v_hull_polygons, v_coefficients_plane);
+      publishShapeArray(v_cloud_hull, v_hull_polygons, v_coefficients_plane, pc_in->header);
       for(unsigned int i = 0; i < v_cloud_hull.size(); i++)
       {
-        publishPolygonArray(v_cloud_hull[i], v_hull_polygons[i], v_coefficients_plane[i], pc_in->header);
-        publishPolygons(v_cloud_hull[i], pc_in->header);
+        //publishPolygonArray(v_cloud_hull[i], v_hull_polygons[i], v_coefficients_plane[i], pc_in->header);
+        //publishPolygons(v_cloud_hull[i], pc_in->header);
         publishMarker(v_cloud_hull[i], pc_in->header, 0, 0, 1);
         ctr_++;
         //ROS_INFO("%d planes published so far", ctr_);
@@ -448,6 +451,60 @@ public:
   }
 
   /**
+   * @brief creates polygon from parameters and publish it
+   *
+   * creates polygon from parameters and publish it
+   *
+   * @param cloud_hull point cloud
+   * @param hull_polygons polygons
+   * @param coefficients_plane coefficients
+   * @param header header of published polygons
+   *
+   * @return nothing
+   */
+  void
+  publishShapeArray(std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > >& v_cloud_hull,
+                    std::vector<std::vector<pcl::Vertices> >& v_hull_polygons,
+                    std::vector<pcl::ModelCoefficients>& v_coefficients_plane,
+                    std_msgs::Header header)
+  {
+    cob_3d_mapping_msgs::ShapeArray sa;
+    //p.polygons.resize(hull_polygons.size());
+    sa.header = header;
+    /*p.normal.x = coefficients_plane.values[0];
+    p.normal.y = coefficients_plane.values[1];
+    p.normal.z = coefficients_plane.values[2];
+    p.d.data = coefficients_plane.values[3];*/
+    for(unsigned int i=0; i<v_cloud_hull.size(); i++)
+    {
+      cob_3d_mapping_msgs::Shape s;
+      s.type = cob_3d_mapping_msgs::Shape::PLANE;
+      s.params.resize(4);
+      for(unsigned int c=0; c<4; c++)
+        s.params[c] = v_coefficients_plane[i].values[c];
+      s.points.resize(v_hull_polygons[i].size());
+      for(unsigned int j=0; j<v_hull_polygons[i].size(); j++)
+      {
+        pcl::PointCloud<pcl::PointXYZ> pc;
+        for(unsigned int k=0; k<v_hull_polygons[i][j].vertices.size(); k++)
+        {
+          int idx = v_hull_polygons[i][j].vertices[k];
+          pcl::PointXYZ p;
+          p.x = v_cloud_hull[i].points[idx].x;
+          p.y = v_cloud_hull[i].points[idx].y;
+          p.z = v_cloud_hull[i].points[idx].z;
+          pc.points.push_back(p);
+        }
+        sensor_msgs::PointCloud2 pc_msg;
+        pcl::toROSMsg(pc, pc_msg);
+        s.points.push_back(pc_msg);
+      }
+      sa.shapes.push_back(s);
+      shape_array_pub_.publish(sa);
+    }
+  }
+
+  /**
    * @brief publish markers
    *
    * publish markers
@@ -514,6 +571,7 @@ protected:
   ros::Publisher object_cluster_pub_;
   ros::Publisher polygon_array_pub_;
   ros::Publisher polygon_pub_;
+  ros::Publisher shape_array_pub_;
 
   ros::ServiceServer get_plane_;
 
