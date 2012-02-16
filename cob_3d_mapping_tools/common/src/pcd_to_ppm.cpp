@@ -110,36 +110,15 @@ void readOptions(int argc, char* argv[])
 int main(int argc, char** argv)
 {
   readOptions(argc, argv);
-  PointCloud<PointXYZRGBA>::Ptr pc(new PointCloud<PointXYZRGBA>());
-  PointCloud<PointXYZRGB>::Ptr p_(new PointCloud<PointXYZRGB>());
-  cout << "has_denorm: " << numeric_limits<float>::has_denorm << endl;
-  cout << "denormalized: " << numeric_limits<float>::denorm_min() << endl;
+  PointCloud<PointXYZRGB>::Ptr p(new PointCloud<PointXYZRGB>());
+
   PCDReader r;
-  if (r.read(file_i, *p_) == -1) 
-  {
-    if (r.read(file_i, *pc) == -1) return(0);
-  }
-  else
-  {
-    pc->resize(p_->size());
-    pc->width = p_->width;
-    pc->height = p_->height;
-    for(size_t i = 0; i < p_->size(); ++i)
-    {
-//      if (p_->points[i].rgb < numeric_limits<float>::min()) 
-//	cout << (double)p_->points[i].rgb << endl;
-      pc->points[i].x = p_->points[i].x;
-      pc->points[i].y = p_->points[i].y;
-      pc->points[i].z = p_->points[i].z;
-      pc->points[i].rgba = p_->points[i].rgba;
-    }
-    
-  }
+  if (r.read(file_i, *p) == -1) return(0);
   
-  cout << "Loaded pointcloud with " << pc->width << " x " << pc->height << " points." << endl;
+  cout << "Loaded pointcloud with " << p->width << " x " << p->height << " points." << endl;
 
   cob_3d_mapping_tools::PPMWriter w;
-  if (w.writeRGB(file_o[0], *pc) == -1) return(0);
+  if (w.writeRGB(file_o[0], *p) == -1) return(0);
   cout << "Extracted RGB image..." << endl;
 
   if (file_o[1] != "")
@@ -149,7 +128,8 @@ int main(int argc, char** argv)
     if (max_z != FLT_MIN)
       w.setMaxZ(max_z);
 
-    if (w.writeDepth(file_o[1], *pc) == -1) return(0);
+    if (w.writeDepth(file_o[1], *p) == -1) return(0);
+    if (w.writeDepthLinear(file_o[1] + "_linear", *p) == -1) return(0);
     cout << "Extracted depth image..." << endl;
   }
 

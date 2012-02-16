@@ -57,11 +57,13 @@
 
 #include <iostream>
 #include <fstream>
+#include <math.h>
 
 using namespace std;
 
 int cob_3d_mapping_tools::PPMReader::mapRGB(const string &file_name,
-				       pcl::PointCloud<pcl::PointXYZRGBA> &cloud)
+					    pcl::PointCloud<pcl::PointXYZRGB> &cloud,
+					    bool remove_undef_points)
 {
   ifstream ppmFile;
   ppmFile.open(file_name.c_str());
@@ -128,9 +130,24 @@ int cob_3d_mapping_tools::PPMReader::mapRGB(const string &file_name,
       if (word == 3)
       {
 	rgb = ((uint32_t)col[0] << 16 | (uint32_t)col[1] << 8 | (uint32_t) col[2]);
-	if (rgb != LBL_PLANE && rgb != LBL_EDGE && rgb != LBL_CYL && rgb != LBL_SPH)
-	  rgb = LBL_UNDEF;
-	cloud.points[point].rgba = rgb;
+	if (rgb != LBL_PLANE && rgb != LBL_EDGE && rgb != LBL_COR && rgb != LBL_CYL && rgb != LBL_SPH)
+	{
+	  cloud.points[point].r = (LBL_UNDEF >> 16) & 0x0000ff;
+	  cloud.points[point].g = (LBL_UNDEF >> 8)  & 0x0000ff;
+	  cloud.points[point].b = (LBL_UNDEF)       & 0x0000ff;
+	  if (remove_undef_points)
+	  {
+	    cloud.points[point].x = std::numeric_limits<float>::quiet_NaN();
+	    cloud.points[point].y = std::numeric_limits<float>::quiet_NaN();
+	    cloud.points[point].z = std::numeric_limits<float>::quiet_NaN();
+	  }
+	}
+	else
+	{
+	  cloud.points[point].r = col[0];
+	  cloud.points[point].g = col[1];
+	  cloud.points[point].b = col[2];
+	}
 	word = 0;
 	point++;
       }
@@ -145,7 +162,7 @@ int cob_3d_mapping_tools::PPMReader::mapRGB(const string &file_name,
 }
 
 int cob_3d_mapping_tools::PPMWriter::writeRGB(const string &file_name, 
-					 const pcl::PointCloud<pcl::PointXYZRGBA> &cloud)
+					 const pcl::PointCloud<pcl::PointXYZRGB> &cloud)
 {
   ofstream ppmFile;
   ppmFile.open(file_name.c_str());
@@ -180,7 +197,7 @@ int cob_3d_mapping_tools::PPMWriter::writeRGB(const string &file_name,
 }
 	 
 int cob_3d_mapping_tools::PPMWriter::writeDepth(const string &file_name, 
-					   const pcl::PointCloud<pcl::PointXYZRGBA> &cloud)
+					   const pcl::PointCloud<pcl::PointXYZRGB> &cloud)
 {
   ofstream ppmFile;
   ppmFile.open(file_name.c_str());
@@ -224,6 +241,63 @@ int cob_3d_mapping_tools::PPMWriter::writeDepth(const string &file_name,
 	ppmFile << "255 255 255\n";
       }
       
+    }
+    ppmFile.close();
+  }
+  catch(int e)
+  {
+    ppmFile.close();
+    throw e;
+  }
+  return 0;
+}
+
+int cob_3d_mapping_tools::PPMWriter::writeDepthLinear(
+  const string &file_name, 
+  const pcl::PointCloud<pcl::PointXYZRGB> &cloud)
+{
+  ofstream ppmFile;
+  ppmFile.open(file_name.c_str());
+  if(!ppmFile.is_open()) 
+  {
+    cout << "Could not create \"" << file_name << "\"" << endl;
+    return (-1);
+  }
+
+  try
+  {
+    // Write header:
+    ppmFile << "P3\n"
+	    << "# Generated from PCD file\n"
+	    << cloud.width << " " << cloud.height << "\n"
+	    << "255\n";
+
+    float max_z = 0, min_z = 10.0;
+    for (size_t i = 0; i < cloud.points.size(); i++)
+    {
+      if (!pcl::hasValidXYZ(cloud.points[i]))
+	continue;
+
+      max_z = max (cloud.points[i].z, max_z);
+      min_z = min (cloud.points[i].z, min_z);
+    }
+    max_z = round(1090.0 - (345.0 / max_z));
+    min_z = round(1090.0 - (345.0 / min_z));
+    cout << "Max_z = " << max_z << " | Min_z = " << min_z << endl;
+    double grd_position;
+    uint8_t rgb[3];
+    for (size_t i = 0; i < cloud.points.size(); i++)
+    {
+      if (pcl::hasValidXYZ(cloud.points[i]))
+      {
+	grd_position = ( round(1090.0 - (345.0 / cloud.points[i].z) ) - min_z) / (max_z - min_z);
+	cob_3d_mapping_tools::getGradientColor(grd_position, rgb);
+	ppmFile << (int)rgb[0] << " " << (int)rgb[1] << " " << (int)rgb[2] << "\n" ;
+      }
+      else 
+      {
+	ppmFile << "255 255 255\n";
+      } 
     }
     ppmFile.close();
   }
