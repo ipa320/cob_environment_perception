@@ -75,6 +75,7 @@ namespace cob_3d_mapping_features
   public:
     using pcl::PCLBase<PointInT>::input_;
     using pcl::PCLBase<PointInT>::indices_;
+    using pcl::PCLBase<PointInT>::initCompute;
 
     typedef pcl::PointCloud<PointInT> PointCloudIn;
     typedef typename PointCloudIn::Ptr PointCloudInPtr;
