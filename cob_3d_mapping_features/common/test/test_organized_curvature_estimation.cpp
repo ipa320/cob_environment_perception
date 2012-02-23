@@ -73,6 +73,8 @@
 // Package Includes:
 #include "cob_3d_mapping_common/point_types.h"
 #include "cob_3d_mapping_features/organized_curvature_estimation_omp.h"
+#include "cob_3d_mapping_features/curvature_classifier.h"
+#include "cob_3d_mapping_features/impl/curvature_classifier.hpp"
 
 
 using namespace std;
@@ -177,6 +179,11 @@ int main(int argc, char** argv)
     oce.setOutputLabels(l);
     oce.compute(*pc);
     cout << t.elapsed() << "s\t for principal curvature estimation" << endl;
+
+    cob_3d_mapping_features::CurvatureClassifier<PrincipalCurvatures, PointLabel>cc;
+    cc.setInputCloud(pc);
+    cc.setIndices(ind_ptr);
+    cc.classify(*l);
 
     // colorize edges of 3d point cloud
     for (size_t i = 0; i < l->points.size(); i++)
