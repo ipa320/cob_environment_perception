@@ -61,7 +61,7 @@
 template <typename PointInT, typename PointOutT> void
 cob_3d_mapping_features::CurvatureClassifier<PointInT,PointOutT>::classify(PointCloudOut &output)
 {
-  if(!pcl::PCLBase<PointInT>::initCompute())
+  if(!initCompute())
   {
     output.width = output.height = 0;
     output.points.clear ();
