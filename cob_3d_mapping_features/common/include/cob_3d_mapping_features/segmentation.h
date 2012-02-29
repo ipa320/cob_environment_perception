@@ -61,6 +61,14 @@
 #include <opencv2/core/core.hpp>
 #include <cob_3d_mapping_common/point_types.h>
 
+// define indices to access labels list:
+#define I_NAN    1
+#define I_BORDER 2
+#define I_EDGE   3
+#define I_PLANE  4
+#define I_CYL    5
+#define I_SPHERE 6
+
 namespace cob_3d_mapping_features
 {
 
@@ -68,11 +76,13 @@ namespace cob_3d_mapping_features
   {
     int u;
     int v;
+    bool c_gap;
 
-    Coords(int u_in, int v_in)
+    Coords(int u_in, int v_in, bool c_gap_in)
       {
 	u = u_in;
 	v=  v_in;
+	c_gap = c_gap_in;
       }
   };
 
