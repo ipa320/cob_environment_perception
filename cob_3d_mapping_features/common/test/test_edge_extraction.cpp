@@ -367,7 +367,7 @@ public:
           PointLabel* p = &cloud_in->points[i*width+j];
           p->label = cur_label;
           //Eigen::Vector2d uv(j,i);
-          Coords c(j,i);
+          Coords c(j,i,false);
 
           //int count = 0;
           bool is_wave = true;
@@ -379,26 +379,26 @@ public:
             {
               cloud_in->points[pt_ctr+1].label = cur_label;
               //wave.push_back(&cloud_in->points[pt_ctr+1]);
-              wave_coords.push_back(Coords(c.u+1,c.v)/*Eigen::Vector2d(uv(0)+1,uv(1))*/);
+              wave_coords.push_back(Coords(c.u+1,c.v,false)/*Eigen::Vector2d(uv(0)+1,uv(1))*/);
             }
             if( c.u/*uv(0)*/ > 0 && cloud_in->points[pt_ctr-1].label==0)
             {
               cloud_in->points[pt_ctr-1].label = cur_label;
               //wave.push_back(&cloud_in->points[pt_ctr-1]);
-              wave_coords.push_back(Coords(c.u-1,c.v)/*Eigen::Vector2d(uv(0)-1,uv(1))*/);
+              wave_coords.push_back(Coords(c.u-1,c.v,false)/*Eigen::Vector2d(uv(0)-1,uv(1))*/);
             }
             //std::cout << pt_ctr+width << ": "<< (int)(cloud_in->points[pt_ctr+width].boundary_point) << std::endl;
             if(c.v/*uv(1)*/ < height-1 && cloud_in->points[pt_ctr+width].label==0)
             {
               cloud_in->points[pt_ctr+width].label = cur_label;
               //wave.push_back(&cloud_in->points[pt_ctr+width]);
-              wave_coords.push_back(Coords(c.u,c.v+1)/*Eigen::Vector2d(uv(0),uv(1)+1)*/);
+              wave_coords.push_back(Coords(c.u,c.v+1,false)/*Eigen::Vector2d(uv(0),uv(1)+1)*/);
             }
             if(c.v/*uv(1)*/ > 0 && cloud_in->points[pt_ctr-width].label==0)
             {
               cloud_in->points[pt_ctr-width].label = cur_label;
               //wave.push_back(&cloud_in->points[pt_ctr-width]);
-              wave_coords.push_back(Coords(c.u,c.v-1)/*Eigen::Vector2d(uv(0),uv(1)-1)*/);
+              wave_coords.push_back(Coords(c.u,c.v-1,false)/*Eigen::Vector2d(uv(0),uv(1)-1)*/);
             }
             //p = wave.back();
             if(wave_coords.size()>0)
@@ -561,7 +561,7 @@ public:
           cur_label++;
           PointLabel* p = &cloud_in->points[i*width+j];
           p->label = cur_label;
-          Coords c(j,i);
+          Coords c(j,i,false);
 
           //int count = 0;
           bool gap_l=false, gap_r=false, gap_a=false, gap_d=false;
@@ -599,7 +599,7 @@ public:
               cloud_in->points[pt_ctr+1].label = cur_label;
               if(!(isStopperInNeighbors(cloud_in, indices_ul) && isStopperInNeighbors(cloud_in, indices_ll) && gap_l))
               ///if(!isStopperInNeighbors(cloud_in, indices_ur) || !isStopperInNeighbors(cloud_in, indices_lr))
-                wave_coords.push_back(Coords(c.u+1,c.v));
+                wave_coords.push_back(Coords(c.u+1,c.v,false));
             }
             if( c.u > 0 && cloud_in->points[pt_ctr-1].label==0)
             {
@@ -613,7 +613,7 @@ public:
               //if(!((isStopperInNeighbors(cloud_in, indices_ur) || isStopperInNeighbors(cloud_in, indices_ul)) &&
               //    (isStopperInNeighbors(cloud_in, indices_lr) || isStopperInNeighbors(cloud_in, indices_ll))))
               //if(!isStopperInNeighbors(cloud_in, indices_ul) || !isStopperInNeighbors(cloud_in, indices_ll))
-                wave_coords.push_back(Coords(c.u-1,c.v));
+                wave_coords.push_back(Coords(c.u-1,c.v,false));
             }
             //std::cout << pt_ctr+width << ": "<< (int)(cloud_in->points[pt_ctr+width].boundary_point) << std::endl;
             if(c.v < height-1 && cloud_in->points[pt_ctr+width].label==0)
@@ -628,7 +628,7 @@ public:
               //if(!((isStopperInNeighbors(cloud_in, indices_ur) || isStopperInNeighbors(cloud_in, indices_lr)) &&
               //    (isStopperInNeighbors(cloud_in, indices_ul) || isStopperInNeighbors(cloud_in, indices_ll))))
               //if(!isStopperInNeighbors(cloud_in, indices_lr) || !isStopperInNeighbors(cloud_in, indices_ll))
-                wave_coords.push_back(Coords(c.u,c.v+1));
+                wave_coords.push_back(Coords(c.u,c.v+1,false));
             }
             if(c.v > 0 && cloud_in->points[pt_ctr-width].label==0)
             {
@@ -642,7 +642,7 @@ public:
               //if(!((isStopperInNeighbors(cloud_in, indices_ur) || isStopperInNeighbors(cloud_in, indices_lr)) &&
               //    (isStopperInNeighbors(cloud_in, indices_ul) || isStopperInNeighbors(cloud_in, indices_ll))))
               //if(!isStopperInNeighbors(cloud_in, indices_ur) || !isStopperInNeighbors(cloud_in, indices_ul))
-                wave_coords.push_back(Coords(c.u,c.v-1));
+                wave_coords.push_back(Coords(c.u,c.v-1,false));
             }
             //p = wave.back();
             if(wave_coords.size()>0)
