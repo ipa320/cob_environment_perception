@@ -1,5 +1,6 @@
 #Trigger Table Object Cluster
 #goal definition
+sensor_msgs/PointCloud2 table_hull
 ---
 #result definition
 sensor_msgs/PointCloud2[] bounding_boxes
