@@ -2,7 +2,7 @@
 <launch>
   <node ns="geometry_map" pkg="cob_3d_mapping_geometry_map" type="geometry_map_node" name="geometry_map" output="screen">
   	<!--remap from="table_hull" to="/swissranger/pointcloud2_raw"/-->
-  	<remap from="polygon_array" to="/plane_extraction/polygon_array"/>
+  	<remap from="shape_array" to="/plane_extraction/shape_array"/>
   	<!--param name="file_path" type="string" value="/media/GOADaten/Daten/20110823_bagfiles/kitchen_empty/map/"/-->
   	<param name="file_path" type="string" value="/Bag_Files/kitchen_table_chair"/>
   	<param name="save_to_file" type="bool" value="false"/>

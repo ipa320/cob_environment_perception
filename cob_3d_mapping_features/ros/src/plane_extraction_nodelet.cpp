@@ -482,9 +482,12 @@ public:
       s.params.resize(4);
       for(unsigned int c=0; c<4; c++)
         s.params[c] = v_coefficients_plane[i].values[c];
-      s.points.resize(v_hull_polygons[i].size());
+      //std::cout << "normal: " << v_coefficients_plane[i].values[0] << ","  << v_coefficients_plane[i].values[1] << "," << v_coefficients_plane[i].values[2] << std::endl;
+      //std::cout << "d: " << v_coefficients_plane[i].values[3] << std::endl << std::endl;
+      //s.points.resize(v_hull_polygons[i].size());
       for(unsigned int j=0; j<v_hull_polygons[i].size(); j++)
       {
+        if (v_hull_polygons[i][j].vertices.size()==0) continue;
         pcl::PointCloud<pcl::PointXYZ> pc;
         for(unsigned int k=0; k<v_hull_polygons[i][j].vertices.size(); k++)
         {
@@ -500,8 +503,8 @@ public:
         s.points.push_back(pc_msg);
       }
       sa.shapes.push_back(s);
-      shape_array_pub_.publish(sa);
     }
+    shape_array_pub_.publish(sa);
   }
 
   /**
