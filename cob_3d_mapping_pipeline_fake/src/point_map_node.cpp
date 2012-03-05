@@ -73,7 +73,7 @@ getMap(cob_3d_mapping_msgs::GetPointMap::Request &req,
 {
   rosbag::Bag bag;
   bag.open(file_path, rosbag::bagmode::Read);
-  rosbag::View view(bag, rosbag::TopicQuery("point_map"));
+  rosbag::View view(bag, rosbag::TopicQuery("/point_map"));
   rosbag::MessageInstance m = *(view.begin());
   sensor_msgs::PointCloud2::ConstPtr pc = m.instantiate<sensor_msgs::PointCloud2>();
   res.map = *pc;
