@@ -501,20 +501,20 @@ public:
     ROS_INFO(" converting polygon to Shape\n");
     ROS_INFO(" poly.poly_points.size () = %d \n",poly.poly_points.size ());
 
-    //s.params.resize (7);
-    s.params.resize (4);
+    s.params.resize (7);
+    //s.params.resize (4);
 
     s.type = 0;
     s.params[0] = poly.normal (0);
     s.params[1] = poly.normal (1);
     s.params[2] = poly.normal (2);
     s.params[3] = poly.d;
-    /*
-     ROS_INFO("Centroid: %f,%f,%f",poly.centroid[0].x,poly.centroid[0].y,poly.centroid[0].z);
+
+     //ROS_INFO("Centroid: %f,%f,%f",poly.centroid[0].x,poly.centroid[0].y,poly.centroid[0].z);
      s.params[4] = poly.centroid[0].x;
      s.params[5] = poly.centroid[0].y;
      s.params[6] = poly.centroid[0].z;
-     */
+
     s.points.resize (0);
     for (unsigned int i = 0; i < poly.poly_points.size (); i++)
     {
