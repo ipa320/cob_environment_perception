@@ -113,7 +113,7 @@ public:
   {
     ctr_ = 0;
     //convex_hull_sub_ = n_.subscribe("table_hull", 1, &FeatureMap::subCallback, this);
-    polygon_sub_ = n_.subscribe("polygon_array", 10, &GeometryMapNode::polygonCallback, this);
+    shape_sub_ = n_.subscribe("shape_array", 10, &GeometryMapNode::shapeCallback, this);
     map_pub_ = n_.advertise<geometry_msgs::PolygonStamped>("geometry_map",1);
     map_pub_2_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("geometry_map_2",1);
     marker_pub_ = n_.advertise<visualization_msgs::Marker>("geometry_marker",100);
@@ -182,6 +182,31 @@ public:
     time+=step_time;
     ROS_INFO("[feature map] Accumulated time at step %d: %f s", ctr, time);
     ctr++;
+    publishMapMarker();
+    publishMap();
+    ctr_++;
+    //ROS_INFO("%d polygons received so far", ctr_);
+  }
+
+  void
+  shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr sa)
+  {
+    static int ctr=0;
+    static double time = 0;
+    PrecisionStopWatch t;
+    for(unsigned int i=0; i<sa->shapes.size(); i++)
+    {
+      MapEntryPtr map_entry_ptr = MapEntryPtr(new MapEntry());
+      if(!convertFromROSMsg(sa->shapes[i], *map_entry_ptr)) continue;
+      dumpPolygonToFile(*map_entry_ptr);
+      t.precisionStart();
+      geometry_map_.addMapEntry(map_entry_ptr);
+      double step_time =t.precisionStop();
+      //ROS_INFO("Adding feature took %f s", step_time);
+      time+=step_time;
+      //ROS_INFO("[feature map] Accumulated time at step %d: %f s", ctr, time);
+      ctr++;
+    }
     publishMapMarker();
     publishMap();
     ctr_++;
@@ -347,6 +372,56 @@ public:
   }
 
   /**
+   * @brief writing to a ros message to convert a feature map
+   *
+   * writing to a ros message to convert a feature map
+   *
+   * @param p ros message containing polygons
+   * @param map_entry input as feature map
+   *
+   * @return nothing
+   */
+  bool
+  convertFromROSMsg(const cob_3d_mapping_msgs::Shape& s, MapEntry& map_entry)
+  {
+    map_entry.id = 0;
+    map_entry.normal(0) = s.params[0];
+    map_entry.normal(1) = s.params[1];
+    map_entry.normal(2) = s.params[2];
+    map_entry.d = s.params[3];
+    //std::cout << "normal: " << map_entry.normal(0) << ","  << map_entry.normal(1) << "," << map_entry.normal(2) << std::endl;
+    //std::cout << "d: " << map_entry.d << std::endl << std::endl;
+    map_entry.merged = 0;
+    //map_entry.polygon_world.resize(p.polygons.size());
+    for(unsigned int i=0; i<s.points.size(); i++)
+    {
+      if(s.points[i].data.size())
+      {
+        pcl::PointCloud<pcl::PointXYZ> cloud;
+        pcl::fromROSMsg(s.points[i], cloud);
+        std::vector<Eigen::Vector3f> pts;
+        pts.resize(cloud.points.size());
+        for(unsigned int j=0; j<cloud.points.size(); j++)
+        {
+          /*pts[j] = Eigen::Vector3f(p.polygons[i].points[j].x,
+                                   p.polygons[i].points[j].y,
+                                   p.polygons[i].points[j].z);*/
+          pts[j](0) = cloud.points[j].x;
+          pts[j](1) = cloud.points[j].y;
+          pts[j](2) = cloud.points[j].z;
+        }
+        map_entry.polygon_world.push_back(pts);
+      }
+      else
+      {
+        std::cout << "shape has no points" << std::endl;
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
    * @brief output featuremap to dump file
    *
    * output featuremap to dump file, path is hard coded
@@ -359,7 +434,7 @@ public:
   {
     static int ctr=0;
     std::stringstream ss;
-    ss << "/home/goa-hh/pcl_daten/kitchen_kinect/polygons/polygon_" << ctr << ".txt";
+    ss << "/home/goa/tmp/polygon_" << ctr << ".txt";
     std::ofstream myfile;
     myfile.open (ss.str().c_str());
     myfile << m.id << "\n";
@@ -369,8 +444,8 @@ public:
     {
       for(unsigned int j=0; j<m.polygon_world[i].size(); j++)
       {
-        myfile << m.polygon_world[i][j](0) << "\n";
-        myfile << m.polygon_world[i][j](1) << "\n";
+        myfile << m.polygon_world[i][j](0) << " ";
+        myfile << m.polygon_world[i][j](1) << " ";
         myfile << m.polygon_world[i][j](2) << "\n";
       }
     }
@@ -531,7 +606,7 @@ public:
 
 
 protected:
-  ros::Subscriber polygon_sub_;
+  ros::Subscriber shape_sub_;
   ros::Publisher map_pub_;
   ros::Publisher map_pub_2_;
   ros::Publisher marker_pub_;
