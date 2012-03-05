@@ -1,0 +1,4 @@
+cob_3d_mapping_msgs/ShapeArray map
+---
+int32[]  delete
+cob_3d_mapping_msgs/ShapeArray map
