@@ -6,6 +6,7 @@ byte OTHER=4
 # potential extensions: SPHERE, CYLINDER, BOX 
 
 byte type
+byte id
 
 # define shape parameters
 # for plane
