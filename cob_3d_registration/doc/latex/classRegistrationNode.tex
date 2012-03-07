@@ -1,0 +1,306 @@
+\hypertarget{classRegistrationNode}{
+\section{RegistrationNode Class Reference}
+\label{classRegistrationNode}\index{RegistrationNode@{RegistrationNode}}
+}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classRegistrationNode_a4d2461773d8a8736556c5a14e22ead39}{
+{\bfseries RegistrationNode} (bool dummy)}
+\label{classRegistrationNode_a4d2461773d8a8736556c5a14e22ead39}
+
+\item 
+\hyperlink{classRegistrationNode_a061d1dd7a7d20ce2f6f1b49effc242f7}{$\sim$RegistrationNode} ()
+\item 
+void \hyperlink{classRegistrationNode_a088465f420639938a06747c8ee4c4df7}{onInit} ()
+\begin{DoxyCompactList}\small\item\em initializes parameters \item\end{DoxyCompactList}\item 
+void \hyperlink{classRegistrationNode_aa4c32460d529b455cd3a8f264e379ecb}{createParamters} (const std::string \&algo)
+\item 
+void \hyperlink{classRegistrationNode_a314ac88efd6a9165c5db16de31a68496}{publishParameters} ()
+\item 
+void \hyperlink{classRegistrationNode_a7da9e7d7af487ba6760e656b6a9790a4}{buildAlgo} ()
+\item 
+void \hyperlink{classRegistrationNode_ad58ddd35fc39f760197225500100ac30}{pointCloudSubCallback} (const pcl::PointCloud$<$ Point $>$::Ptr \&pc\_\-in)
+\begin{DoxyCompactList}\small\item\em callback for point cloud subroutine \item\end{DoxyCompactList}\item 
+bool \hyperlink{classRegistrationNode_a83816fd7a40b43b04a76c4e71995d215}{registerService} (::registration::RegistrationPCD::Request \&req,::registration::RegistrationPCD::Response \&res)
+\end{DoxyCompactItemize}
+\subsection*{Public Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classRegistrationNode_ad756391e2bcbae371580c09249fb9277}{
+ros::NodeHandle {\bfseries n\_\-}}
+\label{classRegistrationNode_ad756391e2bcbae371580c09249fb9277}
+
+\item 
+\hypertarget{classRegistrationNode_a97206aeb3f84ce6ec1d92c2bafa55ca9}{
+ros::Time {\bfseries stamp\_\-}}
+\label{classRegistrationNode_a97206aeb3f84ce6ec1d92c2bafa55ca9}
+
+\end{DoxyCompactItemize}
+\subsection*{Protected Types}
+\begin{DoxyCompactItemize}
+\item 
+enum \{ \par
+{\bfseries E\_\-ALGO\_\-ICP} = 1, 
+{\bfseries E\_\-ALGO\_\-ICP\_\-LM} = 2, 
+{\bfseries E\_\-ALGO\_\-GICP} = 3, 
+{\bfseries E\_\-ALGO\_\-ICP\_\-MOMENTS} = 4, 
+\par
+{\bfseries E\_\-ALGO\_\-ICP\_\-FPFH} = 5, 
+{\bfseries E\_\-ALGO\_\-ICP\_\-NARF} = 6, 
+{\bfseries E\_\-ALGO\_\-FASTSLAM} = 7, 
+{\bfseries E\_\-ALGO\_\-ICP\_\-EDGES} = 8, 
+\par
+{\bfseries E\_\-ALGO\_\-RGBDSLAM} = 9, 
+{\bfseries E\_\-ALGO\_\-INFO} = 10, 
+{\bfseries E\_\-ALGO\_\-COR} = 11, 
+{\bfseries E\_\-ALGO\_\-NONE} = 0
+ \}
+\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classRegistrationNode_a4c014e25b84d541c26b381d7c163f9f4}{publish\_\-results} ()
+\item 
+bool \hyperlink{classRegistrationNode_a49613a1b302f646f7e222c0daa1a9e7b}{do\_\-preprocess} (pcl::PointCloud$<$ Point $>$ \&pc, cv\_\-bridge::CvImagePtr \&cv\_\-ptr, cv::Mat \&img\_\-depth)
+\item 
+bool \hyperlink{classRegistrationNode_a4c57bd480d76df5ab6b186a6521d1822}{do\_\-register} (const pcl::PointCloud$<$ Point $>$ \&pc, const cv\_\-bridge::CvImagePtr \&cv\_\-ptr, cv::Mat \&img\_\-depth)
+\item 
+\hypertarget{classRegistrationNode_ad37f0db5fd52b870426794d2b44cef08}{
+void {\bfseries setSettings\_\-ICP} (\hyperlink{classRegistration__ICP}{Registration\_\-ICP}$<$ Point $>$ $\ast$pr)}
+\label{classRegistrationNode_ad37f0db5fd52b870426794d2b44cef08}
+
+\item 
+\hypertarget{classRegistrationNode_aaf68c48a76890081dd89ffecb9d6c1c7}{
+void {\bfseries setSettings\_\-ICP\_\-Moments} (\hyperlink{classRegistration__ICP__Moments}{Registration\_\-ICP\_\-Moments}$<$ Point $>$ $\ast$pr)}
+\label{classRegistrationNode_aaf68c48a76890081dd89ffecb9d6c1c7}
+
+\item 
+\hypertarget{classRegistrationNode_a82d75e7f4013b917ce3e1f57b12e87e8}{
+void {\bfseries setSettings\_\-ICP\_\-FPFH} (\hyperlink{classRegistration__ICP__FPFH}{Registration\_\-ICP\_\-FPFH}$<$ Point $>$ $\ast$pr)}
+\label{classRegistrationNode_a82d75e7f4013b917ce3e1f57b12e87e8}
+
+\item 
+\hypertarget{classRegistrationNode_a924764ad64859741ebe4a8e1070f08a9}{
+void {\bfseries setSettings\_\-ICP\_\-NARF} (\hyperlink{classRegistration__ICP__NARF}{Registration\_\-ICP\_\-NARF}$<$ Point $>$ $\ast$pr)}
+\label{classRegistrationNode_a924764ad64859741ebe4a8e1070f08a9}
+
+\item 
+\hypertarget{classRegistrationNode_a4929fcef285c47872eb412b99a5a6286}{
+void {\bfseries setSettings\_\-ICP\_\-Edges} (\hyperlink{classRegistration__ICP__Edges}{Registration\_\-ICP\_\-Edges}$<$ Point $>$ $\ast$pr)}
+\label{classRegistrationNode_a4929fcef285c47872eb412b99a5a6286}
+
+\item 
+\hypertarget{classRegistrationNode_a4e62d689b604dcc07a90738a48eeb112}{
+void {\bfseries setSettings\_\-Info} (\hyperlink{classRegistration__Infobased}{Registration\_\-Infobased}$<$ Point $>$ $\ast$pr)}
+\label{classRegistrationNode_a4e62d689b604dcc07a90738a48eeb112}
+
+\item 
+\hypertarget{classRegistrationNode_aace7037e3ac43e5d2925f2a5ae9b7248}{
+void {\bfseries publishMarkerPoint} (const Point \&p, int id, float r, float g, float b, float Size=0.02)}
+\label{classRegistrationNode_aace7037e3ac43e5d2925f2a5ae9b7248}
+
+\item 
+\hypertarget{classRegistrationNode_a5329c6053bf5b9a9e4e6d444612efaa1}{
+void {\bfseries publishLineMarker} (Eigen::Vector3f a, Eigen::Vector3f b, const int id=rand()\%111111)}
+\label{classRegistrationNode_a5329c6053bf5b9a9e4e6d444612efaa1}
+
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classRegistrationNode_ad13d7e29d9a11fbe33705207856828b7}{
+ros::Subscriber {\bfseries point\_\-cloud\_\-sub\_\-}}
+\label{classRegistrationNode_ad13d7e29d9a11fbe33705207856828b7}
+
+\item 
+\hypertarget{classRegistrationNode_ae5d6a5bc2cba20991dad627df98e40df}{
+ros::ServiceServer \hyperlink{classRegistrationNode_ae5d6a5bc2cba20991dad627df98e40df}{register\_\-ser\_\-}}
+\label{classRegistrationNode_ae5d6a5bc2cba20991dad627df98e40df}
+
+\begin{DoxyCompactList}\small\item\em subscriber to input data \item\end{DoxyCompactList}\item 
+\hypertarget{classRegistrationNode_a9e32e3410a5df73d604b7fc2771b2d7a}{
+TransformListener \hyperlink{classRegistrationNode_a9e32e3410a5df73d604b7fc2771b2d7a}{tf\_\-listener\_\-}}
+\label{classRegistrationNode_a9e32e3410a5df73d604b7fc2771b2d7a}
+
+\begin{DoxyCompactList}\small\item\em service for evaluation of registration \item\end{DoxyCompactList}\item 
+\hypertarget{classRegistrationNode_a6d3cdad1532c2dc263060938bbd81aed}{
+ros::Publisher {\bfseries point\_\-cloud\_\-pub\_\-}}
+\label{classRegistrationNode_a6d3cdad1532c2dc263060938bbd81aed}
+
+\item 
+\hypertarget{classRegistrationNode_a11653721623a3641d0279011664d829b}{
+ros::Publisher \hyperlink{classRegistrationNode_a11653721623a3641d0279011664d829b}{marker\_\-pub\_\-}}
+\label{classRegistrationNode_a11653721623a3641d0279011664d829b}
+
+\begin{DoxyCompactList}\small\item\em publisher for map \item\end{DoxyCompactList}\item 
+\hyperlink{classParameterBucket}{ParameterBucket} \hyperlink{classRegistrationNode_a64f206a310aa231161d13fd7aa54380d}{parameters\_\-}
+\begin{DoxyCompactList}\small\item\em publish markers for visualization \item\end{DoxyCompactList}\item 
+\hypertarget{classRegistrationNode_af89c036128385228f4d74fc5908803e8}{
+\hyperlink{classGeneralRegistration}{GeneralRegistration}$<$ Point $>$ $\ast$ \hyperlink{classRegistrationNode_af89c036128385228f4d74fc5908803e8}{reg\_\-}}
+\label{classRegistrationNode_af89c036128385228f4d74fc5908803e8}
+
+\begin{DoxyCompactList}\small\item\em registration algorithm \item\end{DoxyCompactList}\item 
+\hypertarget{classRegistrationNode_af51e29db4f2f9abcedcb8a1c43396838}{
+double \hyperlink{classRegistrationNode_af51e29db4f2f9abcedcb8a1c43396838}{duration\_\-}}
+\label{classRegistrationNode_af51e29db4f2f9abcedcb8a1c43396838}
+
+\begin{DoxyCompactList}\small\item\em evaluation: duration in seconds \item\end{DoxyCompactList}\item 
+\hypertarget{classRegistrationNode_a8ae0191181e275268c82182c828e1842}{
+int \hyperlink{classRegistrationNode_a8ae0191181e275268c82182c828e1842}{memory\_\-usage\_\-kb\_\-}}
+\label{classRegistrationNode_a8ae0191181e275268c82182c828e1842}
+
+\begin{DoxyCompactList}\small\item\em evaluation: incremental memory usage in kB \item\end{DoxyCompactList}\item 
+\hypertarget{classRegistrationNode_a4630d8b7a3c1816e672f82897f3989b8}{
+bool \hyperlink{classRegistrationNode_a4630d8b7a3c1816e672f82897f3989b8}{registration\_\-result\_\-}}
+\label{classRegistrationNode_a4630d8b7a3c1816e672f82897f3989b8}
+
+\begin{DoxyCompactList}\small\item\em evaluation: success -\/$>$ true \item\end{DoxyCompactList}\end{DoxyCompactItemize}
+
+
+\subsection{Constructor \& Destructor Documentation}
+\hypertarget{classRegistrationNode_a061d1dd7a7d20ce2f6f1b49effc242f7}{
+\index{RegistrationNode@{RegistrationNode}!$\sim$RegistrationNode@{$\sim$RegistrationNode}}
+\index{$\sim$RegistrationNode@{$\sim$RegistrationNode}!RegistrationNode@{RegistrationNode}}
+\subsubsection[{$\sim$RegistrationNode}]{\setlength{\rightskip}{0pt plus 5cm}RegistrationNode::$\sim$RegistrationNode (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily  \mbox{[}inline\mbox{]}}}}
+\label{classRegistrationNode_a061d1dd7a7d20ce2f6f1b49effc242f7}
+
+
+void 
+
+
+
+\subsection{Member Function Documentation}
+\hypertarget{classRegistrationNode_a7da9e7d7af487ba6760e656b6a9790a4}{
+\index{RegistrationNode@{RegistrationNode}!buildAlgo@{buildAlgo}}
+\index{buildAlgo@{buildAlgo}!RegistrationNode@{RegistrationNode}}
+\subsubsection[{buildAlgo}]{\setlength{\rightskip}{0pt plus 5cm}void RegistrationNode::buildAlgo (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily  \mbox{[}inline\mbox{]}}}}
+\label{classRegistrationNode_a7da9e7d7af487ba6760e656b6a9790a4}
+reading out parameter and creating an instance of the algorithm setting all needed parameters for algorithm \hypertarget{classRegistrationNode_aa4c32460d529b455cd3a8f264e379ecb}{
+\index{RegistrationNode@{RegistrationNode}!createParamters@{createParamters}}
+\index{createParamters@{createParamters}!RegistrationNode@{RegistrationNode}}
+\subsubsection[{createParamters}]{\setlength{\rightskip}{0pt plus 5cm}void RegistrationNode::createParamters (
+\begin{DoxyParamCaption}
+\item[{const std::string \&}]{ algo}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily  \mbox{[}inline\mbox{]}}}}
+\label{classRegistrationNode_aa4c32460d529b455cd3a8f264e379ecb}
+creating parameter settings for evaluation it's not thought to be used for registration self \hypertarget{classRegistrationNode_a49613a1b302f646f7e222c0daa1a9e7b}{
+\index{RegistrationNode@{RegistrationNode}!do\_\-preprocess@{do\_\-preprocess}}
+\index{do\_\-preprocess@{do\_\-preprocess}!RegistrationNode@{RegistrationNode}}
+\subsubsection[{do\_\-preprocess}]{\setlength{\rightskip}{0pt plus 5cm}bool RegistrationNode::do\_\-preprocess (
+\begin{DoxyParamCaption}
+\item[{pcl::PointCloud$<$ Point $>$ \&}]{ pc, }
+\item[{cv\_\-bridge::CvImagePtr \&}]{ cv\_\-ptr, }
+\item[{cv::Mat \&}]{ img\_\-depth}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily  \mbox{[}inline, protected\mbox{]}}}}
+\label{classRegistrationNode_a49613a1b302f646f7e222c0daa1a9e7b}
+preprocessing data \hypertarget{classRegistrationNode_a4c57bd480d76df5ab6b186a6521d1822}{
+\index{RegistrationNode@{RegistrationNode}!do\_\-register@{do\_\-register}}
+\index{do\_\-register@{do\_\-register}!RegistrationNode@{RegistrationNode}}
+\subsubsection[{do\_\-register}]{\setlength{\rightskip}{0pt plus 5cm}bool RegistrationNode::do\_\-register (
+\begin{DoxyParamCaption}
+\item[{const pcl::PointCloud$<$ Point $>$ \&}]{ pc, }
+\item[{const cv\_\-bridge::CvImagePtr \&}]{ cv\_\-ptr, }
+\item[{cv::Mat \&}]{ img\_\-depth}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily  \mbox{[}inline, protected\mbox{]}}}}
+\label{classRegistrationNode_a4c57bd480d76df5ab6b186a6521d1822}
+registration process
+\begin{DoxyItemize}
+\item setting input data
+\item measurement
+\item visualization helper (for debugging) 
+\end{DoxyItemize}\hypertarget{classRegistrationNode_a088465f420639938a06747c8ee4c4df7}{
+\index{RegistrationNode@{RegistrationNode}!onInit@{onInit}}
+\index{onInit@{onInit}!RegistrationNode@{RegistrationNode}}
+\subsubsection[{onInit}]{\setlength{\rightskip}{0pt plus 5cm}void RegistrationNode::onInit (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily  \mbox{[}inline\mbox{]}}}}
+\label{classRegistrationNode_a088465f420639938a06747c8ee4c4df7}
+
+
+initializes parameters 
+
+initializes parameters
+
+\begin{DoxyReturn}{Returns}
+nothing 
+\end{DoxyReturn}
+\hypertarget{classRegistrationNode_ad58ddd35fc39f760197225500100ac30}{
+\index{RegistrationNode@{RegistrationNode}!pointCloudSubCallback@{pointCloudSubCallback}}
+\index{pointCloudSubCallback@{pointCloudSubCallback}!RegistrationNode@{RegistrationNode}}
+\subsubsection[{pointCloudSubCallback}]{\setlength{\rightskip}{0pt plus 5cm}void RegistrationNode::pointCloudSubCallback (
+\begin{DoxyParamCaption}
+\item[{const pcl::PointCloud$<$ Point $>$::Ptr \&}]{ pc\_\-in}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily  \mbox{[}inline\mbox{]}}}}
+\label{classRegistrationNode_ad58ddd35fc39f760197225500100ac30}
+
+
+callback for point cloud subroutine 
+
+callback for point cloud subroutine which stores the point cloud for further calculation
+
+
+\begin{DoxyParams}{Parameters}
+\item[{\em pc\_\-in}]new point cloud\end{DoxyParams}
+\begin{DoxyReturn}{Returns}
+nothing 
+\end{DoxyReturn}
+\hypertarget{classRegistrationNode_a4c014e25b84d541c26b381d7c163f9f4}{
+\index{RegistrationNode@{RegistrationNode}!publish\_\-results@{publish\_\-results}}
+\index{publish\_\-results@{publish\_\-results}!RegistrationNode@{RegistrationNode}}
+\subsubsection[{publish\_\-results}]{\setlength{\rightskip}{0pt plus 5cm}void RegistrationNode::publish\_\-results (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily  \mbox{[}inline, protected\mbox{]}}}}
+\label{classRegistrationNode_a4c014e25b84d541c26b381d7c163f9f4}
+publishing evaluation results \hypertarget{classRegistrationNode_a314ac88efd6a9165c5db16de31a68496}{
+\index{RegistrationNode@{RegistrationNode}!publishParameters@{publishParameters}}
+\index{publishParameters@{publishParameters}!RegistrationNode@{RegistrationNode}}
+\subsubsection[{publishParameters}]{\setlength{\rightskip}{0pt plus 5cm}void RegistrationNode::publishParameters (
+\begin{DoxyParamCaption}
+{}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily  \mbox{[}inline\mbox{]}}}}
+\label{classRegistrationNode_a314ac88efd6a9165c5db16de31a68496}
+reading out all parameters from parameter bag and publishing them as parameterlist thought to be used for evaluation \hypertarget{classRegistrationNode_a83816fd7a40b43b04a76c4e71995d215}{
+\index{RegistrationNode@{RegistrationNode}!registerService@{registerService}}
+\index{registerService@{registerService}!RegistrationNode@{RegistrationNode}}
+\subsubsection[{registerService}]{\setlength{\rightskip}{0pt plus 5cm}bool RegistrationNode::registerService (
+\begin{DoxyParamCaption}
+\item[{::registration::RegistrationPCD::Request \&}]{ req, }
+\item[{::registration::RegistrationPCD::Response \&}]{ res}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily  \mbox{[}inline\mbox{]}}}}
+\label{classRegistrationNode_a83816fd7a40b43b04a76c4e71995d215}
+service callback to register a dataset returning success 
+
+\subsection{Member Data Documentation}
+\hypertarget{classRegistrationNode_a64f206a310aa231161d13fd7aa54380d}{
+\index{RegistrationNode@{RegistrationNode}!parameters\_\-@{parameters\_\-}}
+\index{parameters\_\-@{parameters\_\-}!RegistrationNode@{RegistrationNode}}
+\subsubsection[{parameters\_\-}]{\setlength{\rightskip}{0pt plus 5cm}{\bf ParameterBucket} {\bf RegistrationNode::parameters\_\-}\hspace{0.3cm}{\ttfamily  \mbox{[}protected\mbox{]}}}}
+\label{classRegistrationNode_a64f206a310aa231161d13fd7aa54380d}
+
+
+publish markers for visualization 
+
+parameter bag (containing max, min, step...) 
+
+The documentation for this class was generated from the following file:\begin{DoxyCompactItemize}
+\item 
+ros/src/registration\_\-node.cpp\end{DoxyCompactItemize}

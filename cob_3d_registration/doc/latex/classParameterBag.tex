@@ -1,0 +1,113 @@
+\hypertarget{classParameterBag}{
+\section{ParameterBag Class Reference}
+\label{classParameterBag}\index{ParameterBag@{ParameterBag}}
+}
+Inheritance diagram for ParameterBag:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{classParameterBag}
+\end{center}
+\end{figure}
+\subsection*{Classes}
+\begin{DoxyCompactItemize}
+\item 
+struct \hyperlink{structParameterBag_1_1ParameterBagShortcut}{ParameterBagShortcut}
+\end{DoxyCompactItemize}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classParameterBag_aa441186069d8890e7ecd94bc323b029d}{
+const std::map$<$ std::string, int $>$ \& {\bfseries getInts} () const }
+\label{classParameterBag_aa441186069d8890e7ecd94bc323b029d}
+
+\item 
+\hypertarget{classParameterBag_ab13e8fbb42358e4dc2f72456e0475ffa}{
+const std::map$<$ std::string, double $>$ \& {\bfseries getDoubles} () const }
+\label{classParameterBag_ab13e8fbb42358e4dc2f72456e0475ffa}
+
+\item 
+\hypertarget{classParameterBag_a96eab8894314fbced498b8a9025bdb59}{
+const std::map$<$ std::string, std::string $>$ \& {\bfseries getStrings} () const }
+\label{classParameterBag_a96eab8894314fbced498b8a9025bdb59}
+
+\item 
+\hypertarget{classParameterBag_ad3f0af8e03332d8ff072c2b087f447f0}{
+\hyperlink{structParameterBag_1_1ParameterBagShortcut}{ParameterBagShortcut}$<$ int $>$ {\bfseries createParam} (ros::NodeHandle \&n, const std::string \&name, int v)}
+\label{classParameterBag_ad3f0af8e03332d8ff072c2b087f447f0}
+
+\item 
+\hypertarget{classParameterBag_a6234beff97e34bae792f560dc5199700}{
+\hyperlink{structParameterBag_1_1ParameterBagShortcut}{ParameterBagShortcut}$<$ double $>$ {\bfseries createParam} (ros::NodeHandle \&n, const std::string \&name, double v)}
+\label{classParameterBag_a6234beff97e34bae792f560dc5199700}
+
+\item 
+\hypertarget{classParameterBag_aaf837b9c32c883471acd38825c8b415a}{
+void {\bfseries createParam} (ros::NodeHandle \&n, const std::string \&name, std::string v)}
+\label{classParameterBag_aaf837b9c32c883471acd38825c8b415a}
+
+\item 
+\hypertarget{classParameterBag_abd3c8663bf3b04bbb0f3978a87b31a2b}{
+void {\bfseries setParam} (const std::string \&name, int v)}
+\label{classParameterBag_abd3c8663bf3b04bbb0f3978a87b31a2b}
+
+\item 
+\hypertarget{classParameterBag_ab1157303d340f800f24245b1ec369b8b}{
+void {\bfseries setParam} (const std::string \&name, const std::string \&v)}
+\label{classParameterBag_ab1157303d340f800f24245b1ec369b8b}
+
+\item 
+\hypertarget{classParameterBag_ab862e0710eb048d59fff94cce04056af}{
+void {\bfseries setParam} (const std::string \&name, double v)}
+\label{classParameterBag_ab862e0710eb048d59fff94cce04056af}
+
+\item 
+\hypertarget{classParameterBag_a57d7a5cad5c90a8532cd93f61eefc37f}{
+bool {\bfseries getParam} (const std::string \&name, int \&val)}
+\label{classParameterBag_a57d7a5cad5c90a8532cd93f61eefc37f}
+
+\item 
+\hypertarget{classParameterBag_a8803c44d95e9341f3e9e746dcb71c06e}{
+bool {\bfseries getParam} (const std::string \&name, double \&val)}
+\label{classParameterBag_a8803c44d95e9341f3e9e746dcb71c06e}
+
+\item 
+\hypertarget{classParameterBag_a1b5b8dd08eef223b17333dbc982caea3}{
+bool {\bfseries getParam} (const std::string \&name, std::string \&val)}
+\label{classParameterBag_a1b5b8dd08eef223b17333dbc982caea3}
+
+\item 
+\hypertarget{classParameterBag_a2b0507694ac0f2606aec122621aa01ff}{
+bool {\bfseries getMax} (const std::string \&name, int \&val)}
+\label{classParameterBag_a2b0507694ac0f2606aec122621aa01ff}
+
+\item 
+\hypertarget{classParameterBag_a0db46a3c07d31177be78eba42f1b741d}{
+bool {\bfseries getMax} (const std::string \&name, double \&val)}
+\label{classParameterBag_a0db46a3c07d31177be78eba42f1b741d}
+
+\item 
+\hypertarget{classParameterBag_ab6521af4306ac281dfc92f9abc17f41d}{
+bool {\bfseries getMin} (const std::string \&name, int \&val)}
+\label{classParameterBag_ab6521af4306ac281dfc92f9abc17f41d}
+
+\item 
+\hypertarget{classParameterBag_ad25c1fae4a2049a1006d4b0c5eb13733}{
+bool {\bfseries getMin} (const std::string \&name, double \&val)}
+\label{classParameterBag_ad25c1fae4a2049a1006d4b0c5eb13733}
+
+\item 
+\hypertarget{classParameterBag_ad9c3ffc8b8cffe53196df06e34fdb1bf}{
+bool {\bfseries getStep} (const std::string \&name, int \&val)}
+\label{classParameterBag_ad9c3ffc8b8cffe53196df06e34fdb1bf}
+
+\item 
+\hypertarget{classParameterBag_aeb4a3e10ed52ff77d94d6a135a150be6}{
+bool {\bfseries getStep} (const std::string \&name, double \&val)}
+\label{classParameterBag_aeb4a3e10ed52ff77d94d6a135a150be6}
+
+\end{DoxyCompactItemize}
+
+
+The documentation for this class was generated from the following file:\begin{DoxyCompactItemize}
+\item 
+ros/src/parameters/parameters\_\-bag.h\end{DoxyCompactItemize}

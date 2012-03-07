@@ -77,7 +77,8 @@ namespace cob_3d_mapping_filters
     /** \constructor */
     IntensityFilter()
     : intensity_max_threshold_ (65000),
-      intensity_min_threshold_ (0)
+      intensity_min_threshold_ (0),
+      negative_ (false)
     {};
 
     //virtual ~IntensityFilter();
@@ -103,6 +104,18 @@ namespace cob_3d_mapping_filters
     {
       return intensity_max_threshold_;
     }
+       inline void
+       setNegative (bool negative)
+       {
+         negative_ = negative;
+       }
+ 
+       inline bool
+       getNegative ()
+       {
+         return (negative_);
+       }
+
 
   protected:
 
@@ -122,6 +135,8 @@ namespace cob_3d_mapping_filters
     /** \filter limit */
     int intensity_max_threshold_;
     int intensity_min_threshold_;
+
+    bool negative_;
   };
 
   template <>

@@ -1,0 +1,107 @@
+\hypertarget{classRegistration__Infobased}{
+\section{Registration\_\-Infobased$<$ Point $>$ Class Template Reference}
+\label{classRegistration__Infobased}\index{Registration\_\-Infobased@{Registration\_\-Infobased}}
+}
+Inheritance diagram for Registration\_\-Infobased$<$ Point $>$:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{classRegistration__Infobased}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classRegistration__Infobased_a8736c7e147dfe0e1970745946c84572e}{
+void {\bfseries setUseICP} (const bool b)}
+\label{classRegistration__Infobased_a8736c7e147dfe0e1970745946c84572e}
+
+\item 
+\hypertarget{classRegistration__Infobased_a5780a16f8e3117f2f0fcba6689daec04}{
+virtual boost::shared\_\-ptr$<$ pcl::PointCloud$<$ Point $>$ $>$ \hyperlink{classRegistration__Infobased_a5780a16f8e3117f2f0fcba6689daec04}{getMap} ()}
+\label{classRegistration__Infobased_a5780a16f8e3117f2f0fcba6689daec04}
+
+\begin{DoxyCompactList}\small\item\em map is not necessarily implemented \item\end{DoxyCompactList}\item 
+\hypertarget{classRegistration__Infobased_ae08c19be51f80cb68fa6de0dca888a88}{
+pcl::PointCloud$<$ Point $>$ \& {\bfseries getSource} ()}
+\label{classRegistration__Infobased_ae08c19be51f80cb68fa6de0dca888a88}
+
+\item 
+\hypertarget{classRegistration__Infobased_a22635c046c5678769d14fcb7356a347f}{
+pcl::PointCloud$<$ Point $>$ \& {\bfseries getTarget} ()}
+\label{classRegistration__Infobased_a22635c046c5678769d14fcb7356a347f}
+
+\item 
+\hypertarget{classRegistration__Infobased_a130f9051bbfeda57d765e919ea8870e0}{
+virtual boost::shared\_\-ptr$<$ const pcl::PointCloud$<$ Point $>$ $>$ \hyperlink{classRegistration__Infobased_a130f9051bbfeda57d765e919ea8870e0}{getMarkers} ()}
+\label{classRegistration__Infobased_a130f9051bbfeda57d765e919ea8870e0}
+
+\begin{DoxyCompactList}\small\item\em debug function for marker visualization \item\end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classRegistration__Infobased_ab016a8a196669659952729589e8f9c5f}{
+virtual bool {\bfseries compute\_\-features} ()}
+\label{classRegistration__Infobased_ab016a8a196669659952729589e8f9c5f}
+
+\item 
+\hypertarget{classRegistration__Infobased_a6f7b7249d32b0f2f76052d2cbbf8f63e}{
+virtual bool {\bfseries compute\_\-corrospondences} ()}
+\label{classRegistration__Infobased_a6f7b7249d32b0f2f76052d2cbbf8f63e}
+
+\item 
+\hypertarget{classRegistration__Infobased_ac3bd2459aa5b39223aa0faba283f1dc2}{
+virtual bool {\bfseries compute\_\-transformation} ()}
+\label{classRegistration__Infobased_ac3bd2459aa5b39223aa0faba283f1dc2}
+
+\item 
+\hypertarget{classRegistration__Infobased_ac7d1ecf11333c36537d719f96d00b5be}{
+float {\bfseries getMaxDiff2} (const pcl::PointCloud$<$ Point $>$ \&pc, const int ind, const pcl::PointCloud$<$ Point $>$ \&pc2, int \&mi)}
+\label{classRegistration__Infobased_ac7d1ecf11333c36537d719f96d00b5be}
+
+\item 
+\hypertarget{classRegistration__Infobased_a892c4ad907ee8bd98dcc102d89b784ec}{
+float {\bfseries getMaxDiff} (const pcl::PointCloud$<$ Point $>$ \&pc, const int ind)}
+\label{classRegistration__Infobased_a892c4ad907ee8bd98dcc102d89b784ec}
+
+\item 
+\hypertarget{classRegistration__Infobased_aaf9398c5d32e26895c6e14684fb74380}{
+int {\bfseries getI} (const int ind, const pcl::PointCloud$<$ Point $>$ \&pc)}
+\label{classRegistration__Infobased_aaf9398c5d32e26895c6e14684fb74380}
+
+\item 
+\hypertarget{classRegistration__Infobased_a1c553bcad88092d5c1d1ddcf39a128b8}{
+float {\bfseries findCorr} (pcl::PointCloud$<$ Point $>$ \&pc\_\-old, const pcl::PointCloud$<$ Point $>$ \&pc\_\-new, std::vector$<$ int $>$ \&cor\_\-inds)}
+\label{classRegistration__Infobased_a1c553bcad88092d5c1d1ddcf39a128b8}
+
+\item 
+\hypertarget{classRegistration__Infobased_ae1e5447da4c02579fc2186a254c0577c}{
+void {\bfseries getDis} (const Eigen::Vector3f \&C, const Eigen::Vector3f \&S, float \&dT, float \&dA)}
+\label{classRegistration__Infobased_ae1e5447da4c02579fc2186a254c0577c}
+
+\item 
+\hypertarget{classRegistration__Infobased_acbff89b4a2cd7e2f1c1b1b34b0cb8dd9}{
+float {\bfseries calc\_\-error} (const pcl::PointCloud$<$ Point $>$ \&s, const pcl::PointCloud$<$ Point $>$ \&t)}
+\label{classRegistration__Infobased_acbff89b4a2cd7e2f1c1b1b34b0cb8dd9}
+
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classRegistration__Infobased_a9a316bf088021afaada65470673cf7c4}{
+pcl::PointCloud$<$ Point $>$ {\bfseries register\_\-}}
+\label{classRegistration__Infobased_a9a316bf088021afaada65470673cf7c4}
+
+\item 
+\hypertarget{classRegistration__Infobased_a093d3ca42b8511a984f81d13346fd318}{
+pcl::PointCloud$<$ Point $>$ {\bfseries markers\_\-}}
+\label{classRegistration__Infobased_a093d3ca42b8511a984f81d13346fd318}
+
+\end{DoxyCompactItemize}
+\subsubsection*{template$<$typename Point$>$ class Registration\_\-Infobased$<$ Point $>$}
+
+
+
+The documentation for this class was generated from the following files:\begin{DoxyCompactItemize}
+\item 
+common/include/registration/registration\_\-info.h\item 
+common/include/registration/impl/registration\_\-info.hpp\end{DoxyCompactItemize}

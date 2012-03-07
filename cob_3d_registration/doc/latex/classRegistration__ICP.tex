@@ -1,0 +1,147 @@
+\hypertarget{classRegistration__ICP}{
+\section{Registration\_\-ICP$<$ Point $>$ Class Template Reference}
+\label{classRegistration__ICP}\index{Registration\_\-ICP@{Registration\_\-ICP}}
+}
+
+
+{\ttfamily \#include $<$registration\_\-icp.h$>$}
+
+Inheritance diagram for Registration\_\-ICP$<$ Point $>$:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=3.303835cm]{classRegistration__ICP}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classRegistration__ICP_ab16c8d926cbfaefec2cfb5e29eceffab}{
+void \hyperlink{classRegistration__ICP_ab16c8d926cbfaefec2cfb5e29eceffab}{setNonLinear} (bool b)}
+\label{classRegistration__ICP_ab16c8d926cbfaefec2cfb5e29eceffab}
+
+\begin{DoxyCompactList}\small\item\em non linear uses LM instead of SVD \item\end{DoxyCompactList}\item 
+\hypertarget{classRegistration__ICP_a248f3d67674df34036faaccf7f69f014}{
+void \hyperlink{classRegistration__ICP_a248f3d67674df34036faaccf7f69f014}{setUseOnlyLastReference} (bool b)}
+\label{classRegistration__ICP_a248f3d67674df34036faaccf7f69f014}
+
+\begin{DoxyCompactList}\small\item\em set false to build up a map, instead of using only last frame for registration \item\end{DoxyCompactList}\item 
+\hypertarget{classRegistration__ICP_ae577aec867b0d2f350487dceba478b64}{
+void \hyperlink{classRegistration__ICP_ae577aec867b0d2f350487dceba478b64}{setUseGICP} (bool b)}
+\label{classRegistration__ICP_ae577aec867b0d2f350487dceba478b64}
+
+\begin{DoxyCompactList}\small\item\em switch backend to gicp \item\end{DoxyCompactList}\item 
+\hypertarget{classRegistration__ICP_a5eb9c15e9b4cf56f676a7e73d0855b82}{
+virtual boost::shared\_\-ptr$<$ pcl::PointCloud$<$ Point $>$ $>$ \hyperlink{classRegistration__ICP_a5eb9c15e9b4cf56f676a7e73d0855b82}{getMap} ()}
+\label{classRegistration__ICP_a5eb9c15e9b4cf56f676a7e73d0855b82}
+
+\begin{DoxyCompactList}\small\item\em return pointlcoud to register against \item\end{DoxyCompactList}\item 
+\hypertarget{classRegistration__ICP_a00182a197453a61cdd58108e0cd9fb6f}{
+void \hyperlink{classRegistration__ICP_a00182a197453a61cdd58108e0cd9fb6f}{setMaxIterations} (int v)}
+\label{classRegistration__ICP_a00182a197453a61cdd58108e0cd9fb6f}
+
+\begin{DoxyCompactList}\small\item\em set maximum number of iterations \item\end{DoxyCompactList}\item 
+\hypertarget{classRegistration__ICP_a24520c9711a60d047c107664426e7d33}{
+void \hyperlink{classRegistration__ICP_a24520c9711a60d047c107664426e7d33}{setCorrDist} (float v)}
+\label{classRegistration__ICP_a24520c9711a60d047c107664426e7d33}
+
+\begin{DoxyCompactList}\small\item\em set maximum correlation distance \item\end{DoxyCompactList}\item 
+\hypertarget{classRegistration__ICP_aa13488b9d37d5edf16baaf3de11242ba}{
+void \hyperlink{classRegistration__ICP_aa13488b9d37d5edf16baaf3de11242ba}{setTrfEpsilon} (float v)}
+\label{classRegistration__ICP_aa13488b9d37d5edf16baaf3de11242ba}
+
+\begin{DoxyCompactList}\small\item\em sets transformation epsilon as break condition for icp \item\end{DoxyCompactList}\item 
+\hypertarget{classRegistration__ICP_a648647c59a5693170332c17e328dec39}{
+void \hyperlink{classRegistration__ICP_a648647c59a5693170332c17e328dec39}{setOutlierRejectionThreshold} (float v)}
+\label{classRegistration__ICP_a648647c59a5693170332c17e328dec39}
+
+\begin{DoxyCompactList}\small\item\em sets maximum distance for RANSAC \item\end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classRegistration__ICP_a656bded6e531c0ed9e23a0851d0c97dc}{
+virtual bool {\bfseries compute\_\-features} ()}
+\label{classRegistration__ICP_a656bded6e531c0ed9e23a0851d0c97dc}
+
+\item 
+\hypertarget{classRegistration__ICP_aa375b4ac4304c0055fa15452046f77a3}{
+virtual bool {\bfseries compute\_\-corrospondences} ()}
+\label{classRegistration__ICP_aa375b4ac4304c0055fa15452046f77a3}
+
+\item 
+\hypertarget{classRegistration__ICP_ad016a9ee4ae532da959c397e6990d2fd}{
+virtual bool {\bfseries compute\_\-transformation} ()}
+\label{classRegistration__ICP_ad016a9ee4ae532da959c397e6990d2fd}
+
+\item 
+virtual void \hyperlink{classRegistration__ICP_a3217a0d69daa6726a5c8049600b9607a}{setSettingsForICP} (\hyperlink{classModifiedICP__G}{ModifiedICP\_\-G} $\ast$icp)
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classRegistration__ICP_a20abdf17fe5018793562e5ee6846d21f}{
+pcl::PointCloud$<$ Point $>$ {\bfseries register\_\-}}
+\label{classRegistration__ICP_a20abdf17fe5018793562e5ee6846d21f}
+
+\item 
+\hypertarget{classRegistration__ICP_a5e42b414fed6c9819ee9f32c823ec1ae}{
+int {\bfseries icp\_\-max\_\-iterations\_\-}}
+\label{classRegistration__ICP_a5e42b414fed6c9819ee9f32c823ec1ae}
+
+\item 
+\hypertarget{classRegistration__ICP_aca82c8a16a506d961391953d066a2fe4}{
+float {\bfseries icp\_\-max\_\-corr\_\-dist\_\-}}
+\label{classRegistration__ICP_aca82c8a16a506d961391953d066a2fe4}
+
+\item 
+\hypertarget{classRegistration__ICP_a8f16700511ebd07a622729917f12d8c9}{
+float {\bfseries outlier\_\-rejection\_\-threshold\_\-}}
+\label{classRegistration__ICP_a8f16700511ebd07a622729917f12d8c9}
+
+\item 
+\hypertarget{classRegistration__ICP_ad7e975482bc81a2c49fa82b7d29758d8}{
+float {\bfseries icp\_\-trf\_\-epsilon\_\-}}
+\label{classRegistration__ICP_ad7e975482bc81a2c49fa82b7d29758d8}
+
+\item 
+\hypertarget{classRegistration__ICP_a09bf9b060c676380761a75cc7831f642}{
+bool {\bfseries non\_\-linear\_\-}}
+\label{classRegistration__ICP_a09bf9b060c676380761a75cc7831f642}
+
+\item 
+\hypertarget{classRegistration__ICP_af46d619b7417a00a925b3557ea3e771d}{
+bool {\bfseries use\_\-only\_\-last\_\-refrence\_\-}}
+\label{classRegistration__ICP_af46d619b7417a00a925b3557ea3e771d}
+
+\item 
+\hypertarget{classRegistration__ICP_ab471192a1045e731608aead65acdffad}{
+bool {\bfseries use\_\-gicp\_\-}}
+\label{classRegistration__ICP_ab471192a1045e731608aead65acdffad}
+
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+\subsubsection*{template$<$typename Point$>$ class Registration\_\-ICP$<$ Point $>$}
+
+encapsulates icp with extension extending icp to allow featurebased matching, as keypoint matching 
+
+\subsection{Member Function Documentation}
+\hypertarget{classRegistration__ICP_a3217a0d69daa6726a5c8049600b9607a}{
+\index{Registration\_\-ICP@{Registration\_\-ICP}!setSettingsForICP@{setSettingsForICP}}
+\index{setSettingsForICP@{setSettingsForICP}!Registration_ICP@{Registration\_\-ICP}}
+\subsubsection[{setSettingsForICP}]{\setlength{\rightskip}{0pt plus 5cm}template$<$typename Point $>$ void {\bf Registration\_\-ICP}$<$ Point $>$::setSettingsForICP (
+\begin{DoxyParamCaption}
+\item[{{\bf ModifiedICP\_\-G} $\ast$}]{ icp}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily  \mbox{[}protected, virtual\mbox{]}}}}
+\label{classRegistration__ICP_a3217a0d69daa6726a5c8049600b9607a}
+function for setting up icp can be overwritten by subclasses to modify backend 
+
+Reimplemented in \hyperlink{classRegistration__ICP__Features_a944cd0d0d248afc66b9833f0cfd322ed}{Registration\_\-ICP\_\-Features$<$ Point $>$}.
+
+
+
+The documentation for this class was generated from the following files:\begin{DoxyCompactItemize}
+\item 
+common/include/registration/registration\_\-icp.h\item 
+common/include/registration/impl/registration\_\-icp.hpp\end{DoxyCompactItemize}
