@@ -50,7 +50,7 @@ rosbuild_add_library(cob_3d_mapping_features_omp
 
 rosbuild_add_openmp_flags(cob_3d_mapping_features_omp)
 
-rosbuild_add_executable(test_edge_extraction common/test/test_edge_extraction.cpp)
+#rosbuild_add_executable(test_edge_extraction common/test/test_edge_extraction.cpp)
 rosbuild_add_executable(test_segmentation common/test/test_new_segmentation.cpp)
 rosbuild_add_executable(test_segmentation_2 common/test/test_segmentation_2.cpp)
 rosbuild_add_executable(test_plane_extraction common/src/plane_extraction.cpp)
@@ -64,11 +64,11 @@ rosbuild_add_executable(profile_fee common/test/profile_fee.cpp)
 rosbuild_add_executable(profile_ee common/test/profile_ee.cpp)
 
 
-rosbuild_add_compile_flags(test_edge_extraction -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
+#rosbuild_add_compile_flags(test_edge_extraction -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
 rosbuild_add_compile_flags(test_edge_estimation -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
 rosbuild_add_compile_flags(feature_evaluation -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
 
-target_link_libraries(test_edge_extraction cob_3d_mapping_features)
+#target_link_libraries(test_edge_extraction cob_3d_mapping_features)
 target_link_libraries(test_edge_estimation cob_3d_mapping_features)
 target_link_libraries(test_segmentation cob_3d_mapping_features cob_3d_mapping_features_omp)
 target_link_libraries(test_segmentation_2 cob_3d_mapping_features)
