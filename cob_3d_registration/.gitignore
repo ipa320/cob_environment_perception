@@ -1,0 +1,5 @@
+build
+bin
+*tar*
+*.pcd
+*.pyc

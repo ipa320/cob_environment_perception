@@ -1,0 +1,55 @@
+<package>
+  <description brief="registration">
+
+     registration
+
+  </description>
+  <author>Joshua Hampp</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/registration</url>
+  <depend package="roscpp"/>
+  <depend package="nodelet"/>
+  <depend package="pcl"/>
+  <depend package="pcl_ros"/>
+  <depend package="dynamic_reconfigure"/>
+  <depend package="tf"/>
+  <depend package="tf_conversions"/>
+  <depend package="nav_msgs"/>
+  <depend package="trajectory_msgs"/>
+  <depend package="opencv2"/>
+  <depend package="cv_bridge"/>
+  <depend package="gazebo"/>
+  
+  <!-- depend package="libwm4"/ -->
+  <depend package="libtoon"/>
+  <depend package="libcvd"/>
+  <depend package="bfl"/>
+  <!-- depend package="cob_vision_slam"/ -->
+  <!-- depend package="cob_vision_ipa_utils"/ -->
+  <!-- depend package="cob_vision_features"/ -->
+  <!-- depend package="cob_camera_sensors"/ -->
+  
+  <depend package="cob_3d_mapping_features"/>
+  <depend package="cob_3d_mapping_common"/>
+  
+  <rosdep name="boost"/>
+  <!-- rosdep name="ann"/ -->
+  <!-- rosdep name="lapack"/ -->
+  <rosdep name="tinyxml"/>
+  
+  <!-- depend package="rgbdslam"/ -->
+
+	<export>
+	  <rosdoc config="rosdoc.yaml" />
+	</export>
+
+<!--
+  <export>
+    <cpp cflags="-I${prefix}/common/include" lflags="-Wl,-rpath,${prefix}/common/lib -L${prefix}/common/lib -lcob_vision_slam"/>
+    <cpp cflags="-I${prefix}/common/include" lflags="-Wl,-rpath,${prefix}/common/lib -L${prefix}/common/lib"/>
+  </export>
+-->
+</package>
+
+

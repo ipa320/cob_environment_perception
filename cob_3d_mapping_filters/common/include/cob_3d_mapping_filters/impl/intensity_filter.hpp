@@ -59,6 +59,10 @@
 template <typename PointT> void
 cob_3d_mapping_filters::IntensityFilter<PointT>::applyFilter (PointCloud &pc_out)
 {
+	if(negative_) {
+	   negativeApplyFilter(pc_out);
+	   return;
+   }
   // set the parameters for output poincloud (pc_out)
   pc_out.points.resize(input_->points.size());
   pc_out.header = input_->header;

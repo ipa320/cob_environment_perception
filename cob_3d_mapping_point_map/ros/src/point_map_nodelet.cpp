@@ -103,7 +103,10 @@
 #include "cob_3d_mapping_common/reconfigureable_node.h"
 #include <cob_3d_mapping_point_map/point_map_nodeletConfig.h>
 
+#include <sensor_msgs/CameraInfo.h>
 
+#include "../../../cob_3d_registration/common/include/registration/general_registration.h"
+#include "../../../cob_3d_registration/common/include/registration/registration_info.h"
 
 
 using namespace tf;
@@ -113,24 +116,33 @@ using namespace tf;
 class PointMapNodelet : public pcl_ros::PCLNodelet, protected Reconfigurable_Node<cob_3d_mapping_point_map::point_map_nodeletConfig>
 {
   typedef pcl::PointXYZRGB Point;
+  GeneralRegistration<Point> *reg_;
+  pcl::PointCloud<Point> map_;
 
 public:
   // Constructor
   PointMapNodelet()
   : Reconfigurable_Node<cob_3d_mapping_point_map::point_map_nodeletConfig>("PointMapNodelet"),
-    point_map_(&ctr_),
     ctr_(0),
     is_running_(false)
     {
+
+    reg_ = new Registration_Infobased<Point>();
+    ((Registration_Infobased<Point>*)reg_)->setThresholdDiff(0.06);
+    ((Registration_Infobased<Point>*)reg_)->setThresholdStep(0.06);
+    ((Registration_Infobased<Point>*)reg_)->setMinInfo(1);
+    ((Registration_Infobased<Point>*)reg_)->setMaxInfo(17);
+    ((Registration_Infobased<Point>*)reg_)->SetAlwaysRelevantChanges(true);
+
     setReconfigureCallback2(boost::bind(&callback, this, _1, _2), boost::bind(&callback_get, this, _1));
-    //setReconfigureCallback(boost::bind(&callback, this, _1, _2));
+    setReconfigureCallback(boost::bind(&callback, this, _1, _2));
     }
 
 
   // Destructor
   ~PointMapNodelet()
   {
-    /// void
+    delete reg_;
   }
 
   /**
@@ -152,11 +164,6 @@ public:
     boost::mutex::scoped_lock l1(inst->m_mutex_actionCallback);
     boost::mutex::scoped_lock l2(inst->m_mutex_pointCloudSubCallback);
 
-    inst->point_map_.setICP_maxIterations(config.icp_max_iterations);
-    inst->point_map_.setICP_maxCorrDist(config.icp_max_first_corr_dist);
-    inst->point_map_.setICP_maxCorrDist(config.icp_max_corr_dist);
-    inst->point_map_.setReuse(config.reuse);
-    inst->point_map_.setICP_trfEpsilon(config.icp_trf_epsilon);
     inst->file_path_ = config.file_path;
     inst->save_pc_ = inst->save_map_fov_ = inst->save_map_ = config.save;
     inst->save_pc_aligned_ = config.save_pc_aligned;
@@ -164,7 +171,6 @@ public:
     inst->voxel_leafsize_x_ = config.voxel_leafsize_x;
     inst->voxel_leafsize_y_ = config.voxel_leafsize_y;
     inst->voxel_leafsize_z_ = config.voxel_leafsize_z;
-    inst->point_map_.setUseReferenceMap(config.use_reference_map);
     inst->use_fov_ = config.use_fov;
 
     ROS_INFO("callback");
@@ -176,11 +182,6 @@ public:
     if(!inst)
       return;
 
-    config.icp_max_iterations=inst->point_map_.getICP_maxIterations();
-    config.icp_max_first_corr_dist=inst->point_map_.getICP_maxFirstCorrDist();
-    config.icp_max_corr_dist=inst->point_map_.getICP_maxCorrDist();
-    config.reuse=inst->point_map_.getReuse();
-    config.icp_trf_epsilon=inst->point_map_.getICP_trfEpsilon();
     config.file_path=inst->file_path_;
     config.save = inst->save_pc_;
     config.save_pc_aligned = inst->save_pc_aligned_;
@@ -188,7 +189,6 @@ public:
     config.voxel_leafsize_x = inst->voxel_leafsize_x_;
     config.voxel_leafsize_y = inst->voxel_leafsize_y_;
     config.voxel_leafsize_z = inst->voxel_leafsize_z_;
-    config.use_reference_map=inst->point_map_.getUseReferenceMap();
     config.use_fov = inst->use_fov_;
 
   }
@@ -207,6 +207,7 @@ public:
     PCLNodelet::onInit();
     n_ = getNodeHandle();
 
+    camera_info_sub_ = n_.subscribe("camera_info", 1, &PointMapNodelet::cameraInfoSubCallback, this);
     point_cloud_pub_ = n_.advertise<pcl::PointCloud<Point> >("point_cloud2_map",1);
     point_cloud_pub_aligned_ = n_.advertise<pcl::PointCloud<Point> >("point_cloud2_aligned",1);
     //fov_marker_pub_ = n_.advertise<visualization_msgs::Marker>("fov_marker",10);
@@ -224,22 +225,6 @@ public:
     double icp_trf_epsilon;
     bool use_reference_map, reuse;
 
-    //TODO: values in launch file are not shown in reconfigure_gui; define bounds in gui for realistic values
-    n_.param("aggregate_point_map/icp_max_iterations" ,icp_max_iterations ,50);
-    n_.param("aggregate_point_map/icp_max_corr_dist" ,icp_max_corr_dist,0.05);;
-    n_.param("aggregate_point_map/icp_max_first_corr_dist" ,icp_max_first_corr_dist,0.3);
-    n_.param("aggregate_point_map/icp_trf_epsilon" ,icp_trf_epsilon,0.0005);
-    n_.param("aggregate_point_map/use_reference_map",use_reference_map,false);
-    n_.param("aggregate_point_map/use_fov",use_fov_,false);
-    //use_fov_=true;
-    n_.param("aggregate_point_map/reuse",reuse,true);
-    point_map_.setICP_maxIterations(icp_max_iterations);
-    point_map_.setICP_maxCorrDist(icp_max_corr_dist);
-    point_map_.setICP_maxFirstCorrDist(icp_max_first_corr_dist);
-    point_map_.setICP_trfEpsilon(icp_trf_epsilon);
-    point_map_.setUseReferenceMap(use_reference_map);
-    point_map_.setReuse(reuse);
-
 
     n_.param("aggregate_point_map/file_path" ,file_path_ ,std::string("~/pcl_daten/table/icp/map_"));
     n_.param("aggregate_point_map/save_pc",save_pc_ , false);
@@ -253,12 +238,6 @@ public:
     /*std::stringstream ss;
     ss << file_path_ << "/gt.pcd";
     /pcl::io::savePCDFileASCII (ss.str(), ref_map_);*/
-    if(use_reference_map)
-    {
-      std::string ref_map_path;
-      n_.param("aggregate_point_map/file_path_ref_map" ,ref_map_path ,std::string("/home/goa/pcl_daten/kitchen_ground_truth/whole_kitchen.pcd"));
-      pcl::io::loadPCDFile(ref_map_path, *point_map_.getRefMap());
-    }
   }
 
   /**
@@ -274,7 +253,18 @@ public:
   void
   pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc_in)
   {
+    boost::mutex::scoped_lock l(m_mutex_pointCloudSubCallback);
     pc_in_ = *pc_in;
+  }
+
+  void
+  cameraInfoSubCallback(sensor_msgs::CameraInfo::ConstPtr ci)
+  {
+    ((Registration_Infobased<Point>*)reg_)->setKinectParameters(
+        ci->P[0],
+        ci->P[2],
+        ci->P[6]
+        );
   }
 
   /**
@@ -296,7 +286,7 @@ public:
   {
     res.success.data = false;
 
-    if(!is_running_)
+    if(!is_running_ || pc_in_.size()<1)
       return true;
 
     boost::mutex::scoped_lock l(m_mutex_pointCloudSubCallback);
@@ -318,95 +308,50 @@ public:
         ss2 << file_path_ << "/pc_" << ctr_ << ".pcd";
         pcl::io::savePCDFileASCII (ss2.str(), pc_in_);
       }
-      pcl_ros::transformPointCloud(pc_in_, pc_in_, transform);
-      pc_in_.header.frame_id = "/map";
-      pcl::VoxelGrid<Point> voxel;
-      voxel.setInputCloud(pc_in_.makeShared());
-      voxel.setLeafSize(voxel_leafsize_x_,voxel_leafsize_y_,voxel_leafsize_z_);
-      voxel.filter(*pc);
+
       ROS_DEBUG("Registering new point cloud");
-      //shiftCloud(pc);
-      //shiftCloud(pc_in_);
-      if(save_pc_trans_==true)
+      reg_->setInputOginalCloud(pc_in_.makeShared());
+
       {
-        ss2.str("");
-        ss2.clear();
-        ss2 << file_path_ << "/pc_trans_" << ctr_ << ".pcd";
-        pcl::io::savePCDFileASCII (ss2.str(), *pc);
-        ss2.str("");
-        ss2.clear();
-        ss2 << file_path_ << "/pc_in_trans_" << ctr_ << ".pcd";
-        pcl::io::savePCDFileASCII (ss2.str(), pc_in_);
+        Eigen::Quaternionf q;
+        q.w() = transform.getRotation().getW();
+        q.x() = transform.getRotation().getX();
+        q.y() = transform.getRotation().getY();
+        q.z() = transform.getRotation().getZ();
+        Eigen::Matrix3f R=q.toRotationMatrix();
+        Eigen::Vector3f t;
+        t(0)=transform.getOrigin().getX();
+        t(1)=transform.getOrigin().getY();
+        t(2)=transform.getOrigin().getZ();
+        Eigen::Matrix4f odo=Eigen::Matrix4f::Identity();
+
+        for(int i=0; i<3; i++)
+          odo.col(3)(i) = t(i);
+        for(int i=0; i<3; i++)
+          for(int j=0; j<3; j++)
+            odo(i,j) = R(i,j);
+
+        reg_->setOdometry(odo);
+
+        if(ctr_==0)
+          reg_->setTransformation(odo);
       }
 
-      cob_3d_mapping_msgs::GetFieldOfView get_fov_srv;
-      if(use_fov_) {
+      if(reg_->compute()||ctr_==0) {
+        pcl::transformPointCloud(pc_in_,pc_in_,reg_->getTransformation());
 
-        Eigen::Vector3d n_up;
-        Eigen::Vector3d n_down;
-        Eigen::Vector3d n_right;
-        Eigen::Vector3d n_left;
-        Eigen::Vector3d n_origin;
-        Eigen::Vector3d n_max_range;
+        map_.header.frame_id="/map";
+        pc_in_.header.frame_id="/map";
+        map_+=pc_in_;
 
-        get_fov_srv.request.target_frame = std::string("/map");
-        get_fov_srv.request.stamp = pc->header.stamp;
-        if(get_fov_srv_client_.call(get_fov_srv))
-        {
-          ROS_DEBUG("FOV service called [OK].");
-
-          n_up(0) = get_fov_srv.response.fov.points[0].x;
-          n_up(1) = get_fov_srv.response.fov.points[0].y;
-          n_up(2) = get_fov_srv.response.fov.points[0].z;
-          n_down(0) = get_fov_srv.response.fov.points[1].x;
-          n_down(1) = get_fov_srv.response.fov.points[1].y;
-          n_down(2) = get_fov_srv.response.fov.points[1].z;
-          n_right(0) = get_fov_srv.response.fov.points[2].x;
-          n_right(1) = get_fov_srv.response.fov.points[2].y;
-          n_right(2) = get_fov_srv.response.fov.points[2].z;
-          n_left(0) = get_fov_srv.response.fov.points[3].x;
-          n_left(1) = get_fov_srv.response.fov.points[3].y;
-          n_left(2) = get_fov_srv.response.fov.points[3].z;
-          n_origin(0) = get_fov_srv.response.fov.points[4].x;
-          n_origin(1) = get_fov_srv.response.fov.points[4].y;
-          n_origin(2) = get_fov_srv.response.fov.points[4].z;
-          n_max_range(0) = get_fov_srv.response.fov.points[5].x;
-          n_max_range(1) = get_fov_srv.response.fov.points[5].y;
-          n_max_range(2) = get_fov_srv.response.fov.points[5].z;
-
-          //segment FOV
-          ipa_env_model::FieldOfViewSegmentation<Point> seg_;
-
-          seg_.setInputCloud(point_map_.getUsedMap());
-          //transformNormals(map_.header.frame_id, pc->header.stamp);
-          pcl::PointIndices indices;
-          seg_.segment(indices, n_up, n_down, n_right, n_left, n_origin, n_max_range);
-          pcl::PointCloud<Point>::Ptr frustum = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>);
-          pcl::ExtractIndices<Point> extractIndices;
-          extractIndices.setInputCloud(point_map_.getUsedMap());
-          extractIndices.setIndices(boost::make_shared<pcl::PointIndices>(indices));
-          extractIndices.filter(*frustum);
-          ROS_DEBUG("[aggregate_point_map] Frustum size: %d", (int)frustum->size());
-
-          point_map_.setUsedMapToRegistrate(frustum);
-        }
-        else
-        {
-          ROS_WARN("FOV service called [FAILED].");
-          return false;
-        }
-      }
-      else
-        point_map_.setUsedMapToRegistrate(point_map_.getUsedMap());
-
-      if(point_map_.compute(pc_in_.makeShared(), pc)) {
-        downsampleMap();
-        point_cloud_pub_.publish(*point_map_.getMap());
-        //pc->header.frame_id = "/map";
         point_cloud_pub_aligned_.publish(pc_in_);
+
+        downsampleMap();
+
+        point_cloud_pub_.publish(map_);
       }
       else
-        ROS_WARN("ICP not successful");
+        ROS_WARN("not successful");
 
       ROS_DEBUG("[aggregate_point_map] ICP took %f s", t.elapsed());
 
@@ -414,7 +359,7 @@ public:
       {
         std::stringstream ss1;
         ss1 << file_path_ << "/map_" << ctr_ << ".pcd";
-        pcl::io::savePCDFileASCII (ss1.str(), *point_map_.getMap());
+        pcl::io::savePCDFileASCII (ss1.str(), map_);
       }
       if(save_pc_aligned_==true)
       {
@@ -480,7 +425,7 @@ public:
   {
     //TODO: add mutex
     ROS_INFO("Clearing point map...");
-    point_map_.clearMap();
+    map_.clear();
     return true;
   }
 
@@ -498,7 +443,7 @@ public:
   getMap(cob_3d_mapping_msgs::GetPointMap::Request &req,
          cob_3d_mapping_msgs::GetPointMap::Response &res)
   {
-    pcl::toROSMsg(*(point_map_.getMap()), res.map);
+    pcl::toROSMsg(map_, res.map);
     return true;
   }
 
@@ -516,7 +461,7 @@ public:
   setReferenceMap(cob_3d_mapping_msgs::SetReferenceMap::Request &req,
                   cob_3d_mapping_msgs::SetReferenceMap::Response &res)
   {
-    pcl::fromROSMsg(req.map, *point_map_.getRefMap());
+    ROS_WARN("not needed");
     return true;
   }
 
@@ -532,9 +477,9 @@ public:
   downsampleMap()
   {
     pcl::VoxelGrid<Point> vox_filter;
-    vox_filter.setInputCloud(point_map_.getMap()->makeShared());
+    vox_filter.setInputCloud(map_.makeShared());
     vox_filter.setLeafSize(voxel_leafsize_x_,voxel_leafsize_y_,voxel_leafsize_z_);
-    vox_filter.filter(*point_map_.getMap());
+    vox_filter.filter(map_);
   }
 
   /*void
@@ -556,6 +501,7 @@ public:
 
 protected:
   ros::Subscriber point_cloud_sub_;		//subscriber for input pc
+  ros::Subscriber camera_info_sub_;             //subscriber for input pc
   ros::Publisher point_cloud_pub_;		//publisher for map
   ros::Publisher point_cloud_pub_aligned_;      //publisher for aligned pc
   //ros::Publisher fov_marker_pub_;		//publisher for FOV marker
@@ -567,8 +513,6 @@ protected:
   actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerMappingAction>* as_;
 
   TransformListener tf_listener_;
-
-  PointMap point_map_;
 
   int ctr_;
   bool is_running_;

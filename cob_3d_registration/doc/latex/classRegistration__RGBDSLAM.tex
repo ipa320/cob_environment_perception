@@ -1,0 +1,106 @@
+\hypertarget{classRegistration__RGBDSLAM}{
+\section{Registration\_\-RGBDSLAM$<$ Point $>$ Class Template Reference}
+\label{classRegistration__RGBDSLAM}\index{Registration\_\-RGBDSLAM@{Registration\_\-RGBDSLAM}}
+}
+
+
+{\ttfamily \#include $<$registration\_\-rgbdslam.h$>$}
+
+Inheritance diagram for Registration\_\-RGBDSLAM$<$ Point $>$:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{classRegistration__RGBDSLAM}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classRegistration__RGBDSLAM_ab2bfaca24dc1d7c02bb512c4ead4d939}{
+{\bfseries Registration\_\-RGBDSLAM} (ros::NodeHandle \&nh)}
+\label{classRegistration__RGBDSLAM_ab2bfaca24dc1d7c02bb512c4ead4d939}
+
+\item 
+\hypertarget{classRegistration__RGBDSLAM_a119c92ef6613c9bea7d7507559974178}{
+boost::shared\_\-ptr$<$ pcl::PointCloud$<$ Point $>$ $>$ \hyperlink{classRegistration__RGBDSLAM_a119c92ef6613c9bea7d7507559974178}{getMap} ()}
+\label{classRegistration__RGBDSLAM_a119c92ef6613c9bea7d7507559974178}
+
+\begin{DoxyCompactList}\small\item\em map is not necessarily implemented \item\end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classRegistration__RGBDSLAM_a4160e4cbc8a7cfeda378e9da0495618d}{
+virtual bool {\bfseries compute\_\-features} ()}
+\label{classRegistration__RGBDSLAM_a4160e4cbc8a7cfeda378e9da0495618d}
+
+\item 
+\hypertarget{classRegistration__RGBDSLAM_ad9156fba578117effbb54669808df3fa}{
+virtual bool {\bfseries compute\_\-corrospondences} ()}
+\label{classRegistration__RGBDSLAM_ad9156fba578117effbb54669808df3fa}
+
+\item 
+\hypertarget{classRegistration__RGBDSLAM_a9a57f40c068a98520efb4401fb07f0e0}{
+virtual bool {\bfseries compute\_\-transformation} ()}
+\label{classRegistration__RGBDSLAM_a9a57f40c068a98520efb4401fb07f0e0}
+
+\item 
+\hypertarget{classRegistration__RGBDSLAM_a6d80282ad1d5547295f43a3018ea735b}{
+void \hyperlink{classRegistration__RGBDSLAM_a6d80282ad1d5547295f43a3018ea735b}{transformationCallback} (const tf::tfMessage \&transform)}
+\label{classRegistration__RGBDSLAM_a6d80282ad1d5547295f43a3018ea735b}
+
+\begin{DoxyCompactList}\small\item\em get last transformation and calculate the transformation matrix \item\end{DoxyCompactList}\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classRegistration__RGBDSLAM_a32d5fe77a83e546080aaee1bcdead42f}{
+pcl::PointCloud$<$ Point $>$ {\bfseries register\_\-}}
+\label{classRegistration__RGBDSLAM_a32d5fe77a83e546080aaee1bcdead42f}
+
+\item 
+\hypertarget{classRegistration__RGBDSLAM_af83c679733a4eef87053200ec583fa72}{
+ros::Publisher {\bfseries pub\_\-img\_\-}}
+\label{classRegistration__RGBDSLAM_af83c679733a4eef87053200ec583fa72}
+
+\item 
+\hypertarget{classRegistration__RGBDSLAM_a163812fdfbaeb9b8db3f59c05ee00663}{
+ros::Publisher {\bfseries pub\_\-img\_\-depth\_\-}}
+\label{classRegistration__RGBDSLAM_a163812fdfbaeb9b8db3f59c05ee00663}
+
+\item 
+\hypertarget{classRegistration__RGBDSLAM_a31a5dc9b215fa9157cb890d84bf3cfbc}{
+ros::Publisher {\bfseries pub\_\-camera\_\-info\_\-}}
+\label{classRegistration__RGBDSLAM_a31a5dc9b215fa9157cb890d84bf3cfbc}
+
+\item 
+\hypertarget{classRegistration__RGBDSLAM_a0d2001a54b8013b602004a892cab4249}{
+ros::Publisher {\bfseries pub\_\-cloud\_\-}}
+\label{classRegistration__RGBDSLAM_a0d2001a54b8013b602004a892cab4249}
+
+\item 
+\hypertarget{classRegistration__RGBDSLAM_a0c92e217d23b31dfb1add3e652dba29a}{
+ros::Subscriber {\bfseries sub\_\-trans\_\-}}
+\label{classRegistration__RGBDSLAM_a0c92e217d23b31dfb1add3e652dba29a}
+
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+\subsubsection*{template$<$typename Point$>$ class Registration\_\-RGBDSLAM$<$ Point $>$}
+
+class which wraps the interface to rgbd slam
+
+topics needed:
+\begin{DoxyItemize}
+\item /camera/rgb/image\_\-mono
+\item /camera/depth/image
+\item /camera/rgb/camera\_\-info
+\item /camera/rgb/points topics output:
+\item /rgbdslam/cloud
+\item /rgbdslam/transformed\_\-slowdown\_\-cloud
+\item /rgbdslam/first\_\-frame
+\item /rgbdslam/transforms 
+\end{DoxyItemize}
+
+The documentation for this class was generated from the following files:\begin{DoxyCompactItemize}
+\item 
+ros/include/registration\_\-rgbdslam.h\item 
+ros/include/impl/registration\_\-rgbdslam.hpp\end{DoxyCompactItemize}

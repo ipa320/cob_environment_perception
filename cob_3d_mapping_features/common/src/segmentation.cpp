@@ -199,7 +199,11 @@ void Segmentation::propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_i
   std::vector<pcl::Boundary*> wave;
   std::vector<Coords> wave_coords;
 
+<<<<<<< HEAD
   int cur_label = 4;
+=======
+  int cur_label = 3;
+>>>>>>> 9d1b4da3fd79f23fe39d05802345d8b1533d59a1
   int px_range = 8;
   std::vector<int> indices_ul;
   std::vector<int> indices_ur;

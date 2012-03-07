@@ -1,0 +1,79 @@
+\hypertarget{classRegistration__ICP__Features}{
+\section{Registration\_\-ICP\_\-Features$<$ Point $>$ Class Template Reference}
+\label{classRegistration__ICP__Features}\index{Registration\_\-ICP\_\-Features@{Registration\_\-ICP\_\-Features}}
+}
+
+
+{\ttfamily \#include $<$registration\_\-icp.h$>$}
+
+Inheritance diagram for Registration\_\-ICP\_\-Features$<$ Point $>$:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=1.321534cm]{classRegistration__ICP__Features}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+void \hyperlink{classRegistration__ICP__Features_a63a46214a8b176447ba6ee0986d2dea5}{setFeatures} (\hyperlink{classFeatureContainerInterface}{FeatureContainerInterface} $\ast$features)
+\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+virtual void \hyperlink{classRegistration__ICP__Features_a944cd0d0d248afc66b9833f0cfd322ed}{setSettingsForICP} (\hyperlink{classModifiedICP__G}{ModifiedICP\_\-G} $\ast$icp)
+\item 
+\hypertarget{classRegistration__ICP__Features_abbc0a01f50b62453b469a7f044751644}{
+virtual void {\bfseries setSettingsForICP} (\hyperlink{classModifiedICP}{ModifiedICP}$<$ Point $>$ \&icp)}
+\label{classRegistration__ICP__Features_abbc0a01f50b62453b469a7f044751644}
+
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classRegistration__ICP__Features_a1a47588deb521b8eaf140f262ab7511e}{
+\hyperlink{classFeatureContainerInterface}{FeatureContainerInterface} $\ast$ {\bfseries features\_\-}}
+\label{classRegistration__ICP__Features_a1a47588deb521b8eaf140f262ab7511e}
+
+\item 
+\hypertarget{classRegistration__ICP__Features_a8b93595575938bd37e96dd4bbdf5f8a7}{
+const \hyperlink{classFeatureContainerInterface}{FeatureContainerInterface} $\ast$ {\bfseries features\_\-}}
+\label{classRegistration__ICP__Features_a8b93595575938bd37e96dd4bbdf5f8a7}
+
+\end{DoxyCompactItemize}
+
+
+\subsection{Detailed Description}
+\subsubsection*{template$<$typename Point$>$ class Registration\_\-ICP\_\-Features$<$ Point $>$}
+
+extending icp to features and keypoints 
+
+\subsection{Member Function Documentation}
+\hypertarget{classRegistration__ICP__Features_a63a46214a8b176447ba6ee0986d2dea5}{
+\index{Registration\_\-ICP\_\-Features@{Registration\_\-ICP\_\-Features}!setFeatures@{setFeatures}}
+\index{setFeatures@{setFeatures}!Registration_ICP_Features@{Registration\_\-ICP\_\-Features}}
+\subsubsection[{setFeatures}]{\setlength{\rightskip}{0pt plus 5cm}template$<$typename Point $>$ void {\bf Registration\_\-ICP\_\-Features}$<$ Point $>$::setFeatures (
+\begin{DoxyParamCaption}
+\item[{{\bf FeatureContainerInterface} $\ast$}]{ features}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily  \mbox{[}inline\mbox{]}}}}
+\label{classRegistration__ICP__Features_a63a46214a8b176447ba6ee0986d2dea5}
+sets a featureinterface it is used for the correlation calculation in icp \hypertarget{classRegistration__ICP__Features_a944cd0d0d248afc66b9833f0cfd322ed}{
+\index{Registration\_\-ICP\_\-Features@{Registration\_\-ICP\_\-Features}!setSettingsForICP@{setSettingsForICP}}
+\index{setSettingsForICP@{setSettingsForICP}!Registration_ICP_Features@{Registration\_\-ICP\_\-Features}}
+\subsubsection[{setSettingsForICP}]{\setlength{\rightskip}{0pt plus 5cm}template$<$typename Point $>$ void {\bf Registration\_\-ICP\_\-Features}$<$ Point $>$::setSettingsForICP (
+\begin{DoxyParamCaption}
+\item[{{\bf ModifiedICP\_\-G} $\ast$}]{ icp}
+\end{DoxyParamCaption}
+)\hspace{0.3cm}{\ttfamily  \mbox{[}protected, virtual\mbox{]}}}}
+\label{classRegistration__ICP__Features_a944cd0d0d248afc66b9833f0cfd322ed}
+function for setting up icp can be overwritten by subclasses to modify backend 
+
+Reimplemented from \hyperlink{classRegistration__ICP_a3217a0d69daa6726a5c8049600b9607a}{Registration\_\-ICP$<$ Point $>$}.
+
+
+
+The documentation for this class was generated from the following files:\begin{DoxyCompactItemize}
+\item 
+common/include/registration/registration\_\-icp.h\item 
+common/include/registration/registration\_\-moments.h\item 
+common/include/registration/impl/registration\_\-icp.hpp\end{DoxyCompactItemize}

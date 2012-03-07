@@ -677,6 +677,250 @@ public:
   }
 
 
+  int
+  searchForNeighbors (
+      pcl::PointCloud<PointLabel>::Ptr& cloud_in,
+      int col, int row,
+      double radius,
+      std::vector<int>& indices_ul,
+      std::vector<int>& indices_ur,
+      std::vector<int>& indices_lr,
+      std::vector<int>& indices_ll,
+      bool gap_l, bool gap_r, bool gap_a, bool gap_d)
+  {
+    //NaN test
+    //TODO: use PCL function for that
+    //if(cloud_in->points[index].x != cloud_in->points[index].x) return 0;
+
+    gap_l=gap_r=gap_a=gap_d=false;
+    indices_ul.clear();
+    indices_ur.clear();
+    indices_lr.clear();
+    indices_ll.clear();
+
+    int idx_x = col;
+    int idx_y = row;
+
+    int gap_l_ctr = 0;
+    int gap_a_ctr = 0;
+    for (int i=idx_x-radius; i<=idx_x; i++)
+    {
+      if(i>=cloud_in->width) break;
+      if(i<0) continue;
+      for (int j=idx_y-radius+1; j<=idx_y; j++)
+      {
+        if(j<0) continue;
+        if(i==idx_x && j==idx_y) continue; //skip p itself
+        if(j>=cloud_in->height) break;
+        indices_ul.push_back(i+j*cloud_in->width);
+        if(j==idx_y && cloud_in->points[i+j*cloud_in->width].label!=1) gap_l_ctr++;
+        if(i==idx_x && cloud_in->points[i+j*cloud_in->width].label!=1) gap_a_ctr++;
+        //std::cout << "(" << i << "," << j << ")";
+      }
+    }
+    if(gap_l_ctr==0) gap_l = true;
+    if(gap_a_ctr==0) gap_a = true;
+
+    int gap_r_ctr = 0;
+    int gap_d_ctr = 0;
+    for (int i=idx_x; i<idx_x+radius; i++)
+    {
+      if(i>=cloud_in->width) break;
+      if(i<0) continue;
+      for (int j=idx_y-radius; j<=idx_y; j++)
+      {
+        if(j<0) continue;
+        if(i==idx_x && j==idx_y) continue; //skip p itself
+        if(j>=cloud_in->height) break;
+        indices_ur.push_back(i+j*cloud_in->width);
+        if(j==idx_y && cloud_in->points[i+j*cloud_in->width].label!=1) gap_r_ctr++;
+        if(i==idx_x && cloud_in->points[i+j*cloud_in->width].label!=1) gap_d_ctr++;
+        //std::cout << "(" << i << "," << j << ")";
+      }
+    }
+    if(gap_r_ctr==0) gap_r = true;
+    if(gap_d_ctr==0) gap_d = true;
+    for (int i=idx_x; i<idx_x+radius; i++)
+    {
+      if(i>=cloud_in->width) break;
+      if(i<0) continue;
+      for (int j=idx_y; j<=idx_y+radius; j++)
+      {
+        if(j<0) continue;
+        if(i==idx_x && j==idx_y) continue; //skip p itself
+        if(j>=cloud_in->height) break;
+        indices_lr.push_back(i+j*cloud_in->width);
+        //std::cout << "(" << i << "," << j << ")";
+      }
+    }
+    for (int i=idx_x-radius+1; i<=idx_x; i++)
+    {
+      if(i>=cloud_in->width) break;
+      if(i<0) continue;
+      for (int j=idx_y; j<=idx_y+radius; j++)
+      {
+        if(j<0) continue;
+        if(i==idx_x && j==idx_y) continue; //skip p itself
+        if(j>=cloud_in->height) break;
+        indices_ll.push_back(i+j*cloud_in->width);
+        //std::cout << "(" << i << "," << j << ")";
+      }
+    }
+    return 1;
+  }
+
+  bool isStopperInNeighbors(pcl::PointCloud<PointLabel>::Ptr& cloud_in, std::vector<int>& indices)
+  {
+    for(unsigned int i=0; i< indices.size(); i++)
+    {
+      if(cloud_in->points[indices[i]].label == 1)
+        return true;
+    }
+    return false;
+  }
+
+
+  void propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_in)
+  {
+    //TODO: unlabel small cluster, change pixel step?
+    boost::timer t;
+    int width = cloud_in->width, height = cloud_in->height;
+    std::vector<pcl::Boundary*> wave;
+    std::vector<Coords> wave_coords;
+
+    int cur_label = 3;
+    int px_range = 5;
+    std::vector<int> indices_ul;
+    std::vector<int> indices_ur;
+    std::vector<int> indices_lr;
+    std::vector<int> indices_ll;
+
+    for(int i = 0; i < height; i++ )
+    {
+      for(int j = 0; j < width; j++ )
+      {
+        //std::cout << i << "," << j << ":" << cur_label << std::endl;
+        if(cloud_in->points[i*width+j].label == 0)
+        {
+          cur_label++;
+          PointLabel* p = &cloud_in->points[i*width+j];
+          p->label = cur_label;
+          Coords c(j,i);
+
+          //int count = 0;
+          bool gap_l=false, gap_r=false, gap_a=false, gap_d=false;
+          bool is_wave = true;
+          while(is_wave)
+          {
+            //count++;
+            int pt_ctr = c.u+c.v*width;
+            if( c.u < width-1 && cloud_in->points[pt_ctr+1].label==0)
+            {
+              searchForNeighbors (cloud_in,c.u,c.v,px_range,
+                  indices_ul, indices_ur,
+                  indices_lr, indices_ll,
+                  gap_l, gap_r, gap_a, gap_d);
+              if(c.u = 320 && c.v == 240)
+              {
+                std::cout << c.u << "," << c.v << " --> " << pt_ctr << std::endl;
+                std::cout << "UL: ";
+                for(unsigned int i=0; i<indices_ul.size(); i++)
+                  std::cout << indices_ul[i] << ", ";
+                std::cout << std::endl;
+                std::cout << "UR: ";
+                for(unsigned int i=0; i<indices_ur.size(); i++)
+                  std::cout << indices_ur[i] << ", ";
+                std::cout << std::endl;
+                std::cout << "LR: ";
+                for(unsigned int i=0; i<indices_lr.size(); i++)
+                  std::cout << indices_lr[i] << ", ";
+                std::cout << std::endl;
+                std::cout << "LL: ";
+                for(unsigned int i=0; i<indices_ll.size(); i++)
+                  std::cout << indices_ll[i] << ", ";
+                std::cout << std::endl;
+              }
+              cloud_in->points[pt_ctr+1].label = cur_label;
+              if(!(isStopperInNeighbors(cloud_in, indices_ul) && isStopperInNeighbors(cloud_in, indices_ll) && gap_l))
+              ///if(!isStopperInNeighbors(cloud_in, indices_ur) || !isStopperInNeighbors(cloud_in, indices_lr))
+                wave_coords.push_back(Coords(c.u+1,c.v));
+            }
+            if( c.u > 0 && cloud_in->points[pt_ctr-1].label==0)
+            {
+              searchForNeighbors (cloud_in,c.u,c.v,px_range,
+                  indices_ul, indices_ur,
+                  indices_lr, indices_ll,
+                  gap_l, gap_r, gap_a, gap_d);
+
+              cloud_in->points[pt_ctr-1].label = cur_label;
+              if(!(isStopperInNeighbors(cloud_in, indices_ur) && isStopperInNeighbors(cloud_in, indices_lr) && gap_r))
+              //if(!((isStopperInNeighbors(cloud_in, indices_ur) || isStopperInNeighbors(cloud_in, indices_ul)) &&
+              //    (isStopperInNeighbors(cloud_in, indices_lr) || isStopperInNeighbors(cloud_in, indices_ll))))
+              //if(!isStopperInNeighbors(cloud_in, indices_ul) || !isStopperInNeighbors(cloud_in, indices_ll))
+                wave_coords.push_back(Coords(c.u-1,c.v));
+            }
+            //std::cout << pt_ctr+width << ": "<< (int)(cloud_in->points[pt_ctr+width].boundary_point) << std::endl;
+            if(c.v < height-1 && cloud_in->points[pt_ctr+width].label==0)
+            {
+              searchForNeighbors (cloud_in,c.u,c.v,px_range,
+                  indices_ul, indices_ur,
+                  indices_lr, indices_ll,
+                  gap_l, gap_r, gap_a, gap_d);
+
+              cloud_in->points[pt_ctr+width].label = cur_label;
+              if(!(isStopperInNeighbors(cloud_in, indices_ur) && isStopperInNeighbors(cloud_in, indices_ul) && gap_a))
+              //if(!((isStopperInNeighbors(cloud_in, indices_ur) || isStopperInNeighbors(cloud_in, indices_lr)) &&
+              //    (isStopperInNeighbors(cloud_in, indices_ul) || isStopperInNeighbors(cloud_in, indices_ll))))
+              //if(!isStopperInNeighbors(cloud_in, indices_lr) || !isStopperInNeighbors(cloud_in, indices_ll))
+                wave_coords.push_back(Coords(c.u,c.v+1));
+            }
+            if(c.v > 0 && cloud_in->points[pt_ctr-width].label==0)
+            {
+              searchForNeighbors (cloud_in,c.u,c.v,px_range,
+                  indices_ul, indices_ur,
+                  indices_lr, indices_ll,
+                  gap_l, gap_r, gap_a, gap_d);
+
+              cloud_in->points[pt_ctr-width].label = cur_label;
+              if(!(isStopperInNeighbors(cloud_in, indices_lr) && isStopperInNeighbors(cloud_in, indices_ll) && gap_d))
+              //if(!((isStopperInNeighbors(cloud_in, indices_ur) || isStopperInNeighbors(cloud_in, indices_lr)) &&
+              //    (isStopperInNeighbors(cloud_in, indices_ul) || isStopperInNeighbors(cloud_in, indices_ll))))
+              //if(!isStopperInNeighbors(cloud_in, indices_ur) || !isStopperInNeighbors(cloud_in, indices_ul))
+                wave_coords.push_back(Coords(c.u,c.v-1));
+            }
+            //p = wave.back();
+            if(wave_coords.size()>0)
+            {
+              //wave.pop_back();
+              c = wave_coords.back();
+              wave_coords.pop_back();
+              //std::cout << wave_coords.size() << std::endl;
+            }
+            else
+              is_wave = false;
+          }
+          /*if(count <= maxSize)
+                                {
+                                        region_size[cloud_in->points[i*width+j].boundary_point]=1;
+                                }
+                                else
+                                {
+                                        region_size[cloud_in->points[i*width+j].boundary_point]=2;
+                                }*/
+        }
+        /*else
+                        {
+                                if(region_size[cloud_in->points[i*width+j].boundary_point]==1)
+                                        cloud_in->points[i*width+j].boundary_point = 0;
+                        }*/
+      }
+
+    }
+    std::cout << "Time elapsed for wavefront propagation: " << t.elapsed() << std::endl;
+    return;
+  }
+
+
   /*Calculates the point curvature of a point cloud and thresholds to mark edges.
    * Curvature seems to be a weak indicator for edges.
    */

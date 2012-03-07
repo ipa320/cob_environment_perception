@@ -1,0 +1,21 @@
+<?xml version="1.0" ?>
+<launch>
+
+	<include file="$(find rgbdslam_dev)/launch/custom.launch"/>
+
+    <node pkg="evaluation" type="evaluate.py" name="evaluation" output="screen">
+      <param name="directory" value="/home/goa-jh/Dropbox/evalresults" />  
+      <param name="filename" value="rgbdslam" />
+    </node>
+    
+    <node pkg="registration" type="registration" name="registration" output="screen">
+      <param name="algo" value="rgbdslam" />      
+      
+      <remap from="rgbdslam/image_mono" to="/camera/rgb/image_color"/>
+      <remap from="rgbdslam/image" to="/camera/depth/image"/>
+      <remap from="rgbdslam/camera_info" to="/camera/rgb/camera_info"/>
+      <remap from="rgbdslam/points" to="/camera/rgb/points"/>
+
+    </node>
+</launch>
+

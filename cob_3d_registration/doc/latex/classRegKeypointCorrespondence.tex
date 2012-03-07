@@ -1,0 +1,61 @@
+\hypertarget{classRegKeypointCorrespondence}{
+\section{RegKeypointCorrespondence$<$ Point, Keypoint $>$ Class Template Reference}
+\label{classRegKeypointCorrespondence}\index{RegKeypointCorrespondence@{RegKeypointCorrespondence}}
+}
+Inheritance diagram for RegKeypointCorrespondence$<$ Point, Keypoint $>$:\begin{figure}[H]
+\begin{center}
+\leavevmode
+\includegraphics[height=2.000000cm]{classRegKeypointCorrespondence}
+\end{center}
+\end{figure}
+\subsection*{Public Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classRegKeypointCorrespondence_a297cfea656d891bea94e2d45245a05d9}{
+virtual void {\bfseries getCorrespondences} (std::vector$<$ pcl::registration::Correspondence $>$ \&correspondences)}
+\label{classRegKeypointCorrespondence_a297cfea656d891bea94e2d45245a05d9}
+
+\item 
+\hypertarget{classRegKeypointCorrespondence_ae055e55096e52385a5a91a6f15bf1fc3}{
+virtual boost::shared\_\-ptr$<$ pcl::PointCloud$<$ Point $>$ $>$ {\bfseries getSourcePoints} ()}
+\label{classRegKeypointCorrespondence_ae055e55096e52385a5a91a6f15bf1fc3}
+
+\item 
+\hypertarget{classRegKeypointCorrespondence_ae43d02fb394fb3e7470ae355ddaa92a1}{
+virtual boost::shared\_\-ptr$<$ pcl::PointCloud$<$ Point $>$ $>$ {\bfseries getTargetPoints} ()}
+\label{classRegKeypointCorrespondence_ae43d02fb394fb3e7470ae355ddaa92a1}
+
+\end{DoxyCompactItemize}
+\subsection*{Protected Member Functions}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classRegKeypointCorrespondence_a045fecfd029e9e4f82ba7ce06a24925d}{
+virtual Point {\bfseries getPointForKeypointSrc} (const int ind)=0}
+\label{classRegKeypointCorrespondence_a045fecfd029e9e4f82ba7ce06a24925d}
+
+\item 
+\hypertarget{classRegKeypointCorrespondence_a6b5e53daa87597446ec19cfb41e227f7}{
+virtual Point {\bfseries getPointForKeypointTgt} (const int ind)=0}
+\label{classRegKeypointCorrespondence_a6b5e53daa87597446ec19cfb41e227f7}
+
+\end{DoxyCompactItemize}
+\subsection*{Protected Attributes}
+\begin{DoxyCompactItemize}
+\item 
+\hypertarget{classRegKeypointCorrespondence_a3a8fe81b6aa6ef704e89ce1a9e41ec28}{
+pcl::PointCloud$<$ Keypoint $>$ {\bfseries keypoints\_\-src\_\-}}
+\label{classRegKeypointCorrespondence_a3a8fe81b6aa6ef704e89ce1a9e41ec28}
+
+\item 
+\hypertarget{classRegKeypointCorrespondence_a02f55a21dc55bddb6727a62fe0871660}{
+pcl::PointCloud$<$ Keypoint $>$ {\bfseries keypoints\_\-tgt\_\-}}
+\label{classRegKeypointCorrespondence_a02f55a21dc55bddb6727a62fe0871660}
+
+\end{DoxyCompactItemize}
+\subsubsection*{template$<$typename Point, typename Keypoint$>$ class RegKeypointCorrespondence$<$ Point, Keypoint $>$}
+
+
+
+The documentation for this class was generated from the following file:\begin{DoxyCompactItemize}
+\item 
+common/include/registration/registration\_\-correspondence.h\end{DoxyCompactItemize}

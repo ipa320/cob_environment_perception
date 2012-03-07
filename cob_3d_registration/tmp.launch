@@ -1,0 +1,15 @@
+<?xml version="1.0" ?>
+<launch>
+
+    <node pkg="evaluation" type="evaluate.py" name="evaluation" output="screen">
+      <param name="directory" value="/tmp/eval/info" />  
+      <param name="filename" value="$FN$" />
+    </node>
+    
+    <node pkg="registration" type="registration" name="registration" output="screen">
+      <param name="algo" value="info" />
+
+<param name="use_icp" value="1" />
+
+    </node>
+</launch>
