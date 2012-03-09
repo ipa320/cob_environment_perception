@@ -17,7 +17,7 @@
  * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 11/2011
+ * Date of creation: 01/2012
  * ToDo:
  *
  *
@@ -52,13 +52,6 @@
  *
  ****************************************************************/
 
-/*
- * FPFH_SVM_trainer.cpp
- *
- *  Created on: 27.05.2011
- *      Author: goa-sf
- */
-
 #include <boost/program_options.hpp>
 #include <iostream>
 
@@ -74,12 +67,10 @@ using namespace std;
 using namespace pcl;
 
 string file_plane;
-string file_edge_vex;
-string file_edge_cav;
-string file_sphere_vex;
-string file_sphere_cav;
-string file_cylinder_vex;
-string file_cylinder_cav;
+string file_edge;
+string file_corner;
+string file_sphere;
+string file_cylinder;
 string file_folder = "";
 
 double svm_gamma;
@@ -91,11 +82,11 @@ int svm_samples;
 void readOptions(int argc, char* argv[])
 {
   using namespace boost::program_options;
-
+  
   options_description cmd_line("Options");
   cmd_line.add_options()
     ("help", "produce help messsage")
-    ("svm_gamma,g", value<double>(&svm_gamma)->default_value(1.0),
+    ("svm_gamma,g", value<double>(&svm_gamma)->default_value(1.0), 
      "Training parameter gamma")
     ("svm_c,c", value<double>(&svm_c)->default_value(1.0),
      "Training parameter c")
@@ -115,13 +106,11 @@ void readOptions(int argc, char* argv[])
   {
     cout << "Reads files containing FPFH features and creates a SVM model" << endl;
     cout << "The following files from the defined folder containing the strings are used:" << endl;
-    cout << "\t  \"plane\"" << endl;
-    cout << "\t  \"edge_convex_\"" << endl;
-    cout << "\t  \"edge_concave_\"" << endl;
-    cout << "\t  \"sphere_convex_\"" << endl;
-    cout << "\t  \"sphere_concave_\"" << endl;
-    cout << "\t  \"cylinder_convex_\"" << endl;
-    cout << "\t  \"cylinder_concave_\"" << endl;
+    cout << "\t  \"fpfh_plane.pcd\"" << endl;
+    cout << "\t  \"fpfh_edge.pcd\"" << endl;
+    cout << "\t  \"fpfh_cor.pcd\"" << endl;
+    cout << "\t  \"fpfh_sph.pcd\"" << endl;
+    cout << "\t  \"fpfh_cyl.pcd\"" << endl;
     cout << cmd_line << endl;
     exit(0);
   }
@@ -137,22 +126,18 @@ void readOptions(int argc, char* argv[])
       files[i] = file_folder + files[i];
       // if(!r.read(files[i], c))
       // 	continue;
-      // if(getFieldIndex(c, "histogram") == -1)
+      // if(getFieldIndex(c, "histogram") == -1) 
       // 	continue;
-      if(string::npos != files[i].rfind("plane_"))
+      if(string::npos != files[i].rfind("fpfh_plane"))
 	file_plane = files[i];
-      else if (string::npos != files[i].rfind("edge_convex_"))
-	file_edge_vex = files[i];
-      else if (string::npos != files[i].rfind("edge_concave_"))
-	file_edge_cav = files[i];
-      else if (string::npos != files[i].rfind("sphere_convex_"))
-	file_sphere_vex = files[i];
-      else if (string::npos != files[i].rfind("sphere_concave_"))
-	file_sphere_cav = files[i];
-      else if (string::npos != files[i].rfind("cylinder_convex_"))
-	file_cylinder_vex = files[i];
-      else if (string::npos != files[i].rfind("cylinder_concave_"))
-	file_cylinder_cav = files[i];
+      else if (string::npos != files[i].rfind("fpfh_edge"))
+	file_edge = files[i];
+      else if (string::npos != files[i].rfind("fpfh_cor"))
+	file_corner = files[i];
+      else if (string::npos != files[i].rfind("fpfh_sph"))
+	file_sphere = files[i];
+      else if (string::npos != files[i].rfind("fpfh_cyl"))
+	file_cylinder = files[i];
     }
   }
 }
@@ -161,44 +146,43 @@ int main(int argc, char** argv)
 {
   readOptions(argc, argv);
 
-  PointCloud<FPFHSignature33> pc_plane, pc_edge_vex, pc_edge_cav, pc_sphere_vex, pc_sphere_cav, pc_cylinder_vex, pc_cylinder_cav;
+  PointCloud<FPFHSignature33>::Ptr p_plane (new PointCloud<FPFHSignature33>);
+  PointCloud<FPFHSignature33>::Ptr p_edge (new PointCloud<FPFHSignature33>);
+  PointCloud<FPFHSignature33>::Ptr p_corner (new PointCloud<FPFHSignature33>);
+  PointCloud<FPFHSignature33>::Ptr p_cylinder (new PointCloud<FPFHSignature33>);
+  PointCloud<FPFHSignature33>::Ptr p_sphere (new PointCloud<FPFHSignature33>);
+
   PCDReader reader;
   cout << "Read "<< file_plane << " for plane." << endl;
-  reader.read(file_plane, pc_plane);
-  cout << "Read "<< file_edge_vex << " for edge vex." << endl;
-  reader.read(file_edge_vex, pc_edge_vex);
-  cout << "Read "<< file_edge_cav << " for edge cave." << endl;
-  reader.read(file_edge_cav, pc_edge_cav);
-  cout << "Read "<< file_sphere_vex << " for sph vex." << endl;
-  reader.read(file_sphere_vex, pc_sphere_vex);
-  cout << "Read "<< file_sphere_cav << " for sph cave." << endl;
-  reader.read(file_sphere_cav, pc_sphere_cav);
-  cout << "Read "<< file_cylinder_vex << " for cyl vex." << endl;
-  reader.read(file_cylinder_vex, pc_cylinder_vex);
-  cout << "Read "<< file_cylinder_cav << " for cyl cave." << endl;
-  reader.read(file_cylinder_cav, pc_cylinder_cav);
+  reader.read(file_plane, *p_plane);
+  cout << "Read "<< file_edge << " for edge." << endl;
+  reader.read(file_edge, *p_edge);
+  cout << "Read "<< file_corner << " for corner." << endl;
+  reader.read(file_corner, *p_corner);
+  cout << "Read "<< file_sphere << " for sph." << endl;
+  reader.read(file_sphere, *p_sphere);
+  cout << "Read "<< file_cylinder << " for cyl." << endl;
+  reader.read(file_cylinder, *p_cylinder);
 
-  int plane_samples, edge_vex_samples, edge_cav_samples, sphere_vex_samples, cylinder_vex_samples, sphere_cav_samples, cylinder_cav_samples, sample_count;
+  int plane_samples, edge_samples, corner_samples, sphere_samples, cylinder_samples, sample_count;
 
   if (svm_samples == 0)
   {
-    plane_samples = pc_plane.height * pc_plane.width;
-    edge_vex_samples = pc_edge_vex.height * pc_edge_vex.width;
-    sphere_vex_samples =  pc_sphere_vex.height * pc_sphere_vex.width;
-    cylinder_vex_samples = pc_cylinder_vex.height * pc_cylinder_vex.width;
-    edge_cav_samples = pc_edge_cav.height * pc_edge_cav.width;
-    sphere_cav_samples =  pc_sphere_cav.height * pc_sphere_cav.width;
-    cylinder_cav_samples = pc_cylinder_cav.height * pc_cylinder_cav.width;
+    plane_samples = p_plane->height * p_plane->width;
+    edge_samples = p_edge->height * p_edge->width;
+    sphere_samples =  p_sphere->height * p_sphere->width;
+    cylinder_samples = p_cylinder->height * p_cylinder->width;
+    corner_samples = p_corner->height * p_corner->width;
   }
   else
   {
-    plane_samples = edge_vex_samples = edge_cav_samples = sphere_cav_samples = cylinder_cav_samples = sphere_vex_samples = cylinder_vex_samples = svm_samples;
+    plane_samples = edge_samples = corner_samples = sphere_samples = cylinder_samples = svm_samples;
   }
-  sample_count = plane_samples + edge_vex_samples + edge_cav_samples + sphere_vex_samples + cylinder_vex_samples + sphere_cav_samples + cylinder_cav_samples;
+  sample_count = plane_samples + edge_samples + corner_samples + sphere_samples + cylinder_samples;
   cout << "Found " << sample_count << " samples." << endl;
   cv::Mat train_data(sample_count, 33, CV_32FC1);
   cv::Mat train_data_classes(sample_count, 1, CV_32FC1);
-
+  
   // Read FPFHs for Plane Categorie
   float* row;
   int i_end = 0;
@@ -208,74 +192,54 @@ int main(int argc, char** argv)
     row = train_data.ptr<float>(i + i_end);
     for(int j = 0; j < 33; j++)
     {
-      row[j] = pc_plane.points[i].histogram[j];
+      row[j] = p_plane->points[i].histogram[j];
     }
   }
 
   // Read FPFHs for Edge Categorie
   i_end += plane_samples;
-  for (int i = 0; i < edge_vex_samples; i ++)
+  for (int i = 0; i < edge_samples; i ++)
   {
-    train_data_classes.at<float>(i + i_end) = SVM_EDGE_CVX;
+    train_data_classes.at<float>(i + i_end) = SVM_EDGE;
     row = train_data.ptr<float>(i + i_end);
     for(int j = 0; j < 33; j++)
     {
-      row[j] = pc_edge_vex.points[i].histogram[j];
+      row[j] = p_edge->points[i].histogram[j];
     }
   }
 
-  i_end += edge_vex_samples;
-  for (int i = 0; i < edge_cav_samples; i ++)
+  i_end += edge_samples;
+  for (int i = 0; i < corner_samples; i ++)
   {
-    train_data_classes.at<float>(i + i_end) = SVM_EDGE_CAV;
+    train_data_classes.at<float>(i + i_end) = SVM_COR;
     row = train_data.ptr<float>(i + i_end);
     for(int j = 0; j < 33; j++)
     {
-      row[j] = pc_edge_cav.points[i].histogram[j];
+      row[j] = p_corner->points[i].histogram[j];
     }
   }
 
   // Read FPFHs for Sphere Categorie
-  i_end += edge_cav_samples;
-  for (int i = 0; i < sphere_vex_samples; i ++)
+  i_end += corner_samples;
+  for (int i = 0; i < sphere_samples; i ++)
   {
-    train_data_classes.at<float>(i + i_end) = SVM_SPH_CVX;
+    train_data_classes.at<float>(i + i_end) = SVM_SPH;
     row = train_data.ptr<float>(i + i_end);
     for(int j = 0; j < 33; j++)
     {
-      row[j] = pc_sphere_vex.points[i].histogram[j];
-    }
-  }
-  i_end += sphere_vex_samples;
-  for (int i = 0; i < sphere_cav_samples; i ++)
-  {
-    train_data_classes.at<float>(i + i_end) = SVM_SPH_CAV;
-    row = train_data.ptr<float>(i + i_end);
-    for(int j = 0; j < 33; j++)
-    {
-      row[j] = pc_sphere_cav.points[i].histogram[j];
+      row[j] = p_sphere->points[i].histogram[j];
     }
   }
 
   // Read FPFHs for Cylinder Categorie
-  i_end += sphere_cav_samples;
-  for (int i = 0; i < cylinder_vex_samples; i ++)
+  i_end += sphere_samples;
+  for (int i = 0; i < cylinder_samples; i ++)
   {
-    train_data_classes.at<float>(i + i_end) = SVM_CYL_CVX;
+    train_data_classes.at<float>(i + i_end) = SVM_CYL;
     row = train_data.ptr<float>(i + i_end);
     for(int j = 0; j < 33; j++)
     {
-      row[j] = pc_cylinder_vex.points[i].histogram[j];
-    }
-  }
-  i_end += cylinder_vex_samples;
-  for (int i = 0; i < cylinder_cav_samples; i ++)
-  {
-    train_data_classes.at<float>(i + i_end) = SVM_CYL_CAV;
-    row = train_data.ptr<float>(i + i_end);
-    for(int j = 0; j < 33; j++)
-    {
-      row[j] = pc_cylinder_cav.points[i].histogram[j];
+      row[j] = p_cylinder->points[i].histogram[j];
     }
   }
 
@@ -289,15 +253,15 @@ int main(int argc, char** argv)
   params.gamma = svm_gamma;
   // Define iteration termination criteria:
   params.term_crit.type = CV_TERMCRIT_ITER | CV_TERMCRIT_EPS;
-  params.term_crit.max_iter = 200;
+  params.term_crit.max_iter = 1000;
   params.term_crit.epsilon = 0.00001;
   cout << "Starting training process with " << sample_count << " samples." << endl;
-  if(svm_k == 0)
+  if(svm_k == 0) 
     svm.train(train_data, train_data_classes, cv::Mat(), cv::Mat(), params);
-  else
+  else 
     svm.train_auto(train_data, train_data_classes, cv::Mat(), cv::Mat(), params, svm_k);
   string file_xml = file_folder + "SVM_fpfh_rng_g_c.xml";
   svm.save(file_xml.c_str());
   //cout << "C: " << params.C << " - Gamma: " << svm_gamma << " / " << params.gamma << endl;
-  cout << "Training process complete." << endl;
+  cout << "Training process completed." << endl;
 }
