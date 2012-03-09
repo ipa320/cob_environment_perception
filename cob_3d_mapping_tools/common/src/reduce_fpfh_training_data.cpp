@@ -17,7 +17,7 @@
  * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 11/2011
+ * Date of creation: 01/2012
  * ToDo:
  *
  *
@@ -52,52 +52,75 @@
  *
  ****************************************************************/
 
-/*! 
- * @brief Defines some commonly used labels for primitive geometrires
- *
- */
 
-#ifndef COB_3D_MAPPING_COMMON_LABEL_DEFINES_H_
-#define COB_3D_MAPPING_COMMON_LABEL_DEFINES_H_
+#include "cob_3d_mapping_tools/most_discriminating_data_points.h"
+#include <boost/program_options.hpp>
 
+#include <pcl/point_types.h>
+#include <pcl/io/pcd_io.h>
 
-// --- define colors ---
-#define LBL_PLANE    0x00CCFF
-#define LBL_EDGE     0x7F0000
-#define LBL_EDGE_CVX 0xFF6600
-#define LBL_COR      0xFFCC00
-#define LBL_COR_CVX  0xFF00FF
-#define LBL_CYL      0x007F00
-#define LBL_CYL_CVX  0x00FF66
-#define LBL_SPH      0x00007F
-#define LBL_SPH_CVX  0x9900FF
-#define LBL_UNDEF    0x999999
+using namespace std;
+using namespace pcl;
 
-// --- define SVM labels ---
-#define SVM_PLANE 0
-#define SVM_EDGE  1
-#define SVM_COR   2
-#define SVM_SPH   3
-#define SVM_CYL   4
+string in_, out_;
+int k_;
 
-#define SVM_EDGE_CVX 1
-#define SVM_SPH_CVX  2
-#define SVM_CYL_CVX  3
+void readOptions(int argc, char* argv[])
+{
+  using namespace boost::program_options;
+  options_description options("Options");
+  options.add_options()
+    ("help", "produce help message")
+    ("in", value<string>(&in_), "input fpfh pcd")
+    ("out", value<string>(&out_), "output fpfh pcd")
+    ("intervals,k", value<int>(&k_)->default_value(100), "k means value")
+    ;
 
-#define SVM_EDGE_CAV 4
-#define SVM_SPH_CAV  5
-#define SVM_CYL_CAV  6
+  positional_options_description p_opt;
+  p_opt.add("in",1).add("out", 1);
+  variables_map vm;
+  store(command_line_parser(argc, argv).options(options).positional(p_opt).run(), vm);
+  notify(vm);
 
-#define SVM_COR_CVX  7
-#define SVM_COR_CAV  8
+  if (vm.count("help"))
+  {
+    cout << options << endl;
+    exit(0);
+  }
+}
 
-// --- define integer labels ---
-#define I_PLANE 0
-#define I_EDGE  1
-#define I_SPH   2
-#define I_CYL   3
-#define I_COR   4
-#define I_EDGECORNER 5
-#define I_CURVED 6
+int main(int argc, char** argv)
+{
+  readOptions(argc, argv);
+  PointCloud<FPFHSignature33>::Ptr f_in (new PointCloud<FPFHSignature33>);
+  PointCloud<FPFHSignature33>::Ptr f_out (new PointCloud<FPFHSignature33>);
 
-#endif
+  io::loadPCDFile<FPFHSignature33>(in_, *f_in);
+  cout << "loaded fpfh" << endl;
+  vector<vector<float> > d_in;
+  vector<vector<float> > d_out;
+
+  d_in.resize(f_in->size());
+  for (size_t n=0;n<f_in->size();n++)
+  {
+    d_in.at(n) = vector<float>(f_in->points[n].histogram,
+			       f_in->points[n].histogram +
+			       sizeof(f_in->points[n].histogram) / sizeof(float));
+  }
+  cout << "copied fpfh" << endl;
+  MostDiscriminatingDataPoints md;
+  md.setInputData(&d_in);
+  md.setK(k_);
+  md.computeDataPoints(&d_out);
+  cout << "computed kmeans" << endl;
+
+  f_out->points.resize(k_);
+
+  for (size_t k=0; k<k_; k++)
+  {
+    for (size_t m=0;m<33;m++) f_out->points[k].histogram[m] = d_out.at(k).at(m);
+  }
+  cout << "saved fpfh" << endl;
+  io::savePCDFileASCII<FPFHSignature33>(out_, *f_out);
+  return (0);
+}

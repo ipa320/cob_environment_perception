@@ -17,7 +17,7 @@
  * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 11/2011
+ * Date of creation: 02/2012
  * ToDo:
  *
  *
@@ -52,52 +52,74 @@
  *
  ****************************************************************/
 
-/*! 
- * @brief Defines some commonly used labels for primitive geometrires
- *
- */
+#include <boost/program_options.hpp>
 
-#ifndef COB_3D_MAPPING_COMMON_LABEL_DEFINES_H_
-#define COB_3D_MAPPING_COMMON_LABEL_DEFINES_H_
+#include <pcl/io/pcd_io.h>
+#include <pcl/common/file_io.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+
+using namespace std;
+using namespace pcl;
+
+string out, in_f;
+vector<string> in_pcds;
 
 
-// --- define colors ---
-#define LBL_PLANE    0x00CCFF
-#define LBL_EDGE     0x7F0000
-#define LBL_EDGE_CVX 0xFF6600
-#define LBL_COR      0xFFCC00
-#define LBL_COR_CVX  0xFF00FF
-#define LBL_CYL      0x007F00
-#define LBL_CYL_CVX  0x00FF66
-#define LBL_SPH      0x00007F
-#define LBL_SPH_CVX  0x9900FF
-#define LBL_UNDEF    0x999999
+void readOptions(int argc, char* argv[])
+{
+  using namespace boost::program_options;
+  options_description options("Options");
+  options.add_options()
+    ("help", "produce help message")
+    ("out,o", value<string> (&out), "output pcd file name")
+    ("folder,f", value<string> (&in_f), "input folder containing all pcd files to merge")
+    ("pcds,p", value<vector<string> > (&in_pcds), "list of input pcds to merge")
+    ;
 
-// --- define SVM labels ---
-#define SVM_PLANE 0
-#define SVM_EDGE  1
-#define SVM_COR   2
-#define SVM_SPH   3
-#define SVM_CYL   4
+  positional_options_description p_opt;
+  p_opt.add("out", 1);
+  variables_map vm;
+  store(command_line_parser(argc, argv).options(options).positional(p_opt).run(), vm);
+  notify(vm);
 
-#define SVM_EDGE_CVX 1
-#define SVM_SPH_CVX  2
-#define SVM_CYL_CVX  3
+  if (vm.count("help") || !vm.count("out"))
+  {
+    cout << "\nTool to merge pcd files (of all types) specified by a folder "
+	 << "or given as a list to a single file\n\n";
+    cout << options << endl;
+    exit(0);
+  }
+}
 
-#define SVM_EDGE_CAV 4
-#define SVM_SPH_CAV  5
-#define SVM_CYL_CAV  6
+int main(int argc, char** argv)
+{
+  readOptions(argc, argv);
+  sensor_msgs::PointCloud2::Ptr cloud_out (new sensor_msgs::PointCloud2);
+  sensor_msgs::PointCloud2::Ptr cloud_in (new sensor_msgs::PointCloud2);
+  sensor_msgs::PointCloud2::Ptr cloud_tmp (new sensor_msgs::PointCloud2);
+  if (in_f != "") 
+  {
+    vector<string> tmp_in;
+    getAllPcdFilesInDirectory(in_f, tmp_in);
+    for(size_t i=0; i<tmp_in.size(); i++)
+    {
+      in_pcds.push_back(in_f + tmp_in[i]);
+    }
+  }
+  cout << "PCD files to merge: " << in_pcds.size() << endl;
+  io::loadPCDFile(in_pcds[0], *cloud_out);
+  for (size_t i=1; i<in_pcds.size(); i++)
+  {
+    io::loadPCDFile(in_pcds[i], *cloud_in);
+    cout << "loaded " << cloud_in->width * cloud_in->height << " points..." << endl;
+    concatenatePointCloud (*cloud_in,*cloud_out,*cloud_tmp);
+    cout << "copied " << cloud_tmp->width * cloud_tmp->height << " points..." << endl;
+    *cloud_out = *cloud_tmp;
 
-#define SVM_COR_CVX  7
-#define SVM_COR_CAV  8
+  }
+  io::savePCDFile(out, *cloud_out);
+  cout << "saved " << cloud_out->width * cloud_out->height << " points!" << endl;
 
-// --- define integer labels ---
-#define I_PLANE 0
-#define I_EDGE  1
-#define I_SPH   2
-#define I_CYL   3
-#define I_COR   4
-#define I_EDGECORNER 5
-#define I_CURVED 6
-
-#endif
+  return 0;
+}
