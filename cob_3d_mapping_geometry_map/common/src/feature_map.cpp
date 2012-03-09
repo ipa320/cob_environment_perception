@@ -274,16 +274,16 @@ FeatureMap::addMapEntry(FeatureMap::MapEntryPtr p_ptr)
       gpc_polygon gpc_result;
       gpc_polygon gpc_p_merge;
       gpc_polygon gpc_p_map;
-      std::cout << "Planes before merging:\n";
-      std::cout << "New f: " << p.normal(0) << "," << p.normal(1) << "," << p.normal(2) << "," << p.d << std::endl;
-      std::cout << "Map f: " << p_map.normal(0) << "," << p_map.normal(1) << "," << p_map.normal(2) << "," << p_map.d << std::endl;
+      ROS_DEBUG("Planes before merging:");
+      ROS_DEBUG("New f: %f,%f,%f,%f", p.normal(0), p.normal(1), p.normal(2), p.d);
+      ROS_DEBUG("Map f: %f,%f,%f,%f", p_map.normal(0), p_map.normal(1), p_map.normal(2), p_map.d);
       double d_p = p.d;
       Eigen::Vector3f normal_p(p.normal(0), p.normal(1), p.normal(2));
       if(p_map.normal.dot(normal_p)<-0.97) {normal_p = -normal_p, d_p=-d_p;}
-      std::cout << "dot: " << p_map.normal.dot(normal_p) << std::endl;
+      ROS_DEBUG("dot: %f", p_map.normal.dot(normal_p));
       Eigen::Vector3f n_map = p_map.normal + normal_p;
       double d_map = p_map.d + d_p;
-      std::cout << "d_map before norm: " << d_map << "," << n_map.norm() << std::endl;
+      ROS_DEBUG("d_map before norm: %f,%f", d_map, n_map.norm());
       d_map = d_map/n_map.norm();
       n_map.normalize();
       Eigen::Vector3f ft_pt;
@@ -295,9 +295,9 @@ FeatureMap::addMapEntry(FeatureMap::MapEntryPtr p_ptr)
         ft_pt << -d_map/n_map(0), 0, 0;
       else if(fabs(n_map(1))>0.01)
         ft_pt << 0, -d_map/n_map(1), 0;*/
-      std::cout << "Merged plane:\n";
-      std::cout << "Merged f: " << n_map(0) << "," << n_map(1) << "," << n_map(2) << "," << d_map << std::endl;
-      std::cout << "FP: " << ft_pt(0) << "," << ft_pt(1) << "," << ft_pt(2) << std::endl;
+      ROS_DEBUG("Merged plane:");
+      ROS_DEBUG("Merged f: %f,%f,%f,%f", n_map(0) , n_map(1) , n_map(2) , d_map);
+      ROS_DEBUG("FP: %f,%f,%f", ft_pt(0), ft_pt(1), ft_pt(2));
       Eigen::Affine3f transformation_from_plane_to_world;
       Eigen::Affine3f transformation_from_world_to_plane;
       getTransformationFromPlaneToWorld(n_map, ft_pt, transformation_from_plane_to_world);
@@ -314,11 +314,11 @@ FeatureMap::addMapEntry(FeatureMap::MapEntryPtr p_ptr)
       getGpcStructureUsingMap(p_map, transformation_from_world_to_plane/*p_map.transform_from_world_to_plane*/, &gpc_p_map);
       //printGpcStructure(&gpc_p_map);
       gpc_polygon_clip(GPC_INT, &gpc_p_merge, &gpc_p_map, &gpc_result);
-      std::cout << "num contours intersect: " << gpc_result.num_contours << std::endl;
+      ROS_DEBUG("num contours intersect: %d", gpc_result.num_contours);
       if(gpc_result.num_contours == 0)
       {
-        std::cout << "no intersection" << std::endl;
-        std::cout << p.normal << std::endl;
+        ROS_DEBUG("no intersection");
+        //ROS_DEBUG(p.normal);
         continue;
       }
       gpc_polygon_clip(GPC_UNION, &gpc_p_merge, &gpc_p_map, &gpc_result);
@@ -365,7 +365,7 @@ FeatureMap::addMapEntry(FeatureMap::MapEntryPtr p_ptr)
             //TODO: update normal, d, transformation...?
           }
         }
-        std::cout << i << ": feature merged" << std::endl;
+        ROS_DEBUG("%d: feature merged",i);
         /*if(fabs(p_map.normal(1))>0.8)
         {
           printGpcStructure(&gpc_result);
@@ -389,8 +389,8 @@ FeatureMap::addMapEntry(FeatureMap::MapEntryPtr p_ptr)
     p.id = new_id_;
     map_.push_back(p_ptr);
     new_id_++;
-    std::cout << "feature added" << std::endl;
-    //ROS_INFO("added new feature");
+    //std::cout << "feature added" << std::endl;
+    ROS_DEBUG("added new feature");
   }
   //printGpcStructure(&gpc_p);
   //gpc_free_polygon(&gpc_p);
@@ -421,7 +421,7 @@ FeatureMap::getGpcStructure(FeatureMap::MapEntry& p, gpc_polygon* gpc_p)
       Eigen::Vector3f point_trans = p.transform_from_world_to_plane*p.polygon_world[j][k];
       gpc_p->contour[j].vertex[k].x = point_trans(0);
       gpc_p->contour[j].vertex[k].y = point_trans(1);
-      if(fabs(point_trans(2))>0.01) std::cout << "z: " << point_trans(2) << std::endl;
+      //if(fabs(point_trans(2))>0.01) std::cout << "z: " << point_trans(2) << std::endl;
       //std::cout << k << ":" << gpc_p->contour[j].vertex[k].x << "," << gpc_p->contour[j].vertex[k].y <<std::endl;
     }
   }

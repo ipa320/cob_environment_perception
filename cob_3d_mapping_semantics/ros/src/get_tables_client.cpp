@@ -76,7 +76,7 @@ public:
 
   {
     get_tables_client_ = nh.serviceClient<cob_3d_mapping_msgs::GetObjectsOfClass> ("get_objects_of_class");
-    pc2_pub_ = nh.advertise<sensor_msgs::PointCloud2> ("/get_tables_client/point_cloud2", 100);
+   pc2_pub_ = nh.advertise<sensor_msgs::PointCloud2> ("/get_tables_client/point_cloud2", 100);
     ros::param::param ("~file_path", file_path_, std::string ("/home/goa-wq/tmp/"));
     ros::param::param ("~save_txt_file", save_txt_file_, true);
     ros::param::param ("~save_pcd_file", save_pcd_file_, true);
@@ -127,7 +127,7 @@ public:
     {
       for (unsigned int i = 0; i < res.objects.shapes.size (); i++)
       {
-        if (save_txt_file_ == true)
+        if (save_txt_file_ == true && res.objects.shapes.size() > 0)
         {
           std::ofstream object_file;
           std::stringstream ss;
@@ -139,23 +139,24 @@ public:
           object_file.close ();
           ROS_INFO("Text file saved");
         }
-        if (save_pcd_file_ == true)
+        if (save_pcd_file_ == true && res.objects.shapes.size() > 0)
         {
           for (unsigned int j = 0; j < res.objects.shapes[i].points.size (); j++)
           {
             ROS_INFO("Saving Table object: table_%d_%d",i,j);
             std::stringstream ss1;
-            ss1 << file_path_ << "shape_" << i << "_" << j << ".pcd";
+            ss1 << file_path_ << "table_" << i << "_" << j << ".pcd";
             pcl::PointCloud<pcl::PointXYZ> p;
             pcl::fromROSMsg (res.objects.shapes[i].points[j], p);
             pcl::io::savePCDFile (ss1.str (), p, false);
             ROS_INFO("PCD file saved");
           }
         }
+
       }
     }
 
-    if (save_bag_file_ == true)
+    if (save_bag_file_ == true && res.objects.shapes.size() > 0)
     {
       cob_3d_mapping_msgs::ShapeArray sa;// = res.objects.shapes;
       sa.header.stamp = ros::Time (1.0);
@@ -164,7 +165,7 @@ public:
       for (unsigned int i = 0; i < res.objects.shapes.size (); i++)
       {
         sa.shapes.push_back (res.objects.shapes[i]);
-
+        /*
         for (unsigned int j = 0; j < res.objects.shapes[i].points.size (); j++)
         {
           sensor_msgs::PointCloud2 pc2;
@@ -173,7 +174,7 @@ public:
           pc2_pub_.publish(pc2);
           ros::Duration(10).sleep();
         }
-
+        */
       }
 
     rosbag::Bag bag;
@@ -186,6 +187,8 @@ public:
     ROS_INFO("BAG file saved");
     //std::cout << sa.header.stamp << std::endl;
   }
+    else
+      ROS_INFO("No table object : BAG file not saved");
 
 }
 

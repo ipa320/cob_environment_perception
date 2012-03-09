@@ -28,12 +28,15 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
-rosbuild_add_library(cob_table_object_cluster 
+rosbuild_add_library(cob_table_object_cluster
 	common/src/table_object_cluster.cpp)
-rosbuild_add_library(cob_table_object_cluster_nodelets 
+rosbuild_add_library(cob_table_object_cluster_nodelets
 	ros/src/table_object_cluster_nodelet.cpp)
-	
+
 rosbuild_add_executable(table_object_cluster_action_client ros/src/table_object_cluster_action_client.cpp)
+rosbuild_add_executable(srs_table_object_cluster  ros/src/srs_table_object_cluster_node.cpp)
+
+target_link_libraries(srs_table_object_cluster cob_table_object_cluster)
 
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)

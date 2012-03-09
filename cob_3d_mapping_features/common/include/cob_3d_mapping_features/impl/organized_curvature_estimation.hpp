@@ -60,8 +60,8 @@
 
 template <typename PointInT, typename PointNT, typename PointLabelT, typename PointOutT> void
 cob_3d_mapping_features::OrganizedCurvatureEstimation<PointInT,PointNT,PointLabelT,PointOutT>::computePointCurvatures (
-  const NormalCloudIn &normals, 
-  int index, 
+  const NormalCloudIn &normals,
+  int index,
   const std::vector<int> &indices,
   float &pcx, float &pcy, float &pcz, float &pc1, float &pc2,
   int &label_out)
@@ -94,7 +94,7 @@ cob_3d_mapping_features::OrganizedCurvatureEstimation<PointInT,PointNT,PointLabe
   centroid *= num_p_inv;
   cov.setZero();
 
-  for (std::vector<Eigen::Vector3f>::iterator it = normals_projected.begin(); 
+  for (std::vector<Eigen::Vector3f>::iterator it = normals_projected.begin();
        it != normals_projected.end(); ++it)
   {
     demean = *it - centroid;
@@ -121,6 +121,12 @@ cob_3d_mapping_features::OrganizedCurvatureEstimation<PointInT,PointNT,PointLabe
     labels_->points.resize(input_->size());
     labels_->height = input_->height;
     labels_->width = input_->width;
+  }
+  if (output.points.size() != input_->size())
+  {
+    output.points.resize(input_->size());
+    output.height = input_->height;
+    output.width = input_->width;
   }
 
   std::vector<int> nn_indices;

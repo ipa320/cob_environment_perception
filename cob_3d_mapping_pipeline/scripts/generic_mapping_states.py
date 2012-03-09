@@ -74,6 +74,7 @@ sss = simple_script_server()
 # This state will initialize all hardware drivers.
 class UpdateEnvMap(smach.State):
 
+
 	def __init__(self):
 
 		smach.State.__init__(
@@ -169,7 +170,7 @@ class Map360(smach.State):
 			return 'failed'
 		i = 0.2
 		ctr = 0
-		while i <= 6.2:
+		while i <= 8:#6.2:
 			scan_pose[2]=i
 			sss.move("base",scan_pose)
 			if operator.mod(ctr,2) == 0:
@@ -187,3 +188,60 @@ class Map360(smach.State):
 		#get map
 
 		return 'succeeded'
+
+
+class Map180(smach.State):
+
+	def __init__(self):
+
+		smach.State.__init__(
+			self,
+			outcomes=['succeeded', 'failed'],
+			input_keys=['angle_range']) #good angle value: 0.4
+		self.client = actionlib.SimpleActionClient('trigger_mapping', TriggerMappingAction)
+
+	def execute(self, userdata):
+		scan_pose = [0, -1, 0]
+		sss.move("tray","down")
+		sss.move("torso","home")
+		sss.move("head","front")
+		sss.move("base",scan_pose)
+		#sss.move("base",scan_position)
+		goal = TriggerMappingGoal()
+		goal.start = True
+		if not self.client.wait_for_server():#rospy.Duration.from_sec(5.0)):
+			rospy.logerr('server not available')
+			return 'failed'
+		self.client.send_goal(goal)
+		if not self.client.wait_for_result():#rospy.Duration.from_sec(5.0)):
+			return 'failed'
+		i = 0.2
+		ctr = 0
+		while i <= 4:#6.2:
+			scan_pose[2]=i
+			sss.move("base",scan_pose)
+			#if operator.mod(ctr,2) == 0:
+			#	sss.move("torso",[[-0.2,0.0,-0.2]])
+			#else:
+			#	sss.move("torso","home")
+			#sss.sleep(0.5)
+			i = i+0.2
+			#ctr = ctr+1
+		sss.move("torso",[[-0.2,0.0,-0.2]])
+		while i > 0:#6.2:
+			scan_pose[2]=i
+			sss.move("base",scan_pose)
+			i = i-0.2
+
+		goal.start = False
+		self.client.send_goal(goal)
+		self.client.wait_for_result(rospy.Duration.from_sec(5.0))
+		#sss.move("torso","home")
+		#move neck/base
+		#get map
+
+		return 'succeeded'
+
+
+
+

@@ -170,11 +170,24 @@ bool Segmentation::isStopperInNeighbors(pcl::PointCloud<PointLabel>::Ptr& cloud_
 {
   for(unsigned int i=0; i< indices.size(); i++)
   {
-    if(cloud_in->points[indices[i]].label == 1)
+    if(cloud_in->points[indices[i]].label > 0 && cloud_in->points[indices[i]].label <= 3)
       return true;
   }
   return false;
 }
+
+/*bool Segmentation::isEdgeInNeighbors(pcl::PointCloud<PointLabel>::Ptr& cloud_in, std::vector<int>& indices)
+{
+  int edge_ctr=0;
+  for(unsigned int i=0; i< indices.size(); i++)
+  {
+    if(cloud_in->points[indices[i]].label == 1)
+      edge_ctr++;
+  }
+  if(edge_ctr==indices.size())
+    return true;
+  return false;
+}*/
 
 
 void Segmentation::propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_in)
@@ -186,7 +199,7 @@ void Segmentation::propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_i
   std::vector<pcl::Boundary*> wave;
   std::vector<Coords> wave_coords;
 
-  int cur_label = 3;
+  int cur_label = 4;
   int px_range = 8;
   std::vector<int> indices_ul;
   std::vector<int> indices_ur;
@@ -204,10 +217,11 @@ void Segmentation::propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_i
 	cur_label++;
 	PointLabel* p = &cloud_in->points[i*width+j];
 	p->label = cur_label;
-	Coords c(j,i);
+	Coords c(j,i,false);
 	//int count = 0;
 	bool gap_l=false, gap_r=false, gap_a=false, gap_d=false;
 	bool is_wave = true;
+	bool narrow_wave = false;
 	int wave_ctr=0;
 	while(is_wave)
 	{
@@ -244,33 +258,49 @@ void Segmentation::propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_i
 	      std::cout << "Stopper ll:" << isStopperInNeighbors(cloud_in, indices_ll) << std::endl;
 	      std::cout << "Gap l:" << gap_l << std::endl;
               }*/
-	    if(!(isStopperInNeighbors(cloud_in, indices_ul) && isStopperInNeighbors(cloud_in, indices_ll) /*&& gap_l*/))
+	    if(isStopperInNeighbors(cloud_in, indices_ur) && isStopperInNeighbors(cloud_in, indices_lr)) c.c_gap = true;
+	    //if(!(isStopperInNeighbors(cloud_in, indices_ul) && isStopperInNeighbors(cloud_in, indices_ll) && (!isStopperInNeighbors(cloud_in, indices_ur) || !isStopperInNeighbors(cloud_in, indices_lr))/*&& gap_l*/))
+	    // has no gap behind or is in/ close before gap
+	    if(!(isStopperInNeighbors(cloud_in, indices_ul) && isStopperInNeighbors(cloud_in, indices_ll)) || (isStopperInNeighbors(cloud_in, indices_ur) && isStopperInNeighbors(cloud_in, indices_lr)))
               ///if(!isStopperInNeighbors(cloud_in, indices_ur) || !isStopperInNeighbors(cloud_in, indices_lr))
-	      wave_coords_cands.push_back(Coords(c.u+1,c.v));
+	        wave_coords_cands.push_back(Coords(c.u+1,c.v,c.c_gap));
 	    else
 	    {
-	      stop=true;
-	      if(cancel==3) std::cout << "R Stopper: " << c.u+1 << "," << c.v << std::endl;
+	      if(!c.c_gap)
+	        wave_coords_cands.push_back(Coords(c.u+1,c.v,c.c_gap));
+	      else
+	      {
+                stop=true;
+                if(cancel==3) std::cout << "R Stopper: " << c.u+1 << "," << c.v << std::endl;
+	      }
 	    }
+	    c.c_gap=false;
 	  }
 	  if( c.u > 0 && cloud_in->points[pt_ctr-1].label==0)
 	  {
-	    searchForNeighbors (cloud_in,c.u,c.v+1,px_range,
+	    searchForNeighbors (cloud_in,c.u-1,c.v,px_range,
 				indices_ul, indices_ur,
 				indices_lr, indices_ll,
 				gap_l, gap_r, gap_a, gap_d);
 
 	    cloud_in->points[pt_ctr-1].label = cur_label;
-	    if(!(isStopperInNeighbors(cloud_in, indices_ur) && isStopperInNeighbors(cloud_in, indices_lr) /*&& gap_r*/))
+	    if(isStopperInNeighbors(cloud_in, indices_ul) && isStopperInNeighbors(cloud_in, indices_ll)) c.c_gap = true;
+	    if(!(isStopperInNeighbors(cloud_in, indices_ur) && isStopperInNeighbors(cloud_in, indices_lr)) || (isStopperInNeighbors(cloud_in, indices_ul) && isStopperInNeighbors(cloud_in, indices_ll)))
               //if(!((isStopperInNeighbors(cloud_in, indices_ur) || isStopperInNeighbors(cloud_in, indices_ul)) &&
               //    (isStopperInNeighbors(cloud_in, indices_lr) || isStopperInNeighbors(cloud_in, indices_ll))))
               //if(!isStopperInNeighbors(cloud_in, indices_ul) || !isStopperInNeighbors(cloud_in, indices_ll))
-	      wave_coords_cands.push_back(Coords(c.u-1,c.v));
+	      wave_coords_cands.push_back(Coords(c.u-1,c.v, c.c_gap));
 	    else
 	    {
-	      stop=true;
-	      if(cancel==3) std::cout << "U Stopper: " << c.u+1 << "," << c.v << std::endl;
+	      if(!c.c_gap)
+	        wave_coords_cands.push_back(Coords(c.u-1,c.v,c.c_gap));
+	      else
+	      {
+	        stop=true;
+	        if(cancel==3) std::cout << "U Stopper: " << c.u+1 << "," << c.v << std::endl;
+	      }
 	    }
+	    c.c_gap=false;
 	  }
 	  //std::cout << pt_ctr+width << ": "<< (int)(cloud_in->points[pt_ctr+width].boundary_point) << std::endl;
 	  if(c.v < height-1 && cloud_in->points[pt_ctr+width].label==0)
@@ -281,21 +311,27 @@ void Segmentation::propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_i
 				gap_l, gap_r, gap_a, gap_d);
 
 	    cloud_in->points[pt_ctr+width].label = cur_label;
-	    if(!(isStopperInNeighbors(cloud_in, indices_ur) && isStopperInNeighbors(cloud_in, indices_ul) && gap_a))
+	    if(isStopperInNeighbors(cloud_in, indices_lr) && isStopperInNeighbors(cloud_in, indices_ll)) c.c_gap = true;
+	    if(!(isStopperInNeighbors(cloud_in, indices_ur) && isStopperInNeighbors(cloud_in, indices_ul)) || (isStopperInNeighbors(cloud_in, indices_lr) && isStopperInNeighbors(cloud_in, indices_ll)))
               //if(!((isStopperInNeighbors(cloud_in, indices_ur) || isStopperInNeighbors(cloud_in, indices_lr)) &&
               //    (isStopperInNeighbors(cloud_in, indices_ul) || isStopperInNeighbors(cloud_in, indices_ll))))
               //if(!isStopperInNeighbors(cloud_in, indices_lr) || !isStopperInNeighbors(cloud_in, indices_ll))
-	      wave_coords_cands.push_back(Coords(c.u,c.v+1));
+	      wave_coords_cands.push_back(Coords(c.u,c.v+1,c.c_gap));
 	    else
 	    {
-	      stop=true;
-	      if(cancel==3)
+	      if(!c.c_gap)
+	        wave_coords_cands.push_back(Coords(c.u,c.v+1,c.c_gap));
+	      else
 	      {
-		std::cout << "Stopper ur:" << isStopperInNeighbors(cloud_in, indices_ul) << std::endl;
-		std::cout << "Stopper ul:" << isStopperInNeighbors(cloud_in, indices_ll) << std::endl;
-		std::cout << "Gap a:" << gap_l << std::endl;
+	        stop=true;
+	        if(cancel==3)
+	        {
+	          std::cout << "Stopper ur:" << isStopperInNeighbors(cloud_in, indices_ul) << std::endl;
+	          std::cout << "Stopper ul:" << isStopperInNeighbors(cloud_in, indices_ll) << std::endl;
+	          std::cout << "Gap a:" << gap_l << std::endl;
+	        }
+	        if(cancel==3) std::cout << "L Stopper: " << c.u+1 << "," << c.v << std::endl;
 	      }
-	      if(cancel==3) std::cout << "L Stopper: " << c.u+1 << "," << c.v << std::endl;
 	    }
 	  }
 	  if(c.v > 0 && cloud_in->points[pt_ctr-width].label==0)
@@ -306,15 +342,21 @@ void Segmentation::propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_i
 				gap_l, gap_r, gap_a, gap_d);
 
 	    cloud_in->points[pt_ctr-width].label = cur_label;
-	    if(!(isStopperInNeighbors(cloud_in, indices_lr) && isStopperInNeighbors(cloud_in, indices_ll) && gap_d))
+	    if(isStopperInNeighbors(cloud_in, indices_ur) && isStopperInNeighbors(cloud_in, indices_ul)) c.c_gap = true;
+	    if(!(isStopperInNeighbors(cloud_in, indices_lr) && isStopperInNeighbors(cloud_in, indices_ll)) || (isStopperInNeighbors(cloud_in, indices_ur) && isStopperInNeighbors(cloud_in, indices_ul)))
               //if(!((isStopperInNeighbors(cloud_in, indices_ur) || isStopperInNeighbors(cloud_in, indices_lr)) &&
               //    (isStopperInNeighbors(cloud_in, indices_ul) || isStopperInNeighbors(cloud_in, indices_ll))))
               //if(!isStopperInNeighbors(cloud_in, indices_ur) || !isStopperInNeighbors(cloud_in, indices_ul))
-	      wave_coords_cands.push_back(Coords(c.u,c.v-1));
+	      wave_coords_cands.push_back(Coords(c.u,c.v-1,c.c_gap));
 	    else
 	    {
-	      stop=true;
-	      if(cancel==3) std::cout << "U Stopper: " << c.u+1 << "," << c.v << std::endl;
+	      if(!c.c_gap)
+	        wave_coords_cands.push_back(Coords(c.u,c.v-1,c.c_gap));
+	      else
+	      {
+	        stop=true;
+	        if(cancel==3) std::cout << "U Stopper: " << c.u+1 << "," << c.v << std::endl;
+	      }
 	    }
 	  }
 	  if(!stop)
@@ -341,10 +383,10 @@ void Segmentation::propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_i
 	  }
 	}
 	//Better: merge with neighbouring segment
-	if(wave_ctr <10)
+	/*if(wave_ctr <10)
 	{
 	  cur_label--;
-	}
+	}*/
 	/*if(count <= maxSize)
 	  {
 	  region_size[cloud_in->points[i*width+j].boundary_point]=1;
@@ -406,3 +448,5 @@ void Segmentation::getClusterIndices(pcl::PointCloud<PointLabel>::Ptr& cloud_in,
     }
   }
 }
+
+

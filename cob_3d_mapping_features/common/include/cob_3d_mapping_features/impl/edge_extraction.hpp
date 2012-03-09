@@ -76,7 +76,7 @@ cob_3d_mapping_features::EdgeExtraction<PointInT,PointOutT>::extractEdges(
       output.points[i].label = 2;
     }
     //TODO: apply weight factor
-    else if (input_3d_->points[i].strength > thresh || (input_2d_->points[i].strength+0.1) > thresh)
+    else if (input_3d_->points[i].strength > thresh*2 || (input_2d_->points[i].strength+0.1) > thresh)
     {
       // add normalized 2D and 3D strength values and apply threshold
       // set edges to label 1:

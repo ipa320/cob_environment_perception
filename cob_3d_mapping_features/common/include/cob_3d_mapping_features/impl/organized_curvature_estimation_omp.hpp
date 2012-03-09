@@ -66,6 +66,12 @@ cob_3d_mapping_features::OrganizedCurvatureEstimationOMP<PointInT,PointNT,PointL
     labels_->height = input_->height;
     labels_->width = input_->width;
   }
+  if (output.points.size() != input_->size())
+  {
+    output.points.resize(input_->size());
+    output.height = input_->height;
+    output.width = input_->width;
+  }
 
   int threadsize = 1;
 

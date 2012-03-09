@@ -1,0 +1,9 @@
+<?xml version="1.0"?>
+
+<launch>
+
+
+<node pkg="cob_3d_mapping_geometry_map" type="dynamic_geometry_map_node" name="dynamic_geometry_map" output="screen" />
+
+             
+</launch>

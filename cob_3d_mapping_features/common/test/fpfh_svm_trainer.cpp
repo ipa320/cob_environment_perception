@@ -91,20 +91,20 @@ int svm_samples;
 void readOptions(int argc, char* argv[])
 {
   using namespace boost::program_options;
-  
+
   options_description cmd_line("Options");
   cmd_line.add_options()
     ("help", "produce help messsage")
-    ("svm_gamma,g", value<double>(&svm_gamma)->default_value(1.0), 
+    ("svm_gamma,g", value<double>(&svm_gamma)->default_value(1.0),
      "Training parameter gamma")
     ("svm_c,c", value<double>(&svm_c)->default_value(1.0),
      "Training parameter c")
     ("svm_k,k", value<int>(&svm_k)->default_value(0),
      "Set k_fold != 0 to use train_auto")
     ("folder,f", value<string>(&file_folder),
-     "path to folder containing a pcd file for each class. " 
+     "path to folder containing a pcd file for each class. "
      "If this is defined all seperatly defined files will be ignored.")
-    ("svm_max_samples,s", value<int>(&svm_samples)->default_value(0), 
+    ("svm_max_samples,s", value<int>(&svm_samples)->default_value(0),
      "maximal number of samples per class. (0 for all)")
     ;
   variables_map vm;
@@ -137,7 +137,7 @@ void readOptions(int argc, char* argv[])
       files[i] = file_folder + files[i];
       // if(!r.read(files[i], c))
       // 	continue;
-      // if(getFieldIndex(c, "histogram") == -1) 
+      // if(getFieldIndex(c, "histogram") == -1)
       // 	continue;
       if(string::npos != files[i].rfind("plane_"))
 	file_plane = files[i];
@@ -198,7 +198,7 @@ int main(int argc, char** argv)
   cout << "Found " << sample_count << " samples." << endl;
   cv::Mat train_data(sample_count, 33, CV_32FC1);
   cv::Mat train_data_classes(sample_count, 1, CV_32FC1);
-  
+
   // Read FPFHs for Plane Categorie
   float* row;
   int i_end = 0;
@@ -292,12 +292,12 @@ int main(int argc, char** argv)
   params.term_crit.max_iter = 200;
   params.term_crit.epsilon = 0.00001;
   cout << "Starting training process with " << sample_count << " samples." << endl;
-  if(svm_k == 0) 
+  if(svm_k == 0)
     svm.train(train_data, train_data_classes, cv::Mat(), cv::Mat(), params);
-  else 
+  else
     svm.train_auto(train_data, train_data_classes, cv::Mat(), cv::Mat(), params, svm_k);
   string file_xml = file_folder + "SVM_fpfh_rng_g_c.xml";
   svm.save(file_xml.c_str());
   //cout << "C: " << params.C << " - Gamma: " << svm_gamma << " / " << params.gamma << endl;
-  cout << "Training process completed." << endl;
+  cout << "Training process complete." << endl;
 }

@@ -75,7 +75,7 @@
 #include <cob_3d_mapping_common/reconfigureable_node.h>
 
 
-#include <cob_3d_mapping_geometry_map/feature_map_nodeConfig.h>
+#include <cob_3d_mapping_geometry_map/geometry_map_nodeConfig.h>
 
 #include "pcl/surface/convex_hull.h"
 #include "pcl/filters/project_inliers.h"
@@ -97,38 +97,39 @@
 #include "cob_3d_mapping_common/stop_watch.h"
 
 // internal includes
-#include "cob_3d_mapping_geometry_map/feature_map.h"
+#include "cob_3d_mapping_geometry_map/geometry_map.h"
+#include "cob_3d_mapping_geometry_map/map_entry.h"
 
 
 //####################
 //#### nodelet class ####
-class FeatureMapNode : protected Reconfigurable_Node<cob_3d_mapping_geometry_map::feature_map_nodeConfig>
+class GeometryMapNode : protected Reconfigurable_Node<cob_3d_mapping_geometry_map::geometry_map_nodeConfig>
 {
 public:
 
   // Constructor
-  FeatureMapNode()
-  : Reconfigurable_Node<cob_3d_mapping_geometry_map::feature_map_nodeConfig>("FeatureMapNode")
+	GeometryMapNode()
+  : Reconfigurable_Node<cob_3d_mapping_geometry_map::geometry_map_nodeConfig>("GeometryMapNode")
   {
     ctr_ = 0;
     //convex_hull_sub_ = n_.subscribe("table_hull", 1, &FeatureMap::subCallback, this);
-    polygon_sub_ = n_.subscribe("polygon_array", 10, &FeatureMapNode::polygonCallback, this);
-    map_pub_ = n_.advertise<geometry_msgs::PolygonStamped>("feature_map",1);
-    map_pub_2_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("feature_map_2",1);
-    marker_pub_ = n_.advertise<visualization_msgs::Marker>("feature_marker",100);
-    clear_map_server_ = n_.advertiseService("clear_geometry_map", &FeatureMapNode::clearMap, this);
-    get_map_server_ = n_.advertiseService("get_geometry_map", &FeatureMapNode::getMap, this);
+    shape_sub_ = n_.subscribe("shape_array", 10, &GeometryMapNode::shapeCallback, this);
+    map_pub_ = n_.advertise<geometry_msgs::PolygonStamped>("geometry_map",1);
+    map_pub_2_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("geometry_map_2",1);
+    marker_pub_ = n_.advertise<visualization_msgs::Marker>("geometry_marker",100);
+    clear_map_server_ = n_.advertiseService("clear_geometry_map", &GeometryMapNode::clearMap, this);
+    get_map_server_ = n_.advertiseService("get_geometry_map", &GeometryMapNode::getMap, this);
     ros::param::param("~file_path" ,file_path_ ,std::string("/home/goa/tmp/"));
     ros::param::param("~save_to_file" ,save_to_file_ ,false);
     std::cout << file_path_ << std::endl;
-    feature_map_.setFilePath(file_path_);
-    feature_map_.setSaveToFile(save_to_file_);
+    geometry_map_.setFilePath(file_path_);
+    geometry_map_.setSaveToFile(save_to_file_);
 
     setReconfigureCallback(boost::bind(&callback, this, _1, _2));
   }
 
   // Destructor
-  ~FeatureMapNode()
+  ~GeometryMapNode()
   {
     /// void
   }
@@ -144,15 +145,15 @@ public:
    *
    * @return nothing
    */
-  static void callback(FeatureMapNode *fmn, cob_3d_mapping_geometry_map::feature_map_nodeConfig &config, uint32_t level)
+  static void callback(GeometryMapNode *gmn, cob_3d_mapping_geometry_map::geometry_map_nodeConfig &config, uint32_t level)
   {
     //TODO: not multithreading safe
 
-    if(!fmn)
+    if(!gmn)
       return;
 
-    fmn->feature_map_.setSaveToFile( config.save_to_file );
-    fmn->feature_map_.setFilePath( config.file_path );
+    gmn->geometry_map_.setSaveToFile( config.save_to_file );
+    gmn->geometry_map_.setFilePath( config.file_path );
   }
 
 
@@ -171,16 +172,41 @@ public:
     static int ctr=0;
     static double time = 0;
     PrecisionStopWatch t;
-    FeatureMap::MapEntryPtr map_entry_ptr = FeatureMap::MapEntryPtr(new FeatureMap::MapEntry());
+	MapEntryPtr map_entry_ptr = MapEntryPtr(new MapEntry());
     convertFromROSMsg(*p, *map_entry_ptr);
     //dumpPolygonToFile(*map_entry_ptr);
     t.precisionStart();
-    feature_map_.addMapEntry(map_entry_ptr);
+    geometry_map_.addMapEntry(map_entry_ptr);
     double step_time =t.precisionStop();
     ROS_INFO("Adding feature took %f s", step_time);
     time+=step_time;
     ROS_INFO("[feature map] Accumulated time at step %d: %f s", ctr, time);
     ctr++;
+    publishMapMarker();
+    publishMap();
+    ctr_++;
+    //ROS_INFO("%d polygons received so far", ctr_);
+  }
+
+  void
+  shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr sa)
+  {
+    static int ctr=0;
+    static double time = 0;
+    PrecisionStopWatch t;
+    for(unsigned int i=0; i<sa->shapes.size(); i++)
+    {
+      MapEntryPtr map_entry_ptr = MapEntryPtr(new MapEntry());
+      if(!convertFromROSMsg(sa->shapes[i], *map_entry_ptr)) continue;
+      dumpPolygonToFile(*map_entry_ptr);
+      t.precisionStart();
+      geometry_map_.addMapEntry(map_entry_ptr);
+      double step_time =t.precisionStop();
+      //ROS_INFO("Adding feature took %f s", step_time);
+      time+=step_time;
+      //ROS_INFO("[feature map] Accumulated time at step %d: %f s", ctr, time);
+      ctr++;
+    }
     publishMapMarker();
     publishMap();
     ctr_++;
@@ -203,7 +229,7 @@ public:
   {
     //TODO: add mutex
     ROS_INFO("Clearing geometry map...");
-    feature_map_.clearMap();
+    geometry_map_.clearMap();
     return true;
   }
 
@@ -221,12 +247,12 @@ public:
   getMap(cob_3d_mapping_msgs::GetGeometricMap::Request &req,
          cob_3d_mapping_msgs::GetGeometricMap::Response &res)
   {
-    boost::shared_ptr<std::vector<FeatureMap::MapEntryPtr> > map = feature_map_.getMap();
+    boost::shared_ptr<std::vector<MapEntryPtr> > map = geometry_map_.getMap();
     res.map.header.stamp = ros::Time::now();
     res.map.header.frame_id = "/map";
     for(unsigned int i=0; i<map->size(); i++)
     {
-      FeatureMap::MapEntry& sm = *(map->at(i));
+      MapEntry& sm = *(map->at(i));
       cob_3d_mapping_msgs::Shape s;
       convertToROSMsg(sm,s);
       res.map.shapes.push_back(s);
@@ -238,15 +264,15 @@ public:
   /**
    * @brief reading a ros message to convert it to a feature map
    *
-   * reading a ros message to convert it to a feature map
+   * reading a ros message to convert it to a geometry map
    *
    * @param p ros message containing polygons
-   * @param map_entry output to feature map
+   * @param map_entry output to geometry map
    *
    * @return nothing
    */
   void
-  convertFromROSMsg(const cob_3d_mapping_msgs::PolygonArray& p, FeatureMap::MapEntry& map_entry)
+  convertFromROSMsg(const cob_3d_mapping_msgs::PolygonArray& p, MapEntry& map_entry)
   {
     map_entry.id = 0;
     map_entry.d = p.d.data;
@@ -276,17 +302,17 @@ public:
   }
 
   /**
-   * @brief writing to a ros message to convert a feature map
+   * @brief writing to a ros message to convert a geometry map
    *
-   * writing to a ros message to convert a feature map
+   * writing to a ros message to convert a geometry map
    *
    * @param p ros message containing polygons
-   * @param map_entry input as feature map
+   * @param map_entry input as geometry map
    *
    * @return nothing
    */
   void
-  convertToROSMsg(const FeatureMap::MapEntry& map_entry, cob_3d_mapping_msgs::PolygonArray& p)
+  convertToROSMsg(const MapEntry& map_entry, cob_3d_mapping_msgs::PolygonArray& p)
   {
     p.d.data = map_entry.d;
     p.normal.x = map_entry.normal(0);
@@ -316,7 +342,7 @@ public:
    * @return nothing
    */
   void
-  convertToROSMsg(const FeatureMap::MapEntry& map_entry, cob_3d_mapping_msgs::Shape& s)
+  convertToROSMsg(const MapEntry& map_entry, cob_3d_mapping_msgs::Shape& s)
   {
     s.params.resize(4);
     s.params[0] = map_entry.normal(0);
@@ -346,6 +372,56 @@ public:
   }
 
   /**
+   * @brief writing to a ros message to convert a feature map
+   *
+   * writing to a ros message to convert a feature map
+   *
+   * @param p ros message containing polygons
+   * @param map_entry input as feature map
+   *
+   * @return nothing
+   */
+  bool
+  convertFromROSMsg(const cob_3d_mapping_msgs::Shape& s, MapEntry& map_entry)
+  {
+    map_entry.id = 0;
+    map_entry.normal(0) = s.params[0];
+    map_entry.normal(1) = s.params[1];
+    map_entry.normal(2) = s.params[2];
+    map_entry.d = s.params[3];
+    //std::cout << "normal: " << map_entry.normal(0) << ","  << map_entry.normal(1) << "," << map_entry.normal(2) << std::endl;
+    //std::cout << "d: " << map_entry.d << std::endl << std::endl;
+    map_entry.merged = 0;
+    //map_entry.polygon_world.resize(p.polygons.size());
+    for(unsigned int i=0; i<s.points.size(); i++)
+    {
+      if(s.points[i].data.size())
+      {
+        pcl::PointCloud<pcl::PointXYZ> cloud;
+        pcl::fromROSMsg(s.points[i], cloud);
+        std::vector<Eigen::Vector3f> pts;
+        pts.resize(cloud.points.size());
+        for(unsigned int j=0; j<cloud.points.size(); j++)
+        {
+          /*pts[j] = Eigen::Vector3f(p.polygons[i].points[j].x,
+                                   p.polygons[i].points[j].y,
+                                   p.polygons[i].points[j].z);*/
+          pts[j](0) = cloud.points[j].x;
+          pts[j](1) = cloud.points[j].y;
+          pts[j](2) = cloud.points[j].z;
+        }
+        map_entry.polygon_world.push_back(pts);
+      }
+      else
+      {
+        std::cout << "shape has no points" << std::endl;
+        return false;
+      }
+    }
+    return true;
+  }
+
+  /**
    * @brief output featuremap to dump file
    *
    * output featuremap to dump file, path is hard coded
@@ -354,11 +430,11 @@ public:
    *
    * @return nothing
    */
-  void dumpPolygonToFile(FeatureMap::MapEntry& m)
+  void dumpPolygonToFile(MapEntry& m)
   {
     static int ctr=0;
     std::stringstream ss;
-    ss << "/home/goa/pcl_daten/kitchen_kinect/polygons/polygon_" << ctr << ".txt";
+    ss << "/home/goa/tmp/polygon_" << ctr << ".txt";
     std::ofstream myfile;
     myfile.open (ss.str().c_str());
     myfile << m.id << "\n";
@@ -368,8 +444,8 @@ public:
     {
       for(unsigned int j=0; j<m.polygon_world[i].size(); j++)
       {
-        myfile << m.polygon_world[i][j](0) << "\n";
-        myfile << m.polygon_world[i][j](1) << "\n";
+        myfile << m.polygon_world[i][j](0) << " ";
+        myfile << m.polygon_world[i][j](1) << " ";
         myfile << m.polygon_world[i][j](2) << "\n";
       }
     }
@@ -382,12 +458,12 @@ public:
 
   void publishMap()
   {
-    boost::shared_ptr<std::vector<FeatureMap::MapEntryPtr> > map = feature_map_.getMap();
+    boost::shared_ptr<std::vector<MapEntryPtr> > map = geometry_map_.getMap();
     //cob_3d_mapping_msgs::PolygonArrayArray map_msg;
     cob_3d_mapping_msgs::ShapeArray map_msg;
     for(unsigned int i=0; i<map->size(); i++)
     {
-      FeatureMap::MapEntry& sm = *(map->at(i));
+      MapEntry& sm = *(map->at(i));
       //cob_3d_mapping_msgs::PolygonArray p;
       cob_3d_mapping_msgs::Shape s;
       convertToROSMsg(sm, s);
@@ -399,9 +475,9 @@ public:
 
 
   /**
-   * @brief publishes the polygon of every feature
+   * @brief publishes the polygon of every geometry
    *
-   * publishes the polygon of every feature
+   * publishes the polygon of every geometry
    *
    * @return nothing
    */
@@ -409,10 +485,10 @@ public:
   {
     geometry_msgs::PolygonStamped p;
     p.header.frame_id = "/map";
-    boost::shared_ptr<std::vector<FeatureMap::MapEntryPtr> > map = feature_map_.getMap();
+    boost::shared_ptr<std::vector<MapEntryPtr> > map = geometry_map_.getMap();
     for(unsigned int i=0; i<map->size(); i++)
     {
-      FeatureMap::MapEntry& pm = *(map->at(i));
+    	MapEntry& pm = *(map->at(i));
       for(unsigned int j=0; j<pm.polygon_world.size(); j++)
       {
         p.polygon.points.resize(pm.polygon_world[j].size());
@@ -457,11 +533,11 @@ public:
     marker.color.a = 1.0;
 
     geometry_msgs::Point pt;
-    boost::shared_ptr<std::vector<FeatureMap::MapEntryPtr> > map = feature_map_.getMap();
+    boost::shared_ptr<std::vector<MapEntryPtr> > map = geometry_map_.getMap();
     int ctr=0;
     for(unsigned int i=0; i<map->size(); i++)
     {
-      FeatureMap::MapEntry& pm = *(map->at(i));
+    	MapEntry& pm = *(map->at(i));
       //if(pm.merged/*pm.normal(2)<0.1*/)
       {
         //marker.id = pm.id;
@@ -530,14 +606,14 @@ public:
 
 
 protected:
-  ros::Subscriber polygon_sub_;
+  ros::Subscriber shape_sub_;
   ros::Publisher map_pub_;
   ros::Publisher map_pub_2_;
   ros::Publisher marker_pub_;
   ros::ServiceServer clear_map_server_;
   ros::ServiceServer get_map_server_;
 
-  FeatureMap feature_map_;      /// map containing features (polygons)
+  GeometryMap geometry_map_;      /// map containing geometrys (polygons)
 
   unsigned int ctr_;            /// counter how many polygons are received
   std::string file_path_;
@@ -546,9 +622,9 @@ protected:
 
 int main (int argc, char** argv)
 {
-  ros::init (argc, argv, "feature_map_node");
+  ros::init (argc, argv, "geometry_map_node");
 
-  FeatureMapNode fmn;
+  GeometryMapNode gmn;
 
   ros::Rate loop_rate(10);
   while (ros::ok())

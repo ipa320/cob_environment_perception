@@ -7,6 +7,7 @@
 #include "cob_3d_mapping_common/stop_watch.h"
 #include "cob_3d_mapping_common/point_types.h"
 #include "cob_3d_mapping_features/fast_edge_estimation_3d_omp.h"
+#include "cob_3d_mapping_features/organized_normal_estimation_omp.h"
 
 using namespace pcl;
 typedef visualization::PointCloudColorHandlerRGBField<PointXYZRGB> ColorHdlRGB;
@@ -21,13 +22,21 @@ int main(int argc, char** argv)
   PCDReader r;
   if (r.read(file_, *p) == -1) return(0);
 
-  IntegralImageNormalEstimation<PointXYZRGB,Normal> ne;
-  ne.setNormalEstimationMethod (ne.COVARIANCE_MATRIX);
-  ne.setMaxDepthChangeFactor(0.02f);
-  ne.setNormalSmoothingSize(10.0f);
-  ne.setDepthDependentSmoothing(true);
+//  IntegralImageNormalEstimation<PointXYZRGB,Normal> ne;
+//  ne.setNormalEstimationMethod (ne.COVARIANCE_MATRIX);
+//  ne.setMaxDepthChangeFactor(0.02f);
+//  ne.setNormalSmoothingSize(10.0f);
+//  ne.setDepthDependentSmoothing(true);
+//  ne.setInputCloud(p);
+//  ne.compute(*n);
+  t.precisionStart();
+  cob_3d_mapping_features::OrganizedNormalEstimationOMP<PointXYZRGB,Normal,PointLabel> ne;
+  ne.setPixelSearchRadius(8,2,2);
   ne.setInputCloud(p);
+  PointCloud<PointLabel>::Ptr labels(new PointCloud<PointLabel>);
+  ne.setOutputLabels(labels);
   ne.compute(*n);
+  std::cout << t.precisionStop() << "s\t for normal estimation" << std::endl;
 
   t.precisionStart();
   cob_3d_mapping_features::FastEdgeEstimation3DOMP<PointXYZRGB, Normal, InterestPoint> ee3d;
@@ -47,10 +56,16 @@ int main(int argc, char** argv)
       p->points[i].b = 0;
     }
     else if (col < 0)
-    { 
+    {
       p->points[i].r = 255;
       p->points[i].g = 0;
       p->points[i].b = 0;
+    }
+    else if (col > 100)
+    {
+      p->points[i].r = 0;
+      p->points[i].g = 0;
+      p->points[i].b = 255;
     }
     else
     {
