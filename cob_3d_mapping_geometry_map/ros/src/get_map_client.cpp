@@ -103,7 +103,7 @@ int main (int argc, char **argv)
   cob_3d_mapping_msgs::GetGeometricMapRequest req;
   cob_3d_mapping_msgs::GetGeometricMapResponse resp;
 
-  if (ros::service::call("get_geometry_map", req,resp))
+  if (ros::service::call("/geometry_map/get_geometry_map", req,resp))
   {
     ROS_INFO("Service call finished.");
   }

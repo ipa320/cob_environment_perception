@@ -76,6 +76,8 @@
 #include "cob_3d_mapping_features/fast_edge_estimation_3d.h"
 #include "cob_3d_mapping_features/organized_normal_estimation.h"
 #include "cob_3d_mapping_features/organized_curvature_estimation.h"
+#include "cob_3d_mapping_features/curvature_classifier.h"
+#include "cob_3d_mapping_features/impl/curvature_classifier.hpp"
 
 
 using namespace std;
@@ -104,7 +106,7 @@ void readOptions(int argc, char* argv[])
     ("radius,r", value<int>(&radius_)->default_value(5), "radius")
     ("circle,c", value<int>(&circle_)->default_value(2),"circle steps")
     ("feature,f", value<int>(&rfp_)->default_value(20), "set 3d edge estimation radius")
-    ("extraction_th,x", value<float>(&ex_th_)->default_value(0.1), 
+    ("extraction_th,x", value<float>(&ex_th_)->default_value(0.1),
       "set the strength threshold for edge extraction")
     ;
 
@@ -125,17 +127,27 @@ void applyColor(int i, PointCloud<PointLabel>::Ptr p, PointCloud<PointXYZRGB>::P
 {
   switch (p->points[i].label)
   {
-  case 3:
+  case 5: //sphere
+    col->points[i].r = 255;
+    col->points[i].g = 0;
+    col->points[i].b = 255;
+    break;
+  case 4: //cylinder
+    col->points[i].r = 255;
+    col->points[i].g = 255;
+    col->points[i].b = 0;
+    break;
+  case 3: //plane
     col->points[i].r = 0;
     col->points[i].g = 0;
     col->points[i].b = 255;
     break;
-  case 2:
+  case 2: //edge
     col->points[i].r = 0;
     col->points[i].g = 255;
     col->points[i].b = 0;
     break;
-  case 1:
+  case 1: //border
     col->points[i].r = 255;
     col->points[i].g = 0;
     col->points[i].b = 0;
@@ -143,7 +155,7 @@ void applyColor(int i, PointCloud<PointLabel>::Ptr p, PointCloud<PointXYZRGB>::P
   default:
     col->points[i].r = 100;
     col->points[i].g = 100;
-    col->points[i].b = 100;    
+    col->points[i].b = 100;
     break;
   }
 }
@@ -199,6 +211,10 @@ int main(int argc, char** argv)
   oce.compute(*pc);
   cout << t.precisionStop() << "s\t for Organized Curvature Estimation" << endl;
 
+  cob_3d_mapping_features::CurvatureClassifier<PrincipalCurvatures, PointLabel>cc;
+  cc.setInputCloud(pc);
+  cc.classify(*l);
+
   for (size_t i = 0; i < l->points.size(); i++)
   {
     applyColor(i, l, p);
@@ -229,7 +245,7 @@ int main(int argc, char** argv)
 //  ColorHdlRGB col_hdl2(p2);
 
   /* --- Viewports: ---
-   *  1y 
+   *  1y
    *    | 1 | 3 |
    * .5 ----+----
    *    | 2 | 4 |

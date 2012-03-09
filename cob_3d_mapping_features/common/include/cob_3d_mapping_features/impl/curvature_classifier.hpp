@@ -1,6 +1,6 @@
 /****************************************************************
  *
- * Copyright (c) 2010
+ * Copyright (c) 2011
  *
  * Fraunhofer Institute for Manufacturing Engineering
  * and Automation (IPA)
@@ -8,8 +8,8 @@
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
  * Project name: care-o-bot
- * ROS stack name: cob_environment_perception
- * ROS package name: cob_3d_mapping_point_map
+ * ROS stack name: cob_environment_perception_intern
+ * ROS package name: cob_3d_mapping_features
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -17,7 +17,9 @@
  * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 11/2011
+ * Date of creation: 02/2012
+ * ToDo:
+ *
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
@@ -50,53 +52,49 @@
  *
  ****************************************************************/
 
-//##################
-//#### includes ####
+#ifndef __IMPL_CURVATURE_CLASSIFIER_H__
+#define __IMPL_CURVATURE_CLASSIFIER_H__
 
-// ROS includes
-#include <ros/ros.h>
+#include "cob_3d_mapping_features/curvature_classifier.h"
 
-// ROS message includes
-#include <cob_3d_mapping_msgs/GetPointMap.h>
 
-// PCL includes
-#include <pcl/io/pcd_io.h>
-#include <pcl/point_types.h>
-
-int main (int argc, char **argv)
+template <typename PointInT, typename PointOutT> void
+cob_3d_mapping_features::CurvatureClassifier<PointInT,PointOutT>::classify(PointCloudOut &output)
 {
-  if(argc<1) {
-    ROS_ERROR("Please specify output file\nrosrun cob_3d_mapping_point_map get_map_client myfile.pcd");
-    return -1;
-  }
-  ros::init(argc, argv, "get_point_map");
-
-  ros::NodeHandle nh;
-
-  ROS_INFO("Waiting for service server to start.");
-  ros::service::waitForService("/point_map/get_point_map"); //will wait for infinite time
-
-  ROS_INFO("Server started, polling map.");
-
-  //build message
-  cob_3d_mapping_msgs::GetPointMapRequest req;
-  cob_3d_mapping_msgs::GetPointMapResponse resp;
-
-  if (ros::service::call("/point_map/get_point_map", req,resp))
+  if(!initCompute())
   {
-    ROS_INFO("Service call finished.");
+    output.width = output.height = 0;
+    output.points.clear ();
+    return;
   }
-  else
+  if (output.points.size() != input_->size())
   {
-    ROS_INFO("Service call failed.");
-    return 0;
+    output.points.resize(input_->size());
+    output.height = input_->height;
+    output.width = input_->width;
   }
-
-  pcl::PointCloud<pcl::PointXYZRGB> map;
-  pcl::fromROSMsg(resp.map, map);
-  pcl::io::savePCDFile(argv[1],map,false);
-
-  //exit
-  return 0;
+  for (size_t i=0; i < indices_->size(); ++i)
+  {
+    if (input_->points[(*indices_)[i]].pc1 < pc_c_max_th_lower_)
+    {
+      output.points[i].label = I_PLANE;
+    }
+    else if (input_->points[(*indices_)[i]].pc1 < pc_max_min_ratio_ * input_->points[(*indices_)[i]].pc2 &&
+             input_->points[(*indices_)[i]].pc1 < pc_c_max_th_sphere_upper_)
+    {
+      output.points[i].label = I_SPHERE;
+    }
+    else if (input_->points[(*indices_)[i]].pc1 > pc_c_max_th_cylinder_upper_)
+    {
+      output.points[i].label = I_EDGE;
+    }
+    else
+    {
+      output.points[i].label = I_CYL;
+    }
+  }
 }
 
+#define PCL_INSTANTIATE_CurvatureClassifier(T,OutT) template class PCL_EXPORTS cob_3d_mapping_features::CurvatureClassifier<T,OutT>;
+
+#endif

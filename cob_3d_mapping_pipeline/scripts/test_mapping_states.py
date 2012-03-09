@@ -19,7 +19,7 @@ class TestStates:
 		#SM.userdata.pose = "home"
 		SM.userdata.angle_range = 0.6
 		#SM.userdata.scan_pose = [-1.3, -1.0, 3.14]
-                SM.userdata.scan_pose = [0.515, -0.614, 1.583]
+        SM.userdata.scan_pose = [0.515, -0.614, 1.583]
 
 		# open the container
 		with SM:

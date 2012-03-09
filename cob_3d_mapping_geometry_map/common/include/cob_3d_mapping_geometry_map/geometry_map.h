@@ -53,8 +53,8 @@
  *
  ****************************************************************/
 
-#ifndef __FEATURE_MAP_H__
-#define __FEATURE_MAP_H__
+#ifndef __GEOMETRY_MAP_H__
+#define __GEOMETRY_MAP_H__
 
 //##################
 //#### includes ####
@@ -64,28 +64,40 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 
+#include <Eigen/Eigenvalues>
+#include <Eigen/Geometry>
+
 // internal includes
 extern "C" {
 #include "cob_3d_mapping_geometry_map/gpc.h"
 }
+//#ifndef __GEOMETRY_MAP_VISUALISATION_H__
+#include "cob_3d_mapping_geometry_map/vis/geometry_map_visualisation.h"
+#include "cob_3d_mapping_geometry_map/map_entry.h"
 
 
-class FeatureMap
+
+//#endif
+//#include "cob_3d_mapping_geometry_map/vis/TestPlanes.h"
+
+
+
+class GeometryMap
 {
 public:
-  struct MapEntry
-  {
-    //needed for 32-bit systems: see http://eigen.tuxfamily.org/dox/TopicStructHavingEigenMembers.html
-    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    unsigned int id;
-    std::vector<std::vector<Eigen::Vector3f> > polygon_world;
-    //cob_env_model::PolygonArray polygon_world;
-    //gpc_polygon polygon_plane;
-    Eigen::Vector3f normal;
-    double d;
-    Eigen::Affine3f transform_from_world_to_plane;
-    unsigned int merged;
-  };
+//  struct MapEntry
+//  {
+//    //needed for 32-bit systems: see http://eigen.tuxfamily.org/dox/TopicStructHavingEigenMembers.html
+//    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+//    unsigned int id;
+//    std::vector<std::vector<Eigen::Vector3f> > polygon_world;
+//    //cob_env_model::PolygonArray polygon_world;
+//    //gpc_polygon polygon_plane;
+//    Eigen::Vector3f normal;
+//    double d;
+//    Eigen::Affine3f transform_from_world_to_plane;
+//    unsigned int merged;
+//  };
 
   /*inline std::ostream& operator << (std::ostream& os, const MapEntry& m)
   {
@@ -93,32 +105,46 @@ public:
     return (os);
   }*/
 
+	 // std::ofstream outputFile;
+	  int counter_output;
 
-  typedef boost::shared_ptr<MapEntry> MapEntryPtr;
+//  typedef boost::shared_ptr<MapEntry> MapEntryPtr;
 
   // Constructor
-  FeatureMap()
+  GeometryMap()
   :new_id_(0),
+   counter_output(0),
    file_path_("./"),
    save_to_file_(false)
+
   {
-    /// void
+	//  outputFile.open("/home/goa-hh/test.txt");
+
   }
 
   // Destructor
-  ~FeatureMap()
+  ~GeometryMap()
   {
-    /// void
+	  //outputFile.close();
   }
 
   void
   addMapEntry(MapEntryPtr p);
 
   void
+  searchIntersection(MapEntry p , std::vector<int>& intersections);
+
+  void
+  mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections);
+
+  void
+  removeMapEntry(int id);
+
+  void
   getGpcStructure(MapEntry& p, gpc_polygon* gpc_p);
 
   void
-  getGpcStructureUsingMap(FeatureMap::MapEntry& p,
+  getGpcStructureUsingMap(MapEntry& p,
                           Eigen::Affine3f& transform_from_world_to_plane,
                           gpc_polygon* gpc_p);
 
@@ -126,10 +152,14 @@ public:
   printMapEntry(MapEntry& p);
 
   void
+  printMap();
+
+
+  void
   printGpcStructure(gpc_polygon* p);
 
   void
-  saveMapEntry(std::string path, int ctr, FeatureMap::MapEntry& p);
+  saveMapEntry(std::string path, int ctr, MapEntry& p);
 
   void
   saveMap(std::string path);
@@ -146,6 +176,12 @@ public:
   getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,
                                     const Eigen::Vector3f &origin,
                                     Eigen::Affine3f &transformation);
+
+  void
+  getPointOnPlane(const Eigen::Vector3f &normal,double d,Eigen::Vector3f &point);
+
+  float
+  rounding(float x);
 
   boost::shared_ptr<std::vector<MapEntryPtr> >
   getMap()
@@ -165,7 +201,6 @@ public:
     save_to_file_ = save_to_file;
   }
 
-
 protected:
   std::vector<MapEntryPtr> map_;
   unsigned int new_id_;
@@ -174,4 +209,4 @@ protected:
 
 };
 
-#endif //__FEATURE_MAP_H__
+#endif //__GEOMETRY_MAP_H__

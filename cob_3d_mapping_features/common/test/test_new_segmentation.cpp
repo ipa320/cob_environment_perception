@@ -71,7 +71,7 @@
 
 // Package Includes:
 #include "cob_3d_mapping_common/point_types.h"
-#include "cob_3d_mapping_features/fast_edge_estimation_3d.h"
+#include "cob_3d_mapping_features/fast_edge_estimation_3d_omp.h"
 #include "cob_3d_mapping_features/edge_estimation_3d.h"
 #include "cob_3d_mapping_features/edge_estimation_2d.h"
 #include "cob_3d_mapping_features/edge_extraction.h"
@@ -147,7 +147,7 @@ int main(int argc, char** argv)
   cout << t.elapsed() << "s\t for normal estimation" << endl;
 
   t.restart();
-  cob_3d_mapping_features::FastEdgeEstimation3D<PointXYZRGB, Normal, InterestPoint> ee3d;
+  cob_3d_mapping_features::FastEdgeEstimation3DOMP<PointXYZRGB, Normal, InterestPoint> ee3d;
   ee3d.setPixelSearchRadius(rfp_,1,1);
   ee3d.setInputCloud(p);
   ee3d.setInputNormals(n);
