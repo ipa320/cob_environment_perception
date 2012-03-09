@@ -78,10 +78,10 @@ using namespace std;
 using namespace pcl;
 
 typedef Eigen::Vector3f Vec;
-typedef visualization::PointCloudColorHandlerRGBField<PointXYZ> ColorHdlRGBA;
+typedef visualization::PointCloudColorHandlerRGBField<PointXYZRGBA> ColorHdlRGBA;
 
 string folder_;
-bool vis_, pl, ed, co, cy, sp;
+bool vis_;
 float step_;
 float noise_;
 float rn_;
@@ -108,18 +108,13 @@ void readOptions(int argc, char* argv[])
     ("out,o", value<string>(&folder_), "output folder")
     ("step,s", value<float>(&step_)->default_value(0.005f), "define point density")
     ("noise,g", value<float>(&noise_)->default_value(0.0f), "add gaussian noise")
-    ("normal,n", value<float>(&rn_)->default_value(0.015f),
+    ("normal,n", value<float>(&rn_)->default_value(0.015f), 
      "neighborood radius normal estimation")
     ("feature,f", value<float>(&rf_)->default_value(0.025f), 
      "neighborood radius feature estimation")
     ("shaperadius,r", value<float>(&r_)->default_value(0.05f), 
      "radius for size of cylinder and spheres")
-    ("vis,v", "enable visualization")
-    ("plane,P", "enable plane")
-    ("edge,E", "enable edge")
-    ("corner,C", "enable corner")
-    ("sphere,S", "enable sphere")
-    ("cylinder,Z", "enable cylinder")
+    ("vis,v", value<bool>(&vis_)->default_value(false), "enable visualization")
     ;
 
   variables_map vm;
@@ -127,25 +122,13 @@ void readOptions(int argc, char* argv[])
 	.options(cmd_line).run(), vm);
   notify(vm);
 
-  if (vm.count("help"))
+  if (vm.count("help") || !vm.count("in"))
   {
     cout << "Generates FPFH of a single point on various shapes" << endl;
     cout << "TODO: For some shape sizes the point not always lies in the center of the shape" << endl;
     cout << cmd_line << endl;
     exit(0);
   }
-  if (vm.count("vis")) vis_ = true;
-  else vis_ = false;
-  if (vm.count("plane")) pl = true;
-  else pl = false;
-  if (vm.count("edge")) ed = true;
-  else ed = false;
-  if (vm.count("corner")) co = true;
-  else co = false;
-  if (vm.count("cylinder")) cy = true;
-  else cy = false;
-  if (vm.count("sphere")) sp = true;
-  else sp = false;
 }
 
 // convert a float to string
@@ -165,157 +148,168 @@ string fl2label(const float & f, const size_t & precision)
 
 void generateName(ft_config * cfg, string shape)
 {
-  string name = fl2label(cfg->rf, 3) + "rf_" 
-    + fl2label(cfg->rn, 3) + "rn_" 
+  string name = fl2label(cfg->rf, 3) + "fpfh_" 
+    + fl2label(cfg->rn, 3) + "n_" 
     + fl2label(cfg->rng, 4) + "rng_"
-    + fl2label(cfg->s, 4) + "s_"
     + shape + ".pcd";
   cfg->file_name = name;
 }
 
-void generateFeature(ft_config * cfg, PointCloud<PointXYZ>::Ptr & p_in,
+void generateFeature(ft_config * cfg, PointIndices::Ptr idx, PointCloud<PointXYZRGBA>::Ptr & p_in,
 		     PointCloud<Normal>::Ptr & normal_out)
 {
   PointCloud<FPFHSignature33>::Ptr fpfh (new PointCloud<FPFHSignature33>);
+  PointCloud<FPFHSignature33>::Ptr qpoint (new PointCloud<FPFHSignature33>);
+  PointIndices::Ptr pi(new PointIndices);
   vector<float> d;
-  KdTree<PointXYZ>::Ptr tree(new KdTreeFLANN<PointXYZ>());
+  KdTree<PointXYZRGBA>::Ptr tree(new KdTreeFLANN<PointXYZRGBA>());
   tree->setInputCloud(p_in);
+  tree->radiusSearch(idx->indices[0], cfg->rf, pi->indices, d);
 
-  NormalEstimation<PointXYZ, Normal> norm;
+  for (size_t i = 0; i < pi->indices.size(); ++i)
+    p_in->points[pi->indices[i]].rgba = 0x0000ff;
+  p_in->points[idx->indices[0]].rgba = LBL_PLANE;
+
+  NormalEstimation<PointXYZRGBA, Normal> norm;
   norm.setInputCloud(p_in);
   norm.setSearchMethod(tree);
   norm.setRadiusSearch(cfg->rn);
   norm.compute(*normal_out);
 
-  FPFHEstimation<PointXYZ, Normal, FPFHSignature33> fpfhE;
+  FPFHEstimation<PointXYZRGBA, Normal, FPFHSignature33> fpfhE;
   fpfhE.setInputCloud(p_in);
   fpfhE.setInputNormals(normal_out);
   fpfhE.setSearchMethod(tree);
   fpfhE.setRadiusSearch(cfg->rf);
   fpfhE.compute(*fpfh);
 
-  if (!folder_.empty()) io::savePCDFileASCII<FPFHSignature33>(folder_ + cfg->file_name, *fpfh);
+  copyPointCloud<FPFHSignature33>(*fpfh, *idx, *qpoint);
+  if (!folder_.empty()) io::savePCDFileASCII<FPFHSignature33>(folder_ + cfg->file_name, *qpoint);
 }
 
-void plane (ft_config * cfg, PointCloud<PointXYZ>::Ptr & out, 
-	    PointCloud<Normal>::Ptr & normal_out)
+size_t getShapeCenter(PointCloud<PointXYZRGBA>::Ptr & cloud)
 {
-  cob_3d_mapping_tools::PointGenerator<PointXYZ> pg;
+  size_t idx_min = 0;
+  float dist, min_dist = 100000.0f;
+  for (size_t idx=0; idx < cloud->size(); idx ++)
+  {
+    dist = cloud->points[idx].x*cloud->points[idx].x + 
+      cloud->points[idx].y*cloud->points[idx].y + 
+      cloud->points[idx].z*cloud->points[idx].z; 
+    if (dist<min_dist) min_dist = dist; idx_min=idx;
+  }
+  return idx_min;
+}
+
+void plane (ft_config * cfg, PointCloud<PointXYZRGBA>::Ptr & out, 
+		 PointCloud<Normal>::Ptr & normal_out)
+{
+  cob_3d_mapping_tools::PointGenerator<PointXYZRGBA> pg;
   pg.setGaussianNoise(cfg->rng);
   pg.setOutputCloud(out);
   pg.generatePlane(cfg->s, 0.25f * Vec::UnitZ(), 0.2f * Vec::UnitX(), 0.2f * Vec::UnitY());
-  generateName(cfg, "plane");
-  generateFeature(cfg, out, normal_out);
+  PointIndices::Ptr idx(new PointIndices);
+  idx->indices.push_back(getShapeCenter(out));
+  generateName(cfg, "plane_");
+  generateFeature(cfg, idx,  out, normal_out);
 }
 
-void edge (ft_config * cfg, PointCloud<PointXYZ>::Ptr & out, 
+void edge_convex(ft_config * cfg, PointCloud<PointXYZRGBA>::Ptr & out, 
 		 PointCloud<Normal>::Ptr & normal_out)
 {
   Vec o(0.0, 0.0, 0.25);
-  cob_3d_mapping_tools::PointGenerator<PointXYZ> pg;
+  cob_3d_mapping_tools::PointGenerator<PointXYZRGBA> pg;
   pg.setGaussianNoise(cfg->rng);
   pg.setOutputCloud(out);
-  pg.generateEdge(cfg->s, o, 0.5f * Vec::UnitX(), Vec(0.0f, 1.0f, 1.0f).normalized() * 0.05f);
-  pg.generateEdge(cfg->s, -o, 0.5f * Vec::UnitX(), Vec(0.0f, 1.0f, 1.0f).normalized() * 0.05f);
-  generateName(cfg, "edge");
-  generateFeature(cfg, out, normal_out);
+  pg.generateEdge(cfg->s, o, 0.5f * Vec::UnitX(), Vec(0.0f, 1.0f, 1.0f).normalized() * 0.2f);
+  PointIndices::Ptr idx(new PointIndices);
+  idx->indices.push_back(getShapeCenter(out));
+  generateName(cfg, "edge_convex_");
+  generateFeature(cfg, idx,  out, normal_out);
 }
 
-void edge_concave(ft_config * cfg, PointCloud<PointXYZ>::Ptr & out, 
+void edge_concave(ft_config * cfg, PointCloud<PointXYZRGBA>::Ptr & out, 
 		  PointCloud<Normal>::Ptr & normal_out)
 {
   Vec o(0.0, 0.0, 0.25);
-  cob_3d_mapping_tools::PointGenerator<PointXYZ> pg;
+  cob_3d_mapping_tools::PointGenerator<PointXYZRGBA> pg;
   pg.setGaussianNoise(cfg->rng);
   pg.setOutputCloud(out);
   pg.generateEdge(cfg->s, o, -0.5f * Vec::UnitX(), Vec(0.0f, 1.0f, -1.0f).normalized() * 0.2f);
+  PointIndices::Ptr idx(new PointIndices);
+  idx->indices.push_back(getShapeCenter(out));
   generateName(cfg, "edge_concave_");
-  generateFeature(cfg, out, normal_out);
+  generateFeature(cfg, idx, out, normal_out);
 }
 
-void corner(ft_config * cfg, PointCloud<PointXYZ>::Ptr & out, 
+void corner_convex(ft_config * cfg, PointCloud<PointXYZRGBA>::Ptr & out, 
 		   PointCloud<Normal>::Ptr & normal_out)
 {
-  Vec o(0.0, 0.25, 0.25);
-  cob_3d_mapping_tools::PointGenerator<PointXYZ> pg;
-  pg.setGaussianNoise(cfg->rng);
-  pg.setOutputCloud(out);
-  pg.generateCorner(cfg->s, o, Vec::UnitX() + Vec::UnitZ(), Vec::UnitY(),
-		    -Vec::UnitX() + Vec::UnitZ(), 0.05f);
-  pg.generateCorner(cfg->s, -o, Vec::UnitX() + Vec::UnitZ(), Vec::UnitY(),
-		    -Vec::UnitX() + Vec::UnitZ(), 0.05f);
-  generateName(cfg, "corner");
-  generateFeature(cfg, out, normal_out);
+
 }
 
-void corner_concave(ft_config * cfg, PointCloud<PointXYZ>::Ptr & out, 
+void corner_concave(ft_config * cfg, PointCloud<PointXYZRGBA>::Ptr & out, 
 		    PointCloud<Normal>::Ptr & normal_out)
 {
-  Vec o(0.0, 0.0, 0.25);
-  cob_3d_mapping_tools::PointGenerator<PointXYZ> pg;
-  pg.setGaussianNoise(cfg->rng);
-  pg.setOutputCloud(out);
-  pg.generateCorner(cfg->s, o,
-		    Vec::UnitX() - Vec::UnitZ(),
-		    Vec::UnitY(),
-		    -Vec::UnitX() - Vec::UnitZ(), 
-		    0.05f);
-  generateName(cfg, "edge_concave_");
-  generateFeature(cfg, out, normal_out);
+
 }
 
-void cylinder(ft_config * cfg, PointCloud<PointXYZ>::Ptr & out, 
-	      PointCloud<Normal>::Ptr & normal_out, float r)
+void cylinder_concave(ft_config * cfg, PointCloud<PointXYZRGBA>::Ptr & out, 
+		      PointCloud<Normal>::Ptr & normal_out, float r)
 {
   Vec o(0.0, 0.0, 0.25);
-  Vec o2(0.0, 0.0, -0.25-r);
-  cob_3d_mapping_tools::PointGenerator<PointXYZ> pg;
+  cob_3d_mapping_tools::PointGenerator<PointXYZRGBA> pg;
   pg.setGaussianNoise(cfg->rng);
   pg.setOutputCloud(out);
-  Eigen::Quaternion<float> q;
-  q = Eigen::AngleAxis<float>(0.1*M_PI, Vec::UnitX());
-  pg.generateCylinder(cfg->s, o, 0.2f * Vec::UnitX(), q * (r * Vec::UnitY()), 0.8f * M_PI);
-  pg.generateCylinder(cfg->s, o2, 0.2f * Vec::UnitX(),q * (r * Vec::UnitY()), 0.8f * M_PI);
-  generateName(cfg, fl2label(r,3) + "cylinder");
-  generateFeature(cfg, out, normal_out);
+  pg.generateCylinder(cfg->s, o, 0.2f * Vec::UnitX(), r * Vec::UnitY(), M_PI);
+  PointIndices::Ptr idx(new PointIndices);
+  idx->indices.push_back(getShapeCenter(out));
+  generateName(cfg, "cylinder_concave_");
+  generateFeature(cfg, idx, out, normal_out);
 }
 
-void cylinder_convex(ft_config * cfg, PointCloud<PointXYZ>::Ptr & out, 
+void cylinder_convex(ft_config * cfg, PointCloud<PointXYZRGBA>::Ptr & out, 
 		     PointCloud<Normal>::Ptr & normal_out, float r)
 {
   Vec o(0.0, 0.0, 2.0);
-  cob_3d_mapping_tools::PointGenerator<PointXYZ> pg;
+  cob_3d_mapping_tools::PointGenerator<PointXYZRGBA> pg;
   pg.setGaussianNoise(cfg->rng);
   pg.setOutputCloud(out);
   pg.generateCylinder(cfg->s, o, 0.2f * Vec::UnitX(), -r * Vec::UnitY(), M_PI);
+  PointIndices::Ptr idx(new PointIndices);
+  idx->indices.push_back(getShapeCenter(out));
   generateName(cfg, "cylinder_convex_");
-  generateFeature(cfg, out, normal_out);
+  generateFeature(cfg, idx, out, normal_out);
 }
 
-void sphere(ft_config * cfg, PointCloud<PointXYZ>::Ptr & out, 
-		   PointCloud<Normal>::Ptr & normal_out, float r)
-{
-  Vec o(0.0, 0.0, 0.25+r);
-  Vec o2(0.0, 0.0, -0.25);
-  cob_3d_mapping_tools::PointGenerator<PointXYZ> pg;
-  pg.setGaussianNoise(cfg->rng);
-  pg.setOutputCloud(out);
-  pg.generateSphere(cfg->s, o, -Vec::UnitZ(), r, 0.4 * M_PI);
-  pg.generateSphere(cfg->s, o2, -Vec::UnitZ(), r, 0.4 * M_PI);
-  generateName(cfg, fl2label(r,3) + "sphere");
-  generateFeature(cfg, out, normal_out);
-}
-
-void sphere_concave(ft_config * cfg, PointCloud<PointXYZ>::Ptr & out, 
+void sphere_convex(ft_config * cfg, PointCloud<PointXYZRGBA>::Ptr & out, 
 		   PointCloud<Normal>::Ptr & normal_out, float r)
 {
   Vec o(0.0, 0.0, 0.25);
-  cob_3d_mapping_tools::PointGenerator<PointXYZ> pg;
+  cob_3d_mapping_tools::PointGenerator<PointXYZRGBA> pg;
   pg.setGaussianNoise(cfg->rng);
   pg.setOutputCloud(out);
-  pg.generateSphere(cfg->s, o, Vec::UnitZ(), r, 0.45 * M_PI);
+  float step = cfg->s;
+  pg.generateSphere(step, o, -Vec::UnitZ(), r, 0.45 * M_PI);
+  PointIndices::Ptr idx(new PointIndices);
+  idx->indices.push_back(getShapeCenter(out));
+  generateName(cfg, "sphere_convex_");
+  generateFeature(cfg, idx, out, normal_out);
+}
+
+void sphere_concave(ft_config * cfg, PointCloud<PointXYZRGBA>::Ptr & out, 
+		   PointCloud<Normal>::Ptr & normal_out, float r)
+{
+  Vec o(0.0, 0.0, 0.25);
+  cob_3d_mapping_tools::PointGenerator<PointXYZRGBA> pg;
+  pg.setGaussianNoise(cfg->rng);
+  pg.setOutputCloud(out);
+  float step = cfg->s;
+  pg.generateSphere(step, o, Vec::UnitZ(), r, 0.45 * M_PI);
+  PointIndices::Ptr idx(new PointIndices);
+  idx->indices.push_back(getShapeCenter(out));
   generateName(cfg, "sphere_concave_");
-  generateFeature(cfg, out, normal_out);
+  generateFeature(cfg, idx, out, normal_out);
 }
 
 int main(int argc, char** argv)
@@ -329,53 +323,52 @@ int main(int argc, char** argv)
   c1->rn = rn_;
   c1->rf = rf_;
 
-  PointCloud<PointXYZ>::Ptr p (new PointCloud<PointXYZ>);
+  PointCloud<PointXYZRGBA>::Ptr p (new PointCloud<PointXYZRGBA>);
   PointCloud<Normal>::Ptr n (new PointCloud<Normal>);
+  PointCloud<PointXYZRGBA>::Ptr p2 (new PointCloud<PointXYZRGBA>);
+  PointCloud<Normal>::Ptr n2 (new PointCloud<Normal>);
+  PointCloud<PointXYZRGBA>::Ptr p3 (new PointCloud<PointXYZRGBA>);
+  PointCloud<Normal>::Ptr n3 (new PointCloud<Normal>);
 
-  if(pl) plane(c1, p, n);
+  plane(c1, p, n);
 
-  if(ed)
+  p.reset(new PointCloud<PointXYZRGBA>);
+  n.reset(new PointCloud<Normal>);
+  edge_convex(c1, p, n);
+
+  p.reset(new PointCloud<PointXYZRGBA>);
+  n.reset(new PointCloud<Normal>);
+  edge_concave(c1, p, n);
+
+  p3.reset(new PointCloud<PointXYZRGBA>);
+  n3.reset(new PointCloud<Normal>);
+  cylinder_convex(c1, p3, n3, r_);
+
+  p.reset(new PointCloud<PointXYZRGBA>);
+  n.reset(new PointCloud<Normal>);
+  cylinder_concave(c1, p, n, r_);
+
+  p.reset(new PointCloud<PointXYZRGBA>);
+  n.reset(new PointCloud<Normal>);
+  sphere_convex(c1, p, n, r_);
+
+  p.reset(new PointCloud<PointXYZRGBA>);
+  n.reset(new PointCloud<Normal>);
+  sphere_concave(c1, p, n, r_);
+
+  visualization::PCLVisualizer vis;
+  int vp(0);
+  vis.setBackgroundColor(0.7, 0.7, 0.7, vp);
+  vis.addCoordinateSystem(0.1,vp);
+  ColorHdlRGBA hdl(p3);
+  vis.addPointCloud<PointXYZRGBA>(p3, hdl, "points", vp);
+  vis.addPointCloudNormals<PointXYZRGBA, Normal>(p3, n3, 4, 0.02, "normals", vp);
+
+
+  while(!vis.wasStopped())
   {
-    p.reset(new PointCloud<PointXYZ>);
-    n.reset(new PointCloud<Normal>);
-    edge(c1, p, n);
+    vis.spinOnce(100);
+    usleep(100000);
   }
 
-  if(co)
-  {
-    p.reset(new PointCloud<PointXYZ>);
-    n.reset(new PointCloud<Normal>);
-    corner(c1, p, n);
-  }
-
-  if (cy)
-  {
-    p.reset(new PointCloud<PointXYZ>);
-    n.reset(new PointCloud<Normal>);
-    cylinder(c1, p, n, r_);
-  }
-
-  if(sp)
-  {
-    p.reset(new PointCloud<PointXYZ>);
-    n.reset(new PointCloud<Normal>);
-    sphere(c1, p, n, r_);
-  }
-
-  if (vis_)
-  {
-    visualization::PCLVisualizer vis;
-    int vp(0);
-    vis.setBackgroundColor(0.5,0.5,0.5,vp);
-    vis.addCoordinateSystem(0.1,vp);
-    vis.addPointCloud<PointXYZ>(p, "points", vp);
-    vis.addPointCloudNormals<PointXYZ, Normal>(p, n, 4, 0.02, "normals", vp);
-
-    while(!vis.wasStopped())
-    {
-      vis.spinOnce(100);
-      usleep(100000);
-    }
-  }
-  return 0;
 }

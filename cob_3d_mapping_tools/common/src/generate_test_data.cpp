@@ -71,7 +71,7 @@ using namespace std;
 
 string folder_, config_file_;
 vector<string> scenes_;
-float r_min_, r_max_, r_step_;
+float r_min_, r_max_, r_step_, limit_;
 
 string fl2label(float f, size_t precision)
 {
@@ -96,9 +96,10 @@ void readOptions(int argc, char* argv[])
     ("config,c", value<string>(&config_file_), "cfg file")
     ("folder", value<string>(&folder_), "set folder")
     ("scenes", value<vector<string> >(&scenes_), "name of used scenes")
-    ("r_min", value<float>(&r_min_)->default_value(0.02), "radius to start with")
-    ("r_max", value<float>(&r_max_)->default_value(0.03), "radius to end with")
-    ("r_step", value<float>(&r_step_)->default_value(0.005), "radius step width")
+    ("r_min", value<float>(&r_min_)->default_value(0.02f), "radius to start with")
+    ("r_max", value<float>(&r_max_)->default_value(0.03f), "radius to end with")
+    ("r_step", value<float>(&r_step_)->default_value(0.005f), "radius step width")
+    ("z_limit", value<float>(&limit_)->default_value(3.5f), "z distance limit")
     ;
 
   positional_options_description p_opt;
@@ -158,7 +159,7 @@ int main(int argc, char** argv)
     PassThrough<PointXYZRGB> pass;
     pass.setInputCloud(in);
     pass.setFilterFieldName("z");
-    pass.setFilterLimits(0.0f, 3.5f);
+    pass.setFilterLimits(0.0f, limit_);
     pass.filter(*in);
 
     KdTree<PointXYZRGB>::Ptr tree(new KdTreeFLANN<PointXYZRGB>());
