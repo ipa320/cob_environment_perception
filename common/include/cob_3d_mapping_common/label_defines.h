@@ -74,7 +74,12 @@
 #define LBL_UNDEF    0x999999
 
 // --- define SVM labels ---
-#define SVM_PLANE    0
+#define SVM_PLANE 0
+#define SVM_EDGE  1
+#define SVM_COR   2
+#define SVM_SPH   3
+#define SVM_CYL   4
+
 #define SVM_EDGE_CVX 1
 #define SVM_SPH_CVX  2
 #define SVM_CYL_CVX  3
@@ -82,6 +87,9 @@
 #define SVM_EDGE_CAV 4
 #define SVM_SPH_CAV  5
 #define SVM_CYL_CAV  6
+
+#define SVM_COR_CVX  7
+#define SVM_COR_CAV  8
 
 // --- define integer labels ---
 #define I_PLANE 0
