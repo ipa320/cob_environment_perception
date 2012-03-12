@@ -55,9 +55,8 @@
 #ifndef __IMPL_ORGANIZED_NORMAL_ESTIMATION_H__
 #define __IMPL_ORGANIZED_NORMAL_ESTIMATION_H__
 
-#define L_NAN 1
-#define L_BORDER 2
 
+#include "cob_3d_mapping_common/label_defines.h"
 #include "cob_3d_mapping_features/organized_normal_estimation.h"
 
 template <typename PointInT, typename PointOutT, typename LabelOutT> void
@@ -73,7 +72,7 @@ cob_3d_mapping_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>
 
   if (pcl_isnan(p.z))
   {
-    label_out = L_NAN;
+    label_out = I_NAN;
     return;
   }
 
@@ -216,7 +215,7 @@ cob_3d_mapping_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>
   }
 
   if (range_border_counter[mask_.size()-1] > 0)
-    label_out = L_BORDER;
+    label_out = I_BORDER;
 
   float num_p_inv = 1.0f / normals.size();
   n_idx *= num_p_inv;
@@ -236,7 +235,6 @@ cob_3d_mapping_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>
     labels_->width = input_->width;
   }
 
-//#pragma omp parallel for schedule (dynamic, threadsize)
   for (std::vector<int>::iterator it=indices_->begin(); it != indices_->end(); ++it)
   {
     computePointNormal(*surface_, *it, 

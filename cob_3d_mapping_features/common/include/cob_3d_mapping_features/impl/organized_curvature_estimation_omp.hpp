@@ -91,7 +91,7 @@ cob_3d_mapping_features::OrganizedCurvatureEstimationOMP<PointInT,PointNT,PointL
     }
     else
     {
-      labels_->points[(*indices_)[i]].label = label_list_[I_NAN];
+      labels_->points[(*indices_)[i]].label = I_NAN;
     }
   }
 }

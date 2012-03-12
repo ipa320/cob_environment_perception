@@ -175,17 +175,20 @@ int main(int argc, char** argv)
   seg.propagateWavefront2(le);
   seg.getClusterIndices(le, clusters, segmented);
   cout << t.elapsed() << "s\t for clustering" << endl;
-  ofstream fs;
-  fs.open (file_out_.c_str());
-  for(unsigned int i=0; i<clusters.size(); i++)
+  if (file_out_ != "")
   {
-    for(unsigned int j=0; j<clusters[i].indices.size(); j++)
+    ofstream fs;
+    fs.open (file_out_.c_str());
+    for(unsigned int i=0; i<clusters.size(); i++)
     {
-      fs << clusters[i].indices[j] << " ";
+      for(unsigned int j=0; j<clusters[i].indices.size(); j++)
+      {
+	fs << clusters[i].indices[j] << " ";
+      }
+      fs << "\n";
     }
-    fs << "\n";
+    fs.close();
   }
-  fs.close();
 
   // map 3d edges on 2d image:
   edge_3d = cv::Mat(ip3d->height, ip3d->width, CV_32FC1);

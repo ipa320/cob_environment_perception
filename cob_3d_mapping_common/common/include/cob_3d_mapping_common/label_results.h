@@ -91,7 +91,7 @@ namespace cob_3d_mapping_common
       all = 0;
       for(size_t i = 0; i < NUM_LBL; ++i)
       {
-	all = exp[I_PLANE]+exp[I_EDGE]+exp[I_SPH]+exp[I_CYL]+exp[I_COR];
+	all = exp[EVAL_PLANE]+exp[EVAL_EDGE]+exp[EVAL_SPH]+exp[EVAL_CYL]+exp[EVAL_COR];
       }
       for(size_t i = 0; i < NUM_LBL; ++i)
       {

@@ -91,13 +91,22 @@
 #define SVM_COR_CVX  7
 #define SVM_COR_CAV  8
 
-// --- define integer labels ---
-#define I_PLANE 0
-#define I_EDGE  1
-#define I_SPH   2
-#define I_CYL   3
-#define I_COR   4
-#define I_EDGECORNER 5
-#define I_CURVED 6
+// --- define integer labels only for feature evaluation ---
+#define EVAL_PLANE 0
+#define EVAL_EDGE  1
+#define EVAL_SPH   2
+#define EVAL_CYL   3
+#define EVAL_COR   4
+#define EVAL_EDGECORNER 5
+#define EVAL_CURVED 6
+
+// --- define integer labels for classification ---
+#define I_NAN    0
+#define I_BORDER 1
+#define I_EDGE   2
+#define I_PLANE  3
+#define I_CYL    4
+#define I_SPHERE 5
+#define I_CORNER 6
 
 #endif

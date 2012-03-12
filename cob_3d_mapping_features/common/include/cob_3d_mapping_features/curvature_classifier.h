@@ -58,14 +58,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/pcl_base.h>
-
-// define indices to access labels list:
-#define I_NAN    0
-#define I_BORDER 1
-#define I_EDGE   2
-#define I_PLANE  3
-#define I_CYL    4
-#define I_SPHERE 5
+#include "cob_3d_mapping_common/label_defines.h"
 
 namespace cob_3d_mapping_features
 {
@@ -86,14 +79,32 @@ namespace cob_3d_mapping_features
     typedef typename PointCloudOut::ConstPtr PointCloudOutConstPtr;
 
     /*! Empty constructor */
-    CurvatureClassifier()
-      :pc_c_max_th_cylinder_upper_(0.11),
-       pc_c_max_th_sphere_upper_(0.11),
-       pc_c_max_th_lower_(0.004),
-       pc_max_min_ratio_(5.0)
+    CurvatureClassifier() :
+      c_upper_(0.11),
+      c_lower_(0.02),
+      c_ratio_cylinder_sphere_(7.0),
+      c_ratio_edge_corner_(2.75)
     {}
     /*! Empty destructor */
     ~CurvatureClassifier() {}
+
+
+    /*!
+     * @brief set the rules for classification
+     *
+     * @param[in] c_upper everything above is edge
+     * @param[in] c_lower everything above is plane
+     * @param[in] c_r_cyl_sph ratio to differentiate between cylinder and sphere (bigger -> more spheres)
+     * @param[in] c_r_edge_cor ratio to differentiate between edge and corner (bigger -> more corners)
+     */
+    inline void 
+    setRules(float c_upper, float c_lower, float c_r_cyl_sph, float c_r_edge_cor = 2.75)
+    {
+      c_upper_ = c_upper;
+      c_lower_ = c_lower;
+      c_ratio_cylinder_sphere_ = c_r_cyl_sph;
+      c_ratio_edge_corner_ = c_r_edge_cor;
+    }
 
     /*!
      * @brief classify a point cloud
@@ -106,10 +117,10 @@ namespace cob_3d_mapping_features
     //virtual inline bool
     //  initCompute();
 
-    float pc_c_max_th_cylinder_upper_; //everything above is edge, should be the same value as pc.cmax_sphere_upper
-    float pc_c_max_th_sphere_upper_; //everything above is edge, should be the same value as pc.cmax_cylinder_upper
-    float pc_c_max_th_lower_; //everything below is plane
-    float pc_max_min_ratio_; //ratio for pc to differentiate between cylinder and sphere
+    float c_upper_; //everything above is edge
+    float c_lower_; //everything below is plane
+    float c_ratio_cylinder_sphere_; //max min ratio to differentiate between cylinder and sphere
+    float c_ratio_edge_corner_; //max min ratio to differentiate between edge and corner
 
   };
 }
