@@ -56,14 +56,8 @@
 #define __ORGANIZED_CURVATURE_ESTIMATION_H__
 
 #include "cob_3d_mapping_features/organized_features.h"
+#include "cob_3d_mapping_common/label_defines.h"
 
-// define indices to access labels list:
-#define I_NAN    0
-#define I_BORDER 1
-#define I_EDGE   2
-#define I_PLANE  3
-#define I_CYL    4
-#define I_SPHERE 5
 // number of currently used labels:
 #define I_SIZE 3
 
@@ -103,9 +97,6 @@ namespace cob_3d_mapping_features
     OrganizedCurvatureEstimation ()
     {
       feature_name_ = "OrganizedCurvatureEstimation";
-      label_list_[0] = 1;
-      label_list_[1] = 2;
-      label_list_[2] = 3;
     };
 
     inline void
@@ -118,13 +109,6 @@ namespace cob_3d_mapping_features
       setEdgeClassThreshold(float th)
     {
       edge_curvature_threshold_ = th;
-    }
-
-    inline void setLabelClasses(int nan, int border_points, int edges)
-    {
-      label_list_[I_NAN] = nan;
-      label_list_[I_BORDER] = border_points;
-      label_list_[I_EDGE] = edges;
     }
 
     void
@@ -148,7 +132,6 @@ namespace cob_3d_mapping_features
     LabelCloudOutPtr labels_;
 
     float edge_curvature_threshold_;
-    int label_list_ [I_SIZE];
     
   };
 }

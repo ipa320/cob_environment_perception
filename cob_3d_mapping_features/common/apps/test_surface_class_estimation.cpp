@@ -73,6 +73,7 @@
 // Package Includes:
 #include "cob_3d_mapping_common/point_types.h"
 #include "cob_3d_mapping_common/stop_watch.h"
+#include "cob_3d_mapping_common/label_defines.h"
 #include "cob_3d_mapping_features/fast_edge_estimation_3d.h"
 #include "cob_3d_mapping_features/organized_normal_estimation.h"
 #include "cob_3d_mapping_features/organized_curvature_estimation.h"
@@ -127,27 +128,27 @@ void applyColor(int i, PointCloud<PointLabel>::Ptr p, PointCloud<PointXYZRGB>::P
 {
   switch (p->points[i].label)
   {
-  case 5: //sphere
+  case I_SPHERE: //sphere
     col->points[i].r = 255;
     col->points[i].g = 0;
     col->points[i].b = 255;
     break;
-  case 4: //cylinder
+  case I_CYL: //cylinder
     col->points[i].r = 255;
     col->points[i].g = 255;
     col->points[i].b = 0;
     break;
-  case 3: //plane
+  case I_PLANE: //plane
     col->points[i].r = 0;
     col->points[i].g = 0;
     col->points[i].b = 255;
     break;
-  case 2: //edge
+  case I_EDGE: //edge
     col->points[i].r = 0;
     col->points[i].g = 255;
     col->points[i].b = 0;
     break;
-  case 1: //border
+  case I_BORDER: //border
     col->points[i].r = 255;
     col->points[i].g = 0;
     col->points[i].b = 0;

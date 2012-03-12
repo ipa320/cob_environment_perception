@@ -75,18 +75,23 @@ cob_3d_mapping_features::CurvatureClassifier<PointInT,PointOutT>::classify(Point
   }
   for (size_t i=0; i < indices_->size(); ++i)
   {
-    if (input_->points[(*indices_)[i]].pc1 < pc_c_max_th_lower_)
+    if (input_->points[(*indices_)[i]].pc1 < c_lower_)
     {
       output.points[i].label = I_PLANE;
     }
-    else if (input_->points[(*indices_)[i]].pc1 < pc_max_min_ratio_ * input_->points[(*indices_)[i]].pc2 &&
-             input_->points[(*indices_)[i]].pc1 < pc_c_max_th_sphere_upper_)
-    {
-      output.points[i].label = I_SPHERE;
-    }
-    else if (input_->points[(*indices_)[i]].pc1 > pc_c_max_th_cylinder_upper_)
+    else if (input_->points[(*indices_)[i]].pc1 > c_upper_)
     {
       output.points[i].label = I_EDGE;
+      /* // Uncomment for corner support:
+      if (input_->points[(*indices_)[i]].pc1 < c_ratio_edge_corner_ * input_->points[(*indices_)[i]].pc2)
+	output.points[i].label = I_CORNER;
+      else
+	output.points[i].label = I_EDGE;
+      */
+    }
+    else if (input_->points[(*indices_)[i]].pc1 < c_ratio_cylinder_sphere_ * input_->points[(*indices_)[i]].pc2)
+    {
+      output.points[i].label = I_SPHERE;
     }
     else
     {

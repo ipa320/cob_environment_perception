@@ -110,7 +110,7 @@ cob_3d_mapping_features::OrganizedCurvatureEstimation<PointInT,PointNT,PointLabe
   //normals_->points[index].curvature = curvatures_->points[index].pc1;
   //std::cout << pc1 << " " << pc2 << std::endl;
   if (pc1 >= edge_curvature_threshold_ && label_out == 0)
-    label_out = label_list_[I_EDGE];
+    label_out = I_EDGE;
 }
 
 template <typename PointInT, typename PointNT, typename PointLabelT, typename PointOutT> void
@@ -145,7 +145,7 @@ cob_3d_mapping_features::OrganizedCurvatureEstimation<PointInT,PointNT,PointLabe
     }
     else
     {
-      labels_->points[*it].label = label_list_[I_NAN];
+      labels_->points[*it].label = I_NAN;
     }
   }
 }
