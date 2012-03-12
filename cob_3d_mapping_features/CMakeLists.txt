@@ -50,42 +50,48 @@ rosbuild_add_library(cob_3d_mapping_features_omp
 
 rosbuild_add_openmp_flags(cob_3d_mapping_features_omp)
 
-# feature evaluation:
-rosbuild_add_executable(fpfh_svm_trainer common/test/fpfh_svm_trainer.cpp)
-rosbuild_add_executable(feature_evaluation common/test/feature_evaluation.cpp)
-rosbuild_add_executable(feature_evaluation_fpfh common/test/feature_evaluation_fpfh.cpp)
-rosbuild_add_compile_flags(feature_evaluation -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
+target_link_libraries(cob_3d_mapping_features_nodelets cob_3d_mapping_features)
 
 
-
-rosbuild_add_executable(test_edge_extraction common/test/test_edge_extraction.cpp)
-rosbuild_add_executable(test_segmentation common/test/test_new_segmentation.cpp)
-rosbuild_add_executable(test_segmentation_2 common/test/test_segmentation_2.cpp)
 rosbuild_add_executable(test_plane_extraction common/src/plane_extraction.cpp)
 rosbuild_add_executable(plane_extraction_action_client ros/src/plane_extraction_action_client.cpp)
 
-rosbuild_add_executable(test_edge_estimation common/test/test_edge_estimation.cpp)
-rosbuild_add_executable(test_surface_class_estimation common/test/test_surface_class_estimation.cpp)
+
+# feature evaluation:
+rosbuild_add_executable(evaluation_fpfh_svm_trainer common/apps/evaluation_fpfh_svm_trainer.cpp)
+rosbuild_add_executable(evaluation_features common/apps/evaluation_features.cpp)
+rosbuild_add_executable(evaluation_features_fpfh common/apps/evaluation_features_fpfh.cpp)
+rosbuild_add_compile_flags(evaluation_features -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
+
+# Georg's old test program for edge estimation and segmentation:
+rosbuild_add_executable(test_edge_extraction common/apps/test_edge_extraction.cpp)
+rosbuild_add_compile_flags(test_edge_extraction -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
+target_link_libraries(test_edge_extraction cob_3d_mapping_features)
+
+# Uses FEE3D and EE2D to extract edges and segment clusters
+rosbuild_add_executable(test_segmentation common/apps/test_segmentation.cpp)
+target_link_libraries(test_segmentation cob_3d_mapping_features cob_3d_mapping_features_omp)
+
+# Test Surface Classification using organized principal curvatures
+rosbuild_add_executable(test_surface_class_estimation common/apps/test_surface_class_estimation.cpp)
+target_link_libraries(test_surface_class_estimation cob_3d_mapping_features)
+
+# Test program for 2D (on RGB or depth) and 3D EdgeEstimation + visualization
+rosbuild_add_executable(test_edge_estimation common/apps/test_edge_estimation.cpp)
+rosbuild_add_compile_flags(test_edge_estimation -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
+target_link_libraries(test_edge_estimation cob_3d_mapping_features)
+
+# Profiling old EdgeEstimation and FastEdgeEstimation
+# Only computation, no visualization or output.
 rosbuild_add_executable(profile_fee_omp common/test/profile_fee_omp.cpp)
 rosbuild_add_executable(profile_fee common/test/profile_fee.cpp)
 rosbuild_add_executable(profile_ee common/test/profile_ee.cpp)
-
-
-rosbuild_add_compile_flags(test_edge_extraction -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
-rosbuild_add_compile_flags(test_edge_estimation -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
-
-
-target_link_libraries(test_edge_extraction cob_3d_mapping_features)
-target_link_libraries(test_edge_estimation cob_3d_mapping_features)
-target_link_libraries(test_segmentation cob_3d_mapping_features cob_3d_mapping_features_omp)
-target_link_libraries(test_segmentation_2 cob_3d_mapping_features)
-
-target_link_libraries(cob_3d_mapping_features_nodelets cob_3d_mapping_features)
-target_link_libraries(test_surface_class_estimation cob_3d_mapping_features )
-
 target_link_libraries(profile_fee_omp cob_3d_mapping_features cob_3d_mapping_features_omp)
 target_link_libraries(profile_fee cob_3d_mapping_features)
 target_link_libraries(profile_ee cob_3d_mapping_features)
+
+# PCL RANSAC Tutorial:
+#rosbuild_add_executable(planar_segmentation common/src/planar_segementation.cpp)
 
 
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)

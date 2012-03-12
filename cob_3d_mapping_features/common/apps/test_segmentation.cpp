@@ -100,7 +100,7 @@ void readOptions(int argc, char* argv[])
     ("feature,f", value<int>(&rfp_)->default_value(20),
      "set 3d edge estimation radius")
     ("extraction_th,x", value<float>(&ex_th_)->default_value(0.1),
-      "set the strength threshold for edge extraction")
+     "set the strength threshold for edge extraction")
     ;
 
   positional_options_description p_opt;
