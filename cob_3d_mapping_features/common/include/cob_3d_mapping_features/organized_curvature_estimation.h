@@ -114,8 +114,21 @@ namespace cob_3d_mapping_features
     void
       computePointCurvatures(
 	const NormalCloudIn &normals, 
-	int index, 
+	const int index, 
 	const std::vector<int> &indices,
+	float &pcx, 
+	float &pcy, 
+	float &pcz, 
+	float &pc1, 
+	float &pc2,
+	int &label_out);
+
+    void
+      computePointCurvatures(
+	const NormalCloudIn &normals, 
+	const int index, 
+	const std::vector<int> &indices,
+	const std::vector<int> &distance_weights,
 	float &pcx, 
 	float &pcy, 
 	float &pcz, 

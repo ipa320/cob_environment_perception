@@ -93,7 +93,7 @@ int circle_;
 float th_;
 int threads_;
 int rfp_;
-float ex_th_;
+float lower_, upper_;
 
 void readOptions(int argc, char* argv[])
 {
@@ -107,8 +107,8 @@ void readOptions(int argc, char* argv[])
     ("radius,r", value<int>(&radius_)->default_value(5), "radius")
     ("circle,c", value<int>(&circle_)->default_value(2),"circle steps")
     ("feature,f", value<int>(&rfp_)->default_value(20), "set 3d edge estimation radius")
-    ("extraction_th,x", value<float>(&ex_th_)->default_value(0.1),
-      "set the strength threshold for edge extraction")
+    ("lower,l", value<float>(&lower_)->default_value(0.01), "lower curvature threshold")
+    ("upper,u", value<float>(&upper_)->default_value(0.1), "upper curvature threshold")
     ;
 
   positional_options_description p_opt;
@@ -191,6 +191,16 @@ int main(int argc, char** argv)
   ne.compute(*n3);
   cout << t.precisionStop() << "s\t for IntegralImage Estimation" << endl;
 */
+/*
+  t.precisionStart();
+  KdTreeFLANN<PointXYZRGB>::Ptr tree(new KdTreeFLANN<PointXYZRGB>);
+  NormalEstimation<PointXYZRGB, Normal> ne;
+  ne.setRadiusSearch(0.04);
+  ne.setSearchMethod(tree);
+  ne.setInputCloud(p);
+  ne.compute(*n);
+  cout << t.precisionStop() << "s\t for Normal Estimation" << endl;
+*/
 
   t.precisionStart();
   cob_3d_mapping_features::OrganizedNormalEstimation<PointXYZRGB, Normal, PointLabel>one;
@@ -214,26 +224,35 @@ int main(int argc, char** argv)
 
   cob_3d_mapping_features::CurvatureClassifier<PrincipalCurvatures, PointLabel>cc;
   cc.setInputCloud(pc);
+  cc.setRules(upper_, lower_, 7.0);
   cc.classify(*l);
-
-  for (size_t i = 0; i < l->points.size(); i++)
-  {
-    applyColor(i, l, p);
-  }
 /*
+  t.precisionStart();
+  std::vector<float> angles;
+  cob_3d_mapping_features::OrganizedExtendedNormalEstimation<PointXYZRGB, Normal, PointLabel>oene;
+  oene.setInputCloud(p);
+  oene.setOutputLabels(l);
+  oene.setOutputVariance(&angles);
+  oene.setPixelSearchRadius(radius_,1,circle_); //radius,pixel,circle
+  oene.setDistanceThresholdModifier(th_);
+  oene.compute(*n);
+  cout << t.precisionStop() << "s\t for Organized Extended Normal Estimation" << endl;
+*/  
+  
   cout << "Colorize min max values" <<endl;
   float c_max = 0;
   float c_min = 100000;
-
-  for (size_t i = 0; i < p->points.size(); i++)
+  
+  for (size_t i = 0; i<pc->points.size(); i++)
   {
-    c_max = std::max(n->points[i].curvature,c_max);
-    c_min = std::min(n->points[i].curvature,c_min);
+    c_max = std::max(pc->points[i].pc1,c_max);
+    c_min = std::min(pc->points[i].pc1,c_min);
   }
-
-  for (size_t i = 0; i < p->points.size(); i++)
+  std::cout << "max: " << c_max << " min: " << c_min << std::endl;
+/*
+  for (size_t i = 0; i<pc->points.size(); i++)
   {
-    int col = (n->points[i].curvature) / (cmax_) * 255;
+    int col = (pc->points[i].pc1-c_min) / (c_max-c_min) * 255;
     if (col > 255) col = 255;
     if (col < 0) col = 0;
     p->points[i].r = col;
@@ -241,8 +260,15 @@ int main(int argc, char** argv)
     p->points[i].b = col;
   }
 */
+
+  for (size_t i = 0; i < l->points.size(); i++)
+  {
+    applyColor(i, l, p);
+  }
+
   visualization::PCLVisualizer v;
   ColorHdlRGB col_hdl(p);
+  visualization::PointCloudColorHandlerCustom<PointXYZRGB> col_hdl_single (p, 255,0,0);
 //  ColorHdlRGB col_hdl2(p2);
 
   /* --- Viewports: ---
@@ -257,13 +283,14 @@ int main(int argc, char** argv)
   int v1(0);
   v.createViewPort(0.0, 0.0, 0.5, 1.0, v1);
   v.setBackgroundColor(0,127,127, v1);
-  v.addPointCloud<PointXYZRGB>(p,col_hdl, "segmented1", v1);
+  v.addPointCloud<PointXYZRGB>(p, col_hdl, "segmented1", v1);
   //v.addPointCloudNormals<PointXYZRGB, Normal>(p,n,10,0.04,"normals1", v1);
 
   int v2(0);
   v.createViewPort(0.5, 0.0, 1.0, 1.0, v2);
   v.setBackgroundColor(0,127,127, v2);
-  v.addPointCloud<PointXYZRGB>(p,col_hdl, "segmented2", v2);
+
+  v.addPointCloud<PointXYZRGB>(p, col_hdl_single, "segmented2", v2);
   v.addPointCloudNormals<PointXYZRGB, Normal>(p,n,10,0.04,"normals2", v2);
 
   while(!v.wasStopped())

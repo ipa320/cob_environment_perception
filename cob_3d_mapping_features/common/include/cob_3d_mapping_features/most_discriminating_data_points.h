@@ -53,74 +53,102 @@
  ****************************************************************/
 
 
-#include "cob_3d_mapping_features/most_discriminating_data_points.h"
-#include <boost/program_options.hpp>
+#ifndef __MOST_DISCRIMINATING_DATA_POINTS_H__
+#define __MOST_DISCRIMINATING_DATA_POINTS_H__
 
-#include <pcl/point_types.h>
-#include <pcl/io/pcd_io.h>
+#include <vector>
 
-using namespace std;
-using namespace pcl;
-
-string in_, out_;
-int k_;
-
-void readOptions(int argc, char* argv[])
+namespace cob_3d_mapping_features
 {
-  using namespace boost::program_options;
-  options_description options("Options");
-  options.add_options()
-    ("help", "produce help message")
-    ("in", value<string>(&in_), "input fpfh pcd")
-    ("out", value<string>(&out_), "output fpfh pcd")
-    ("intervals,k", value<int>(&k_)->default_value(100), "k means value")
-    ;
 
-  positional_options_description p_opt;
-  p_opt.add("in",1).add("out", 1);
-  variables_map vm;
-  store(command_line_parser(argc, argv).options(options).positional(p_opt).run(), vm);
-  notify(vm);
-
-  if (vm.count("help"))
+  struct SortableDataPoint
   {
-    cout << options << endl;
-    exit(0);
-  }
+  public:
+  SortableDataPoint() : idx(-1), dist(0.0) { }
+  
+  SortableDataPoint(const int &index, const float &mean_distance) : idx(index), dist(mean_distance) 
+      { }
+  
+    inline bool
+    operator<( const SortableDataPoint& other) const { return (dist < other.dist); }
+
+    inline bool
+    operator>( const SortableDataPoint& other) const { return (dist > other.dist); }
+
+    inline bool
+    operator<=( const SortableDataPoint& other) const { return (dist <= other.dist); }
+
+    inline bool
+    operator>=( const SortableDataPoint& other) const { return (dist >= other.dist); }
+
+
+    int idx;
+    float dist;
+  
+  };
+
+  class MostDiscriminatingDataPoints
+  {
+    public:
+    MostDiscriminatingDataPoints () : predefined_initial_centers_(false), k_(1) { }
+
+
+    inline void
+      setInputData(const std::vector<std::vector<float> > * const pdata)
+    {
+      pdata_ = pdata;
+      m_ = (pdata->at(0)).size();
+      n_ = pdata->size();
+    }
+
+    inline void
+      setK(const int k)
+    {
+      k_ = k;
+    }
+
+    inline void
+      setInitialMeans(std::vector<int> * const pindices)
+    {
+      init_indices_ = pindices;
+      predefined_initial_centers_ = true;
+      k_ = pindices->size();
+    }
+
+    inline void
+      resetInitialMeans()
+    {
+      predefined_initial_centers_ = false;
+    }
+
+    void
+      computeInitialMeans(std::vector<int> * const output_init_indices);
+
+    void
+      computeDataPoints(std::vector<std::vector<float> > * const k_means);
+
+    protected:
+    void
+      computeKmeans();
+
+    int
+      eStep();
+   
+    void
+      mStep();
+
+    bool predefined_initial_centers_;
+    size_t k_;
+    size_t m_; // size of a data point
+    size_t n_; // number of data points
+    const std::vector<std::vector<float> > *pdata_; // n x m
+    std::vector<std::vector<float> > *pmeans_; // k x m
+
+    std::vector<int> *init_indices_;
+    std::vector<int> assigned_classes_;
+    std::vector<int> count_;
+   
+  };
 }
 
-int main(int argc, char** argv)
-{
-  readOptions(argc, argv);
-  PointCloud<FPFHSignature33>::Ptr f_in (new PointCloud<FPFHSignature33>);
-  PointCloud<FPFHSignature33>::Ptr f_out (new PointCloud<FPFHSignature33>);
-
-  io::loadPCDFile<FPFHSignature33>(in_, *f_in);
-  cout << "loaded fpfh" << endl;
-  vector<vector<float> > d_in;
-  vector<vector<float> > d_out;
-
-  d_in.resize(f_in->size());
-  for (size_t n=0;n<f_in->size();n++)
-  {
-    d_in.at(n) = vector<float>(f_in->points[n].histogram,
-			       f_in->points[n].histogram +
-			       sizeof(f_in->points[n].histogram) / sizeof(float));
-  }
-  cout << "copied fpfh" << endl;
-  cob_3d_mapping_features::MostDiscriminatingDataPoints md;
-  md.setInputData(&d_in);
-  md.setK(k_);
-  md.computeDataPoints(&d_out);
-  cout << "computed kmeans" << endl;
-
-  f_out->points.resize(k_);
-
-  for (size_t k=0; k<k_; k++)
-  {
-    for (size_t m=0;m<33;m++) f_out->points[k].histogram[m] = d_out.at(k).at(m);
-  }
-  cout << "saved fpfh" << endl;
-  io::savePCDFileASCII<FPFHSignature33>(out_, *f_out);
-  return (0);
-}
+#endif // __MOST_DISCRIMINATING_DATA_POINTS_H__
