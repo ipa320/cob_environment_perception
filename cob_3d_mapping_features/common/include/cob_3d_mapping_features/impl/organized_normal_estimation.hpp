@@ -59,6 +59,10 @@
 #include "cob_3d_mapping_common/label_defines.h"
 #include "cob_3d_mapping_features/organized_normal_estimation.h"
 
+
+// TODO: remove the storage of normals to increase speed (std::vector<Eigen::Vector3f> normals)
+
+
 template <typename PointInT, typename PointOutT, typename LabelOutT> void
 cob_3d_mapping_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>::computePointNormal (
   const PointCloudIn &cloud,
@@ -72,6 +76,7 @@ cob_3d_mapping_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>
 
   if (pcl_isnan(p.z))
   {
+    n_x = n_y = n_z = std::numeric_limits<float>::quiet_NaN();
     label_out = I_NAN;
     return;
   }

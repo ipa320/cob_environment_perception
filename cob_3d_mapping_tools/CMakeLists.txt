@@ -26,8 +26,7 @@ INCLUDE_DIRECTORIES(
 
 rosbuild_add_library(cob_3d_mapping_tools
 	common/src/cob_3d_mapping_tools/io.cpp
-	common/src/cob_3d_mapping_tools/point_generator.cpp
-	common/src/cob_3d_mapping_tools/most_discriminating_data_points.cpp)
+	common/src/cob_3d_mapping_tools/point_generator.cpp)
 
 rosbuild_add_executable(transform_pointcloud ros/src/transform_pointcloud.cpp)
 rosbuild_add_executable(concat_fields_node ros/src/concat_fields.cpp)
@@ -49,7 +48,7 @@ rosbuild_add_executable(merge_pcds common/src/merge_pcds.cpp)
 rosbuild_add_executable(merge_knn_training_data common/src/merge_knn_training_data.cpp)
 rosbuild_add_executable(merge_fpfh_training_data common/src/merge_fpfh_training_data.cpp)
 rosbuild_add_executable(reduce_fpfh_training_data common/src/reduce_fpfh_training_data.cpp)
-target_link_libraries(reduce_fpfh_training_data cob_3d_mapping_tools)
+target_link_libraries(reduce_fpfh_training_data cob_3d_mapping_features)
 rosbuild_add_executable(fpfh_primitives common/src/fpfh_primitives.cpp)
 target_link_libraries(fpfh_primitives cob_3d_mapping_tools)
 
