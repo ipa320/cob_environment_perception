@@ -206,82 +206,82 @@ int main (int argc, char** argv)
 		  if ( c_max < c_low )
 		  {
 		    pre_rgb = LBL_PLANE;
-		    if (exp_rgb != LBL_PLANE && exp_rgb != LBL_UNDEF) stats.fp[I_PLANE]++;
+		    if (exp_rgb != LBL_PLANE && exp_rgb != LBL_UNDEF) stats.fp[EVAL_PLANE]++;
 		  }
 		  else if (c_max > c_high)
 		  {
 		    if (c_max < c_r2 * c_min)
 		    {
 		      pre_rgb = LBL_COR;
-		      if (exp_rgb != LBL_COR && exp_rgb != LBL_UNDEF) stats.fp[I_COR]++;
+		      if (exp_rgb != LBL_COR && exp_rgb != LBL_UNDEF) stats.fp[EVAL_COR]++;
 		    }
 		    else
 		    {
 		      pre_rgb = LBL_EDGE;
-		      if (exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF) stats.fp[I_EDGE]++;
+		      if (exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF) stats.fp[EVAL_EDGE]++;
 		    }
 		    // special case:  combined class for corner and edge
 		    if (exp_rgb != LBL_COR && exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF) 
-		      stats.fp[I_EDGECORNER]++;
+		      stats.fp[EVAL_EDGECORNER]++;
 		  }
 		  else
 		  {
 		    if (c_max < c_r1 * c_min)
 		    {
 		      pre_rgb = LBL_SPH;
-		      if (exp_rgb != LBL_SPH && exp_rgb != LBL_UNDEF) stats.fp[I_SPH]++;
+		      if (exp_rgb != LBL_SPH && exp_rgb != LBL_UNDEF) stats.fp[EVAL_SPH]++;
 		    }
 		    else
 		    {
 		      pre_rgb = LBL_CYL;
-		      if (exp_rgb != LBL_CYL && exp_rgb != LBL_UNDEF) stats.fp[I_CYL]++;
+		      if (exp_rgb != LBL_CYL && exp_rgb != LBL_UNDEF) stats.fp[EVAL_CYL]++;
 		    }
 		    // special case:  combined class for sphere and cylinder
 		    if (exp_rgb != LBL_SPH && exp_rgb != LBL_CYL && exp_rgb != LBL_UNDEF) 
-		      stats.fp[I_CURVED]++;
+		      stats.fp[EVAL_CURVED]++;
 		  }
 
 		  switch(exp_rgb) 
 		  {
 		  case LBL_PLANE:
-		    if (pre_rgb != exp_rgb) stats.fn[I_PLANE]++;
-		    stats.exp[I_PLANE]++;
+		    if (pre_rgb != exp_rgb) stats.fn[EVAL_PLANE]++;
+		    stats.exp[EVAL_PLANE]++;
 		    break;
 		  case LBL_EDGE:
 		    if (pre_rgb != exp_rgb) 
 		    {
-		      stats.fn[I_EDGE]++;
-		      if (pre_rgb != LBL_COR) stats.fn[I_EDGECORNER]++;
+		      stats.fn[EVAL_EDGE]++;
+		      if (pre_rgb != LBL_COR) stats.fn[EVAL_EDGECORNER]++;
 		    }
-		    stats.exp[I_EDGE]++;
-		    stats.exp[I_EDGECORNER]++;
+		    stats.exp[EVAL_EDGE]++;
+		    stats.exp[EVAL_EDGECORNER]++;
 		    break;
 		  case LBL_COR:
 		    if (pre_rgb != exp_rgb)
 		    {
-		      stats.fn[I_COR]++;
-		      if (pre_rgb != LBL_EDGE) stats.fn[I_EDGECORNER]++;
+		      stats.fn[EVAL_COR]++;
+		      if (pre_rgb != LBL_EDGE) stats.fn[EVAL_EDGECORNER]++;
 		    }
-		    stats.exp[I_COR]++;
-		    stats.exp[I_EDGECORNER]++;
+		    stats.exp[EVAL_COR]++;
+		    stats.exp[EVAL_EDGECORNER]++;
 		    break;
 		  case LBL_SPH:
 		    if (pre_rgb != exp_rgb)
 		    {
-		      stats.fn[I_SPH]++;
-		      if (pre_rgb != LBL_CYL) stats.fn[I_CURVED]++;
+		      stats.fn[EVAL_SPH]++;
+		      if (pre_rgb != LBL_CYL) stats.fn[EVAL_CURVED]++;
 		    }
-		    stats.exp[I_SPH]++;
-		    stats.exp[I_CURVED]++;
+		    stats.exp[EVAL_SPH]++;
+		    stats.exp[EVAL_CURVED]++;
 		    break;
 		  case LBL_CYL:
 		    if (pre_rgb != exp_rgb) 
 		    {
-		      stats.fn[I_CYL]++;
-		      if (pre_rgb != LBL_SPH) stats.fn[I_CURVED]++;
+		      stats.fn[EVAL_CYL]++;
+		      if (pre_rgb != LBL_SPH) stats.fn[EVAL_CURVED]++;
 		    }
-		    stats.exp[I_CYL]++;
-		    stats.exp[I_CURVED]++;
+		    stats.exp[EVAL_CYL]++;
+		    stats.exp[EVAL_CURVED]++;
 		    break;
 		  default:
 		    stats.undef++;
@@ -339,82 +339,82 @@ int main (int argc, char** argv)
 		  if ( r_min > r_high )
 		  {
 		    pre_rgb = LBL_PLANE;
-		    if (exp_rgb != LBL_PLANE && exp_rgb != LBL_UNDEF) stats.fp[I_PLANE]++;
+		    if (exp_rgb != LBL_PLANE && exp_rgb != LBL_UNDEF) stats.fp[EVAL_PLANE]++;
 		  }
 		  else if (r_min < r_low)
 		  {
 		    if (r_max < r_r2 * r_min)
 		    {
 		      pre_rgb = LBL_COR;
-		      if (exp_rgb != LBL_COR && exp_rgb != LBL_UNDEF) stats.fp[I_COR]++;
+		      if (exp_rgb != LBL_COR && exp_rgb != LBL_UNDEF) stats.fp[EVAL_COR]++;
 		    }
 		    else
 		    {
 		      pre_rgb = LBL_EDGE;
-		      if (exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF) stats.fp[I_EDGE]++;
+		      if (exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF) stats.fp[EVAL_EDGE]++;
 		    }
 		    // special case:  combined class for corner and edge
 		    if (exp_rgb != LBL_COR && exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF) 
-		      stats.fp[I_EDGECORNER]++;
+		      stats.fp[EVAL_EDGECORNER]++;
 		  }
 		  else
 		  {
 		    if (r_max < r_r1 * r_min)
 		    {
 		      pre_rgb = LBL_SPH;
-		      if (exp_rgb != LBL_SPH && exp_rgb != LBL_UNDEF) stats.fp[I_SPH]++;
+		      if (exp_rgb != LBL_SPH && exp_rgb != LBL_UNDEF) stats.fp[EVAL_SPH]++;
 		    }
 		    else
 		    {
 		      pre_rgb = LBL_CYL;
-		      if (exp_rgb != LBL_CYL && exp_rgb != LBL_UNDEF) stats.fp[I_CYL]++;
+		      if (exp_rgb != LBL_CYL && exp_rgb != LBL_UNDEF) stats.fp[EVAL_CYL]++;
 		    }
 		    // special case:  combined class for sphere and cylinder
 		    if (exp_rgb != LBL_SPH && exp_rgb != LBL_CYL && exp_rgb != LBL_UNDEF) 
-		      stats.fp[I_CURVED]++;
+		      stats.fp[EVAL_CURVED]++;
 		  }
 
 		  switch(exp_rgb) 
 		  {
 		  case LBL_PLANE:
-		    if (pre_rgb != exp_rgb) stats.fn[I_PLANE]++;
-		    stats.exp[I_PLANE]++;
+		    if (pre_rgb != exp_rgb) stats.fn[EVAL_PLANE]++;
+		    stats.exp[EVAL_PLANE]++;
 		    break;
 		  case LBL_EDGE:
 		    if (pre_rgb != exp_rgb) 
 		    {
-		      stats.fn[I_EDGE]++;
-		      if (pre_rgb != LBL_COR) stats.fn[I_EDGECORNER]++;
+		      stats.fn[EVAL_EDGE]++;
+		      if (pre_rgb != LBL_COR) stats.fn[EVAL_EDGECORNER]++;
 		    }
-		    stats.exp[I_EDGE]++;
-		    stats.exp[I_EDGECORNER]++;
+		    stats.exp[EVAL_EDGE]++;
+		    stats.exp[EVAL_EDGECORNER]++;
 		    break;
 		  case LBL_COR:
 		    if (pre_rgb != exp_rgb)
 		    {
-		      stats.fn[I_COR]++;
-		      if (pre_rgb != LBL_EDGE) stats.fn[I_EDGECORNER]++;
+		      stats.fn[EVAL_COR]++;
+		      if (pre_rgb != LBL_EDGE) stats.fn[EVAL_EDGECORNER]++;
 		    }
-		    stats.exp[I_COR]++;
-		    stats.exp[I_EDGECORNER]++;
+		    stats.exp[EVAL_COR]++;
+		    stats.exp[EVAL_EDGECORNER]++;
 		    break;
 		  case LBL_SPH:
 		    if (pre_rgb != exp_rgb)
 		    {
-		      stats.fn[I_SPH]++;
-		      if (pre_rgb != LBL_CYL) stats.fn[I_CURVED]++;
+		      stats.fn[EVAL_SPH]++;
+		      if (pre_rgb != LBL_CYL) stats.fn[EVAL_CURVED]++;
 		    }
-		    stats.exp[I_SPH]++;
-		    stats.exp[I_CURVED]++;
+		    stats.exp[EVAL_SPH]++;
+		    stats.exp[EVAL_CURVED]++;
 		    break;
 		  case LBL_CYL:
 		    if (pre_rgb != exp_rgb) 
 		    {
-		      stats.fn[I_CYL]++;
-		      if (pre_rgb != LBL_SPH) stats.fn[I_CURVED]++;
+		      stats.fn[EVAL_CYL]++;
+		      if (pre_rgb != LBL_SPH) stats.fn[EVAL_CURVED]++;
 		    }
-		    stats.exp[I_CYL]++;
-		    stats.exp[I_CURVED]++;
+		    stats.exp[EVAL_CYL]++;
+		    stats.exp[EVAL_CURVED]++;
 		    break;
 		  default:
 		    stats.undef++;
