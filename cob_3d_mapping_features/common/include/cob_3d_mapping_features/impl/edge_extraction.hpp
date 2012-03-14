@@ -56,6 +56,7 @@
 #define __IMPL_EDGE_EXTRACTION_H__
 
 #include "cob_3d_mapping_common/point_types.h"
+#include "cob_3d_mapping_common/label_defines.h"
 #include "cob_3d_mapping_features/edge_extraction.h"
 
 template <typename PointInT, typename PointOutT> void
@@ -72,20 +73,17 @@ cob_3d_mapping_features::EdgeExtraction<PointInT,PointOutT>::extractEdges(
   {
     if (input_3d_->points[i].strength > 1.0)
     {
-      // set NANs to label 2:
-      output.points[i].label = 2;
+      output.points[i].label = I_NAN;
     }
     //TODO: apply weight factor
     else if (input_3d_->points[i].strength > thresh*2 || (input_2d_->points[i].strength+0.1) > thresh)
     {
       // add normalized 2D and 3D strength values and apply threshold
-      // set edges to label 1:
-      output.points[i].label = 1;
+      output.points[i].label = I_EDGE;
     }
     else
     {
-      // set remainders to label 0:
-      output.points[i].label = 0;
+      output.points[i].label = I_UNDEF;
     }
   }
 }

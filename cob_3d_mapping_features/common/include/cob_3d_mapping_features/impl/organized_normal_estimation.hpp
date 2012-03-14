@@ -120,7 +120,8 @@ cob_3d_mapping_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>
 	if ( d > distance_threshold )
 	{
 	  gab++; // count as gab point
-	  if ( d > 3.0*distance_threshold )
+	  //if ( d > 3.0*distance_threshold )
+	  if ( d > distance_threshold )
 	    *it_rbc += 1; // increment range border counter of current circle
 	  continue;
 	}
@@ -181,7 +182,8 @@ cob_3d_mapping_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>
 	if ( d > distance_threshold )
 	{
 	  gab++; // count as gab point
-	  if ( d > 3.0*distance_threshold )
+	  //if ( d > 3.0*distance_threshold )
+	  if ( d > distance_threshold )
 	    *it_rbc += 1; // increment range border counter of current circle
 	  continue;
 	}
