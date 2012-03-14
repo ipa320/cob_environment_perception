@@ -53,6 +53,7 @@
  ****************************************************************/
 
 #include <boost/timer.hpp>
+#include <cob_3d_mapping_common/label_defines.h>
 #include "cob_3d_mapping_features/segmentation.h"
 
 using namespace cob_3d_mapping_features;
@@ -212,7 +213,7 @@ void Segmentation::propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_i
     for(int j = 0; j < width; j++ )
     {
       //std::cout << i << "," << j << ":" << cloud_in->points[i*width+j].label << std::endl;
-      if(cloud_in->points[i*width+j].label == 0)
+      if(cloud_in->points[i*width+j].label==I_UNDEF)
       {
 	cur_label++;
 	PointLabel* p = &cloud_in->points[i*width+j];
@@ -229,7 +230,7 @@ void Segmentation::propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_i
 	  bool stop = false;
 	  //count++;
 	  int pt_ctr = c.u+c.v*width;
-	  if( c.u < width-1 && cloud_in->points[pt_ctr+1].label==0)
+	  if( c.u < width-1 && cloud_in->points[pt_ctr+1].label==I_UNDEF)
 	  {
 	    searchForNeighbors (cloud_in,c.u+1,c.v,px_range,
 				indices_ul, indices_ur,
@@ -276,7 +277,7 @@ void Segmentation::propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_i
 	    }
 	    c.c_gap=false;
 	  }
-	  if( c.u > 0 && cloud_in->points[pt_ctr-1].label==0)
+	  if( c.u > 0 && cloud_in->points[pt_ctr-1].label==I_UNDEF)
 	  {
 	    searchForNeighbors (cloud_in,c.u-1,c.v,px_range,
 				indices_ul, indices_ur,
@@ -303,7 +304,7 @@ void Segmentation::propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_i
 	    c.c_gap=false;
 	  }
 	  //std::cout << pt_ctr+width << ": "<< (int)(cloud_in->points[pt_ctr+width].boundary_point) << std::endl;
-	  if(c.v < height-1 && cloud_in->points[pt_ctr+width].label==0)
+	  if(c.v < height-1 && cloud_in->points[pt_ctr+width].label==I_UNDEF)
 	  {
 	    searchForNeighbors (cloud_in,c.u,c.v+1,px_range,
 				indices_ul, indices_ur,
@@ -334,7 +335,7 @@ void Segmentation::propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_i
 	      }
 	    }
 	  }
-	  if(c.v > 0 && cloud_in->points[pt_ctr-width].label==0)
+	  if(c.v > 0 && cloud_in->points[pt_ctr-width].label==I_UNDEF)
 	  {
 	    searchForNeighbors (cloud_in,c.u,c.v-1,px_range,
 				indices_ul, indices_ur,

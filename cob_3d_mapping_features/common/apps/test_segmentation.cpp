@@ -71,10 +71,13 @@
 
 // Package Includes:
 #include "cob_3d_mapping_common/point_types.h"
+#include "cob_3d_mapping_common/label_defines.h"
 #include "cob_3d_mapping_features/fast_edge_estimation_3d_omp.h"
 #include "cob_3d_mapping_features/edge_estimation_3d.h"
 #include "cob_3d_mapping_features/edge_estimation_2d.h"
 #include "cob_3d_mapping_features/edge_extraction.h"
+#include "cob_3d_mapping_features/organized_normal_estimation.h"
+#include "cob_3d_mapping_features/organized_curvature_estimation.h"
 #include "cob_3d_mapping_features/segmentation.h"
 
 using namespace std;
@@ -83,9 +86,9 @@ using namespace pcl;
 typedef visualization::PointCloudColorHandlerRGBField<PointXYZRGB> ColorHdlRGB;
 
 string file_in_, file_out_;
-float rn_;
-int rfp_;
-float ex_th_;
+float rn_, d_th_, ex_th_, lower_, upper_;
+int pns_f_, pns_n_, circle_;
+bool en_one_, en_oce_;
 
 void readOptions(int argc, char* argv[])
 {
@@ -93,14 +96,18 @@ void readOptions(int argc, char* argv[])
   options_description options("Options");
   options.add_options()
     ("help", "produce help message")
+    ("one", "use organized normal estimation (one) instead of original normal estimation (ne)")
+    ("oce", "use organized curvature estimation (oce) instead of fast edge estimation (fee)")
     ("in,i", value<string>(&file_in_), "input pcd file")
     ("out,o", value<string>(&file_out_), "output pcd file")
-    ("normal,n", value<float>(&rn_)->default_value(0.025),
-     "set normal estimation radius")
-    ("feature,f", value<int>(&rfp_)->default_value(20),
-     "set 3d edge estimation radius")
-    ("extraction_th,x", value<float>(&ex_th_)->default_value(0.1),
-     "set the strength threshold for edge extraction")
+    ("normal,n", value<float>(&rn_)->default_value(0.025), "radius for original normal estimation (ne)")
+    ("pns_f,s", value<int>(&pns_f_)->default_value(10), "pixel neighborhood size of the used feature (oce) or (fee)")
+    ("pns_n", value<int>(&pns_n_), "pixel neighborhood size of organized normal estimation (one) default set to pns_f")
+    ("circle,c", value<int>(&circle_)->default_value(2), "use only n-th circle of neighborhood")
+    ("skip_distant_point,d", value<float>(&d_th_)->default_value(5), "threshold to ignore distant points in neighborhood")
+    ("extraction_th,x", value<float>(&ex_th_)->default_value(0.1), "set the strength threshold for edge extraction (2D + 3D)")
+    ("lower,l", value<float>(&lower_)->default_value(1.5), "lower curvature threshold (plane)-> not used yet")
+    ("upper,u", value<float>(&upper_)->default_value(6.0), "upper curvature threshold (edge)")
     ;
 
   positional_options_description p_opt;
@@ -109,11 +116,16 @@ void readOptions(int argc, char* argv[])
   store(command_line_parser(argc, argv).options(options).positional(p_opt).run(), vm);
   notify(vm);
 
-  if (vm.count("help"))
+  if (vm.count("help") || argc == 1)
   {
+    cout << "\"pns\" stands for \"pixel neighborhood size\" and refers to N x N mask for nearest neighbor search\n"
+	 << "\t where N = 2 * pns + 1\n" << endl;
     cout << options << endl;
     exit(0);
   }
+  en_one_ = vm.count("one");
+  en_oce_ = vm.count("oce");
+  if (!vm.count("pns_n")) pns_n_ = pns_f_;
 }
 
 int main(int argc, char** argv)
@@ -124,10 +136,10 @@ int main(int argc, char** argv)
   // 3D point clouds
   PointCloud<PointXYZRGB>::Ptr p(new PointCloud<PointXYZRGB>);
   PointCloud<Normal>::Ptr n(new PointCloud<Normal>);
+  PointCloud<PrincipalCurvatures>::Ptr pc(new PointCloud<PrincipalCurvatures>);
   PointCloud<InterestPoint>::Ptr ip3d(new PointCloud<InterestPoint>);
   PointCloud<InterestPoint>::Ptr ip2d(new PointCloud<InterestPoint>);
-  PointCloud<PointLabel>::Ptr le(new PointCloud<PointLabel>);
-  PointCloud<PointLabel>::Ptr lc(new PointCloud<PointLabel>);
+  PointCloud<PointLabel>::Ptr l(new PointCloud<PointLabel>);
 
   // 2D representation
   cv::Mat color, sobel, laplace, edge_3d, combined_2d, combined_3d, segmented;
@@ -137,23 +149,32 @@ int main(int argc, char** argv)
   PCDReader r;
   if (r.read(file_in_, *p) == -1) return(0);
 
-  t.restart();
-  KdTreeFLANN<PointXYZRGB>::Ptr tree(new KdTreeFLANN<PointXYZRGB>);
-  NormalEstimation<PointXYZRGB, Normal> ne;
-  ne.setRadiusSearch(rn_);
-  ne.setSearchMethod(tree);
-  ne.setInputCloud(p);
-  ne.compute(*n);
-  cout << t.elapsed() << "s\t for normal estimation" << endl;
 
-  t.restart();
-  cob_3d_mapping_features::FastEdgeEstimation3DOMP<PointXYZRGB, Normal, InterestPoint> ee3d;
-  ee3d.setPixelSearchRadius(rfp_,1,1);
-  ee3d.setInputCloud(p);
-  ee3d.setInputNormals(n);
-  ee3d.compute(*ip3d);
-  cout << t.elapsed() << "s\t for 3D edge estimation" << endl;
+  // --- Normal Estimation ---
+  if (en_one_)
+  {
+    t.restart();
+    cob_3d_mapping_features::OrganizedNormalEstimation<PointXYZRGB, Normal, PointLabel>one;
+    one.setInputCloud(p);
+    one.setOutputLabels(l);
+    one.setPixelSearchRadius(pns_n_,1,circle_); //radius,pixel,circle
+    one.setDistanceThresholdModifier(d_th_);
+    one.compute(*n);
+    cout << t.elapsed() << "s\t for Organized Normal Estimation" << endl;
+  }
+  else
+  {
+    t.restart();
+    KdTreeFLANN<PointXYZRGB>::Ptr tree(new KdTreeFLANN<PointXYZRGB>);
+    NormalEstimation<PointXYZRGB, Normal> ne;
+    ne.setRadiusSearch(rn_);
+    ne.setSearchMethod(tree);
+    ne.setInputCloud(p);
+    ne.compute(*n);
+    cout << t.elapsed() << "s\t for normal estimation" << endl;
+  }
 
+  // --- 2D Edge Estimation ---
   t.restart();
   cob_3d_mapping_features::EdgeEstimation2D<PointXYZRGB, InterestPoint> ee2d;
   ee2d.setInputCloud(p);
@@ -162,19 +183,47 @@ int main(int argc, char** argv)
   ee2d.computeEdges(sobel, laplace, combined_2d);
   cout << t.elapsed() << "s\t for 2D edge estimation" << endl;
 
-  t.restart();
-  cob_3d_mapping_features::EdgeExtraction<InterestPoint,PointLabel> eex;
-  eex.setInput2DEdges(ip2d);
-  eex.setInput3DEdges(ip3d);
-  eex.setThreshold(ex_th_);
-  eex.extractEdges(*le);
-  cout << t.elapsed() << "s\t for edge extraction" << endl;
+  // --- 3D Edge Estimation ---
+  if (en_oce_)
+  {
+    t.restart();
+    cob_3d_mapping_features::OrganizedCurvatureEstimation<PointXYZRGB,Normal,PointLabel,PrincipalCurvatures>oce;
+    oce.setInputCloud(p);
+    oce.setInputNormals(n);
+    oce.setOutputLabels(l);
+    oce.setPixelSearchRadius(pns_f_,1,circle_);
+    oce.setDistanceThresholdModifier(d_th_);
+    oce.setEdgeClassThreshold(upper_);
+    oce.compute(*pc);
+    cout << t.elapsed() << "s\t for Organized Curvature Estimation" << endl;
+  }
+  else
+  {
+    t.restart();
+    cob_3d_mapping_features::FastEdgeEstimation3DOMP<PointXYZRGB, Normal, InterestPoint> ee3d;
+    ee3d.setPixelSearchRadius(pns_f_,1,circle_);
+    ee3d.setInputCloud(p);
+    ee3d.setInputNormals(n);
+    ee3d.compute(*ip3d);
+    cout << t.elapsed() << "s\t for 3D edge estimation" << endl;
 
+    t.restart();
+    cob_3d_mapping_features::EdgeExtraction<InterestPoint,PointLabel> eex;
+    eex.setInput2DEdges(ip2d);
+    eex.setInput3DEdges(ip3d);
+    eex.setThreshold(ex_th_);
+    eex.extractEdges(*l);
+    cout << t.elapsed() << "s\t for edge extraction" << endl;
+  }
+
+  // --- Segmentation ---
   t.restart();
   cob_3d_mapping_features::Segmentation seg;
-  seg.propagateWavefront2(le);
-  seg.getClusterIndices(le, clusters, segmented);
+  seg.propagateWavefront2(l);
+  seg.getClusterIndices(l, clusters, segmented);
   cout << t.elapsed() << "s\t for clustering" << endl;
+
+
   if (file_out_ != "")
   {
     ofstream fs;
@@ -191,35 +240,54 @@ int main(int argc, char** argv)
   }
 
   // map 3d edges on 2d image:
-  edge_3d = cv::Mat(ip3d->height, ip3d->width, CV_32FC1);
-  for (unsigned int i=0; i < ip3d->height; i++)
+  if (en_oce_)
   {
-    for (unsigned int j=0; j < ip3d->width; j++)
+    edge_3d = cv::Mat(pc->height, pc->width, CV_32FC1);
+    for (unsigned int i=0; i < pc->height; i++)
     {
-      edge_3d.at<float>(i,j) = ip3d->points[i*ip3d->width+j].strength;
+      for (unsigned int j=0; j < pc->width; j++)
+      {
+	edge_3d.at<float>(i,j) = pc->points[i*pc->width+j].pc1;
+      }
+    }
+  }
+  else
+  {
+    edge_3d = cv::Mat(ip3d->height, ip3d->width, CV_32FC1);
+    for (unsigned int i=0; i < ip3d->height; i++)
+    {
+      for (unsigned int j=0; j < ip3d->width; j++)
+      {
+	edge_3d.at<float>(i,j) = ip3d->points[i*ip3d->width+j].strength;
+      }
     }
   }
 
-  // colorize edges of 3d point cloud
-  for (size_t i = 0; i < le->points.size(); i++)
+  // colorize edges of label point cloud
+  for (size_t i = 0; i < l->points.size(); i++)
   {
-    if (le->points[i].label == 0)
+    switch (l->points[i].label)
     {
+    case I_NAN:
       p->points[i].r = 255;
       p->points[i].g = 255;
       p->points[i].b = 255;
-    }
-    else if (le->points[i].label == 1)
-    {
+      break;
+    case I_BORDER:
       p->points[i].r = 255;
       p->points[i].g = 0;
       p->points[i].b = 0;
-    }
-    else
-    {
+      break;
+    case I_EDGE:
       p->points[i].r = 0;
       p->points[i].g = 255;
       p->points[i].b = 0;
+      break;
+    default:
+      p->points[i].r = 0;
+      p->points[i].g = 0;
+      p->points[i].b = 255;
+      break;
     }
   }
 
