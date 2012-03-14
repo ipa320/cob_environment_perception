@@ -78,6 +78,7 @@
 #include "cob_3d_mapping_features/organized_curvature_estimation.h"
 #include "cob_3d_mapping_features/curvature_classifier.h"
 #include "cob_3d_mapping_features/impl/curvature_classifier.hpp"
+#include "cob_3d_mapping_features/segmentation.h"
 
 
 using namespace std;
@@ -127,27 +128,27 @@ void applyColor(int i, PointCloud<PointLabel>::Ptr p, PointCloud<PointXYZRGB>::P
 {
   switch (p->points[i].label)
   {
-  case 5: //sphere
+  case 6: //sphere
     col->points[i].r = 255;
     col->points[i].g = 0;
     col->points[i].b = 255;
     break;
-  case 4: //cylinder
+  case 5: //cylinder
     col->points[i].r = 255;
     col->points[i].g = 255;
     col->points[i].b = 0;
     break;
-  case 3: //plane
+  case 4: //plane
     col->points[i].r = 0;
     col->points[i].g = 0;
     col->points[i].b = 255;
     break;
-  case 2: //edge
+  case 3: //edge
     col->points[i].r = 0;
     col->points[i].g = 255;
     col->points[i].b = 0;
     break;
-  case 1: //border
+  case 2: //border
     col->points[i].r = 255;
     col->points[i].g = 0;
     col->points[i].b = 0;
@@ -212,8 +213,9 @@ int main(int argc, char** argv)
   cout << t.precisionStop() << "s\t for Organized Curvature Estimation" << endl;
 
   cob_3d_mapping_features::CurvatureClassifier<PrincipalCurvatures, PointLabel>cc;
+  cc.setUpperThreshold(0.1);
   cc.setInputCloud(pc);
-  cc.classify(*l);
+  cc.classifyForSegmentation(*l);
 
   for (size_t i = 0; i < l->points.size(); i++)
   {
@@ -270,6 +272,15 @@ int main(int argc, char** argv)
     v.spinOnce(100);
     usleep(100000);
   }
+
+  cv::Mat segmented;
+  vector<PointIndices> clusters;
+  cob_3d_mapping_features::Segmentation seg;
+  seg.propagateWavefront2(l);
+  seg.getClusterIndices(l, clusters, segmented);
+  cv::imshow("segmented", segmented);
+  cv::waitKey();
+
   return(0);
 
 }

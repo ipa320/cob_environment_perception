@@ -75,54 +75,54 @@ sss = simple_script_server()
 class UpdateEnvMap(smach.State):
 
 
-	def __init__(self):
+  def __init__(self):
 
-		smach.State.__init__(
-			self,
-			outcomes=['succeeded', 'failed'],
-			input_keys=['angle_range']) #good angle value: 0.4
-		self.client = actionlib.SimpleActionClient('trigger_mapping', TriggerMappingAction)
+    smach.State.__init__(
+      self,
+      outcomes=['succeeded', 'failed'],
+      input_keys=['angle_range']) #good angle value: 0.4
+    self.client = actionlib.SimpleActionClient('trigger_mapping', TriggerMappingAction)
 
-	def execute(self, userdata):
-		#scan_position = [-1.3, -1.0, 3.14]
-		#sss.move("torso","home")
-		#sss.move("head","front")
-		#sss.move("tray","down")
-		#sss.move("base",scan_position)
-		rospy.wait_for_service('point_map/clear_point_map',10)
-		try:
-			clear_point_map = rospy.ServiceProxy('point_map/clear_point_map', Trigger)
-			resp1 = clear_point_map()
-		except rospy.ServiceException, e:
-			print "Service call failed: %s"%e
-		rospy.wait_for_service('geometry_map/clear_geometry_map',10)
-		try:
-			clear_geom_map = rospy.ServiceProxy('geometry_map/clear_geometry_map', Trigger)
-			resp1 = clear_geom_map()
-		except rospy.ServiceException, e:
-			print "Service call failed: %s"%e
-		goal = TriggerMappingGoal()
-		goal.start = True
-		if not self.client.wait_for_server():#rospy.Duration.from_sec(5.0)):
-			rospy.logerr('server not available')
-			return 'failed'
-		self.client.send_goal(goal)
-		if not self.client.wait_for_result():#rospy.Duration.from_sec(5.0)):
-			return 'failed'
-		angle_start = -userdata.angle_range/2
-		angle_stop = userdata.angle_range/2
-		sss.move("torso",[[-0.2,angle_start,-0.1]])
-		sss.move("torso",[[-0.2,angle_stop,-0.1]])
-		sss.move("torso",[[0,angle_stop,0]])
-		sss.move("torso",[[0,angle_start,0]])
-		goal.start = False
-		self.client.send_goal(goal)
-		self.client.wait_for_result(rospy.Duration.from_sec(5.0))
-		sss.move("torso","home")
-		#move neck/base
-		#get map
+  def execute(self, userdata):
+    #scan_position = [-1.3, -1.0, 3.14]
+    #sss.move("torso","home")
+    #sss.move("head","front")
+    #sss.move("tray","down")
+    #sss.move("base",scan_position)
+    rospy.wait_for_service('point_map/clear_point_map',10)
+    try:
+      clear_point_map = rospy.ServiceProxy('point_map/clear_point_map', Trigger)
+      resp1 = clear_point_map()
+    except rospy.ServiceException, e:
+      print "Service call failed: %s"%e
+    rospy.wait_for_service('geometry_map/clear_geometry_map',10)
+    try:
+      clear_geom_map = rospy.ServiceProxy('geometry_map/clear_geometry_map', Trigger)
+      resp1 = clear_geom_map()
+    except rospy.ServiceException, e:
+      print "Service call failed: %s"%e
+    goal = TriggerMappingGoal()
+    goal.start = True
+    if not self.client.wait_for_server():#rospy.Duration.from_sec(5.0)):
+      rospy.logerr('server not available')
+      return 'failed'
+    self.client.send_goal(goal)
+    if not self.client.wait_for_result():#rospy.Duration.from_sec(5.0)):
+      return 'failed'
+    angle_start = -userdata.angle_range/2
+    angle_stop = userdata.angle_range/2
+    sss.move("torso",[[-0.2,angle_start,-0.1]])
+    sss.move("torso",[[-0.2,angle_stop,-0.1]])
+    sss.move("torso",[[0,angle_stop,0]])
+    sss.move("torso",[[0,angle_start,0]])
+    goal.start = False
+    self.client.send_goal(goal)
+    self.client.wait_for_result(rospy.Duration.from_sec(5.0))
+    sss.move("torso","home")
+    #move neck/base
+    #get map
 
-		return 'succeeded'
+    return 'succeeded'
 
 """experimental state, should be replaces by generic state for approach pose"""
 class ApproachScanPose(smach.State):
@@ -145,103 +145,101 @@ class ApproachScanPose(smach.State):
 
 class Map360(smach.State):
 
-	def __init__(self):
+  def __init__(self):
 
-		smach.State.__init__(
-			self,
-			outcomes=['succeeded', 'failed'],
-			input_keys=['angle_range']) #good angle value: 0.4
-		self.client = actionlib.SimpleActionClient('trigger_mapping', TriggerMappingAction)
+    smach.State.__init__(
+      self,
+      outcomes=['succeeded', 'failed'],
+      input_keys=['angle_range']) #good angle value: 0.4
+    self.client = actionlib.SimpleActionClient('trigger_mapping', TriggerMappingAction)
 
-	def execute(self, userdata):
-		scan_pose = [0, 0, 0]
-		sss.move("base",scan_pose)
-		sss.move("torso","home")
-		sss.move("head","front")
-		sss.move("tray","down")
-		#sss.move("base",scan_position)
-		goal = TriggerMappingGoal()
-		goal.start = True
-		if not self.client.wait_for_server():#rospy.Duration.from_sec(5.0)):
-			rospy.logerr('server not available')
-			return 'failed'
-		self.client.send_goal(goal)
-		if not self.client.wait_for_result():#rospy.Duration.from_sec(5.0)):
-			return 'failed'
-		i = 0.2
-		ctr = 0
-		while i <= 8:#6.2:
-			scan_pose[2]=i
-			sss.move("base",scan_pose)
-			if operator.mod(ctr,2) == 0:
-				sss.move("torso",[[-0.2,0.0,-0.2]])
-			else:
-				sss.move("torso","home")
-			#sss.sleep(0.5)
-			i = i+0.2
-			ctr = ctr+1
-		goal.start = False
-		self.client.send_goal(goal)
-		self.client.wait_for_result(rospy.Duration.from_sec(5.0))
-		#sss.move("torso","home")
-		#move neck/base
-		#get map
+  def execute(self, userdata):
+    scan_pose = [0, 0, 0]
+    sss.move("base",scan_pose)
+    sss.move("torso","home")
+    sss.move("head","front")
+    sss.move("tray","down")
+    #sss.move("base",scan_position)
+    goal = TriggerMappingGoal()
+    goal.start = True
+    if not self.client.wait_for_server():#rospy.Duration.from_sec(5.0)):
+      rospy.logerr('server not available')
+      return 'failed'
+    self.client.send_goal(goal)
+    if not self.client.wait_for_result():#rospy.Duration.from_sec(5.0)):
+      return 'failed'
+    i = 0.2
+    ctr = 0
+    while i <= 8:#6.2:
+      scan_pose[2]=i
+      sss.move("base",scan_pose)
+      if operator.mod(ctr,2) == 0:
+        sss.move("torso",[[-0.2,0.0,-0.2]])
+      else:
+        sss.move("torso","home")
+      #sss.sleep(0.5)
+      i = i+0.2
+      ctr = ctr+1
+    goal.start = False
+    self.client.send_goal(goal)
+    self.client.wait_for_result(rospy.Duration.from_sec(5.0))
+    #sss.move("torso","home")
+    #move neck/base
+    #get map
 
-		return 'succeeded'
+    return 'succeeded'
 
 
 class Map180(smach.State):
 
-	def __init__(self):
+  def __init__(self):
 
-		smach.State.__init__(
-			self,
-			outcomes=['succeeded', 'failed'],
-			input_keys=['angle_range']) #good angle value: 0.4
-		self.client = actionlib.SimpleActionClient('trigger_mapping', TriggerMappingAction)
+    smach.State.__init__(
+      self,
+      outcomes=['succeeded', 'failed'],
+      input_keys=['angle_range']) #good angle value: 0.4
+    self.client = actionlib.SimpleActionClient('trigger_mapping', TriggerMappingAction)
 
-	def execute(self, userdata):
-		scan_pose = [0, -1, 0]
-		sss.move("tray","down")
-		sss.move("torso","home")
-		sss.move("head","front")
-		sss.move("base",scan_pose)
-		#sss.move("base",scan_position)
-		goal = TriggerMappingGoal()
-		goal.start = True
-		if not self.client.wait_for_server():#rospy.Duration.from_sec(5.0)):
-			rospy.logerr('server not available')
-			return 'failed'
-		self.client.send_goal(goal)
-		if not self.client.wait_for_result():#rospy.Duration.from_sec(5.0)):
-			return 'failed'
-		i = 0.2
-		ctr = 0
-		while i <= 4:#6.2:
-			scan_pose[2]=i
-			sss.move("base",scan_pose)
-			#if operator.mod(ctr,2) == 0:
-			#	sss.move("torso",[[-0.2,0.0,-0.2]])
-			#else:
-			#	sss.move("torso","home")
-			#sss.sleep(0.5)
-			i = i+0.2
-			#ctr = ctr+1
-		sss.move("torso",[[-0.2,0.0,-0.2]])
-		while i > 0:#6.2:
-			scan_pose[2]=i
-			sss.move("base",scan_pose)
-			i = i-0.2
+  def execute(self, userdata):
+    scan_pose = [0, -1, 0]
+    sss.move("tray","down")
+    sss.move("torso","home")
+    sss.move("head","front")
+    sss.move("base",scan_pose)
+    #sss.move("base",scan_position)
+    goal = TriggerMappingGoal()
+    goal.start = True
+    if not self.client.wait_for_server():#rospy.Duration.from_sec(5.0)):
+      rospy.logerr('server not available')
+      return 'failed'
+    self.client.send_goal(goal)
+    if not self.client.wait_for_result():#rospy.Duration.from_sec(5.0)):
+      return 'failed'
+    i = 0.2
+    ctr = 0
+    while i <= 4:#6.2:
+      scan_pose[2]=i
+      sss.move("base",scan_pose)
+      #if operator.mod(ctr,2) == 0:
+      #  sss.move("torso",[[-0.2,0.0,-0.2]])
+      #else:
+      #  sss.move("torso","home")
+      #sss.sleep(0.5)
+      i = i+0.8
+      #ctr = ctr+1
+    sss.move("torso",[[-0.2,0.0,-0.2]])
+    while i > 0:#6.2:
+      i = i-0.8
+      scan_pose[2]=i
+      sss.move("base",scan_pose)
+    goal.start = False
+    self.client.send_goal(goal)
+    self.client.wait_for_result(rospy.Duration.from_sec(5.0))
+    #sss.move("torso","home")
+    #move neck/base
+    #get map
 
-		goal.start = False
-		self.client.send_goal(goal)
-		self.client.wait_for_result(rospy.Duration.from_sec(5.0))
-		#sss.move("torso","home")
-		#move neck/base
-		#get map
-
-		return 'succeeded'
-
+    return 'succeeded'
 
 
 
