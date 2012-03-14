@@ -79,6 +79,7 @@
 #include "cob_3d_mapping_features/organized_curvature_estimation.h"
 #include "cob_3d_mapping_features/curvature_classifier.h"
 #include "cob_3d_mapping_features/impl/curvature_classifier.hpp"
+#include "cob_3d_mapping_features/segmentation.h"
 
 
 using namespace std;
@@ -107,8 +108,8 @@ void readOptions(int argc, char* argv[])
     ("radius,r", value<int>(&radius_)->default_value(5), "radius")
     ("circle,c", value<int>(&circle_)->default_value(2),"circle steps")
     ("feature,f", value<int>(&rfp_)->default_value(20), "set 3d edge estimation radius")
-    ("lower,l", value<float>(&lower_)->default_value(0.01), "lower curvature threshold")
-    ("upper,u", value<float>(&upper_)->default_value(0.1), "upper curvature threshold")
+    ("lower,l", value<float>(&lower_)->default_value(1.5), "lower curvature threshold")
+    ("upper,u", value<float>(&upper_)->default_value(6.0), "upper curvature threshold")
     ;
 
   positional_options_description p_opt;
@@ -224,35 +225,25 @@ int main(int argc, char** argv)
 
   cob_3d_mapping_features::CurvatureClassifier<PrincipalCurvatures, PointLabel>cc;
   cc.setInputCloud(pc);
-  cc.setRules(upper_, lower_, 7.0);
-  cc.classify(*l);
-/*
-  t.precisionStart();
-  std::vector<float> angles;
-  cob_3d_mapping_features::OrganizedExtendedNormalEstimation<PointXYZRGB, Normal, PointLabel>oene;
-  oene.setInputCloud(p);
-  oene.setOutputLabels(l);
-  oene.setOutputVariance(&angles);
-  oene.setPixelSearchRadius(radius_,1,circle_); //radius,pixel,circle
-  oene.setDistanceThresholdModifier(th_);
-  oene.compute(*n);
-  cout << t.precisionStop() << "s\t for Organized Extended Normal Estimation" << endl;
-*/  
+  cc.setUpperThreshold(upper_);
+  cc.setLowerThreshold(lower_);
+  cc.setMaxMinRatio(7.0);
+  cc.classifyForSegmentation(*l);
   
   cout << "Colorize min max values" <<endl;
   float c_max = 0;
   float c_min = 100000;
-  
-  for (size_t i = 0; i<pc->points.size(); i++)
-  {
-    c_max = std::max(pc->points[i].pc1,c_max);
-    c_min = std::min(pc->points[i].pc1,c_min);
-  }
-  std::cout << "max: " << c_max << " min: " << c_min << std::endl;
+
 /*
-  for (size_t i = 0; i<pc->points.size(); i++)
+  for (size_t i = 0; i < p->points.size(); i++)
   {
-    int col = (pc->points[i].pc1-c_min) / (c_max-c_min) * 255;
+    c_max = std::max(n->points[i].curvature,c_max);
+    c_min = std::min(n->points[i].curvature,c_min);
+  }
+
+  for (size_t i = 0; i < p->points.size(); i++)
+  {
+    int col = (n->points[i].curvature) / (cmax_) * 255;
     if (col > 255) col = 255;
     if (col < 0) col = 0;
     p->points[i].r = col;
@@ -260,7 +251,6 @@ int main(int argc, char** argv)
     p->points[i].b = col;
   }
 */
-
   for (size_t i = 0; i < l->points.size(); i++)
   {
     applyColor(i, l, p);
@@ -298,6 +288,15 @@ int main(int argc, char** argv)
     v.spinOnce(100);
     usleep(100000);
   }
+
+  cv::Mat segmented;
+  vector<PointIndices> clusters;
+  cob_3d_mapping_features::Segmentation seg;
+  seg.propagateWavefront2(l);
+  seg.getClusterIndices(l, clusters, segmented);
+  cv::imshow("segmented", segmented);
+  cv::waitKey();
+
   return(0);
 
 }

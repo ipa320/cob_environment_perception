@@ -225,18 +225,21 @@ int main(int argc, char** argv)
 
 
   if (file_out_ != "")
+  {  ofstream fs;
+  fs.open (file_out_.c_str());
+  for(unsigned int i=0; i<clusters.size(); i++)
   {
-    ofstream fs;
-    fs.open (file_out_.c_str());
-    for(unsigned int i=0; i<clusters.size(); i++)
+    if(clusters[i].indices.size()<100) continue;
+    for(unsigned int j=0; j<clusters[i].indices.size(); j++)
     {
-      for(unsigned int j=0; j<clusters[i].indices.size(); j++)
-      {
-	fs << clusters[i].indices[j] << " ";
-      }
-      fs << "\n";
+      if(i==60) std::cout << clusters[i].indices[j] << ",";
+      fs << clusters[i].indices[j];
+      if(j<clusters[i].indices.size()-1) fs << " ";
     }
-    fs.close();
+    if(i==60) std::cout << std::endl;
+    if(i<clusters.size()-1) fs << "\n";
+    std::cout << "cluster " << i << " has " << clusters[i].indices.size() << " points" << std::endl;
+  }
   }
 
   // map 3d edges on 2d image:

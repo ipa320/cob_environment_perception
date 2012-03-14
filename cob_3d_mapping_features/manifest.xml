@@ -22,7 +22,7 @@
   <depend package="cob_3d_mapping_common"/>
 
 	<depend package="visualization_msgs"/>
-	
+
 	<!--rosdep name="pcl"/-->
 
   <export>

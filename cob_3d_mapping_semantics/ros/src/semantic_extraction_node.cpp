@@ -87,7 +87,7 @@ public:
   // Constructor
   SemanticExtractionNode () :
     /*norm_x_min_ (-0.1), norm_x_max_ (0.1), norm_y_min_ (-0.1), norm_y_max_ (0.1), norm_z_min_ (-0.99),
-     norm_z_max_ (0.99)*/tilt_angle_ (3.0), height_min_ (0.4), height_max_ (1), area_min_ (1), area_max_ (3)
+     norm_z_max_ (0.99)*/tilt_angle_ (3.0), height_min_ (0.6), height_max_ (1.2), area_min_ (0.5), area_max_ (3)
   {
     sa_sub_ = n_.subscribe ("shape_array", 10, &SemanticExtractionNode::callbackShapeArray, this);
     sa_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_array_pub", 10);
