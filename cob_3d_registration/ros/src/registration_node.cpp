@@ -75,9 +75,9 @@
 #include <tf_conversions/tf_kdl.h>
 #include <pcl/io/pcd_io.h>
 #include <visualization_msgs/Marker.h>
-#include "registration/RegistrationPCD.h"
-#include "registration/Parameterlist.h"
-#include "registration/EvaluationResult.h"
+#include "cob_3d_registration/RegistrationPCD.h"
+#include "cob_3d_registration/Parameterlist.h"
+#include "cob_3d_registration/EvaluationResult.h"
 #include "parameters/parameters_bag.h"
 
 #include <registration/registration_icp.h>
@@ -278,8 +278,8 @@ public:
    * thought to be used for evaluation
    */
   void publishParameters() {
-    ros::ServiceClient client = n_.serviceClient< ::registration::Parameterlist>("paramterlist");
-    ::registration::Parameterlist srv;
+    ros::ServiceClient client = n_.serviceClient< ::cob_3d_registration::Parameterlist>("paramterlist");
+    ::cob_3d_registration::Parameterlist srv;
 
     const std::map<std::string, int> &is = parameters_.getInts();
     for(std::map<std::string, int>::const_iterator it=is.begin(); it!=is.end(); it++) {
@@ -510,8 +510,8 @@ public:
    * service callback to register a dataset
    * returning success
    */
-  bool registerService(::registration::RegistrationPCD::Request  &req,
-                       ::registration::RegistrationPCD::Response &res )
+  bool registerService(::cob_3d_registration::RegistrationPCD::Request  &req,
+                       ::cob_3d_registration::RegistrationPCD::Response &res )
   {
     ROS_INFO("register...");
 
@@ -680,8 +680,8 @@ protected:
    */
   void publish_results()
   {
-    ros::ServiceClient client = n_.serviceClient< ::registration::EvaluationResult>("evaluate");
-    ::registration::EvaluationResult srv;
+    ros::ServiceClient client = n_.serviceClient< ::cob_3d_registration::EvaluationResult>("evaluate");
+    ::cob_3d_registration::EvaluationResult srv;
 
     srv.request.duration = duration_;
     srv.request.memory = memory_usage_kb_;
