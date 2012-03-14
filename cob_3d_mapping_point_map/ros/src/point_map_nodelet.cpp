@@ -396,11 +396,13 @@ public:
     cob_3d_mapping_msgs::TriggerMappingResult result;
     if(goal->start && !is_running_)
     {
+      ROS_INFO("Starting mapping...");
       point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &PointMapNodelet::pointCloudSubCallback, this);
       is_running_ = true;
     }
     else if(!goal->start && is_running_)
     {
+      ROS_INFO("Stopping mapping...");
       point_cloud_sub_.shutdown();
       //first_ = true;
       is_running_ = false;
