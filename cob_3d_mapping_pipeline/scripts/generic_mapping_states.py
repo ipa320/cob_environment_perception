@@ -168,18 +168,19 @@ class Map360(smach.State):
     self.client.send_goal(goal)
     if not self.client.wait_for_result():#rospy.Duration.from_sec(5.0)):
       return 'failed'
-    i = 0.2
+    i = 0.8
     ctr = 0
     while i <= 8:#6.2:
       scan_pose[2]=i
       sss.move("base",scan_pose)
-      if operator.mod(ctr,2) == 0:
-        sss.move("torso",[[-0.2,0.0,-0.2]])
-      else:
-        sss.move("torso","home")
       #sss.sleep(0.5)
-      i = i+0.2
+      i = i+0.8
       ctr = ctr+1
+    sss.move("torso",[[-0.2,0.0,-0.2]])
+    while i > 0:#6.2:
+      i = i-0.8
+      scan_pose[2]=i
+      sss.move("base",scan_pose)
     goal.start = False
     self.client.send_goal(goal)
     self.client.wait_for_result(rospy.Duration.from_sec(5.0))

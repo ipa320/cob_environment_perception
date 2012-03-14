@@ -22,9 +22,9 @@
   <depend package="gazebo"/>
   
   <!-- depend package="libwm4"/ -->
-  <depend package="libtoon"/>
+  <!--depend package="libtoon"/>
   <depend package="libcvd"/>
-  <depend package="bfl"/>
+  <depend package="bfl"/-->
   <!-- depend package="cob_vision_slam"/ -->
   <!-- depend package="cob_vision_ipa_utils"/ -->
   <!-- depend package="cob_vision_features"/ -->
