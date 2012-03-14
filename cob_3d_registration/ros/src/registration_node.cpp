@@ -1,0 +1,988 @@
+/****************************************************************
+ *
+ * Copyright (c) 2011
+ *
+ * Fraunhofer Institute for Manufacturing Engineering
+ * and Automation (IPA)
+ *
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *
+ * Project name: care-o-bot
+ * ROS stack name: cob_vision
+ * ROS package name: dynamic_tutorials
+ * Description:
+ *
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *
+ * Author: goa-jh
+ * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ *
+ * Date of creation: Nov 7, 2011
+ * ToDo:
+ *
+ *
+ *
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     * Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer.
+ *     * Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution.
+ *     * Neither the name of the Fraunhofer Institute for Manufacturing
+ *       Engineering and Automation (IPA) nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License LGPL as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU Lesser General Public License LGPL for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License LGPL along with this program.
+ * If not, see <http://www.gnu.org/licenses/>.
+ *
+ ****************************************************************/
+
+#define HAS_RGB 1
+
+//##################
+//#### includes ####
+
+// standard includes
+//--
+#include <sstream>
+#include <fstream>
+
+// ROS includes
+#include <ros/ros.h>
+#include <pcl/point_types.h>
+#define PCL_MINOR (PCL_VERSION[2] - '0')
+
+#include <pcl/filters/passthrough.h>
+#include <pcl_ros/transforms.h>
+#include <pcl_ros/point_cloud.h>
+#include <tf/transform_listener.h>
+#include <tf_conversions/tf_kdl.h>
+#include <pcl/io/pcd_io.h>
+#include <visualization_msgs/Marker.h>
+#include "cob_3d_registration/RegistrationPCD.h"
+#include "cob_3d_registration/Parameterlist.h"
+#include "cob_3d_registration/EvaluationResult.h"
+#include "parameters/parameters_bag.h"
+
+#include <registration/registration_icp.h>
+#ifndef PCL_DEPRECATED
+#include <registration/registration_icp_moments.h>
+#include <registration/registration_icp_fpfh.h>
+#include <registration/registration_icp_narf.h>
+
+//#include <registration/registration_fastslam.h>
+//#include <cob_vision_utils/VisionUtils.h>
+#include <opencv/cv.h>
+
+#include <registration/registration_icp_edges.h>
+#include <registration/registration_info.h>
+#include <registration/registration_correspondence.h>
+#include <registration_rgbdslam.h>
+#endif
+
+#include <pcl/filters/voxel_grid.h>
+#include <registration/preprocessing/kinect_error.h>
+
+#include <cv_bridge/cv_bridge.h>
+#include <sys/stat.h>
+
+#include <registration/measurements/measure.h>
+
+using namespace tf;
+#define SHOW_MAP 1
+
+/// helper class to measure maximum memory usage over time
+class MemoryOperator
+{
+  measurement_tools::MemoryUsage mu_;
+  int max_used_;
+  bool run_, running_;
+public:
+  MemoryOperator():
+    max_used_(0), run_(true), running_(false)
+  {
+  }
+
+  void halt() {
+    run_=false;
+  }
+
+  void wait() {
+    ROS_INFO("halt");
+    while(running_) run_=false;
+    ROS_INFO("halt");
+  }
+
+  int getKB() {
+    return max_used_;
+  }
+
+  void run() {
+    running_ = true;
+    while(run_) {
+      int m = mu_.getKB();
+      max_used_ = std::max(m, max_used_);
+      usleep(10000);
+    }
+    running_=false;
+  }
+};
+
+//####################
+//#### node class ####
+class RegistrationNode
+{
+#if HAS_RGB
+  typedef pcl::PointXYZRGB Point;
+#else
+  typedef pcl::PointXYZ Point;
+#endif
+
+public:
+  // Constructor
+  RegistrationNode():
+    reg_(NULL), parameters_(n_)
+  {
+    onInit();
+  }
+
+  RegistrationNode(bool dummy):
+    reg_(NULL), parameters_(n_)
+  {
+  }
+
+
+  // Destructor
+  ~RegistrationNode()
+  {
+    /// void
+    delete reg_;
+  }
+
+  /**
+   * @brief initializes parameters
+   *
+   * initializes parameters
+   *
+   * @return nothing
+   */
+  void
+  onInit()
+  {
+    //general
+    parameters_.addParameter("algo");
+    parameters_.addParameter("voxelsize");
+
+    //icp
+    parameters_.addParameter("max_iterations");
+    parameters_.addParameter("corr_dist");
+    parameters_.addParameter("trf_epsilon");
+    parameters_.addParameter("outlier_rejection_threshold");
+    parameters_.addParameter("use_only_last_refrence");
+
+
+    //icp moments
+    parameters_.addParameter("moments_radius");
+
+    //icp fpfh
+    parameters_.addParameter("fpfh_radius");
+
+    //icp edges
+    parameters_.addParameter("edge_radius");
+    parameters_.addParameter("threshold");
+    parameters_.addParameter("distance_threshold");
+
+    //info
+    parameters_.addParameter("use_icp");
+
+    point_cloud_pub_ = n_.advertise<pcl::PointCloud<Point> >("result_pc",1);
+#if SHOW_MAP
+    marker2_pub_ = n_.advertise<pcl::PointCloud<Point> >("result_marker",1);
+#endif
+    point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &RegistrationNode::pointCloudSubCallback, this);
+    register_ser_ = n_.advertiseService("registration_process", &RegistrationNode::registerService, this);
+    marker_pub_ = n_.advertise<visualization_msgs::Marker>("markers", 1);
+
+    //after reading params
+    buildAlgo();
+
+    //say what we are doing here
+    publishParameters();
+  }
+
+  /**
+   * creating parameter settings for evaluation
+   * it's not thought to be used for registration self
+   */
+  void createParamters(const std::string &algo) {
+
+    //for all icp, fastslam
+    if(algo.find("icp")==0 || algo.find("gicp")==0 || algo=="fastslam") {
+
+      //TODO: not with all!!!!
+      parameters_.createParam(n_,"voxelsize",0.04).setMin(0.04).setMax(0.041).setStep(10.02); //0cm or 2cm
+    }
+
+    //icp
+    if(algo.find("icp")==0 || algo.find("gicp")==0) {
+      parameters_.createParam(n_,"max_iterations",40).setMin(40).setMax(41).setStep(30);
+      parameters_.createParam(n_,"corr_dist",0.2).setMin(0.2).setMax(0.3).setStep(0.2);
+      parameters_.createParam(n_,"trf_epsilon",3.5).setMin(3.5).setMax(3.6).setStep(1.); //10^-(1...10)
+      parameters_.createParam(n_,"outlier_rejection_threshold",0.1).setMax(0.3).setStep(0.1);
+      parameters_.createParam(n_,"use_only_last_refrence",1).setMax(1).setStep(2); //true/false
+    }
+
+    //icp moments
+    if(algo=="icp_moments") {
+      parameters_.setParam("voxelsize_min",0.04);
+      parameters_.createParam(n_,"moments_radius",0.05).setMax(0.2).setStep(0.05);
+    }
+
+    //icp fpfh
+    if(algo=="icp_fpfh") {
+      parameters_.setParam("voxelsize_min",0.04);
+      parameters_.createParam(n_,"fpfh_radius",0.05).setMax(0.2).setStep(0.05);
+    }
+
+    //icp edges
+    if(algo=="icp_edges") {
+      //parameters_.createParam(n_,"edge_radius",0.01).setMax(0.2).setStep(0.01);
+      parameters_.createParam(n_,"threshold",0.45).setMin(0.45).setMax(0.456).setStep(0.1);
+      //parameters_.createParam(n_,"distance_threshold",0.01).setMax(0.2).setStep(0.01);
+    }
+
+    //info
+    if(algo=="info") {
+      parameters_.createParam(n_,"use_icp",1).setMax(1).setStep(1); //true/false
+    }
+  }
+
+  /**
+   * reading out all parameters from parameter bag and publishing them as parameterlist
+   * thought to be used for evaluation
+   */
+  void publishParameters() {
+    ros::ServiceClient client = n_.serviceClient< ::cob_3d_registration::Parameterlist>("paramterlist");
+    ::cob_3d_registration::Parameterlist srv;
+
+    const std::map<std::string, int> &is = parameters_.getInts();
+    for(std::map<std::string, int>::const_iterator it=is.begin(); it!=is.end(); it++) {
+      std::ostringstream s;
+      s<<it->second;
+      srv.request.types.push_back("int");
+      srv.request.names.push_back(it->first);
+      srv.request.values.push_back(s.str());
+    }
+
+    const std::map<std::string, double> &ds = parameters_.getDoubles();
+    for(std::map<std::string, double>::const_iterator it=ds.begin(); it!=ds.end(); it++) {
+      std::ostringstream s;
+      s<<it->second;
+      srv.request.types.push_back("double");
+      srv.request.names.push_back(it->first);
+      srv.request.values.push_back(s.str());
+    }
+
+    const std::map<std::string, std::string> &ss = parameters_.getStrings();
+    for(std::map<std::string, std::string>::const_iterator it=ss.begin(); it!=ss.end(); it++) {
+      std::ostringstream s;
+      s<<it->second;
+      srv.request.types.push_back("string");
+      srv.request.names.push_back(it->first);
+      srv.request.values.push_back(s.str());
+    }
+
+    bool b=false;
+    int tries=0;
+    do {
+      b=client.call(srv);
+      if(!b) sleep(2);
+      ++tries;
+    } while(!b && tries<5);
+
+    if (b)
+    {
+      ROS_DEBUG("published paramters successfully");
+    }
+    else
+    {
+      ROS_ERROR("Failed to call paramterlist service");
+    }
+  }
+
+  /**
+   * reading out parameter and creating an instance of the algorithm
+   * setting all needed parameters for algorithm
+   */
+  void buildAlgo()
+  {
+    delete reg_;
+    reg_=NULL;
+
+    //get algo
+    int e_algo=E_ALGO_ICP_EDGES;
+
+    //parameter "algo" determines the algorithm
+    std::string s_algo;
+    if(parameters_.getParam("algo",s_algo)) {
+      if(s_algo=="icp")
+        e_algo=E_ALGO_ICP;
+      else if(s_algo=="icp lm")
+        e_algo=E_ALGO_ICP_LM;
+      else if(s_algo=="gicp")
+        e_algo=E_ALGO_GICP;
+      else if(s_algo=="icp_moments")
+        e_algo=E_ALGO_ICP_MOMENTS;
+      else if(s_algo=="icp_fpfh")
+        e_algo=E_ALGO_ICP_FPFH;
+      else if(s_algo=="icp_narf")
+        e_algo=E_ALGO_ICP_NARF;
+//      else if(s_algo=="fastslam")
+//        e_algo=E_ALGO_FASTSLAM;
+      else if(s_algo=="icp_edges")
+        e_algo=E_ALGO_ICP_EDGES;
+      else if(s_algo=="rgbdslam")
+        e_algo=E_ALGO_RGBDSLAM;
+      else if(s_algo=="info")
+        e_algo=E_ALGO_INFO;
+      else if(s_algo=="cor")
+        e_algo=E_ALGO_COR;
+      else
+        ROS_WARN("algo %s not found", s_algo.c_str());
+
+    }
+    else
+      ROS_WARN("using algo icp", e_algo);
+
+    //init: settings
+    ROS_INFO("init %d", e_algo);
+    switch(e_algo) {
+      case E_ALGO_ICP:
+        reg_ = new Registration_ICP<Point>();
+
+        setSettings_ICP((Registration_ICP<Point>*)reg_);
+        break;
+
+      case E_ALGO_GICP:
+        reg_ = new Registration_ICP<Point>();
+
+        setSettings_ICP((Registration_ICP<Point>*)reg_);
+        ((Registration_ICP<Point>*)reg_)->setUseGICP(true);
+
+        break;
+
+      case E_ALGO_ICP_LM:
+        reg_ = new Registration_ICP<Point>();
+        ((Registration_ICP<Point>*)reg_)->setNonLinear(true);
+
+        setSettings_ICP((Registration_ICP<Point>*)reg_);
+        break;
+
+      case E_ALGO_ICP_MOMENTS:
+#ifndef PCL_DEPRECATED
+        reg_ = new Registration_ICP_Moments<Point>();
+
+        setSettings_ICP_Moments((Registration_ICP_Moments<Point>*)reg_);
+#else
+        ROS_ERROR("not supported");
+#endif
+        break;
+
+      case E_ALGO_ICP_FPFH:
+#ifndef PCL_DEPRECATED
+        reg_ = new Registration_ICP_FPFH<Point>();
+
+        setSettings_ICP_FPFH((Registration_ICP_FPFH<Point>*)reg_);
+#else
+        ROS_ERROR("not supported");
+#endif
+        break;
+
+      case E_ALGO_ICP_NARF:
+#ifndef PCL_DEPRECATED
+        reg_ = new Registration_ICP_NARF<Point>();
+
+        setSettings_ICP_NARF((Registration_ICP_NARF<Point>*)reg_);
+#else
+        ROS_ERROR("not supported");
+#endif
+        break;
+
+      case E_ALGO_ICP_EDGES:
+#ifndef PCL_DEPRECATED
+#if HAS_RGB
+        reg_ = new Registration_ICP_Edges<Point>();
+
+        setSettings_ICP_Edges((Registration_ICP_Edges<Point>*)reg_);
+#endif
+#else
+        ROS_ERROR("not supported");
+#endif
+        break;
+
+      /*case E_ALGO_FASTSLAM:
+#ifndef PCL_DEPRECATED
+        reg_ = new Registration_FastSLAM<Point>();
+
+        //setSettings_ICP_FastSLAM((Registration_FastSLAM<Point>*)reg_);
+#else
+        ROS_ERROR("not supported");
+#endif
+        break;*/
+
+      case E_ALGO_RGBDSLAM:
+        reg_ = new Registration_RGBDSLAM<Point>(n_);
+
+        //setSettings_ICP_Edges((Registration_ICP_Edges<Point>*)reg_);
+        break;
+
+      case E_ALGO_INFO:
+#ifndef PCL_DEPRECATED
+        reg_ = new Registration_Infobased<Point>();
+
+        setSettings_Info((Registration_Infobased<Point>*)reg_);
+#else
+        ROS_ERROR("not supported");
+#endif
+        break;
+
+      case E_ALGO_COR:
+#ifndef PCL_DEPRECATED
+        reg_ = new Registration_Corrospondence<Point>();
+
+        //((Registration_Corrospondence<Point>*)reg_)->setKeypoints(new Keypoints_Segments<Point>);
+        ((Registration_Corrospondence<Point>*)reg_)->setKeypoints(new Keypoints_Narf<Point>);
+
+        //setSettings_Cor((Registration_Corrospondence<Point>*)reg_);
+#else
+        ROS_ERROR("not supported");
+
+#endif
+        break;
+
+    }
+    ROS_INFO("done");
+
+  }
+
+  /**
+   * @brief callback for point cloud subroutine
+   *
+   * callback for point cloud subroutine which stores the point cloud
+   * for further calculation
+   *
+   * @param pc_in  new point cloud
+   *
+   * @return nothing
+   */
+  void
+  pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc_in)
+  {
+
+    tf::StampedTransform transform;
+    try{
+      //listener.lookupTransform("/turtle2", "/turtle1",
+      //                         ros::Time(0), transform);
+    }
+    catch (tf::TransformException ex){
+      ROS_ERROR("%s",ex.what());
+    }
+
+  }
+
+  /**
+   * service callback to register a dataset
+   * returning success
+   */
+  bool registerService(::cob_3d_registration::RegistrationPCD::Request  &req,
+                       ::cob_3d_registration::RegistrationPCD::Response &res )
+  {
+    ROS_INFO("register...");
+
+
+    pcl::PointCloud<Point> pc;
+    pcl::io::loadPCDFile(req.pcd_fn, pc);
+
+    for(int i=0; i<pc.size(); i++) {
+      if(pc[i].z==0||pc[i].z>10)
+        pc[i].z=pc[i].y=pc[i].x=std::numeric_limits<float>::quiet_NaN();
+    }
+
+    sensor_msgs::Image img;
+    {
+      FILE *fp = fopen(req.img_fn.c_str(), "rb");
+      if(!fp) return false;
+
+      struct stat filestatus;
+      stat(req.img_fn.c_str(), &filestatus );
+
+      uint8_t *up = new uint8_t[filestatus.st_size];
+      fread(up,filestatus.st_size,1,fp);
+      img.deserialize(up);
+      delete up;
+
+      fclose(fp);
+    }
+
+    cv::Mat img_depth(pc.height, pc.width, CV_16UC1);
+#ifdef USE_DEPTH_IMG_
+    sensor_msgs::Image img_depth;
+    {
+      FILE *fp = fopen(req.depth_img_fn.c_str(), "rb");
+      if(!fp) return false;
+
+      struct stat filestatus;
+      stat(req.img_fn.c_str(), &filestatus );
+
+      uint8_t *up = new uint8_t[filestatus.st_size];
+      fread(up,filestatus.st_size,1,fp);
+      img_depth.deserialize(up);
+      delete up;
+
+      fclose(fp);
+    }
+#elif 0
+    cv::Mat cv_pc(pc.height, pc.width, CV_32FC1);
+    for(int x=0; x<pc.width; x++)
+      for(int y=0; y<pc.height; y++)
+        *(cv_pc.ptr<float>(y)+x) = pc.points[x+y*pc.width].z;
+
+    ipa_Utils::ConvertToShowImage(cv_pc, img_depth, 1, 0., 5.);
+#else
+    for(int x=0; x<pc.width; x++)
+      for(int y=0; y<pc.height; y++) {
+        int raw_depth = std::max(0, (int)(((1./pc.points[x+y*pc.width].z)-3.3309495161)/-0.0030711016));
+        *(img_depth.ptr<unsigned short>(y)+x) = raw_depth<2048?raw_depth:0;
+      }
+#endif
+
+    cv_bridge::CvImagePtr cv_ptr;
+    try
+    {
+      cv_ptr = cv_bridge::toCvCopy(img, "rgb8");
+    }
+    catch (cv_bridge::Exception& e)
+    {
+      ROS_ERROR("cv_bridge exception: %s", e.what());
+      return false;
+    }
+
+    cv_bridge::CvImagePtr cv_ptr_depth;
+#ifdef USE_DEPTH_IMG_
+    try
+    {
+      cv_ptr_depth = cv_bridge::toCvCopy(img_depth, "rgb8");
+      img_depth = cv_ptr_depth->image;
+    }
+    catch (cv_bridge::Exception& e)
+    {
+      ROS_ERROR("cv_bridge exception: %s", e.what());
+      return false;
+    }
+#endif
+
+    reg_->setInputOginalCloud(boost::shared_ptr<const pcl::PointCloud<Point> >(new pcl::PointCloud<Point>(pc)));
+
+    measurement_tools::PrecisionStopWatchAll psw;
+    do_preprocess(pc,cv_ptr,img_depth);
+    ROS_INFO("do_preprocess took %f", psw.precisionStop());
+    psw.precisionStart();
+    do_register(pc,cv_ptr,img_depth);
+    ROS_INFO("do_register took %f", psw.precisionStop());
+
+    publish_results();
+
+    //debug purpose
+#if SHOW_MAP
+
+    if(marker_pub_.getNumSubscribers()&&reg_->getMarkers()) {
+      for(int i=0; i<reg_->getMarkers()->size(); i++)
+#if HAS_RGB
+        publishMarkerPoint(reg_->getMarkers()->points[i], i, reg_->getMarkers()->points[i].r/255., reg_->getMarkers()->points[i].g/255., reg_->getMarkers()->points[i].b/255.);
+#else
+      publishMarkerPoint(reg_->getMarkers()->points[i], i, 1,0,0);
+#endif
+    }
+
+#ifndef PCL_DEPRECATED
+    std::string s_algo;
+    if(parameters_.getParam("algo",s_algo) && s_algo=="info") {
+      pcl::PointCloud<Point> result = *((Registration_Infobased<Point>*)reg_)->getMarkers2();
+      result.header.frame_id="/head_cam3d_frame";
+      marker2_pub_.publish(result);
+
+      for(int i=0; i<((Registration_Infobased<Point>*)reg_)->getSource().size(); i++)
+        publishLineMarker( ((Registration_Infobased<Point>*)reg_)->getSource().points[i].getVector3fMap(), ((Registration_Infobased<Point>*)reg_)->getTarget().points[i].getVector3fMap(), -i);
+    }
+    else if(parameters_.getParam("algo",s_algo) && s_algo=="cor") {
+      pcl::registration::Correspondences cor;
+      ((Registration_Corrospondence<Point>*)reg_)->getKeypoints()->getCorrespondences(cor);
+      for(int i=0; i<cor.size(); i++)
+        publishLineMarker( ((Registration_Corrospondence<Point>*)reg_)->getKeypoints()->getSourcePoints()->points[cor[i].indexQuery].getVector3fMap(), ((Registration_Corrospondence<Point>*)reg_)->getKeypoints()->getTargetPoints()->points[cor[i].indexMatch].getVector3fMap(), -i);
+    }
+#endif
+
+    if(registration_result_) {
+      pcl::PointCloud<Point> result;
+      pcl::io::loadPCDFile(req.pcd_fn, result);
+      static pcl::PointCloud<Point> map;
+      pcl::transformPointCloud(result,result,reg_->getTransformation());
+      map.header.frame_id = result.header.frame_id;
+      map += result;
+
+      pcl::VoxelGrid<Point> voxel;
+      voxel.setInputCloud(map.makeShared());
+      float voxelsize=0.04;
+      voxel.setLeafSize(voxelsize,voxelsize,voxelsize);
+      voxel.filter(map);
+
+      map.header.frame_id="/head_cam3d_frame";
+      point_cloud_pub_.publish(map);
+
+      {
+        std::string s_algo;
+        parameters_.getParam("algo",s_algo);
+            pcl::io::savePCDFileBinary("/home/goa-jh/Dropbox/"+s_algo+"_map.pcd",map);
+      }
+    }
+    else
+      ROS_INFO("not successful");
+#endif
+
+    return true;
+  }
+
+
+  ros::NodeHandle n_;
+  ros::Time stamp_;
+
+
+protected:
+
+  /**
+   * publishing evaluation results
+   */
+  void publish_results()
+  {
+    ros::ServiceClient client = n_.serviceClient< ::cob_3d_registration::EvaluationResult>("evaluate");
+    ::cob_3d_registration::EvaluationResult srv;
+
+    srv.request.duration = duration_;
+    srv.request.memory = memory_usage_kb_;
+    srv.request.state = registration_result_;
+
+    Eigen::Matrix4f T = reg_->getTransformation(), T2=Eigen::Matrix4f::Identity();
+    //rotate around 180° around z
+    Eigen::Vector3f Z;
+    Z(0)=Z(1)=0.f;Z(2)=1.f;
+    Eigen::AngleAxisf aa(M_PI,Z);
+    for(int i=0; i<3; i++)
+      for(int j=0; j<3; j++)
+        T2(i,j)=aa.toRotationMatrix()(i,j);
+    T=T2*T;
+
+    for(int i=0; i<4; i++)
+      for(int j=0; j<4; j++)
+        srv.request.transformation.push_back( T(i,j) );
+
+    if (client.call(srv))
+    {
+      ROS_DEBUG("published paramters successfully");
+    }
+    else
+    {
+      ROS_ERROR("Failed to call paramterlist service");
+    }
+  }
+
+  /**
+   * preprocessing data
+   *
+   */
+  bool do_preprocess(pcl::PointCloud<Point> &pc, cv_bridge::CvImagePtr &cv_ptr, cv::Mat &img_depth) {
+
+#if NEED_GAZEBO_BUG_
+    //gazebo bug escaping hack
+    for(int i=0; i<pc.size(); i++) {
+      if(pc.points[i].z>5||pc.points[i].z<0.5) {
+        pc.points.erase(pc.points.begin()+i);
+        --i;
+      }
+    }
+    pc.width=pc.size();
+    pc.height=1;
+#endif
+
+    pcl::PassThrough<Point> pass;
+    pass.setInputCloud (pc.makeShared());
+    pass.setFilterFieldName ("z");
+    pass.setFilterLimits (0.0, 6.0);
+    pass.filter (pc);
+
+    int simulate_distortion;
+    if(parameters_.getParam("simulate_distortion",simulate_distortion)&&simulate_distortion) {
+      ROS_INFO("simulationg distortion");
+
+      preprocessing::KinectErrorGenerator<Point> filter;
+      filter.setInputCloud(pc.makeShared());
+      filter.filter(pc);
+    }
+
+    double voxelsize;
+    if(parameters_.getParam("voxelsize",voxelsize) && voxelsize>0.f) {
+      ROS_INFO("voxelize with %f", voxelsize);
+
+      pcl::VoxelGrid<Point> voxel;
+      voxel.setInputCloud(pc.makeShared());
+      voxel.setLeafSize(voxelsize,voxelsize,voxelsize);
+      voxel.filter(pc);
+
+      ROS_INFO("resulting pc with %d points", pc.size());
+
+      if(((Registration_ICP<Point>*)reg_)->getMap()) {
+        voxel.setInputCloud(((Registration_ICP<Point>*)reg_)->getMap());
+        voxel.setLeafSize(voxelsize,voxelsize,voxelsize);
+        voxel.filter(*reg_->getMap());
+      }
+
+    }
+
+    return true;
+  }
+
+  /**
+   * registration process
+   *    - setting input data
+   *    - measurement
+   *    - visualization helper (for debugging)
+   */
+  bool do_register(const pcl::PointCloud<Point> &pc, const cv_bridge::CvImagePtr &cv_ptr, cv::Mat &img_depth) {
+    if(reg_==NULL)
+      return false;
+
+    ROS_INFO("register %d %d", cv_ptr->image.cols, cv_ptr->image.rows);
+
+    reg_->setInputImage(boost::shared_ptr<const cv::Mat>(new cv::Mat(cv_ptr->image)));
+    reg_->setInputDepthImage(boost::shared_ptr<const cv::Mat>(new cv::Mat(img_depth)));
+    reg_->setInputCloud(pc.makeShared());
+
+
+    MemoryOperator mo;
+    boost::thread workerThread(&MemoryOperator::run, &mo);
+
+    measurement_tools::PrecisionStopWatchAll psw2;
+    measurement_tools::PrecisionStopWatchThread psw;
+    bool ret = reg_->compute();
+    duration_ = psw.precisionStop();
+    registration_result_ = ret;
+    {
+      std::string s_algo;
+      if(parameters_.getParam("algo",s_algo) && s_algo=="rgbdslam")
+        duration_ = psw2.precisionStop();
+    }
+
+    mo.halt();
+    workerThread.join();
+
+    memory_usage_kb_ = mo.getKB();
+
+    ROS_ERROR("time %f", duration_);
+    ROS_ERROR("memory %d", memory_usage_kb_);
+
+    //std::cout<<reg_->getTransformation()<<"\n";
+
+    ROS_INFO("done");
+
+    return ret;
+  }
+
+  ros::Subscriber point_cloud_sub_;             /// subscriber to input data
+  ros::ServiceServer register_ser_;             /// service for evaluation of registration
+  TransformListener tf_listener_;
+  ros::Publisher point_cloud_pub_;              /// publisher for map
+  ros::Publisher marker2_pub_;                  /// publish markers for visualization as pc
+  ros::Publisher marker_pub_;                   /// publish markers for visualization
+
+  /// parameter bag (containing max, min, step...)
+  ParameterBucket parameters_;
+
+  /// registration algorithm
+  GeneralRegistration<Point> *reg_;
+
+  //evaluation values
+
+  /// evaluation: duration in seconds
+  double duration_;
+  /// evaluation: incremental memory usage in kB
+  int memory_usage_kb_;
+  /// evaluation: success -> true
+  bool registration_result_;
+
+  enum {E_ALGO_ICP=1,E_ALGO_ICP_LM=2,E_ALGO_GICP=3,E_ALGO_ICP_MOMENTS=4,E_ALGO_ICP_FPFH=5, E_ALGO_ICP_NARF=6, E_ALGO_FASTSLAM=7, E_ALGO_ICP_EDGES=8, E_ALGO_RGBDSLAM=9, E_ALGO_INFO=10, E_ALGO_COR=11, E_ALGO_NONE=0};
+
+  //settings
+  void setSettings_ICP(Registration_ICP<Point> *pr) {
+    double d;
+    int i;
+
+    if(parameters_.getParam("corr_dist",d))
+      pr->setCorrDist(d);
+    if(parameters_.getParam("max_iterations",i))
+      pr->setMaxIterations(i);
+    if(parameters_.getParam("trf_epsilon",d))
+      pr->setTrfEpsilon(pow(10,-d));
+    if(parameters_.getParam("outlier_rejection_threshold",d))
+      pr->setOutlierRejectionThreshold(d);
+    if(parameters_.getParam("use_only_last_refrence",i))
+      pr->setUseOnlyLastReference(i!=0);
+  }
+#ifndef PCL_DEPRECATED
+  void setSettings_ICP_Moments(Registration_ICP_Moments<Point> *pr) {
+    setSettings_ICP(pr);
+
+    double d;
+    int i;
+
+    if(parameters_.getParam("moments_radius",d))
+      pr->setMomentRadius(d);
+  }
+  void setSettings_ICP_FPFH(Registration_ICP_FPFH<Point> *pr) {
+    setSettings_ICP(pr);
+
+    double d;
+    int i;
+
+    if(parameters_.getParam("fpfh_radius",d))
+      pr->setFPFHRadius(d);
+  }
+  void setSettings_ICP_NARF(Registration_ICP_NARF<Point> *pr) {
+    setSettings_ICP(pr);
+  }
+  void setSettings_ICP_Edges(Registration_ICP_Edges<Point> *pr) {
+    double d;
+
+    if(parameters_.getParam("edge_radius",d))
+      pr->setRadius(d);
+    if(parameters_.getParam("threshold",d))
+      pr->setThreshold(d);
+    if(parameters_.getParam("distance_threshold",d))
+      pr->setDisThreshold(d);
+    setSettings_ICP(pr);
+  }
+  void setSettings_Info(Registration_Infobased<Point> *pr) {
+    int i;
+
+    //if(parameters_.getParam("use_icp",i))
+    //  pr->setUseICP(i!=0);
+  }
+#endif
+
+  /******************VISUALIZATION******************/
+  void publishMarkerPoint(const Point &p, int id, float r, float g, float b, float Size=0.02)
+  {
+    if(!marker_pub_.getNumSubscribers())
+      return;
+
+    visualization_msgs::Marker marker;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.type = visualization_msgs::Marker::CUBE;
+    marker.lifetime = ros::Duration(0);
+    marker.header.frame_id="/head_cam3d_frame";
+    //marker.header.stamp = stamp;
+
+    marker.pose.orientation.x = 0.0;
+    marker.pose.orientation.y = 0.0;
+    marker.pose.orientation.z = 0.0;
+    marker.pose.orientation.w = 1.0;
+
+    marker.scale.x = Size;
+    marker.scale.y = Size;
+    marker.scale.z = Size;
+    marker.color.r = r;
+    marker.color.g = g;
+    marker.color.b = b;
+    marker.color.a = 1.0;
+
+    marker.id = id;
+    marker.pose.position.x = p.x;
+    marker.pose.position.y = p.y;
+    marker.pose.position.z = p.z;
+
+    marker_pub_.publish(marker);
+  }
+
+  void publishLineMarker(Eigen::Vector3f a, Eigen::Vector3f b, const int id=rand()%111111)
+  {
+    visualization_msgs::Marker marker;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.type = visualization_msgs::Marker::LINE_STRIP;
+    marker.lifetime = ros::Duration(id<0?0:4);
+    marker.header.frame_id="/head_cam3d_frame";
+
+    marker.pose.orientation.x = 0.0;
+    marker.pose.orientation.y = 0.0;
+    marker.pose.orientation.z = 0.0;
+    marker.pose.orientation.w = 1.0;
+
+    marker.scale.x = 0.02;
+    marker.scale.y = 0.02;
+    marker.scale.z = 0.02;
+    marker.color.r = 0;
+    marker.color.g = 1;
+    marker.color.b = 0;
+    marker.color.a = 1.0;
+
+    marker.id = id;
+
+    marker.points.resize(2);
+
+    marker.points[0].x = a(0);
+    marker.points[0].y = a(1);
+    marker.points[0].z = a(2);
+
+    marker.points[1].x = b(0);
+    marker.points[1].y = b(1);
+    marker.points[1].z = b(2);
+
+    marker_pub_.publish(marker);
+  }
+
+};
+
+int main(int argc, char **argv) {
+#if SHOW_MAP
+  setVerbosityLevel(pcl::console::L_DEBUG);
+#endif
+
+  ros::init(argc, argv, "registration");
+
+  if(argc>1&&strcmp(argv[1],"eval")==0) { //we're sending paramters...
+    RegistrationNode tn(true);
+
+    tn.createParamters(argv[2]);
+    tn.publishParameters();
+    return 0;
+  }
+
+  RegistrationNode tn;
+
+  ROS_INFO("Spinning node");
+  ros::spin();
+  return 0;
+}

@@ -88,22 +88,19 @@ namespace cob_3d_mapping_features
     /*! Empty destructor */
     ~CurvatureClassifier() {}
 
-
-    /*!
-     * @brief set the rules for classification
-     *
-     * @param[in] c_upper everything above is edge
-     * @param[in] c_lower everything above is plane
-     * @param[in] c_r_cyl_sph ratio to differentiate between cylinder and sphere (bigger -> more spheres)
-     * @param[in] c_r_edge_cor ratio to differentiate between edge and corner (bigger -> more corners)
-     */
-    inline void 
-    setRules(float c_upper, float c_lower, float c_r_cyl_sph, float c_r_edge_cor = 2.75)
+    void setUpperThreshold (const float &threshold)
     {
-      c_upper_ = c_upper;
-      c_lower_ = c_lower;
-      c_ratio_cylinder_sphere_ = c_r_cyl_sph;
-      c_ratio_edge_corner_ = c_r_edge_cor;
+      c_upper_ = threshold;
+    }
+
+    void setLowerThreshold (const float &threshold)
+    {
+      c_lower_ = threshold;
+    }
+
+    void setMaxMinRatio (const float &ratio)
+    {
+      c_ratio_cylinder_sphere_ = ratio;
     }
 
     /*!
@@ -112,6 +109,8 @@ namespace cob_3d_mapping_features
      * @param[in] output a curvature point cloud to be classified
      */
     void classify(PointCloudOut &output);
+
+    void classifyForSegmentation(PointCloudOut &output);
 
   protected:
     //virtual inline bool

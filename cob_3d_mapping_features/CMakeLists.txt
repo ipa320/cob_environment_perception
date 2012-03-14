@@ -56,7 +56,8 @@ target_link_libraries(cob_3d_mapping_features_nodelets cob_3d_mapping_features)
 
 rosbuild_add_executable(test_plane_extraction common/src/plane_extraction.cpp)
 rosbuild_add_executable(plane_extraction_action_client ros/src/plane_extraction_action_client.cpp)
-
+rosbuild_add_executable(test_organized_curvature_estimation common/apps/test_organized_curvature_estimation.cpp)
+target_link_libraries(test_organized_curvature_estimation cob_3d_mapping_features cob_3d_mapping_features_omp)
 
 # feature evaluation:
 rosbuild_add_executable(evaluation_fpfh_svm_trainer common/apps/evaluation_fpfh_svm_trainer.cpp)
@@ -65,9 +66,9 @@ rosbuild_add_executable(evaluation_features_fpfh common/apps/evaluation_features
 rosbuild_add_compile_flags(evaluation_features -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
 
 # Georg's old test program for edge estimation and segmentation:
-rosbuild_add_executable(test_edge_extraction common/apps/test_edge_extraction.cpp)
-rosbuild_add_compile_flags(test_edge_extraction -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
-target_link_libraries(test_edge_extraction cob_3d_mapping_features)
+#rosbuild_add_executable(test_edge_extraction common/apps/test_edge_extraction.cpp)
+#rosbuild_add_compile_flags(test_edge_extraction -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
+#target_link_libraries(test_edge_extraction cob_3d_mapping_features)
 
 # Uses FEE3D and EE2D to extract edges and segment clusters
 rosbuild_add_executable(test_segmentation common/apps/test_segmentation.cpp)
@@ -101,3 +102,6 @@ target_link_libraries(profile_ee cob_3d_mapping_features)
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
+
+# rostest
+rosbuild_add_roslaunch_check(ros/launch)

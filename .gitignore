@@ -2,10 +2,13 @@
 .cproject
 .pydevproject
 *.pyc
+*.tar*
+*.orig
 bin
 lib
 build
 docs
+doc
 srv_gen
 msg_gen
 cmake_install.cmake

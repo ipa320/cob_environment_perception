@@ -1,0 +1,35 @@
+<?xml version="1.0" ?>
+<launch>
+
+    <node pkg="evaluation" type="evaluate.py" name="evaluation" output="screen">
+      <param name="directory" value="/home/goa-jh" />   
+    </node>
+    
+    <node pkg="registration" type="registration" name="registration" output="screen">
+      <param name="algo" value="cor" />
+            
+      <param name="voxelsize" value="0.03" />   
+      <param name="simulate_distortion" value="0" />  
+         
+      <param name="use_only_last_refrence" value="0" />       
+      <param name="outlier_rejection_threshold" value="0.2" />    
+      <param name="corr_dist" value="0.2" />       
+      <param name="trf_epsilon" value="3" />     
+      
+      <param name="moments_radius" value="0.1" />     
+      
+      <param name="fpfh_radius" value="0.1" />       
+      
+      <param name="edge_radius" value="0.04" />     
+      <param name="threshold" value="0.47" />     
+      <param name="distance_threshold" value="0.1" />     
+      
+      
+      <remap from="rgbdslam/image_mono" to="/camera/rgb/image_mono"/>
+      <remap from="rgbdslam/image" to="/camera/depth/image"/>
+      <remap from="rgbdslam/camera_info" to="/camera/rgb/camera_info"/>
+      <remap from="rgbdslam/points" to="/camera/rgb/points"/>
+
+    </node>
+</launch>
+

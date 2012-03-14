@@ -88,11 +88,12 @@ namespace cob_3d_mapping_features
 	fake_surface_ = false;
       }
 
+      //TODO: set radius in m instead of pixel
       inline void
 	setPixelSearchRadius(int pixel_radius, int pixel_step_size=1, int circle_step_size=1)
-      { 
+      {
 	pixel_search_radius_ = pixel_radius;
-	pixel_steps_ = pixel_step_size; 
+	pixel_steps_ = pixel_step_size;
 	circle_steps_ = circle_step_size;
       }
 
@@ -102,7 +103,7 @@ namespace cob_3d_mapping_features
 	distance_threshold_modifier_ = mod;
       }
 
-      void 
+      void
 	compute(PointCloudOut &output);
 
       int
@@ -145,10 +146,10 @@ namespace cob_3d_mapping_features
 
       inline const std::string&
 	getClassName () const { return (feature_name_); }
-      
+
       PointCloudInConstPtr surface_;
       bool fake_surface_;
-      
+
       int pixel_search_radius_;
       int pixel_steps_;
       int circle_steps_;
@@ -157,7 +158,7 @@ namespace cob_3d_mapping_features
       float distance_threshold_modifier_;
 
       std::string feature_name_;
-    
+
     private:
       virtual void
 	computeFeature (PointCloudOut &output) = 0;

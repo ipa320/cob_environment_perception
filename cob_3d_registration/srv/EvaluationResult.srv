@@ -1,0 +1,6 @@
+float64 duration
+int64 memory
+bool state
+float64[] transformation
+---
+int64 success
