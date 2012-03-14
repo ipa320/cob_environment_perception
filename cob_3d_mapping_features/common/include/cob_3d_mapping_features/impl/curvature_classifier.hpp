@@ -61,10 +61,12 @@
 template <typename PointInT, typename PointOutT> void
 cob_3d_mapping_features::CurvatureClassifier<PointInT,PointOutT>::classify(PointCloudOut &output)
 {
+  //std::cout << "da" << std::endl;
   if(!initCompute())
   {
     output.width = output.height = 0;
     output.points.clear ();
+    std::cout << "error" << std::endl;
     return;
   }
   if (output.points.size() != input_->size())
@@ -75,6 +77,7 @@ cob_3d_mapping_features::CurvatureClassifier<PointInT,PointOutT>::classify(Point
   }
   for (size_t i=0; i < indices_->size(); ++i)
   {
+    if (output.points[i].label == I_BORDER) {continue;}
     if (input_->points[(*indices_)[i]].pc1 < pc_c_max_th_lower_)
     {
       output.points[i].label = I_PLANE;
@@ -91,6 +94,38 @@ cob_3d_mapping_features::CurvatureClassifier<PointInT,PointOutT>::classify(Point
     else
     {
       output.points[i].label = I_CYL;
+    }
+  }
+}
+
+template <typename PointInT, typename PointOutT> void
+cob_3d_mapping_features::CurvatureClassifier<PointInT,PointOutT>::classifyForSegmentation(PointCloudOut &output)
+{
+  //std::cout << "da" << std::endl;
+  if(!initCompute())
+  {
+    output.width = output.height = 0;
+    output.points.clear ();
+    std::cout << "error" << std::endl;
+    return;
+  }
+  if (output.points.size() != input_->size())
+  {
+    output.points.resize(input_->size());
+    output.height = input_->height;
+    output.width = input_->width;
+  }
+  for (size_t i=0; i < indices_->size(); ++i)
+  {
+    if (output.points[i].label == I_NAN) {continue;}
+    if (output.points[i].label == I_BORDER) {output.points[i].label = I_EDGE;continue;}
+    if (input_->points[(*indices_)[i]].pc1 > pc_c_max_th_cylinder_upper_)
+    {
+      output.points[i].label = I_EDGE;
+    }
+    else
+    {
+      output.points[i].label = 0;
     }
   }
 }

@@ -169,12 +169,18 @@ int main(int argc, char** argv)
   //KdTreeFLANN<PointXYZRGB>::Ptr tree(new KdTreeFLANN<PointXYZRGB>);
   //ne.setRadiusSearch(rn_);
   //ne.setSearchMethod(tree);
-  for(unsigned int i=3; i<indices.size(); i++)
+  for(unsigned int i=0; i<indices.size(); i++)
   {
-    cout << i << endl;
+    std::cout << "cluster " << i << " has " << indices[i].indices.size() << " points" << std::endl;
+    if(i==3)
+    {
+      /*for(unsigned int j=0; j<indices[i].indices.size(); j++)
+        std::cout << indices[i].indices[j] << ",";
+      std::cout << std::endl;*/
+    //cout << i << ": " << indices[i].indices.front() << "!" << endl;
     t.restart();
     boost::shared_ptr<PointIndices> ind_ptr = boost::make_shared<PointIndices>(indices[i]);
-    std::cout << ind_ptr->indices[0] << std::endl;
+    std::cout << ind_ptr->indices.size() << std::endl;
     oce.setIndices(ind_ptr);
     oce.setOutputLabels(l);
     oce.compute(*pc);
@@ -232,6 +238,7 @@ int main(int argc, char** argv)
         p->points[i].b = 255;
       }
     }
+    }
   }
   visualization::PCLVisualizer v;
   v.setBackgroundColor(0,127,127);
@@ -243,5 +250,7 @@ int main(int argc, char** argv)
     v.spinOnce(100);
     usleep(100000);
   }
+
+
   return(0);
 }

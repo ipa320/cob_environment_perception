@@ -55,9 +55,7 @@
   	<param name="save_pc_aligned" type="bool" value="false"/>
   	<param name="save_map_fov" type="bool" value="false"/>
   	<param name="save_pc_trans" type="bool" value="false"/>
-  	<param name="voxel_leafsize_x" type="double" value="0.03" />
-  	<param name="voxel_leafsize_y" type="double" value="0.03" />
-  	<param name="voxel_leafsize_z" type="double" value="0.03" />
+  	<param name="voxel_leafsize" type="double" value="0.01" />
   	<param name="use_reference_map" type="bool" value="false"/>
   	<param name="use_fov" type="bool" value="false"/>
   </node>

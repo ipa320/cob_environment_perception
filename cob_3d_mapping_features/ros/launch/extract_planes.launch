@@ -30,7 +30,7 @@
   	<remap from="shape_array" to="plane_extraction/shape_array"/>
   	<!--remap from="point_cloud2" to="/aggregate_point_map/map"/-->
   	<!--remap from="point_cloud2" to="/voxel_grid2/output"/-->
-  	<param name="file_path" type="string" value="/home/goa-hh/bag_files/plane"/>
+  	<param name="file_path" type="string" value="/home/goa/tmp"/>
   	<param name="save_to_file" type="bool" value="false"/>
   	<param name="plane_constraint" type="int" value="0"/>
   	<param name="passthrough_max_z" type="double" value="3.0"/>

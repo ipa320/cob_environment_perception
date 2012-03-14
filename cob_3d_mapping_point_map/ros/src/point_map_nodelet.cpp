@@ -168,9 +168,7 @@ public:
     inst->save_pc_ = inst->save_map_fov_ = inst->save_map_ = config.save;
     inst->save_pc_aligned_ = config.save_pc_aligned;
     inst->save_pc_trans_ = config.save_pc_trans;
-    inst->voxel_leafsize_x_ = config.voxel_leafsize_x;
-    inst->voxel_leafsize_y_ = config.voxel_leafsize_y;
-    inst->voxel_leafsize_z_ = config.voxel_leafsize_z;
+    inst->voxel_leafsize_ = config.voxel_leafsize;
     inst->use_fov_ = config.use_fov;
 
     ROS_INFO("callback");
@@ -186,9 +184,7 @@ public:
     config.save = inst->save_pc_;
     config.save_pc_aligned = inst->save_pc_aligned_;
     config.save_pc_trans = inst->save_pc_trans_;
-    config.voxel_leafsize_x = inst->voxel_leafsize_x_;
-    config.voxel_leafsize_y = inst->voxel_leafsize_y_;
-    config.voxel_leafsize_z = inst->voxel_leafsize_z_;
+    config.voxel_leafsize = inst->voxel_leafsize_;
     config.use_fov = inst->use_fov_;
 
   }
@@ -232,9 +228,7 @@ public:
     n_.param("aggregate_point_map/save_pc_aligned",save_pc_aligned_,false);
     n_.param("aggregate_point_map/save_map_fov" ,save_map_fov_,false);
     n_.param("aggregate_point_map/save_pc_trans" ,save_pc_trans_,false);
-    n_.param("aggregate_point_map/voxel_leafsize_x" ,voxel_leafsize_x_, 0.05);
-    n_.param("aggregate_point_map/voxel_leafsize_y" ,voxel_leafsize_y_, 0.05);
-    n_.param("aggregate_point_map/voxel_leafsize_z" ,voxel_leafsize_z_, 0.05);
+    n_.param("aggregate_point_map/voxel_leafsize" ,voxel_leafsize_, 0.03);
     /*std::stringstream ss;
     ss << file_path_ << "/gt.pcd";
     /pcl::io::savePCDFileASCII (ss.str(), ref_map_);*/
@@ -349,6 +343,11 @@ public:
         downsampleMap();
 
         point_cloud_pub_.publish(map_);
+        cob_3d_mapping_msgs::GetFieldOfViewRequest req;
+        req.stamp = pc_in_.header.stamp;
+        req.target_frame = "/map";
+        cob_3d_mapping_msgs::GetFieldOfViewResponse res;
+        get_fov_srv_client_.call(req,res);
       }
       else
         ROS_WARN("not successful");
@@ -478,7 +477,7 @@ public:
   {
     pcl::VoxelGrid<Point> vox_filter;
     vox_filter.setInputCloud(map_.makeShared());
-    vox_filter.setLeafSize(voxel_leafsize_x_,voxel_leafsize_y_,voxel_leafsize_z_);
+    vox_filter.setLeafSize(voxel_leafsize_,voxel_leafsize_,voxel_leafsize_);
     vox_filter.filter(map_);
   }
 
@@ -518,9 +517,7 @@ protected:
   bool is_running_;
   bool use_fov_;               /// if map should be cut by frustum (reduce input information)
 
-  double voxel_leafsize_x_;
-  double voxel_leafsize_y_;
-  double voxel_leafsize_z_;
+  double voxel_leafsize_;
 
   // Parameters for file saving
   std::string file_path_;

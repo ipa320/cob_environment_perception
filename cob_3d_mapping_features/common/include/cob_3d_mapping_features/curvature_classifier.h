@@ -60,12 +60,12 @@
 #include <pcl/pcl_base.h>
 
 // define indices to access labels list:
-#define I_NAN    0
-#define I_BORDER 1
-#define I_EDGE   2
-#define I_PLANE  3
-#define I_CYL    4
-#define I_SPHERE 5
+#define I_NAN    1
+#define I_BORDER 2
+#define I_EDGE   3
+#define I_PLANE  4
+#define I_CYL    5
+#define I_SPHERE 6
 
 namespace cob_3d_mapping_features
 {
@@ -95,12 +95,30 @@ namespace cob_3d_mapping_features
     /*! Empty destructor */
     ~CurvatureClassifier() {}
 
+    void setUpperThreshold (const float &threshold)
+    {
+      pc_c_max_th_cylinder_upper_ = threshold;
+      pc_c_max_th_sphere_upper_ = threshold;
+    }
+
+    void setLowerThreshold (const float &threshold)
+    {
+      pc_c_max_th_lower_ = threshold;
+    }
+
+    void setMaxMinRatio (const float &ratio)
+    {
+      pc_max_min_ratio_ = ratio;
+    }
+
     /*!
      * @brief classify a point cloud
      *
      * @param[in] output a curvature point cloud to be classified
      */
     void classify(PointCloudOut &output);
+
+    void classifyForSegmentation(PointCloudOut &output);
 
   protected:
     //virtual inline bool
