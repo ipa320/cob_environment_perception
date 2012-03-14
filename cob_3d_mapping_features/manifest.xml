@@ -27,7 +27,7 @@
 
   <export>
   	<cpp cflags="-I${prefix}/common/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcob_3d_mapping_features"/>
-  	<nodelet plugin="${prefix}/nodelet_plugins.xml" />
+  	<!--nodelet plugin="${prefix}/nodelet_plugins.xml" /-->
   </export>
 </package>
 
