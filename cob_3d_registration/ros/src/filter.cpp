@@ -72,7 +72,7 @@
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_kdl.h>
 #include <pcl/io/pcd_io.h>
-#include "registration/RegistrationPCD.h"
+#include "cob_3d_registration/RegistrationPCD.h"
 #include "registration/preprocessing/kinect_error.h"
 
 #include <registration/registration_icp.h>
@@ -142,8 +142,8 @@ public:
     point_cloud_pub_.publish(pc);
   }
 
-  bool filterService(registration::RegistrationPCD::Request  &req,
-                       registration::RegistrationPCD::Response &res )
+  bool filterService(cob_3d_registration::RegistrationPCD::Request  &req,
+                     cob_3d_registration::RegistrationPCD::Response &res )
   {
     ROS_INFO("filter...");
 
