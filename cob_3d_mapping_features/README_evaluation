@@ -1,0 +1,66 @@
+The following explains the evaluation process and use of the different program parts and scripts
+
+___Labeling________________________________________________________________________________________
+
+From raw point clouds to ground-truth
+___________________________________________________________________________________________________
+
+  - pcd_to_ppm:
+    extract the depth and rgb data of pcd files
+
+  - extract_organized_curvature:
+    extract min and max curvature of pcd files to ppm color image to make labeling easier
+
+  - Import rgb, depth and curvature images in GIMP to label manually
+
+  - ppm_to_pcd:
+    map back the labeled ppm file onto the point cloud
+
+___Best Configuration Parameter____________________________________________________________________
+
+Determing the best configuration fo RSD and PC for each scene
+___________________________________________________________________________________________________
+
+  - generate_test_data:
+    generate feature values (RSD,PC,FPFH) for a list of normal and feature radius parameters
+
+  - evaluate_test_data:
+    evaluate the previously generated list of feature values with several config parameters of
+    RSD and PC. the results are saved for all combinations in a .csv file
+
+  - use OpenOffice Calc to find the best combinations
+
+___FPFH Training___________________________________________________________________________________
+
+Setting up SVM for FPFH classification
+___________________________________________________________________________________________________
+
+  - generatePrimitives.sh + fpfh_primitives:
+    generate FPFH feature values for convex and concave synthetic shapes in different sizes for
+    all classes
+
+  - extractFeatureValues.sh + extract_feature_values:
+    extract FPFH feature values for all classes from the previously generated test data using the
+    manually labeled scenes
+
+  - reduceFeatureValues.sh + reduce_fpfh_training_data:
+    perform k-means to select the most discriminating histograms (about 1,000 from over 800,000) 
+    from all available data to reduce training time of SVM
+
+  - trainSVMs.sh + fpfh_svm_trainer:
+    run OpenCV svm trainer in autotrainig mode using the reduced set of FPFH feature values
+
+  - evaluateFPFH.sh + feature_evaluation_fpfh:
+    evaluate several configuration combinations of fpfh and create .csv file
+    use OpenOffice Calc to find the best one
+
+___Testing Results_________________________________________________________________________________
+
+Get a look on the results for the best configuration
+___________________________________________________________________________________________________
+
+  - feature_evaluation:
+    take raw and labeled pcd, set up the desired configurations and visualize the classification
+    results for all features
+
+___________________________________________________________________________________________________

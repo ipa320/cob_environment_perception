@@ -61,15 +61,29 @@
 template <typename PointInT, typename PointNT, typename PointLabelT, typename PointOutT> void
 cob_3d_mapping_features::OrganizedCurvatureEstimation<PointInT,PointNT,PointLabelT,PointOutT>::computePointCurvatures (
   const NormalCloudIn &normals,
-  int index,
+  const int index,
   const std::vector<int> &indices,
   float &pcx, float &pcy, float &pcz, float &pc1, float &pc2,
   int &label_out)
 {
+  std::vector<int> weights(indices.size(),1);
+  computePointCurvatures(normals, index, weights, pcx, pcy, pcz, pc1, pc2, label_out);
+}
+
+template <typename PointInT, typename PointNT, typename PointLabelT, typename PointOutT> void
+cob_3d_mapping_features::OrganizedCurvatureEstimation<PointInT,PointNT,PointLabelT,PointOutT>::computePointCurvatures (
+  const NormalCloudIn &normals,
+  const int index,
+  const std::vector<int> &indices,
+  const std::vector<int> &distance_weights,
+  float &pcx, float &pcy, float &pcz, float &pc1, float &pc2,
+  int &label_out)
+{
+  if (pcl_isnan(normals.points[index].normal[2])) return;
   Eigen::Vector3f norm(normals.points[index].normal[0],
 		       normals.points[index].normal[1],
 		       normals.points[index].normal[2]);
-  if (this->isNaN(norm)) return;
+
 
   Eigen::Matrix3f cov, eigenvectors;
   Eigen::Vector3f centroid, demean, eigenvalues;
@@ -77,16 +91,34 @@ cob_3d_mapping_features::OrganizedCurvatureEstimation<PointInT,PointNT,PointLabe
   Eigen::Matrix3f I = Eigen::Matrix3f::Identity ();
   Eigen::Matrix3f M = I - norm * norm.transpose(); // projection matrix
   std::vector<Eigen::Vector3f> normals_projected;
+  std::vector<float> weights;
+  float weight;
 
   for (std::vector<int>::const_iterator it = indices.begin(); it != indices.end(); ++it)
   {
+    if (pcl_isnan(normals.points[*it].normal[2])) continue;
     norm[0] = normals.points[*it].normal[0];
     norm[1] = normals.points[*it].normal[1];
     norm[2] = normals.points[*it].normal[2];
-    if (this->isNaN(norm)) continue;
 
     normals_projected.push_back( M * norm );
     centroid += normals_projected.at(normals_projected.size()-1);
+
+    /*
+    std::cout << *it << ": ";
+    std::cout << normals.points[index].normal[0] << " "
+	      << normals.points[index].normal[1] << " " 
+	      << normals.points[index].normal[2] << "  |  ";
+    std::cout << surface_->points[index].x << " "
+	      << surface_->points[index].y << " " 
+	      << surface_->points[index].z << std::endl;
+    */
+    weight = 
+      pow(surface_->points[*it].x - surface_->points[index].x,2) +
+      pow(surface_->points[*it].y - surface_->points[index].y,2) +
+      pow(surface_->points[*it].z - surface_->points[index].z,2);
+
+    weights.push_back(weight);
   }
 
   if (normals_projected.size() <=1) return;
@@ -94,23 +126,23 @@ cob_3d_mapping_features::OrganizedCurvatureEstimation<PointInT,PointNT,PointLabe
   centroid *= num_p_inv;
   cov.setZero();
 
-  for (std::vector<Eigen::Vector3f>::iterator it = normals_projected.begin();
-       it != normals_projected.end(); ++it)
+  for (size_t i=0; i<normals_projected.size(); ++i)
   {
-    demean = *it - centroid;
-    cov += demean * demean.transpose();
+    demean = normals_projected[i] - centroid;
+    //cov += 1.0f / (distance_weights[i] * distance_weights[i]) * demean * demean.transpose();
+    cov += 1.0f / (sqrt(weights[i])) * demean * demean.transpose();
   }
 
   pcl::eigen33(cov, eigenvectors, eigenvalues);
   pcx = eigenvectors (0,2);
   pcy = eigenvectors (1,2);
   pcz = eigenvectors (2,2);
-  pc1 = eigenvalues (2) * num_p_inv;
-  pc2 = eigenvalues (1) * num_p_inv;
+  pc1 = eigenvalues (2) * num_p_inv * surface_->points[index].z;
+  pc2 = eigenvalues (1) * num_p_inv * surface_->points[index].z;
   //normals_->points[index].curvature = curvatures_->points[index].pc1;
   //std::cout << pc1 << " " << pc2 << std::endl;
   if (pc1 >= edge_curvature_threshold_ && label_out == 0)
-    label_out = label_list_[I_EDGE];
+    label_out = I_EDGE;
 }
 
 template <typename PointInT, typename PointNT, typename PointLabelT, typename PointOutT> void
@@ -130,12 +162,15 @@ cob_3d_mapping_features::OrganizedCurvatureEstimation<PointInT,PointNT,PointLabe
   }
 
   std::vector<int> nn_indices;
+  std::vector<int> nn_distances;
 
   for (std::vector<int>::iterator it=indices_->begin(); it != indices_->end(); ++it)
   {
-    if (this->searchForNeighborsInRange(*surface_, *it, nn_indices) != -1)
+    if (this->searchForNeighborsInRange(*surface_, *it, nn_indices, nn_distances) != -1)
     {
-      computePointCurvatures(*normals_, *it, nn_indices,
+      //for (size_t i=0; i<nn_distances.size(); i++) std::cout << nn_distances[i] << "  ";
+      //std::cout << std::endl;
+      computePointCurvatures(*normals_, *it, nn_indices, nn_distances,
 			     output.points[*it].principal_curvature[0],
 			     output.points[*it].principal_curvature[1],
 			     output.points[*it].principal_curvature[2],
@@ -145,7 +180,7 @@ cob_3d_mapping_features::OrganizedCurvatureEstimation<PointInT,PointNT,PointLabe
     }
     else
     {
-      labels_->points[*it].label = label_list_[I_NAN];
+      labels_->points[*it].label = I_NAN;
     }
   }
 }

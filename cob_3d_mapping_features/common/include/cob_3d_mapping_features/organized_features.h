@@ -110,7 +110,15 @@ namespace cob_3d_mapping_features
 	searchForNeighbors(const PointCloudIn &cloud, int index, std::vector<int>& indices);
 
       int
-	searchForNeighborsInRange(const PointCloudIn &cloud, int index, std::vector<int>& indices);
+	searchForNeighborsInRange(const PointCloudIn &cloud, 
+				  int index, 
+				  std::vector<int>& indices);
+
+      int
+	searchForNeighborsInRange(const PointCloudIn &cloud, 
+				  int index, 
+				  std::vector<int>& indices, 
+				  std::vector<int>& distances); // circle index of the point
 
 
     protected:
@@ -120,19 +128,7 @@ namespace cob_3d_mapping_features
 
       virtual inline bool
 	deinitCompute();
-
-      inline bool
-	isNaN (const Eigen::Vector3f &pt)
-      {
-	return (pcl_isnan(pt[0]) || pcl_isnan(pt[1]) || pcl_isnan(pt[2]));
-      }
-
-      inline bool
-	isNaN (const PointInT &pt)
-      {
-	return (pcl_isnan(pt.x) || pcl_isnan(pt.y) || pcl_isnan(pt.z));
-      }
-
+      
       inline bool
 	isInRange (const PointInT &pi, const PointInT &pq, float distance_th_sqr)
       {

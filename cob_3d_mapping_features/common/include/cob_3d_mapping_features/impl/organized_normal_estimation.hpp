@@ -55,10 +55,13 @@
 #ifndef __IMPL_ORGANIZED_NORMAL_ESTIMATION_H__
 #define __IMPL_ORGANIZED_NORMAL_ESTIMATION_H__
 
-#define L_NAN 1
-#define L_BORDER 2
 
+#include "cob_3d_mapping_common/label_defines.h"
 #include "cob_3d_mapping_features/organized_normal_estimation.h"
+
+
+// TODO: remove the storage of normals to increase speed (std::vector<Eigen::Vector3f> normals)
+
 
 template <typename PointInT, typename PointOutT, typename LabelOutT> void
 cob_3d_mapping_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>::computePointNormal (
@@ -73,7 +76,8 @@ cob_3d_mapping_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>
 
   if (pcl_isnan(p.z))
   {
-    label_out = L_NAN;
+    n_x = n_y = n_z = std::numeric_limits<float>::quiet_NaN();
+    label_out = I_NAN;
     return;
   }
 
@@ -116,7 +120,8 @@ cob_3d_mapping_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>
 	if ( d > distance_threshold )
 	{
 	  gab++; // count as gab point
-	  if ( d > 3.0*distance_threshold )
+	  //if ( d > 3.0*distance_threshold )
+	  if ( d > distance_threshold )
 	    *it_rbc += 1; // increment range border counter of current circle
 	  continue;
 	}
@@ -177,7 +182,8 @@ cob_3d_mapping_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>
 	if ( d > distance_threshold )
 	{
 	  gab++; // count as gab point
-	  if ( d > 3.0*distance_threshold )
+	  //if ( d > 3.0*distance_threshold )
+	  if ( d > distance_threshold )
 	    *it_rbc += 1; // increment range border counter of current circle
 	  continue;
 	}
@@ -216,7 +222,7 @@ cob_3d_mapping_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>
   }
 
   if (range_border_counter[mask_.size()-1] > 0)
-    label_out = L_BORDER;
+    label_out = I_BORDER;
 
   float num_p_inv = 1.0f / normals.size();
   n_idx *= num_p_inv;
@@ -236,7 +242,6 @@ cob_3d_mapping_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>
     labels_->width = input_->width;
   }
 
-//#pragma omp parallel for schedule (dynamic, threadsize)
   for (std::vector<int>::iterator it=indices_->begin(); it != indices_->end(); ++it)
   {
     computePointNormal(*surface_, *it, 

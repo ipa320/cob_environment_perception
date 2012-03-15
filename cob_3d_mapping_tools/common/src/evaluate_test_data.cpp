@@ -59,137 +59,20 @@
 #include <pcl/common/file_io.h>
 #include <pcl/point_types.h>
 
-#include "cob_3d_mapping_common/label_defines.h"
-
-#define NUM_LBL 7
+#include "cob_3d_mapping_common/label_results.h"
 
 using namespace pcl;
 using namespace std;
 
-class SceneResults
-{
-public:
-  SceneResults(const string rn, const string rf, bool mls) : rn_(rn), rf_(rf), mls_(mls), undef(0)
-  {
-    for (size_t i = 0; i < NUM_LBL; ++i)
-    {
-      exp[i] = 0;
-      fp[i] = 0;
-      fn[i] = 0;
-      tp[i] = 0;
-      tn[i] = 0;
-      prec[i] = 0.0;
-      rec[i] = 0.0;
-      f1[i] = 0.0;
-    }
-  }
-
-  void calcResults()
-  {
-    all = 0;
-    for(size_t i = 0; i < NUM_LBL; ++i)
-    {
-      all = exp[I_PLANE]+exp[I_EDGE]+exp[I_SPH]+exp[I_CYL]+exp[I_COR];
-    }
-    for(size_t i = 0; i < NUM_LBL; ++i)
-    {
-      tp[i] = exp[i] - fn[i];
-      tn[i] = all - exp[i] - fp[i];
-      prec[i] = (float)tp[i] / (tp[i] + fp[i]);
-      rec[i] = (float)tp[i] / (tp[i] + fn[i]);
-      f1[i] = 2.0f * prec[i] * rec[i] / (prec[i] + rec[i]);
-    }
-  }
-
-  void writeToFile(const string file,
-		   const float p1 = 0.0, 
-		   const float p2 = 0.0,
-		   const float p3 = 0.0,
-		   const float p4 = 0.0)
-  {
-    fstream f;
-    f.open(file.c_str(), fstream::out | fstream::app);
-    f << rn_ <<";"<< rf_ <<";"<< mls_ <<";"
-      << p1 <<";"<< p2 <<";"<< p3 <<";"<< p4 <<";"
-      << all <<";"<< undef <<";";
-
-    for(size_t i = 0; i < NUM_LBL; ++i)
-    {
-      f << exp[i] <<";"<< tp[i] <<";"<< fp[i] <<";"<< fn[i] <<";"
-	<< prec[i] <<";"<< rec[i] <<";"<< f1[i] <<";";
-    }
-
-    f << endl;
-    f.close();
-  }
-
-public:
-  int exp [NUM_LBL];
-  int fp [NUM_LBL];
-  int fn [NUM_LBL];
-  int tp [NUM_LBL];
-  int tn [NUM_LBL];
-  int undef;
-  int all;  
-  float prec [NUM_LBL];
-  float rec [NUM_LBL];
-  float f1 [NUM_LBL];
-
-private:
-  string rn_;
-  string rf_;
-  bool mls_;
-};
-
 vector<string> scenes_;
 string folder_, config_file_;
-bool en_pc, en_rsd, en_fpfh;
+bool en_pc, en_rsd;
 
 float c_low_min, c_low_max, c_low_steps, c_high_min, c_high_max, c_high_steps;
 float c_r1_min, c_r1_max, c1_steps, c_r2_min, c_r2_max, c2_steps;
 
 float r_low_min, r_low_max, r_low_steps, r_high_min, r_high_max, r_high_steps;
 float r_r1_min, r_r1_max, r1_steps, r_r2_min, r_r2_max, r2_steps;
-
-void parseFileName(string file, string &rn, string &rf, bool &is_mls)
-{
-  string tmp = "";
-  if (string::npos != file.rfind("rnmls_"))
-  {
-    is_mls = true;
-    rn = tmp + file[file.length() - 18] + file[file.length() - 17] + file[file.length() - 16];
-  }
-  else
-  {
-    is_mls = false;
-    rn = tmp + file[file.length() - 15] + file[file.length() - 14] + file[file.length() - 13];
-  }
-  rf = tmp + file[file.length() - 9] + file[file.length() - 8] + file[file.length() - 7];
-
-  return;
-}
-
-string createTimestamp()
-{
-  struct tm *t;
-  time_t rawtime;
-  time(&rawtime);
-  t = localtime(&rawtime);
-  stringstream stamp;
-  stamp << (t->tm_year+1900);
-  if (t->tm_mon+1 < 10) stamp << "0";
-  stamp << t->tm_mon+1;
-  if (t->tm_mday < 10) stamp << "0";
-  stamp << t->tm_mday << "_";
-  if (t->tm_hour < 10) stamp << "0";
-  stamp << t->tm_hour;
-  if (t->tm_min < 10) stamp << "0";
-  stamp << t->tm_min;
-  if (t->tm_sec < 10) stamp << "0";
-  stamp << t->tm_sec;
-
-  return stamp.str();
-}
 
 void readOptions(int argc, char* argv[])
 {
@@ -202,7 +85,6 @@ void readOptions(int argc, char* argv[])
     ("scenes", value<vector<string> >(&scenes_), "name of used scenes")
     ("pc,P", "enable PC")
     ("rsd,R", "enable RSD")
-    ("fpfh,F", "enable FPFH")
 
     ("c_low_min", value<float>(&c_low_min), "")
     ("c_low_max", value<float>(&c_low_max), "")
@@ -263,49 +145,36 @@ void readOptions(int argc, char* argv[])
   }
   if (vm.count("pc")) en_pc = true;
   if (vm.count("rsd")) en_rsd = true;
-  if (vm.count("fpfh")) en_fpfh = true;
 }
 
 int main (int argc, char** argv)
 {
   readOptions(argc, argv);
   PointCloud<PointXYZRGB>::Ptr p(new PointCloud<PointXYZRGB>);
-  PointCloud<FPFHSignature33>::Ptr fpfh(new PointCloud<FPFHSignature33>);
   PointCloud<PrincipalCurvatures>::Ptr pc(new PointCloud<PrincipalCurvatures>);
   PointCloud<PrincipalRadiiRSD>::Ptr rsd(new PointCloud<PrincipalRadiiRSD>);
 
   for (size_t i = 0; i < scenes_.size(); i++)
   {
-    vector<string> pc_pcds, rsd_pcds, fpfh_pcds;
+    vector<string> pc_pcds, rsd_pcds;
     getAllPcdFilesInDirectory(folder_ + "0_pc/" + scenes_[i] + "/", pc_pcds);
     getAllPcdFilesInDirectory(folder_ + "0_rsd/" + scenes_[i] + "/", rsd_pcds);
-    getAllPcdFilesInDirectory(folder_ + "0_fpfh/" + scenes_[i] + "/", fpfh_pcds);
     
     cout << "Scene " << scenes_[i] << ": Found " << pc_pcds.size() << " pcd files for PC" << endl;
     cout << "Scene " << scenes_[i] << ": Found " << rsd_pcds.size() << " pcd files for RSD" << endl;
-    cout << "Scene " << scenes_[i] << ": Found " << fpfh_pcds.size() << " pcd files for FPFH" << endl;
 
     if (en_pc)
     {
-      string logfile = folder_ + "results/" + scenes_[i] + "/res_pc_" + createTimestamp() + ".csv";
-      fstream f;
-      f.open(logfile.c_str(), fstream::out);
-      f << "rn;"<<"rf;"<<"mls;"<<"c_low;"<<"c_high;"<<"c_r1(cyl/sph);"<<"c_r2(cor/edge);"
-	<< "all;"<<"undef;"
-	<< "exp(Plane);"<<"TP;"<<"FP;"<<"FN;"<<"Prec.;"<<"Rec.;"<<"F1;"
-	<< "exp(Edge);"<<"TP;"<<"FP;"<<"FN;"<<"Prec.;"<<"Rec.;"<<"F1;"
-	<< "exp(Sphere);"<<"TP;"<<"FP;"<<"FN;"<<"Prec.;"<<"Rec.;"<<"F1;"
-	<< "exp(Cylinder);"<<"TP;"<<"FP;"<<"FN;"<<"Prec.;"<<"Rec.;"<<"F1;"
-	<< "exp(Corner);"<<"TP;"<<"FP;"<<"FN;"<<"Prec.;"<<"Rec.;"<<"F1;"
-	<< "exp(EdgeCorner);"<<"TP;"<<"FP;"<<"FN;"<<"Prec.;"<<"Rec.;"<<"F1;"
-	<< "exp(Curved);"<<"TP;"<<"FP;"<<"FN;"<<"Prec.;"<<"Rec.;"<<"F1;"<< endl;
-      f.close();
+      string logfile = folder_ + "results/" + scenes_[i] + "/res_pc_" + 
+	cob_3d_mapping_common::createTimestamp() + ".csv";
+      
+      cob_3d_mapping_common::writeHeader(logfile,"c_low","c_high","c_r1(cyl/sph)","c_r2(cor/edge)");
 
       for (size_t j = 0; j < pc_pcds.size(); j++)
       {
 	bool is_mls;
 	string rn, rf;
-	parseFileName(pc_pcds[j], rn, rf, is_mls);
+	cob_3d_mapping_common::parseFileName(pc_pcds[j], rn, rf, is_mls);
 	io::loadPCDFile<PointXYZRGB>(folder_+"normals/"+scenes_[i]+"/mls_"+scenes_[i]+
 				     "_"+rn+"rn.pcd",*p);
 	rn = "0."+rn;
@@ -327,7 +196,7 @@ int main (int argc, char** argv)
 	      {
 		cout << c_low <<" | "<< c_high <<" | "<< c_r1 <<" | "<< c_r2 <<endl;
 		// new instance class for holding evaluation results:
-		SceneResults stats(rn,rf,is_mls);
+		cob_3d_mapping_common::LabelResults stats(rn,rf,is_mls);
 		for (size_t idx = 0; idx < p->points.size(); idx++)
 		{
 		  exp_rgb = *reinterpret_cast<int*>(&p->points[idx].rgb); // expected label
@@ -337,80 +206,82 @@ int main (int argc, char** argv)
 		  if ( c_max < c_low )
 		  {
 		    pre_rgb = LBL_PLANE;
-		    if (exp_rgb != LBL_PLANE && exp_rgb != LBL_UNDEF) stats.fp[I_PLANE]++;
+		    if (exp_rgb != LBL_PLANE && exp_rgb != LBL_UNDEF) stats.fp[EVAL_PLANE]++;
 		  }
 		  else if (c_max > c_high)
 		  {
 		    if (c_max < c_r2 * c_min)
 		    {
 		      pre_rgb = LBL_COR;
-		      if (exp_rgb != LBL_COR && exp_rgb != LBL_UNDEF) stats.fp[I_COR]++;
+		      if (exp_rgb != LBL_COR && exp_rgb != LBL_UNDEF) stats.fp[EVAL_COR]++;
 		    }
 		    else
 		    {
 		      pre_rgb = LBL_EDGE;
-		      if (exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF) stats.fp[I_EDGE]++;
+		      if (exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF) stats.fp[EVAL_EDGE]++;
 		    }
 		    // special case:  combined class for corner and edge
-		    if (exp_rgb != LBL_COR && exp_rgb != LBL_EDGE) stats.fp[I_EDGECORNER]++;
+		    if (exp_rgb != LBL_COR && exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF) 
+		      stats.fp[EVAL_EDGECORNER]++;
 		  }
 		  else
 		  {
 		    if (c_max < c_r1 * c_min)
 		    {
 		      pre_rgb = LBL_SPH;
-		      if (exp_rgb != LBL_SPH && exp_rgb != LBL_UNDEF) stats.fp[I_SPH]++;
+		      if (exp_rgb != LBL_SPH && exp_rgb != LBL_UNDEF) stats.fp[EVAL_SPH]++;
 		    }
 		    else
 		    {
 		      pre_rgb = LBL_CYL;
-		      if (exp_rgb != LBL_CYL && exp_rgb != LBL_UNDEF) stats.fp[I_CYL]++;
+		      if (exp_rgb != LBL_CYL && exp_rgb != LBL_UNDEF) stats.fp[EVAL_CYL]++;
 		    }
 		    // special case:  combined class for sphere and cylinder
-		    if (exp_rgb != LBL_SPH && exp_rgb != LBL_CYL) stats.fp[I_CURVED]++;
+		    if (exp_rgb != LBL_SPH && exp_rgb != LBL_CYL && exp_rgb != LBL_UNDEF) 
+		      stats.fp[EVAL_CURVED]++;
 		  }
 
 		  switch(exp_rgb) 
 		  {
 		  case LBL_PLANE:
-		    if (pre_rgb != exp_rgb) stats.fn[I_PLANE]++;
-		    stats.exp[I_PLANE]++;
+		    if (pre_rgb != exp_rgb) stats.fn[EVAL_PLANE]++;
+		    stats.exp[EVAL_PLANE]++;
 		    break;
 		  case LBL_EDGE:
 		    if (pre_rgb != exp_rgb) 
 		    {
-		      stats.fn[I_EDGE]++;
-		      if (pre_rgb != LBL_COR) stats.fn[I_EDGECORNER]++;
+		      stats.fn[EVAL_EDGE]++;
+		      if (pre_rgb != LBL_COR) stats.fn[EVAL_EDGECORNER]++;
 		    }
-		    stats.exp[I_EDGE]++;
-		    stats.exp[I_EDGECORNER]++;
+		    stats.exp[EVAL_EDGE]++;
+		    stats.exp[EVAL_EDGECORNER]++;
 		    break;
 		  case LBL_COR:
 		    if (pre_rgb != exp_rgb)
 		    {
-		      stats.fn[I_COR]++;
-		      if (pre_rgb != LBL_EDGE) stats.fn[I_EDGECORNER]++;
+		      stats.fn[EVAL_COR]++;
+		      if (pre_rgb != LBL_EDGE) stats.fn[EVAL_EDGECORNER]++;
 		    }
-		    stats.exp[I_COR]++;
-		    stats.exp[I_EDGECORNER]++;
+		    stats.exp[EVAL_COR]++;
+		    stats.exp[EVAL_EDGECORNER]++;
 		    break;
 		  case LBL_SPH:
 		    if (pre_rgb != exp_rgb)
 		    {
-		      stats.fn[I_SPH]++;
-		      if (pre_rgb != LBL_CYL) stats.fn[I_CURVED]++;
+		      stats.fn[EVAL_SPH]++;
+		      if (pre_rgb != LBL_CYL) stats.fn[EVAL_CURVED]++;
 		    }
-		    stats.exp[I_SPH]++;
-		    stats.exp[I_CURVED]++;
+		    stats.exp[EVAL_SPH]++;
+		    stats.exp[EVAL_CURVED]++;
 		    break;
 		  case LBL_CYL:
 		    if (pre_rgb != exp_rgb) 
 		    {
-		      stats.fn[I_CYL]++;
-		      if (pre_rgb != LBL_SPH) stats.fn[I_CURVED]++;
+		      stats.fn[EVAL_CYL]++;
+		      if (pre_rgb != LBL_SPH) stats.fn[EVAL_CURVED]++;
 		    }
-		    stats.exp[I_CYL]++;
-		    stats.exp[I_CURVED]++;
+		    stats.exp[EVAL_CYL]++;
+		    stats.exp[EVAL_CURVED]++;
 		    break;
 		  default:
 		    stats.undef++;
@@ -429,25 +300,15 @@ int main (int argc, char** argv)
 
     if (en_rsd)
     {
-      string logfile = folder_ + "results/" + scenes_[i] + "/res_rsd_" + createTimestamp() + ".csv";
-      fstream f;
-      f.open(logfile.c_str(), fstream::out);
-      f << "rn;"<<"rf;"<<"mls;"<<"r_low;"<<"r_high;"<<"r_r1(cyl/sph);"<<"r_r2(cor/edge);"
-	<< "all;"<<"undef;"
-	<< "exp(Plane);"<<"TP;"<<"FP;"<<"FN;"<<"Prec.;"<<"Rec.;"<<"F1;"
-	<< "exp(Edge);"<<"TP;"<<"FP;"<<"FN;"<<"Prec.;"<<"Rec.;"<<"F1;"
-	<< "exp(Sphere);"<<"TP;"<<"FP;"<<"FN;"<<"Prec.;"<<"Rec.;"<<"F1;"
-	<< "exp(Cylinder);"<<"TP;"<<"FP;"<<"FN;"<<"Prec.;"<<"Rec.;"<<"F1;"
-	<< "exp(Corner);"<<"TP;"<<"FP;"<<"FN;"<<"Prec.;"<<"Rec.;"<<"F1;"
-	<< "exp(EdgeCorner);"<<"TP;"<<"FP;"<<"FN;"<<"Prec.;"<<"Rec.;"<<"F1;"
-	<< "exp(Curved);"<<"TP;"<<"FP;"<<"FN;"<<"Prec.;"<<"Rec.;"<<"F1;"<< endl;
-      f.close();
+      string logfile = folder_ + "results/" + scenes_[i] + "/res_rsd_" + 
+	cob_3d_mapping_common::createTimestamp() + ".csv";
+      cob_3d_mapping_common::writeHeader(logfile,"r_low","r_high","r_r1(cyl/sph)","r_r2(cor/edge)");
 
       for (size_t j = 0; j < pc_pcds.size(); j++)
       {
 	bool is_mls;
 	string rn, rf;
-	parseFileName(rsd_pcds[j], rn, rf, is_mls);
+	cob_3d_mapping_common::parseFileName(rsd_pcds[j], rn, rf, is_mls);
 	io::loadPCDFile<PointXYZRGB>(folder_+"normals/"+scenes_[i]+"/mls_"+scenes_[i]+
 				     "_"+rn+"rn.pcd",*p);
 	rn = "0."+rn;
@@ -468,7 +329,7 @@ int main (int argc, char** argv)
 	      {
 		cout << r_low <<" | "<< r_high <<" | "<< r_r1 <<" | "<< r_r2 <<endl;
 		// new instance class for holding evaluation results:
-		SceneResults stats(rn,rf,is_mls);
+		cob_3d_mapping_common::LabelResults stats(rn,rf,is_mls);
 		for (size_t idx = 0; idx < p->points.size(); idx++)
 		{
 		  exp_rgb = *reinterpret_cast<int*>(&p->points[idx].rgb); // expected label
@@ -478,80 +339,82 @@ int main (int argc, char** argv)
 		  if ( r_min > r_high )
 		  {
 		    pre_rgb = LBL_PLANE;
-		    if (exp_rgb != LBL_PLANE && exp_rgb != LBL_UNDEF) stats.fp[I_PLANE]++;
+		    if (exp_rgb != LBL_PLANE && exp_rgb != LBL_UNDEF) stats.fp[EVAL_PLANE]++;
 		  }
 		  else if (r_min < r_low)
 		  {
 		    if (r_max < r_r2 * r_min)
 		    {
 		      pre_rgb = LBL_COR;
-		      if (exp_rgb != LBL_COR && exp_rgb != LBL_UNDEF) stats.fp[I_COR]++;
+		      if (exp_rgb != LBL_COR && exp_rgb != LBL_UNDEF) stats.fp[EVAL_COR]++;
 		    }
 		    else
 		    {
 		      pre_rgb = LBL_EDGE;
-		      if (exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF) stats.fp[I_EDGE]++;
+		      if (exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF) stats.fp[EVAL_EDGE]++;
 		    }
 		    // special case:  combined class for corner and edge
-		    if (exp_rgb != LBL_COR && exp_rgb != LBL_EDGE) stats.fp[I_EDGECORNER]++;
+		    if (exp_rgb != LBL_COR && exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF) 
+		      stats.fp[EVAL_EDGECORNER]++;
 		  }
 		  else
 		  {
 		    if (r_max < r_r1 * r_min)
 		    {
 		      pre_rgb = LBL_SPH;
-		      if (exp_rgb != LBL_SPH && exp_rgb != LBL_UNDEF) stats.fp[I_SPH]++;
+		      if (exp_rgb != LBL_SPH && exp_rgb != LBL_UNDEF) stats.fp[EVAL_SPH]++;
 		    }
 		    else
 		    {
 		      pre_rgb = LBL_CYL;
-		      if (exp_rgb != LBL_CYL && exp_rgb != LBL_UNDEF) stats.fp[I_CYL]++;
+		      if (exp_rgb != LBL_CYL && exp_rgb != LBL_UNDEF) stats.fp[EVAL_CYL]++;
 		    }
 		    // special case:  combined class for sphere and cylinder
-		    if (exp_rgb != LBL_SPH && exp_rgb != LBL_CYL) stats.fp[I_CURVED]++;
+		    if (exp_rgb != LBL_SPH && exp_rgb != LBL_CYL && exp_rgb != LBL_UNDEF) 
+		      stats.fp[EVAL_CURVED]++;
 		  }
 
 		  switch(exp_rgb) 
 		  {
 		  case LBL_PLANE:
-		    if (pre_rgb != exp_rgb) stats.fn[I_PLANE]++;
-		    stats.exp[I_PLANE]++;
+		    if (pre_rgb != exp_rgb) stats.fn[EVAL_PLANE]++;
+		    stats.exp[EVAL_PLANE]++;
 		    break;
 		  case LBL_EDGE:
 		    if (pre_rgb != exp_rgb) 
 		    {
-		      stats.fn[I_EDGE]++;
-		      if (pre_rgb != LBL_COR) stats.fn[I_EDGECORNER]++;
+		      stats.fn[EVAL_EDGE]++;
+		      if (pre_rgb != LBL_COR) stats.fn[EVAL_EDGECORNER]++;
 		    }
-		    stats.exp[I_EDGE]++;
-		    stats.exp[I_EDGECORNER]++;
+		    stats.exp[EVAL_EDGE]++;
+		    stats.exp[EVAL_EDGECORNER]++;
 		    break;
 		  case LBL_COR:
 		    if (pre_rgb != exp_rgb)
 		    {
-		      stats.fn[I_COR]++;
-		      if (pre_rgb != LBL_EDGE) stats.fn[I_EDGECORNER]++;
+		      stats.fn[EVAL_COR]++;
+		      if (pre_rgb != LBL_EDGE) stats.fn[EVAL_EDGECORNER]++;
 		    }
-		    stats.exp[I_COR]++;
-		    stats.exp[I_EDGECORNER]++;
+		    stats.exp[EVAL_COR]++;
+		    stats.exp[EVAL_EDGECORNER]++;
 		    break;
 		  case LBL_SPH:
 		    if (pre_rgb != exp_rgb)
 		    {
-		      stats.fn[I_SPH]++;
-		      if (pre_rgb != LBL_CYL) stats.fn[I_CURVED]++;
+		      stats.fn[EVAL_SPH]++;
+		      if (pre_rgb != LBL_CYL) stats.fn[EVAL_CURVED]++;
 		    }
-		    stats.exp[I_SPH]++;
-		    stats.exp[I_CURVED]++;
+		    stats.exp[EVAL_SPH]++;
+		    stats.exp[EVAL_CURVED]++;
 		    break;
 		  case LBL_CYL:
 		    if (pre_rgb != exp_rgb) 
 		    {
-		      stats.fn[I_CYL]++;
-		      if (pre_rgb != LBL_SPH) stats.fn[I_CURVED]++;
+		      stats.fn[EVAL_CYL]++;
+		      if (pre_rgb != LBL_SPH) stats.fn[EVAL_CURVED]++;
 		    }
-		    stats.exp[I_CYL]++;
-		    stats.exp[I_CURVED]++;
+		    stats.exp[EVAL_CYL]++;
+		    stats.exp[EVAL_CURVED]++;
 		    break;
 		  default:
 		    stats.undef++;
@@ -566,11 +429,6 @@ int main (int argc, char** argv)
 	  }
 	}
       }
-    }
-
-    if (en_fpfh)
-    {
-
     }
   }
 

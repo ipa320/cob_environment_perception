@@ -24,7 +24,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 INCLUDE_DIRECTORIES(
 	${PROJECT_SOURCE_DIR}/common/include)
 
-rosbuild_add_library(cob_3d_mapping_tools 
+rosbuild_add_library(cob_3d_mapping_tools
 	common/src/cob_3d_mapping_tools/io.cpp
 	common/src/cob_3d_mapping_tools/point_generator.cpp)
 
@@ -44,8 +44,11 @@ rosbuild_add_executable(extract_organized_curvatures common/src/extract_organize
 target_link_libraries(extract_organized_curvatures cob_3d_mapping_tools cob_3d_mapping_features)
 
 # some tools for fpfh training:
+rosbuild_add_executable(merge_pcds common/src/merge_pcds.cpp)
 rosbuild_add_executable(merge_knn_training_data common/src/merge_knn_training_data.cpp)
 rosbuild_add_executable(merge_fpfh_training_data common/src/merge_fpfh_training_data.cpp)
+rosbuild_add_executable(reduce_fpfh_training_data common/src/reduce_fpfh_training_data.cpp)
+target_link_libraries(reduce_fpfh_training_data cob_3d_mapping_features)
 rosbuild_add_executable(fpfh_primitives common/src/fpfh_primitives.cpp)
 target_link_libraries(fpfh_primitives cob_3d_mapping_tools)
 

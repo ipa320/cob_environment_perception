@@ -68,7 +68,6 @@ namespace cob_3d_mapping_features
     using OrganizedFeatures<PointInT,PointOutT>::surface_;
     using OrganizedFeatures<PointInT,PointOutT>::indices_;
     using OrganizedFeatures<PointInT,PointOutT>::feature_name_;
-    using OrganizedCurvatureEstimation<PointInT,PointNT,PointLabelT,PointOutT>::label_list_;
     using OrganizedCurvatureEstimation<PointInT,PointNT,PointLabelT,PointOutT>::labels_;
     using OrganizedCurvatureEstimation<PointInT,PointNT,PointLabelT,PointOutT>::normals_;
 
@@ -77,9 +76,6 @@ namespace cob_3d_mapping_features
     OrganizedCurvatureEstimationOMP ()
     {
       feature_name_ = "OrganizedCurvatureEstimationOMP";
-      label_list_[0] = 1;
-      label_list_[1] = 2;
-      label_list_[2] = 3;
     };
 
     protected:
