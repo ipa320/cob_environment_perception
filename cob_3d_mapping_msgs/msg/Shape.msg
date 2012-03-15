@@ -1,9 +1,11 @@
+Header header
+
 byte PLANE=0
 byte LINE=1
 byte CURVED=2
 byte MESH=3
 byte OTHER=4
-# potential extensions: SPHERE, CYLINDER, BOX 
+# potential extensions: SPHERE, CYLINDER, BOX
 
 byte type
 byte id
