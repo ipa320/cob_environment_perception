@@ -58,14 +58,7 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/pcl_base.h>
-
-// define indices to access labels list:
-#define I_NAN    1
-#define I_BORDER 2
-#define I_EDGE   3
-#define I_PLANE  4
-#define I_CYL    5
-#define I_SPHERE 6
+#include "cob_3d_mapping_common/label_defines.h"
 
 namespace cob_3d_mapping_features
 {
@@ -86,29 +79,28 @@ namespace cob_3d_mapping_features
     typedef typename PointCloudOut::ConstPtr PointCloudOutConstPtr;
 
     /*! Empty constructor */
-    CurvatureClassifier()
-      :pc_c_max_th_cylinder_upper_(0.11),
-       pc_c_max_th_sphere_upper_(0.11),
-       pc_c_max_th_lower_(0.004),
-       pc_max_min_ratio_(5.0)
+    CurvatureClassifier() :
+      c_upper_(0.11),
+      c_lower_(0.02),
+      c_ratio_cylinder_sphere_(7.0),
+      c_ratio_edge_corner_(2.75)
     {}
     /*! Empty destructor */
     ~CurvatureClassifier() {}
 
     void setUpperThreshold (const float &threshold)
     {
-      pc_c_max_th_cylinder_upper_ = threshold;
-      pc_c_max_th_sphere_upper_ = threshold;
+      c_upper_ = threshold;
     }
 
     void setLowerThreshold (const float &threshold)
     {
-      pc_c_max_th_lower_ = threshold;
+      c_lower_ = threshold;
     }
 
     void setMaxMinRatio (const float &ratio)
     {
-      pc_max_min_ratio_ = ratio;
+      c_ratio_cylinder_sphere_ = ratio;
     }
 
     /*!
@@ -124,10 +116,10 @@ namespace cob_3d_mapping_features
     //virtual inline bool
     //  initCompute();
 
-    float pc_c_max_th_cylinder_upper_; //everything above is edge, should be the same value as pc.cmax_sphere_upper
-    float pc_c_max_th_sphere_upper_; //everything above is edge, should be the same value as pc.cmax_cylinder_upper
-    float pc_c_max_th_lower_; //everything below is plane
-    float pc_max_min_ratio_; //ratio for pc to differentiate between cylinder and sphere
+    float c_upper_; //everything above is edge
+    float c_lower_; //everything below is plane
+    float c_ratio_cylinder_sphere_; //max min ratio to differentiate between cylinder and sphere
+    float c_ratio_edge_corner_; //max min ratio to differentiate between edge and corner
 
   };
 }

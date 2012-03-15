@@ -9,7 +9,7 @@
  *
  * Project name: care-o-bot
  * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_features
+ * ROS package name: cob_3d_mapping_tools
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -17,7 +17,7 @@
  * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 12/2011
+ * Date of creation: 02/2012
  * ToDo:
  *
  *
@@ -52,50 +52,74 @@
  *
  ****************************************************************/
 
-#ifndef __IMPL_ORGANIZED_CURVATURE_ESTIMATION_OMP_H__
-#define __IMPL_ORGANIZED_CURVATURE_ESTIMATION_OMP_H__
+#include <boost/program_options.hpp>
 
-#include "cob_3d_mapping_features/organized_curvature_estimation_omp.h"
+#include <pcl/io/pcd_io.h>
+#include <pcl/common/file_io.h>
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
 
-template <typename PointInT, typename PointNT, typename PointLabelT, typename PointOutT> void
-cob_3d_mapping_features::OrganizedCurvatureEstimationOMP<PointInT,PointNT,PointLabelT,PointOutT>::computeFeature (PointCloudOut &output)
+using namespace std;
+using namespace pcl;
+
+string out, in_f;
+vector<string> in_pcds;
+
+
+void readOptions(int argc, char* argv[])
 {
-  if (labels_->points.size() != input_->size())
-  {
-    labels_->points.resize(input_->size());
-    labels_->height = input_->height;
-    labels_->width = input_->width;
-  }
-  if (output.points.size() != input_->size())
-  {
-    output.points.resize(input_->size());
-    output.height = input_->height;
-    output.width = input_->width;
-  }
+  using namespace boost::program_options;
+  options_description options("Options");
+  options.add_options()
+    ("help", "produce help message")
+    ("out,o", value<string> (&out), "output pcd file name")
+    ("folder,f", value<string> (&in_f), "input folder containing all pcd files to merge")
+    ("pcds,p", value<vector<string> > (&in_pcds), "list of input pcds to merge")
+    ;
 
-  int threadsize = 1;
+  positional_options_description p_opt;
+  p_opt.add("out", 1);
+  variables_map vm;
+  store(command_line_parser(argc, argv).options(options).positional(p_opt).run(), vm);
+  notify(vm);
 
-#pragma omp parallel for schedule (dynamic, threadsize)
-  for (size_t i=0; i < indices_->size(); ++i)
+  if (vm.count("help") || !vm.count("out"))
   {
-    std::vector<int> nn_indices;
-    if (this->searchForNeighborsInRange(*surface_, (*indices_)[i], nn_indices) != -1)
-    {
-      computePointCurvatures(*normals_, (*indices_)[i], nn_indices,
-			     output.points[(*indices_)[i]].principal_curvature[0],
-			     output.points[(*indices_)[i]].principal_curvature[1],
-			     output.points[(*indices_)[i]].principal_curvature[2],
-			     output.points[(*indices_)[i]].pc1,
-			     output.points[(*indices_)[i]].pc2,
-			     labels_->points[(*indices_)[i]].label);
-    }
-    else
-    {
-      labels_->points[(*indices_)[i]].label = I_NAN;
-    }
+    cout << "\nTool to merge pcd files (of all types) specified by a folder "
+	 << "or given as a list to a single file\n\n";
+    cout << options << endl;
+    exit(0);
   }
 }
 
-#define PCL_INSTANTIATE_OrganizedCurvatureEstimationOMP(T,NT,LabelT,OutT) template class PCL_EXPORTS cob_3d_mapping_features::OrganizedCurvatureEstimationOMP<T,NT,LabelT,OutT>;
+int main(int argc, char** argv)
+{
+  readOptions(argc, argv);
+  sensor_msgs::PointCloud2::Ptr cloud_out (new sensor_msgs::PointCloud2);
+  sensor_msgs::PointCloud2::Ptr cloud_in (new sensor_msgs::PointCloud2);
+  sensor_msgs::PointCloud2::Ptr cloud_tmp (new sensor_msgs::PointCloud2);
+  if (in_f != "") 
+  {
+    vector<string> tmp_in;
+    getAllPcdFilesInDirectory(in_f, tmp_in);
+    for(size_t i=0; i<tmp_in.size(); i++)
+    {
+      in_pcds.push_back(in_f + tmp_in[i]);
+    }
+  }
+  cout << "PCD files to merge: " << in_pcds.size() << endl;
+  io::loadPCDFile(in_pcds[0], *cloud_out);
+  for (size_t i=1; i<in_pcds.size(); i++)
+  {
+    io::loadPCDFile(in_pcds[i], *cloud_in);
+    cout << "loaded " << cloud_in->width * cloud_in->height << " points..." << endl;
+    concatenatePointCloud (*cloud_in,*cloud_out,*cloud_tmp);
+    cout << "copied " << cloud_tmp->width * cloud_tmp->height << " points..." << endl;
+    *cloud_out = *cloud_tmp;
 
-#endif
+  }
+  io::savePCDFile(out, *cloud_out);
+  cout << "saved " << cloud_out->width * cloud_out->height << " points!" << endl;
+
+  return 0;
+}

@@ -9,7 +9,7 @@
  *
  * Project name: care-o-bot
  * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_features
+ * ROS package name: cob_3d_mapping_tools
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -17,7 +17,7 @@
  * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 12/2011
+ * Date of creation: 01/2012
  * ToDo:
  *
  *
@@ -52,50 +52,103 @@
  *
  ****************************************************************/
 
-#ifndef __IMPL_ORGANIZED_CURVATURE_ESTIMATION_OMP_H__
-#define __IMPL_ORGANIZED_CURVATURE_ESTIMATION_OMP_H__
 
-#include "cob_3d_mapping_features/organized_curvature_estimation_omp.h"
+#ifndef __MOST_DISCRIMINATING_DATA_POINTS_H__
+#define __MOST_DISCRIMINATING_DATA_POINTS_H__
 
-template <typename PointInT, typename PointNT, typename PointLabelT, typename PointOutT> void
-cob_3d_mapping_features::OrganizedCurvatureEstimationOMP<PointInT,PointNT,PointLabelT,PointOutT>::computeFeature (PointCloudOut &output)
+#include <vector>
+
+namespace cob_3d_mapping_features
 {
-  if (labels_->points.size() != input_->size())
-  {
-    labels_->points.resize(input_->size());
-    labels_->height = input_->height;
-    labels_->width = input_->width;
-  }
-  if (output.points.size() != input_->size())
-  {
-    output.points.resize(input_->size());
-    output.height = input_->height;
-    output.width = input_->width;
-  }
 
-  int threadsize = 1;
-
-#pragma omp parallel for schedule (dynamic, threadsize)
-  for (size_t i=0; i < indices_->size(); ++i)
+  struct SortableDataPoint
   {
-    std::vector<int> nn_indices;
-    if (this->searchForNeighborsInRange(*surface_, (*indices_)[i], nn_indices) != -1)
+  public:
+  SortableDataPoint() : idx(-1), dist(0.0) { }
+  
+  SortableDataPoint(const int &index, const float &mean_distance) : idx(index), dist(mean_distance) 
+      { }
+  
+    inline bool
+    operator<( const SortableDataPoint& other) const { return (dist < other.dist); }
+
+    inline bool
+    operator>( const SortableDataPoint& other) const { return (dist > other.dist); }
+
+    inline bool
+    operator<=( const SortableDataPoint& other) const { return (dist <= other.dist); }
+
+    inline bool
+    operator>=( const SortableDataPoint& other) const { return (dist >= other.dist); }
+
+
+    int idx;
+    float dist;
+  
+  };
+
+  class MostDiscriminatingDataPoints
+  {
+    public:
+    MostDiscriminatingDataPoints () : predefined_initial_centers_(false), k_(1) { }
+
+
+    inline void
+      setInputData(const std::vector<std::vector<float> > * const pdata)
     {
-      computePointCurvatures(*normals_, (*indices_)[i], nn_indices,
-			     output.points[(*indices_)[i]].principal_curvature[0],
-			     output.points[(*indices_)[i]].principal_curvature[1],
-			     output.points[(*indices_)[i]].principal_curvature[2],
-			     output.points[(*indices_)[i]].pc1,
-			     output.points[(*indices_)[i]].pc2,
-			     labels_->points[(*indices_)[i]].label);
+      pdata_ = pdata;
+      m_ = (pdata->at(0)).size();
+      n_ = pdata->size();
     }
-    else
+
+    inline void
+      setK(const int k)
     {
-      labels_->points[(*indices_)[i]].label = I_NAN;
+      k_ = k;
     }
-  }
+
+    inline void
+      setInitialMeans(std::vector<int> * const pindices)
+    {
+      init_indices_ = pindices;
+      predefined_initial_centers_ = true;
+      k_ = pindices->size();
+    }
+
+    inline void
+      resetInitialMeans()
+    {
+      predefined_initial_centers_ = false;
+    }
+
+    void
+      computeInitialMeans(std::vector<int> * const output_init_indices);
+
+    void
+      computeDataPoints(std::vector<std::vector<float> > * const k_means);
+
+    protected:
+    void
+      computeKmeans();
+
+    int
+      eStep();
+   
+    void
+      mStep();
+
+    bool predefined_initial_centers_;
+    size_t k_;
+    size_t m_; // size of a data point
+    size_t n_; // number of data points
+    const std::vector<std::vector<float> > *pdata_; // n x m
+    std::vector<std::vector<float> > *pmeans_; // k x m
+
+    std::vector<int> *init_indices_;
+    std::vector<int> assigned_classes_;
+    std::vector<int> count_;
+   
+  };
 }
 
-#define PCL_INSTANTIATE_OrganizedCurvatureEstimationOMP(T,NT,LabelT,OutT) template class PCL_EXPORTS cob_3d_mapping_features::OrganizedCurvatureEstimationOMP<T,NT,LabelT,OutT>;
-
-#endif
+#endif // __MOST_DISCRIMINATING_DATA_POINTS_H__

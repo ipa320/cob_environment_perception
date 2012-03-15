@@ -108,8 +108,19 @@ cob_3d_mapping_features::OrganizedFeatures<PointInT,PointOutT>::searchForNeighbo
   int index,
   std::vector<int>& indices)
 {
-  int idx;
+  std::vector<int> distances;
+  return searchForNeighborsInRange(cloud, index, indices, distances);
+}
 
+
+template <typename PointInT, typename PointOutT> int
+cob_3d_mapping_features::OrganizedFeatures<PointInT,PointOutT>::searchForNeighborsInRange(
+  const PointCloudIn &cloud,
+  int index,
+  std::vector<int>& indices,
+  std::vector<int>& distances)
+{
+  int idx;
   int idx_x = index % cloud.width;
   int idx_y = index * inv_width_;
   PointInT p = cloud.points[index];
@@ -120,6 +131,9 @@ cob_3d_mapping_features::OrganizedFeatures<PointInT,PointOutT>::searchForNeighbo
 
   indices.clear();
   indices.reserve((int)(pixel_search_radius_ * pixel_search_radius_));
+  distances.clear();
+  distances.reserve((int)(pixel_search_radius_ * pixel_search_radius_));
+  int c_i = pixel_search_radius_;
 
   if (idx_y >= pixel_search_radius_ && idx_y < (int)cloud.height - pixel_search_radius_ &&
       idx_x >= pixel_search_radius_ && idx_x < (int)cloud.width - pixel_search_radius_)
@@ -134,7 +148,9 @@ cob_3d_mapping_features::OrganizedFeatures<PointInT,PointOutT>::searchForNeighbo
 	if ( d > distance_threshold ) continue;
 
 	indices.push_back(idx);
+	distances.push_back(c_i);
       }
+      c_i -= circle_steps_;
     }
   }
   else
@@ -152,7 +168,9 @@ cob_3d_mapping_features::OrganizedFeatures<PointInT,PointOutT>::searchForNeighbo
 	if ( d > distance_threshold ) continue;
 
 	indices.push_back(idx);
+	distances.push_back(c_i);
       }
+      c_i -= circle_steps_;
     }
   }
   if (indices.size() > 1)

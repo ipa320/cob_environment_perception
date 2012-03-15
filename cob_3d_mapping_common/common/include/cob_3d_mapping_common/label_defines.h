@@ -74,7 +74,12 @@
 #define LBL_UNDEF    0x999999
 
 // --- define SVM labels ---
-#define SVM_PLANE    0
+#define SVM_PLANE 0
+#define SVM_EDGE  1
+#define SVM_COR   2
+#define SVM_SPH   3
+#define SVM_CYL   4
+
 #define SVM_EDGE_CVX 1
 #define SVM_SPH_CVX  2
 #define SVM_CYL_CVX  3
@@ -83,13 +88,26 @@
 #define SVM_SPH_CAV  5
 #define SVM_CYL_CAV  6
 
-// --- define integer labels ---
-#define I_PLANE 0
-#define I_EDGE  1
-#define I_SPH   2
-#define I_CYL   3
-#define I_COR   4
-#define I_EDGECORNER 5
-#define I_CURVED 6
+#define SVM_COR_CVX  7
+#define SVM_COR_CAV  8
+
+// --- define integer labels only for feature evaluation ---
+#define EVAL_PLANE 0
+#define EVAL_EDGE  1
+#define EVAL_SPH   2
+#define EVAL_CYL   3
+#define EVAL_COR   4
+#define EVAL_EDGECORNER 5
+#define EVAL_CURVED 6
+
+// --- define integer labels for classification ---
+#define I_UNDEF  0
+#define I_NAN    1
+#define I_BORDER 2
+#define I_EDGE   3
+#define I_PLANE  4
+#define I_CYL    5
+#define I_SPHERE 6
+#define I_CORNER 7
 
 #endif
