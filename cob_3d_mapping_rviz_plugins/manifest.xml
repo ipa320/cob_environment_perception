@@ -10,6 +10,7 @@
   <url>http://ros.org/wiki/cob_3d_mapping_rviz_plugins</url>
 
   <depend package="rviz"/>
+  <depend package="pcl"/>
   <depend package="cob_3d_mapping_msgs"/>
 
   <export>
