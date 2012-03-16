@@ -32,9 +32,9 @@
 
 #include "cob_3d_mapping_rviz_plugins/shape_base.h"
 
-namespace ogre_tools
+namespace Ogre
 {
-class Shape;
+class ManualObject;
 }
 
 namespace rviz
@@ -50,7 +50,8 @@ public:
 protected:
   virtual void onNewMessage(const MarkerConstPtr& old_message, const MarkerConstPtr& new_message);
 
-  ogre_tools::Shape* shape_;
+  Ogre::SceneNode* scene_node_;
+  Ogre::ManualObject* polygon_;
 };
 
 }
