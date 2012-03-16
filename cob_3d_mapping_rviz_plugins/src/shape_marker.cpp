@@ -80,6 +80,8 @@ namespace rviz
     origin(0)=new_message->params[4];
     origin(1)=new_message->params[5];
     origin(2)=new_message->params[6];
+    //std::cout << "normal: " << normal << std::endl;
+    //std::cout << "centroid: " << origin << std::endl;
     v = normal.unitOrthogonal ();
     u = normal.cross (v);
     pcl::getTransformationFromTwoUnitVectorsAndOrigin(v, normal,  origin, transformation);
@@ -88,7 +90,7 @@ namespace rviz
     list<TPPLPoly> polys,result;
 
     //fill polys
-    for(size_t i=0; i<new_message->points.size(); i++) {
+    for(size_t i=0; i<1/*new_message->points.size()*/; i++) {
       pcl::PointCloud<pcl::PointXYZ> pc;
       TPPLPoly poly;
 
@@ -98,11 +100,13 @@ namespace rviz
       poly.SetHole(i>0);
 
       for(size_t j=0; j<pc.size(); j++) {
+        //std::cout << "before:" << pc[j].x << "," << pc[j].y << "," << pc[j].z << std::endl;
         Eigen::Vector3f p3 = transformation*pc[j].getVector3fMap();
-        poly[j].x = p3(1);
-        poly[j].y = p3(2);
+        poly[j].x = p3(0);
+        poly[j].y = p3(1);
+        //std::cout << "after:" << p3(0) << "," << p3(1) << "," << p3(2) << std::endl;
       }
-      poly.Invert();
+      poly.SetOrientation(TPPL_CCW);
 
       polys.push_back(poly);
     }
@@ -111,15 +115,15 @@ namespace rviz
 
 
     polygon_->clear();
-    polygon_->begin("BaseWhiteNoLighting", Ogre::RenderOperation::OT_TRIANGLE_LIST);
+    polygon_->begin("RVIZ/Blue", Ogre::RenderOperation::OT_TRIANGLE_LIST);
 
-    Ogre::ColourValue color( 0, 0, 0, 1 );
+    Ogre::ColourValue color( 0, 0, 1, 1 );
     TPPLPoint p1;
 
     transformation=transformation.inverse();
     for(std::list<TPPLPoly>::iterator it=result.begin(); it!=result.end(); it++) {
       //draw each triangle
-      ROS_INFO("number %d", it->GetNumPoints());
+      //ROS_INFO("number %d", it->GetNumPoints());
       for(size_t i=0;i<it->GetNumPoints();i++) {
         p1 = it->GetPoint(i);
 
@@ -128,6 +132,28 @@ namespace rviz
         p3(1)=p1.y;
         p3(2)=0;
         p3 = transformation*p3;
+
+        //std::cout << p3(0) << "," << p3(1) << "," << p3(2) << std::endl;
+
+        polygon_->position(p3(0),p3(1),p3(2));  // start position
+        polygon_->normal(normal(0),normal(1),normal(2));
+        polygon_->colour(color);
+      }
+    }
+
+    for(std::list<TPPLPoly>::iterator it=result.begin(); it!=result.end(); it++) {
+      //draw each triangle
+      //ROS_INFO("number %d", it->GetNumPoints());
+      for(int i=it->GetNumPoints()-1;i>=0;i--) {
+        p1 = it->GetPoint(i);
+
+        Eigen::Vector3f p3;
+        p3(0)=p1.x;
+        p3(1)=p1.y;
+        p3(2)=0;
+        p3 = transformation*p3;
+
+        //std::cout << p3(0) << "," << p3(1) << "," << p3(2) << std::endl;
 
         polygon_->position(p3(0),p3(1),p3(2));  // start position
         polygon_->colour(color);
