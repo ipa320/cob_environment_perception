@@ -149,15 +149,15 @@ namespace rviz
       v2=v;
       v2(0)*=v2(0);
       v2(1)*=v2(1);
-      n2(1)=new_message->params[6];
-      n2(2)=new_message->params[7];
+      n2(0)=new_message->params[6];
+      n2(1)=new_message->params[7];
 
       //dummy normal
       normal(0)=new_message->params[3];
       normal(1)=new_message->params[4];
       normal(2)=new_message->params[5];
 
-      Eigen::Vector3f x,y;
+      Eigen::Vector3f x,y, origin;
       x(0)=1.f;
       y(1)=1.f;
       x(1)=x(2)=y(0)=y(2)=0.f;
@@ -166,9 +166,12 @@ namespace rviz
       proj2plane_.col(0)=normal.cross(y);
       proj2plane_.col(1)=normal.cross(x);
 
-      pos = proj2plane_*v + normal*(v).dot(n2);
+      origin(0)=new_message->params[0];
+      origin(1)=new_message->params[1];
+      origin(2)=new_message->params[2];
 
-      //normal =...
+      pos = origin+proj2plane_*v + normal*(v2.dot(n2));
+      normal += normal*(v).dot(n2);
     }
   }
 
@@ -180,9 +183,7 @@ namespace rviz
       origin(2)=new_message->params[6];
     }
     else if(new_message->params.size()==8) {
-      origin(0)=new_message->params[0];
-      origin(1)=new_message->params[1];
-      origin(2)=new_message->params[2];
+      origin(2)=origin(1)=origin(0)=0;
     }
 
     return origin;
@@ -196,7 +197,7 @@ namespace rviz
     list<TPPLPoly> polys,result;
 
     //fill polys
-    for(size_t i=0; i<1/*new_message->points.size()*/; i++) {
+    for(size_t i=0; i<new_message->points.size(); i++) {
       pcl::PointCloud<pcl::PointXYZ> pc;
       TPPLPoly poly;
 
@@ -223,7 +224,6 @@ namespace rviz
 
     for(std::list<TPPLPoly>::iterator it=result.begin(); it!=result.end(); it++) {
       //draw each triangle
-      //ROS_INFO("number %d", it->GetNumPoints());
       for(size_t i=0;i<it->GetNumPoints();i++) {
         p1 = it->GetPoint(i);
 
@@ -236,7 +236,6 @@ namespace rviz
     }
 
     polygon_->end();
-
 
     vis_manager_->getSelectionManager()->removeObject(coll_);
     /*coll_ = vis_manager_->getSelectionManager()->createCollisionForObject(
@@ -259,6 +258,7 @@ namespace rviz
     pos.z = origin(2);
 
     setPosition(pos);
+    return;
     setOrientation( orient * Ogre::Quaternion( Ogre::Degree(90), Ogre::Vector3(1,0,0) ) );
 
     //scale_correct = Ogre::Quaternion( Ogre::Degree(90), Ogre::Vector3(1,0,0) ) * scale;
