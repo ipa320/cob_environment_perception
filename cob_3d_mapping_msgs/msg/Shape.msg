@@ -23,3 +23,5 @@ sensor_msgs/PointCloud2[] points
 #### define mesh ####
 # each three entries form a triangle; indices of points are stored
 int32[] vertices
+
+float32[] color

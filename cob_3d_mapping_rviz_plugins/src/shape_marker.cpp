@@ -54,6 +54,7 @@ namespace rviz
                             Ogre::SceneNode* parent_node ) :
                             ShapeBase(owner, manager, parent_node), polygon_(0)
   {
+
     scene_node_ = manager->getSceneManager()->getRootSceneNode()->createChildSceneNode();
 
     static int count = 0;
@@ -66,7 +67,25 @@ namespace rviz
 
   ShapeMarker::~ShapeMarker()
   {
-    delete polygon_;
+    //delete polygon_;
+  }
+
+  std::string createMaterialIfNotExists(const float r, const float g, const float b, const float a)
+  {
+    char buf[128];
+    sprintf(buf, "ShapeColor%f;%f;%f;%f",r,g,b,a);
+    if(!Ogre::MaterialManager::getSingleton().getByName(buf, Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME).isNull())
+      return buf;
+
+    Ogre::ColourValue color( r,g,b,a );
+    Ogre::MaterialPtr mat = Ogre::MaterialManager::getSingleton().create( buf, Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME );
+    mat->setAmbient(color * 0.01f);
+    mat->setDiffuse(color);
+    mat->setLightingEnabled(true);
+    mat->setReceiveShadows(true);
+    mat->setCullingMode(Ogre::CULL_NONE);
+
+    return buf;
   }
 
   void ShapeMarker::onNewMessage( const MarkerConstPtr& old_message,
@@ -115,9 +134,8 @@ namespace rviz
 
 
     polygon_->clear();
-    polygon_->begin("RVIZ/Blue", Ogre::RenderOperation::OT_TRIANGLE_LIST);
+    polygon_->begin(createMaterialIfNotExists(new_message->color[0],new_message->color[1],new_message->color[2],new_message->color[3]), Ogre::RenderOperation::OT_TRIANGLE_LIST);
 
-    Ogre::ColourValue color( 0, 0, 1, 1 );
     TPPLPoint p1;
 
     transformation=transformation.inverse();
@@ -137,26 +155,6 @@ namespace rviz
 
         polygon_->position(p3(0),p3(1),p3(2));  // start position
         polygon_->normal(normal(0),normal(1),normal(2));
-        polygon_->colour(color);
-      }
-    }
-
-    for(std::list<TPPLPoly>::iterator it=result.begin(); it!=result.end(); it++) {
-      //draw each triangle
-      //ROS_INFO("number %d", it->GetNumPoints());
-      for(int i=it->GetNumPoints()-1;i>=0;i--) {
-        p1 = it->GetPoint(i);
-
-        Eigen::Vector3f p3;
-        p3(0)=p1.x;
-        p3(1)=p1.y;
-        p3(2)=0;
-        p3 = transformation*p3;
-
-        //std::cout << p3(0) << "," << p3(1) << "," << p3(2) << std::endl;
-
-        polygon_->position(p3(0),p3(1),p3(2));  // start position
-        polygon_->colour(color);
       }
     }
 
