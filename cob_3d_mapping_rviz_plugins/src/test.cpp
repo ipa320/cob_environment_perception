@@ -30,16 +30,23 @@ int main(int argc, char **argv) {
 
   while(ros::ok()) {
     cob_3d_mapping_msgs::ShapeArray sa;
+    sa.header.frame_id="/map";
+
     cob_3d_mapping_msgs::Shape s;
 
     s.params.push_back(0);
-    s.params.push_back(1);
     s.params.push_back(0);
+    s.params.push_back(1);
     s.params.push_back(0);
     s.params.push_back(1);
     s.params.push_back(1);
     s.params.push_back(1);
     s.header.frame_id="/map";
+
+    s.color.push_back(0);
+    s.color.push_back(1);
+    s.color.push_back(0);
+    s.color.push_back(1);
 
     pcl::PointCloud<pcl::PointXYZ> pc;
     pcl::PointXYZ pt;
@@ -73,6 +80,10 @@ int main(int argc, char **argv) {
     pcl::toROSMsg(pc,pc2);
     s.points.push_back(pc2);
 
+    sa.shapes.push_back(s);
+
+    s.params[0]=1;
+    s.params[1]=0;
     sa.shapes.push_back(s);
 
     pub.publish(sa);
