@@ -60,9 +60,6 @@
 #include "cob_3d_mapping_features/organized_normal_estimation.h"
 
 
-// TODO: remove the storage of normals to increase speed (std::vector<Eigen::Vector3f> normals)
-
-
 template <typename PointInT, typename PointOutT, typename LabelOutT> void
 cob_3d_mapping_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>::computePointNormal (
   const PointCloudIn &cloud,
@@ -72,26 +69,24 @@ cob_3d_mapping_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>
   float &n_z,
   int &label_out)
 {
-  PointInT p = cloud.points[index];
-
-  if (pcl_isnan(p.z))
+  Eigen::Vector3f p = cloud.points[index].getVector3fMap();
+  if (pcl_isnan(p(2)))
   {
     n_x = n_y = n_z = std::numeric_limits<float>::quiet_NaN();
     label_out = I_NAN;
     return;
   }
 
-  int idx, max_gab, gab, init_gab;
+  int idx, max_gab, gab, init_gab, n_normals = 0;
   int idx_x = index % input_->width;
   int idx_y = index * inv_width_;
 
-  float distance_threshold = distance_threshold_modifier_ * 0.003 * p.z * p.z;
+  float distance_threshold = skip_distant_point_threshold_ * 0.003 * p(2) * p(2);
 
   bool has_prev_point;
 
   std::vector<int> range_border_counter(mask_.size(), 0);
-  std::vector<Eigen::Vector3f> normals;
-  Eigen::Vector3f ni, p_curr;
+  Eigen::Vector3f p_curr;
   Eigen::Vector3f p_prev(0,0,0);
   Eigen::Vector3f p_first(0,0,0);
   Eigen::Vector3f n_idx(0,0,0);
@@ -104,39 +99,26 @@ cob_3d_mapping_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>
   if (idx_y >= pixel_search_radius_ && idx_y < (int)cloud.height - pixel_search_radius_ &&
       idx_x >= pixel_search_radius_ && idx_x < (int)cloud.width - pixel_search_radius_)
   {
-    for (it_c = mask_.begin(); it_c != mask_.end(); it_c++, it_rbc++) // iterate circles 
+    for (it_c = mask_.begin(); it_c != mask_.end(); ++it_c, ++it_rbc) // iterate circles 
     {
       has_prev_point = false; init_gab = gab = 0; max_gab = 0.25 * (*it_c).size(); // reset loop
     
-      for (it_ci = (*it_c).begin(); it_ci != (*it_c).end(); it_ci++) // iterate current circle
+      for (it_ci = (*it_c).begin(); it_ci != (*it_c).end(); ++it_ci) // iterate current circle
       {
 	idx = index + *it_ci;
-	if ( pcl_isnan(cloud.points[idx].z) )
+	Eigen::Vector3f p_i = cloud.points[idx].getVector3fMap();
+	if ( pcl_isnan(p_i(2)) )                        { ++gab; continue; }               // count as gab point
+	if ( fabs(p_i(2) - p(2)) > distance_threshold ) { ++gab; ++(*it_rbc); continue; }  // count as gab point
+	if ( gab <= max_gab && has_prev_point ) // check gab is small enough and a previous point exists
 	{
-	  gab++; // count as gab point
-	  continue;	  
-	}
-	float d = fabs(cloud.points[idx].z - p.z); 
-	if ( d > distance_threshold )
-	{
-	  gab++; // count as gab point
-	  //if ( d > 3.0*distance_threshold )
-	  if ( d > distance_threshold )
-	    *it_rbc += 1; // increment range border counter of current circle
-	  continue;
-	}
-	if ( gab <= max_gab && has_prev_point) // check gab is small enough and a previous point exists
-	{
-	  p_curr = cloud.points[idx].getVector3fMap() - p.getVector3fMap();
-	  ni = p_prev.cross(p_curr); // compute normal of p_prev and p_curr
-	  ni = ni.normalized();
-	  n_idx += ni; // add to mean normal
-	  normals.push_back(ni);
+	  p_curr = p_i - p;
+	  n_idx += (p_prev.cross(p_curr)).normalized(); // compute normal of p_prev and p_curr	
+	  ++n_normals;
 	  p_prev = p_curr;
 	}
 	else // current is first point in circle or just after a gab
 	{
-	  p_prev = cloud.points[idx].getVector3fMap() - p.getVector3fMap();
+	  p_prev = p_i - p;
 	  if (!has_prev_point)
 	  {
 	    p_first = p_prev; // remember the first valid point in circle
@@ -148,57 +130,39 @@ cob_3d_mapping_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>
       }
 
       // close current circle (last and first point) if gab is small enough
-      if ( gab + init_gab <= max_gab) 
+      if (gab + init_gab <= max_gab)
       {
 	// compute normal of p_first and p_prev
-	ni = p_prev.cross(p_first);
-	ni = ni.normalized();
-	n_idx += ni;
-	normals.push_back(ni);
+	n_idx += (p_prev.cross(p_first)).normalized();
+	++n_normals;
       }
     } // end loop of circles
   }
   else
   {
-    for (it_c = mask_.begin(); it_c != mask_.end(); it_c++, it_rbc++) // iterate circles 
+    for (it_c = mask_.begin(); it_c != mask_.end(); ++it_c, ++it_rbc) // iterate circles 
     {
       has_prev_point = false; gab = 0; max_gab = 0.25 * (*it_c).size(); // reset circle loop
-    
-      for (it_ci = (*it_c).begin(); it_ci != (*it_c).end(); it_ci++) // iterate current circle
+ 
+      for (it_ci = (*it_c).begin(); it_ci != (*it_c).end(); ++it_ci) // iterate current circle
       {
 	idx = index + *it_ci;
-	if ( idx < 0 || idx >= (int)cloud.points.size() ) // check top and bottom image border
-	{
-	  gab++; // count as gab point
-	  continue;
-	}
-	int v = idx * inv_width_; // calculate y coordinate in image
-	if ( v < 0 || v >= (int)cloud.height || pcl_isnan(cloud.points[idx].z)) // check left, right
-	{
-	  gab++; // count as gab point
-	  continue;
-	}
-	float d = fabs(cloud.points[idx].z - p.z); 
-	if ( d > distance_threshold )
-	{
-	  gab++; // count as gab point
-	  //if ( d > 3.0*distance_threshold )
-	  if ( d > distance_threshold )
-	    *it_rbc += 1; // increment range border counter of current circle
-	  continue;
-	}
+        // check top and bottom image border
+	if ( idx < 0 || idx >= (int)cloud.points.size() ) { ++gab; continue; } // count as gab point
+	int v = idx * inv_width_; // calculate y coordinate in image, // check left, right border
+	if ( v < 0 || v >= (int)cloud.height || pcl_isnan(cloud.points[idx].z)) { ++gab; continue; } // count as gab point
+	Eigen::Vector3f p_i = cloud.points[idx].getVector3fMap();
+	if ( fabs(p_i(2) - p(2)) > distance_threshold ) { ++gab; ++(*it_rbc); continue; }  // count as gab point
 	if ( gab <= max_gab && has_prev_point) // check gab is small enough and a previous point exists
 	{
-	  p_curr = cloud.points[idx].getVector3fMap() - p.getVector3fMap();
-	  ni = p_prev.cross(p_curr); // compute normal of p_prev and p_curr
-	  ni = ni.normalized();
-	  n_idx += ni; // add to mean normal
-	  normals.push_back(ni);
+	  p_curr = p_i - p;
+	  n_idx += (p_prev.cross(p_curr)).normalized(); // compute normal of p_prev and p_curr
+	  ++n_normals;
 	  p_prev = p_curr;
 	}
 	else // current is first point in circle or just after a gab
 	{
-	  p_prev = cloud.points[idx].getVector3fMap() - p.getVector3fMap();
+	  p_prev = p_i - p;
 	  if (!has_prev_point)
 	  {
 	    p_first = p_prev; // remember the first valid point in circle
@@ -213,10 +177,8 @@ cob_3d_mapping_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>
       if ( gab + init_gab <= max_gab) 
       {
 	// compute normal of p_first and p_prev
-	ni = p_prev.cross(p_first);
-	ni = ni.normalized();
-	n_idx += ni;
-	normals.push_back(ni);
+	n_idx += (p_prev.cross(p_first)).normalized();
+	++n_normals;
       }
     } // end loop of circles
   }
@@ -224,8 +186,7 @@ cob_3d_mapping_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>
   if (range_border_counter[mask_.size()-1] > 0)
     label_out = I_BORDER;
 
-  float num_p_inv = 1.0f / normals.size();
-  n_idx *= num_p_inv;
+  n_idx /= (float)n_normals;
   n_idx = n_idx.normalized();
   n_x = n_idx(0);
   n_y = n_idx(1);

@@ -87,7 +87,7 @@ typedef visualization::PointCloudColorHandlerRGBField<PointXYZRGB> ColorHdlRGB;
 
 string file_in_, file_out_;
 float rn_, d_th_, ex_th_, lower_, upper_;
-int pns_f_, pns_n_, circle_;
+int pns_f_, pns_n_, circle_, points_;
 bool en_one_, en_oce_;
 
 void readOptions(int argc, char* argv[])
@@ -101,10 +101,11 @@ void readOptions(int argc, char* argv[])
     ("in,i", value<string>(&file_in_), "input pcd file")
     ("out,o", value<string>(&file_out_), "output pcd file")
     ("normal,n", value<float>(&rn_)->default_value(0.025), "radius for original normal estimation (ne)")
-    ("pns_f,s", value<int>(&pns_f_)->default_value(10), "pixel neighborhood size of the used feature (oce) or (fee)")
+    ("pns_f,s", value<int>(&pns_f_)->default_value(8), "pixel neighborhood size of the used feature (oce) or (fee)")
     ("pns_n", value<int>(&pns_n_), "pixel neighborhood size of organized normal estimation (one) default set to pns_f")
     ("circle,c", value<int>(&circle_)->default_value(2), "use only n-th circle of neighborhood")
-    ("skip_distant_point,d", value<float>(&d_th_)->default_value(5), "threshold to ignore distant points in neighborhood")
+    ("points,p", value<int>(&points_)->default_value(2), "use only n-th circle of neighborhood")
+    ("skip_distant_point,d", value<float>(&d_th_)->default_value(12), "threshold to ignore distant points in neighborhood")
     ("extraction_th,x", value<float>(&ex_th_)->default_value(0.1), "set the strength threshold for edge extraction (2D + 3D)")
     ("lower,l", value<float>(&lower_)->default_value(1.5), "lower curvature threshold (plane)-> not used yet")
     ("upper,u", value<float>(&upper_)->default_value(6.0), "upper curvature threshold (edge)")
@@ -157,8 +158,8 @@ int main(int argc, char** argv)
     cob_3d_mapping_features::OrganizedNormalEstimation<PointXYZRGB, Normal, PointLabel>one;
     one.setInputCloud(p);
     one.setOutputLabels(l);
-    one.setPixelSearchRadius(pns_n_,1,circle_); //radius,pixel,circle
-    one.setDistanceThresholdModifier(d_th_);
+    one.setPixelSearchRadius(pns_n_,points_,circle_); //radius,pixel,circle
+    one.setSkipDistantPointThreshold(d_th_);
     one.compute(*n);
     cout << t.elapsed() << "s\t for Organized Normal Estimation" << endl;
   }
@@ -191,8 +192,8 @@ int main(int argc, char** argv)
     oce.setInputCloud(p);
     oce.setInputNormals(n);
     oce.setOutputLabels(l);
-    oce.setPixelSearchRadius(pns_f_,1,circle_);
-    oce.setDistanceThresholdModifier(d_th_);
+    oce.setPixelSearchRadius(pns_f_,points_,circle_);
+    oce.setSkipDistantPointThreshold(d_th_);
     oce.setEdgeClassThreshold(upper_);
     oce.compute(*pc);
     cout << t.elapsed() << "s\t for Organized Curvature Estimation" << endl;

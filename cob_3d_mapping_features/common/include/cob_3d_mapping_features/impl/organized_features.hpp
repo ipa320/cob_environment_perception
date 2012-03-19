@@ -57,12 +57,11 @@
 
 template <typename PointInT, typename PointOutT> int
 cob_3d_mapping_features::OrganizedFeatures<PointInT,PointOutT>::searchForNeighbors(
-  const PointCloudIn &cloud,
   int index,
   std::vector<int>& indices)
 {
   int idx;
-  int idx_x = index % cloud.width;
+  int idx_x = index % surface_->width;
   int idx_y = index * inv_width_;
 
   std::vector<std::vector<int> >::iterator it_c;
@@ -71,15 +70,15 @@ cob_3d_mapping_features::OrganizedFeatures<PointInT,PointOutT>::searchForNeighbo
   indices.clear();
   indices.reserve((int)(pixel_search_radius_ * pixel_search_radius_));
 
-  if (idx_y >= pixel_search_radius_ && idx_y < (int)cloud.height - pixel_search_radius_ &&
-      idx_x >= pixel_search_radius_ && idx_x < (int)cloud.width - pixel_search_radius_)
+  if (idx_y >= pixel_search_radius_ && idx_y < (int)surface_->height - pixel_search_radius_ &&
+      idx_x >= pixel_search_radius_ && idx_x < (int)surface_->width - pixel_search_radius_)
   {
     for (it_c = mask_.begin(); it_c != mask_.end(); it_c++) // iterate circles
     {
       for (it_ci = (*it_c).begin(); it_ci != (*it_c).end(); it_ci++) // iterate current circle
       {
 	idx = index + *it_ci;
-	if (pcl_isnan(cloud.points[idx].z) ) continue;
+	if (pcl_isnan(surface_->points[idx].z) ) continue;
 	indices.push_back(idx);
       }
     }
@@ -91,10 +90,10 @@ cob_3d_mapping_features::OrganizedFeatures<PointInT,PointOutT>::searchForNeighbo
       for (it_ci = (*it_c).begin(); it_ci != (*it_c).end(); it_ci++) // iterate current circle
       {
 	idx = index + *it_ci;
-	if ( idx < 0 || idx >= (int)cloud.points.size() ) continue;
+	if ( idx < 0 || idx >= (int)surface_->points.size() ) continue;
 	int v = idx * inv_width_;
-	if (v < 0 || v >= (int)cloud.height) continue;
-	if (pcl_isnan(cloud.points[idx].z)) continue;
+	if (v < 0 || v >= (int)surface_->height) continue;
+	if (pcl_isnan(surface_->points[idx].z)) continue;
 	indices.push_back(idx);
       }
     }
@@ -104,53 +103,36 @@ cob_3d_mapping_features::OrganizedFeatures<PointInT,PointOutT>::searchForNeighbo
 
 template <typename PointInT, typename PointOutT> int
 cob_3d_mapping_features::OrganizedFeatures<PointInT,PointOutT>::searchForNeighborsInRange(
-  const PointCloudIn &cloud,
   int index,
   std::vector<int>& indices)
 {
-  std::vector<int> distances;
-  return searchForNeighborsInRange(cloud, index, indices, distances);
-}
-
-
-template <typename PointInT, typename PointOutT> int
-cob_3d_mapping_features::OrganizedFeatures<PointInT,PointOutT>::searchForNeighborsInRange(
-  const PointCloudIn &cloud,
-  int index,
-  std::vector<int>& indices,
-  std::vector<int>& distances)
-{
   int idx;
-  int idx_x = index % cloud.width;
+  int idx_x = index % surface_->width;
   int idx_y = index * inv_width_;
-  PointInT p = cloud.points[index];
-  float distance_threshold = distance_threshold_modifier_ * 0.003 * p.z * p.z;
+  const PointInT* p = &(surface_->points[index]);
+  const PointInT* p_i;
+  float distance_threshold = skip_distant_point_threshold_ * 0.003 * p->z * p->z;
 
   std::vector<std::vector<int> >::iterator it_c;
   std::vector<int>::iterator it_ci;
 
   indices.clear();
-  indices.reserve((int)(pixel_search_radius_ * pixel_search_radius_));
-  distances.clear();
-  distances.reserve((int)(pixel_search_radius_ * pixel_search_radius_));
-  int c_i = pixel_search_radius_;
+  indices.reserve(n_points_);
 
-  if (idx_y >= pixel_search_radius_ && idx_y < (int)cloud.height - pixel_search_radius_ &&
-      idx_x >= pixel_search_radius_ && idx_x < (int)cloud.width - pixel_search_radius_)
+  if (idx_y >= pixel_search_radius_ && idx_y < (int)surface_->height - pixel_search_radius_ &&
+      idx_x >= pixel_search_radius_ && idx_x < (int)surface_->width - pixel_search_radius_)
   {
     for (it_c = mask_.begin(); it_c != mask_.end(); it_c++) // iterate circles
     {
       for (it_ci = (*it_c).begin(); it_ci != (*it_c).end(); it_ci++) // iterate current circle
       {
 	idx = index + *it_ci;
-	if ( pcl_isnan(cloud.points[idx].z) ) continue;
-	float d = fabs(cloud.points[idx].z - p.z);
-	if ( d > distance_threshold ) continue;
+	p_i = &(surface_->points[idx]);
+	if ( pcl_isnan(p_i->z) ) continue;
+	if ( fabs(p_i->z - p->z) > distance_threshold ) continue;
 
 	indices.push_back(idx);
-	distances.push_back(c_i);
       }
-      c_i -= circle_steps_;
     }
   }
   else
@@ -160,17 +142,78 @@ cob_3d_mapping_features::OrganizedFeatures<PointInT,PointOutT>::searchForNeighbo
       for (it_ci = (*it_c).begin(); it_ci != (*it_c).end(); it_ci++) // iterate current circle
       {
 	idx = index + *it_ci;
-	if ( idx < 0 || idx >= (int)cloud.points.size() ) continue;
+	if ( idx < 0 || idx >= (int)surface_->points.size() ) continue;
 	int v = idx * inv_width_;
-	if (v < 0 || v >= (int)cloud.height) continue;
-	if ( pcl_isnan(cloud.points[idx].z) ) continue;
-	float d = fabs(cloud.points[idx].z - p.z);
-	if ( d > distance_threshold ) continue;
+	if (v < 0 || v >= (int)surface_->height) continue;
+	p_i = &(surface_->points[idx]);
+	if ( pcl_isnan(p_i->z) ) continue;
+	if ( fabs(p_i->z - p->z) > distance_threshold ) continue;
 
 	indices.push_back(idx);
-	distances.push_back(c_i);
       }
-      c_i -= circle_steps_;
+    }
+  }
+  if (indices.size() > 1)
+    return 1;
+  else
+    return -1;
+}
+
+
+template <typename PointInT, typename PointOutT> int
+cob_3d_mapping_features::OrganizedFeatures<PointInT,PointOutT>::searchForNeighborsInRange(
+  int index,
+  std::vector<int>& indices,
+  std::vector<float>& sqr_distances)
+{
+  int idx;
+  int idx_x = index % surface_->width;
+  int idx_y = index * inv_width_;
+  const PointInT* p = &(surface_->points[index]);
+  const PointInT* p_i;
+  float distance_threshold = skip_distant_point_threshold_ * 0.003 * p->z * p->z, d_z;
+  std::vector<std::vector<int> >::iterator it_c;
+  std::vector<int>::iterator it_ci;
+
+  indices.clear();
+  indices.reserve(n_points_);
+  sqr_distances.clear();
+  sqr_distances.reserve(n_points_);
+
+  if (idx_y >= pixel_search_radius_ && idx_y < (int)surface_->height - pixel_search_radius_ &&
+      idx_x >= pixel_search_radius_ && idx_x < (int)surface_->width - pixel_search_radius_)
+  {
+    for (it_c = mask_.begin(); it_c != mask_.end(); it_c++) // iterate circles
+    {
+      for (it_ci = (*it_c).begin(); it_ci != (*it_c).end(); it_ci++) // iterate current circle
+      {
+	idx = index + *it_ci;
+	p_i = &(surface_->points[idx]);
+	if ( pcl_isnan(p_i->z) ) continue;
+	if ( (d_z = fabs(p_i->z - p->z)) > distance_threshold ) continue;
+
+	indices.push_back(idx);
+	sqr_distances.push_back(pow(p_i->x - p->x, 2) + pow(p_i->y - p->y, 2) + pow(d_z, 2));
+      }
+    }
+  }
+  else
+  {
+    for (it_c = mask_.begin(); it_c != mask_.end(); it_c++) // iterate circles
+    {
+      for (it_ci = (*it_c).begin(); it_ci != (*it_c).end(); it_ci++) // iterate current circle
+      {
+	idx = index + *it_ci;
+	if ( idx < 0 || idx >= (int)surface_->points.size() ) continue;
+	int v = idx * inv_width_;
+	if (v < 0 || v >= (int)surface_->height) continue;
+	p_i = &(surface_->points[idx]);
+	if ( pcl_isnan(p_i->z) ) continue;
+	if ( (d_z = fabs(p_i->z - p->z)) > distance_threshold ) continue;
+
+	indices.push_back(idx);
+	sqr_distances.push_back(pow(p_i->x - p->x, 2) + pow(p_i->y - p->y, 2) + pow(d_z, 2));
+      }
     }
   }
   if (indices.size() > 1)
@@ -225,6 +268,7 @@ cob_3d_mapping_features::OrganizedFeatures<PointInT,PointOutT>::initCompute()
   {
     int num_circles = std::floor(pixel_search_radius_ / circle_steps_);
     inv_width_ = 1.0f / surface_->width;
+    n_points_ = pow(2 * pixel_search_radius_ + 1, 2);
     // create a new mask
     mask_.clear();
     for (int circle = 0; circle < num_circles; circle++)

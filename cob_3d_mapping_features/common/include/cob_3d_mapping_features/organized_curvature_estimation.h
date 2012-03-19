@@ -71,11 +71,12 @@ namespace cob_3d_mapping_features
     using OrganizedFeatures<PointInT,PointOutT>::pixel_search_radius_;
     using OrganizedFeatures<PointInT,PointOutT>::pixel_steps_;
     using OrganizedFeatures<PointInT,PointOutT>::circle_steps_;
+    using OrganizedFeatures<PointInT,PointOutT>::n_points_;
     using OrganizedFeatures<PointInT,PointOutT>::mask_;
     using OrganizedFeatures<PointInT,PointOutT>::input_;
     using OrganizedFeatures<PointInT,PointOutT>::indices_;
     using OrganizedFeatures<PointInT,PointOutT>::surface_;
-    using OrganizedFeatures<PointInT,PointOutT>::distance_threshold_modifier_;
+    using OrganizedFeatures<PointInT,PointOutT>::skip_distant_point_threshold_;
     using OrganizedFeatures<PointInT,PointOutT>::feature_name_;
 
     typedef pcl::PointCloud<PointInT> PointCloudIn;
@@ -113,26 +114,26 @@ namespace cob_3d_mapping_features
 
     void
       computePointCurvatures(
-	const NormalCloudIn &normals, 
-	const int index, 
+	const NormalCloudIn &normals,
+	const int index,
 	const std::vector<int> &indices,
-	float &pcx, 
-	float &pcy, 
-	float &pcz, 
-	float &pc1, 
+	float &pcx,
+	float &pcy,
+	float &pcz,
+	float &pc1,
 	float &pc2,
 	int &label_out);
 
     void
       computePointCurvatures(
-	const NormalCloudIn &normals, 
-	const int index, 
+	const NormalCloudIn &normals,
+	const int index,
 	const std::vector<int> &indices,
-	const std::vector<int> &distance_weights,
-	float &pcx, 
-	float &pcy, 
-	float &pcz, 
-	float &pc1, 
+	const std::vector<float> &sqr_distances,
+	float &pcx,
+	float &pcy,
+	float &pcz,
+	float &pc1,
 	float &pc2,
 	int &label_out);
 
