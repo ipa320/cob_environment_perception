@@ -177,9 +177,14 @@ namespace rviz
 
   Eigen::Vector3f MsgToOrigin(const cob_3d_mapping_msgs::Shape::ConstPtr& new_message) {
     Eigen::Vector3f origin;
-    origin(0)=new_message->centroid.x;
-    origin(1)=new_message->centroid.y;
-    origin(2)=new_message->centroid.z;
+
+    origin(0)=origin(1)=origin(2)=0.f;
+
+    if(new_message->params.size()==4) {
+      origin(0)=new_message->centroid.x;
+      origin(1)=new_message->centroid.y;
+      origin(2)=new_message->centroid.z;
+    }
 
     return origin;
   }
