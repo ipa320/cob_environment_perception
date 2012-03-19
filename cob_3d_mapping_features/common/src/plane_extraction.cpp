@@ -255,7 +255,6 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
           ss.clear();
           ss << file_path_ << "/planes/plane_" << ctr_ << "_" << ctr << ".pcd";
           pcl::io::savePCDFileASCII (ss.str(), dominant_plane);
-          std::cout << ss << std::endl;
         }
 
         // Project the model inliers

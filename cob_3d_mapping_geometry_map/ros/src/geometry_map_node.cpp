@@ -114,8 +114,8 @@ public:
     ctr_ = 0;
     //convex_hull_sub_ = n_.subscribe("table_hull", 1, &FeatureMap::subCallback, this);
     shape_sub_ = n_.subscribe("shape_array", 10, &GeometryMapNode::shapeCallback, this);
-    map_pub_ = n_.advertise<geometry_msgs::PolygonStamped>("geometry_map",1);
-    map_pub_2_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("geometry_map_2",1);
+    //map_pub_ = n_.advertise<geometry_msgs::PolygonStamped>("geometry_map",1);
+    map_pub_2_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("geometry_map_array",1);
     marker_pub_ = n_.advertise<visualization_msgs::Marker>("geometry_marker",100);
     clear_map_server_ = n_.advertiseService("clear_geometry_map", &GeometryMapNode::clearMap, this);
     get_map_server_ = n_.advertiseService("get_geometry_map", &GeometryMapNode::getMap, this);
@@ -349,9 +349,14 @@ public:
     s.params[1] = map_entry.normal(1);
     s.params[2] = map_entry.normal(2);
     s.params[3] = map_entry.d;
+    s.centroid.x = map_entry.centroid(0);
+    s.centroid.y = map_entry.centroid(1);
+    s.centroid.z = map_entry.centroid(2);
     s.points.resize(map_entry.polygon_world.size());
+    s.holes.resize(map_entry.holes.size());
     for(unsigned int i=0; i<map_entry.polygon_world.size(); i++)
     {
+      s.holes[i] = map_entry.holes[i];
       //s.points[i].points.resize(map_entry.polygon_world[i].size());
       pcl::PointCloud<pcl::PointXYZ> cloud;
       for(unsigned int j=0; j<map_entry.polygon_world[i].size(); j++)
@@ -395,6 +400,7 @@ public:
     //map_entry.polygon_world.resize(p.polygons.size());
     for(unsigned int i=0; i<s.points.size(); i++)
     {
+      map_entry.holes.push_back(false);
       if(s.points[i].data.size())
       {
         pcl::PointCloud<pcl::PointXYZ> cloud;
@@ -461,12 +467,15 @@ public:
     boost::shared_ptr<std::vector<MapEntryPtr> > map = geometry_map_.getMap();
     //cob_3d_mapping_msgs::PolygonArrayArray map_msg;
     cob_3d_mapping_msgs::ShapeArray map_msg;
+    map_msg.header.frame_id="/map";
+    map_msg.header.stamp = ros::Time::now();
     for(unsigned int i=0; i<map->size(); i++)
     {
       MapEntry& sm = *(map->at(i));
       //cob_3d_mapping_msgs::PolygonArray p;
       cob_3d_mapping_msgs::Shape s;
       convertToROSMsg(sm, s);
+      s.header = map_msg.header;
       //map_msg.polygon_array.push_back(p);
       map_msg.shapes.push_back(s);
     }
@@ -512,14 +521,17 @@ public:
    */
   void publishMapMarker()
   {
-    visualization_msgs::Marker marker;
+    visualization_msgs::Marker marker, t_marker;
     marker.action = visualization_msgs::Marker::ADD;
     marker.type = visualization_msgs::Marker::LINE_STRIP;
     marker.lifetime = ros::Duration();
     marker.header.frame_id = "/map";
+
+    t_marker.action = visualization_msgs::Marker::ADD;
+    t_marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+    t_marker.lifetime = ros::Duration();
+    t_marker.header.frame_id = "/map";
     //marker.header.stamp = stamp;
-
-
 
     //create the marker in the table reference frame
     //the caller is responsible for setting the pose of the marker to match
@@ -534,54 +546,51 @@ public:
 
     geometry_msgs::Point pt;
     boost::shared_ptr<std::vector<MapEntryPtr> > map = geometry_map_.getMap();
-    int ctr=0;
+    int ctr=0, t_ctr=2000;
     for(unsigned int i=0; i<map->size(); i++)
     {
     	MapEntry& pm = *(map->at(i));
-      //if(pm.merged/*pm.normal(2)<0.1*/)
-      {
+        int color_ctr = i%4;
         //marker.id = pm.id;
-        //if(i==0)
+        if(color_ctr==0)
         {
           marker.color.r = 0;
           marker.color.g = 0;
           marker.color.b = 1;
         }
-        /*else if(i==1)
+        else if(color_ctr==1)
         {
           marker.color.r = 0;
           marker.color.g = 1;
           marker.color.b = 0;
         }
-        else if(i==2)
+        else if(color_ctr==2)
         {
           marker.color.r = 0;
           marker.color.g = 1;
           marker.color.b = 1;
         }
-        else if(i==3)
+        else if(color_ctr==3)
         {
           marker.color.r = 1;
           marker.color.g = 1;
           marker.color.b = 0;
         }
-        else if(i==4)
-        {
-          marker.color.r = 1;
-          marker.color.g = 0;
-          marker.color.b = 1;
-        }
-        else
-        {
-          marker.color.r = 0;
-          marker.color.g = 0;
-          marker.color.b = 1;
-        }*/
         for(unsigned int j=0; j<pm.polygon_world.size(); j++)
         {
+          //if(pm.polygon_world.size()>1) std::cout << "id: " << ctr << ", " << pm.polygon_world.size() << std::endl;
           //TODO: this is a workaround as the marker can't display more than one contour
           marker.id = ctr;
+          marker.color.r /= j+1;
+          marker.color.g /= j+1;
+          marker.color.b /= j+1;
+
+          t_marker.id = t_ctr;
+          std::stringstream ss;
+          ss << ctr;
+          t_marker.text = ss.str();
           ctr++;
+          t_ctr++;
           for(unsigned int k=0; k<pm.polygon_world[j].size(); k++)
           {
             marker.points.resize(pm.polygon_world[j].size()+1);
@@ -597,9 +606,9 @@ public:
           marker.points[pm.polygon_world[j].size()].y = pm.polygon_world[j][0](1);
           marker.points[pm.polygon_world[j].size()].z = pm.polygon_world[j][0](2);
           marker_pub_.publish(marker);
+          marker_pub_.publish(t_marker);
         }
       }
-    }
   }
 
   ros::NodeHandle n_;

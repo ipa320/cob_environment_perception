@@ -477,16 +477,16 @@ public:
     p.d.data = coefficients_plane.values[3];*/
     for(unsigned int i=0; i<v_cloud_hull.size(); i++)
     {
-      cob_3d_mapping_msgs::Shape s;
-      s.type = cob_3d_mapping_msgs::Shape::PLANE;
-      s.params.resize(4);
-      for(unsigned int c=0; c<4; c++)
-        s.params[c] = v_coefficients_plane[i].values[c];
       //std::cout << "normal: " << v_coefficients_plane[i].values[0] << ","  << v_coefficients_plane[i].values[1] << "," << v_coefficients_plane[i].values[2] << std::endl;
       //std::cout << "d: " << v_coefficients_plane[i].values[3] << std::endl << std::endl;
       //s.points.resize(v_hull_polygons[i].size());
       for(unsigned int j=0; j<v_hull_polygons[i].size(); j++)
       {
+        cob_3d_mapping_msgs::Shape s;
+        s.type = cob_3d_mapping_msgs::Shape::PLANE;
+        s.params.resize(4);
+        for(unsigned int c=0; c<4; c++)
+          s.params[c] = v_coefficients_plane[i].values[c];
         if (v_hull_polygons[i][j].vertices.size()==0) continue;
         pcl::PointCloud<pcl::PointXYZ> pc;
         for(unsigned int k=0; k<v_hull_polygons[i][j].vertices.size(); k++)
@@ -501,8 +501,8 @@ public:
         sensor_msgs::PointCloud2 pc_msg;
         pcl::toROSMsg(pc, pc_msg);
         s.points.push_back(pc_msg);
+        sa.shapes.push_back(s);
       }
-      sa.shapes.push_back(s);
     }
     shape_array_pub_.publish(sa);
   }
