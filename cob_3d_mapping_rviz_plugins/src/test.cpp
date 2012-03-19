@@ -38,15 +38,15 @@ int main(int argc, char **argv) {
     s.params.push_back(0);
     s.params.push_back(1);
     s.params.push_back(0);
-    s.params.push_back(1);
-    s.params.push_back(1);
-    s.params.push_back(1);
+    s.centroid.x = 1;
+    s.centroid.y = 1;
+    s.centroid.z = 1;
     s.header.frame_id="/map";
 
-    s.color.push_back(0);
-    s.color.push_back(1);
-    s.color.push_back(0);
-    s.color.push_back(1);
+    s.color.r = 0;
+    s.color.g = 1;
+    s.color.b = 0;
+    s.color.a = 1;
 
     pcl::PointCloud<pcl::PointXYZ> pc;
     pcl::PointXYZ pt;
