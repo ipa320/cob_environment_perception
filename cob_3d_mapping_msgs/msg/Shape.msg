@@ -24,4 +24,6 @@ sensor_msgs/PointCloud2[] points
 # each three entries form a triangle; indices of points are stored
 int32[] vertices
 
-float32[] color
+geometry_msgs/Point32 centroid
+std_msgs/ColorRGBA color
+bool[] holes

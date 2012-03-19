@@ -67,7 +67,7 @@ namespace rviz
 
   ShapeMarker::~ShapeMarker()
   {
-    //delete polygon_;
+    delete polygon_;
   }
 
   std::string createMaterialIfNotExists(const float r, const float g, const float b, const float a)
@@ -91,15 +91,15 @@ namespace rviz
   TPPLPoint MsgToPoint2D(const pcl::PointXYZ &point, const cob_3d_mapping_msgs::Shape::ConstPtr& new_message) {
     TPPLPoint pt;
 
-    if(new_message->params.size()==7) {
+    if(new_message->params.size()==4) {
       Eigen::Vector3f u,v,normal,origin;
       Eigen::Affine3f transformation;
       normal(0)=new_message->params[0];
       normal(1)=new_message->params[1];
       normal(2)=new_message->params[2];
-      origin(0)=new_message->params[4];
-      origin(1)=new_message->params[5];
-      origin(2)=new_message->params[6];
+      origin(0)=new_message->centroid.x;
+      origin(1)=new_message->centroid.y;
+      origin(2)=new_message->centroid.z;
       //std::cout << "normal: " << normal << std::endl;
       //std::cout << "centroid: " << origin << std::endl;
       v = normal.unitOrthogonal ();
@@ -110,7 +110,7 @@ namespace rviz
       pt.x = p3(0);
       pt.y = p3(1);
     }
-    else if(new_message->params.size()==8) {
+    else if(new_message->params.size()==5) {
       pt.x=point.x;
       pt.y=point.y;
     }
@@ -119,15 +119,15 @@ namespace rviz
   }
 
   void MsgToPoint3D(const TPPLPoint &pt, const cob_3d_mapping_msgs::Shape::ConstPtr& new_message, Eigen::Vector3f &pos, Eigen::Vector3f &normal) {
-    if(new_message->params.size()==7) {
+    if(new_message->params.size()==4) {
       Eigen::Vector3f u,v,origin;
       Eigen::Affine3f transformation;
       normal(0)=new_message->params[0];
       normal(1)=new_message->params[1];
       normal(2)=new_message->params[2];
-      origin(0)=new_message->params[4];
-      origin(1)=new_message->params[5];
-      origin(2)=new_message->params[6];
+      origin(0)=new_message->centroid.x;
+      origin(1)=new_message->centroid.y;
+      origin(2)=new_message->centroid.z;
       //std::cout << "normal: " << normal << std::endl;
       //std::cout << "centroid: " << origin << std::endl;
       v = normal.unitOrthogonal ();
@@ -142,20 +142,20 @@ namespace rviz
       p3(2)=0;
       pos = transformation*p3;
     }
-    else if(new_message->params.size()==8) {
+    else if(new_message->params.size()==5) {
       Eigen::Vector2f v,v2,n2;
       v(0)=pt.x;
       v(1)=pt.y;
       v2=v;
       v2(0)*=v2(0);
       v2(1)*=v2(1);
-      n2(0)=new_message->params[6];
-      n2(1)=new_message->params[7];
+      n2(0)=new_message->params[3];
+      n2(1)=new_message->params[4];
 
       //dummy normal
-      normal(0)=new_message->params[3];
-      normal(1)=new_message->params[4];
-      normal(2)=new_message->params[5];
+      normal(0)=new_message->params[0];
+      normal(1)=new_message->params[1];
+      normal(2)=new_message->params[2];
 
       Eigen::Vector3f x,y, origin;
       x(0)=1.f;
@@ -166,9 +166,9 @@ namespace rviz
       proj2plane_.col(0)=normal.cross(y);
       proj2plane_.col(1)=normal.cross(x);
 
-      origin(0)=new_message->params[0];
-      origin(1)=new_message->params[1];
-      origin(2)=new_message->params[2];
+      origin(0)=new_message->centroid.x;
+      origin(1)=new_message->centroid.y;
+      origin(2)=new_message->centroid.z;
 
       pos = origin+proj2plane_*v + normal*(v2.dot(n2));
       normal += normal*(v).dot(n2);
@@ -177,14 +177,9 @@ namespace rviz
 
   Eigen::Vector3f MsgToOrigin(const cob_3d_mapping_msgs::Shape::ConstPtr& new_message) {
     Eigen::Vector3f origin;
-    if(new_message->params.size()==7) {
-      origin(0)=new_message->params[4];
-      origin(1)=new_message->params[5];
-      origin(2)=new_message->params[6];
-    }
-    else if(new_message->params.size()==8) {
-      origin(2)=origin(1)=origin(0)=0;
-    }
+    origin(0)=new_message->centroid.x;
+    origin(1)=new_message->centroid.y;
+    origin(2)=new_message->centroid.z;
 
     return origin;
   }
@@ -204,12 +199,15 @@ namespace rviz
       pcl::fromROSMsg(new_message->points[i],pc);
 
       poly.Init(pc.size());
-      poly.SetHole(i>0);
+      poly.SetHole(new_message->holes[i]);
 
       for(size_t j=0; j<pc.size(); j++) {
         poly[j] = MsgToPoint2D(pc[j], new_message);
       }
-      poly.SetOrientation(TPPL_CCW);
+      if(new_message->holes[i])
+        poly.SetOrientation(TPPL_CW);
+      else
+        poly.SetOrientation(TPPL_CCW);
 
       polys.push_back(poly);
     }
@@ -218,7 +216,7 @@ namespace rviz
 
 
     polygon_->clear();
-    polygon_->begin(createMaterialIfNotExists(new_message->color[0],new_message->color[1],new_message->color[2],new_message->color[3]), Ogre::RenderOperation::OT_TRIANGLE_LIST);
+    polygon_->begin(createMaterialIfNotExists(new_message->color.r,new_message->color.b,new_message->color.g,new_message->color.a), Ogre::RenderOperation::OT_TRIANGLE_LIST);
 
     TPPLPoint p1;
 
@@ -257,7 +255,7 @@ namespace rviz
     pos.y = origin(1);
     pos.z = origin(2);
 
-    setPosition(pos);
+    //setPosition(pos);
     return;
     setOrientation( orient * Ogre::Quaternion( Ogre::Degree(90), Ogre::Vector3(1,0,0) ) );
 
