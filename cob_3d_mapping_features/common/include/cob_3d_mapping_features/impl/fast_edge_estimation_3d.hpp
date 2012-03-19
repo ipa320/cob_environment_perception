@@ -104,7 +104,7 @@ cob_3d_mapping_features::FastEdgeEstimation3D<PointInT, PointNT, PointOutT>::com
       output.points[*it].strength=2;
     else
     {
-      this->searchForNeighbors (*surface_, *it, nn_indices);
+      this->searchForNeighbors (*it, nn_indices);
 
       normal[0] = normals_->points[*it].normal_x;
       normal[1] = normals_->points[*it].normal_y;

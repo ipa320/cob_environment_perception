@@ -72,7 +72,7 @@ namespace cob_3d_mapping_features
     using OrganizedFeatures<PointInT,PointOutT>::input_;
     using OrganizedFeatures<PointInT,PointOutT>::indices_;
     using OrganizedFeatures<PointInT,PointOutT>::surface_;
-    using OrganizedFeatures<PointInT,PointOutT>::distance_threshold_modifier_;
+    using OrganizedFeatures<PointInT,PointOutT>::skip_distant_point_threshold_;
     using OrganizedFeatures<PointInT,PointOutT>::feature_name_;
 
     typedef pcl::PointCloud<PointInT> PointCloudIn;

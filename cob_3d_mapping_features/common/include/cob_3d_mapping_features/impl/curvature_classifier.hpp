@@ -123,14 +123,14 @@ cob_3d_mapping_features::CurvatureClassifier<PointInT,PointOutT>::classifyForSeg
   for (size_t i=0; i < indices_->size(); ++i)
   {
     if (output.points[i].label == I_NAN) {continue;}
-    if (output.points[i].label == I_BORDER) {output.points[i].label = I_EDGE;continue;}
+    if (output.points[i].label == I_BORDER) {output.points[i].label = I_EDGE; continue;}
     if (input_->points[(*indices_)[i]].pc1 > c_upper_)
     {
       output.points[i].label = I_EDGE;
     }
     else
     {
-      output.points[i].label = 0;
+      output.points[i].label = I_UNDEF;
     }
   }
 }

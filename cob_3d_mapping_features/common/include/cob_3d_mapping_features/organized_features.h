@@ -78,7 +78,7 @@ namespace cob_3d_mapping_features
       OrganizedFeatures () : pixel_search_radius_(2)
 	,pixel_steps_(1)
 	,circle_steps_(1)
-	,distance_threshold_modifier_(4.0)
+	,skip_distant_point_threshold_(4.0)
       { };
 
       inline void
@@ -88,37 +88,45 @@ namespace cob_3d_mapping_features
 	fake_surface_ = false;
       }
 
-      //TODO: set radius in m instead of pixel
       inline void
-	setPixelSearchRadius(int pixel_radius, int pixel_step_size=1, int circle_step_size=1)
+	setPixelWindowSize(int size, int pixel_steps=1, int circle_steps=1)
       {
-	pixel_search_radius_ = pixel_radius;
-	pixel_steps_ = pixel_step_size;
-	circle_steps_ = circle_step_size;
+	pixel_search_radius_ = size / 2;
+	pixel_steps_ = pixel_steps;
+	circle_steps_ = circle_steps;
       }
 
       inline void
-	setDistanceThresholdModifier(float mod)
+	setPixelSearchRadius(int pixel_radius, int pixel_steps=1, int circle_steps=1)
       {
-	distance_threshold_modifier_ = mod;
+	pixel_search_radius_ = pixel_radius;
+	pixel_steps_ = pixel_steps;
+	circle_steps_ = circle_steps;
+      }
+
+      // Ignore points in window with high distance
+      // Value represents the quantization steps of Kinect (approximately)
+      inline void
+	setSkipDistantPointThreshold(float th)
+      {
+	skip_distant_point_threshold_ = th;
       }
 
       void
 	compute(PointCloudOut &output);
 
       int
-	searchForNeighbors(const PointCloudIn &cloud, int index, std::vector<int>& indices);
+	searchForNeighbors(int index,
+			   std::vector<int>& indices);
 
       int
-	searchForNeighborsInRange(const PointCloudIn &cloud, 
-				  int index, 
+	searchForNeighborsInRange(int index,
 				  std::vector<int>& indices);
 
       int
-	searchForNeighborsInRange(const PointCloudIn &cloud, 
-				  int index, 
-				  std::vector<int>& indices, 
-				  std::vector<int>& distances); // circle index of the point
+	searchForNeighborsInRange(int index,
+				  std::vector<int>& indices,
+				  std::vector<float>& sqr_distances);
 
 
     protected:
@@ -154,8 +162,9 @@ namespace cob_3d_mapping_features
       int pixel_steps_;
       int circle_steps_;
       std::vector<std::vector<int> > mask_;
+      int n_points_;
       float inv_width_;
-      float distance_threshold_modifier_;
+      float skip_distant_point_threshold_;
 
       std::string feature_name_;
 
