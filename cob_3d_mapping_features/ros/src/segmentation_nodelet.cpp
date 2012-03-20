@@ -8,8 +8,8 @@
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
  * Project name: care-o-bot
- * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_features
+ * ROS stack name: cob_vision
+ * ROS package name: cob_env_model
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -17,7 +17,7 @@
  * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 12/2011
+ * Date of creation: 02/2012
  * ToDo:
  *
  *
@@ -52,37 +52,62 @@
  *
  ****************************************************************/
 
-#ifndef __IMPL_ORGANIZED_NORMAL_ESTIMATION_H__
-#define __IMPL_ORGANIZED_NORMAL_ESTIMATION_H__
+// ROS includes
+#include <ros/ros.h>
+#include <pluginlib/class_list_macros.h>
+#include <sensor_msgs/image_encodings.h>
 
-#include "cob_3d_mapping_common/label_defines.h"
-#include "cob_3d_mapping_features/organized_normal_estimation_omp.h"
+// Package includes
+#include "cob_3d_mapping_common/stop_watch.h"
+#include "cob_3d_mapping_features/segmentation_nodelet.h"
 
-template <typename PointInT, typename PointOutT, typename LabelOutT> void
-cob_3d_mapping_features::OrganizedNormalEstimationOMP<PointInT,PointOutT,LabelOutT>::computeFeature (PointCloudOut &output)
+
+void
+cob_3d_mapping_features::SegmentationNodelet::received_cloud_cb(const pcl::PointCloud<PointT>::ConstPtr& cloud)
 {
-  if (labels_->points.size() != input_->size())
-  {
-    labels_->points.resize(input_->size());
-    labels_->height = input_->height;
-    labels_->width = input_->width;
-  }
+  //boost::mutex::scoped_lock lock(mutex_);
+  PrecisionStopWatch t;
+  t.precisionStart();
+  std::cout << "Start .... ";
 
-  int threadsize = 1;
+  one_.setInputCloud(cloud);
+  one_.compute(*normals_);
 
-#pragma omp parallel for schedule (dynamic, threadsize)
-  for (size_t i=0; i < indices_->size(); ++i)
-  {
-    labels_->points[(*indices_)[i]].label = I_UNDEF;
-    computePointNormal(*surface_, (*indices_)[i], 
-		       output.points[(*indices_)[i]].normal[0],
-		       output.points[(*indices_)[i]].normal[1],
-		       output.points[(*indices_)[i]].normal[2],
-		       labels_->points[(*indices_)[i]].label);
-  }
+  oce_.setInputCloud(cloud);
+  oce_.compute(*pc_);
+
+  seg_.propagateWavefront2(labels_);
+  cv::Mat segmented;
+  seg_.getClusterIndices(labels_, clusters_, segmented);
+
+  cv_bridge::CvImage cv_ptr;
+  cv_ptr.image = segmented;
+  cv_ptr.encoding = sensor_msgs::image_encodings::RGB8;
+  image_pub_.publish(cv_ptr.toImageMsg());
+  std::cout << t.precisionStop() << "s\t for segmentation!" << std::endl;
 }
 
-#define PCL_INSTANTIATE_OrganizedNormalEstimationOMP(T,OutT,LabelT) template class PCL_EXPORTS cob_3d_mapping_features::OrganizedNormalEstimationOMP<T,OutT,LabelT>;
+void
+cob_3d_mapping_features::SegmentationNodelet::onInit()
+{
+  PCLNodelet::onInit();
+  //h_viewer_ = new pcl::visualization::CloudViewer("Nodelet Test!");
 
-#endif
+  one_.setOutputLabels(labels_);
+  one_.setPixelSearchRadius(8,2,2);
+  one_.setSkipDistantPointThreshold(12);
 
+  oce_.setInputNormals(normals_);
+  oce_.setOutputLabels(labels_);
+  oce_.setPixelSearchRadius(8,2,2);
+  oce_.setSkipDistantPointThreshold(12);
+  oce_.setEdgeClassThreshold(6.0);
+
+  nh_ = getNodeHandle();
+  it_ = image_transport::ImageTransport(nh_);
+  sub_ = nh_.subscribe<pcl::PointCloud<PointT> >
+    ("cloud_in", 1, boost::bind(&cob_3d_mapping_features::SegmentationNodelet::received_cloud_cb, this, _1));
+  image_pub_ = it_.advertise("segmentation_image", 1);
+}
+
+PLUGINLIB_DECLARE_CLASS(cob_3d_mapping_features, SegmentationNodelet, cob_3d_mapping_features::SegmentationNodelet, nodelet::Nodelet);

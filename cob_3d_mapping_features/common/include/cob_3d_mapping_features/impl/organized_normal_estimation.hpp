@@ -205,6 +205,7 @@ cob_3d_mapping_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>
 
   for (std::vector<int>::iterator it=indices_->begin(); it != indices_->end(); ++it)
   {
+    labels_->points[*it].label = I_UNDEF;
     computePointNormal(*surface_, *it, 
 		       output.points[*it].normal[0],
 		       output.points[*it].normal[1],

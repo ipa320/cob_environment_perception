@@ -22,6 +22,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/ros/include)
 
 #uncomment if you have defined messages
 #rosbuild_genmsg()
@@ -42,7 +43,8 @@ rosbuild_add_library(cob_3d_mapping_features
 	common/src/organized_normal_estimation.cpp)
 
 rosbuild_add_library(cob_3d_mapping_features_nodelets
-	ros/src/plane_extraction_nodelet.cpp)
+	ros/src/plane_extraction_nodelet.cpp
+	ros/src/segmentation_nodelet.cpp)
 
 rosbuild_add_library(cob_3d_mapping_features_omp
 	common/src/organized_curvature_estimation_omp.cpp
@@ -51,7 +53,7 @@ rosbuild_add_library(cob_3d_mapping_features_omp
 
 rosbuild_add_openmp_flags(cob_3d_mapping_features_omp)
 
-target_link_libraries(cob_3d_mapping_features_nodelets cob_3d_mapping_features)
+target_link_libraries(cob_3d_mapping_features_nodelets cob_3d_mapping_features cob_3d_mapping_features_omp)
 
 
 rosbuild_add_executable(test_plane_extraction common/src/plane_extraction.cpp)
