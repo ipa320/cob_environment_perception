@@ -189,6 +189,22 @@ namespace rviz
     return origin;
   }
 
+  void triangle(const cob_3d_mapping_msgs::Shape::ConstPtr& new_message, Ogre::ManualObject* polygon_, TPPLPoint p1, TPPLPoint p2, TPPLPoint p3) {
+    Eigen::Vector3f pp, normal;
+
+    MsgToPoint3D(p1,new_message,pp,normal);
+    polygon_->position(pp(0),pp(1),pp(2));  // start position
+    polygon_->normal(normal(0),normal(1),normal(2));
+
+    MsgToPoint3D(p2,new_message,pp,normal);
+    polygon_->position(pp(0),pp(1),pp(2));  // start position
+    polygon_->normal(normal(0),normal(1),normal(2));
+
+    MsgToPoint3D(p3,new_message,pp,normal);
+    polygon_->position(pp(0),pp(1),pp(2));  // start position
+    polygon_->normal(normal(0),normal(1),normal(2));
+  }
+
   void ShapeMarker::onNewMessage( const MarkerConstPtr& old_message,
                                   const MarkerConstPtr& new_message )
   {
@@ -223,19 +239,31 @@ namespace rviz
     polygon_->clear();
     polygon_->begin(createMaterialIfNotExists(new_message->color.r,new_message->color.b,new_message->color.g,new_message->color.a), Ogre::RenderOperation::OT_TRIANGLE_LIST);
 
-    TPPLPoint p1;
+    TPPLPoint p1,p2,p3,p4, p12,p23,p31;
 
     for(std::list<TPPLPoly>::iterator it=result.begin(); it!=result.end(); it++) {
       //draw each triangle
-      for(size_t i=0;i<it->GetNumPoints();i++) {
-        p1 = it->GetPoint(i);
+      if(it->GetNumPoints()!=3) continue;
 
-        Eigen::Vector3f p3, normal;
-        MsgToPoint3D(p1,new_message,p3,normal);
+      p1 = it->GetPoint(0);
+      p2 = it->GetPoint(1);
+      p3 = it->GetPoint(2);
+      p4.x = (p1.x+p2.x+p3.x)/3;
+      p4.y = (p1.y+p2.y+p3.y)/3;
+      p12.x = (p1.x+p2.x)/2;
+      p12.y = (p1.y+p2.y)/2;
+      p23.x = (p3.x+p2.x)/2;
+      p23.y = (p3.y+p2.y)/2;
+      p31.x = (p1.x+p3.x)/2;
+      p31.y = (p1.y+p3.y)/2;
 
-        polygon_->position(p3(0),p3(1),p3(2));  // start position
-        polygon_->normal(normal(0),normal(1),normal(2));
-      }
+      triangle(new_message,polygon_,p1,p12,p4);
+      triangle(new_message,polygon_,p1,p31,p4);
+      triangle(new_message,polygon_,p3,p23,p4);
+
+      triangle(new_message,polygon_,p12,p2,p4);
+      triangle(new_message,polygon_,p31,p3,p4);
+      triangle(new_message,polygon_,p23,p2,p4);
     }
 
     polygon_->end();
