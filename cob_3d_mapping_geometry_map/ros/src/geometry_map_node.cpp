@@ -85,21 +85,20 @@
 //#include <sensor_msgs/PointCloud2.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
-#include <cob_3d_mapping_msgs/PolygonArray.h>
-#include <cob_3d_mapping_msgs/PolygonArrayArray.h>
 #include <cob_3d_mapping_msgs/GetGeometricMap.h>
 #include <cob_3d_mapping_msgs/ShapeArray.h>
-#include <geometry_msgs/PolygonStamped.h>
 #include <cob_srvs/Trigger.h>
 
 // external includes
 #include <boost/timer.hpp>
 #include "cob_3d_mapping_common/stop_watch.h"
+#include <cob_3d_mapping_common/ros_msg_conversions.h>
+#include "cob_3d_mapping_common/polygon.h"
 
 // internal includes
 #include "cob_3d_mapping_geometry_map/geometry_map.h"
-#include "cob_3d_mapping_geometry_map/map_entry.h"
 
+using namespace cob_3d_mapping;
 
 //####################
 //#### nodelet class ####
@@ -112,10 +111,8 @@ public:
   : Reconfigurable_Node<cob_3d_mapping_geometry_map::geometry_map_nodeConfig>("GeometryMapNode")
   {
     ctr_ = 0;
-    //convex_hull_sub_ = n_.subscribe("table_hull", 1, &FeatureMap::subCallback, this);
     shape_sub_ = n_.subscribe("shape_array", 10, &GeometryMapNode::shapeCallback, this);
-    //map_pub_ = n_.advertise<geometry_msgs::PolygonStamped>("geometry_map",1);
-    map_pub_2_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("geometry_map_array",1);
+    map_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("geometry_map_array",1);
     marker_pub_ = n_.advertise<visualization_msgs::Marker>("geometry_marker",100);
     clear_map_server_ = n_.advertiseService("clear_geometry_map", &GeometryMapNode::clearMap, this);
     get_map_server_ = n_.advertiseService("get_geometry_map", &GeometryMapNode::getMap, this);
@@ -157,37 +154,6 @@ public:
   }
 
 
-  /**
-   * @brief callback for adding polygons to feature map and publishing them
-   *
-   * callback for adding polygons to feature map and publishing them
-   *
-   * @param p ros message containing feature map
-   *
-   * @return nothing
-   */
-  void
-  polygonCallback(const cob_3d_mapping_msgs::PolygonArray::ConstPtr p)
-  {
-    static int ctr=0;
-    static double time = 0;
-    PrecisionStopWatch t;
-	MapEntryPtr map_entry_ptr = MapEntryPtr(new MapEntry());
-    convertFromROSMsg(*p, *map_entry_ptr);
-    //dumpPolygonToFile(*map_entry_ptr);
-    t.precisionStart();
-    geometry_map_.addMapEntry(map_entry_ptr);
-    double step_time =t.precisionStop();
-    ROS_INFO("Adding feature took %f s", step_time);
-    time+=step_time;
-    ROS_INFO("[feature map] Accumulated time at step %d: %f s", ctr, time);
-    ctr++;
-    publishMapMarker();
-    publishMap();
-    ctr_++;
-    //ROS_INFO("%d polygons received so far", ctr_);
-  }
-
   void
   shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr sa)
   {
@@ -196,8 +162,8 @@ public:
     PrecisionStopWatch t;
     for(unsigned int i=0; i<sa->shapes.size(); i++)
     {
-      MapEntryPtr map_entry_ptr = MapEntryPtr(new MapEntry());
-      if(!convertFromROSMsg(sa->shapes[i], *map_entry_ptr)) continue;
+      PolygonPtr map_entry_ptr = PolygonPtr(new Polygon());
+      if(!fromROSMsg(sa->shapes[i], *map_entry_ptr)) continue;
       dumpPolygonToFile(*map_entry_ptr);
       t.precisionStart();
       geometry_map_.addMapEntry(map_entry_ptr);
@@ -247,185 +213,19 @@ public:
   getMap(cob_3d_mapping_msgs::GetGeometricMap::Request &req,
          cob_3d_mapping_msgs::GetGeometricMap::Response &res)
   {
-    boost::shared_ptr<std::vector<MapEntryPtr> > map = geometry_map_.getMap();
+    boost::shared_ptr<std::vector<PolygonPtr> > map = geometry_map_.getMap();
     res.map.header.stamp = ros::Time::now();
     res.map.header.frame_id = "/map";
     for(unsigned int i=0; i<map->size(); i++)
     {
-      MapEntry& sm = *(map->at(i));
+      Polygon& sm = *(map->at(i));
       cob_3d_mapping_msgs::Shape s;
-      convertToROSMsg(sm,s);
+      toROSMsg(sm,s);
       res.map.shapes.push_back(s);
     }
     return true;
   }
 
-
-  /**
-   * @brief reading a ros message to convert it to a feature map
-   *
-   * reading a ros message to convert it to a geometry map
-   *
-   * @param p ros message containing polygons
-   * @param map_entry output to geometry map
-   *
-   * @return nothing
-   */
-  void
-  convertFromROSMsg(const cob_3d_mapping_msgs::PolygonArray& p, MapEntry& map_entry)
-  {
-    map_entry.id = 0;
-    map_entry.d = p.d.data;
-    map_entry.normal(0) = p.normal.x;
-    map_entry.normal(1) = p.normal.y;
-    map_entry.normal(2) = p.normal.z;
-    map_entry.merged = 0;
-    //map_entry.polygon_world.resize(p.polygons.size());
-    for(unsigned int i=0; i<p.polygons.size(); i++)
-    {
-      if(p.polygons[i].points.size())
-      {
-        std::vector<Eigen::Vector3f> pts;
-        pts.resize(p.polygons[i].points.size());
-        for(unsigned int j=0; j<p.polygons[i].points.size(); j++)
-        {
-          /*pts[j] = Eigen::Vector3f(p.polygons[i].points[j].x,
-                                   p.polygons[i].points[j].y,
-                                   p.polygons[i].points[j].z);*/
-          pts[j](0) = p.polygons[i].points[j].x;
-          pts[j](1) = p.polygons[i].points[j].y;
-          pts[j](2) = p.polygons[i].points[j].z;
-        }
-        map_entry.polygon_world.push_back(pts);
-      }
-    }
-  }
-
-  /**
-   * @brief writing to a ros message to convert a geometry map
-   *
-   * writing to a ros message to convert a geometry map
-   *
-   * @param p ros message containing polygons
-   * @param map_entry input as geometry map
-   *
-   * @return nothing
-   */
-  void
-  convertToROSMsg(const MapEntry& map_entry, cob_3d_mapping_msgs::PolygonArray& p)
-  {
-    p.d.data = map_entry.d;
-    p.normal.x = map_entry.normal(0);
-    p.normal.y = map_entry.normal(1);
-    p.normal.z = map_entry.normal(2);
-    p.polygons.resize(map_entry.polygon_world.size());
-    for(unsigned int i=0; i<map_entry.polygon_world.size(); i++)
-    {
-      p.polygons[i].points.resize(map_entry.polygon_world[i].size());
-      for(unsigned int j=0; j<map_entry.polygon_world[i].size(); j++)
-      {
-        p.polygons[i].points[j].x = map_entry.polygon_world[i][j](0);
-        p.polygons[i].points[j].y = map_entry.polygon_world[i][j](1);
-        p.polygons[i].points[j].z = map_entry.polygon_world[i][j](2);
-      }
-    }
-  }
-
-  /**
-   * @brief writing to a ros message to convert a feature map
-   *
-   * writing to a ros message to convert a feature map
-   *
-   * @param p ros message containing polygons
-   * @param map_entry input as feature map
-   *
-   * @return nothing
-   */
-  void
-  convertToROSMsg(const MapEntry& map_entry, cob_3d_mapping_msgs::Shape& s)
-  {
-    s.params.resize(4);
-    s.params[0] = map_entry.normal(0);
-    s.params[1] = map_entry.normal(1);
-    s.params[2] = map_entry.normal(2);
-    s.params[3] = map_entry.d;
-    s.centroid.x = map_entry.centroid(0);
-    s.centroid.y = map_entry.centroid(1);
-    s.centroid.z = map_entry.centroid(2);
-    s.points.resize(map_entry.polygon_world.size());
-    s.holes.resize(map_entry.holes.size());
-    for(unsigned int i=0; i<map_entry.polygon_world.size(); i++)
-    {
-      s.holes[i] = map_entry.holes[i];
-      //s.points[i].points.resize(map_entry.polygon_world[i].size());
-      pcl::PointCloud<pcl::PointXYZ> cloud;
-      for(unsigned int j=0; j<map_entry.polygon_world[i].size(); j++)
-      {
-        pcl::PointXYZ p;
-        p.x = map_entry.polygon_world[i][j](0);
-        p.y = map_entry.polygon_world[i][j](1);
-        p.z = map_entry.polygon_world[i][j](2);
-        cloud.points.push_back(p);
-        /*s.points[i].points[j].x = map_entry.polygon_world[i][j](0);
-        s.points[i].points[j].y = map_entry.polygon_world[i][j](1);
-        s.points[i].points[j].z = map_entry.polygon_world[i][j](2);*/
-      }
-      sensor_msgs::PointCloud2 cloud_msg;
-      pcl::toROSMsg(cloud, cloud_msg);
-      s.points[i]= cloud_msg;
-    }
-  }
-
-  /**
-   * @brief writing to a ros message to convert a feature map
-   *
-   * writing to a ros message to convert a feature map
-   *
-   * @param p ros message containing polygons
-   * @param map_entry input as feature map
-   *
-   * @return nothing
-   */
-  bool
-  convertFromROSMsg(const cob_3d_mapping_msgs::Shape& s, MapEntry& map_entry)
-  {
-    map_entry.id = 0;
-    map_entry.normal(0) = s.params[0];
-    map_entry.normal(1) = s.params[1];
-    map_entry.normal(2) = s.params[2];
-    map_entry.d = s.params[3];
-    //std::cout << "normal: " << map_entry.normal(0) << ","  << map_entry.normal(1) << "," << map_entry.normal(2) << std::endl;
-    //std::cout << "d: " << map_entry.d << std::endl << std::endl;
-    map_entry.merged = 0;
-    //map_entry.polygon_world.resize(p.polygons.size());
-    for(unsigned int i=0; i<s.points.size(); i++)
-    {
-      map_entry.holes.push_back(false);
-      if(s.points[i].data.size())
-      {
-        pcl::PointCloud<pcl::PointXYZ> cloud;
-        pcl::fromROSMsg(s.points[i], cloud);
-        std::vector<Eigen::Vector3f> pts;
-        pts.resize(cloud.points.size());
-        for(unsigned int j=0; j<cloud.points.size(); j++)
-        {
-          /*pts[j] = Eigen::Vector3f(p.polygons[i].points[j].x,
-                                   p.polygons[i].points[j].y,
-                                   p.polygons[i].points[j].z);*/
-          pts[j](0) = cloud.points[j].x;
-          pts[j](1) = cloud.points[j].y;
-          pts[j](2) = cloud.points[j].z;
-        }
-        map_entry.polygon_world.push_back(pts);
-      }
-      else
-      {
-        std::cout << "shape has no points" << std::endl;
-        return false;
-      }
-    }
-    return true;
-  }
 
   /**
    * @brief output featuremap to dump file
@@ -436,7 +236,7 @@ public:
    *
    * @return nothing
    */
-  void dumpPolygonToFile(MapEntry& m)
+  void dumpPolygonToFile(Polygon& m)
   {
     static int ctr=0;
     std::stringstream ss;
@@ -445,14 +245,14 @@ public:
     myfile.open (ss.str().c_str());
     myfile << m.id << "\n";
     myfile << m.normal(0) << "\n" << m.normal(1) << "\n" << m.normal(2) << "\n";
-    myfile << m.polygon_world[0].size() << "\n";
-    for(unsigned int i=0; i<m.polygon_world.size(); i++)
+    myfile << m.contours[0].size() << "\n";
+    for(unsigned int i=0; i<m.contours.size(); i++)
     {
-      for(unsigned int j=0; j<m.polygon_world[i].size(); j++)
+      for(unsigned int j=0; j<m.contours[i].size(); j++)
       {
-        myfile << m.polygon_world[i][j](0) << " ";
-        myfile << m.polygon_world[i][j](1) << " ";
-        myfile << m.polygon_world[i][j](2) << "\n";
+        myfile << m.contours[i][j](0) << " ";
+        myfile << m.contours[i][j](1) << " ";
+        myfile << m.contours[i][j](2) << "\n";
       }
     }
 
@@ -464,53 +264,25 @@ public:
 
   void publishMap()
   {
-    boost::shared_ptr<std::vector<MapEntryPtr> > map = geometry_map_.getMap();
+    boost::shared_ptr<std::vector<PolygonPtr> > map = geometry_map_.getMap();
     //cob_3d_mapping_msgs::PolygonArrayArray map_msg;
     cob_3d_mapping_msgs::ShapeArray map_msg;
     map_msg.header.frame_id="/map";
     map_msg.header.stamp = ros::Time::now();
     for(unsigned int i=0; i<map->size(); i++)
     {
-      MapEntry& sm = *(map->at(i));
+      Polygon& sm = *(map->at(i));
       //cob_3d_mapping_msgs::PolygonArray p;
       cob_3d_mapping_msgs::Shape s;
-      convertToROSMsg(sm, s);
+      toROSMsg(sm, s);
       s.header = map_msg.header;
       //map_msg.polygon_array.push_back(p);
       map_msg.shapes.push_back(s);
     }
-    map_pub_2_.publish(map_msg);
+    map_pub_.publish(map_msg);
   }
 
 
-  /**
-   * @brief publishes the polygon of every geometry
-   *
-   * publishes the polygon of every geometry
-   *
-   * @return nothing
-   */
-  void publishMapPolygons()
-  {
-    geometry_msgs::PolygonStamped p;
-    p.header.frame_id = "/map";
-    boost::shared_ptr<std::vector<MapEntryPtr> > map = geometry_map_.getMap();
-    for(unsigned int i=0; i<map->size(); i++)
-    {
-    	MapEntry& pm = *(map->at(i));
-      for(unsigned int j=0; j<pm.polygon_world.size(); j++)
-      {
-        p.polygon.points.resize(pm.polygon_world[j].size());
-        for(unsigned int k=0; k<pm.polygon_world[j].size(); k++)
-        {
-          p.polygon.points[k].x = pm.polygon_world[j][k](0);
-          p.polygon.points[k].y = pm.polygon_world[j][k](1);
-          p.polygon.points[k].z = pm.polygon_world[j][k](2);
-        }
-        map_pub_.publish(p);
-      }
-    }
-  }
 
   /**
    * @brief publishes the contour of the polygons
@@ -545,11 +317,11 @@ public:
     marker.color.a = 1.0;
 
     geometry_msgs::Point pt;
-    boost::shared_ptr<std::vector<MapEntryPtr> > map = geometry_map_.getMap();
+    boost::shared_ptr<std::vector<PolygonPtr> > map = geometry_map_.getMap();
     int ctr=0, t_ctr=2000;
     for(unsigned int i=0; i<map->size(); i++)
     {
-    	MapEntry& pm = *(map->at(i));
+    	Polygon& pm = *(map->at(i));
         int color_ctr = i%4;
         //marker.id = pm.id;
         if(color_ctr==0)
@@ -576,9 +348,9 @@ public:
           marker.color.g = 1;
           marker.color.b = 0;
         }
-        for(unsigned int j=0; j<pm.polygon_world.size(); j++)
+        for(unsigned int j=0; j<pm.contours.size(); j++)
         {
-          //if(pm.polygon_world.size()>1) std::cout << "id: " << ctr << ", " << pm.polygon_world.size() << std::endl;
+          //if(pm.contours.size()>1) std::cout << "id: " << ctr << ", " << pm.contours.size() << std::endl;
           //TODO: this is a workaround as the marker can't display more than one contour
           marker.id = ctr;
           marker.color.r /= j+1;
@@ -591,20 +363,20 @@ public:
           t_marker.text = ss.str();
           ctr++;
           t_ctr++;
-          for(unsigned int k=0; k<pm.polygon_world[j].size(); k++)
+          for(unsigned int k=0; k<pm.contours[j].size(); k++)
           {
-            marker.points.resize(pm.polygon_world[j].size()+1);
-            /*pt.x = pm.polygon_world[j][k](0);
-                  pt.y = pm.polygon_world[j][k](1);
-                  pt.z = pm.polygon_world[j][k](2);*/
-            marker.points[k].x = pm.polygon_world[j][k](0);
-            marker.points[k].y = pm.polygon_world[j][k](1);
-            marker.points[k].z = pm.polygon_world[j][k](2);
+            marker.points.resize(pm.contours[j].size()+1);
+            /*pt.x = pm.contours[j][k](0);
+                  pt.y = pm.contours[j][k](1);
+                  pt.z = pm.contours[j][k](2);*/
+            marker.points[k].x = pm.contours[j][k](0);
+            marker.points[k].y = pm.contours[j][k](1);
+            marker.points[k].z = pm.contours[j][k](2);
             //marker.points.push_back(pt);
           }
-          marker.points[pm.polygon_world[j].size()].x = pm.polygon_world[j][0](0);
-          marker.points[pm.polygon_world[j].size()].y = pm.polygon_world[j][0](1);
-          marker.points[pm.polygon_world[j].size()].z = pm.polygon_world[j][0](2);
+          marker.points[pm.contours[j].size()].x = pm.contours[j][0](0);
+          marker.points[pm.contours[j].size()].y = pm.contours[j][0](1);
+          marker.points[pm.contours[j].size()].z = pm.contours[j][0](2);
           marker_pub_.publish(marker);
           marker_pub_.publish(t_marker);
         }
@@ -617,7 +389,6 @@ public:
 protected:
   ros::Subscriber shape_sub_;
   ros::Publisher map_pub_;
-  ros::Publisher map_pub_2_;
   ros::Publisher marker_pub_;
   ros::ServiceServer clear_map_server_;
   ros::ServiceServer get_map_server_;

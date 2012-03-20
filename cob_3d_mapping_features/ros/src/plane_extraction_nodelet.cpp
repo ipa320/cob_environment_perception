@@ -98,9 +98,7 @@
 // ROS message includes
 //#include <sensor_msgs/PointCloud2.h>
 #include <cob_3d_mapping_msgs/GetPlane.h>
-#include <cob_3d_mapping_msgs/PolygonArray.h>
 #include <cob_3d_mapping_msgs/ShapeArray.h>
-#include <geometry_msgs/PolygonStamped.h>
 
 // external includes
 #include <boost/timer.hpp>
@@ -183,11 +181,7 @@ public:
     n_ = getNodeHandle();
 
     point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &PlaneExtractionNodelet::pointCloudSubCallback, this);
-    viz_marker_pub_ = n_.advertise<visualization_msgs::Marker>("plane_marker",100);
-    chull_pub_ = n_.advertise<pcl::PointCloud<Point> >("chull",1);
-    object_cluster_pub_ = n_.advertise<pcl::PointCloud<Point> >("object_cluster",1);
-    polygon_pub_ = n_.advertise<geometry_msgs::PolygonStamped>("polygons",1);
-    polygon_array_pub_ = n_.advertise<cob_3d_mapping_msgs::PolygonArray>("polygon_array",1);
+    viz_marker_pub_ = n_.advertise<visualization_msgs::Marker>("plane_marker",10);
     shape_array_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("shape_array",1);
 
     as_= new actionlib::SimpleActionServer<cob_3d_mapping_msgs::PlaneExtractionAction>(n_, "plane_extraction", boost::bind(&PlaneExtractionNodelet::actionCallback, this, _1), false);
@@ -289,8 +283,6 @@ public:
       publishShapeArray(v_cloud_hull, v_hull_polygons, v_coefficients_plane, pc_in->header);
       for(unsigned int i = 0; i < v_cloud_hull.size(); i++)
       {
-        //publishPolygonArray(v_cloud_hull[i], v_hull_polygons[i], v_coefficients_plane[i], pc_in->header);
-        //publishPolygons(v_cloud_hull[i], pc_in->header);
         publishMarker(v_cloud_hull[i], pc_in->header, 0, 0, 1);
         ctr_++;
         //ROS_INFO("%d planes published so far", ctr_);
@@ -383,71 +375,6 @@ public:
     res.plane_coeffs[3].data = plane_coeffs_.values[3];
     ROS_INFO("Hull size: %d", res.hull.width*res.hull.height);
     return true;
-  }
-
-  /**
-   * @brief creates polygon from point cloud and publish it
-   *
-   * creates polygon from point cloud and publish it
-   *
-   * @param cloud_hull point cloud
-   * @param header header of published polygons
-   *
-   * @return nothing
-   */
-  void
-  publishPolygons(pcl::PointCloud<Point>& cloud_hull,
-                  std_msgs::Header header)
-  {
-    geometry_msgs::PolygonStamped polygon;
-    polygon.header = header;
-    polygon.polygon.points.resize(cloud_hull.points.size());
-    for(unsigned int i = 0; i < cloud_hull.points.size(); i++)
-    {
-      polygon.polygon.points[i].x = cloud_hull.points[i].x;
-      polygon.polygon.points[i].y = cloud_hull.points[i].y;
-      polygon.polygon.points[i].z = cloud_hull.points[i].z;
-    }
-    polygon_pub_.publish(polygon);
-  }
-
-  /**
-   * @brief creates polygon from parameters and publish it
-   *
-   * creates polygon from parameters and publish it
-   *
-   * @param cloud_hull point cloud
-   * @param hull_polygons polygons
-   * @param coefficients_plane coefficients
-   * @param header header of published polygons
-   *
-   * @return nothing
-   */
-  void
-  publishPolygonArray(pcl::PointCloud<Point>& cloud_hull,
-                      std::vector< pcl::Vertices >& hull_polygons,
-                      pcl::ModelCoefficients& coefficients_plane,
-                      std_msgs::Header header)
-  {
-    cob_3d_mapping_msgs::PolygonArray p;
-    p.polygons.resize(hull_polygons.size());
-    p.header = header;
-    p.normal.x = coefficients_plane.values[0];
-    p.normal.y = coefficients_plane.values[1];
-    p.normal.z = coefficients_plane.values[2];
-    p.d.data = coefficients_plane.values[3];
-    for(unsigned int i=0; i<hull_polygons.size(); i++)
-    {
-      p.polygons[i].points.resize(hull_polygons[i].vertices.size());
-      for(unsigned int j=0; j<hull_polygons[i].vertices.size(); j++)
-      {
-        int idx = hull_polygons[i].vertices[j];
-        p.polygons[i].points[j].x = cloud_hull.points[idx].x;
-        p.polygons[i].points[j].y = cloud_hull.points[idx].y;
-        p.polygons[i].points[j].z = cloud_hull.points[idx].z;
-      }
-      polygon_array_pub_.publish(p);
-    }
   }
 
   /**
@@ -570,10 +497,6 @@ public:
 protected:
   ros::Subscriber point_cloud_sub_;
   ros::Publisher viz_marker_pub_;
-  ros::Publisher chull_pub_;
-  ros::Publisher object_cluster_pub_;
-  ros::Publisher polygon_array_pub_;
-  ros::Publisher polygon_pub_;
   ros::Publisher shape_array_pub_;
 
   ros::ServiceServer get_plane_;
@@ -607,50 +530,3 @@ protected:
 };
 
 PLUGINLIB_DECLARE_CLASS(cob_3d_mapping_features, PlaneExtractionNodelet, PlaneExtractionNodelet, nodelet::Nodelet)
-
-/// Old code
-
-/*void publishMarker(pcl::PointCloud<Point>& cloud_hull, std::string& frame_id)
-{
-  visualization_msgs::Marker marker;
-  marker.action = visualization_msgs::Marker::ADD;
-  marker.type = visualization_msgs::Marker::TRIANGLE_LIST;
-  marker.lifetime = ros::Duration();
-  marker.header.frame_id = frame_id;
-  marker.id = ctr_;
-
-
-  //create the marker in the table reference frame
-  //the caller is responsible for setting the pose of the marker to match
-
-  marker.scale.x = 1;
-  marker.scale.y = 1;
-  marker.scale.z = 1;
-
-  geometry_msgs::Point pt1, pt2, pt3;
-  pt1.x = cloud_hull.points[0].x;
-  pt1.y = cloud_hull.points[0].y;
-  pt1.z = cloud_hull.points[0].z;
-
-  for(unsigned int i = 1; i < cloud_hull.points.size()-1; ++i)
-  {
-    pt2.x = cloud_hull.points[i].x;
-    pt2.y = cloud_hull.points[i].y;
-    pt2.z = cloud_hull.points[i].z;
-
-    pt3.x = cloud_hull.points[i+1].x;
-    pt3.y = cloud_hull.points[i+1].y;
-    pt3.z = cloud_hull.points[i+1].z;
-
-    marker.points.push_back(pt1);
-    marker.points.push_back(pt2);
-    marker.points.push_back(pt3);
-  }
-
-  marker.color.r = 0;
-  marker.color.g = 0;
-  marker.color.b = 1;
-  marker.color.a = 1.0;
-
-  table_marker_pub_.publish(marker);
-}*/

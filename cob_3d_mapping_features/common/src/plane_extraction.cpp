@@ -334,9 +334,9 @@ PlaneExtraction::saveHulls(pcl::PointCloud<Point>& cloud_hull,
           std::vector< pcl::Vertices >& hull_polygons,
           int plane_ctr)
 {
-  pcl::PointCloud<Point> hull_part;
   for(unsigned int i=0; i<hull_polygons.size(); i++)
   {
+    pcl::PointCloud<Point> hull_part;
     for(unsigned int j=0; j<hull_polygons[i].vertices.size(); j++)
     {
       int idx = hull_polygons[i].vertices[j];
