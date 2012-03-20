@@ -19,8 +19,6 @@
  *
  * Date of creation: 11/2011
  * ToDo:
- * ROS parameters for parameters in semantic_extraction class
- * switch to ShapeArray message type for map
  *
  *
  *
@@ -66,7 +64,6 @@
 #include <sensor_msgs/PointCloud.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
-#include <cob_3d_mapping_msgs/PolygonArrayArray.h>
 
 // PCL includes
 #include <pcl/point_cloud.h>
@@ -552,122 +549,6 @@ public:
 
   }
 
-  /**
-   * @brief publish shape_array messages
-   */
-  /*  void
-   publishShapes ()
-   {
-   sa_pub_.publish (sa_);
-   }
-   */
-  /**
-   * @brief convert ros message to polygon struct
-   *
-   * @param p ros message to be converted
-   *
-   * @param poly polygon stuct
-   * @return nothing
-   */
-  void
-  convertFromROSMsg (const cob_3d_mapping_msgs::PolygonArray& p, SemanticExtraction::Polygon& poly)
-  {
-    ROS_INFO(" converting ROS msg \n");
-
-    poly.normal (0) = p.normal.x;
-    poly.normal (1) = p.normal.y;
-    poly.normal (2) = p.normal.z;
-    poly.d = p.d.data;
-
-    for (unsigned int i = 0; i < p.polygons.size (); i++)
-    {
-      ROS_INFO("polygon < %d > size: %d" , i,p.polygons.size ());
-      if (p.polygons[i].points.size ())
-      {
-        ROS_INFO("polygon < %d > size: %d" , i, p.polygons[i].points.size ());
-
-        //std::vector<Eigen::Vector3f>  pts;
-        //Eigen::Vector3f p3f;
-
-        std::vector<Eigen::Vector3f> pts;
-        pts.resize (p.polygons[i].points.size ());
-
-        //std::cout<<" pts size : "<< pts.size()<<std::endl;
-        //std::cout<<"\n\n_"<<i<<"_";
-
-        for (unsigned int j = 0; j < p.polygons[i].points.size (); j++)
-        {
-          //std::cout<<"\n\t#"<<j<<"#";
-
-          pts[j][0] = p.polygons[i].points[j].x;
-          pts[j][1] = p.polygons[i].points[j].y;
-          pts[j][2] = p.polygons[i].points[j].z;
-
-          //std::cout<<"\t%x = "<< pts[j][0]<<std::endl;
-          //std::cout<<"\t\t%y = "<< pts[j][1]<<std::endl;
-          //std::cout<<"\t\t%z = "<< pts[j][2]<<std::endl;
-
-          /*
-           p3f[0] = p.polygons[i].points[j].x;
-           std::cout<<"\t\t%%x = "<< p3f[0]<<std::endl;
-           p3f[1] = p.polygons[i].points[j].y;
-           std::cout<<"\t\t%%x = "<< p3f[1]<<std::endl;
-           p3f[2] = p.polygons[i].points[j].z;
-           std::cout<<"\t\t%%x = "<< p3f[2]<<std::endl;
-
-           pts.push_back(p3f);
-           std::cout<<" pts point : "<< pts[j]<<std::endl;
-
-           */
-        }
-
-        poly.poly_points.push_back (pts);
-      }
-    }
-  }
-  /*
-   void
-   convertToROSMsg (const SemanticExtraction::Polygon& poly, cob_3d_mapping_msgs::PolygonArray& p)
-   {
-   ROS_INFO(" converting to ROS msg \n");
-
-   p.normal.x = poly.normal (0);
-   p.normal.y = poly.normal (1);
-   p.normal.z = poly.normal (2);
-   p.d.data = poly.d;
-
-   //std::cout<<" -:--------------:"<<std::endl;
-   //std::cout<<" normal(0) :"<<p.normal.x<<std::endl;
-
-   //p.polygons.resize(poly.poly_points.size());
-   for (unsigned int i = 0; i < poly.poly_points.size (); i++)
-   {
-   std::cout << " poly size : " << poly.poly_points.size () << std::endl;
-   if (poly.poly_points.size ())
-   {
-   std::cout << " poly at i size: " << poly.poly_points[i].size () << std::endl;
-
-   //std::cout<<"\n\n_"<<i<<"_";
-
-   for (unsigned int j = 0; j < poly.poly_points[i].size (); j++)
-   {
-   //std::cout<<"\n\t#"<<j<<"#";
-
-   p.polygons[i].points[j].x = poly.poly_points[i][j][0];
-   p.polygons[i].points[j].y = poly.poly_points[i][j][1];
-   p.polygons[i].points[j].z = poly.poly_points[i][j][2];
-
-   //std::cout<<"\t%x = "<< pts[j][0]<<std::endl;
-   //std::cout<<"\t\t%y = "<< pts[j][1]<<std::endl;
-   //std::cout<<"\t\t%z = "<< pts[j][2]<<std::endl;
-   }
-
-   p.polygons.push_back (p.polygons[i]);
-   }
-   }
-
-   }
-   */
   /**
    * @brief convert polygon to PointCloud message
    *
