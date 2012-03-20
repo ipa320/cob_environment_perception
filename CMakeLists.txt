@@ -26,7 +26,11 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/ros/include)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/ros/include
+    ${PROJECT_SOURCE_DIR}/common/include)
+
+rosbuild_add_library(cob_3d_mapping_common common/src/shape.cpp
+   common/src/polygon.cpp )
 
 rosbuild_add_executable(field_of_view_node ros/src/field_of_view.cpp)
 rosbuild_add_executable(keyframe_detector_node ros/src/keyframe_detector.cpp)
