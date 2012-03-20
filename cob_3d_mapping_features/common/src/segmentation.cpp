@@ -430,8 +430,10 @@ void Segmentation::getClusterIndices(pcl::PointCloud<PointLabel>::Ptr& cloud_in,
   }
   seg_img = cv::Mat(cloud_in->height,cloud_in->width, CV_8UC3);
   std::vector<cv::Vec3b> colorTab;
-  colorTab.push_back(cv::Vec3b((uchar)255, (uchar)0, (uchar)0));
-  colorTab.push_back(cv::Vec3b((uchar)0, (uchar)255, (uchar)0));
+  colorTab.push_back(cv::Vec3b((uchar)0, (uchar)255, (uchar)0)); // undef
+  colorTab.push_back(cv::Vec3b((uchar)255, (uchar)255, (uchar)255)); // nan
+  colorTab.push_back(cv::Vec3b((uchar)0, (uchar)0, (uchar)0)); // border
+  colorTab.push_back(cv::Vec3b((uchar)255, (uchar)0, (uchar)0)); // edge
   for(int i = 1; i < 256; i++ )
   {
     int b = cv::theRNG().uniform(0, 255);

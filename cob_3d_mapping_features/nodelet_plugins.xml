@@ -1,8 +1,13 @@
 <library path="lib/libcob_3d_mapping_features_nodelets">
   <class name="cob_3d_mapping_features/PlaneExtractionNodelet" type="PlaneExtractionNodelet" base_class_type="nodelet::Nodelet">
-  <description>
-  Nodelet for plane extraction
-  </description>
+    <description>
+      Nodelet for plane extraction
+    </description>
+  </class>
+  <class name="cob_3d_mapping_features/SegmentationNodelet" type="cob_3d_mapping_features::SegmentationNodelet" base_class_type="nodelet::Nodelet">
+    <description>
+      Nodelet for segmentation
+    </description>
   </class>
 
 </library>

@@ -8,8 +8,8 @@
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
  * Project name: care-o-bot
- * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_features
+ * ROS stack name: cob_vision
+ * ROS package name: cob_env_model
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -17,7 +17,7 @@
  * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 12/2011
+ * Date of creation: 02/2012
  * ToDo:
  *
  *
@@ -52,37 +52,75 @@
  *
  ****************************************************************/
 
-#ifndef __IMPL_ORGANIZED_NORMAL_ESTIMATION_H__
-#define __IMPL_ORGANIZED_NORMAL_ESTIMATION_H__
+#ifndef __COB_3D_MAPPING_FEATURES_SEGMENTATION_NODELET_H__
+#define __COB_3D_MAPPING_FEATURES_SEGMENTATION_NODELET_H__
 
-#include "cob_3d_mapping_common/label_defines.h"
+
+// ROS includes
+#include <pcl_ros/pcl_nodelet.h>
+#include <image_transport/image_transport.h>
+#include <cv_bridge/cv_bridge.h>
+
+// PCL includes
+#include <pcl/point_types.h>
+#include <pcl/PointIndices.h>
+
+// Package includes
+#include "cob_3d_mapping_common/point_types.h"
 #include "cob_3d_mapping_features/organized_normal_estimation_omp.h"
+#include "cob_3d_mapping_features/organized_curvature_estimation_omp.h"
+#include "cob_3d_mapping_features/segmentation.h"
 
-template <typename PointInT, typename PointOutT, typename LabelOutT> void
-cob_3d_mapping_features::OrganizedNormalEstimationOMP<PointInT,PointOutT,LabelOutT>::computeFeature (PointCloudOut &output)
+namespace cob_3d_mapping_features
 {
-  if (labels_->points.size() != input_->size())
+  class SegmentationNodelet : public pcl_ros::PCLNodelet
   {
-    labels_->points.resize(input_->size());
-    labels_->height = input_->height;
-    labels_->width = input_->width;
-  }
+    typedef pcl::PointXYZRGB PointT;
+    //typedef pcl::PointCloud<PointT> PointCloud;
 
-  int threadsize = 1;
+  public:
+    SegmentationNodelet() : it_(nh_)
+      , one_()
+      , oce_()
+      , seg_()
+      , normals_(new pcl::PointCloud<pcl::Normal>)
+      , pc_(new pcl::PointCloud<pcl::PrincipalCurvatures>)
+      , labels_(new pcl::PointCloud<PointLabel>)
+      , clusters_()
+    { }
 
-#pragma omp parallel for schedule (dynamic, threadsize)
-  for (size_t i=0; i < indices_->size(); ++i)
-  {
-    labels_->points[(*indices_)[i]].label = I_UNDEF;
-    computePointNormal(*surface_, (*indices_)[i], 
-		       output.points[(*indices_)[i]].normal[0],
-		       output.points[(*indices_)[i]].normal[1],
-		       output.points[(*indices_)[i]].normal[2],
-		       labels_->points[(*indices_)[i]].label);
-  }
+    ~SegmentationNodelet() 
+    { }
+
+
+  protected:    
+    virtual void 
+    onInit();
+
+    void
+    received_cloud_cb(const pcl::PointCloud<PointT>::ConstPtr& cloud);
+
+    //boost::mutex mutex_;
+    ros::NodeHandle nh_;
+    ros::Subscriber sub_;
+    image_transport::ImageTransport it_;
+    image_transport::Publisher image_pub_;
+    
+    OrganizedNormalEstimationOMP<PointT, pcl::Normal, PointLabel> one_;
+    OrganizedCurvatureEstimationOMP<PointT, pcl::Normal, PointLabel, pcl::PrincipalCurvatures> oce_;
+    Segmentation seg_;
+
+    pcl::PointCloud<pcl::Normal>::Ptr normals_;
+    pcl::PointCloud<pcl::PrincipalCurvatures>::Ptr pc_;
+    pcl::PointCloud<PointLabel>::Ptr labels_;
+    std::vector<pcl::PointIndices> clusters_;
+    cv::Mat segmented_;
+
+  };
+
+  
+  
 }
 
-#define PCL_INSTANTIATE_OrganizedNormalEstimationOMP(T,OutT,LabelT) template class PCL_EXPORTS cob_3d_mapping_features::OrganizedNormalEstimationOMP<T,OutT,LabelT>;
 
-#endif
-
+#endif  //__COB_3D_MAPPING_FEATURES_SEGMENTATION_NODELET_H__
