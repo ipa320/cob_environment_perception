@@ -16,6 +16,14 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
+#add include search paths
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
+
+#add project executbles(example examples/example.cpp)
+rosbuild_add_executable(${PROJECT_NAME} ros/src/MapDemonDriver.cpp common/src/MapDemonCtrl.cpp common/src/SerialDevice.cpp)
+rosbuild_add_executable(testClient ros/test/test_client.cpp)
+rosbuild_add_executable(testClientPOS ros/test/test_clientPOS.cpp)
+
 #uncomment if you have defined messages
 #rosbuild_genmsg()
 #uncomment if you have defined services
@@ -28,3 +36,6 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
+
+
+

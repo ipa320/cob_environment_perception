@@ -1,0 +1,10 @@
+joint_names: ["stepper","servo"]
+
+# single positions
+home: [[0,0]]
+up: [[0,-1.3]]
+down: [[0,1.3]]
+one_rot: [[6.28,0]]
+
+# trajectories
+scan: [one_rot,home]
