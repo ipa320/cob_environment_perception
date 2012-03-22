@@ -475,6 +475,7 @@ public:
 				error_ = false;
 				error_msg_ = "";
 				res.success.data = true;
+				res.error_message.data = error_msg_;
 				ROS_INFO("...recovering COB3DMD successful");
 			}
 		}
