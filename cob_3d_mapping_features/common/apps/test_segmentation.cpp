@@ -251,7 +251,11 @@ int main(int argc, char** argv)
     {
       for (unsigned int j=0; j < pc->width; j++)
       {
-	edge_3d.at<float>(i,j) = pc->points[i*pc->width+j].pc1;
+	if (l->points[i*pc->width+j].label == I_BORDER ||
+	    l->points[i*pc->width+j].label == I_NAN)
+	  edge_3d.at<float>(i,j) = 2*upper_;
+	else
+	  edge_3d.at<float>(i,j) = pc->points[i*pc->width+j].pc1;
       }
     }
   }
@@ -299,6 +303,11 @@ int main(int argc, char** argv)
   cv::imshow("sobel", sobel);
   cv::imshow("laplace", laplace);
   cv::imshow("combined2d", combined_2d);
+  if (en_oce_) 
+  {
+    cv::threshold(edge_3d,edge_3d, upper_ * 1.1, upper_ * 1.1, cv::THRESH_TRUNC);
+    cv::normalize(edge_3d,edge_3d, 0, 1, cv::NORM_MINMAX);
+  }
   cv::imshow("edge3d", edge_3d);
   cv::imshow("segmented", segmented);
   cv::waitKey();

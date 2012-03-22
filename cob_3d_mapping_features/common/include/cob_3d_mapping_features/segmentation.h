@@ -95,7 +95,12 @@ namespace cob_3d_mapping_features
       bool& gap_l, bool& gap_r, bool& gap_a, bool& gap_d);
     bool isStopperInNeighbors(pcl::PointCloud<PointLabel>::Ptr& cloud_in, std::vector<int>& indices);
     void propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_in);
-    void getClusterIndices(pcl::PointCloud<PointLabel>::Ptr& cloud_in, std::vector<pcl::PointIndices>& cluster_indices, cv::Mat& seg_img);
+    void getClusterIndices(pcl::PointCloud<PointLabel>::Ptr& cloud_in,
+			   std::vector<pcl::PointIndices>& cluster_indices,
+			   cv::Mat& seg_img);
+    void getClusterIndices(pcl::PointCloud<PointLabel>::Ptr& cloud_in,
+			   std::vector<pcl::PointIndices>& cluster_indices,
+			   pcl::PointCloud<PointXYZRGB>::Ptr& colored_cloud);
 
   };
 }
