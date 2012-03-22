@@ -23,7 +23,11 @@ MapDemonCtrl::MapDemonCtrl(MapDemonCtrlParams * params, SerialDevice * sd)
 /// Destructor
 MapDemonCtrl::~MapDemonCtrl()
 {
-
+	m_sd->FlushInPort();	
+	m_sd->FlushOutPort();
+	m_sd->PutString("R0\n");	/// shut the robot position output
+	
+	m_sd->closePort();
 }
 
 /*!
@@ -103,8 +107,8 @@ bool MapDemonCtrl::Init(MapDemonCtrlParams * params)
 	if( !m_sd->FlushInBuffer() )
 		return false;	/// ...and flush serial port input buffer
 
-//	std::cout << "Detecting the robot..." << std::endl;
-	/*m_sd->PutString("N\n");
+	std::cout << "Detecting the robot..." << std::endl;
+	m_sd->PutString("N\n");
 	std::string str;
 	m_sd->GetString(str);
 	
@@ -116,8 +120,8 @@ bool MapDemonCtrl::Init(MapDemonCtrlParams * params)
 		m_ErrorMessage = errorMsg.str();
 		return false;
 	}
-*/
-//	std::cout << "Robot successfuly detected. ID: """ << str.c_str() << """" << std::endl;
+
+	std::cout << "Robot successfuly detected. ID: """ << str.c_str() << """" << std::endl;
 	
 
 	m_SerialDeviceOpened = true;
@@ -150,24 +154,35 @@ bool MapDemonCtrl::RunCalibration()
 	std::vector<double> MaxVel = m_params_->GetMaxVel();
 	
 	/// Shut robot output in case it was already enabled...
-	m_sd->PutString("R0\n");
 	if( !m_sd->FlushInBuffer() )
 		return false;	/// ...and flush serial port input buffer
 	
 	/// Run encoder calibration
 	m_sd->PutString("L\n");
-	m_sd->GetString(str);		/// lock till getting response
 	
-	char *cstr = new char (str.size()+1);
-	strcpy(cstr, str.c_str());
+	size_t found = string::npos;	
+	char retry = 0;	//
+	
+	/// get messages till 'L' is received (this is necessary because if the message output of the robot was enabled, between the flush buffer and this we still could have received a few characters from that, before the 'L'.
+	while( found == string::npos )
+	{
+		m_sd->GetString(str);	// read another message
+		found = str.find_first_of("L", 0);	// find L
+		retry++;
+		if(retry == 4)	// experimental value, normally one or two messages are received btw flushinbuffer and getstring.
+			return false;	/// if tryout
+	}
 
-	if(strchr(cstr, 'L') == NULL)
-		return false;
+	//char *cstr = new char (str.size()+1);
+	//strcpy(cstr, str.c_str());
+
+	//if(strchr(cstr, 'L') == NULL)
+	//	return false;
 
 	/// Reposition to Home in case of existant Offsets
 	std::vector<double> tmppos( 2, 0.0f );
 	MovePos(tmppos);
-		
+
 	return true;
 }
 
@@ -403,7 +418,9 @@ bool MapDemonCtrl::Close()
 bool MapDemonCtrl::Recover()
 {
 	std::ostringstream errorMsg;
-
+	
+	m_sd->PutString("R0\n");	/// shut reposition messages from the robot
+	
 	if( !m_sd->checkIfStillThere() )
 	{
 		errorMsg << "COB3DMD not detected anymore.";
@@ -411,7 +428,7 @@ bool MapDemonCtrl::Recover()
 		m_ErrorMessage = errorMsg.str();
 		return false;
 	}
-	else if(!RunCalibration())
+	else if( !RunCalibration() )
 	{
 		errorMsg << "COB3DMD recalibration failed.";
 		m_ErrorMessage = errorMsg.str();
