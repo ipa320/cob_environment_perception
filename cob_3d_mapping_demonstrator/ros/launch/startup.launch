@@ -1,0 +1,20 @@
+<?xml version="1.0"?>
+
+<!--Launchfile for MappingDemon-->
+
+<launch>
+
+	<param name="robot_description" command="$(find xacro)/xacro.py '$(find cob_3d_mapping_demonstrator)/md.urdf.xacro'" />
+	
+	<node name="cob_3d_mapping_demonstrator_controller" type="cob_3d_mapping_demonstrator" pkg="cob_3d_mapping_demonstrator" output="screen">
+		<rosparam file="$(find cob_3d_mapping_demonstrator)/ros/launch/config.yaml"/>
+	</node>
+	
+    <remap from="base_controller/command" to="cob_3d_mapping_demonstrator/command_vel" />
+    
+	<!--node ns="cob_3d_mapping_demonstrator_controller" pkg="cob_teleop" type="teleop_cob" name="spawn_teleop_keyboard" output="screen"/-->
+	
+	<node ns="cob_3d_mapping_demonstrator_controller" name="joint_trajectory_controller" pkg="cob_trajectory_controller" type="cob_trajectory_controller"  respawn="false" output="screen" />
+
+</launch>
+
