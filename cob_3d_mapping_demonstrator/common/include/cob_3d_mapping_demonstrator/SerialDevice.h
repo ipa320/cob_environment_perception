@@ -16,6 +16,7 @@ public:
 	void closePort();
 	
 	bool FlushInBuffer();
+	bool SerialDevice::FlushOutBuffer();
 	
 	int PutString(std::string );
 	
