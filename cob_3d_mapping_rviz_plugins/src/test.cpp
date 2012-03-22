@@ -79,6 +79,7 @@ int main(int argc, char **argv) {
     sensor_msgs::PointCloud2 pc2;
     pcl::toROSMsg(pc,pc2);
     s.points.push_back(pc2);
+    s.holes.push_back(false);
 
     sa.shapes.push_back(s);
 
