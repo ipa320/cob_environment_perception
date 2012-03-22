@@ -23,8 +23,8 @@ MapDemonCtrl::MapDemonCtrl(MapDemonCtrlParams * params, SerialDevice * sd)
 /// Destructor
 MapDemonCtrl::~MapDemonCtrl()
 {
-	m_sd->FlushInPort();	
-	m_sd->FlushOutPort();
+	m_sd->FlushInBuffer();	
+	m_sd->FlushOutBuffer();
 	m_sd->PutString("R0\n");	/// shut the robot position output
 	
 	m_sd->closePort();
@@ -160,7 +160,7 @@ bool MapDemonCtrl::RunCalibration()
 	/// Run encoder calibration
 	m_sd->PutString("L\n");
 	
-	size_t found = string::npos;	
+	size_t found = std::string::npos;	
 	char retry = 0;	//
 	
 	/// get messages till 'L' is received (this is necessary because if the message output of the robot was enabled, between the flush buffer and this we still could have received a few characters from that, before the 'L'.
