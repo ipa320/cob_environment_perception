@@ -1,0 +1,158 @@
+<?xml version="1.0"?>
+<robot name="mapping_demonstrator">
+
+	<!-- BASE LINK is the lower case-->
+	<link name="base"/>
+			<!--inertial>
+				<origin xyz="0 0 0" rpy="0 0 0"/>
+				<mass value="0.1"/>
+				<inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
+			</inertial-->
+
+		<!--visual>
+			<origin xyz="0 0 0.05" rpy="0 0 0" />
+			<geometry>
+				<box size= "0.45 0.385 0.140"/>
+			</geometry>
+			<material name="white">
+				<color rgba="0.85 0.85 0.85 1"/>
+			</material>
+		</visual-->
+
+			<!--collision>
+				<origin xyz="0 0 0" rpy="0 0 0" />
+				<geometry>
+					<box xyz= "0 0 0"/>
+				</geometry>
+			</collision-->
+		<!--/link-->
+
+	<!--link name="pole">
+		<visual>
+			<origin xyz="0 0 0.140" rpy="0 0 0" />
+			<geometry>
+				<box size= "0.045 0.045 1.1"/>
+			</geometry>
+			<material name="white">
+				<color rgba="0.65 0.65 0.65 1"/>
+			</material>
+		</visual>
+	</link>
+	-->
+	<!--link name="topstruct">
+		<visual>
+			<origin xyz="0 0 1.10" rpy="0 0 0" />
+			<geometry>
+				<box size= "0.05 0.05 0.13"/>
+			</geometry>
+			<material name="bluish">
+				<color rgba="0.35 0.55 0.85 1"/>
+			</material>
+		</visual>
+	</link>
+	-->
+	<link name="pan"/>
+				<!--inertial>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+			<mass value="0.1"/>
+			<inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
+		</inertial-->
+
+		<!--visual>
+			<origin xyz="0 0 1.10" rpy="0 0 -3.14" />
+			<geometry>
+				<box size= "0.045 0.045 0.64"/>
+			</geometry>
+			<material name="grey">
+				<color rgba="0.95 0.75 0.10 1"/>
+			</material>
+		</visual>
+
+			<collision>
+				<origin xyz="0 0 0" rpy="0 0 0" />
+				<geometry>
+					<box xyz= "0 0 0"/>
+				</geometry>
+			</collision>
+		</link>
+		-->
+		<link name="tilt"/>
+		<link name="camera"/>
+			<!--inertial>
+				<origin xyz="0 0 0" rpy="0 0 0"/>
+				<mass value="0.1"/>
+				<inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
+			</inertial-->
+
+			<!--visual>
+				<origin xyz="0 0 1.14" rpy="1.57 0 0" />
+				<geometry>
+					<box size= "0.045 0.045 0.5"/>
+				</geometry>
+				<material name="grey" />
+					<color rgba="0.25 0.25 0.50 1"/>
+				</material>
+			</visual>
+		
+			<collision>
+				<origin xyz="0 0 0" rpy="0 0 0" />
+				<geometry>
+					<box xyz= "0 0 0"/>
+				</geometry>
+			</collision-->
+		<!--/link-->
+		<!--link name="kinect">
+			<inertial>
+				<origin xyz="0 0 0" rpy="0 0 0"/>
+				<mass value="0.1"/>
+				<inertia ixx="0.01" ixy="0" ixz="0" iyy="0.01" iyz="0" izz="0.01" />
+			</inertial-->
+
+			<!--visual>
+				<origin xyz="0 0 1.44" rpy="0 0 0" />
+				<geometry>
+					<box size= "0.18 0.05 0.2"/>
+				</geometry>
+				<material name="Yellow" />
+					<color rgba="0.65 0.95 0.30 1"/>
+				</material>
+			</visual>
+		
+			<collision>
+				<origin xyz="0 0 0" rpy="0 0 0" />
+				<geometry>
+					<box xyz= "0 0 0"/>
+				</geometry>
+			</collision-->
+		<!--/link-->
+		<joint name="stepper" type="revolute">
+			<parent link="base"/>
+			<child link="pan" />
+			<origin xyz="0 0 0.06" rpy="0 3.14 0"/>
+			<limit lower="-7" upper="7" velocity="1.02" effort="0"/>
+			<!--calibration rising="-0.9"/-->
+			<calibration rising="0"/>
+			<!-- max vel is 5.23 -->
+			<axis xyz="0 0 1"/>
+		</joint>
+	
+		<joint name="servo" type="revolute">
+			<parent link="pan"/>
+			<child link="tilt"/>
+			<origin xyz="0 0 0.066" rpy="1.57 0 0"/>
+			<axis xyz="0 1 0"/>
+			<limit lower="-1.56" upper="1.56" velocity="1.02" effort="0"/>
+			<!-- max vel is 12.31-->
+			<!--calibration rising="0.04"/-->
+			<calibration rising="0"/>
+			<!--max vel is 12.32 -->
+		</joint >
+			
+		<joint name="camjoint" type="fixed">
+			<parent link="tilt"/>
+			<child link="camera"/>
+			<origin xyz="0 0 0" rpy="0 0 0"/>
+		</joint>
+
+	
+</robot>
