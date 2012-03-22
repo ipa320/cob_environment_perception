@@ -3,7 +3,7 @@
 #include <pthread.h>
 
 //ROS Message Includes
-#include <sensor_msgs/JointState.h>	
+#include <sensor_msgs/JointState.h>
 #include <brics_actuator/JointPositions.h>
 #include <brics_actuator/JointVelocities.h>
 #include <diagnostic_msgs/DiagnosticArray.h>
@@ -24,28 +24,28 @@ class MappingDemonstratorNode
 public:
 	/// create a handle for this node, initialize node
 	ros::NodeHandle n_;
-	
+
 	/// declaration of topics to publish
 	ros::Publisher topicPub_JointState_;
 	ros::Publisher topicPub_OperationMode_;
 	ros::Publisher topicPub_Diagnostic_;
-	  
+
 	/// declaration of topics to subscribe
 	ros::Subscriber topicSub_CommandPos_;
 	ros::Subscriber topicSub_CommandVel_;
-	
+
 	/// declaration of service servers
 	ros::ServiceServer srvServer_Init_;
 	ros::ServiceServer srvServer_Stop_;
 	ros::ServiceServer srvServer_Recover_;
 	ros::ServiceServer srvServer_OperationMode_;
-	
+
 	/// handle for 3d-mapping-demon ctrl
 	MapDemonCtrl* md_ctrl_;
-	
+
 	/// handle for 3d-mapping-demon parameters
 	MapDemonCtrlParams* md_params_;
-	
+
 	/// handle for Serial port
 	SerialDevice* md_sd_;
 
@@ -62,25 +62,25 @@ public:
 	{
 		n_ = ros::NodeHandle("~");
 		md_sd_ = new SerialDevice();
-		
+
 		md_params_ = new MapDemonCtrlParams();
 		md_ctrl_ = new MapDemonCtrl(md_params_, md_sd_);
-		
+
 		/// implementation of topics to publish
 		topicPub_JointState_ = n_.advertise<sensor_msgs::JointState> ("joint_states", 1);
 		topicPub_OperationMode_ = n_.advertise<std_msgs::String> ("current_operationmode", 1);
 		topicPub_Diagnostic_ = n_.advertise<diagnostic_msgs::DiagnosticArray>("diagnostics", 1);
-		
+
 		/// implementation of topics to subscribe
 		topicSub_CommandPos_ = n_.subscribe("command_pos", 1, &MappingDemonstratorNode::topicCallback_CommandPos, this);
 		topicSub_CommandVel_ = n_.subscribe("command_vel", 1, &MappingDemonstratorNode::topicCallback_CommandVel, this);
-		
+
 		/// implementation of service servers
 		srvServer_Init_ = n_.advertiseService("init", &MappingDemonstratorNode::srvCallback_Init, this);
 		srvServer_Stop_ = n_.advertiseService("stop", &MappingDemonstratorNode::srvCallback_Stop, this);
-		srvServer_Recover_ = n_.advertiseService("recover", &MappingDemonstratorNode::srvCallback_Recover, this);	   		
+		srvServer_Recover_ = n_.advertiseService("recover", &MappingDemonstratorNode::srvCallback_Recover, this);
 	    srvServer_OperationMode_ = n_.advertiseService("set_operation_mode", &MappingDemonstratorNode::srvCallback_SetOperationMode, this);
-	    
+
 		initialized_ = false;
 		stopped_ = true;
 		error_ = false;
@@ -115,7 +115,7 @@ public:
 		ROS_INFO("Serial baudrate set to:\t\t%d bps.", SerialBaudRate);
 		/// Initialize port parameters and operation mode
 		md_params_->Init(SerialDevice, SerialBaudRate);
-		
+
 		/// Set joint names
 		XmlRpc::XmlRpcValue JointNamesXmlRpc;
 		std::vector<std::string> JointNames;
@@ -134,21 +134,21 @@ public:
 			ROS_ERROR("Parameter joint_names not set, shutting down node...");
 			n_.shutdown();
 		}
-		
+
 		/// get operation mode from parameter server
 		std::string opmode = "velocity";
 		if(n_.hasParam("operation_mode"))
 		{
-			n_.getParam("operation_mode", opmode);		
+			n_.getParam("operation_mode", opmode);
 			md_params_->SetOperationMode(opmode);
 		}
 		ROS_INFO("Operation mode set to: %s.", opmode.c_str());
-		
+
 		XmlRpc::XmlRpcValue fixedVelocitiesXmlRpc;
 		std::vector<double> fixedVelocities;
 		if(n_.hasParam("fixed_velocities"))
 		{
-			n_.getParam("fixed_velocities", fixedVelocitiesXmlRpc);		
+			n_.getParam("fixed_velocities", fixedVelocitiesXmlRpc);
 			fixedVelocities.resize(fixedVelocitiesXmlRpc.size());
 			for (int i = 0; i < fixedVelocitiesXmlRpc.size(); i++)
 			{
@@ -157,20 +157,20 @@ public:
 			md_params_->SetFixedVels(fixedVelocities);
 		}
 		ROS_INFO("Loaded position fixed_velocities");
-		
+
 			JointNames.resize(JointNamesXmlRpc.size());
 		    for (int i = 0; i < JointNamesXmlRpc.size(); i++)
 			{
 				JointNames[i] = (std::string)JointNamesXmlRpc[i];
 			}
-		
+
 		auto_init = true;
 		if(n_.hasParam("auto_initialize"))
 		{
 			n_.getParam("auto_initialize", auto_init);
 		}
 		ROS_INFO("Auto initialize set to: %d", auto_init);
-		
+
 		ROS_INFO("Parameters initialisation successful.");
 	}
 
@@ -179,7 +179,7 @@ public:
 	 	std::vector<std::string> JointNames = md_params_->GetJointNames();
 		unsigned int DOF = JointNames.size();	/// always 2 for mapping-demon
 		md_params_->SetDOF(DOF);/// set DOF
-			
+
 		urdf::Model model;
 		ROS_DEBUG("Loading urdf");
 		//Get robot urdf xml string from parameter server
@@ -194,7 +194,7 @@ public:
 			ROS_ERROR("URDF not found, shutting down node...");
 			n_.shutdown();
 		}
-		
+
 		///This tries to extract the parameters from the urdf file
 		/// Get max velocities out of urdf model
 		std::vector<double> MaxVelocities(DOF);
@@ -222,14 +222,14 @@ public:
 		{
 			Offsets[i] = model.getJoint(JointNames[i].c_str())->calibration->rising.get()[0];
 		}
-	
+
 		/// Set parameters
 		md_params_->SetMaxVel(MaxVelocities);
 		md_params_->SetLowerLimits(LowerLimits);
 		md_params_->SetUpperLimits(UpperLimits);
 		md_params_->SetOffsets(Offsets);
-		
-		ROS_DEBUG("Loading complete");	
+
+		ROS_DEBUG("Loading complete");
 	}
 
 	void runAutoInit()
@@ -245,9 +245,9 @@ public:
 			error_msg_ = md_ctrl_->getErrorMessage();
 			ROS_ERROR("...initializing COB3DMD unsuccessful. Error: %s", error_msg_.c_str());
 		}
-	
+
 	}
-	
+
 	void topicCallback_CommandPos(const brics_actuator::JointPositions::ConstPtr& msg)
 	{
 		ROS_DEBUG("Received new position command.");
@@ -267,7 +267,7 @@ public:
 				ROS_ERROR("Skipping command: Commanded positions and DOF are not same dimension.");
 				return;
 			}
-			
+
 			/// parse positions
 			for (unsigned int i = 0; i < DOF; i++)
 			{
@@ -284,7 +284,7 @@ public:
 					ROS_ERROR("Skipping command: Received unit %s doesn't match expected unit %s.", msg->positions[i].unit.c_str(), unit.c_str());
 					return;
 				}
-				
+
 				/// check angular limits
 				if(msg->positions[i].value > upperLimits[i])
 				{
@@ -311,8 +311,8 @@ public:
 				ROS_ERROR("Joint reposition error: %s", md_ctrl_->getErrorMessage().c_str());
 				return;
 			}
-			
-			ROS_INFO("Successfuly executed position command");	
+
+			ROS_INFO("Successfully executed position command");
 		}
 		else
 		{
@@ -321,7 +321,7 @@ public:
 	}
 
 	void topicCallback_CommandVel(const brics_actuator::JointVelocities::ConstPtr& msg)
-	{	
+	{
 		ROS_DEBUG("Received new velocity command.");
 
 		if(initialized_)
@@ -338,7 +338,7 @@ public:
 				ROS_ERROR("Skipping command: Commanded velocities and DOF are not same dimension.");
 				return;
 			}
-			
+
 			/// parse positions
 			for (unsigned int i = 0; i < DOF; i++)
 			{
@@ -355,7 +355,7 @@ public:
 					ROS_ERROR("Skipping command: Received unit %s doesn't match expected unit %s.", msg->velocities[i].unit.c_str(), unit.c_str());
 					return;
 				}
-				
+
 				/// check angular limits
 				if(fabs(msg->velocities[i].value) > maxVels[i])
 				{
@@ -369,16 +369,16 @@ public:
 					cmd_vel[i] = msg->velocities[i].value;
 				}
 			}
-			
+
 			if (!md_ctrl_->MoveVel(cmd_vel))	// send both positions in the vector
 			{
 				error_ = true;
 				error_msg_ = md_ctrl_->getErrorMessage();
 				ROS_ERROR("Skipping command: %s", md_ctrl_->getErrorMessage().c_str());
-				return;	
+				return;
 			}
-			
-			ROS_DEBUG("Executed velocity command");	
+
+			ROS_DEBUG("Executed velocity command");
 		}
 		else
 		{
@@ -416,7 +416,7 @@ public:
 			res.error_message.data = "COB3DMD already initialized";
 			ROS_WARN("...initializing COB3DMD unsuccessful. Warn: %s", res.error_message.data.c_str());
 		}
-		
+
 		return true;
 	}
 	/*!
@@ -458,17 +458,19 @@ public:
 			res.success.data = false;
 			res.error_message.data = error_msg_;
 			ROS_ERROR("...recovering COB3DMD unsuccessful. Error: %s", error_msg_.c_str());
-		}			
+			return false;
+		}
 		else
-		{	
+		{
 			ROS_WARN("Recalibrating COB3DMD now...");
 			if( !md_ctrl_->Recover() )
-			{	
+			{
 				error_ = true;
 				error_msg_ = md_ctrl_->getErrorMessage();
 				res.success.data = false;
 				res.error_message.data = md_ctrl_->getErrorMessage();
 				ROS_ERROR("...recovering COB3DMD unsuccessful. Error: %s", res.error_message.data.c_str());
+				return false;
 			}
 			else
 			{
@@ -477,13 +479,13 @@ public:
 				res.success.data = true;
 				res.error_message.data = error_msg_;
 				ROS_INFO("...recovering COB3DMD successful");
+				return true;
 			}
 		}
-		return true;
 	}
-	
+
 	bool srvCallback_SetOperationMode(cob_srvs::SetOperationMode::Request &req, cob_srvs::SetOperationMode::Response &res)
-	{	
+	{
 		if (req.operation_mode.data == "velocity")
 		{
 			md_params_->SetOperationMode("velocity");
@@ -498,7 +500,7 @@ public:
 		{
 			res.success.data = false;
 		}
-		
+
 		ROS_INFO("Operation mode change request to %s succeded.", req.operation_mode.data.c_str());
 		return true;
 	}
@@ -507,13 +509,12 @@ public:
 bool publisher( void *arg )
 {
 	MappingDemonstratorNode * md_node = (MappingDemonstratorNode*) arg;
-
 	md_node->last_publish_time_ = ros::Time::now();
-	
+
 	if(md_node->initialized_)	/// don't publish any of this if not initialised
 	{
 		if( md_node->md_ctrl_->UpdatePositions() )
-		{		
+		{
 			/// create JointState message and publish
 			sensor_msgs::JointState joint_state_msg;
 			joint_state_msg.header.stamp = ros::Time::now();
@@ -530,8 +531,8 @@ bool publisher( void *arg )
 			ROS_ERROR("Pan reported position incongruency. Run recal");
 			md_node->error_ = true;
 		}
-	}	
-	
+	}
+
 	/// publish operation mode topic
 	std_msgs::String opmode_msg;
 	opmode_msg.data = md_node->md_params_->GetOperationMode();
@@ -540,7 +541,7 @@ bool publisher( void *arg )
 	// publishing diagnotic messages
 	diagnostic_msgs::DiagnosticArray diagnostics;
 	diagnostics.status.resize(1);
-	
+
 	// set diagnostics
 	if(md_node->error_)
 	{
@@ -565,19 +566,19 @@ bool publisher( void *arg )
 	}
 	// publish diagnostic message
 	md_node->topicPub_Diagnostic_.publish(diagnostics);
-	
+
 	return true;
 }
 
 int main(int argc, char **argv)
 {
 	//pthread_t th;   	//publisher thread
- 	
+
 	/// initialize ROS, specify name of node
 	ros::init(argc, argv, "cob_3d_mapping_demonstrator_node");
 
 	MappingDemonstratorNode md_node;	/// create node, already initializing
-	
+
 	md_node.getROSParameters();					/// get configuration parameters from parameter server
 	md_node.getRobotDescriptionParameters();	/// get robot parameters from URDF file
 	if( md_node.auto_init )
@@ -597,7 +598,7 @@ int main(int argc, char **argv)
 	}
 
 	/// set node publisher latency in seconds
-	ros::Duration min_publish_duration; 
+	ros::Duration min_publish_duration;
 	if (md_node.n_.hasParam("min_publish_duration"))
 	{
 		double sec;
@@ -610,20 +611,20 @@ int main(int argc, char **argv)
 		min_publish_duration.fromSec(1 / frequency);
 		ROS_WARN("Parameter min_publish_duration not defined, setting to %f sec", min_publish_duration.toSec());
 	}
-		
+
 	/// main loop
 	ros::Rate loop_rate(frequency); // Hz
-	
+
 	while (md_node.n_.ok())
 	{
-		if ((ros::Time::now() - md_node.last_publish_time_) >= min_publish_duration)
+		//if ((ros::Time::now() - md_node.last_publish_time_) >= min_publish_duration)
 		{
 			publisher(&md_node);
 		}
 
 		/// sleep and waiting for messages, callbacks
 		ros::spinOnce();
-		loop_rate.sleep();	
+		loop_rate.sleep();
 	}
 
 	return 0;
