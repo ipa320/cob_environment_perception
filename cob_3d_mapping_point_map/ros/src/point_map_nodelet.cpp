@@ -347,7 +347,7 @@ public:
         req.stamp = pc_in_.header.stamp;
         req.target_frame = "/map";
         cob_3d_mapping_msgs::GetFieldOfViewResponse res;
-        get_fov_srv_client_.call(req,res);
+        //get_fov_srv_client_.call(req,res);
       }
       else
         ROS_WARN("not successful");

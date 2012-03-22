@@ -56,6 +56,23 @@
 //internal include
 #include "cob_3d_mapping_semantics/semantic_extraction.h"
 
+ /**
+   * @brief check if the polygon is a table object candidate or not
+   *
+   * @param poly_ptr pointer to the polygon
+   *
+   * @return true or false
+   */
+bool
+SemanticExtraction::isTable(PolygonPtr poly_ptr)
+{
+  //Check if the plane spanned by the polygon is horizontal or not
+  if (isHorizontal (poly_ptr) && isHeightOK(poly_ptr) && isSizeOK(poly_ptr))
+    return true;
+  else
+    return false;
+}
+
 bool
 SemanticExtraction::isHorizontal (PolygonPtr p_ptr)
 {
@@ -71,85 +88,53 @@ SemanticExtraction::isHorizontal (PolygonPtr p_ptr)
   }
 }
 
-void
+bool
 SemanticExtraction::isHeightOk (PolygonPtr p_ptr)
 {
-  poly_height_.resize(0);
-  //calcPolyCentroid (p_ptr);
-  computeCentroidPCL(p_ptr);
-
-  for(unsigned int i=0;i<p_ptr->poly_points.size();i++)
-  {
-    //check centroid's z component with threshold values for height
-    if (centroid_[i].z > height_min_ && centroid_[i].z < height_max_)
-    {
-      poly_height_.push_back(true);
-    }
-
-    else
-    {
-      poly_height_.push_back(false);
-    }
-  }
-  std::cout << "\n\t**poly_height_ = " << poly_height_.size() << std::endl;
+  if(p_ptr->centroid(2) > height_min_ && p_ptr->centroid(2) < height_max)
+    return true;
+  else return false;
 }
 
 
-void
+bool
 SemanticExtraction::isSizeOk (PolygonPtr p_ptr)
 {
   poly_size_.resize(0);
-  calcPolyArea (p_ptr);
-  //TODO: parameters
-
-  for(unsigned int i=0;i<p_ptr->poly_points.size();i++)
-   {
-      if (area_[i] >= area_min_ && area_[i] <= area_max_)
-        poly_size_.push_back(true);
-      else if (area_[i] < area_min_)
-      {
-        std::cout << "\tSize is small "<< std::endl;
-        poly_size_.push_back(false);
-      }
-      //TODO: really 31?
-
-      else if (area_[i] > area_max_)
-      {
-        std::cout << "\tSize is large "<< std::endl;
-        poly_size_.push_back(false);
-      }
-    }
-  std::cout << "\n\t***poly_size_ = " << poly_size_.size() << std::endl;
-
+  double area = calcPolyArea (p_ptr);
+  if (area >= area_min_ && area <= area_max_)
+    return true;
+  return false;
 }
 
 // http://paulbourke.net/geometry/polyarea/
 // works for all polygons except self-intersecting polygons
 
-void
+double
 SemanticExtraction::calcPolyArea (PolygonPtr p_ptr)
 {
-  double xi, xi_1, yi, yi_1;
+  double xi, xi_1, yi, yi_1, area=0;
 
-  area_.resize (p_ptr->poly_points.size ());
+  //area_.resize (p_ptr->contours.size ());
   double sum;
-  for (unsigned int i = 0; i < p_ptr->poly_points.size (); i++)
+  for (unsigned int i = 0; i < p_ptr->contours.size (); i++)
   {
+    if(p_ptr->holes[i]) continue;
     sum = 0;
-    area_[i] = 0;
-    for (unsigned int j = 0; j < p_ptr->poly_points[i].size (); j++)
+    //area_[i] = 0;
+    for (unsigned int j = 0; j < p_ptr->contours[i].size (); j++)
     {
-      xi = p_ptr->poly_points[i][j][0];
-      yi = p_ptr->poly_points[i][j][1];
-      if (j == (p_ptr->poly_points[i].size ()) - 1)
+      xi = p_ptr->contours[i][j][0];
+      yi = p_ptr->contours[i][j][1];
+      if (j == (p_ptr->contours[i].size ()) - 1)
       {
-        xi_1 = p_ptr->poly_points[i][0][0];
-        yi_1 = p_ptr->poly_points[i][0][1];
+        xi_1 = p_ptr->contours[i][0][0];
+        yi_1 = p_ptr->contours[i][0][1];
       }
       else
       {
-        xi_1 = p_ptr->poly_points[i][j + 1][0];
-        yi_1 = p_ptr->poly_points[i][j + 1][1];
+        xi_1 = p_ptr->contours[i][j + 1][0];
+        yi_1 = p_ptr->contours[i][j + 1][1];
       }
       sum = sum + (xi * yi_1 - xi_1 * yi);
       /*
@@ -163,10 +148,10 @@ SemanticExtraction::calcPolyArea (PolygonPtr p_ptr)
        */
 
     }
-    area_[i] = fabs (sum / 2);
-    std::cout << "\n\t*** Area of polygon ( " << i << " ) = " << area_[i] << std::endl;
+    area += fabs (sum / 2);
+    //std::cout << "\n\t*** Area of polygon ( " << i << " ) = " << area_[i] << std::endl;
   }
-
+  return area;
 }
 
 void

@@ -76,6 +76,9 @@
 #include <cob_3d_mapping_msgs/GetGeometricMap.h>
 #include <cob_3d_mapping_msgs/GetObjectsOfClass.h>
 #include <cob_3d_mapping_semantics/semantic_extraction.h>
+#include <cob_3d_mapping_common/ros_msg_conversions.h>
+
+using namespace cob_3d_mapping;
 
 class SemanticExtractionNode
 {
@@ -158,11 +161,11 @@ public:
   callbackShapeArray (const cob_3d_mapping_msgs::ShapeArray::ConstPtr sa_ptr)
   {
 
-    ROS_INFO( "\n\t-------------------------------------\n"
+    /*ROS_INFO( "\n\t-------------------------------------\n"
         "\t|       NEW MESSAGE RECEIVED        |\n"
         "\t-------------------------------------\n");
 
-    ROS_INFO(" Total number of shapes received: %d ", sa_ptr->shapes.size());
+    ROS_INFO(" Total number of shapes received: %d ", sa_ptr->shapes.size());*/
 
     cob_3d_mapping_msgs::ShapeArray sa_msg;
     sa_msg.header.frame_id = "/map";
@@ -171,76 +174,28 @@ public:
     for (unsigned int i = 0; i < sa_ptr->shapes.size (); i++)
     {
 
-      ROS_INFO("Shape < %d > passed for conversion ",i);
+      //ROS_INFO("Shape < %d > passed for conversion ",i);
 
       //ROS_INFO(" Entered for loop \n");
-      SemanticExtraction::PolygonPtr poly_ptr = SemanticExtraction::PolygonPtr (new SemanticExtraction::Polygon ());
+      PolygonPtr poly_ptr = PolygonPtr (new Polygon ());
 
-      convertShapeToPolygon (sa_ptr->shapes[i], *poly_ptr);
+      fromROSMsg(sa_ptr->shapes[i], *poly_ptr);
+      //convertShapeToPolygon (sa_ptr->shapes[i], *poly_ptr);
       //sem_exn_.PolygonMap.push_back (poly_ptr);
-      ROS_INFO("sa_ptr->shapes[%d] converted to polygon",i );
+      //ROS_INFO("sa_ptr->shapes[%d] converted to polygon",i );
       //convertFromROSMsg (p->polygon_array[i], *poly_ptr);
       //convertToPointCloudMsg (*poly_ptr, *pc_ptr);
       //pc_pub_.publish (*pc_ptr);
-      if (isTableObject (poly_ptr) == true)
+      if (sem_exn_.isTableObject (poly_ptr))
       {
         table_ctr++;
         //ros::Duration (5).sleep ();
         cob_3d_mapping_msgs::Shape s;
-        convertPolygonToShape (*poly_ptr, s);
+        toROSMsg(*poly_ptr, s);
+        //convertPolygonToShape (*poly_ptr, s);
         //publishShapeMarker (s);
         sa_msg.shapes.push_back (s);
       }
-
-      /*
-       cob_3d_mapping_msgs::Shape s;
-
-       //Check if the plane spanned by the polygon is horizontal or not
-       if (sem_exn_.isHorizontal (poly_ptr))
-       {
-       ROS_INFO(" Plane is h0rizontal \n");
-       publishPolygonMarker (*poly_ptr);
-
-       sem_exn_.isHeightOk (poly_ptr);
-       sem_exn_.isSizeOk (poly_ptr);
-       for (unsigned int j = 0; j < sem_exn_.poly_height_.size (); j++)
-       {
-       pc_index_.push_back(sem_exn_.poly_height_[j] && sem_exn_.poly_size_[j]);
-
-       //Check if the height of the polygon is Ok or not
-       if (sem_exn_.poly_height_[j])
-       {
-       ROS_INFO(" Height is ok \n");
-       //Check if the area of the the polygon is ok or not
-       if (sem_exn_.poly_size_[j])
-       {
-       ROS_INFO(" Size is ok \n");
-       //publishPolygonMarker (*poly_ptr); //publish marker messages to see visually on rviz
-       //TODO: publish as ShapeArray, not as PointCloud
-       }
-
-       else
-       {
-       ROS_INFO(" Size is not ok \n");
-       }
-
-       }
-
-       else
-       {
-       ROS_INFO(" Height is not ok \n");
-       }
-
-       }
-       }
-       else
-       {
-       ROS_INFO(" Plane is not horizontal \n");
-       }
-
-       convertPolygonToShape (*poly_ptr, s);
-       sa_msg.shapes.push_back (s);
-       */
     }//end for
 
     ROS_INFO("Found %d tables", table_ctr);
@@ -248,49 +203,6 @@ public:
     //publishMapMarker ();
   }
 
-  /**
-   * @brief check if the polygon is a table object candidate or not
-   *
-   * @param poly_ptr pointer to the polygon
-   *
-   * @return true or false
-   */
-  bool
-  isTableObject (SemanticExtraction::PolygonPtr poly_ptr)
-  {
-    bool flag_horizontal = false;
-    pc_index_.resize (0);
-    //Check if the plane spanned by the polygon is horizontal or not
-    if (sem_exn_.isHorizontal (poly_ptr))
-    {
-      flag_horizontal = true;
-      ROS_INFO(" Plane is horizontal \n");
-      //publishPolygonMarker (*poly_ptr);
-
-      sem_exn_.isHeightOk (poly_ptr);
-      sem_exn_.isSizeOk (poly_ptr);
-      for (unsigned int i = 0; i < sem_exn_.poly_height_.size (); i++)
-      {
-        pc_index_.push_back (sem_exn_.poly_height_[i] && sem_exn_.poly_size_[i]);
-      }
-
-      for (unsigned int j = 0; j < pc_index_.size (); j++)
-      {
-        if (flag_horizontal && pc_index_[j])
-        {
-          ROS_INFO("<___Table Object___>");
-          return true;
-          break;
-        }
-        else
-          continue;
-      }
-      return false;
-    }
-    else
-      return false;
-
-  }
 
   /**
    * @brief service offering table object candidates
@@ -306,19 +218,21 @@ public:
   {
     ROS_INFO("service get_objects_of_class started....");
 
-    if (getMapService ())
+    std::vector<PolygonPtr>& map;
+    if (getMapService (map))
     {
       int table_ctr = 0;
       sem_exn_.setNormBounds (tilt_angle_);
-      for (unsigned int i = 0; i < sem_exn_.PolygonMap.size (); i++)
+      for (unsigned int i = 0; i < map.size (); i++)
       {
         //ROS_INFO("\n\tisTableObject....  : ");
-        if (isTableObject (sem_exn_.PolygonMap[i]))
+        if (sem_exn_.isTableObject (map[i]))
         {
           table_ctr++;
           //ros::Duration (10).sleep ();
           cob_3d_mapping_msgs::Shape s;
-          convertPolygonToShape (*sem_exn_.PolygonMap[i], s);
+          toROSMsg(*map[i], s);
+          //convertPolygonToShape (*sem_exn_.PolygonMap[i], s);
           publishShapeMarker (s);
           ROS_INFO("getTablesService: Polygon[%d] converted to shape",i);
           res.objects.shapes.push_back (s);
@@ -383,7 +297,7 @@ public:
    * @return true if service successful
    */
   bool
-  getMapService ()
+  getMapService (std::vector<PolygonPtr>& map)
   {
     ROS_INFO("Waiting for service server to start.");
     ros::service::waitForService ("get_geometry_map", 10); //will wait for infinite time
@@ -407,10 +321,11 @@ public:
     ROS_INFO(" res.map.shapes.size ()  = %d \n",res.map.shapes.size ());
     for (unsigned int i = 0; i < res.map.shapes.size (); i++)
     {
-      SemanticExtraction::PolygonPtr poly_ptr = SemanticExtraction::PolygonPtr (new SemanticExtraction::Polygon ());
+      PolygonPtr poly_ptr = PolygonPtr (new Polygon ());
       cob_3d_mapping_msgs::Shape& s = res.map.shapes[i];
-      SemanticExtraction::Polygon p;
-      convertShapeToPolygon (s, *poly_ptr);
+      Polygon p;
+      fromROSMsg(s, *poly_ptr);
+      //convertShapeToPolygon (s, *poly_ptr);
       sem_exn_.PolygonMap.push_back (poly_ptr);
     }
     ROS_INFO(" sem_exn_.PolygonMap.size ()  = %d \n",sem_exn_.PolygonMap.size ());
