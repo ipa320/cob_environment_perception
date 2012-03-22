@@ -77,6 +77,11 @@
 #include <Eigen/Core>
 #include <boost/shared_ptr.hpp>
 #include <boost/thread/mutex.hpp>
+
+#include <cob_3d_mapping_common/polygon.h>
+
+using namespace cob_3d_mapping;
+
 class SemanticExtraction
 {
 
@@ -84,16 +89,16 @@ public:
   /**
    * @brief Contains polygon normal vector, d and polygon points
    */
-  struct Polygon
+  /*struct Polygon
   {
     std::vector<std::vector<Eigen::Vector3f> > poly_points;
     Eigen::Vector3f normal;
     float d;
     std::vector<pcl::PointXYZ> centroid;
-  };
+  };*/
 
   //shared pointer to polygon struct
-  typedef boost::shared_ptr<Polygon> PolygonPtr;
+  //typedef boost::shared_ptr<Polygon> PolygonPtr;
   std::vector<PolygonPtr> PolygonMap;
 
   /**
@@ -258,6 +263,9 @@ public:
     area_max_ = area_max;
   }
 
+  bool
+  isTable(PolygonPtr poly_ptr);
+
   /**
    * @brief check if the plane of the polygon is horizontal or not
    *
@@ -277,7 +285,7 @@ public:
    * @return nothing
    */
 
-  void
+  bool
   isHeightOk (PolygonPtr p_ptr);
 
   /**
@@ -287,7 +295,7 @@ public:
    *
    * @return nothing
    */
-  void
+  bool
   isSizeOk (PolygonPtr p_ptr);
 
   /**
@@ -297,7 +305,7 @@ public:
    *
    * @return nothing
    */
-  void
+  double
   calcPolyArea (PolygonPtr p_ptr);
 
   /**
