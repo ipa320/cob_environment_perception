@@ -112,6 +112,13 @@ void stepper_cal()
 		stepper_advance();	// comand single step advance
 	}
 	
+	stepper_set_direction(1);	// change direciton of rotation and some steps (this is to avoid having to manually reposition again when recalibrating to avoid)
+	for(int8_t i=0; i<4; i++)
+	{	
+		_delay_ms(15);		// 20 ms interstep is really slow, but securs no extra step after index is passed
+		stepper_advance();
+	}
+	
 	_delay_ms(100);		// delay to let motor settle
 	indexSet = 0;		// reset index flag
 	curr_step_num = 0;	// reset step count
