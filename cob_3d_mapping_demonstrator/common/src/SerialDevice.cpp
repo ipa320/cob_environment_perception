@@ -154,6 +154,14 @@ bool SerialDevice::FlushInBuffer()
 		return 1;	
 }
 
+
+{
+	if( tcflush(m_fd, TCOFLUSH) == -1 )
+		return 0;
+	else
+		return 1;	
+}
+
 unsigned char SerialDevice::GetChar()
 {
 	unsigned char c;
