@@ -155,6 +155,7 @@ bool SerialDevice::FlushInBuffer()
 }
 
 
+bool SerialDevice::FlushOutBuffer()
 {
 	if( tcflush(m_fd, TCOFLUSH) == -1 )
 		return 0;

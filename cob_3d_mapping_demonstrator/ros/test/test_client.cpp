@@ -66,9 +66,9 @@ int main(int argc, char **argv)
     jointVal1.value = 0.7;
 
 	jv.velocities.push_back(jointVal1);
-   
+
     jointVal1.joint_uri = "servo";
-    jointVal1.value = 0.1;
+    jointVal1.value = 0.2;
 
  	jv.velocities.push_back(jointVal1);
 

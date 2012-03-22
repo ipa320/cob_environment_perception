@@ -2,7 +2,7 @@
 #define __3D_MAP_DEMON_H_
 
 // standard includes
-#include <pthread.h> 
+#include <pthread.h>
 #include <string>
 
 //own includes
@@ -20,21 +20,21 @@ public:
 
 	/// Destructor
 	~MapDemonCtrl();
-	
+
 	pthread_mutex_t m_mutex;
-			
+
 	bool Init(MapDemonCtrlParams * params);
-	
+
 	bool isInitialized() const
 	{
 		return m_Initialized;
 	}
-	
+
 	bool RunCalibration() ;
-	
+
 	bool MovePos( const std::vector<double>& target_positions );
 	bool MoveVel( const std::vector<double>& target_velocities );
-	
+
 	std::string getErrorMessage() const
 	{
 		return m_ErrorMessage;
@@ -55,7 +55,7 @@ public:
 	 */
 	bool setMaxVelocity(double velocity);
 	bool setMaxVelocity(const std::vector<double>& velocities);
-	
+
 	/*!
 	 * \brief Gets the current positions
 	 */
@@ -71,7 +71,7 @@ public:
 	{
 		return m_velocities;
 	}
-	
+
 	bool UpdatePositions();
 
 
@@ -79,21 +79,22 @@ private:
 	bool m_Initialized;
 	int m_DeviceHandle;
 	bool m_SerialDeviceOpened;
-	
+
 	MapDemonCtrlParams* m_params_;
 
 	SerialDevice * m_sd;
-	
+
 	std::vector<double> m_positions;
+	std::vector<double> m_old_positions;
 
 	std::vector<double> m_velocities;
-	
+
 	double m_encoder;
-	
+
 	ros::Time m_last_time_pub;
-	
+
 	std::string m_ErrorMessage;
-	
+
 
 };
 

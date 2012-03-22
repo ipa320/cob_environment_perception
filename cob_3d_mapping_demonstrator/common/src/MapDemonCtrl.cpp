@@ -23,10 +23,10 @@ MapDemonCtrl::MapDemonCtrl(MapDemonCtrlParams * params, SerialDevice * sd)
 /// Destructor
 MapDemonCtrl::~MapDemonCtrl()
 {
-	m_sd->FlushInPort();	
-	m_sd->FlushOutPort();
+	m_sd->FlushInBuffer();
+	m_sd->FlushOutBuffer();
 	m_sd->PutString("R0\n");	/// shut the robot position output
-	
+
 	m_sd->closePort();
 }
 
@@ -38,7 +38,7 @@ bool MapDemonCtrl::Init(MapDemonCtrlParams * params)
 	/// get serial port configurable parameters
 	std::string SerialDeviceName = m_params_->GetSerialDevice();
 	int SerialBaudrate = m_params_->GetBaudRate();
-	std::ostringstream errorMsg;	
+	std::ostringstream errorMsg;
 
 	int DOF = m_params_->GetDOF();
 	std::vector<std::string> JointNames = m_params_->GetJointNames();
@@ -47,26 +47,33 @@ bool MapDemonCtrl::Init(MapDemonCtrlParams * params)
 	std::vector<double> Offsets = m_params_->GetOffsets();
 	std::vector<double> LowerLimits = m_params_->GetLowerLimits();
 	std::vector<double> UpperLimits = m_params_->GetUpperLimits();
-	
-	
+
+
 	m_positions.resize(DOF);
+        m_positions[0] = 0;
+        m_positions[1] = 0;
+        m_old_positions.resize(DOF);
+        m_old_positions[0] = 0;
+        m_old_positions[1] = 0;
 	m_velocities.resize(DOF);
-	
+	m_velocities[0] = 0;
+	m_velocities[1] = 0;
+
 	std::cout << "============================================================================== " << std::endl;
 	std::cout << "Mapping Demonstrator Init: Trying to initialize with the following parameters: " << std::endl;
-	
+
 	std::cout << std::endl << "Joint Names:\t\t";
 	for (int i = 0; i < DOF; i++)
 	{
 		std::cout << JointNames[i] << "\t";
 	}
-	
+
 	std::cout << std::endl << "maxVel     :\t\t";
 	for (int i = 0; i < DOF; i++)
 	{
 		std::cout << MaxVel[i] << "\t";
 	}
-	
+
 	std::cout << std::endl << "fixedVel   :\t\t";
 	for (int i = 0; i < DOF; i++)
 	{
@@ -84,7 +91,7 @@ bool MapDemonCtrl::Init(MapDemonCtrlParams * params)
 	{
 		std::cout << LowerLimits[i] << "\t";
 	}
-	
+
 	std::cout << std::endl << "offsets    :\t\t";
 	for (int i = 0; i < DOF; i++)
 	{
@@ -92,18 +99,18 @@ bool MapDemonCtrl::Init(MapDemonCtrlParams * params)
 	}
 
 	std::cout << std::endl << "============================================================================== " << std::endl;
-	
+
 	/// now open serial port
 	int spres = m_sd->openPort(SerialDeviceName.c_str(), SerialBaudrate, 2, 0);
 	if(spres == -1)
 	{
 		errorMsg << "Could not open device " << SerialDeviceName;
 		m_ErrorMessage = errorMsg.str();
-		return false;	
+		return false;
 	}
 
 	/// this is for security. in case the robot is already outputing data, shut it...
-	m_sd->PutString("R0\n");	
+	m_sd->PutString("R0\n");
 	if( !m_sd->FlushInBuffer() )
 		return false;	/// ...and flush serial port input buffer
 
@@ -111,7 +118,7 @@ bool MapDemonCtrl::Init(MapDemonCtrlParams * params)
 	m_sd->PutString("N\n");
 	std::string str;
 	m_sd->GetString(str);
-	
+
 	while(str.find("COB3DMD") == std::string::npos)
 	{
 		m_sd->GetString(str);
@@ -122,7 +129,7 @@ bool MapDemonCtrl::Init(MapDemonCtrlParams * params)
 	}
 
 	std::cout << "Robot successfuly detected. ID: """ << str.c_str() << """" << std::endl;
-	
+
 
 	m_SerialDeviceOpened = true;
 
@@ -134,10 +141,10 @@ bool MapDemonCtrl::Init(MapDemonCtrlParams * params)
 		m_ErrorMessage = errorMsg.str();
 		return false;
 	}
-	
+
 	m_sd->PutString("R1\n");
 	m_Initialized = true;
-	
+
 	return true;
 }
 
@@ -152,19 +159,19 @@ bool MapDemonCtrl::RunCalibration()
 	std::ostringstream errorMsg;
 	std::vector<std::string> JointNames = m_params_->GetJointNames();
 	std::vector<double> MaxVel = m_params_->GetMaxVel();
-	
+
 	/// Shut robot output in case it was already enabled...
 	if( !m_sd->FlushInBuffer() )
 		return false;	/// ...and flush serial port input buffer
-	
+
 	/// Run encoder calibration
 	m_sd->PutString("L\n");
-	
-	size_t found = string::npos;	
+
+	size_t found = std::string::npos;
 	char retry = 0;	//
-	
+
 	/// get messages till 'L' is received (this is necessary because if the message output of the robot was enabled, between the flush buffer and this we still could have received a few characters from that, before the 'L'.
-	while( found == string::npos )
+	while( found == std::string::npos )
 	{
 		m_sd->GetString(str);	// read another message
 		found = str.find_first_of("L", 0);	// find L
@@ -193,29 +200,29 @@ bool MapDemonCtrl::RunCalibration()
  * \param JointNames Vector target_positions Vector
  */
 bool MapDemonCtrl::MovePos( const std::vector<double>& target_positions )
-{	
+{
 	std::vector<double> Offsets = m_params_->GetOffsets();
 	std::vector<double> velo = m_params_->GetFixedVels();
 	int target_step[2];
 	int time_to_target[2];
 	int lat[2];
-	
+
 	std::stringstream ss;
-	
+
 	/// TODO: Mathematically simplify
 	target_step[0] = (int)round( (target_positions[0] + Offsets[0]) * 63.66197724f );	/// convert radians to step number, consider offset
 	target_step[1] = (int)round( (target_positions[1] + Offsets[1]) * 81.4873308631f );	/// convert radians to step number, consider offset
-	
-	time_to_target[0] = (int)round(1000 * (target_positions[0] - m_positions[0]) / velo[0] );	// "Interstep latency = delta_position / vel" 
-	time_to_target[1] = (int)round(1000 * (target_positions[1] - m_positions[1]) / velo[1] );	// "Interstep latency = delta_position / vel" 
-	
+
+	time_to_target[0] = (int)round(1000 * (target_positions[0] - m_positions[0]) / velo[0] );	// "Interstep latency = delta_position / vel"
+	time_to_target[1] = (int)round(1000 * (target_positions[1] - m_positions[1]) / velo[1] );	// "Interstep latency = delta_position / vel"
+
 	lat[0] = time_to_target[0] / ((target_positions[0] - m_positions[0]) * 63.66197724f) ;
 	lat[1] = time_to_target[1] / ((target_positions[1] - m_positions[1]) * 81.4873308631f) ;
-	
+
 	printf("TARGET POS: %f\n", target_positions[0]);
 	printf("TARGET STEP: %d\n", target_step[0]);
 	printf("Lat: %d\n", lat[0]);
-	
+
 	ss << "P" << target_step[0] << "," << lat[0] << std::endl;
 	ss << "T" << target_step[1] << "," << lat[1] << std::endl << std::ends;
 
@@ -232,8 +239,17 @@ bool MapDemonCtrl::MovePos( const std::vector<double>& target_positions )
  */
 bool MapDemonCtrl::MoveVel(const std::vector<double>& target_velocities)
 {
+  m_velocities[0] = target_velocities[0];
+  m_velocities[1] = target_velocities[1];
+  /*std::cout << m_velocities[0] << "," << m_velocities[0] << std::endl;
+  if(fabs(m_old_positions[0]-m_positions[0])<0.02 && fabs(m_old_positions[1]-m_positions[1])<0.02 &&
+      fabs(m_velocities[0])>0 && fabs(m_velocities[1])>0)
+  {
+    std::cout << "no move" << std::endl;
+    return true;
+  }*/
 	unsigned int DOF = m_params_->GetDOF();
-	
+
 	std::vector<std::string> JointNames = m_params_->GetJointNames();
 	std::vector<double> lowerLimits = m_params_->GetLowerLimits();
 	std::vector<double> upperLimits = m_params_->GetUpperLimits();
@@ -242,7 +258,7 @@ bool MapDemonCtrl::MoveVel(const std::vector<double>& target_velocities)
 	std::ostringstream ss;
 	std::ostringstream errorMsg;
 	bool errSet = false;
-	
+
 	double delta_t;
 	double target_pos[2];
 	int target_step[2];
@@ -250,14 +266,14 @@ bool MapDemonCtrl::MoveVel(const std::vector<double>& target_velocities)
 
 	//if ( !UpdatePositions() )
 	//	return false;
-		
+
 	/// calculate elapsed time since last velocity query for integration
   	delta_t = ros::Time::now().toSec() - m_last_time_pub.toSec();
-  	
+
   	/// TODO: Glitches here, delta_t sometimes gets a 'weird' value and makes turn the other way of a sudden, decalibrating
   	m_last_time_pub = ros::Time::now();
-  	delta_t = delta_t > 0.1 ? 0.1 : delta_t;	// Limit delta_t to avoid insane velocities in case of long delta_t
-	
+  	delta_t = 0.05;//delta_t > 0.1 ? 0.1 : delta_t;	// Limit delta_t to avoid insane velocities in case of long delta_t
+
 	/// final position in radians
 	target_pos[0] = target_velocities[0] * delta_t + m_positions[0] + Offsets[0];
 	target_pos[1] = target_velocities[1] * delta_t + m_positions[1] + Offsets[1];
@@ -270,7 +286,7 @@ bool MapDemonCtrl::MoveVel(const std::vector<double>& target_velocities)
 			errorMsg << "Computed final position for joint """ << JointNames[i] << """ exceeds limit " << lowerLimits[i] << std::endl;
 			m_ErrorMessage = errorMsg.str();
 			target_pos[i] = lowerLimits[i];
-			m_velocities[0] = 0.0f; 
+			m_velocities[0] = 0.0f;
 			errSet = true;
 		}
 		if(target_pos[i] > upperLimits[i])
@@ -284,11 +300,12 @@ bool MapDemonCtrl::MoveVel(const std::vector<double>& target_velocities)
 		else
 			errSet = false;
 	}
-	
-	/// calculate final position after the single velocity command, in steps (first command after "P")	
+
+	/// calculate final position after the single velocity command, in steps (first command after "P")
 	target_step[0] = (int)round( target_pos[0] * 63.66197724f );
 	target_step[1] = (int)round( target_pos[1] * 81.4873308631f );
-	
+	std::cout << "t_step: " << target_step[1] << std::endl;
+
 	/// calculate steps to jump
 	//double stepper_delta_step = fabs(target_velocities[0]) * delta_t / 0.015707963f ;
 	//double servo_delta_step = fabs(target_velocities[1]) * delta_t / 0.0122718463f;
@@ -298,28 +315,34 @@ bool MapDemonCtrl::MoveVel(const std::vector<double>& target_velocities)
 
 	double stepper_delta_step = fabs((target_pos[0] - m_positions[0]) * 63.66197724f) ;
 	double servo_delta_step =  fabs((target_pos[1] - m_positions[1]) * 81.4873308631f) ;
-	
+
+	if(stepper_delta_step>=1)
+	{
+	  latencies[0] = ( (int)round(delta_t * 1000 / stepper_delta_step ) );
+	  latencies[0] = (latencies[0] > 4) ? latencies[0] : 4; // security for encoder
+	  ss << "P" << target_step[0] << "," << latencies[0] << std::endl;
+	}
+
 	/// calculate latency -in ms- for the window
 	//latencies[0] = (int)round( 0.015707963 * 1000 / stepper_delta_step ) ;
 	//latencies[1] = (int)round( 0.0122718463 * 1000 / servo_delta_step ) ;
-	latencies[0] = ( (int)round(delta_t * 1000 / stepper_delta_step ) );
-	latencies[1] = ( (int)round(delta_t * 1000 / servo_delta_step ) );
-	
-	latencies[0] = (latencies[0] > 4) ? latencies[0] : 4;	// security for encoder
-	//latencies[1] = (latencies[1] > 1) ? latencies[
-	ss << "P" << target_step[0] << "," << latencies[0] << std::endl;
-	ss << "T" << target_step[1] << "," << latencies[1] << std::endl;
-	
+
+	std::cout << servo_delta_step << std::endl;
+	if(servo_delta_step>=1)
+	{
+          latencies[1] = ( (int)round(delta_t * 1000 / servo_delta_step ) );
+          //latencies[1] = (latencies[1] > 1) ? latencies[
+          ss << "T" << target_step[1] << "," << latencies[1] << std::endl;
+          std::cout << ss.str() << std::endl;
+	}
+
 	ss << std::ends;	/// end string with null for the uart driver
 
 	m_sd->PutString(ss.str());
-	
-	m_velocities[0] = target_velocities[0];
-	m_velocities[1] = target_velocities[1];
-	
+
 	if(errSet)
 		return false;
-	
+
 	return true;
 }
 
@@ -338,10 +361,10 @@ bool MapDemonCtrl::UpdatePositions()
 	char *p_pos;
 	char *e_pos;
 	char *t_pos;
-	
+
 	//if( !m_sd->FlushInBuffer() )
 	//	return false;	/// ...and flush serial port input buffer
-	
+
 	//m_sd->PutString("r\n");
 	m_sd->GetString(str);	/// Get next position str
 
@@ -367,11 +390,13 @@ bool MapDemonCtrl::UpdatePositions()
 	*t_pos = '\0';		// replace comma by null to mark end of first token
 	t_pos++;				// advance ptr2 to begining of next token
 
+	m_old_positions[0] = m_positions[0];
+	m_old_positions[1] = m_positions[1];
 	m_positions[0] = (double)atoi(p_pos) * 0.015707963f - Offsets[0];	// convert step number to angle
 	m_encoder = (double)atoi(e_pos) * 0.003141593f - Offsets[0];
 	m_positions[1] = (double)atoi(t_pos) * 0.0122718463f - Offsets[1];	// convert servo pos to angle
-	
-	/// check angular difference between reported step count and encoder position. 
+
+	/// check angular difference between reported step count and encoder position.
 	if(fabs(m_positions[0] - m_encoder) > 0.05f)
 	{
 		errorMsg << "Pan reported incongruent position. Run recover";
@@ -380,7 +405,7 @@ bool MapDemonCtrl::UpdatePositions()
 	}
 	else
 		m_ErrorMessage = "";
-	
+
 	return true;
 }
 
@@ -388,7 +413,7 @@ bool MapDemonCtrl::Stop()
 {
 	std::ostringstream errorMsg;
 	std::string str;
-	
+
 	m_sd->PutString("E\n");
 	m_sd->GetString(str);
 	if ( str.find("E\n") == std::string::npos )
@@ -397,14 +422,14 @@ bool MapDemonCtrl::Stop()
 		m_ErrorMessage = errorMsg.str();
 		return false;
 	}
-	
+
 	return true;
 }
 /*!
  * \brief Close
  */
 bool MapDemonCtrl::Close()
-{	
+{
 	m_sd->PutString("E\n");	// stop movement
 	m_Initialized = false;
 	m_sd->closePort();
@@ -418,9 +443,9 @@ bool MapDemonCtrl::Close()
 bool MapDemonCtrl::Recover()
 {
 	std::ostringstream errorMsg;
-	
+
 	m_sd->PutString("R0\n");	/// shut reposition messages from the robot
-	
+
 	if( !m_sd->checkIfStillThere() )
 	{
 		errorMsg << "COB3DMD not detected anymore.";
@@ -435,5 +460,8 @@ bool MapDemonCtrl::Recover()
 		return false;
 	}
 	else
-		return true;
+	{
+	  m_sd->PutString("R1\n");
+	  return true;
+	}
 }
