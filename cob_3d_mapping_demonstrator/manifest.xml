@@ -1,13 +1,24 @@
 <package>
   <description brief="cob_3d_mapping_demonstrator">
 
-     cob_3d_mapping_demonstrator
+     This package contains the 3D Mapping Demonstrator robot controller.
 
   </description>
-  <author>Julio</author>
+  <author>Julio Sagardoy</author>
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
-  <url>http://ros.org/wiki/cob_3d_mapping_demonstrator</url>
+  <url>http://ros.org/wiki/mapping_demon</url>
+ 
+  <depend package="roscpp"/> 
+  <depend package="urdf"/>  
+  <depend package="sensor_msgs"/>
+  <depend package="diagnostic_msgs"/>
+  <depend package="cob_srvs"/>
+  <depend package="brics_actuator"/>
+  <depend package="cob_trajectory_controller"/>
+  <depend package="cob_dashboard"/>
+  <depend package="cob_command_gui"/>
+    
 
 </package>
 
