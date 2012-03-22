@@ -55,7 +55,9 @@
 // ROS includes
 #include <ros/ros.h>
 #include <pluginlib/class_list_macros.h>
-#include <sensor_msgs/image_encodings.h>
+#include <sensor_msgs/image_encodings.h> 
+
+#include <pcl/io/io.h>
 
 // Package includes
 #include "cob_3d_mapping_common/stop_watch.h"
@@ -65,7 +67,6 @@
 void
 cob_3d_mapping_features::SegmentationNodelet::received_cloud_cb(const pcl::PointCloud<PointT>::ConstPtr& cloud)
 {
-  //boost::mutex::scoped_lock lock(mutex_);
   PrecisionStopWatch t;
   t.precisionStart();
   std::cout << "Start .... ";
@@ -84,6 +85,11 @@ cob_3d_mapping_features::SegmentationNodelet::received_cloud_cb(const pcl::Point
   cv_ptr.image = segmented;
   cv_ptr.encoding = sensor_msgs::image_encodings::RGB8;
   image_pub_.publish(cv_ptr.toImageMsg());
+
+  pcl::copyPointCloud<PointXYZRGB,PointXYZRGB>(*cloud,*colored_);
+  seg_.getClusterIndices(labels_, clusters_, colored_);
+  pub_.publish(*colored_);
+
   std::cout << t.precisionStop() << "s\t for segmentation!" << std::endl;
 }
 
@@ -108,6 +114,7 @@ cob_3d_mapping_features::SegmentationNodelet::onInit()
   sub_ = nh_.subscribe<pcl::PointCloud<PointT> >
     ("cloud_in", 1, boost::bind(&cob_3d_mapping_features::SegmentationNodelet::received_cloud_cb, this, _1));
   image_pub_ = it_.advertise("segmentation_image", 1);
+  pub_ = nh_.advertise<pcl::PointCloud<PointT> >("segmentation_cloud", 1);
 }
 
 PLUGINLIB_DECLARE_CLASS(cob_3d_mapping_features, SegmentationNodelet, cob_3d_mapping_features::SegmentationNodelet, nodelet::Nodelet);

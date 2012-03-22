@@ -452,4 +452,45 @@ void Segmentation::getClusterIndices(pcl::PointCloud<PointLabel>::Ptr& cloud_in,
   }
 }
 
+void Segmentation::getClusterIndices(pcl::PointCloud<PointLabel>::Ptr& cloud_in, 
+				     std::vector<pcl::PointIndices>& cluster_indices, 
+				     pcl::PointCloud<PointXYZRGB>::Ptr& colored_cloud)
+{
+  int max_idx=0;
+  int i=0;
+  cluster_indices.clear();
+  for(i = 0; i < cloud_in->size(); i++ )
+  {
+    if(cloud_in->points[i].label>max_idx) max_idx=cloud_in->points[i].label;
+  }
+  for(int k=0; k<=max_idx; k++)
+  {
+    pcl::PointIndices cluster;
+    for(i = 0; i < cloud_in->size(); i++ )
+    {
+      if(cloud_in->points[i].label==k)
+	cluster.indices.push_back(i);
+    }
+    cluster_indices.push_back(cluster);
+  }
+  std::vector<uint32_t> colorTab;
+  colorTab.push_back((uint32_t)0 << 16 | (uint32_t)255 << 8 | (uint32_t)0); // undef
+  colorTab.push_back((uint32_t)255 << 16 | (uint32_t)255 << 8 | (uint32_t)255); // nan
+  colorTab.push_back((uint32_t)0 << 16 | (uint32_t)0 << 8 | (uint32_t)0); // border
+  colorTab.push_back((uint32_t)255 << 16 | (uint32_t)0 << 8 | (uint32_t)0); // edge
+  for(int i = 1; i < 256; i++ )
+  {
+    uint32_t b = cv::theRNG().uniform(0, 255);
+    uint32_t g = cv::theRNG().uniform(0, 255);
+    uint32_t r = cv::theRNG().uniform(0, 255);
+   
+    colorTab.push_back(r << 16 | g << 8 | b);
+  }
+  for(int i = 0; i < cloud_in->size(); i++ )
+  {
+    int label = cloud_in->points[i].label;
+    colored_cloud->points[i].rgb = *reinterpret_cast<float*>(&(colorTab[label]));
+  }
+}
+
 

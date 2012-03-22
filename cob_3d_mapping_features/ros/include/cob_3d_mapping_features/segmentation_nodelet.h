@@ -83,6 +83,7 @@ namespace cob_3d_mapping_features
       , one_()
       , oce_()
       , seg_()
+      , colored_(new pcl::PointCloud<PointT>)
       , normals_(new pcl::PointCloud<pcl::Normal>)
       , pc_(new pcl::PointCloud<pcl::PrincipalCurvatures>)
       , labels_(new pcl::PointCloud<PointLabel>)
@@ -103,6 +104,7 @@ namespace cob_3d_mapping_features
     //boost::mutex mutex_;
     ros::NodeHandle nh_;
     ros::Subscriber sub_;
+    ros::Publisher pub_;
     image_transport::ImageTransport it_;
     image_transport::Publisher image_pub_;
     
@@ -110,6 +112,7 @@ namespace cob_3d_mapping_features
     OrganizedCurvatureEstimationOMP<PointT, pcl::Normal, PointLabel, pcl::PrincipalCurvatures> oce_;
     Segmentation seg_;
 
+    pcl::PointCloud<PointT>::Ptr colored_;
     pcl::PointCloud<pcl::Normal>::Ptr normals_;
     pcl::PointCloud<pcl::PrincipalCurvatures>::Ptr pc_;
     pcl::PointCloud<PointLabel>::Ptr labels_;
