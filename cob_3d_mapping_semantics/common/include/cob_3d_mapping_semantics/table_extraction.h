@@ -54,8 +54,8 @@
  *
  ****************************************************************/
 
-#ifndef SEMANTIC_EXTRACTION_H_
-#define SEMANTIC_EXTRACTION_H_
+#ifndef TABLE_EXTRACTION_H_
+#define TABLE_EXTRACTION_H_
 
 //##################
 //#### includes ####
@@ -82,49 +82,40 @@
 
 using namespace cob_3d_mapping;
 
-class SemanticExtraction
+class TableExtraction
 {
 
 public:
-  /**
-   * @brief Contains polygon normal vector, d and polygon points
-   */
-  /*struct Polygon
-  {
-    std::vector<std::vector<Eigen::Vector3f> > poly_points;
-    Eigen::Vector3f normal;
-    float d;
-    std::vector<pcl::PointXYZ> centroid;
-  };*/
-
-  //shared pointer to polygon struct
-  //typedef boost::shared_ptr<Polygon> PolygonPtr;
-  std::vector<PolygonPtr> PolygonMap;
 
   /**
    * @brief Constructor
    */
-  SemanticExtraction () //:
-    /*norm_x_min_ (-0.1), norm_x_max_ (0.1), norm_y_min_ (-0.1), norm_y_max_ (0.1), norm_z_min_ (-0.99),
-        norm_z_max_ (0.99), height_min_ (0.4), height_max_ (1), area_min_ (1), area_max_ (3)*/
+  TableExtraction ()
+  :norm_x_min_(-0.1),
+   norm_x_max_(0.1),
+   norm_y_min_(-0.1),
+   norm_y_max_(0.1),
+   norm_z_min_ (-0.99),
+   norm_z_max_ (0.99),
+   height_min_ (0.4),
+   height_max_ (1),
+   area_min_ (1),
+   area_max_ (3)
   {
-    centroid_.resize (0);
-    area_.resize (0);
-    poly_height_.resize (0);
-    poly_size_.resize (0);
+    /// void
   }
 
   /**
    * @brief Destructor
    */
-  ~SemanticExtraction ()
+  ~TableExtraction ()
   {
 
     /// void
   }
 
   void
-  setNormBounds (double tilt_angle)
+  setNormalBounds (double tilt_angle)
   {
     static const double PI = 3.1415926;
     double ang_rad = tilt_angle * (PI / 180.0);
@@ -135,13 +126,13 @@ public:
     setNormYMax (norm);
     setNormZMin (-cos (ang_rad));
     setNormZMax (cos (ang_rad));
-    std::cout << "\n\t*tilt_angle = " << tilt_angle << std::endl;
+    /*std::cout << "\n\t*tilt_angle = " << tilt_angle << std::endl;
     std::cout << "\n\t*norm_x_min = " << norm_x_min_ << std::endl;
     std::cout << "\n\t*norm_x_max = " << norm_x_max_ << std::endl;
     std::cout << "\n\t*norm_y_min = " << norm_y_min_ << std::endl;
     std::cout << "\n\t*norm_y_max = " << norm_y_max_ << std::endl;
     std::cout << "\n\t*norm_z_min = " << norm_z_min_ << std::endl;
-    std::cout << "\n\t*norm_z_max = " << norm_z_max_ << std::endl;
+    std::cout << "\n\t*norm_z_max = " << norm_z_max_ << std::endl;*/
   }
 
   /**
@@ -223,7 +214,7 @@ public:
    *
    */
   void
-  setHightMin (double height_min)
+  setHeightMin (double height_min)
   {
     height_min_ = height_min;
   }
@@ -235,7 +226,7 @@ public:
    *
    */
   void
-  setHightMax (double height_max)
+  setHeightMax (double height_max)
   {
     height_max_ = height_max;
   }
@@ -263,73 +254,51 @@ public:
     area_max_ = area_max;
   }
 
+  /**
+   * @brief sets the input polygon
+   *
+   * @param poly_ptr pointer to the polygon
+   *
+   */
+  void setInputPolygon(PolygonPtr poly_ptr)
+  {
+    poly_ptr_ = poly_ptr;
+  }
+
+  /**
+   * @brief check if the polygon is a table object candidate or not
+   *
+   * @return true or false
+   */
   bool
-  isTable(PolygonPtr poly_ptr);
+  isTable();
 
   /**
    * @brief check if the plane of the polygon is horizontal or not
-   *
-   * @param p_ptr shared pointer to the polygon
    *
    * @return true or false
    */
 
   bool
-  isHorizontal (PolygonPtr p_ptr);
+  isHorizontal ();
 
   /**
    * @brief check if the plane is high enough or not
    *
-   * @param p_ptr shared pointer the polygon
-   *
    * @return nothing
    */
 
   bool
-  isHeightOk (PolygonPtr p_ptr);
+  isHeightOk ();
 
   /**
    * @brief check if the area of the plane polygon is sufficient or not
    *
-   * @param p_ptr shared pointer to the polygon
-   *
    * @return nothing
    */
   bool
-  isSizeOk (PolygonPtr p_ptr);
+  isSizeOk ();
 
-  /**
-   * @brief Calculate area of a polygon
-   *
-   * @param p_ptr shared pointer to the polygon
-   *
-   * @return nothing
-   */
-  double
-  calcPolyArea (PolygonPtr p_ptr);
-
-  /**
-   * @brief Calculate centroid of a polygon
-   *
-   * @param p_ptr shared pointer to the polygon
-   *
-   * @return nothing
-   */
-  void
-  calcPolyCentroid (PolygonPtr p_ptr);
-
-  /**
-   * @brief Compute centroid of a polygon using PCL library
-   *
-   * @param p_ptr shared pointer to the polygon
-   *
-   * @return nothing
-   */
-  void
-  computeCentroidPCL (PolygonPtr p_ptr);
-
-  std::vector<bool> poly_height_;
-  std::vector<bool> poly_size_;
 protected:
 
   double norm_x_min_, norm_x_max_;
@@ -340,9 +309,8 @@ protected:
 
   double area_min_, area_max_;
 
-  std::vector<double> area_;
-  std::vector<pcl::PointXYZ> centroid_;
+  PolygonPtr poly_ptr_;
 
 };
 
-#endif /* SEMANTIC_EXTRACTION_H_ */
+#endif /* TABLE_EXTRACTION_H_ */
