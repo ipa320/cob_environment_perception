@@ -79,11 +79,23 @@ namespace rviz
 
     Ogre::ColourValue color( r,g,b,a );
     Ogre::MaterialPtr mat = Ogre::MaterialManager::getSingleton().create( buf, Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME );
-    mat->setAmbient(color * 0.01f);
-    mat->setDiffuse(color);
-    mat->setLightingEnabled(true);
-    mat->setReceiveShadows(true);
-    mat->setCullingMode(Ogre::CULL_NONE);
+    mat->getTechnique(0)->setAmbient(color*0.5/*color * 0.01f*/);
+    //mat->setDiffuse(color);
+    mat->getTechnique(0)->setLightingEnabled(true);
+    mat->setReceiveShadows(false);
+    //mat->setCullingMode(Ogre::CULL_NONE);
+     mat->getTechnique(0)->setDiffuse( color );
+
+    if ( color.a < 0.9998 )
+    {
+      mat->getTechnique(0)->setSceneBlending( Ogre::SBT_TRANSPARENT_ALPHA );
+      mat->getTechnique(0)->setDepthWriteEnabled( false );
+    }
+    else
+    {
+      mat->getTechnique(0)->setSceneBlending( Ogre::SBT_REPLACE );
+      mat->getTechnique(0)->setDepthWriteEnabled( true );
+    }
 
     return buf;
   }
@@ -264,6 +276,19 @@ namespace rviz
       triangle(new_message,polygon_,p12,p2,p4);
       triangle(new_message,polygon_,p31,p3,p4);
       triangle(new_message,polygon_,p23,p2,p4);
+    }
+
+    for(std::list<TPPLPoly>::iterator it=result.begin(); it!=result.end(); it++) {
+      //draw each triangle
+      for(int i=it->GetNumPoints()-1;i>=0;i--) {
+        p1 = it->GetPoint(i);
+
+        Eigen::Vector3f p3, normal;
+        MsgToPoint3D(p1,new_message,p3,normal);
+
+        polygon_->position(p3(0),p3(1),p3(2));  // start position
+        polygon_->normal(-normal(0),-normal(1),-normal(2));
+      }
     }
 
     polygon_->end();
