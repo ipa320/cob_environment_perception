@@ -230,6 +230,7 @@ void Segmentation::propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_i
 	  bool stop = false;
 	  //count++;
 	  int pt_ctr = c.u+c.v*width;
+	  // check the point right of current label:
 	  if( c.u < width-1 && cloud_in->points[pt_ctr+1].label==I_UNDEF)
 	  {
 	    searchForNeighbors (cloud_in,c.u+1,c.v,px_range,
@@ -272,7 +273,7 @@ void Segmentation::propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_i
 	      else
 	      {
                 stop=true;
-                if(cancel==3) std::cout << "R Stopper: " << c.u+1 << "," << c.v << std::endl;
+                //if(cancel==3) std::cout << "R Stopper: " << c.u+1 << "," << c.v << std::endl;
 	      }
 	    }
 	    c.c_gap=false;
@@ -298,7 +299,7 @@ void Segmentation::propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_i
 	      else
 	      {
 	        stop=true;
-	        if(cancel==3) std::cout << "U Stopper: " << c.u+1 << "," << c.v << std::endl;
+	        //if(cancel==3) std::cout << "U Stopper: " << c.u+1 << "," << c.v << std::endl;
 	      }
 	    }
 	    c.c_gap=false;
@@ -325,6 +326,7 @@ void Segmentation::propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_i
 	      else
 	      {
 	        stop=true;
+		/*
 	        if(cancel==3)
 	        {
 	          std::cout << "Stopper ur:" << isStopperInNeighbors(cloud_in, indices_ul) << std::endl;
@@ -332,6 +334,7 @@ void Segmentation::propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_i
 	          std::cout << "Gap a:" << gap_l << std::endl;
 	        }
 	        if(cancel==3) std::cout << "L Stopper: " << c.u+1 << "," << c.v << std::endl;
+		*/
 	      }
 	    }
 	  }
@@ -356,7 +359,7 @@ void Segmentation::propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_i
 	      else
 	      {
 	        stop=true;
-	        if(cancel==3) std::cout << "U Stopper: " << c.u+1 << "," << c.v << std::endl;
+	        //if(cancel==3) std::cout << "U Stopper: " << c.u+1 << "," << c.v << std::endl;
 	      }
 	    }
 	  }
@@ -405,7 +408,7 @@ void Segmentation::propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_i
     }
 
   }
-  std::cout << "Time elapsed for wavefront propagation: " << t.elapsed() << std::endl;
+  //std::cout << "Time elapsed for wavefront propagation: " << t.elapsed() << std::endl;
   return;
 }
 
@@ -429,25 +432,13 @@ void Segmentation::getClusterIndices(pcl::PointCloud<PointLabel>::Ptr& cloud_in,
     cluster_indices.push_back(cluster);
   }
   seg_img = cv::Mat(cloud_in->height,cloud_in->width, CV_8UC3);
-  std::vector<cv::Vec3b> colorTab;
-  colorTab.push_back(cv::Vec3b((uchar)0, (uchar)255, (uchar)0)); // undef
-  colorTab.push_back(cv::Vec3b((uchar)255, (uchar)255, (uchar)255)); // nan
-  colorTab.push_back(cv::Vec3b((uchar)0, (uchar)0, (uchar)0)); // border
-  colorTab.push_back(cv::Vec3b((uchar)255, (uchar)0, (uchar)0)); // edge
-  for(int i = 1; i < 256; i++ )
-  {
-    int b = cv::theRNG().uniform(0, 255);
-    int g = cv::theRNG().uniform(0, 255);
-    int r = cv::theRNG().uniform(0, 255);
 
-    colorTab.push_back(cv::Vec3b((uchar)b, (uchar)g, (uchar)r));
-  }
   for(int i = 0; i < seg_img.rows; i++ )
   {
     for(int j = 0; j < seg_img.cols; j++ )
     {
       int label = cloud_in->points[i*cloud_in->width+j].label;
-      seg_img.at<cv::Vec3b>(i,j) = colorTab[label];
+      seg_img.at<cv::Vec3b>(i,j) = color_tab_[label];
     }
   }
 }
@@ -463,6 +454,7 @@ void Segmentation::getClusterIndices(pcl::PointCloud<PointLabel>::Ptr& cloud_in,
   {
     if(cloud_in->points[i].label>max_idx) max_idx=cloud_in->points[i].label;
   }
+
   for(int k=0; k<=max_idx; k++)
   {
     pcl::PointIndices cluster;
@@ -473,24 +465,10 @@ void Segmentation::getClusterIndices(pcl::PointCloud<PointLabel>::Ptr& cloud_in,
     }
     cluster_indices.push_back(cluster);
   }
-  std::vector<uint32_t> colorTab;
-  colorTab.push_back((uint32_t)0 << 16 | (uint32_t)255 << 8 | (uint32_t)0); // undef
-  colorTab.push_back((uint32_t)255 << 16 | (uint32_t)255 << 8 | (uint32_t)255); // nan
-  colorTab.push_back((uint32_t)0 << 16 | (uint32_t)0 << 8 | (uint32_t)0); // border
-  colorTab.push_back((uint32_t)255 << 16 | (uint32_t)0 << 8 | (uint32_t)0); // edge
-  for(int i = 1; i < 256; i++ )
-  {
-    uint32_t b = cv::theRNG().uniform(0, 255);
-    uint32_t g = cv::theRNG().uniform(0, 255);
-    uint32_t r = cv::theRNG().uniform(0, 255);
-   
-    colorTab.push_back(r << 16 | g << 8 | b);
-  }
   for(int i = 0; i < cloud_in->size(); i++ )
   {
     int label = cloud_in->points[i].label;
-    colored_cloud->points[i].rgb = *reinterpret_cast<float*>(&(colorTab[label]));
+    uint32_t rgb = (color_tab_[label])[2] << 16 | (color_tab_[label])[1] << 8 | (color_tab_[label])[0];
+    colored_cloud->points[i].rgb = *reinterpret_cast<float*>(&rgb);
   }
 }
-
-
