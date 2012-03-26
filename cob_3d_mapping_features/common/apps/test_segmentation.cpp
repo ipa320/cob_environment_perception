@@ -79,6 +79,7 @@
 #include "cob_3d_mapping_features/organized_normal_estimation.h"
 #include "cob_3d_mapping_features/organized_curvature_estimation.h"
 #include "cob_3d_mapping_features/segmentation.h"
+#include "cob_3d_mapping_features/extended_segmentation.h"
 
 using namespace std;
 using namespace pcl;
@@ -136,20 +137,23 @@ int main(int argc, char** argv)
 
   // 3D point clouds
   PointCloud<PointXYZRGB>::Ptr p(new PointCloud<PointXYZRGB>);
+  PointCloud<PointXYZRGB>::Ptr color_cloud(new PointCloud<PointXYZRGB>);
   PointCloud<Normal>::Ptr n(new PointCloud<Normal>);
   PointCloud<PrincipalCurvatures>::Ptr pc(new PointCloud<PrincipalCurvatures>);
   PointCloud<InterestPoint>::Ptr ip3d(new PointCloud<InterestPoint>);
   PointCloud<InterestPoint>::Ptr ip2d(new PointCloud<InterestPoint>);
   PointCloud<PointLabel>::Ptr l(new PointCloud<PointLabel>);
+  PointCloud<PointLabel>::Ptr l_copy(new PointCloud<PointLabel>);
 
   // 2D representation
   cv::Mat color, sobel, laplace, edge_3d, combined_2d, combined_3d, segmented;
 
   vector<PointIndices> clusters;
+  vector<cob_3d_mapping_common::Cluster> cluster_list;
 
   PCDReader r;
   if (r.read(file_in_, *p) == -1) return(0);
-
+  *color_cloud = *p;
 
   // --- Normal Estimation ---
   if (en_one_)
@@ -218,11 +222,20 @@ int main(int argc, char** argv)
   }
 
   // --- Segmentation ---
+  *l_copy = *l;
   t.restart();
   cob_3d_mapping_features::Segmentation seg;
   seg.propagateWavefront2(l);
   seg.getClusterIndices(l, clusters, segmented);
   cout << t.elapsed() << "s\t for clustering" << endl;
+
+  // --- Segmentation ---
+  t.restart();
+  cob_3d_mapping_features::ExtendedSegmentation<Normal,PointLabel> eseg;
+  eseg.setInputNormals(n);
+  eseg.propagateWavefront(l_copy, cluster_list);
+  eseg.getColoredCloud(cluster_list, color_cloud);
+  cout << t.elapsed() << "s\t for extended clustering" << endl;
 
 
   if (file_out_ != "")
@@ -313,9 +326,31 @@ int main(int argc, char** argv)
   cv::waitKey();
 
   visualization::PCLVisualizer v;
-  v.setBackgroundColor(0,127,127);
-  ColorHdlRGB col_hdl(p);
-  v.addPointCloud<PointXYZRGB>(p,col_hdl, "segmented");
+  ColorHdlRGB col_hdl(color_cloud);
+  visualization::PointCloudColorHandlerCustom<PointXYZRGB> col_hdl_single (p, 255,0,0);
+
+  /* --- Viewports: ---
+   *  1y
+   *    | 1 | 3 |
+   * .5 ----+----
+   *    | 2 | 4 |
+   *  0    .5    1x
+   * 1:
+   */
+  // xmin, ymin, xmax, ymax
+  int v1(0);
+  v.createViewPort(0.0, 0.0, 0.5, 1.0, v1);
+  v.setBackgroundColor(0,127,127, v1);
+  v.addPointCloud<PointXYZRGB>(color_cloud, col_hdl, "segmented1", v1);
+  //v.addPointCloudNormals<PointXYZRGB, Normal>(p,n,10,0.04,"normals1", v1);
+
+  int v2(0);
+  v.createViewPort(0.5, 0.0, 1.0, 1.0, v2);
+  v.setBackgroundColor(0,127,127, v2);
+
+  v.addPointCloud<PointXYZRGB>(p, col_hdl_single, "segmented2", v2);
+  v.addPointCloudNormals<PointXYZRGB, Normal>(p,n,3,0.04,"normals2", v2);
+
 
   while(!v.wasStopped())
   {

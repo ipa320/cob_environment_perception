@@ -52,39 +52,34 @@
  *
  ****************************************************************/
 
-#ifndef __SEGMENTATION_H__
-#define __SEGMENTATION_H__
+#ifndef __EXTENDED_SEGMENTATION_H__
+#define __EXTENDED_SEGMENTATION_H__
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/PointIndices.h>
 #include <opencv2/core/core.hpp>
 #include <cob_3d_mapping_common/point_types.h>
+#include <cob_3d_mapping_common/cluster.h>
 
 namespace cob_3d_mapping_features
 {
-
-  struct Coords
-  {
-    int u;
-    int v;
-    bool c_gap;
-
-    Coords(int u_in, int v_in, bool c_gap_in)
-      {
-	u = u_in;
-	v=  v_in;
-	c_gap = c_gap_in;
-      }
-  };
-
-  class Segmentation
+  template <typename PointNT, typename PointOutT>
+  class ExtendedSegmentation
   {
   public:
+    typedef pcl::PointCloud<PointNT> NormalCloudIn;
+    typedef typename NormalCloudIn::Ptr NormalCloudInPtr;
+    typedef typename NormalCloudIn::ConstPtr NormalCloudInConstPtr;
+
+    typedef pcl::PointCloud<PointOutT> LabelCloud;
+    typedef typename LabelCloud::Ptr LabelCloudPtr;
+    typedef typename LabelCloud::ConstPtr LabelCloudConstPtr;
+
+  public:
     /** \brief Empty constructor. */
-    Segmentation () : color_tab_()
+    ExtendedSegmentation () : color_tab_()
     { 
-      color_tab_.reserve(504);
+      color_tab_.reserve(2052);
       color_tab_.push_back(cv::Vec3b(0, 255, 0)); // undef
       color_tab_.push_back(cv::Vec3b(255, 255, 255)); // nan
       color_tab_.push_back(cv::Vec3b(0, 0, 255)); // border
@@ -101,39 +96,36 @@ namespace cob_3d_mapping_features
       }
     };
 
-    int 
-    searchForNeighbors(pcl::PointCloud<PointLabel>::Ptr& cloud_in,
-		       int col, int row,
-		       double radius,
-		       std::vector<int>& indices_ul,
-		       std::vector<int>& indices_ur,
-		       std::vector<int>& indices_lr,
-		       std::vector<int>& indices_ll,
-		       bool& gap_l, bool& gap_r, bool& gap_a, bool& gap_d);
-
-    bool 
-    isStopperInNeighbors(pcl::PointCloud<PointLabel>::Ptr& cloud_in,
-			 std::vector<int>& indices);
+    inline void
+    setInputNormals(const NormalCloudInConstPtr &normals) { normals_ = normals; }
 
     void
-    propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_in);
+    propagateWavefront(const LabelCloudPtr& labels,
+		       std::vector<cob_3d_mapping_common::Cluster>& cluster_out);
 
     void
-    getClusterIndices(pcl::PointCloud<PointLabel>::Ptr& cloud_in,
-		      std::vector<pcl::PointIndices>& cluster_indices,
-		      cv::Mat& seg_img);
-
-    void
-    getClusterIndices(pcl::PointCloud<PointLabel>::Ptr& cloud_in,
-		      std::vector<pcl::PointIndices>& cluster_indices,
-		      pcl::PointCloud<PointXYZRGB>::Ptr& colored_cloud);
+    getColoredCloud(std::vector<cob_3d_mapping_common::Cluster>& cluster_list,
+		    pcl::PointCloud<PointXYZRGB>::Ptr& color_cloud);
 
   protected:
+    NormalCloudInConstPtr normals_;
     std::vector<cv::Vec3b> color_tab_;
+
+    struct Coords
+    {
+    public:
+    Coords(int u_in, int v_in, bool c_gap_in) : u(u_in), v(v_in), c_gap(c_gap_in)
+	{ }
+      
+      int u;
+      int v;
+      bool c_gap;
+    };
+
     
   };
 }
 
-#endif  //#ifndef __SEGMENTATION_H__
+#endif  //#ifndef __EXTENDED_SEGMENTATION_H__
 
 

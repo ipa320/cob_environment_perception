@@ -35,6 +35,7 @@ rosbuild_add_library(cob_3d_mapping_features
 	common/src/edge_estimation_3d.cpp
 	common/src/edge_estimation_2d.cpp
 	common/src/edge_extraction.cpp
+	common/src/extended_segmentation.cpp
 	common/src/segmentation.cpp
 	common/src/plane_extraction.cpp
 	common/src/knn_classifier.cpp

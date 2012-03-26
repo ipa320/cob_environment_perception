@@ -77,17 +77,17 @@ cob_3d_mapping_features::SegmentationNodelet::received_cloud_cb(const pcl::Point
   oce_.setInputCloud(cloud);
   oce_.compute(*pc_);
 
-  seg_.propagateWavefront2(labels_);
-  cv::Mat segmented;
-  seg_.getClusterIndices(labels_, clusters_, segmented);
+  seg_.propagateWavefront(labels_, cluster_list_);
+  //cv::Mat segmented;
+  //seg_.getClusterIndices(labels_, clusters_, segmented);
 
-  cv_bridge::CvImage cv_ptr;
-  cv_ptr.image = segmented;
-  cv_ptr.encoding = sensor_msgs::image_encodings::RGB8;
-  image_pub_.publish(cv_ptr.toImageMsg());
+  //cv_bridge::CvImage cv_ptr;
+  //cv_ptr.image = segmented;
+  //cv_ptr.encoding = sensor_msgs::image_encodings::RGB8;
+  //image_pub_.publish(cv_ptr.toImageMsg());
 
   pcl::copyPointCloud<PointXYZRGB,PointXYZRGB>(*cloud,*colored_);
-  seg_.getClusterIndices(labels_, clusters_, colored_);
+  seg_.getColoredCloud(cluster_list_, colored_);
   pub_.publish(*colored_);
 
   std::cout << t.precisionStop() << "s\t for segmentation!" << std::endl;
@@ -101,13 +101,15 @@ cob_3d_mapping_features::SegmentationNodelet::onInit()
 
   one_.setOutputLabels(labels_);
   one_.setPixelSearchRadius(8,2,2);
-  one_.setSkipDistantPointThreshold(12);
+  one_.setSkipDistantPointThreshold(8);
 
   oce_.setInputNormals(normals_);
   oce_.setOutputLabels(labels_);
   oce_.setPixelSearchRadius(8,2,2);
-  oce_.setSkipDistantPointThreshold(12);
+  oce_.setSkipDistantPointThreshold(8);
   oce_.setEdgeClassThreshold(6.0);
+
+  seg_.setInputNormals(normals_);
 
   nh_ = getNodeHandle();
   it_ = image_transport::ImageTransport(nh_);
