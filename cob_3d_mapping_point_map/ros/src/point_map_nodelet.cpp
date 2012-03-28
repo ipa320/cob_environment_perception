@@ -349,9 +349,11 @@ public:
         req.target_frame = "/map";
         cob_3d_mapping_msgs::GetFieldOfViewResponse res;
         //get_fov_srv_client_.call(req,res);
+
+        ROS_WARN("registration successful");
       }
       else
-        ROS_WARN("not successful");
+        ROS_WARN("registration not successful");
 
       ROS_DEBUG("[aggregate_point_map] ICP took %f s", t.elapsed());
 
