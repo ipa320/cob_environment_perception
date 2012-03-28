@@ -335,6 +335,7 @@ public:
         pcl::transformPointCloud(pc_in_,pc_in_,reg_->getTransformation());
 
         map_.header.frame_id="/map";
+        map_.header.stamp=pc_in_.header.stamp;
         pc_in_.header.frame_id="/map";
         map_+=pc_in_;
 
