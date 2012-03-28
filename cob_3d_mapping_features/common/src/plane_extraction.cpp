@@ -292,7 +292,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
           pcl::PointCloud<Point>::Ptr plane_cluster_ptr = plane_cluster.makeShared();
 
           if(plane_cluster_ptr->size()<5) continue;
-          else std::cout << "plane cluster has " << plane_cluster_ptr->size() << " points" << std::endl;
+          //else std::cout << "plane cluster has " << plane_cluster_ptr->size() << " points" << std::endl;
 
           // Create a Convex Hull representation of the projected inliers
           pcl::PointCloud<Point> cloud_hull;
