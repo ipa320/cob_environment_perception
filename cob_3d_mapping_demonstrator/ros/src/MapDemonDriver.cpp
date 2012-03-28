@@ -1,12 +1,14 @@
 #include <ros/ros.h>
 #include <urdf/model.h>
-#include <pthread.h>
+//#include <pthread.h>
+#include <actionlib/server/simple_action_server.h>
 
 //ROS Message Includes
 #include <sensor_msgs/JointState.h>
 #include <brics_actuator/JointPositions.h>
 #include <brics_actuator/JointVelocities.h>
 #include <diagnostic_msgs/DiagnosticArray.h>
+#include <pr2_controllers_msgs/JointTrajectoryAction.h>
 
 //ROS Service Includes
 #include <cob_srvs/Trigger.h>
@@ -40,6 +42,8 @@ public:
 	ros::ServiceServer srvServer_Recover_;
 	ros::ServiceServer srvServer_OperationMode_;
 
+	actionlib::SimpleActionServer<pr2_controllers_msgs::JointTrajectoryAction> as_;
+
 	/// handle for 3d-mapping-demon ctrl
 	MapDemonCtrl* md_ctrl_;
 
@@ -59,8 +63,10 @@ public:
 
 	///Constructor
 	MappingDemonstratorNode()
+	  :n_("~"),
+	   as_(n_, "joint_trajectory_action", boost::bind(&MappingDemonstratorNode::executeTrajectory, this, _1), true)
 	{
-		n_ = ros::NodeHandle("~");
+		//n_ = ros::NodeHandle("~");
 		md_sd_ = new SerialDevice();
 
 		md_params_ = new MapDemonCtrlParams();
@@ -246,6 +252,22 @@ public:
 			ROS_ERROR("...initializing COB3DMD unsuccessful. Error: %s", error_msg_.c_str());
 		}
 
+	}
+
+	void executeTrajectory(const pr2_controllers_msgs::JointTrajectoryGoalConstPtr &goal)
+	{
+	  trajectory_msgs::JointTrajectory traj = goal->trajectory;
+	  brics_actuator::JointPositions::Ptr joint_pos(new brics_actuator::JointPositions());
+	  for(unsigned int i=0; i<traj.joint_names.size(); i++)
+	  {
+	    brics_actuator::JointValue jv;
+	    jv.joint_uri = traj.joint_names[i];
+	    jv.unit = "rad";
+	    jv.value = traj.points[0].positions[i];
+	    joint_pos->positions.push_back(jv);
+	  }
+	  topicCallback_CommandPos(joint_pos);
+	  as_.setSucceeded();
 	}
 
 	void topicCallback_CommandPos(const brics_actuator::JointPositions::ConstPtr& msg)
