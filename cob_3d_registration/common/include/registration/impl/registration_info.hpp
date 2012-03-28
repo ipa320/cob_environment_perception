@@ -322,6 +322,7 @@ bool Registration_Infobased<Point>::compute_transformation()
 #else
       if(!use_odometry_ || this->failed_<10)
         return false;
+      }
       else {
         T = T.Identity();
         ROS_INFO("using odometry");
