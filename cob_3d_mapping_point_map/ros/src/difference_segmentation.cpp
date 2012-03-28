@@ -210,15 +210,16 @@ public:
   {
     static int ctr=0;
     PointCloud pc_diff;
-    /*std::cout << "map size:" << map->size() << std::endl;
+    std::cout << "map size:" << map->size() << std::endl;
     std::cout << map->header.stamp << std::endl;
     std::cout << "pc_aligned size:" << pc_aligned->size() << std::endl;
-    std::cout << pc_aligned->header.stamp << std::endl;*/
+    std::cout << pc_aligned->header.stamp << std::endl;
     //pcl::fromROSMsg(pc_aligned_msg, pc_aligned);
     //pcl::SegmentDifferences<Point> sd;
     sd_.setTargetCloud(map_.makeShared());
     sd_.setInputCloud(pc_aligned);
     sd_.segment(pc_diff);
+    std::cout << pc_diff.size() << std::endl;
     if(pc_diff.size()>0)
     {
       /*std::stringstream ss;
