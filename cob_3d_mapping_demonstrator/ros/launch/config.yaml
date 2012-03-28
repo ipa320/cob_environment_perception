@@ -1,8 +1,9 @@
 serial_device: ttyUSB0
 serial_baudrate: 57600
 joint_names: ['stepper', 'servo']
-fixed_velocities: [1.02, 1.02]
+#fixed_velocities: [1.02, 1.02]
+fixed_velocities: [0.5, 0.5]
 auto_initialize: true
-operation_mode: velocity
+operation_mode: position
 min_publish_duration: 0.01
 frequency: 50
