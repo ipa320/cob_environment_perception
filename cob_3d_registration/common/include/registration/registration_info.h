@@ -117,7 +117,7 @@ public:
     depth_map(NULL), use_icp_(false),
     //threshold_diff_(0.06), min_changes_(4500), min_info_(1), max_info_(17), threshold_step_(0.06),
     //threshold_diff_(0.06), min_changes_(2600), min_info_(1), max_info_(17), threshold_step_(0.06),
-    threshold_diff_(0.06), min_changes_(800), min_info_(1), max_info_(17), threshold_step_(0.06),
+    threshold_diff_(0.08), min_changes_(800), min_info_(2), max_info_(16), threshold_step_(0.08),
     //threshold_diff_(0.06), min_changes_(4500), min_info_(1), max_info_(17), threshold_step_(0.06),
     tmax_(0.1), rmax_(0.1), check_samples_(true),
     odometry_(Eigen::Matrix4f::Identity()), odometry_last_(Eigen::Matrix4f::Identity()), failed_(0),
