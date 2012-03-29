@@ -112,7 +112,7 @@ public:
   {
     ctr_ = 0;
     shape_sub_ = n_.subscribe("shape_array", 10, &GeometryMapNode::shapeCallback, this);
-    map_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("geometry_map_array",1);
+    map_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("map_array",1);
     marker_pub_ = n_.advertise<visualization_msgs::Marker>("geometry_marker",100);
     clear_map_server_ = n_.advertiseService("clear_geometry_map", &GeometryMapNode::clearMap, this);
     get_map_server_ = n_.advertiseService("get_geometry_map", &GeometryMapNode::getMap, this);
@@ -164,7 +164,7 @@ public:
     {
       PolygonPtr map_entry_ptr = PolygonPtr(new Polygon());
       if(!fromROSMsg(sa->shapes[i], *map_entry_ptr)) continue;
-      dumpPolygonToFile(*map_entry_ptr);
+      //dumpPolygonToFile(*map_entry_ptr);
       t.precisionStart();
       geometry_map_.addMapEntry(map_entry_ptr);
       double step_time =t.precisionStop();
@@ -276,6 +276,8 @@ public:
       cob_3d_mapping_msgs::Shape s;
       toROSMsg(sm, s);
       s.header = map_msg.header;
+      s.color.b = 1;
+      s.color.a = 1;
       //map_msg.polygon_array.push_back(p);
       map_msg.shapes.push_back(s);
     }
