@@ -20,6 +20,12 @@
   <depend package="cob_command_gui"/>
   <depend package="actionlib"/>
   <depend package="pr2_controllers_msgs"/>
+  <depend package="rviz"/>
+  <depend package="cob_script_server"/>
+
+  <export>
+    <rviz plugin="${prefix}/lib/plugin.yaml"/>
+  </export>
 
 
 </package>
