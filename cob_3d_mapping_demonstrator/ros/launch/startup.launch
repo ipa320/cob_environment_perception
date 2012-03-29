@@ -13,8 +13,8 @@
 	<node name="state_publisher" type="state_publisher" pkg="robot_state_publisher" output="screen">
 		<remap from="joint_states" to="/cob_3d_mapping_demonstrator_controller/joint_states"/>
 	</node>
-	<include file="$(find openni_launch)/launch/openni.launch"/>
-    <remap from="base_controller/command" to="cob_3d_mapping_demonstrator/command_vel" />
+	<include file="$(find cob_3d_mapping_demonstrator)/ros/launch/openni.launch"/>
+  <remap from="base_controller/command" to="cob_3d_mapping_demonstrator/command_vel" />
 
 	<!--node ns="cob_3d_mapping_demonstrator_controller" pkg="cob_teleop" type="teleop_cob" name="spawn_teleop_keyboard" output="screen"/-->
 

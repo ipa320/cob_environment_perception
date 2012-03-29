@@ -17,12 +17,21 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 #add include search paths
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include
+    ${PROJECT_SOURCE_DIR}/ros/include)
 
 #add project executbles(example examples/example.cpp)
+rosbuild_add_library(cob_3d_mapping_demonstrator_rviz ros/src/rviz_buttons.cpp
+    ros/src/rviz_buttons_panel.cpp
+    ros/src/init.cpp)
 rosbuild_add_executable(${PROJECT_NAME} ros/src/MapDemonDriver.cpp common/src/MapDemonCtrl.cpp common/src/SerialDevice.cpp)
 rosbuild_add_executable(testClient ros/test/test_client.cpp)
 rosbuild_add_executable(testClientPOS ros/test/test_clientPOS.cpp)
+
+# Add wx widgets
+find_package(wxWidgets REQUIRED)
+include(${wxWidgets_USE_FILE})
+include_directories( ${wxWidgets_INCLUDE_DIRS} )
 
 #uncomment if you have defined messages
 #rosbuild_genmsg()
