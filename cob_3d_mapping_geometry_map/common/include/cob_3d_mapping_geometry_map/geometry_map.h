@@ -172,6 +172,9 @@ public:
   float
   rounding(float x);
 
+  void
+  colorizeMap();
+
   boost::shared_ptr<std::vector<cob_3d_mapping::PolygonPtr> >
   getMap()
   {

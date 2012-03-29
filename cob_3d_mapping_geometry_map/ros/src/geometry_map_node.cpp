@@ -265,6 +265,7 @@ public:
   void publishMap()
   {
     boost::shared_ptr<std::vector<PolygonPtr> > map = geometry_map_.getMap();
+    geometry_map_.colorizeMap();
     //cob_3d_mapping_msgs::PolygonArrayArray map_msg;
     cob_3d_mapping_msgs::ShapeArray map_msg;
     map_msg.header.frame_id="/map";
@@ -276,8 +277,8 @@ public:
       cob_3d_mapping_msgs::Shape s;
       toROSMsg(sm, s);
       s.header = map_msg.header;
-      s.color.b = 1;
-      s.color.a = 1;
+      //s.color.b = 1;
+      //s.color.a = 1;
       //map_msg.polygon_array.push_back(p);
       map_msg.shapes.push_back(s);
     }
