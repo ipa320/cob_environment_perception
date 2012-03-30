@@ -63,17 +63,27 @@
 
 namespace cob_3d_mapping_features
 {
-  template <typename PointNT, typename PointOutT>
+  template <typename PointT, typename PointNT, typename PointCT, typename PointOutT>
   class ExtendedSegmentation
   {
   public:
+    typedef pcl::PointCloud<PointT> PointCloudIn;
+    typedef typename PointCloudIn::Ptr PointCloudInPtr;
+    typedef typename PointCloudIn::ConstPtr PointCloudInConstPtr;
+
     typedef pcl::PointCloud<PointNT> NormalCloudIn;
     typedef typename NormalCloudIn::Ptr NormalCloudInPtr;
     typedef typename NormalCloudIn::ConstPtr NormalCloudInConstPtr;
 
+    typedef pcl::PointCloud<PointCT> CurvatureCloudIn;
+    typedef typename CurvatureCloudIn::Ptr CurvatureCloudInPtr;
+    typedef typename CurvatureCloudIn::ConstPtr CurvatureCloudInConstPtr;
+
     typedef pcl::PointCloud<PointOutT> LabelCloud;
     typedef typename LabelCloud::Ptr LabelCloudPtr;
     typedef typename LabelCloud::ConstPtr LabelCloudConstPtr;
+
+    typedef std::vector<cob_3d_mapping_common::Cluster> ClusterList;
 
   public:
     /** \brief Empty constructor. */
@@ -97,29 +107,44 @@ namespace cob_3d_mapping_features
     };
 
     inline void
+    setInput(const PointCloudInConstPtr &points) { surface_ = points; }
+
+    inline void
     setInputNormals(const NormalCloudInConstPtr &normals) { normals_ = normals; }
+
+    inline void
+    setInputCurvatures(const CurvatureCloudInConstPtr &curvatures) { curvatures_ = curvatures; }
 
     void
     propagateWavefront(const LabelCloudPtr& labels,
-		       std::vector<cob_3d_mapping_common::Cluster>& cluster_out);
+		       ClusterList& cluster_out);
 
     void
-    getColoredCloud(std::vector<cob_3d_mapping_common::Cluster>& cluster_list,
+    analyseClusters(ClusterList& cluster_out);
+
+    void
+    getColoredCloud(ClusterList& cluster_list,
 		    pcl::PointCloud<PointXYZRGB>::Ptr& color_cloud);
 
+    void
+    getColoredCloudByType(ClusterList& cluster_list,
+			  pcl::PointCloud<PointXYZRGB>::Ptr& color_cloud);
+
   protected:
+    PointCloudInConstPtr surface_;
     NormalCloudInConstPtr normals_;
+    CurvatureCloudInConstPtr curvatures_;
     std::vector<cv::Vec3b> color_tab_;
 
     struct Coords
     {
     public:
-    Coords(int u_in, int v_in, bool c_gap_in) : u(u_in), v(v_in), c_gap(c_gap_in)
+    Coords(int u_in, int v_in, float angle) : u(u_in), v(v_in), angle(angle)
 	{ }
       
       int u;
       int v;
-      bool c_gap;
+      float angle;
     };
 
     
