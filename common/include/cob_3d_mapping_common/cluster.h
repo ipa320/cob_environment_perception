@@ -62,24 +62,74 @@ namespace cob_3d_mapping_common
   class Cluster
   {
   public:
-    Cluster () : indices(), orientation(), type(I_UNDEF)
+    Cluster () : indices()
+      , type(I_UNDEF)
+      , sum_points(0.0, 0.0, 0.0)
+      , sum_orientation(0.0, 0.0, 0.0)
+      , sum_angle(0.0)
+      , sum_max_curvature(0.0)
+      , sum_min_curvature(0.0)
     { };
 
     ~Cluster () { };
 
     void
-    updateCluster(const int idx, const Eigen::Vector3f& new_normal)
+      updateCluster(const int idx, 
+		    const Eigen::Vector3f& new_point, 
+		    const Eigen::Vector3f& new_normal)
     {
       indices.push_back(idx);
-      orientation += new_normal / (indices.size());
-      orientation = orientation.normalized();
+      sum_points += new_point;
+      sum_orientation += new_normal;
     }
 
-    Eigen::Vector3f orientation;
-    std::vector<int> indices;
+    void
+    updateCluster(const int idx,
+		  const Eigen::Vector3f& new_normal, 
+		  const float c_max,
+		  const float c_min)
+    {
+      indices.push_back(idx);
+      sum_orientation += new_normal;
+
+      sum_max_curvature += c_max;
+      sum_min_curvature += c_min;
+    }
+
+    inline Eigen::Vector3f
+    getCentroid() { return (sum_points / indices.size()); }
+    
+    inline Eigen::Vector3f
+      getOrientation() { return (sum_orientation / indices.size()).normalized(); }
+
+    inline float
+    getNormalChange() { return sum_angle / indices.size(); }
+
+    inline float
+    getSurfaceCurvature() { return eigenvalues(0) / (eigenvalues(0) + eigenvalues(1) + eigenvalues(2)); }
+
+    inline float
+    getMaxCurvature() { return (sum_max_curvature / indices.size()); }
+
+    inline float
+    getMinCurvature() { return (sum_min_curvature / indices.size()); }
+
+    inline bool
+    isConvex() { return (sum_max_curvature < 0); }
+
     int type;
+    std::vector<int> indices;
+    Eigen::Vector3f first_component;
+    Eigen::Vector3f second_component;
+    Eigen::Vector3f third_component;
+    Eigen::Vector3f eigenvalues;
 
   protected:
+    Eigen::Vector3f sum_points;
+    Eigen::Vector3f sum_orientation;
+    float sum_angle;
+    float sum_max_curvature;
+    float sum_min_curvature;
 
   };
 
