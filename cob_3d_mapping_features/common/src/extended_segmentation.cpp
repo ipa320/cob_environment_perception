@@ -61,4 +61,4 @@
 #include "cob_3d_mapping_features/extended_segmentation.h"
 #include "cob_3d_mapping_features/impl/extended_segmentation.hpp"
 
-PCL_INSTANTIATE_ExtendedSegmentation(pcl::Normal, PointLabel)
+PCL_INSTANTIATE_ExtendedSegmentation(pcl::PointXYZRGB, pcl::Normal, pcl::PrincipalCurvatures, PointLabel)

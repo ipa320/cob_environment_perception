@@ -231,8 +231,9 @@ int main(int argc, char** argv)
 
   // --- Segmentation ---
   t.restart();
-  cob_3d_mapping_features::ExtendedSegmentation<Normal,PointLabel> eseg;
+  cob_3d_mapping_features::ExtendedSegmentation<PointXYZRGB,Normal,PrincipalCurvatures,PointLabel> eseg;
   eseg.setInputNormals(n);
+  eseg.setInputCurvatures(pc);
   eseg.propagateWavefront(l_copy, cluster_list);
   eseg.getColoredCloud(cluster_list, color_cloud);
   cout << t.elapsed() << "s\t for extended clustering" << endl;
@@ -268,7 +269,7 @@ int main(int argc, char** argv)
 	    l->points[i*pc->width+j].label == I_NAN)
 	  edge_3d.at<float>(i,j) = 2*upper_;
 	else
-	  edge_3d.at<float>(i,j) = pc->points[i*pc->width+j].pc1;
+	  edge_3d.at<float>(i,j) = std::abs(pc->points[i*pc->width+j].pc1);
       }
     }
   }
@@ -284,7 +285,23 @@ int main(int argc, char** argv)
     }
   }
 
-  // colorize edges of label point cloud
+  for (size_t i=0; i<pc->points.size(); ++i)
+  {
+    if (pc->points[i].pc1 > 0)
+    {
+      p->points[i].r = 255;
+      p->points[i].g = 0;
+      p->points[i].b = 0;
+    }
+    else
+    {
+      p->points[i].r = 0;
+      p->points[i].g = 0;
+      p->points[i].b = 255;
+    }
+  }
+
+  /*// colorize edges of label point cloud
   for (size_t i = 0; i < l->points.size(); i++)
   {
     switch (l->points[i].label)
@@ -311,6 +328,7 @@ int main(int argc, char** argv)
       break;
     }
   }
+  */
 
   cv::imshow("Color", color);
   cv::imshow("sobel", sobel);
@@ -327,6 +345,7 @@ int main(int argc, char** argv)
 
   visualization::PCLVisualizer v;
   ColorHdlRGB col_hdl(color_cloud);
+  ColorHdlRGB col_hdl2(p);
   visualization::PointCloudColorHandlerCustom<PointXYZRGB> col_hdl_single (p, 255,0,0);
 
   /* --- Viewports: ---
@@ -348,7 +367,7 @@ int main(int argc, char** argv)
   v.createViewPort(0.5, 0.0, 1.0, 1.0, v2);
   v.setBackgroundColor(0,127,127, v2);
 
-  v.addPointCloud<PointXYZRGB>(p, col_hdl_single, "segmented2", v2);
+  v.addPointCloud<PointXYZRGB>(p, col_hdl2, "segmented2", v2);
   v.addPointCloudNormals<PointXYZRGB, Normal>(p,n,3,0.04,"normals2", v2);
 
 

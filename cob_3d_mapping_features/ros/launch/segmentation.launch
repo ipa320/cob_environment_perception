@@ -1,5 +1,7 @@
 <launch>
+  <node pkg="topic_tools" type="throttle" name="throttle" args="messages /camera/depth_registered/points 1.0 cloud_in">
+  </node>
   <node pkg="nodelet" type="nodelet" name="segmentation" args="load cob_3d_mapping_features/SegmentationNodelet camera_nodelet_manager" output="screen">
-    <remap from="cloud_in" to="/camera/depth_registered/points"/>
+    <!--<remap from="cloud_in" to="/camera/depth_registered/points"/>-->
   </node>
 </launch>

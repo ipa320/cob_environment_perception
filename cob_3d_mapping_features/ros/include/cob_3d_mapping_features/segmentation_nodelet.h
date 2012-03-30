@@ -111,7 +111,7 @@ namespace cob_3d_mapping_features
     
     OrganizedNormalEstimationOMP<PointT, pcl::Normal, PointLabel> one_;
     OrganizedCurvatureEstimationOMP<PointT, pcl::Normal, PointLabel, pcl::PrincipalCurvatures> oce_;
-    ExtendedSegmentation<pcl::Normal,PointLabel> seg_;
+    ExtendedSegmentation<pcl::PointXYZRGB,pcl::Normal,pcl::PrincipalCurvatures,PointLabel> seg_;
 
     pcl::PointCloud<PointT>::Ptr colored_;
     pcl::PointCloud<pcl::Normal>::Ptr normals_;

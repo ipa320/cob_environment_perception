@@ -73,6 +73,10 @@ rosbuild_add_compile_flags(evaluation_features -DEIGEN_YES_I_KNOW_SPARSE_MODULE_
 #rosbuild_add_compile_flags(test_edge_extraction -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
 #target_link_libraries(test_edge_extraction cob_3d_mapping_features)
 
+# Uses ONE and OCE to test the extended segmentation and cluster analyis
+rosbuild_add_executable(test_extended_segmentation common/apps/test_extended_segmentation.cpp)
+target_link_libraries(test_extended_segmentation cob_3d_mapping_features)
+
 # Uses FEE3D and EE2D to extract edges and segment clusters
 rosbuild_add_executable(test_segmentation common/apps/test_segmentation.cpp)
 target_link_libraries(test_segmentation cob_3d_mapping_features cob_3d_mapping_features_omp)
