@@ -16,4 +16,6 @@ group2:
            [Look right,move,right],
            [Look rightdown,move,rightdown],
            [Look left,move,left],
-           [Look leftdown,move,leftdown]]
+           [Look leftdown,move,leftdown],
+           [Look down,move,down],
+           [Look up,move,up]]
