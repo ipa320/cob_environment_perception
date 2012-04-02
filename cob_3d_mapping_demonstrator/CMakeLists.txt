@@ -23,6 +23,7 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include
 #add project executbles(example examples/example.cpp)
 rosbuild_add_library(cob_3d_mapping_demonstrator_rviz ros/src/rviz_buttons.cpp
     ros/src/rviz_buttons_panel.cpp
+    ros/src/rviz_title.cpp
     ros/src/init.cpp)
 rosbuild_add_executable(${PROJECT_NAME} ros/src/MapDemonDriver.cpp common/src/MapDemonCtrl.cpp common/src/SerialDevice.cpp)
 rosbuild_add_executable(testClient ros/test/test_client.cpp)
