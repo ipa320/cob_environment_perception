@@ -114,19 +114,19 @@ bool MapDemonCtrl::Init(MapDemonCtrlParams * params)
   usleep(200000);
   if( !m_sd->FlushInBuffer() )
     return false;	/// ...and flush serial port input buffer
-  //usleep(200000);
+  usleep(200000);
 
   std::cout << "Detecting the robot..." << std::endl;
   //m_sd->PutString("N\n");
   //usleep(200000);
   std::string str("");
   //m_sd->GetString(str);
+  m_sd->PutString("N\n");
 
   unsigned int ctr=0;
   while(str.find("COB3DMD") == std::string::npos)
   {
     str.clear();
-    m_sd->PutString("N\n");
     m_sd->GetString(str);
     std::cout << "return 1: " << str.c_str() << std::endl;
     //str.resize(30);	// Resize just in case weird name is too long
@@ -166,14 +166,15 @@ bool MapDemonCtrl::Init(MapDemonCtrlParams * params)
  */
 bool MapDemonCtrl::RunCalibration()
 {
-  std::string str;
   std::ostringstream errorMsg;
   std::vector<std::string> JointNames = m_params_->GetJointNames();
   std::vector<double> MaxVel = m_params_->GetMaxVel();
 
   /// Shut robot output in case it was already enabled...
+  usleep(200000);
   if( !m_sd->FlushInBuffer() )
     return false;	/// ...and flush serial port input buffer
+  usleep(200000);
 
   /// Run encoder calibration
   m_sd->PutString("L\n");
@@ -184,9 +185,11 @@ bool MapDemonCtrl::RunCalibration()
   /// get messages till 'L' is received (this is necessary because if the message output of the robot was enabled, between the flush buffer and this we still could have received a few characters from that, before the 'L'.
   while( found == std::string::npos )
   {
+    std::string str;
     m_sd->GetString(str);	// read another message
     found = str.find_first_of("L", 0);	// find L
     retry++;
+    std::cout << "calib cb: " << str << std::endl;
     if(retry == 4)	// experimental value, normally one or two messages are received btw flushinbuffer and getstring.
       return false;	/// if tryout
   }
@@ -423,16 +426,28 @@ bool MapDemonCtrl::UpdatePositions()
 bool MapDemonCtrl::Stop()
 {
   std::ostringstream errorMsg;
-  std::string str;
+  std::string str("");
 
   m_sd->PutString("E\n");
-  m_sd->GetString(str);
-  if ( str.find("E\n") == std::string::npos )
+  unsigned int ctr=0;
+  while(str.find("E") == std::string::npos)
+  {
+    str.clear();
+    m_sd->GetString(str);
+    if(ctr>50)
+    {
+      errorMsg << "COB3DMD did not confirm halt";
+      m_ErrorMessage = errorMsg.str();
+      return false;
+    }
+    ctr++;
+  }
+  /*if ( str.find("E\n") == std::string::npos )
   {
     errorMsg << "COB3DMD did not confirm halt";
     m_ErrorMessage = errorMsg.str();
     return false;
-  }
+  }*/
 
   return true;
 }

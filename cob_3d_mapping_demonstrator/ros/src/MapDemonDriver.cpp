@@ -268,13 +268,14 @@ public:
 	  }
 	  topicCallback_CommandPos(joint_pos);
 	  bool isMoving = true;
+	  stopped_=false;
 	  while(isMoving)
 	  {
 	    std::vector<double> pos = md_ctrl_->GetPositions();
-	    ROS_INFO("%f, %f", traj.points[0].positions[0]-pos[0], traj.points[0].positions[1]-pos[1]);
+	    //ROS_INFO("%f, %f", traj.points[0].positions[0]-pos[0], traj.points[0].positions[1]-pos[1]);
 	    if( fabs(traj.points[0].positions[0]-pos[0])<0.005 &&  fabs(traj.points[0].positions[1]-pos[1])<0.008 )
 	      isMoving = false;
-	    if ( as_.isPreemptRequested())
+	    if ( as_.isPreemptRequested() || stopped_)
 	    {
 	      as_.setPreempted();
 	      return;
@@ -473,7 +474,7 @@ public:
 			{
 				res.success.data = false;
 				md_ctrl_->getErrorMessage();
-				ROS_ERROR("...stopping COB3DMD unsuccessful. Error: %s", res.error_message.data.c_str());
+				ROS_ERROR("!!...stopping COB3DMD unsuccessful. Error: %s", res.error_message.data.c_str());
 			}
 		}
 		else
