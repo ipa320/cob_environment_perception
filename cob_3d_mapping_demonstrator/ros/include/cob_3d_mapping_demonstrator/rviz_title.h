@@ -92,8 +92,6 @@ protected:
     wxPanel* panel_;
     wxFrame* frame_; // temp
 
-
-
 };
 }
 

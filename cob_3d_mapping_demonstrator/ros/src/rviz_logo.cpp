@@ -17,7 +17,7 @@
  * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 03/2012
+ * Date of creation: 04/2012
  * ToDo:
  *
  *
@@ -53,17 +53,85 @@
  *
  ****************************************************************/
 
-#include "rviz/plugin/type_registry.h"
-
-#include "cob_3d_mapping_demonstrator/rviz_buttons.h"
-#include "cob_3d_mapping_demonstrator/rviz_title.h"
 #include "cob_3d_mapping_demonstrator/rviz_logo.h"
+#include "rviz/visualization_manager.h"
+#include "rviz/window_manager_interface.h"
 
-extern "C" void rvizPluginInit(rviz::TypeRegistry* reg)
+using namespace std;
+
+
+namespace rviz
 {
-  reg->registerDisplay<rviz::RvizButtons>("RvizButtons");
-  reg->registerDisplay<rviz::RvizTitle>("RvizTitle");
-  reg->registerDisplay<rviz::RvizLogo>("RvizLogo");
-}
 
+  RvizLogo::~RvizLogo() {
+
+  }
+
+  /**
+ Constructor
+   */
+  RvizLogo::RvizLogo(const std::string& name, VisualizationManager* manager/*wxWindow *parent, const wxString& title, rviz::WindowManagerInterface * wmi */)
+  : Display( "logo", manager ),
+    frame_(0)
+  //: wxPanel( parent, wxID_ANY, wxDefaultPosition, wxSize(280, 180), wxTAB_TRAVERSAL, title)
+  //, m_wmi( wmi )
+  {
+    // Create controls
+    //m_button = new wxButton(this, ID_RESET_BUTTON, wxT("Reset map"));
+    wxWindow* parent = 0;
+
+    WindowManagerInterface* wm = vis_manager_->getWindowManager();
+    if (wm)
+    {
+      parent = wm->getParentWindow();
+    }
+    else
+    {
+      frame_ = new wxFrame(0, wxID_ANY, wxString::FromAscii(""), wxDefaultPosition, wxDefaultSize, wxMINIMIZE_BOX | wxMAXIMIZE_BOX | wxRESIZE_BORDER | wxCAPTION | wxCLIP_CHILDREN);
+      parent = frame_;
+    }
+
+    panel_ = new wxImagePanel(parent, wxT("/home/goa/git/cob_environment_perception_intern/cob_3d_mapping_demonstrator/lib/logo_title.jpg"),wxBITMAP_TYPE_JPEG);
+    //if (!pic_.LoadFile(wxT("/home/goa/git/cob_environment_perception_intern/cob_3d_mapping_demonstrator/lib/logo.jpg"),wxBITMAP_TYPE_JPEG)) ROS_ERROR("Image file not found!");
+    //logo_ = new wxStaticBitmap(panel_, wxID_ANY, pic_);
+    //wxSizer *vsizer = new wxBoxSizer(wxVERTICAL);
+    //vsizer->Add(logo_, 1, wxALIGN_CENTER);
+
+    //vsizer->SetSizeHints(panel_);
+    //panel_->SetSizerAndFit(vsizer);
+
+    if (wm)
+    {
+      wm->addPane(name, panel_);
+    }
+  }
+
+  void RvizLogo::onEnable()
+  {
+    if (frame_)
+    {
+      frame_->Show(true);
+    }
+    else
+    {
+      WindowManagerInterface* wm = vis_manager_->getWindowManager();
+      wm->showPane(panel_);
+    }
+  }
+
+  void RvizLogo::onDisable()
+  {
+    if (frame_)
+    {
+      frame_->Show(false);
+    }
+    else
+    {
+      WindowManagerInterface* wm = vis_manager_->getWindowManager();
+      wm->closePane(panel_);
+    }
+  }
+
+}
+///////////////////////////////////////////////////////////////////////////////
 
