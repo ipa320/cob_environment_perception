@@ -652,7 +652,7 @@ public:
       voxel.setLeafSize(voxelsize,voxelsize,voxelsize);
       voxel.filter(map);
 
-      map.header.frame_id="/head_cam3d_frame";
+      map.header.frame_id="/head_cam3d_link";
       point_cloud_pub_.publish(map);
 
       {

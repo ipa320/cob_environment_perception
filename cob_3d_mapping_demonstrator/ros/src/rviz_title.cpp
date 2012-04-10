@@ -71,7 +71,7 @@ namespace rviz
  Constructor
    */
   RvizTitle::RvizTitle(const std::string& name, VisualizationManager* manager/*wxWindow *parent, const wxString& title, rviz::WindowManagerInterface * wmi */)
-  : Display( "", manager ),
+  : Display( "title", manager ),
     frame_(0)
   //: wxPanel( parent, wxID_ANY, wxDefaultPosition, wxSize(280, 180), wxTAB_TRAVERSAL, title)
   //, m_wmi( wmi )

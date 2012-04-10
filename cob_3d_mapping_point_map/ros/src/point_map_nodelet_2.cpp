@@ -18,12 +18,7 @@
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
  * Date of creation: 01/2011
- * ToDo: add documentation
- * switch all console outputs to ROS_DEBUG erledigt
- * set flag to say whether pointclouds should be saved to files or not erledigt
- * rename variables according to coding guidelines: erledigt
- * 	see http://pointclouds.org/documentation/advanced/pcl_style_guide.php#variables
- * add comments to explain functionality
+ * ToDo:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
@@ -72,8 +67,8 @@
 #include <actionlib/server/simple_action_server.h>
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_eigen.h>
-#include <message_filters/subscriber.h>
-#include <message_filters/time_synchronizer.h>
+//#include <message_filters/subscriber.h>
+//#include <message_filters/time_synchronizer.h>
 #include <pluginlib/class_list_macros.h>
 //#include <pcl/registration/icp.h>
 //#include <cob_3d_mapping_common/point_types.h>
@@ -91,7 +86,7 @@
 
 // ROS message includes
 //#include <sensor_msgs/PointCloud2.h>
-#include <cob_3d_mapping_msgs/GetFieldOfView.h>
+//#include <cob_3d_mapping_msgs/GetFieldOfView.h>
 #include <cob_3d_mapping_msgs/TriggerMappingAction.h>
 #include <cob_3d_mapping_msgs/SetReferenceMap.h>
 #include <cob_3d_mapping_msgs/GetPointMap.h>
@@ -101,8 +96,8 @@
 #include <boost/timer.hpp>
 //#include <boost/numeric/ublas/matrix.hpp>
 
-#include "cob_3d_mapping_point_map/impl/field_of_view_segmentation.hpp"
-#include "cob_3d_mapping_point_map/point_map.h"
+//#include "cob_3d_mapping_point_map/impl/field_of_view_segmentation.hpp"
+//#include "cob_3d_mapping_point_map/point_map.h"
 #include "cob_3d_mapping_point_map/point_map_nodeletConfig.h"
 
 //#include <sensor_msgs/CameraInfo.h>
@@ -113,8 +108,8 @@
 
 //using namespace tf;
 
-typedef message_filters::TimeSynchronizer<sensor_msgs::PointCloud2, geometry_msgs::TransformStamped> TimeSync;
-typedef boost::shared_ptr<TimeSync> TimeSyncPtr;
+//typedef message_filters::TimeSynchronizer<sensor_msgs::PointCloud2, geometry_msgs::TransformStamped> TimeSync;
+//typedef boost::shared_ptr<TimeSync> TimeSyncPtr;
 
 //####################
 //#### node class ####
@@ -201,8 +196,8 @@ public:
     PCLNodelet::onInit();
     n_ = getNodeHandle();
 
-    sync_ = TimeSyncPtr(new TimeSync(point_cloud_sub_, transform_sub_, 10));
-    sync_->registerCallback(boost::bind(&PointMapNodelet::registerCallback, this, _1, _2));
+    //sync_ = TimeSyncPtr(new TimeSync(point_cloud_sub_, transform_sub_, 10));
+    //sync_->registerCallback(boost::bind(&PointMapNodelet::registerCallback, this, _1, _2));
     map_pub_ = n_.advertise<pcl::PointCloud<Point> >("map",1);
     clear_map_server_ = n_.advertiseService("clear_point_map", &PointMapNodelet::clearMap, this);
     get_map_server_ = n_.advertiseService("get_point_map", &PointMapNodelet::getMap, this);
@@ -249,16 +244,16 @@ public:
    * @return nothing
    */
   void
-  registerCallback(const sensor_msgs::PointCloud2ConstPtr& pc_msg, const geometry_msgs::TransformStampedConstPtr& trf_msg)
+  updateCallback(const pcl::PointCloud<Point>::Ptr& pc)
   {
     ROS_INFO("PointCloudSubCallback");
-    pcl::PointCloud<Point> pc;
-    pcl::fromROSMsg(*pc_msg, pc);
-    pcl::PointCloud<Point>::Ptr pc_ptr = pc.makeShared();
-    if (pc.size() < 1)
+    //pcl::PointCloud<Point> pc;
+    //pcl::fromROSMsg(*pc_msg, pc);
+    //pcl::PointCloud<Point>::Ptr pc_ptr = pc.makeShared();
+    if (pc->size() < 1)
       return;
-    tf::Transform trf_reg;
-    tf::transformMsgToTF(trf_msg->transform, trf_reg);
+    //tf::Transform trf_reg;
+    //tf::transformMsgToTF(trf_msg->transform, trf_reg);
     //tf::TransformTFToEigen(trf_reg, af_reg);
     //pcl::transformPointCloud(pc, pc, af.affine());
 
@@ -271,8 +266,8 @@ public:
     try
     {
       std::stringstream ss2;
-      tf_listener_.waitForTransform(map_frame_id_, pc.header.frame_id, pc.header.stamp, ros::Duration(0.1));
-      tf_listener_.lookupTransform(map_frame_id_, pc.header.frame_id, pc.header.stamp/*ros::Time(0)*/, trf_map);
+      tf_listener_.waitForTransform(map_frame_id_, pc->header.frame_id, pc->header.stamp, ros::Duration(0.1));
+      tf_listener_.lookupTransform(map_frame_id_, pc->header.frame_id, pc->header.stamp/*ros::Time(0)*/, trf_map);
     }
     catch (tf::TransformException ex)
     {
@@ -280,10 +275,10 @@ public:
       return;
     }
     Eigen::Affine3d af;
-    tf::TransformTFToEigen(trf_map*trf_reg, af);
+    tf::TransformTFToEigen(trf_map, af);
     Eigen::Matrix4f trf = af.matrix().cast<float>();
-    pcl::transformPointCloud(pc, pc, trf);
-    pc.header.frame_id = map_frame_id_;
+    pcl::transformPointCloud(*pc, *pc, trf);
+    pc->header.frame_id = map_frame_id_;
     //map_.header.frame_id="/map";
 
     updateMap(pc);
@@ -302,9 +297,9 @@ public:
   }
 
   void
-  updateMap(pcl::PointCloud<Point>& pc)
+  updateMap(const pcl::PointCloud<Point>::Ptr& pc)
   {
-    map_ += pc;
+    map_ += *pc;
     downsampleMap();
   }
 
@@ -327,16 +322,16 @@ public:
     if(goal->start && !is_running_)
     {
       ROS_INFO("Starting mapping...");
-      //point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &PointMapNodelet::pointCloudSubCallback, this);
-      point_cloud_sub_.subscribe(n_, "point_cloud2", 1);
-      transform_sub_.subscribe(n_, "transform_reg", 1);
+      point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &PointMapNodelet::updateCallback, this);
+      //point_cloud_sub_.subscribe(n_, "point_cloud2", 1);
+      //transform_sub_.subscribe(n_, "transform_reg", 1);
       is_running_ = true;
     }
     else if(!goal->start && is_running_)
     {
       ROS_INFO("Stopping mapping...");
-      point_cloud_sub_.unsubscribe();
-      transform_sub_.unsubscribe();
+      point_cloud_sub_.shutdown();//unsubscribe();
+      //transform_sub_.unsubscribe();
       //first_ = true;
       is_running_ = false;
     }
@@ -384,7 +379,8 @@ public:
   /**
    * @brief sets reference map
    *
-   * sets the 3d map representing the environment which is used to align new frames
+   * sets the 3d map representing a static environment,
+   * overrides any existing map
    *
    * @param req containing reference map
    * @param res not needed
@@ -395,7 +391,9 @@ public:
   setReferenceMap(cob_3d_mapping_msgs::SetReferenceMap::Request &req,
                   cob_3d_mapping_msgs::SetReferenceMap::Response &res)
   {
-    ROS_WARN("not needed");
+    pcl::fromROSMsg(req.map, map_);
+    downsampleMap();
+    //ROS_WARN("not needed");
     return true;
   }
 
@@ -403,7 +401,7 @@ public:
   /**
    * @brief downsamples the map
    *
-   * downsamples the map using the voxel_lefsize parameters to voxelize
+   * downsamples the map using the voxel_leafsize parameters to voxelize
    *
    * @return nothing
    */
@@ -421,15 +419,15 @@ public:
 
 
 protected:
-  message_filters::Subscriber<sensor_msgs::PointCloud2> point_cloud_sub_;
-  message_filters::Subscriber<geometry_msgs::TransformStamped> transform_sub_;
-  TimeSyncPtr sync_;
-  //ros::Subscriber point_cloud_sub_;		//subscriber for input pc
+  //message_filters::Subscriber<sensor_msgs::PointCloud2> point_cloud_sub_;
+  //message_filters::Subscriber<geometry_msgs::TransformStamped> transform_sub_;
+  //TimeSyncPtr sync_;
+  ros::Subscriber point_cloud_sub_;		//subscriber for input pc
   //ros::Subscriber camera_info_sub_;             //subscriber for input pc
   ros::Publisher map_pub_;		//publisher for map
   //ros::Publisher point_cloud_pub_aligned_;      //publisher for aligned pc
   //ros::Publisher fov_marker_pub_;		//publisher for FOV marker
-  ros::ServiceClient get_fov_srv_client_;
+  //ros::ServiceClient get_fov_srv_client_;
   ros::ServiceServer clear_map_server_;
   //ros::ServiceServer keyframe_trigger_server_;
   //ros::ServiceServer set_reference_map_server_;

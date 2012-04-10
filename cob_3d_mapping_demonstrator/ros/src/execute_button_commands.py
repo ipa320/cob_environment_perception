@@ -174,6 +174,7 @@ class execute_button_commands():
 
   def execute_reset(self):
     print "reset"
+    self.execute_stop()
     goal = TriggerMappingGoal()
     goal.start = False
     self.trigger_client.send_goal(goal)
