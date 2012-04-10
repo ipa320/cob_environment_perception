@@ -20,6 +20,7 @@
   <depend package="opencv2"/>
   <depend package="cv_bridge"/>
   <depend package="gazebo"/>
+  <depend package="cob_srvs"/>
   
   <!-- depend package="libwm4"/ -->
   <!--depend package="libtoon"/>
@@ -39,17 +40,12 @@
   <rosdep name="tinyxml"/>
   
   <!-- depend package="rgbdslam"/ -->
-
-	<export>
-	  <rosdoc config="rosdoc.yaml" />
-	</export>
-
-<!--
+  
   <export>
-    <cpp cflags="-I${prefix}/common/include" lflags="-Wl,-rpath,${prefix}/common/lib -L${prefix}/common/lib -lcob_vision_slam"/>
-    <cpp cflags="-I${prefix}/common/include" lflags="-Wl,-rpath,${prefix}/common/lib -L${prefix}/common/lib"/>
+	  <rosdoc config="rosdoc.yaml" />
+  	<nodelet plugin="${prefix}/nodelet_plugins.xml" />
   </export>
--->
+
 </package>
 
 

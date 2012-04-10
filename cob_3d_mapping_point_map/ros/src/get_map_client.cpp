@@ -88,7 +88,7 @@ int main (int argc, char **argv)
   }
   else
   {
-    ROS_INFO("Service call failed.");
+    ROS_INFO("[get map client]: Service call failed.");
     return 0;
   }
 
