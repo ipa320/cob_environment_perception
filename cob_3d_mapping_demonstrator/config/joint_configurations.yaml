@@ -6,6 +6,8 @@ left: [[-1.6,0]]
 leftdown: [[-1.6,-0.8]]
 right: [[1.6,0]]
 rightdown: [[1.6,-0.8]]
+down: [[0,-0.8]]
+up: [[0,0.8]]
 
 # trajectories
 scan: [one_rot,home]

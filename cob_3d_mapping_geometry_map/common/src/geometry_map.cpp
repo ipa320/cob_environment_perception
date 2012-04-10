@@ -652,6 +652,36 @@ x = floor(x); 5;
 x /= 10000;
 return x;
 }
+
+void
+GeometryMap::colorizeMap()
+{
+  for(unsigned int i=0; i<map_.size(); i++)
+  {
+    if(fabs(map_[i]->normal[2]) < 0.1) //plane is vertical
+    {
+      map_[i]->color[0] = 0.5;
+      map_[i]->color[1] = 0.5;
+      map_[i]->color[2] = 0;
+      map_[i]->color[3] = 1;
+    }
+    else if(fabs(map_[i]->normal[0]) < 0.12 && fabs(map_[i]->normal[1]) < 0.12 && fabs(map_[i]->normal[2]) > 0.9) //plane is horizontal
+    {
+      map_[i]->color[0] = 0;
+      map_[i]->color[1] = 0.5;
+      map_[i]->color[2] = 0;
+      map_[i]->color[3] = 1;
+    }
+    else
+    {
+      map_[i]->color[0] = 1;
+      map_[i]->color[1] = 1;
+      map_[i]->color[2] = 1;
+      map_[i]->color[3] = 1;
+    }
+  }
+}
+
 /*int main (int argc, char** argv)
  {
 
