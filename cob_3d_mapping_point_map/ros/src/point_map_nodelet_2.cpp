@@ -436,7 +436,7 @@ protected:
 
   tf::TransformListener tf_listener_;
 
-  int ctr_;
+  unsigned int ctr_;
   bool is_running_;
 
   // Parameters from launch file

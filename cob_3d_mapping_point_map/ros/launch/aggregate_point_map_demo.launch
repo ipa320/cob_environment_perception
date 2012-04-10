@@ -1,0 +1,75 @@
+<?xml version="1.0"?>
+
+
+<launch>
+<!-- Includes -->
+
+	<arg name="start_manager" default="true"/>
+	<arg name="nodelet_manager" default="point_map_manager"/>
+  <!-- start nodelet manager -->
+  <node if="$(arg start_manager)" pkg="nodelet" type="nodelet" name="$(arg nodelet_manager)"  args="manager" output="screen"/>
+
+  <!-- Start point cloud converter -->
+	<!--node pkg="point_cloud_converter" type="point_cloud_converter" name="converter_mug" output="screen">
+ 	 	<remap from="/points_in" to="/full_cloud" />
+ 	 	<remap from="/points2_out" to="/converter_out" />
+	</node-->
+
+	 <node pkg="nodelet" type="nodelet" name="pass_through" args="load pcl/PassThrough $(arg nodelet_manager)" output="screen">
+    <remap from="~input" to="/camera/depth_registered/points" />
+    <rosparam>
+      filter_field_name: z
+      filter_limit_min: 0.0
+      filter_limit_max: 5.0
+      keep_organized: true
+    </rosparam>
+  </node>
+
+  <node pkg="cob_3d_mapping_common" type="field_of_view_node" name="field_of_view_node" output="screen" />
+
+  <node pkg="cob_3d_mapping_common" type="keyframe_detector_node" name="keyframe_detector_node" output="screen">
+  	<remap from="camera_info" to="/camera/depth_registered/camera_info"/>
+
+  	<param name="r_limit_" type="double" value="0.013" />
+  	<param name="p_limit_" type="double" value="0.013" />
+  	<param name="y_limit" type="double" value="0.013" />
+  	<param name="distance_limit_" type="double" value="0.025"/>
+  	<param name="trigger_always" type="bool" value="false"/>
+  </node>
+
+	<!-- Start aggregate point map -->
+  <node pkg="nodelet" type="nodelet" name="point_map_nodelet" args="load cob_3d_mapping_point_map/PointMapNodelet $(arg nodelet_manager)" output="screen">
+  	<!-- remap from="point_cloud2" to="/cam3d/rgb/points"/-->
+  	<remap from="camera_info" to="/camera/depth_registered/camera_info"/>
+  	<remap from="point_cloud2" to="/camera/depth_registered/points"/>
+  	<remap from="point_cloud2_map" to="point_map/map"/>
+  	<remap from="point_cloud2_aligned" to="point_map/pc_aligned"/>
+  	<remap from="clear_point_map" to="point_map/clear_point_map"/>
+  	<remap from="get_point_map" to="point_map/get_point_map"/>
+
+  	<param name="icp_max_iterations" type="int" value="50"/>
+  	<param name="icp_max_corr_dist" type="double" value="0.05"/>
+  	<param name="icp_trf_epsilon" type="double" value="5e-4"/>
+  	<param name="file_path" type="string" value="/home/goa-jh/bagfiles/myown/"/>
+  	<param name="save_pc" type="bool" value="false"/>
+  	<param name="save_map" type="bool" value="false"/>
+  	<param name="save_pc_aligned" type="bool" value="false"/>
+  	<param name="save_map_fov" type="bool" value="false"/>
+  	<param name="save_pc_trans" type="bool" value="false"/>
+  	<param name="voxel_leafsize" type="double" value="0.01" />
+  	<param name="use_reference_map" type="bool" value="false"/>
+  	<param name="use_fov" type="bool" value="false"/>
+  </node>
+
+  <node pkg="nodelet" type="nodelet" name="voxel" args="standalone pcl/VoxelGrid " output="screen">
+    <remap from="~input" to="/point_map/pc_aligned" />
+    <remap from="~output" to="/point_map/pc_aligned_vox" />
+    <rosparam>
+      filter_field_name: z
+      filter_limit_min: -100.0
+      filter_limit_max: 100.0
+      leaf_size: 0.03
+    </rosparam>
+  </node>
+
+  </launch>
