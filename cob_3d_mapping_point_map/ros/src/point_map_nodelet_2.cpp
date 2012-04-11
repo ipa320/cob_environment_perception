@@ -205,10 +205,10 @@ public:
     as_->start();
 
 
-    n_.param("~file_path" ,file_path_ ,std::string("~/pcl_daten/table/icp/map_"));
-    n_.param("~save_",save_ , false);
+    n_.param("aggregate_point_map/file_path" ,file_path_ ,std::string("~/pcl_daten/table/icp/map_"));
+    n_.param("aggregate_point_map/save_",save_ , false);
     //n_.param("aggregate_point_map/save_map",save_ ,false);
-    n_.param("~voxel_leafsize" ,voxel_leafsize_, 0.03);
+    n_.param("aggregate_point_map/voxel_leafsize" ,voxel_leafsize_, 0.03);
   }
 
   /**
