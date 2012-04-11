@@ -201,8 +201,8 @@ public:
     PCLNodelet::onInit();
     n_ = getNodeHandle();
 
-    sync_ = TimeSyncPtr(new TimeSync(point_cloud_sub_, transform_sub_, 10));
-    sync_->registerCallback(boost::bind(&PointMapNodelet::registerCallback, this, _1, _2));
+    //sync_ = TimeSyncPtr(new TimeSync(point_cloud_sub_, transform_sub_, 10));
+    //sync_->registerCallback(boost::bind(&PointMapNodelet::registerCallback, this, _1, _2));
     map_pub_ = n_.advertise<pcl::PointCloud<Point> >("map",1);
     clear_map_server_ = n_.advertiseService("clear_point_map", &PointMapNodelet::clearMap, this);
     get_map_server_ = n_.advertiseService("get_point_map", &PointMapNodelet::getMap, this);
@@ -210,10 +210,10 @@ public:
     as_->start();
 
 
-    n_.param("~file_path" ,file_path_ ,std::string("~/pcl_daten/table/icp/map_"));
-    n_.param("~save_",save_ , false);
+    n_.param("aggregate_point_map/file_path" ,file_path_ ,std::string("~/pcl_daten/table/icp/map_"));
+    n_.param("aggregate_point_map/save_",save_ , false);
     //n_.param("aggregate_point_map/save_map",save_ ,false);
-    n_.param("~voxel_leafsize" ,voxel_leafsize_, 0.03);
+    n_.param("aggregate_point_map/voxel_leafsize" ,voxel_leafsize_, 0.03);
   }
 
   /**
@@ -249,7 +249,7 @@ public:
    * @return nothing
    */
   void
-  registerCallback(const sensor_msgs::PointCloud2ConstPtr& pc_msg, const geometry_msgs::TransformStampedConstPtr& trf_msg)
+  registerCallback(const sensor_msgs::PointCloud2ConstPtr& pc_msg)
   {
     ROS_INFO("PointCloudSubCallback");
     pcl::PointCloud<Point> pc;
@@ -257,8 +257,6 @@ public:
     pcl::PointCloud<Point>::Ptr pc_ptr = pc.makeShared();
     if (pc.size() < 1)
       return;
-    tf::Transform trf_reg;
-    tf::transformMsgToTF(trf_msg->transform, trf_reg);
     //tf::TransformTFToEigen(trf_reg, af_reg);
     //pcl::transformPointCloud(pc, pc, af.affine());
 
@@ -280,7 +278,7 @@ public:
       return;
     }
     Eigen::Affine3d af;
-    tf::TransformTFToEigen(trf_map*trf_reg, af);
+    tf::TransformTFToEigen(trf_map,af);
     Eigen::Matrix4f trf = af.matrix().cast<float>();
     pcl::transformPointCloud(pc, pc, trf);
     pc.header.frame_id = map_frame_id_;
@@ -327,16 +325,16 @@ public:
     if(goal->start && !is_running_)
     {
       ROS_INFO("Starting mapping...");
-      //point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &PointMapNodelet::pointCloudSubCallback, this);
-      point_cloud_sub_.subscribe(n_, "point_cloud2", 1);
-      transform_sub_.subscribe(n_, "transform_reg", 1);
+      point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &PointMapNodelet::registerCallback, this);
+      //point_cloud_sub_.subscribe(n_, "point_cloud2", 1);
+      //transform_sub_.subscribe(n_, "transform_reg", 1);
       is_running_ = true;
     }
     else if(!goal->start && is_running_)
     {
       ROS_INFO("Stopping mapping...");
-      point_cloud_sub_.unsubscribe();
-      transform_sub_.unsubscribe();
+      point_cloud_sub_.shutdown();
+      //transform_sub_.unsubscribe();
       //first_ = true;
       is_running_ = false;
     }
@@ -421,10 +419,10 @@ public:
 
 
 protected:
-  message_filters::Subscriber<sensor_msgs::PointCloud2> point_cloud_sub_;
+  //message_filters::Subscriber<sensor_msgs::PointCloud2> point_cloud_sub_;
   message_filters::Subscriber<geometry_msgs::TransformStamped> transform_sub_;
   TimeSyncPtr sync_;
-  //ros::Subscriber point_cloud_sub_;		//subscriber for input pc
+  ros::Subscriber point_cloud_sub_;		//subscriber for input pc
   //ros::Subscriber camera_info_sub_;             //subscriber for input pc
   ros::Publisher map_pub_;		//publisher for map
   //ros::Publisher point_cloud_pub_aligned_;      //publisher for aligned pc
