@@ -1,0 +1,7 @@
+<library path="lib/libcob_3d_registration">
+  <class name="cob_3d_registration/RegistrationNodelet" type="RegistrationNodelet" base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet for 3d registration
+  </description>
+  </class>
+</library>
