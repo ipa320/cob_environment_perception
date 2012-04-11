@@ -233,7 +233,7 @@ public:
     parameters_.addParameter("always_relevant_changes");
 
     camera_info_sub_ = n_.subscribe("camera_info", 1, &RegistrationNodelet::cameraInfoSubCallback, this);
-    point_cloud_pub_aligned_ = n_.advertise<pcl::PointCloud<Point> >("point_cloud2_aligned",1);
+    point_cloud_pub_aligned_ = n_.advertise<sensor_msgs::PointCloud2>("point_cloud2_aligned",1);
     point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &RegistrationNodelet::pointCloudSubCallback, this);
     keyframe_trigger_server_ = n_.advertiseService("trigger_keyframe", &RegistrationNodelet::onKeyframeCallback, this);
     //point_cloud_pub_ = n_.advertise<pcl::PointCloud<Point> >("result_pc",1);
@@ -313,9 +313,11 @@ public:
 
       if(do_register(*pc_in_,cv_bridge::CvImagePtr(),NULL)||ctr_==0) {
         if(point_cloud_pub_aligned_.getNumSubscribers()>0) {
+          sensor_msgs::PointCloud2 pc2;
           pcl::PointCloud<Point> pc;
           pcl::transformPointCloud(*pc_in_,pc,reg_->getTransformation());
-          point_cloud_pub_aligned_.publish(pc);
+          pcl::toROSMsg(pc,pc2);
+          point_cloud_pub_aligned_.publish(pc2);
         }
 
         Eigen::Affine3d af;
