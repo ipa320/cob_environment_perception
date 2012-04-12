@@ -26,7 +26,7 @@
 #include <cob_srvs/Trigger.h>
 
 
-#include "cob_3d_mapping_common/reconfigureable_node.h"
+#include <dynamic_reconfigure/server.h>
 #include <cob_3d_mapping_common/keyframe_detectorConfig.h>
 
 
@@ -36,15 +36,15 @@ using namespace cob_3d_mapping_common;
 
 //####################
 //#### node class ####
-class KeyframeDetector : protected Reconfigurable_Node<keyframe_detectorConfig>
+class KeyframeDetector //: protected Reconfigurable_Node<keyframe_detectorConfig>
 {
 
 public:
   // Constructor
   KeyframeDetector()
-  : Reconfigurable_Node<keyframe_detectorConfig>("KeyframeDetector"),
-    first_(true), trigger_always_(false)
+  : first_(true), trigger_always_(false)
     {
+    config_server_.setCallback(boost::bind(&KeyframeDetector::dynReconfCallback, this, _1, _2));
     point_cloud_sub_ = n_.subscribe("camera_info", 1, &KeyframeDetector::pointCloudSubCallback, this);
     transform_sub_ = n_.subscribe("/tf", 1, &KeyframeDetector::transformSubCallback, this);
     keyframe_trigger_client_ = n_.serviceClient<cob_srvs::Trigger>("trigger_keyframe");
@@ -55,7 +55,7 @@ public:
     n_.param("aggregate_point_map/distance_limit",distance_limit_,0.03);
     n_.param("aggregate_point_map/trigger_always",trigger_always_,false);
 
-    setReconfigureCallback(boost::bind(&callback, this, _1, _2));
+    //setReconfigureCallback(boost::bind(&callback, this, _1, _2));
     }
 
 
@@ -65,8 +65,17 @@ public:
     /// void
   }
 
+  void dynReconfCallback(cob_3d_mapping_common::keyframe_detectorConfig &config, uint32_t level)
+  {
+    r_limit_ = config.r_limit;
+    p_limit_ = config.p_limit;
+    y_limit_ = config.y_limit;
+    distance_limit_ = config.distance_limit;
+    trigger_always_ = config.trigger_always;
+  }
+
   // callback for dynamic reconfigure
-  static void callback(KeyframeDetector *inst, keyframe_detectorConfig &config, uint32_t level)
+  /*static void callback(KeyframeDetector *inst, keyframe_detectorConfig &config, uint32_t level)
   {
     if(!inst)
       return;
@@ -79,7 +88,7 @@ public:
     inst->distance_limit_ = config.distance_limit;
     inst->trigger_always_ = config.trigger_always;
 
-  }
+  }*/
 
   void
   pointCloudSubCallback(sensor_msgs::CameraInfo::ConstPtr pc_in)
@@ -167,6 +176,7 @@ protected:
   ros::Subscriber point_cloud_sub_, transform_sub_;             //subscriber for input pc
   TransformListener tf_listener_;
   ros::ServiceClient keyframe_trigger_client_;
+  dynamic_reconfigure::Server<cob_3d_mapping_common::keyframe_detectorConfig> config_server_;
 
   bool first_;
   bool trigger_always_;

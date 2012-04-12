@@ -72,7 +72,9 @@
 #include <pluginlib/class_list_macros.h>
 //#include <pcl/registration/icp.h>
 //#include <cob_3d_mapping_common/point_types.h>
-#include <cob_3d_mapping_common/reconfigureable_node.h>
+//#include <cob_3d_mapping_common/reconfigureable_node.h>
+#include <dynamic_reconfigure/server.h>
+#include <cob_3d_mapping_point_map/point_map_nodeletConfig.h>
 
 // PCL includes
 #include <pcl/io/pcd_io.h>
@@ -98,7 +100,7 @@
 
 //#include "cob_3d_mapping_point_map/impl/field_of_view_segmentation.hpp"
 //#include "cob_3d_mapping_point_map/point_map.h"
-#include "cob_3d_mapping_point_map/point_map_nodeletConfig.h"
+//#include "cob_3d_mapping_point_map/point_map_nodeletConfig.h"
 
 //#include <sensor_msgs/CameraInfo.h>
 
@@ -113,14 +115,14 @@
 
 //####################
 //#### node class ####
-class PointMapNodelet : public pcl_ros::PCLNodelet, protected Reconfigurable_Node<cob_3d_mapping_point_map::point_map_nodeletConfig>
+class PointMapNodelet : public pcl_ros::PCLNodelet//, protected Reconfigurable_Node<cob_3d_mapping_point_map::point_map_nodeletConfig>
 {
   typedef pcl::PointXYZRGB Point;
 
 public:
   // Constructor
   PointMapNodelet()
-  : Reconfigurable_Node<cob_3d_mapping_point_map::point_map_nodeletConfig>("PointMapNodelet"),
+  : //Reconfigurable_Node<cob_3d_mapping_point_map::point_map_nodeletConfig>("PointMapNodelet"),
     ctr_(0),
     is_running_(false),
     map_frame_id_("/map")
@@ -135,8 +137,8 @@ public:
     ((Registration_Infobased<Point>*)reg_)->setMaxInfo(17);
     ((Registration_Infobased<Point>*)reg_)->SetAlwaysRelevantChanges(true);*/
 
-    setReconfigureCallback2(boost::bind(&callback, this, _1, _2), boost::bind(&callback_get, this, _1));
-    setReconfigureCallback(boost::bind(&callback, this, _1, _2));
+    //setReconfigureCallback2(boost::bind(&callback, this, _1, _2), boost::bind(&callback_get, this, _1));
+    //setReconfigureCallback(boost::bind(&callback, this, _1, _2));
     }
 
 
@@ -157,7 +159,7 @@ public:
    *
    * @return nothing
    */
-  static void callback(PointMapNodelet *inst, cob_3d_mapping_point_map::point_map_nodeletConfig &config, uint32_t level)
+  /*static void callback(PointMapNodelet *inst, cob_3d_mapping_point_map::point_map_nodeletConfig &config, uint32_t level)
   {
     if(!inst)
       return;
@@ -180,6 +182,13 @@ public:
     config.save = inst->save_;
     config.voxel_leafsize = inst->voxel_leafsize_;
 
+  }*/
+
+  void dynReconfCallback(cob_3d_mapping_point_map::point_map_nodeletConfig &config, uint32_t level)
+  {
+    file_path_ = config.file_path;
+    save_ = config.save;
+    voxel_leafsize_ = config.voxel_leafsize;
   }
 
 
@@ -196,19 +205,22 @@ public:
     PCLNodelet::onInit();
     n_ = getNodeHandle();
 
+    //f_ = boost::bind(&PointMapNodelet::dynReconfCallback, _1, _2);
+    config_server_.setCallback(boost::bind(&PointMapNodelet::dynReconfCallback, this, _1, _2));
+
     //sync_ = TimeSyncPtr(new TimeSync(point_cloud_sub_, transform_sub_, 10));
     //sync_->registerCallback(boost::bind(&PointMapNodelet::registerCallback, this, _1, _2));
+    point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &PointMapNodelet::updateCallback, this);
     map_pub_ = n_.advertise<pcl::PointCloud<Point> >("map",1);
     clear_map_server_ = n_.advertiseService("clear_point_map", &PointMapNodelet::clearMap, this);
     get_map_server_ = n_.advertiseService("get_point_map", &PointMapNodelet::getMap, this);
-    as_= new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerMappingAction>(n_, "trigger_mapping", boost::bind(&PointMapNodelet::actionCallback, this, _1), false);
-    as_->start();
+    //as_= new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerMappingAction>(n_, "trigger_mapping", boost::bind(&PointMapNodelet::actionCallback, this, _1), false);
+    //as_->start();
 
 
-    n_.param("aggregate_point_map/file_path" ,file_path_ ,std::string("~/pcl_daten/table/icp/map_"));
-    n_.param("aggregate_point_map/save_",save_ , false);
-    //n_.param("aggregate_point_map/save_map",save_ ,false);
-    n_.param("aggregate_point_map/voxel_leafsize" ,voxel_leafsize_, 0.03);
+    //n_.param("aggregate_point_map/file_path" ,file_path_ ,std::string("~/pcl_daten/table/icp/map_"));
+    //n_.param("aggregate_point_map/save_",save_ , false);
+    //n_.param("aggregate_point_map/voxel_leafsize" ,voxel_leafsize_, 0.03);
   }
 
   /**
@@ -251,7 +263,10 @@ public:
     //pcl::fromROSMsg(*pc_msg, pc);
     //pcl::PointCloud<Point>::Ptr pc_ptr = pc.makeShared();
     if (pc->size() < 1)
+    {
+      ROS_WARN("size too small");
       return;
+    }
     //tf::Transform trf_reg;
     //tf::transformMsgToTF(trf_msg->transform, trf_reg);
     //tf::TransformTFToEigen(trf_reg, af_reg);
@@ -284,7 +299,7 @@ public:
     updateMap(pc);
     map_pub_.publish(map_);
 
-    //ROS_DEBUG("[aggregate_point_map] ICP took %f s", t.elapsed());
+    ROS_INFO("[aggregate_point_map] Map has %d points", map_.size());
 
     if(save_)
     {
@@ -355,6 +370,9 @@ public:
     //TODO: add mutex
     ROS_INFO("Clearing point map...");
     map_.clear();
+    Point p;
+    map_.points.push_back(p);
+    map_pub_.publish(map_);
     return true;
   }
 
@@ -433,6 +451,9 @@ protected:
   //ros::ServiceServer set_reference_map_server_;
   ros::ServiceServer get_map_server_;
   actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerMappingAction>* as_;
+
+  dynamic_reconfigure::Server<cob_3d_mapping_point_map::point_map_nodeletConfig> config_server_;
+  //dynamic_reconfigure::Server<cob_3d_mapping_point_map::point_map_nodeletConfig> f_;
 
   tf::TransformListener tf_listener_;
 

@@ -35,9 +35,9 @@ file(GLOB registration_SRC1
 #rosbuild_add_executable(registration ros/src/registration_node.cpp)
 
 rosbuild_add_library(cob_3d_registration
-	ros/src/registration_node.cpp)
-	
-	
+	ros/src/registration_nodelet.cpp)
+
+
 rosbuild_add_executable(capture ros/src/capture.cpp)
 rosbuild_add_executable(filter ros/src/filter.cpp)
 rosbuild_add_executable(png2img ros/src/png_to_img.cpp)

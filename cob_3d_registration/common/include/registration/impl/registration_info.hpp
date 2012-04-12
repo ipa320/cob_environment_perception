@@ -338,10 +338,8 @@ bool Registration_Infobased<Point>::compute_transformation()
   if(Eigen::Quaternionf(T.topLeftCorner<3, 3> ()).angularDistance(Eigen::Quaternionf::Identity())>3*rmax_)
     T=T.Identity();
 
-  if(!use_odometry_)
     this->transformation_ = this->transformation_*T;
-  else
-    this->transformation_ = this->transformation_*(this->odometry_last_.inverse()*this->odometry_)*T;
+
   this->last_input_ = this->input_org_;
   this->odometry_last_ = this->odometry_;
   this->failed_ = 0;

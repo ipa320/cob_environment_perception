@@ -69,6 +69,7 @@
 #include <pcl_ros/pcl_nodelet.h>
 #include <tf_conversions/tf_eigen.h>
 #include <tf/transform_broadcaster.h>
+#include <actionlib/server/simple_action_server.h>
 #include <pcl/point_types.h>
 #define PCL_MINOR (PCL_VERSION[2] - '0')
 
@@ -108,6 +109,7 @@
 
 #include <registration/measurements/measure.h>
 #include <cob_srvs/Trigger.h>
+#include <cob_3d_mapping_msgs/TriggerMappingAction.h>
 
 using namespace tf;
 #define SHOW_MAP 0
@@ -162,13 +164,13 @@ class RegistrationNodelet : public pcl_ros::PCLNodelet
 public:
   // Constructor
   RegistrationNodelet():
-    reg_(NULL), ctr_(0)
+    reg_(NULL), ctr_(0), is_running_(false)
   {
     //onInit();
   }
 
   RegistrationNodelet(bool dummy):
-    reg_(NULL), ctr_(0)
+    reg_(NULL), ctr_(0), is_running_(false)
   {
   }
 
@@ -192,6 +194,7 @@ public:
   {
     PCLNodelet::onInit();
     parameters_.setNodeHandle(getNodeHandle());
+    n_ = getNodeHandle();
 
     parameters_.addParameter("world_frame_id");
     if(!parameters_.getParam("world_frame_id",world_id_))
@@ -233,9 +236,10 @@ public:
     parameters_.addParameter("always_relevant_changes");
 
     camera_info_sub_ = n_.subscribe("camera_info", 1, &RegistrationNodelet::cameraInfoSubCallback, this);
-    point_cloud_pub_aligned_ = n_.advertise<sensor_msgs::PointCloud2>("point_cloud2_aligned",1);
-    point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &RegistrationNodelet::pointCloudSubCallback, this);
+    point_cloud_pub_aligned_ = n_.advertise<pcl::PointCloud<Point> >("point_cloud2_aligned",1);
     keyframe_trigger_server_ = n_.advertiseService("trigger_keyframe", &RegistrationNodelet::onKeyframeCallback, this);
+    as_= boost::shared_ptr<actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerMappingAction> >(new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerMappingAction>(n_, "trigger_mapping", boost::bind(&RegistrationNodelet::actionCallback, this, _1), false));
+    as_->start();
     //point_cloud_pub_ = n_.advertise<pcl::PointCloud<Point> >("result_pc",1);
 #if SHOW_MAP
     marker2_pub_ = n_.advertise<pcl::PointCloud<Point> >("result_marker",1);
@@ -286,12 +290,13 @@ public:
   {
     res.success.data = false;
 
-    if(pc_in_->size()<1)
+    if(pc_in_==0 || pc_in_->size()<1)
       return true;
 
     StampedTransform transform;
     try
     {
+      //std::cout << world_id_ << "," << pc_in_->header.frame_id << std::endl;
       std::stringstream ss2;
       tf_listener_.waitForTransform(world_id_, pc_in_->header.frame_id, pc_in_->header.stamp, ros::Duration(0.1));
       tf_listener_.lookupTransform(world_id_, pc_in_->header.frame_id, pc_in_->header.stamp/*ros::Time(0)*/, transform);
@@ -306,18 +311,20 @@ public:
         tf::TransformTFToEigen(transform, af);
         reg_->setOdometry(af.matrix().cast<float>());
 
-        if(ctr_==0)
-          reg_->setTransformation(af.matrix().cast<float>());
+        //if(ctr_==0)
+        //  reg_->setTransformation(af.matrix().cast<float>());
       }
       reg_->setInputOginalCloud(pc_in_);
 
       if(do_register(*pc_in_,cv_bridge::CvImagePtr(),NULL)||ctr_==0) {
         if(point_cloud_pub_aligned_.getNumSubscribers()>0) {
-          sensor_msgs::PointCloud2 pc2;
+          //sensor_msgs::PointCloud2 pc2;
           pcl::PointCloud<Point> pc;
+          pc.header.frame_id = pc_in_->header.frame_id;
           pcl::transformPointCloud(*pc_in_,pc,reg_->getTransformation());
-          pcl::toROSMsg(pc,pc2);
-          point_cloud_pub_aligned_.publish(pc2);
+          //pc = *pc_in_;
+          //pcl::toROSMsg(pc,pc2);
+          point_cloud_pub_aligned_.publish(pc);
         }
 
         Eigen::Affine3d af;
@@ -339,6 +346,38 @@ public:
 
     res.success.data = true;
     return true;
+  }
+
+  /**
+   * @brief action callback
+   *
+   * default action callback to start or stop registration
+   *
+   * @param goal settings
+   *
+   * @return nothing
+   */
+  void
+  actionCallback(const cob_3d_mapping_msgs::TriggerMappingGoalConstPtr &goal)
+  {
+    cob_3d_mapping_msgs::TriggerMappingResult result;
+    if(goal->start && !is_running_)
+    {
+      ROS_INFO("Starting mapping...");
+      point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &RegistrationNodelet::pointCloudSubCallback, this);
+      //point_cloud_sub_.subscribe(n_, "point_cloud2", 1);
+      //transform_sub_.subscribe(n_, "transform_reg", 1);
+      is_running_ = true;
+    }
+    else if(!goal->start && is_running_)
+    {
+      ROS_INFO("Stopping mapping...");
+      point_cloud_sub_.shutdown();//unsubscribe();
+      //transform_sub_.unsubscribe();
+      //first_ = true;
+      is_running_ = false;
+    }
+    as_->setSucceeded(result);
   }
 
   /**
@@ -919,6 +958,7 @@ protected:
   ros::Publisher point_cloud_pub_;              /// publisher for map
   ros::Publisher marker2_pub_;                  /// publish markers for visualization as pc
   ros::Publisher marker_pub_;                   /// publish markers for visualization
+  boost::shared_ptr<actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerMappingAction> > as_;
   unsigned int ctr_;
 
   /// parameter bag (containing max, min, step...)
@@ -926,6 +966,8 @@ protected:
 
   /// registration algorithm
   GeneralRegistration<Point> *reg_;
+
+  bool is_running_;
 
   //evaluation values
 

@@ -72,9 +72,7 @@
 #include <pcl_ros/transforms.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl/common/transform.h>
-#include <cob_3d_mapping_common/reconfigureable_node.h>
-
-
+#include <dynamic_reconfigure/server.h>
 #include <cob_3d_mapping_geometry_map/geometry_map_nodeConfig.h>
 
 #include "pcl/surface/convex_hull.h"
@@ -102,14 +100,14 @@ using namespace cob_3d_mapping;
 
 //####################
 //#### nodelet class ####
-class GeometryMapNode : protected Reconfigurable_Node<cob_3d_mapping_geometry_map::geometry_map_nodeConfig>
+class GeometryMapNode //: protected Reconfigurable_Node<cob_3d_mapping_geometry_map::geometry_map_nodeConfig>
 {
 public:
 
   // Constructor
-	GeometryMapNode()
-  : Reconfigurable_Node<cob_3d_mapping_geometry_map::geometry_map_nodeConfig>("GeometryMapNode")
+  GeometryMapNode()
   {
+    config_server_.setCallback(boost::bind(&GeometryMapNode::dynReconfCallback, this, _1, _2));
     ctr_ = 0;
     shape_sub_ = n_.subscribe("shape_array", 10, &GeometryMapNode::shapeCallback, this);
     map_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("map_array",1);
@@ -121,14 +119,18 @@ public:
     std::cout << file_path_ << std::endl;
     geometry_map_.setFilePath(file_path_);
     geometry_map_.setSaveToFile(save_to_file_);
-
-    setReconfigureCallback(boost::bind(&callback, this, _1, _2));
   }
 
   // Destructor
   ~GeometryMapNode()
   {
     /// void
+  }
+
+  void dynReconfCallback(cob_3d_mapping_geometry_map::geometry_map_nodeConfig &config, uint32_t level)
+  {
+    geometry_map_.setSaveToFile( config.save_to_file );
+    geometry_map_.setFilePath( config.file_path );
   }
 
   /**
@@ -142,7 +144,7 @@ public:
    *
    * @return nothing
    */
-  static void callback(GeometryMapNode *gmn, cob_3d_mapping_geometry_map::geometry_map_nodeConfig &config, uint32_t level)
+  /*static void callback(GeometryMapNode *gmn, cob_3d_mapping_geometry_map::geometry_map_nodeConfig &config, uint32_t level)
   {
     //TODO: not multithreading safe
 
@@ -151,7 +153,7 @@ public:
 
     gmn->geometry_map_.setSaveToFile( config.save_to_file );
     gmn->geometry_map_.setFilePath( config.file_path );
-  }
+  }*/
 
 
   void
@@ -196,6 +198,10 @@ public:
     //TODO: add mutex
     ROS_INFO("Clearing geometry map...");
     geometry_map_.clearMap();
+    cob_3d_mapping_msgs::ShapeArray map_msg;
+    map_msg.header.frame_id="/map";
+    map_msg.header.stamp = ros::Time::now();
+    map_pub_.publish(map_msg);
     return true;
   }
 
@@ -324,66 +330,66 @@ public:
     int ctr=0, t_ctr=2000;
     for(unsigned int i=0; i<map->size(); i++)
     {
-    	Polygon& pm = *(map->at(i));
-        int color_ctr = i%4;
-        //marker.id = pm.id;
-        if(color_ctr==0)
-        {
-          marker.color.r = 0;
-          marker.color.g = 0;
-          marker.color.b = 1;
-        }
-        else if(color_ctr==1)
-        {
-          marker.color.r = 0;
-          marker.color.g = 1;
-          marker.color.b = 0;
-        }
-        else if(color_ctr==2)
-        {
-          marker.color.r = 0;
-          marker.color.g = 1;
-          marker.color.b = 1;
-        }
-        else if(color_ctr==3)
-        {
-          marker.color.r = 1;
-          marker.color.g = 1;
-          marker.color.b = 0;
-        }
-        for(unsigned int j=0; j<pm.contours.size(); j++)
-        {
-          //if(pm.contours.size()>1) std::cout << "id: " << ctr << ", " << pm.contours.size() << std::endl;
-          //TODO: this is a workaround as the marker can't display more than one contour
-          marker.id = ctr;
-          marker.color.r /= j+1;
-          marker.color.g /= j+1;
-          marker.color.b /= j+1;
+      Polygon& pm = *(map->at(i));
+      int color_ctr = i%4;
+      //marker.id = pm.id;
+      if(color_ctr==0)
+      {
+        marker.color.r = 0;
+        marker.color.g = 0;
+        marker.color.b = 1;
+      }
+      else if(color_ctr==1)
+      {
+        marker.color.r = 0;
+        marker.color.g = 1;
+        marker.color.b = 0;
+      }
+      else if(color_ctr==2)
+      {
+        marker.color.r = 0;
+        marker.color.g = 1;
+        marker.color.b = 1;
+      }
+      else if(color_ctr==3)
+      {
+        marker.color.r = 1;
+        marker.color.g = 1;
+        marker.color.b = 0;
+      }
+      for(unsigned int j=0; j<pm.contours.size(); j++)
+      {
+        //if(pm.contours.size()>1) std::cout << "id: " << ctr << ", " << pm.contours.size() << std::endl;
+        //TODO: this is a workaround as the marker can't display more than one contour
+        marker.id = ctr;
+        marker.color.r /= j+1;
+        marker.color.g /= j+1;
+        marker.color.b /= j+1;
 
-          t_marker.id = t_ctr;
-          std::stringstream ss;
-          ss << ctr;
-          t_marker.text = ss.str();
-          ctr++;
-          t_ctr++;
-          for(unsigned int k=0; k<pm.contours[j].size(); k++)
-          {
-            marker.points.resize(pm.contours[j].size()+1);
-            /*pt.x = pm.contours[j][k](0);
+        t_marker.id = t_ctr;
+        std::stringstream ss;
+        ss << ctr;
+        t_marker.text = ss.str();
+        ctr++;
+        t_ctr++;
+        for(unsigned int k=0; k<pm.contours[j].size(); k++)
+        {
+          marker.points.resize(pm.contours[j].size()+1);
+          /*pt.x = pm.contours[j][k](0);
                   pt.y = pm.contours[j][k](1);
                   pt.z = pm.contours[j][k](2);*/
-            marker.points[k].x = pm.contours[j][k](0);
-            marker.points[k].y = pm.contours[j][k](1);
-            marker.points[k].z = pm.contours[j][k](2);
-            //marker.points.push_back(pt);
-          }
-          marker.points[pm.contours[j].size()].x = pm.contours[j][0](0);
-          marker.points[pm.contours[j].size()].y = pm.contours[j][0](1);
-          marker.points[pm.contours[j].size()].z = pm.contours[j][0](2);
-          marker_pub_.publish(marker);
-          marker_pub_.publish(t_marker);
+          marker.points[k].x = pm.contours[j][k](0);
+          marker.points[k].y = pm.contours[j][k](1);
+          marker.points[k].z = pm.contours[j][k](2);
+          //marker.points.push_back(pt);
         }
+        marker.points[pm.contours[j].size()].x = pm.contours[j][0](0);
+        marker.points[pm.contours[j].size()].y = pm.contours[j][0](1);
+        marker.points[pm.contours[j].size()].z = pm.contours[j][0](2);
+        marker_pub_.publish(marker);
+        marker_pub_.publish(t_marker);
       }
+    }
   }
 
   ros::NodeHandle n_;
@@ -395,6 +401,7 @@ protected:
   ros::Publisher marker_pub_;
   ros::ServiceServer clear_map_server_;
   ros::ServiceServer get_map_server_;
+  dynamic_reconfigure::Server<cob_3d_mapping_geometry_map::geometry_map_nodeConfig> config_server_;
 
   GeometryMap geometry_map_;      /// map containing geometrys (polygons)
 
