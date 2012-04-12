@@ -91,7 +91,8 @@
 #include "pcl/filters/voxel_grid.h"
 #include <Eigen/StdVector>
 
-#include <cob_3d_mapping_common/reconfigureable_node.h>
+//#include <cob_3d_mapping_common/reconfigureable_node.h>
+#include <dynamic_reconfigure/server.h>
 #include <cob_3d_mapping_features/plane_extraction_nodeletConfig.h>
 
 
@@ -113,20 +114,19 @@ using namespace cob_3d_mapping_features;
 
 //####################
 //#### nodelet class ####
-class PlaneExtractionNodelet : public pcl_ros::PCLNodelet, protected Reconfigurable_Node<plane_extraction_nodeletConfig>
+class PlaneExtractionNodelet : public pcl_ros::PCLNodelet//, protected Reconfigurable_Node<plane_extraction_nodeletConfig>
 {
 public:
   typedef pcl::PointXYZRGB Point;
   // Constructor
   PlaneExtractionNodelet()
   : as_(0),
-    mode_action_(false),
-    Reconfigurable_Node<plane_extraction_nodeletConfig>("PlaneExtractionNodelet")
+    mode_action_(false)
   {
     ctr_ = 0;
     min_cluster_size_ = 300;
 
-    setReconfigureCallback(boost::bind(&callback, this, _1, _2));
+    //setReconfigureCallback(boost::bind(&callback, this, _1, _2));
   }
 
   // Destructor
@@ -134,6 +134,19 @@ public:
   {
     /// void
     if(as_) delete as_;
+  }
+
+  void dynReconfCallback(cob_3d_mapping_features::plane_extraction_nodeletConfig &config, uint32_t level)
+  {
+    file_path_ = config.file_path;
+    save_to_file_ = config.save_to_file;
+    plane_constraint_ = config.plane_constraint;
+    mode_action_ = config.mode_action;
+    target_frame_ = config.target_frame;
+
+    pe.setFilePath(file_path_);
+    pe.setSaveToFile(save_to_file_);
+    pe.setPlaneConstraint((PlaneConstraint)plane_constraint_);
   }
 
   /**
@@ -147,7 +160,7 @@ public:
    *
    * @return nothing
    */
-  static void callback(PlaneExtractionNodelet *inst, cob_3d_mapping_features::plane_extraction_nodeletConfig &config, uint32_t level)
+  /*static void callback(PlaneExtractionNodelet *inst, cob_3d_mapping_features::plane_extraction_nodeletConfig &config, uint32_t level)
   {
     if(!inst)
       return;
@@ -165,7 +178,7 @@ public:
     inst->pe.setFilePath(inst->file_path_);
     inst->pe.setSaveToFile(inst->save_to_file_);
     inst->pe.setPlaneConstraint((PlaneConstraint)inst->plane_constraint_);
-  }
+  }*/
 
 
   /**
@@ -180,6 +193,7 @@ public:
     PCLNodelet::onInit();
     n_ = getNodeHandle();
 
+    config_server_.setCallback(boost::bind(&PlaneExtractionNodelet::dynReconfCallback, this, _1, _2));
     point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &PlaneExtractionNodelet::pointCloudSubCallback, this);
     viz_marker_pub_ = n_.advertise<visualization_msgs::Marker>("plane_marker",10);
     shape_array_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("shape_array",1);
@@ -498,6 +512,7 @@ protected:
   ros::Subscriber point_cloud_sub_;
   ros::Publisher viz_marker_pub_;
   ros::Publisher shape_array_pub_;
+  dynamic_reconfigure::Server<cob_3d_mapping_features::plane_extraction_nodeletConfig> config_server_;
 
   ros::ServiceServer get_plane_;
 

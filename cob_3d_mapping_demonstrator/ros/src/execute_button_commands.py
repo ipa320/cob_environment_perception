@@ -84,6 +84,7 @@ class execute_button_commands():
     self.script_action_server.register_preempt_callback(self.execute_stop)
     self.script_action_server.start()
     self.trigger_client = actionlib.SimpleActionClient('trigger_mapping', TriggerMappingAction)
+    self.step = 0.1
 
 #------------------- Actionlib section -------------------#
   ## Executes actionlib callbacks.
@@ -100,8 +101,10 @@ class execute_button_commands():
       ret=self.execute_reset()
     elif server_goal.function_name == "clear":
       ret=self.execute_clear()
+    #elif server_goal.function_name == "recover":
+    #  ret=self.execute_recover()
     elif server_goal.function_name == "recover":
-      ret=self.execute_recover()
+      ret=self.execute_step()
     else:
       rospy.logerr("function <<%s>> not supported", server_goal.function_name)
       self.script_action_server.set_aborted(server_result)
@@ -183,6 +186,7 @@ class execute_button_commands():
       return False
     sss.move("cob_3d_mapping_demonstrator","home")
     self.execute_clear()
+    self.step = 0.1
     return True
 
     #TODO: move to home, stop mapping, clear map
@@ -207,6 +211,22 @@ class execute_button_commands():
     print "recover"
     sss.recover("cob_3d_mapping_demonstrator")
     return True
+
+  def execute_step(self):
+    if self.step==0.1:
+      self.execute_clear()
+    print "step"
+    goal = TriggerMappingGoal()
+    if not self.trigger_client.wait_for_server(rospy.Duration.from_sec(2.0)):
+      rospy.logerr('server not available')
+      #return False
+    else:
+      goal.start = True
+      self.trigger_client.send_goal(goal)
+      if not self.trigger_client.wait_for_result(rospy.Duration.from_sec(2.0)):
+        print "no result"
+    sss.move("cob_3d_mapping_demonstrator",[[self.step,-0.3]])
+    self.step += 0.1
 
 ## Main routine for running the script server
 #
