@@ -64,15 +64,10 @@
 // ROS includes
 #include <ros/ros.h>
 #include <ros/console.h>
-#include <actionlib/server/simple_action_server.h>
+//#include <actionlib/server/simple_action_server.h>
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_eigen.h>
-//#include <message_filters/subscriber.h>
-//#include <message_filters/time_synchronizer.h>
 #include <pluginlib/class_list_macros.h>
-//#include <pcl/registration/icp.h>
-//#include <cob_3d_mapping_common/point_types.h>
-//#include <cob_3d_mapping_common/reconfigureable_node.h>
 #include <dynamic_reconfigure/server.h>
 #include <cob_3d_mapping_point_map/point_map_nodeletConfig.h>
 
@@ -87,31 +82,10 @@
 //#include <visualization_msgs/Marker.h>
 
 // ROS message includes
-//#include <sensor_msgs/PointCloud2.h>
-//#include <cob_3d_mapping_msgs/GetFieldOfView.h>
-#include <cob_3d_mapping_msgs/TriggerMappingAction.h>
 #include <cob_3d_mapping_msgs/SetReferenceMap.h>
 #include <cob_3d_mapping_msgs/GetPointMap.h>
 #include <cob_srvs/Trigger.h>
 
-// external includes
-#include <boost/timer.hpp>
-//#include <boost/numeric/ublas/matrix.hpp>
-
-//#include "cob_3d_mapping_point_map/impl/field_of_view_segmentation.hpp"
-//#include "cob_3d_mapping_point_map/point_map.h"
-//#include "cob_3d_mapping_point_map/point_map_nodeletConfig.h"
-
-//#include <sensor_msgs/CameraInfo.h>
-
-//#include "../../../cob_3d_registration/common/include/registration/general_registration.h"
-//#include "../../../cob_3d_registration/common/include/registration/registration_info.h"
-
-
-//using namespace tf;
-
-//typedef message_filters::TimeSynchronizer<sensor_msgs::PointCloud2, geometry_msgs::TransformStamped> TimeSync;
-//typedef boost::shared_ptr<TimeSync> TimeSyncPtr;
 
 //####################
 //#### node class ####
@@ -122,73 +96,35 @@ class PointMapNodelet : public pcl_ros::PCLNodelet//, protected Reconfigurable_N
 public:
   // Constructor
   PointMapNodelet()
-  : //Reconfigurable_Node<cob_3d_mapping_point_map::point_map_nodeletConfig>("PointMapNodelet"),
-    ctr_(0),
+  : ctr_(0),
     is_running_(false),
-    map_frame_id_("/map")
+    map_frame_id_("map")
     {
 
     map_.header.frame_id = map_frame_id_;
-
-    /*reg_ = new Registration_Infobased<Point>();
-    ((Registration_Infobased<Point>*)reg_)->setThresholdDiff(0.06);
-    ((Registration_Infobased<Point>*)reg_)->setThresholdStep(0.06);
-    ((Registration_Infobased<Point>*)reg_)->setMinInfo(1);
-    ((Registration_Infobased<Point>*)reg_)->setMaxInfo(17);
-    ((Registration_Infobased<Point>*)reg_)->SetAlwaysRelevantChanges(true);*/
-
-    //setReconfigureCallback2(boost::bind(&callback, this, _1, _2), boost::bind(&callback_get, this, _1));
-    //setReconfigureCallback(boost::bind(&callback, this, _1, _2));
     }
 
 
   // Destructor
   ~PointMapNodelet()
   {
-    //delete reg_;
+    // void
   }
 
   /**
-   * @brief callback for dynamic reconfigure
+   * @brief Callback for dynamic reconfigure server
    *
-   * everytime the dynamic reconfiguration changes this function will be called
-   *
-   * @param inst instance of PointMapNodelet which parameters should be changed
-   * @param config data of configuration
-   * @param level bit descriptor which notifies which parameter changed
+   * Callback for dynamic reconfigure server
    *
    * @return nothing
    */
-  /*static void callback(PointMapNodelet *inst, cob_3d_mapping_point_map::point_map_nodeletConfig &config, uint32_t level)
-  {
-    if(!inst)
-      return;
-
-    //boost::mutex::scoped_lock l1(inst->m_mutex_actionCallback);
-    //boost::mutex::scoped_lock l2(inst->m_mutex_pointCloudSubCallback);
-
-    inst->file_path_ = config.file_path;
-    inst->save_ = config.save;
-    inst->voxel_leafsize_ = config.voxel_leafsize;
-  }
-
-  // callback for dynamic reconfigure
-  static void callback_get(PointMapNodelet *inst, cob_3d_mapping_point_map::point_map_nodeletConfig &config)
-  {
-    if(!inst)
-      return;
-
-    config.file_path=inst->file_path_;
-    config.save = inst->save_;
-    config.voxel_leafsize = inst->voxel_leafsize_;
-
-  }*/
-
-  void dynReconfCallback(cob_3d_mapping_point_map::point_map_nodeletConfig &config, uint32_t level)
+  void
+  dynReconfCallback(cob_3d_mapping_point_map::point_map_nodeletConfig &config, uint32_t level)
   {
     file_path_ = config.file_path;
     save_ = config.save;
     voxel_leafsize_ = config.voxel_leafsize;
+    map_frame_id_ = config.map_frame_id;
   }
 
 
@@ -205,41 +141,17 @@ public:
     PCLNodelet::onInit();
     n_ = getNodeHandle();
 
-    //f_ = boost::bind(&PointMapNodelet::dynReconfCallback, _1, _2);
     config_server_.setCallback(boost::bind(&PointMapNodelet::dynReconfCallback, this, _1, _2));
 
-    //sync_ = TimeSyncPtr(new TimeSync(point_cloud_sub_, transform_sub_, 10));
-    //sync_->registerCallback(boost::bind(&PointMapNodelet::registerCallback, this, _1, _2));
     point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &PointMapNodelet::updateCallback, this);
     map_pub_ = n_.advertise<pcl::PointCloud<Point> >("map",1);
-    clear_map_server_ = n_.advertiseService("clear_point_map", &PointMapNodelet::clearMap, this);
-    get_map_server_ = n_.advertiseService("get_point_map", &PointMapNodelet::getMap, this);
-    //as_= new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerMappingAction>(n_, "trigger_mapping", boost::bind(&PointMapNodelet::actionCallback, this, _1), false);
-    //as_->start();
-
+    clear_map_server_ = n_.advertiseService("clear_map", &PointMapNodelet::clearMap, this);
+    get_map_server_ = n_.advertiseService("get_map", &PointMapNodelet::getMap, this);
 
     //n_.param("aggregate_point_map/file_path" ,file_path_ ,std::string("~/pcl_daten/table/icp/map_"));
     //n_.param("aggregate_point_map/save_",save_ , false);
     //n_.param("aggregate_point_map/voxel_leafsize" ,voxel_leafsize_, 0.03);
   }
-
-  /**
-   * @brief callback for point cloud subroutine
-   *
-   * callback for point cloud subroutine which stores the point cloud
-   * for further calculation
-   *
-   * @param pc_in  new point cloud
-   *
-   * @return nothing
-   */
-  /*void
-  pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc_in)
-  {
-    boost::mutex::scoped_lock l(m_mutex_pointCloudSubCallback);
-    pc_in_ = *pc_in;
-  }*/
-
 
   /**
    * @brief callback for point cloud subroutine
@@ -258,25 +170,12 @@ public:
   void
   updateCallback(const pcl::PointCloud<Point>::Ptr& pc)
   {
-    ROS_INFO("PointCloudSubCallback");
-    //pcl::PointCloud<Point> pc;
-    //pcl::fromROSMsg(*pc_msg, pc);
-    //pcl::PointCloud<Point>::Ptr pc_ptr = pc.makeShared();
+    ROS_DEBUG("PointCloudSubCallback");
     if (pc->size() < 1)
     {
-      ROS_WARN("size too small");
+      ROS_WARN("[point_map] Incoming point cloud is empty, skipping map update.");
       return;
     }
-    //tf::Transform trf_reg;
-    //tf::transformMsgToTF(trf_msg->transform, trf_reg);
-    //tf::TransformTFToEigen(trf_reg, af_reg);
-    //pcl::transformPointCloud(pc, pc, af.affine());
-
-    //boost::mutex::scoped_lock l(m_mutex_pointCloudSubCallback);
-
-    //boost::timer t;
-    //pcl::PointCloud<Point>::Ptr pc = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>);
-    //TODO: apply registration trafo
     tf::StampedTransform trf_map;
     try
     {
@@ -294,18 +193,17 @@ public:
     Eigen::Matrix4f trf = af.matrix().cast<float>();
     pcl::transformPointCloud(*pc, *pc, trf);
     pc->header.frame_id = map_frame_id_;
-    //map_.header.frame_id="/map";
 
     updateMap(pc);
     map_pub_.publish(map_);
 
-    ROS_INFO("[aggregate_point_map] Map has %d points", map_.size());
+    ROS_DEBUG("[point_map] Updated map has %d points", map_.size());
 
     if(save_)
     {
-      std::stringstream ss1;
-      ss1 << file_path_ << "/map_" << ctr_ << ".pcd";
-      pcl::io::savePCDFileASCII (ss1.str(), map_);
+      std::stringstream ss;
+      ss << file_path_ << "/map_" << ctr_ << ".pcd";
+      pcl::io::savePCDFileASCII (ss.str(), map_);
     }
     ctr_++;
     return;
@@ -328,7 +226,7 @@ public:
    *
    * @return nothing
    */
-  void
+  /*void
   actionCallback(const cob_3d_mapping_msgs::TriggerMappingGoalConstPtr &goal)
   {
     //boost::mutex::scoped_lock l(m_mutex_actionCallback);
@@ -351,7 +249,7 @@ public:
       is_running_ = false;
     }
     as_->setSucceeded(result);
-  }
+  }*/
 
   /**
    * @brief clears map
@@ -437,30 +335,19 @@ public:
 
 
 protected:
-  //message_filters::Subscriber<sensor_msgs::PointCloud2> point_cloud_sub_;
-  //message_filters::Subscriber<geometry_msgs::TransformStamped> transform_sub_;
-  //TimeSyncPtr sync_;
-  ros::Subscriber point_cloud_sub_;		//subscriber for input pc
-  //ros::Subscriber camera_info_sub_;             //subscriber for input pc
+  ros::Subscriber point_cloud_sub_;	//subscriber for input pc
   ros::Publisher map_pub_;		//publisher for map
-  //ros::Publisher point_cloud_pub_aligned_;      //publisher for aligned pc
-  //ros::Publisher fov_marker_pub_;		//publisher for FOV marker
-  //ros::ServiceClient get_fov_srv_client_;
   ros::ServiceServer clear_map_server_;
-  //ros::ServiceServer keyframe_trigger_server_;
-  //ros::ServiceServer set_reference_map_server_;
   ros::ServiceServer get_map_server_;
-  actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerMappingAction>* as_;
 
   dynamic_reconfigure::Server<cob_3d_mapping_point_map::point_map_nodeletConfig> config_server_;
-  //dynamic_reconfigure::Server<cob_3d_mapping_point_map::point_map_nodeletConfig> f_;
 
   tf::TransformListener tf_listener_;
 
   unsigned int ctr_;
   bool is_running_;
 
-  // Parameters from launch file
+  // Parameters from launch file or dynamic config
   std::string file_path_;
   bool save_;
   std::string map_frame_id_;

@@ -112,8 +112,8 @@ public:
     shape_sub_ = n_.subscribe("shape_array", 10, &GeometryMapNode::shapeCallback, this);
     map_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("map_array",1);
     marker_pub_ = n_.advertise<visualization_msgs::Marker>("geometry_marker",100);
-    clear_map_server_ = n_.advertiseService("clear_geometry_map", &GeometryMapNode::clearMap, this);
-    get_map_server_ = n_.advertiseService("get_geometry_map", &GeometryMapNode::getMap, this);
+    clear_map_server_ = n_.advertiseService("clear_map", &GeometryMapNode::clearMap, this);
+    get_map_server_ = n_.advertiseService("get_map", &GeometryMapNode::getMap, this);
     ros::param::param("~file_path" ,file_path_ ,std::string("/home/goa/tmp/"));
     ros::param::param("~save_to_file" ,save_to_file_ ,false);
     std::cout << file_path_ << std::endl;

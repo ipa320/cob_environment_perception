@@ -195,13 +195,13 @@ class execute_button_commands():
     print "clear"
     try:
       #rospy.wait_for_service('point_map/clear_point_map', timeout=2.0)
-      clear = rospy.ServiceProxy('point_map/clear_point_map', Trigger)
+      clear = rospy.ServiceProxy('point_map/clear_map', Trigger)
       resp = clear()
     except rospy.ServiceException, e:
       print "Service call failed: %s"%e
     try:
       #rospy.wait_for_service('geometry_map/clear_geometry_map', timeout=2.0)
-      clear = rospy.ServiceProxy('geometry_map/clear_geometry_map', Trigger)
+      clear = rospy.ServiceProxy('geometry_map/clear_map', Trigger)
       resp = clear()
     except rospy.ServiceException, e:
       print "Service call failed: %s"%e
