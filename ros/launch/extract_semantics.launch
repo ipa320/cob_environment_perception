@@ -6,7 +6,7 @@
   	<remap from="shape_array_pub" to="/semantic_extraction_node/get_geometry_map"/>
   	<remap from="marker" to="/semantic_extraction_node/shape_marker"/>
   	<remap from="marker_array" to="/semantic_extraction_node/map_marker_array"/>
-  	<remap from="get_geometry_map" to="/geometry_map/get_geometry_map"/>
+  	<remap from="get_geometry_map" to="/geometry_map/get_map"/>
 
   	<param name="tilt_angle" type = "double" value= "5.0" /><!--tilt angle in degrees-->
   	<param name="height_min" type = "double" value= "0.5"/>
