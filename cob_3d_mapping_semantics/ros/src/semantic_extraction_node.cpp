@@ -262,7 +262,7 @@ public:
     cob_3d_mapping_msgs::GetGeometricMapRequest req;
     cob_3d_mapping_msgs::GetGeometricMapResponse res;
 
-    if (ros::service::call ("/geometry_map/get_geometry_map", req, res))
+    if (ros::service::call ("get_geometry_map", req, res))
     {
       ROS_INFO("Service call finished.");
     }

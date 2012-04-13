@@ -95,7 +95,7 @@ int main (int argc, char **argv)
   ros::NodeHandle nh;
 
   ROS_INFO("Waiting for service server to start.");
-  ros::service::waitForService("/geometry_map/get_geometry_map"); //will wait for infinite time
+  ros::service::waitForService("/geometry_map/get_map"); //will wait for infinite time
 
   ROS_INFO("Server started, polling map.");
 
@@ -103,7 +103,7 @@ int main (int argc, char **argv)
   cob_3d_mapping_msgs::GetGeometricMapRequest req;
   cob_3d_mapping_msgs::GetGeometricMapResponse resp;
 
-  if (ros::service::call("/geometry_map/get_geometry_map", req,resp))
+  if (ros::service::call("/geometry_map/get_map", req,resp))
   {
     ROS_INFO("Service call finished.");
   }
