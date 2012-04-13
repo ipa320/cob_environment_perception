@@ -109,5 +109,6 @@
 #define I_CYL    5
 #define I_SPHERE 6
 #define I_CORNER 7
+#define NUM_LABELS 8
 
 #endif
