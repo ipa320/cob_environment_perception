@@ -62,6 +62,9 @@ rosbuild_add_executable(plane_extraction_action_client ros/src/plane_extraction_
 rosbuild_add_executable(test_organized_curvature_estimation common/apps/test_organized_curvature_estimation.cpp)
 target_link_libraries(test_organized_curvature_estimation cob_3d_mapping_features cob_3d_mapping_features_omp)
 
+# node for segmentation visualization:
+rosbuild_add_executable(segmentation_visualizer ros/src/segmentation_visualizer.cpp)
+
 # feature evaluation:
 rosbuild_add_executable(evaluation_fpfh_svm_trainer common/apps/evaluation_fpfh_svm_trainer.cpp)
 rosbuild_add_executable(evaluation_features common/apps/evaluation_features.cpp)

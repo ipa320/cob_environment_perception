@@ -73,12 +73,15 @@ cob_3d_mapping_features::SegmentationNodelet::received_cloud_cb(const pcl::Point
 
   one_.setInputCloud(cloud);
   one_.compute(*normals_);
-
+  pcl::copyPointCloud<PointXYZRGB,PointXYZRGB>(*cloud,*colored_);
+  pcl::copyPointCloud<PointXYZRGB,PointXYZRGB>(*cloud,*classified_);
   //oce_.setInputCloud(cloud);
   //oce_.compute(*pc_);
 
-  seg_.setInput(cloud);
-  seg_.propagateWavefront(labels_, cluster_list_);
+  seg_.setInputPoints(cloud);
+  seg_.propagateWavefront(cluster_list_);
+  seg_.propagateWavefront2ndPass(cluster_list_);
+  seg_.getColoredCloud(cluster_list_, colored_);
   //cv::Mat segmented;
   //seg_.getClusterIndices(labels_, clusters_, segmented);
 
@@ -86,11 +89,10 @@ cob_3d_mapping_features::SegmentationNodelet::received_cloud_cb(const pcl::Point
   //cv_ptr.image = segmented;
   //cv_ptr.encoding = sensor_msgs::image_encodings::RGB8;
   //image_pub_.publish(cv_ptr.toImageMsg());
-
-  pcl::copyPointCloud<PointXYZRGB,PointXYZRGB>(*cloud,*colored_);
   seg_.analyseClusters(cluster_list_);
-  seg_.getColoredCloudByType(cluster_list_, colored_);
+  seg_.getColoredCloudByType(cluster_list_, classified_);
   pub_.publish(*colored_);
+  classify_pub_.publish(*classified_);
 
   std::cout << t.precisionStop() << "s\t for segmentation!" << std::endl;
 }
@@ -113,6 +115,7 @@ cob_3d_mapping_features::SegmentationNodelet::onInit()
 
   seg_.setInputNormals(normals_);
   seg_.setInputCurvatures(pc_);
+  seg_.setOutputLabels(labels_);
 
   nh_ = getNodeHandle();
   it_ = image_transport::ImageTransport(nh_);
@@ -120,6 +123,8 @@ cob_3d_mapping_features::SegmentationNodelet::onInit()
     ("cloud_in", 1, boost::bind(&cob_3d_mapping_features::SegmentationNodelet::received_cloud_cb, this, _1));
   image_pub_ = it_.advertise("segmentation_image", 1);
   pub_ = nh_.advertise<pcl::PointCloud<PointT> >("segmentation_cloud", 1);
+  classify_pub_ = nh_.advertise<pcl::PointCloud<PointT> >("classified_cloud", 1);
+
 }
 
 PLUGINLIB_DECLARE_CLASS(cob_3d_mapping_features, SegmentationNodelet, cob_3d_mapping_features::SegmentationNodelet, nodelet::Nodelet);

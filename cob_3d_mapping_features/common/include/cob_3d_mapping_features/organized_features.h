@@ -79,6 +79,7 @@ namespace cob_3d_mapping_features
 	,pixel_steps_(1)
 	,circle_steps_(1)
 	,skip_distant_point_threshold_(4.0)
+	,mask_changed(false)
       { };
 
       inline void
@@ -94,6 +95,7 @@ namespace cob_3d_mapping_features
 	pixel_search_radius_ = size / 2;
 	pixel_steps_ = pixel_steps;
 	circle_steps_ = circle_steps;
+	mask_changed = true;
       }
 
       inline void
@@ -102,6 +104,7 @@ namespace cob_3d_mapping_features
 	pixel_search_radius_ = pixel_radius;
 	pixel_steps_ = pixel_steps;
 	circle_steps_ = circle_steps;
+	mask_changed = true;
       }
 
       // Ignore points in window with high distance
@@ -127,6 +130,9 @@ namespace cob_3d_mapping_features
 	searchForNeighborsInRange(int index,
 				  std::vector<int>& indices,
 				  std::vector<float>& sqr_distances);
+
+      void
+	computeMaskManually(int cloud_width);
 
 
     protected:
@@ -157,6 +163,7 @@ namespace cob_3d_mapping_features
 
       PointCloudInConstPtr surface_;
       bool fake_surface_;
+      bool mask_changed;
 
       int pixel_search_radius_;
       int pixel_steps_;

@@ -94,7 +94,7 @@ cob_3d_mapping_features::OrganizedCurvatureEstimation<PointInT,PointNT,PointLabe
     PointNT const* n_i = &(normals.points[*it]);
     if ( pcl_isnan(n_i->normal[2]) ) continue;
     normals_projected.push_back( M * Eigen::Vector3f(n_i->normal) );
-    centroid += normals_projected.at(normals_projected.size()-1);
+    centroid += normals_projected.back();
     if ( (surface_->points[*it].getVector3fMap() - p_idx).normalized().dot(n_idx) > 0.0) ++prob_concave;
     else ++prob_convex;
   }

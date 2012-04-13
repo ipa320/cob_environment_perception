@@ -107,20 +107,39 @@ namespace cob_3d_mapping_features
     };
 
     inline void
-    setInput(const PointCloudInConstPtr &points) { surface_ = points; }
+    setInputPoints(const PointCloudInConstPtr &points) { surface_ = points; }
 
     inline void
-    setInputNormals(const NormalCloudInConstPtr &normals) { normals_ = normals; }
+    setInputNormals(const NormalCloudInPtr &normals) { normals_ = normals; }
 
     inline void
-    setInputCurvatures(const CurvatureCloudInConstPtr &curvatures) { curvatures_ = curvatures; }
+    setInputCurvatures(const CurvatureCloudInPtr &curvatures) { curvatures_ = curvatures; }
+
+    inline void
+    setOutputLabels(const LabelCloudPtr& labels) { labels_ = labels; }
 
     void
-    propagateWavefront(const LabelCloudPtr& labels,
-		       ClusterList& cluster_out);
+    propagateWavefront(ClusterList& cluster_out);
+
+    void
+    propagateWavefront2ndPass(ClusterList& cluster_list);
+
+    bool
+    hasValidCurvature(int idx);
+
+    void
+    computeClusterCurvature(cob_3d_mapping_common::Cluster& c, int search_size);
+    
+    bool
+    computeClusterComponents(cob_3d_mapping_common::Cluster& c);
 
     void
     analyseClusters(ClusterList& cluster_out);
+
+    void
+    calcNormalIntersections(ClusterList& cluster_list,
+			    pcl::PointCloud<PointXYZ>::Ptr& intersection_points);
+
 
     void
     getColoredCloud(ClusterList& cluster_list,
@@ -132,23 +151,28 @@ namespace cob_3d_mapping_features
 
   protected:
     PointCloudInConstPtr surface_;
-    NormalCloudInConstPtr normals_;
-    CurvatureCloudInConstPtr curvatures_;
+    NormalCloudInPtr normals_;
+    CurvatureCloudInPtr curvatures_;
+    LabelCloudPtr labels_;
     std::vector<cv::Vec3b> color_tab_;
-
-    struct Coords
-    {
-    public:
-    Coords(int u_in, int v_in, float angle) : u(u_in), v(v_in), angle(angle)
-	{ }
-      
-      int u;
-      int v;
-      float angle;
-    };
-
     
   };
+
+  struct ClusterElement
+  {
+  public:
+  ClusterElement(int u_in, int v_in, float goodness_in) : u(u_in), v(v_in), goodness(goodness_in)
+      { }
+      
+    int u;
+    int v;
+    float goodness;
+  };
+
+  inline const bool operator< (const ClusterElement& lhs, const ClusterElement& rhs){return lhs.goodness < rhs.goodness;}
+  inline const bool operator> (const ClusterElement& lhs, const ClusterElement& rhs){return  operator< (rhs, lhs);}
+  inline const bool operator<=(const ClusterElement& lhs, const ClusterElement& rhs){return !operator> (lhs, rhs);}
+  inline const bool operator>=(const ClusterElement& lhs, const ClusterElement& rhs){return !operator< (lhs, rhs);}
 }
 
 #endif  //#ifndef __EXTENDED_SEGMENTATION_H__

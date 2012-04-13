@@ -266,36 +266,34 @@ cob_3d_mapping_features::OrganizedFeatures<PointInT,PointOutT>::initCompute()
   }
   else
   {
-    int num_circles = std::floor(pixel_search_radius_ / circle_steps_);
     inv_width_ = 1.0f / surface_->width;
-    n_points_ = pow(2 * pixel_search_radius_ + 1, 2);
-    // create a new mask
-    mask_.clear();
-    for (int circle = 0; circle < num_circles; circle++)
+    if (mask_changed)
     {
-      int circle_size = pixel_search_radius_ - (circle*circle_steps_);
-      int dy = circle_size * surface_->width;
+      int num_circles = std::floor(pixel_search_radius_ / circle_steps_);
+      n_points_ = pow(2 * pixel_search_radius_ + 1, 2);
+      // create a new mask
+      mask_.clear();
+      for (int circle = 0; circle < num_circles; circle++)
+      {
+	int circle_size = pixel_search_radius_ - (circle*circle_steps_);
+	int dy = circle_size * surface_->width;
 
-      std::vector<int> new_circle;
-      for (int x = circle_size; x >= -circle_size; x -= pixel_steps_)
-      {
-	new_circle.push_back( x - dy );
+	std::vector<int> new_circle;
+
+	for (int x = circle_size; x >= -circle_size; x -= pixel_steps_)
+	  new_circle.push_back( x - dy );
+	for (int y = -circle_size+pixel_steps_; y <= circle_size-pixel_steps_; y += pixel_steps_)
+	  new_circle.push_back( -circle_size + y * surface_->width );
+	for (int x = -circle_size; x <= +circle_size; x += pixel_steps_)
+	  new_circle.push_back( x + dy );
+	for (int y = circle_size-pixel_steps_; y >= -circle_size+pixel_steps_; y -= pixel_steps_)
+	  new_circle.push_back( circle_size + y * surface_->width );
+
+	mask_.push_back(new_circle);
       }
-      for (int y = -circle_size+pixel_steps_; y <= circle_size-pixel_steps_; y += pixel_steps_)
-      {
-	new_circle.push_back( -circle_size + y * surface_->width );
-      }
-      for (int x = -circle_size; x <= +circle_size; x += pixel_steps_)
-      {
-	new_circle.push_back( x + dy );
-      }
-      for (int y = circle_size-pixel_steps_; y >= -circle_size+pixel_steps_; y -= pixel_steps_)
-      {
-	new_circle.push_back( circle_size + y * surface_->width );
-      }
-      mask_.push_back(new_circle);
     }
   }
+
   return (true);
 }
 
@@ -344,6 +342,34 @@ cob_3d_mapping_features::OrganizedFeatures<PointInT,PointOutT>::compute(PointClo
   computeFeature (output);
 
   deinitCompute ();
+}
+
+template <typename PointInT, typename PointOutT> void
+cob_3d_mapping_features::OrganizedFeatures<PointInT,PointOutT>::computeMaskManually(int cloud_width)
+{
+  int num_circles = std::floor(pixel_search_radius_ / circle_steps_);
+  n_points_ = pow(2 * pixel_search_radius_ + 1, 2);
+  // create a new mask
+  mask_.clear();
+  for (int circle = 0; circle < num_circles; circle++)
+  {
+    int circle_size = pixel_search_radius_ - (circle*circle_steps_);
+    int dy = circle_size * cloud_width;
+
+    std::vector<int> new_circle;
+
+    for (int x = circle_size; x >= -circle_size; x -= pixel_steps_)
+      new_circle.push_back( x - dy );
+    for (int y = -circle_size+pixel_steps_; y <= circle_size-pixel_steps_; y += pixel_steps_)
+      new_circle.push_back( -circle_size + y * cloud_width );
+    for (int x = -circle_size; x <= +circle_size; x += pixel_steps_)
+      new_circle.push_back( x + dy );
+    for (int y = circle_size-pixel_steps_; y >= -circle_size+pixel_steps_; y -= pixel_steps_)
+      new_circle.push_back( circle_size + y * cloud_width );
+
+    mask_.push_back(new_circle);
+  }
+  mask_changed = false;
 }
 
 #endif

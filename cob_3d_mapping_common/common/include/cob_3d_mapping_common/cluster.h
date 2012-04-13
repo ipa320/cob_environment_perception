@@ -63,6 +63,7 @@ namespace cob_3d_mapping_common
   {
   public:
     Cluster () : indices()
+      , is_save_plane(false)
       , type(I_UNDEF)
       , sum_points(0.0, 0.0, 0.0)
       , sum_orientation(0.0, 0.0, 0.0)
@@ -74,9 +75,9 @@ namespace cob_3d_mapping_common
     ~Cluster () { };
 
     void
-      updateCluster(const int idx, 
-		    const Eigen::Vector3f& new_point, 
-		    const Eigen::Vector3f& new_normal)
+    updateCluster(const int idx, 
+		  const Eigen::Vector3f& new_point, 
+		  const Eigen::Vector3f& new_normal)
     {
       indices.push_back(idx);
       sum_points += new_point;
@@ -100,7 +101,7 @@ namespace cob_3d_mapping_common
     getCentroid() { return (sum_points / indices.size()); }
     
     inline Eigen::Vector3f
-      getOrientation() { return (sum_orientation / indices.size()).normalized(); }
+    getOrientation() { return (sum_orientation / indices.size()).normalized(); }
 
     inline float
     getNormalChange() { return sum_angle / indices.size(); }
@@ -117,26 +118,34 @@ namespace cob_3d_mapping_common
     inline bool
     isConvex() { return (sum_max_curvature < 0); }
 
+    bool is_save_plane;
     int type;
     std::vector<int> indices;
     Eigen::Vector3f first_component;
     Eigen::Vector3f second_component;
     Eigen::Vector3f third_component;
     Eigen::Vector3f eigenvalues;
-
-  protected:
-    Eigen::Vector3f sum_points;
     Eigen::Vector3f sum_orientation;
-    float sum_angle;
+
+    Eigen::Vector3f ints_centroid;
+    Eigen::Vector3f ints_comp_1;
+    Eigen::Vector3f ints_comp_2;
+    Eigen::Vector3f ints_comp_3;
+    Eigen::Vector3f ints_values;
+
     float sum_max_curvature;
     float sum_min_curvature;
 
+
+  protected:
+    Eigen::Vector3f sum_points;
+    float sum_angle;
   };
 
-  inline bool operator< (const Cluster& lhs, const Cluster& rhs){return lhs.indices.size() < rhs.indices.size();}
-  inline bool operator> (const Cluster& lhs, const Cluster& rhs){return  operator< (rhs, lhs);}
-  inline bool operator<=(const Cluster& lhs, const Cluster& rhs){return !operator> (lhs, rhs);}
-  inline bool operator>=(const Cluster& lhs, const Cluster& rhs){return !operator< (lhs, rhs);}
+  inline const bool operator< (const Cluster& lhs, const Cluster& rhs){return lhs.indices.size() < rhs.indices.size();}
+  inline const bool operator> (const Cluster& lhs, const Cluster& rhs){return  operator< (rhs, lhs);}
+  inline const bool operator<=(const Cluster& lhs, const Cluster& rhs){return !operator> (lhs, rhs);}
+  inline const bool operator>=(const Cluster& lhs, const Cluster& rhs){return !operator< (lhs, rhs);}
 }
 
 #endif //__COB_3D_MAPPING_COMMON_CLUSTER_H__
