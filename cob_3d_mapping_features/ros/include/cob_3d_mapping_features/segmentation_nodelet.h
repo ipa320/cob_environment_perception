@@ -84,6 +84,7 @@ namespace cob_3d_mapping_features
       , oce_()
       , seg_()
       , colored_(new pcl::PointCloud<PointT>)
+      , classified_(new pcl::PointCloud<PointT>)
       , normals_(new pcl::PointCloud<pcl::Normal>)
       , pc_(new pcl::PointCloud<pcl::PrincipalCurvatures>)
       , labels_(new pcl::PointCloud<PointLabel>)
@@ -106,6 +107,7 @@ namespace cob_3d_mapping_features
     ros::NodeHandle nh_;
     ros::Subscriber sub_;
     ros::Publisher pub_;
+    ros::Publisher classify_pub_;
     image_transport::ImageTransport it_;
     image_transport::Publisher image_pub_;
     
@@ -114,6 +116,7 @@ namespace cob_3d_mapping_features
     ExtendedSegmentation<pcl::PointXYZRGB,pcl::Normal,pcl::PrincipalCurvatures,PointLabel> seg_;
 
     pcl::PointCloud<PointT>::Ptr colored_;
+    pcl::PointCloud<PointT>::Ptr classified_;
     pcl::PointCloud<pcl::Normal>::Ptr normals_;
     pcl::PointCloud<pcl::PrincipalCurvatures>::Ptr pc_;
     pcl::PointCloud<PointLabel>::Ptr labels_;

@@ -8,8 +8,8 @@
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
  * Project name: care-o-bot
- * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_features
+ * ROS stack name: cob_vision
+ * ROS package name: cob_env_model
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -17,7 +17,7 @@
  * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 12/2011
+ * Date of creation: 02/2012
  * ToDo:
  *
  *
@@ -52,74 +52,55 @@
  *
  ****************************************************************/
 
-#ifndef __ORGANIZED_NORMAL_ESTIMATION_H__
-#define __ORGANIZED_NORMAL_ESTIMATION_H__
+#ifndef __COB_3D_MAPPING_FEATURES_SEGMENTATION_VISUALIZER_H__
+#define __COB_3D_MAPPING_FEATURES_SEGMENTATION_VISUALIZER_H__
 
-#include "cob_3d_mapping_features/organized_features.h"
+#include <ros/ros.h>
+#include <sensor_msgs/PointCloud2.h>
+
+#include <pcl/point_types.h>
+#include <pcl/visualization/pcl_visualizer.h>
 
 namespace cob_3d_mapping_features
 {
-  template <typename PointInT, typename PointOutT, typename LabelOutT>
-    class OrganizedNormalEstimation : public OrganizedFeatures<PointInT,PointOutT>
+  class SegmentationVisualizer
   {
     public:
+    SegmentationVisualizer() : nh_(), v_(), v1_(0), v2_(0)
+    { }
 
-    using OrganizedFeatures<PointInT,PointOutT>::pixel_search_radius_;
-    using OrganizedFeatures<PointInT,PointOutT>::pixel_steps_;
-    using OrganizedFeatures<PointInT,PointOutT>::circle_steps_;
-    using OrganizedFeatures<PointInT,PointOutT>::inv_width_;
-    using OrganizedFeatures<PointInT,PointOutT>::mask_;
-    using OrganizedFeatures<PointInT,PointOutT>::input_;
-    using OrganizedFeatures<PointInT,PointOutT>::indices_;
-    using OrganizedFeatures<PointInT,PointOutT>::surface_;
-    using OrganizedFeatures<PointInT,PointOutT>::skip_distant_point_threshold_;
-    using OrganizedFeatures<PointInT,PointOutT>::feature_name_;
+    ~SegmentationVisualizer() 
+    { }
 
-    typedef pcl::PointCloud<PointInT> PointCloudIn;
-    typedef typename PointCloudIn::Ptr PointCloudInPtr;
-    typedef typename PointCloudIn::ConstPtr PointCloudInConstPtr;
-
-    typedef pcl::PointCloud<PointOutT> PointCloudOut;
-    typedef typename PointCloudOut::Ptr PointCloudOutPtr;
-    typedef typename PointCloudOut::ConstPtr PointCloudOutConstPtr;
-
-    typedef pcl::PointCloud<LabelOutT> LabelCloudOut;
-    typedef typename LabelCloudOut::Ptr LabelCloudOutPtr;
-    typedef typename LabelCloudOut::ConstPtr LabelCloudOutConstPtr;
-
-    OrganizedNormalEstimation ()
-    {
-      feature_name_ = "OrganizedNormalEstimation";
-    };
 
     inline void
-    setOutputLabels(LabelCloudOutPtr labels) { labels_ = labels; }
+      spinOnce() { v_.spinOnce(100); }
+
+    inline bool
+      isRunning() { return !v_.wasStopped(); }
 
     void
-    computePointNormal(
-      const PointCloudIn &cloud,
-      int index,
-      float &n_x,
-      float &n_y,
-      float &n_z,
-      int &label_out);
+      init();
 
-    void
-    recomputeSegmentNormal(PointCloudInConstPtr cloud_in,
-			   LabelCloudOutConstPtr label_in,
-			   int index,
-			   float& n_x,
-			   float& n_y,
-			   float& n_z);
 
+    
     protected:
 
     void
-      computeFeature (PointCloudOut &output);
+      update_v1_cb(const sensor_msgs::PointCloud2::ConstPtr& cloud_in);
 
-    LabelCloudOutPtr labels_;
-    
+    void
+      update_v2_cb(const sensor_msgs::PointCloud2::ConstPtr& cloud_in);
+
+    ros::NodeHandle nh_;
+    ros::Subscriber sub_v1_;
+    ros::Subscriber sub_v2_;
+
+    pcl::visualization::PCLVisualizer v_;
+    int v1_;
+    int v2_;
   };
 }
+
 
 #endif

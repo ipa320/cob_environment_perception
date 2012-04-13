@@ -162,7 +162,8 @@ int main(int argc, char** argv)
     cob_3d_mapping_features::OrganizedNormalEstimation<PointXYZRGB, Normal, PointLabel>one;
     one.setInputCloud(p);
     one.setOutputLabels(l);
-    one.setPixelSearchRadius(pns_n_,points_,circle_); //radius,pixel,circle
+    //one.setPixelSearchRadius(pns_n_,points_,circle_); //radius,pixel,circle
+    one.setPixelSearchRadius(8,2,2);
     one.setSkipDistantPointThreshold(d_th_);
     one.compute(*n);
     cout << t.elapsed() << "s\t for Organized Normal Estimation" << endl;
@@ -232,9 +233,11 @@ int main(int argc, char** argv)
   // --- Segmentation ---
   t.restart();
   cob_3d_mapping_features::ExtendedSegmentation<PointXYZRGB,Normal,PrincipalCurvatures,PointLabel> eseg;
+  eseg.setInputPoints(p);
   eseg.setInputNormals(n);
   eseg.setInputCurvatures(pc);
-  eseg.propagateWavefront(l_copy, cluster_list);
+  eseg.setOutputLabels(l_copy);
+  eseg.propagateWavefront(cluster_list);
   eseg.getColoredCloud(cluster_list, color_cloud);
   cout << t.elapsed() << "s\t for extended clustering" << endl;
 
@@ -368,7 +371,7 @@ int main(int argc, char** argv)
   v.setBackgroundColor(0,127,127, v2);
 
   v.addPointCloud<PointXYZRGB>(p, col_hdl2, "segmented2", v2);
-  v.addPointCloudNormals<PointXYZRGB, Normal>(p,n,3,0.04,"normals2", v2);
+  v.addPointCloudNormals<PointXYZRGB, Normal>(p,n,5,0.04,"normals2", v2);
 
 
   while(!v.wasStopped())

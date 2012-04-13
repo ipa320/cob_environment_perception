@@ -61,6 +61,89 @@
 
 
 template <typename PointInT, typename PointOutT, typename LabelOutT> void
+cob_3d_mapping_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>::recomputeSegmentNormal (
+  PointCloudInConstPtr cloud_in,
+  LabelCloudOutConstPtr label_in,
+  int index,
+  float& n_x,
+  float& n_y,
+  float& n_z)
+{
+  Eigen::Vector3f p = cloud_in->points[index].getVector3fMap();
+  if (pcl_isnan(p(2)))
+  {
+    n_x = n_y = n_z = std::numeric_limits<float>::quiet_NaN();
+    return;
+  }
+
+
+  int idx, max_gab, gab, init_gab, n_normals = 0;
+  int idx_x = index % cloud_in->width;
+  int idx_y = index / cloud_in->width;
+  int l_idx = label_in->points[index].label;
+
+  if (idx_y < pixel_search_radius_ || idx_y >= (int)cloud_in->height - pixel_search_radius_ ||
+      idx_x < pixel_search_radius_ || idx_x >= (int)cloud_in->width - pixel_search_radius_)
+      return;
+
+  bool has_prev_point;
+
+  Eigen::Vector3f p_curr;
+  Eigen::Vector3f p_prev(0,0,0);
+  Eigen::Vector3f p_first(0,0,0);
+  Eigen::Vector3f n_idx(0,0,0);
+
+  std::vector<std::vector<int> >::iterator it_c; // circle iterator
+  std::vector<int>::iterator it_ci; // points in circle iterator
+
+  // check where query point is and use out-of-image validation for neighbors or not
+  for (it_c = mask_.begin(); it_c != mask_.end(); ++it_c) // iterate circles 
+  {
+    has_prev_point = false; init_gab = gab = 0; max_gab = 0.25 * (*it_c).size(); // reset loop
+    
+    for (it_ci = (*it_c).begin(); it_ci != (*it_c).end(); ++it_ci) // iterate current circle
+    {
+      idx = index + *it_ci;
+      //std::cout << idx % cloud_in->width << " / " << idx / cloud_in->width << std::endl;
+      Eigen::Vector3f p_i = cloud_in->points[idx].getVector3fMap();
+      if ( pcl_isnan(p_i(2)) || label_in->points[idx].label != l_idx) { ++gab; continue; } // count as gab point
+      if ( gab <= max_gab && has_prev_point ) // check gab is small enough and a previous point exists
+      {
+	p_curr = p_i - p;
+	n_idx += (p_prev.cross(p_curr)).normalized(); // compute normal of p_prev and p_curr	
+	++n_normals;
+	p_prev = p_curr;
+      }
+      else // current is first point in circle or just after a gab
+      {
+	p_prev = p_i - p;
+	if (!has_prev_point)
+	{
+	  p_first = p_prev; // remember the first valid point in circle
+	  init_gab = gab; // save initial gab size
+	  has_prev_point = true;
+	}
+      }
+      gab = 0; // found valid point, reset gab counter
+    }
+
+    // close current circle (last and first point) if gab is small enough
+    if (gab + init_gab <= max_gab)
+    {
+      // compute normal of p_first and p_prev
+      n_idx += (p_prev.cross(p_first)).normalized();
+      ++n_normals;
+    }
+  } // end loop of circles
+  n_idx /= (float)n_normals;
+  n_idx = n_idx.normalized();
+  n_x = n_idx(0);
+  n_y = n_idx(1);
+  n_z = n_idx(2);
+}
+
+
+template <typename PointInT, typename PointOutT, typename LabelOutT> void
 cob_3d_mapping_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>::computePointNormal (
   const PointCloudIn &cloud,
   int index,
