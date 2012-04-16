@@ -174,6 +174,8 @@ public:
   /// if pose information is used, the changes are always relevant!
   bool SetAlwaysRelevantChanges(const bool b) {always_relevant_changes_=b;}
 
+  virtual void setTransformation(const Eigen::Matrix4f &mat) {this->transformation_=mat;this->odometry_last_=Eigen::Matrix4f::Identity();this->odometry_=Eigen::Matrix4f::Identity();}
+
 private:
   pcl::PointCloud<Point> register_;
   pcl::PointCloud<pcl::PointXYZRGB> markers_;
