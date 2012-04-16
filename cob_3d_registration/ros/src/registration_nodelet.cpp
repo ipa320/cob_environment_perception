@@ -235,7 +235,7 @@ public:
     parameters_.addParameter("max_info");
     parameters_.addParameter("always_relevant_changes");
 
-    reset_server_ = n_.advertiseService("clear_map", &RegistrationNodelet::reset, this);
+    reset_server_ = n_.advertiseService("reset", &RegistrationNodelet::reset, this);
     camera_info_sub_ = n_.subscribe("camera_info", 1, &RegistrationNodelet::cameraInfoSubCallback, this);
     point_cloud_pub_aligned_ = n_.advertise<pcl::PointCloud<Point> >("point_cloud2_aligned",1);
     keyframe_trigger_server_ = n_.advertiseService("trigger_keyframe", &RegistrationNodelet::onKeyframeCallback, this);
@@ -311,7 +311,7 @@ public:
   {
     res.success.data = false;
 
-    if(pc_in_==0 || pc_in_->size()<1)
+    if(pc_in_==0 || pc_in_->size()<1 || !is_running_)
       return true;
 
     StampedTransform transform;
