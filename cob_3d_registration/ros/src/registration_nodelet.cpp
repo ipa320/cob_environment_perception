@@ -235,6 +235,7 @@ public:
     parameters_.addParameter("max_info");
     parameters_.addParameter("always_relevant_changes");
 
+    reset_server_ = n_.advertiseService("clear_map", &RegistrationNodelet::reset, this);
     camera_info_sub_ = n_.subscribe("camera_info", 1, &RegistrationNodelet::cameraInfoSubCallback, this);
     point_cloud_pub_aligned_ = n_.advertise<pcl::PointCloud<Point> >("point_cloud2_aligned",1);
     keyframe_trigger_server_ = n_.advertiseService("trigger_keyframe", &RegistrationNodelet::onKeyframeCallback, this);
@@ -253,6 +254,26 @@ public:
 
     //say what we are doing here
     //publishParameters();
+  }
+
+  /**
+   * @brief resetes transformation
+   *
+   * resetes transformation
+   *
+   * @param req not needed
+   * @param res not needed
+   *
+   * @return nothing
+   */
+  bool
+  reset(cob_srvs::Trigger::Request &req,
+           cob_srvs::Trigger::Response &res)
+  {
+    //TODO: add mutex
+    ROS_INFO("Resetting transformation...");
+    if(reg_) reg_->setTransformation(Eigen::Matrix4f::Identity());
+    return true;
   }
 
   /**
@@ -949,6 +970,7 @@ protected:
       );
   }
 
+  ros::ServiceServer reset_server_;
   ros::Subscriber camera_info_sub_;             //subscriber for input pc
   ros::Publisher point_cloud_pub_aligned_;      //publisher for aligned pc
   ros::ServiceServer keyframe_trigger_server_;
