@@ -101,10 +101,10 @@ class execute_button_commands():
       ret=self.execute_reset()
     elif server_goal.function_name == "clear":
       ret=self.execute_clear()
-    #elif server_goal.function_name == "recover":
-    #  ret=self.execute_recover()
-    elif server_goal.function_name == "recover":
+    elif server_goal.function_name == "step":
       ret=self.execute_step()
+    elif server_goal.function_name == "recover":
+      ret=self.execute_recover()
     else:
       rospy.logerr("function <<%s>> not supported", server_goal.function_name)
       self.script_action_server.set_aborted(server_result)
@@ -202,6 +202,12 @@ class execute_button_commands():
     try:
       #rospy.wait_for_service('geometry_map/clear_geometry_map', timeout=2.0)
       clear = rospy.ServiceProxy('geometry_map/clear_map', Trigger)
+      resp = clear()
+    except rospy.ServiceException, e:
+      print "Service call failed: %s"%e
+    try:
+      #rospy.wait_for_service('geometry_map/clear_geometry_map', timeout=2.0)
+      clear = rospy.ServiceProxy('registration/reset', Trigger)
       resp = clear()
     except rospy.ServiceException, e:
       print "Service call failed: %s"%e
