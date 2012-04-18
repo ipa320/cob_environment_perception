@@ -79,18 +79,19 @@
 PlaneExtraction::PlaneExtraction()
 {
   ctr_ = 0;
-  min_cluster_size_ = 1000;
+  min_cluster_size_ = 50;
   file_path_ = "/home/goa/tmp/";
   save_to_file_ = false;
   plane_constraint_ = NONE;
 
-  pcl::KdTree<Point>::Ptr clusters_tree;
-  clusters_tree = boost::make_shared<pcl::KdTreeFLANN<Point> > ();
+  //pcl::KdTree<Point>::Ptr clusters_tree;
+  //clusters_tree = boost::make_shared<pcl::KdTreeFLANN<Point> > ();
+  pcl::KdTreeFLANN<Point>::Ptr tree (new pcl::KdTreeFLANN<Point> ());
   // Table clustering parameters
   // TODO: parameter
   cluster_.setClusterTolerance (0.06);
   cluster_.setMinClusterSize (min_cluster_size_);
-  cluster_.setSearchMethod (clusters_tree);
+  cluster_.setSearchMethod (tree);
 
   pcl::KdTree<Point>::Ptr clusters_2_tree;
   clusters_2_tree = boost::make_shared<pcl::KdTreeFLANN<Point> > ();
@@ -100,7 +101,6 @@ PlaneExtraction::PlaneExtraction()
   cluster_2_.setMinClusterSize (50);
   cluster_2_.setSearchMethod (clusters_2_tree);
 
-  pcl::KdTreeFLANN<Point>::Ptr tree (new pcl::KdTreeFLANN<Point> ());
   normal_estimator_.setSearchMethod(tree);
   //TODO: parameter
   normal_estimator_.setRadiusSearch(0.1);
@@ -119,7 +119,7 @@ PlaneExtraction::PlaneExtraction()
 
 //input should be point cloud that is amplitude filetered, statistical outlier filtered, voxel filtered and the floor cut, coordinate system should be /map
 void
-PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
+PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
                                std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > >& v_cloud_hull,
                                std::vector<std::vector<pcl::Vertices> >& v_hull_polygons,
                                std::vector<pcl::ModelCoefficients>& v_coefficients_plane)
@@ -146,6 +146,21 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
   cluster_.setInputCloud (pc_in);
   cluster_.extract (clusters);
   ROS_DEBUG ("Number of clusters found: %d", (int)clusters.size ());
+  //ROS_INFO("Clustering took %f s", t.precisionStop());
+  //t.precisionStart();
+
+  // Estimate point normals
+  normal_estimator_.setInputCloud(pc_in);
+  //normalEstimator.setNumberOfThreads(4);
+  pcl::PointCloud<pcl::Normal>::Ptr cloud_normals(new pcl::PointCloud<pcl::Normal> ());
+  normal_estimator_.compute(*cloud_normals);
+  //ROS_INFO("Normal estimation took %f s", t.precisionStop());
+  //t.precisionStart();
+
+  seg_.setInputCloud (pc_in);
+  seg_.setInputNormals (cloud_normals);
+
+  proj_.setInputCloud (pc_in);
 
   // Go through all clusters and search for planes
 
@@ -153,34 +168,31 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
   {
     ROS_DEBUG("Processing cluster no. %u", i);
     // Extract cluster points
-    pcl::PointCloud<Point> cluster;
+    /*pcl::PointCloud<Point> cluster;
     extract_.setInputCloud (pc_in);
     extract_.setIndices (boost::make_shared<const pcl::PointIndices> (clusters[i]));
     extract_.setNegative (false);
     extract_.filter (cluster);
-    pcl::PointCloud<Point>::Ptr cluster_ptr = cluster.makeShared();
+    ROS_INFO("Extraction1 took %f s", t.precisionStop());
+    t.precisionStart();*/
+    /*pcl::PointCloud<Point>::Ptr cluster_ptr = cluster.makeShared();
     if(save_to_file_)
     {
       ss.str("");
       ss.clear();
       ss << file_path_ << "/planes/cluster_" << ctr_ << ".pcd";
       pcl::io::savePCDFileASCII (ss.str(), cluster);
-    }
-
-    // Estimate point normals
-    normal_estimator_.setInputCloud(cluster_ptr);
-    //normalEstimator.setNumberOfThreads(4);
-    pcl::PointCloud<pcl::Normal>::Ptr cloud_normals(new pcl::PointCloud<pcl::Normal> ());
-    normal_estimator_.compute(*cloud_normals);
+    }*/
 
     // Find plane
     pcl::PointIndices::Ptr inliers_plane (new pcl::PointIndices ());
-    pcl::PointIndices::Ptr consider_in_cluster(new pcl::PointIndices ());
-    for(unsigned int idx_ctr=0; idx_ctr < cluster_ptr->size(); idx_ctr++)
-      consider_in_cluster->indices.push_back(idx_ctr);
+    //pcl::PointIndices::Ptr clusters_ptr(&clusters[i]);
+    //pcl::PointIndices::Ptr consider_in_cluster(new pcl::PointIndices ());
+    //for(unsigned int idx_ctr=0; idx_ctr < clusters[i].indices.size(); idx_ctr++)
+    //  consider_in_cluster->indices.push_back(clusters[i].indices[idx_ctr]);
     int ctr = 0;
     // iterate over cluster to find all planes until cluster is too small
-    while(consider_in_cluster->indices.size()>min_cluster_size_ /*&& ctr<6*/)
+    while(clusters[i].indices.size() > min_cluster_size_ /*&& ctr<6*/)
     {
       //ROS_INFO("Cluster size: %d", (int)consider_in_cluster->indices.size());
 
@@ -190,9 +202,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
       //seg.setAxis(Eigen::Vector3f(0,0,1));
       //TODO: parameter
 
-      seg_.setInputCloud (cluster_ptr);
-      seg_.setIndices(consider_in_cluster);
-      seg_.setInputNormals (cloud_normals);
+      seg_.setIndices(boost::make_shared<const pcl::PointIndices> (clusters[i]));
       // Obtain the plane inliers and coefficients
       pcl::ModelCoefficients coefficients_plane;
       seg_.segment (*inliers_plane, coefficients_plane);
@@ -205,7 +215,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
         //ROS_INFO("Failed to detect plane in scan, skipping cluster");
         break;
       }
-      if ( inliers_plane->indices.size() < (unsigned int)150)
+      if ( inliers_plane->indices.size() < (unsigned int)50)
       {
         //std::cout << "Plane coefficients: " << *coefficients_plane << std::endl;
         //ROS_INFO("Plane detection has %d inliers, below min threshold of %d, skipping cluster", (int)inliers_plane->indices.size(), 150);
@@ -252,8 +262,8 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
       {
         // Extract plane points, only needed for storing bag file
         ROS_DEBUG("Plane has %d inliers", (int)inliers_plane->indices.size());
-        pcl::PointCloud<Point> dominant_plane;
-        extract_.setInputCloud(cluster_ptr);
+        /*pcl::PointCloud<Point> dominant_plane;
+        extract_.setInputCloud(pc_in);
         extract_.setIndices(inliers_plane);
         extract_.filter(dominant_plane);
         if(save_to_file_)
@@ -262,13 +272,12 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
           ss.clear();
           ss << file_path_ << "/planes/plane_" << ctr_ << "_" << ctr << ".pcd";
           pcl::io::savePCDFileASCII (ss.str(), dominant_plane);
-        }
+        }*/
 
         // Project the model inliers
         pcl::PointCloud<Point>::Ptr cloud_projected (new pcl::PointCloud<Point>);
 
         proj_.setModelCoefficients (boost::make_shared<pcl::ModelCoefficients>(coefficients_plane));
-        proj_.setInputCloud (cluster_ptr);
         proj_.setIndices(inliers_plane);
         proj_.filter (*cloud_projected);
         if(save_to_file_)
@@ -283,10 +292,10 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
         cluster_2_.setInputCloud (cloud_projected);
         cluster_2_.extract (plane_clusters);
 
+        extract_.setInputCloud(cloud_projected);
         for(unsigned int j=0; j<plane_clusters.size(); j++)
         {
           pcl::PointCloud<Point> plane_cluster;
-          extract_.setInputCloud(cloud_projected);
           extract_.setIndices(boost::make_shared<const pcl::PointIndices> (plane_clusters[j]));
           extract_.filter(plane_cluster);
           pcl::PointCloud<Point>::Ptr plane_cluster_ptr = plane_cluster.makeShared();
@@ -315,20 +324,22 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
 
       }
 
-      // Remove plane inliers from indices list
-      for(unsigned int idx_ctr1=0; idx_ctr1 < consider_in_cluster->indices.size(); idx_ctr1++)
+      // Remove plane inliers from indices vector
+      for(unsigned int idx_ctr1=0; idx_ctr1 < clusters[i].indices.size(); idx_ctr1++)
       {
         for(unsigned int idx_ctr2=0; idx_ctr2 < inliers_plane->indices.size(); idx_ctr2++)
         {
-          if(consider_in_cluster->indices[idx_ctr1] == inliers_plane->indices[idx_ctr2])
-            consider_in_cluster->indices.erase(consider_in_cluster->indices.begin()+idx_ctr1);
+          if(clusters[i].indices[idx_ctr1] == inliers_plane->indices[idx_ctr2])
+            clusters[i].indices.erase(clusters[i].indices.begin()+idx_ctr1);
         }
       }
       //ctr_++;
     }
-    if(consider_in_cluster->indices.size()>0)
+    //ROS_INFO("Plane estimation took %f s", t.precisionStop());
+    //t.precisionStart();
+    if(clusters[i].indices.size()>0)
     {
-      if(save_to_file_)
+      /*if(save_to_file_)
       {
         ss.str("");
         ss.clear();
@@ -343,7 +354,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
           extract_.filter (remaining_pts);
           pcl::io::savePCDFileASCII (ss.str(), remaining_pts);
         }
-      }
+      }*/
     }
     ctr_++;
   }

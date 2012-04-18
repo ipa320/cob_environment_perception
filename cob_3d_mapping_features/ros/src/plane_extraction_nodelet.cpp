@@ -143,6 +143,8 @@ public:
     plane_constraint_ = config.plane_constraint;
     mode_action_ = config.mode_action;
     target_frame_ = config.target_frame;
+    passthrough_min_z_ = config.passthrough_min_z;
+    passthrough_max_z_ = config.passthrough_max_z;
 
     pe.setFilePath(file_path_);
     pe.setSaveToFile(save_to_file_);
@@ -203,16 +205,13 @@ public:
 
     get_plane_ = n_.advertiseService("get_plane", &PlaneExtractionNodelet::srvCallback, this);
 
-    n_.param("plane_extraction/file_path" ,file_path_ ,std::string("/home/goa-hh/"));
+    /*n_.param("plane_extraction/file_path" ,file_path_ ,std::string("/home/goa-hh/"));
     n_.param("plane_extraction/save_to_file" ,save_to_file_ ,false);
     n_.param("plane_extraction/plane_constraint", plane_constraint_ ,0);
     n_.param("plane_extraction/mode_action", mode_action_ ,false);
     n_.param("plane_extraction/target_frame" ,target_frame_ ,std::string("/map"));
     n_.param("plane_extraction/passthrough_min_z" ,passthrough_min_z_,-0.1);
-    n_.param("plane_extraction/passthrough_max_z" ,passthrough_max_z_,2.0);
-    pe.setFilePath(file_path_);
-    pe.setSaveToFile(save_to_file_);
-    pe.setPlaneConstraint((PlaneConstraint)plane_constraint_);
+    n_.param("plane_extraction/passthrough_max_z" ,passthrough_max_z_,2.0);*/
   }
 
 
