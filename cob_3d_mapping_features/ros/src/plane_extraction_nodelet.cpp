@@ -173,7 +173,7 @@ public:
 
     config_server_.setCallback(boost::bind(&PlaneExtractionNodelet::dynReconfCallback, this, _1, _2));
     point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &PlaneExtractionNodelet::pointCloudSubCallback, this);
-    viz_marker_pub_ = n_.advertise<visualization_msgs::Marker>("plane_marker",10);
+    viz_marker_pub_ = n_.advertise<visualization_msgs::Marker>("visualization_marker",10);
     shape_array_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("shape_array",1);
 
     as_= new actionlib::SimpleActionServer<cob_3d_mapping_msgs::PlaneExtractionAction>(n_, "plane_extraction", boost::bind(&PlaneExtractionNodelet::actionCallback, this, _1), false);

@@ -24,7 +24,7 @@
   	<remap from="point_cloud2" to="registration/pc_aligned"/>
   	<!-- remap from="point_cloud2" to="/cam3d/rgb/points"/-->
   	<remap from="chull" to="plane_extraction/chull"/>
-  	<remap from="plane_marker" to="plane_extraction/plane_marker"/>
+  	<remap from="visualization_marker" to="plane_extraction/visualization_marker"/>
   	<remap from="object_cluster" to="plane_extraction/object_cluster"/>
   	<remap from="polygons" to="plane_extraction/polygons"/>
   	<remap from="polygon_array" to="plane_extraction/polygon_array"/>
