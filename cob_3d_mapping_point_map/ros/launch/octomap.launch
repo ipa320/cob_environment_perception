@@ -1,0 +1,21 @@
+<!-- Launch octomap_server for mapping: Listens to incoming PointCloud2 data 
+and incrementally builds an octomap. The data is sent out in different representations. -->
+<launch>
+	<node pkg="octomap_server" type="octomap_server_node" name="octomap_server">
+		<param name="resolution" value="0.05" />
+		
+		<!-- fixed map frame (set to 'map' if SLAM or localization running!) -->
+		<param name="frame_id" type="string" value="map" />
+		
+		<!-- maximum range to integrate (speedup!) -->
+		<param name="max_sensor_range" value="5.0" />
+		<!--param name="min" value="0.8" /-->
+		<param name="latch" value="true"/>
+		
+		<!-- data source to integrate (PointCloud2) -->
+		<!--remap from="cloud_in" to="/narrow_stereo/points_filtered2" /-->
+		<!--remap from="cloud_in" to="/camera/depth_registered/points" /-->
+		<remap from="cloud_in" to="/registration/pc_aligned" />
+	
+	</node>
+</launch>
