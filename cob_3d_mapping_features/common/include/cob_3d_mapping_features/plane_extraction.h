@@ -119,6 +119,65 @@ public:
     save_to_file_ = save_to_file;
   }
 
+  inline void
+  setClusteringParamClusterTolerance (double cluster_tolerance)
+  {
+    cluster_.setClusterTolerance (cluster_tolerance);
+  }
+
+  inline void
+  setClusteringParamMinClusterSize (unsigned int min_cluster_size)
+  {
+    cluster_.setMinClusterSize (min_cluster_size);
+  }
+
+  inline void
+  setClusteringParamMaxClusterSize (unsigned int max_cluster_size)
+  {
+    cluster_.setMaxClusterSize (max_cluster_size);
+  }
+
+  inline void
+  setNormalEstimationParamRadius (double radius)
+  {
+    normal_estimator_.setRadiusSearch (radius);
+  }
+
+  inline void
+  setSegmentationParamOptimizeCoefficients (bool optimize_coefficients)
+  {
+    seg_.setOptimizeCoefficients (optimize_coefficients);
+  }
+
+  inline void
+  setSegmentationParamModelType (int model_type)
+  {
+    seg_.setModelType (model_type);
+  }
+
+  inline void
+  setSegmentationParamMethodType (int method_type)
+  {
+    seg_.setModelType (method_type);
+  }
+
+  inline void
+  setSegmentationParamNormalDistanceWeight (double normal_distance_weight)
+  {
+    seg_.setNormalDistanceWeight (normal_distance_weight);
+  }
+
+  inline void
+  setSegmentationParamMaxIterations (int max_iterations)
+  {
+    seg_.setMaxIterations (max_iterations);
+  }
+
+  inline void
+  setSegmentationParamDistanceThreshold (double threshold)
+  {
+    seg_.setDistanceThreshold (threshold);
+  }
   void
   findClosestTable(std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > >& v_cloud_hull,
                    std::vector<pcl::ModelCoefficients>& v_coefficients_plane,
@@ -127,17 +186,60 @@ public:
 
 
 protected:
+  /**
+   * @brief extract Euclidean clusters from point cloud data
+   *
+   * @param pc_in input point cloud
+   * @param clusters indices of the found clusters
+   *
+   * @return nothing
+   */
+  void
+  extractClusters (const pcl::PointCloud<Point>::Ptr& pc_in, std::vector<pcl::PointIndices>& clusters);
+
+  /**
+   * @brief check whether given plane is valid or not
+   *
+   * @param coefficients_plane pointer to coefficients of the plane to be evaluated
+   *
+   * @return nothing
+   */
+  bool
+  isValidPlane(const pcl::ModelCoefficients& coefficients_plane);
+
+  /**
+   * @brief write point cloud data to a file
+   *
+   * @param dominant_plane_ptr pointer to point cloud specifying dominant plane
+   *
+   * @return nothing
+   */
+  void
+  dumpToPCDFileAllPlanes (pcl::PointCloud<Point>::Ptr dominant_plane_ptr);
+
   int ctr_;
-  unsigned int min_cluster_size_;
+
   std::string file_path_;
   bool save_to_file_;
   PlaneConstraint plane_constraint_;
+
+  pcl::PointCloud<Point> extracted_planes_;
+  //clustering parameters
+  double cluster_tolerance_;unsigned int min_cluster_size_;unsigned int max_cluster_size_;
+
+  //Normal Estimation parameters
+  double radius_;
+
+  //segmentation parameters
+  bool optimize_coefficients_;
+  double normal_distance_weight_;int max_iterations_;
+  double distance_threshold_;
 
   pcl::EuclideanClusterExtraction<Point> cluster_;
   pcl::EuclideanClusterExtraction<Point> cluster_2_;
   pcl::SACSegmentationFromNormals<Point, pcl::Normal> seg_;
   pcl::ExtractIndices<Point> extract_;
-  pcl::NormalEstimation<Point,pcl::Normal> normal_estimator_;
+  pcl::NormalEstimation<Point, pcl::Normal> normal_estimator_;
   pcl::ProjectInliers<Point> proj_;
   pcl::ConcaveHull<Point> chull_;
 
