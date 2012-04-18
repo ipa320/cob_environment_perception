@@ -68,7 +68,7 @@
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/project_inliers.h>
 #include <pcl/surface/concave_hull.h>
-#include <pcl/features/normal_3d_omp.h>
+//#include <pcl/features/normal_3d_omp.h>
 #include <pcl/segmentation/extract_clusters.h>
 #include <Eigen/StdVector>
 
@@ -101,47 +101,45 @@ public:
             std::vector< pcl::Vertices >& hull_polygons,
             int plane_ctr);
 
-  void
+  inline void
   setPlaneConstraint(PlaneConstraint constr)
   {
     plane_constraint_ = constr;
   }
 
-  void
+  inline void
   setFilePath(std::string file_path)
   {
     file_path_ = file_path;
   }
 
-  void
+  inline void
   setSaveToFile(bool save_to_file)
   {
     save_to_file_ = save_to_file;
   }
 
   inline void
-  setClusteringParamClusterTolerance (double cluster_tolerance)
+  setClusterTolerance (double cluster_tolerance)
   {
+    cluster_tolerance_ = cluster_tolerance;
     cluster_.setClusterTolerance (cluster_tolerance);
+    cluster_plane_.setClusterTolerance (cluster_tolerance);
   }
 
   inline void
-  setClusteringParamMinClusterSize (unsigned int min_cluster_size)
+  setMinPlaneSize (unsigned int min_plane_size)
   {
-    cluster_.setMinClusterSize (min_cluster_size);
+    min_plane_size_ = min_plane_size;
+    cluster_.setMinClusterSize (min_plane_size);
+    cluster_plane_.setMinClusterSize (min_plane_size);
   }
 
-  inline void
-  setClusteringParamMaxClusterSize (unsigned int max_cluster_size)
-  {
-    cluster_.setMaxClusterSize (max_cluster_size);
-  }
-
-  inline void
+  /*inline void
   setNormalEstimationParamRadius (double radius)
   {
     normal_estimator_.setRadiusSearch (radius);
-  }
+  }*/
 
   inline void
   setSegmentationParamOptimizeCoefficients (bool optimize_coefficients)
@@ -150,22 +148,16 @@ public:
   }
 
   inline void
-  setSegmentationParamModelType (int model_type)
-  {
-    seg_.setModelType (model_type);
-  }
-
-  inline void
   setSegmentationParamMethodType (int method_type)
   {
     seg_.setModelType (method_type);
   }
 
-  inline void
+  /*inline void
   setSegmentationParamNormalDistanceWeight (double normal_distance_weight)
   {
     seg_.setNormalDistanceWeight (normal_distance_weight);
-  }
+  }*/
 
   inline void
   setSegmentationParamMaxIterations (int max_iterations)
@@ -178,6 +170,14 @@ public:
   {
     seg_.setDistanceThreshold (threshold);
   }
+
+  inline void
+  setAlpha (double alpha)
+  {
+    alpha_ = alpha;
+    chull_.setAlpha (alpha);
+  }
+
   void
   findClosestTable(std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > >& v_cloud_hull,
                    std::vector<pcl::ModelCoefficients>& v_coefficients_plane,
@@ -186,17 +186,6 @@ public:
 
 
 protected:
-  /**
-   * @brief extract Euclidean clusters from point cloud data
-   *
-   * @param pc_in input point cloud
-   * @param clusters indices of the found clusters
-   *
-   * @return nothing
-   */
-  void
-  extractClusters (const pcl::PointCloud<Point>::Ptr& pc_in, std::vector<pcl::PointIndices>& clusters);
-
   /**
    * @brief check whether given plane is valid or not
    *
@@ -218,30 +207,35 @@ protected:
   dumpToPCDFileAllPlanes (pcl::PointCloud<Point>::Ptr dominant_plane_ptr);
 
   int ctr_;
-
   std::string file_path_;
   bool save_to_file_;
   PlaneConstraint plane_constraint_;
 
-  pcl::PointCloud<Point> extracted_planes_;
   //clustering parameters
-  double cluster_tolerance_;unsigned int min_cluster_size_;unsigned int max_cluster_size_;
+  double cluster_tolerance_;
+  unsigned int min_plane_size_;
 
   //Normal Estimation parameters
   double radius_;
 
   //segmentation parameters
-  bool optimize_coefficients_;
-  double normal_distance_weight_;int max_iterations_;
+  //double normal_distance_weight_;
+  int max_iterations_;
   double distance_threshold_;
 
+  //convex hull parameters
+  double alpha_;
+
   pcl::EuclideanClusterExtraction<Point> cluster_;
-  pcl::EuclideanClusterExtraction<Point> cluster_2_;
-  pcl::SACSegmentationFromNormals<Point, pcl::Normal> seg_;
+  pcl::EuclideanClusterExtraction<Point> cluster_plane_;
+  //pcl::SACSegmentationFromNormals<Point, pcl::Normal> seg_;
+  pcl::SACSegmentation<Point> seg_;
   pcl::ExtractIndices<Point> extract_;
-  pcl::NormalEstimation<Point, pcl::Normal> normal_estimator_;
+  //pcl::NormalEstimation<Point, pcl::Normal> normal_estimator_;
   pcl::ProjectInliers<Point> proj_;
   pcl::ConcaveHull<Point> chull_;
+
+  pcl::PointCloud<Point> extracted_planes_;
 
 };
 
