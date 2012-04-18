@@ -91,7 +91,7 @@ public:
   }
 
   void
-  extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
+  extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
                 std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > >& v_cloud_hull,
                 std::vector<std::vector<pcl::Vertices> >& v_hull_polygons,
                 std::vector<pcl::ModelCoefficients>& v_coefficients_plane);
