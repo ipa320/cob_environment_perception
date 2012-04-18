@@ -126,6 +126,17 @@ public:
     ctr_ = 0;
     min_cluster_size_ = 300;
 
+    passthrough_min_z_ = -0.1;
+    passthrough_max_z_ = 2.0;
+    vox_leaf_size_ = 0.03;
+    cluster_tolerance_ = 0.05;
+    max_cluster_size_ = 60000;
+    radius_ = 0.02;
+    optimize_coefficients_ = true;
+    normal_distance_weight_ = 0.04;
+    max_iterations_ = 99;
+    distance_threshold_ = 0.02;
+
     //setReconfigureCallback(boost::bind(&callback, this, _1, _2));
   }
 
@@ -147,6 +158,14 @@ public:
     pe.setFilePath(file_path_);
     pe.setSaveToFile(save_to_file_);
     pe.setPlaneConstraint((PlaneConstraint)plane_constraint_);
+    pe.setClusteringParamClusterTolerance (cluster_tolerance_);
+    pe.setClusteringParamMinClusterSize (min_cluster_size_);
+    pe.setClusteringParamMaxClusterSize (max_cluster_size_);
+    pe.setNormalEstimationParamRadius (radius_);
+    pe.setSegmentationParamOptimizeCoefficients (optimize_coefficients_);
+    pe.setSegmentationParamNormalDistanceWeight (normal_distance_weight_);
+    pe.setSegmentationParamMaxIterations (max_iterations_);
+    pe.setSegmentationParamDistanceThreshold (distance_threshold_);
   }
 
   /**
@@ -210,9 +229,28 @@ public:
     n_.param("plane_extraction/target_frame" ,target_frame_ ,std::string("/map"));
     n_.param("plane_extraction/passthrough_min_z" ,passthrough_min_z_,-0.1);
     n_.param("plane_extraction/passthrough_max_z" ,passthrough_max_z_,2.0);
+    n_.param ("plane_extraction/vox_leaf_size", vox_leaf_size_, 0.03);
+    n_.param ("plane_extraction/cluster_tolerance", cluster_tolerance_, 0.05);
+    n_.param ("plane_extraction/min_cluster_size", min_cluster_size_, 999);
+    n_.param ("plane_extraction/max_cluster_size", max_cluster_size_, 60000);
+    n_.param ("plane_extraction/radius", radius_, 0.02);
+    n_.param ("plane_extraction/optimize_coefficients", optimize_coefficients_, true);
+    n_.param ("plane_extraction/normal_distance_weight", normal_distance_weight_, 0.04);
+    n_.param ("plane_extraction/max_iterations", max_iterations_, 99);
+    n_.param ("plane_extraction/distance_threshold", distance_threshold_, 0.02);
+
     pe.setFilePath(file_path_);
     pe.setSaveToFile(save_to_file_);
     pe.setPlaneConstraint((PlaneConstraint)plane_constraint_);
+
+    pe.setClusteringParamClusterTolerance (cluster_tolerance_);
+    pe.setClusteringParamMinClusterSize (min_cluster_size_);
+    pe.setClusteringParamMaxClusterSize (max_cluster_size_);
+    pe.setNormalEstimationParamRadius (radius_);
+    pe.setSegmentationParamOptimizeCoefficients (optimize_coefficients_);
+    pe.setSegmentationParamNormalDistanceWeight (normal_distance_weight_);
+    pe.setSegmentationParamMaxIterations (max_iterations_);
+    pe.setSegmentationParamDistanceThreshold (distance_threshold_);
   }
 
 
@@ -240,7 +278,7 @@ public:
     // Downsample input
     pcl::VoxelGrid<Point> voxel;
     voxel.setInputCloud(pc_in);
-    voxel.setLeafSize(0.04,0.04,0.04);
+    voxel.setLeafSize (vox_leaf_size_, vox_leaf_size_, vox_leaf_size_);
     voxel.setFilterFieldName("z");
     voxel.setFilterLimits(passthrough_min_z_, passthrough_max_z_);
     pcl::PointCloud<Point>::Ptr pc_vox = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>);
@@ -301,6 +339,8 @@ public:
         ctr_++;
         //ROS_INFO("%d planes published so far", ctr_);
       }
+
+      publishShapeArray(v_cloud_hull, v_hull_polygons, v_coefficients_plane, pc_in->header);
     }
 
   }
@@ -531,16 +571,28 @@ protected:
 
   TransformListener tf_listener_;
   int ctr_;                             /// counter for published planes, also used as id
-  unsigned int min_cluster_size_;       /// parameter for cluster size
+  //unsigned int min_cluster_size_;       /// parameter for cluster size
   std::string file_path_;
   bool save_to_file_;
   bool mode_action_;
   int plane_constraint_;                /// constraint parameter for PlaneExtraction (pe)
   std::string target_frame_;
+
+  double vox_leaf_size_;				///  voxel filter leaf size
   double passthrough_min_z_;
   double passthrough_max_z_;
 
   //boost::mutex m_mutex_pointCloudSubCallback, m_mutex_actionCallback;
+  //clustering parameters
+  double cluster_tolerance_;int min_cluster_size_;int max_cluster_size_;
+
+  //Normal Estimation parameters
+  double radius_;
+
+  //segmentation parameters
+  bool optimize_coefficients_;
+  double normal_distance_weight_;int max_iterations_;
+  double distance_threshold_;
 
 };
 

@@ -85,6 +85,8 @@ PlaneExtraction::PlaneExtraction()
   plane_constraint_ = NONE;
 
   pcl::KdTree<Point>::Ptr clusters_tree;
+  cluster_.setSearchMethod (clusters_tree);
+
   clusters_tree = boost::make_shared<pcl::KdTreeFLANN<Point> > ();
   // Table clustering parameters
   // TODO: parameter
@@ -102,21 +104,81 @@ PlaneExtraction::PlaneExtraction()
 
   pcl::KdTreeFLANN<Point>::Ptr tree (new pcl::KdTreeFLANN<Point> ());
   normal_estimator_.setSearchMethod(tree);
-  //TODO: parameter
-  normal_estimator_.setRadiusSearch(0.1);
 
-  seg_.setOptimizeCoefficients (true);
   seg_.setModelType (pcl::SACMODEL_NORMAL_PLANE);
-  seg_.setNormalDistanceWeight (0.05);
   seg_.setMethodType (pcl::SAC_RANSAC);
-  seg_.setMaxIterations (100);
-  seg_.setDistanceThreshold (0.03);
 
   proj_.setModelType (pcl::SACMODEL_PLANE);
 
   chull_.setAlpha (0.2);
 }
 
+void
+PlaneExtraction::extractClusters (const pcl::PointCloud<Point>::Ptr& pc_in, std::vector<pcl::PointIndices>& clusters)
+{
+  cluster_.setInputCloud (pc_in);
+  cluster_.extract (clusters);
+}
+
+bool
+PlaneExtraction::isValidPlane (const pcl::ModelCoefficients& coefficients_plane)
+{
+  //std::cout << "Coefficients plane = " << *coefficients_plane << std::endl;
+  bool validPlane = true;
+  switch (plane_constraint_)
+  {
+    case HORIZONTAL:
+    {
+      if (fabs (coefficients_plane.values[0]) > 0.12 || fabs (coefficients_plane.values[1]) > 0.12
+          || fabs (coefficients_plane.values[2]) < 0.9)
+      {
+        //std::cout << "Plane is not horizontal: " << coefficients_plane << std::endl;
+        validPlane = false;
+      }
+      //else
+      //std::cout << "Plane is horizontal: " << coefficients_plane << std::endl;
+      break;
+    }
+    case VERTICAL:
+    {
+      if (fabs (coefficients_plane.values[2]) > 0.1)
+        validPlane = false;
+      break;
+    }
+    case NONE:
+    {
+      validPlane = true;
+      break;
+    }
+    default:
+      break;
+  }
+  return validPlane;
+  /*
+   else
+   {
+   if (fabs (coefficients_plane.values[0]) < 0.1 && fabs (coefficients_plane.values[1]) < 0.1
+   && fabs (coefficients_plane.values[2]) > 0.9)
+   {
+   //ROS_INFO("Detected plane perpendicular to z axis");
+   //std::cout << "Plane coefficients: " << *coefficients_plane << std::endl;
+   g = 1;
+   }
+   else if (fabs (coefficients_plane.values[2]) < 0.15) //18 degrees
+   {
+   //ROS_INFO("Detected plane parallel to z axis");
+   //std::cout << "Plane coefficients: " << *coefficients_plane << std::endl;
+   b = 1;
+   }*/
+  /*else
+   {
+   ROS_INFO("Detected plane not parallel to z axis or perpendicular to z axis");
+   //std::cout << "Plane coefficients: " << *coefficients_plane << std::endl;
+   break;
+   }*/
+  // }
+
+}
 //input should be point cloud that is amplitude filetered, statistical outlier filtered, voxel filtered and the floor cut, coordinate system should be /map
 void
 PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
@@ -143,8 +205,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
   // Extract Eucledian clusters
 
   std::vector<pcl::PointIndices> clusters;
-  cluster_.setInputCloud (pc_in);
-  cluster_.extract (clusters);
+  extractClusters (pc_in, clusters);
   ROS_DEBUG ("Number of clusters found: %d", (int)clusters.size ());
 
   // Go through all clusters and search for planes
@@ -211,44 +272,11 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
         //ROS_INFO("Plane detection has %d inliers, below min threshold of %d, skipping cluster", (int)inliers_plane->indices.size(), 150);
         break;
       }
-      if(plane_constraint_ == HORIZONTAL)
-      {
-        if(fabs(coefficients_plane.values[0]) > 0.12 || fabs(coefficients_plane.values[1]) > 0.12 || fabs(coefficients_plane.values[2]) < 0.9)
-        {
-          //std::cout << "Plane is not horizontal: " << coefficients_plane << std::endl;
-          invalidPlane = true;
-        }
-        //else
-          //std::cout << "Plane is horizontal: " << coefficients_plane << std::endl;
-      }
-      else if(plane_constraint_ == VERTICAL)
-      {
-        if(fabs(coefficients_plane.values[2]) > 0.1)
-          invalidPlane = true;
-      }
-      else
-      {
-        if(fabs(coefficients_plane.values[0]) < 0.1 && fabs(coefficients_plane.values[1]) < 0.1 && fabs(coefficients_plane.values[2]) > 0.9)
-        {
-          //ROS_INFO("Detected plane perpendicular to z axis");
-          //std::cout << "Plane coefficients: " << *coefficients_plane << std::endl;
-          g=1;
-        }
-        else if(fabs(coefficients_plane.values[2]) < 0.15) //18 degrees
-        {
-          //ROS_INFO("Detected plane parallel to z axis");
-          //std::cout << "Plane coefficients: " << *coefficients_plane << std::endl;
-          b=1;
-        }
-        /*else
-          {
-            ROS_INFO("Detected plane not parallel to z axis or perpendicular to z axis");
-            //std::cout << "Plane coefficients: " << *coefficients_plane << std::endl;
-            break;
-          }*/
-      }
+      bool validPlane = false;
+      validPlane = isValidPlane (coefficients_plane);
+      std::cout << " Plane valid = " << validPlane << std::endl;
 
-      if(!invalidPlane)
+      if(validPlane)
       {
         // Extract plane points, only needed for storing bag file
         ROS_DEBUG("Plane has %d inliers", (int)inliers_plane->indices.size());
@@ -262,6 +290,8 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
           ss.clear();
           ss << file_path_ << "/planes/plane_" << ctr_ << "_" << ctr << ".pcd";
           pcl::io::savePCDFileASCII (ss.str(), dominant_plane);
+          //pcl::PointCloud<Point>::Ptr dominant_plane_ptr = dominant_plane.makeShared ();
+          //dumpToPCDFileAllPlanes (dominant_plane_ptr);
         }
 
         // Project the model inliers
@@ -357,6 +387,21 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
 }
 
 void
+PlaneExtraction::dumpToPCDFileAllPlanes (pcl::PointCloud<Point>::Ptr dominant_plane_ptr)
+{
+
+  extracted_planes_.header.frame_id = dominant_plane_ptr->header.frame_id;
+  extracted_planes_ += *dominant_plane_ptr;
+  std::stringstream ss;
+  ss << file_path_ << "/planes/all_planes.pcd";
+  pcl::io::savePCDFileASCII (ss.str (), extracted_planes_);
+  /*
+   //pcl::visualization::CloudViewer viewer(" All Extracted planes");
+   pcl::PointCloud<Point>::Ptr all_planes (new pcl::PointCloud<Point>);
+   pcl::io::loadPCDFile (ss.str (), *all_planes);
+   */
+}
+void
 PlaneExtraction::saveHulls(pcl::PointCloud<Point>& cloud_hull,
           std::vector< pcl::Vertices >& hull_polygons,
           int plane_ctr)
@@ -374,6 +419,7 @@ PlaneExtraction::saveHulls(pcl::PointCloud<Point>& cloud_hull,
     pcl::io::savePCDFileASCII (ss.str(), hull_part);
   }
 }
+
 
 void
 PlaneExtraction::findClosestTable(std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > >& v_cloud_hull,
