@@ -66,10 +66,9 @@
 #include <pcl/ModelCoefficients.h>
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
-#include <pcl/filters/voxel_grid.h>
 
 // external includes
-#include <boost/timer.hpp>
+//#include <boost/timer.hpp>
 #include "cob_3d_mapping_common/stop_watch.h"
 
 // internal includes
@@ -77,51 +76,50 @@
 
 
 PlaneExtraction::PlaneExtraction()
+: ctr_(0),
+  file_path_("/tmp"),
+  save_to_file_(false),
+  plane_constraint_(NONE),
+  cluster_tolerance_(0.05),
+  min_plane_size_(50),
+  radius_(0.1),
+  //normal_distance_weight_(0.05),
+  max_iterations_(100),
+  distance_threshold_(0.04)
 {
-  ctr_ = 0;
-  min_cluster_size_ = 50;
-  file_path_ = "/home/goa/tmp/";
-  save_to_file_ = false;
-  plane_constraint_ = NONE;
-
-  //pcl::KdTree<Point>::Ptr clusters_tree;
-  //clusters_tree = boost::make_shared<pcl::KdTreeFLANN<Point> > ();
   pcl::KdTreeFLANN<Point>::Ptr tree (new pcl::KdTreeFLANN<Point> ());
-  // Table clustering parameters
-  // TODO: parameter
-  cluster_.setClusterTolerance (0.06);
-  cluster_.setMinClusterSize (min_cluster_size_);
+
+  // Init clustering of full cloud
+  cluster_.setClusterTolerance (cluster_tolerance_);
+  cluster_.setMinClusterSize (min_plane_size_);
   cluster_.setSearchMethod (tree);
 
-  pcl::KdTree<Point>::Ptr clusters_2_tree;
-  clusters_2_tree = boost::make_shared<pcl::KdTreeFLANN<Point> > ();
-  // Table clustering parameters
-  // TODO: parameter
-  cluster_2_.setClusterTolerance (0.06);
-  cluster_2_.setMinClusterSize (50);
-  cluster_2_.setSearchMethod (clusters_2_tree);
+  // Init clustering of planes
+  //TODO: parameter
+  pcl::KdTree<Point>::Ptr clusters_plane_tree(new pcl::KdTreeFLANN<Point> ());
+  cluster_plane_.setClusterTolerance (cluster_tolerance_);
+  cluster_plane_.setMinClusterSize (min_plane_size_);
+  cluster_plane_.setSearchMethod (clusters_plane_tree);
 
-  normal_estimator_.setSearchMethod(tree);
+  //normal_estimator_.setSearchMethod(tree);
 
-  seg_.setModelType (pcl::SACMODEL_NORMAL_PLANE);
+  seg_.setOptimizeCoefficients (true);
+  //seg_.setNormalDistanceWeight (normal_distance_weight_);
+  //seg_.setModelType (pcl::SACMODEL_NORMAL_PLANE);
+  seg_.setModelType (pcl::SACMODEL_PLANE);
   seg_.setMethodType (pcl::SAC_RANSAC);
+  seg_.setMaxIterations (max_iterations_);
+  seg_.setDistanceThreshold (distance_threshold_);
 
   proj_.setModelType (pcl::SACMODEL_PLANE);
 
-  chull_.setAlpha (0.2);
-}
-
-void
-PlaneExtraction::extractClusters (const pcl::PointCloud<Point>::Ptr& pc_in, std::vector<pcl::PointIndices>& clusters)
-{
-  cluster_.setInputCloud (pc_in);
-  cluster_.extract (clusters);
+  chull_.setAlpha (alpha_);
 }
 
 bool
 PlaneExtraction::isValidPlane (const pcl::ModelCoefficients& coefficients_plane)
 {
-  //std::cout << "Coefficients plane = " << *coefficients_plane << std::endl;
+  //TODO: parameters
   bool validPlane = true;
   switch (plane_constraint_)
   {
@@ -152,32 +150,9 @@ PlaneExtraction::isValidPlane (const pcl::ModelCoefficients& coefficients_plane)
       break;
   }
   return validPlane;
-  /*
-   else
-   {
-   if (fabs (coefficients_plane.values[0]) < 0.1 && fabs (coefficients_plane.values[1]) < 0.1
-   && fabs (coefficients_plane.values[2]) > 0.9)
-   {
-   //ROS_INFO("Detected plane perpendicular to z axis");
-   //std::cout << "Plane coefficients: " << *coefficients_plane << std::endl;
-   g = 1;
-   }
-   else if (fabs (coefficients_plane.values[2]) < 0.15) //18 degrees
-   {
-   //ROS_INFO("Detected plane parallel to z axis");
-   //std::cout << "Plane coefficients: " << *coefficients_plane << std::endl;
-   b = 1;
-   }*/
-  /*else
-   {
-   ROS_INFO("Detected plane not parallel to z axis or perpendicular to z axis");
-   //std::cout << "Plane coefficients: " << *coefficients_plane << std::endl;
-   break;
-   }*/
-  // }
-
 }
-//input should be point cloud that is amplitude filetered, statistical outlier filtered, voxel filtered and the floor cut, coordinate system should be /map
+
+//input should be point cloud that is amplitude filetered, statistical outlier filtered, voxel filtered, coordinate system should be /map
 void
 PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
                                std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > >& v_cloud_hull,
@@ -186,11 +161,10 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
 {
   static int ctr=0;
   static double time=0;
-  //boost::timer t;
   PrecisionStopWatch t;
   t.precisionStart();
   std::stringstream ss;
-  ROS_INFO("Extract planes");
+  ROS_DEBUG("Extract planes");
   ROS_DEBUG("Saving files: %d", save_to_file_);
   if(save_to_file_)
   {
@@ -203,21 +177,23 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
   // Extract Eucledian clusters
 
   std::vector<pcl::PointIndices> clusters;
-  extractClusters (pc_in, clusters);
+  cluster_.setInputCloud (pc_in);
+  cluster_.extract (clusters);
+  //extractClusters (pc_in, clusters);
   ROS_DEBUG ("Number of clusters found: %d", (int)clusters.size ());
   //ROS_INFO("Clustering took %f s", t.precisionStop());
   //t.precisionStart();
 
   // Estimate point normals
-  normal_estimator_.setInputCloud(pc_in);
+  //normal_estimator_.setInputCloud(pc_in);
   //normalEstimator.setNumberOfThreads(4);
-  pcl::PointCloud<pcl::Normal>::Ptr cloud_normals(new pcl::PointCloud<pcl::Normal> ());
-  normal_estimator_.compute(*cloud_normals);
+  //pcl::PointCloud<pcl::Normal>::Ptr cloud_normals(new pcl::PointCloud<pcl::Normal> ());
+  //normal_estimator_.compute(*cloud_normals);
   //ROS_INFO("Normal estimation took %f s", t.precisionStop());
   //t.precisionStart();
 
   seg_.setInputCloud (pc_in);
-  seg_.setInputNormals (cloud_normals);
+  //seg_.setInputNormals (cloud_normals);
 
   proj_.setInputCloud (pc_in);
 
@@ -251,15 +227,9 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
     //  consider_in_cluster->indices.push_back(clusters[i].indices[idx_ctr]);
     int ctr = 0;
     // iterate over cluster to find all planes until cluster is too small
-    while(clusters[i].indices.size() > min_cluster_size_ /*&& ctr<6*/)
+    while(clusters[i].indices.size() > min_plane_size_)
     {
       //ROS_INFO("Cluster size: %d", (int)consider_in_cluster->indices.size());
-
-      // Do SAC plane segmentation
-
-      // Create the segmentation object for the planar model and set all the parameters
-      //seg.setAxis(Eigen::Vector3f(0,0,1));
-      //TODO: parameter
 
       seg_.setIndices(boost::make_shared<const pcl::PointIndices> (clusters[i]));
       // Obtain the plane inliers and coefficients
@@ -267,14 +237,13 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
       seg_.segment (*inliers_plane, coefficients_plane);
 
       // Evaluate plane
-      float g=1, b=0;
-      bool invalidPlane = false;
       if (coefficients_plane.values.size () <=3)
       {
         //ROS_INFO("Failed to detect plane in scan, skipping cluster");
         break;
       }
-      if ( inliers_plane->indices.size() < (unsigned int)50)
+      //TODO: parameter
+      if ( inliers_plane->indices.size() < min_plane_size_)
       {
         //std::cout << "Plane coefficients: " << *coefficients_plane << std::endl;
         //ROS_INFO("Plane detection has %d inliers, below min threshold of %d, skipping cluster", (int)inliers_plane->indices.size(), 150);
@@ -282,7 +251,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
       }
       bool validPlane = false;
       validPlane = isValidPlane (coefficients_plane);
-      std::cout << " Plane valid = " << validPlane << std::endl;
+      //std::cout << " Plane valid = " << validPlane << std::endl;
 
       if(validPlane)
       {
@@ -315,8 +284,8 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
         }
 
         std::vector<pcl::PointIndices> plane_clusters;
-        cluster_2_.setInputCloud (cloud_projected);
-        cluster_2_.extract (plane_clusters);
+        cluster_plane_.setInputCloud (cloud_projected);
+        cluster_plane_.extract (plane_clusters);
 
         extract_.setInputCloud(cloud_projected);
         for(unsigned int j=0; j<plane_clusters.size(); j++)
@@ -326,6 +295,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
           extract_.filter(plane_cluster);
           pcl::PointCloud<Point>::Ptr plane_cluster_ptr = plane_cluster.makeShared();
 
+          //TODO: remove, should never happen because of minimum cluster size
           if(plane_cluster_ptr->size()<5) continue;
           //else std::cout << "plane cluster has " << plane_cluster_ptr->size() << " points" << std::endl;
 
@@ -339,7 +309,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
           v_cloud_hull.push_back(cloud_hull);
           v_hull_polygons.push_back(hull_polygons);
           v_coefficients_plane.push_back(coefficients_plane);
-          ROS_DEBUG("v_cloud_hull size: %d", v_cloud_hull.size());
+          ROS_DEBUG("v_cloud_hull size: %d", (unsigned int)v_cloud_hull.size());
 
           if(save_to_file_)
           {
@@ -363,9 +333,9 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
     }
     //ROS_INFO("Plane estimation took %f s", t.precisionStop());
     //t.precisionStart();
-    if(clusters[i].indices.size()>0)
+    /*if(clusters[i].indices.size() >0 )
     {
-      /*if(save_to_file_)
+      if(save_to_file_)
       {
         ss.str("");
         ss.clear();
@@ -380,8 +350,8 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
           extract_.filter (remaining_pts);
           pcl::io::savePCDFileASCII (ss.str(), remaining_pts);
         }
-      }*/
-    }
+      }
+    }*/
     ctr_++;
   }
   double step_time = t.precisionStop();
@@ -410,8 +380,8 @@ PlaneExtraction::dumpToPCDFileAllPlanes (pcl::PointCloud<Point>::Ptr dominant_pl
 }
 void
 PlaneExtraction::saveHulls(pcl::PointCloud<Point>& cloud_hull,
-          std::vector< pcl::Vertices >& hull_polygons,
-          int plane_ctr)
+                           std::vector< pcl::Vertices >& hull_polygons,
+                           int plane_ctr)
 {
   for(unsigned int i=0; i<hull_polygons.size(); i++)
   {
@@ -428,6 +398,7 @@ PlaneExtraction::saveHulls(pcl::PointCloud<Point>& cloud_hull,
 }
 
 
+//TODO: move to semantics
 void
 PlaneExtraction::findClosestTable(std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > >& v_cloud_hull,
                                   std::vector<pcl::ModelCoefficients>& v_coefficients_plane,
@@ -438,7 +409,7 @@ PlaneExtraction::findClosestTable(std::vector<pcl::PointCloud<Point>, Eigen::ali
   for(unsigned int i=0; i<v_cloud_hull.size(); i++)
   {
     //if(fabs(v_coefficients_plane[i].values[3])>0.5 && fabs(v_coefficients_plane[i].values[3])<1.2)
-      table_candidates.push_back(i);
+    table_candidates.push_back(i);
   }
   if(table_candidates.size()>0)
   {
@@ -446,16 +417,16 @@ PlaneExtraction::findClosestTable(std::vector<pcl::PointCloud<Point>, Eigen::ali
     {
       double d_min = 1000;
       double d = d_min;
-	Eigen::Vector4f centroid;
-	pcl::compute3DCentroid(v_cloud_hull[i], centroid);
+      Eigen::Vector4f centroid;
+      pcl::compute3DCentroid(v_cloud_hull[i], centroid);
       //for(unsigned int j=0; j<v_cloud_hull[i].size(); j++)
       //{
       //  Eigen::Vector3f p = v_cloud_hull[i].points[j].getVector3fMap();
       //  d += fabs((p-robot_pose).norm());
       //}
       //d /= v_cloud_hull[i].size();
-	Eigen::Vector3f centroid3 = centroid.head(3);
-	d = fabs((centroid3-robot_pose).norm());
+      Eigen::Vector3f centroid3 = centroid.head(3);
+      d = fabs((centroid3-robot_pose).norm());
       ROS_INFO("d: %f", d);
       if(d<d_min)
       {
@@ -466,6 +437,7 @@ PlaneExtraction::findClosestTable(std::vector<pcl::PointCloud<Point>, Eigen::ali
   }
 }
 
+#include <pcl/filters/voxel_grid.h>
 
 int main()
 {
