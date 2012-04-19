@@ -72,7 +72,9 @@ namespace cob_3d_mapping
   public:
 
     Shape()
-    :color(4,1)
+    : id(0),
+      merged(0),
+      color(4,1)
     {
     }
 
