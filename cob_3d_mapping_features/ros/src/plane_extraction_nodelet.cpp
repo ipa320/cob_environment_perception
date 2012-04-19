@@ -107,10 +107,13 @@
 
 #include "cob_3d_mapping_features/plane_extraction.h"
 #include "cob_3d_mapping_msgs/PlaneExtractionAction.h"
+#include <cob_3d_mapping_common/polygon.h>
+#include <cob_3d_mapping_common/ros_msg_conversions.h>
 
 
 using namespace tf;
 using namespace cob_3d_mapping_features;
+using namespace cob_3d_mapping;
 
 //####################
 //#### nodelet class ####
@@ -123,7 +126,7 @@ public:
   : as_(0),
     ctr_(0),
     mode_action_(false),
-    target_frame_("map"),
+    target_frame_("/map"),
     vox_leaf_size_(0.04),
     passthrough_min_z_(-0.1),
     passthrough_max_z_(2.0)
@@ -252,6 +255,7 @@ public:
       std::vector<std::vector<pcl::Vertices> > v_hull_polygons;
       std::vector<pcl::ModelCoefficients> v_coefficients_plane;
       extractPlane(pc_trans.makeShared(), v_cloud_hull, v_hull_polygons, v_coefficients_plane);
+
       publishShapeArray(v_cloud_hull, v_hull_polygons, v_coefficients_plane, pc_in->header);
       for(unsigned int i = 0; i < v_cloud_hull.size(); i++)
       {
@@ -260,7 +264,7 @@ public:
         //ROS_INFO("%d planes published so far", ctr_);
       }
 
-      publishShapeArray(v_cloud_hull, v_hull_polygons, v_coefficients_plane, pc_in->header);
+      //publishShapeArray(v_cloud_hull, v_hull_polygons, v_coefficients_plane, pc_in->header);
     }
 
   }
@@ -371,39 +375,73 @@ public:
     cob_3d_mapping_msgs::ShapeArray sa;
     //p.polygons.resize(hull_polygons.size());
     sa.header = header;
-    /*p.normal.x = coefficients_plane.values[0];
-    p.normal.y = coefficients_plane.values[1];
-    p.normal.z = coefficients_plane.values[2];
-    p.d.data = coefficients_plane.values[3];*/
+    sa.header.frame_id = target_frame_;
+    unsigned int ctr = 0;
     for(unsigned int i=0; i<v_cloud_hull.size(); i++)
     {
+      Polygon p;
+      p.id = ctr;
+      p.color[0] = p.color[3] = 1;
+      p.color[1] = p.color[2] = 0;
+      for(unsigned int c=0; c<3; c++)
+        p.normal[c] = v_coefficients_plane[i].values[c];
+      p.d =  v_coefficients_plane[i].values[3];
+      std::vector<Eigen::Vector3f> pts;
+      for(unsigned int j=0; j<v_cloud_hull[i].size(); j++)
+      {
+        pts.push_back(v_cloud_hull[i].points[j].getVector3fMap());
+      }
+      p.contours.push_back(pts);
+      p.holes.push_back(false);
+      p.computeCentroid();
+
+      cob_3d_mapping_msgs::Shape s;
+      s.header = header;
+      s.header.frame_id = target_frame_;
+      s.type = cob_3d_mapping_msgs::Shape::PLANE;
+      toROSMsg(p, s);
+      sa.shapes.push_back(s);
+      ctr++;
+    }
+
       //std::cout << "normal: " << v_coefficients_plane[i].values[0] << ","  << v_coefficients_plane[i].values[1] << "," << v_coefficients_plane[i].values[2] << std::endl;
       //std::cout << "d: " << v_coefficients_plane[i].values[3] << std::endl << std::endl;
       //s.points.resize(v_hull_polygons[i].size());
-      for(unsigned int j=0; j<v_hull_polygons[i].size(); j++)
+      //ROS_INFO("poly size: %d",v_hull_polygons[i].size());
+      //ROS_INFO("%d,%d,%d",i,v_hull_polygons[i][0].vertices.size(),v_cloud_hull[i].size());
+     /* for(unsigned int j=0; j<v_hull_polygons[i].size(); j++)
       {
+        //ROS_INFO("j: %d", j);
         cob_3d_mapping_msgs::Shape s;
+        s.header = header;
+        s.header.frame_id = target_frame_;
         s.type = cob_3d_mapping_msgs::Shape::PLANE;
         s.params.resize(4);
         for(unsigned int c=0; c<4; c++)
           s.params[c] = v_coefficients_plane[i].values[c];
+        s.color.r = 1;
+        s.color.a = 1;
         if (v_hull_polygons[i][j].vertices.size()==0) continue;
         pcl::PointCloud<pcl::PointXYZ> pc;
         for(unsigned int k=0; k<v_hull_polygons[i][j].vertices.size(); k++)
         {
+          //ROS_INFO("k: %d", k);
           int idx = v_hull_polygons[i][j].vertices[k];
           pcl::PointXYZ p;
           p.x = v_cloud_hull[i].points[idx].x;
           p.y = v_cloud_hull[i].points[idx].y;
           p.z = v_cloud_hull[i].points[idx].z;
+          if(p.x<0.001 && p.x>-0.001) std::cout << p.y << "," << p.z << std::endl;
           pc.points.push_back(p);
         }
         sensor_msgs::PointCloud2 pc_msg;
         pcl::toROSMsg(pc, pc_msg);
         s.points.push_back(pc_msg);
+        s.holes.push_back(false);
         sa.shapes.push_back(s);
       }
-    }
+    }*/
+    //std::cout << sa.shapes[0].params[0] << "," << sa.shapes[1].params[0] << std::endl;
     shape_array_pub_.publish(sa);
   }
 
@@ -430,6 +468,7 @@ public:
     marker.type = visualization_msgs::Marker::POINTS;
     marker.lifetime = ros::Duration();
     marker.header = header;
+    marker.header.frame_id = target_frame_;
     marker.id = ctr_;
 
 

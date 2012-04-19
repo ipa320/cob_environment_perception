@@ -295,8 +295,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
           extract_.filter(plane_cluster);
           pcl::PointCloud<Point>::Ptr plane_cluster_ptr = plane_cluster.makeShared();
 
-          //TODO: remove, should never happen because of minimum cluster size
-          if(plane_cluster_ptr->size()<5) continue;
+          if(plane_cluster_ptr->size() < min_plane_size_) continue;
           //else std::cout << "plane cluster has " << plane_cluster_ptr->size() << " points" << std::endl;
 
           // Create a Convex Hull representation of the projected inliers
@@ -306,9 +305,43 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
           //TODO: parameter
 
           chull_.reconstruct (cloud_hull, hull_polygons);
-          v_cloud_hull.push_back(cloud_hull);
-          v_hull_polygons.push_back(hull_polygons);
-          v_coefficients_plane.push_back(coefficients_plane);
+          if(hull_polygons.size() > 1)
+          {
+            ROS_WARN("Extracted Polygon has more than one contour, separating ...");
+            pcl::PointCloud<Point>::Ptr cloud_hull_ptr = cloud_hull.makeShared();
+            pcl::ExtractIndices<Point> extract_2;
+            extract_2.setInputCloud(cloud_hull_ptr);
+            for( unsigned int z=0; z<hull_polygons.size(); z++)
+            {
+              //ROS_WARN("\tC%d size: %d", z,hull_polygons[z].vertices.size());
+              pcl::PointCloud<Point> cloud_hull_2;
+              std::vector< pcl::Vertices > hull_polygons_2;
+              pcl::PointIndices hull_poly_indices;
+              for (unsigned int x=0; x<hull_polygons[z].vertices.size(); x++)
+                hull_poly_indices.indices.push_back(hull_polygons[z].vertices[x]);
+              //ROS_INFO("Size indices: %d", hull_poly_indices.indices.size());
+              extract_2.setIndices(boost::make_shared<const pcl::PointIndices> (hull_poly_indices));
+              extract_2.filter(cloud_hull_2);
+              //ROS_INFO("Hull 2 size: %d", cloud_hull_2.size());
+              pcl::Vertices verts;
+              for(unsigned int y=0; y<cloud_hull_2.size(); y++)
+                verts.vertices.push_back(y);
+              verts.vertices.push_back(0);
+              //ROS_INFO("Verts size: %d", verts.vertices.size());
+              hull_polygons_2.push_back(verts);
+              v_cloud_hull.push_back(cloud_hull_2);
+              v_hull_polygons.push_back(hull_polygons_2);
+              v_coefficients_plane.push_back(coefficients_plane);
+            }
+          }
+          else
+          {
+            //ROS_INFO("Hull size: %d", cloud_hull.size());
+            //ROS_INFO("Verts size: %d", hull_polygons[0].vertices.size());
+            v_cloud_hull.push_back(cloud_hull);
+            v_hull_polygons.push_back(hull_polygons);
+            v_coefficients_plane.push_back(coefficients_plane);
+          }
           ROS_DEBUG("v_cloud_hull size: %d", (unsigned int)v_cloud_hull.size());
 
           if(save_to_file_)
@@ -359,7 +392,6 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
   time += step_time;
   ROS_INFO("[plane extraction] Accumulated time at step %d: %f s", ctr, time);
   ctr++;
-  //ROS_INFO("v_cloud_hull size: %d", v_cloud_hull.size());
   return;
 }
 
