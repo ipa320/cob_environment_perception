@@ -208,6 +208,8 @@ namespace rviz
     TPPLPartition pp;
     list<TPPLPoly> polys,result;
 
+    //std::cout << "id: " << new_message->id << std::endl;
+    //std::cout << new_message->centroid << std::endl;
     //fill polys
     for(size_t i=0; i<new_message->points.size(); i++) {
       pcl::PointCloud<pcl::PointXYZ> pc;
