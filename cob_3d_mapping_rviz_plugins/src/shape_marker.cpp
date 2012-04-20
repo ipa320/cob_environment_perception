@@ -63,6 +63,18 @@ namespace rviz
     polygon_ = manager->getSceneManager()->createManualObject( ss.str() );
     polygon_->setDynamic( true );
     scene_node_->attachObject( polygon_ );
+
+    if(count==1) {
+      Ogre::Light* directionalLight = manager->getSceneManager()->createLight("directionalLight");
+      if(directionalLight) {
+        directionalLight->setType(Ogre::Light::LT_DIRECTIONAL);
+        directionalLight->setDiffuseColour(Ogre::ColourValue(0.5,0.5,0.5));
+        directionalLight->setSpecularColour(Ogre::ColourValue(1,1,1));
+        directionalLight->setDirection(Ogre::Vector3( 0, -1, 0 ));
+      }
+      else
+        ROS_ERROR("couldn't create directionalLight");
+    }
   }
 
   ShapeMarker::~ShapeMarker()
@@ -79,14 +91,15 @@ namespace rviz
 
     Ogre::ColourValue color( r,g,b,a );
     Ogre::MaterialPtr mat = Ogre::MaterialManager::getSingleton().create( buf, Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME );
-    mat->getTechnique(0)->setAmbient(color*0.5/*color * 0.01f*/);
-    //mat->setDiffuse(color);
-    mat->getTechnique(0)->setLightingEnabled(true);
-    mat->setReceiveShadows(false);
-    //mat->setCullingMode(Ogre::CULL_NONE);
-     mat->getTechnique(0)->setDiffuse( color );
 
-    if ( color.a < 0.9998 )
+    mat->getTechnique(0)->setLightingEnabled(true);
+    mat->getTechnique(0)->setAmbient(color /*color * 0.01f*/);
+    mat->setReceiveShadows(false);
+    mat->setCullingMode(Ogre::CULL_NONE);
+    mat->getTechnique(0)->setDiffuse( color );
+    //mat->getTechnique(0)->setSpecular( color );
+
+    if ( true || color.a < 0.9998 )
     {
       mat->getTechnique(0)->setSceneBlending( Ogre::SBT_TRANSPARENT_ALPHA );
       mat->getTechnique(0)->setDepthWriteEnabled( false );
@@ -122,7 +135,7 @@ namespace rviz
       pt.x = p3(0);
       pt.y = p3(1);
     }
-    else if(new_message->params.size()==5) {
+    else if(new_message->params.size()==5||new_message->params.size()==6) {
       pt.x=point.x;
       pt.y=point.y;
     }
@@ -137,6 +150,7 @@ namespace rviz
       normal(0)=new_message->params[0];
       normal(1)=new_message->params[1];
       normal(2)=new_message->params[2];
+      normal.normalize();
       origin(0)=new_message->centroid.x;
       origin(1)=new_message->centroid.y;
       origin(2)=new_message->centroid.z;
@@ -154,17 +168,22 @@ namespace rviz
       p3(2)=0;
       pos = transformation*p3;
     }
-    else if(new_message->params.size()==5) {
-      Eigen::Vector2f v,v2,n2;
+    else if(new_message->params.size()==5||new_message->params.size()==6) {
+      Eigen::Vector2f v;
+      Eigen::Vector3f v2,n2;
       v(0)=pt.x;
       v(1)=pt.y;
-      v2=v;
-      v2(0)*=v2(0);
-      v2(1)*=v2(1);
+      v2(2)=0.f;
+      v2(0)=v(0)*v(0);
+      v2(1)=v(1)*v(1);
+      if(new_message->params.size()==6)
+        v2(2)=v(0)*v(1);
+      n2(2)=0.f;
       n2(0)=new_message->params[3];
       n2(1)=new_message->params[4];
+      if(new_message->params.size()==6)
+        n2(2)=new_message->params[5];
 
-      //dummy normal
       normal(0)=new_message->params[0];
       normal(1)=new_message->params[1];
       normal(2)=new_message->params[2];
@@ -183,7 +202,7 @@ namespace rviz
       origin(2)=new_message->centroid.z;
 
       pos = origin+proj2plane_*v + normal*(v2.dot(n2));
-      normal += normal*(v).dot(n2);
+      normal += normal*(2*v(0)*n2(0)+v(1)*n2(2) + 2*v(1)*n2(1)+v(0)*n2(2));
     }
   }
 
@@ -249,7 +268,7 @@ namespace rviz
 
 
     polygon_->clear();
-    polygon_->begin(createMaterialIfNotExists(new_message->color.r,new_message->color.b,new_message->color.g,new_message->color.a), Ogre::RenderOperation::OT_TRIANGLE_LIST);
+    polygon_->begin(createMaterialIfNotExists(new_message->color.r,new_message->color.g,new_message->color.b,new_message->color.a), Ogre::RenderOperation::OT_TRIANGLE_LIST);
 
     TPPLPoint p1,p2,p3,p4, p12,p23,p31;
 
