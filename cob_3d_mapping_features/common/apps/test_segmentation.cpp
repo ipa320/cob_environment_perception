@@ -149,7 +149,7 @@ int main(int argc, char** argv)
   cv::Mat color, sobel, laplace, edge_3d, combined_2d, combined_3d, segmented;
 
   vector<PointIndices> clusters;
-  vector<cob_3d_mapping_common::Cluster> cluster_list;
+  cob_3d_mapping_features::ClusterList cluster_list;
 
   PCDReader r;
   if (r.read(file_in_, *p) == -1) return(0);

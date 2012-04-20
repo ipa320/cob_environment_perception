@@ -58,8 +58,9 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <opencv2/core/core.hpp>
-#include <cob_3d_mapping_common/point_types.h>
-#include <cob_3d_mapping_common/cluster.h>
+
+#include "cob_3d_mapping_common/point_types.h"
+#include "cob_3d_mapping_features/cluster_list.h"
 
 namespace cob_3d_mapping_features
 {
@@ -83,7 +84,7 @@ namespace cob_3d_mapping_features
     typedef typename LabelCloud::Ptr LabelCloudPtr;
     typedef typename LabelCloud::ConstPtr LabelCloudConstPtr;
 
-    typedef std::vector<cob_3d_mapping_common::Cluster> ClusterList;
+    //typedef std::vector<cob_3d_mapping_features::Cluster> ClusterList;
 
   public:
     /** \brief Empty constructor. */
@@ -106,48 +107,51 @@ namespace cob_3d_mapping_features
       }
     };
 
-    inline void
-    setInputPoints(const PointCloudInConstPtr &points) { surface_ = points; }
+    inline void setInputPoints(const PointCloudInConstPtr &points) { surface_ = points; }
+    inline void setInputNormals(const NormalCloudInPtr &normals) { normals_ = normals; }
+    inline void setInputCurvatures(const CurvatureCloudInPtr &curvatures) { curvatures_ = curvatures; }
+    inline void setOutputLabels(const LabelCloudPtr& labels) { labels_ = labels; }
 
-    inline void
-    setInputNormals(const NormalCloudInPtr &normals) { normals_ = normals; }
 
-    inline void
-    setInputCurvatures(const CurvatureCloudInPtr &curvatures) { curvatures_ = curvatures; }
+    // --- cluster construction ---
+    void propagateWavefront(ClusterList& cluster_out);
 
-    inline void
-    setOutputLabels(const LabelCloudPtr& labels) { labels_ = labels; }
+    void propagateWavefront2ndPass(ClusterList& cluster_list);
 
-    void
-    propagateWavefront(ClusterList& cluster_out);
+    bool hasValidCurvature(int idx);
 
-    void
-    propagateWavefront2ndPass(ClusterList& cluster_list);
 
-    bool
-    hasValidCurvature(int idx);
+    // --- single cluster operations ---
+    void computeClusterCurvature(cob_3d_mapping_features::ClusterPtr c);
 
-    void
-    computeClusterCurvature(cob_3d_mapping_common::Cluster& c, int search_size);
+    void computeClusterPointCurvature(cob_3d_mapping_features::ClusterPtr c, int search_size);
     
-    bool
-    computeClusterComponents(cob_3d_mapping_common::Cluster& c);
+    bool computeClusterComponents(cob_3d_mapping_features::ClusterPtr c);
 
-    void
-    analyseClusters(ClusterList& cluster_out);
+    void computeClusterNormalIntersections(cob_3d_mapping_features::ClusterPtr c);
 
-    void
-    calcNormalIntersections(ClusterList& cluster_list,
-			    pcl::PointCloud<PointXYZ>::Ptr& intersection_points);
+    void computeClusterColorHistogram(cob_3d_mapping_features::ClusterPtr c);
+
+    void mergeClusterProperties(cob_3d_mapping_features::ClusterPtr c_src,
+				cob_3d_mapping_features::ClusterPtr c_trg);
+
+    void joinAdjacentRotationalClusters(cob_3d_mapping_features::ClusterPtr c,
+					cob_3d_mapping_features::ClusterList& cluster_list);
+
+    void joinAdjacentRotationalClustersOld(cob_3d_mapping_features::ClusterPtr c,
+					   cob_3d_mapping_features::ClusterList& cluster_list);
 
 
-    void
-    getColoredCloud(ClusterList& cluster_list,
-		    pcl::PointCloud<PointXYZRGB>::Ptr& color_cloud);
+    // --- cluster list operations ---
+    void computeBoundarySmoothness(ClusterList& cl);
+    
+    void analyseClusters(ClusterList& cluster_out);
 
-    void
-    getColoredCloudByType(ClusterList& cluster_list,
-			  pcl::PointCloud<PointXYZRGB>::Ptr& color_cloud);
+    void getColoredCloud(ClusterList& cluster_list,
+			 pcl::PointCloud<PointXYZRGB>::Ptr& color_cloud);
+
+    void getColoredCloudByType(ClusterList& cluster_list,
+			       pcl::PointCloud<PointXYZRGB>::Ptr& color_cloud);
 
   protected:
     PointCloudInConstPtr surface_;

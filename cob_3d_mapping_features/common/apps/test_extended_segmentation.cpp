@@ -106,15 +106,19 @@ int main(int argc, char** argv)
 {
   readOptions(argc, argv);
 
-  PointCloud<PointXYZ>::Ptr intersections(new PointCloud<PointXYZ>);
   PointCloud<PointXYZRGB>::Ptr p(new PointCloud<PointXYZRGB>);
   PointCloud<PointXYZRGB>::Ptr cp(new PointCloud<PointXYZRGB>);
   PointCloud<PointXYZRGB>::Ptr cp2nd(new PointCloud<PointXYZRGB>);
   PointCloud<PointXYZRGB>::Ptr tp(new PointCloud<PointXYZRGB>);
   PointCloud<Normal>::Ptr n(new PointCloud<Normal>);
+  PointCloud<Normal>::Ptr n2(new PointCloud<Normal>);
   PointCloud<PrincipalCurvatures>::Ptr pc(new PointCloud<PrincipalCurvatures>);
   PointCloud<PointLabel>::Ptr l(new PointCloud<PointLabel>);
-  vector<cob_3d_mapping_common::Cluster> cluster_list;
+
+  PointCloud<PointXYZ>::Ptr centroids1st(new PointCloud<PointXYZ>);
+  PointCloud<Normal>::Ptr normals1st(new PointCloud<Normal>);
+
+  cob_3d_mapping_features::ClusterList cluster_list;
 
   PCDReader r;
   if (r.read(file_in_, *p) == -1) return(0);
@@ -129,7 +133,7 @@ int main(int argc, char** argv)
   one.setSkipDistantPointThreshold(d_th_);
   one.compute(*n);
   cout << t.precisionStop() << "s\t for Organized Normal Estimation" << endl;
-
+  *n2 = *n;
   /*
   t.precisionStart();
   cob_3d_mapping_features::OrganizedCurvatureEstimation<PointXYZRGB,Normal,PointLabel,PrincipalCurvatures>oce;
@@ -153,9 +157,19 @@ int main(int argc, char** argv)
   eseg.propagateWavefront(cluster_list);
   eseg.getColoredCloud(cluster_list, cp);
   //eseg.propagateWavefront2ndPass(cluster_list);
-  //eseg.getColoredCloud(cluster_list, cp2nd);
+  centroids1st->points.resize(cluster_list.size());
+  normals1st->points.resize(cluster_list.size());
+  centroids1st->width = normals1st->width = 1;
+  centroids1st->height = normals1st->height = cluster_list.size();
+  int i2 = 0;
+  for (cob_3d_mapping_features::ClusterPtr c = cluster_list.begin(); c != cluster_list.end(); ++c, ++i2)
+  {
+    centroids1st->points[i2].getVector3fMap() = c->getCentroid();
+    normals1st->points[i2].getNormalVector3fMap() = c->getOrientation();
+  }
+
   eseg.analyseClusters(cluster_list);
-  eseg.calcNormalIntersections(cluster_list, intersections);
+  eseg.getColoredCloud(cluster_list, cp2nd);
   eseg.getColoredCloudByType(cluster_list, tp);
   cout << t.precisionStop() << "s\t for extended clustering" << endl;
   cout << "Found " << cluster_list.size() << " clusters." << endl;
@@ -182,38 +196,34 @@ int main(int argc, char** argv)
   comp3->points.resize(cluster_list.size());
   comp3->height = cluster_list.size();
 
-  ints_centroids->points.resize(cluster_list.size());
   ints_centroids->width = ints_comp1->width = ints_comp2->width = ints_comp3->width = connection->width = 1;
-  ints_centroids->height = cluster_list.size();
+  ints_centroids->height = ints_comp1->height = ints_comp2->height = ints_comp3->height = connection->height = cluster_list.size();
+  ints_centroids->points.resize(cluster_list.size());
   ints_comp1->points.resize(cluster_list.size());
-  ints_comp1->height = cluster_list.size();
   ints_comp2->points.resize(cluster_list.size());
-  ints_comp2->height = cluster_list.size();
   ints_comp3->points.resize(cluster_list.size());
-  ints_comp3->height = cluster_list.size();
   connection->points.resize(cluster_list.size());
-  connection->height = cluster_list.size();
 
 
   int i = 0;
-  for (vector<cob_3d_mapping_common::Cluster>::iterator c = cluster_list.begin(); c != cluster_list.end(); ++c)
+  for (cob_3d_mapping_features::ClusterPtr c = cluster_list.begin(); c != cluster_list.end(); ++c)
   {
     if (c->indices.size() < 100) continue;
     centroids->points[i].getVector3fMap() = c->getCentroid();
-    comp1->points[i].getNormalVector3fMap() = c->first_component * c->eigenvalues(2);
-    comp2->points[i].getNormalVector3fMap() = c->second_component * c->eigenvalues(1);
-    comp3->points[i].getNormalVector3fMap() = c->third_component * c->eigenvalues(0);
+    comp1->points[i].getNormalVector3fMap() = c->pca_point_comp1 * c->pca_point_values(2);
+    comp2->points[i].getNormalVector3fMap() = c->pca_point_comp2 * c->pca_point_values(1);
+    comp3->points[i].getNormalVector3fMap() = c->pca_point_comp3 * c->pca_point_values(0);
 
 
-    ints_centroids->points[i].getVector3fMap() = c->ints_centroid;
+    ints_centroids->points[i].getVector3fMap() = c->pca_inter_centroid;
     ints_centroids->points[i].r = cp2nd->points[c->indices[0]].r;
     ints_centroids->points[i].g = cp2nd->points[c->indices[0]].g;
     ints_centroids->points[i].b = cp2nd->points[c->indices[0]].b;
-    ints_comp1->points[i].getNormalVector3fMap() = c->ints_comp_1 * c->ints_values(2);
-    ints_comp2->points[i].getNormalVector3fMap() = c->ints_comp_2 * c->ints_values(1);
-    ints_comp3->points[i].getNormalVector3fMap() = c->ints_comp_3 * c->ints_values(0);
+    ints_comp1->points[i].getNormalVector3fMap() = c->pca_inter_comp1 * c->pca_inter_values(2);
+    ints_comp2->points[i].getNormalVector3fMap() = c->pca_inter_comp2 * c->pca_inter_values(1);
+    ints_comp3->points[i].getNormalVector3fMap() = c->pca_inter_comp3 * c->pca_inter_values(0);
 
-    connection->points[i].getNormalVector3fMap() = c->ints_centroid - c->getCentroid();
+    connection->points[i].getNormalVector3fMap() = c->pca_inter_centroid - c->getCentroid();
 
     ++i;
   }
@@ -224,7 +234,6 @@ int main(int argc, char** argv)
   visualization::PointCloudColorHandlerRGBField<PointXYZRGB> type_col_hdl(tp);
   visualization::PointCloudColorHandlerRGBField<PointXYZRGB> ints_hdl(ints_centroids);
   visualization::PointCloudColorHandlerCustom<PointXYZ> blue_hdl (centroids, 0,0,255);
-  visualization::PointCloudColorHandlerCustom<PointXYZ> intersections_hdl (intersections, 255,0,0);
   visualization::PointCloudColorHandlerCustom<PointXYZRGB> white_hdl (p, 255,255,255);
   visualization::PointCloudColorHandlerCustom<PointXYZRGB> black_hdl (p, 0, 0, 0);
 
@@ -251,13 +260,17 @@ int main(int argc, char** argv)
   v.createViewPort(0.5, 0.5, 1.0, 1.0, v4);
   v.setBackgroundColor(0, 0.75, 0.75, v4);
   v.addPointCloud<PointXYZRGB>(p, black_hdl, "normals", v4);
-  //v.addPointCloud<PointXYZ>(intersections, intersections_hdl, "intersection_points", v4);
-  //v.addPointCloudNormals<PointXYZRGB, Normal>(p,n,4,0.04,"normals2", v4);
+  v.addPointCloudNormals<PointXYZRGB, Normal>(p,n,4,0.04,"normals2", v4);
+  //v.addPointCloudNormals<PointXYZ, Normal>(centroids1st,normals1st,1,0.1,"normals2", v4);
 
 
   int v2(0);
   v.createViewPort(0.5, 0.0, 1.0, 0.5, v2);
   v.setBackgroundColor(0, 0.75, 0.75, v2);
+  v.addPointCloud<PointXYZRGB>(p, black_hdl, "normals4", v2);
+  //v.addPointCloudNormals<PointXYZRGB, Normal>(p,n,4,0.04,"normals2", v4);
+  v.addPointCloudNormals<PointXYZRGB, Normal>(p,n2,4,0.04,"normals3", v2);
+  /*
   //v.addPointCloud<PointXYZRGB>(p, white_hdl, "cloud", v2);
   v.addPointCloud<PointXYZRGB>(tp, type_col_hdl, "types", v2);
   v.addPointCloud<PointXYZ>(centroids, blue_hdl, "clusters", v2);
@@ -266,7 +279,7 @@ int main(int argc, char** argv)
   v.addPointCloudNormals<PointXYZ,Normal>(centroids, comp3, 1, 100.0, "comp3", v2);
   v.setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "comp1", v2);
   v.setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "comp2", v2);
-  v.setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "comp3", v2);*/
+  v.setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "comp3", v2);/
 
   v.addPointCloud<PointXYZRGB>(ints_centroids, ints_hdl, "ints_centroid", v2);
   v.addPointCloudNormals<PointXYZRGB,Normal>(ints_centroids, ints_comp1, 1, 10.0, "ints_comp1", v2);
@@ -276,25 +289,7 @@ int main(int argc, char** argv)
   v.setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "ints_comp2", v2);
   v.setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "ints_comp3", v2);
   v.addPointCloudNormals<PointXYZ,Normal>(centroids, connection, 1, 1.0, "connections", v2);
-
-  /*
-  int i = 0;
-  PointXYZ c1, c2;
-  for (vector<cob_3d_mapping_common::Cluster>::iterator c = cluster_list.begin(); c != cluster_list.end(); ++c, ++i)
-  {
-    if (c->indices.size() < 100) continue;
-    c1.getVector3fMap() = c->first_component * c->eigenvalues(2) + centroids->points[i].getVector3fMap();
-    c2.getVector3fMap() = c->second_component * c->eigenvalues(1) + centroids->points[i].getVector3fMap();
-    v.addLine<PointXYZ,PointXYZ>(
-      centroids->points[i], c1, 1.0, 0.0, 0.0, "first_c_" + boost::lexical_cast<string>(i), v2);
-    v.addLine<PointXYZ,PointXYZ>(
-      centroids->points[i], c2, 0.0, 1.0, 0.0, "second_c_" + boost::lexical_cast<string>(i), v2);
-    v.addText3D<PointXYZ>(
-      boost::lexical_cast<string>(c->getSurfaceCurvature()), centroids->points[i],
-      0.05, 0.75, 0.75, 0.75, "curvature_" + boost::lexical_cast<string>(i), v2);
-  }
   */
-
   while(!v.wasStopped())
   {
     v.spinOnce(100);

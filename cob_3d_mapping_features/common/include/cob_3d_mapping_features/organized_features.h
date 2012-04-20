@@ -78,19 +78,23 @@ namespace cob_3d_mapping_features
       OrganizedFeatures () : pixel_search_radius_(2)
 	,pixel_steps_(1)
 	,circle_steps_(1)
+	,mask_()
+	,n_points_(0)
+	,inv_width_(0.0)
 	,skip_distant_point_threshold_(4.0)
+	,fake_surface_(true)
 	,mask_changed(false)
       { };
 
       inline void
-	setSearchSurface(const PointCloudInConstPtr cloud)
+      setSearchSurface(const PointCloudInConstPtr cloud)
       {
 	surface_ = cloud;
 	fake_surface_ = false;
       }
 
       inline void
-	setPixelWindowSize(int size, int pixel_steps=1, int circle_steps=1)
+      setPixelWindowSize(int size, int pixel_steps=1, int circle_steps=1)
       {
 	pixel_search_radius_ = size / 2;
 	pixel_steps_ = pixel_steps;
@@ -99,7 +103,7 @@ namespace cob_3d_mapping_features
       }
 
       inline void
-	setPixelSearchRadius(int pixel_radius, int pixel_steps=1, int circle_steps=1)
+      setPixelSearchRadius(int pixel_radius, int pixel_steps=1, int circle_steps=1)
       {
 	pixel_search_radius_ = pixel_radius;
 	pixel_steps_ = pixel_steps;
@@ -115,24 +119,15 @@ namespace cob_3d_mapping_features
 	skip_distant_point_threshold_ = th;
       }
 
-      void
-	compute(PointCloudOut &output);
+      void compute(PointCloudOut &output);
 
-      int
-	searchForNeighbors(int index,
-			   std::vector<int>& indices);
+      int searchForNeighbors(int index, std::vector<int>& indices);
 
-      int
-	searchForNeighborsInRange(int index,
-				  std::vector<int>& indices);
+      int searchForNeighborsInRange(int index, std::vector<int>& indices);
 
-      int
-	searchForNeighborsInRange(int index,
-				  std::vector<int>& indices,
-				  std::vector<float>& sqr_distances);
+      int searchForNeighborsInRange(int index, std::vector<int>& indices, std::vector<float>& sqr_distances);
 
-      void
-	computeMaskManually(int cloud_width);
+      void computeMaskManually(int cloud_width);
 
 
     protected:
@@ -162,8 +157,6 @@ namespace cob_3d_mapping_features
 	getClassName () const { return (feature_name_); }
 
       PointCloudInConstPtr surface_;
-      bool fake_surface_;
-      bool mask_changed;
 
       int pixel_search_radius_;
       int pixel_steps_;
@@ -172,6 +165,9 @@ namespace cob_3d_mapping_features
       int n_points_;
       float inv_width_;
       float skip_distant_point_threshold_;
+
+      bool fake_surface_;
+      bool mask_changed;
 
       std::string feature_name_;
 
