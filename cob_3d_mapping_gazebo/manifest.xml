@@ -10,6 +10,7 @@
   <url>http://ros.org/wiki/cob_env_model_gazebo</url>
 
 	<depend package="gazebo"/>
+	<depend package="cob_gazebo_worlds"/>
 	<depend package="cob_script_server"/>
 
 </package>
