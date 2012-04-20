@@ -58,7 +58,9 @@
 #include <deque>
 #include <queue>
 #include <list>
+#include <set>
 #include <math.h>
+
 
 #include <pcl/common/eigen.h>
 #include <Eigen/LU>
@@ -71,57 +73,45 @@ template <typename PointT, typename PointNT, typename PointCT, typename PointOut
 cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>::propagateWavefront(
   ClusterList& cluster_out)
 {
-  int curr_label = I_EDGE;
   int width = labels_->width, height = labels_->height;
-  //const float angle_threshold = M_PI / 9.0; // max angle difference between mean angle of cluster
-  const float angle_threshold = 0.8; // everything above belongs to cluster
+  const float angle_threshold = 35.0 / 180.0 * M_PI; // max angle difference between mean angle of cluster
+  //const float angle_threshold = 0.8; // everything above belongs to cluster
   const float curvature_threshold = 20; // everything above belongs to cluster
-  const int min_cluster_size = 20;
+  const int min_cluster_size = 200;
   cluster_out.clear();
-  cluster_out.resize(3);
-  cluster_out[0].type = I_NAN;
-  cluster_out[1].type = I_BORDER;
-  cluster_out[2].type = I_EDGE;
+  cluster_out.addNewCluster(I_NAN)->type = I_NAN;
+  cluster_out.addNewCluster(I_BORDER)->type = I_BORDER;
+  cluster_out.addNewCluster(I_EDGE)->type = I_EDGE;
 
   for(size_t i=0; i<labels_->points.size(); ++i)
   {
-    switch(labels_->points[i].label)
+    if (labels_->points[i].label == I_UNDEF)
     {
-    case I_NAN:
-      cluster_out[0].indices.push_back(i);
-      break;
-
-    case I_BORDER:
-      cluster_out[1].indices.push_back(i);
-      break;
-
-    case I_EDGE:
-      cluster_out[2].indices.push_back(i);
-      break;
-
-    case I_UNDEF:
-    {
-      ++curr_label;
-      cob_3d_mapping_common::Cluster new_cluster;
-      std::list<ClusterElement> coords_todo;
-      coords_todo.push_back(ClusterElement(i%width, i/width, 0.0));
-      labels_->points[i].label = curr_label;
+      ClusterPtr new_cluster = cluster_out.addNewCluster();
+      //std::list<ClusterElement> coords_todo;
+      //coords_todo.push_back(ClusterElement(i%width, i/width, 0.0));
+      std::multiset<ClusterElement> coords_todo;
+      coords_todo.insert(ClusterElement(i%width, i/width, 0.0));
+      labels_->points[i].label = new_cluster->id;
       while (coords_todo.size() != 0)
       {
-	ClusterElement p = coords_todo.front();
-	coords_todo.pop_front();
+	//ClusterElement p = coords_todo.front();
+	ClusterElement p = *coords_todo.begin();
+	coords_todo.erase(coords_todo.begin());
+	//coords_todo.pop_front();
 	float cos_angle_norm, cos_angle_dist, angle, plane_distance;
 	Eigen::Vector3f p_i;
 	int p_idx = p.v * width + p.u;
-	new_cluster.updateCluster(
+	int p_new;
+	new_cluster->addNewPoint(
 	  p_idx, surface_->points[p_idx].getVector3fMap(),
 	  Eigen::Vector3f(normals_->points[p_idx].normal));
 	//bool is_highly_curved = (std::abs(new_cluster.getMaxCurvature()) > curvature_threshold);
 	
-	Eigen::Vector3f c = new_cluster.getCentroid();
+	Eigen::Vector3f c = new_cluster->getCentroid();
 	//float dist_threshold = 20.0 * 0.003 * surface_->points[p_idx].z *surface_->points[p_idx].z;
 	// Look right
-	if (p.u+1 < width && labels_->points[p_idx+1].label == I_UNDEF)
+	if (p.u+1 < width)
 	{
 	  /* Cluster is still to small to have convincing mean values
 	   * --- or ---
@@ -131,64 +121,107 @@ cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>:
 	   * Cluster has low mean curvature and is most likely a plane
 	   * so check if the orientation of the new point is similar to the cluster
 	   */
-	  cos_angle_norm = new_cluster.getOrientation().dot(Eigen::Vector3f(normals_->points[p_idx+1].normal));
-	  //plane_distance = surface_->points[p_idx+1].getVector3fMap().dot(normals_->points[p_idx+1].getNormalVector3fMap());
-	  if ( (int)new_cluster.indices.size() < min_cluster_size || 
-	       //(fabs(plane_distance - plane_distance_cluster) < dist_threshold &&
-		cos_angle_norm > angle_threshold)// && std::fabs(p_i.norm() * angle) < dist_threshold) )
+	  if (labels_->points[(p_new = p_idx+1)].label == I_UNDEF)
 	  {
-	    labels_->points[p_idx+1].label = curr_label;
-	    coords_todo.push_back(ClusterElement(p.u+1, p.v, cos_angle_norm));
+	    //cos_angle_norm = new_cluster->getOrientation().dot(Eigen::Vector3f(normals_->points[p_idx+1].normal));
+	    cos_angle_norm = 
+	      fabs(atan2((new_cluster->getOrientation().cross(normals_->points[p_new].getNormalVector3fMap())).norm(),
+			new_cluster->getOrientation().dot(normals_->points[p_new].getNormalVector3fMap())));
+	    if ( (int)new_cluster->indices.size() < min_cluster_size || 
+		 //(fabs(plane_distance - plane_distance_cluster) < dist_threshold &&
+		 cos_angle_norm < angle_threshold)// && std::fabs(p_i.norm() * angle) < dist_threshold) )
+	    {
+	      labels_->points[p_new].label = new_cluster->id;
+	      //coords_todo.push_back(ClusterElement(p.u+1, p.v, cos_angle_norm));
+	      coords_todo.insert(ClusterElement(p.u+1, p.v, cos_angle_norm));
+	    }
+	  }
+	  else if (labels_->points[p_new].label > I_EDGE)
+	  { 
+	    cluster_out.connect(new_cluster->id, labels_->points[p_new].label, p_idx, p_new);
 	  }
 	}
+
 	// Look down
-	if (p.v+1 < height  && labels_->points[p_idx+width].label == I_UNDEF)
+	if (p.v+1 < height)
 	{
-	  cos_angle_norm = new_cluster.getOrientation().dot(Eigen::Vector3f(normals_->points[p_idx+width].normal));
-	  //plane_distance = surface_->points[p_idx+width].getVector3fMap().dot(normals_->points[p_idx+width].getNormalVector3fMap());
-	  if ( (int)new_cluster.indices.size() < min_cluster_size || 
-	       //(fabs(plane_distance - plane_distance_cluster) < dist_threshold &&
-		cos_angle_norm > angle_threshold)//&& std::fabs(p_i.norm() * angle) < dist_threshold) )
+	  if (labels_->points[(p_new = p_idx+width)].label == I_UNDEF)
 	  {
-	    labels_->points[p_idx+width].label = curr_label;
-	    coords_todo.push_back(ClusterElement(p.u, p.v+1, cos_angle_norm));
+	    //cos_angle_norm = new_cluster->getOrientation().dot(Eigen::Vector3f(normals_->points[p_idx+width].normal));
+	    cos_angle_norm = 
+	      fabs(atan2((new_cluster->getOrientation().cross(normals_->points[p_new].getNormalVector3fMap())).norm(),
+			new_cluster->getOrientation().dot(normals_->points[p_new].getNormalVector3fMap())));
+	    if ( (int)new_cluster->indices.size() < min_cluster_size || 
+		 //(fabs(plane_distance - plane_distance_cluster) < dist_threshold &&
+		 cos_angle_norm < angle_threshold)//&& std::fabs(p_i.norm() * angle) < dist_threshold) )
+	    {
+	      labels_->points[p_new].label = new_cluster->id;
+	      //coords_todo.push_back(ClusterElement(p.u, p.v+1, cos_angle_norm));
+	      coords_todo.insert(ClusterElement(p.u, p.v+1, cos_angle_norm));
+	    }
+	  }
+	  else if (labels_->points[p_new].label > I_EDGE)
+	  {
+	    cluster_out.connect(new_cluster->id, labels_->points[p_new].label, p_idx, p_new);
 	  }
 	}
+
 	// Look left
-	if (p.u > 0 && labels_->points[p_idx-1].label == I_UNDEF)
+	if (p.u > 0)
 	{
-	  cos_angle_norm = new_cluster.getOrientation().dot(Eigen::Vector3f(normals_->points[p_idx-1].normal));
-	  //plane_distance = surface_->points[p_idx-1].getVector3fMap().dot(normals_->points[p_idx-1].getNormalVector3fMap());
-	  if ( (int)new_cluster.indices.size() < min_cluster_size || 
-	       //(fabs(plane_distance - plane_distance_cluster) < dist_threshold &&
-		cos_angle_norm > angle_threshold) //&& std::fabs(p_i.norm() * angle) < dist_threshold) )
+	  if (labels_->points[(p_new = p_idx-1)].label == I_UNDEF)
 	  {
-	    labels_->points[p_idx-1].label = curr_label;
-	    coords_todo.push_back(ClusterElement(p.u-1, p.v, cos_angle_norm));
-	  }	 
+	    //cos_angle_norm = new_cluster->getOrientation().dot(Eigen::Vector3f(normals_->points[p_idx-1].normal));
+	    cos_angle_norm = 
+	      fabs(atan2(new_cluster->getOrientation().cross(normals_->points[p_new].getNormalVector3fMap()).norm(),
+			new_cluster->getOrientation().dot(normals_->points[p_new].getNormalVector3fMap())));
+	    //plane_distance = surface_->points[p_idx-1].getVector3fMap().dot(normals_->points[p_idx-1].getNormalVector3fMap());
+	    if ( (int)new_cluster->indices.size() < min_cluster_size || 
+		 //(fabs(plane_distance - plane_distance_cluster) < dist_threshold &&
+		 cos_angle_norm < angle_threshold) //&& std::fabs(p_i.norm() * angle) < dist_threshold) )
+	    {
+	      labels_->points[p_new].label = new_cluster->id;
+	      //coords_todo.push_back(ClusterElement(p.u-1, p.v, cos_angle_norm));
+	      coords_todo.insert(ClusterElement(p.u-1, p.v, cos_angle_norm));
+
+	    }
+	  }
+	  else if (labels_->points[p_idx-1].label > I_EDGE)
+	  { 
+	    cluster_out.connect(new_cluster->id, labels_->points[p_new].label, p_idx, p_new);
+	  }
 	}
+
 	// Look up
-	if (p.v > 0 && labels_->points[p_idx-width].label == I_UNDEF)
+	if (p.v > 0)
 	{
-	  cos_angle_norm = new_cluster.getOrientation().dot(Eigen::Vector3f(normals_->points[p_idx-width].normal));
-	  //plane_distance = surface_->points[p_idx-width].getVector3fMap().dot(normals_->points[p_idx-width].getNormalVector3fMap());
-	  if ( (int)new_cluster.indices.size() < min_cluster_size || 
-	       //(fabs(plane_distance - plane_distance_cluster) < dist_threshold &&
-		cos_angle_norm > angle_threshold)//&& std::fabs(p_i.norm() * angle) < dist_threshold) )
+	  if (labels_->points[(p_new = p_idx-width)].label == I_UNDEF)
 	  {
-	    labels_->points[p_idx-width].label = curr_label;
-	    coords_todo.push_back(ClusterElement(p.u, p.v-1, cos_angle_norm));
+	    //cos_angle_norm = new_cluster->getOrientation().dot(Eigen::Vector3f(normals_->points[p_idx-width].normal));
+	    cos_angle_norm = 
+	      fabs(atan2((new_cluster->getOrientation().cross(normals_->points[p_new].getNormalVector3fMap())).norm(),
+			new_cluster->getOrientation().dot(normals_->points[p_new].getNormalVector3fMap())));
+	    if ( (int)new_cluster->indices.size() < min_cluster_size || 
+		 //(fabs(plane_distance - plane_distance_cluster) < dist_threshold &&
+		 cos_angle_norm < angle_threshold)//&& std::fabs(p_i.norm() * angle) < dist_threshold) )
+	    {
+	      labels_->points[p_new].label = new_cluster->id;
+	      //coords_todo.push_back(ClusterElement(p.u, p.v-1, cos_angle_norm));
+	      coords_todo.insert(ClusterElement(p.u, p.v-1, cos_angle_norm));
+	    }
+	  }
+	  else if (labels_->points[p_new].label > I_EDGE)
+	  { 
+	    cluster_out.connect(new_cluster->id, labels_->points[p_new].label, p_idx, p_new);
 	  }
 	}
 	//coords_todo.sort();
-      }
-
-      cluster_out.push_back(new_cluster);
-      break;
+      } // end while
     }
-    default:
-      break;
-    }
+    else if(labels_->points[i].label <= I_EDGE)
+      cluster_out[labels_->points[i].label]->indices.push_back(i);
+    else
+      continue;
   }
   return;
 }
@@ -197,9 +230,12 @@ template <typename PointT, typename PointNT, typename PointCT, typename PointOut
 cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>::propagateWavefront2ndPass(
   ClusterList& cluster_list)
 {
+  std::cout << "[propagateWavefront2ndPass] currently not implemented" << std::endl;
+  return;
+/*
   // ---- Find potential planes and drop all other clusters -----
   std::vector<int> indices_todo;
-  ClusterList::iterator c = cluster_list.begin();
+  ClusterPtr c = cluster_list.begin();
   int curr_label = I_EDGE;
   while (c != cluster_list.end())
   {
@@ -213,7 +249,8 @@ cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>:
       labels_->points[*idx].label = I_UNDEF;
       indices_todo.push_back(*idx);
     }
-    c = cluster_list.erase(c);
+    ++c;
+    //c = cluster_list.erase(c);
   }
 
   // ----- Try a different segmentation method on all previously dropped clusters -----
@@ -228,7 +265,7 @@ cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>:
     if (labels_->points[*idx].label != I_UNDEF) continue;
 
     ++curr_label;
-    cob_3d_mapping_common::Cluster new_cluster;
+    cob_3d_mapping_features::Cluster new_cluster;
     std::list<ClusterElement> coords_todo;
     coords_todo.push_back(ClusterElement((*idx)%width, (*idx)/width, 0.0));
     std::queue<Eigen::Vector3f> normal_buffer;
@@ -238,7 +275,7 @@ cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>:
       ClusterElement p = coords_todo.front();
       coords_todo.pop_front();
       int p_idx = p.v * width + p.u;
-      new_cluster.updateCluster(p_idx,surface_->points[p_idx].getVector3fMap(),Eigen::Vector3f(normals_->points[p_idx].normal));
+      new_cluster.addNewPoint(p_idx,surface_->points[p_idx].getVector3fMap(),Eigen::Vector3f(normals_->points[p_idx].normal));
       normal_buffer.push(Eigen::Vector3f(normals_->points[p_idx].normal));
       //if (normal_buffer.size() > min_cluster_size && normal_buffer.size() > 0.3 * new_cluster.indices.size())
       if (normal_buffer.size() > buffer_size)
@@ -292,12 +329,16 @@ cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>:
 
     cluster_list.push_back(new_cluster);
   }
+*/
 }
 
 
 template <typename PointT, typename PointNT, typename PointCT, typename PointOutT> bool
 cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>::hasValidCurvature(int idx)
 {
+  std::cout << "[hasValidCurvature] currently not implemented" << std::endl;
+  return false;
+/*
   Eigen::Vector3f n_idx(normals_->points[idx].normal);
   Eigen::Matrix3f M = Eigen::Matrix3f::Identity() - n_idx * n_idx.transpose(); // projection matrix
   std::vector<Eigen::Vector3f> normals_projected;
@@ -329,45 +370,77 @@ cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>:
   std::cout << "C: " << (1.0 / centroid.norm()) * eigenvalues(2)*num_p_inv << "\tNorm: " << centroid.norm() <<std::endl;
   if ( (1.0 / centroid.norm()) * eigenvalues(2)*num_p_inv < 0.8) return true;
   return false;
+*/
 }
 
 
 template <typename PointT, typename PointNT, typename PointCT, typename PointOutT> bool
 cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>::computeClusterComponents(
-  cob_3d_mapping_common::Cluster& c)
+  ClusterPtr c)
 {
   Eigen::Matrix3f cov = Eigen::Matrix3f::Zero();
-  Eigen::Vector3f centroid = c.getCentroid();
-  for (std::vector<int>::iterator idx = c.indices.begin(); idx != c.indices.end(); ++idx)
+  Eigen::Vector3f centroid = c->getCentroid();
+  for (std::vector<int>::iterator idx = c->indices.begin(); idx != c->indices.end(); ++idx)
   {
     Eigen::Vector3f demean = surface_->points[*idx].getVector3fMap() - centroid;
     cov += demean * demean.transpose();
   }
+
   Eigen::Matrix3f eigenvectors;
   Eigen::Vector3f eigenvalues;
   pcl::eigen33(cov, eigenvectors, eigenvalues);
-  eigenvalues /= c.indices.size();
-  c.first_component = eigenvectors.col(2);
-  c.second_component = eigenvectors.col(1);
-  c.third_component = eigenvectors.col(0);
-  c.eigenvalues = eigenvalues;
-  if ( eigenvalues(0) / (eigenvalues(0)+eigenvalues(1)+eigenvalues(2)) < 0.001 * centroid(2) * centroid(2) )
+  eigenvalues /= c->indices.size();
+  c->pca_point_comp1 = eigenvectors.col(2);
+  c->pca_point_comp2 = eigenvectors.col(1);
+  c->pca_point_comp3 = eigenvectors.col(0);
+  c->pca_point_values = eigenvalues;
+  if ( eigenvalues(0) / (eigenvalues(0)+eigenvalues(1)+eigenvalues(2)) < 0.0008 * centroid(2) * centroid(2) )
   {
-    c.type = I_PLANE;
-    c.is_save_plane = true;
+    c->type = I_PLANE;
+    //c->is_save_plane = true;
   }
-  return c.is_save_plane;
+  return c->is_save_plane;
 }
 
 template <typename PointT, typename PointNT, typename PointCT, typename PointOutT> void
 cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>::computeClusterCurvature(
-  cob_3d_mapping_common::Cluster& c, int search_size)
+  ClusterPtr c)
+{
+  // compute principal curvature of the segment in its entirety
+  Eigen::Matrix3f M = Eigen::Matrix3f::Identity() - c->getOrientation() * c->getOrientation().transpose();
+  std::vector<Eigen::Vector3f> normals_projected;
+  Eigen::Vector3f n_centroid = Eigen::Vector3f::Zero();
+  for (std::vector<int>::iterator idx = c->indices.begin(); idx != c->indices.end(); ++ idx)
+  {
+    if (pcl_isnan(normals_->points[*idx].normal[2])) continue;
+    normals_projected.push_back( M * Eigen::Vector3f(normals_->points[*idx].normal) );
+    n_centroid += normals_projected.back();
+  }
+  float num_p_inv = 1.0f / normals_projected.size();
+  n_centroid *= num_p_inv;
+  Eigen::Matrix3f cov = Eigen::Matrix3f::Zero();
+  for (std::vector<Eigen::Vector3f>::iterator n_it = normals_projected.begin(); n_it != normals_projected.end(); ++n_it)
+  {
+    Eigen::Vector3f demean = *n_it - n_centroid;
+    cov += demean * demean.transpose();
+  }
+  Eigen::Vector3f eigenvalues;
+  Eigen::Matrix3f eigenvectors;
+  pcl::eigen33(cov, eigenvectors, eigenvalues);
+  c->max_curvature = eigenvalues(2) * num_p_inv;
+  c->min_curvature = eigenvalues(1) * num_p_inv;
+  c->min_curvature_direction = eigenvectors.col(1);
+}
+
+template <typename PointT, typename PointNT, typename PointCT, typename PointOutT> void
+cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>::computeClusterPointCurvature(
+  ClusterPtr c, int search_size)
 {
   //float mean_curvature_max=0.0, mean_curvature_min=0.0;
   std::vector<int> geometry(NUM_LABELS, 0);
   int y_offset = search_size * surface_->width;
-  int cluster_label = labels_->points[c.indices.front()].label;
-  for (std::vector<int>::iterator idx=c.indices.begin(); idx != c.indices.end(); ++idx)
+  int cluster_label = labels_->points[c->indices.front()].label;
+  for (std::vector<int>::iterator idx=c->indices.begin(); idx != c->indices.end(); ++idx)
   {
     Eigen::Vector3f n_idx(normals_->points[*idx].normal);
     if (pcl_isnan(n_idx(2))) continue;
@@ -393,6 +466,7 @@ cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>:
       Eigen::Vector3f demean = *n_it - centroid;
       cov += demean * demean.transpose();
     }
+
     Eigen::Vector3f eigenvalues;
     Eigen::Matrix3f eigenvectors;
     pcl::eigen33(cov, eigenvectors, eigenvalues);
@@ -409,7 +483,195 @@ cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>:
   int max = 0; size_t max_idx = 0;
   for (size_t i=0; i<geometry.size(); ++i)
     if ( (max=std::max(max,geometry[i])) == geometry[i] ) max_idx=i;
-  c.type = max_idx;
+  c->type = max_idx;
+}
+
+template <typename PointT, typename PointNT, typename PointCT, typename PointOutT> void
+cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>::computeClusterNormalIntersections(
+  ClusterPtr c)
+{
+  const std::size_t idx_steps = 1;
+  const float rand_max_inv = 1.0f / RAND_MAX;
+  std::size_t front = 0, back = c->indices.size()-1;
+  Eigen::Vector3f p_mean = Eigen::Vector3f::Zero();
+  std::vector<Eigen::Vector3f> p_list;
+  //std::cout << "Inter: " << c->id << std::endl;
+  while(front < c->indices.size()) //back)
+  {
+    // find random normal pair on cluster
+    back = (std::size_t)( (float)(c->indices.size()-1) * (float)rand() * (float)rand_max_inv );
+    while (back == front) back = (std::size_t)( (float)(c->indices.size()-1) * (float)rand() * (float)rand_max_inv );
+
+    Eigen::Vector3f x1(surface_->points[c->indices[front]].getVector3fMap());
+    Eigen::Vector3f x2(surface_->points[c->indices[back]].getVector3fMap());
+    Eigen::Vector3f n1(normals_->points[c->indices[front]].getNormalVector3fMap());
+    Eigen::Vector3f n2(normals_->points[c->indices[back]].getNormalVector3fMap());
+    //if (pcl_isnan(n1(0)) || pcl_isnan(n2(0)) || pcl_isnan(x1(0)) || pcl_isnan(x2(0)))
+    //std::cout<<"n1:"<<n1(0)<<" n2:"<<n2(0)<<" x1:"<<x1(0)<<" x2:"<<x2(0)<<std::endl;
+    //if (!pcl_isnan(n1(0)) && !pcl_isnan(n2(0)))
+    //{
+    Eigen::Vector3f cross_n = n2.cross(n1);
+    Eigen::Vector3f dist_x = x1 - x2;
+    /*if (cross_n(0) == 0)
+    {
+      std::cout << cross_n(0) <<" "<< cross_n(1)<<" "<<cross_n(2) << std::endl;
+      std::cout<<"n1:"<<n1 << std::endl;
+      std::cout<<"n2:"<<n2 << std::endl;
+      std::cout<<" x1:"<<x1<< std::endl;
+      std::cout<<" x2:"<<x2<<std::endl;
+    }*/
+    if ( !((cross_n(0) == cross_n(1)) && (cross_n(1) == cross_n(2)) && (cross_n(2) == 0)) )
+    {
+      float cross_n_denom = 1.0f / (cross_n(0)*cross_n(0) + cross_n(1)*cross_n(1) + cross_n(2)*cross_n(2));
+      //if (pcl_isnan(cross_n_denom)) std::cout << "Denom:"<< front << std::endl;
+      Eigen::Matrix3f m_s, m_t;
+      m_s << dist_x, n2, cross_n;
+      m_t << dist_x, n1, cross_n;
+      float s = m_s.determinant() * cross_n_denom;
+      float t = m_t.determinant() * cross_n_denom;
+      //std::cout<<"s:" << front << " | "<< cross_n_denom<<  std::endl;
+      //std::cout<<"t:" << front << " | "<< cross_n_denom<<  std::endl;
+      Eigen::Vector3f p1 = x1 + n1 * s;
+      Eigen::Vector3f p2 = x2 + n2 * t;
+      p_mean += p1 + p2;
+      p_list.push_back(p1);
+      p_list.push_back(p2);
+    }
+    front += idx_steps;
+  }
+  
+  float num_p_inv = 1.0f / (float)p_list.size();
+  c->pca_inter_centroid = p_mean * num_p_inv;
+  //std::cout << "" << c->pca_inter_centroid(0) <<","<<c->pca_inter_centroid(1)<<","<<c->pca_inter_centroid(1) << std::endl;
+  Eigen::Matrix3f cov = Eigen::Matrix3f::Zero();
+  for (std::vector<Eigen::Vector3f>::iterator p_it = p_list.begin(); p_it != p_list.end(); ++p_it)
+  {
+    Eigen::Vector3f demean = *p_it - c->pca_inter_centroid;
+    cov += demean * demean.transpose();
+  }
+  Eigen::Vector3f eigenvalues;
+  Eigen::Matrix3f eigenvectors;
+  pcl::eigen33(cov, eigenvectors, eigenvalues);
+  eigenvalues *= num_p_inv;
+
+  c->pca_inter_comp1 = eigenvectors.col(2);
+  c->pca_inter_comp2 = eigenvectors.col(1);
+  c->pca_inter_comp3 = eigenvectors.col(0);
+  c->pca_inter_values = eigenvalues;
+  //std::cout << "Inter: " << c->id << " done" << std::endl;
+}
+
+template <typename PointT, typename PointNT, typename PointCT, typename PointOutT> void
+cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>::mergeClusterProperties(
+  ClusterPtr c_src, ClusterPtr c_trg)
+{
+  for (std::vector<int>::iterator it = c_src->indices.begin(); it != c_src->indices.end(); ++it)
+  {
+    c_trg->addNewPoint(*it, surface_->points[*it].getVector3fMap(), normals_->points[*it].getNormalVector3fMap());
+  }
+  std::cout<<"components"<<std::endl;
+  computeClusterComponents(c_trg);
+  std::cout<<"intersections"<<std::endl;
+  //computeClusterNormalIntersections(c_trg);
+  c_trg->type = I_UNDEF;
+}
+
+template <typename PointT, typename PointNT, typename PointCT, typename PointOutT> void
+cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>::joinAdjacentRotationalClusters(
+  ClusterPtr c,
+  ClusterList& cluster_list)
+{
+  const float max_angle = 45.0 / 180.0 * M_PI;
+  const float min_smoothness = 0.95;
+  std::vector<ClusterPtr> adjacent_clusters;
+  //cluster_list.getMinAngleAdjacentClusters(c->id, max_angle, adjacent_clusters);
+  cluster_list.getAdjacentClustersWithSmoothBoundaries(c->id, min_smoothness, adjacent_clusters);
+  std::cout << "Adjacent Clusters: " << adjacent_clusters.size() << std::endl;
+  for (std::vector<ClusterPtr>::iterator a_it = adjacent_clusters.begin(); a_it != adjacent_clusters.end(); ++a_it)
+  {
+    mergeClusterProperties(*a_it, c);
+    std::cout << "Done properties" << std::endl;
+    cluster_list.mergeClusterDataStructure( (*a_it)->id, c->id);
+    std::cout << "Done data structure" << std::endl;
+  }
+}
+
+template <typename PointT, typename PointNT, typename PointCT, typename PointOutT> void
+cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>::joinAdjacentRotationalClustersOld(
+  ClusterPtr c,
+  ClusterList& cluster_list)
+{
+  const float max_angle = 45.0 / 180.0 * M_PI;
+  const float max_dist = 0.5;
+  bool still_something_todo = !c->is_save_plane;
+  while (still_something_todo)
+  {
+    //std::cout << "1" << std::endl;
+    std::vector<ClusterPtr> adjacent_clusters;
+    if ( pcl_isnan(c->pca_inter_centroid(0)) ) std::cout << "Gotcha... -1 | " << c->id << std::endl;
+    if ( pcl_isnan(c->getCentroid()(0)) ) std::cout << "Gotcha... 0 | " << c->id << std::endl;
+    Eigen::Vector3f c_int = c->pca_inter_centroid - c->getCentroid();
+    //std::cout << "2" << std::endl;
+    cluster_list.getAdjacentClusters(c->id, adjacent_clusters);
+    //std::cout << cluster_list.size() << std::endl;
+    //std::cout << "3" << std::endl;
+    for (std::vector<ClusterPtr>::iterator a_it = adjacent_clusters.begin(); a_it != adjacent_clusters.end(); ++a_it)
+    {
+      if ( (*a_it)->is_save_plane ) continue;
+
+      //if ( pcl_isnan((*a_it)->pca_inter_centroid(0)) ) std::cout << "Gotcha... 1" << std::endl;
+      //if ( pcl_isnan(c->pca_inter_centroid(0)) ) std::cout << "Gotcha... 2" << std::endl;
+      //if ( pcl_isnan((*a_it)->getCentroid()(0)) ) std::cout << "Gotcha... 3" << std::endl;
+      //std::cout << "calc angles" << std::endl;
+      if ( ((*a_it)->pca_inter_centroid - c->pca_inter_centroid).norm() > max_dist ) continue;
+      Eigen::Vector3f a_int = (*a_it)->pca_inter_centroid;
+      Eigen::Vector3f a = (*a_it)->getCentroid();
+      Eigen::Vector3f a_cross_c = (a_int - a).cross(c_int);
+      float a_dot_c = (a_int - a).dot(c_int);
+      float angle = atan2( a_cross_c.norm(), a_dot_c );
+      //Eigen::Vector3f cross = (*a_it)->getOrientation().cross(c->getOrientation());
+      //float dot = (*a_it)->getOrientation().dot(c->getOrientation());
+      //float angle = atan2( cross.norm(), dot);
+      //std::cout << "c:"<<c_int(0)<<","<<c_int(1)<<","<<c_int(2)<<std::endl;
+      //std::cout << "a:"<<a(0)<<","<<a(1)<<","<<a(2)<<" | "<<a_int(0)<<","<<a_int(1)<<","<<a_int(2)<<std::endl;
+      //std::cout << "cross|dot:"<<a_cross_c(0)<<","<<a_cross_c(1)<<","<<a_cross_c(2)<<" | "<<a_dot_c<<std::endl;
+      //std::cout << angle << " " << fabs(angle) << std::endl;
+      if ( fabs(angle) > max_angle ) continue;
+      
+      //std::cout << "merge properties" << std::endl;
+      mergeClusterProperties(*a_it, c);
+      //std::cout << "merge data structure" << std::endl;
+      cluster_list.mergeClusterDataStructure( (*a_it)->id, c->id);
+      
+      still_something_todo = false;
+      break;
+    }
+    still_something_todo = !still_something_todo; // if we merged before, we still have something todo!
+    //std::cout << (still_something_todo ? "true" : "false") << std::endl;
+  }
+}
+
+template <typename PointT, typename PointNT, typename PointCT, typename PointOutT> void
+cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>::computeBoundarySmoothness(
+  ClusterList& cl)
+{
+  boost::graph_traits<ClusterList::GraphT>::edge_iterator e_it, e_end;
+  ClusterPtr c1;//, c2;
+  const float max_angle = cos(35.0 * M_PI / 180);
+  for (boost::tie(e_it,e_end)=boost::edges(cl.g_); e_it != e_end; ++e_it)
+  {
+    //c2 = cl.g_[boost::source(*e_it, cl.g_)].c_it;
+    c1 = cl.g_[boost::target(*e_it, cl.g_)].c_it;
+    int smooth_points = 0;
+    std::map<int,int>::iterator it = (cl.g_[*e_it].boundary_points[c1->id]).begin();
+    for ( ; it != (cl.g_[*e_it].boundary_points[c1->id]).end(); ++it)
+    {
+      if ( max_angle < normals_->points[(*it).first].getNormalVector3fMap().dot(
+	     normals_->points[(*it).second].getNormalVector3fMap()) )
+	++smooth_points;
+    }
+    cl.g_[*e_it].smoothness = (float)smooth_points / (cl.g_[*e_it].boundary_points[c1->id]).size();
+  }
 }
 
 template <typename PointT, typename PointNT, typename PointCT, typename PointOutT> void
@@ -417,15 +679,15 @@ cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>:
   ClusterList& cluster_list)
 {
   OrganizedNormalEstimation<PointT,PointNT,PointOutT> one;
-  for (ClusterList::iterator c = cluster_list.begin(); c != cluster_list.end(); ++c)
+  cluster_list.sort();
+  for (ClusterPtr c = cluster_list.begin(); c != cluster_list.end(); ++c)
   {
-    if (c->indices.size() < 100) continue;
-    
-    if (c->type == I_EDGE || c->type == I_NAN || c->type == I_BORDER || computeClusterComponents(*c)) continue;
-
+    if (c->indices.size() < 20) continue;
+    if (c->type == I_EDGE || c->type == I_NAN || c->type == I_BORDER) continue;
+    computeClusterComponents(c);
     // recompute normals
-    /*
-    int w_size = std::floor(sqrt(c->indices.size() / 16.0f))+8;
+    
+    int w_size = std::floor(sqrt(c->indices.size() / 16.0f))+ 8 + round(2*c->getCentroid()(2));
     int steps = std::floor(w_size / 3);
     one.setPixelSearchRadius(w_size,2,steps);
     one.computeMaskManually(surface_->width);
@@ -439,144 +701,45 @@ cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>:
       if (!pcl_isnan(normals_->points[*idx].normal[2]))
 	c->sum_orientation += Eigen::Vector3f(normals_->points[*idx].normal);
     }
-    */
-    // compute principal curvature of the segment in its entirety
-    Eigen::Matrix3f M = Eigen::Matrix3f::Identity() - c->getOrientation() * c->getOrientation().transpose();
-    std::vector<Eigen::Vector3f> normals_projected;
-    Eigen::Vector3f n_centroid = Eigen::Vector3f::Zero();
-    for (std::vector<int>::iterator idx = c->indices.begin(); idx != c->indices.end(); ++ idx)
-    {
-      if (pcl_isnan(normals_->points[*idx].normal[2])) continue;
-      normals_projected.push_back( M * Eigen::Vector3f(normals_->points[*idx].normal) );
-      n_centroid += normals_projected.back();
-    }
-    float num_p_inv = 1.0f / normals_projected.size();
-    n_centroid *= num_p_inv;
-    Eigen::Matrix3f cov = Eigen::Matrix3f::Zero();
-    for (std::vector<Eigen::Vector3f>::iterator n_it = normals_projected.begin(); n_it != normals_projected.end(); ++n_it)
-    {
-      Eigen::Vector3f demean = *n_it - n_centroid;
-      cov += demean * demean.transpose();
-    }
-    Eigen::Vector3f eigenvalues;
-    Eigen::Matrix3f eigenvectors;
-    pcl::eigen33(cov, eigenvectors, eigenvalues);
-    eigenvalues(2) *= num_p_inv;
-    eigenvalues(1) *= num_p_inv;
-    //std::cout <<"2ndPass: size = "<< c->indices.size() <<"\tc_max = "<< eigenvalues(2) <<"\tc_min = "<< eigenvalues(1) << std::endl;
 
-    if (eigenvalues(2) < 0.02) c->type = I_PLANE;
-    else if(eigenvalues(2) < 7.0 * eigenvalues(1)) c->type = I_SPHERE;
-    else c->type = I_CYL;
+    //computeClusterNormalIntersections(c);
+    //cluster_list.computeEdgeAngles(c->id);
   }
-}
-
-template <typename PointT, typename PointNT, typename PointCT, typename PointOutT> void
-cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>::calcNormalIntersections(
-  ClusterList& cluster_list,
-  pcl::PointCloud<PointXYZ>::Ptr& intersection_points)
-{
-  const std::size_t idx_steps = 1;
-  const float rand_max_inv = 1.0f / RAND_MAX;
-
-  for (ClusterList::iterator c = cluster_list.begin(); c != cluster_list.end(); ++c)
+  std::cout << "Second.. " << std::endl;
+  computeBoundarySmoothness(cluster_list);
+  //cluster_list.removeSmallClusters();
+ 
+  for (ClusterPtr c = --cluster_list.end(); c != cluster_list.begin(); --c)
   {
-    if (c->indices.size() < 100) continue;
+    std::cout << "ID: " << c->id << std::endl;
+    if (c->indices.size() < 5) continue;
     if (c->type == I_EDGE || c->type == I_NAN || c->type == I_BORDER || c->is_save_plane) continue;
-    std::size_t front = 0, back = c->indices.size()-1;
-    Eigen::Vector3f p_mean = Eigen::Vector3f::Zero();
-    std::vector<Eigen::Vector3f> p_list;
-    while(front < c->indices.size()) //back)
-    {
-      back = (std::size_t)( (float)(c->indices.size()-1) * (float)rand() * (float)rand_max_inv );
-      while (back == front) back = (std::size_t)( (float)(c->indices.size()-1) * (float)rand() * (float)rand_max_inv );
-
-      Eigen::Vector3f x1(surface_->points[c->indices[front]].getVector3fMap());
-      Eigen::Vector3f x2(surface_->points[c->indices[back]].getVector3fMap());
-      Eigen::Vector3f n1(normals_->points[c->indices[front]].getNormalVector3fMap());
-      Eigen::Vector3f n2(normals_->points[c->indices[back]].getNormalVector3fMap());
-      if (!pcl_isnan(n1(0)) && !pcl_isnan(n2(0)))
-      {
-	Eigen::Vector3f cross_n = n2.cross(n1);
-	Eigen::Vector3f dist_x = x1 - x2;
-	float cross_n_denom = 1.0f / (cross_n(0)*cross_n(0) + cross_n(1)*cross_n(1) + cross_n(2)*cross_n(2));
-	Eigen::Matrix3f m_s, m_t;
-	m_s << dist_x, n2, cross_n;
-	m_t << dist_x, n1, cross_n;
-	float s = m_s.determinant() * cross_n_denom;
-	float t = m_t.determinant() * cross_n_denom;
-      
-	Eigen::Vector3f p1 = x1 + n1 * s;
-	Eigen::Vector3f p2 = x2 + n2 * t;
-	p_mean += p1 + p2;
-	p_list.push_back(p1);
-	p_list.push_back(p2);
-	intersection_points->points.push_back( pcl::PointXYZ(p1(0),p1(1),p1(2)) );
-	intersection_points->points.push_back( pcl::PointXYZ(p2(0),p2(1),p2(2)) );
-      }
-      front += idx_steps;
-      //back -= idx_steps;
-    }
-
-    float num_p_inv = 1.0f / (float)p_list.size();
-    c->ints_centroid = p_mean * num_p_inv;
-    Eigen::Matrix3f cov = Eigen::Matrix3f::Zero();
-    for (std::vector<Eigen::Vector3f>::iterator p_it = p_list.begin(); p_it != p_list.end(); ++p_it)
-    {
-      Eigen::Vector3f demean = *p_it - c->ints_centroid;
-      cov += demean * demean.transpose();
-    }
-    Eigen::Vector3f eigenvalues;
-    Eigen::Matrix3f eigenvectors;
-    pcl::eigen33(cov, eigenvectors, eigenvalues);
-    eigenvalues *= num_p_inv;
-
-    c->ints_comp_1 = eigenvectors.col(2);
-    c->ints_comp_2 = eigenvectors.col(1);
-    c->ints_comp_3 = eigenvectors.col(0);
-    c->ints_values = eigenvalues;
-    //if ( eigenvalues(1) / (eigenvalues(0)+eigenvalues(1)+eigenvalues(2)) > 0.05)
-    if ( eigenvalues(1) / (eigenvalues(0)) > 2.0)
-      c->type = I_CYL;
-
-    std::cout<<"Z = "<< c->getCentroid()(2) <<"\t2nd = "<< eigenvalues(1) / (eigenvalues(0)) <<std::endl;
+    joinAdjacentRotationalClusters(c, cluster_list);
+    //computeClusterCurvature(c);
+    if (c->max_curvature < 0.02) c->type = I_PLANE;
+    else if(c->max_curvature < 7.0 * c->min_curvature) c->type = I_SPHERE;
+    else c->type = I_CYL;
+    std::cout << "ID: " << c->id << " done"<< std::endl;
   }
+  //std::cout << "done" << std::endl;
 }
-
-
 
 template <typename PointT, typename PointNT, typename PointCT, typename PointOutT> void
 cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>::getColoredCloud(
   ClusterList& cluster_list,
   pcl::PointCloud<PointXYZRGB>::Ptr& color_cloud)
 {
-  std::sort(cluster_list.begin()+3, cluster_list.end());
+  cluster_list.sort();
   uint32_t rgb;
-  int t = 4;
-  for(int c = cluster_list.size()-1; c>2; --c, ++t)
+  int t = 0;
+  for(std::list<Cluster>::reverse_iterator c = cluster_list.rbegin(); c != cluster_list.rend(); ++c, ++t)
   {
-    /*if (cluster_list[c].indices.size() > 10)
-      std::cout << "Size: " << cluster_list[c].indices.size() 
-		<< " | MaxCurv: " << cluster_list[c].getMaxCurvature() 
-		<< " | MinCurv: " << cluster_list[c].getMinCurvature() << std::endl;*/
     rgb = (color_tab_[t])[2] << 16 | (color_tab_[t])[1] << 8 | (color_tab_[t])[0];
-    for(size_t i = 0; i<cluster_list[c].indices.size(); ++i)
+    for(size_t i = 0; i<c->indices.size(); ++i)
     {
-      color_cloud->points[cluster_list[c].indices[i]].rgb = *reinterpret_cast<float*>(&rgb);
+      color_cloud->points[c->indices[i]].rgb = *reinterpret_cast<float*>(&rgb);
     }
   }
-  //Edge
-  rgb = (color_tab_[3])[2] << 16 | (color_tab_[3])[1] << 8 | (color_tab_[3])[0];
-  for(size_t i = 0; i<cluster_list[2].indices.size(); ++i)
-    color_cloud->points[cluster_list[2].indices[i]].rgb = *reinterpret_cast<float*>(&rgb);
-  //border
-  rgb = (color_tab_[2])[2] << 16 | (color_tab_[2])[1] << 8 | (color_tab_[2])[0];
-  for(size_t i = 0; i<cluster_list[1].indices.size(); ++i)
-    color_cloud->points[cluster_list[1].indices[i]].rgb = *reinterpret_cast<float*>(&rgb);
-  rgb = (color_tab_[1])[2] << 16 | (color_tab_[1])[1] << 8 | (color_tab_[1])[0];
-  //nan
-  for(size_t i = 0; i<cluster_list[0].indices.size(); ++i)
-    color_cloud->points[cluster_list[0].indices[i]].rgb = *reinterpret_cast<float*>(&rgb);
 }
 
 
@@ -585,58 +748,58 @@ cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>:
   ClusterList& cluster_list,
   pcl::PointCloud<PointXYZRGB>::Ptr& color_cloud)
 {
-  for(int c = 0; c<(int)cluster_list.size(); ++c)
+  for(ClusterPtr c = cluster_list.begin(); c != cluster_list.end(); ++c)
   {
-    switch(cluster_list[c].type)
+    switch(c->type)
     {
     case I_NAN:
       break;
     case I_BORDER:
-      for(size_t i = 0; i<cluster_list[c].indices.size(); ++i)
+      for(size_t i = 0; i<c->indices.size(); ++i)
       {
-	color_cloud->points[cluster_list[c].indices[i]].r = 255;
-	color_cloud->points[cluster_list[c].indices[i]].g = 255;
-	color_cloud->points[cluster_list[c].indices[i]].b = 255;
+	color_cloud->points[c->indices[i]].r = 255;
+	color_cloud->points[c->indices[i]].g = 255;
+	color_cloud->points[c->indices[i]].b = 255;
       }
       break;
     case I_EDGE:
-      for(size_t i = 0; i<cluster_list[c].indices.size(); ++i)
+      for(size_t i = 0; i<c->indices.size(); ++i)
       {
-	color_cloud->points[cluster_list[c].indices[i]].r = 255;
-	color_cloud->points[cluster_list[c].indices[i]].g = 0;
-	color_cloud->points[cluster_list[c].indices[i]].b = 0;
+	color_cloud->points[c->indices[i]].r = 255;
+	color_cloud->points[c->indices[i]].g = 0;
+	color_cloud->points[c->indices[i]].b = 0;
       }
       break;
     case I_PLANE:
-      for(size_t i = 0; i<cluster_list[c].indices.size(); ++i)
+      for(size_t i = 0; i<c->indices.size(); ++i)
       {
-	color_cloud->points[cluster_list[c].indices[i]].r = 0;
-	color_cloud->points[cluster_list[c].indices[i]].g = 200;
-	color_cloud->points[cluster_list[c].indices[i]].b = 255;
+	color_cloud->points[c->indices[i]].r = 0;
+	color_cloud->points[c->indices[i]].g = 200;
+	color_cloud->points[c->indices[i]].b = 255;
       }
       break;
     case I_CYL:
-      for(size_t i = 0; i<cluster_list[c].indices.size(); ++i)
+      for(size_t i = 0; i<c->indices.size(); ++i)
       {
-	color_cloud->points[cluster_list[c].indices[i]].r = 0;
-	color_cloud->points[cluster_list[c].indices[i]].g = 200;
-	color_cloud->points[cluster_list[c].indices[i]].b = 0;
+	color_cloud->points[c->indices[i]].r = 0;
+	color_cloud->points[c->indices[i]].g = 200;
+	color_cloud->points[c->indices[i]].b = 0;
       }
       break;
     case I_SPHERE:
-      for(size_t i = 0; i<cluster_list[c].indices.size(); ++i)
+      for(size_t i = 0; i<c->indices.size(); ++i)
       {
-	color_cloud->points[cluster_list[c].indices[i]].r = 255;
-	color_cloud->points[cluster_list[c].indices[i]].g = 255;
-	color_cloud->points[cluster_list[c].indices[i]].b = 0;
+	color_cloud->points[c->indices[i]].r = 255;
+	color_cloud->points[c->indices[i]].g = 255;
+	color_cloud->points[c->indices[i]].b = 0;
       }
       break;
     default:
-      for(size_t i = 0; i<cluster_list[c].indices.size(); ++i)
+      for(size_t i = 0; i<c->indices.size(); ++i)
       {
-	color_cloud->points[cluster_list[c].indices[i]].r = 255;
-	color_cloud->points[cluster_list[c].indices[i]].g = 0;
-	color_cloud->points[cluster_list[c].indices[i]].b = 255;
+	color_cloud->points[c->indices[i]].r = 255;
+	color_cloud->points[c->indices[i]].g = 0;
+	color_cloud->points[c->indices[i]].b = 255;
       }
       break;
     }

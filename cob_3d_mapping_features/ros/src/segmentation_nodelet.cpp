@@ -78,22 +78,21 @@ cob_3d_mapping_features::SegmentationNodelet::received_cloud_cb(const pcl::Point
   //oce_.setInputCloud(cloud);
   //oce_.compute(*pc_);
 
+  //NODELET_INFO("load... ");
   seg_.setInputPoints(cloud);
+  //NODELET_INFO("segment... ");
   seg_.propagateWavefront(cluster_list_);
-  seg_.propagateWavefront2ndPass(cluster_list_);
-  seg_.getColoredCloud(cluster_list_, colored_);
-  //cv::Mat segmented;
-  //seg_.getClusterIndices(labels_, clusters_, segmented);
-
-  //cv_bridge::CvImage cv_ptr;
-  //cv_ptr.image = segmented;
-  //cv_ptr.encoding = sensor_msgs::image_encodings::RGB8;
-  //image_pub_.publish(cv_ptr.toImageMsg());
+  //seg_.propagateWavefront2ndPass(cluster_list_);
+  //NODELET_INFO("analyze... ");
   seg_.analyseClusters(cluster_list_);
+  //NODELET_INFO("colorize... ");
+  seg_.getColoredCloud(cluster_list_, colored_);
+  
   seg_.getColoredCloudByType(cluster_list_, classified_);
+  //NODELET_INFO("publish... ");
   pub_.publish(*colored_);
   classify_pub_.publish(*classified_);
-
+  std::cout << "Number of Clusters: " << cluster_list_.size() << std::endl;
   std::cout << t.precisionStop() << "s\t for segmentation!" << std::endl;
 }
 

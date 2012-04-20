@@ -55,97 +55,82 @@
 #ifndef __COB_3D_MAPPING_COMMON_CLUSTER_H__
 #define __COB_3D_MAPPING_COMMON_CLUSTER_H__
 
+#include <pcl/common/eigen.h>
+
 #include "cob_3d_mapping_common/label_defines.h"
 
-namespace cob_3d_mapping_common
+
+namespace cob_3d_mapping_features
 {
   class Cluster
   {
   public:
-    Cluster () : indices()
+    Cluster (int id_=0) : id(id_)
       , is_save_plane(false)
       , type(I_UNDEF)
+      , indices()
       , sum_points(0.0, 0.0, 0.0)
       , sum_orientation(0.0, 0.0, 0.0)
       , sum_angle(0.0)
-      , sum_max_curvature(0.0)
-      , sum_min_curvature(0.0)
-    { };
+      , max_curvature(0.0)
+      , min_curvature(0.0)
+    { }
 
-    ~Cluster () { };
+    ~Cluster () { }
 
     void
-    updateCluster(const int idx, 
-		  const Eigen::Vector3f& new_point, 
-		  const Eigen::Vector3f& new_normal)
+    addNewPoint(const int idx, const Eigen::Vector3f& new_point, const Eigen::Vector3f& new_normal)
     {
       indices.push_back(idx);
       sum_points += new_point;
       sum_orientation += new_normal;
     }
-
-    void
-    updateCluster(const int idx,
-		  const Eigen::Vector3f& new_normal, 
-		  const float c_max,
-		  const float c_min)
-    {
-      indices.push_back(idx);
-      sum_orientation += new_normal;
-
-      sum_max_curvature += c_max;
-      sum_min_curvature += c_min;
-    }
-
-    inline Eigen::Vector3f
-    getCentroid() { return (sum_points / indices.size()); }
     
-    inline Eigen::Vector3f
-    getOrientation() { return (sum_orientation / indices.size()).normalized(); }
+    inline std::size_t size() const { return indices.size(); }
+    inline Eigen::Vector3f getCentroid() const { return (sum_points / indices.size()); }
+    inline Eigen::Vector3f getOrientation() const { return (sum_orientation / indices.size()).normalized(); }
+    inline bool isConvex() const { return (max_curvature < 0); }
+    inline float getNormalChange() const { return sum_angle / indices.size(); }
+    inline float getSurfaceCurvature() const
+    { return pca_point_values(0) / (pca_point_values(0) + pca_point_values(1) + pca_point_values(2)); }
 
-    inline float
-    getNormalChange() { return sum_angle / indices.size(); }
 
-    inline float
-    getSurfaceCurvature() { return eigenvalues(0) / (eigenvalues(0) + eigenvalues(1) + eigenvalues(2)); }
-
-    inline float
-    getMaxCurvature() { return (sum_max_curvature / indices.size()); }
-
-    inline float
-    getMinCurvature() { return (sum_min_curvature / indices.size()); }
-
-    inline bool
-    isConvex() { return (sum_max_curvature < 0); }
-
+    // Members:
+    const int id;
     bool is_save_plane;
     int type;
     std::vector<int> indices;
-    Eigen::Vector3f first_component;
-    Eigen::Vector3f second_component;
-    Eigen::Vector3f third_component;
-    Eigen::Vector3f eigenvalues;
-    Eigen::Vector3f sum_orientation;
-
-    Eigen::Vector3f ints_centroid;
-    Eigen::Vector3f ints_comp_1;
-    Eigen::Vector3f ints_comp_2;
-    Eigen::Vector3f ints_comp_3;
-    Eigen::Vector3f ints_values;
-
-    float sum_max_curvature;
-    float sum_min_curvature;
-
-
-  protected:
     Eigen::Vector3f sum_points;
+    Eigen::Vector3f sum_orientation;
     float sum_angle;
+
+    // Curvature Properties:
+    float max_curvature;
+    float min_curvature;
+    Eigen::Vector3f min_curvature_direction;
+
+    // Point Statistical Properties:
+    Eigen::Vector3f pca_point_comp1;
+    Eigen::Vector3f pca_point_comp2;
+    Eigen::Vector3f pca_point_comp3;
+    Eigen::Vector3f pca_point_values;
+
+    // Normal Intersection Properties:
+    Eigen::Vector3f pca_inter_centroid;
+    Eigen::Vector3f pca_inter_comp1;
+    Eigen::Vector3f pca_inter_comp2;
+    Eigen::Vector3f pca_inter_comp3;
+    Eigen::Vector3f pca_inter_values;
+
   };
 
   inline const bool operator< (const Cluster& lhs, const Cluster& rhs){return lhs.indices.size() < rhs.indices.size();}
   inline const bool operator> (const Cluster& lhs, const Cluster& rhs){return  operator< (rhs, lhs);}
   inline const bool operator<=(const Cluster& lhs, const Cluster& rhs){return !operator> (lhs, rhs);}
   inline const bool operator>=(const Cluster& lhs, const Cluster& rhs){return !operator< (lhs, rhs);}
+
+  // TODO: provide a static function to recompute cluster properties after merging
+  //       IN: cluster&, PointCloud::ConstPtr
 }
 
 #endif //__COB_3D_MAPPING_COMMON_CLUSTER_H__

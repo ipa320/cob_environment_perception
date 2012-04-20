@@ -88,7 +88,6 @@ namespace cob_3d_mapping_features
       , normals_(new pcl::PointCloud<pcl::Normal>)
       , pc_(new pcl::PointCloud<pcl::PrincipalCurvatures>)
       , labels_(new pcl::PointCloud<PointLabel>)
-      , clusters_()
       , cluster_list_()
     { }
 
@@ -110,7 +109,7 @@ namespace cob_3d_mapping_features
     ros::Publisher classify_pub_;
     image_transport::ImageTransport it_;
     image_transport::Publisher image_pub_;
-    
+
     OrganizedNormalEstimationOMP<PointT, pcl::Normal, PointLabel> one_;
     OrganizedCurvatureEstimationOMP<PointT, pcl::Normal, PointLabel, pcl::PrincipalCurvatures> oce_;
     ExtendedSegmentation<pcl::PointXYZRGB,pcl::Normal,pcl::PrincipalCurvatures,PointLabel> seg_;
@@ -120,8 +119,7 @@ namespace cob_3d_mapping_features
     pcl::PointCloud<pcl::Normal>::Ptr normals_;
     pcl::PointCloud<pcl::PrincipalCurvatures>::Ptr pc_;
     pcl::PointCloud<PointLabel>::Ptr labels_;
-    std::vector<pcl::PointIndices> clusters_;
-    std::vector<cob_3d_mapping_common::Cluster> cluster_list_;
+    cob_3d_mapping_features::ClusterList cluster_list_;
     cv::Mat segmented_;
 
   };

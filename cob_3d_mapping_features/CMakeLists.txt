@@ -41,7 +41,8 @@ rosbuild_add_library(cob_3d_mapping_features
 	common/src/knn_classifier.cpp
 	common/src/most_discriminating_data_points.cpp
 	common/src/organized_curvature_estimation.cpp
-	common/src/organized_normal_estimation.cpp)
+	common/src/organized_normal_estimation.cpp
+	common/src/cluster_list.cpp)
 
 rosbuild_add_library(cob_3d_mapping_features_nodelets
 	ros/src/plane_extraction_nodelet.cpp
