@@ -30,4 +30,5 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #target_link_libraries(example ${PROJECT_NAME})
 
 # rostest for tools
-rosbuild_add_roslaunch_check(launch/mapping.launch ROBOT=cob3-3 ROBOT_ENV=ipa-kitchen)
+#rosbuild_add_roslaunch_check(launch/mapping.launch ROBOT=cob3-3 ROBOT_ENV=ipa-kitchen)
+rosbuild_add_roslaunch_check(launch)
