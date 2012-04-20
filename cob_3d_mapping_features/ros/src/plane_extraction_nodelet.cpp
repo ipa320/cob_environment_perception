@@ -107,10 +107,13 @@
 
 #include "cob_3d_mapping_features/plane_extraction.h"
 #include "cob_3d_mapping_msgs/PlaneExtractionAction.h"
+#include <cob_3d_mapping_common/polygon.h>
+#include <cob_3d_mapping_common/ros_msg_conversions.h>
 
 
 using namespace tf;
 using namespace cob_3d_mapping_features;
+using namespace cob_3d_mapping;
 
 //####################
 //#### nodelet class ####
@@ -121,83 +124,42 @@ public:
   // Constructor
   PlaneExtractionNodelet()
   : as_(0),
-    mode_action_(false)
+    ctr_(0),
+    mode_action_(false),
+    target_frame_("/map"),
+    vox_leaf_size_(0.04),
+    passthrough_min_z_(-0.1),
+    passthrough_max_z_(2.0)
   {
-    ctr_ = 0;
-    min_cluster_size_ = 300;
-
-    passthrough_min_z_ = -0.1;
-    passthrough_max_z_ = 2.0;
-    vox_leaf_size_ = 0.03;
-    cluster_tolerance_ = 0.05;
-    max_cluster_size_ = 60000;
-    radius_ = 0.02;
-    optimize_coefficients_ = true;
-    normal_distance_weight_ = 0.04;
-    max_iterations_ = 99;
-    distance_threshold_ = 0.02;
-
-    //setReconfigureCallback(boost::bind(&callback, this, _1, _2));
+    // void
   }
 
   // Destructor
+  virtual
   ~PlaneExtractionNodelet()
   {
-    /// void
     if(as_) delete as_;
   }
 
   void dynReconfCallback(cob_3d_mapping_features::plane_extraction_nodeletConfig &config, uint32_t level)
   {
-    file_path_ = config.file_path;
-    save_to_file_ = config.save_to_file;
-    plane_constraint_ = config.plane_constraint;
     mode_action_ = config.mode_action;
     target_frame_ = config.target_frame;
+    passthrough_min_z_ = config.passthrough_min_z;
+    passthrough_max_z_ = config.passthrough_max_z;
 
-    pe.setFilePath(file_path_);
-    pe.setSaveToFile(save_to_file_);
-    pe.setPlaneConstraint((PlaneConstraint)plane_constraint_);
-    pe.setClusteringParamClusterTolerance (cluster_tolerance_);
-    pe.setClusteringParamMinClusterSize (min_cluster_size_);
-    pe.setClusteringParamMaxClusterSize (max_cluster_size_);
-    pe.setNormalEstimationParamRadius (radius_);
-    pe.setSegmentationParamOptimizeCoefficients (optimize_coefficients_);
-    pe.setSegmentationParamNormalDistanceWeight (normal_distance_weight_);
-    pe.setSegmentationParamMaxIterations (max_iterations_);
-    pe.setSegmentationParamDistanceThreshold (distance_threshold_);
+    pe.setFilePath(config.file_path);
+    pe.setSaveToFile(config.save_to_file);
+    pe.setPlaneConstraint((PlaneConstraint)config.plane_constraint);
+    pe.setClusterTolerance (config.cluster_tolerance);
+    pe.setMinPlaneSize (config.min_plane_size);
+    pe.setAlpha(config.alpha);
+    //pe.setClusteringParamMaxClusterSize (config.max_cluster_size);
+    //pe.setNormalEstimationParamRadius (config.normal_radius);
+    //pe.setSegmentationParamNormalDistanceWeight (normal_distance_weight_);
+    //pe.setSegmentationParamMaxIterations (max_iterations_);
+    //pe.setSegmentationParamDistanceThreshold (distance_threshold_);
   }
-
-  /**
-   * @brief callback for dynamic reconfigure
-   *
-   * everytime the dynamic reconfiguration changes this function will be called
-   *
-   * @param inst instance of PlaneExtractionNodelet which parameters should be changed
-   * @param config data of configuration
-   * @param level bit descriptor which notifies which parameter changed
-   *
-   * @return nothing
-   */
-  /*static void callback(PlaneExtractionNodelet *inst, cob_3d_mapping_features::plane_extraction_nodeletConfig &config, uint32_t level)
-  {
-    if(!inst)
-      return;
-
-    //boost::mutex::scoped_lock l1(inst->m_mutex_actionCallback);
-    //boost::mutex::scoped_lock l2(inst->m_mutex_pointCloudSubCallback);
-    boost::mutex::scoped_lock lock(inst->mutex_);
-
-    inst->file_path_ = config.file_path;
-    inst->save_to_file_ = config.save_to_file;
-    inst->plane_constraint_ = config.plane_constraint;
-    inst->mode_action_ = config.mode_action;
-    inst->target_frame_ = config.target_frame;
-
-    inst->pe.setFilePath(inst->file_path_);
-    inst->pe.setSaveToFile(inst->save_to_file_);
-    inst->pe.setPlaneConstraint((PlaneConstraint)inst->plane_constraint_);
-  }*/
 
 
   /**
@@ -214,43 +176,13 @@ public:
 
     config_server_.setCallback(boost::bind(&PlaneExtractionNodelet::dynReconfCallback, this, _1, _2));
     point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &PlaneExtractionNodelet::pointCloudSubCallback, this);
-    viz_marker_pub_ = n_.advertise<visualization_msgs::Marker>("plane_marker",10);
+    viz_marker_pub_ = n_.advertise<visualization_msgs::Marker>("visualization_marker",10);
     shape_array_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("shape_array",1);
 
     as_= new actionlib::SimpleActionServer<cob_3d_mapping_msgs::PlaneExtractionAction>(n_, "plane_extraction", boost::bind(&PlaneExtractionNodelet::actionCallback, this, _1), false);
     as_->start();
 
     get_plane_ = n_.advertiseService("get_plane", &PlaneExtractionNodelet::srvCallback, this);
-
-    n_.param("plane_extraction/file_path" ,file_path_ ,std::string("/home/goa-hh/"));
-    n_.param("plane_extraction/save_to_file" ,save_to_file_ ,false);
-    n_.param("plane_extraction/plane_constraint", plane_constraint_ ,0);
-    n_.param("plane_extraction/mode_action", mode_action_ ,false);
-    n_.param("plane_extraction/target_frame" ,target_frame_ ,std::string("/map"));
-    n_.param("plane_extraction/passthrough_min_z" ,passthrough_min_z_,-0.1);
-    n_.param("plane_extraction/passthrough_max_z" ,passthrough_max_z_,2.0);
-    n_.param ("plane_extraction/vox_leaf_size", vox_leaf_size_, 0.03);
-    n_.param ("plane_extraction/cluster_tolerance", cluster_tolerance_, 0.05);
-    n_.param ("plane_extraction/min_cluster_size", min_cluster_size_, 999);
-    n_.param ("plane_extraction/max_cluster_size", max_cluster_size_, 60000);
-    n_.param ("plane_extraction/radius", radius_, 0.02);
-    n_.param ("plane_extraction/optimize_coefficients", optimize_coefficients_, true);
-    n_.param ("plane_extraction/normal_distance_weight", normal_distance_weight_, 0.04);
-    n_.param ("plane_extraction/max_iterations", max_iterations_, 99);
-    n_.param ("plane_extraction/distance_threshold", distance_threshold_, 0.02);
-
-    pe.setFilePath(file_path_);
-    pe.setSaveToFile(save_to_file_);
-    pe.setPlaneConstraint((PlaneConstraint)plane_constraint_);
-
-    pe.setClusteringParamClusterTolerance (cluster_tolerance_);
-    pe.setClusteringParamMinClusterSize (min_cluster_size_);
-    pe.setClusteringParamMaxClusterSize (max_cluster_size_);
-    pe.setNormalEstimationParamRadius (radius_);
-    pe.setSegmentationParamOptimizeCoefficients (optimize_coefficients_);
-    pe.setSegmentationParamNormalDistanceWeight (normal_distance_weight_);
-    pe.setSegmentationParamMaxIterations (max_iterations_);
-    pe.setSegmentationParamDistanceThreshold (distance_threshold_);
   }
 
 
@@ -271,10 +203,6 @@ public:
                     std::vector<std::vector<pcl::Vertices> >& v_hull_polygons,
                     std::vector<pcl::ModelCoefficients>& v_coefficients_plane)
   {
-    //std::cout << "pc frame:" << pc_in->header.frame_id << std::endl;
-    //pcl::io::savePCDFileASCII ("/home/goa/tmp/before_trans.pcd", *pc_in);
-    //pcl::io::savePCDFileASCII ("/home/goa/tmp/after_trans.pcd", *pc_in);
-    //std::cout << "pc frame:" << pc_in->header.frame_id << std::endl;
     // Downsample input
     pcl::VoxelGrid<Point> voxel;
     voxel.setInputCloud(pc_in);
@@ -283,12 +211,7 @@ public:
     voxel.setFilterLimits(passthrough_min_z_, passthrough_max_z_);
     pcl::PointCloud<Point>::Ptr pc_vox = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>);
     voxel.filter(*pc_vox);
-    //pcl::io::savePCDFileASCII ("/home/goa/tmp/after_voxel.pcd", *pc_vox);
-    //ROS_INFO("pc size after voxel: %d", pc_vox->size());
-    //TODO: transform to /base_link or /map
     pe.extractPlanes(pc_vox, v_cloud_hull, v_hull_polygons, v_coefficients_plane);
-
-
   }
 
   /**
@@ -332,7 +255,8 @@ public:
       std::vector<std::vector<pcl::Vertices> > v_hull_polygons;
       std::vector<pcl::ModelCoefficients> v_coefficients_plane;
       extractPlane(pc_trans.makeShared(), v_cloud_hull, v_hull_polygons, v_coefficients_plane);
-      publishShapeArray(v_cloud_hull, v_hull_polygons, v_coefficients_plane, pc_trans.header);
+
+      publishShapeArray(v_cloud_hull, v_hull_polygons, v_coefficients_plane, pc_in->header);
       for(unsigned int i = 0; i < v_cloud_hull.size(); i++)
       {
         publishMarker(v_cloud_hull[i], pc_trans.header, 0, 0, 1);
@@ -340,7 +264,7 @@ public:
         //ROS_INFO("%d planes published so far", ctr_);
       }
 
-      publishShapeArray(v_cloud_hull, v_hull_polygons, v_coefficients_plane, pc_trans.header);
+      //publishShapeArray(v_cloud_hull, v_hull_polygons, v_coefficients_plane, pc_in->header);
     }
 
   }
@@ -360,7 +284,6 @@ public:
     //boost::mutex::scoped_lock l1(m_mutex_actionCallback);
 
     ROS_INFO("action callback");
-    //TODO: use scoped_lock
     boost::mutex::scoped_lock lock(mutex_);
     /*if(!lock)
     //if(!lock.owns_lock())
@@ -388,7 +311,7 @@ public:
       tf_listener_.waitForTransform("/map", "/head_cam3d_link", pc_cur_.header.stamp, ros::Duration(2));
       tf_listener_.lookupTransform("/map", "/head_cam3d_link", pc_cur_.header.stamp, transform);
     }
-    catch (tf::TransformException ex)
+    catch (tf::TransformException& ex)
     {
       ROS_ERROR("[plane_extraction] : %s",ex.what());
     }
@@ -397,7 +320,7 @@ public:
     ROS_INFO("Rob pose: (%f,%f,%f)", bt_rob_pose.x(),bt_rob_pose.y(),bt_rob_pose.z());
     unsigned int idx = 0;
     pe.findClosestTable(v_cloud_hull, v_coefficients_plane, rob_pose, idx);
-    ROS_INFO("Hull %d size: %d", idx, v_cloud_hull[idx].size());
+    ROS_INFO("Hull %d size: %d", idx, (unsigned int)v_cloud_hull[idx].size());
     pcl::copyPointCloud(v_cloud_hull[idx], hull_);
     plane_coeffs_ = v_coefficients_plane[idx];
     as_->setSucceeded(result_);
@@ -452,39 +375,73 @@ public:
     cob_3d_mapping_msgs::ShapeArray sa;
     //p.polygons.resize(hull_polygons.size());
     sa.header = header;
-    /*p.normal.x = coefficients_plane.values[0];
-    p.normal.y = coefficients_plane.values[1];
-    p.normal.z = coefficients_plane.values[2];
-    p.d.data = coefficients_plane.values[3];*/
+    sa.header.frame_id = target_frame_;
+    unsigned int ctr = 0;
     for(unsigned int i=0; i<v_cloud_hull.size(); i++)
     {
+      Polygon p;
+      p.id = ctr;
+      p.color[0] = p.color[3] = 1;
+      p.color[1] = p.color[2] = 0;
+      for(unsigned int c=0; c<3; c++)
+        p.normal[c] = v_coefficients_plane[i].values[c];
+      p.d =  v_coefficients_plane[i].values[3];
+      std::vector<Eigen::Vector3f> pts;
+      for(unsigned int j=0; j<v_cloud_hull[i].size(); j++)
+      {
+        pts.push_back(v_cloud_hull[i].points[j].getVector3fMap());
+      }
+      p.contours.push_back(pts);
+      p.holes.push_back(false);
+      p.computeCentroid();
+
+      cob_3d_mapping_msgs::Shape s;
+      s.header = header;
+      s.header.frame_id = target_frame_;
+      s.type = cob_3d_mapping_msgs::Shape::PLANE;
+      toROSMsg(p, s);
+      sa.shapes.push_back(s);
+      ctr++;
+    }
+
       //std::cout << "normal: " << v_coefficients_plane[i].values[0] << ","  << v_coefficients_plane[i].values[1] << "," << v_coefficients_plane[i].values[2] << std::endl;
       //std::cout << "d: " << v_coefficients_plane[i].values[3] << std::endl << std::endl;
       //s.points.resize(v_hull_polygons[i].size());
-      for(unsigned int j=0; j<v_hull_polygons[i].size(); j++)
+      //ROS_INFO("poly size: %d",v_hull_polygons[i].size());
+      //ROS_INFO("%d,%d,%d",i,v_hull_polygons[i][0].vertices.size(),v_cloud_hull[i].size());
+     /* for(unsigned int j=0; j<v_hull_polygons[i].size(); j++)
       {
+        //ROS_INFO("j: %d", j);
         cob_3d_mapping_msgs::Shape s;
+        s.header = header;
+        s.header.frame_id = target_frame_;
         s.type = cob_3d_mapping_msgs::Shape::PLANE;
         s.params.resize(4);
         for(unsigned int c=0; c<4; c++)
           s.params[c] = v_coefficients_plane[i].values[c];
+        s.color.r = 1;
+        s.color.a = 1;
         if (v_hull_polygons[i][j].vertices.size()==0) continue;
         pcl::PointCloud<pcl::PointXYZ> pc;
         for(unsigned int k=0; k<v_hull_polygons[i][j].vertices.size(); k++)
         {
+          //ROS_INFO("k: %d", k);
           int idx = v_hull_polygons[i][j].vertices[k];
           pcl::PointXYZ p;
           p.x = v_cloud_hull[i].points[idx].x;
           p.y = v_cloud_hull[i].points[idx].y;
           p.z = v_cloud_hull[i].points[idx].z;
+          if(p.x<0.001 && p.x>-0.001) std::cout << p.y << "," << p.z << std::endl;
           pc.points.push_back(p);
         }
         sensor_msgs::PointCloud2 pc_msg;
         pcl::toROSMsg(pc, pc_msg);
         s.points.push_back(pc_msg);
+        s.holes.push_back(false);
         sa.shapes.push_back(s);
       }
-    }
+    }*/
+    //std::cout << sa.shapes[0].params[0] << "," << sa.shapes[1].params[0] << std::endl;
     shape_array_pub_.publish(sa);
   }
 
@@ -511,6 +468,7 @@ public:
     marker.type = visualization_msgs::Marker::POINTS;
     marker.lifetime = ros::Duration();
     marker.header = header;
+    marker.header.frame_id = target_frame_;
     marker.id = ctr_;
 
 
@@ -572,28 +530,15 @@ protected:
   TransformListener tf_listener_;
   int ctr_;                             /// counter for published planes, also used as id
   //unsigned int min_cluster_size_;       /// parameter for cluster size
-  std::string file_path_;
-  bool save_to_file_;
+  //std::string file_path_;
+  //bool save_to_file_;
   bool mode_action_;
-  int plane_constraint_;                /// constraint parameter for PlaneExtraction (pe)
+  //int plane_constraint_;                /// constraint parameter for PlaneExtraction (pe)
   std::string target_frame_;
 
   double vox_leaf_size_;				///  voxel filter leaf size
   double passthrough_min_z_;
   double passthrough_max_z_;
-
-  //boost::mutex m_mutex_pointCloudSubCallback, m_mutex_actionCallback;
-  //clustering parameters
-  double cluster_tolerance_;int min_cluster_size_;int max_cluster_size_;
-
-  //Normal Estimation parameters
-  double radius_;
-
-  //segmentation parameters
-  bool optimize_coefficients_;
-  double normal_distance_weight_;int max_iterations_;
-  double distance_threshold_;
-
 };
 
 PLUGINLIB_DECLARE_CLASS(cob_3d_mapping_features, PlaneExtractionNodelet, PlaneExtractionNodelet, nodelet::Nodelet)
