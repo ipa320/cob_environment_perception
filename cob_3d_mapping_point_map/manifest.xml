@@ -26,7 +26,7 @@
   <!-- rosdep name="pcl"/-->
   
   <export>
-  	<cpp cflags="-I${prefix}/common/include" lflags="-Wl,-rpath,${prefix}/lib -lcob_3d_mapping_point_map"/>
+  	<cpp cflags="-I${prefix}/common/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcob_3d_mapping_point_map"/>
   	<nodelet plugin="${prefix}/nodelet_plugins.xml" />
   </export>
 

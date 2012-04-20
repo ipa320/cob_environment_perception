@@ -14,11 +14,12 @@
   <depend stack="executive_smach" /> <!-- smach_ros, smach -->
   <depend stack="geometry" /> <!-- tf, tf_conversions -->
   <depend stack="nodelet_core" /> <!-- nodelet -->
+  <depend stack="openni_kinect" /> <!-- openni_launch -->
   <depend stack="perception_pcl" /> <!-- pcl, pcl_ros -->
   <depend stack="pr2_controllers" /> <!-- pr2_controllers_msgs -->
-  <depend stack="robot_model" /> <!-- urdf -->
+  <depend stack="robot_model" /> <!-- robot_state_publisher, urdf -->
   <depend stack="ros" />
-  <depend stack="ros_comm" /> <!-- rosbag, rospy, roscpp -->
+  <depend stack="ros_comm" /> <!-- rospy, rosbag, roscpp -->
   <depend stack="simulator_gazebo" /> <!-- gazebo -->
   <depend stack="vision_opencv" /> <!-- opencv2, cv_bridge -->
   <depend stack="visualization" /> <!-- rviz -->
