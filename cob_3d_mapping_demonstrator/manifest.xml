@@ -21,6 +21,7 @@
   <depend package="actionlib"/>
   <depend package="pr2_controllers_msgs"/>
   <depend package="rviz"/>
+  <depend package="openni_launch"/>
   <depend package="cob_script_server"/>
   <depend package="cob_3d_mapping_msgs"/>
 
