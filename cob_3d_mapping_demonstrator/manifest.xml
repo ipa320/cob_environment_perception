@@ -20,10 +20,12 @@
   <depend package="cob_command_gui"/>
   <depend package="actionlib"/>
   <depend package="pr2_controllers_msgs"/>
+  <depend package="robot_state_publisher"/>
   <depend package="rviz"/>
   <depend package="openni_launch"/>
   <depend package="cob_script_server"/>
   <depend package="cob_3d_mapping_msgs"/>
+  <depend package="cob_3d_mapping_pipeline"/>
 
   <export>
     <rviz plugin="${prefix}/lib/plugin.yaml"/>
