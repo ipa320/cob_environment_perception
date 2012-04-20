@@ -75,6 +75,7 @@ namespace cob_3d_mapping
   inline void
   toROSMsg(const Polygon& p, cob_3d_mapping_msgs::Shape& s)
   {
+    s.id = p.id;
     s.params.resize(4);
     s.params[0] = p.normal(0);
     s.params[1] = p.normal(1);
@@ -142,7 +143,7 @@ namespace cob_3d_mapping
     //p.contours.resize(p.polygons.size());
     for(unsigned int i=0; i<s.points.size(); i++)
     {
-      p.holes.push_back(false);
+      p.holes.push_back(s.holes[i]);
       if(s.points[i].data.size())
       {
         pcl::PointCloud<pcl::PointXYZ> cloud;
