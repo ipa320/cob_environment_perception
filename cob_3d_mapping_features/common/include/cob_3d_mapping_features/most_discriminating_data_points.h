@@ -56,6 +56,7 @@
 #ifndef __MOST_DISCRIMINATING_DATA_POINTS_H__
 #define __MOST_DISCRIMINATING_DATA_POINTS_H__
 
+#include <cstddef>
 #include <vector>
 
 namespace cob_3d_mapping_features
