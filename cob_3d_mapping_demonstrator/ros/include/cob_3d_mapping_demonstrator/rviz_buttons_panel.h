@@ -73,6 +73,7 @@ class RvizButtonsPanel : public wxPanel
     ~RvizButtonsPanel();
 
     virtual void OnStart(wxCommandEvent& event);
+    virtual void OnStep(wxCommandEvent& event);
     virtual void OnStop(wxCommandEvent& event);
     virtual void OnReset(wxCommandEvent& event);
     virtual void OnClear(wxCommandEvent& event);
@@ -80,6 +81,7 @@ class RvizButtonsPanel : public wxPanel
 
   protected:
     wxButton * button_start_;
+    wxButton * button_step_;
     wxButton * button_stop_;
     wxButton * button_reset_;
     wxButton * button_clear_;

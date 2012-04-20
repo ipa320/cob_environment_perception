@@ -63,6 +63,7 @@ namespace rviz
 {
 
 const int ID_BUTTON_START(101);
+const int ID_BUTTON_STEP(106);
 const int ID_BUTTON_STOP(102);
 const int ID_BUTTON_RESET(103);
 const int ID_BUTTON_CLEAR(104);
@@ -82,7 +83,8 @@ RvizButtonsPanel::RvizButtonsPanel(wxWindow *parent, const wxString& title/*, rv
     //parent_ = parent;
 
     button_start_ = new wxButton(this, ID_BUTTON_START, wxT("Start"),wxDefaultPosition,wxDefaultSize,wxBU_EXACTFIT);
-    button_stop_ = new wxButton(this, ID_BUTTON_STOP, wxT("Stop"),wxDefaultPosition,wxDefaultSize,wxBU_EXACTFIT);
+    button_step_ = new wxButton(this, ID_BUTTON_STEP, wxT("Step"),wxDefaultPosition,wxDefaultSize,wxBU_EXACTFIT);
+    //button_stop_ = new wxButton(this, ID_BUTTON_STOP, wxT("Stop"),wxDefaultPosition,wxDefaultSize,wxBU_EXACTFIT);
     button_reset_ = new wxButton(this, ID_BUTTON_RESET, wxT("Reset"),wxDefaultPosition,wxDefaultSize,wxBU_EXACTFIT);
     button_clear_ = new wxButton(this, ID_BUTTON_CLEAR, wxT("Clear"),wxDefaultPosition,wxDefaultSize,wxBU_EXACTFIT);
     button_recover_ = new wxButton(this, ID_BUTTON_RECOVER, wxT("Recover"),wxDefaultPosition,wxDefaultSize,wxBU_EXACTFIT);
@@ -93,7 +95,8 @@ RvizButtonsPanel::RvizButtonsPanel(wxWindow *parent, const wxString& title/*, rv
     m_text_dist = new wxStaticText(this, -1, wxT("closest pos.: none"));*/
 
     button_start_->Enable(true);
-    button_stop_->Enable(true);
+    button_step_->Enable(true);
+    //button_stop_->Enable(true);
     button_reset_->Enable(true);
     button_clear_->Enable(true);
     button_recover_->Enable(true);
@@ -114,7 +117,8 @@ RvizButtonsPanel::RvizButtonsPanel(wxWindow *parent, const wxString& title/*, rv
 
     /* Trajectory planning related buttons, on top*/
     vsizer->Add(button_start_, ID_BUTTON_START, wxEXPAND);
-    vsizer->Add(button_stop_, ID_BUTTON_STOP, wxEXPAND);
+    //vsizer->Add(button_stop_, ID_BUTTON_STOP, wxEXPAND);
+    vsizer->Add(button_step_, ID_BUTTON_STEP, wxEXPAND);
     vsizer->Add(button_reset_, ID_BUTTON_RESET, wxEXPAND);
     vsizer->Add(button_clear_, ID_BUTTON_CLEAR, wxEXPAND);
     vsizer->Add(button_recover_, ID_BUTTON_RECOVER, wxEXPAND);
@@ -147,43 +151,22 @@ void RvizButtonsPanel::OnStart(wxCommandEvent& event)
    action_client_->sendGoal(goal);
    action_client_->waitForResult(ros::Duration(1.0));
    if (action_client_->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
-     ROS_INFO("Demonstrator was recovered");
+     ROS_INFO("Demonstrator was started");
    ROS_INFO("Current State: %s\n", action_client_->getState().toString().c_str());
-   /*srs_ui_but::ArmNavNew srv;
+}
 
-   if ( ros::service::exists("arm_nav_new",true) && ros::service::call("arm_nav_new",srv) ) {
+void RvizButtonsPanel::OnStep(wxCommandEvent& event)
+{
 
-     if (srv.response.completed) {
-
-         m_button_new->Enable(false);
-         m_button_plan->Enable(true);
-         m_button_play->Enable(false);
-         m_button_reset->Enable(true);
-         m_button_success->Enable(false);
-         m_button_failed->Enable(true);
-
-         if (goal_pregrasp) {
-
-           m_text_status->SetLabel(wxString::FromAscii("status: Move gripper to desired position"));
-
-
-         }
-         if (goal_away) m_text_status->SetLabel(wxString::FromAscii("status: Move gripper to safe position"));
-
-     } else {
-
-       m_text_status->SetLabel(wxString::FromAscii(srv.response.error.c_str()));
-
-     }
-
-   } else {
-
-     ROS_ERROR("failed when calling arm_nav_new service");
-     m_text_status->SetLabel(wxString::FromAscii("status: Communication error"));
-
-   }*/
-
-
+   ROS_INFO("On step");
+   cob_script_server::ScriptGoal goal;
+   goal.function_name = "step";
+   // Fill in goal here
+   action_client_->sendGoal(goal);
+   action_client_->waitForResult(ros::Duration(1.0));
+   if (action_client_->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+     ROS_INFO("Demonstrator step");
+   ROS_INFO("Current State: %s\n", action_client_->getState().toString().c_str());
 }
 
 void RvizButtonsPanel::OnStop(wxCommandEvent& event)
@@ -381,6 +364,7 @@ void RvizButtonsPanel::OnRecover(wxCommandEvent& event)
 ///////////////////////////////////////////////////////////////////////////////
 BEGIN_EVENT_TABLE(RvizButtonsPanel, wxPanel)
     EVT_BUTTON(ID_BUTTON_START,  RvizButtonsPanel::OnStart)
+    EVT_BUTTON(ID_BUTTON_STEP,  RvizButtonsPanel::OnStep)
     EVT_BUTTON(ID_BUTTON_STOP,  RvizButtonsPanel::OnStop)
     EVT_BUTTON(ID_BUTTON_RESET,  RvizButtonsPanel::OnReset)
     EVT_BUTTON(ID_BUTTON_CLEAR,  RvizButtonsPanel::OnClear)

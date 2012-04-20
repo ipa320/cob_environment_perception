@@ -8,7 +8,7 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/cob_3d_mapping_pipeline</url>
-  
+
 	<depend package="nodelet"/>
   <depend package="cob_script_server"/>
   <depend package="cob_3d_mapping_msgs"/>
@@ -16,6 +16,7 @@
   <depend package="cob_3d_mapping_geometry_map"/>
   <depend package="cob_3d_mapping_features"/>
 	<depend package="cob_3d_mapping_common"/>
+	<depend package="cob_3d_registration"/>
  	<depend package="smach"/>
 	<depend package="smach_ros"/>
 
