@@ -1,6 +1,5 @@
 <?xml version="1.0"?>
 
-
 <launch>
 
   <arg name="start_manager" default="true"/>
@@ -9,7 +8,7 @@
   <node if="$(arg start_manager)" pkg="nodelet" type="nodelet" name="$(arg nodelet_manager)"  args="manager" output="screen"/>
 
   <node pkg="cob_3d_mapping_common" type="keyframe_detector_node" name="keyframe_detector_node" output="screen">
-    <remap from="camera_info" to="/cam3d/rgb/camera_info"/>
+    <remap from="camera_info" to="/camera/depth_registered/camera_info"/>
 
     <param name="r_limit_" type="double" value="0.013" />
     <param name="p_limit_" type="double" value="0.013" />
@@ -20,9 +19,10 @@
 
   <node pkg="nodelet" type="nodelet" name="registration_nodelet" args="load cob_3d_registration/RegistrationNodelet $(arg nodelet_manager)" output="screen">
 
-    <remap from="camera_info" to="/cam3d/rgb/camera_info"/>
-    <remap from="point_cloud2" to="/cam3d/rgb/points"/>
+    <remap from="camera_info" to="/camera/depth_registered/camera_info"/>
+    <remap from="point_cloud2" to="/camera/depth_registered/points"/>
     <remap from="point_cloud2_aligned" to="registration/pc_aligned"/>
+    <remap from="reset" to="registration/reset"/>
 
       <param name="algo" value="info" />
       <param name="threshold_step" value="0.06" />
