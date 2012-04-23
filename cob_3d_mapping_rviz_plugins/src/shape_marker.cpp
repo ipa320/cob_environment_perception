@@ -241,7 +241,7 @@ namespace rviz
 
     for(std::list<TPPLPoly>::iterator it=result.begin(); it!=result.end(); it++) {
       //draw each triangle
-      for(size_t i=0;i<it->GetNumPoints();i++) {
+      for(long i=0;i<it->GetNumPoints();i++) {
         p1 = it->GetPoint(i);
 
         Eigen::Vector3f p3, normal;
