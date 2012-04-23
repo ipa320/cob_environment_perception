@@ -49,11 +49,11 @@ public:
     transform_sub_ = n_.subscribe("/tf", 1, &KeyframeDetector::transformSubCallback, this);
     keyframe_trigger_client_ = n_.serviceClient<cob_srvs::Trigger>("trigger_keyframe");
 
-    n_.param("aggregate_point_map/r_limit",r_limit_,0.01);
+    /*n_.param("aggregate_point_map/r_limit",r_limit_,0.01);
     n_.param("aggregate_point_map/y_limit",y_limit_,0.01);
     n_.param("aggregate_point_map/p_limit",p_limit_,0.01);
     n_.param("aggregate_point_map/distance_limit",distance_limit_,0.03);
-    n_.param("aggregate_point_map/trigger_always",trigger_always_,false);
+    n_.param("aggregate_point_map/trigger_always",trigger_always_,false);*/
 
     //setReconfigureCallback(boost::bind(&callback, this, _1, _2));
     }
