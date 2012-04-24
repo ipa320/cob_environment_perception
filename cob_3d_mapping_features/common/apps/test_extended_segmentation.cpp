@@ -252,7 +252,8 @@ int main(int argc, char** argv)
   int v1(0);
   v.createViewPort(0.0, 0.5, 0.5, 1.0, v1);
   v.setBackgroundColor(0, 0.75, 0.75, v1);
-  v.addPointCloud<PointXYZRGB>(cp, col_hdl, "segmented", v1);
+  v.addPointCloud<PointXYZRGB>(tp, type_col_hdl, "segmented", v1);
+  //v.addPointCloud<PointXYZRGB>(cp, col_hdl, "segmented", v1);
 
   int v3(0);
   v.createViewPort(0.0, 0.0, 0.5, 0.5, v3);

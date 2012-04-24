@@ -394,10 +394,10 @@ cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>:
   c->pca_point_comp2 = eigenvectors.col(1);
   c->pca_point_comp3 = eigenvectors.col(0);
   c->pca_point_values = eigenvalues;
-  if ( eigenvalues(0) / (eigenvalues(0)+eigenvalues(1)+eigenvalues(2)) < 0.0008 * centroid(2) * centroid(2) )
+  if ( eigenvalues(0) / (eigenvalues(0)+eigenvalues(1)+eigenvalues(2)) < 0.001 * centroid(2) * centroid(2) )
   {
     c->type = I_PLANE;
-    //c->is_save_plane = true;
+    c->is_save_plane = true;
   }
   return c->is_save_plane;
 }
@@ -568,6 +568,7 @@ cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>:
   for (std::vector<int>::iterator it = c_src->indices.begin(); it != c_src->indices.end(); ++it)
   {
     c_trg->addNewPoint(*it, surface_->points[*it].getVector3fMap(), normals_->points[*it].getNormalVector3fMap());
+    labels_->points[*it].label = c_trg->id;
   }
   //std::cout<<"components"<<std::endl;
   computeClusterComponents(c_trg);
@@ -677,6 +678,28 @@ cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>:
 */
 
 template <typename PointT, typename PointNT, typename PointCT, typename PointOutT> void
+cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>::recomputeClusterNormals(ClusterPtr c)
+{
+  OrganizedNormalEstimation<PointT,PointNT,PointOutT> one;
+  int w_size = std::min( std::floor(sqrt(c->indices.size() / 16.0f))+ 8, 30.0);
+  //int w_size = std::floor(4.0 * log10(c->indices.size()));
+  //std::cout << "Size="<<w_size<< std::endl;
+  int steps = std::floor(w_size / 3);
+  one.setPixelSearchRadius(w_size,2,steps);
+  one.computeMaskManually(surface_->width);
+  c->sum_orientation = Eigen::Vector3f::Zero();
+  for (std::vector<int>::iterator idx = c->indices.begin(); idx != c->indices.end(); ++ idx)
+  {
+    one.recomputeSegmentNormal(surface_, labels_, *idx,
+			       normals_->points[*idx].normal[0],
+			       normals_->points[*idx].normal[1],
+			       normals_->points[*idx].normal[2]);
+    if (!pcl_isnan(normals_->points[*idx].normal[2]))
+      c->sum_orientation += Eigen::Vector3f(normals_->points[*idx].normal);
+  }
+}
+
+template <typename PointT, typename PointNT, typename PointCT, typename PointOutT> void
 cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>::computeBoundaryProperties(
   ClusterPtr c,
   ClusterList& cluster_list)
@@ -771,7 +794,6 @@ template <typename PointT, typename PointNT, typename PointCT, typename PointOut
 cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>::analyseClusters(
   ClusterList& cluster_list)
 {
-  //OrganizedNormalEstimation<PointT,PointNT,PointOutT> one;
   cluster_list.sort();
   for (ClusterPtr c = cluster_list.begin(); c != cluster_list.end(); ++c)
   {
@@ -779,24 +801,6 @@ cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>:
     if (c->type == I_EDGE || c->type == I_NAN || c->type == I_BORDER) continue;
     computeClusterComponents(c);
     computeBoundaryProperties(c, cluster_list);
-    // recompute normals
-    /*
-    //int w_size = std::floor(sqrt(c->indices.size() / 16.0f))+ 8;
-    int w_size = std::floor(4.0 * log10(c->indices.size()));
-    int steps = std::floor(w_size / 3);
-    one.setPixelSearchRadius(w_size,2,steps);
-    one.computeMaskManually(surface_->width);
-    c->sum_orientation = Eigen::Vector3f::Zero();
-    for (std::vector<int>::iterator idx = c->indices.begin(); idx != c->indices.end(); ++ idx)
-    {
-      one.recomputeSegmentNormal(surface_, labels_, *idx,
-				 normals_->points[*idx].normal[0],
-				 normals_->points[*idx].normal[1],
-				 normals_->points[*idx].normal[2]);
-      if (!pcl_isnan(normals_->points[*idx].normal[2]))
-	c->sum_orientation += Eigen::Vector3f(normals_->points[*idx].normal);
-    }
-    */
     //computeClusterNormalIntersections(c);
     //cluster_list.computeEdgeAngles(c->id);
   }
@@ -809,12 +813,17 @@ cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>:
   {
     //std::cout << "ID: " << c->id << std::endl;
     if (c->indices.size() < 5) continue;
-    if (c->type == I_EDGE || c->type == I_NAN || c->type == I_BORDER || c->is_save_plane) continue;
+    if (c->type == I_EDGE || c->type == I_NAN || c->type == I_BORDER) continue;
     joinAdjacentRotationalClusters(c, cluster_list);
-    //computeClusterCurvature(c);
-    if (c->max_curvature < 0.02) c->type = I_PLANE;
-    else if(c->max_curvature < 7.0 * c->min_curvature) c->type = I_SPHERE;
-    else c->type = I_CYL;
+    if (!c->is_save_plane) 
+    {
+      recomputeClusterNormals(c);
+      computeClusterCurvature(c);
+      if (c->max_curvature < 0.02) c->type = I_PLANE;
+      else if(c->max_curvature < 9.0 * c->min_curvature) c->type = I_SPHERE;
+      else c->type = I_CYL;
+    }
+    else c->type = I_PLANE;
     //std::cout << "ID: " << c->id << " done"<< std::endl;
   }
 
