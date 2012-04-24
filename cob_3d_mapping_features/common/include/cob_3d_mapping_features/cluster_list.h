@@ -71,6 +71,7 @@ namespace cob_3d_mapping_features
     ClusterList(): g_()
       , clusters_()
       , to_vID_()
+      , boundary_points_()
       , max_cID_(0)
     { }
 
@@ -100,15 +101,24 @@ namespace cob_3d_mapping_features
       if (!res.second) ++(g_[res.first].width); // if already existing: increment edge width by one
       (g_[res.first].boundary_points[cID_1])[idx_1] = idx_2;
       (g_[res.first].boundary_points[cID_2])[idx_2] = idx_1;
+      boundary_points_[idx_1];// = BoundaryPoint();
+      boundary_points_[idx_2];// = BoundaryPoint();
     }
 
     // checks whether both clusters are connected
     inline bool
     areConnected(const int cID_1, const int cID_2)
-    { return (boost::edge(to_vID_[cID_1], to_vID_[cID_2], g_)).second;}
+    { return (boost::edge(to_vID_[cID_1], to_vID_[cID_2], g_)).second; }
+
+    inline Edge&
+      getConnection(const int cID_1, const int cID_2)
+    { return (g_[boost::edge(to_vID_[cID_1], to_vID_[cID_2], g_).first]); }
 
     void
     computeEdgeAngles(int cID);
+
+    void
+    computeEdgeSmoothness(const float max_angle);
 
     // merges cluster of cID_source into cID_target and deletes source 
     // (only data structure, properties have to be merge before
@@ -129,48 +139,45 @@ namespace cob_3d_mapping_features
     getAdjacentClustersWithSmoothBoundaries(int cID_start, const float min_smoothness,
 					    std::vector<ClusterPtr>& adjacent_clusters);
 
+
+
+    // boundary point operations:
+    inline BoundaryPoint& getBoundaryPoint(int idx) { return boundary_points_[idx]; }
+
+    inline std::pair<std::map<int,int>::iterator, std::map<int,int>::iterator> getBoundaryPointIndices(int cID_1, int cID_2)
+    { 
+      std::pair<EdgeID,bool> edge = boost::edge(to_vID_[cID_1], to_vID_[cID_2], g_);
+      if (edge.second) 
+	return std::make_pair(g_[edge.first].boundary_points[cID_1].begin(),g_[edge.first].boundary_points[cID_1].end());
+      return std::make_pair(g_[edge.first].boundary_points.begin()->second.end(),
+			    g_[edge.first].boundary_points.begin()->second.end());
+    }
+    
+    inline std::map<int,BoundaryPoint>::iterator bp_begin() { return boundary_points_.begin(); }
+    inline std::map<int,BoundaryPoint>::iterator bp_end() { return boundary_points_.end(); }
+    inline std::size_t bp_size() { return boundary_points_.size(); }
     
     // list std operations:
     inline std::list<Cluster>::iterator operator[](int cID) { return g_[to_vID_[cID]].c_it; }
-
     inline std::list<Cluster>::iterator begin() { return clusters_.begin(); }
     inline std::list<Cluster>::const_iterator begin() const { return clusters_.begin(); }
-
     inline std::list<Cluster>::iterator end() { return clusters_.end(); }
     inline std::list<Cluster>::const_iterator end() const { return clusters_.end(); }
-
     inline std::list<Cluster>::reverse_iterator rbegin() { return clusters_.rbegin(); }
     inline std::list<Cluster>::const_reverse_iterator rbegin() const { return clusters_.rbegin(); }
-
     inline std::list<Cluster>::reverse_iterator rend() { return clusters_.rend(); }
     inline std::list<Cluster>::const_reverse_iterator rend() const { return clusters_.rend(); }
-
     inline std::size_t size() const { return clusters_.size(); }
+    inline void clear() { boundary_points_.clear(); clusters_.clear(); to_vID_.clear(); g_.clear(); max_cID_ = 0; }
 
-    inline void clear() { clusters_.clear(); to_vID_.clear(); g_.clear(); max_cID_ = 0; }
 
-
+    private:
     struct Vertex 
     {
       Vertex() { };
       Vertex( std::list<Cluster>::iterator it) : c_it(it) { };
 
       std::list<Cluster>::iterator c_it; 
-    };
-
-    struct Edge 
-    {
-    Edge() : width(1)
-        , angle(std::numeric_limits<float>::quiet_NaN())
-	, d_size(0)
-	, boundary_points()
-	, smoothness(0.0) { }
-
-      int width;
-      float angle;
-      int d_size;
-      std::map<int,std::map<int,int> > boundary_points;
-      float smoothness;
     };
     
     /*
@@ -189,6 +196,7 @@ namespace cob_3d_mapping_features
     GraphT g_;
     std::list<Cluster> clusters_;
     std::map<int, VertexID> to_vID_;
+    std::map<int, BoundaryPoint> boundary_points_;
     
     int max_cID_;
 

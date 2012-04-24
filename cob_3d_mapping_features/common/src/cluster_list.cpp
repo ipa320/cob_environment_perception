@@ -72,6 +72,23 @@ cob_3d_mapping_features::ClusterList::computeEdgeAngles(int cID)
 }
 
 void
+cob_3d_mapping_features::ClusterList::computeEdgeSmoothness(const float max_angle)
+{
+  boost::graph_traits<GraphT>::edge_iterator e_it, e_end;
+  for (boost::tie(e_it,e_end) = boost::edges(g_); e_it != e_end; ++e_it)
+  {
+    std::map<int,int>::iterator bp_it = g_[*e_it].boundary_points.begin()->second.begin();
+    int smooth_points = 0;
+    for ( ; bp_it != g_[*e_it].boundary_points.begin()->second.end(); ++bp_it)
+    {
+      if (max_angle < boundary_points_[bp_it->first].normal.dot(boundary_points_[bp_it->second].normal))
+	++smooth_points;
+    }
+    g_[*e_it].smoothness = static_cast<float>(smooth_points) / static_cast<float>(g_[*e_it].boundary_points.begin()->second.size());
+  }
+}
+
+void
 cob_3d_mapping_features::ClusterList::mergeClusterDataStructure(int cID_source, int cID_target)
 {
   mergeClusterDataStructure(to_vID_[cID_source], to_vID_[cID_target]);
@@ -234,7 +251,7 @@ cob_3d_mapping_features::ClusterList::getAdjacentClustersWithSmoothBoundaries(
     for (boost::tie(oe_it,oe_end) = boost::out_edges(curr_c,g_); oe_it != oe_end; ++oe_it)
     {
       float smooth = g_[*oe_it].smoothness;
-      std::cout << smooth << std::endl;
+      //std::cout << smooth << std::endl;
       VertexID new_id = boost::target(*oe_it,g_);
       //fabs(new_angle) < max_angle && 
       if (id_set.find(g_[new_id].c_it->id) == id_set.end()

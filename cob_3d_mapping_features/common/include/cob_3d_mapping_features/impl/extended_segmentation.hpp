@@ -77,7 +77,7 @@ cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>:
   const float angle_threshold = 35.0 / 180.0 * M_PI; // max angle difference between mean angle of cluster
   //const float angle_threshold = 0.8; // everything above belongs to cluster
   const float curvature_threshold = 20; // everything above belongs to cluster
-  const int min_cluster_size = 200;
+  const int min_cluster_size = 100;
   cluster_out.clear();
   cluster_out.addNewCluster(I_NAN)->type = I_NAN;
   cluster_out.addNewCluster(I_BORDER)->type = I_BORDER;
@@ -569,9 +569,9 @@ cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>:
   {
     c_trg->addNewPoint(*it, surface_->points[*it].getVector3fMap(), normals_->points[*it].getNormalVector3fMap());
   }
-  std::cout<<"components"<<std::endl;
+  //std::cout<<"components"<<std::endl;
   computeClusterComponents(c_trg);
-  std::cout<<"intersections"<<std::endl;
+  //std::cout<<"intersections"<<std::endl;
   //computeClusterNormalIntersections(c_trg);
   c_trg->type = I_UNDEF;
 }
@@ -582,17 +582,17 @@ cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>:
   ClusterList& cluster_list)
 {
   const float max_angle = 45.0 / 180.0 * M_PI;
-  const float min_smoothness = 0.95;
+  const float min_smoothness = 0.80;
   std::vector<ClusterPtr> adjacent_clusters;
   //cluster_list.getMinAngleAdjacentClusters(c->id, max_angle, adjacent_clusters);
   cluster_list.getAdjacentClustersWithSmoothBoundaries(c->id, min_smoothness, adjacent_clusters);
-  std::cout << "Adjacent Clusters: " << adjacent_clusters.size() << std::endl;
+  //std::cout << "Adjacent Clusters: " << adjacent_clusters.size() << std::endl;
   for (std::vector<ClusterPtr>::iterator a_it = adjacent_clusters.begin(); a_it != adjacent_clusters.end(); ++a_it)
   {
     mergeClusterProperties(*a_it, c);
-    std::cout << "Done properties" << std::endl;
+    //std::cout << "Done properties" << std::endl;
     cluster_list.mergeClusterDataStructure( (*a_it)->id, c->id);
-    std::cout << "Done data structure" << std::endl;
+    //std::cout << "Done data structure" << std::endl;
   }
 }
 
@@ -651,6 +651,7 @@ cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>:
   }
 }
 
+/*
 template <typename PointT, typename PointNT, typename PointCT, typename PointOutT> void
 cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>::computeBoundarySmoothness(
   ClusterList& cl)
@@ -673,21 +674,115 @@ cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>:
     cl.g_[*e_it].smoothness = (float)smooth_points / (cl.g_[*e_it].boundary_points[c1->id]).size();
   }
 }
+*/
+
+template <typename PointT, typename PointNT, typename PointCT, typename PointOutT> void
+cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>::computeBoundaryProperties(
+  ClusterPtr c,
+  ClusterList& cluster_list)
+{
+  std::vector<ClusterPtr> adj_c;
+  std::vector<std::map<int,int>* > boundary_lists;
+  cluster_list.getAdjacentClusters(c->id, adj_c);
+  int perimeter = 0;
+  for (std::vector<ClusterPtr>::iterator a_it = adj_c.begin(); a_it != adj_c.end(); ++a_it)
+  {
+    Edge e = cluster_list.getConnection(c->id, (*a_it)->id);
+    //perimeter = round(static_cast<float>(e.boundary_points[c->id].size()) / 10.0f + pow(c->getCentroid()(2),2));
+    //std::cout << perimeter <<" = "<<e.boundary_points[c->id].size()<<" / 10.0f + "<<c->getCentroid()(2)<<"^2" << std::endl;
+    perimeter = ceil( std::min(
+			sqrt((float)c->size()) / (float)e.boundary_points[c->id].size() + pow(c->getCentroid()(2), 2)+5.0, 30.0) );
+    //std::cout << perimeter <<" = "<<c->size()<<"/"<<e.boundary_points[c->id].size()<<" + "<<c->getCentroid()(2)<<"^2" << std::endl;
+    for (std::map<int,int>::iterator b_it = e.boundary_points[c->id].begin(); b_it != e.boundary_points[c->id].end(); ++b_it)
+    {
+      computeBoundaryPointProperties(perimeter, b_it->first, cluster_list.getBoundaryPoint(b_it->first));
+    }
+  }
+/*
+  for (std::vector<ClusterPtr>::iterator a_it = adj_c.begin(); a_it != adj_c.end(); ++a_it)
+  {
+    boundary_lists.push_back( &( (cluster_list.getConnection(c->id, (*a_it)->id)).boundary_points[c->id] ) );
+    perimeter += boundary_lists.back()->size();
+  }
+  for (std::vector<std::map<int,int>* >::iterator l_it = boundary_lists.begin(); l_it != boundary_lists.end(); ++l_it)
+  {
+    for (std::map<int,int>::iterator b_it = (*l_it)->begin(); b_it != (*l_it)->end(); ++b_it)
+    {
+      computeBoundaryPointProperties(5, b_it->first, cluster_list.getBoundaryPoint(b_it->first));
+    }
+  }
+*/
+}
+
+template <typename PointT, typename PointNT, typename PointCT, typename PointOutT> void
+cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>::computeBoundaryPointProperties(
+  const int r,
+  const int index,
+  BoundaryPoint& bp)
+{
+  const int w = surface_->width, h = surface_->height, s = surface_->height * surface_->width;
+  const int l_idx = labels_->points[index].label;
+
+  // compute mask boundary constrains first, 
+  const int w_rem = index%w;
+  const int x_max = std::min(2*r, r + w - w_rem - 1); // max offset at each line
+  const int y_min = std::max(index - r*w - r, w_rem - r);
+  const int y_max = std::min(index + r*w - r, s - (w - w_rem) - r);
+  Eigen::Matrix<float, 1, 9, Eigen::RowMajor> accu = Eigen::Matrix<float, 1, 9, Eigen::RowMajor>::Zero();
+  int point_count = 0;
+  for (int y = y_min; y <= y_max; y += w) // y: beginning of each line
+  {
+    for (int idx = y; idx < y + x_max; ++idx) 
+    {
+      if (labels_->points[idx].label != l_idx) continue;
+      PointT const* p_idx = &(surface_->points[idx]);
+      if (pcl_isnan(p_idx->x)) continue;
+      accu[0] += p_idx->x * p_idx->x;
+      accu[1] += p_idx->x * p_idx->y;
+      accu[2] += p_idx->x * p_idx->z;
+      accu[3] += p_idx->y * p_idx->y;
+      accu[4] += p_idx->y * p_idx->z;
+      accu[5] += p_idx->z * p_idx->z;
+      accu[6] += p_idx->x;
+      accu[7] += p_idx->y;
+      accu[8] += p_idx->z;
+      ++point_count;
+    }
+  }
+  accu /= static_cast<float>(point_count);
+    
+  Eigen::Matrix3f cov;
+  cov.coeffRef(0) =                   accu(0) - accu(6) * accu(6);
+  cov.coeffRef(1) = cov.coeffRef(3) = accu(1) - accu(6) * accu(7);
+  cov.coeffRef(2) = cov.coeffRef(6) = accu(2) - accu(6) * accu(8);
+  cov.coeffRef(4) =                   accu(3) - accu(7) * accu(7);
+  cov.coeffRef(5) = cov.coeffRef(7) = accu(4) - accu(7) * accu(8);
+  cov.coeffRef(8) =                   accu(5) - accu(8) * accu(8);
+  Eigen::Vector3f eigenvalues;
+  Eigen::Matrix3f eigenvectors;
+  pcl::eigen33(cov, eigenvectors, eigenvalues);
+  if ( surface_->points[index].getVector3fMap().dot(eigenvectors.col(0)) > 0)
+    bp.normal = eigenvectors.col(0) * (-1);
+  else
+    bp.normal = eigenvectors.col(0);
+}
 
 template <typename PointT, typename PointNT, typename PointCT, typename PointOutT> void
 cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>::analyseClusters(
   ClusterList& cluster_list)
 {
-  OrganizedNormalEstimation<PointT,PointNT,PointOutT> one;
+  //OrganizedNormalEstimation<PointT,PointNT,PointOutT> one;
   cluster_list.sort();
   for (ClusterPtr c = cluster_list.begin(); c != cluster_list.end(); ++c)
   {
     if (c->indices.size() < 20) continue;
     if (c->type == I_EDGE || c->type == I_NAN || c->type == I_BORDER) continue;
     computeClusterComponents(c);
+    computeBoundaryProperties(c, cluster_list);
     // recompute normals
-    
-    int w_size = std::floor(sqrt(c->indices.size() / 16.0f))+ 8 + round(2*c->getCentroid()(2));
+    /*
+    //int w_size = std::floor(sqrt(c->indices.size() / 16.0f))+ 8;
+    int w_size = std::floor(4.0 * log10(c->indices.size()));
     int steps = std::floor(w_size / 3);
     one.setPixelSearchRadius(w_size,2,steps);
     one.computeMaskManually(surface_->width);
@@ -701,17 +796,18 @@ cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>:
       if (!pcl_isnan(normals_->points[*idx].normal[2]))
 	c->sum_orientation += Eigen::Vector3f(normals_->points[*idx].normal);
     }
-
+    */
     //computeClusterNormalIntersections(c);
     //cluster_list.computeEdgeAngles(c->id);
   }
-  std::cout << "Second.. " << std::endl;
-  computeBoundarySmoothness(cluster_list);
+  //std::cout << "Second.. " << std::endl;
+  //computeBoundarySmoothness(cluster_list);
+  cluster_list.computeEdgeSmoothness(cos(45.0/180.0*M_PI));
   //cluster_list.removeSmallClusters();
- 
+
   for (ClusterPtr c = --cluster_list.end(); c != cluster_list.begin(); --c)
   {
-    std::cout << "ID: " << c->id << std::endl;
+    //std::cout << "ID: " << c->id << std::endl;
     if (c->indices.size() < 5) continue;
     if (c->type == I_EDGE || c->type == I_NAN || c->type == I_BORDER || c->is_save_plane) continue;
     joinAdjacentRotationalClusters(c, cluster_list);
@@ -719,9 +815,31 @@ cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>:
     if (c->max_curvature < 0.02) c->type = I_PLANE;
     else if(c->max_curvature < 7.0 * c->min_curvature) c->type = I_SPHERE;
     else c->type = I_CYL;
-    std::cout << "ID: " << c->id << " done"<< std::endl;
+    //std::cout << "ID: " << c->id << " done"<< std::endl;
   }
+
   //std::cout << "done" << std::endl;
+}
+
+template <typename PointT, typename PointNT, typename PointCT, typename PointOutT> void
+cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>::getBoundaryCloud(
+  ClusterList& cluster_list,
+  pcl::PointCloud<PointXYZRGB>::Ptr& boundary_points,
+  pcl::PointCloud<Normal>::Ptr& boundary_normals)
+{
+  boundary_points->clear();
+  boundary_normals->clear();
+  boundary_points->resize(cluster_list.bp_size());
+  boundary_normals->resize(cluster_list.bp_size());
+  boundary_points->width = boundary_normals->width = 1;
+  boundary_points->height = boundary_normals->height = cluster_list.bp_size();
+  typename pcl::PointCloud<PointT>::iterator p_it = boundary_points->begin();
+  typename pcl::PointCloud<PointNT>::iterator n_it = boundary_normals->begin();
+  for(std::map<int,BoundaryPoint>::iterator b_it = cluster_list.bp_begin(); b_it != cluster_list.bp_end(); ++b_it, ++p_it, ++n_it)
+  {
+    *p_it = surface_->points[b_it->first];
+    n_it->getNormalVector3fMap() = b_it->second.normal;
+  }
 }
 
 template <typename PointT, typename PointNT, typename PointCT, typename PointOutT> void
@@ -731,10 +849,18 @@ cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>:
 {
   cluster_list.sort();
   uint32_t rgb;
-  int t = 0;
+  int t = 1;
   for(std::list<Cluster>::reverse_iterator c = cluster_list.rbegin(); c != cluster_list.rend(); ++c, ++t)
   {
-    rgb = (color_tab_[t])[2] << 16 | (color_tab_[t])[1] << 8 | (color_tab_[t])[0];
+    if (c->type == I_NAN || c->type == I_BORDER)
+    {
+      rgb = (color_tab_[0])[2] << 16 | (color_tab_[0])[1] << 8 | (color_tab_[0])[0];
+      --t;
+    }
+    else
+    {
+      rgb = (color_tab_[t])[2] << 16 | (color_tab_[t])[1] << 8 | (color_tab_[t])[0];
+    }
     for(size_t i = 0; i<c->indices.size(); ++i)
     {
       color_cloud->points[c->indices[i]].rgb = *reinterpret_cast<float*>(&rgb);

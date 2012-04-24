@@ -110,8 +110,10 @@ int main(int argc, char** argv)
   PointCloud<PointXYZRGB>::Ptr cp(new PointCloud<PointXYZRGB>);
   PointCloud<PointXYZRGB>::Ptr cp2nd(new PointCloud<PointXYZRGB>);
   PointCloud<PointXYZRGB>::Ptr tp(new PointCloud<PointXYZRGB>);
+  PointCloud<PointXYZRGB>::Ptr bp(new PointCloud<PointXYZRGB>);
   PointCloud<Normal>::Ptr n(new PointCloud<Normal>);
   PointCloud<Normal>::Ptr n2(new PointCloud<Normal>);
+  PointCloud<Normal>::Ptr bp_n(new PointCloud<Normal>);
   PointCloud<PrincipalCurvatures>::Ptr pc(new PointCloud<PrincipalCurvatures>);
   PointCloud<PointLabel>::Ptr l(new PointCloud<PointLabel>);
 
@@ -171,6 +173,7 @@ int main(int argc, char** argv)
   eseg.analyseClusters(cluster_list);
   eseg.getColoredCloud(cluster_list, cp2nd);
   eseg.getColoredCloudByType(cluster_list, tp);
+  eseg.getBoundaryCloud(cluster_list, bp, bp_n);
   cout << t.precisionStop() << "s\t for extended clustering" << endl;
   cout << "Found " << cluster_list.size() << " clusters." << endl;
 
@@ -267,9 +270,9 @@ int main(int argc, char** argv)
   int v2(0);
   v.createViewPort(0.5, 0.0, 1.0, 0.5, v2);
   v.setBackgroundColor(0, 0.75, 0.75, v2);
-  v.addPointCloud<PointXYZRGB>(p, black_hdl, "normals4", v2);
+  v.addPointCloud<PointXYZRGB>(cp, col_hdl, "normals4", v2);
   //v.addPointCloudNormals<PointXYZRGB, Normal>(p,n,4,0.04,"normals2", v4);
-  v.addPointCloudNormals<PointXYZRGB, Normal>(p,n2,4,0.04,"normals3", v2);
+  v.addPointCloudNormals<PointXYZRGB, Normal>(bp,bp_n,1,0.04,"normals3", v2);
   /*
   //v.addPointCloud<PointXYZRGB>(p, white_hdl, "cloud", v2);
   v.addPointCloud<PointXYZRGB>(tp, type_col_hdl, "types", v2);

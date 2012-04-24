@@ -129,6 +129,28 @@ namespace cob_3d_mapping_features
   inline const bool operator<=(const Cluster& lhs, const Cluster& rhs){return !operator> (lhs, rhs);}
   inline const bool operator>=(const Cluster& lhs, const Cluster& rhs){return !operator< (lhs, rhs);}
 
+
+  struct BoundaryPoint
+  {
+    Eigen::Vector3f normal;
+  };
+
+  // represents connection between two clusters:
+  struct Edge 
+  {
+    Edge() : width(1)
+      , angle(std::numeric_limits<float>::quiet_NaN())
+      , d_size(0)
+      , boundary_points()
+      , smoothness(0.0) { }
+    
+    int width;
+    float angle;
+    int d_size;
+    std::map<int,std::map<int,int> > boundary_points;
+    float smoothness;
+  };
+
   // TODO: provide a static function to recompute cluster properties after merging
   //       IN: cluster&, PointCloud::ConstPtr
 }

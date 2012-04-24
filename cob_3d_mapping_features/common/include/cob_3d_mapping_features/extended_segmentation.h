@@ -91,9 +91,10 @@ namespace cob_3d_mapping_features
     ExtendedSegmentation () : color_tab_()
     { 
       color_tab_.reserve(2052);
-      color_tab_.push_back(cv::Vec3b(0, 255, 0)); // undef
+      // (b,g,r)
+      /*color_tab_.push_back(cv::Vec3b(0, 255, 0)); // undef
       color_tab_.push_back(cv::Vec3b(255, 255, 255)); // nan
-      color_tab_.push_back(cv::Vec3b(0, 0, 255)); // border
+      color_tab_.push_back(cv::Vec3b(0, 0, 255)); // border */
       color_tab_.push_back(cv::Vec3b(0, 0, 255)); // edge
       color_tab_.push_back(cv::Vec3b(255, 200, 0)); // first
       color_tab_.push_back(cv::Vec3b(0, 200, 255)); // second
@@ -144,8 +145,16 @@ namespace cob_3d_mapping_features
 
     // --- cluster list operations ---
     void computeBoundarySmoothness(ClusterList& cl);
+
+    void computeBoundaryProperties(ClusterPtr c, ClusterList& cluster_list);
+
+    void computeBoundaryPointProperties(const int r, const int index, BoundaryPoint& bp);
     
     void analyseClusters(ClusterList& cluster_out);
+
+    void getBoundaryCloud(ClusterList& cluster_list,
+			  pcl::PointCloud<PointXYZRGB>::Ptr& boundary_points,
+			  pcl::PointCloud<Normal>::Ptr& boundary_normals);
 
     void getColoredCloud(ClusterList& cluster_list,
 			 pcl::PointCloud<PointXYZRGB>::Ptr& color_cloud);
