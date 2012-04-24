@@ -193,8 +193,7 @@ GeometryMap::searchIntersection(Polygon& p,std::vector<int>& intersections)
 
     Polygon& p_map = *(map_[i]);
     //  std::cout << "berechnung " << p_map.normal.dot(p.normal);
-    if((p_map.normal.dot(p.normal)>0.95 && fabs(p_map.d-p.d)<0.1) ||
-        (p_map.normal.dot(p.normal)<-0.95 && fabs(p_map.d+p.d)<0.1))
+    if((fabs(p_map.normal.dot(p.normal)) > cos_angle_ && fabs(p_map.d-p.d) < d_))
 
     {
 
@@ -264,6 +263,7 @@ GeometryMap::mergeWithMap(PolygonPtr p_ptr , std::vector<int> intersections)
 	average_normal=average_normal/merge_counter;
 	average_d=average_d/merge_counter;
 	average_normal.normalize();
+	average_d /= average_normal.norm();
 
 //	outputFile << "new System" <<std::endl;
 //	outputFile <<"normal" <<std::endl << average_normal<<std::endl<<"d: " <<average_d<<std::endl;
@@ -293,7 +293,7 @@ GeometryMap::mergeWithMap(PolygonPtr p_ptr , std::vector<int> intersections)
 
 	getGpcStructureUsingMap(p, transformation_from_world_to_plane, &gpc_result);
 
-	for(int i=0 ; i<intersections.size();i++)
+	for(unsigned int i=0 ; i<intersections.size();i++)
 	{
 
 		Polygon& p_map = *(map_[intersections[i]]);

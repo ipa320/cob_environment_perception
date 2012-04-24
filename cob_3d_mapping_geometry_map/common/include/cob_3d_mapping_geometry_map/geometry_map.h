@@ -101,8 +101,9 @@ public:
   :new_id_(0),
    counter_output(0),
    file_path_("./"),
-   save_to_file_(false)
-
+   save_to_file_(false),
+   cos_angle_(0.97),
+   d_(0.1)
   {
 	//  outputFile.open("/home/goa-hh/test.txt");
 
@@ -193,11 +194,19 @@ public:
     save_to_file_ = save_to_file;
   }
 
+  void
+  setMergeThresholds(double cos_angle, double d)
+  {
+    cos_angle_ = cos_angle;
+    d_ = d;
+  }
+
 protected:
   std::vector<cob_3d_mapping::PolygonPtr> map_;
   unsigned int new_id_;
   std::string file_path_;
   bool save_to_file_;
+  double cos_angle_, d_;
 
 };
 

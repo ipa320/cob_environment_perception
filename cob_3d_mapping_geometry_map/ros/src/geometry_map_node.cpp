@@ -131,6 +131,7 @@ public:
   {
     geometry_map_.setSaveToFile( config.save_to_file );
     geometry_map_.setFilePath( config.file_path );
+    geometry_map_.setMergeThresholds(config.cos_angle, config.d);
   }
 
   /**
