@@ -142,6 +142,8 @@ namespace cob_3d_mapping_features
     void joinAdjacentRotationalClustersOld(cob_3d_mapping_features::ClusterPtr c,
 					   cob_3d_mapping_features::ClusterList& cluster_list);
 
+    void recomputeClusterNormals(cob_3d_mapping_features::ClusterPtr c);
+
 
     // --- cluster list operations ---
     void computeBoundarySmoothness(ClusterList& cl);
