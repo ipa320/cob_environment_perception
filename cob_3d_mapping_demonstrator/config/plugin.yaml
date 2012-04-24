@@ -1,0 +1,20 @@
+name: cob_3d_mapping_demonstrator_rviz
+library: cob_3d_mapping_demonstrator_rviz
+displays:
+  -
+    class_name: RvizButtons
+    display_name: RvizButtons
+    description: |
+      Buttons to control the mapping demonstrator
+  -
+    class_name: RvizTitle
+    display_name: RvizTitle
+    description: |
+      Shows a title
+  -
+    class_name: RvizLogo
+    display_name: RvizLogo
+    description: |
+      Shows the IPA logo
+
+      
