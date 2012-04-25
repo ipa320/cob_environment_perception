@@ -141,7 +141,8 @@ public:
     PCLNodelet::onInit();
     n_ = getNodeHandle();
 
-    config_server_.setCallback(boost::bind(&PointMapNodelet::dynReconfCallback, this, _1, _2));
+    config_server_ = boost::shared_ptr<dynamic_reconfigure::Server<cob_3d_mapping_point_map::point_map_nodeletConfig> >(new dynamic_reconfigure::Server<cob_3d_mapping_point_map::point_map_nodeletConfig>(getPrivateNodeHandle()));
+    config_server_->setCallback(boost::bind(&PointMapNodelet::dynReconfCallback, this, _1, _2));
 
     point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &PointMapNodelet::updateCallback, this);
     map_pub_ = n_.advertise<pcl::PointCloud<Point> >("map",1);
@@ -340,7 +341,7 @@ protected:
   ros::ServiceServer clear_map_server_;
   ros::ServiceServer get_map_server_;
 
-  dynamic_reconfigure::Server<cob_3d_mapping_point_map::point_map_nodeletConfig> config_server_;
+  boost::shared_ptr<dynamic_reconfigure::Server<cob_3d_mapping_point_map::point_map_nodeletConfig> > config_server_;
 
   tf::TransformListener tf_listener_;
 
