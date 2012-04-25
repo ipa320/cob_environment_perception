@@ -174,7 +174,8 @@ public:
     PCLNodelet::onInit();
     n_ = getNodeHandle();
 
-    config_server_.setCallback(boost::bind(&PlaneExtractionNodelet::dynReconfCallback, this, _1, _2));
+    config_server_ = boost::shared_ptr<dynamic_reconfigure::Server<cob_3d_mapping_features::plane_extraction_nodeletConfig> >(new dynamic_reconfigure::Server<cob_3d_mapping_features::plane_extraction_nodeletConfig>(getPrivateNodeHandle()));
+    config_server_->setCallback(boost::bind(&PlaneExtractionNodelet::dynReconfCallback, this, _1, _2));
     point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &PlaneExtractionNodelet::pointCloudSubCallback, this);
     viz_marker_pub_ = n_.advertise<visualization_msgs::Marker>("visualization_marker",10);
     shape_array_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("shape_array",1);
@@ -510,7 +511,7 @@ protected:
   ros::Subscriber point_cloud_sub_;
   ros::Publisher viz_marker_pub_;
   ros::Publisher shape_array_pub_;
-  dynamic_reconfigure::Server<cob_3d_mapping_features::plane_extraction_nodeletConfig> config_server_;
+  boost::shared_ptr<dynamic_reconfigure::Server<cob_3d_mapping_features::plane_extraction_nodeletConfig> > config_server_;
 
   ros::ServiceServer get_plane_;
 
