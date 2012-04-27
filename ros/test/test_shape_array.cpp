@@ -40,13 +40,13 @@ int main(int argc, char **argv) {
     s.centroid.y = 1;
     s.centroid.z = 1;
     s.header.frame_id="/map";
-
-    s.color.r = 0;
-    s.color.g = 1;
+    s.header.stamp = sa.header.stamp;
+    s.color.r = 1;
+    s.color.g = 0;
     s.color.b = 0;
     s.color.a = 1;
 
-    s.type = cob_3d_mapping_msgs::Shape::PLANE;
+    //s.type = cob_3d_mapping_msgs::Shape::PLANE;
     pcl::PointCloud<pcl::PointXYZ> pc;
     pcl::PointCloud<pcl::PointXYZ> pc_1;
     pcl::PointCloud<pcl::PointXYZ> pc_2;
@@ -56,9 +56,9 @@ int main(int argc, char **argv) {
     float f = 0.0;
     for(int i = 0;i < 99;i++)
     {
-      float x = 5 * sin(f + i / 10.0f * 2 * M_PI);
-      float y = 5 * sin(f + i / 10.0f * 2 * M_PI);
-      float z = 5 * cos(f + i / 10.0f * 2 * M_PI);
+      float x = 5 * sin(f + i / 100.0f * 2 * M_PI);
+      float y = 5 * sin(f + i / 100.0f * 2 * M_PI);
+      float z = 5 * cos(f + i / 100.0f * 2 * M_PI);
       pt.x = i/100;
       pt.y = y;
       pt.z = z;
@@ -78,57 +78,58 @@ int main(int argc, char **argv) {
 
 
 
-    pt.x=0;
-    pt.y=0;
-    pt.z=0;
+    pt.x=0.0;
+    pt.y=0.0;
+    pt.z=0.0;
     pc.push_back(pt);
 
-    pt.x=5;
-    pt.y=0;
-    pt.z=0;
+    pt.x=5.0;
+    pt.y=0.0;
+    pt.z=0.0;
     pc.push_back(pt);
 
-    pt.x=0;
-    pt.y=5;
-    pt.z=0;
+    pt.x=0.0;
+    pt.y=5.0;
+    pt.z=0.0;
     pc.push_back(pt);
 
-    pt.x=5;
-    pt.y=5;
-    pt.z=0;
+    pt.x=5.0;
+    pt.y=5.0;
+    pt.z=0.0;
     pc.push_back(pt);
 
-    pt.x=0;
-    pt.y=5;
-    pt.z=5;
-    pc.push_back(pt);
-
-    pt.x=5;
-    pt.y=0;
-    pt.z=5;
-    pc.push_back(pt);
-
-    pt.x=5;
-    pt.y=0;
-    pt.z=5;
-    pc.push_back(pt);
-
-    pt.x=5;
-    pt.y=5;
-    pt.z=5;
-    pc.push_back(pt);
-
+    /*
     pt.x=0;
     pt.y=5;
     pt.z=5;
     pc.push_back(pt);
 
+    pt.x=0;
+    pt.y=0;
+    pt.z=5;
+    pc.push_back(pt);
+
+    pt.x=0;
+    pt.y=5;
+    pt.z=0;
+    pc.push_back(pt);
+
+    pt.x=0;
+    pt.y=0;
+    pt.z=0;
+    pc.push_back(pt);
+
+    pt.x=0;
+    pt.y=5;
+    pt.z=5;
+    pc.push_back(pt);
+*/
     sensor_msgs::PointCloud2 pc2;
     pcl::toROSMsg(pc,pc2);
     s.points.push_back(pc2);
-    sa.shapes.push_back(s);
+   // sa.shapes.push_back(s);
 
-    /*
+/*
     s.color.r = 1;
     s.color.g = 0;
     s.color.b = 0;
@@ -159,15 +160,15 @@ int main(int argc, char **argv) {
     pcl::toROSMsg(pc_3,pc2_3);
     sa.shapes.pop_back();
     s.points.push_back(pc2_3);
-
+*/
     s.holes.push_back(false);
 
-    sa.shapes.push_back(s);
+   // sa.shapes.push_back(s);
 
     s.params[0]=1;
     s.params[1]=0;
-    //sa.shapes.push_back(s);
-*/
+    sa.shapes.push_back(s);
+
     pub.publish(sa);
 
     ros::spinOnce();
