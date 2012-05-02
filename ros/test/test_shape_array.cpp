@@ -165,8 +165,8 @@ int main(int argc, char **argv) {
 
    // sa.shapes.push_back(s);
 
-    s.params[0]=1;
-    s.params[1]=0;
+    //s.params[0]=1;
+    //s.params[1]=0;
     sa.shapes.push_back(s);
 
     pub.publish(sa);
