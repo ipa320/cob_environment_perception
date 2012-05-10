@@ -74,6 +74,11 @@
 // internal includes
 #include "cob_3d_mapping_features/plane_extraction.h"
 
+// additional includes
+#include <pcl/common/eigen.h>
+#include <pcl/common/centroid.h>
+#include <pcl/kdtree/kdtree_flann.h>
+
 
 PlaneExtraction::PlaneExtraction()
 : ctr_(0),
@@ -87,7 +92,10 @@ PlaneExtraction::PlaneExtraction()
   max_iterations_(100),
   distance_threshold_(0.04)
 {
-  pcl::KdTreeFLANN<Point>::Ptr tree (new pcl::KdTreeFLANN<Point> ());
+  //for ros electric
+ // pcl::KdTreeFLANN<Point>::Ptr tree (new pcl::KdTreeFLANN<Point> ());
+  // ros fuerte
+  pcl::search::KdTree<Point>::Ptr tree (new pcl::search::KdTree<Point>());
 
   // Init clustering of full cloud
   cluster_.setClusterTolerance (cluster_tolerance_);
@@ -96,7 +104,12 @@ PlaneExtraction::PlaneExtraction()
 
   // Init clustering of planes
   //TODO: parameter
-  pcl::KdTree<Point>::Ptr clusters_plane_tree(new pcl::KdTreeFLANN<Point> ());
+
+  //for ros electric
+  //pcl::KdTree<Point>::Ptr clusters_plane_tree(new pcl::KdTreeFLANN<Point> ());
+  // for ros fuerte
+  pcl::search::KdTree<Point>::Ptr clusters_plane_tree(new pcl::search::KdTree<Point>());
+
   cluster_plane_.setClusterTolerance (cluster_tolerance_);
   cluster_plane_.setMinClusterSize (min_plane_size_);
   cluster_plane_.setSearchMethod (clusters_plane_tree);
