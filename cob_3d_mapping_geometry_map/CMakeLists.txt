@@ -11,6 +11,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
 rosbuild_init()
 
+
 # add dynamic reconfigure api
 rosbuild_find_ros_package(dynamic_reconfigure)
 include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
@@ -22,6 +23,10 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
+# include vtk
+include_directories("/usr/include/vtk-5.6")
+# include pcl directly
+include(/opt/ros/fuerte/include/pcl-1.5)
 
 #uncomment if you have defined messages
 #rosbuild_genmsg()
@@ -39,8 +44,12 @@ rosbuild_add_executable(eval_feature_map common/test/eval_mapping.cpp)
 #rosbuild_add_executable(geometry_test_map common/test/geometry_map_test.cpp)
 rosbuild_add_executable(get_map_client ros/src/get_map_client.cpp)
 
-target_link_libraries(dynamic_geometry_map_node gpc geometry_map_lib geometry_map_vis_lib)
-target_link_libraries(geometry_map_node gpc geometry_map_lib geometry_map_vis_lib)
+target_link_libraries(geometry_map_lib gpc )
+#target_link_libraries(dynamic_geometry_map_node gpc geometry_map_lib geometry_map_vis_lib)
+#target_link_libraries(geometry_map_node gpc geometry_map_lib geometry_map_vis_lib)
+#target_link_libraries(geometry_map gpc geometry_map_vis_lib )
+target_link_libraries(dynamic_geometry_map_node  geometry_map_lib geometry_map_vis_lib)
+target_link_libraries(geometry_map_node  geometry_map_lib geometry_map_vis_lib)
 target_link_libraries(geometry_map gpc geometry_map_vis_lib )
 #target_link_libraries(geometry_test_map  geometry_map_vis_lib geometry_map_lib test_planes gpc)
 
