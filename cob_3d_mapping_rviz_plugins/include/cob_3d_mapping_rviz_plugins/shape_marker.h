@@ -44,7 +44,7 @@ class ShapeMarker : public ShapeBase
 {
 public:
   ShapeMarker(ShapeDisplay* owner, VisualizationManager* manager, Ogre::SceneNode* parent_node);
-  ~ShapeMarker();
+  virtual ~ShapeMarker();
   virtual S_MaterialPtr getMaterials();
 
 protected:

@@ -273,6 +273,7 @@ bool validateFloats(const cob_3d_mapping_msgs::Shape& msg)
   valid = valid && validateFloats(msg.color);
   valid = valid && validateFloats(msg.points);
   return valid;*/
+  return false;
 }
 
 void ShapeDisplay::processMessage( const cob_3d_mapping_msgs::Shape::ConstPtr& message )
