@@ -208,6 +208,8 @@ namespace rviz
     TPPLPartition pp;
     list<TPPLPoly> polys,result;
 
+    //std::cout << "id: " << new_message->id << std::endl;
+    //std::cout << new_message->centroid << std::endl;
     //fill polys
     for(size_t i=0; i<new_message->points.size(); i++) {
       pcl::PointCloud<pcl::PointXYZ> pc;
@@ -239,7 +241,7 @@ namespace rviz
 
     for(std::list<TPPLPoly>::iterator it=result.begin(); it!=result.end(); it++) {
       //draw each triangle
-      for(size_t i=0;i<it->GetNumPoints();i++) {
+      for(long i=0;i<it->GetNumPoints();i++) {
         p1 = it->GetPoint(i);
 
         Eigen::Vector3f p3, normal;
