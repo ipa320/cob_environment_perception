@@ -71,7 +71,8 @@
 #include <pcl/point_types.h>
 #include <pcl_ros/transforms.h>
 #include <pcl_ros/point_cloud.h>
-#include <pcl/common/transform.h>
+#include <pcl/common/transforms.h>
+#include <pcl/common/eigen.h>
 #include <dynamic_reconfigure/server.h>
 #include <cob_3d_mapping_geometry_map/geometry_map_nodeConfig.h>
 
