@@ -62,6 +62,7 @@
 #include <cob_3d_mapping_common/point_types.h>
 #include <pcl/kdtree/kdtree.h>
 #include <pcl/common/pca.h>
+#include <pcl/PointIndices.h>
 
 
 template<typename Point>
@@ -82,10 +83,10 @@ void Keypoints_Segments<Point>::extractFeatures(const pcl::PointCloud<Point>& po
 
     ROS_INFO("normals done");
 
-#ifdef PCL_DEPRECATED
+#ifdef GICP_ENABLE
     boost::shared_ptr<pcl::search::OrganizedNeighbor<Point> > oTree (new pcl::search::OrganizedNeighbor<Point> );
 #else
-    boost::shared_ptr<pcl::OrganizedDataIndex<Point> > oTree (new pcl::OrganizedDataIndex<Point> );
+    boost::shared_ptr<pcl::search::OrganizedNeighbor<Point> > oTree (new pcl::search::OrganizedNeighbor<Point> );
 #endif
     cob_3d_mapping_features::EdgeEstimation3D<Point, Normal, InterestPoint> ee;
     ee.setRadiusSearch(radius_);
@@ -125,6 +126,7 @@ void Keypoints_Segments<Point>::extractFeatures(const pcl::PointCloud<Point>& po
   mids.clear();
   for(int i=0; i<clusters.size(); i++) {
     if(clusters[i].get_indices_size()<point_cloud.size()*0.001)
+
       continue;
 
     pcl::PointCloud<Point> temp;

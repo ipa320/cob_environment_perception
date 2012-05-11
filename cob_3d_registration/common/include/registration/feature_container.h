@@ -22,8 +22,8 @@ class FeatureContainer : public FeatureContainerInterface
 {
 public:
   typedef typename pcl::PointCloud<FeatureType>::ConstPtr FeatureCloudConstPtr;
-  typedef typename pcl::KdTree<FeatureType> KdTree;
-  typedef typename pcl::KdTree<FeatureType>::Ptr KdTreePtr;
+  typedef typename pcl::search::KdTree<FeatureType> KdTree;
+  typedef typename pcl::search::KdTree<FeatureType>::Ptr KdTreePtr;
   typedef boost::function<int (const pcl::PointCloud<FeatureType> &, int, std::vector<int> &,
                                std::vector<float> &)> SearchMethod;
 
@@ -119,7 +119,7 @@ protected:
   bool build_;
   float radius2_;
   pcl::PointCloud<Point> org_in_, org_out_;
-  boost::shared_ptr<pcl::KdTree<Point> > tree_;
+  boost::shared_ptr<pcl::search::KdTree<Point> > tree_;
 public:
 
   FeatureContainerInterface_Euclidean():

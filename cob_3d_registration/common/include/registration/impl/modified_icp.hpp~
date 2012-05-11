@@ -151,7 +151,6 @@ class ModifiedICP_T : public ParentClass, public ModifiedICP_G {
     this->tree_.reset(new FeatureSearch<PointT>(features));
   }
 
-
 };
 
 /**
