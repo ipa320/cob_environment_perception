@@ -565,16 +565,17 @@ template <typename PointT, typename PointNT, typename PointCT, typename PointOut
 cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>::mergeClusterProperties(
   ClusterPtr c_src, ClusterPtr c_trg)
 {
+  // TODO: boundary points will not be merged yet!
   for (std::vector<int>::iterator it = c_src->indices.begin(); it != c_src->indices.end(); ++it)
   {
     c_trg->addNewPoint(*it, surface_->points[*it].getVector3fMap(), normals_->points[*it].getNormalVector3fMap());
     labels_->points[*it].label = c_trg->id;
   }
   //std::cout<<"components"<<std::endl;
-  computeClusterComponents(c_trg);
+  //computeClusterComponents(c_trg);
   //std::cout<<"intersections"<<std::endl;
   //computeClusterNormalIntersections(c_trg);
-  c_trg->type = I_UNDEF;
+  //c_trg->type = I_UNDEF;
 }
 
 template <typename PointT, typename PointNT, typename PointCT, typename PointOutT> void
@@ -799,7 +800,7 @@ cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>:
   {
     if (c->indices.size() < 20) continue;
     if (c->type == I_EDGE || c->type == I_NAN || c->type == I_BORDER) continue;
-    computeClusterComponents(c);
+    //computeClusterComponents(c);
     computeBoundaryProperties(c, cluster_list);
     //computeClusterNormalIntersections(c);
     //cluster_list.computeEdgeAngles(c->id);
@@ -815,6 +816,7 @@ cob_3d_mapping_features::ExtendedSegmentation<PointT,PointNT,PointCT,PointOutT>:
     if (c->indices.size() < 5) continue;
     if (c->type == I_EDGE || c->type == I_NAN || c->type == I_BORDER) continue;
     joinAdjacentRotationalClusters(c, cluster_list);
+    computeClusterComponents(c);
     if (!c->is_save_plane) 
     {
       recomputeClusterNormals(c);

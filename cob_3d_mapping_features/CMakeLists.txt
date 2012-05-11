@@ -53,6 +53,13 @@ rosbuild_add_library(cob_3d_mapping_features_omp
 	common/src/organized_normal_estimation_omp.cpp
 	common/src/fast_edge_estimation_3d_omp.cpp)
 
+rosbuild_add_library(cob_3d_segmentation
+	common/src/cluster_handler.cpp
+	common/src/edge_handler.cpp
+	common/src/cluster_graph_structure.cpp
+	common/src/depth_segmentation.cpp)
+
+
 rosbuild_add_openmp_flags(cob_3d_mapping_features_omp)
 
 target_link_libraries(cob_3d_mapping_features_nodelets cob_3d_mapping_features cob_3d_mapping_features_omp)
@@ -62,6 +69,10 @@ rosbuild_add_executable(test_plane_extraction common/src/plane_extraction.cpp)
 rosbuild_add_executable(plane_extraction_action_client ros/src/plane_extraction_action_client.cpp)
 rosbuild_add_executable(test_organized_curvature_estimation common/apps/test_organized_curvature_estimation.cpp)
 target_link_libraries(test_organized_curvature_estimation cob_3d_mapping_features cob_3d_mapping_features_omp)
+
+# segmentation:
+rosbuild_add_executable(test_depth_segmentation common/apps/test_depth_segmentation.cpp)
+target_link_libraries(test_depth_segmentation cob_3d_segmentation cob_3d_mapping_features)
 
 # node for segmentation visualization:
 rosbuild_add_executable(segmentation_visualizer ros/src/segmentation_visualizer.cpp)
