@@ -55,7 +55,7 @@
 //additional includes
 #include <pcl/ply/ply_parser.h>
 #include <pcl/io/pcd_io.h>
-#ifdef GICP_ENABLE
+#ifdef PCL_DEPRECATED
 #include <pcl/io/ply_io.h>
 #endif
 #include <pcl/point_types.h>

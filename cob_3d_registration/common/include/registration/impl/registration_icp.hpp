@@ -174,7 +174,7 @@ bool Registration_ICP<Point>::compute_transformation()
   ModifiedICP<Point> icp_;
   pcl::IterativeClosestPoint<Point,Point> *icp = &icp_;
 
-#ifdef PCL_DEPRECATED
+#ifdef GICP_ENABLE
   ModifiedGICP<Point> gicp_;
   if(use_gicp_)
     icp = &gicp_;
@@ -198,7 +198,7 @@ bool Registration_ICP<Point>::compute_transformation()
 
   bool res = false;
 
-#ifdef PCL_DEPRECATED
+#ifdef GICP_ENABLE
   if(use_gicp_)
     res=gicp_.getMaximumIterations()!=gicp_.getNeededIterations()&&gicp_.getNeededIterations()>0;
   else

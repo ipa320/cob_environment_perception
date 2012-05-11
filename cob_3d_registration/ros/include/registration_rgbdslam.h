@@ -16,6 +16,8 @@
 #include <sensor_msgs/CameraInfo.h>
 #include <cv_bridge/cv_bridge.h>
 #include <tf/transform_datatypes.h>
+#include <tf/tfMessage.h>
+#include <ros/console.h>
 
 /**
  *
@@ -66,6 +68,7 @@ protected:
   void transformationCallback(const tf::tfMessage &transform) {
     ROS_INFO("got transformation");
     if(!transform.get_transforms_size())
+
       return;
 
     std::vector< geometry_msgs::TransformStamped> tfs;

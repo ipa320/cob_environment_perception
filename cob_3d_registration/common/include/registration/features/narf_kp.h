@@ -59,7 +59,7 @@ public:
     return this->keypoints_src_.size()>0 && this->keypoints_tgt_.size()>0;
   }
 
-  virtual void getCorrespondences(std::vector<pcl::registration::Correspondence> &correspondences) {
+  virtual void getCorrespondences(pcl::Correspondences &correspondences) {
     pcl::PointCloud<pcl::FPFHSignature33> tsrc, ttgt;
 
     if(this->keypoints_src_.size()<1||this->keypoints_tgt_.size()<1) {
@@ -93,7 +93,7 @@ public:
       std::vector<float> distance(1);
       std::vector<int> index_reciprocal(1);
       std::vector<float> distance_reciprocal(1);
-      pcl::registration::Correspondence corr;
+      pcl::Correspondence corr;
       unsigned int nr_valid_correspondences = 0;
 
       for (unsigned int i = 0; i < indices_->size(); ++i)
@@ -103,8 +103,8 @@ public:
 
         if ( (*indices_)[i] == index_reciprocal[0] )
         {
-          corr.indexQuery = (*indices_)[i];
-          corr.indexMatch = index[0];
+          corr.index_query = (*indices_)[i];
+          corr.index_match = index[0];
           corr.distance = (this->keypoints_tgt_[index[0]].getVector3fMap()-this->keypoints_src_[(*indices_)[i]].getVector3fMap()).squaredNorm();
           correspondences[nr_valid_correspondences] = corr;
           ++nr_valid_correspondences;

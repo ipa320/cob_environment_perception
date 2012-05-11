@@ -55,7 +55,7 @@ public:
     {
       pcl::MomentInvariantsEstimation<Point,pcl::MomentInvariants> est;
 #ifdef GICP_ENABLE
-      boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree<Point>);
+      boost::shared_ptr<pcl::search::KdTree<Point> > tree (new ppcl::search::KdTree<Point>);
 #else
       boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree<Point>);
 #endif
