@@ -21,7 +21,7 @@ main (int argc, char **argv)
   ros::NodeHandle n;
   ros::Publisher pub = n.advertise<cob_3d_mapping_msgs::ShapeArray> ("shapes_array", 1);
 
-  ROS_INFO(" Publishing shape_array.........");
+  ROS_INFO(" Publishing shape_array.........:");
   ros::Rate loop_rate (1);
   uint32_t seq = 0;
   while (ros::ok ())
@@ -90,6 +90,8 @@ main (int argc, char **argv)
     pc.clear ();
     pc2.data.clear ();
     s.points.clear ();
+
+
     pt.x = 10;
     pt.y = 6;
     pt.z = 0;
@@ -110,8 +112,8 @@ main (int argc, char **argv)
     pt.z = 0;
     pc.push_back (pt);
 
-    s.centroid.x = 8;
-    s.centroid.y = 8;
+    s.centroid.x = 1;
+    s.centroid.y = 1;
     s.centroid.z = 0;
     // sensor_msgs::PointCloud2 pc2;
     pcl::toROSMsg (pc, pc2);
@@ -144,6 +146,9 @@ main (int argc, char **argv)
     pt.z = 0;
     pc.push_back (pt);
 
+    s.centroid.x = -1;
+    s.centroid.y = -1;
+    s.centroid.z = 0;
     //sensor_msgs::PointCloud2 pc2;
     pcl::toROSMsg (pc, pc2);
     s.points.push_back (pc2);
