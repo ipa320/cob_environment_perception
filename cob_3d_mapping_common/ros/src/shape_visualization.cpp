@@ -68,7 +68,7 @@
 
 #include <visualization_msgs/InteractiveMarker.h>
 #include <visualization_msgs/InteractiveMarkerControl.h>
-//#include <visualization_msgs/MenuEntry.h>
+#include <visualization_msgs/MenuEntry.h>
 #include <interactive_markers/interactive_marker_server.h>
 #include <interactive_markers/menu_handler.h>
 //#include <boost/bind.hpp>
@@ -98,7 +98,7 @@ class ShapeVisualization
 public:
   // Constructor
   ShapeVisualization () :
-      marker_id_ (0), shape_ctr_(0),display_marker_ (true)
+      marker_id_ (0), shape_ctr_ (0), display_marker_ (true)
   {
     shape_array_sub_ = nh_.subscribe ("shape_array", 1, &ShapeVisualization::shapeArrayCallback, this);
     viz_msg_pub_ = nh_.advertise<visualization_msgs::Marker> ("marker", 10);
@@ -143,7 +143,7 @@ public:
   displayNormalCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
   {
     ROS_INFO(" display Normal Feedback .....");
-/*
+    /*
      std::cout << "  feedback->__connection_header : " << feedback->__connection_header << cout << endl;
      std::cout << "  feedback->client_id : " << feedback->client_id << cout << endl;
      std::cout << "  feedback->control_name : " << feedback->control_name << cout << endl;
@@ -154,33 +154,34 @@ public:
      std::cout << "  feedback->mouse_point : " << feedback->mouse_point << cout << endl;
      std::cout << "  feedback->mouse_point_valid : " << feedback->mouse_point_valid << cout << endl;
      std::cout << "  feedback->pose : " << feedback->pose << cout << endl;
-*/
-     string title;
-     stringstream ss;
-     menu_handler_.getTitle(feedback->menu_entry_id,title);
-     for(unsigned int j=0;j<shape_ctr_;j++)
-     {
-       ss.clear();
-       ss << "Normal vector" << "/menu_shape_"<<j;
-       std::cout<<" feedback title : "<<title<<std::endl;
-       std::cout<<" ss title : "<<ss.str()<<std::endl;
+     */
+    int n_id = -1;
+    string title;
+    stringstream ss;
+    menu_handler_.getTitle (feedback->menu_entry_id, title);
+    for (unsigned int j = 0; j < shape_ctr_; j++)
+    {
+      ss.str ("");
+      ss << "Normal vector" << j;
+      //std::cout<<" feedback title : "<<title<<std::endl;
+      //std::cout<<" ss title : "<<ss.str()<<std::endl;
 
-       if(title == ss.str())
-       {
-         ROS_INFO("message from marker...........%d........",j);
-       }
-     }
+      if (title == ss.str ())
+      {
+        ROS_INFO("message from marker..........: %d", j);
+        n_id = j;
+        break;
+      }
+    }
 
-
-     interactive_markers::MenuHandler::CheckState check_state;
-
+    interactive_markers::MenuHandler::CheckState check_state;
 
     menu_handler_.getCheckState (feedback->menu_entry_id, check_state);
     if (check_state == interactive_markers::MenuHandler::UNCHECKED)
     {
       //ROS_INFO(" entry state changed ");
       menu_handler_.setCheckState (feedback->menu_entry_id, interactive_markers::MenuHandler::CHECKED);
-      displayNormal (true);
+      displayNormal (true, n_id);
       menu_handler_.reApply (*im_server_);
       im_server_->applyChanges ();
     }
@@ -188,7 +189,7 @@ public:
     {
       //ROS_INFO(" entry state changed ");
       menu_handler_.setCheckState (feedback->menu_entry_id, interactive_markers::MenuHandler::UNCHECKED);
-      displayNormal (false);
+      displayNormal (false,n_id);
       menu_handler_.reApply (*im_server_);
       im_server_->applyChanges ();
     }
@@ -199,13 +200,33 @@ public:
   {
     ROS_INFO(" display centroid Feedback .....");
 
+    int c_id = -1;
+    string title;
+    stringstream ss;
+    menu_handler_.getTitle (feedback->menu_entry_id, title);
+
+    for (unsigned int j = 0; j < shape_ctr_; j++)
+    {
+      ss.str ("");
+      ss << "Centroid" << j;
+      //std::cout<<" feedback title : "<<title<<std::endl;
+      //std::cout<<" ss title : "<<ss.str()<<std::endl;
+
+      if (title == ss.str ())
+      {
+        //ROS_INFO("message from marker..........: %d", j);
+        c_id = j;
+        break;
+      }
+    }
+
     interactive_markers::MenuHandler::CheckState check_state;
     menu_handler_.getCheckState (feedback->menu_entry_id, check_state);
     if (check_state == interactive_markers::MenuHandler::UNCHECKED)
     {
       //ROS_INFO(" entry state changed ");
       menu_handler_.setCheckState (feedback->menu_entry_id, interactive_markers::MenuHandler::CHECKED);
-      displayCentroid (true);
+      displayCentroid (true,c_id);
       menu_handler_.reApply (*im_server_);
       im_server_->applyChanges ();
     }
@@ -213,7 +234,7 @@ public:
     {
       //ROS_INFO(" entry state changed ");
       menu_handler_.setCheckState (feedback->menu_entry_id, interactive_markers::MenuHandler::UNCHECKED);
-      displayCentroid (false);
+      displayCentroid (false,c_id);
       menu_handler_.reApply (*im_server_);
       im_server_->applyChanges ();
     }
@@ -256,6 +277,170 @@ public:
     }
 
     return pt;
+  }
+
+  void
+  displayNormal (bool display, int normal_id)
+  {
+    if (display == true)
+    {
+      ROS_INFO_ONCE(" Displaying normal vector .....");
+      //marker_id_ = 0;
+      visualization_msgs::Marker marker;
+
+      marker.header.frame_id = header_.frame_id;
+      marker.header.stamp = ros::Time::now ();
+      marker.ns = "normal_marker";
+
+      marker.type = visualization_msgs::Marker::ARROW;
+      marker.action = visualization_msgs::Marker::ADD;
+      marker.lifetime = ros::Duration ();
+
+      //set color
+      marker.color.r = 0;
+      marker.color.g = 1;
+      marker.color.b = 0;
+      marker.color.a = 1;
+
+      //set scale
+      marker.scale.x = 1;
+      marker.scale.y = 0.1;
+      marker.scale.z = 0.1;
+
+      //set pose
+      for (int k = 0; k < centroid_.size (); k++)
+      {
+        if (k == normal_id)
+        {
+          marker.pose.position.x = centroid_[k][0] + 0.2;
+          marker.pose.position.y = centroid_[k][1] + 0.2;
+          marker.pose.position.z = 0;
+
+          marker.pose.orientation.x = normal_[k][0];
+          marker.pose.orientation.y = normal_[k][1];
+          marker.pose.orientation.z = normal_[k][2];
+          marker.pose.orientation.w = 1;
+          break;
+        }
+      }
+
+      marker.id = 0; //marker_id_++;
+      /*
+       std::cout << " normal vector marker id " << marker_id_ << std::endl;
+       std::cout << " normal_[0] " << normal_[0][0] << std::endl;
+       std::cout << " normal_[1] " << normal_[0][1] << std::endl;
+       std::cout << " normal_[2] " << normal_[0][2] << std::endl;
+       */
+      visualization_msgs::InteractiveMarkerControl im_ctrl_n;
+      im_ctrl_n.always_visible = true;
+      im_ctrl_n.name = "normal_ctrl";
+      im_ctrl_n.description = "display_normal";
+      im_ctrl_n.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
+      im_ctrl_n.markers.push_back (marker);
+      im.controls.push_back (im_ctrl_n);
+
+      im_server_->insert (im);
+    }
+    else
+    {
+      ROS_INFO_ONCE(" removing marker.....");
+      for (unsigned int i = 0; i < im.controls.size (); i++)
+      {
+        if (im.controls[i].name == "normal_ctrl")
+        {
+          im.controls.erase (im.controls.begin () + i);
+          //marker_id_--;
+        }
+        im_server_->insert (im);
+      }
+
+    }
+  }
+
+  void
+  displayCentroid (bool display, int centroid_id)
+  {
+    if (display == true)
+    {
+      ROS_INFO_ONCE(" Displaying centroid .....");
+      //marker_id_ = 0;
+      visualization_msgs::Marker marker;
+
+      marker.header.frame_id = header_.frame_id;
+      marker.header.stamp = ros::Time::now ();
+      marker.ns = "centroid_marker";
+
+      marker.type = visualization_msgs::Marker::SPHERE;
+      marker.action = visualization_msgs::Marker::ADD;
+      marker.lifetime = ros::Duration ();
+
+      //set color
+      marker.color.r = 0;
+      marker.color.g = 0;
+      marker.color.b = 1;
+      marker.color.a = 1;
+
+      //set pose
+      for (int k = 0; k < centroid_.size (); k++)
+      {
+        if (k == centroid_id)
+        {
+          std::cout<<" centroid_[k][0] <<"<<k<<" : "<<centroid_[k][0]<<std::endl;
+          std::cout<<" centroid_[k][1] <<"<<k<<" : "<<centroid_[k][1]<<std::endl;
+          std::cout<<" centroid_[k][2] <<"<<k<<" : "<<centroid_[k][2]<<std::endl;
+
+          marker.pose.position.x = centroid_[k][0];
+          marker.pose.position.y = centroid_[k][1];
+          marker.pose.position.z = centroid_[k][2];
+          break;
+        }
+      }
+
+      //set scale
+      marker.scale.x = 0.1;
+      marker.scale.y = 0.1;
+      marker.scale.z = 0.1;
+
+      marker.id = 0; //marker_id_++;
+      /*
+       std::cout << " centroid marker id " << marker_id_ << std::endl;
+       std::cout << " centroid_[0] " << centroid_[0][0] << std::endl;
+       std::cout << " centroid_[1] " << centroid_[0][1] << std::endl;
+       std::cout << " centroid_[2] " << centroid_[0][2] << std::endl;
+       */
+      visualization_msgs::InteractiveMarkerControl im_ctrl_c;
+      im_ctrl_c.always_visible = true;
+      im_ctrl_c.name = "centroid_ctrl";
+      im_ctrl_c.description = "display centroid";
+      im_ctrl_c.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
+      im_ctrl_c.markers.push_back (marker);
+
+      visualization_msgs::InteractiveMarker im_n;
+      im_n.name = "shape_visualizer1";
+      im_n.description = "shape details1";
+      im_n.header.frame_id = "/map";
+      im_n.header.stamp = ros::Time::now();
+
+      im_n.controls.push_back (im_ctrl_c);
+
+      im_server_->insert (im_n);
+    }
+    else
+    {
+      ROS_INFO_ONCE(" removing centroid.....");
+      for (unsigned int i = 0; i < im.controls.size (); i++)
+      {
+        //im_ctrl_c.markers[0].action = visualization_msgs::Marker::DELETE;
+        //im_ctrl_c.markers.pop_back();
+
+        if (im.controls[i].name == "centroid_ctrl")
+        {
+          im.controls.erase (im.controls.begin () + i);
+          //marker_id_--;
+        }
+        im_server_->insert (im);
+      }
+    }
   }
 
   void
@@ -311,165 +496,56 @@ public:
     }
   }
   void
-  createShapeMenu ()
+  createShapeMenu (interactive_markers::MenuHandler& menu_h)
   {
     ROS_INFO_ONCE(" creating shape menu .....");
-    interactive_markers::MenuHandler menu_handler;
+   // interactive_markers::MenuHandler menu_handler;
     interactive_markers::MenuHandler::EntryHandle eh_1, eh_2, eh_3;
+    std::string n_title,c_title;
     stringstream ss;
-    ss << im.name << "/menu_shape_"<<shape_ctr_;
-    ss.clear();
-    ss<<"Normal vector"<<shape_ctr_++;
+    ss << im.name << "/menu_shape_" << shape_ctr_;
+/*
     eh_1 = menu_handler_.insert (ss.str (), boost::bind (&ShapeVisualization::menuCB, this, _1));
-    eh_2 = menu_handler_.insert (eh_1, ss.str(), boost::bind (&ShapeVisualization::displayNormalCB, this, _1));
-    eh_3 = menu_handler_.insert (eh_1, "Centroid", boost::bind (&ShapeVisualization::displayCentroidCB, this, _1));
+    ss.str ("");
+    ss << "Normal vector" << shape_ctr_;
+    eh_2 = menu_handler_.insert (eh_1, ss.str (), boost::bind (&ShapeVisualization::displayNormalCB, this, _1));
+    ss.str ("");
+    ss << "Centroid" << shape_ctr_;
+    eh_3 = menu_handler_.insert (eh_1, ss.str(), boost::bind (&ShapeVisualization::displayCentroidCB, this, _1));
+
     menu_handler_.setVisible (eh_1, true);
     menu_handler_.setCheckState (eh_1, interactive_markers::MenuHandler::NO_CHECKBOX);
     menu_handler_.setVisible (eh_2, true);
     menu_handler_.setCheckState (eh_2, interactive_markers::MenuHandler::UNCHECKED);
     menu_handler_.setVisible (eh_3, true);
     menu_handler_.setCheckState (eh_3, interactive_markers::MenuHandler::UNCHECKED);
+    */
+    eh_1 = menu_h.insert (ss.str (), boost::bind (&ShapeVisualization::menuCB, this, _1));
+     ss.str ("");
+     ss << "Normal vector" << shape_ctr_;
+     n_title = ss.str ();
+     eh_2 = menu_h.insert (eh_1, n_title, boost::bind (&ShapeVisualization::displayNormalCB, this, _1));
+     ss.str ("");
+     ss << "Centroid" << shape_ctr_;
+     c_title = ss.str ();
+     eh_3 = menu_h.insert (eh_1, c_title, boost::bind (&ShapeVisualization::displayCentroidCB, this, _1));
+
+     menu_h.setVisible (eh_1, true);
+     menu_h.setCheckState (eh_1, interactive_markers::MenuHandler::NO_CHECKBOX);
+     menu_h.setVisible (eh_2, true);
+     menu_h.setCheckState (eh_2, interactive_markers::MenuHandler::UNCHECKED);
+     menu_h.setVisible (eh_3, true);
+     menu_h.setCheckState (eh_3, interactive_markers::MenuHandler::UNCHECKED);
+
+     visualization_msgs::MenuEntry menu_entry;
+     menu_entry.title = n_title;
+     im.menu_entries.push_back(menu_entry);
+     menu_entry.title = c_title;
+     im.menu_entries.push_back(menu_entry);
+
 
   }
 
-  void
-  displayNormal (bool display)
-  {
-    if (display == true)
-    {
-      ROS_INFO_ONCE(" Displaying normal vector .....");
-      //marker_id_ = 0;
-      visualization_msgs::Marker marker;
-
-      marker.header.frame_id = header_.frame_id;
-      marker.header.stamp = ros::Time::now ();
-      marker.ns = "normal_marker";
-
-      marker.type = visualization_msgs::Marker::ARROW;
-      marker.action = visualization_msgs::Marker::ADD;
-      marker.lifetime = ros::Duration ();
-
-      //set color
-      marker.color.r = 0;
-      marker.color.g = 1;
-      marker.color.b = 0;
-      marker.color.a = 1;
-
-      //set scale
-       marker.scale.x = 1;
-       marker.scale.y = 0.1;
-       marker.scale.z = 0.1;
-
-      //set pose
-      marker.pose.position.x = centroid_[0][0] + 0.2;
-      marker.pose.position.y = centroid_[0][1] + 0.2;
-      marker.pose.position.z = 0;
-
-      marker.pose.orientation.x = 0;//normal_[0][0];
-      marker.pose.orientation.y = -1;//normal_[0][1];
-      marker.pose.orientation.z = 0;//normal_[0][2];
-      marker.pose.orientation.w = 1;
-
-      marker.id = 0; //marker_id_++;
-          /*
-           std::cout << " normal vector marker id " << marker_id_ << std::endl;
-           std::cout << " normal_[0] " << normal_[0][0] << std::endl;
-           std::cout << " normal_[1] " << normal_[0][1] << std::endl;
-           std::cout << " normal_[2] " << normal_[0][2] << std::endl;
-           */
-      visualization_msgs::InteractiveMarkerControl im_ctrl_n;
-      im_ctrl_n.always_visible = true;
-      im_ctrl_n.name = "normal_ctrl";
-      im_ctrl_n.description = "display_normal";
-      im_ctrl_n.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
-      im_ctrl_n.markers.push_back (marker);
-      im.controls.push_back (im_ctrl_n);
-
-      im_server_->insert (im);
-    }
-    else
-    {
-      ROS_INFO_ONCE(" removing marker.....");
-      for (unsigned int i = 0; i < im.controls.size (); i++)
-      {
-        if (im.controls[i].name == "normal_ctrl")
-        {
-          im.controls.erase (im.controls.begin () + i);
-          //marker_id_--;
-        }
-        im_server_->insert (im);
-      }
-
-    }
-  }
-
-  void
-  displayCentroid (bool display)
-  {
-    if (display == true)
-    {
-      ROS_INFO_ONCE(" Displaying centroid .....");
-      //marker_id_ = 0;
-      visualization_msgs::Marker marker;
-
-      marker.header.frame_id = header_.frame_id;
-      marker.header.stamp = ros::Time::now ();
-      marker.ns = "centroid_marker";
-
-      marker.type = visualization_msgs::Marker::SPHERE;
-      marker.action = visualization_msgs::Marker::ADD;
-      marker.lifetime = ros::Duration ();
-
-      //set color
-      marker.color.r = 0;
-      marker.color.g = 0;
-      marker.color.b = 1;
-      marker.color.a = 1;
-
-      //set pose
-      marker.pose.position.x = centroid_[0][0];
-      marker.pose.position.y = centroid_[0][1];
-      marker.pose.position.z = centroid_[0][2];
-
-      //set scale
-      marker.scale.x = 0.1;
-      marker.scale.y = 0.1;
-      marker.scale.z = 0.1;
-
-      marker.id = 0; //marker_id_++;
-          /*
-           std::cout << " centroid marker id " << marker_id_ << std::endl;
-           std::cout << " centroid_[0] " << centroid_[0][0] << std::endl;
-           std::cout << " centroid_[1] " << centroid_[0][1] << std::endl;
-           std::cout << " centroid_[2] " << centroid_[0][2] << std::endl;
-           */
-      visualization_msgs::InteractiveMarkerControl im_ctrl_c;
-      im_ctrl_c.always_visible = true;
-      im_ctrl_c.name = "centroid_ctrl";
-      im_ctrl_c.description = "display centroid";
-      im_ctrl_c.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
-      im_ctrl_c.markers.push_back (marker);
-      im.controls.push_back (im_ctrl_c);
-
-      im_server_->insert (im);
-    }
-    else
-    {
-      ROS_INFO_ONCE(" removing centroid.....");
-      for (unsigned int i = 0; i < im.controls.size (); i++)
-      {
-        //im_ctrl_c.markers[0].action = visualization_msgs::Marker::DELETE;
-        //im_ctrl_c.markers.pop_back();
-
-        if (im.controls[i].name == "centroid_ctrl")
-        {
-          im.controls.erase (im.controls.begin () + i);
-          //marker_id_--;
-        }
-        im_server_->insert (im);
-      }
-    }
-  }
 
   void
   publishInteractiveMarker (const cob_3d_mapping_msgs::Shape::ConstPtr& shape_msg, std_msgs::Header header) //,std::vector::size_type sa_size)
@@ -505,17 +581,30 @@ public:
       polys.push_back (poly);
     }
     pp.Triangulate_EC (&polys, &result);
+    /*
+///////////////////////////////////////
+    visualization_msgs::InteractiveMarker im_l;
+    ROS_INFO_ONCE(" creating interactive marker .....");
+      stringstream ss;
+    ss << "shape_visualizer" << shape_ctr_;
+     im_l.name = ss.str();
+     ss.str("");
+     im_l.description = "shape details";
+     im_l.header = header;
 
-    // visualization_msgs::InteractiveMarker im;
-    visualization_msgs::InteractiveMarkerControl im_ctrl;
 
- //   stringstream ss;
- //   ss << "shape_visualizer" << shape_ctr_;
+     interactive_markers::MenuHandler menu_h;
+//////////////////////
+*/
+    interactive_markers::MenuHandler menu_h;
+
+
     ROS_INFO_ONCE(" creating interactive marker .....");
     im.name = "shape_visualizer";
     im.description = "shape details";
     im.header = header;
 
+     visualization_msgs::InteractiveMarkerControl im_ctrl;
     im_ctrl.always_visible = true;
     im_ctrl.name = "shape_display";
     im_ctrl.description = "shape_markers";
@@ -525,17 +614,24 @@ public:
 
     im.controls.push_back (im_ctrl);
 
-    //displayNormal(true);
+     //im_server_->insert (im, boost::bind (&ShapeVisualization::imServerCB, this, _1),visualization_msgs::InteractiveMarkerFeedback::BUTTON_CLICK);
+//////////////////////////////////////
 
-    // im_server_->insert (im, boost::bind (&ShapeVisualization::imServerCB, this, _1),visualization_msgs::InteractiveMarkerFeedback::BUTTON_CLICK);
+   // im_l.controls.push_back (im_ctrl);
+    //im_server_->insert (im_l);
+//////////////////
+
+    //im_server_->insert (im);
+   // createShapeMenu ();
+    //menu_handler_.apply (*im_server_, im.name);
     im_server_->insert (im);
-    createShapeMenu ();
-
-    menu_handler_.apply (*im_server_, im.name);
+    createShapeMenu (menu_h);
+    //menu_h.apply (*im_server_, im_l.name);
+    menu_h.apply (*im_server_, im.name);
 
     im_server_->applyChanges ();
     //viz_msg_im_pub_.publish (im);
-
+    shape_ctr_++;
   }
 
 protected:
@@ -554,7 +650,7 @@ protected:
   std_msgs::Header header_;
 
   visualization_msgs::InteractiveMarker im;
-  visualization_msgs::InteractiveMarkerControl im_ctrl_n, im_ctrl_c;
+  //visualization_msgs::InteractiveMarkerControl im_ctrl_n, im_ctrl_c;
 
   std::vector<Eigen::Vector3f> normal_;
   std::vector<Eigen::Vector4f> centroid_;
