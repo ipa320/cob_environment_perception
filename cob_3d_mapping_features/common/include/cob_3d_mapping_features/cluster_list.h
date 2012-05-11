@@ -111,7 +111,7 @@ namespace cob_3d_mapping_features
     { return (boost::edge(to_vID_[cID_1], to_vID_[cID_2], g_)).second; }
 
     inline Edge&
-      getConnection(const int cID_1, const int cID_2)
+    getConnection(const int cID_1, const int cID_2)
     { return (g_[boost::edge(to_vID_[cID_1], to_vID_[cID_2], g_).first]); }
 
     void
