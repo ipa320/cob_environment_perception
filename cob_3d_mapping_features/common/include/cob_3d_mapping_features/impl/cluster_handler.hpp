@@ -57,6 +57,21 @@
 
 #include "cob_3d_mapping_features/cluster_handler.h"
 
+/*
+template <typename LabelT, typename PointT, typename PointNT> void
+cob_3d_mapping_features::ExtendedSegmentation<LabelT,PointT,PointNT>::recomputeClusterNormals(ClusterPtr c)
+{
+  int w_size = std::min( std::floor(sqrt(c->indices.size() / 16.0f))+ 8, 30.0);
+  int steps = std::floor(w_size / 3);
+  one.setPixelSearchRadius(w_size,2,steps);
+  one.computeMaskManually(surface_->width);
+  c->sum_orientation = Eigen::Vector3f::Zero();
+  for (std::vector<int>::iterator idx = c->indices.begin(); idx != c->indices.end(); ++ idx)
+  {
+  }
+}
+*/
+
 template<typename LabelT, typename PointT, typename PointNT> void
 cob_3d_mapping_features::DepthClusterHandler<LabelT,PointT,PointNT>::computeClusterComponents(ClusterPtr c)
 {

@@ -63,7 +63,7 @@
 template <typename ClusterHandlerT, typename EdgeHandlerT> void 
 cob_3d_mapping_features::ClusterGraphStructure<ClusterHandlerT,EdgeHandlerT>::merge(const int cid_source, const int cid_target)
 {
-  merge(vid_[cid_source], vid_[cid_target]);
+  merge(vid_.find(cid_source)->second, vid_.find(cid_target)->second);
 }
 
 template <typename ClusterHandlerT, typename EdgeHandlerT> void 
@@ -99,9 +99,10 @@ cob_3d_mapping_features::ClusterGraphStructure<ClusterHandlerT,EdgeHandlerT>::ge
   int cid, std::vector<ClusterPtr>& adjacent_clusters)
 {
   adjacent_clusters.clear();
+  if (vid_.find(cid) == vid_.end()) return;
   typename boost::graph_traits<GraphT>::adjacency_iterator aj_it, aj_end;
   //std::cout << "EDGES: " << boost::out_degree(to_vID_[cID],g_) << std::endl;
-  for (boost::tie(aj_it,aj_end) = boost::adjacent_vertices(vid_[cid],g_); aj_it != aj_end; ++aj_it)
+  for (boost::tie(aj_it,aj_end) = boost::adjacent_vertices(vid_.find(cid)->second,g_); aj_it != aj_end; ++aj_it)
     adjacent_clusters.push_back(g_[*aj_it].c_it);
 }
 
@@ -110,17 +111,20 @@ cob_3d_mapping_features::ClusterGraphStructure<ClusterHandlerT,EdgeHandlerT>::ge
   int cid_start, std::vector<ClusterPtr>& connected_clusters, boost::function<bool (EdgePtr)> f)
 {
   connected_clusters.clear();
-  VertexID curr_c = vid_[cid_start];
+  if (vid_.find(cid_start) == vid_.end()) return;
+  VertexID curr_c;
   std::set<int> id_set;
   id_set.insert(cid_start);
   std::list<VertexID> vertex_todo;
-  vertex_todo.push_back(vid_[cid_start]);
+  vertex_todo.push_back(vid_.find(cid_start)->second);
 
   while (vertex_todo.size() != 0)
   {
     typename boost::graph_traits<GraphT>::out_edge_iterator oe_it, oe_end;
     curr_c = vertex_todo.front();
     vertex_todo.pop_front();
+    //std::cout << g_[curr_c].c_it->size() << std::endl;
+    //std::cout << boost::out_degree(curr_c,g_) << std::endl;
     for (boost::tie(oe_it,oe_end) = boost::out_edges(curr_c,g_); oe_it != oe_end; ++oe_it)
     {
       VertexID new_id = boost::target(*oe_it,g_);
@@ -132,6 +136,7 @@ cob_3d_mapping_features::ClusterGraphStructure<ClusterHandlerT,EdgeHandlerT>::ge
       }
     }
   }
+  //std::cout << "search done" << std::endl;
 }
 
 /*

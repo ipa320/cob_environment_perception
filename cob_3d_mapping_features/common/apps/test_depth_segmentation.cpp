@@ -132,7 +132,9 @@ int main(int argc, char** argv)
   seg.setNormalCloud(n);
   seg.setLabelCloud(l);
   seg.setOutputGraph(g);
+  std::cout << "initial segmentation..." << std::endl;
   seg.performInitialSegmentation();
+  std::cout << "refine segmentation.." << std::endl;
   seg.refineSegmentation();
   g->clusters()->getColoredCloud(p);
   
@@ -140,6 +142,7 @@ int main(int argc, char** argv)
 
 
   visualization::PCLVisualizer v;
+  visualization::PointCloudColorHandlerRGBField<PointXYZRGB> col_hdl(p);
   /* --- Viewports: ---
    *  1y
    *    | 1 | 3 |
@@ -150,9 +153,9 @@ int main(int argc, char** argv)
    */
   // xmin, ymin, xmax, ymax
   int v1(0);
-  v.createViewPort(0.0, 0.5, 0.5, 1.0, v1);
-  v.setBackgroundColor(1, 1, 1, v1);
-  v.addPointCloud<PointXYZRGB>(p, "segmented", v1);
+  //v.createViewPort(0.0, 0.5, 0.5, 1.0, v1);
+  v.setBackgroundColor(1, 1, 1);
+  v.addPointCloud<PointXYZRGB>(p, col_hdl, "segmented");
 
 
   while(!v.wasStopped())

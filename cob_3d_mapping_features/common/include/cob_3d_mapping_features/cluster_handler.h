@@ -110,11 +110,12 @@ namespace cob_3d_mapping_features
     inline void sortBySize() { clusters_.sort(); }
     virtual void clear() { clusters_.clear(); id_to_cluster_.clear(); max_cid_ = 0; }
 
-    inline ClusterPtr getCluster(const int id) { return id_to_cluster_[id]; }
+    inline ClusterPtr getCluster(const int id) 
+    { return ( (id_to_cluster_.find(id) == id_to_cluster_.end()) ? clusters_.end() : id_to_cluster_.find(id)->second ); }
     inline ClusterPtr createCluster(int id = 0)
     { 
       clusters_.push_back(ClusterType( (id<=max_cid_ ? ++max_cid_ : max_cid_ = id) )); 
-      return (id_to_cluster_[id] = --clusters_.end());
+      return (id_to_cluster_[max_cid_] = --clusters_.end());
     }
     inline void getColoredCloud(pcl::PointCloud<PointXYZRGB>::Ptr color_cloud)
     {
