@@ -8,14 +8,31 @@
 #ifndef NARF_KP_H_
 #define NARF_KP_H_
 
-struct EIGEN_ALIGN16 NarfKPoint
-{
-  PCL_ADD_POINT4D; // This adds the members x,y,z which can also be accessed using the point (which is float[4])
+#include <ros/console.h>
+ #include <pcl/point_types.h>
+ #include <pcl/point_cloud.h>
+ #include <pcl/io/pcd_io.h>
+#include <pcl/impl/point_types.hpp>
+#include <pcl/point_traits.h>
 
-  pcl::FPFHSignature33 fpfh;
 
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-};
+
+
+struct NarfKPoint
+ {
+   PCL_ADD_POINT4D;                  // preferred way of adding a XYZ+padding
+   pcl::FPFHSignature33 fpfh;
+   EIGEN_MAKE_ALIGNED_OPERATOR_NEW   // make sure our new allocators are aligned
+ } EIGEN_ALIGN16;                    // enforce SSE padding for correct memory alignment
+
+ POINT_CLOUD_REGISTER_POINT_STRUCT (NarfKPoint,           // here we assume a XYZ + "test" (as fields)
+                                    (float, x, x)
+                                    (float, y, y)
+                                    (float, z, z)
+                                    (float[33], fpfh,fpfh)
+
+ )
+
 
 template<typename Point>
 class Keypoints_Narf : public RegKeypointCorrespondence<Point, NarfKPoint>
@@ -83,9 +100,15 @@ public:
         (*indices_)[i]=i;
 
       // setup tree for reciprocal search
-      pcl::KdTreeFLANN<pcl::FPFHSignature33> tree_reciprocal;
+//      for electrioc
+//      pcl::KdTreeFLANN<pcl::FPFHSignature33> tree_reciprocal;
+       pcl::search::KdTree<pcl::FPFHSignature33> tree_reciprocal;
+
       tree_reciprocal.setInputCloud(tsrc.makeShared(), indices_);
-      pcl::KdTreeFLANN<pcl::FPFHSignature33> tree_;
+
+//      pcl::KdTreeFLANN<pcl::FPFHSignature33> tree_;
+      pcl::search::KdTree<pcl::FPFHSignature33> tree_;
+
       tree_.setInputCloud(ttgt.makeShared());
 
       correspondences.resize(indices_->size());

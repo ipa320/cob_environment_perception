@@ -10,6 +10,7 @@
 
 #include <pcl/filters/extract_indices.h>
 #include <pcl/registration/impl/correspondence_types.hpp>
+#include <pcl/PointIndices.h>
 #ifdef VISUALIZE_SEGMENTS_
 #include <pcl/visualization/cloud_viewer.h>
 #endif

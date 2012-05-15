@@ -37,7 +37,7 @@ public:
     ROS_INFO("calc fpfh for source");
     {
 #ifdef GICP_ENABLE
-      boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::KdTreeFLANN<Point>);
+      boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree <Point>);
 #else
       boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree<Point>);
 #endif

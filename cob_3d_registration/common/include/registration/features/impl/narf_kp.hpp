@@ -147,7 +147,7 @@ void Keypoints_Narf<Point>::extractFeatures(const pcl::PointCloud<Point>& point_
       ROS_INFO("finishing...");
 
 
-      tree.reset(new pcl::KdTreeFLANN<Point>);
+      tree.reset(new pcl::search::KdTree<Point>);
       tree->setInputCloud(point_cloud.makeShared());
 
       narf_descriptors.clear();

@@ -55,6 +55,8 @@
 #include <pcl/correspondence.h>
 #include <pcl/registration/correspondence_rejection_distance.h>
 #include <pcl/registration/transformation_estimation_svd.h>
+#include <pcl/search/kdtree.h>
+#include <pcl/search/search.h>
 
 template <typename Point>
 bool Registration_Corrospondence<Point>::compute_features() {
