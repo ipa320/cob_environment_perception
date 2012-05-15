@@ -107,8 +107,8 @@ namespace cob_3d_mapping_features
       , sum_orientations_(0.0, 0.0, 0.0)
     { }
 
-    inline Eigen::Vector3f getCentroid() const { sum_points_ / indices_.size(); }
-    inline Eigen::Vector3f getOrientation() const { sum_orientations_ / indices_.size(); }
+    inline Eigen::Vector3f getCentroid() const { return sum_points_ / static_cast<float>(indices_.size()); }
+    inline Eigen::Vector3f getOrientation() const { return sum_orientations_ / static_cast<float>(indices_.size()); }
 
 
   public:

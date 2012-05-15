@@ -103,19 +103,19 @@ namespace cob_3d_mapping_features
 
     EdgePtr connect(const int cid1, const int cid2)
     {
-      if (cid1 == cid2) return e_hdl_->end();
-      if (vid_.find(cid1) == vid_.end()) vid_[cid1] = boost::add_vertex(GraphVertex(c_hdl_->getCluster(cid1)), g_);
-      if (vid_.find(cid2) == vid_.end()) vid_[cid2] = boost::add_vertex(GraphVertex(c_hdl_->getCluster(cid2)), g_);
+      if (cid1 == cid2) { std::cout << "[ClusterGraphStructure::connect]: connect identic IDs" << std::endl; return e_hdl_->end(); }
+      if (vid_.find(cid1) == vid_.end()) { vid_[cid1] = boost::add_vertex(GraphVertex(c_hdl_->getCluster(cid1)), g_); }
+      if (vid_.find(cid2) == vid_.end()) { vid_[cid2] = boost::add_vertex(GraphVertex(c_hdl_->getCluster(cid2)), g_); }
       std::pair<EdgeID,bool> res = boost::add_edge(vid_[cid1], vid_[cid2], g_);
       if (res.second) g_[res.first].e_it = e_hdl_->createEdge();
       return g_[res.first].e_it;
     }
 
     inline bool areConnected(const int cid1, const int cid2)
-    { return (boost::edge(vid_[cid1], vid_[cid2], g_)).second; }
+    { return (boost::edge(vid_.find(cid1)->second, vid_.find(cid2)->second, g_)).second; }
 
     inline EdgePtr getConnection(const int cid1, const int cid2)
-    { return g_[boost::edge(vid_[cid1], vid_[cid2], g_).first].e_it; }
+    { return g_[boost::edge(vid_.find(cid1)->second, vid_.find(cid2)->second, g_).first].e_it; }
 
     void merge(const int cid_source, const int cid_target);
     void getAdjacentClusters(int cid, std::vector<ClusterPtr>& adjacent_clusters);

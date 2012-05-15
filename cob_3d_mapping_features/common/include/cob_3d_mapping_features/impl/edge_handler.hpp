@@ -110,7 +110,7 @@ cob_3d_mapping_features::BoundaryPointsEdgeHandler<LabelT,PointT>::computeBounda
   const int index,
   BoundaryPoint& bp)
 {
-  const int w = surface_->width, h = surface_->height, s = surface_->height * surface_->width;
+  const int w = surface_->width, s = surface_->height * surface_->width;
   const int l_idx = labels_->points[index].label;
 
   // compute mask boundary constrains first, 
