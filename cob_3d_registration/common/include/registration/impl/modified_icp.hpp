@@ -58,6 +58,10 @@
 #include <pcl/registration/icp.h>
 #include <pcl/kdtree/kdtree.h>
 #include "../feature_container.h"
+#include <pcl/registration/registration.h>
+#include <pcl/features/feature.h>
+#include <pcl/search/kdtree.h>
+#include <pcl/search/search.h>
 #ifdef GICP_ENABLE
 #include <pcl/registration/gicp.h>
 #include <pcl/registration/transformation_estimation_lm.h>
@@ -84,7 +88,9 @@ class ModifiedICP_T : public ParentClass, public ModifiedICP_G {
    * own search tree which passes down search calls
    */
   template <typename PointT2>
-  class FeatureSearch : public pcl::KdTree<PointT2>
+//  class FeatureSearch : public pcl::KdTree<PointT2>
+   // class FeatureSearch : public pcl::search::Search<PointT2>
+class FeatureSearch: public pcl::KdTreeFLANN<PointT2>
   {
     FeatureContainerInterface* features_;
 
@@ -103,6 +109,9 @@ class ModifiedICP_T : public ParentClass, public ModifiedICP_G {
       return k_indices.size();
     }
 
+
+
+
     /// not implemented
     virtual int
     nearestKSearch (const PointT2 &p_q, int k, std::vector<int> &k_indices, std::vector<float> &k_sqr_distances) {error();return 0;}
@@ -110,6 +119,10 @@ class ModifiedICP_T : public ParentClass, public ModifiedICP_G {
     /// not implemented
     virtual int
     nearestKSearch (int index, int k, std::vector<int> &k_indices, std::vector<float> &k_sqr_distances) {error();return 0;}
+
+//    /// not implemented
+//    virtual int
+//    nearestKSearch(const PointT&, int, std::vector<int>&, std::vector<float>&){error();return 0;}
 
     /// not implemented
     virtual int
@@ -121,12 +134,12 @@ class ModifiedICP_T : public ParentClass, public ModifiedICP_G {
     radiusSearch (const PointT2 &p_q, double radius, std::vector<int> &k_indices,
                   std::vector<float> &k_sqr_distances, int max_nn = INT_MAX) const {error();return 0;}
 
-    /// not implemented
+    /// not implemented-Wfatal-errors
     virtual int
     radiusSearch (int index, double radius, std::vector<int> &k_indices,
                   std::vector<float> &k_sqr_distances, int max_nn = INT_MAX) const {error();return 0;}
 
-    virtual std::string getName() const {return "ICP Feature";}
+//   virtual std::string getName() const {return "ICP Feature";}
 
   };
 
@@ -160,7 +173,12 @@ class ModifiedICP_T : public ParentClass, public ModifiedICP_G {
 template <class PointT>
 class ModifiedICP : public ModifiedICP_T<pcl::IterativeClosestPoint<PointT,PointT>, PointT>
 {
+
 };
+
+
+
+
 
 #ifdef GICP_ENABLE
 /**

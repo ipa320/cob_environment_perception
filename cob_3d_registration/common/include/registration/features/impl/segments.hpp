@@ -74,7 +74,7 @@ void Keypoints_Segments<Point>::extractFeatures(const pcl::PointCloud<Point>& po
   {
     pcl::PointCloud<Normal>::Ptr n(new pcl::PointCloud<Normal>);
 
-    boost::shared_ptr<pcl::KdTreeFLANN<Point> > tree(new pcl::KdTreeFLANN<Point>);
+    boost::shared_ptr<pcl::search::KdTree<Point> > tree(new pcl::search::KdTree<Point>);
     pcl::NormalEstimation<Point, Normal> ne;
     ne.setRadiusSearch(radius_);
     ne.setSearchMethod(tree);
@@ -125,7 +125,8 @@ void Keypoints_Segments<Point>::extractFeatures(const pcl::PointCloud<Point>& po
 
   mids.clear();
   for(int i=0; i<clusters.size(); i++) {
-    if(clusters[i].get_indices_size()<point_cloud.size()*0.001)
+//    if(clusters[i].get_indices_size()<point_cloud.size()*0.001)
+	    if(clusters[i].indices.size()<point_cloud.size()*0.001)
 
       continue;
 

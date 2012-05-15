@@ -88,6 +88,8 @@
 #include <registration/registration_icp.h>
 
 #include <vtk-5.6/vtkCommand.h>
+#include <pcl/features/feature.h>
+#include <pcl/point_traits.h>
 #ifndef GICP_ENABLE
 #include <registration/registration_icp_moments.h>
 #include <registration/registration_icp_fpfh.h>
@@ -117,6 +119,7 @@
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/common/eigen.h>
 #include <pcl/registration/correspondence_estimation.h>
+
 
 
 
@@ -686,20 +689,20 @@ public:
     }
 
     sensor_msgs::Image img;
-    {
-      FILE *fp = fopen(req.img_fn.c_str(), "rb");
-      if(!fp) return false;
-
-      struct stat filestatus;
-      stat(req.img_fn.c_str(), &filestatus );
-
-      uint8_t *up = new uint8_t[filestatus.st_size];
-      fread(up,filestatus.st_size,1,fp);
-      img.deserialize(up);
-      delete up;
-
-      fclose(fp);
-    }
+//    {
+//      FILE *fp = fopen(req.img_fn.c_str(), "rb");
+//      if(!fp) return false;
+//
+//      struct stat filestatus;
+//      stat(req.img_fn.c_str(), &filestatus );
+//
+//      uint8_t *up = new uint8_t[filestatus.st_size];
+//      fread(up,filestatus.st_size,1,fp);
+//      img.deserialize(up);
+//      delete up;
+//
+//      fclose(fp);
+//    }
 
     cv::Mat img_depth(pc.height, pc.width, CV_16UC1);
 #ifdef USE_DEPTH_IMG_
@@ -1180,4 +1183,3 @@ int main(int argc, char **argv) {
 }*/
 
 PLUGINLIB_DECLARE_CLASS(cob_3d_registration, RegistrationNodelet, RegistrationNodelet, nodelet::Nodelet)
-
