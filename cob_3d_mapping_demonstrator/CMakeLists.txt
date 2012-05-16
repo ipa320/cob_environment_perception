@@ -18,7 +18,10 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 #add include search paths
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include
-    ${PROJECT_SOURCE_DIR}/ros/include)
+    ${PROJECT_SOURCE_DIR}/ros/include $)
+
+find_package(Qt4 4.4.3 COMPONENTS QtCore QtGui QtXml REQUIRED )
+ include(${QT_USE_FILE})
 
 #add project executbles(example examples/example.cpp)
 rosbuild_add_library(cob_3d_mapping_demonstrator_rviz ros/src/rviz_buttons.cpp
@@ -27,6 +30,8 @@ rosbuild_add_library(cob_3d_mapping_demonstrator_rviz ros/src/rviz_buttons.cpp
     ros/src/rviz_logo.cpp
     ros/src/rviz_logo_panel.cpp
     ros/src/init.cpp)
+target_link_libraries(cob_3d_mapping_demonstrator_rviz ${OpenCV_LIBS})
+
 rosbuild_add_executable(${PROJECT_NAME} ros/src/MapDemonDriver.cpp common/src/MapDemonCtrl.cpp common/src/SerialDevice.cpp)
 rosbuild_add_executable(testClient ros/test/test_client.cpp)
 rosbuild_add_executable(testClientPOS ros/test/test_clientPOS.cpp)

@@ -51,7 +51,10 @@ target_link_libraries(cob_3d_registration vtkCommon )
 rosbuild_add_executable(capture ros/src/capture.cpp)
 
 rosbuild_add_executable(filter ros/src/filter.cpp)
+
 rosbuild_add_executable(png2img ros/src/png_to_img.cpp)
+target_link_libraries(png2img ${OpenCV_LIBS})
+
 rosbuild_add_executable(ply2pcd ros/src/ply_to_pcd.cpp)
 rosbuild_add_executable(testing ros/src/test.cpp)
 rosbuild_add_executable(eval_svd ros/src/test_svd.cpp)
