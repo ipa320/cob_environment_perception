@@ -87,7 +87,7 @@
 
 #include <registration/registration_icp.h>
 
-#include <vtk-5.6/vtkCommand.h>
+#include <vtkCommand.h>
 #include <pcl/features/feature.h>
 #include <pcl/point_traits.h>
 #ifndef GICP_ENABLE
