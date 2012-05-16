@@ -53,16 +53,16 @@
  *
  ****************************************************************/
 //additional includes
-#include <pcl/ply/ply_parser.h>
 #include <pcl/io/pcd_io.h>
 #ifdef GICP_ENABLE
 #include <pcl/io/ply_io.h>
 #endif
 #include <pcl/point_types.h>
 #include <sys/stat.h>
-
-
-
+   #include <ros/assert.h>
+   #include <ros/console.h>
+#include <iostream>
+#include <fstream>
 
 int main(int argc, char **argv) {
   if(argc<4) {
@@ -84,11 +84,13 @@ int main(int argc, char **argv) {
 
     uint8_t *up = new uint8_t[filestatus.st_size];
     fread(up,filestatus.st_size,1,fp);
-    img.deserialize(up);
+//    img.deserialize(up);
     delete up;
 
     fclose(fp);
   }
+
+
 
   {
     FILE *fp = fopen(argv[1], "rb");
@@ -102,7 +104,7 @@ int main(int argc, char **argv) {
 
     uint8_t *up = new uint8_t[filestatus.st_size];
     fread(up,filestatus.st_size,1,fp);
-    depth.deserialize(up);
+//    depth.deserialize(up);
     delete up;
 
     fclose(fp);
