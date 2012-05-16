@@ -69,13 +69,13 @@
 #include <boost/timer.hpp>
 #include <Eigen/Geometry>
 #include <pcl/win32_macros.h>
-#include <pcl/common/transform.h>
+#include <pcl/common/transforms.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/visualization/cloud_viewer.h>
 //#include <pcl/common/impl/transform.hpp>
-#include "pcl_ros/transforms.h"
+//#include "pcl/transforms.h"
 #include "cob_3d_mapping_geometry_map/vis/geometry_map_visualisation.h"
 
 

@@ -156,7 +156,11 @@ int main(int argc, char** argv)
   std::cout << "indices file read successfully" << std::endl;
 
   t.restart();
-  KdTreeFLANN<PointXYZRGB>::Ptr tree(new KdTreeFLANN<PointXYZRGB>);
+      //for electric
+    //KdTreeFLANN<PointXYZRGB>::Ptr tree(new KdTreeFLANN<PointXYZRGB>);
+    //for fuerte
+   pcl::search::KdTree<PointXYZRGB>::Ptr tree(new  pcl::search::KdTree<PointXYZRGB>);
+
   NormalEstimation<PointXYZRGB, Normal> ne;
   ne.setRadiusSearch(rn_);
   ne.setSearchMethod(tree);
