@@ -135,7 +135,7 @@ bool Registration_Infobased<Point>::compute_features()
   }
 
 #if DEBUG_SWITCH_
-  ROS_INFO("found %d %d", indices_pos.size(), indices_neg.size());
+  ROS_INFO("found  %d %d", indices_pos.size(), indices_neg.size());
 #endif
 
   if(indices_pos.size()+indices_neg.size()<min_changes_ /*|| std::min(indices_pos.size(), indices_neg.size())<100*/)
@@ -200,7 +200,7 @@ bool Registration_Infobased<Point>::compute_features()
   markers_.width=markers_.size();
   markers_.height=1;
 
-  ROS_INFO("found %d %d", indices_pos2.size(), indices_neg2.size());
+  ROS_INFO("found2 %d %d", indices_pos2.size(), indices_neg2.size());
 #endif
 
   this->scene_changed_=true;
