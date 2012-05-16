@@ -76,6 +76,9 @@
 template <typename Point>
 bool Registration_Infobased<Point>::compute_features()
 {
+  if(!this->input_org_)
+    return false;
+
   this->scene_changed_=false;
 
   indices_pos2.clear();
