@@ -58,6 +58,7 @@
 #include "../transf_est/tf_est_multi_cors.h"
 #include <pcl/registration/transformation_estimation_svd.h>
 #include "modified_icp.hpp"
+#include <pcl/point_traits.h>
 
 
 // organized access to pointcloud

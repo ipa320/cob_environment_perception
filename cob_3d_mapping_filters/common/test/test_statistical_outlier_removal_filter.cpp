@@ -8,10 +8,14 @@
 //AmplitudeFilter
 #include <pcl/filters/statistical_outlier_removal.h>
 #include <pcl/filters/impl/statistical_outlier_removal.hpp>
-
-#include <pcl/point_types.h>
+#include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/kdtree/impl/kdtree_flann.hpp>
 #include <pcl/io/pcd_io.h>
 #include <cob_3d_mapping_common/point_types.h>
+#include <pcl/search/kdtree.h>
+#include <pcl/search/search.h>
+#include <pcl/search/organized.h>
+#include <pcl/search/impl/organized.hpp>
 //#include <sensor_msgs/point_cloud_conversion.h>
 
 #include <boost/timer.hpp>
