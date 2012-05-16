@@ -90,6 +90,7 @@ namespace rviz
     if (wm)
     {
       parent = wm->getParentWindow();
+
     }
     else
     {
