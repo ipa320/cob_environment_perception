@@ -80,6 +80,10 @@
 
 #include <cob_3d_mapping_common/polygon.h>
 
+
+//additional includes
+#include <ros/console.h>
+
 using namespace cob_3d_mapping;
 
 class TableExtraction
