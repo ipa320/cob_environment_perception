@@ -18,17 +18,29 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 #add include search paths
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include
-    ${PROJECT_SOURCE_DIR}/ros/include $)
+    ${PROJECT_SOURCE_DIR}/ros/include)
 
-find_package(Qt4 4.4.3 COMPONENTS QtCore QtGui QtXml REQUIRED )
- include(${QT_USE_FILE})
+find_package(Qt4 COMPONENTS QtCore QtGui REQUIRED)
+include(${QT_USE_FILE})
+
+## I prefer the Qt signals and slots to avoid defining "emit", "slots",
+## etc because they can conflict with boost signals, so define QT_NO_KEYWORDS here.
+add_definitions(-DQT_NO_KEYWORDS)
+
+## Here we specify which header files need to be run through "moc",
+## Qt's meta-object compiler.
+qt4_wrap_cpp(MOC_FILES
+    ros/src/rviz_logo.cpp
+)
 
 #add project executbles(example examples/example.cpp)
-#rosbuild_add_library(cob_3d_mapping_demonstrator_rviz ros/src/rviz_buttons.cpp
+rosbuild_add_library(cob_3d_mapping_demonstrator_rviz ros/src/rviz_logo.cpp
+ ${MOC_FILES})#ros/src/rviz_buttons.cpp
 #    ros/src/rviz_buttons_panel.cpp
 #    ros/src/rviz_logo.cpp
 #    ros/src/init.cpp)
 #target_link_libraries(cob_3d_mapping_demonstrator_rviz ${OpenCV_LIBS})
+target_link_libraries(cob_3d_mapping_demonstrator_rviz  ${QT_LIBRARIES})
 
 rosbuild_add_executable(${PROJECT_NAME} ros/src/MapDemonDriver.cpp common/src/MapDemonCtrl.cpp common/src/SerialDevice.cpp)
 rosbuild_add_executable(testClient ros/test/test_client.cpp)
