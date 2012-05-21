@@ -56,43 +56,42 @@
 #ifndef RVIZ_LOGO_H
 #define RVIZ_LOGO_H
 
-#include <wx/wx.h>
-//#include <wx/menu.h>
-//#include <wx/dialog.h>
-//#include <wx/msgdlg.h>
-#include <string.h>
-#include "rviz/display.h"
-//#include "cob_3d_mapping_demonstrator/rviz_logo_panel.h"
+#include <rviz/panel.h>
 
-namespace rviz
+#include <ros/ros.h>
+
+#include <string.h>
+
+class QPixmap;
+class QLabel;
+
+namespace cob_environment_perception
 {
-  class RvizLogo : public Display
+  class RvizTitle : public rviz::Panel
 {
+    //Q_OBJECT
 public:
     /// Constructor
-    RvizLogo(const std::string& name, VisualizationManager* manager/*wxWindow *parent, const wxString& title, rviz::WindowManagerInterface * wmi*/);
-    ~RvizLogo();
+    RvizTitle(QWidget* parent = 0);
+    ~RvizTitle() {};
 
-    void onEnable();
+    //virtual void saveToConfig( const std::string& key_prefix, const boost::shared_ptr<rviz::Config>& config );
+    //virtual void loadFromConfig( const std::string& key_prefix, const boost::shared_ptr<rviz::Config>& config );
 
-    void onDisable();
 
-
-    void targetFrameChanged()
-    {
-    }
-
-    void fixedFrameChanged()
-    {
-    }
-
+    //Q_SIGNALS:
+      /** @brief Emitted when something changes which will change the display config file. */
+      void configChanged();
 
 protected:
 
-    wxBitmap pic_;
+    QPixmap* image_;
+    QLabel* image_label_;
+    rviz::VisualizationManager* manager_;
+    /*wxBitmap pic_;
     wxStaticBitmap *logo_;
     wxImagePanel* panel_;
-    wxFrame* frame_; // temp
+    wxFrame* frame_; // temp*/
 
 };
 }
