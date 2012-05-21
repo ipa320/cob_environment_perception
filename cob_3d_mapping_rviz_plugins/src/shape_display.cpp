@@ -45,9 +45,9 @@
 #include "markers/triangle_list_marker.h"*/
 #include "cob_3d_mapping_rviz_plugins/shape_marker.h"
 
-#include <ogre_tools/arrow.h>
-#include <ogre_tools/shape.h>
-#include <ogre_tools/billboard_line.h>
+#include <rviz/ogre_helpers/arrow.h>
+#include <rviz/ogre_helpers/shape.h>
+#include <rviz/ogre_helpers/billboard_line.h>
 
 #include <tf/transform_listener.h>
 
@@ -61,10 +61,10 @@ namespace rviz
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
-ShapeDisplay::ShapeDisplay( const std::string& name, VisualizationManager* manager )
-: Display( name, manager )
-, tf_filter_(*manager->getTFClient(), "", 100, update_nh_)
-, marker_topic_("visualization_marker")
+ShapeDisplay::ShapeDisplay()
+: Display(),
+ tf_filter_(*manager->getTFClient(), "", 100, update_nh_),
+ marker_topic_("visualization_marker")
 {
   scene_node_ = scene_manager_->getRootSceneNode()->createChildSceneNode();
 
