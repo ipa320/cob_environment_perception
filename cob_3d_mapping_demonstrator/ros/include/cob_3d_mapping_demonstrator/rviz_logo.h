@@ -62,7 +62,7 @@
 //#include <wx/msgdlg.h>
 #include <string.h>
 #include "rviz/display.h"
-#include "cob_3d_mapping_demonstrator/rviz_logo_panel.h"
+//#include "cob_3d_mapping_demonstrator/rviz_logo_panel.h"
 
 namespace rviz
 {
