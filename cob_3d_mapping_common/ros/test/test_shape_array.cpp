@@ -114,7 +114,7 @@ main (int argc, char **argv)
 
     s.centroid.x = 1;
     s.centroid.y = 1;
-    s.centroid.z = 0;
+    s.centroid.z = 1;
     // sensor_msgs::PointCloud2 pc2;
     pcl::toROSMsg (pc, pc2);
     s.points.push_back (pc2);
@@ -148,7 +148,7 @@ main (int argc, char **argv)
 
     s.centroid.x = -1;
     s.centroid.y = -1;
-    s.centroid.z = 0;
+    s.centroid.z = -1;
     //sensor_msgs::PointCloud2 pc2;
     pcl::toROSMsg (pc, pc2);
     s.points.push_back (pc2);
