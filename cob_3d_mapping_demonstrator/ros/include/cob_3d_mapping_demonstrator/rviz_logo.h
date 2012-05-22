@@ -53,8 +53,8 @@
  *
  ****************************************************************/
 
-#ifndef RVIZ_LOGO_H
-#define RVIZ_LOGO_H
+#ifndef RVIZ_TITLE_H
+#define RVIZ_TITLE_H
 
 #include <rviz/panel.h>
 
@@ -68,32 +68,18 @@ class QLabel;
 namespace cob_environment_perception
 {
   class RvizTitle : public rviz::Panel
-{
-    //Q_OBJECT
-public:
+  {
+    Q_OBJECT
+  public:
     /// Constructor
     RvizTitle(QWidget* parent = 0);
     ~RvizTitle() {};
 
-    //virtual void saveToConfig( const std::string& key_prefix, const boost::shared_ptr<rviz::Config>& config );
-    //virtual void loadFromConfig( const std::string& key_prefix, const boost::shared_ptr<rviz::Config>& config );
-
-
-    //Q_SIGNALS:
-      /** @brief Emitted when something changes which will change the display config file. */
-      void configChanged();
-
-protected:
-
+  protected:
     QPixmap* image_;
     QLabel* image_label_;
-    rviz::VisualizationManager* manager_;
-    /*wxBitmap pic_;
-    wxStaticBitmap *logo_;
-    wxImagePanel* panel_;
-    wxFrame* frame_; // temp*/
 
-};
+  };
 }
 
-#endif // RVIZ_LOGO_H
+#endif // RVIZ_TITLE_H

@@ -61,7 +61,6 @@
 #include <QSize>
 #include <QApplication>
 
-#include <rviz/visualization_manager.h>
 #include <ros/package.h>
 
 #include "cob_3d_mapping_demonstrator/rviz_logo.h"
@@ -77,8 +76,6 @@ namespace cob_environment_perception
    */
   RvizTitle::RvizTitle( QWidget* parent )
   :   rviz::Panel( parent )
-      , manager_( NULL )
-
   {
     string path = ros::package::getPath("cob_3d_mapping_demonstrator") + "/ros/files/logo_title.jpg";
 
@@ -99,61 +96,10 @@ namespace cob_environment_perception
     QHBoxLayout* main_layout = new QHBoxLayout;
     main_layout->addWidget(image_label_);
     setLayout(main_layout);
-
-
-    /*wxWindow* parent = 0;
-
-    WindowManagerInterface* wm = vis_manager_->getWindowManager();
-    if (wm)
-    {
-      parent = wm->getParentWindow();
-    }
-    else
-    {
-      frame_ = new wxFrame(0, wxID_ANY, wxString::FromAscii(""), wxDefaultPosition, wxDefaultSize, wxMINIMIZE_BOX | wxMAXIMIZE_BOX | wxRESIZE_BORDER | wxCAPTION | wxCLIP_CHILDREN);
-      parent = frame_;
-    }
-
-    panel_ = new wxImagePanel(parent, wxString::FromAscii(path.c_str()),wxBITMAP_TYPE_JPEG);
-
-
-    if (wm)
-    {
-      wm->addPane(name, panel_);
-    }*/
-  }
-
-  // Save all configuration data from this panel to the given Config
-  // object.  It is important here that you append the key_prefix to all
-  // keys you use, so that your settings don't collide with settings
-  // from other components.
-  /*void RvizTitle::saveToConfig( const std::string& key_prefix, const boost::shared_ptr<rviz::Config>& config )
-  {
-    //config->set( key_prefix + "/Topic", output_topic_ );
-  }
-
-  // Load all configuration data for this panel from the given Config
-  // object.  It is important here that you append the key_prefix to all
-  // keys you use, so that your settings don't collide with settings
-  // from other components.
-  void RvizTitle::loadFromConfig( const std::string& key_prefix, const boost::shared_ptr<rviz::Config>& config )
-  {
-    /*std::string topic;
-    config->get( key_prefix + "/Topic", &topic );
-    output_topic_editor_->setText( QString::fromStdString( topic ));
-    updateTopic();*/
-  //}
-
-
-  void RvizTitle::configChanged()
-  {
-    cout << "bla";
   }
 
 }
 
 #include <pluginlib/class_list_macros.h>
 PLUGINLIB_DECLARE_CLASS( cob_3d_mapping_demonstrator, Title, cob_environment_perception::RvizTitle, rviz::Panel )
-
-///////////////////////////////////////////////////////////////////////////////
 
