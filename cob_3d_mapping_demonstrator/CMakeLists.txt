@@ -7,8 +7,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  Release        : w/o debug symbols, w/ optimization
 #  RelWithDebInfo : w/ debug symbols, w/ optimization
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
-
+set(ROS_BUILD_TYPE RelWithDebInfo)
 rosbuild_init()
 
 #set the default path for built executables to the "bin" directory
@@ -30,11 +29,13 @@ add_definitions(-DQT_NO_KEYWORDS)
 ## Here we specify which header files need to be run through "moc",
 ## Qt's meta-object compiler.
 qt4_wrap_cpp(MOC_FILES
-    ros/src/rviz_logo.cpp
+    ros/include/cob_3d_mapping_demonstrator/rviz_logo.h
+    ros/include/cob_3d_mapping_demonstrator/rviz_buttons.h
 )
 
 #add project executbles(example examples/example.cpp)
 rosbuild_add_library(cob_3d_mapping_demonstrator_rviz ros/src/rviz_logo.cpp
+ ros/src/rviz_buttons.cpp
  ${MOC_FILES})#ros/src/rviz_buttons.cpp
 #    ros/src/rviz_buttons_panel.cpp
 #    ros/src/rviz_logo.cpp
