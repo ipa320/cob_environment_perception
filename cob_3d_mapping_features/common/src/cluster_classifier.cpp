@@ -17,7 +17,7 @@
  * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 04/2012
+ * Date of creation: 05/2012
  * ToDo:
  *
  *
@@ -50,54 +50,13 @@
  * License LGPL along with this program.
  * If not, see <http://www.gnu.org/licenses/>.
  *
- ****************************************************************/
+****************************************************************/
 
-#ifndef __CLUSTER_CLASSIFIER_H__
-#define __CLUSTER_CLASSIFIER_H__
+#include <pcl/point_types.h>
 
-#include "cob_3d_mapping_features/cluster_handler.h"
+// package includes:
+#include "cob_3d_mapping_common/point_types.h"
+#include "cob_3d_mapping_features/impl/cluster_classifier.hpp"
 
 
-namespace cob_3d_mapping_features
-{
-  template <typename ClusterHandlerT, typename PointT, typename NormalT, typename LabelT>
-  class ClusterClassifier
-  {
-  public:
-    typedef pcl::PointCloud<PointT> PointCloud;
-    typedef typename PointCloud::ConstPtr PointCloudConstPtr;
-    typedef pcl::PointCloud<NormalT> NormalCloud;
-    typedef typename NormalCloud::Ptr NormalCloudPtr;
-    typedef pcl::PointCloud<LabelT> LabelCloud;
-    typedef typename LabelCloud::ConstPtr LabelCloudConstPtr;
-
-    typedef typename ClusterHandlerT::Ptr ClusterHdlPtr;
-    typedef typename ClusterHandlerT::ClusterPtr ClusterPtr;
-    typedef typename ClusterHandlerT::ClusterType ClusterType;
-
-  public:
-    ClusterClassifier() 
-    { }
-
-    ~ClusterClassifier()
-    { }
-
-    inline void setClusterHandler(ClusterHdlPtr clusters) { clusters_ = clusters; }
-    inline void setPointCloudIn(PointCloudConstPtr points) { surface_ = points; }
-    inline void setNormalCloudInOut(NormalCloudPtr normals) { normals_ = normals; }
-    inline void setLabelCloudIn(LabelCloudConstPtr labels) { labels_ = labels; }
-
-    void classify();
-
-  private:
-    void recomputeClusterNormals(ClusterPtr c);
-
-    ClusterHdlPtr clusters_;
-    LabelCloudConstPtr labels_;
-    PointCloudConstPtr surface_;
-    NormalCloudPtr normals_;
-  };
-
-}
-
-#endif
+template class cob_3d_mapping_features::ClusterClassifier<cob_3d_mapping_features::DepthClusterHandler<PointLabel, pcl::PointXYZRGB, pcl::Normal>, pcl::PointXYZRGB, pcl::Normal, PointLabel>;

@@ -59,6 +59,15 @@
 
 namespace cob_3d_mapping_features
 {
+  namespace OrganizedNormalEstimationHelper
+  {
+    template <typename PointT, typename LabelT> void
+    computeSegmentNormal( Eigen::Vector3f& normal_out, int index,
+			  boost::shared_ptr<const pcl::PointCloud<PointT> > surface,
+			  boost::shared_ptr<const pcl::PointCloud<LabelT> > labels,
+			  int r, int steps);
+  }
+
   template <typename PointInT, typename PointOutT, typename LabelOutT>
     class OrganizedNormalEstimation : public OrganizedFeatures<PointInT,PointOutT>
   {

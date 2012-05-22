@@ -104,6 +104,7 @@ cob_3d_mapping_features::BoundaryPointsEdgeHandler<LabelT,PointT>::merge(EdgePtr
   erase(source);
 }
 
+/* is now a general free function in orgnazied_normal_estimation.h
 template<typename LabelT, typename PointT> void
 cob_3d_mapping_features::BoundaryPointsEdgeHandler<LabelT,PointT>::computeBoundaryPointProperties(
   const int r,
@@ -156,5 +157,5 @@ cob_3d_mapping_features::BoundaryPointsEdgeHandler<LabelT,PointT>::computeBounda
   else
     bp.normal = eigenvectors.col(0);
 }
-
+*/
 #endif

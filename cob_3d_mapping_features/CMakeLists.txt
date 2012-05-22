@@ -57,7 +57,8 @@ rosbuild_add_library(cob_3d_segmentation
 	common/src/cluster_handler.cpp
 	common/src/edge_handler.cpp
 	common/src/cluster_graph_structure.cpp
-	common/src/depth_segmentation.cpp)
+	common/src/depth_segmentation.cpp
+	common/src/cluster_classifier.cpp)
 
 
 rosbuild_add_openmp_flags(cob_3d_mapping_features_omp)

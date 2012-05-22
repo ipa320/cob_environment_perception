@@ -62,6 +62,7 @@
 
 #include "cob_3d_mapping_common/label_defines.h"
 #include "cob_3d_mapping_features/depth_segmentation.h"
+#include "cob_3d_mapping_features/organized_normal_estimation.h"
 
 template <typename ClusterGraphT, typename PointT, typename PointNT, typename PointLabelT> void
 cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>::addIfIsValid(
@@ -92,11 +93,11 @@ cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLab
   int width = labels_->width, height = labels_->height;
   // reset graph and property handlers:
   graph_->clear();
-  graph_->clusters()->setLabelCloud(labels_);
-  graph_->clusters()->setPointCloud(surface_);
-  graph_->clusters()->setNormalCloud(normals_);
-  graph_->edges()->setLabelCloud(labels_);
-  graph_->edges()->setPointCloud(surface_);
+  graph_->clusters()->setLabelCloudIn(labels_);
+  graph_->clusters()->setPointCloudIn(surface_);
+  graph_->clusters()->setNormalCloudIn(normals_);
+  graph_->edges()->setLabelCloudIn(labels_);
+  graph_->edges()->setPointCloudIn(surface_);
   graph_->clusters()->createCluster(I_NAN)->type = I_NAN;
   graph_->clusters()->createCluster(I_BORDER)->type = I_BORDER;
   graph_->clusters()->createCluster(I_EDGE)->type = I_EDGE;
@@ -144,17 +145,7 @@ template <typename ClusterGraphT, typename PointT, typename PointNT, typename Po
 cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>::refineSegmentation()
 {
   graph_->clusters()->sortBySize(); // Ascending order
-  std::cout << "Clusters: " << graph_->clusters()->numClusters() << std::endl;;
   ClusterPtr c_it, c_end;
-  std::cout << "BoundaryProperites" << std::endl;
-  int num_p = 0, num_c = 0;
-  for (boost::tie(c_it,c_end) = graph_->clusters()->getClusters(); c_it != c_end; ++c_it)
-  {
-    num_p += c_it->size();
-    if (c_it->size() > 20) ++num_c;
-  }
-  std::cout << "Points: " << num_p << " C: " << num_c << std::endl;
-  
   for (boost::tie(c_it,c_end) = graph_->clusters()->getClusters(); c_it != c_end; ++c_it)
   {
     //std::cout << c_it->size() << std::endl;
@@ -162,36 +153,17 @@ cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLab
     if (c_it->type == I_EDGE || c_it->type == I_NAN || c_it->type == I_BORDER) continue;
     computeBoundaryProperties(c_it);
   }
-  std::cout << "Edge Smoothness" << std::endl;
   computeEdgeSmoothness();
   for ( --c_end; c_end != graph_->clusters()->begin(); --c_end) // iterate from back to front
   {
-    if ( c_end->size() < 5 ) break;
+    if ( c_end->size() < 5 ) continue;
     if ( c_end->type == I_EDGE || c_end->type == I_NAN || c_end->type == I_BORDER) continue;
     std::vector<ClusterPtr> adj_list;
-    std::cout << "Merge: " << c_end->id() << "(" << c_end->size() << ")" << std::endl;
     graph_->getConnectedClusters(c_end->id(), adj_list, graph_->edges()->edge_validator);
-    std::cout << "Connected: " << adj_list.size() << std::endl;
     for (typename std::vector<ClusterPtr>::iterator a_it = adj_list.begin(); a_it != adj_list.end(); ++a_it)
     {
       graph_->merge( (*a_it)->id(), c_end->id() );
     }
-    std::cout << "Components..." << std::endl;
-    graph_->clusters()->computeClusterComponents(c_end);
-    std::cout << "Is Plane: " << (c_end->is_save_plane ? "True" : "False" ) << std::endl;
-    if (!c_end->is_save_plane)
-    {
-      //graph_->clusters()->recomputeClusterNormals(c_end);
-      graph_->clusters()->computeCurvature(c_end);
-      if (c_end->max_curvature < 0.02) 
-	c_end->type = I_PLANE;
-      else if (c_end->max_curvature < 9.0 * c_end->min_curvature) 
-	c_end->type = I_SPHERE;
-      else
-	c_end->type = I_CYL;
-    }
-    else c_end->type = I_PLANE;
-    std::cout << "Done!" << std::endl;
   }
 }
 
@@ -204,12 +176,14 @@ cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLab
   for (typename std::vector<ClusterPtr>::iterator a_it = adj_list.begin(); a_it != adj_list.end(); ++a_it)
   {
     EdgePtr e = graph_->getConnection(c->id(), (*a_it)->id());
-    if (e->boundary_pairs.find(c->id()) == e->boundary_pairs.end()) std::cout << "not there" << std::endl;
     perimeter = ceil( std::min( sqrt( static_cast<float>(c->size()) ) / e->boundary_pairs[c->id()].size() 
 				+ pow(c->getCentroid()(2), 2) + 5.0, 30.0) );
     for (std::list<int>::iterator b_it = e->boundary_pairs[c->id()].begin(); b_it != e->boundary_pairs[c->id()].end(); ++b_it)
     {
-      graph_->edges()->computeBoundaryPointProperties(perimeter, *b_it, graph_->edges()->getBoundaryPoint(*b_it));
+      //graph_->edges()->computeBoundaryPointProperties(perimeter, *b_it, graph_->edges()->getBoundaryPoint(*b_it));
+      cob_3d_mapping_features::OrganizedNormalEstimationHelper::computeSegmentNormal<PointT,PointLabelT>(
+	graph_->edges()->getBoundaryPoint(*b_it).normal, *b_it,
+	surface_, labels_, perimeter, 1);
     }
   }
 }

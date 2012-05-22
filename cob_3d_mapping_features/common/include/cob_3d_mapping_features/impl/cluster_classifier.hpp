@@ -56,6 +56,9 @@
 #define __IMPL_CLUSTER_CLASSIFIER_HPP__
 
 #include "cob_3d_mapping_features/cluster_classifier.h"
+#include "cob_3d_mapping_features/organized_normal_estimation.h"
+
+#include <boost/tuple/tuple.hpp>
 
 template <typename ClusterHandlerT, typename PointT, typename NormalT, typename LabelT> void
 cob_3d_mapping_features::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::classify()
@@ -63,11 +66,14 @@ cob_3d_mapping_features::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT
   ClusterPtr c_it, c_end;
   for ( boost::tie(c_it,c_end) = clusters_->getClusters(); c_it != c_end; ++c_it)
   {
+    if ( c_it->size() < 5 ) continue;
+    if ( c_it->type == I_EDGE || c_it->type == I_NAN || c_it->type == I_BORDER) continue;
+
     clusters_->computeClusterComponents(c_it);
 
     if (!c_it->is_save_plane)
     {
-      clusters_->recomputeClusterNormals(c_it);
+      recomputeClusterNormals(c_it);
       clusters_->computeCurvature(c_it);
       if (c_it->max_curvature < 0.02)
 	c_it->type = I_PLANE;
@@ -77,6 +83,22 @@ cob_3d_mapping_features::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT
 	c_it->type = I_CYL;
     }
     else c_it->type = I_PLANE;
+  }
+}
+
+template <typename ClusterHandlerT, typename PointT, typename NormalT, typename LabelT> void
+cob_3d_mapping_features::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::recomputeClusterNormals(ClusterPtr c)
+{
+  int w_size = std::min( std::floor(sqrt(c->size() / 16.0f))+ 8, 30.0);
+  int steps = std::floor(w_size / 5);
+  clusters_->clearOrientation(c);
+  for (typename ClusterType::iterator idx = c->begin(); idx != c->end(); ++ idx)
+  {
+    Eigen::Vector3f new_normal;
+    OrganizedNormalEstimationHelper::computeSegmentNormal<PointT,LabelT>(
+      new_normal, *idx, surface_, labels_, w_size, steps);
+    normals_->points[*idx].getNormalVector3fMap() = new_normal;
+    clusters_->updateNormal(c, new_normal);
   }
 }
 
