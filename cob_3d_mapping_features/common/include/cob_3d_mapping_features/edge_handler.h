@@ -114,6 +114,24 @@ namespace cob_3d_mapping_features
     
     ~BoundaryPointsEdgeHandler() { };
 
+    void mapBoundaryPoints(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points, pcl::PointCloud<pcl::Normal>::Ptr normals)
+    {
+      points->clear();
+      normals->clear();
+      points->resize(boundary_points_.size());
+      normals->resize(boundary_points_.size());
+      points->width = normals->width = 1;
+      points->height = normals->height = boundary_points_.size();
+      pcl::PointCloud<pcl::PointXYZRGB>::iterator p_it = points->begin();
+      pcl::PointCloud<pcl::Normal>::iterator n_it = normals->begin();
+      for(std::map<int,BoundaryPoint>::iterator b_it = boundary_points_.begin(); 
+	  b_it != boundary_points_.end(); ++b_it, ++p_it, ++n_it)
+      {
+	*p_it = surface_->points[b_it->first];
+	n_it->getNormalVector3fMap() = b_it->second.normal;
+      }
+    }
+
     void erase(EdgePtr e);
     void merge(EdgePtr source, EdgePtr target);
     inline void addBoundaryPair(EdgePtr e, const int cid1, const int idx1, const int cid2, const int idx2)
@@ -125,12 +143,10 @@ namespace cob_3d_mapping_features
     }
     inline BoundaryPoint& getBoundaryPoint(const int idx) { return boundary_points_[idx]; }
 
-    void computeBoundaryPointProperties(const int r, const int index, BoundaryPoint& bp);
-
     const boost::function<bool (EdgePtr)> edge_validator;
 
-    inline void setLabelCloud(LabelCloudConstPtr labels) { labels_ = labels; }
-    inline void setPointCloud(PointCloudConstPtr points) { surface_ = points; }
+    inline void setLabelCloudIn(LabelCloudConstPtr labels) { labels_ = labels; }
+    inline void setPointCloudIn(PointCloudConstPtr points) { surface_ = points; }
 
   private:
     std::map<int,BoundaryPoint> boundary_points_;
@@ -140,12 +156,12 @@ namespace cob_3d_mapping_features
     class BoundarySmoothnessValidator
     {
     public:
-      BoundarySmoothnessValidator(float max_smoothness) : max_smoothness_(max_smoothness)
+      BoundarySmoothnessValidator(float min_smoothness) : min_smoothness_(min_smoothness)
       { }
 
-      inline bool operator() (EdgePtr e) { return (e->smoothness > max_smoothness_); }
+      inline bool operator() (EdgePtr e) { return (e->smoothness > min_smoothness_); }
     private:
-      float max_smoothness_;
+      float min_smoothness_;
     };    
   };
 }

@@ -62,3 +62,8 @@
 #include "cob_3d_mapping_features/impl/organized_normal_estimation.hpp"
 
 PCL_INSTANTIATE_OrganizedNormalEstimation(pcl::PointXYZRGB,pcl::Normal,PointLabel)
+
+template void cob_3d_mapping_features::OrganizedNormalEstimationHelper::computeSegmentNormal(
+  Eigen::Vector3f&, int, boost::shared_ptr<const pcl::PointCloud<pcl::PointXYZRGB> >,
+  boost::shared_ptr<const pcl::PointCloud<PointLabel> >, int, int);
+

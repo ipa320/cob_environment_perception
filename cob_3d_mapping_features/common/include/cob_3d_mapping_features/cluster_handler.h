@@ -84,17 +84,21 @@ namespace cob_3d_mapping_features
       , color_tab_()
     {
       const float rand_max_inv = 1.0f/ RAND_MAX;
-      color_tab_.reserve(2052);
-      color_tab_.push_back( (  0 << 16 |   0 << 8 | 255) ); // edge
-      color_tab_.push_back( (255 << 16 | 200 << 8 |   0) ); // first
-      color_tab_.push_back( (  0 << 16 | 200 << 8 | 255) ); // first
-      color_tab_.push_back( (  0 << 16 | 200 << 8 |   0) ); // first
-      for (size_t i=0; i<2048; ++i)
+      color_tab_.resize(2048);
+      color_tab_[I_UNDEF] = LBL_UNDEF;
+      color_tab_[I_NAN] = LBL_NAN;
+      color_tab_[I_BORDER] = LBL_BORDER;
+      color_tab_[I_EDGE] = LBL_EDGE;
+      color_tab_[I_PLANE] = LBL_PLANE;
+      color_tab_[I_CYL] = LBL_CYL;
+      color_tab_[I_SPHERE] = LBL_SPH;
+      color_tab_[I_CORNER] = LBL_COR;
+      for (size_t i=NUM_LABELS; i<2048 - NUM_LABELS; ++i)
       {
 	int r = (float)rand() * rand_max_inv * 255;
 	int g = (float)rand() * rand_max_inv * 255;
 	int b = (float)rand() * rand_max_inv * 255;
-	color_tab_.push_back( r << 16 | g << 8 | b );
+	color_tab_[i] = ( r << 16 | g << 8 | b );
       }
     }
     virtual ~ClusterHandlerBase() { };
@@ -106,25 +110,41 @@ namespace cob_3d_mapping_features
     inline std::pair<ClusterPtr,ClusterPtr> getClusters() { return std::make_pair(clusters_.begin(),clusters_.end()); }
     inline std::pair<reverse_iterator, reverse_iterator> getClustersReverse() 
     { return std::make_pair(clusters_.rbegin(), clusters_.rend()); }
+
     inline size_type numClusters() const { return clusters_.size(); }
     inline void sortBySize() { clusters_.sort(); }
     virtual void clear() { clusters_.clear(); id_to_cluster_.clear(); max_cid_ = 0; }
+    virtual void erase(ClusterPtr c) { clusters_.erase(c); }
 
     inline ClusterPtr getCluster(const int id) 
     { return ( (id_to_cluster_.find(id) == id_to_cluster_.end()) ? clusters_.end() : id_to_cluster_.find(id)->second ); }
+
     inline ClusterPtr createCluster(int id = 0)
     { 
       clusters_.push_back(ClusterType( (id<=max_cid_ ? ++max_cid_ : max_cid_ = id) )); 
       return (id_to_cluster_[max_cid_] = --clusters_.end());
     }
-    inline void getColoredCloud(pcl::PointCloud<PointXYZRGB>::Ptr color_cloud)
+
+    void mapClusterColor(pcl::PointCloud<PointXYZRGB>::Ptr color_cloud)
     {
-      uint32_t rgb; int t = 1;
+      uint32_t rgb; int t = 3;
       for(reverse_iterator c = clusters_.rbegin(); c != clusters_.rend(); ++c, ++t)
       {
-	if (c->id() == I_NAN || c->id() == I_BORDER) { rgb = color_tab_[0]; --t; }
+	if (c->id() == I_NAN || c->id() == I_BORDER) { rgb = color_tab_[c->id()]; --t; }
 	else { rgb = color_tab_[t]; }
-	for(size_t i = 0; i<c->size(); ++i) { color_cloud->points[(*c)[i]].rgb = *reinterpret_cast<float*>(&rgb); }
+	for(typename ClusterType::iterator it = c->begin(); it != c->end(); ++it)
+	{ color_cloud->points[*it].rgb = *reinterpret_cast<float*>(&rgb); }
+      }
+    }
+
+    void mapTypeColor(pcl::PointCloud<PointXYZRGB>::Ptr color_cloud)
+    {
+      uint32_t rgb;
+      for(ClusterPtr c = clusters_.begin(); c != clusters_.end(); ++c)
+      {
+	rgb = color_tab_[c->type];
+	for (typename ClusterType::iterator it = c->begin(); it != c->end(); ++it)
+	  color_cloud->points[*it].rgb = *reinterpret_cast<float*>(&rgb);
       }
     }
 
@@ -164,12 +184,19 @@ namespace cob_3d_mapping_features
       c->sum_orientations_ += normals_->points[idx].getNormalVector3fMap();
     }
 
-    inline void merge(ClusterPtr source, ClusterPtr target)
-    { for (ClusterType::iterator idx = source->begin(); idx != source->end(); ++idx) addPoint(target, *idx); }
+    inline void updateNormal(ClusterPtr c, const Eigen::Vector3f& normal) const { c->sum_orientations_ += normal; }
+    inline void clearOrientation(ClusterPtr c) const { c->sum_orientations_ = Eigen::Vector3f::Zero(); }
 
-    inline void setLabelCloud(LabelCloudConstPtr labels) { labels_ = labels; }
-    inline void setPointCloud(PointCloudConstPtr points) { surface_ = points; }
-    inline void setNormalCloud(NormalCloudConstPtr normals) { normals_ = normals; }
+    inline void merge(ClusterPtr source, ClusterPtr target)
+    { 
+      for (ClusterType::iterator idx = source->begin(); idx != source->end(); ++idx) 
+	addPoint(target, *idx);
+      erase(source);
+    }
+
+    inline void setLabelCloudIn(LabelCloudConstPtr labels) { labels_ = labels; }
+    inline void setPointCloudIn(PointCloudConstPtr points) { surface_ = points; }
+    inline void setNormalCloudIn(NormalCloudConstPtr normals) { normals_ = normals; }
 
     void computeClusterComponents(ClusterPtr c);
     void computeCurvature(ClusterPtr c);
@@ -177,7 +204,6 @@ namespace cob_3d_mapping_features
     bool computePrincipalComponents(ClusterPtr c);
     void computeNormalIntersections(ClusterPtr c);
     //void computeColorHistogram(ClusterPtr c);
-    void recomputeClusterNormals(ClusterPtr c);
 
   private:
     LabelCloudConstPtr labels_;

@@ -58,7 +58,69 @@
 
 #include "cob_3d_mapping_common/label_defines.h"
 #include "cob_3d_mapping_features/organized_normal_estimation.h"
+#include <pcl/common/eigen.h>
 
+template <typename PointT, typename LabelT> void
+cob_3d_mapping_features::OrganizedNormalEstimationHelper::computeSegmentNormal(
+  Eigen::Vector3f& normal_out,
+  int index,
+  boost::shared_ptr<const pcl::PointCloud<PointT> > surface,
+  boost::shared_ptr<const pcl::PointCloud<LabelT> > labels,
+  int r, int steps)
+{
+  const int w = surface->width, s = surface->height * surface->width;
+  const int l_idx = labels->points[index].label;
+
+  // compute mask boundary constrains first, 
+  const int w_rem = index%w;
+  const int x_max = std::min(2*r, r + w - w_rem - 1); // max offset at each line
+  const int y_min = std::max(index - r*w - r, w_rem - r);
+  const int y_max = std::min(index + r*w - r, s - (w - w_rem) - r);
+  Eigen::Matrix<float, 1, 9, Eigen::RowMajor> accu = Eigen::Matrix<float, 1, 9, Eigen::RowMajor>::Zero();
+  int point_count = 0;
+  for (int y = y_min; y <= y_max; y += steps*w) // y: beginning of each line
+  {
+    for (int idx = y; idx < y + x_max; idx+=steps)
+    {
+      if (labels->points[idx].label != l_idx) { idx = idx - steps + 1; continue; }
+      PointT const* p_idx = &(surface->points[idx]);
+      if (pcl_isnan(p_idx->x)) { idx = idx - steps + 1; continue; }
+      accu[0] += p_idx->x * p_idx->x;
+      accu[1] += p_idx->x * p_idx->y;
+      accu[2] += p_idx->x * p_idx->z;
+      accu[3] += p_idx->y * p_idx->y;
+      accu[4] += p_idx->y * p_idx->z;
+      accu[5] += p_idx->z * p_idx->z;
+      accu[6] += p_idx->x;
+      accu[7] += p_idx->y;
+      accu[8] += p_idx->z;
+      ++point_count;
+    }
+    if (point_count == 0) { y = y - steps*w + w; }
+  }
+  /*if (point_count <= 1)
+  {
+    std::cout << "Still to less valid points" << std::endl;
+    //normal_out(0) = normal_out(1) = normal_out(2) = std::numeric_limits<float>::quiet_NaN();
+    //return;
+    }*/
+  accu /= static_cast<float>(point_count);
+    
+  Eigen::Matrix3f cov;
+  cov.coeffRef(0) =                   accu(0) - accu(6) * accu(6);
+  cov.coeffRef(1) = cov.coeffRef(3) = accu(1) - accu(6) * accu(7);
+  cov.coeffRef(2) = cov.coeffRef(6) = accu(2) - accu(6) * accu(8);
+  cov.coeffRef(4) =                   accu(3) - accu(7) * accu(7);
+  cov.coeffRef(5) = cov.coeffRef(7) = accu(4) - accu(7) * accu(8);
+  cov.coeffRef(8) =                   accu(5) - accu(8) * accu(8);
+  Eigen::Vector3f eigenvalues;
+  Eigen::Matrix3f eigenvectors;
+  pcl::eigen33(cov, eigenvectors, eigenvalues);
+  if ( surface->points[index].getVector3fMap().dot(eigenvectors.col(0)) > 0)
+    normal_out = eigenvectors.col(0) * (-1);
+  else
+    normal_out = eigenvectors.col(0);
+}
 
 template <typename PointInT, typename PointOutT, typename LabelOutT> void
 cob_3d_mapping_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>::recomputeSegmentNormal (

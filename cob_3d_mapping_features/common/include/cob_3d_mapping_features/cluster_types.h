@@ -110,7 +110,6 @@ namespace cob_3d_mapping_features
     inline Eigen::Vector3f getCentroid() const { return sum_points_ / static_cast<float>(indices_.size()); }
     inline Eigen::Vector3f getOrientation() const { return sum_orientations_ / static_cast<float>(indices_.size()); }
 
-
   public:
     int type;
     bool is_save_plane;

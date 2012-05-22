@@ -118,10 +118,10 @@ namespace cob_3d_mapping_features
     ~DepthSegmentation ()
     { };
 
-    inline void setOutputGraph(ClusterGraphPtr clusters) { graph_ = clusters; }
-    inline void setPointCloud(PointCloudConstPtr points) { surface_ = points; }
-    inline void setNormalCloud(NormalCloudPtr normals) { normals_ = normals; }
-    inline void setLabelCloud(LabelCloudPtr labels) { labels_ = labels; }
+    inline void setClusterGraphOut(ClusterGraphPtr clusters) { graph_ = clusters; }
+    inline void setPointCloudIn(PointCloudConstPtr points) { surface_ = points; }
+    inline void setNormalCloudIn(NormalCloudConstPtr normals) { normals_ = normals; }
+    inline void setLabelCloudOut(LabelCloudPtr labels) { labels_ = labels; }
 
     void performInitialSegmentation();
 
@@ -140,7 +140,7 @@ namespace cob_3d_mapping_features
 
     ClusterGraphPtr graph_;
     PointCloudConstPtr surface_;
-    NormalCloudPtr normals_;
+    NormalCloudConstPtr normals_;
     LabelCloudPtr labels_;
     
   };
