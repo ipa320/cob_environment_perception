@@ -63,7 +63,7 @@ namespace rviz
 
 ShapeDisplay::ShapeDisplay()
 : Display(),
- tf_filter_(*manager->getTFClient(), "", 100, update_nh_),
+ tf_filter_(*vis_manager_->getTFClient(), "", 100, update_nh_),
  marker_topic_("visualization_marker")
 {
   scene_node_ = scene_manager_->getRootSceneNode()->createChildSceneNode();
