@@ -373,8 +373,7 @@ cob_3d_mapping_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>
     } // end loop of circles
   }
 
-  if (range_border_counter[mask_.size()-1] > 0)
-    label_out = I_BORDER;
+  //if (range_border_counter[mask_.size()-1] > 0) label_out = I_BORDER;
 
   n_idx /= (float)n_normals;
   n_idx = n_idx.normalized();

@@ -66,12 +66,14 @@
 
 template <typename ClusterGraphT, typename PointT, typename PointNT, typename PointLabelT> void
 cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>::addIfIsValid(
-  int u, int v, int idx, int idx_prev, Eigen::Vector3f& n, 
+  int u, int v, int idx, int idx_prev, float dist_th, float p_z, Eigen::Vector3f& n, 
   std::multiset<SegmentationCandidate>& coords_todo, ClusterPtr c)
 {
+  if (fabs(p_z - surface_->points[idx].z) > dist_th) return;
   int* p_label = &(labels_->points[idx].label);
   if (*p_label == I_UNDEF)
   {
+
     float angle = fabs( atan2((n.cross(normals_->points[idx].getNormalVector3fMap())).norm(),
 			n.dot(normals_->points[idx].getNormalVector3fMap())) );
 
@@ -83,7 +85,7 @@ cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLab
   }
   else if (*p_label > I_EDGE && c->id() != *p_label)
   {
-    graph_->edges()->addBoundaryPair(graph_->connect(c->id(), *p_label), c->id(), idx_prev, *p_label, idx);
+    graph_->edges()->updateProperties(graph_->connect(c->id(), *p_label), c->id(), idx_prev, *p_label, idx);
   }
 }
 
@@ -93,7 +95,7 @@ cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLab
   int width = labels_->width, height = labels_->height;
   // reset graph and property handlers:
   graph_->clear();
-  graph_->clusters()->setLabelCloudIn(labels_);
+  graph_->clusters()->setLabelCloudInOut(labels_);
   graph_->clusters()->setPointCloudIn(surface_);
   graph_->clusters()->setNormalCloudIn(normals_);
   graph_->edges()->setLabelCloudIn(labels_);
@@ -115,21 +117,41 @@ cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLab
       {
 	SegmentationCandidate p = *coords_todo.begin();
 	coords_todo.erase(coords_todo.begin());
-	float angle;
-	Eigen::Vector3f p_i;
 	int p_idx = p.v * width + p.u;
+	float p_z = surface_->points[p_idx].z;
+	float dist_th = 2.0 * 0.003 * p_z * p_z;
 	graph_->clusters()->addPoint(c, p_idx); // clusterhandler takes care of properties
  
 	Eigen::Vector3f n_n = c->getOrientation();
 	// Look right
-	if (p.u+1 < width) { addIfIsValid(p.u+1, p.v, p_idx+1, p_idx, n_n, coords_todo, c); }
+	if (p.u+1 < width) { addIfIsValid(p.u+1, p.v, p_idx+1, p_idx, dist_th, p_z, n_n, coords_todo, c); }
 	// Look down
-	if (p.v+1 < height) { addIfIsValid(p.u, p.v+1, p_idx+width, p_idx, n_n, coords_todo, c); }
+	if (p.v+1 < height) { addIfIsValid(p.u, p.v+1, p_idx+width, p_idx, dist_th, p_z, n_n, coords_todo, c); }
 	// Look left
-	if (p.u > 0) { addIfIsValid(p.u-1, p.v, p_idx-1, p_idx, n_n, coords_todo, c); }
+	if (p.u > 0) { addIfIsValid(p.u-1, p.v, p_idx-1, p_idx, dist_th, p_z, n_n, coords_todo, c); }
 	// Look up
-	if (p.v > 0) { addIfIsValid(p.u, p.v-1, p_idx-width, p_idx, n_n, coords_todo, c); }
+	if (p.v > 0) { addIfIsValid(p.u, p.v-1, p_idx-width, p_idx, dist_th, p_z, n_n, coords_todo, c); }
       } // end while
+      
+      // merge small clusters
+
+      if (c->size() < min_cluster_size_) 
+      {
+	std::vector<ClusterPtr> adj_list;
+	graph_->getAdjacentClusters(c->id(), adj_list);
+	if (adj_list.size() != 0)
+	{
+	  int max_cluster_id = adj_list.front()->id();
+	  int max_edge_width = 0;
+	  for (typename std::vector<ClusterPtr>::iterator it = adj_list.begin(); it != adj_list.end(); ++it)
+	  {
+	    EdgePtr e = graph_->getConnection(c->id(), (*it)->id());
+	    if (e->size() > max_edge_width) { max_cluster_id = (*it)->id(); max_edge_width = e->size(); }
+	  }
+	  graph_->merge( c->id(), max_cluster_id );
+	}
+      }
+
     }
     else if(labels_->points[i].label <= I_EDGE)
     {
@@ -159,11 +181,32 @@ cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLab
     if ( c_end->size() < 5 ) continue;
     if ( c_end->type == I_EDGE || c_end->type == I_NAN || c_end->type == I_BORDER) continue;
     std::vector<ClusterPtr> adj_list;
-    graph_->getConnectedClusters(c_end->id(), adj_list, graph_->edges()->edge_validator);
+    //graph_->getConnectedClusters(c_end->id(), adj_list, graph_->edges()->edge_validator);
+    graph_->getAdjacentClusters(c_end->id(), adj_list);
     for (typename std::vector<ClusterPtr>::iterator a_it = adj_list.begin(); a_it != adj_list.end(); ++a_it)
     {
-      graph_->merge( (*a_it)->id(), c_end->id() );
+      if ( graph_->getConnection(c_end->id(), (*a_it)->id())->smoothness < 0.8 ) continue;
+      std::vector<EdgePtr> updated_edges;
+      graph_->merge( (*a_it)->id(), c_end->id(), updated_edges );
+      for (typename std::vector<EdgePtr>::iterator e_it = updated_edges.begin(); e_it != updated_edges.end(); ++e_it)
+      {
+	computeBoundaryProperties(c_end, *e_it);
+	computeEdgeSmoothness(*e_it);
+      }
     }
+  }
+}
+
+template <typename ClusterGraphT, typename PointT, typename PointNT, typename PointLabelT> void
+cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>::computeBoundaryProperties(
+  ClusterPtr c, EdgePtr e)
+{
+  int window_size = ceil( std::min( sqrt( static_cast<float>(c->size()) ) / e->boundary_pairs[c->id()].size()
+				    + pow(c->getCentroid()(2), 2) + 5.0, 30.0) ); 
+  for (std::list<int>::iterator b_it = e->boundary_pairs[c->id()].begin(); b_it != e->boundary_pairs[c->id()].end(); ++b_it)
+  {
+    cob_3d_mapping_features::OrganizedNormalEstimationHelper::computeSegmentNormal<PointT,PointLabelT>(
+      graph_->edges()->getBoundaryPoint(*b_it).normal, *b_it, surface_, labels_, window_size, 1);
   }
 }
 
@@ -172,38 +215,34 @@ cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLab
 {
   std::vector<ClusterPtr> adj_list;
   graph_->getAdjacentClusters(c->id(), adj_list);
-  int perimeter = 0;
   for (typename std::vector<ClusterPtr>::iterator a_it = adj_list.begin(); a_it != adj_list.end(); ++a_it)
   {
-    EdgePtr e = graph_->getConnection(c->id(), (*a_it)->id());
-    perimeter = ceil( std::min( sqrt( static_cast<float>(c->size()) ) / e->boundary_pairs[c->id()].size() 
-				+ pow(c->getCentroid()(2), 2) + 5.0, 30.0) );
-    for (std::list<int>::iterator b_it = e->boundary_pairs[c->id()].begin(); b_it != e->boundary_pairs[c->id()].end(); ++b_it)
-    {
-      //graph_->edges()->computeBoundaryPointProperties(perimeter, *b_it, graph_->edges()->getBoundaryPoint(*b_it));
-      cob_3d_mapping_features::OrganizedNormalEstimationHelper::computeSegmentNormal<PointT,PointLabelT>(
-	graph_->edges()->getBoundaryPoint(*b_it).normal, *b_it,
-	surface_, labels_, perimeter, 1);
-    }
+    computeBoundaryProperties(c, graph_->getConnection(c->id(), (*a_it)->id()));
   }
+}
+
+template <typename ClusterGraphT, typename PointT, typename PointNT, typename PointLabelT> void
+cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>::computeEdgeSmoothness(EdgePtr e)
+{
+  int smooth_points = 0;
+  std::list<int>::iterator bp_it, bp_end;
+  for (boost::tie(bp_it,bp_end) = e->getBoundaryPairs(); bp_it != bp_end; ++bp_it)
+  {
+    BoundaryPoint bp_this = graph_->edges()->getBoundaryPoint(*bp_it);
+    float angle = fabs( atan2(bp_this.normal.cross(graph_->edges()->getBoundaryPoint(bp_this.brother).normal).norm(),
+			      bp_this.normal.dot(graph_->edges()->getBoundaryPoint(bp_this.brother).normal)) );
+    //if (max_boundary_angle_ < bp_this.normal.dot(graph_->edges()->getBoundaryPoint(bp_this.brother).normal))
+    if (angle < max_boundary_angle_)
+      ++smooth_points;
+  }
+  e->smoothness = static_cast<float>(smooth_points) / static_cast<float>(e->size());
 }
 
 template <typename ClusterGraphT, typename PointT, typename PointNT, typename PointLabelT> void
 cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>::computeEdgeSmoothness()
 {
   EdgePtr e_it, e_end;
-  std::list<int>::iterator bp_it, bp_end;
-  for (boost::tie(e_it,e_end) = graph_->edges()->getEdges(); e_it != e_end; ++e_it)
-  {
-    int smooth_points = 0;
-    for (boost::tie(bp_it,bp_end) = e_it->getBoundaryPairs(); bp_it != bp_end; ++bp_it)
-    {
-      BoundaryPoint bp_this = graph_->edges()->getBoundaryPoint(*bp_it);
-      if (max_boundary_angle_ < bp_this.normal.dot(graph_->edges()->getBoundaryPoint(bp_this.brother).normal))
-	++smooth_points;
-    }
-    e_it->smoothness = static_cast<float>(smooth_points) / static_cast<float>(e_it->size());
-  }
+  for (boost::tie(e_it,e_end) = graph_->edges()->getEdges(); e_it != e_end; ++e_it) { computeEdgeSmoothness(e_it); }
 }
 
 #endif

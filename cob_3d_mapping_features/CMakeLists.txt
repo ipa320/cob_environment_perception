@@ -46,7 +46,8 @@ rosbuild_add_library(cob_3d_mapping_features
 
 rosbuild_add_library(cob_3d_mapping_features_nodelets
 	ros/src/plane_extraction_nodelet.cpp
-	ros/src/segmentation_nodelet.cpp)
+	ros/src/segmentation_nodelet.cpp
+	ros/src/segmentation_all_in_one_nodelet.cpp)
 
 rosbuild_add_library(cob_3d_mapping_features_omp
 	common/src/organized_curvature_estimation_omp.cpp
@@ -63,7 +64,7 @@ rosbuild_add_library(cob_3d_segmentation
 
 rosbuild_add_openmp_flags(cob_3d_mapping_features_omp)
 
-target_link_libraries(cob_3d_mapping_features_nodelets cob_3d_mapping_features cob_3d_mapping_features_omp)
+target_link_libraries(cob_3d_mapping_features_nodelets cob_3d_mapping_features cob_3d_mapping_features_omp cob_3d_segmentation)
 
 
 rosbuild_add_executable(test_plane_extraction common/src/plane_extraction.cpp)

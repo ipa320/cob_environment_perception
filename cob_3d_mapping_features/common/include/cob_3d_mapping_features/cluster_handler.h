@@ -166,7 +166,7 @@ namespace cob_3d_mapping_features
     typedef boost::shared_ptr<DepthClusterHandler<LabelT,PointT,PointNT> > Ptr;
 
     typedef pcl::PointCloud<LabelT> LabelCloud;
-    typedef typename LabelCloud::ConstPtr LabelCloudConstPtr;
+    typedef typename LabelCloud::Ptr LabelCloudPtr;
     typedef pcl::PointCloud<PointT> PointCloud;
     typedef typename PointCloud::ConstPtr PointCloudConstPtr;
     typedef pcl::PointCloud<PointNT> NormalCloud;
@@ -189,12 +189,15 @@ namespace cob_3d_mapping_features
 
     inline void merge(ClusterPtr source, ClusterPtr target)
     { 
-      for (ClusterType::iterator idx = source->begin(); idx != source->end(); ++idx) 
+      for (ClusterType::iterator idx = source->begin(); idx != source->end(); ++idx)
+      {
 	addPoint(target, *idx);
+	labels_->points[*idx].label = target->id();
+      }
       erase(source);
     }
 
-    inline void setLabelCloudIn(LabelCloudConstPtr labels) { labels_ = labels; }
+    inline void setLabelCloudInOut(LabelCloudPtr labels) { labels_ = labels; }
     inline void setPointCloudIn(PointCloudConstPtr points) { surface_ = points; }
     inline void setNormalCloudIn(NormalCloudConstPtr normals) { normals_ = normals; }
 
@@ -206,7 +209,7 @@ namespace cob_3d_mapping_features
     //void computeColorHistogram(ClusterPtr c);
 
   private:
-    LabelCloudConstPtr labels_;
+    LabelCloudPtr labels_;
     PointCloudConstPtr surface_;
     NormalCloudConstPtr normals_;
   };

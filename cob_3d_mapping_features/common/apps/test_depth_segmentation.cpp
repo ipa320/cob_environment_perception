@@ -75,6 +75,7 @@ using namespace std;
 using namespace pcl;
 
 string file_in_;
+string file_out_;
 float d_th_, upper_;
 
 void readOptions(int argc, char* argv[])
@@ -86,6 +87,7 @@ void readOptions(int argc, char* argv[])
     ("in,i", value<string>(&file_in_), "input pcd file")
     ("skip_distant_point,d", value<float>(&d_th_)->default_value(8), "threshold to ignore distant points in neighborhood")
     ("upper,u", value<float>(&upper_)->default_value(6.0), "upper curvature threshold (edge)")
+    ("out,o", value<string>(&file_out_), "save labeled file to")
     ;
 
   positional_options_description p_opt;
@@ -108,6 +110,7 @@ int main(int argc, char** argv)
   readOptions(argc, argv);
 
   PointCloud<PointXYZRGB>::Ptr p(new PointCloud<PointXYZRGB>);
+  PointCloud<PointXYZRGB>::Ptr p2(new PointCloud<PointXYZRGB>);
   PointCloud<PointXYZRGB>::Ptr pt(new PointCloud<PointXYZRGB>);
   PointCloud<PointXYZRGB>::Ptr pbp(new PointCloud<PointXYZRGB>);
   PointCloud<Normal>::Ptr n(new PointCloud<Normal>);
@@ -117,7 +120,7 @@ int main(int argc, char** argv)
 
   PCDReader r;
   if (r.read(file_in_, *p) == -1) return(0);
-  *pt = *p;
+  *pt = *p2 = *p;
   PrecisionStopWatch t;
   t.precisionStart();
   cob_3d_mapping_features::OrganizedNormalEstimation<PointXYZRGB, Normal, PointLabel>one;
@@ -135,10 +138,11 @@ int main(int argc, char** argv)
   cob_3d_mapping_features::DepthSegmentation<SegTypes::Graph, SegTypes::Point, SegTypes::Normal, SegTypes::Label> seg;
   seg.setPointCloudIn(p);
   seg.setNormalCloudIn(n);
-  seg.setLabelCloudOut(l);
+  seg.setLabelCloudInOut(l);
   seg.setClusterGraphOut(g);
   std::cout << "initial segmentation..." << std::endl;
   seg.performInitialSegmentation();
+  g->clusters()->mapClusterColor(p2);
   std::cout << "refine segmentation.." << std::endl;
   seg.refineSegmentation();
   g->clusters()->mapClusterColor(p);
@@ -152,10 +156,16 @@ int main(int argc, char** argv)
   g->clusters()->mapTypeColor(pt);
   cout << t.precisionStop() << "s\t for depth segmentation" << endl;
 
+  if (file_out_ != "")
+  {
+    io::savePCDFileASCII<PointXYZRGB>(file_out_, *p);
+    return 0;
+  }
 
   visualization::PCLVisualizer v;
   visualization::PointCloudColorHandlerRGBField<PointXYZRGB> chdl_p(p);
   visualization::PointCloudColorHandlerRGBField<PointXYZRGB> chdl_pt(pt);
+  visualization::PointCloudColorHandlerRGBField<PointXYZRGB> chdl_p2(p2);
   /* --- Viewports: ---
    *  1y
    *    | 1 | 2 |
@@ -167,31 +177,31 @@ int main(int argc, char** argv)
   // xmin, ymin, xmax, ymax
   int v1(0);
   v.createViewPort(0.0, 0.5, 0.5, 1.0, v1);
-  v.setBackgroundColor(1, 1, 1, v1);
+  //v.setBackgroundColor(1, 1, 1, v1);
   v.addPointCloud<PointXYZRGB>(p, chdl_p, "segmented", v1);
-  v.addPointCloudNormals<PointXYZRGB, Normal>(p, n_org, 4, 0.04, "normals_org", v1);
-  v.setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_COLOR, 0.7, 0.7, 0.7, "normals_org", v1);
+  v.addPointCloudNormals<PointXYZRGB, Normal>(p, n_org, 5, 0.04, "normals_org", v1);
+  //v.setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_COLOR, 0.7, 0.7, 0.7, "normals_org", v1);
 
   int v2(0);
   v.createViewPort(0.5, 0.5, 1.0, 1.0, v2);
-  v.setBackgroundColor(1, 1, 1, v2);
+  //v.setBackgroundColor(1, 1, 1, v2);
   v.addPointCloud<PointXYZRGB>(pt, chdl_pt, "classified", v2);
-  v.addPointCloudNormals<PointXYZRGB, Normal>(pt, n, 4, 0.04, "normals_new", v2);
-  v.setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_COLOR, 0.7, 0.7, 0.7, "normals_new", v2);
+  v.addPointCloudNormals<PointXYZRGB, Normal>(pt, n, 5, 0.04, "normals_new", v2);
+  //v.setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_COLOR, 0.7, 0.7, 0.7, "normals_new", v2);
   //v.addPointCloudNormals<PointXYZRGB, Normal>(p,n,4,0.04,"normals2", v2);
   //v.addPointCloudNormals<PointXYZ, Normal>(centroids1st,normals1st,1,0.1,"normals2", v2);
 
   int v3(0);
   v.createViewPort(0.0, 0.0, 0.5, 0.5, v3);
-  v.setBackgroundColor(1, 1, 1, v3);
+  //v.setBackgroundColor(1, 1, 1, v3);
   v.addPointCloud<PointXYZRGB>(p, chdl_p, "boundary_points", v3);
-  v.addPointCloudNormals<PointXYZRGB, Normal>(pbp, n_bp, 2, 0.04, "boundary_normals", v3);
   //v.addPointCloud<PointXYZRGB>(cp2nd, col_hdl_2nd, "segmented2nd", v3);
 
   int v4(0);
   v.createViewPort(0.5, 0.0, 1.0, 0.5, v4);
-  v.setBackgroundColor(1, 1, 1, v4);
-  //v.addPointCloud<PointXYZRGB>(cp, col_hdl, "normals4", v4);
+  //v.setBackgroundColor(1, 1, 1, v4);
+  v.addPointCloud<PointXYZRGB>(p2, chdl_p2, "segmented_first", v4);
+  v.addPointCloudNormals<PointXYZRGB, Normal>(pbp, n_bp, 1, 0.02, "boundary_normals", v4);
   //v.addPointCloudNormals<PointXYZRGB, Normal>(bp,bp_n,1,0.04,"normals3", v4);
 
   while(!v.wasStopped())
