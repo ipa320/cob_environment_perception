@@ -90,6 +90,7 @@ namespace cob_3d_mapping_features
 
     inline EdgePtr createEdge() { edges_.push_back(EdgeType()); return --edges_.end(); }
     virtual void merge(EdgePtr source, EdgePtr target) = 0;
+    virtual void move(int old_cid, int new_cid, EdgePtr e) = 0;
 
   private:
     std::list<EdgeType> edges_;
@@ -134,12 +135,14 @@ namespace cob_3d_mapping_features
 
     void erase(EdgePtr e);
     void merge(EdgePtr source, EdgePtr target);
-    inline void addBoundaryPair(EdgePtr e, const int cid1, const int idx1, const int cid2, const int idx2)
+    void move(int old_cid, int new_cid, EdgePtr e);
+
+    inline void updateProperties(EdgePtr e, const int cid1, const int idx1, const int cid2, const int idx2)
     {
       e->boundary_pairs[cid1].push_back(idx1); // idx1 is at border of cluster cid1
       e->boundary_pairs[cid2].push_back(idx2); // idx2 is at border of cluster cid2
-      boundary_points_.insert(std::make_pair(idx1, BoundaryPoint(idx2))); // idx1 is BoundaryPoint with bother idx2
-      boundary_points_.insert(std::make_pair(idx2, BoundaryPoint(idx1))); // idx2 is BoundaryPoint with bother idx1
+      boundary_points_.insert(std::make_pair(idx1, BoundaryPoint(idx2))); // idx1 is BoundaryPoint with brother idx2
+      boundary_points_.insert(std::make_pair(idx2, BoundaryPoint(idx1))); // idx2 is BoundaryPoint with brother idx1
     }
     inline BoundaryPoint& getBoundaryPoint(const int idx) { return boundary_points_[idx]; }
 

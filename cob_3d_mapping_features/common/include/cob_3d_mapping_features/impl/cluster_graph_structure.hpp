@@ -63,11 +63,24 @@
 template <typename ClusterHandlerT, typename EdgeHandlerT> void 
 cob_3d_mapping_features::ClusterGraphStructure<ClusterHandlerT,EdgeHandlerT>::merge(const int cid_source, const int cid_target)
 {
-  merge(vid_.find(cid_source)->second, vid_.find(cid_target)->second);
+  std::vector<EdgePtr> updated_edges;
+  merge(vid_.find(cid_source)->second, vid_.find(cid_target)->second, updated_edges);
 }
 
 template <typename ClusterHandlerT, typename EdgeHandlerT> void 
-cob_3d_mapping_features::ClusterGraphStructure<ClusterHandlerT,EdgeHandlerT>::merge(const VertexID src, const VertexID trg)
+cob_3d_mapping_features::ClusterGraphStructure<ClusterHandlerT,EdgeHandlerT>::merge(
+  const int cid_source, 
+  const int cid_target,
+  std::vector<EdgePtr>& updated_edges)
+{
+  merge(vid_.find(cid_source)->second, vid_.find(cid_target)->second, updated_edges);
+}
+
+template <typename ClusterHandlerT, typename EdgeHandlerT> void 
+cob_3d_mapping_features::ClusterGraphStructure<ClusterHandlerT,EdgeHandlerT>::merge(
+  const VertexID src, 
+  const VertexID trg,
+  std::vector<EdgePtr>& updated_edges)
 {
   e_hdl_->erase(g_[boost::edge(src, trg, g_).first].e_it);
   boost::remove_edge(src, trg, g_);
@@ -80,12 +93,14 @@ cob_3d_mapping_features::ClusterGraphStructure<ClusterHandlerT,EdgeHandlerT>::me
     boost::tie(eid,ok) = boost::add_edge(trg, boost::target(*oe_it,g_), g_); // try add new edge
     if (ok) // if not already existing, move EdgePtr
     { 
-      g_[eid].e_it = g_[*oe_it].e_it; 
+      g_[eid].e_it = g_[*oe_it].e_it;
+      e_hdl_->move(g_[src].c_it->id(), g_[trg].c_it->id(), g_[eid].e_it);
     } 
     else // else use EdgeHandler to merge to target and drop from Handler
     { 
       e_hdl_->merge(g_[*oe_it].e_it, g_[eid].e_it);
     }
+    updated_edges.push_back(g_[eid].e_it);
   }
   vid_.erase(g_[src].c_it->id()); // erase from map
   c_hdl_->merge(g_[src].c_it, g_[trg].c_it); // use ClusterHandler to merge properties and drop from handler

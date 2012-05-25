@@ -118,12 +118,13 @@ namespace cob_3d_mapping_features
     { return g_[boost::edge(vid_.find(cid1)->second, vid_.find(cid2)->second, g_).first].e_it; }
 
     void merge(const int cid_source, const int cid_target);
+    void merge(const int cid_source, const int cid_target, std::vector<EdgePtr>& updated_edges);
     void getAdjacentClusters(int cid, std::vector<ClusterPtr>& adjacent_clusters);
     void getConnectedClusters(int cid_start, std::vector<ClusterPtr>& connected_clusters, boost::function<bool (EdgePtr)> f);
 
 
   private:
-    struct GraphVertex 
+    struct GraphVertex
     {
       GraphVertex() { };
       GraphVertex(ClusterPtr it) : c_it(it) { };
@@ -144,7 +145,7 @@ namespace cob_3d_mapping_features
     typedef typename boost::graph_traits<GraphT>::vertex_descriptor VertexID;
     typedef typename boost::graph_traits<GraphT>::edge_descriptor EdgeID;
 
-    void merge(const VertexID src, const VertexID trg);
+    void merge(const VertexID src, const VertexID trg, std::vector<EdgePtr>& updated_edges);
 
     ClusterHandlerPtr c_hdl_;
     EdgeHandlerPtr e_hdl_;

@@ -104,6 +104,17 @@ cob_3d_mapping_features::BoundaryPointsEdgeHandler<LabelT,PointT>::merge(EdgePtr
   erase(source);
 }
 
+template<typename LabelT, typename PointT> void
+cob_3d_mapping_features::BoundaryPointsEdgeHandler<LabelT,PointT>::move(int old_cid, int new_cid, EdgePtr e)
+{
+  std::map<int,std::list<int> >::iterator it = e->boundary_pairs.find(old_cid);
+  if (it != e->boundary_pairs.end())
+  {
+    std::swap(e->boundary_pairs[new_cid], it->second);
+    e->boundary_pairs.erase(it);
+  }
+}
+
 /* is now a general free function in orgnazied_normal_estimation.h
 template<typename LabelT, typename PointT> void
 cob_3d_mapping_features::BoundaryPointsEdgeHandler<LabelT,PointT>::computeBoundaryPointProperties(

@@ -111,8 +111,8 @@ namespace cob_3d_mapping_features
 
   public:
     DepthSegmentation () : max_angle_(35.0f / 180.0f * M_PI)
-      , max_boundary_angle_(45.0f / 180.0f * M_PI)
-      , min_cluster_size_(100)
+      , max_boundary_angle_(50.0f / 180.0f * M_PI)
+      , min_cluster_size_(150)
     { };
     
     ~DepthSegmentation ()
@@ -121,17 +121,19 @@ namespace cob_3d_mapping_features
     inline void setClusterGraphOut(ClusterGraphPtr clusters) { graph_ = clusters; }
     inline void setPointCloudIn(PointCloudConstPtr points) { surface_ = points; }
     inline void setNormalCloudIn(NormalCloudConstPtr normals) { normals_ = normals; }
-    inline void setLabelCloudOut(LabelCloudPtr labels) { labels_ = labels; }
+    inline void setLabelCloudInOut(LabelCloudPtr labels) { labels_ = labels; }
 
     void performInitialSegmentation();
 
     void refineSegmentation();
 
   private:
-    void addIfIsValid(int u, int v, int idx, int idx_prev, Eigen::Vector3f& n, 
+    void addIfIsValid(int u, int v, int idx, int idx_prev, float dist_th, float p_z, Eigen::Vector3f& n,
 		      std::multiset<SegmentationCandidate>& coords_todo, ClusterPtr c);
 
+    void computeBoundaryProperties(ClusterPtr c, EdgePtr e);
     void computeBoundaryProperties(ClusterPtr c);
+    void computeEdgeSmoothness(EdgePtr e);
     void computeEdgeSmoothness();
 
     float max_angle_; // between mean normal of cluster and point candidates of initial segmentation
