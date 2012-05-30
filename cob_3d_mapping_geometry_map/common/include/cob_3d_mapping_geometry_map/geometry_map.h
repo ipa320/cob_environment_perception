@@ -68,12 +68,13 @@
 #include <Eigen/Geometry>
 
 // internal includes
-extern "C" {
-#include "cob_3d_mapping_geometry_map/gpc.h"
-}
+//extern "C" {
+//#include "cob_3d_mapping_common/include/gpc.h"
+//}
 //#ifndef __GEOMETRY_MAP_VISUALISATION_H__
 #include "cob_3d_mapping_geometry_map/vis/geometry_map_visualisation.h"
 #include "cob_3d_mapping_common/polygon.h"
+//#include "cob_3d_mapping_common/shape.h"
 
 
 
@@ -118,25 +119,25 @@ public:
   void
   addMapEntry(cob_3d_mapping::PolygonPtr p);
 
-  void
-  searchIntersection(cob_3d_mapping::Polygon& p , std::vector<int>& intersections);
+//  void
+//  searchIntersection(cob_3d_mapping::Polygon& p , std::vector<int>& intersections);
 
-  void
-  mergeWithMap(cob_3d_mapping::PolygonPtr p_ptr , std::vector<int> intersections);
+//  void
+//  mergeWithMap(cob_3d_mapping::PolygonPtr p_ptr , std::vector<int> intersections);
 
   void
   computeCentroid(cob_3d_mapping::Polygon& p);
 
-  void
-  removeMapEntry(int id);
+//  void
+//  removeMapEntry(int id);
 
-  void
-  getGpcStructure(cob_3d_mapping::Polygon& p, gpc_polygon* gpc_p);
+//  void
+//  getGpcStructure(cob_3d_mapping::Polygon& p, gpc_polygon* gpc_p);
 
-  void
-  getGpcStructureUsingMap(cob_3d_mapping::Polygon& p,
-                          Eigen::Affine3f& transform_from_world_to_plane,
-                          gpc_polygon* gpc_p);
+//  void
+//  getGpcStructureUsingMap(cob_3d_mapping::Polygon& p,
+//                          Eigen::Affine3f& transform_from_world_to_plane,
+//                          gpc_polygon* gpc_p);
 
   void
   printMapEntry(cob_3d_mapping::Polygon& p);
@@ -145,8 +146,8 @@ public:
   printMap();
 
 
-  void
-  printGpcStructure(gpc_polygon* p);
+//  void
+//  printGpcStructure(gpc_polygon* p);
 
   void
   saveMapEntry(std::string path, int ctr, cob_3d_mapping::Polygon& p);
@@ -157,18 +158,18 @@ public:
   void
   clearMap();
 
-  void
-  getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
-                             Eigen::Vector3f &u,
-                             Eigen::Vector3f &v);
+//  void
+//  getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
+//                             Eigen::Vector3f &u,
+//                             Eigen::Vector3f &v);
 
-  void
-  getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,
-                                    const Eigen::Vector3f &origin,
-                                    Eigen::Affine3f &transformation);
+//  void
+//  getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,
+//                                    const Eigen::Vector3f &origin,
+//                                    Eigen::Affine3f &transformation);
 
-  void
-  getPointOnPlane(const Eigen::Vector3f &normal,double d,Eigen::Vector3f &point);
+//  void
+//  getPointOnPlane(const Eigen::Vector3f &normal,double d,Eigen::Vector3f &point);
 
   float
   rounding(float x);

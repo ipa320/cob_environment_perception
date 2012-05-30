@@ -107,6 +107,7 @@ public:
   // Constructor
   GeometryMapNode()
   {
+
     config_server_.setCallback(boost::bind(&GeometryMapNode::dynReconfCallback, this, _1, _2));
     ctr_ = 0;
     shape_sub_ = n_.subscribe("shape_array", 10, &GeometryMapNode::shapeCallback, this);
@@ -119,6 +120,7 @@ public:
     std::cout << file_path_ << std::endl;
     geometry_map_.setFilePath(file_path_);
     geometry_map_.setSaveToFile(save_to_file_);
+
   }
 
   // Destructor
@@ -165,6 +167,8 @@ public:
     PrecisionStopWatch t;
     for(unsigned int i=0; i<sa->shapes.size(); i++)
     {
+
+//      ShapePtr map_entry_ptr = ShapePtr(new Shape());
       PolygonPtr map_entry_ptr = PolygonPtr(new Polygon());
       if(!fromROSMsg(sa->shapes[i], *map_entry_ptr)) continue;
       //dumpPolygonToFile(*map_entry_ptr);
