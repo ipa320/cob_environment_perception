@@ -132,16 +132,7 @@ void Polygon::assignMembers(Eigen::Vector3f &new_normal,double &new_d){
 
 
 }
-void Polygon::assignMembers(Eigen::Vector3f &new_normal,Eigen::Vector3f & new_z_axis,Eigen::Vector3f &new_origin){
-	d=new_origin.norm();
-	normal=new_normal;
 
-	Eigen::Affine3f transform_from_plane_to_world;
-	pcl::getTransformationFromTwoUnitVectorsAndOrigin(normal,new_z_axis,new_origin,transform_from_plane_to_world);
-//	getTransformationFromPlaneToWorld(normal,pt_on_polygon,transform_from_plane_to_world);
-	transform_from_world_to_plane=transform_from_plane_to_world.inverse();
-
-}
 
 void Polygon::assignMembers(){
 
@@ -513,61 +504,7 @@ bool Polygon::isMergeCandidate_intersect(Polygon& p_map){
 }
 
 
-void
-Polygon::performTransformationWorldToPlane(Polygon& poly_plane)
-{
 
-//	this->debug_output("INTERN");
-	  for(size_t j=0; j<contours.size(); j++)
-	  {
-	    //std::cout << j << std::endl;
-	    poly_plane.holes.resize(contours.size());
-	    poly_plane.contours.resize(contours.size());
-
-
-//	      std::cout<<"plane coordinates:"<<std::endl;
-//	    std::cout<<"point trans"<<std::endl;
-	    for(size_t k=0; k<contours[j].size(); k++)
-	    {
-	    	poly_plane.contours[j].resize(contours[j].size() );
-	      Eigen::Vector3f point_trans = transform_from_world_to_plane*contours[j][k];
-
-//	      Eigen::Vector3f test_point;
-//	      test_point << -1 ,0 ,1;
-//	      Eigen::Vector3f test_trafo = transform_from_world_to_plane*test_point;
-//	      std::cout<<"TEST POINT"<<test_trafo<<std::endl;exit(1);
-
-	      poly_plane.contours[j][k] = point_trans;
-
-//	      std::cout <<point_trans <<std::endl;
-//		    std::cout<<std::endl;
-
-	    }
-
-	  }
-}
-
-void
-Polygon::performTransformationPlaneToWorld(Polygon& poly_plane)
-{
-	  for(size_t j=0; j<contours.size(); j++)
-	  {
-	    //std::cout << j << std::endl;
-	    poly_plane.holes.resize(contours.size());
-	    poly_plane.contours.resize(contours.size());
-
-	    for(size_t k=0; k<contours[j].size(); k++)
-	    {
-	    	poly_plane.contours[j].resize(contours[j].size() );
-
-	      //std::cout << p.contours[j][k] << std::endl;
-	      Eigen::Vector3f point_trans = transform_from_world_to_plane.inverse()*contours[j][k];
-	      poly_plane.contours[j][k] = point_trans;
-
-
-	    }
-	  }
-}
 
 void Polygon::debug_output(std::string name){
 
