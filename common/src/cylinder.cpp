@@ -117,34 +117,36 @@ namespace cob_3d_mapping
 void
 Cylinder::roll()
 {
+
+
+//Transform to local coordinate system
 	Polygon poly_plane;
 
+		  for(size_t j=0; j<unrolled_.contours.size(); j++)
+		  {
+
+		    poly_plane.holes.resize(contours.size());
+		    poly_plane.contours.resize(contours.size());
 
 
-//		      exit(1);
+		    for(size_t k=0; k<unrolled_.contours[j].size(); k++)
+		    {
+		    	poly_plane.contours[j].resize(unrolled_.contours[j].size() );
+		      Eigen::Vector3f point_trans = transformation_from_world_to_cylinder_*unrolled_.contours[j][k];
+
+		      poly_plane.contours[j][k] = point_trans;
+
+		    }
+		  }
 
 
-//TODO: CHNAGE THIS - DIRTY !!!!!!!!!!!
-		      unrolled_.transform_from_world_to_plane=transformation_from_world_to_cylinder_;
-
-//
-//    Eigen::Vector3f test_point;
-//    test_point << -1 ,0 ,1;
-//    Eigen::Vector3f test_trafo = unrolled_.transform_from_world_to_plane*test_point;
-//    Eigen::Vector3f test_trafo2 =transformation_from_world_to_cylinder_*test_point;
-//    std::cout<<"TEST POINT"<<std::endl<<test_trafo<<std::endl;
-//    std::cout<<"TEST POINT2"<<std::endl<<test_trafo2<<std::endl;
-
-	this->unrolled_.performTransformationWorldToPlane(poly_plane);
-
-//	poly_plane.debug_output("poly plane");
+// transform into cylinder shape via polar coordinates
 	 for(size_t j=0; j<poly_plane.contours.size(); j++)
 		  {
 
 			 contours[j].resize(poly_plane.contours[j].size());
 	      	 holes.resize(poly_plane.contours[j].size());
 
-//	      	 std::cout<<"alpha"<<std::endl;
 		    for(size_t k=0; k<poly_plane.contours[j].size(); k++)
 			{
 
@@ -356,31 +358,24 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,c
 void Cylinder::merge(std::vector<CylinderPtr>& c_array){
 
 
-//transform polygon to local system --> merge polygon A
-// transform map polygon in system of A and shift it  -->merge polygon(s) B
-
-
-//    exit(1);
-
-//	Polygon merge_polygon_A;
 	std::vector<PolygonPtr>  merge_polygons_B;
 
 //	transform unrolled_ to local system
-//	this->unrolled_.performTransformationWorldToPlane(merge_polygon_A);
+
 
 	for(int i=0; i < (int) c_array.size();i++)
 	{
 		Cylinder & c_map=*(c_array[i]);
 
 	 PolygonPtr map_shifted_polygon = PolygonPtr(new Polygon());
+
 //	get shifted polygons with respect to THIS
 
-//	c_map.unrolled_.debug_output("map unrolled");
+
 	c_map.getShiftedPolygon(*this,*map_shifted_polygon);
 
 	merge_polygons_B.push_back(map_shifted_polygon);
 
-//	map_shifted_polygon->debug_output("Merge B");
 
 
 	}//for
@@ -411,10 +406,8 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array){
 	c_map2.axes_=axes_;
 	c_map2.origin_=origin_;
 	c_map2.transformation_from_world_to_cylinder_=transformation_from_world_to_cylinder_;
-//	c_map2.unrolled_.transform_from_world_to_plane=transformation_from_world_to_cylinder_;
 	double dist= origin_.norm();
 	c_map2.unrolled_.assignMembers(unrolled_.normal,dist);
-//	c_map2.unrolled_.assignMembers(axes_[1],axes_[2],origin_);
 
 	c_map2.roll();
 

@@ -89,10 +89,7 @@ struct merge_config {
 
 
 
-//    transformation in world->plane  , plane->world
 
-   void performTransformationWorldToPlane(Polygon& poly_plane);
-   void performTransformationPlaneToWorld(Polygon& poly_world);
 
 //    Compute vector containing indices(intersections) of merge candidates for polygon in poly_vec
     void isMergeCandidate(std::vector< boost::shared_ptr<Polygon> >& poly_vec,merge_config& limits, std::vector<int>& intersections);
@@ -102,7 +99,6 @@ struct merge_config {
     void merge(std::vector< boost::shared_ptr<Polygon> >& poly_vec);
 
 //    Calculate members of polygon
-    void assignMembers(Eigen::Vector3f &new_normal,Eigen::Vector3f & new_z_axis,Eigen::Vector3f &new_origin);
  	void assignMembers(Eigen::Vector3f &new_normal,double &new_d);
  	void assignMembers();
 
