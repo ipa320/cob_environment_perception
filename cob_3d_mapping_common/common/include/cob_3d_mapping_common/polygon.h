@@ -57,13 +57,28 @@
 #define POLYGON_H_
 
 #include "cob_3d_mapping_common/shape.h"
+#include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
+extern "C" {
+#include "cob_3d_mapping_common/gpc.h"
+}
 
 namespace cob_3d_mapping
 {
 
+struct merge_config {
+  double angle_thresh ;
+  float  d_thresh;
+} ;
+
+
+//Polygon Class, derived from Shape class
+
+
   class Polygon : public Shape
   {
   public:
+
     void
     computeCentroid();
 
@@ -72,6 +87,35 @@ namespace cob_3d_mapping
     double
     computeArea();
 
+
+
+//    transformation in world->plane  , plane->world
+
+   void performTransformationWorldToPlane(Polygon& poly_plane);
+   void performTransformationPlaneToWorld(Polygon& poly_world);
+
+//    Compute vector containing indices(intersections) of merge candidates for polygon in poly_vec
+    void isMergeCandidate(std::vector< boost::shared_ptr<Polygon> >& poly_vec,merge_config& limits, std::vector<int>& intersections);
+    bool isMergeCandidate_intersect(Polygon& p_map);
+
+//    Merge polygon with polygons in poly_vec
+    void merge(std::vector< boost::shared_ptr<Polygon> >& poly_vec);
+
+//    Calculate members of polygon
+    void assignMembers(Eigen::Vector3f &new_normal,Eigen::Vector3f & new_z_axis,Eigen::Vector3f &new_origin);
+ 	void assignMembers(Eigen::Vector3f &new_normal,double &new_d);
+ 	void assignMembers();
+
+ 	//    Use general polygon clipper to create polygon structures
+ 	    void
+ 	    GpcStructureUsingMap(Eigen::Affine3f& external_trafo,gpc_polygon* gpc_p);
+
+ 	    void
+ 	    GpcStructure( gpc_polygon* gpc_p);
+
+ 	void debug_output(std::string name);
+
+
     //needed for 32-bit systems: see http://eigen.tuxfamily.org/dox/TopicStructHavingEigenMembers.html
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     std::vector<std::vector<Eigen::Vector3f> > contours;
@@ -79,10 +123,16 @@ namespace cob_3d_mapping
     double d;
     Eigen::Affine3f transform_from_world_to_plane;
     std::vector<bool> holes;
+
+
+  private:
+
+
+
+
   };
 
   typedef boost::shared_ptr<Polygon> PolygonPtr;
-
 }
 
 #endif /* POLYGON_H_ */

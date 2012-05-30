@@ -29,11 +29,23 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/ros/include
     ${PROJECT_SOURCE_DIR}/common/include)
 
+rosbuild_add_library(gpc common/src/gpc.c)
+
 rosbuild_add_library(cob_3d_mapping_common common/src/shape.cpp
-   common/src/polygon.cpp )
+   common/src/polygon.cpp common/src/cylinder.cpp common/src/gpc.c)
+#target_link_libraries(cob_3d_mapping_common gpc)
+
+
+
 
 rosbuild_add_executable(field_of_view_node ros/src/field_of_view.cpp)
 rosbuild_add_executable(keyframe_detector_node ros/src/keyframe_detector.cpp)
+
+#~~~~~~~~~
+rosbuild_add_executable(cylinder common/src/cyl_test.cpp)
+target_link_libraries(cylinder cob_3d_mapping_common )
+#~~~~~~~~~
+
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
 #target_link_libraries(${PROJECT_NAME} another_library)
