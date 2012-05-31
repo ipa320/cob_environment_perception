@@ -32,11 +32,13 @@ main (int argc, char **argv)
     sa.header.seq = seq++;
 
     cob_3d_mapping_msgs::Shape s;
+    s.params.resize(4);
 
-    s.params.push_back (0);
-    s.params.push_back (0);
-    s.params.push_back (1);
-    s.params.push_back (0);
+    s.params[0] = 0;
+    s.params[1] = 0;
+    s.params[2] = 1;
+    s.params[3] = 0;
+
     s.centroid.x = 0;
     s.centroid.y = 0;
     s.centroid.z = 0;
@@ -59,21 +61,40 @@ main (int argc, char **argv)
     pt.z = 0.0;
     pc.push_back (pt);
 
-    pt.x = 5.0;
+    pt.x = 3.0;
     pt.y = 0.0;
     pt.z = 0.0;
     pc.push_back (pt);
 
     pt.x = 0.0;
-    pt.y = 5.0;
+    pt.y = 3.0;
     pt.z = 0.0;
     pc.push_back (pt);
 
-    pt.x = 5.0;
-    pt.y = 5.0;
+    pt.x = 0.0;
+    pt.y = 0.0;
+    pt.z = 3.0;
+    pc.push_back (pt);
+
+    pt.x = 3.0;
+    pt.y = 3.0;
     pt.z = 0.0;
     pc.push_back (pt);
 
+    pt.x = 3.0;
+    pt.y = 0.0;
+    pt.z = 3.0;
+    pc.push_back (pt);
+
+    pt.x = 0.0;
+    pt.y = 3.0;
+    pt.z = 3.0;
+    pc.push_back (pt);
+
+    pt.x = 3.0;
+    pt.y = 3.0;
+    pt.z = 3.0;
+    pc.push_back (pt);
 
     pcl::toROSMsg (pc, pc2);
     s.points.push_back (pc2);
@@ -92,29 +113,35 @@ main (int argc, char **argv)
     s.points.clear ();
 
 
-    pt.x = 10;
+    pt.x = 2;
     pt.y = 6;
-    pt.z = 0;
+    pt.z = 2;
     pc.push_back (pt);
 
     pt.x = 6;
-    pt.y = 10;
-    pt.z = 0;
+    pt.y = 2;
+    pt.z = 2;
     pc.push_back (pt);
 
     pt.x = 6;
     pt.y = 6;
-    pt.z = 0;
+    pt.z = 2;
     pc.push_back (pt);
 
-    pt.x = 10;
-    pt.y = 10;
-    pt.z = 0;
+    /*
+    pt.x = 2;
+    pt.y = 2;
+    pt.z = 2;
     pc.push_back (pt);
+*/
+    s.params[0] = 1;
+    s.params[1] = 0;
+    s.params[2] = 1;
+    s.params[3] = 0;
 
-    s.centroid.x = 1;
-    s.centroid.y = 1;
-    s.centroid.z = 1;
+    s.centroid.x = 14/3;
+    s.centroid.y = 14/3;
+    s.centroid.z = 2;
     // sensor_msgs::PointCloud2 pc2;
     pcl::toROSMsg (pc, pc2);
     s.points.push_back (pc2);
@@ -133,22 +160,27 @@ main (int argc, char **argv)
 
     pt.x = -5;
     pt.y = -5;
-    pt.z = 0;
+    pt.z = 3;
     pc.push_back (pt);
 
     pt.x = -5;
     pt.y = -1;
-    pt.z = 0;
+    pt.z = 3;
     pc.push_back (pt);
 
     pt.x = -6;
     pt.y = -5;
-    pt.z = 0;
+    pt.z = 3;
     pc.push_back (pt);
 
-    s.centroid.x = -1;
-    s.centroid.y = -1;
-    s.centroid.z = -1;
+    s.centroid.x = -16/3;
+    s.centroid.y = -11/3;
+    s.centroid.z = 3;
+
+    s.params[0] = 1;
+    s.params[1] = 1;
+    s.params[2] = 1;
+    s.params[3] = 0;
     //sensor_msgs::PointCloud2 pc2;
     pcl::toROSMsg (pc, pc2);
     s.points.push_back (pc2);
