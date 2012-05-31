@@ -112,7 +112,7 @@ limits.angle_thresh=cos_angle_;
 // find out polygons, to merge with
  std::vector<int> intersections;
  p.isMergeCandidate(map_,limits,intersections);
-
+std::cout<<intersections.size()<<std::endl;
 // if polygon has to be merged ...
 if(intersections.size()>0)
 	{
