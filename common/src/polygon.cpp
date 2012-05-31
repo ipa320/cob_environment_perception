@@ -290,7 +290,6 @@ void
 Polygon::merge(std::vector<PolygonPtr>& poly_vec)
 {
 
-
 	Eigen::Vector3f average_normal=normal;
 	double average_d=d;
 	int merge_counter=1;
@@ -426,6 +425,8 @@ Polygon::merge(std::vector<PolygonPtr>& poly_vec)
 		//TODO: set z to something else?
 		Eigen::Vector3f point(gpc_C.contour[j].vertex[k].x, gpc_C.contour[j].vertex[k].y, 0);
 		p_map3.contours[j][k] = p_map3.transform_from_world_to_plane.inverse()*point;
+//		p_map3.d=average_d;
+//		p_map3.normal=average_normal;
 		//TODO: update normal, d, transformation...?
 	  }
 	}
@@ -498,7 +499,6 @@ bool Polygon::isMergeCandidate_intersect(Polygon& p_map){
 	{
 			is_intersected=true;
 	}
-     std::cout<<"is intersected: "<<is_intersected<<std::endl;
 
     return is_intersected;
 }
