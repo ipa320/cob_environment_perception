@@ -145,6 +145,23 @@ void Polygon::assignMembers(){
 
 }
 
+
+void
+Polygon::assignContours(std::vector<std::vector<Eigen::Vector3f> > in_contours)
+{
+	  for(size_t j=0; j<in_contours.size(); j++)
+	  {
+		  contours.resize(in_contours.size());
+		  holes.resize(in_contours.size());
+	    for(size_t k=0; k<in_contours[j].size(); k++)
+	    {
+	    	contours[j].resize(in_contours[j].size());
+
+	    	contours[j][k]=in_contours[j][k];
+	    }
+	  }
+}
+
 void
 Polygon::computeCentroid()
 {
@@ -508,17 +525,29 @@ bool Polygon::isMergeCandidate_intersect(Polygon& p_map){
 
 void Polygon::debug_output(std::string name){
 
-	 std::cout<<"Start Debug Output~~~~~~ "<<name.c_str()<<" ~~~~~~~~~~~~~~~~~~"<<std::endl;
+	std::ofstream os;
+	std::string path = "/home/goa-tz/debug/";
+	path.append(name.c_str());
+	os.open(path.c_str());
+
+
+
+ std::cout<<"Start Debug Output~~~~~~ "<<name.c_str()<<" ~~~~~~~~~~~~~~~~~~"<<std::endl;
+
 
 		 for (int i = 0; i < (int) this->contours.size(); ++i) {
 			 for (int j = 0; j < (int) this->contours[i].size(); ++j) {
 
-		 std::cout<<"contor "<<i<<" vertex "<<j <<"  : "<<std::endl<<"~~~~"<<std::endl<<this->contours[i][j]<<std::endl<<std::endl;
+//		 std::cout<<"contor "<<i<<" vertex "<<j <<"  : "<<std::endl<<"~~~~"<<std::endl<<this->contours[i][j]<<std::endl<<std::endl;
+
+				 os << contours[i][j]<<std::endl;
+
 			}
 		}
-		 std::cout<<"normal: "<<std::endl;
-		 std::cout<< normal<<std::endl;
-		 std::cout<<"End Debug Output~~~~~~~~~~~~~~~~~~~~~~~~"<<std::endl<<std::endl;
+//		 std::cout<<"normal: "<<std::endl;
+//		 std::cout<< normal<<std::endl;
+//		 std::cout<<"End Debug Output~~~~~~~~~~~~~~~~~~~~~~~~"<<std::endl<<std::endl;
+		 os.close();
 }
 
 
