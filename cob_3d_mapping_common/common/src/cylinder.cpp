@@ -300,7 +300,7 @@ void Cylinder::assignTransformationFromWorldToCylinder() {
 	//	Get Trafo from World to Cylinder
 
 
-	std::cout<<"AXIS "<<std::endl<<axes_[1]<<std::endl;
+//	std::cout<<"AXIS "<<std::endl<<axes_[1]<<std::endl;
 
 	Eigen::Affine3f transformation;
 	pcl::getTransformationFromTwoUnitVectorsAndOrigin(axes_[1],axes_[2],origin_,transformation);
@@ -311,7 +311,7 @@ void Cylinder::assignTransformationFromWorldToCylinder() {
 
 
 //	std::cout<<"transfromed origin"<<std::endl<<transformation*origin_<<std::endl;
-	std::cout<<" x= "<<x<<" y= "<<z<<" z= "<<z<<" roll= "<<roll<<" pitch= "<<pitch<<" yaw= "<<yaw<<std::endl;
+//	std::cout<<" x= "<<x<<" y= "<<z<<" z= "<<z<<" roll= "<<roll<<" pitch= "<<pitch<<" yaw= "<<yaw<<std::endl;
 	//	invert Trafo
 	transformation_from_world_to_cylinder_=transformation;
 
@@ -344,10 +344,16 @@ this->unroll();
 	    	std::cout<< "CRITERIA FULFILLED"<<std::endl;
 	   	 Polygon shifted_polygon_map ;
 
+
+
 				c_map.getShiftedPolygon(*this,shifted_polygon_map);
 //				shifted_polygon_map.debug_output("# shifted Polygon");
 //				this->unrolled_.debug_output("# THis unrolled");
 //				std::cout<<"~~~~~~~~~~~~~~~~~~~~~~~~~~~~"<<std::endl;
+
+				 unrolled_.debug_output("unrolled_ORIGINAL");
+				 shifted_polygon_map.debug_output("SPM");
+				 c_map.unrolled_.debug_output("map_ORIGINALS");
 	    		bool is_intersected = this->unrolled_.isMergeCandidate_intersect(shifted_polygon_map);
 
 
@@ -415,15 +421,25 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array){
 //	c_map2.assignMembers(merge_polygon_C.normal,merge_polygon_C.d);
 
 
-
+//	// TODO: AVERAGE R, AXES, etc...
+//	c_map2.r_=r_;
+//	c_map2.axes_=axes_;
+//	c_map2.origin_=origin_;
+//	c_map2.transformation_from_world_to_cylinder_=transformation_from_world_to_cylinder_;
+//	// c_map2.unrolled_.transform_from_world_to_plane=transformation_from_world_to_cylinder_;
+//	double dist= origin_.norm();
+//	c_map2.unrolled_.assignMembers(unrolled_.normal,dist);
+//	// c_map2.unrolled_.assignMembers(axes_[1],axes_[2],origin_);
 
 	c_map2.r_=average_cyl.r_;
 	c_map2.axes_=average_cyl.axes_;
 	c_map2.origin_=origin_;
 	c_map2.transformation_from_world_to_cylinder_=average_cyl.transformation_from_world_to_cylinder_;
 	double dist= origin_.norm();
-	c_map2.unrolled_.assignMembers(unrolled_.normal,dist);
+	c_map2.unrolled_.assignMembers(average_cyl.axes_[1],dist);
 
+	c_map2.roll();
+	c_map2.unroll();
 	c_map2.roll();
 
 	for (int i = 0; i < (int)c_array.size(); ++i) {
@@ -511,6 +527,7 @@ Cylinder::weightAttributes(std::vector<CylinderPtr >& c_array,Cylinder& average_
 			average_c.r_ += c_map.merged * c_map.r_;
 			for (int axis_runner = 0; axis_runner < 3; ++axis_runner) {
 				average_c.axes_[axis_runner]+=c_map.axes_[axis_runner]*c_map.merged;
+
 			}
 			average_c.merged += c_map.merged;
 
@@ -525,18 +542,20 @@ Cylinder::weightAttributes(std::vector<CylinderPtr >& c_array,Cylinder& average_
 		average_c.r_ /= average_c.merged;
 		for (int axis_runner = 0; axis_runner < 3; ++axis_runner) {
 			average_c.axes_[axis_runner] /= average_c.merged;
+
 		}
 
 
 //		Origin is not weighted !!
 
-		std::cout<<"axe_av"<<std::endl<<average_c.axes_[1]<<std::endl;
 
 
 		average_c.origin_ /= average_c.merged;
 
-		//calculate transformation from world to cylinder
 		average_c.assignTransformationFromWorldToCylinder();
+
+		//calculate transformation from world to cylinder
+//		average_c.unroll();
 
 
 
