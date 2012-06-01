@@ -62,6 +62,7 @@
 extern "C" {
 #include "cob_3d_mapping_common/gpc.h"
 }
+#include <fstream>
 
 namespace cob_3d_mapping
 {
@@ -101,6 +102,7 @@ struct merge_config {
 //    Calculate members of polygon
  	void assignMembers(Eigen::Vector3f &new_normal,double &new_d);
  	void assignMembers();
+ 	void assignContours(std::vector<std::vector<Eigen::Vector3f> > contours);
 
  	//    Use general polygon clipper to create polygon structures
  	    void
