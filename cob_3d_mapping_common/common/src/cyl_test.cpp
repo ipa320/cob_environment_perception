@@ -30,7 +30,7 @@ transform_cylinder(CylinderPtr & c_ptr,Eigen::Affine3f& trafo)
  	}
 
 c.origin_=trafo*c.origin_;
-//std::cout<<"origin\n"<<c.origin_<<std::endl;
+std::cout<<"origin\n"<<c.origin_<<std::endl;
 
 for (int i = 0; i < 3; ++i) {
 
@@ -194,8 +194,8 @@ c2->merged=1;
   Eigen::Affine3f trafo;
   pcl::getTransformation(x,y,z,roll,pitch,yaw,trafo);
 
-//transform_cylinder(c1,trafo);
-//transform_cylinder(c2,trafo);
+transform_cylinder(c1,trafo);
+transform_cylinder(c2,trafo);
 
 
 //####################################################

@@ -98,15 +98,18 @@ struct merge_config {
 
 //    Merge polygon with polygons in poly_vec
     void merge(std::vector< boost::shared_ptr<Polygon> >& poly_vec);
+    void merge_union(std::vector< boost::shared_ptr<Polygon> >& poly_vec,const Polygon & p_average);
 
 //    Calculate members of polygon
- 	void assignMembers(Eigen::Vector3f &new_normal,double &new_d);
+ 	void assignMembers(const Eigen::Vector3f &new_normal, const double &new_d);
+ 	void assignMembers(const Eigen::Vector3f & z_axis,const Eigen::Vector3f &new_normal, const Eigen::Vector3f & pt_on_polygon);
+
  	void assignMembers();
  	void assignContours(std::vector<std::vector<Eigen::Vector3f> > contours);
 
  	//    Use general polygon clipper to create polygon structures
  	    void
- 	    GpcStructureUsingMap(Eigen::Affine3f& external_trafo,gpc_polygon* gpc_p);
+ 	    GpcStructureUsingMap(const Eigen::Affine3f& external_trafo,gpc_polygon* gpc_p);
 
  	    void
  	    GpcStructure( gpc_polygon* gpc_p);
