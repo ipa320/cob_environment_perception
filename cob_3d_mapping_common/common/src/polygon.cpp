@@ -373,8 +373,9 @@ Polygon::merge(std::vector<PolygonPtr>& poly_vec)
 //	outputFile << "new Trafo " << std::endl;
 //	outputFile << transformation_from_world_to_plane.matrix()<< std::endl;
 //	std::cout<<"poly A"<<std::endl;
+
 	this->GpcStructureUsingMap(p_average.transform_from_world_to_plane, &gpc_C);
-//	getGpcStructureUsingMap(p, transformation_from_world_to_plane, &gpc_result);
+
 
 	for(unsigned int i=0 ; i<poly_vec.size();i++)
 	{
@@ -382,11 +383,8 @@ Polygon::merge(std::vector<PolygonPtr>& poly_vec)
 		Polygon& p_map2 = *(poly_vec[i]);
 
 
-
-//		getGpcStructureUsingMap(p_map, transformation_from_world_to_plane, &gpc_p_map);
-//		std::cout<<"poly B"<<std::endl;
-
 		p_map2.GpcStructureUsingMap(p_average.transform_from_world_to_plane,&gpc_B);
+
 
 		gpc_polygon_clip(GPC_UNION, &gpc_B, &gpc_C, &gpc_C);
 
@@ -441,13 +439,13 @@ Polygon::merge(std::vector<PolygonPtr>& poly_vec)
 	  {
 		//TODO: set z to something else?
 		Eigen::Vector3f point(gpc_C.contour[j].vertex[k].x, gpc_C.contour[j].vertex[k].y, 0);
-		p_map3.contours[j][k] = p_map3.transform_from_world_to_plane.inverse()*point;
-//		p_map3.d=average_d;
-//		p_map3.normal=average_normal;
+		p_map3.contours[j][k] = p_average.transform_from_world_to_plane.inverse()*point;
+
+
+		p_map3.assignMembers(p_average.normal,p_average.d);
 		//TODO: update normal, d, transformation...?
 	  }
 	}
-
 	}
 }
 
