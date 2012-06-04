@@ -30,12 +30,12 @@ transform_cylinder(CylinderPtr & c_ptr,Eigen::Affine3f& trafo)
  	}
 
 c.origin_=trafo*c.origin_;
-std::cout<<"origin\n"<<c.origin_<<std::endl;
+//std::cout<<"origin\n"<<c.origin_<<std::endl;
 
 for (int i = 0; i < 3; ++i) {
 
 	c.axes_[i]=trafo.rotation()*c.axes_[i];
-	std::cout<<"axis -"<<i<<" \n"<<c.axes_[i]<<std::endl;
+//	std::cout<<"axis -"<<i<<" \n"<<c.axes_[i]<<std::endl;
 }
 
 
@@ -43,7 +43,7 @@ float roll,pitch,yaw,x,y,z;
 pcl::getTranslationAndEulerAngles(trafo,x,y,z,roll,pitch,yaw);
 
 
-	std::cout<<" x= "<<x<<" y= "<<z<<" z= "<<z<<" roll= "<<roll<<" pitch= "<<pitch<<" yaw= "<<yaw<<std::endl;
+//	std::cout<<" x= "<<x<<" y= "<<z<<" z= "<<z<<" roll= "<<roll<<" pitch= "<<pitch<<" yaw= "<<yaw<<std::endl;
 }
 
 int main(int argc, char **argv) {
@@ -70,10 +70,10 @@ Eigen::Vector3f origin1;
 x_axis1 << 1,0,0;
 axes1.push_back(x_axis1);
 
-y_axis1 << 0,1,0;
+y_axis1 << 0,0,1;
 axes1.push_back(y_axis1);
 
-z_axis1 << 0,0,1;
+z_axis1 << 0,1,0;
 axes1.push_back(z_axis1);
 
 c1->axes_=axes1;
@@ -86,8 +86,8 @@ c1->axes_=axes1;
  contour1.push_back(v1);
  v1 << 1 ,0 ,-1;
  contour1.push_back(v1);
- v1 << -1, 0 ,-1;
- contour1.push_back(v1);
+// v1 << -1, 0 ,-1;
+// contour1.push_back(v1);
  c1->contours.push_back(contour1);
 
 
@@ -135,10 +135,10 @@ c1->merged=1;
  x_axis2 << 0,-1,0;
  axes2.push_back(x_axis2);
 
- y_axis2 << 1,0,0;
+ y_axis2 << 0,0,1;
  axes2.push_back(y_axis2);
 
- z_axis2 << 0,0,1;
+ z_axis2 << 1,0,0;
  axes2.push_back(z_axis2);
 
  c2->axes_=axes2;
@@ -151,8 +151,8 @@ c1->merged=1;
   contour2.push_back(v2);
   v2 << 0 ,-1 ,-1;
   contour2.push_back(v2);
-  v2 << 0, 1 ,-1;
-  contour2.push_back(v2);
+//  v2 << 0, 1 ,-1;
+//  contour2.push_back(v2);
   c2->contours.push_back(contour2);
 
 
@@ -194,8 +194,8 @@ c2->merged=1;
   Eigen::Affine3f trafo;
   pcl::getTransformation(x,y,z,roll,pitch,yaw,trafo);
 
-transform_cylinder(c1,trafo);
-transform_cylinder(c2,trafo);
+//transform_cylinder(c1,trafo);
+//transform_cylinder(c2,trafo);
 
 
 //####################################################
