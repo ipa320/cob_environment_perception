@@ -442,11 +442,13 @@ Polygon::merge(std::vector<PolygonPtr>& poly_vec)
 		p_map3.contours[j][k] = p_average.transform_from_world_to_plane.inverse()*point;
 
 
+
 		p_map3.assignMembers(p_average.normal,p_average.d);
 		//TODO: update normal, d, transformation...?
 	  }
 	}
-	}
+		}
+
 }
 
 
