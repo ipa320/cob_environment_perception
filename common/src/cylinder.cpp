@@ -148,13 +148,13 @@ void Cylinder::roll() {
 			float alpha;
 			Eigen::Vector3f point_temp;
 			//		      alpha= B/r
-			alpha = unrolled_.contours[j][k][0] / r_;
+//			alpha = unrolled_.contours[j][k][0] / r_;
+			alpha = poly_plane.contours[j][k][0] / r_;
+
 
 			//				 use polar coordinates to create cylinder points
-			point_temp << r_ * sin(alpha), unrolled_.contours[j][k][1], r_
-					* cos(alpha);
-			std::cout << "p_local unrolled\n" << unrolled_.contours[j][k]
-					<< std::endl;
+			point_temp << r_ * sin(alpha), poly_plane.contours[j][k][1], r_	* cos(alpha);
+			std::cout << "p_local unrolled\n" << poly_plane.contours[j][k]	<< std::endl;
 			std::cout << "p_local rolled\n" << point_temp << std::endl;
 
 			//	      transform back in world system
@@ -316,8 +316,15 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 			//				std::cout<<"~~~~~~~~~~~~~~~~~~~~~~~~~~~~"<<std::endl;
 
 			unrolled_.debug_output("merge A");
-			shifted_polygon_map.debug_output("SPM");
+//			shifted_polygon_map.debug_output("SPM");
 			c_map.unrolled_.debug_output("merge B");
+
+//			double area_B =c_map.unrolled_.computeArea();
+//			std::cout<<"AREA MERGED"<<area_B<<std::endl;
+//
+//			double area_A =unrolled_.computeArea();
+//			std::cout<<"AREA MERGED"<<area_A<<std::endl;
+
 			bool is_intersected = this->unrolled_.isMergeCandidate_intersect(
 					shifted_polygon_map);
 
@@ -370,24 +377,30 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
 	//	polygon operation for merging
 //	Polygon & p_av=*merge_polygons_B[0];
 
-	unrolled_.merge_union(merge_polygons_B,*merge_polygons_B[0]);
+//	unrolled_.merge_union(merge_polygons_B,average_cyl.unrolled_);
+	unrolled_.merge_union(merge_polygons_B,unrolled_);
+
+
 
 	Polygon& merge_polygon_C = *merge_polygons_B[0];
 
-	merge_polygon_C.debug_output("merged polygon");
 
 	Cylinder& c_map2 = *c_array[0];
-
 	//	assign values to resulting cylinder
 	c_map2.unrolled_ = merge_polygon_C;
-
-	c_map2.roll();
 	c_map2.r_ = average_cyl.r_;
-	c_map2.axes_ = average_cyl.axes_;
-	c_map2.origin_ = origin_;
+	c_map2.axes_ =axes_;
+	c_map2.origin_ = average_cyl.origin_;
 	c_map2.unrolled_.transform_from_world_to_plane
-			= average_cyl.unrolled_.transform_from_world_to_plane;
+			= unrolled_.transform_from_world_to_plane;
+	c_map2.roll();
+	c_map2.axes_=average_cyl.axes_;
 	c_map2.unroll();
+
+
+	c_map2.unrolled_.debug_output("unrolled average");
+
+
 
 	for (int i = 0; i < (int) c_array.size(); ++i) {
 
