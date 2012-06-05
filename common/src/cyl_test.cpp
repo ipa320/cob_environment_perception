@@ -183,11 +183,11 @@ c2->merged=1;
 
   float x,y,z,roll,pitch,yaw;
 
-  x=1;
+  x=-1;
   y=1;
   z=1;
   roll=0.3;
-  pitch=0.4;
+  pitch=-0.4;
   yaw=1;
 
 
@@ -243,7 +243,7 @@ Cylinder& result=*merge_candidates[0];
 //		}
 //	}
 //
-	 result.unrolled_.debug_output("result");
+//	 result.unrolled_.debug_output("result");
 }
 //
 //
