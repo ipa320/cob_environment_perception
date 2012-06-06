@@ -115,7 +115,7 @@ public:
     marker_pub_ = n_.advertise<visualization_msgs::Marker>("geometry_marker",100);
     clear_map_server_ = n_.advertiseService("clear_map", &GeometryMapNode::clearMap, this);
     get_map_server_ = n_.advertiseService("get_map", &GeometryMapNode::getMap, this);
-    ros::param::param("~file_path" ,file_path_ ,std::string("/home/goa/tmp/"));
+    ros::param::param("~file_path" ,file_path_ ,std::string("/home/goa-tz/tmp/"));
     ros::param::param("~save_to_file" ,save_to_file_ ,false);
     std::cout << file_path_ << std::endl;
     geometry_map_.setFilePath(file_path_);
@@ -168,7 +168,11 @@ public:
     for(unsigned int i=0; i<sa->shapes.size(); i++)
     {
 
+
 //      ShapePtr map_entry_ptr = ShapePtr(new Shape());
+    	int shape_type=sa->shapes[i].type;
+
+
       PolygonPtr map_entry_ptr = PolygonPtr(new Polygon());
       if(!fromROSMsg(sa->shapes[i], *map_entry_ptr)) continue;
       //dumpPolygonToFile(*map_entry_ptr);

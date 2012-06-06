@@ -82,20 +82,34 @@
 #include "cob_3d_mapping_geometry_map/geometry_map.h"
 //#include "cob_3d_mapping_geometry_map/vis/geometry_map_visualisation.h"
 
+
+
 using namespace cob_3d_mapping;
 
 void
 //GeometryMap::addMapEntry(PolygonPtr p_ptr)
+
+
+
+
 GeometryMap::addMapEntry(PolygonPtr p_ptr)
 
 {
 
+
+
+//if POLYGON
 
   Polygon& p = *p_ptr;
 
 cob_3d_mapping::merge_config  limits;
 limits.d_thresh=d_;
 limits.angle_thresh=cos_angle_;
+//limits.weighting_method="AREA";
+//limits.weighting_method="COUNTER";
+limits.weighting_method="COMBINED";
+
+
 
 
 //Debug Output------------
@@ -112,7 +126,11 @@ limits.angle_thresh=cos_angle_;
 // find out polygons, to merge with
  std::vector<int> intersections;
  p.isMergeCandidate(map_,limits,intersections);
-std::cout<<intersections.size()<<std::endl;
+// std::cout<<"intersections size = "<<intersections.size()<<std::endl;
+ if (intersections.size()> 1) {
+	 std::cout<<"merging multiple planes n= "<<intersections.size()<<std::endl;
+}
+
 // if polygon has to be merged ...
 if(intersections.size()>0)
 	{
@@ -801,11 +819,11 @@ int main (int argc, char** argv)
   m_p->d = -1;
   std::vector<Eigen::Vector3f> vv;
   Eigen::Vector3f v;
-  v << 0,0,0;
-  vv.push_back(v);
   v << 1,0,0;
   vv.push_back(v);
-  v << 1,1,0;
+  v << 1,0.5,0;
+  vv.push_back(v);
+  v << 1,1,2;
   vv.push_back(v);
   v << 0,1,0;
   vv.push_back(v);
@@ -865,7 +883,7 @@ int main (int argc, char** argv)
 //  m_p->contours.push_back(vv);
 //  m_p->holes.push_back(0);
 //  gm.addMapEntry(m_p);
-  gm.saveMap("/home/goa-tz/GM_test/pcl_daten/merge_test");
+//  gm.saveMap("/home/goa-tz/GM_test/pcl_daten/merge_test");
 
 /*  Eigen::Vector3f test;
   Eigen::Vector3f result;

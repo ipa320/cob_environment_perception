@@ -30,7 +30,7 @@ transform_cylinder(CylinderPtr & c_ptr,Eigen::Affine3f& trafo)
  	}
 
 c.origin_=trafo*c.origin_;
-std::cout<<"origin\n"<<c.origin_<<std::endl;
+//std::cout<<"origin\n"<<c.origin_<<std::endl;
 
 for (int i = 0; i < 3; ++i) {
 
@@ -41,24 +41,20 @@ for (int i = 0; i < 3; ++i) {
 
 float roll,pitch,yaw,x,y,z;
 pcl::getTranslationAndEulerAngles(trafo,x,y,z,roll,pitch,yaw);
-
-
 //	std::cout<<" x= "<<x<<" y= "<<z<<" z= "<<z<<" roll= "<<roll<<" pitch= "<<pitch<<" yaw= "<<yaw<<std::endl;
+
+
 }
 
 int main(int argc, char **argv) {
 
-	std::cout <<"goa-tz --> start"<< std::endl;
 
 
 //####################################################
 //Cylinder #1
 
 CylinderPtr  c1  =CylinderPtr(new Cylinder());
-
 c1->id = 0;
-
-
 
 Eigen::Vector3f x_axis1,y_axis1,z_axis1;
 std::vector<Eigen::Vector3f> axes1;
@@ -86,8 +82,8 @@ c1->axes_=axes1;
  contour1.push_back(v1);
  v1 << 1 ,0 ,-1;
  contour1.push_back(v1);
-// v1 << -1, 0 ,-1;
-// contour1.push_back(v1);
+ v1 << -1, 0 ,-1;
+ contour1.push_back(v1);
  c1->contours.push_back(contour1);
 
 
@@ -121,8 +117,6 @@ c1->merged=1;
 //####################################################
 //Cylinder  #2
  CylinderPtr  c2  =CylinderPtr(new Cylinder());
-
-
  c2->id = 0;
 
  Eigen::Vector3f x_axis2,y_axis2,z_axis2;
@@ -151,8 +145,8 @@ c1->merged=1;
   contour2.push_back(v2);
   v2 << 0 ,-1 ,-1;
   contour2.push_back(v2);
-//  v2 << 0, 1 ,-1;
-//  contour2.push_back(v2);
+  v2 << 0, 1 ,-1;
+  contour2.push_back(v2);
   c2->contours.push_back(contour2);
 
 
@@ -183,11 +177,11 @@ c2->merged=1;
 
   float x,y,z,roll,pitch,yaw;
 
-  x=-1;
-  y=1;
-  z=1;
-  roll=0.3;
-  pitch=-0.4;
+  x=1;
+  y=2;
+  z=3;
+  roll=0.2;
+  pitch=0.4;
   yaw=1;
 
 
@@ -196,6 +190,12 @@ c2->merged=1;
 
 transform_cylinder(c1,trafo);
 transform_cylinder(c2,trafo);
+
+//#######################################################
+//	cylinders from octave script
+//#######################################################
+
+
 
 
 //####################################################
@@ -211,8 +211,9 @@ limits.angle_thresh=0.97;
 limits.d_thresh= 0.1;
 
 //c_map.push_back(c2);
-//c_map.push_back(c1);
+
 c_map.push_back(c2);
+//c_map.push_back(c3);
 
 
 c1->isMergeCandidate(c_map,limits,intersections);
@@ -243,14 +244,9 @@ Cylinder& result=*merge_candidates[0];
 //		}
 //	}
 //
-//	 result.unrolled_.debug_output("result");
+
 }
-//
-//
-//
-//
-//
-//std::cout <<"goa-tz --> done"<< std::endl;
+
 
 return 1;
 }
