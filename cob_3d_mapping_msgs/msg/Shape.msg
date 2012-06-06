@@ -1,6 +1,6 @@
 Header header
 
-byte PLANE=0
+byte POLYGON=0
 byte LINE=1
 byte CURVED=2
 byte MESH=3
