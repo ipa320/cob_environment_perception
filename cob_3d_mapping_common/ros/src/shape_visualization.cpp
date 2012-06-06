@@ -65,6 +65,7 @@
 //#include <cob_3d_mapping_msgs/ShapeArray.h>
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
+//#include <geometry_msgs/Point.h>
 
 #include <visualization_msgs/InteractiveMarker.h>
 #include <visualization_msgs/InteractiveMarkerControl.h>
@@ -127,13 +128,15 @@ public:
 
       im.name = "shape_visulization_marker";
       im.header = sa->header;
+
+      header_ = sa->header;
       // im.description = "shape normal and centroid";
 
       for (unsigned int i = 0; i < sa->shapes.size (); i++)
       {
         boost::shared_ptr<cob_3d_mapping_msgs::Shape> s_ptr = boost::make_shared<cob_3d_mapping_msgs::Shape> (
             sa->shapes[i]);
-        publishInteractiveMarker (s_ptr, sa->header);
+        publishInteractiveMarker (s_ptr);
       }
     }
   }
@@ -324,7 +327,6 @@ public:
           std::cout << " centroid_[1] " << centroid_[k][1] << std::endl;
           std::cout << " centroid_[2] " << centroid_[k][2] << std::endl;
 
-
           marker.pose.orientation.x = normal_[k][0];
           marker.pose.orientation.y = normal_[k][1];
           marker.pose.orientation.z = normal_[k][2];
@@ -397,6 +399,7 @@ public:
       marker.color.b = 1;
       marker.color.a = 1;
 
+
       //set pose
       for (int k = 0; k < centroid_.size (); k++)
       {
@@ -406,10 +409,14 @@ public:
            std::cout<<" centroid_[k][0] <<"<<k<<" : "<<centroid_[k][0]<<std::endl;
            std::cout<<" centroid_[k][1] <<"<<k<<" : "<<centroid_[k][1]<<std::endl;
            std::cout<<" centroid_[k][2] <<"<<k<<" : "<<centroid_[k][2]<<std::endl;
+
+            marker.pose.position.x = centroid_[k][0];
+            marker.pose.position.y = centroid_[k][1];
+            marker.pose.position.z = centroid_[k][2];
            */
-          marker.pose.position.x = centroid_[k][0];
-          marker.pose.position.y = centroid_[k][1];
-          marker.pose.position.z = centroid_[k][2];
+            marker.pose.position.x = 1;
+               marker.pose.position.y = 1;
+               marker.pose.position.z = 1;
           break;
         }
       }
@@ -530,13 +537,16 @@ public:
                const std_msgs::ColorRGBA& clr)
   {
     ROS_INFO_ONCE(" creating markers .....");
-    marker_id_ = 0;
+
     visualization_msgs::Marker marker;
+    marker.id = marker_id_++;
+    //marker.header = header_;
 
     marker.header.frame_id = header_.frame_id;
     marker.header.stamp = ros::Time::now ();
     marker.ns = "shape_marker";
 
+    //marker.type = visualization_msgs::Marker::LINE_STRIP;
     marker.type = visualization_msgs::Marker::TRIANGLE_LIST;
     //marker.ns = "shape visualization";
     marker.action = visualization_msgs::Marker::ADD;
@@ -554,52 +564,83 @@ public:
     marker.scale.z = 0.1;
 
     //set pose
+    /*
     marker.pose.position.x = centroid_[shape_ctr_][0];
     marker.pose.position.y = centroid_[shape_ctr_][1];
     marker.pose.position.z = centroid_[shape_ctr_][2];
-
+*/
     marker.pose.orientation.x = normal_[shape_ctr_][0];
     marker.pose.orientation.y = normal_[shape_ctr_][1];
     marker.pose.orientation.z = normal_[shape_ctr_][2];
     marker.pose.orientation.w = 0;
 
-    marker.points.resize (pc.points.size ());
-    std::cout << "marker points = " << marker.points.size () << std::endl;
-    if (marker.points.size () % 3 == 0)
+    //marker.points.resize (pc.points.size ());
+    //std::cout << "marker points = " << marker.points.size () << std::endl;
+
+    geometry_msgs::Point pt;
+    if (marker.type == visualization_msgs::Marker::TRIANGLE_LIST)
     {
-      for (unsigned int i = 0; i < pc.points.size (); i++)
+      unsigned int num_pts = pc.points.size ();
+
+      for (unsigned int i = 0; i < num_pts; i++)
       {
-        marker.id = marker_id_++;
-        marker.points[i].x = pc.points[i].x;
-        marker.points[i].y = pc.points[i].y;
-        marker.points[i].z = pc.points[i].z;
+          pt.x = pc.points[i].x;
+          pt.y = pc.points[i].y;
+          pt.z = pc.points[i].z;
+          marker.points.push_back (pt);
+          /*
+          std::cout << " pt.x : " << pt.x << std::endl;
+          std::cout << " pt.y : " << pt.y << std::endl;
+          std::cout << " pt.z : " << pt.z << std::endl;
+          std::cout << " ----------------- " << std::endl;
+          */
+        if (i != 0 && i % 2 == 0 )
+        {
+          marker.points.push_back (pt);
+          /*
+          std::cout << " i % 2 == 0 : i = "<<i<< std::endl;
+          std::cout << " pt.x : " << pt.x << std::endl;
+          std::cout << " pt.y : " << pt.y << std::endl;
+          std::cout << " pt.z : " << pt.z << std::endl;
+          std::cout << " ----------------- " << std::endl;
+          */
+        }
+
       }
+      num_pts = marker.points.size ();
+      std::cout << "marker points = " << marker.points.size () << std::endl;
+      if (num_pts % 3 != 0)
+      {
+        do
+        {
+          marker.points.push_back (pt);
+          num_pts++;
+        } while (num_pts % 3 != 0);
+        std::cout << " num_pts : " << num_pts << std::endl;
+      }
+
     }
     else
     {
-      unsigned int new_size = marker.points.size ();
-      do
+      for (unsigned int i = 0; i < pc.points.size (); i++)
       {
-        new_size++;
-        std::cout << " new size : " << new_size << std::endl;
-      } while (new_size % 3 != 0);
-      marker.points.resize (new_size);
-      for (unsigned int i = 0; i < new_size; i++)
-      {
-        marker.id = marker_id_++;
-        if (i < pc.points.size ())
-        {
-          marker.points[i].x = pc.points[i].x;
-          marker.points[i].y = pc.points[i].y;
-          marker.points[i].z = pc.points[i].z;
-        }
-        else
-        {
-          marker.points[i].x = pc.points[pc.points.size () - 1].x;
-          marker.points[i].y = pc.points[pc.points.size () - 1].y;
-          marker.points[i].z = pc.points[pc.points.size () - 1].z;
-        }
+        pt.x = pc.points[i].x;
+        pt.y = pc.points[i].y;
+        pt.z = pc.points[i].z;
+        /*
+        std::cout << " pt.x : " << pt.x << std::endl;
+        std::cout << " pt.y : " << pt.y << std::endl;
+        std::cout << " pt.z : " << pt.z << std::endl;
+        std::cout << " ----------------- " << std::endl;
+        */
+        marker.points.push_back (pt);
       }
+
+      pt.x = pc.points[0].x;
+      pt.y = pc.points[0].y;
+      pt.z = pc.points[0].z;
+      marker.points.push_back (pt);
+
     }
     im_ctrl.markers.push_back (marker);
 
@@ -694,11 +735,11 @@ public:
   }
 
   void
-  publishInteractiveMarker (const cob_3d_mapping_msgs::Shape::ConstPtr& shape_msg, std_msgs::Header header) //,std::vector::size_type sa_size)
+  publishInteractiveMarker (const cob_3d_mapping_msgs::Shape::ConstPtr& shape_msg) //,std::vector::size_type sa_size)
   {
     shape_ctr_++;
 
-    header_ = header;
+    //header_ = header;
     //shape_pub_.publish (*shape_msg);
     cob_3d_mapping::Polygon p;
     cob_3d_mapping::fromROSMsg (*shape_msg, p);
@@ -763,7 +804,7 @@ public:
     ss << "shape_visualizer_" << shape_ctr_;
     int_marker.name = ss.str ();
     //int_marker.description = "shape details";
-    int_marker.header = header;
+    int_marker.header = header_;
 
     ss.str ("");
     visualization_msgs::InteractiveMarkerControl im_ctrl;
