@@ -154,8 +154,8 @@ void Cylinder::roll() {
 
 			//				 use polar coordinates to create cylinder points
 			point_temp << r_ * sin(alpha), poly_plane.contours[j][k][1], r_	* cos(alpha);
-			std::cout << "p_local unrolled\n" << poly_plane.contours[j][k]	<< std::endl;
-			std::cout << "p_local rolled\n" << point_temp << std::endl;
+//			std::cout << "p_local unrolled\n" << poly_plane.contours[j][k]	<< std::endl;
+//			std::cout << "p_local rolled\n" << point_temp << std::endl;
 
 			//	      transform back in world system
 			//			point_temp=transformation_from_world_to_cylinder_.inverse()* point_temp;
@@ -307,7 +307,7 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 
 			//	    	prepare cylinder
 			c_map.unroll();
-			std::cout << "CRITERIA FULFILLED" << std::endl;
+			std::cout << "merge criteria fulfilled" << std::endl;
 			Polygon shifted_polygon_map;
 
 			c_map.getShiftedPolygon(*this, shifted_polygon_map);
@@ -321,7 +321,7 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 
 //			double area_B =c_map.unrolled_.computeArea();
 //			std::cout<<"AREA MERGED"<<area_B<<std::endl;
-//
+////
 //			double area_A =unrolled_.computeArea();
 //			std::cout<<"AREA MERGED"<<area_A<<std::endl;
 
