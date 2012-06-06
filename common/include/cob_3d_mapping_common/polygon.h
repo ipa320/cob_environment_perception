@@ -64,12 +64,15 @@ extern "C" {
 }
 #include <fstream>
 
+//#include "cob_3d_mapping_common/stop_watch.h"
+
 namespace cob_3d_mapping
 {
 
 struct merge_config {
   double angle_thresh ;
   float  d_thresh;
+  std::string weighting_method;
 } ;
 
 
@@ -88,12 +91,15 @@ struct merge_config {
     double
     computeArea();
 
+    double computeArea3d();
 
 
 
+
+    void getTransformedContours(const Eigen::Affine3f& trafo,std::vector< std::vector<Eigen::Vector3f> >& t_contours);
 
 //    Compute vector containing indices(intersections) of merge candidates for polygon in poly_vec
-    void isMergeCandidate(std::vector< boost::shared_ptr<Polygon> >& poly_vec,merge_config& limits, std::vector<int>& intersections);
+    void isMergeCandidate(std::vector< boost::shared_ptr<Polygon> >& poly_vec,merge_config& config, std::vector<int>& intersections);
     bool isMergeCandidate_intersect(Polygon& p_map);
 
 //    Merge polygon with polygons in poly_vec
@@ -103,9 +109,11 @@ struct merge_config {
 //    Calculate members of polygon
  	void assignMembers(const Eigen::Vector3f &new_normal, const double &new_d);
  	void assignMembers(const Eigen::Vector3f & z_axis,const Eigen::Vector3f &new_normal, const Eigen::Vector3f & pt_on_polygon);
-
  	void assignMembers();
- 	void assignContours(std::vector<std::vector<Eigen::Vector3f> > contours);
+
+// 	Weighting
+ 	void assignWeight();
+ 	void applyWeighting(const std::vector< boost::shared_ptr<Polygon> >& poly_vec , Polygon & p_average );
 
  	//    Use general polygon clipper to create polygon structures
  	    void
@@ -124,6 +132,10 @@ struct merge_config {
     double d;
     Eigen::Affine3f transform_from_world_to_plane;
     std::vector<bool> holes;
+    double merge_weight_;
+
+    merge_config merge_settings_;
+
 
 
   private:
