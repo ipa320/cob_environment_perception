@@ -74,6 +74,8 @@
 //#ifndef __GEOMETRY_MAP_VISUALISATION_H__
 #include "cob_3d_mapping_geometry_map/vis/geometry_map_visualisation.h"
 #include "cob_3d_mapping_common/polygon.h"
+#include "cob_3d_mapping_common/cylinder.h"
+
 //#include "cob_3d_mapping_common/shape.h"
 
 
@@ -117,7 +119,7 @@ public:
   }
 
   void
-  addMapEntry(cob_3d_mapping::PolygonPtr p);
+  addMapEntry(cob_3d_mapping::PolygonPtr p_ptr);
 
 //  void
 //  searchIntersection(cob_3d_mapping::Polygon& p , std::vector<int>& intersections);
