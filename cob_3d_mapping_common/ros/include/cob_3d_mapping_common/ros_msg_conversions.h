@@ -174,6 +174,75 @@ fromROSMsg(const cob_3d_mapping_msgs::Shape& s, Polygon& p)
 	return true;
 }
 
+
+inline void
+toROSMsg(const Cylinder& c, cob_3d_mapping_msgs::Shape& s)
+{
+
+
+	s.params.resize(14);
+	//	x axis
+	s.params[0]=c.axes_[1][0];
+	s.params[1]=c.axes_[1][1];
+	s.params[2]=c.axes_[1][2];
+
+
+	s.params[3]=c.axes_[2][0];
+	s.params[4]=c.axes_[2][1];
+	s.params[5]=c.axes_[2][2];
+
+	s.params[6]=c.axes_[0][0];
+	s.params[7]=c.axes_[0][1];
+	s.params[8]=c.axes_[0][2];
+
+	s.params[9]=c.r_;
+
+	s.params[10]=c.origin_[0];
+	s.params[11]=c.origin_[1];
+	s.params[12]=c.origin_[2];
+
+
+	s.params[13]=c.d;
+	//std::cout << "normal: " << p.normal(0) << ","  << p.normal(1) << "," << p.normal(2) << std::endl;
+	//std::cout << "d: " << p.d << std::endl << std::endl;
+
+	s.id=c.id;
+
+	s.color.r=c.color[0];
+	s.color.g=c.color[1];
+	s.color.b=c.color[2];
+	s.color.a=c.color[3];
+
+
+	s.points.resize(c.contours.size());
+		s.holes.resize(c.holes.size());
+		for(unsigned int i=0; i<c.contours.size(); i++)
+		{
+			s.holes[i] = c.holes[i];
+			//s.points[i].points.resize(p.contours[i].size());
+			pcl::PointCloud<pcl::PointXYZ> cloud;
+			for(unsigned int j=0; j<c.contours[i].size(); j++)
+			{
+				pcl::PointXYZ pt;
+				pt.x = c.contours[i][j](0);
+				pt.y = c.contours[i][j](1);
+				pt.z = c.contours[i][j](2);
+				cloud.points.push_back(pt);
+
+			}
+			sensor_msgs::PointCloud2 cloud_msg;
+			pcl::toROSMsg(cloud, cloud_msg);
+			s.points[i]= cloud_msg;
+		}
+
+
+
+
+
+
+}
+
+
 inline bool
 fromROSMsg(const cob_3d_mapping_msgs::Shape& s,Cylinder& c){
 
@@ -203,7 +272,7 @@ fromROSMsg(const cob_3d_mapping_msgs::Shape& s,Cylinder& c){
 	c.origin_[1]	= s.params[11];
 	c.origin_[2]	= s.params[12];
 
-	c.d = s.params[3];
+	c.d = s.params[13];
 	//std::cout << "normal: " << p.normal(0) << ","  << p.normal(1) << "," << p.normal(2) << std::endl;
 	//std::cout << "d: " << p.d << std::endl << std::endl;
 	c.merged = 1;

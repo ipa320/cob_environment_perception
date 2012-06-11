@@ -530,4 +530,9 @@ void Cylinder::weightAttributes(std::vector<CylinderPtr>& c_array,
 
 }
 
+
+void
+Cylinder::assignMembers(){
+	std::cout<<"not yet implemented..."<<std::endl;
+}
 }//namespace

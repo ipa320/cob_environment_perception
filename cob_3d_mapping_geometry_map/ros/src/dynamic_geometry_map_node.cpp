@@ -347,7 +347,7 @@ protected:
   std::vector<MapEntryPtr> fov_map_;
 
 
-  GeometryMap geometry_map_;
+  GeometryMap<cob_3d_mapping::Polygon> geometry_map_;
 
 
 };

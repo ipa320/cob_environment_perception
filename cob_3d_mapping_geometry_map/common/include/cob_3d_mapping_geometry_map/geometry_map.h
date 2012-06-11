@@ -84,7 +84,7 @@
 //#include "cob_3d_mapping_geometry_map/vis/TestPlanes.h"
 
 
-
+template <class T>
 class GeometryMap
 {
 public:
@@ -119,40 +119,25 @@ public:
   }
 
   void
-  addMapEntry(cob_3d_mapping::PolygonPtr p_ptr);
+  addMapEntry(boost::shared_ptr<T> p_ptr);
 
-//  void
-//  searchIntersection(cob_3d_mapping::Polygon& p , std::vector<int>& intersections);
 
-//  void
-//  mergeWithMap(cob_3d_mapping::PolygonPtr p_ptr , std::vector<int> intersections);
 
   void
-  computeCentroid(cob_3d_mapping::Polygon& p);
+  computeCentroid(T& p);
 
-//  void
-//  removeMapEntry(int id);
-
-//  void
-//  getGpcStructure(cob_3d_mapping::Polygon& p, gpc_polygon* gpc_p);
-
-//  void
-//  getGpcStructureUsingMap(cob_3d_mapping::Polygon& p,
-//                          Eigen::Affine3f& transform_from_world_to_plane,
-//                          gpc_polygon* gpc_p);
 
   void
-  printMapEntry(cob_3d_mapping::Polygon& p);
+  printMapEntry(T& p);
 
   void
   printMap();
 
 
-//  void
-//  printGpcStructure(gpc_polygon* p);
+
 
   void
-  saveMapEntry(std::string path, int ctr, cob_3d_mapping::Polygon& p);
+  saveMapEntry(std::string path, int ctr, T& p);
 
   void
   saveMap(std::string path);
@@ -179,10 +164,10 @@ public:
   void
   colorizeMap();
 
-  boost::shared_ptr<std::vector<cob_3d_mapping::PolygonPtr> >
+  boost::shared_ptr<std::vector<boost::shared_ptr<T> > >
   getMap()
   {
-    return boost::make_shared<std::vector<cob_3d_mapping::PolygonPtr> >(map_);
+    return boost::make_shared< std::vector< boost::shared_ptr<T> > >(map_);
   }
 
   void
@@ -205,7 +190,7 @@ public:
   }
 
 protected:
-  std::vector<cob_3d_mapping::PolygonPtr> map_;
+  std::vector<boost::shared_ptr<T> > map_;
   unsigned int new_id_;
   std::string file_path_;
   bool save_to_file_;
