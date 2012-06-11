@@ -521,8 +521,12 @@ Polygon::merge_union(std::vector<PolygonPtr>& poly_vec, const Polygon& p_average
 	for(unsigned int i=0 ; i<poly_vec.size();i++)
 	{
 
+
 		Polygon& p_map2 = *(poly_vec[i]);
 
+		std::cout<<"new\n"<<this->d<<std::endl;
+		std::cout<<"map\n"<<p_map2.d<<std::endl;
+		std::cout<<"average\n"<< p_average.d<<std::endl;
 
 		p_map2.GpcStructureUsingMap(p_average.transform_from_world_to_plane,&gpc_B);
 		//		p_map2.GpcStructureUsingMap(transform_from_world_to_plane,&gpc_B);
@@ -627,10 +631,12 @@ Polygon::isMergeCandidate(std::vector<PolygonPtr>& poly_vec,merge_config& config
 		//assign weight for new polygon
 
 
-		if((fabs(p_map.normal.dot(normal)) > merge_settings_.angle_thresh && fabs(p_map.d-d) < merge_settings_.d_thresh))
+		std::cout<<p_map.d - this->d<<std::endl;
+
+		if((fabs(p_map.normal.dot(normal)) > merge_settings_.angle_thresh && fabs(p_map.d-this->d) < merge_settings_.d_thresh))
 
 		{
-
+			std::cout<<"-->criteria fulfilled";
 
 			bool is_intersected= this->isMergeCandidate_intersect(p_map);
 
