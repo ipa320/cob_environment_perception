@@ -408,7 +408,7 @@ Polygon::applyWeighting(const std::vector<PolygonPtr>& poly_vec, Polygon & p_ave
 		if(normal.dot(p_map1.normal)<0){
 			//	if (p.normal.dot(p_map.normal)<-0.95){
 			p_map1.normal=-p_map1.normal;
-			p_map1.d=-p_map1.d;
+//			p_map1.d=-p_map1.d;
 
 		}
 		//		 outputFile <<"wird dazu addiert:  d: "<< p_map.d  <<std::endl;
@@ -513,7 +513,9 @@ Polygon::merge_union(std::vector<PolygonPtr>& poly_vec, const Polygon& p_average
 
 
 
-
+	if (fabs(p_average.d - this->d) > merge_settings_.d_thresh) {
+		std::cerr<<"Error! Trying to merge d1-d2 > threshold";
+	}
 	this->GpcStructureUsingMap(p_average.transform_from_world_to_plane, &gpc_C);
 	//	this->GpcStructureUsingMap(transform_from_world_to_plane, &gpc_C);
 
@@ -524,9 +526,7 @@ Polygon::merge_union(std::vector<PolygonPtr>& poly_vec, const Polygon& p_average
 
 		Polygon& p_map2 = *(poly_vec[i]);
 
-		std::cout<<"new\n"<<this->d<<std::endl;
-		std::cout<<"map\n"<<p_map2.d<<std::endl;
-		std::cout<<"average\n"<< p_average.d<<std::endl;
+
 
 		p_map2.GpcStructureUsingMap(p_average.transform_from_world_to_plane,&gpc_B);
 		//		p_map2.GpcStructureUsingMap(transform_from_world_to_plane,&gpc_B);
@@ -561,9 +561,12 @@ Polygon::merge_union(std::vector<PolygonPtr>& poly_vec, const Polygon& p_average
 				p_map2.merged=p_average.merged;
 			else
 				p_map2.merged=9;
+
+			p_map2.merge_weight_=p_average.merge_weight_;
+			p_map2.assignMembers(p_average.normal,p_average.d);
+
 		}
 
-		p_map2.merge_weight_=p_average.merge_weight_;
 
 
 
@@ -604,7 +607,7 @@ Polygon::merge_union(std::vector<PolygonPtr>& poly_vec, const Polygon& p_average
 				//TODO: AVERAGING
 			}
 		}
-		p_map3.assignMembers(p_average.normal,p_average.d);
+//		p_map3.assignMembers(p_average.normal,p_average.d);
 
 	}
 
@@ -631,12 +634,10 @@ Polygon::isMergeCandidate(std::vector<PolygonPtr>& poly_vec,merge_config& config
 		//assign weight for new polygon
 
 
-		std::cout<<p_map.d - this->d<<std::endl;
 
 		if((fabs(p_map.normal.dot(normal)) > merge_settings_.angle_thresh && fabs(p_map.d-this->d) < merge_settings_.d_thresh))
 
 		{
-			std::cout<<"-->criteria fulfilled";
 
 			bool is_intersected= this->isMergeCandidate_intersect(p_map);
 
@@ -725,23 +726,24 @@ void Polygon::debug_output(std::string name){
 	path.append(name.c_str());
 	os.open(path.c_str());
 
+std::cout<< "name~~~~~~~~~~~~"<<std::endl;
 
-
-	std::cout<<"saving polygon nodes to "<<path.c_str()<<std::endl;
-
-
-	for (int i = 0; i < (int) this->contours.size(); ++i) {
-		for (int j = 0; j < (int) this->contours[i].size(); ++j) {
-
-			//		 std::cout<<"contor "<<i<<" vertex "<<j <<"  : "<<std::endl<<"~~~~"<<std::endl<<this->contours[i][j]<<std::endl<<std::endl;
-
-			os << contours[i][j]<<std::endl;
-
-		}
-	}
-	//		 std::cout<<"normal: "<<std::endl;
-	//		 std::cout<< normal<<std::endl;
-	//		 std::cout<<"End Debug Output~~~~~~~~~~~~~~~~~~~~~~~~"<<std::endl<<std::endl;
+//	std::cout<<"saving polygon nodes to "<<path.c_str()<<std::endl;
+//
+//
+//	for (int i = 0; i < (int) this->contours.size(); ++i) {
+//		for (int j = 0; j < (int) this->contours[i].size(); ++j) {
+//
+//			//		 std::cout<<"contor "<<i<<" vertex "<<j <<"  : "<<std::endl<<"~~~~"<<std::endl<<this->contours[i][j]<<std::endl<<std::endl;
+//
+//			os << contours[i][j]<<std::endl;
+//
+//		}
+//	}
+			 std::cout<<"normal: "<<std::endl;
+			 std::cout<< normal<<std::endl;
+			 std::cout<<"d: "<<
+			 std::cout<<"End Debug Output~~~~~~~~~~~~~~~~~~~~~~~~"<<std::endl<<std::endl;
 	os.close();
 }
 
