@@ -208,6 +208,20 @@ namespace cob_3d_mapping_features
     void computeNormalIntersections(ClusterPtr c);
     //void computeColorHistogram(ClusterPtr c);
 
+    void mapClusterBorders(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points)
+    {
+      uint32_t color = LBL_BORDER;
+      for (size_t idx = points->width; idx < ( points->size() - points->width ); ++idx)
+      {
+	int curr_label = labels_->points[idx].label;
+	if (curr_label != labels_->points[idx + 1].label || curr_label != labels_->points[idx + points->width].label ||
+	    curr_label != labels_->points[idx - 1].label || curr_label != labels_->points[idx - points->width].label)
+	{
+	  points->points[idx].rgb = *reinterpret_cast<float*>(&color);
+	}
+      }
+    }
+
   private:
     LabelCloudPtr labels_;
     PointCloudConstPtr surface_;

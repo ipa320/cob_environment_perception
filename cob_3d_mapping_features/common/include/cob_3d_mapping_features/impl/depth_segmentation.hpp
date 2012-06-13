@@ -69,7 +69,11 @@ cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLab
   int u, int v, int idx, int idx_prev, float dist_th, float p_z, Eigen::Vector3f& n, 
   std::multiset<SegmentationCandidate>& coords_todo, ClusterPtr c)
 {
-  if (fabs(p_z - surface_->points[idx].z) > dist_th) return;
+  if (p_z < 1.2)
+  {
+    if (fabs(p_z - surface_->points[idx].z) > (dist_th + 0.01f)) return;
+  }
+  else if (fabs(p_z - surface_->points[idx].z) > dist_th) return;
   int* p_label = &(labels_->points[idx].label);
   if (*p_label == I_UNDEF)
   {
@@ -185,7 +189,10 @@ cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLab
     graph_->getAdjacentClusters(c_end->id(), adj_list);
     for (typename std::vector<ClusterPtr>::iterator a_it = adj_list.begin(); a_it != adj_list.end(); ++a_it)
     {
-      if ( graph_->getConnection(c_end->id(), (*a_it)->id())->smoothness < 0.8 ) continue;
+      EdgePtr e = graph_->getConnection(c_end->id(), (*a_it)->id());
+      if ( e->smoothness < 0.8 ) continue;
+      //std::cout << sqrt((*a_it)->size()) * 1.0f << " > " << e->size() << std::endl;
+      if ( e->size() < sqrt((*a_it)->size()) * 0.6f ) continue;
       std::vector<EdgePtr> updated_edges;
       graph_->merge( (*a_it)->id(), c_end->id(), updated_edges );
       for (typename std::vector<EdgePtr>::iterator e_it = updated_edges.begin(); e_it != updated_edges.end(); ++e_it)

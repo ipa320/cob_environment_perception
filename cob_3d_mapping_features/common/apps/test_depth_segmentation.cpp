@@ -75,7 +75,7 @@ using namespace std;
 using namespace pcl;
 
 string file_in_;
-string file_out_;
+string label_out_, type_out_;
 float d_th_, upper_;
 
 void readOptions(int argc, char* argv[])
@@ -87,7 +87,8 @@ void readOptions(int argc, char* argv[])
     ("in,i", value<string>(&file_in_), "input pcd file")
     ("skip_distant_point,d", value<float>(&d_th_)->default_value(8), "threshold to ignore distant points in neighborhood")
     ("upper,u", value<float>(&upper_)->default_value(6.0), "upper curvature threshold (edge)")
-    ("out,o", value<string>(&file_out_), "save labeled file to")
+    ("label_out,l", value<string>(&label_out_), "save labeled file to")
+    ("type_out,t", value<string>(&type_out_), "save classified file to")
     ;
 
   positional_options_description p_opt;
@@ -154,11 +155,19 @@ int main(int argc, char** argv)
   cc.setLabelCloudIn(l);
   cc.classify();
   g->clusters()->mapTypeColor(pt);
+  //cc.mapUnusedPoints(pt);
+  //cc.mapPointClasses(pt);
+  g->clusters()->mapClusterBorders(pt);
   cout << t.precisionStop() << "s\t for depth segmentation" << endl;
 
-  if (file_out_ != "")
+  if (label_out_ != "")
   {
-    io::savePCDFileASCII<PointXYZRGB>(file_out_, *p);
+    io::savePCDFileASCII<PointXYZRGB>(label_out_, *p);
+    return 0;
+  }
+  if (type_out_ != "")
+  {
+    io::savePCDFileASCII<PointXYZRGB>(type_out_, *pt);
     return 0;
   }
 

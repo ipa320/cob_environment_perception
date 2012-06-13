@@ -8,13 +8,13 @@
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
  * Project name: care-o-bot
- * ROS stack name: cob_vision
- * ROS package name: cob_env_model
+ * ROS stack name: cob_environment_perception_intern
+ * ROS package name: cob_3d_mapping_features
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
- * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
+ * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
  * Date of creation: 05/2012
@@ -52,76 +52,93 @@
  *
  ****************************************************************/
 
-#ifndef __COB_3D_MAPPING_FEATURES_SEGMENTATION_ALL_IN_ONE_NODELET_H__
-#define __COB_3D_MAPPING_FEATURES_SEGMENTATION_ALL_IN_ONE_NODELET_H__
-
-
-// ROS includes
-#include <pcl_ros/pcl_nodelet.h>
-
-// PCL includes
+// PCL:
 #include <pcl/point_types.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/common/file_io.h>
 
-// Package includes
+// stack includes:
+#include "cob_3d_mapping_common/stop_watch.h"
 #include "cob_3d_mapping_common/point_types.h"
 #include "cob_3d_mapping_features/organized_normal_estimation_omp.h"
 #include "cob_3d_mapping_features/depth_segmentation.h"
 #include "cob_3d_mapping_features/cluster_classifier.h"
 
-namespace cob_3d_mapping_features
+using namespace pcl;
+
+typedef cob_3d_mapping_features::PredefinedSegmentationTypes ST;
+
+class PerformanceTester
 {
-  class SegmentationAllInOneNodelet : public pcl_ros::PCLNodelet
+public:
+  PerformanceTester()
+    : l(new PointCloud<PointLabel>)
+    , n(new PointCloud<Normal>)
+    , g(new ST::Graph)
   {
-  public:
-    typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloud;
-
-    typedef pcl::PointCloud<pcl::Normal> NormalCloud;
-
-    typedef pcl::PointCloud<PointLabel> LabelCloud;
-
-    typedef PredefinedSegmentationTypes ST;
-
-
-  public:
-    SegmentationAllInOneNodelet()
-      : one_()
-      , seg_()
-      , graph_(new ST::Graph)
-      , segmented_(new PointCloud)
-      , classified_(new PointCloud)
-      , normals_(new NormalCloud)
-      , labels_(new LabelCloud)
-    { }
-
-    ~SegmentationAllInOneNodelet() 
-    { }
-
-
-  protected:    
-    void onInit();
-
-    void received_cloud_cb(PointCloud::ConstPtr cloud);
-
-    //boost::mutex mutex_;
-    ros::NodeHandle nh_;
-    ros::Subscriber sub_points_;
-    ros::Publisher pub_segmented_;
-    ros::Publisher pub_classified_;
-
-    OrganizedNormalEstimationOMP<pcl::PointXYZRGB, pcl::Normal, PointLabel> one_;
-    DepthSegmentation<ST::Graph, ST::Point, ST::Normal, ST::Label> seg_;
-    ClusterClassifier<ST::CH, ST::Point, ST::Normal, ST::Label> cc_;
-    ST::Graph::Ptr graph_;
-
-    PointCloud::Ptr segmented_;
-    PointCloud::Ptr classified_;
-    NormalCloud::Ptr normals_;
-    LabelCloud::Ptr labels_;
-  };
-
+    one.setOutputLabels(l);
+    one.setPixelSearchRadius(8,2,2); //radius,pixel,circle
+    one.setSkipDistantPointThreshold(6.0);    
+    seg.setNormalCloudIn(n);
+    seg.setLabelCloudInOut(l);
+    seg.setClusterGraphOut(g);
+  }
   
-  
+  void 
+  computeForOneCloud(PointCloud<PointXYZRGB>::ConstPtr cloud)
+  {
+    PrecisionStopWatch t;
+    t.precisionStart();
+    one.setInputCloud(cloud);
+    one.compute(*n);
+    std::cout << t.precisionStop() << " | ";
+    t.precisionStart();
+    seg.setPointCloudIn(cloud);
+    seg.performInitialSegmentation();
+    seg.refineSegmentation();    
+    std::cout << t.precisionStop() << std::endl;
+  }
+
+private:
+  PointCloud<PointLabel>::Ptr l;
+  PointCloud<Normal>::Ptr n;
+  ST::Graph::Ptr g;
+  cob_3d_mapping_features::DepthSegmentation<ST::Graph, ST::Point, ST::Normal, ST::Label> seg;
+  cob_3d_mapping_features::OrganizedNormalEstimationOMP<PointXYZRGB, Normal, PointLabel> one;
+
+};
+
+int main (int argc, char** argv)
+{
+  if (argc != 2)
+  {
+    std::cout << "Please provide a folder containing multiple pcd files" << std::endl;
+    return 0;
+  }
+
+  PerformanceTester pt;
+  PCDReader r;
+  std::vector<std::string> files;
+  getAllPcdFilesInDirectory(argv[1], files);
+  std::vector<PointCloud<PointXYZRGB>::Ptr> clouds;
+  for (std::vector<std::string>::iterator it = files.begin(); it != files.end(); ++it)
+  {
+    clouds.push_back(PointCloud<PointXYZRGB>::Ptr(new PointCloud<PointXYZRGB>));
+    r.read( argv[1] + *it, *(clouds.back()) );
+  }
+
+  int i = 0;
+  while (i < 20)
+  {
+    std::vector<PointCloud<PointXYZRGB>::Ptr>::iterator p = clouds.begin();
+    std::cout << "Run #"<< i << std::endl;
+    while(p != clouds.end())
+    {
+      pt.computeForOneCloud(*p);
+      ++p;
+    }
+    ++i;
+  }
+
+  return 0;
 }
-
-
-#endif  //__COB_3D_MAPPING_FEATURES_SEGMENTATION_NODELET_H__

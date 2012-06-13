@@ -57,6 +57,7 @@
 
 #include "cob_3d_mapping_features/cluster_handler.h"
 
+#include "cob_3d_mapping_common/label_defines.h"
 
 namespace cob_3d_mapping_features
 {
@@ -88,14 +89,48 @@ namespace cob_3d_mapping_features
     inline void setLabelCloudIn(LabelCloudConstPtr labels) { labels_ = labels; }
 
     void classify();
+    void classifyOld();
+
+    void mapUnusedPoints(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points)
+    {
+      uint32_t color = LBL_COR;
+      for (std::vector<int>::iterator it = test.begin(); it != test.end(); ++it)
+	points->points[*it].rgb = *reinterpret_cast<float*>(&color);
+    }
+
+    void mapPointClasses(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points)
+    {
+      uint32_t color = LBL_COR;
+      for (std::vector<int>::iterator it = test.begin(); it != test.end(); ++it)
+	points->points[*it].rgb = *reinterpret_cast<float*>(&color);
+
+      color = LBL_PLANE;
+      for (std::vector<int>::iterator it = test_plane.begin(); it != test_plane.end(); ++it)
+	points->points[*it].rgb = *reinterpret_cast<float*>(&color);      
+
+      color = LBL_CYL;
+      for (std::vector<int>::iterator it = test_cyl.begin(); it != test_cyl.end(); ++it)
+	points->points[*it].rgb = *reinterpret_cast<float*>(&color);
+
+      color = LBL_SPH;
+      for (std::vector<int>::iterator it = test_sph.begin(); it != test_sph.end(); ++it)
+	points->points[*it].rgb = *reinterpret_cast<float*>(&color);
+    }
 
   private:
     void recomputeClusterNormals(ClusterPtr c);
+    void recomputeClusterNormals(ClusterPtr c, int w_size, int steps);
+    bool computeClusterPointCurvature(int index, int r, int steps, float& pc_min, float& pc_max);
+
 
     ClusterHdlPtr clusters_;
     LabelCloudConstPtr labels_;
     PointCloudConstPtr surface_;
     NormalCloudPtr normals_;
+    std::vector<int> test;
+    std::vector<int> test_cyl;
+    std::vector<int> test_plane;
+    std::vector<int> test_sph;
   };
 
 }
