@@ -63,7 +63,7 @@
 
 #include <ros/package.h>
 
-#include "cob_3d_mapping_demonstrator/rviz_logo.h"
+#include "cob_3d_mapping_demonstrator/rviz_title.h"
 
 using namespace std;
 
