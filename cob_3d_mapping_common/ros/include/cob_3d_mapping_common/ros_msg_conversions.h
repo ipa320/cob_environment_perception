@@ -76,6 +76,7 @@ namespace cob_3d_mapping
   toROSMsg(const Polygon& p, cob_3d_mapping_msgs::Shape& s)
   {
     s.id = p.id;
+    s.type = cob_3d_mapping_msgs::Shape::POLYGON;
     s.params.resize(4);
     s.params[0] = p.normal(0);
     s.params[1] = p.normal(1);
