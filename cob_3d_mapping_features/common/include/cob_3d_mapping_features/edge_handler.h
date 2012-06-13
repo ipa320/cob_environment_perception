@@ -55,6 +55,7 @@
 #ifndef __COB_3D_MAPPING_FEATURES_EDGE_HANDLER_H__
 #define __COB_3D_MAPPING_FEATURES_EDGE_HANDLER_H__
 
+#include "cob_3d_mapping_common/label_defines.h"
 #include "cob_3d_mapping_features/edge_types.h"
 
 #include <boost/function.hpp>
@@ -114,6 +115,15 @@ namespace cob_3d_mapping_features
     { };
     
     ~BoundaryPointsEdgeHandler() { };
+
+    void mapBoundaryPoints(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points)
+    {
+      uint32_t color = LBL_BORDER;
+      for(std::map<int,BoundaryPoint>::iterator b_it = boundary_points_.begin(); b_it != boundary_points_.end(); ++b_it)
+      {
+	points->points[b_it->first].rgb = *reinterpret_cast<float*>(&color);
+      }
+    }
 
     void mapBoundaryPoints(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points, pcl::PointCloud<pcl::Normal>::Ptr normals)
     {

@@ -4,11 +4,6 @@
       Nodelet for plane extraction
     </description>
   </class>
-  <class name="cob_3d_mapping_features/SegmentationNodelet" type="cob_3d_mapping_features::SegmentationNodelet" base_class_type="nodelet::Nodelet">
-    <description>
-      Nodelet for segmentation
-    </description>
-  </class>
   <class name="cob_3d_mapping_features/SegmentationAllInOneNodelet" type="cob_3d_mapping_features::SegmentationAllInOneNodelet" base_class_type="nodelet::Nodelet">
     <description>
       Nodelet for segmentation

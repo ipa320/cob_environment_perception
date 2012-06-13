@@ -77,10 +77,15 @@ cob_3d_mapping_features::SegmentationAllInOneNodelet::onInit()
   seg_.setLabelCloudInOut(labels_);
   seg_.setClusterGraphOut(graph_);
 
+  cc_.setClusterHandler(graph_->clusters());
+  cc_.setNormalCloudInOut(normals_);
+  cc_.setLabelCloudIn(labels_);
+
   nh_ = getNodeHandle();
   sub_points_ = nh_.subscribe<PointCloud>
     ("cloud_in", 1, boost::bind(&cob_3d_mapping_features::SegmentationAllInOneNodelet::received_cloud_cb, this, _1));
   pub_segmented_ = nh_.advertise<PointCloud>("segmentation_cloud", 1);
+  pub_classified_ = nh_.advertise<PointCloud>("classified_cloud", 1);
   std::cout << "Loaded" << std::endl;
 
 }
@@ -94,13 +99,18 @@ cob_3d_mapping_features::SegmentationAllInOneNodelet::received_cloud_cb(PointClo
 
   one_.setInputCloud(cloud);
   one_.compute(*normals_);
-  *segmented_ = *cloud;
+  *classified_ = *segmented_ = *cloud;
 
   seg_.setPointCloudIn(cloud);
   seg_.performInitialSegmentation();
   seg_.refineSegmentation();
   graph_->clusters()->mapClusterColor(segmented_);
+  cc_.setPointCloudIn(cloud);
+  cc_.classify();
+  graph_->clusters()->mapTypeColor(classified_);
   pub_segmented_.publish(segmented_);
+  pub_classified_.publish(classified_);
+  
   NODELET_INFO("Done .... ");
 }
 

@@ -96,6 +96,7 @@ namespace cob_3d_mapping_features
     DepthCluster(int id)
       : ClusterBase(id)
       , type(I_UNDEF)
+      , type_probability(1.0)
       , is_save_plane(false)
       , max_curvature(0.0)
       , min_curvature(0.0)
@@ -112,6 +113,7 @@ namespace cob_3d_mapping_features
 
   public:
     int type;
+    float type_probability;
     bool is_save_plane;
     float max_curvature;
     float min_curvature;

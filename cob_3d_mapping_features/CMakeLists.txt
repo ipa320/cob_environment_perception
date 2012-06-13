@@ -35,18 +35,15 @@ rosbuild_add_library(cob_3d_mapping_features
 	common/src/edge_estimation_3d.cpp
 	common/src/edge_estimation_2d.cpp
 	common/src/edge_extraction.cpp
-	common/src/extended_segmentation.cpp
 	common/src/segmentation.cpp
 	common/src/plane_extraction.cpp
 	common/src/knn_classifier.cpp
 	common/src/most_discriminating_data_points.cpp
 	common/src/organized_curvature_estimation.cpp
-	common/src/organized_normal_estimation.cpp
-	common/src/cluster_list.cpp)
+	common/src/organized_normal_estimation.cpp)
 
 rosbuild_add_library(cob_3d_mapping_features_nodelets
 	ros/src/plane_extraction_nodelet.cpp
-	ros/src/segmentation_nodelet.cpp
 	ros/src/segmentation_all_in_one_nodelet.cpp)
 
 rosbuild_add_library(cob_3d_mapping_features_omp
@@ -90,14 +87,6 @@ rosbuild_add_compile_flags(evaluation_features -DEIGEN_YES_I_KNOW_SPARSE_MODULE_
 #rosbuild_add_compile_flags(test_edge_extraction -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
 #target_link_libraries(test_edge_extraction cob_3d_mapping_features)
 
-# Uses ONE and OCE to test the extended segmentation and cluster analyis
-rosbuild_add_executable(test_extended_segmentation common/apps/test_extended_segmentation.cpp)
-target_link_libraries(test_extended_segmentation cob_3d_mapping_features)
-
-# Uses FEE3D and EE2D to extract edges and segment clusters
-rosbuild_add_executable(test_segmentation common/apps/test_segmentation.cpp)
-target_link_libraries(test_segmentation cob_3d_mapping_features cob_3d_mapping_features_omp)
-
 # Test Surface Classification using organized principal curvatures
 rosbuild_add_executable(test_surface_class_estimation common/apps/test_surface_class_estimation.cpp)
 target_link_libraries(test_surface_class_estimation cob_3d_mapping_features)
@@ -113,10 +102,12 @@ rosbuild_add_executable(profile_oce common/test/profile_oce.cpp)
 rosbuild_add_executable(profile_fee_omp common/test/profile_fee_omp.cpp)
 rosbuild_add_executable(profile_fee common/test/profile_fee.cpp)
 rosbuild_add_executable(profile_ee common/test/profile_ee.cpp)
+rosbuild_add_executable(profile_depth_seg common/test/profile_depth_seg.cpp)
 target_link_libraries(profile_oce cob_3d_mapping_features cob_3d_mapping_features_omp)
 target_link_libraries(profile_fee_omp cob_3d_mapping_features cob_3d_mapping_features_omp)
 target_link_libraries(profile_fee cob_3d_mapping_features)
 target_link_libraries(profile_ee cob_3d_mapping_features)
+target_link_libraries(profile_depth_seg cob_3d_mapping_features cob_3d_mapping_features_omp cob_3d_segmentation)
 
 # PCL RANSAC Tutorial:
 #rosbuild_add_executable(planar_segmentation common/src/planar_segementation.cpp)
