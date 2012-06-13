@@ -29,12 +29,12 @@ add_definitions(-DQT_NO_KEYWORDS)
 ## Here we specify which header files need to be run through "moc",
 ## Qt's meta-object compiler.
 qt4_wrap_cpp(MOC_FILES
-    ros/include/cob_3d_mapping_demonstrator/rviz_logo.h
+    ros/include/cob_3d_mapping_demonstrator/rviz_title.h
     ros/include/cob_3d_mapping_demonstrator/rviz_buttons.h
 )
 
 #add project executbles(example examples/example.cpp)
-rosbuild_add_library(cob_3d_mapping_demonstrator_rviz ros/src/rviz_logo.cpp
+rosbuild_add_library(cob_3d_mapping_demonstrator_rviz ros/src/rviz_title.cpp
  ros/src/rviz_buttons.cpp
  ${MOC_FILES})#ros/src/rviz_buttons.cpp
 #    ros/src/rviz_buttons_panel.cpp

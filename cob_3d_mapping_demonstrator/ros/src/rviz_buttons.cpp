@@ -75,6 +75,8 @@ namespace cob_environment_perception
 
     QPushButton* start_button = new QPushButton("Start");
     start_button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    QPushButton* stop_button = new QPushButton("Stop");
+    stop_button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     QPushButton* step_button = new QPushButton("Step");
     step_button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     QPushButton* reset_button = new QPushButton("Reset");
@@ -86,6 +88,7 @@ namespace cob_environment_perception
 
     QVBoxLayout* layout = new QVBoxLayout;
     layout->addWidget(start_button);
+    layout->addWidget(stop_button);
     layout->addWidget(step_button);
     layout->addWidget(reset_button);
     layout->addWidget(clear_button);
@@ -93,6 +96,7 @@ namespace cob_environment_perception
     setLayout( layout );
 
     connect( start_button, SIGNAL( clicked() ), this, SLOT( onStart() ));
+    connect( stop_button, SIGNAL( clicked() ), this, SLOT( onStop() ));
     connect( step_button, SIGNAL( clicked() ), this, SLOT( onStep() ));
     connect( reset_button, SIGNAL( clicked() ), this, SLOT( onReset() ));
     connect( clear_button, SIGNAL( clicked() ), this, SLOT( onClear() ));
@@ -119,6 +123,12 @@ namespace cob_environment_perception
      ROS_INFO("Current State: %s\n", action_client_->getState().toString().c_str());
   }
 
+  void RvizButtons::onStop()
+  {
+     ROS_INFO("On stop");
+     action_client_->cancelGoal();
+  }
+
   void RvizButtons::onStep()
   {
      ROS_INFO("On step");
@@ -131,13 +141,6 @@ namespace cob_environment_perception
        ROS_INFO("Demonstrator step");
      ROS_INFO("Current State: %s\n", action_client_->getState().toString().c_str());
   }
-
-  /*void RvizButtons::OnStop()
-  {
-
-     ROS_INFO("On stop");
-     action_client_->cancelGoal();
-  }*/
 
   void RvizButtons::onReset()
   {
