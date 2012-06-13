@@ -656,7 +656,7 @@ public:
         reg_ = new Registration_Corrospondence<Point>();
 
         //((Registration_Corrospondence<Point>*)reg_)->setKeypoints(new Keypoints_Segments<Point>);
-        ((Registration_Corrospondence<Point>*)reg_)->setKeypoints(new Keypoints_Narf<Point>);
+        //((Registration_Corrospondence<Point>*)reg_)->setKeypoints(new Keypoints_Narf<Point>);
 
         //setSettings_Cor((Registration_Corrospondence<Point>*)reg_);
 #else

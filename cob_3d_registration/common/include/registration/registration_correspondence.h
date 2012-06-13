@@ -147,6 +147,6 @@ protected:
 
 //keypoints...
 #include "features/segments.h"
-#include "features/narf_kp.h"
+//#include "features/narf_kp.h"
 
 #endif /* REGISTRATION_CORRESPONDENCE_H_ */
