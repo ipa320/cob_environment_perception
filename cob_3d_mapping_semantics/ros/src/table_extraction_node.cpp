@@ -80,23 +80,23 @@
 
 using namespace cob_3d_mapping;
 
-class SemanticExtractionNode
+class TableExtractionNode
 {
 public:
 
   // Constructor
-  SemanticExtractionNode () :
+  TableExtractionNode () :
     /*norm_x_min_ (-0.1), norm_x_max_ (0.1), norm_y_min_ (-0.1), norm_y_max_ (0.1), norm_z_min_ (-0.99),
      norm_z_max_ (0.99)*/tilt_angle_ (3.0), height_min_ (0.6), height_max_ (1.2), area_min_ (0.5), area_max_ (3)
   {
-    sa_sub_ = n_.subscribe ("shape_array", 10, &SemanticExtractionNode::callbackShapeArray, this);
+    sa_sub_ = n_.subscribe ("shape_array", 10, &TableExtractionNode::callbackShapeArray, this);
     sa_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_array_pub", 10);
     //pc2_pub_ = n_.advertise<sensor_msgs::PointCloud2> ("shape_pointcloud2", 1);
 
     s_marker_pub_ = n_.advertise<visualization_msgs::Marker> ("marker", 100);
     map_marker_pub_ = n_.advertise<visualization_msgs::MarkerArray> ("marker_array", 10);
 
-    get_tables_server_ = n_.advertiseService ("get_objects_of_class", &SemanticExtractionNode::getTablesService, this);
+    get_tables_server_ = n_.advertiseService ("get_objects_of_class", &TableExtractionNode::getTablesService, this);
 
     n_.getParam ("semantic_extraction/tilt_angle", tilt_angle_);
     /*
@@ -143,7 +143,7 @@ public:
   }
 
   // Destructor
-  ~SemanticExtractionNode ()
+  ~TableExtractionNode ()
   {
     /// void
   }
@@ -300,7 +300,7 @@ public:
    * @return nothing
    */
   /*void
-  convertToPointCloudMsg (const SemanticExtraction::Polygon& poly, sensor_msgs::PointCloud& pc)
+  convertToPointCloudMsg (const TableExtraction::Polygon& poly, sensor_msgs::PointCloud& pc)
   {
     pc.header.frame_id = "/map";
 
@@ -477,7 +477,7 @@ main (int argc, char** argv)
 {
   ros::init (argc, argv, "semantic_extraction_node");
 
-  SemanticExtractionNode sem_exn_node;
+  TableExtractionNode sem_exn_node;
   //ros::spin ();
 
   ros::Rate loop_rate (10);
