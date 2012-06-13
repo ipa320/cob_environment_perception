@@ -406,7 +406,6 @@ public:
       cob_3d_mapping_msgs::Shape s;
       s.header = header;
       s.header.frame_id = target_frame_;
-      s.type = cob_3d_mapping_msgs::Shape::PLANE;
       toROSMsg(p, s);
       sa.shapes.push_back(s);
       ctr++;

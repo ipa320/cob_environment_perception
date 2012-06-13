@@ -436,6 +436,7 @@ GeometryMap::getGpcStructureUsingMap(Polygon& p, Eigen::Affine3f& transform_from
     {
       //std::cout << p.contours[j][k] << std::endl;
       Eigen::Vector3f point_trans = transform_from_world_to_plane*p.contours[j][k];
+      //std::cout << j <<"," << k << ":" << point_trans << std::endl;
       gpc_p->contour[j].vertex[k].x = point_trans(0);
       gpc_p->contour[j].vertex[k].y = point_trans(1);
 

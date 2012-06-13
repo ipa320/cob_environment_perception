@@ -21,12 +21,12 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include
-    /usr/include/vtk-5.8)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
+    #/usr/include/vtk-5.8)
 
 
 ## include vtk
-include_directories("/usr/include/vtk-5.6" )
+#include_directories("/usr/include/vtk-5.6" )
 ## include pcl directly
 #include(/opt/ros/fuerte/include/pcl-1.5)
 #include(/opt/ros/fuerte/include/pcl-1.5)
@@ -37,9 +37,7 @@ include_directories(${EIGEN_INCLUDE_DIRS})
 add_definitions(${EIGEN_DEFINITIONS})
 find_package(OpenCV REQUIRED)
 find_package(VTK REQUIRED)
-
-
-
+include_directories(${VTK_INCLUDE_DIRS})
 
 
 #uncomment if you have defined messages
@@ -136,7 +134,8 @@ target_link_libraries(profile_fee cob_3d_mapping_features vtkCommon vtkFiltering
 target_link_libraries(profile_fee_omp cob_3d_mapping_features cob_3d_mapping_features_omp vtkCommon vtkFiltering ${OpenCV_LIBS})
 target_link_libraries(profile_ee  cob_3d_mapping_features vtkCommon vtkFiltering ${OpenCV_LIBS})
 
-
+rosbuild_add_executable(profile_ne common/test/profile_ne.cpp)
+target_link_libraries(profile_ne cob_3d_mapping_features_omp cob_3d_mapping_features)
 
 
 # PCL RANSAC Tutorial:
