@@ -62,3 +62,4 @@
 #include "cob_3d_mapping_features/impl/organized_normal_estimation.hpp"
 
 PCL_INSTANTIATE_OrganizedNormalEstimation(pcl::PointXYZRGB,pcl::Normal,PointLabel)
+PCL_INSTANTIATE_OrganizedNormalEstimation(pcl::PointXYZ,pcl::Normal,PointLabel)

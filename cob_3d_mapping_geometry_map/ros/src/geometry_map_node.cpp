@@ -112,7 +112,7 @@ public:
     ctr_ = 0;
     shape_sub_ = n_.subscribe("shape_array", 10, &GeometryMapNode::shapeCallback, this);
     map_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("map_array",1);
-    marker_pub_ = n_.advertise<visualization_msgs::Marker>("geometry_marker",100);
+    marker_pub_ = n_.advertise<visualization_msgs::Marker>("geometry_marker",1);
     clear_map_server_ = n_.advertiseService("clear_map", &GeometryMapNode::clearMap, this);
     get_map_server_ = n_.advertiseService("get_map", &GeometryMapNode::getMap, this);
     ros::param::param("~file_path" ,file_path_ ,std::string("/home/goa/tmp/"));
@@ -161,6 +161,7 @@ public:
   void
   shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr sa)
   {
+    ROS_INFO("Callback: %d shapes", sa->shapes.size());
     static int ctr=0;
     static double time = 0;
     PrecisionStopWatch t;
@@ -180,7 +181,7 @@ public:
     publishMapMarker();
     publishMap();
     ctr_++;
-    //ROS_INFO("%d polygons received so far", ctr_);
+    ROS_INFO("%d polygons received so far", ctr_);
   }
 
   /**

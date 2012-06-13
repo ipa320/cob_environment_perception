@@ -72,7 +72,7 @@ cob_3d_mapping_features::OrganizedNormalEstimationOMP<PointInT,PointOutT,LabelOu
 #pragma omp parallel for schedule (dynamic, threadsize)
   for (size_t i=0; i < indices_->size(); ++i)
   {
-    computePointNormal(*surface_, (*indices_)[i], 
+    computePointNormal(*surface_, (*indices_)[i],
 		       output.points[(*indices_)[i]].normal[0],
 		       output.points[(*indices_)[i]].normal[1],
 		       output.points[(*indices_)[i]].normal[2],
