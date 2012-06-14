@@ -46,9 +46,8 @@ pcl::getTranslationAndEulerAngles(trafo,x,y,z,roll,pitch,yaw);
 
 }
 
+
 int main(int argc, char **argv) {
-
-
 
 //####################################################
 //Cylinder #1

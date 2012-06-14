@@ -84,7 +84,7 @@
 //#include "cob_3d_mapping_geometry_map/vis/TestPlanes.h"
 
 
-template <class T>
+
 class GeometryMap
 {
 public:
@@ -117,18 +117,20 @@ public:
   {
 	  //outputFile.close();
   }
-
-  void
-  addMapEntry(boost::shared_ptr<T> p_ptr);
-
+   void
+  addMapEntry(boost::shared_ptr<cob_3d_mapping::Polygon> p_ptr);
 
 
-  void
-  computeCentroid(T& p);
+   void
+   addMapEntry(boost::shared_ptr<cob_3d_mapping::Cylinder> c_ptr);
 
 
   void
-  printMapEntry(T& p);
+  computeCentroid(cob_3d_mapping::Polygon& p);
+
+
+  void
+  printMapEntry(cob_3d_mapping::Polygon& p);
 
   void
   printMap();
@@ -137,7 +139,7 @@ public:
 
 
   void
-  saveMapEntry(std::string path, int ctr, T& p);
+  saveMapEntry(std::string path, int ctr, cob_3d_mapping::Polygon& p);
 
   void
   saveMap(std::string path);
@@ -164,11 +166,20 @@ public:
   void
   colorizeMap();
 
-  boost::shared_ptr<std::vector<boost::shared_ptr<T> > >
-  getMap()
+
+  boost::shared_ptr<std::vector<cob_3d_mapping::PolygonPtr > >
+  getMap_polygon()
   {
-    return boost::make_shared< std::vector< boost::shared_ptr<T> > >(map_);
+	    return boost::make_shared< std::vector< cob_3d_mapping::PolygonPtr > >(map_polygon_);
   }
+
+
+  boost::shared_ptr<std::vector<cob_3d_mapping::CylinderPtr > >
+  getMap_cylinder()
+  {
+    return boost::make_shared< std::vector< cob_3d_mapping::CylinderPtr > >(map_cylinder_);
+  }
+
 
   void
   setFilePath(std::string file_path)
@@ -190,7 +201,8 @@ public:
   }
 
 protected:
-  std::vector<boost::shared_ptr<T> > map_;
+  std::vector<boost::shared_ptr<cob_3d_mapping::Polygon> > map_polygon_;
+  std::vector<boost::shared_ptr<cob_3d_mapping::Cylinder> > map_cylinder_;
   unsigned int new_id_;
   std::string file_path_;
   bool save_to_file_;

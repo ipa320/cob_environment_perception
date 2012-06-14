@@ -91,75 +91,132 @@ using namespace cob_3d_mapping;
 
 
 
-template <class T>
 void
-GeometryMap<T>::addMapEntry(boost::shared_ptr<T> p_ptr)
+GeometryMap::addMapEntry(boost::shared_ptr<Polygon> p_ptr)
 
 {
 
-  T& p = *p_ptr;
+	Polygon& p = *p_ptr;
 
-cob_3d_mapping::merge_config  limits;
-limits.d_thresh=d_;
-limits.angle_thresh=cos_angle_;
-//limits.weighting_method="AREA";
-limits.weighting_method="COUNTER";
-//limits.weighting_method="COMBINED";
+	cob_3d_mapping::merge_config  limits;
+	limits.d_thresh=d_;
+	limits.angle_thresh=cos_angle_;
+	//limits.weighting_method="AREA";
+	limits.weighting_method="COUNTER";
+	//	limits.weighting_method="COMBINED";
 
+	// find out polygons, to merge with
+	std::vector<int> intersections;
 
-
-
-//Debug Output------------
-//std::cout<<"INPUT: "<<std::endl;
-//std::cout<<"Polygon: "<<std::endl;
-//std::cout<<"d= "<<p.d<<std::endl;
-//std::cout<<"id= "<<p.id<<std::endl;
-//std::cout<<"Map: "<<std::endl;
-//std::cout<<"Size of map_ before merge "<<map_.size()<<std::endl;
-//std::cout<<"old id "<<new_id_<<std::endl;
-// -------------------
+	if (map_polygon_.size()> 0) {
 
 
-// find out polygons, to merge with
- std::vector<int> intersections;
- p.isMergeCandidate(map_,limits,intersections);
-// std::cout<<"intersections size = "<<intersections.size()<<std::endl;
+		p.isMergeCandidate(map_polygon_,limits,intersections);
+		// std::cout<<"intersections size = "<<intersections.size()<<std::endl;
 
 
-// if polygon has to be merged ...
-if(intersections.size()>0)
-	{
-	  std::vector<boost::shared_ptr<T> > merge_candidates;
 
-	  for(int i=0;i<(int)intersections.size();i++)
-	  {
 
-		  merge_candidates.push_back(map_[intersections[i]]);
-	  }
-// merge polygon with merge candidates
-	  p.merge(merge_candidates);
 
-//	  std::cout<<"size +- "<< 1 -merge_candidates.size()<<std::endl;
+		// if polygon has to be merged ...
+
+		if(intersections.size()>0)
+		{
+
+
+
+
+			std::vector<boost::shared_ptr<Polygon> > merge_candidates;
+
+			for(int i=0;i<(int)intersections.size();i++)
+			{
+
+				merge_candidates.push_back(map_polygon_[intersections[i]]);
+
+			}
+			// merge polygon with merge candidates
+			p.merge(merge_candidates);
+
+
+			//	  std::cout<<"size +- "<< 1 -merge_candidates.size()<<std::endl;
+		}
+		//if polygon does not have to be merged , add new polygon
+		else
+		{
+
+
+
+			p.assignMembers();
+			map_polygon_.push_back(p_ptr);
+			new_id_++;
+
+
+
+			//	std::cout<<"size +1"<<std::endl;
+		}
 	}
-//if polygon does not have to be merged , add new polygon
-else
+
+	else{
+		p.assignMembers();
+		map_polygon_.push_back(p_ptr);
+		new_id_++;
+	}
+
+	if(save_to_file_) saveMap(file_path_);
+
+
+}
+
+void
+GeometryMap::addMapEntry(boost::shared_ptr<Cylinder> c_ptr)
+
+{
+
+	Cylinder& c = *c_ptr;
+
+	cob_3d_mapping::merge_config  limits;
+	limits.d_thresh=d_;
+	limits.angle_thresh=cos_angle_;
+	//limits.weighting_method="AREA";
+	limits.weighting_method="COUNTER";
+	//limits.weighting_method="COMBINED";
+
+	// find out polygons, to merge with
+	std::vector<int> intersections;
+	c.isMergeCandidate(map_cylinder_,limits,intersections);
+	// std::cout<<"intersections size = "<<intersections.size()<<std::endl;
+
+
+	// if polygon has to be merged ...
+	if(intersections.size()>0)
+	{
+		std::vector<boost::shared_ptr<Cylinder> > merge_candidates;
+
+		for(int i=0;i<(int)intersections.size();i++)
+		{
+
+			merge_candidates.push_back(map_cylinder_[intersections[i]]);
+		}
+		// merge polygon with merge candidates
+		c.merge(merge_candidates);
+
+		//	  std::cout<<"size +- "<< 1 -merge_candidates.size()<<std::endl;
+	}
+	//if polygon does not have to be merged , add new polygon
+	else
 	{
 
 
-	p.assignMembers();
-	map_.push_back(p_ptr);
-	new_id_++;
+		c.assignMembers();
+		map_cylinder_.push_back(c_ptr);
+		new_id_++;
 
-//	std::cout<<"size +1"<<std::endl;
+		//	std::cout<<"size +1"<<std::endl;
 	}
 
 
-   if(save_to_file_) saveMap(file_path_);
+	if(save_to_file_) saveMap(file_path_);
 
-
-
-   //debug
-//   std::cout<<"size_map: "<<map_.size()<<std::endl;
 
 }
 
@@ -168,110 +225,111 @@ else
 
 
 
-template <class T>
 void
-GeometryMap<T>::printMapEntry(T& p)
+GeometryMap::printMapEntry(cob_3d_mapping::Polygon& p)
 {
-  std::cout << "Polygon:\n";
-  for(int i=0; i< (int)p.contours.size(); i++)
-  {
-    std::cout << i << std::endl;
-    for(int j=0; j< (int)p.contours[i].size(); j++)
-    {
-      std::cout << "(" << p.contours[i][j](0) << ", " << p.contours[i][j](1) << ", " << p.contours[i][j](2) << ")\n";
-    }
-  }
-  std::cout << "Normal: (" << p.normal(0) << ", " << p.normal(1) << ", " << p.normal(2) << ")\n";
-  std::cout << "d: " << p.d << std::endl;
-  std::cout << "Transformation:\n" << p.transform_from_world_to_plane.matrix() << "\n";
+	std::cout << "Polygon:\n";
+	for(int i=0; i< (int)p.contours.size(); i++)
+	{
+		std::cout << i << std::endl;
+		for(int j=0; j< (int)p.contours[i].size(); j++)
+		{
+			std::cout << "(" << p.contours[i][j](0) << ", " << p.contours[i][j](1) << ", " << p.contours[i][j](2) << ")\n";
+		}
+	}
+	std::cout << "Normal: (" << p.normal(0) << ", " << p.normal(1) << ", " << p.normal(2) << ")\n";
+	std::cout << "d: " << p.d << std::endl;
+	std::cout << "Transformation:\n" << p.transform_from_world_to_plane.matrix() << "\n";
 }
 
-template <class T>
+
 void
-GeometryMap<T>::printMap()
+GeometryMap::printMap()
 {
 	std::stringstream ss;
 
 	ss << "/home/goa-tz/GM_test/map/outputfile_" << counter_output << ".txt";
-    std::ofstream outputFile2;
-    outputFile2.open(ss.str().c_str());
+	std::ofstream outputFile2;
+	outputFile2.open(ss.str().c_str());
 
 
-	  for(int i=0; i< (int)map_.size(); i++)
-	  {
+	for(int i=0; i< (int)map_polygon_.size(); i++)
+	{
 
-		  Polygon& p =*map_[i];
+		Polygon& p =*map_polygon_[i];
 
-		     outputFile2 <<"ID: " << i << "trafo " << std::endl <<  p.transform_from_world_to_plane.matrix() <<std::endl;
-			 outputFile2 << "normal:" << std::endl << p.normal << std::endl << "d: " << p.d << std::endl;
-			 outputFile2 << "Polygon:\n";
-			  for(int i=0; i< p.contours.size(); i++)
-			  {
-				  outputFile2 << i << std::endl;
-			    for(int j=0; j< p.contours[i].size(); j++)
-			    {
-			    	outputFile2 << "(" << p.contours[i][j](0) << ", " << p.contours[i][j](1) << ", " << p.contours[i][j](2) << ")\n";
-			    }
-			  }
-			 outputFile2 << "----------------------------";
+		outputFile2 <<"ID: " << i << "trafo " << std::endl <<  p.transform_from_world_to_plane.matrix() <<std::endl;
+		outputFile2 << "normal:" << std::endl << p.normal << std::endl << "d: " << p.d << std::endl;
+		outputFile2 << "Polygon:\n";
+		for(int i=0; i< (int)p.contours.size(); i++)
+		{
+			outputFile2 << i << std::endl;
+			for(int j=0; j< (int)p.contours[i].size(); j++)
+			{
+				outputFile2 << "(" << p.contours[i][j](0) << ", " << p.contours[i][j](1) << ", " << p.contours[i][j](2) << ")\n";
+			}
+		}
+		outputFile2 << "----------------------------";
 
-	  }
-	  outputFile2.close();
-	  counter_output++;
-}
-
-template <class T>
-void
-GeometryMap<T>::saveMapEntry(std::string path, int ctr, T& p)
-{
-  std::stringstream ss;
-  ss << path << "polygon_" << ctr << ".pl";
-  std::ofstream plane_file;
-  plane_file.open (ss.str().c_str());
-  plane_file << p.normal(0) << " " << p.normal(1) << " " << p.normal(2) << " " << p.d;
-  ss.str("");
-  ss.clear();
-  plane_file.close();
-  for(int i=0; i< p.contours.size(); i++)
-  {
-    pcl::PointCloud<pcl::PointXYZ> pc;
-    ss << path << "polygon_" << ctr << "_" << i << ".pcd";
-    for(int j=0; j< p.contours[i].size(); j++)
-    {
-      pcl::PointXYZ pt;
-      pt.x = p.contours[i][j](0);
-      pt.y = p.contours[i][j](1);
-      pt.z = p.contours[i][j](2);
-      pc.points.push_back(pt);
-    }
-    //std::cout << ss.str() << std::endl;
-    pcl::io::savePCDFileASCII (ss.str(), pc);
-    ss.str("");
-    ss.clear();
-  }
-}
-
-template <class T>
-void
-GeometryMap<T>::saveMap(std::string path)
-{
-  static int ctr=0;
-  std::stringstream ss;
-  ss << path << "/" << ctr << "_";
-  //std::cout << ctr << " Saving map with " << map_.size() << " entries..." << std::endl;
-  for(size_t i=0; i< map_.size(); i++)
-  {
-      saveMapEntry(ss.str(), i, *map_[i]);
-  }
-  ctr++;
+	}
+	outputFile2.close();
+	counter_output++;
 }
 
 
-template <class T>
 void
-GeometryMap<T>::clearMap()
+GeometryMap::saveMapEntry(std::string path, int ctr, cob_3d_mapping::Polygon& p)
 {
-  map_.clear();
+	std::stringstream ss;
+	ss << path << "polygon_" << ctr << ".pl";
+	std::ofstream plane_file;
+	plane_file.open (ss.str().c_str());
+	plane_file << p.normal(0) << " " << p.normal(1) << " " << p.normal(2) << " " << p.d;
+	ss.str("");
+	ss.clear();
+	plane_file.close();
+	for(int i=0; i< (int)p.contours.size(); i++)
+	{
+		pcl::PointCloud<pcl::PointXYZ> pc;
+		ss << path << "polygon_" << ctr << "_" << i << ".pcd";
+		for(int j=0; j< (int)p.contours[i].size(); j++)
+		{
+			pcl::PointXYZ pt;
+			pt.x = p.contours[i][j](0);
+			pt.y = p.contours[i][j](1);
+			pt.z = p.contours[i][j](2);
+			pc.points.push_back(pt);
+		}
+		//std::cout << ss.str() << std::endl;
+		pcl::io::savePCDFileASCII (ss.str(), pc);
+		ss.str("");
+		ss.clear();
+	}
+}
+
+
+void
+GeometryMap::saveMap(std::string path)
+{
+
+	//	only for polygons
+	static int ctr=0;
+	std::stringstream ss;
+	ss << path << "/" << ctr << "_";
+	//std::cout << ctr << " Saving map with " << map_.size() << " entries..." << std::endl;
+	for(size_t i=0; i< map_polygon_.size(); i++)
+	{
+		saveMapEntry(ss.str(), i, *map_polygon_[i]);
+	}
+	ctr++;
+}
+
+
+void
+GeometryMap::clearMap()
+{
+	map_polygon_.clear();
+	map_cylinder_.clear();
 }
 
 //void
@@ -374,47 +432,78 @@ GeometryMap<T>::clearMap()
 //}
 
 
-template <class T>
+
 float
-GeometryMap<T>::rounding(float x)
+GeometryMap::rounding(float x)
 
 {
-x *= 10000;
-x += 0.5;
-x = floor(x); 5;
-x /= 10000;
-return x;
+	x *= 10000;
+	x += 0.5;
+	x = floor(x);
+	x /= 10000;
+	return x;
 }
 
 
-template <class T>
+
 void
-GeometryMap<T>::colorizeMap()
+GeometryMap::colorizeMap()
 {
-  for(unsigned int i=0; i<map_.size(); i++)
-  {
-    if(fabs(map_[i]->normal[2]) < 0.1) //plane is vertical
-    {
-      map_[i]->color[0] = 0.5;
-      map_[i]->color[1] = 0.5;
-      map_[i]->color[2] = 0;
-      map_[i]->color[3] = 1;
-    }
-    else if(fabs(map_[i]->normal[0]) < 0.12 && fabs(map_[i]->normal[1]) < 0.12 && fabs(map_[i]->normal[2]) > 0.9) //plane is horizontal
-    {
-      map_[i]->color[0] = 0;
-      map_[i]->color[1] = 0.5;
-      map_[i]->color[2] = 0;
-      map_[i]->color[3] = 1;
-    }
-    else
-    {
-      map_[i]->color[0] = 1;
-      map_[i]->color[1] = 1;
-      map_[i]->color[2] = 1;
-      map_[i]->color[3] = 1;
-    }
-  }
+
+
+	//coloring for polygon
+	for(unsigned int i=0; i<map_polygon_.size(); i++)
+	{
+		if(fabs(map_polygon_[i]->normal[2]) < 0.1) //plane is vertical
+		{
+			map_polygon_[i]->color[0] = 0.5;
+			map_polygon_[i]->color[1] = 0.5;
+			map_polygon_[i]->color[2] = 0;
+			map_polygon_[i]->color[3] = 1;
+		}
+		else if(fabs(map_polygon_[i]->normal[0]) < 0.12 && fabs(map_polygon_[i]->normal[1]) < 0.12 && fabs(map_polygon_[i]->normal[2]) > 0.9) //plane is horizontal
+		{
+			map_polygon_[i]->color[0] = 0;
+			map_polygon_[i]->color[1] = 0.5;
+			map_polygon_[i]->color[2] = 0;
+			map_polygon_[i]->color[3] = 1;
+		}
+		else
+		{
+			map_polygon_[i]->color[0] = 1;
+			map_polygon_[i]->color[1] = 1;
+			map_polygon_[i]->color[2] = 1;
+			map_polygon_[i]->color[3] = 1;
+		}
+	}
+
+	//coloring for cylinder
+	for(unsigned int i=0; i<map_cylinder_.size(); i++)
+	{
+		if(fabs(map_cylinder_[i]->axes_[0][0]) < 0.1 && fabs(map_cylinder_[i]->axes_[0][1]) < 0.1) //cylinder is vertical
+		{
+			map_cylinder_[i]->color[0] = 0.5;
+			map_cylinder_[i]->color[1] = 0.5;
+			map_cylinder_[i]->color[2] = 0;
+			map_cylinder_[i]->color[3] = 1;
+		}
+		else if(fabs(map_cylinder_[i]->axes_[0][2]) < 0.12) //plane is horizontal
+		{
+			map_cylinder_[i]->color[0] = 0;
+			map_cylinder_[i]->color[1] = 0.5;
+			map_cylinder_[i]->color[2] = 0;
+			map_cylinder_[i]->color[3] = 1;
+		}
+		else
+		{
+			map_cylinder_[i]->color[0] = 1;
+			map_cylinder_[i]->color[1] = 1;
+			map_cylinder_[i]->color[2] = 1;
+			map_cylinder_[i]->color[3] = 1;
+		}
+	}
+
+
 }
 
 /*int main (int argc, char** argv)
@@ -461,96 +550,77 @@ GeometryMap<T>::colorizeMap()
 }*/
 
 int main (int argc, char** argv)
- {
-  GeometryMap<Polygon> gm;
-  GeometryMapVisualisation gmv;
-  PolygonPtr m_p = PolygonPtr(new Polygon());
+{
+	GeometryMap gm;
+	GeometryMapVisualisation gmv;
 
 
+	Eigen::Vector3f v;
+	std::vector<Eigen::Vector3f> vv;
+	PolygonPtr m_p1 = PolygonPtr(new Polygon());
+	m_p1->id = 1;
+	m_p1->normal << 0.000000,-1.000000,-0.000000;
+	m_p1->d = 0;
+	v << 1.207107,0.000000,0.353553;
+	vv.push_back(v);
+	v << 1.207107,0.000000,-0.353553;
+	vv.push_back(v);
+	v << -0.207107,0.000000,-0.353553;
+	vv.push_back(v);
+	v << -0.207107,0.000000,0.353553;
+	vv.push_back(v);
+	m_p1->contours.push_back(vv);
+	m_p1->holes.push_back(0);
+	gm.addMapEntry(m_p1);
 
-  m_p->id = 0;
-  m_p->normal << 0,0,1;
-  m_p->d = -1;
-  std::vector<Eigen::Vector3f> vv;
-  Eigen::Vector3f v;
-  v << 1,0,0;
-  vv.push_back(v);
-  v << 1,0.5,0;
-  vv.push_back(v);
-  v << 1,1,2;
-  vv.push_back(v);
-  v << 0,1,0;
-  vv.push_back(v);
-  m_p->contours.push_back(vv);
-  m_p->holes.push_back(0);
-  gm.addMapEntry(m_p);
 
+	vv.clear();
+	PolygonPtr m_p2 = PolygonPtr(new Polygon());
+	m_p2->id = 2;
+	m_p2->normal << -0.000000,1.000000,0.000000;
+	m_p2->d = 0;
+	v << 0.207107,0.000000,0.353553;
+	vv.push_back(v);
+	v << 0.207107,0.000000,-0.353553;
+	vv.push_back(v);
+	v << -1.207107,0.000000,-0.353553;
+	vv.push_back(v);
+	v << -1.207107,0.000000,0.353553;
+	vv.push_back(v);
+	m_p2->contours.push_back(vv);
+	m_p2->holes.push_back(0);
+	gm.addMapEntry(m_p2);
+	//
+	//  m_p = PolygonPtr(new Polygon());
+	//  m_p->id = 1;
+	//  m_p->normal << 0,0,-1;
+	//  m_p->d = -1;
+	//  vv.clear();
+	//  v << 2,2,1;
+	//  vv.push_back(v);
+	//  v << 2,3,1;
+	//  vv.push_back(v);
+	//  v << 3,3,1;
+	//  vv.push_back(v);
+	//  v << 3,2,1;
+	//  vv.push_back(v);
+	//  m_p->contours.push_back(vv);
+	//  m_p->holes.push_back(0);
+	//  gm.addMapEntry(m_p);
+	//  gm.saveMap("/home/goa-tz/GM_test/pcl_daten/merge_test");
 
-  m_p->id = 1;
-  m_p->normal << 0,0,1;
-  m_p->d = -1;
-  vv.clear();
-  v << 0.5,3,0;
-  vv.push_back(v);
-  v << 1.5,3,0;
-  vv.push_back(v);
-  v << 1.5,4.5,0;
-  vv.push_back(v);
-  v << 0,1.5,0;
-  vv.push_back(v);
-  m_p->contours.push_back(vv);
-  m_p->holes.push_back(0);
-  gm.addMapEntry(m_p);
-
-//  gmv.showPolygon(m_p,0);
-
-  m_p = PolygonPtr(new Polygon());
-  m_p->id = 2;
-  m_p->normal << 0,0,1;
-  m_p->d = 1;
-  vv.clear();
-  v << 1,0,-1;
-  vv.push_back(v);
-  v << 1,1,-1;
-  vv.push_back(v);
-  v << 0,1,-1;
-  vv.push_back(v);
-  v << 0,0,-1;
-  vv.push_back(v);
-  m_p->contours.push_back(vv);
-  m_p->holes.push_back(0);
-  gm.addMapEntry(m_p);
-//
-//  m_p = PolygonPtr(new Polygon());
-//  m_p->id = 1;
-//  m_p->normal << 0,0,-1;
-//  m_p->d = -1;
-//  vv.clear();
-//  v << 2,2,1;
-//  vv.push_back(v);
-//  v << 2,3,1;
-//  vv.push_back(v);
-//  v << 3,3,1;
-//  vv.push_back(v);
-//  v << 3,2,1;
-//  vv.push_back(v);
-//  m_p->contours.push_back(vv);
-//  m_p->holes.push_back(0);
-//  gm.addMapEntry(m_p);
-//  gm.saveMap("/home/goa-tz/GM_test/pcl_daten/merge_test");
-
-/*  Eigen::Vector3f test;
+	/*  Eigen::Vector3f test;
   Eigen::Vector3f result;
   double d=1;
   test << 1,1,1;
   gm.getPointOnPlane(test,d,result);
   std::cout << result(0) <<"," << result(1) <<","<< result(2);*/
-  std::cout<<"done"<<std::endl;
-  return 1;
- }
+	std::cout<<"done"<<std::endl;
+	return 1;
+}
 
 
 
-template class GeometryMap<cob_3d_mapping::Polygon>;
-template class GeometryMap<cob_3d_mapping::Cylinder>;
+//template class GeometryMap<cob_3d_mapping::Polygon>;
+//template class GeometryMap<cob_3d_mapping::Cylinder>;
 

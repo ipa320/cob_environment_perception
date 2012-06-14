@@ -388,6 +388,7 @@ Polygon::applyWeighting(const std::vector<PolygonPtr>& poly_vec, Polygon & p_ave
 	Eigen::Vector3f average_normal=normal*merge_weight_;
 	double average_d=d*merge_weight_;
 	double sum_w=merge_weight_;
+	int    sum_merged=1;
 	//	std::cout << "avg normal " << std::endl << average_normal << std::endl ;
 	//	std::cout << "p merged " << std::endl << poly_vec[0]->merged << std::endl ;
 	//	std::cout << "p merged *normal  " << std::endl << poly_vec[0]->merged*poly_vec[0]->normal << std::endl ;
@@ -419,6 +420,7 @@ Polygon::applyWeighting(const std::vector<PolygonPtr>& poly_vec, Polygon & p_ave
 		average_normal += p_map1.merge_weight_* p_map1.normal;
 		average_d +=p_map1.merge_weight_ * p_map1.d;
 		sum_w += p_map1.merge_weight_;
+		sum_merged += p_map1.merged;
 
 
 	}
@@ -432,7 +434,17 @@ Polygon::applyWeighting(const std::vector<PolygonPtr>& poly_vec, Polygon & p_ave
 	average_normal.normalize();
 	average_d /= average_normal.norm();
 
+
+	if (sum_merged < 9) {
+		p_average.merged=sum_merged;
+
+	}
+	else
+		p_average.merged=9;
+
+
 	p_average.assignMembers(average_normal,average_d);
+
 	p_average.assignWeight();
 
 //	weigths <<"average weight"<< p_average.merge_weight_<<std::endl;
@@ -514,8 +526,9 @@ Polygon::merge_union(std::vector<PolygonPtr>& poly_vec, const Polygon& p_average
 
 
 	if (fabs(p_average.d - this->d) > merge_settings_.d_thresh) {
-		std::cerr<<"Error! Trying to merge d1-d2 > threshold";
+		std::cerr<<"Error! Trying to merge d1-d2 > threshold";exit(1);
 	}
+
 	this->GpcStructureUsingMap(p_average.transform_from_world_to_plane, &gpc_C);
 	//	this->GpcStructureUsingMap(transform_from_world_to_plane, &gpc_C);
 
@@ -524,11 +537,11 @@ Polygon::merge_union(std::vector<PolygonPtr>& poly_vec, const Polygon& p_average
 	{
 
 
-		Polygon& p_map2 = *(poly_vec[i]);
+		Polygon& p_map = *(poly_vec[i]);
 
 
 
-		p_map2.GpcStructureUsingMap(p_average.transform_from_world_to_plane,&gpc_B);
+		p_map.GpcStructureUsingMap(p_average.transform_from_world_to_plane,&gpc_B);
 		//		p_map2.GpcStructureUsingMap(transform_from_world_to_plane,&gpc_B);
 
 
@@ -552,18 +565,21 @@ Polygon::merge_union(std::vector<PolygonPtr>& poly_vec, const Polygon& p_average
 		if (i==0)
 		{
 			//			conversion of oject to boost shared pointer
-			p_map2.transform_from_world_to_plane=p_average.transform_from_world_to_plane;
+			p_map.transform_from_world_to_plane=p_average.transform_from_world_to_plane;
 			//			p_map2.transform_from_world_to_plane=transform_from_world_to_plane;
 
-			p_map2.d=p_average.d;
-			p_map2.normal=p_average.normal;
-			if(p_average.merged<9)
-				p_map2.merged=p_average.merged;
-			else
-				p_map2.merged=9;
+			p_map.d=p_average.d;
+			p_map.normal=p_average.normal;
 
-			p_map2.merge_weight_=p_average.merge_weight_;
-			p_map2.assignMembers(p_average.normal,p_average.d);
+//			std::cout<<"MERGED = "<<p_average.merged<<std::endl;
+
+			if(p_map.merged<9)
+				p_map.merged=p_average.merged;
+			else
+				p_map.merged=9;
+
+			p_map.merge_weight_=p_average.merge_weight_;
+//			p_map2.assignMembers(p_average.normal,p_average.d);
 
 		}
 
@@ -582,15 +598,15 @@ Polygon::merge_union(std::vector<PolygonPtr>& poly_vec, const Polygon& p_average
 		}
 		//	printGpcStructure(&gpc_result);
 
-		Polygon& p_map3 = *(poly_vec[0]);
+		p_map = *(poly_vec[0]);
 
-		p_map3.contours.resize(gpc_C.num_contours);
-		p_map3.holes.resize(gpc_C.num_contours);
+		p_map.contours.resize(gpc_C.num_contours);
+		p_map.holes.resize(gpc_C.num_contours);
 
 		for(int j=0; j<gpc_C.num_contours; j++)
 		{
-			p_map3.contours[j].resize(gpc_C.contour[j].num_vertices);
-			p_map3.holes[j] = gpc_C.hole[j];
+			p_map.contours[j].resize(gpc_C.contour[j].num_vertices);
+			p_map.holes[j] = gpc_C.hole[j];
 			//          std::cout << "contour " << j << " is " << gpc_result.hole[j] << std::endl;
 			for(int k=0; k<gpc_C.contour[j].num_vertices; k++)
 			{
@@ -598,7 +614,7 @@ Polygon::merge_union(std::vector<PolygonPtr>& poly_vec, const Polygon& p_average
 
 				//TODO: set z to something else?
 				Eigen::Vector3f point(gpc_C.contour[j].vertex[k].x, gpc_C.contour[j].vertex[k].y, 0);
-				p_map3.contours[j][k] = p_average.transform_from_world_to_plane.inverse()*point;
+				p_map.contours[j][k] = p_average.transform_from_world_to_plane.inverse()*point;
 				//		p_map3.contours[j][k] = transform_from_world_to_plane.inverse()*point;
 
 
@@ -625,6 +641,7 @@ Polygon::isMergeCandidate(std::vector<PolygonPtr>& poly_vec,merge_config& config
 	merged=1;
 	//	this->assignMembers();
 	this->assignWeight();
+	this->computeCentroid();
 
 	for(size_t i=0; i< poly_vec.size(); i++)
 	{
@@ -633,11 +650,30 @@ Polygon::isMergeCandidate(std::vector<PolygonPtr>& poly_vec,merge_config& config
 
 		//assign weight for new polygon
 
+//		std::cout<<"BUG FIXING–––––––––––––––––––\n"<<std::endl;
+//		std::cout<<"d new "<< this->d<<std::endl;
+//		std::cout<<"d map "<< p_map.d<<std::endl;
+//		std::cout<<"\n normal new:\n"<<this->normal<<std::endl;
+//		std::cout<<"\n normal map:\n"<<p_map.normal<<std::endl;
+//		std::cout<<"––––––––––––––––––––––––––––––"<<std::endl;
 
 
-		if((fabs(p_map.normal.dot(normal)) > merge_settings_.angle_thresh && fabs(p_map.d-this->d) < merge_settings_.d_thresh))
+
+		//		compute connection between centroids of polygons
+
+		Eigen::Vector4f temp=this->centroid-p_map.centroid;
+		Eigen::Vector3f connection;
+
+
+		connection << temp[0], temp[1] , temp[2];
+
+//		std::cout<<"dot = "<<fabs(connection.dot(normal))<<std::endl;
+		if(fabs(connection.dot(normal)) < (1- merge_settings_.angle_thresh) && fabs(p_map.d-this->d) < merge_settings_.d_thresh)
+
+//			if((fabs(p_map.normal.dot(normal)) > merge_settings_.angle_thresh && fabs(p_map.d-this->d) < merge_settings_.d_thresh))
 
 		{
+
 
 			bool is_intersected= this->isMergeCandidate_intersect(p_map);
 
