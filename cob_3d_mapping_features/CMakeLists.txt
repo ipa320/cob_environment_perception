@@ -35,7 +35,6 @@ rosbuild_add_library(cob_3d_mapping_features
 	common/src/edge_estimation_3d.cpp
 	common/src/edge_estimation_2d.cpp
 	common/src/edge_extraction.cpp
-	common/src/segmentation.cpp
 	common/src/plane_extraction.cpp
 	common/src/knn_classifier.cpp
 	common/src/most_discriminating_data_points.cpp
@@ -43,25 +42,17 @@ rosbuild_add_library(cob_3d_mapping_features
 	common/src/organized_normal_estimation.cpp)
 
 rosbuild_add_library(cob_3d_mapping_features_nodelets
-	ros/src/plane_extraction_nodelet.cpp
-	ros/src/segmentation_all_in_one_nodelet.cpp)
+	ros/src/plane_extraction_nodelet.cpp)
 
 rosbuild_add_library(cob_3d_mapping_features_omp
 	common/src/organized_curvature_estimation_omp.cpp
 	common/src/organized_normal_estimation_omp.cpp
 	common/src/fast_edge_estimation_3d_omp.cpp)
 
-rosbuild_add_library(cob_3d_segmentation
-	common/src/cluster_handler.cpp
-	common/src/edge_handler.cpp
-	common/src/cluster_graph_structure.cpp
-	common/src/depth_segmentation.cpp
-	common/src/cluster_classifier.cpp)
-
 
 rosbuild_add_openmp_flags(cob_3d_mapping_features_omp)
 
-target_link_libraries(cob_3d_mapping_features_nodelets cob_3d_mapping_features cob_3d_mapping_features_omp cob_3d_segmentation)
+target_link_libraries(cob_3d_mapping_features_nodelets cob_3d_mapping_features)
 
 
 rosbuild_add_executable(test_plane_extraction common/src/plane_extraction.cpp)
@@ -69,12 +60,6 @@ rosbuild_add_executable(plane_extraction_action_client ros/src/plane_extraction_
 rosbuild_add_executable(test_organized_curvature_estimation common/apps/test_organized_curvature_estimation.cpp)
 target_link_libraries(test_organized_curvature_estimation cob_3d_mapping_features cob_3d_mapping_features_omp)
 
-# segmentation:
-rosbuild_add_executable(test_depth_segmentation common/apps/test_depth_segmentation.cpp)
-target_link_libraries(test_depth_segmentation cob_3d_segmentation cob_3d_mapping_features)
-
-# node for segmentation visualization:
-rosbuild_add_executable(segmentation_visualizer ros/src/segmentation_visualizer.cpp)
 
 # feature evaluation:
 rosbuild_add_executable(evaluation_fpfh_svm_trainer common/apps/evaluation_fpfh_svm_trainer.cpp)
@@ -102,12 +87,11 @@ rosbuild_add_executable(profile_oce common/test/profile_oce.cpp)
 rosbuild_add_executable(profile_fee_omp common/test/profile_fee_omp.cpp)
 rosbuild_add_executable(profile_fee common/test/profile_fee.cpp)
 rosbuild_add_executable(profile_ee common/test/profile_ee.cpp)
-rosbuild_add_executable(profile_depth_seg common/test/profile_depth_seg.cpp)
 target_link_libraries(profile_oce cob_3d_mapping_features cob_3d_mapping_features_omp)
 target_link_libraries(profile_fee_omp cob_3d_mapping_features cob_3d_mapping_features_omp)
 target_link_libraries(profile_fee cob_3d_mapping_features)
 target_link_libraries(profile_ee cob_3d_mapping_features)
-target_link_libraries(profile_depth_seg cob_3d_mapping_features cob_3d_mapping_features_omp cob_3d_segmentation)
+
 
 # PCL RANSAC Tutorial:
 #rosbuild_add_executable(planar_segmentation common/src/planar_segementation.cpp)

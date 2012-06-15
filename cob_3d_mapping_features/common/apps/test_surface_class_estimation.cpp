@@ -79,7 +79,7 @@
 #include "cob_3d_mapping_features/organized_curvature_estimation.h"
 #include "cob_3d_mapping_features/curvature_classifier.h"
 #include "cob_3d_mapping_features/impl/curvature_classifier.hpp"
-#include "cob_3d_mapping_features/segmentation.h"
+//#include "cob_3d_mapping_features/segmentation.h"
 
 
 using namespace std;
@@ -289,6 +289,7 @@ int main(int argc, char** argv)
     usleep(100000);
   }
 
+  /*
   cv::Mat segmented;
   vector<PointIndices> clusters;
   cob_3d_mapping_features::Segmentation seg;
@@ -296,6 +297,7 @@ int main(int argc, char** argv)
   seg.getClusterIndices(l, clusters, segmented);
   cv::imshow("segmented", segmented);
   cv::waitKey();
+  */
 
   return(0);
 

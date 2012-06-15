@@ -52,18 +52,18 @@
  *
  ****************************************************************/
  
-#ifndef __COB_3D_MAPPING_FEATURES_EDGE_HANDLER_H__
-#define __COB_3D_MAPPING_FEATURES_EDGE_HANDLER_H__
+#ifndef __COB_3D_SEGMENTATION_EDGE_HANDLER_H__
+#define __COB_3D_SEGMENTATION_EDGE_HANDLER_H__
 
-#include "cob_3d_mapping_common/label_defines.h"
-#include "cob_3d_mapping_features/edge_types.h"
+#include <cob_3d_mapping_common/label_defines.h>
+#include "cob_3d_segmentation/edge_types.h"
 
 #include <boost/function.hpp>
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 
-namespace cob_3d_mapping_features
+namespace cob_3d_segmentation
 {
   template<typename EdgeT>
   class EdgeHandlerBase

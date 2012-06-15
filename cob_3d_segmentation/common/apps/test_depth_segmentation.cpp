@@ -9,7 +9,7 @@
  *
  * Project name: care-o-bot
  * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_features
+ * ROS package name: cob_3d_segmentation
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -67,9 +67,8 @@
 #include "cob_3d_mapping_common/point_types.h"
 #include "cob_3d_mapping_common/label_defines.h"
 #include "cob_3d_mapping_features/organized_normal_estimation.h"
-#include "cob_3d_mapping_features/organized_curvature_estimation.h"
-#include "cob_3d_mapping_features/depth_segmentation.h"
-#include "cob_3d_mapping_features/cluster_classifier.h"
+#include "cob_3d_segmentation/depth_segmentation.h"
+#include "cob_3d_segmentation/cluster_classifier.h"
 
 using namespace std;
 using namespace pcl;
@@ -133,10 +132,10 @@ int main(int argc, char** argv)
   cout << t.precisionStop() << "s\t for Organized Normal Estimation" << endl;
   *n_org = *n;
   
-  typedef cob_3d_mapping_features::PredefinedSegmentationTypes SegTypes;
+  typedef cob_3d_segmentation::PredefinedSegmentationTypes SegTypes;
   t.precisionStart();
   SegTypes::Graph::Ptr g(new SegTypes::Graph);
-  cob_3d_mapping_features::DepthSegmentation<SegTypes::Graph, SegTypes::Point, SegTypes::Normal, SegTypes::Label> seg;
+  cob_3d_segmentation::DepthSegmentation<SegTypes::Graph, SegTypes::Point, SegTypes::Normal, SegTypes::Label> seg;
   seg.setPointCloudIn(p);
   seg.setNormalCloudIn(n);
   seg.setLabelCloudInOut(l);
@@ -148,7 +147,7 @@ int main(int argc, char** argv)
   seg.refineSegmentation();
   g->clusters()->mapClusterColor(p);
   g->edges()->mapBoundaryPoints(pbp,n_bp);
-  cob_3d_mapping_features::ClusterClassifier<SegTypes::CH, SegTypes::Point, SegTypes::Normal, SegTypes::Label> cc;
+  cob_3d_segmentation::ClusterClassifier<SegTypes::CH, SegTypes::Point, SegTypes::Normal, SegTypes::Label> cc;
   cc.setClusterHandler(g->clusters());
   cc.setPointCloudIn(p);
   cc.setNormalCloudInOut(n);

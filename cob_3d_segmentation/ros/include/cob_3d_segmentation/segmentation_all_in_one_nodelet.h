@@ -9,7 +9,7 @@
  *
  * Project name: care-o-bot
  * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_features
+ * ROS package name: cob_3d_segmentation
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -50,13 +50,78 @@
  * License LGPL along with this program.
  * If not, see <http://www.gnu.org/licenses/>.
  *
-****************************************************************/
+ ****************************************************************/
 
+#ifndef __SEGMENTATION_ALL_IN_ONE_NODELET_H__
+#define __SEGMENTATION_ALL_IN_ONE_NODELET_H__
+
+
+// ROS includes
+#include <pcl_ros/pcl_nodelet.h>
+
+// PCL includes
 #include <pcl/point_types.h>
 
-// package includes:
+// Package includes
 #include "cob_3d_mapping_common/point_types.h"
-#include "cob_3d_mapping_features/impl/cluster_handler.hpp"
+#include "cob_3d_mapping_features/organized_normal_estimation_omp.h"
+#include "cob_3d_segmentation/depth_segmentation.h"
+#include "cob_3d_segmentation/cluster_classifier.h"
+
+namespace cob_3d_segmentation
+{
+  class SegmentationAllInOneNodelet : public pcl_ros::PCLNodelet
+  {
+  public:
+    typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloud;
+
+    typedef pcl::PointCloud<pcl::Normal> NormalCloud;
+
+    typedef pcl::PointCloud<PointLabel> LabelCloud;
+
+    typedef PredefinedSegmentationTypes ST;
 
 
-template class cob_3d_mapping_features::DepthClusterHandler<PointLabel, pcl::PointXYZRGB, pcl::Normal>;
+  public:
+    SegmentationAllInOneNodelet()
+      : one_()
+      , seg_()
+      , graph_(new ST::Graph)
+      , segmented_(new PointCloud)
+      , classified_(new PointCloud)
+      , normals_(new NormalCloud)
+      , labels_(new LabelCloud)
+    { }
+
+    ~SegmentationAllInOneNodelet() 
+    { }
+
+
+  protected:    
+    void onInit();
+
+    void received_cloud_cb(PointCloud::ConstPtr cloud);
+
+    //boost::mutex mutex_;
+    ros::NodeHandle nh_;
+    ros::Subscriber sub_points_;
+    ros::Publisher pub_segmented_;
+    ros::Publisher pub_classified_;
+
+    cob_3d_mapping_features::OrganizedNormalEstimationOMP<pcl::PointXYZRGB, pcl::Normal, PointLabel> one_;
+    DepthSegmentation<ST::Graph, ST::Point, ST::Normal, ST::Label> seg_;
+    ClusterClassifier<ST::CH, ST::Point, ST::Normal, ST::Label> cc_;
+    ST::Graph::Ptr graph_;
+
+    PointCloud::Ptr segmented_;
+    PointCloud::Ptr classified_;
+    NormalCloud::Ptr normals_;
+    LabelCloud::Ptr labels_;
+  };
+
+  
+  
+}
+
+
+#endif  //__COB_3D_MAPPING_FEATURES_SEGMENTATION_NODELET_H__

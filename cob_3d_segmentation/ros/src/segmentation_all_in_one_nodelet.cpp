@@ -8,8 +8,8 @@
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
  * Project name: care-o-bot
- * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_features
+ * ROS stack name: cob_vision
+ * ROS package name: cob_env_model
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -50,13 +50,68 @@
  * License LGPL along with this program.
  * If not, see <http://www.gnu.org/licenses/>.
  *
-****************************************************************/
+ ****************************************************************/
 
-#include <pcl/point_types.h>
+// ROS includes
+#include <ros/ros.h>
+#include <pluginlib/class_list_macros.h>
 
-// package includes:
-#include "cob_3d_mapping_common/point_types.h"
-#include "cob_3d_mapping_features/impl/edge_handler.hpp"
+#include <pcl/io/io.h>
+
+// Package includes
+#include "cob_3d_mapping_common/stop_watch.h"
+#include "cob_3d_segmentation/segmentation_all_in_one_nodelet.h"
 
 
-template class cob_3d_mapping_features::BoundaryPointsEdgeHandler<PointLabel, pcl::PointXYZRGB>;
+
+void
+cob_3d_segmentation::SegmentationAllInOneNodelet::onInit()
+{
+  PCLNodelet::onInit();
+
+  one_.setOutputLabels(labels_);
+  one_.setPixelSearchRadius(8,2,2);
+  one_.setSkipDistantPointThreshold(8);
+
+  seg_.setNormalCloudIn(normals_);
+  seg_.setLabelCloudInOut(labels_);
+  seg_.setClusterGraphOut(graph_);
+
+  cc_.setClusterHandler(graph_->clusters());
+  cc_.setNormalCloudInOut(normals_);
+  cc_.setLabelCloudIn(labels_);
+
+  nh_ = getNodeHandle();
+  sub_points_ = nh_.subscribe<PointCloud>
+    ("cloud_in", 1, boost::bind(&cob_3d_segmentation::SegmentationAllInOneNodelet::received_cloud_cb, this, _1));
+  pub_segmented_ = nh_.advertise<PointCloud>("segmentation_cloud", 1);
+  pub_classified_ = nh_.advertise<PointCloud>("classified_cloud", 1);
+  std::cout << "Loaded" << std::endl;
+
+}
+
+void
+cob_3d_segmentation::SegmentationAllInOneNodelet::received_cloud_cb(PointCloud::ConstPtr cloud)
+{
+  PrecisionStopWatch t;
+  t.precisionStart();
+  NODELET_INFO("Start .... ");
+
+  one_.setInputCloud(cloud);
+  one_.compute(*normals_);
+  *classified_ = *segmented_ = *cloud;
+
+  seg_.setPointCloudIn(cloud);
+  seg_.performInitialSegmentation();
+  seg_.refineSegmentation();
+  graph_->clusters()->mapClusterColor(segmented_);
+  cc_.setPointCloudIn(cloud);
+  cc_.classify();
+  graph_->clusters()->mapTypeColor(classified_);
+  pub_segmented_.publish(segmented_);
+  pub_classified_.publish(classified_);
+  
+  NODELET_INFO("Done .... ");
+}
+
+PLUGINLIB_DECLARE_CLASS(cob_3d_segmentation, SegmentationAllInOneNodelet, cob_3d_segmentation::SegmentationAllInOneNodelet, nodelet::Nodelet);

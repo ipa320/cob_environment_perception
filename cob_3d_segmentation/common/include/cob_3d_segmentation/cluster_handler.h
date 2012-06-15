@@ -52,12 +52,12 @@
  *
  ****************************************************************/
 
-#ifndef __COB_3D_MAPPING_FEATURES_CLUSTER_HANDLER_H__
-#define __COB_3D_MAPPING_FEATURES_CLUSTER_HANDLER_H__
+#ifndef __COB_3D_SEGMENTATION_CLUSTER_HANDLER_H__
+#define __COB_3D_SEGMENTATION_CLUSTER_HANDLER_H__
 
 #include <cob_3d_mapping_common/point_types.h>
 #include <cob_3d_mapping_common/label_defines.h>
-#include "cob_3d_mapping_features/cluster_types.h"
+#include "cob_3d_segmentation/cluster_types.h"
 
 #include <list>
 
@@ -66,7 +66,7 @@
 #include <pcl/common/eigen.h>
 
 
-namespace cob_3d_mapping_features
+namespace cob_3d_segmentation
 {
   template<typename ClusterT>
   class ClusterHandlerBase

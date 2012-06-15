@@ -9,7 +9,7 @@
  *
  * Project name: care-o-bot
  * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_features
+ * ROS package name: cob_3d_segmentation
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -55,11 +55,11 @@
 #ifndef __CLUSTER_CLASSIFIER_H__
 #define __CLUSTER_CLASSIFIER_H__
 
-#include "cob_3d_mapping_features/cluster_handler.h"
+#include "cob_3d_segmentation/cluster_handler.h"
 
 #include "cob_3d_mapping_common/label_defines.h"
 
-namespace cob_3d_mapping_features
+namespace cob_3d_segmentation
 {
   template <typename ClusterHandlerT, typename PointT, typename NormalT, typename LabelT>
   class ClusterClassifier

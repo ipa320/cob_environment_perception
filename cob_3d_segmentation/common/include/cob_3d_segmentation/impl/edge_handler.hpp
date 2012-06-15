@@ -9,7 +9,7 @@
  *
  * Project name: care-o-bot
  * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_features
+ * ROS package name: cob_3d_segmentation
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -55,18 +55,18 @@
 #ifndef __IMPL_EDGE_HANDLER_HPP__
 #define __IMPL_EDGE_HANDLER_HPP__
 
-#include "cob_3d_mapping_features/edge_handler.h"
+#include "cob_3d_segmentation/edge_handler.h"
 #include <pcl/common/eigen.h>
 
 template<typename LabelT, typename PointT> void
-cob_3d_mapping_features::BoundaryPointsEdgeHandler<LabelT,PointT>::erase(EdgePtr e)
+cob_3d_segmentation::BoundaryPointsEdgeHandler<LabelT,PointT>::erase(EdgePtr e)
 {
   // TODO: delete boundary points
   EdgeHandlerBase<BoundaryPointsEdge>::erase(e);
 }
 
 template<typename LabelT, typename PointT> void
-cob_3d_mapping_features::BoundaryPointsEdgeHandler<LabelT,PointT>::merge(EdgePtr source, EdgePtr target)
+cob_3d_segmentation::BoundaryPointsEdgeHandler<LabelT,PointT>::merge(EdgePtr source, EdgePtr target)
 {
   /* Assume edge_src connects cluster "a" and "b", and edge_trg connects cluster "a" and "c":
    *
@@ -105,7 +105,7 @@ cob_3d_mapping_features::BoundaryPointsEdgeHandler<LabelT,PointT>::merge(EdgePtr
 }
 
 template<typename LabelT, typename PointT> void
-cob_3d_mapping_features::BoundaryPointsEdgeHandler<LabelT,PointT>::move(int old_cid, int new_cid, EdgePtr e)
+cob_3d_segmentation::BoundaryPointsEdgeHandler<LabelT,PointT>::move(int old_cid, int new_cid, EdgePtr e)
 {
   std::map<int,std::list<int> >::iterator it = e->boundary_pairs.find(old_cid);
   if (it != e->boundary_pairs.end())
@@ -117,7 +117,7 @@ cob_3d_mapping_features::BoundaryPointsEdgeHandler<LabelT,PointT>::move(int old_
 
 /* is now a general free function in orgnazied_normal_estimation.h
 template<typename LabelT, typename PointT> void
-cob_3d_mapping_features::BoundaryPointsEdgeHandler<LabelT,PointT>::computeBoundaryPointProperties(
+cob_3d_segmentation::BoundaryPointsEdgeHandler<LabelT,PointT>::computeBoundaryPointProperties(
   const int r,
   const int index,
   BoundaryPoint& bp)

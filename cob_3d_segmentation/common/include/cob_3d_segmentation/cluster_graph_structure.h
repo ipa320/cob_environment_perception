@@ -9,7 +9,7 @@
  *
  * Project name: care-o-bot
  * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_common
+ * ROS package name: cob_3d_segmentation
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -60,10 +60,10 @@
 #include <boost/graph/adjacency_list.hpp>
 #include <boost/graph/graph_traits.hpp>
 
-#include "cob_3d_mapping_features/cluster_handler.h"
-#include "cob_3d_mapping_features/edge_handler.h"
+#include "cob_3d_segmentation/cluster_handler.h"
+#include "cob_3d_segmentation/edge_handler.h"
 
-namespace cob_3d_mapping_features
+namespace cob_3d_segmentation
 { 
   template <typename ClusterHandlerT, typename EdgeHandlerT>
   class ClusterGraphStructure
