@@ -1,0 +1,10 @@
+name: cob_3d_mapping_rviz_plugins
+library: cob_3d_mapping_rviz_plugins
+displays:
+  -
+    class_name: ShapeDisplay
+    display_name: ShapeDisplay
+    description: |
+      Can visualize cob_3d_mapping_msgs::Shape
+
+      
