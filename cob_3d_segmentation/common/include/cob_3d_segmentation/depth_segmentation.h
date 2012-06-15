@@ -61,6 +61,7 @@
 #include <pcl/point_types.h>
 
 #include "cob_3d_mapping_common/point_types.h"
+#include "cob_3d_segmentation/general_segmentation.h"
 #include "cob_3d_segmentation/cluster_graph_structure.h"
 
 namespace cob_3d_segmentation
@@ -90,7 +91,7 @@ namespace cob_3d_segmentation
 
 
   template <typename ClusterGraphT, typename PointT, typename PointNT, typename PointLabelT>
-  class DepthSegmentation
+    class DepthSegmentation : public GeneralSegmentation<PointT>
   {
   public:
     typedef pcl::PointCloud<PointT> PointCloud;
@@ -119,9 +120,17 @@ namespace cob_3d_segmentation
     { };
 
     inline void setClusterGraphOut(ClusterGraphPtr clusters) { graph_ = clusters; }
-    inline void setPointCloudIn(PointCloudConstPtr points) { surface_ = points; }
+    
     inline void setNormalCloudIn(NormalCloudConstPtr normals) { normals_ = normals; }
     inline void setLabelCloudInOut(LabelCloudPtr labels) { labels_ = labels; }
+    virtual void setInputCloud(const PointCloudConstPtr& points) { surface_ = points; }
+    virtual LabelCloudConstPtr getOutputCloud() { return labels_; }
+    virtual bool compute() 
+    { 
+      performInitialSegmentation();
+      refineSegmentation();
+      return true;
+    }
 
     void performInitialSegmentation();
 

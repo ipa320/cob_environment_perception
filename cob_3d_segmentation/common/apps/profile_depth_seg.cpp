@@ -93,7 +93,7 @@ public:
     one.compute(*n);
     std::cout << t.precisionStop() << " | ";
     t.precisionStart();
-    seg.setPointCloudIn(cloud);
+    seg.setInputCloud(cloud);
     seg.performInitialSegmentation();
     seg.refineSegmentation();    
     std::cout << t.precisionStop() << std::endl;

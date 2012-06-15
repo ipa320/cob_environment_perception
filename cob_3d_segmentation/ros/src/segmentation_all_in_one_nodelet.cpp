@@ -101,7 +101,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::received_cloud_cb(PointCloud::
   one_.compute(*normals_);
   *classified_ = *segmented_ = *cloud;
 
-  seg_.setPointCloudIn(cloud);
+  seg_.setInputCloud(cloud);
   seg_.performInitialSegmentation();
   seg_.refineSegmentation();
   graph_->clusters()->mapClusterColor(segmented_);
