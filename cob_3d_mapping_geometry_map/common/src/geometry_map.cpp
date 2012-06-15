@@ -92,7 +92,7 @@ using namespace cob_3d_mapping;
 
 
 void
-GeometryMap::addMapEntry(boost::shared_ptr<Polygon> p_ptr)
+GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
 
 {
 
@@ -101,9 +101,11 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon> p_ptr)
 	cob_3d_mapping::merge_config  limits;
 	limits.d_thresh=d_;
 	limits.angle_thresh=cos_angle_;
-	//limits.weighting_method="AREA";
-	limits.weighting_method="COUNTER";
-	//	limits.weighting_method="COMBINED";
+//	limits.weighting_method="AREA";
+//	limits.weighting_method="COUNTER";
+//	limits.weighting_method="DIST";
+
+		limits.weighting_method="COMBINED";
 
 	// find out polygons, to merge with
 	std::vector<int> intersections;
@@ -158,6 +160,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon> p_ptr)
 
 	else{
 		p.assignMembers();
+		p.assignWeight(limits.weighting_method);
 		map_polygon_.push_back(p_ptr);
 		new_id_++;
 	}
@@ -561,13 +564,13 @@ int main (int argc, char** argv)
 	m_p1->id = 1;
 	m_p1->normal << 0.000000,-1.000000,-0.000000;
 	m_p1->d = 0;
-	v << 1.207107,0.000000,0.353553;
+	v << 0.707107,0.000000,0.153553;
 	vv.push_back(v);
-	v << 1.207107,0.000000,-0.353553;
+	v << 0.707107,0.000000,-0.553553;
 	vv.push_back(v);
-	v << -0.207107,0.000000,-0.353553;
+	v << -0.707107,0.000000,-0.553553;
 	vv.push_back(v);
-	v << -0.207107,0.000000,0.353553;
+	v << -0.707107,0.000000,0.153553;
 	vv.push_back(v);
 	m_p1->contours.push_back(vv);
 	m_p1->holes.push_back(0);
@@ -579,13 +582,13 @@ int main (int argc, char** argv)
 	m_p2->id = 2;
 	m_p2->normal << -0.000000,1.000000,0.000000;
 	m_p2->d = 0;
-	v << 0.207107,0.000000,0.353553;
+	v << 0.707107,0.000000,0.553553;
 	vv.push_back(v);
-	v << 0.207107,0.000000,-0.353553;
+	v << 0.707107,0.000000,-0.153553;
 	vv.push_back(v);
-	v << -1.207107,0.000000,-0.353553;
+	v << -0.707107,0.000000,-0.153553;
 	vv.push_back(v);
-	v << -1.207107,0.000000,0.353553;
+	v << -0.707107,0.000000,0.553553;
 	vv.push_back(v);
 	m_p2->contours.push_back(vv);
 	m_p2->holes.push_back(0);

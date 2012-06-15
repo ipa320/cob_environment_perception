@@ -244,6 +244,7 @@ Cylinder& result=*merge_candidates[0];
 //	}
 //
 
+result.unrolled_.debug_output("result");
 }
 
 

@@ -118,7 +118,7 @@ public:
 	  //outputFile.close();
   }
    void
-  addMapEntry(boost::shared_ptr<cob_3d_mapping::Polygon> p_ptr);
+  addMapEntry(boost::shared_ptr<cob_3d_mapping::Polygon>& p_ptr);
 
 
    void
