@@ -21,7 +21,7 @@
   </node-->
 
   <node pkg="nodelet" type="nodelet" name="plane_extraction" args="load cob_3d_mapping_features/PlaneExtractionNodelet $(arg nodelet_manager)" output="screen">
-  	<remap from="point_cloud2" to="point_map/pc_aligned"/>
+  	<remap from="point_cloud2" to="registration/pc_aligned"/>
   	<remap from="chull" to="plane_extraction/chull"/>
   	<remap from="plane_marker" to="plane_extraction/plane_marker"/>
   	<remap from="object_cluster" to="plane_extraction/object_cluster"/>

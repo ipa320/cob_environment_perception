@@ -53,13 +53,13 @@ public:
   const std::map<std::string, std::string> &getStrings() const {return params_string_;}
 
   ParameterBagShortcut<int> createParam(ros::NodeHandle &n, const std::string &name, int v) {
-    n.param("/registration/"+name,v,v);
+    n.param("registration_nodelet/"+name,v,v);
     params_int_[name] = v;
-    n.param("/registration/"+name+"_max",v,v);
+    n.param("registration_nodelet/"+name+"_max",v,v);
     params_int_[name+"_max"] = v;
-    n.param("/registration/"+name+"_min",v,v);
+    n.param("registration_nodelet/"+name+"_min",v,v);
     params_int_[name+"_min"] = v;
-    n.param("/registration/"+name+"_step",v,1);
+    n.param("registration_nodelet/"+name+"_step",v,1);
     params_int_[name+"_step"] = v;
 
     ParameterBagShortcut<int> r;
@@ -69,13 +69,13 @@ public:
   }
 
   ParameterBagShortcut<double> createParam(ros::NodeHandle &n, const std::string &name, double v) {
-    n.param("/registration/"+name,v,v);
+    n.param("registration_nodelet/"+name,v,v);
     params_double_[name] = v;
-    n.param("/registration/"+name+"_max",v,v);
+    n.param("registration_nodelet/"+name+"_max",v,v);
     params_double_[name+"_max"] = v;
-    n.param("/registration/"+name+"_min",v,v);
+    n.param("registration_nodelet/"+name+"_min",v,v);
     params_double_[name+"_min"] = v;
-    n.param("/registration/"+name+"_step",v,1.);
+    n.param("registration_nodelet/"+name+"_step",v,1.);
     params_double_[name+"_step"] = v;
 
     ParameterBagShortcut<double> r;
@@ -85,7 +85,7 @@ public:
   }
 
   void createParam(ros::NodeHandle &n, const std::string &name, std::string v) {
-    n.param("/registration/"+name,v,v);
+    n.param("registration_nodelet/"+name,v,v);
     params_string_[name] = v;
   }
 
@@ -120,26 +120,29 @@ public:
 
 class ParameterBucket : public ParameterBag
 {
-  ros::NodeHandle &n;
+  ros::NodeHandle n;
 public:
   ParameterBucket(ros::NodeHandle &n):n(n) {}
+  ParameterBucket() {}
+
+  void setNodeHandle(ros::NodeHandle &_n) {n=_n;}
 
   bool addParameter(const std::string &name) {
-    if(!n.hasParam("/registration/"+name)) return false;
+    if(!n.hasParam("registration_nodelet/"+name)) return false;
 
     bool ret=false;
     int i;
-    if(n.getParam("/registration/"+name,i)) {
+    if(n.getParam("registration_nodelet/"+name,i)) {
       createParam(n,name,i);
     }
 
     double f;
-    if(n.getParam("/registration/"+name,f)) {
+    if(n.getParam("/"+name,f)) {
       createParam(n,name,(double)f);
     }
 
     std::string s;
-    if(n.getParam("/registration/"+name,s)) {
+    if(n.getParam("registration_nodelet/"+name,s)) {
       createParam(n,name,s);
     }
 

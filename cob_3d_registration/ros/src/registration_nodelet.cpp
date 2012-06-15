@@ -65,6 +65,11 @@
 
 // ROS includes
 #include <ros/ros.h>
+#include <pluginlib/class_list_macros.h>
+#include <pcl_ros/pcl_nodelet.h>
+#include <tf_conversions/tf_eigen.h>
+#include <tf/transform_broadcaster.h>
+#include <actionlib/server/simple_action_server.h>
 #include <pcl/point_types.h>
 #define PCL_MINOR (PCL_VERSION[2] - '0')
 
@@ -103,9 +108,11 @@
 #include <sys/stat.h>
 
 #include <registration/measurements/measure.h>
+#include <cob_srvs/Trigger.h>
+#include <cob_3d_mapping_msgs/TriggerMappingAction.h>
 
 using namespace tf;
-#define SHOW_MAP 1
+#define SHOW_MAP 0
 
 /// helper class to measure maximum memory usage over time
 class MemoryOperator
@@ -146,7 +153,7 @@ public:
 
 //####################
 //#### node class ####
-class RegistrationNode
+class RegistrationNodelet : public pcl_ros::PCLNodelet
 {
 #if HAS_RGB
   typedef pcl::PointXYZRGB Point;
@@ -156,20 +163,20 @@ class RegistrationNode
 
 public:
   // Constructor
-  RegistrationNode():
-    reg_(NULL), parameters_(n_)
+  RegistrationNodelet():
+    reg_(NULL), ctr_(0), is_running_(false)
   {
-    onInit();
+    //onInit();
   }
 
-  RegistrationNode(bool dummy):
-    reg_(NULL), parameters_(n_)
+  RegistrationNodelet(bool dummy):
+    reg_(NULL), ctr_(0), is_running_(false)
   {
   }
 
 
   // Destructor
-  ~RegistrationNode()
+  ~RegistrationNodelet()
   {
     /// void
     delete reg_;
@@ -185,6 +192,18 @@ public:
   void
   onInit()
   {
+    PCLNodelet::onInit();
+    parameters_.setNodeHandle(getNodeHandle());
+    n_ = getNodeHandle();
+
+    parameters_.addParameter("world_frame_id");
+    if(!parameters_.getParam("world_frame_id",world_id_))
+      world_id_="/map"; //default value
+
+    parameters_.addParameter("corrected_frame_id");
+    if(!parameters_.getParam("corrected_frame_id",corrected_id_))
+      corrected_id_="/camera_registered"; //default value
+
     //general
     parameters_.addParameter("algo");
     parameters_.addParameter("voxelsize");
@@ -210,20 +229,167 @@ public:
 
     //info
     parameters_.addParameter("use_icp");
+    parameters_.addParameter("threshold_diff");
+    parameters_.addParameter("threshold_step");
+    parameters_.addParameter("min_info");
+    parameters_.addParameter("max_info");
+    parameters_.addParameter("always_relevant_changes");
 
-    point_cloud_pub_ = n_.advertise<pcl::PointCloud<Point> >("result_pc",1);
+    reset_server_ = n_.advertiseService("clear_map", &RegistrationNodelet::reset, this);
+    camera_info_sub_ = n_.subscribe("camera_info", 1, &RegistrationNodelet::cameraInfoSubCallback, this);
+    point_cloud_pub_aligned_ = n_.advertise<pcl::PointCloud<Point> >("point_cloud2_aligned",1);
+    keyframe_trigger_server_ = n_.advertiseService("trigger_keyframe", &RegistrationNodelet::onKeyframeCallback, this);
+    as_= boost::shared_ptr<actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerMappingAction> >(new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerMappingAction>(n_, "trigger_mapping", boost::bind(&RegistrationNodelet::actionCallback, this, _1), false));
+    as_->start();
+    //point_cloud_pub_ = n_.advertise<pcl::PointCloud<Point> >("result_pc",1);
 #if SHOW_MAP
     marker2_pub_ = n_.advertise<pcl::PointCloud<Point> >("result_marker",1);
 #endif
-    point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &RegistrationNode::pointCloudSubCallback, this);
-    register_ser_ = n_.advertiseService("registration_process", &RegistrationNode::registerService, this);
-    marker_pub_ = n_.advertise<visualization_msgs::Marker>("markers", 1);
+    //point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &RegistrationNodelet::pointCloudSubCallback, this);
+    //register_ser_ = n_.advertiseService("registration_process", &RegistrationNodelet::registerService, this);
+    //marker_pub_ = n_.advertise<visualization_msgs::Marker>("markers", 1);
 
     //after reading params
     buildAlgo();
 
     //say what we are doing here
-    publishParameters();
+    //publishParameters();
+  }
+
+  /**
+   * @brief resetes transformation
+   *
+   * resetes transformation
+   *
+   * @param req not needed
+   * @param res not needed
+   *
+   * @return nothing
+   */
+  bool
+  reset(cob_srvs::Trigger::Request &req,
+        cob_srvs::Trigger::Response &res)
+  {
+    //TODO: add mutex
+    ROS_INFO("Resetting transformation...");
+    if(reg_) reg_->setTransformation(Eigen::Matrix4f::Identity());
+    return true;
+  }
+
+  /**
+   * @brief callback for point cloud subroutine
+   *
+   * callback for point cloud subroutine which stores the point cloud
+   * for further calculation
+   *
+   * @param pc_in  new point cloud
+   *
+   * @return nothing
+   */
+  void
+  pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc_in)
+  {
+    pc_frame_id_=pc_in->header.frame_id;
+
+    reg_->setInputOginalCloud(pc_in);
+
+    if(do_register(*pc_in,cv_bridge::CvImagePtr(),NULL)||ctr_==0) {
+      if(point_cloud_pub_aligned_.getNumSubscribers()>0) {
+        pcl::PointCloud<Point> pc;
+        pc.header.frame_id = pc_in->header.frame_id;
+        pcl::transformPointCloud(*pc_in,pc,reg_->getTransformation());
+        point_cloud_pub_aligned_.publish(pc);
+      }
+
+      StampedTransform transform;
+      Eigen::Affine3d af;
+      af.matrix()=reg_->getTransformation().cast<double>();
+      tf::TransformEigenToTF(af,transform);
+      tf_br_.sendTransform(tf::StampedTransform(transform, transform.stamp_, world_id_, corrected_id_));
+
+      ROS_WARN("registration successful");
+    }
+    else
+      ROS_WARN("registration not successful");
+    ctr_++;
+  }
+
+  /**
+   * @brief callback for point cloud subroutine
+   *
+   * callback for keyframe subroutine which loads in the first step
+   * the unexact transformation from the laser sensors and calibrates the
+   * input cloud from the 3d camera. This already transformed data will be
+   * used to build a 3d map either aligned to the first frame or to an
+   * existing map. Additionally debug output to *.pcd files are possible.
+   *
+   * @param req  not used
+   * @param res  not used
+   *
+   * @return nothing
+   */
+  bool onKeyframeCallback(cob_srvs::Trigger::Request &req,
+                          cob_srvs::Trigger::Response &res)
+  {
+    res.success.data = false;
+    if(pc_frame_id_.size()<1)
+      return true;
+
+    StampedTransform transform;
+    try
+    {
+      std::stringstream ss2;
+      tf_listener_.waitForTransform(world_id_, pc_frame_id_, ros::Time(0), ros::Duration(0.1));
+      tf_listener_.lookupTransform(world_id_, pc_frame_id_, ros::Time(0), transform);
+
+      ROS_DEBUG("Registering new point cloud");
+
+      Eigen::Affine3d af;
+      tf::TransformTFToEigen(transform, af);
+      reg_->setOdometry(af.matrix().cast<float>());
+      reg_->setMoved(true);
+
+    }
+    catch (tf::TransformException ex)
+    {
+      ROS_ERROR("[registration] : %s",ex.what());
+      return false;
+    }
+
+    res.success.data = true;
+    return true;
+  }
+
+  /**
+   * @brief action callback
+   *
+   * default action callback to start or stop registration
+   *
+   * @param goal settings
+   *
+   * @return nothing
+   */
+  void
+  actionCallback(const cob_3d_mapping_msgs::TriggerMappingGoalConstPtr &goal)
+  {
+    cob_3d_mapping_msgs::TriggerMappingResult result;
+    if(goal->start && !is_running_)
+    {
+      ROS_INFO("Starting mapping...");
+      point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &RegistrationNodelet::pointCloudSubCallback, this);
+      //point_cloud_sub_.subscribe(n_, "point_cloud2", 1);
+      //transform_sub_.subscribe(n_, "transform_reg", 1);
+      is_running_ = true;
+    }
+    else if(!goal->start && is_running_)
+    {
+      ROS_INFO("Stopping mapping...");
+      point_cloud_sub_.shutdown();//unsubscribe();
+      //transform_sub_.unsubscribe();
+      //first_ = true;
+      is_running_ = false;
+    }
+    as_->setSucceeded(result);
   }
 
   /**
@@ -353,8 +519,8 @@ public:
         e_algo=E_ALGO_ICP_FPFH;
       else if(s_algo=="icp_narf")
         e_algo=E_ALGO_ICP_NARF;
-//      else if(s_algo=="fastslam")
-//        e_algo=E_ALGO_FASTSLAM;
+      //      else if(s_algo=="fastslam")
+      //        e_algo=E_ALGO_FASTSLAM;
       else if(s_algo=="icp_edges")
         e_algo=E_ALGO_ICP_EDGES;
       else if(s_algo=="rgbdslam")
@@ -371,7 +537,7 @@ public:
       ROS_WARN("using algo icp", e_algo);
 
     //init: settings
-    ROS_INFO("init %d", e_algo);
+    ROS_INFO("init %s", s_algo.c_str());
     switch(e_algo) {
       case E_ALGO_ICP:
         reg_ = new Registration_ICP<Point>();
@@ -436,7 +602,7 @@ public:
 #endif
         break;
 
-      /*case E_ALGO_FASTSLAM:
+        /*case E_ALGO_FASTSLAM:
 #ifndef PCL_DEPRECATED
         reg_ = new Registration_FastSLAM<Point>();
 
@@ -478,31 +644,6 @@ public:
 
     }
     ROS_INFO("done");
-
-  }
-
-  /**
-   * @brief callback for point cloud subroutine
-   *
-   * callback for point cloud subroutine which stores the point cloud
-   * for further calculation
-   *
-   * @param pc_in  new point cloud
-   *
-   * @return nothing
-   */
-  void
-  pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc_in)
-  {
-
-    tf::StampedTransform transform;
-    try{
-      //listener.lookupTransform("/turtle2", "/turtle1",
-      //                         ros::Time(0), transform);
-    }
-    catch (tf::TransformException ex){
-      ROS_ERROR("%s",ex.what());
-    }
 
   }
 
@@ -603,7 +744,7 @@ public:
     do_preprocess(pc,cv_ptr,img_depth);
     ROS_INFO("do_preprocess took %f", psw.precisionStop());
     psw.precisionStart();
-    do_register(pc,cv_ptr,img_depth);
+    do_register(pc,cv_ptr,&img_depth);
     ROS_INFO("do_register took %f", psw.precisionStop());
 
     publish_results();
@@ -652,13 +793,13 @@ public:
       voxel.setLeafSize(voxelsize,voxelsize,voxelsize);
       voxel.filter(map);
 
-      map.header.frame_id="/head_cam3d_frame";
+      map.header.frame_id="/head_cam3d_link";
       point_cloud_pub_.publish(map);
 
       {
         std::string s_algo;
         parameters_.getParam("algo",s_algo);
-            pcl::io::savePCDFileBinary("/home/goa-jh/Dropbox/"+s_algo+"_map.pcd",map);
+        pcl::io::savePCDFileBinary("/home/goa-jh/Dropbox/"+s_algo+"_map.pcd",map);
       }
     }
     else
@@ -772,58 +913,74 @@ protected:
    *    - measurement
    *    - visualization helper (for debugging)
    */
-  bool do_register(const pcl::PointCloud<Point> &pc, const cv_bridge::CvImagePtr &cv_ptr, cv::Mat &img_depth) {
+  bool do_register(const pcl::PointCloud<Point> &pc, const cv_bridge::CvImagePtr &cv_ptr, cv::Mat *img_depth) {
     if(reg_==NULL)
       return false;
 
-    ROS_INFO("register %d %d", cv_ptr->image.cols, cv_ptr->image.rows);
-
-    reg_->setInputImage(boost::shared_ptr<const cv::Mat>(new cv::Mat(cv_ptr->image)));
-    reg_->setInputDepthImage(boost::shared_ptr<const cv::Mat>(new cv::Mat(img_depth)));
+    if(cv_ptr) reg_->setInputImage(boost::shared_ptr<const cv::Mat>(new cv::Mat(cv_ptr->image)));
+    if(img_depth) reg_->setInputDepthImage(boost::shared_ptr<const cv::Mat>(new cv::Mat(*img_depth)));
     reg_->setInputCloud(pc.makeShared());
 
+    //MemoryOperator mo;
+    //boost::thread workerThread(&MemoryOperator::run, &mo);
 
-    MemoryOperator mo;
-    boost::thread workerThread(&MemoryOperator::run, &mo);
-
-    measurement_tools::PrecisionStopWatchAll psw2;
-    measurement_tools::PrecisionStopWatchThread psw;
+    //measurement_tools::PrecisionStopWatchAll psw2;
+    //measurement_tools::PrecisionStopWatchThread psw;
     bool ret = reg_->compute();
-    duration_ = psw.precisionStop();
+    //duration_ = psw.precisionStop();
     registration_result_ = ret;
-    {
+    /*{
       std::string s_algo;
       if(parameters_.getParam("algo",s_algo) && s_algo=="rgbdslam")
         duration_ = psw2.precisionStop();
-    }
+    }*/
 
-    mo.halt();
-    workerThread.join();
+    //mo.halt();
+    //workerThread.join();
 
-    memory_usage_kb_ = mo.getKB();
+    //memory_usage_kb_ = mo.getKB();
 
-    ROS_ERROR("time %f", duration_);
-    ROS_ERROR("memory %d", memory_usage_kb_);
+    //ROS_ERROR("time %f", duration_);
+    //ROS_ERROR("memory %d", memory_usage_kb_);
 
     //std::cout<<reg_->getTransformation()<<"\n";
-
-    ROS_INFO("done");
 
     return ret;
   }
 
+  void
+  cameraInfoSubCallback(sensor_msgs::CameraInfo::ConstPtr ci)
+  {
+    std::string s_algo;
+    if(parameters_.getParam("algo",s_algo) && s_algo=="info")
+
+      ((Registration_Infobased<Point>*)reg_)->setKinectParameters(
+          ci->P[0],
+          ci->P[2],
+          ci->P[6]
+      );
+  }
+
+  ros::ServiceServer reset_server_;
+  ros::Subscriber camera_info_sub_;             //subscriber for input pc
+  ros::Publisher point_cloud_pub_aligned_;      //publisher for aligned pc
+  ros::ServiceServer keyframe_trigger_server_;
   ros::Subscriber point_cloud_sub_;             /// subscriber to input data
   ros::ServiceServer register_ser_;             /// service for evaluation of registration
-  TransformListener tf_listener_;
+  tf::TransformBroadcaster tf_br_;
   ros::Publisher point_cloud_pub_;              /// publisher for map
   ros::Publisher marker2_pub_;                  /// publish markers for visualization as pc
   ros::Publisher marker_pub_;                   /// publish markers for visualization
+  boost::shared_ptr<actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerMappingAction> > as_;
+  unsigned int ctr_;
 
   /// parameter bag (containing max, min, step...)
   ParameterBucket parameters_;
 
   /// registration algorithm
   GeneralRegistration<Point> *reg_;
+
+  bool is_running_;
 
   //evaluation values
 
@@ -833,6 +990,8 @@ protected:
   int memory_usage_kb_;
   /// evaluation: success -> true
   bool registration_result_;
+
+  std::string corrected_id_, world_id_, pc_frame_id_;
 
   enum {E_ALGO_ICP=1,E_ALGO_ICP_LM=2,E_ALGO_GICP=3,E_ALGO_ICP_MOMENTS=4,E_ALGO_ICP_FPFH=5, E_ALGO_ICP_NARF=6, E_ALGO_FASTSLAM=7, E_ALGO_ICP_EDGES=8, E_ALGO_RGBDSLAM=9, E_ALGO_INFO=10, E_ALGO_COR=11, E_ALGO_NONE=0};
 
@@ -857,7 +1016,6 @@ protected:
     setSettings_ICP(pr);
 
     double d;
-    int i;
 
     if(parameters_.getParam("moments_radius",d))
       pr->setMomentRadius(d);
@@ -866,7 +1024,6 @@ protected:
     setSettings_ICP(pr);
 
     double d;
-    int i;
 
     if(parameters_.getParam("fpfh_radius",d))
       pr->setFPFHRadius(d);
@@ -887,9 +1044,21 @@ protected:
   }
   void setSettings_Info(Registration_Infobased<Point> *pr) {
     int i;
+    double f;
 
     //if(parameters_.getParam("use_icp",i))
     //  pr->setUseICP(i!=0);
+
+    if(parameters_.getParam("threshold_diff",f))
+      pr->setThresholdDiff(f);
+    if(parameters_.getParam("threshold_step",f))
+      ((Registration_Infobased<Point>*)reg_)->setThresholdStep(f);
+    if(parameters_.getParam("min_info",i))
+      ((Registration_Infobased<Point>*)reg_)->setMinInfo(i);
+    if(parameters_.getParam("max_info",i))
+      ((Registration_Infobased<Point>*)reg_)->setMaxInfo(i);
+    if(parameters_.getParam("always_relevant_changes",i))
+      ((Registration_Infobased<Point>*)reg_)->SetAlwaysRelevantChanges(i!=0);
   }
 #endif
 
@@ -965,6 +1134,7 @@ protected:
 
 };
 
+/*
 int main(int argc, char **argv) {
 #if SHOW_MAP
   setVerbosityLevel(pcl::console::L_DEBUG);
@@ -973,16 +1143,19 @@ int main(int argc, char **argv) {
   ros::init(argc, argv, "registration");
 
   if(argc>1&&strcmp(argv[1],"eval")==0) { //we're sending paramters...
-    RegistrationNode tn(true);
+    RegistrationNodelet tn(true);
 
     tn.createParamters(argv[2]);
     tn.publishParameters();
     return 0;
   }
 
-  RegistrationNode tn;
+  RegistrationNodelet tn;
 
   ROS_INFO("Spinning node");
   ros::spin();
   return 0;
-}
+}*/
+
+PLUGINLIB_DECLARE_CLASS(cob_3d_registration, RegistrationNodelet, RegistrationNodelet, nodelet::Nodelet)
+

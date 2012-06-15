@@ -22,7 +22,7 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
 #rosbuild_genmsg()
 #uncomment if you have defined services
 #rosbuild_gensrv()
-rosbuild_add_library(cob_3d_mapping_semantics common/src/semantic_extraction.cpp)
+rosbuild_add_library(cob_3d_mapping_semantics common/src/table_extraction.cpp)
 
 #rosbuild_add_executable(semantic_extraction common/src/semantic_extraction.cpp)
 rosbuild_add_executable(semantic_extraction_node ros/src/semantic_extraction_node.cpp)

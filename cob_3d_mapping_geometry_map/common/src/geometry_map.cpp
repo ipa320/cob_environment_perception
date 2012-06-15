@@ -74,6 +74,7 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
+#include <pcl/common/centroid.h>
 //#include <pcl/common/impl/transform.hpp>
 
 
@@ -81,26 +82,26 @@
 #include "cob_3d_mapping_geometry_map/geometry_map.h"
 //#include "cob_3d_mapping_geometry_map/vis/geometry_map_visualisation.h"
 
-
+using namespace cob_3d_mapping;
 
 void
-GeometryMap::addMapEntry(MapEntryPtr p_ptr)
+GeometryMap::addMapEntry(PolygonPtr p_ptr)
 {
 
 
-  MapEntry& p = *p_ptr;
+  Polygon& p = *p_ptr;
 
 
 /*
 	  outputFile << "-----------------------------------------------------------------------------" << std::endl ;
 	  outputFile << "new merge counter:" << counter_output << std::endl;
 	  outputFile << "normal:" << std::endl << p.normal << std::endl << "d: " << p.d << std::endl;
-	  for(int i=0; i< p.polygon_world.size(); i++)
+	  for(int i=0; i< p.contours.size(); i++)
 	  {
 		  outputFile << i << std::endl;
-	    for(int j=0; j< p.polygon_world[i].size(); j++)
+	    for(int j=0; j< p.contours[i].size(); j++)
 	    {
-	    	outputFile << "(" << p.polygon_world[i][j](0) << ", " << p.polygon_world[i][j](1) << ", " << p.polygon_world[i][j](2) << ")\n";
+	    	outputFile << "(" << p.contours[i][j](0) << ", " << p.contours[i][j](1) << ", " << p.contours[i][j](2) << ")\n";
 	    }
 	  }
 
@@ -129,10 +130,11 @@ GeometryMap::addMapEntry(MapEntryPtr p_ptr)
 	//	ft_pt << 1,1,-average_normal(0)/average_normal(2)-average_normal(1)/average_normal(2)+average_d/average_normal(2);
 	 getPointOnPlane(p.normal,p.d,ft_pt);
      Eigen::Affine3f transformation_from_plane_to_world;
-     getTransformationFromPlaneToWorld(p.normal, ft_pt/*p.polygon_world[0][0]*/, transformation_from_plane_to_world);
+     getTransformationFromPlaneToWorld(p.normal, ft_pt/*p.contours[0][0]*/, transformation_from_plane_to_world);
      p.transform_from_world_to_plane = transformation_from_plane_to_world.inverse();
      p.merged++;
      p.id = new_id_;
+     computeCentroid(p);
      map_.push_back(p_ptr);
      new_id_++;
 //     std::cout << "feature added" << std::endl;
@@ -161,52 +163,72 @@ GeometryMap::addMapEntry(MapEntryPtr p_ptr)
 
 }
 
+//void
+//GeometryMap::sortContours()
+
 void
-GeometryMap::searchIntersection(MapEntry p,std::vector<int>& intersections)
+GeometryMap::computeCentroid(Polygon& p)
 {
-	//  MapEntry& p = *p_ptr;
-
-	  for(size_t i=0; i< map_.size(); i++)
-	  {
-
-			  MapEntry& p_map = *(map_[i]);
-			//  std::cout << "berechnung " << p_map.normal.dot(p.normal);
-			  if((p_map.normal.dot(p.normal)>0.95 && fabs(p_map.d-p.d)<0.1) ||
-				(p_map.normal.dot(p.normal)<-0.95 && fabs(p_map.d+p.d)<0.1))
-
-			{
-
-
-			  gpc_polygon gpc_result;
-			  gpc_polygon gpc_p_merge;
-			  gpc_polygon gpc_p_map;
-
-			  Eigen::Affine3f transformation_from_world_to_plane;
-
-			  transformation_from_world_to_plane = p_map.transform_from_world_to_plane;
-			  getGpcStructureUsingMap(p, transformation_from_world_to_plane, &gpc_p_merge);
-
-			  getGpcStructureUsingMap(p_map, transformation_from_world_to_plane, &gpc_p_map);
-			  gpc_polygon_clip(GPC_INT, &gpc_p_merge, &gpc_p_map, &gpc_result);
-// 		  	  std::cout << "num contours intersect: " << gpc_result.num_contours << std::endl;
-			  if(gpc_result.num_contours == 0)
-			  {
-				//std::cout << "no intersection with map " << i << std::endl;
-				//std::cout << p.normal << std::endl;
-				continue;
-			  }
-			 // std::cout << "intersection with map " << i << std::endl;
-			  intersections.push_back(i);
-
-			}
-	  }
+  std::vector<pcl::PointXYZ> centroid;
+  centroid.resize(p.contours[0].size ());
+  pcl::PointCloud<pcl::PointXYZ> poly_cloud;
+  for (unsigned int i = 0; i < p.contours[0].size (); i++)
+  {
+    pcl::PointXYZ pt;
+    pt.x = p.contours[0][i][0];
+    pt.y = p.contours[0][i][1];
+    pt.z = p.contours[0][i][2];
+    poly_cloud.push_back(pt);
+  }
+  pcl::compute3DCentroid(poly_cloud,p.centroid);
 }
 
 void
-GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
+GeometryMap::searchIntersection(Polygon& p,std::vector<int>& intersections)
+{
+  //  Polygon& p = *p_ptr;
+
+  for(size_t i=0; i< map_.size(); i++)
+  {
+
+    Polygon& p_map = *(map_[i]);
+    //  std::cout << "berechnung " << p_map.normal.dot(p.normal);
+    if((p_map.normal.dot(p.normal)>0.95 && fabs(p_map.d-p.d)<0.1) ||
+        (p_map.normal.dot(p.normal)<-0.95 && fabs(p_map.d+p.d)<0.1))
+
+    {
+
+
+      gpc_polygon gpc_result;
+      gpc_polygon gpc_p_merge;
+      gpc_polygon gpc_p_map;
+
+      Eigen::Affine3f transformation_from_world_to_plane;
+
+      transformation_from_world_to_plane = p_map.transform_from_world_to_plane;
+      getGpcStructureUsingMap(p, transformation_from_world_to_plane, &gpc_p_merge);
+
+      getGpcStructureUsingMap(p_map, transformation_from_world_to_plane, &gpc_p_map);
+      gpc_polygon_clip(GPC_INT, &gpc_p_merge, &gpc_p_map, &gpc_result);
+      // 		  	  std::cout << "num contours intersect: " << gpc_result.num_contours << std::endl;
+      if(gpc_result.num_contours == 0)
+      {
+        //std::cout << "no intersection with map " << i << std::endl;
+        //std::cout << p.normal << std::endl;
+        continue;
+      }
+      // std::cout << "intersection with map " << i << std::endl;
+      intersections.push_back(i);
+
+    }
+  }
+}
+
+void
+GeometryMap::mergeWithMap(PolygonPtr p_ptr , std::vector<int> intersections)
 {
 
-	MapEntry& p = *p_ptr;
+	Polygon& p = *p_ptr;
 	Eigen::Vector3f average_normal=p.normal;
 	double average_d=p.d;
 	int merge_counter=1;
@@ -219,7 +241,7 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 
 	for(int i=0 ; i<intersections.size();i++)
 	{
-		 MapEntry& p_map = *(map_[intersections[i]]);
+		 Polygon& p_map = *(map_[intersections[i]]);
 	//	 outputFile << "map: " << intersections[i] <<std::endl;
 		 if(p.normal.dot(p_map.normal)<0){
 	//	if (p.normal.dot(p_map.normal)<-0.95){
@@ -274,7 +296,7 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 	for(int i=0 ; i<intersections.size();i++)
 	{
 
-		MapEntry& p_map = *(map_[intersections[i]]);
+		Polygon& p_map = *(map_[intersections[i]]);
 
 
 
@@ -307,22 +329,25 @@ GeometryMap::mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections)
 	}
 //	printGpcStructure(&gpc_result);
 
-	MapEntry& p_map = *(map_[intersections[0]]);
+	Polygon& p_map = *(map_[intersections[0]]);
 
-	p_map.polygon_world.resize(gpc_result.num_contours);
+	p_map.contours.resize(gpc_result.num_contours);
+	p_map.holes.resize(gpc_result.num_contours);
 
 	for(int j=0; j<gpc_result.num_contours; j++)
 	{
-	  p_map.polygon_world[j].resize(gpc_result.contour[j].num_vertices);
-
+	  p_map.contours[j].resize(gpc_result.contour[j].num_vertices);
+	  p_map.holes[j] = gpc_result.hole[j];
+          //std::cout << "contour " << j << " is " << gpc_result.hole[j] << std::endl;
 	  for(int k=0; k<gpc_result.contour[j].num_vertices; k++)
 	  {
 		//TODO: set z to something else?
 		Eigen::Vector3f point(gpc_result.contour[j].vertex[k].x, gpc_result.contour[j].vertex[k].y, 0);
-		p_map.polygon_world[j][k] = p_map.transform_from_world_to_plane.inverse()*point;
+		p_map.contours[j][k] = p_map.transform_from_world_to_plane.inverse()*point;
 		//TODO: update normal, d, transformation...?
 	  }
 	}
+	//std::cout << std::endl;
 //	std::cout << "Normale average" << average_normal[0] <<average_normal[1] <<average_normal[2] << std::endl;
 //	std::cout << "d average" << average_d << std::endl;
 
@@ -345,24 +370,24 @@ GeometryMap::removeMapEntry(int id)
 }
 
 void
-GeometryMap::getGpcStructure(MapEntry& p, gpc_polygon* gpc_p)
+GeometryMap::getGpcStructure(Polygon& p, gpc_polygon* gpc_p)
 {
   //printMapEntry(p);
-  gpc_p->num_contours = p.polygon_world.size();
-  gpc_p->hole = (int*)malloc(p.polygon_world.size()*sizeof(int));
-  gpc_p->contour = (gpc_vertex_list*)malloc(p.polygon_world.size()*sizeof(gpc_vertex_list));
+  gpc_p->num_contours = p.contours.size();
+  gpc_p->hole = (int*)malloc(p.contours.size()*sizeof(int));
+  gpc_p->contour = (gpc_vertex_list*)malloc(p.contours.size()*sizeof(gpc_vertex_list));
   //std::cout << "num_contours: " << gpc_p->num_contours << std::endl;
-  for(size_t j=0; j<p.polygon_world.size(); j++)
+  for(size_t j=0; j<p.contours.size(); j++)
   {
     //std::cout << j << std::endl;
-    gpc_p->contour[j].num_vertices = p.polygon_world[j].size();
+    gpc_p->contour[j].num_vertices = p.contours[j].size();
     gpc_p->hole[j] = 0;
     //std::cout << "num_vertices: " << gpc_p->contour[j].num_vertices << std::endl;
     gpc_p->contour[j].vertex = (gpc_vertex*)malloc(gpc_p->contour[j].num_vertices*sizeof(gpc_vertex));
-    for(size_t k=0; k<p.polygon_world[j].size(); k++)
+    for(size_t k=0; k<p.contours[j].size(); k++)
     {
-      //std::cout << p.polygon_world[j][k] << std::endl;
-      Eigen::Vector3f point_trans = p.transform_from_world_to_plane*p.polygon_world[j][k];
+      //std::cout << p.contours[j][k] << std::endl;
+      Eigen::Vector3f point_trans = p.transform_from_world_to_plane*p.contours[j][k];
       gpc_p->contour[j].vertex[k].x = point_trans(0);
       gpc_p->contour[j].vertex[k].y = point_trans(1);
       // if(fabs(point_trans(2))>0.01) std::cout << "z: " << point_trans(2) << std::endl;
@@ -389,27 +414,27 @@ GeometryMap::getGpcStructure(MapEntry& p, gpc_polygon* gpc_p)
 }
 
 void
-GeometryMap::getGpcStructureUsingMap(MapEntry& p, Eigen::Affine3f& transform_from_world_to_plane, gpc_polygon* gpc_p)
+GeometryMap::getGpcStructureUsingMap(Polygon& p, Eigen::Affine3f& transform_from_world_to_plane, gpc_polygon* gpc_p)
 {
   //Eigen::Affine3f transformation_from_plane_to_world;
-  //getTransformationFromPlaneToWorld(p.normal, p.polygon_world[0][0], transformation_from_plane_to_world);
+  //getTransformationFromPlaneToWorld(p.normal, p.contours[0][0], transformation_from_plane_to_world);
   //p.transform_from_world_to_plane = transform_from_world_to_plane;//transformation_from_plane_to_world.inverse();
   //printMapEntry(p);
-  gpc_p->num_contours = p.polygon_world.size();
-  gpc_p->hole = (int*)malloc(p.polygon_world.size()*sizeof(int));
-  gpc_p->contour = (gpc_vertex_list*)malloc(p.polygon_world.size()*sizeof(gpc_vertex_list));
+  gpc_p->num_contours = p.contours.size();
+  gpc_p->hole = (int*)malloc(p.contours.size()*sizeof(int));
+  gpc_p->contour = (gpc_vertex_list*)malloc(p.contours.size()*sizeof(gpc_vertex_list));
   //std::cout << "num_contours: " << gpc_p->num_contours << std::endl;
-  for(size_t j=0; j<p.polygon_world.size(); j++)
+  for(size_t j=0; j<p.contours.size(); j++)
   {
     //std::cout << j << std::endl;
-    gpc_p->contour[j].num_vertices = p.polygon_world[j].size();
-    gpc_p->hole[j] = 0;
+    gpc_p->hole[j] = p.holes[j];
+    gpc_p->contour[j].num_vertices = p.contours[j].size();
     //std::cout << "num_vertices: " << gpc_p->contour[j].num_vertices << std::endl;
     gpc_p->contour[j].vertex = (gpc_vertex*)malloc(gpc_p->contour[j].num_vertices*sizeof(gpc_vertex));
-    for(size_t k=0; k<p.polygon_world[j].size(); k++)
+    for(size_t k=0; k<p.contours[j].size(); k++)
     {
-      //std::cout << p.polygon_world[j][k] << std::endl;
-      Eigen::Vector3f point_trans = transform_from_world_to_plane*p.polygon_world[j][k];
+      //std::cout << p.contours[j][k] << std::endl;
+      Eigen::Vector3f point_trans = transform_from_world_to_plane*p.contours[j][k];
       gpc_p->contour[j].vertex[k].x = point_trans(0);
       gpc_p->contour[j].vertex[k].y = point_trans(1);
 
@@ -420,15 +445,15 @@ GeometryMap::getGpcStructureUsingMap(MapEntry& p, Eigen::Affine3f& transform_fro
 }
 
 void
-GeometryMap::printMapEntry(MapEntry& p)
+GeometryMap::printMapEntry(Polygon& p)
 {
   std::cout << "Polygon:\n";
-  for(int i=0; i< p.polygon_world.size(); i++)
+  for(int i=0; i< p.contours.size(); i++)
   {
     std::cout << i << std::endl;
-    for(int j=0; j< p.polygon_world[i].size(); j++)
+    for(int j=0; j< p.contours[i].size(); j++)
     {
-      std::cout << "(" << p.polygon_world[i][j](0) << ", " << p.polygon_world[i][j](1) << ", " << p.polygon_world[i][j](2) << ")\n";
+      std::cout << "(" << p.contours[i][j](0) << ", " << p.contours[i][j](1) << ", " << p.contours[i][j](2) << ")\n";
     }
   }
   std::cout << "Normal: (" << p.normal(0) << ", " << p.normal(1) << ", " << p.normal(2) << ")\n";
@@ -449,17 +474,17 @@ GeometryMap::printMap()
 	  for(int i=0; i< map_.size(); i++)
 	  {
 
-		  MapEntry& p =*map_[i];
+		  Polygon& p =*map_[i];
 
 		     outputFile2 <<"ID: " << i << "trafo " << std::endl <<  p.transform_from_world_to_plane.matrix() <<std::endl;
 			 outputFile2 << "normal:" << std::endl << p.normal << std::endl << "d: " << p.d << std::endl;
 			 outputFile2 << "Polygon:\n";
-			  for(int i=0; i< p.polygon_world.size(); i++)
+			  for(int i=0; i< p.contours.size(); i++)
 			  {
 				  outputFile2 << i << std::endl;
-			    for(int j=0; j< p.polygon_world[i].size(); j++)
+			    for(int j=0; j< p.contours[i].size(); j++)
 			    {
-			    	outputFile2 << "(" << p.polygon_world[i][j](0) << ", " << p.polygon_world[i][j](1) << ", " << p.polygon_world[i][j](2) << ")\n";
+			    	outputFile2 << "(" << p.contours[i][j](0) << ", " << p.contours[i][j](1) << ", " << p.contours[i][j](2) << ")\n";
 			    }
 			  }
 			 outputFile2 << "----------------------------";
@@ -470,7 +495,7 @@ GeometryMap::printMap()
 }
 
 void
-GeometryMap::saveMapEntry(std::string path, int ctr, MapEntry& p)
+GeometryMap::saveMapEntry(std::string path, int ctr, Polygon& p)
 {
   std::stringstream ss;
   ss << path << "polygon_" << ctr << ".pl";
@@ -480,16 +505,16 @@ GeometryMap::saveMapEntry(std::string path, int ctr, MapEntry& p)
   ss.str("");
   ss.clear();
   plane_file.close();
-  for(int i=0; i< p.polygon_world.size(); i++)
+  for(int i=0; i< p.contours.size(); i++)
   {
     pcl::PointCloud<pcl::PointXYZ> pc;
     ss << path << "polygon_" << ctr << "_" << i << ".pcd";
-    for(int j=0; j< p.polygon_world[i].size(); j++)
+    for(int j=0; j< p.contours[i].size(); j++)
     {
       pcl::PointXYZ pt;
-      pt.x = p.polygon_world[i][j](0);
-      pt.y = p.polygon_world[i][j](1);
-      pt.z = p.polygon_world[i][j](2);
+      pt.x = p.contours[i][j](0);
+      pt.y = p.contours[i][j](1);
+      pt.z = p.contours[i][j](2);
       pc.points.push_back(pt);
     }
     //std::cout << ss.str() << std::endl;
@@ -627,13 +652,43 @@ x = floor(x); 5;
 x /= 10000;
 return x;
 }
+
+void
+GeometryMap::colorizeMap()
+{
+  for(unsigned int i=0; i<map_.size(); i++)
+  {
+    if(fabs(map_[i]->normal[2]) < 0.1) //plane is vertical
+    {
+      map_[i]->color[0] = 0.5;
+      map_[i]->color[1] = 0.5;
+      map_[i]->color[2] = 0;
+      map_[i]->color[3] = 1;
+    }
+    else if(fabs(map_[i]->normal[0]) < 0.12 && fabs(map_[i]->normal[1]) < 0.12 && fabs(map_[i]->normal[2]) > 0.9) //plane is horizontal
+    {
+      map_[i]->color[0] = 0;
+      map_[i]->color[1] = 0.5;
+      map_[i]->color[2] = 0;
+      map_[i]->color[3] = 1;
+    }
+    else
+    {
+      map_[i]->color[0] = 1;
+      map_[i]->color[1] = 1;
+      map_[i]->color[2] = 1;
+      map_[i]->color[3] = 1;
+    }
+  }
+}
+
 /*int main (int argc, char** argv)
  {
 
   GeometryMap fm;
   for(int j=0; j<46; j++)
   {
-    GeometryMap::MapEntryPtr m_p = GeometryMap::MapEntryPtr(new GeometryMap::MapEntry());
+    GeometryMap::PolygonPtr m_p = GeometryMap::PolygonPtr(new GeometryMap::Polygon());
     std::stringstream ss;
     ss << "/home/goa/pcl_daten/kitchen_kinect/polygons/polygon_" << j << ".txt";
     std::ifstream myfile;
@@ -660,7 +715,7 @@ return x;
           vv.push_back(v);
           i++;
       }
-        m_p->polygon_world.push_back(vv);
+        m_p->contours.push_back(vv);
       myfile.close();
     }
     //fm.printMapEntry(*m_p);
@@ -675,7 +730,7 @@ int main (int argc, char** argv)
 
   GeometryMap gm;
   GeometryMapVisualisation gmv;
-  MapEntryPtr m_p = MapEntryPtr(new MapEntry());
+  PolygonPtr m_p = PolygonPtr(new Polygon());
 
 
 
@@ -693,13 +748,13 @@ int main (int argc, char** argv)
   vv.push_back(v);
   v << 0,0,1;
   vv.push_back(v);
-  m_p->polygon_world.push_back(vv);
+  m_p->contours.push_back(vv);
 //  gm.addMapEntry(m_p);
 
 
 //  gmv.showPolygon(m_p,0);
 
-  m_p = MapEntryPtr(new MapEntry());
+  m_p = PolygonPtr(new Polygon());
   m_p->id = 1;
   m_p->normal << 0,0,4;
   m_p->d = 4;
@@ -712,10 +767,10 @@ int main (int argc, char** argv)
   vv.push_back(v);
   v << 0,0,-1;
   vv.push_back(v);
-  m_p->polygon_world.push_back(vv);
+  m_p->contours.push_back(vv);
   //gm.addMapEntry(m_p);
 
-  /*m_p = MapEntryPtr(new MapEntry());
+  /*m_p = PolygonPtr(new Polygon());
   m_p->id = 1;
   m_p->normal << 0,0,-1;
   m_p->d = -1;
@@ -728,7 +783,7 @@ int main (int argc, char** argv)
   vv.push_back(v);
   v << 3,2,1;
   vv.push_back(v);
-  m_p->polygon_world.push_back(vv);
+  m_p->contours.push_back(vv);
   gm.addMapEntry(m_p);*/
   gm.saveMap("/home/goa/pcl_daten/merge_test/");
 

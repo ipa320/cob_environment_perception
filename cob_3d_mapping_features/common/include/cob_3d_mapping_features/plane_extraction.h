@@ -134,6 +134,7 @@ protected:
   PlaneConstraint plane_constraint_;
 
   pcl::EuclideanClusterExtraction<Point> cluster_;
+  pcl::EuclideanClusterExtraction<Point> cluster_2_;
   pcl::SACSegmentationFromNormals<Point, pcl::Normal> seg_;
   pcl::ExtractIndices<Point> extract_;
   pcl::NormalEstimation<Point,pcl::Normal> normal_estimator_;

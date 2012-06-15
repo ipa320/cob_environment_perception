@@ -8,7 +8,7 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/cob_3d_mapping_common</url>
-  
+
   <depend package="roscpp"/>
   <depend package="pcl"/>
   <depend package="dynamic_reconfigure"/>
@@ -17,9 +17,9 @@
   <depend package="visualization_msgs"/>
   <depend package="cob_srvs"/>
   <depend package="cob_3d_mapping_msgs"/>
-  
+
   <export>
-  	<cpp cflags="-I${prefix}/common/include -I${prefix}/ros/include"/>
+  	<cpp cflags="-I${prefix}/common/include -I${prefix}/ros/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcob_3d_mapping_common"/>
   </export>
 
 </package>

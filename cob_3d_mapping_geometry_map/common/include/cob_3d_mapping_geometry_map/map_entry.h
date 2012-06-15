@@ -25,8 +25,10 @@
     //gpc_polygon polygon_plane;
     Eigen::Vector3f normal;
     double d;
+    Eigen::Vector4f centroid;
     Eigen::Affine3f transform_from_world_to_plane;
     unsigned int merged;
+    std::vector<bool> holes;
   };
 
   typedef boost::shared_ptr<MapEntry> MapEntryPtr;
