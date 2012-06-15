@@ -112,7 +112,7 @@ struct merge_config {
  	void assignMembers();
 
 // 	Weighting
- 	void assignWeight();
+ 	void assignWeight(std::string & mode);
  	void applyWeighting(const std::vector< boost::shared_ptr<Polygon> >& poly_vec , Polygon & p_average );
 
  	//    Use general polygon clipper to create polygon structures
