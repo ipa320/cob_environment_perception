@@ -136,7 +136,7 @@ int main(int argc, char** argv)
   t.precisionStart();
   SegTypes::Graph::Ptr g(new SegTypes::Graph);
   cob_3d_segmentation::DepthSegmentation<SegTypes::Graph, SegTypes::Point, SegTypes::Normal, SegTypes::Label> seg;
-  seg.setPointCloudIn(p);
+  seg.setInputCloud(p);
   seg.setNormalCloudIn(n);
   seg.setLabelCloudInOut(l);
   seg.setClusterGraphOut(g);
