@@ -35,7 +35,8 @@ rosbuild_add_library(cob_3d_mapping_point_map
 	common/src/point_map.cpp)
 
 rosbuild_add_library(cob_3d_mapping_point_map_nodelets
-	ros/src/point_map_nodelet.cpp
+	#ros/src/point_map_nodelet.cpp
+	ros/src/point_map_nodelet_2.cpp
 	ros/src/difference_segmentation.cpp)
 
 rosbuild_add_executable(set_reference_map_client ros/src/set_reference_map.cpp)

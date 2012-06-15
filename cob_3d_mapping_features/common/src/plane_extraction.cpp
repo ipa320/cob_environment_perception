@@ -92,6 +92,14 @@ PlaneExtraction::PlaneExtraction()
   cluster_.setMinClusterSize (min_cluster_size_);
   cluster_.setSearchMethod (clusters_tree);
 
+  pcl::KdTree<Point>::Ptr clusters_2_tree;
+  clusters_2_tree = boost::make_shared<pcl::KdTreeFLANN<Point> > ();
+  // Table clustering parameters
+  // TODO: parameter
+  cluster_2_.setClusterTolerance (0.06);
+  cluster_2_.setMinClusterSize (50);
+  cluster_2_.setSearchMethod (clusters_2_tree);
+
   pcl::KdTreeFLANN<Point>::Ptr tree (new pcl::KdTreeFLANN<Point> ());
   normal_estimator_.setSearchMethod(tree);
   //TODO: parameter
@@ -175,7 +183,6 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
     while(consider_in_cluster->indices.size()>min_cluster_size_ /*&& ctr<6*/)
     {
       //ROS_INFO("Cluster size: %d", (int)consider_in_cluster->indices.size());
-      ctr++;
 
       // Do SAC plane segmentation
 
@@ -255,7 +262,6 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
           ss.clear();
           ss << file_path_ << "/planes/plane_" << ctr_ << "_" << ctr << ".pcd";
           pcl::io::savePCDFileASCII (ss.str(), dominant_plane);
-          std::cout << ss << std::endl;
         }
 
         // Project the model inliers
@@ -265,28 +271,48 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::Ptr& pc_in,
         proj_.setInputCloud (cluster_ptr);
         proj_.setIndices(inliers_plane);
         proj_.filter (*cloud_projected);
-
-        // Create a Convex Hull representation of the projected inliers
-        pcl::PointCloud<Point> cloud_hull;
-        std::vector< pcl::Vertices > hull_polygons;
-        chull_.setInputCloud (cloud_projected);
-        //TODO: parameter
-
-        chull_.reconstruct (cloud_hull, hull_polygons);
-        v_cloud_hull.push_back(cloud_hull);
-        v_hull_polygons.push_back(hull_polygons);
-        v_coefficients_plane.push_back(coefficients_plane);
-        ROS_DEBUG("v_cloud_hull size: %d", v_cloud_hull.size());
-
-
         if(save_to_file_)
         {
-          saveHulls(cloud_hull, hull_polygons, ctr);
           ss.str("");
           ss.clear();
           ss << file_path_ << "/planes/plane_pr_" << ctr_ << "_" << ctr << ".pcd";
           pcl::io::savePCDFileASCII (ss.str(), *cloud_projected);
         }
+
+        std::vector<pcl::PointIndices> plane_clusters;
+        cluster_2_.setInputCloud (cloud_projected);
+        cluster_2_.extract (plane_clusters);
+
+        for(unsigned int j=0; j<plane_clusters.size(); j++)
+        {
+          pcl::PointCloud<Point> plane_cluster;
+          extract_.setInputCloud(cloud_projected);
+          extract_.setIndices(boost::make_shared<const pcl::PointIndices> (plane_clusters[j]));
+          extract_.filter(plane_cluster);
+          pcl::PointCloud<Point>::Ptr plane_cluster_ptr = plane_cluster.makeShared();
+
+          if(plane_cluster_ptr->size()<5) continue;
+          //else std::cout << "plane cluster has " << plane_cluster_ptr->size() << " points" << std::endl;
+
+          // Create a Convex Hull representation of the projected inliers
+          pcl::PointCloud<Point> cloud_hull;
+          std::vector< pcl::Vertices > hull_polygons;
+          chull_.setInputCloud (plane_cluster_ptr);
+          //TODO: parameter
+
+          chull_.reconstruct (cloud_hull, hull_polygons);
+          v_cloud_hull.push_back(cloud_hull);
+          v_hull_polygons.push_back(hull_polygons);
+          v_coefficients_plane.push_back(coefficients_plane);
+          ROS_DEBUG("v_cloud_hull size: %d", v_cloud_hull.size());
+
+          if(save_to_file_)
+          {
+            saveHulls(cloud_hull, hull_polygons, ctr);
+          }
+          ctr++;
+        }
+
       }
 
       // Remove plane inliers from indices list
@@ -335,9 +361,9 @@ PlaneExtraction::saveHulls(pcl::PointCloud<Point>& cloud_hull,
           std::vector< pcl::Vertices >& hull_polygons,
           int plane_ctr)
 {
-  pcl::PointCloud<Point> hull_part;
   for(unsigned int i=0; i<hull_polygons.size(); i++)
   {
+    pcl::PointCloud<Point> hull_part;
     for(unsigned int j=0; j<hull_polygons[i].vertices.size(); j++)
     {
       int idx = hull_polygons[i].vertices[j];

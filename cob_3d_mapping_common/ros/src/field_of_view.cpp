@@ -65,7 +65,8 @@
 #include <visualization_msgs/Marker.h>
 #include <cob_3d_mapping_msgs/GetFieldOfView.h>
 #include <Eigen/Core>
-#include "cob_3d_mapping_common/reconfigureable_node.h"
+//#include "cob_3d_mapping_common/reconfigureable_node.h"
+#include <dynamic_reconfigure/server.h>
 #include <cob_3d_mapping_common/field_of_viewConfig.h>
 
 // external includes
@@ -76,22 +77,22 @@ using namespace tf;
 
 //####################
 //#### node class ####
-class FieldOfView : protected Reconfigurable_Node<cob_3d_mapping_common::field_of_viewConfig>
+class FieldOfView
 {
 public:
   // Constructor
   FieldOfView()
-  : Reconfigurable_Node<cob_3d_mapping_common::field_of_viewConfig>("FieldOfView")
   {
+    config_server_.setCallback(boost::bind(&FieldOfView::dynReconfCallback, this, _1, _2));
     fov_marker_pub_ = n_.advertise<visualization_msgs::Marker>("fov_marker",10);
     get_fov_srv_ = n_.advertiseService("get_fov", &FieldOfView::srvCallback_GetFieldOfView, this);
-    setSensorFoV_hor(cob_3d_mapping_common::field_of_viewConfig::__getDefault__().sensor_fov_hor_angle);
+    /*setSensorFoV_hor(cob_3d_mapping_common::field_of_viewConfig::__getDefault__().sensor_fov_hor_angle);
     setSensorFoV_ver(cob_3d_mapping_common::field_of_viewConfig::__getDefault__().sensor_fov_ver_angle);
-    setSensorMaxRange(cob_3d_mapping_common::field_of_viewConfig::__getDefault__().sensor_max_range);
-    camera_frame_ = std::string(/*"/base_kinect_rear_link"*/"/head_cam3d_link");
+    setSensorMaxRange(cob_3d_mapping_common::field_of_viewConfig::__getDefault__().sensor_max_range);*/
+    //camera_frame_ = std::string(/*"/base_kinect_rear_link"*/"/head_cam3d_link");
     computeFieldOfView();
 
-    setReconfigureCallback2(boost::bind(&callback, this, _1, _2), boost::bind(&callback_get, this, _1));
+    //setReconfigureCallback2(boost::bind(&callback, this, _1, _2), boost::bind(&callback_get, this, _1));
   }
 
 
@@ -99,6 +100,17 @@ public:
   ~FieldOfView()
   {
     /// void
+  }
+
+  void dynReconfCallback(cob_3d_mapping_common::field_of_viewConfig &config, uint32_t level)
+  {
+      setSensorFoV_hor(config.sensor_fov_hor_angle);
+      setSensorFoV_ver(config.sensor_fov_ver_angle);
+      setSensorMaxRange(config.sensor_max_range);
+      camera_frame_ = config.camera_frame;
+
+    //new settings -> recalculate
+    computeFieldOfView();
   }
 
   /**
@@ -112,7 +124,7 @@ public:
    *
    * @return nothing
    */
-  static void callback(FieldOfView *fov, cob_3d_mapping_common::field_of_viewConfig &config, uint32_t level)
+  /*static void callback(FieldOfView *fov, cob_3d_mapping_common::field_of_viewConfig &config, uint32_t level)
   {
     if(!fov)
       return;
@@ -141,7 +153,7 @@ public:
     config.sensor_fov_hor_angle = fov->sensor_fov_hor_;
     config.sensor_fov_ver_angle = fov->sensor_fov_ver_;
     config.sensor_max_range = fov->sensor_max_range_;
-  }
+  }*/
 
   void setSensorFoV_hor(double val) {
     sensor_fov_hor_ = val*M_PI/180;
@@ -452,6 +464,7 @@ protected:
   ros::Time stamp_;
 
   TransformListener tf_listener_;
+  dynamic_reconfigure::Server<cob_3d_mapping_common::field_of_viewConfig> config_server_;
 
   double sensor_fov_hor_;       /// horizontal angle of sensor
   double sensor_fov_ver_;       /// vertical angle of sensor

@@ -91,16 +91,15 @@
 #include "pcl/filters/voxel_grid.h"
 #include <Eigen/StdVector>
 
-#include <cob_3d_mapping_common/reconfigureable_node.h>
+//#include <cob_3d_mapping_common/reconfigureable_node.h>
+#include <dynamic_reconfigure/server.h>
 #include <cob_3d_mapping_features/plane_extraction_nodeletConfig.h>
 
 
 // ROS message includes
 //#include <sensor_msgs/PointCloud2.h>
 #include <cob_3d_mapping_msgs/GetPlane.h>
-#include <cob_3d_mapping_msgs/PolygonArray.h>
 #include <cob_3d_mapping_msgs/ShapeArray.h>
-#include <geometry_msgs/PolygonStamped.h>
 
 // external includes
 #include <boost/timer.hpp>
@@ -115,20 +114,19 @@ using namespace cob_3d_mapping_features;
 
 //####################
 //#### nodelet class ####
-class PlaneExtractionNodelet : public pcl_ros::PCLNodelet, protected Reconfigurable_Node<plane_extraction_nodeletConfig>
+class PlaneExtractionNodelet : public pcl_ros::PCLNodelet//, protected Reconfigurable_Node<plane_extraction_nodeletConfig>
 {
 public:
   typedef pcl::PointXYZRGB Point;
   // Constructor
   PlaneExtractionNodelet()
   : as_(0),
-    mode_action_(false),
-    Reconfigurable_Node<plane_extraction_nodeletConfig>("PlaneExtractionNodelet")
+    mode_action_(false)
   {
     ctr_ = 0;
     min_cluster_size_ = 300;
 
-    setReconfigureCallback(boost::bind(&callback, this, _1, _2));
+    //setReconfigureCallback(boost::bind(&callback, this, _1, _2));
   }
 
   // Destructor
@@ -136,6 +134,19 @@ public:
   {
     /// void
     if(as_) delete as_;
+  }
+
+  void dynReconfCallback(cob_3d_mapping_features::plane_extraction_nodeletConfig &config, uint32_t level)
+  {
+    file_path_ = config.file_path;
+    save_to_file_ = config.save_to_file;
+    plane_constraint_ = config.plane_constraint;
+    mode_action_ = config.mode_action;
+    target_frame_ = config.target_frame;
+
+    pe.setFilePath(file_path_);
+    pe.setSaveToFile(save_to_file_);
+    pe.setPlaneConstraint((PlaneConstraint)plane_constraint_);
   }
 
   /**
@@ -149,7 +160,7 @@ public:
    *
    * @return nothing
    */
-  static void callback(PlaneExtractionNodelet *inst, cob_3d_mapping_features::plane_extraction_nodeletConfig &config, uint32_t level)
+  /*static void callback(PlaneExtractionNodelet *inst, cob_3d_mapping_features::plane_extraction_nodeletConfig &config, uint32_t level)
   {
     if(!inst)
       return;
@@ -167,7 +178,7 @@ public:
     inst->pe.setFilePath(inst->file_path_);
     inst->pe.setSaveToFile(inst->save_to_file_);
     inst->pe.setPlaneConstraint((PlaneConstraint)inst->plane_constraint_);
-  }
+  }*/
 
 
   /**
@@ -182,12 +193,9 @@ public:
     PCLNodelet::onInit();
     n_ = getNodeHandle();
 
+    config_server_.setCallback(boost::bind(&PlaneExtractionNodelet::dynReconfCallback, this, _1, _2));
     point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &PlaneExtractionNodelet::pointCloudSubCallback, this);
-    viz_marker_pub_ = n_.advertise<visualization_msgs::Marker>("plane_marker",100);
-    chull_pub_ = n_.advertise<pcl::PointCloud<Point> >("chull",1);
-    object_cluster_pub_ = n_.advertise<pcl::PointCloud<Point> >("object_cluster",1);
-    polygon_pub_ = n_.advertise<geometry_msgs::PolygonStamped>("polygons",1);
-    polygon_array_pub_ = n_.advertise<cob_3d_mapping_msgs::PolygonArray>("polygon_array",1);
+    viz_marker_pub_ = n_.advertise<visualization_msgs::Marker>("plane_marker",10);
     shape_array_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("shape_array",1);
 
     as_= new actionlib::SimpleActionServer<cob_3d_mapping_msgs::PlaneExtractionAction>(n_, "plane_extraction", boost::bind(&PlaneExtractionNodelet::actionCallback, this, _1), false);
@@ -289,8 +297,6 @@ public:
       publishShapeArray(v_cloud_hull, v_hull_polygons, v_coefficients_plane, pc_in->header);
       for(unsigned int i = 0; i < v_cloud_hull.size(); i++)
       {
-        //publishPolygonArray(v_cloud_hull[i], v_hull_polygons[i], v_coefficients_plane[i], pc_in->header);
-        //publishPolygons(v_cloud_hull[i], pc_in->header);
         publishMarker(v_cloud_hull[i], pc_in->header, 0, 0, 1);
         ctr_++;
         //ROS_INFO("%d planes published so far", ctr_);
@@ -386,71 +392,6 @@ public:
   }
 
   /**
-   * @brief creates polygon from point cloud and publish it
-   *
-   * creates polygon from point cloud and publish it
-   *
-   * @param cloud_hull point cloud
-   * @param header header of published polygons
-   *
-   * @return nothing
-   */
-  void
-  publishPolygons(pcl::PointCloud<Point>& cloud_hull,
-                  std_msgs::Header header)
-  {
-    geometry_msgs::PolygonStamped polygon;
-    polygon.header = header;
-    polygon.polygon.points.resize(cloud_hull.points.size());
-    for(unsigned int i = 0; i < cloud_hull.points.size(); i++)
-    {
-      polygon.polygon.points[i].x = cloud_hull.points[i].x;
-      polygon.polygon.points[i].y = cloud_hull.points[i].y;
-      polygon.polygon.points[i].z = cloud_hull.points[i].z;
-    }
-    polygon_pub_.publish(polygon);
-  }
-
-  /**
-   * @brief creates polygon from parameters and publish it
-   *
-   * creates polygon from parameters and publish it
-   *
-   * @param cloud_hull point cloud
-   * @param hull_polygons polygons
-   * @param coefficients_plane coefficients
-   * @param header header of published polygons
-   *
-   * @return nothing
-   */
-  void
-  publishPolygonArray(pcl::PointCloud<Point>& cloud_hull,
-                      std::vector< pcl::Vertices >& hull_polygons,
-                      pcl::ModelCoefficients& coefficients_plane,
-                      std_msgs::Header header)
-  {
-    cob_3d_mapping_msgs::PolygonArray p;
-    p.polygons.resize(hull_polygons.size());
-    p.header = header;
-    p.normal.x = coefficients_plane.values[0];
-    p.normal.y = coefficients_plane.values[1];
-    p.normal.z = coefficients_plane.values[2];
-    p.d.data = coefficients_plane.values[3];
-    for(unsigned int i=0; i<hull_polygons.size(); i++)
-    {
-      p.polygons[i].points.resize(hull_polygons[i].vertices.size());
-      for(unsigned int j=0; j<hull_polygons[i].vertices.size(); j++)
-      {
-        int idx = hull_polygons[i].vertices[j];
-        p.polygons[i].points[j].x = cloud_hull.points[idx].x;
-        p.polygons[i].points[j].y = cloud_hull.points[idx].y;
-        p.polygons[i].points[j].z = cloud_hull.points[idx].z;
-      }
-      polygon_array_pub_.publish(p);
-    }
-  }
-
-  /**
    * @brief creates polygon from parameters and publish it
    *
    * creates polygon from parameters and publish it
@@ -477,16 +418,16 @@ public:
     p.d.data = coefficients_plane.values[3];*/
     for(unsigned int i=0; i<v_cloud_hull.size(); i++)
     {
-      cob_3d_mapping_msgs::Shape s;
-      s.type = cob_3d_mapping_msgs::Shape::PLANE;
-      s.params.resize(4);
-      for(unsigned int c=0; c<4; c++)
-        s.params[c] = v_coefficients_plane[i].values[c];
       //std::cout << "normal: " << v_coefficients_plane[i].values[0] << ","  << v_coefficients_plane[i].values[1] << "," << v_coefficients_plane[i].values[2] << std::endl;
       //std::cout << "d: " << v_coefficients_plane[i].values[3] << std::endl << std::endl;
       //s.points.resize(v_hull_polygons[i].size());
       for(unsigned int j=0; j<v_hull_polygons[i].size(); j++)
       {
+        cob_3d_mapping_msgs::Shape s;
+        s.type = cob_3d_mapping_msgs::Shape::PLANE;
+        s.params.resize(4);
+        for(unsigned int c=0; c<4; c++)
+          s.params[c] = v_coefficients_plane[i].values[c];
         if (v_hull_polygons[i][j].vertices.size()==0) continue;
         pcl::PointCloud<pcl::PointXYZ> pc;
         for(unsigned int k=0; k<v_hull_polygons[i][j].vertices.size(); k++)
@@ -501,8 +442,8 @@ public:
         sensor_msgs::PointCloud2 pc_msg;
         pcl::toROSMsg(pc, pc_msg);
         s.points.push_back(pc_msg);
+        sa.shapes.push_back(s);
       }
-      sa.shapes.push_back(s);
     }
     shape_array_pub_.publish(sa);
   }
@@ -570,11 +511,8 @@ public:
 protected:
   ros::Subscriber point_cloud_sub_;
   ros::Publisher viz_marker_pub_;
-  ros::Publisher chull_pub_;
-  ros::Publisher object_cluster_pub_;
-  ros::Publisher polygon_array_pub_;
-  ros::Publisher polygon_pub_;
   ros::Publisher shape_array_pub_;
+  dynamic_reconfigure::Server<cob_3d_mapping_features::plane_extraction_nodeletConfig> config_server_;
 
   ros::ServiceServer get_plane_;
 
@@ -607,50 +545,3 @@ protected:
 };
 
 PLUGINLIB_DECLARE_CLASS(cob_3d_mapping_features, PlaneExtractionNodelet, PlaneExtractionNodelet, nodelet::Nodelet)
-
-/// Old code
-
-/*void publishMarker(pcl::PointCloud<Point>& cloud_hull, std::string& frame_id)
-{
-  visualization_msgs::Marker marker;
-  marker.action = visualization_msgs::Marker::ADD;
-  marker.type = visualization_msgs::Marker::TRIANGLE_LIST;
-  marker.lifetime = ros::Duration();
-  marker.header.frame_id = frame_id;
-  marker.id = ctr_;
-
-
-  //create the marker in the table reference frame
-  //the caller is responsible for setting the pose of the marker to match
-
-  marker.scale.x = 1;
-  marker.scale.y = 1;
-  marker.scale.z = 1;
-
-  geometry_msgs::Point pt1, pt2, pt3;
-  pt1.x = cloud_hull.points[0].x;
-  pt1.y = cloud_hull.points[0].y;
-  pt1.z = cloud_hull.points[0].z;
-
-  for(unsigned int i = 1; i < cloud_hull.points.size()-1; ++i)
-  {
-    pt2.x = cloud_hull.points[i].x;
-    pt2.y = cloud_hull.points[i].y;
-    pt2.z = cloud_hull.points[i].z;
-
-    pt3.x = cloud_hull.points[i+1].x;
-    pt3.y = cloud_hull.points[i+1].y;
-    pt3.z = cloud_hull.points[i+1].z;
-
-    marker.points.push_back(pt1);
-    marker.points.push_back(pt2);
-    marker.points.push_back(pt3);
-  }
-
-  marker.color.r = 0;
-  marker.color.g = 0;
-  marker.color.b = 1;
-  marker.color.a = 1.0;
-
-  table_marker_pub_.publish(marker);
-}*/

@@ -76,6 +76,11 @@
 template <typename Point>
 bool Registration_Infobased<Point>::compute_features()
 {
+  if(!this->input_org_)
+    return false;
+
+  this->scene_changed_=false;
+
   indices_pos2.clear();
   indices_neg2.clear();
 
@@ -117,7 +122,7 @@ bool Registration_Infobased<Point>::compute_features()
 
       float d = pn.z-po.z;
 
-	  // threshold is calculated in consideration of quantization error
+      // threshold is calculated in consideration of quantization error
       const float di = std::max(pn.z,po.z) * threshold_diff_;
       if(d>di) {
         depth_map[ind]=1;
@@ -133,16 +138,19 @@ bool Registration_Infobased<Point>::compute_features()
   }
 
 #if DEBUG_SWITCH_
-  ROS_INFO("found %d %d", indices_pos.size(), indices_neg.size());
+  ROS_INFO("found  %d %d", indices_pos.size(), indices_neg.size());
 #endif
 
   if(indices_pos.size()+indices_neg.size()<min_changes_ /*|| std::min(indices_pos.size(), indices_neg.size())<100*/)
   {
-    standing_++;
-    if(always_relevant_changes_ && standing_>15) {
-      odo_is_good_=true;
-      standing_=0;
-      return true;
+    if(this->moved_)
+    {
+      standing_++;
+      if(always_relevant_changes_ && standing_>15) {
+        odo_is_good_=true;
+        standing_=0;
+        return true;
+      }
     }
     return false;
   }
@@ -154,7 +162,7 @@ bool Registration_Infobased<Point>::compute_features()
     if( info<max_info_ && info>min_info_) {
       if(getMaxDiff(pc_old, indices_pos[i])>threshold_step_)
         indices_pos2.push_back(indices_pos[i]);
-      if(getMaxDiff2(pc, indices_pos[i], pc_old, mi)>threshold_step_)
+      else if(getMaxDiff2(pc, indices_pos[i], pc_old, mi)>threshold_step_)
         indices_neg2.push_back(mi);
     }
   }
@@ -165,7 +173,7 @@ bool Registration_Infobased<Point>::compute_features()
       if(getMaxDiff(pc, indices_neg[i])>threshold_step_) {
         indices_neg2.push_back(indices_neg[i]);
       }
-      if(getMaxDiff2(pc_old, indices_neg[i], pc, mi)>threshold_step_)
+      else if(getMaxDiff2(pc_old, indices_neg[i], pc, mi)>threshold_step_)
         indices_pos2.push_back(mi);
     }
   }
@@ -195,11 +203,13 @@ bool Registration_Infobased<Point>::compute_features()
   markers_.width=markers_.size();
   markers_.height=1;
 
-  ROS_INFO("found %d %d", indices_pos2.size(), indices_neg2.size());
+  ROS_INFO("found2 %d %d", indices_pos2.size(), indices_neg2.size());
 #endif
 
+  this->scene_changed_=true;
+
 #if USED_ODO_
-  return true;
+  return this->moved_;
 #elif USE_INFINITE_
   return std::min(indices_pos2.size(), indices_neg2.size())>400;
 #else
@@ -315,12 +325,14 @@ bool Registration_Infobased<Point>::compute_transformation()
         T = icp.getFinalTransformation();
       }
 
-      if(!checkSamples(T, &bad))
+      checkSamples(T, &bad);
+      if(bad>2) {
 #if EVALUATION_MODE_
         T=T.Identity();
 #else
-      if(!use_odometry_ || this->failed_<10)
-        return false;
+        if(!use_odometry_ || this->failed_<10)
+          return false;
+      }
       else {
         T = T.Identity();
         ROS_INFO("using odometry");
@@ -331,10 +343,13 @@ bool Registration_Infobased<Point>::compute_transformation()
 
   }
 
-  if(!use_odometry_)
-    this->transformation_ = this->transformation_*T;
-  else
-    this->transformation_ = this->transformation_*(this->odometry_last_.inverse()*this->odometry_)*T;
+  if(T.col(3).head<3>().squaredNorm()>9*tmax_*tmax_)
+    T=T.Identity();
+  if(Eigen::Quaternionf(T.topLeftCorner<3, 3> ()).angularDistance(Eigen::Quaternionf::Identity())>3*rmax_)
+    T=T.Identity();
+
+  this->transformation_ = this->transformation_*T;
+
   this->last_input_ = this->input_org_;
   this->odometry_last_ = this->odometry_;
   this->failed_ = 0;
@@ -447,7 +462,7 @@ void Registration_Infobased<Point>::getKinectParameters()
   for(int x=pc.width-1; x>=0; x-=8) {
     for(int y=pc.height-1; y>=0; y-=8) {
       int ind = getInd(x,y);
-      if(pcl_isfinite(pc[ind].z)&&pc[ind].z!=p1.z) {
+      if(pcl_isfinite(pc[ind].z)&&pc[ind].z!=p1.z&&pc[ind].z<10.f) {
         p2=pc[ind];
         i2=ind;
         x=-1;
@@ -498,6 +513,8 @@ bool Registration_Infobased<Point>::checkSamples(const Eigen::Matrix4f &T, int *
       if(pcl_isfinite(pc[ind].z)) {
         Eigen::Vector4f v=T*pc[ind].getVector4fMap();
 
+        if(v(2)>10.f) continue;
+
         int x=kinect_f_*v(0)/v(2)+kinect_dx_;
         int y=kinect_f_*v(1)/v(2)+kinect_dy_;
 
@@ -505,7 +522,7 @@ bool Registration_Infobased<Point>::checkSamples(const Eigen::Matrix4f &T, int *
           continue;
 
         ++found;
-        if( std::min(pc_old[getInd(x,y)].z,v(2))<4 && std::abs(pc_old[getInd(x,y)].z-v(2))>threshold_diff_*v(2)*0.5 )
+        if( std::abs(pc_old[getInd(x,y)].z-v(2))>threshold_diff_*v(2)*0.5 )
           bad++;
       }
     }

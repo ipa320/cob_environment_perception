@@ -73,7 +73,7 @@ extern "C" {
 }
 //#ifndef __GEOMETRY_MAP_VISUALISATION_H__
 #include "cob_3d_mapping_geometry_map/vis/geometry_map_visualisation.h"
-#include "cob_3d_mapping_geometry_map/map_entry.h"
+#include "cob_3d_mapping_common/polygon.h"
 
 
 
@@ -85,20 +85,6 @@ extern "C" {
 class GeometryMap
 {
 public:
-//  struct MapEntry
-//  {
-//    //needed for 32-bit systems: see http://eigen.tuxfamily.org/dox/TopicStructHavingEigenMembers.html
-//    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-//    unsigned int id;
-//    std::vector<std::vector<Eigen::Vector3f> > polygon_world;
-//    //cob_env_model::PolygonArray polygon_world;
-//    //gpc_polygon polygon_plane;
-//    Eigen::Vector3f normal;
-//    double d;
-//    Eigen::Affine3f transform_from_world_to_plane;
-//    unsigned int merged;
-//  };
-
   /*inline std::ostream& operator << (std::ostream& os, const MapEntry& m)
   {
     os << "(" << m.d << "," << m.normal << "," << ")";
@@ -129,27 +115,30 @@ public:
   }
 
   void
-  addMapEntry(MapEntryPtr p);
+  addMapEntry(cob_3d_mapping::PolygonPtr p);
 
   void
-  searchIntersection(MapEntry p , std::vector<int>& intersections);
+  searchIntersection(cob_3d_mapping::Polygon& p , std::vector<int>& intersections);
 
   void
-  mergeWithMap(MapEntryPtr p_ptr , std::vector<int> intersections);
+  mergeWithMap(cob_3d_mapping::PolygonPtr p_ptr , std::vector<int> intersections);
+
+  void
+  computeCentroid(cob_3d_mapping::Polygon& p);
 
   void
   removeMapEntry(int id);
 
   void
-  getGpcStructure(MapEntry& p, gpc_polygon* gpc_p);
+  getGpcStructure(cob_3d_mapping::Polygon& p, gpc_polygon* gpc_p);
 
   void
-  getGpcStructureUsingMap(MapEntry& p,
+  getGpcStructureUsingMap(cob_3d_mapping::Polygon& p,
                           Eigen::Affine3f& transform_from_world_to_plane,
                           gpc_polygon* gpc_p);
 
   void
-  printMapEntry(MapEntry& p);
+  printMapEntry(cob_3d_mapping::Polygon& p);
 
   void
   printMap();
@@ -159,7 +148,7 @@ public:
   printGpcStructure(gpc_polygon* p);
 
   void
-  saveMapEntry(std::string path, int ctr, MapEntry& p);
+  saveMapEntry(std::string path, int ctr, cob_3d_mapping::Polygon& p);
 
   void
   saveMap(std::string path);
@@ -183,10 +172,13 @@ public:
   float
   rounding(float x);
 
-  boost::shared_ptr<std::vector<MapEntryPtr> >
+  void
+  colorizeMap();
+
+  boost::shared_ptr<std::vector<cob_3d_mapping::PolygonPtr> >
   getMap()
   {
-    return boost::make_shared<std::vector<MapEntryPtr> >(map_);
+    return boost::make_shared<std::vector<cob_3d_mapping::PolygonPtr> >(map_);
   }
 
   void
@@ -202,7 +194,7 @@ public:
   }
 
 protected:
-  std::vector<MapEntryPtr> map_;
+  std::vector<cob_3d_mapping::PolygonPtr> map_;
   unsigned int new_id_;
   std::string file_path_;
   bool save_to_file_;

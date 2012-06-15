@@ -101,7 +101,7 @@ int main (int argc, char **argv)
     ROS_INFO("Service call finished.");
   }
   else
-    ROS_INFO("AService call failed.");
+    ROS_INFO("[set reference map]: Service call failed.");
 
   return 0;
 }

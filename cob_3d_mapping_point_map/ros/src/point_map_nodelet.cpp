@@ -335,6 +335,7 @@ public:
         pcl::transformPointCloud(pc_in_,pc_in_,reg_->getTransformation());
 
         map_.header.frame_id="/map";
+        map_.header.stamp=pc_in_.header.stamp;
         pc_in_.header.frame_id="/map";
         map_+=pc_in_;
 
@@ -347,10 +348,12 @@ public:
         req.stamp = pc_in_.header.stamp;
         req.target_frame = "/map";
         cob_3d_mapping_msgs::GetFieldOfViewResponse res;
-        get_fov_srv_client_.call(req,res);
+        //get_fov_srv_client_.call(req,res);
+
+        ROS_WARN("registration successful");
       }
       else
-        ROS_WARN("not successful");
+        ROS_WARN("registration not successful");
 
       ROS_DEBUG("[aggregate_point_map] ICP took %f s", t.elapsed());
 
