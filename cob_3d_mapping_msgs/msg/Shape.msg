@@ -1,12 +1,14 @@
+Header header
+
 byte PLANE=0
 byte LINE=1
 byte CURVED=2
 byte MESH=3
 byte OTHER=4
-# potential extensions: SPHERE, CYLINDER, BOX 
+# potential extensions: SPHERE, CYLINDER, BOX
 
 byte type
-byte id
+int32 id
 
 # define shape parameters
 # for plane
@@ -21,3 +23,7 @@ sensor_msgs/PointCloud2[] points
 #### define mesh ####
 # each three entries form a triangle; indices of points are stored
 int32[] vertices
+
+geometry_msgs/Point32 centroid
+std_msgs/ColorRGBA color
+bool[] holes
