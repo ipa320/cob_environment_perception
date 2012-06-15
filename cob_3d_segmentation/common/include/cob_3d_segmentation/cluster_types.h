@@ -52,12 +52,12 @@
  *
  ****************************************************************/
 
-#ifndef __COB_3D_MAPPING_FEATURES_CLUSTER_TYPES_H__
-#define __COB_3D_MAPPING_FEATURES_CLUSTER_TYPES_H__
+#ifndef __COB_3D_SEGMENTATION_CLUSTER_TYPES_H__
+#define __COB_3D_SEGMENTATION_TYPES_H__
 
 #include <pcl/common/eigen.h>
 
-namespace cob_3d_mapping_features
+namespace cob_3d_segmentation
 {
   class ClusterBase
   {

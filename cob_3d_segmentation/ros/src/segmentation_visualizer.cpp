@@ -8,8 +8,8 @@
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
  * Project name: care-o-bot
- * ROS stack name: cob_vision
- * ROS package name: cob_env_model
+ * ROS stack name: cob_environment_perception_intern
+ * ROS package name: cob_3d_segmentation
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -52,12 +52,12 @@
  *
  ****************************************************************/
 
-#include "cob_3d_mapping_features/segmentation_visualizer.h"
+#include "cob_3d_segmentation/segmentation_visualizer.h"
 
 #include <pcl/visualization/point_cloud_handlers.h>
 
 
-using namespace cob_3d_mapping_features;
+using namespace cob_3d_segmentation;
 
 void
 SegmentationVisualizer::init()

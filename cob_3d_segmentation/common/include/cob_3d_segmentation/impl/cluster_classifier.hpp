@@ -9,7 +9,7 @@
  *
  * Project name: care-o-bot
  * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_features
+ * ROS package name: cob_3d_segmentation
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -55,15 +55,15 @@
 #ifndef __IMPL_CLUSTER_CLASSIFIER_HPP__
 #define __IMPL_CLUSTER_CLASSIFIER_HPP__
 
-#include "cob_3d_mapping_features/cluster_classifier.h"
-#include "cob_3d_mapping_features/organized_normal_estimation.h"
+#include "cob_3d_segmentation/cluster_classifier.h"
+#include <cob_3d_mapping_features/organized_normal_estimation.h>
 
 #include <pcl/common/eigen.h>
 
 #include <boost/tuple/tuple.hpp>
 
 template <typename ClusterHandlerT, typename PointT, typename NormalT, typename LabelT> void
-cob_3d_mapping_features::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::classifyOld()
+cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::classifyOld()
 {
   ClusterPtr c_it, c_end;
   for ( boost::tie(c_it,c_end) = clusters_->getClusters(); c_it != c_end; ++c_it)
@@ -92,7 +92,7 @@ cob_3d_mapping_features::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT
 }
 
 template <typename ClusterHandlerT, typename PointT, typename NormalT, typename LabelT> void
-cob_3d_mapping_features::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::classify()
+cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::classify()
 {
   ClusterPtr c_it, c_end;
   float pc_min, pc_max;
@@ -144,7 +144,7 @@ cob_3d_mapping_features::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT
 }
 
 template <typename ClusterHandlerT, typename PointT, typename NormalT, typename LabelT> void
-cob_3d_mapping_features::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::recomputeClusterNormals(ClusterPtr c)
+cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::recomputeClusterNormals(ClusterPtr c)
 {
   int w_size = std::min( std::floor(sqrt(c->size() / 16.0f)) + 5, 30.0);
   int steps = std::floor(w_size / 5);
@@ -152,7 +152,7 @@ cob_3d_mapping_features::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT
 }
 
 template <typename ClusterHandlerT, typename PointT, typename NormalT, typename LabelT> void
-cob_3d_mapping_features::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::recomputeClusterNormals(
+cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::recomputeClusterNormals(
   ClusterPtr c,
   int w_size,
   int steps)
@@ -161,7 +161,7 @@ cob_3d_mapping_features::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT
   for (typename ClusterType::iterator idx = c->begin(); idx != c->end(); ++ idx)
   {
     Eigen::Vector3f new_normal;
-    OrganizedNormalEstimationHelper::computeSegmentNormal<PointT,LabelT>(
+    cob_3d_mapping_features::OrganizedNormalEstimationHelper::computeSegmentNormal<PointT,LabelT>(
       new_normal, *idx, surface_, labels_, w_size, steps);
     normals_->points[*idx].getNormalVector3fMap() = new_normal;
     clusters_->updateNormal(c, new_normal);
@@ -169,7 +169,7 @@ cob_3d_mapping_features::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT
 }
 
 template <typename ClusterHandlerT, typename PointT, typename NormalT, typename LabelT> bool
-cob_3d_mapping_features::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::computeClusterPointCurvature(
+cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::computeClusterPointCurvature(
   int index, int r, int steps, float& pc_min, float& pc_max)
 {
   const int w = surface_->width, s = surface_->height * surface_->width;
@@ -217,7 +217,7 @@ cob_3d_mapping_features::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT
 
 /*
 template <typename ClusterHandlerT, typename PointT, typename NormalT, typename LabelT> void
-cob_3d_mapping_features::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::computeClusterPointCurvature(ClusterPtr c)
+cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::computeClusterPointCurvature(ClusterPtr c)
 {
 
   for (typename ClusterType::iterator idx=c->begin(); idx != c->end(); ++idx)

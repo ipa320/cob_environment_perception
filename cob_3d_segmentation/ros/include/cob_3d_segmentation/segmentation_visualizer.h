@@ -8,8 +8,8 @@
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
  * Project name: care-o-bot
- * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_features
+ * ROS stack name: cob_vision
+ * ROS package name: cob_env_model
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -17,7 +17,7 @@
  * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 05/2012
+ * Date of creation: 02/2012
  * ToDo:
  *
  *
@@ -52,51 +52,55 @@
  *
  ****************************************************************/
 
-#ifndef __COB_3D_MAPPING_FEATURES_EDGE_TYPES_H__
-#define __COB_3D_MAPPING_FEATURES_EDGE_TYPES_H__
+#ifndef __SEGMENTATION_VISUALIZER_H__
+#define __SEGMENTATION_VISUALIZER_H__
 
-#include <list>
-#include <map>
-#include <utility>
+#include <ros/ros.h>
+#include <sensor_msgs/PointCloud2.h>
 
-namespace cob_3d_mapping_features
+#include <pcl/point_types.h>
+#include <pcl/visualization/pcl_visualizer.h>
+
+namespace cob_3d_segmentation
 {
-  class BoundaryPoint
+  class SegmentationVisualizer
   {
-  public:
-    BoundaryPoint(int idx=0) : brother(idx), normal() { }
+    public:
+    SegmentationVisualizer() : nh_(), v_(), v1_(0), v2_(0)
+    { }
+
+    ~SegmentationVisualizer() 
+    { }
+
+
+    inline void
+      spinOnce() { v_.spinOnce(100); }
+
+    inline bool
+      isRunning() { return !v_.wasStopped(); }
+
+    void
+      init();
+
+
     
-    int brother;
-    Eigen::Vector3f normal;
-  };
+    protected:
 
-  class BoundaryPointsEdge
-  {
-  public:
-    BoundaryPointsEdge() : width(1)
-      , boundary_pairs()
-      , smoothness(0.0) { }
+    void
+      update_v1_cb(const sensor_msgs::PointCloud2::ConstPtr& cloud_in);
 
-    inline std::pair<std::list<int>::iterator, std::list<int>::iterator> getBoundaryPairs()
-    { return std::make_pair(boundary_pairs.begin()->second.begin(), boundary_pairs.begin()->second.end()); }
+    void
+      update_v2_cb(const sensor_msgs::PointCloud2::ConstPtr& cloud_in);
 
-    inline std::pair<std::list<int>::iterator, std::list<int>::iterator> getBoundaryPairsOf(int cid)
-    { return std::make_pair(boundary_pairs[cid].begin(), boundary_pairs[cid].end()); }
+    ros::NodeHandle nh_;
+    ros::Subscriber sub_v1_;
+    ros::Subscriber sub_v2_;
 
-    inline std::list<int>::size_type size() const { return boundary_pairs.begin()->second.size(); }
-
-    inline void addBoundaryIndices(const int cid1, const int cid2, const int idx1, const int idx2)
-    {
-      boundary_pairs[cid1].push_back(idx2);
-      boundary_pairs[cid2].push_back(idx1);
-    }
-
-    inline bool isAttachedTo(int cid) { return (boundary_pairs.find(cid) != boundary_pairs.end()); }
-    
-    int width;
-    std::map<int,std::list<int> > boundary_pairs;
-    float smoothness;
+    pcl::visualization::PCLVisualizer v_;
+    int v1_;
+    int v2_;
   };
 }
+
 
 #endif

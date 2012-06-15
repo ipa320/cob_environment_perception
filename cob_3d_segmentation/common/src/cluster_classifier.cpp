@@ -9,7 +9,7 @@
  *
  * Project name: care-o-bot
  * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_features
+ * ROS package name: cob_3d_segmentation
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -56,7 +56,7 @@
 
 // package includes:
 #include "cob_3d_mapping_common/point_types.h"
-#include "cob_3d_mapping_features/impl/cluster_classifier.hpp"
+#include "cob_3d_segmentation/impl/cluster_classifier.hpp"
 
 
-template class cob_3d_mapping_features::ClusterClassifier<cob_3d_mapping_features::DepthClusterHandler<PointLabel, pcl::PointXYZRGB, pcl::Normal>, pcl::PointXYZRGB, pcl::Normal, PointLabel>;
+template class cob_3d_segmentation::ClusterClassifier<cob_3d_segmentation::DepthClusterHandler<PointLabel, pcl::PointXYZRGB, pcl::Normal>, pcl::PointXYZRGB, pcl::Normal, PointLabel>;

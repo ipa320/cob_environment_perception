@@ -9,7 +9,7 @@
  *
  * Project name: care-o-bot
  * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_features
+ * ROS package name: cob_3d_segmentation
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -55,11 +55,11 @@
 #ifndef __IMPL_CLUSTER_HANDLER_HPP__
 #define __IMPL_CLUSTER_HANDLER_HPP__
 
-#include "cob_3d_mapping_features/cluster_handler.h"
+#include "cob_3d_segmentation/cluster_handler.h"
 
 
 template<typename LabelT, typename PointT, typename PointNT> void
-cob_3d_mapping_features::DepthClusterHandler<LabelT,PointT,PointNT>::computeClusterComponents(ClusterPtr c)
+cob_3d_segmentation::DepthClusterHandler<LabelT,PointT,PointNT>::computeClusterComponents(ClusterPtr c)
 {
   Eigen::Matrix3f cov = Eigen::Matrix3f::Zero();
   Eigen::Vector3f centroid = c->getCentroid();
@@ -85,7 +85,7 @@ cob_3d_mapping_features::DepthClusterHandler<LabelT,PointT,PointNT>::computeClus
 }
 
 template<typename LabelT, typename PointT, typename PointNT> void
-cob_3d_mapping_features::DepthClusterHandler<LabelT,PointT,PointNT>::computeCurvature(ClusterPtr c)
+cob_3d_segmentation::DepthClusterHandler<LabelT,PointT,PointNT>::computeCurvature(ClusterPtr c)
 {
   // compute principal curvature of the segment in its entirety
   Eigen::Matrix3f M = Eigen::Matrix3f::Identity() - c->getOrientation() * c->getOrientation().transpose();
@@ -114,7 +114,7 @@ cob_3d_mapping_features::DepthClusterHandler<LabelT,PointT,PointNT>::computeCurv
 }
 
 template<typename LabelT, typename PointT, typename PointNT> void
-cob_3d_mapping_features::DepthClusterHandler<LabelT,PointT,PointNT>::computeNormalIntersections(ClusterPtr c)
+cob_3d_segmentation::DepthClusterHandler<LabelT,PointT,PointNT>::computeNormalIntersections(ClusterPtr c)
 {
   const std::size_t idx_steps = 1;
   const float rand_max_inv = 1.0f / RAND_MAX;

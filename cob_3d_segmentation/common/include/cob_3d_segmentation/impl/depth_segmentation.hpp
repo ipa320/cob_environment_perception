@@ -9,7 +9,7 @@
  *
  * Project name: care-o-bot
  * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_features
+ * ROS package name: cob_3d_segmentation
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -61,11 +61,11 @@
 #include <Eigen/LU>
 
 #include "cob_3d_mapping_common/label_defines.h"
-#include "cob_3d_mapping_features/depth_segmentation.h"
+#include "cob_3d_segmentation/depth_segmentation.h"
 #include "cob_3d_mapping_features/organized_normal_estimation.h"
 
 template <typename ClusterGraphT, typename PointT, typename PointNT, typename PointLabelT> void
-cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>::addIfIsValid(
+cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>::addIfIsValid(
   int u, int v, int idx, int idx_prev, float dist_th, float p_z, Eigen::Vector3f& n, 
   std::multiset<SegmentationCandidate>& coords_todo, ClusterPtr c)
 {
@@ -94,7 +94,7 @@ cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLab
 }
 
 template <typename ClusterGraphT, typename PointT, typename PointNT, typename PointLabelT> void
-cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>::performInitialSegmentation()
+cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>::performInitialSegmentation()
 {
   int width = labels_->width, height = labels_->height;
   // reset graph and property handlers:
@@ -168,7 +168,7 @@ cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLab
 }
 
 template <typename ClusterGraphT, typename PointT, typename PointNT, typename PointLabelT> void 
-cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>::refineSegmentation()
+cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>::refineSegmentation()
 {
   graph_->clusters()->sortBySize(); // Ascending order
   ClusterPtr c_it, c_end;
@@ -205,7 +205,7 @@ cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLab
 }
 
 template <typename ClusterGraphT, typename PointT, typename PointNT, typename PointLabelT> void
-cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>::computeBoundaryProperties(
+cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>::computeBoundaryProperties(
   ClusterPtr c, EdgePtr e)
 {
   int window_size = ceil( std::min( sqrt( static_cast<float>(c->size()) ) / e->boundary_pairs[c->id()].size()
@@ -218,7 +218,7 @@ cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLab
 }
 
 template <typename ClusterGraphT, typename PointT, typename PointNT, typename PointLabelT> void
-cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>::computeBoundaryProperties(ClusterPtr c)
+cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>::computeBoundaryProperties(ClusterPtr c)
 {
   std::vector<ClusterPtr> adj_list;
   graph_->getAdjacentClusters(c->id(), adj_list);
@@ -229,7 +229,7 @@ cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLab
 }
 
 template <typename ClusterGraphT, typename PointT, typename PointNT, typename PointLabelT> void
-cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>::computeEdgeSmoothness(EdgePtr e)
+cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>::computeEdgeSmoothness(EdgePtr e)
 {
   int smooth_points = 0;
   std::list<int>::iterator bp_it, bp_end;
@@ -246,7 +246,7 @@ cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLab
 }
 
 template <typename ClusterGraphT, typename PointT, typename PointNT, typename PointLabelT> void
-cob_3d_mapping_features::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>::computeEdgeSmoothness()
+cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>::computeEdgeSmoothness()
 {
   EdgePtr e_it, e_end;
   for (boost::tie(e_it,e_end) = graph_->edges()->getEdges(); e_it != e_end; ++e_it) { computeEdgeSmoothness(e_it); }

@@ -9,7 +9,7 @@
  *
  * Project name: care-o-bot
  * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_features
+ * ROS package name: cob_3d_segmentation
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -54,9 +54,9 @@
 
 #include <boost/timer.hpp>
 #include <cob_3d_mapping_common/label_defines.h>
-#include "cob_3d_mapping_features/segmentation.h"
+#include "cob_3d_segmentation/segmentation.h"
 
-using namespace cob_3d_mapping_features;
+using namespace cob_3d_segmentation;
 
 int Segmentation::searchForNeighbors (
   pcl::PointCloud<PointLabel>::Ptr& cloud_in,

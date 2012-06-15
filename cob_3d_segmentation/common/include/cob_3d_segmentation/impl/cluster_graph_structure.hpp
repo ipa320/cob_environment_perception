@@ -9,7 +9,7 @@
  *
  * Project name: care-o-bot
  * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_common
+ * ROS package name: cob_3d_segmentation
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -56,19 +56,19 @@
 #define __IMPL_CLUSTER_GRAPH_STRUCTURE_HPP__
 
 // from cluster.h: #include "cob_3d_mapping_common/label_defines.h"
-#include "cob_3d_mapping_features/cluster_graph_structure.h"
+#include "cob_3d_segmentation/cluster_graph_structure.h"
 
 #include <set>
 
 template <typename ClusterHandlerT, typename EdgeHandlerT> void 
-cob_3d_mapping_features::ClusterGraphStructure<ClusterHandlerT,EdgeHandlerT>::merge(const int cid_source, const int cid_target)
+cob_3d_segmentation::ClusterGraphStructure<ClusterHandlerT,EdgeHandlerT>::merge(const int cid_source, const int cid_target)
 {
   std::vector<EdgePtr> updated_edges;
   merge(vid_.find(cid_source)->second, vid_.find(cid_target)->second, updated_edges);
 }
 
 template <typename ClusterHandlerT, typename EdgeHandlerT> void 
-cob_3d_mapping_features::ClusterGraphStructure<ClusterHandlerT,EdgeHandlerT>::merge(
+cob_3d_segmentation::ClusterGraphStructure<ClusterHandlerT,EdgeHandlerT>::merge(
   const int cid_source, 
   const int cid_target,
   std::vector<EdgePtr>& updated_edges)
@@ -77,7 +77,7 @@ cob_3d_mapping_features::ClusterGraphStructure<ClusterHandlerT,EdgeHandlerT>::me
 }
 
 template <typename ClusterHandlerT, typename EdgeHandlerT> void 
-cob_3d_mapping_features::ClusterGraphStructure<ClusterHandlerT,EdgeHandlerT>::merge(
+cob_3d_segmentation::ClusterGraphStructure<ClusterHandlerT,EdgeHandlerT>::merge(
   const VertexID src, 
   const VertexID trg,
   std::vector<EdgePtr>& updated_edges)
@@ -110,7 +110,7 @@ cob_3d_mapping_features::ClusterGraphStructure<ClusterHandlerT,EdgeHandlerT>::me
 
 
 template <typename ClusterHandlerT, typename EdgeHandlerT> void
-cob_3d_mapping_features::ClusterGraphStructure<ClusterHandlerT,EdgeHandlerT>::getAdjacentClusters(
+cob_3d_segmentation::ClusterGraphStructure<ClusterHandlerT,EdgeHandlerT>::getAdjacentClusters(
   int cid, std::vector<ClusterPtr>& adjacent_clusters)
 {
   adjacent_clusters.clear();
@@ -122,7 +122,7 @@ cob_3d_mapping_features::ClusterGraphStructure<ClusterHandlerT,EdgeHandlerT>::ge
 }
 
 template <typename ClusterHandlerT, typename EdgeHandlerT> void
-cob_3d_mapping_features::ClusterGraphStructure<ClusterHandlerT,EdgeHandlerT>::getConnectedClusters(
+cob_3d_segmentation::ClusterGraphStructure<ClusterHandlerT,EdgeHandlerT>::getConnectedClusters(
   int cid_start, std::vector<ClusterPtr>& connected_clusters, boost::function<bool (EdgePtr)> f)
 {
   connected_clusters.clear();
@@ -156,7 +156,7 @@ cob_3d_mapping_features::ClusterGraphStructure<ClusterHandlerT,EdgeHandlerT>::ge
 
 /*
 void
-cob_3d_mapping_features::ClusterList::computeEdgeAngles(int cID)
+cob_3d_segmentation::ClusterList::computeEdgeAngles(int cID)
 {
   boost::graph_traits<GraphT>::out_edge_iterator oe_it, oe_end;
   Eigen::Vector3f c_n = g_[to_vID_[cID]].c_it->getOrientation();
@@ -169,7 +169,7 @@ cob_3d_mapping_features::ClusterList::computeEdgeAngles(int cID)
 }
 
 void
-cob_3d_mapping_features::ClusterList::computeEdgeSmoothness(const float max_angle)
+cob_3d_segmentation::ClusterList::computeEdgeSmoothness(const float max_angle)
 {
   boost::graph_traits<GraphT>::edge_iterator e_it, e_end;
   for (boost::tie(e_it,e_end) = boost::edges(g_); e_it != e_end; ++e_it)
@@ -188,7 +188,7 @@ cob_3d_mapping_features::ClusterList::computeEdgeSmoothness(const float max_angl
 
 /* not working
 void
-cob_3d_mapping_features::ClusterGraphStructure::removeSmallClusters()
+cob_3d_segmentation::ClusterGraphStructure::removeSmallClusters()
 {
   boost::graph_traits<GraphT>::vertex_iterator v_it, v_del, v_end;
   boost::tie(v_it,v_end)=boost::vertices(g_);
@@ -221,7 +221,7 @@ cob_3d_mapping_features::ClusterGraphStructure::removeSmallClusters()
 
 /* not working
 void
-cob_3d_mapping_features::ClusterList::getMinAngleAdjacentClusters(
+cob_3d_segmentation::ClusterList::getMinAngleAdjacentClusters(
   int cID_start, 
   const float max_angle, 
   std::vector<ClusterPtr>& adjacent_clusters)
@@ -287,7 +287,7 @@ cob_3d_mapping_features::ClusterList::getMinAngleAdjacentClusters(
 
 /* not working
 void
-cob_3d_mapping_features::ClusterList::getAdjacentClustersWithSmoothBoundaries(
+cob_3d_segmentation::ClusterList::getAdjacentClustersWithSmoothBoundaries(
   int cID_start, 
   const float min_smoothness,
   std::vector<ClusterPtr>& adjacent_clusters)

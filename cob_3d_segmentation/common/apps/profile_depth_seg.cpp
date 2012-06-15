@@ -9,7 +9,7 @@
  *
  * Project name: care-o-bot
  * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_features
+ * ROS package name: cob_3d_segmentation
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -61,12 +61,12 @@
 #include "cob_3d_mapping_common/stop_watch.h"
 #include "cob_3d_mapping_common/point_types.h"
 #include "cob_3d_mapping_features/organized_normal_estimation_omp.h"
-#include "cob_3d_mapping_features/depth_segmentation.h"
-#include "cob_3d_mapping_features/cluster_classifier.h"
+#include "cob_3d_segmentation/depth_segmentation.h"
+#include "cob_3d_segmentation/cluster_classifier.h"
 
 using namespace pcl;
 
-typedef cob_3d_mapping_features::PredefinedSegmentationTypes ST;
+typedef cob_3d_segmentation::PredefinedSegmentationTypes ST;
 
 class PerformanceTester
 {
@@ -103,7 +103,7 @@ private:
   PointCloud<PointLabel>::Ptr l;
   PointCloud<Normal>::Ptr n;
   ST::Graph::Ptr g;
-  cob_3d_mapping_features::DepthSegmentation<ST::Graph, ST::Point, ST::Normal, ST::Label> seg;
+  cob_3d_segmentation::DepthSegmentation<ST::Graph, ST::Point, ST::Normal, ST::Label> seg;
   cob_3d_mapping_features::OrganizedNormalEstimationOMP<PointXYZRGB, Normal, PointLabel> one;
 
 };

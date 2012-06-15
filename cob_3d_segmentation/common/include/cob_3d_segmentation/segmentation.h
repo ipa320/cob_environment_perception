@@ -9,7 +9,7 @@
  *
  * Project name: care-o-bot
  * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_features
+ * ROS package name: cob_3d_segmentation
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -61,7 +61,7 @@
 #include <opencv2/core/core.hpp>
 #include <cob_3d_mapping_common/point_types.h>
 
-namespace cob_3d_mapping_features
+namespace cob_3d_segmentation
 {
 
   struct Coords
