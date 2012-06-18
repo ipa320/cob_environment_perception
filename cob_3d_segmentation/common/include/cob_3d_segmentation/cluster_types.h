@@ -56,6 +56,7 @@
 #define __COB_3D_SEGMENTATION_TYPES_H__
 
 #include <pcl/common/eigen.h>
+#include <set>
 
 namespace cob_3d_segmentation
 {
@@ -104,6 +105,7 @@ namespace cob_3d_segmentation
       , pca_point_comp2(0.0, 0.0, 0.0)
       , pca_point_comp3(0.0, 0.0, 0.0)
       , pca_point_values(0.0, 0.0, 0.0)
+      , border_indices()
       , sum_points_(0.0, 0.0, 0.0)
       , sum_orientations_(0.0, 0.0, 0.0)
     { }
@@ -122,6 +124,8 @@ namespace cob_3d_segmentation
     Eigen::Vector3f pca_point_comp2;
     Eigen::Vector3f pca_point_comp3;
     Eigen::Vector3f pca_point_values;
+
+    std::vector<int> border_indices;
 
   private:
     Eigen::Vector3f sum_points_;

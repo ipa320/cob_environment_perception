@@ -34,10 +34,13 @@ rosbuild_add_library(cob_3d_segmentation
 	common/src/depth_segmentation.cpp
 	common/src/cluster_classifier.cpp)
 
-target_link_libraries(cob_3d_segmentation cob_3d_mapping_features cob_3d_mapping_features_omp)
-
 rosbuild_add_library(cob_3d_segmentation_nodelets
 	ros/src/segmentation_all_in_one_nodelet.cpp)
+
+target_link_libraries(cob_3d_segmentation cob_3d_mapping_features cob_3d_mapping_features_omp)
+target_link_libraries(cob_3d_segmentation_nodelets cob_3d_segmentation)
+
+
 
 rosbuild_add_executable(segmentation_node ros/src/segmentation_node.cpp)
 

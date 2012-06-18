@@ -202,6 +202,7 @@ cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>
       }
     }
   }
+  graph_->clusters()->addBorderIndicesToClusters();
 }
 
 template <typename ClusterGraphT, typename PointT, typename PointNT, typename PointLabelT> void

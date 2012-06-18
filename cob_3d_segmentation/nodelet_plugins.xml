@@ -1,7 +1,7 @@
-<library path="lib/libcob_3d_registration">
-  <class name="cob_3d_registration/RegistrationNodelet" type="RegistrationNodelet" base_class_type="nodelet::Nodelet">
-  <description>
-  Nodelet for 3d registration
-  </description>
+<library path="lib/libcob_3d_segmentation_nodelets">
+  <class name="cob_3d_segmentation/SegmentationAllInOneNodelet" type="cob_3d_segmentation::SegmentationAllInOneNodelet" base_class_type="nodelet::Nodelet">
+    <description>
+      Nodelet for segmentation
+    </description>
   </class>
 </library>
