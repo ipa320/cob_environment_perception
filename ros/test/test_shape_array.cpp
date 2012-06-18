@@ -34,7 +34,7 @@ main (int argc, char **argv)
     cob_3d_mapping_msgs::Shape s;
     s.params.resize (4);
 
-    s.header.frame_id = "/map";
+    s.header.frame_id = "map";
     s.header.stamp = sa.header.stamp;
 
     s.type = cob_3d_mapping_msgs::Shape::PLANE;
@@ -44,14 +44,14 @@ main (int argc, char **argv)
     sensor_msgs::PointCloud2 pc2;
 
     //first shape
-    s.params[0] = 0;
-    s.params[1] = 0;
-    s.params[2] = 1;
+    s.params[0] = 1;
+    s.params[1] = 1;
+    s.params[2] = 0;
     s.params[3] = 0;
 
-    s.centroid.x = 1.5;
-    s.centroid.y = 1.5;
-    s.centroid.z = 3.0;
+    s.centroid.x = 0.5;
+    s.centroid.y = 0.5;
+    s.centroid.z = 1.0;
 
     s.color.r = 1;
     s.color.g = 0;
@@ -60,23 +60,29 @@ main (int argc, char **argv)
 
     pt.x = 0.0;
     pt.y = 0.0;
-    pt.z = 3.0;
+    pt.z = 1.0;
     pc.push_back (pt);
 
-    pt.x = 3.0;
+    pt.x = 1.0;
     pt.y = 0.0;
-    pt.z = 3.0;
+    pt.z = 1.0;
     pc.push_back (pt);
 
-    pt.x = 3.0;
-    pt.y = 3.0;
-    pt.z = 3.0;
+    pt.x = 1.0;
+    pt.y = 1.0;
+    pt.z = 1.0;
     pc.push_back (pt);
 
     pt.x = 0.0;
-    pt.y = 3.0;
-    pt.z = 3.0;
+    pt.y = 1.0;
+    pt.z = 1.0;
     pc.push_back (pt);
+
+    pt.x = 0.0;
+    pt.y = 0.0;
+    pt.z = 1.0;
+    pc.push_back (pt);
+
     /*
      pt.x = 0.0;
      pt.y = 0.0;
@@ -93,196 +99,191 @@ main (int argc, char **argv)
      pt.z = 3.0;
      pc.push_back (pt);
      */
-    pt.x = 0.0;
-    pt.y = 0.0;
-    pt.z = 3.0;
-    pc.push_back (pt);
-
     pcl::toROSMsg (pc, pc2);
     s.points.push_back (pc2);
 
     s.holes.push_back (false);
     sa.shapes.push_back (s);
+    /*
+     //second shape
+     s.params[0] = 1;
+     s.params[1] = 0;
+     s.params[2] = 1;
+     s.params[3] = 0;
 
-    //second shape
-    s.params[0] = 1;
-    s.params[1] = 0;
-    s.params[2] = 1;
-    s.params[3] = 0;
+     s.centroid.x = 14 / 3;
+     s.centroid.y = 14 / 3;
+     s.centroid.z = 2;
 
-    s.centroid.x = 14 / 3;
-    s.centroid.y = 14 / 3;
-    s.centroid.z = 2;
+     s.color.r = 0;
+     s.color.g = 1;
+     s.color.b = 0;
+     s.color.a = 1;
 
-    s.color.r = 0;
-    s.color.g = 1;
-    s.color.b = 0;
-    s.color.a = 1;
+     pc.clear ();
+     pc2.data.clear ();
+     s.points.clear ();
 
-    pc.clear ();
-    pc2.data.clear ();
-    s.points.clear ();
+     pt.x = 2;
+     pt.y = 6;
+     pt.z = 2;
+     pc.push_back (pt);
 
-    pt.x = 2;
-    pt.y = 6;
-    pt.z = 2;
-    pc.push_back (pt);
+     pt.x = 6;
+     pt.y = 2;
+     pt.z = 2;
+     pc.push_back (pt);
 
-    pt.x = 6;
-    pt.y = 2;
-    pt.z = 2;
-    pc.push_back (pt);
-
-    pt.x = 6;
-    pt.y = 6;
-    pt.z = 2;
-    pc.push_back (pt);
-
+     pt.x = 6;
+     pt.y = 6;
+     pt.z = 2;
+     pc.push_back (pt);
+     */
     /*
      pt.x = 2;
      pt.y = 2;
      pt.z = 2;
      pc.push_back (pt);
      */
+    /*
+     // sensor_msgs::PointCloud2 pc2;
+     pcl::toROSMsg (pc, pc2);
+     s.points.push_back (pc2);
+     s.holes.push_back (false);
+     sa.shapes.push_back (s);
 
-    // sensor_msgs::PointCloud2 pc2;
-    pcl::toROSMsg (pc, pc2);
-    s.points.push_back (pc2);
-    s.holes.push_back (false);
-    sa.shapes.push_back (s);
+     //third shape
+     s.centroid.x = -16 / 3;
+     s.centroid.y = -11 / 3;
+     s.centroid.z = 3;
 
-    //third shape
-    s.centroid.x = -16 / 3;
-    s.centroid.y = -11 / 3;
-    s.centroid.z = 3;
+     s.params[0] = 1;
+     s.params[1] = 1;
+     s.params[2] = 1;
+     s.params[3] = 0;
 
-    s.params[0] = 1;
-    s.params[1] = 1;
-    s.params[2] = 1;
-    s.params[3] = 0;
+     s.color.r = 0;
+     s.color.g = 0;
+     s.color.b = 1;
+     s.color.a = 1;
 
-    s.color.r = 0;
-    s.color.g = 0;
-    s.color.b = 1;
-    s.color.a = 1;
+     pc.clear ();
+     pc2.data.clear ();
+     s.points.clear ();
 
-    pc.clear ();
-    pc2.data.clear ();
-    s.points.clear ();
+     pt.x = -5;
+     pt.y = -5;
+     pt.z = 3;
+     pc.push_back (pt);
 
-    pt.x = -5;
-    pt.y = -5;
-    pt.z = 3;
-    pc.push_back (pt);
+     pt.x = -5;
+     pt.y = -1;
+     pt.z = 3;
+     pc.push_back (pt);
 
-    pt.x = -5;
-    pt.y = -1;
-    pt.z = 3;
-    pc.push_back (pt);
-
-    pt.x = -6;
-    pt.y = -5;
-    pt.z = 3;
-    pc.push_back (pt);
+     pt.x = -6;
+     pt.y = -5;
+     pt.z = 3;
+     pc.push_back (pt);
 
 
-    //sensor_msgs::PointCloud2 pc2;
-    pcl::toROSMsg (pc, pc2);
-    s.points.push_back (pc2);
+     //sensor_msgs::PointCloud2 pc2;
+     pcl::toROSMsg (pc, pc2);
+     s.points.push_back (pc2);
 
-    s.holes.push_back (false);
-    sa.shapes.push_back (s);
+     s.holes.push_back (false);
+     sa.shapes.push_back (s);
 
-    //fourth shape
-    s.centroid.x = -16 / 3;
-    s.centroid.y = -11 / 3;
-    s.centroid.z = 3;
+     //fourth shape
+     s.centroid.x = -16 / 3;
+     s.centroid.y = -11 / 3;
+     s.centroid.z = 3;
 
-    s.params[0] = 1;
-    s.params[1] = 1;
-    s.params[2] = 1;
-    s.params[3] = 0;
+     s.params[0] = 1;
+     s.params[1] = 1;
+     s.params[2] = 1;
+     s.params[3] = 0;
 
-    s.color.r = 1;
-    s.color.g = 0;
-    s.color.b = 1;
-    s.color.a = 1;
+     s.color.r = 1;
+     s.color.g = 0;
+     s.color.b = 1;
+     s.color.a = 1;
 
-    pc.clear ();
-    pc2.data.clear ();
-    s.points.clear ();
+     pc.clear ();
+     pc2.data.clear ();
+     s.points.clear ();
 
-    pt.x = -1;
-    pt.y = 0;
-    pt.z = 0;
-    pc.push_back (pt);
+     pt.x = -1;
+     pt.y = 0;
+     pt.z = 0;
+     pc.push_back (pt);
 
-    pt.x = -1;
-    pt.y = -1;
-    pt.z = 0;
-    pc.push_back (pt);
+     pt.x = -1;
+     pt.y = -1;
+     pt.z = 0;
+     pc.push_back (pt);
 
-    pt.x = -2;
-    pt.y = -2;
-    pt.z = 0;
-    pc.push_back (pt);
+     pt.x = -2;
+     pt.y = -2;
+     pt.z = 0;
+     pc.push_back (pt);
 
-    pt.x = 0;
-    pt.y = -2;
-    pt.z = 0;
-    pc.push_back (pt);
-    //sensor_msgs::PointCloud2 pc2;
-    pcl::toROSMsg (pc, pc2);
-    s.points.push_back (pc2);
+     pt.x = 0;
+     pt.y = -2;
+     pt.z = 0;
+     pc.push_back (pt);
+     //sensor_msgs::PointCloud2 pc2;
+     pcl::toROSMsg (pc, pc2);
+     s.points.push_back (pc2);
 
-    s.holes.push_back (false);
-    sa.shapes.push_back (s);
+     s.holes.push_back (false);
+     sa.shapes.push_back (s);
 
-    //fifth shape
-    s.params[0] = 0;
-    s.params[1] = 0;
-    s.params[2] = 1;
-    s.params[3] = 0;
+     //fifth shape
+     s.params[0] = 0;
+     s.params[1] = 0;
+     s.params[2] = 1;
+     s.params[3] = 0;
 
-    s.centroid.x = -1;
-    s.centroid.y = -1;
-    s.centroid.z = -1;
+     s.centroid.x = -1;
+     s.centroid.y = -1;
+     s.centroid.z = -1;
 
-    s.color.r = 1;
-    s.color.g = 1;
-    s.color.b = 0;
-    s.color.a = 1;
+     s.color.r = 1;
+     s.color.g = 1;
+     s.color.b = 0;
+     s.color.a = 1;
 
-    pc.clear ();
-    pc2.data.clear ();
-    s.points.clear ();
+     pc.clear ();
+     pc2.data.clear ();
+     s.points.clear ();
 
-    pt.x = 0.0;
-    pt.y = 0.0;
-    pt.z = -3.0;
-    pc.push_back (pt);
+     pt.x = 0.0;
+     pt.y = 0.0;
+     pt.z = -3.0;
+     pc.push_back (pt);
 
-    pt.x = -3.0;
-    pt.y = 0.0;
-    pt.z = -3.0;
-    pc.push_back (pt);
+     pt.x = -3.0;
+     pt.y = 0.0;
+     pt.z = -3.0;
+     pc.push_back (pt);
 
-    pt.x = -3.0;
-    pt.y = -3.0;
-    pt.z = -3.0;
-    pc.push_back (pt);
+     pt.x = -3.0;
+     pt.y = -3.0;
+     pt.z = -3.0;
+     pc.push_back (pt);
 
-    pt.x = 0.0;
-    pt.y = -3.0;
-    pt.z = -3.0;
-    pc.push_back (pt);
+     pt.x = 0.0;
+     pt.y = -3.0;
+     pt.z = -3.0;
+     pc.push_back (pt);
 
-    pcl::toROSMsg (pc, pc2);
-    s.points.push_back (pc2);
+     pcl::toROSMsg (pc, pc2);
+     s.points.push_back (pc2);
 
-    s.holes.push_back (false);
-    sa.shapes.push_back (s);
-
+     s.holes.push_back (false);
+     sa.shapes.push_back (s);
+     */
     pub.publish (sa);
 
     ros::spinOnce ();

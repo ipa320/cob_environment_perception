@@ -126,10 +126,10 @@ public:
       ROS_INFO("displaying shape array message ");
       display_marker_ = false;
 
+      header_ = sa->header;
+
       im.name = "shape_visulization_marker";
       im.header = sa->header;
-
-      header_ = sa->header;
       // im.description = "shape normal and centroid";
 
       for (unsigned int i = 0; i < sa->shapes.size (); i++)
@@ -290,11 +290,12 @@ public:
       ROS_INFO_ONCE(" Displaying normal vector .....");
       //marker_id_ = 0;
       visualization_msgs::Marker marker;
-
+      marker.header = header_;
+      /*
       marker.header.frame_id = header_.frame_id;
       marker.header.stamp = ros::Time::now ();
       marker.ns = "normal_marker";
-
+      */
       marker.type = visualization_msgs::Marker::ARROW;
       marker.action = visualization_msgs::Marker::ADD;
       marker.lifetime = ros::Duration ();
@@ -306,9 +307,9 @@ public:
       marker.color.a = 1;
 
       //set scale
-      marker.scale.x = 1;
-      marker.scale.y = 0.1;
-      marker.scale.z = 0.1;
+      marker.scale.x = 0.5;
+      marker.scale.y = 0.5;
+      marker.scale.z = 0.5;
 
       //set pose
       for (unsigned int k = 0; k < centroid_.size (); k++)
@@ -319,18 +320,32 @@ public:
           marker.pose.position.y = centroid_[k][1];
           marker.pose.position.z = centroid_[k][2];
 
+
+//////////////////////////
+          normalToQuartinion (normal_[k], marker);
+
+          std::cout << " ---marker orientation--- " << std::endl;
+          std::cout << "marker.pose.orientation.x : " << marker.pose.orientation.x << std::endl;
+          std::cout << "marker.pose.orientation.y : " << marker.pose.orientation.y << std::endl;
+          std::cout << "marker.pose.orientation.z : " << marker.pose.orientation.z << std::endl;
+          std::cout << "marker.pose.orientation.w : " << marker.pose.orientation.w << std::endl;
+
+          std::cout << "--- normal vector ---" << std::endl;
           std::cout << " normal_[0] " << normal_[k][0] << std::endl;
           std::cout << " normal_[1] " << normal_[k][1] << std::endl;
           std::cout << " normal_[2] " << normal_[k][2] << std::endl;
 
+          std::cout << "--- centroid ---" << std::endl;
           std::cout << " centroid_[0] " << centroid_[k][0] << std::endl;
           std::cout << " centroid_[1] " << centroid_[k][1] << std::endl;
           std::cout << " centroid_[2] " << centroid_[k][2] << std::endl;
-
-          marker.pose.orientation.x = normal_[k][0];
-          marker.pose.orientation.y = normal_[k][1];
-          marker.pose.orientation.z = normal_[k][2];
-          marker.pose.orientation.w = 0;
+//////////////////
+          /*
+           marker.pose.orientation.x = normal_[k][0];
+           marker.pose.orientation.y = normal_[k][1];
+           marker.pose.orientation.z = normal_[k][2];
+           marker.pose.orientation.w = 0;
+           */
           break;
         }
       }
@@ -344,6 +359,7 @@ public:
        */
 
       visualization_msgs::InteractiveMarkerControl im_ctrl_n;
+
       im_ctrl_n.always_visible = true;
       ss.str ("");
       ss << "normal_ctrl_" << shape_idx;
@@ -399,7 +415,6 @@ public:
       marker.color.b = 1;
       marker.color.a = 1;
 
-
       //set pose
       for (int k = 0; k < centroid_.size (); k++)
       {
@@ -409,14 +424,15 @@ public:
            std::cout<<" centroid_[k][0] <<"<<k<<" : "<<centroid_[k][0]<<std::endl;
            std::cout<<" centroid_[k][1] <<"<<k<<" : "<<centroid_[k][1]<<std::endl;
            std::cout<<" centroid_[k][2] <<"<<k<<" : "<<centroid_[k][2]<<std::endl;
-
-            marker.pose.position.x = centroid_[k][0];
-            marker.pose.position.y = centroid_[k][1];
-            marker.pose.position.z = centroid_[k][2];
            */
-            marker.pose.position.x = 1;
-               marker.pose.position.y = 1;
-               marker.pose.position.z = 1;
+          marker.pose.position.x = centroid_[k][0];
+          marker.pose.position.y = centroid_[k][1];
+          marker.pose.position.z = centroid_[k][2];
+          /*
+           marker.pose.position.x = 1;
+           marker.pose.position.y = 1;
+           marker.pose.position.z = 1;
+           */
           break;
         }
       }
@@ -564,15 +580,30 @@ public:
     marker.scale.z = 0.1;
 
     //set pose
-    /*
+
     marker.pose.position.x = centroid_[shape_ctr_][0];
     marker.pose.position.y = centroid_[shape_ctr_][1];
     marker.pose.position.z = centroid_[shape_ctr_][2];
-*/
-    marker.pose.orientation.x = normal_[shape_ctr_][0];
-    marker.pose.orientation.y = normal_[shape_ctr_][1];
-    marker.pose.orientation.z = normal_[shape_ctr_][2];
-    marker.pose.orientation.w = 0;
+
+    normalToQuartinion (normal_[shape_ctr_], marker);
+
+    /*
+     marker.pose.orientation.x = normal_[shape_ctr_][0];
+     marker.pose.orientation.y = normal_[shape_ctr_][1];
+     marker.pose.orientation.z = normal_[shape_ctr_][2];
+     marker.pose.orientation.w = 0;
+     */
+
+    std::cout << " ---marker orientation--- " << std::endl;
+    std::cout << "marker.pose.orientation.x : " << marker.pose.orientation.x << std::endl;
+    std::cout << "marker.pose.orientation.y : " << marker.pose.orientation.y << std::endl;
+    std::cout << "marker.pose.orientation.z : " << marker.pose.orientation.z << std::endl;
+    std::cout << "marker.pose.orientation.w : " << marker.pose.orientation.w << std::endl;
+
+    std::cout << "--- normal vector ---" << std::endl;
+    std::cout << " normal_[0] " << normal_[shape_ctr_][0] << std::endl;
+    std::cout << " normal_[1] " << normal_[shape_ctr_][1] << std::endl;
+    std::cout << " normal_[2] " << normal_[shape_ctr_][2] << std::endl;
 
     //marker.points.resize (pc.points.size ());
     //std::cout << "marker points = " << marker.points.size () << std::endl;
@@ -584,26 +615,26 @@ public:
 
       for (unsigned int i = 0; i < num_pts; i++)
       {
-          pt.x = pc.points[i].x;
-          pt.y = pc.points[i].y;
-          pt.z = pc.points[i].z;
-          marker.points.push_back (pt);
-          /*
-          std::cout << " pt.x : " << pt.x << std::endl;
-          std::cout << " pt.y : " << pt.y << std::endl;
-          std::cout << " pt.z : " << pt.z << std::endl;
-          std::cout << " ----------------- " << std::endl;
-          */
-        if (i != 0 && i % 2 == 0 )
+        pt.x = pc.points[i].x;
+        pt.y = pc.points[i].y;
+        pt.z = pc.points[i].z;
+        marker.points.push_back (pt);
+        /*
+         std::cout << " pt.x : " << pt.x << std::endl;
+         std::cout << " pt.y : " << pt.y << std::endl;
+         std::cout << " pt.z : " << pt.z << std::endl;
+         std::cout << " ----------------- " << std::endl;
+         */
+        if (i != 0 && i % 2 == 0)
         {
           marker.points.push_back (pt);
           /*
-          std::cout << " i % 2 == 0 : i = "<<i<< std::endl;
-          std::cout << " pt.x : " << pt.x << std::endl;
-          std::cout << " pt.y : " << pt.y << std::endl;
-          std::cout << " pt.z : " << pt.z << std::endl;
-          std::cout << " ----------------- " << std::endl;
-          */
+           std::cout << " i % 2 == 0 : i = "<<i<< std::endl;
+           std::cout << " pt.x : " << pt.x << std::endl;
+           std::cout << " pt.y : " << pt.y << std::endl;
+           std::cout << " pt.z : " << pt.z << std::endl;
+           std::cout << " ----------------- " << std::endl;
+           */
         }
 
       }
@@ -628,11 +659,11 @@ public:
         pt.y = pc.points[i].y;
         pt.z = pc.points[i].z;
         /*
-        std::cout << " pt.x : " << pt.x << std::endl;
-        std::cout << " pt.y : " << pt.y << std::endl;
-        std::cout << " pt.z : " << pt.z << std::endl;
-        std::cout << " ----------------- " << std::endl;
-        */
+         std::cout << " pt.x : " << pt.x << std::endl;
+         std::cout << " pt.y : " << pt.y << std::endl;
+         std::cout << " pt.z : " << pt.z << std::endl;
+         std::cout << " ----------------- " << std::endl;
+         */
         marker.points.push_back (pt);
       }
 
@@ -851,6 +882,23 @@ protected:
   visualization_msgs::InteractiveMarker im;
   std::vector<Eigen::Vector3f> normal_;
   std::vector<Eigen::Vector4f> centroid_;
+
+  void
+  normalToQuartinion (const Eigen::Vector3f& normal, visualization_msgs::Marker& marker)
+  {
+    double roll = 0, pitch = 0, yaw = 0;
+    roll = acos (normal[0]);
+    pitch = acos (normal[1]);
+    yaw = acos (normal[2]);
+    marker.pose.orientation.x = cos (roll / 2) * cos (pitch / 2) * cos (yaw / 2)
+        + sin (roll / 2) * sin (pitch / 2) * sin (yaw / 2);
+    marker.pose.orientation.y = sin (roll / 2) * cos (pitch / 2) * cos (yaw / 2)
+        - cos (roll / 2) * sin (pitch / 2) * sin (yaw / 2);
+    marker.pose.orientation.z = cos (roll / 2) * sin (pitch / 2) * cos (yaw / 2)
+        + sin (roll / 2) * cos (pitch / 2) * sin (yaw / 2);
+    marker.pose.orientation.w = cos (roll / 2) * cos (pitch / 2) * sin (yaw / 2)
+        - sin (roll / 2) * sin (pitch / 2) * cos (yaw / 2);
+  }
 };
 
 int
