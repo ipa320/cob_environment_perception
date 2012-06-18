@@ -101,12 +101,14 @@ namespace cob_3d_segmentation
     void onInit();
 
     void received_cloud_cb(PointCloud::ConstPtr cloud);
+    void publishShapeArray(ST::CH::Ptr cluster_handler, PointCloud::ConstPtr cloud);
 
     //boost::mutex mutex_;
     ros::NodeHandle nh_;
     ros::Subscriber sub_points_;
     ros::Publisher pub_segmented_;
     ros::Publisher pub_classified_;
+    ros::Publisher pub_shape_array_;
 
     cob_3d_mapping_features::OrganizedNormalEstimationOMP<pcl::PointXYZRGB, pcl::Normal, PointLabel> one_;
     DepthSegmentation<ST::Graph, ST::Point, ST::Normal, ST::Label> seg_;

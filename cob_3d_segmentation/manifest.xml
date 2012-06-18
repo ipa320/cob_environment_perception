@@ -19,6 +19,7 @@
   <export>
     <cpp cflags="-I${prefix}/common/include -I${prefix}/ros/include"
 	 lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcob_3d_segmentation"/>
+    <nodelet plugin="${prefix}/nodelet_plugins.xml" />
   </export>
 
 </package>

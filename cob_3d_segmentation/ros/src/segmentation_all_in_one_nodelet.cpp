@@ -59,6 +59,7 @@
 #include <pcl/io/io.h>
 
 // Package includes
+#include <cob_3d_mapping_msgs/ShapeArray.h>
 #include "cob_3d_mapping_common/stop_watch.h"
 #include "cob_3d_segmentation/segmentation_all_in_one_nodelet.h"
 
@@ -86,6 +87,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::onInit()
     ("cloud_in", 1, boost::bind(&cob_3d_segmentation::SegmentationAllInOneNodelet::received_cloud_cb, this, _1));
   pub_segmented_ = nh_.advertise<PointCloud>("segmentation_cloud", 1);
   pub_classified_ = nh_.advertise<PointCloud>("classified_cloud", 1);
+  pub_shape_array_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray>("shape_array",1);
   std::cout << "Loaded" << std::endl;
 
 }
@@ -110,8 +112,61 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::received_cloud_cb(PointCloud::
   graph_->clusters()->mapTypeColor(classified_);
   pub_segmented_.publish(segmented_);
   pub_classified_.publish(classified_);
-  
+
+  publishShapeArray(graph_->clusters(), cloud);
   NODELET_INFO("Done .... ");
+}
+
+void
+cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr cluster_handler, PointCloud::ConstPtr cloud)
+{
+  cob_3d_mapping_msgs::ShapeArray sa;
+  sa.header = cloud->header;
+  
+  for (ST::CH::ClusterPtr c = cluster_handler->begin(); c != cluster_handler->end(); ++c)
+  {
+    switch(c->type)
+    {
+    case I_PLANE:
+    {
+      sa.shapes.push_back(cob_3d_mapping_msgs::Shape());
+      cob_3d_mapping_msgs::Shape* s = &sa.shapes.back();
+      s->type = cob_3d_mapping_msgs::Shape::PLANE;
+      s->params.resize(4);
+      Eigen::Vector3f n = c->getOrientation();
+      s->params[0] = n(0); // n_x
+      s->params[1] = n(1); // n_y
+      s->params[2] = n(2); // n_z
+      s->params[3] = c->getCentroid().norm(); // d
+      s->points.resize(1);
+      sensor_msgs::PointCloud2* blob = &s->points.back();
+      blob->header = cloud->header;
+      blob->width = c->border_indices.size();
+      blob->height = 1;
+      blob->point_step = sizeof(pcl::PointXYZ);
+      blob->row_step = blob->point_step * c->border_indices.size();
+      blob->data.resize(blob->row_step);
+      blob->is_dense = true;
+
+      uint8_t* msg_data = &blob->data[0];
+      for (size_t i = 0; i < c->border_indices.size(); ++i, msg_data += blob->point_step)
+      {
+	const uint8_t* cloud_data = reinterpret_cast<const uint8_t*>(&(cloud->points[c->border_indices[i]]));
+	memcpy(msg_data, cloud_data, blob->point_step);
+      }
+      break;
+    }
+    case I_CYL:
+    {
+      break;
+    }
+    default:
+    {
+      break;
+    }
+    }
+  }
+  pub_shape_array_.publish(sa);
 }
 
 PLUGINLIB_DECLARE_CLASS(cob_3d_segmentation, SegmentationAllInOneNodelet, cob_3d_segmentation::SegmentationAllInOneNodelet, nodelet::Nodelet);

@@ -151,7 +151,7 @@ namespace cob_3d_segmentation
     virtual void addPoint(ClusterPtr c, int idx) = 0;
     virtual void merge(ClusterPtr source, ClusterPtr target) = 0;
 
-  private:
+  protected:
     std::list<ClusterType> clusters_;
     std::map<int,ClusterPtr> id_to_cluster_;
     int max_cid_;
@@ -208,16 +208,27 @@ namespace cob_3d_segmentation
     void computeNormalIntersections(ClusterPtr c);
     //void computeColorHistogram(ClusterPtr c);
 
+    void addBorderIndicesToClusters()
+    {
+      for (size_t idx = labels_->width; idx < ( labels_->size() - labels_->width ); ++idx)
+      {
+	int curr_label = labels_->points[idx].label;
+	if (curr_label != labels_->points[idx + 1].label || curr_label != labels_->points[idx + labels_->width].label ||
+	    curr_label != labels_->points[idx - 1].label || curr_label != labels_->points[idx - labels_->width].label)
+	{
+	  id_to_cluster_[curr_label]->border_indices.push_back(idx);
+	}
+      }
+    }
+
     void mapClusterBorders(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points)
     {
       uint32_t color = LBL_BORDER;
-      for (size_t idx = points->width; idx < ( points->size() - points->width ); ++idx)
+      for (ClusterPtr c = clusters_.begin(); c != clusters_.end(); ++c)
       {
-	int curr_label = labels_->points[idx].label;
-	if (curr_label != labels_->points[idx + 1].label || curr_label != labels_->points[idx + points->width].label ||
-	    curr_label != labels_->points[idx - 1].label || curr_label != labels_->points[idx - points->width].label)
+	for(std::vector<int>::iterator idx = c->border_indices.begin(); idx != c->border_indices.end(); ++idx)
 	{
-	  points->points[idx].rgb = *reinterpret_cast<float*>(&color);
+	  points->points[*idx].rgb = *reinterpret_cast<float*>(&color);
 	}
       }
     }

@@ -135,7 +135,7 @@ cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::c
       { 
 	c_it->type = max_idx;
 	c_it->type_probability = static_cast<float>(max) / static_cast<float>(valid_points);
-	std::cout << "Label: " << max_idx << " : #" << c_it->type_probability << std::endl;
+	//std::cout << "Label: " << max_idx << " : #" << c_it->type_probability << std::endl;
 	if (c_it->type == I_CYL && c_it->type_probability < 0.8) { c_it->type = I_SPHERE; }
       }
     }
