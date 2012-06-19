@@ -370,6 +370,41 @@ public:
 	}
 
 
+	void completeCylinder(Cylinder& cyl)
+	{
+//		complete 3-leg
+		cyl.axes_[0]=cyl.axes_[1].cross(cyl.axes_[2]);
+
+//		unrolled polygon including >Trafo World 2 Plane
+		cyl.unrolled_.assignMembers(cyl.axes_[1], cyl.axes_[2], cyl.origin_);
+
+//		calculate radius
+
+		float r;
+		std::vector<Eigen::Vector2f> pp_vec;
+		Eigen::Vector2f pp;
+		float temp_r;
+		cyl.getTransformedContours
+		for (int i = 0; i < cyl.contours.size(); ++i) {
+
+			for (int j = 0; j < cyl.contours[i].size(); ++j) {
+
+				Eigen::Vector3f temp = cyl.unrolled_.transform_from_world_to_plane * cyl.contours[i][j] ;
+//				get the x and z components
+				pp << temp[0],temp[2];
+				pp_vec.push_back(pp);
+				temp_r += pp.norm();
+			}
+
+		}
+
+
+		r=temp_r /pp_vec.size();
+
+
+	}
+
+
 
 	/**
 	 * @brief publishes the contour of the polygons
