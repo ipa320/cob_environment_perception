@@ -75,8 +75,10 @@
 #include <cob_3d_mapping_msgs/ShapeArray.h>
 #include <cob_3d_mapping_msgs/GetGeometricMap.h>
 #include <cob_3d_mapping_msgs/GetObjectsOfClass.h>
+#include <cob_3d_mapping_msgs/GetTables.h>
 #include <cob_3d_mapping_semantics/table_extraction.h>
 #include <cob_3d_mapping_common/ros_msg_conversions.h>
+//#include <tabletop_object_detector/TabletopDetection.h>
 
 using namespace cob_3d_mapping;
 
@@ -96,7 +98,8 @@ public:
     s_marker_pub_ = n_.advertise<visualization_msgs::Marker> ("marker", 100);
     map_marker_pub_ = n_.advertise<visualization_msgs::MarkerArray> ("marker_array", 10);
 
-    get_tables_server_ = n_.advertiseService ("get_objects_of_class", &TableExtractionNode::getTablesService, this);
+    //get_tables_server_ = n_.advertiseService ("get_objects_of_class", &TableExtractionNode::getTablesService, this);
+    get_tables_server_ = n_.advertiseService ("get_tables", &TableExtractionNode::getTablesService2, this);
 
     n_.getParam ("semantic_extraction/tilt_angle", tilt_angle_);
     /*
@@ -246,6 +249,77 @@ public:
   }
 
   /**
+   * @brief service offering table object candidates
+   *
+   * @param req request for objects of a class (table objects in this case)
+   * @param res response of the service which is possible table object candidates
+   *
+   * @return true if service successful
+   */
+  bool
+  getTablesService2 (cob_3d_mapping_msgs::GetTablesRequest &req,
+		  cob_3d_mapping_msgs::GetTablesResponse &res)
+  {
+    ROS_INFO("table detection started....");
+
+    cob_3d_mapping_msgs::ShapeArray sa;
+    if (getMapService (sa))
+    {
+      int table_ctr = 0;
+      for (unsigned int i = 0; i < sa.shapes.size (); i++)
+      {
+        PolygonPtr poly_ptr = PolygonPtr (new Polygon());
+        fromROSMsg(sa.shapes[i], *poly_ptr);
+        //ROS_INFO("\n\tisTableObject....  : ");
+        te_.setInputPolygon(poly_ptr);
+        if (te_.isTable())
+        {
+          table_ctr++;
+          //ros::Duration (10).sleep ();
+          //cob_3d_mapping_msgs::Shape s;
+          //toROSMsg(*map[i], s);
+          //convertPolygonToShape (*sem_exn_.PolygonMap[i], s);
+          publishShapeMarker (sa.shapes[i]);
+          ROS_INFO("getTablesService: Polygon[%d] converted to shape",i);
+          //res.objects.shapes.push_back (sa.shapes[i]);
+          tabletop_object_detector::Table table;
+          Eigen::Affine3f pose;
+          Eigen::Vector4f min_pt;
+          Eigen::Vector4f max_pt;
+          poly_ptr->computePoseAndBoundingBox(pose, min_pt, max_pt);
+          table.pose.pose.position.x = poly_ptr->centroid[0];
+          table.pose.pose.position.y = poly_ptr->centroid[1];
+          table.pose.pose.position.z = poly_ptr->centroid[2];
+          Eigen::Quaternionf quat(pose.rotation());
+          table.pose.pose.orientation.x = quat.x();
+          table.pose.pose.orientation.y = quat.y();
+          table.pose.pose.orientation.z = quat.z();
+          table.pose.pose.orientation.w = quat.w();
+          table.x_min = min_pt(0);
+          table.x_max = max_pt(0);
+          table.y_min = min_pt(1);
+          table.y_max = max_pt(1);
+          table.convex_hull.type = arm_navigation_msgs::Shape::MESH;
+          for( unsigned int j=0; j<poly_ptr->contours[0].size(); j++)
+          {
+        	  geometry_msgs::Point p;
+        	  p.x = poly_ptr->contours[0][j](0);
+        	  p.y = poly_ptr->contours[0][j](1);
+        	  p.z = poly_ptr->contours[0][j](2);
+        	  table.convex_hull.vertices.push_back(p);
+          }
+
+          tabletop_object_detector::TabletopDetectionResult det;
+          det.table = table;
+          res.tables.push_back(det);
+        }
+      }
+      ROS_INFO("Found %d tables", table_ctr);
+    }
+    return true;
+  }
+
+  /**
    * @brief service offering geometry map of the scene
    *
    * @return true if service successful
@@ -332,8 +406,8 @@ public:
   void
   publishShapeMarker (const cob_3d_mapping_msgs::Shape& s)
   {
-    static int ctr = 0;
-    //TODO: set unique ID for each new marker, remove old markers
+    //static int ctr = 0;
+    //TODO: remove old markers
 
 
     visualization_msgs::Marker marker;
@@ -344,7 +418,7 @@ public:
     marker.ns = "shape_marker";
     marker.header.stamp = ros::Time::now ();
 
-    marker.id = ctr;
+    marker.id = s.id;
     marker.scale.x = 0.05;
     marker.scale.y = 0.05;
     marker.scale.z = 0;
@@ -377,7 +451,7 @@ public:
        */
     }
     s_marker_pub_.publish (marker);
-    ctr++;
+    //ctr++;
 
   }
 
