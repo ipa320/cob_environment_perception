@@ -56,60 +56,7 @@
 
 namespace cob_3d_mapping {
 
-//void Cylinder::getMiddlepoint(Eigen::Vector3f& middlepoint){
-//
-//float x_min,x_max,y_max,y_min,x_middle,y_middle,z_max,z_min,z_middle;
-//
-//	x_max=contours[0][0][0];
-//	x_min=contours[0][0][0];
-//	y_max=contours[0][0][1];
-//	y_min=contours[0][0][1];
-//	z_max=contours[0][0][2];
-//	z_min=contours[0][0][2];
-//
-//
-// for(size_t j=0; j<contours.size(); j++)
-//	  {
-//	    for(size_t k=0; k<contours[j].size(); k++)
-//		{
-//
-//
-//
-//				x_max=std::max(x_max,contours[j][k][0]);
-//				x_min=std::min(x_min,contours[j][k][0]);
-//				y_max=std::max(y_max,contours[j][k][1]);
-//				y_min=std::min(y_min,contours[j][k][1]);
-//				z_max=std::max(z_max,contours[j][k][2]);
-//				z_min=std::min(z_min,contours[j][k][2]);
-//	    	//Transform  Points in Cylinder Coordinate System
-//
-//
-//
-//		}
-//	  }
-// x_middle=x_min+((x_max-x_min)/2);
-// y_middle=y_min+((y_max-y_min)/2);
-// z_middle=z_min+((z_max-z_min)/2);
-//
-// middlepoint << x_middle,y_middle,z_middle;
-//
-// Eigen::Vector3f maxpoint,minpoint;
-//
-// maxpoint << x_max,y_max,z_max;
-// minpoint << x_min,y_min,z_min;
-//
-//
-//
-//
-//
-// if (debug_=true) {
-//	 // 	Debug Output
-//	 	std::cout<<"middlepoint"<<std::endl<<middlepoint<<std::endl;
-//
-//}
-//
-//
-//}
+
 
 
 void Cylinder::roll() {
@@ -154,8 +101,7 @@ void Cylinder::roll() {
 
 			//				 use polar coordinates to create cylinder points
 			point_temp << r_ * sin(alpha), poly_plane.contours[j][k][1], r_	* cos(alpha);
-//			std::cout << "p_local unrolled\n" << poly_plane.contours[j][k]	<< std::endl;
-//			std::cout << "p_local rolled\n" << point_temp << std::endl;
+
 
 			//	      transform back in world system
 			//			point_temp=transformation_from_world_to_cylinder_.inverse()* point_temp;
@@ -212,12 +158,7 @@ void Cylinder::unroll() {
 		}
 	}
 
-	//	    Eigen::Vector3f test_point;
-	//	    test_point << -1 ,0 ,1;
-	//	    Eigen::Vector3f test_trafo = unrolled_.transform_from_world_to_plane*test_point;
-	//	    Eigen::Vector3f test_trafo2 =transformation_from_world_to_cylinder_*test_point;
-	//	    std::cout<<"TEST POINT"<<std::endl<<test_trafo<<std::endl;
-	//	    std::cout<<"TEST POINT2"<<std::endl<<test_trafo2<<std::endl; //exit(1);
+
 
 
 }
@@ -264,27 +205,7 @@ void Cylinder::getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha)
 
 }
 
-//void Cylinder::assignTransformationFromWorldToCylinder() {
-//
-//	//	Get Trafo from World to Cylinder
-//
-//
-////	std::cout<<"AXIS "<<std::endl<<axes_[1]<<std::endl;
-//
-//	Eigen::Affine3f transformation;
-////	std::cout<<axes_[1]<<" "<<axes_[2]<<std::endl;
-//	pcl::getTransformationFromTwoUnitVectorsAndOrigin(axes_[1],axes_[2],origin_,transformation);
-//
-//
-//
-//
-////	std::cout<<"transfromed origin"<<std::endl<<transformation*origin_<<std::endl;
-//	//	invert Trafo
-//	transformation_from_world_to_cylinder_=transformation;
-//
-//
-//
-//}
+
 
 void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 		const merge_config& limits, std::vector<int>& intersections) {
@@ -455,20 +376,11 @@ Cylinder::getShiftedPolygon(Cylinder& c, Polygon & shifted_polygon) {
 									* unrolled_.contours[j][k]);
 			//END LOCAL
 
-			//					 std::cout<<"shifted"<<shifted_polygon.contours[j][k]<<std::endl<<std::endl;
 		}
 	}
-//	Eigen::Vector3f transformed_origin = c.unrolled_.transform_from_world_to_plane.inverse() * (shift_trafo	* c.unrolled_.transform_from_world_to_plane * origin_);
 
-	//		    	double  transformed_d=transformed_origin.norm();
-
-
-	//		    	std::cout<<"t_o\n"<<transformed_origin<<"t_d\n"<<transformed_d<<std::endl;
-	//		    	 shifted_polygon.assignMembers(transformed_normal,transformed_d);
 			shifted_polygon.assignMembers(c.axes_[1], c.axes_[2], origin_);
-	//		    	 shifted_polygon.transform_from_world_to_plane=c.unrolled_.transform_from_world_to_plane;
-	//		    	 shifted_polygon.d=c.d;
-	//		    	 shifted_polygon.normal=c.normal;
+
 
 
 }
