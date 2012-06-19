@@ -22,6 +22,7 @@ int32 id
 # symmetry axis = params[0],params[1],params[2]
 # z axis 	= params[3], params[4], params[5]
 # origin	= params[6], params[7], params[8]
+# radius	= params[9]
 #
 float64[] params
 
