@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
-  <node pkg="cob_3d_mapping_semantics" type="semantic_extraction_node" name="semantic_extraction" output="screen">
+  <node pkg="cob_3d_mapping_semantics" type="table_extraction_node" name="semantic_extraction" output="screen">
   	<!--remap from="map" to="/aggregate_point_map/map"/-->
   	<remap from="shape_array" to="/get_tables_client/shape_array"/>
   	<remap from="shape_array_pub" to="/semantic_extraction_node/get_geometry_map"/>

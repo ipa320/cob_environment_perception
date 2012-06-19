@@ -15,6 +15,7 @@
 	<depend package="visualization_msgs"/>
 	<depend package="cob_3d_mapping_msgs"/>
 	<depend package="cob_3d_mapping_common"/>
+	<depend package="tabletop_object_detector"/>
 
 	
 </package>
