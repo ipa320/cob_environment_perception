@@ -65,7 +65,7 @@ target_link_libraries(eval_feature_map gpc cob_3d_mapping_common)
 #rosbuild_add_executable(get_map_client ros/src/get_map_client.cpp)
 
 
-
+#rosbuild_add_executable(cluster2shape_node ros/src/cluster2shape_node.cpp)
 
 
 

@@ -101,11 +101,8 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
 	cob_3d_mapping::merge_config  limits;
 	limits.d_thresh=d_;
 	limits.angle_thresh=cos_angle_;
-//	limits.weighting_method="AREA";
-//	limits.weighting_method="COUNTER";
-//	limits.weighting_method="DIST";
+	limits.weighting_method="COUNTER";
 
-		limits.weighting_method="COMBINED";
 
 	// find out polygons, to merge with
 	std::vector<int> intersections;
@@ -335,104 +332,6 @@ GeometryMap::clearMap()
 	map_cylinder_.clear();
 }
 
-//void
-//GeometryMap::printGpcStructure(gpc_polygon* p)
-//{
-//  std::cout << "GPC Structure: " << std::endl;
-//  std::cout << "Num Contours: " << p->num_contours << std::endl;
-//  for(int i=0; i< p->num_contours; i++)
-//  {
-//    std::cout << i << std::endl;
-//    std::cout << "isHole: " << p->hole[i] << std::endl;
-//    std::cout << "Num points: " << p->contour[i].num_vertices << std::endl;
-//    for(int j=0; j< p->contour[i].num_vertices; j++)
-//    {
-//      std::cout << p->contour[i].vertex[j].x << " " << p->contour[i].vertex[j].y << "\n";
-//    }
-//  }
-//}
-
-//void
-//GeometryMap::getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
-//                                            Eigen::Vector3f &u, Eigen::Vector3f &v)
-//{
-//  v = normal.unitOrthogonal ();
-//  u = normal.cross (v);
-//}
-//
-//void
-//GeometryMap::getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,
-//                                                   const Eigen::Vector3f &origin, Eigen::Affine3f &transformation)
-//{
-//  Eigen::Vector3f u, v;
-//
-//
-//  getCoordinateSystemOnPlane(normal, u, v);
-//
-////  std::cout << "u " << u <<  std::endl << " v " << v << std::endl;
-//  pcl::getTransformationFromTwoUnitVectorsAndOrigin(v, normal,  origin, transformation);
-//  transformation = transformation.inverse();
-//}
-//
-//void
-//GeometryMap::getPointOnPlane(const Eigen::Vector3f &normal,double d,Eigen::Vector3f &point)
-//{
-//	// outputFile << "in getPointOnPlane" << std::endl;
-//	// outputFile << "normal 0 " << normal(0) << "normal 1 " << normal(1)<< "normal 2 " << normal(2)<< std::endl;
-//
-//	float value=fabs(normal(0));
-//	int direction=0;
-////	 outputFile << "abs normal 0 " << fabs(normal(0)) << "normal 1 " << fabs(normal(1))<< "normal 2 " << fabs(normal(2))<< std::endl;
-//
-//	if(fabs(normal(1))>value)
-//	{
-//
-//		direction=1;
-//		value=fabs(normal(1));
-//	}
-//
-//
-//	if(fabs(normal(2))>value)
-//	{
-//		direction=2;
-//		value=fabs(normal(2));
-//	}
-//	point << 0,0,0;
-//	point(direction)=-d/normal(direction);
-////	 outputFile << "direction: " << direction << "  point " << std::endl << point << std::endl;
-//
-////	Eigen::Vector3f round_normal;
-////	round_normal[0]=rounding(normal[0]);
-////	round_normal[1]=rounding(normal[1]);
-////	round_normal[2]=rounding(normal[2]);
-////
-////	int counter=0;
-////	std::vector<int> no_zero_direction;
-////	for(int i=0 ;i<3;i++)
-////	{
-////		if(round_normal[i]==0){
-////			counter++;}
-////		else
-////		no_zero_direction.push_back(i);
-////	}
-//////	std::cout << " normal " <<std::endl<< normal << std::endl;
-//////	std::cout << "counter " << counter;
-////	if(counter==0)
-////	{
-////		point << 0,0,d/round_normal(2);
-////	}
-////	if(counter==1)
-////	{
-////		point << 0,0,0;
-////		point[no_zero_direction[0]]=1;
-////		point[no_zero_direction[1]]=-round_normal(no_zero_direction[0])/round_normal(no_zero_direction[1])+d/round_normal(no_zero_direction[1]);
-////	}
-////	if(counter==2)
-////	{
-////		point << 0,0,0;
-////		point(no_zero_direction[0])=d/round_normal(no_zero_direction[0]);
-////	}
-//}
 
 
 
@@ -509,48 +408,7 @@ GeometryMap::colorizeMap()
 
 }
 
-/*int main (int argc, char** argv)
- {
 
-  GeometryMap fm;
-  for(int j=0; j<46; j++)
-  {
-    GeometryMap::PolygonPtr m_p = GeometryMap::PolygonPtr(new GeometryMap::Polygon());
-    std::stringstream ss;
-    ss << "/home/goa/pcl_daten/kitchen_kinect/polygons/polygon_" << j << ".txt";
-    std::ifstream myfile;
-    myfile.open (ss.str().c_str());
-    if (myfile.is_open())
-    {
-        myfile >> m_p->id;
-        std::cout << m_p->id << std::endl;
-        myfile >> m_p->normal(0);
-        myfile >> m_p->normal(1);
-        myfile >> m_p->normal(2);
-        std::cout << "normal:" << m_p->normal << std::endl;
-        std::vector<Eigen::Vector3f> vv;
-        int num;
-        myfile >> num;
-        std::cout << num << std::endl;
-        int i=0;
-        while ( i<num )
-        {
-          Eigen::Vector3f v;
-          myfile >> v(0);
-          myfile >> v(1);
-          myfile >> v(2);
-          vv.push_back(v);
-          i++;
-      }
-        m_p->contours.push_back(vv);
-      myfile.close();
-    }
-    //fm.printMapEntry(*m_p);
-    fm.addMapEntry(m_p);
-
-  }
-  fm.saveMap("/home/goa/pcl_daten/kitchen_kinect/map");
-}*/
 
 int main (int argc, char** argv)
 {
@@ -564,13 +422,13 @@ int main (int argc, char** argv)
 	m_p1->id = 1;
 	m_p1->normal << 0.000000,-1.000000,-0.000000;
 	m_p1->d = 0;
-	v << 0.707107,0.000000,0.153553;
+	v << 0.500000,0.010000,0.500000;
 	vv.push_back(v);
-	v << 0.707107,0.000000,-0.553553;
+	v << 0.500000,0.010000,-0.500000;
 	vv.push_back(v);
-	v << -0.707107,0.000000,-0.553553;
+	v << -0.500000,0.010000,-0.500000;
 	vv.push_back(v);
-	v << -0.707107,0.000000,0.153553;
+	v << -0.500000,0.010000,0.500000;
 	vv.push_back(v);
 	m_p1->contours.push_back(vv);
 	m_p1->holes.push_back(0);
@@ -582,48 +440,22 @@ int main (int argc, char** argv)
 	m_p2->id = 2;
 	m_p2->normal << -0.000000,1.000000,0.000000;
 	m_p2->d = 0;
-	v << 0.707107,0.000000,0.553553;
+	v << 0.500000,-0.010000,0.500000;
 	vv.push_back(v);
-	v << 0.707107,0.000000,-0.153553;
+	v << 0.500000,-0.010000,-0.500000;
 	vv.push_back(v);
-	v << -0.707107,0.000000,-0.153553;
+	v << -0.500000,-0.010000,-0.500000;
 	vv.push_back(v);
-	v << -0.707107,0.000000,0.553553;
+	v << -0.500000,-0.010000,0.500000;
 	vv.push_back(v);
 	m_p2->contours.push_back(vv);
 	m_p2->holes.push_back(0);
 	gm.addMapEntry(m_p2);
-	//
-	//  m_p = PolygonPtr(new Polygon());
-	//  m_p->id = 1;
-	//  m_p->normal << 0,0,-1;
-	//  m_p->d = -1;
-	//  vv.clear();
-	//  v << 2,2,1;
-	//  vv.push_back(v);
-	//  v << 2,3,1;
-	//  vv.push_back(v);
-	//  v << 3,3,1;
-	//  vv.push_back(v);
-	//  v << 3,2,1;
-	//  vv.push_back(v);
-	//  m_p->contours.push_back(vv);
-	//  m_p->holes.push_back(0);
-	//  gm.addMapEntry(m_p);
-	//  gm.saveMap("/home/goa-tz/GM_test/pcl_daten/merge_test");
 
-	/*  Eigen::Vector3f test;
-  Eigen::Vector3f result;
-  double d=1;
-  test << 1,1,1;
-  gm.getPointOnPlane(test,d,result);
-  std::cout << result(0) <<"," << result(1) <<","<< result(2);*/
 	std::cout<<"done"<<std::endl;
 	return 1;
 }
 
 
 
-//template class GeometryMap<cob_3d_mapping::Polygon>;
-//template class GeometryMap<cob_3d_mapping::Cylinder>;
 

@@ -147,18 +147,6 @@ public:
   void
   clearMap();
 
-//  void
-//  getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
-//                             Eigen::Vector3f &u,
-//                             Eigen::Vector3f &v);
-
-//  void
-//  getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,
-//                                    const Eigen::Vector3f &origin,
-//                                    Eigen::Affine3f &transformation);
-
-//  void
-//  getPointOnPlane(const Eigen::Vector3f &normal,double d,Eigen::Vector3f &point);
 
   float
   rounding(float x);
