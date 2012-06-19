@@ -347,6 +347,7 @@ GeometryMap::mergeWithMap(PolygonPtr p_ptr , std::vector<int> intersections)
 		//TODO: update normal, d, transformation...?
 	  }
 	}
+	p_map.computeCentroid();
 	//std::cout << std::endl;
 //	std::cout << "Normale average" << average_normal[0] <<average_normal[1] <<average_normal[2] << std::endl;
 //	std::cout << "d average" << average_d << std::endl;
