@@ -297,10 +297,7 @@ Polygon::GpcStructureUsingMap(const Eigen::Affine3f& external_trafo, gpc_polygon
 	getTransformedContours(external_trafo,transformed_contours);
 
 
-	//Eigen::Affine3f transformation_from_plane_to_world;
-	//getTransformationFromPlaneToWorld(p.normal, p.contours[0][0], transformation_from_plane_to_world);
-	//p.transform_from_world_to_plane = transform_from_world_to_plane;//transformation_from_plane_to_world.inverse();
-	//printMapEntry(p);
+
 
 
 	gpc_p->num_contours = contours.size();
@@ -443,6 +440,8 @@ void Polygon::assignWeight(std::string& mode)
 
 	if (std::strcmp(mode.c_str(), "COUNTER")== 0) {
 
+		//USE
+
 
 		merge_weight_=merged;
 
@@ -460,6 +459,7 @@ void Polygon::assignWeight(std::string& mode)
 
 	}
 	else if (std::strcmp(mode.c_str(), "COMBINED")== 0) {
+		//USE
 
 		merge_weight_ = merged     +       sqrt(computeArea3d())  ;
 
