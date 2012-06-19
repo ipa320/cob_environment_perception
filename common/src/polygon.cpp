@@ -379,59 +379,39 @@ Polygon::merge(std::vector<PolygonPtr>& poly_vec)
 void
 Polygon::applyWeighting(const std::vector<PolygonPtr>& poly_vec, Polygon & p_average)
 {
-	//	std::ofstream weigths;
-	//	std::string weightspath= "/home/goa-tz/debug/weight_analysis/weights";
-	//	weigths.open(weightspath.c_str());
-	//
-	//	weigths <<"new weight"<< merge_weight_<<std::endl;
+
 
 	Eigen::Vector3f average_normal=normal*merge_weight_;
 	double average_d=d*merge_weight_;
 	double sum_w=merge_weight_;
 	int    sum_merged=1;
 
-	std::cout<<"new = "<<merge_weight_<<std::endl;
 
-	//	std::cout << "avg normal " << std::endl << average_normal << std::endl ;
-	//	std::cout << "p merged " << std::endl << poly_vec[0]->merged << std::endl ;
-	//	std::cout << "p merged *normal  " << std::endl << poly_vec[0]->merged*poly_vec[0]->normal << std::endl ;
-
-
-	//	outputFile <<"merging with maps:" <<std::endl;
 
 	for(int i=0 ; i< (int) poly_vec.size();i++)
 	{
 		Polygon& p_map1 =*(poly_vec[i]);
 
 
-		//		weigths <<"map weight" <<p_map1.merge_weight_<<std::endl;
-		//		std::cout <<"map weight" <<p_map1.merge_weight_<<std::endl;
 
 
-		//	 outputFile << "map: " << intersections[i] <<std::endl;
 		if(normal.dot(p_map1.normal)<0){
 			//	if (p.normal.dot(p_map.normal)<-0.95){
 			p_map1.normal=-p_map1.normal;
 			//			p_map1.d=-p_map1.d;
 
 		}
-		//		 outputFile <<"wird dazu addiert:  d: "<< p_map.d  <<std::endl;
-		//		 outputFile <<"normale" <<std::endl << p_map.normal << std::endl;
 
 
-		//	 std::cout << " add normal :" << std::endl << p_map.normal << std::endl;
 		average_normal += p_map1.merge_weight_* p_map1.normal;
 		average_d +=p_map1.merge_weight_ * p_map1.d;
 		sum_w += p_map1.merge_weight_;
 		sum_merged += p_map1.merged;
 
-		std::cout<<"map = "<<p_map1.merge_weight_<<std::endl;
 
 	}
 
 
-	//	std::cout << "avg normal " << std::endl << average_normal << std::endl ;
-	//	std::cout << "merge counter " << std::endl << merge_counter << std::endl ;
 
 	average_normal=average_normal/sum_w;
 	average_d=average_d/sum_w;
@@ -476,11 +456,7 @@ void Polygon::assignWeight(std::string& mode)
 
 
 		merge_weight_ = computeArea3d();
-		//		std::cout<<"merge weight = "<<merge_weight_<<std::endl;
 
-		//		//	transform contours back
-		//		transformed_contours.clear();
-		//		getTransformedContours(transform_from_world_to_plane.inverse(),contours);
 
 	}
 	else if (std::strcmp(mode.c_str(), "COMBINED")== 0) {
@@ -497,11 +473,12 @@ void Polygon::assignWeight(std::string& mode)
 		float dist_factor=d*d;
 
 		if (fabs(d)<0.5) {
-			dist_factor=0.25;
+			dist_factor=0.5;
 		}
-
+		dist_factor *= 0.5;
 		dist_factor=1/dist_factor;
 		merge_weight_ =merged + dist_factor;
+//		merge_weight_=dist_factor;
 		//		merge_weight_ =   ;
 
 	}
@@ -517,32 +494,11 @@ Polygon::merge_union(std::vector<PolygonPtr>& poly_vec, const Polygon& p_average
 
 
 
-	////	outputFile << "new System" <<std::endl;
-	////	outputFile <<"normal" <<std::endl << average_normal<<std::endl<<"d: " <<average_d<<std::endl;
-	//
-	////	std::cout << "avg normal " << std::endl << average_normal << std::endl ;
-	////	std::cout << "avg d :"  << average_d << std::endl ;
-	//
-	//
-	//	Eigen::Vector3f ft_pt;
-	//
-	//	getPointOnPolygon(average_normal,average_d,ft_pt);
-	////	outputFile <<"ft_pt: "<< ft_pt <<std::endl;
-	//
-	//
-	//	Eigen::Affine3f transformation_from_plane_to_world;
-	//	Eigen::Affine3f transformation_from_world_to_plane;
-	//	getTransformationFromPlaneToWorld(average_normal, ft_pt, transformation_from_plane_to_world);
-	//	transformation_from_world_to_plane = transformation_from_plane_to_world.inverse();
 
 	gpc_polygon gpc_C;
 	gpc_polygon gpc_B;
 
-	//	 ROS_INFO_STREAM("merge trafo " << std::endl << transformation_from_world_to_plane.matrix());
 
-	//	outputFile << "new Trafo " << std::endl;
-	//	outputFile << transformation_from_world_to_plane.matrix()<< std::endl;
-	//	std::cout<<"poly A"<<std::endl;
 
 
 
@@ -568,17 +524,6 @@ Polygon::merge_union(std::vector<PolygonPtr>& poly_vec, const Polygon& p_average
 
 
 		gpc_polygon_clip(GPC_UNION, &gpc_B, &gpc_C, &gpc_C);
-
-		//		std::cout<<"poly c"<<std::endl;
-		//		std::cout<<"num contours"<<gpc_C.num_contours<<std::endl;
-		//		  for(size_t j=0; j<gpc_C.num_contours; j++){
-		//			  for(size_t k=0; k<gpc_C.contour[j].num_vertices; k++){
-		//
-		//	     std::cout << k << ":" << gpc_C.contour[j].vertex[k].x << "," << gpc_C.contour[j].vertex[k].y <<std::endl;
-		//
-		//	}
-		//
-		//}
 
 
 
@@ -606,10 +551,6 @@ Polygon::merge_union(std::vector<PolygonPtr>& poly_vec, const Polygon& p_average
 
 
 
-
-		//	printGpcStructure(&gpc_result);
-		//	std::cout << "map" << std::endl;
-		//	printGpcStructure(&gpc_p_map);
 
 
 		if(i!=0)
@@ -647,8 +588,8 @@ Polygon::merge_union(std::vector<PolygonPtr>& poly_vec, const Polygon& p_average
 		}
 		p_map.assignWeight(merge_settings_.weighting_method);
 
-		std::cout<<"combined = "<<p_map.merge_weight_<<std::endl;
-		std::cout<<"––––––––––––––––––––––––––––––––––––"<<std::endl;
+//		std::cout<<"combined = "<<p_map.merge_weight_<<std::endl;
+//		std::cout<<"––––––––––––––––––––––––––––––––––––"<<std::endl;
 
 	}
 
@@ -673,18 +614,7 @@ Polygon::isMergeCandidate(std::vector<PolygonPtr>& poly_vec,merge_config& config
 
 		Polygon& p_map = *(poly_vec[i]);
 
-		//assign weight for new polygon
 
-		//		std::cout<<"BUG FIXING–––––––––––––––––––\n"<<std::endl;
-		//		std::cout<<"d new "<< this->d<<std::endl;
-		//		std::cout<<"d map "<< p_map.d<<std::endl;
-		//		std::cout<<"\n normal new:\n"<<this->normal<<std::endl;
-		//		std::cout<<"\n normal map:\n"<<p_map.normal<<std::endl;
-		//		std::cout<<"––––––––––––––––––––––––––––––"<<std::endl;
-
-
-
-		//		compute connection between centroids of polygons
 
 		Eigen::Vector4f temp=this->centroid-p_map.centroid;
 		Eigen::Vector3f connection;
@@ -702,13 +632,12 @@ Polygon::isMergeCandidate(std::vector<PolygonPtr>& poly_vec,merge_config& config
 
 			bool is_intersected= this->isMergeCandidate_intersect(p_map);
 
-			std::cout<<"is intersected"<<is_intersected<<std::endl;
 
 			if(is_intersected == true)
 			{
 				//std::cout << "no intersection with map " << i << std::endl;
-				//std::cout << p.normal << std::endl;
-				std::cout << "intersection with map " << i << std::endl;
+//				std::cout << p.normal << std::endl;
+//				std::cout << "intersection with map " << i << std::endl;
 				intersections.push_back(i);
 				continue;
 			}

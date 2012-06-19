@@ -96,22 +96,18 @@ public:
 
 	void roll();
 	void unroll();
-//	void assignTransformationFromWorldToCylinder();
 	void weightAttributes(std::vector<boost::shared_ptr<Cylinder> >& c_array,Cylinder& average_c);
 
 	void isMergeCandidate(const std::vector<boost::shared_ptr<Cylinder> >& cylinder_array,const merge_config& limits,std::vector<int>& intersections);
 	void merge(std::vector<boost::shared_ptr<Cylinder> >& c_array);
 	void assignMembers();
-//	void preMergeTrafo();
 	double r_;
 	std::vector<Eigen::Vector3f> axes_;
 	Eigen::Vector3f origin_;
 	Polygon unrolled_;
-//	Eigen::Affine3f transformation_from_world_to_cylinder_;
 	bool debug_;
 
 private:
-	//	void getMiddlepoint(Eigen::Vector3f& middlepoint);
 	void getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha);
 	void getShiftedPolygon(Cylinder& c_map, Polygon & shifted_polygon);
 };
