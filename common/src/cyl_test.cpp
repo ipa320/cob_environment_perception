@@ -49,53 +49,86 @@ pcl::getTranslationAndEulerAngles(trafo,x,y,z,roll,pitch,yaw);
 
 int main(int argc, char **argv) {
 
-//####################################################
-//Cylinder #1
-
-CylinderPtr  c1  =CylinderPtr(new Cylinder());
-c1->id = 0;
-
-Eigen::Vector3f x_axis1,y_axis1,z_axis1;
-std::vector<Eigen::Vector3f> axes1;
-Eigen::Vector3f origin1;
- std::vector<Eigen::Vector3f> contour1;
- Eigen::Vector3f v1;
-
-
-x_axis1 << 1,0,0;
-axes1.push_back(x_axis1);
-
-y_axis1 << 0,0,1;
-axes1.push_back(y_axis1);
-
-z_axis1 << 0,1,0;
-axes1.push_back(z_axis1);
-
-c1->axes_=axes1;
-
-
-
- v1 << -1, 0, 1;
- contour1.push_back(v1);
- v1 << 1, 0, 1;
- contour1.push_back(v1);
- v1 << 1 ,0 ,-1;
- contour1.push_back(v1);
- v1 << -1, 0 ,-1;
- contour1.push_back(v1);
- c1->contours.push_back(contour1);
-
-
-c1->merged=1;
- origin1 << 0,0,0;
- c1->origin_=origin1;
-
- c1->r_=1;
-
-
-
- c1->holes.push_back(0);
- c1->debug_=false;
+	Eigen::Vector3f v;
+	std::vector<Eigen::Vector3f> vv;
+	//Cylinder ,c.id1
+	CylinderPtr  c1  =CylinderPtr(new Cylinder());
+	c1->id = 1;
+	Eigen::Vector3f x_axis1,y_axis1,z_axis1;
+	std::vector<Eigen::Vector3f> axes1;
+	Eigen::Vector3f origin1;
+	 std::vector<Eigen::Vector3f> contour1;
+	 Eigen::Vector3f v1;
+	x_axis1 << 1,0,0;
+	axes1.push_back(x_axis1);
+	y_axis1 << 0,0,1;
+	axes1.push_back(y_axis1);
+	z_axis1 << 0,1,0;
+	axes1.push_back(z_axis1);
+	c1->axes_=axes1;
+	v1 << 1.000000, 0.000000, 0.000000;
+	contour1.push_back(v1);
+	v1 << 0.866025, 0.500000, 0.523599;
+	contour1.push_back(v1);
+	v1 << 0.500000, 0.866025, 1.047198;
+	contour1.push_back(v1);
+	v1 << 0.000000, 1.000000, 1.570796;
+	contour1.push_back(v1);
+	c1->contours.push_back(contour1);
+	c1->merged=1;
+	 origin1 << 0,0,0;
+	 c1->origin_=origin1;
+	 c1->r_=1;
+	c1->holes.push_back(0);
+	c1->debug_=false;
+////####################################################
+////Cylinder #1
+//
+//CylinderPtr  c1  =CylinderPtr(new Cylinder());
+//c1->id = 0;
+//
+//Eigen::Vector3f x_axis1,y_axis1,z_axis1;
+//std::vector<Eigen::Vector3f> axes1;
+//Eigen::Vector3f origin1;
+// std::vector<Eigen::Vector3f> contour1;
+// Eigen::Vector3f v1;
+//
+//
+//x_axis1 << 0,0,0;
+//axes1.push_back(x_axis1);
+////actual vecotro supposed to be 1 0 0
+//
+//y_axis1 << 0,0,1;
+//axes1.push_back(y_axis1);
+//
+//z_axis1 << 0,1,0;
+//axes1.push_back(z_axis1);
+//
+//c1->axes_=axes1;
+//
+//
+//
+// v1 << -1, 0, 1;
+// contour1.push_back(v1);
+// v1 << 1, 0, 1;
+// contour1.push_back(v1);
+// v1 << 1 ,0 ,-1;
+// contour1.push_back(v1);
+// v1 << -1, 0 ,-1;
+// contour1.push_back(v1);
+// c1->contours.push_back(contour1);
+//
+//
+//c1->merged=1;
+// origin1 << 0,0,0;
+// c1->origin_=origin1;
+//
+//// c1->r_=1;
+//
+//
+//
+// c1->holes.push_back(0);
+// c1->debug_=false;
 
  if (c1->debug_== true) {
 
@@ -188,7 +221,17 @@ c2->merged=1;
   pcl::getTransformation(x,y,z,roll,pitch,yaw,trafo);
 
 transform_cylinder(c1,trafo);
-transform_cylinder(c2,trafo);
+//transform_cylinder(c2,trafo);
+
+//#######################################################
+//  completion test
+  c1->completeCylinder();
+  std::cout<<"X-axis = \n"<<c1->axes_[0]<<std::endl;
+
+  std::cout<<"r = "<<c1->r_<<std::endl;
+  exit(1);
+
+
 
 //#######################################################
 //	cylinders from octave script
@@ -197,55 +240,55 @@ transform_cylinder(c2,trafo);
 
 
 
-//####################################################
-//Is merge???
-
-//  std::cout<<"c1"<<c1->unrolled_.normal<<std::endl;
-//  std::cout<<"c2"<<c2->unrolled_.normal<<std::endl;
-
-std::vector<CylinderPtr> c_map;
-std::vector<int> intersections;
-merge_config limits;
-limits.angle_thresh=0.97;
-limits.d_thresh= 0.1;
-
+////####################################################
+////Is merge???
+//
+////  std::cout<<"c1"<<c1->unrolled_.normal<<std::endl;
+////  std::cout<<"c2"<<c2->unrolled_.normal<<std::endl;
+//
+//std::vector<CylinderPtr> c_map;
+//std::vector<int> intersections;
+//merge_config limits;
+//limits.angle_thresh=0.97;
+//limits.d_thresh= 0.1;
+//
+////c_map.push_back(c2);
+//
 //c_map.push_back(c2);
-
-c_map.push_back(c2);
-//c_map.push_back(c3);
-
-
-c1->isMergeCandidate(c_map,limits,intersections);
-std::vector<CylinderPtr> merge_candidates ;
-
-for(int i=0;i<(int)intersections.size();i++)
-{
-
-	  merge_candidates.push_back(c_map[intersections[i]]);
-}
-std::cout<<"intersections size: ="<<intersections.size()<<std::endl;
-
-std::cout<<"merge_candidates size: ="<<merge_candidates.size()<<std::endl;
-
-
-if(merge_candidates.size()>0){
-c1->merge(merge_candidates);
+////c_map.push_back(c3);
 //
 //
-
-Cylinder& result=*merge_candidates[0];
-//result.unrolled_.debug_output("result_polygon");
-//	 std::cout<<"goa-tz MERGED--> new vertices"<<std::endl;
-//	 for (int i = 0; i < (int) result.contours.size(); ++i) {
-//		 for (int j = 0; j < (int) result.contours[i].size(); ++j) {
+//c1->isMergeCandidate(c_map,limits,intersections);
+//std::vector<CylinderPtr> merge_candidates ;
 //
-//	 std::cout<<"contor "<<i<<" vertex "<<j <<"  : "<<std::endl<<"~~~~"<<std::endl<<result.contours[i][j]<<std::endl<<std::endl;
-//		}
-//	}
+//for(int i=0;i<(int)intersections.size();i++)
+//{
 //
-
-result.unrolled_.debug_output("result");
-}
+//	  merge_candidates.push_back(c_map[intersections[i]]);
+//}
+//std::cout<<"intersections size: ="<<intersections.size()<<std::endl;
+//
+//std::cout<<"merge_candidates size: ="<<merge_candidates.size()<<std::endl;
+//
+//
+//if(merge_candidates.size()>0){
+//c1->merge(merge_candidates);
+////
+////
+//
+//Cylinder& result=*merge_candidates[0];
+////result.unrolled_.debug_output("result_polygon");
+////	 std::cout<<"goa-tz MERGED--> new vertices"<<std::endl;
+////	 for (int i = 0; i < (int) result.contours.size(); ++i) {
+////		 for (int j = 0; j < (int) result.contours[i].size(); ++j) {
+////
+////	 std::cout<<"contor "<<i<<" vertex "<<j <<"  : "<<std::endl<<"~~~~"<<std::endl<<result.contours[i][j]<<std::endl<<std::endl;
+////		}
+////	}
+////
+//
+//result.unrolled_.debug_output("result");
+//}
 
 
 return 1;
