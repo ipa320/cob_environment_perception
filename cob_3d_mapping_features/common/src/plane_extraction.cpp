@@ -320,7 +320,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
           if(plane_cluster_ptr->size() < min_plane_size_) continue;
           //else std::cout << "plane cluster has " << plane_cluster_ptr->size() << " points" << std::endl;
 
-          // Create a Convex Hull representation of the projected inliers
+          // Create a Concave Hull representation of the projected inliers
           pcl::PointCloud<Point> cloud_hull;
           std::vector< pcl::Vertices > hull_polygons;
           chull_.setInputCloud (plane_cluster_ptr);
