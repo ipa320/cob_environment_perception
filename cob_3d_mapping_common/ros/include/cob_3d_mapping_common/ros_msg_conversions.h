@@ -59,6 +59,8 @@
 #include <cob_3d_mapping_msgs/Shape.h>
 #include <cob_3d_mapping_msgs/ShapeArray.h>
 #include "cob_3d_mapping_common/polygon.h"
+#include "cob_3d_mapping_common/cylinder.h"
+
 
 namespace cob_3d_mapping
 {
@@ -76,7 +78,7 @@ namespace cob_3d_mapping
   toROSMsg(const Polygon& p, cob_3d_mapping_msgs::Shape& s)
   {
     s.id = p.id;
-    s.type = cob_3d_mapping_msgs::Shape::POLYGON;
+	s.type = cob_3d_mapping_msgs::Shape::POLYGON;
     s.params.resize(4);
     s.params[0] = p.normal(0);
     s.params[1] = p.normal(1);
