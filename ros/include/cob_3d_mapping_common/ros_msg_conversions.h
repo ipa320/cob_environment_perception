@@ -191,18 +191,14 @@ toROSMsg(const Cylinder& c, cob_3d_mapping_msgs::Shape& s)
 	s.params[4]=c.axes_[2][1];
 	s.params[5]=c.axes_[2][2];
 
-	s.params[6]=c.axes_[0][0];
-	s.params[7]=c.axes_[0][1];
-	s.params[8]=c.axes_[0][2];
+
+	s.params[6]=c.origin_[0];
+	s.params[7]=c.origin_[1];
+	s.params[8]=c.origin_[2];
 
 	s.params[9]=c.r_;
 
-	s.params[10]=c.origin_[0];
-	s.params[11]=c.origin_[1];
-	s.params[12]=c.origin_[2];
 
-
-	s.params[13]=c.d;
 	//std::cout << "normal: " << p.normal(0) << ","  << p.normal(1) << "," << p.normal(2) << std::endl;
 	//std::cout << "d: " << p.d << std::endl << std::endl;
 
@@ -262,17 +258,12 @@ fromROSMsg(const cob_3d_mapping_msgs::Shape& s,Cylinder& c){
 	c.axes_[2][1] = s.params[4];
 	c.axes_[2][2] = s.params[5];
 
-	c.axes_[0][0]=  s.params[6];
-	c.axes_[0][1] = s.params[7];
-	c.axes_[0][2] = s.params[8];
-
-	c.r_=s.params[9];
 
 	c.origin_[0]	= s.params[10];
 	c.origin_[1]	= s.params[11];
 	c.origin_[2]	= s.params[12];
 
-	c.d = s.params[13];
+
 	//std::cout << "normal: " << p.normal(0) << ","  << p.normal(1) << "," << p.normal(2) << std::endl;
 	//std::cout << "d: " << p.d << std::endl << std::endl;
 	c.merged = 1;
