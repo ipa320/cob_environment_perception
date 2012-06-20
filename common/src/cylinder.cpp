@@ -458,13 +458,14 @@ Cylinder::completeCylinder()
 
 	//		calculate radius
 
-	float r;
+
 	std::vector<std::vector<Eigen::Vector3f> >temp_vec;
 	Eigen::Vector2f pp;
 	float temp_r=0;
 	int counter=0;
 
 	this->getTransformedContours(unrolled_.transform_from_world_to_plane,temp_vec);
+
 
 	for (int i = 0; i < (int) temp_vec.size(); ++i) {
 		for (int j = 0; j < (int) temp_vec[i].size(); ++j) {
