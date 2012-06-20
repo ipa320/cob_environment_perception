@@ -207,7 +207,7 @@ namespace cob_3d_segmentation
     bool computePrincipalComponents(ClusterPtr c);
     void computeNormalIntersections(ClusterPtr c);
     //void computeColorHistogram(ClusterPtr c);
-
+    
     void addBorderIndicesToClusters()
     {
       for (size_t idx = labels_->width; idx < ( labels_->size() - labels_->width ); ++idx)
@@ -230,6 +230,37 @@ namespace cob_3d_segmentation
 	{
 	  points->points[*idx].rgb = *reinterpret_cast<float*>(&color);
 	}
+      }
+    }
+
+    void mapClusterNormalIntersectionResults(
+      pcl::PointCloud<pcl::PointXYZ>::Ptr ints_centroids,
+      pcl::PointCloud<pcl::Normal>::Ptr comp1,
+      pcl::PointCloud<pcl::Normal>::Ptr comp2,
+      pcl::PointCloud<pcl::Normal>::Ptr comp3,
+      pcl::PointCloud<pcl::PointXYZ>::Ptr centroids,
+      pcl::PointCloud<pcl::Normal>::Ptr connection)
+    {
+      ints_centroids->width = comp1->width = comp2->width = comp3->width = centroids->width = connection->width = numClusters();
+      ints_centroids->height = comp1->height = comp2->height = comp3->height = centroids->width = connection->height = 1;
+      ints_centroids->resize(numClusters());
+      comp1->resize(numClusters());
+      comp2->resize(numClusters());
+      comp3->resize(numClusters());
+      centroids->resize(numClusters());
+      connection->resize(numClusters());
+
+      int i = 0;
+      for (ClusterPtr c = clusters_.begin(); c != clusters_.end(); ++c)
+      {
+	if (c->type != I_CYL) continue;
+	ints_centroids->points[i].getVector3fMap() = c->pca_inter_centroid;
+	comp1->points[i].getNormalVector3fMap() = c->pca_inter_comp1 * c->pca_inter_values(2);
+	comp2->points[i].getNormalVector3fMap() = c->pca_inter_comp2 * c->pca_inter_values(1);
+	comp3->points[i].getNormalVector3fMap() = c->pca_inter_comp3 * c->pca_inter_values(0);
+	centroids->points[i].getVector3fMap() = c->getCentroid();
+	connection->points[i].getNormalVector3fMap() = c->pca_inter_centroid - c->getCentroid();
+	++i;
       }
     }
 

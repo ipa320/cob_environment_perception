@@ -125,6 +125,12 @@ namespace cob_3d_segmentation
     Eigen::Vector3f pca_point_comp3;
     Eigen::Vector3f pca_point_values;
 
+    Eigen::Vector3f pca_inter_centroid;
+    Eigen::Vector3f pca_inter_comp1;
+    Eigen::Vector3f pca_inter_comp2;
+    Eigen::Vector3f pca_inter_comp3;
+    Eigen::Vector3f pca_inter_values;
+
     std::vector<int> border_indices;
 
   private:

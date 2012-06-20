@@ -170,10 +170,19 @@ int main(int argc, char** argv)
     return 0;
   }
 
+  PointCloud<PointXYZ>::Ptr centroids(new PointCloud<PointXYZ>);
+  PointCloud<PointXYZ>::Ptr ints_centroids(new PointCloud<PointXYZ>);
+  PointCloud<Normal>::Ptr ints_comp1(new PointCloud<Normal>);
+  PointCloud<Normal>::Ptr ints_comp2(new PointCloud<Normal>);
+  PointCloud<Normal>::Ptr ints_comp3(new PointCloud<Normal>);
+  PointCloud<Normal>::Ptr connection(new PointCloud<Normal>);
+  g->clusters()->mapClusterNormalIntersectionResults(ints_centroids, ints_comp1, ints_comp2, ints_comp3, centroids, connection);
+
   visualization::PCLVisualizer v;
   visualization::PointCloudColorHandlerRGBField<PointXYZRGB> chdl_p(p);
   visualization::PointCloudColorHandlerRGBField<PointXYZRGB> chdl_pt(pt);
   visualization::PointCloudColorHandlerRGBField<PointXYZRGB> chdl_p2(p2);
+  visualization::PointCloudColorHandlerCustom<PointXYZ> blue_hdl (centroids, 0,0,255);
   /* --- Viewports: ---
    *  1y
    *    | 1 | 2 |
@@ -187,8 +196,17 @@ int main(int argc, char** argv)
   v.createViewPort(0.0, 0.5, 0.5, 1.0, v1);
   //v.setBackgroundColor(1, 1, 1, v1);
   v.addPointCloud<PointXYZRGB>(p, chdl_p, "segmented", v1);
-  v.addPointCloudNormals<PointXYZRGB, Normal>(p, n_org, 5, 0.04, "normals_org", v1);
+  //v.addPointCloudNormals<PointXYZRGB, Normal>(p, n_org, 5, 0.04, "normals_org", v1);
   //v.setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_COLOR, 0.7, 0.7, 0.7, "normals_org", v1);
+  v.addPointCloud<PointXYZ>(ints_centroids, blue_hdl, "ints_centroid", v1);
+  v.addPointCloudNormals<PointXYZ,Normal>(ints_centroids, ints_comp1, 1, 10.0, "ints_comp1", v1);
+  v.addPointCloudNormals<PointXYZ,Normal>(ints_centroids, ints_comp2, 1, 10.0, "ints_comp2", v1);
+  v.addPointCloudNormals<PointXYZ,Normal>(ints_centroids, ints_comp3, 1, 10.0, "ints_comp3", v1);
+  v.setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "ints_comp1", v1);
+  v.setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "ints_comp2", v1);
+  v.setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "ints_comp3", v1);
+  v.addPointCloudNormals<PointXYZ,Normal>(centroids, connection, 1, 1.0, "connections", v1);
+  
 
   int v2(0);
   v.createViewPort(0.5, 0.5, 1.0, 1.0, v2);
