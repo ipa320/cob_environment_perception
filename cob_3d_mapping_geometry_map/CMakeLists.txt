@@ -21,6 +21,9 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
+find_package(VTK REQUIRED)
+include_directories(${VTK_INCLUDE_DIRS})
+
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
 
 #uncomment if you have defined messages
@@ -28,7 +31,7 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
-rosbuild_add_library(gpc common/src/gpc.c)
+#rosbuild_add_library(gpc common/src/gpc.c)
 rosbuild_add_library(geometry_map_lib common/src/geometry_map.cpp)
 rosbuild_add_library(geometry_map_vis_lib common/src/vis/geometry_map_visualisation.cpp)
 #rosbuild_add_executable(geometry_map_visualisation common/src/vis/geometry_map_visualisation.cpp)
@@ -39,9 +42,9 @@ rosbuild_add_executable(eval_feature_map common/test/eval_mapping.cpp)
 #rosbuild_add_executable(geometry_test_map common/test/geometry_map_test.cpp)
 rosbuild_add_executable(get_map_client ros/src/get_map_client.cpp)
 
-target_link_libraries(dynamic_geometry_map_node gpc geometry_map_lib geometry_map_vis_lib)
-target_link_libraries(geometry_map_node gpc geometry_map_lib geometry_map_vis_lib)
-target_link_libraries(geometry_map gpc geometry_map_vis_lib )
+target_link_libraries(dynamic_geometry_map_node geometry_map_lib geometry_map_vis_lib)
+target_link_libraries(geometry_map_node geometry_map_lib geometry_map_vis_lib)
+target_link_libraries(geometry_map geometry_map_vis_lib )
 #target_link_libraries(geometry_test_map  geometry_map_vis_lib geometry_map_lib test_planes gpc)
 
 #target_link_libraries(geometry_map_visualisation gpc geometry_map_lib)

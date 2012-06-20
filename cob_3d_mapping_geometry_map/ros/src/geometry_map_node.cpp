@@ -71,7 +71,7 @@
 #include <pcl/point_types.h>
 #include <pcl_ros/transforms.h>
 #include <pcl_ros/point_cloud.h>
-#include <pcl/common/transform.h>
+//#include <pcl/common/transform.h>
 #include <dynamic_reconfigure/server.h>
 #include <cob_3d_mapping_geometry_map/geometry_map_nodeConfig.h>
 
@@ -384,7 +384,7 @@ public:
 		std::vector<Eigen::Vector2f> pp_vec;
 		Eigen::Vector2f pp;
 		float temp_r;
-		cyl.getTransformedContours
+		//cyl.getTransformedContours
 		for (int i = 0; i < cyl.contours.size(); ++i) {
 
 			for (int j = 0; j < cyl.contours[i].size(); ++j) {
