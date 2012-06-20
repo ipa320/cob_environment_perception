@@ -54,3 +54,5 @@ rosbuild_add_compile_flags(cob_3d_registration -D__LINUX__ ${SSE_FLAGS})
 
 #target_link_libraries(registration ann  cob_vision_slam cob_sensor_fusion cob_camera_sensors cob_3d_mapping_features_omp)
 target_link_libraries(cob_3d_registration cob_3d_segmentation cob_3d_mapping_features_omp)
+
+rosbuild_add_roslaunch_check(ros/launch)

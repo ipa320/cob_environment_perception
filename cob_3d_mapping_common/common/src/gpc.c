@@ -37,7 +37,7 @@ Copyright: (C) Advanced Interfaces Group,
 ===========================================================================
 */
 
-#include "cob_3d_mapping_geometry_map/gpc.h"
+#include "cob_3d_mapping_common/gpc.h"
 #include <stdlib.h>
 #include <float.h>
 #include <math.h>

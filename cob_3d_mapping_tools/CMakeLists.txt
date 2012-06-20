@@ -81,3 +81,4 @@ rosbuild_add_compile_flags(generate_test_data -DEIGEN_YES_I_KNOW_SPARSE_MODULE_I
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
+rosbuild_add_roslaunch_check(ros/launch)
