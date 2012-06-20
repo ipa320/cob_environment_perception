@@ -60,6 +60,7 @@
 #include <pcl_ros/pcl_nodelet.h>
 
 // PCL includes
+#include <pcl/surface/concave_hull.h>
 #include <pcl/point_types.h>
 
 // Package includes
@@ -109,11 +110,13 @@ namespace cob_3d_segmentation
     ros::Publisher pub_segmented_;
     ros::Publisher pub_classified_;
     ros::Publisher pub_shape_array_;
+    ros::Publisher pub_chull_;
 
     cob_3d_mapping_features::OrganizedNormalEstimationOMP<pcl::PointXYZRGB, pcl::Normal, PointLabel> one_;
     DepthSegmentation<ST::Graph, ST::Point, ST::Normal, ST::Label> seg_;
     ClusterClassifier<ST::CH, ST::Point, ST::Normal, ST::Label> cc_;
     ST::Graph::Ptr graph_;
+    pcl::ConcaveHull<pcl::PointXYZRGB> chull_;
 
     PointCloud::Ptr segmented_;
     PointCloud::Ptr classified_;
