@@ -55,6 +55,7 @@
 #ifndef __IMPL_ORGANIZED_NORMAL_ESTIMATION_H__
 #define __IMPL_ORGANIZED_NORMAL_ESTIMATION_H__
 
+#include "cob_3d_mapping_common/label_defines.h"
 #include "cob_3d_mapping_features/organized_normal_estimation_omp.h"
 
 template <typename PointInT, typename PointOutT, typename LabelOutT> void
@@ -72,6 +73,7 @@ cob_3d_mapping_features::OrganizedNormalEstimationOMP<PointInT,PointOutT,LabelOu
 #pragma omp parallel for schedule (dynamic, threadsize)
   for (size_t i=0; i < indices_->size(); ++i)
   {
+    labels_->points[(*indices_)[i]].label = I_UNDEF;
     computePointNormal(*surface_, (*indices_)[i], 
 		       output.points[(*indices_)[i]].normal[0],
 		       output.points[(*indices_)[i]].normal[1],

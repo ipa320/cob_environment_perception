@@ -70,7 +70,6 @@ namespace cob_3d_mapping_features
     using OrganizedFeatures<PointInT, PointOutT>::indices_;
     using OrganizedFeatures<PointInT, PointOutT>::surface_;
     using OrganizedFeatures<PointInT, PointOutT>::feature_name_;
-    using OrganizedFeatures<PointInT, PointOutT>::distance_threshold_modifier_;
 
     typedef pcl::PointCloud<PointInT> PointCloudIn;
     typedef typename PointCloudIn::Ptr PointCloudInPtr;
@@ -87,7 +86,6 @@ namespace cob_3d_mapping_features
     FastEdgeEstimation3D ()
       {
 	feature_name_ = "FastEdgeEstimation3D";
-	distance_threshold_modifier_ = 0.0;
       };
 
       inline void 

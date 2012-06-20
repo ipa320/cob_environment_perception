@@ -22,6 +22,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/ros/include)
 
 #uncomment if you have defined messages
 #rosbuild_genmsg()
@@ -34,7 +35,6 @@ rosbuild_add_library(cob_3d_mapping_features
 	common/src/edge_estimation_3d.cpp
 	common/src/edge_estimation_2d.cpp
 	common/src/edge_extraction.cpp
-	common/src/segmentation.cpp
 	common/src/plane_extraction.cpp
 	common/src/knn_classifier.cpp
 	common/src/most_discriminating_data_points.cpp
@@ -49,6 +49,7 @@ rosbuild_add_library(cob_3d_mapping_features_omp
 	common/src/organized_normal_estimation_omp.cpp
 	common/src/fast_edge_estimation_3d_omp.cpp)
 
+
 rosbuild_add_openmp_flags(cob_3d_mapping_features_omp)
 
 target_link_libraries(cob_3d_mapping_features_nodelets cob_3d_mapping_features)
@@ -58,6 +59,7 @@ rosbuild_add_executable(test_plane_extraction common/src/plane_extraction.cpp)
 rosbuild_add_executable(plane_extraction_action_client ros/src/plane_extraction_action_client.cpp)
 rosbuild_add_executable(test_organized_curvature_estimation common/apps/test_organized_curvature_estimation.cpp)
 target_link_libraries(test_organized_curvature_estimation cob_3d_mapping_features cob_3d_mapping_features_omp)
+
 
 # feature evaluation:
 rosbuild_add_executable(evaluation_fpfh_svm_trainer common/apps/evaluation_fpfh_svm_trainer.cpp)
@@ -70,10 +72,6 @@ rosbuild_add_compile_flags(evaluation_features -DEIGEN_YES_I_KNOW_SPARSE_MODULE_
 #rosbuild_add_compile_flags(test_edge_extraction -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
 #target_link_libraries(test_edge_extraction cob_3d_mapping_features)
 
-# Uses FEE3D and EE2D to extract edges and segment clusters
-rosbuild_add_executable(test_segmentation common/apps/test_segmentation.cpp)
-target_link_libraries(test_segmentation cob_3d_mapping_features cob_3d_mapping_features_omp)
-
 # Test Surface Classification using organized principal curvatures
 rosbuild_add_executable(test_surface_class_estimation common/apps/test_surface_class_estimation.cpp)
 target_link_libraries(test_surface_class_estimation cob_3d_mapping_features)
@@ -85,12 +83,15 @@ target_link_libraries(test_edge_estimation cob_3d_mapping_features)
 
 # Profiling old EdgeEstimation and FastEdgeEstimation
 # Only computation, no visualization or output.
+rosbuild_add_executable(profile_oce common/test/profile_oce.cpp)
 rosbuild_add_executable(profile_fee_omp common/test/profile_fee_omp.cpp)
 rosbuild_add_executable(profile_fee common/test/profile_fee.cpp)
 rosbuild_add_executable(profile_ee common/test/profile_ee.cpp)
+target_link_libraries(profile_oce cob_3d_mapping_features cob_3d_mapping_features_omp)
 target_link_libraries(profile_fee_omp cob_3d_mapping_features cob_3d_mapping_features_omp)
 target_link_libraries(profile_fee cob_3d_mapping_features)
 target_link_libraries(profile_ee cob_3d_mapping_features)
+
 
 # PCL RANSAC Tutorial:
 #rosbuild_add_executable(planar_segmentation common/src/planar_segementation.cpp)

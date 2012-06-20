@@ -78,47 +78,56 @@ namespace cob_3d_mapping_features
       OrganizedFeatures () : pixel_search_radius_(2)
 	,pixel_steps_(1)
 	,circle_steps_(1)
-	,distance_threshold_modifier_(4.0)
+	,mask_()
+	,n_points_(0)
+	,inv_width_(0.0)
+	,skip_distant_point_threshold_(4.0)
+	,fake_surface_(true)
+	,mask_changed(false)
       { };
 
       inline void
-	setSearchSurface(const PointCloudInConstPtr cloud)
+      setSearchSurface(const PointCloudInConstPtr cloud)
       {
 	surface_ = cloud;
 	fake_surface_ = false;
       }
 
-      //TODO: set radius in m instead of pixel
       inline void
-	setPixelSearchRadius(int pixel_radius, int pixel_step_size=1, int circle_step_size=1)
+      setPixelWindowSize(int size, int pixel_steps=1, int circle_steps=1)
+      {
+	pixel_search_radius_ = size / 2;
+	pixel_steps_ = pixel_steps;
+	circle_steps_ = circle_steps;
+	mask_changed = true;
+      }
+
+      inline void
+      setPixelSearchRadius(int pixel_radius, int pixel_steps=1, int circle_steps=1)
       {
 	pixel_search_radius_ = pixel_radius;
-	pixel_steps_ = pixel_step_size;
-	circle_steps_ = circle_step_size;
+	pixel_steps_ = pixel_steps;
+	circle_steps_ = circle_steps;
+	mask_changed = true;
       }
 
+      // Ignore points in window with high distance
+      // Value represents the quantization steps of Kinect (approximately)
       inline void
-	setDistanceThresholdModifier(float mod)
+	setSkipDistantPointThreshold(float th)
       {
-	distance_threshold_modifier_ = mod;
+	skip_distant_point_threshold_ = th;
       }
 
-      void
-	compute(PointCloudOut &output);
+      void compute(PointCloudOut &output);
 
-      int
-	searchForNeighbors(const PointCloudIn &cloud, int index, std::vector<int>& indices);
+      int searchForNeighbors(int index, std::vector<int>& indices);
 
-      int
-	searchForNeighborsInRange(const PointCloudIn &cloud, 
-				  int index, 
-				  std::vector<int>& indices);
+      int searchForNeighborsInRange(int index, std::vector<int>& indices);
 
-      int
-	searchForNeighborsInRange(const PointCloudIn &cloud, 
-				  int index, 
-				  std::vector<int>& indices, 
-				  std::vector<int>& distances); // circle index of the point
+      int searchForNeighborsInRange(int index, std::vector<int>& indices, std::vector<float>& sqr_distances);
+
+      void computeMaskManually(int cloud_width);
 
 
     protected:
@@ -148,14 +157,17 @@ namespace cob_3d_mapping_features
 	getClassName () const { return (feature_name_); }
 
       PointCloudInConstPtr surface_;
-      bool fake_surface_;
 
       int pixel_search_radius_;
       int pixel_steps_;
       int circle_steps_;
       std::vector<std::vector<int> > mask_;
+      int n_points_;
       float inv_width_;
-      float distance_threshold_modifier_;
+      float skip_distant_point_threshold_;
+
+      bool fake_surface_;
+      bool mask_changed;
 
       std::string feature_name_;
 
