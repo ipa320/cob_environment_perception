@@ -68,7 +68,7 @@ extern "C" {
 #include <pcl/point_types.h>
 #include <pcl/common/centroid.h>
 #include <pcl/common/eigen.h>
-#include <pcl/common/transform.h>
+#include <pcl/common/transforms.h>
 //#include <pcl/common/transformation_from_correspondences.h>
 
 

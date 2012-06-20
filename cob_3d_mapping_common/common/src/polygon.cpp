@@ -56,7 +56,8 @@
 #include "cob_3d_mapping_common/polygon.h"
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/common/transform.h>
+#include <pcl/common/eigen.h>
+#include <pcl/common/transforms.h>
 #include <pcl/common/centroid.h>
 #include <boost/shared_ptr.hpp>
 
