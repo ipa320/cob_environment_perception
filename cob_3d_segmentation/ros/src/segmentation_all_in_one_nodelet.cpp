@@ -57,6 +57,7 @@
 #include <pluginlib/class_list_macros.h>
 
 #include <pcl/io/io.h>
+#include <pcl/ros/for_each_type.h>
 
 // Package includes
 #include <cob_3d_mapping_msgs/ShapeArray.h>
@@ -139,7 +140,9 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr 
       s->params[2] = n(2); // n_z
       s->params[3] = c->getCentroid().norm(); // d
       s->points.resize(1);
+      s->holes.push_back(false);
       sensor_msgs::PointCloud2* blob = &s->points.back();
+      for_each_type<traits::fieldList<pcl::PointXYZ>::type> (detail::FieldAdder<pcl::PointXYZ>(blob->fields));
       blob->header = cloud->header;
       blob->width = c->border_indices.size();
       blob->height = 1;
