@@ -56,6 +56,7 @@
 #include "cob_3d_mapping_demonstrator/rviz_logo.h"
 #include "rviz/visualization_manager.h"
 #include "rviz/window_manager_interface.h"
+#include <ros/package.h>
 
 using namespace std;
 
@@ -76,6 +77,7 @@ namespace rviz
   //: wxPanel( parent, wxID_ANY, wxDefaultPosition, wxSize(280, 180), wxTAB_TRAVERSAL, title)
   //, m_wmi( wmi )
   {
+    string path = ros::package::getPath("cob_3d_mapping_demonstrator") + "/ros/files/logo_title.jpg";
     // Create controls
     //m_button = new wxButton(this, ID_RESET_BUTTON, wxT("Reset map"));
     wxWindow* parent = 0;
@@ -91,7 +93,7 @@ namespace rviz
       parent = frame_;
     }
 
-    panel_ = new wxImagePanel(parent, wxT("/home/goa/git/cob_environment_perception_intern/cob_3d_mapping_demonstrator/lib/logo_title.jpg"),wxBITMAP_TYPE_JPEG);
+    panel_ = new wxImagePanel(parent, wxString::FromAscii(path.c_str()),wxBITMAP_TYPE_JPEG);
     //if (!pic_.LoadFile(wxT("/home/goa/git/cob_environment_perception_intern/cob_3d_mapping_demonstrator/lib/logo.jpg"),wxBITMAP_TYPE_JPEG)) ROS_ERROR("Image file not found!");
     //logo_ = new wxStaticBitmap(panel_, wxID_ANY, pic_);
     //wxSizer *vsizer = new wxBoxSizer(wxVERTICAL);

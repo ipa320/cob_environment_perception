@@ -1,7 +1,7 @@
 #!/usr/bin/python
 import sys
 import roslib
-roslib.load_manifest('cob_env_model_gazebo')
+roslib.load_manifest('cob_3d_mapping_gazebo')
 
 import rospy
 import os
@@ -25,7 +25,7 @@ class MyScript(script):
 		req_set.model_state.pose.orientation.x = 0
 		req_set.model_state.pose.orientation.y = 0
 		req_set.model_state.pose.orientation.z = 0
-		req_set.model_state.reference_frame = "map"	
+		req_set.model_state.reference_frame = "map"
 		res_set = srv_set_model_state(req_set)
 		self.sss.wait_for_input()
 
@@ -33,16 +33,16 @@ class MyScript(script):
 		req_set.model_state.pose.orientation.z = 1
 		res_set = srv_set_model_state(req_set)
 
-		
+
 if __name__ == "__main__":
 	SCRIPT = MyScript()
 	SCRIPT.Start()
 	#if len(sys.argv) < 2:
 	#	print '[Train_LoadObject.py] Please specify the name of the urdf model to be loaded'
 	#	sys.exit()
-	
 
-		
+
+
 
 
 

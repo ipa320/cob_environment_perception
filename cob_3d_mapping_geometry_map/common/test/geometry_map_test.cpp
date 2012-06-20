@@ -167,7 +167,7 @@ GeometryMapTest::~GeometryMapTest() {}
 		  vv.push_back(v);
 		  m_p->polygon_world.push_back(vv);
 		  gm.addMapEntry(m_p);
-		  std::cout << m_p->transform_from_world_to_plane.matrix();
+		 // std::cout << m_p->transform_from_world_to_plane.matrix();
 		  gmv.showMap(gm.getMap());
 
 	}

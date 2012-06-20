@@ -17,7 +17,7 @@
  * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 03/2012
+ * Date of creation: 08/2011
  * ToDo:
  *
  *
@@ -63,8 +63,8 @@
 
 // ROS includes
 #include <ros/ros.h>
-//#include <pluginlib/class_list_macros.h>
-//#include <pcl_ros/pcl_nodelet.h>
+#include <pluginlib/class_list_macros.h>
+#include <pcl_ros/pcl_nodelet.h>
 #include <pcl/io/io.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
@@ -73,15 +73,15 @@
 #include <actionlib/server/simple_action_server.h>
 #include <pcl/point_types.h>
 
-#include <cob_3d_mapping_common/reconfigureable_node.h>
+#include <dynamic_reconfigure/server.h>
 #include <cob_table_object_cluster/table_object_cluster_nodeletConfig.h>
 
 
 
 // ROS message includes
 //#include <sensor_msgs/PointCloud2.h>
-#include <cob_3d_mapping_msgs/GetPointMap.h>
-//#include <cob_3d_mapping_msgs/GetBoundingBoxes.h>
+#include <cob_3d_mapping_msgs/GetPlane.h>
+#include <cob_3d_mapping_msgs/GetBoundingBoxes.h>
 
 // external includes
 #include <boost/timer.hpp>
@@ -95,76 +95,64 @@ using namespace cob_table_object_cluster;
 
 //####################
 //#### nodelet class ####
-class TableObjectClusterNode : protected Reconfigurable_Node<table_object_cluster_nodeletConfig>
+class TableObjectClusterNodelet : public pcl_ros::PCLNodelet
 {
 public:
   typedef pcl::PointXYZ Point;
   // Constructor
-  TableObjectClusterNode()
-  : Reconfigurable_Node<table_object_cluster_nodeletConfig>("TableObjectClusterNode"),
-    as_(0)
+  TableObjectClusterNodelet()
+  : as_(0)
   {
-    save_to_file_ = table_object_cluster_nodeletConfig::__getDefault__().save_to_file;
+    save_to_file_ = table_object_cluster_nodeletConfig::__getDefault__().save;
     file_path_ = table_object_cluster_nodeletConfig::__getDefault__().file_path;
-
-    setReconfigureCallback(boost::bind(&callback, this, _1, _2));
-
-    //n_ = getNodeHandle();
-
-    get_point_map_client_ = n_.serviceClient<cob_3d_mapping_msgs::GetPointMap>("get_point_map");
-    //get_bb_client_ = n_.serviceClient<cob_3d_mapping_msgs::GetBoundingBoxes>("get_known_objects");
-    as_= new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TableObjectClusterAction>(n_, "table_object_cluster", boost::bind(&TableObjectClusterNode::actionCallback, this, _1), false);
-    as_->start();
-
-    n_.param("table_object_cluster/file_path" ,file_path_ ,std::string("/home/goa/tmp/"));
-    n_.param("table_object_cluster/save_to_file" ,save_to_file_ ,false);
-    n_.getParam("table_object_cluster/height_min" ,height_min_);
-    n_.getParam("table_object_cluster/height_max" ,height_max_);
-    n_.getParam("table_object_cluster/min_cluster_size", min_cluster_size_);
-    n_.getParam("table_object_cluster/cluster_tolerance", cluster_tolerance_);
-    ROS_INFO("cluster: %d,%f", min_cluster_size_, cluster_tolerance_);
-    toc.setPrismHeight(height_min_, height_max_);
-    toc.setClusterParams(min_cluster_size_, cluster_tolerance_);
   }
 
   // Destructor
-  ~TableObjectClusterNode()
+  ~TableObjectClusterNodelet()
   {
     /// void
     if(as_) delete as_;
   }
 
   /**
-   * @brief callback for dynamic reconfigure
+   * @brief Callback for dynamic reconfigure server
    *
-   * everytime the dynamic reconfiguration changes this function will be called
-   *
-   * @param inst instance of PlaneExtractionNodelet which parameters should be changed
-   * @param config data of configuration
-   * @param level bit descriptor which notifies which parameter changed
+   * Callback for dynamic reconfigure server
    *
    * @return nothing
    */
-  static void callback(TableObjectClusterNode *tocn, table_object_cluster_nodeletConfig &config, uint32_t level)
+  void
+  dynReconfCallback(table_object_cluster_nodeletConfig &config, uint32_t level)
   {
-    //TODO: not multithreading safe
-
-    if(!tocn)
-      return;
-
-    tocn->save_to_file_ = config.save_to_file;
-    tocn->file_path_ = config.file_path;
-
-    /*
-    n_.getParam("table_object_cluster/height_min" ,height_min_);
-    n_.getParam("table_object_cluster/height_max" ,height_max_);
-    n_.getParam("table_object_cluster/min_cluster_size", min_cluster_size_);
-    n_.getParam("table_object_cluster/cluster_tolerance", cluster_tolerance_);
-    toc.setPrismHeight(height_min_, height_max_);
-    toc.setClusterParams(min_cluster_size_, cluster_tolerance_);
-    */
+    save_to_file_ = config.save;
+    file_path_ = config.file_path;
+    /*height_min_ = config.height_min;
+    height_max_ = config.height_max;
+    min_cluster_size_ = config.min_cluster_size;
+    cluster_tolerance_ = config.cluster_tolerance;*/
+    toc.setPrismHeight(config.height_min, config.height_max);
+    toc.setClusterParams(config.min_cluster_size, config.cluster_tolerance);
   }
 
+  /**
+   * @brief initializes parameters
+   *
+   * initializes parameters
+   *
+   * @return nothing
+   */
+  void onInit()
+  {
+    PCLNodelet::onInit();
+    n_ = getNodeHandle();
+
+    config_server_.setCallback(boost::bind(&TableObjectClusterNodelet::dynReconfCallback, this, _1, _2));
+
+    get_plane_client_ = n_.serviceClient<cob_3d_mapping_msgs::GetPlane>("get_plane");
+    get_bb_client_ = n_.serviceClient<cob_3d_mapping_msgs::GetBoundingBoxes>("get_known_objects");
+    as_= new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TableObjectClusterAction>(n_, "table_object_cluster", boost::bind(&TableObjectClusterNodelet::actionCallback, this, _1), false);
+    as_->start();
+  }
 
 
   /**
@@ -182,30 +170,30 @@ public:
     ROS_INFO("action callback");
     cob_3d_mapping_msgs::TableObjectClusterFeedback feedback;
     cob_3d_mapping_msgs::TableObjectClusterResult result;
-    cob_3d_mapping_msgs::GetPointMap srv;
-    if(!get_point_map_client_.call(srv))
+    cob_3d_mapping_msgs::GetPlane srv;
+    if(!get_plane_client_.call(srv))
     {
-      ROS_ERROR("Failed to call service get_point_map");
+      ROS_ERROR("Failed to call service get_plane");
       as_->setAborted();
       return;
     }
-    pcl::PointCloud<Point>::Ptr map(new pcl::PointCloud<Point>);
+    pcl::PointCloud<Point>::Ptr pc(new pcl::PointCloud<Point>);
     pcl::PointCloud<Point>::Ptr hull(new pcl::PointCloud<Point>);
-    pcl::fromROSMsg(srv.response.map, *map);
-    pcl::fromROSMsg(goal->table_hull, *hull);
-    /*Eigen::Vector4f plane_coeffs(srv.response.plane_coeffs[0].data,
+    pcl::fromROSMsg(srv.response.pc, *pc);
+    pcl::fromROSMsg(srv.response.hull, *hull);
+    Eigen::Vector4f plane_coeffs(srv.response.plane_coeffs[0].data,
                                  srv.response.plane_coeffs[1].data,
                                  srv.response.plane_coeffs[2].data,
-                                 srv.response.plane_coeffs[3].data);*/
+                                 srv.response.plane_coeffs[3].data);
     ROS_INFO("Hull size: %d", hull->size());
 
     pcl::PointCloud<Point>::Ptr pc_roi(new pcl::PointCloud<Point>);
-    toc.extractTableRoi(map, hull, *pc_roi);
+    toc.extractTableRoi(pc, hull, *pc_roi);
     //toc.extractTableRoi2(pc, hull, plane_coeffs, *pc_roi);
     ROS_INFO("ROI size: %d", pc_roi->size());
     //TODO: proceed also if no bbs are sent
     pcl::PointCloud<Point>::Ptr pc_roi_red(new pcl::PointCloud<Point>);
-    /*cob_3d_mapping_msgs::GetBoundingBoxes srv2;
+    cob_3d_mapping_msgs::GetBoundingBoxes srv2;
     if(get_bb_client_.call(srv2))
     {
       std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > > known_objs;
@@ -225,17 +213,17 @@ public:
       p.y = 0.18113546;
       p.z = 1.0654262;
       obj.points.push_back(p);
-      known_objs.push_back(obj);
+      known_objs.push_back(obj);*/
       toc.removeKnownObjects(pc_roi, known_objs, *pc_roi_red);
     }
     else
     {
       ROS_WARN("Failed to call service get_bounding_boxes");
       pc_roi_red = pc_roi;
-    }*/
+    }
 
     std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > > bounding_boxes;
-    toc.calculateBoundingBoxes(pc_roi,bounding_boxes);
+    toc.calculateBoundingBoxes(pc_roi_red,bounding_boxes);
     for(unsigned int i=0; i< bounding_boxes.size(); i++)
     {
       sensor_msgs::PointCloud2 bb;
@@ -247,7 +235,7 @@ public:
     {
       std::stringstream ss;
       ss << file_path_ << "/pc.pcd";
-      pcl::io::savePCDFileASCII (ss.str(), *map);
+      pcl::io::savePCDFileASCII (ss.str(), *pc);
       ss.str("");
       ss.clear();
       ss << file_path_ << "/hull.pcd";
@@ -279,33 +267,20 @@ public:
 
 protected:
   actionlib::SimpleActionServer<cob_3d_mapping_msgs::TableObjectClusterAction>* as_;
-  ros::ServiceClient get_point_map_client_;
-  //ros::ServiceClient get_bb_client_;
+  ros::ServiceClient get_plane_client_;
+  ros::ServiceClient get_bb_client_;
+  dynamic_reconfigure::Server<table_object_cluster_nodeletConfig> config_server_;
   boost::mutex mutex_;
 
   TableObjectCluster toc;       /// class for actual calculation
 
   bool save_to_file_;
   std::string file_path_;
-  double height_min_;           /// paramter for object detection
+  /*double height_min_;           /// paramter for object detection
   double height_max_;           /// paramter for object detection
   int min_cluster_size_;        /// paramter for object detection
-  double cluster_tolerance_;    /// paramter for object detection
+  double cluster_tolerance_;    /// paramter for object detection*/
 
 };
 
-
-int main (int argc, char** argv)
-{
-  ros::init (argc, argv, "table_object_cluster_node");
-
-  TableObjectClusterNode toc;
-
-  ros::Rate loop_rate(10);
-  while (ros::ok())
-  {
-    ros::spinOnce ();
-    loop_rate.sleep();
-  }
-}
-
+PLUGINLIB_DECLARE_CLASS(cob_env_model, TableObjectClusterNodelet, TableObjectClusterNodelet, nodelet::Nodelet)

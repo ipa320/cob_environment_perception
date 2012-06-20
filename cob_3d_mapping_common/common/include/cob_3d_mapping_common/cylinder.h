@@ -1,6 +1,6 @@
 /****************************************************************
  *
- * Copyright (c) 2010
+ * Copyright (c) 2011
  *
  * Fraunhofer Institute for Manufacturing Engineering
  * and Automation (IPA)
@@ -8,16 +8,16 @@
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
  * Project name: care-o-bot
- * ROS stack name: cob_3d_environment_perception_intern
- * ROS package name: cob_3d_mapping_demonstrator
- * Description: Feature Map for storing and handling geometric features
+ * ROS stack name: cob_environment_perception
+ * ROS package name: cob_3d_mapping_common
+ * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
- * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ * Author: goa-tz
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 03/2012
+ * Date of creation: 05/2012
  * ToDo:
  *
  *
@@ -53,45 +53,71 @@
  *
  ****************************************************************/
 
-#ifndef RVIZ_BUTTONS_PANEL_H
-#define RVIZ_BUTTONS_PANEL_H
+#ifndef CYLINDER_H_
+#define CYLINDER_H_
 
-#include <wx/panel.h>
-#include <wx/button.h>
-#include <ros/ros.h>
+#include "cob_3d_mapping_common/shape.h"
+#include "cob_3d_mapping_common/polygon.h"
 
-#include <cob_script_server/ScriptAction.h>
-#include <actionlib/client/simple_action_client.h>
+#include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
+extern "C" {
+#include "cob_3d_mapping_common/gpc.h"
+}
+#include <pcl/point_cloud.h>
+#include <pcl/point_types.h>
+#include <pcl/common/centroid.h>
+#include <pcl/common/eigen.h>
+#include <pcl/common/transform.h>
+//#include <pcl/common/transformation_from_correspondences.h>
 
 
-namespace rviz
+
+
+namespace cob_3d_mapping{
+
+class Cylinder: public Polygon
+
+//principle:
+//internal representation of cylinder as 3d polygon, analog to polygon in polygon class.
+//additional attributes: radius, axis of symmetry...
+//
+
+// preparation for merge operation:
+// with corner points,axis --> in initialization transformation to polygon by projection in plane (unrolling)
+
+// 1.	calculate a horizontal and a vertical shift for polygons of same cylinder by centroid, centriangle...
+// 2. transform polygon 1 and 2 in same coordinate system and consider calculated shifts for that
+// 3. use standard polygon operations to merge
+
 {
-class RvizButtonsPanel : public wxPanel
-  {
-  public:
-    RvizButtonsPanel(wxWindow *parent, const wxString& title);
-    ~RvizButtonsPanel();
 
-    virtual void OnStart(wxCommandEvent& event);
-    virtual void OnStep(wxCommandEvent& event);
-    virtual void OnStop(wxCommandEvent& event);
-    virtual void OnReset(wxCommandEvent& event);
-    virtual void OnClear(wxCommandEvent& event);
-    virtual void OnRecover(wxCommandEvent& event);
+public:
 
-  protected:
-    wxButton * button_start_;
-    wxButton * button_step_;
-    wxButton * button_stop_;
-    wxButton * button_reset_;
-    wxButton * button_clear_;
-    wxButton * button_recover_;
+	void roll();
+	void unroll();
+	void weightAttributes(std::vector<boost::shared_ptr<Cylinder> >& c_array,Cylinder& average_c);
 
-    actionlib::SimpleActionClient<cob_script_server::ScriptAction>* action_client_;
+	void isMergeCandidate(const std::vector<boost::shared_ptr<Cylinder> >& cylinder_array,const merge_config& limits,std::vector<int>& intersections);
+	void merge(std::vector<boost::shared_ptr<Cylinder> >& c_array);
+	void assignMembers();
+	void completeCylinder();
 
-  private:
-    DECLARE_EVENT_TABLE()
-  };
+	double r_;
+	std::vector<Eigen::Vector3f> axes_;
+	Eigen::Vector3f origin_;
+	Polygon unrolled_;
+	bool debug_;
+
+private:
+	void getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha);
+	void getShiftedPolygon(Cylinder& c_map, Polygon & shifted_polygon);
+};
+
+
+
+typedef boost::shared_ptr<Cylinder> CylinderPtr;
+
 }
 
-#endif //RVIZ_BUTTONS_PANEL_H
+#endif

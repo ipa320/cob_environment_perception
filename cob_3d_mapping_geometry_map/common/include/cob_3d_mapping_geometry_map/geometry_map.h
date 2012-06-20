@@ -68,12 +68,15 @@
 #include <Eigen/Geometry>
 
 // internal includes
-extern "C" {
-#include "cob_3d_mapping_geometry_map/gpc.h"
-}
+//extern "C" {
+//#include "cob_3d_mapping_common/include/gpc.h"
+//}
 //#ifndef __GEOMETRY_MAP_VISUALISATION_H__
 #include "cob_3d_mapping_geometry_map/vis/geometry_map_visualisation.h"
 #include "cob_3d_mapping_common/polygon.h"
+#include "cob_3d_mapping_common/cylinder.h"
+
+//#include "cob_3d_mapping_common/shape.h"
 
 
 
@@ -101,8 +104,9 @@ public:
   :new_id_(0),
    counter_output(0),
    file_path_("./"),
-   save_to_file_(false)
-
+   save_to_file_(false),
+   cos_angle_(0.97),
+   d_(0.1)
   {
 	//  outputFile.open("/home/goa-hh/test.txt");
 
@@ -113,29 +117,17 @@ public:
   {
 	  //outputFile.close();
   }
+   void
+  addMapEntry(boost::shared_ptr<cob_3d_mapping::Polygon>& p_ptr);
 
-  void
-  addMapEntry(cob_3d_mapping::PolygonPtr p);
 
-  void
-  searchIntersection(cob_3d_mapping::Polygon& p , std::vector<int>& intersections);
+   void
+   addMapEntry(boost::shared_ptr<cob_3d_mapping::Cylinder> c_ptr);
 
-  void
-  mergeWithMap(cob_3d_mapping::PolygonPtr p_ptr , std::vector<int> intersections);
 
   void
   computeCentroid(cob_3d_mapping::Polygon& p);
 
-  void
-  removeMapEntry(int id);
-
-  void
-  getGpcStructure(cob_3d_mapping::Polygon& p, gpc_polygon* gpc_p);
-
-  void
-  getGpcStructureUsingMap(cob_3d_mapping::Polygon& p,
-                          Eigen::Affine3f& transform_from_world_to_plane,
-                          gpc_polygon* gpc_p);
 
   void
   printMapEntry(cob_3d_mapping::Polygon& p);
@@ -144,8 +136,7 @@ public:
   printMap();
 
 
-  void
-  printGpcStructure(gpc_polygon* p);
+
 
   void
   saveMapEntry(std::string path, int ctr, cob_3d_mapping::Polygon& p);
@@ -156,18 +147,6 @@ public:
   void
   clearMap();
 
-  void
-  getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
-                             Eigen::Vector3f &u,
-                             Eigen::Vector3f &v);
-
-  void
-  getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,
-                                    const Eigen::Vector3f &origin,
-                                    Eigen::Affine3f &transformation);
-
-  void
-  getPointOnPlane(const Eigen::Vector3f &normal,double d,Eigen::Vector3f &point);
 
   float
   rounding(float x);
@@ -175,11 +154,20 @@ public:
   void
   colorizeMap();
 
-  boost::shared_ptr<std::vector<cob_3d_mapping::PolygonPtr> >
-  getMap()
+
+  boost::shared_ptr<std::vector<cob_3d_mapping::PolygonPtr > >
+  getMap_polygon()
   {
-    return boost::make_shared<std::vector<cob_3d_mapping::PolygonPtr> >(map_);
+	    return boost::make_shared< std::vector< cob_3d_mapping::PolygonPtr > >(map_polygon_);
   }
+
+
+  boost::shared_ptr<std::vector<cob_3d_mapping::CylinderPtr > >
+  getMap_cylinder()
+  {
+    return boost::make_shared< std::vector< cob_3d_mapping::CylinderPtr > >(map_cylinder_);
+  }
+
 
   void
   setFilePath(std::string file_path)
@@ -193,11 +181,20 @@ public:
     save_to_file_ = save_to_file;
   }
 
+  void
+  setMergeThresholds(double cos_angle, double d)
+  {
+    cos_angle_ = cos_angle;
+    d_ = d;
+  }
+
 protected:
-  std::vector<cob_3d_mapping::PolygonPtr> map_;
+  std::vector<boost::shared_ptr<cob_3d_mapping::Polygon> > map_polygon_;
+  std::vector<boost::shared_ptr<cob_3d_mapping::Cylinder> > map_cylinder_;
   unsigned int new_id_;
   std::string file_path_;
   bool save_to_file_;
+  double cos_angle_, d_;
 
 };
 
