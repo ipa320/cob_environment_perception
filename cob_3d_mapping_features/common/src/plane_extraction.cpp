@@ -66,6 +66,7 @@
 #include <pcl/ModelCoefficients.h>
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
+#include <pcl/filters/voxel_grid.h>
 
 // external includes
 //#include <boost/timer.hpp>
@@ -469,7 +470,6 @@ PlaneExtraction::findClosestTable(std::vector<pcl::PointCloud<Point>, Eigen::ali
   }
 }
 
-#include <pcl/filters/voxel_grid.h>
 
 int main()
 {
