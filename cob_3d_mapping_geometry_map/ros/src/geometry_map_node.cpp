@@ -173,7 +173,7 @@ public:
 			std::cout<<"dbg[2]"<<std::endl;
 
 			////    distinction of type
-			if (sa->shapes[i].type == cob_3d_mapping_msgs::Shape::PLANE) {
+			if (sa->shapes[i].type == cob_3d_mapping_msgs::Shape::POLYGON) {
 				std::cout<<"dbg[3]"<<std::endl;
 
 				PolygonPtr polygon_map_entry_ptr = PolygonPtr(new Polygon());

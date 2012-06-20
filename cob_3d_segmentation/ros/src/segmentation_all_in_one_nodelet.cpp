@@ -55,6 +55,7 @@
 // ROS includes
 #include <ros/ros.h>
 #include <pluginlib/class_list_macros.h>
+#include <boost/make_shared.hpp>
 
 #include <pcl/io/io.h>
 #include <pcl/ros/for_each_type.h>
@@ -83,12 +84,15 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::onInit()
   cc_.setNormalCloudInOut(normals_);
   cc_.setLabelCloudIn(labels_);
 
+  chull_.setAlpha (0.2);
+
   nh_ = getNodeHandle();
   sub_points_ = nh_.subscribe<PointCloud>
     ("cloud_in", 1, boost::bind(&cob_3d_segmentation::SegmentationAllInOneNodelet::received_cloud_cb, this, _1));
   pub_segmented_ = nh_.advertise<PointCloud>("segmentation_cloud", 1);
   pub_classified_ = nh_.advertise<PointCloud>("classified_cloud", 1);
   pub_shape_array_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray>("shape_array",1);
+  pub_chull_ = nh_.advertise<PointCloud>("concave_hull", 1);
   std::cout << "Loaded" << std::endl;
 
 }
@@ -123,7 +127,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr 
 {
   cob_3d_mapping_msgs::ShapeArray sa;
   sa.header = cloud->header;
-  
+  //pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
   for (ST::CH::ClusterPtr c = cluster_handler->begin(); c != cluster_handler->end(); ++c)
   {
     switch(c->type)
@@ -132,7 +136,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr 
     {
       sa.shapes.push_back(cob_3d_mapping_msgs::Shape());
       cob_3d_mapping_msgs::Shape* s = &sa.shapes.back();
-      s->type = cob_3d_mapping_msgs::Shape::PLANE;
+      s->type = cob_3d_mapping_msgs::Shape::POLYGON;
       s->params.resize(4);
       Eigen::Vector3f n = c->getOrientation();
       s->params[0] = n(0); // n_x
@@ -141,6 +145,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr 
       s->params[3] = c->getCentroid().norm(); // d
       s->points.resize(1);
       s->holes.push_back(false);
+      /* // Fill in all border points
       sensor_msgs::PointCloud2* blob = &s->points.back();
       for_each_type<traits::fieldList<pcl::PointXYZ>::type> (detail::FieldAdder<pcl::PointXYZ>(blob->fields));
       blob->header = cloud->header;
@@ -157,6 +162,15 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr 
 	const uint8_t* cloud_data = reinterpret_cast<const uint8_t*>(&(cloud->points[c->border_indices[i]]));
 	memcpy(msg_data, cloud_data, blob->point_step);
       }
+      */
+      // use concave hull algorithm
+      pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull(new pcl::PointCloud<pcl::PointXYZRGB>);
+      chull_.setInputCloud(cloud);
+      chull_.setIndices(boost::make_shared<std::vector<int> >(c->border_indices));
+      chull_.reconstruct(*hull);
+      //hull_cloud->header = hull->header;
+      //*hull_cloud += *hull;
+      pcl::toROSMsg(*hull, s->points.back());
       break;
     }
     case I_CYL:
@@ -169,6 +183,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr 
     }
     }
   }
+  //pub_chull_.publish(hull_cloud);
   pub_shape_array_.publish(sa);
 }
 
