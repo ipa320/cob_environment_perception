@@ -145,9 +145,15 @@ fromROSMsg(const cob_3d_mapping_msgs::Shape& s, Polygon& p)
 	p.color[2] = s.color.b;
 	p.color[3] = s.color.a;
 	//p.contours.resize(p.polygons.size());
+	std::cout<<"dbg[3.1]"<<std::endl;
+	std::cout<<s.points.size();
 	for(unsigned int i=0; i<s.points.size(); i++)
 	{
+		std::cout<<"dbg[3.2]"<<std::endl;
+
 		p.holes.push_back(s.holes[i]);
+		std::cout<<"dbg[3.3]"<<std::endl;
+
 		if(s.points[i].data.size())
 		{
 			pcl::PointCloud<pcl::PointXYZ> cloud;
@@ -162,6 +168,7 @@ fromROSMsg(const cob_3d_mapping_msgs::Shape& s, Polygon& p)
 				pts[j](0) = cloud.points[j].x;
 				pts[j](1) = cloud.points[j].y;
 				pts[j](2) = cloud.points[j].z;
+
 			}
 			p.contours.push_back(pts);
 		}

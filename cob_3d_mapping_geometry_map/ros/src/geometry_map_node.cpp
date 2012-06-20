@@ -163,20 +163,28 @@ public:
 	void
 	shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr sa)
 	{
+		std::cout<<"dbg[1]"<<std::endl;
 		static int ctr=0;
 		static double time = 0;
 		PrecisionStopWatch t;
 		for(unsigned int i=0; i<sa->shapes.size(); i++)
 		{
 
+			std::cout<<"dbg[2]"<<std::endl;
 
 			////    distinction of type
-			if (sa->shapes[i].type == 0) {
+			if (sa->shapes[i].type == cob_3d_mapping_msgs::Shape::PLANE) {
+				std::cout<<"dbg[3]"<<std::endl;
+
 				PolygonPtr polygon_map_entry_ptr = PolygonPtr(new Polygon());
 				if(!fromROSMsg(sa->shapes[i], *polygon_map_entry_ptr)) {
+					std::cout<<"dbg[4]"<<std::endl;
+
 					continue;
 				}
+
 				geometry_map_.addMapEntry(polygon_map_entry_ptr);
+
 			}
 
 			 if (sa->shapes[i].type == 5) {
