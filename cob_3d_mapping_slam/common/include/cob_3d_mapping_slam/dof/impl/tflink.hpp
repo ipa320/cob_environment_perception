@@ -1,0 +1,196 @@
+template<typename INPUT>
+void TFLink<INPUT>::operator()(const TFLinkObj &obj, const TFLinkObj &cor_obj)
+{
+  ROS_ASSERT(obj.plane_==cor_obj.plane_);
+  ROS_ASSERT(obj.weight_R_==cor_obj.weight_R_);
+  ROS_ASSERT(obj.weight_t_==cor_obj.weight_t_);
+
+  if(!obj.length_ || !obj.length_)
+    return;
+
+  if(!obj.plane_) {
+    sum_x_ += obj.weight_R_*cor_obj.next_point_;
+    sum_y_ += obj.weight_R_*obj.next_point_;
+    rot_sum_ += obj.weight_R_;
+  }
+
+  variance_x_ += obj.weight_R_*cor_obj.rotation_n_ * cor_obj.rotation_n_.transpose() /(cor_obj.length_*cor_obj.length_);
+  if(!obj.plane_||cor_obj.rotation_n_.dot(obj.rotation_n_)>-0.7*(cor_obj.length_*obj.length_)) {
+    covariance_ += obj.weight_R_*cor_obj.rotation_n_ * obj.rotation_n_.transpose() /(cor_obj.length_*obj.length_);
+    variance_y_ += obj.weight_R_*obj.rotation_n_ * obj.rotation_n_.transpose() /(obj.length_*obj.length_);
+  }
+  else {
+    ROS_INFO("inverse");
+    covariance_ -= obj.weight_R_*cor_obj.rotation_n_ * obj.rotation_n_.transpose() /(cor_obj.length_*obj.length_);
+    variance_y_ -= obj.weight_R_*obj.rotation_n_ * obj.rotation_n_.transpose() /(obj.length_*obj.length_);
+  }
+  accumlated_weight_ += obj.weight_R_;
+
+
+  translation_ += obj.weight_t_*cor_obj.translation_M_;
+  var_x_ += obj.weight_t_*cor_obj.next_point_;
+  var_y_ += obj.weight_t_*obj.next_point_;
+}
+
+template<typename INPUT>
+TFLink<INPUT> TFLink<INPUT>::operator+(const TFLink &o) const
+{
+  TFLink<INPUT> r;
+#if 0
+  //std::cout<<"test\n"<<variance_x_.inverse()*covariance_<<"\n";
+
+  std::cout<<"test1\n"<<covariance_<<"\n";
+  std::cout<<"test2\n"<<getRotation()*variance_x_<<"\n";
+  std::cout<<"test3\n"<<getRotation()*variance_y_<<"\n";
+
+  std::cout<<"test1\n"<<o.covariance_<<"\n";
+  std::cout<<"test2\n"<<o.getRotation()*o.variance_x_<<"\n";
+  std::cout<<"test3\n"<<o.getRotation()*o.variance_y_<<"\n";
+  /*std::cout<<"test\n"<<variance_y_<<"\n";
+  std::cout<<"test\n"<<covariance_*getRotation().transpose()<<"\n";
+  std::cout<<"test\n"<<getRotation().inverse()*covariance_<<"\n";
+  std::cout<<"test\n"<<getRotation()*variance_y_<<"\n";*/
+
+  Matrix t=o.covariance_;
+  t.normalize();
+  r.covariance_ = variance_y_ * o.getRotation().transpose();// * o.covariance_.inverse().transpose() * covariance_;
+  r.covariance_ = covariance_*o.covariance_;
+  r.covariance_ = variance_x_*t.inverse().transpose()*t;
+  r.covariance_ = o.covariance_*covariance_.transpose();
+
+  r.covariance_ = variance_x_.transpose()*covariance_.inverse().transpose()*o.covariance_;
+
+  //r.covariance_ = o.covariance_*covariance_.transpose();
+
+  r.covariance_ = o.getRotation()*covariance_;
+
+  std::cout<<"test\n"<<(o.getRotation()*getRotation()).inverse()<<"\n";
+
+  Matrix A=o.covariance_;
+  Matrix B=covariance_;
+  A.normalize();
+  B.normalize();
+  r.covariance_ = variance_y_*covariance_*variance_y_.inverse()*o.covariance_*o.variance_y_.inverse();
+
+  std::cout<<"V1\n"<<variance_y_<<"\n";
+  std::cout<<"U1\n"<<variance_x_<<"\n";
+  std::cout<<"V1\n"<<variance_y_.inverse()<<"\n";
+  std::cout<<"V2\n"<<o.variance_y_.inverse()<<"\n";
+  std::cout<<"COV1\n"<<covariance_<<"\n";
+  std::cout<<"COV2\n"<<o.covariance_<<"\n";
+  std::cout<<"COV\n"<<r.covariance_<<"\n";
+
+  r.covariance_ = o.getRotation()*covariance_; //works (1,2)
+  //r.covariance_ = o.covariance_*o.variance_y_.inverse()*covariance_; //works (1), not(2)
+
+  r.covariance_ = o.covariance_*getRotation(); //works (1,2)
+
+#endif
+
+  r.covariance_ = o.getRotation()*covariance_ + o.covariance_*getRotation(); //works (1,2)
+  r.accumlated_weight_ = std::min(accumlated_weight_,o.accumlated_weight_);
+
+  r.finish();
+
+  return r;
+}
+
+template<typename INPUT>
+void TFLink<INPUT>::finish() {
+
+  std::cout<<"variance_\n"<<covariance_<<"\n";
+  if(rot_sum_) {
+    covariance_ -= (sum_x_*sum_y_.transpose())/rot_sum_;
+    variance_x_ -= (sum_x_*sum_x_.transpose())/rot_sum_;
+    variance_y_ -= (sum_y_*sum_y_.transpose())/rot_sum_;
+
+    sum_x_.fill(0);
+    sum_y_.fill(0);
+    rot_sum_=0; //TODO: check this line
+  }
+
+  // ------------- ROTATION ------------------
+
+  std::cout<<"variance_\n"<<covariance_<<"\n";
+
+  Eigen::JacobiSVD<Matrix> svd (covariance_, Eigen::ComputeFullU | Eigen::ComputeFullV);
+  const Matrix& u = svd.matrixU(),
+      & v = svd.matrixV();
+
+  Matrix s = Matrix::Identity();
+  if (u.determinant()*v.determinant() < 0.0f)
+    s(2,2) = -1.0f;
+
+  rot_ = u * s * v.transpose();
+
+  ROS_ASSERT(pcl_isfinite(rot_.sum()));
+
+  rot_var_ = std::max(
+      svd.singularValues().squaredNorm()<0.01f*accumlated_weight_*accumlated_weight_ || svd.singularValues()(1)*svd.singularValues()(1)<=0.01f*svd.singularValues().squaredNorm() ? 100000. : 0.,
+      2*M_PI*sqrtf((variance_y_-(rot_.transpose()*variance_x_*rot_)).squaredNorm()/variance_y_.squaredNorm())/2);
+
+  if(!pcl_isfinite(rot_var_))
+    rot_var_ = 100000;
+
+  std::cout<<"SING VALS\n"<<svd.singularValues()<<"\n";
+//  std::cout<<"ROT_DIS "<<(variance_y_-(rot_.transpose()*variance_x_*rot_)).norm()<<"\n";
+//  std::cout<<"ROT1 \n"<<(variance_y_)<<"\n";
+//  std::cout<<"ROT2 \n"<<((rot_.transpose()*variance_x_*rot_))<<"\n";
+
+  // ------------- TRANSLATION ------------------
+
+  Vector temp = var_x_ - rot_*var_y_;
+  tr_ = translation_.fullPivLu().solve(temp);
+  tr_var_ = (temp-translation_*tr_).norm() + tr_.norm()*rot_var_/(2*M_PI);
+
+  ROS_ASSERT(pcl_isfinite(temp.sum()));
+
+  std::cout<<"rot_var. "<<tr_var_<<"\n";
+  std::cout<<"TRANSLATION MATRIX\n"<<translation_<<"\n";
+  std::cout<<"TRANSLATION VECTOR\n"<<temp<<"\n";
+  std::cout<<"det. "<<translation_.determinant()<<"\n";
+  std::cout<<"should det. "<<(0.2*accumlated_weight_*accumlated_weight_)<<"\n";
+  if(translation_.determinant()<(TYPE)0.2*accumlated_weight_*accumlated_weight_) // rang to low
+    tr_var_ += 10000;
+
+  if(!pcl_isfinite(tr_var_) || !pcl_isfinite(tr_.sum()))
+    tr_var_ = 100000;
+  if(!pcl_isfinite(tr_.sum())
+#ifndef ATOM_TESTING_
+      ||tr_var_>=1000
+#endif
+      )
+    tr_.fill(0);
+
+}
+
+template<typename INPUT>
+void TFLink<INPUT>::check() const {
+  Matrix R = getRotation();
+
+  std::cout<<"V1\n"<<variance_y_<<"\n";
+  std::cout<<"U1\n"<<variance_x_<<"\n";
+
+  std::cout<<"V2\n"<<R.transpose()*variance_x_*R<<"\n";
+  std::cout<<"U2\n"<<R*variance_y_*R.transpose()<<"\n";
+
+  std::cout<<"C\n"<<(variance_y_-(R.transpose()*variance_x_*R)).norm()<<"\n";
+  std::cout<<"C\n"<<(variance_x_-(R*variance_y_*R.transpose())).norm()<<"\n";
+}
+
+template<typename INPUT>
+typename TFLink<INPUT>::Matrix4 TFLink<INPUT>::getTransformation() const {
+  Matrix rot = getRotation();
+
+  //std::cout<<"delta\n"<<var_x_ - rot*var_y_<<"\n";
+  //std::cout<<"translation:\n"<<t<<"\n";
+
+  Matrix4 r=Matrix4::Identity();
+  for(int i=0; i<3; i++) {
+    for(int j=0; j<3; j++)
+      r(i,j) = rot(i,j);
+    r.col(3)(i)= getTranslation()(i);
+  }
+
+  return r;
+}
