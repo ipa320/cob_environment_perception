@@ -72,6 +72,9 @@ namespace cob_3d_mapping
     double
     computeArea();
 
+    void
+    computePoseAndBoundingBox(Eigen::Affine3f& pose, Eigen::Vector4f& min_pt, Eigen::Vector4f& max_pt);
+
     //needed for 32-bit systems: see http://eigen.tuxfamily.org/dox/TopicStructHavingEigenMembers.html
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
     std::vector<std::vector<Eigen::Vector3f> > contours;
