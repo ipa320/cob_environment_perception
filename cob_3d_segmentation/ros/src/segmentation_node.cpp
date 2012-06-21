@@ -98,7 +98,7 @@ public:
 
 #ifdef COMPILE_NODELET
 
-typedef Segmentation_Node<pcl::PointXYZ,pcl::PointXYZ,As_Nodelet> Segmentation_Node_XYZ;
+typedef Segmentation_Node<pcl::PointXYZ,pcl::PointXYZRGB,As_Nodelet> Segmentation_Node_XYZ;
 
 PLUGINLIB_DECLARE_CLASS(cob_3d_segmentation, Segmentation_Node_XYZ, Segmentation_Node_XYZ, nodelet::Nodelet)
 
@@ -107,7 +107,7 @@ PLUGINLIB_DECLARE_CLASS(cob_3d_segmentation, Segmentation_Node_XYZ, Segmentation
 int main(int argc, char **argv) {
   ros::init(argc, argv, "segmentation");
 
-  Segmentation_Node<pcl::PointXYZ,pcl::PointXYZ,As_Node> sn;
+  Segmentation_Node<pcl::PointXYZ,pcl::PointXYZRGB,As_Node> sn;
   sn.onInit();
 
   ros::spin();

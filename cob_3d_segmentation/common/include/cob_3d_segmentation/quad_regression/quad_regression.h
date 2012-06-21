@@ -89,7 +89,6 @@ namespace Segmentation
 
     //------------MEMBERS---------------
     boost::shared_ptr<const pcl::PointCloud<Point> > input_;
-    boost::shared_ptr<const pcl::PointCloud<PointLabel> > output_;
 
     std::vector<SubStructure::ParamC> levels_; ///quad-tree
     std::vector<Segmentation::S_POLYGON> polygons_;
@@ -158,6 +157,8 @@ namespace Segmentation
 
     void outline(int *ch, const int w, const int h, std::vector<SubStructure::SXY> &out, const int i, S_POLYGON &poly, const SubStructure::Model &model, const int mark);
 
+    boost::shared_ptr<const pcl::PointCloud<PointLabel> > compute_labeled_pc();
+
   public:
     /// constructor, setups variables
     Segmentation_QuadRegression();
@@ -178,7 +179,7 @@ namespace Segmentation
     /// gets preprocessed output cloud
     virtual boost::shared_ptr<const pcl::PointCloud<PointLabel> > getOutputCloud()
     {
-      return output_;
+      return compute_labeled_pc();
     }
 
     virtual bool compute();

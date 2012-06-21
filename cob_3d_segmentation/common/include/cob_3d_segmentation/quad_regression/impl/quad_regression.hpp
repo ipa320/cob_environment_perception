@@ -1,12 +1,11 @@
 
 #include "../sub_structures/poly2d.hpp"
+#include "../sub_structures/labeling.h"
 
 template <typename Point, typename PointLabel>
 Segmentation_QuadRegression<Point,PointLabel>::Segmentation_QuadRegression():
-output_(new pcl::PointCloud<PointLabel>()),
 MIN_LOD(8), FINAL_LOD(0), GO_DOWN_TO_LVL(3),
-outline_check_(0), outline_check_size_(0),
-ch_(NULL)
+ch_(NULL), outline_check_(0), outline_check_size_(0)
 {
 }
 
@@ -488,4 +487,34 @@ bool Segmentation_QuadRegression<Point,PointLabel>::compute() {
   buildTree(*input_);
   calc();
   return true;
+}
+
+template <typename Point, typename PointLabel>
+boost::shared_ptr<const pcl::PointCloud<PointLabel> > Segmentation_QuadRegression<Point,PointLabel>::compute_labeled_pc()
+{
+  typename pcl::PointCloud<PointLabel>::Ptr out(new pcl::PointCloud<PointLabel>);
+
+  ROS_ASSERT(levels_.size()>0);
+
+  out->resize(levels_[0].w*levels_[0].h);
+  out->width = levels_[0].w;
+  out->height= levels_[0].h;
+
+  for(size_t x=0; x<levels_[0].w; x++)
+  {
+    for(size_t y=0; y<levels_[0].h; y++)
+    {
+      //position
+      const int i=0;
+      (*out)(x,y).x = levels_[0].data[getInd(x,y)].model_(0,1)/levels_[0].data[getInd(x,y)].model_(0,0);
+      (*out)(x,y).y = levels_[0].data[getInd(x,y)].model_(0,3)/levels_[0].data[getInd(x,y)].model_(0,0);
+      (*out)(x,y).z = levels_[0].data[getInd(x,y)].z_(0)/levels_[0].data[getInd(x,y)].model_(0,0);
+
+      //color/label
+      int mark = isOccupied(0,x,y);
+      SetLabeledPoint<PointLabel>( (*out)(x,y), mark);
+    }
+  }
+
+  return out;
 }

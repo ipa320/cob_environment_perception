@@ -59,6 +59,14 @@ public:
     }
     return false;
   }
+
+  template <typename Point>
+  void writePC(const size_t ind, typename pcl::PointCloud<Point>::ConstPtr pc) const
+  {
+    char fn[512];
+    sprintf(fn,"test/labeled/pc%d.pcd",(int)ind);
+    pcl::io::savePCDFile(fn,*pc);
+  }
 };
 
 /**
@@ -101,12 +109,15 @@ void segment_pointcloud(GeneralSegmentation<Point, PointLabel> *seg, typename pc
       seg->compute()
       );
   ROS_INFO("segmentation took %f", psw.precisionStop());
+
+  static size_t nr=0;
+  Testing_PCDLoader::get().writePC<PointLabel>(nr++, seg->getOutputCloud());
 }
 
 TEST(Segmentation, quad_regression)
 {
   typedef pcl::PointXYZ Point;
-  typedef pcl::PointXYZ PointL;
+  typedef pcl::PointXYZRGB PointL;
 
   pcl::PointCloud<Point>::Ptr pc(new pcl::PointCloud<Point>);
   Segmentation::Segmentation_QuadRegression<Point,PointL> seg;
