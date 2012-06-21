@@ -41,14 +41,9 @@ struct Model {
 
     const float d=temp.param.z_(0)/temp.param.model_(0,0);
 
-    ROS_INFO("error %f %f (%f)",error2,d,
-             (std::abs(p(2))+std::abs(p(4))+std::abs(p(5)))/(std::abs(p(1))+std::abs(p(3)))
-    );
-
     if(error2 > (temp.param.model_(0,0)*temp.param.model_(0,0))/(1<<13)*d*d || (std::abs(p(2))+std::abs(p(4))+std::abs(p(5)))/(std::abs(p(1))+std::abs(p(3)))>1.f)
       return false;
 
-    ROS_INFO("gotcha");
     p = temp.p;
 
     return true;

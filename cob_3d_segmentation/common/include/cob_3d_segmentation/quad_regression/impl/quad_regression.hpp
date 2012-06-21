@@ -5,7 +5,8 @@ template <typename Point, typename PointLabel>
 Segmentation_QuadRegression<Point,PointLabel>::Segmentation_QuadRegression():
 output_(new pcl::PointCloud<PointLabel>()),
 MIN_LOD(8), FINAL_LOD(0), GO_DOWN_TO_LVL(3),
-outline_check_(0), outline_check_size_(0)
+outline_check_(0), outline_check_size_(0),
+ch_(NULL)
 {
 }
 
