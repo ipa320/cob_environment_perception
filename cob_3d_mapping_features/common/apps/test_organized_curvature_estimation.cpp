@@ -72,6 +72,7 @@
 
 // Package Includes:
 #include "cob_3d_mapping_common/point_types.h"
+#include "cob_3d_mapping_features/organized_normal_estimation.h"
 #include "cob_3d_mapping_features/organized_curvature_estimation_omp.h"
 #include "cob_3d_mapping_features/curvature_classifier.h"
 #include "cob_3d_mapping_features/impl/curvature_classifier.hpp"
@@ -86,6 +87,7 @@ string file_in_, file_out_, file_cluster_;
 float rn_;
 int rfp_;
 float ex_th_;
+bool en_one_;
 
 void readOptions(int argc, char* argv[])
 {
@@ -102,6 +104,7 @@ void readOptions(int argc, char* argv[])
      "set 3d edge estimation radius")
     ("extraction_th,x", value<float>(&ex_th_)->default_value(0.1),
       "set the strength threshold for edge extraction")
+    ("one", "use organized normal estimation (one) instead of original normal estimation (ne)")
     ;
 
   positional_options_description p_opt;
@@ -115,6 +118,7 @@ void readOptions(int argc, char* argv[])
     cout << options << endl;
     exit(0);
   }
+  en_one_ = vm.count("one");
 }
 
 int main(int argc, char** argv)
@@ -155,93 +159,118 @@ int main(int argc, char** argv)
   }
   std::cout << "indices file read successfully" << std::endl;
 
-  t.restart();
-      //for electric
-    //KdTreeFLANN<PointXYZRGB>::Ptr tree(new KdTreeFLANN<PointXYZRGB>);
-    //for fuerte
-   pcl::search::KdTree<PointXYZRGB>::Ptr tree(new  pcl::search::KdTree<PointXYZRGB>);
-
-  NormalEstimation<PointXYZRGB, Normal> ne;
-  ne.setRadiusSearch(rn_);
-  ne.setSearchMethod(tree);
-  ne.setInputCloud(p);
-  ne.compute(*n);
-  cout << t.elapsed() << "s\t for normal estimation" << endl;
+  // --- Normal Estimation ---
+  if (en_one_)
+  {
+    t.restart();
+    cob_3d_mapping_features::OrganizedNormalEstimation<PointXYZRGB, Normal, PointLabel>one;
+    one.setInputCloud(p);
+    one.setOutputLabels(l);
+    //one.setPixelSearchRadius(pns_n_,points_,circle_); //radius,pixel,circle
+    one.setPixelSearchRadius(8,2,2);
+    one.setSkipDistantPointThreshold(12);
+    one.compute(*n);
+    cout << t.elapsed() << "s\t for Organized Normal Estimation" << endl;
+  }
+  else
+  {
+    t.restart();
+    pcl::search::KdTree<PointXYZRGB>::Ptr tree(new  pcl::search::KdTree<PointXYZRGB>);
+    NormalEstimation<PointXYZRGB, Normal> ne;
+    ne.setRadiusSearch(rn_);
+    ne.setSearchMethod(tree);
+    ne.setInputCloud(p);
+    ne.compute(*n);
+    cout << t.elapsed() << "s\t for normal estimation" << endl;
+  }
   cob_3d_mapping_features::OrganizedCurvatureEstimationOMP<PointXYZRGB, Normal, PointLabel, PrincipalCurvatures> oce;
   oce.setInputCloud(p);
   oce.setInputNormals(n);
+  oce.setPixelSearchRadius(8,2,2);
+  oce.setSkipDistantPointThreshold(12);
+  
   //KdTreeFLANN<PointXYZRGB>::Ptr tree(new KdTreeFLANN<PointXYZRGB>);
   //ne.setRadiusSearch(rn_);
   //ne.setSearchMethod(tree);
-  for(unsigned int i=0; i<indices.size(); i++)
+  if (indices.size() == 0)
   {
-    std::cout << "cluster " << i << " has " << indices[i].indices.size() << " points" << std::endl;
-    if(i==3)
-    {
-      /*for(unsigned int j=0; j<indices[i].indices.size(); j++)
-        std::cout << indices[i].indices[j] << ",";
-      std::cout << std::endl;*/
-    //cout << i << ": " << indices[i].indices.front() << "!" << endl;
-    t.restart();
-    boost::shared_ptr<PointIndices> ind_ptr = boost::make_shared<PointIndices>(indices[i]);
-    std::cout << ind_ptr->indices.size() << std::endl;
-    oce.setIndices(ind_ptr);
     oce.setOutputLabels(l);
     oce.compute(*pc);
-    cout << t.elapsed() << "s\t for principal curvature estimation" << endl;
-
     cob_3d_mapping_features::CurvatureClassifier<PrincipalCurvatures, PointLabel>cc;
     cc.setInputCloud(pc);
-    cc.setIndices(ind_ptr);
     cc.classify(*l);
-
-    // colorize edges of 3d point cloud
-    for (size_t i = 0; i < l->points.size(); i++)
+  }
+  else
+  {
+    for(unsigned int i=0; i<indices.size(); i++)
     {
-      //std::cout << l->points[i].label << std::endl;
-      if (l->points[i].label == 0)
+      std::cout << "cluster " << i << " has " << indices[i].indices.size() << " points" << std::endl;
+      if(i==3)
       {
-        p->points[i].r = 0;
-        p->points[i].g = 0;
-        p->points[i].b = 0;
-      }
-      else if (l->points[i].label == 1)
-      {
-        p->points[i].r = 0;
-        p->points[i].g = 255;
-        p->points[i].b = 0;
-      }
-      else if (l->points[i].label == 2)
-      {
-        p->points[i].r = 0;
-        p->points[i].g = 0;
-        p->points[i].b = 255;
-      }
-      else if (l->points[i].label == 3)
-      {
-        p->points[i].r = 255;
-        p->points[i].g = 0;
-        p->points[i].b = 0;
-      }
-      else if (l->points[i].label == 4)
-      {
-        p->points[i].r = 255;
-        p->points[i].g = 255;
-        p->points[i].b = 0;
-      }
-      else if (l->points[i].label == 5)
-      {
-        p->points[i].r = 255;
-        p->points[i].g = 0;
-        p->points[i].b = 255;
-      }
-      else
-      {
-        p->points[i].r = 255;
-        p->points[i].g = 255;
-        p->points[i].b = 255;
+	/*for(unsigned int j=0; j<indices[i].indices.size(); j++)
+	  std::cout << indices[i].indices[j] << ",";
+	  std::cout << std::endl;*/
+	//cout << i << ": " << indices[i].indices.front() << "!" << endl;
+	t.restart();
+	boost::shared_ptr<PointIndices> ind_ptr = boost::make_shared<PointIndices>(indices[i]);
+	std::cout << ind_ptr->indices.size() << std::endl;
+	oce.setIndices(ind_ptr);
+	oce.setOutputLabels(l);
+	oce.compute(*pc);
+	cout << t.elapsed() << "s\t for principal curvature estimation" << endl;
+
+	cob_3d_mapping_features::CurvatureClassifier<PrincipalCurvatures, PointLabel>cc;
+	cc.setInputCloud(pc);
+	cc.setIndices(ind_ptr);
+	cc.classify(*l);
       }
     }
+  }
+  // colorize edges of 3d point cloud
+  for (size_t i = 0; i < l->points.size(); i++)
+  {
+    //std::cout << l->points[i].label << std::endl;
+    if (l->points[i].label == I_UNDEF)
+    {
+      p->points[i].r = 0;
+      p->points[i].g = 0;
+      p->points[i].b = 0;
+    }
+    else if (l->points[i].label == I_NAN)
+    {
+      p->points[i].r = 0;
+      p->points[i].g = 255;
+      p->points[i].b = 0;
+    }
+    else if (l->points[i].label == I_EDGE)
+    {
+      p->points[i].r = 0;
+      p->points[i].g = 0;
+      p->points[i].b = 255;
+    }
+    else if (l->points[i].label == I_BORDER)
+    {
+      p->points[i].r = 255;
+      p->points[i].g = 0;
+      p->points[i].b = 0;
+    }
+    else if (l->points[i].label == I_PLANE)
+    {
+      p->points[i].r = 255;
+      p->points[i].g = 255;
+      p->points[i].b = 0;
+    }
+    else if (l->points[i].label == I_CYL)
+    {
+      p->points[i].r = 255;
+      p->points[i].g = 0;
+      p->points[i].b = 255;
+    }
+    else
+    {
+      p->points[i].r = 255;
+      p->points[i].g = 255;
+      p->points[i].b = 255;
     }
   }
   visualization::PCLVisualizer v;

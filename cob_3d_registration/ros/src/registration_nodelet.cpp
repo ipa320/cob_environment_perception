@@ -249,7 +249,7 @@ public:
     parameters_.addParameter("max_info");
     parameters_.addParameter("always_relevant_changes");
 
-    reset_server_ = n_.advertiseService("reset", &RegistrationNodelet::reset, this);
+    reset_server_ = n_.advertiseService("clear_map", &RegistrationNodelet::reset, this);
     camera_info_sub_ = n_.subscribe("camera_info", 1, &RegistrationNodelet::cameraInfoSubCallback, this);
     point_cloud_pub_aligned_ = n_.advertise<pcl::PointCloud<Point> >("point_cloud2_aligned",1);
     keyframe_trigger_server_ = n_.advertiseService("trigger_keyframe", &RegistrationNodelet::onKeyframeCallback, this);
@@ -282,7 +282,7 @@ public:
    */
   bool
   reset(cob_srvs::Trigger::Request &req,
-           cob_srvs::Trigger::Response &res)
+        cob_srvs::Trigger::Response &res)
   {
     //TODO: add mutex
     ROS_INFO("Resetting transformation...");
@@ -303,7 +303,29 @@ public:
   void
   pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc_in)
   {
-    pc_in_ = pc_in;
+    pc_frame_id_=pc_in->header.frame_id;
+
+    reg_->setInputOginalCloud(pc_in);
+
+    if(do_register(*pc_in,cv_bridge::CvImagePtr(),NULL)||ctr_==0) {
+      if(point_cloud_pub_aligned_.getNumSubscribers()>0) {
+        pcl::PointCloud<Point> pc;
+        pc.header.frame_id = pc_in->header.frame_id;
+        pcl::transformPointCloud(*pc_in,pc,reg_->getTransformation());
+        point_cloud_pub_aligned_.publish(pc);
+      }
+
+      StampedTransform transform;
+      Eigen::Affine3d af;
+      af.matrix()=reg_->getTransformation().cast<double>();
+      tf::TransformEigenToTF(af,transform);
+      tf_br_.sendTransform(tf::StampedTransform(transform, transform.stamp_, world_id_, corrected_id_));
+
+      ROS_WARN("registration successful");
+    }
+    else
+      ROS_WARN("registration not successful");
+    ctr_++;
   }
 
   /**
@@ -324,54 +346,23 @@ public:
                           cob_srvs::Trigger::Response &res)
   {
     res.success.data = false;
-
-    if(pc_in_==0 || pc_in_->size()<1 || !is_running_)
+    if(pc_frame_id_.size()<1)
       return true;
 
     StampedTransform transform;
     try
     {
-      //std::cout << world_id_ << "," << pc_in_->header.frame_id << std::endl;
       std::stringstream ss2;
-      tf_listener_.waitForTransform(world_id_, pc_in_->header.frame_id, pc_in_->header.stamp, ros::Duration(0.1));
-      tf_listener_.lookupTransform(world_id_, pc_in_->header.frame_id, pc_in_->header.stamp/*ros::Time(0)*/, transform);
+      tf_listener_.waitForTransform(world_id_, pc_frame_id_, ros::Time(0), ros::Duration(0.1));
+      tf_listener_.lookupTransform(world_id_, pc_frame_id_, ros::Time(0), transform);
 
       ROS_DEBUG("Registering new point cloud");
 
-      //if((pc_in_->header.timestamp-transform.stamp_)>0.1)
-      //  ROS_ERROR("[registration] timestampf of pointcloud and transformation are %f away",(pc_in_->header.timestamp-transform.stamp_));
+      Eigen::Affine3d af;
+      tf::TransformTFToEigen(transform, af);
+      reg_->setOdometry(af.matrix().cast<float>());
+      reg_->setMoved(true);
 
-      {
-        Eigen::Affine3d af;
-        tf::TransformTFToEigen(transform, af);
-        reg_->setOdometry(af.matrix().cast<float>());
-
-        //if(ctr_==0)
-        //  reg_->setTransformation(af.matrix().cast<float>());
-      }
-      reg_->setInputOginalCloud(pc_in_);
-
-      if(do_register(*pc_in_,cv_bridge::CvImagePtr(),NULL)||ctr_==0) {
-        if(point_cloud_pub_aligned_.getNumSubscribers()>0) {
-          //sensor_msgs::PointCloud2 pc2;
-          pcl::PointCloud<Point> pc;
-          pc.header.frame_id = pc_in_->header.frame_id;
-          pcl::transformPointCloud(*pc_in_,pc,reg_->getTransformation());
-          //pc = *pc_in_;
-          //pcl::toROSMsg(pc,pc2);
-          point_cloud_pub_aligned_.publish(pc);
-        }
-
-        Eigen::Affine3d af;
-        af.matrix()=reg_->getTransformation().cast<double>();
-        tf::TransformEigenToTF(af,transform);
-        tf_br_.sendTransform(tf::StampedTransform(transform, transform.stamp_, world_id_, corrected_id_));
-
-        ROS_WARN("registration successful");
-      }
-      else
-        ROS_WARN("registration not successful");
-      ctr_++;
     }
     catch (tf::TransformException ex)
     {
@@ -1014,9 +1005,7 @@ protected:
   /// evaluation: success -> true
   bool registration_result_;
 
-  std::string corrected_id_, world_id_;
-
-  pcl::PointCloud<Point>::Ptr pc_in_;
+  std::string corrected_id_, world_id_, pc_frame_id_;
 
   enum {E_ALGO_ICP=1,E_ALGO_ICP_LM=2,E_ALGO_GICP=3,E_ALGO_ICP_MOMENTS=4,E_ALGO_ICP_FPFH=5, E_ALGO_ICP_NARF=6, E_ALGO_FASTSLAM=7, E_ALGO_ICP_EDGES=8, E_ALGO_RGBDSLAM=9, E_ALGO_INFO=10, E_ALGO_COR=11, E_ALGO_NONE=0};
 

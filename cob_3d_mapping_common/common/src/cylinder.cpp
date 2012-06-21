@@ -76,7 +76,7 @@ void Cylinder::roll() {
 			//		      Eigen::Vector3f point_trans = transformation_from_world_to_cylinder_*unrolled_.contours[j][k];
 			Eigen::Vector3f point_trans =
 					unrolled_.transform_from_world_to_plane
-							* unrolled_.contours[j][k];
+					* unrolled_.contours[j][k];
 
 			poly_plane.contours[j][k] = point_trans;
 
@@ -95,7 +95,7 @@ void Cylinder::roll() {
 			float alpha;
 			Eigen::Vector3f point_temp;
 			//		      alpha= B/r
-//			alpha = unrolled_.contours[j][k][0] / r_;
+			//			alpha = unrolled_.contours[j][k][0] / r_;
 			alpha = poly_plane.contours[j][k][0] / r_;
 
 
@@ -106,7 +106,7 @@ void Cylinder::roll() {
 			//	      transform back in world system
 			//			point_temp=transformation_from_world_to_cylinder_.inverse()* point_temp;
 			point_temp = unrolled_.transform_from_world_to_plane.inverse()
-					* point_temp;
+							* point_temp;
 
 			//			std::cout<<"DEBUG: point after trafo\n"<<point_temp<<std::endl;
 
@@ -149,7 +149,7 @@ void Cylinder::unroll() {
 			//	      transform back in world system
 			Eigen::Vector3f point_global =
 					unrolled_.transform_from_world_to_plane.inverse()
-							* point_trans;
+					* point_trans;
 			//	      	std::cout<<"point _trans\n"<< point_global<<std::endl;
 
 
@@ -198,7 +198,7 @@ void Cylinder::getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha)
 		//	Debug Output
 		std::cout << "avec" << std::endl << vec2d << std::endl;
 		std::cout << "alpha = " << acos(cos_alpha) * (180 / 3.1459)
-				<< std::endl;
+						<< std::endl;
 		std::cout << "TX = " << Tx << std::endl << std::endl;
 
 	}
@@ -221,8 +221,8 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 		//compare symmetry axes and d
 		if ((fabs(c_map.axes_[1] .dot(axes_[1])) > limits.angle_thresh))
 
-		//	    	std::cout<<"transformed origins"<<std::endl<<transformation_from_world_to_cylinder_*origin_<<std::endl<<std::endl;
-		//			std::cout<<transformation_from_world_to_cylinder_*c_map.origin_<<std::endl;
+			//	    	std::cout<<"transformed origins"<<std::endl<<transformation_from_world_to_cylinder_*origin_<<std::endl<<std::endl;
+			//			std::cout<<transformation_from_world_to_cylinder_*c_map.origin_<<std::endl;
 
 		{
 
@@ -237,14 +237,14 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 			//				std::cout<<"~~~~~~~~~~~~~~~~~~~~~~~~~~~~"<<std::endl;
 
 			unrolled_.debug_output("merge A");
-//			shifted_polygon_map.debug_output("SPM");
+			//			shifted_polygon_map.debug_output("SPM");
 			c_map.unrolled_.debug_output("merge B");
 
-//			double area_B =c_map.unrolled_.computeArea();
-//			std::cout<<"AREA MERGED"<<area_B<<std::endl;
-////
-//			double area_A =unrolled_.computeArea();
-//			std::cout<<"AREA MERGED"<<area_A<<std::endl;
+			//			double area_B =c_map.unrolled_.computeArea();
+			//			std::cout<<"AREA MERGED"<<area_B<<std::endl;
+			////
+			//			double area_A =unrolled_.computeArea();
+			//			std::cout<<"AREA MERGED"<<area_A<<std::endl;
 
 			bool is_intersected = this->unrolled_.isMergeCandidate_intersect(
 					shifted_polygon_map);
@@ -296,9 +296,9 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
 
 
 	//	polygon operation for merging
-//	Polygon & p_av=*merge_polygons_B[0];
+	//	Polygon & p_av=*merge_polygons_B[0];
 
-//	unrolled_.merge_union(merge_polygons_B,average_cyl.unrolled_);
+	//	unrolled_.merge_union(merge_polygons_B,average_cyl.unrolled_);
 	unrolled_.merge_union(merge_polygons_B,unrolled_);
 
 
@@ -313,7 +313,7 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
 	c_map2.axes_ =axes_;
 	c_map2.origin_ = average_cyl.origin_;
 	c_map2.unrolled_.transform_from_world_to_plane
-			= unrolled_.transform_from_world_to_plane;
+	= unrolled_.transform_from_world_to_plane;
 	c_map2.roll();
 	c_map2.axes_=average_cyl.axes_;
 	c_map2.unroll();
@@ -342,7 +342,7 @@ Cylinder::getShiftedPolygon(Cylinder& c, Polygon & shifted_polygon) {
 	//	LOCAL
 	Eigen::Vector3f transformed_normal =
 			c.unrolled_.transform_from_world_to_plane.rotation()
-					* unrolled_.normal;
+			* unrolled_.normal;
 
 	//		      calculate trafo parameters
 	float x_shift, z_shift, alpha;
@@ -371,15 +371,15 @@ Cylinder::getShiftedPolygon(Cylinder& c, Polygon & shifted_polygon) {
 
 
 			shifted_polygon.contours[j][k]		= c.unrolled_.transform_from_world_to_plane.inverse()
-							* (shift_trafo
-									* c.unrolled_.transform_from_world_to_plane
-									* unrolled_.contours[j][k]);
+									* (shift_trafo
+											* c.unrolled_.transform_from_world_to_plane
+											* unrolled_.contours[j][k]);
 			//END LOCAL
 
 		}
 	}
 
-			shifted_polygon.assignMembers(c.axes_[1], c.axes_[2], origin_);
+	shifted_polygon.assignMembers(c.axes_[1], c.axes_[2], origin_);
 
 
 
@@ -409,7 +409,7 @@ void Cylinder::weightAttributes(std::vector<CylinderPtr>& c_array,
 		average_c.r_ += c_map.merged * c_map.r_;
 		for (int axis_runner = 0; axis_runner < 3; ++axis_runner) {
 			average_c.axes_[axis_runner] += c_map.axes_[axis_runner]
-					* c_map.merged;
+			                                            * c_map.merged;
 
 		}
 		average_c.merged += c_map.merged;
@@ -443,8 +443,50 @@ void Cylinder::weightAttributes(std::vector<CylinderPtr>& c_array,
 }
 
 
+
+
+
+
 void
-Cylinder::assignMembers(){
-	std::cout<<"not yet implemented..."<<std::endl;
+Cylinder::completeCylinder()
+{
+	//		complete 3-leg
+	axes_[0]=axes_[2].cross(axes_[1]);
+
+	//		unrolled polygon including >Trafo World 2 Plane
+	unrolled_.assignMembers(axes_[1], axes_[2], origin_);
+
+	//		calculate radius
+
+
+	std::vector<std::vector<Eigen::Vector3f> >temp_vec;
+	Eigen::Vector2f pp;
+	float temp_r=0;
+	int counter=0;
+
+	this->getTransformedContours(unrolled_.transform_from_world_to_plane,temp_vec);
+
+
+	for (int i = 0; i < (int) temp_vec.size(); ++i) {
+		for (int j = 0; j < (int) temp_vec[i].size(); ++j) {
+
+			pp << temp_vec[i][j][1],temp_vec[i][j][2];
+			temp_r += pp.norm();
+			counter++;
+		}
+	}
+
+
+	r_=temp_r /counter;
+	this->unroll();
+
+
 }
+
+void
+Cylinder::assignMembers()
+{
+	std::cout<< "not yet implemented";
+}
+
 }//namespace

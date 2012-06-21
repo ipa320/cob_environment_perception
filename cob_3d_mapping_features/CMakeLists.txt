@@ -21,24 +21,14 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
-    #/usr/include/vtk-5.8)
-
-
-## include vtk
-#include_directories("/usr/include/vtk-5.6" )
-## include pcl directly
-#include(/opt/ros/fuerte/include/pcl-1.5)
-#include(/opt/ros/fuerte/include/pcl-1.5)
-#include(/opt/ros/fuerte/stacks/geometry/tf/include)
-
 find_package(Eigen REQUIRED)
 include_directories(${EIGEN_INCLUDE_DIRS})
 add_definitions(${EIGEN_DEFINITIONS})
 find_package(OpenCV REQUIRED)
 find_package(VTK REQUIRED)
 include_directories(${VTK_INCLUDE_DIRS})
-
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/ros/include)
 
 #uncomment if you have defined messages
 #rosbuild_genmsg()
@@ -51,7 +41,6 @@ rosbuild_add_library(cob_3d_mapping_features
 	common/src/edge_estimation_3d.cpp
 	common/src/edge_estimation_2d.cpp
 	common/src/edge_extraction.cpp
-	common/src/segmentation.cpp
 	common/src/plane_extraction.cpp
 	common/src/knn_classifier.cpp
 	common/src/most_discriminating_data_points.cpp
@@ -69,9 +58,7 @@ rosbuild_add_library(cob_3d_mapping_features_omp
 
 rosbuild_add_openmp_flags(cob_3d_mapping_features_omp)
 
-rosbuild_add_boost_directories()
-
-target_link_libraries(cob_3d_mapping_features_nodelets cob_3d_mapping_features ${OpenCV_LIBS})
+target_link_libraries(cob_3d_mapping_features_nodelets cob_3d_mapping_features)
 
 
 rosbuild_add_executable(test_plane_extraction common/src/plane_extraction.cpp)
@@ -109,11 +96,6 @@ rosbuild_link_boost(evaluation_features_fpfh program_options)
 #rosbuild_add_compile_flags(test_edge_extraction -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
 #target_link_libraries(test_edge_extraction cob_3d_mapping_features)
 
-# Uses FEE3D and EE2D to extract edges and segment clusters
-rosbuild_add_executable(test_segmentation common/apps/test_segmentation.cpp)
-target_link_libraries(test_segmentation cob_3d_mapping_features cob_3d_mapping_features_omp vtkCommon vtkFiltering ${OpenCV_LIBS})
-rosbuild_link_boost(test_segmentation program_options)
-
 # Test Surface Classification using organized principal curvatures
 rosbuild_add_executable(test_surface_class_estimation common/apps/test_surface_class_estimation.cpp)
 target_link_libraries(test_surface_class_estimation cob_3d_mapping_features vtkCommon vtkFiltering vtkRendering ${OpenCV_LIBS})
@@ -127,9 +109,11 @@ rosbuild_link_boost(test_edge_estimation program_options)
 
 # Profiling old EdgeEstimation and FastEdgeEstimation
 # Only computation, no visualization or output.
+rosbuild_add_executable(profile_oce common/test/profile_oce.cpp)
 rosbuild_add_executable(profile_fee_omp common/test/profile_fee_omp.cpp)
 rosbuild_add_executable(profile_fee common/test/profile_fee.cpp)
 rosbuild_add_executable(profile_ee common/test/profile_ee.cpp)
+target_link_libraries(profile_oce cob_3d_mapping_features cob_3d_mapping_features_omp)
 target_link_libraries(profile_fee cob_3d_mapping_features vtkCommon vtkFiltering ${OpenCV_LIBS})
 target_link_libraries(profile_fee_omp cob_3d_mapping_features cob_3d_mapping_features_omp vtkCommon vtkFiltering ${OpenCV_LIBS})
 target_link_libraries(profile_ee  cob_3d_mapping_features vtkCommon vtkFiltering ${OpenCV_LIBS})
