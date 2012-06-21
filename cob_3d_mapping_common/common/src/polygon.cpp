@@ -57,6 +57,10 @@
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/common/centroid.h>
+#include <pcl/common/eigen.h>
+#include <pcl/common/transform.h>
+#include <pcl/common/common.h>
+#include <pcl/registration/transforms.h>
 
 namespace cob_3d_mapping
 {
@@ -132,6 +136,37 @@ Polygon::computeArea()
     //std::cout << "\n\t*** Area of polygon ( " << i << " ) = " << area_[i] << std::endl;
   }
   return area;
+}
+
+void
+Polygon::computePoseAndBoundingBox(Eigen::Affine3f& pose, Eigen::Vector4f& min_pt, Eigen::Vector4f& max_pt)
+{
+	  pcl::PointCloud<pcl::PointXYZ> poly_cloud;
+	  unsigned int idx = 0;
+	  for (unsigned int j = 0; j < contours[idx].size () ; j++)
+	  {
+	    pcl::PointXYZ p;
+	    p.x = contours[idx][j][0];
+	    p.y = contours[idx][j][1];
+	    p.z = contours[idx][j][2];
+	    poly_cloud.push_back(p);
+	  }
+	  Eigen::Matrix3f cov;
+	pcl::computeCovarianceMatrix (poly_cloud, centroid, cov);
+	EIGEN_ALIGN16 Eigen::Vector3f eigen_values;
+	EIGEN_ALIGN16 Eigen::Matrix3f eigen_vectors;
+	pcl::eigen33 (cov, eigen_vectors, eigen_values);
+	//Eigen::Affine3f pose;
+	pcl::getTransformationFromTwoUnitVectorsAndOrigin(eigen_vectors.col(1),eigen_vectors.col(0),centroid.head(3),pose);
+	/*Eigen::Matrix4f pose = Eigen::Matrix4f::Zero();//(eigen_vectors.col(2),eigen_vectors.col(1),eigen_vectors.col(0),centroid.head(3));
+	pose.col(0).head(3) = eigen_vectors.col(2);
+	pose.col(1).head(3) = eigen_vectors.col(1);
+	pose.col(2).head(3) = eigen_vectors.col(0);
+	pose.col(3) = centroid;*/
+	pcl::PointCloud<pcl::PointXYZ> cloud_trans;
+	pcl::transformPointCloud(poly_cloud, cloud_trans, pose);
+	//Eigen::Vector4f min_pt, max_pt;
+	pcl::getMinMax3D(cloud_trans, min_pt, max_pt);
 }
 
 }
