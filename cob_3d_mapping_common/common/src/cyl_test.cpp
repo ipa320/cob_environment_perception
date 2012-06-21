@@ -49,6 +49,7 @@ pcl::getTranslationAndEulerAngles(trafo,x,y,z,roll,pitch,yaw);
 
 int main(int argc, char **argv) {
 
+
 //####################################################
 //Cylinder #1
 
@@ -62,8 +63,9 @@ Eigen::Vector3f origin1;
  Eigen::Vector3f v1;
 
 
-x_axis1 << 1,0,0;
+x_axis1 << 0,0,0;
 axes1.push_back(x_axis1);
+//actual vecotro supposed to be 1 0 0
 
 y_axis1 << 0,0,1;
 axes1.push_back(y_axis1);
@@ -90,7 +92,7 @@ c1->merged=1;
  origin1 << 0,0,0;
  c1->origin_=origin1;
 
- c1->r_=1;
+// c1->r_=1;
 
 
 
@@ -125,7 +127,7 @@ c1->merged=1;
   Eigen::Vector3f v2;
 
 
- x_axis2 << 0,-1,0;
+ x_axis2 << 0,0,0;
  axes2.push_back(x_axis2);
 
  y_axis2 << 0,0,1;
@@ -149,11 +151,11 @@ c1->merged=1;
   c2->contours.push_back(contour2);
 
 
-c2->merged=1;
+  c2->merged=1;
   origin2 << 0,0,0;
   c2->origin_=origin2;
 
-  c2->r_=1;
+//  c2->r_=1;
 
 
 
@@ -189,6 +191,20 @@ c2->merged=1;
 
 transform_cylinder(c1,trafo);
 transform_cylinder(c2,trafo);
+
+//#######################################################
+//  completion test
+  c1->completeCylinder();
+  c2->completeCylinder();
+  std::cout<<"X-axis = \n"<<c1->axes_[0]<<std::endl;
+  std::cout<<"X-axis = \n"<<c2->axes_[0]<<std::endl;
+
+
+  std::cout<<"r = "<<c1->r_<<std::endl;
+  std::cout<<"r = "<<c2->r_<<std::endl;
+
+
+
 
 //#######################################################
 //	cylinders from octave script

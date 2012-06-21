@@ -101,6 +101,8 @@ public:
 	void isMergeCandidate(const std::vector<boost::shared_ptr<Cylinder> >& cylinder_array,const merge_config& limits,std::vector<int>& intersections);
 	void merge(std::vector<boost::shared_ptr<Cylinder> >& c_array);
 	void assignMembers();
+	void completeCylinder();
+
 	double r_;
 	std::vector<Eigen::Vector3f> axes_;
 	Eigen::Vector3f origin_;

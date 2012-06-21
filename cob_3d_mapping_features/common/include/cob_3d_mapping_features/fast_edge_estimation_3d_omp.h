@@ -68,7 +68,6 @@ namespace cob_3d_mapping_features
     using OrganizedFeatures<PointInT, PointOutT>::indices_;
     using OrganizedFeatures<PointInT, PointOutT>::surface_;
     using OrganizedFeatures<PointInT, PointOutT>::feature_name_;
-    using OrganizedFeatures<PointInT, PointOutT>::distance_threshold_modifier_;
     using FastEdgeEstimation3D<PointInT,PointNT,PointOutT>::normals_;
 
     typedef pcl::PointCloud<PointOutT> PointCloudOut;
@@ -78,7 +77,6 @@ namespace cob_3d_mapping_features
     FastEdgeEstimation3DOMP ()
       {
 	feature_name_ = "FastEdgeEstimation3DOMP";
-	distance_threshold_modifier_ = 0.0;
       };
 
     protected:

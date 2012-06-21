@@ -62,15 +62,17 @@
 
 
 // --- define colors ---
-#define LBL_PLANE    0x00CCFF
-#define LBL_EDGE     0x7F0000
-#define LBL_EDGE_CVX 0xFF6600
-#define LBL_COR      0xFFCC00
-#define LBL_COR_CVX  0xFF00FF
-#define LBL_CYL      0x007F00
-#define LBL_CYL_CVX  0x00FF66
-#define LBL_SPH      0x00007F
-#define LBL_SPH_CVX  0x9900FF
+#define LBL_NAN      0x999999
+#define LBL_BORDER   0xFF00FF
+#define LBL_PLANE    0x00CCFF // cyan
+#define LBL_EDGE     0x7F0000 // red
+#define LBL_EDGE_CVX 0xFF6600 // orange
+#define LBL_COR      0xFFCC00 // dark yellow
+#define LBL_COR_CVX  0xFF00FF // magenta
+#define LBL_CYL      0x007F00 // green
+#define LBL_CYL_CVX  0x00FF66 // light green
+#define LBL_SPH      0x00007F // blue
+#define LBL_SPH_CVX  0x9900FF // purple
 #define LBL_UNDEF    0x999999
 
 // --- define SVM labels ---
@@ -109,5 +111,6 @@
 #define I_CYL    5
 #define I_SPHERE 6
 #define I_CORNER 7
+#define NUM_LABELS 8
 
 #endif

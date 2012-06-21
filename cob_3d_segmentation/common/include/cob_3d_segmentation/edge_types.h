@@ -14,10 +14,10 @@
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
- * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 10/2011
+ * Date of creation: 05/2012
  * ToDo:
  *
  *
@@ -52,54 +52,51 @@
  *
  ****************************************************************/
 
-#ifndef __SEGMENTATION_H__
-#define __SEGMENTATION_H__
+#ifndef __COB_3D_SEGMENTATION_EDGE_TYPES_H__
+#define __COB_3D_SEGMENTATION_EDGE_TYPES_H__
 
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <pcl/PointIndices.h>
-#include <opencv2/core/core.hpp>
-#include <cob_3d_mapping_common/point_types.h>
+#include <list>
+#include <map>
+#include <utility>
 
-namespace cob_3d_mapping_features
+namespace cob_3d_segmentation
 {
-
-  struct Coords
-  {
-    int u;
-    int v;
-    bool c_gap;
-
-    Coords(int u_in, int v_in, bool c_gap_in)
-      {
-	u = u_in;
-	v=  v_in;
-	c_gap = c_gap_in;
-      }
-  };
-
-  class Segmentation
+  class BoundaryPoint
   {
   public:
-    /** \brief Empty constructor. */
-    Segmentation () { };
+    BoundaryPoint(int idx=0) : brother(idx), normal() { }
+    
+    int brother;
+    Eigen::Vector3f normal;
+  };
 
-    int searchForNeighbors (
-      pcl::PointCloud<PointLabel>::Ptr& cloud_in,
-      int col, int row,
-      double radius,
-      std::vector<int>& indices_ul,
-      std::vector<int>& indices_ur,
-      std::vector<int>& indices_lr,
-      std::vector<int>& indices_ll,
-      bool& gap_l, bool& gap_r, bool& gap_a, bool& gap_d);
-    bool isStopperInNeighbors(pcl::PointCloud<PointLabel>::Ptr& cloud_in, std::vector<int>& indices);
-    void propagateWavefront2(pcl::PointCloud<PointLabel>::Ptr& cloud_in);
-    void getClusterIndices(pcl::PointCloud<PointLabel>::Ptr& cloud_in, std::vector<pcl::PointIndices>& cluster_indices, cv::Mat& seg_img);
+  class BoundaryPointsEdge
+  {
+  public:
+    BoundaryPointsEdge() : width(1)
+      , boundary_pairs()
+      , smoothness(0.0) { }
 
+    inline std::pair<std::list<int>::iterator, std::list<int>::iterator> getBoundaryPairs()
+    { return std::make_pair(boundary_pairs.begin()->second.begin(), boundary_pairs.begin()->second.end()); }
+
+    inline std::pair<std::list<int>::iterator, std::list<int>::iterator> getBoundaryPairsOf(int cid)
+    { return std::make_pair(boundary_pairs[cid].begin(), boundary_pairs[cid].end()); }
+
+    inline std::list<int>::size_type size() const { return boundary_pairs.begin()->second.size(); }
+
+    inline void addBoundaryIndices(const int cid1, const int cid2, const int idx1, const int idx2)
+    {
+      boundary_pairs[cid1].push_back(idx2);
+      boundary_pairs[cid2].push_back(idx1);
+    }
+
+    inline bool isAttachedTo(int cid) { return (boundary_pairs.find(cid) != boundary_pairs.end()); }
+    
+    int width;
+    std::map<int,std::list<int> > boundary_pairs;
+    float smoothness;
   };
 }
 
-#endif  //#ifndef __SEGMENTATION_H__
-
-
+#endif
