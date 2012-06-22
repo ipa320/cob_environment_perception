@@ -148,6 +148,12 @@ cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::c
 	if (c_it->type == I_CYL)
 	{
 	  if(c_it->type_probability < 0.8) { c_it->type = I_SPHERE; }
+	  else 
+	  { 
+	    std::cout <<c_it->pca_inter_comp1(0) <<", "
+		      <<c_it->pca_inter_comp1(1) <<", "
+		      <<c_it->pca_inter_comp1(2) <<" | " << valid_points << std::endl; 
+	  }
 	  //else { clusters_->computeNormalIntersections(c_it); }
 	}
       }
