@@ -171,7 +171,8 @@ public:
 
 
 			////    distinction of type
-			if (sa->shapes[i].type == cob_3d_mapping_msgs::Shape::PLANE) {
+			if (sa->shapes[i].type == cob_3d_mapping_msgs::Shape::POLYGON) {
+				std::cout<<"dbg[3]"<<std::endl;
 
 				PolygonPtr polygon_map_entry_ptr = PolygonPtr(new Polygon());
 				if(!fromROSMsg(sa->shapes[i], *polygon_map_entry_ptr)) {
@@ -527,8 +528,7 @@ int main (int argc, char** argv)
 		ros::spinOnce ();
 		loop_rate.sleep();
 	}
-};
-
+}
 
 //PLUGINLIB_DECLARE_CLASS(cob_env_model, FeatureMap, FeatureMap, nodelet::Nodelet)
 

@@ -69,6 +69,10 @@ extern "C" {
 #include <pcl/common/centroid.h>
 #include <pcl/common/eigen.h>
 #include <pcl/common/transform.h>
+//#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/registration/transforms.h>
+#include <pcl/sample_consensus/method_types.h>
+#include <pcl/sample_consensus/sac_model_circle.h>
 //#include <pcl/common/transformation_from_correspondences.h>
 
 
@@ -102,6 +106,7 @@ public:
 	void merge(std::vector<boost::shared_ptr<Cylinder> >& c_array);
 	void assignMembers();
 	void completeCylinder();
+	void CylinderFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr in_cloud, std::vector<int>& indices,  Eigen::Vector3f& c_pt, Eigen::Vector3f& sym_axis);
 
 	double r_;
 	std::vector<Eigen::Vector3f> axes_;
