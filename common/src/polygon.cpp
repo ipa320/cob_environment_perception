@@ -104,7 +104,7 @@ getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
 //
 
 void
-getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,const Eigen::Vector3f &origin, Eigen::Affine3f &transformation)
+Polygon::getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,const Eigen::Vector3f &origin, Eigen::Affine3f &transformation)
 {
 	Eigen::Vector3f u, v;
 
@@ -117,7 +117,7 @@ getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,const Eigen::Vec
 }
 
 void
-getTransformationFromPlaneToWorld(const Eigen::Vector3f z_axis,const Eigen::Vector3f &normal,const Eigen::Vector3f &origin, Eigen::Affine3f &transformation)
+Polygon::getTransformationFromPlaneToWorld(const Eigen::Vector3f z_axis,const Eigen::Vector3f &normal,const Eigen::Vector3f &origin, Eigen::Affine3f &transformation)
 {
 	//  Eigen::Vector3f u, v;
 	//
@@ -708,6 +708,7 @@ Polygon::getTransformedContours(const Eigen::Affine3f& trafo,std::vector< std::v
 		}
 	}
 }
+
 
 
 
