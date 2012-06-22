@@ -131,7 +131,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr 
     {
       sa.shapes.push_back(cob_3d_mapping_msgs::Shape());
       cob_3d_mapping_msgs::Shape* s = &sa.shapes.back();
-      s->type = cob_3d_mapping_msgs::Shape::PLANE;
+      s->type = cob_3d_mapping_msgs::Shape::POLYGON;
       s->params.resize(4);
       Eigen::Vector3f n = c->getOrientation();
       s->params[0] = n(0); // n_x
