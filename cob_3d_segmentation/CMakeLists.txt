@@ -36,3 +36,6 @@ rosbuild_add_roslaunch_check(ros/launch)
 rosbuild_add_executable(test_segmentation ros/test/test_segmentation.cpp)
 rosbuild_add_compile_flags(test_segmentation ${SSE_FLAGS})
 target_link_libraries(test_segmentation gtest)
+
+rosbuild_add_executable(test_polygon_extraction ros/test/test_polygon_extraction.cpp)
+target_link_libraries(test_polygon_extraction gtest)

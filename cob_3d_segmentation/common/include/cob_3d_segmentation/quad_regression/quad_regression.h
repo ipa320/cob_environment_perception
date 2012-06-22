@@ -166,6 +166,7 @@ namespace Segmentation
     /// destructor
     virtual ~Segmentation_QuadRegression() {
       delete [] ch_;
+      delete [] outline_check_;
     }
 
     /// sets preprocessed input cloud
