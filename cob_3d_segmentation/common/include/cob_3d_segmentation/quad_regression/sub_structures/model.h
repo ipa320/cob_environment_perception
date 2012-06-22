@@ -13,7 +13,7 @@
  * Model contains data for regression calculations and parameters
  */
 struct Model {
-  typename Param::Vector6f p;
+  Param::Vector6f p;
   Param param;
 
   Model() {}
