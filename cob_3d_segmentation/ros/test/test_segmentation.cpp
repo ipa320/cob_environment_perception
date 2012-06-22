@@ -22,17 +22,6 @@ class Testing_PCDLoader
 {
   std::vector<sensor_msgs::PointCloud2> pc2s_;
 
-  void load(const std::string &fn) {
-    sensor_msgs::PointCloud2 pc2;
-
-    pc2.header.frame_id = fn; ///filename is stored in frame_id
-
-    if(!pcl::io::loadPCDFile(fn,pc2))
-      pc2s_.push_back(pc2);
-    else
-      ROS_ERROR("failed to load pcd file %s",fn.c_str());
-  }
-
   Testing_PCDLoader()
   {
     load("test/kitchen01_close_raw.pcd");
@@ -43,13 +32,25 @@ class Testing_PCDLoader
     load("test/shelves01_far_raw.pcd");
     load("test/table01_close1m_raw.pcd");
     load("test/table01_far_raw.pcd");
-    //TODO: rest
   }
 
 public:
+
+  /// singleton
   static Testing_PCDLoader &get() {
     static Testing_PCDLoader t;
     return t;
+  }
+
+  void load(const std::string &fn) {
+    sensor_msgs::PointCloud2 pc2;
+
+    pc2.header.frame_id = fn; ///filename is stored in frame_id
+
+    if(!pcl::io::loadPCDFile(fn,pc2))
+      pc2s_.push_back(pc2);
+    else
+      ROS_ERROR("failed to load pcd file %s",fn.c_str());
   }
 
   template <typename Point>
@@ -183,7 +184,7 @@ void segment_pointcloud(GeneralSegmentation<Point, PointLabel> *seg, typename pc
 
   //for documentation
   static Testing_CSV csv = Testing_CSV::create_table("execution_time","filename,execution time in seconds");
-  double took;
+  double took=0.;
 
   seg->setInputCloud(pc);
 
@@ -220,6 +221,15 @@ TEST(Segmentation, quad_regression)
 
 int main(int argc, char **argv){
   ros::Time::init();
+
+  if(argc>1 && strcmp(argv[1],"--help")==0)
+  {
+    printf("usage:\n\t- without any options tests segmentation\n\t- with additional pcd files\n");
+    return 0;
+  }
+
+  for(int i=1; i<argc; i++)
+    Testing_PCDLoader::get().load(argv[i]);
 
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();
