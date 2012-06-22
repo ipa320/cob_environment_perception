@@ -91,7 +91,7 @@ namespace cob_3d_segmentation
 
 
   template <typename ClusterGraphT, typename PointT, typename PointNT, typename PointLabelT>
-    class DepthSegmentation : public GeneralSegmentation<PointT>
+    class DepthSegmentation : public GeneralSegmentation<PointT, PointLabelT>
   {
   public:
     typedef pcl::PointCloud<PointT> PointCloud;
