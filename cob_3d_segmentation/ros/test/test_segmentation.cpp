@@ -60,12 +60,15 @@ public:
   template <typename Point>
   bool getPC(const size_t ind, typename pcl::PointCloud<Point>::Ptr pc, std::string &fn) const
   {
+    pc->clear();
     if(ind<pc2s_fn_.size())
     {
       sensor_msgs::PointCloud2 pc2;
-      _load(pc2s_fn_[ind],pc2);
+      if(_load(pc2s_fn_[ind],pc2))
+      {
       pcl::fromROSMsg(pc2,*pc);
       fn = pc2.header.frame_id;
+      }
       return true;
     }
     return false;
@@ -219,6 +222,7 @@ TEST(Segmentation, quad_regression)
   std::string fn;
   while(Testing_PCDLoader::get().getPC<Point>(ind++, pc, fn))
   {
+    if(pc->size()<1) continue;
     ROS_INFO("processing pc %d ...",(int)ind-1);
     segment_pointcloud<Point,PointL>(&seg,pc, std::string(fn.begin()+(fn.find_last_of("/")+1),fn.end()));
   }
