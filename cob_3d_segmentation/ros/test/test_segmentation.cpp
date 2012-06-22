@@ -20,7 +20,18 @@
  */
 class Testing_PCDLoader
 {
-  std::vector<sensor_msgs::PointCloud2> pc2s_;
+  std::vector<std::string> pc2s_fn_;
+
+  static bool _load(const std::string &fn, sensor_msgs::PointCloud2 &pc2) {
+    pc2.header.frame_id = fn; ///filename is stored in frame_id
+
+    if(!pcl::io::loadPCDFile(fn,pc2))
+      return true;
+    else
+      ROS_ERROR("failed to load pcd file %s",fn.c_str());
+
+    return false;
+  }
 
   Testing_PCDLoader()
   {
@@ -43,23 +54,18 @@ public:
   }
 
   void load(const std::string &fn) {
-    sensor_msgs::PointCloud2 pc2;
-
-    pc2.header.frame_id = fn; ///filename is stored in frame_id
-
-    if(!pcl::io::loadPCDFile(fn,pc2))
-      pc2s_.push_back(pc2);
-    else
-      ROS_ERROR("failed to load pcd file %s",fn.c_str());
+    pc2s_fn_.push_back(fn);
   }
 
   template <typename Point>
   bool getPC(const size_t ind, typename pcl::PointCloud<Point>::Ptr pc, std::string &fn) const
   {
-    if(ind<pc2s_.size())
+    if(ind<pc2s_fn_.size())
     {
-      pcl::fromROSMsg(pc2s_[ind],*pc);
-      fn = pc2s_[ind].header.frame_id;
+      sensor_msgs::PointCloud2 pc2;
+      _load(pc2s_fn_[ind],pc2);
+      pcl::fromROSMsg(pc2,*pc);
+      fn = pc2.header.frame_id;
       return true;
     }
     return false;
