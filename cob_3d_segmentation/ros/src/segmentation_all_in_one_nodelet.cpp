@@ -93,7 +93,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::onInit()
   pub_classified_ = nh_.advertise<PointCloud>("classified_cloud", 1);
   pub_shape_array_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray>("shape_array",1);
   pub_chull_ = nh_.advertise<PointCloud>("concave_hull", 1);
-  std::cout << "Loaded" << std::endl;
+  std::cout << "Loaded segmentation nodelet" << std::endl;
 
 }
 
@@ -102,7 +102,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::received_cloud_cb(PointCloud::
 {
   PrecisionStopWatch t;
   t.precisionStart();
-  NODELET_INFO("Start .... ");
+  NODELET_INFO("Start with segmentation .... ");
 
   one_.setInputCloud(cloud);
   one_.compute(*normals_);
@@ -119,7 +119,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::received_cloud_cb(PointCloud::
   pub_classified_.publish(classified_);
 
   publishShapeArray(graph_->clusters(), cloud);
-  NODELET_INFO("Done .... ");
+  NODELET_INFO("Done with segmentation .... ");
 }
 
 void
@@ -127,7 +127,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr 
 {
   cob_3d_mapping_msgs::ShapeArray sa;
   sa.header = cloud->header;
-  //pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
   for (ST::CH::ClusterPtr c = cluster_handler->begin(); c != cluster_handler->end(); ++c)
   {
     switch(c->type)
@@ -165,11 +165,12 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr 
       */
       // use concave hull algorithm
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull(new pcl::PointCloud<pcl::PointXYZRGB>);
+      std::vector< pcl::Vertices > hull_polygons;
       chull_.setInputCloud(cloud);
       chull_.setIndices(boost::make_shared<std::vector<int> >(c->border_indices));
-      chull_.reconstruct(*hull);
-      //hull_cloud->header = hull->header;
-      //*hull_cloud += *hull;
+      chull_.reconstruct(*hull, hull_polygons);
+      hull_cloud->header = hull->header;
+      *hull_cloud += *hull;
       pcl::toROSMsg(*hull, s->points.back());
       break;
     }
@@ -183,7 +184,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr 
     }
     }
   }
-  //pub_chull_.publish(hull_cloud);
+  pub_chull_.publish(hull_cloud);
   pub_shape_array_.publish(sa);
 }
 
