@@ -24,6 +24,9 @@ class Testing_PCDLoader
 
   void load(const std::string &fn) {
     sensor_msgs::PointCloud2 pc2;
+
+    pc2.header.frame_id = fn; ///filename is stored in frame_id
+
     if(!pcl::io::loadPCDFile(fn,pc2))
       pc2s_.push_back(pc2);
     else
@@ -50,21 +53,25 @@ public:
   }
 
   template <typename Point>
-  bool getPC(const size_t ind, typename pcl::PointCloud<Point>::Ptr pc) const
+  bool getPC(const size_t ind, typename pcl::PointCloud<Point>::Ptr pc, std::string &fn) const
   {
     if(ind<pc2s_.size())
     {
       pcl::fromROSMsg(pc2s_[ind],*pc);
+      fn = pc2s_[ind].header.frame_id;
       return true;
     }
     return false;
   }
 
   template <typename Point>
-  void writePC(const size_t ind, typename pcl::PointCloud<Point>::ConstPtr pc) const
+  void writePC(const std::string &pc_fn, typename pcl::PointCloud<Point>::ConstPtr pc) const
   {
+    const ::testing::TestInfo* const test_info =
+      ::testing::UnitTest::GetInstance()->current_test_info();
+
     char fn[512];
-    sprintf(fn,"test/labeled/pc%d.pcd",(int)ind);
+    sprintf(fn,"test/labeled/pc_%s_%s_%s.pcd",test_info->test_case_name(), test_info->name(), pc_fn.c_str());
     pcl::io::savePCDFile(fn,*pc);
   }
 };
@@ -94,13 +101,89 @@ public:
   };
 };
 
+/**
+ * write down a table
+ */
+class Testing_CSV
+{
+  FILE *fp;
+  int row, col;
+public:
+  Testing_CSV(std::string fn):row(0),col(0)
+  {
+    const ::testing::TestInfo* const test_info =
+      ::testing::UnitTest::GetInstance()->current_test_info();
+    fn = "test/results/csv_"+std::string(test_info->test_case_name())+"_"+std::string(test_info->name())+".csv";
+    fp = fopen(fn.c_str(),"w");
+  }
 
+  ~Testing_CSV()
+  {
+    if(fp) fclose(fp);
+  }
+
+  void add(const std::string &str)
+  {
+    if(col>0) fputc('\t',fp);
+    fwrite(str.c_str(),str.size(),1,fp);
+    ++col;
+  }
+
+  template<typename T>
+  void add(const T v)
+  {
+    std::stringstream ss(std::stringstream::out);
+    ss<<v;
+    add(ss.str());
+  }
+
+  void next()
+  {
+    if(col>0)
+    {
+      fputc('\n',fp);
+      col=0;
+      ++row;
+    }
+  }
+
+  static Testing_CSV create_table(const std::string &fn, std::string cols)
+  {
+    Testing_CSV csv(fn);
+    size_t pos;
+    while(cols.size()>0)
+    {
+      pos=cols.find(",");
+      if(pos!=std::string::npos)
+      {
+        csv.add(std::string(cols.begin(),cols.begin()+pos));
+        cols.erase(cols.begin(), cols.begin()+(pos+1));
+      }
+      else
+      {
+        csv.add(cols);
+        break;
+      }
+    }
+    csv.next();
+    return csv;
+  }
+};
+
+
+
+
+/*******************************TESTING STARTS HERE********************************/
 
 template <typename Point, typename PointLabel>
-void segment_pointcloud(GeneralSegmentation<Point, PointLabel> *seg, typename pcl::PointCloud<Point>::Ptr &pc)
+void segment_pointcloud(GeneralSegmentation<Point, PointLabel> *seg, typename pcl::PointCloud<Point>::Ptr &pc, const std::string &fn)
 {
   EXPECT_TRUE(seg!=NULL);
   EXPECT_TRUE(pc->size()>0);
+
+  //for documentation
+  static Testing_CSV csv = Testing_CSV::create_table("execution_time","filename,execution time in seconds");
+  double took;
 
   seg->setInputCloud(pc);
 
@@ -108,10 +191,12 @@ void segment_pointcloud(GeneralSegmentation<Point, PointLabel> *seg, typename pc
   EXPECT_TRUE(
       seg->compute()
       );
-  ROS_INFO("segmentation took %f", psw.precisionStop());
+  ROS_INFO("segmentation took %f", took=psw.precisionStop());
+  csv.add(fn);
+  csv.add(took);
+  csv.next();
 
-  static size_t nr=0;
-  Testing_PCDLoader::get().writePC<PointLabel>(nr++, seg->getOutputCloud());
+  Testing_PCDLoader::get().writePC<PointLabel>(fn, seg->getOutputCloud());
 }
 
 TEST(Segmentation, quad_regression)
@@ -124,10 +209,11 @@ TEST(Segmentation, quad_regression)
 
   ROS_INFO("starting segmentation");
   size_t ind=0;
-  while(Testing_PCDLoader::get().getPC<Point>(ind++, pc))
+  std::string fn;
+  while(Testing_PCDLoader::get().getPC<Point>(ind++, pc, fn))
   {
     ROS_INFO("processing pc %d ...",(int)ind-1);
-    segment_pointcloud<Point,PointL>(&seg,pc);
+    segment_pointcloud<Point,PointL>(&seg,pc, std::string(fn.begin()+(fn.find_last_of("/")+1),fn.end()));
   }
 }
 
