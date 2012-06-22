@@ -83,10 +83,10 @@ namespace cob_3d_segmentation
 
     inline void addIndex(int idx) { indices_.push_back(idx); }
     
-    
+    std::vector<int> indices_;    
   protected:
     int id_;
-    std::vector<int> indices_;
+
   };
 
   class DepthCluster : public ClusterBase
