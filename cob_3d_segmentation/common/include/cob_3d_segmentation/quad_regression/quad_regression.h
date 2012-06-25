@@ -184,6 +184,9 @@ namespace Segmentation
     }
 
     virtual bool compute();
+
+    /*** evaluation purposes ***/
+    void compute_accuracy(float &mean, float &var, float &mean_abs, float &var_abs, size_t &used, size_t &mem, size_t &points);
   };
 
 #include "impl/quad_regression.hpp"
