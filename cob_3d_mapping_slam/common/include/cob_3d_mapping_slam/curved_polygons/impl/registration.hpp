@@ -7,25 +7,44 @@ typename _DOF6::TYPE OBJCTXT<_DOF6>::check_assumption(typename SCOR_MEMBER::Ptr 
   typename DOF6::TYPE w_sum=(typename DOF6::TYPE)0, p=(typename DOF6::TYPE)0;
   const typename DOF6::TYPE metric=(typename DOF6::TYPE)0.002;
 
-  for(size_t i=0; i<m1->distances_.size(); i++)
+  size_t goods=0;
+  for(typename SCOR_MEMBER::MAP::const_iterator it = m1->distances_.begin(); it!=m1->distances_.end(); it++)
   {
     typename DOF6::TYPE mi = (typename DOF6::TYPE)10000;
-    for(size_t j=0; j<m2->candidates_.size(); j++)
+
+    for(size_t j=0; j<it->first->candidates_.size(); j++)
     {
-      mi = std::min(mi, std::abs(m1->distances_[i].d_-m2->candidates_[j].d_) );
-      ROS_INFO("candid with %f %f",m1->distances_[i].d_,m2->candidates_[j].d_);
+      typename SCOR_MEMBER::MAP::const_iterator it2 = m2->distances_.find(it->first->candidates_[j]);
+
+      if(it2!=m2->distances_.end())
+      {
+
+        for(size_t k=0; k<it->second.size(); k++)
+        {
+          for(size_t l=0; l<it2->second.size(); l++)
+          {
+            //ROS_INFO("d %f %f",it->second[k], it2->second[l]);
+            mi = std::min(mi, std::abs(it->second[k] - it2->second[l]) );
+          }
+        }
+      }
     }
+
+//    ROS_INFO("candid with best %f",mi);
 
     if(mi<10)
     {
       p += std::pow(metric, mi);
       w_sum += 1;
     }
+
+    if(std::pow(metric, mi)>0.7f)
+      goods++;
   }
   if(w_sum) p/=w_sum;
 
 #ifdef DEBUG_
-  ROS_INFO("Assumption is p=%f (%d, %d)",p,m1->candidates_.size(),m2->candidates_.size());
+  ROS_INFO("Assumption is p=%f (%d, %d) goods=%d",p,m1->candidates_.size(),m2->candidates_.size(),goods);
 #endif
 
   return p;
@@ -56,13 +75,8 @@ void OBJCTXT<_DOF6>::findCorrespondences(const OBJCTXT &ctxt, std::list<SCOR> &c
 
       if( obj.isReachable(*ctxt.objs_[j],tf.getRotationVariance(),tf.getTranslationVariance()) )
       {
-        SCOR_DISTANCES d;
-        d.d_ = ctxt.objs_[i]->getDistance(*ctxt.objs_[j]);
-
-        d.to_ = members2[j];
-        members.back()->candidates_.push_back(d);
-        d.to_ = members.back();
-        members2[j]->candidates_.push_back(d);
+        members.back()->candidates_.push_back(members2[j]);
+        members2[j]->candidates_.push_back(members.back());
       }
     }
   }
@@ -72,13 +86,10 @@ void OBJCTXT<_DOF6>::findCorrespondences(const OBJCTXT &ctxt, std::list<SCOR> &c
     for(size_t j=i+1; j<ctxt.objs_.size(); j++) {
       //if(members2[j]->candidates_.size()<1) continue;
 
-      SCOR_DISTANCES d;
-      d.d_ = ctxt.objs_[i]->getDistance(*ctxt.objs_[j]);
+      std::vector<typename DOF6::TYPE> d = ctxt.objs_[i]->getDistance(*ctxt.objs_[j]);
 
-      d.to_ = members2[j];
-      members2[i]->distances_.push_back(d);
-      d.to_ = members2[i];
-      members2[j]->distances_.push_back(d);
+      members2[i]->distances_[members2[j]] = d;
+      members2[j]->distances_[members2[i]] = d;
     }
   }
 
@@ -87,24 +98,21 @@ void OBJCTXT<_DOF6>::findCorrespondences(const OBJCTXT &ctxt, std::list<SCOR> &c
     for(size_t j=i+1; j<objs_.size(); j++) {
       //if(members[j]->candidates_.size()<1) continue;
 
-      SCOR_DISTANCES d;
-      d.d_ = objs_[i]->getDistance(*objs_[j]);
+      std::vector<typename DOF6::TYPE> d = objs_[i]->getDistance(*objs_[j]);
 
-      d.to_ = members[j];
-      members[i]->distances_.push_back(d);
-      d.to_ = members[i];
-      members[j]->distances_.push_back(d);
+      members[i]->distances_[members[j]] = d;
+      members[j]->distances_[members[i]] = d;
     }
   }
 
   for(size_t i=0; i<members.size(); i++)
   {
     for(size_t j=0; j<members[i]->candidates_.size(); j++)
-      if(check_assumption(members[i],members[i]->candidates_[j].to_)>0.7)
+      if(check_assumption(members[i],members[i]->candidates_[j])>0.7)
       {
         SCOR c;
         c.a = members[i]->obj_;
-        c.b = members[i]->candidates_[j].to_->obj_;
+        c.b = members[i]->candidates_[j]->obj_;
         cors.push_back(c);
       }
 #ifdef DEBUG_
@@ -194,6 +202,8 @@ _DOF6 OBJCTXT<_DOF6>::optimizeLink(const DOF6 &_tf, std::list<SCOR> &cors, const
     }
 
     if(list.size()) ++used2;
+
+    ROS_INFO("----------------------");
   }
   ROS_INFO("USED %d %d",used,used2);
 

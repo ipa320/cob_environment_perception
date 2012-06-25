@@ -49,8 +49,9 @@ static const char *BAGFILES[][512]={
                                      //"test/cp_rotate_real_cups4.bag",
                                      //"test/cp2_rot_real_cups1.bag",
                                      //"test/cp2_static_room.bag",
-                                     "test/cp3_rot_real_cups.bag",
+                                     //"test/cp3_rot_real_cups.bag",
                                      //"test/cp3_rgbd_dataset_freiburg2_dishes.bag",
+                                     "test/cp3_rgbd_dataset_freiburg2_rpy.bag",
                                      //"test/cp3_rgbd_dataset_freiburg1_plant.bag",
                                      //"test/cp2_rgbd_dataset_freiburg2_dishes.bag",
                                      //"test/cp2_freiburg.bag",
@@ -64,7 +65,7 @@ static const char *BAGFILES[][512]={
 static const char *GROUNDTRUTH[][512]={
   {
    //"test/rgbd_dataset_freiburg2_dishes-groundtruth.txt",
-   "test/rgbd_dataset_freiburg1_plant-groundtruth.txt",
+   "test/rgbd_dataset_freiburg2_rpy-groundtruth.txt",
     //"test/rgbd_dataset_freiburg2_dishes-groundtruth.txt",
     0
   }
@@ -365,7 +366,9 @@ void t4()
 
 struct SOdomotry_Data
 {
-  double timestamp, tx, ty, tz, qx, qy, qz, qw;
+  double timestamp;
+  Eigen::Vector3f t;
+  Eigen::Quaternionf q;
 };
 
 #include <visualization_msgs/Marker.h>
@@ -392,7 +395,7 @@ TEST(Slam,bag_run)
 
         std::istringstream iss(line);
         SOdomotry_Data odo;
-        if (!(iss >> odo.timestamp >> odo.tx >> odo.ty >> odo.tz >> odo.qx >> odo.qy >> odo.qz >> odo.qw)) {
+        if (!(iss >> odo.timestamp >> odo.t(0) >> odo.t(1) >> odo.t(2) >> odo.q.x() >> odo.q.y() >> odo.q.z() >> odo.q.w())) {
           ROS_ERROR("parsing groundtruth");
           ROS_ASSERT(0);
           break;
@@ -456,6 +459,8 @@ TEST(Slam,bag_run)
       Eigen::Matrix3f last_rot= Eigen::Matrix3f::Identity();
 
       Eigen::Vector3f last_odo_tr = Eigen::Vector3f::Zero();
+      Eigen::Vector3f first_odo_tr = Eigen::Vector3f::Zero();
+      Eigen::Matrix3f first_odo_rot= Eigen::Matrix3f::Identity();
 
       //load data
       int ctr=0;
@@ -531,7 +536,7 @@ TEST(Slam,bag_run)
             while(n)
             {
 
-              tmp_tr += n->link_.getTranslation();
+              tmp_tr += tmp_rot*n->link_.getTranslation();
               tmp_rot = ((Eigen::Matrix3f)n->link_.getRotation())*tmp_rot;
 
               std::cout<<"con\n";
@@ -559,20 +564,33 @@ TEST(Slam,bag_run)
               odos.erase(odos.begin());
             if(odos.size()>0)
             {
+              if(start == s->stamp)
+              {
+                first_odo_tr  = odos.front().t;
+                first_odo_rot = odos.front().q;
+              }
+
+              odos.front().t -= first_odo_tr;
+              odos.front().t = first_odo_rot.inverse()*odos.front().t;
+              odos.front().q = first_odo_rot.inverse()*odos.front().q;
+
+              std::cout<<"ROT2\n"<<(::DOF6::EulerAnglesf)tmp_rot<<"\n";
+              std::cout<<"TR2\n"<<tmp_tr<<"\n";
+
+              std::cout<<"ODO ROT2\n"<<(::DOF6::EulerAnglesf)odos.front().q.toRotationMatrix().inverse()<<"\n";
+              std::cout<<"ODO TR2\n"<<-odos.front().t<<"\n";
+
               odo.header.stamp = ros::Time(odos.front().timestamp);
-              odo.pose.pose.position.x = odos.front().tx;
-              odo.pose.pose.position.y = odos.front().ty;
-              odo.pose.pose.position.z = odos.front().tz;
-              Eigen::Vector3f tr;
-              tr(0) = odos.front().tx;
-              tr(1) = odos.front().ty;
-              tr(2) = odos.front().tz;
-              ROS_INFO("odometry tr jump with length %f", (tr-last_odo_tr).norm());
-              last_odo_tr = tr;
-              odo.pose.pose.orientation.x = odos.front().qx;
-              odo.pose.pose.orientation.y = odos.front().qy;
-              odo.pose.pose.orientation.z = odos.front().qz;
-              odo.pose.pose.orientation.w = odos.front().qw;
+              odo.pose.pose.position.x = odos.front().t(0);
+              odo.pose.pose.position.y = odos.front().t(1);
+              odo.pose.pose.position.z = odos.front().t(2);
+
+              ROS_INFO("odometry tr jump with length %f", (odos.front().t-last_odo_tr).norm());
+              last_odo_tr = odos.front().t;
+              odo.pose.pose.orientation.x = odos.front().q.x();
+              odo.pose.pose.orientation.y = odos.front().q.y();
+              odo.pose.pose.orientation.z = odos.front().q.z();
+              odo.pose.pose.orientation.w = odos.front().q.w();
 
               bag_out.write("groundtruth", ros::Time(odos.front().timestamp), odo);
             }
@@ -619,7 +637,11 @@ TEST(Slam,bag_run)
               viewer.showCloud(rgb);
               std::cerr<<"press any key\n";
 //              if((last-start).toSec()>31.8)
-                getchar();
+                if(getchar()=='q')
+                {
+                  bag_out.close();
+                  return;
+                }
               rgb.reset(new pcl::PointCloud<pcl::PointXYZRGB>);
             }
 
@@ -627,7 +649,7 @@ TEST(Slam,bag_run)
           }
         }
 
-        if(s->weight<500) continue;
+        //if(s->weight<500) continue;
 
         Slam_CurvedPolygon::ex_curved_polygon xp = *s;
 

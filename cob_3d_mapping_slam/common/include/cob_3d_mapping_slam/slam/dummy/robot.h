@@ -17,12 +17,12 @@ namespace Dummy
 
     static float getMaxSpeedTranslationPerSecond()
     {
-      return 0.4f;
+      return 0.2f;
     }
 
     static float getMaxSpeedRotationPerSecond()
     {
-      return 0.4f;
+      return 0.2f;
     }
 
   };
