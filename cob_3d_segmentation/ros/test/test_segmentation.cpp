@@ -226,14 +226,14 @@ TEST(Segmentation, quad_regression)
   {
     if(pc->size()<1) continue;
     ROS_INFO("processing pc %d ...",(int)ind-1);
-    std::string fn(fn.begin()+(fn.find_last_of("/")+1),fn.end());
-    segment_pointcloud<Point,PointL>(&seg,pc, fn);
+    std::string fn_short(fn.begin()+(fn.find_last_of("/")+1),fn.end());
+    segment_pointcloud<Point,PointL>(&seg,pc, fn_short);
 
     float mean, var, mean_abs, var_abs;
     size_t used, mem, points;
     seg.compute_accuracy(mean, var, mean_abs, var_abs, used, mem, points);
 
-    csv.add(fn);
+    csv.add(fn_short);
     csv.add(mean);
     csv.add(var);
     csv.add(mean_abs);
