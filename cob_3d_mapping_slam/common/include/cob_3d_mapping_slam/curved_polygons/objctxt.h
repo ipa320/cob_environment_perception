@@ -34,16 +34,11 @@ namespace Slam_CurvedPolygon
     struct SCOR_MEMBER
     {
       typedef boost::shared_ptr<SCOR_MEMBER> Ptr;
+      typedef std::map<SCOR_MEMBER::Ptr, std::vector<typename DOF6::TYPE> > MAP;
 
       typename OBJECT::Ptr obj_;
-      std::vector<SCOR_DISTANCES> candidates_;
-      std::vector<SCOR_DISTANCES> distances_;
-    };
-
-    struct SCOR_DISTANCES
-    {
-      typename SCOR_MEMBER::Ptr to_;
-      typename DOF6::TYPE d_;
+      std::vector<SCOR_MEMBER::Ptr> candidates_;
+      MAP distances_;
     };
 
     typename DOF6::TYPE check_assumption(typename SCOR_MEMBER::Ptr m1, typename SCOR_MEMBER::Ptr m2) const;

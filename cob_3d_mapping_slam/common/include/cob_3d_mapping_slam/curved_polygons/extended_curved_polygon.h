@@ -91,6 +91,13 @@ namespace Slam_CurvedPolygon
         ID_ = 1;
       }
 
+      S_FEATURE(const Eigen::Vector3f &v):
+        v_(v), var_(0.1f) //TODO: default value?
+      {
+        type_ = POINT;
+        ID_ = -1;
+      }
+
       void transform(const Eigen::Matrix3f &rot, const Eigen::Vector3f &tr, const float var_R, const float var_T)
       {
         switch(type_)
@@ -117,8 +124,12 @@ namespace Slam_CurvedPolygon
 
       void merge(const S_FEATURE &o)
       {
-        ROS_ASSERT(type_ == o.type_);
-        ROS_INFO("l bef %f",v_.norm());
+        if(type_ != o.type_)
+        {
+          ROS_INFO("cannot merge features of differnt type");
+          return;
+        }
+
         switch(type_)
         {
           case POINT:
@@ -134,7 +145,6 @@ namespace Slam_CurvedPolygon
             ROS_ASSERT(0);
             break;
         }
-        ROS_INFO("l aft %f",v_.norm());
 
         var_ = var_ - var_*var_/(var_+o.var_);
       }
@@ -154,6 +164,7 @@ namespace Slam_CurvedPolygon
     Eigen::Matrix<float,3,2> proj2plane_;
 
     std::vector<S_FEATURE> features_;
+    std::vector<Eigen::Vector3f> segments_;
     std::vector<Eigen::Vector3f> points3d_;
     Eigen::Vector3f bb_min_, bb_max_;
 
@@ -221,7 +232,7 @@ namespace Slam_CurvedPolygon
       nearest_point(1) = data_.features[2].y;
       nearest_point(2) = data_.features[2].z;
 
-      if(1||param_.col(2).squaredNorm()>0.05f*0.05f)
+      if(param_.col(2).squaredNorm()>0.05f*0.05f)
       {
         is_plane = false;
         //TODO: calc point
@@ -248,6 +259,17 @@ namespace Slam_CurvedPolygon
           features_.push_back( S_FEATURE(data_.features[i]));
       }
 
+      int mains[4]={};
+      Classification::Classification cl;
+      Classification::QuadBB qbb;
+      cl.setPoints(segments_);
+      cl.buildLocalTree(false,&qbb,NULL,NULL,mains);
+
+      for(int i=0; segments_.size()>3 && i<4; i++)
+      {
+        features_.push_back( S_FEATURE( points3d_[mains[i]] ));
+      }
+
       //      std::cout<<"NP\n"<<nearest_point_<<"\n";
       //      std::cout<<"NP*\n"<<data_.features[0].x<<"\n"<<data_.features[0].y<<"\n"<<data_.features[0].z<<"\n";
     }
@@ -259,8 +281,11 @@ namespace Slam_CurvedPolygon
       for(size_t i=0; i<data_.polyline.size(); i++)
       {
         Eigen::Vector2f pt;
-        pt(0) = data_.polyline[i].x;
-        pt(1) = data_.polyline[i].y;
+        Eigen::Vector3f pt3;
+        pt3(0) = pt(0) = data_.polyline[i].x;
+        pt3(1) = pt(1) = data_.polyline[i].y;
+        pt3(2) = 0.f;
+        segments_.push_back( pt3 );
         points3d_.push_back( project2world(pt) );
       }
 
