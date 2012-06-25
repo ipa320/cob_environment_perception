@@ -2,6 +2,8 @@
 #include "../sub_structures/poly2d.hpp"
 #include "../sub_structures/labeling.h"
 
+//#define DO_NOT_DOWNSAMPLE_
+
 template <typename Point, typename PointLabel>
 Segmentation_QuadRegression<Point,PointLabel>::Segmentation_QuadRegression():
 MIN_LOD(8), FINAL_LOD(0), GO_DOWN_TO_LVL(3),
@@ -14,10 +16,19 @@ template <typename Point, typename PointLabel>
 void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointCloud<Point> &pc) {
   getKinectParams(*input_);
 
+#ifdef DO_NOT_DOWNSAMPLE_
+  int w=input_->width;
+  int h=input_->height;
+#else
   int w=input_->width/2;
   int h=input_->height/2;
+#endif
 
-  for(int i=0; i<4; i++){
+#ifdef DO_NOT_DOWNSAMPLE_
+  for(int i=0; i<5; i++){
+#else
+    for(int i=0; i<4; i++){
+#endif
     levels_.push_back(SubStructure::ParamC(w,h));
 
     w/=2;
@@ -97,6 +108,20 @@ void Segmentation_QuadRegression<Point,PointLabel>::buildTree(const pcl::PointCl
       Eigen::Vector3f p,t;
       for(size_t x=0; x<lvl->w; x++) {
         for(size_t y=0; y<lvl->h; y++) {
+#ifdef DO_NOT_DOWNSAMPLE_
+          j=getInd(x,y);
+
+          if(pcl_isfinite(pc[j].z))
+          {
+            lvl->data[j]=pc[j].getVector3fMap();
+          }
+          else
+          {
+            lvl->data[j]=Eigen::Vector3f::Zero();
+          }
+
+          lvl->data[j].occopied=-1;
+#else
           int num=0;
           p(0)=p(1)=p(2)=0.f;
 
@@ -141,6 +166,7 @@ void Segmentation_QuadRegression<Point,PointLabel>::buildTree(const pcl::PointCl
           lvl->data[j]=p/num;
 
           lvl->data[j].occopied=-1;
+#endif
         }
       }
     }
