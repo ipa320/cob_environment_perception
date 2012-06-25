@@ -252,13 +252,13 @@ void Segmentation_QuadRegression<Point,PointLabel>::grow(SubStructure::VISITED_L
               (
 #ifdef USE_MIN_MAX_RECHECK_
                   (levels_[i].data[getInd(x,y)].v_max_-levels_[i].data[getInd(x,y)].v_min_)< 2*(model.get_max_gradient(levels_[i].data[getInd(x,y)])*d*(1<<i)/kinect_params_.f+thr) /*std::min(0.5f,std::max(0.02f,0.05f*d))*/ //TODO: in anbhaengigkeit der steigung
-      //&& std::abs(model.model(levels_[i].data[getInd(x,y)].v_min_(0),levels_[i].data[getInd(x,y)].v_min_(1))-levels_[i].data[getInd(x,y)].v_min_(2))<thr
-      //&& std::abs(model.model(levels_[i].data[getInd(x,y)].v_max_(0),levels_[i].data[getInd(x,y)].v_max_(1))-levels_[i].data[getInd(x,y)].v_max_(2))<thr
-      &&
+                  //&& std::abs(model.model(levels_[i].data[getInd(x,y)].v_min_(0),levels_[i].data[getInd(x,y)].v_min_(1))-levels_[i].data[getInd(x,y)].v_min_(2))<thr
+                  //&& std::abs(model.model(levels_[i].data[getInd(x,y)].v_max_(0),levels_[i].data[getInd(x,y)].v_max_(1))-levels_[i].data[getInd(x,y)].v_max_(2))<thr
+                  &&
 #endif
-      (checkModelAt(model, i,x,y,
-                    thr)
-                    /*||
+                  (checkModelAt(model, i,x,y,
+                                thr)
+                                /*||
                     checkModelAtZ(model, i,x,y,
                                   0.01f)*/)
                                   //d*(0.04-0.005*levels_[i].data[getInd(x,y)].model_(0,0)/model.param.model_(0,0))))
@@ -330,8 +330,8 @@ void Segmentation_QuadRegression<Point,PointLabel>::grow(SubStructure::VISITED_L
 #ifdef USE_MIN_MAX_RECHECK_
       pt.back = x>32 && y>32 && x<320-32 && y<240-32 && //TODO: improve this stupid thing (but it was easy :) )
           (levels_[i+2].data[getInd2(x/4,y/4)].v_min_-
-          model.model(levels_[i].data[getInd(x,y)].model_(1)/levels_[i].data[getInd(x,y)].model_(0,0),
-                      levels_[i].data[getInd(x,y)].model_(3)/levels_[i].data[getInd(x,y)].model_(0,0)))>=-0.05;
+              model.model(levels_[i].data[getInd(x,y)].model_(1)/levels_[i].data[getInd(x,y)].model_(0,0),
+                          levels_[i].data[getInd(x,y)].model_(3)/levels_[i].data[getInd(x,y)].model_(0,0)))>=-0.05;
 #endif
       outs.push_back(pt);
     }
@@ -517,4 +517,118 @@ boost::shared_ptr<const pcl::PointCloud<PointLabel> > Segmentation_QuadRegressio
   }
 
   return out;
+}
+
+class RunningStat
+{
+public:
+  RunningStat() : m_n(0),m_newS(0) {}
+
+  void Clear()
+  {
+    m_n = 0;
+  }
+
+  void Push(double x)
+  {
+    m_n++;
+
+    // See Knuth TAOCP vol 2, 3rd edition, page 232
+    if (m_n == 1)
+    {
+      m_oldM = m_newM = x;
+      m_oldS = 0.0;
+    }
+    else
+    {
+      m_newM = m_oldM + (x - m_oldM)/m_n;
+      m_newS = m_oldS + (x - m_oldM)*(x - m_newM);
+
+      // set up for next iteration
+      m_oldM = m_newM;
+      m_oldS = m_newS;
+    }
+  }
+
+  int NumDataValues() const
+  {
+    return m_n;
+  }
+
+  double Mean() const
+  {
+    return (m_n > 0) ? m_newM : 0.0;
+  }
+
+  double Variance() const
+  {
+    return ( (m_n > 1) ? m_newS/(m_n - 1) : 0.0 );
+  }
+
+  double StandardDeviation() const
+  {
+    return sqrt( Variance() );
+  }
+
+private:
+  int m_n;
+  double m_oldM, m_newM, m_oldS, m_newS;
+};
+
+
+template <typename Point, typename PointLabel>
+void Segmentation_QuadRegression<Point,PointLabel>::compute_accuracy(float &mean, float &var, float &mean_abs, float &var_abs, size_t &used, size_t &mem, size_t &points)
+{
+  typename pcl::PointCloud<PointLabel>::Ptr out(new pcl::PointCloud<PointLabel>);
+
+  ROS_ASSERT(levels_.size()>0);
+
+  out->resize(levels_[0].w*levels_[0].h);
+  out->width = levels_[0].w;
+  out->height= levels_[0].h;
+
+  RunningStat rstat, rstat_abs;
+  points = 0;
+
+  for(size_t x=0; x<levels_[0].w; x++)
+  {
+    for(size_t y=0; y<levels_[0].h; y++)
+    {
+      //position
+      const int i=0;
+
+      //color/label
+      int mark = isOccupied(0,x,y);
+
+      if(mark>0 && mark<(int)polygons_.size())
+      {
+        const float z_model = polygons_[mark].model_.model(
+            levels_[0].data[getInd(x,y)].model_(0,1)/levels_[0].data[getInd(x,y)].model_(0,0),
+            levels_[0].data[getInd(x,y)].model_(0,3)/levels_[0].data[getInd(x,y)].model_(0,0)
+        );
+        const float z = levels_[0].data[getInd(x,y)].z_(0)/levels_[0].data[getInd(x,y)].model_(0,0);
+
+        if(pcl_isfinite(z - z_model))
+        {
+          rstat.Push(z - z_model);
+          rstat_abs.Push(std::abs(z - z_model));
+        }
+      }
+
+      if(levels_[0].data[getInd(x,y)].z_(0)/levels_[0].data[getInd(x,y)].model_(0,0)>0 && pcl_isfinite(levels_[0].data[getInd(x,y)].z_(0)/levels_[0].data[getInd(x,y)].model_(0,0)))
+        points++;
+
+    }
+  }
+
+  //points = levels_[0].w*levels_[0].h;
+  used = rstat.NumDataValues();
+  mem = 0;
+  for(size_t i=0; i<polygons_.size(); i++)
+    mem+=4*6 + polygons_[i].segments_.size()*2*4;
+
+  mean = rstat.Mean();
+  var = rstat.Variance();
+  mean_abs = rstat_abs.Mean();
+  var_abs = rstat_abs.Variance();
 }
