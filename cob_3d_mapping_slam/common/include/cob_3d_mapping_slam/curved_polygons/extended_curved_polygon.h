@@ -10,6 +10,7 @@
 
 #include <cob_3d_mapping_msgs/CurvedPolygon.h>
 #include "/home/josh/workspace/dynamic_tutorials/common/include/registration/object.hpp"
+//#include "sac_model_correspondence.h"
 
 namespace Slam_CurvedPolygon
 {
@@ -220,7 +221,7 @@ namespace Slam_CurvedPolygon
       nearest_point(1) = data_.features[2].y;
       nearest_point(2) = data_.features[2].z;
 
-      if(param_.col(2).squaredNorm()>0.05f*0.05f)
+      if(1||param_.col(2).squaredNorm()>0.05f*0.05f)
       {
         is_plane = false;
         //TODO: calc point

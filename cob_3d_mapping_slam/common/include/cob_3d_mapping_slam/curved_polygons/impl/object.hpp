@@ -15,8 +15,8 @@ bool Object<_DOF6>::operator|(const Object &o) const
 #endif
 
 #if 1
-  if( (data_.getNearestPoint()-o.data_.getNearestPoint()).squaredNorm() < 0.31f*0.31f ||
-      (data_.getFeatures()[2].v_-o.data_.getFeatures()[2].v_).squaredNorm() < 0.31f*0.31f )
+  if( (data_.getNearestPoint()-o.data_.getNearestPoint()).squaredNorm() < 0.1f*0.1f ||
+      (data_.getFeatures()[2].v_-o.data_.getFeatures()[2].v_).squaredNorm() < 0.1f*0.1f )
   {
     return true;
   }
@@ -26,12 +26,46 @@ bool Object<_DOF6>::operator|(const Object &o) const
 }
 
 template<typename _DOF6>
+bool Object<_DOF6>::isReachable(const Object &o, const typename DOF6::TYPE &thr_rot, const typename DOF6::TYPE &thr_tr) const
+{
+  const int i=2;
+
+  Eigen::Matrix<typename TFLINK::TYPE, 3,1> v1,v2;
+
+  v1 = data_.getFeatures()[i].v_;
+  v2 = o.data_.getFeatures()[i].v_;
+
+  if(( (v2-v1).squaredNorm()>thr_tr*thr_tr &&
+          std::acos(v2.dot(v1)/(v2.norm()*v1.norm())) > thr_rot) ||
+      std::abs(v2.norm()-v1.norm()) > thr_tr + 0.03*v2.norm()
+      )
+  {
+    return false;
+  }
+
+  return true;
+}
+
+template<typename _DOF6>
+typename _DOF6::TYPE Object<_DOF6>::getDistance(const Object &o) const
+{
+  const int i=2;
+
+  Eigen::Matrix<typename TFLINK::TYPE, 3,1> v1,v2;
+
+  v1 = data_.getFeatures()[i].v_;
+  v2 = o.data_.getFeatures()[i].v_;
+
+  return (v1-v2).norm();
+}
+
+template<typename _DOF6>
 bool Object<_DOF6>::operator&(const Object &o) const
 {
 
   //validate extensions
 
-  return (*this)|o;
+  //return (*this)|o;
 
   if( std::min(data_.getFeatures()[1].v_org_.squaredNorm(),o.data_.getFeatures()[1].v_org_.squaredNorm())
   /std::max(data_.getFeatures()[1].v_org_.squaredNorm(),o.data_.getFeatures()[1].v_org_.squaredNorm()) < 0.6f )

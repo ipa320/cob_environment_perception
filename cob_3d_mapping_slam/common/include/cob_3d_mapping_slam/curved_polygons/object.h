@@ -58,6 +58,9 @@ namespace Slam_CurvedPolygon
       return true;
     }
 
+    bool isReachable(const Object &o, const typename DOF6::TYPE &thr_rot, const typename DOF6::TYPE &thr_tr) const;
+    typename DOF6::TYPE getDistance(const Object &o) const;
+
     bool operator|(const Object &o) const; /// check bounding box ... (wide match)
     bool operator&(const Object &o) const; /// check bounding box, size, ... and similarity(classification) (narrow match)
     TFLIST getTFList(const Object &o, const typename DOF6::TYPE &thr_rot, const typename DOF6::TYPE &thr_tr, const Eigen::Matrix3f &rot, const Eigen::Vector3f &tr) const;
