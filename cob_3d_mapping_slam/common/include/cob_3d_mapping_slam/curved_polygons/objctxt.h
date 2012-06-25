@@ -29,6 +29,24 @@ namespace Slam_CurvedPolygon
       typename OBJECT::Ptr a,b;
     };
 
+    struct SCOR_DISTANCES;
+
+    struct SCOR_MEMBER
+    {
+      typedef boost::shared_ptr<SCOR_MEMBER> Ptr;
+
+      typename OBJECT::Ptr obj_;
+      std::vector<SCOR_DISTANCES> candidates_;
+      std::vector<SCOR_DISTANCES> distances_;
+    };
+
+    struct SCOR_DISTANCES
+    {
+      typename SCOR_MEMBER::Ptr to_;
+      typename DOF6::TYPE d_;
+    };
+
+    typename DOF6::TYPE check_assumption(typename SCOR_MEMBER::Ptr m1, typename SCOR_MEMBER::Ptr m2) const;
 
     /**
      * find correspondences for objects
