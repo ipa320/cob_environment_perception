@@ -484,6 +484,7 @@ void Segmentation_QuadRegression<Point,PointLabel>::outline(int *ch, const int w
 
 template <typename Point, typename PointLabel>
 bool Segmentation_QuadRegression<Point,PointLabel>::compute() {
+  polygons_.clear();
   buildTree(*input_);
   calc();
   return true;
