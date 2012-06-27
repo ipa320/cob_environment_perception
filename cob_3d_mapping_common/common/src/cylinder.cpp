@@ -59,24 +59,24 @@ namespace cob_3d_mapping {
 
 
 
-void Cylinder::roll() {
+void Cylinder::getCyl3D(std::vector<std::vector<Eigen::Vector3f> >& contours3D) {
 
 	//Transform to local coordinate system
 	Polygon poly_plane;
 
-	for (size_t j = 0; j < unrolled_.contours.size(); j++) {
+	for (size_t j = 0; j < contours.size(); j++) {
 
-		poly_plane.holes.resize(unrolled_.contours.size());
-		poly_plane.contours.resize(unrolled_.contours.size());
+		poly_plane.holes.resize(contours.size());
+		poly_plane.contours.resize(contours.size());
 
-		for (size_t k = 0; k < unrolled_.contours[j].size(); k++) {
-			poly_plane.contours[j].resize(unrolled_.contours[j].size());
+		for (size_t k = 0; k < contours[j].size(); k++) {
+			poly_plane.contours[j].resize(contours[j].size());
 			//				std::cout<<"DEBUG: point before trafo\n"<<unrolled_.contours[j][k]<<std::endl;
 
 			//		      Eigen::Vector3f point_trans = transformation_from_world_to_cylinder_*unrolled_.contours[j][k];
 			Eigen::Vector3f point_trans =
-					unrolled_.transform_from_world_to_plane
-					* unrolled_.contours[j][k];
+					transform_from_world_to_plane
+					* contours[j][k];
 
 			poly_plane.contours[j][k] = point_trans;
 
@@ -86,12 +86,12 @@ void Cylinder::roll() {
 	// transform into cylinder shape via polar coordinates
 	for (size_t j = 0; j < poly_plane.contours.size(); j++) {
 
-		contours.resize(poly_plane.contours.size());
+		contours3D.resize(poly_plane.contours.size());
 		holes.resize(poly_plane.contours.size());
 
 		for (size_t k = 0; k < poly_plane.contours[j].size(); k++) {
 
-			contours[j].resize(poly_plane.contours[j].size());
+			contours3D[j].resize(poly_plane.contours[j].size());
 			float alpha;
 			Eigen::Vector3f point_temp;
 			//		      alpha= B/r
@@ -105,12 +105,12 @@ void Cylinder::roll() {
 
 			//	      transform back in world system
 			//			point_temp=transformation_from_world_to_cylinder_.inverse()* point_temp;
-			point_temp = unrolled_.transform_from_world_to_plane.inverse()
-											* point_temp;
+			point_temp = transform_from_world_to_plane.inverse()
+																											* point_temp;
 
 			//			std::cout<<"DEBUG: point after trafo\n"<<point_temp<<std::endl;
 
-			contours[j][k] = point_temp;
+			contours3D[j][k] = point_temp;
 			//		  		    std::cout<<std::endl;
 
 
@@ -119,25 +119,23 @@ void Cylinder::roll() {
 
 }
 
-void Cylinder::unroll() {
+void
+Cylinder::ContoursFromList( std::vector<std::vector<Eigen::Vector3f> >& in_list)
+{
 
-	//calculate transformation from world to cylinder
-
-	this->unrolled_.assignMembers(axes_[1], axes_[2], origin_);
-
-	//	configure unroilled polygon
-	unrolled_.contours.resize(contours.size());
+	assignMembers(axes_[1], axes_[2], origin_);	//	configure unrolled polygon
+	contours.resize(in_list.size());
 	//		unrolled_.transform_from_world_to_plane=transformation_from_world_to_cylinder_;
-	for (size_t j = 0; j < contours.size(); j++) {
+	for (size_t j = 0; j < in_list.size(); j++) {
 
-		unrolled_.contours[j].resize(contours[j].size());
-		unrolled_.holes.resize(contours[j].size());
+		contours[j].resize(in_list[j].size());
+		holes.resize(in_list[j].size());
 
-		for (size_t k = 0; k < contours[j].size(); k++) {
+		for (size_t k = 0; k < in_list[j].size(); k++) {
 
 			//		  Transform  Points in Cylinder Coordinate System
 			Eigen::Vector3f point_trans =
-					unrolled_.transform_from_world_to_plane * contours[j][k];
+					transform_from_world_to_plane * in_list[j][k];
 
 			float Tx, alpha;
 			//	      flatten polygon
@@ -148,81 +146,169 @@ void Cylinder::unroll() {
 			//	      	std::cout<<"point _trans\n"<< point_trans<<std::endl;
 			//	      transform back in world system
 			Eigen::Vector3f point_global =
-					unrolled_.transform_from_world_to_plane.inverse()
+					transform_from_world_to_plane.inverse()
 					* point_trans;
 			//	      	std::cout<<"point _trans\n"<< point_global<<std::endl;
 
 
-			unrolled_.contours[j][k] = point_global;
+			contours[j][k] = point_global;
+		}
+	}
+}
+
+
+
+void Cylinder::ContoursFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud) {
+
+	/* Assign Contours to Cylinder using border points
+	 *
+	 * Input:	in_cloud ........... ConstPtr to PointCloud containing the boarder points -> in right order?!?!
+	 *
+	 *
+	 * TODO: Just single contours ->
+	 */
+
+	for (int i = 0; i < 1; ++i) {		//SINGLE CONTOUR
+
+		contours.resize(1);
+
+		for(int j = 0; j < (int)in_cloud->width; ++j) {
+			contours[i].resize(in_cloud->width);
+
+			contours[i][j]=in_cloud->at(i).getVector3fMap ();
 
 		}
 	}
 
 
 
-
 }
 
-void Cylinder::unroll(pcl::PointCloud<pcl::PointXYZRGB>::Ptr in_cloud) {
+void
+Cylinder::ParamsFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud , std::vector<int>& indices)//, Eigen::Vector3f c_pt)//, Eigen::Vector3f& sym_axis)
+{
+
+	/* compute cylinder parameters from point cloud
+	 *
+	 * input: 	in_cloud ............ ConstPtr to PointCloud
+	 * 			indices ............ vector, containing indices belonging to current cylinder
+	 *
+	 *
+	 * params:	r .............. radius of cylinder
+	 * 			axes ........... triad , defining cylinder coordinate system
+	 * 			centroid ....... centroid of cylinder strip
+	 * 			origin ......... point on symmetry axis
+	 */
 
 
-	//	all members are available except contours (partly still in unrolled_ )--> change that
-	//	--> point cloud in
-	//	--> unroll
-	//	--> safe flat contours
+	//	Establish coordinate system for projection to horizontal plane
 
+	//	get arbitrary axis, orthogonal to symmetry axis: local x-axis  (lx)
+	Eigen::Vector3f lx;
+	lx=axes_[1].unitOrthogonal();
+	//	complete triad with local z axis (lz)
+	Eigen::Vector3f lz;
+	lz=lx.cross(axes_[1]);
 
+	Eigen::Affine3f trafo_hor2w;
+	Eigen::Vector3f centroid3f ;
+	centroid3f <<centroid[0] , centroid[1] , centroid[2];
+	this->getTransformationFromPlaneToWorld(axes_[1],centroid3f,trafo_hor2w);
+
+	////	transform  points to horizontal coordinate system
 	pcl::PointCloud<pcl::PointXYZRGB>::Ptr trans_cloud( new pcl::PointCloud<pcl::PointXYZRGB>() );
-
-	pcl::transformPointCloud(*in_cloud,*trans_cloud,unrolled_.transform_from_world_to_plane);
-	float Tx, alpha;
+	pcl::transformPointCloud(*in_cloud,indices,*trans_cloud,trafo_hor2w.inverse());
 
 
-	for (uint8 i = 0; i < trans_cloud->height; ++i) {
-
-		getTrafo2d(trans_cloud->points[i].getVectorMap3f(),Tx,alpha);
-		trans_cloud->points[i][0]=Tx;
-		trans_cloud->points[i][2]=0;
-		unrolled_.transform_from_world_to_plane.inverse()*trans_cloud;
-
-	}
-
-	//	configure unroilled polygon
-	unrolled_.contours.resize(contours.size());
-	//		unrolled_.transform_from_world_to_plane=transformation_from_world_to_cylinder_;
-	for (size_t j = 0; j < contours.size(); j++) {
-
-		unrolled_.contours[j].resize(contours[j].size());
-		unrolled_.holes.resize(contours[j].size());
-
-		for (size_t k = 0; k < contours[j].size(); k++) {
-
-			//		  Transform  Points in Cylinder Coordinate System
-			Eigen::Vector3f point_trans =
-					unrolled_.transform_from_world_to_plane * contours[j][k];
-
-			//	      flatten polygon
-			getTrafo2d(point_trans, Tx, alpha);
-			// New coordinates( p_y = 0 because now on a plane)
-			point_trans[0] = Tx;
-			point_trans[2] = 0;
-			//	      	std::cout<<"point _trans\n"<< point_trans<<std::endl;
-			//	      transform back in world system
-			Eigen::Vector3f point_global =
-					unrolled_.transform_from_world_to_plane.inverse()
-					* point_trans;
-			//	      	std::cout<<"point _trans\n"<< point_global<<std::endl;
 
 
-			unrolled_.contours[j][k] = point_global;
+	//	use points in lcs to estimate r, origin
 
-		}
-	}
+	// Inliers of circle model
+	pcl::PointIndices inliers;
+	// Coefficients of circle model
+	pcl::ModelCoefficients coeff;
+	// Create the segmentation object
+	pcl::SACSegmentation<pcl::PointXYZRGB> seg;
+	// Optimize coefficients
+	seg.setOptimizeCoefficients (true);
+	// Set type of method
+	seg.setMethodType (pcl::SAC_LMEDS);
+	// Set number of maximum iterations
+	seg.setMaxIterations (10);
+	// Set type of model
+	seg.setModelType (pcl::SACMODEL_CIRCLE2D);
+	// Set threshold of model
+	seg.setDistanceThreshold (0.010);
+	// Give as input the filtered point cloud
+	seg.setInputCloud (trans_cloud);
+	// Call the segmenting method
+	seg.setOptimizeCoefficients(true);
+	//	seg.getOptimizeCoefficients();
+	seg.segment(inliers,coeff);
 
+
+
+
+	//	origin in lcs
+	Eigen::Vector3f l_origin;
+	l_origin << coeff.values[0],coeff.values[1],0;
+	//origin in wcs
+	origin_ = trafo_hor2w * l_origin  ;
+	//calculate axis from origin to centroid
+	axes_[2]=origin_- centroid3f;
+	axes_[0] = axes_[1].cross(axes_[2]);
+
+	r_=coeff.values[2];
+
+	//		unrolled polygon including >Trafo World 2 Plane
+	this->assignMembers(axes_[1], axes_[2], origin_);
+
+
+}
+
+
+void
+Cylinder::ParamsFromShapeMsg(){
+
+	/*
+	 * Function ParamsFromROSMsg is used to complete the cylinder parameters,
+	 * with the given set of parameters obtained from a ROS ShapeMsg.
+	 * (cob_environment_perception/cob_3d_mapping_msgs/msg/Shape.msg)
+	 *
+	 * abbreviations:	wcs ............................. World coordinate System
+	 * 					lcs ............................. local coordinate system
+	 *
+	 *
+	 * Already set:		r_ ............................... Radius of the cylinder
+	 * 					origin_ .......................... Origin, point on symmetry axis, in lcs , same y coordinate as centroid
+	 * 					axes_[1] ......................... Symmetry axis of c ylinder, y- axis in lcs
+	 * 					axes_[2] ......................... axis, connecting origin and centroid
+	 *
+	 *
+	 * To be set:		centroid ........................ centroid of cylinder strip
+	 * 					normal .......................... equivalent to axes_[2], serves as normal to unrolled cylinder plane
+	 * 					axes_[0] ........................ completes the triade of axes
+	 * 					transform_from_world_to_plane ...
+	 * 					d ............................... distance to origin of wcs
+	 *
+	 */
+
+//	axes_[0]
+	axes_[0]=axes_[2].cross(axes_[1]);
+
+//	centroid
+//	centroid = origin_+(r_*axes_[2]);
+
+//		normal, d and transform_from_world_to_plane set within Polygon::assignMembers
+		this->assignMembers(axes_[1], axes_[2], origin_);
 
 
 
 }
+
+
+
 void Cylinder::getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha) {
 
 	//	calculation of translation Tx and Ty
@@ -258,19 +344,18 @@ void Cylinder::getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha)
 		//	Debug Output
 		std::cout << "avec" << std::endl << vec2d << std::endl;
 		std::cout << "alpha = " << acos(cos_alpha) * (180 / 3.1459)
-										<< std::endl;
+																										<< std::endl;
 		std::cout << "TX = " << Tx << std::endl << std::endl;
 
 	}
 
 }
-
-
+//~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+//methods for merging~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 		const merge_config& limits, std::vector<int>& intersections) {
 
-	this->unroll();
 
 	for (size_t i = 0; i < cylinder_array.size(); i++) {
 
@@ -287,18 +372,18 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 		{
 
 			//	    	prepare cylinder
-			c_map.unroll();
+			//			c_map.unroll();
 			std::cout << "merge criteria fulfilled" << std::endl;
 			Polygon shifted_polygon_map;
 
-			c_map.getShiftedPolygon(*this, shifted_polygon_map);
+			c_map.getShiftedPolygon(*this,shifted_polygon_map);
 			//				shifted_polygon_map.debug_output("shifted Polygon");
 			//				this->unrolled_.debug_output("# THis unrolled");
 			//				std::cout<<"~~~~~~~~~~~~~~~~~~~~~~~~~~~~"<<std::endl;
 
-			unrolled_.debug_output("merge A");
-			//			shifted_polygon_map.debug_output("SPM");
-			c_map.unrolled_.debug_output("merge B");
+			//			debug_output("merge A");
+			shifted_polygon_map.debug_output("SPM");
+			//			c_map.debug_output("merge B");
 
 			//			double area_B =c_map.unrolled_.computeArea();
 			//			std::cout<<"AREA MERGED"<<area_B<<std::endl;
@@ -306,15 +391,17 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 			//			double area_A =unrolled_.computeArea();
 			//			std::cout<<"AREA MERGED"<<area_A<<std::endl;
 
-			bool is_intersected = this->unrolled_.isMergeCandidate_intersect(
+			bool is_intersected = this->isMergeCandidate_intersect(
 					shifted_polygon_map);
 
 			if (is_intersected == false) {
 				//std::cout << "no intersection with map " << i << std::endl;
 				//std::cout << p.normal << std::endl;
+				std::cout<<"no intersection"<<std::endl;
 				continue;
 			}
 			if (is_intersected == true) {
+				std::cout<<"has intersection"<<std::endl;
 				intersections.push_back(i);
 
 			}
@@ -345,7 +432,7 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
 		//	get shifted polygons with respect to THIS
 
 
-		c_map.getShiftedPolygon(*this, *map_shifted_polygon);
+		c_map.getShiftedPolygon(*this,*map_shifted_polygon);
 
 
 
@@ -359,7 +446,7 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
 	//	Polygon & p_av=*merge_polygons_B[0];
 
 	//	unrolled_.merge_union(merge_polygons_B,average_cyl.unrolled_);
-	unrolled_.merge_union(merge_polygons_B,unrolled_);
+	merge_union(merge_polygons_B,*this);
 
 
 
@@ -368,18 +455,19 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
 
 	Cylinder& c_map2 = *c_array[0];
 	//	assign values to resulting cylinder
-	c_map2.unrolled_ = merge_polygon_C;
+	c_map2.contours = merge_polygon_C.contours;
 	c_map2.r_ = average_cyl.r_;
 	c_map2.axes_ =axes_;
 	c_map2.origin_ = average_cyl.origin_;
-	c_map2.unrolled_.transform_from_world_to_plane
-	= unrolled_.transform_from_world_to_plane;
-	c_map2.roll();
+	c_map2.transform_from_world_to_plane
+	= transform_from_world_to_plane;
+	std::vector<std::vector<Eigen::Vector3f> > contours3d;
+	c_map2.getCyl3D(contours3d);
 	c_map2.axes_=average_cyl.axes_;
-	c_map2.unroll();
+	//	c_map2.unroll();
 
 
-	c_map2.unrolled_.debug_output("unrolled average");
+	c_map2.debug_output("unrolled average");
 
 
 
@@ -400,9 +488,10 @@ Cylinder::getShiftedPolygon(Cylinder& c, Polygon & shifted_polygon) {
 	//	    	Transform normal of map polygon in cylinder system of THIS
 
 	//	LOCAL
+
 	Eigen::Vector3f transformed_normal =
-			c.unrolled_.transform_from_world_to_plane.rotation()
-			* unrolled_.normal;
+			c.transform_from_world_to_plane.rotation()
+			* normal;
 
 	//		      calculate trafo parameters
 	float x_shift, z_shift, alpha;
@@ -430,10 +519,10 @@ Cylinder::getShiftedPolygon(Cylinder& c, Polygon & shifted_polygon) {
 			//		  Transform  Points in Cylinder Coordinate System
 
 
-			shifted_polygon.contours[j][k]		= c.unrolled_.transform_from_world_to_plane.inverse()
-													* (shift_trafo
-															* c.unrolled_.transform_from_world_to_plane
-															* unrolled_.contours[j][k]);
+			shifted_polygon.contours[j][k]		= c.transform_from_world_to_plane.inverse()
+																													* (shift_trafo
+																															* c.transform_from_world_to_plane
+																															* contours[j][k]);
 			//END LOCAL
 
 		}
@@ -493,7 +582,7 @@ void Cylinder::weightAttributes(std::vector<CylinderPtr>& c_array,
 
 	average_c.origin_ /= average_c.merged;
 
-	average_c.unrolled_.assignMembers(average_c.axes_[1], average_c.axes_[2],
+	average_c.assignMembers(average_c.axes_[1], average_c.axes_[2],
 			average_c.origin_);
 
 	//calculate transformation from world to cylinder
@@ -504,121 +593,118 @@ void Cylinder::weightAttributes(std::vector<CylinderPtr>& c_array,
 
 
 
-
+//void
+//Cylinder::completeCylinder()
+//{
+//
+//	//		complete triade
+//	axes_[0]=axes_[2].cross(axes_[1]);
+//
+//	//		unrolled polygon including >Trafo World 2 Plane
+//	this->assignMembers(axes_[1], axes_[2], origin_);
+//
+//	//		calculate radius
+//
+//
+//	std::vector<std::vector<Eigen::Vector3f> >temp_vec;
+//	Eigen::Vector2f pp;
+//	float temp_r=0;
+//	int counter=0;
+//
+//	this->getTransformedContours(transform_from_world_to_plane,temp_vec);
+//
+//
+//	for (int i = 0; i < (int) temp_vec.size(); ++i) {
+//		for (int j = 0; j < (int) temp_vec[i].size(); ++j) {
+//
+//			pp << temp_vec[i][j][1],temp_vec[i][j][2];
+//			temp_r += pp.norm();
+//			counter++;
+//		}
+//	}
+//
+//
+//	r_=temp_r /counter;
+//	//	this->unroll();
+//
+//
+//}
+//void Cylinder::unroll() {
+//
+//	//calculate transformation from world to cylinder
+//
+//	assignMembers(axes_[1], axes_[2], origin_);
+//
+//	//	configure unroilled polygon
+//	contours.resize(contours.size());
+//	//		unrolled_.transform_from_world_to_plane=transformation_from_world_to_cylinder_;
+//	for (size_t j = 0; j < contours.size(); j++) {
+//
+//		contours[j].resize(contours[j].size());
+//		holes.resize(contours[j].size());
+//
+//		for (size_t k = 0; k < contours[j].size(); k++) {
+//
+//			//		  Transform  Points in Cylinder Coordinate System
+//			Eigen::Vector3f point_trans =
+//					transform_from_world_to_plane * contours[j][k];
+//
+//			float Tx, alpha;
+//			//	      flatten polygon
+//			getTrafo2d(point_trans, Tx, alpha);
+//			// New coordinates( p_y = 0 because now on a plane)
+//			point_trans[0] = Tx;
+//			point_trans[2] = 0;
+//			//	      	std::cout<<"point _trans\n"<< point_trans<<std::endl;
+//			//	      transform back in world system
+//			Eigen::Vector3f point_global =
+//					transform_from_world_to_plane.inverse()
+//					* point_trans;
+//			//	      	std::cout<<"point _trans\n"<< point_global<<std::endl;
+//
+//
+//			contours[j][k] = point_global;
+//
+//		}
+//	}
+//
+//
+//
+//
+//}
 
 
 void
-Cylinder::CylinderFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::Ptr in_cloud, std::vector<int>& indices,  Eigen::Vector3f& c_pt, Eigen::Vector3f& sym_axis)
-{
-	//assign symmetry axis of cylinder
-	axes_[1]=sym_axis;
+Cylinder::dbg_out(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points,std::string & name){
 
-	//	get arbitrary axis, orthogonal to symmetry axis: local x-axis  (lx)
-	Eigen::Vector3f lx;
-	lx=axes_[1].unitOrthogonal();
-	//	complete triad with local z axis (lz)
-	Eigen::Vector3f lz;
-	lz=lx.cross(axes_[1]);
 
-	Eigen::Affine3f trafo_hor2w;
-	this->getTransformationFromPlaneToWorld(axes_[1],c_pt,trafo_hor2w);
+	std::ofstream os;
+	std::string path = "/home/goa-tz/debug/";
+	path.append(name.c_str());
+	os.open(path.c_str());
 
-	////	transform boarder points to horizontal coordinate system
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr trans_cloud( new pcl::PointCloud<pcl::PointXYZRGB>() );
-	pcl::transformPointCloud(*in_cloud,indices,*trans_cloud,trafo_hor2w.inverse());
+	for (int i = 0; i < (int)points->width; ++i) {
+		os << points->points[i].x;
+		os <<" ";
 
-	for (int i = 0; i < (int)trans_cloud->width; ++i) {
+		os << points->points[i].y;
+		os <<" ";
 
-		trans_cloud->points[i].x=0;
+		os << points->points[i].z;
+
+
+		os <<"\n";
 	}
 
-	pcl::SampleConsensusModelCircle2D<pcl::PointXYZRGB> circle(trans_cloud);
-	std::vector<int > samples;
-	Eigen::VectorXf coeff;
-	circle.computeModelCoefficients(samples,coeff);
 
 
-	//	origin in lcs
-	Eigen::Vector3f l_origin;
-	l_origin << coeff[0],coeff[1],0;
-	//origin in wcs
-	origin_ = trafo_hor2w * l_origin  ;
-	//calculate axis from origin to centroid
-	axes_[2]=origin_- c_pt;
-	axes_[0] = axes_[1].cross(axes_[2]);
 
-	r_=coeff[2];
-
-	//		unrolled polygon including >Trafo World 2 Plane
-	unrolled_.assignMembers(axes_[1], axes_[2], origin_);
-
-	//	//		calculate radius
-	//
-	//
-	//	std::vector<std::vector<Eigen::Vector3f> >temp_vec;
-	//	Eigen::Vector2f pp;
-	//	float temp_r=0;
-	//	int counter=0;
-	//
-	//	this->getTransformedContours(unrolled_.transform_from_world_to_plane,temp_vec);
-	//
-	//
-	//	for (int i = 0; i < (int) temp_vec.size(); ++i) {
-	//		for (int j = 0; j < (int) temp_vec[i].size(); ++j) {
-	//
-	//			pp << temp_vec[i][j][1],temp_vec[i][j][2];
-	//			temp_r += pp.norm();
-	//			counter++;
-	//		}
-	//	}
-	//
-	//
-	//	r_=temp_r /counter;
-	this->unroll();
+	os.close();
 
 
-}
-void
-Cylinder::completeCylinder()
-{
-
-	//		complete triade
-	axes_[0]=axes_[2].cross(axes_[1]);
-
-	//		unrolled polygon including >Trafo World 2 Plane
-	unrolled_.assignMembers(axes_[1], axes_[2], origin_);
-
-	//		calculate radius
 
 
-	std::vector<std::vector<Eigen::Vector3f> >temp_vec;
-	Eigen::Vector2f pp;
-	float temp_r=0;
-	int counter=0;
 
-	this->getTransformedContours(unrolled_.transform_from_world_to_plane,temp_vec);
-
-
-	for (int i = 0; i < (int) temp_vec.size(); ++i) {
-		for (int j = 0; j < (int) temp_vec[i].size(); ++j) {
-
-			pp << temp_vec[i][j][1],temp_vec[i][j][2];
-			temp_r += pp.norm();
-			counter++;
-		}
-	}
-
-
-	r_=temp_r /counter;
-	this->unroll();
-
-
-}
-
-void
-Cylinder::assignMembers()
-{
-	std::cout<< "not yet implemented";
 }
 
 }//namespace

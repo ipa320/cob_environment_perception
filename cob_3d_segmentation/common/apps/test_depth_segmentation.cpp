@@ -73,6 +73,8 @@
 using namespace std;
 using namespace pcl;
 
+typedef cob_3d_segmentation::PredefinedSegmentationTypes SegTypes;
+
 string file_in_;
 string label_out_, type_out_;
 float d_th_, upper_;
@@ -132,7 +134,6 @@ int main(int argc, char** argv)
   cout << t.precisionStop() << "s\t for Organized Normal Estimation" << endl;
   *n_org = *n;
   
-  typedef cob_3d_segmentation::PredefinedSegmentationTypes SegTypes;
   t.precisionStart();
   SegTypes::Graph::Ptr g(new SegTypes::Graph);
   cob_3d_segmentation::DepthSegmentation<SegTypes::Graph, SegTypes::Point, SegTypes::Normal, SegTypes::Label> seg;
@@ -144,7 +145,7 @@ int main(int argc, char** argv)
   seg.performInitialSegmentation();
   g->clusters()->mapClusterColor(p2);
   std::cout << "refine segmentation.." << std::endl;
-  seg.refineSegmentation();
+  //seg.refineSegmentation();
   g->clusters()->mapClusterColor(p);
   g->edges()->mapBoundaryPoints(pbp,n_bp);
   cob_3d_segmentation::ClusterClassifier<SegTypes::CH, SegTypes::Point, SegTypes::Normal, SegTypes::Label> cc;
@@ -198,14 +199,14 @@ int main(int argc, char** argv)
   v.addPointCloud<PointXYZRGB>(p, chdl_p, "segmented", v1);
   //v.addPointCloudNormals<PointXYZRGB, Normal>(p, n_org, 5, 0.04, "normals_org", v1);
   //v.setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_COLOR, 0.7, 0.7, 0.7, "normals_org", v1);
-  v.addPointCloud<PointXYZ>(ints_centroids, blue_hdl, "ints_centroid", v1);
-  v.addPointCloudNormals<PointXYZ,Normal>(ints_centroids, ints_comp1, 1, 10.0, "ints_comp1", v1);
-  v.addPointCloudNormals<PointXYZ,Normal>(ints_centroids, ints_comp2, 1, 10.0, "ints_comp2", v1);
-  v.addPointCloudNormals<PointXYZ,Normal>(ints_centroids, ints_comp3, 1, 10.0, "ints_comp3", v1);
+  v.addPointCloud<PointXYZ>(centroids, blue_hdl, "ints_centroid", v1);
+  v.addPointCloudNormals<PointXYZ,Normal>(centroids, ints_comp1, 1, 1.0, "ints_comp1", v1);
+  //v.addPointCloudNormals<PointXYZ,Normal>(ints_centroids, ints_comp2, 1, 10.0, "ints_comp2", v1);
+  //v.addPointCloudNormals<PointXYZ,Normal>(ints_centroids, ints_comp3, 1, 10.0, "ints_comp3", v1);
   v.setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "ints_comp1", v1);
-  v.setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "ints_comp2", v1);
-  v.setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "ints_comp3", v1);
-  v.addPointCloudNormals<PointXYZ,Normal>(centroids, connection, 1, 1.0, "connections", v1);
+  //v.setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "ints_comp2", v1);
+  //v.setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "ints_comp3", v1);
+  //v.addPointCloudNormals<PointXYZ,Normal>(centroids, connection, 1, 1.0, "connections", v1);
   
 
   int v2(0);

@@ -30,20 +30,20 @@ transform_cylinder(CylinderPtr & c_ptr,Eigen::Affine3f& trafo)
  	}
 
 c.origin_=trafo*c.origin_;
-//std::cout<<"origin\n"<<c.origin_<<std::endl;
+std::cout<<"transformed origin\n"<<c.origin_<<std::endl;
 
 for (int i = 0; i < 3; ++i) {
 
 	c.axes_[i]=trafo.rotation()*c.axes_[i];
 //	std::cout<<"axis -"<<i<<" \n"<<c.axes_[i]<<std::endl;
 }
-
+c.normal=trafo.rotation()*c.normal;
 
 float roll,pitch,yaw,x,y,z;
 pcl::getTranslationAndEulerAngles(trafo,x,y,z,roll,pitch,yaw);
 //	std::cout<<" x= "<<x<<" y= "<<z<<" z= "<<z<<" roll= "<<roll<<" pitch= "<<pitch<<" yaw= "<<yaw<<std::endl;
 
-
+c.assignMembers(c.axes_[1], c.axes_[2], c.origin_);	//	configure unrolled polygon
 }
 
 
@@ -60,12 +60,14 @@ Eigen::Vector3f x_axis1,y_axis1,z_axis1;
 std::vector<Eigen::Vector3f> axes1;
 Eigen::Vector3f origin1;
  std::vector<Eigen::Vector3f> contour1;
+ std::vector<std::vector<Eigen::Vector3f> > contours1;
+
  Eigen::Vector3f v1;
 
 
-x_axis1 << 0,0,0;
+x_axis1 << 1,0,0;
 axes1.push_back(x_axis1);
-//actual vecotro supposed to be 1 0 0
+//actual vector supposed to be 1 0 0
 
 y_axis1 << 0,0,1;
 axes1.push_back(y_axis1);
@@ -74,6 +76,7 @@ z_axis1 << 0,1,0;
 axes1.push_back(z_axis1);
 
 c1->axes_=axes1;
+c1->r_=1;
 
 
 
@@ -85,30 +88,36 @@ c1->axes_=axes1;
  contour1.push_back(v1);
  v1 << -1, 0 ,-1;
  contour1.push_back(v1);
- c1->contours.push_back(contour1);
+
+ c1->merged=1;
+  origin1 << 0,0,0;
+  c1->origin_=origin1;
+
+  c1->holes.push_back(0);
+  c1->debug_=false;
+
+ contours1.push_back(contour1);
+ c1->ContoursFromList(contours1);
 
 
-c1->merged=1;
- origin1 << 0,0,0;
- c1->origin_=origin1;
+
+
 
 // c1->r_=1;
 
 
 
- c1->holes.push_back(0);
- c1->debug_=false;
 
- if (c1->debug_== true) {
-
- 	 std::cout<<"goa-tz C1--> new vertices"<<std::endl;
- 	 for (int i = 0; i < (int) c1->unrolled_.contours.size(); ++i) {
- 		 for (int j = 0; j < (int) c1->unrolled_.contours[i].size(); ++j) {
-
- 			 std::cout<<"contor "<<i<<" vertex "<<j <<"  : "<<std::endl<<"~~~~"<<std::endl<<c1->unrolled_.contours[i][j]<<std::endl<<std::endl;
- 		}
- 	}
- }
+// if (c1->debug_== true) {
+//
+// 	 std::cout<<"goa-tz C1--> new vertices"<<std::endl;
+// 	 for (int i = 0; i < (int) c1->contours.size(); ++i) {
+// 		 for (int j = 0; j < (int) c1->contours[i].size(); ++j) {
+//
+// 			 std::cout<<"contor "<<i<<" vertex "<<j <<"  : "<<std::endl<<"~~~~"<<std::endl<<c1->contours[i][j]<<std::endl<<std::endl;
+// 		}
+// 	}
+// }
 
 
 
@@ -124,10 +133,11 @@ c1->merged=1;
  std::vector<Eigen::Vector3f> axes2;
  Eigen::Vector3f origin2;
   std::vector<Eigen::Vector3f> contour2;
+  std::vector<std::vector<Eigen::Vector3f> > contours2;
   Eigen::Vector3f v2;
 
 
- x_axis2 << 0,0,0;
+ x_axis2 << 0,-1,0;
  axes2.push_back(x_axis2);
 
  y_axis2 << 0,0,1;
@@ -138,6 +148,7 @@ c1->merged=1;
 
  c2->axes_=axes2;
 
+ c2->r_ = 1;
 
 
   v2 << 0, 1, 1;
@@ -148,7 +159,7 @@ c1->merged=1;
   contour2.push_back(v2);
   v2 << 0, 1 ,-1;
   contour2.push_back(v2);
-  c2->contours.push_back(contour2);
+  contours2.push_back(contour2);
 
 
   c2->merged=1;
@@ -161,17 +172,20 @@ c1->merged=1;
 
   c2->holes.push_back(0);
   c2->debug_=false;
+  c2->ContoursFromList(contours2);
 
-  if (c2->debug_== true) {
 
-  	 std::cout<<"goa-tz C2--> new vertices"<<std::endl;
-  	 for (int i = 0; i < (int) c2->unrolled_.contours.size(); ++i) {
-  		 for (int j = 0; j < (int) c2->unrolled_.contours[i].size(); ++j) {
 
-  			 std::cout<<"contor "<<i<<" vertex "<<j <<"  : "<<std::endl<<"~~~~"<<std::endl<<c2->unrolled_.contours[i][j]<<std::endl<<std::endl;
-  		}
-  	}
-  }
+//  if (c2->debug_== true) {
+//
+//  	 std::cout<<"goa-tz C2--> new vertices"<<std::endl;
+//  	 for (int i = 0; i < (int) c2->contours.size(); ++i) {
+//  		 for (int j = 0; j < (int) c2->contours[i].size(); ++j) {
+//
+//  			 std::cout<<"contor "<<i<<" vertex "<<j <<"  : "<<std::endl<<"~~~~"<<std::endl<<c2->contours[i][j]<<std::endl<<std::endl;
+//  		}
+//  	}
+//  }
 
 
 //transform cylinders
@@ -192,12 +206,20 @@ c1->merged=1;
 transform_cylinder(c1,trafo);
 transform_cylinder(c2,trafo);
 
+
+
+
+std::string s_c1 = "c1->unrolled";
+c1->debug_output(s_c1);
+
+std::string s_c2 = "c2->unrolled";
+  c2->debug_output(s_c2);
 //#######################################################
 //  completion test
-  c1->completeCylinder();
-  c2->completeCylinder();
-  std::cout<<"X-axis = \n"<<c1->axes_[0]<<std::endl;
-  std::cout<<"X-axis = \n"<<c2->axes_[0]<<std::endl;
+//  c1->completeCylinder();
+//  c2->completeCylinder();
+//  std::cout<<"X-axis = \n"<<c1->axes_[0]<<std::endl;
+//  std::cout<<"X-axis = \n"<<c2->axes_[0]<<std::endl;
 
 
   std::cout<<"r = "<<c1->r_<<std::endl;
@@ -260,7 +282,7 @@ Cylinder& result=*merge_candidates[0];
 //	}
 //
 
-result.unrolled_.debug_output("result");
+result.debug_output("result");
 }
 
 
