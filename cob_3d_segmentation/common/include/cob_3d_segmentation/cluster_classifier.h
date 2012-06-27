@@ -120,7 +120,8 @@ namespace cob_3d_segmentation
   private:
     void recomputeClusterNormals(ClusterPtr c);
     void recomputeClusterNormals(ClusterPtr c, int w_size, int steps);
-    bool computeClusterPointCurvature(int index, int r, int steps, float& pc_min, float& pc_max);
+    bool computeClusterPointCurvature(int index, int r, int steps, 
+				      float& pc_min, float& pc_max, Eigen::Vector3f& pc_min_direction);
 
 
     ClusterHdlPtr clusters_;

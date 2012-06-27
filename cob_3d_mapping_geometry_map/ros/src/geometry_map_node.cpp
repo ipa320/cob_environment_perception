@@ -184,21 +184,17 @@ public:
 
 			}
 
-			 if (sa->shapes[i].type == 5) {
+			if (sa->shapes[i].type == 5) {
 				CylinderPtr cylinder_map_entry_ptr = CylinderPtr(new Cylinder());
 				if(!fromROSMsg(sa->shapes[i], *cylinder_map_entry_ptr)){
 					continue;
 				}
-//				calculate missing attributes
-				cylinder_map_entry_ptr->completeCylinder();
+				//				calculate missing attributes
+//				cylinder_map_entry_ptr->completeCylinder();
+				cylinder_map_entry_ptr->ParamsFromShapeMsg();
 				geometry_map_.addMapEntry(cylinder_map_entry_ptr);
 
 			}
-
-
-
-
-
 
 
 			//dumpPolygonToFile(*map_entry_ptr);
@@ -211,7 +207,7 @@ public:
 		}
 
 
-//		debug
+		//		debug
 
 
 
@@ -323,7 +319,7 @@ public:
 	{
 
 
-//		if index = type 1 poly ptr , else cylinder ptr --> push back in shape vector?!
+		//		if index = type 1 poly ptr , else cylinder ptr --> push back in shape vector?!
 
 		boost::shared_ptr<std::vector<PolygonPtr> > map_polygon = geometry_map_.getMap_polygon();
 		boost::shared_ptr<std::vector<CylinderPtr> > map_cylinder = geometry_map_.getMap_cylinder();
@@ -335,14 +331,14 @@ public:
 		map_msg.header.frame_id="/map";
 		map_msg.header.stamp = ros::Time::now();
 
-//		std::cout<<"_________________________________"<<std::endl;
-//		std::cout<<"polygon size: "<<map_polygon->size()<<std::endl;
-//		polygons
+		//		std::cout<<"_________________________________"<<std::endl;
+		//		std::cout<<"polygon size: "<<map_polygon->size()<<std::endl;
+		//		polygons
 		for(unsigned int i=0; i<map_polygon->size(); i++)
 		{
 			Polygon& sm = *(map_polygon->at(i));
 
-//			std::cout<<sm.d<<std::endl<<std::endl;
+			//			std::cout<<sm.d<<std::endl<<std::endl;
 
 
 
@@ -356,7 +352,7 @@ public:
 			map_msg.shapes.push_back(s);
 		}
 
-//		cylinders
+		//		cylinders
 		for(unsigned int i=0; i<map_cylinder->size(); i++)
 		{
 			Cylinder& sm = *(map_cylinder->at(i));
@@ -416,16 +412,19 @@ public:
 		geometry_msgs::Point pt;
 
 
-//		only implemented for polygon
+		//		only implemented for polygon
 
-		boost::shared_ptr<std::vector<PolygonPtr> > map = geometry_map_.getMap_polygon();
+		boost::shared_ptr<std::vector<PolygonPtr> > map_polygon = geometry_map_.getMap_polygon();
+
+
+
 		int ctr=0, t_ctr=2000;
 
-//		std::cout<<"____________________________________________"<<std::endl;
-//		std::cout<<"marker size: "<<map->size()<<std::endl;
-		for(unsigned int i=0; i<map->size(); i++)
+		//		std::cout<<"____________________________________________"<<std::endl;
+		//		std::cout<<"marker size: "<<map->size()<<std::endl;
+		for(unsigned int i=0; i<map_polygon->size(); i++)
 		{
-			Polygon& pm = *(map->at(i));
+			Polygon& pm = *(map_polygon->at(i));
 			int color_ctr = i%4;
 			//marker.id = pm.id;
 			if(color_ctr==0)
@@ -454,7 +453,7 @@ public:
 			}
 
 
-//			std::cout<<pm.d<<std::endl<<std::endl;
+			//			std::cout<<pm.d<<std::endl<<std::endl;
 
 			for(unsigned int j=0; j<pm.contours.size(); j++)
 			{
@@ -494,8 +493,98 @@ public:
 
 			}
 		}
+		//		only implemented for polygon
+
+				boost::shared_ptr<std::vector<CylinderPtr> > map_cylinder = geometry_map_.getMap_cylinder();
+
+
+
+				 ctr=0;
+				 t_ctr=2000;
+
+				//		std::cout<<"____________________________________________"<<std::endl;
+				//		std::cout<<"marker size: "<<map->size()<<std::endl;
+				for(unsigned int i=0; i<map_cylinder->size(); i++)
+				{
+					Cylinder& cm = *(map_cylinder->at(i));
+					int color_ctr = i%4;
+					//marker.id = cm.id;
+					if(color_ctr==0)
+					{
+						marker.color.r = 0;
+						marker.color.g = 0;
+						marker.color.b = 1;
+					}
+					else if(color_ctr==1)
+					{
+						marker.color.r = 0;
+						marker.color.g = 1;
+						marker.color.b = 0;
+					}
+					else if(color_ctr==2)
+					{
+						marker.color.r = 0;
+						marker.color.g = 1;
+						marker.color.b = 1;
+					}
+					else if(color_ctr==3)
+					{
+						marker.color.r = 1;
+						marker.color.g = 1;
+						marker.color.b = 0;
+					}
+
+
+					//			std::cout<<pm.d<<std::endl<<std::endl;
+
+//					get 3dimensional contours
+					std::vector<std::vector<Eigen::Vector3f> > contours3d;
+					cm.getCyl3D(contours3d);
+
+					for(unsigned int j=0; j<contours3d.size(); j++)
+					{
+						//if(pm.contours.size()>1) std::cout << "id: " << ctr << ", " << pm.contours.size() << std::endl;
+						//TODO: this is a workaround as the marker can't display more than one contour
+						marker.id = ctr;
+						marker.color.r /= j+1;
+						marker.color.g /= j+1;
+						marker.color.b /= j+1;
+
+						t_marker.id = t_ctr;
+						std::stringstream ss;
+						ss << ctr;
+						t_marker.text = ss.str();
+						ctr++;
+						t_ctr++;
+
+						for(unsigned int k=0; k<contours3d[j].size(); k++)
+						{
+							marker.points.resize(contours3d[j].size()+1);
+							/*pt.x = contours3d[j][k](0);
+		                  pt.y = pm.contours[j][k](1);
+		                  pt.z = pm.contours[j][k](2);*/
+							marker.points[k].x = contours3d[j][k](0);
+							marker.points[k].y = contours3d[j][k](1);
+							marker.points[k].z = contours3d[j][k](2);
+							//marker.points.push_back(pt);
+						}
+						marker.points[contours3d[j].size()].x = contours3d[j][0](0);
+						marker.points[contours3d[j].size()].y = contours3d[j][0](1);
+						marker.points[contours3d[j].size()].z = contours3d[j][0](2);
+						marker_pub_.publish(marker);
+						marker_pub_.publish(t_marker);
+
+
+
+
+					}
+				}
 
 	}
+
+
+
+
 
 	ros::NodeHandle n_;
 

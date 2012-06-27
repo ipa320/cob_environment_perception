@@ -88,9 +88,7 @@ struct merge_config {
 
     // http://paulbourke.net/geometry/polyarea/
     // works for all polygons except self-intersecting polygons
-    double
-    computeArea();
-
+    double computeArea();
     double computeArea3d();
 
 

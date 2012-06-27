@@ -10,7 +10,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #set(ROS_BUILD_TYPE RelWithDebInfo)
 
 rosbuild_init()
-
+rosbuild_check_for_sse()
 
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include ${PROJECT_SOURCE_DIR}/ros/include)
 
@@ -38,7 +38,7 @@ rosbuild_add_library(cob_3d_segmentation_nodelets
 	ros/src/segmentation_all_in_one_nodelet.cpp)
 
 target_link_libraries(cob_3d_segmentation cob_3d_mapping_features cob_3d_mapping_features_omp)
-target_link_libraries(cob_3d_segmentation_nodelets cob_3d_segmentation)
+target_link_libraries(cob_3d_segmentation_nodelets cob_3d_segmentation cob_3d_mapping_common)
 
 
 
@@ -60,3 +60,11 @@ target_link_libraries(profile_depth_seg cob_3d_mapping_features cob_3d_mapping_f
 
 rosbuild_add_compile_flags(cob_3d_segmentation -D__LINUX__ -DCOMPILE_NODELET)
 rosbuild_add_roslaunch_check(ros/launch)
+
+#######################  TESTING  #######################
+rosbuild_add_executable(test_segmentation ros/test/test_segmentation.cpp)
+rosbuild_add_compile_flags(test_segmentation ${SSE_FLAGS})
+target_link_libraries(test_segmentation gtest)
+
+rosbuild_add_executable(test_polygon_extraction ros/test/test_polygon_extraction.cpp)
+target_link_libraries(test_polygon_extraction gtest)
