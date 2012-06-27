@@ -263,9 +263,10 @@ c.axes_[2][1] = s.params[4];
 c.axes_[2][2] = s.params[5];
 
 
-c.origin_[0] = s.params[10];
-c.origin_[1] = s.params[11];
-c.origin_[2] = s.params[12];
+c.origin_[0] = s.params[6];
+c.origin_[1] = s.params[7];
+c.origin_[2] = s.params[8];
+c.r_ 		 = s.params[9];
 
 
 //std::cout << "normal: " << p.normal(0) << "," << p.normal(1) << "," << p.normal(2) << std::endl;
