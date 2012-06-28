@@ -9,10 +9,11 @@
 #define POLYGON_EXTRACTION_H_
 
 #include <vector>
+#include <stack>
 #include <algorithm>
 #include "impl/poly2d.hpp"
 
-namespace Segmentation
+namespace cob_3d_segmentation
 {
   /*
    * point has to have integer x,y and must be sortable
@@ -31,6 +32,8 @@ namespace Segmentation
     template <typename TPoint>
     static int getPos(int *ch, const int xx, const int yy, const int w, const int h);
 
+    static bool hasMultiplePositions(unsigned int i);
+
   public:
 
     PolygonExtraction():ch_(NULL),ch_size_(0),outline_check_(NULL),outline_check_size_(0)
@@ -47,6 +50,7 @@ namespace Segmentation
     void outline(const int w, const int h, std::vector<TPoint> out, TPolygon &poly);
 
   };
+
 
 #include "impl/polygon_extraction.hpp"
 

@@ -68,6 +68,8 @@
 #include "cob_3d_mapping_features/organized_normal_estimation_omp.h"
 #include "cob_3d_segmentation/depth_segmentation.h"
 #include "cob_3d_segmentation/cluster_classifier.h"
+#include "cob_3d_segmentation/polygon_extraction/polygon_types.h"
+#include "cob_3d_segmentation/polygon_extraction/polygon_extraction.h"
 
 namespace cob_3d_segmentation
 {
@@ -117,6 +119,7 @@ namespace cob_3d_segmentation
     ClusterClassifier<ST::CH, ST::Point, ST::Normal, ST::Label> cc_;
     ST::Graph::Ptr graph_;
     pcl::ConcaveHull<pcl::PointXYZRGB> chull_;
+    PolygonExtraction pe_;
 
     PointCloud::Ptr segmented_;
     PointCloud::Ptr classified_;
