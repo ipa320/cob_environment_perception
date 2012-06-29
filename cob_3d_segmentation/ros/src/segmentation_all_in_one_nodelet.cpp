@@ -143,8 +143,6 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr 
       s->params[1] = n(1); // n_y
       s->params[2] = n(2); // n_z
       s->params[3] = c->getCentroid().norm(); // d
-      s->points.resize(1);
-      s->holes.push_back(false);
       /* // Fill in all border points
       sensor_msgs::PointCloud2* blob = &s->points.back();
       for_each_type<traits::fieldList<pcl::PointXYZ>::type> (detail::FieldAdder<pcl::PointXYZ>(blob->fields));
@@ -178,6 +176,8 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr 
       PolygonContours<PolygonPoint> poly;
       pe_.outline(cloud->width, cloud->height, c->border_points, poly);
       //std::cout << "#Polygons: " << poly.polys_.size() << std::endl;
+      s->points.resize(poly.polys_.size());
+      s->holes.push_back(false);
       for (int i = 0; i < poly.polys_.size(); ++i)
       {
 	for (std::vector<PolygonPoint>::iterator it = poly.polys_[i].begin(); it != poly.polys_[i].end(); ++it)
@@ -185,10 +185,11 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr 
 	  hull_cloud->points.push_back(cloud->points[PolygonPoint::getInd(it->x, it->y)]);
 	  hull->points.push_back(cloud->points[PolygonPoint::getInd(it->x, it->y)]);
 	}
+	hull->height = 1;
+	hull->width = hull->size();
+	pcl::toROSMsg(*hull, s->points[i]);
+	hull->clear();
       }
-      hull->height = 1;
-      hull->width = hull->size();
-      pcl::toROSMsg(*hull, s->points.back());
       break;
     }
     case I_CYL:
