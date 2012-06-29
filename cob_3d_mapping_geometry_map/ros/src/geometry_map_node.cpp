@@ -164,7 +164,6 @@ public:
 	shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr sa)
 	{
 
-		std::cout<<"DEBUG 1"<<std::endl;
 		static int ctr=0;
 		static double time = 0;
 		PrecisionStopWatch t;
@@ -176,17 +175,14 @@ public:
 			if (sa->shapes[i].type == 0) {
 				std::cout<<"polygon detected"<<std::endl;
 
-				std::cout<<"DEBUG 2"<<std::endl;
 
 				PolygonPtr polygon_map_entry_ptr = PolygonPtr(new Polygon());
 				if(!fromROSMsg(sa->shapes[i], *polygon_map_entry_ptr)) {
 
 					continue;
 				}
-				std::cout<<"DEBUG 3"<<std::endl;
 
 				geometry_map_.addMapEntry(polygon_map_entry_ptr);
-				std::cout<<"DEBUG 4"<<std::endl;
 
 			}
 
@@ -222,6 +218,7 @@ public:
 
 
 		publishMapMarker();
+		std::cout<<"publishMap() DEACTIVATED!!"<<std::endl;
 //		publishMap();
 		ctr_++;
 		//ROS_INFO("%d polygons received so far", ctr_);
@@ -498,7 +495,6 @@ public:
 				marker.points[pm.contours[j].size()].z = pm.contours[j][0](2);
 				marker_pub_.publish(marker);
 				marker_pub_.publish(t_marker);
-				std::cout<<"running..."<<std::endl;
 
 
 
