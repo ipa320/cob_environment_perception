@@ -214,6 +214,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder> c_ptr)
 		//	std::cout<<"size +1"<<std::endl;
 	}
 
+	std::cout<<"Map Size ="<<map_cylinder_.size()<<std::endl;
 
 	if(save_to_file_) saveMap(file_path_);
 

@@ -110,7 +110,7 @@ public:
 
 		config_server_.setCallback(boost::bind(&GeometryMapNode::dynReconfCallback, this, _1, _2));
 		ctr_ = 0;
-		shape_sub_ = n_.subscribe("shape_array", 10, &GeometryMapNode::shapeCallback, this);
+		shape_sub_ = n_.subscribe("SA", 10, &GeometryMapNode::shapeCallback, this);
 		map_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("map_array",1);
 		marker_pub_ = n_.advertise<visualization_msgs::Marker>("geometry_marker",100);
 		clear_map_server_ = n_.advertiseService("clear_map", &GeometryMapNode::clearMap, this);
@@ -171,28 +171,33 @@ public:
 
 
 			////    distinction of type
-			if (sa->shapes[i].type == cob_3d_mapping_msgs::Shape::POLYGON) {
-				std::cout<<"dbg[3]"<<std::endl;
+			if (sa->shapes[i].type == 0) {
+				std::cout<<"polygon detected"<<std::endl;
+
 
 				PolygonPtr polygon_map_entry_ptr = PolygonPtr(new Polygon());
 				if(!fromROSMsg(sa->shapes[i], *polygon_map_entry_ptr)) {
 
 					continue;
 				}
-
+				std::cout<<"Debug[1]"<<std::endl;
 				geometry_map_.addMapEntry(polygon_map_entry_ptr);
 
 			}
 
 			if (sa->shapes[i].type == 5) {
+				std::cout<<"cylinder detected"<<std::endl;
 				CylinderPtr cylinder_map_entry_ptr = CylinderPtr(new Cylinder());
+				cylinder_map_entry_ptr->allocate();
 				if(!fromROSMsg(sa->shapes[i], *cylinder_map_entry_ptr)){
 					continue;
 				}
+
 				//				calculate missing attributes
-//				cylinder_map_entry_ptr->completeCylinder();
 				cylinder_map_entry_ptr->ParamsFromShapeMsg();
+
 				geometry_map_.addMapEntry(cylinder_map_entry_ptr);
+
 
 			}
 
@@ -386,6 +391,7 @@ public:
 	 */
 	void publishMapMarker()
 	{
+		std::cout<<"publish map markers"<<std::endl;
 		visualization_msgs::Marker marker, t_marker;
 		marker.action = visualization_msgs::Marker::ADD;
 		marker.type = visualization_msgs::Marker::LINE_STRIP;
@@ -487,7 +493,7 @@ public:
 				marker.points[pm.contours[j].size()].z = pm.contours[j][0](2);
 				marker_pub_.publish(marker);
 				marker_pub_.publish(t_marker);
-
+				std::cout<<"running..."<<std::endl;
 
 
 
