@@ -57,10 +57,17 @@
 namespace cob_3d_mapping {
 
 
-
+void Cylinder::allocate()
+{
+	//allocate axes
+	axes_.resize(3);
+	axes_[0].resize(3);
+	axes_[1].resize(3);
+	axes_[2].resize(3);
+	}
 
 void Cylinder::getCyl3D(std::vector<std::vector<Eigen::Vector3f> >& contours3D) {
-
+//	std::cout<<"getCyl3d"<<std::endl;
 	//Transform to local coordinate system
 	Polygon poly_plane;
 
@@ -360,48 +367,30 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 	for (size_t i = 0; i < cylinder_array.size(); i++) {
 
 		Cylinder& c_map = *(cylinder_array[i]);
-		//	   std::cout<<"criteria"<< fabs(c_map.axes_[3] .dot(axes_[3]))<<" "<<c_map.r_-r_;
 
 
 		//compare symmetry axes and d
 		if ((fabs(c_map.axes_[1] .dot(axes_[1])) > limits.angle_thresh))
 
-			//	    	std::cout<<"transformed origins"<<std::endl<<transformation_from_world_to_cylinder_*origin_<<std::endl<<std::endl;
-			//			std::cout<<transformation_from_world_to_cylinder_*c_map.origin_<<std::endl;
+
 
 		{
 
-			//	    	prepare cylinder
-			//			c_map.unroll();
-			std::cout << "merge criteria fulfilled" << std::endl;
+
 			Polygon shifted_polygon_map;
 
 			c_map.getShiftedPolygon(*this,shifted_polygon_map);
-			//				shifted_polygon_map.debug_output("shifted Polygon");
-			//				this->unrolled_.debug_output("# THis unrolled");
-			//				std::cout<<"~~~~~~~~~~~~~~~~~~~~~~~~~~~~"<<std::endl;
 
-			//			debug_output("merge A");
-			shifted_polygon_map.debug_output("SPM");
-			//			c_map.debug_output("merge B");
-
-			//			double area_B =c_map.unrolled_.computeArea();
-			//			std::cout<<"AREA MERGED"<<area_B<<std::endl;
-			////
-			//			double area_A =unrolled_.computeArea();
-			//			std::cout<<"AREA MERGED"<<area_A<<std::endl;
 
 			bool is_intersected = this->isMergeCandidate_intersect(
 					shifted_polygon_map);
 
 			if (is_intersected == false) {
-				//std::cout << "no intersection with map " << i << std::endl;
-				//std::cout << p.normal << std::endl;
-				std::cout<<"no intersection"<<std::endl;
+
 				continue;
 			}
 			if (is_intersected == true) {
-				std::cout<<"has intersection"<<std::endl;
+//				std::cout<<"has intersection"<<std::endl;
 				intersections.push_back(i);
 
 			}

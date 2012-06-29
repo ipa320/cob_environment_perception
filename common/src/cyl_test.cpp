@@ -65,39 +65,43 @@ Eigen::Vector3f origin1;
  Eigen::Vector3f v1;
 
 
-x_axis1 << 1,0,0;
-axes1.push_back(x_axis1);
-//actual vector supposed to be 1 0 0
+ x_axis1 << 1,0,0;
+ 		axes1.push_back(x_axis1);
 
-y_axis1 << 0,0,1;
-axes1.push_back(y_axis1);
+ 		y_axis1 << 0,0,1;
+ 		axes1.push_back(y_axis1);
 
-z_axis1 << 0,1,0;
-axes1.push_back(z_axis1);
+ 		z_axis1 << 0,1,0;
+ 		axes1.push_back(z_axis1);
 
-c1->axes_=axes1;
-c1->r_=1;
-
+ 		c1->axes_=axes1;
+ 		c1->r_=1;
 
 
- v1 << -1, 0, 1;
- contour1.push_back(v1);
- v1 << 1, 0, 1;
- contour1.push_back(v1);
- v1 << 1 ,0 ,-1;
- contour1.push_back(v1);
- v1 << -1, 0 ,-1;
- contour1.push_back(v1);
 
- c1->merged=1;
-  origin1 << 0,0,0;
-  c1->origin_=origin1;
+ 		v1 << -1, 0, 1;
+ 		contour1.push_back(v1);
+ 		v1 << 0, 1, 1;
+ 		contour1.push_back(v1);
+ 		v1 << 1, 0, 1;
+ 		contour1.push_back(v1);
+ 		v1 << 1 ,0 ,-1;
+ 		contour1.push_back(v1);
+ 		v1 << 0, 1, -1;
+ 		contour1.push_back(v1);
+ 		v1 << -1, 0 ,-1;
+ 		contour1.push_back(v1);
 
-  c1->holes.push_back(0);
-  c1->debug_=false;
+ 		c1->merged=1;
+ 		origin1 << 0,0,0;
+ 		c1->origin_=origin1;
 
- contours1.push_back(contour1);
- c1->ContoursFromList(contours1);
+ 		c1->holes.push_back(0);
+ 		c1->debug_=true;
+
+ 		contours1.push_back(contour1);
+ 		c1->ContoursFromList(contours1);
+
 
 
 
@@ -137,42 +141,42 @@ c1->r_=1;
   Eigen::Vector3f v2;
 
 
- x_axis2 << 0,-1,0;
- axes2.push_back(x_axis2);
+  x_axis2 << 1,0,0;
+  		axes2.push_back(x_axis2);
 
- y_axis2 << 0,0,1;
- axes2.push_back(y_axis2);
+  		y_axis2 << 0,0,1;
+  		axes2.push_back(y_axis2);
 
- z_axis2 << 1,0,0;
- axes2.push_back(z_axis2);
+  		z_axis2 << 0,1,0;
+  		axes2.push_back(z_axis2);
 
- c2->axes_=axes2;
-
- c2->r_ = 1;
-
-
-  v2 << 0, 1, 1;
-  contour2.push_back(v2);
-  v2 << 0, -1, 1;
-  contour2.push_back(v2);
-  v2 << 0 ,-1 ,-1;
-  contour2.push_back(v2);
-  v2 << 0, 1 ,-1;
-  contour2.push_back(v2);
-  contours2.push_back(contour2);
-
-
-  c2->merged=1;
-  origin2 << 0,0,0;
-  c2->origin_=origin2;
-
-//  c2->r_=1;
+  		c2->axes_=axes2;
+  		c2->r_=1;
 
 
 
-  c2->holes.push_back(0);
-  c2->debug_=false;
-  c2->ContoursFromList(contours2);
+  		v2 << -1, 0, 1;
+  		contour2.push_back(v2);
+  		v2 << 0.1, 0, 1;
+  		contour2.push_back(v2);
+  		v2 << 1, 0, 1;
+  		contour2.push_back(v2);
+  		v2 << 1 ,0 ,-1;
+  		contour2.push_back(v2);
+  		v2 << 0.1, 0, -1;
+  		contour2.push_back(v2);
+  		v2 << -1, 0 ,-1;
+  		contour2.push_back(v2);
+
+  		c2->merged=1;
+  		origin1 << 0,0,0;
+  		c2->origin_=origin2;
+
+  		c2->holes.push_back(0);
+  		c2->debug_=false;
+
+  		contours2.push_back(contour2);
+  		c2->ContoursFromList(contours2);
 
 
 
@@ -282,8 +286,31 @@ Cylinder& result=*merge_candidates[0];
 //	}
 //
 
+
 result.debug_output("result");
+
+
+std::vector<std::vector<Eigen::Vector3f> > con3d;
+
+c1->getCyl3D(con3d);
+
+std::cout<<"c1 - size"<<c1->contours[0].size()<<std::endl;
+std::cout<<"con3d - size"<<con3d[0].size()<<std::endl;
+
+
+for (int i = 0; i < con3d.size(); ++i) {
+	for (int j = 0; j < con3d[i].size(); ++j) {
+
+		std::cout<<con3d[i][j]<<std::endl<<std::endl;
+
+	}
+
+
 }
+}
+
+
+
 
 
 return 1;
