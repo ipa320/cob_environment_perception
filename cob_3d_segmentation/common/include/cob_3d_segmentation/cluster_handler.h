@@ -127,7 +127,7 @@ namespace cob_3d_segmentation
 
     void mapClusterColor(pcl::PointCloud<PointXYZRGB>::Ptr color_cloud)
     {
-      uint32_t rgb; int t = 3;
+      uint32_t rgb; int t = 4;
       for(reverse_iterator c = clusters_.rbegin(); c != clusters_.rend(); ++c, ++t)
       {
 	if (c->id() == I_NAN || c->id() == I_BORDER) { rgb = color_tab_[c->id()]; --t; }
@@ -210,15 +210,40 @@ namespace cob_3d_segmentation
     
     void addBorderIndicesToClusters()
     {
+      int mask[] = 
+	{ 
+	  -labels_->width, 1, labels_->width, -1
+	  /*-labels_->width - 1, -labels_->width, -labels_->width + 1,
+	  -1, 1,
+	  labels_->width - 1, labels_->width, labels_->width + 1*/
+	};
+
+      int curr_label, count;
       for (size_t idx = labels_->width; idx < ( labels_->size() - labels_->width ); ++idx)
       {
-	int curr_label = labels_->points[idx].label;
-	if (curr_label != labels_->points[idx + 1].label || curr_label != labels_->points[idx + labels_->width].label ||
-	    curr_label != labels_->points[idx - 1].label || curr_label != labels_->points[idx - labels_->width].label)
+	count = 0;
+	curr_label = labels_->points[idx].label;
+	for(int i=0;i<4;++i) { if (curr_label!=labels_->points[idx+mask[i]].label) { ++count; } }
+	if (count >= 4 || count < 1) continue;
+	id_to_cluster_[curr_label]->border_points.push_back(PolygonPoint(idx%labels_->width, idx/labels_->width));
+      }
+      /*
+      for (size_t idx = labels_->width; idx < ( labels_->size() - labels_->width ); ++idx)
+      {
+	count = 0;
+	curr_label = labels_->points[idx].label;
+	if (labels_->points[idx - labels_->width + 1].label != curr_label) { ++count; }
+	if (labels_->points[idx - labels_->width - 1].label != curr_label) { ++count; }
+	if (labels_->points[idx + labels_->width + 1].label != curr_label) { ++count; }
+	if (labels_->points[idx + labels_->width - 1].label != curr_label) { ++count; }
+	if (count > 2) continue;
+	if (count > 0 || labels_->points[idx + 1].label != curr_label || labels_->points[idx + labels_->width].label != curr_label
+	    || labels_->points[idx - 1].label != curr_label || labels_->points[idx - labels_->width].label != curr_label)
 	{
-	  id_to_cluster_[curr_label]->border_indices.push_back(idx);
+	  id_to_cluster_[curr_label]->border_points.push_back(PolygonPoint(idx%labels_->width, idx/labels_->width));
 	}
       }
+      */
     }
 
     void mapClusterBorders(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points)
@@ -226,9 +251,9 @@ namespace cob_3d_segmentation
       uint32_t color = LBL_BORDER;
       for (ClusterPtr c = clusters_.begin(); c != clusters_.end(); ++c)
       {
-	for(std::vector<int>::iterator idx = c->border_indices.begin(); idx != c->border_indices.end(); ++idx)
+	for(std::vector<PolygonPoint>::iterator bp = c->border_points.begin(); bp != c->border_points.end(); ++bp)
 	{
-	  points->points[*idx].rgb = *reinterpret_cast<float*>(&color);
+	  points->points[PolygonPoint::getInd(bp->x,bp->y)].rgb = surface_->points[PolygonPoint::getInd(bp->x,bp->y)].rgb;
 	}
       }
     }
