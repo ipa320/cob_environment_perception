@@ -167,6 +167,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr 
 	memcpy(msg_data, cloud_data, blob->point_step);
       }
       */
+      /*
       // use concave hull algorithm
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull(new pcl::PointCloud<pcl::PointXYZRGB>);
       std::vector< pcl::Vertices > hull_polygons;
@@ -175,6 +176,22 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr 
       chull_.reconstruct(*hull, hull_polygons);
       hull_cloud->header = hull->header;
       *hull_cloud += *hull;
+      pcl::toROSMsg(*hull, s->points.back());
+      */
+      pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull(new pcl::PointCloud<pcl::PointXYZRGB>);
+      PolygonContours<PolygonPoint> poly;
+      pe_.outline(cloud->width, cloud->height, c->border_points, poly);
+      //std::cout << "#Polygons: " << poly.polys_.size() << std::endl;
+      for (int i = 0; i < poly.polys_.size(); ++i)
+      {
+	for (std::vector<PolygonPoint>::iterator it = poly.polys_[i].begin(); it != poly.polys_[i].end(); ++it)
+	{
+	  hull_cloud->points.push_back(cloud->points[PolygonPoint::getInd(it->x, it->y)]);
+	  hull->points.push_back(cloud->points[PolygonPoint::getInd(it->x, it->y)]);
+	}
+      }
+      hull->height = 1;
+      hull->width = hull->size();
       pcl::toROSMsg(*hull, s->points.back());
       break;
     }
@@ -200,6 +217,9 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr 
     }
     }
   }
+  hull_cloud->header = cloud->header;
+  hull_cloud->height = 1;
+  hull_cloud->width = hull_cloud->size();
   pub_chull_.publish(hull_cloud);
   pub_shape_array_.publish(sa);
 }

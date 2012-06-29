@@ -2,7 +2,7 @@
 namespace Contour2D {
 
   struct spline2D {
-    int v, x,y, bf;
+    int v, x, y, bf;
   };
 
   spline2D g_Splines[9][256];
