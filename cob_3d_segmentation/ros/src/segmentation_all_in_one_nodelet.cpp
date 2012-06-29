@@ -91,7 +91,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::onInit()
     ("cloud_in", 1, boost::bind(&cob_3d_segmentation::SegmentationAllInOneNodelet::received_cloud_cb, this, _1));
   pub_segmented_ = nh_.advertise<PointCloud>("segmentation_cloud", 1);
   pub_classified_ = nh_.advertise<PointCloud>("classified_cloud", 1);
-  pub_shape_array_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray>("shape_array",1);
+  pub_shape_array_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray>("plane_extraction/shape_array",1);
   pub_chull_ = nh_.advertise<PointCloud>("concave_hull", 1);
   std::cout << "Loaded segmentation nodelet" << std::endl;
 
@@ -157,8 +157,8 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr 
       uint8_t* msg_data = &blob->data[0];
       for (size_t i = 0; i < c->border_indices.size(); ++i, msg_data += blob->point_step)
       {
-	const uint8_t* cloud_data = reinterpret_cast<const uint8_t*>(&(cloud->points[c->border_indices[i]]));
-	memcpy(msg_data, cloud_data, blob->point_step);
+        const uint8_t* cloud_data = reinterpret_cast<const uint8_t*>(&(cloud->points[c->border_indices[i]]));
+        memcpy(msg_data, cloud_data, blob->point_step);
       }
       */
       /*
@@ -180,15 +180,15 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr 
       s->holes.push_back(false);
       for (int i = 0; i < poly.polys_.size(); ++i)
       {
-	for (std::vector<PolygonPoint>::iterator it = poly.polys_[i].begin(); it != poly.polys_[i].end(); ++it)
-	{
-	  hull_cloud->points.push_back(cloud->points[PolygonPoint::getInd(it->x, it->y)]);
-	  hull->points.push_back(cloud->points[PolygonPoint::getInd(it->x, it->y)]);
-	}
-	hull->height = 1;
-	hull->width = hull->size();
-	pcl::toROSMsg(*hull, s->points[i]);
-	hull->clear();
+        for (std::vector<PolygonPoint>::iterator it = poly.polys_[i].begin(); it != poly.polys_[i].end(); ++it)
+        {
+          hull_cloud->points.push_back(cloud->points[PolygonPoint::getInd(it->x, it->y)]);
+          hull->points.push_back(cloud->points[PolygonPoint::getInd(it->x, it->y)]);
+        }
+        hull->height = 1;
+        hull->width = hull->size();
+        pcl::toROSMsg(*hull, s->points[i]);
+        hull->clear();
       }
       break;
     }
