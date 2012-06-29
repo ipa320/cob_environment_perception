@@ -69,6 +69,13 @@ extern "C" {
 #include <pcl/common/centroid.h>
 #include <pcl/common/eigen.h>
 #include <pcl/common/transform.h>
+#include <pcl/segmentation/sac_segmentation.h>
+#include <pcl/registration/transforms.h>
+#include <pcl/sample_consensus/method_types.h>
+//#include <pcl/sample_consensus/sac_model_circle.h>
+#include <pcl/ModelCoefficients.h>
+#include <pcl/exceptions.h>
+
 //#include <pcl/common/transformation_from_correspondences.h>
 
 
@@ -78,40 +85,45 @@ namespace cob_3d_mapping{
 
 class Cylinder: public Polygon
 
-//principle:
-//internal representation of cylinder as 3d polygon, analog to polygon in polygon class.
-//additional attributes: radius, axis of symmetry...
-//
 
-// preparation for merge operation:
-// with corner points,axis --> in initialization transformation to polygon by projection in plane (unrolling)
-
-// 1.	calculate a horizontal and a vertical shift for polygons of same cylinder by centroid, centriangle...
-// 2. transform polygon 1 and 2 in same coordinate system and consider calculated shifts for that
-// 3. use standard polygon operations to merge
 
 {
 
 public:
 
-	void roll();
-	void unroll();
+	void ContoursFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud);
+	void ContoursFromList( std::vector<std::vector<Eigen::Vector3f> >& in_list);
+
+	void ParamsFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud, std::vector<int>& indices);
+	void ParamsFromShapeMsg();
+
+
+
+
+	void getCyl3D(std::vector<std::vector<Eigen::Vector3f> >& contours3D);
+	void allocate();
+
 	void weightAttributes(std::vector<boost::shared_ptr<Cylinder> >& c_array,Cylinder& average_c);
 
 	void isMergeCandidate(const std::vector<boost::shared_ptr<Cylinder> >& cylinder_array,const merge_config& limits,std::vector<int>& intersections);
 	void merge(std::vector<boost::shared_ptr<Cylinder> >& c_array);
-	void assignMembers();
-	void completeCylinder();
+
+
+
+
+
+
+	void dbg_out(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points,std::string& name);
 
 	double r_;
 	std::vector<Eigen::Vector3f> axes_;
 	Eigen::Vector3f origin_;
-	Polygon unrolled_;
+//	Polygon unrolled_;
 	bool debug_;
 
 private:
 	void getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha);
-	void getShiftedPolygon(Cylinder& c_map, Polygon & shifted_polygon);
+	void getShiftedPolygon(Cylinder& c,Polygon & shifted_polygon);
 };
 
 

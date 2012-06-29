@@ -147,7 +147,7 @@ int main(int argc, char** argv)
   seg.performInitialSegmentation();
   g->clusters()->mapClusterColor(p2);
   std::cout << "refine segmentation.." << std::endl;
-  seg.refineSegmentation();
+  //seg.refineSegmentation();
   g->clusters()->mapClusterColor(p);
   g->edges()->mapBoundaryPoints(pbp,n_bp);
   cob_3d_segmentation::ClusterClassifier<SegTypes::CH, SegTypes::Point, SegTypes::Normal, SegTypes::Label> cc;
