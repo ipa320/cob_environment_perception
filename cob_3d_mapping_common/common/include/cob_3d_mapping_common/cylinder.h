@@ -101,6 +101,7 @@ public:
 
 
 	void getCyl3D(std::vector<std::vector<Eigen::Vector3f> >& contours3D);
+	void allocate();
 
 	void weightAttributes(std::vector<boost::shared_ptr<Cylinder> >& c_array,Cylinder& average_c);
 
