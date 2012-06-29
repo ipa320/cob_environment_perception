@@ -107,10 +107,10 @@ public:
 	// Constructor
 	GeometryMapNode()
 	{
-
+		std::cout<<"THIS IS GEOMETRY MAP NOde"<<std::endl;
 		config_server_.setCallback(boost::bind(&GeometryMapNode::dynReconfCallback, this, _1, _2));
 		ctr_ = 0;
-		shape_sub_ = n_.subscribe("SA", 10, &GeometryMapNode::shapeCallback, this);
+		shape_sub_ = n_.subscribe("shape_array", 10, &GeometryMapNode::shapeCallback, this);
 		map_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("map_array",1);
 		marker_pub_ = n_.advertise<visualization_msgs::Marker>("geometry_marker",100);
 		clear_map_server_ = n_.advertiseService("clear_map", &GeometryMapNode::clearMap, this);
@@ -163,6 +163,8 @@ public:
 	void
 	shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr sa)
 	{
+
+		std::cout<<"DEBUG 1"<<std::endl;
 		static int ctr=0;
 		static double time = 0;
 		PrecisionStopWatch t;
@@ -174,14 +176,17 @@ public:
 			if (sa->shapes[i].type == 0) {
 				std::cout<<"polygon detected"<<std::endl;
 
+				std::cout<<"DEBUG 2"<<std::endl;
 
 				PolygonPtr polygon_map_entry_ptr = PolygonPtr(new Polygon());
 				if(!fromROSMsg(sa->shapes[i], *polygon_map_entry_ptr)) {
 
 					continue;
 				}
-				std::cout<<"Debug[1]"<<std::endl;
+				std::cout<<"DEBUG 3"<<std::endl;
+
 				geometry_map_.addMapEntry(polygon_map_entry_ptr);
+				std::cout<<"DEBUG 4"<<std::endl;
 
 			}
 
@@ -217,7 +222,7 @@ public:
 
 
 		publishMapMarker();
-		publishMap();
+//		publishMap();
 		ctr_++;
 		//ROS_INFO("%d polygons received so far", ctr_);
 	}
