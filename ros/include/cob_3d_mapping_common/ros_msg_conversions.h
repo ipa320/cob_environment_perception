@@ -128,7 +128,6 @@ inline bool
 fromROSMsg(const cob_3d_mapping_msgs::Shape& s, Polygon& p)
 {
 
-
 p.id = 0;
 p.centroid(0) = s.centroid.x;
 p.centroid(1) = s.centroid.y;
@@ -139,7 +138,7 @@ p.normal(2) = s.params[2];
 p.d = s.params[3];
 //std::cout << "normal: " << p.normal(0) << "," << p.normal(1) << "," << p.normal(2) << std::endl;
 //std::cout << "d: " << p.d << std::endl << std::endl;
-p.merged = 0;
+p.merged = 1;
 p.color[0] = s.color.r;
 p.color[1] = s.color.g;
 p.color[2] = s.color.b;
@@ -184,7 +183,7 @@ toROSMsg(const Cylinder& c, cob_3d_mapping_msgs::Shape& s)
 {
 
 
-s.params.resize(14);
+s.params.resize(10);
 // x axis
 s.params[0]=c.axes_[1][0];
 s.params[1]=c.axes_[1][1];
@@ -231,10 +230,10 @@ cloud.points.push_back(pt);
 
 }
 sensor_msgs::PointCloud2 cloud_msg;
+
 pcl::toROSMsg(cloud, cloud_msg);
 s.points[i]= cloud_msg;
 }
-
 
 
 
@@ -252,7 +251,6 @@ c.id = 0;
 // c.centroid(0) = s.centroid.x;
 // c.centroid(1) = s.centroid.y;
 // c.centroid(2) = s.centroid.z;
-
 
 c.axes_[1][0]= s.params[0];
 c.axes_[1][1] = s.params[1];
@@ -284,6 +282,8 @@ if(s.points[i].data.size())
 {
 pcl::PointCloud<pcl::PointXYZ> cloud;
 pcl::fromROSMsg(s.points[i], cloud);
+
+
 std::vector<Eigen::Vector3f> pts;
 pts.resize(cloud.points.size());
 for(unsigned int j=0; j<cloud.points.size(); j++)
