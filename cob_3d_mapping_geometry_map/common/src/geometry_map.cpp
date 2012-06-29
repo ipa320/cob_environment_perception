@@ -106,15 +106,12 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
 
 	// find out polygons, to merge with
 	std::vector<int> intersections;
-	std::cout<<"DEBUG 3.1"<<std::endl;
 
 	if (map_polygon_.size()> 0) {
 
-		std::cout<<"Debug 3.1.1"<<std::endl;
 		p.isMergeCandidate(map_polygon_,limits,intersections);
 		// std::cout<<"intersections size = "<<intersections.size()<<std::endl;
 
-		std::cout<<"Debug 3.1.2"<<std::endl;
 
 
 
@@ -125,7 +122,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
 		{
 
 
-
+			std::cout<<"merging-..."<<std::endl;
 
 			std::vector<boost::shared_ptr<Polygon> > merge_candidates;
 
@@ -137,7 +134,6 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
 			}
 			// merge polygon with merge candidates
 			p.merge(merge_candidates);
-			std::cout<<"Debug 3.1.3"<<std::endl;
 
 
 			//	  std::cout<<"size +- "<< 1 -merge_candidates.size()<<std::endl;
@@ -152,25 +148,20 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
 			map_polygon_.push_back(p_ptr);
 			new_id_++;
 
-			std::cout<<"Debug 3.1.3"<<std::endl;
 
 			//	std::cout<<"size +1"<<std::endl;
 		}
 	}
 
 	else{
-		std::cout<<"DEBUG 3.2"<<std::endl;
 
 		p.assignMembers();
 		p.assignWeight(limits.weighting_method);
-		std::cout<<"DEBUG 3.3"<<std::endl;
 		map_polygon_.push_back(p_ptr);
-		std::cout<<"DEBUG 3.4"<<std::endl;
 
 		new_id_++;
 	}
-	std::cout<<"DEBUG 3.5"<<std::endl;
-
+	std::cout<<"size map"<<map_polygon_.size()<<std::endl;
 	if(save_to_file_) saveMap(file_path_);
 
 
