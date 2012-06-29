@@ -159,10 +159,11 @@ void Polygon::assignMembers(const Eigen::Vector3f& z_axis, const Eigen::Vector3f
 }
 
 void Polygon::assignMembers(){
+	std::cout<<"DEBUG 3.2.1"<<std::endl;
 
 	Eigen::Vector3f pt_on_polygon;
 	getPointOnPolygon(normal,d,pt_on_polygon);
-	computeCentroid();
+//	computeCentroid();
 	Eigen::Affine3f transform_from_plane_to_world;
 	getTransformationFromPlaneToWorld(normal,pt_on_polygon,transform_from_plane_to_world);
 	transform_from_world_to_plane=transform_from_plane_to_world.inverse();
@@ -607,7 +608,7 @@ Polygon::isMergeCandidate(std::vector<PolygonPtr>& poly_vec,merge_config& config
 	merged=1;
 //		this->assignMembers();
 	this->assignWeight(merge_settings_.weighting_method);
-	this->computeCentroid();
+//	this->computeCentroid();
 
 	for(size_t i=0; i< poly_vec.size(); i++)
 	{
