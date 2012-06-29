@@ -88,12 +88,13 @@ struct merge_config {
 
     // http://paulbourke.net/geometry/polyarea/
     // works for all polygons except self-intersecting polygons
-    double
-    computeArea();
-
+    double computeArea();
     double computeArea3d();
 
 
+
+    void getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,const Eigen::Vector3f &origin, Eigen::Affine3f &transformation);
+    void getTransformationFromPlaneToWorld(const Eigen::Vector3f z_axis,const Eigen::Vector3f &normal,const Eigen::Vector3f &origin, Eigen::Affine3f &transformation);
 
 
     void getTransformedContours(const Eigen::Affine3f& trafo,std::vector< std::vector<Eigen::Vector3f> >& t_contours);
