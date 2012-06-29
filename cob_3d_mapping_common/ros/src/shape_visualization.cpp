@@ -341,12 +341,12 @@ public:
           marker.pose.position.z = trans (2);
 
           setOrientation (normal_[k], marker);
-          /*
+
            marker.pose.orientation.x = quat.x ();
            marker.pose.orientation.x = quat.y ();
            marker.pose.orientation.x = quat.z ();
            marker.pose.orientation.x = quat.w ();
-           */
+
 //////////////////////////
           /*
            marker.pose.orientation.x = -0.5;
@@ -576,11 +576,11 @@ public:
       marker.scale.z = 0.1;
 
       //set pose
-      /*
+
        marker.pose.position.x = centroid_[shape_ctr_][0];
        marker.pose.position.x = centroid_[shape_ctr_][1];
        marker.pose.position.x = centroid_[shape_ctr_][2];
-       */
+
       Eigen::Vector3f v, normal, origin;
       Eigen::Affine3f transformation;
       normal (0) = normal_[shape_ctr_][0];
@@ -829,13 +829,12 @@ public:
    c_title = ss.str ();
    eh_3 = menu_h_ptr->insert (eh_1, "Centroid",
    boost::bind (&ShapeVisualization::displayCentroidCB, this, _1, shape_ctr_, menu_h_ptr));
-
+/*
    std::cout << " eh_1 : " << eh_1 << std::endl;
    std::cout << " eh_2 : " << eh_2 << std::endl;
    std::cout << " eh_3 : " << eh_3 << std::endl;
+*/
 
-   //shape_ctr_++;
-   //std::cout<<" shape_ctr_ : "<<shape_ctr_<<std::endl;
    menu_h_ptr->setVisible (eh_1, true);
    menu_h_ptr->setCheckState (eh_1, interactive_markers::MenuHandler::NO_CHECKBOX);
    menu_h_ptr->setVisible (eh_2, true);
