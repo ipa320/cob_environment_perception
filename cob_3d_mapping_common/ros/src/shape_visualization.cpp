@@ -336,17 +336,18 @@ public:
           pcl::getTransformationFromTwoUnitVectorsAndOrigin (v, normal_[k], origin, transformation);
           Eigen::Quaternionf quat (transformation.rotation ());
           Eigen::Vector3f trans (transformation.translation ());
-          marker.pose.position.x = trans (0);
-          marker.pose.position.y = trans (1);
-          marker.pose.position.z = trans (2);
+
+           marker.pose.position.x = trans (0);
+           marker.pose.position.y = trans (1);
+           marker.pose.position.z = trans (2);
 
           setOrientation (normal_[k], marker);
-
+/*
            marker.pose.orientation.x = quat.x ();
            marker.pose.orientation.x = quat.y ();
            marker.pose.orientation.x = quat.z ();
            marker.pose.orientation.x = quat.w ();
-
+*/
 //////////////////////////
           /*
            marker.pose.orientation.x = -0.5;
@@ -463,11 +464,11 @@ public:
            std::cout << " centroid_[k][0] <<" << k << " : " << centroid_[k][0] << std::endl;
            std::cout << " centroid_[k][1] <<" << k << " : " << centroid_[k][1] << std::endl;
            std::cout << " centroid_[k][2] <<" << k << " : " << centroid_[k][2] << std::endl;
-
-           marker.pose.position.x = centroid_[k][0];
-           marker.pose.position.y = centroid_[k][1];
-           marker.pose.position.z = centroid_[k][2];
            */
+          marker.pose.position.x = centroid_[k][0];
+          marker.pose.position.y = centroid_[k][1];
+          marker.pose.position.z = centroid_[k][2];
+
           Eigen::Vector3f u, v, normal, origin;
           Eigen::Affine3f transformation;
 
@@ -482,14 +483,11 @@ public:
           pcl::getTransformationFromTwoUnitVectorsAndOrigin (v, normal, origin, transformation);
           //Eigen::Quaternionf quat (transformation.rotation ());
           Eigen::Vector3f trans (transformation.translation ());
-          marker.pose.position.x = trans (0);
-          marker.pose.position.y = trans (1);
-          marker.pose.position.z = trans (2);
-          /*
-           marker.pose.position.x = 1;
-           marker.pose.position.y = 1;
-           marker.pose.position.z = 1;
-           */
+
+           marker.pose.position.x = trans (0);
+           marker.pose.position.y = trans (1);
+           marker.pose.position.z = trans (2);
+
           break;
         }
       }
@@ -576,13 +574,14 @@ public:
       marker.scale.z = 0.1;
 
       //set pose
-
+      /*
        marker.pose.position.x = centroid_[shape_ctr_][0];
        marker.pose.position.x = centroid_[shape_ctr_][1];
        marker.pose.position.x = centroid_[shape_ctr_][2];
-
+       */
       Eigen::Vector3f v, normal, origin;
       Eigen::Affine3f transformation;
+
       normal (0) = normal_[shape_ctr_][0];
       normal (1) = normal_[shape_ctr_][1];
       normal (2) = normal_[shape_ctr_][2];
@@ -590,19 +589,23 @@ public:
       origin (1) = centroid_[shape_ctr_][1];
       origin (2) = centroid_[shape_ctr_][2];
 
+     // normal = normal.unitOrthogonal();
       //std::cout << "normal: " << normal << std::endl;
       //std::cout << "centroid: " << origin << std::endl;
       v = normal.unitOrthogonal ();
       pcl::getTransformationFromTwoUnitVectorsAndOrigin (v, normal, origin, transformation);
       Eigen::Quaternionf quat (transformation.rotation ());
       Eigen::Vector3f trans (transformation.translation ());
-      marker.pose.position.x = trans (0);
-      marker.pose.position.y = trans (1);
-      marker.pose.position.z = trans (2);
+
+       marker.pose.position.x = trans (0);
+       marker.pose.position.y = trans (1);
+       marker.pose.position.z = trans (2);
+
       marker.pose.orientation.x = quat.x ();
       marker.pose.orientation.y = quat.y ();
       marker.pose.orientation.z = quat.z ();
       marker.pose.orientation.w = quat.w ();
+
       //draw each triangle
       marker.points.resize (it->GetNumPoints ());
       //std::cout << "marker points = " << marker.points.size () << std::endl;
@@ -623,7 +626,7 @@ public:
     }
   }
 
-  /*
+/*
    void
    fillMarkers (pcl::PointCloud<pcl::PointXYZ> pc, visualization_msgs::InteractiveMarkerControl& im_ctrl,
    const std_msgs::ColorRGBA& clr)
@@ -655,21 +658,44 @@ public:
    marker.scale.x = 1.0;
    marker.scale.y = 1.0;
    marker.scale.z = 1.0;
-   */
+
+   Eigen::Vector3f v, normal, origin;
+   Eigen::Affine3f transformation;
+
+   normal (0) = normal_[shape_ctr_][0];
+   normal (1) = normal_[shape_ctr_][1];
+   normal (2) = normal_[shape_ctr_][2];
+   origin (0) = centroid_[shape_ctr_][0];
+   origin (1) = centroid_[shape_ctr_][1];
+   origin (2) = centroid_[shape_ctr_][2];
+
+   v = normal.unitOrthogonal ();
+   pcl::getTransformationFromTwoUnitVectorsAndOrigin (v, normal, origin, transformation);
+   Eigen::Quaternionf quat (transformation.rotation ());
+   Eigen::Vector3f trans (transformation.translation ());
+
+    marker.pose.position.x = trans (0);
+    marker.pose.position.y = trans (1);
+    marker.pose.position.z = trans (2);
+
+   marker.pose.orientation.x = quat.x ();
+   marker.pose.orientation.y = quat.y ();
+   marker.pose.orientation.z = quat.z ();
+   marker.pose.orientation.w = quat.w ();
   //set pose
   /*
    marker.pose.position.x = centroid_[shape_ctr_][0];
    marker.pose.position.y = centroid_[shape_ctr_][1];
    marker.pose.position.z = centroid_[shape_ctr_][2];
-   */
+
   // setOrientation (normal_[shape_ctr_], marker);
-  /*
+
    marker.pose.orientation.x = normal_[shape_ctr_][0];
    marker.pose.orientation.y = normal_[shape_ctr_][1];
    marker.pose.orientation.z = normal_[shape_ctr_][2];
    marker.pose.orientation.w = 0;
-   */
-  /*
+
+
    std::cout << " ---marker orientation--- " << std::endl;
    std::cout << "marker.pose.orientation.x : " << marker.pose.orientation.x << std::endl;
    std::cout << "marker.pose.orientation.y : " << marker.pose.orientation.y << std::endl;
@@ -680,10 +706,10 @@ public:
    std::cout << " normal_[0] " << normal_[shape_ctr_][0] << std::endl;
    std::cout << " normal_[1] " << normal_[shape_ctr_][1] << std::endl;
    std::cout << " normal_[2] " << normal_[shape_ctr_][2] << std::endl;
-   */
+
   //marker.points.resize (pc.points.size ());
   //std::cout << "marker points = " << marker.points.size () << std::endl;
-  /*
+
    geometry_msgs::Point pt;
    if (marker.type == visualization_msgs::Marker::TRIANGLE_LIST)
    {
@@ -752,7 +778,7 @@ public:
    im_ctrl.markers.push_back (marker);
 
    }
-   */
+*/
   /*
    void
    createMarker3D (std::vector<Eigen::Vector3f>& pos_vec, visualization_msgs::InteractiveMarkerControl& im_ctrl,
@@ -805,44 +831,44 @@ public:
    }
 
    */
-   void
-   createShapeMenu (boost::shared_ptr<interactive_markers::MenuHandler> menu_h_ptr)
-   {
-   ROS_INFO(" creating menu for shape < %d >", shape_ctr_);
+  void
+  createShapeMenu (boost::shared_ptr<interactive_markers::MenuHandler> menu_h_ptr)
+  {
+    ROS_INFO(" creating menu for shape < %d >", shape_ctr_);
 
-   interactive_markers::MenuHandler::EntryHandle eh_1, eh_2, eh_3;
-   std::string n_title, c_title;
-   stringstream ss;
-   //ss << im.name << "/menu_shape_" << shape_ctr_;
-   //ss << "menu_shape_" << shape_ctr_;
+    interactive_markers::MenuHandler::EntryHandle eh_1, eh_2, eh_3;
+    std::string n_title, c_title;
+    stringstream ss;
+    //ss << im.name << "/menu_shape_" << shape_ctr_;
+    //ss << "menu_shape_" << shape_ctr_;
 
-   //std::cout << " menu handle ptr->shape menu>> " << shape_ctr_ << " <<" << menu_h_ptr << std::endl;
+    //std::cout << " menu handle ptr->shape menu>> " << shape_ctr_ << " <<" << menu_h_ptr << std::endl;
 
-   eh_1 = menu_h_ptr->insert ("Display", boost::bind (&ShapeVisualization::menuCB, this, _1));
-   ss.str ("");
-   //ss << "Normal_" << shape_ctr_;
-   n_title = ss.str ();
-   eh_2 = menu_h_ptr->insert (eh_1, "Normal",
-   boost::bind (&ShapeVisualization::displayNormalCB, this, _1, shape_ctr_, menu_h_ptr));
-   ss.str ("");
-   ss << "Centroid_" << shape_ctr_;
-   c_title = ss.str ();
-   eh_3 = menu_h_ptr->insert (eh_1, "Centroid",
-   boost::bind (&ShapeVisualization::displayCentroidCB, this, _1, shape_ctr_, menu_h_ptr));
-/*
-   std::cout << " eh_1 : " << eh_1 << std::endl;
-   std::cout << " eh_2 : " << eh_2 << std::endl;
-   std::cout << " eh_3 : " << eh_3 << std::endl;
-*/
+    eh_1 = menu_h_ptr->insert ("Display", boost::bind (&ShapeVisualization::menuCB, this, _1));
+    ss.str ("");
+    //ss << "Normal_" << shape_ctr_;
+    n_title = ss.str ();
+    eh_2 = menu_h_ptr->insert (eh_1, "Normal",
+                               boost::bind (&ShapeVisualization::displayNormalCB, this, _1, shape_ctr_, menu_h_ptr));
+    ss.str ("");
+    ss << "Centroid_" << shape_ctr_;
+    c_title = ss.str ();
+    eh_3 = menu_h_ptr->insert (eh_1, "Centroid",
+                               boost::bind (&ShapeVisualization::displayCentroidCB, this, _1, shape_ctr_, menu_h_ptr));
+    /*
+     std::cout << " eh_1 : " << eh_1 << std::endl;
+     std::cout << " eh_2 : " << eh_2 << std::endl;
+     std::cout << " eh_3 : " << eh_3 << std::endl;
+     */
 
-   menu_h_ptr->setVisible (eh_1, true);
-   menu_h_ptr->setCheckState (eh_1, interactive_markers::MenuHandler::NO_CHECKBOX);
-   menu_h_ptr->setVisible (eh_2, true);
-   menu_h_ptr->setCheckState (eh_2, interactive_markers::MenuHandler::UNCHECKED);
-   menu_h_ptr->setVisible (eh_3, true);
-   menu_h_ptr->setCheckState (eh_3, interactive_markers::MenuHandler::UNCHECKED);
+    menu_h_ptr->setVisible (eh_1, true);
+    menu_h_ptr->setCheckState (eh_1, interactive_markers::MenuHandler::NO_CHECKBOX);
+    menu_h_ptr->setVisible (eh_2, true);
+    menu_h_ptr->setCheckState (eh_2, interactive_markers::MenuHandler::UNCHECKED);
+    menu_h_ptr->setVisible (eh_3, true);
+    menu_h_ptr->setCheckState (eh_3, interactive_markers::MenuHandler::UNCHECKED);
 
-   }
+  }
 
   /**
    * @brief Publish interactive markers for a shape message using interactive marker server
