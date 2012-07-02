@@ -122,8 +122,6 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
 		{
 
 
-			std::cout<<"merging-..."<<std::endl;
-
 			std::vector<boost::shared_ptr<Polygon> > merge_candidates;
 
 			for(int i=0;i<(int)intersections.size();i++)
@@ -133,7 +131,10 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
 
 			}
 			// merge polygon with merge candidates
+			std::cout<<"merging with "<<merge_candidates.size()<<" shapes..."<<std::endl;
+			//std::cout <<"c before: "<< p.centroid(0)<<", "<<p.centroid(1)<<", "<<p.centroid(2)<<std::endl;
 			p.merge(merge_candidates);
+			//std::cout <<"c after : "<< p.centroid(0)<<", "<<p.centroid(1)<<", "<<p.centroid(2)<<std::endl;
 
 
 			//	  std::cout<<"size +- "<< 1 -merge_candidates.size()<<std::endl;
@@ -161,7 +162,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
 
 		new_id_++;
 	}
-	std::cout<<"size map"<<map_polygon_.size()<<std::endl;
+	std::cout<<"size map "<<map_polygon_.size()<<std::endl;
 	if(save_to_file_) saveMap(file_path_);
 
 
