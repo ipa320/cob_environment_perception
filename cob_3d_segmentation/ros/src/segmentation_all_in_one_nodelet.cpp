@@ -115,15 +115,18 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::received_cloud_cb(PointCloud::
   seg_.setInputCloud(cloud);
   seg_.performInitialSegmentation();
   seg_.refineSegmentation();
+  NODELET_INFO("Done with segmentation .... ");
   graph_->clusters()->mapClusterColor(segmented_);
   cc_.setPointCloudIn(cloud);
   cc_.classify();
   graph_->clusters()->mapTypeColor(classified_);
+  NODELET_INFO("publish first cloud .... ");
   pub_segmented_.publish(segmented_);
+  NODELET_INFO("publish second cloud .... ");
   pub_classified_.publish(classified_);
-
+  NODELET_INFO("publish shape array .... ");
   publishShapeArray(graph_->clusters(), cloud);
-  NODELET_INFO("Done with segmentation .... ");
+  NODELET_INFO("Done with publishing .... ");
 }
 
 void
@@ -138,38 +141,54 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr 
     {
     case I_PLANE:
     {
-      sa.shapes.push_back(cob_3d_mapping_msgs::Shape());
-      cob_3d_mapping_msgs::Shape* s = &sa.shapes.back();
-      s->type = cob_3d_mapping_msgs::Shape::POLYGON;
-      s->params.resize(4);
-      Eigen::Vector3f n = c->getOrientation();
-      s->params[0] = n(0); // n_x
-      s->params[1] = n(1); // n_y
-      s->params[2] = n(2); // n_z
-      s->params[3] = c->getCentroid().norm(); // d
-      s->centroid.x = c->getCentroid()[0];
-      s->centroid.y = c->getCentroid()[1];
-      s->centroid.z = c->getCentroid()[2];
+      //std::cout << "Cluster: " << c->size() << " : ";
 
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull(new pcl::PointCloud<pcl::PointXYZRGB>);
       PolygonContours<PolygonPoint> poly;
       pe_.outline(cloud->width, cloud->height, c->border_points, poly);
-      //std::cout << "#Polygons: " << poly.polys_.size() << std::endl;
-      s->points.resize(poly.polys_.size());
+      //std::cout << "Polys: " << poly.polys_.size() << std::endl;
+      if (!poly.polys_.size()) continue; // continue, if no contours were found
 
+      sa.shapes.push_back(cob_3d_mapping_msgs::Shape());
+      cob_3d_mapping_msgs::Shape* s = &sa.shapes.back();
+      s->type = cob_3d_mapping_msgs::Shape::POLYGON;
+      s->points.resize(poly.polys_.size());
+      int max_idx=0, max_size=0;
       for (int i = 0; i < poly.polys_.size(); ++i)
       {
-        s->holes.push_back(false);
+        if (poly.polys_[i].size() > max_size) { max_idx = i; max_size = poly.polys_[i].size(); }
+      }
+
+      Eigen::Vector3f centroid = Eigen::Vector3f::Zero();
+      for (int i = 0; i < poly.polys_.size(); ++i)
+      {
+        if (i == max_idx) s->holes.push_back(false);
+        else s->holes.push_back(true);
+
         for (std::vector<PolygonPoint>::iterator it = poly.polys_[i].begin(); it != poly.polys_[i].end(); ++it)
         {
-          hull_cloud->points.push_back(cloud->points[PolygonPoint::getInd(it->x, it->y)]);
-          hull->points.push_back(cloud->points[PolygonPoint::getInd(it->x, it->y)]);
+          pcl::PointXYZRGB p = cloud->points[PolygonPoint::getInd(it->x, it->y)];
+          if (i==max_idx) { centroid += p.getVector3fMap(); }
+          hull_cloud->points.push_back(p);
+          hull->points.push_back(p);
         }
         hull->height = 1;
         hull->width = hull->size();
         pcl::toROSMsg(*hull, s->points[i]);
         hull->clear();
       }
+      //std::cout << centroid(0) << ", " << centroid(1) << ", " << centroid(2) << std::endl;
+      centroid /= poly.polys_[max_idx].size();
+      s->centroid.x = centroid[0];
+      s->centroid.y = centroid[1];
+      s->centroid.z = centroid[2];
+
+      s->params.resize(4);
+      Eigen::Vector3f n = c->getOrientation();
+      s->params[0] = n(0); // n_x
+      s->params[1] = n(1); // n_y
+      s->params[2] = n(2); // n_z
+      s->params[3] = centroid.norm(); // d
       break;
     }
     case I_CYL:
@@ -193,6 +212,12 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr 
       break;
     }
     }
+
+    /*for (int i = 0; i < sa.shapes.back().points.size(); ++i)
+    {
+      std::cout << "Size: " << sa.shapes.back().points[i].data.size()
+                << " \t Step: " << sa.shapes.back().points[i].point_step << std::endl;
+                }*/
   }
   hull_cloud->header = cloud->header;
   hull_cloud->height = 1;

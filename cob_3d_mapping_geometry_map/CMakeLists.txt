@@ -58,8 +58,8 @@ target_link_libraries(geometry_map_node gpc geometry_map_lib geometry_map_vis_li
 rosbuild_add_executable(eval_feature_map common/test/eval_mapping.cpp)
 target_link_libraries(eval_feature_map gpc cob_3d_mapping_common)
 
-rosbuild_add_executable(cylinder_client ros/src/cylinder_client.cpp)
-target_link_libraries(cylinder_client cob_3d_mapping_common)
+#rosbuild_add_executable(cylinder_client ros/src/cylinder_client.cpp)
+#target_link_libraries(cylinder_client cob_3d_mapping_common)
 
 #rosbuild_add_executable(geometry_test_map common/test/geometry_map_test.cpp)
 #target_link_libraries(geometry_test_map  geometry_map_vis_lib geometry_map_lib test_planes gpc)
