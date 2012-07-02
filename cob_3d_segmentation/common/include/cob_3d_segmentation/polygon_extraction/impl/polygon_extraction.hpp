@@ -61,7 +61,7 @@ void PolygonExtraction::outline(const int w, const int h, std::vector<TPoint> ou
     int num=0;
     std::stack<Contour2D::spline2D> forked_states;
     std::stack<typename std::vector<TPoint>::size_type> forked_points;
-    while(1) 
+    while(1)
     {
       if(x<0 || y<0 || x>=w || y>=h || ch_[ TPoint::getInd(x,y) ]<1) { // ch_ means, we reached the starting point again
         break;
@@ -73,24 +73,24 @@ void PolygonExtraction::outline(const int w, const int h, std::vector<TPoint> ou
 
       if(p==0|| (!Contour2D::g_Splines[bf][p].x&&!Contour2D::g_Splines[bf][p].y) )
       {
-	// There is no valid next point:
-	if (forked_states.size() == 0 || (std::abs(x-start_x)+std::abs(y-start_y)) <= 4) { break; }
-	// Go back to last forked state
-	v = forked_states.top().v;
-	x = forked_states.top().x;
-	y = forked_states.top().y;
-	bf = forked_states.top().bf;
-	forked_states.pop();
-	poly.removeLastPoints(forked_points.top());
-	forked_points.pop();
-	ch_ [ TPoint::getInd(x,y) ] = 1;
-	continue;
+        // There is no valid next point:
+        if (forked_states.size() == 0 || (std::abs(x-start_x)+std::abs(y-start_y)) <= 4) { break; }
+        // Go back to last forked state
+        v = forked_states.top().v;
+        x = forked_states.top().x;
+        y = forked_states.top().y;
+        bf = forked_states.top().bf;
+        forked_states.pop();
+        poly.removeLastPoints(forked_points.top());
+        forked_points.pop();
+        ch_ [ TPoint::getInd(x,y) ] = 1;
+        continue;
       }
       if (hasMultiplePositions((unsigned int)p))
       {
-	Contour2D::spline2D s = {v, x, y, bf};
-	forked_states.push(s);
-	forked_points.push(0);
+        Contour2D::spline2D s = {v, x, y, bf};
+        forked_states.push(s);
+        forked_points.push(0);
       }
 
       v+=v+Contour2D::g_Splines[bf][p].v;
@@ -101,7 +101,7 @@ void PolygonExtraction::outline(const int w, const int h, std::vector<TPoint> ou
 
       if(std::abs(v)>5) {
         v=0;
-	++(forked_points.top());
+        ++(forked_points.top());
         poly.addPoint(x,y);
       }
     }
