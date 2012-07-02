@@ -107,23 +107,21 @@ struct merge_config {
     void merge(std::vector< boost::shared_ptr<Polygon> >& poly_vec);
     void merge_union(std::vector< boost::shared_ptr<Polygon> >& poly_vec,const Polygon & p_average);
 
-//    Calculate members of polygon
- 	void assignMembers(const Eigen::Vector3f &new_normal, const double &new_d);
- 	void assignMembers(const Eigen::Vector3f & z_axis,const Eigen::Vector3f &new_normal, const Eigen::Vector3f & pt_on_polygon);
- 	void assignMembers();
+//  Calculate members of polygon
+    void assignMembers(const Eigen::Vector3f &new_normal, const double &new_d, const Eigen::Vector4f& new_centroid);
+    void assignMembers(const Eigen::Vector3f & z_axis,const Eigen::Vector3f &new_normal, const Eigen::Vector3f & pt_on_polygon);
+    void assignMembers();
 
-// 	Weighting
- 	void assignWeight(std::string & mode);
- 	void applyWeighting(const std::vector< boost::shared_ptr<Polygon> >& poly_vec , Polygon & p_average );
+//  Weighting
+    void assignWeight(std::string & mode);
+    void applyWeighting(const std::vector< boost::shared_ptr<Polygon> >& poly_vec , Polygon & p_average );
 
- 	//    Use general polygon clipper to create polygon structures
- 	    void
- 	    GpcStructureUsingMap(const Eigen::Affine3f& external_trafo,gpc_polygon* gpc_p);
+    //    Use general polygon clipper to create polygon structures
+    void GpcStructureUsingMap(const Eigen::Affine3f& external_trafo,gpc_polygon* gpc_p);
 
- 	    void
- 	    GpcStructure( gpc_polygon* gpc_p);
+    void GpcStructure( gpc_polygon* gpc_p);
 
- 	void debug_output(std::string name);
+    void debug_output(std::string name);
 
 
     //needed for 32-bit systems: see http://eigen.tuxfamily.org/dox/TopicStructHavingEigenMembers.html
