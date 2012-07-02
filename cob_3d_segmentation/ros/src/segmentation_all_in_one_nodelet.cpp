@@ -175,8 +175,10 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr 
         hull->height = 1;
         hull->width = hull->size();
         pcl::toROSMsg(*hull, s->points[i]);
+        //std::cout << hull->points.size() << " | " << s->points[i].data.size() << " ";
         hull->clear();
       }
+      //std::cout << std::endl;
       //std::cout << centroid(0) << ", " << centroid(1) << ", " << centroid(2) << std::endl;
       centroid /= poly.polys_[max_idx].size();
       s->centroid.x = centroid[0];
