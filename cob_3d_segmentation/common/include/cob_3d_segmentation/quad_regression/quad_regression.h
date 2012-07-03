@@ -57,6 +57,9 @@
 #define SEGMENTATION_QUAD_REGR_H_
 
 #include "../general_segmentation.h"
+
+#define USE_MIN_MAX_RECHECK_
+
 #include "polygon.h"
 
 namespace Segmentation
