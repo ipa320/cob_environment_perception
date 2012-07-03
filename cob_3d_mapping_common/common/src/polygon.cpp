@@ -134,15 +134,19 @@ Polygon::getTransformationFromPlaneToWorld(const Eigen::Vector3f z_axis,const Ei
 
 //Polygon::Polygon()
 
-void Polygon::assignMembers(const Eigen::Vector3f &new_normal,const double &new_d){
+void Polygon::assignMembers(const Eigen::Vector3f &new_normal,const double &new_d, const Eigen::Vector4f& new_centroid){
 	d=new_d;
 	normal=new_normal;
-	Eigen::Vector3f pt_on_polygon;
-	getPointOnPolygon(normal,d,pt_on_polygon);
-	Eigen::Affine3f transform_from_plane_to_world;
-	getTransformationFromPlaneToWorld(normal,pt_on_polygon,transform_from_plane_to_world);
-	transform_from_world_to_plane=transform_from_plane_to_world.inverse();
-
+	centroid=new_centroid;
+	/*
+    Eigen::Vector3f pt_on_polygon;
+    getPointOnPolygon(normal,d,pt_on_polygon);
+    Eigen::Affine3f transform_from_plane_to_world;
+    getTransformationFromPlaneToWorld(normal,pt_on_polygon,transform_from_plane_to_world);
+    transform_from_world_to_plane=transform_from_plane_to_world.inverse();
+	 */
+	pcl::getTransformationFromTwoUnitVectorsAndOrigin(
+			this->normal.unitOrthogonal(),this->normal,this->centroid.head(3),this->transform_from_world_to_plane);
 
 }
 
@@ -159,15 +163,17 @@ void Polygon::assignMembers(const Eigen::Vector3f& z_axis, const Eigen::Vector3f
 }
 
 void Polygon::assignMembers(){
-	std::cout<<"DEBUG 3.2.1"<<std::endl;
-
-	Eigen::Vector3f pt_on_polygon;
-	getPointOnPolygon(normal,d,pt_on_polygon);
-	computeCentroid();
-	Eigen::Affine3f transform_from_plane_to_world;
-	getTransformationFromPlaneToWorld(normal,pt_on_polygon,transform_from_plane_to_world);
-	transform_from_world_to_plane=transform_from_plane_to_world.inverse();
-
+	/*
+    std::cout<<"DEBUG 3.2.1"<<std::endl;
+    Eigen::Vector3f pt_on_polygon;
+    getPointOnPolygon(normal,d,pt_on_polygon);
+//	computeCentroid();
+    Eigen::Affine3f transform_from_plane_to_world;
+    getTransformationFromPlaneToWorld(normal,pt_on_polygon,transform_from_plane_to_world);
+    transform_from_world_to_plane=transform_from_plane_to_world.inverse();
+	 */
+	pcl::getTransformationFromTwoUnitVectorsAndOrigin(
+			this->normal.unitOrthogonal(),this->normal,this->centroid.head(3),this->transform_from_world_to_plane);
 }
 
 
@@ -189,17 +195,11 @@ Polygon::computeCentroid()
 			}
 		}
 	}
-
 	pcl::PointCloud<pcl::PointXYZ> poly_cloud;
-	std::cout<<contours[idx].size()<<std::endl;
-
 	for (unsigned int j = 0; j < contours[idx].size () ; j++)
 	{
-
 		pcl::PointXYZ p;
-
 		p.x = contours[idx][j][0];
-
 		p.y = contours[idx][j][1];
 		p.z = contours[idx][j][2];
 		poly_cloud.push_back(p);
@@ -237,13 +237,13 @@ Polygon::computeArea()
 			sum = sum + (xi * yi_1 - xi_1 * yi);
 
 			/*
-       std::cout << " ---------------------------------------" << std::endl;
-       std::cout << " isSizeOk: xi-->" << xi << std::endl;
-       std::cout << " \t: xi_1-->" << xi_1 << std::endl;
-       std::cout << " \nisSizeOk: yi-->" << yi << std::endl;
-       std::cout << " \t: yi_1-->" << yi_1 << std::endl;
-       std::cout << " isSizeOk: sum-->" << sum << std::endl;
-       std::cout << " ++++++++++++++++++++++++++++++++++++++++" <<std::endl;
+          std::cout << " ---------------------------------------" << std::endl;
+          std::cout << " isSizeOk: xi-->" << xi << std::endl;
+          std::cout << " \t: xi_1-->" << xi_1 << std::endl;
+          std::cout << " \nisSizeOk: yi-->" << yi << std::endl;
+          std::cout << " \t: yi_1-->" << yi_1 << std::endl;
+          std::cout << " isSizeOk: sum-->" << sum << std::endl;
+          std::cout << " ++++++++++++++++++++++++++++++++++++++++" <<std::endl;
 			 */
 
 		}
@@ -377,15 +377,15 @@ Polygon::merge(std::vector<PolygonPtr>& poly_vec)
 
 	applyWeighting(poly_vec,*p_average);
 
-
 	merge_union(poly_vec,*p_average);
 }
 void
 Polygon::applyWeighting(const std::vector<PolygonPtr>& poly_vec, Polygon & p_average)
 {
 
-
+std::cout<<"MERGE WEIGHT: "<<merge_weight_<<std::endl;
 	Eigen::Vector3f average_normal=normal*merge_weight_;
+	Eigen::Vector4f average_centroid=centroid*merge_weight_;
 	double average_d=d*merge_weight_;
 	double sum_w=merge_weight_;
 	int    sum_merged=1;
@@ -408,6 +408,7 @@ Polygon::applyWeighting(const std::vector<PolygonPtr>& poly_vec, Polygon & p_ave
 
 
 		average_normal += p_map1.merge_weight_* p_map1.normal;
+		average_centroid += p_map1.merge_weight_* p_map1.centroid;
 		average_d +=p_map1.merge_weight_ * p_map1.d;
 		sum_w += p_map1.merge_weight_;
 		sum_merged += p_map1.merged;
@@ -418,6 +419,7 @@ Polygon::applyWeighting(const std::vector<PolygonPtr>& poly_vec, Polygon & p_ave
 
 
 	average_normal=average_normal/sum_w;
+	average_centroid=average_centroid/sum_w;
 	average_d=average_d/sum_w;
 	average_normal.normalize();
 	average_d /= average_normal.norm();
@@ -431,7 +433,7 @@ Polygon::applyWeighting(const std::vector<PolygonPtr>& poly_vec, Polygon & p_ave
 		p_average.merged=9;
 
 
-	p_average.assignMembers(average_normal,average_d);
+	p_average.assignMembers(average_normal,average_d,average_centroid);
 
 
 
@@ -485,7 +487,7 @@ void Polygon::assignWeight(std::string& mode)
 		dist_factor *= 0.5;
 		dist_factor=1/dist_factor;
 		merge_weight_ =merged + dist_factor;
-//		merge_weight_=dist_factor;
+		//		merge_weight_=dist_factor;
 		//		merge_weight_ =   ;
 
 	}
@@ -501,10 +503,8 @@ Polygon::merge_union(std::vector<PolygonPtr>& poly_vec, const Polygon& p_average
 
 
 
-
 	gpc_polygon gpc_C;
 	gpc_polygon gpc_B;
-
 
 
 
@@ -595,8 +595,8 @@ Polygon::merge_union(std::vector<PolygonPtr>& poly_vec, const Polygon& p_average
 		}
 		p_map.assignWeight(merge_settings_.weighting_method);
 
-//		std::cout<<"combined = "<<p_map.merge_weight_<<std::endl;
-//		std::cout<<"––––––––––––––––––––––––––––––––––––"<<std::endl;
+		//		std::cout<<"combined = "<<p_map.merge_weight_<<std::endl;
+		//		std::cout<<"––––––––––––––––––––––––––––––––––––"<<std::endl;
 
 	}
 
@@ -612,7 +612,7 @@ Polygon::isMergeCandidate(std::vector<PolygonPtr>& poly_vec,merge_config& config
 
 	merge_settings_=config;
 	merged=1;
-//		this->assignMembers();
+	//		this->assignMembers();
 	this->assignWeight(merge_settings_.weighting_method);
 	this->computeCentroid();
 
@@ -629,12 +629,16 @@ Polygon::isMergeCandidate(std::vector<PolygonPtr>& poly_vec,merge_config& config
 
 		connection << temp[0], temp[1] , temp[2];
 
-		//		std::cout<<"dot = "<<fabs(connection.dot(normal))<<std::endl;
-//		if(fabs(connection.dot(normal)) < (1- merge_settings_.angle_thresh) && fabs(p_map.d-this->d) < merge_settings_.d_thresh)
 
-						if((fabs(p_map.normal.dot(normal)) > merge_settings_.angle_thresh && fabs(p_map.d-this->d) < merge_settings_.d_thresh))
+
+		//		std::cout<<"dot = "<<fabs(connection.dot(normal))<<std::endl;
+//				if(fabs(connection.dot(normal)) < (1- merge_settings_.angle_thresh) && fabs(p_map.d-this->d) < merge_settings_.d_thresh)
+					if(fabs(connection.dot(normal)) < (1- 0.99) && fabs(p_map.d-this->d) < merge_settings_.d_thresh)
+
+//		if((fabs(p_map.normal.dot(normal)) > merge_settings_.angle_thresh && fabs(p_map.d-this->d) < merge_settings_.d_thresh))
 
 		{
+
 
 
 			bool is_intersected= this->isMergeCandidate_intersect(p_map);
@@ -643,23 +647,30 @@ Polygon::isMergeCandidate(std::vector<PolygonPtr>& poly_vec,merge_config& config
 			if(is_intersected == true)
 			{
 				//std::cout << "no intersection with map " << i << std::endl;
-//				std::cout << p.normal << std::endl;
-//				std::cout << "intersection with map " << i << std::endl;
+				//				std::cout << p.normal << std::endl;
+				//				std::cout << "intersection with map " << i << std::endl;
 				intersections.push_back(i);
 				continue;
+
+			}
+			if (is_intersected == false) {
+				std::cout<<" criteria fulfilled, but no intersection\n";
 			}
 
 
 
-			// std::cout << "intersection with map " << i << std::endl;
+			Eigen::Vector4f temp=this->centroid-p_map.centroid;
+			Eigen::Vector3f connection;
 
 
 		}
 
-	}
 
+		//		std::cout<<"dot = "<<fabs(connection.dot(normal))<<std::endl;
+		//		if(fabs(connection.dot(normal)) < (1- merge_settings_.angle_thresh) && fabs(p_map.d-this->d) < merge_settings_.d_thresh)
 
-}
+	}}
+
 
 bool Polygon::isMergeCandidate_intersect(Polygon& p_map){
 
@@ -726,24 +737,24 @@ void Polygon::debug_output(std::string name){
 	path.append(name.c_str());
 	os.open(path.c_str());
 
-//	std::cout<< "name~~~~~~~~~~~~"<<std::endl;
+	//	std::cout<< "name~~~~~~~~~~~~"<<std::endl;
 
-		std::cout<<"saving polygon nodes to "<<path.c_str()<<std::endl;
+	std::cout<<"saving polygon nodes to "<<path.c_str()<<std::endl;
 
 
-		for (int i = 0; i < (int) this->contours.size(); ++i) {
-			for (int j = 0; j < (int) this->contours[i].size(); ++j) {
+	for (int i = 0; i < (int) this->contours.size(); ++i) {
+		for (int j = 0; j < (int) this->contours[i].size(); ++j) {
 
-				//		 std::cout<<"contor "<<i<<" vertex "<<j <<"  : "<<std::endl<<"~~~~"<<std::endl<<this->contours[i][j]<<std::endl<<std::endl;
+			//		 std::cout<<"contor "<<i<<" vertex "<<j <<"  : "<<std::endl<<"~~~~"<<std::endl<<this->contours[i][j]<<std::endl<<std::endl;
 
-				os << contours[i][j]<<std::endl;
+			os << contours[i][j]<<std::endl;
 
-			}
 		}
-//	std::cout<<"normal: "<<std::endl;
-//	std::cout<< normal<<std::endl;
-//	std::cout<<"d: "<<
-//			std::cout<<"End Debug Output~~~~~~~~~~~~~~~~~~~~~~~~"<<std::endl<<std::endl;
+	}
+	//	std::cout<<"normal: "<<std::endl;
+	//	std::cout<< normal<<std::endl;
+	//	std::cout<<"d: "<<
+	//			std::cout<<"End Debug Output~~~~~~~~~~~~~~~~~~~~~~~~"<<std::endl<<std::endl;
 	os.close();
 }
 

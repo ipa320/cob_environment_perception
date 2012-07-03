@@ -91,12 +91,15 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
 
 {
 
+
+	std::ofstream os ("/home/goa-tz/debug/DBG",std::ios::app);
+
 	Polygon& p = *p_ptr;
 
 	cob_3d_mapping::merge_config  limits;
 	limits.d_thresh=d_;
 	limits.angle_thresh=cos_angle_;
-	limits.weighting_method="COUNTER";
+	limits.weighting_method="COMBINED";
 
 
 	std::cout<<"CONTOURSSIZE : "<<p.contours.size()<<std::endl;
@@ -117,9 +120,6 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
 		if(intersections.size()>0)
 		{
 
-
-			std::cout<<"merging-..."<<std::endl;
-
 			std::vector<boost::shared_ptr<Polygon> > merge_candidates;
 
 			for(int i=0;i<(int)intersections.size();i++)
@@ -127,16 +127,44 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
 
 				merge_candidates.push_back(map_polygon_[intersections[i]]);
 
+//							os<<"_____________________"<<std::endl;
+//							os<<"MAP:                "<<intersections[i]<<std::endl;
+//
+//							Polygon& p_new = *map_polygon_[intersections[i]];
+//							os<<"ID: "<<p_new.id<<std::endl;
+//							os<<"D:  "<<p_new.d<<std::endl;
+//
+//							os<<"_____________________"<<std::endl;
+//							os<<"NEW POLYGON:\n"<<std::endl;
+//
+//							os<<"ID: "<<p_ptr->id<<std::endl;
+//							os<<"D:  "<<p_ptr->d<<std::endl;
+
+
 			}
 			// merge polygon with merge candidates
+			std::cout<<"merging with "<<merge_candidates.size()<<" shapes..."<<std::endl;
+			//std::cout <<"c before: "<< p.centroid(0)<<", "<<p.centroid(1)<<", "<<p.centroid(2)<<std::endl;
 			p.merge(merge_candidates);
+			//std::cout <<"c after : "<< p.centroid(0)<<", "<<p.centroid(1)<<", "<<p.centroid(2)<<std::endl;
 
 
 			//	  std::cout<<"size +- "<< 1 -merge_candidates.size()<<std::endl;
+
+
+
 		}
 		//if polygon does not have to be merged , add new polygon
 		else
 		{
+			os<<"_______!!!_________"<<std::endl;
+			os<<"NEW ADDITION:                "<<std::endl;
+
+
+			os<<"NEW POLYGON:\n"<<std::endl;
+			os<<"ID: "<<p_ptr->id<<std::endl;
+			os<<"D:  "<<p_ptr->d<<std::endl;
+			os<<"NORMAL"<<p_ptr->normal<<std::endl;
 
 
 
@@ -157,12 +185,8 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
 
 		new_id_++;
 	}
-	std::cout<<"size map     "<<map_polygon_.size()<<std::endl;
-
-
-
 	if(save_to_file_) saveMap(file_path_);
-
+		std::cout<<"MAP SIZE"<<map_polygon_.size()<<"\n";
 
 
 }
