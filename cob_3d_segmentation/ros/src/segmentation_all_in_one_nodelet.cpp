@@ -164,11 +164,13 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr 
       {
         if (i == max_idx) s->holes.push_back(false);
         else s->holes.push_back(true);
-
         for (std::vector<PolygonPoint>::iterator it = poly.polys_[i].begin(); it != poly.polys_[i].end(); ++it)
         {
           pcl::PointXYZRGB p = cloud->points[PolygonPoint::getInd(it->x, it->y)];
-          if (i==max_idx) { centroid += p.getVector3fMap(); }
+          if (i==max_idx)
+          {
+            centroid += p.getVector3fMap();
+          }
           hull_cloud->points.push_back(p);
           hull->points.push_back(p);
         }
@@ -186,10 +188,10 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr 
       s->centroid.z = centroid[2];
 
       s->params.resize(4);
-      Eigen::Vector3f n = c->getOrientation();
-      s->params[0] = n(0); // n_x
-      s->params[1] = n(1); // n_y
-      s->params[2] = n(2); // n_z
+      Eigen::Vector3f orientation = c->pca_point_comp3;
+      s->params[0] = orientation(0); // n_x
+      s->params[1] = orientation(1); // n_y
+      s->params[2] = orientation(2); // n_z
       s->params[3] = centroid.norm(); // d
       break;
     }

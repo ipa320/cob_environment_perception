@@ -96,11 +96,11 @@ namespace cob_3d_segmentation
       , labels_(new LabelCloud)
     { }
 
-    ~SegmentationAllInOneNodelet() 
+    ~SegmentationAllInOneNodelet()
     { }
 
 
-  protected:    
+  protected:
     void onInit();
 
     void received_cloud_cb(PointCloud::ConstPtr cloud);
@@ -127,8 +127,6 @@ namespace cob_3d_segmentation
     LabelCloud::Ptr labels_;
   };
 
-  
-  
 }
 
 
