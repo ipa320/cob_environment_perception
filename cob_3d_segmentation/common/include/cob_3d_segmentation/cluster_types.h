@@ -76,7 +76,7 @@ namespace cob_3d_segmentation
     virtual ~ClusterBase() { }
 
     inline const int id() const { return id_; }
-    
+
     inline value_type& operator[](size_type idx) { return indices_.at(idx); }
     inline iterator begin() { return indices_.begin(); }
     inline iterator end() { return indices_.end(); }
@@ -132,7 +132,6 @@ namespace cob_3d_segmentation
     Eigen::Vector3f pca_point_values;
 
     Eigen::Vector3f pca_inter_centroid;
-
     Eigen::Vector3f pca_inter_comp1;
     Eigen::Vector3f pca_inter_comp2;
     Eigen::Vector3f pca_inter_comp3;
