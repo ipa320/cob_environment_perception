@@ -95,10 +95,10 @@ namespace cob_3d_segmentation
       color_tab_[I_CORNER] = LBL_COR;
       for (size_t i=NUM_LABELS; i<2048 - NUM_LABELS; ++i)
       {
-	int r = (float)rand() * rand_max_inv * 255;
-	int g = (float)rand() * rand_max_inv * 255;
-	int b = (float)rand() * rand_max_inv * 255;
-	color_tab_[i] = ( r << 16 | g << 8 | b );
+        int r = (float)rand() * rand_max_inv * 255;
+        int g = (float)rand() * rand_max_inv * 255;
+        int b = (float)rand() * rand_max_inv * 255;
+        color_tab_[i] = ( r << 16 | g << 8 | b );
       }
     }
     virtual ~ClusterHandlerBase() { };
@@ -130,10 +130,10 @@ namespace cob_3d_segmentation
       uint32_t rgb; int t = 4;
       for(reverse_iterator c = clusters_.rbegin(); c != clusters_.rend(); ++c, ++t)
       {
-	if (c->id() == I_NAN || c->id() == I_BORDER) { rgb = color_tab_[c->id()]; --t; }
-	else { rgb = color_tab_[t]; }
-	for(typename ClusterType::iterator it = c->begin(); it != c->end(); ++it)
-	{ color_cloud->points[*it].rgb = *reinterpret_cast<float*>(&rgb); }
+        if (c->id() == I_NAN || c->id() == I_BORDER) { rgb = color_tab_[c->id()]; --t; }
+        else { rgb = color_tab_[t]; }
+        for(typename ClusterType::iterator it = c->begin(); it != c->end(); ++it)
+        { color_cloud->points[*it].rgb = *reinterpret_cast<float*>(&rgb); }
       }
     }
 
@@ -142,9 +142,9 @@ namespace cob_3d_segmentation
       uint32_t rgb;
       for(ClusterPtr c = clusters_.begin(); c != clusters_.end(); ++c)
       {
-	rgb = color_tab_[c->type];
-	for (typename ClusterType::iterator it = c->begin(); it != c->end(); ++it)
-	  color_cloud->points[*it].rgb = *reinterpret_cast<float*>(&rgb);
+        rgb = color_tab_[c->type];
+        for (typename ClusterType::iterator it = c->begin(); it != c->end(); ++it)
+          color_cloud->points[*it].rgb = *reinterpret_cast<float*>(&rgb);
       }
     }
 
@@ -178,7 +178,7 @@ namespace cob_3d_segmentation
     ~DepthClusterHandler() { };
 
     void addPoint(ClusterPtr c, int idx)
-    { 
+    {
       c->addIndex(idx);
       c->sum_points_ += surface_->points[idx].getVector3fMap();
       c->sum_orientations_ += normals_->points[idx].getNormalVector3fMap();
@@ -188,11 +188,11 @@ namespace cob_3d_segmentation
     inline void clearOrientation(ClusterPtr c) const { c->sum_orientations_ = Eigen::Vector3f::Zero(); }
 
     inline void merge(ClusterPtr source, ClusterPtr target)
-    { 
+    {
       for (ClusterType::iterator idx = source->begin(); idx != source->end(); ++idx)
       {
-	addPoint(target, *idx);
-	labels_->points[*idx].label = target->id();
+        addPoint(target, *idx);
+        labels_->points[*idx].label = target->id();
       }
       erase(source);
     }
@@ -207,41 +207,41 @@ namespace cob_3d_segmentation
     bool computePrincipalComponents(ClusterPtr c);
     void computeNormalIntersections(ClusterPtr c);
     //void computeColorHistogram(ClusterPtr c);
-    
+
     void addBorderIndicesToClusters()
     {
-      int mask[] = 
-	{ 
-	  -labels_->width, 1, labels_->width, -1
-	  /*-labels_->width - 1, -labels_->width, -labels_->width + 1,
-	  -1, 1,
-	  labels_->width - 1, labels_->width, labels_->width + 1*/
-	};
+      int mask[] =
+        {
+          -labels_->width, 1, labels_->width, -1
+          /*-labels_->width - 1, -labels_->width, -labels_->width + 1,
+          -1, 1,
+          labels_->width - 1, labels_->width, labels_->width + 1*/
+        };
 
       int curr_label, count;
       for (size_t idx = labels_->width; idx < ( labels_->size() - labels_->width ); ++idx)
       {
-	count = 0;
-	curr_label = labels_->points[idx].label;
-	for(int i=0;i<4;++i) { if (curr_label!=labels_->points[idx+mask[i]].label) { ++count; } }
-	if (count >= 4 || count < 1) continue;
-	id_to_cluster_[curr_label]->border_points.push_back(PolygonPoint(idx%labels_->width, idx/labels_->width));
+        count = 0;
+        curr_label = labels_->points[idx].label;
+        for(int i=0;i<4;++i) { if (curr_label!=labels_->points[idx+mask[i]].label) { ++count; } }
+        if (count >= 4 || count < 1) continue;
+        id_to_cluster_[curr_label]->border_points.push_back(PolygonPoint(idx%labels_->width, idx/labels_->width));
       }
       /*
       for (size_t idx = labels_->width; idx < ( labels_->size() - labels_->width ); ++idx)
       {
-	count = 0;
-	curr_label = labels_->points[idx].label;
-	if (labels_->points[idx - labels_->width + 1].label != curr_label) { ++count; }
-	if (labels_->points[idx - labels_->width - 1].label != curr_label) { ++count; }
-	if (labels_->points[idx + labels_->width + 1].label != curr_label) { ++count; }
-	if (labels_->points[idx + labels_->width - 1].label != curr_label) { ++count; }
-	if (count > 2) continue;
-	if (count > 0 || labels_->points[idx + 1].label != curr_label || labels_->points[idx + labels_->width].label != curr_label
-	    || labels_->points[idx - 1].label != curr_label || labels_->points[idx - labels_->width].label != curr_label)
-	{
-	  id_to_cluster_[curr_label]->border_points.push_back(PolygonPoint(idx%labels_->width, idx/labels_->width));
-	}
+        count = 0;
+        curr_label = labels_->points[idx].label;
+        if (labels_->points[idx - labels_->width + 1].label != curr_label) { ++count; }
+        if (labels_->points[idx - labels_->width - 1].label != curr_label) { ++count; }
+        if (labels_->points[idx + labels_->width + 1].label != curr_label) { ++count; }
+        if (labels_->points[idx + labels_->width - 1].label != curr_label) { ++count; }
+        if (count > 2) continue;
+        if (count > 0 || labels_->points[idx + 1].label != curr_label || labels_->points[idx + labels_->width].label != curr_label
+            || labels_->points[idx - 1].label != curr_label || labels_->points[idx - labels_->width].label != curr_label)
+        {
+          id_to_cluster_[curr_label]->border_points.push_back(PolygonPoint(idx%labels_->width, idx/labels_->width));
+        }
       }
       */
     }
@@ -251,10 +251,10 @@ namespace cob_3d_segmentation
       uint32_t color = LBL_BORDER;
       for (ClusterPtr c = clusters_.begin(); c != clusters_.end(); ++c)
       {
-	for(std::vector<PolygonPoint>::iterator bp = c->border_points.begin(); bp != c->border_points.end(); ++bp)
-	{
-	  points->points[PolygonPoint::getInd(bp->x,bp->y)].rgb = surface_->points[PolygonPoint::getInd(bp->x,bp->y)].rgb;
-	}
+        for(std::vector<PolygonPoint>::iterator bp = c->border_points.begin(); bp != c->border_points.end(); ++bp)
+        {
+          points->points[PolygonPoint::getInd(bp->x,bp->y)].rgb = surface_->points[PolygonPoint::getInd(bp->x,bp->y)].rgb;
+        }
       }
     }
 
@@ -278,14 +278,14 @@ namespace cob_3d_segmentation
       int i = 0;
       for (ClusterPtr c = clusters_.begin(); c != clusters_.end(); ++c)
       {
-	if (c->type != I_CYL) continue;
-	ints_centroids->points[i].getVector3fMap() = c->pca_inter_centroid;
-	comp1->points[i].getNormalVector3fMap() = c->pca_inter_comp1 * c->pca_inter_values(2);
-	comp2->points[i].getNormalVector3fMap() = c->pca_inter_comp2 * c->pca_inter_values(1);
-	comp3->points[i].getNormalVector3fMap() = c->pca_inter_comp3 * c->pca_inter_values(0);
-	centroids->points[i].getVector3fMap() = c->getCentroid();
-	connection->points[i].getNormalVector3fMap() = c->pca_inter_centroid - c->getCentroid();
-	++i;
+        if (c->type != I_CYL) continue;
+        ints_centroids->points[i].getVector3fMap() = c->pca_inter_centroid;
+        comp1->points[i].getNormalVector3fMap() = c->pca_inter_comp1 * c->pca_inter_values(2);
+        comp2->points[i].getNormalVector3fMap() = c->pca_inter_comp2 * c->pca_inter_values(1);
+        comp3->points[i].getNormalVector3fMap() = c->pca_inter_comp3 * c->pca_inter_values(0);
+        centroids->points[i].getVector3fMap() = c->getCentroid();
+        connection->points[i].getNormalVector3fMap() = c->pca_inter_centroid - c->getCentroid();
+        ++i;
       }
     }
 
