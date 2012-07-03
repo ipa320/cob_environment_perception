@@ -163,7 +163,7 @@ void Polygon::assignMembers(){
 
 	Eigen::Vector3f pt_on_polygon;
 	getPointOnPolygon(normal,d,pt_on_polygon);
-//	computeCentroid();
+	computeCentroid();
 	Eigen::Affine3f transform_from_plane_to_world;
 	getTransformationFromPlaneToWorld(normal,pt_on_polygon,transform_from_plane_to_world);
 	transform_from_world_to_plane=transform_from_plane_to_world.inverse();
@@ -189,11 +189,17 @@ Polygon::computeCentroid()
 			}
 		}
 	}
+
 	pcl::PointCloud<pcl::PointXYZ> poly_cloud;
+	std::cout<<contours[idx].size()<<std::endl;
+
 	for (unsigned int j = 0; j < contours[idx].size () ; j++)
 	{
+
 		pcl::PointXYZ p;
+
 		p.x = contours[idx][j][0];
+
 		p.y = contours[idx][j][1];
 		p.z = contours[idx][j][2];
 		poly_cloud.push_back(p);
@@ -608,7 +614,7 @@ Polygon::isMergeCandidate(std::vector<PolygonPtr>& poly_vec,merge_config& config
 	merged=1;
 //		this->assignMembers();
 	this->assignWeight(merge_settings_.weighting_method);
-//	this->computeCentroid();
+	this->computeCentroid();
 
 	for(size_t i=0; i< poly_vec.size(); i++)
 	{
@@ -624,9 +630,9 @@ Polygon::isMergeCandidate(std::vector<PolygonPtr>& poly_vec,merge_config& config
 		connection << temp[0], temp[1] , temp[2];
 
 		//		std::cout<<"dot = "<<fabs(connection.dot(normal))<<std::endl;
-		if(fabs(connection.dot(normal)) < (1- merge_settings_.angle_thresh) && fabs(p_map.d-this->d) < merge_settings_.d_thresh)
+//		if(fabs(connection.dot(normal)) < (1- merge_settings_.angle_thresh) && fabs(p_map.d-this->d) < merge_settings_.d_thresh)
 
-			//			if((fabs(p_map.normal.dot(normal)) > merge_settings_.angle_thresh && fabs(p_map.d-this->d) < merge_settings_.d_thresh))
+						if((fabs(p_map.normal.dot(normal)) > merge_settings_.angle_thresh && fabs(p_map.d-this->d) < merge_settings_.d_thresh))
 
 		{
 

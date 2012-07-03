@@ -167,6 +167,7 @@ public:
 		static int ctr=0;
 		static double time = 0;
 		PrecisionStopWatch t;
+		std::cout<<"size shapes"<<sa->shapes.size()<<std::endl;
 		for(unsigned int i=0; i<sa->shapes.size(); i++)
 		{
 
@@ -181,7 +182,6 @@ public:
 
 					continue;
 				}
-
 				geometry_map_.addMapEntry(polygon_map_entry_ptr);
 
 			}
