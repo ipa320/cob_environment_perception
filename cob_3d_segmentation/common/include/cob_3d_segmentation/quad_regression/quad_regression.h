@@ -161,6 +161,7 @@ namespace Segmentation
     void outline(int *ch, const int w, const int h, std::vector<SubStructure::SXY> &out, const int i, S_POLYGON &poly, const SubStructure::Model &model, const int mark);
 
     boost::shared_ptr<const pcl::PointCloud<PointLabel> > compute_labeled_pc();
+    boost::shared_ptr<const pcl::PointCloud<PointLabel> > compute_reconstructed_pc();
 
   public:
     /// constructor, setups variables
@@ -184,6 +185,12 @@ namespace Segmentation
     virtual boost::shared_ptr<const pcl::PointCloud<PointLabel> > getOutputCloud()
     {
       return compute_labeled_pc();
+    }
+
+    /// gets reconstructed output cloud
+    virtual boost::shared_ptr<const pcl::PointCloud<PointLabel> > getReconstructedOutputCloud()
+    {
+      return compute_reconstructed_pc();
     }
 
     virtual bool compute();

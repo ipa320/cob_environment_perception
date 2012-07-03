@@ -520,6 +520,42 @@ boost::shared_ptr<const pcl::PointCloud<PointLabel> > Segmentation_QuadRegressio
   return out;
 }
 
+template <typename Point, typename PointLabel>
+boost::shared_ptr<const pcl::PointCloud<PointLabel> > Segmentation_QuadRegression<Point,PointLabel>::compute_reconstructed_pc()
+{
+  typename pcl::PointCloud<PointLabel>::Ptr out(new pcl::PointCloud<PointLabel>);
+
+  ROS_ASSERT(levels_.size()>0);
+
+  out->resize(levels_[0].w*levels_[0].h);
+  out->width = levels_[0].w;
+  out->height= levels_[0].h;
+
+  for(size_t x=0; x<levels_[0].w; x++)
+  {
+    for(size_t y=0; y<levels_[0].h; y++)
+    {
+      //position
+      const int i=0;
+      (*out)(x,y).x = levels_[0].data[getInd(x,y)].model_(0,1)/levels_[0].data[getInd(x,y)].model_(0,0);
+      (*out)(x,y).y = levels_[0].data[getInd(x,y)].model_(0,3)/levels_[0].data[getInd(x,y)].model_(0,0);
+
+      //color/label
+      int mark = isOccupied(0,x,y);
+      if(mark>=0)
+      (*out)(x,y).z = polygons_[mark].model_.model(
+            levels_[0].data[getInd(x,y)].model_(0,1)/levels_[0].data[getInd(x,y)].model_(0,0),
+            levels_[0].data[getInd(x,y)].model_(0,3)/levels_[0].data[getInd(x,y)].model_(0,0)
+        );
+else
+      (*out)(x,y).z = std::numeric_limits<float>::quiet_NaN( );
+      SetLabeledPoint<PointLabel>( (*out)(x,y), mark);
+    }
+  }
+
+  return out;
+}
+
 class RunningStat
 {
 public:
