@@ -141,23 +141,22 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr 
     {
     case I_PLANE:
     {
-      //std::cout << "Cluster: " << c->size() << " : ";
-
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull(new pcl::PointCloud<pcl::PointXYZRGB>);
       PolygonContours<PolygonPoint> poly;
       pe_.outline(cloud->width, cloud->height, c->border_points, poly);
       //std::cout << "Polys: " << poly.polys_.size() << std::endl;
       if (!poly.polys_.size()) continue; // continue, if no contours were found
 
-      sa.shapes.push_back(cob_3d_mapping_msgs::Shape());
-      cob_3d_mapping_msgs::Shape* s = &sa.shapes.back();
-      s->type = cob_3d_mapping_msgs::Shape::POLYGON;
-      s->points.resize(poly.polys_.size());
       int max_idx=0, max_size=0;
       for (int i = 0; i < poly.polys_.size(); ++i)
       {
         if (poly.polys_[i].size() > max_size) { max_idx = i; max_size = poly.polys_[i].size(); }
       }
+
+      sa.shapes.push_back(cob_3d_mapping_msgs::Shape());
+      cob_3d_mapping_msgs::Shape* s = &sa.shapes.back();
+      s->type = cob_3d_mapping_msgs::Shape::POLYGON;
+      s->points.resize(poly.polys_.size());
 
       Eigen::Vector3f centroid = Eigen::Vector3f::Zero();
       for (int i = 0; i < poly.polys_.size(); ++i)
@@ -192,7 +191,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr 
       s->params[0] = orientation(0); // n_x
       s->params[1] = orientation(1); // n_y
       s->params[2] = orientation(2); // n_z
-      s->params[3] = centroid.norm(); // d
+      s->params[3] = fabs(centroid.dot(orientation)); // d
       break;
     }
     case I_CYL:
