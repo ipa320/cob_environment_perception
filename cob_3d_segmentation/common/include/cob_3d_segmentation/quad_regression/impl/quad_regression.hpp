@@ -245,13 +245,13 @@ void Segmentation_QuadRegression<Point,PointLabel>::grow(SubStructure::VISITED_L
           std::abs(model.param.z_(0)/model.param.model_(0,0))
       );
 
-      const float thr=(d*d+2.f)*0.004f;
+      const float thr=(d*d+2.f)*0.0025f;
 
       if( hops>0 && x>0&&y>0&&x+1<levels_[i].w&&y+1<levels_[i].h &&
           d!=0.f && ((found<1&&first_lvl) ||
               (
 #ifdef USE_MIN_MAX_RECHECK_
-                  (levels_[i].data[getInd(x,y)].v_max_-levels_[i].data[getInd(x,y)].v_min_)< 2*(model.get_max_gradient(levels_[i].data[getInd(x,y)])*d*(1<<i)/kinect_params_.f+thr) /*std::min(0.5f,std::max(0.02f,0.05f*d))*/ //TODO: in anbhaengigkeit der steigung
+                  (levels_[i].data[getInd(x,y)].v_max_-levels_[i].data[getInd(x,y)].v_min_)< 1.5f*(model.get_max_gradient(levels_[i].data[getInd(x,y)])*d*(1<<i)/kinect_params_.f+4*thr) /*std::min(0.5f,std::max(0.02f,0.05f*d))*/ //TODO: in anbhaengigkeit der steigung
                   //&& std::abs(model.model(levels_[i].data[getInd(x,y)].v_min_(0),levels_[i].data[getInd(x,y)].v_min_(1))-levels_[i].data[getInd(x,y)].v_min_(2))<thr
                   //&& std::abs(model.model(levels_[i].data[getInd(x,y)].v_max_(0),levels_[i].data[getInd(x,y)].v_max_(1))-levels_[i].data[getInd(x,y)].v_max_(2))<thr
                   &&
