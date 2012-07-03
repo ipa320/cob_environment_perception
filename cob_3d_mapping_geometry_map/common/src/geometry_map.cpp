@@ -80,14 +80,9 @@
 
 
 #include "cob_3d_mapping_geometry_map/geometry_map.h"
-//#include "cob_3d_mapping_geometry_map/vis/geometry_map_visualisation.h"
-
-
-
 using namespace cob_3d_mapping;
 
 
-//GeometryMap::addMapEntry(PolygonPtr p_ptr)
 
 
 
@@ -104,6 +99,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
 	limits.weighting_method="COUNTER";
 
 
+	std::cout<<"CONTOURSSIZE : "<<p.contours.size()<<std::endl;
 	// find out polygons, to merge with
 	std::vector<int> intersections;
 
@@ -161,8 +157,12 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
 
 		new_id_++;
 	}
-	std::cout<<"size map"<<map_polygon_.size()<<std::endl;
+	std::cout<<"size map     "<<map_polygon_.size()<<std::endl;
+
+
+
 	if(save_to_file_) saveMap(file_path_);
+
 
 
 }
