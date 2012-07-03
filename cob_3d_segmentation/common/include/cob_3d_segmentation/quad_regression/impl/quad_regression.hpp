@@ -245,7 +245,7 @@ void Segmentation_QuadRegression<Point,PointLabel>::grow(SubStructure::VISITED_L
           std::abs(model.param.z_(0)/model.param.model_(0,0))
       );
 
-      const float thr=(d*d+2.f)*0.0025f;
+      const float thr=(d*d+1.2f)*0.0035f;
 
       if( hops>0 && x>0&&y>0&&x+1<levels_[i].w&&y+1<levels_[i].h &&
           d!=0.f && ((found<1&&first_lvl) ||
