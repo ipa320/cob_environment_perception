@@ -44,7 +44,8 @@ void PolygonExtraction::outline(const int w, const int h, std::vector<TPoint> ou
   memset(outline_check_,false,out.size());
 
   int n=-1;
-  while(n+1<(int)out.size()) {
+  while(n+1<(int)out.size())
+  {
     ++n;
     if(outline_check_[n])
       continue;
@@ -58,7 +59,7 @@ void PolygonExtraction::outline(const int w, const int h, std::vector<TPoint> ou
     int start_x=x, start_y=y;
 
     poly.addPoint(x,y);
-    int num=0;
+    //int num=0;
     std::stack<Contour2D::spline2D> forked_states;
     std::stack<typename std::vector<TPoint>::size_type> forked_points;
     while(1)
@@ -97,7 +98,7 @@ void PolygonExtraction::outline(const int w, const int h, std::vector<TPoint> ou
       x+=Contour2D::g_Splines[bf][p].x;
       y+=Contour2D::g_Splines[bf][p].y;
       bf=Contour2D::g_Splines[bf][p].bf;
-      ++num;
+      //++num;
 
       if(std::abs(v)>5) {
         v=0;
@@ -106,7 +107,7 @@ void PolygonExtraction::outline(const int w, const int h, std::vector<TPoint> ou
       }
     }
 
-    if(num<5 || (std::abs(x-start_x)+std::abs(y-start_y))>4 )
+    if(poly.polys_.back().size() < 4 || (std::abs(x-start_x)+std::abs(y-start_y))>4 )
     {
       poly.removePolygon();
     }
