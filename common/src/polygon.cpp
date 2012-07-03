@@ -512,7 +512,8 @@ namespace cob_3d_mapping
 
 
     if (fabs(p_average.d - this->d) > merge_settings_.d_thresh) {
-      std::cerr<<"Error! Trying to merge d1-d2 > threshold";exit(1);
+      std::cerr<<"Error! Trying to merge d1-d2 = "
+               << fabs(p_average.d - this->d) <<" > "<< merge_settings_.d_thresh << std::endl;//exit(1);
     }
 
     this->GpcStructureUsingMap(p_average.transform_from_world_to_plane, &gpc_C);
@@ -630,24 +631,33 @@ namespace cob_3d_mapping
 
 
       connection << temp[0], temp[1] , temp[2];
+      // For debug:
+      if (fabs(1 - p_map.normal.norm()) > 0.001) std::cout <<"p_map normal not normalized: "<< p_map.normal.norm() <<std::endl;
+      if (fabs(1 - this->normal.norm()) > 0.001) std::cout <<"this normal not normalized : "<< this->normal.norm() <<std::endl;
+      /*
+      std::cout<<"DEBUG: dd:"<<fabs(connection.dot(this->normal))<<" ang:"<<fabs(p_map.normal.dot(this->normal))<<" size(this):";
+      for(int ci=0;ci<this->contours.size();++ci) std::cout<<this->contours[ci].size()<<", ";
+      std::cout<<"size(pmap):";
+      for(int ci=0;ci<p_map.contours.size();++ci) std::cout<<p_map.contours[ci].size()<<", ";
+      */
+      //std::cout<<"dot = "<<fabs(connection.dot(normal))<<std::endl;
 
-      //		std::cout<<"dot = "<<fabs(connection.dot(normal))<<std::endl;
-      if(fabs(connection.dot(normal)) < (1- merge_settings_.angle_thresh) && fabs(p_map.d-this->d) < merge_settings_.d_thresh)
-
-        //			if((fabs(p_map.normal.dot(normal)) > merge_settings_.angle_thresh && fabs(p_map.d-this->d) < merge_settings_.d_thresh))
-
+      //if((fabs(p_map.normal.dot(normal)) > merge_settings_.angle_thresh && fabs(p_map.d-this->d) < merge_settings_.d_thresh))
+      //if(fabs(connection.dot(normal)) < (1- merge_settings_.angle_thresh) && fabs(p_map.d-this->d) < merge_settings_.d_thresh)
+      // cos angle between normals && (projection of connection on normal -> perpendicular distance of centroid to this plane)
+      if(fabs(p_map.normal.dot(this->normal)) > (merge_settings_.angle_thresh) &&
+         fabs(connection.dot(this->normal)) < 0.05f/* < merge_settings_.d_thresh*/)
       {
-
-
         bool is_intersected= this->isMergeCandidate_intersect(p_map);
-
+        //std::cout<<"I:"<<(is_intersected ? "true" : "false");
 
         if(is_intersected == true)
         {
           //std::cout << "no intersection with map " << i << std::endl;
-//				std::cout << p.normal << std::endl;
-//				std::cout << "intersection with map " << i << std::endl;
+          //std::cout << p.normal << std::endl;
+          //std::cout << "intersection with map " << i << std::endl;
           intersections.push_back(i);
+          //std::cout<<std::endl;
           continue;
         }
 
@@ -657,7 +667,7 @@ namespace cob_3d_mapping
 
 
       }
-
+      //std::cout<<std::endl;
     }
 
 
