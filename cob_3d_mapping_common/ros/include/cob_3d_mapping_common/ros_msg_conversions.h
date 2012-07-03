@@ -138,7 +138,7 @@ fromROSMsg(const cob_3d_mapping_msgs::Shape& s, Polygon& p)
 	p.d = s.params[3];
 	//std::cout << "normal: " << p.normal(0) << "," << p.normal(1) << "," << p.normal(2) << std::endl;
 	//std::cout << "d: " << p.d << std::endl << std::endl;
-	p.merged = 1;
+	p.merged = 0;
 	p.color[0] = s.color.r;
 	p.color[1] = s.color.g;
 	p.color[2] = s.color.b;

@@ -74,160 +74,158 @@
 void
 cob_3d_segmentation::SegmentationAllInOneNodelet::onInit()
 {
-	PCLNodelet::onInit();
+  PCLNodelet::onInit();
 
-	one_.setOutputLabels(labels_);
-	one_.setPixelSearchRadius(8,2,2);
-	one_.setSkipDistantPointThreshold(8);
+  one_.setOutputLabels(labels_);
+  one_.setPixelSearchRadius(8,2,2);
+  one_.setSkipDistantPointThreshold(8);
 
-	seg_.setNormalCloudIn(normals_);
-	seg_.setLabelCloudInOut(labels_);
-	seg_.setClusterGraphOut(graph_);
+  seg_.setNormalCloudIn(normals_);
+  seg_.setLabelCloudInOut(labels_);
+  seg_.setClusterGraphOut(graph_);
 
-	cc_.setClusterHandler(graph_->clusters());
-	cc_.setNormalCloudInOut(normals_);
-	cc_.setLabelCloudIn(labels_);
+  cc_.setClusterHandler(graph_->clusters());
+  cc_.setNormalCloudInOut(normals_);
+  cc_.setLabelCloudIn(labels_);
 
-	chull_.setAlpha (0.2);
+  chull_.setAlpha (0.2);
 
-	nh_ = getNodeHandle();
-	sub_points_ = nh_.subscribe<PointCloud>
-	("cloud_in", 1, boost::bind(&cob_3d_segmentation::SegmentationAllInOneNodelet::received_cloud_cb, this, _1));
-	pub_segmented_ = nh_.advertise<PointCloud>("segmentation_cloud", 1);
-	pub_classified_ = nh_.advertise<PointCloud>("classified_cloud", 1);
-	pub_shape_array_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray>("/plane_extraction/shape_array",1);
-	pub_chull_ = nh_.advertise<PointCloud>("concave_hull", 1);
-	std::cout << "Loaded segmentation nodelet" << std::endl;
+  nh_ = getNodeHandle();
+  sub_points_ = nh_.subscribe<PointCloud>
+    ("cloud_in", 1, boost::bind(&cob_3d_segmentation::SegmentationAllInOneNodelet::received_cloud_cb, this, _1));
+  pub_segmented_ = nh_.advertise<PointCloud>("segmentation_cloud", 1);
+  pub_classified_ = nh_.advertise<PointCloud>("classified_cloud", 1);
+  pub_shape_array_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray>("/plane_extraction/shape_array",1);
+  pub_chull_ = nh_.advertise<PointCloud>("concave_hull", 1);
+  std::cout << "Loaded segmentation nodelet" << std::endl;
 
 }
 
 void
 cob_3d_segmentation::SegmentationAllInOneNodelet::received_cloud_cb(PointCloud::ConstPtr cloud)
 {
-	PrecisionStopWatch t;
-	t.precisionStart();
-	NODELET_INFO("Start with segmentation .... ");
+  PrecisionStopWatch t;
+  t.precisionStart();
+  NODELET_INFO("Start with segmentation .... ");
 
-	one_.setInputCloud(cloud);
-	one_.compute(*normals_);
-	*classified_ = *segmented_ = *cloud;
+  one_.setInputCloud(cloud);
+  one_.compute(*normals_);
+  *classified_ = *segmented_ = *cloud;
 
-	seg_.setInputCloud(cloud);
-	seg_.performInitialSegmentation();
-	seg_.refineSegmentation();
-	graph_->clusters()->mapClusterColor(segmented_);
-	cc_.setPointCloudIn(cloud);
-	cc_.classify();
-	graph_->clusters()->mapTypeColor(classified_);
-	pub_segmented_.publish(segmented_);
-	pub_classified_.publish(classified_);
-
-	publishShapeArray(graph_->clusters(), cloud);
-	NODELET_INFO("Done with segmentation .... ");
+  seg_.setInputCloud(cloud);
+  seg_.performInitialSegmentation();
+  seg_.refineSegmentation();
+  NODELET_INFO("Done with segmentation .... ");
+  graph_->clusters()->mapClusterColor(segmented_);
+  cc_.setPointCloudIn(cloud);
+  cc_.classify();
+  graph_->clusters()->mapTypeColor(classified_);
+  NODELET_INFO("publish first cloud .... ");
+  pub_segmented_.publish(segmented_);
+  NODELET_INFO("publish second cloud .... ");
+  pub_classified_.publish(classified_);
+  NODELET_INFO("publish shape array .... ");
+  publishShapeArray(graph_->clusters(), cloud);
+  NODELET_INFO("Done with publishing .... ");
 }
 
 void
 cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr cluster_handler, PointCloud::ConstPtr cloud)
 {
-	cob_3d_mapping_msgs::ShapeArray sa;
-	sa.header = cloud->header;
-	pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
-	for (ST::CH::ClusterPtr c = cluster_handler->begin(); c != cluster_handler->end(); ++c)
-	{
-		switch(c->type)
-		{
-		case I_PLANE:
-		{
-			sa.shapes.push_back(cob_3d_mapping_msgs::Shape());
-			cob_3d_mapping_msgs::Shape* s = &sa.shapes.back();
-			s->type = cob_3d_mapping_msgs::Shape::POLYGON;
-			s->params.resize(4);
-			Eigen::Vector3f n = c->getOrientation();
-			s->params[0] = n(0); // n_x
-			s->params[1] = n(1); // n_y
-			s->params[2] = n(2); // n_z
-			s->params[3] = c->getCentroid().norm(); // d
-			s->centroid.x = c->getCentroid()[0];
-			s->centroid.y = c->getCentroid()[1];
-			s->centroid.z = c->getCentroid()[2];
+  cob_3d_mapping_msgs::ShapeArray sa;
+  sa.header = cloud->header;
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+  for (ST::CH::ClusterPtr c = cluster_handler->begin(); c != cluster_handler->end(); ++c)
+  {
+    switch(c->type)
+    {
+    case I_PLANE:
+    {
+      //std::cout << "Cluster: " << c->size() << " : ";
 
-			/* // Fill in all border points
-      sensor_msgs::PointCloud2* blob = &s->points.back();
-      for_each_type<traits::fieldList<pcl::PointXYZ>::type> (detail::FieldAdder<pcl::PointXYZ>(blob->fields));
-      blob->header = cloud->header;
-      blob->width = c->border_indices.size();
-      blob->height = 1;
-      blob->point_step = sizeof(pcl::PointXYZ);
-      blob->row_step = blob->point_step * c->border_indices.size();
-      blob->data.resize(blob->row_step);
-      blob->is_dense = true;
-
-      uint8_t* msg_data = &blob->data[0];
-      for (size_t i = 0; i < c->border_indices.size(); ++i, msg_data += blob->point_step)
-      {
-	const uint8_t* cloud_data = reinterpret_cast<const uint8_t*>(&(cloud->points[c->border_indices[i]]));
-	memcpy(msg_data, cloud_data, blob->point_step);
-      }
-			 */
-			/*
-      // use concave hull algorithm
       pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull(new pcl::PointCloud<pcl::PointXYZRGB>);
-      std::vector< pcl::Vertices > hull_polygons;
-      chull_.setInputCloud(cloud);
-      chull_.setIndices(boost::make_shared<std::vector<int> >(c->border_indices));
-      chull_.reconstruct(*hull, hull_polygons);
-      hull_cloud->header = hull->header;
-			 *hull_cloud += *hull;
-      pcl::toROSMsg(*hull, s->points.back());
-			 */
-			pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull(new pcl::PointCloud<pcl::PointXYZRGB>);
-			PolygonContours<PolygonPoint> poly;
-			pe_.outline(cloud->width, cloud->height, c->border_points, poly);
-			//std::cout << "#Polygons: " << poly.polys_.size() << std::endl;
-			s->points.resize(poly.polys_.size());
-//			s->holes.push_back(false);
-			for (int i = 0; i < poly.polys_.size(); ++i)
-			{
-				s->holes.push_back(false);
-				for (std::vector<PolygonPoint>::iterator it = poly.polys_[i].begin(); it != poly.polys_[i].end(); ++it)
-				{
-					hull_cloud->points.push_back(cloud->points[PolygonPoint::getInd(it->x, it->y)]);
-					hull->points.push_back(cloud->points[PolygonPoint::getInd(it->x, it->y)]);
-				}
-				hull->height = 1;
-				hull->width = hull->size();
-				pcl::toROSMsg(*hull, s->points[i]);
-				hull->clear();
-			}
-			break;
-		}
-		case I_CYL:
-		{
+      PolygonContours<PolygonPoint> poly;
+      pe_.outline(cloud->width, cloud->height, c->border_points, poly);
+      //std::cout << "Polys: " << poly.polys_.size() << std::endl;
+      if (!poly.polys_.size()) continue; // continue, if no contours were found
 
-			//    	cob_3d_mapping::CylinderPtr  cyl  =cob_3d_mapping::CylinderPtr(new cob_3d_mapping::Cylinder());
-			//
-			//    	Eigen::Vector3f centroid3f  = c->getCentroid();
-			//    	cyl->centroid << centroid3f[0] , centroid3f[1] , centroid3f[2] , 0;
-			//
-			//    	cyl->axes_.resize(3);
-			//    	cyl->axes_[1] = c->pca_inter_comp1;
-			//
-			//
-			//    	cyl->ParamsFromCloud(cloud,c->indices_);
+      sa.shapes.push_back(cob_3d_mapping_msgs::Shape());
+      cob_3d_mapping_msgs::Shape* s = &sa.shapes.back();
+      s->type = cob_3d_mapping_msgs::Shape::POLYGON;
+      s->points.resize(poly.polys_.size());
+      int max_idx=0, max_size=0;
+      for (int i = 0; i < poly.polys_.size(); ++i)
+      {
+        if (poly.polys_[i].size() > max_size) { max_idx = i; max_size = poly.polys_[i].size(); }
+      }
 
-			break;
-		}
-		default:
-		{
-			break;
-		}
-		}
-	}
-	hull_cloud->header = cloud->header;
-	hull_cloud->height = 1;
-	hull_cloud->width = hull_cloud->size();
-	pub_chull_.publish(hull_cloud);
-	pub_shape_array_.publish(sa);
+      Eigen::Vector3f centroid = Eigen::Vector3f::Zero();
+      for (int i = 0; i < poly.polys_.size(); ++i)
+      {
+        if (i == max_idx) s->holes.push_back(false);
+        else s->holes.push_back(true);
+
+        for (std::vector<PolygonPoint>::iterator it = poly.polys_[i].begin(); it != poly.polys_[i].end(); ++it)
+        {
+          pcl::PointXYZRGB p = cloud->points[PolygonPoint::getInd(it->x, it->y)];
+          if (i==max_idx) { centroid += p.getVector3fMap(); }
+          hull_cloud->points.push_back(p);
+          hull->points.push_back(p);
+        }
+        hull->height = 1;
+        hull->width = hull->size();
+        pcl::toROSMsg(*hull, s->points[i]);
+        //std::cout << hull->points.size() << " | " << s->points[i].data.size() << " ";
+        hull->clear();
+      }
+      //std::cout << std::endl;
+      //std::cout << centroid(0) << ", " << centroid(1) << ", " << centroid(2) << std::endl;
+      centroid /= poly.polys_[max_idx].size();
+      s->centroid.x = centroid[0];
+      s->centroid.y = centroid[1];
+      s->centroid.z = centroid[2];
+
+      s->params.resize(4);
+      Eigen::Vector3f n = c->getOrientation();
+      s->params[0] = n(0); // n_x
+      s->params[1] = n(1); // n_y
+      s->params[2] = n(2); // n_z
+      s->params[3] = centroid.norm(); // d
+      break;
+    }
+    case I_CYL:
+    {
+
+      //      cob_3d_mapping::CylinderPtr  cyl  =cob_3d_mapping::CylinderPtr(new cob_3d_mapping::Cylinder());
+      //
+      //      Eigen::Vector3f centroid3f  = c->getCentroid();
+      //      cyl->centroid << centroid3f[0] , centroid3f[1] , centroid3f[2] , 0;
+      //
+      //      cyl->axes_.resize(3);
+      //      cyl->axes_[1] = c->pca_inter_comp1;
+      //
+      //
+      //      cyl->ParamsFromCloud(cloud,c->indices_);
+
+      break;
+    }
+    default:
+    {
+      break;
+    }
+    }
+
+    /*for (int i = 0; i < sa.shapes.back().points.size(); ++i)
+    {
+      std::cout << "Size: " << sa.shapes.back().points[i].data.size()
+                << " \t Step: " << sa.shapes.back().points[i].point_step << std::endl;
+                }*/
+  }
+  hull_cloud->header = cloud->header;
+  hull_cloud->height = 1;
+  hull_cloud->width = hull_cloud->size();
+  pub_chull_.publish(hull_cloud);
+  pub_shape_array_.publish(sa);
 }
 
 PLUGINLIB_DECLARE_CLASS(cob_3d_segmentation, SegmentationAllInOneNodelet, cob_3d_segmentation::SegmentationAllInOneNodelet, nodelet::Nodelet);

@@ -163,7 +163,6 @@ public:
 	void
 	shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr sa)
 	{
-
 		static int ctr=0;
 		static double time = 0;
 		PrecisionStopWatch t;
@@ -171,6 +170,8 @@ public:
 		for(unsigned int i=0; i<sa->shapes.size(); i++)
 		{
 
+
+//			if (i != 1) {
 
 			////    distinction of type
 			if (sa->shapes[i].type == 0) {
@@ -187,7 +188,7 @@ public:
 			}
 
 			if (sa->shapes[i].type == 5) {
-				std::cout<<"cylinder detected"<<std::endl;
+				std::cout<<"CYLINDER detected"<<std::endl;
 				CylinderPtr cylinder_map_entry_ptr = CylinderPtr(new Cylinder());
 				cylinder_map_entry_ptr->allocate();
 				if(!fromROSMsg(sa->shapes[i], *cylinder_map_entry_ptr)){
@@ -201,6 +202,7 @@ public:
 
 
 			}
+//		}
 
 
 			//dumpPolygonToFile(*map_entry_ptr);
@@ -218,8 +220,9 @@ public:
 
 
 		publishMapMarker();
-		std::cout<<"publishMap() DEACTIVATED!!"<<std::endl;
-//		publishMap();
+//		std::cout<<"publishMap() DEACTIVATED!!"<<std::endl;
+
+		publishMap();
 		ctr_++;
 		//ROS_INFO("%d polygons received so far", ctr_);
 	}
