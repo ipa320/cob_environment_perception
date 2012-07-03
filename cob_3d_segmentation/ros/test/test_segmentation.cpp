@@ -81,7 +81,7 @@ public:
       ::testing::UnitTest::GetInstance()->current_test_info();
 
     char fn[512];
-    sprintf(fn,"test/labeled/pc_%s_%s_%s.pcd",test_info->test_case_name(), test_info->name(), pc_fn.c_str());
+    sprintf(fn,"test/labeled/pc_%s_%s_%s",test_info->test_case_name(), test_info->name(), pc_fn.c_str());
     pcl::io::savePCDFile(fn,*pc);
   }
 };
@@ -228,6 +228,8 @@ TEST(Segmentation, quad_regression)
     ROS_INFO("processing pc %d ...",(int)ind-1);
     std::string fn_short(fn.begin()+(fn.find_last_of("/")+1),fn.end());
     segment_pointcloud<Point,PointL>(&seg,pc, fn_short);
+
+    Testing_PCDLoader::get().writePC<PointL>("reconstructed_"+fn_short, seg.getReconstructedOutputCloud());
 
     float mean, var, mean_abs, var_abs;
     size_t used, mem, points;
