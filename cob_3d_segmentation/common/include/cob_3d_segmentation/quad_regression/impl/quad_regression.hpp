@@ -266,7 +266,7 @@ void Segmentation_QuadRegression<Point,PointLabel>::grow(SubStructure::VISITED_L
                                   //d*(0.01-0.005*levels_[i].data[getInd(x,y)].model_(0,0)/model.param.model_(0,0)))
               )
 #ifdef USE_NORMAL_CHECK
-              && ( (i!=1&&i!=2) || std::abs(Model(levels_[i].data[getInd(x,y)]).getLinearNormal().dot(
+              && ( (i!=1&&i!=2) || std::abs(SubStructure::Model(levels_[i].data[getInd(x,y)]).getLinearNormal().dot(
                   model.getNormal(levels_[i].data[getInd(x,y)].model_(1,0)/levels_[i].data[getInd(x,y)].model_(0,0),
                                   levels_[i].data[getInd(x,y)].model_(3,0)/levels_[i].data[getInd(x,y)].model_(0,0)) ))>0.8 ) //TODO: optimize normalize out
 #endif
