@@ -1,6 +1,6 @@
 Header header
 
-byte PLANE=0
+byte POLYGON=0
 byte LINE=1
 byte CURVED=2
 byte MESH=3
@@ -10,7 +10,7 @@ byte CYLINDER=5
 
 byte type
 int32 id
- 
+
 # define shape parameters
 # for plane
 # normal vector = params[0],params[1],params[2]
