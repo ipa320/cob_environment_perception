@@ -124,7 +124,8 @@ Polygon::getTransformationFromPlaneToWorld(const Eigen::Vector3f z_axis,const Ei
 	//  getCoordinateSystemOnPlane(normal, u, v);
 
 	//  std::cout << "u " << u <<  std::endl << " v " << v << std::endl;
-	pcl::getTransformationFromTwoUnitVectorsAndOrigin(z_axis, normal,  origin, transformation);
+	this->normal = normal;
+		pcl::getTransformationFromTwoUnitVectorsAndOrigin(z_axis, normal,  origin, transformation);
 	transformation = transformation.inverse();
 }
 
@@ -383,7 +384,7 @@ void
 Polygon::applyWeighting(const std::vector<PolygonPtr>& poly_vec, Polygon & p_average)
 {
 
-std::cout<<"MERGE WEIGHT: "<<merge_weight_<<std::endl;
+//std::cout<<"MERGE WEIGHT: "<<merge_weight_<<std::endl;
 	Eigen::Vector3f average_normal=normal*merge_weight_;
 	Eigen::Vector4f average_centroid=centroid*merge_weight_;
 	double average_d=d*merge_weight_;
@@ -507,6 +508,7 @@ Polygon::merge_union(std::vector<PolygonPtr>& poly_vec, const Polygon& p_average
 	gpc_polygon gpc_B;
 
 
+//	std::cout<<"DEBUG [2.1]\n";
 
 
 	if (fabs(p_average.d - this->d) > merge_settings_.d_thresh) {
@@ -523,6 +525,7 @@ Polygon::merge_union(std::vector<PolygonPtr>& poly_vec, const Polygon& p_average
 
 		Polygon& p_map = *(poly_vec[i]);
 
+//		std::cout<<"DEBUG [2.2]\n";
 
 
 		p_map.GpcStructureUsingMap(p_average.transform_from_world_to_plane,&gpc_B);
@@ -534,6 +537,7 @@ Polygon::merge_union(std::vector<PolygonPtr>& poly_vec, const Polygon& p_average
 
 
 
+//		std::cout<<"DEBUG [2.3]\n";
 
 		if (i==0)
 		{
@@ -594,6 +598,8 @@ Polygon::merge_union(std::vector<PolygonPtr>& poly_vec, const Polygon& p_average
 			}
 		}
 		p_map.assignWeight(merge_settings_.weighting_method);
+//		std::cout<<"DEBUG [2.4]\n";
+
 
 		//		std::cout<<"combined = "<<p_map.merge_weight_<<std::endl;
 		//		std::cout<<"––––––––––––––––––––––––––––––––––––"<<std::endl;
@@ -633,8 +639,8 @@ Polygon::isMergeCandidate(std::vector<PolygonPtr>& poly_vec,merge_config& config
 
 		//		std::cout<<"dot = "<<fabs(connection.dot(normal))<<std::endl;
 //				if(fabs(connection.dot(normal)) < (1- merge_settings_.angle_thresh) && fabs(p_map.d-this->d) < merge_settings_.d_thresh)
-					if(fabs(connection.dot(normal)) < (1- 0.99) && fabs(p_map.d-this->d) < merge_settings_.d_thresh)
-
+		if(fabs(p_map.normal.dot(this->normal)) > (merge_settings_.angle_thresh) &&
+		         fabs(connection.dot(this->normal)) < 0.05/* < merge_settings_.d_thresh*/)
 //		if((fabs(p_map.normal.dot(normal)) > merge_settings_.angle_thresh && fabs(p_map.d-this->d) < merge_settings_.d_thresh))
 
 		{

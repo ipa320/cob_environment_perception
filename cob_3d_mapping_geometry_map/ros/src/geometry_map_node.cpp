@@ -220,9 +220,9 @@ public:
 
 
 		publishMapMarker();
-//		std::cout<<"publishMap() DEACTIVATED!!"<<std::endl;
+		std::cout<<"publishMap() DEACTIVATED!!"<<std::endl;
 
-		publishMap();
+//		publishMap();
 		ctr_++;
 		//ROS_INFO("%d polygons received so far", ctr_);
 	}
@@ -412,8 +412,8 @@ public:
 		//create the marker in the table reference frame
 		//the caller is responsible for setting the pose of the marker to match
 
-		marker.scale.x = 0.02;
-		marker.scale.y = 0.02;
+		marker.scale.x = 0.01;
+		marker.scale.y = 0.01;
 		marker.scale.z = 1;
 		marker.color.r = 0;
 		marker.color.g = 0;

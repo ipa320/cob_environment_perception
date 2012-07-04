@@ -102,7 +102,6 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
 	limits.weighting_method="COMBINED";
 
 
-	std::cout<<"CONTOURSSIZE : "<<p.contours.size()<<std::endl;
 	// find out polygons, to merge with
 	std::vector<int> intersections;
 
@@ -127,18 +126,18 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
 
 				merge_candidates.push_back(map_polygon_[intersections[i]]);
 
-//							os<<"_____________________"<<std::endl;
-//							os<<"MAP:                "<<intersections[i]<<std::endl;
-//
-//							Polygon& p_new = *map_polygon_[intersections[i]];
-//							os<<"ID: "<<p_new.id<<std::endl;
-//							os<<"D:  "<<p_new.d<<std::endl;
-//
-//							os<<"_____________________"<<std::endl;
-//							os<<"NEW POLYGON:\n"<<std::endl;
-//
-//							os<<"ID: "<<p_ptr->id<<std::endl;
-//							os<<"D:  "<<p_ptr->d<<std::endl;
+				//							os<<"_____________________"<<std::endl;
+				//							os<<"MAP:                "<<intersections[i]<<std::endl;
+				//
+				//							Polygon& p_new = *map_polygon_[intersections[i]];
+				//							os<<"ID: "<<p_new.id<<std::endl;
+				//							os<<"D:  "<<p_new.d<<std::endl;
+				//
+				//							os<<"_____________________"<<std::endl;
+				//							os<<"NEW POLYGON:\n"<<std::endl;
+				//
+				//							os<<"ID: "<<p_ptr->id<<std::endl;
+				//							os<<"D:  "<<p_ptr->d<<std::endl;
 
 
 			}
@@ -157,15 +156,6 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
 		//if polygon does not have to be merged , add new polygon
 		else
 		{
-			os<<"_______!!!_________"<<std::endl;
-			os<<"NEW ADDITION:                "<<std::endl;
-
-
-			os<<"NEW POLYGON:\n"<<std::endl;
-			os<<"ID: "<<p_ptr->id<<std::endl;
-			os<<"D:  "<<p_ptr->d<<std::endl;
-			os<<"NORMAL"<<p_ptr->normal<<std::endl;
-
 
 
 			p.assignMembers();
@@ -186,7 +176,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
 		new_id_++;
 	}
 	if(save_to_file_) saveMap(file_path_);
-		std::cout<<"MAP SIZE"<<map_polygon_.size()<<"\n";
+	std::cout<<"MAP SIZE Polygon"<<map_polygon_.size()<<"\n";
 
 
 }
@@ -208,31 +198,35 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 
 	// find out polygons, to merge with
 	std::vector<int> intersections;
-	c.isMergeCandidate(map_cylinder_,limits,intersections);
-	// std::cout<<"intersections size = "<<intersections.size()<<std::endl;
+//	if (map_cylinder_.size()> 0 )
+//	{
+		c.isMergeCandidate(map_cylinder_,limits,intersections);
+		// std::cout<<"intersections size = "<<intersections.size()<<std::endl;
+		std::cout<<"Intersection Size: "<<intersections.size()<<"\n";
 
 
-	// if polygon has to be merged ...
-	if(intersections.size()>0)
-	{
-		std::vector<boost::shared_ptr<Cylinder> > merge_candidates;
-
-		for(int i=0;i<(int)intersections.size();i++)
+		// if polygon has to be merged ...
+		if(intersections.size()>0)
 		{
+			std::vector<boost::shared_ptr<Cylinder> > merge_candidates;
 
-			merge_candidates.push_back(map_cylinder_[intersections[i]]);
+			for(int i=0;i<(int)intersections.size();i++)
+			{
+
+				merge_candidates.push_back(map_cylinder_[intersections[i]]);
+			}
+			// merge polygon with merge candidates
+			c.merge(merge_candidates);
+
+			//	  std::cout<<"size +- "<< 1 -merge_candidates.size()<<std::endl;
 		}
-		// merge polygon with merge candidates
-		c.merge(merge_candidates);
-
-		//	  std::cout<<"size +- "<< 1 -merge_candidates.size()<<std::endl;
-	}
+//	}
 	//if polygon does not have to be merged , add new polygon
 	else
 	{
 
 
-		c.assignMembers();
+		c.assignMembers(c.axes_[1],c.axes_[2],c.origin_);
 		map_cylinder_.push_back(c_ptr);
 		new_id_++;
 
@@ -241,7 +235,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 
 	std::cout<<"Map Size ="<<map_cylinder_.size()<<std::endl;
 
-	if(save_to_file_) saveMap(file_path_);
+//	if(save_to_file_) saveMap(file_path_);
 
 
 }
@@ -254,7 +248,6 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 void
 GeometryMap::printMapEntry(cob_3d_mapping::Polygon& p)
 {
-	std::cout << "Polygon:\n";
 	for(int i=0; i< (int)p.contours.size(); i++)
 	{
 		std::cout << i << std::endl;
