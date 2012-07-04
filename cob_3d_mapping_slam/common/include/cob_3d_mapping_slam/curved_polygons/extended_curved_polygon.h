@@ -8,6 +8,8 @@
 #ifndef SCP_EXTENDED_CURVED_POLYGON_H_
 #define SCP_EXTENDED_CURVED_POLYGON_H_
 
+#define DEBUG_LEVEL 30
+
 #include <cob_3d_mapping_msgs/CurvedPolygon.h>
 #include "/home/josh/workspace/dynamic_tutorials/common/include/registration/object.hpp"
 //#include "sac_model_correspondence.h"
@@ -232,7 +234,7 @@ namespace Slam_CurvedPolygon
       nearest_point(1) = data_.features[2].y;
       nearest_point(2) = data_.features[2].z;
 
-      if(param_.col(2).squaredNorm()>0.05f*0.05f)
+      if(param_.col(2).squaredNorm()>0.01f*0.01f)
       {
         is_plane = false;
         //TODO: calc point
@@ -263,7 +265,8 @@ namespace Slam_CurvedPolygon
       Classification::Classification cl;
       Classification::QuadBB qbb;
       cl.setPoints(segments_);
-      cl.buildLocalTree(false,&qbb,NULL,NULL,mains);
+      form_.n_ = cl.buildLocalTree(false,&qbb,NULL,NULL,mains);
+      form_.n_->clean(1,form_.n_->energy_sum_*0.01f);
 
       for(int i=0; segments_.size()>3 && i<4; i++)
       {
@@ -407,28 +410,125 @@ namespace Slam_CurvedPolygon
       return std::abs(l1-l2) < std::min(l1,l2) * thr;
     }
 
+    float bestMatch(const ex_curved_polygon &o, std::map<size_t,size_t> &r, std::vector<size_t> &m1, std::vector<size_t> &m2, float e=0, float e_min=std::numeric_limits<float>::max())
+    {
+      if(m2.size()==0 || m1.size()==0 || e>e_min) return e;
+
+      for(size_t i=0; i<m1.size(); i++)
+      {
+        size_t t1 = m1[i];
+        m1.erase(m1.begin()+i);
+
+        for(size_t j=0; j<m2.size(); j++)
+        {
+          size_t t2 = m2[j];
+          m2.erase(m2.begin()+j);
+
+          float er = bestMatch(o,r,m1,m2,e+(features_[t1].v_-o.features_[t2].v_).norm(), e_min);
+
+          if(er < e_min)
+          {
+            e_min = er;
+            r[t1] = t2;
+          }
+
+          m2.insert(m2.begin()+j,t2);
+        }
+
+        m1.insert(m1.begin()+i,t1);
+      }
+
+      return e_min;
+    }
+
     /**
      * update parameters, ... from other obj. (TODO:)
      */
     void operator+=(const ex_curved_polygon &o) {
       ID_ += o.ID_;
       ROS_ASSERT(features_.size()==o.features_.size());
+
+      std::map<size_t,size_t> cor;
+      std::vector<size_t> matches1,matches2;
       for(size_t i=0; i<features_.size(); i++)
-        features_[i].merge(o.features_[i]);
-      form_ += o.form_;
+      {
+        if(features_[i].ID_!=-1) features_[i].merge(o.features_[i]);
+        else matches1.push_back(i);
+      }
+
+      matches2=matches1;
+      float m=bestMatch(o,cor,matches1,matches2);
+      ROS_INFO("dist bestMatch %f",m);
+
+      ROS_ASSERT(cor.size()==4);
+      if(m<0.08f*4)
+      {
+        for(std::map<size_t,size_t>::const_iterator it = cor.begin(); it!=cor.end(); it++)
+        {
+          ROS_INFO("cor %d %d",it->first,it->second);
+          std::cout<<features_[it->first].v_<<"-\n"<<o.features_[it->second].v_<<"\n";
+          features_[it->first].merge(o.features_[it->second]);
+        }
+
+        if( !(form_ += o.form_) )
+        {
+          matchForm(o);
+          //debug_form();
+          //o.debug_form();
+        }
+      }
+    }
+
+    void debug_form() const
+    {
+      Classification::Classification cl;
+      Classification::QuadBB qbb;
+      cl.setPoints(segments_);
+      cl.buildLocalTree(true,&qbb);
     }
 
     bool matchForm(const ex_curved_polygon &o) const {
-      return form_.n_->compare(*o.form_.n_)<0.2f*std::min(form_.n_->energy_, o.form_.n_->energy_);
+      float e = form_.n_->search(*o.form_.n_,0.8);
+
+      //if(e>std::max(form_.n_->energy_sum_, o.form_.n_->energy_sum_))
+      if(e<0.4*std::min(form_.n_->energy_sum_, o.form_.n_->energy_sum_)&&std::min(form_.n_->energy_sum_, o.form_.n_->energy_sum_)>1)
+      {
+        debug_form();
+        o.debug_form();
+
+        form_.n_->print();
+        o.form_.n_->print();
+        ROS_INFO("could");
+      }
+
+      ROS_INFO("match %f %f",e,0.2f*std::min(form_.n_->energy_sum_, o.form_.n_->energy_sum_));
+      return e<0.4f*std::min(form_.n_->energy_sum_, o.form_.n_->energy_sum_);
     }
 
     float matchFormf(const ex_curved_polygon &o) const {
-      return 1.f-form_.n_->compare(*o.form_.n_)/std::min(form_.n_->energy_, o.form_.n_->energy_);
+      return std::max(0.1f,1.1f-form_.n_->search(*o.form_.n_,0.8)/std::min(form_.n_->energy_sum_, o.form_.n_->energy_sum_));
     }
 
     float getEnergy() const {return form_.n_->energy_;}
     float getWeight() const {return data_.weight;}
     void printEnergy() const {form_.n_->print();}
+
+    void getTriangles(std::vector<Eigen::Vector3f> &tri) const
+    {
+      for(size_t i=0; i<features_.size(); i++)
+      {
+        if(features_[i].ID_!=-1 || !pcl_isfinite(features_[2].v_.sum()) || !pcl_isfinite(features_[i].v_.sum())) continue;
+        if(tri.size()>2)
+          tri.push_back( tri[tri.size()-1] );
+        else
+          tri.push_back( features_[i].v_ );
+        tri.push_back( features_[2].v_ );
+        tri.push_back( features_[i].v_ );
+      }
+      if(tri.size()>2)
+        tri[0] = tri[tri.size()-1];
+    }
+
   };
 
 }

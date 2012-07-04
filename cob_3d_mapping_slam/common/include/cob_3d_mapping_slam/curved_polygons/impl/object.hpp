@@ -8,7 +8,7 @@ bool Object<_DOF6>::operator|(const Object &o) const
 #if 0
   //first bb
   //ROS_INFO("check %d %d %d",  data_.intersectsBB(o.data_, 0.4 /*metres*/), data_.fitsCurvature(o.data_, 0.1 /*rad*/), data_.extensionMatch(o.data_, 0.2 /*percent*/));
-  if( data_.intersectsBB(o.data_, 0.1 /*metres*/) )
+  if( data_.intersectsBB(o.data_, 0.01 /*metres*/)&&data_.extensionMatch(o.data_, 0.05 /*percent*/) )
   {
     return true;
   }
@@ -28,25 +28,27 @@ bool Object<_DOF6>::operator|(const Object &o) const
 template<typename _DOF6>
 bool Object<_DOF6>::isReachable(const Object &o, const typename DOF6::TYPE &thr_rot, const typename DOF6::TYPE &thr_tr) const
 {
-  const int i=2;
-
-  if(!data_.extensionMatch(o.data_, 0.2 /*percent*/) || data_.isPlane() != o.data_.isPlane() /*||!data_.fitsCurvature(o.data_, 0.3)*/)
+  if( (!data_.extensionMatch(o.data_, 0.2 /*percent*/) && !data_.matchForm(o.data_)) ||
+      data_.isPlane() != o.data_.isPlane() /*||!data_.fitsCurvature(o.data_, 0.3)*/)
     return false;
 
   Eigen::Matrix<typename TFLINK::TYPE, 3,1> v1,v2;
 
-  v1 = data_.getFeatures()[i].v_;
-  v2 = o.data_.getFeatures()[i].v_;
+  for(size_t i=0; i<data_.getFeatures().size(); i++) {
+    if(data_.getFeatures()[i].type_ != ex_curved_polygon::S_FEATURE::POINT) continue;
+    v1 = data_.getFeatures()[i].v_;
+    v2 = o.data_.getFeatures()[i].v_;
 
-  if(( (v2-v1).squaredNorm()>thr_tr*thr_tr &&
-      std::acos(v2.dot(v1)/(v2.norm()*v1.norm())) > thr_rot) ||
-      std::abs(v2.norm()-v1.norm()) > thr_tr + 0.03*v2.norm()
-  )
-  {
-    return false;
+    if(!(( (v2-v1).squaredNorm()>thr_tr*thr_tr &&
+        std::acos(v2.dot(v1)/(v2.norm()*v1.norm())) > thr_rot) ||
+        std::abs(v2.norm()-v1.norm()) > thr_tr + 0.02*v2.norm())
+    )
+    {
+      return true;
+    }
   }
 
-  return true;
+  return false;
 }
 
 template<typename _DOF6>
@@ -77,6 +79,22 @@ template<typename _DOF6>
 bool Object<_DOF6>::operator&(const Object &o) const
 {
 
+  Eigen::Matrix<typename TFLINK::TYPE, 3,1> v1,v2;
+
+  for(size_t i=0; i<data_.getFeatures().size(); i++) {
+    if(data_.getFeatures()[i].type_ != ex_curved_polygon::S_FEATURE::POINT) continue;
+    v1 = data_.getFeatures()[i].v_;
+    v2 = o.data_.getFeatures()[i].v_;
+
+    if(!(( (v2-v1).squaredNorm()>0.02*0.02 &&
+        std::acos(v2.dot(v1)/(v2.norm()*v1.norm())) > 0.02) ||
+        std::abs(v2.norm()-v1.norm()) > 0.02 + 0.02*v2.norm())
+    )
+    {
+      return true;
+    }
+  }
+
   //validate extensions
 
   //return (*this)|o;
@@ -93,8 +111,8 @@ bool Object<_DOF6>::operator&(const Object &o) const
   if( //data_.extensionMatch(o.data_, 0.2 /*percent*/) &&
       //data_.intersectsBB(o.data_, 0.05 /*metres*/) &&
       (data_.matchForm(o.data_)
-          ||
-          ( (*this|o) && data_.extensionMatch(o.data_, 0.2 /*percent*/) && data_.intersectsBB(o.data_, 0.05 /*metres*/))
+          //     ||
+          //     ( (*this|o) && data_.extensionMatch(o.data_, 0.2 /*percent*/) && data_.intersectsBB(o.data_, 0.05 /*metres*/))
       ) &&
       data_.isPlane() == o.data_.isPlane()
       //data_.fitsCurvature(o.data_, 0.15 /*rad*/)
@@ -111,7 +129,7 @@ bool Object<_DOF6>::operator&(const Object &o) const
   }
 #endif
 
-#if 1
+#if 0
   //check wether we are similiar
 
   //wether A to B
@@ -157,8 +175,10 @@ typename Object<_DOF6>::TFLIST Object<_DOF6>::getTFList(const Object &o, const t
   }
 
   const float fw = data_.matchFormf(o.data_);
+  ROS_INFO("fw %f",fw);
   if(fw<=0.) return list;
   float w = fw*sqrtf(data_.getWeight()*o.data_.getWeight())/1000 / (1+data_.getFeatures()[2].v_.squaredNorm());
+  ROS_INFO("w %f",w);
 
   //  if( std::min(data_.getFeatures()[1].v_org_.squaredNorm(),o.data_.getFeatures()[1].v_org_.squaredNorm())
   //  /std::max(data_.getFeatures()[1].v_org_.squaredNorm(),o.data_.getFeatures()[1].v_org_.squaredNorm()) < 0.75f )
@@ -178,12 +198,15 @@ typename Object<_DOF6>::TFLIST Object<_DOF6>::getTFList(const Object &o, const t
 
       v1 = data_.getFeatures()[i].v_;
       v2 = o.data_.getFeatures()[j].v_;
-
       //if(!data_.isPlane()) return list;
-      if(!pcl_isfinite(v1.sum()) || !pcl_isfinite(v2.sum())
+      if(!pcl_isfinite(v1.sum()) || !pcl_isfinite(v2.sum()) || !pcl_isfinite(w)
           //|| TODO: check against threshold
       )
+      {
+        if( !pcl_isfinite(w) )
+          ROS_WARN("weight is infinite");
         continue;
+      }
 
 
       //std::cout<<"match "<<data_.getFeatures()[i].ID<<"\n"<<v1<<"\n\n"<<v2<<"\n";

@@ -126,7 +126,7 @@ void TFLink<INPUT>::finish() {
   ROS_ASSERT(pcl_isfinite(rot_.sum()));
 
   rot_var_ = std::max(
-      svd.singularValues().squaredNorm()<0.01f*accumlated_weight_*accumlated_weight_ || svd.singularValues()(1)*svd.singularValues()(1)<=0.01f*svd.singularValues().squaredNorm() ? 100000. : 0.,
+      /*svd.singularValues().squaredNorm()<0.01f*accumlated_weight_*accumlated_weight_ || */svd.singularValues()(1)*svd.singularValues()(1)<=0.01f*svd.singularValues().squaredNorm() ? 100000. : 0.,
       2*M_PI*sqrtf((variance_y_-(rot_.transpose()*variance_x_*rot_)).squaredNorm()/variance_y_.squaredNorm())/2);
 
   if(!pcl_isfinite(rot_var_))

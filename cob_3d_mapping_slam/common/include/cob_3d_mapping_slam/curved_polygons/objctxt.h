@@ -73,6 +73,7 @@ namespace Slam_CurvedPolygon
 
     size_t getNumObjs() const {return objs_.size();}
 
+    const std::vector<typename OBJECT::Ptr> &getObjs() const {return objs_;}
   };
 
 #include "impl/objctxt.hpp"
