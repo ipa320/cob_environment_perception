@@ -100,5 +100,8 @@ main ()
   cout << endl << "Euler2:" << endl;
   cout << toDegrees (a.x) << endl << toDegrees (a.y) << endl << toDegrees (a.z) << endl;
 
+  Eigen::Vector3f v(1,0,0);
+  cout << endl << "v.unitOrthogonal :: \n" <<v.unitOrthogonal()<< endl;
+
   return 0;
 }
