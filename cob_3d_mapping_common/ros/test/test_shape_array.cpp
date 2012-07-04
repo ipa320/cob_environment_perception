@@ -39,35 +39,37 @@ firstShape (cob_3d_mapping_msgs::Shape& s)
   s.color.b = 0;
   s.color.a = 1;
 
+  float z = -1;
+
   pt.x = 0.0;
   pt.y = 0.0;
-  pt.z = 1.0;
+  pt.z = z;
   pc.push_back (pt);
 
   pt.x = 1.0;
   pt.y = 0.0;
-  pt.z = 1.0;
+  pt.z = z;
   pc.push_back (pt);
 
   pt.x = 1.0;
   pt.y = 1.0;
-  pt.z = 1.0;
+  pt.z = z;
   pc.push_back (pt);
 
   pt.x = 0.0;
   pt.y = 1.0;
-  pt.z = 1.0;
+  pt.z = z;
   pc.push_back (pt);
 
-  /*
+/*
    pt.x = 0.0;
    pt.y = 0.0;
-   pt.z = 1.0;
+   pt.z = z;
    pc.push_back (pt);
-   */
+*/
   Eigen::VectorXf centroid;
   pcl::computeNDCentroid (pc, centroid);
-  //std::cout<<" centroid : "<<centroid<<"--> X: "<<centroid[0]<<"--> Y: "<<centroid[1]<<"--> Z: "<<centroid[2]<<std::endl;
+  //std::cout<<" centroid : "<<centroid<<"\n X: "<<centroid[0]<<"\n Y: "<<centroid[1]<<"\n Z: "<<centroid[2]<<std::endl;
 
   s.centroid.x = centroid[0];
   s.centroid.y = centroid[1];
@@ -407,16 +409,16 @@ main (int argc, char **argv)
     cob_3d_mapping_msgs::Shape s;
     s.params.resize (4);
 
-    s.header.frame_id = "map";
+    s.header.frame_id = "/map";
     s.header.stamp = sa.header.stamp;
 
     s.type = cob_3d_mapping_msgs::Shape::PLANE;
-    s.holes.push_back (false);
-
 
      firstShape(s);
+     s.holes.push_back (false);
      sa.shapes.push_back (s);
-     //std::cout<<" shape_size_1 : "<<s.points.size()<<std::endl;
+
+     //std::cout<<" shape s.holes : "<<(bool)s.holes[0]<<std::endl;
      s.points.clear ();
      //std::cout<<" shape_size_1 clear : "<<s.points.size()<<std::endl;
 /*
