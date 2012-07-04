@@ -66,7 +66,7 @@ static const char *GROUNDTRUTH[][512]={
   {
    //"test/rgbd_dataset_freiburg2_dishes-groundtruth.txt",
    "test/rgbd_dataset_freiburg2_rpy-groundtruth.txt",
-    //"test/rgbd_dataset_freiburg2_dishes-groundtruth.txt",
+   //"test/rgbd_dataset_freiburg2_dishes-groundtruth.txt",
     0
   }
 };
@@ -406,9 +406,9 @@ TEST(Slam,bag_run)
 
     }
 
+    rosbag::Bag bag, bag_out;
     try {
       //read file
-      rosbag::Bag bag, bag_out;
       bag.    open(BAGFILES[0][bg_file],                         rosbag::bagmode::Read);
       bag_out.open(std::string(BAGFILES[0][bg_file])+".odo.bag", rosbag::bagmode::Write);
 
@@ -421,7 +421,7 @@ TEST(Slam,bag_run)
 
       rosbag::View view(bag, rosbag::TopicQuery(topics));
 
-      visualization_msgs::Marker marker_text, marker_points, marker_planes, marker_cor1, marker_cor2, marker_del;
+      visualization_msgs::Marker marker_text, marker_points, marker_planes, marker_cor1, marker_cor2, marker_del, marker_map;
       marker_text.header.frame_id = "/openni_rgb_frame";
       marker_text.pose.position.x = 0;
       marker_text.pose.position.y = 0;
@@ -435,25 +435,28 @@ TEST(Slam,bag_run)
       marker_text.scale.x = marker_text.scale.y = marker_text.scale.z = 0.01;
       marker_text.color.r = marker_text.color.g = marker_text.color.b =  marker_text.color.a = 1;
 
-      marker_del = marker_cor1 =  marker_cor2 = marker_points = marker_planes = marker_text;
+      marker_map = marker_del = marker_cor1 =  marker_cor2 = marker_points = marker_planes = marker_text;
       marker_text.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
       marker_text.scale.x = marker_text.scale.y = marker_text.scale.z = 0.35;
       marker_points.color.g = marker_points.color.b =  0;
       marker_planes.color.g = marker_planes.color.r =  0;
       marker_cor2.color.b = marker_cor2.color.r =  0;
       marker_del.action = visualization_msgs::Marker::DELETE;
+      marker_map.type = visualization_msgs::Marker::TRIANGLE_LIST;
+      marker_map.scale.x = marker_map.scale.y = marker_map.scale.z = 1;
 
       marker_text.id = 0;
       marker_points.id = 1;
       marker_planes.id = 2;
       marker_cor1.id = 3;
       marker_cor2.id = 4;
+      marker_map.id = 5;
 
       //setup slam
       typedef DOF6::DOF6_Source<DOF6::TFLinkvf,DOF6::DOF6_Uncertainty<Dummy::RobotParameters,float> > DOF6;
       typedef Slam::Node<Slam_CurvedPolygon::OBJCTXT<DOF6> > Node;
 
-      Slam::Context<Slam_CurvedPolygon::KEY<DOF6>, Node> ctxt(.50,.50);
+      Slam::Context<Slam_CurvedPolygon::KEY<DOF6>, Node> ctxt(.30,.30);
 
       Eigen::Vector3f last_tr = Eigen::Vector3f::Zero();
       Eigen::Matrix3f last_rot= Eigen::Matrix3f::Identity();
@@ -531,13 +534,15 @@ TEST(Slam,bag_run)
 
             //check path
             Eigen::Matrix3f tmp_rot = Eigen::Matrix3f::Identity();
+            Eigen::Matrix3f tmp_rot2 = Eigen::Matrix3f::Identity();
             Eigen::Vector3f tmp_tr  = Eigen::Vector3f::Zero();
             const Slam::SWAY<Node> *n = &ctxt.getPath().getLocal();
             while(n)
             {
 
-              tmp_tr += tmp_rot*n->link_.getTranslation();
+              tmp_tr = tmp_rot2*tmp_tr + n->link_.getTranslation();
               tmp_rot = ((Eigen::Matrix3f)n->link_.getRotation())*tmp_rot;
+              tmp_rot2= ((Eigen::Matrix3f)n->link_.getRotation());
 
               std::cout<<"con\n";
               n = n->node_->getConnections().size()?&n->node_->getConnections()[0]:NULL;
@@ -595,24 +600,51 @@ TEST(Slam,bag_run)
               bag_out.write("groundtruth", ros::Time(odos.front().timestamp), odo);
             }
 
+            for(size_t i=0; i<ctxt.getPath().getLocal().node_->getContext().getObjs().size(); i++)
+            {
+              std::vector<Eigen::Vector3f> tris;
+              ctxt.getPath().getLocal().node_->getContext().getObjs()[i]->getData().getTriangles(tris);
+              ROS_ASSERT(tris.size()%3==0);
+
+              ::std_msgs::ColorRGBA col;
+              unsigned int rnd=rand();
+              col.a=1;
+              col.r = ((rnd>>0)&0xff)/255.f;
+              col.g = ((rnd>>8)&0xff)/255.f;
+              col.b = ((rnd>>16)&0xff)/255.f;
+              for(size_t j=0; j<tris.size(); j++)
+              {
+                Eigen::Vector3f v=((Eigen::Matrix3f)ctxt.getPath().getLocal().link_.getRotation())*tris[j]+ctxt.getPath().getLocal().link_.getTranslation();
+                line_p.x = v(0);
+                line_p.y = v(1);
+                line_p.z = v(2);
+                marker_map.points.push_back(line_p);
+                marker_map.colors.push_back(col);
+              }
+            }
+
             while(memory_sa.size()>0 && memory_sa.front().header.stamp<=last)
             {
               bag_out.write("shapes_array", last, memory_sa.front());
               memory_sa.erase(memory_sa.begin());
             }
-            for(int i=0; i<5; i++)
+            for(int i=0; i<6; i++)
             {
               marker_del.id = i;
-              bag_out.write("/markers", last, marker_del);
+              if(i<5) bag_out.write("/markers", last, marker_del);
+              else bag_out.write("/map", last, marker_del);
             }
             bag_out.write("/markers", last, marker_points);
             bag_out.write("/markers", last, marker_planes);
             bag_out.write("/markers", last, marker_cor1);
             bag_out.write("/markers", last, marker_cor2);
+            bag_out.write("/map", last, marker_map);
             marker_points.points.clear();
             marker_planes.points.clear();
             marker_cor1.points.clear();
             marker_cor2.points.clear();
+            marker_map.points.clear();
+            marker_map.colors.clear();
             //OUTPUT-------------------
 
 
@@ -753,6 +785,7 @@ TEST(Slam,bag_run)
       bag.close();
     }
     catch(...) {
+      bag_out.close();
       std::cout<<"failed to load: "<<BAGFILES[0][bg_file]<<"\n";
       ASSERT_TRUE(false);
     }

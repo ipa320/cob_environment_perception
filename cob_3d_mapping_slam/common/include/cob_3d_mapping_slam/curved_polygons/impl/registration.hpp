@@ -108,7 +108,7 @@ void OBJCTXT<_DOF6>::findCorrespondences(const OBJCTXT &ctxt, std::list<SCOR> &c
   for(size_t i=0; i<members.size(); i++)
   {
     for(size_t j=0; j<members[i]->candidates_.size(); j++)
-      if(check_assumption(members[i],members[i]->candidates_[j])>0.7)
+      if(check_assumption(members[i],members[i]->candidates_[j])>0.9f)
       {
         SCOR c;
         c.a = members[i]->obj_;
@@ -218,7 +218,7 @@ _DOF6 OBJCTXT<_DOF6>::optimizeLink(const DOF6 &_tf, std::list<SCOR> &cors, const
   //    //return optimizeLink(_tf, cors, tf.getRotationVariance()+tf.getTranslationVariance(), tf.getRotation(), tf.getTranslation());
   //    return optimizeLink(_tf, cors, 1.5, tf.getRotation(), tf.getTranslation());
   //  else
-  if(depth<3 || thr_rot>0.07f)
+  if(depth<4 || thr_rot>0.05f)
     return optimizeLink(_tf, cors, thr_rot*0.75f, thr_tr*0.75f, tf.getRotation(), tf.getTranslation(), depth+1);
 
 #ifdef DEBUG_

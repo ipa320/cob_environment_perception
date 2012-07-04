@@ -38,6 +38,9 @@ bool OBJCTXT<_DOF6>::add(const OBJCTXT &ctxt, const DOF6 &tf)
 {
   const size_t old = objs_.size();
 
+  if(old>0 && (tf.getSource1()->getTranslationVariance()+tf.getSource1()->getRotationVariance())>0.1 )
+    return false;
+
   ROS_INFO("add ctxt");
   std::cout<<tf<<"\n";
 
@@ -54,12 +57,12 @@ bool OBJCTXT<_DOF6>::add(const OBJCTXT &ctxt, const DOF6 &tf)
     for(size_t i=0; i<objs_.size(); i++) {
       if(!objs_[i]) continue;
 
-      if( ((*objs_[i])|(*o)) || ((*objs_[i])&(*o)) )
+      if( /*((*objs_[i])|(*o)) ||*/ ((*objs_[i])&(*o)) || objs_[i]->isReachable(*ctxt.objs_[j],tf.getRotationVariance()+0.03f,tf.getTranslationVariance()+0.03f) )
       {
         found = true;
 
         typename OBJECT::TFLIST list = objs_[i]->getTFList(*ctxt.objs_[j], tf.getRotationVariance()+0.1, tf.getTranslationVariance()+0.1, tf.getRotation(), tf.getTranslation());
-        if(list.size()>0)
+        if(list.size()>0 && objs_[i]->isReachable(*ctxt.objs_[j],tf.getRotationVariance(),tf.getTranslationVariance()))
         {
           ROS_INFO("update object");
           (*objs_[i]) += *o;

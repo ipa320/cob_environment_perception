@@ -48,6 +48,8 @@ namespace Slam
     size_t getNumObjs() const {return ctxt_.getNumObjs();}
 
     const std::vector<SWAY<Node> > &getConnections() const {return connections_;}
+
+    const OBJECT_CONTEXT &getContext() const {return ctxt_;}
   };
 
 #include "impl/node.hpp"
