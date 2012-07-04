@@ -290,7 +290,7 @@ Cylinder::ParamsFromShapeMsg(){
 	 * Already set:		r_ ............................... Radius of the cylinder
 	 * 					origin_ .......................... Origin, point on symmetry axis, in lcs , same y coordinate as centroid
 	 * 					axes_[1] ......................... Symmetry axis of c ylinder, y- axis in lcs
-	 * 					axes_[2] ......................... axis, connecting origin and centroid
+	 * 					axes_[2] ......................... axis, connecting origin and centroid, Z-axis
 	 *
 	 *
 	 * To be set:		centroid ........................ centroid of cylinder strip
