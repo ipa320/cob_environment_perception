@@ -11,6 +11,7 @@
 template<typename Point>
 void SetLabeledPoint(Point &pt, const int mark)
 {
+  srand(mark);
   int color = rand();
   pt.r= (color>>0)&0xff;
   pt.g= (color>>8)&0xff;
