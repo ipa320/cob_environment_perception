@@ -192,9 +192,10 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
 }
 
 void
-GeometryMap::addMapEntry(boost::shared_ptr<Cylinder> c_ptr)
+GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 
 {
+
 
 	Cylinder& c = *c_ptr;
 
