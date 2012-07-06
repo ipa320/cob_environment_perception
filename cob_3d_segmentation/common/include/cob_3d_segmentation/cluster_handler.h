@@ -108,7 +108,7 @@ namespace cob_3d_segmentation
     inline reverse_iterator rbegin() { return clusters_.rbegin(); }
     inline reverse_iterator rend() { return clusters_.rend(); }
     inline std::pair<ClusterPtr,ClusterPtr> getClusters() { return std::make_pair(clusters_.begin(),clusters_.end()); }
-    inline std::pair<reverse_iterator, reverse_iterator> getClustersReverse() 
+    inline std::pair<reverse_iterator, reverse_iterator> getClustersReverse()
     { return std::make_pair(clusters_.rbegin(), clusters_.rend()); }
 
     inline size_type numClusters() const { return clusters_.size(); }
@@ -116,12 +116,12 @@ namespace cob_3d_segmentation
     virtual void clear() { clusters_.clear(); id_to_cluster_.clear(); max_cid_ = 0; }
     virtual void erase(ClusterPtr c) { clusters_.erase(c); }
 
-    inline ClusterPtr getCluster(const int id) 
+    inline ClusterPtr getCluster(const int id)
     { return ( (id_to_cluster_.find(id) == id_to_cluster_.end()) ? clusters_.end() : id_to_cluster_.find(id)->second ); }
 
     inline ClusterPtr createCluster(int id = 0)
-    { 
-      clusters_.push_back(ClusterType( (id<=max_cid_ ? ++max_cid_ : max_cid_ = id) )); 
+    {
+      clusters_.push_back(ClusterType( (id<=max_cid_ ? ++max_cid_ : max_cid_ = id) ));
       return (id_to_cluster_[max_cid_] = --clusters_.end());
     }
 
@@ -253,7 +253,8 @@ namespace cob_3d_segmentation
       {
         for(std::vector<PolygonPoint>::iterator bp = c->border_points.begin(); bp != c->border_points.end(); ++bp)
         {
-          points->points[PolygonPoint::getInd(bp->x,bp->y)].rgb = surface_->points[PolygonPoint::getInd(bp->x,bp->y)].rgb;
+          points->points[PolygonPoint::getInd(bp->x,bp->y)].rgb = LBL_BORDER;
+//surface_->points[PolygonPoint::getInd(bp->x,bp->y)].rgb;
         }
       }
     }

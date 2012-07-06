@@ -149,7 +149,6 @@ fromROSMsg(const cob_3d_mapping_msgs::Shape& s, Polygon& p)
 
 		for(unsigned int i=0; i<s.points.size(); i++)
 		{
-
 			p.holes.push_back(s.holes[i]);
 
 			if(s.points[i].data.size())

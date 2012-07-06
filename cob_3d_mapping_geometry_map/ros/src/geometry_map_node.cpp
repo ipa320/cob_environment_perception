@@ -166,7 +166,7 @@ public:
 		static int ctr=0;
 		static double time = 0;
 		PrecisionStopWatch t;
-		std::cout<<"size shapes"<<sa->shapes.size()<<std::endl;
+		std::cout<<"size shapes "<<sa->shapes.size()<<std::endl;
 		for(unsigned int i=0; i<sa->shapes.size(); i++)
 		{
 
@@ -180,11 +180,10 @@ public:
 
 				PolygonPtr polygon_map_entry_ptr = PolygonPtr(new Polygon());
 				if(!fromROSMsg(sa->shapes[i], *polygon_map_entry_ptr)) {
-
+          std::cout << "ERROR: fromROSMsg" << std::endl;
 					continue;
 				}
 				geometry_map_.addMapEntry(polygon_map_entry_ptr);
-
 			}
 
 			if (sa->shapes[i].type == 5) {

@@ -52,12 +52,15 @@
  *
  ****************************************************************/
 
+#include <sstream>
+
 // ROS includes
 #include <ros/ros.h>
 #include <pluginlib/class_list_macros.h>
 #include <boost/make_shared.hpp>
 
 #include <pcl/io/io.h>
+#include <pcl/io/pcd_io.h>
 #include <pcl/ros/for_each_type.h>
 
 #include <cob_3d_mapping_common/cylinder.h>
@@ -111,9 +114,8 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::received_cloud_cb(PointCloud::
   tf::StampedTransform trf_map;
   try
   {
-    std::stringstream ss2;
     tf_listener_.waitForTransform(target_frame_, cloud->header.frame_id, cloud->header.stamp, ros::Duration(2));
-    tf_listener_.lookupTransform(target_frame_, cloud->header.frame_id, cloud->header.stamp/*ros::Time(0)*/, trf_map);
+    tf_listener_.lookupTransform(target_frame_, cloud->header.frame_id, cloud->header.stamp, trf_map);
   }
   catch (tf::TransformException ex)
   {
@@ -123,6 +125,8 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::received_cloud_cb(PointCloud::
   Eigen::Affine3d ad;
   tf::TransformTFToEigen(trf_map, ad);
   Eigen::Affine3f af = ad.cast<float>();
+
+  //Eigen::Affine3f af = Eigen::Affine3f::Identity();
 
 //      cloud->header.frame_id =target_frame_;
 
@@ -152,6 +156,14 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::received_cloud_cb(PointCloud::
   NODELET_INFO("publish second cloud .... ");
   pub_classified_.publish(classified_);
   NODELET_INFO("publish shape array .... ");
+  /*
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr bp (new pcl::PointCloud<pcl::PointXYZRGB>);
+  *bp = *cloud;
+  graph_->clusters()->mapClusterBorders(bp);
+  std::stringstream ss;
+  ss << "/share/goa-sf/pcd_data/bags/pcd_borders/borders_"<<cloud->header.stamp<<".pcd";
+  pcl::io::savePCDFileASCII(ss.str(), *bp);
+  */
   publishShapeArray(graph_->clusters(), cloud, af);
 
   NODELET_INFO("Done with publishing .... ");
@@ -171,8 +183,16 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
   for (ST::CH::ClusterPtr c = cluster_handler->begin(); c != cluster_handler->end(); ++c)
   {
     // compute hull:
+    if (c->type != I_PLANE /*&& c->type != I_CYL*/) continue;
+    if (c->size() <= ceil(1.1f * static_cast<float>(c->border_points.size())))
+    {
+      std::cout <<"[ " << c->size() <<" | "<< c->border_points.size() << " ]" << std::endl;
+      continue;
+    }
     PolygonContours<PolygonPoint> poly;
+    std::cout << "Get outline for " << c->size() << " Points with "<< c->border_points.size() << " border points" << std::endl;
     pe_.outline(cloud->width, cloud->height, c->border_points, poly);
+    std::cout << "Gotcha!!!" <<std::endl;
     if (!poly.polys_.size()) continue; // continue, if no contours were found
 
     int max_idx=0, max_size=0;
@@ -184,6 +204,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
     sa.shapes.push_back(cob_3d_mapping_msgs::Shape());
     cob_3d_mapping_msgs::Shape* s = &sa.shapes.back();
     s->points.resize(poly.polys_.size());
+    s->header.frame_id = target_frame_.c_str();
 
     Eigen::Vector3f centroid = Eigen::Vector3f::Zero();
     for (int i = 0; i < (int)poly.polys_.size(); ++i)
@@ -214,11 +235,10 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
     case I_PLANE:
     {
       std::cout << "Plane: " << c->size() << ", " << c->border_points.size() << std::endl;
-      std::cout << "cloud: " << cloud->width << ", " << cloud->height << ", " << cloud->size() << std::endl;
       s->type = cob_3d_mapping_msgs::Shape::POLYGON;
 
       s->params.resize(4);
-      Eigen::Vector3f orientation = c->pca_point_comp3;
+      Eigen::Vector3f orientation = tf.rotation() * c->pca_point_comp3;
       s->params[0] = orientation(0); // n_x
       s->params[1] = orientation(1); // n_y
       s->params[2] = orientation(2); // n_z

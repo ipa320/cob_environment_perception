@@ -105,7 +105,7 @@ public:
    counter_output(0),
    file_path_("./"),
    save_to_file_(false),
-   cos_angle_(0.97),
+   cos_angle_(0.95),
    d_(0.1)
   {
 	//  outputFile.open("/home/goa-hh/test.txt");

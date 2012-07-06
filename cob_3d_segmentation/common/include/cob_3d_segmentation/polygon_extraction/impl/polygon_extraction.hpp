@@ -25,7 +25,7 @@ template<typename TPoint, typename TPolygon>
 void PolygonExtraction::outline(const int w, const int h, std::vector<TPoint> out, TPolygon &poly)
 {
   std::sort(out.begin(),out.end());
-  std::cout <<"--> D 1"<<std::endl;
+  //std::cout <<"--> D 1"<<std::endl;
   if(ch_size_<w*h) {
     delete [] ch_;
     ch_ = new int[w*h];
@@ -35,14 +35,14 @@ void PolygonExtraction::outline(const int w, const int h, std::vector<TPoint> ou
   for(size_t j=0; j<out.size(); j++) {
     ch_[ TPoint::getInd(out[j].x,out[j].y) ]=(int)j+1;
   }
-  std::cout <<"--> D 2"<<std::endl;
+  //std::cout <<"--> D 2"<<std::endl;
   if(outline_check_size_<out.size()) {
     delete [] outline_check_;
     outline_check_ = new bool[out.size()];
     outline_check_size_=out.size();
   }
   memset(outline_check_,false,out.size());
-  std::cout <<"--> D 3"<<std::endl;
+  //std::cout <<"--> D 3"<<std::endl;
   int n=-1;
   while(n+1<(int)out.size())
   {
@@ -77,7 +77,7 @@ void PolygonExtraction::outline(const int w, const int h, std::vector<TPoint> ou
       {
         // There is no valid next point:
         if (forked_states.size() == 0 || (std::abs(x-start_x)+std::abs(y-start_y)) <= 4) { break; }
-        std::cout << "--> Back to fork!" << std::endl;
+        //std::cout << "--> Back to fork!" << std::endl;
         // Go back to last forked state
         v = forked_states.top().v;
         x = forked_states.top().x;
@@ -108,7 +108,7 @@ void PolygonExtraction::outline(const int w, const int h, std::vector<TPoint> ou
         poly.addPoint(x,y);
       }
     }
-    std::cout <<"--> D 4"<<std::endl;
+    //std::cout <<"--> D 4"<<std::endl;
     if(poly.polys_.back().size() < 4 || (std::abs(x-start_x)+std::abs(y-start_y))>4 )
     {
       poly.removePolygon();
