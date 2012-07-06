@@ -134,6 +134,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(ST::CH::Ptr 
 {
   cob_3d_mapping_msgs::ShapeArray sa;
   sa.header = cloud->header;
+  std::cout << "Frame: " << sa.header.frame_id << std::endl;
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
   for (ST::CH::ClusterPtr c = cluster_handler->begin(); c != cluster_handler->end(); ++c)
   {
