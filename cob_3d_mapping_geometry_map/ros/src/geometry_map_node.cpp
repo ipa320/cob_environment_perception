@@ -220,9 +220,9 @@ public:
 
 
 		publishMapMarker();
-		std::cout<<"publishMap() DEACTIVATED!!"<<std::endl;
+//		std::cout<<"publishMap() DEACTIVATED!!"<<std::endl;
 
-//		publishMap();
+		publishMap();
 		ctr_++;
 		//ROS_INFO("%d polygons received so far", ctr_);
 	}
@@ -519,30 +519,33 @@ public:
 					Cylinder& cm = *(map_cylinder->at(i));
 					int color_ctr = i%4;
 					//marker.id = cm.id;
-					if(color_ctr==0)
-					{
-						marker.color.r = 0;
-						marker.color.g = 0;
-						marker.color.b = 1;
-					}
-					else if(color_ctr==1)
-					{
-						marker.color.r = 0;
-						marker.color.g = 1;
-						marker.color.b = 0;
-					}
-					else if(color_ctr==2)
-					{
-						marker.color.r = 0;
-						marker.color.g = 1;
-						marker.color.b = 1;
-					}
-					else if(color_ctr==3)
-					{
-						marker.color.r = 1;
-						marker.color.g = 1;
-						marker.color.b = 0;
-					}
+					marker.color.r=1;
+					marker.color.g=0;
+					marker.color.b=0;
+//					if(color_ctr==0)
+//					{
+//						marker.color.r = 0;
+//						marker.color.g = 0;
+//						marker.color.b = 1;
+//					}
+//					else if(color_ctr==1)
+//					{
+//						marker.color.r = 0;
+//						marker.color.g = 1;
+//						marker.color.b = 0;
+//					}
+//					else if(color_ctr==2)
+//					{
+//						marker.color.r = 0;
+//						marker.color.g = 1;
+//						marker.color.b = 1;
+//					}
+//					else if(color_ctr==3)
+//					{
+//						marker.color.r = 1;
+//						marker.color.g = 1;
+//						marker.color.b = 0;
+//					}
 
 
 					//			std::cout<<pm.d<<std::endl<<std::endl;
@@ -556,9 +559,12 @@ public:
 						//if(pm.contours.size()>1) std::cout << "id: " << ctr << ", " << pm.contours.size() << std::endl;
 						//TODO: this is a workaround as the marker can't display more than one contour
 						marker.id = ctr;
-						marker.color.r /= j+1;
-						marker.color.g /= j+1;
-						marker.color.b /= j+1;
+//						marker.color.r /= j+1;
+//						marker.color.g /= j+1;
+//						marker.color.b /= j+1;
+						marker.color.r=1;
+						marker.color.g=0;
+						marker.color.b=0;
 
 						t_marker.id = t_ctr;
 						std::stringstream ss;
@@ -584,15 +590,10 @@ public:
 						marker_pub_.publish(marker);
 						marker_pub_.publish(t_marker);
 
-
-
-
 					}
 				}
 
 	}
-
-
 
 
 
