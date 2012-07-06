@@ -66,67 +66,68 @@ namespace cob_3d_mapping
 
 
 // NON MEMBER FUNCTIONS
-  void
-  getPointOnPolygon(const Eigen::Vector3f &normal,double d,Eigen::Vector3f &point)
-  {
+void
+getPointOnPolygon(const Eigen::Vector3f &normal,double d,Eigen::Vector3f &point)
+{
 
 
 
-    float value=fabs(normal(0));
-    int direction=0;
+	float value=fabs(normal(0));
+	int direction=0;
 
-    if(fabs(normal(1))>value)
-    {
+	if(fabs(normal(1))>value)
+	{
 
-      direction=1;
-      value=fabs(normal(1));
-    }
+		direction=1;
+		value=fabs(normal(1));
+	}
 
-    if(fabs(normal(2))>value)
+	if(fabs(normal(2))>value)
 
-    {
-      direction=2;
-      value=fabs(normal(2));
-    }
-    point << 0,0,0;
-    point(direction)=-d/normal(direction);
+	{
+		direction=2;
+		value=fabs(normal(2));
+	}
+	point << 0,0,0;
+	point(direction)=-d/normal(direction);
 
-  }
+}
 
-  void
-  getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
-                             Eigen::Vector3f &u, Eigen::Vector3f &v)
-  {
-    v = normal.unitOrthogonal ();
-    u = normal.cross (v);
-  }
+void
+getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
+		Eigen::Vector3f &u, Eigen::Vector3f &v)
+{
+	v = normal.unitOrthogonal ();
+	u = normal.cross (v);
+}
 
 //
 
-  void
-  Polygon::getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,const Eigen::Vector3f &origin, Eigen::Affine3f &transformation)
-  {
-    Eigen::Vector3f u, v;
+void
+Polygon::getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,const Eigen::Vector3f &origin, Eigen::Affine3f &transformation)
+{
+	Eigen::Vector3f u, v;
 
 
-    getCoordinateSystemOnPlane(normal, u, v);
+	getCoordinateSystemOnPlane(normal, u, v);
 
-    //  std::cout << "u " << u <<  std::endl << " v " << v << std::endl;
-    pcl::getTransformationFromTwoUnitVectorsAndOrigin(v, normal,  origin, transformation);
-    transformation = transformation.inverse();
-  }
+	//  std::cout << "u " << u <<  std::endl << " v " << v << std::endl;
+	pcl::getTransformationFromTwoUnitVectorsAndOrigin(v, normal,  origin, transformation);
+	transformation = transformation.inverse();
+}
 
-  void
-  Polygon::getTransformationFromPlaneToWorld(const Eigen::Vector3f z_axis,const Eigen::Vector3f &normal,const Eigen::Vector3f &origin, Eigen::Affine3f &transformation)
-  {
-    //  Eigen::Vector3f u, v;
-    //
-    //  getCoordinateSystemOnPlane(normal, u, v);
+void
+Polygon::getTransformationFromPlaneToWorld(const Eigen::Vector3f z_axis,const Eigen::Vector3f &normal,const Eigen::Vector3f &origin, Eigen::Affine3f &transformation)
+{
+	//  Eigen::Vector3f u, v;
+	//
+	//  getCoordinateSystemOnPlane(normal, u, v);
 
-    //  std::cout << "u " << u <<  std::endl << " v " << v << std::endl;
-    pcl::getTransformationFromTwoUnitVectorsAndOrigin(z_axis, normal,  origin, transformation);
-    transformation = transformation.inverse();
-  }
+	//  std::cout << "u " << u <<  std::endl << " v " << v << std::endl;
+	this->normal = normal;
+		pcl::getTransformationFromTwoUnitVectorsAndOrigin(z_axis, normal,  origin, transformation);
+	transformation = transformation.inverse();
+}
 
 
 
@@ -134,36 +135,36 @@ namespace cob_3d_mapping
 
 //Polygon::Polygon()
 
-  void Polygon::assignMembers(const Eigen::Vector3f &new_normal,const double &new_d, const Eigen::Vector4f& new_centroid){
-    d=new_d;
-    normal=new_normal;
-    centroid=new_centroid;
-    /*
+void Polygon::assignMembers(const Eigen::Vector3f &new_normal,const double &new_d, const Eigen::Vector4f& new_centroid){
+	d=new_d;
+	normal=new_normal;
+	centroid=new_centroid;
+	/*
     Eigen::Vector3f pt_on_polygon;
     getPointOnPolygon(normal,d,pt_on_polygon);
     Eigen::Affine3f transform_from_plane_to_world;
     getTransformationFromPlaneToWorld(normal,pt_on_polygon,transform_from_plane_to_world);
     transform_from_world_to_plane=transform_from_plane_to_world.inverse();
-    */
-    pcl::getTransformationFromTwoUnitVectorsAndOrigin(
-      this->normal.unitOrthogonal(),this->normal,this->centroid.head(3),this->transform_from_world_to_plane);
+	 */
+	pcl::getTransformationFromTwoUnitVectorsAndOrigin(
+			this->normal.unitOrthogonal(),this->normal,this->centroid.head(3),this->transform_from_world_to_plane);
 
-  }
+}
 
-  void Polygon::assignMembers(const Eigen::Vector3f& z_axis, const Eigen::Vector3f &new_normal, const Eigen::Vector3f& pt_on_polygon){
+void Polygon::assignMembers(const Eigen::Vector3f& z_axis, const Eigen::Vector3f &new_normal, const Eigen::Vector3f& pt_on_polygon){
 
-    d=pt_on_polygon.norm();
-    normal=new_normal;
+	d=pt_on_polygon.norm();
+	normal=new_normal;
 
-    Eigen::Affine3f transform_from_plane_to_world;
-    getTransformationFromPlaneToWorld(z_axis,normal,pt_on_polygon,transform_from_plane_to_world);
-    transform_from_world_to_plane=transform_from_plane_to_world.inverse();
+	Eigen::Affine3f transform_from_plane_to_world;
+	getTransformationFromPlaneToWorld(z_axis,normal,pt_on_polygon,transform_from_plane_to_world);
+	transform_from_world_to_plane=transform_from_plane_to_world.inverse();
 
 
-  }
+}
 
-  void Polygon::assignMembers(){
-    /*
+void Polygon::assignMembers(){
+	/*
     std::cout<<"DEBUG 3.2.1"<<std::endl;
     Eigen::Vector3f pt_on_polygon;
     getPointOnPolygon(normal,d,pt_on_polygon);
@@ -171,72 +172,72 @@ namespace cob_3d_mapping
     Eigen::Affine3f transform_from_plane_to_world;
     getTransformationFromPlaneToWorld(normal,pt_on_polygon,transform_from_plane_to_world);
     transform_from_world_to_plane=transform_from_plane_to_world.inverse();
-    */
-    pcl::getTransformationFromTwoUnitVectorsAndOrigin(
-      this->normal.unitOrthogonal(),this->normal,this->centroid.head(3),this->transform_from_world_to_plane);
-  }
+	 */
+	pcl::getTransformationFromTwoUnitVectorsAndOrigin(
+			this->normal.unitOrthogonal(),this->normal,this->centroid.head(3),this->transform_from_world_to_plane);
+}
 
 
 
-  void
-  Polygon::computeCentroid()
-  {
-    //find largest non-hole contour
-    unsigned int idx = 0;
-    for (unsigned int i = 0; i < contours.size (); i++)
-    {
-      int max_pts = 0;
-      if(!holes[i])
-      {
-        if((int)contours[i].size()>(int)max_pts)
-        {
-          max_pts = contours[i].size();
-          idx = i;
-        }
-      }
-    }
-    pcl::PointCloud<pcl::PointXYZ> poly_cloud;
-    for (unsigned int j = 0; j < contours[idx].size () ; j++)
-    {
-      pcl::PointXYZ p;
-      p.x = contours[idx][j][0];
-      p.y = contours[idx][j][1];
-      p.z = contours[idx][j][2];
-      poly_cloud.push_back(p);
-    }
-    pcl::compute3DCentroid(poly_cloud,centroid);
-  }
+void
+Polygon::computeCentroid()
+{
+	//find largest non-hole contour
+	unsigned int idx = 0;
+	for (unsigned int i = 0; i < contours.size (); i++)
+	{
+		int max_pts = 0;
+		if(!holes[i])
+		{
+			if((int)contours[i].size()>(int)max_pts)
+			{
+				max_pts = contours[i].size();
+				idx = i;
+			}
+		}
+	}
+	pcl::PointCloud<pcl::PointXYZ> poly_cloud;
+	for (unsigned int j = 0; j < contours[idx].size () ; j++)
+	{
+		pcl::PointXYZ p;
+		p.x = contours[idx][j][0];
+		p.y = contours[idx][j][1];
+		p.z = contours[idx][j][2];
+		poly_cloud.push_back(p);
+	}
+	pcl::compute3DCentroid(poly_cloud,centroid);
+}
 
 
-  double
-  Polygon::computeArea()
-  {
-    double xi, xi_1, yi, yi_1, area=0;
+double
+Polygon::computeArea()
+{
+	double xi, xi_1, yi, yi_1, area=0;
 
-    //area_. (poly_ptr_->contours.size ());
-    double sum;
-    for (unsigned int i = 0; i < contours.size (); i++)
-    {
-      if(holes[i]) continue;
-      sum = 0;
-      //area_[i] = 0;
-      for (unsigned int j = 0; j < contours[i].size (); j++)
-      {
-        xi = contours[i][j][0];
-        yi = contours[i][j][1];
-        if (j == (contours[i].size ()) - 1)
-        {
-          xi_1 = contours[i][0][0];
-          yi_1 = contours[i][0][1];
-        }
-        else
-        {
-          xi_1 = contours[i][j + 1][0];
-          yi_1 = contours[i][j + 1][1];
-        }
-        sum = sum + (xi * yi_1 - xi_1 * yi);
+	//area_. (poly_ptr_->contours.size ());
+	double sum;
+	for (unsigned int i = 0; i < contours.size (); i++)
+	{
+		if(holes[i]) continue;
+		sum = 0;
+		//area_[i] = 0;
+		for (unsigned int j = 0; j < contours[i].size (); j++)
+		{
+			xi = contours[i][j][0];
+			yi = contours[i][j][1];
+			if (j == (contours[i].size ()) - 1)
+			{
+				xi_1 = contours[i][0][0];
+				yi_1 = contours[i][0][1];
+			}
+			else
+			{
+				xi_1 = contours[i][j + 1][0];
+				yi_1 = contours[i][j + 1][1];
+			}
+			sum = sum + (xi * yi_1 - xi_1 * yi);
 
-        /*
+			/*
           std::cout << " ---------------------------------------" << std::endl;
           std::cout << " isSizeOk: xi-->" << xi << std::endl;
           std::cout << " \t: xi_1-->" << xi_1 << std::endl;
@@ -244,520 +245,524 @@ namespace cob_3d_mapping
           std::cout << " \t: yi_1-->" << yi_1 << std::endl;
           std::cout << " isSizeOk: sum-->" << sum << std::endl;
           std::cout << " ++++++++++++++++++++++++++++++++++++++++" <<std::endl;
-        */
+			 */
 
-      }
-      area += fabs (sum / 2);
-      //std::cout << "\n\t*** Area of polygon ( " << i << " ) = " << area_[i] << std::endl;
-    }
-    return area;
-  }
+		}
+		area += fabs (sum / 2);
+		//std::cout << "\n\t*** Area of polygon ( " << i << " ) = " << area_[i] << std::endl;
+	}
+	return area;
+}
 
-  double
-  Polygon::computeArea3d()
-  {
-    Eigen::Vector3f vi, vi_1;
-
-    double area=0;
-
-    //area_. (poly_ptr_->contours.size ());
-    for (unsigned int i = 0; i < contours.size (); i++)
-    {
-      if(holes[i]) continue;
-      Eigen::Vector3f temp_vec;
-      temp_vec << 0, 0, 0;
-
-      //area_[i] = 0;
-      for (unsigned int j = 0; j < contours[i].size (); j++)
-      {
-        vi << contours[i][j][0],contours[i][j][1],contours[i][j][2];
-
-        if (j == (contours[i].size ()) - 1)
-        {
-          vi_1 << contours[i][0][0],contours[i][0][1],contours[i][0][2];
-        }
-        else
-        {
-          vi_1 << contours[i][j + 1][0],contours[i][j + 1][1],contours[i][j+1][2];
-        }
-
-        temp_vec = temp_vec + (vi.cross(vi_1));
-
-
+double
+Polygon::computeArea3d()
+{
+	Eigen::Vector3f vi, vi_1;
+
+	double area=0;
+
+	//area_. (poly_ptr_->contours.size ());
+	for (unsigned int i = 0; i < contours.size (); i++)
+	{
+		if(holes[i]) continue;
+		Eigen::Vector3f temp_vec;
+		temp_vec << 0, 0, 0;
+
+		//area_[i] = 0;
+		for (unsigned int j = 0; j < contours[i].size (); j++)
+		{
+			vi << contours[i][j][0],contours[i][j][1],contours[i][j][2];
+
+			if (j == (contours[i].size ()) - 1)
+			{
+				vi_1 << contours[i][0][0],contours[i][0][1],contours[i][0][2];
+			}
+			else
+			{
+				vi_1 << contours[i][j + 1][0],contours[i][j + 1][1],contours[i][j+1][2];
+			}
+
+			temp_vec = temp_vec + (vi.cross(vi_1));
+
+
+
+		}
+		area += normal.dot(temp_vec) /2;
+		//std::cout << "\n\t*** Area of polygon ( " << i << " ) = " << area_[i] << std::endl;
+	}
+	return std::fabs(area);
+}
+
 
-      }
-      area += normal.dot(temp_vec) /2;
-      //std::cout << "\n\t*** Area of polygon ( " << i << " ) = " << area_[i] << std::endl;
-    }
-    return std::fabs(area);
-  }
+void
+Polygon::GpcStructureUsingMap(const Eigen::Affine3f& external_trafo, gpc_polygon* gpc_p)
+{
 
 
-  void
-  Polygon::GpcStructureUsingMap(const Eigen::Affine3f& external_trafo, gpc_polygon* gpc_p)
-  {
 
+	//	get transformed contours
+	std::vector< std::vector <Eigen::Vector3f> > transformed_contours;
+	getTransformedContours(external_trafo,transformed_contours);
 
 
-    //	get transformed contours
-    std::vector< std::vector <Eigen::Vector3f> > transformed_contours;
-    getTransformedContours(external_trafo,transformed_contours);
 
 
 
+	gpc_p->num_contours = contours.size();
+	gpc_p->hole = (int*)malloc(contours.size()*sizeof(int));
+	gpc_p->contour = (gpc_vertex_list*)malloc(contours.size()*sizeof(gpc_vertex_list));
+	//std::cout << "num_contours: " << gpc_p->num_contours << std::endl;
+	for(size_t j=0; j<contours.size(); j++)
+	{
+		//std::cout << j << std::endl;
+		gpc_p->hole[j] = holes[j];
+		gpc_p->contour[j].num_vertices = contours[j].size();
+		//std::cout << "num_vertices: " << gpc_p->contour[j].num_vertices << std::endl;
+		gpc_p->contour[j].vertex = (gpc_vertex*)malloc(gpc_p->contour[j].num_vertices*sizeof(gpc_vertex));
 
 
-    gpc_p->num_contours = contours.size();
-    gpc_p->hole = (int*)malloc(contours.size()*sizeof(int));
-    gpc_p->contour = (gpc_vertex_list*)malloc(contours.size()*sizeof(gpc_vertex_list));
-    //std::cout << "num_contours: " << gpc_p->num_contours << std::endl;
-    for(size_t j=0; j<contours.size(); j++)
-    {
-      //std::cout << j << std::endl;
-      gpc_p->hole[j] = holes[j];
-      gpc_p->contour[j].num_vertices = contours[j].size();
-      //std::cout << "num_vertices: " << gpc_p->contour[j].num_vertices << std::endl;
-      gpc_p->contour[j].vertex = (gpc_vertex*)malloc(gpc_p->contour[j].num_vertices*sizeof(gpc_vertex));
+		for(size_t k=0; k<contours[j].size(); k++)
+		{
+			//std::cout << p.contours[j][k] << std::endl;
+			Eigen::Vector3f point_trans = transformed_contours[j][k];
+			//      std::cout<<point_trans<<std::endl;
+			gpc_p->contour[j].vertex[k].x = point_trans(0);
+			gpc_p->contour[j].vertex[k].y = point_trans(1);
 
 
-      for(size_t k=0; k<contours[j].size(); k++)
-      {
-        //std::cout << p.contours[j][k] << std::endl;
-        Eigen::Vector3f point_trans = transformed_contours[j][k];
-        //      std::cout<<point_trans<<std::endl;
-        gpc_p->contour[j].vertex[k].x = point_trans(0);
-        gpc_p->contour[j].vertex[k].y = point_trans(1);
 
 
+			//if(point_trans(2)>0.2 || point_trans(2)<-0.2) std::cout << "z: " << point_trans(2) << std::endl;
+			//     std::cout << k << ":" << gpc_p->contour[j].vertex[k].x << "," << gpc_p->contour[j].vertex[k].y <<std::endl;
+		}
+	}
+}
 
+void
+Polygon::GpcStructure( gpc_polygon* gpc_p)
+{
 
-        //if(point_trans(2)>0.2 || point_trans(2)<-0.2) std::cout << "z: " << point_trans(2) << std::endl;
-        //     std::cout << k << ":" << gpc_p->contour[j].vertex[k].x << "," << gpc_p->contour[j].vertex[k].y <<std::endl;
-      }
-    }
-  }
+	//	get transformed contours
+	std::vector< std::vector <Eigen::Vector3f> > transformed_contours;
+	getTransformedContours(transform_from_world_to_plane,transformed_contours);
+	//printMapEntry(p);
+	gpc_p->num_contours = contours.size();
+	gpc_p->hole = (int*)malloc(contours.size()*sizeof(int));
+	gpc_p->contour = (gpc_vertex_list*)malloc(contours.size()*sizeof(gpc_vertex_list));
+	//std::cout << "num_contours: " << gpc_p->num_contours << std::endl;
+	for(size_t j=0; j<contours.size(); j++)
+	{
+		//std::cout << j << std::endl;
+		gpc_p->contour[j].num_vertices = contours[j].size();
+		gpc_p->hole[j] = 0;
+		//std::cout << "num_vertices: " << gpc_p->contour[j].num_vertices << std::endl;
+		gpc_p->contour[j].vertex = (gpc_vertex*)malloc(gpc_p->contour[j].num_vertices*sizeof(gpc_vertex));
+		for(size_t k=0; k<contours[j].size(); k++)
+		{
+			//std::cout << p.contours[j][k] << std::endl;
+			Eigen::Vector3f point_trans = transformed_contours[j][k];
+			gpc_p->contour[j].vertex[k].x = point_trans(0);
+			gpc_p->contour[j].vertex[k].y = point_trans(1);
+			// if(fabs(point_trans(2))>0.01) std::cout << "z: " << point_trans(2) << std::endl;
+			//std::cout << k << ":" << gpc_p->contour[j].vertex[k].x << "," << gpc_p->contour[j].vertex[k].y <<std::endl;
+		}
+	}
+}
 
-  void
-  Polygon::GpcStructure( gpc_polygon* gpc_p)
-  {
+void
+Polygon::merge(std::vector<PolygonPtr>& poly_vec)
+{
 
-    //	get transformed contours
-    std::vector< std::vector <Eigen::Vector3f> > transformed_contours;
-    getTransformedContours(transform_from_world_to_plane,transformed_contours);
-    //printMapEntry(p);
-    gpc_p->num_contours = contours.size();
-    gpc_p->hole = (int*)malloc(contours.size()*sizeof(int));
-    gpc_p->contour = (gpc_vertex_list*)malloc(contours.size()*sizeof(gpc_vertex_list));
-    //std::cout << "num_contours: " << gpc_p->num_contours << std::endl;
-    for(size_t j=0; j<contours.size(); j++)
-    {
-      //std::cout << j << std::endl;
-      gpc_p->contour[j].num_vertices = contours[j].size();
-      gpc_p->hole[j] = 0;
-      //std::cout << "num_vertices: " << gpc_p->contour[j].num_vertices << std::endl;
-      gpc_p->contour[j].vertex = (gpc_vertex*)malloc(gpc_p->contour[j].num_vertices*sizeof(gpc_vertex));
-      for(size_t k=0; k<contours[j].size(); k++)
-      {
-        //std::cout << p.contours[j][k] << std::endl;
-        Eigen::Vector3f point_trans = transformed_contours[j][k];
-        gpc_p->contour[j].vertex[k].x = point_trans(0);
-        gpc_p->contour[j].vertex[k].y = point_trans(1);
-        // if(fabs(point_trans(2))>0.01) std::cout << "z: " << point_trans(2) << std::endl;
-        //std::cout << k << ":" << gpc_p->contour[j].vertex[k].x << "," << gpc_p->contour[j].vertex[k].y <<std::endl;
-      }
-    }
-  }
 
-  void
-  Polygon::merge(std::vector<PolygonPtr>& poly_vec)
-  {
+	PolygonPtr p_average= PolygonPtr(new Polygon);
 
+	applyWeighting(poly_vec,*p_average);
 
-    PolygonPtr p_average= PolygonPtr(new Polygon);
+	merge_union(poly_vec,*p_average);
+}
+void
+Polygon::applyWeighting(const std::vector<PolygonPtr>& poly_vec, Polygon & p_average)
+{
 
-    applyWeighting(poly_vec,*p_average);
+//std::cout<<"MERGE WEIGHT: "<<merge_weight_<<std::endl;
+	Eigen::Vector3f average_normal=normal*merge_weight_;
+	Eigen::Vector4f average_centroid=centroid*merge_weight_;
+	double average_d=d*merge_weight_;
+	double sum_w=merge_weight_;
+	int    sum_merged=1;
 
-    merge_union(poly_vec,*p_average);
-  }
-  void
-  Polygon::applyWeighting(const std::vector<PolygonPtr>& poly_vec, Polygon & p_average)
-  {
 
 
-    Eigen::Vector3f average_normal=normal*merge_weight_;
-    Eigen::Vector4f average_centroid=centroid*merge_weight_;
-    double average_d=d*merge_weight_;
-    double sum_w=merge_weight_;
-    int    sum_merged=1;
+	for(int i=0 ; i< (int) poly_vec.size();i++)
+	{
+		Polygon& p_map1 =*(poly_vec[i]);
 
 
 
-    for(int i=0 ; i< (int) poly_vec.size();i++)
-    {
-      Polygon& p_map1 =*(poly_vec[i]);
 
+		if(normal.dot(p_map1.normal)<0){
+			//	if (p.normal.dot(p_map.normal)<-0.95){
+			p_map1.normal=-p_map1.normal;
+			//			p_map1.d=-p_map1.d;
 
+		}
 
 
-      if(normal.dot(p_map1.normal)<0){
-        //	if (p.normal.dot(p_map.normal)<-0.95){
-        p_map1.normal=-p_map1.normal;
-        //			p_map1.d=-p_map1.d;
+		average_normal += p_map1.merge_weight_* p_map1.normal;
+		average_centroid += p_map1.merge_weight_* p_map1.centroid;
+		average_d +=p_map1.merge_weight_ * p_map1.d;
+		sum_w += p_map1.merge_weight_;
+		sum_merged += p_map1.merged;
 
-      }
 
+	}
 
-      average_normal += p_map1.merge_weight_* p_map1.normal;
-      average_centroid += p_map1.merge_weight_* p_map1.centroid;
-      average_d +=p_map1.merge_weight_ * p_map1.d;
-      sum_w += p_map1.merge_weight_;
-      sum_merged += p_map1.merged;
 
 
-    }
+	average_normal=average_normal/sum_w;
+	average_centroid=average_centroid/sum_w;
+	average_d=average_d/sum_w;
+	average_normal.normalize();
+	average_d /= average_normal.norm();
 
 
+	if (sum_merged < 9) {
+		p_average.merged=sum_merged;
 
-    average_normal=average_normal/sum_w;
-    average_centroid=average_centroid/sum_w;
-    average_d=average_d/sum_w;
-    average_normal.normalize();
-    average_d /= average_normal.norm();
+	}
+	else
+		p_average.merged=9;
 
 
-    if (sum_merged < 9) {
-      p_average.merged=sum_merged;
+	p_average.assignMembers(average_normal,average_d,average_centroid);
 
-    }
-    else
-      p_average.merged=9;
 
 
-    p_average.assignMembers(average_normal,average_d,average_centroid);
+	//	weigths <<"average weight"<< p_average.merge_weight_<<std::endl;
+}
 
 
 
-    //	weigths <<"average weight"<< p_average.merge_weight_<<std::endl;
-  }
 
+void Polygon::assignWeight(std::string& mode)
+{
 
 
+	if (std::strcmp(mode.c_str(), "COUNTER")== 0) {
 
-  void Polygon::assignWeight(std::string& mode)
-  {
+		//USE
 
 
-    if (std::strcmp(mode.c_str(), "COUNTER")== 0) {
+		merge_weight_=merged;
 
-      //USE
+	}
+	else if (std::strcmp(mode.c_str(), "AREA")== 0) {
 
+		//DO NOT USE
+		//THIS IS WORK IN PROGRESS
 
-      merge_weight_=merged;
 
-    }
-    else if (std::strcmp(mode.c_str(), "AREA")== 0) {
 
-      //DO NOT USE
-      //THIS IS WORK IN PROGRESS
 
+		merge_weight_ = computeArea3d();
 
 
+	}
+	else if (std::strcmp(mode.c_str(), "COMBINED")== 0) {
+		//USE
 
-      merge_weight_ = computeArea3d();
+		merge_weight_ = merged     +       sqrt(computeArea3d())  ;
 
+	}
 
-    }
-    else if (std::strcmp(mode.c_str(), "COMBINED")== 0) {
-      //USE
+	else if (std::strcmp(mode.c_str(), "DIST")== 0) {
 
-      merge_weight_ = merged     +       sqrt(computeArea3d())  ;
+		//		Do not use d has to be substituted with value for distance to sensor , not distance in global
+		//		coordinate system
 
-    }
+		float dist_factor=d*d;
 
-    else if (std::strcmp(mode.c_str(), "DIST")== 0) {
+		if (fabs(d)<0.5) {
+			dist_factor=0.5;
+		}
+		dist_factor *= 0.5;
+		dist_factor=1/dist_factor;
+		merge_weight_ =merged + dist_factor;
+		//		merge_weight_=dist_factor;
+		//		merge_weight_ =   ;
 
-      //		Do not use d has to be substituted with value for distance to sensor , not distance in global
-      //		coordinate system
+	}
 
-      float dist_factor=d*d;
+}
 
-      if (fabs(d)<0.5) {
-        dist_factor=0.5;
-      }
-      dist_factor *= 0.5;
-      dist_factor=1/dist_factor;
-      merge_weight_ =merged + dist_factor;
-//		merge_weight_=dist_factor;
-      //		merge_weight_ =   ;
 
-    }
 
-  }
 
+void
+Polygon::merge_union(std::vector<PolygonPtr>& poly_vec, const Polygon& p_average)
+{
 
 
 
-  void
-  Polygon::merge_union(std::vector<PolygonPtr>& poly_vec, const Polygon& p_average)
-  {
+	gpc_polygon gpc_C;
+	gpc_polygon gpc_B;
 
 
+//	std::cout<<"DEBUG [2.1]\n";
 
+//
+//	if (fabs(p_average.d - this->d) > merge_settings_.d_thresh) {
+//		std::cerr<<"Error! Trying to merge d1-d2 > threshold";exit(1);
+//	}
 
-    gpc_polygon gpc_C;
-    gpc_polygon gpc_B;
+	this->GpcStructureUsingMap(p_average.transform_from_world_to_plane, &gpc_C);
+	//	this->GpcStructureUsingMap(transform_from_world_to_plane, &gpc_C);
 
 
+	for(unsigned int i=0 ; i<poly_vec.size();i++)
+	{
 
 
+		Polygon& p_map = *(poly_vec[i]);
 
-    if (fabs(p_average.d - this->d) > merge_settings_.d_thresh) {
-      std::cerr<<"Error! Trying to merge d1-d2 = "
-               << fabs(p_average.d - this->d) <<" > "<< merge_settings_.d_thresh << std::endl;//exit(1);
-    }
+//		std::cout<<"DEBUG [2.2]\n";
 
-    this->GpcStructureUsingMap(p_average.transform_from_world_to_plane, &gpc_C);
-    //	this->GpcStructureUsingMap(transform_from_world_to_plane, &gpc_C);
 
+		p_map.GpcStructureUsingMap(p_average.transform_from_world_to_plane,&gpc_B);
+		//		p_map2.GpcStructureUsingMap(transform_from_world_to_plane,&gpc_B);
 
-    for(unsigned int i=0 ; i<poly_vec.size();i++)
-    {
 
 
-      Polygon& p_map = *(poly_vec[i]);
+		gpc_polygon_clip(GPC_UNION, &gpc_B, &gpc_C, &gpc_C);
 
 
 
-      p_map.GpcStructureUsingMap(p_average.transform_from_world_to_plane,&gpc_B);
-      //		p_map2.GpcStructureUsingMap(transform_from_world_to_plane,&gpc_B);
+//		std::cout<<"DEBUG [2.3]\n";
 
+		if (i==0)
+		{
+			//			conversion of oject to boost shared pointer
+			p_map.transform_from_world_to_plane=p_average.transform_from_world_to_plane;
+			//			p_map2.transform_from_world_to_plane=transform_from_world_to_plane;
 
+			p_map.d=p_average.d;
+			p_map.normal=p_average.normal;
 
-      gpc_polygon_clip(GPC_UNION, &gpc_B, &gpc_C, &gpc_C);
+			//			std::cout<<"MERGED = "<<p_average.merged<<std::endl;
 
+			if(p_map.merged<9)
+				p_map.merged=p_average.merged;
+			else
+				p_map.merged=9;
 
+			p_map.merge_weight_=p_average.merge_weight_;
+			//			p_map2.assignMembers(p_average.normal,p_average.d);
 
+		}
 
-      if (i==0)
-      {
-        //			conversion of oject to boost shared pointer
-        p_map.transform_from_world_to_plane=p_average.transform_from_world_to_plane;
-        //			p_map2.transform_from_world_to_plane=transform_from_world_to_plane;
 
-        p_map.d=p_average.d;
-        p_map.normal=p_average.normal;
 
-        //			std::cout<<"MERGED = "<<p_average.merged<<std::endl;
 
-        if(p_map.merged<9)
-          p_map.merged=p_average.merged;
-        else
-          p_map.merged=9;
 
-        p_map.merge_weight_=p_average.merge_weight_;
-        //			p_map2.assignMembers(p_average.normal,p_average.d);
+		if(i!=0)
+		{
+			//			remove map entries
+			poly_vec.erase(poly_vec.begin()+i);
+		}
+		//	printGpcStructure(&gpc_result);
 
-      }
+		p_map = *(poly_vec[0]);
 
+		p_map.contours.resize(gpc_C.num_contours);
+		p_map.holes.resize(gpc_C.num_contours);
 
+		for(int j=0; j<gpc_C.num_contours; j++)
+		{
+			p_map.contours[j].resize(gpc_C.contour[j].num_vertices);
+			p_map.holes[j] = gpc_C.hole[j];
+			//          std::cout << "contour " << j << " is " << gpc_result.hole[j] << std::endl;
+			for(int k=0; k<gpc_C.contour[j].num_vertices; k++)
+			{
 
 
+				//TODO: set z to something else?
+				Eigen::Vector3f point(gpc_C.contour[j].vertex[k].x, gpc_C.contour[j].vertex[k].y, 0);
+				p_map.contours[j][k] = p_average.transform_from_world_to_plane.inverse()*point;
 
-      if(i!=0)
-      {
-        //			remove map entries
-        poly_vec.erase(poly_vec.begin()+i);
-      }
-      //	printGpcStructure(&gpc_result);
+				//		p_map3.contours[j][k] = transform_from_world_to_plane.inverse()*point;
 
-      p_map = *(poly_vec[0]);
 
-      p_map.contours.resize(gpc_C.num_contours);
-      p_map.holes.resize(gpc_C.num_contours);
 
-      for(int j=0; j<gpc_C.num_contours; j++)
-      {
-        p_map.contours[j].resize(gpc_C.contour[j].num_vertices);
-        p_map.holes[j] = gpc_C.hole[j];
-        //          std::cout << "contour " << j << " is " << gpc_result.hole[j] << std::endl;
-        for(int k=0; k<gpc_C.contour[j].num_vertices; k++)
-        {
 
+				//TODO: AVERAGING
+			}
+		}
+		p_map.assignWeight(merge_settings_.weighting_method);
+//		std::cout<<"DEBUG [2.4]\n";
 
-          //TODO: set z to something else?
-          Eigen::Vector3f point(gpc_C.contour[j].vertex[k].x, gpc_C.contour[j].vertex[k].y, 0);
-          p_map.contours[j][k] = p_average.transform_from_world_to_plane.inverse()*point;
 
-          //		p_map3.contours[j][k] = transform_from_world_to_plane.inverse()*point;
+		//		std::cout<<"combined = "<<p_map.merge_weight_<<std::endl;
+		//		std::cout<<"––––––––––––––––––––––––––––––––––––"<<std::endl;
 
+	}
 
+}
 
 
-          //TODO: AVERAGING
-        }
-      }
-      p_map.assignWeight(merge_settings_.weighting_method);
+void
+//Polygon::merge_intersect(std::vector<PolygonPtr> poly_vec,std::vector<int>& intersections,std::vector<double>& limit_vec)
+Polygon::isMergeCandidate(std::vector<PolygonPtr>& poly_vec,merge_config& config,std::vector<int>& intersections)
 
-//		std::cout<<"combined = "<<p_map.merge_weight_<<std::endl;
-//		std::cout<<"––––––––––––––––––––––––––––––––––––"<<std::endl;
+{
 
-    }
 
-  }
+	merge_settings_=config;
+	merged=1;
+	//		this->assignMembers();
+	this->assignWeight(merge_settings_.weighting_method);
+	this->computeCentroid();
 
+	for(size_t i=0; i< poly_vec.size(); i++)
+	{
 
-  void
-  //Polygon::merge_intersect(std::vector<PolygonPtr> poly_vec,std::vector<int>& intersections,std::vector<double>& limit_vec)
-  Polygon::isMergeCandidate(std::vector<PolygonPtr>& poly_vec,merge_config& config,std::vector<int>& intersections)
+		Polygon& p_map = *(poly_vec[i]);
 
-  {
 
 
-    merge_settings_=config;
-    merged=1;
-//		this->assignMembers();
-    this->assignWeight(merge_settings_.weighting_method);
-//	this->computeCentroid();
+		Eigen::Vector4f temp=this->centroid-p_map.centroid;
+		Eigen::Vector3f connection;
 
-    for(size_t i=0; i< poly_vec.size(); i++)
-    {
 
-      Polygon& p_map = *(poly_vec[i]);
+		connection << temp[0], temp[1] , temp[2];
 
 
 
-      Eigen::Vector4f temp=this->centroid-p_map.centroid;
-      Eigen::Vector3f connection;
+		//		std::cout<<"dot = "<<fabs(connection.dot(normal))<<std::endl;
+//				if(fabs(connection.dot(normal)) < (1- merge_settings_.angle_thresh) && fabs(p_map.d-this->d) < merge_settings_.d_thresh)
+		if(fabs(p_map.normal.dot(this->normal)) > (merge_settings_.angle_thresh) &&
+		         fabs(connection.dot(this->normal)) < 0.05/* < merge_settings_.d_thresh*/)
+//		if((fabs(p_map.normal.dot(normal)) > merge_settings_.angle_thresh && fabs(p_map.d-this->d) < merge_settings_.d_thresh))
 
+		{
 
-      connection << temp[0], temp[1] , temp[2];
-      // For debug:
-      if (fabs(1 - p_map.normal.norm()) > 0.001) std::cout <<"p_map normal not normalized: "<< p_map.normal.norm() <<std::endl;
-      if (fabs(1 - this->normal.norm()) > 0.001) std::cout <<"this normal not normalized : "<< this->normal.norm() <<std::endl;
-      /*
-      std::cout<<"DEBUG: dd:"<<fabs(connection.dot(this->normal))<<" ang:"<<fabs(p_map.normal.dot(this->normal))<<" size(this):";
-      for(int ci=0;ci<this->contours.size();++ci) std::cout<<this->contours[ci].size()<<", ";
-      std::cout<<"size(pmap):";
-      for(int ci=0;ci<p_map.contours.size();++ci) std::cout<<p_map.contours[ci].size()<<", ";
-      */
-      //std::cout<<"dot = "<<fabs(connection.dot(normal))<<std::endl;
 
-      //if((fabs(p_map.normal.dot(normal)) > merge_settings_.angle_thresh && fabs(p_map.d-this->d) < merge_settings_.d_thresh))
-      //if(fabs(connection.dot(normal)) < (1- merge_settings_.angle_thresh) && fabs(p_map.d-this->d) < merge_settings_.d_thresh)
-      // cos angle between normals && (projection of connection on normal -> perpendicular distance of centroid to this plane)
-      if(fabs(p_map.normal.dot(this->normal)) > (merge_settings_.angle_thresh) &&
-         fabs(connection.dot(this->normal)) < 0.05f/* < merge_settings_.d_thresh*/)
-      {
-        bool is_intersected= this->isMergeCandidate_intersect(p_map);
-        //std::cout<<"I:"<<(is_intersected ? "true" : "false");
 
-        if(is_intersected == true)
-        {
-          //std::cout << "no intersection with map " << i << std::endl;
-          //std::cout << p.normal << std::endl;
-          //std::cout << "intersection with map " << i << std::endl;
-          intersections.push_back(i);
-          //std::cout<<std::endl;
-          continue;
-        }
+			bool is_intersected= this->isMergeCandidate_intersect(p_map);
 
 
+			if(is_intersected == true)
+			{
+				//std::cout << "no intersection with map " << i << std::endl;
+				//				std::cout << p.normal << std::endl;
+				//				std::cout << "intersection with map " << i << std::endl;
+				intersections.push_back(i);
+				continue;
 
-        // std::cout << "intersection with map " << i << std::endl;
+			}
+			if (is_intersected == false) {
+				std::cout<<" criteria fulfilled, but no intersection\n";
+			}
 
 
-      }
-      //std::cout<<std::endl;
-    }
 
+			Eigen::Vector4f temp=this->centroid-p_map.centroid;
+			Eigen::Vector3f connection;
 
-  }
 
-  bool Polygon::isMergeCandidate_intersect(Polygon& p_map){
+		}
 
-    bool is_intersected;
-    gpc_polygon gpc_result;
-    gpc_polygon gpc_p_merge;
-    gpc_polygon gpc_p_map;
 
-    //      Eigen::Affine3f transformation_from_world_to_plane;
+		//		std::cout<<"dot = "<<fabs(connection.dot(normal))<<std::endl;
+		//		if(fabs(connection.dot(normal)) < (1- merge_settings_.angle_thresh) && fabs(p_map.d-this->d) < merge_settings_.d_thresh)
 
-    //      transformation_from_world_to_plane = transform_from_world_to_plane;
-    //      std::cout<<"this:"<<std::endl;
-    this->GpcStructureUsingMap(p_map.transform_from_world_to_plane, &gpc_p_merge);
-    //      std::cout<<"map:"<<std::endl;
-    p_map.GpcStructureUsingMap(p_map.transform_from_world_to_plane,&gpc_p_map);
+	}}
 
 
-    gpc_polygon_clip(GPC_INT,&gpc_p_merge,&gpc_p_map,&gpc_result);
+bool Polygon::isMergeCandidate_intersect(Polygon& p_map){
 
-    if(gpc_result.num_contours == 0)
-    {
-      is_intersected=false;
-    }
-    else
-    {
-      is_intersected=true;
-    }
+	bool is_intersected;
+	gpc_polygon gpc_result;
+	gpc_polygon gpc_p_merge;
+	gpc_polygon gpc_p_map;
 
-    return is_intersected;
-  }
+	//      Eigen::Affine3f transformation_from_world_to_plane;
 
+	//      transformation_from_world_to_plane = transform_from_world_to_plane;
+	//      std::cout<<"this:"<<std::endl;
+	this->GpcStructureUsingMap(p_map.transform_from_world_to_plane, &gpc_p_merge);
+	//      std::cout<<"map:"<<std::endl;
+	p_map.GpcStructureUsingMap(p_map.transform_from_world_to_plane,&gpc_p_map);
 
-  void
-  Polygon::getTransformedContours(const Eigen::Affine3f& trafo,std::vector< std::vector<Eigen::Vector3f> >& t_contours)
-  {
 
+	gpc_polygon_clip(GPC_INT,&gpc_p_merge,&gpc_p_map,&gpc_result);
 
+	if(gpc_result.num_contours == 0)
+	{
+		is_intersected=false;
+	}
+	else
+	{
+		is_intersected=true;
+	}
 
-    t_contours.resize(contours.size());
-    for(size_t j=0; j<contours.size(); j++)
-    {
-      t_contours[j].resize(contours[j].size());
+	return is_intersected;
+}
 
 
+void
+Polygon::getTransformedContours(const Eigen::Affine3f& trafo,std::vector< std::vector<Eigen::Vector3f> >& t_contours)
+{
 
-      for(size_t k=0; k<contours[j].size(); k++)
-      {
 
-        //	    	std::cout<<trafo.matrix()<<std::endl;
-        t_contours[j][k] = trafo*contours[j][k];
 
+	t_contours.resize(contours.size());
+	for(size_t j=0; j<contours.size(); j++)
+	{
+		t_contours[j].resize(contours[j].size());
 
-      }
-    }
-  }
 
 
+		for(size_t k=0; k<contours[j].size(); k++)
+		{
 
+			//	    	std::cout<<trafo.matrix()<<std::endl;
+			t_contours[j][k] = trafo*contours[j][k];
 
-  void Polygon::debug_output(std::string name){
 
-    std::ofstream os;
-    std::string path = "/home/goa-tz/debug/";
-    path.append(name.c_str());
-    os.open(path.c_str());
+		}
+	}
+}
 
-//	std::cout<< "name~~~~~~~~~~~~"<<std::endl;
 
-    std::cout<<"saving polygon nodes to "<<path.c_str()<<std::endl;
 
 
-    for (int i = 0; i < (int) this->contours.size(); ++i) {
-      for (int j = 0; j < (int) this->contours[i].size(); ++j) {
+void Polygon::debug_output(std::string name){
 
-        //		 std::cout<<"contor "<<i<<" vertex "<<j <<"  : "<<std::endl<<"~~~~"<<std::endl<<this->contours[i][j]<<std::endl<<std::endl;
+	std::ofstream os;
+	std::string path = "/home/goa-tz/debug/";
+	path.append(name.c_str());
+	os.open(path.c_str());
 
-        os << contours[i][j]<<std::endl;
+	//	std::cout<< "name~~~~~~~~~~~~"<<std::endl;
 
-      }
-    }
-//	std::cout<<"normal: "<<std::endl;
-//	std::cout<< normal<<std::endl;
-//	std::cout<<"d: "<<
-//			std::cout<<"End Debug Output~~~~~~~~~~~~~~~~~~~~~~~~"<<std::endl<<std::endl;
-    os.close();
-  }
+	std::cout<<"saving polygon nodes to "<<path.c_str()<<std::endl;
+
+
+	for (int i = 0; i < (int) this->contours.size(); ++i) {
+		for (int j = 0; j < (int) this->contours[i].size(); ++j) {
+
+			//		 std::cout<<"contor "<<i<<" vertex "<<j <<"  : "<<std::endl<<"~~~~"<<std::endl<<this->contours[i][j]<<std::endl<<std::endl;
+
+			os << contours[i][j]<<std::endl;
+
+		}
+	}
+	//	std::cout<<"normal: "<<std::endl;
+	//	std::cout<< normal<<std::endl;
+	//	std::cout<<"d: "<<
+	//			std::cout<<"End Debug Output~~~~~~~~~~~~~~~~~~~~~~~~"<<std::endl<<std::endl;
+	os.close();
+}
 
 
 

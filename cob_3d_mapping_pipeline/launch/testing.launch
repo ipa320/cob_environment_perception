@@ -1,7 +1,7 @@
 <?xml version="1.0"?>
 <launch>
   <node pkg="pcl_ros" type="pcd_to_pointcloud" name="pcd_to_pointcloud"
-        args="/home/goa-tz/data/kitchen01_close_raw.pcd 1"/>
+        args="/home/goa-tz/data/table01_close1m_raw.pcd 1"/>
 
   <arg name="mapping_manager" value="mapping_manager"/>
   <node pkg="nodelet" type="nodelet" name="$(arg mapping_manager)" args="manager" output="screen"/>
