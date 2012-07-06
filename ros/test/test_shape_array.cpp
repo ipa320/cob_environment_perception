@@ -39,7 +39,7 @@ firstShape (cob_3d_mapping_msgs::Shape& s)
   s.color.b = 0;
   s.color.a = 1;
 
-  float z = -1;
+  float z = 1;
 
   pt.x = 0.0;
   pt.y = 0.0;
@@ -317,17 +317,19 @@ sixthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f v1, Eigen::Vector3f c
   pcl::PointCloud<pcl::PointXYZ> pc;
   sensor_msgs::PointCloud2 pc2;
 
-  Eigen::Vector3f v2 (1, 0, 0), v3 (0, 0, 0);
-  cout << " v1 : \n" << v1 << endl;
+  Eigen::Vector3f v2 (1, 0, 0), v3 (0, 0, 0),v4;
+  //cout << " v1 : \n" << v1 << endl;
   //cout<< " v1 orthognal : \n"<<v1.unitOrthogonal()<<endl;
   //v1.normalize();
   //cout<< " v1 norm : "<<v1<<endl;
   v2 = v1.unitOrthogonal ();
-  cout << " v2 : \n" << v2 << endl;
+  //cout << " v2 : \n" << v2 << endl;
   //cout<< " v1 euler : \n"<<v1.eulerAngles(v1.de,1,2)<<endl;
-  v3 = v1.cross (v2);
+  v3 = v2.unitOrthogonal();
   //cout << " v3 : \n" << v3 << endl;
 
+  v4 = v3.unitOrthogonal();
+  //cout << " v4 : \n" << v3 << endl;
   //sixth shape
 
   s.params[0] = v1[0];
@@ -341,7 +343,7 @@ sixthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f v1, Eigen::Vector3f c
   s.color.a = 1;
 
   int a = 4;
-
+/*
   for (int i = 1; i < 4; i++)
   {
     if (i % 3 == 0)
@@ -360,22 +362,40 @@ sixthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f v1, Eigen::Vector3f c
     pc.push_back (pt);
     cout << " pt : \n" << pt << endl;
   }
-
-  /*
-   pt.x = 0.0;
-   pt.y = 0.0;
-   pt.z = 0.0;
+*/
+  //int x = v2[0], y = v2[1], z = v2[2];
+  int x = 1, y = 0, z = 0;
+   pt.x = x;
+   pt.y = y;
+   pt.z = z;
    pc.push_back (pt);
 
-   pt.x =  v2[0];
-   pt.y =  v2[1];
-   pt.y =  v2[2];
-
-   pt.x =  v3[0];
-   pt.y =  v3[1];
-   pt.y =  v3[2];
+   //x = v3[0], y = v3[1], z = v3[2];
+   x = 1, y = 1, z = 0;
+   pt.x = x;
+   pt.y = y;
+   pt.z = z;
    pc.push_back (pt);
-   */
+
+   //x = v4[0], y = v4[1], z = v4[2];
+   x = 1, y = 1, z = 1;
+   pt.x = x;
+   pt.y = y;
+   pt.z = z;
+   pc.push_back (pt);
+
+   x = 1, y = 0, z = 1;
+   pt.x = x;
+   pt.y = y;
+   pt.z = z;
+   pc.push_back (pt);
+/*
+   x = v2[0], y = v2[1], z = v2[2];
+   pt.x = x;
+   pt.y = y;
+   pt.z = z;
+   pc.push_back (pt);
+  */
   Eigen::VectorXf centroid;
   pcl::computeNDCentroid (pc, centroid);
   //std::cout << " centroid : \n" << centroid << std::endl;
@@ -413,15 +433,16 @@ main (int argc, char **argv)
     s.header.stamp = sa.header.stamp;
 
     s.type = cob_3d_mapping_msgs::Shape::PLANE;
+    s.holes.push_back (false);
 
      firstShape(s);
-     s.holes.push_back (false);
+
      sa.shapes.push_back (s);
 
      //std::cout<<" shape s.holes : "<<(bool)s.holes[0]<<std::endl;
      s.points.clear ();
      //std::cout<<" shape_size_1 clear : "<<s.points.size()<<std::endl;
-/*
+
      secondShape(s);
      sa.shapes.push_back (s);
      s.points.clear ();
@@ -437,16 +458,19 @@ main (int argc, char **argv)
      fifthShape (s);
      sa.shapes.push_back (s);
      s.points.clear ();
-  */
-     /*
-    Eigen::Vector3f v1 (0.707, 0, 0.707);
-    Eigen::Vector3f color (1, 0, 0);
 
-    sixthShape (s, v1, color);
+
+    //Eigen::Vector3f v1 (0.707,0.707,0.707),v2(-1,1,0),v3,v4;
+     Eigen::Vector3f v1 (1,0,0),v2(-1,1,0),v3,v4;
+    Eigen::Vector3f color (1, 1, 1);
+    v3 = v1;
+    //v3 = v1.cross(v2);
+    //cout<< " v3 : \n"<<v1<<endl;
+    sixthShape (s, v3, color);
     sa.shapes.push_back (s);
     s.points.clear ();
 
-
+/*
     v1[0] = 0.707;
     v1[1] = -0.707;
     v1[2] = -0.707;
