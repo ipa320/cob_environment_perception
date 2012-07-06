@@ -510,10 +510,10 @@ Polygon::merge_union(std::vector<PolygonPtr>& poly_vec, const Polygon& p_average
 
 //	std::cout<<"DEBUG [2.1]\n";
 
-
-	if (fabs(p_average.d - this->d) > merge_settings_.d_thresh) {
-		std::cerr<<"Error! Trying to merge d1-d2 > threshold";exit(1);
-	}
+//
+//	if (fabs(p_average.d - this->d) > merge_settings_.d_thresh) {
+//		std::cerr<<"Error! Trying to merge d1-d2 > threshold";exit(1);
+//	}
 
 	this->GpcStructureUsingMap(p_average.transform_from_world_to_plane, &gpc_C);
 	//	this->GpcStructureUsingMap(transform_from_world_to_plane, &gpc_C);
