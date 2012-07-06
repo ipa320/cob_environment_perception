@@ -64,10 +64,10 @@ void Cylinder::allocate()
 	axes_[0].resize(3);
 	axes_[1].resize(3);
 	axes_[2].resize(3);
-	}
+}
 
 void Cylinder::getCyl3D(std::vector<std::vector<Eigen::Vector3f> >& contours3D) {
-//	std::cout<<"getCyl3d"<<std::endl;
+	//	std::cout<<"getCyl3d"<<std::endl;
 	//Transform to local coordinate system
 	Polygon poly_plane;
 
@@ -113,7 +113,7 @@ void Cylinder::getCyl3D(std::vector<std::vector<Eigen::Vector3f> >& contours3D) 
 			//	      transform back in world system
 			//			point_temp=transformation_from_world_to_cylinder_.inverse()* point_temp;
 			point_temp = transform_from_world_to_plane.inverse()
-																											* point_temp;
+																													* point_temp;
 
 			//			std::cout<<"DEBUG: point after trafo\n"<<point_temp<<std::endl;
 
@@ -263,7 +263,18 @@ Cylinder::ParamsFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud ,
 	//origin in wcs
 	origin_ = trafo_hor2w * l_origin  ;
 	//calculate axis from origin to centroid
-	axes_[2]=origin_- centroid3f;
+
+
+	axes_[2]= centroid3f - origin_;
+
+	if (axes_[2][2] > 0 ) {
+
+		axes_[2] = origin_ - centroid3f;
+	}
+
+
+
+
 	axes_[0] = axes_[1].cross(axes_[2]);
 
 	r_=coeff.values[2];
@@ -290,7 +301,7 @@ Cylinder::ParamsFromShapeMsg(){
 	 * Already set:		r_ ............................... Radius of the cylinder
 	 * 					origin_ .......................... Origin, point on symmetry axis, in lcs , same y coordinate as centroid
 	 * 					axes_[1] ......................... Symmetry axis of c ylinder, y- axis in lcs
-	 * 					axes_[2] ......................... axis, connecting origin and centroid
+	 * 					axes_[2] ......................... axis, connecting origin and centroid, Z-axis
 	 *
 	 *
 	 * To be set:		centroid ........................ centroid of cylinder strip
@@ -301,14 +312,18 @@ Cylinder::ParamsFromShapeMsg(){
 	 *
 	 */
 
-//	axes_[0]
-	axes_[0]=axes_[2].cross(axes_[1]);
+	//	axes_[0]
+	axes_[0]=axes_[1].cross(axes_[2]);
+	axes_[0].normalize();//= axes_[0];
+	axes_[1].normalize();//= axes_[1];
+	axes_[2].normalize();//= axes_[2].normalize();
 
-//	centroid
-//	centroid = origin_+(r_*axes_[2]);
 
-//		normal, d and transform_from_world_to_plane set within Polygon::assignMembers
-		this->assignMembers(axes_[1], axes_[2], origin_);
+	//	centroid
+	//	centroid = origin_+(r_*axes_[2]);
+
+	//		normal, d and transform_from_world_to_plane set within Polygon::assignMembers
+	this->assignMembers(axes_[1], axes_[2], origin_);
 
 
 
@@ -351,7 +366,7 @@ void Cylinder::getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha)
 		//	Debug Output
 		std::cout << "avec" << std::endl << vec2d << std::endl;
 		std::cout << "alpha = " << acos(cos_alpha) * (180 / 3.1459)
-																										<< std::endl;
+																												<< std::endl;
 		std::cout << "TX = " << Tx << std::endl << std::endl;
 
 	}
@@ -370,12 +385,29 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 
 
 		//compare symmetry axes and d
-		if ((fabs(c_map.axes_[1] .dot(axes_[1])) > limits.angle_thresh))
+//		std::cout<<"r1 "<<c_map.r_<<"\n";
+//		std::cout<<"r2 "<<r_<<"\n\n";
 
+		Eigen::Vector3f connection=c_map.origin_-origin_;
+
+		double diff_origin = connection.norm();
+		connection.normalize();
+
+
+		if ((fabs(c_map.axes_[1] .dot(axes_[1])) > limits.angle_thresh)  && fabs(c_map.r_ - r_) < (0.2 ) )
 
 
 		{
 
+			if (fabs(diff_origin)> 0.20 && fabs(connection.dot(axes_[1])) < 0.95 )
+			{
+				continue;
+			}
+//			}
+//			else if (fabs(diff_origin)> 0.1 && fabs(connection.dot(axes_[1])) > 0.97 )
+//			{
+//
+//			}
 
 			Polygon shifted_polygon_map;
 
@@ -390,11 +422,12 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 				continue;
 			}
 			if (is_intersected == true) {
-//				std::cout<<"has intersection"<<std::endl;
+				//				std::cout<<"has intersection"<<std::endl;
 				intersections.push_back(i);
 
 			}
 			// std::cout << "intersection with map " << i << std::endl;
+//			}//elseif
 
 		}//if
 
@@ -412,7 +445,7 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
 
 	//	transform unrolled_ to local system
 
-
+	//	std::cout<<"DEBUG [1]\n";
 	for (int i = 0; i < (int) c_array.size(); i++) {
 		Cylinder & c_map = *(c_array[i]);
 
@@ -427,6 +460,7 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
 
 		merge_polygons_B.push_back(map_shifted_polygon);
 
+		//		std::cout<<"DEBUG [2]\n";
 
 	}//for
 
@@ -437,20 +471,28 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
 	//	unrolled_.merge_union(merge_polygons_B,average_cyl.unrolled_);
 	merge_union(merge_polygons_B,*this);
 
+	//	std::cout<<"DEBUG [3]\n";
 
 
 	Polygon& merge_polygon_C = *merge_polygons_B[0];
+	//	std::cout<<"DEBUG [3.1\n";
 
 
 	Cylinder& c_map2 = *c_array[0];
+	//	std::cout<<"DEBUG [3.1.1]\n";
+
 	//	assign values to resulting cylinder
 	c_map2.contours = merge_polygon_C.contours;
+	//	std::cout<<"DEBUG [3.1.2]\n";
+
 	c_map2.r_ = average_cyl.r_;
 	c_map2.axes_ =axes_;
 	c_map2.origin_ = average_cyl.origin_;
 	c_map2.transform_from_world_to_plane
 	= transform_from_world_to_plane;
 	std::vector<std::vector<Eigen::Vector3f> > contours3d;
+	//	std::cout<<"DEBUG [3.2]\n";
+
 	c_map2.getCyl3D(contours3d);
 	c_map2.axes_=average_cyl.axes_;
 	//	c_map2.unroll();
@@ -458,12 +500,15 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
 
 	c_map2.debug_output("unrolled average");
 
+	//	std::cout<<"DEBUG [4]\n";
 
 
 	for (int i = 0; i < (int) c_array.size(); ++i) {
 
 		if (i != 0) {
 			c_array.erase(c_array.begin() + i);
+			//			std::cout<<"DEBUG [4]\n";
+
 		}
 
 	}
@@ -509,9 +554,9 @@ Cylinder::getShiftedPolygon(Cylinder& c, Polygon & shifted_polygon) {
 
 
 			shifted_polygon.contours[j][k]		= c.transform_from_world_to_plane.inverse()
-																													* (shift_trafo
-																															* c.transform_from_world_to_plane
-																															* contours[j][k]);
+																															* (shift_trafo
+																																	* c.transform_from_world_to_plane
+																																	* contours[j][k]);
 			//END LOCAL
 
 		}

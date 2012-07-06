@@ -163,13 +163,15 @@ public:
 	void
 	shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr sa)
 	{
-
 		static int ctr=0;
 		static double time = 0;
 		PrecisionStopWatch t;
+		std::cout<<"size shapes"<<sa->shapes.size()<<std::endl;
 		for(unsigned int i=0; i<sa->shapes.size(); i++)
 		{
 
+
+//			if (i != 1) {
 
 			////    distinction of type
 			if (sa->shapes[i].type == 0) {
@@ -181,13 +183,12 @@ public:
 
 					continue;
 				}
-
 				geometry_map_.addMapEntry(polygon_map_entry_ptr);
 
 			}
 
 			if (sa->shapes[i].type == 5) {
-				std::cout<<"cylinder detected"<<std::endl;
+				std::cout<<"CYLINDER detected"<<std::endl;
 				CylinderPtr cylinder_map_entry_ptr = CylinderPtr(new Cylinder());
 				cylinder_map_entry_ptr->allocate();
 				if(!fromROSMsg(sa->shapes[i], *cylinder_map_entry_ptr)){
@@ -201,6 +202,7 @@ public:
 
 
 			}
+//		}
 
 
 			//dumpPolygonToFile(*map_entry_ptr);
@@ -218,8 +220,9 @@ public:
 
 
 		publishMapMarker();
-		std::cout<<"publishMap() DEACTIVATED!!"<<std::endl;
-//		publishMap();
+//		std::cout<<"publishMap() DEACTIVATED!!"<<std::endl;
+
+		publishMap();
 		ctr_++;
 		//ROS_INFO("%d polygons received so far", ctr_);
 	}
@@ -409,8 +412,8 @@ public:
 		//create the marker in the table reference frame
 		//the caller is responsible for setting the pose of the marker to match
 
-		marker.scale.x = 0.02;
-		marker.scale.y = 0.02;
+		marker.scale.x = 0.01;
+		marker.scale.y = 0.01;
 		marker.scale.z = 1;
 		marker.color.r = 0;
 		marker.color.g = 0;
@@ -516,30 +519,33 @@ public:
 					Cylinder& cm = *(map_cylinder->at(i));
 					int color_ctr = i%4;
 					//marker.id = cm.id;
-					if(color_ctr==0)
-					{
-						marker.color.r = 0;
-						marker.color.g = 0;
-						marker.color.b = 1;
-					}
-					else if(color_ctr==1)
-					{
-						marker.color.r = 0;
-						marker.color.g = 1;
-						marker.color.b = 0;
-					}
-					else if(color_ctr==2)
-					{
-						marker.color.r = 0;
-						marker.color.g = 1;
-						marker.color.b = 1;
-					}
-					else if(color_ctr==3)
-					{
-						marker.color.r = 1;
-						marker.color.g = 1;
-						marker.color.b = 0;
-					}
+					marker.color.r=1;
+					marker.color.g=0;
+					marker.color.b=0;
+//					if(color_ctr==0)
+//					{
+//						marker.color.r = 0;
+//						marker.color.g = 0;
+//						marker.color.b = 1;
+//					}
+//					else if(color_ctr==1)
+//					{
+//						marker.color.r = 0;
+//						marker.color.g = 1;
+//						marker.color.b = 0;
+//					}
+//					else if(color_ctr==2)
+//					{
+//						marker.color.r = 0;
+//						marker.color.g = 1;
+//						marker.color.b = 1;
+//					}
+//					else if(color_ctr==3)
+//					{
+//						marker.color.r = 1;
+//						marker.color.g = 1;
+//						marker.color.b = 0;
+//					}
 
 
 					//			std::cout<<pm.d<<std::endl<<std::endl;
@@ -553,9 +559,12 @@ public:
 						//if(pm.contours.size()>1) std::cout << "id: " << ctr << ", " << pm.contours.size() << std::endl;
 						//TODO: this is a workaround as the marker can't display more than one contour
 						marker.id = ctr;
-						marker.color.r /= j+1;
-						marker.color.g /= j+1;
-						marker.color.b /= j+1;
+//						marker.color.r /= j+1;
+//						marker.color.g /= j+1;
+//						marker.color.b /= j+1;
+						marker.color.r=1;
+						marker.color.g=0;
+						marker.color.b=0;
 
 						t_marker.id = t_ctr;
 						std::stringstream ss;
@@ -581,15 +590,10 @@ public:
 						marker_pub_.publish(marker);
 						marker_pub_.publish(t_marker);
 
-
-
-
 					}
 				}
 
 	}
-
-
 
 
 

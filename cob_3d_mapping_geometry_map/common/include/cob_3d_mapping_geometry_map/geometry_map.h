@@ -122,7 +122,7 @@ public:
 
 
    void
-   addMapEntry(boost::shared_ptr<cob_3d_mapping::Cylinder> c_ptr);
+   addMapEntry(boost::shared_ptr<cob_3d_mapping::Cylinder>& c_ptr);
 
 
   void

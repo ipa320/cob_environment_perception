@@ -8,14 +8,18 @@
     <arg name="start_manager" value="false"/>
     <arg name="nodelet_manager" value="$(arg mapping_manager)"/>
   </include-->
+  <!--include file="$(find cob_3d_mapping_features)/ros/launch/extract_planes.launch">
+	<arg name="start_manager" value="false"/>
+	<arg name="nodelet_manager" value="$(arg mapping_manager)"/>
+  </include-->
   <node pkg="nodelet" type="nodelet" name="segmentation"
         args="load cob_3d_segmentation/SegmentationAllInOneNodelet $(arg mapping_manager)" output="screen">
-    <remap from="cloud_in" to="/registration/pc_aligned" />
+    <remap from="cloud_in" to="registration/pc_aligned" />
   </node>
   <include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch"/>
 
   <node pkg="rosbag" type="play" name="rosbag_play" cwd="node" respawn="false" output="screen"
-        args="/share/goa-sf/pcd_data/bags/office01_far.bag -k -q --pause">
+        args="/share/goa-sf/pcd_data/bags/gotcha.bag -k -q --pause">
   </node>
 </launch>
 

@@ -36,14 +36,14 @@ namespace cob_3d_segmentation
     void removePolygon() { polys_.erase(polys_.end()-1); }
     void addPoint(int x, int y) { polys_.back().push_back(TPoint(x,y)); }
     /*void removeLastPoints(typename std::vector<TPoint>::size_type n)
-    { 
-      if(polys_.back().size() > n) { polys_.back().resize(polys_.back().size() - n); } 
+    {
+      if(polys_.back().size() > n) { polys_.back().resize(polys_.back().size() - n); }
       }*/
-    void removeLastPoints(int n) 
-    { 
+    void removeLastPoints(int n)
+    {
       if(n && polys_.back().size() > n)
       {
-	polys_.back().erase( polys_.back().begin()+(polys_.back().size()-n-1), polys_.back().end() );
+        polys_.back().erase( polys_.back().begin()+(polys_.back().size()-n-1), polys_.back().end() );
       }
     }
 
