@@ -268,13 +268,13 @@ public:
       marker.lifetime = ros::Duration ();
 
       //set color
-      marker.color.r = 0;
-      marker.color.g = 1;
+      marker.color.r = 1;
+      marker.color.g = 0;
       marker.color.b = 0;
       marker.color.a = 1;
 
       //set scale
-      marker.scale.x = 0.1;
+      marker.scale.x = 0.05;
       marker.scale.y = 0.1;
       marker.scale.z = 0.1;
 
@@ -289,34 +289,44 @@ public:
            marker.pose.position.z = centroid_[k][2];
            */
           /*
-          Eigen::Vector3f u, v, normal, origin;
-          Eigen::Affine3f transformation;
+           Eigen::Vector3f u, v, normal, origin;
+           Eigen::Affine3f transformation;
 
-          normal (0) = normal_[k][0];
-          normal (1) = normal_[k][1];
-          normal (2) = normal_[k][2];
-          origin (0) = centroid_[k][0];
-          origin (1) = centroid_[k][1];
-          origin (2) = centroid_[k][2];
+           normal (0) = normal_[k][0];
+           normal (1) = normal_[k][1];
+           normal (2) = normal_[k][2];
+           origin (0) = centroid_[k][0];
+           origin (1) = centroid_[k][1];
+           origin (2) = centroid_[k][2];
 
-          v = normal.unitOrthogonal ();
-          pcl::getTransformationFromTwoUnitVectorsAndOrigin (v, normal_[k], origin, transformation);
-          */
+           v = normal.unitOrthogonal ();
+           pcl::getTransformationFromTwoUnitVectorsAndOrigin (v, normal_[k], origin, transformation);
+           */
           Eigen::Quaternionf quat (transformation.rotation ());
           Eigen::Vector3f trans (transformation.translation ());
+          /*
+           marker.pose.position.x = trans (0);
+           marker.pose.position.y = trans (1);
+           marker.pose.position.z = trans (2);
+           */
+          //pcl::PointXYZ pt;
+          //pt.x = [trans (0)];
+          marker.points.resize (2);
+          marker.points[0].x = trans (0);
+          marker.points[0].y = trans (1);
+          marker.points[0].z = trans (2);
 
-          marker.pose.position.x = trans (0);
-          marker.pose.position.y = trans (1);
-          marker.pose.position.z = trans (2);
-
-          setOrientation (normal_[k], marker);
+          marker.points[1].x = normal_[k][0] + trans (0);
+          marker.points[1].y = normal_[k][1] + trans (1);
+          marker.points[1].z = normal_[k][2] + trans (2);
+          //setOrientation (normal_[k], marker);
 
           /*
            marker.pose.orientation.x = quat.x ();
-           marker.pose.orientation.x = quat.y ();
-           marker.pose.orientation.x = quat.z ();
-           marker.pose.orientation.x = quat.w ();
-*/
+           marker.pose.orientation.y = quat.y ();
+           marker.pose.orientation.z = quat.z ();
+           marker.pose.orientation.w = quat.w ();
+           */
 //////////////////////////
           /*
            marker.pose.orientation.x = -0.5;
@@ -353,7 +363,7 @@ public:
         }
       }
 
-      marker.id = 0;
+      marker.id = marker_id_++;
       /*
        std::cout << " normal vector marker id " << marker_id_ << std::endl;
        std::cout << " normal_[0] " << normal_[0][0] << std::endl;
@@ -434,24 +444,24 @@ public:
            std::cout << " centroid_[k][1] <<" << k << " : " << centroid_[k][1] << std::endl;
            std::cout << " centroid_[k][2] <<" << k << " : " << centroid_[k][2] << std::endl;
 
-          marker.pose.position.x = centroid_[k][0];
-          marker.pose.position.y = centroid_[k][1];
-          marker.pose.position.z = centroid_[k][2];
-*/
+           marker.pose.position.x = centroid_[k][0];
+           marker.pose.position.y = centroid_[k][1];
+           marker.pose.position.z = centroid_[k][2];
+           */
           /*
-          Eigen::Vector3f u, v, normal, origin;
-          Eigen::Affine3f transformation;
+           Eigen::Vector3f u, v, normal, origin;
+           Eigen::Affine3f transformation;
 
-          normal (0) = normal_[k][0];
-          normal (1) = normal_[k][1];
-          normal (2) = normal_[k][2];
-          origin (0) = centroid_[k][0];
-          origin (1) = centroid_[k][1];
-          origin (2) = centroid_[k][2];
+           normal (0) = normal_[k][0];
+           normal (1) = normal_[k][1];
+           normal (2) = normal_[k][2];
+           origin (0) = centroid_[k][0];
+           origin (1) = centroid_[k][1];
+           origin (2) = centroid_[k][2];
 
-          v = normal.unitOrthogonal ();
-          pcl::getTransformationFromTwoUnitVectorsAndOrigin (v, normal, origin, transformation);
-          */
+           v = normal.unitOrthogonal ();
+           pcl::getTransformationFromTwoUnitVectorsAndOrigin (v, normal, origin, transformation);
+           */
           //Eigen::Quaternionf quat (transformation.rotation ());
           Eigen::Vector3f trans (transformation.translation ());
 
@@ -463,7 +473,7 @@ public:
         }
       }
 
-      marker.id = 0; //marker_id_++;
+      marker.id = marker_id_++;
       /*
        std::cout << " centroid marker id " << marker_id_ << std::endl;
        std::cout << " centroid_[0] " << centroid_[0][0] << std::endl;
@@ -512,12 +522,13 @@ public:
    */
   void
   createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::InteractiveMarkerControl& im_ctrl,
-                const std_msgs::ColorRGBA& clr)
+                const std_msgs::ColorRGBA& clr, Eigen::Affine3f transformation)
   {
     ROS_INFO(" creating markers .....");
     marker_id_ = 0;
     //setOrientation(normal_[shape_ctr_],marker);
     std::cout << "triangle list " << triangle_list.size () << std::endl;
+    transformation = transformation.inverse ();
 
     TPPLPoint pt;
     for (std::list<TPPLPoly>::iterator it = triangle_list.begin (); it != triangle_list.end (); it++)
@@ -550,28 +561,29 @@ public:
        marker.pose.position.x = centroid_[shape_ctr_][0];
        marker.pose.position.x = centroid_[shape_ctr_][1];
        marker.pose.position.x = centroid_[shape_ctr_][2];
-       */
-      Eigen::Vector3f v, normal, origin;
-      Eigen::Affine3f transformation;
 
-      normal (0) = normal_[shape_ctr_][0];
-      normal (1) = normal_[shape_ctr_][1];
-      normal (2) = normal_[shape_ctr_][2];
-      origin (0) = centroid_[shape_ctr_][0];
-      origin (1) = centroid_[shape_ctr_][1];
-      origin (2) = centroid_[shape_ctr_][2];
+       Eigen::Vector3f v, normal, origin;
+       //Eigen::Affine3f transformation;
 
-      std::cout << "normal: " << normal_[shape_ctr_] << std::endl;
-      std::cout << "centroid: " << origin << std::endl;
-      v = normal.unitOrthogonal ();
-      std::cout << " normal.unitOrthogonal: " << v << std::endl;
-      /*
+       normal (0) = normal_[shape_ctr_][0];
+       normal (1) = normal_[shape_ctr_][1];
+       normal (2) = normal_[shape_ctr_][2];
+       origin (0) = centroid_[shape_ctr_][0];
+       origin (1) = centroid_[shape_ctr_][1];
+       origin (2) = centroid_[shape_ctr_][2];
+
+       std::cout << "normal: " << normal_[shape_ctr_] << std::endl;
+       std::cout << "centroid: " << origin << std::endl;
+       //v = normal.unitOrthogonal ();
+       std::cout << " normal.unitOrthogonal: " << v << std::endl;
+
+
        v = v.unitOrthogonal();
        std::cout << " normal.unitOrthogonal: " << v << std::endl;
        v = v.unitOrthogonal();
        std::cout << " normal.unitOrthogonal: " << v << std::endl;
        */
-      pcl::getTransformationFromTwoUnitVectorsAndOrigin (v, normal, origin, transformation);
+      //pcl::getTransformationFromTwoUnitVectorsAndOrigin (v, normal, origin, transformation);
       Eigen::Quaternionf quat (transformation.rotation ());
       Eigen::Vector3f trans (transformation.translation ());
 
@@ -825,10 +837,12 @@ public:
     interactive_markers::MenuHandler::EntryHandle eh_1, eh_2, eh_3;
 
     eh_1 = menu_h_ptr->insert ("Display", boost::bind (&ShapeVisualization::menuCB, this, _1));
-    eh_2 = menu_h_ptr->insert (eh_1, "Normal",
-                               boost::bind (&ShapeVisualization::displayNormalCB, this, _1, shape_ctr_, menu_h_ptr,transformation));
-    eh_3 = menu_h_ptr->insert (eh_1, "Centroid",
-                               boost::bind (&ShapeVisualization::displayCentroidCB, this, _1, shape_ctr_, menu_h_ptr, transformation));
+    eh_2 = menu_h_ptr->insert (
+        eh_1, "Normal",
+        boost::bind (&ShapeVisualization::displayNormalCB, this, _1, shape_ctr_, menu_h_ptr, transformation));
+    eh_3 = menu_h_ptr->insert (
+        eh_1, "Centroid",
+        boost::bind (&ShapeVisualization::displayCentroidCB, this, _1, shape_ctr_, menu_h_ptr, transformation));
 
     menu_h_ptr->setVisible (eh_1, true);
     menu_h_ptr->setCheckState (eh_1, interactive_markers::MenuHandler::NO_CHECKBOX);
@@ -841,7 +855,7 @@ public:
   TPPLPoint
   MsgToPoint2D (const pcl::PointXYZ &point, Eigen::Affine3f& transformation)
   {
-    ROS_INFO(" --------MsgToPoint2D------------");
+    //ROS_INFO(" --------MsgToPoint2D------------");
     TPPLPoint pt;
     std::cout << "\n ..map..\n" << transformation * point.getVector3fMap () << std::endl;
     Eigen::Vector3f p3 = transformation * point.getVector3fMap ();
@@ -850,7 +864,7 @@ public:
 
     ROS_INFO("\n ptXY:x = %f, y = %f ", pt.x, pt.y);
 
-    ROS_INFO(" --------END------------");
+    //ROS_INFO(" --------END------------");
     return pt;
   }
   /**
@@ -867,7 +881,7 @@ public:
     shape_pub_.publish (*shape_msg);
     cob_3d_mapping::Polygon p;
     cob_3d_mapping::fromROSMsg (*shape_msg, p);
-    normal_.push_back (p.normal);
+    normal_.push_back (p.normal.normalized());
     centroid_.push_back (p.centroid);
 
     TPPLPartition pp;
@@ -888,10 +902,11 @@ public:
       //std::cout << "centroid: " << origin << std::endl;
       v = normal.unitOrthogonal ();
 
-      //std::cout << "normal.unitOrthogonal : " << v << std::endl;
+      std::cout << "normal.unitOrthogonal : " << v << std::endl;
       //u = normal.cross (v);
       pcl::getTransformationFromTwoUnitVectorsAndOrigin (v, normal, origin, transformation);
-      std::cout << " transformation trans: " << transformation.translation () << std::endl;
+      //std::cout << " transformation trans: " << transformation.translation () << std::endl;
+      //std::cout << " transformation rotat: " << transformation.rotation() << std::endl;
       //transformation=transformation.inverse();
       //std::cout << " transformation trans: " << transformation.translation () << std::endl;
     }
@@ -961,7 +976,7 @@ public:
     im_ctrl.description = "shape_markers";
     im_ctrl.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
 
-    createMarker (result, im_ctrl, shape_msg->color);
+    createMarker (result, im_ctrl, shape_msg->color, transformation);
     /*
      for (size_t i = 0; i < shape_msg->points.size (); i++)
      {
@@ -976,7 +991,8 @@ public:
 
     //im_server_->insert (im, boost::bind (&ShapeVisualization::imServerCB, this, _1),visualization_msgs::InteractiveMarkerFeedback::BUTTON_CLICK);
     im_server_->insert (int_marker);
-    createShapeMenu (menu_h_ptr,transformation);
+    transformation = transformation.inverse ();
+    createShapeMenu (menu_h_ptr, transformation);
     menu_h_ptr->apply (*im_server_, int_marker.name);
     im_server_->applyChanges ();
 
@@ -1018,19 +1034,19 @@ protected:
     yaw = acos (normal[2]);
 
     std::cout << " roll : " << toDegrees (roll) << " pitch : " << toDegrees (pitch) << " yaw : " << toDegrees (yaw)
-            << std::endl;
+        << std::endl;
     /*
-    Eigen::Affine3f transformation;
-    transformation = pcl::getTransformation(normal[0], normal[1], normal[2],roll,pitch,yaw);
+     Eigen::Affine3f transformation;
+     transformation = pcl::getTransformation(normal[0], normal[1], normal[2],roll,pitch,yaw);
 
-    Eigen::Quaternionf quat (transformation.rotation ());
-    Eigen::Vector3f trans (transformation.translation ());
+     Eigen::Quaternionf quat (transformation.rotation ());
+     Eigen::Vector3f trans (transformation.translation ());
 
-    marker.pose.orientation.x = quat.x ();
-    marker.pose.orientation.y = quat.y ();
-    marker.pose.orientation.z = quat.z ();
-    marker.pose.orientation.w = quat.w ();
-    */
+     marker.pose.orientation.x = quat.x ();
+     marker.pose.orientation.y = quat.y ();
+     marker.pose.orientation.z = quat.z ();
+     marker.pose.orientation.w = quat.w ();
+     */
 
     marker.pose.orientation.x = cos (roll / 2) * cos (pitch / 2) * cos (yaw / 2)
         + sin (roll / 2) * sin (pitch / 2) * sin (yaw / 2);

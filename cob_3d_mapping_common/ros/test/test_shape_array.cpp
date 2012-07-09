@@ -22,24 +22,24 @@
 using namespace std;
 
 void
-firstShape (cob_3d_mapping_msgs::Shape& s)
+firstShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vector3f color)
 {
   pcl::PointXYZ pt;
   pcl::PointCloud<pcl::PointXYZ> pc;
   sensor_msgs::PointCloud2 pc2;
 
   //first shape
-  s.params[0] = 0;
-  s.params[1] = 0;
-  s.params[2] = 1;
+  s.params[0] = normal[0];
+  s.params[1] = normal[1];
+  s.params[2] = normal[2];
   s.params[3] = 0;
 
-  s.color.r = 1;
-  s.color.g = 0;
-  s.color.b = 0;
+  s.color.r = color[0];
+  s.color.g = color[1];
+  s.color.b = color[2];
   s.color.a = 1;
 
-  float z = 1;
+  float z = 2;
 
   pt.x = 0.0;
   pt.y = 0.0;
@@ -61,12 +61,12 @@ firstShape (cob_3d_mapping_msgs::Shape& s)
   pt.z = z;
   pc.push_back (pt);
 
-/*
+  /*
    pt.x = 0.0;
    pt.y = 0.0;
    pt.z = z;
    pc.push_back (pt);
-*/
+   */
   Eigen::VectorXf centroid;
   pcl::computeNDCentroid (pc, centroid);
   //std::cout<<" centroid : "<<centroid<<"\n X: "<<centroid[0]<<"\n Y: "<<centroid[1]<<"\n Z: "<<centroid[2]<<std::endl;
@@ -80,30 +80,21 @@ firstShape (cob_3d_mapping_msgs::Shape& s)
 }
 
 void
-secondShape (cob_3d_mapping_msgs::Shape& s)
+secondShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vector3f color)
 {
   pcl::PointXYZ pt;
   pcl::PointCloud<pcl::PointXYZ> pc;
   sensor_msgs::PointCloud2 pc2;
 
-  //second shape
-  s.params[0] = 0;
-  s.params[1] = 0;
-  s.params[2] = 1;
+  s.params[0] = normal[0];
+  s.params[1] = normal[1];
+  s.params[2] = normal[2];
   s.params[3] = 0;
-  /*
-   s.centroid.x = 1;
-   s.centroid.y = 1;
-   s.centroid.z = -1;
-   */
-  s.color.r = 0;
-  s.color.g = 1;
-  s.color.b = 0;
+
+  s.color.r = color[0];
+  s.color.g = color[1];
+  s.color.b = color[2];
   s.color.a = 1;
-  /*
-   pc.clear ();
-   pc2.data.clear ();
-   */
 
   pt.x = 0;
   pt.y = 0;
@@ -144,26 +135,20 @@ secondShape (cob_3d_mapping_msgs::Shape& s)
 }
 
 void
-thirdShape (cob_3d_mapping_msgs::Shape& s)
+thirdShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vector3f color)
 {
-  //third shape
-  /*
-   s.centroid.x = -16 / 3;
-   s.centroid.y = -11 / 3;
-   s.centroid.z = -2;
-   */
   pcl::PointXYZ pt;
   pcl::PointCloud<pcl::PointXYZ> pc;
   sensor_msgs::PointCloud2 pc2;
 
-  s.params[0] = 0;
-  s.params[1] = 0;
-  s.params[2] = -1;
+  s.params[0] = normal[0];
+  s.params[1] = normal[1];
+  s.params[2] = normal[2];
   s.params[3] = 0;
 
-  s.color.r = 0;
-  s.color.g = 0;
-  s.color.b = 1;
+  s.color.r = color[0];
+  s.color.g = color[1];
+  s.color.b = color[2];
   s.color.a = 1;
 
   pt.x = -5;
@@ -194,147 +179,211 @@ thirdShape (cob_3d_mapping_msgs::Shape& s)
 }
 
 void
-fourthShape (cob_3d_mapping_msgs::Shape& s)
+fourthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vector3f color)
 {
   pcl::PointXYZ pt;
   pcl::PointCloud<pcl::PointXYZ> pc;
   sensor_msgs::PointCloud2 pc2;
-
-  //fourth shape
   /*
-   s.centroid.x = -2 / 3;
-   s.centroid.y = -2 / 3;
-   s.centroid.z = 0;
+   Eigen::Vector3f v2 (1, 0, 0), v3 (0, 0, 0), v4;
+   //cout << " v1 : \n" << v1 << endl;
+   //cout<< " v1 orthognal : \n"<<v1.unitOrthogonal()<<endl;
+   //v1.normalize();
+   //cout<< " v1 norm : "<<v1<<endl;
+   v2 = v1.unitOrthogonal ();
+   //cout << " v2 : \n" << v2 << endl;
+   //cout<< " v1 euler : \n"<<v1.eulerAngles(v1.de,1,2)<<endl;
+   v3 = v2.unitOrthogonal ();
+   //cout << " v3 : \n" << v3 << endl;
+
+   v4 = v3.unitOrthogonal ();
+   //cout << " v4 : \n" << v3 << endl;
+   //sixth shape
    */
-  s.params[0] = 0;
-  s.params[1] = 0;
-  s.params[2] = 1;
+  s.params[0] = normal[0];
+  s.params[1] = normal[1];
+  s.params[2] = normal[2];
   s.params[3] = 0;
 
-  s.color.r = 1;
-  s.color.g = 0;
-  s.color.b = 1;
+  s.color.r = color[0];
+  s.color.g = color[1];
+  s.color.b = color[2];
   s.color.a = 1;
+  /*
+   int a = 4;
 
-  pt.x = -1;
-  pt.y = 0;
-  pt.z = 0;
+   for (int i = 1; i < 4; i++)
+   {
+   if (i % 3 == 0)
+   {
+   pt.x = a * i * v2[0];
+   pt.y = i * v2[1];
+   }
+   else
+   {
+   if (i % 2 == 0)
+   pt.x = i * v2[0];
+   else
+   pt.y = a * i * v2[1];
+   }
+   pt.z = v2[2];
+   pc.push_back (pt);
+   cout << " pt : \n" << pt << endl;
+   }
+   */
+  //int x = v2[0], y = v2[1], z = v2[2];
+  int x = 1, y = 0, z = 0;
+  pt.x = x;
+  pt.y = y;
+  pt.z = z;
   pc.push_back (pt);
 
-  pt.x = -1;
-  pt.y = -1;
-  pt.z = 0;
+  //x = v3[0], y = v3[1], z = v3[2];
+  x = 0, y = 1, z = 0;
+  pt.x = x;
+  pt.y = y;
+  pt.z = z;
   pc.push_back (pt);
 
-  pt.x = 0;
-  pt.y = -1;
-  pt.z = 0;
+  //x = v4[0], y = v4[1], z = v4[2];
+  x = 0, y = 0, z = 1;
+  pt.x = x;
+  pt.y = y;
+  pt.z = z;
   pc.push_back (pt);
 
   /*
-   pt.x = 0;
-   pt.y = -2;
-   pt.z = 0;
+   x = 1, y = 0, z = 1;
+   pt.x = x;
+   pt.y = y;
+   pt.z = z;
+   pc.push_back (pt);
+
+   x = v2[0], y = v2[1], z = v2[2];
+   pt.x = x;
+   pt.y = y;
+   pt.z = z;
    pc.push_back (pt);
    */
-
   Eigen::VectorXf centroid;
   pcl::computeNDCentroid (pc, centroid);
-  //std::cout<<" centroid : "<<centroid<<"--> X: "<<centroid[0]<<"--> Y: "<<centroid[1]<<"--> Z: "<<centroid[2]<<std::endl;
-
+  //std::cout << " centroid : \n" << centroid << std::endl;
+  //std::cout << " point cloud : \n" << pc << std::endl;
   s.centroid.x = centroid[0];
   s.centroid.y = centroid[1];
   s.centroid.z = centroid[2];
-
   pcl::toROSMsg (pc, pc2);
   s.points.push_back (pc2);
 
 }
 
 void
-fifthShape (cob_3d_mapping_msgs::Shape& s)
+fifthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vector3f color)
 {
   pcl::PointXYZ pt;
   pcl::PointCloud<pcl::PointXYZ> pc;
   sensor_msgs::PointCloud2 pc2;
 
-  //fifth shape
-  s.params[0] = 0;
-  s.params[1] = 0;
-  s.params[2] = -1;
+  s.params[0] = normal[0];
+  s.params[1] = normal[1];
+  s.params[2] = normal[2];
   s.params[3] = 0;
 
-  /*
-   s.centroid.x = -2;
-   s.centroid.y = -1;
-   s.centroid.z = -3;
-   */
-
-  s.color.r = 1;
-  s.color.g = 1;
-  s.color.b = 0;
+  s.color.r = color[0];
+  s.color.g = color[1];
+  s.color.b = color[2];
   s.color.a = 1;
-
-  pt.x = 0.0;
-  pt.y = 0.0;
-  pt.z = -3.0;
-  pc.push_back (pt);
-
-  pt.x = -3.0;
-  pt.y = 0.0;
-  pt.z = -3.0;
-  pc.push_back (pt);
-
-  pt.x = -3.0;
-  pt.y = -3.0;
-  pt.z = -3.0;
-  pc.push_back (pt);
-
-  /*
-   pt.x = 0.0;
-   pt.y = -3.0;
-   pt.z = -3.0;
-   pc.push_back (pt);
-   */
-  Eigen::VectorXf centroid;
-  pcl::computeNDCentroid (pc, centroid);
-  //std::cout<<" centroid : "<<centroid<<"--> X: "<<centroid[0]<<"--> Y: "<<centroid[1]<<"--> Z: "<<centroid[2]<<std::endl;
-
-  s.centroid.x = centroid[0];
-  s.centroid.y = centroid[1];
-  s.centroid.z = centroid[2];
-
-  pcl::toROSMsg (pc, pc2);
-  s.points.push_back (pc2);
-
-}
-
-void
-sixthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f v1, Eigen::Vector3f color)
-{
-
-  pcl::PointXYZ pt;
-  pcl::PointCloud<pcl::PointXYZ> pc;
-  sensor_msgs::PointCloud2 pc2;
-
-  Eigen::Vector3f v2 (1, 0, 0), v3 (0, 0, 0),v4;
-  //cout << " v1 : \n" << v1 << endl;
+/*
+  Eigen::Vector3f v2 (-normal[0], normal[1], -normal[2]), v3 (normal[0], -normal[1], normal[2]), v4 (normal[0], normal[1], -normal[2]);
+  cout << " normal : \n" << normal << endl;
+  cout << " v2 : \n" << v2 << endl;
+  cout << " v3 : \n" << v3 << endl;
+  cout << " v4 : \n" << v4 << endl;
   //cout<< " v1 orthognal : \n"<<v1.unitOrthogonal()<<endl;
   //v1.normalize();
   //cout<< " v1 norm : "<<v1<<endl;
-  v2 = v1.unitOrthogonal ();
-  //cout << " v2 : \n" << v2 << endl;
+  //v2 = v1.unitOrthogonal ();
+  cout << " v2.dot (normal) : \n" << v2.dot (normal) << endl;
+  cout << " v3.dot (normal) : \n" << v3.dot (normal) << endl;
+  cout << " v4.dot (normal) : \n" << v4.dot (normal) << endl;
+
   //cout<< " v1 euler : \n"<<v1.eulerAngles(v1.de,1,2)<<endl;
-  v3 = v2.unitOrthogonal();
+  //v3 = v2.unitOrthogonal ();
   //cout << " v3 : \n" << v3 << endl;
 
-  v4 = v3.unitOrthogonal();
+  //v4 = v3.unitOrthogonal ();
   //cout << " v4 : \n" << v3 << endl;
   //sixth shape
+*/
+  float x = 0 , y = -1, z = 0;
 
-  s.params[0] = v1[0];
-  s.params[1] = v1[1];
-  s.params[2] = v1[2];
+  pt.x = x;
+  pt.y = y;
+  pt.z = z;
+  pc.push_back (pt);
+
+  x = 1 , y = -1, z = 0;
+
+  pt.x = x;
+  pt.y = y;
+  pt.z = z;
+  pc.push_back (pt);
+
+  x = 1.5 , y = -1, z = 0.5;
+
+  pt.x = x;
+  pt.y = y;
+  pt.z = z;
+  pc.push_back (pt);
+
+
+  x = 1 , y = -1, z = 1;
+
+  pt.x = x;
+  pt.y = y;
+  pt.z = z;
+  pc.push_back (pt);
+
+  x = 0.5 , y = -1, z = 1.5;
+  pt.x = x;
+  pt.y = y;
+  pt.z = z;
+  pc.push_back (pt);
+
+  x = 0 , y = -1, z = 1;
+  pt.x = x;
+  pt.y = y;
+  pt.z = z;
+  pc.push_back (pt);
+
+  x = -0.5 , y = -1, z = 0.5;
+  pt.x = x;
+  pt.y = y;
+  pt.z = z;
+  pc.push_back (pt);
+  Eigen::VectorXf centroid;
+  pcl::computeNDCentroid (pc, centroid);
+  //std::cout << " centroid : \n" << centroid << std::endl;
+
+  s.centroid.x = centroid[0];
+  s.centroid.y = centroid[1];
+  s.centroid.z = centroid[2];
+  pcl::toROSMsg (pc, pc2);
+  s.points.push_back (pc2);
+
+}
+
+void
+sixthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vector3f color)
+{
+
+  pcl::PointXYZ pt;
+  pcl::PointCloud<pcl::PointXYZ> pc;
+  sensor_msgs::PointCloud2 pc2;
+
+  s.params[0] = normal[0];
+  s.params[1] = normal[1];
+  s.params[2] = normal[2];
   s.params[3] = 0;
 
   s.color.r = color[0];
@@ -342,64 +391,33 @@ sixthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f v1, Eigen::Vector3f c
   s.color.b = color[2];
   s.color.a = 1;
 
-  int a = 4;
-/*
-  for (int i = 1; i < 4; i++)
-  {
-    if (i % 3 == 0)
-    {
-      pt.x = a * i * v2[0];
-      pt.y = i * v2[1];
-    }
-    else
-    {
-      if (i % 2 == 0)
-        pt.x = i * v2[0];
-      else
-        pt.y = a * i * v2[1];
-    }
-    pt.z = v2[2];
-    pc.push_back (pt);
-    cout << " pt : \n" << pt << endl;
-  }
-*/
-  //int x = v2[0], y = v2[1], z = v2[2];
-  int x = 1, y = 0, z = 0;
-   pt.x = x;
-   pt.y = y;
-   pt.z = z;
-   pc.push_back (pt);
+  int x = 2, y = 0, z = 0;
+  pt.x = x;
+  pt.y = y;
+  pt.z = z;
+  pc.push_back (pt);
 
-   //x = v3[0], y = v3[1], z = v3[2];
-   x = 1, y = 1, z = 0;
-   pt.x = x;
-   pt.y = y;
-   pt.z = z;
-   pc.push_back (pt);
+  x = 2, y = 1, z = 0;
+  pt.x = x;
+  pt.y = y;
+  pt.z = z;
+  pc.push_back (pt);
 
-   //x = v4[0], y = v4[1], z = v4[2];
-   x = 1, y = 1, z = 1;
-   pt.x = x;
-   pt.y = y;
-   pt.z = z;
-   pc.push_back (pt);
+  x = 2, y = 1, z = 1;
+  pt.x = x;
+  pt.y = y;
+  pt.z = z;
+  pc.push_back (pt);
 
-   x = 1, y = 0, z = 1;
-   pt.x = x;
-   pt.y = y;
-   pt.z = z;
-   pc.push_back (pt);
-/*
-   x = v2[0], y = v2[1], z = v2[2];
-   pt.x = x;
-   pt.y = y;
-   pt.z = z;
-   pc.push_back (pt);
-  */
+  x = 2, y = 0, z = 1;
+  pt.x = x;
+  pt.y = y;
+  pt.z = z;
+  pc.push_back (pt);
+
   Eigen::VectorXf centroid;
   pcl::computeNDCentroid (pc, centroid);
-  //std::cout << " centroid : \n" << centroid << std::endl;
-  //std::cout << " point cloud : \n" << pc << std::endl;
+
   s.centroid.x = centroid[0];
   s.centroid.y = centroid[1];
   s.centroid.z = centroid[2];
@@ -415,7 +433,7 @@ main (int argc, char **argv)
   ros::NodeHandle n;
   ros::Publisher pub = n.advertise<cob_3d_mapping_msgs::ShapeArray> ("shapes_array", 1);
 
-  ROS_INFO(" Publishing shape_array.........:");
+  ROS_INFO("\nPublishing shape_array...........");
   ros::Rate loop_rate (1);
   uint32_t seq = 0;
 
@@ -435,62 +453,67 @@ main (int argc, char **argv)
     s.type = cob_3d_mapping_msgs::Shape::PLANE;
     s.holes.push_back (false);
 
-     firstShape(s);
+    Eigen::Vector3f normal (0, 0, 1);
+    Eigen::Vector3f color (1, 0, 0);
 
-     sa.shapes.push_back (s);
-
-     //std::cout<<" shape s.holes : "<<(bool)s.holes[0]<<std::endl;
-     s.points.clear ();
-     //std::cout<<" shape_size_1 clear : "<<s.points.size()<<std::endl;
-
-     secondShape(s);
-     sa.shapes.push_back (s);
-     s.points.clear ();
-
-     thirdShape(s);
-     sa.shapes.push_back (s);
-     s.points.clear ();
-
-     fourthShape(s);
-     sa.shapes.push_back (s);
-     s.points.clear ();
-
-     fifthShape (s);
-     sa.shapes.push_back (s);
-     s.points.clear ();
-
-
-    //Eigen::Vector3f v1 (0.707,0.707,0.707),v2(-1,1,0),v3,v4;
-     Eigen::Vector3f v1 (1,0,0),v2(-1,1,0),v3,v4;
-    Eigen::Vector3f color (1, 1, 1);
-    v3 = v1;
-    //v3 = v1.cross(v2);
-    //cout<< " v3 : \n"<<v1<<endl;
-    sixthShape (s, v3, color);
+    firstShape (s, normal, color);
     sa.shapes.push_back (s);
     s.points.clear ();
 
-/*
-    v1[0] = 0.707;
-    v1[1] = -0.707;
-    v1[2] = -0.707;
     color[0] = 0;
     color[1] = 1;
     color[2] = 0;
-    sixthShape (s, v1, color);
+
+    secondShape (s, normal, color);
     sa.shapes.push_back (s);
     s.points.clear ();
 
-    v1[0] = 1;
-    v1[1] = 1;
-    v1[2] = 0;
+    color[0] = 1;
+    color[1] = 1;
+    color[2] = 0;
+
+    thirdShape (s, normal, color);
+    sa.shapes.push_back (s);
+    s.points.clear ();
+
+    normal[0] = 0.707;
+    normal[1] = 0.707;
+    normal[2] = 0.707;
+
     color[0] = 0;
     color[1] = 0;
     color[2] = 1;
-    sixthShape (s, v1, color);
+
+    fourthShape (s, normal, color);
     sa.shapes.push_back (s);
     s.points.clear ();
+/*
+    normal[0] = 0.866;
+    normal[1] = 0.5;
+    normal[2] = 0.5;
 */
+    normal[0] = 0;
+    normal[1] = 1;
+    normal[2] = 0;
+
+    color[0] = 1;
+    color[1] = 1;
+    color[2] = 1;
+    fifthShape (s, normal, color);
+    sa.shapes.push_back (s);
+    s.points.clear ();
+
+    normal[0] = 1;
+    normal[1] = 0;
+    normal[2] = 0;
+
+    color[0] = 0;
+    color[1] = 1;
+    color[2] = 1;
+    sixthShape (s, normal, color);
+    sa.shapes.push_back (s);
+    s.points.clear ();
+
     pub.publish (sa);
 
     ros::spinOnce ();
