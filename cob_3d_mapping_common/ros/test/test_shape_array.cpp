@@ -337,7 +337,7 @@ fifthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vector
   pc.push_back (pt);
 
 
-  x = 1 , y = -1, z = 1;
+  x = 0.8 , y = -1, z = 1.2;
 
   pt.x = x;
   pt.y = y;
@@ -356,7 +356,19 @@ fifthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vector
   pt.z = z;
   pc.push_back (pt);
 
-  x = -0.5 , y = -1, z = 0.5;
+  x = -1 , y = -1, z = 2;
+  pt.x = x;
+  pt.y = y;
+  pt.z = z;
+  pc.push_back (pt);
+
+  x = 0 , y = -1, z = 0.5;
+  pt.x = x;
+  pt.y = y;
+  pt.z = z;
+  pc.push_back (pt);
+
+  x = -0.5 , y = -1, z = -0.5;
   pt.x = x;
   pt.y = y;
   pt.z = z;
