@@ -235,7 +235,7 @@ namespace rviz
 
 
     polygon_->clear();
-    polygon_->begin(createMaterialIfNotExists(new_message->color.r,new_message->color.b,new_message->color.g,new_message->color.a), Ogre::RenderOperation::OT_TRIANGLE_LIST);
+    polygon_->begin(createMaterialIfNotExists(new_message->color.r,new_message->color.g,new_message->color.b,new_message->color.a), Ogre::RenderOperation::OT_TRIANGLE_LIST);
 
     TPPLPoint p1;
 
