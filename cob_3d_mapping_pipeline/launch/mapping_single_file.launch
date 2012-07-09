@@ -1,8 +1,9 @@
 <?xml version="1.0"?>
 <launch>
   <node pkg="pcl_ros" type="pcd_to_pointcloud" name="pcd_to_pointcloud"
-        args="/share/goa-sf/pcd_data/segmentation_evaluation/org/table01_close1m_raw.pcd 1"/>
-        <!--args="/share/goa-sf/pcd_data/bags/pcd/1341579110.549636170.pcd 1"/-->
+        args="/share/goa-sf/pcd_data/bags/pcd/1341579110.549636170.pcd 1"/>
+        <!--args="/share/goa-sf/pcd_data/segmentation_evaluation/org/table01_close1m_raw.pcd 1"/-->
+
 
 
   <arg name="mapping_manager" value="mapping_manager"/>

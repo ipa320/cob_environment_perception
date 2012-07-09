@@ -111,6 +111,13 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::onInit()
 void
 cob_3d_segmentation::SegmentationAllInOneNodelet::received_cloud_cb(PointCloud::ConstPtr cloud)
 {
+  boost::mutex::scoped_lock lock(mutex_);
+  if (!lock)
+  {
+    NODELET_INFO("Segmentation callback not owning lock...");
+    return;
+  };
+
   tf::StampedTransform trf_map;
   try
   {
@@ -124,10 +131,8 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::received_cloud_cb(PointCloud::
   }
   Eigen::Affine3d ad;
   tf::TransformTFToEigen(trf_map, ad);
-  Eigen::Affine3f af = ad.cast<float>();
-
   //Eigen::Affine3f af = Eigen::Affine3f::Identity();
-
+  Eigen::Affine3f af = ad.cast<float>();
 //      cloud->header.frame_id =target_frame_;
 
   PrecisionStopWatch t;
