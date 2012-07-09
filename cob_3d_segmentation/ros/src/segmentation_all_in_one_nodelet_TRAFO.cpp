@@ -183,7 +183,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
 	for (ST::CH::ClusterPtr c = cluster_handler->begin(); c != cluster_handler->end(); ++c)
 	{
 		// compute hull:
-		if (c->type != I_PLANE /*&& c->type != I_CYL*/) continue;
+		if (c->type != I_PLANE && c->type != I_CYL) continue;
 		if (c->size() <= ceil(1.1f * static_cast<float>(c->border_points.size())))
 		{
 			std::cout <<"[ " << c->size() <<" | "<< c->border_points.size() << " ]" << std::endl;
@@ -248,16 +248,16 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
 		}
 		case I_CYL:
 		{
-			std::cout << "Cyl: " << c->size() << std::endl;
+			std::cout << "CYL: " << c->size() << std::endl;
 			s->type = cob_3d_mapping_msgs::Shape::CYLINDER;
 			s->params.resize(10);
 
 			cob_3d_mapping::CylinderPtr  cyl = cob_3d_mapping::CylinderPtr(new cob_3d_mapping::Cylinder());
-			Eigen::Vector3f centroid3f  = tf * c->getCentroid();
+			Eigen::Vector3f centroid3f  = c->getCentroid();
 			cyl->centroid << centroid3f[0] , centroid3f[1] , centroid3f[2] , 0;
 
 			cyl->axes_.resize(3);
-			cyl->axes_[1] = tf.rotation() * c->pca_inter_comp1;
+			cyl->axes_[1] =  c->pca_inter_comp1;
 			cyl->ParamsFromCloud(cloud,c->indices_);
 
 
@@ -275,12 +275,17 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
 
 
 			 Eigen::Vector3f tf_origin = tf * cyl->origin_;
-			    s->params[6] =  tf_origin[0];
-			   s->params[7] =  tf_origin[1];
+			 s->params[6] =  tf_origin[0];
+			 s->params[7] =  tf_origin[1];
 		     s->params[8] =  tf_origin[2];
 
 
+
 			s->params[9]= cyl->r_;
+
+
+
+
 			break;
 		}
 		default:
