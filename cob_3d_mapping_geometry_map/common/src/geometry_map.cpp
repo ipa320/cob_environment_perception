@@ -176,7 +176,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
 		new_id_++;
 	}
 	if(save_to_file_) saveMap(file_path_);
-	std::cout<<"MAP SIZE Polygon"<<map_polygon_.size()<<"\n";
+	std::cout<<"Map Size POLYGON"<<map_polygon_.size()<<"\n";
 
 
 }
@@ -193,8 +193,8 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 	limits.d_thresh=d_;
 	limits.angle_thresh=cos_angle_;
 	//limits.weighting_method="AREA";
-	limits.weighting_method="COUNTER";
-	//limits.weighting_method="COMBINED";
+//	limits.weighting_method="COUNTER";
+	limits.weighting_method="COMBINED";
 
 	// find out polygons, to merge with
 	std::vector<int> intersections;
@@ -233,7 +233,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 		//	std::cout<<"size +1"<<std::endl;
 	}
 
-	std::cout<<"Map Size ="<<map_cylinder_.size()<<std::endl;
+	std::cout<<"Map Size CYLINDER="<<map_cylinder_.size()<<std::endl;
 
 //	if(save_to_file_) saveMap(file_path_);
 

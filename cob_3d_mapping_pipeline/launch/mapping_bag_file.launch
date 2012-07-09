@@ -19,7 +19,7 @@
   <include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch"/>
 
   <node pkg="rosbag" type="play" name="rosbag_play" cwd="node" respawn="false" output="screen"
-        args="/share/goa-sf/pcd_data/bags/gotcha.bag -k -q --pause">
+        args="/share/goa-sf/pcd_data/bags/single_cyl_1.bag -k -q --pause">
   </node>
 </launch>
 

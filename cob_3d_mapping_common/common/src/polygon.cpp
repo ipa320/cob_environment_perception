@@ -660,7 +660,7 @@ Polygon::isMergeCandidate(std::vector<PolygonPtr>& poly_vec,merge_config& config
 
 			}
 			if (is_intersected == false) {
-				std::cout<<" criteria fulfilled, but no intersection\n";
+//				std::cout<<" criteria fulfilled, but no intersection\n";
 			}
 
 
