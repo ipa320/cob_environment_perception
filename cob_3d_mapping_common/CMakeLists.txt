@@ -34,6 +34,13 @@ rosbuild_add_library(cob_3d_mapping_common common/src/shape.cpp
 
 rosbuild_add_executable(field_of_view_node ros/src/field_of_view.cpp)
 rosbuild_add_executable(keyframe_detector_node ros/src/keyframe_detector.cpp)
+rosbuild_add_executable(shape_visualization ros/src/shape_visualization.cpp)
+rosbuild_add_executable(test_shape_array ros/test/test_shape_array.cpp)
+rosbuild_add_executable(uv_angle_test common/test/uv_angle_test.cpp)
+
+#rosbuild_add_library(cob_3d_mapping_common_sv ros/src/shape_visualization.cpp)
+target_link_libraries(shape_visualization cob_3d_mapping_rviz_plugins)
+
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
 #target_link_libraries(${PROJECT_NAME} another_library)
