@@ -260,7 +260,7 @@ public:
       publishShapeArray(v_cloud_hull, v_hull_polygons, v_coefficients_plane, pc_in->header);
       for(unsigned int i = 0; i < v_cloud_hull.size(); i++)
       {
-        publishMarker(v_cloud_hull[i], pc_trans.header, 0, 0, 1);
+        publishMarker(v_cloud_hull[i], pc_in->header, 0, 0, 1);
         ctr_++;
         //ROS_INFO("%d planes published so far", ctr_);
       }
