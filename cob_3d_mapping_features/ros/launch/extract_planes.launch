@@ -34,7 +34,8 @@
   	<param name="file_path" type="string" value="/tmp"/>
   	<param name="save_to_file" type="bool" value="false"/>
   	<param name="plane_constraint" type="int" value="0"/>
-
+  	<param name="target_frame" type="string" value="/map"/>
+  	
   	<!-- Voxel filter parameters -->
   	<param name="vox_leaf_size" type="double" value="0.04"/>
 	  <param name="passthrough_min_z" type="double" value="-0.1"/>
