@@ -19,7 +19,7 @@
  *
  * Date of creation: 03/2012
  * ToDo:
- *e
+ *
  *
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -201,36 +201,34 @@ Polygon::computeCentroid()
 	pcl::compute3DCentroid(poly_cloud,centroid);
 }
 
-
 double
 Polygon::computeArea()
 {
-	double xi, xi_1, yi, yi_1, area=0;
+  double xi, xi_1, yi, yi_1, area=0;
 
-	//area_. (poly_ptr_->contours.size ());
-	double sum;
-	for (unsigned int i = 0; i < contours.size (); i++)
-	{
-		if(holes[i]) continue;
-		sum = 0;
-		//area_[i] = 0;
-		for (unsigned int j = 0; j < contours[i].size (); j++)
-		{
-			xi = contours[i][j][0];
-			yi = contours[i][j][1];
-			if (j == (contours[i].size ()) - 1)
-			{
-				xi_1 = contours[i][0][0];
-				yi_1 = contours[i][0][1];
-			}
-			else
-			{
-				xi_1 = contours[i][j + 1][0];
-				yi_1 = contours[i][j + 1][1];
-			}
-			sum = sum + (xi * yi_1 - xi_1 * yi);
-
-			/*
+  //area_.resize (poly_ptr_->contours.size ());
+  double sum;
+  for (unsigned int i = 0; i < contours.size (); i++)
+  {
+    if(holes[i]) continue;
+    sum = 0;
+    //area_[i] = 0;
+    for (unsigned int j = 0; j < contours[i].size (); j++)
+    {
+      xi = contours[i][j][0];
+      yi = contours[i][j][1];
+      if (j == (contours[i].size ()) - 1)
+      {
+        xi_1 = contours[i][0][0];
+        yi_1 = contours[i][0][1];
+      }
+      else
+      {
+        xi_1 = contours[i][j + 1][0];
+        yi_1 = contours[i][j + 1][1];
+      }
+      sum = sum + (xi * yi_1 - xi_1 * yi);
+      /*
        std::cout << " ---------------------------------------" << std::endl;
        std::cout << " isSizeOk: xi-->" << xi << std::endl;
        std::cout << " \t: xi_1-->" << xi_1 << std::endl;
@@ -238,13 +236,13 @@ Polygon::computeArea()
        std::cout << " \t: yi_1-->" << yi_1 << std::endl;
        std::cout << " isSizeOk: sum-->" << sum << std::endl;
        std::cout << " ++++++++++++++++++++++++++++++++++++++++" <<std::endl;
-			 */
+       */
 
-		}
-		area += fabs (sum / 2);
-		//std::cout << "\n\t*** Area of polygon ( " << i << " ) = " << area_[i] << std::endl;
-	}
-	return area;
+    }
+    area += fabs (sum / 2);
+    //std::cout << "\n\t*** Area of polygon ( " << i << " ) = " << area_[i] << std::endl;
+  }
+  return area;
 }
 
 double
@@ -284,6 +282,37 @@ Polygon::computeArea3d()
 		//std::cout << "\n\t*** Area of polygon ( " << i << " ) = " << area_[i] << std::endl;
 	}
 	return std::fabs(area);
+}
+
+void
+Polygon::computePoseAndBoundingBox(Eigen::Affine3f& pose, Eigen::Vector4f& min_pt, Eigen::Vector4f& max_pt)
+{
+	  pcl::PointCloud<pcl::PointXYZ> poly_cloud;
+	  unsigned int idx = 0;
+	  for (unsigned int j = 0; j < contours[idx].size () ; j++)
+	  {
+	    pcl::PointXYZ p;
+	    p.x = contours[idx][j][0];
+	    p.y = contours[idx][j][1];
+	    p.z = contours[idx][j][2];
+	    poly_cloud.push_back(p);
+	  }
+	  Eigen::Matrix3f cov;
+	pcl::computeCovarianceMatrix (poly_cloud, centroid, cov);
+	EIGEN_ALIGN16 Eigen::Vector3f eigen_values;
+	EIGEN_ALIGN16 Eigen::Matrix3f eigen_vectors;
+	pcl::eigen33 (cov, eigen_vectors, eigen_values);
+	//Eigen::Affine3f pose;
+	pcl::getTransformationFromTwoUnitVectorsAndOrigin(eigen_vectors.col(1),eigen_vectors.col(0),centroid.head(3),pose);
+	/*Eigen::Matrix4f pose = Eigen::Matrix4f::Zero();//(eigen_vectors.col(2),eigen_vectors.col(1),eigen_vectors.col(0),centroid.head(3));
+	pose.col(0).head(3) = eigen_vectors.col(2);
+	pose.col(1).head(3) = eigen_vectors.col(1);
+	pose.col(2).head(3) = eigen_vectors.col(0);
+	pose.col(3) = centroid;*/
+	pcl::PointCloud<pcl::PointXYZ> cloud_trans;
+	pcl::transformPointCloud(poly_cloud, cloud_trans, pose);
+	//Eigen::Vector4f min_pt, max_pt;
+	pcl::getMinMax3D(cloud_trans, min_pt, max_pt);
 }
 
 

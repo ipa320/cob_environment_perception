@@ -93,7 +93,8 @@ struct merge_config {
 
     double computeArea3d();
 
-
+    void
+    computePoseAndBoundingBox(Eigen::Affine3f& pose, Eigen::Vector4f& min_pt, Eigen::Vector4f& max_pt);
 
 
     void getTransformedContours(const Eigen::Affine3f& trafo,std::vector< std::vector<Eigen::Vector3f> >& t_contours);
@@ -146,6 +147,7 @@ struct merge_config {
   };
 
   typedef boost::shared_ptr<Polygon> PolygonPtr;
+
 }
 
 #endif /* POLYGON_H_ */
