@@ -59,6 +59,7 @@
 #include "../general_segmentation.h"
 
 #define USE_MIN_MAX_RECHECK_
+#define STOP_TIME
 
 #include "polygon.h"
 
@@ -100,6 +101,10 @@ namespace Segmentation
 
     bool *outline_check_;         ///needed for outline, no need to reallocate every time
     size_t outline_check_size_;    ///remember size for var. above
+
+#ifdef STOP_TIME
+    double execution_time_quadtree_, execution_time_growing_, execution_time_polyextraction_;
+#endif
 
     void prepare(const pcl::PointCloud<Point> &pc); /// setup level size
     void getKinectParams(const pcl::PointCloud<Point> &pc); /// calculate kinect parameters
@@ -196,7 +201,17 @@ namespace Segmentation
     virtual bool compute();
 
     /*** evaluation purposes ***/
-    void compute_accuracy(float &mean, float &var, float &mean_abs, float &var_abs, size_t &used, size_t &mem, size_t &points);
+    void compute_accuracy(float &mean, float &var, size_t &used, size_t &mem, size_t &points, float &avg_dist);
+
+#ifdef STOP_TIME
+    void getExecutionTimes(double &quadtree, double &growing, double &extraction)
+    {
+      quadtree = execution_time_quadtree_;
+      extraction = execution_time_polyextraction_;
+      growing = execution_time_growing_ - extraction;
+    }
+#endif
+
   };
 
 #include "impl/quad_regression.hpp"
