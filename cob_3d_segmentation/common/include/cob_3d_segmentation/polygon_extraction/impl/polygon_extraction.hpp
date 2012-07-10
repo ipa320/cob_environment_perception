@@ -30,8 +30,9 @@ void PolygonExtraction::outline(const int w, const int h, std::vector<TPoint> ou
     delete [] ch_;
     ch_ = new int[w*h];
     ch_size_=w*h;
+    memset(ch_,0,sizeof(int)*ch_size_);
   }
-  memset(ch_,0,sizeof(int)*ch_size_);
+
   for(size_t j=0; j<out.size(); j++) {
     ch_[ TPoint::getInd(out[j].x,out[j].y) ]=(int)j+1;
   }
