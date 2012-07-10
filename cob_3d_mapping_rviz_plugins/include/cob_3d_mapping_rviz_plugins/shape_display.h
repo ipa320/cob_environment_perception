@@ -77,7 +77,7 @@ typedef std::pair<std::string, int32_t> MarkerID;
 class ShapeDisplay : public Display
 {
 public:
-  ShapeDisplay( const std::string& name, VisualizationManager* manager );
+  ShapeDisplay();
   virtual ~ShapeDisplay();
 
   virtual void update(float wall_dt, float ros_dt);
