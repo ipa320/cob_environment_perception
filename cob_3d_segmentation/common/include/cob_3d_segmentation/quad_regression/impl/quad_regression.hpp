@@ -2,6 +2,8 @@
 #include "../sub_structures/poly2d.hpp"
 #include "../sub_structures/labeling.h"
 
+#include <cob_3d_mapping_common/stop_watch.h>
+
 //#define DO_NOT_DOWNSAMPLE_
 
 template <typename Point, typename PointLabel>
@@ -100,6 +102,11 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
   void Segmentation_QuadRegression<Point,PointLabel>::buildTree(const pcl::PointCloud<Point> &pc) {
     int j;
 
+#ifdef STOP_TIME
+    PrecisionStopWatch ssw;
+    ssw.precisionStart();
+#endif
+
     //go through all levels
     for(size_t i=0; i<levels_.size(); i++) {
 
@@ -185,10 +192,18 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
       }
 
     }
+
+#ifdef STOP_TIME
+    execution_time_quadtree_ = ssw.precisionStop();
+#endif
   }
 
   template <typename Point, typename PointLabel>
   void Segmentation_QuadRegression<Point,PointLabel>::calc() {
+
+    execution_time_polyextraction_=0.;
+    PrecisionStopWatch ssw;
+    ssw.precisionStart();
 
     for(int i=(int)levels_.size()-1; i>(int)(levels_.size()-GO_DOWN_TO_LVL); i--) {
 
@@ -217,6 +232,8 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
       }
 
     }
+
+    execution_time_growing_ = ssw.precisionStop();
 
     //preparePolygons();
   }
@@ -424,6 +441,12 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
   template <typename Point, typename PointLabel>
   void Segmentation_QuadRegression<Point,PointLabel>::outline(int *ch, const int w, const int h, std::vector<SubStructure::SXY> &out, const int i, S_POLYGON &poly, const SubStructure::Model &model, const int mark)
   {
+
+#ifdef STOP_TIME
+    PrecisionStopWatch ssw;
+    ssw.precisionStart();
+#endif
+
     SubStructure::SXYcmp ttt;
     std::sort(out.begin(),out.end(), ttt);
 
@@ -505,6 +528,10 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
     for(size_t j=0; j<out.size(); j++) {
       ch[ getInd(out[j].x,out[j].y) ]=0;
     }
+
+#ifdef STOP_TIME
+    execution_time_polyextraction_ += ssw.precisionStop();
+#endif
 
   }
 
@@ -640,7 +667,7 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
 
 
   template <typename Point, typename PointLabel>
-  void Segmentation_QuadRegression<Point,PointLabel>::compute_accuracy(float &mean, float &var, float &mean_abs, float &var_abs, size_t &used, size_t &mem, size_t &points)
+  void Segmentation_QuadRegression<Point,PointLabel>::compute_accuracy(float &mean, float &var, size_t &used, size_t &mem, size_t &points, float &avg_dist)
   {
     typename pcl::PointCloud<PointLabel>::Ptr out(new pcl::PointCloud<PointLabel>);
 
@@ -650,8 +677,9 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
     out->width = levels_[0].w;
     out->height= levels_[0].h;
 
-    RunningStat rstat, rstat_abs;
+    RunningStat rstat;
     points = 0;
+    avg_dist = 0;
 
     for(size_t x=0; x<levels_[0].w; x++)
     {
@@ -671,10 +699,18 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
           );
           const float z = levels_[0].data[getInd(x,y)].z_(0)/levels_[0].data[getInd(x,y)].model_(0,0);
 
-          if(pcl_isfinite(z - z_model))
+          Eigen::Vector3f p;
+          p(0) =
+              levels_[0].data[getInd(x,y)].model_(0,1)/levels_[0].data[getInd(x,y)].model_(0,0);
+          p(1) =
+              levels_[0].data[getInd(x,y)].model_(0,3)/levels_[0].data[getInd(x,y)].model_(0,0);
+          p(2) = z;
+          const float d = std::min(std::abs(z - z_model), (polygons_[i].project2world(polygons_[i].nextPoint(p))-p).norm());
+
+          if(pcl_isfinite(d))
           {
-            rstat.Push(z - z_model);
-            rstat_abs.Push(std::abs(z - z_model));
+            rstat.Push(d);
+            avg_dist += z;
           }
         }
 
@@ -692,6 +728,5 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
 
     mean = rstat.Mean();
     var = rstat.Variance();
-    mean_abs = rstat_abs.Mean();
-    var_abs = rstat_abs.Variance();
+    avg_dist /= points;
   }
