@@ -216,7 +216,7 @@ typedef boost::polygon::polygon_90_set_traits<BoostPolygonSet> BoostTraits;
       return r;
     }
 
-    Eigen::Vector3f project2world(const Eigen::Vector2f &pt) {
+    Eigen::Vector3f project2world(const Eigen::Vector2f &pt) const {
       Eigen::Vector3f pt2;
       pt2(0)=pt(0)*pt(0);
       pt2(1)=pt(1)*pt(1);
@@ -371,176 +371,61 @@ typedef boost::polygon::polygon_90_set_traits<BoostPolygonSet> BoostTraits;
       }
     }
 
-#if 0
-    void toRosMsg(cob_3d_mapping_msgs::CurvedPolygonPtr msg, const ros::Time &time, const std::vector<S_CORS> &cors) const
+    /// find nearest point to manifold (Newton)
+    Eigen::Vector2f _nextPoint(const Eigen::Vector3f &v, Eigen::Vector3f p, const int depth=0) const
     {
-      msg->stamp = time;
-      msg->ID = form_->obj_->getId();
-
-      for(int i=0; i<6; i++)
-        msg->parameter[i] = model_.p(i);
-
-      msg->polyline.clear();
-      if(segments_.size()>0) {
-        for(size_t i=0; i<segments_[0].size(); i++) {
-          cob_3d_mapping_msgs::polyline_point pt;
-          pt.x=segments_[0][i](0);
-          pt.y=segments_[0][i](1);
-          pt.edge_prob=segments_[0][i](2);
-          msg->polyline.push_back(pt);
-        }
+      if(depth>10)
+      {
+        return p.head<2>();
       }
 
-      cob_3d_mapping_msgs::feature ft;
+//      std::cout<<"p\n"<<p<<"\n";
+      p(2) = param_.col(2)(0)*p(0)*p(0)+param_.col(2)(1)*p(1)*p(1)+param_.col(2)(2)*p(0)*p(1);
+//      std::cout<<"p\n"<<p<<"\n";
 
-      //nearest point
-      ft.ID = 1;
-      ft.x=param_.col(0)(0);
-      ft.y=param_.col(0)(1);
-      ft.z=param_.col(0)(2);
-      msg->features.push_back(ft);
+      Eigen::Vector3f n;
+      n(0) = -(param_.col(2)(0)*2*p(0)+param_.col(2)(2)*p(1));
+      n(1) = -(param_.col(2)(1)*2*p(1)+param_.col(2)(2)*p(0));
+      n(2) = 1;
 
-      //feature from form
-      ft.ID = 2;
-      ft.x=feature_(0);
-      ft.y=feature_(1);
-      ft.z=feature_(2);
-      msg->features.push_back(ft);
+      Eigen::Vector3f d = ((p-v).dot(n)/n.squaredNorm()*n+(v-p));
 
-      //mid of outer hull
-      ft.ID = 3;
-      ft.x=middle_(0);
-      ft.y=middle_(1);
-      ft.z=middle_(2);
-      msg->features.push_back(ft);
+//      std::cout<<"d\n"<<d<<"\n";
+//      std::cout<<"n\n"<<n<<"\n";
+//      std::cout<<"pv\n"<<(p-v)/(p-v)(2)<<"\n";
+//      std::cout<<"pv\n"<<(p-v)<<"\n";
+//      std::cout<<"dd\n"<<(p-v).dot(n)/n.squaredNorm()*n<<"\n";
+      //ROS_ASSERT(std::abs(d(2))<=std::abs(z));
 
-      Eigen::Vector2f ft1,ft2;
-      Eigen::Vector3f ft3,n=model_.getNormal(middle_(0),middle_(1));
-      getFeature(ft1,ft2,ft3);
-
-      //curvature feature 1
-      ft.ID = 4;
-      ft.x=ft1(0);
-      ft.y=ft1(1);
-      ft.z= -(ft1.dot(n.head<2>()))/n(2);
-      msg->features.push_back(ft);
-
-      //curvature feature 2
-      ft.ID = 5;
-      ft.x=ft2(0);
-      ft.y=ft2(1);
-      ft.z= -(ft2.dot(n.head<2>()))/n(2);
-      msg->features.push_back(ft);
-
-
-      msg->score;
-      Classification::ObjectList::Ptr ol=Classification::ObjectSearchTree::get().findList(form_);
-
-      for(size_t i=0; i<ol->get().size(); i++) {
-        cob_3d_mapping_msgs::simalarity_score sc;
-
-        sc.prob = ol->get()[i].dist_;
-        sc.ID = ol->get()[i].n_->obj_->getId();
-
-        msg->score.push_back(sc);
+      if(!pcl_isfinite(d.sum()) || d.head<2>().squaredNorm()<0.001f*0.001f)
+      {
+//        std::cout<<"---------------\n";
+        return (p+d).head<2>();
       }
-
-      //add cors
-      for(size_t i=0; i<cors.size(); i++) {
-        cob_3d_mapping_msgs::simalarity_score sc;
-
-        sc.prob = cors[i].prob_;
-        sc.ID = cors[i].ID_;
-
-        msg->score.push_back(sc);
-      }
-
-      TiXmlElement *root=Classification::Serializable::createRoot();
-      form_->writeXML(root);
-      msg->energy = Classification::Serializable::getString(root);
-
-      for(int i=0; i<connectivity_.connections_.size(); i++)
-        std::cout<<"CON bt "<<i<<" with "<<connectivity_.connections_[i]<<"\n";
+      return _nextPoint(v,p+d,depth+1);
     }
-#endif
 
-#if 0
-    static void frontal_outline(const std::vector<S_POLYGON> &o, std::vector<Eigen::Vector2f> &pts, Eigen::Vector2f dir) {
-      pts.clear();
+    /// find nearest point to manifold (Newton)
+    Eigen::Vector2f nextPoint(const Eigen::Vector3f &v) const
+    {
+      Eigen::Vector3f p;
 
-      if(segments_.size()<1 || o.segments_.size()<1 || segments_[0].size()<2 || o.segments_[0].size()<2) return; //only outer
+      p(0) = (v-param_.col(0)).dot(proj2plane_.col(0));
+      p(1) = (v-param_.col(0)).dot(proj2plane_.col(1));
+      p(2) = (v-param_.col(0)).dot(param_.col(1));
 
-      /*dir(0)=(o.param_xy_(1)-param_xy_(1))/2;
-      float f=(param_xy_(0)-o.param_xy_(0))/(o.param_xy_(4)-param_xy_(4));
-      if(f<0.f) return;
-      dir(1)=sqrtf(f);*/
-      dir.normalize();
-      /*Eigen::Vector2f off;
-      off(0)=0.f;
-      off(1)=(o.param_xy_(3)-param_xy_(3))/2;*/
+      Eigen::Vector2f r = _nextPoint(p, p);
 
-      Eigen::Vector2f v;
-      v(0)=dir(1);
-      v(1)=-dir(0);
+      float e1 = (v-project2world(p.head<2>())).norm();
+      float e2 = (v-project2world(r)).norm();
 
-      //step 1: project to v
-      float min_A=std::numeric_limits<float>::min(), max_A=std::numeric_limits<float>::max();
-
-      for(size_t j=0; j<o.size(); j++) {
-        for(size_t i=0; i<o[j].segments_[0].size(); i++) {
-          f=v.dot(o[ji].segments_[0][i].head<2>());
-          min_A=std::min(f,min_B);
-          max_A=std::max(f,max_B);
-        }
+      if(e1<e2)
+      {
+        return p.head<2>();
       }
 
-      for(size_t i=0; i<o.size(); i++) {
-        //step 2: curvature in dir + number of pts
-        float c_B=dir(0)*o[i].param_xy_(2)+dir(1)*o[i].param_xy_(4);
-        int n_B=2+(int)(std::abs(c_B)*(max_B-min_B)*20);
-        std::cout<<"trying "<<n_B<<" points\n";
-      }
-
-      /*//check if it's near and in wich way (left, right connected)
-      const float thr=0.03;
-      if(std::min(std::abs(max_A-max_B), std::min(std::abs(max_A-min_B),
-                                                  std::min(std::abs(min_A-max_B), std::abs(min_A-max_B))))
-      >thr) //TODO: check threshold
-        return;
-      bool reverse_A=false,reverse_B=false;
-      bool closed=false;
-      if(std::min(std::abs(max_A-max_B), std::abs(max_A-min_B))<=thr) {
-        reverse_B = (std::abs(max_A-max_B)<std::abs(max_A-min_B));
-        closed=std::min(std::abs(min_A-max_B), std::abs(min_A-max_B))<=thr;
-      }
-      else {
-        reverse_A = true;
-        reverse_B = (std::abs(min_A-max_B)<std::abs(min_A-min_B));
-      }
-      //step 2: curvature in dir + number of pts
-      float c_A=dir(0)*param_xy_(2)+dir(1)*param_xy_(4);
-      float c_B=dir(0)*o.param_xy_(2)+dir(1)*o.param_xy_(4);
-      int n_A=2+(int)(std::abs(c_A)*(max_A-min_A)*20);
-      std::cout<<"trying "<<n_A<<" points\n";
-      int n_B=2+(int)(std::abs(c_B)*(max_B-min_B)*20);
-      std::cout<<"trying "<<n_B<<" points\n";
-
-      //step 3: create pts
-      Eigen::Vector2f p;
-      for(int i=reverse_A?n_A-1:0; i!=(reverse_A?-1:n_A); reverse_A?i--:i++) {
-        p(0)=i*(max_A-min_A)/n_A + min_A;
-        p(1)=dir(1)*p(0)+off(1);
-        p(1)=param_xy_(0)+param_xy_(1)*p(0)+param_xy_(2)*p(0)*p(0)+param_xy_(3)*p(1)+param_xy_(4)*p(1)*p(1);
-        pts.push_back(p);
-      }
-      for(int i=reverse_B?n_B-1:0; i!=(reverse_B?-1:n_B); reverse_B?i--:i++) {
-        p(0)=i*(max_B-min_B)/n_B + min_B;
-        p(1)=dir(1)*p(0)+off(1);
-        p(1)=o.param_xy_(0)+o.param_xy_(1)*p(0)+o.param_xy_(2)*p(0)*p(0)+o.param_xy_(3)*p(1)+o.param_xy_(4)*p(1)*p(1);
-        pts.push_back(p);
-      }*/
+      return r;
     }
-#endif
   };
   }
 
