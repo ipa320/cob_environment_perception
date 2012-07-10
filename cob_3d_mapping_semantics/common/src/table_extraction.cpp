@@ -54,6 +54,7 @@
  ****************************************************************/
 //internal include
 #include "cob_3d_mapping_semantics/table_extraction.h"
+#include <ros/console.h>
 
 using namespace cob_3d_mapping;
 
