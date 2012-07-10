@@ -35,10 +35,10 @@ rosbuild_genmsg()
 #uncomment if you have defined services
 rosbuild_gensrv()
 
-#rosbuild_add_library(cob_3d_mapping_rviz_plugins src/shape_display.cpp
+rosbuild_add_library(cob_3d_mapping_rviz_plugins #src/shape_display.cpp
 #    src/shape_base.cpp
 #    src/shape_marker.cpp
-#    src/polypartition.cpp
+    src/polypartition.cpp)
 #    src/init.cpp)
 #rosbuild_add_executable(cob_3d_mapping_rviz_plugins_test src/test.cpp)
 

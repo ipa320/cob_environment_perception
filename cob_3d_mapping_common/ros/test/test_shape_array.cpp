@@ -462,7 +462,7 @@ main (int argc, char **argv)
     s.header.frame_id = "/map";
     s.header.stamp = sa.header.stamp;
 
-    s.type = cob_3d_mapping_msgs::Shape::PLANE;
+    s.type = cob_3d_mapping_msgs::Shape::POLYGON;
     s.holes.push_back (false);
 
     Eigen::Vector3f normal (0, 0, 1);
