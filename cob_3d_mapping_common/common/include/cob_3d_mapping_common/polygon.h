@@ -57,20 +57,72 @@
 #define POLYGON_H_
 
 #include "cob_3d_mapping_common/shape.h"
+#include <boost/shared_ptr.hpp>
+#include <boost/enable_shared_from_this.hpp>
+extern "C" {
+#include "cob_3d_mapping_common/gpc.h"
+}
+#include <fstream>
+
+//#include "cob_3d_mapping_common/stop_watch.h"
 
 namespace cob_3d_mapping
 {
 
+struct merge_config {
+  double angle_thresh ;
+  float  d_thresh;
+  std::string weighting_method;
+} ;
+
+
+//Polygon Class, derived from Shape class
+
+
   class Polygon : public Shape
   {
   public:
+
     void
     computeCentroid();
 
     // http://paulbourke.net/geometry/polyarea/
     // works for all polygons except self-intersecting polygons
-    double
-    computeArea();
+    double computeArea();
+    double computeArea3d();
+
+
+
+    void getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,const Eigen::Vector3f &origin, Eigen::Affine3f &transformation);
+    void getTransformationFromPlaneToWorld(const Eigen::Vector3f z_axis,const Eigen::Vector3f &normal,const Eigen::Vector3f &origin, Eigen::Affine3f &transformation);
+
+
+    void getTransformedContours(const Eigen::Affine3f& trafo,std::vector< std::vector<Eigen::Vector3f> >& t_contours);
+
+//    Compute vector containing indices(intersections) of merge candidates for polygon in poly_vec
+    void isMergeCandidate(std::vector< boost::shared_ptr<Polygon> >& poly_vec,merge_config& config, std::vector<int>& intersections);
+    bool isMergeCandidate_intersect(Polygon& p_map);
+
+//    Merge polygon with polygons in poly_vec
+    void merge(std::vector< boost::shared_ptr<Polygon> >& poly_vec);
+    void merge_union(std::vector< boost::shared_ptr<Polygon> >& poly_vec,const Polygon & p_average);
+
+//  Calculate members of polygon
+    void assignMembers(const Eigen::Vector3f &new_normal, const double &new_d, const Eigen::Vector4f& new_centroid);
+    void assignMembers(const Eigen::Vector3f & z_axis,const Eigen::Vector3f &new_normal, const Eigen::Vector3f & pt_on_polygon);
+    void assignMembers();
+
+//  Weighting
+    void assignWeight(std::string & mode);
+    void applyWeighting(const std::vector< boost::shared_ptr<Polygon> >& poly_vec , Polygon & p_average );
+
+    //    Use general polygon clipper to create polygon structures
+    void GpcStructureUsingMap(const Eigen::Affine3f& external_trafo,gpc_polygon* gpc_p);
+
+    void GpcStructure( gpc_polygon* gpc_p);
+
+    void debug_output(std::string name);
+
 
     void
     computePoseAndBoundingBox(Eigen::Affine3f& pose, Eigen::Vector4f& min_pt, Eigen::Vector4f& max_pt);
@@ -82,10 +134,20 @@ namespace cob_3d_mapping
     double d;
     Eigen::Affine3f transform_from_world_to_plane;
     std::vector<bool> holes;
+    double merge_weight_;
+
+    merge_config merge_settings_;
+
+
+
+  private:
+
+
+
+
   };
 
   typedef boost::shared_ptr<Polygon> PolygonPtr;
-
 }
 
 #endif /* POLYGON_H_ */
