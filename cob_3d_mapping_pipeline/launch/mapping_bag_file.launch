@@ -18,10 +18,11 @@
         args="load cob_3d_segmentation/SegmentationAllInOneNodelet $(arg mapping_manager)" output="screen">
     <remap from="cloud_in" to="registration/pc_aligned" />
   </node>
-  <include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch"/>
+  <!--include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch"/-->
 
   <node pkg="rosbag" type="play" name="rosbag_play" cwd="node" respawn="false" output="screen"
-        args="/share/goa-sf/pcd_data/bags/gotcha.bag -k -q --pause">
+        args="/share/goa-sf/pcd_data/bags/tum_set/rgbd_dataset_freiburg2_coke-points.bag -k -q --pause">
+    <remap from="/camera/rgb/points" to="/registration/pc_aligned"/>
   </node>
 </launch>
 
