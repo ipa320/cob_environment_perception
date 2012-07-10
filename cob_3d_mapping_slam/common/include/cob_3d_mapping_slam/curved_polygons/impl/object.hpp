@@ -79,6 +79,9 @@ template<typename _DOF6>
 bool Object<_DOF6>::operator&(const Object &o) const
 {
 
+  if(data_.intersectsBB(o.data_, 0.05 /*metres*/) || data_.fitsCurvature(o.data_, 0.1 /*rad*/))
+    return true;
+
   Eigen::Matrix<typename TFLINK::TYPE, 3,1> v1,v2;
 
   for(size_t i=0; i<data_.getFeatures().size(); i++) {
@@ -168,33 +171,41 @@ typename Object<_DOF6>::TFLIST Object<_DOF6>::getTFList(const Object &o, const t
   typename Object<_DOF6>::TFLIST list;
   typedef typename Object<_DOF6>::TF_CORS CORS;
 
-  if(data_.isPlane() != o.data_.isPlane())
-  {
-    ROS_WARN("plane not plane...");
-    //return list;
-  }
+  //  if(data_.isPlane() != o.data_.isPlane())
+  //  {
+  //    ROS_WARN("plane not plane...");
+  //    //return list;
+  //  }
 
   const float fw = data_.matchFormf(o.data_);
   ROS_INFO("fw %f",fw);
   if(fw<=0.) return list;
-  float w = fw*sqrtf(data_.getWeight()*o.data_.getWeight())/1000 / (1+data_.getFeatures()[2].v_.squaredNorm());
-  ROS_INFO("w %f",w);
+  const float wX = fw*sqrtf(data_.getWeight()*o.data_.getWeight())/1000 / (1+data_.getFeatures()[2].v_.squaredNorm());
+  ROS_INFO("w %f",wX);
 
   //  if( std::min(data_.getFeatures()[1].v_org_.squaredNorm(),o.data_.getFeatures()[1].v_org_.squaredNorm())
   //  /std::max(data_.getFeatures()[1].v_org_.squaredNorm(),o.data_.getFeatures()[1].v_org_.squaredNorm()) < 0.75f )
   //    return list;
 
   //build up our features
-  ROS_ASSERT(data_.getFeatures().size() == o.data_.getFeatures().size());
+
+  //ROS_ASSERT(data_.getFeatures().size() == o.data_.getFeatures().size());
 
   for(size_t i=0; i<data_.getFeatures().size(); i++) {
-    for(size_t j=0; j<o.data_.getFeatures().size(); j++) {
+
+    if(i>=data_.getFeatures().size() || i>=o.data_.getFeatures().size())
+      break;
+
+    //for(size_t j=0; j<o.data_.getFeatures().size(); j++)
+    size_t j=i;
+    {
       if(data_.getFeatures()[i].ID_ != o.data_.getFeatures()[j].ID_ || data_.getFeatures()[i].type_ != o.data_.getFeatures()[j].type_)
         continue;
 
       ROS_ASSERT(data_.getFeatures()[i].type_ == o.data_.getFeatures()[j].type_);
 
       Eigen::Matrix<typename TFLINK::TYPE, 3,1> v1,v2;
+      float w = wX;
 
       v1 = data_.getFeatures()[i].v_;
       v2 = o.data_.getFeatures()[j].v_;
@@ -208,7 +219,6 @@ typename Object<_DOF6>::TFLIST Object<_DOF6>::getTFList(const Object &o, const t
         continue;
       }
 
-
       //std::cout<<"match "<<data_.getFeatures()[i].ID<<"\n"<<v1<<"\n\n"<<v2<<"\n";
 
       ex_curved_polygon::S_FEATURE ft_temp = data_.getFeatures()[i];
@@ -216,10 +226,12 @@ typename Object<_DOF6>::TFLIST Object<_DOF6>::getTFList(const Object &o, const t
       Eigen::Vector3f v1p = ft_temp.v_;
       switch(data_.getFeatures()[i].ID_)
       {
+        case 1:
+          if(data_.isPlane() != o.data_.isPlane()) break;
+          w*=5;
         case 3:
           w*=0.2f;
         case -1:
-        case 1:
         {
           bool normal=false;
 
@@ -281,8 +293,8 @@ typename Object<_DOF6>::TFLIST Object<_DOF6>::getTFList(const Object &o, const t
               ) );
             else
               list.push_back( CORS(
-                  typename TFLINK::TFLinkObj(v1,data_.isPlane(),false, w2*w, w2*w),
-                  typename TFLINK::TFLinkObj(v2,o.data_.isPlane(),false, w2*w, w2*w)
+                  typename TFLINK::TFLinkObj(v1,data_.isPlane()&&data_.getFeatures()[i].ID_!=-1,false, w2*w, w2*w),
+                  typename TFLINK::TFLinkObj(v2,o.data_.isPlane()&&data_.getFeatures()[i].ID_!=-1,false, w2*w, w2*w)
               ) );
 
             ROS_ASSERT(!normal || (list.back().a.translation_M_.sum()==0&&list.back().b.translation_M_.sum()==0) );

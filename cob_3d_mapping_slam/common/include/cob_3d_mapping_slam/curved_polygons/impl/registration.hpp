@@ -73,7 +73,10 @@ void OBJCTXT<_DOF6>::findCorrespondences(const OBJCTXT &ctxt, std::list<SCOR> &c
     for(size_t j=0; j<ctxt.objs_.size(); j++) {
       if(!ctxt.objs_[j]) continue;
 
-      if( obj.isReachable(*ctxt.objs_[j],tf.getRotationVariance(),tf.getTranslationVariance()) )
+      //if( obj.isReachable(*ctxt.objs_[j],tf.getRotationVariance(),tf.getTranslationVariance()) )
+      if(obj.isReachable(*ctxt.objs_[j],tf.getRotationVariance(),tf.getTranslationVariance())
+          || (
+          (obj.getData().intersectsBB(ctxt.objs_[j]->getData(), 0.1 /*metres*/) && obj.getData().canMerge(ctxt.objs_[j]->getData()))) )
       {
         members.back()->candidates_.push_back(members2[j]);
         members2[j]->candidates_.push_back(members.back());
@@ -218,7 +221,7 @@ _DOF6 OBJCTXT<_DOF6>::optimizeLink(const DOF6 &_tf, std::list<SCOR> &cors, const
   //    //return optimizeLink(_tf, cors, tf.getRotationVariance()+tf.getTranslationVariance(), tf.getRotation(), tf.getTranslation());
   //    return optimizeLink(_tf, cors, 1.5, tf.getRotation(), tf.getTranslation());
   //  else
-  if(depth<4 || thr_rot>0.05f)
+  if(depth<3 || thr_rot>0.07f)
     return optimizeLink(_tf, cors, thr_rot*0.75f, thr_tr*0.75f, tf.getRotation(), tf.getTranslation(), depth+1);
 
 #ifdef DEBUG_
@@ -230,7 +233,16 @@ _DOF6 OBJCTXT<_DOF6>::optimizeLink(const DOF6 &_tf, std::list<SCOR> &cors, const
 
     if(list.size()>0)
     {
-      Debug::Interface::get().addArrow(it->a->getNearestPoint(),it->b->getNearestPoint());
+      for(typename OBJECT::TFLIST::const_iterator k = list.begin(); k!=list.end(); k++)
+      {
+        if( k->a.plane_ )
+        {
+          Debug::Interface::get().addArrow(it->a->getNearestPoint(),it->a->getNearestPoint()+0.1f*k->a.rotation_n_/k->a.length_,100);
+          Debug::Interface::get().addArrow(it->b->getNearestPoint(),it->b->getNearestPoint()+0.1f*k->b.rotation_n_/k->b.length_,255,100);
+        }
+        else
+          Debug::Interface::get().addArrow(k->a.next_point_, k->b.next_point_);
+      }
     }
     else
     {
