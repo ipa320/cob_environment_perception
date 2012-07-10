@@ -217,7 +217,7 @@ TEST(Segmentation, quad_regression)
   pcl::PointCloud<Point>::Ptr pc(new pcl::PointCloud<Point>);
   Segmentation::Segmentation_QuadRegression<Point,PointL> seg;
 
-  static Testing_CSV csv = Testing_CSV::create_table("accuracy","filename,mean,variance,absolute mean, absolute variance, used points, memory for representation, points");
+  static Testing_CSV csv = Testing_CSV::create_table("accuracy","filename,mean,variance,average distance,used points, memory for representation,points,execution time: quadtree,execution time: growing,execution time: extraction");
 
   ROS_INFO("starting segmentation");
   size_t ind=0;
@@ -231,18 +231,22 @@ TEST(Segmentation, quad_regression)
 
     Testing_PCDLoader::get().writePC<PointL>("reconstructed_"+fn_short, seg.getReconstructedOutputCloud());
 
-    float mean, var, mean_abs, var_abs;
+    float mean, var, dist;
+    double et_quadtree, et_growing, et_extraction;
     size_t used, mem, points;
-    seg.compute_accuracy(mean, var, mean_abs, var_abs, used, mem, points);
+    seg.compute_accuracy(mean, var, used, mem, points, dist);
+    seg.getExecutionTimes(et_quadtree, et_growing, et_extraction);
 
     csv.add(fn_short);
     csv.add(mean);
     csv.add(var);
-    csv.add(mean_abs);
-    csv.add(var_abs);
+    csv.add(dist);
     csv.add(used);
     csv.add(mem);
     csv.add(points);
+    csv.add(et_quadtree);
+    csv.add(et_growing);
+    csv.add(et_extraction);
     csv.next();
   }
 }
