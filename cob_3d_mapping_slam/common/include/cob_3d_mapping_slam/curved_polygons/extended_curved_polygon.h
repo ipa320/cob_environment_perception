@@ -13,6 +13,7 @@
 #include <cob_3d_mapping_msgs/CurvedPolygon.h>
 #include "/home/josh/workspace/dynamic_tutorials/common/include/registration/object.hpp"
 //#include "sac_model_correspondence.h"
+#include "polygon_merger.h"
 
 namespace Slam_CurvedPolygon
 {
@@ -132,23 +133,36 @@ namespace Slam_CurvedPolygon
           return;
         }
 
-        switch(type_)
+        if(!pcl_isfinite(o.v_.sum())||!pcl_isfinite(o.var_))
+          return;
+
+
+        ROS_INFO("var %f, %f",var_,o.var_);
+        if(!pcl_isfinite(v_.sum())||!pcl_isfinite(var_))
         {
-          case POINT:
-          case NORMAL:
-            v_ = v_ + var_/(var_+o.var_)*(o.v_-v_);
-            break;
-          case DIRECTION:
-            v_ = v_ + var_/(var_+o.var_)*(o.v_-v_);
-            v_.normalize();
-            break;
-
-          default:
-            ROS_ASSERT(0);
-            break;
+          v_ = o.v_;
+          var_ = o.var_;
         }
+        else
+        {
+          switch(type_)
+          {
+            case POINT:
+            case NORMAL:
+              v_ = v_ + var_/(var_+o.var_)*(o.v_-v_);
+              break;
+            case DIRECTION:
+              v_ = v_ + var_/(var_+o.var_)*(o.v_-v_);
+              v_.normalize();
+              break;
 
-        var_ = var_ - var_*var_/(var_+o.var_);
+            default:
+              ROS_ASSERT(0);
+              break;
+          }
+
+          var_ = var_ - var_*var_/(var_+o.var_);
+        }
       }
 
     };
@@ -280,6 +294,7 @@ namespace Slam_CurvedPolygon
     void update_points3d()
     {
       points3d_.clear();
+      segments_.clear();
 
       for(size_t i=0; i<data_.polyline.size(); i++)
       {
@@ -287,7 +302,7 @@ namespace Slam_CurvedPolygon
         Eigen::Vector3f pt3;
         pt3(0) = pt(0) = data_.polyline[i].x;
         pt3(1) = pt(1) = data_.polyline[i].y;
-        pt3(2) = 0.f;
+        pt3(2) = data_.polyline[i].edge_prob;
         segments_.push_back( pt3 );
         points3d_.push_back( project2world(pt) );
       }
@@ -312,7 +327,7 @@ namespace Slam_CurvedPolygon
       }
     }
 
-    Eigen::Vector3f project2world(const Eigen::Vector2f &pt) {
+    Eigen::Vector3f project2world(const Eigen::Vector2f &pt) const {
       Eigen::Vector3f pt2;
       pt2(0)=pt(0)*pt(0);
       pt2(1)=pt(1)*pt(1);
@@ -330,6 +345,38 @@ namespace Slam_CurvedPolygon
 
     void transform(const Eigen::Matrix3f &rot, const Eigen::Vector3f &tr, const float var_R, const float var_T)
     {
+      param_.col(0) = rot * param_.col(0)+tr;
+
+      param_.col(1) = rot * param_.col(1);
+      {
+        Eigen::Vector3f x,y,xy,t;
+        x(0)=1.f;
+        y(1)=1.f;
+        x(1)=x(2)=y(0)=y(2)=0.f;
+        xy=x+y;
+        xy.normalize();
+
+        param_.col(2)(0)=data_.parameter[2];
+        param_.col(2)(1)=data_.parameter[4];
+        param_.col(2)(2)=data_.parameter[5];
+
+        t(0)=(rot.transpose()*x).dot(param_.col(2));
+        t(1)=(rot.transpose()*y).dot(param_.col(2));
+        t(2)=0;
+        t(2)=(rot.transpose()*xy).dot(param_.col(2)) - xy.dot(t);
+        param_.col(2) = t;
+
+        x = rot * x;
+        y = rot * y;
+
+        proj2plane_.col(0)=param_.col(1).cross(y);
+        proj2plane_.col(1)=param_.col(1).cross(x);
+
+        param_.col(2)(0)*=proj2plane_(0,0)*proj2plane_(0,0);
+        param_.col(2)(1)*=proj2plane_(1,1)*proj2plane_(1,1);
+        param_.col(2)(2)*=proj2plane_(0,0)*proj2plane_(1,1);
+      }
+
       //TODO:
       //nearest_point_ = rot*nearest_point_;
       //      for(size_t i=0; i<points3d_.size(); i++)
@@ -441,42 +488,113 @@ namespace Slam_CurvedPolygon
       return e_min;
     }
 
+    bool merge(const ex_curved_polygon &o1, const ex_curved_polygon &o2) {
+      PolygonData p1, p2, p3;
+
+      for(size_t i=0; i<o1.segments_.size(); i++)
+      {
+        Eigen::Vector2f p = nextPoint(o1.project2world(o1.segments_[i].head<2>() ));
+        p1.add(p(0), p(1));
+      }
+      for(size_t i=0; i<o2.segments_.size(); i++)
+      {
+        Eigen::Vector2f p = nextPoint(o2.project2world(o2.segments_[i].head<2>() ));
+        p2.add(p(0), p(1));
+      }
+
+      mergePolygons(p1,p2, p3);
+
+      ROS_ASSERT(p3.get().size()>0);
+
+      float lges=0.f, er=0.f, erlast=0.f, lfirst=0.f;
+      float er2=0;
+
+      data_.polyline.clear();
+      for(size_t i=0; i<p3.get().size()/2; i++)
+      {
+        Eigen::Vector2f v1;
+        ::cob_3d_mapping_msgs::polyline_point pt;
+        v1(0)=p3.get()[i*2+0];
+        v1(1)=p3.get()[i*2+1];
+
+        pt.x = v1(0);
+        pt.y = v1(1);
+        pt.edge_prob = 0; //TODO:
+
+        data_.polyline.push_back(pt);
+      }
+
+      update_points3d();
+
+      int mains[4]={};
+      Classification::Classification cl;
+      Classification::QuadBB qbb;
+      cl.setPoints(segments_);
+      form_.n_ = cl.buildLocalTree(false,&qbb,NULL,NULL,mains);
+      form_.n_->clean(1,form_.n_->energy_sum_*0.01f);
+
+      for(size_t i=0; i<features_.size(); i++)
+      {
+        if(features_[i].ID_==-1)
+        {
+          features_.erase(features_.begin()+i);
+          --i;
+        }
+      }
+
+      for(int i=0; segments_.size()>3 && i<4; i++)
+      {
+        features_.push_back( S_FEATURE( points3d_[mains[i]] ));
+      }
+
+      return true;
+    }
+
     /**
      * update parameters, ... from other obj. (TODO:)
      */
     void operator+=(const ex_curved_polygon &o) {
       ID_ += o.ID_;
-      ROS_ASSERT(features_.size()==o.features_.size());
 
       std::map<size_t,size_t> cor;
       std::vector<size_t> matches1,matches2;
-      for(size_t i=0; i<features_.size(); i++)
+      for(size_t i=0; i<std::min(features_.size(),o.features_.size()); i++)
       {
         if(features_[i].ID_!=-1) features_[i].merge(o.features_[i]);
         else matches1.push_back(i);
       }
 
-      matches2=matches1;
-      float m=bestMatch(o,cor,matches1,matches2);
-      ROS_INFO("dist bestMatch %f",m);
+      //merge parameters to third manifold
+      ex_curved_polygon o2 = *this;
+      //o2.proj2plane_
+      //TODO:
 
-      ROS_ASSERT(cor.size()==4);
-      if(m<0.08f*4)
-      {
-        for(std::map<size_t,size_t>::const_iterator it = cor.begin(); it!=cor.end(); it++)
-        {
-          ROS_INFO("cor %d %d",it->first,it->second);
-          std::cout<<features_[it->first].v_<<"-\n"<<o.features_[it->second].v_<<"\n";
-          features_[it->first].merge(o.features_[it->second]);
-        }
+      //combine outline
+      merge(o,o2);
 
-        if( !(form_ += o.form_) )
-        {
-          matchForm(o);
-          //debug_form();
-          //o.debug_form();
-        }
-      }
+      //      matches2=matches1;
+      //      float m=bestMatch(o,cor,matches1,matches2);
+      //      ROS_INFO("dist bestMatch %f",m);
+      //      ROS_INFO("cor.size() %d",cor.size());
+      //      std::cout.flush();
+      //
+      //      ROS_ASSERT(cor.size()==4);
+      //      if(m<0.08f*4)
+      //      {
+      //        for(std::map<size_t,size_t>::const_iterator it = cor.begin(); it!=cor.end(); it++)
+      //        {
+      //          ROS_INFO("cor %d %d",it->first,it->second);
+      //          std::cout<<features_[it->first].v_<<"-\n"<<o.features_[it->second].v_<<"\n";
+      //          features_[it->first].merge(o.features_[it->second]);
+      //        }
+      //
+      //        if( !(form_ += o.form_) )
+      //        {
+      //          matchForm(o);
+      //          //debug_form();
+      //          //o.debug_form();
+      //        }
+      //      }
     }
 
     void debug_form() const
@@ -529,6 +647,155 @@ namespace Slam_CurvedPolygon
         tri[0] = tri[tri.size()-1];
     }
 
+    /// find nearest point to manifold (Newton)
+    Eigen::Vector2f _nextPoint(const Eigen::Vector3f &v, Eigen::Vector3f p, const int depth=0) const
+    {
+      if(depth>10)
+      {
+        ROS_INFO("break as depth");
+        return p.head<2>();
+      }
+
+//      std::cout<<"p\n"<<p<<"\n";
+      p(2) = param_.col(2)(0)*p(0)*p(0)+param_.col(2)(1)*p(1)*p(1)+param_.col(2)(2)*p(0)*p(1);
+//      std::cout<<"p\n"<<p<<"\n";
+
+      Eigen::Vector3f n;
+      n(0) = -(param_.col(2)(0)*2*p(0)+param_.col(2)(2)*p(1));
+      n(1) = -(param_.col(2)(1)*2*p(1)+param_.col(2)(2)*p(0));
+      n(2) = 1;
+
+      Eigen::Vector3f d = ((p-v).dot(n)/n.squaredNorm()*n+(v-p));
+
+//      std::cout<<"d\n"<<d<<"\n";
+//      std::cout<<"n\n"<<n<<"\n";
+//      std::cout<<"pv\n"<<(p-v)/(p-v)(2)<<"\n";
+//      std::cout<<"pv\n"<<(p-v)<<"\n";
+//      std::cout<<"dd\n"<<(p-v).dot(n)/n.squaredNorm()*n<<"\n";
+      //ROS_ASSERT(std::abs(d(2))<=std::abs(z));
+
+      if(!pcl_isfinite(d.sum()) || d.head<2>().squaredNorm()<0.001f*0.001f)
+      {
+//        std::cout<<"---------------\n";
+        return (p+d).head<2>();
+      }
+      return _nextPoint(v,p+d,depth+1);
+    }
+
+    /// find nearest point to manifold (Newton)
+    Eigen::Vector2f nextPoint(const Eigen::Vector3f &v) const
+    {
+      //      Eigen::Matrix3f M;
+      //      M.col(0) = proj2plane_.col(0);
+      //      M.col(1) = proj2plane_.col(1);
+      //      M.col(2) = param_.col(2);
+      //M = M.inverse().eval();
+
+      //Eigen::Vector2f p = (M*(v-param_.col(0))).head<2>();
+      Eigen::Vector3f p;
+
+      p(0) = (v-param_.col(0)).dot(proj2plane_.col(0));
+      p(1) = (v-param_.col(0)).dot(proj2plane_.col(1));
+      p(2) = (v-param_.col(0)).dot(param_.col(1));
+
+      Eigen::Vector2f r = _nextPoint(p, p);
+
+      float e1 = (v-project2world(p.head<2>())).norm();
+      float e2 = (v-project2world(r)).norm();
+//      std::cout<<"dist: "<<e1<<"  "<<e2<<"\n";
+      std::cout.flush();
+
+      //ROS_ASSERT(e1>=e2);
+
+      if(e1<e2)
+      {
+        ROS_WARN("e1>=e2");
+        return p.head<2>();
+      }
+
+      return r;
+    }
+
+    bool canMerge(const ex_curved_polygon &o) const {
+      PolygonData p1, p2, p3;
+
+      for(size_t i=0; i<o.segments_.size(); i++)
+      {
+        Eigen::Vector2f p = nextPoint(o.project2world(o.segments_[i].head<2>() ));
+        p1.add(
+            p(0),p(1)
+            //            ((o.segments_[i](0) * o.proj2plane_(0,0)+o.param_.col(0)(0))-param_.col(0)(0))/proj2plane_(0,0),
+            //            ((o.segments_[i](1) * o.proj2plane_(1,1)+o.param_.col(0)(1))-param_.col(0)(1))/proj2plane_(1,1)
+        );
+      }
+      for(size_t i=0; i<segments_.size(); i++)
+      {
+        p2.add(segments_[i](0),segments_[i](1));
+      }
+
+      std::cout<<"off1\n"<<param_.col(0)<<"\n";
+      std::cout<<"off2\n"<<o.param_.col(0)<<"\n";
+      std::cout<<"n1\n"<<param_.col(1)<<"\n";
+      std::cout<<"n2\n"<<o.param_.col(1)<<"\n";
+      std::cout<<"p1\n"<<param_.col(2)<<"\n";
+      std::cout<<"p2\n"<<o.param_.col(2)<<"\n";
+
+      if(unionPolygons(p1,p2, p3)<0.5f)
+        return false;
+
+      float lges=0.f, er=0.f, erlast=0.f, lfirst=0.f;
+      float er2=0;
+
+      for(size_t i=0; i<p3.get().size()/2; i++)
+      {
+        Eigen::Vector2f v1, v3;
+        Eigen::Vector3f t, n, v2;
+        v1(0)=p3.get()[i*2+0];
+        v1(1)=p3.get()[i*2+1];
+        //        v2(0) = ((v1(0)*proj2plane_(0,0)+param_.col(0)(0))-o.param_.col(0)(0))/o.proj2plane_(0,0);
+        //        v2(1) = ((v1(1)*proj2plane_(1,1)+param_.col(0)(1))-o.param_.col(0)(1))/o.proj2plane_(1,1);
+
+        t = project2world(v1);
+        v2 = o.project2world(o.nextPoint(t));
+
+        v1(0)=p3.get()[(i*2+2)%p3.get().size()];
+        v1(1)=p3.get()[(i*2+3)%p3.get().size()];
+        n = project2world(v1);
+
+        const float l = (t-n).norm();
+        er += l*erlast;
+        erlast = (t-v2).norm();
+        er2 += erlast;
+        er += l*erlast;
+        lges += 2*l;
+
+//        std::cout<<"coord\t\t"<<erlast<<"  "<<l<<"\n"<<t<<"\n\n"<<v2<<"\n\n";
+
+        if(i==0) lfirst = l;
+
+      }
+
+      er += lfirst*erlast;
+
+      if(isPlane()) ROS_INFO("PLANE");
+      ROS_INFO("proj %f", er/lges);
+
+      return er/lges<0.05f;
+    }
+
+    bool invalid() const
+    {
+      if(!pcl_isfinite(getNearestPoint().sum()))
+        return true;
+
+      for(size_t i=0; i<points3d_.size(); i++)
+      {
+        if(!pcl_isfinite(points3d_[i].sum()) || points3d_[i](2)<0)
+          return true;
+      }
+
+      return false;
+    }
   };
 
 }

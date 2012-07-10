@@ -54,15 +54,21 @@ bool OBJCTXT<_DOF6>::add(const OBJCTXT &ctxt, const DOF6 &tf)
     //o->transform(((Eigen::Matrix3f)tf.getRotation()).transpose(),-tf.getTranslation());
 
     bool found=false;
-    for(size_t i=0; i<objs_.size(); i++) {
+    for(size_t i=0; i<old; i++) {
       if(!objs_[i]) continue;
 
-      if( /*((*objs_[i])|(*o)) ||*/ ((*objs_[i])&(*o)) || objs_[i]->isReachable(*ctxt.objs_[j],tf.getRotationVariance()+0.03f,tf.getTranslationVariance()+0.03f) )
+      if( //objs_[i]->compatible(*o) &&
+          (
+          ///*((*objs_[i])|(*o)) ||*/ ((*objs_[i])&(*o)) ||
+          //objs_[i]->isReachable(*o,tf.getRotationVariance()+0.01f,tf.getTranslationVariance()+0.01f)
+          //||
+              ((*objs_[i])&(*o)) && (objs_[i]->getData().canMerge(o->getData()))
+          ))
       {
         found = true;
 
         typename OBJECT::TFLIST list = objs_[i]->getTFList(*ctxt.objs_[j], tf.getRotationVariance()+0.1, tf.getTranslationVariance()+0.1, tf.getRotation(), tf.getTranslation());
-        if(list.size()>0 && objs_[i]->isReachable(*ctxt.objs_[j],tf.getRotationVariance(),tf.getTranslationVariance()))
+        if(1||list.size()>0 && objs_[i]->isReachable(*ctxt.objs_[j],tf.getRotationVariance(),tf.getTranslationVariance()))
         {
           ROS_INFO("update object");
           (*objs_[i]) += *o;

@@ -68,6 +68,7 @@ namespace Slam_CurvedPolygon
     Eigen::Vector3f getNearestPoint() const {return data_.getNearestPoint();}
     Eigen::Vector3f getNearestTransformedPoint(const Eigen::Matrix3f &rot, const Eigen::Vector3f &tr) const {return data_.getNearestTransformedPoint(rot, tr);}
 
+    bool compatible(const Object &o) const {return data_.isPlane()==o.data_.isPlane();}
   };
 
 #include "impl/object.hpp"
