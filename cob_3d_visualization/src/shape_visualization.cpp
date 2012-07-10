@@ -106,7 +106,7 @@ public:
     shape_array_sub_ = nh_.subscribe ("shape_array", 1, &ShapeVisualization::shapeArrayCallback, this);
     viz_msg_pub_ = nh_.advertise<visualization_msgs::Marker> ("marker", 10);
     //viz_msg_im_pub_ = nh_.advertise<visualization_msgs::InteractiveMarker> ("interactive_marker", 1);
-    shape_pub_ = nh_.advertise<cob_3d_mapping_msgs::Shape> ("shape", 1);
+//    shape_pub_ = nh_.advertise<cob_3d_mapping_msgs::Shape> ("shape", 1);
     im_server_.reset (new interactive_markers::InteractiveMarkerServer ("shapes", "shape_server", false));
 
   }
@@ -636,7 +636,7 @@ protected:
   ros::Subscriber shape_array_sub_; // sub for shape array msgs
   ros::Publisher viz_msg_pub_; // pub for marker msgs
   ros::Publisher viz_msg_im_pub_;
-  ros::Publisher shape_pub_;
+//  ros::Publisher shape_pub_;
 
   unsigned int marker_id_; // create markers with unique ids
   unsigned int shape_ctr_; // keep track of shape indices
