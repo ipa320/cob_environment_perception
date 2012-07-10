@@ -89,7 +89,7 @@
 #include <Eigen/Core>
 
 //#include <cob_3d_mapping_msgs/ShapeArray.h>
-#include <cob_3d_mapping_rviz_plugins/polypartition.h>
+#include <cob_3d_visualization/polypartition.h>
 #include <cob_3d_mapping_common/ros_msg_conversions.h>
 
 #define PI 3.14159265

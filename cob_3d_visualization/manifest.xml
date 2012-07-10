@@ -1,0 +1,19 @@
+<package>
+  <description brief="cob_3d_visualization">
+
+     cob_3d_visualization
+
+  </description>
+  <author>Georg Arbeiter</author>
+  <license>IPA</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/cob_3d_visualization</url>
+
+  <depend package="cob_3d_mapping_common"/>
+  <depend package="cob_3d_mapping_msgs"/>
+  <depend package="interactive_markers"/>
+  <depend package="pcl"/>
+
+</package>
+
+
