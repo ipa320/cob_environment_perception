@@ -145,12 +145,7 @@ namespace cob_3d_segmentation
 
     tf::TransformListener tf_listener_;
     std::string target_frame_;
-
-
-
-
-
-
+    boost::mutex mutex_;
   };
 
 }
