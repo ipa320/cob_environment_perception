@@ -9,11 +9,13 @@
  *
  */
 
-#include <pluginlib/class_list_macros.h>
+#include "rviz/plugin/type_registry.h"
 
 #include "cob_3d_mapping_rviz_plugins/shape_display.h"
 
-PLUGINLIB_DECLARE_CLASS( rviz, ShapeDisplay, rviz::ShapeDisplay, rviz::Display )
-
+extern "C" void rvizPluginInit(rviz::TypeRegistry* reg)
+{
+  reg->registerDisplay<rviz::ShapeDisplay>("ShapeDisplay");
+}
 
 
