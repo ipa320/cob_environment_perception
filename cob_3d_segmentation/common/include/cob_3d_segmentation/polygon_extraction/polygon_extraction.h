@@ -38,6 +38,7 @@ namespace cob_3d_segmentation
 
     PolygonExtraction():ch_(NULL),ch_size_(0),outline_check_(NULL),outline_check_size_(0)
     {
+      Contour2D::generateSpline2D();
     }
 
     virtual ~PolygonExtraction()

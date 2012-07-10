@@ -2,7 +2,9 @@
 <launch>
   <!-- start environment modelling -->
   <arg name="mapping_manager" value="mapping_manager"/>
-  <node pkg="nodelet" type="nodelet" name="$(arg mapping_manager)"  args="manager" output="screen"/>
+  <!-- node launch-prefix="gdb -ex run -_-args" pkg="nodelet" type="nodelet" name="$(arg mapping_manager)"
+        args="manager" output="screen"/ -->
+  <node pkg="nodelet" type="nodelet" name="$(arg mapping_manager)" args="manager" output="screen"/>
 
   <!--include file="$(find cob_3d_mapping_point_map)/ros/launch/point_map.launch">
     <arg name="start_manager" value="false"/>
@@ -19,7 +21,7 @@
   <include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch"/>
 
   <node pkg="rosbag" type="play" name="rosbag_play" cwd="node" respawn="false" output="screen"
-        args="/share/goa-sf/pcd_data/bags/single_cyl_1.bag -k -q --pause">
+        args="/share/goa-sf/pcd_data/bags/single_cyl_2.bag -k -q --pause">
   </node>
 </launch>
 
