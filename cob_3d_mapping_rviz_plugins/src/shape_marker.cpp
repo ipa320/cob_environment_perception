@@ -43,7 +43,7 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/ros/conversions.h>
-#include <pcl/common/transforms.h>
+#include <pcl/common/transform.h>
 
 #include <sensor_msgs/PointCloud2.h>
 
