@@ -68,7 +68,11 @@ extern "C" {
 #include <pcl/point_types.h>
 #include <pcl/common/centroid.h>
 #include <pcl/common/eigen.h>
+#ifdef PCL_VERSION_COMPARE
+#include <pcl/common/transforms.h>
+#else
 #include <pcl/common/transform.h>
+#endif
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/registration/transforms.h>
 #include <pcl/sample_consensus/method_types.h>

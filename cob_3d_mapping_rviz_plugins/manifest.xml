@@ -14,6 +14,7 @@
   <depend package="cob_3d_mapping_msgs"/>
 
   <export>
+		<cpp cflags="-I${prefix}/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcob_3d_mapping_rviz_plugins"/>
     <rviz plugin="${prefix}/lib/plugin.yaml"/>
   </export>
 

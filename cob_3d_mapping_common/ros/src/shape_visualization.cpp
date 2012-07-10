@@ -70,7 +70,13 @@
 #include <interactive_markers/menu_handler.h>
 
 // PCL includes
+#include <pcl/pcl_config.h>
+#ifdef PCL_VERSION_COMPARE
+#include <pcl/common/transforms.h>
+#else
 #include <pcl/common/transform.h>
+#endif
+#include <pcl/common/eigen.h>
 #include <pcl/point_cloud.h>
 #include <pcl/ros/conversions.h>
 #include <pcl/point_types.h>
