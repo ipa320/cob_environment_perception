@@ -106,36 +106,36 @@ public:
 
   // Constructor
   GeometryMapNode()
-  {
-    std::cout<<"THIS IS GEOMETRY MAP NOde"<<std::endl;
-    config_server_.setCallback(boost::bind(&GeometryMapNode::dynReconfCallback, this, _1, _2));
-    ctr_ = 0;
-    shape_sub_ = n_.subscribe("shape_array", 10, &GeometryMapNode::shapeCallback, this);
-    map_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("map_array",1);
-    marker_pub_ = n_.advertise<visualization_msgs::Marker>("geometry_marker",100);
-    clear_map_server_ = n_.advertiseService("clear_map", &GeometryMapNode::clearMap, this);
-    get_map_server_ = n_.advertiseService("get_map", &GeometryMapNode::getMap, this);
-    ros::param::param("~file_path" ,file_path_ ,std::string("/home/goa-tz/tmp/"));
-    ros::param::param("~save_to_file" ,save_to_file_ ,false);
-    std::cout << file_path_ << std::endl;
-    geometry_map_.setFilePath(file_path_);
-    geometry_map_.setSaveToFile(save_to_file_);
+    {
+      std::cout<<"THIS IS GEOMETRY MAP NOde"<<std::endl;
+      config_server_.setCallback(boost::bind(&GeometryMapNode::dynReconfCallback, this, _1, _2));
+      ctr_ = 0;
+      shape_sub_ = n_.subscribe("shape_array", 10, &GeometryMapNode::shapeCallback, this);
+      map_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("map_array",1);
+      marker_pub_ = n_.advertise<visualization_msgs::Marker>("geometry_marker",100);
+      clear_map_server_ = n_.advertiseService("clear_map", &GeometryMapNode::clearMap, this);
+      get_map_server_ = n_.advertiseService("get_map", &GeometryMapNode::getMap, this);
+      ros::param::param("~file_path" ,file_path_ ,std::string("/home/goa-tz/tmp/"));
+      ros::param::param("~save_to_file" ,save_to_file_ ,false);
+      std::cout << file_path_ << std::endl;
+      geometry_map_.setFilePath(file_path_);
+      geometry_map_.setSaveToFile(save_to_file_);
 
 
 
-  }
+    }
 
   // Destructor
   ~GeometryMapNode()
-  {
-    /// void
-  }
+    {
+      /// void
+    }
 
   void dynReconfCallback(cob_3d_mapping_geometry_map::geometry_map_nodeConfig &config, uint32_t level)
-  {
-    geometry_map_.setSaveToFile( config.save_to_file );
-    geometry_map_.setMergeThresholds(config.cos_angle, config.d);
-  }
+    {
+      geometry_map_.setSaveToFile( config.save_to_file );
+      geometry_map_.setMergeThresholds(config.cos_angle, config.d);
+    }
 
   /**
    * @brief callback for dynamic reconfigure
@@ -149,11 +149,11 @@ public:
    * @return nothing
    */
   /*static void callback(GeometryMapNode *gmn, cob_3d_mapping_geometry_map::geometry_map_nodeConfig &config, uint32_t level)
-  {
+    {
     //TODO: not multithreading safe
 
     if(!gmn)
-      return;
+    return;
 
     gmn->geometry_map_.setSaveToFile( config.save_to_file );
     gmn->geometry_map_.setFilePath( config.file_path );

@@ -106,7 +106,7 @@ namespace cob_3d_segmentation
       , classified_(new PointCloud)
       , normals_(new NormalCloud)
       , labels_(new LabelCloud)
-      , target_frame_("/map")
+      , target_frame_("/world")
 
     {
 

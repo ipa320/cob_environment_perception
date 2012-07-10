@@ -133,21 +133,17 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::received_cloud_cb(PointCloud::
   PrecisionStopWatch t;
   t.precisionStart();
   NODELET_INFO("Start with segmentation .... ");
-  //one_.setInputCloud(pc_trans);
   one_.setInputCloud(cloud);
   one_.compute(*normals_);
-  //*classified_ = *segmented_ = *pc_trans;
+
   *classified_ = *segmented_ = *cloud;
 
   seg_.setInputCloud(cloud);
-  //seg_.setInputCloud(pc_trans);
-
   seg_.performInitialSegmentation();
   seg_.refineSegmentation();
   NODELET_INFO("Done with segmentation .... ");
   graph_->clusters()->mapClusterColor(segmented_);
 
-  //cc_.setPointCloudIn(pc_trans);
   cc_.setPointCloudIn(cloud);
   cc_.classify();
   graph_->clusters()->mapTypeColor(classified_);
@@ -192,7 +188,6 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
     PolygonContours<PolygonPoint> poly;
     std::cout << "Get outline for " << c->size() << " Points with "<< c->border_points.size() << " border points" << std::endl;
     pe_.outline(cloud->width, cloud->height, c->border_points, poly);
-    std::cout << "Gotcha!!!" <<std::endl;
     if (!poly.polys_.size()) continue; // continue, if no contours were found
 
     int max_idx=0, max_size=0;
@@ -235,7 +230,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
     {
     case I_PLANE:
     {
-      std::cout << "Plane: " << c->size() << ", " << c->border_points.size() << std::endl;
+      //std::cout << "Plane: " << c->size() << ", " << c->border_points.size() << std::endl;
       s->type = cob_3d_mapping_msgs::Shape::POLYGON;
 
       s->params.resize(4);
