@@ -1,0 +1,14 @@
+.project
+.cproject
+.pydevproject
+*.pyc
+bin
+lib
+build
+docs
+srv_gen
+msg_gen
+cmake_install.cmake
+*.cfgc
+*/cfg/cpp
+cob_3d_mapping_msgs/src
