@@ -10,7 +10,7 @@ byte CYLINDER=5
 
 byte type
 int32 id
- 
+
 # define shape parameters
 # for plane
 # normal vector = params[0],params[1],params[2]
