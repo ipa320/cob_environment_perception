@@ -86,7 +86,11 @@
 #include "parameters/parameters_bag.h"
 
 #include <registration/registration_icp.h>
-#ifndef PCL_DEPRECATED
+
+#include <vtkCommand.h>
+#include <pcl/features/feature.h>
+#include <pcl/point_traits.h>
+#ifndef GICP_ENABLE
 #include <registration/registration_icp_moments.h>
 #include <registration/registration_icp_fpfh.h>
 #include <registration/registration_icp_narf.h>
@@ -110,6 +114,16 @@
 #include <registration/measurements/measure.h>
 #include <cob_srvs/Trigger.h>
 #include <cob_3d_mapping_msgs/TriggerMappingAction.h>
+
+
+#include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/common/eigen.h>
+#include <pcl/registration/correspondence_estimation.h>
+
+
+
+
+
 
 using namespace tf;
 #define SHOW_MAP 0
@@ -235,7 +249,7 @@ public:
     parameters_.addParameter("max_info");
     parameters_.addParameter("always_relevant_changes");
 
-    reset_server_ = n_.advertiseService("reset", &RegistrationNodelet::reset, this);
+    reset_server_ = n_.advertiseService("clear_map", &RegistrationNodelet::reset, this);
     camera_info_sub_ = n_.subscribe("camera_info", 1, &RegistrationNodelet::cameraInfoSubCallback, this);
     point_cloud_pub_aligned_ = n_.advertise<pcl::PointCloud<Point> >("point_cloud2_aligned",1);
     keyframe_trigger_server_ = n_.advertiseService("trigger_keyframe", &RegistrationNodelet::onKeyframeCallback, this);
@@ -268,7 +282,7 @@ public:
    */
   bool
   reset(cob_srvs::Trigger::Request &req,
-           cob_srvs::Trigger::Response &res)
+        cob_srvs::Trigger::Response &res)
   {
     //TODO: add mutex
     ROS_INFO("Resetting transformation...");
@@ -289,7 +303,29 @@ public:
   void
   pointCloudSubCallback(const pcl::PointCloud<Point>::Ptr& pc_in)
   {
-    pc_in_ = pc_in;
+    pc_frame_id_=pc_in->header.frame_id;
+
+    reg_->setInputOginalCloud(pc_in);
+
+    if(do_register(*pc_in,cv_bridge::CvImagePtr(),NULL)||ctr_==0) {
+      if(point_cloud_pub_aligned_.getNumSubscribers()>0) {
+        pcl::PointCloud<Point> pc;
+        pc.header.frame_id = pc_in->header.frame_id;
+        pcl::transformPointCloud(*pc_in,pc,reg_->getTransformation());
+        point_cloud_pub_aligned_.publish(pc);
+      }
+
+      StampedTransform transform;
+      Eigen::Affine3d af;
+      af.matrix()=reg_->getTransformation().cast<double>();
+      tf::TransformEigenToTF(af,transform);
+      tf_br_.sendTransform(tf::StampedTransform(transform, transform.stamp_, world_id_, corrected_id_));
+
+      ROS_WARN("registration successful");
+    }
+    else
+      ROS_WARN("registration not successful");
+    ctr_++;
   }
 
   /**
@@ -310,54 +346,23 @@ public:
                           cob_srvs::Trigger::Response &res)
   {
     res.success.data = false;
-
-    if(pc_in_==0 || pc_in_->size()<1 || !is_running_)
+    if(pc_frame_id_.size()<1)
       return true;
 
     StampedTransform transform;
     try
     {
-      //std::cout << world_id_ << "," << pc_in_->header.frame_id << std::endl;
       std::stringstream ss2;
-      tf_listener_.waitForTransform(world_id_, pc_in_->header.frame_id, pc_in_->header.stamp, ros::Duration(0.1));
-      tf_listener_.lookupTransform(world_id_, pc_in_->header.frame_id, pc_in_->header.stamp/*ros::Time(0)*/, transform);
+      tf_listener_.waitForTransform(world_id_, pc_frame_id_, ros::Time(0), ros::Duration(0.1));
+      tf_listener_.lookupTransform(world_id_, pc_frame_id_, ros::Time(0), transform);
 
       ROS_DEBUG("Registering new point cloud");
 
-      //if((pc_in_->header.timestamp-transform.stamp_)>0.1)
-      //  ROS_ERROR("[registration] timestampf of pointcloud and transformation are %f away",(pc_in_->header.timestamp-transform.stamp_));
+      Eigen::Affine3d af;
+      tf::TransformTFToEigen(transform, af);
+      reg_->setOdometry(af.matrix().cast<float>());
+      reg_->setMoved(true);
 
-      {
-        Eigen::Affine3d af;
-        tf::TransformTFToEigen(transform, af);
-        reg_->setOdometry(af.matrix().cast<float>());
-
-        //if(ctr_==0)
-        //  reg_->setTransformation(af.matrix().cast<float>());
-      }
-      reg_->setInputOginalCloud(pc_in_);
-
-      if(do_register(*pc_in_,cv_bridge::CvImagePtr(),NULL)||ctr_==0) {
-        if(point_cloud_pub_aligned_.getNumSubscribers()>0) {
-          //sensor_msgs::PointCloud2 pc2;
-          pcl::PointCloud<Point> pc;
-          pc.header.frame_id = pc_in_->header.frame_id;
-          pcl::transformPointCloud(*pc_in_,pc,reg_->getTransformation());
-          //pc = *pc_in_;
-          //pcl::toROSMsg(pc,pc2);
-          point_cloud_pub_aligned_.publish(pc);
-        }
-
-        Eigen::Affine3d af;
-        af.matrix()=reg_->getTransformation().cast<double>();
-        tf::TransformEigenToTF(af,transform);
-        tf_br_.sendTransform(tf::StampedTransform(transform, transform.stamp_, world_id_, corrected_id_));
-
-        ROS_WARN("registration successful");
-      }
-      else
-        ROS_WARN("registration not successful");
-      ctr_++;
     }
     catch (tf::TransformException ex)
     {
@@ -570,7 +575,7 @@ public:
         break;
 
       case E_ALGO_ICP_MOMENTS:
-#ifndef PCL_DEPRECATED
+#ifndef GICP_ENABLE
         reg_ = new Registration_ICP_Moments<Point>();
 
         setSettings_ICP_Moments((Registration_ICP_Moments<Point>*)reg_);
@@ -580,7 +585,7 @@ public:
         break;
 
       case E_ALGO_ICP_FPFH:
-#ifndef PCL_DEPRECATED
+#ifndef GICP_ENABLE
         reg_ = new Registration_ICP_FPFH<Point>();
 
         setSettings_ICP_FPFH((Registration_ICP_FPFH<Point>*)reg_);
@@ -590,7 +595,7 @@ public:
         break;
 
       case E_ALGO_ICP_NARF:
-#ifndef PCL_DEPRECATED
+#ifndef GICP_ENABLE
         reg_ = new Registration_ICP_NARF<Point>();
 
         setSettings_ICP_NARF((Registration_ICP_NARF<Point>*)reg_);
@@ -600,7 +605,7 @@ public:
         break;
 
       case E_ALGO_ICP_EDGES:
-#ifndef PCL_DEPRECATED
+#ifndef GICP_ENABLE
 #if HAS_RGB
         reg_ = new Registration_ICP_Edges<Point>();
 
@@ -612,7 +617,7 @@ public:
         break;
 
         /*case E_ALGO_FASTSLAM:
-#ifndef PCL_DEPRECATED
+#ifndef GICP_ENABLE
         reg_ = new Registration_FastSLAM<Point>();
 
         //setSettings_ICP_FastSLAM((Registration_FastSLAM<Point>*)reg_);
@@ -628,7 +633,7 @@ public:
         break;
 
       case E_ALGO_INFO:
-#ifndef PCL_DEPRECATED
+#ifndef GICP_ENABLE
         reg_ = new Registration_Infobased<Point>();
 
         setSettings_Info((Registration_Infobased<Point>*)reg_);
@@ -638,11 +643,11 @@ public:
         break;
 
       case E_ALGO_COR:
-#ifndef PCL_DEPRECATED
+#ifndef GICP_ENABLE
         reg_ = new Registration_Corrospondence<Point>();
 
         //((Registration_Corrospondence<Point>*)reg_)->setKeypoints(new Keypoints_Segments<Point>);
-        ((Registration_Corrospondence<Point>*)reg_)->setKeypoints(new Keypoints_Narf<Point>);
+        //((Registration_Corrospondence<Point>*)reg_)->setKeypoints(new Keypoints_Narf<Point>);
 
         //setSettings_Cor((Registration_Corrospondence<Point>*)reg_);
 #else
@@ -675,20 +680,20 @@ public:
     }
 
     sensor_msgs::Image img;
-    {
-      FILE *fp = fopen(req.img_fn.c_str(), "rb");
-      if(!fp) return false;
-
-      struct stat filestatus;
-      stat(req.img_fn.c_str(), &filestatus );
-
-      uint8_t *up = new uint8_t[filestatus.st_size];
-      fread(up,filestatus.st_size,1,fp);
-      img.deserialize(up);
-      delete up;
-
-      fclose(fp);
-    }
+//    {
+//      FILE *fp = fopen(req.img_fn.c_str(), "rb");
+//      if(!fp) return false;
+//
+//      struct stat filestatus;
+//      stat(req.img_fn.c_str(), &filestatus );
+//
+//      uint8_t *up = new uint8_t[filestatus.st_size];
+//      fread(up,filestatus.st_size,1,fp);
+//      img.deserialize(up);
+//      delete up;
+//
+//      fclose(fp);
+//    }
 
     cv::Mat img_depth(pc.height, pc.width, CV_16UC1);
 #ifdef USE_DEPTH_IMG_
@@ -763,14 +768,14 @@ public:
 
     if(marker_pub_.getNumSubscribers()&&reg_->getMarkers()) {
       for(int i=0; i<reg_->getMarkers()->size(); i++)
-#if HAS_RGB
+#if HAS_RGBPCL_DEPRECATED
         publishMarkerPoint(reg_->getMarkers()->points[i], i, reg_->getMarkers()->points[i].r/255., reg_->getMarkers()->points[i].g/255., reg_->getMarkers()->points[i].b/255.);
 #else
       publishMarkerPoint(reg_->getMarkers()->points[i], i, 1,0,0);
 #endif
     }
 
-#ifndef PCL_DEPRECATED
+#ifndef GICP_ENABLE
     std::string s_algo;
     if(parameters_.getParam("algo",s_algo) && s_algo=="info") {
       pcl::PointCloud<Point> result = *((Registration_Infobased<Point>*)reg_)->getMarkers2();
@@ -781,7 +786,7 @@ public:
         publishLineMarker( ((Registration_Infobased<Point>*)reg_)->getSource().points[i].getVector3fMap(), ((Registration_Infobased<Point>*)reg_)->getTarget().points[i].getVector3fMap(), -i);
     }
     else if(parameters_.getParam("algo",s_algo) && s_algo=="cor") {
-      pcl::registration::Correspondences cor;
+      pcl::Correspondences cor;
       ((Registration_Corrospondence<Point>*)reg_)->getKeypoints()->getCorrespondences(cor);
       for(int i=0; i<cor.size(); i++)
         publishLineMarker( ((Registration_Corrospondence<Point>*)reg_)->getKeypoints()->getSourcePoints()->points[cor[i].indexQuery].getVector3fMap(), ((Registration_Corrospondence<Point>*)reg_)->getKeypoints()->getTargetPoints()->points[cor[i].indexMatch].getVector3fMap(), -i);
@@ -1000,9 +1005,7 @@ protected:
   /// evaluation: success -> true
   bool registration_result_;
 
-  std::string corrected_id_, world_id_;
-
-  pcl::PointCloud<Point>::Ptr pc_in_;
+  std::string corrected_id_, world_id_, pc_frame_id_;
 
   enum {E_ALGO_ICP=1,E_ALGO_ICP_LM=2,E_ALGO_GICP=3,E_ALGO_ICP_MOMENTS=4,E_ALGO_ICP_FPFH=5, E_ALGO_ICP_NARF=6, E_ALGO_FASTSLAM=7, E_ALGO_ICP_EDGES=8, E_ALGO_RGBDSLAM=9, E_ALGO_INFO=10, E_ALGO_COR=11, E_ALGO_NONE=0};
 
@@ -1022,7 +1025,7 @@ protected:
     if(parameters_.getParam("use_only_last_refrence",i))
       pr->setUseOnlyLastReference(i!=0);
   }
-#ifndef PCL_DEPRECATED
+#ifndef GICP_ENABLE
   void setSettings_ICP_Moments(Registration_ICP_Moments<Point> *pr) {
     setSettings_ICP(pr);
 
@@ -1169,4 +1172,3 @@ int main(int argc, char **argv) {
 }*/
 
 PLUGINLIB_DECLARE_CLASS(cob_3d_registration, RegistrationNodelet, RegistrationNodelet, nodelet::Nodelet)
-

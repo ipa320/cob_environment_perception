@@ -14,8 +14,11 @@ group2:
   component_name: cob_3d_mapping_demonstrator
   buttons: [[Home,move,home],
            [Look right,move,right],
-           [Look rightdown,move,rightdown],
            [Look left,move,left],
-           [Look leftdown,move,leftdown],
            [Look down,move,down],
+           [Look rightdown,move,rightdown],
+           [Look leftdown,move,leftdown],
+           [Look downhalf,move,downhalf],
+           [Look rightdownhalf,move,rightdownhalf],
+           [Look leftdownhalf,move,leftdownhalf],
            [Look up,move,up]]

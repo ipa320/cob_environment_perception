@@ -58,6 +58,7 @@
 #include "../transf_est/tf_est_multi_cors.h"
 #include <pcl/registration/transformation_estimation_svd.h>
 #include "modified_icp.hpp"
+#include <pcl/point_traits.h>
 
 
 // organized access to pointcloud
@@ -76,6 +77,11 @@
 template <typename Point>
 bool Registration_Infobased<Point>::compute_features()
 {
+  if(!this->input_org_)
+    return false;
+
+  this->scene_changed_=false;
+
   indices_pos2.clear();
   indices_neg2.clear();
 
@@ -117,7 +123,7 @@ bool Registration_Infobased<Point>::compute_features()
 
       float d = pn.z-po.z;
 
-	  // threshold is calculated in consideration of quantization error
+      // threshold is calculated in consideration of quantization error
       const float di = std::max(pn.z,po.z) * threshold_diff_;
       if(d>di) {
         depth_map[ind]=1;
@@ -133,16 +139,19 @@ bool Registration_Infobased<Point>::compute_features()
   }
 
 #if DEBUG_SWITCH_
-  ROS_INFO("found %d %d", indices_pos.size(), indices_neg.size());
+  ROS_INFO("found  %d %d", indices_pos.size(), indices_neg.size());
 #endif
 
   if(indices_pos.size()+indices_neg.size()<min_changes_ /*|| std::min(indices_pos.size(), indices_neg.size())<100*/)
   {
-    standing_++;
-    if(always_relevant_changes_ && standing_>15) {
-      odo_is_good_=true;
-      standing_=0;
-      return true;
+    if(this->moved_)
+    {
+      standing_++;
+      if(always_relevant_changes_ && standing_>15) {
+        odo_is_good_=true;
+        standing_=0;
+        return true;
+      }
     }
     return false;
   }
@@ -195,11 +204,13 @@ bool Registration_Infobased<Point>::compute_features()
   markers_.width=markers_.size();
   markers_.height=1;
 
-  ROS_INFO("found %d %d", indices_pos2.size(), indices_neg2.size());
+  ROS_INFO("found2 %d %d", indices_pos2.size(), indices_neg2.size());
 #endif
 
+  this->scene_changed_=true;
+
 #if USED_ODO_
-  return true;
+  return this->moved_;
 #elif USE_INFINITE_
   return std::min(indices_pos2.size(), indices_neg2.size())>400;
 #else
@@ -320,8 +331,8 @@ bool Registration_Infobased<Point>::compute_transformation()
 #if EVALUATION_MODE_
         T=T.Identity();
 #else
-      if(!use_odometry_ || this->failed_<10)
-        return false;
+        if(!use_odometry_ || this->failed_<10)
+          return false;
       }
       else {
         T = T.Identity();
@@ -338,7 +349,7 @@ bool Registration_Infobased<Point>::compute_transformation()
   if(Eigen::Quaternionf(T.topLeftCorner<3, 3> ()).angularDistance(Eigen::Quaternionf::Identity())>3*rmax_)
     T=T.Identity();
 
-    this->transformation_ = this->transformation_*T;
+  this->transformation_ = this->transformation_*T;
 
   this->last_input_ = this->input_org_;
   this->odometry_last_ = this->odometry_;

@@ -75,7 +75,7 @@ template <typename Point>
 class GeneralRegistration
 {
 public:
-  GeneralRegistration():transformation_(Eigen::Matrix4f::Identity())
+  GeneralRegistration():transformation_(Eigen::Matrix4f::Identity()),moved_(true),scene_changed_(false)
   {}
 
   virtual ~GeneralRegistration() {}
@@ -126,6 +126,8 @@ public:
   /// get transformation
   virtual Eigen::Matrix4f getTransformation() const {return transformation_;}
   virtual void setTransformation(const Eigen::Matrix4f &mat) {transformation_=mat;}
+  virtual void setMoved(const bool b) {moved_=b;}
+  virtual bool getSceneChanged() const {return scene_changed_;}
 
   /// map is not necessarily implemented
   virtual boost::shared_ptr<pcl::PointCloud<Point> > getMap() {ROS_ERROR("should never happ"); return boost::shared_ptr<pcl::PointCloud<Point> >(new pcl::PointCloud<Point>);}
@@ -139,5 +141,6 @@ protected:
   boost::shared_ptr<const pcl::PointCloud<Point> > input_, input_org_;
   boost::shared_ptr<const cv::Mat> input_image_, input_depth_image_;
   Eigen::Matrix4f transformation_;
+  bool moved_, scene_changed_;
 
 };

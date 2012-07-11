@@ -55,8 +55,13 @@
 
 #ifndef REGISTRATION_CORRESPONDENCE_H_
 #define REGISTRATION_CORRESPONDENCE_H_
-
+#include <pcl/correspondence.h>
 #include <pcl/registration/correspondence_estimation.h>
+//#include <pcl/pcl_base.h>
+//#include <pcl/kdtree/kdtree.h>
+// #include <pcl/kdtree/kdtree_flann.h>
+// #include <pcl/pcl_macros.h>
+// #include <pcl/registration/correspondence_types.h>
 
 
 template <typename Point>
@@ -66,7 +71,7 @@ public:
   virtual boost::shared_ptr<pcl::PointCloud<Point> > getSourcePoints()=0;
   virtual boost::shared_ptr<pcl::PointCloud<Point> > getTargetPoints()=0;
 
-  virtual void getCorrespondences(std::vector<pcl::registration::Correspondence> &correspondences)=0;
+  virtual void getCorrespondences(pcl::Correspondences &correspondences)=0;
 
   virtual bool compute(const pcl::PointCloud<Point> &src, const pcl::PointCloud<Point> &tgt)=0;
 };
@@ -81,7 +86,7 @@ protected:
   virtual Point getPointForKeypointTgt(const int ind)=0;
 
 public:
-  virtual void getCorrespondences(std::vector<pcl::registration::Correspondence> &correspondences) {
+  virtual void getCorrespondences(pcl::Correspondences &correspondences) {
     pcl::registration::CorrespondenceEstimation<Keypoint, Keypoint> est;
     est.setInputCloud (keypoints_src_.makeShared());
     est.setInputTarget (keypoints_tgt_.makeShared());
@@ -125,8 +130,8 @@ protected:
   virtual bool compute_corrospondences();
   virtual bool compute_transformation();
 
-  void rejectBadCorrespondences (const pcl::registration::CorrespondencesPtr &all_correspondences,
-                                 pcl::registration::Correspondences &remaining_correspondences);
+  void rejectBadCorrespondences (const pcl::CorrespondencesPtr &all_correspondences,
+                                 pcl::Correspondences &remaining_correspondences);
 
   //internal states
   pcl::PointCloud<Point> register_;
@@ -134,7 +139,7 @@ protected:
   float rejection_dis_;
 
   RegKeypointCorrespondenceAbstract<Point> *keypoints_;
-  pcl::registration::CorrespondencesPtr all_correspondences_;
+  pcl::CorrespondencesPtr all_correspondences_;
 };
 
 
@@ -142,6 +147,6 @@ protected:
 
 //keypoints...
 #include "features/segments.h"
-#include "features/narf_kp.h"
+//#include "features/narf_kp.h"
 
 #endif /* REGISTRATION_CORRESPONDENCE_H_ */

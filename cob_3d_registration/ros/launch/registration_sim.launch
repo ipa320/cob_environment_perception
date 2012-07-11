@@ -19,7 +19,7 @@
   </node>
 
   <node pkg="cob_3d_mapping_common" type="keyframe_detector_node" name="keyframe_detector_node" output="screen">
-    <remap from="camera_info" to="/cam3d/camera_info"/>
+    <remap from="camera_info" to="/cam3d/rgb/camera_info"/>
 
     <param name="r_limit_" type="double" value="0.013" />
     <param name="p_limit_" type="double" value="0.013" />
@@ -30,7 +30,7 @@
 
   <node pkg="nodelet" type="nodelet" name="registration_nodelet" args="load cob_3d_registration/RegistrationNodelet $(arg nodelet_manager)" output="screen">
 
-    <remap from="camera_info" to="/cam3d/camera_info"/>
+    <remap from="camera_info" to="/cam3d/rgb/camera_info"/>
     <remap from="point_cloud2" to="/pass_through/output"/>
     <remap from="point_cloud2_aligned" to="registration/pc_aligned"/>
 

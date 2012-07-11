@@ -60,7 +60,7 @@
 #include <ros/ros.h>
 #include <pcl/point_types.h>
 #include <geometry_msgs/Twist.h>
-
+#include <sensor_msgs/Image.h>
 #include <tf/transform_listener.h>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -69,6 +69,7 @@
 #include <pcl_ros/point_cloud.h>
 #include <pcl/io/pcd_io.h>
 #include <gazebo/GetModelState.h>
+#include <iostream>
 
 class Capture
 {
@@ -91,6 +92,7 @@ private:
 
   sensor_msgs::PointCloud2ConstPtr last_pc_;
   sensor_msgs::ImageConstPtr last_img_, last_depth_img_;
+
 
   std::string prefix_;
   int frame_number_;
@@ -159,7 +161,6 @@ public:
 
     ROS_INFO("creating %s...",fn);
     fp_xml_ = fopen(fn,"w");
-
     ROS_ASSERT(fp_xml_);
 
     fputs("<?xml version=\"1.0\" ?>\n", fp_xml_);
@@ -194,19 +195,31 @@ public:
     pcl::fromROSMsg(*last_pc_,pc);
     pcl::io::savePCDFileASCII (fn_pcd, pc);
 
-    //serialize image
-    FILE *fp = fopen(fn_img,"wb");
-    if(fp)
-    {
-      uint32_t len = last_img_->serializationLength();
+//    electric
+//    //serialize image
+//    FILE *fp = fopen(fn_img,"wb");
+//    if(fp)
+//    {
+//	//for electric
+//      uint32_t len = last_img_->serializationLength();
+//
+//
+//
+//      uint8_t *wptr = new uint8_t[len];
+//      last_img_->serialize(wptr,0);
+//      fwrite(wptr, 1, len, fp);
+//      delete [] wptr;
+//
+//      fclose(fp);
+//    }
 
-      uint8_t *wptr = new uint8_t[len];
-      last_img_->serialize(wptr,0);
-      fwrite(wptr, 1, len, fp);
-      delete [] wptr;
-
-      fclose(fp);
-    }
+//    fuerte
+std::ofstream stream(fn_img);
+//std::ofstream* last_img_stream =new std::ofstream;
+//last_img_stream->open(fn_img);
+stream << *last_img_;
+stream.close();
+//delete last_img_stream;
 
     /*fp = fopen(fn_img_depth,"wb");
     if(fp)
@@ -220,6 +233,7 @@ public:
 
       fclose(fp);
     }*/
+
 
     Eigen::Vector3f pos= absolute_pos_ - start_pos_;
     Eigen::Quaternionf rot = absolute_rot_*start_rot_.inverse();
