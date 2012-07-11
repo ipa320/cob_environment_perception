@@ -60,6 +60,7 @@
 #include <pcl_ros/pcl_nodelet.h>
 
 // PCL includes
+#include <pcl/surface/concave_hull.h>
 #include <pcl/point_types.h>
 
 // Package includes
@@ -67,6 +68,8 @@
 #include "cob_3d_mapping_features/organized_normal_estimation_omp.h"
 #include "cob_3d_segmentation/depth_segmentation.h"
 #include "cob_3d_segmentation/cluster_classifier.h"
+#include "cob_3d_segmentation/polygon_extraction/polygon_types.h"
+#include "cob_3d_segmentation/polygon_extraction/polygon_extraction.h"
 
 namespace cob_3d_segmentation
 {
@@ -93,11 +96,11 @@ namespace cob_3d_segmentation
       , labels_(new LabelCloud)
     { }
 
-    ~SegmentationAllInOneNodelet() 
+    ~SegmentationAllInOneNodelet()
     { }
 
 
-  protected:    
+  protected:
     void onInit();
 
     void received_cloud_cb(PointCloud::ConstPtr cloud);
@@ -109,11 +112,14 @@ namespace cob_3d_segmentation
     ros::Publisher pub_segmented_;
     ros::Publisher pub_classified_;
     ros::Publisher pub_shape_array_;
+    ros::Publisher pub_chull_;
 
     cob_3d_mapping_features::OrganizedNormalEstimationOMP<pcl::PointXYZRGB, pcl::Normal, PointLabel> one_;
     DepthSegmentation<ST::Graph, ST::Point, ST::Normal, ST::Label> seg_;
     ClusterClassifier<ST::CH, ST::Point, ST::Normal, ST::Label> cc_;
     ST::Graph::Ptr graph_;
+    pcl::ConcaveHull<pcl::PointXYZRGB> chull_;
+    PolygonExtraction pe_;
 
     PointCloud::Ptr segmented_;
     PointCloud::Ptr classified_;
@@ -121,8 +127,6 @@ namespace cob_3d_segmentation
     LabelCloud::Ptr labels_;
   };
 
-  
-  
 }
 
 
