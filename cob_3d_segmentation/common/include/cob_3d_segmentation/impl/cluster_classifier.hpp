@@ -75,16 +75,16 @@ cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::c
 
     if (!c_it->is_save_plane)
     {
-      
+
       recomputeClusterNormals(c_it);
       clusters_->computeCurvature(c_it);
       if (c_it->max_curvature < 0.02)
-	c_it->type = I_PLANE;
+        c_it->type = I_PLANE;
       else if (c_it->max_curvature < 9.0 * c_it->min_curvature)
-	c_it->type = I_SPHERE;
+        c_it->type = I_SPHERE;
       else
-	c_it->type = I_CYL;
-      
+        c_it->type = I_CYL;
+
       //c_it->type = I_CORNER;
     }
     else c_it->type = I_PLANE;
@@ -115,28 +115,47 @@ cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::c
       int valid_points = 0;
       for (typename ClusterType::iterator idx=c_it->begin(); idx != c_it->end(); ++idx)
       {
-	if (!computeClusterPointCurvature(*idx, w_size, steps, pc_min, pc_max)) 
-	{
-	  test.push_back(*idx);
-	  continue;
-	}
-	++valid_points;
-	if (pc_max < 0.01) { ++geometry[I_PLANE]; test_plane.push_back(*idx); }
-	else if(pc_max > 9.0 * pc_min) { ++geometry[I_CYL]; test_cyl.push_back(*idx); }
-	else { ++geometry[I_SPHERE]; test_sph.push_back(*idx); }
+        Eigen::Vector3f min_direction;
+        if (!computeClusterPointCurvature(*idx, w_size, steps, pc_min, pc_max, min_direction))
+        {
+          test.push_back(*idx);
+          continue;
+        }
+        ++valid_points;
+
+        if (pc_max < 0.01) { ++geometry[I_PLANE]; test_plane.push_back(*idx); }
+        else if(pc_max > 9.0 * pc_min)
+        {
+          ++geometry[I_CYL];
+          test_cyl.push_back(*idx);
+          c_it->pca_inter_comp1 += min_direction;
+        }
+        else { ++geometry[I_SPHERE]; test_sph.push_back(*idx); }
       }
+      c_it->pca_inter_comp1 = c_it->pca_inter_comp1.normalized();
+      c_it->pca_inter_values(2) = 1.0;
 
       int max = 0; size_t max_idx = 0;
       for (size_t i=0; i<geometry.size(); ++i)
-	if ( (max=std::max(max,geometry[i])) == geometry[i] ) max_idx=i;
+        if ( (max=std::max(max,geometry[i])) == geometry[i] ) max_idx=i;
 
       if (max == 0) { c_it->type = I_EDGE; }
-      else 
-      { 
-	c_it->type = max_idx;
-	c_it->type_probability = static_cast<float>(max) / static_cast<float>(valid_points);
-	//std::cout << "Label: " << max_idx << " : #" << c_it->type_probability << std::endl;
-	if (c_it->type == I_CYL && c_it->type_probability < 0.8) { c_it->type = I_SPHERE; }
+      else
+      {
+        c_it->type = max_idx;
+        c_it->type_probability = static_cast<float>(max) / static_cast<float>(valid_points);
+        //std::cout << "Label: " << max_idx << " : #" << c_it->type_probability << std::endl;
+        if (c_it->type == I_CYL)
+        {
+          if(c_it->type_probability < 0.8) { c_it->type = I_SPHERE; }
+          /*else
+            {
+            std::cout <<c_it->pca_inter_comp1(0) <<", "
+            <<c_it->pca_inter_comp1(1) <<", "
+            <<c_it->pca_inter_comp1(2) <<" | " << valid_points << std::endl;
+            }*/
+          //else { clusters_->computeNormalIntersections(c_it); }
+        }
       }
     }
     else c_it->type = I_PLANE;
@@ -170,12 +189,12 @@ cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::r
 
 template <typename ClusterHandlerT, typename PointT, typename NormalT, typename LabelT> bool
 cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::computeClusterPointCurvature(
-  int index, int r, int steps, float& pc_min, float& pc_max)
+  int index, int r, int steps, float& pc_min, float& pc_max, Eigen::Vector3f& pc_min_direction)
 {
   const int w = surface_->width, s = surface_->height * surface_->width;
   const int l_idx = labels_->points[index].label;
 
-  // compute mask boundary constrains first, 
+  // compute mask boundary constrains first,
   const int w_rem = index%w;
   const int x_max = std::min(2*r, r + w - w_rem - 1); // max offset at each line
   const int y_min = std::max(index - r*w - r, w_rem - r);
@@ -212,6 +231,7 @@ cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::c
   pcl::eigen33(cov, eigenvectors, eigenvalues);
   pc_max = eigenvalues(2) * num_p_inv;
   pc_min = eigenvalues(1) * num_p_inv;
+  pc_min_direction = eigenvectors.col(1);
   return true;
 }
 
@@ -223,7 +243,7 @@ cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::c
   for (typename ClusterType::iterator idx=c->begin(); idx != c->end(); ++idx)
   {
 
-   
+
     if (eigenvalues(2) < 0.01) ++geometry[I_PLANE];
     else if(eigenvalues(2) < 0.11)
     {

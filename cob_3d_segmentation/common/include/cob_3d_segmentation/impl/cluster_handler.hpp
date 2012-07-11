@@ -167,7 +167,7 @@ cob_3d_segmentation::DepthClusterHandler<LabelT,PointT,PointNT>::computeNormalIn
   }
   
   float num_p_inv = 1.0f / (float)p_list.size();
-  //c->pca_inter_centroid = p_mean * num_p_inv;
+  c->pca_inter_centroid = p_mean * num_p_inv;
   //std::cout << "" << c->pca_inter_centroid(0) <<","<<c->pca_inter_centroid(1)<<","<<c->pca_inter_centroid(1) << std::endl;
   Eigen::Matrix3f cov = Eigen::Matrix3f::Zero();
   for (std::vector<Eigen::Vector3f>::iterator p_it = p_list.begin(); p_it != p_list.end(); ++p_it)
@@ -180,12 +180,11 @@ cob_3d_segmentation::DepthClusterHandler<LabelT,PointT,PointNT>::computeNormalIn
   pcl::eigen33(cov, eigenvectors, eigenvalues);
   eigenvalues *= num_p_inv;
 
-  /*
   c->pca_inter_comp1 = eigenvectors.col(2);
   c->pca_inter_comp2 = eigenvectors.col(1);
   c->pca_inter_comp3 = eigenvectors.col(0);
   c->pca_inter_values = eigenvalues;
-  */
+
   //std::cout << "Inter: " << c->id << " done" << std::endl;
 }
 

@@ -106,7 +106,7 @@ public:
    file_path_("./"),
    save_to_file_(false),
    cos_angle_(0.97),
-   d_(0.1)
+   d_(0.01)
   {
 	//  outputFile.open("/home/goa-hh/test.txt");
 
@@ -122,7 +122,7 @@ public:
 
 
    void
-   addMapEntry(boost::shared_ptr<cob_3d_mapping::Cylinder> c_ptr);
+   addMapEntry(boost::shared_ptr<cob_3d_mapping::Cylinder>& c_ptr);
 
 
   void

@@ -50,7 +50,7 @@ SET(CMAKE_SKIP_BUILD_RPATH  FALSE)
 
 # when building, don't use the install RPATH already
 # (but later on when installing)
-SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE) 
+SET(CMAKE_BUILD_WITH_INSTALL_RPATH FALSE)
 
 SET(CMAKE_INSTALL_RPATH "${CMAKE_INSTALL_PREFIX}/cob_3d_mapping_point_map/lib")
 
@@ -80,15 +80,15 @@ INSTALL(FILES cob_3d_mapping_point_map/ros/launch/aggregate_point_map.launch
 )
 
 #cob_3d_mapping_common
-INSTALL(PROGRAMS cob_3d_mapping_common/bin/field_of_view_node cob_3d_mapping_common/bin/keyframe_detector_node
-    DESTINATION "${CMAKE_INSTALL_PREFIX}/cob_3d_mapping_common/bin"
+#INSTALL(PROGRAMS cob_3d_mapping_common/bin/field_of_view_node cob_3d_mapping_common/bin/keyframe_detector_node
+#    DESTINATION "${CMAKE_INSTALL_PREFIX}/cob_3d_mapping_common/bin"
+#)
+#INSTALL(FILES cob_3d_mapping_common/CMakeLists.txt cob_3d_mapping_common/Makefile cob_3d_mapping_common/manifest.xml
+#    DESTINATION "${CMAKE_INSTALL_PREFIX}/cob_3d_mapping_common/"
 )
-INSTALL(FILES cob_3d_mapping_common/CMakeLists.txt cob_3d_mapping_common/Makefile cob_3d_mapping_common/manifest.xml
-    DESTINATION "${CMAKE_INSTALL_PREFIX}/cob_3d_mapping_common/"
-)
-INSTALL(FILES cob_3d_mapping_common/ros/launch/field_of_view.launch
-    DESTINATION "${CMAKE_INSTALL_PREFIX}/cob_3d_mapping_common/ros/launch"
-)
+#INSTALL(FILES cob_3d_mapping_common/ros/launch/field_of_view.launch
+#    DESTINATION "${CMAKE_INSTALL_PREFIX}/cob_3d_mapping_common/ros/launch"
+#)
 
 
 include(CPack)

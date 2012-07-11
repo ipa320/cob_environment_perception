@@ -8,6 +8,8 @@
 #include <pcl/point_cloud.h>
 
 #include <cob_3d_segmentation/general_segmentation.h>
+#include <cob_3d_segmentation/quad_regression/quad_regression.h>
+
 
 class As_Node
 {
@@ -42,7 +44,7 @@ public:
   }
 };
 
-template <typename Point, typename Parent>
+template <typename Point, typename PointLabel, typename Parent>
 class Segmentation_Node : public Parent
 {
   typedef pcl::PointCloud<Point> PointCloud;
@@ -50,7 +52,9 @@ class Segmentation_Node : public Parent
   ros::Subscriber point_cloud_sub_;
   ros::Publisher  point_cloud_pub_;
 
-  GeneralSegmentation<Point> *seg_;
+  GeneralSegmentation<Point, PointLabel> *seg_;
+
+  std::string algo_;
 public:
   // Constructor
   Segmentation_Node()
@@ -64,8 +68,17 @@ public:
     this->start();
 
     ros::NodeHandle *n=&(this->n_);
-    point_cloud_sub_ = this->n_.subscribe("/camera/rgb/points", 1, &Segmentation_Node<Point,Parent>::pointCloudSubCallback, this);
+    point_cloud_sub_ = this->n_.subscribe("/camera/rgb/points", 1, &Segmentation_Node<Point, PointLabel, Parent>::pointCloudSubCallback, this);
     point_cloud_pub_ = n->advertise<PointCloud>("point_cloud_labeled", 1);
+
+    //decide which algorithm should be used
+    if(n->getParam("algorithm",algo_))
+    {
+      if(algo_=="quad regression")
+      {
+        seg_ = new Segmentation::Segmentation_QuadRegression<Point,PointLabel>();
+      }
+    }
   }
 
   void
@@ -85,7 +98,7 @@ public:
 
 #ifdef COMPILE_NODELET
 
-typedef Segmentation_Node<pcl::PointXYZ,As_Nodelet> Segmentation_Node_XYZ;
+typedef Segmentation_Node<pcl::PointXYZ,pcl::PointXYZRGB,As_Nodelet> Segmentation_Node_XYZ;
 
 PLUGINLIB_DECLARE_CLASS(cob_3d_segmentation, Segmentation_Node_XYZ, Segmentation_Node_XYZ, nodelet::Nodelet)
 
@@ -94,7 +107,7 @@ PLUGINLIB_DECLARE_CLASS(cob_3d_segmentation, Segmentation_Node_XYZ, Segmentation
 int main(int argc, char **argv) {
   ros::init(argc, argv, "segmentation");
 
-  Segmentation_Node<pcl::PointXYZ,As_Node> sn;
+  Segmentation_Node<pcl::PointXYZ,pcl::PointXYZRGB,As_Node> sn;
   sn.onInit();
 
   ros::spin();

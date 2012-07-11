@@ -69,9 +69,13 @@
 #include "cob_3d_mapping_features/organized_normal_estimation.h"
 #include "cob_3d_segmentation/depth_segmentation.h"
 #include "cob_3d_segmentation/cluster_classifier.h"
+#include "cob_3d_segmentation/polygon_extraction/polygon_types.h"
+#include "cob_3d_segmentation/polygon_extraction/polygon_extraction.h"
 
 using namespace std;
 using namespace pcl;
+
+typedef cob_3d_segmentation::PredefinedSegmentationTypes SegTypes;
 
 string file_in_;
 string label_out_, type_out_;
@@ -131,8 +135,7 @@ int main(int argc, char** argv)
   one.compute(*n);
   cout << t.precisionStop() << "s\t for Organized Normal Estimation" << endl;
   *n_org = *n;
-  
-  typedef cob_3d_segmentation::PredefinedSegmentationTypes SegTypes;
+
   t.precisionStart();
   SegTypes::Graph::Ptr g(new SegTypes::Graph);
   cob_3d_segmentation::DepthSegmentation<SegTypes::Graph, SegTypes::Point, SegTypes::Normal, SegTypes::Label> seg;
@@ -154,8 +157,8 @@ int main(int argc, char** argv)
   cc.setLabelCloudIn(l);
   cc.classify();
   g->clusters()->mapTypeColor(pt);
-  //cc.mapUnusedPoints(pt);
-  //cc.mapPointClasses(pt);
+  cc.mapUnusedPoints(pt);
+  cc.mapPointClasses(pt);
   g->clusters()->mapClusterBorders(pt);
   cout << t.precisionStop() << "s\t for depth segmentation" << endl;
 
@@ -170,10 +173,45 @@ int main(int argc, char** argv)
     return 0;
   }
 
+  PointCloud<PointXYZ>::Ptr centroids(new PointCloud<PointXYZ>);
+  PointCloud<PointXYZ>::Ptr ints_centroids(new PointCloud<PointXYZ>);
+  PointCloud<Normal>::Ptr ints_comp1(new PointCloud<Normal>);
+  PointCloud<Normal>::Ptr ints_comp2(new PointCloud<Normal>);
+  PointCloud<Normal>::Ptr ints_comp3(new PointCloud<Normal>);
+  PointCloud<Normal>::Ptr connection(new PointCloud<Normal>);
+  PointCloud<Normal>::Ptr plane_normals(new PointCloud<Normal>);
+  PointCloud<PointXYZ>::Ptr plane_centroids(new PointCloud<PointXYZ>);
+
+  g->clusters()->mapClusterNormalIntersectionResults(ints_centroids, ints_comp1, ints_comp2, ints_comp3, centroids, connection);
+
+  cob_3d_segmentation::PolygonExtraction pe_;
+  PointCloud<PointXYZRGB>::Ptr borders(new PointCloud<PointXYZRGB>);
+  Normal ni;
+  PointXYZ pi;
+  for (SegTypes::CH::ClusterPtr c = g->clusters()->begin(); c != g->clusters()->end(); ++c)
+  {
+    if (c->type != I_PLANE) continue;
+    ni.getNormalVector3fMap() = c->pca_point_comp3;//c->getOrientation();
+    plane_normals->points.push_back(ni);
+    pi.getVector3fMap() = c->getCentroid();
+    plane_centroids->points.push_back(pi);
+    cob_3d_segmentation::PolygonContours<cob_3d_segmentation::PolygonPoint> poly;
+    pe_.outline(p->width, p->height, c->border_points, poly);
+    for (int i = 0; i < poly.polys_.size(); ++i)
+    {
+      for (std::vector<cob_3d_segmentation::PolygonPoint>::iterator it = poly.polys_[i].begin(); it != poly.polys_[i].end(); ++it)
+      {
+        borders->points.push_back(p->points[cob_3d_segmentation::PolygonPoint::getInd(it->x, it->y)]);
+      }
+    }
+  }
+
   visualization::PCLVisualizer v;
   visualization::PointCloudColorHandlerRGBField<PointXYZRGB> chdl_p(p);
   visualization::PointCloudColorHandlerRGBField<PointXYZRGB> chdl_pt(pt);
   visualization::PointCloudColorHandlerRGBField<PointXYZRGB> chdl_p2(p2);
+  visualization::PointCloudColorHandlerCustom<PointXYZ> blue_hdl (centroids, 0,0,255);
+  visualization::PointCloudColorHandlerRGBField<PointXYZRGB> border_hdl (borders);
   /* --- Viewports: ---
    *  1y
    *    | 1 | 2 |
@@ -187,8 +225,18 @@ int main(int argc, char** argv)
   v.createViewPort(0.0, 0.5, 0.5, 1.0, v1);
   //v.setBackgroundColor(1, 1, 1, v1);
   v.addPointCloud<PointXYZRGB>(p, chdl_p, "segmented", v1);
-  v.addPointCloudNormals<PointXYZRGB, Normal>(p, n_org, 5, 0.04, "normals_org", v1);
+  //v.addPointCloudNormals<PointXYZRGB, Normal>(p, n_org, 5, 0.04, "normals_org", v1);
   //v.setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_COLOR, 0.7, 0.7, 0.7, "normals_org", v1);
+  v.addPointCloud<PointXYZ>(centroids, blue_hdl, "ints_centroid", v1);
+  v.addPointCloudNormals<PointXYZ,Normal>(centroids, ints_comp1, 1, 1.0, "ints_comp1", v1);
+  v.addPointCloudNormals<PointXYZ,Normal>(plane_centroids, plane_normals, 1, 1.0, "plane_normals", v1);
+  //v.addPointCloudNormals<PointXYZ,Normal>(ints_centroids, ints_comp2, 1, 10.0, "ints_comp2", v1);
+  //v.addPointCloudNormals<PointXYZ,Normal>(ints_centroids, ints_comp3, 1, 10.0, "ints_comp3", v1);
+  v.setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_COLOR, 1.0, 0.0, 0.0, "ints_comp1", v1);
+  v.setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "plane_normals", v1);
+  //v.setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_COLOR, 0.0, 1.0, 0.0, "ints_comp2", v1);
+  //v.setPointCloudRenderingProperties(visualization::PCL_VISUALIZER_COLOR, 0.0, 0.0, 1.0, "ints_comp3", v1);
+  //v.addPointCloudNormals<PointXYZ,Normal>(centroids, connection, 1, 1.0, "connections", v1);
 
   int v2(0);
   v.createViewPort(0.5, 0.5, 1.0, 1.0, v2);
@@ -202,7 +250,7 @@ int main(int argc, char** argv)
   int v3(0);
   v.createViewPort(0.0, 0.0, 0.5, 0.5, v3);
   //v.setBackgroundColor(1, 1, 1, v3);
-  v.addPointCloud<PointXYZRGB>(p, chdl_p, "boundary_points", v3);
+  v.addPointCloud<PointXYZRGB>(borders, border_hdl, "boundary_points", v3);
   //v.addPointCloud<PointXYZRGB>(cp2nd, col_hdl_2nd, "segmented2nd", v3);
 
   int v4(0);

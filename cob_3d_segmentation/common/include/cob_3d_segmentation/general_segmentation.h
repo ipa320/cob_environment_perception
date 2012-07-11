@@ -64,7 +64,7 @@
 /**
  * a general abstract class for segmentation purpose of 3d pointclouds
  */
-template <typename Point>
+  template <typename Point, typename PointLabel>
 class GeneralSegmentation
 {
 public:

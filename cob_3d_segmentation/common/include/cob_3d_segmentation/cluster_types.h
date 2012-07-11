@@ -53,10 +53,11 @@
  ****************************************************************/
 
 #ifndef __COB_3D_SEGMENTATION_CLUSTER_TYPES_H__
-#define __COB_3D_SEGMENTATION_TYPES_H__
+#define __COB_3D_SEGMENTATION_CLUSTER_TYPES_H__
 
 #include <pcl/common/eigen.h>
 #include <set>
+#include <cob_3d_segmentation/polygon_extraction/polygon_types.h>
 
 namespace cob_3d_segmentation
 {
@@ -75,18 +76,18 @@ namespace cob_3d_segmentation
     virtual ~ClusterBase() { }
 
     inline const int id() const { return id_; }
-    
+
     inline value_type& operator[](size_type idx) { return indices_.at(idx); }
     inline iterator begin() { return indices_.begin(); }
     inline iterator end() { return indices_.end(); }
     inline size_type size() const { return indices_.size(); }
 
     inline void addIndex(int idx) { indices_.push_back(idx); }
-    
-    
+
+    std::vector<int> indices_;
   protected:
     int id_;
-    std::vector<int> indices_;
+
   };
 
   class DepthCluster : public ClusterBase
@@ -105,7 +106,12 @@ namespace cob_3d_segmentation
       , pca_point_comp2(0.0, 0.0, 0.0)
       , pca_point_comp3(0.0, 0.0, 0.0)
       , pca_point_values(0.0, 0.0, 0.0)
-      , border_indices()
+      , pca_inter_centroid(0.0, 0.0, 0.0)
+      , pca_inter_comp1(0.0, 0.0, 0.0)
+      , pca_inter_comp2(0.0, 0.0, 0.0)
+      , pca_inter_comp3(0.0, 0.0, 0.0)
+      , pca_inter_values(0.0, 0.0, 0.0)
+      , border_points()
       , sum_points_(0.0, 0.0, 0.0)
       , sum_orientations_(0.0, 0.0, 0.0)
     { }
@@ -125,7 +131,13 @@ namespace cob_3d_segmentation
     Eigen::Vector3f pca_point_comp3;
     Eigen::Vector3f pca_point_values;
 
-    std::vector<int> border_indices;
+    Eigen::Vector3f pca_inter_centroid;
+    Eigen::Vector3f pca_inter_comp1;
+    Eigen::Vector3f pca_inter_comp2;
+    Eigen::Vector3f pca_inter_comp3;
+    Eigen::Vector3f pca_inter_values;
+
+    std::vector<PolygonPoint> border_points;
 
   private:
     Eigen::Vector3f sum_points_;
