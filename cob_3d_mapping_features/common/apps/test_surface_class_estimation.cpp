@@ -79,7 +79,7 @@
 #include "cob_3d_mapping_features/organized_curvature_estimation.h"
 #include "cob_3d_mapping_features/curvature_classifier.h"
 #include "cob_3d_mapping_features/impl/curvature_classifier.hpp"
-#include "cob_3d_mapping_features/segmentation.h"
+//#include "cob_3d_mapping_features/segmentation.h"
 
 
 using namespace std;
@@ -208,7 +208,7 @@ int main(int argc, char** argv)
   one.setInputCloud(p);
   one.setOutputLabels(l);
   one.setPixelSearchRadius(radius_,1,circle_); //radius,pixel,circle
-  one.setDistanceThresholdModifier(th_);
+  one.setSkipDistantPointThreshold(th_);
   one.compute(*n);
   cout << t.precisionStop() << "s\t for Organized Normal Estimation" << endl;
 
@@ -218,7 +218,7 @@ int main(int argc, char** argv)
   oce.setInputNormals(n);
   oce.setOutputLabels(l);
   oce.setPixelSearchRadius(radius_,1,circle_);
-  oce.setDistanceThresholdModifier(th_);
+  oce.setSkipDistantPointThreshold(th_);
   oce.setEdgeClassThreshold(cmax_);
   oce.compute(*pc);
   cout << t.precisionStop() << "s\t for Organized Curvature Estimation" << endl;
@@ -281,7 +281,7 @@ int main(int argc, char** argv)
   v.setBackgroundColor(0,127,127, v2);
 
   v.addPointCloud<PointXYZRGB>(p, col_hdl_single, "segmented2", v2);
-  v.addPointCloudNormals<PointXYZRGB, Normal>(p,n,10,0.04,"normals2", v2);
+  v.addPointCloudNormals<PointXYZRGB, Normal>(p,n,3,0.04,"normals2", v2);
 
   while(!v.wasStopped())
   {
@@ -289,6 +289,7 @@ int main(int argc, char** argv)
     usleep(100000);
   }
 
+  /*
   cv::Mat segmented;
   vector<PointIndices> clusters;
   cob_3d_mapping_features::Segmentation seg;
@@ -296,6 +297,7 @@ int main(int argc, char** argv)
   seg.getClusterIndices(l, clusters, segmented);
   cv::imshow("segmented", segmented);
   cv::waitKey();
+  */
 
   return(0);
 

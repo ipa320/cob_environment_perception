@@ -72,6 +72,11 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <Eigen/StdVector>
 
+// additional includes
+#include <pcl/common/eigen.h>
+#include <pcl/common/centroid.h>
+#include <ros/console.h>
+
 
 enum PlaneConstraint {NONE, HORIZONTAL, VERTICAL};
 

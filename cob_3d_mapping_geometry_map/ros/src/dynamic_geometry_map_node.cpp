@@ -15,13 +15,14 @@
 #include <pcl/point_types.h>
 #include <pcl_ros/transforms.h>
 #include <pcl_ros/point_cloud.h>
-#include <pcl/common/transform.h>
+#include <pcl/common/transforms.h>
 #include <cob_3d_mapping_common/reconfigureable_node.h>
 #include <cob_3d_mapping_msgs/GetFieldOfView.h>
 #include <tf/transform_listener.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <pcl_ros/pcl_nodelet.h>
+#include <pcl/common/eigen.h>
 
 
 

@@ -62,7 +62,7 @@ public:
 
     //need to rebuild tree
     ROS_INFO("build tree %d %d", this->org_in_.size(), this->org_out_.size());
-    this->tree_.reset (new pcl::KdTreeFLANN<Point>);
+    this->tree_.reset (new pcl::search::KdTree<Point>);
     this->tree_->setInputCloud(this->org_in_.makeShared());
     ROS_INFO("build tree done");
 
