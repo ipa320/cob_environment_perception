@@ -107,7 +107,7 @@ public:
   // Constructor
   GeometryMapNode()
     {
-      std::cout<<"THIS IS GEOMETRY MAP NOde"<<std::endl;
+      TF_="/world";
       config_server_.setCallback(boost::bind(&GeometryMapNode::dynReconfCallback, this, _1, _2));
       ctr_ = 0;
       shape_sub_ = n_.subscribe("shape_array", 10, &GeometryMapNode::shapeCallback, this);
@@ -196,7 +196,7 @@ public:
 
         //				calculate missing attributes
         cylinder_map_entry_ptr->ParamsFromShapeMsg();
-
+        std::cout<<"adding map entry...\n";
         geometry_map_.addMapEntry(cylinder_map_entry_ptr);
 
 
@@ -244,7 +244,7 @@ public:
     ROS_INFO("Clearing geometry map...");
     geometry_map_.clearMap();
     cob_3d_mapping_msgs::ShapeArray map_msg;
-    map_msg.header.frame_id="/map";
+    map_msg.header.frame_id=TF_;
     map_msg.header.stamp = ros::Time::now();
     map_pub_.publish(map_msg);
     return true;
@@ -268,7 +268,7 @@ public:
     boost::shared_ptr<std::vector<CylinderPtr> > map_cylinder = geometry_map_.getMap_cylinder();
 
     res.map.header.stamp = ros::Time::now();
-    res.map.header.frame_id = "/map";
+    res.map.header.frame_id = TF_;
     for(unsigned int i=0; i<map_polygon->size(); i++)
     {
       Polygon& sm = *(map_polygon->at(i));
@@ -337,7 +337,7 @@ public:
     geometry_map_.colorizeMap();
     //cob_3d_mapping_msgs::PolygonArrayArray map_msg;
     cob_3d_mapping_msgs::ShapeArray map_msg;
-    map_msg.header.frame_id="/map";
+    map_msg.header.frame_id=TF_;
     map_msg.header.stamp = ros::Time::now();
 
     //		std::cout<<"_________________________________"<<std::endl;
@@ -400,12 +400,12 @@ public:
     marker.action = visualization_msgs::Marker::ADD;
     marker.type = visualization_msgs::Marker::LINE_STRIP;
     marker.lifetime = ros::Duration();
-    marker.header.frame_id = "/map";
+    marker.header.frame_id = TF_;
 
     t_marker.action = visualization_msgs::Marker::ADD;
     t_marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
     t_marker.lifetime = ros::Duration();
-    t_marker.header.frame_id = "/map";
+    t_marker.header.frame_id = TF_;
     //marker.header.stamp = stamp;
 
     //create the marker in the table reference frame
@@ -600,6 +600,10 @@ public:
 
 
 protected:
+
+  std::string TF_;
+
+
   ros::Subscriber shape_sub_;
   ros::Publisher map_pub_;
   ros::Publisher marker_pub_;
