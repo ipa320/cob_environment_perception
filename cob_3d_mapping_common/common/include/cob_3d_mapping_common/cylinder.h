@@ -119,9 +119,9 @@ public:
 	void allocate();
 
 	void weightAttributes(std::vector<boost::shared_ptr<Cylinder> >& c_array,Cylinder& average_c);
-
+	void applyWeightingCylinder(std::vector<boost::shared_ptr<Cylinder> >& merge_candidates);
 	void isMergeCandidate(const std::vector<boost::shared_ptr<Cylinder> >& cylinder_array,const merge_config& limits,std::vector<int>& intersections);
-	void merge(std::vector<boost::shared_ptr<Cylinder> >& c_array);
+	void mergeCylinder(std::vector<boost::shared_ptr<Cylinder> >& c_array);
 
 
 
@@ -138,7 +138,7 @@ public:
 
 private:
 	void getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha);
-	void getShiftedPolygon(Cylinder& c,Polygon & shifted_polygon);
+	void getShiftedCylinder(Cylinder& c,Cylinder & shifted_Cylinder);
 };
 
 
