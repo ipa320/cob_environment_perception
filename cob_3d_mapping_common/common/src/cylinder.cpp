@@ -409,13 +409,13 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 //
 //			}
 
-			Polygon shifted_polygon_map;
+			Cylinder shifted_cylinder_map;
 
-			c_map.getShiftedPolygon(*this,shifted_polygon_map);
+			c_map.getShiftedCylinder(*this,shifted_cylinder_map);
 
 
 			bool is_intersected = this->isMergeCandidate_intersect(
-					shifted_polygon_map);
+					shifted_cylinder_map);
 
 			if (is_intersected == false) {
 
@@ -435,13 +435,13 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 
 }
 
-void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
+void Cylinder::mergeCylinder(std::vector<CylinderPtr>& c_array) {
 
 	//varibles for averaging new cylinder attributes
 	Cylinder average_cyl;
-	weightAttributes(c_array, average_cyl);
+//	weightAttributes(c_array, average_cyl);
 
-	std::vector<PolygonPtr> merge_polygons_B;
+	std::vector<CylinderPtr> merge_candidates;
 
 	//	transform unrolled_ to local system
 
@@ -449,52 +449,62 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
 	for (int i = 0; i < (int) c_array.size(); i++) {
 		Cylinder & c_map = *c_array[i];
 
-		PolygonPtr map_shifted_polygon = PolygonPtr(new Polygon());
+		CylinderPtr map_shifted_cylinder = CylinderPtr(new Cylinder());
 
 		//	get shifted polygons with respect to THIS
 
 
-		c_map.getShiftedPolygon(*this,*map_shifted_polygon);
+		c_map.getShiftedCylinder(*this,*map_shifted_cylinder);
 
 
 
-		merge_polygons_B.push_back(map_shifted_polygon);
+		merge_candidates.push_back(map_shifted_cylinder);
 
 				std::cout<<"DEBUG [2]\n";
 
 	}//for
+  std::cout<<"DEBUG [3]\n";
 
 
 	//	polygon operation for merging
 	//	Polygon & p_av=*merge_polygons_B[0];
 
 	//	unrolled_.merge_union(merge_polygons_B,average_cyl.unrolled_);
-	merge_union(merge_polygons_B,*this);
+	//merge_union(merge_polygons_B,*this);
+	this->merge(merge_candidates);
 
 		std::cout<<"DEBUG [3]\n";
 
 
-	Polygon& merge_polygon_C = *merge_polygons_B[0];
+//	Polygon& merge_polygon_C = *merge_polygons_B[0];
 		std::cout<<"DEBUG [3.1\n";
 
 
-	Cylinder& c_map2 = *c_array[0];
+//	Cylinder& c_map2 = *c_array[0];
 		std::cout<<"DEBUG [3.1.1]\n";
 
+
+
+
+
 	//	assign values to resulting cylinder
-	c_map2.contours = merge_polygon_C.contours;
+//	c_map2.contours = merge_polygon_C.contours;
 
-		std::cout<<"DEBUG [3.1.2]\n";
+//		std::cout<<"DEBUG [3.1.2]\n";
 
-	c_map2.r_ = average_cyl.r_;
-	c_map2.axes_ =axes_;
-	c_map2.origin_ = average_cyl.origin_;
-	c_map2.transform_from_world_to_plane
-	= average_cyl.transform_from_world_to_plane;
+//		 weightAttributes(c_array, *this);
+      this->applyWeightingCylinder(c_array);
 
-		std::cout<<"DEBUG [3.2]\n";
 
-	c_map2.axes_=average_cyl.axes_;
+//	c_map2.r_ = average_cyl.r_; //-->needs to be from cylider specific weighting
+//	c_map2.axes_ =axes_;       // "    "
+//	c_map2.origin_ = average_cyl.origin_;
+//	c_map2.transform_from_world_to_plane
+//	= average_cyl.transform_from_world_to_plane;
+//
+//		std::cout<<"DEBUG [3.2]\n";
+//
+//	c_map2.axes_=average_cyl.axes_;
 	//	c_map2.unroll();
 
 
@@ -503,21 +513,21 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
 	//	std::cout<<"DEBUG [4]\n";
 
 
-	for (int i = 0; i < (int) c_array.size(); ++i) {
-		if (i != 0) {
-			c_array.erase(c_array.begin() + i);
+//	for (int i = 0; i < (int) c_array.size(); ++i) {
+//		if (i != 0) {
+//			c_array.erase(c_array.begin() + i);
+//
+//						std::cout<<"DEBUG [4]\n";
+//
+//		}
 
-						std::cout<<"DEBUG [4]\n";
-
-		}
-
-	}
+//	}
 
 }
 
 void
 
-Cylinder::getShiftedPolygon(Cylinder& c, Polygon & shifted_polygon) {
+Cylinder::getShiftedCylinder(Cylinder& c, Cylinder & shifted_polygon) {
 
 	//	    	Transform normal of map polygon in cylinder system of THIS
 
@@ -682,7 +692,15 @@ void Cylinder::weightAttributes(std::vector<CylinderPtr>& c_array,
 //			//		  Transform  Points in Cylinder Coordinate System
 //			Eigen::Vector3f point_trans =
 //					transform_from_world_to_plane * contours[j][k];
+//c_map2.r_ = average_cyl.r_; //-->needs to be from cylider specific weighting
+//  c_map2.axes_ =axes_;       // "    "
+//  c_map2.origin_ = average_cyl.origin_;
+//  c_map2.transform_from_world_to_plane
+//  = average_cyl.transform_from_world_to_plane;
 //
+//    std::cout<<"DEBUG [3.2]\n";
+//
+//  c_map2.axes_=average_cyl.axes_;
 //			float Tx, alpha;
 //			//	      flatten polygon
 //			getTrafo2d(point_trans, Tx, alpha);
@@ -707,7 +725,69 @@ void Cylinder::weightAttributes(std::vector<CylinderPtr>& c_array,
 //
 //}
 
+void
+Cylinder::applyWeightingCylinder(std::vector<CylinderPtr>& merge_candidates)
+{
+/*
+ * Already weighted:
+ *  - normal
+ *  - centroid
+ *  - d
+ *  - merge weight
+ *  - transform from world to plane
+ *
+ *
+ *  Still need to be weighted:
+ *  - r
+ *  - origin
+ *  - axes
+ *
+ *
+ */
 
+//  axes
+
+  Eigen::Vector3f temp_axis1,temp_axis0;
+
+  temp_axis0 = this->axes_[0];
+  temp_axis1 = this->axes_[1];
+  float   merge_weight_sum = this ->merge_weight_;
+  float temp_r = this->r_;
+
+
+
+
+  for (int i = 0; i < (int)merge_candidates.size(); ++i) {
+
+//    symmetry axis (axes_[1])
+
+
+
+    temp_axis1 += merge_candidates[i]->merge_weight_ * merge_candidates[i]->axes_[1] ;
+    temp_axis1 += merge_candidates[i]->merge_weight_ * merge_candidates[i]->axes_[0] ;
+
+    temp_r += merge_candidates[i]->merge_weight_ * merge_candidates[i]->r_;
+
+    merge_weight_sum += merge_candidates[i]->merge_weight_;
+
+  }
+
+this->r_ = temp_r / merge_weight_sum;
+this->axes_[0] = temp_axis0 / merge_weight_sum;
+this->axes_[1] = temp_axis1 / merge_weight_sum;
+
+this->origin_[0] = this->centroid[0];
+this->origin_[1] = this->centroid[1];
+this->origin_[2] = this->centroid[2];
+
+
+this->axes_[2] = this->normal;
+
+
+
+
+
+}
 void
 Cylinder::dbg_out(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points,std::string & name){
 
@@ -734,8 +814,6 @@ Cylinder::dbg_out(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points,std::string & na
 
 
 	os.close();
-
-
 
 
 

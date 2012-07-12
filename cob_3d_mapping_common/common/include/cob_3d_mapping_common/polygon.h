@@ -107,6 +107,8 @@ struct merge_config {
     void merge(std::vector< boost::shared_ptr<Polygon> >& poly_vec);
     void merge_union(std::vector< boost::shared_ptr<Polygon> >& poly_vec,const Polygon & p_average);
 
+
+
 //  Calculate members of polygon
     void assignMembers(const Eigen::Vector3f &new_normal, const double &new_d, const Eigen::Vector4f& new_centroid);
     void assignMembers(const Eigen::Vector3f & z_axis,const Eigen::Vector3f &new_normal, const Eigen::Vector3f & pt_on_polygon);
