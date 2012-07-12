@@ -337,7 +337,7 @@ public:
     geometry_map_.colorizeMap();
     //cob_3d_mapping_msgs::PolygonArrayArray map_msg;
     cob_3d_mapping_msgs::ShapeArray map_msg;
-    map_msg.header.frame_id=TF_;
+   map_msg.header.frame_id=TF_;
     map_msg.header.stamp = ros::Time::now();
 
     //		std::cout<<"_________________________________"<<std::endl;
