@@ -678,7 +678,7 @@ transform_from_world_to_plane=transform_from_plane_to_world.inverse();
 // std::cout<<"dot = "<<fabs(connection.dot(normal))<<std::endl;
 // if(fabs(connection.dot(normal)) < (1- merge_settings_.angle_thresh) && fabs(p_map.d-this->d) < merge_settings_.d_thresh)
       if(fabs(p_map.normal.dot(this->normal)) > (merge_settings_.angle_thresh) &&
-         fabs(connection.dot(this->normal)) < 0.1/* < merge_settings_.d_thresh*/)
+         fabs(connection.dot(this->normal)) /*< *0.2*/  < merge_settings_.d_thresh)
 //		if((fabs(p_map.normal.dot(normal)) > merge_settings_.angle_thresh && fabs(p_map.d-this->d) < merge_settings_.d_thresh))
 
       {
@@ -698,7 +698,7 @@ transform_from_world_to_plane=transform_from_plane_to_world.inverse();
 
         }
         if (is_intersected == false) {
-          std::cout<<" criteria fulfilled, but no intersection\n";
+//          std::cout<<" criteria fulfilled, but no intersection\n";
         }
 
 

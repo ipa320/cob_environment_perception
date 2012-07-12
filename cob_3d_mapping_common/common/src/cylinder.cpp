@@ -445,9 +445,9 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
 
 	//	transform unrolled_ to local system
 
-	//	std::cout<<"DEBUG [1]\n";
+		std::cout<<"DEBUG [1]\n";
 	for (int i = 0; i < (int) c_array.size(); i++) {
-		Cylinder & c_map = *(c_array[i]);
+		Cylinder & c_map = *c_array[i];
 
 		PolygonPtr map_shifted_polygon = PolygonPtr(new Polygon());
 
@@ -460,7 +460,7 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
 
 		merge_polygons_B.push_back(map_shifted_polygon);
 
-		//		std::cout<<"DEBUG [2]\n";
+				std::cout<<"DEBUG [2]\n";
 
 	}//for
 
@@ -471,43 +471,43 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
 	//	unrolled_.merge_union(merge_polygons_B,average_cyl.unrolled_);
 	merge_union(merge_polygons_B,*this);
 
-	//	std::cout<<"DEBUG [3]\n";
+		std::cout<<"DEBUG [3]\n";
 
 
 	Polygon& merge_polygon_C = *merge_polygons_B[0];
-	//	std::cout<<"DEBUG [3.1\n";
+		std::cout<<"DEBUG [3.1\n";
 
 
 	Cylinder& c_map2 = *c_array[0];
-	//	std::cout<<"DEBUG [3.1.1]\n";
+		std::cout<<"DEBUG [3.1.1]\n";
 
 	//	assign values to resulting cylinder
 	c_map2.contours = merge_polygon_C.contours;
-	//	std::cout<<"DEBUG [3.1.2]\n";
+
+		std::cout<<"DEBUG [3.1.2]\n";
 
 	c_map2.r_ = average_cyl.r_;
 	c_map2.axes_ =axes_;
 	c_map2.origin_ = average_cyl.origin_;
 	c_map2.transform_from_world_to_plane
-	= transform_from_world_to_plane;
-	std::vector<std::vector<Eigen::Vector3f> > contours3d;
-	//	std::cout<<"DEBUG [3.2]\n";
+	= average_cyl.transform_from_world_to_plane;
 
-	c_map2.getCyl3D(contours3d);
+		std::cout<<"DEBUG [3.2]\n";
+
 	c_map2.axes_=average_cyl.axes_;
 	//	c_map2.unroll();
 
 
-	c_map2.debug_output("unrolled average");
+//	c_map2.debug_output("unrolled average");
 
 	//	std::cout<<"DEBUG [4]\n";
 
 
 	for (int i = 0; i < (int) c_array.size(); ++i) {
-
 		if (i != 0) {
 			c_array.erase(c_array.begin() + i);
-			//			std::cout<<"DEBUG [4]\n";
+
+						std::cout<<"DEBUG [4]\n";
 
 		}
 
