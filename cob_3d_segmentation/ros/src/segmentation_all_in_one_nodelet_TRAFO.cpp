@@ -179,6 +179,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
   for (ST::CH::ClusterPtr c = cluster_handler->begin(); c != cluster_handler->end(); ++c)
   {
     // compute hull:
+    if (c->getCentroid()[2] > 5.0f) continue;
     if (c->type != I_PLANE && c->type != I_CYL) continue;
     if (c->size() <= ceil(1.1f * static_cast<float>(c->border_points.size())))
     {
@@ -191,10 +192,13 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
     if (!poly.polys_.size()) continue; // continue, if no contours were found
 
     int max_idx=0, max_size=0;
+    std::cout << "Polys: ";
     for (int i = 0; i < (int)poly.polys_.size(); ++i)
     {
+      std::cout << poly.polys_[i].size() << " ";
       if ((int)poly.polys_[i].size() > max_size) { max_idx = i; max_size = poly.polys_[i].size(); }
     }
+    std::cout << std::endl;
 
     sa.shapes.push_back(cob_3d_mapping_msgs::Shape());
     cob_3d_mapping_msgs::Shape* s = &sa.shapes.back();
@@ -220,7 +224,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
       hull->clear();
     }
     centroid /= poly.polys_[max_idx].size();
-    Eigen::Vector3f tf_centroid = tf * centroid;
+    Eigen::Vector3f tf_centroid = tf * c->getCentroid();//centroid;
     s->centroid.x = tf_centroid[0];
     s->centroid.y = tf_centroid[1];
     s->centroid.z = tf_centroid[2];
@@ -274,12 +278,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
       s->params[7] =  tf_origin[1];
       s->params[8] =  tf_origin[2];
 
-
-
       s->params[9]= cyl->r_;
-
-
-
 
       break;
     }
