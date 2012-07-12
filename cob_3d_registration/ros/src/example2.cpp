@@ -5,7 +5,7 @@
 
 #include <pcl/io/pcd_io.h>
 #include <pcl/ros/conversions.h>
-#ifdef GICP_ENABLE
+#ifdef PCL_DEPRECATED
 #include <pcl/keypoints/uniform_sampling.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/features/fpfh.h>

@@ -58,11 +58,10 @@
 #include <cob_3d_mapping_features/edge_estimation_3d.h>
 #include <cob_3d_mapping_features/edge_estimation_2d.h>
 #include <cob_3d_mapping_features/edge_extraction.h>
-#include <cob_3d_mapping_common/point_types.h>
 #include <cob_3d_segmentation/segmentation.h>
+#include <cob_3d_mapping_common/point_types.h>
 #include <pcl/kdtree/kdtree.h>
 #include <pcl/common/pca.h>
-#include <pcl/PointIndices.h>
 
 
 template<typename Point>
@@ -74,7 +73,7 @@ void Keypoints_Segments<Point>::extractFeatures(const pcl::PointCloud<Point>& po
   {
     pcl::PointCloud<Normal>::Ptr n(new pcl::PointCloud<Normal>);
 
-    boost::shared_ptr<pcl::search::KdTree<Point> > tree(new pcl::search::KdTree<Point>);
+    boost::shared_ptr<pcl::KdTreeFLANN<Point> > tree(new pcl::KdTreeFLANN<Point>);
     pcl::NormalEstimation<Point, Normal> ne;
     ne.setRadiusSearch(radius_);
     ne.setSearchMethod(tree);
@@ -83,10 +82,10 @@ void Keypoints_Segments<Point>::extractFeatures(const pcl::PointCloud<Point>& po
 
     ROS_INFO("normals done");
 
-#ifdef GICP_ENABLE
+#ifdef PCL_DEPRECATED
     boost::shared_ptr<pcl::search::OrganizedNeighbor<Point> > oTree (new pcl::search::OrganizedNeighbor<Point> );
 #else
-    boost::shared_ptr<pcl::search::OrganizedNeighbor<Point> > oTree (new pcl::search::OrganizedNeighbor<Point> );
+    boost::shared_ptr<pcl::OrganizedDataIndex<Point> > oTree (new pcl::OrganizedDataIndex<Point> );
 #endif
     cob_3d_mapping_features::EdgeEstimation3D<Point, Normal, InterestPoint> ee;
     ee.setRadiusSearch(radius_);
@@ -125,9 +124,7 @@ void Keypoints_Segments<Point>::extractFeatures(const pcl::PointCloud<Point>& po
 
   mids.clear();
   for(int i=0; i<clusters.size(); i++) {
-//    if(clusters[i].get_indices_size()<point_cloud.size()*0.001)
-	    if(clusters[i].indices.size()<point_cloud.size()*0.001)
-
+    if(clusters[i].get_indices_size()<point_cloud.size()*0.001)
       continue;
 
     pcl::PointCloud<Point> temp;

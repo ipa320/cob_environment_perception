@@ -463,6 +463,7 @@ public:
                 std_msgs::Header header,
                 float r, float g, float b)
   {
+    if(cloud_hull.points.size()==0) return;
     visualization_msgs::Marker marker;
     marker.action = visualization_msgs::Marker::ADD;
     marker.type = visualization_msgs::Marker::POINTS;

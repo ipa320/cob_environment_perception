@@ -175,7 +175,7 @@ int main(int argc, char** argv)
   else
   {
     t.restart();
-    pcl::search::KdTree<PointXYZRGB>::Ptr tree(new  pcl::search::KdTree<PointXYZRGB>);
+    KdTreeFLANN<PointXYZRGB>::Ptr tree(new KdTreeFLANN<PointXYZRGB>);
     NormalEstimation<PointXYZRGB, Normal> ne;
     ne.setRadiusSearch(rn_);
     ne.setSearchMethod(tree);
@@ -273,6 +273,7 @@ int main(int argc, char** argv)
       p->points[i].b = 255;
     }
   }
+
   visualization::PCLVisualizer v;
   v.setBackgroundColor(0,127,127);
   ColorHdlRGB col_hdl(p);
