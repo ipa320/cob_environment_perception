@@ -11,7 +11,7 @@
 #include "../feature_container.h"
 #include <pcl/features/moment_invariants.h>
 #include <pcl/features/impl/moment_invariants.hpp>
-#ifdef GICP_ENABLE
+#ifdef PCL_DEPRECATED
 #include <pcl/search/kdtree.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #else
@@ -38,10 +38,10 @@ public:
     ROS_INFO("calc moments for source");
     {
       pcl::MomentInvariantsEstimation<Point,pcl::MomentInvariants> est;
-#ifdef GICP_ENABLE
-      boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree<Point>);
+#ifdef PCL_DEPRECATED
+      boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::KdTreeFLANN<Point>);
 #else
-      boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree<Point>);
+      boost::shared_ptr<pcl::KdTree<Point> > tree (new pcl::KdTreeFLANN<Point>);
 #endif
 
       est.setInputCloud(this->org_in_.makeShared());
@@ -54,10 +54,10 @@ public:
     ROS_INFO("calc moments for target");
     {
       pcl::MomentInvariantsEstimation<Point,pcl::MomentInvariants> est;
-#ifdef GICP_ENABLE
-      boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree<Point>);
+#ifdef PCL_DEPRECATED
+      boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::KdTreeFLANN<Point>);
 #else
-      boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree<Point>);
+      boost::shared_ptr<pcl::KdTree<Point> > tree (new pcl::KdTreeFLANN<Point>);
 #endif
 
       est.setInputCloud(this->org_out_.makeShared());

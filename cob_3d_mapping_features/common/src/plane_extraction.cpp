@@ -75,11 +75,6 @@
 // internal includes
 #include "cob_3d_mapping_features/plane_extraction.h"
 
-// additional includes
-#include <pcl/common/eigen.h>
-#include <pcl/common/centroid.h>
-#include <pcl/kdtree/kdtree_flann.h>
-
 
 PlaneExtraction::PlaneExtraction()
 : ctr_(0),
@@ -94,10 +89,7 @@ PlaneExtraction::PlaneExtraction()
   distance_threshold_(0.04),
   alpha_(0.2)
 {
-  //for ros electric
- // pcl::KdTreeFLANN<Point>::Ptr tree (new pcl::KdTreeFLANN<Point> ());
-  // ros fuerte
-  pcl::search::KdTree<Point>::Ptr tree (new pcl::search::KdTree<Point>());
+  pcl::KdTreeFLANN<Point>::Ptr tree (new pcl::KdTreeFLANN<Point> ());
 
   // Init clustering of full cloud
   cluster_.setClusterTolerance (cluster_tolerance_);
@@ -106,12 +98,7 @@ PlaneExtraction::PlaneExtraction()
 
   // Init clustering of planes
   //TODO: parameter
-
-  //for ros electric
-  //pcl::KdTree<Point>::Ptr clusters_plane_tree(new pcl::KdTreeFLANN<Point> ());
-  // for ros fuerte
-  pcl::search::KdTree<Point>::Ptr clusters_plane_tree(new pcl::search::KdTree<Point>());
-
+  pcl::KdTree<Point>::Ptr clusters_plane_tree(new pcl::KdTreeFLANN<Point> ());
   cluster_plane_.setClusterTolerance (cluster_tolerance_);
   cluster_plane_.setMinClusterSize (min_plane_size_);
   cluster_plane_.setSearchMethod (clusters_plane_tree);
@@ -129,7 +116,6 @@ PlaneExtraction::PlaneExtraction()
   proj_.setModelType (pcl::SACMODEL_PLANE);
 
   chull_.setAlpha (alpha_);
-  chull_.setDimension (2);
 }
 
 bool
@@ -182,13 +168,13 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
   std::stringstream ss;
   ROS_DEBUG("Extract planes");
   ROS_DEBUG("Saving files: %d", save_to_file_);
-  /*if(save_to_file_)
+  if(save_to_file_)
   {
     ss.str("");
     ss.clear();
     ss << file_path_ << "/planes/pc_" << ctr_ << ".pcd";
     pcl::io::savePCDFileASCII (ss.str(), *pc_in);
-  }*/
+  }
   //ROS_INFO("pc_in size: %d" , pc_in->size());
   // Extract Eucledian clusters
 
@@ -309,13 +295,6 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
           pcl::PointCloud<Point> plane_cluster;
           extract_.setIndices(boost::make_shared<const pcl::PointIndices> (plane_clusters[j]));
           extract_.filter(plane_cluster);
-          if(save_to_file_)
-          {
-            ss.str("");
-            ss.clear();
-            ss << file_path_ << "/planes/plane_pr_c_" << ctr_ << "_" << ctr << "_" << j << ".pcd";
-            pcl::io::savePCDFileASCII (ss.str(), plane_cluster);
-          }
           pcl::PointCloud<Point>::Ptr plane_cluster_ptr = plane_cluster.makeShared();
 
           if(plane_cluster_ptr->size() < min_plane_size_) continue;
@@ -328,17 +307,10 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
           //TODO: parameter
 
           chull_.reconstruct (cloud_hull, hull_polygons);
-          ROS_INFO("Hull dimension: %d", chull_.getDim());
-          if(save_to_file_)
-          {
-            saveHulls(cloud_hull, hull_polygons, ctr);
-          }
-          ROS_WARN("Extracted Polygon has %d contours", hull_polygons.size());
           if(hull_polygons.size() > 1)
           {
-            ROS_WARN("Skipping ...");
-            continue;
-            //ROS_WARN("Extracted Polygon has %d contours, separating ...", hull_polygons.size());
+		continue;
+            ROS_WARN("Extracted Polygon %d contours, separating ...", hull_polygons.size());
             pcl::PointCloud<Point>::Ptr cloud_hull_ptr = cloud_hull.makeShared();
             pcl::ExtractIndices<Point> extract_2;
             extract_2.setInputCloud(cloud_hull_ptr);
@@ -375,6 +347,10 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
           }
           ROS_DEBUG("v_cloud_hull size: %d", (unsigned int)v_cloud_hull.size());
 
+          if(save_to_file_)
+          {
+            saveHulls(cloud_hull, hull_polygons, ctr);
+          }
           ctr++;
         }
 
@@ -442,9 +418,6 @@ PlaneExtraction::saveHulls(pcl::PointCloud<Point>& cloud_hull,
                            std::vector< pcl::Vertices >& hull_polygons,
                            int plane_ctr)
 {
-  std::stringstream ss1;
-  ss1 << file_path_ << "/planes/chull_" << ctr_ << "_" << plane_ctr << ".pcd";
-  pcl::io::savePCDFileASCII (ss1.str(), cloud_hull);
   for(unsigned int i=0; i<hull_polygons.size(); i++)
   {
     pcl::PointCloud<Point> hull_part;
@@ -453,8 +426,6 @@ PlaneExtraction::saveHulls(pcl::PointCloud<Point>& cloud_hull,
       int idx = hull_polygons[i].vertices[j];
       hull_part.points.push_back(cloud_hull.points[idx]);
     }
-    hull_part.width = hull_polygons[i].vertices.size();
-    hull_part.height = 1;
     std::stringstream ss;
     ss << file_path_ << "/planes/hull_" << ctr_ << "_" << plane_ctr << "_" <<  i << ".pcd";
     pcl::io::savePCDFileASCII (ss.str(), hull_part);

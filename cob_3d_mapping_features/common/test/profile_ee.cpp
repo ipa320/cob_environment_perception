@@ -3,7 +3,6 @@
 #include <pcl/features/integral_image_normal.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/point_cloud_handlers.h>
-#include <pcl/common/eigen.h>
 
 #include "cob_3d_mapping_common/stop_watch.h"
 #include "cob_3d_mapping_common/point_types.h"
@@ -31,11 +30,8 @@ int main(int argc, char** argv)
   ne.compute(*n);
 
   t.precisionStart();
-  //for electric
-  //OrganizedDataIndex<PointXYZRGB>::Ptr oTree (new OrganizedDataIndex<PointXYZRGB> );
-  // for fuerte
-  search::OrganizedNeighbor<PointXYZRGB>::Ptr oTree (new search::OrganizedNeighbor<PointXYZRGB> );
-  cob_3d_mapping_features::EdgeEstimation3D<PointXYZRGB, pcl::Normal, pcl::InterestPoint> ee;
+  OrganizedDataIndex<PointXYZRGB>::Ptr oTree (new OrganizedDataIndex<PointXYZRGB> );
+  cob_3d_mapping_features::EdgeEstimation3D<PointXYZRGB, Normal, InterestPoint> ee;
   ee.setRadiusSearch(0.04);
   ee.setSearchMethod(oTree);
   ee.setInputCloud(p);
