@@ -9,8 +9,7 @@
 #define SEGMENTS_H_
 
 #include <pcl/filters/extract_indices.h>
-#include <pcl/registration/impl/correspondence_types.hpp>
-#include <pcl/PointIndices.h>
+
 #ifdef VISUALIZE_SEGMENTS_
 #include <pcl/visualization/cloud_viewer.h>
 #endif
@@ -23,7 +22,6 @@ struct EIGEN_ALIGN16 PCAPoint
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
-
 
 template<typename Point>
 class Keypoints_Segments : public RegKeypointCorrespondence<Point, PCAPoint>
@@ -85,9 +83,9 @@ public:
     return ret;
   }
 
-  virtual void getCorrespondences(pcl::Correspondences &correspondences) {
+  virtual void getCorrespondences(std::vector<pcl::registration::Correspondence> &correspondences) {
 
-    pcl::Correspondence corr;
+    pcl::registration::Correspondence corr;
     correspondences.clear();
 
     const float thr = 0.001;
@@ -119,8 +117,8 @@ public:
       if(f>thr)
         continue;
 
-      corr.index_query = i;
-      corr.index_match = mi;
+      corr.indexQuery = i;
+      corr.indexMatch = mi;
       corr.distance = f;
       correspondences.push_back(corr);
 

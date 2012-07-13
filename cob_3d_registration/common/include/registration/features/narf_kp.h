@@ -8,31 +8,14 @@
 #ifndef NARF_KP_H_
 #define NARF_KP_H_
 
-#include <ros/console.h>
- #include <pcl/point_types.h>
- #include <pcl/point_cloud.h>
- #include <pcl/io/pcd_io.h>
-#include <pcl/impl/point_types.hpp>
-#include <pcl/point_traits.h>
+struct EIGEN_ALIGN16 NarfKPoint
+{
+  PCL_ADD_POINT4D; // This adds the members x,y,z which can also be accessed using the point (which is float[4])
 
+  pcl::FPFHSignature33 fpfh;
 
-
-
-struct NarfKPoint
- {
-   PCL_ADD_POINT4D;                  // preferred way of adding a XYZ+padding
-   pcl::FPFHSignature33 fpfh;
-   EIGEN_MAKE_ALIGNED_OPERATOR_NEW   // make sure our new allocators are aligned
- } EIGEN_ALIGN16;                    // enforce SSE padding for correct memory alignment
-
- POINT_CLOUD_REGISTER_POINT_STRUCT (NarfKPoint,           // here we assume a XYZ + "test" (as fields)
-                                    (float, x, x)
-                                    (float, y, y)
-                                    (float, z, z)
-                                    (float[33], fpfh,fpfh)
-
- )
-
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+};
 
 template<typename Point>
 class Keypoints_Narf : public RegKeypointCorrespondence<Point, NarfKPoint>
@@ -76,7 +59,7 @@ public:
     return this->keypoints_src_.size()>0 && this->keypoints_tgt_.size()>0;
   }
 
-  virtual void getCorrespondences(pcl::Correspondences &correspondences) {
+  virtual void getCorrespondences(std::vector<pcl::registration::Correspondence> &correspondences) {
     pcl::PointCloud<pcl::FPFHSignature33> tsrc, ttgt;
 
     if(this->keypoints_src_.size()<1||this->keypoints_tgt_.size()<1) {
@@ -100,15 +83,9 @@ public:
         (*indices_)[i]=i;
 
       // setup tree for reciprocal search
-//      for electrioc
-//      pcl::KdTreeFLANN<pcl::FPFHSignature33> tree_reciprocal;
-       pcl::search::KdTree<pcl::FPFHSignature33> tree_reciprocal;
-
+      pcl::KdTreeFLANN<pcl::FPFHSignature33> tree_reciprocal;
       tree_reciprocal.setInputCloud(tsrc.makeShared(), indices_);
-
-//      pcl::KdTreeFLANN<pcl::FPFHSignature33> tree_;
-      pcl::search::KdTree<pcl::FPFHSignature33> tree_;
-
+      pcl::KdTreeFLANN<pcl::FPFHSignature33> tree_;
       tree_.setInputCloud(ttgt.makeShared());
 
       correspondences.resize(indices_->size());
@@ -116,7 +93,7 @@ public:
       std::vector<float> distance(1);
       std::vector<int> index_reciprocal(1);
       std::vector<float> distance_reciprocal(1);
-      pcl::Correspondence corr;
+      pcl::registration::Correspondence corr;
       unsigned int nr_valid_correspondences = 0;
 
       for (unsigned int i = 0; i < indices_->size(); ++i)
@@ -126,8 +103,8 @@ public:
 
         if ( (*indices_)[i] == index_reciprocal[0] )
         {
-          corr.index_query = (*indices_)[i];
-          corr.index_match = index[0];
+          corr.indexQuery = (*indices_)[i];
+          corr.indexMatch = index[0];
           corr.distance = (this->keypoints_tgt_[index[0]].getVector3fMap()-this->keypoints_src_[(*indices_)[i]].getVector3fMap()).squaredNorm();
           correspondences[nr_valid_correspondences] = corr;
           ++nr_valid_correspondences;

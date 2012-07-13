@@ -59,6 +59,15 @@
 
 namespace cob_3d_mapping_features
 {
+  namespace OrganizedNormalEstimationHelper
+  {
+    template <typename PointT, typename LabelT> void
+    computeSegmentNormal( Eigen::Vector3f& normal_out, int index,
+			  boost::shared_ptr<const pcl::PointCloud<PointT> > surface,
+			  boost::shared_ptr<const pcl::PointCloud<LabelT> > labels,
+			  int r, int steps);
+  }
+
   template <typename PointInT, typename PointOutT, typename LabelOutT>
     class OrganizedNormalEstimation : public OrganizedFeatures<PointInT,PointOutT>
   {
@@ -72,7 +81,7 @@ namespace cob_3d_mapping_features
     using OrganizedFeatures<PointInT,PointOutT>::input_;
     using OrganizedFeatures<PointInT,PointOutT>::indices_;
     using OrganizedFeatures<PointInT,PointOutT>::surface_;
-    using OrganizedFeatures<PointInT,PointOutT>::distance_threshold_modifier_;
+    using OrganizedFeatures<PointInT,PointOutT>::skip_distant_point_threshold_;
     using OrganizedFeatures<PointInT,PointOutT>::feature_name_;
 
     typedef pcl::PointCloud<PointInT> PointCloudIn;
@@ -93,16 +102,24 @@ namespace cob_3d_mapping_features
     };
 
     inline void
-      setOutputLabels(LabelCloudOutPtr labels) { labels_ = labels; }
+    setOutputLabels(LabelCloudOutPtr labels) { labels_ = labels; }
 
     void
-      computePointNormal(
-	const PointCloudIn &cloud,
-	int index,
-	float &n_x,
-	float &n_y,
-	float &n_z,
-	int &label_out);
+    computePointNormal(
+      const PointCloudIn &cloud,
+      int index,
+      float &n_x,
+      float &n_y,
+      float &n_z,
+      int &label_out);
+
+    void
+    recomputeSegmentNormal(PointCloudInConstPtr cloud_in,
+			   LabelCloudOutConstPtr label_in,
+			   int index,
+			   float& n_x,
+			   float& n_y,
+			   float& n_z);
 
     protected:
 

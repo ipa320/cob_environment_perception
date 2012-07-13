@@ -75,7 +75,6 @@
 #include <pcl/visualization/point_cloud_handlers.h>
 
 #include <opencv2/ml/ml.hpp>
-#include <opencv2/highgui/highgui.hpp>
 
 using namespace std;
 using namespace pcl;
@@ -247,11 +246,8 @@ void processFPFH(const PointCloud<PointXYZRGB>::Ptr in,
     vox.setLeafSize(fpfh_vox_, fpfh_vox_, fpfh_vox_);
     vox.filter(*ref_out);
   }
-  //for electric
-  //KdTree<PointXYZRGB>::Ptr tree(new KdTreeFLANN<PointXYZRGB>());
-  //for fuerte
-  pcl::search::KdTree<PointXYZRGB>::Ptr tree(new pcl::search::KdTree<PointXYZRGB>);
 
+  KdTree<PointXYZRGB>::Ptr tree(new KdTreeFLANN<PointXYZRGB>());
   tree->setInputCloud(ref_out);
 
   // Optional surface smoothing
@@ -286,11 +282,7 @@ void processFPFH(const PointCloud<PointXYZRGB>::Ptr in,
   }
 
   // FPFH estimation
-  // for electric
-  //tree.reset(new KdTreeFLANN<PointXYZRGB>());
-  // for fuerte	
-  tree.reset(new pcl::search::KdTree<PointXYZRGB>);
-
+  tree.reset(new KdTreeFLANN<PointXYZRGB>());
   tree->setInputCloud(ref_out);
   cout << "FPFH: estimation (with " << ref_out->points.size() << " points)" << endl;
   FPFHEstimation<PointXYZRGB, Normal, FPFHSignature33> fpfhE;
@@ -421,11 +413,8 @@ void processPC(const PointCloud<PointXYZRGB>::Ptr in,
     vox.setLeafSize(pc_vox_, pc_vox_, pc_vox_);
     vox.filter(*ref_out);
   }
-  //for electric
-  //KdTree<PointXYZRGB>::Ptr tree(new KdTreeFLANN<PointXYZRGB>());
-  // for fuerte
-  pcl::search::KdTree<PointXYZRGB>::Ptr tree(new pcl::search::KdTree<PointXYZRGB>);
 
+  KdTree<PointXYZRGB>::Ptr tree(new KdTreeFLANN<PointXYZRGB>());
   tree->setInputCloud(ref_out);
 
   // Optional surface smoothing
@@ -460,12 +449,7 @@ void processPC(const PointCloud<PointXYZRGB>::Ptr in,
   }
 
   // estimate PC
-  //for electric
-  //tree.reset(new KdTreeFLANN<PointXYZRGB>());
-  //for fuerte
-  tree.reset(new pcl::search::KdTree<PointXYZRGB>);
-
-
+  tree.reset(new KdTreeFLANN<PointXYZRGB>());
   tree->setInputCloud(ref_out);
   cout << "PC: estimation (with " << ref_out->points.size() << " points)" << endl;
   PrincipalCurvaturesEstimation<PointXYZRGB, Normal, PrincipalCurvatures> pcE;
@@ -603,12 +587,7 @@ void processRSD(const PointCloud<PointXYZRGB>::Ptr in,
     vox.filter(*ref_out);
   }
 
-  //for electric
-  //KdTree<PointXYZRGB>::Ptr tree(new KdTreeFLANN<PointXYZRGB>());
-  // for fuerte
-  pcl::search::KdTree<PointXYZRGB>::Ptr tree(new pcl::search::KdTree<PointXYZRGB>);
-
-
+  KdTree<PointXYZRGB>::Ptr tree(new KdTreeFLANN<PointXYZRGB>());
   tree->setInputCloud(ref_out);
 
   // optional surface smoothing
