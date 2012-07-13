@@ -83,76 +83,102 @@
 using namespace cob_3d_mapping;
 
 
+
+
+
 void
 GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
 
 {
-  std::ofstream os ("/home/goa-tz/debug/DBG",std::ios::app);
 
-  Polygon& p = *p_ptr;
 
-  cob_3d_mapping::merge_config  limits;
-  limits.d_thresh=d_;
-  limits.angle_thresh=cos_angle_;
-  limits.weighting_method="COMBINED";
+	std::ofstream os ("/home/goa-tz/debug/DBG",std::ios::app);
 
-  // find out polygons, to merge with
-  std::vector<int> intersections;
+	Polygon& p = *p_ptr;
 
-  if (map_polygon_.size()> 0)
-  {
-    p.isMergeCandidate(map_polygon_,limits,intersections);
-    if(intersections.size()>0) // if polygon has to be merged ...
-    {
-      std::vector<boost::shared_ptr<Polygon> > merge_candidates;
-      for(int i=intersections.size()-1; i>=0 ;--i)
-      {
-        // copies pointer to polygon
-        merge_candidates.push_back(map_polygon_[intersections[i]]);
-        // delete pointer in map, polygon still available. However there should be a better solution than
-        // copying and deleting pointers manually.
-        map_polygon_[intersections[i]] = map_polygon_.back();
-        map_polygon_.pop_back();
-        //              os<<"_____________________"<<std::endl;
-        //              os<<"MAP:                "<<intersections[i]<<std::endl;
-        //
-        //              Polygon& p_new = *map_polygon_[intersections[i]];
-        //              os<<"ID: "<<p_new.id<<std::endl;
-        //              os<<"D:  "<<p_new.d<<std::endl;
-        //
-        //              os<<"_____________________"<<std::endl;
-        //              os<<"NEW POLYGON:\n"<<std::endl;
-        //
-        //              os<<"ID: "<<p_ptr->id<<std::endl;
-        //              os<<"D:  "<<p_ptr->d<<std::endl;
+	cob_3d_mapping::merge_config  limits;
+	limits.d_thresh=d_;
+	limits.angle_thresh=cos_angle_;
+	limits.weighting_method="COMBINED";
 
-      }
-      // merge polygon with merge candidates
-      std::cout<<"merging with "<<merge_candidates.size()<<" shapes..."<<std::endl;
-      //std::cout <<"c before: "<< p.centroid(0)<<", "<<p.centroid(1)<<", "<<p.centroid(2)<<std::endl;
-      p.merge(merge_candidates); // merge all new candidates into p
-      map_polygon_.push_back(p_ptr); // add p to map, candidates were dropped!
-      ++new_id_;
-      //std::cout <<"c after : "<< p.centroid(0)<<", "<<p.centroid(1)<<", "<<p.centroid(2)<<std::endl;
-      //    std::cout<<"size +- "<< 1 -merge_candidates.size()<<std::endl;
-    }
-    else //if polygon does not have to be merged , add new polygon
-    {
-      p.assignMembers();
-      map_polygon_.push_back(p_ptr);
-      new_id_++;
-      //  std::cout<<"size +1"<<std::endl;
-    }
-  }
-  else
-  {
-    p.assignMembers();
-    p.assignWeight(limits.weighting_method);
-    map_polygon_.push_back(p_ptr);
-    new_id_++;
-  }
-  if(save_to_file_) saveMap(file_path_);
-  std::cout<<"Map Size POLYGON "<<map_polygon_.size()<<"\n";
+
+	// find out polygons, to merge with
+	std::vector<int> intersections;
+
+	if (map_polygon_.size()> 0) {
+
+		p.isMergeCandidate(map_polygon_,limits,intersections);
+		// std::cout<<"intersections size = "<<intersections.size()<<std::endl;
+
+
+
+
+
+		// if polygon has to be merged ...
+
+		if(intersections.size()>0)
+		{
+
+			std::vector<boost::shared_ptr<Polygon> > merge_candidates;
+
+			for(int i=0;i<(int)intersections.size();i++)
+			{
+
+				merge_candidates.push_back(map_polygon_[intersections[i]]);
+
+				//							os<<"_____________________"<<std::endl;
+				//							os<<"MAP:                "<<intersections[i]<<std::endl;
+				//
+				//							Polygon& p_new = *map_polygon_[intersections[i]];
+				//							os<<"ID: "<<p_new.id<<std::endl;
+				//							os<<"D:  "<<p_new.d<<std::endl;
+				//
+				//							os<<"_____________________"<<std::endl;
+				//							os<<"NEW POLYGON:\n"<<std::endl;
+				//
+				//							os<<"ID: "<<p_ptr->id<<std::endl;
+				//							os<<"D:  "<<p_ptr->d<<std::endl;
+
+
+			}
+			// merge polygon with merge candidates
+			std::cout<<"merging with "<<merge_candidates.size()<<" shapes..."<<std::endl;
+			//std::cout <<"c before: "<< p.centroid(0)<<", "<<p.centroid(1)<<", "<<p.centroid(2)<<std::endl;
+			p.merge(merge_candidates);
+			//std::cout <<"c after : "<< p.centroid(0)<<", "<<p.centroid(1)<<", "<<p.centroid(2)<<std::endl;
+
+
+			//	  std::cout<<"size +- "<< 1 -merge_candidates.size()<<std::endl;
+
+
+
+		}
+		//if polygon does not have to be merged , add new polygon
+		else
+		{
+
+
+			p.assignMembers();
+			map_polygon_.push_back(p_ptr);
+			new_id_++;
+
+
+			//	std::cout<<"size +1"<<std::endl;
+		}
+	}
+
+	else{
+
+		p.assignMembers();
+		p.assignWeight(limits.weighting_method);
+		map_polygon_.push_back(p_ptr);
+
+		new_id_++;
+	}
+	if(save_to_file_) saveMap(file_path_);
+	std::cout<<"Map Size POLYGON"<<map_polygon_.size()<<"\n";
+
+
 }
 
 void

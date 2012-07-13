@@ -7,6 +7,8 @@
 
 
 //includes needed for testing
+#include <ros/console.h>
+#include <ros/assert.h>
 #include <gtest/gtest.h>
 
 #include <pcl/io/pcd_io.h>
