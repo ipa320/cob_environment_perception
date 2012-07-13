@@ -110,7 +110,7 @@ bool Registration_ICP<Point>::compute_corrospondences()
   float radius_=0.1;
 
   // Initialize estimators for surface normals and FPFH features
-  boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree<Point>);
+  boost::shared_ptr<pcl::KdTreeFLANN<Point> > tree (new pcl::KdTreeFLANN<Point>);
 
   pcl::NormalEstimation<Point, pcl::Normal> norm_est;
   norm_est.setSearchMethod (tree);
@@ -174,7 +174,7 @@ bool Registration_ICP<Point>::compute_transformation()
   ModifiedICP<Point> icp_;
   pcl::IterativeClosestPoint<Point,Point> *icp = &icp_;
 
-#ifdef GICP_ENABLE
+#ifdef PCL_DEPRECATED
   ModifiedGICP<Point> gicp_;
   if(use_gicp_)
     icp = &gicp_;
@@ -198,7 +198,7 @@ bool Registration_ICP<Point>::compute_transformation()
 
   bool res = false;
 
-#ifdef GICP_ENABLE
+#ifdef PCL_DEPRECATED
   if(use_gicp_)
     res=gicp_.getMaximumIterations()!=gicp_.getNeededIterations()&&gicp_.getNeededIterations()>0;
   else

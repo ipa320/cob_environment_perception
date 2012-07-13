@@ -1,4 +1,9 @@
-
+/*
+ * feature_container.h
+ *
+ *  Created on: Nov 8, 2011
+ *      Author: goa-jh
+ */
 
 #ifndef FEATURE_CONTAINER_H_
 #define FEATURE_CONTAINER_H_
@@ -17,14 +22,8 @@ class FeatureContainer : public FeatureContainerInterface
 {
 public:
   typedef typename pcl::PointCloud<FeatureType>::ConstPtr FeatureCloudConstPtr;
-//  typedef typename pcl::<FeatureType> KdTree;
-//  typedef typename pcl::search::Search<FeatureType> KdTree;
-    typedef typename pcl::search::KdTree<FeatureType> KdTree;
-
-//  typedef typename pcl::KdTree<FeatureType>::Ptr KdTreePtr;
-//  typedef typename pcl::search::Search<FeatureType>::Ptr KdTreePtr;
-    typedef typename pcl::search::KdTree<FeatureType>::Ptr KdTreePtr;
-
+  typedef typename pcl::KdTree<FeatureType> KdTree;
+  typedef typename pcl::KdTree<FeatureType>::Ptr KdTreePtr;
   typedef boost::function<int (const pcl::PointCloud<FeatureType> &, int, std::vector<int> &,
                                std::vector<float> &)> SearchMethod;
 
@@ -120,7 +119,7 @@ protected:
   bool build_;
   float radius2_;
   pcl::PointCloud<Point> org_in_, org_out_;
-  boost::shared_ptr<pcl::search::KdTree<Point> > tree_;
+  boost::shared_ptr<pcl::KdTree<Point> > tree_;
 public:
 
   FeatureContainerInterface_Euclidean():
@@ -134,13 +133,13 @@ public:
     org_in_=src;
     org_out_=tgt;
 
-    tree_.reset (new pcl::search::KdTree<Point>);
+    tree_.reset (new pcl::KdTreeFLANN<Point>);
     if(org_in_.size()>0) tree_->setInputCloud(org_in_.makeShared());
 
     build_ = hidden_build();
   }
 
-  virtual bool isValid () {return build_;}
+  virtual bool isValid () {return  build_;}
   virtual void findFeatureCorrespondences (int index, std::vector<int> &correspondence_indices,
                                            std::vector<float> &distances) {
     correspondence_indices.clear();

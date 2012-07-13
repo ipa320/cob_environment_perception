@@ -7,7 +7,11 @@ leftdown: [[-1.6,-0.8]]
 right: [[1.6,0]]
 rightdown: [[1.6,-0.8]]
 down: [[0,-0.8]]
+downhalf: [[0,-0.4]]
 up: [[0,0.8]]
+uphalf: [[0,0.4]]
+rightdownhalf: [[1.6,-0.4]]
+leftdownhalf: [[-1.6,-0.4]]
 
 # trajectories
 scan: [one_rot,home]

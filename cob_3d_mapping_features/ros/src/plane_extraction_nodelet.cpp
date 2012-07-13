@@ -70,7 +70,6 @@
 #include <pcl/point_types.h>
 #include <pcl/registration/icp.h>
 #include <tf/transform_listener.h>
-#include <tf/transform_datatypes.h>
 //#include <tf_conversions/tf_kdl.h>
 #include <pcl_ros/transforms.h>
 #include <pcl_ros/point_cloud.h>
@@ -90,11 +89,7 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/segmentation/extract_polygonal_prism_data.h>
 #include "pcl/filters/voxel_grid.h"
-//#include <Eigen/StdVector>
-#include <pcl/common/eigen.h>
-#include <pcl/common/centroid.h>
-#include <ros/console.h>
-
+#include <Eigen/StdVector>
 
 //#include <cob_3d_mapping_common/reconfigureable_node.h>
 #include <dynamic_reconfigure/server.h>
@@ -321,9 +316,7 @@ public:
     {
       ROS_ERROR("[plane_extraction] : %s",ex.what());
     }
-    //btVector3 bt_rob_pose = transform.getOrigin();
-    btVector3 bt_rob_pose( transform.getOrigin()[0], transform.getOrigin()[1], transform.getOrigin()[2]);
-
+    btVector3 bt_rob_pose = transform.getOrigin();
     Eigen::Vector3f rob_pose(bt_rob_pose.x(),bt_rob_pose.y(),bt_rob_pose.z());
     ROS_INFO("Rob pose: (%f,%f,%f)", bt_rob_pose.x(),bt_rob_pose.y(),bt_rob_pose.z());
     unsigned int idx = 0;
@@ -470,6 +463,7 @@ public:
                 std_msgs::Header header,
                 float r, float g, float b)
   {
+    if(cloud_hull.points.size()==0) return;
     visualization_msgs::Marker marker;
     marker.action = visualization_msgs::Marker::ADD;
     marker.type = visualization_msgs::Marker::POINTS;

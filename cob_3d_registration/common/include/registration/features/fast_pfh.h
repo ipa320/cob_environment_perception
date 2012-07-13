@@ -10,7 +10,7 @@
 
 #include "../feature_container.h"
 #include <pcl/features/fpfh.h>
-#ifdef GICP_ENABLE
+#ifdef PCL_DEPRECATED
 #include <pcl/search/kdtree.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #else
@@ -36,10 +36,10 @@ public:
 
     ROS_INFO("calc fpfh for source");
     {
-#ifdef GICP_ENABLE
-      boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree <Point>);
+#ifdef PCL_DEPRECATED
+      boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::KdTreeFLANN<Point>);
 #else
-      boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree<Point>);
+      boost::shared_ptr<pcl::KdTree<Point> > tree (new pcl::KdTreeFLANN<Point>);
 #endif
       pcl::PointCloud<pcl::Normal>::Ptr normals (new pcl::PointCloud<pcl::Normal> ());
 
@@ -66,10 +66,10 @@ public:
 
     ROS_INFO("calc fpfh for target");
     {
-#ifdef GICP_ENABLE
-      boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree<Point>);
+#ifdef PCL_DEPRECATED
+      boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::KdTreeFLANN<Point>);
 #else
-      boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree<Point>);
+      boost::shared_ptr<pcl::KdTree<Point> > tree (new pcl::KdTreeFLANN<Point>);
 #endif
       pcl::PointCloud<pcl::Normal>::Ptr normals (new pcl::PointCloud<pcl::Normal> ());
 
