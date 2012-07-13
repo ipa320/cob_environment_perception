@@ -69,7 +69,7 @@
 #include <boost/timer.hpp>
 #include <Eigen/Geometry>
 #include <pcl/win32_macros.h>
-#include <pcl/common/transform.h>
+#include <pcl/common/transforms.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
