@@ -57,6 +57,8 @@
 #define TF_EST_MULTI_CORS_H_
 
 #include <pcl/registration/registration.h>
+#include <pcl/registration/correspondence_estimation.h>
+#include <pcl/registration/correspondence_types.h>
 
 /**
  * global transformation estimation using HIRN implications
@@ -70,7 +72,7 @@ class TransformationEstimationMultipleCorrespondences : public pcl::Registration
     int ind_o, ind_n;
     float dis;
   };
-  
+
   /// search structure
   struct SORT_S2 {
     float dis;
@@ -80,10 +82,12 @@ class TransformationEstimationMultipleCorrespondences : public pcl::Registration
   };
 
   typedef typename pcl::Registration<Point, Point>::PointCloudSource PointCloudSource;
+//  typedef typename registration<Point, Point>::CorrespondenceEstimation::PointCloudSource PointCloudSource;
   typedef typename PointCloudSource::Ptr PointCloudSourcePtr;
   typedef typename PointCloudSource::ConstPtr PointCloudSourceConstPtr;
 
 public:
+
   TransformationEstimationMultipleCorrespondences () :
     tmax_(0.1f), rmax_(0.1f)
   {
@@ -101,6 +105,10 @@ public:
 protected:
   virtual void
   computeTransformation (PointCloudSource &output);
+
+  virtual void
+  computeTransformation (PointCloudSource &output,const Eigen::Matrix4f& guess){};
+
 
   Eigen::Matrix4f findTF_fast
   (const pcl::PointCloud<Point> &pc_old, const pcl::PointCloud<Point> &pc_new,

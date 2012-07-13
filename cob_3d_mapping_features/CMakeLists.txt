@@ -111,7 +111,7 @@ rosbuild_link_boost(evaluation_features_fpfh program_options)
 
 # Test Surface Classification using organized principal curvatures
 rosbuild_add_executable(test_surface_class_estimation common/apps/test_surface_class_estimation.cpp)
-target_link_libraries(test_surface_class_estimation cob_3d_mapping_features vtkCommon vtkFiltering vtkRendering ${OpenCV_LIBS})
+target_link_libraries(test_surface_class_estimation cob_3d_mapping_features cob_3d_mapping_features_omp vtkCommon vtkFiltering vtkRendering ${OpenCV_LIBS})
 rosbuild_link_boost(test_surface_class_estimation program_options)
 
 # Test program for 2D (on RGB or depth) and 3D EdgeEstimation + visualization

@@ -16,6 +16,9 @@
 #include <sensor_msgs/CameraInfo.h>
 #include <cv_bridge/cv_bridge.h>
 #include <tf/transform_datatypes.h>
+#include <tf/tfMessage.h>
+#include <ros/console.h>
+#include <geometry_msgs/TransformStamped.h>
 
 /**
  *
@@ -65,12 +68,15 @@ protected:
   /// get last transformation and calculate the transformation matrix
   void transformationCallback(const tf::tfMessage &transform) {
     ROS_INFO("got transformation");
-    if(!transform.get_transforms_size())
+//    if(!transform.get_transforms_size())
+
+
+
       return;
 
     std::vector< geometry_msgs::TransformStamped> tfs;
-    transform.get_transforms_vec(tfs);
-
+//    transform.transforms(tfs);
+    tfs=transform.transforms;
     Eigen::Matrix3f resR = Eigen::Matrix3f::Identity();
     Eigen::Vector3f rest;
     rest(0)=rest(1)=rest(2)=0.f;
@@ -79,6 +85,7 @@ protected:
 
       tf::StampedTransform T;
       tf::transformStampedMsgToTF(tfs[i], T);
+
 
       Eigen::Quaternionf q;
       q.w() = T.getRotation().getW();
