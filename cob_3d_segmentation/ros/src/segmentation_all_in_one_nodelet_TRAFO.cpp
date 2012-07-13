@@ -61,7 +61,7 @@
 
 #include <pcl/io/io.h>
 #include <pcl/io/pcd_io.h>
-#include <pcl/ros/for_each_type.h>
+#include <pcl/for_each_type.h>
 
 #include <cob_3d_mapping_common/cylinder.h>
 
