@@ -17,7 +17,7 @@
  * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 03/2012
+ * Date of creation: 04/2012
  * ToDo:
  *
  *
@@ -53,28 +53,25 @@
  *
  ****************************************************************/
 
-#ifndef RVIZ_BUTTONS_H
-#define RVIZ_BUTTONS_H
+#ifndef RVIZ_LOGO_H
+#define RVIZ_LOGO_H
 
 #include <wx/wx.h>
-#include <wx/menu.h>
-//#include <wx/panel.h>
-#include <wx/dialog.h>
-#include <wx/msgdlg.h>
-//#include <wx/sizer.h>
-#include <ros/ros.h>
+//#include <wx/menu.h>
+//#include <wx/dialog.h>
+//#include <wx/msgdlg.h>
 #include <string.h>
 #include "rviz/display.h"
-#include "cob_3d_mapping_demonstrator/rviz_buttons_panel.h"
+#include "cob_3d_mapping_demonstrator/rviz_logo_panel.h"
 
 namespace rviz
 {
-  class RvizButtons : public Display
+  class RvizLogo : public Display
 {
 public:
     /// Constructor
-    RvizButtons(const std::string& name, VisualizationManager* manager/*wxWindow *parent, const wxString& title, rviz::WindowManagerInterface * wmi*/);
-    ~RvizButtons();
+    RvizLogo(const std::string& name, VisualizationManager* manager/*wxWindow *parent, const wxString& title, rviz::WindowManagerInterface * wmi*/);
+    ~RvizLogo();
 
     void onEnable();
 
@@ -91,29 +88,13 @@ public:
 
 
 protected:
-    //! stored window manager interface pointer
-    //rviz::WindowManagerInterface * m_wmi;
 
-
-    /*wxStaticText *m_text_status;
-    wxStaticText *m_text_object;
-    wxStaticText *m_text_timeout;
-    wxStaticText *m_text_dist; // distance to closest pregrasp position*/
-
-    ros::ServiceServer service_start_;
-    ros::ServiceServer service_timeout_;
-
-    //wxWindow *parent_;
-    RvizButtonsPanel* panel_;
+    wxBitmap pic_;
+    wxStaticBitmap *logo_;
+    wxImagePanel* panel_;
     wxFrame* frame_; // temp
-
-
-
-
-//private:
-//    DECLARE_EVENT_TABLE()
 
 };
 }
 
-#endif // RVIZ_BUTTONS_H
+#endif // RVIZ_LOGO_H
