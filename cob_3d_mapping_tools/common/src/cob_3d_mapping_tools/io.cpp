@@ -71,7 +71,7 @@ int cob_3d_mapping_tools::PPMReader::mapRGB(const string &file_name,
   {
     cout << "Could not open \"" << file_name << "\"" << endl;
     return (-1);
-  } 
+  }
 
   try
   {
@@ -104,13 +104,13 @@ int cob_3d_mapping_tools::PPMReader::mapRGB(const string &file_name,
 	value = "";
       }
     }
-    
+
     // Check size
     if (width != cloud.width || height != cloud.height)
     {
-      cout << "Size of PPM file (" 
-	   << width << " x " << height 
-	   << ") does not match the size of point cloud (" 
+      cout << "Size of PPM file ("
+	   << width << " x " << height
+	   << ") does not match the size of point cloud ("
 	   << cloud.width << " x " << cloud.height << ")" << endl;
       ppmFile.close();
       return(-1);
@@ -161,25 +161,25 @@ int cob_3d_mapping_tools::PPMReader::mapRGB(const string &file_name,
   return 0;
 }
 
-int cob_3d_mapping_tools::PPMWriter::writeRGB(const string &file_name, 
+int cob_3d_mapping_tools::PPMWriter::writeRGB(const string &file_name,
 					 const pcl::PointCloud<pcl::PointXYZRGB> &cloud)
 {
   ofstream ppmFile;
   ppmFile.open(file_name.c_str());
-  if(!ppmFile.is_open()) 
+  if(!ppmFile.is_open())
   {
     cout << "Could not create \"" << file_name << "\"" << endl;
     return (-1);
   }
 
-  try 
+  try
   {
     // Write header:
     ppmFile << "P3\n"
 	    << "# Generated from PCD file\n"
 	    << cloud.width << " " << cloud.height << "\n"
 	    << "255\n";
-    
+
     for (size_t i=0; i < cloud.points.size(); i++)
     {
       ppmFile << (int)cloud.points[i].r << " "
@@ -195,13 +195,13 @@ int cob_3d_mapping_tools::PPMWriter::writeRGB(const string &file_name,
   }
   return 0;
 }
-	 
-int cob_3d_mapping_tools::PPMWriter::writeDepth(const string &file_name, 
+
+int cob_3d_mapping_tools::PPMWriter::writeDepth(const string &file_name,
 					   const pcl::PointCloud<pcl::PointXYZRGB> &cloud)
 {
   ofstream ppmFile;
   ppmFile.open(file_name.c_str());
-  if(!ppmFile.is_open()) 
+  if(!ppmFile.is_open())
   {
     cout << "Could not create \"" << file_name << "\"" << endl;
     return (-1);
@@ -217,12 +217,12 @@ int cob_3d_mapping_tools::PPMWriter::writeDepth(const string &file_name,
 
     for (size_t i = 0; i < cloud.points.size(); i++)
     {
-      if (!pcl::hasValidXYZ(cloud.points[i]))
+      if (!pcl::isFinite(cloud.points[i]))
 	continue;
 
-      if(!fixed_max_) 
+      if(!fixed_max_)
 	max_z_ = max (cloud.points[i].z, max_z_);
-      if(!fixed_min_) 
+      if(!fixed_min_)
 	min_z_ = min (cloud.points[i].z, min_z_);
     }
     cout << "Max_z = " << max_z_ << " | Min_z = " << min_z_ << endl;
@@ -230,17 +230,17 @@ int cob_3d_mapping_tools::PPMWriter::writeDepth(const string &file_name,
     uint8_t rgb[3];
     for (size_t i = 0; i < cloud.points.size(); i++)
     {
-      if (pcl::hasValidXYZ(cloud.points[i]))
+      if (pcl::isFinite(cloud.points[i]))
       {
 	grd_position = (cloud.points[i].z - min_z_) / (max_z_ - min_z_);
 	cob_3d_mapping_tools::getGradientColor(grd_position, rgb);
 	ppmFile << (int)rgb[0] << " " << (int)rgb[1] << " " << (int)rgb[2] << "\n" ;
       }
-      else 
+      else
       {
 	ppmFile << "255 255 255\n";
       }
-      
+
     }
     ppmFile.close();
   }
@@ -253,12 +253,12 @@ int cob_3d_mapping_tools::PPMWriter::writeDepth(const string &file_name,
 }
 
 int cob_3d_mapping_tools::PPMWriter::writeDepthLinear(
-  const string &file_name, 
+  const string &file_name,
   const pcl::PointCloud<pcl::PointXYZRGB> &cloud)
 {
   ofstream ppmFile;
   ppmFile.open(file_name.c_str());
-  if(!ppmFile.is_open()) 
+  if(!ppmFile.is_open())
   {
     cout << "Could not create \"" << file_name << "\"" << endl;
     return (-1);
@@ -275,7 +275,7 @@ int cob_3d_mapping_tools::PPMWriter::writeDepthLinear(
     float max_z = 0, min_z = 10.0;
     for (size_t i = 0; i < cloud.points.size(); i++)
     {
-      if (!pcl::hasValidXYZ(cloud.points[i]))
+      if (!pcl::isFinite(cloud.points[i]))
 	continue;
 
       max_z = max (cloud.points[i].z, max_z);
@@ -288,16 +288,16 @@ int cob_3d_mapping_tools::PPMWriter::writeDepthLinear(
     uint8_t rgb[3];
     for (size_t i = 0; i < cloud.points.size(); i++)
     {
-      if (pcl::hasValidXYZ(cloud.points[i]))
+      if (pcl::isFinite(cloud.points[i]))
       {
 	grd_position = ( round(1090.0 - (345.0 / cloud.points[i].z) ) - min_z) / (max_z - min_z);
 	cob_3d_mapping_tools::getGradientColor(grd_position, rgb);
 	ppmFile << (int)rgb[0] << " " << (int)rgb[1] << " " << (int)rgb[2] << "\n" ;
       }
-      else 
+      else
       {
 	ppmFile << "255 255 255\n";
-      } 
+      }
     }
     ppmFile.close();
   }
@@ -322,8 +322,8 @@ void cob_3d_mapping_tools::PPMWriter::setMinZ (const float &min)
 }
 
 
-// color is proportional to position 
-// position  <0;1> 
+// color is proportional to position
+// position  <0;1>
 // position means position of color in color gradient
 uint32_t cob_3d_mapping_tools::getGradientColor(double position, uint8_t rgb[])
 {
@@ -340,32 +340,32 @@ uint32_t cob_3d_mapping_tools::getGradientColor(double position, uint8_t rgb[])
 
   switch (n)
   {
-  case 0: 
+  case 0:
     rgb[0] = 255;
     rgb[1] = t;
     rgb[2] = 0;
     break;
-  case 1: 
+  case 1:
     rgb[0] = 255 - t;
     rgb[1] = 255;
     rgb[2] = 0;
     break;
-  case 2: 
+  case 2:
     rgb[0] = 0;
     rgb[1] = 255;
     rgb[2] = t;
     break;
-  case 3: 
+  case 3:
     rgb[0] = 0;
     rgb[1] = 255 - t;
     rgb[2] = 255;
     break;
-  case 4: 
+  case 4:
     rgb[0] = t;
     rgb[1] = 0;
     rgb[2] = 255;
     break;
-  case 5: 
+  case 5:
     rgb[0] = 255;
     rgb[1] = 0;
     rgb[2] = 255 - t;
