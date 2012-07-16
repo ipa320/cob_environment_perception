@@ -698,7 +698,7 @@ transform_from_world_to_plane=transform_from_plane_to_world.inverse();
 
         }
         if (is_intersected == false) {
-          std::cout<<" criteria fulfilled, but no intersection\n";
+          //std::cout<<" criteria fulfilled, but no intersection\n";
         }
 
 

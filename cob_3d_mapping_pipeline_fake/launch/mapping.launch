@@ -1,0 +1,5 @@
+<?xml version="1.0"?>
+<launch>
+	<include file="$(find cob_3d_mapping_pipeline_fake)/launch/point_map.launch"/>
+	<include file="$(find cob_3d_mapping_pipeline_fake)/launch/geometry_map.launch"/>
+</launch>
