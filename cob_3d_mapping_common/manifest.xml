@@ -1,11 +1,11 @@
 <package>
   <description brief="cob_3d_mapping_common">
 
-     cob_3d_mapping_common
+     Common classes and nodes for 3D environment perception.
 
   </description>
   <author>Georg Arbeiter</author>
-  <license>BSD</license>
+  <license>LGPL</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/cob_3d_mapping_common</url>
 

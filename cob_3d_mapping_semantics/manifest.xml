@@ -1,11 +1,11 @@
 <package>
   <description brief="cob_3d_mapping_semantics">
 
-     cob_3d_mapping_semantics
+     Extraction of semantic data (e.g. table extraction) from 3-D environment maps.
 
   </description>
   <author>Georg Arbeiter</author>
-  <license>BSD</license>
+  <license>LGPL</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/cob_3d_mapping_semantics</url>
 

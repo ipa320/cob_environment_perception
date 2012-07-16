@@ -1,11 +1,11 @@
 <package>
   <description brief="cob_3d_mapping_pipeline_fake">
 
-     cob_3d_mapping_pipeline_fake
+     Fake mapping pipeline that publishes a point and a geometry map of ipa-kitchen
 
   </description>
   <author>Georg Arbeiter</author>
-  <license>BSD</license>
+  <license>LGPL</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/cob_3d_mapping_pipeline_fake</url>
   
