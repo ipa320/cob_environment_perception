@@ -53,67 +53,45 @@
  *
  ****************************************************************/
 
-#ifndef RVIZ_BUTTONS_H
-#define RVIZ_BUTTONS_H
+#ifndef RVIZ_BUTTONS_PANEL_H
+#define RVIZ_BUTTONS_PANEL_H
 
-#include <wx/wx.h>
-#include <wx/menu.h>
-//#include <wx/panel.h>
-#include <wx/dialog.h>
-#include <wx/msgdlg.h>
-//#include <wx/sizer.h>
+#include <wx/panel.h>
+#include <wx/button.h>
 #include <ros/ros.h>
-#include <string.h>
-#include "rviz/display.h"
-#include "cob_3d_mapping_demonstrator/rviz_buttons_panel.h"
+
+#include <cob_script_server/ScriptAction.h>
+#include <actionlib/client/simple_action_client.h>
+
 
 namespace rviz
 {
-  class RvizButtons : public Display
-{
-public:
-    /// Constructor
-    RvizButtons(const std::string& name, VisualizationManager* manager/*wxWindow *parent, const wxString& title, rviz::WindowManagerInterface * wmi*/);
-    ~RvizButtons();
+class RvizButtonsPanel : public wxPanel
+  {
+  public:
+    RvizButtonsPanel(wxWindow *parent, const wxString& title);
+    ~RvizButtonsPanel();
 
-    void onEnable();
+    virtual void OnStart(wxCommandEvent& event);
+    virtual void OnStep(wxCommandEvent& event);
+    virtual void OnStop(wxCommandEvent& event);
+    virtual void OnReset(wxCommandEvent& event);
+    virtual void OnClear(wxCommandEvent& event);
+    virtual void OnRecover(wxCommandEvent& event);
 
-    void onDisable();
+  protected:
+    wxButton * button_start_;
+    wxButton * button_step_;
+    wxButton * button_stop_;
+    wxButton * button_reset_;
+    wxButton * button_clear_;
+    wxButton * button_recover_;
 
+    actionlib::SimpleActionClient<cob_script_server::ScriptAction>* action_client_;
 
-    void targetFrameChanged()
-    {
-    }
-
-    void fixedFrameChanged()
-    {
-    }
-
-
-protected:
-    //! stored window manager interface pointer
-    //rviz::WindowManagerInterface * m_wmi;
-
-
-    /*wxStaticText *m_text_status;
-    wxStaticText *m_text_object;
-    wxStaticText *m_text_timeout;
-    wxStaticText *m_text_dist; // distance to closest pregrasp position*/
-
-    ros::ServiceServer service_start_;
-    ros::ServiceServer service_timeout_;
-
-    //wxWindow *parent_;
-    RvizButtonsPanel* panel_;
-    wxFrame* frame_; // temp
-
-
-
-
-//private:
-//    DECLARE_EVENT_TABLE()
-
-};
+  private:
+    DECLARE_EVENT_TABLE()
+  };
 }
 
-#endif // RVIZ_BUTTONS_H
+#endif //RVIZ_BUTTONS_PANEL_H

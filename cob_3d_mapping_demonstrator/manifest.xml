@@ -28,7 +28,7 @@
   <depend package="cob_3d_mapping_pipeline"/>
 
   <export>
-    <rviz plugin="${prefix}/plugin_description.xml"/>
+    <rviz plugin="${prefix}/lib/plugin.yaml"/>
   </export>
 
 
