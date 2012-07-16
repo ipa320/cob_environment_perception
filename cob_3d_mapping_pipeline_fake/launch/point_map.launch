@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
   <node ns="point_map" pkg="cob_3d_mapping_pipeline_fake" type="point_map_node" name="point_map" output="screen">
-  	<param name="file_path" type="string" value="$(find cob_3d_mapping_pipeline_fake)/files/scan180_final_pointmap.bag"/>
+  	<param name="file_path" type="string" value="$(find cob_3d_mapping_pipeline_fake)/files/scan90_final_pts.bag"/>
   </node>
 </launch>
