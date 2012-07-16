@@ -66,18 +66,13 @@
 #include <cob_3d_mapping_msgs/GetPointMap.h>
 
 std::string file_path;
+sensor_msgs::PointCloud2::ConstPtr pc;
 
 bool
 getMap(cob_3d_mapping_msgs::GetPointMap::Request &req,
        cob_3d_mapping_msgs::GetPointMap::Response &res)
 {
-  rosbag::Bag bag;
-  bag.open(file_path, rosbag::bagmode::Read);
-  rosbag::View view(bag, rosbag::TopicQuery("/point_map"));
-  rosbag::MessageInstance m = *(view.begin());
-  sensor_msgs::PointCloud2::ConstPtr pc = m.instantiate<sensor_msgs::PointCloud2>();
   res.map = *pc;
-  bag.close();
   return true;
 }
 
@@ -87,8 +82,17 @@ int main (int argc, char **argv)
   ros::NodeHandle nh;
 
   ros::param::get("~file_path", file_path);
+  rosbag::Bag bag;
+  bag.open(file_path, rosbag::bagmode::Read);
+  rosbag::View view(bag, rosbag::TopicQuery("/point_map/map"));
+  rosbag::MessageInstance m = *(view.begin());
+  pc = m.instantiate<sensor_msgs::PointCloud2>();
+  bag.close();
 
-  ros::ServiceServer get_map_server = nh.advertiseService("get_point_map", &getMap);
+  ros::ServiceServer get_map_server = nh.advertiseService("get_map", &getMap);
+  ros::Publisher pub = nh.advertise<sensor_msgs::PointCloud2>("map",1);
+  ros::Duration(0.5).sleep();
+  pub.publish(*pc);
   ros::spin();
 
   return 0;

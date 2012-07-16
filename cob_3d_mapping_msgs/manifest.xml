@@ -1,11 +1,11 @@
 <package>
   <description brief="cob_env_model_msgs">
 
-     cob_env_model_msgs
+     Message, service and action definitions for environment perception.
 
   </description>
   <author>Georg Arbeiter</author>
-  <license>BSD</license>
+  <license>LGPL</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/cob_env_model_msgs</url>
 
