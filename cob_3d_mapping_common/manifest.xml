@@ -20,7 +20,6 @@
   <depend package="cob_srvs"/>
   <depend package="cob_3d_mapping_msgs"/>
   <depend package="interactive_markers"/>
-  <depend package="cob_3d_mapping_rviz_plugins"/>
   
   <export>
   <cpp cflags="-I${prefix}/common/include -I${prefix}/ros/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcob_3d_mapping_common"/>
