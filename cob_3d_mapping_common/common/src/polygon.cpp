@@ -383,7 +383,9 @@ namespace cob_3d_mapping
     PolygonPtr p_average= PolygonPtr(new Polygon);
     applyWeighting(poly_vec,*p_average);
     merge_union(poly_vec,*p_average);
+    this->assignWeight();
   }
+
 
 
 
@@ -396,7 +398,7 @@ namespace cob_3d_mapping
     Eigen::Vector4f average_centroid=centroid*merge_weight_;
     double average_d=d*merge_weight_;
     double sum_w=merge_weight_;
-    int sum_merged=1;
+    int sum_merged=merged;
 
     for(int i=0 ; i< (int) poly_vec.size();i++)
     {
@@ -412,7 +414,10 @@ namespace cob_3d_mapping
       average_centroid += p_map1.merge_weight_* p_map1.centroid;
       average_d +=p_map1.merge_weight_ * p_map1.d;
       sum_w += p_map1.merge_weight_;
+
       sum_merged += p_map1.merged;
+
+
     }
 
     average_normal=average_normal/sum_w;
@@ -422,35 +427,37 @@ namespace cob_3d_mapping
     average_d /= average_normal.norm();
 
     if (sum_merged < 9)
+    {
       p_average.merged=sum_merged;
+    }
     else
+    {
       p_average.merged=9;
+    }
 
     p_average.assignMembers(average_normal,average_d,average_centroid);
-
-   // weigths <<"average weight"<< p_average.merge_weight_<<std::endl;
   }
 
   void
-  Polygon::assignWeight(std::string& mode)
+  Polygon::assignWeight()
   {
-    if (std::strcmp(mode.c_str(), "COUNTER")== 0)
+    if (std::strcmp(merge_settings_.weighting_method.c_str(), "COUNTER")== 0)
     {
       //USE
       merge_weight_=merged;
     }
-    else if (std::strcmp(mode.c_str(), "AREA")== 0)
+    else if (std::strcmp(merge_settings_.weighting_method.c_str(), "AREA")== 0)
     {
       //DO NOT USE
       //THIS IS WORK IN PROGRESS
       merge_weight_ = computeArea3d();
     }
-    else if (std::strcmp(mode.c_str(), "COMBINED")== 0)
+    else if (std::strcmp(merge_settings_.weighting_method.c_str(), "COMBINED")== 0)
     {
       //USE
       merge_weight_ = merged + sqrt(computeArea3d());
     }
-    else if (std::strcmp(mode.c_str(), "DIST")== 0)
+    else if (std::strcmp(merge_settings_.weighting_method.c_str(), "DIST")== 0)
     {
       // Do not use d has to be substituted with value for distance to sensor , not distance in global
       // coordinate system
@@ -524,7 +531,6 @@ namespace cob_3d_mapping
     }
     if (this->contours.size() == 0) std::cout << "!!!! NO CONTOURS ANYMORE" << std::endl;
     //std::cout << this->contours.size() << std::endl;
-    this->assignWeight(merge_settings_.weighting_method);
   }
 
 /* OLD --- too buggy

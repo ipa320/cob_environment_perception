@@ -92,7 +92,7 @@ Eigen::Vector3f origin1;
  		v1 << -1, 0 ,-1;
  		contour1.push_back(v1);
 
- 		c1->merged=1;
+ 		c1->merged=0;
  		origin1 << 0,0,0;
  		c1->origin_=origin1;
 
@@ -168,7 +168,7 @@ Eigen::Vector3f origin1;
   		v2 << -1, 0 ,-1;
   		contour2.push_back(v2);
 
-  		c2->merged=1;
+  		c2->merged=0;
   		origin1 << 0,0,0;
   		c2->origin_=origin2;
 
@@ -214,10 +214,8 @@ transform_cylinder(c2,trafo);
 
 
 std::string s_c1 = "c1->unrolled";
-c1->debug_output(s_c1);
 
 std::string s_c2 = "c2->unrolled";
-  c2->debug_output(s_c2);
 //#######################################################
 //  completion test
 //  c1->completeCylinder();
@@ -271,7 +269,7 @@ std::cout<<"merge_candidates size: ="<<merge_candidates.size()<<std::endl;
 
 
 if(merge_candidates.size()>0){
-c1->merge(merge_candidates);
+c1->mergeCylinder(merge_candidates);
 //
 //
 
@@ -287,7 +285,6 @@ Cylinder& result=*merge_candidates[0];
 //
 
 
-result.debug_output("result");
 
 
 std::vector<std::vector<Eigen::Vector3f> > con3d;

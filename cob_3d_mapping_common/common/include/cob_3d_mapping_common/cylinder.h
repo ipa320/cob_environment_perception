@@ -127,7 +127,7 @@ public:
 
 
 
-
+	void printAttributes(std::string & name);
 	void dbg_out(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points,std::string& name);
 
 	double r_;
@@ -138,7 +138,7 @@ public:
 
 private:
 	void getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha);
-	void getShiftedCylinder(Cylinder& c,Cylinder & shifted_Cylinder);
+	void getShiftedCylinder(Cylinder& c,Polygon & shifted_polygon);
 };
 
 
