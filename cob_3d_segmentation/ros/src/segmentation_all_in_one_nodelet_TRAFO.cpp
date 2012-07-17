@@ -175,11 +175,10 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
   sa.header.frame_id = target_frame_.c_str();
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull(new pcl::PointCloud<pcl::PointXYZRGB>);
-
   for (ST::CH::ClusterPtr c = cluster_handler->begin(); c != cluster_handler->end(); ++c)
   {
     // compute hull:
-    if (c->getCentroid()[2] > 5.0f) continue;
+    if (c->getCentroid()[2] > 1.5f) continue;
     if (c->type != I_PLANE && c->type != I_CYL) continue;
     if (c->size() <= ceil(1.1f * static_cast<float>(c->border_points.size())))
     {

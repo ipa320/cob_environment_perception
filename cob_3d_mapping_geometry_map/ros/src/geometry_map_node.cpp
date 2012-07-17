@@ -166,7 +166,8 @@ public:
     static int ctr=0;
     static double time = 0;
     PrecisionStopWatch t;
-    std::cout<<"size shapes "<<sa->shapes.size()<<std::endl;
+    std::cout<<">>>>>>>>>new cloud>>>>>>>>>>\n";
+
     for(unsigned int i=0; i<sa->shapes.size(); i++)
     {
 
@@ -175,7 +176,6 @@ public:
 
       ////    distinction of type
       if (sa->shapes[i].type == 0) {
-        std::cout<<"polygon detected"<<std::endl;
 
 
         PolygonPtr polygon_map_entry_ptr = PolygonPtr(new Polygon());
@@ -187,7 +187,7 @@ public:
       }
 
       if (sa->shapes[i].type == 5) {
-        std::cout<<"CYLINDER detected"<<std::endl;
+        std::cout<<"CYL\n";
         CylinderPtr cylinder_map_entry_ptr = CylinderPtr(new Cylinder());
         cylinder_map_entry_ptr->allocate();
         if(!fromROSMsg(sa->shapes[i], *cylinder_map_entry_ptr)){
@@ -196,7 +196,6 @@ public:
 
         //				calculate missing attributes
         cylinder_map_entry_ptr->ParamsFromShapeMsg();
-        std::cout<<"adding map entry...\n";
         geometry_map_.addMapEntry(cylinder_map_entry_ptr);
 
 
@@ -395,7 +394,6 @@ public:
    */
   void publishMapMarker()
   {
-    std::cout<<"publish map markers"<<std::endl;
     visualization_msgs::Marker marker, t_marker;
     marker.action = visualization_msgs::Marker::ADD;
     marker.type = visualization_msgs::Marker::LINE_STRIP;
