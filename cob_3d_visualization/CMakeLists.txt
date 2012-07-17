@@ -20,6 +20,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_genmsg()
 #uncomment if you have defined services
 #rosbuild_gensrv()
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/include)
 
 rosbuild_add_executable(shape_visualization src/shape_visualization.cpp
 	src/polypartition.cpp)
