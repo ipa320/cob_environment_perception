@@ -137,7 +137,7 @@ namespace cob_3d_mapping
     p.d = s.params[3];
     //std::cout << "normal: " << p.normal(0) << ","  << p.normal(1) << "," << p.normal(2) << std::endl;
     //std::cout << "d: " << p.d << std::endl << std::endl;
-    p.merged = 0;
+    p.merged = 1;
     p.color[0] = s.color.r;
     p.color[1] = s.color.g;
     p.color[2] = s.color.b;
