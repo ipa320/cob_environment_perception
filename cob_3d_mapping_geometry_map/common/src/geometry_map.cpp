@@ -91,13 +91,16 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
 
   Polygon& p = *p_ptr;
 
+
   cob_3d_mapping::merge_config  limits;
   limits.d_thresh=d_;
   limits.angle_thresh=cos_angle_;
   //	limits.weighting_method="COMBINED";
   limits.weighting_method="COUNTER";
 
-  p.assignWeight(limits.weighting_method);
+
+  p.merge_settings_ = limits;
+  p.assignWeight();
 
 
   // find out polygons, to merge with
@@ -113,7 +116,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
       {
 
         if (intersections.size() > 1) {
-          std::cout<<"Intersection Size POLYGON= "<<intersections.size()<<"\n";
+//          std::cout<<"Intersection Size POLYGON= "<<intersections.size()<<"\n";
         }
         // copies pointer to polygon
         merge_candidates.push_back(map_polygon_[intersections[i]]);
@@ -146,7 +149,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
     else //if polygon does not have to be merged , add new polygon
     {
       p.assignMembers();
-      p.assignWeight(limits.weighting_method);
+      p.assignWeight();
       map_polygon_.push_back(p_ptr);
       new_id_++;
       //  std::cout<<"size +1"<<std::endl;
@@ -155,12 +158,12 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
   else
   {
     p.assignMembers();
-    p.assignWeight(limits.weighting_method);
+    p.assignWeight();
     map_polygon_.push_back(p_ptr);
     new_id_++;
   }
   if(save_to_file_) saveMap(file_path_);
-  std::cout<<"Map Size POLYGON "<<map_polygon_.size()<<"\n";
+//  std::cout<<"Map Size POLYGON "<<map_polygon_.size()<<"\n";
 }
 
 void
@@ -179,9 +182,9 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
   limits.weighting_method="COUNTER";
   //	limits.weighting_method="COMBINED";
 
+  c.merge_settings_ = limits;
 
-  c.assignWeight(limits.weighting_method);
-
+  c.assignWeight();
 
   // find out polygons, to merge with
   std::vector<int> intersections;
@@ -208,7 +211,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 
       }
       // merge polygon with merge candidates
-      c.merge(merge_candidates);
+      c.mergeCylinder(merge_candidates);
       map_cylinder_.push_back(c_ptr);
       new_id_ ++;
 
@@ -221,7 +224,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 
 
       c.assignMembers(c.axes_[1],c.axes_[2],c.origin_);
-      c.assignWeight(limits.weighting_method);
+      c.assignWeight();
 
       map_cylinder_.push_back(c_ptr);
       new_id_++;
@@ -232,9 +235,8 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
   else{
 
     c.assignMembers(c.axes_[1],c.axes_[2],c.origin_);
-    c.assignWeight(limits.weighting_method);
+    c.assignWeight();
 
-    c.merged = 1;
     map_cylinder_.push_back(c_ptr);
 
     new_id_++;
