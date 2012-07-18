@@ -195,7 +195,6 @@ public:
         }
 
         //				calculate missing attributes
-        cylinder_map_entry_ptr->ParamsFromShapeMsg();
         geometry_map_.addMapEntry(cylinder_map_entry_ptr);
 
 
