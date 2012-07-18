@@ -105,7 +105,10 @@ struct merge_config {
 
 //    Merge polygon with polygons in poly_vec
     void merge(std::vector< boost::shared_ptr<Polygon> >& poly_vec);
+
     void merge_union(std::vector< boost::shared_ptr<Polygon> >& poly_vec,const Polygon & p_average);
+
+
 
 //  Calculate members of polygon
     void assignMembers(const Eigen::Vector3f &new_normal, const double &new_d, const Eigen::Vector4f& new_centroid);
@@ -113,7 +116,7 @@ struct merge_config {
     void assignMembers();
 
 //  Weighting
-    void assignWeight(std::string & mode);
+    void assignWeight();
     void applyWeighting(const std::vector< boost::shared_ptr<Polygon> >& poly_vec , Polygon & p_average );
 
     //    Use general polygon clipper to create polygon structures

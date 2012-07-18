@@ -106,7 +106,7 @@ class Cylinder: public Polygon
 
 public:
 
-	void ContoursFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud);
+	void ContoursFromCloud(pcl::PointCloud<pcl::PointXYZ>::ConstPtr in_cloud);
 	void ContoursFromList( std::vector<std::vector<Eigen::Vector3f> >& in_list);
 
 	void ParamsFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud, std::vector<int>& indices);
@@ -116,18 +116,19 @@ public:
 
 
 	void getCyl3D(std::vector<std::vector<Eigen::Vector3f> >& contours3D);
+	void getCyl2D();
 	void allocate();
 
 	void weightAttributes(std::vector<boost::shared_ptr<Cylinder> >& c_array,Cylinder& average_c);
-
+	void applyWeightingCylinder(std::vector<boost::shared_ptr<Cylinder> >& merge_candidates);
 	void isMergeCandidate(const std::vector<boost::shared_ptr<Cylinder> >& cylinder_array,const merge_config& limits,std::vector<int>& intersections);
-	void merge(std::vector<boost::shared_ptr<Cylinder> >& c_array);
+	void mergeCylinder(std::vector<boost::shared_ptr<Cylinder> >& c_array);
 
 
 
 
 
-
+	void printAttributes(std::string & name);
 	void dbg_out(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points,std::string& name);
 
 	double r_;
@@ -138,7 +139,7 @@ public:
 
 private:
 	void getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha);
-	void getShiftedPolygon(Cylinder& c,Polygon & shifted_polygon);
+	void getShiftedCylinder(Cylinder& c,Polygon & shifted_polygon);
 };
 
 

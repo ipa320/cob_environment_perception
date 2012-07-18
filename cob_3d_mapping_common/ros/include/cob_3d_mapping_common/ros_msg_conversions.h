@@ -127,7 +127,7 @@ namespace cob_3d_mapping
   inline bool
   fromROSMsg(const cob_3d_mapping_msgs::Shape& s, Polygon& p)
   {
-    p.id = 0;
+    p.id = s.id;
     p.centroid(0) = s.centroid.x;
     p.centroid(1) = s.centroid.y;
     p.centroid(2) = s.centroid.z;
