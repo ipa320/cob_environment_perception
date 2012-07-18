@@ -1,11 +1,11 @@
 <package>
   <description brief="cob_3d_mapping_common">
 
-     cob_3d_mapping_common
+     Common classes and nodes for 3D environment perception.
 
   </description>
   <author>Georg Arbeiter</author>
-  <license>BSD</license>
+  <license>LGPL</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/cob_3d_mapping_common</url>
 
@@ -19,8 +19,7 @@
   <depend package="nodelet"/>
   <depend package="cob_srvs"/>
   <depend package="cob_3d_mapping_msgs"/>
-  <!--depend package="interactive_markers"/-->
-  <!--depend package="cob_3d_mapping_rviz_plugins"/-->
+  <depend package="interactive_markers"/>
   
   <export>
   <cpp cflags="-I${prefix}/common/include -I${prefix}/ros/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcob_3d_mapping_common"/>
