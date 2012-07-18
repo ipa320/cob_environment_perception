@@ -173,7 +173,9 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 
 
   Cylinder& c = *c_ptr;
+  c.ParamsFromShapeMsg();
 
+  c.getCyl2D();
 
   cob_3d_mapping::merge_config  limits;
   limits.d_thresh=d_;
@@ -211,7 +213,9 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 
       }
       // merge polygon with merge candidates
+
       c.mergeCylinder(merge_candidates);
+
       map_cylinder_.push_back(c_ptr);
       new_id_ ++;
 
