@@ -189,7 +189,7 @@ public:
     n_.param("aggregate_point_map/file_path" ,file_path_ ,std::string("~/pcl_daten/table/icp/map_"));
     n_.param("aggregate_point_map/save",save_ , false);
 
-    pcl::KdTreeFLANN<Point>::Ptr tree (new pcl::KdTreeFLANN<Point> ());
+    pcl::search::KdTree<Point>::Ptr tree (new pcl::search::KdTree<Point> ());
     sd_.setSearchMethod(tree);
     sd_.setDistanceThreshold(0.001);
     diff_maps_.header.frame_id="/map";

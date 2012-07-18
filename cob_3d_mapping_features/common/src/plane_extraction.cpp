@@ -86,7 +86,8 @@ PlaneExtraction::PlaneExtraction()
   radius_(0.1),
   //normal_distance_weight_(0.05),
   max_iterations_(100),
-  distance_threshold_(0.04)
+  distance_threshold_(0.04),
+  alpha_(0.2)
 {
   pcl::KdTreeFLANN<Point>::Ptr tree (new pcl::KdTreeFLANN<Point> ());
 
@@ -321,7 +322,8 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
           std::cout << "Hull: " << cloud_hull.size() << ", " << hull_polygons[0].vertices.size()<<", "<< plane_cluster_ptr->size() << std::endl;
           if(hull_polygons.size() > 1)
           {
-            ROS_WARN("Extracted Polygon has more than one contour, separating ...");
+		continue;
+            ROS_WARN("Extracted Polygon %d contours, separating ...", hull_polygons.size());
             pcl::PointCloud<Point>::Ptr cloud_hull_ptr = cloud_hull.makeShared();
             pcl::ExtractIndices<Point> extract_2;
             extract_2.setInputCloud(cloud_hull_ptr);

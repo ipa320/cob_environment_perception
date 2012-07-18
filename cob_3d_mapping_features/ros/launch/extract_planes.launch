@@ -46,6 +46,8 @@
 
     <!-- Normal Estimation parameters -->
       <param name="radius" type="double" value="0.1"/>
+    <!-- Concave Hull parameters -->
+      <param name="alpha" type="double" value="0.2"/>
 
       <!-- Segmentation parameters -->
     <!-- param name="normal_distance_weight" type="double" value="0.5"/>

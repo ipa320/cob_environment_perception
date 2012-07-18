@@ -64,6 +64,9 @@
 #include <pcl/surface/convex_hull.h>
 #include <pcl/io/pcd_io.h>
 
+  //aditional includes
+#include <ros/console.h>
+
 void
 TableObjectCluster::extractTableRoi(pcl::PointCloud<Point>::Ptr& pc_in,
                                     pcl::PointCloud<Point>::Ptr& hull,
@@ -155,8 +158,13 @@ TableObjectCluster::calculateBoundingBoxes(pcl::PointCloud<Point>::Ptr& pc_roi_r
                    std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > >& bounding_boxes)
 {
   ROS_INFO("Calculate bb");
+
+
+  // for ros electric
   pcl::KdTree<Point>::Ptr clusters_tree;
-  clusters_tree = boost::make_shared<pcl::KdTreeFLANN<Point> > ();
+  //	for ros fuerte
+  //pcl::search::KdTree<Point>::Ptr clusters_tree;
+  //clusters_tree = boost::make_shared<pcl::search::KdTree<Point> > ();
 
   pcl::EuclideanClusterExtraction<Point> cluster_obj;
 
