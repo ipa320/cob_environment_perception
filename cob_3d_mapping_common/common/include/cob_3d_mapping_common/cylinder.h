@@ -106,7 +106,7 @@ class Cylinder: public Polygon
 
 public:
 
-	void ContoursFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud);
+	void ContoursFromCloud(pcl::PointCloud<pcl::PointXYZ>::ConstPtr in_cloud);
 	void ContoursFromList( std::vector<std::vector<Eigen::Vector3f> >& in_list);
 
 	void ParamsFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud, std::vector<int>& indices);
@@ -116,6 +116,7 @@ public:
 
 
 	void getCyl3D(std::vector<std::vector<Eigen::Vector3f> >& contours3D);
+	void getCyl2D();
 	void allocate();
 
 	void weightAttributes(std::vector<boost::shared_ptr<Cylinder> >& c_array,Cylinder& average_c);
