@@ -58,8 +58,8 @@
 #include <cob_3d_mapping_features/edge_estimation_3d.h>
 #include <cob_3d_mapping_features/edge_estimation_2d.h>
 #include <cob_3d_mapping_features/edge_extraction.h>
-#include <cob_3d_mapping_common/point_types.h>
 #include <cob_3d_segmentation/segmentation.h>
+#include <cob_3d_mapping_common/point_types.h>
 #include <pcl/kdtree/kdtree.h>
 #include <pcl/common/pca.h>
 

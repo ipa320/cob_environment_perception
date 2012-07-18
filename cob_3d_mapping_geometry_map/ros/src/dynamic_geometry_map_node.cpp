@@ -22,6 +22,7 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
 #include <pcl_ros/pcl_nodelet.h>
+#include <pcl/common/eigen.h>
 
 
 
