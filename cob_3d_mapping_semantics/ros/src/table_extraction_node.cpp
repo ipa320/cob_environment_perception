@@ -88,55 +88,28 @@ public:
 
   // Constructor
   TableExtractionNode () :
-    /*norm_x_min_ (-0.1), norm_x_max_ (0.1), norm_y_min_ (-0.1), norm_y_max_ (0.1), norm_z_min_ (-0.99),
-     norm_z_max_ (0.99)*/tilt_angle_ (3.0), height_min_ (0.6), height_max_ (1.2), area_min_ (0.5), area_max_ (3)
+    tilt_angle_ (3.0),
+    height_min_ (0.6),
+    height_max_ (1.2),
+    area_min_ (0.5),
+    area_max_ (3),
+    table_ctr_(0),
+    table_ctr_old_(0)
   {
     sa_sub_ = n_.subscribe ("shape_array", 10, &TableExtractionNode::callbackShapeArray, this);
     sa_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_array_pub", 10);
-    //pc2_pub_ = n_.advertise<sensor_msgs::PointCloud2> ("shape_pointcloud2", 1);
-
-    s_marker_pub_ = n_.advertise<visualization_msgs::Marker> ("marker", 100);
-    map_marker_pub_ = n_.advertise<visualization_msgs::MarkerArray> ("marker_array", 10);
+    s_marker_pub_ = n_.advertise<visualization_msgs::Marker> ("marker", 10);
 
     //get_tables_server_ = n_.advertiseService ("get_objects_of_class", &TableExtractionNode::getTablesService, this);
     get_tables_server_ = n_.advertiseService ("get_tables", &TableExtractionNode::getTablesService2, this);
 
-    n_.getParam ("semantic_extraction/tilt_angle", tilt_angle_);
-    /*
-     n_.getParam ("semantic_extraction/norm_x_min", norm_x_min_);
-     n_.getParam ("semantic_extraction/norm_x_max", norm_x_max_);
-     n_.getParam ("semantic_extraction/norm_y_min", norm_y_min_);
-     n_.getParam ("semantic_extraction/norm_y_max", norm_y_max_);
-     n_.getParam ("semantic_extraction/norm_z_min", norm_z_min_);
-     n_.getParam ("semantic_extraction/norm_z_max", norm_z_max_);
-     */
-    n_.getParam ("semantic_extraction/height_min", height_min_);
-    n_.getParam ("semantic_extraction/height_max", height_max_);
+    ros::NodeHandle private_nh("~");
+    private_nh.getParam ("tilt_angle", tilt_angle_);
+    private_nh.getParam ("height_min", height_min_);
+    private_nh.getParam ("height_max", height_max_);
+    private_nh.getParam ("area_min", area_min_);
+    private_nh.getParam ("area_max", area_max_);
 
-    n_.getParam ("semantic_extraction/area_min", area_min_);
-    n_.getParam ("semantic_extraction/area_max", area_max_);
-
-    //     ROS PARAMETERS
-    /*
-     std::cout << "\n\t*norm_x_min = " << norm_x_min_ << std::endl;
-     std::cout << "\n\t*norm_x_max = " << norm_x_max_ << std::endl;
-     std::cout << "\n\t*norm_y_min = " << norm_y_min_ << std::endl;
-     std::cout << "\n\t*norm_y_max = " << norm_y_max_ << std::endl;
-     std::cout << "\n\t*norm_z_min = " << norm_z_min_ << std::endl;
-     std::cout << "\n\t*norm_z_max = " << norm_z_max_ << std::endl;
-     std::cout << "\n\t*height_min = " << height_min_ << std::endl;
-     std::cout << "\n\t*height_max = " << height_max_ << std::endl;
-     std::cout << "\n\t*area_min = " << area_min_ << std::endl;
-     std::cout << "\n\t*area_min = " << area_max_ << std::endl;
-
-
-     sem_exn_.setNormXMin (norm_x_min_);
-     sem_exn_.setNormXMax (norm_x_max_);
-     sem_exn_.setNormYMin (norm_y_min_);
-     sem_exn_.setNormYMax (norm_y_max_);
-     sem_exn_.setNormZMin (norm_z_min_);
-     sem_exn_.setNormZMax (norm_z_max_);
-     */
     te_.setNormalBounds (tilt_angle_);
     te_.setHeightMin (height_min_);
     te_.setHeightMax (height_max_);
@@ -169,41 +142,26 @@ public:
 
     ROS_INFO(" Total number of shapes received: %d ", sa_ptr->shapes.size());*/
 
-    cob_3d_mapping_msgs::ShapeArray sa_msg;
-    sa_msg.header.frame_id = "/map";
-    int table_ctr = 0;
-    //sem_exn_.PolygonMap.resize (0);
+    cob_3d_mapping_msgs::ShapeArray sa, tables;
+    sa.header = sa_ptr->header;
+    table_ctr_old_ = table_ctr_;
+    table_ctr_ = 0;
     for (unsigned int i = 0; i < sa_ptr->shapes.size (); i++)
     {
-
-      //ROS_INFO("Shape < %d > passed for conversion ",i);
-
-      //ROS_INFO(" Entered for loop \n");
       PolygonPtr poly_ptr = PolygonPtr (new Polygon ());
 
       fromROSMsg(sa_ptr->shapes[i], *poly_ptr);
-      //convertShapeToPolygon (sa_ptr->shapes[i], *poly_ptr);
-      //sem_exn_.PolygonMap.push_back (poly_ptr);
-      //ROS_INFO("sa_ptr->shapes[%d] converted to polygon",i );
-      //convertFromROSMsg (p->polygon_array[i], *poly_ptr);
-      //convertToPointCloudMsg (*poly_ptr, *pc_ptr);
-      //pc_pub_.publish (*pc_ptr);
       te_.setInputPolygon(poly_ptr);
       if (te_.isTable())
       {
-        table_ctr++;
-        //ros::Duration (5).sleep ();
-        //cob_3d_mapping_msgs::Shape s;
-        //toROSMsg(*poly_ptr, s);
-        //convertPolygonToShape (*poly_ptr, s);
-        publishShapeMarker (sa_ptr->shapes[i]);
-        sa_msg.shapes.push_back (sa_ptr->shapes[i]);
+        table_ctr_++;
+        tables.shapes.push_back(sa_ptr->shapes[i]);
+        sa.shapes.push_back (sa_ptr->shapes[i]);
       }
     }//end for
 
-    ROS_INFO("Found %d tables", table_ctr);
-    sa_pub_.publish (sa_msg);
-    //publishMapMarker ();
+    ROS_INFO("Found %d tables", table_ctr_);
+    sa_pub_.publish (sa);
   }
 
 
@@ -215,13 +173,13 @@ public:
    *
    * @return true if service successful
    */
-  bool
+  /*bool
   getTablesService (cob_3d_mapping_msgs::GetObjectsOfClassRequest &req,
                     cob_3d_mapping_msgs::GetObjectsOfClassResponse &res)
   {
     ROS_INFO("service get_objects_of_class started....");
 
-    cob_3d_mapping_msgs::ShapeArray sa;
+    cob_3d_mapping_msgs::ShapeArray sa, tables;
     if (getMapService (sa))
     {
       int table_ctr = 0;
@@ -238,15 +196,15 @@ public:
           //cob_3d_mapping_msgs::Shape s;
           //toROSMsg(*map[i], s);
           //convertPolygonToShape (*sem_exn_.PolygonMap[i], s);
-          publishShapeMarker (sa.shapes[i]);
           ROS_INFO("getTablesService: Polygon[%d] converted to shape",i);
           res.objects.shapes.push_back (sa.shapes[i]);
         }
       }
-      ROS_INFO("Found %d tables", table_ctr);
+      publishShapeMarker (sa.shapes[i]);
+      ROS_INFO("Found %d tables", table_ctr_);
     }
     return true;
-  }
+  }*/
 
   /**
    * @brief service offering table object candidates
@@ -258,14 +216,15 @@ public:
    */
   bool
   getTablesService2 (cob_3d_mapping_msgs::GetTablesRequest &req,
-		  cob_3d_mapping_msgs::GetTablesResponse &res)
+                     cob_3d_mapping_msgs::GetTablesResponse &res)
   {
     ROS_INFO("table detection started....");
 
-    cob_3d_mapping_msgs::ShapeArray sa;
+    cob_3d_mapping_msgs::ShapeArray sa, tables;
     if (getMapService (sa))
     {
-      int table_ctr = 0;
+      table_ctr_old_ = table_ctr_;
+      table_ctr_ = 0;
       for (unsigned int i = 0; i < sa.shapes.size (); i++)
       {
         PolygonPtr poly_ptr = PolygonPtr (new Polygon());
@@ -274,14 +233,8 @@ public:
         te_.setInputPolygon(poly_ptr);
         if (te_.isTable())
         {
-          table_ctr++;
-          //ros::Duration (10).sleep ();
-          //cob_3d_mapping_msgs::Shape s;
-          //toROSMsg(*map[i], s);
-          //convertPolygonToShape (*sem_exn_.PolygonMap[i], s);
-          publishShapeMarker (sa.shapes[i]);
-          ROS_INFO("getTablesService: Polygon[%d] converted to shape",i);
-          //res.objects.shapes.push_back (sa.shapes[i]);
+          table_ctr_++;
+          tables.shapes.push_back(sa.shapes[i]);
           tabletop_object_detector::Table table;
           Eigen::Affine3f pose;
           Eigen::Vector4f min_pt;
@@ -302,11 +255,11 @@ public:
           table.convex_hull.type = arm_navigation_msgs::Shape::MESH;
           for( unsigned int j=0; j<poly_ptr->contours[0].size(); j++)
           {
-        	  geometry_msgs::Point p;
-        	  p.x = poly_ptr->contours[0][j](0);
-        	  p.y = poly_ptr->contours[0][j](1);
-        	  p.z = poly_ptr->contours[0][j](2);
-        	  table.convex_hull.vertices.push_back(p);
+            geometry_msgs::Point p;
+            p.x = poly_ptr->contours[0][j](0);
+            p.y = poly_ptr->contours[0][j](1);
+            p.z = poly_ptr->contours[0][j](2);
+            table.convex_hull.vertices.push_back(p);
           }
 
           tabletop_object_detector::TabletopDetectionResult det;
@@ -314,7 +267,8 @@ public:
           res.tables.push_back(det);
         }
       }
-      ROS_INFO("Found %d tables", table_ctr);
+      publishShapeMarker (tables);
+      ROS_INFO("Found %d tables", table_ctr_);
     }
     return true;
   }
@@ -346,56 +300,9 @@ public:
       return 0;
     }
     sa = res.map;
-    /*sem_exn_.PolygonMap.resize (0);
-    ROS_INFO(" res.map.shapes.size ()  = %d \n",res.map.shapes.size ());
-    for (unsigned int i = 0; i < res.map.shapes.size (); i++)
-    {
-      PolygonPtr poly_ptr = PolygonPtr (new Polygon ());
-      cob_3d_mapping_msgs::Shape& s = res.map.shapes[i];
-      Polygon p;
-      fromROSMsg(s, *poly_ptr);
-      //convertShapeToPolygon (s, *poly_ptr);
-      sem_exn_.PolygonMap.push_back (poly_ptr);
-    }
-    ROS_INFO(" sem_exn_.PolygonMap.size ()  = %d \n",sem_exn_.PolygonMap.size ());
-    publishMapMarker ();*/
     return true;
   }
 
-
-
-
-  /**
-   * @brief convert polygon to PointCloud message
-   *
-   * @param poly polygon to be converted
-   *
-   * @param pc resultant point_cloud message
-   * @return nothing
-   */
-  /*void
-  convertToPointCloudMsg (const TableExtraction::Polygon& poly, sensor_msgs::PointCloud& pc)
-  {
-    pc.header.frame_id = "/map";
-
-    for (unsigned int i = 0; i < poly.poly_points.size (); i++)
-    {
-      //std::cout << " poly size : " << poly.poly_points.size () << std::endl;
-      if (poly.poly_points.size ())
-      {
-        geometry_msgs::Point32 pts;
-        for (unsigned int j = 0; j < poly.poly_points[i].size (); j++)
-        {
-          //std::cout<<"\n\t#"<<j<<"#";
-          pts.x = poly.poly_points[i][j][0];
-          pts.y = poly.poly_points[i][j][1];
-          pts.z = poly.poly_points[i][j][2];
-          pc.points.push_back (pts);
-        }
-      }
-    }
-
-  }*/
   /**
    * @brief publishe markers to visualize shape in rviz
    *
@@ -404,121 +311,57 @@ public:
    * @return nothing
    */
   void
-  publishShapeMarker (const cob_3d_mapping_msgs::Shape& s)
+  publishShapeMarker (const cob_3d_mapping_msgs::ShapeArray& sa)
   {
-    //static int ctr = 0;
-    //TODO: remove old markers
-
-
-    visualization_msgs::Marker marker;
-    marker.action = visualization_msgs::Marker::ADD;
-    marker.type = visualization_msgs::Marker::LINE_STRIP;
-    marker.lifetime = ros::Duration ();
-    marker.header.frame_id = "/map";
-    marker.ns = "shape_marker";
-    marker.header.stamp = ros::Time::now ();
-
-    marker.id = s.id;
-    marker.scale.x = 0.05;
-    marker.scale.y = 0.05;
-    marker.scale.z = 0;
-    marker.color.r = 1;
-    marker.color.g = 0;
-    marker.color.b = 0;
-    marker.color.a = 1.0;
-    for (unsigned int i = 0; i < s.points.size (); i++)
+    for(unsigned int i=0; i<table_ctr_old_; i++)
     {
+      visualization_msgs::Marker marker;
+      marker.action = visualization_msgs::Marker::DELETE;
+      marker.id = i;
+      s_marker_pub_.publish (marker);
+    }
+    for(unsigned int i=0; i<sa.shapes.size(); i++)
+    {
+      visualization_msgs::Marker marker;
+      marker.action = visualization_msgs::Marker::ADD;
+      marker.type = visualization_msgs::Marker::LINE_STRIP;
+      marker.lifetime = ros::Duration ();
+      marker.header.frame_id = "/map";
+      marker.ns = "shape_marker";
+      marker.header.stamp = ros::Time::now ();
+
+      marker.id = i;
+      marker.scale.x = 0.05;
+      marker.scale.y = 0.05;
+      marker.scale.z = 0;
+      marker.color.r = 1;
+      marker.color.g = 0;
+      marker.color.b = 0;
+      marker.color.a = 1.0;
+
 
       // sensor_msgs::PointCloud2 pc2;
       pcl::PointCloud<pcl::PointXYZ> cloud;
-      int cloud_size = s.points[i].height * s.points[i].width;
 
-      pcl::fromROSMsg (s.points[i], cloud);
+      pcl::fromROSMsg (sa.shapes[i].points[0], cloud);
 
-      marker.points.resize (cloud_size);
-      for (int j = 0; j < cloud_size; j++)
+      geometry_msgs::Point p;
+      //marker.points.resize (cloud.size()+1);
+      for (unsigned int j = 0; j < cloud.size(); j++)
       {
-
-        marker.points[j].x = cloud[j].x;
-        marker.points[j].y = cloud[j].y;
-        marker.points[j].z = cloud[j].z;
+        p.x = cloud[j].x;
+        p.y = cloud[j].y;
+        p.z = cloud[j].z;
+        marker.points.push_back(p);
       }
-      /*
-       marker.points[poly.poly_points[i].size ()].x = poly.poly_points[i][0] (0);
-       marker.points[poly.poly_points[i].size ()].y = poly.poly_points[i][0] (1);
-       marker.points[poly.poly_points[i].size ()].z = poly.poly_points[i][0] (2);
-       //std::cout<<" ctr : "<<ctr<<std::endl;
-       */
+      p.x = cloud[0].x;
+      p.y = cloud[0].y;
+      p.z = cloud[0].z;
+      marker.points.push_back(p);
+      s_marker_pub_.publish (marker);
     }
-    s_marker_pub_.publish (marker);
-    //ctr++;
 
   }
-
-  /**
-   * @brief publish complete map of polygons
-   *
-   * @return nothing
-   */
-  /*void
-  publishMapMarker ()
-  {
-
-    int ctr = 0;
-    visualization_msgs::MarkerArray marker_arr;
-    visualization_msgs::Marker marker;
-    marker.action = visualization_msgs::Marker::ADD;
-    marker.type = visualization_msgs::Marker::LINE_STRIP;
-    marker.lifetime = ros::Duration ();
-    marker.header.frame_id = "/map";
-    marker.ns = "map_marker_array";
-    //marker.header.stamp = ros::Time::now();
-
-    marker.scale.x = 0.02;
-    marker.scale.y = 0.02;
-    marker.scale.z = 0;
-    marker.color.r = 0;
-    marker.color.g = 0;
-    marker.color.b = 1;
-    marker.color.a = 1.0;
-    //marker_arr.markers.resize (sem_exn_.PolygonMap.size ());
-    for (unsigned int k = 0; k < sem_exn_.PolygonMap.size (); k++)
-    {
-
-      for (unsigned int i = 0; i < sem_exn_.PolygonMap[k]->poly_points.size (); i++)
-      {
-        if (ctr % 2 == 0)
-        {
-          marker.color.r = 0;
-          marker.color.g = 0;
-          marker.color.b = 1;
-        }
-        else
-        {
-          marker.color.r = 0;
-          marker.color.g = 1;
-          marker.color.b = 0;
-        }
-
-        marker.id = ctr;
-        //ROS_INFO("marker.id = %d",marker.id);
-        ctr++;
-        marker.points.resize (sem_exn_.PolygonMap[k]->poly_points[i].size ());
-        for (unsigned int j = 0; j < marker.points.size (); j++)
-        {
-
-          marker.points[j].x = sem_exn_.PolygonMap[k]->poly_points[i][j] (0);
-          marker.points[j].y = sem_exn_.PolygonMap[k]->poly_points[i][j] (1);
-          marker.points[j].z = sem_exn_.PolygonMap[k]->poly_points[i][j] (2);
-
-          //marker.points.push_back(pt);
-        }
-        marker_arr.markers.push_back (marker);
-      }
-      map_marker_pub_.publish (marker_arr);
-    }
-
-  }*/
 
   ros::NodeHandle n_;
 
@@ -527,23 +370,17 @@ protected:
   ros::Publisher sa_pub_;
   ros::Publisher pc2_pub_;
   ros::Publisher s_marker_pub_;
-  ros::Publisher map_marker_pub_;
   ros::ServiceServer get_tables_server_;
 
   TableExtraction te_;
-  cob_3d_mapping_msgs::ShapeArray sa_;
-
-  std::vector<bool> pc_index_;
 
   double tilt_angle_;
-  /*
-   double norm_x_min_, norm_x_max_;
-   double norm_y_min_, norm_y_max_;
-   double norm_z_min_, norm_z_max_;
-   */
   double height_min_, height_max_;
-
   double area_min_, area_max_;
+
+  unsigned int table_ctr_;
+  unsigned int table_ctr_old_;
+
 };
 
 int

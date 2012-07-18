@@ -1,9 +1,9 @@
 <launch>
  
 
-	<node pkg="cob_3d_mapping_common" type="shape_visualization" name="shape_visualization" output="screen">
+	<node pkg="cob_3d_visualization" type="shape_visualization" name="shape_visualization" output="screen">
   	
-     <remap from="shape_array" to="/shapes_array"/>
+     <remap from="shape_array" to="geometry_map/map_array"/>
      <remap from="shape" to="shape_visualization/shape"/>
   	<!--remap from="point_cloud" to="/cam3d/rgb/points"/-->
   
