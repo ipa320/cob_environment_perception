@@ -44,7 +44,7 @@
   <!--include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch"/-->
 
   <node pkg="rosbag" type="play" name="rosbag_play" cwd="node" respawn="false" output="screen"
-        args="/share/goa-sf/pcd_data/bags/tum_set/rgbd_dataset_freiburg1_room-points.bag -k -q --pause">
+        args="/share/goa-sf/pcd_data/bags/tum_set/rgbd_dataset_freiburg2_coke-points.bag -k -q --pause">
     <remap from="/camera/rgb/points" to="/registration/pc_aligned"/>
   </node>
 </launch>
