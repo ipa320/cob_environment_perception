@@ -20,13 +20,17 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
+# add dynamic reconfigure api
+rosbuild_find_ros_package(dynamic_reconfigure)
+include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
+gencfg()
+
 #uncomment if you have defined messages
 #rosbuild_genmsg()
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
 rosbuild_add_library(cob_3d_segmentation
-	ros/src/segmentation_node.cpp
 	common/src/segmentation.cpp # Old segmentation
 	common/src/cluster_handler.cpp
 	common/src/edge_handler.cpp
@@ -35,14 +39,14 @@ rosbuild_add_library(cob_3d_segmentation
 	common/src/cluster_classifier.cpp)
 
 rosbuild_add_library(cob_3d_segmentation_nodelets
-	ros/src/segmentation_all_in_one_nodelet_TRAFO.cpp)
+	ros/src/segmentation_all_in_one_nodelet.cpp)
 
 target_link_libraries(cob_3d_segmentation cob_3d_mapping_features cob_3d_mapping_features_omp)
 target_link_libraries(cob_3d_segmentation_nodelets cob_3d_segmentation cob_3d_mapping_common)
 
 
-
 rosbuild_add_executable(segmentation_node ros/src/segmentation_node.cpp)
+target_link_libraries(segmentation_node cob_3d_segmentation)
 
 
 # segmentation app:
