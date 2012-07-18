@@ -160,6 +160,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
 
 			p.assignMembers();
 			map_polygon_.push_back(p_ptr);
+			p.id = new_id_;
 			new_id_++;
 
 
@@ -172,7 +173,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
 		p.assignMembers();
 		p.assignWeight(limits.weighting_method);
 		map_polygon_.push_back(p_ptr);
-
+		p.id = new_id_;
 		new_id_++;
 	}
 	if(save_to_file_) saveMap(file_path_);
@@ -228,6 +229,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 
 		c.assignMembers(c.axes_[1],c.axes_[2],c.origin_);
 		map_cylinder_.push_back(c_ptr);
+		c.id = new_id_;
 		new_id_++;
 
 		//	std::cout<<"size +1"<<std::endl;
@@ -378,15 +380,15 @@ GeometryMap::colorizeMap()
 		if(fabs(map_polygon_[i]->normal[2]) < 0.1) //plane is vertical
 		{
 			map_polygon_[i]->color[0] = 0.5;
-			map_polygon_[i]->color[1] = 0.5;
-			map_polygon_[i]->color[2] = 0;
+			map_polygon_[i]->color[1] = 0;
+			map_polygon_[i]->color[2] = 0.5;
 			map_polygon_[i]->color[3] = 1;
 		}
 		else if(fabs(map_polygon_[i]->normal[0]) < 0.12 && fabs(map_polygon_[i]->normal[1]) < 0.12 && fabs(map_polygon_[i]->normal[2]) > 0.9) //plane is horizontal
 		{
 			map_polygon_[i]->color[0] = 0;
-			map_polygon_[i]->color[1] = 0.5;
-			map_polygon_[i]->color[2] = 0;
+			map_polygon_[i]->color[1] = 0;
+			map_polygon_[i]->color[2] = 0.5;
 			map_polygon_[i]->color[3] = 1;
 		}
 		else
