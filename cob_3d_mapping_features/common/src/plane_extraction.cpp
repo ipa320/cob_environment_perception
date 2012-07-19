@@ -481,30 +481,5 @@ PlaneExtraction::findClosestTable(std::vector<pcl::PointCloud<Point>, Eigen::ali
   }
 }
 
-#include <pcl/filters/voxel_grid.h>
-
-int main()
-{
-  PlaneExtraction pe;
-  std::string file_path("/home/goa/pcl_daten/kitchen_kinect2/");
-  pe.setFilePath(file_path);
-  pe.setSaveToFile(true);
-  std::stringstream ss;
-  ss << file_path << "pointclouds/point_cloud.pcd";
-  pcl::PointCloud<pcl::PointXYZRGB> cloud;
-  pcl::io::loadPCDFile (ss.str(), cloud);
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr = cloud.makeShared();
-  std::cout << "Pointcloud of size " << cloud_ptr->size() << " loaded" << std::endl;
-  pcl::VoxelGrid<pcl::PointXYZRGB> voxel;
-  voxel.setInputCloud(cloud_ptr);
-  voxel.setLeafSize(0.03,0.03,0.03);
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_vox = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
-  voxel.filter(*cloud_vox);
-  std::vector<pcl::PointCloud<pcl::PointXYZRGB>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZRGB> > > v_cloud_hull;
-  std::vector<std::vector<pcl::Vertices> > v_hull_polygons;
-  std::vector<pcl::ModelCoefficients> v_coefficients_plane;
-  pe.extractPlanes(cloud_vox, v_cloud_hull, v_hull_polygons, v_coefficients_plane);
-  return 0;
-}
 
 

@@ -22,6 +22,7 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/ros/include)
     #/usr/include/vtk-5.8)
 
 
@@ -38,7 +39,6 @@ add_definitions(${EIGEN_DEFINITIONS})
 find_package(OpenCV REQUIRED)
 find_package(VTK REQUIRED)
 include_directories(${VTK_INCLUDE_DIRS})
-
 
 #uncomment if you have defined messages
 #rosbuild_genmsg()
@@ -74,8 +74,9 @@ rosbuild_add_boost_directories()
 target_link_libraries(cob_3d_mapping_features_nodelets cob_3d_mapping_features ${OpenCV_LIBS})
 
 
-rosbuild_add_executable(test_plane_extraction common/src/plane_extraction.cpp)
-target_link_libraries(test_plane_extraction ${OpenCV_LIBS})
+rosbuild_add_executable(test_plane_extraction common/apps/test_plane_extraction.cpp)
+target_link_libraries(test_plane_extraction cob_3d_mapping_features ${OpenCV_LIBS} vtkCommon vtkFiltering)
+rosbuild_link_boost(test_plane_extraction program_options)
 
 rosbuild_add_executable(plane_extraction_action_client ros/src/plane_extraction_action_client.cpp)
 target_link_libraries(plane_extraction_action_client ${OpenCV_LIBS})

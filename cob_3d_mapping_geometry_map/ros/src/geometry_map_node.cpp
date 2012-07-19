@@ -107,7 +107,6 @@ public:
   // Constructor
   GeometryMapNode()
     {
-      std::cout<<"THIS IS GEOMETRY MAP NOde"<<std::endl;
       config_server_.setCallback(boost::bind(&GeometryMapNode::dynReconfCallback, this, _1, _2));
       ctr_ = 0;
       shape_sub_ = n_.subscribe("shape_array", 10, &GeometryMapNode::shapeCallback, this);
@@ -135,6 +134,7 @@ public:
     {
       geometry_map_.setSaveToFile( config.save_to_file );
       geometry_map_.setMergeThresholds(config.cos_angle, config.d);
+      map_frame_id_ = config.map_frame_id;
     }
 
   /**
@@ -175,7 +175,6 @@ public:
 
       ////    distinction of type
       if (sa->shapes[i].type == 0) {
-        std::cout<<"polygon detected"<<std::endl;
 
 
         PolygonPtr polygon_map_entry_ptr = PolygonPtr(new Polygon());
@@ -195,8 +194,6 @@ public:
         }
 
         //				calculate missing attributes
-        cylinder_map_entry_ptr->ParamsFromShapeMsg();
-
         geometry_map_.addMapEntry(cylinder_map_entry_ptr);
 
 
@@ -244,7 +241,7 @@ public:
     ROS_INFO("Clearing geometry map...");
     geometry_map_.clearMap();
     cob_3d_mapping_msgs::ShapeArray map_msg;
-    map_msg.header.frame_id="/map";
+    map_msg.header.frame_id=map_frame_id_;
     map_msg.header.stamp = ros::Time::now();
     map_pub_.publish(map_msg);
     return true;
@@ -268,7 +265,7 @@ public:
     boost::shared_ptr<std::vector<CylinderPtr> > map_cylinder = geometry_map_.getMap_cylinder();
 
     res.map.header.stamp = ros::Time::now();
-    res.map.header.frame_id = "/map";
+    res.map.header.frame_id = map_frame_id_;
     for(unsigned int i=0; i<map_polygon->size(); i++)
     {
       Polygon& sm = *(map_polygon->at(i));
@@ -337,7 +334,7 @@ public:
     geometry_map_.colorizeMap();
     //cob_3d_mapping_msgs::PolygonArrayArray map_msg;
     cob_3d_mapping_msgs::ShapeArray map_msg;
-    map_msg.header.frame_id="/map";
+    map_msg.header.frame_id=map_frame_id_;
     map_msg.header.stamp = ros::Time::now();
 
     //		std::cout<<"_________________________________"<<std::endl;
@@ -375,9 +372,6 @@ public:
       //map_msg.polygon_array.push_back(p);
       map_msg.shapes.push_back(s);
     }
-
-
-
     map_pub_.publish(map_msg);
   }
 
@@ -395,17 +389,16 @@ public:
    */
   void publishMapMarker()
   {
-    std::cout<<"publish map markers"<<std::endl;
     visualization_msgs::Marker marker, t_marker;
     marker.action = visualization_msgs::Marker::ADD;
     marker.type = visualization_msgs::Marker::LINE_STRIP;
     marker.lifetime = ros::Duration();
-    marker.header.frame_id = "/map";
+    marker.header.frame_id = map_frame_id_;
 
     t_marker.action = visualization_msgs::Marker::ADD;
     t_marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
     t_marker.lifetime = ros::Duration();
-    t_marker.header.frame_id = "/map";
+    t_marker.header.frame_id = map_frame_id_;
     //marker.header.stamp = stamp;
 
     //create the marker in the table reference frame
@@ -613,6 +606,7 @@ protected:
   unsigned int ctr_;            /// counter how many polygons are received
   std::string file_path_;
   bool save_to_file_;
+  std::string map_frame_id_;
 };
 
 int main (int argc, char** argv)

@@ -27,11 +27,11 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_gensrv()
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
 
-find_package(PCL 1.5.1 REQUIRED COMPONENTS
-common io kdtree search surface features filters)
-include_directories(${PCL_INCLUDE_DIRS})
-link_directories(${PCL_LIBRARY_DIRS})
-add_definitions(${PCL_DEFINITIONS})
+#find_package(PCL 1.5.1 REQUIRED COMPONENTS
+#common io kdtree search surface features filters)
+#include_directories(${PCL_INCLUDE_DIRS})
+#link_directories(${PCL_LIBRARY_DIRS})
+#add_definitions(${PCL_DEFINITIONS})
 
 
 
