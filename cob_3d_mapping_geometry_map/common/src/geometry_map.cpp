@@ -141,6 +141,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
       // merge polygon with merge candidates
       //std::cout <<"c before: "<< p.centroid(0)<<", "<<p.centroid(1)<<", "<<p.centroid(2)<<std::endl;
       p.merge(merge_candidates); // merge all new candidates into p
+	p.id = new_id_;
       map_polygon_.push_back(p_ptr); // add p to map, candidates were dropped!
       ++new_id_;
       //std::cout <<"c after : "<< p.centroid(0)<<", "<<p.centroid(1)<<", "<<p.centroid(2)<<std::endl;
@@ -150,6 +151,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
     {
       p.assignMembers();
       p.assignWeight();
+	p.id = new_id_;
       map_polygon_.push_back(p_ptr);
       new_id_++;
       //  std::cout<<"size +1"<<std::endl;
@@ -159,6 +161,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
   {
     p.assignMembers();
     p.assignWeight();
+	p.id = new_id_;
     map_polygon_.push_back(p_ptr);
     new_id_++;
   }
@@ -215,6 +218,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
       // merge polygon with merge candidates
 
       c.mergeCylinder(merge_candidates);
+	c.id = new_id_;
 
       map_cylinder_.push_back(c_ptr);
       new_id_ ++;
@@ -229,6 +233,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 
       c.assignMembers(c.axes_[1],c.axes_[2],c.origin_);
       c.assignWeight();
+	c.id = new_id_;
 
       map_cylinder_.push_back(c_ptr);
       new_id_++;
@@ -240,6 +245,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 
     c.assignMembers(c.axes_[1],c.axes_[2],c.origin_);
     c.assignWeight();
+	c.id = new_id_;
 
     map_cylinder_.push_back(c_ptr);
 
