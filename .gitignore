@@ -14,10 +14,10 @@ msg_gen
 cmake_install.cmake
 *.cfgc
 */cfg/cpp
-cob_3d_mapping_common/src
 cob_3d_mapping_features/src
 cob_3d_mapping_geometry_map/src
 cob_3d_mapping_point_map/src
 cob_3d_registration/src
+cob_3d_segmentation/src
 cob_table_object_cluster/src
 ROS_NOBUILD

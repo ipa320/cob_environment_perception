@@ -103,7 +103,7 @@ void readOptions(int argc, char* argv[])
   if (vm.count("help") || argc == 1)
   {
     cout << "\"pns\" stands for \"pixel neighborhood size\" and refers to N x N mask for nearest neighbor search\n"
-	 << "\t where N = 2 * pns + 1\n" << endl;
+         << "\t where N = 2 * pns + 1\n" << endl;
     cout << options << endl;
     exit(0);
   }
@@ -124,6 +124,19 @@ int main(int argc, char** argv)
 
   PCDReader r;
   if (r.read(file_in_, *p) == -1) return(0);
+  /*
+  p->resize(p_3->size());
+  p->width = p_3->width;
+  p->height = p_3->height;
+  for (int i =0; i < p_3->size(); ++i)
+  {
+    p->points[i].x = p_3->points[i].x;
+    p->points[i].y = p_3->points[i].y;
+    p->points[i].z = p_3->points[i].z;
+    p->points[i].rgba = 0xffffff;
+  }
+  */
+
   *pt = *p2 = *p;
   PrecisionStopWatch t;
   t.precisionStart();

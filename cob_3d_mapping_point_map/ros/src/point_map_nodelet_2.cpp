@@ -98,7 +98,7 @@ public:
   PointMapNodelet()
   : ctr_(0),
     is_running_(false),
-    map_frame_id_("map")
+    map_frame_id_("/map")
     {
 
     map_.header.frame_id = map_frame_id_;
@@ -125,6 +125,7 @@ public:
     save_ = config.save;
     voxel_leafsize_ = config.voxel_leafsize;
     map_frame_id_ = config.map_frame_id;
+    map_.header.frame_id = map_frame_id_;
   }
 
 
@@ -181,7 +182,7 @@ public:
     try
     {
       std::stringstream ss2;
-      tf_listener_.waitForTransform(map_frame_id_, pc->header.frame_id, pc->header.stamp, ros::Duration(0.1));
+      tf_listener_.waitForTransform(map_frame_id_, pc->header.frame_id, pc->header.stamp, ros::Duration(2.0));
       tf_listener_.lookupTransform(map_frame_id_, pc->header.frame_id, pc->header.stamp/*ros::Time(0)*/, trf_map);
     }
     catch (tf::TransformException ex)
