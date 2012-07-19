@@ -93,6 +93,11 @@
 #include <cob_3d_mapping_common/ros_msg_conversions.h>
 #include "cob_3d_mapping_common/polygon.h"
 
+
+#include <tf_conversions/tf_eigen.h>
+#include <tf/transform_listener.h>
+
+
 // internal includes
 #include "cob_3d_mapping_geometry_map/geometry_map.h"
 
@@ -106,38 +111,45 @@ public:
 
   // Constructor
   GeometryMapNode()
-    {
-      config_server_.setCallback(boost::bind(&GeometryMapNode::dynReconfCallback, this, _1, _2));
-      ctr_ = 0;
-      shape_sub_ = n_.subscribe("shape_array", 10, &GeometryMapNode::shapeCallback, this);
-      map_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("map_array",1);
-      marker_pub_ = n_.advertise<visualization_msgs::Marker>("geometry_marker",100);
-      clear_map_server_ = n_.advertiseService("clear_map", &GeometryMapNode::clearMap, this);
-      get_map_server_ = n_.advertiseService("get_map", &GeometryMapNode::getMap, this);
-      ros::param::param("~file_path" , file_path_ , std::string("/home/goa-tz/tmp/"));
-      ros::param::param("~save_to_file" , save_to_file_ , false);
-      //ros::param::param("~map_frame_id", map_frame_id_, "/map");
-      std::cout << file_path_ << std::endl;
-      geometry_map_.setFilePath(file_path_);
-      geometry_map_.setSaveToFile(save_to_file_);
+  {
+    enable_tf_=true;
+    map_frame_id_="/map";
+    config_server_.setCallback(boost::bind(&GeometryMapNode::dynReconfCallback, this, _1, _2));
+    ctr_ = 0;
+    shape_sub_ = n_.subscribe("shape_array", 10, &GeometryMapNode::shapeCallback, this);
+    map_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("map_array",1);
+    marker_pub_ = n_.advertise<visualization_msgs::Marker>("geometry_marker",100);
+    clear_map_server_ = n_.advertiseService("clear_map", &GeometryMapNode::clearMap, this);
+    get_map_server_ = n_.advertiseService("get_map", &GeometryMapNode::getMap, this);
+    ros::param::param("~file_path" , file_path_ , std::string("/home/goa-tz/tmp/"));
+    ros::param::param("~save_to_file" , save_to_file_ , false);
+    //ros::param::param("~map_frame_id", map_frame_id_, "/map");
+    std::cout << file_path_ << std::endl;
+    geometry_map_.setFilePath(file_path_);
+    geometry_map_.setSaveToFile(save_to_file_);
 
 
 
-    }
+
+
+
+  }
 
   // Destructor
   ~GeometryMapNode()
-    {
-      /// void
-    }
+  {
+    /// void
+  }
 
   void dynReconfCallback(cob_3d_mapping_geometry_map::geometry_map_nodeConfig &config, uint32_t level)
-    {
-      ROS_INFO("[geometry_map]: received new parameters");
-      geometry_map_.setSaveToFile( config.save_to_file );
-      geometry_map_.setMergeThresholds(config.cos_angle, config.d);
-      map_frame_id_ = config.map_frame_id;
-    }
+  {
+    ROS_INFO("[geometry_map]: received new parameters");
+    geometry_map_.setSaveToFile( config.save_to_file );
+    geometry_map_.setMergeThresholds(config.cos_angle, config.d);
+    map_frame_id_ = config.map_frame_id;
+    enable_tf_ = config.enable_tf;
+
+  }
 
   /**
    * @brief callback for dynamic reconfigure
@@ -165,6 +177,34 @@ public:
   void
   shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr sa)
   {
+
+    tf::StampedTransform trf_map;
+    Eigen::Affine3f af = Eigen::Affine3f::Identity();
+    std::cout<<"GMN looking for "<<sa->header.frame_id<<"\n";
+    std::cout<<"[GMN-->FRAME SET TO]"<<map_frame_id_.c_str()<<"\n";
+
+    if (enable_tf_)
+    {
+      try
+      {
+        tf_listener_.waitForTransform(map_frame_id_, sa->header.frame_id, sa->header.stamp, ros::Duration(2));
+        tf_listener_.lookupTransform(map_frame_id_, sa->header.frame_id, sa->header.stamp, trf_map);
+      }
+      catch (tf::TransformException ex)
+      {
+        ROS_ERROR("[geometry map node] : %s",ex.what());
+        return;
+      }
+      Eigen::Affine3d ad;
+      tf::TransformTFToEigen(trf_map, ad);
+      af = ad.cast<float>();
+    }
+
+
+
+
+
+
     static int ctr=0;
     static double time = 0;
     PrecisionStopWatch t;
@@ -185,6 +225,7 @@ public:
           std::cout << "ERROR: fromROSMsg" << std::endl;
           continue;
         }
+        polygon_map_entry_ptr->transform2tf(af);
         geometry_map_.addMapEntry(polygon_map_entry_ptr);
       }
 
@@ -195,8 +236,12 @@ public:
         if(!fromROSMsg(sa->shapes[i], *cylinder_map_entry_ptr)){
           continue;
         }
+        //prepare cylinder for geometry map
+        cylinder_map_entry_ptr->transform2tf(af);
+        cylinder_map_entry_ptr->ParamsFromShapeMsg();
+        cylinder_map_entry_ptr->getCyl2D();
 
-        //				calculate missing attributes
+
         geometry_map_.addMapEntry(cylinder_map_entry_ptr);
 
 
@@ -322,6 +367,9 @@ public:
 
     ctr++;
   }
+
+
+
 
 
   void publishMap()
@@ -601,6 +649,13 @@ protected:
   ros::Publisher marker_pub_;
   ros::ServiceServer clear_map_server_;
   ros::ServiceServer get_map_server_;
+
+
+
+  tf::TransformListener tf_listener_;
+  bool enable_tf_;
+
+
   dynamic_reconfigure::Server<cob_3d_mapping_geometry_map::geometry_map_nodeConfig> config_server_;
 
   GeometryMap geometry_map_;      /// map containing geometrys (polygons)
@@ -611,6 +666,8 @@ protected:
   bool save_to_file_;
   std::string map_frame_id_;
 };
+
+
 
 int main (int argc, char** argv)
 {
