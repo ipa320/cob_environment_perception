@@ -242,6 +242,8 @@ protected:
 
   pcl::PointCloud<Point> extracted_planes_;
 
+public:
+  std::vector<std::vector<int> > extracted_planes_indices_;
 };
 
 #endif //__PLANE_EXTRACTION_H__

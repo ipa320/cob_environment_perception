@@ -66,7 +66,6 @@
 
   //aditional includes
 #include <ros/console.h>
-#include <pcl/kdtree/kdtree_flann.h>
 
 void
 TableObjectCluster::extractTableRoi(pcl::PointCloud<Point>::Ptr& pc_in,
@@ -162,9 +161,9 @@ TableObjectCluster::calculateBoundingBoxes(pcl::PointCloud<Point>::Ptr& pc_roi_r
 
 
   // for ros electric
-  // pcl::KdTree<Point>::Ptr clusters_tree;
+  //pcl::KdTree<Point>::Ptr clusters_tree;
   //	for ros fuerte
-    pcl::search::KdTree<Point>::Ptr clusters_tree;
+  pcl::search::KdTree<Point>::Ptr clusters_tree;
   clusters_tree = boost::make_shared<pcl::search::KdTree<Point> > ();
 
   pcl::EuclideanClusterExtraction<Point> cluster_obj;
