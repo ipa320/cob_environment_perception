@@ -74,8 +74,8 @@ rosbuild_add_boost_directories()
 target_link_libraries(cob_3d_mapping_features_nodelets cob_3d_mapping_features ${OpenCV_LIBS})
 
 
-rosbuild_add_executable(test_plane_extraction common/src/plane_extraction.cpp)
-target_link_libraries(test_plane_extraction ${OpenCV_LIBS})
+rosbuild_add_executable(test_plane_extraction common/apps/test_plane_extraction.cpp)
+target_link_libraries(test_plane_extraction cob_3d_mapping_features)
 
 rosbuild_add_executable(plane_extraction_action_client ros/src/plane_extraction_action_client.cpp)
 target_link_libraries(plane_extraction_action_client ${OpenCV_LIBS})

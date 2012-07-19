@@ -81,7 +81,7 @@ PlaneExtraction::PlaneExtraction()
   file_path_("/tmp"),
   save_to_file_(false),
   plane_constraint_(NONE),
-  cluster_tolerance_(0.05),
+  cluster_tolerance_(0.06),
   min_plane_size_(50),
   radius_(0.1),
   //normal_distance_weight_(0.05),
@@ -200,7 +200,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
   proj_.setInputCloud (pc_in);
 
   // Go through all clusters and search for planes
-
+  extracted_planes_indices_.clear();
   for(unsigned int i = 0; i < clusters.size(); ++i)
   {
     ROS_DEBUG("Processing cluster no. %u", i);
@@ -290,6 +290,8 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
         cluster_plane_.extract (plane_clusters);
 
         extract_.setInputCloud(cloud_projected);
+        std::cout << "projected: " << cloud_projected->size() << std::endl;
+        std::cout << "inliers_plane: " << inliers_plane->indices.size() << std::endl;
         for(unsigned int j=0; j<plane_clusters.size(); j++)
         {
           pcl::PointCloud<Point> plane_cluster;
@@ -300,6 +302,16 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
           if(plane_cluster_ptr->size() < min_plane_size_) continue;
           //else std::cout << "plane cluster has " << plane_cluster_ptr->size() << " points" << std::endl;
 
+          // <stupidity> All this is very stupid and serves only the purpose of evaluation!!!
+          extracted_planes_indices_.push_back(std::vector<int>());
+          std::cout << "plane_cluster: " << plane_clusters[j].indices.size() << std::endl;
+          for (size_t idx = 0; idx < plane_clusters[j].indices.size(); ++idx)
+          {
+            //std::cout << plane_clusters[j].indices[idx] << " ";
+            extracted_planes_indices_.back().push_back(inliers_plane->indices[ plane_clusters[j].indices[idx] ]);
+          }
+          // </stupidity>
+
           // Create a Concave Hull representation of the projected inliers
           pcl::PointCloud<Point> cloud_hull;
           std::vector< pcl::Vertices > hull_polygons;
@@ -307,6 +319,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
           //TODO: parameter
 
           chull_.reconstruct (cloud_hull, hull_polygons);
+          std::cout << "Hull: " << cloud_hull.size() << ", " << hull_polygons[0].vertices.size()<<", "<< plane_cluster_ptr->size() << std::endl;
           if(hull_polygons.size() > 1)
           {
 		continue;
@@ -471,30 +484,3 @@ PlaneExtraction::findClosestTable(std::vector<pcl::PointCloud<Point>, Eigen::ali
     }
   }
 }
-
-
-int main()
-{
-  PlaneExtraction pe;
-  std::string file_path("/home/goa/pcl_daten/kitchen_kinect2/");
-  pe.setFilePath(file_path);
-  pe.setSaveToFile(true);
-  std::stringstream ss;
-  ss << file_path << "pointclouds/point_cloud.pcd";
-  pcl::PointCloud<pcl::PointXYZRGB> cloud;
-  pcl::io::loadPCDFile (ss.str(), cloud);
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_ptr = cloud.makeShared();
-  std::cout << "Pointcloud of size " << cloud_ptr->size() << " loaded" << std::endl;
-  pcl::VoxelGrid<pcl::PointXYZRGB> voxel;
-  voxel.setInputCloud(cloud_ptr);
-  voxel.setLeafSize(0.03,0.03,0.03);
-  pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_vox = pcl::PointCloud<pcl::PointXYZRGB>::Ptr(new pcl::PointCloud<pcl::PointXYZRGB>);
-  voxel.filter(*cloud_vox);
-  std::vector<pcl::PointCloud<pcl::PointXYZRGB>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZRGB> > > v_cloud_hull;
-  std::vector<std::vector<pcl::Vertices> > v_hull_polygons;
-  std::vector<pcl::ModelCoefficients> v_coefficients_plane;
-  pe.extractPlanes(cloud_vox, v_cloud_hull, v_hull_polygons, v_coefficients_plane);
-  return 0;
-}
-
-
