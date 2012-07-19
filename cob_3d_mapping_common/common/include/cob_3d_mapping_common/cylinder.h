@@ -76,11 +76,9 @@ extern "C" {
 #include <pcl/segmentation/sac_segmentation.h>
 #include <pcl/registration/transforms.h>
 #include <pcl/sample_consensus/method_types.h>
-//#include <pcl/sample_consensus/sac_model_circle.h>
 #include <pcl/ModelCoefficients.h>
 #include <pcl/exceptions.h>
 
-//#include <pcl/common/transformation_from_correspondences.h>
 
 
 
@@ -114,31 +112,32 @@ public:
     axes_[1].resize(3);
     axes_[2].resize(3);
   }
+
+  //##############Methods to initialize cylinder and its paramers#########
+
   void ContoursFromCloud(pcl::PointCloud<pcl::PointXYZ>::ConstPtr in_cloud);
   void ContoursFromList( std::vector<std::vector<Eigen::Vector3f> >& in_list);
-
   void ParamsFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud, std::vector<int>& indices);
   void ParamsFromShapeMsg();
-
-
-
-
-  void getCyl3D(std::vector<std::vector<Eigen::Vector3f> >& contours3D);
-  void getCyl2D();
-
-  void weightAttributes(std::vector<boost::shared_ptr<Cylinder> >& c_array,Cylinder& average_c);
-  void applyWeightingCylinder(std::vector<boost::shared_ptr<Cylinder> >& merge_candidates);
-  virtual void isMergeCandidate(const std::vector<boost::shared_ptr<Cylinder> >& cylinder_array,const merge_config& limits,std::vector<int>& intersections);
-  virtual void merge(std::vector<boost::shared_ptr<Cylinder> >& c_array);
+  virtual void computeAttributes(const Eigen::Vector3f & z_axis,const Eigen::Vector3f &new_normal, const Eigen::Vector3f & new_origin);
   virtual void transform2tf(Eigen::Affine3f & tf);
 
 
-  virtual void computeAttributes(const Eigen::Vector3f & z_axis,const Eigen::Vector3f &new_normal, const Eigen::Vector3f & new_origin);
 
+  //################## methods to roll and unroll cylinder###############
+  void getCyl3D(std::vector<std::vector<Eigen::Vector3f> >& contours3D);
+  void makeCyl2D();
 
-  void printAttributes(std::string & name);
+  //################## methods for merging############################
+  virtual void isMergeCandidate(const std::vector<boost::shared_ptr<Cylinder> >& cylinder_array,const merge_config& limits,std::vector<int>& intersections);
+  virtual void merge(std::vector<boost::shared_ptr<Cylinder> >& c_array);
+
+//############## debugging methods ####################
   void dbg_out(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points,std::string& name);
+  void printAttributes(std::string & name);
 
+
+//################# member variables########################
   double r_;
   std::vector<Eigen::Vector3f> axes_;
   Eigen::Vector3f origin_;
@@ -146,8 +145,11 @@ public:
   bool debug_;
 
 private:
+//################ private methods for merging to avoid confusion by user################
   void getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha);
   void getShiftedCylinder(Cylinder& c,Cylinder& shifted_cylinder);
+  void applyWeightingCylinder(std::vector<boost::shared_ptr<Cylinder> >& merge_candidates);
+
 };
 
 
