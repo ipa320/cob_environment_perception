@@ -113,13 +113,13 @@ void Cylinder::getCyl3D(std::vector<std::vector<Eigen::Vector3f> >& contours3D) 
       //	      transform back in world system
       //			point_temp=transformation_from_world_to_cylinder_.inverse()* point_temp;
       point_temp = transform_from_world_to_plane.inverse()
-																													                * point_temp;
+																													                    * point_temp;
 
       //			std::cout<<"DEBUG: point after trafo\n"<<point_temp<<std::endl;
 
 
       contours3D[j][k] = point_temp;
-//            contours3D[j][k] = contours[j][k];
+      //            contours3D[j][k] = contours[j][k];
 
 
 
@@ -174,41 +174,37 @@ void Cylinder::getCyl2D()
    * Convert Contours in cylindrical shape to polygonial shape
    */
 
-this->debug_output("3d");
-std::string n1="3d";
-this->printAttributes(n1);
+
   for (size_t j = 0; j < contours.size(); j++) {
 
 
-      for (size_t k = 0; k < contours[j].size(); k++) {
+    for (size_t k = 0; k < contours[j].size(); k++) {
 
-        //      Transform  Points in Cylinder Coordinate System
-        Eigen::Vector3f point_trans =
-            transform_from_world_to_plane * contours[j][k];
+      //      Transform  Points in Cylinder Coordinate System
+      Eigen::Vector3f point_trans =
+          transform_from_world_to_plane * contours[j][k];
 
-        float Tx, alpha;
-        //        flatten polygon
-        getTrafo2d(point_trans, Tx, alpha);
-        // New coordinates( p_y = 0 because now on a plane)
-        point_trans[0] = Tx;
-        point_trans[2] = 0;
-        //          std::cout<<"point _trans\n"<< point_trans<<std::endl;
-        //        transform back in world system
-        Eigen::Vector3f point_global =
-            transform_from_world_to_plane.inverse()
-            * point_trans;
-        //          std::cout<<"point _trans\n"<< point_global<<std::endl;
+      float Tx, alpha;
+      //        flatten polygon
+      getTrafo2d(point_trans, Tx, alpha);
+      // New coordinates( p_y = 0 because now on a plane)
+      point_trans[0] = Tx;
+      point_trans[2] = 0;
+      //          std::cout<<"point _trans\n"<< point_trans<<std::endl;
+      //        transform back in world system
+      Eigen::Vector3f point_global =
+          transform_from_world_to_plane.inverse()
+          * point_trans;
+      //          std::cout<<"point _trans\n"<< point_global<<std::endl;
 
 
-        contours[j][k] = point_global;
-
-      }
-
-      this->debug_output("2d");
-      std::string n="2d";
-     this->printAttributes(n);
+      contours[j][k] = point_global;
 
     }
+
+
+
+  }
 
 }
 
@@ -355,6 +351,7 @@ Cylinder::ParamsFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud ,
 
 
   r_=coeff.values[2];
+
   axes_[0].normalize();
   axes_[1].normalize();
   axes_[2].normalize();
@@ -457,7 +454,7 @@ void Cylinder::getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha)
     //	Debug Output
     std::cout << "avec" << std::endl << vec2d << std::endl;
     std::cout << "alpha = " << acos(cos_alpha) * (180 / 3.1459)
-																												                << std::endl;
+																												                    << std::endl;
     std::cout << "TX = " << Tx << std::endl << std::endl;
 
   }
@@ -683,9 +680,9 @@ Cylinder::getShiftedCylinder(Cylinder& c, Polygon & shifted_polygon) {
 
 
       shifted_polygon.contours[j][k]		= c.transform_from_world_to_plane.inverse()
-																															                * (shift_trafo
-																															                    * c.transform_from_world_to_plane
-																															                    * contours[j][k]);
+																															                    * (shift_trafo
+																															                        * c.transform_from_world_to_plane
+																															                        * contours[j][k]);
       //END LOCAL
 
     }
@@ -905,7 +902,6 @@ Cylinder::applyWeightingCylinder(std::vector<CylinderPtr>& merge_candidates)
   this->axes_[1].normalize();
   this->axes_[2].normalize();
 
-
   this->origin_ = temp_origin / merge_weight_sum;
   this->normal = this->axes_[2];
 
@@ -922,6 +918,32 @@ Cylinder::applyWeightingCylinder(std::vector<CylinderPtr>& merge_candidates)
 
 
 }
+
+ void
+Cylinder::transform2tf(Eigen::Affine3f & trafo)
+{
+  //transform contours
+
+  this->TransformContours(trafo);
+
+  //  transform parameters
+  Eigen::Vector3f tf_axes_1 = trafo.rotation() * this->axes_[1];
+  this->axes_[1] =  tf_axes_1;
+
+  Eigen::Vector3f tf_axes_2 = trafo.rotation() * this->axes_[2];
+  this->axes_[2] = tf_axes_2;
+
+  Eigen::Vector3f tf_origin = trafo * this->origin_;
+  this->origin_ =  tf_origin;
+
+  Eigen::Vector3f centroid3f;
+  centroid3f<<  this->centroid[0], this->centroid[1], this->centroid[2];
+  centroid3f = trafo * centroid3f;
+  this->centroid << centroid3f[0], centroid3f[1], centroid3f[2], 0;
+  this->computeAttributes(axes_[1],axes_[2],centroid);
+
+}
+
 void
 Cylinder::dbg_out(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points,std::string & name){
 
@@ -951,6 +973,20 @@ Cylinder::dbg_out(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points,std::string & na
 
 
 
+}
+
+void
+Cylinder::computeAttributes(const Eigen::Vector3f& z_axis, const Eigen::Vector3f &new_normal, const Eigen::Vector4f& centroid)
+{
+
+
+  //  TODO: recomputation of centroid
+  normal=new_normal;
+  d=fabs(centroid.head(3).dot(normal));
+
+  Eigen::Affine3f transform_from_plane_to_world;
+  getTransformationFromPlaneToWorld(z_axis,normal,centroid.head(3),transform_from_plane_to_world);
+  transform_from_world_to_plane=transform_from_plane_to_world.inverse();
 }
 
 void

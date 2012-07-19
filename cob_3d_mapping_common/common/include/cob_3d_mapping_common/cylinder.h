@@ -123,9 +123,10 @@ public:
 	void applyWeightingCylinder(std::vector<boost::shared_ptr<Cylinder> >& merge_candidates);
 	void isMergeCandidate(const std::vector<boost::shared_ptr<Cylinder> >& cylinder_array,const merge_config& limits,std::vector<int>& intersections);
 	void mergeCylinder(std::vector<boost::shared_ptr<Cylinder> >& c_array);
+  virtual void transform2tf(Eigen::Affine3f & tf);
 
 
-
+  virtual void computeAttributes(const Eigen::Vector3f & z_axis,const Eigen::Vector3f &new_normal, const Eigen::Vector4f & centroid);
 
 
 	void printAttributes(std::string & name);
