@@ -14,12 +14,11 @@
 	<node name="state_publisher" type="state_publisher" pkg="robot_state_publisher" output="screen">
 		<remap from="joint_states" to="/cob_3d_mapping_demonstrator_controller/joint_states"/>
 	</node>
-  <node name="kill" type="kill_xtion.sh" pkg="cob_3d_mapping_demonstrator"/>
+	<include file="$(find cob_3d_mapping_demonstrator)/ros/launch/openni.launch"/>
   <remap from="base_controller/command" to="cob_3d_mapping_demonstrator/command_vel" />
 
   <node name="execute_button_commands" type="execute_button_commands.py" pkg="cob_3d_mapping_demonstrator" output="screen"/>
   <include file="$(find cob_3d_mapping_pipeline)/launch/mapping_demo.launch"/>
-	<include file="$(find cob_3d_mapping_demonstrator)/ros/launch/openni.launch"/>
 
 	<!--node ns="cob_3d_mapping_demonstrator_controller" pkg="cob_teleop" type="teleop_cob" name="spawn_teleop_keyboard" output="screen"/-->
 

@@ -1,6 +1,6 @@
 /****************************************************************
  *
- * Copyright (c) 2011
+ * Copyright (c) 2010
  *
  * Fraunhofer Institute for Manufacturing Engineering
  * and Automation (IPA)
@@ -8,17 +8,18 @@
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
  * Project name: care-o-bot
- * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_features
- * Description:
+ * ROS stack name: cob_3d_environment_perception_intern
+ * ROS package name: cob_3d_mapping_demonstrator
+ * Description: Feature Map for storing and handling geometric features
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
- * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
+ * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 11/2011
+ * Date of creation: 04/2012
  * ToDo:
+ *
  *
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -50,16 +51,50 @@
  * License LGPL along with this program.
  * If not, see <http://www.gnu.org/licenses/>.
  *
-****************************************************************/
+ ****************************************************************/
 
-// external includes:
-#include <pcl/point_types.h>
-#include <pcl/impl/instantiate.hpp>
+#ifndef RVIZ_LOGO_H
+#define RVIZ_LOGO_H
 
-// package includes:
-#include "cob_3d_mapping_common/point_types.h"
-#include "cob_3d_mapping_features/organized_normal_estimation_omp.h"
-#include "cob_3d_mapping_features/impl/organized_normal_estimation_omp.hpp"
+#include <wx/wx.h>
+//#include <wx/menu.h>
+//#include <wx/dialog.h>
+//#include <wx/msgdlg.h>
+#include <string.h>
+#include "rviz/display.h"
+#include "cob_3d_mapping_demonstrator/rviz_logo_panel.h"
 
-PCL_INSTANTIATE_OrganizedNormalEstimationOMP(pcl::PointXYZRGB,pcl::Normal,PointLabel)
-PCL_INSTANTIATE_OrganizedNormalEstimationOMP(pcl::PointXYZ,pcl::Normal,PointLabel)
+namespace rviz
+{
+  class RvizLogo : public Display
+{
+public:
+    /// Constructor
+    RvizLogo(const std::string& name, VisualizationManager* manager/*wxWindow *parent, const wxString& title, rviz::WindowManagerInterface * wmi*/);
+    ~RvizLogo();
+
+    void onEnable();
+
+    void onDisable();
+
+
+    void targetFrameChanged()
+    {
+    }
+
+    void fixedFrameChanged()
+    {
+    }
+
+
+protected:
+
+    wxBitmap pic_;
+    wxStaticBitmap *logo_;
+    wxImagePanel* panel_;
+    wxFrame* frame_; // temp
+
+};
+}
+
+#endif // RVIZ_LOGO_H
