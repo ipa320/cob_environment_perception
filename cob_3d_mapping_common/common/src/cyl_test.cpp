@@ -269,7 +269,7 @@ std::cout<<"merge_candidates size: ="<<merge_candidates.size()<<std::endl;
 
 
 if(merge_candidates.size()>0){
-c1->mergeCylinder(merge_candidates);
+c1->merge(merge_candidates);
 //
 //
 

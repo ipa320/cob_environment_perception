@@ -106,41 +106,48 @@ class Cylinder: public Polygon
 
 public:
 
-	void ContoursFromCloud(pcl::PointCloud<pcl::PointXYZ>::ConstPtr in_cloud);
-	void ContoursFromList( std::vector<std::vector<Eigen::Vector3f> >& in_list);
+  Cylinder():debug_(false)
+  {
+    //allocate axes
+    axes_.resize(3);
+    axes_[0].resize(3);
+    axes_[1].resize(3);
+    axes_[2].resize(3);
+  }
+  void ContoursFromCloud(pcl::PointCloud<pcl::PointXYZ>::ConstPtr in_cloud);
+  void ContoursFromList( std::vector<std::vector<Eigen::Vector3f> >& in_list);
 
-	void ParamsFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud, std::vector<int>& indices);
-	void ParamsFromShapeMsg();
+  void ParamsFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud, std::vector<int>& indices);
+  void ParamsFromShapeMsg();
 
 
 
 
-	void getCyl3D(std::vector<std::vector<Eigen::Vector3f> >& contours3D);
-	void getCyl2D();
-	void allocate();
+  void getCyl3D(std::vector<std::vector<Eigen::Vector3f> >& contours3D);
+  void getCyl2D();
 
-	void weightAttributes(std::vector<boost::shared_ptr<Cylinder> >& c_array,Cylinder& average_c);
-	void applyWeightingCylinder(std::vector<boost::shared_ptr<Cylinder> >& merge_candidates);
-	void isMergeCandidate(const std::vector<boost::shared_ptr<Cylinder> >& cylinder_array,const merge_config& limits,std::vector<int>& intersections);
-	void mergeCylinder(std::vector<boost::shared_ptr<Cylinder> >& c_array);
+  void weightAttributes(std::vector<boost::shared_ptr<Cylinder> >& c_array,Cylinder& average_c);
+  void applyWeightingCylinder(std::vector<boost::shared_ptr<Cylinder> >& merge_candidates);
+  virtual void isMergeCandidate(const std::vector<boost::shared_ptr<Cylinder> >& cylinder_array,const merge_config& limits,std::vector<int>& intersections);
+  virtual void merge(std::vector<boost::shared_ptr<Cylinder> >& c_array);
   virtual void transform2tf(Eigen::Affine3f & tf);
 
 
-  virtual void computeAttributes(const Eigen::Vector3f & z_axis,const Eigen::Vector3f &new_normal, const Eigen::Vector4f & centroid);
+  virtual void computeAttributes(const Eigen::Vector3f & z_axis,const Eigen::Vector3f &new_normal, const Eigen::Vector3f & new_origin);
 
 
-	void printAttributes(std::string & name);
-	void dbg_out(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points,std::string& name);
+  void printAttributes(std::string & name);
+  void dbg_out(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points,std::string& name);
 
-	double r_;
-	std::vector<Eigen::Vector3f> axes_;
-	Eigen::Vector3f origin_;
-//	Polygon unrolled_;
-	bool debug_;
+  double r_;
+  std::vector<Eigen::Vector3f> axes_;
+  Eigen::Vector3f origin_;
+  //	Polygon unrolled_;
+  bool debug_;
 
 private:
-	void getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha);
-	void getShiftedCylinder(Cylinder& c,Polygon & shifted_polygon);
+  void getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha);
+  void getShiftedCylinder(Cylinder& c,Cylinder& shifted_cylinder);
 };
 
 
