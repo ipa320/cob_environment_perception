@@ -1,6 +1,6 @@
 /****************************************************************
  *
- * Copyright (c) 2011
+ * Copyright (c) 2010
  *
  * Fraunhofer Institute for Manufacturing Engineering
  * and Automation (IPA)
@@ -8,17 +8,18 @@
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
  * Project name: care-o-bot
- * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_features
- * Description:
+ * ROS stack name: cob_3d_environment_perception_intern
+ * ROS package name: cob_3d_mapping_demonstrator
+ * Description: Feature Map for storing and handling geometric features
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
- * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
+ * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 11/2011
+ * Date of creation: 03/2012
  * ToDo:
+ *
  *
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -50,16 +51,19 @@
  * License LGPL along with this program.
  * If not, see <http://www.gnu.org/licenses/>.
  *
-****************************************************************/
+ ****************************************************************/
 
-// external includes:
-#include <pcl/point_types.h>
-#include <pcl/impl/instantiate.hpp>
+#include "rviz/plugin/type_registry.h"
 
-// package includes:
-#include "cob_3d_mapping_common/point_types.h"
-#include "cob_3d_mapping_features/organized_normal_estimation_omp.h"
-#include "cob_3d_mapping_features/impl/organized_normal_estimation_omp.hpp"
+#include "cob_3d_mapping_demonstrator/rviz_buttons.h"
+#include "cob_3d_mapping_demonstrator/rviz_title.h"
+#include "cob_3d_mapping_demonstrator/rviz_logo.h"
 
-PCL_INSTANTIATE_OrganizedNormalEstimationOMP(pcl::PointXYZRGB,pcl::Normal,PointLabel)
-PCL_INSTANTIATE_OrganizedNormalEstimationOMP(pcl::PointXYZ,pcl::Normal,PointLabel)
+extern "C" void rvizPluginInit(rviz::TypeRegistry* reg)
+{
+  reg->registerDisplay<rviz::RvizButtons>("RvizButtons");
+  reg->registerDisplay<rviz::RvizTitle>("RvizTitle");
+  reg->registerDisplay<rviz::RvizLogo>("RvizLogo");
+}
+
+

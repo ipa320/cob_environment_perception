@@ -1,6 +1,6 @@
 /****************************************************************
  *
- * Copyright (c) 2011
+ * Copyright (c) 2010
  *
  * Fraunhofer Institute for Manufacturing Engineering
  * and Automation (IPA)
@@ -8,17 +8,18 @@
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
  * Project name: care-o-bot
- * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_features
- * Description:
+ * ROS stack name: cob_3d_environment_perception_intern
+ * ROS package name: cob_3d_mapping_demonstrator
+ * Description: Feature Map for storing and handling geometric features
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
- * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
+ * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 11/2011
+ * Date of creation: 03/2012
  * ToDo:
+ *
  *
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -50,16 +51,47 @@
  * License LGPL along with this program.
  * If not, see <http://www.gnu.org/licenses/>.
  *
-****************************************************************/
+ ****************************************************************/
 
-// external includes:
-#include <pcl/point_types.h>
-#include <pcl/impl/instantiate.hpp>
+#ifndef RVIZ_BUTTONS_PANEL_H
+#define RVIZ_BUTTONS_PANEL_H
 
-// package includes:
-#include "cob_3d_mapping_common/point_types.h"
-#include "cob_3d_mapping_features/organized_normal_estimation_omp.h"
-#include "cob_3d_mapping_features/impl/organized_normal_estimation_omp.hpp"
+#include <wx/panel.h>
+#include <wx/button.h>
+#include <ros/ros.h>
 
-PCL_INSTANTIATE_OrganizedNormalEstimationOMP(pcl::PointXYZRGB,pcl::Normal,PointLabel)
-PCL_INSTANTIATE_OrganizedNormalEstimationOMP(pcl::PointXYZ,pcl::Normal,PointLabel)
+#include <cob_script_server/ScriptAction.h>
+#include <actionlib/client/simple_action_client.h>
+
+
+namespace rviz
+{
+class RvizButtonsPanel : public wxPanel
+  {
+  public:
+    RvizButtonsPanel(wxWindow *parent, const wxString& title);
+    ~RvizButtonsPanel();
+
+    virtual void OnStart(wxCommandEvent& event);
+    virtual void OnStep(wxCommandEvent& event);
+    virtual void OnStop(wxCommandEvent& event);
+    virtual void OnReset(wxCommandEvent& event);
+    virtual void OnClear(wxCommandEvent& event);
+    virtual void OnRecover(wxCommandEvent& event);
+
+  protected:
+    wxButton * button_start_;
+    wxButton * button_step_;
+    wxButton * button_stop_;
+    wxButton * button_reset_;
+    wxButton * button_clear_;
+    wxButton * button_recover_;
+
+    actionlib::SimpleActionClient<cob_script_server::ScriptAction>* action_client_;
+
+  private:
+    DECLARE_EVENT_TABLE()
+  };
+}
+
+#endif //RVIZ_BUTTONS_PANEL_H

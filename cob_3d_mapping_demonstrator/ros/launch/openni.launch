@@ -20,9 +20,6 @@
   <arg name="rgb_camera_info_url"   default="" />
   <arg name="depth_camera_info_url" default="" />
 
-  <!-- Use OpenNI's factory-calibrated depth->RGB registration? -->
-  <arg name="depth_registration" default="true" />
-
   <!-- Arguments for remapping "rgb", "depth", "depth_registered" namespaces -->
   <arg name="rgb"              default="rgb" />
   <arg name="ir"               default="ir" />
@@ -30,23 +27,23 @@
   <arg name="depth_registered" default="depth_registered" />
   <arg name="projector"        default="projector" />
 
-  <!-- Optionally suppress loading the driver nodelet and/or publishing the default tf
-       tree. Useful if you are playing back recorded raw data from a bag, or are
-       supplying a more accurate tf tree from calibration. -->
-  <arg name="load_driver" default="true" />
-  <arg name="publish_tf" default="false" />
-
   <!-- Disable bond topics by default -->
-  <arg name="bond" default="false" /> <!-- DEPRECATED, use respawn arg instead -->
-  <arg name="respawn" default="$(arg bond)" />
+  <arg name="bond" default="false" />
+  <arg if="$(arg bond)" name="bond_arg" value="" />
+  <arg unless="$(arg bond)" name="bond_arg" value="--no-bond" />
+
+  <!-- Optionally launch manager in GDB, for debugging -->
+  <arg name="debug" default="false" />
+  <arg if="$(arg debug)" name="launch_prefix" value="xterm -e gdb --args" />
+  <arg unless="$(arg debug)" name="launch_prefix" value="" />
+  <!-- Also globally disable bond heartbeat timeout in debug mode, so everything
+       doesn't die when you hit a break point -->
+  <param if="$(arg debug)" name="/bond_disable_heartbeat_timeout" value="true" />
 
   <!-- Nodelet manager, lives in top-level namespace -->
-  <arg name="manager" value="mapping_manager2" />
-  <arg name="debug" default="false" /> <!-- Run manager in GDB? -->
-  <include file="$(find openni_launch)/launch/includes/manager.launch">
-    <arg name="name" value="$(arg manager)" />
-    <arg name="debug" value="$(arg debug)" />
-  </include>
+  <arg name="manager" value="mapping_manager" />
+  <!--node pkg="nodelet" type="nodelet" name="$(arg manager)" args="manager"
+        output="screen" launch-prefix="$(arg launch_prefix)" /-->
 
   <!-- Push down all topics/nodelets into "camera" namespace -->
   <group ns="$(arg camera)">
@@ -60,32 +57,20 @@
       <arg name="depth_frame_id"        value="$(arg depth_frame_id)" />
       <arg name="rgb_camera_info_url"   value="$(arg rgb_camera_info_url)" />
       <arg name="depth_camera_info_url" value="$(arg depth_camera_info_url)" />
-      <arg name="depth_registration"    value="$(arg depth_registration)" />
       <arg name="rgb"                   value="$(arg rgb)" />
       <arg name="ir"                    value="$(arg ir)" />
       <arg name="depth"                 value="$(arg depth)" />
       <arg name="depth_registered"      value="$(arg depth_registered)" />
       <arg name="projector"             value="$(arg projector)" />
-      <arg name="respawn"               value="$(arg respawn)" />
-    </include>
-
-    <!-- Load standard constellation of processing nodelets -->
-    <include file="$(find openni_launch)/launch/includes/processing.launch">
-      <arg name="manager"               value="/$(arg manager)" /> <!-- Fully resolved -->
-      <arg name="rgb"                   value="$(arg rgb)" />
-      <arg name="ir"                    value="$(arg ir)" />
-      <arg name="depth"                 value="$(arg depth)" />
-      <arg name="depth_registered"      value="$(arg depth_registered)" />
-      <arg name="projector"             value="$(arg projector)" />
-      <arg name="respawn"               value="$(arg respawn)" />
+      <arg name="bond"                  value="$(arg bond_arg)" />
     </include>
 
   </group> <!-- camera -->
 
+<param name="camera/driver/depth_registration" type="bool" value="true" />
   <!-- Load reasonable defaults for the relative pose between cameras -->
-  <include if="$(arg publish_tf)"
-     file="$(find openni_launch)/launch/kinect_frames.launch">
+  <!--include file="$(find openni_launch)/launch/kinect_frames.launch">
     <arg name="camera" value="$(arg camera)" />
-  </include>
+  </include-->
 
 </launch>

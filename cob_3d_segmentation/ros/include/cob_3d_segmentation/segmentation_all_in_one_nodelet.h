@@ -58,6 +58,11 @@
 
 // ROS includes
 #include <pcl_ros/pcl_nodelet.h>
+#include <pcl_ros/transforms.h>
+#include <tf/transform_listener.h>
+#include <tf_conversions/tf_eigen.h>
+#include <dynamic_reconfigure/server.h>
+#include <cob_3d_segmentation/segmentation_nodeletConfig.h>
 
 // PCL includes
 #include <pcl/surface/concave_hull.h>
@@ -70,6 +75,7 @@
 #include "cob_3d_segmentation/cluster_classifier.h"
 #include "cob_3d_segmentation/polygon_extraction/polygon_types.h"
 #include "cob_3d_segmentation/polygon_extraction/polygon_extraction.h"
+
 
 namespace cob_3d_segmentation
 {
@@ -90,10 +96,14 @@ namespace cob_3d_segmentation
       : one_()
       , seg_()
       , graph_(new ST::Graph)
+      , pe_()
       , segmented_(new PointCloud)
       , classified_(new PointCloud)
       , normals_(new NormalCloud)
       , labels_(new LabelCloud)
+      , target_frame_id_("/map")
+      , enable_tf_(false)
+      , centroid_passthrough_(5.0f)
     { }
 
     ~SegmentationAllInOneNodelet()
@@ -102,9 +112,10 @@ namespace cob_3d_segmentation
 
   protected:
     void onInit();
+    void configCallback(cob_3d_segmentation::segmentation_nodeletConfig& config, uint32_t level);
 
-    void received_cloud_cb(PointCloud::ConstPtr cloud);
-    void publishShapeArray(ST::CH::Ptr cluster_handler, PointCloud::ConstPtr cloud);
+    void receivedCloudCallback(PointCloud::ConstPtr cloud);
+    void publishShapeArray(ST::CH::Ptr cluster_handler, PointCloud::ConstPtr cloud, Eigen::Affine3f& tf);
 
     //boost::mutex mutex_;
     ros::NodeHandle nh_;
@@ -114,17 +125,26 @@ namespace cob_3d_segmentation
     ros::Publisher pub_shape_array_;
     ros::Publisher pub_chull_;
 
+    boost::shared_ptr<dynamic_reconfigure::Server<cob_3d_segmentation::segmentation_nodeletConfig> > config_server_;
+
     cob_3d_mapping_features::OrganizedNormalEstimationOMP<pcl::PointXYZRGB, pcl::Normal, PointLabel> one_;
     DepthSegmentation<ST::Graph, ST::Point, ST::Normal, ST::Label> seg_;
     ClusterClassifier<ST::CH, ST::Point, ST::Normal, ST::Label> cc_;
     ST::Graph::Ptr graph_;
-    pcl::ConcaveHull<pcl::PointXYZRGB> chull_;
     PolygonExtraction pe_;
 
     PointCloud::Ptr segmented_;
     PointCloud::Ptr classified_;
     NormalCloud::Ptr normals_;
     LabelCloud::Ptr labels_;
+
+
+    tf::TransformListener tf_listener_;
+    std::string target_frame_id_;
+    bool enable_tf_;
+    float centroid_passthrough_;
+
+    boost::mutex mutex_;
   };
 
 }
