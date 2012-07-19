@@ -97,15 +97,17 @@ struct merge_config {
     void getTransformationFromPlaneToWorld(const Eigen::Vector3f z_axis,const Eigen::Vector3f &normal,const Eigen::Vector3f &origin, Eigen::Affine3f &transformation);
 
 
-    void getTransformedContours(const Eigen::Affine3f& trafo,std::vector< std::vector<Eigen::Vector3f> >& t_contours);
+    std::vector<std::vector<Eigen::Vector3f> > getTransformedContours(const Eigen::Affine3f& trafo);
+    void TransformContours(const Eigen::Affine3f& trafo);
 
+
+    virtual void transform2tf(const Eigen::Affine3f& trafo);
 //    Compute vector containing indices(intersections) of merge candidates for polygon in poly_vec
     void isMergeCandidate(std::vector< boost::shared_ptr<Polygon> >& poly_vec,merge_config& config, std::vector<int>& intersections);
     bool isMergeCandidate_intersect(Polygon& p_map);
 
 //    Merge polygon with polygons in poly_vec
     void merge(std::vector< boost::shared_ptr<Polygon> >& poly_vec);
-
     void merge_union(std::vector< boost::shared_ptr<Polygon> >& poly_vec,const Polygon & p_average);
 
 
@@ -114,6 +116,9 @@ struct merge_config {
     void assignMembers(const Eigen::Vector3f &new_normal, const double &new_d, const Eigen::Vector4f& new_centroid);
     void assignMembers(const Eigen::Vector3f & z_axis,const Eigen::Vector3f &new_normal, const Eigen::Vector3f & pt_on_polygon);
     void assignMembers();
+    virtual void computeAttributes(const Eigen::Vector3f &new_normal, const Eigen::Vector4f & new_centroid);
+
+
 
 //  Weighting
     void assignWeight();
