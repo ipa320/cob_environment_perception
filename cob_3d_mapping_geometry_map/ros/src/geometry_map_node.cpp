@@ -233,10 +233,11 @@ public:
         if(!fromROSMsg(sa->shapes[i], *cylinder_map_entry_ptr)){
           continue;
         }
+
         //prepare cylinder for geometry map
         cylinder_map_entry_ptr->transform2tf(af);
         cylinder_map_entry_ptr->ParamsFromShapeMsg();
-        cylinder_map_entry_ptr->getCyl2D();
+        cylinder_map_entry_ptr->makeCyl2D();
 
 
         geometry_map_.addMapEntry(cylinder_map_entry_ptr);
