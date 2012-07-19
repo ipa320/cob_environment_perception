@@ -43,7 +43,7 @@ float roll,pitch,yaw,x,y,z;
 pcl::getTranslationAndEulerAngles(trafo,x,y,z,roll,pitch,yaw);
 //	std::cout<<" x= "<<x<<" y= "<<z<<" z= "<<z<<" roll= "<<roll<<" pitch= "<<pitch<<" yaw= "<<yaw<<std::endl;
 
-c.assignMembers(c.axes_[1], c.axes_[2], c.origin_);	//	configure unrolled polygon
+c.computeAttributes(c.axes_[1], c.axes_[2], c.origin_);	//	configure unrolled polygon
 }
 
 
