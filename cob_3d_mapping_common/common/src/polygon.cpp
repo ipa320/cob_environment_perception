@@ -400,17 +400,16 @@ void
 Polygon::merge(std::vector<PolygonPtr>& poly_vec)
 {
   PolygonPtr p_average= PolygonPtr(new Polygon);
-  applyWeighting(poly_vec,*p_average);
-  merge_union(poly_vec,*p_average);
+  applyWeighting(poly_vec,p_average);
+  merge_union(poly_vec,p_average);
   this->assignWeight();
 }
 
 
 
 
-
 void
-Polygon::applyWeighting(const std::vector<PolygonPtr>& poly_vec, Polygon & p_average)
+Polygon::applyWeighting(const std::vector<PolygonPtr>& poly_vec, PolygonPtr & p_average)
 {
   //std::cout<<"MERGE WEIGHT: "<<merge_weight_<<std::endl;
   Eigen::Vector3f average_normal=normal*merge_weight_;
@@ -447,14 +446,14 @@ Polygon::applyWeighting(const std::vector<PolygonPtr>& poly_vec, Polygon & p_ave
 
   if (sum_merged < 9)
   {
-    p_average.merged=sum_merged;
+    p_average->merged=sum_merged;
   }
   else
   {
-    p_average.merged=9;
+    p_average->merged=9;
   }
 
-  p_average.assignMembers(average_normal,average_d,average_centroid);
+  p_average->computeAttributes(average_normal,average_centroid);
 }
 
 void
@@ -494,16 +493,16 @@ Polygon::assignWeight()
 }
 
 void
-Polygon::merge_union(std::vector<PolygonPtr>& poly_vec, const Polygon& p_average)
+Polygon::merge_union(std::vector<PolygonPtr>& poly_vec,  PolygonPtr& p_average)
 {
   gpc_polygon gpc_C, gpc_B;
 
-  this->GpcStructureUsingMap(p_average.transform_from_world_to_plane, &gpc_C);
+  this->GpcStructureUsingMap(p_average->transform_from_world_to_plane, &gpc_C);
 
   for(size_t i=0;i<poly_vec.size();++i)
   {
     //std::cout << poly_vec[i]->contours.size() << " " << std::endl;
-    poly_vec[i]->GpcStructureUsingMap(p_average.transform_from_world_to_plane,&gpc_B);
+    poly_vec[i]->GpcStructureUsingMap(p_average->transform_from_world_to_plane,&gpc_B);
     /*for (size_t c=0; c<gpc_B.num_contours; ++c)
       {
         std::cout << "!Contour " << c+1 << ": " << std::endl;
@@ -515,13 +514,13 @@ Polygon::merge_union(std::vector<PolygonPtr>& poly_vec, const Polygon& p_average
   }
 
   // fill in parameters for "this" polygon
-  this->transform_from_world_to_plane = p_average.transform_from_world_to_plane;
-  this->d = p_average.d;
-  this->normal = p_average.normal;
-  this->centroid = p_average.centroid;
-  if(this->merged<9) { this->merged = p_average.merged; }
+  this->transform_from_world_to_plane = p_average->transform_from_world_to_plane;
+  this->d = p_average->d;
+  this->normal = p_average->normal;
+  this->centroid = p_average->centroid;
+  if(this->merged<9) { this->merged = p_average->merged; }
   else { this->merged = 9; }
-  this->merge_weight_ = p_average.merge_weight_;
+  this->merge_weight_ = p_average->merge_weight_;
 
   // clear contours, at the end gpc_C contains everything we need!
   this->contours.clear();
@@ -538,7 +537,7 @@ Polygon::merge_union(std::vector<PolygonPtr>& poly_vec, const Polygon& p_average
         continue;
       last_x = gpc_C.contour[j].vertex[k].x;
       last_y = gpc_C.contour[j].vertex[k].y;
-      this->contours.back().push_back(p_average.transform_from_world_to_plane.inverse() * Eigen::Vector3f(last_x,last_y,0));
+      this->contours.back().push_back(p_average->transform_from_world_to_plane.inverse() * Eigen::Vector3f(last_x,last_y,0));
     }
 
     if (this->contours.back().size() <= 2)  // drop empty contour lists
@@ -631,7 +630,6 @@ Polygon::isMergeCandidate(std::vector<PolygonPtr>& poly_vec,merge_config& config
 {
   merge_settings_=config;
   merged=1;
-  //this->assignMembers();
   this->computeCentroid();
 
   for(size_t i=0; i< poly_vec.size(); ++i)

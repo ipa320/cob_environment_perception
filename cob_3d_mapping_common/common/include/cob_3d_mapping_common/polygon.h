@@ -103,12 +103,12 @@ struct merge_config {
 
     virtual void transform2tf(const Eigen::Affine3f& trafo);
 //    Compute vector containing indices(intersections) of merge candidates for polygon in poly_vec
-    void isMergeCandidate(std::vector< boost::shared_ptr<Polygon> >& poly_vec,merge_config& config, std::vector<int>& intersections);
+    virtual void isMergeCandidate(std::vector< boost::shared_ptr<Polygon> >& poly_vec,merge_config& config, std::vector<int>& intersections);
     bool isMergeCandidate_intersect(Polygon& p_map);
 
 //    Merge polygon with polygons in poly_vec
-    void merge(std::vector< boost::shared_ptr<Polygon> >& poly_vec);
-    void merge_union(std::vector< boost::shared_ptr<Polygon> >& poly_vec,const Polygon & p_average);
+    virtual void merge(std::vector< boost::shared_ptr<Polygon> >& poly_vec);
+    void merge_union(std::vector< boost::shared_ptr<Polygon> >& poly_vec, boost::shared_ptr<Polygon>&  p_average);
 
 
 
@@ -122,7 +122,7 @@ struct merge_config {
 
 //  Weighting
     void assignWeight();
-    void applyWeighting(const std::vector< boost::shared_ptr<Polygon> >& poly_vec , Polygon & p_average );
+    void applyWeighting(const std::vector< boost::shared_ptr<Polygon> >& poly_vec , boost::shared_ptr<Polygon> & p_average );
 
     //    Use general polygon clipper to create polygon structures
     void GpcStructureUsingMap(const Eigen::Affine3f& external_trafo,gpc_polygon* gpc_p);
