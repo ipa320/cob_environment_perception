@@ -28,6 +28,8 @@ firstShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vector
   pcl::PointCloud<pcl::PointXYZ> pc;
   sensor_msgs::PointCloud2 pc2;
 
+  s.id = 0;
+
   //first shape
   s.params[0] = normal[0];
   s.params[1] = normal[1];
@@ -86,6 +88,8 @@ secondShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vecto
   pcl::PointCloud<pcl::PointXYZ> pc;
   sensor_msgs::PointCloud2 pc2;
 
+  s.id = 1;
+
   s.params[0] = normal[0];
   s.params[1] = normal[1];
   s.params[2] = normal[2];
@@ -140,6 +144,8 @@ thirdShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vector
   pcl::PointXYZ pt;
   pcl::PointCloud<pcl::PointXYZ> pc;
   sensor_msgs::PointCloud2 pc2;
+
+  s.id = 2;
 
   s.params[0] = normal[0];
   s.params[1] = normal[1];
@@ -200,6 +206,8 @@ fourthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vecto
    //cout << " v4 : \n" << v3 << endl;
    //sixth shape
    */
+
+  s.id = 3;
   s.params[0] = normal[0];
   s.params[1] = normal[1];
   s.params[2] = normal[2];
@@ -283,6 +291,8 @@ fifthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vector
   pcl::PointXYZ pt;
   pcl::PointCloud<pcl::PointXYZ> pc;
   sensor_msgs::PointCloud2 pc2;
+
+  s.id = 4;
 
   s.params[0] = normal[0];
   s.params[1] = normal[1];
@@ -393,6 +403,8 @@ sixthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vector
   pcl::PointCloud<pcl::PointXYZ> pc;
   sensor_msgs::PointCloud2 pc2;
 
+  s.id = 5;
+
   s.params[0] = normal[0];
   s.params[1] = normal[1];
   s.params[2] = normal[2];
@@ -443,13 +455,14 @@ main (int argc, char **argv)
 
   ros::init (argc, argv, "test_shape_array");
   ros::NodeHandle n;
-  ros::Publisher pub = n.advertise<cob_3d_mapping_msgs::ShapeArray> ("shapes_array", 1);
+  ros::Publisher pub = n.advertise<cob_3d_mapping_msgs::ShapeArray> ("/geometry_map/map_array", 1);
 
   ROS_INFO("\nPublishing shape_array...........");
   ros::Rate loop_rate (1);
+  loop_rate.sleep ();
   uint32_t seq = 0;
 
-  while (ros::ok ())
+  //while (ros::ok ())
   {
     cob_3d_mapping_msgs::ShapeArray sa;
     sa.header.frame_id = "/map";
@@ -527,9 +540,9 @@ main (int argc, char **argv)
     s.points.clear ();
 
     pub.publish (sa);
-
-    ros::spinOnce ();
     loop_rate.sleep ();
+    ros::spin ();
+    //loop_rate.sleep ();
   }
 
   return 0;
