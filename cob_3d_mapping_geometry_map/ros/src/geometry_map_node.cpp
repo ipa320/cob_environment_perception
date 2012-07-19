@@ -180,8 +180,6 @@ public:
 
     tf::StampedTransform trf_map;
     Eigen::Affine3f af = Eigen::Affine3f::Identity();
-    std::cout<<"GMN looking for "<<sa->header.frame_id<<"\n";
-    std::cout<<"[GMN-->FRAME SET TO]"<<map_frame_id_.c_str()<<"\n";
 
     if (enable_tf_)
     {
@@ -230,9 +228,8 @@ public:
       }
 
       if (sa->shapes[i].type == 5) {
-        std::cout<<"CYL\n";
         CylinderPtr cylinder_map_entry_ptr = CylinderPtr(new Cylinder());
-        cylinder_map_entry_ptr->allocate();
+//        cylinder_map_entry_ptr->allocate();
         if(!fromROSMsg(sa->shapes[i], *cylinder_map_entry_ptr)){
           continue;
         }

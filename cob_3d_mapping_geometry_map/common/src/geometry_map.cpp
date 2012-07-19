@@ -148,7 +148,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
     }
     else //if polygon does not have to be merged , add new polygon
     {
-      p.assignMembers();
+      p.computeAttributes(p.normal,p.centroid);
       p.assignWeight();
       map_polygon_.push_back(p_ptr);
       new_id_++;
@@ -157,7 +157,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
   }
   else
   {
-    p.assignMembers();
+    p.computeAttributes(p.normal,p.centroid);
     p.assignWeight();
     map_polygon_.push_back(p_ptr);
     new_id_++;
@@ -214,7 +214,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
       }
       // merge polygon with merge candidates
 
-      c.mergeCylinder(merge_candidates);
+      c.merge(merge_candidates);
 
       map_cylinder_.push_back(c_ptr);
       new_id_ ++;
@@ -227,7 +227,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
     {
 
 
-      c.assignMembers(c.axes_[1],c.axes_[2],c.origin_);
+      c.computeAttributes(c.axes_[1],c.axes_[2],c.origin_);
       c.assignWeight();
 
       map_cylinder_.push_back(c_ptr);
@@ -238,7 +238,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
   }
   else{
 
-    c.assignMembers(c.axes_[1],c.axes_[2],c.origin_);
+    c.computeAttributes(c.axes_[1],c.axes_[2],c.origin_);
     c.assignWeight();
 
     map_cylinder_.push_back(c_ptr);
