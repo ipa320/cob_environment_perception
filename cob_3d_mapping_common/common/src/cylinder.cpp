@@ -491,7 +491,7 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
   //create average cylinder for  averaging
   CylinderPtr average_cyl =CylinderPtr(new Cylinder());
   *average_cyl = *this;
-  average_cyl->applyWeightingCylinder(c_array);
+  average_cyl->applyWeighting(c_array);
 
   //  cast CylinderPtr to PolygonPtr to use merge_union   -- is  a better way possible ?!
   std::vector<PolygonPtr> merge_polygons;
@@ -511,7 +511,76 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
 
 }
 
+void
+Cylinder::applyWeighting(std::vector<CylinderPtr>& merge_candidates)
+{
+  /*
+   * Already weighted:
+   *  - merge weight
+   *
+   *
+   *  Still need to be weighted:
+   *  - r
+   *  - origin
+   *  - axes
+   *  - transform from world to plane
+   *  - normal
+   */
 
+
+  Eigen::Vector3f temp_axis1,temp_axis0, temp_axis2,temp_origin;
+
+  temp_axis1 = this->merge_weight_ * this->sym_axis;
+  temp_axis2 = this->merge_weight_ * this->normal;
+  temp_origin = this->merge_weight_ * this->origin_;
+  double   merge_weight_sum = this ->merge_weight_;
+  double temp_r = merge_weight_sum * this->r_;
+  int merged_sum = this->merged;
+
+
+
+  for (int i = 0; i < (int)merge_candidates.size(); ++i) {
+
+
+    temp_axis1 += merge_candidates[i]->merge_weight_ * merge_candidates[i]->sym_axis ;
+    temp_axis2 += merge_candidates[i]->merge_weight_ * merge_candidates[i]->normal ;
+
+
+    temp_origin += merge_candidates[i]->merge_weight_ * merge_candidates[i]->origin_;
+
+    temp_r += merge_candidates[i]->merge_weight_ * merge_candidates[i]->r_;
+
+    merge_weight_sum += merge_candidates[i]->merge_weight_;
+
+    merged_sum  += merge_candidates[i]->merged;
+
+  }
+
+  this->r_ = temp_r / merge_weight_sum;
+  this->sym_axis = temp_axis1 / merge_weight_sum;
+
+  this->normal = temp_axis2 / merge_weight_sum;
+
+  this->sym_axis.normalize();
+  this->normal.normalize();
+
+  this->origin_ = temp_origin / merge_weight_sum;
+  this->normal = this->normal;
+
+
+  if (merged_sum < 15)
+  {
+    this->merged=merged_sum;
+  }
+  else
+  {
+    this->merged=9;
+  }
+
+  this->computeAttributes(this->sym_axis,this->normal,this->origin_);
+
+//  this->normal = this->normal;
+}
 
 void
 Cylinder::dbg_out(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points,std::string & name){
@@ -650,76 +719,7 @@ Cylinder::getShiftedCylinder(Cylinder& c, Cylinder & shifted_cylinder) {
 
 
 
-void
-Cylinder::applyWeightingCylinder(std::vector<CylinderPtr>& merge_candidates)
-{
-  /*
-   * Already weighted:
-   *  - merge weight
-   *
-   *
-   *  Still need to be weighted:
-   *  - r
-   *  - origin
-   *  - axes
-   *  - transform from world to plane
-   *  - normal
-   */
 
-
-  Eigen::Vector3f temp_axis1,temp_axis0, temp_axis2,temp_origin;
-
-  temp_axis1 = this->merge_weight_ * this->sym_axis;
-  temp_axis2 = this->merge_weight_ * this->normal;
-  temp_origin = this->merge_weight_ * this->origin_;
-  double   merge_weight_sum = this ->merge_weight_;
-  double temp_r = merge_weight_sum * this->r_;
-  int merged_sum = this->merged;
-
-
-
-  for (int i = 0; i < (int)merge_candidates.size(); ++i) {
-
-
-    temp_axis1 += merge_candidates[i]->merge_weight_ * merge_candidates[i]->sym_axis ;
-    temp_axis2 += merge_candidates[i]->merge_weight_ * merge_candidates[i]->normal ;
-
-
-    temp_origin += merge_candidates[i]->merge_weight_ * merge_candidates[i]->origin_;
-
-    temp_r += merge_candidates[i]->merge_weight_ * merge_candidates[i]->r_;
-
-    merge_weight_sum += merge_candidates[i]->merge_weight_;
-
-    merged_sum  += merge_candidates[i]->merged;
-
-  }
-
-  this->r_ = temp_r / merge_weight_sum;
-  this->sym_axis = temp_axis1 / merge_weight_sum;
-
-  this->normal = temp_axis2 / merge_weight_sum;
-
-  this->sym_axis.normalize();
-  this->normal.normalize();
-
-  this->origin_ = temp_origin / merge_weight_sum;
-  this->normal = this->normal;
-
-
-  if (merged_sum < 15)
-  {
-    this->merged=merged_sum;
-  }
-  else
-  {
-    this->merged=9;
-  }
-
-  this->computeAttributes(this->sym_axis,this->normal,this->origin_);
-
-//  this->normal = this->normal;
-}
 
 
 

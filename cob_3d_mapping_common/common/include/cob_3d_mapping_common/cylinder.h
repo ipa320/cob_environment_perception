@@ -127,6 +127,7 @@ public:
   //################## methods for merging############################
   virtual void isMergeCandidate(const std::vector<boost::shared_ptr<Cylinder> >& cylinder_array,const merge_config& limits,std::vector<int>& intersections);
   virtual void merge(std::vector<boost::shared_ptr<Cylinder> >& c_array);
+  virtual void applyWeighting(std::vector<boost::shared_ptr<Cylinder> >& merge_candidates);
 
 //############## debugging methods ####################
   void dbg_out(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points,std::string& name);
@@ -144,7 +145,6 @@ private:
 //################ private methods for merging to avoid confusion by user################
   void getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha);
   void getShiftedCylinder(Cylinder& c,Cylinder& shifted_cylinder);
-  void applyWeightingCylinder(std::vector<boost::shared_ptr<Cylinder> >& merge_candidates);
 
 };
 
