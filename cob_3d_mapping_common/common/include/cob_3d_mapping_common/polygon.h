@@ -94,7 +94,7 @@ public:
   virtual void merge(std::vector< boost::shared_ptr<Polygon> >& poly_vec);
   void merge_union(std::vector< boost::shared_ptr<Polygon> >& poly_vec, boost::shared_ptr<Polygon>&  p_average);
   void assignWeight();
-  void applyWeighting(const std::vector< boost::shared_ptr<Polygon> >& poly_vec , boost::shared_ptr<Polygon> & p_average );
+  virtual void applyWeighting(const std::vector< boost::shared_ptr<Polygon> >& poly_vec , boost::shared_ptr<Polygon> & p_average );
   void GpcStructureUsingMap(const Eigen::Affine3f& external_trafo,gpc_polygon* gpc_p);
   void GpcStructure( gpc_polygon* gpc_p);
 
