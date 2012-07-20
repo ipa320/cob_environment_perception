@@ -116,7 +116,7 @@ void
 Cylinder::ContoursFromList( std::vector<std::vector<Eigen::Vector3f> >& in_list)
 {
 
-  computeAttributes(axes_[1], axes_[2], origin_); //  configure unrolled polygon
+  computeAttributes(sym_axis, normal, origin_); //  configure unrolled polygon
   contours.resize(in_list.size());
   //    unrolled_.transform_from_world_to_plane=transformation_from_world_to_cylinder_;
   for (size_t j = 0; j < in_list.size(); j++) {
@@ -170,15 +170,15 @@ Cylinder::ParamsFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud ,
 
   //  get arbitrary axis, orthogonal to symmetry axis: local x-axis  (lx)
   Eigen::Vector3f lx;
-  lx=axes_[1].unitOrthogonal();
+  lx=sym_axis.unitOrthogonal();
   //  complete triad with local z axis (lz)
   Eigen::Vector3f lz;
-  lz=lx.cross(axes_[1]);
+  lz=lx.cross(sym_axis);
 
   Eigen::Affine3f trafo_hor2w;
   Eigen::Vector3f centroid3f ;
   centroid3f <<centroid[0] , centroid[1] , centroid[2];
-  this->getTransformationFromPlaneToWorld(axes_[1],centroid3f,trafo_hor2w);
+  this->getTransformationFromPlaneToWorld(sym_axis,centroid3f,trafo_hor2w);
 
   ////  transform  points to horizontal coordinate system
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr trans_cloud( new pcl::PointCloud<pcl::PointXYZRGB>() );
@@ -221,25 +221,24 @@ Cylinder::ParamsFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud ,
   //calculate axis from origin to centroid
 
 
-  axes_[2]= centroid3f - origin_;
+  normal= centroid3f - origin_;
 
 
-  if (axes_[2][2] > 0 ) {
+  if (normal[2] > 0 ) {
 
-    axes_[2] = origin_ - centroid3f;
+    normal = origin_ - centroid3f;
   }
 
 
 
   r_=coeff.values[2];
 
-  axes_[0].normalize();
-  axes_[1].normalize();
-  axes_[2].normalize();
+  sym_axis.normalize();
+  normal.normalize();
 
 
   //    unrolled polygon including >Trafo World 2 Plane
-  this->computeAttributes(axes_[1], axes_[2], origin_);
+  this->computeAttributes(sym_axis, normal, origin_);
 
 }
 
@@ -257,53 +256,53 @@ Cylinder::ParamsFromShapeMsg(){
    *
    * Already set:   r_ ............................... Radius of the cylinder
    *          origin_ .......................... Origin, point on symmetry axis, in lcs , same y coordinate as centroid
-   *          axes_[1] ......................... Symmetry axis of c ylinder, y- axis in lcs
-   *          axes_[2] ......................... axis, connecting origin and centroid, Z-axis
+   *          sym_axis ......................... Symmetry axis of c ylinder, y- axis in lcs
+   *          centroid ......................... centroid of cylinder piece
    *
    *
    * To be set:   centroid ........................ centroid of cylinder strip
    *          normal .......................... equivalent to axes_[2], serves as normal to unrolled cylinder plane
-   *          axes_[0] ........................ completes the triade of axes
    *          transform_from_world_to_plane ...
    *          d ............................... distance to origin of wcs
    *
    */
 
-  //  axes_[0]
 
-  if (axes_[1][2] < 0 )
+  if (sym_axis[2] < 0 )
   {
-    axes_[1]= axes_[1] *-1;
+    sym_axis= sym_axis *-1;
   }
 
-  axes_[0]=axes_[1].cross(axes_[2]);
-  axes_[0].normalize();//= axes_[0];
-  axes_[1].normalize();//= axes_[1];
-  axes_[2].normalize();//= axes_[2].normalize();
+
+  sym_axis.normalize();//= sym_axis;
+  normal.normalize();//= normal.normalize();
 
 
 
 
   //  centroid
-  centroid<< origin_[0]+(r_*axes_[2][0]) , origin_[1]+(r_*axes_[2][1]) , origin_[2]+(r_*axes_[2][2]) , 0;
+//  centroid<< origin_[0]+(r_*normal[0]) , origin_[1]+(r_*normal[1]) , origin_[2]+(r_*normal[2]) , 0;
 
   //    normal, d and transform_from_world_to_plane set within Polygon::assignMembers
-  this->computeAttributes(axes_[1], axes_[2], origin_);
+  this->computeAttributes(sym_axis, normal, origin_);
 
 }
 
 void
-Cylinder::computeAttributes(const Eigen::Vector3f& z_axis, const Eigen::Vector3f &new_normal, const Eigen::Vector3f& new_origin)
+Cylinder::computeAttributes(const Eigen::Vector3f& sym_axis, const Eigen::Vector3f &new_normal, const Eigen::Vector3f& new_origin)
 {
 
 
   //  TODO: recomputation of centroid
-  normal=new_normal;
   origin_=new_origin;
   d=fabs(this->centroid.head(3).dot(normal));
+//  normal = sym_axis.unitOrthogonal();
+//  pcl::getTransformationFromTwoUnitVectorsAndOrigin(
+//          this->sym_axis,this->normal,this->origin_,this->transform_from_world_to_plane);
 
+  normal=new_normal;
   Eigen::Affine3f transform_from_plane_to_world;
-  getTransformationFromPlaneToWorld(z_axis,normal,origin_,transform_from_plane_to_world);
+  getTransformationFromPlaneToWorld(sym_axis,normal,origin_,transform_from_plane_to_world);
   transform_from_world_to_plane=transform_from_plane_to_world.inverse();
 }
 
@@ -316,11 +315,11 @@ Cylinder::transform2tf(Eigen::Affine3f & trafo)
   this->TransformContours(trafo);
 
   //  transform parameters
-  Eigen::Vector3f tf_axes_1 = trafo.rotation() * this->axes_[1];
-  this->axes_[1] =  tf_axes_1;
+  Eigen::Vector3f tf_axes_1 = trafo.rotation() * this->sym_axis;
+  this->sym_axis =  tf_axes_1;
 
-  Eigen::Vector3f tf_axes_2 = trafo.rotation() * this->axes_[2];
-  this->axes_[2] = tf_axes_2;
+  Eigen::Vector3f tf_axes_2 = trafo.rotation() * this->normal;
+  this->normal = tf_axes_2;
 
   Eigen::Vector3f tf_origin = trafo * this->origin_;
   this->origin_ =  tf_origin;
@@ -329,7 +328,7 @@ Cylinder::transform2tf(Eigen::Affine3f & trafo)
   centroid3f<<  this->centroid[0], this->centroid[1], this->centroid[2];
   centroid3f = trafo * centroid3f;
   this->centroid << centroid3f[0], centroid3f[1], centroid3f[2], 0;
-  this->computeAttributes(axes_[1],axes_[2],origin_);
+  this->computeAttributes(sym_axis,normal,origin_);
 
 }
 
@@ -446,7 +445,7 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
     Eigen::Vector3f connection=c_map.origin_-origin_;
 
 
-    if ((fabs(c_map.axes_[1] .dot(axes_[1])) > limits.angle_thresh)  && fabs(c_map.r_ - r_) < (0.1 ) )
+    if ((fabs(c_map.sym_axis .dot(sym_axis)) > limits.angle_thresh)  && fabs(c_map.r_ - r_) < (0.05 ) )
 
     {
 
@@ -504,6 +503,11 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
 
 
   this->merge_union(merge_polygons,average_polygon);
+  this->assignWeight();
+
+  std::cout<<" weight after merge: "<<this->merge_weight_<<std::endl;
+  std::cout<<" radius after weighting: "<<this->r_<<std::endl;
+
 
 }
 
@@ -544,9 +548,8 @@ Cylinder::printAttributes(std::string & name)
   std::cout<<"origin = \n"<< this->origin_<<"\n";
   std::cout<< "centroid = \n"<<this->centroid<<"\n";
   std::cout<<"radius = "<< this->r_<<"\n";
-  std::cout<<"x-axis = \n"<<this->axes_[0]<<"\n";
   std::cout<<"normal = "<< this->normal<<"\n";
-  std::cout<<"sym_axis = "<< this->axes_[1]<<"\n";
+  std::cout<<"sym_axis = "<< this->sym_axis<<"\n";
   std::cout<<"merged = " << this->merged<<"\n";
   std::cout<<"merge_weight = "<<this->merge_weight_<<"\n";
   std::cout<< "_________________\n";
@@ -640,7 +643,7 @@ Cylinder::getShiftedCylinder(Cylinder& c, Cylinder & shifted_cylinder) {
 
   shifted_cylinder.merge_weight_=c.merge_weight_;
   shifted_cylinder.merged = c.merged;
-  shifted_cylinder.computeAttributes(c.axes_[1], c.axes_[2], origin_);
+  shifted_cylinder.computeAttributes(c.sym_axis, c.normal, origin_);
 
 }
 
@@ -666,9 +669,8 @@ Cylinder::applyWeightingCylinder(std::vector<CylinderPtr>& merge_candidates)
 
   Eigen::Vector3f temp_axis1,temp_axis0, temp_axis2,temp_origin;
 
-  temp_axis0 = this->merge_weight_ * this->axes_[0];
-  temp_axis1 = this->merge_weight_ * this->axes_[1];
-  temp_axis2 = this->merge_weight_ * this->axes_[2];
+  temp_axis1 = this->merge_weight_ * this->sym_axis;
+  temp_axis2 = this->merge_weight_ * this->normal;
   temp_origin = this->merge_weight_ * this->origin_;
   double   merge_weight_sum = this ->merge_weight_;
   double temp_r = merge_weight_sum * this->r_;
@@ -679,9 +681,8 @@ Cylinder::applyWeightingCylinder(std::vector<CylinderPtr>& merge_candidates)
   for (int i = 0; i < (int)merge_candidates.size(); ++i) {
 
 
-    temp_axis0 += merge_candidates[i]->merge_weight_ * merge_candidates[i]->axes_[0] ;
-    temp_axis1 += merge_candidates[i]->merge_weight_ * merge_candidates[i]->axes_[1] ;
-    temp_axis2 += merge_candidates[i]->merge_weight_ * merge_candidates[i]->axes_[2] ;
+    temp_axis1 += merge_candidates[i]->merge_weight_ * merge_candidates[i]->sym_axis ;
+    temp_axis2 += merge_candidates[i]->merge_weight_ * merge_candidates[i]->normal ;
 
 
     temp_origin += merge_candidates[i]->merge_weight_ * merge_candidates[i]->origin_;
@@ -695,20 +696,18 @@ Cylinder::applyWeightingCylinder(std::vector<CylinderPtr>& merge_candidates)
   }
 
   this->r_ = temp_r / merge_weight_sum;
-  this->axes_[1] = temp_axis1 / merge_weight_sum;
+  this->sym_axis = temp_axis1 / merge_weight_sum;
 
-  this->axes_[0] = temp_axis0 / merge_weight_sum;
-  this->axes_[2] = temp_axis2 / merge_weight_sum;
+  this->normal = temp_axis2 / merge_weight_sum;
 
-  this->axes_[0].normalize();
-  this->axes_[1].normalize();
-  this->axes_[2].normalize();
+  this->sym_axis.normalize();
+  this->normal.normalize();
 
   this->origin_ = temp_origin / merge_weight_sum;
-  this->normal = this->axes_[2];
+  this->normal = this->normal;
 
 
-  if (merged_sum < 9)
+  if (merged_sum < 15)
   {
     this->merged=merged_sum;
   }
@@ -717,8 +716,11 @@ Cylinder::applyWeightingCylinder(std::vector<CylinderPtr>& merge_candidates)
     this->merged=9;
   }
 
-  this->computeAttributes(this->axes_[1],this->axes_[2],this->origin_);
+  this->computeAttributes(this->sym_axis,this->normal,this->origin_);
+
+//  this->normal = this->normal;
 }
+
 
 
 

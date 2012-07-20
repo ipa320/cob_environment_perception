@@ -114,10 +114,13 @@ Polygon::computeAttributes(const Eigen::Vector3f &new_normal, const Eigen::Vecto
   normal=new_normal;
   centroid = new_centroid;
   d=fabs(centroid.head(3).dot(normal));
+  d=centroid.norm();
 
   pcl::getTransformationFromTwoUnitVectorsAndOrigin(
         this->normal.unitOrthogonal(),this->normal,this->centroid.head(3),this->transform_from_world_to_plane);
 }
+
+
 
 void Polygon::transform2tf(const Eigen::Affine3f& trafo)
 {
@@ -126,10 +129,11 @@ void Polygon::transform2tf(const Eigen::Affine3f& trafo)
 
     //transform parameters
     //  transform parameters
-    this->normal = trafo.rotation() * this->normal;
-    Eigen::Vector3f centroid3f;
-    centroid3f = trafo * centroid3f;
-    this->centroid.head(3) = centroid3f;
+    Eigen::Vector3f tf_normal = trafo.rotation() *this->normal;
+    this->normal =tf_normal;
+    Eigen::Vector3f tf_centroid3f = this->centroid.head(3);
+    tf_centroid3f = trafo * tf_centroid3f;
+    this->centroid.head(3) = tf_centroid3f;
     this->computeAttributes(this->normal,this->centroid);
 }
 
@@ -207,8 +211,8 @@ void
 Polygon::merge(std::vector<PolygonPtr>& poly_vec)
 {
   PolygonPtr p_average= PolygonPtr(new Polygon);
-  applyWeighting(poly_vec,p_average);
-  merge_union(poly_vec,p_average);
+  this->applyWeighting(poly_vec,p_average);
+  this->merge_union(poly_vec,p_average);
   this->assignWeight();
 }
 
@@ -303,6 +307,7 @@ Polygon::assignWeight()
 void
 Polygon::applyWeighting(const std::vector<PolygonPtr>& poly_vec, PolygonPtr & p_average)
 {
+
   //std::cout<<"MERGE WEIGHT: "<<merge_weight_<<std::endl;
   Eigen::Vector3f average_normal=normal*merge_weight_;
   Eigen::Vector4f average_centroid=centroid*merge_weight_;
@@ -334,7 +339,7 @@ Polygon::applyWeighting(const std::vector<PolygonPtr>& poly_vec, PolygonPtr & p_
   average_centroid=average_centroid/sum_w;
   average_d=average_d/sum_w;
   average_normal.normalize();
-  average_d /= average_normal.norm();
+//  average_d /= average_normal.norm();
 
   if (sum_merged < 9)
   {
@@ -345,7 +350,11 @@ Polygon::applyWeighting(const std::vector<PolygonPtr>& poly_vec, PolygonPtr & p_
     p_average->merged=9;
   }
 
+
   p_average->computeAttributes(average_normal,average_centroid);
+
+
+
 }
 
 
