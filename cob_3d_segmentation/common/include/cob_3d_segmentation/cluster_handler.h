@@ -219,13 +219,20 @@ namespace cob_3d_segmentation
         };
 
       int curr_label, count;
-      for (size_t idx = labels_->width; idx < ( labels_->size() - labels_->width ); ++idx)
+      for (size_t idx = 0; idx < labels_->size(); ++idx)
       {
         count = 0;
         curr_label = labels_->points[idx].label;
+        int x = static_cast<int>(idx % labels_->width);
+        int y = static_cast<int>(idx / labels_->width);
+        if (y == 0 || y == labels_->height - 1 || x == 0 || x == labels_->width -1)
+        {
+          id_to_cluster_[curr_label]->border_points.push_back(PolygonPoint(x, y));
+          continue;
+        }
         for(int i=0;i<4;++i) { if (curr_label!=labels_->points[idx+mask[i]].label) { ++count; } }
         if (count >= 4 || count < 1) continue;
-        id_to_cluster_[curr_label]->border_points.push_back(PolygonPoint(idx%labels_->width, idx/labels_->width));
+        id_to_cluster_[curr_label]->border_points.push_back(PolygonPoint(x, y));
       }
       /*
       for (size_t idx = labels_->width; idx < ( labels_->size() - labels_->width ); ++idx)
