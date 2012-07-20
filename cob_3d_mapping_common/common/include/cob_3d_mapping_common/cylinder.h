@@ -90,11 +90,10 @@ class Cylinder: public Polygon
 /*
  * Cylinder:
  *
- * Members:		axes_		........................... 3x3 ........ Axes of the cylinder coordinate system (ccs)
- * 				axes_[1]	........................... 3x1 ........ Symmetry axis of the cylinder (ccs - y)
- * 				axes_[2]	........................... 3x1 ........ axis from origin to centroid  (ccs - z)
- * 				axis_[0]	........................... 3x1 ........ Axis completes the triad (ccs - x)
- * 				normal		........................... 3x1 ........ equivalent to axes_[2], normal of unrolled polygon
+ * Members:
+ *        sym_axis .............................3x1 ........ symmetry axis of cylinder
+ * 				normal		........................... 3x1 ........ second axis of cylinder, normal of the polygon, which represents the cylinder
+ *        r         ........................... 1x1 ......... radius of the cylinder
  *
  */
 
@@ -106,11 +105,8 @@ public:
 
   Cylinder():debug_(false)
   {
-    //allocate axes
-    axes_.resize(3);
-    axes_[0].resize(3);
-    axes_[1].resize(3);
-    axes_[2].resize(3);
+
+
   }
 
   //##############Methods to initialize cylinder and its paramers#########
@@ -119,7 +115,7 @@ public:
   void ContoursFromList( std::vector<std::vector<Eigen::Vector3f> >& in_list);
   void ParamsFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud, std::vector<int>& indices);
   void ParamsFromShapeMsg();
-  virtual void computeAttributes(const Eigen::Vector3f & z_axis,const Eigen::Vector3f &new_normal, const Eigen::Vector3f & new_origin);
+  virtual void computeAttributes(const Eigen::Vector3f & sym_axis,const Eigen::Vector3f &new_normal, const Eigen::Vector3f & new_origin);
   virtual void transform2tf(Eigen::Affine3f & tf);
 
 
@@ -139,7 +135,7 @@ public:
 
 //################# member variables########################
   double r_;
-  std::vector<Eigen::Vector3f> axes_;
+ Eigen::Vector3f sym_axis;
   Eigen::Vector3f origin_;
   //	Polygon unrolled_;
   bool debug_;

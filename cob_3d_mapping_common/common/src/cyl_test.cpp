@@ -32,18 +32,17 @@ transform_cylinder(CylinderPtr & c_ptr,Eigen::Affine3f& trafo)
 c.origin_=trafo*c.origin_;
 std::cout<<"transformed origin\n"<<c.origin_<<std::endl;
 
-for (int i = 0; i < 3; ++i) {
 
-	c.axes_[i]=trafo.rotation()*c.axes_[i];
+	c.sym_axis=trafo.rotation()*c.sym_axis;
+	c.normal = trafo.rotation()*c.normal;
 //	std::cout<<"axis -"<<i<<" \n"<<c.axes_[i]<<std::endl;
-}
 c.normal=trafo.rotation()*c.normal;
 
 float roll,pitch,yaw,x,y,z;
 pcl::getTranslationAndEulerAngles(trafo,x,y,z,roll,pitch,yaw);
 //	std::cout<<" x= "<<x<<" y= "<<z<<" z= "<<z<<" roll= "<<roll<<" pitch= "<<pitch<<" yaw= "<<yaw<<std::endl;
 
-c.computeAttributes(c.axes_[1], c.axes_[2], c.origin_);	//	configure unrolled polygon
+c.computeAttributes(c.sym_axis, c.normal, c.origin_);	//	configure unrolled polygon
 }
 
 
@@ -74,7 +73,8 @@ Eigen::Vector3f origin1;
  		z_axis1 << 0,1,0;
  		axes1.push_back(z_axis1);
 
- 		c1->axes_=axes1;
+ 		c1->sym_axis = y_axis1;
+ 		c1->normal = z_axis1;
  		c1->r_=1;
 
 
@@ -150,8 +150,9 @@ Eigen::Vector3f origin1;
   		z_axis2 << 0,1,0;
   		axes2.push_back(z_axis2);
 
-  		c2->axes_=axes2;
-  		c2->r_=1;
+c2->sym_axis=y_axis2;
+c2->normal = z_axis2;
+c2->r_=1;
 
 
 
