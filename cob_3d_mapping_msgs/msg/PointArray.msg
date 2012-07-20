@@ -1,4 +1,4 @@
-# An array of poses with a header for global reference.
+# DEPRECATED: An array of poses with a header for global reference.
 
 Header header
 
