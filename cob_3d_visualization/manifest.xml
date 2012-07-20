@@ -1,11 +1,11 @@
 <package>
   <description brief="cob_3d_visualization">
 
-     cob_3d_visualization
+     Visualization of 3D environment data using mainly interactive markers.
 
   </description>
   <author>Georg Arbeiter</author>
-  <license>IPA</license>
+  <license>LGPL</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/cob_3d_visualization</url>
 
