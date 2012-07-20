@@ -43,7 +43,7 @@ UISP=uisp -v=3 -dlpt=/dev/parport0 -dprog=dapa
 AVRDUDE_P=avrdude -p $(MCU) -c dapa -P /dev/parport0
 AVRDUDE_U=avrdude -p $(MCU) -c butterfly -P /dev/ttyUSB0 -b 230400
 CFLAGS = -std=c99 -pedantic -Wall $(INCPATH:%=-I%) -mmcu=$(MCU) \
-         -mcall-prologues $(COPTS)
+         -mcall-prologues $(COPTS) -D__DELAY_BACKWARD_COMPATIBLE__
 LDFLAGS = $(LIBPATH:%=-L%) $(LIBS:%=-l%) -mmcu=$(MCU) $(LOPTS)
 DEPS = $(foreach f, $(MODULES),$(dir $(f)).$(notdir $f).d)
 OBJS = $(MODULES:%=%.o)

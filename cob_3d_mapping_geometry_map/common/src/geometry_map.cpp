@@ -70,7 +70,7 @@
 #include <boost/timer.hpp>
 #include <Eigen/Geometry>
 #include <pcl/win32_macros.h>
-#include <pcl/common/transform.h>
+//#include <pcl/common/transform.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
@@ -139,6 +139,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
       // merge polygon with merge candidates
       //std::cout <<"c before: "<< p.centroid(0)<<", "<<p.centroid(1)<<", "<<p.centroid(2)<<std::endl;
       p.merge(merge_candidates); // merge all new candidates into p
+	p.id = new_id_;
       map_polygon_.push_back(p_ptr); // add p to map, candidates were dropped!
       ++new_id_;
       //std::cout <<"c after : "<< p.centroid(0)<<", "<<p.centroid(1)<<", "<<p.centroid(2)<<std::endl;
@@ -148,6 +149,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
     {
       p.computeAttributes(p.normal,p.centroid);
       p.assignWeight();
+	p.id = new_id_;
       map_polygon_.push_back(p_ptr);
       new_id_++;
       //  std::cout<<"size +1"<<std::endl;
@@ -157,6 +159,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
   {
     p.computeAttributes(p.normal,p.centroid);
     p.assignWeight();
+	p.id = new_id_;
     map_polygon_.push_back(p_ptr);
     new_id_++;
   }
@@ -212,6 +215,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
       // merge polygon with merge candidates
 
       c.merge(merge_candidates);
+      c.id = new_id_;
 
       map_cylinder_.push_back(c_ptr);
       new_id_ ++;
@@ -226,6 +230,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 
       c.computeAttributes(c.sym_axis,c.normal,c.origin_);
       c.assignWeight();
+	c.id = new_id_;
 
       map_cylinder_.push_back(c_ptr);
       new_id_++;
@@ -237,6 +242,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 
     c.computeAttributes(c.sym_axis,c.normal,c.origin_);
     c.assignWeight();
+	c.id = new_id_;
 
     map_cylinder_.push_back(c_ptr);
 

@@ -399,7 +399,6 @@ public:
       cob_3d_mapping_msgs::Shape s;
       s.header = header;
       s.header.frame_id = target_frame_;
-      s.type = cob_3d_mapping_msgs::Shape::POLYGON;
       toROSMsg(p, s);
       sa.shapes.push_back(s);
       ctr++;
@@ -464,6 +463,7 @@ public:
                 std_msgs::Header header,
                 float r, float g, float b)
   {
+    if(cloud_hull.points.size()==0) return;
     visualization_msgs::Marker marker;
     marker.action = visualization_msgs::Marker::ADD;
     marker.type = visualization_msgs::Marker::POINTS;

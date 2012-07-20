@@ -12,6 +12,7 @@
 #include <pcl/sample_consensus/sac_model_plane.h>
 #include <pcl/segmentation/extract_polygonal_prism_data.h>
 #include <pcl/surface/convex_hull.h>
+#include <pcl/common/centroid.h>
 
 class EvalMapping
 {

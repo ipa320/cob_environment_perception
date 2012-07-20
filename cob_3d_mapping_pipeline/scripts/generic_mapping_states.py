@@ -89,15 +89,15 @@ class UpdateEnvMap(smach.State):
     #sss.move("head","front")
     #sss.move("tray","down")
     #sss.move("base",scan_position)
-    rospy.wait_for_service('point_map/clear_point_map',10)
+    rospy.wait_for_service('point_map/clear_map',10)
     try:
-      clear_point_map = rospy.ServiceProxy('point_map/clear_point_map', Trigger)
+      clear_point_map = rospy.ServiceProxy('point_map/clear_map', Trigger)
       resp1 = clear_point_map()
     except rospy.ServiceException, e:
       print "Service call failed: %s"%e
-    rospy.wait_for_service('geometry_map/clear_geometry_map',10)
+    rospy.wait_for_service('geometry_map/clear_map',10)
     try:
-      clear_geom_map = rospy.ServiceProxy('geometry_map/clear_geometry_map', Trigger)
+      clear_geom_map = rospy.ServiceProxy('geometry_map/clear_map', Trigger)
       resp1 = clear_geom_map()
     except rospy.ServiceException, e:
       print "Service call failed: %s"%e
@@ -154,7 +154,7 @@ class Map360(smach.State):
     self.client = actionlib.SimpleActionClient('trigger_mapping', TriggerMappingAction)
 
   def execute(self, userdata):
-    scan_pose = [0, 0, 0]
+    scan_pose = [0, -0.5, 0]
     sss.move("base",scan_pose)
     sss.move("torso","home")
     sss.move("head","front")
@@ -208,6 +208,7 @@ class Map180(smach.State):
     sss.move("head","front")
     sss.move("base",scan_pose)
     #sss.move("base",scan_position)
+    raw_input("Press any key")
     goal = TriggerMappingGoal()
     goal.start = True
     if not self.client.wait_for_server():#rospy.Duration.from_sec(5.0)):
@@ -231,6 +232,58 @@ class Map180(smach.State):
     sss.move("torso",[[-0.2,0.0,-0.2]])
     while i > 0:#6.2:
       i = i-0.8
+      scan_pose[2]=i
+      sss.move("base",scan_pose)
+    goal.start = False
+    self.client.send_goal(goal)
+    self.client.wait_for_result(rospy.Duration.from_sec(5.0))
+    #sss.move("torso","home")
+    #move neck/base
+    #get map
+
+    return 'succeeded'
+
+class Map90(smach.State):
+
+  def __init__(self):
+
+    smach.State.__init__(
+      self,
+      outcomes=['succeeded', 'failed'],
+      input_keys=['angle_range']) #good angle value: 0.4
+    self.client = actionlib.SimpleActionClient('trigger_mapping', TriggerMappingAction)
+
+  def execute(self, userdata):
+    scan_pose = [0.515, -1, 1.583]
+    sss.move("tray","down")
+    sss.move("torso","home")
+    sss.move("head","front")
+    sss.move("base",scan_pose)
+    #sss.move("base",scan_position)
+    goal = TriggerMappingGoal()
+    goal.start = True
+    if not self.client.wait_for_server():#rospy.Duration.from_sec(5.0)):
+      rospy.logerr('server not available')
+      return 'failed'
+    self.client.send_goal(goal)
+    if not self.client.wait_for_result():#rospy.Duration.from_sec(5.0)):
+      return 'failed'
+    i = 1.8
+    ctr = 0
+    while ctr <= 2:#6.2:
+      scan_pose[2]=i
+      sss.move("base",scan_pose)
+      #if operator.mod(ctr,2) == 0:
+      #  sss.move("torso",[[-0.2,0.0,-0.2]])
+      #else:
+      #  sss.move("torso","home")
+      #sss.sleep(0.5)
+      i = i+0.8
+      ctr = ctr+1
+    sss.move("torso",[[-0.2,0.0,-0.2]])
+    while ctr > 0:#6.2:
+      i = i-0.9
+      ctr = ctr-1
       scan_pose[2]=i
       sss.move("base",scan_pose)
     goal.start = False

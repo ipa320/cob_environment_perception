@@ -12,6 +12,9 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rosbuild_init()
 rosbuild_check_for_sse()
 
+find_package(VTK REQUIRED)
+include_directories(${VTK_INCLUDE_DIRS})
+
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include ${PROJECT_SOURCE_DIR}/ros/include)
 
 
@@ -51,10 +54,12 @@ target_link_libraries(segmentation_node cob_3d_segmentation)
 
 # segmentation app:
 rosbuild_add_executable(test_depth_segmentation common/apps/test_depth_segmentation.cpp)
-target_link_libraries(test_depth_segmentation cob_3d_segmentation cob_3d_mapping_features cob_3d_mapping_features_omp)
+target_link_libraries(test_depth_segmentation cob_3d_segmentation cob_3d_mapping_features cob_3d_mapping_features_omp vtkCommon vtkRendering)
+rosbuild_link_boost(test_depth_segmentation program_options)
 
 # node for segmentation visualization:
 rosbuild_add_executable(segmentation_visualizer ros/src/segmentation_visualizer.cpp)
+target_link_libraries(segmentation_visualizer vtkCommon vtkRendering)
 
 # Executables for profiling:
 rosbuild_add_executable(profile_depth_seg common/apps/profile_depth_seg.cpp)
