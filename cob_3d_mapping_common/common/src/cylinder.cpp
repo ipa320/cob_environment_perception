@@ -505,8 +505,8 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
   this->merge_union(merge_polygons,average_polygon);
   this->assignWeight();
 
-  std::cout<<" weight after merge: "<<this->merge_weight_<<std::endl;
-  std::cout<<" radius after weighting: "<<this->r_<<std::endl;
+//  std::cout<<" weight after merge: "<<this->merge_weight_<<std::endl;
+//  std::cout<<" radius after weighting: "<<this->r_<<std::endl;
 
 
 }

@@ -53,4 +53,4 @@
  *
  ****************************************************************/
 
-#include "cob_3d_mapping_common/shape.h"z
+#include "cob_3d_mapping_common/shape.h"
