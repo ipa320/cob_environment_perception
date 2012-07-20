@@ -171,6 +171,9 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
       std::cout <<"[ " << c->size() <<" | "<< c->border_points.size() << " ]" << std::endl;
       continue;
     }
+
+
+
     PolygonContours<PolygonPoint> poly;
     std::cout << "Get outline for " << c->size() << " Points with "<< c->border_points.size() << " border points" << std::endl;
     pe_.outline(cloud->width, cloud->height, c->border_points, poly);
@@ -240,22 +243,21 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
       Eigen::Vector3f centroid3f  = c->getCentroid();
       cyl->centroid << centroid3f[0] , centroid3f[1] , centroid3f[2] , 0;
 
-      cyl->axes_.resize(3);
-      cyl->axes_[1] =  c->pca_inter_comp1;
-      std::cout<<"sym axis\n"<<cyl->axes_[1]<<"\n";
+      cyl->sym_axis =  c->pca_inter_comp1;
+      std::cout<<"sym axis\n"<<cyl->sym_axis<<"\n";
       std::cout<<"centroid\n"<<cyl->centroid<<"\n";
       cyl->ParamsFromCloud(cloud,c->indices_);
 
 
       //write parameters to msg - after transformation to target frame
-      s->params[0] =  cyl->axes_[1][0];
-      s->params[1] = cyl->axes_[1][1];
-      s->params[2] = cyl->axes_[1][2];
+      s->params[0] =  cyl->sym_axis[0];
+      s->params[1] = cyl->sym_axis[1];
+      s->params[2] = cyl->sym_axis[2];
 
 
-      s->params[3] = cyl->axes_[2][0];
-      s->params[4] = cyl->axes_[2][1];
-      s->params[5] = cyl->axes_[2][2];
+      s->params[3] = cyl->normal[0];
+      s->params[4] = cyl->normal[1];
+      s->params[5] = cyl->normal[2];
 
 
       s->params[6] =  cyl->origin_[0];
