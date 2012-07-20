@@ -301,6 +301,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
   hull_cloud->header = cloud->header;
   hull_cloud->height = 1;
   hull_cloud->width = hull_cloud->size();
+  hull_cloud->header.frame_id = target_frame_id_.c_str();
   pub_chull_.publish(hull_cloud);
   pub_shape_array_.publish(sa);
 }

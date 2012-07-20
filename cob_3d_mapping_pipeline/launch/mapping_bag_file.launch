@@ -3,9 +3,9 @@
   <!-- start environment modelling -->
   <arg name="mapping_manager" value="mapping_manager"/>
   <arg name="bag_file" default="/share/goa-sf/pcd_data/bags/tum_set/rgbd_dataset_freiburg2_coke-points.bag"/>
-  <node launch-prefix="gdb -ex run --args" pkg="nodelet" type="nodelet" name="$(arg mapping_manager)"
-        args="manager" output="screen"/>
-  <!--node pkg="nodelet" type="nodelet" name="$(arg mapping_manager)" args="manager" output="screen"/-->
+  <!--node launch-prefix="gdb -ex run -_-args" pkg="nodelet" type="nodelet" name="$(arg mapping_manager)"
+        args="manager" output="screen"/-->
+  <node pkg="nodelet" type="nodelet" name="$(arg mapping_manager)" args="manager" output="screen"/>
 
   <!--include file="$(find cob_3d_mapping_point_map)/ros/launch/point_map.launch">
     <arg name="start_manager" value="false"/>
