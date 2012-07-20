@@ -17,7 +17,7 @@
   <node pkg="nodelet" type="nodelet" name="segmentation"
         args="load cob_3d_segmentation/SegmentationAllInOneNodelet $(arg mapping_manager)" output="screen">
     <remap from="cloud_in" to="registration/pc_aligned" />
-    <param name="centroid_passthrough" type="double" value="1.5" />
+    <param name="centroid_passthrough" type="double" value="3.0"/>
   </node>
 
   <!--node pkg="nodelet" type="nodelet" name="point_map"
