@@ -56,6 +56,7 @@
 #define __DEPTH_SEGMENTATION_H__
 
 #include <math.h>
+#include <queue>
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -68,16 +69,25 @@ namespace cob_3d_segmentation
 {
   struct SegmentationCandidate
   {
-    SegmentationCandidate(int u_in, int v_in, float angle_in) : u(u_in), v(v_in), angle(angle_in) { }
+    typedef boost::shared_ptr<SegmentationCandidate> Ptr;
+    SegmentationCandidate(int u_in, int v_in, float angle_in) : u(u_in), v(v_in), dot_value(angle_in) { }
     int u;
     int v;
-    float angle;
+    float dot_value;
   };
 
-  inline const bool operator< (const SegmentationCandidate& lhs, const SegmentationCandidate& rhs){return lhs.angle < rhs.angle;}
+  inline const bool operator< (const SegmentationCandidate& lhs, const SegmentationCandidate& rhs){return lhs.dot_value < rhs.dot_value;}
   inline const bool operator> (const SegmentationCandidate& lhs, const SegmentationCandidate& rhs){return  operator< (rhs, lhs);}
   inline const bool operator<=(const SegmentationCandidate& lhs, const SegmentationCandidate& rhs){return !operator> (lhs, rhs);}
   inline const bool operator>=(const SegmentationCandidate& lhs, const SegmentationCandidate& rhs){return !operator< (lhs, rhs);}
+
+  struct ptr_deref
+  {
+    template<typename T>
+    bool operator() (const boost::shared_ptr<T>& lhs, const boost::shared_ptr<T>& rhs) const { return operator< (*lhs, *rhs); }
+  };
+
+  typedef std::priority_queue<SegmentationCandidate::Ptr, std::vector<SegmentationCandidate::Ptr>, ptr_deref> SegmentationQueue;
 
   struct PredefinedSegmentationTypes
   {
@@ -105,28 +115,31 @@ namespace cob_3d_segmentation
     typedef pcl::PointCloud<PointLabelT> LabelCloud;
     typedef typename LabelCloud::Ptr LabelCloudPtr;
     typedef typename LabelCloud::ConstPtr LabelCloudConstPtr;
-    
+
     typedef typename ClusterGraphT::Ptr ClusterGraphPtr;
     typedef typename ClusterGraphT::ClusterPtr ClusterPtr;
     typedef typename ClusterGraphT::EdgePtr EdgePtr;
 
   public:
-    DepthSegmentation () : max_angle_(35.0f / 180.0f * M_PI)
-      , max_boundary_angle_(50.0f / 180.0f * M_PI)
+    DepthSegmentation ()
+      //: max_angle_cos_(35.0f / 180.0f * M_PI)
+      //, max_boundary_angle_cos_(50.0f / 180.0f * M_PI)
+      : min_dot_normals_(cos(35.0f / 180.0f * M_PI))
+      , min_dot_boundary_(cos(50.0f / 180.0f * M_PI))
       , min_cluster_size_(150)
     { };
-    
+
     ~DepthSegmentation ()
     { };
 
     inline void setClusterGraphOut(ClusterGraphPtr clusters) { graph_ = clusters; }
-    
+
     inline void setNormalCloudIn(NormalCloudConstPtr normals) { normals_ = normals; }
     inline void setLabelCloudInOut(LabelCloudPtr labels) { labels_ = labels; }
     virtual void setInputCloud(const PointCloudConstPtr& points) { surface_ = points; }
     virtual LabelCloudConstPtr getOutputCloud() { return labels_; }
-    virtual bool compute() 
-    { 
+    virtual bool compute()
+    {
       performInitialSegmentation();
       refineSegmentation();
       return true;
@@ -138,22 +151,24 @@ namespace cob_3d_segmentation
 
   private:
     void addIfIsValid(int u, int v, int idx, int idx_prev, float dist_th, float p_z, Eigen::Vector3f& n,
-		      std::multiset<SegmentationCandidate>& coords_todo, ClusterPtr c);
+                      SegmentationQueue& seg_queue, ClusterPtr c);
 
     void computeBoundaryProperties(ClusterPtr c, EdgePtr e);
     void computeBoundaryProperties(ClusterPtr c);
     void computeEdgeSmoothness(EdgePtr e);
     void computeEdgeSmoothness();
 
-    float max_angle_; // between mean normal of cluster and point candidates of initial segmentation
-    float max_boundary_angle_;
+    //float max_angle_cos_; // between mean normal of cluster and point candidates of initial segmentation
+    //float max_boundary_angle_;
+    float min_dot_normals_; // minimum dot product value for region growing (0 -> perpendicular, 1 -> parallel)
+    float min_dot_boundary_; // minimum dot product value for boundary smoothness (0 -> perpendicular, 1 -> parallel)
     int min_cluster_size_;
 
     ClusterGraphPtr graph_;
     PointCloudConstPtr surface_;
     NormalCloudConstPtr normals_;
     LabelCloudPtr labels_;
-    
+
   };
 }
 
