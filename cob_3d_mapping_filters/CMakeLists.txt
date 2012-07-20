@@ -12,9 +12,9 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rosbuild_init()
 
 # add dynamic reconfigure api
-rosbuild_find_ros_package(dynamic_reconfigure)
-include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
-gencfg()
+#rosbuild_find_ros_package(dynamic_reconfigure)
+#include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
+#gencfg()
 
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
@@ -26,6 +26,14 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #uncomment if you have defined services
 #rosbuild_gensrv()
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
+
+#find_package(PCL 1.5.1 REQUIRED COMPONENTS
+#common io kdtree search surface features filters)
+#include_directories(${PCL_INCLUDE_DIRS})
+#link_directories(${PCL_LIBRARY_DIRS})
+#add_definitions(${PCL_DEFINITIONS})
+
+
 
 rosbuild_add_library(cob_3d_mapping_filters
 	common/src/amplitude_filter.cpp
@@ -43,9 +51,12 @@ rosbuild_add_executable(test_amplitude_filter common/test/test_amplitude_filter.
 rosbuild_add_executable(test_intensity_filter common/test/test_intensity_filter.cpp)
 rosbuild_add_executable(test_jump_edge_filter common/test/test_jump_edge_filter.cpp)
 rosbuild_add_executable(test_speckle_filter common/test/test_speckle_filter.cpp)
-rosbuild_add_executable(test_statisitcal_outlier_removal_filter common/test/test_statistical_outlier_removal_filter.cpp)
+rosbuild_add_executable(test_statistical_outlier_removal_filter common/test/test_statistical_outlier_removal_filter.cpp)
 
-target_link_libraries(cob_3d_mapping_filter_nodelets cob_3d_mapping_filters)
+target_link_libraries(test_statistical_outlier_removal_filter ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${PCL_KDTREE_LIBRARY} ${PCL_SEARCH_LIBRARY} ${PCL_SURFACE_LIBRARY} ${PCL_FEATURES_LIBRARY}  ${PCL_FILTERS_LIBRARY})
+#rosbuild_link_boost(test_statistical_outlier_removal_filter program_options)
+
+
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
 #target_link_libraries(${PROJECT_NAME} another_library)
@@ -54,3 +65,4 @@ target_link_libraries(cob_3d_mapping_filter_nodelets cob_3d_mapping_filters)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
 rosbuild_add_roslaunch_check(ros/launch)
+
