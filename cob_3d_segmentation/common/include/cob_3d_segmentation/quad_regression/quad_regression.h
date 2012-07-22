@@ -1,4 +1,3 @@
-
 /****************************************************************
  *
  * Copyright (c) 2011
@@ -56,6 +55,9 @@
 #ifndef SEGMENTATION_QUAD_REGR_H_
 #define SEGMENTATION_QUAD_REGR_H_
 
+#include <cob_3d_mapping_msgs/ShapeArray.h>
+#include <cob_3d_mapping_msgs/Shape.h>
+
 #include "../general_segmentation.h"
 
 #define USE_MIN_MAX_RECHECK_
@@ -69,6 +71,7 @@ namespace Segmentation
 #define getInd(x, y) ((x)+(y)*levels_[i].w)
 #define getInd1(x, y) ((x)+(y)*levels_[i-1].w)
 #define getInd2(x, y) ((x)+(y)*levels_[i+2].w)
+#define getInd3(x, y) ((x)+(y)*levels_[i+1].w)
 #define getIndPC(x, y) ((x)+(y)*pc.width)
 
   /**
@@ -124,7 +127,7 @@ namespace Segmentation
     }
 
     inline int isOccupied(const int i, const int x, const int y) const {
-      if(i>=levels_.size())
+      if(i>=(int)levels_.size())
         return -1;
       if(levels_[i].data[getInd(x,y)].occopied>=0)
         return levels_[i].data[getInd(x,y)].occopied;
@@ -149,16 +152,77 @@ namespace Segmentation
 
       for(int xx=-1; xx<2; xx++)
         for(int yy=-1; yy<2; yy++)
-          if(x+xx>=0 && y+yy>=0 && x+xx<levels_[i].w && y+yy<levels_[i].h && levels_[i].data[getInd(x,y)].occopied==mark){
-            poly.segments_.back().push_back(poly.project2plane( levels_[i].data[getInd(x,y)].model_(0,1)/levels_[i].data[getInd(x,y)].model_(0,0),
-                                                                levels_[i].data[getInd(x,y)].model_(0,3)/levels_[i].data[getInd(x,y)].model_(0,0),
-                                                                levels_[i].data[getInd(x,y)].z_(0)/levels_[i].data[getInd(x,y)].model_(0,0),
-                                                                v));
+          if(x+xx>=0 && y+yy>=0 && x+xx<(int)levels_[i].w && y+yy<(int)levels_[i].h
+              && filterOccupied(i,x+xx,y+yy,mark) //&& (levels_[i].data[getInd(x+xx,y+yy)].occopied==mark||levels_[i+1].data[getInd3((x+xx)/2,(y+yy)/2)].occopied==mark)
+      //&& poly.model_.check_tangent(levels_[i].data[getInd(x+xx,y+yy)],0.02f)
+          ){
+            Eigen::Vector3f p;
+            p(0) = levels_[i].data[getInd(x+xx,y+yy)].model_(0,1)/levels_[i].data[getInd(x+xx,y+yy)].model_(0,0);
+            p(1) = levels_[i].data[getInd(x+xx,y+yy)].model_(0,3)/levels_[i].data[getInd(x+xx,y+yy)].model_(0,0);
+            p(2) = levels_[i].data[getInd(x+xx,y+yy)].z_(0)/levels_[i].data[getInd(x+xx,y+yy)].model_(0,0);
+
+
+            //            Eigen::Vector3f p = poly.project2plane(levels_[i].data[getInd(x+xx,y+yy)].model_(0,1)/levels_[i].data[getInd(x+xx,y+yy)].z_(0),
+            //                                                   levels_[i].data[getInd(x+xx,y+yy)].model_(0,3)/levels_[i].data[getInd(x+xx,y+yy)].z_(0),
+            //                                                   model,v);
+
+            p.head<2>() = poly.nextPoint(p);
+            /*
+Eigen::Vector2f vv;
+      vv(0) = (p-poly.param_.col(0)).dot(poly.proj2plane_.col(0))/poly.proj2plane_.col(0).squaredNorm();
+      vv(1) = (p-poly.param_.col(0)).dot(poly.proj2plane_.col(1))/poly.proj2plane_.col(1).squaredNorm();
+            p.head<2>() = vv;*/
+
+            if(!pcl_isfinite(p.sum())) continue;
+            p(2) = v;
+            poly.segments_.back().push_back(p);
             return;
           }
-      poly.segments_.back().push_back(poly.project2plane(((x<<(i+1))-kinect_params_.dx)/kinect_params_.f,
-                                                         ((y<<(i+1))-kinect_params_.dy)/kinect_params_.f,
-                                                         model,v));
+#if 0
+      for(int xx=-1; xx<2; xx++)
+        for(int yy=-1; yy<2; yy++)
+          if(x+xx>=0 && y+yy>=0 && x+xx<(int)levels_[i].w && y+yy<(int)levels_[i].h
+              && poly.model_.check_tangent(levels_[i].data[getInd(x+xx,y+yy)],0.02f)){
+            Eigen::Vector3f p;
+            p(0) = levels_[i].data[getInd(x+xx,y+yy)].model_(0,1)/levels_[i].data[getInd(x+xx,y+yy)].model_(0,0);
+            p(1) = levels_[i].data[getInd(x+xx,y+yy)].model_(0,3)/levels_[i].data[getInd(x+xx,y+yy)].model_(0,0);
+            p(2) = levels_[i].data[getInd(x+xx,y+yy)].z_(0)/levels_[i].data[getInd(x+xx,y+yy)].model_(0,0);
+            /*            p.head<2>() = poly.nextPoint(p);
+
+Eigen::Vector2f vv;
+      vv(0) = (p-poly.param_.col(0)).dot(poly.proj2plane_.col(0))/poly.proj2plane_.col(0).squaredNorm();
+      vv(1) = (p-poly.param_.col(0)).dot(poly.proj2plane_.col(1))/poly.proj2plane_.col(1).squaredNorm();
+            p.head<2>() = vv;
+             */
+            if(!pcl_isfinite(p.sum())) continue;
+            p(2) = v;
+            poly.segments_.back().push_back(p);
+            return;
+          }
+
+      //      for(int xx=-2; xx<3; xx++)
+      //        for(int yy=-2; yy<3; yy++)
+      //          if(x+xx>=0 && y+yy>=0 && x+xx<levels_[i].w && y+yy<levels_[i].h && levels_[i].data[getInd(x+xx,y+yy)].occopied==mark){
+      //            Eigen::Vector3f p;
+      //            p(0) = levels_[i].data[getInd(x+xx,y+yy)].model_(0,1)/levels_[i].data[getInd(x+xx,y+yy)].model_(0,0);
+      //            p(1) = levels_[i].data[getInd(x+xx,y+yy)].model_(0,3)/levels_[i].data[getInd(x+xx,y+yy)].model_(0,0);
+      //            p(2) = levels_[i].data[getInd(x+xx,y+yy)].z_(0)/levels_[i].data[getInd(x+xx,y+yy)].model_(0,0);
+      //            //p.head<2>() = poly.nextPoint(p);
+      //
+      //            p.head<2>() -= poly.getCenter();
+      //            p(0)/=poly.proj2plane_(0,0);
+      //            p(1)/=poly.proj2plane_(1,1);
+      //
+      //            if(!pcl_isfinite(p.sum())) continue;
+      //            p(2) = v;
+      //            poly.segments_.back().push_back(p);
+      //            return;
+      //          }
+#endif
+      Eigen::Vector3f p = poly.project2plane(((x<<(i+1))-kinect_params_.dx)/kinect_params_.f,
+                                             ((y<<(i+1))-kinect_params_.dy)/kinect_params_.f,
+                                             model,v);
+      poly.segments_.back().push_back(p);
     }
 
     int getPos(int *ch, const int xx, const int yy, const int w, const int h);
@@ -187,18 +251,22 @@ namespace Segmentation
     }
 
     /// gets preprocessed output cloud
-    virtual boost::shared_ptr<const pcl::PointCloud<PointLabel> > getOutputCloud()
-    {
+    virtual boost::shared_ptr<const pcl::PointCloud<PointLabel> > getOutputCloud() {
       return compute_labeled_pc();
     }
 
     /// gets reconstructed output cloud
-    virtual boost::shared_ptr<const pcl::PointCloud<PointLabel> > getReconstructedOutputCloud()
-    {
+    virtual boost::shared_ptr<const pcl::PointCloud<PointLabel> > getReconstructedOutputCloud() {
       return compute_reconstructed_pc();
     }
 
     virtual bool compute();
+
+    /// convert to ROS message
+    operator cob_3d_mapping_msgs::ShapeArray() const;
+
+    /// get polygons
+    const std::vector<Segmentation::S_POLYGON> &getPolygons() const {return polygons_;}
 
     /*** evaluation purposes ***/
     void compute_accuracy(float &mean, float &var, size_t &used, size_t &mem, size_t &points, float &avg_dist);

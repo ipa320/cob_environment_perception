@@ -1,6 +1,7 @@
 
 #include "../sub_structures/poly2d.hpp"
 #include "../sub_structures/labeling.h"
+#include "../sub_structures/debug.h"
 
 #include <cob_3d_mapping_common/stop_watch.h>
 
@@ -11,6 +12,7 @@ Segmentation_QuadRegression<Point,PointLabel>::Segmentation_QuadRegression():
 MIN_LOD(8), FINAL_LOD(0), GO_DOWN_TO_LVL(3),
 ch_(NULL), outline_check_(0), outline_check_size_(0)
 {
+  Contour2D::generateSpline2D();
 }
 
 
@@ -210,7 +212,7 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
       //from one corner to the other
       size_t sx=0, sy=0;
       while(sx<levels_[i].w-1 && sy<levels_[i].h-1) {
-        for(int x=sx+1; x<levels_[i].w-1; x++) {
+        for(int x=sx+1; x<(int)levels_[i].w-1; x++) {
           //if(isOccupied2(i,x,sy)==-1&&!checkOccupiedDeep(i,x,sy))
           if(isOccupied(i,x,sy)==-1)
           {
@@ -249,7 +251,8 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
 
   template <typename Point, typename PointLabel>
   void Segmentation_QuadRegression<Point,PointLabel>::grow(SubStructure::VISITED_LIST<SubStructure::SVALUE> &list, SubStructure::Model &model, const int i, const int mark, bool first_lvl) {
-    int x, y, hops, occ, found=0;
+    int x, y, hops, occ;
+    unsigned int found=0;
     bool bNew,bNew2;
     int last_size=-1;
 #ifdef CHECK_CONNECTIVITY
@@ -290,7 +293,7 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
 
         const float thr=(d*d+1.2f)*0.0035f;
 
-        if( hops>0 && x>0&&y>0&&x+1<levels_[i].w&&y+1<levels_[i].h &&
+        if( hops>0 && x>0&&y>0&&x+1<(int)levels_[i].w&&y+1<(int)levels_[i].h &&
             d!=0.f && ((found<1&&first_lvl) ||
                 (
 #ifdef USE_MIN_MAX_RECHECK_
@@ -367,19 +370,26 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
         x= list.vals[j].v%levels_[i].w;
         y= list.vals[j].v/levels_[i].w;
 
-        if(x>0 && y>0 && x<levels_[i].w && y<levels_[i].h && isOccupied(i,x,y)==mark) continue;
+        if(x>0 && y>0 && x<(int)levels_[i].w && y<(int)levels_[i].h && isOccupied(i,x,y)==mark) continue;
 
         pt.x=x;pt.y=y;
 #ifdef USE_MIN_MAX_RECHECK_
-        pt.back = x>32 && y>32 && x<320-32 && y<240-32 && //TODO: improve this stupid thing (but it was easy :) )
-            (levels_[i+2].data[getInd2(x/4,y/4)].v_min_-
-                model.model(levels_[i].data[getInd(x,y)].model_(1)/levels_[i].data[getInd(x,y)].model_(0,0),
-                            levels_[i].data[getInd(x,y)].model_(3)/levels_[i].data[getInd(x,y)].model_(0,0)))>=-0.05;
+//        const float delta = (levels_[i+2].data[getInd2(x/4,y/4)].v_max_-
+//            model.model(levels_[i].data[getInd(x,y)].model_(1)/levels_[i].data[getInd(x,y)].model_(0,0),
+//                        levels_[i].data[getInd(x,y)].model_(3)/levels_[i].data[getInd(x,y)].model_(0,0)));
+//        pt.back = (delta > -0.01f && levels_[i+2].data[getInd2(x/4,y/4)].v_min_<0.1f) || delta>2*(model.get_max_gradient(levels_[i].data[getInd(x,y)])*levels_[i].data[getInd(x,y)].z_(0)/levels_[i].data[getInd(x,y)].model_(0,0)*(1<<i)/kinect_params_.f+4*0.03f);
+        pt.back = levels_[i+2].data[getInd2(x/4,y/4)].v_max_-
+                        model.model(levels_[i+2].data[getInd2(x/4,y/4)].model_(1)/levels_[i+2].data[getInd2(x/4,y/4)].model_(0,0),
+                                    levels_[i+2].data[getInd2(x/4,y/4)].model_(3)/levels_[i+2].data[getInd2(x/4,y/4)].model_(0,0))
+                                    > (model.get_max_gradient(levels_[i+2].data[getInd2(x/4,y/4)])*levels_[i+2].data[getInd2(x/4,y/4)].z_(0)/levels_[i+2].data[getInd2(x/4,y/4)].model_(0,0)*(1<<i)/kinect_params_.f+4*0.03f);
+        //TODO: improve this stupid thing (but it was easy :) )
 #endif
         outs.push_back(pt);
       }
 
       outline(ch_, levels_[i].w,levels_[i].h,outs,i, poly, model, mark);
+      if(poly.segments_.size()<1)
+        ROS_WARN("segment empty");
 
       polygons_.push_back(poly);
 
@@ -396,10 +406,10 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
       if(filterOccupied(i,x,y,mark))
         continue;
 
-      bool above = y>0 &&               filterOccupied(i,x,y-1,mark);
-      bool below = y+1<levels_[i].h &&  filterOccupied(i,x,y+1,mark);
-      bool left  = x>0 &&               filterOccupied(i,x-1,y,mark);
-      bool right = x+1<levels_[i].w &&  filterOccupied(i,x+1,y,mark);
+      bool above = y>0 &&                    filterOccupied(i,x,y-1,mark);
+      bool below = y+1<(int)levels_[i].h &&  filterOccupied(i,x,y+1,mark);
+      bool left  = x>0 &&                    filterOccupied(i,x-1,y,mark);
+      bool right = x+1<(int)levels_[i].w &&  filterOccupied(i,x+1,y,mark);
 
       if(above&&below&&left&&right)
         continue;
@@ -454,6 +464,19 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
       ch[ getInd(out[j].x,out[j].y) ]=(int)j+1;
     }
 
+#if DEBUG_LEVEL>200
+    {  char buf[128];
+    int *bs = new int[w*h];
+    memset(bs,0,w*h*4);
+    for(size_t j=0; j<out.size(); j++) {
+      bs[ getInd(out[j].x,out[j].y) ]=-(out[j].back+1);
+    }
+    sprintf(buf,"/tmp/poly%d.ppm",polygons_.size());
+    QQPF_Debug::ppm(buf,w,h,bs);
+    delete [] bs;
+    }
+#endif
+
     if(outline_check_size_<out.size()) {
       delete [] outline_check_;
       outline_check_ = new bool[out.size()];
@@ -505,7 +528,7 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
         bf=Contour2D::g_Splines[bf][p].bf;
         ++num;
 
-        if(std::abs(v)>5) {
+        if(std::abs(v)>3) {
           v=0;
           Eigen::Vector2f tv;
           tv(0)=x;tv(1)=y;
@@ -517,6 +540,7 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
 
       if(num<5 || (std::abs(x-start_x)+std::abs(y-start_y))>4 ) {
         poly.segments_.erase(poly.segments_.end()-1);
+
 #ifdef USE_BOOST_POLYGONS_
         poly.segments2d_.erase(poly.segments2d_.end()-1);
 #endif
@@ -548,7 +572,7 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
   {
     typename pcl::PointCloud<PointLabel>::Ptr out(new pcl::PointCloud<PointLabel>);
 
-    ROS_ASSERT(levels_.size()>0);
+    ROS_ASSERT(levels_.size()>1);
 
     out->resize(levels_[0].w*levels_[0].h);
     out->width = levels_[0].w;
@@ -729,4 +753,90 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
     mean = rstat.Mean();
     var = rstat.Variance();
     avg_dist /= points;
+  }
+
+  template <typename Point, typename PointLabel>
+  Segmentation_QuadRegression<Point,PointLabel>::operator cob_3d_mapping_msgs::ShapeArray() const {
+    cob_3d_mapping_msgs::ShapeArray sa;
+    sa.header.frame_id="/openni_rgb_frame";
+
+    cob_3d_mapping_msgs::Shape s;
+    s.header.frame_id="/openni_rgb_frame";
+
+    for(size_t i=0; i<polygons_.size(); i++) {
+      if(polygons_[i].segments_.size()<1) continue;
+
+      Eigen::Vector3f mi, ma;
+
+      s.params.clear();
+      s.centroid.x=(polygons_[i].param_.col(0)(0));
+      s.centroid.y=(polygons_[i].param_.col(0)(1));
+      s.centroid.z=(polygons_[i].param_.col(0)(2));
+
+      s.params.push_back(polygons_[i].param_.col(1)(0));
+      s.params.push_back(polygons_[i].param_.col(1)(1));
+
+      s.params.push_back(polygons_[i].param_.col(2)(0));
+      s.params.push_back(polygons_[i].param_.col(2)(1));
+      s.params.push_back(polygons_[i].param_.col(2)(2));
+
+      s.params.push_back(polygons_[i].proj2plane_.col(0)(0));
+      s.params.push_back(polygons_[i].proj2plane_.col(0)(1));
+      s.params.push_back(polygons_[i].proj2plane_.col(0)(2));
+
+      s.params.push_back(polygons_[i].proj2plane_.col(1)(0));
+      s.params.push_back(polygons_[i].proj2plane_.col(1)(1));
+      s.params.push_back(polygons_[i].proj2plane_.col(1)(2));
+
+
+      SetLabeledPoint(s.color, i);
+      s.color.r/=255.f;
+      s.color.g/=255.f;
+      s.color.b/=255.f;
+      s.color.a=1.f;
+      //s.color.a=std::min(1000.f,polygons_[i].weight_)/1000.f;
+
+      s.points.clear();
+      float backs=0;
+      for(size_t j=0; j<polygons_[i].segments_.size(); j++) {
+        pcl::PointCloud<pcl::PointXYZ> pc;
+        pcl::PointXYZ pt;
+
+        for(size_t k=0; k<polygons_[i].segments_[j].size(); k++) {
+          pt.x=polygons_[i].segments_[j][k](0);
+          pt.y=polygons_[i].segments_[j][k](1);
+          if(j==0) {
+            backs+=polygons_[i].segments_[j][k](2);
+            if(k==0)
+              mi = ma = polygons_[i].project2world( polygons_[i].segments_[j][k].head<2>() );
+            else
+            {
+              Eigen::Vector3f t = polygons_[i].project2world( polygons_[i].segments_[j][k].head<2>() );
+              mi(0) = std::min(t(0),mi(0));
+              mi(1) = std::min(t(1),mi(1));
+              mi(2) = std::min(t(2),mi(2));
+              ma(0) = std::max(t(0),ma(0));
+              ma(1) = std::max(t(1),ma(1));
+              ma(2) = std::max(t(2),ma(2));
+            }
+          }
+          pt.z=0;
+          if(pcl_isfinite(pt.x) && pcl_isfinite(pt.y)) {
+            pc.push_back(pt);
+          }
+        }
+
+        sensor_msgs::PointCloud2 pc2;
+        pcl::toROSMsg(pc,pc2);
+
+        s.points.push_back(pc2);
+        s.holes.push_back(j>0);
+      }
+
+      //ROS_INFO("density %f",(mi-ma).squaredNorm()/(polygons_[i].weight_*polygons_[i].weight_));
+      //if( (mi-ma).squaredNorm()/(polygons_[i].weight_*polygons_[i].weight_)<0.00002f)
+        sa.shapes.push_back(s);
+    }
+
+    return sa;
   }

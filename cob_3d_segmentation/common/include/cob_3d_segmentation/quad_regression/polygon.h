@@ -9,6 +9,7 @@
 #define POLYGON_H_
 
 #include "sub_structures.h"
+#include <cob_3d_mapping_msgs/CurvedPolygon.h>
 
 namespace Segmentation
 {
@@ -21,12 +22,12 @@ namespace Segmentation
 #include <boost/geometry/algorithms/envelope.hpp>
 #include <boost/geometry/geometries/polygon.hpp>
 #include <boost/geometry/geometries/point_xy.hpp>
-using namespace boost::polygon::operators;
+  using namespace boost::polygon::operators;
 
-typedef boost::polygon::polygon_with_holes_data<int> BoostPolygon;
-typedef BoostPolygon::point_type BoostPoint;
-typedef std::vector<BoostPolygon> BoostPolygonSet;
-typedef boost::polygon::polygon_90_set_traits<BoostPolygonSet> BoostTraits;
+  typedef boost::polygon::polygon_with_holes_data<int> BoostPolygon;
+  typedef BoostPolygon::point_type BoostPoint;
+  typedef std::vector<BoostPolygon> BoostPolygonSet;
+  typedef boost::polygon::polygon_90_set_traits<BoostPolygonSet> BoostTraits;
 #endif
 
   struct S_POLYGON {
@@ -107,9 +108,12 @@ typedef boost::polygon::polygon_90_set_traits<BoostPolygonSet> BoostTraits;
       mv(1)=y;
       float mz;
       mz=model.intersect(mv(0), mv(1));
-      mv=mv*mz-getCenter();
-      mv(0)/=proj2plane_(0,0);
-      mv(1)/=proj2plane_(1,1);
+      //mv=mv*mz-getCenter();
+      Eigen::Vector3f v;
+      v.head<2>() = mz * mv;
+      v(2) = mz;
+      mv(0) = (v-param_.col(0)).dot(proj2plane_.col(0))/proj2plane_.col(0).squaredNorm();
+      mv(1) = (v-param_.col(0)).dot(proj2plane_.col(1))/proj2plane_.col(1).squaredNorm();
 #if DEBUG_LEVEL >70
       if(!pcl_isfinite(mv(0))) {
         ROS_ERROR("mist");
@@ -166,8 +170,8 @@ typedef boost::polygon::polygon_90_set_traits<BoostPolygonSet> BoostTraits;
       mv(0)=x;
       mv(1)=y;
       mv=mv*mz-getCenter();
-      mv(0)/=proj2plane_(0,0);
-      mv(1)/=proj2plane_(1,1);
+      //mv(0)/=proj2plane_(0,0);
+      //mv(1)/=proj2plane_(1,1);
 #if DEBUG_LEVEL >70
       if(!pcl_isfinite(mv(0))) {
         ROS_ERROR("mistXYZ");
@@ -191,9 +195,17 @@ typedef boost::polygon::polygon_90_set_traits<BoostPolygonSet> BoostTraits;
       mv3(2)=b;
       float mz;
       mz=model.intersect(mv(0), mv(1));
-      mv=mv*mz-getCenter();
-      mv(0)/=proj2plane_(0,0);
-      mv(1)/=proj2plane_(1,1);
+
+      //      Eigen::Vector3f v;
+      //      v.head<2>() = mz * mv;
+      //      v(2) = mz;
+
+      mv=mv*mz-param_.col(0).head<2>();
+      //      mv(0) = (v-param_.col(0)).dot(proj2plane_.col(0))/proj2plane_.col(0).squaredNorm();
+      //      mv(1) = (v-param_.col(0)).dot(proj2plane_.col(1))/proj2plane_.col(1).squaredNorm();
+
+      //      ROS_INFO("e %f %f", (v-project2world(mv)).norm(), model.model(mz*x,mz*y)-mz);
+
 #if DEBUG_LEVEL >70
       if(!pcl_isfinite(mv(0))) {
         ROS_ERROR("mist");
@@ -222,17 +234,12 @@ typedef boost::polygon::polygon_90_set_traits<BoostPolygonSet> BoostTraits;
       pt2(1)=pt(1)*pt(1);
       pt2(2)=pt(0)*pt(1);
 
-      return param_.col(0) + proj2plane_*pt + param_.col(1)*(pt2).dot(param_.col(2));
+      return param_.col(0) + proj2plane_*pt + proj2plane_.col(0).cross(proj2plane_.col(1)) * (pt2.dot(param_.col(2)) + pt.dot(param_.col(1).head<2>()));
     }
 
     float getFeature(Eigen::Vector2f &ra,Eigen::Vector2f &rb,Eigen::Vector3f &rc) const {
 
       rc=feature_;
-
-      /*ra=feature_;
-      rb.fill(0);
-
-      return 1;*/
 
       float a=param_(0,2), b=param_(1,2), c=param_(2,2);
 
@@ -254,46 +261,6 @@ typedef boost::polygon::polygon_90_set_traits<BoostPolygonSet> BoostTraits;
 
     Eigen::Vector3f getInvariantCurvature() const {
       Eigen::Vector3f r;
-#if 0
-      //TESTING
-      r=param_.col(2);
-      r(0)=atanf(r(0)/30);
-      r(1)=atanf(r(1)/30);
-      r(2)=atanf(r(2)/30);
-      return r;
-
-      float x,y;
-      /*float a2=param_(0,2)*param_(0,2);
-      float b2=param_(1,2)*param_(1,2);
-      if(std::abs(model.p(5))<0.0001f) {
-        x=b2/(a2-b2);
-        y=sqrtf(1-x);
-      }
-      else*/ {
-        float a=2*param_(0,2)+param_(2,2);
-        float c=param_(1,1)+param_(0,1);
-        float b=2*param_(1,2)+param_(2,2);
-
-        float ma=a*a+b*b;
-        float mb=a*c;
-        float mc=c*c-b*b;
-
-        x=(mb+sqrtf(mb*mb-4*ma*mc))/(-2*ma);
-        y=sqrtf(1-x*x);
-      }
-      /*x=sqrtf(x);
-      r(0)=atanf(param_(0,2)*x+param_(1,2)*y);
-      r(1)=atanf(param_(0,2)*y-param_(1,2)*x);*/
-      r(0)=atanf( (2*param_(0,2)*x+2*param_(1,2)*y+param_(2,2)*(x+y)) /30.f);
-      r(1)=atanf( (2*param_(0,2)*y-2*param_(1,2)*x+param_(2,2)*(y-x)) /30.f);
-      float x2=M_SQRT1_2*x-M_SQRT1_2*y;
-      float y2=M_SQRT1_2*x+M_SQRT1_2*y;
-      r(2)=atanf( (2*param_(0,2)*x2+2*param_(1,2)*y2+param_(2,2)*(x2+y2)) /30.f);
-
-      std::cout<<"CURVXYZ1 "<<param_(0,2)<<" "<<param_(1,2)<<" "<<param_(2,2)<<"\n";
-      std::cout<<"CURVXYZ2 "<<r(0)<<" "<<r(1)<<" "<<r(2)<<"\n";
-
-#else
       float a=param_(0,2), b=param_(1,2), c=param_(2,2);
 
       float x1 =  sqrtf((a-b)*sqrtf(c*c+b*b-2*a*b+a*a)+c*c+b*b-2*a*b+a*a)/(sqrtf(2)*sqrtf(c*c+b*b-2*a*b+a*a));
@@ -305,9 +272,6 @@ typedef boost::polygon::polygon_90_set_traits<BoostPolygonSet> BoostTraits;
       r(1)=atanf( (a*x2*x2+b*y2*y2+c*x2*y2) /30.f);
       r(2)=0.f;
 
-      std::cout<<"CURVXYZ1 "<<param_(0,2)<<" "<<param_(1,2)<<" "<<param_(2,2)<<"\n";
-      std::cout<<"CURVXYZ2 "<<r(0)<<" "<<r(1)<<" "<<r(2)<<"\n";
-#endif
       return r;
     }
 
@@ -317,41 +281,48 @@ typedef boost::polygon::polygon_90_set_traits<BoostPolygonSet> BoostTraits;
       y(1)=1.f;
       x(1)=x(2)=y(0)=y(2)=0.f;
 
-      proj2plane_.col(0)=param_.col(1).cross(y);
-      proj2plane_.col(1)=param_.col(1).cross(x);
+      proj2plane_.col(0)=x;
+      proj2plane_.col(1)=y;
 
-      param_.col(2)(0)*=proj2plane_(0,0)*proj2plane_(0,0);
-      param_.col(2)(1)*=proj2plane_(1,1)*proj2plane_(1,1);
-      param_.col(2)(2)*=proj2plane_(0,0)*proj2plane_(1,1);
+      //proj2plane_.col(0)=param_.col(1).cross(y);
+      //proj2plane_.col(1)=param_.col(1).cross(x);
+
+      //param_.col(2)(0)*=proj2plane_(0,0)*proj2plane_(0,0);
+      //param_.col(2)(1)*=proj2plane_(1,1)*proj2plane_(1,1);
+      //param_.col(2)(2)*=proj2plane_(0,0)*proj2plane_(1,1);
     }
 
     void operator=(const SubStructure::Model &model) {
+      feature_.fill(0);
       param_xy_ = model.p;
       model_ = model;
 
-      if(std::abs(model.p(5))<0.0001f) {
-        param_.col(0)(0)=-model.p(1)/(2*model.p(2));
-        param_.col(0)(1)=-model.p(3)/(2*model.p(4));
-      }
-      else {
-        param_.col(0)(1)=
-            ((2*model.p(2)*model.p(3))/model.p(5)-model.p(1)) /
-            ( model.p(5)-(4*model.p(2)*model.p(4)/model.p(5)));
+      //      if(std::abs(model.p(5))<0.0001f) {
+      //        param_.col(0)(0)=-model.p(1)/(2*model.p(2));
+      //        param_.col(0)(1)=-model.p(3)/(2*model.p(4));
+      //      }
+      //      else {
+      //        param_.col(0)(1)=
+      //            ((2*model.p(2)*model.p(3))/model.p(5)-model.p(1)) /
+      //            ( model.p(5)-(4*model.p(2)*model.p(4)/model.p(5)));
+      //
+      //        param_.col(0)(0)=-(model.p(1)+model.p(5)*param_.col(0)(1))/(2*model.p(2));
+      //      }
+      //
+      //      if(!pcl_isfinite(param_.col(0)(0)))
+      //        param_.col(0)(0)=0.f;
+      //      if(!pcl_isfinite(param_.col(0)(1)))
+      //        param_.col(0)(1)=0.f;
+      //
+      //      param_.col(0)(2)=model.model(param_.col(0)(0), param_.col(0)(1));
 
-        param_.col(0)(0)=-(model.p(1)+model.p(5)*param_.col(0)(1))/(2*model.p(2));
-      }
+      param_.col(0) = Eigen::Vector3f::Zero();
+      param_.col(0)(2) = model.p(0);
 
-      if(!pcl_isfinite(param_.col(0)(0)))
-        param_.col(0)(0)=0.f;
-      if(!pcl_isfinite(param_.col(0)(1)))
-        param_.col(0)(1)=0.f;
-
-      param_.col(0)(2)=model.model(param_.col(0)(0), param_.col(0)(1));
-
-      param_.col(1)(0)=-(model.p(1)+2*model.p(2)*param_.col(0)(0)+model.p(5)*param_.col(0)(1));
-      param_.col(1)(1)=-(model.p(3)+2*model.p(4)*param_.col(0)(1)+model.p(5)*param_.col(0)(0));
-      param_.col(1)(2)=1;
-      param_.col(1).normalize();
+      param_.col(1)(0)=model.p(1);//-(model.p(1)+2*model.p(2)*param_.col(0)(0)+model.p(5)*param_.col(0)(1));
+      param_.col(1)(1)=model.p(3);//-(model.p(3)+2*model.p(4)*param_.col(0)(1)+model.p(5)*param_.col(0)(0));
+      param_.col(1)(2)=0;
+      //      param_.col(1).normalize();
 
       param_.col(2)(0)=model.p(2);
       param_.col(2)(1)=model.p(4);
@@ -360,6 +331,12 @@ typedef boost::polygon::polygon_90_set_traits<BoostPolygonSet> BoostTraits;
       weight_ = model.param.model_(0,0);
 
       update();
+
+      middle_(0) = model_.param.model_(0,1)/model_.param.model_(0,0);
+      middle_(1) = model_.param.model_(0,3)/model_.param.model_(0,0);
+      middle_(2) = model_.param.z_(0)/model_.param.model_(0,0);
+
+      middle_ = project2world(nextPoint(middle_));
     }
 
     void print() {
@@ -371,6 +348,82 @@ typedef boost::polygon::polygon_90_set_traits<BoostPolygonSet> BoostTraits;
       }
     }
 
+    void toRosMsg(cob_3d_mapping_msgs::CurvedPolygon *msg, const ros::Time &time) const
+    {
+      static int nextID = 0;
+      msg->stamp = time;
+      msg->ID = nextID++;
+      msg->weight = model_.param.model_(0,0);
+
+      for(int i=0; i<6; i++)
+        msg->parameter[i] = model_.p(i);
+
+      msg->polyline.clear();
+      if(segments_.size()>0) {
+        for(size_t i=0; i<segments_[0].size(); i++) {
+          cob_3d_mapping_msgs::polyline_point pt;
+          pt.x=segments_[0][i](0);
+          pt.y=segments_[0][i](1);
+          pt.edge_prob=segments_[0][i](2);
+          msg->polyline.push_back(pt);
+        }
+      }
+
+      cob_3d_mapping_msgs::feature ft;
+
+      //nearest point
+      ft.ID = 1;
+      Eigen::Vector3f nxtPt = project2world(nextPoint(Eigen::Vector3f::Zero()));
+      ft.x=nxtPt(0);
+      ft.y=nxtPt(1);
+      ft.z=nxtPt(2);
+      msg->features.push_back(ft);
+
+      //feature from form
+      ft.ID = 2;
+      ft.x=feature_(0);
+      ft.y=feature_(1);
+      ft.z=feature_(2);
+      msg->features.push_back(ft);
+
+      //mid of outer hull
+      ft.ID = 3;
+      ft.x=middle_(0);
+      ft.y=middle_(1);
+      ft.z=middle_(2);
+      msg->features.push_back(ft);
+
+      Eigen::Vector2f ft1,ft2;
+      Eigen::Vector3f ft3,n=model_.getNormal(middle_(0),middle_(1)),ft1p,ft2p;
+      getFeature(ft1,ft2,ft3);
+
+      ft1p(0)=ft1(0);
+      ft1p(1)=ft1(1);
+      ft2p(0)=ft2(0);
+      ft2p(1)=ft2(1);
+      ft1p(2)=ft2p(2)=0.f;
+
+      //curvature feature 1
+      ft.ID = 4;
+      ft3=ft1p.cross(n);
+      ft.x = ft3(0);
+      ft.y = ft3(1);
+      ft.z = ft3(2);
+      //if(pcl_isfinite(ft3.sum()))
+      msg->features.push_back(ft);
+
+      //curvature feature 2
+      ft.ID = 5;
+      ft3=ft2p.cross(n);
+      ft.x = ft3(0);
+      ft.y = ft3(1);
+      ft.z = ft3(2);
+      //if(pcl_isfinite(ft3.sum()))
+      msg->features.push_back(ft);
+
+    }
+
+
     /// find nearest point to manifold (Newton)
     Eigen::Vector2f _nextPoint(const Eigen::Vector3f &v, Eigen::Vector3f p, const int depth=0) const
     {
@@ -379,27 +432,28 @@ typedef boost::polygon::polygon_90_set_traits<BoostPolygonSet> BoostTraits;
         return p.head<2>();
       }
 
-//      std::cout<<"p\n"<<p<<"\n";
-      p(2) = param_.col(2)(0)*p(0)*p(0)+param_.col(2)(1)*p(1)*p(1)+param_.col(2)(2)*p(0)*p(1);
-//      std::cout<<"p\n"<<p<<"\n";
+      //      std::cout<<"p\n"<<p<<"\n";
+      p(2) = param_.col(2)(0)*p(0)*p(0)+param_.col(2)(1)*p(1)*p(1)+param_.col(2)(2)*p(0)*p(1)
+                  + param_.col(1)(0)*p(0)+param_.col(1)(1)*p(1);
+      //      std::cout<<"p\n"<<p<<"\n";
 
       Eigen::Vector3f n;
-      n(0) = -(param_.col(2)(0)*2*p(0)+param_.col(2)(2)*p(1));
-      n(1) = -(param_.col(2)(1)*2*p(1)+param_.col(2)(2)*p(0));
+      n(0) = -(param_.col(2)(0)*2*p(0)+param_.col(2)(2)*p(1)+param_.col(1)(0));
+      n(1) = -(param_.col(2)(1)*2*p(1)+param_.col(2)(2)*p(0)+param_.col(1)(1));
       n(2) = 1;
 
       Eigen::Vector3f d = ((p-v).dot(n)/n.squaredNorm()*n+(v-p));
 
-//      std::cout<<"d\n"<<d<<"\n";
-//      std::cout<<"n\n"<<n<<"\n";
-//      std::cout<<"pv\n"<<(p-v)/(p-v)(2)<<"\n";
-//      std::cout<<"pv\n"<<(p-v)<<"\n";
-//      std::cout<<"dd\n"<<(p-v).dot(n)/n.squaredNorm()*n<<"\n";
+      //      std::cout<<"d\n"<<d<<"\n";
+      //      std::cout<<"n\n"<<n<<"\n";
+      //      std::cout<<"pv\n"<<(p-v)/(p-v)(2)<<"\n";
+      //      std::cout<<"pv\n"<<(p-v)<<"\n";
+      //      std::cout<<"dd\n"<<(p-v).dot(n)/n.squaredNorm()*n<<"\n";
       //ROS_ASSERT(std::abs(d(2))<=std::abs(z));
 
       if(!pcl_isfinite(d.sum()) || d.head<2>().squaredNorm()<0.001f*0.001f)
       {
-//        std::cout<<"---------------\n";
+        //        std::cout<<"---------------\n";
         return (p+d).head<2>();
       }
       return _nextPoint(v,p+d,depth+1);
@@ -412,7 +466,7 @@ typedef boost::polygon::polygon_90_set_traits<BoostPolygonSet> BoostTraits;
 
       p(0) = (v-param_.col(0)).dot(proj2plane_.col(0));
       p(1) = (v-param_.col(0)).dot(proj2plane_.col(1));
-      p(2) = (v-param_.col(0)).dot(param_.col(1));
+      p(2) = (v-param_.col(0)).dot(proj2plane_.col(0).cross(proj2plane_.col(1)));
 
       Eigen::Vector2f r = _nextPoint(p, p);
 
@@ -427,6 +481,6 @@ typedef boost::polygon::polygon_90_set_traits<BoostPolygonSet> BoostTraits;
       return r;
     }
   };
-  }
+}
 
 #endif /* POLYGON_H_ */
