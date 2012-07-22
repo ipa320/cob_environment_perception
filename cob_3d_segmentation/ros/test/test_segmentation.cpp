@@ -10,6 +10,7 @@
 #include <gtest/gtest.h>
 
 #include <pcl/io/pcd_io.h>
+#include <rosbag/bag.h>
 
 //includes needed for segmentation (things to test)
 #include <cob_3d_segmentation/general_segmentation.h>
@@ -248,6 +249,13 @@ TEST(Segmentation, quad_regression)
     csv.add(et_growing);
     csv.add(et_extraction);
     csv.next();
+
+    //saving ros msgs to bag-file
+    rosbag::Bag bag_out;
+    bag_out.open("test/labeled/"+fn_short+".bag", rosbag::bagmode::Write);
+    bag_out.write("shapes_array", ros::Time(1342850029.582334425+0.1), (cob_3d_mapping_msgs::ShapeArray)seg);
+    bag_out.write("shapes_array", ros::Time(1342850029.582334425+0.2), (cob_3d_mapping_msgs::ShapeArray)seg);
+    bag_out.write("shapes_array", ros::Time(1342850029.582334425+0.4), (cob_3d_mapping_msgs::ShapeArray)seg);
   }
 }
 

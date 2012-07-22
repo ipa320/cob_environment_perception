@@ -41,7 +41,7 @@ struct Model {
 
     const float d=temp.param.z_(0)/temp.param.model_(0,0);
 
-    if(error2 > (temp.param.model_(0,0)*temp.param.model_(0,0))/(1<<13)*d*d || (std::abs(p(2))+std::abs(p(4))+std::abs(p(5)))/(std::abs(p(1))+std::abs(p(3)))>1.f)
+    if(std::abs(param.model_.determinant()/param.model_(0,0))>0.0001f && (error2 > (temp.param.model_(0,0)*temp.param.model_(0,0))/(1<<13)*d*d || (std::abs(p(2))+std::abs(p(4))+std::abs(p(5)))/(std::abs(p(1))+std::abs(p(3)))>1.f))
       return false;
 
     p = temp.p;
@@ -104,6 +104,10 @@ struct Model {
     if(param.model_(0,0)==0) {
       p(0)=p(1)=p(2)=p(3)=p(4)=p(5)=0.f;
     }
+//    else if(param.model_(0,0)>1000 && std::abs(param.model_.determinant()/param.model_(0,0))<0.00001f)
+//    {
+//      getLinear2();
+//    }
     else {
       bool bLDLT=param.z_(0)/param.model_(0)<1.2f;
 
@@ -127,6 +131,14 @@ struct Model {
       }
 
     }
+  }
+
+  Eigen::Matrix3f getLinearMatrix() const {
+    Eigen::Matrix3f M;
+    for(int i=0; i<3; i++)
+      for(int j=0; j<3; j++)
+        M(i,j)=param.model_(i>1?3:i, j>1?3:j);
+    return M;
   }
 
   Eigen::Vector3f getLinear() const {
@@ -170,11 +182,11 @@ struct Model {
     return n;
   }
 
-  Eigen::Vector3f getNormal(const float x, const float y) {
+  Eigen::Vector3f getNormal(const float x, const float y) const {
     Eigen::Vector3f n;
     n(2)=1;
-    n(0)=p(1)+2*x*p(2)+p(5)*y;
-    n(1)=p(3)+2*x*p(4)+p(5)*x;
+    n(0)=-(p(1)+2*x*p(2)+p(5)*y);
+    n(1)=-(p(3)+2*x*p(4)+p(5)*x);
     n.normalize();
     return n;
   }

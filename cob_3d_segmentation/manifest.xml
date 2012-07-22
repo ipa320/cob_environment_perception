@@ -14,6 +14,7 @@
   <depend package="tinyxml"/>
   <depend package="nodelet"/>
   <depend package="cob_3d_mapping_common"/>
+  <depend package="cob_3d_mapping_msgs"/>
 
 </package>
 

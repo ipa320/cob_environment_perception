@@ -28,6 +28,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 rosbuild_add_library(cob_3d_segmentation  ros/src/segmentation_node.cpp)
 rosbuild_add_executable(segmentation_node ros/src/segmentation_node.cpp)
+rosbuild_add_executable(qppf_node ros/src/qppf_node.cpp)
 
 rosbuild_add_compile_flags(cob_3d_segmentation -D__LINUX__ -DCOMPILE_NODELET)
 
