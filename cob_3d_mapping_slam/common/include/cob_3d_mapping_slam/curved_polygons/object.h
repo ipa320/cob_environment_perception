@@ -18,6 +18,7 @@ namespace Slam_CurvedPolygon
   {
     //cob_3d_mapping_msgs::CurvedPolygon data_;
     Slam_CurvedPolygon::ex_curved_polygon data_;
+    size_t used_, creation_;
 
   public:
 
@@ -37,7 +38,7 @@ namespace Slam_CurvedPolygon
     typedef typename std::list<TF_CORS> TFLIST;
 
     Object(const cob_3d_mapping_msgs::CurvedPolygon &cp):
-      data_(cp)
+      data_(cp), used_(1), creation_(1)
     {
 
     }
@@ -51,12 +52,18 @@ namespace Slam_CurvedPolygon
       data_.transform(rot, tr,var_R,var_T);
     }
 
-    bool operator+=(const Object &o) {//TODO:
+    bool operator+=(const Object &o) {
       ///update
-      //data_ = o.data_;
-      data_ += o.data_;
-      return true;
+      if(data_ += o.data_) {
+        used_ += o.used_;
+        used_ += o.creation_;
+        return true;
+      }
+      return false;
     }
+
+    void used() {++used_;}
+    void processed() {++creation_;}
 
     bool isReachable(const Object &o, const typename DOF6::TYPE &thr_rot, const typename DOF6::TYPE &thr_tr) const;
     std::vector<typename DOF6::TYPE> getDistance(const Object &o) const;
@@ -69,6 +76,10 @@ namespace Slam_CurvedPolygon
     Eigen::Vector3f getNearestTransformedPoint(const Eigen::Matrix3f &rot, const Eigen::Vector3f &tr) const {return data_.getNearestTransformedPoint(rot, tr);}
 
     bool compatible(const Object &o) const {return data_.isPlane()==o.data_.isPlane();}
+
+    size_t getUsedCounter() const {return used_;}
+    size_t getCreationCounter() const {return creation_;}
+
   };
 
 #include "impl/object.hpp"

@@ -44,7 +44,7 @@ typename _DOF6::TYPE OBJCTXT<_DOF6>::check_assumption(typename SCOR_MEMBER::Ptr 
   if(w_sum) p/=w_sum;
 
 #ifdef DEBUG_
-  ROS_INFO("Assumption is p=%f (%d, %d) goods=%d",p,m1->candidates_.size(),m2->candidates_.size(),goods);
+  ROS_INFO("Assumption is p=%f (%d, %d) goods=%d",p,(int)m1->candidates_.size(),(int)m2->candidates_.size(),goods);
 #endif
 
   return p;
@@ -76,7 +76,9 @@ void OBJCTXT<_DOF6>::findCorrespondences(const OBJCTXT &ctxt, std::list<SCOR> &c
       //if( obj.isReachable(*ctxt.objs_[j],tf.getRotationVariance(),tf.getTranslationVariance()) )
       if(obj.isReachable(*ctxt.objs_[j],tf.getRotationVariance(),tf.getTranslationVariance())
           || (
-          (obj.getData().intersectsBB(ctxt.objs_[j]->getData(), 0.1 /*metres*/) && obj.getData().canMerge(ctxt.objs_[j]->getData()))) )
+          (
+              obj.getData().intersectsBB(ctxt.objs_[j]->getData(), 0.1f /*metres*/) &&
+              obj.getData().canMerge(ctxt.objs_[j]->getData()))) )
       {
         members.back()->candidates_.push_back(members2[j]);
         members2[j]->candidates_.push_back(members.back());
@@ -124,7 +126,7 @@ void OBJCTXT<_DOF6>::findCorrespondences(const OBJCTXT &ctxt, std::list<SCOR> &c
   }
 
 #ifdef DEBUG_
-  ROS_INFO("found %d correspondences", (int)cors.size());
+  ROS_INFO("found %d correspondences (%d %d)", (int)cors.size(), (int)objs_.size(), (int)ctxt.objs_.size());
 #endif
 
   return;
@@ -191,10 +193,12 @@ _DOF6 OBJCTXT<_DOF6>::optimizeLink(const DOF6 &_tf, std::list<SCOR> &cors, const
 
   int used=0;
   int used2=0;
-  for(typename std::list<SCOR>::const_iterator it = cors.begin(); it!=cors.end(); it++)
+  for(typename std::list<SCOR>::iterator it = cors.begin(); it!=cors.end(); it++)
   {
     typename OBJECT::TFLIST list = it->a->getTFList(*it->b, thr_rot+0.025f, thr_tr+0.025f, rot, tr);
     //typename OBJECT::TFLIST list = it->a->getTFList(*it->b, thr_rot+0.025f, thr_tr+0.025f, Eigen::Matrix3f::Identity(), Eigen::Vector3f::Zero());
+
+    it->used_ = list.size()>0;
 
     for(typename OBJECT::TFLIST::const_iterator k = list.begin(); k!=list.end(); k++)
     {
@@ -221,26 +225,24 @@ _DOF6 OBJCTXT<_DOF6>::optimizeLink(const DOF6 &_tf, std::list<SCOR> &cors, const
   //    //return optimizeLink(_tf, cors, tf.getRotationVariance()+tf.getTranslationVariance(), tf.getRotation(), tf.getTranslation());
   //    return optimizeLink(_tf, cors, 1.5, tf.getRotation(), tf.getTranslation());
   //  else
-  if(depth<3 || thr_rot>0.07f)
+  if(depth<3 || thr_rot>0.075f)
     return optimizeLink(_tf, cors, thr_rot*0.75f, thr_tr*0.75f, tf.getRotation(), tf.getTranslation(), depth+1);
 
 #ifdef DEBUG_
   //DEBUG
-  for(typename std::list<SCOR>::const_iterator it = cors.begin(); it!=cors.end(); it++)
+  for(typename std::list<SCOR>::iterator it = cors.begin(); it!=cors.end(); it++)
   {
-    //      typename OBJECT::TFLIST list = it->a->getTFList(*it->b, thr_rot+0.025f, thr_tr+0.025f, tf.getRotation(), tf.getTranslation());
-    typename OBJECT::TFLIST list = it->a->getTFList(*it->b, thr_rot+0.025f, thr_tr+0.025f, rot, tr);
-
-    if(list.size()>0)
+    if(it->used_)
     {
+      typename OBJECT::TFLIST list = it->a->getTFList(*it->b, thr_rot+0.025f, thr_tr+0.025f, rot, tr);
       for(typename OBJECT::TFLIST::const_iterator k = list.begin(); k!=list.end(); k++)
       {
-        if( k->a.plane_ )
-        {
-          Debug::Interface::get().addArrow(it->a->getNearestPoint(),it->a->getNearestPoint()+0.1f*k->a.rotation_n_/k->a.length_,100);
-          Debug::Interface::get().addArrow(it->b->getNearestPoint(),it->b->getNearestPoint()+0.1f*k->b.rotation_n_/k->b.length_,255,100);
-        }
-        else
+//        if( k->a.plane_ )
+//        {
+//          Debug::Interface::get().addArrow(it->a->getNearestPoint(),it->a->getNearestPoint()+0.1f*k->a.rotation_n_/k->a.length_,100);
+//          Debug::Interface::get().addArrow(it->b->getNearestPoint(),it->b->getNearestPoint()+0.1f*k->b.rotation_n_/k->b.length_,255,100);
+//        }
+//        else
           Debug::Interface::get().addArrow(k->a.next_point_, k->b.next_point_);
       }
     }

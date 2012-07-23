@@ -28,14 +28,14 @@ bool Object<_DOF6>::operator|(const Object &o) const
 template<typename _DOF6>
 bool Object<_DOF6>::isReachable(const Object &o, const typename DOF6::TYPE &thr_rot, const typename DOF6::TYPE &thr_tr) const
 {
-  if( (!data_.extensionMatch(o.data_, 0.2 /*percent*/) && !data_.matchForm(o.data_)) ||
-      data_.isPlane() != o.data_.isPlane() /*||!data_.fitsCurvature(o.data_, 0.3)*/)
-    return false;
+//  if( (!data_.extensionMatch(o.data_, 0.25f /*percent*/, 0.1f) && !data_.matchForm(o.data_)) )//||
+//      //data_.isPlane() != o.data_.isPlane() /*||!data_.fitsCurvature(o.data_, 0.3)*/)
+//    return false;
 
   Eigen::Matrix<typename TFLINK::TYPE, 3,1> v1,v2;
 
   for(size_t i=0; i<data_.getFeatures().size(); i++) {
-    if(data_.getFeatures()[i].type_ != ex_curved_polygon::S_FEATURE::POINT) continue;
+    if(data_.getFeatures()[i].type_ != ex_curved_polygon::S_FEATURE::POINT && data_.getFeatures()[i].type_ != ex_curved_polygon::S_FEATURE::NORMAL) continue;
     v1 = data_.getFeatures()[i].v_;
     v2 = o.data_.getFeatures()[i].v_;
 
@@ -180,7 +180,8 @@ typename Object<_DOF6>::TFLIST Object<_DOF6>::getTFList(const Object &o, const t
   const float fw = data_.matchFormf(o.data_);
   ROS_INFO("fw %f",fw);
   if(fw<=0.) return list;
-  const float wX = fw*sqrtf(data_.getWeight()*o.data_.getWeight())/1000 / (1+data_.getFeatures()[2].v_.squaredNorm());
+  //const float wX = fw*sqrtf(data_.getWeight()*o.data_.getWeight())/1000 / (1+data_.getFeatures()[2].v_.squaredNorm());
+  const float wX = fw*used_/(float)creation_*std::min(data_.getWeight(),o.data_.getWeight())/1000;
   ROS_INFO("w %f",wX);
 
   //  if( std::min(data_.getFeatures()[1].v_org_.squaredNorm(),o.data_.getFeatures()[1].v_org_.squaredNorm())
@@ -228,7 +229,7 @@ typename Object<_DOF6>::TFLIST Object<_DOF6>::getTFList(const Object &o, const t
       {
         case 1:
           if(data_.isPlane() != o.data_.isPlane()) break;
-          w*=5;
+          w*=25;
         case 3:
           w*=0.2f;
         case -1:
@@ -252,40 +253,40 @@ typename Object<_DOF6>::TFLIST Object<_DOF6>::getTFList(const Object &o, const t
             //          std::cout<<"Ma*:\n"<<v1p<<"\n";
             //          std::cout<<"Mb*:\n"<<o.data_.getNearestTransformedPoint(rot, tr)<<"\n";
 
-            std::cout<<"\t\tMa:\n"<<v1<<"\n";
-            std::cout<<"\t\tMb:\n"<<v2<<"\n";
-            std::cout<<"\t\tMa*:\n"<<v1p<<"\n";
-            std::cout<<"\t\tMb*:\n"<<o.data_.getNearestTransformedPoint(rot, tr)<<"\n";
-            std::cout<<"\t\tMa**:\n"<<data_.getNearestTransformedPoint(rot, Eigen::Vector3f::Zero())<<"\n";
-            std::cout<<"\t\tMb**:\n"<<o.data_.getNearestTransformedPoint(rot, Eigen::Vector3f::Zero())<<"\n";
-            std::cout<<"\tnormal:  "<<normal<<"\n";
-            std::cout<<"\tplane:  "<<data_.isPlane()<<"\n";
-            std::cout<<"\tthr:  "<<thr_tr<<thr_rot<<"\n";
-            std::cout<<"\tthr:  "<<
-                std::abs(v2.norm()-v1p.norm())<<"/"<<
-                std::acos(v2.dot(v1p)/(v2.norm()*v1p.norm()))<<"\n";
+//            std::cout<<"\t\tMa:\n"<<v1<<"\n";
+//            std::cout<<"\t\tMb:\n"<<v2<<"\n";
+//            std::cout<<"\t\tMa*:\n"<<v1p<<"\n";
+//            std::cout<<"\t\tMb*:\n"<<o.data_.getNearestTransformedPoint(rot, tr)<<"\n";
+//            std::cout<<"\t\tMa**:\n"<<data_.getNearestTransformedPoint(rot, Eigen::Vector3f::Zero())<<"\n";
+//            std::cout<<"\t\tMb**:\n"<<o.data_.getNearestTransformedPoint(rot, Eigen::Vector3f::Zero())<<"\n";
+//            std::cout<<"\tnormal:  "<<normal<<"\n";
+//            std::cout<<"\tplane:  "<<data_.isPlane()<<"\n";
+//            std::cout<<"\tthr:  "<<thr_tr<<thr_rot<<"\n";
+//            std::cout<<"\tthr:  "<<
+//                std::abs(v2.norm()-v1p.norm())<<"/"<<
+//                std::acos(v2.dot(v1p)/(v2.norm()*v1p.norm()))<<"\n";
 
             //if(data_.getFeatures()[i].ID_!=3) return list;
             break;
           }
 
-          std::cout<<"\t\ta:\n"<<v1<<"\n";
-          std::cout<<"\t\tb:\n"<<v2<<"\n";
-          std::cout<<"\t\ta*:\n"<<v1p<<"\n";
-          std::cout<<"\t\tb*:\n"<<o.data_.getNearestTransformedPoint(rot, tr)<<"\n";
-          std::cout<<"\t\ta**:\n"<<data_.getNearestTransformedPoint(rot, Eigen::Vector3f::Zero())<<"\n";
-          std::cout<<"\t\tb**:\n"<<o.data_.getNearestTransformedPoint(rot, Eigen::Vector3f::Zero())<<"\n";
-          std::cout<<"\tnormal:  "<<normal<<"\n";
-          std::cout<<"\tplane:  "<<data_.isPlane()<<"\n";
-          std::cout<<"\tthr:  "<<thr_tr<<"/"<<thr_rot<<"\n";
-          std::cout<<"\tthr:  "<<
-              std::abs(v2.norm()-v1p.norm())<<"/"<<
-              std::acos(v2.dot(v1p/
-                               (v2.norm()*v1p.norm()) ))<<"\n";
+//          std::cout<<"\t\ta:\n"<<v1<<"\n";
+//          std::cout<<"\t\tb:\n"<<v2<<"\n";
+//          std::cout<<"\t\ta*:\n"<<v1p<<"\n";
+//          std::cout<<"\t\tb*:\n"<<o.data_.getNearestTransformedPoint(rot, tr)<<"\n";
+//          std::cout<<"\t\ta**:\n"<<data_.getNearestTransformedPoint(rot, Eigen::Vector3f::Zero())<<"\n";
+//          std::cout<<"\t\tb**:\n"<<o.data_.getNearestTransformedPoint(rot, Eigen::Vector3f::Zero())<<"\n";
+//          std::cout<<"\tnormal:  "<<normal<<"\n";
+//          std::cout<<"\tplane:  "<<data_.isPlane()<<"\n";
+//          std::cout<<"\tthr:  "<<thr_tr<<"/"<<thr_rot<<"\n";
+//          std::cout<<"\tthr:  "<<
+//              std::abs(v2.norm()-v1p.norm())<<"/"<<
+//              std::acos(v2.dot(v1p/
+//                               (v2.norm()*v1p.norm()) ))<<"\n";
 
-          const float w2 = data_.getFeatures()[i].type_==ex_curved_polygon::S_FEATURE::NORMAL? 1.f : 0.3f;
-          if(data_.getFeatures()[i].ID_!=3)
-          {
+          const float w2 = data_.getFeatures()[i].type_==ex_curved_polygon::S_FEATURE::NORMAL? 1.5f : 1.f;
+//          if(data_.getFeatures()[i].ID_!=3)
+//          {
             if(normal)
               list.push_back( CORS(
                   typename TFLINK::TFLinkObj(v1,true,true, w2*w, w2*w),
@@ -293,18 +294,18 @@ typename Object<_DOF6>::TFLIST Object<_DOF6>::getTFList(const Object &o, const t
               ) );
             else
               list.push_back( CORS(
-                  typename TFLINK::TFLinkObj(v1,data_.isPlane()&&data_.getFeatures()[i].ID_!=-1,false, w2*w, w2*w),
-                  typename TFLINK::TFLinkObj(v2,o.data_.isPlane()&&data_.getFeatures()[i].ID_!=-1,false, w2*w, w2*w)
+                  typename TFLINK::TFLinkObj(v1,data_.getFeatures()[i].type_==ex_curved_polygon::S_FEATURE::NORMAL,false, w2*w, w2*w),
+                  typename TFLINK::TFLinkObj(v2,o.data_.getFeatures()[j].type_==ex_curved_polygon::S_FEATURE::NORMAL,false, w2*w, w2*w)
               ) );
 
             ROS_ASSERT(!normal || (list.back().a.translation_M_.sum()==0&&list.back().b.translation_M_.sum()==0) );
-          }
-          else {
-            list.push_back( CORS(
-                typename TFLINK::TFLinkObj(v1,false,false, w2*w, w2*w),
-                typename TFLINK::TFLinkObj(v2,false,false, w2*w, w2*w)
-            ) );
-          }
+//          }
+//          else {
+//            list.push_back( CORS(
+//                typename TFLINK::TFLinkObj(v1,false,false, w2*w, w2*w),
+//                typename TFLINK::TFLinkObj(v2,false,false, w2*w, w2*w)
+//            ) );
+//          }
 
           //        //TODO: not everything is a plane!!!
           //        list.push_back( CORS(
@@ -323,13 +324,13 @@ typename Object<_DOF6>::TFLIST Object<_DOF6>::getTFList(const Object &o, const t
         case 5:
           w*=0.2f;
 
-          std::cout<<"\t\tv1 ("<<data_.getFeatures()[i].ID_<<")\n"<<v1<<"\n";
-          std::cout<<"\t\tv2 ("<<data_.getFeatures()[i].ID_<<")\n"<<v2<<"\n";
-          std::cout<<"\t\tv1* ("<<data_.getFeatures()[i].ID_<<")\n"<<v1p<<"\n";
+//          std::cout<<"\t\tv1 ("<<data_.getFeatures()[i].ID_<<")\n"<<v1<<"\n";
+//          std::cout<<"\t\tv2 ("<<data_.getFeatures()[i].ID_<<")\n"<<v2<<"\n";
+//          std::cout<<"\t\tv1* ("<<data_.getFeatures()[i].ID_<<")\n"<<v1p<<"\n";
 
           if( std::acos(v1p.dot(v2)) > thr_rot )
           {
-            std::cout<<"ABOVE MISS   ABOVE MISS   ABOVE MISS\n";
+//            std::cout<<"ABOVE MISS   ABOVE MISS   ABOVE MISS\n";
             break;
           }
 
