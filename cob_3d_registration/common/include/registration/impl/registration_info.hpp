@@ -330,6 +330,7 @@ bool Registration_Infobased<Point>::compute_transformation()
 #if EVALUATION_MODE_
         T=T.Identity();
 #else
+        bad_counter_++;
         if(!use_odometry_ || this->failed_<10)
           return false;
       }
