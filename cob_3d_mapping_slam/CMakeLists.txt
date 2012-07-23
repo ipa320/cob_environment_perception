@@ -37,5 +37,8 @@ rosbuild_add_compile_flags(slam_node ${SSE_FLAGS})
 rosbuild_add_executable(test_atoms ros/test/atoms.cpp)
 target_link_libraries(test_atoms gtest)
 
+rosbuild_add_executable(test_merging ros/test/merging.cpp)
+target_link_libraries(test_merging gtest)
+
 rosbuild_add_executable(test_slam ros/test/slam.cpp common/src/curved_polygons/polygon_merger.cpp)
 target_link_libraries(test_slam gtest)
