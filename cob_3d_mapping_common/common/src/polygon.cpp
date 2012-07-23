@@ -363,7 +363,7 @@ Polygon::GpcStructureUsingMap(const Eigen::Affine3f& external_trafo, gpc_polygon
 {
   // get transformed contours
   std::vector< std::vector <Eigen::Vector3f> > transformed_contours;
-  transformed_contours = getTransformedContours(external_trafo);
+  transformed_contours = this->getTransformedContours(external_trafo);
 
   gpc_p->num_contours = contours.size();
   gpc_p->hole = (int*)malloc(contours.size()*sizeof(int));
