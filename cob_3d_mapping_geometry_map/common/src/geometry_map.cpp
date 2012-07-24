@@ -150,8 +150,9 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
     {
       p.assignMembers();
       p.assignWeight();
+      p.frame_stamp = frame_counter_;
       map_polygon_.push_back(p_ptr);
-      new_id_++;
+      ++new_id_;
       //  std::cout<<"size +1"<<std::endl;
     }
   }
@@ -159,8 +160,9 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
   {
     p.assignMembers();
     p.assignWeight();
+    p.frame_stamp = frame_counter_;
     map_polygon_.push_back(p_ptr);
-    new_id_++;
+    ++new_id_;
   }
   if(save_to_file_) saveMap(file_path_);
 //  std::cout<<"Map Size POLYGON "<<map_polygon_.size()<<"\n";
@@ -253,8 +255,23 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 }
 
 
-
-
+void
+GeometryMap::cleanUp()
+{
+  int n_dropped = 0;
+  for(int idx = map_polygon_.size() - 1 ; idx >= 0; --idx)
+  {
+    //std::cout << map_polygon_[idx]->merged <<", " << (frame_counter_ - 3) <<" > "<<(int)map_polygon_[idx]->frame_stamp<<std::endl;
+    if (map_polygon_[idx]->merged <= 1 && (frame_counter_ - 3) > (int)map_polygon_[idx]->frame_stamp)
+    {
+      map_polygon_[idx] = map_polygon_.back();
+      map_polygon_.pop_back();
+      ++n_dropped;
+    }
+  }
+  std::cout << "Dropped " << n_dropped << "Polys" << std::endl;
+  // TODO: clean up cylinders
+}
 
 
 void

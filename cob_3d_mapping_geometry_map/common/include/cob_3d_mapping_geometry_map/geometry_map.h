@@ -93,41 +93,43 @@ public:
     os << "(" << m.d << "," << m.normal << "," << ")";
     return (os);
   }*/
-
-	 // std::ofstream outputFile;
-	  int counter_output;
-
 //  typedef boost::shared_ptr<MapEntry> MapEntryPtr;
 
-  // Constructor
+    // Constructor
   GeometryMap()
-  :new_id_(0),
-   counter_output(0),
-   file_path_("./"),
-   save_to_file_(false),
-   cos_angle_(0.97),
-   d_(0.01)
+    : new_id_(0)
+    , counter_output(0)
+    , frame_counter_(0)
+    , file_path_("./")
+    , save_to_file_(false)
+    , cos_angle_(0.97)
+    , d_(0.01)
   {
-	//  outputFile.open("/home/goa-hh/test.txt");
-
+    //  outputFile.open("/home/goa-hh/test.txt");
   }
 
   // Destructor
   ~GeometryMap()
   {
-	  //outputFile.close();
+    //outputFile.close();
   }
-   void
+
+  void
   addMapEntry(boost::shared_ptr<cob_3d_mapping::Polygon>& p_ptr);
 
 
-   void
-   addMapEntry(boost::shared_ptr<cob_3d_mapping::Cylinder>& c_ptr);
+  void
+  addMapEntry(boost::shared_ptr<cob_3d_mapping::Cylinder>& c_ptr);
 
 
   void
   computeCentroid(cob_3d_mapping::Polygon& p);
 
+  inline void
+  incrFrame() { ++frame_counter_; };
+
+  void
+  cleanUp();
 
   void
   printMapEntry(cob_3d_mapping::Polygon& p);
@@ -158,7 +160,7 @@ public:
   boost::shared_ptr<std::vector<cob_3d_mapping::PolygonPtr > >
   getMap_polygon()
   {
-	    return boost::make_shared< std::vector< cob_3d_mapping::PolygonPtr > >(map_polygon_);
+    return boost::make_shared< std::vector< cob_3d_mapping::PolygonPtr > >(map_polygon_);
   }
 
 
@@ -192,6 +194,9 @@ protected:
   std::vector<boost::shared_ptr<cob_3d_mapping::Polygon> > map_polygon_;
   std::vector<boost::shared_ptr<cob_3d_mapping::Cylinder> > map_cylinder_;
   unsigned int new_id_;
+  // std::ofstream outputFile;
+  int counter_output;
+  int frame_counter_;
   std::string file_path_;
   bool save_to_file_;
   double cos_angle_, d_;
