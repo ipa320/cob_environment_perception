@@ -115,9 +115,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
       for(int i=intersections.size()-1; i>=0 ;--i)
       {
 
-        if (intersections.size() > 1) {
-//          std::cout<<"Intersection Size POLYGON= "<<intersections.size()<<"\n";
-        }
+
         // copies pointer to polygon
         merge_candidates.push_back(map_polygon_[intersections[i]]);
         // delete pointer in map, polygon still available. However there should be a better solution than
@@ -141,6 +139,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
       // merge polygon with merge candidates
       //std::cout <<"c before: "<< p.centroid(0)<<", "<<p.centroid(1)<<", "<<p.centroid(2)<<std::endl;
       p.merge(merge_candidates); // merge all new candidates into p
+	p.id = new_id_;
       map_polygon_.push_back(p_ptr); // add p to map, candidates were dropped!
       ++new_id_;
       //std::cout <<"c after : "<< p.centroid(0)<<", "<<p.centroid(1)<<", "<<p.centroid(2)<<std::endl;
@@ -148,8 +147,9 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
     }
     else //if polygon does not have to be merged , add new polygon
     {
-      p.assignMembers();
+      p.computeAttributes(p.normal,p.centroid);
       p.assignWeight();
+	p.id = new_id_;
       map_polygon_.push_back(p_ptr);
       new_id_++;
       //  std::cout<<"size +1"<<std::endl;
@@ -157,13 +157,13 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
   }
   else
   {
-    p.assignMembers();
+    p.computeAttributes(p.normal,p.centroid);
     p.assignWeight();
+	p.id = new_id_;
     map_polygon_.push_back(p_ptr);
     new_id_++;
   }
   if(save_to_file_) saveMap(file_path_);
-//  std::cout<<"Map Size POLYGON "<<map_polygon_.size()<<"\n";
 }
 
 void
@@ -173,9 +173,9 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 
 
   Cylinder& c = *c_ptr;
-  c.ParamsFromShapeMsg();
-
-  c.getCyl2D();
+//  c.ParamsFromShapeMsg();
+//
+//  c.getCyl2D();
 
   cob_3d_mapping::merge_config  limits;
   limits.d_thresh=d_;
@@ -214,7 +214,8 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
       }
       // merge polygon with merge candidates
 
-      c.mergeCylinder(merge_candidates);
+      c.merge(merge_candidates);
+      c.id = new_id_;
 
       map_cylinder_.push_back(c_ptr);
       new_id_ ++;
@@ -227,8 +228,9 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
     {
 
 
-      c.assignMembers(c.axes_[1],c.axes_[2],c.origin_);
+      c.computeAttributes(c.sym_axis,c.normal,c.origin_);
       c.assignWeight();
+	c.id = new_id_;
 
       map_cylinder_.push_back(c_ptr);
       new_id_++;
@@ -238,8 +240,9 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
   }
   else{
 
-    c.assignMembers(c.axes_[1],c.axes_[2],c.origin_);
+    c.computeAttributes(c.sym_axis,c.normal,c.origin_);
     c.assignWeight();
+	c.id = new_id_;
 
     map_cylinder_.push_back(c_ptr);
 
@@ -413,14 +416,14 @@ GeometryMap::colorizeMap()
   //coloring for cylinder
   for(unsigned int i=0; i<map_cylinder_.size(); i++)
   {
-    if(fabs(map_cylinder_[i]->axes_[0][0]) < 0.1 && fabs(map_cylinder_[i]->axes_[0][1]) < 0.1) //cylinder is vertical
+    if(fabs(map_cylinder_[i]->normal[0]) < 0.1 && fabs(map_cylinder_[i]->normal[1]) < 0.1) //cylinder is vertical
     {
       map_cylinder_[i]->color[0] = 0.5;
       map_cylinder_[i]->color[1] = 0.5;
       map_cylinder_[i]->color[2] = 0;
       map_cylinder_[i]->color[3] = 1;
     }
-    else if(fabs(map_cylinder_[i]->axes_[0][2]) < 0.12) //plane is horizontal
+    else if(fabs(map_cylinder_[i]->normal[2]) < 0.12) //plane is horizontal
     {
       map_cylinder_[i]->color[0] = 0;
       map_cylinder_[i]->color[1] = 0.5;
