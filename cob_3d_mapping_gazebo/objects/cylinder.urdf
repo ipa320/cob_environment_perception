@@ -5,17 +5,17 @@
       <geometry>
         <cylinder length="2" radius="0.2"/>
       </geometry>
-      <orgin xyz="-0.5 -2.2 -2" />
+      <orgin xyz="0 0 0" />
     </visual>
     <collision>
       <origin xyz="0 0 0"/>
       <geometry>
-        <box size="1 1 1" />
+        <box size="0.6 0.6 0.6" />
       </geometry>
     </collision>
    <inertial>
       <origin xyz="0 0 0" /> 
-      <mass value="1.0" />
+      <mass value="1" />
       <inertia  ixx="1.0" ixy="0.0"  ixz="0.0"  iyy="100.0"  iyz="0.0"  izz="1.0" />
     </inertial>
   </link>

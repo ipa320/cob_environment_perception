@@ -257,9 +257,6 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 
 
 
-
-
-
 void
 GeometryMap::printMapEntry(cob_3d_mapping::Polygon& p)
 {
