@@ -399,11 +399,11 @@ namespace cob_3d_mapping
     double average_d=d*merge_weight_;
     double sum_w=merge_weight_;
     int sum_merged=merged;
-
+    std::cout << "This: " << average_normal(0)<<","<<average_normal(1)<<","<<average_normal(2)<<" | " << merge_weight_;
     for(int i=0 ; i< (int) poly_vec.size();i++)
     {
       Polygon& p_map1 =*(poly_vec[i]);
-
+      std::cout << ", " << p_map1.merge_weight_;
       if(normal.dot(p_map1.normal)<0){
       //if (p.normal.dot(p_map.normal)<-0.95){
         p_map1.normal=-p_map1.normal;
@@ -419,13 +419,12 @@ namespace cob_3d_mapping
 
 
     }
-
     average_normal=average_normal/sum_w;
     average_centroid=average_centroid/sum_w;
     average_d=average_d/sum_w;
     average_normal.normalize();
     average_d /= average_normal.norm();
-
+    std::cout << " | "<<average_normal(0)<<","<<average_normal(1)<<","<<average_normal(2)<<std::endl;
     if (sum_merged < 9)
     {
       p_average.merged=sum_merged;

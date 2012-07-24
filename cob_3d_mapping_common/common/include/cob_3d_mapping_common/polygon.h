@@ -82,6 +82,12 @@ struct merge_config {
   class Polygon : public Shape
   {
   public:
+    Polygon()
+      : normal(Eigen::Vector3f::Zero())
+      , d(0.0)
+      , transform_from_world_to_plane(Eigen::Affine3f::Identity())
+      , merge_weight_(1.0)
+    { }
 
     void
     computeCentroid();
