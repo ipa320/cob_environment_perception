@@ -17,7 +17,7 @@
  * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 05/2012
+ * Date of creation: 07/2012
  * ToDo:
  *
  *
@@ -56,55 +56,50 @@
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/common/file_io.h>
+#include <pcl/filters/voxel_grid.h>
 
 // stack includes:
 #include "cob_3d_mapping_common/stop_watch.h"
 #include "cob_3d_mapping_common/point_types.h"
-#include "cob_3d_mapping_features/organized_normal_estimation_omp.h"
-#include "cob_3d_segmentation/depth_segmentation.h"
-#include "cob_3d_segmentation/cluster_classifier.h"
+#include "cob_3d_mapping_features/plane_extraction.h"
 
-using namespace pcl;
 
-typedef cob_3d_segmentation::PredefinedSegmentationTypes ST;
+typedef pcl::PointXYZRGB PointT;
 
 class PerformanceTester
 {
 public:
   PerformanceTester()
-    : l(new PointCloud<PointLabel>)
-    , n(new PointCloud<Normal>)
-    , g(new ST::Graph)
+    : p_vox(new pcl::PointCloud<PointT>)
   {
-    one.setOutputLabels(l);
-    one.setPixelSearchRadius(8,2,2); //radius,pixel,circle
-    one.setSkipDistantPointThreshold(6.0);
-    seg.setNormalCloudIn(n);
-    seg.setLabelCloudInOut(l);
-    seg.setClusterGraphOut(g);
+    voxel.setLeafSize(0.03,0.03,0.03);
+    pe.setSaveToFile(false);
+    pe.setClusterTolerance(0.06);
+    pe.setMinPlaneSize(50);
+    pe.setAlpha(0.2);
   }
 
   void
-  computeForOneCloud(PointCloud<PointXYZRGB>::ConstPtr cloud)
+  computeForOneCloud(pcl::PointCloud<PointT>::ConstPtr cloud)
   {
     PrecisionStopWatch t;
     t.precisionStart();
-    one.setInputCloud(cloud);
-    one.compute(*n);
+    voxel.setInputCloud(cloud);
+    voxel.filter(*p_vox);
     std::cout << t.precisionStop() << " | ";
     t.precisionStart();
-    seg.setInputCloud(cloud);
-    seg.performInitialSegmentation();
-    seg.refineSegmentation();
+    pe.extractPlanes(p_vox, v_cloud_hull, v_hull_polygons, v_coefficients_plane);
     std::cout << t.precisionStop() << std::endl;
   }
 
 private:
-  PointCloud<PointLabel>::Ptr l;
-  PointCloud<Normal>::Ptr n;
-  ST::Graph::Ptr g;
-  cob_3d_segmentation::DepthSegmentation<ST::Graph, ST::Point, ST::Normal, ST::Label> seg;
-  cob_3d_mapping_features::OrganizedNormalEstimationOMP<PointXYZRGB, Normal, PointLabel> one;
+  pcl::PointCloud<PointT>::Ptr p_vox;
+  std::vector<pcl::PointCloud<PointT>, Eigen::aligned_allocator<pcl::PointCloud<PointT> > > v_cloud_hull;
+  std::vector<std::vector<pcl::Vertices> > v_hull_polygons;
+  std::vector<pcl::ModelCoefficients> v_coefficients_plane;
+
+  pcl::VoxelGrid<PointT> voxel;
+  PlaneExtraction pe;
 
 };
 
@@ -117,20 +112,20 @@ int main (int argc, char** argv)
   }
 
   PerformanceTester pt;
-  PCDReader r;
+  pcl::PCDReader r;
   std::vector<std::string> files;
-  getAllPcdFilesInDirectory(argv[1], files);
-  std::vector<PointCloud<PointXYZRGB>::Ptr> clouds;
+  pcl::getAllPcdFilesInDirectory(argv[1], files);
+  std::vector<pcl::PointCloud<PointT>::Ptr> clouds;
   for (std::vector<std::string>::iterator it = files.begin(); it != files.end(); ++it)
   {
-    clouds.push_back(PointCloud<PointXYZRGB>::Ptr(new PointCloud<PointXYZRGB>));
+    clouds.push_back(pcl::PointCloud<PointT>::Ptr(new pcl::PointCloud<PointT>));
     r.read( argv[1] + *it, *(clouds.back()) );
   }
 
   int i = 0;
   while (i < 20)
   {
-    std::vector<PointCloud<PointXYZRGB>::Ptr>::iterator p = clouds.begin();
+    std::vector<pcl::PointCloud<PointT>::Ptr>::iterator p = clouds.begin();
     std::cout << "Run #"<< i << std::endl;
     while(p != clouds.end())
     {
