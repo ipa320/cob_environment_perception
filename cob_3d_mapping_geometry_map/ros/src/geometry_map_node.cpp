@@ -212,7 +212,8 @@ public:
       //ROS_INFO("[feature map] Accumulated time at step %d: %f s", ctr, time);
       ctr++;
     }
-
+    geometry_map_.cleanUp();
+    geometry_map_.incrFrame();
 
     //		debug
 
