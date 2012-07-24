@@ -72,15 +72,19 @@ namespace cob_3d_mapping
   public:
 
     Shape()
-    : id(0),
-      merged(0),
-      color(4,1)
-    {
-    }
+      : id(0)
+      , merged(1)
+      , frame_stamp(0)
+      , centroid(Eigen::Vector4f::Zero())
+      , color(4,1)
+    { }
+
+    virtual ~Shape() { }
 
     unsigned int id;
-    Eigen::Vector4f centroid;
     unsigned int merged;
+    unsigned int frame_stamp;
+    Eigen::Vector4f centroid;
     std::vector<float> color;
   };
 
