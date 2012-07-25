@@ -260,7 +260,7 @@ public:
    * @param poly_ptr pointer to the polygon
    *
    */
-  void setInputPolygon(PolygonPtr poly_ptr)
+  void setInputPolygon(Polygon::Ptr poly_ptr)
   {
     poly_ptr_ = poly_ptr;
   }
@@ -309,7 +309,7 @@ protected:
 
   double area_min_, area_max_;
 
-  PolygonPtr poly_ptr_;
+  Polygon::Ptr poly_ptr_;
 
 };
 
