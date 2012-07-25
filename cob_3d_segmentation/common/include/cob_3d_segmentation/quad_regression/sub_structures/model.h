@@ -33,6 +33,13 @@ struct Model {
    */
   bool isLinearAndTo()
   {
+    //Variance for both axis (spare small objects)
+    const float Vx = (param.model_(1,1)-param.model_(0,1)*param.model_(0,1)/param.model_(0,0))/param.model_(0,0);
+    const float Vy = (param.model_(3,3)-param.model_(0,3)*param.model_(0,3)/param.model_(0,0))/param.model_(0,0);
+
+    if(Vx<0.01f || Vy<0.01f)
+      return false;
+
     Model temp = *this;
     temp.getLinear2();
 
@@ -41,7 +48,7 @@ struct Model {
 
     const float d=temp.param.z_(0)/temp.param.model_(0,0);
 
-    if(std::abs(param.model_.determinant()/param.model_(0,0))>0.0001f && (error2 > (temp.param.model_(0,0)*temp.param.model_(0,0))/(1<<13)*d*d || (std::abs(p(2))+std::abs(p(4))+std::abs(p(5)))/(std::abs(p(1))+std::abs(p(3)))>1.f))
+    if(std::abs(param.model_.determinant()/param.model_(0,0))>0.0001f)//&& (error2 > (temp.param.model_(0,0)*temp.param.model_(0,0))/(1<<13)*d*d || (std::abs(p(2))+std::abs(p(4))+std::abs(p(5)))/(std::abs(p(1))+std::abs(p(3)))>1.f))
       return false;
 
     p = temp.p;
