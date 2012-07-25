@@ -30,6 +30,7 @@ bool OBJCTXT<_DOF6>::registration(const OBJCTXT &ctxt, DOF6 &tf, typename DOF6::
   if((tf.getSource1()->getTranslationVariance()+tf.getSource1()->getRotationVariance())>0.3)
   {
     tf.getSource1()->reset();
+    ROS_INFO("failed to register");
     return false;
   }
 
@@ -163,10 +164,11 @@ void OBJCTXT<_DOF6>::filter()
   {
     size_t c = objs_[i]->getCreationCounter(), u = objs_[i]->getUsedCounter();
 
-    if(c>10 && std::log(u)/std::log(c) < 0.2f)
+    if(c>10 && std::log(u)/std::log(c) < 0.5f)
     {
       objs_.erase(objs_.begin()+i);
       --i;
+      ROS_INFO("removed object");
     }
   }
 }
@@ -176,3 +178,22 @@ void OBJCTXT<_DOF6>::updateBB()
 {
   bb_.update(*this);
 }
+
+template<typename _DOF6>
+typename OBJCTXT<_DOF6>::Ptr OBJCTXT<_DOF6>::clone() const
+{
+  OBJCTXT::Ptr r(new OBJCTXT(*this));
+  for(size_t i=0; i<objs_.size(); i++)
+    r->objs_[i].reset( new OBJECT(*objs_[i]) );
+  return r;
+}
+
+template<typename _DOF6>
+OBJCTXT<_DOF6> &OBJCTXT<_DOF6>::transform(const DOF6 &tf)
+{
+  for(size_t i=0; i<objs_.size(); i++)
+    objs_[i]->transform(tf.getRotation(), tf.getTranslation(), tf.getRotationVariance(), tf.getTranslationVariance());
+  updateBB();
+  return *this;
+}
+

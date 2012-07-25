@@ -181,7 +181,7 @@ typename Object<_DOF6>::TFLIST Object<_DOF6>::getTFList(const Object &o, const t
   ROS_INFO("fw %f",fw);
   if(fw<=0.) return list;
   //const float wX = fw*sqrtf(data_.getWeight()*o.data_.getWeight())/1000 / (1+data_.getFeatures()[2].v_.squaredNorm());
-  const float wX = fw*used_/(float)creation_*std::min(data_.getWeight(),o.data_.getWeight())/1000;
+  const float wX = fw*used_/(float)creation_*std::min(data_.getWeight(),o.data_.getWeight())/1000 / (1+data_.getFeatures()[2].v_.squaredNorm());
   ROS_INFO("w %f",wX);
 
   //  if( std::min(data_.getFeatures()[1].v_org_.squaredNorm(),o.data_.getFeatures()[1].v_org_.squaredNorm())
@@ -229,7 +229,7 @@ typename Object<_DOF6>::TFLIST Object<_DOF6>::getTFList(const Object &o, const t
       {
         case 1:
           if(data_.isPlane() != o.data_.isPlane()) break;
-          w*=25;
+          w*=5;
         case 3:
           w*=0.2f;
         case -1:

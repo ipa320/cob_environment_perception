@@ -191,16 +191,18 @@ void TFLink<INPUT>::finish() {
   ROS_ASSERT(pcl_isfinite(rot_.sum()));
 
   rot_var_ = std::max(
-      /*svd.singularValues().squaredNorm()<0.01f*accumlated_weight_*accumlated_weight_ || */svd.singularValues()(1)*svd.singularValues()(1)<=0.01f*svd.singularValues().squaredNorm() ? 100000. : 0.,
-          2*M_PI*sqrtf((variance_y_-(rot_.transpose()*variance_x_*rot_)).squaredNorm()/variance_y_.squaredNorm())/2);
+      /*svd.singularValues().squaredNorm()<0.01f*accumlated_weight_*accumlated_weight_ || */
+      svd.singularValues()(1)*svd.singularValues()(1)<=0.0005f*svd.singularValues().squaredNorm() ? 100000. : 0.,
+      //svd.singularValues().squaredNorm()<0.01f ? 100000. : 0.,
+          M_PI*sqrtf((variance_y_-(rot_.transpose()*variance_x_*rot_)).squaredNorm()/variance_y_.squaredNorm()));
 
   if(!pcl_isfinite(rot_var_))
     rot_var_ = 100000;
 
   std::cout<<"SING VALS\n"<<svd.singularValues()<<"\n";
-  //  std::cout<<"ROT_DIS "<<(variance_y_-(rot_.transpose()*variance_x_*rot_)).norm()<<"\n";
-  //  std::cout<<"ROT1 \n"<<(variance_y_)<<"\n";
-  //  std::cout<<"ROT2 \n"<<((rot_.transpose()*variance_x_*rot_))<<"\n";
+    std::cout<<"ROT_DIS "<<sqrtf((variance_y_-(rot_.transpose()*variance_x_*rot_)).squaredNorm()/variance_y_.squaredNorm())<<"\n";
+//    std::cout<<"ROT1 \n"<<(variance_y_)<<"\n";
+//    std::cout<<"ROT2 \n"<<((rot_.transpose()*variance_x_*rot_))<<"\n";
 
   // ------------- TRANSLATION ------------------
 

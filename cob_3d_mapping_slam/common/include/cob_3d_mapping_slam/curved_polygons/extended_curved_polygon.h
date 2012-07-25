@@ -230,7 +230,7 @@ namespace Slam_CurvedPolygon
       //      proj2plane_.col(1).normalize();
       //param_.col(1).cross(y).cross(param_.col(1));
 
-      ROS_INFO("DOT %f %f %f %f %f", proj2plane_.col(0).dot(proj2plane_.col(1)), proj2plane_.col(0).dot(param_.col(1)), param_.col(1).dot(proj2plane_.col(1)), proj2plane_.col(0).norm(), proj2plane_.col(1).norm());
+      //      ROS_INFO("DOT %f %f %f %f %f", proj2plane_.col(0).dot(proj2plane_.col(1)), proj2plane_.col(0).dot(param_.col(1)), param_.col(1).dot(proj2plane_.col(1)), proj2plane_.col(0).norm(), proj2plane_.col(1).norm());
 
       //      param_.col(2)(0)*=proj2plane_(0,0)*proj2plane_(0,0);
       //      param_.col(2)(1)*=proj2plane_(1,1)*proj2plane_(1,1);
@@ -283,11 +283,11 @@ namespace Slam_CurvedPolygon
       for(int i=0; outline_.segments_.size()>3 && i<4; i++)
       {
         features_.push_back( S_FEATURE( points3d_[mains[i]] ));
-        std::cout<<"MAIN\n"<<points3d_[mains[i]]<<"\n\n";
+        //        std::cout<<"MAIN\n"<<points3d_[mains[i]]<<"\n\n";
       }
 
       data_.polyline.clear();
-      ROS_INFO("COMPRESSED %d", (int)compressed.size());
+      //      ROS_INFO("COMPRESSED %d", (int)compressed.size());
       for(size_t i=0; i<compressed.size(); i++)
       {
         cob_3d_mapping_msgs::polyline_point pt;
@@ -565,6 +565,9 @@ namespace Slam_CurvedPolygon
 
       Outline p1, p2;
 
+      p1.weight_ = o1.data_.weight;
+      p2.weight_ = o2.data_.weight;
+
       for(size_t i=0; i<o1.outline_.segments_.size(); i++)
       {
         //if(o1.segments_[i](2)>0.5f)
@@ -599,11 +602,15 @@ namespace Slam_CurvedPolygon
       //      sprintf(buffer,"%dB.svg",cnt);
       //      p2.debug_svg(buffer);
 
+      p1.reverse(); //TODO: change alog. instead of this
+      p2.reverse();
       outline_ = p1+p2;
-      for(size_t i=0; i<outline_.segments_.size(); i++)
-        outline_.segments_[i](2) /= std::max(o1.data_.weight, o2.data_.weight);
+      outline_.reverse();
 
-      sprintf(buffer,"%dC.svg",cnt);
+//      for(size_t i=0; i<outline_.segments_.size(); i++)
+//        outline_.segments_[i](2) /= std::max(o1.data_.weight, o2.data_.weight);
+
+      sprintf(buffer,"%f %dC.svg",Debug::Interface::get().getTime(), cnt);
       p1.debug_svg(p2.debug_svg(outline_.debug_svg(buffer,200,500,"red"),200,500,"green"),200,500);
 
       std::vector<Classification::Classification::EnergyPoint> compressed;
@@ -627,7 +634,7 @@ namespace Slam_CurvedPolygon
       for(int i=0; outline_.segments_.size()>3 && i<4; i++)
       {
         features_.push_back( S_FEATURE( project2world(outline_.segments_[mains[i]].head<2>()) ));
-        std::cout<<"MAIN\n"<<project2world(outline_.segments_[mains[i]].head<2>())<<"\n\n";
+        //        std::cout<<"MAIN\n"<<project2world(outline_.segments_[mains[i]].head<2>())<<"\n\n";
       }
 
       data_.polyline.clear();
@@ -698,7 +705,7 @@ namespace Slam_CurvedPolygon
         const float by = bt.dot(o.proj2plane_.col(1));
 
         data_.parameter[5] = bx*bx*o.param_.col(2)(0) + by*by*o.param_.col(2)(1) + bx*by*o.param_.col(2)(2)
-            - (bx*bx*data_.parameter[2] + by*by*data_.parameter[4]);
+                - (bx*bx*data_.parameter[2] + by*by*data_.parameter[4]);
 
         for(int i=0; i<6; i++)
           data_.parameter[i] = (data_.parameter[i]*o.data_.weight + o2.data_.parameter[i]*data_.weight)/(data_.weight+o.data_.weight);
@@ -855,40 +862,41 @@ namespace Slam_CurvedPolygon
                          param_.col(1)(0),param_.col(1)(1),
                          p(0),p(1),p(2)};
       Eigen::LevenbergMarquardt<MyFunctor, float> lm(functor);
+      lm.parameters.maxfev = 50;
       lm.minimize(r);
 
       return r;
 #if 0
-      if(depth>10)
-      {
-        ROS_INFO("break as depth");
-        return p.head<2>();
-      }
+if(depth>10)
+{
+  ROS_INFO("break as depth");
+  return p.head<2>();
+}
 
-      //            std::cout<<"p\n"<<p<<"\n";
-      p(2) = param_.col(2)(0)*p(0)*p(0)+param_.col(2)(1)*p(1)*p(1)+param_.col(2)(2)*p(0)*p(1);
-      //            std::cout<<"p\n"<<p<<"\n";
+//            std::cout<<"p\n"<<p<<"\n";
+p(2) = param_.col(2)(0)*p(0)*p(0)+param_.col(2)(1)*p(1)*p(1)+param_.col(2)(2)*p(0)*p(1);
+//            std::cout<<"p\n"<<p<<"\n";
 
-      Eigen::Vector3f n;
-      n(0) = -(param_.col(2)(0)*2*p(0)+param_.col(2)(2)*p(1));
-      n(1) = -(param_.col(2)(1)*2*p(1)+param_.col(2)(2)*p(0));
-      n(2) = 1;
+Eigen::Vector3f n;
+n(0) = -(param_.col(2)(0)*2*p(0)+param_.col(2)(2)*p(1));
+n(1) = -(param_.col(2)(1)*2*p(1)+param_.col(2)(2)*p(0));
+n(2) = 1;
 
-      Eigen::Vector3f d = ((p-v).dot(n)/n.squaredNorm()*n+(v-p));
+Eigen::Vector3f d = ((p-v).dot(n)/n.squaredNorm()*n+(v-p));
 
-      //            std::cout<<"d\n"<<d<<"\n";
-      //            std::cout<<"n\n"<<n<<"\n";
-      //            std::cout<<"pv\n"<<(p-v)/(p-v)(2)<<"\n";
-      //            std::cout<<"pv\n"<<(p-v)<<"\n";
-      //            std::cout<<"dd\n"<<(p-v).dot(n)/n.squaredNorm()*n<<"\n";
-      //ROS_ASSERT(std::abs(d(2))<=std::abs(z));
+//            std::cout<<"d\n"<<d<<"\n";
+//            std::cout<<"n\n"<<n<<"\n";
+//            std::cout<<"pv\n"<<(p-v)/(p-v)(2)<<"\n";
+//            std::cout<<"pv\n"<<(p-v)<<"\n";
+//            std::cout<<"dd\n"<<(p-v).dot(n)/n.squaredNorm()*n<<"\n";
+//ROS_ASSERT(std::abs(d(2))<=std::abs(z));
 
-      if(!pcl_isfinite(d.sum()) || d.head<2>().squaredNorm()<0.001f*0.001f)
-      {
-        //                std::cout<<"---------------\n";
-        return (p+d).head<2>();
-      }
-      return _nextPoint(v,p+d,depth+1);
+if(!pcl_isfinite(d.sum()) || d.head<2>().squaredNorm()<0.001f*0.001f)
+{
+  //                std::cout<<"---------------\n";
+  return (p+d).head<2>();
+}
+return _nextPoint(v,p+d,depth+1);
 #endif
     }
 
@@ -910,14 +918,14 @@ namespace Slam_CurvedPolygon
 
       p(0) = (v-param_.col(0)).dot(proj2plane_.col(0))/proj2plane_.col(0).squaredNorm();
       p(1) = (v-param_.col(0)).dot(proj2plane_.col(1))/proj2plane_.col(1).squaredNorm();
-      p(2) = (v-param_.col(0)).dot(param_.col(1));
+      p(2) = (v-param_.col(0)).dot(proj2plane_.col(0).cross(proj2plane_.col(1)));
 
       Eigen::Vector2f r = _nextPoint(p, p);
 
       float e1 = (v-project2world(p.head<2>())).norm();
       float e2 = (v-project2world(r)).norm();
-      std::cout<<"dist: "<<e1<<"  "<<e2<<"\n";
-      std::cout.flush();
+      //      std::cout<<"dist: "<<e1<<"  "<<e2<<"\n";
+      //      std::cout.flush();
 
       //ROS_ASSERT(e1+0.1f>=e2 || !pcl_isfinite(e1));
 
@@ -954,9 +962,9 @@ namespace Slam_CurvedPolygon
       //      std::cout<<"p1\n"<<param_.col(2)<<"\n";
       //      std::cout<<"p2\n"<<o.param_.col(2)<<"\n";
 
-      if(unionPolygons(p1,p2, p3)<0.3f)
+      if(unionPolygons(p1,p2, p3)<0.4f)
       {
-        ROS_INFO("merge break 1");
+//        ROS_INFO("merge break 1");
         return false;
       }
 
@@ -991,13 +999,43 @@ namespace Slam_CurvedPolygon
         if(i==0) lfirst = l;
 
       }
+      //      Outline p3 = outline_|o.outline_;
+      //
+      //      float lges=0.f, er=0.f, erlast=0.f, lfirst=0.f;
+      //      float er2=0;
+      //
+      //      for(size_t i=0; i<p3.segments_.size(); i++)
+      //      {
+      //        Eigen::Vector2f v1=p3.segments_[i].head<2>(), v3;
+      //        Eigen::Vector3f t, n, v2;
+      //        //        v2(0) = ((v1(0)*proj2plane_(0,0)+param_.col(0)(0))-o.param_.col(0)(0))/o.proj2plane_(0,0);
+      //        //        v2(1) = ((v1(1)*proj2plane_(1,1)+param_.col(0)(1))-o.param_.col(0)(1))/o.proj2plane_(1,1);
+      //
+      //        t = project2world(v1);
+      //        v2 = o.project2world(o.nextPoint(t));
+      //
+      //        v1=p3.segments_[(i+1)%p3.segments_.size()].head<2>();
+      //        n = project2world(v1);
+      //
+      //        const float l = (t-n).norm();
+      //        er += l*erlast;
+      //        erlast = (t-v2).norm();
+      //        er2 += erlast;
+      //        er += l*erlast;
+      //        lges += 2*l;
+      //
+      //        //        std::cout<<"coord\t\t"<<erlast<<"  "<<l<<"\n"<<t<<"\n\n"<<v2<<"\n\n";
+      //
+      //        if(i==0) lfirst = l;
+      //
+      //      }
 
       er += lfirst*erlast;
 
       if(isPlane()) ROS_INFO("PLANE");
       ROS_INFO("proj %f", er/lges);
 
-      return er/lges<0.06f;
+      return er/lges<0.05f;
     }
 
     bool invalid() const
