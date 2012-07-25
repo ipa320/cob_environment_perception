@@ -21,7 +21,7 @@
     <param name="centroid_passthrough" type="double" value="3.0"/>
   </node>
 
-  <!--node pkg="nodelet" type="nodelet" name="point_map"
+  <node pkg="nodelet" type="nodelet" name="point_map"
         args="load cob_3d_mapping_point_map/PointMapNodelet $(arg mapping_manager)" output="screen">
     <remap from="point_cloud2" to="registration/pc_aligned" />
     <remap from="map" to="point/map" />
@@ -41,9 +41,9 @@
   </node-->
   <!--include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch"/-->
 
-  <node pkg="rosbag" type="play" name="rosbag_play" cwd="node" respawn="false" output="screen"
-        args="$(arg bag_file) -k -q --pause">
+  <!--node pkg="rosbag" type="play" name="rosbag_play" cwd="node" respawn="false" output="screen"
+        args="$(arg bag_file) -k -q -_-pause">
     <remap from="/camera/rgb/points" to="/registration/pc_aligned"/>
-  </node>
+  </node-->
 </launch>
 

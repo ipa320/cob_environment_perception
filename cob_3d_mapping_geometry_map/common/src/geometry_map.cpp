@@ -64,10 +64,14 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <queue>
+#include <functional>
 
 
 // external includes
 #include <boost/timer.hpp>
+#include <boost/tuple/tuple.hpp>
+#include <boost/tuple/tuple_comparison.hpp>
 #include <Eigen/Geometry>
 #include <pcl/win32_macros.h>
 //#include <pcl/common/transform.h>
@@ -84,72 +88,45 @@ using namespace cob_3d_mapping;
 
 
 void
-GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
-
+GeometryMap::addMapEntry(Polygon::Ptr& p_ptr)
 {
-
-
   Polygon& p = *p_ptr;
-
 
   cob_3d_mapping::merge_config  limits;
   limits.d_thresh=d_;
   limits.angle_thresh=cos_angle_;
   //	limits.weighting_method="COMBINED";
   limits.weighting_method="COUNTER";
-
-
   p.merge_settings_ = limits;
   p.assignWeight();
 
-
-  // find out polygons, to merge with
   std::vector<int> intersections;
-
   if (map_polygon_.size()> 0)
   {
-    p.isMergeCandidate(map_polygon_,limits,intersections);
+    p.getMergeCandidates(map_polygon_,intersections);
     if(intersections.size()>0) // if polygon has to be merged ...
     {
       std::vector<boost::shared_ptr<Polygon> > merge_candidates;
       for(int i=intersections.size()-1; i>=0 ;--i)
       {
-
-
         // copies pointer to polygon
         merge_candidates.push_back(map_polygon_[intersections[i]]);
         // delete pointer in map, polygon still available. However there should be a better solution than
         // copying and deleting pointers manually.
         map_polygon_[intersections[i]] = map_polygon_.back();
         map_polygon_.pop_back();
-        //              os<<"_____________________"<<std::endl;
-        //              os<<"MAP:                "<<intersections[i]<<std::endl;
-        //
-        //              Polygon& p_new = *map_polygon_[intersections[i]];
-        //              os<<"ID: "<<p_new.id<<std::endl;
-        //              os<<"D:  "<<p_new.d<<std::endl;
-        //
-        //              os<<"_____________________"<<std::endl;
-        //              os<<"NEW POLYGON:\n"<<std::endl;
-        //
-        //              os<<"ID: "<<p_ptr->id<<std::endl;
-        //              os<<"D:  "<<p_ptr->d<<std::endl;
-
       }
       // merge polygon with merge candidates
-      //std::cout <<"c before: "<< p.centroid(0)<<", "<<p.centroid(1)<<", "<<p.centroid(2)<<std::endl;
       p.merge(merge_candidates); // merge all new candidates into p
-	  p.id = new_id_;
+      p.id = new_id_;
       map_polygon_.push_back(p_ptr); // add p to map, candidates were dropped!
       ++new_id_;
-      //std::cout <<"c after : "<< p.centroid(0)<<", "<<p.centroid(1)<<", "<<p.centroid(2)<<std::endl;
-      //    std::cout<<"size +- "<< 1 -merge_candidates.size()<<std::endl;
     }
     else //if polygon does not have to be merged , add new polygon
     {
       p.computeAttributes(p.normal,p.centroid);
       p.assignWeight();
-	  p.id = new_id_;
+      p.id = new_id_;
       p.frame_stamp = frame_counter_;
       map_polygon_.push_back(p_ptr);
       ++new_id_;
@@ -160,7 +137,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
   {
     p.computeAttributes(p.normal,p.centroid);
     p.assignWeight();
-	p.id = new_id_;
+    p.id = new_id_;
     p.frame_stamp = frame_counter_;
     map_polygon_.push_back(p_ptr);
     ++new_id_;
@@ -170,10 +147,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
 
 void
 GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
-
 {
-
-
   Cylinder& c = *c_ptr;
 //  c.ParamsFromShapeMsg();
 //
@@ -244,17 +218,70 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 
     c.computeAttributes(c.sym_axis,c.normal,c.origin_);
     c.assignWeight();
-	c.id = new_id_;
+    c.id = new_id_;
 
     map_cylinder_.push_back(c_ptr);
 
     new_id_++;
   }
   std::cout<<"Map Size CYLINDER="<<map_cylinder_.size()<<std::endl;
-
   //	if(save_to_file_) saveMap(file_path_);
+}
 
+void
+GeometryMap::computeTfError(const std::vector<Polygon::Ptr>& list_polygon, Eigen::Affine3f adjust_tf)
+{
+  if (map_polygon_.size() < 10)
+  {
+    adjust_tf = Eigen::Affine3f::Identity();
+    return;
+  }
+  cob_3d_mapping::merge_config  limits;
+  limits.d_thresh=d_;
+  limits.angle_thresh=cos_angle_;
+  limits.weighting_method="COUNTER";
+  // min heap to store polygons with max overlap (Landmark elements: overlap, num_vertices, idx_old, idx_new)
+  typedef boost::tuple<float,unsigned int,unsigned int,unsigned int> Landmark;
+  std::priority_queue<Landmark, std::vector<Landmark>, std::greater<Landmark> > landmarks_queue;
+  const size_t q_size = 3;
+  for (size_t p=0; p<list_polygon.size(); ++p) // new polys
+  {
+    Polygon::Ptr pp = list_polygon[p];
+    pp->merge_settings_=limits;
+    for (size_t q=0; q<map_polygon_.size(); ++q) // old polys
+    {
+      Polygon::Ptr pq = map_polygon_[q];
+      if ( !pp->hasSimilarParametersWith(pq) ) continue;
+      Landmark lm_new(pp->getContourOverlap(pq), pq->contours[pq->outerContourIndex()].size(), q, p);
+      if (landmarks_queue.size() < q_size) landmarks_queue.push(lm_new);
+      else if (lm_new > landmarks_queue.top())
+      {
+        landmarks_queue.pop();
+        landmarks_queue.push(lm_new);
+      }
+    }
+  }
 
+  // 0: plane normal, 1: projection on plane, 2: origin
+  Eigen::Vector3f *n = new Eigen::Vector3f[q_size]; // old
+  Eigen::Vector3f *m = new Eigen::Vector3f[q_size]; // new
+  Landmark lm = landmarks_queue.top(); landmarks_queue.pop();
+  *n = map_polygon_[lm.get<2>()]->normal;
+  *m = list_polygon[lm.get<3>()]->normal;
+  lm = landmarks_queue.top(); landmarks_queue.pop();
+  Eigen::Matrix3f N = Eigen::Matrix3f::Identity() - *n * n->transpose();
+  Eigen::Matrix3f M = Eigen::Matrix3f::Identity() - *m * m->transpose();
+  *++n = (N * map_polygon_[lm.get<2>()]->normal).normalized();
+  *++m = (M * list_polygon[lm.get<3>()]->normal).normalized();
+  lm = landmarks_queue.top(); landmarks_queue.pop();
+  *++n   = map_polygon_[lm.get<2>()]->normal;
+  *++m   = list_polygon[lm.get<3>()]->normal;
+
+  Eigen::Affine3f T_r, T_f; // right, wrong
+  pcl::getTransformationFromTwoUnitVectorsAndOrigin(n[0], n[1], n[2], T_r);
+  pcl::getTransformationFromTwoUnitVectorsAndOrigin(m[0], m[1], m[2], T_f);
+
+  adjust_tf = T_r * T_f.inverse();
 }
 
 
@@ -469,7 +496,7 @@ int main (int argc, char** argv)
 
   Eigen::Vector3f v;
   std::vector<Eigen::Vector3f> vv;
-  PolygonPtr m_p1 = PolygonPtr(new Polygon());
+  Polygon::Ptr m_p1 = Polygon::Ptr(new Polygon());
   m_p1->id = 1;
   m_p1->normal << 0.000000,-1.000000,-0.000000;
   m_p1->d = 0;
@@ -487,7 +514,7 @@ int main (int argc, char** argv)
 
 
   vv.clear();
-  PolygonPtr m_p2 = PolygonPtr(new Polygon());
+  Polygon::Ptr m_p2 = Polygon::Ptr(new Polygon());
   m_p2->id = 2;
   m_p2->normal << -0.000000,1.000000,0.000000;
   m_p2->d = 0;
@@ -506,7 +533,3 @@ int main (int argc, char** argv)
   std::cout<<"done"<<std::endl;
   return 1;
 }
-
-
-
-
