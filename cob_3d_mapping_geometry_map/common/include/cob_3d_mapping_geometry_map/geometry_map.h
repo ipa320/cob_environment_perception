@@ -88,6 +88,8 @@
 class GeometryMap
 {
 public:
+  typedef std::vector<cob_3d_mapping::Polygon::Ptr>::iterator polygon_iterator;
+  typedef std::vector<cob_3d_mapping::Polygon::Ptr>::iterator cylinder_iterator;
   /*inline std::ostream& operator << (std::ostream& os, const MapEntry& m)
   {
     os << "(" << m.d << "," << m.normal << "," << ")";
@@ -115,12 +117,14 @@ public:
   }
 
   void
-  addMapEntry(boost::shared_ptr<cob_3d_mapping::Polygon>& p_ptr);
+    addMapEntry(cob_3d_mapping::Polygon::Ptr& p_ptr);
 
 
   void
   addMapEntry(boost::shared_ptr<cob_3d_mapping::Cylinder>& c_ptr);
 
+  void
+  computeTfError(const std::vector<cob_3d_mapping::Polygon::Ptr>& list_polygon, Eigen::Affine3f adjust_tf);
 
   void
   computeCentroid(cob_3d_mapping::Polygon& p);
@@ -157,10 +161,10 @@ public:
   colorizeMap();
 
 
-  boost::shared_ptr<std::vector<cob_3d_mapping::PolygonPtr > >
+  boost::shared_ptr<std::vector<cob_3d_mapping::Polygon::Ptr > >
   getMap_polygon()
   {
-    return boost::make_shared< std::vector< cob_3d_mapping::PolygonPtr > >(map_polygon_);
+    return boost::make_shared< std::vector< cob_3d_mapping::Polygon::Ptr > >(map_polygon_);
   }
 
 
@@ -191,7 +195,7 @@ public:
   }
 
 protected:
-  std::vector<boost::shared_ptr<cob_3d_mapping::Polygon> > map_polygon_;
+  std::vector<cob_3d_mapping::Polygon::Ptr > map_polygon_;
   std::vector<boost::shared_ptr<cob_3d_mapping::Cylinder> > map_cylinder_;
   unsigned int new_id_;
   // std::ofstream outputFile;

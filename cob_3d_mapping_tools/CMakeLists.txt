@@ -32,6 +32,7 @@ rosbuild_add_executable(transform_pointcloud ros/src/transform_pointcloud.cpp)
 rosbuild_add_executable(concat_fields_node ros/src/concat_fields.cpp)
 rosbuild_add_executable(bag_to_pcd ros/src/bag_to_pcd.cpp)
 rosbuild_add_executable(pointcloud_to_pcd ros/src/pointcloud_to_pcd.cpp)
+rosbuild_add_executable(pointcloud_tf_delayer ros/src/pointcloud_tf_delayer.cpp)
 
 rosbuild_add_executable(create_point_cloud common/src/create_point_cloud.cpp)
 rosbuild_add_executable(create_kitchen_point_cloud common/src/create_kitchen_point_cloud.cpp)

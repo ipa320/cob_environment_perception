@@ -165,14 +165,12 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
   {
     // compute hull:
     if (c->getCentroid()[2] > centroid_passthrough_) continue;
-    if (c->type != I_PLANE  && c->type != I_CYL) continue;
+    if (c->type != I_PLANE /* && c->type != I_CYL*/) continue;
     if (c->size() <= ceil(1.1f * static_cast<float>(c->border_points.size())))
     {
       std::cout <<"[ " << c->size() <<" | "<< c->border_points.size() << " ]" << std::endl;
       continue;
     }
-
-
 
     PolygonContours<PolygonPoint> poly;
     std::cout << "Get outline for " << c->size() << " Points with "<< c->border_points.size() << " border points" << std::endl;

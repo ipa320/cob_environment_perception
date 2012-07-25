@@ -177,30 +177,19 @@ public:
   void
   shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr sa)
   {
-
     tf::StampedTransform trf_map;
     Eigen::Affine3f af = Eigen::Affine3f::Identity();
 
-    if (enable_tf_)
+    try
     {
-      try
-      {
-        tf_listener_.waitForTransform(map_frame_id_, sa->header.frame_id, sa->header.stamp, ros::Duration(2));
-        tf_listener_.lookupTransform(map_frame_id_, sa->header.frame_id, sa->header.stamp, trf_map);
-      }
-      catch (tf::TransformException ex)
-      {
-        ROS_ERROR("[geometry map node] : %s",ex.what());
-        return;
-      }
-      Eigen::Affine3d ad;
-      tf::TransformTFToEigen(trf_map, ad);
-      af = ad.cast<float>();
+      tf_listener_.waitForTransform(map_frame_id_, sa->header.frame_id, sa->header.stamp, ros::Duration(2));
+      tf_listener_.lookupTransform(map_frame_id_, sa->header.frame_id, sa->header.stamp, trf_map);
     }
+    catch (tf::TransformException ex) { ROS_ERROR("[geometry map node] : %s",ex.what()); return; }
 
-
-
-
+    Eigen::Affine3d ad;
+    tf::TransformTFToEigen(trf_map, ad);
+    af = ad.cast<float>();
 
 
     static int ctr=0;
@@ -208,18 +197,60 @@ public:
     PrecisionStopWatch t;
     std::cout<<">>>>>>>>>new cloud>>>>>>>>>>\n";
 
+    std::vector<Polygon::Ptr> polygon_list;
+    std::vector<CylinderPtr> cylinder_list;
+
+    for(size_t i=0; i<sa->shapes.size(); ++i)
+    {
+      switch (sa->shapes[i].type)
+      {
+      case cob_3d_mapping_msgs::Shape::POLYGON:
+      {
+        polygon_list.push_back(Polygon::Ptr(new Polygon));
+        fromROSMsg(sa->shapes[i], *polygon_list.back());
+        polygon_list.back()->transform2tf(af);
+        break;
+      }
+      case cob_3d_mapping_msgs::Shape::CYLINDER:
+      {
+        cylinder_list.push_back(Cylinder::Ptr(new Cylinder));
+        fromROSMsg(sa->shapes[i], *cylinder_list.back());
+        cylinder_list.back()->transform2tf(af);
+        break;
+      }
+      default:
+        break;
+      }
+    }
+
+    geometry_map_.computeTfError(polygon_list, af);
+
+    for (size_t i=0; i<polygon_list.size(); ++i)
+    {
+      polygon_list[i]->transform2tf(af);
+      geometry_map_.addMapEntry(polygon_list[i]);
+    }
+    for (size_t i=0; i<cylinder_list.size(); ++i)
+    {
+      cylinder_list[i]->transform2tf(af);
+      geometry_map_.addMapEntry(cylinder_list[i]);
+    }
+
+    geometry_map_.cleanUp();
+    geometry_map_.incrFrame();
+
+    publishMapMarker();
+    publishMap();
+    ctr_++;
+
+/*
     for(unsigned int i=0; i<sa->shapes.size(); i++)
     {
-
-
-      //			if (i != 1) {
-
-      ////    distinction of type
-      if (sa->shapes[i].type == 0) {
-
-
-        PolygonPtr polygon_map_entry_ptr = PolygonPtr(new Polygon());
-        if(!fromROSMsg(sa->shapes[i], *polygon_map_entry_ptr)) {
+      if (sa->shapes[i].type == 0)
+      {
+        Polygon::Ptr polygon_map_entry_ptr = Polygon::Ptr(new Polygon());
+        if(!fromROSMsg(sa->shapes[i], *polygon_map_entry_ptr))
+        {
           std::cout << "ERROR: fromROSMsg" << std::endl;
           continue;
         }
@@ -227,25 +258,18 @@ public:
         geometry_map_.addMapEntry(polygon_map_entry_ptr);
       }
 
-      if (sa->shapes[i].type == 5) {
+      if (sa->shapes[i].type == 5)
+      {
         CylinderPtr cylinder_map_entry_ptr = CylinderPtr(new Cylinder());
-//        cylinder_map_entry_ptr->allocate();
-        if(!fromROSMsg(sa->shapes[i], *cylinder_map_entry_ptr)){
-          continue;
-        }
+        // cylinder_map_entry_ptr->allocate();
+        if(!fromROSMsg(sa->shapes[i], *cylinder_map_entry_ptr)) { continue; }
 
         //prepare cylinder for geometry map
         cylinder_map_entry_ptr->transform2tf(af);
         cylinder_map_entry_ptr->ParamsFromShapeMsg();
         cylinder_map_entry_ptr->makeCyl2D();
-
-
         geometry_map_.addMapEntry(cylinder_map_entry_ptr);
-
-
       }
-      //		}
-
 
       //dumpPolygonToFile(*map_entry_ptr);
       t.precisionStart();
@@ -255,19 +279,7 @@ public:
       //ROS_INFO("[feature map] Accumulated time at step %d: %f s", ctr, time);
       ctr++;
     }
-    geometry_map_.cleanUp();
-    geometry_map_.incrFrame();
-
-    //		debug
-
-
-
-    publishMapMarker();
-    //		std::cout<<"publishMap() DEACTIVATED!!"<<std::endl;
-
-    publishMap();
-    ctr_++;
-    //ROS_INFO("%d polygons received so far", ctr_);
+*/
   }
 
   /**
@@ -308,7 +320,7 @@ public:
   getMap(cob_3d_mapping_msgs::GetGeometricMap::Request &req,
       cob_3d_mapping_msgs::GetGeometricMap::Response &res)
   {
-    boost::shared_ptr<std::vector<PolygonPtr> > map_polygon = geometry_map_.getMap_polygon();
+    boost::shared_ptr<std::vector<Polygon::Ptr> > map_polygon = geometry_map_.getMap_polygon();
     boost::shared_ptr<std::vector<CylinderPtr> > map_cylinder = geometry_map_.getMap_cylinder();
 
     res.map.header.stamp = ros::Time::now();
@@ -377,7 +389,7 @@ public:
 
     //		if index = type 1 poly ptr , else cylinder ptr --> push back in shape vector?!
 
-    boost::shared_ptr<std::vector<PolygonPtr> > map_polygon = geometry_map_.getMap_polygon();
+    boost::shared_ptr<std::vector<Polygon::Ptr> > map_polygon = geometry_map_.getMap_polygon();
     boost::shared_ptr<std::vector<CylinderPtr> > map_cylinder = geometry_map_.getMap_cylinder();
 
 
@@ -467,7 +479,7 @@ public:
 
     //		only implemented for polygon
 
-    boost::shared_ptr<std::vector<PolygonPtr> > map_polygon = geometry_map_.getMap_polygon();
+    boost::shared_ptr<std::vector<Polygon::Ptr> > map_polygon = geometry_map_.getMap_polygon();
 
 
 
