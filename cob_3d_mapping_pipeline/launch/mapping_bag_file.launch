@@ -14,6 +14,8 @@
 	<arg name="start_manager" value="false"/>
 	<arg name="nodelet_manager" value="$(arg mapping_manager)"/>
   </include-->
+
+
   <node pkg="nodelet" type="nodelet" name="segmentation"
         args="load cob_3d_segmentation/SegmentationAllInOneNodelet $(arg mapping_manager)" output="screen">
     <remap from="cloud_in" to="registration/pc_aligned" />
@@ -41,7 +43,7 @@
   <!--include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch"/-->
 
   <node pkg="rosbag" type="play" name="rosbag_play" cwd="node" respawn="false" output="screen"
-        args="/share/goa-sf/pcd_data/bags/single_cyl_2.bag -k -q --pause">
+        args="/share/goa-sf/pcd_data/bags/sim_cyl_3.bag -k -q --pause">
     <remap from="/camera/rgb/points" to="/registration/pc_aligned"/>
   </node>
 </launch>
