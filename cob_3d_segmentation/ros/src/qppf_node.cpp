@@ -17,6 +17,13 @@
 
 #include <cob_3d_segmentation/quad_regression/quad_regression.h>
 #include <cob_3d_mapping_msgs/CurvedPolygon_Array.h>
+#include <cob_3d_mapping_msgs/FilterObject.h>
+
+#include <actionlib/server/simple_action_server.h>
+#include <cob_3d_segmentation/ObjectWatchGoal.h>
+#include <cob_3d_segmentation/ObjectWatchFeedback.h>
+#include <cob_3d_segmentation/ObjectWatchAction.h>
+#include <geometry_msgs/PoseStamped.h>
 
 class As_Node
 {
@@ -61,9 +68,15 @@ class QPPF_Node : public Parent
 
   Segmentation::Segmentation_QuadRegression<Point, PointLabel> seg_;
 
+  std::vector<cob_3d_mapping_msgs::FilterObject> filter_;
+
+  actionlib::SimpleActionServer<cob_3d_segmentation::ObjectWatchAction> as_;
+  cob_3d_segmentation::ObjectWatchGoalConstPtr  goal_;
+
 public:
   // Constructor
-  QPPF_Node()
+  QPPF_Node(const std::string &name):
+    as_(this->n_, name, boost::bind(&QPPF_Node::setGoal, this, _1), false)
   {
   }
 
@@ -78,6 +91,30 @@ public:
     curved_pub_ = n->advertise<cob_3d_mapping_msgs::CurvedPolygon_Array>("/curved_polygons", 1);
     shapes_pub_ = n->advertise<cob_3d_mapping_msgs::ShapeArray>("/shapes_array", 1);
 
+    as_.start();
+  }
+
+  void setGoal(const cob_3d_segmentation::ObjectWatchGoalConstPtr &goal)
+  {
+    as_.setPreempted();
+
+    if(!goal) {
+      goal_.reset();
+      return;
+    }
+
+    if(goal->widths.size()!=goal->heights.size())
+    {
+      ROS_ERROR("malformed goal message (|widths|!=|heights|): aborting...");
+      goal_.reset();
+    }
+    else if(goal->widths.size()==0)
+    {
+      ROS_DEBUG("stopping segment filtering");
+      goal_.reset();
+    }
+    else
+      goal_ = goal;
   }
 
   void
@@ -87,6 +124,41 @@ public:
 
     seg_.setInputCloud(pc_in);
     seg_.compute();
+    if(goal_)
+    {
+      cob_3d_segmentation::ObjectWatchFeedback feedback;
+      for(size_t i=0; i<seg_.getPolygons().size(); i++)
+      {
+        Eigen::Matrix3f P;
+        Eigen::Vector3f origin;
+        float h, w;
+        if(seg_.getPolygons()[i].getPose(P,origin,h,w))
+        {
+          std::cerr<<"z: "<<origin(2)<<"  ";
+          std::cerr<<"w: "<<w<<"  ";
+          std::cerr<<"h: "<<h<<"\n";
+          for(size_t j=0; j<goal_->heights.size(); j++)
+            if( std::abs(h-goal_->heights[j])<0.2f*goal_->heights[j]  && std::abs(w-goal_->widths[j])<0.2f*goal_->widths[j]) {
+              ROS_INFO("found");
+              std::cout<<"P\n"<<P<<"\n";
+              std::cout<<"origin\n"<<origin<<"\n";
+
+              geometry_msgs::PoseStamped p;
+              p.header = pc_in->header;
+              Eigen::Quaternionf Q(P);
+              p.pose.orientation.x = Q.x();
+              p.pose.orientation.y = Q.y();
+              p.pose.orientation.z = Q.z();
+              p.pose.orientation.w = Q.w();
+              p.pose.position.x = origin(0);
+              p.pose.position.y = origin(1);
+              p.pose.position.z = origin(2);
+              feedback.objs.push_back(p);
+            }
+        }
+      }
+      as_.publishFeedback(feedback);
+    }
     if(shapes_pub_.getNumSubscribers()>0)
     {
       cob_3d_mapping_msgs::ShapeArray sa = seg_;
@@ -119,7 +191,7 @@ PLUGINLIB_DECLARE_CLASS(cob_3d_segmentation, QPPF_XYZ, QPPF_Node_XYZ, nodelet::N
 int main(int argc, char **argv) {
   ros::init(argc, argv, "qppf");
 
-  QPPF_Node<pcl::PointXYZ,pcl::PointXYZRGB,As_Node> sn;
+  QPPF_Node<pcl::PointXYZ,pcl::PointXYZRGB,As_Node> sn("qppf");
   sn.onInit();
 
   ros::spin();
