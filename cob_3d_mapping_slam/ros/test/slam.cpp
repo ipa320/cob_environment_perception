@@ -54,7 +54,8 @@ static const char *BAGFILES[][512]={
                                      //"test/cp3_rgbd_dataset_freiburg2_dishes.bag",
                                      //"test/cp3_rgbd_dataset_freiburg2_rpy.bag",
                                      //"test/cp4_moving.bag",
-                                     "test/cp4_room.bag",
+                                     //"test/cp4_room.bag",
+                                     "test/cp4_rgbd_dataset_freiburg2_rpy.bag",
                                      //"test/cp3_rgbd_dataset_freiburg2_xyz.bag",
                                      //"test/cp3_rgbd_dataset_freiburg1_plant.bag",
                                      //"test/cp2_rgbd_dataset_freiburg2_dishes.bag",
@@ -63,7 +64,7 @@ static const char *BAGFILES[][512]={
                                      //"test/cp_rot_sim_kitchen.bag",
                                      //"test/cp_tr_real_cups.bag",
                                      //"test/cp_rotate_real_wall.bag",
-                                     ""}
+                                     (const char*)0}
 };
 
 static const char *GROUNDTRUTH[][512]={
@@ -273,7 +274,7 @@ TEST(Slam,bag_run)
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr rgb(new pcl::PointCloud<pcl::PointXYZRGB>);
 
   int bg_file=0;
-  while(strlen(BAGFILES[0][bg_file])>0) {
+  while(BAGFILES[0][bg_file]) {
 
     std::vector<SOdomotry_Data> odos;
     if(GROUNDTRUTH[0][bg_file]) {
@@ -386,6 +387,7 @@ TEST(Slam,bag_run)
             ROS_INFO("new frame");
 
             last=s->header.stamp;
+            Debug::Interface::get().setTime((last-start).toSec());
             if(first) {
               first=false;
               start = s->header.stamp;
@@ -513,7 +515,8 @@ TEST(Slam,bag_run)
 
                 ::std_msgs::ColorRGBA col;
                 unsigned int rnd=(((i+1)*11)<<12)+(i+3)*i*7;//rand();
-                col.a=1;
+                ROS_ASSERT(n->node_->getContext().getObjs()[i]->getUsedCounter() <= n->node_->getContext().getObjs()[i]->getCreationCounter());
+                col.a = std::log(n->node_->getContext().getObjs()[i]->getUsedCounter())/std::log(n->node_->getContext().getObjs()[i]->getCreationCounter());
                 col.r = ((rnd>>0)&0xff)/255.f;
                 col.g = ((rnd>>8)&0xff)/255.f;
                 col.b = ((rnd>>16)%0xff)/255.f;

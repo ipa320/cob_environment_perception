@@ -225,7 +225,7 @@ _DOF6 OBJCTXT<_DOF6>::optimizeLink(const DOF6 &_tf, std::list<SCOR> &cors, const
   //    //return optimizeLink(_tf, cors, tf.getRotationVariance()+tf.getTranslationVariance(), tf.getRotation(), tf.getTranslation());
   //    return optimizeLink(_tf, cors, 1.5, tf.getRotation(), tf.getTranslation());
   //  else
-  if(depth<3 || thr_rot>0.075f)
+  if(depth<3 || thr_rot>0.06f)
     return optimizeLink(_tf, cors, thr_rot*0.75f, thr_tr*0.75f, tf.getRotation(), tf.getTranslation(), depth+1);
 
 #ifdef DEBUG_

@@ -17,6 +17,7 @@ namespace Slam_CurvedPolygon
   class OBJCTXT
   {
   public:
+    typedef boost::shared_ptr<OBJCTXT> Ptr;
     typedef _DOF6 DOF6;
     typedef Slam_CurvedPolygon::Object<DOF6> OBJECT;
 
@@ -226,6 +227,12 @@ namespace Slam_CurvedPolygon
       objs_.push_back(obj);
     }
 
+    void operator+=(const OBJCTXT &o) {
+      for(size_t i=0; i<o.objs_.size(); i++)
+        objs_.push_back(o.objs_[i]);
+      updateBB();
+    }
+
     void clear() {objs_.clear();}
 
     bool registration(const OBJCTXT &ctxt, DOF6 &tf, typename DOF6::TYPE &probability_success_rate, typename DOF6::TYPE &probability_error_rate);
@@ -244,6 +251,9 @@ namespace Slam_CurvedPolygon
     const FoVBB &getBoundingBox() const {return bb_;}
 
     bool empty() const {return objs_.size()==0;}
+
+    typename OBJCTXT::Ptr clone() const;
+    OBJCTXT &transform(const DOF6 &tf);
 
   };
 

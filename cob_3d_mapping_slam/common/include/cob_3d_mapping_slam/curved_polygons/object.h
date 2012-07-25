@@ -56,13 +56,13 @@ namespace Slam_CurvedPolygon
       ///update
       if(data_ += o.data_) {
         used_ += o.used_;
-        used_ += o.creation_;
+        creation_ += o.creation_;
         return true;
       }
       return false;
     }
 
-    void used() {++used_;}
+    //void used() {++used_;}
     void processed() {++creation_;}
 
     bool isReachable(const Object &o, const typename DOF6::TYPE &thr_rot, const typename DOF6::TYPE &thr_tr) const;
