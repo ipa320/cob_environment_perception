@@ -123,7 +123,7 @@ class RecordCylinderScript(script):
                 # send transformation of current pose 
                 self.br.sendTransform((positions_x[step],positions_y[step], 0),
                     tf.transformations.quaternion_from_euler(0, 0, alpha[step]),
-                    rospy.Time.now(),"base_link","map")
+                    rospy.Time.now(),"/head_cam3d_link","/map")
 
           
             #increment step and let sleep for 1 second    
@@ -153,6 +153,12 @@ if __name__ == "__main__":
     do_tf = False
     do_spawn = False
     do_verbose = True
+    
+    
+    intervall = 0.3
+    num_steps = 12
+    radius = 1
+    center = (0,0)
     # parse command line options
     try:
         opts, args = getopt.getopt(sys.argv[1:], "h", ["help"])
@@ -163,15 +169,23 @@ if __name__ == "__main__":
     # process options
     for o, a in opts:
         if o in ("-h", "--help"):
-            print "Usage: rosrun RecordCylinder.py [spawn] [tf] \n -[optional arguments]"
+            print "\n\nUsage:\t rosrun RecordCylinder.py [optional arguments]"
+            print"arguments:\t v .............. disable verbose output of spawned cylinder"
+            print"          \t spawn .......... spawn cylinder"
+            print"          \t tf ............. publish transform in frame map"
+            print"          \t I [time]........ set rest intervall at every step to time"
+            print"          \t N [#] .......... number of steps on trajectory"
+            print"          \t C [x0][y0][r] .. set parameters of trajectory circle"
+            print"-------------------------------------------------------------------------"
+            print"default values\t V = True , spawn = False , tf = False , I 0.3 , C 0 0 1 , N 12 "   
             sys.exit(0)
+
             
     # process arguments
-    for arg in args:
+    for i in range(len(args)):
 
-
-        
-        if (arg in '-v')  == True:
+        arg = args[i]
+        if (arg in 'V')  == True:
             print "no verbose activated"
             do_verbose = False
             continue        
@@ -183,14 +197,27 @@ if __name__ == "__main__":
             print "tf = true"
             do_tf = True
             continue
+        elif(arg in "I") == True:
+            print ("intervall set to %s" % args[i+1])
+            intervall = (float)(args[i+1])
+            continue
+        elif(arg in "N") == True:
+            print ("number of steps set to %s" % args[i+1] )
+            num_steps = (float)(args[i+1])         
+            continue              
+        elif(arg in "C") == True:
+            print ("circle paramaters set")
+            center[0] = (float)(args[i+1])
+            center[1] = (float)(args[i+2])
+            radius = (float)(args[i+3])            
+            continue            
+
              
             
                 
     #parameters for trajectory
-    num_steps = 10
-    radius = 1
-    center = (0,0)
-    intervall = 0.7
+
+
     
     #initialize script
     SCRIPT = RecordCylinderScript(center,radius,num_steps,intervall)
