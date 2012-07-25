@@ -290,8 +290,8 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
         cluster_plane_.extract (plane_clusters);
 
         extract_.setInputCloud(cloud_projected);
-        std::cout << "projected: " << cloud_projected->size() << std::endl;
-        std::cout << "inliers_plane: " << inliers_plane->indices.size() << std::endl;
+        /*std::cout << "projected: " << cloud_projected->size() << std::endl;
+        std::cout << "inliers_plane: " << inliers_plane->indices.size() << std::endl;*/
         for(unsigned int j=0; j<plane_clusters.size(); j++)
         {
           pcl::PointCloud<Point> plane_cluster;
@@ -302,15 +302,15 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
           if(plane_cluster_ptr->size() < min_plane_size_) continue;
           //else std::cout << "plane cluster has " << plane_cluster_ptr->size() << " points" << std::endl;
 
-          // <stupidity> All this is very stupid and serves only the purpose of evaluation!!!
+          // <evaluation_stuff>
           extracted_planes_indices_.push_back(std::vector<int>());
-          std::cout << "plane_cluster: " << plane_clusters[j].indices.size() << std::endl;
+          //std::cout << "plane_cluster: " << plane_clusters[j].indices.size() << std::endl;
           for (size_t idx = 0; idx < plane_clusters[j].indices.size(); ++idx)
           {
             //std::cout << plane_clusters[j].indices[idx] << " ";
             extracted_planes_indices_.back().push_back(inliers_plane->indices[ plane_clusters[j].indices[idx] ]);
           }
-          // </stupidity>
+          // </evaluation_stuff>
 
           // Create a Concave Hull representation of the projected inliers
           pcl::PointCloud<Point> cloud_hull;
@@ -319,10 +319,11 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
           //TODO: parameter
 
           chull_.reconstruct (cloud_hull, hull_polygons);
-          std::cout << "Hull: " << cloud_hull.size() << ", " << hull_polygons[0].vertices.size()<<", "<< plane_cluster_ptr->size() << std::endl;
+          /*std::cout << "Hull: " << cloud_hull.size() << ", " << hull_polygons[0].vertices.size()
+            << ", "<< plane_cluster_ptr->size() << std::endl;*/
           if(hull_polygons.size() > 1)
           {
-		continue;
+            continue;
             ROS_WARN("Extracted Polygon %d contours, separating ...", hull_polygons.size());
             pcl::PointCloud<Point>::Ptr cloud_hull_ptr = cloud_hull.makeShared();
             pcl::ExtractIndices<Point> extract_2;
@@ -404,9 +405,9 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
     ctr_++;
   }
   double step_time = t.precisionStop();
-  ROS_INFO("Plane extraction took %f", step_time);
+  //ROS_INFO("Plane extraction took %f", step_time);
   time += step_time;
-  ROS_INFO("[plane extraction] Accumulated time at step %d: %f s", ctr, time);
+  //ROS_INFO("[plane extraction] Accumulated time at step %d: %f s", ctr, time);
   ctr++;
   return;
 }

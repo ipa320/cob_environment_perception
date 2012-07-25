@@ -66,8 +66,8 @@
 
 template <typename ClusterGraphT, typename PointT, typename PointNT, typename PointLabelT> void
 cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>::addIfIsValid(
-  int u, int v, int idx, int idx_prev, float dist_th, float p_z, Eigen::Vector3f& n, 
-  std::multiset<SegmentationCandidate>& coords_todo, ClusterPtr c)
+  int u, int v, int idx, int idx_prev, float dist_th, float p_z, Eigen::Vector3f& n,
+  SegmentationQueue& seg_queue, ClusterPtr c)
 {
   if (p_z < 1.2)
   {
@@ -78,13 +78,13 @@ cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>
   if (*p_label == I_UNDEF)
   {
 
-    float angle = fabs( atan2((n.cross(normals_->points[idx].getNormalVector3fMap())).norm(),
-			n.dot(normals_->points[idx].getNormalVector3fMap())) );
-
-    if ( (int)c->size() < min_cluster_size_ || angle < max_angle_)
+    /*float angle = fabs( atan2((n.cross(normals_->points[idx].getNormalVector3fMap())).norm(),
+      n.dot(normals_->points[idx].getNormalVector3fMap())) );*/
+    float dot_value = fabs( n.dot(normals_->points[idx].getNormalVector3fMap()) );
+    if ( (int)c->size() < min_cluster_size_ || dot_value > min_dot_normals_)
     {
       *p_label = c->id();;
-      coords_todo.insert(SegmentationCandidate(u, v, angle));
+      seg_queue.push( SegmentationCandidate::Ptr(new SegmentationCandidate(u, v, dot_value)) );
     }
   }
   else if (*p_label > I_EDGE && c->id() != *p_label)
@@ -114,46 +114,47 @@ cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>
     if (labels_->points[i].label == I_UNDEF)
     {
       ClusterPtr c = graph_->clusters()->createCluster();
-      std::multiset<SegmentationCandidate> coords_todo;
-      coords_todo.insert(SegmentationCandidate(i%width, i/width, 0.0));
+      //std::multiset<SegmentationCandidate> seg_queue;
+      SegmentationQueue seg_queue;
+      seg_queue.push( SegmentationCandidate::Ptr(new SegmentationCandidate(i%width, i/width, 0.0)) );
       labels_->points[i].label = c->id();
-      while (coords_todo.size() != 0)
+      while (seg_queue.size() != 0)
       {
-	SegmentationCandidate p = *coords_todo.begin();
-	coords_todo.erase(coords_todo.begin());
-	int p_idx = p.v * width + p.u;
-	float p_z = surface_->points[p_idx].z;
-	float dist_th = 2.0 * 0.003 * p_z * p_z;
-	graph_->clusters()->addPoint(c, p_idx); // clusterhandler takes care of properties
- 
-	Eigen::Vector3f n_n = c->getOrientation();
-	// Look right
-	if (p.u+1 < width) { addIfIsValid(p.u+1, p.v, p_idx+1, p_idx, dist_th, p_z, n_n, coords_todo, c); }
-	// Look down
-	if (p.v+1 < height) { addIfIsValid(p.u, p.v+1, p_idx+width, p_idx, dist_th, p_z, n_n, coords_todo, c); }
-	// Look left
-	if (p.u > 0) { addIfIsValid(p.u-1, p.v, p_idx-1, p_idx, dist_th, p_z, n_n, coords_todo, c); }
-	// Look up
-	if (p.v > 0) { addIfIsValid(p.u, p.v-1, p_idx-width, p_idx, dist_th, p_z, n_n, coords_todo, c); }
+        SegmentationCandidate p = *seg_queue.top(); // get point with max dot_value!
+        seg_queue.pop();
+        int p_idx = p.v * width + p.u;
+        float p_z = surface_->points[p_idx].z;
+        float dist_th = 2.0 * 0.003 * p_z * p_z;
+        graph_->clusters()->addPoint(c, p_idx); // clusterhandler takes care of properties
+
+        Eigen::Vector3f n_n = c->getOrientation();
+        // Look right
+        if (p.u+1 < width) { addIfIsValid(p.u+1, p.v, p_idx+1, p_idx, dist_th, p_z, n_n, seg_queue, c); }
+        // Look down
+        if (p.v+1 < height) { addIfIsValid(p.u, p.v+1, p_idx+width, p_idx, dist_th, p_z, n_n, seg_queue, c); }
+        // Look left
+        if (p.u > 0) { addIfIsValid(p.u-1, p.v, p_idx-1, p_idx, dist_th, p_z, n_n, seg_queue, c); }
+        // Look up
+        if (p.v > 0) { addIfIsValid(p.u, p.v-1, p_idx-width, p_idx, dist_th, p_z, n_n, seg_queue, c); }
       } // end while
-      
+
       // merge small clusters
 
-      if (c->size() < min_cluster_size_) 
+      if (c->size() < min_cluster_size_)
       {
-	std::vector<ClusterPtr> adj_list;
-	graph_->getAdjacentClusters(c->id(), adj_list);
-	if (adj_list.size() != 0)
-	{
-	  int max_cluster_id = adj_list.front()->id();
-	  int max_edge_width = 0;
-	  for (typename std::vector<ClusterPtr>::iterator it = adj_list.begin(); it != adj_list.end(); ++it)
-	  {
-	    EdgePtr e = graph_->getConnection(c->id(), (*it)->id());
-	    if (e->size() > max_edge_width) { max_cluster_id = (*it)->id(); max_edge_width = e->size(); }
-	  }
-	  graph_->merge( c->id(), max_cluster_id );
-	}
+        std::vector<ClusterPtr> adj_list;
+        graph_->getAdjacentClusters(c->id(), adj_list);
+        if (adj_list.size() != 0)
+        {
+          int max_cluster_id = adj_list.front()->id();
+          int max_edge_width = 0;
+          for (typename std::vector<ClusterPtr>::iterator it = adj_list.begin(); it != adj_list.end(); ++it)
+          {
+            EdgePtr e = graph_->getConnection(c->id(), (*it)->id());
+            if (e->size() > max_edge_width) { max_cluster_id = (*it)->id(); max_edge_width = e->size(); }
+          }
+          graph_->merge( c->id(), max_cluster_id );
+        }
       }
 
     }
@@ -167,7 +168,7 @@ cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>
   return;
 }
 
-template <typename ClusterGraphT, typename PointT, typename PointNT, typename PointLabelT> void 
+template <typename ClusterGraphT, typename PointT, typename PointNT, typename PointLabelT> void
 cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>::refineSegmentation()
 {
   graph_->clusters()->sortBySize(); // Ascending order
@@ -197,8 +198,8 @@ cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>
       graph_->merge( (*a_it)->id(), c_end->id(), updated_edges );
       for (typename std::vector<EdgePtr>::iterator e_it = updated_edges.begin(); e_it != updated_edges.end(); ++e_it)
       {
-	computeBoundaryProperties(c_end, *e_it);
-	computeEdgeSmoothness(*e_it);
+        computeBoundaryProperties(c_end, *e_it);
+        computeEdgeSmoothness(*e_it);
       }
     }
   }
@@ -210,7 +211,7 @@ cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>
   ClusterPtr c, EdgePtr e)
 {
   int window_size = ceil( std::min( sqrt( static_cast<float>(c->size()) ) / e->boundary_pairs[c->id()].size()
-				    + pow(c->getCentroid()(2), 2) + 5.0, 30.0) ); 
+                                    + pow(c->getCentroid()(2), 2) + 5.0, 30.0) );
   for (std::list<int>::iterator b_it = e->boundary_pairs[c->id()].begin(); b_it != e->boundary_pairs[c->id()].end(); ++b_it)
   {
     cob_3d_mapping_features::OrganizedNormalEstimationHelper::computeSegmentNormal<PointT,PointLabelT>(
@@ -237,10 +238,10 @@ cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>
   for (boost::tie(bp_it,bp_end) = e->getBoundaryPairs(); bp_it != bp_end; ++bp_it)
   {
     BoundaryPoint bp_this = graph_->edges()->getBoundaryPoint(*bp_it);
-    float angle = fabs( atan2(bp_this.normal.cross(graph_->edges()->getBoundaryPoint(bp_this.brother).normal).norm(),
-			      bp_this.normal.dot(graph_->edges()->getBoundaryPoint(bp_this.brother).normal)) );
-    //if (max_boundary_angle_ < bp_this.normal.dot(graph_->edges()->getBoundaryPoint(bp_this.brother).normal))
-    if (angle < max_boundary_angle_)
+    /*float angle = fabs( atan2(bp_this.normal.cross(graph_->edges()->getBoundaryPoint(bp_this.brother).normal).norm(),
+      bp_this.normal.dot(graph_->edges()->getBoundaryPoint(bp_this.brother).normal)) );*/
+    //if (angle < max_boundary_angle_)
+    if (min_dot_boundary_ < bp_this.normal.dot(graph_->edges()->getBoundaryPoint(bp_this.brother).normal))
       ++smooth_points;
   }
   e->smoothness = static_cast<float>(smooth_points) / static_cast<float>(e->size());

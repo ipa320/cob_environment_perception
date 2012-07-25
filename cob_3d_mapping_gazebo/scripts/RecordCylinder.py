@@ -123,7 +123,7 @@ class RecordCylinderScript(script):
                 # send transformation of current pose 
                 self.br.sendTransform((positions_x[step],positions_y[step], 0),
                     tf.transformations.quaternion_from_euler(0, 0, alpha[step]),
-                    rospy.Time.now(),"/head_cam3d_link","/map")
+                    rospy.Time.now(),"/map","/head_cam3d_link")
 
           
             #increment step and let sleep for 1 second    
@@ -210,7 +210,8 @@ if __name__ == "__main__":
             center[0] = (float)(args[i+1])
             center[1] = (float)(args[i+2])
             radius = (float)(args[i+3])            
-            continue            
+            continue
+                    
 
              
             
