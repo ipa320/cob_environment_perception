@@ -577,6 +577,7 @@ Cylinder::applyWeighting(std::vector<CylinderPtr>& merge_candidates)
   this->normal = this->sym_axis.cross(x_axis);
 
 //  !overide! use initial values for normal and sym_axis
+//  this->origin_ = merge_candidates[0]->origin_;
   this->normal = merge_candidates[0]->normal;
   this->sym_axis = merge_candidates[0]-> sym_axis;
 
