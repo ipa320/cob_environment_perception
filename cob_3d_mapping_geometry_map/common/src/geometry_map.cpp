@@ -139,7 +139,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
       // merge polygon with merge candidates
       //std::cout <<"c before: "<< p.centroid(0)<<", "<<p.centroid(1)<<", "<<p.centroid(2)<<std::endl;
       p.merge(merge_candidates); // merge all new candidates into p
-	p.id = new_id_;
+	  p.id = new_id_;
       map_polygon_.push_back(p_ptr); // add p to map, candidates were dropped!
       ++new_id_;
       //std::cout <<"c after : "<< p.centroid(0)<<", "<<p.centroid(1)<<", "<<p.centroid(2)<<std::endl;
@@ -149,9 +149,10 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
     {
       p.computeAttributes(p.normal,p.centroid);
       p.assignWeight();
-	p.id = new_id_;
+	  p.id = new_id_;
+      p.frame_stamp = frame_counter_;
       map_polygon_.push_back(p_ptr);
-      new_id_++;
+      ++new_id_;
       //  std::cout<<"size +1"<<std::endl;
     }
   }
@@ -160,8 +161,9 @@ GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
     p.computeAttributes(p.normal,p.centroid);
     p.assignWeight();
 	p.id = new_id_;
+    p.frame_stamp = frame_counter_;
     map_polygon_.push_back(p_ptr);
-    new_id_++;
+    ++new_id_;
   }
   if(save_to_file_) saveMap(file_path_);
 }
@@ -230,7 +232,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 
       c.computeAttributes(c.sym_axis,c.normal,c.origin_);
       c.assignWeight();
-	c.id = new_id_;
+      c.id = new_id_;
 
       map_cylinder_.push_back(c_ptr);
       new_id_++;
@@ -255,6 +257,24 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 
 }
 
+
+void
+GeometryMap::cleanUp()
+{
+  int n_dropped = 0;
+  for(int idx = map_polygon_.size() - 1 ; idx >= 0; --idx)
+  {
+    //std::cout << map_polygon_[idx]->merged <<", " << (frame_counter_ - 3) <<" > "<<(int)map_polygon_[idx]->frame_stamp<<std::endl;
+    if (map_polygon_[idx]->merged <= 1 && (frame_counter_ - 3) > (int)map_polygon_[idx]->frame_stamp)
+    {
+      map_polygon_[idx] = map_polygon_.back();
+      map_polygon_.pop_back();
+      ++n_dropped;
+    }
+  }
+  std::cout << "Dropped " << n_dropped << "Polys" << std::endl;
+  // TODO: clean up cylinders
+}
 
 
 void
