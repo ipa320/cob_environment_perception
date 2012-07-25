@@ -150,6 +150,7 @@ namespace Segmentation
       poly.segments2d_.back().push_back(BoostPoint(x,y));
 #endif
 
+#if 0
       for(int xx=-1; xx<2; xx++)
         for(int yy=-1; yy<2; yy++)
           if(x+xx>=0 && y+yy>=0 && x+xx<(int)levels_[i].w && y+yy<(int)levels_[i].h
@@ -178,7 +179,6 @@ Eigen::Vector2f vv;
             poly.segments_.back().push_back(p);
             return;
           }
-#if 0
       for(int xx=-1; xx<2; xx++)
         for(int yy=-1; yy<2; yy++)
           if(x+xx>=0 && y+yy>=0 && x+xx<(int)levels_[i].w && y+yy<(int)levels_[i].h

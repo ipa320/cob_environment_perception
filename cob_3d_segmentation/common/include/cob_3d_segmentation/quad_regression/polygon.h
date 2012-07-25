@@ -9,6 +9,8 @@
 #define POLYGON_H_
 
 #include "sub_structures.h"
+#include <eigen3/Eigen/Dense>
+#include <unsupported/Eigen/NonLinearOptimization>
 #include <cob_3d_mapping_msgs/CurvedPolygon.h>
 
 namespace Segmentation
@@ -425,38 +427,82 @@ namespace Segmentation
 
 
     /// find nearest point to manifold (Newton)
+//    Eigen::Vector2f _nextPoint(const Eigen::Vector3f &v, Eigen::Vector3f p, const int depth=0) const
+//    {
+//      if(depth>10)
+//      {
+//        return p.head<2>();
+//      }
+//
+//      //      std::cout<<"p\n"<<p<<"\n";
+//      p(2) = param_.col(2)(0)*p(0)*p(0)+param_.col(2)(1)*p(1)*p(1)+param_.col(2)(2)*p(0)*p(1)
+//                  + param_.col(1)(0)*p(0)+param_.col(1)(1)*p(1);
+//      //      std::cout<<"p\n"<<p<<"\n";
+//
+//      Eigen::Vector3f n;
+//      n(0) = -(param_.col(2)(0)*2*p(0)+param_.col(2)(2)*p(1)+param_.col(1)(0));
+//      n(1) = -(param_.col(2)(1)*2*p(1)+param_.col(2)(2)*p(0)+param_.col(1)(1));
+//      n(2) = 1;
+//
+//      Eigen::Vector3f d = ((p-v).dot(n)/n.squaredNorm()*n+(v-p));
+//
+//      //      std::cout<<"d\n"<<d<<"\n";
+//      //      std::cout<<"n\n"<<n<<"\n";
+//      //      std::cout<<"pv\n"<<(p-v)/(p-v)(2)<<"\n";
+//      //      std::cout<<"pv\n"<<(p-v)<<"\n";
+//      //      std::cout<<"dd\n"<<(p-v).dot(n)/n.squaredNorm()*n<<"\n";
+//      //ROS_ASSERT(std::abs(d(2))<=std::abs(z));
+//
+//      if(!pcl_isfinite(d.sum()) || d.head<2>().squaredNorm()<0.001f*0.001f)
+//      {
+//        //        std::cout<<"---------------\n";
+//        return (p+d).head<2>();
+//      }
+//      return _nextPoint(v,p+d,depth+1);
+//    }
+
+    struct MyFunctor
+    {
+      const float a,b,c, d,e;
+      const float x0,y0,z0;
+
+      int operator()(const Eigen::VectorXf &x, Eigen::VectorXf &fvec) const
+      {
+        // distance
+        fvec(0) = std::pow((-z0+b*x(1)*x(1)+c*x(0)*x(1)+a*x(0)*x(0)+d*x(0)+e*x(1)),2)+std::pow(x(1)-y0,2)+std::pow(x(0)-x0,2);
+        fvec(1) = 0;
+
+        //        std::cout<<"fvec\n"<<fvec<<std::endl;
+        return 0;
+      }
+
+      int df(const Eigen::VectorXf &x, Eigen::MatrixXf &fjac) const
+      {
+        //Jacobian
+        //TODO:
+        fjac(0,0) = 2*(c*x(1)+2*a*x(0)+d)*(-z0+b*x(1)*x(1)+c*x(0)*x(1)+a*x(0)*x(0)+d*x(0)+e*x(1))+2*(x(0)-x0);
+        fjac(0,1) = 2*(2*b*x(1)+c*x(0)+e)*(-z0+b*x(1)*x(1)+c*x(0)*x(1)+a*x(0)*x(0)+d*x(0)+e*x(1))+2*(x(1)-y0);
+        fjac(1,0) = fjac(1,1) = 0;
+        return 0;
+      }
+
+      int inputs() const { return 2; }
+      int values() const { return 2; } // number of constraints
+    };
+
+    /// find nearest point to manifold (Newton)
     Eigen::Vector2f _nextPoint(const Eigen::Vector3f &v, Eigen::Vector3f p, const int depth=0) const
     {
-      if(depth>10)
-      {
-        return p.head<2>();
-      }
+      Eigen::VectorXf r(2);
+      r = v.head<2>();
+      MyFunctor functor={param_.col(2)(0),param_.col(2)(1),param_.col(2)(2),
+                         param_.col(1)(0),param_.col(1)(1),
+                         p(0),p(1),p(2)};
+      Eigen::LevenbergMarquardt<MyFunctor, float> lm(functor);
+      lm.parameters.maxfev = 150;
+      lm.minimize(r);
 
-      //      std::cout<<"p\n"<<p<<"\n";
-      p(2) = param_.col(2)(0)*p(0)*p(0)+param_.col(2)(1)*p(1)*p(1)+param_.col(2)(2)*p(0)*p(1)
-                  + param_.col(1)(0)*p(0)+param_.col(1)(1)*p(1);
-      //      std::cout<<"p\n"<<p<<"\n";
-
-      Eigen::Vector3f n;
-      n(0) = -(param_.col(2)(0)*2*p(0)+param_.col(2)(2)*p(1)+param_.col(1)(0));
-      n(1) = -(param_.col(2)(1)*2*p(1)+param_.col(2)(2)*p(0)+param_.col(1)(1));
-      n(2) = 1;
-
-      Eigen::Vector3f d = ((p-v).dot(n)/n.squaredNorm()*n+(v-p));
-
-      //      std::cout<<"d\n"<<d<<"\n";
-      //      std::cout<<"n\n"<<n<<"\n";
-      //      std::cout<<"pv\n"<<(p-v)/(p-v)(2)<<"\n";
-      //      std::cout<<"pv\n"<<(p-v)<<"\n";
-      //      std::cout<<"dd\n"<<(p-v).dot(n)/n.squaredNorm()*n<<"\n";
-      //ROS_ASSERT(std::abs(d(2))<=std::abs(z));
-
-      if(!pcl_isfinite(d.sum()) || d.head<2>().squaredNorm()<0.001f*0.001f)
-      {
-        //        std::cout<<"---------------\n";
-        return (p+d).head<2>();
-      }
-      return _nextPoint(v,p+d,depth+1);
+      return r;
     }
 
     /// find nearest point to manifold (Newton)
@@ -480,6 +526,63 @@ namespace Segmentation
 
       return r;
     }
+
+    bool getPose(Eigen::Matrix3f &P, Eigen::Vector3f &origin, float &h, float &w) const {
+      if(segments_.size()<1)
+        return false;
+
+      Eigen::Matrix2f A, C;
+      Eigen::Vector2f B, v1, v2;
+
+      A(0,0) = model_.param.model_(1,1);
+      A(1,1) = model_.param.model_(3,3);
+      A(0,1) = A(1,0) = model_.param.model_(1,3);
+
+      B(0) = model_.param.model_(0,1);
+      B(1) = model_.param.model_(0,3);
+
+      C = A-C*C.transpose();
+
+      Eigen::EigenSolver<Eigen::Matrix2f> es(C);
+
+//      std::cout<<"EV1\n"<<es.eigenvectors().col(0)<<"\n";
+//      std::cout<<"EV2\n"<<es.eigenvectors().col(1)<<"\n";
+
+      v1 = es.eigenvectors().col(0).real();
+      v2 = es.eigenvectors().col(1).real();
+
+      v1.normalize();
+      v2.normalize();
+
+      P.col(0) = project2world(v1)-project2world(Eigen::Vector2f::Zero());
+      P.col(1) = project2world(v2)-project2world(Eigen::Vector2f::Zero());
+      P.col(0).normalize();
+      P.col(1).normalize();
+      P.col(2) = P.col(0).cross(P.col(1));
+
+      float h_ma = std::numeric_limits<float>::min(), h_mi = std::numeric_limits<float>::max();
+      float w_ma = std::numeric_limits<float>::min(), w_mi = std::numeric_limits<float>::max();
+
+      for(size_t i=0; i<segments_[0].size(); i++)
+      {
+        float f=segments_[0][i].head<2>().dot(v1);
+        h_ma = std::max(h_ma, f);
+        h_mi = std::min(h_mi, f);
+
+        f=segments_[0][i].head<2>().dot(v2);
+        w_ma = std::max(w_ma, f);
+        w_mi = std::min(w_mi, f);
+      }
+
+      origin = middle_;
+      w = (project2world(v1*h_ma)-project2world(v1*h_mi)).norm();
+      h = (project2world(v2*w_ma)-project2world(v2*w_mi)).norm();
+
+//      ROS_INFO("%f %f   %f %f", w, h_ma-h_mi, h, w_ma-w_mi);
+
+      return true;
+    }
+
   };
 }
 
