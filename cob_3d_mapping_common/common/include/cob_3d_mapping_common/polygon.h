@@ -79,9 +79,15 @@ struct merge_config {
 //Polygon Class, derived from Shape class
 
 
-class Polygon : public Shape
-{
-public:
+  class Polygon : public Shape
+  {
+  public:
+    Polygon()
+      : normal(Eigen::Vector3f::Zero())
+      , d(0.0)
+      , transform_from_world_to_plane(Eigen::Affine3f::Identity())
+      , merge_weight_(1.0)
+    { }
 
   //##########methods for instantiation##############
   virtual void computeAttributes(const Eigen::Vector3f &new_normal, const Eigen::Vector4f & new_centroid);
