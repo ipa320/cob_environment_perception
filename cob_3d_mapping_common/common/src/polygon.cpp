@@ -141,92 +141,84 @@ void Polygon::transform2tf(const Eigen::Affine3f& trafo)
 //###########methods for merging##################
 
 void
-Polygon::isMergeCandidate(std::vector<PolygonPtr>& poly_vec,merge_config& config,std::vector<int>& intersections)
+Polygon::getMergeCandidates(const std::vector<Polygon::Ptr>& poly_vec, std::vector<int>& intersections) const
 {
-
-
   for(size_t i=0; i< poly_vec.size(); ++i)
   {
-    Polygon& p_map = *(poly_vec[i]);
-
-    Eigen::Vector4f temp=this->centroid-p_map.centroid;
-    Eigen::Vector3f connection;
-    connection << temp[0], temp[1] , temp[2];
-
-
-    if(fabs(p_map.normal.dot(this->normal)) > (merge_settings_.angle_thresh) &&
-        fabs(connection.dot(this->normal)) < merge_settings_.d_thresh)
-
-    {
-
-
-
-      bool is_intersected= this->isMergeCandidate_intersect(p_map);
-      if(is_intersected == true)
-      {
-
-        intersections.push_back(i);
-        continue;
-      }
-      if (is_intersected == false)
-      {
-        //          std::cout<<" criteria fulfilled, but no intersection\n";
-      }
-
-      Eigen::Vector4f temp=this->centroid-p_map.centroid;
-      Eigen::Vector3f connection;
-    }
-
+    if(this->hasSimilarParametersWith(poly_vec[i]) && this->isIntersectedWith(poly_vec[i])) intersections.push_back(i);
   }
 }
 
-
 bool
-Polygon::isMergeCandidate_intersect(Polygon& p_map)
+Polygon::isIntersectedWith(const Polygon::Ptr& poly) const
 {
-  bool is_intersected;
-  gpc_polygon gpc_result;
-  gpc_polygon gpc_p_merge;
-  gpc_polygon gpc_p_map;
-
-
-  this->GpcStructureUsingMap(p_map.transform_from_world_to_plane, &gpc_p_merge);
-  // std::cout<<"map:"<<std::endl;
-  p_map.GpcStructureUsingMap(p_map.transform_from_world_to_plane, &gpc_p_map);
-  gpc_polygon_clip(GPC_INT,&gpc_p_merge,&gpc_p_map,&gpc_result);
-
-  if(gpc_result.num_contours == 0)
-  {
-    is_intersected=false;
-  }
-  else
-  {
-    is_intersected=true;
-  }
-
-  return is_intersected;
+  gpc_polygon gpc_res;
+  this->getIntersection(poly,gpc_res);
+  return (gpc_res.num_contours != 0);
 }
 
 void
-Polygon::merge(std::vector<PolygonPtr>& poly_vec)
+Polygon::getIntersection(const Polygon::Ptr& poly, gpc_polygon& gpc_intersection) const
 {
-  PolygonPtr p_average= PolygonPtr(new Polygon);
+  gpc_polygon gpc_poly, gpc_here;
+
+  this->gpcStructureUsingMap(poly->transform_from_world_to_plane, &gpc_here);
+  poly->gpcStructureUsingMap(poly->transform_from_world_to_plane, &gpc_poly);
+  gpc_polygon_clip(GPC_INT, &gpc_here, &gpc_poly, &gpc_intersection);
+}
+
+float
+Polygon::getContourOverlap(const Polygon::Ptr& poly) const
+{
+  gpc_polygon gpc_a, gpc_b, gpc_res_int, gpc_res_union;
+  this->gpcStructureUsingMap(poly->transform_from_world_to_plane, &gpc_a);
+  poly->gpcStructureUsingMap(poly->transform_from_world_to_plane, &gpc_b);
+  gpc_polygon_clip(GPC_INT, &gpc_a, &gpc_b, &gpc_res_int);
+  gpc_polygon_clip(GPC_UNION, &gpc_a, &gpc_b, &gpc_res_union);
+
+  size_t i_int, i_union;
+  for(size_t i=0;i<gpc_res_int.num_contours;++i) { if(!gpc_res_int.hole[i]) { i_int = i; break; } }
+  for(size_t i=0;i<gpc_res_union.num_contours;++i) { if(!gpc_res_union.hole[i]) { i_union = i; break; } }
+  int overlap = 0;
+  float d_th = pow( 0.01, 2 );
+  for(size_t i=0;i<gpc_res_int.contour[i_int].num_vertices; ++i)
+  {
+    gpc_vertex *pv_int = &gpc_res_int.contour[i_int].vertex[i];
+    for(size_t j=0;j<gpc_res_union.contour[i_union].num_vertices; ++j)
+    {
+      if( pow(gpc_res_union.contour[i_union].vertex[j].x - pv_int->x, 2) +
+          pow(gpc_res_union.contour[i_union].vertex[j].y - pv_int->y, 2) < d_th )
+      {
+        ++overlap;
+        break;
+      }
+    }
+  }
+  std::cout << "Overlap: " << overlap << "/"<<gpc_res_int.contour[i_int].num_vertices << " -> "
+            << (float)overlap/(float)gpc_res_int.contour[i_int].num_vertices << std::endl;
+
+  return (float)overlap/(float)gpc_res_int.contour[i_int].num_vertices;
+}
+
+void
+Polygon::merge(std::vector<Polygon::Ptr>& poly_vec)
+{
+  Polygon::Ptr p_average= Polygon::Ptr(new Polygon);
   this->applyWeighting(poly_vec,p_average);
   this->merge_union(poly_vec,p_average);
   this->assignWeight();
 }
 
 void
-Polygon::merge_union(std::vector<PolygonPtr>& poly_vec,  PolygonPtr& p_average)
+Polygon::merge_union(std::vector<Polygon::Ptr>& poly_vec,  Polygon::Ptr& p_average)
 {
   gpc_polygon gpc_C, gpc_B;
-
-  this->GpcStructureUsingMap(p_average->transform_from_world_to_plane, &gpc_C);
+  this->gpcStructureUsingMap(p_average->transform_from_world_to_plane, &gpc_C);
 
   for(size_t i=0;i<poly_vec.size();++i)
   {
     //std::cout << poly_vec[i]->contours.size() << " " << std::endl;
-    poly_vec[i]->GpcStructureUsingMap(p_average->transform_from_world_to_plane,&gpc_B);
+    poly_vec[i]->gpcStructureUsingMap(p_average->transform_from_world_to_plane,&gpc_B);
 
     gpc_polygon_clip(GPC_UNION, &gpc_B, &gpc_C, &gpc_C);
   }
@@ -299,15 +291,13 @@ Polygon::assignWeight()
     dist_factor *= 0.5;
     dist_factor=1/dist_factor;
     merge_weight_ =merged + dist_factor;
-
   }
 }
 
 
 void
-Polygon::applyWeighting(const std::vector<PolygonPtr>& poly_vec, PolygonPtr & p_average)
+Polygon::applyWeighting(const std::vector<Polygon::Ptr>& poly_vec, Polygon::Ptr & p_average)
 {
-
   //std::cout<<"MERGE WEIGHT: "<<merge_weight_<<std::endl;
   Eigen::Vector3f average_normal=normal*merge_weight_;
   Eigen::Vector4f average_centroid=centroid*merge_weight_;
@@ -319,7 +309,8 @@ Polygon::applyWeighting(const std::vector<PolygonPtr>& poly_vec, PolygonPtr & p_
   {
     Polygon& p_map1 =*(poly_vec[i]);
 
-    if(normal.dot(p_map1.normal)<0){
+    if(normal.dot(p_map1.normal)<0)
+    {
       //if (p.normal.dot(p_map.normal)<-0.95){
       p_map1.normal=-p_map1.normal;
       // p_map1.d=-p_map1.d;
@@ -329,17 +320,13 @@ Polygon::applyWeighting(const std::vector<PolygonPtr>& poly_vec, PolygonPtr & p_
     average_centroid += p_map1.merge_weight_* p_map1.centroid;
     average_d +=p_map1.merge_weight_ * p_map1.d;
     sum_w += p_map1.merge_weight_;
-
     sum_merged += p_map1.merged;
-
-
   }
 
   average_normal=average_normal/sum_w;
   average_centroid=average_centroid/sum_w;
   average_d=average_d/sum_w;
   average_normal.normalize();
-//  average_d /= average_normal.norm();
 
   if (sum_merged < 9)
   {
@@ -349,21 +336,16 @@ Polygon::applyWeighting(const std::vector<PolygonPtr>& poly_vec, PolygonPtr & p_
   {
     p_average->merged=9;
   }
-
-
   p_average->computeAttributes(average_normal,average_centroid);
-
-
-
 }
 
 
 void
-Polygon::GpcStructureUsingMap(const Eigen::Affine3f& external_trafo, gpc_polygon* gpc_p)
+Polygon::gpcStructureUsingMap(const Eigen::Affine3f& external_trafo, gpc_polygon* gpc_p) const
 {
   // get transformed contours
   std::vector< std::vector <Eigen::Vector3f> > transformed_contours;
-  transformed_contours = this->getTransformedContours(external_trafo);
+  this->getTransformedContours(external_trafo, transformed_contours);
 
   gpc_p->num_contours = contours.size();
   gpc_p->hole = (int*)malloc(contours.size()*sizeof(int));
@@ -381,41 +363,12 @@ Polygon::GpcStructureUsingMap(const Eigen::Affine3f& external_trafo, gpc_polygon
       Eigen::Vector3f point_trans = transformed_contours[j][k];
       gpc_p->contour[j].vertex[k].x = point_trans(0);
       gpc_p->contour[j].vertex[k].y = point_trans(1);
-
-    }
-  }
-}
-
-void
-Polygon::GpcStructure( gpc_polygon* gpc_p)
-{
-  // get transformed contours
-  std::vector< std::vector <Eigen::Vector3f> > transformed_contours;
-  transformed_contours= getTransformedContours(transform_from_world_to_plane);
-  //printMapEntry(p);
-  gpc_p->num_contours = contours.size();
-  gpc_p->hole = (int*)malloc(contours.size()*sizeof(int));
-  gpc_p->contour = (gpc_vertex_list*)malloc(contours.size()*sizeof(gpc_vertex_list));
-  for(size_t j=0; j<contours.size(); j++)
-  {
-    //std::cout << j << std::endl;
-    gpc_p->contour[j].num_vertices = contours[j].size();
-    gpc_p->hole[j] = 0;
-    gpc_p->contour[j].vertex = (gpc_vertex*)malloc(gpc_p->contour[j].num_vertices*sizeof(gpc_vertex));
-    for(size_t k=0; k<contours[j].size(); k++)
-    {
-      Eigen::Vector3f point_trans = transformed_contours[j][k];
-      gpc_p->contour[j].vertex[k].x = point_trans(0);
-      gpc_p->contour[j].vertex[k].y = point_trans(1);
-
     }
   }
 }
 
 
 //#######methods for calculation#####################
-
-
 void
 Polygon::computeCentroid()
 {
@@ -447,7 +400,7 @@ Polygon::computeCentroid()
 
 
 double
-Polygon::computeArea()
+Polygon::computeArea() const
 {
   double xi, xi_1, yi, yi_1, area=0;
 
@@ -482,7 +435,7 @@ Polygon::computeArea()
 }
 
 double
-Polygon::computeArea3d()
+Polygon::computeArea3d() const
 {
   Eigen::Vector3f vi, vi_1;
   double area=0;
@@ -515,8 +468,12 @@ Polygon::computeArea3d()
   }
   return std::fabs(area);
 }
+
 void
-Polygon::getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,const Eigen::Vector3f &origin, Eigen::Affine3f &transformation)
+Polygon::getTransformationFromPlaneToWorld(
+  const Eigen::Vector3f &normal,
+  const Eigen::Vector3f &origin,
+  Eigen::Affine3f &transformation) const
 {
   Eigen::Vector3f u, v;
   getCoordinateSystemOnPlane(normal, u, v);
@@ -526,7 +483,11 @@ Polygon::getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,const E
 }
 
 void
-Polygon::getTransformationFromPlaneToWorld(const Eigen::Vector3f z_axis,const Eigen::Vector3f &normal,const Eigen::Vector3f &origin, Eigen::Affine3f &transformation)
+Polygon::getTransformationFromPlaneToWorld(
+  const Eigen::Vector3f z_axis,
+  const Eigen::Vector3f &normal,
+  const Eigen::Vector3f &origin,
+  Eigen::Affine3f &transformation)
 {
   // Eigen::Vector3f u, v;
   // getCoordinateSystemOnPlane(normal, u, v);
@@ -550,23 +511,18 @@ Polygon::TransformContours(const Eigen::Affine3f& trafo)
   }
 }
 
-
-std::vector< std::vector<Eigen::Vector3f> >
-Polygon::getTransformedContours(const Eigen::Affine3f& trafo)
+void
+Polygon::getTransformedContours(const Eigen::Affine3f& trafo, std::vector< std::vector<Eigen::Vector3f> >& new_contours) const
 {
-  std::vector<std::vector<Eigen::Vector3f> > t_contours;
-  t_contours.resize(contours.size());
+  new_contours.resize(contours.size());
   for(size_t j=0; j<contours.size(); j++)
   {
-    t_contours[j].resize(contours[j].size());
+    new_contours[j].resize(contours[j].size());
     for(size_t k=0; k<contours[j].size(); k++)
     {
-      // std::cout<<trafo.matrix()<<std::endl;
-      t_contours[j][k] = trafo*contours[j][k];
+      new_contours[j][k] = trafo*contours[j][k];
     }
   }
-
-  return t_contours;
 }
 
 void

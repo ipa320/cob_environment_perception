@@ -446,25 +446,11 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 
 
     if ((fabs(c_map.sym_axis .dot(sym_axis)) > limits.angle_thresh)  && fabs(c_map.r_ - r_) < (0.01 ) )
-
     {
-
-      Cylinder shifted_cylinder;
-      c_map.getShiftedCylinder(*this,shifted_cylinder);
-
-
-      bool is_intersected = this->isMergeCandidate_intersect(
-          shifted_cylinder);
-
-      if (is_intersected == false) {
-
-
-        continue;
-      }
-      if (is_intersected == true) {
-        intersections.push_back(i);
-      }
-
+      CylinderPtr shifted_cylinder;
+      c_map.getShiftedCylinder(*this,*shifted_cylinder);
+      if (this->isIntersectedWith(boost::static_pointer_cast<Polygon>(shifted_cylinder)))
+      { intersections.push_back(i); }
     }//if
 
   }//for
@@ -493,13 +479,13 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
     merge_cylinders.push_back(shifted_cylinder);
   }
 
-  //  cast CylinderPtr to PolygonPtr to use merge_union   -- is  a better way possible ?!
-  std::vector<PolygonPtr> merge_polygons;
+  //  cast CylinderPtr to Polygon::Ptr to use merge_union   -- is  a better way possible ?!
+  std::vector<Polygon::Ptr> merge_polygons;
   for (size_t i = 0; i < merge_cylinders.size(); ++i) {
-    PolygonPtr tmp_ptr= merge_cylinders[i];
+    Polygon::Ptr tmp_ptr= merge_cylinders[i];
     merge_polygons.push_back(tmp_ptr);
   }
-  PolygonPtr average_polygon= average_cyl;
+  Polygon::Ptr average_polygon= average_cyl;
 
   this->merge_union(merge_polygons,average_polygon);
 

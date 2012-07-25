@@ -102,6 +102,7 @@ class Cylinder: public Polygon
 {
 
 public:
+  typedef boost::shared_ptr<Cylinder> Ptr;
 
   Cylinder():debug_(false)
   {

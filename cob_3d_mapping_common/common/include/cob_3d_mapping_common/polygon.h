@@ -68,19 +68,21 @@ extern "C" {
 
 namespace cob_3d_mapping
 {
-
-struct merge_config {
-  double angle_thresh ;
-  float  d_thresh;
-  std::string weighting_method;
-} ;
-
-
-//Polygon Class, derived from Shape class
+  struct merge_config
+  {
+    double angle_thresh;
+    float  d_thresh;
+    std::string weighting_method;
+  };
 
 
+  //Polygon Class, derived from Shape class
   class Polygon : public Shape
   {
+  public:
+    typedef boost::shared_ptr<Polygon> Ptr;
+    typedef boost::shared_ptr<const Polygon> ConstPtr;
+
   public:
     Polygon()
       : normal(Eigen::Vector3f::Zero())
@@ -89,59 +91,65 @@ struct merge_config {
       , merge_weight_(1.0)
     { }
 
-  //##########methods for instantiation##############
-  virtual void computeAttributes(const Eigen::Vector3f &new_normal, const Eigen::Vector4f & new_centroid);
-  virtual void transform2tf(const Eigen::Affine3f& trafo);
+    inline size_t outerContourIndex() const
+    {
+      for(size_t i=0;i<contours.size();++i) { if(!holes[i]) { return i; } };
+      return 0;
+    }
+
+    //##########methods for instantiation##############
+    virtual void computeAttributes(const Eigen::Vector3f &new_normal, const Eigen::Vector4f & new_centroid);
+    virtual void transform2tf(const Eigen::Affine3f& trafo);
 
 
-  //###########methods for merging##################
-  virtual void isMergeCandidate(std::vector< boost::shared_ptr<Polygon> >& poly_vec,merge_config& config, std::vector<int>& intersections);
-  bool isMergeCandidate_intersect(Polygon& p_map);
-  virtual void merge(std::vector< boost::shared_ptr<Polygon> >& poly_vec);
-  void merge_union(std::vector< boost::shared_ptr<Polygon> >& poly_vec, boost::shared_ptr<Polygon>&  p_average);
-  void assignWeight();
-  virtual void applyWeighting(const std::vector< boost::shared_ptr<Polygon> >& poly_vec , boost::shared_ptr<Polygon> & p_average );
-  void GpcStructureUsingMap(const Eigen::Affine3f& external_trafo,gpc_polygon* gpc_p);
-  void GpcStructure( gpc_polygon* gpc_p);
+    //###########methods for merging##################
+    virtual void getMergeCandidates(const std::vector<Polygon::Ptr>& poly_vec, std::vector<int>& intersections) const;
+    virtual bool isIntersectedWith(const Polygon::Ptr& poly) const;
+    void getIntersection(const Polygon::Ptr& poly, gpc_polygon& gpc_intersection) const;
+    float getContourOverlap(const Polygon::Ptr& poly) const;
 
-  //#######methods for calculation#####################
+    virtual void merge(std::vector<Polygon::Ptr>& poly_vec);
+    void merge_union(std::vector<Polygon::Ptr>& poly_vec, Polygon::Ptr&  p_average);
+    void assignWeight();
+    virtual void applyWeighting(const std::vector<Polygon::Ptr>& poly_vec, Polygon::Ptr& p_average);
+    void gpcStructureUsingMap(const Eigen::Affine3f& external_trafo, gpc_polygon* gpc_p) const;
 
-  void computeCentroid();
-  double computeArea();   // http://paulbourke.net/geometry/polyarea/
-  double computeArea3d();
-  void getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,const Eigen::Vector3f &origin, Eigen::Affine3f &transformation);
-  void getTransformationFromPlaneToWorld(const Eigen::Vector3f z_axis,const Eigen::Vector3f &normal,const Eigen::Vector3f &origin, Eigen::Affine3f &transformation);
-  std::vector<std::vector<Eigen::Vector3f> > getTransformedContours(const Eigen::Affine3f& trafo);
-  void TransformContours(const Eigen::Affine3f& trafo);
-  void computePoseAndBoundingBox(Eigen::Affine3f& pose, Eigen::Vector4f& min_pt, Eigen::Vector4f& max_pt);
+    inline bool hasSimilarParametersWith(const Polygon::Ptr& poly) const
+    {
+      return ( fabs(poly->normal.dot(this->normal)) > this->merge_settings_.angle_thresh &&
+               fabs( (this->centroid-poly->centroid).head(3).dot(this->normal) ) < this->merge_settings_.d_thresh );
+    }
 
-
-  //#############debugging methods#######################
-
-  void debug_output(std::string name);
-
-
-  //########## member variables#################
-  //needed for 32-bit systems: see http://eigen.tuxfamily.org/dox/TopicStructHavingEigenMembers.html
-  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-  std::vector<std::vector<Eigen::Vector3f> > contours;
-  Eigen::Vector3f normal;
-  double d;
-  Eigen::Affine3f transform_from_world_to_plane;
-  std::vector<bool> holes;
-  double merge_weight_;
-  merge_config merge_settings_;
+    //#######methods for calculation#####################
+    void computeCentroid();
+    double computeArea() const;   // http://paulbourke.net/geometry/polyarea/
+    double computeArea3d() const;
+    void getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,const Eigen::Vector3f &origin,
+                                           Eigen::Affine3f &transformation) const ;
+    void getTransformationFromPlaneToWorld(const Eigen::Vector3f z_axis,const Eigen::Vector3f &normal,
+                                           const Eigen::Vector3f &origin, Eigen::Affine3f &transformation);
+    void getTransformedContours(const Eigen::Affine3f& trafo, std::vector<std::vector<Eigen::Vector3f> >& new_contours) const ;
+    void TransformContours(const Eigen::Affine3f& trafo);
+    void computePoseAndBoundingBox(Eigen::Affine3f& pose, Eigen::Vector4f& min_pt, Eigen::Vector4f& max_pt);
 
 
-
-private:
-
-
+    //#############debugging methods#######################
+    void debug_output(std::string name);
 
 
-};
+    //########## member variables#################
+    //needed for 32-bit systems: see http://eigen.tuxfamily.org/dox/TopicStructHavingEigenMembers.html
+    EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+      std::vector<std::vector<Eigen::Vector3f> > contours;
+    Eigen::Vector3f normal;
+    double d;
+    Eigen::Affine3f transform_from_world_to_plane;
+    std::vector<bool> holes;
+    double merge_weight_;
+    merge_config merge_settings_;
 
-typedef boost::shared_ptr<Polygon> PolygonPtr;
+  private:
+
+  };
 }
-
 #endif /* POLYGON_H_ */
