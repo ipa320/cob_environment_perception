@@ -102,8 +102,8 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::onInit()
 
 void
 cob_3d_segmentation::SegmentationAllInOneNodelet::configCallback(
-  cob_3d_segmentation::segmentation_nodeletConfig& config,
-  uint32_t level)
+    cob_3d_segmentation::segmentation_nodeletConfig& config,
+    uint32_t level)
 {
   NODELET_INFO("[segmentation]: received new parameters");
   centroid_passthrough_ = config.centroid_passthrough;
@@ -194,7 +194,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
     s->header.frame_id = cloud->header.frame_id.c_str();
 
     Eigen::Vector3f centroid = c->getCentroid();
-    Eigen::Matrix3f M = Eigen::Matrix3f::Identity() - c->pca_point_comp3 * c->pca_point_comp3.transpose(); // projection
+    //    Eigen::Matrix3f M = Eigen::Matrix3f::Identity() - c->pca_point_comp3 * c->pca_point_comp3.transpose(); // projection
     for (int i = 0; i < (int)poly.polys_.size(); ++i)
     {
       if (i == max_idx) s->holes.push_back(false);
@@ -202,7 +202,9 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
       pcl::PointXYZRGB p;
       for (std::vector<PolygonPoint>::iterator it = poly.polys_[i].begin(); it != poly.polys_[i].end(); ++it)
       {
-        p.getVector3fMap() = M * (cloud->points[PolygonPoint::getInd(it->x, it->y)].getVector3fMap() - centroid) + centroid;
+        //        p.getVector3fMap() = M * (cloud->points[PolygonPoint::getInd(it->x, it->y)].getVector3fMap() - centroid) + centroid;
+        p.getVector3fMap() = cloud->points[PolygonPoint::getInd(it->x, it->y)].getVector3fMap();
+
         hull_cloud->points.push_back(p);
         hull->points.push_back(p);
       }
