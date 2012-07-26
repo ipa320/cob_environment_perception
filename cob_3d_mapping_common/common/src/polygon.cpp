@@ -111,10 +111,10 @@ Polygon::computeAttributes(const Eigen::Vector3f &new_normal, const Eigen::Vecto
 
 
 //  TODO: recomputation of centroid
-  normal=new_normal;
+  this->d = new_centroid.head(3).dot(new_normal);
+  if (d > 0) { this->normal = -new_normal; }
+  else { this->normal = new_normal; this->d = fabs(this->d);  }
   centroid = new_centroid;
-  d=fabs(centroid.head(3).dot(normal));
-  d=centroid.norm();
 
   pcl::getTransformationFromTwoUnitVectorsAndOrigin(
         this->normal.unitOrthogonal(),this->normal,this->centroid.head(3),this->transform_from_world_to_plane);
@@ -176,9 +176,10 @@ Polygon::getContourOverlap(const Polygon::Ptr& poly) const
   gpc_polygon_clip(GPC_INT, &gpc_a, &gpc_b, &gpc_res_int);
   gpc_polygon_clip(GPC_UNION, &gpc_a, &gpc_b, &gpc_res_union);
 
-  size_t i_int, i_union;
+  int i_int = -1, i_union = -1;
   for(size_t i=0;i<gpc_res_int.num_contours;++i) { if(!gpc_res_int.hole[i]) { i_int = i; break; } }
   for(size_t i=0;i<gpc_res_union.num_contours;++i) { if(!gpc_res_union.hole[i]) { i_union = i; break; } }
+  if(i_int == -1 || i_union == -1) return 0.0;
   int overlap = 0;
   float d_th = pow( 0.01, 2 );
   for(size_t i=0;i<gpc_res_int.contour[i_int].num_vertices; ++i)
@@ -311,12 +312,12 @@ Polygon::applyWeighting(const std::vector<Polygon::Ptr>& poly_vec, Polygon::Ptr 
 
     if(normal.dot(p_map1.normal)<0)
     {
-      //if (p.normal.dot(p_map.normal)<-0.95){
-      p_map1.normal=-p_map1.normal;
-      // p_map1.d=-p_map1.d;
+      average_normal += p_map1.merge_weight_* -p_map1.normal;
     }
-
-    average_normal += p_map1.merge_weight_* p_map1.normal;
+    else
+    {
+      average_normal += p_map1.merge_weight_* p_map1.normal;
+    }
     average_centroid += p_map1.merge_weight_* p_map1.centroid;
     average_d +=p_map1.merge_weight_ * p_map1.d;
     sum_w += p_map1.merge_weight_;
