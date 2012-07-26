@@ -228,13 +228,13 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
   //	if(save_to_file_) saveMap(file_path_);
 }
 
-void
+bool
 GeometryMap::computeTfError(const std::vector<Polygon::Ptr>& list_polygon, Eigen::Affine3f adjust_tf)
 {
   if (map_polygon_.size() < 10)
   {
     adjust_tf = Eigen::Affine3f::Identity();
-    return;
+    return false;
   }
   cob_3d_mapping::merge_config  limits;
   limits.d_thresh=d_;
@@ -261,27 +261,52 @@ GeometryMap::computeTfError(const std::vector<Polygon::Ptr>& list_polygon, Eigen
       }
     }
   }
+  if (landmarks_queue.size() < q_size) return false;
+
+  DOF6::TFLinkvf tfe;
+  tfe(DOF6::TFLinkvf::TFLinkObj(
 
   // 0: plane normal, 1: projection on plane, 2: origin
   Eigen::Vector3f *n = new Eigen::Vector3f[q_size]; // old
   Eigen::Vector3f *m = new Eigen::Vector3f[q_size]; // new
+
   Landmark lm = landmarks_queue.top(); landmarks_queue.pop();
-  *n = map_polygon_[lm.get<2>()]->normal;
-  *m = list_polygon[lm.get<3>()]->normal;
-  lm = landmarks_queue.top(); landmarks_queue.pop();
-  Eigen::Matrix3f N = Eigen::Matrix3f::Identity() - *n * n->transpose();
-  Eigen::Matrix3f M = Eigen::Matrix3f::Identity() - *m * m->transpose();
-  *++n = (N * map_polygon_[lm.get<2>()]->normal).normalized();
-  *++m = (M * list_polygon[lm.get<3>()]->normal).normalized();
-  lm = landmarks_queue.top(); landmarks_queue.pop();
-  *++n   = map_polygon_[lm.get<2>()]->normal;
-  *++m   = list_polygon[lm.get<3>()]->normal;
+  n[0] = map_polygon_[lm.get<2>()]->normal;
+  m[0] = list_polygon[lm.get<3>()]->normal;
 
-  Eigen::Affine3f T_r, T_f; // right, wrong
-  pcl::getTransformationFromTwoUnitVectorsAndOrigin(n[0], n[1], n[2], T_r);
+  lm = landmarks_queue.top(); landmarks_queue.pop();
+  Eigen::Matrix3f N = Eigen::Matrix3f::Identity() - n[0] * n[0].transpose();
+  Eigen::Matrix3f M = Eigen::Matrix3f::Identity() - m[0] * m[0].transpose();
+  n[1] = (N * map_polygon_[lm.get<2>()]->normal).normalized();
+  m[1] = (M * list_polygon[lm.get<3>()]->normal).normalized();
+
+  lm = landmarks_queue.top(); landmarks_queue.pop();
+  n[2] = map_polygon_[lm.get<2>()]->normal;
+  m[2] = list_polygon[lm.get<3>()]->normal;
+
+  std::cout<<"n0:"<<n[0](0)<<","<<n[0](1)<<","<<n[0](2)<<std::endl;
+  std::cout<<"n1:"<<n[1](0)<<","<<n[1](1)<<","<<n[1](2)<<std::endl;
+  std::cout<<"n2:"<<n[2](0)<<","<<n[2](1)<<","<<n[2](2)<<std::endl;
+
+  std::cout<<"m0:"<<m[0](0)<<","<<m[0](1)<<","<<m[0](2)<<std::endl;
+  std::cout<<"m1:"<<m[1](0)<<","<<m[1](1)<<","<<m[1](2)<<std::endl;
+  std::cout<<"m2:"<<m[2](0)<<","<<m[2](1)<<","<<m[2](2)<<std::endl;
+
+  Eigen::Affine3f T_f, T_c;
   pcl::getTransformationFromTwoUnitVectorsAndOrigin(m[0], m[1], m[2], T_f);
+  n[0] = T_f * n[0];
+  n[1] = T_f * n[1];
+  n[2] = T_f * n[2];
+  pcl::getTransformationFromTwoUnitVectorsAndOrigin(n[0], n[1], n[2], T_c);
+  adjust_tf = T_c;
+  std::cout<<"aff:"<< T_c(0,0)<<","<<T_c(0,1)<<","<<T_c(0,2) << std::endl;
+  std::cout<<"aff:"<< T_c(1,0)<<","<<T_c(1,1)<<","<<T_c(1,2) << std::endl;
+  std::cout<<"aff:"<< T_c(2,0)<<","<<T_c(2,1)<<","<<T_c(2,2) << std::endl;
 
-  adjust_tf = T_r * T_f.inverse();
+  delete[] n;
+  delete[] m;
+
+  return true;
 }
 
 

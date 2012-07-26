@@ -56,6 +56,8 @@ int main(int argc, char** argv)
 
   while(1)
   {
+    // wait for user input, then publish
+    KCL::get().waitForIt(KCL::KEYS::S);
     // iterate bag to next cloud
     while(last_pc==NULL)
     {
@@ -76,9 +78,6 @@ int main(int argc, char** argv)
       last_pc = vit->instantiate<sensor_msgs::PointCloud2>();
       ++vit;
     }
-
-    // wait for user input, then publish
-    KCL::get().waitForIt(KCL::KEYS::S);
     std::cout << "Cloud: " << last_pc->header.stamp << std::endl;
     pub.publish(last_pc);
     last_pc.reset();
