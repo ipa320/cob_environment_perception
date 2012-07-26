@@ -117,13 +117,13 @@ public:
   }
 
   void
-    addMapEntry(cob_3d_mapping::Polygon::Ptr& p_ptr);
+  addMapEntry(cob_3d_mapping::Polygon::Ptr& p_ptr);
 
 
   void
   addMapEntry(boost::shared_ptr<cob_3d_mapping::Cylinder>& c_ptr);
 
-  void
+  bool
   computeTfError(const std::vector<cob_3d_mapping::Polygon::Ptr>& list_polygon, Eigen::Affine3f adjust_tf);
 
   void

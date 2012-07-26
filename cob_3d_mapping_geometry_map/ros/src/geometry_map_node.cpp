@@ -223,20 +223,20 @@ public:
       }
     }
 
-    geometry_map_.computeTfError(polygon_list, af);
+    bool needs_adjustment = geometry_map_.computeTfError(polygon_list, af);
 
     for (size_t i=0; i<polygon_list.size(); ++i)
     {
-      polygon_list[i]->transform2tf(af);
+      if(needs_adjustment) polygon_list[i]->transform2tf(af);
       geometry_map_.addMapEntry(polygon_list[i]);
     }
     for (size_t i=0; i<cylinder_list.size(); ++i)
     {
-      cylinder_list[i]->transform2tf(af);
+      if(needs_adjustment) cylinder_list[i]->transform2tf(af);
       geometry_map_.addMapEntry(cylinder_list[i]);
     }
 
-    geometry_map_.cleanUp();
+    //geometry_map_.cleanUp();
     geometry_map_.incrFrame();
 
     publishMapMarker();
@@ -536,9 +536,9 @@ public:
         ctr++;
         t_ctr++;
 
+        marker.points.resize(pm.contours[j].size()+1);
         for(unsigned int k=0; k<pm.contours[j].size(); k++)
         {
-          marker.points.resize(pm.contours[j].size()+1);
           /*pt.x = pm.contours[j][k](0);
                   pt.y = pm.contours[j][k](1);
                   pt.z = pm.contours[j][k](2);*/
@@ -552,9 +552,6 @@ public:
         marker.points[pm.contours[j].size()].z = pm.contours[j][0](2);
         marker_pub_.publish(marker);
         marker_pub_.publish(t_marker);
-
-
-
       }
     }
     //		only implemented for polygon
