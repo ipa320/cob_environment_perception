@@ -33,18 +33,33 @@ struct Model {
    */
   bool isLinearAndTo()
   {
-    Model temp = *this;
+    //Variance for both axis (spare small objects)
+//    const float Vx = (param.model_(1,1)-param.model_(0,1)*param.model_(0,1)/param.model_(0,0))/param.model_(0,0);
+//    const float Vy = (param.model_(3,3)-param.model_(0,3)*param.model_(0,3)/param.model_(0,0))/param.model_(0,0);
+//
+//    if(Vx<0.001f && Vy<0.001f)
+//    {
+//      ROS_INFO("np1 %f %f", Vx, Vy);
+//      return false;
+//    }
+
+    Model temp=*this;
     temp.getLinear2();
 
     //const float error1 = (model_.param.z_ - model_.param.model_*model_.p).squaredNorm();
     const float error2 = (temp.param.z_ - temp.param.model_*temp.p).norm();
-
     const float d=temp.param.z_(0)/temp.param.model_(0,0);
 
-    if(error2 > (temp.param.model_(0,0)*temp.param.model_(0,0))/(1<<13)*d*d || (std::abs(p(2))+std::abs(p(4))+std::abs(p(5)))/(std::abs(p(1))+std::abs(p(3)))>1.f)
+    if(//std::abs(param.model_.determinant())*std::abs(param.z_(0))>0.0001f*param.model_(0,0)*param.model_(0,0) &&
+        (error2 > (temp.param.model_(0,0)*temp.param.model_(0,0))/(1<<13)*d*d || (std::abs(p(2))+std::abs(p(4))+std::abs(p(5)))/(std::abs(p(1))+std::abs(p(3)))>1.f))
+    {
+//      ROS_INFO("np2 %f",std::abs(param.model_.determinant()/param.model_(0,0)));
       return false;
+    }
 
-    p = temp.p;
+    *this = temp;
+
+//    ROS_INFO("plane");
 
     return true;
   }
@@ -104,6 +119,10 @@ struct Model {
     if(param.model_(0,0)==0) {
       p(0)=p(1)=p(2)=p(3)=p(4)=p(5)=0.f;
     }
+//    else if(param.model_(0,0)>1000 && std::abs(param.model_.determinant()/param.model_(0,0))<0.00001f)
+//    {
+//      getLinear2();
+//    }
     else {
       bool bLDLT=param.z_(0)/param.model_(0)<1.2f;
 
@@ -127,6 +146,14 @@ struct Model {
       }
 
     }
+  }
+
+  Eigen::Matrix3f getLinearMatrix() const {
+    Eigen::Matrix3f M;
+    for(int i=0; i<3; i++)
+      for(int j=0; j<3; j++)
+        M(i,j)=param.model_(i>1?3:i, j>1?3:j);
+    return M;
   }
 
   Eigen::Vector3f getLinear() const {
@@ -170,11 +197,11 @@ struct Model {
     return n;
   }
 
-  Eigen::Vector3f getNormal(const float x, const float y) {
+  Eigen::Vector3f getNormal(const float x, const float y) const {
     Eigen::Vector3f n;
     n(2)=1;
-    n(0)=p(1)+2*x*p(2)+p(5)*y;
-    n(1)=p(3)+2*x*p(4)+p(5)*x;
+    n(0)=-(p(1)+2*x*p(2)+p(5)*y);
+    n(1)=-(p(3)+2*x*p(4)+p(5)*x);
     n.normalize();
     return n;
   }
