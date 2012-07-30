@@ -93,8 +93,7 @@ class RecordCylinderScript(script):
 
 
     def RunCircle(self, center,radius):
-        print "Robot orientation is not calculated correctly..."
-        raw_input("to continue anyway pres [Enter] to abort [CTRL+C]") 
+
         # output        
         print "[RecordCylinderScript]--> Circle Paramters:"
         print "                          Center = ( %f , % f )" % (center[0],center[1])
@@ -108,14 +107,42 @@ class RecordCylinderScript(script):
         trajectory = self.calc_circle(center,radius)
         self.Move(trajectory)
         
-    def RunLine(self,start,end):
+    def RunLine(self,start,end,ori):
+        print "[RecordCylinderScript]--> Line Paramters:"
+        print "                          Start = ( %f , % f )" % (start[0],start[1])
+        print "                          End = ( %f , % f ) " % (end[0],end[1])
+        print "                          Ori = %f" % ori
+        print "                          Steps  = %i " % (self.num_steps)
     
-        trajectory = self.calc_line(start,end)
+        trajectory = self.calc_line(start,end,ori)
         self.Move(trajectory)    
         
         
+    def RunSingle(self,pos,ori):
+        print "[SinglePose]--> Line Paramters:"
+        print "                          Pos = ( %f , % f )" % (pos[0],pos[1])
+        print "                          Ori = %f " % (ori)
         
-    def calc_line(self,start,end):
+        trajectory =self.calc_single(pos,ori)
+        
+        self.Move(trajectory)
+
+    def calc_single(self,pos,ori):
+        
+        trajectory = list()
+        positions_x=list()
+        positions_y=list()
+        alpha      =list()
+        positions_x.append(pos[0])
+        positions_y.append(pos[1])
+        alpha.append(ori)
+        
+        trajectory.append(positions_x)
+        trajectory.append(positions_y)
+        trajectory.append(alpha)
+        return trajectory
+            
+    def calc_line(self,start,end,ori):
         positions_x=list()
         positions_y=list()
         alpha      =list()
@@ -131,7 +158,7 @@ class RecordCylinderScript(script):
                      
                 positions_x.append(start[0]+ d_inc * direction_x  )
                 positions_y.append( start[1]+ d_inc * direction_y  )
-                alpha.append(0)
+                alpha.append(ori)
                 step = step+1 
             
             
@@ -166,10 +193,10 @@ class RecordCylinderScript(script):
             positions_x.append( center[0] + radius * math.cos(phi) )
             positions_y.append( center[1] +radius * math.sin(phi) )
             
-            if phi >= PI:
-                alpha.append( phi -2*PI )
-            else:
-                alpha.append(phi)
+           # if phi > PI:
+           #     alpha.append( phi -2*PI )
+           # else:
+            alpha.append(phi)
                                  
             step =step+1
         trajectory = list()
@@ -185,6 +212,7 @@ class RecordCylinderScript(script):
     
     def Move(self,trajectory):
     
+    
         if self.do_spawn == True:       
             self.Spawn()
             time.sleep(1)    
@@ -192,6 +220,7 @@ class RecordCylinderScript(script):
         positions_x = trajectory[0]
         positions_y = trajectory[1]
         alpha       = trajectory[2]
+        
 
         step = 0                
         for a in positions_x:   
@@ -199,16 +228,17 @@ class RecordCylinderScript(script):
                 self.tf_br.set_tf(positions_x[step],positions_y[step],alpha[step])
                 self.tf_br.Run()
             
+            # calculate quaternion
             
+            q = tf.transformations.quaternion_from_euler(0,0,alpha[step])
             
             #set model_state to current pose on circle        
             self.req_set.model_state.pose.position.x = positions_x[step]
             self.req_set.model_state.pose.position.y = positions_y[step]
             self.req_set.model_state.pose.position.z = 0
-            self.req_set.model_state.pose.orientation.w = 1
-            self.req_set.model_state.pose.orientation.x = 0
+            self.req_set.model_state.pose.orientation.w = q[3]
             self.req_set.model_state.pose.orientation.y = 0
-            self.req_set.model_state.pose.orientation.z = alpha[step]            
+            self.req_set.model_state.pose.orientation.z = q[2]
             self.res_set = self.srv_set_model_state(self.req_set)
             
             
@@ -245,6 +275,7 @@ if __name__ == "__main__":
     
     run_circle = False
     run_line = True
+    run_single = False
     
     
     intervall = 0.3
@@ -284,7 +315,8 @@ if __name__ == "__main__":
             continue        
         elif (arg in 'spawn')  == True:
             print "spawn = true"
-            do_spawn = True            
+            do_spawn = True
+                        
             continue
         elif (arg in "tf")  == True:
             print "tf = true"
@@ -311,7 +343,18 @@ if __name__ == "__main__":
             run_circle = False
             start = ((float)(args[i+1]),(float)(args[i+2]))          
             end = ((float)(args[i+3]),(float)(args[i+4]))
+            ori = (float)(args[i+5])
             continue
+
+        elif(arg in "single") == True:
+            print ("single pose paramaters set")
+            run_line = False
+            run_circle = False
+            run_single = True
+            pos = ((float)(args[i+1]),(float)(args[i+2]))          
+            ori = (float)(args[i+3])
+            continue
+            
             
                 
     #parameters for trajectory
@@ -321,13 +364,16 @@ if __name__ == "__main__":
     #initialize script
     SCRIPT = RecordCylinderScript(num_steps,intervall)
     SCRIPT.set_flags(do_tf,do_spawn,do_verbose)
+  
     
     #run script
     if run_line == True:
     
-        SCRIPT.RunLine(start,end)
+        SCRIPT.RunLine(start,end,ori)
     elif run_circle == True:
         SCRIPT.RunCircle(center,radius)
+    elif run_single == True:
+        SCRIPT.RunSingle(pos,ori)
 
 
         
