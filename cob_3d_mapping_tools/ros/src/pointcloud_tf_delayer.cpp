@@ -26,7 +26,7 @@ int main(int argc, char** argv)
 {
   ros::init(argc, argv, "pointcloud_tf_delayer");
   ros::NodeHandle nh;
-  ros::Publisher pub = nh.advertise<sensor_msgs::PointCloud2>("/registration/pc_aligned",1);
+  ros::Publisher pub = nh.advertise<sensor_msgs::PointCloud2>( argc==2 ? "/registration/pc_aligned" : argv[2] ,1);
 
 
   std::cout << "Reads a bagfile containing pointclouds and world transformations" << std::endl;
