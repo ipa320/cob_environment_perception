@@ -82,7 +82,7 @@
 //#include <pcl/common/impl/transform.hpp>
 
 
-
+#include <cob_3d_mapping_slam/dof/tflink.h>
 #include "cob_3d_mapping_geometry_map/geometry_map.h"
 using namespace cob_3d_mapping;
 
@@ -263,24 +263,71 @@ GeometryMap::computeTfError(const std::vector<Polygon::Ptr>& list_polygon, Eigen
   }
   if (landmarks_queue.size() < q_size) return false;
 
-  /*
+  Eigen::Vector3f *n = new Eigen::Vector3f[q_size]; // old
+  Eigen::Vector3f *m = new Eigen::Vector3f[q_size]; // new
+  float *d1 = new float[q_size];
+  float *d2 = new float[q_size];
+  int *size = new int[q_size];
+  float *overlap = new float[q_size];
+
+
   DOF6::TFLinkvf tfe;
   Landmark lm = landmarks_queue.top(); landmarks_queue.pop();
-  tfe(DOF6::TFLinkvf::TFLinkObj(map_polygon_[lm.get<2>()]->normal, true, false, map_polygon_[lm.get<2>()]->d),
-      DOF6::TFLinkvf::TFLinkObj(list_polygon[lm.get<3>()]->normal, true, false, list_polygon[lm.get<3>()]->d));
+  n[0] = map_polygon_[lm.get<2>()]->normal;
+  m[0] = list_polygon[lm.get<3>()]->normal;
+  d1[0] = map_polygon_[lm.get<2>()]->d;
+  d2[0] = list_polygon[lm.get<3>()]->d;
+  size[0] = lm.get<1>();
+  overlap[0] = lm.get<0>();
+  tfe(DOF6::TFLinkvf::TFLinkObj( d1[0] * n[0] , true, false ),
+      DOF6::TFLinkvf::TFLinkObj( d2[0] * m[0] , true, false ));
+
   lm = landmarks_queue.top(); landmarks_queue.pop();
-  tfe(DOF6::TFLinkvf::TFLinkObj(map_polygon_[lm.get<2>()]->normal, true, false, map_polygon_[lm.get<2>()]->d),
-      DOF6::TFLinkvf::TFLinkObj(list_polygon[lm.get<3>()]->normal, true, false, list_polygon[lm.get<3>()]->d));
+  n[1] = map_polygon_[lm.get<2>()]->normal;
+  m[1] = list_polygon[lm.get<3>()]->normal;
+  d1[1] = map_polygon_[lm.get<2>()]->d;
+  d2[1] = list_polygon[lm.get<3>()]->d;
+  size[1] = lm.get<1>();
+  overlap[1] = lm.get<0>();
+  tfe(DOF6::TFLinkvf::TFLinkObj( d1[1] * n[1] , true, false ),
+      DOF6::TFLinkvf::TFLinkObj( d2[1] * n[1] , true, false ));
+
   lm = landmarks_queue.top(); landmarks_queue.pop();
-  tfe(DOF6::TFLinkvf::TFLinkObj(map_polygon_[lm.get<2>()]->normal, true, false, map_polygon_[lm.get<2>()]->d),
-      DOF6::TFLinkvf::TFLinkObj(list_polygon[lm.get<3>()]->normal, true, false, list_polygon[lm.get<3>()]->d));
+  n[2] = map_polygon_[lm.get<2>()]->normal;
+  m[2] = list_polygon[lm.get<3>()]->normal;
+  d1[2] = map_polygon_[lm.get<2>()]->d;
+  d2[2] = list_polygon[lm.get<3>()]->d;
+  size[2] = lm.get<1>();
+  overlap[2] = lm.get<0>();
+  tfe(DOF6::TFLinkvf::TFLinkObj( d1[2] * n[2] , true, false ),
+      DOF6::TFLinkvf::TFLinkObj( d2[2] * n[2] , true, false ));
+
+  for (size_t i = 0; i<q_size; ++i)
+  {
+    std::cout<<"Size:"<<size[i]<<" Overlap:"<<overlap[i]<<std::endl;
+    std::cout<<"n0:"<<n[i](0)<<","<<n[i](1)<<","<<n[i](2)<<" d:"<<d1[i]<<std::endl;
+    std::cout<<"m0:"<<m[i](0)<<","<<m[i](1)<<","<<m[i](2)<<" d:"<<d2[i]<<std::endl;
+  }
 
   tfe.finish();
-  adjust_tf = tfe.getTransformation();
+  Eigen::Affine3f tf;
+  tf.matrix().topLeftCorner<3,3>() = tfe.getRotation();
+  tf.matrix().topRightCorner<3,1>() = tfe.getTranslation();
+  tf.matrix().bottomLeftCorner<1,4>() << 0, 0, 0, 1;
+
+  last_tf_err_ = adjust_tf;
+
+  delete[] n;
+  delete[] m;
+  delete[] d1;
+  delete[] d2;
+  delete[] size;
+  delete[] overlap;
 
   return true;
-  */
 
+
+  /*
   // 0: plane normal, 1: projection on plane, 2: origin
   Eigen::Vector3f *n = new Eigen::Vector3f[q_size]; // old
   Eigen::Vector3f *m = new Eigen::Vector3f[q_size]; // new
@@ -308,30 +355,21 @@ GeometryMap::computeTfError(const std::vector<Polygon::Ptr>& list_polygon, Eigen
   c1 /= 2.0;
   c2 /= 2.0;
 
-  std::cout<<"n0:"<<n[0](0)<<","<<n[0](1)<<","<<n[0](2)<<std::endl;
-  std::cout<<"n1:"<<n[1](0)<<","<<n[1](1)<<","<<n[1](2)<<std::endl;
-  std::cout<<"n2:"<<n[2](0)<<","<<n[2](1)<<","<<n[2](2)<<std::endl;
-
-  std::cout<<"m0:"<<m[0](0)<<","<<m[0](1)<<","<<m[0](2)<<std::endl;
-  std::cout<<"m1:"<<m[1](0)<<","<<m[1](1)<<","<<m[1](2)<<std::endl;
-  std::cout<<"m2:"<<m[2](0)<<","<<m[2](1)<<","<<m[2](2)<<std::endl;
-
   Eigen::Affine3f T_f, rot;
   pcl::getTransformationFromTwoUnitVectorsAndOrigin(m[0], m[1], Eigen::Vector3f::Zero(), T_f);
   pcl::getTransformationFromTwoUnitVectorsAndOrigin(T_f * n[0], T_f * n[1], Eigen::Vector3f::Zero(), rot);
   Eigen::Vector3f t = c1 - rot * c2;
   adjust_tf = rot;
-  /*float roll, pitch, yaw;
+  float roll, pitch, yaw;
   pcl::getEulerAngles(rot, roll, pitch, yaw);
   last_tf_err_ = adjust_tf;
-  pcl::getTransformation(t[0], t[1], t[2], roll, pitch, yaw, adjust_tf);*/
+  pcl::getTransformation(t[0], t[1], t[2], roll, pitch, yaw, adjust_tf);
 
   //adjust_tf = rot * t;
 
   delete[] n;
   delete[] m;
-
-  return true;
+  */
 }
 
 

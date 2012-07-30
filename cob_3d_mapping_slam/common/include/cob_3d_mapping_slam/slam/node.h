@@ -30,6 +30,7 @@ namespace Slam
     typedef typename OBJCTXT::OBJECT OBJECT;
 
     typedef boost::shared_ptr<Node> Ptr;
+
   private:
 
     std::vector<SWAY<Node> > connections_;      /// connections to other nodes
@@ -42,12 +43,17 @@ namespace Slam
     }
 
     bool registration(const OBJCTXT &ctxt, DOF6 &tf, typename DOF6::TYPE &probability_success_rate, typename DOF6::TYPE &probability_error_rate);
+    bool merge(const OBJCTXT &ctxt, DOF6 &tf, std::map<typename OBJECT::Ptr,bool> &used, const bool only_merge);
 
     bool addCtxt(const OBJCTXT &ctxt, const DOF6 &tf);
 
     size_t getNumObjs() const {return ctxt_.getNumObjs();}
 
     const std::vector<SWAY<Node> > &getConnections() const {return connections_;}
+
+    const OBJECT_CONTEXT &getContext() const {return ctxt_;}
+
+    bool compute(const OBJCTXT &ctxt, DOF6 &link, std::map<typename OBJECT::Ptr,bool> &used, const bool only_merge=false, const int depth=0);
   };
 
 #include "impl/node.hpp"

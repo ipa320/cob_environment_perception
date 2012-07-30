@@ -193,7 +193,7 @@ public:
   onInit()
   {
     PCLNodelet::onInit();
-    parameters_.setNodeHandle(getNodeHandle());
+    parameters_.setNodeHandle(n_);
     n_ = getNodeHandle();
 
     parameters_.addParameter("world_frame_id");
@@ -235,7 +235,7 @@ public:
     parameters_.addParameter("max_info");
     parameters_.addParameter("always_relevant_changes");
 
-    reset_server_ = n_.advertiseService("clear_map", &RegistrationNodelet::reset, this);
+    reset_server_ = n_.advertiseService("reset", &RegistrationNodelet::reset, this);
     camera_info_sub_ = n_.subscribe("camera_info", 1, &RegistrationNodelet::cameraInfoSubCallback, this);
     point_cloud_pub_aligned_ = n_.advertise<pcl::PointCloud<Point> >("point_cloud2_aligned",1);
     keyframe_trigger_server_ = n_.advertiseService("trigger_keyframe", &RegistrationNodelet::onKeyframeCallback, this);
@@ -291,6 +291,9 @@ public:
   {
     pc_frame_id_=pc_in->header.frame_id;
 
+    if(reg_==0 || pc_in==0 || pc_in->size()<1 || !is_running_)
+      return;
+
     reg_->setInputOginalCloud(pc_in);
 
     if(do_register(*pc_in,cv_bridge::CvImagePtr(),NULL)||ctr_==0) {
@@ -332,7 +335,8 @@ public:
                           cob_srvs::Trigger::Response &res)
   {
     res.success.data = false;
-    if(pc_frame_id_.size()<1)
+
+    if(reg_==0 || pc_frame_id_.size()<1 || !is_running_)
       return true;
 
     StampedTransform transform;

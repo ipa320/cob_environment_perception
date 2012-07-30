@@ -106,7 +106,7 @@ Eigen::Matrix4f TransformationEstimationMultipleCorrespondences<Point>::findTF_f
     float t = pc_old.points[i].getVector3fMap().norm();
     Eigen::Vector3f vo = pc_old.points[i].getVector3fMap();
 
-    int num=0;
+    //int num=0;
     for(int j=search_sorted_vector(tv,t-tmax); j<tv.size(); j++) {
 
       float dT = std::abs(tv[j].dis-t);
@@ -117,16 +117,16 @@ Eigen::Matrix4f TransformationEstimationMultipleCorrespondences<Point>::findTF_f
 
         if(dA>=rmax_) continue;
 
-        if(num>0 &&
+        /*if(num>0 &&
             (vn-vo)
             .dot
             (pc_new[cors.back().ind_n].getVector3fMap()-vo)<0. )
         {
           cors.resize(cors.size()-num);
           break;
-        }
+        }*/
 
-        ++num;
+        //++num;
 
         c.ind_o = (int)i;
         c.ind_n = tv[j].ind;

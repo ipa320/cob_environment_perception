@@ -112,6 +112,8 @@ class Registration_Infobased : public GeneralRegistration<Point>
 
   /// max. rotation speed between two frames
   float rmax_;
+
+  int bad_counter_;
 public:
   Registration_Infobased():
     depth_map(NULL), use_icp_(false),
@@ -121,8 +123,12 @@ public:
     //threshold_diff_(0.06), min_changes_(4500), min_info_(1), max_info_(17), threshold_step_(0.06),
     tmax_(0.1), rmax_(0.1), check_samples_(true),
     odometry_(Eigen::Matrix4f::Identity()), odometry_last_(Eigen::Matrix4f::Identity()), failed_(0),
-    use_odometry_(false), kinect_f_(0), always_relevant_changes_(false), odo_is_good_(0), standing_(0)
+    use_odometry_(false), kinect_f_(0), always_relevant_changes_(false), odo_is_good_(0), standing_(0), bad_counter_(0)
   {}
+
+  //for freehand usage
+  int getBadCounter() const {return bad_counter_;}
+  void reset() {this->last_input_.reset();}
 
   void setThresholdDiff(const float f) {threshold_diff_=f;}
   void setThresholdStep(const float f) {threshold_step_=f;}
@@ -169,6 +175,17 @@ public:
       odometry_last_ = odometry_;
       use_odometry_=true;
     }
+  }
+
+  virtual bool compute() {
+    if(!compute_features()) {
+      bad_counter_=0;
+      return false;
+    }
+    if(!compute_transformation())
+      return false;
+    bad_counter_=0;
+    return true;
   }
 
   /// if pose information is used, the changes are always relevant!
