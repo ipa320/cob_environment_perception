@@ -106,6 +106,7 @@ public:
     , save_to_file_(false)
     , cos_angle_(0.97)
     , d_(0.01)
+    , last_tf_err_(Eigen::Affine3f::Identity())
   {
     //  outputFile.open("/home/goa-hh/test.txt");
   }
@@ -194,6 +195,8 @@ public:
     d_ = d;
   }
 
+  inline const Eigen::Affine3f& getLastError() { return last_tf_err_; }
+
 protected:
   std::vector<cob_3d_mapping::Polygon::Ptr > map_polygon_;
   std::vector<boost::shared_ptr<cob_3d_mapping::Cylinder> > map_cylinder_;
@@ -204,7 +207,7 @@ protected:
   std::string file_path_;
   bool save_to_file_;
   double cos_angle_, d_;
-
+  Eigen::Affine3f last_tf_err_;
 };
 
 #endif //__GEOMETRY_MAP_H__

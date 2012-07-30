@@ -190,7 +190,7 @@ public:
     Eigen::Affine3d ad;
     tf::TransformTFToEigen(trf_map, ad);
     af = ad.cast<float>();
-
+    //af = geometry_map_.getLastError() * af;
 
     static int ctr=0;
     static double time = 0;

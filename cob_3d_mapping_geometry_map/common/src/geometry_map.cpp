@@ -263,26 +263,50 @@ GeometryMap::computeTfError(const std::vector<Polygon::Ptr>& list_polygon, Eigen
   }
   if (landmarks_queue.size() < q_size) return false;
 
+  /*
   DOF6::TFLinkvf tfe;
-  tfe(DOF6::TFLinkvf::TFLinkObj(
+  Landmark lm = landmarks_queue.top(); landmarks_queue.pop();
+  tfe(DOF6::TFLinkvf::TFLinkObj(map_polygon_[lm.get<2>()]->normal, true, false, map_polygon_[lm.get<2>()]->d),
+      DOF6::TFLinkvf::TFLinkObj(list_polygon[lm.get<3>()]->normal, true, false, list_polygon[lm.get<3>()]->d));
+  lm = landmarks_queue.top(); landmarks_queue.pop();
+  tfe(DOF6::TFLinkvf::TFLinkObj(map_polygon_[lm.get<2>()]->normal, true, false, map_polygon_[lm.get<2>()]->d),
+      DOF6::TFLinkvf::TFLinkObj(list_polygon[lm.get<3>()]->normal, true, false, list_polygon[lm.get<3>()]->d));
+  lm = landmarks_queue.top(); landmarks_queue.pop();
+  tfe(DOF6::TFLinkvf::TFLinkObj(map_polygon_[lm.get<2>()]->normal, true, false, map_polygon_[lm.get<2>()]->d),
+      DOF6::TFLinkvf::TFLinkObj(list_polygon[lm.get<3>()]->normal, true, false, list_polygon[lm.get<3>()]->d));
+
+  tfe.finish();
+  adjust_tf = tfe.getTransformation();
+
+  return true;
+  */
 
   // 0: plane normal, 1: projection on plane, 2: origin
   Eigen::Vector3f *n = new Eigen::Vector3f[q_size]; // old
   Eigen::Vector3f *m = new Eigen::Vector3f[q_size]; // new
+  Eigen::Vector3f c1 = Eigen::Vector3f::Zero();
+  Eigen::Vector3f c2 = Eigen::Vector3f::Zero();
 
   Landmark lm = landmarks_queue.top(); landmarks_queue.pop();
   n[0] = map_polygon_[lm.get<2>()]->normal;
   m[0] = list_polygon[lm.get<3>()]->normal;
+  c1 += map_polygon_[lm.get<2>()]->centroid.head(3).dot(n[0]) * n[0];
+  c2 += list_polygon[lm.get<3>()]->centroid.head(3).dot(m[0]) * m[0];
 
   lm = landmarks_queue.top(); landmarks_queue.pop();
   Eigen::Matrix3f N = Eigen::Matrix3f::Identity() - n[0] * n[0].transpose();
   Eigen::Matrix3f M = Eigen::Matrix3f::Identity() - m[0] * m[0].transpose();
   n[1] = (N * map_polygon_[lm.get<2>()]->normal).normalized();
   m[1] = (M * list_polygon[lm.get<3>()]->normal).normalized();
+  c1 += map_polygon_[lm.get<2>()]->centroid.head(3).dot(n[1]) * n[1];
+  c2 += list_polygon[lm.get<3>()]->centroid.head(3).dot(m[1]) * m[1];
 
   lm = landmarks_queue.top(); landmarks_queue.pop();
   n[2] = map_polygon_[lm.get<2>()]->normal;
   m[2] = list_polygon[lm.get<3>()]->normal;
+
+  c1 /= 2.0;
+  c2 /= 2.0;
 
   std::cout<<"n0:"<<n[0](0)<<","<<n[0](1)<<","<<n[0](2)<<std::endl;
   std::cout<<"n1:"<<n[1](0)<<","<<n[1](1)<<","<<n[1](2)<<std::endl;
@@ -292,16 +316,17 @@ GeometryMap::computeTfError(const std::vector<Polygon::Ptr>& list_polygon, Eigen
   std::cout<<"m1:"<<m[1](0)<<","<<m[1](1)<<","<<m[1](2)<<std::endl;
   std::cout<<"m2:"<<m[2](0)<<","<<m[2](1)<<","<<m[2](2)<<std::endl;
 
-  Eigen::Affine3f T_f, T_c;
-  pcl::getTransformationFromTwoUnitVectorsAndOrigin(m[0], m[1], m[2], T_f);
-  n[0] = T_f * n[0];
-  n[1] = T_f * n[1];
-  n[2] = T_f * n[2];
-  pcl::getTransformationFromTwoUnitVectorsAndOrigin(n[0], n[1], n[2], T_c);
-  adjust_tf = T_c;
-  std::cout<<"aff:"<< T_c(0,0)<<","<<T_c(0,1)<<","<<T_c(0,2) << std::endl;
-  std::cout<<"aff:"<< T_c(1,0)<<","<<T_c(1,1)<<","<<T_c(1,2) << std::endl;
-  std::cout<<"aff:"<< T_c(2,0)<<","<<T_c(2,1)<<","<<T_c(2,2) << std::endl;
+  Eigen::Affine3f T_f, rot;
+  pcl::getTransformationFromTwoUnitVectorsAndOrigin(m[0], m[1], Eigen::Vector3f::Zero(), T_f);
+  pcl::getTransformationFromTwoUnitVectorsAndOrigin(T_f * n[0], T_f * n[1], Eigen::Vector3f::Zero(), rot);
+  Eigen::Vector3f t = c1 - rot * c2;
+  adjust_tf = rot;
+  /*float roll, pitch, yaw;
+  pcl::getEulerAngles(rot, roll, pitch, yaw);
+  last_tf_err_ = adjust_tf;
+  pcl::getTransformation(t[0], t[1], t[2], roll, pitch, yaw, adjust_tf);*/
+
+  //adjust_tf = rot * t;
 
   delete[] n;
   delete[] m;
