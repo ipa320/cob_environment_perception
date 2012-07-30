@@ -112,8 +112,8 @@ Polygon::computeAttributes(const Eigen::Vector3f &new_normal, const Eigen::Vecto
 
 //  TODO: recomputation of centroid
   this->d = new_centroid.head(3).dot(new_normal);
-  if (d > 0) { this->normal = -new_normal; }
-  else { this->normal = new_normal; this->d = fabs(this->d);  }
+  if (this->d > 0) { this->normal = -new_normal; d = -d; }
+  else { this->normal = new_normal; }
   centroid = new_centroid;
 
   pcl::getTransformationFromTwoUnitVectorsAndOrigin(
@@ -130,7 +130,7 @@ void Polygon::transform2tf(const Eigen::Affine3f& trafo)
     //transform parameters
     //  transform parameters
     Eigen::Vector3f tf_normal = trafo.rotation() *this->normal;
-    this->normal =tf_normal;
+    this->normal = tf_normal;
     Eigen::Vector3f tf_centroid3f = this->centroid.head(3);
     tf_centroid3f = trafo * tf_centroid3f;
     this->centroid.head(3) = tf_centroid3f;
@@ -167,8 +167,8 @@ Polygon::getIntersection(const Polygon::Ptr& poly, gpc_polygon& gpc_intersection
   gpc_polygon_clip(GPC_INT, &gpc_here, &gpc_poly, &gpc_intersection);
 }
 
-float
-Polygon::getContourOverlap(const Polygon::Ptr& poly) const
+bool
+Polygon::getContourOverlap(const Polygon::Ptr& poly, float& rel_overlap, int& abs_overlap) const
 {
   gpc_polygon gpc_a, gpc_b, gpc_res_int, gpc_res_union;
   this->gpcStructureUsingMap(poly->transform_from_world_to_plane, &gpc_a);
@@ -179,7 +179,7 @@ Polygon::getContourOverlap(const Polygon::Ptr& poly) const
   int i_int = -1, i_union = -1;
   for(size_t i=0;i<gpc_res_int.num_contours;++i) { if(!gpc_res_int.hole[i]) { i_int = i; break; } }
   for(size_t i=0;i<gpc_res_union.num_contours;++i) { if(!gpc_res_union.hole[i]) { i_union = i; break; } }
-  if(i_int == -1 || i_union == -1) return 0.0;
+  if(i_int == -1 || i_union == -1) return false;
   int overlap = 0;
   float d_th = pow( 0.01, 2 );
   for(size_t i=0;i<gpc_res_int.contour[i_int].num_vertices; ++i)
@@ -195,10 +195,24 @@ Polygon::getContourOverlap(const Polygon::Ptr& poly) const
       }
     }
   }
+  rel_overlap = (float)overlap/(float)gpc_res_int.contour[i_int].num_vertices;
+  abs_overlap = overlap;
   std::cout << "Overlap: " << overlap << "/"<<gpc_res_int.contour[i_int].num_vertices << " -> "
             << (float)overlap/(float)gpc_res_int.contour[i_int].num_vertices << std::endl;
+  return true;
+}
 
-  return (float)overlap/(float)gpc_res_int.contour[i_int].num_vertices;
+float
+Polygon::computeSimilarity(const Polygon::Ptr& poly) const
+{
+  float normal = (fabs(poly->normal.dot(this->normal)) - this->merge_settings_.angle_thresh) /
+    (1-this->merge_settings_.angle_thresh);
+  float d = fabs(fabs((this->centroid-poly->centroid).head(3).dot(this->normal))-this->merge_settings_.d_thresh) /
+    this->merge_settings_.d_thresh;
+  float overlap = 0.0;
+  int abs_overlap;
+  this->getContourOverlap(poly, overlap, abs_overlap);
+  return ( 3.0f / (1.0f / normal + 1.0f / d + 1.0f / overlap) );
 }
 
 void
