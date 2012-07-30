@@ -113,7 +113,7 @@ void OBJCTXT<_DOF6>::findCorrespondences(const OBJCTXT &ctxt, std::list<SCOR> &c
   for(size_t i=0; i<members.size(); i++)
   {
     for(size_t j=0; j<members[i]->candidates_.size(); j++)
-      if(check_assumption(members[i],members[i]->candidates_[j])>0.9f)
+      if(check_assumption(members[i],members[i]->candidates_[j])>0.49f)
       {
         SCOR c;
         c.a = members[i]->obj_;
@@ -180,6 +180,7 @@ void OBJCTXT<_DOF6>::findCorrespondences(const OBJCTXT &ctxt, std::list<SCOR> &c
 template<typename _DOF6>
 _DOF6 OBJCTXT<_DOF6>::optimizeLink(const DOF6 &_tf, std::list<SCOR> &cors, const typename DOF6::TYPE &thr_rot, const typename DOF6::TYPE &thr_tr, const Eigen::Matrix3f &rot, const Eigen::Vector3f &tr, const int depth) const
 {
+  const float noise = 0.005f;
   DOF6 tf;
   tf.deepCopy(_tf); //copy
 
@@ -195,8 +196,8 @@ _DOF6 OBJCTXT<_DOF6>::optimizeLink(const DOF6 &_tf, std::list<SCOR> &cors, const
   int used2=0;
   for(typename std::list<SCOR>::iterator it = cors.begin(); it!=cors.end(); it++)
   {
-    typename OBJECT::TFLIST list = it->a->getTFList(*it->b, thr_rot+0.025f, thr_tr+0.025f, rot, tr);
-    //typename OBJECT::TFLIST list = it->a->getTFList(*it->b, thr_rot+0.025f, thr_tr+0.025f, Eigen::Matrix3f::Identity(), Eigen::Vector3f::Zero());
+    typename OBJECT::TFLIST list = it->a->getTFList(*it->b, thr_rot+noise, thr_tr+noise, rot, tr);
+    //typename OBJECT::TFLIST list = it->a->getTFList(*it->b, thr_rot+noise, thr_tr+noise, Eigen::Matrix3f::Identity(), Eigen::Vector3f::Zero());
 
     it->used_ = list.size()>0;
 
@@ -225,8 +226,8 @@ _DOF6 OBJCTXT<_DOF6>::optimizeLink(const DOF6 &_tf, std::list<SCOR> &cors, const
   //    //return optimizeLink(_tf, cors, tf.getRotationVariance()+tf.getTranslationVariance(), tf.getRotation(), tf.getTranslation());
   //    return optimizeLink(_tf, cors, 1.5, tf.getRotation(), tf.getTranslation());
   //  else
-  if(depth<3 || thr_rot>0.06f)
-    return optimizeLink(_tf, cors, thr_rot*0.75f, thr_tr*0.75f, tf.getRotation(), tf.getTranslation(), depth+1);
+  if(depth<1 || thr_rot>0.06f)
+    return optimizeLink(_tf, cors, thr_rot*0.6f, thr_tr*0.6f, tf.getRotation(), tf.getTranslation(), depth+1);
 
 #ifdef DEBUG_
   //DEBUG
@@ -234,7 +235,7 @@ _DOF6 OBJCTXT<_DOF6>::optimizeLink(const DOF6 &_tf, std::list<SCOR> &cors, const
   {
     if(it->used_)
     {
-      typename OBJECT::TFLIST list = it->a->getTFList(*it->b, thr_rot+0.025f, thr_tr+0.025f, rot, tr);
+      typename OBJECT::TFLIST list = it->a->getTFList(*it->b, thr_rot+noise, thr_tr+noise, rot, tr);
       for(typename OBJECT::TFLIST::const_iterator k = list.begin(); k!=list.end(); k++)
       {
 //        if( k->a.plane_ )
@@ -252,8 +253,19 @@ _DOF6 OBJCTXT<_DOF6>::optimizeLink(const DOF6 &_tf, std::list<SCOR> &cors, const
     }
   }
   Debug::Interface::get().addArrow(Eigen::Vector3f::Zero(), tf.getTranslation());
+
+  for(size_t i=0; i<objs_.size(); i++)
+  {
+    if(!objs_[i]->getData().isPlane()) continue;
+
+    Debug::Interface::get().addArrow((Eigen::Matrix3f)tf.getRotation()*objs_[i]->getNearestPoint()+tf.getTranslation(),Eigen::Vector3f::Zero(), 100,0,100);
+    //Debug::Interface::get().addArrow(objs_[i]->getNearestPoint(),Eigen::Vector3f::Zero(), 100,0,100);
+  }
   //DEBUG
 #endif
+
+  if((size_t)used2*4<cors.size())
+    tf.getSource1()->reset();
 
   return tf;
 }

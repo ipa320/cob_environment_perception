@@ -64,9 +64,9 @@ namespace Slam_CurvedPolygon
       int ID_;
       TYPE type_;
       Eigen::Vector3f v_, v_org_;
-      float var_;
+      float var_, weight_;
 
-      S_FEATURE(const cob_3d_mapping_msgs::feature &ft):var_(0.2f) //TODO: default value?
+      S_FEATURE(const cob_3d_mapping_msgs::feature &ft):var_(0.2f), weight_(1.f) //TODO: default value?
       {
         ID_ = ft.ID;
         v_(0) = ft.x;
@@ -91,14 +91,14 @@ namespace Slam_CurvedPolygon
       }
 
       S_FEATURE(const Eigen::Vector3f &v, const bool bPlane):
-        v_(v), var_(0.2f) //TODO: default value?
+        v_(v), var_(0.2f), weight_(1.f) //TODO: default value?
       {
         type_ = bPlane?NORMAL:POINT;
         ID_ = 1;
       }
 
-      S_FEATURE(const Eigen::Vector3f &v):
-        v_(v), var_(0.2f) //TODO: default value?
+      S_FEATURE(const Eigen::Vector3f &v, const float w):
+        v_(v), var_(0.2f), weight_(w) //TODO: default value?
       {
         type_ = POINT;
         ID_ = -1;
@@ -128,6 +128,40 @@ namespace Slam_CurvedPolygon
         }
       }
 
+      bool isReachable(const S_FEATURE &o, const float thr_tr, const float thr_rot) const
+      {
+        if(type_ != o.type_)
+        {
+          ROS_INFO("cannot check features of differnt type");
+          return false;
+        }
+
+        switch(type_)
+        {
+          case POINT:
+            if(o.v_.norm()-v_.norm()> thr_tr)
+              return false;
+            if(2*std::asin( ((o.v_-v_).norm() - thr_tr)/(2*v_.norm()) )>thr_rot)
+              return false;
+            break;
+          case NORMAL:
+            if(o.v_.norm()-v_.norm()> thr_tr)
+              return false;
+            if(2*std::asin( ((o.v_-v_).norm())/(2*v_.norm()) )>thr_rot)
+              return false;
+            break;
+          case DIRECTION:
+            if(2*std::asin( ((o.v_-v_).norm())/(2*v_.norm()) )>thr_rot)
+              return false;
+            break;
+
+          default:
+            ROS_ASSERT(0);
+            break;
+        }
+        return true;
+      }
+
       void merge(const S_FEATURE &o, const float weight, const float oweight)
       {
         ROS_ASSERT(var_>0);
@@ -152,11 +186,11 @@ namespace Slam_CurvedPolygon
           {
             case POINT:
             case NORMAL:
-              std::cout<<"before\n"<<v_<<"\n\n"<<o.v_<<"\n";
-              ROS_INFO("w %f %f %f %f", weight, oweight, var_,  o.var_);
+//              std::cout<<"before\n"<<v_<<"\n\n"<<o.v_<<"\n";
+//              ROS_INFO("w %f %f %f %f", weight, oweight, var_,  o.var_);
               v_ = v_ + (oweight*var_)/(weight*(var_+o.var_))*(o.v_-v_);
-              std::cout<<"after\n"<<v_<<"\n";
-              if(!pcl_isfinite(v_.sum())) ROS_INFO("HERE");
+//              std::cout<<"after\n"<<v_<<"\n";
+//              if(!pcl_isfinite(v_.sum())) ROS_INFO("HERE");
               break;
             case DIRECTION:
               v_ = v_ + (oweight*var_)/(weight*(var_+o.var_))*(o.v_-v_);
@@ -169,7 +203,7 @@ namespace Slam_CurvedPolygon
           }
 
           var_ = var_ - var_*var_/(var_+o.var_);
-          std::cout<<"after\n"<<var_<<"\n";
+//          std::cout<<"after\n"<<var_<<"\n";
         }
       }
 
@@ -200,10 +234,10 @@ namespace Slam_CurvedPolygon
     void update() {
       ID_ += data_.ID;
 
-      std::cout<<"ID: "<<data_.ID<<"\n";
+      //std::cout<<"ID: "<<data_.ID<<"\n";
       for(size_t i=0; i<data_.score.size(); i++)
       {
-        std::cout<<data_.score[i].ID<<"\n";
+        //std::cout<<data_.score[i].ID<<"\n";
         ID_ += data_.score[i].ID;
       }
 
@@ -271,18 +305,19 @@ namespace Slam_CurvedPolygon
           features_.push_back( S_FEATURE(data_.features[i]));
       }
 
-      int mains[4]={};
+      Classification::Classification::MainPoints mains;
+      mains.size_ = 4;
       Classification::Classification cl;
       Classification::QuadBB qbb;
       cl.setPoints(outline_.segments_);
       std::vector<Classification::Classification::EnergyPoint> compressed;
-      form_.n_ = cl.buildLocalTree(false,&qbb,&compressed,NULL,mains);
+      form_.n_ = cl.buildLocalTree(false,&qbb,&compressed,NULL,&mains);
       if(form_.n_)
         form_.n_->clean(1,form_.n_->energy_sum_*0.01f);
 
-      for(int i=0; outline_.segments_.size()>3 && i<4; i++)
+      for(size_t i=0; i<mains.points_.size(); i++)
       {
-        features_.push_back( S_FEATURE( points3d_[mains[i]] ));
+        features_.push_back( S_FEATURE( points3d_[mains.points_[i].index_], std::min(mains.points_[i].edge_,mains.points_[(i+1)%mains.points_.size()].edge_) ));
         //        std::cout<<"MAIN\n"<<points3d_[mains[i]]<<"\n\n";
       }
 
@@ -614,11 +649,12 @@ namespace Slam_CurvedPolygon
       p1.debug_svg(p2.debug_svg(outline_.debug_svg(buffer,200,500,"red"),200,500,"green"),200,500);
 
       std::vector<Classification::Classification::EnergyPoint> compressed;
-      int mains[4]={};
+      Classification::Classification::MainPoints mains;
+      mains.size_ = 4;
       Classification::Classification cl;
       Classification::QuadBB qbb;
       cl.setPoints(outline_.segments_);
-      form_.n_ = cl.buildLocalTree(false,&qbb,&compressed,NULL,mains);
+      form_.n_ = cl.buildLocalTree(false,&qbb,&compressed,NULL,&mains);
       if(form_.n_)
         form_.n_->clean(1,form_.n_->energy_sum_*0.01f);
 
@@ -631,10 +667,11 @@ namespace Slam_CurvedPolygon
         }
       }
 
-      for(int i=0; outline_.segments_.size()>3 && i<4; i++)
+      for(size_t i=0; i<mains.points_.size(); i++)
       {
-        features_.push_back( S_FEATURE( project2world(outline_.segments_[mains[i]].head<2>()) ));
-        //        std::cout<<"MAIN\n"<<project2world(outline_.segments_[mains[i]].head<2>())<<"\n\n";
+        ROS_ERROR("%f",mains.points_[i].edge_);
+        features_.push_back( S_FEATURE( project2world(outline_.segments_[mains.points_[i].index_].head<2>()), std::min(mains.points_[i].edge_,mains.points_[(i+1)%mains.points_.size()].edge_) ));
+        //        std::cout<<"MAIN\n"<<points3d_[mains[i]]<<"\n\n";
       }
 
       data_.polyline.clear();
@@ -683,7 +720,7 @@ namespace Slam_CurvedPolygon
       if(!canMerge(o))
         return false;
 
-      if(1){
+      if(0) {
         param_.col(0) = (param_.col(0)*data_.weight + o.param_.col(0)*o.data_.weight)/(data_.weight+o.data_.weight);
         param_.col(1) = (param_.col(1)*data_.weight + o.param_.col(1)*o.data_.weight)/(data_.weight+o.data_.weight);
         param_.col(1).normalize();
@@ -736,7 +773,7 @@ namespace Slam_CurvedPolygon
       for(size_t i=0; i<std::min(features_.size(),o.features_.size()); i++)
       {
         if(features_[i].ID_!=-1) features_[i].merge(o.features_[i],data_.weight,o.data_.weight);
-        else matches1.push_back(i);
+        //else matches1.push_back(i);
       }
 
       //      matches2=matches1;
@@ -962,7 +999,7 @@ return _nextPoint(v,p+d,depth+1);
       //      std::cout<<"p1\n"<<param_.col(2)<<"\n";
       //      std::cout<<"p2\n"<<o.param_.col(2)<<"\n";
 
-      if(unionPolygons(p1,p2, p3)<0.4f)
+      if(unionPolygons(p1,p2, p3)<0.2f)
       {
 //        ROS_INFO("merge break 1");
         return false;
@@ -1035,7 +1072,7 @@ return _nextPoint(v,p+d,depth+1);
       if(isPlane()) ROS_INFO("PLANE");
       ROS_INFO("proj %f", er/lges);
 
-      return er/lges<0.05f;
+      return er/lges<0.03f*getNearestPoint().norm();
     }
 
     bool invalid() const

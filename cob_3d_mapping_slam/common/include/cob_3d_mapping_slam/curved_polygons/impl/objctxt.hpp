@@ -9,12 +9,13 @@ bool OBJCTXT<_DOF6>::registration(const OBJCTXT &ctxt, DOF6 &tf, typename DOF6::
   ROS_INFO("registration %d %d",(int)objs_.size(), (int)ctxt.objs_.size());
 #endif
 
+  tf.getSource1()->reset();
+
   //1. correspondences
   used_cors_.clear();
   findCorrespondences(ctxt, used_cors_, tf);
 
   //2. optimize
-  tf.getSource1()->reset();
   //tf = optimizeLink(tf, cors);
   tf = optimizeLink(tf, used_cors_, tf.getRotationVariance(), tf.getTranslationVariance(), tf.getRotation(), tf.getTranslation());
 
@@ -62,6 +63,8 @@ bool OBJCTXT<_DOF6>::merge(const OBJCTXT &ctxt, const DOF6 &tf, std::map<typenam
   {
     //continue;
     if(!it->a || !it->b) continue;
+
+    //if(it->a->getData().isPlane()!=it->b->getData().isPlane()) continue;
 
     typename OBJECT::Ptr o=it->b->makeShared();
     o->transform(Eigen::Matrix3f::Identity(),-tf.getTranslation(),0,0);
@@ -164,7 +167,7 @@ void OBJCTXT<_DOF6>::filter()
   {
     size_t c = objs_[i]->getCreationCounter(), u = objs_[i]->getUsedCounter();
 
-    if(c>10 && std::log(u)/std::log(c) < 0.5f)
+    if(c>10 && std::log(u)/std::log(c) < 0.6f)
     {
       objs_.erase(objs_.begin()+i);
       --i;

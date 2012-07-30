@@ -53,7 +53,7 @@ namespace Slam
 
     const OBJECT_CONTEXT &getContext() const {return ctxt_;}
 
-    bool compute(const OBJCTXT &ctxt, DOF6 &link, std::map<typename OBJECT::Ptr,bool> &used, const bool only_merge=false);
+    bool compute(const OBJCTXT &ctxt, DOF6 &link, std::map<typename OBJECT::Ptr,bool> &used, const bool only_merge=false, const int depth=0);
   };
 
 #include "impl/node.hpp"

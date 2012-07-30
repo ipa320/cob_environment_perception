@@ -46,12 +46,19 @@ namespace Slam_CurvedPolygon
           M.col(0) = a-b;
           M.col(1) = normal_x_;
           M.col(2) = normal_y_;
+          std::cout<<"M\n"<<M<<"\n";
           v = M.inverse()*(a-offs_);
+          std::cout<<a<<"\n\n";
+          std::cout<<b<<"\n\n";
+          ROS_INFO("%f %f %f", v(0),v(1),v(2));
           if(std::abs(v(0))<=1)
           {
+            for(int i=0; i<4; i++)
+              std::cout<<boundary_[i]<<"\n\n";
+
             return pnpoly(v(1),v(2));
           }
-          return false;
+          return false;//TODO: check
         }
 
       };
@@ -63,14 +70,14 @@ namespace Slam_CurvedPolygon
         for(int j=0; j<6; j++)
           for(int i=0; i<4; i++)
           {
-            if(planes_[j].intersectRay(p_[i],p_[(i+1)%4]))
+            if(planes_[j].intersectRay(o.p_[i],o.p_[(i+1)%4]))
               return true;
-            if(planes_[j].intersectRay(p_[i+4],p_[(i+1)%4+4]))
+            if(planes_[j].intersectRay(o.p_[i+4],o.p_[(i+1)%4+4]))
               return true;
-            if(planes_[j].intersectRay(p_[i+4],p_[i]))
+            if(planes_[j].intersectRay(o.p_[i+4],o.p_[i]))
               return true;
           }
-        return false;
+        return true;
       }
 
       bool operator&(const TransformedFoVBB &o) const
@@ -100,9 +107,20 @@ namespace Slam_CurvedPolygon
         }
       }
 
-      TransformedFoVBB transform(const Eigen::Matrix3f &R, const Eigen::Vector3f t) const {
-        ROS_INFO("bb %f %f ",min_dist_,max_dist_);
+      //for testing
+      void update(const Eigen::Vector3f &mi, const Eigen::Vector3f &ma) {
+        min_dist_ = min_x_ = min_y_ = std::numeric_limits<float>::max();
+        max_dist_ = max_x_ = max_y_ = std::numeric_limits<float>::min();
 
+        min_dist_ = std::min(min_dist_, mi(2));
+        min_x_ = std::min(min_x_, mi(0)/mi(2));
+        min_y_ = std::min(min_y_, mi(1)/mi(2));
+        max_dist_ = std::max(max_dist_, ma(2));
+        max_x_ = std::max(max_x_, ma(0)/mi(2));
+        max_y_ = std::max(max_y_, ma(1)/mi(2));
+      }
+
+      TransformedFoVBB transform(const Eigen::Matrix3f &R, const Eigen::Vector3f t) const {
         TransformedFoVBB r;
         r.p_[0](0) = min_x_ * min_dist_;
         r.p_[0](1) = min_y_ * min_dist_;
@@ -145,6 +163,11 @@ namespace Slam_CurvedPolygon
           p[i] = r.p_[i];
           r.p_[i] = R*r.p_[i] + t;
         }
+
+//        for(int i=0; i<8; i++)
+//        {
+//          std::cout<<"p\n"<<r.p_[i]<<"\n";
+//        }
 
         for(int i=0; i<4; i++)
         {
