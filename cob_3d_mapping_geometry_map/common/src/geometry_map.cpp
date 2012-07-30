@@ -104,7 +104,7 @@ GeometryMap::addMapEntry(Polygon::Ptr& p_ptr)
   if (map_polygon_.size()> 0)
   {
     p.getMergeCandidates(map_polygon_,intersections);
-    if(intersections.size()>0) // if polygon has to be merged ...
+    if(false)//intersections.size()>0) // if polygon has to be merged ...
     {
       std::vector<boost::shared_ptr<Polygon> > merge_candidates;
       for(int i=intersections.size()-1; i>=0 ;--i)
@@ -229,11 +229,12 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 }
 
 bool
-GeometryMap::computeTfError(const std::vector<Polygon::Ptr>& list_polygon, Eigen::Affine3f adjust_tf)
+GeometryMap::computeTfError(const std::vector<Polygon::Ptr>& list_polygon, const Eigen::Affine3f& tf_old, Eigen::Affine3f& adjust_tf)
 {
   if (map_polygon_.size() < 10)
   {
     adjust_tf = Eigen::Affine3f::Identity();
+    last_tf_err_ = Eigen::Affine3f::Identity();
     return false;
   }
   cob_3d_mapping::merge_config  limits;
@@ -241,72 +242,58 @@ GeometryMap::computeTfError(const std::vector<Polygon::Ptr>& list_polygon, Eigen
   limits.angle_thresh=cos_angle_;
   limits.weighting_method="COUNTER";
   // min heap to store polygons with max overlap (Landmark elements: overlap, num_vertices, idx_old, idx_new)
-  typedef boost::tuple<float,unsigned int,unsigned int,unsigned int> Landmark;
-  std::priority_queue<Landmark, std::vector<Landmark>, std::greater<Landmark> > landmarks_queue;
+  typedef boost::tuple<float,unsigned int,unsigned int> Landmark;
+  std::priority_queue<Landmark> landmarks_queue;
   const size_t q_size = 3;
-  for (size_t p=0; p<list_polygon.size(); ++p) // new polys
+  int sum_overlap = 0;
+  for (size_t p=0; p<map_polygon_.size(); ++p) // old polys
   {
-    Polygon::Ptr pp = list_polygon[p];
-    pp->merge_settings_=limits;
-    for (size_t q=0; q<map_polygon_.size(); ++q) // old polys
+    Polygon::Ptr pp = map_polygon_[p];
+
+    for (size_t q=0; q<list_polygon.size(); ++q) // new polys
     {
-      Polygon::Ptr pq = map_polygon_[q];
+      Polygon::Ptr pq = list_polygon[q];
+      pq->merge_settings_=limits;
       if ( !pp->hasSimilarParametersWith(pq) ) continue;
-      Landmark lm_new(pp->getContourOverlap(pq), pq->contours[pq->outerContourIndex()].size(), q, p);
-      if (landmarks_queue.size() < q_size) landmarks_queue.push(lm_new);
-      else if (lm_new > landmarks_queue.top())
-      {
-        landmarks_queue.pop();
-        landmarks_queue.push(lm_new);
-      }
+      //if ( pq->contours[pq->outerContourIndex()].size() < 20 ) continue;
+      //int abs_overlap;
+      //float rel_overlap;
+      //if (!pp->getContourOverlap(pq, rel_overlap, abs_overlap)) continue;
+      //if (abs_overlap < 10) continue;
+      //if (rel_overlap < 0.3) continue;
+      //sum_overlap += abs_overlap;
+      float w = pp->computeSimilarity(pq);
+      std::cout << "Sim: " << w << std::endl;
+      if (w < 0.70) continue;
+      landmarks_queue.push( Landmark(w, p, q) );
     }
   }
   if (landmarks_queue.size() < q_size) return false;
 
-  Eigen::Vector3f *n = new Eigen::Vector3f[q_size]; // old
-  Eigen::Vector3f *m = new Eigen::Vector3f[q_size]; // new
-  float *d1 = new float[q_size];
-  float *d2 = new float[q_size];
-  int *size = new int[q_size];
-  float *overlap = new float[q_size];
-
-
+  Landmark lm;
   DOF6::TFLinkvf tfe;
-  Landmark lm = landmarks_queue.top(); landmarks_queue.pop();
-  n[0] = map_polygon_[lm.get<2>()]->normal;
-  m[0] = list_polygon[lm.get<3>()]->normal;
-  d1[0] = map_polygon_[lm.get<2>()]->d;
-  d2[0] = list_polygon[lm.get<3>()]->d;
-  size[0] = lm.get<1>();
-  overlap[0] = lm.get<0>();
-  tfe(DOF6::TFLinkvf::TFLinkObj( d1[0] * n[0] , true, false ),
-      DOF6::TFLinkvf::TFLinkObj( d2[0] * m[0] , true, false ));
-
-  lm = landmarks_queue.top(); landmarks_queue.pop();
-  n[1] = map_polygon_[lm.get<2>()]->normal;
-  m[1] = list_polygon[lm.get<3>()]->normal;
-  d1[1] = map_polygon_[lm.get<2>()]->d;
-  d2[1] = list_polygon[lm.get<3>()]->d;
-  size[1] = lm.get<1>();
-  overlap[1] = lm.get<0>();
-  tfe(DOF6::TFLinkvf::TFLinkObj( d1[1] * n[1] , true, false ),
-      DOF6::TFLinkvf::TFLinkObj( d2[1] * n[1] , true, false ));
-
-  lm = landmarks_queue.top(); landmarks_queue.pop();
-  n[2] = map_polygon_[lm.get<2>()]->normal;
-  m[2] = list_polygon[lm.get<3>()]->normal;
-  d1[2] = map_polygon_[lm.get<2>()]->d;
-  d2[2] = list_polygon[lm.get<3>()]->d;
-  size[2] = lm.get<1>();
-  overlap[2] = lm.get<0>();
-  tfe(DOF6::TFLinkvf::TFLinkObj( d1[2] * n[2] , true, false ),
-      DOF6::TFLinkvf::TFLinkObj( d2[2] * n[2] , true, false ));
-
-  for (size_t i = 0; i<q_size; ++i)
+  Eigen::Vector3f n,m;
+  float d1, d2;
+  int i = 0;
+  while (landmarks_queue.size() != 0)
   {
-    std::cout<<"Size:"<<size[i]<<" Overlap:"<<overlap[i]<<std::endl;
-    std::cout<<"n0:"<<n[i](0)<<","<<n[i](1)<<","<<n[i](2)<<" d:"<<d1[i]<<std::endl;
-    std::cout<<"m0:"<<m[i](0)<<","<<m[i](1)<<","<<m[i](2)<<" d:"<<d2[i]<<std::endl;
+    lm = landmarks_queue.top(); landmarks_queue.pop();
+    n = map_polygon_[lm.get<1>()]->normal;
+    m = list_polygon[lm.get<2>()]->normal;
+    d1 = map_polygon_[lm.get<1>()]->d;
+    d2 = list_polygon[lm.get<2>()]->d;
+    float weight = 2.0f/(fabs(d1)+fabs(d2));//(float)lm.get<0>();
+    tfe(DOF6::TFLinkvf::TFLinkObj( d2 * m , true, false, weight),
+        DOF6::TFLinkvf::TFLinkObj( d1 * n , true, false, weight));
+
+    std::cout<<"%Overlap: "<<lm.get<0>()<<" Weigth: "<<weight<<std::endl;
+    std::cout<<"%Area(old/new): "<<map_polygon_[lm.get<1>()]->computeArea3d()<<", "
+             <<list_polygon[lm.get<2>()]->computeArea3d()<<std::endl;
+    std::cout<<"vector_a"<<i<<" = ["<<n(0)<<","<<n(1)<<","<<n(2)<<"];"<<std::endl;
+    std::cout<<"vector_b"<<i<<" = ["<<m(0)<<","<<m(1)<<","<<m(2)<<"];"<<std::endl;
+    std::cout<<"origin_a"<<i<<" = "<<d1<<" * vector_a"<<i<<";"<<std::endl;
+    std::cout<<"origin_b"<<i<<" = "<<d2<<" * vector_b"<<i<<";"<<std::endl;
+    ++i;
   }
 
   tfe.finish();
@@ -315,61 +302,14 @@ GeometryMap::computeTfError(const std::vector<Polygon::Ptr>& list_polygon, Eigen
   tf.matrix().topRightCorner<3,1>() = tfe.getTranslation();
   tf.matrix().bottomLeftCorner<1,4>() << 0, 0, 0, 1;
 
-  last_tf_err_ = adjust_tf;
+  float roll, pitch, yaw;
+  pcl::getEulerAngles(tf, roll, pitch, yaw);
+  std::cout<<"Angles: r="<<roll*180.0f/M_PI<<" p="<<pitch*180.0f/M_PI<<" y="<<yaw*180.0f/M_PI<<std::endl;
 
-  delete[] n;
-  delete[] m;
-  delete[] d1;
-  delete[] d2;
-  delete[] size;
-  delete[] overlap;
+  adjust_tf = tf;
+  last_tf_err_ = adjust_tf;
 
   return true;
-
-
-  /*
-  // 0: plane normal, 1: projection on plane, 2: origin
-  Eigen::Vector3f *n = new Eigen::Vector3f[q_size]; // old
-  Eigen::Vector3f *m = new Eigen::Vector3f[q_size]; // new
-  Eigen::Vector3f c1 = Eigen::Vector3f::Zero();
-  Eigen::Vector3f c2 = Eigen::Vector3f::Zero();
-
-  Landmark lm = landmarks_queue.top(); landmarks_queue.pop();
-  n[0] = map_polygon_[lm.get<2>()]->normal;
-  m[0] = list_polygon[lm.get<3>()]->normal;
-  c1 += map_polygon_[lm.get<2>()]->centroid.head(3).dot(n[0]) * n[0];
-  c2 += list_polygon[lm.get<3>()]->centroid.head(3).dot(m[0]) * m[0];
-
-  lm = landmarks_queue.top(); landmarks_queue.pop();
-  Eigen::Matrix3f N = Eigen::Matrix3f::Identity() - n[0] * n[0].transpose();
-  Eigen::Matrix3f M = Eigen::Matrix3f::Identity() - m[0] * m[0].transpose();
-  n[1] = (N * map_polygon_[lm.get<2>()]->normal).normalized();
-  m[1] = (M * list_polygon[lm.get<3>()]->normal).normalized();
-  c1 += map_polygon_[lm.get<2>()]->centroid.head(3).dot(n[1]) * n[1];
-  c2 += list_polygon[lm.get<3>()]->centroid.head(3).dot(m[1]) * m[1];
-
-  lm = landmarks_queue.top(); landmarks_queue.pop();
-  n[2] = map_polygon_[lm.get<2>()]->normal;
-  m[2] = list_polygon[lm.get<3>()]->normal;
-
-  c1 /= 2.0;
-  c2 /= 2.0;
-
-  Eigen::Affine3f T_f, rot;
-  pcl::getTransformationFromTwoUnitVectorsAndOrigin(m[0], m[1], Eigen::Vector3f::Zero(), T_f);
-  pcl::getTransformationFromTwoUnitVectorsAndOrigin(T_f * n[0], T_f * n[1], Eigen::Vector3f::Zero(), rot);
-  Eigen::Vector3f t = c1 - rot * c2;
-  adjust_tf = rot;
-  float roll, pitch, yaw;
-  pcl::getEulerAngles(rot, roll, pitch, yaw);
-  last_tf_err_ = adjust_tf;
-  pcl::getTransformation(t[0], t[1], t[2], roll, pitch, yaw, adjust_tf);
-
-  //adjust_tf = rot * t;
-
-  delete[] n;
-  delete[] m;
-  */
 }
 
 
