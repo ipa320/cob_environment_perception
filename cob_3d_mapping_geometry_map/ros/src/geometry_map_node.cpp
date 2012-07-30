@@ -178,7 +178,7 @@ public:
   shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr sa)
   {
     tf::StampedTransform trf_map;
-    Eigen::Affine3f af = Eigen::Affine3f::Identity();
+    Eigen::Affine3f af_orig = Eigen::Affine3f::Identity();
 
     try
     {
@@ -189,8 +189,8 @@ public:
 
     Eigen::Affine3d ad;
     tf::TransformTFToEigen(trf_map, ad);
-    af = ad.cast<float>();
-    //af = geometry_map_.getLastError() * af;
+    af_orig = ad.cast<float>();
+    af_orig = geometry_map_.getLastError() * af_orig;
 
     static int ctr=0;
     static double time = 0;
@@ -208,14 +208,14 @@ public:
       {
         polygon_list.push_back(Polygon::Ptr(new Polygon));
         fromROSMsg(sa->shapes[i], *polygon_list.back());
-        polygon_list.back()->transform2tf(af);
+        polygon_list.back()->transform2tf(af_orig);
         break;
       }
       case cob_3d_mapping_msgs::Shape::CYLINDER:
       {
         cylinder_list.push_back(Cylinder::Ptr(new Cylinder));
         fromROSMsg(sa->shapes[i], *cylinder_list.back());
-        cylinder_list.back()->transform2tf(af);
+        cylinder_list.back()->transform2tf(af_orig);
         break;
       }
       default:
@@ -223,16 +223,21 @@ public:
       }
     }
 
-    bool needs_adjustment = geometry_map_.computeTfError(polygon_list, af);
+    Eigen::Affine3f af_new;
+    bool needs_adjustment = geometry_map_.computeTfError(polygon_list, af_orig, af_new);
 
     for (size_t i=0; i<polygon_list.size(); ++i)
     {
-      if(needs_adjustment) polygon_list[i]->transform2tf(af);
+      //Eigen::Vector3f n = polygon_list[i]->normal;
+      //std::cout<<"n:"<<n(0)<<","<<n(1)<<","<<n(2)<<" before"<<std::endl;
+      if(needs_adjustment) polygon_list[i]->transform2tf(af_new);
+      //n = polygon_list[i]->normal;
+      //std::cout<<"n:"<<n(0)<<","<<n(1)<<","<<n(2)<<" after"<<std::endl;
       geometry_map_.addMapEntry(polygon_list[i]);
     }
     for (size_t i=0; i<cylinder_list.size(); ++i)
     {
-      if(needs_adjustment) cylinder_list[i]->transform2tf(af);
+      if(needs_adjustment) cylinder_list[i]->transform2tf(af_new);
       geometry_map_.addMapEntry(cylinder_list[i]);
     }
 

@@ -125,7 +125,7 @@ public:
   addMapEntry(boost::shared_ptr<cob_3d_mapping::Cylinder>& c_ptr);
 
   bool
-  computeTfError(const std::vector<cob_3d_mapping::Polygon::Ptr>& list_polygon, Eigen::Affine3f adjust_tf);
+  computeTfError(const std::vector<cob_3d_mapping::Polygon::Ptr>& list_polygon, const Eigen::Affine3f& tf_old, Eigen::Affine3f& adjust_tf);
 
   void
   computeCentroid(cob_3d_mapping::Polygon& p);

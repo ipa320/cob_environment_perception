@@ -83,7 +83,7 @@ cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>
     float dot_value = fabs( n.dot(normals_->points[idx].getNormalVector3fMap()) );
     if ( (int)c->size() < min_cluster_size_ || dot_value > min_dot_normals_)
     {
-      *p_label = c->id();;
+      *p_label = c->id();
       seg_queue.push( SegmentationCandidate::Ptr(new SegmentationCandidate(u, v, dot_value)) );
     }
   }
