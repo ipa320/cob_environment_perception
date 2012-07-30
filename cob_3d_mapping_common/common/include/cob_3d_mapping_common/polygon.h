@@ -106,7 +106,8 @@ namespace cob_3d_mapping
     virtual void getMergeCandidates(const std::vector<Polygon::Ptr>& poly_vec, std::vector<int>& intersections) const;
     virtual bool isIntersectedWith(const Polygon::Ptr& poly) const;
     void getIntersection(const Polygon::Ptr& poly, gpc_polygon& gpc_intersection) const;
-    float getContourOverlap(const Polygon::Ptr& poly) const;
+    bool getContourOverlap(const Polygon::Ptr& poly, float& rel_overlap, int& abs_overlap) const;
+    float computeSimilarity(const Polygon::Ptr& poly) const;
 
     virtual void merge(std::vector<Polygon::Ptr>& poly_vec);
     void merge_union(std::vector<Polygon::Ptr>& poly_vec, Polygon::Ptr&  p_average);
