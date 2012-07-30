@@ -1,0 +1,6 @@
+<launch>
+  <node name="qppf_node" pkg="cob_3d_segmentation" type="qppf_node">
+	<remap from="/camera/depth/points" to="/cam3d/depth/points"/>
+  </node>
+</launch>
+

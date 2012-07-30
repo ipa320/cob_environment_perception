@@ -9,8 +9,13 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
 #set(ROS_BUILD_TYPE RelWithDebInfo)
 
+rosbuild_find_ros_package(actionlib_msgs)
+include(${actionlib_msgs_PACKAGE_PATH}/cmake/actionbuild.cmake)
+genaction()
+
 rosbuild_init()
 rosbuild_check_for_sse()
+
 
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include ${PROJECT_SOURCE_DIR}/ros/include)
 
@@ -20,13 +25,13 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-#uncomment if you have defined messages
-#rosbuild_genmsg()
+rosbuild_genmsg()
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
 rosbuild_add_library(cob_3d_segmentation  ros/src/segmentation_node.cpp)
 rosbuild_add_executable(segmentation_node ros/src/segmentation_node.cpp)
+rosbuild_add_executable(qppf_node ros/src/qppf_node.cpp)
 
 rosbuild_add_compile_flags(cob_3d_segmentation -D__LINUX__ -DCOMPILE_NODELET)
 
