@@ -34,24 +34,32 @@ struct Model {
   bool isLinearAndTo()
   {
     //Variance for both axis (spare small objects)
-    const float Vx = (param.model_(1,1)-param.model_(0,1)*param.model_(0,1)/param.model_(0,0))/param.model_(0,0);
-    const float Vy = (param.model_(3,3)-param.model_(0,3)*param.model_(0,3)/param.model_(0,0))/param.model_(0,0);
+//    const float Vx = (param.model_(1,1)-param.model_(0,1)*param.model_(0,1)/param.model_(0,0))/param.model_(0,0);
+//    const float Vy = (param.model_(3,3)-param.model_(0,3)*param.model_(0,3)/param.model_(0,0))/param.model_(0,0);
+//
+//    if(Vx<0.001f && Vy<0.001f)
+//    {
+//      ROS_INFO("np1 %f %f", Vx, Vy);
+//      return false;
+//    }
 
-    if(Vx<0.01f || Vy<0.01f)
-      return false;
-
-    Model temp = *this;
+    Model temp=*this;
     temp.getLinear2();
 
     //const float error1 = (model_.param.z_ - model_.param.model_*model_.p).squaredNorm();
     const float error2 = (temp.param.z_ - temp.param.model_*temp.p).norm();
-
     const float d=temp.param.z_(0)/temp.param.model_(0,0);
 
-    if(std::abs(param.model_.determinant()/param.model_(0,0))>0.0001f)//&& (error2 > (temp.param.model_(0,0)*temp.param.model_(0,0))/(1<<13)*d*d || (std::abs(p(2))+std::abs(p(4))+std::abs(p(5)))/(std::abs(p(1))+std::abs(p(3)))>1.f))
+    if(//std::abs(param.model_.determinant())*std::abs(param.z_(0))>0.0001f*param.model_(0,0)*param.model_(0,0) &&
+        (error2 > (temp.param.model_(0,0)*temp.param.model_(0,0))/(1<<13)*d*d || (std::abs(p(2))+std::abs(p(4))+std::abs(p(5)))/(std::abs(p(1))+std::abs(p(3)))>1.f))
+    {
+//      ROS_INFO("np2 %f",std::abs(param.model_.determinant()/param.model_(0,0)));
       return false;
+    }
 
-    p = temp.p;
+    *this = temp;
+
+//    ROS_INFO("plane");
 
     return true;
   }
