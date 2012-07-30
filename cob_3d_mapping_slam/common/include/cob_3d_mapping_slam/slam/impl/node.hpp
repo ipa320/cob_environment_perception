@@ -25,10 +25,10 @@ bool Node<OBJECT_CONTEXT>::merge(const OBJCTXT &ctxt, DOF6 &tf, std::map<typenam
 }
 
 template<typename OBJECT_CONTEXT>
-bool Node<OBJECT_CONTEXT>::compute(const OBJCTXT &ctxt, DOF6 &link, std::map<typename OBJECT::Ptr, bool> &used, const bool only_merge)
+bool Node<OBJECT_CONTEXT>::compute(const OBJCTXT &ctxt, DOF6 &link, std::map<typename OBJECT::Ptr, bool> &used, const bool only_merge, const int depth)
 {
   //check bounding box
-  if(!(connections_.size()==0 && ctxt_.empty()) && !(ctxt_.getBoundingBox().transform(link.getRotation(),link.getTranslation())&ctxt.getBoundingBox().transform(Eigen::Matrix3f::Identity(), Eigen::Vector3f::Zero())))
+  if(depth>1 && !(connections_.size()==0 && ctxt_.empty()) && !(ctxt_.getBoundingBox().transform(link.getRotation(),link.getTranslation())&ctxt.getBoundingBox().transform(Eigen::Matrix3f::Identity(), Eigen::Vector3f::Zero())))
   {
     ROS_INFO("no intersection");
     return false;
@@ -67,7 +67,7 @@ bool Node<OBJECT_CONTEXT>::compute(const OBJCTXT &ctxt, DOF6 &link, std::map<typ
                          link.getRotationVariance()+connections_[i].link_.getRotationVariance(),
                          (typename DOF6::TROTATION)( ((Eigen::Matrix3f)link.getRotation())*((Eigen::Matrix3f)connections_[i].link_.getRotation())) );
     tmp_link.getSource1()->reset();
-    bool r2 = connections_[i].node_->compute(ctxt, tmp_link, used, true);
+    bool r2 = connections_[i].node_->compute(ctxt, tmp_link, used, true, depth+1);
 
     ROS_INFO("r2 was %d",r2);
 

@@ -35,14 +35,9 @@ bool Object<_DOF6>::isReachable(const Object &o, const typename DOF6::TYPE &thr_
   Eigen::Matrix<typename TFLINK::TYPE, 3,1> v1,v2;
 
   for(size_t i=0; i<data_.getFeatures().size(); i++) {
-    if(data_.getFeatures()[i].type_ != ex_curved_polygon::S_FEATURE::POINT && data_.getFeatures()[i].type_ != ex_curved_polygon::S_FEATURE::NORMAL) continue;
-    v1 = data_.getFeatures()[i].v_;
-    v2 = o.data_.getFeatures()[i].v_;
+    if(data_.getFeatures()[i].type_ == ex_curved_polygon::S_FEATURE::DIRECTION) continue;
 
-    if(!(( (v2-v1).squaredNorm()>thr_tr*thr_tr &&
-        std::acos(v2.dot(v1)/(v2.norm()*v1.norm())) > thr_rot) ||
-        std::abs(v2.norm()-v1.norm()) > thr_tr + 0.02*v2.norm())
-    )
+    if(data_.getFeatures()[i].isReachable(o.data_.getFeatures()[i], thr_tr, thr_rot))
     {
       return true;
     }
@@ -197,8 +192,8 @@ typename Object<_DOF6>::TFLIST Object<_DOF6>::getTFList(const Object &o, const t
     if(i>=data_.getFeatures().size() || i>=o.data_.getFeatures().size())
       break;
 
-    //for(size_t j=0; j<o.data_.getFeatures().size(); j++)
-    size_t j=i;
+    for(size_t j=0; j<o.data_.getFeatures().size(); j++)
+    //size_t j=i;
     {
       if(data_.getFeatures()[i].ID_ != o.data_.getFeatures()[j].ID_ || data_.getFeatures()[i].type_ != o.data_.getFeatures()[j].type_)
         continue;
@@ -206,14 +201,12 @@ typename Object<_DOF6>::TFLIST Object<_DOF6>::getTFList(const Object &o, const t
       ROS_ASSERT(data_.getFeatures()[i].type_ == o.data_.getFeatures()[j].type_);
 
       Eigen::Matrix<typename TFLINK::TYPE, 3,1> v1,v2;
-      float w = wX;
+      float w = wX*(0.5f*(data_.getFeatures()[i].weight_+o.data_.getFeatures()[j].weight_));
 
       v1 = data_.getFeatures()[i].v_;
       v2 = o.data_.getFeatures()[j].v_;
-      //if(!data_.isPlane()) return list;
-      if(!pcl_isfinite(v1.sum()) || !pcl_isfinite(v2.sum()) || !pcl_isfinite(w)
-          //|| TODO: check against threshold
-      )
+
+      if(!pcl_isfinite(v1.sum()) || !pcl_isfinite(v2.sum()) || !pcl_isfinite(w) )
       {
         if( !pcl_isfinite(w) )
           ROS_WARN("weight is infinite");
@@ -224,14 +217,18 @@ typename Object<_DOF6>::TFLIST Object<_DOF6>::getTFList(const Object &o, const t
 
       ex_curved_polygon::S_FEATURE ft_temp = data_.getFeatures()[i];
       ft_temp.transform(rot,tr,0,0);
+
+      if( !ft_temp.isReachable(o.data_.getFeatures()[j],thr_tr,thr_rot) )
+        continue;
+
       Eigen::Vector3f v1p = ft_temp.v_;
       switch(data_.getFeatures()[i].ID_)
       {
         case 1:
           if(data_.isPlane() != o.data_.isPlane()) break;
-          w*=5;
+          w*=30;
         case 3:
-          w*=0.2f;
+          w*=0.1f;
         case -1:
         {
           bool normal=false;
@@ -241,34 +238,34 @@ typename Object<_DOF6>::TFLIST Object<_DOF6>::getTFList(const Object &o, const t
             normal=true;
           }
 
-          if( v2.squaredNorm()<0.1f || v1p.squaredNorm()<0.1f ||
-              //(v2 - v1p).squaredNorm() > (thr_tr+thr_rot*v2.norm())*(thr_tr+thr_rot*v1.norm())
-              ( (v2-v1p).squaredNorm()>thr_tr*thr_tr &&
-                  std::acos(v2.dot(v1p)/(v2.norm()*v1p.norm())) > thr_rot) ||
-                  std::abs(v2.norm()-v1p.norm()) > thr_tr + 0.03*v2.norm()
-          )
-          {
-            //          std::cout<<"Ma:\n"<<v1<<"\n";
-            //          std::cout<<"Mb:\n"<<v2<<"\n";
-            //          std::cout<<"Ma*:\n"<<v1p<<"\n";
-            //          std::cout<<"Mb*:\n"<<o.data_.getNearestTransformedPoint(rot, tr)<<"\n";
-
-//            std::cout<<"\t\tMa:\n"<<v1<<"\n";
-//            std::cout<<"\t\tMb:\n"<<v2<<"\n";
-//            std::cout<<"\t\tMa*:\n"<<v1p<<"\n";
-//            std::cout<<"\t\tMb*:\n"<<o.data_.getNearestTransformedPoint(rot, tr)<<"\n";
-//            std::cout<<"\t\tMa**:\n"<<data_.getNearestTransformedPoint(rot, Eigen::Vector3f::Zero())<<"\n";
-//            std::cout<<"\t\tMb**:\n"<<o.data_.getNearestTransformedPoint(rot, Eigen::Vector3f::Zero())<<"\n";
-//            std::cout<<"\tnormal:  "<<normal<<"\n";
-//            std::cout<<"\tplane:  "<<data_.isPlane()<<"\n";
-//            std::cout<<"\tthr:  "<<thr_tr<<thr_rot<<"\n";
-//            std::cout<<"\tthr:  "<<
-//                std::abs(v2.norm()-v1p.norm())<<"/"<<
-//                std::acos(v2.dot(v1p)/(v2.norm()*v1p.norm()))<<"\n";
-
-            //if(data_.getFeatures()[i].ID_!=3) return list;
-            break;
-          }
+//          if( v2.squaredNorm()<0.1f || v1p.squaredNorm()<0.1f ||
+//              //(v2 - v1p).squaredNorm() > (thr_tr+thr_rot*v2.norm())*(thr_tr+thr_rot*v1.norm())
+//              ( (v2-v1p).squaredNorm()>thr_tr*thr_tr &&
+//                  std::acos(v2.dot(v1p)/(v2.norm()*v1p.norm())) > thr_rot) ||
+//                  std::abs(v2.norm()-v1p.norm()) > thr_tr + 0.03*v2.norm()
+//          )
+//          {
+//            //          std::cout<<"Ma:\n"<<v1<<"\n";
+//            //          std::cout<<"Mb:\n"<<v2<<"\n";
+//            //          std::cout<<"Ma*:\n"<<v1p<<"\n";
+//            //          std::cout<<"Mb*:\n"<<o.data_.getNearestTransformedPoint(rot, tr)<<"\n";
+//
+////            std::cout<<"\t\tMa:\n"<<v1<<"\n";
+////            std::cout<<"\t\tMb:\n"<<v2<<"\n";
+////            std::cout<<"\t\tMa*:\n"<<v1p<<"\n";
+////            std::cout<<"\t\tMb*:\n"<<o.data_.getNearestTransformedPoint(rot, tr)<<"\n";
+////            std::cout<<"\t\tMa**:\n"<<data_.getNearestTransformedPoint(rot, Eigen::Vector3f::Zero())<<"\n";
+////            std::cout<<"\t\tMb**:\n"<<o.data_.getNearestTransformedPoint(rot, Eigen::Vector3f::Zero())<<"\n";
+////            std::cout<<"\tnormal:  "<<normal<<"\n";
+////            std::cout<<"\tplane:  "<<data_.isPlane()<<"\n";
+////            std::cout<<"\tthr:  "<<thr_tr<<thr_rot<<"\n";
+////            std::cout<<"\tthr:  "<<
+////                std::abs(v2.norm()-v1p.norm())<<"/"<<
+////                std::acos(v2.dot(v1p)/(v2.norm()*v1p.norm()))<<"\n";
+//
+//            //if(data_.getFeatures()[i].ID_!=3) return list;
+//            break;
+//          }
 
 //          std::cout<<"\t\ta:\n"<<v1<<"\n";
 //          std::cout<<"\t\tb:\n"<<v2<<"\n";
@@ -328,11 +325,11 @@ typename Object<_DOF6>::TFLIST Object<_DOF6>::getTFList(const Object &o, const t
 //          std::cout<<"\t\tv2 ("<<data_.getFeatures()[i].ID_<<")\n"<<v2<<"\n";
 //          std::cout<<"\t\tv1* ("<<data_.getFeatures()[i].ID_<<")\n"<<v1p<<"\n";
 
-          if( std::acos(v1p.dot(v2)) > thr_rot )
-          {
-//            std::cout<<"ABOVE MISS   ABOVE MISS   ABOVE MISS\n";
-            break;
-          }
+//          if( std::acos(v1p.dot(v2)) > thr_rot )
+//          {
+////            std::cout<<"ABOVE MISS   ABOVE MISS   ABOVE MISS\n";
+//            break;
+//          }
 
           list.push_back( CORS(
               typename TFLINK::TFLinkObj(v1,true,true, w, w),

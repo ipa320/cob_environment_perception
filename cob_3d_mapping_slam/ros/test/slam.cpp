@@ -55,7 +55,7 @@ static const char *BAGFILES[][512]={
                                      //"test/cp3_rgbd_dataset_freiburg2_rpy.bag",
                                      //"test/cp4_moving.bag",
                                      //"test/cp4_room.bag",
-                                     "test/cp4_rgbd_dataset_freiburg2_rpy.bag",
+                                     "test/cp4_rgbd_dataset_freiburg2_rpy2.bag",
                                      //"test/cp3_rgbd_dataset_freiburg2_xyz.bag",
                                      //"test/cp3_rgbd_dataset_freiburg1_plant.bag",
                                      //"test/cp2_rgbd_dataset_freiburg2_dishes.bag",
@@ -368,6 +368,8 @@ TEST(Slam,bag_run)
         cob_3d_mapping_msgs::ShapeArray::ConstPtr sa = m.instantiate<cob_3d_mapping_msgs::ShapeArray>();
         if (sa != NULL)
         {
+          if(sa->header.stamp.toSec()<1311867724.916822)
+            continue;
           memory_sa.push_back(*sa);
           continue;
         }
@@ -378,6 +380,9 @@ TEST(Slam,bag_run)
         cob_3d_mapping_msgs::CurvedPolygon_Array::ConstPtr s = m.instantiate<cob_3d_mapping_msgs::CurvedPolygon_Array>();
         if (s != NULL)
         {
+          if(s->header.stamp.toSec()<1311867724.916822)
+            continue;
+
           //          if(!(std::abs((s->stamp-start).toSec()-0)<0.001 || first || std::abs((s->stamp-start).toSec()-3.15)<0.001 || std::abs((s->stamp-start).toSec()-3.7)<0.1))
           //            continue;
 
@@ -516,7 +521,12 @@ TEST(Slam,bag_run)
                 ::std_msgs::ColorRGBA col;
                 unsigned int rnd=(((i+1)*11)<<12)+(i+3)*i*7;//rand();
                 ROS_ASSERT(n->node_->getContext().getObjs()[i]->getUsedCounter() <= n->node_->getContext().getObjs()[i]->getCreationCounter());
-                col.a = std::log(n->node_->getContext().getObjs()[i]->getUsedCounter())/std::log(n->node_->getContext().getObjs()[i]->getCreationCounter());
+                col.a = std::log(n->node_->getContext().getObjs()[i]->getUsedCounter())/(std::log(n->node_->getContext().getObjs()[i]->getCreationCounter())+0.1f);
+                if(!pcl_isfinite(col.a))
+                {
+                  col.a = 1.f;
+                  ROS_ERROR("color not finite %d %d",n->node_->getContext().getObjs()[i]->getUsedCounter(),n->node_->getContext().getObjs()[i]->getCreationCounter());
+                }
                 col.r = ((rnd>>0)&0xff)/255.f;
                 col.g = ((rnd>>8)&0xff)/255.f;
                 col.b = ((rnd>>16)%0xff)/255.f;

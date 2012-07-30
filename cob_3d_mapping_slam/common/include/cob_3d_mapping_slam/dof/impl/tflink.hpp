@@ -217,7 +217,7 @@ void TFLink<INPUT>::finish() {
   std::cout<<"TRANSLATION VECTOR\n"<<temp<<"\n";
   std::cout<<"det. "<<translation_.determinant()<<"\n";
   std::cout<<"should det. "<<(0.2*accumlated_weight_*accumlated_weight_)<<"\n";
-  if(translation_.determinant()<(TYPE)0.2*accumlated_weight_*accumlated_weight_) // rang to low
+  if(translation_.determinant()<(TYPE)0.04*accumlated_weight_*accumlated_weight_) // rang to low
     tr_var_ += 10000;
 
   if(!pcl_isfinite(tr_var_) || !pcl_isfinite(tr_.sum()))
