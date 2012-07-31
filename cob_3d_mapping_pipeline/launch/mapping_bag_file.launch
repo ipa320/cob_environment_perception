@@ -16,7 +16,7 @@
 	<arg name="nodelet_manager" value="$(arg mapping_manager)"/>
   </include-->
 
-  <include file="(find cob_3d_segmentation)/ros/launch/segmentation.launch">
+  <include file="$(find cob_3d_segmentation)/ros/launch/segmentation.launch">
     <arg name="start_manager" value="false"/>
     <arg name="nodelet_manager" value="$(arg mapping_manager)"/>
   </include>
