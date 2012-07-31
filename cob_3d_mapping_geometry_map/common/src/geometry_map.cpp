@@ -104,7 +104,7 @@ GeometryMap::addMapEntry(Polygon::Ptr& p_ptr)
   if (map_polygon_.size()> 0)
   {
     p.getMergeCandidates(map_polygon_,intersections);
-    if(false)//intersections.size()>0) // if polygon has to be merged ...
+    if(intersections.size()>0) // if polygon has to be merged ...
     {
       std::vector<boost::shared_ptr<Polygon> > merge_candidates;
       for(int i=intersections.size()-1; i>=0 ;--i)
@@ -231,6 +231,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 bool
 GeometryMap::computeTfError(const std::vector<Polygon::Ptr>& list_polygon, const Eigen::Affine3f& tf_old, Eigen::Affine3f& adjust_tf)
 {
+  return false;
   if (map_polygon_.size() < 10)
   {
     adjust_tf = Eigen::Affine3f::Identity();
