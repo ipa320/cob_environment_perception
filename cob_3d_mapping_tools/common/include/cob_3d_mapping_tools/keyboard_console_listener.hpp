@@ -86,7 +86,7 @@ namespace cob_3d_mapping_tools
 
     new_conf = old_conf;
     //memcpy(&raw, &cooked, sizeof(struct termios));
-    const bool debug_b = true;
+    const bool debug_b = false;
     if (debug_b)
     {
       std::cout <<"---Old Config---"<< std::endl;
@@ -137,7 +137,6 @@ namespace cob_3d_mapping_tools
     else if(res == 0) return NULL;
     if (callback) callback(c);
     return c;
-
   }
 
   void KeyboardConsoleListener::spin()
@@ -157,12 +156,12 @@ namespace cob_3d_mapping_tools
 
   char KeyboardConsoleListener::waitForIt(char* c, int size)
   {
-    std::cout<<"BF waitForIt"<<std::endl;
+    //std::cout<<"BF waitForIt"<<std::endl;
     for(;;)
     {
       char c_in = spinOnce();
       //std::cout << (int)c_in << std::endl;
-      for(int i=0; i<size; ++i) { if(c_in == c[i]) { std::cout<<"AF waitForIt"<<std::endl; return c_in; } }
+      for(int i=0; i<size; ++i) { if(c_in == c[i]) { return c_in; } }
     }
   }
 

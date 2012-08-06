@@ -85,9 +85,10 @@ namespace cob_3d_mapping_tools
 
     if (vm.count("help") || argc == 1)
     {
-      std::cout << "Reads a bagfile containing pointclouds and world transformations" << std::endl;
-      std::cout << "and delays next message untill [s]-key is pressed." << std::endl;
-      std::cout << "Syntax is: <file_in.bag> [<pointcloud topic>(default:/registration/pc_aligned)]" << std::endl;
+      std::cout << "Press Key:" << std::endl;
+      std::cout << "[f]     to step forward one message" << std::endl;
+      std::cout << "[b]     to step backward one message" << std::endl;
+      std::cout << "[space] to pause/unpause bagfile iteration in previously used direction" << std::endl;
       std::cout << options << std::endl;
       return false;
     }
@@ -120,7 +121,6 @@ namespace cob_3d_mapping_tools
     if(p_bag) { p_bag->close(); delete p_bag; }
     delete p_view;
     delete tf_broadcaster;
-    //std::cout << "Done" << std::endl;
   }
 
   template <typename MsgT> void
