@@ -60,25 +60,25 @@
 
 #include <set>
 
-template <typename ClusterHandlerT, typename EdgeHandlerT> void 
+template <typename ClusterHandlerT, typename EdgeHandlerT> void
 cob_3d_segmentation::ClusterGraphStructure<ClusterHandlerT,EdgeHandlerT>::merge(const int cid_source, const int cid_target)
 {
   std::vector<EdgePtr> updated_edges;
   merge(vid_.find(cid_source)->second, vid_.find(cid_target)->second, updated_edges);
 }
 
-template <typename ClusterHandlerT, typename EdgeHandlerT> void 
+template <typename ClusterHandlerT, typename EdgeHandlerT> void
 cob_3d_segmentation::ClusterGraphStructure<ClusterHandlerT,EdgeHandlerT>::merge(
-  const int cid_source, 
+  const int cid_source,
   const int cid_target,
   std::vector<EdgePtr>& updated_edges)
 {
   merge(vid_.find(cid_source)->second, vid_.find(cid_target)->second, updated_edges);
 }
 
-template <typename ClusterHandlerT, typename EdgeHandlerT> void 
+template <typename ClusterHandlerT, typename EdgeHandlerT> void
 cob_3d_segmentation::ClusterGraphStructure<ClusterHandlerT,EdgeHandlerT>::merge(
-  const VertexID src, 
+  const VertexID src,
   const VertexID trg,
   std::vector<EdgePtr>& updated_edges)
 {
