@@ -2,6 +2,7 @@
 import sys
 import roslib
 roslib.load_manifest('cob_3d_mapping_gazebo')
+roslib.load_manifest('cob_script_server')
 
 import rospy
 import os
@@ -9,7 +10,7 @@ import math
 import time
 
 from gazebo.srv import *
-from simple_script_server import script
+from simple_script_server import *
 #from subprocess import call
 
 import getopt
@@ -19,7 +20,7 @@ import tf
 class broadcaster (object):
 
     def __init__(self,in_frame,out_frame):
-        rospy.init_node("trafo_")
+        #rospy.init_node("trafo_")
         self.br = tf.TransformBroadcaster()
         self.in_frame= in_frame
         self.out_frame = out_frame
@@ -40,8 +41,12 @@ class broadcaster (object):
 class RecordCylinderScript(script):
 
     def __init__(self,num_steps,intervall):
-        #assign members
-        self.do_spawn =False
+
+        rospy.init_node("recorder")
+        self.sss = simple_script_server()
+        
+        #assign members        
+
         self.do_tf = False
         self.do_verbose= True
         
@@ -54,13 +59,7 @@ class RecordCylinderScript(script):
         self.req_set.model_state.model_name = "robot"
         self.req_set.model_state.reference_frame = "map"
         
-        
-                  
-                
-        #set robot pose to initial pose
-        print "[RecordCylinderScript]--> Set robot to initial pose"
-        self.set_init_pose()
-        
+      
 
         
         
@@ -74,12 +73,15 @@ class RecordCylinderScript(script):
 
 
 
-    def set_flags(self,do_tf,do_spawn,do_verbose):
+    def set_flags(self,do_tf,do_verbose):
         self.do_tf = do_tf
-        self.do_spawn = do_spawn
+
         self.do_verbose = do_verbose
     
     def set_init_pose(self):
+        self.sss.move("arm","folded")
+        self.sss.move("tray","down") 
+
         self.req_set.model_state.pose.position.x = -1.5
         self.req_set.model_state.pose.position.y = -1.5
         self.req_set.model_state.pose.position.z = 0
@@ -87,7 +89,8 @@ class RecordCylinderScript(script):
         self.req_set.model_state.pose.orientation.x = 0
         self.req_set.model_state.pose.orientation.y = 0
         self.req_set.model_state.pose.orientation.z = 0            
-        self.res_set = self.srv_set_model_state(self.req_set)    
+        self.res_set = self.srv_set_model_state(self.req_set)  
+
             
             
 
@@ -126,6 +129,7 @@ class RecordCylinderScript(script):
         trajectory =self.calc_single(pos,ori)
         
         self.Move(trajectory)
+
 
     def calc_single(self,pos,ori):
         
@@ -213,9 +217,6 @@ class RecordCylinderScript(script):
     def Move(self,trajectory):
     
     
-        if self.do_spawn == True:       
-            self.Spawn()
-            time.sleep(1)    
     
         positions_x = trajectory[0]
         positions_y = trajectory[1]
@@ -251,10 +252,28 @@ class RecordCylinderScript(script):
             step = step+1
             time.sleep(self.intervall)
             
-            
+    def PitchHead(self,command):
+        if command == "up":
+            pos = [[-0.2,0,-0.2]]
+        elif command == "down":        
+            pos =  [[0.1,0,0.1]]
+        else:
+            rospy.logwarn('pitch direction not valid use [up] and [down] - ptiching to [0 0 0]')
+
+            pos = [[0,0,0]]                 
+
+        move_handle = self.sss.move("torso",pos)
+        time.sleep(6)
+
+
+        
+        
+        
             
     def Spawn(self):
         #spawn cylinder
+        print "[RecordCylinderScript]--> Set robot to initial pose"
+        self.set_init_pose()
         if do_verbose == False:
             print "[RecordCylinderScript]--> No Verbose Output"
             os.system("roslaunch cob_3d_mapping_gazebo spawn_cylinder.launch >/dev/null")
@@ -270,12 +289,15 @@ class RecordCylinderScript(script):
 if __name__ == "__main__":
     #set flags to default values
     do_tf = False
-    do_spawn = False
+
     do_verbose = True
     
-    run_circle = False
-    run_line = True
+    run_circle = True
+    run_line = False
     run_single = False
+    run_pitch = False
+    run_spawn = False
+    run_helix = False
     
     
     intervall = 0.3
@@ -292,20 +314,30 @@ if __name__ == "__main__":
     # process options
     for o, a in opts:
         if o in ("-h", "--help"):
-            print "\n\nUsage:\t rosrun RecordCylinder.py [optional arguments]"
-            print"arguments:\t v .............. disable verbose output of spawned cylinder"
-            print"          \t spawn .......... spawn cylinder"
-            print"          \t tf ............. publish transform in frame map"
+            print "\n\nUsage:\t rosrun RecordCylinder.py <mode> <options>"
+            print " -- when run without <options> argument a default circle trajectory is used\n"
+            
+            print"<mode>   \t spawn .......... spawn default cylinder"
+            print"          \t single [x0][y0][orientation] .. set parameters of single pose"
+            print"          \t line [start][end][orientation] .. set parameters of trajectory line"
+            print"          \t circle [x0][y0][r] .. set parameters of trajectory circle"
+            print"          \t helix [x0][y0][r] .. set parameters of helix circle - looks up, then middle, then down"
+            print"          \t pitch [up] | [down] ....... pitch torso up or down "
+            print"Note: Only one mode can be chosen at a time. "
+            print"<options> \t V .............. disable verbose output of spawned cylinder"
+            print"          \t tf ............. publish transform in frame /map"
             print"          \t I [time]........ set rest intervall at every step to time"
             print"          \t N [#] .......... number of steps on trajectory"
-            print"          \t circle [x0][y0][r] .. set parameters of trajectory circle"
-            print"          \t line [start] [end] .. set parameters of trajectory line"
+            print"Note: multiple options can be used at the same time by just adding the to the command line"
+
             print"-------------------------------------------------------------------------"
-            print"default values\t V = True , spawn = False , tf = False , I 0.3 , cirlce 0 0 1 , N 12 "   
+            print"default values\t V = True , tf = False , I 0.3 , cirlce 0 0 1 , N 12 "   
+            print"Usage example: RecordCylinder.py circle 0 0 1 N 100 I 0.1 tf"
             sys.exit(0)
 
             
     # process arguments
+
     for i in range(len(args)):
 
         arg = args[i]
@@ -314,9 +346,9 @@ if __name__ == "__main__":
             do_verbose = False
             continue        
         elif (arg in 'spawn')  == True:
-            print "spawn = true"
-            do_spawn = True
-                        
+            print "spawning default cylinder"
+            run_circle = False
+            run_spawn = True                        
             continue
         elif (arg in "tf")  == True:
             print "tf = true"
@@ -334,8 +366,7 @@ if __name__ == "__main__":
             print ("circle paramaters set")            
             center = ((float)(args[i+1]),(float)(args[i+2]))            
             radius = (float)(args[i+3]) 
-            run_circle = True
-            run_line = False           
+       
             continue
         elif(arg in "line") == True:
             print ("line paramaters set")
@@ -348,12 +379,29 @@ if __name__ == "__main__":
 
         elif(arg in "single") == True:
             print ("single pose paramaters set")
-            run_line = False
+
             run_circle = False
             run_single = True
             pos = ((float)(args[i+1]),(float)(args[i+2]))          
             ori = (float)(args[i+3])
             continue
+        elif(arg in "pitch") == True:
+
+            run_circle = False
+
+            run_pitch = True
+            command = (args[i+1])                
+            continue
+            
+#        combinations of trajectories
+        elif(arg in "helix") == True:
+            run_circle = False
+            run_helix  = True
+            continue
+            
+
+        
+                
             
             
                 
@@ -362,8 +410,9 @@ if __name__ == "__main__":
 
     
     #initialize script
+
     SCRIPT = RecordCylinderScript(num_steps,intervall)
-    SCRIPT.set_flags(do_tf,do_spawn,do_verbose)
+    SCRIPT.set_flags(do_tf,do_verbose)
   
     
     #run script
@@ -374,6 +423,21 @@ if __name__ == "__main__":
         SCRIPT.RunCircle(center,radius)
     elif run_single == True:
         SCRIPT.RunSingle(pos,ori)
+    elif run_pitch == True:
+        SCRIPT.PitchHead(command)
+    elif run_spawn == True:
+        SCRIPT.Spawn()  
+    elif run_helix == True:
+        SCRIPT.PitchHead("up")
+        SCRIPT.RunCircle(center,radius)
+        SCRIPT.PitchHead("middle")
+        SCRIPT.RunCircle(center,radius)
+        SCRIPT.PitchHead("down")
+        SCRIPT.RunCircle(center,radius)
+
+        
+          
+      
 
 
         
