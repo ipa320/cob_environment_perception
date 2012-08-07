@@ -18,19 +18,15 @@ namespace cob_3d_mapping_tools
     {
       enum KeyCode
       {
-        A = 0x61,
-        D = 0x64,
-        S = 0x73,
-        W = 0x77,
-        Q = 0x71,
-        E = 0x65,
+        ENTER = 0x0D,
+        SPACE = 0x20,
 
         A_CAP = 0x41,
-        D_CAP = 0x44,
-        S_CAP = 0x53,
-        W_CAP = 0x57,
-        Q_CAP = 0x51,
-        E_CAP = 0x45
+        B_CAP, C_CAP, D_CAP, E_CAP, F_CAP, G_CAP, H_CAP, I_CAP, J_CAP, K_CAP, L_CAP, M_CAP, N_CAP,
+        O_CAP, P_CAP, Q_CAP, R_CAP, S_CAP, T_CAP, U_CAP, V_CAP, W_CAP, X_CAP, Y_CAP, Z_CAP, //=0x5A
+
+        A = 0x61,
+        B, C, D, E, F, G, H, I, J, K, L, M, N, O, P, Q, R, S, T, U, V, W, X, Y, Z, //=0x7A
       };
     };
 
@@ -41,7 +37,7 @@ namespace cob_3d_mapping_tools
     KeyboardConsoleListener& operator=(KeyboardConsoleListener const& copy); // Not implemented
 
   public:
-    ~KeyboardConsoleListener() {reset();}
+    ~KeyboardConsoleListener() { reset(); }
 
     static KeyboardConsoleListener& get()
       {
@@ -53,10 +49,11 @@ namespace cob_3d_mapping_tools
       }
     static void reset(int sig=0);
 
-    void init();
+    void init(unsigned int timeout=1); // timeout * 0.1 sec [1..255]
     char spinOnce();
     void spin();
     void waitForIt(char c);
+    char waitForIt(char* c, int size);
     bool hasStopped();
     void registerKeyboardEventCallback(boost::function<void (char)>& f);
 
@@ -67,7 +64,6 @@ namespace cob_3d_mapping_tools
     int kfd;
     bool tc_modified_;
     bool has_stopped_;
-    char c;
 
     boost::function<void (char)> callback;
 
@@ -83,28 +79,63 @@ namespace cob_3d_mapping_tools
     : kfd(0), tc_modified_(false), has_stopped_(true)
   { }
 
-  void KeyboardConsoleListener::init()
+  void KeyboardConsoleListener::init(unsigned int timeout)
   {
     // get the console in raw mode
     tcgetattr(kfd, &old_conf);
+
     new_conf = old_conf;
     //memcpy(&raw, &cooked, sizeof(struct termios));
+    const bool debug_b = false;
+    if (debug_b)
+    {
+      std::cout <<"---Old Config---"<< std::endl;
+      std::cout <<"ECHO:   "<< ( (new_conf.c_lflag & ECHO) == ECHO ? "True" : "False") << std::endl;
+      std::cout <<"ECHOE:  "<< ( (new_conf.c_lflag & ECHOE) == ECHOE ? "True" : "False") << std::endl;
+      std::cout <<"ECHOK:  "<< ( (new_conf.c_lflag & ECHOK) == ECHOK ? "True" : "False") << std::endl;
+      std::cout <<"ECHONL: "<< ( (new_conf.c_lflag & ECHONL) == ECHONL ? "True" : "False") << std::endl;
+      std::cout <<"ICANON: "<< ( (new_conf.c_lflag & ICANON) == ICANON ? "True" : "False") << std::endl;
+      std::cout <<"IEXTEN: "<< ( (new_conf.c_lflag & IEXTEN) == IEXTEN ? "True" : "False") << std::endl;
+      std::cout <<"ISIG:   "<< ( (new_conf.c_lflag & ISIG) == ISIG ? "True" : "False") << std::endl;
+      std::cout <<"NOFLSH: "<< ( (new_conf.c_lflag & NOFLSH) == NOFLSH ? "True" : "False") << std::endl;
+      std::cout <<"TOSTOP: "<< ( (new_conf.c_lflag & TOSTOP) == TOSTOP ? "True" : "False") << std::endl;
+    }
     new_conf.c_lflag &= (~ICANON & ~ECHO);
+    if (debug_b)
+    {
+      std::cout <<"---New Config---"<< std::endl;
+      std::cout <<"ECHO:   "<< ( (new_conf.c_lflag & ECHO) == ECHO ? "True" : "False") << std::endl;
+      std::cout <<"ECHOE:  "<< ( (new_conf.c_lflag & ECHOE) == ECHOE ? "True" : "False") << std::endl;
+      std::cout <<"ECHOK:  "<< ( (new_conf.c_lflag & ECHOK) == ECHOK ? "True" : "False") << std::endl;
+      std::cout <<"ECHONL: "<< ( (new_conf.c_lflag & ECHONL) == ECHONL ? "True" : "False") << std::endl;
+      std::cout <<"ICANON: "<< ( (new_conf.c_lflag & ICANON) == ICANON ? "True" : "False") << std::endl;
+      std::cout <<"IEXTEN: "<< ( (new_conf.c_lflag & IEXTEN) == IEXTEN ? "True" : "False") << std::endl;
+      std::cout <<"ISIG:   "<< ( (new_conf.c_lflag & ISIG) == ISIG ? "True" : "False") << std::endl;
+      std::cout <<"NOFLSH: "<< ( (new_conf.c_lflag & NOFLSH) == NOFLSH ? "True" : "False") << std::endl;
+      std::cout <<"TOSTOP: "<< ( (new_conf.c_lflag & TOSTOP) == TOSTOP ? "True" : "False") << std::endl;
+    }
     // Setting a new line, then end of file
-    new_conf.c_cc[VEOL] = 1;
-    new_conf.c_cc[VEOF] = 2;
+    //new_conf.c_lflag = 0;
+    //new_conf.c_cc[VEOL] = 1;
+    //new_conf.c_cc[VEOF] = 2;
+    new_conf.c_cc[VTIME] = std::max(std::min(timeout, (unsigned int)255), (unsigned int)1);
+    new_conf.c_cc[VMIN] = 0;
     tcsetattr(kfd, TCSANOW, &new_conf);
     tc_modified_ = true;
   }
 
   char KeyboardConsoleListener::spinOnce()
   {
-    if(read(kfd, &c, 1) < 0)
+    //std::cout << "BF spinOnce"<<std::endl;
+    char c;
+    int res=read(kfd, &c, 1);
+    if(res < 0)
     {
       std::cerr << "ERR: read():" << std::endl;
       KeyboardConsoleListener::reset();
     }
-    if(callback) callback(c);
+    else if(res == 0) return NULL;
+    if (callback) callback(c);
     return c;
   }
 
@@ -121,6 +152,17 @@ namespace cob_3d_mapping_tools
   void KeyboardConsoleListener::waitForIt(char c)
   {
     for(;;) { if (spinOnce() == c) return; };
+  }
+
+  char KeyboardConsoleListener::waitForIt(char* c, int size)
+  {
+    //std::cout<<"BF waitForIt"<<std::endl;
+    for(;;)
+    {
+      char c_in = spinOnce();
+      //std::cout << (int)c_in << std::endl;
+      for(int i=0; i<size; ++i) { if(c_in == c[i]) { return c_in; } }
+    }
   }
 
   bool KeyboardConsoleListener::hasStopped()
