@@ -42,7 +42,6 @@ namespace cob_3d_mapping_tools
     bool init(int argc, char* argv[]);
     void deinit();
     void run();
-    void runDummy();
 
   private:
     void interpret_input(char c_in);
@@ -78,7 +77,7 @@ namespace cob_3d_mapping_tools
       ;
 
     positional_options_description p_opt;
-    p_opt.add("in", 1).add("out", 2);
+    p_opt.add("in", 1);
     variables_map vm;
     store(command_line_parser(argc, argv).options(options).positional(p_opt).run(), vm);
     notify(vm);
@@ -111,7 +110,7 @@ namespace cob_3d_mapping_tools
     while(vit!=p_view->end()) { timeline.push_back(vit); ++vit; }
 
     KCL::get().init(delay);
-    //signal(SIGINT,signal_handler);
+    return true;
   }
 
   template <typename MsgT> void
@@ -121,12 +120,6 @@ namespace cob_3d_mapping_tools
     if(p_bag) { p_bag->close(); delete p_bag; }
     delete p_view;
     delete tf_broadcaster;
-  }
-
-  template <typename MsgT> void
-  bag_delayer<MsgT>::runDummy()
-  {
-    while(1) { ;}
   }
 
   template <typename MsgT> void
