@@ -78,6 +78,9 @@ extern "C" {
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/ModelCoefficients.h>
 #include <pcl/exceptions.h>
+#include <pcl/common/common.h>
+
+#include <math.h>
 
 
 
@@ -127,24 +130,27 @@ public:
   //################## methods for merging############################
   virtual void isMergeCandidate(const std::vector<boost::shared_ptr<Cylinder> >& cylinder_array,const merge_config& limits,std::vector<int>& intersections);
   virtual void merge(std::vector<boost::shared_ptr<Cylinder> >& c_array);
+
   virtual void applyWeighting(std::vector<boost::shared_ptr<Cylinder> >& merge_candidates);
 
-//############## debugging methods ####################
+  //############## debugging methods ####################
   void dbg_out(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points,std::string& name);
   void printAttributes(std::string & name);
 
 
-//################# member variables########################
+  //################# member variables########################
   double r_;
- Eigen::Vector3f sym_axis;
+  double h_min_,h_max_;
+  Eigen::Vector3f sym_axis;
   Eigen::Vector3f origin_;
   //	Polygon unrolled_;
   bool debug_;
 
 private:
-//################ private methods for merging to avoid confusion by user################
+  //################ private methods for merging to avoid confusion by user################
   void getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha);
-  void getShiftedCylinder(Cylinder& c,Cylinder& shifted_cylinder);
+  void getShiftedCylinder(Cylinder& c, Cylinder& shifted_cylinder,bool dbg);
+
 
 };
 

@@ -168,16 +168,10 @@ Cylinder::ParamsFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud ,
 
   //  Establish coordinate system for projection to horizontal plane
 
-  //  get arbitrary axis, orthogonal to symmetry axis: local x-axis  (lx)
-  Eigen::Vector3f lx;
-  lx=sym_axis.unitOrthogonal();
-  //  complete triad with local z axis (lz)
-  Eigen::Vector3f lz;
-  lz=lx.cross(sym_axis);
-
   Eigen::Affine3f trafo_hor2w;
   Eigen::Vector3f centroid3f ;
   centroid3f <<centroid[0] , centroid[1] , centroid[2];
+  // note: this transformation is only for coefficient estimation purposes and is not used for the final cylinder
   this->getTransformationFromPlaneToWorld(sym_axis,centroid3f,trafo_hor2w);
 
   ////  transform  points to horizontal coordinate system
@@ -224,10 +218,13 @@ Cylinder::ParamsFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud ,
   normal= centroid3f - origin_;
 
 
-  if (normal[2] > 0 ) {
 
-    normal = origin_ - centroid3f;
-  }
+
+
+//  if (normal[2] > 0 ) {
+//
+//    normal = origin_ - centroid3f;
+//  }
 
 
 
@@ -239,6 +236,14 @@ Cylinder::ParamsFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud ,
 
   //    unrolled polygon including >Trafo World 2 Plane
   this->computeAttributes(sym_axis, normal, origin_);
+
+
+  //  //  compute height of cylinder
+  //  Eigen::Vector4f min_pts,max_pts;
+  //  pcl::transformPointCloud(*in_cloud,indices,*trans_cloud,this->transform_from_world_to_plane);
+  //  pcl::getMinMax3D(*trans_cloud,min_pts,max_pts);
+
+
 
 }
 
@@ -268,6 +273,8 @@ Cylinder::ParamsFromShapeMsg(){
    */
 
 
+
+
   if (sym_axis[2] < 0 )
   {
     sym_axis= sym_axis *-1;
@@ -286,6 +293,27 @@ Cylinder::ParamsFromShapeMsg(){
   //    normal, d and transform_from_world_to_plane set within Polygon::assignMembers
   this->computeAttributes(sym_axis, normal, origin_);
 
+
+
+
+  //  calculation of h_min and h_max
+  double min,max;
+  min = -1000;
+  max = 1000;
+  std::vector<std::vector<Eigen::Vector3f> > trans_contours;
+  this->getTransformedContours(this->transform_from_world_to_plane);
+  for (size_t i = 0; i < contours.size(); ++i) {
+    for (size_t j = 0; j < contours[i].size(); ++j) {
+      if (contours[i][j][1]< min) min = contours[i][j][1];
+      if (contours[i][j][1]> min) max = contours[i][j][1];
+    }
+  }
+
+  h_max_ = max;
+  h_min_ = min;
+
+
+
 }
 
 void
@@ -299,6 +327,7 @@ Cylinder::computeAttributes(const Eigen::Vector3f& sym_axis, const Eigen::Vector
   //  normal = sym_axis.unitOrthogonal();
   //  pcl::getTransformationFromTwoUnitVectorsAndOrigin(
   //          this->sym_axis,this->normal,this->origin_,this->transform_from_world_to_plane);
+
 
   normal=new_normal;
   Eigen::Affine3f transform_from_plane_to_world;
@@ -353,6 +382,7 @@ void Cylinder::getCyl3D(std::vector<std::vector<Eigen::Vector3f> >& contours3D) 
 
       poly_plane.contours[j][k] = point_trans;
 
+
     }
   }
 
@@ -373,15 +403,17 @@ void Cylinder::getCyl3D(std::vector<std::vector<Eigen::Vector3f> >& contours3D) 
 
       //				 use polar coordinates to create cylinder points
       point_temp << r_ * sin(alpha), poly_plane.contours[j][k][1], r_	* cos(alpha);
+      //      point_temp = poly_plane.contours[j][k];
 
 
       //	      transform back in world system
       point_temp = transform_from_world_to_plane.inverse()
-																													                                                        * point_temp;
+																													                                                                                                * point_temp;
 
 
 
       contours3D[j][k] = point_temp;
+
 
 
 
@@ -449,14 +481,19 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 
     {
 
+
       Cylinder shifted_cylinder;
-      c_map.getShiftedCylinder(*this,shifted_cylinder);
+//      std::cout<<"n_map= \n"<<c_map.normal<< "\n";
+//      std::cout<<"n_new= \n"<<this->normal<< "\n";
+
+      c_map.getShiftedCylinder(*this,shifted_cylinder,false);
 
 
       bool is_intersected = this->isMergeCandidate_intersect(
           shifted_cylinder);
 
       if (is_intersected == false) {
+
 
 
         continue;
@@ -471,44 +508,90 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 
 }
 
+//void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
+//
+//  std::vector<CylinderPtr> merge_cylinders;
+//
+//  //create average cylinder for  averaging
+//  CylinderPtr average_cyl =CylinderPtr(new Cylinder());
+//  *average_cyl = *this;
+//  average_cyl->applyWeighting(c_array);
+//
+//  //	transform  to local system
+//  for (int i = 0; i < (int) c_array.size(); i++) {
+//    Cylinder & c_map = *c_array[i];
+//
+//    //shifted cylinder is computed with respect to "this"- system
+//
+//    CylinderPtr shifted_cylinder = CylinderPtr(new Cylinder());
+//
+//    c_map.getShiftedCylinder(*average_cyl,*shifted_cylinder);
+//
+//    merge_cylinders.push_back(shifted_cylinder);
+//  }
+//
+//  //  cast CylinderPtr to PolygonPtr to use merge_union   -- is  a better way possible ?!
+//  std::vector<PolygonPtr> merge_polygons;
+//  for (size_t i = 0; i < merge_cylinders.size(); ++i) {
+//    PolygonPtr tmp_ptr= merge_cylinders[i];
+//    merge_polygons.push_back(tmp_ptr);
+//  }
+//  PolygonPtr average_polygon= average_cyl;
+//
+//  this->merge_union(merge_polygons,average_polygon);
+//
+//  this->r_ = average_cyl->r_;
+//  this->computeCentroid();
+//  this->computeAttributes(average_cyl->sym_axis,average_cyl->normal,average_cyl->origin_);
+//  this->assignWeight();
+//
+//  //  std::cout<<" weight after merge: "<<this->merge_weight_<<std::endl;
+//
+//
+//}
 void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
 
   std::vector<CylinderPtr> merge_cylinders;
 
   //create average cylinder for  averaging
-    CylinderPtr average_cyl =CylinderPtr(new Cylinder());
-    *average_cyl = *this;
-    average_cyl->applyWeighting(c_array);
+  CylinderPtr average_cyl =CylinderPtr(new Cylinder());
+  *average_cyl = *this;
+  average_cyl->applyWeighting(c_array);
 
-  //	transform  to local system
-  for (int i = 0; i < (int) c_array.size(); i++) {
-    Cylinder & c_map = *c_array[i];
-
-    //shifted cylinder is computed with respect to "this"- system
+  //  transform  to local system
 
     CylinderPtr shifted_cylinder = CylinderPtr(new Cylinder());
 
-    c_map.getShiftedCylinder(*average_cyl,*shifted_cylinder);
-
+    this->getShiftedCylinder(*average_cyl,*shifted_cylinder,true);
     merge_cylinders.push_back(shifted_cylinder);
-  }
 
-  //  cast CylinderPtr to PolygonPtr to use merge_union   -- is  a better way possible ?!
-  std::vector<PolygonPtr> merge_polygons;
-  for (size_t i = 0; i < merge_cylinders.size(); ++i) {
-    PolygonPtr tmp_ptr= merge_cylinders[i];
-    merge_polygons.push_back(tmp_ptr);
-  }
-  PolygonPtr average_polygon= average_cyl;
+    for (int i = 1; i < (int) c_array.size(); i++) {
+      Cylinder & c_map = *c_array[i];
 
-  this->merge_union(merge_polygons,average_polygon);
+      //shifted cylinder is computed with respect to "this"- system
 
-  this->r_ = average_cyl->r_;
-  this->computeCentroid();
-  this->computeAttributes(average_cyl->sym_axis,average_cyl->normal,average_cyl->origin_);
-  this->assignWeight();
 
-  //  std::cout<<" weight after merge: "<<this->merge_weight_<<std::endl;
+      c_map.getShiftedCylinder(*average_cyl,*shifted_cylinder,true);
+
+      merge_cylinders.push_back(shifted_cylinder);
+    }
+
+    //  cast CylinderPtr to PolygonPtr to use merge_union   -- is  a better way possible ?!
+    std::vector<PolygonPtr> merge_polygons;
+    for (size_t i = 0; i < merge_cylinders.size(); ++i) {
+      PolygonPtr tmp_ptr= merge_cylinders[i];
+      merge_polygons.push_back(tmp_ptr);
+    }
+    PolygonPtr average_polygon= average_cyl;
+
+    c_array[0]->merge_union(merge_polygons,average_polygon);
+    *this = *c_array[0];
+    this->r_ = average_cyl->r_;
+    this->computeCentroid();
+    this->computeAttributes(average_cyl->sym_axis,average_cyl->normal,average_cyl->origin_);
+    this->assignWeight();
+
+    //  std::cout<<" weight after merge: "<<this->merge_weight_<<std::endl;
 
 
 }
@@ -552,6 +635,10 @@ Cylinder::applyWeighting(std::vector<CylinderPtr>& merge_candidates)
     merge_weight_sum += merge_candidates[i]->merge_weight_;
     merged_sum  += merge_candidates[i]->merged;
 
+    if (merge_candidates[i]->h_max_ > this-> h_max_)this->h_max_ = merge_candidates[i]->h_max_;
+    if (merge_candidates[i]->h_max_  < this-> h_min_)this->h_min_ = merge_candidates[i]->h_max_;
+
+
   }
 
   this->sym_axis = temp_sym_axis / merge_weight_sum;
@@ -576,10 +663,11 @@ Cylinder::applyWeighting(std::vector<CylinderPtr>& merge_candidates)
   x_axis << this->sym_axis[1], - this->sym_axis[0], this->sym_axis[2];
   this->normal = this->sym_axis.cross(x_axis);
 
-//  !overide! use initial values for normal and sym_axis
-//  this->origin_ = merge_candidates[0]->origin_;
+  //  !overide! use initial values for normal and sym_axis
+  //  this->origin_ = merge_candidates[0]->origin_;
   this->normal = merge_candidates[0]->normal;
   this->sym_axis = merge_candidates[0]-> sym_axis;
+  this->origin_ = merge_candidates[0]-> origin_;
 
 
 
@@ -588,8 +676,10 @@ Cylinder::applyWeighting(std::vector<CylinderPtr>& merge_candidates)
   this->transform_from_world_to_plane=transform_from_plane_to_world.inverse();
 
 
-//  std::cout<<"merged cyl sym axis \n"<<this->sym_axis<<"\n";
-//  std::cout<<"merged normal\n"<<this->normal<<"\n";
+
+
+  //  std::cout<<"merged cyl sym axis \n"<<this->sym_axis<<"\n";
+  //  std::cout<<"merged normal\n"<<this->normal<<"\n";
 
 
   //  this->computeAttributes(this->sym_axis,this->normal,this->origin_);
@@ -680,8 +770,58 @@ void Cylinder::getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha)
   }
 
 }
+//void
+//Cylinder::getShiftedCylinder(Cylinder& c, Cylinder & shifted_cylinder) {
+//
+//  //        Transform normal of map polygon in cylinder system of THIS
+//
+//  //  LOCAL
+//
+//  Eigen::Vector3f transformed_normal =
+//      c.transform_from_world_to_plane.rotation()
+//      * normal;
+//
+//  //          calculate trafo parameters
+//  float x_shift, z_shift, alpha;
+//  Eigen::Vector3f temp_vec;
+//
+//  temp_vec = (c.origin_ - origin_);
+//  z_shift = temp_vec.norm();
+//
+//  getTrafo2d(transformed_normal, x_shift, alpha);
+//  //  std::cout<<"ALPHA = "<< alpha <<"\n";
+//  //  std::cout<<"X-shift = "<<x_shift<<"\n";
+//
+//  Eigen::Affine3f shift_trafo;
+//  pcl::getTransformation(x_shift, 0, z_shift, 0, alpha, 0, shift_trafo);
+//
+//
+//  shifted_cylinder.contours.resize(contours.size());
+//  shifted_cylinder.holes.resize(contours.size());
+//
+//  for (size_t j = 0; j < contours.size(); j++) {
+//    shifted_cylinder.contours[j].resize(contours[j].size());
+//
+//    for (size_t k = 0; k < contours[j].size(); k++) {
+//      //      Transform  Points in Cylinder Coordinate System
+//
+//
+//      shifted_cylinder.contours[j][k]   = c.transform_from_world_to_plane.inverse()
+//                                                                                                                                                              * (shift_trafo
+//                                                                                                                                                                  * c.transform_from_world_to_plane
+//                                                                                                                                                                  * contours[j][k]);
+//      //END LOCAL
+//
+//    }
+//  }
+//
+//  shifted_cylinder.merge_weight_=c.merge_weight_;
+//  shifted_cylinder.merged = c.merged;
+//  shifted_cylinder.computeAttributes(c.sym_axis, c.normal, origin_);
+//
+//}
 void
-Cylinder::getShiftedCylinder(Cylinder& c, Cylinder & shifted_cylinder) {
+Cylinder::getShiftedCylinder(Cylinder& c, Cylinder & shifted_cylinder,bool dbg) {
 
   //        Transform normal of map polygon in cylinder system of THIS
 
@@ -689,21 +829,62 @@ Cylinder::getShiftedCylinder(Cylinder& c, Cylinder & shifted_cylinder) {
 
   Eigen::Vector3f transformed_normal =
       c.transform_from_world_to_plane.rotation()
-      * normal;
+      * this->normal;
 
-  //          calculate trafo parameters
-  float x_shift, z_shift, alpha;
-  Eigen::Vector3f temp_vec;
 
-  temp_vec = (c.origin_ - origin_);
-  z_shift = temp_vec.norm();
 
-  getTrafo2d(transformed_normal, x_shift, alpha);
-  //  std::cout<<"ALPHA = "<< alpha <<"\n";
-  //  std::cout<<"X-shift = "<<x_shift<<"\n";
+  Eigen::Vector3f transformed_sym_axis =
+      c.transform_from_world_to_plane.rotation()
+      * this->sym_axis;
 
-  Eigen::Affine3f shift_trafo;
-  pcl::getTransformation(x_shift, 0, z_shift, 0, alpha, 0, shift_trafo);
+
+
+  Eigen::Vector3f transformed_origin =
+      c.transform_from_world_to_plane
+      *this->origin_;
+
+  //  std::cout<<"origin\n"<<transformed_origin<<std::endl;
+  //  std::cout<<"normal\n"<<transformed_normal<<std::endl;
+  //  std::cout<<"sym_axis\n"<<transformed_sym_axis<<std::endl;
+
+
+
+  Eigen::Affine3f transfer_trafo;
+  pcl::getTransformationFromTwoUnitVectorsAndOrigin(transformed_sym_axis,transformed_normal,transformed_origin,transfer_trafo);
+  //  Debug
+  float roll,pitch,yaw;
+  pcl::getEulerAngles(transfer_trafo,roll,pitch,yaw);
+
+//  if (transformed_normal[0]>0 && transformed_normal[2] <0 ) {
+//    pitch = -M_PI -pitch ;
+//  }
+//  else if (transformed_normal[0]<0 && transformed_normal[2] <0 ) {
+//    pitch = -M_PI-pitch ;
+//
+//  }
+
+  Eigen::Vector3f  trans;
+  trans = pcl::getTranslation(transfer_trafo);
+
+  trans[0] +=  c.r_ * -pitch;
+  trans[1] = 0;
+  if (dbg == true) {
+    std::cout<<"_____________________\n";
+    std::cout<<"roll= "<<roll<<" pitch= "<<pitch<<" yaw= "<<yaw<<std::endl;
+
+    std::cout<<"norma = \n"<<transformed_normal<<"\n";
+    std::cout<<"angles = \n";
+    std::cout<<"alpha = "<<pitch  <<"\n";
+    std::cout<<"tx = "<<c.r_ * -pitch<<std::endl;
+    std::cout<<"_____________________\n";
+
+  }
+
+  //  trans[0] = TODO
+
+  Eigen::Affine3f shift_trafo ;
+
+  pcl::getTransformation(trans[0],trans[1],trans[2],roll,pitch,yaw,shift_trafo);
 
 
   shifted_cylinder.contours.resize(contours.size());
@@ -716,10 +897,8 @@ Cylinder::getShiftedCylinder(Cylinder& c, Cylinder & shifted_cylinder) {
       //      Transform  Points in Cylinder Coordinate System
 
 
-      shifted_cylinder.contours[j][k]   = c.transform_from_world_to_plane.inverse()
-                                                                                                                      * (shift_trafo
-                                                                                                                          * c.transform_from_world_to_plane
-                                                                                                                          * contours[j][k]);
+      shifted_cylinder.contours[j][k]   =
+          transform_from_world_to_plane.inverse()* (shift_trafo* transform_from_world_to_plane* contours[j][k]);
       //END LOCAL
 
     }
@@ -730,7 +909,6 @@ Cylinder::getShiftedCylinder(Cylinder& c, Cylinder & shifted_cylinder) {
   shifted_cylinder.computeAttributes(c.sym_axis, c.normal, origin_);
 
 }
-
 
 
 
