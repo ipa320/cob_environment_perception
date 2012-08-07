@@ -3,12 +3,12 @@
   <link name="my_cylinder">
     <visual>
       <geometry>
-        <cylinder length="0.5" radius="0.2"/>
+        <cylinder length="1.4" radius="0.2"/>
       </geometry>
     </visual>
     <collision>
       <geometry>
-        <cylinder length="0.5" radius="0.2"/>
+        <cylinder length="1.4" radius="0.2"/>
       </geometry>
     </collision>
    <inertial>

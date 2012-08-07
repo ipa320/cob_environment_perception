@@ -93,10 +93,10 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::onInit()
 
 
   sub_points_ = nh_.subscribe<PointCloud>("cloud_in", 1, boost::bind(&SegmentationAllInOneNodelet::receivedCloudCallback, this, _1));
-  pub_segmented_ = nh_.advertise<PointCloud>("segmentation_cloud", 1);
-  pub_classified_ = nh_.advertise<PointCloud>("classified_cloud", 1);
-  pub_shape_array_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray>("/plane_extraction/shape_array",1);
-  pub_chull_ = nh_.advertise<PointCloud>("concave_hull", 1);
+  pub_segmented_ = nh_.advertise<PointCloud>("/segmentation/segmentation_cloud", 1);
+  pub_classified_ = nh_.advertise<PointCloud>("/segmentation/classified_cloud", 1);
+  pub_shape_array_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray>("/segmentation/shape_array",1);
+  pub_chull_ = nh_.advertise<PointCloud>("/segmentation/concave_hull", 1);
   std::cout << "Loaded segmentation nodelet" << std::endl;
 }
 

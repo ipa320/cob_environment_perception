@@ -5,8 +5,8 @@
     <arg name= "cyl_name" default = "cylinder"/>
     <arg name= "pos_x" default = "0"/>
     <arg name= "pos_y" default = "0"/>
-	<param name="$(arg name)" command="$(find xacro)/xacro.py $(find cob_3d_mapping_gazebo)/objects/cylinder.urdf" />
+	<param name="$(arg cyl_name)" command="$(find xacro)/xacro.py $(find cob_3d_mapping_gazebo)/objects/cylinder.urdf" />
 	<!-- spawn model in gazebo -->
-	<node name="spawn_cylinder" pkg="gazebo" type="spawn_model" args="-urdf -param cylinder -x $(arg pos_x) -y $(arg pos_y) -z 1.1 -R 0 -P 0 -Y 0 -model $(arg name)" respawn="false" output="screen" />
+	<node name="spawn_cylinder" pkg="gazebo" type="spawn_model" args="-urdf -param $(arg cyl_name) -x $(arg pos_x) -y $(arg pos_y) -z 1.1 -R 0 -P 0 -Y 0 -model $(arg cyl_name)" respawn="false" output="screen" />
 
 </launch>
