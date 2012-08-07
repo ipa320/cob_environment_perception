@@ -114,7 +114,7 @@ Polygon::computeAttributes(const Eigen::Vector3f &new_normal, const Eigen::Vecto
   normal=new_normal;
   centroid = new_centroid;
   d=fabs(centroid.head(3).dot(normal));
-  d=centroid.norm();
+//  d=centroid.norm();
 
   pcl::getTransformationFromTwoUnitVectorsAndOrigin(
         this->normal.unitOrthogonal(),this->normal,this->centroid.head(3),this->transform_from_world_to_plane);
