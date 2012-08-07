@@ -149,7 +149,7 @@ public:
 private:
   //################ private methods for merging to avoid confusion by user################
   void getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha);
-  void getShiftedCylinder(Cylinder& c, Cylinder& shifted_cylinder,bool dbg);
+  void getShiftedCylinder(Cylinder& c2,Cylinder& c3, Cylinder& result,bool dbg);
 
 
 };
