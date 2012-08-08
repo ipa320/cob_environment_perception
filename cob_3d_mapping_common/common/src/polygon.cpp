@@ -189,13 +189,10 @@ Polygon::isMergeCandidate_intersect(Polygon& p_map)
   gpc_polygon gpc_p_merge;
   gpc_polygon gpc_p_map;
 
-  std::cout<<"debug1"<<std::endl;
 
   this->GpcStructureUsingMap(p_map.transform_from_world_to_plane, &gpc_p_merge);
-  std::cout<<"debug2"<<std::endl;
   p_map.GpcStructureUsingMap(p_map.transform_from_world_to_plane, &gpc_p_map);
 
-  std::cout<<"debug3"<<std::endl;
   gpc_polygon_clip(GPC_INT,&gpc_p_merge,&gpc_p_map,&gpc_result);
 
   if(gpc_result.num_contours == 0)

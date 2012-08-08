@@ -446,6 +446,63 @@ void Cylinder::getCyl3D(std::vector<std::vector<Eigen::Vector3f> >& contours3D) 
   }
 
 }
+void Cylinder::makeCyl3D() {
+  //  std::cout<<"getCyl3d"<<std::endl;
+  //Transform to local coordinate system
+  Polygon poly_plane;
+
+  for (size_t j = 0; j < contours.size(); j++) {
+
+    poly_plane.holes.resize(contours.size());
+    poly_plane.contours.resize(contours.size());
+
+    for (size_t k = 0; k < contours[j].size(); k++) {
+      poly_plane.contours[j].resize(contours[j].size());
+
+      Eigen::Vector3f point_trans =
+          transform_from_world_to_plane
+          * contours[j][k];
+
+      poly_plane.contours[j][k] = point_trans;
+
+
+    }
+  }
+
+  // transform into cylinder shape via polar coordinates
+  for (size_t j = 0; j < poly_plane.contours.size(); j++) {
+
+    holes.resize(poly_plane.contours.size());
+
+    for (size_t k = 0; k < poly_plane.contours[j].size(); k++) {
+
+      float alpha;
+      Eigen::Vector3f point_temp;
+      //          alpha= B/r
+      alpha = poly_plane.contours[j][k][0] / r_;
+
+
+      //         use polar coordinates to create cylinder points
+      point_temp << r_ * sin(alpha), poly_plane.contours[j][k][1], r_ * cos(alpha);
+      //      point_temp = poly_plane.contours[j][k];
+
+
+      //        transform back in world system
+      point_temp = transform_from_world_to_plane.inverse()
+                                                                                                                                                                                  * point_temp;
+
+
+
+      contours[j][k] = point_temp;
+      //      contours3D[j][k] = contours[j][k];
+
+
+
+
+    }
+  }
+
+}
 
 
 
@@ -622,7 +679,6 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 //
 //}
 void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
-std::cout<<"MERGING"<<std::endl;
   std::vector<CylinderPtr> merge_cylinders;
 
   //create average cylinder for  averaging
@@ -632,13 +688,15 @@ std::cout<<"MERGING"<<std::endl;
 
   //  transform  to local system
 
-  CylinderPtr shifted_cylinder = CylinderPtr(new Cylinder());
+
 
   //  this->getShiftedCylinder(*c_array[0],*average_cyl,*shifted_cylinder,true);
-  this->t2t(*average_cyl,*shifted_cylinder);
-  merge_cylinders.push_back(shifted_cylinder);
+  this->t2t(*average_cyl,*this);
+  this->makeCyl2D();
 
-  for (int i = 1; i < (int) c_array.size(); i++) {
+
+
+  for (int i = 0; i < (int) c_array.size(); i++) {
 
     std::cout<<"//////MERGE SIZE = "<<c_array.size()<<"\n";
     Cylinder & c_map = *c_array[i];
@@ -646,12 +704,11 @@ std::cout<<"MERGING"<<std::endl;
     //shifted cylinder is computed with respect to "this"- system
 
     //    c_map.getShiftedCylinder(*c_array[0],*average_cyl,*shifted_cylinder,true);
-    c_map.t2t(*average_cyl,*shifted_cylinder);
+    c_array[i]->t2t(*average_cyl,*c_array[i]);
+    c_array[i]->makeCyl2D();
 
 
-
-
-    merge_cylinders.push_back(shifted_cylinder);
+    merge_cylinders.push_back(c_array[i]);
   }
 
   //  cast CylinderPtr to PolygonPtr to use merge_union   -- is  a better way possible ?!
@@ -662,12 +719,11 @@ std::cout<<"MERGING"<<std::endl;
   }
   PolygonPtr average_polygon= average_cyl;
 
-  c_array[0]->merge_union(merge_polygons,average_polygon);
-  *this = *c_array[0];
-  this->r_ = average_cyl->r_;
-  this->computeCentroid();
-  this->computeAttributes(average_cyl->sym_axis,average_cyl->normal,average_cyl->origin_);
+
+  this->merge_union(merge_polygons,average_polygon);
+  this->GrabParams(*average_cyl);
   this->assignWeight();
+  this->makeCyl3D();
 
   //  std::cout<<" weight after merge: "<<this->merge_weight_<<std::endl;
 
