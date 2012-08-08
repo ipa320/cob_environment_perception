@@ -120,12 +120,14 @@ public:
   void ParamsFromShapeMsg();
   virtual void computeAttributes(const Eigen::Vector3f & sym_axis,const Eigen::Vector3f &new_normal, const Eigen::Vector3f & new_origin);
   virtual void transform2tf(Eigen::Affine3f & tf);
+  void GrabParams(Cylinder& c_src);
 
 
 
   //################## methods to roll and unroll cylinder###############
   void getCyl3D(std::vector<std::vector<Eigen::Vector3f> >& contours3D);
   void makeCyl2D();
+  void getCyl2D(Cylinder& c2d);
 
   //################## methods for merging############################
   virtual void isMergeCandidate(const std::vector<boost::shared_ptr<Cylinder> >& cylinder_array,const merge_config& limits,std::vector<int>& intersections);
@@ -150,6 +152,7 @@ private:
   //################ private methods for merging to avoid confusion by user################
   void getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha);
   void getShiftedCylinder(Cylinder& c2,Cylinder& c3, Cylinder& result,bool dbg);
+  void t2t(Cylinder& c_target,Cylinder& c_result);
 
 
 };
