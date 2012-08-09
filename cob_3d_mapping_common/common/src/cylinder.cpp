@@ -426,7 +426,63 @@ void Cylinder::getCyl3D(std::vector<std::vector<Eigen::Vector3f> >& contours3D) 
 
 }
 
+void Cylinder::makeCyl3D() {
+  //  std::cout<<"getCyl3d"<<std::endl;
+  //Transform to local coordinate system
+  Polygon poly_plane;
 
+  for (size_t j = 0; j < contours.size(); j++) {
+
+    poly_plane.holes.resize(contours.size());
+    poly_plane.contours.resize(contours.size());
+
+    for (size_t k = 0; k < contours[j].size(); k++) {
+      poly_plane.contours[j].resize(contours[j].size());
+
+      Eigen::Vector3f point_trans =
+          transform_from_world_to_plane
+          * contours[j][k];
+
+      poly_plane.contours[j][k] = point_trans;
+
+
+    }
+  }
+
+  // transform into cylinder shape via polar coordinates
+  for (size_t j = 0; j < poly_plane.contours.size(); j++) {
+
+    holes.resize(poly_plane.contours.size());
+
+    for (size_t k = 0; k < poly_plane.contours[j].size(); k++) {
+
+      float alpha;
+      Eigen::Vector3f point_temp;
+      //          alpha= B/r
+      alpha = poly_plane.contours[j][k][0] / r_;
+
+
+      //         use polar coordinates to create cylinder points
+      point_temp << r_ * sin(alpha), poly_plane.contours[j][k][1], r_ * cos(alpha);
+      //      point_temp = poly_plane.contours[j][k];
+
+
+      //        transform back in world system
+      point_temp = transform_from_world_to_plane.inverse()
+                                                                                                                                                                          * point_temp;
+
+
+
+      contours[j][k] = point_temp;
+//      contours3D[j][k] = contours[j][k];
+
+
+
+
+    }
+  }
+
+}
 
 void Cylinder::makeCyl2D()
 {
@@ -476,7 +532,7 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
   for (size_t i = 0; i < cylinder_array.size(); i++) {
 
     Cylinder& c_map = *(cylinder_array[i]);
-
+    c_map.makeCyl2D();
 
     Eigen::Vector3f connection=c_map.origin_-origin_;
 
@@ -597,7 +653,10 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
   this->r_ = average_cyl->r_;
   this->computeCentroid();
   this->computeAttributes(average_cyl->sym_axis,average_cyl->normal,average_cyl->origin_);
+
   this->assignWeight();
+
+  this->makeCyl3D();
 
   //  std::cout<<" weight after merge: "<<this->merge_weight_<<std::endl;
 
