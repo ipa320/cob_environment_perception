@@ -432,7 +432,7 @@ void Cylinder::getCyl3D(std::vector<std::vector<Eigen::Vector3f> >& contours3D) 
 
       //	      transform back in world system
       point_temp = transform_from_world_to_plane.inverse()
-																													                                                                                                                        * point_temp;
+																													                                                                                                                            * point_temp;
 
 
 
@@ -489,7 +489,7 @@ void Cylinder::makeCyl3D() {
 
       //        transform back in world system
       point_temp = transform_from_world_to_plane.inverse()
-                                                                                                                                                                                  * point_temp;
+                                                                                                                                                                                      * point_temp;
 
 
 
@@ -608,7 +608,7 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 
 
       //      c_map.getShiftedCylinder(*this,*this,shifted_cylinder,false);
-      c_map.t2t(*this,c_map_work);
+      c_map.transformToTarget(*this,c_map_work);
 
 
       c_map_work.makeCyl2D();
@@ -691,21 +691,60 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
 
 
   //  this->getShiftedCylinder(*c_array[0],*average_cyl,*shifted_cylinder,true);
-  this->t2t(*average_cyl,*this);
+  this->transformToTarget(*average_cyl,*this);
+
+  bool debug = true;
+  if(debug == true)
+  {
+    std::string s1;
+    s1= "s1.1";
+
+    this->debug_output(s1);
+
+  }
   this->makeCyl2D();
 
+  if(debug == true)
+  {
+    std::string s1;
+
+    s1= "s1.2";
+
+    this->debug_output(s1);
+
+  }
 
 
   for (int i = 0; i < (int) c_array.size(); i++) {
 
-    std::cout<<"//////MERGE SIZE = "<<c_array.size()<<"\n";
-    Cylinder & c_map = *c_array[i];
+    //    std::cout<<"//////MERGE SIZE = "<<c_array.size()<<"\n";
+    //    Cylinder & c_map = *c_array[i];
 
     //shifted cylinder is computed with respect to "this"- system
 
+
     //    c_map.getShiftedCylinder(*c_array[0],*average_cyl,*shifted_cylinder,true);
-    c_array[i]->t2t(*average_cyl,*c_array[i]);
+    c_array[i]->transformToTarget(*average_cyl,*c_array[i]);
+
+
+    if(debug ==true)
+    {
+      std::string s2;
+      s2= "s2.1";
+
+      c_array[i]->debug_output(s2);
+    }
     c_array[i]->makeCyl2D();
+
+
+    if(debug ==true)
+    {
+      std::string s2;
+
+      s2= "s2.2";
+
+      c_array[i]->debug_output(s2);
+    }
 
 
     merge_cylinders.push_back(c_array[i]);
@@ -796,10 +835,9 @@ Cylinder::applyWeighting(std::vector<CylinderPtr>& merge_candidates)
   Eigen::Vector3f x_axis;
   x_axis << this->sym_axis[1], - this->sym_axis[0], this->sym_axis[2];
   this->normal = this->sym_axis.cross(x_axis);
-  std::cout<<"av normal"<<this->normal<<"\n";
 
   //  !overide! use initial values for normal and sym_axis
-  this->normal = merge_candidates[0]->normal;
+  //  this->normal = merge_candidates[0]->normal;
   //  this->sym_axis = merge_candidates[0]-> sym_axis;
   //  this->origin_ = merge_candidates[0]-> origin_;
 
@@ -1084,7 +1122,7 @@ Cylinder::getShiftedCylinder(Cylinder& c2,Cylinder& c3, Cylinder & result,bool d
 
 
 void
-Cylinder::t2t(Cylinder& c_target,Cylinder& c_result)
+Cylinder::transformToTarget(Cylinder& c_target,Cylinder& c_result)
 {
   //Transform "this" cylinder to c_target
 
