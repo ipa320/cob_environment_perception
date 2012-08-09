@@ -66,18 +66,13 @@
 #include <cob_3d_mapping_msgs/GetGeometricMap.h>
 
 std::string file_path;
+cob_3d_mapping_msgs::ShapeArray::ConstPtr sa;
 
 bool
 getMap(cob_3d_mapping_msgs::GetGeometricMap::Request &req,
        cob_3d_mapping_msgs::GetGeometricMap::Response &res)
 {
-  rosbag::Bag bag;
-  bag.open(file_path, rosbag::bagmode::Read);
-  rosbag::View view(bag, rosbag::TopicQuery("geometry_map"));
-  rosbag::MessageInstance m = *(view.begin());
-  cob_3d_mapping_msgs::ShapeArray::ConstPtr sa = m.instantiate<cob_3d_mapping_msgs::ShapeArray>();
   res.map = *sa;
-  bag.close();
   return true;
 }
 
@@ -87,8 +82,17 @@ int main (int argc, char **argv)
   ros::NodeHandle nh;
 
   ros::param::get("~file_path", file_path);
+  rosbag::Bag bag;
+  bag.open(file_path, rosbag::bagmode::Read);
+  rosbag::View view(bag, rosbag::TopicQuery("/geometry_map/map_array"));
+  rosbag::MessageInstance m = *(view.begin());
+  sa = m.instantiate<cob_3d_mapping_msgs::ShapeArray>();
+  bag.close();
 
-  ros::ServiceServer get_map_server = nh.advertiseService("get_geometry_map", &getMap);
+  ros::ServiceServer get_map_server = nh.advertiseService("get_map", &getMap);
+  ros::Publisher pub = nh.advertise<cob_3d_mapping_msgs::ShapeArray>("map_array",1);
+  ros::Duration(0.5).sleep();
+  pub.publish(*sa);
   ros::spin();
 
   return 0;
