@@ -1,0 +1,23 @@
+<package>
+  <description brief="cob_3d_mapping_semantics">
+
+     Extraction of semantic data (e.g. table extraction) from 3-D environment maps.
+
+  </description>
+  <author>Georg Arbeiter</author>
+  <license>LGPL</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/cob_3d_mapping_semantics</url>
+
+	<depend package="roscpp"/>
+	<depend package="pcl"/>
+	<depend package="pcl_ros"/>
+	<depend package="visualization_msgs"/>
+	<depend package="cob_3d_mapping_msgs"/>
+	<depend package="cob_3d_mapping_common"/>
+	<depend package="tabletop_object_detector"/>
+
+	
+</package>
+
+

@@ -1,11 +1,11 @@
 <package>
   <description brief="cob_env_model_msgs">
 
-     cob_env_model_msgs
+     Message, service and action definitions for environment perception.
 
   </description>
   <author>Georg Arbeiter</author>
-  <license>BSD</license>
+  <license>LGPL</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/cob_env_model_msgs</url>
 
@@ -13,6 +13,7 @@
 	<depend package="sensor_msgs"/>
 	<depend package="std_msgs"/>
 	<depend package="actionlib_msgs"/>
+	<depend package="tabletop_object_detector"/>
 	
   <export>
     <cpp cflags="-I${prefix}/msg_gen/cpp -I${prefix}/srv_gen/cpp"/>
