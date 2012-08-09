@@ -125,6 +125,8 @@ public:
 
   //################## methods to roll and unroll cylinder###############
   void getCyl3D(std::vector<std::vector<Eigen::Vector3f> >& contours3D);
+  void makeCyl3D();
+
   void makeCyl2D();
 
   //################## methods for merging############################
