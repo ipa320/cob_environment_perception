@@ -600,10 +600,11 @@ Polygon::computePoseAndBoundingBox(Eigen::Affine3f& pose, Eigen::Vector4f& min_p
 
 void Polygon::debug_output(std::string name)
 {
-  std::ofstream os;
+//  std::ofstream os;
   std::string path = "/home/goa-tz/debug/";
   path.append(name.c_str());
-  os.open(path.c_str());
+  std::ofstream os(path.c_str());
+//  os.open(path.c_str());
   //std::cout<< "name~~~~~~~~~~~~"<<std::endl;
   std::cout<<"saving polygon nodes to "<<path.c_str()<<std::endl;
 

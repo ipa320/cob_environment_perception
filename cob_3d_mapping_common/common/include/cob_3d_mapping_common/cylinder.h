@@ -82,6 +82,8 @@ extern "C" {
 
 #include <math.h>
 
+#include <sstream>
+
 
 
 
@@ -153,7 +155,7 @@ private:
   //################ private methods for merging to avoid confusion by user################
   void getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha);
   void getShiftedCylinder(Cylinder& c2,Cylinder& c3, Cylinder& result,bool dbg);
-  void t2t(Cylinder& c_target,Cylinder& c_result);
+  void transformToTarget(Cylinder& c_target,Cylinder& c_result);
 
 
 };
