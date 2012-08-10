@@ -465,24 +465,24 @@ GeometryMap::colorizeMap()
   {
     if(fabs(map_polygon_[i]->normal[2]) < 0.1) //plane is vertical
     {
-      map_polygon_[i]->color[0] = 0.5;
-      map_polygon_[i]->color[1] = 0.5;
+      map_polygon_[i]->color[0] = 0.75;
+      map_polygon_[i]->color[1] = 0.75;
       map_polygon_[i]->color[2] = 0;
-      map_polygon_[i]->color[3] = 1;
+      map_polygon_[i]->color[3] = 0.8;
     }
     else if(fabs(map_polygon_[i]->normal[0]) < 0.12 && fabs(map_polygon_[i]->normal[1]) < 0.12 && fabs(map_polygon_[i]->normal[2]) > 0.9) //plane is horizontal
     {
       map_polygon_[i]->color[0] = 0;
       map_polygon_[i]->color[1] = 0.5;
       map_polygon_[i]->color[2] = 0;
-      map_polygon_[i]->color[3] = 1;
+      map_polygon_[i]->color[3] = 0.8;
     }
     else
     {
-      map_polygon_[i]->color[0] = 1;
-      map_polygon_[i]->color[1] = 1;
-      map_polygon_[i]->color[2] = 1;
-      map_polygon_[i]->color[3] = 1;
+      map_polygon_[i]->color[0] = 0.75;
+      map_polygon_[i]->color[1] = 0.75;
+      map_polygon_[i]->color[2] = 0.75;
+      map_polygon_[i]->color[3] = 0.8;
     }
   }
 
