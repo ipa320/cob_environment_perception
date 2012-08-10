@@ -38,7 +38,9 @@
 #include <OGRE/OgreManualObject.h>
 #include <OGRE/OgreSceneManager.h>
 #include <OGRE/OgreSceneNode.h>
+#include <OGRE/OgreEntity.h>
 #include <OGRE/OgreMatrix3.h>
+//#include <OGRE/OgreIteratorWrapper.h>
 
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
@@ -54,22 +56,28 @@ namespace rviz
                             Ogre::SceneNode* parent_node ) :
                             ShapeBase(owner, manager, parent_node), polygon_(0)
   {
-
     scene_node_ = manager->getSceneManager()->getRootSceneNode()->createChildSceneNode();
 
     static int count = 0;
-    std::stringstream ss;
+    std::stringstream ss, ss2, ss3;
+
     ss << "Polygon" << count++;
     polygon_ = manager->getSceneManager()->createManualObject( ss.str() );
-    polygon_->setDynamic( true );
-    scene_node_->attachObject( polygon_ );
+    //polygon_->setDynamic( true );
+    //scene_node_->attachObject( polygon_ );
 
-    if(count==1) {
+    if(count==1)
+    {
+      //Ogre::SceneManager::CameraIterator cit = manager->getSceneManager()->getCameraIterator();
+      //while (cit.hasMoreElements()) cit.getNext()->setPolygonMode(Ogre::PM_WIREFRAME); // enable wireframe mode
+
       Ogre::Light* directionalLight = manager->getSceneManager()->createLight("directionalLight");
       if(directionalLight) {
         directionalLight->setType(Ogre::Light::LT_DIRECTIONAL);
-        directionalLight->setDiffuseColour(Ogre::ColourValue(0.5,0.5,0.5));
-        directionalLight->setSpecularColour(Ogre::ColourValue(1,1,1));
+        //directionalLight->setDiffuseColour(Ogre::ColourValue(0.5,0.5,0.5)); // color of light
+        directionalLight->setDiffuseColour(Ogre::ColourValue(1.0,1.0,1.0));
+        //directionalLight->setSpecularColour(Ogre::ColourValue(1.0,1.0,1.0)); // color reflected of object
+        directionalLight->setSpecularColour(Ogre::ColourValue(.0,.0,.0)); // color reflected of object
         directionalLight->setDirection(Ogre::Vector3( 0, -1, 0 ));
       }
       else
@@ -87,29 +95,35 @@ namespace rviz
     char buf[128];
     sprintf(buf, "ShapeColor%f;%f;%f;%f",r,g,b,a);
     if(!Ogre::MaterialManager::getSingleton().getByName(buf, Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME).isNull())
+    {
+      Ogre::MaterialPtr m = Ogre::MaterialManager::getSingleton().getByName(buf, Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME);
+      //std::cout<<buf<<": "<< m->getTechnique(0)->getPass(0)->getDepthCheckEnabled() << std::endl;
       return buf;
+    }
 
     Ogre::ColourValue color( r,g,b,a );
     Ogre::MaterialPtr mat = Ogre::MaterialManager::getSingleton().create( buf, Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME );
 
     mat->getTechnique(0)->setLightingEnabled(true);
-    mat->getTechnique(0)->setAmbient(color /*color * 0.01f*/);
+    mat->getTechnique(0)->setAmbient(color /* * 0.01f*/);
+    mat->getTechnique(0)->setDiffuse(0.2,0.2,0.2,1.0);
     mat->setReceiveShadows(false);
-    mat->setCullingMode(Ogre::CULL_NONE);
-    mat->getTechnique(0)->setDiffuse( color );
+    mat->setCullingMode(Ogre::CULL_NONE); // both-side visibility
+
     //mat->getTechnique(0)->setSpecular( color );
 
     if ( true || color.a < 0.9998 )
     {
       mat->getTechnique(0)->setSceneBlending( Ogre::SBT_TRANSPARENT_ALPHA );
-      mat->getTechnique(0)->setDepthWriteEnabled( false );
+      //mat->getTechnique(0)->setDepthWriteEnabled( false );
+      mat->getTechnique(0)->setDepthCheckEnabled( true );
     }
     else
     {
       mat->getTechnique(0)->setSceneBlending( Ogre::SBT_REPLACE );
       mat->getTechnique(0)->setDepthWriteEnabled( true );
     }
-
+    std::cout << buf << std::endl;
     return buf;
   }
 
@@ -127,9 +141,10 @@ namespace rviz
       origin(2)=new_message->centroid.z;
       //std::cout << "normal: " << normal << std::endl;
       //std::cout << "centroid: " << origin << std::endl;
-      v = normal.unitOrthogonal ();
+      v = (origin.dot(normal) * normal - origin).normalized();//normal.unitOrthogonal ();
       u = normal.cross (v);
       pcl::getTransformationFromTwoUnitVectorsAndOrigin(v, normal,  origin, transformation);
+      //pcl::getTransformationFromTwoUnitVectors(v, normal, transformation);
 
       Eigen::Vector3f p3 = transformation*point.getVector3fMap();
       pt.x = p3(0);
@@ -151,9 +166,9 @@ namespace rviz
       normal(1)=new_message->params[1];
       normal(2)=new_message->params[2];
       normal.normalize();
-      origin(0)=new_message->centroid.x;
-      origin(1)=new_message->centroid.y;
-      origin(2)=new_message->centroid.z;
+      origin(0)=0.0;//new_message->centroid.x;
+      origin(1)=0.0;//new_message->centroid.y;
+      origin(2)=0.0;//new_message->centroid.z;
       //std::cout << "normal: " << normal << std::endl;
       //std::cout << "centroid: " << origin << std::endl;
       v = normal.unitOrthogonal ();
@@ -271,8 +286,9 @@ namespace rviz
 
     polygon_->clear();
     polygon_->begin(createMaterialIfNotExists(new_message->color.r,new_message->color.g,new_message->color.b,new_message->color.a), Ogre::RenderOperation::OT_TRIANGLE_LIST);
-
+    //Ogre::ColourValue ogre_color(new_message->color.r,new_message->color.g,new_message->color.b,new_message->color.a);
     TPPLPoint p1,p2,p3,p4, p12,p23,p31;
+    //int idx = -1;
 
     for(std::list<TPPLPoly>::iterator it=result.begin(); it!=result.end(); it++) {
       //draw each triangle
@@ -280,13 +296,18 @@ namespace rviz
       for(long i=0;i<it->GetNumPoints();i++) {
         p1 = it->GetPoint(i);
 
-        Eigen::Vector3f p3, normal;
-        MsgToPoint3D(p1,new_message,p3,normal);
+        //Eigen::Vector3f p3, normal;
+        //MsgToPoint3D(p1,new_message,p3,normal);
 
-        polygon_->position(p3(0),p3(1),p3(2));  // start position
-        polygon_->normal(normal(0),normal(1),normal(2));
+        //polygon_->position(p3(0),p3(1),p3(2));  // start position
+        //polygon_->normal(normal(0),normal(1),normal(2));
+        polygon_->position(p1.x,p1.y,0.0f);
+        polygon_->normal(0.0,0.0,1.0);
+        //polygon_->index(++idx);
+        //polygon_->colour(ogre_color);
       }
-
+      //polygon_->index(0);
+/*
       if(it->GetNumPoints()!=3) continue;
 
       p1 = it->GetPoint(0);
@@ -321,7 +342,7 @@ namespace rviz
 
         polygon_->position(p3(0),p3(1),p3(2));  // start position
         polygon_->normal(-normal(0),-normal(1),-normal(2));
-      }
+        }*/
     }
 
     polygon_->end();
@@ -332,7 +353,7 @@ namespace rviz
             "fake_ns", new_message->id))), coll_);*/
 
     Ogre::Vector3 pos, scale, scale_correct;
-    Ogre::Quaternion orient;
+    //Ogre::Quaternion orient;
     //transform(new_message, pos, orient, scale);
 
     /*if (owner_ && (new_message->scale.x * new_message->scale.y
@@ -342,13 +363,28 @@ namespace rviz
         "Scale of 0 in one of x/y/z");
   }*/
     Eigen::Vector3f origin=MsgToOrigin(new_message);
-    pos.x = origin(0);
-    pos.y = origin(1);
-    pos.z = origin(2);
+    Eigen::Vector3f new_normal(new_message->params[0], new_message->params[1], new_message->params[2]);
 
     //setPosition(pos);
+    scene_node_->attachObject(polygon_);
+    Eigen::Affine3f aff, rot;
+    Eigen::Vector3f trans, v = (origin.dot(new_normal) * new_normal - origin).normalized();
+    pcl::getTransformationFromTwoUnitVectorsAndOrigin(v, new_normal,  origin, aff);
+    aff = aff.inverse();
+    rot = pcl::getRotationOnly(aff);
+    trans = pcl::getTranslation(aff);
+    Ogre::Matrix4 o_rot(rot(0,0),rot(0,1),rot(0,2),rot(0,3),
+                        rot(1,0),rot(1,1),rot(1,2),rot(1,3),
+                        rot(2,0),rot(2,1),rot(2,2),rot(2,3),
+                        rot(3,0),rot(3,1),rot(3,2),rot(3,3));
+
+    scene_node_->rotate(o_rot.extractQuaternion(), Ogre::Node::TS_PARENT);
+    scene_node_->translate(trans(0),trans(1),trans(2), Ogre::Node::TS_PARENT);
+    //scene_node_->setDirection(new_message->params[0], new_message->params[1], new_message->params[2], Ogre::Node::TS_PARENT);
+    //scene_node_->setPosition(pos);
+
     return;
-    setOrientation( orient * Ogre::Quaternion( Ogre::Degree(90), Ogre::Vector3(1,0,0) ) );
+    //setOrientation( orient * Ogre::Quaternion( Ogre::Degree(90), Ogre::Vector3(1,0,0) ) );
 
     //scale_correct = Ogre::Quaternion( Ogre::Degree(90), Ogre::Vector3(1,0,0) ) * scale;
 
