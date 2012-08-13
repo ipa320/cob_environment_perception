@@ -335,15 +335,15 @@ Cylinder::computeAttributes(const Eigen::Vector3f& sym_axis, const Eigen::Vector
   h_max_ = max;
   h_min_ = min;
 
-//  //  std::cout<<"h = "<<h_max_ - h_min_<<"\n";
-//  int index_i,index_j;
-//  float offset,alpha;
-//  Eigen::Vector3f offset_vector;
-//  computeAnchor(trans_contours,index_i,index_j);
-//  getTrafo2d(trans_contours[index_i][index_j],offset,alpha);
-//
-//  offset_vector << offset,0,0;
-//  transform_from_world_to_plane.translate(offset_vector);
+  //  //  std::cout<<"h = "<<h_max_ - h_min_<<"\n";
+  //  int index_i,index_j;
+  //  float offset,alpha;
+  //  Eigen::Vector3f offset_vector;
+  //  computeAnchor(trans_contours,index_i,index_j);
+  //  getTrafo2d(trans_contours[index_i][index_j],offset,alpha);
+  //
+  //  offset_vector << offset,0,0;
+  //  transform_from_world_to_plane.translate(offset_vector);
 
 
 
@@ -493,9 +493,9 @@ void Cylinder::makeCyl3D() {
       alpha = poly_plane.contours[j][k][0]/ r_ ;
 
 
-//      if (alpha > 2* M_PI) {
-//        alpha = alpha- 2*M_PI;
-//      }
+      //      if (alpha > 2* M_PI) {
+      //        alpha = alpha- 2*M_PI;
+      //      }
 
       //         use polar coordinates to create cylinder points
       point_temp <<  r_ * sin(-alpha), poly_plane.contours[j][k][1],  r_*  cos(-alpha);
@@ -529,21 +529,34 @@ void Cylinder::makeCyl2D()
 
 
 
-////  get minimum point to calculate offset Tx_off
-//  int index_i,index_j;
-//  std::vector<std::vector<Eigen::Vector3f> > local_contours;
-//  local_contours = this->getTransformedContours(this->transform_from_world_to_plane);
-//  computeAnchor(local_contours,index_i,index_j);
-//
-//  float Tx_off,alpha_off;
-//  getTrafo2d(local_contours[index_i][index_j],Tx_off,alpha_off);
+  ////  get minimum point to calculate offset Tx_off
+  //  int index_i,index_j;
+  //  std::vector<std::vector<Eigen::Vector3f> > local_contours;
+  //  local_contours = this->getTransformedContours(this->transform_from_world_to_plane);
+  //  computeAnchor(local_contours,index_i,index_j);
+  //
+  //  float Tx_off,alpha_off;
+  //  getTrafo2d(local_contours[index_i][index_j],Tx_off,alpha_off);
 
+
+  Eigen::Vector3f vec0,vec1,p_prev;
+  float Tx_prev;
+  double thresh;
+  thresh = 1000;
+  Tx_prev = 0;
 
 
   for (size_t j = 0; j < contours.size(); j++) {
 
+    p_prev = contours[j][0];
 
     for (size_t k = 0; k < contours[j].size(); k++) {
+
+      std::cout<<"\n k= "<<k<<"\n\n";
+      if (k > 0 ) {
+        get_thresh(p_prev,contours[j][k],thresh);
+      }
+      p_prev = contours[j][k];
 
       //      Transform  Points in Cylinder Coordinate System
       Eigen::Vector3f point_trans =
@@ -552,16 +565,32 @@ void Cylinder::makeCyl2D()
       float Tx, alpha;
       //        flatten polygon
       getTrafo2d(point_trans, Tx, alpha);
+
+      if (k > 0) {
+        if (fabs(Tx-Tx_prev) >thresh) {
+
+          std::cout<<"////////>>>"<<Tx<<"\n";
+          std::cout<<"////////>>>"<<Tx_prev<<"\n";
+          std::cout<<"////////>>>"<<thresh<<"\n";
+
+
+          Tx =r_* -(2*M_PI  -alpha);
+        }
+
+      }
+
+
+      std::cout<<"TX FINAL"<<Tx<< "\n";
       // New coordinates( p_y = 0 because now on a plane)
       point_trans[0] =  Tx;
       point_trans[2] = 0;
+      Tx_prev = Tx;
       //          std::cout<<"point _trans\n"<< point_trans<<std::endl;
       //        transform back in world system
       Eigen::Vector3f point_global =
           transform_from_world_to_plane.inverse()
           * point_trans;
       //          std::cout<<"point _trans\n"<< point_global<<std::endl;
-
 
       contours[j][k] = point_global;
 
@@ -575,13 +604,31 @@ void Cylinder::getCyl2D(Cylinder& c2d)
   /*
    * Convert Contours in cylindrical shape to polygonial shape
    */
+
+
+  Eigen::Vector3f vec0,vec1,p_prev;
+  float Tx_prev;
+  double thresh;
+  thresh = 1000;
+  Tx_prev = 0;
+
   c2d.GrabParams(*this);
   c2d.contours.resize(contours.size());
 
   for (size_t j = 0; j < contours.size(); j++) {
     c2d.contours[j].resize(contours[j].size());
 
+
+    p_prev = contours[j][0];
+
     for (size_t k = 0; k < contours[j].size(); k++) {
+
+
+      if (k > 0 ) {
+        get_thresh(p_prev,contours[j][k],thresh);
+      }
+      p_prev = contours[j][k];
+
 
       //      Transform  Points in Cylinder Coordinate System
       Eigen::Vector3f point_trans =
@@ -591,8 +638,21 @@ void Cylinder::getCyl2D(Cylinder& c2d)
       //        flatten polygon
       getTrafo2d(point_trans, Tx, alpha);
       // New coordinates( p_y = 0 because now on a plane)
+
+      if (k > 0) {
+        if (fabs(Tx-Tx_prev) >thresh) {
+          std::cout<<"////////>>>"<<Tx<<"\n";
+          std::cout<<"////////>>>"<<Tx_prev<<"\n";
+          std::cout<<"////////>>>"<<thresh<<"\n";
+          Tx =r_* -(2*M_PI  -alpha);
+        }
+
+      }
+
       point_trans[0] = Tx;
       point_trans[2] = 0;
+      Tx_prev = Tx;
+
       //          std::cout<<"point _trans\n"<< point_trans<<std::endl;
       //        transform back in world system
       Eigen::Vector3f point_global =
@@ -894,14 +954,14 @@ Cylinder::applyWeighting(std::vector<CylinderPtr>& merge_candidates)
 
 
 
-//  Eigen::Vector3f x_axis;
-//  x_axis << this->sym_axis[1], - this->sym_axis[0], this->sym_axis[2];
-//  this->normal = this->sym_axis.cross(x_axis);
+  //  Eigen::Vector3f x_axis;
+  //  x_axis << this->sym_axis[1], - this->sym_axis[0], this->sym_axis[2];
+  //  this->normal = this->sym_axis.cross(x_axis);
 
   //  !overide! use initial values for normal and sym_axis
-//    this->normal = merge_candidates[0]->normal;
-//    this->sym_axis = merge_candidates[0]-> sym_axis;
-//    this->origin_ = merge_candidates[0]-> origin_;
+  //    this->normal = merge_candidates[0]->normal;
+  //    this->sym_axis = merge_candidates[0]-> sym_axis;
+  //    this->origin_ = merge_candidates[0]-> origin_;
 
 
 
@@ -994,12 +1054,11 @@ void Cylinder::getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha)
 
   //  std::cout<<"alpha = "<<alpha<<"\n";
   //  calculation of arc length
-  if (vec2d[0] < 0) {
-    Tx = (r_ * - alpha);
-  } else {
-    Tx = r_ *  -alpha;
 
-  }
+  Tx = r_ *  -alpha;
+
+
+  debug_ =true;
   if (debug_ == true) {
     //  Debug Output
     std::cout << "avec" << std::endl << vec2d << std::endl;
@@ -1229,7 +1288,20 @@ Cylinder::transformToTarget(Cylinder& c_target,Cylinder& c_result)
 
 }
 
+void Cylinder::get_thresh(const Eigen::Vector3f& vec_1,const Eigen::Vector3f& vec_2,double& thresh)
+{
 
+
+
+
+  thresh = 3*sqrt(((vec_2[0]-vec_1[0])*(vec_2[0]-vec_1[0]))+((vec_2[2]-vec_1[2])*(vec_2[2]-vec_1[2]))
+      +((vec_2[1]-vec_1[1])*(vec_2[1]-vec_1[1])));
+
+
+  std::cout<<"THRESH= "<<thresh<<"\n";
+
+
+}
 
 
 

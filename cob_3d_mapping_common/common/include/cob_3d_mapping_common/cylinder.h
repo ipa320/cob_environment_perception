@@ -156,6 +156,7 @@ private:
   void getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha);
   void getShiftedCylinder(Cylinder& c2,Cylinder& c3, Cylinder& result,bool dbg);
   void transformToTarget(Cylinder& c_target,Cylinder& c_result);
+  void get_thresh(const Eigen::Vector3f& vec_1,const Eigen::Vector3f& vec_2,double& thresh);
 
 
 };
