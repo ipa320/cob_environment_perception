@@ -107,6 +107,9 @@ struct merge_config {
   //#######methods for calculation#####################
 
   void computeCentroid();
+  void computeAnchor(int& index_i,int&index_);
+  void computeAnchor(const std::vector<std::vector<Eigen::Vector3f> >& in_contours,int& index_i,int&index_j);
+
   double computeArea();   // http://paulbourke.net/geometry/polyarea/
   double computeArea3d();
   void getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,const Eigen::Vector3f &origin, Eigen::Affine3f &transformation);

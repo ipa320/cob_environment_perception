@@ -324,18 +324,29 @@ Cylinder::computeAttributes(const Eigen::Vector3f& sym_axis, const Eigen::Vector
   min = 1000;
   max = -1000;
   std::vector<std::vector<Eigen::Vector3f> > trans_contours;
-  this->getTransformedContours(this->transform_from_world_to_plane);
-  for (size_t i = 0; i < contours.size(); ++i) {
-    for (size_t j = 0; j < contours[i].size(); ++j) {
-      if (contours[i][j][1]< min) min = contours[i][j][1];
-      if (contours[i][j][1]> min) max = contours[i][j][1];
+  trans_contours = this->getTransformedContours(this->transform_from_world_to_plane);
+  for (size_t i = 0; i < trans_contours.size(); ++i) {
+    for (size_t j = 0; j < trans_contours[i].size(); ++j) {
+      if (trans_contours[i][j][1]< min) min = trans_contours[i][j][1];
+      if (trans_contours[i][j][1]> min) max = trans_contours[i][j][1];
     }
   }
 
   h_max_ = max;
   h_min_ = min;
 
-  //  std::cout<<"h = "<<h_max_ - h_min_<<"\n";
+//  //  std::cout<<"h = "<<h_max_ - h_min_<<"\n";
+//  int index_i,index_j;
+//  float offset,alpha;
+//  Eigen::Vector3f offset_vector;
+//  computeAnchor(trans_contours,index_i,index_j);
+//  getTrafo2d(trans_contours[index_i][index_j],offset,alpha);
+//
+//  offset_vector << offset,0,0;
+//  transform_from_world_to_plane.translate(offset_vector);
+
+
+
 }
 
 
@@ -426,13 +437,13 @@ void Cylinder::getCyl3D(std::vector<std::vector<Eigen::Vector3f> >& contours3D) 
 
 
       //				 use polar coordinates to create cylinder points
-      point_temp << r_ * sin(alpha), poly_plane.contours[j][k][1], r_	* cos(alpha);
+      point_temp << r_ * sin(-alpha), poly_plane.contours[j][k][1], r_	* cos(-alpha);
       //      point_temp = poly_plane.contours[j][k];
 
 
       //	      transform back in world system
-      point_temp = transform_from_world_to_plane.inverse()
-																													                                                                                                                            * point_temp;
+      point_temp = transform_from_world_to_plane.inverse() *point_temp;
+
 
 
 
@@ -479,17 +490,21 @@ void Cylinder::makeCyl3D() {
       float alpha;
       Eigen::Vector3f point_temp;
       //          alpha= B/r
-      alpha = poly_plane.contours[j][k][0] / r_;
+      alpha = poly_plane.contours[j][k][0]/ r_ ;
 
+
+//      if (alpha > 2* M_PI) {
+//        alpha = alpha- 2*M_PI;
+//      }
 
       //         use polar coordinates to create cylinder points
-      point_temp << r_ * sin(alpha), poly_plane.contours[j][k][1], r_ * cos(alpha);
+      point_temp <<  r_ * sin(-alpha), poly_plane.contours[j][k][1],  r_*  cos(-alpha);
       //      point_temp = poly_plane.contours[j][k];
 
 
       //        transform back in world system
-      point_temp = transform_from_world_to_plane.inverse()
-                                                                                                                                                                                      * point_temp;
+      point_temp = transform_from_world_to_plane.inverse() * point_temp;
+
 
 
 
@@ -513,6 +528,18 @@ void Cylinder::makeCyl2D()
    */
 
 
+
+////  get minimum point to calculate offset Tx_off
+//  int index_i,index_j;
+//  std::vector<std::vector<Eigen::Vector3f> > local_contours;
+//  local_contours = this->getTransformedContours(this->transform_from_world_to_plane);
+//  computeAnchor(local_contours,index_i,index_j);
+//
+//  float Tx_off,alpha_off;
+//  getTrafo2d(local_contours[index_i][index_j],Tx_off,alpha_off);
+
+
+
   for (size_t j = 0; j < contours.size(); j++) {
 
 
@@ -526,7 +553,7 @@ void Cylinder::makeCyl2D()
       //        flatten polygon
       getTrafo2d(point_trans, Tx, alpha);
       // New coordinates( p_y = 0 because now on a plane)
-      point_trans[0] = Tx;
+      point_trans[0] =  Tx;
       point_trans[2] = 0;
       //          std::cout<<"point _trans\n"<< point_trans<<std::endl;
       //        transform back in world system
@@ -689,15 +716,15 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
   //  transform  to local system
 
 
-
   //  this->getShiftedCylinder(*c_array[0],*average_cyl,*shifted_cylinder,true);
   this->transformToTarget(*average_cyl,*this);
+
 
   bool debug = true;
   if(debug == true)
   {
     std::string s1;
-    s1= "s1.1";
+    s1= "s1.c";
 
     this->debug_output(s1);
 
@@ -708,7 +735,7 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
   {
     std::string s1;
 
-    s1= "s1.2";
+    s1= "s1.p";
 
     this->debug_output(s1);
 
@@ -730,7 +757,7 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
     if(debug ==true)
     {
       std::string s2;
-      s2= "s2.1";
+      s2= "s2.c";
 
       c_array[i]->debug_output(s2);
     }
@@ -741,7 +768,7 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
     {
       std::string s2;
 
-      s2= "s2.2";
+      s2= "s2.p";
 
       c_array[i]->debug_output(s2);
     }
@@ -762,7 +789,26 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
   this->merge_union(merge_polygons,average_polygon);
   this->GrabParams(*average_cyl);
   this->assignWeight();
+
+  if(debug ==true)
+  {
+    std::string s3;
+
+    s3= "s3.p";
+
+    this->debug_output(s3);
+  }
   this->makeCyl3D();
+
+
+  if(debug ==true)
+  {
+    std::string s3;
+
+    s3= "s3.c";
+
+    this->debug_output(s3);
+  }
 
   //  std::cout<<" weight after merge: "<<this->merge_weight_<<std::endl;
 
@@ -786,14 +832,18 @@ Cylinder::applyWeighting(std::vector<CylinderPtr>& merge_candidates)
    */
 
 
-  Eigen::Vector3f temp_sym_axis,temp_origin;
+  Eigen::Vector3f temp_sym_axis,temp_origin,temp_normal;
 
   temp_sym_axis = this->merge_weight_ * this->sym_axis;
   temp_origin = this->merge_weight_ * this->origin_;
+  temp_normal = this->merge_weight_ * this->normal;
+
 
   double   merge_weight_sum = this ->merge_weight_;
   double temp_r = merge_weight_sum * this->r_;
   int merged_sum = this->merged;
+  std::cout<<"r_new"<<this->r_<<"\n";
+
 
 
 
@@ -801,10 +851,16 @@ Cylinder::applyWeighting(std::vector<CylinderPtr>& merge_candidates)
   for (int i = 0; i < (int)merge_candidates.size(); ++i) {
 
 
+
     temp_sym_axis += merge_candidates[i]->merge_weight_ * merge_candidates[i]->sym_axis ;
+
+    temp_normal += merge_candidates[i]->merge_weight_ * merge_candidates[i]->normal ;
+
+
     temp_origin += merge_candidates[i]->merge_weight_ * merge_candidates[i]->origin_;
 
     temp_r += merge_candidates[i]->merge_weight_ * merge_candidates[i]->r_;
+    std::cout<<"r_map"<<merge_candidates[i]->r_<<"\n";
     merge_weight_sum += merge_candidates[i]->merge_weight_;
     merged_sum  += merge_candidates[i]->merged;
 
@@ -815,10 +871,16 @@ Cylinder::applyWeighting(std::vector<CylinderPtr>& merge_candidates)
   }
 
   this->sym_axis = temp_sym_axis / merge_weight_sum;
+
+  this->normal = temp_normal / merge_weight_sum;
+
+
   this->origin_ = temp_origin / merge_weight_sum;
   this->sym_axis.normalize();
 
   this->r_ = temp_r / merge_weight_sum;
+  std::cout<<"r_ave"<<this->r_<<"\n";
+
 
 
   if (merged_sum < 9)
@@ -832,14 +894,14 @@ Cylinder::applyWeighting(std::vector<CylinderPtr>& merge_candidates)
 
 
 
-  Eigen::Vector3f x_axis;
-  x_axis << this->sym_axis[1], - this->sym_axis[0], this->sym_axis[2];
-  this->normal = this->sym_axis.cross(x_axis);
+//  Eigen::Vector3f x_axis;
+//  x_axis << this->sym_axis[1], - this->sym_axis[0], this->sym_axis[2];
+//  this->normal = this->sym_axis.cross(x_axis);
 
   //  !overide! use initial values for normal and sym_axis
-  //  this->normal = merge_candidates[0]->normal;
-  //  this->sym_axis = merge_candidates[0]-> sym_axis;
-  //  this->origin_ = merge_candidates[0]-> origin_;
+//    this->normal = merge_candidates[0]->normal;
+//    this->sym_axis = merge_candidates[0]-> sym_axis;
+//    this->origin_ = merge_candidates[0]-> origin_;
 
 
 
@@ -910,7 +972,7 @@ void Cylinder::getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha)
   //
   //  Tx by meansof arc length
   //  Tx corresponds to radius of cylinder
-  float cos_alpha;
+  //  float cos_alpha;
   Eigen::Vector2f vec2d, z_axis;
 
   if (debug_ == true) {
@@ -920,24 +982,28 @@ void Cylinder::getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha)
 
   //x and z components of point in local system
   vec2d << vec3d[0], vec3d[2];
+  vec2d.normalize();
   //y-axis in local system
   z_axis << 0, 1;
 
   //  angle between y-axis and point-origin connection
-  cos_alpha = vec2d.dot(z_axis) / (vec2d.norm() * z_axis.norm());
-  alpha = (acos(cos_alpha));
+  alpha = M_PI/2 - atan2(vec2d[1],vec2d[0]);
+
+  //  cos_alpha = vec2d.dot(z_axis);
+  //  alpha = (acos(cos_alpha));
+
   //  std::cout<<"alpha = "<<alpha<<"\n";
   //  calculation of arc length
   if (vec2d[0] < 0) {
-    Tx = -(r_ * alpha);
+    Tx = (r_ * - alpha);
   } else {
-    Tx = r_ * alpha;
+    Tx = r_ *  -alpha;
 
   }
-
   if (debug_ == true) {
     //  Debug Output
     std::cout << "avec" << std::endl << vec2d << std::endl;
+    std::cout << "alpha" << std::endl << alpha << std::endl;
     std::cout << "TX = " << Tx << std::endl << std::endl;
 
   }
@@ -1162,8 +1228,6 @@ Cylinder::transformToTarget(Cylinder& c_target,Cylinder& c_result)
 
 
 }
-
-
 
 
 
