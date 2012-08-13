@@ -50,6 +50,7 @@ class FloatProperty;
 class VectorProperty;
 class QuaternionProperty;
 class TfFrameProperty;
+class EditableEnumProperty;
 
 /** @brief An un-constrained "flying" camera, controlled by a position and quaternion. */
 class FreeViewController : public ViewController
@@ -100,6 +101,13 @@ protected Q_SLOTS:
    * change.  Calls updateTargetSceneNode() and
    * onTargetFrameChanged(). */
   virtual void updateAttachedFrame();
+  
+
+  virtual void onDistancePropertyChanged();
+  
+  virtual void onFocusPropertyChanged();
+  
+  virtual void onEyePropertyChanged();
 
 protected:
 
@@ -133,14 +141,14 @@ protected:
 
   Ogre::Quaternion getOrientation(); ///< Return a Quaternion
 
-  BoolProperty* orbit_property_;                ///< If True, use as orbit camera; if False, use as FPS camera
-  BoolProperty* fixed_up_property_;             ///< If True, "up" is fixed to ... up.
   BoolProperty* interaction_enabled_property_;  ///< If True, most changes to camera state are disabled.
-  QCursor interaction_disabled_cursor_;         ///< A cursor for indicating mouse interaction is disabled.
+  EditableEnumProperty* interaction_mode_property_;  ///< Select between Orbit or FPS control style.
+  BoolProperty* fixed_up_property_;             ///< If True, "up" is fixed to ... up.
 
   FloatProperty* distance_property_;            ///< The camera's distance from the focal point
-  VectorProperty* position_property_;           ///< The position of the camera.
-  VectorProperty* focal_point_property_;        ///< The point around which the camera "orbits".
+  VectorProperty* eye_point_property_;           ///< The position of the camera.
+  VectorProperty* focus_point_property_;        ///< The point around which the camera "orbits".
+  VectorProperty* up_vector_property_;        ///< The up vector for the camera.
   FloatProperty* default_transition_time_property_;
 
   Ogre::Vector3 start_position_, goal_position_;
@@ -154,15 +162,14 @@ protected:
   bool dragging_;
   bool animate_;
 
+  QCursor interaction_disabled_cursor_;         ///< A cursor for indicating mouse interaction is disabled.
+  
   ros::Subscriber trajectory_subscriber_;
   ros::Subscriber placement_subscriber_;
 
   TfFrameProperty* attached_frame_property_;
   Ogre::SceneNode* attached_scene_node_;
-//  TfFrameProperty* position_target_frame_property_;
-//  TfFrameProperty* orientation_target_frame_property_;
-//  Ogre::SceneNode* position_target_scene_node_;
-//  Ogre::SceneNode* orientation_target_scene_node_;
+  
   Ogre::Quaternion reference_orientation_;
   Ogre::Vector3 reference_position_;
 

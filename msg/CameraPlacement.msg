@@ -3,21 +3,20 @@ uint8 interpolation_mode
 uint8 LINEAR    = 0 # Positions will be linearly interpolated
 uint8 SPHERICAL = 1 # Position and orientation will be interpolated in a spherical sense.
 
-# If non-empty, sets this as the camera fixed frame before movement
-string camera_attached_frame
+# Sets this as the camera attached (fixed) frame before movement.
+# An empty string will leave the attached frame unchanged. 
+string attached_frame
 
 # When should this pose be reached?
 duration time_from_start
 
-# The frame-relative position for the camera.
-geometry_msgs/PointStamped camera
+# The frame-relative point for the camera.
+geometry_msgs/PointStamped eye
 
-# The frame-relative position for the target (or pivot for an Orbit controller).
-# Note that a '0' time stamp will lock the target to the frame provided.
+# The frame-relative point for the focus (or pivot for an Orbit controller).
 geometry_msgs/PointStamped focus
 
 # The frame-relative vector that maps to "up" in the view plane.
-# The zero-vector will default to +Z in Fixed Frame
-# Note that a '0' time stamp will lock the up vector to the frame provided.
+# The zero-vector will default to +Z in the camera fixed_frame.
 geometry_msgs/Vector3Stamped up
 
