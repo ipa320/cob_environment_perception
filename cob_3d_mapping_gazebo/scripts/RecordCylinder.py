@@ -66,7 +66,7 @@ class RecordCylinderScript(script):
         if do_tf ==True:
            # self.tf_br = broadcaster("/head_cam3d_link","/map",)
             self.tf_br = broadcaster("/map","/odom_combined",)
-            #self.tf_br = broadcaster("/map","/head_cam3d_frame")
+#            self.tf_br = broadcaster("/map","/head_cam3d_link")
 
         
         
