@@ -215,12 +215,13 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 
       }
       // merge polygon with merge candidates
-
+//      c.debug_output("Pre");
       c.merge(merge_candidates);
       c.id = new_id_;
-
+//      c.debug_output("Post");
       map_cylinder_.push_back(c_ptr);
       new_id_ ++;
+
 
       //	  std::cout<<"size +- "<< 1 -merge_candidates.size()<<std::endl;
     }
@@ -236,12 +237,11 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 
       map_cylinder_.push_back(c_ptr);
       new_id_++;
-
       //	std::cout<<"size +1"<<std::endl;
     }
   }
   else{
-
+    std::cout<<"ADD CYLINDER----\n";
     c.computeAttributes(c.sym_axis,c.normal,c.origin_);
     c.assignWeight();
 	c.id = new_id_;
