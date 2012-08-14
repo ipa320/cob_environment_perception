@@ -54,16 +54,15 @@ namespace rviz
 {
 using namespace rviz_view_controllers;
 
+// Strings for selecting control mode styles
 static const std::string MODE_ORBIT = "Orbit";
 static const std::string MODE_FPS = "FPS";
 
-static const Ogre::Quaternion ROBOT_TO_CAMERA_ROTATION =
-  Ogre::Quaternion( Ogre::Radian( -Ogre::Math::HALF_PI ), Ogre::Vector3::UNIT_Y ) *
-  Ogre::Quaternion( Ogre::Radian( -Ogre::Math::HALF_PI ), Ogre::Vector3::UNIT_Z );
-
+// Limits to prevent orbit controller singularity, but not currently used.
 static const float PITCH_LIMIT_LOW = -Ogre::Math::HALF_PI + 0.001;
 static const float PITCH_LIMIT_HIGH = Ogre::Math::HALF_PI - 0.001;
 
+// Some convenience functions for Ogre / geometry_msgs conversions
 static inline Ogre::Vector3 vectorFromMsg(const geometry_msgs::Point &m) { return Ogre::Vector3(m.x, m.y, m.z); }
 static inline Ogre::Vector3 vectorFromMsg(const geometry_msgs::Vector3 &m) { return Ogre::Vector3(m.x, m.y, m.z); }
 static inline geometry_msgs::Point pointOgreToMsg(const Ogre::Vector3 &o) 
@@ -72,6 +71,7 @@ static inline geometry_msgs::Point pointOgreToMsg(const Ogre::Vector3 &o)
   m.x = o.x; m.y = o.y; m.z = o.z; 
   return m;
 }
+
 static inline geometry_msgs::Vector3 vectorOgreToMsg(const Ogre::Vector3 &o) 
 { 
   geometry_msgs::Vector3 m; 
@@ -83,7 +83,7 @@ static inline geometry_msgs::Vector3 vectorOgreToMsg(const Ogre::Vector3 &o)
 
 
 FreeViewController::FreeViewController()
-  : dragging_( false ), animate_(false)
+  : animate_(false), dragging_( false )
 {
   interaction_disabled_cursor_ = makeIconCursor( "package://rviz_view_controllers/icons/disabled.png" );
 
@@ -173,6 +173,7 @@ void FreeViewController::onFocusPropertyChanged()
 
 void FreeViewController::onDistancePropertyChanged()
 {
+  // Uncommenting this causes annoying loops with the functions above.
   //Ogre::Vector3 new_eye_position = focus_point_property_->getVector() + distance_property_->getFloat()* camera_->getOrientation().zAxis();
   //eye_point_property_->setVector(new_eye_position);
 }
@@ -229,6 +230,8 @@ void FreeViewController::reset()
     eye_point_property_->setVector(Ogre::Vector3(5, 5, 10));
     focus_point_property_->setVector(Ogre::Vector3::ZERO);
     distance_property_->setFloat( getDistanceFromCameraToFocalPoint());
+    interaction_enabled_property_->setBool(true);
+    interaction_mode_property_->setStdString(MODE_ORBIT);
 
 
   // Hersh says: why is the following junk necessary?  I don't know.
@@ -291,13 +294,13 @@ void FreeViewController::handleMouseEvent(ViewportMouseEvent& event)
         int width = camera_->getViewport()->getActualWidth();
         int height = camera_->getViewport()->getActualHeight();
 
-        move( -((float)diff_x / (float)width) * distance * tan( fovX / 2.0f ) * 2.0f,
+        move_focus_and_eye( -((float)diff_x / (float)width) * distance * tan( fovX / 2.0f ) * 2.0f,
               ((float)diff_y / (float)height) * distance * tan( fovY / 2.0f ) * 2.0f,
               0.0f );
     }
     else if(interaction_mode_property_->getStdString() == MODE_FPS)  // Orbit style
     {
-      move( diff_x*0.01, -diff_y*0.01, 0.0f );
+      move_focus_and_eye( diff_x*0.01, -diff_y*0.01, 0.0f );
     }
   }
   else if( event.right() )
@@ -305,12 +308,12 @@ void FreeViewController::handleMouseEvent(ViewportMouseEvent& event)
     if( event.shift() ||  (interaction_mode_property_->getStdString() == MODE_FPS) )
     {
       setCursor( MoveZ );
-      move(0.0f, 0.0f, diff_y * 0.1 * (distance / 10.0f));
+      move_focus_and_eye(0.0f, 0.0f, diff_y * 0.1 * (distance / 10.0f));
     }
     else
     {
       setCursor( Zoom );
-      move_camera( 0, 0, diff_y * 0.1 * (distance / 10.0f) );
+      move_eye( 0, 0, diff_y * 0.1 * (distance / 10.0f) );
     }
   }
   else
@@ -494,7 +497,7 @@ void FreeViewController::transformCameraPlacementToAttachedFrame(CameraPlacement
 }
 
 
-// We must assume that this point is in the Rviz Fixed frame...
+// We must assume that this point is in the Rviz Fixed frame since it came from Rviz...
 void FreeViewController::lookAt( const Ogre::Vector3& point )
 {
   if( !interaction_enabled_property_->getBool() ) return;
@@ -512,15 +515,13 @@ void FreeViewController::lookAt( const Ogre::Vector3& point )
 
 void FreeViewController::orbitCameraTo( const Ogre::Vector3& point)
 {
-  if( !interaction_enabled_property_->getBool() ) return;
   beginNewTransition(point, focus_point_property_->getVector(),
                      getOrientation().yAxis(),
                      ros::Duration(default_transition_time_property_->getFloat()));
 }
 
-void FreeViewController::moveCameraWithFocusTo( const Ogre::Vector3& point)
+void FreeViewController::moveEyeWithFocusTo( const Ogre::Vector3& point)
 {
-  if( !interaction_enabled_property_->getBool() ) return;
   beginNewTransition(point, focus_point_property_->getVector() + (point - eye_point_property_->getVector()),
                      getOrientation().yAxis(),
                      ros::Duration(default_transition_time_property_->getFloat()));
@@ -598,14 +599,14 @@ Ogre::Quaternion FreeViewController::getOrientation()  // Do we need this?
   return camera_->getOrientation();
 }
 
-void FreeViewController::move( float x, float y, float z )
+void FreeViewController::move_focus_and_eye( float x, float y, float z )
 {
   Ogre::Vector3 translate( x, y, z );
   eye_point_property_->add( getOrientation() * translate );
   focus_point_property_->add( getOrientation() * translate );
 }
 
-void FreeViewController::move_camera( float x, float y, float z )
+void FreeViewController::move_eye( float x, float y, float z )
 {
   Ogre::Vector3 translate( x, y, z );
   // Only update the camera position if it won't "pass through" the origin

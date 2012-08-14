@@ -23,12 +23,12 @@ while not rospy.is_shutdown():
   cp = CameraPlacement()
   r = 10
   
-  cp.camera_attached_frame = "base_link"
+  cp.attached_frame = "base_link"
   
   p = Point(r*cos(2*pi*t/10), r*sin(2*pi*t/10), 0)
   #p = Point(5,5,0)
-  cp.camera.point = p
-  cp.camera.header.frame_id = "rotating_frame"
+  cp.eye.point = p
+  cp.eye.header.frame_id = "rotating_frame"
   
   #f = Point(0, 0, 2*cos(2*pi*t/5))
   f = Point(0, 0, 0)

@@ -64,27 +64,45 @@ public:
   FreeViewController();
   virtual ~FreeViewController();
 
+  /** @brief Do subclass-specific initialization.  Called by
+   * ViewController::initialize after context_ and camera_ are set.
+   *
+   * This version sets up the attached_scene_node, focus shape, and subscribers. */
   virtual void onInitialize();
 
   /** @brief called by activate().
    *
-   * Override to implement view-specific activation.  This version
-   * calls updateTargetSceneNode(). */
+   * This version calls updateAttachedSceneNode(). */
   virtual void onActivate();
 
-  void yaw( float angle );
-  void pitch( float angle );
-  void move( float x, float y, float z );
-  void move_camera( float x, float y, float z );
 
+  /** @brief Applies a translation to the focus and eye points. */
+  void move_focus_and_eye( float x, float y, float z );
+
+  /** @brief Applies a translation to only the eye point. */
+  void move_eye( float x, float y, float z );
+
+
+  /** @brief Applies a body-fixed-axes sequence of rotations;
+      only accurate for small angles. */
   void yaw_pitch_roll( float yaw, float pitch, float roll );
+
 
   virtual void handleMouseEvent(ViewportMouseEvent& evt);
 
-  virtual void lookAt( const Ogre::Vector3& point );
-  void orbitCameraTo( const Ogre::Vector3& point);
-  void moveCameraWithFocusTo( const Ogre::Vector3& point);
 
+  /** @brief Calls beginNewTransition() to
+      move the focus point to the point provided, assumed to be in the Rviz Fixed Frame */
+  virtual void lookAt( const Ogre::Vector3& point );
+
+
+  /** @brief Calls beginNewTransition() with the focus point fixed, moving the eye to the point given. */
+  void orbitCameraTo( const Ogre::Vector3& point);
+
+  /** @brief Calls beginNewTransition() to move the eye to the point given, keeping the direction fixed.*/
+  void moveEyeWithFocusTo( const Ogre::Vector3& point);
+
+  /** @brief Resets the camera parameters to a sane value. */
   virtual void reset();
 
   /** @brief Configure the settings of this view controller to give,
@@ -102,23 +120,25 @@ protected Q_SLOTS:
    * onTargetFrameChanged(). */
   virtual void updateAttachedFrame();
   
-
   virtual void onDistancePropertyChanged();
   
   virtual void onFocusPropertyChanged();
   
   virtual void onEyePropertyChanged();
 
-protected:
+protected:  //methods
 
+  /** @brief Called at 30Hz by ViewManager::update() while this view
+   * is active. Override with code that needs to run repeatedly. */
   virtual void update(float dt, float ros_dt);
+
   /** @brief Override to implement the change in properties which
-   * nullifies the change in target frame.
-   * @see updateTargetFrame() */
+   * nullifies the change in attached frame.
+   * @see updateAttachedFrame() */
   virtual void onAttachedFrameChanged( const Ogre::Vector3& old_reference_position, const Ogre::Quaternion& old_reference_orientation );
 
-  /** @brief Update the position of the target_scene_node_ from the TF
-   * frame specified in the Target Frame property. */
+  /** @brief Update the position of the attached_scene_node_ from the TF
+   * frame specified in the Attached Frame property. */
   void updateAttachedSceneNode();
 
   void cameraPlacementCallback(const rviz_view_controllers::CameraPlacementConstPtr &cp_ptr);
@@ -127,11 +147,14 @@ protected:
 
   void setPropertiesFromCamera( Ogre::Camera* source_camera );
 
-  // Begin a camera movement animation
-  void beginNewTransition(const Ogre::Vector3 &camera, const Ogre::Vector3 &focus, const Ogre::Vector3 &up,
+  /** @brief Begins a camera movement animation to the given goal points. */
+  void beginNewTransition(const Ogre::Vector3 &eye, const Ogre::Vector3 &focus, const Ogre::Vector3 &up,
                           const ros::Duration &transition_time);
+
+  /** @brief Cancels any currently active camera movement. */
   void cancelTransition();
 
+  /** @brief Updates the Ogre camera properties from the view controller properties. */
   void updateCamera();
 
   Ogre::Vector3 fixedFrameToAttachedLocal(const Ogre::Vector3 &v) { return reference_orientation_.Inverse()*(v - reference_position_); }
@@ -141,16 +164,26 @@ protected:
 
   Ogre::Quaternion getOrientation(); ///< Return a Quaternion
 
-  BoolProperty* interaction_enabled_property_;  ///< If True, most changes to camera state are disabled.
-  EditableEnumProperty* interaction_mode_property_;  ///< Select between Orbit or FPS control style.
-  BoolProperty* fixed_up_property_;             ///< If True, "up" is fixed to ... up.
+protected:    //members
 
-  FloatProperty* distance_property_;            ///< The camera's distance from the focal point
-  VectorProperty* eye_point_property_;           ///< The position of the camera.
-  VectorProperty* focus_point_property_;        ///< The point around which the camera "orbits".
-  VectorProperty* up_vector_property_;        ///< The up vector for the camera.
-  FloatProperty* default_transition_time_property_;
+  BoolProperty* interaction_enabled_property_;      ///< If True, most user changes to camera state are disabled.
+  EditableEnumProperty* interaction_mode_property_; ///< Select between Orbit or FPS control style.
+  BoolProperty* fixed_up_property_;                 ///< If True, "up" is fixed to ... up.
 
+  FloatProperty* distance_property_;                ///< The camera's distance from the focal point
+  VectorProperty* eye_point_property_;              ///< The position of the camera.
+  VectorProperty* focus_point_property_;            ///< The point around which the camera "orbits".
+  VectorProperty* up_vector_property_;              ///< The up vector for the camera.
+  FloatProperty* default_transition_time_property_; ///< A default time for any animation requests.
+
+  TfFrameProperty* attached_frame_property_;
+  Ogre::SceneNode* attached_scene_node_;
+
+  Ogre::Quaternion reference_orientation_;    ///< Used to store the orientation of the attached frame relative to <Fixed Frame>
+  Ogre::Vector3 reference_position_;          ///< Used to store the position of the attached frame relative to <Fixed Frame>
+
+  // Variables used during animation
+  bool animate_;
   Ogre::Vector3 start_position_, goal_position_;
   Ogre::Vector3 start_focus_, goal_focus_;
   Ogre::Vector3 start_up_, goal_up_;
@@ -158,20 +191,13 @@ protected:
   ros::Time transition_start_time_;
   ros::Duration current_transition_duration_;
 
-  Shape* focal_shape_;
-  bool dragging_;
-  bool animate_;
+  Shape* focal_shape_;    ///< A small ellipsoid to show the focus point.
+  bool dragging_;         ///< A flag indicating the dragging state of the mouse.
 
   QCursor interaction_disabled_cursor_;         ///< A cursor for indicating mouse interaction is disabled.
   
   ros::Subscriber trajectory_subscriber_;
   ros::Subscriber placement_subscriber_;
-
-  TfFrameProperty* attached_frame_property_;
-  Ogre::SceneNode* attached_scene_node_;
-  
-  Ogre::Quaternion reference_orientation_;
-  Ogre::Vector3 reference_position_;
 
 };
 

@@ -26,8 +26,8 @@ while not rospy.is_shutdown():
   
   p = Point(r*cos(2*pi*t/20), r*sin(2*pi*t/20), 2)
   #p = Point(5,5,0)
-  cp.camera.point = p
-  cp.camera.header.frame_id = "base_link"
+  cp.eye.point = p
+  cp.eye.header.frame_id = "base_link"
   
   #f = Point(0, 0, 2*cos(2*pi*t/5))
   f = Point(0, 0, 0)

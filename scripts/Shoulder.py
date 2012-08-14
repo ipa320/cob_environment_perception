@@ -22,11 +22,11 @@ for i in range(2):
   t = rospy.get_time()
   cp = CameraPlacement()
  
-  cp.camera_attached_frame = "head_pan_link"
+  cp.attached_frame = "head_pan_link"
  
   p = Point(-3, -0.5, 1.3)
-  cp.camera.point = p
-  cp.camera.header.frame_id = "head_pan_link"
+  cp.eye.point = p
+  cp.eye.header.frame_id = "head_pan_link"
   
   f = Point(0.6, -0.25, 0)
   cp.focus.point = f
