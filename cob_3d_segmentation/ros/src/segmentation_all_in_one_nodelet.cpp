@@ -93,10 +93,11 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::onInit()
 
 
   sub_points_ = nh_.subscribe<PointCloud>("cloud_in", 1, boost::bind(&SegmentationAllInOneNodelet::receivedCloudCallback, this, _1));
-  pub_segmented_ = nh_.advertise<PointCloud>("segmentation_cloud", 1);
-  pub_classified_ = nh_.advertise<PointCloud>("classified_cloud", 1);
-  pub_shape_array_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray>("/plane_extraction/shape_array",1);
-  pub_chull_ = nh_.advertise<PointCloud>("concave_hull", 1);
+  pub_segmented_ = nh_.advertise<PointCloud>("/segmentation/segmented_cloud", 1);
+  pub_classified_ = nh_.advertise<PointCloud>("/segmentation/classified_cloud", 1);
+  pub_shape_array_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray>("/segmentation/shape_array",1);
+  pub_chull_ = nh_.advertise<PointCloud>("/segmentation/concave_hull", 1);
+  pub_chull_dense_ = nh_.advertise<PointCloud>("/segmentation/concave_hull_dense", 1);
   std::cout << "Loaded segmentation nodelet" << std::endl;
 }
 
@@ -161,6 +162,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
   std::cout<<"[SN]-->CLOUD FRAME"<<cloud->header.frame_id.c_str()<<"\n";
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull(new pcl::PointCloud<pcl::PointXYZRGB>);
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud_dense(new pcl::PointCloud<pcl::PointXYZRGB>);
 
   for (ST::CH::ClusterPtr c = cluster_handler->begin(); c != cluster_handler->end(); ++c)
   {
@@ -173,7 +175,8 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
       continue;
     }
 
-
+    for (size_t i = 0; i < c->border_points.size(); ++i)
+      hull_cloud_dense->push_back((*segmented_)[c->border_points[i].y * segmented_->width + c->border_points[i].x]);
 
     PolygonContours<PolygonPoint> poly;
     std::cout << "Get outline for " << c->size() << " Points with "<< c->border_points.size() << " border points" << std::endl;
@@ -281,7 +284,11 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
   hull_cloud->header = cloud->header;
   hull_cloud->height = 1;
   hull_cloud->width = hull_cloud->size();
+  hull_cloud_dense->header = cloud->header;
+  hull_cloud_dense->height = 1;
+  hull_cloud_dense->width = hull_cloud_dense->size();
   pub_chull_.publish(hull_cloud);
+  pub_chull_dense_.publish(hull_cloud_dense);
   pub_shape_array_.publish(sa);
   std::cout<<"[SN]-->sa array frame set to"<<sa.header.frame_id.c_str()<<"\n";
 }

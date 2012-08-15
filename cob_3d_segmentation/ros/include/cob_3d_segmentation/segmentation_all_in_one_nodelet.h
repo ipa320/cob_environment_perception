@@ -83,11 +83,8 @@ namespace cob_3d_segmentation
   {
   public:
     typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloud;
-
     typedef pcl::PointCloud<pcl::Normal> NormalCloud;
-
     typedef pcl::PointCloud<PointLabel> LabelCloud;
-
     typedef PredefinedSegmentationTypes ST;
 
 
@@ -122,6 +119,7 @@ namespace cob_3d_segmentation
     ros::Publisher pub_classified_;
     ros::Publisher pub_shape_array_;
     ros::Publisher pub_chull_;
+    ros::Publisher pub_chull_dense_;
 
     boost::shared_ptr<dynamic_reconfigure::Server<cob_3d_segmentation::segmentation_nodeletConfig> > config_server_;
 
