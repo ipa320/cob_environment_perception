@@ -130,6 +130,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::receivedCloudCallback(PointClo
   cc_.setPointCloudIn(cloud);
   cc_.classify();
   graph_->clusters()->mapTypeColor(classified_);
+  graph_->clusters()->mapClusterBorders(classified_);
   NODELET_INFO("publish first cloud .... ");
   pub_segmented_.publish(segmented_);
   NODELET_INFO("publish second cloud .... ");
