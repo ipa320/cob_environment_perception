@@ -117,8 +117,10 @@ namespace cob_3d_mapping
 
     inline bool hasSimilarParametersWith(const Polygon::Ptr& poly) const
     {
+      Eigen::Vector3f d = (this->centroid - poly->centroid).head(3);
       return ( fabs(poly->normal.dot(this->normal)) > this->merge_settings_.angle_thresh &&
-               fabs( (this->centroid-poly->centroid).head(3).dot(this->normal) ) < this->merge_settings_.d_thresh );
+               fabs( d.dot(this->normal) ) < this->merge_settings_.d_thresh &&
+               fabs( d.dot(poly->normal) ) < this->merge_settings_.d_thresh );
     }
 
     //#######methods for calculation#####################
