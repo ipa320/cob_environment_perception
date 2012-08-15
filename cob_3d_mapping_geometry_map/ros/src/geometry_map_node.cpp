@@ -372,31 +372,35 @@ GeometryMapNode::publishMapMarker()
   for(unsigned int i=0; i<map_polygon->size(); i++)
   {
     Polygon& pm = *(map_polygon->at(i));
-    int color_ctr = i%4;
+    int color_ctr = i%5;
     //marker.id = pm.id;
-    if(color_ctr==0)
+    switch(color_ctr)
     {
+    case 0:
       marker.color.r = 0;
       marker.color.g = 0;
       marker.color.b = 1;
-    }
-    else if(color_ctr==1)
-    {
+      break;
+    case 1:
       marker.color.r = 0;
       marker.color.g = 1;
       marker.color.b = 0;
-    }
-    else if(color_ctr==2)
-    {
+      break;
+    case 2:
       marker.color.r = 0;
       marker.color.g = 1;
       marker.color.b = 1;
-    }
-    else if(color_ctr==3)
-    {
+      break;
+    case 3:
       marker.color.r = 1;
       marker.color.g = 1;
       marker.color.b = 0;
+      break;
+    case 4:
+      marker.color.r = 1;
+      marker.color.g = 0;
+      marker.color.b = 1;
+      break;
     }
 
     //			std::cout<<pm.d<<std::endl<<std::endl;
@@ -406,9 +410,12 @@ GeometryMapNode::publishMapMarker()
       //if(pm.contours.size()>1) std::cout << "id: " << ctr << ", " << pm.contours.size() << std::endl;
       //TODO: this is a workaround as the marker can't display more than one contour
       marker.id = ctr;
-      marker.color.r /= j+1;
-      marker.color.g /= j+1;
-      marker.color.b /= j+1;
+      if (pm.holes[j])
+      {
+        marker.color.r /= static_cast<float>(j+2);
+        marker.color.g /= static_cast<float>(j+2);
+        marker.color.b /= static_cast<float>(j+2);
+      }
 
       t_marker.id = t_ctr;
       std::stringstream ss;
