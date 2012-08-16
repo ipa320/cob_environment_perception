@@ -85,7 +85,7 @@ static inline geometry_msgs::Vector3 vectorOgreToMsg(const Ogre::Vector3 &o)
 FreeViewController::FreeViewController()
   : animate_(false), dragging_( false )
 {
-  interaction_disabled_cursor_ = makeIconCursor( "package://rviz_view_controllers/icons/disabled.png" );
+  interaction_disabled_cursor_ = makeIconCursor( "package://rviz/icons/forbidden.png" );
 
   interaction_enabled_property_ = new BoolProperty("Interaction Enabled", true,
                                    "Enables mouse control of the camera.",
