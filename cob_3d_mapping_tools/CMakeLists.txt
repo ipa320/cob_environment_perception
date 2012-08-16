@@ -24,13 +24,19 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 INCLUDE_DIRECTORIES(
 	${PROJECT_SOURCE_DIR}/common/include)
 
+find_package(VTK REQUIRED)
+include_directories(${VTK_INCLUDE_DIRS})
+rosbuild_add_boost_directories()
+
 rosbuild_add_library(cob_3d_mapping_tools
 	common/src/cob_3d_mapping_tools/io.cpp
 	common/src/cob_3d_mapping_tools/point_generator.cpp)
 
 rosbuild_add_executable(transform_pointcloud ros/src/transform_pointcloud.cpp)
 rosbuild_add_executable(concat_fields_node ros/src/concat_fields.cpp)
+rosbuild_link_boost(concat_fields_node program_options signals)
 rosbuild_add_executable(bag_to_pcd ros/src/bag_to_pcd.cpp)
+rosbuild_link_boost(bag_to_pcd system filesystem)
 rosbuild_add_executable(pointcloud_to_pcd ros/src/pointcloud_to_pcd.cpp)
 
 rosbuild_add_executable(create_point_cloud common/src/create_point_cloud.cpp)
@@ -38,41 +44,58 @@ rosbuild_add_executable(create_kitchen_point_cloud common/src/create_kitchen_poi
 
 # extracts fpfh, pc and rsd feature values from a scene into separated pcd files:
 rosbuild_add_executable(extract_feature_values common/src/extract_feature_values.cpp)
+rosbuild_link_boost(extract_feature_values program_options)
 
 # extracts pc from organized cloud and saves as ppm:
 rosbuild_add_executable(extract_organized_curvatures common/src/extract_organized_curvatures.cpp)
 target_link_libraries(extract_organized_curvatures cob_3d_mapping_tools cob_3d_mapping_features)
+rosbuild_link_boost(extract_organized_curvatures program_options)
 
 # some tools for fpfh training:
 rosbuild_add_executable(merge_pcds common/src/merge_pcds.cpp)
+rosbuild_link_boost(merge_pcds program_options)
 rosbuild_add_executable(merge_knn_training_data common/src/merge_knn_training_data.cpp)
+rosbuild_link_boost(merge_knn_training_data program_options)
 rosbuild_add_executable(merge_fpfh_training_data common/src/merge_fpfh_training_data.cpp)
+rosbuild_link_boost(merge_fpfh_training_data program_options)
 rosbuild_add_executable(reduce_fpfh_training_data common/src/reduce_fpfh_training_data.cpp)
+rosbuild_link_boost(reduce_fpfh_training_data program_options)
 target_link_libraries(reduce_fpfh_training_data cob_3d_mapping_features)
 rosbuild_add_executable(fpfh_primitives common/src/fpfh_primitives.cpp)
-target_link_libraries(fpfh_primitives cob_3d_mapping_tools)
+target_link_libraries(fpfh_primitives cob_3d_mapping_tools vtkCommon vtkFiltering vtkRendering)
+rosbuild_link_boost(fpfh_primitives program_options)
 
 # some tools for synthetic shape generation:
 rosbuild_add_executable(create_synthetic_scene common/src/create_synthetic_scene.cpp)
-target_link_libraries(create_synthetic_scene cob_3d_mapping_tools)
+target_link_libraries(create_synthetic_scene cob_3d_mapping_tools vtkCommon vtkFiltering)
+rosbuild_link_boost(create_synthetic_scene program_options)
 rosbuild_add_executable(create_synthetic_radii_test common/src/create_synthetic_radii_test.cpp)
-target_link_libraries(create_synthetic_radii_test cob_3d_mapping_tools)
+target_link_libraries(create_synthetic_radii_test cob_3d_mapping_tools vtkCommon vtkFiltering)
+rosbuild_link_boost(create_synthetic_radii_test program_options)
 
 # some tools to convert point clouds:
 rosbuild_add_executable(ppm_to_pcd common/src/ppm_to_pcd.cpp)
 target_link_libraries(ppm_to_pcd cob_3d_mapping_tools)
+rosbuild_link_boost(ppm_to_pcd program_options)
 rosbuild_add_executable(pcd_to_ppm common/src/pcd_to_ppm.cpp)
 target_link_libraries(pcd_to_ppm cob_3d_mapping_tools)
+rosbuild_link_boost(pcd_to_ppm program_options)
 rosbuild_add_executable(rgb_to_rgba common/src/rgb_to_rgba.cpp)
+rosbuild_link_boost(rgb_to_rgba program_options)
 rosbuild_add_executable(rgba_to_rgb common/src/rgba_to_rgb.cpp)
+rosbuild_link_boost(rgba_to_rgb program_options)
 
 # a test program for a new smoothing filter for kinect data :
 rosbuild_add_executable(sav_gol common/src/sav_gol_smoothing_filter.cpp)
+target_link_libraries(sav_gol vtkCommon vtkFiltering)
+rosbuild_link_boost(sav_gol program_options)
 
 # some tools to generate fpfh, pc and rsd test data and evaluate various parameters
 rosbuild_add_executable(evaluate_test_data common/src/evaluate_test_data.cpp)
+rosbuild_link_boost(evaluate_test_data program_options)
 rosbuild_add_executable(generate_test_data common/src/generate_test_data.cpp)
 rosbuild_add_compile_flags(generate_test_data -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
+rosbuild_link_boost(generate_test_data program_options)
 
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
