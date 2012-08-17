@@ -57,23 +57,25 @@ class ShapeMarker
 {
   public:
 
-    ShapeMarker(boost::shared_ptr<interactive_markers::InteractiveMarkerServer>& im_server,
+    ShapeMarker(boost::shared_ptr<interactive_markers::InteractiveMarkerServer> im_server,
         cob_3d_mapping_msgs::Shape& shape, int ctr, cob_3d_mapping_msgs::ShapeArray ShapeArr)
     {
       sa_ = ShapeArr;
-      ctr_ = ctr;
+      shape_ctr_ = ctr;
       im_server_ = im_server;
       shape_ = shape;
       createShapeMenu ();
       createInteractiveMarker();
       MoreOptions();
-      //    DisplayAllNormals();
+//      shape_indexes.resize(100) ;//(ShapeArr.shapes.size()) ;
+      display_arrow = 0 ;
+//      ctr_for_shape_indexes = 0 ;
     }
 
     ~ShapeMarker()
     {
-      if(im_server_->erase(marker_.name))
-        ROS_INFO("Marker %s erased",marker_.name.c_str());
+      if(im_server_->erase(marker_.name)){
+//        ROS_INFO("Marker %s erased",marker_.name.c_str());
       stringstream ss;
       ss << "normal_" << shape_.id;
       im_server_->erase(ss.str());
@@ -81,11 +83,15 @@ class ShapeMarker
       ss.clear();
       ss << "centroid_" << shape_.id;
       im_server_->erase(ss.str());
+      }
     }
 
     void MoreOptions();
     void DisplayAllNormals(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
     void DisplayAllCentroids (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    void MoveMarker(int flag) ;//,const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+    void GetPosition (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    double RandomValue (double min, double max) ;
 
 
     void createShapeMenu () ;
@@ -99,12 +105,22 @@ class ShapeMarker
 
     void displayNormalCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
     void displayCentroidCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    void Reset(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+
 
 
 
   protected:
     visualization_msgs::InteractiveMarker marker_ ;
+    visualization_msgs::InteractiveMarker Imarker ;
+    visualization_msgs::Marker marker;
+
+
+    visualization_msgs::InteractiveMarkerControl im_ctrl;
+//    visualization_msgs::InteractiveMarkerControl Im_ctrl;
+
     boost::shared_ptr<interactive_markers::InteractiveMarkerServer> im_server_;
+//    interactive_markers::InteractiveMarkerServer im_server_ ;
     cob_3d_mapping_msgs::Shape shape_;
 
     // test
@@ -115,7 +131,12 @@ class ShapeMarker
 
     Eigen::Affine3f transformation_;
     Eigen::Affine3f transformation_inv_;
-    int ctr_ ;
+    int shape_ctr_ ;//ctr_ ;
+//    std::vector<int> shape_indexes;
+
+    int ctr_for_shape_indexes ;
+
+    int display_arrow ;
 
 };
 
