@@ -24,6 +24,7 @@
 //#include <visualization_msgs/MenuEntry.h>
 #include <interactive_markers/interactive_marker_server.h>
 #include <interactive_markers/menu_handler.h>
+#include <cob_3d_mapping_msgs/ModifyMap.h>
 
 
 #include <boost/shared_ptr.hpp>
@@ -33,7 +34,7 @@ class ShapeVisualization
 {
   public:
     // Constructor
-    ShapeVisualization ()
+    ShapeVisualization () :ctr_for_shape_indexes (0)
 
     {
       shape_array_sub_ = nh_.subscribe ("shape_array", 1, &ShapeVisualization::shapeArrayCallback, this);
@@ -61,6 +62,9 @@ class ShapeVisualization
       ros::Subscriber shape_array_sub_; // sub for shape array msgs
       std::vector<boost::shared_ptr<ShapeMarker> > v_sm_;
       cob_3d_mapping_msgs::ShapeArray sha ;
+      int ctr_for_shape_indexes ;
+//      int counter ;
+
 
       boost::shared_ptr<interactive_markers::InteractiveMarkerServer> im_server_; // server for interactive markers
 
