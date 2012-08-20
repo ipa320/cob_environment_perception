@@ -341,13 +341,13 @@ Polygon::applyWeighting(const std::vector<PolygonPtr>& poly_vec, PolygonPtr & p_
   average_normal.normalize();
   //  average_d /= average_normal.norm();
 
-  if (sum_merged < 9)
+  if (sum_merged < 100)
   {
     p_average->merged=sum_merged;
   }
   else
   {
-    p_average->merged=9;
+    p_average->merged=100;
   }
 
 
@@ -647,7 +647,7 @@ Polygon::computePoseAndBoundingBox(Eigen::Affine3f& pose, Eigen::Vector4f& min_p
 void Polygon::debug_output(std::string name)
 {
   //  std::ofstream os;
-  std::string path = "/home/goa-tz/debug/";
+  std::string path = "/home/goa-tz/debug/dbg/";
   path.append(name.c_str());
   std::ofstream os(path.c_str());
   //  os.open(path.c_str());
