@@ -341,13 +341,13 @@ Polygon::applyWeighting(const std::vector<PolygonPtr>& poly_vec, PolygonPtr & p_
   average_normal.normalize();
   //  average_d /= average_normal.norm();
 
-  if (sum_merged < 100)
+  if (sum_merged < 9)
   {
     p_average->merged=sum_merged;
   }
   else
   {
-    p_average->merged=100;
+    p_average->merged=9;
   }
 
 
