@@ -441,7 +441,7 @@ void Cylinder::makeCyl3D() {
 
 
 
-void Cylinder::makeCyl2D()
+void Cylinder::makeCyl2D(bool debug)
 {
   /*
    * Convert Contours in cylindrical shape to polygonial shape
@@ -450,7 +450,7 @@ void Cylinder::makeCyl2D()
 
 
 
-
+  bool start; // bool to indicate first point of contour
   float Tx_1,Tx_0;
   Eigen::Vector3f z_axis,p_0;
 
@@ -473,9 +473,11 @@ void Cylinder::makeCyl2D()
 
       if (k == 0) {
         z_axis << 0,0,1;
+        start=true;
       }
 
       else {
+        start = false;
         z_axis = transform_from_world_to_plane *z_axis;
       }
       //      Eigen::Vector3f trans_origin = transform_from_world_to_plane*origin_;
@@ -489,14 +491,13 @@ void Cylinder::makeCyl2D()
       //        std::cout<<"THRESH EXCEEDED-----------------\n";
       //      }
 
-      bool debug;
-      if (k==0) {
-        debug=true;
-      }
-      else {
-        debug = true;
-      }
-      getTrafo2d(point_trans,z_axis,Tx_1,debug);
+      //      if (k==0) {
+      //        debug=true;
+      //      }
+      //      else {
+      //        debug = true;
+      //      }
+      getTrafo2d(point_trans,z_axis,Tx_1,debug,start);
 
 
 
@@ -523,11 +524,11 @@ void Cylinder::makeCyl2D()
   }
 
 }
-void Cylinder::getCyl2D(Cylinder& c2d)
+void Cylinder::getCyl2D(Cylinder& c2d,bool debug)
 {
 
   c2d = *this;
-  c2d.makeCyl2D();
+  c2d.makeCyl2D(debug);
 
 }
 
@@ -566,10 +567,10 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 
       c_map.transformToTarget(c1,c2);
       //      c2.recomputeNormal();
-      c1.makeCyl2D();
+      c1.makeCyl2D(true);
       c1.debug_output("MC_NEW");
 
-      c2.makeCyl2D();
+      c2.makeCyl2D(true);
       c2.debug_output("MC_MAP");
 
 
@@ -662,7 +663,7 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
     this->debug_output(s1);
 
   }
-  this->makeCyl2D();
+  this->makeCyl2D(false);
 
   if(debug == true)
   {
@@ -694,7 +695,7 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
 
       c_array[i]->debug_output(s2);
     }
-    c_array[i]->makeCyl2D();
+    c_array[i]->makeCyl2D(false);
 
 
     if(debug ==true)
@@ -818,13 +819,13 @@ Cylinder::applyWeighting(std::vector<CylinderPtr>& merge_candidates)
 
 
 
-  if (merged_sum < 100)
+  if (merged_sum < 9)
   {
     this->merged=merged_sum;
   }
   else
   {
-    this->merged=100;
+    this->merged=9;
   }
 
 
@@ -921,7 +922,7 @@ Cylinder::printAttributes(std::string & name)
 }
 
 
-void Cylinder::getTrafo2d(const Eigen::Vector3f& vec_new,const Eigen::Vector3f& vec_old, float& Tx,bool debug) {
+void Cylinder::getTrafo2d(const Eigen::Vector3f& vec_new,const Eigen::Vector3f& vec_old, float& Tx,bool debug,bool start) {
 
   //  calculation of translation Tx and Ty
   //
@@ -965,10 +966,17 @@ void Cylinder::getTrafo2d(const Eigen::Vector3f& vec_new,const Eigen::Vector3f& 
   {
 
 
+    if (start==true) {
+      alpha = acos((fabs(cos_alpha)));
 
-    alpha = (acos(fabs(cos_alpha)));
+    }
+    else
+    {
+      alpha = fabs(acos((cos_alpha)));
+    }
+
     //    std::cout << "alpha = " << alpha << std::endl;
-    //    make sure alpha < M_PI
+    //        make sure alpha < M_PI
     if (alpha >= M_PI) {
       alpha -=M_PI;
     }
@@ -1324,6 +1332,8 @@ Cylinder::transformToTarget(Cylinder& c_target,Cylinder& c_result)
 
 
   Eigen::Affine3f T12;
+  n12.normalize();
+  s12.normalize();
   pcl::getTransformationFromTwoUnitVectorsAndOrigin(s12,n12,o12,T12);
 
   c_result.contours.resize(this->contours.size());

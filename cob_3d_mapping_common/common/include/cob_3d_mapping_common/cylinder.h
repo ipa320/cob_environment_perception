@@ -128,9 +128,9 @@ public:
 
   //################## methods to roll and unroll cylinder###############
   void getCyl3D(Cylinder& c3d);
-  void makeCyl2D();
+  void makeCyl2D(bool debug);
   void makeCyl3D();
-  void getCyl2D(Cylinder& c2d);
+  void getCyl2D(Cylinder& c2d,bool debug);
 
   //################## methods for merging############################
   virtual void isMergeCandidate(const std::vector<boost::shared_ptr<Cylinder> >& cylinder_array,const merge_config& limits,std::vector<int>& intersections);
@@ -154,8 +154,8 @@ public:
 
 private:
   //################ private methods for merging to avoid confusion by user################
-  void getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha);
-  void getTrafo2d(const Eigen::Vector3f& vec_new,const Eigen::Vector3f& vec_old, float& Tx,bool debug);
+//  void getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha);
+  void getTrafo2d(const Eigen::Vector3f& vec_new,const Eigen::Vector3f& vec_old, float& Tx,bool debug,bool start);
 
   void getShiftedCylinder(Cylinder& c2,Cylinder& c3, Cylinder& result,bool dbg);
   void transformToTarget(Cylinder& c_target,Cylinder& c_result);
