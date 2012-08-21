@@ -82,6 +82,8 @@ extern "C" {
 
 #include <math.h>
 
+#include <sstream>
+
 
 
 
@@ -113,21 +115,22 @@ public:
   }
 
   //##############Methods to initialize cylinder and its paramers#########
-
   void ContoursFromCloud(pcl::PointCloud<pcl::PointXYZ>::ConstPtr in_cloud);
   void ContoursFromList( std::vector<std::vector<Eigen::Vector3f> >& in_list);
   void ParamsFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud, std::vector<int>& indices);
   void ParamsFromShapeMsg();
   virtual void computeAttributes(const Eigen::Vector3f & sym_axis,const Eigen::Vector3f &new_normal, const Eigen::Vector3f & new_origin);
   virtual void transform2tf(Eigen::Affine3f & tf);
+  void GrabParams(Cylinder& c_src);
+  void recomputeNormal();
 
 
 
   //################## methods to roll and unroll cylinder###############
-  void getCyl3D(std::vector<std::vector<Eigen::Vector3f> >& contours3D);
+  void getCyl3D(Cylinder& c3d);
+  void makeCyl2D(bool debug);
   void makeCyl3D();
-
-  void makeCyl2D();
+  void getCyl2D(Cylinder& c2d,bool debug);
 
   //################## methods for merging############################
   virtual void isMergeCandidate(const std::vector<boost::shared_ptr<Cylinder> >& cylinder_array,const merge_config& limits,std::vector<int>& intersections);
@@ -138,6 +141,7 @@ public:
   //############## debugging methods ####################
   void dbg_out(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points,std::string& name);
   void printAttributes(std::string & name);
+  void dump_params(std::string  name);
 
 
   //################# member variables########################
@@ -150,8 +154,12 @@ public:
 
 private:
   //################ private methods for merging to avoid confusion by user################
-  void getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha);
+//  void getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha);
+  void getTrafo2d(const Eigen::Vector3f& vec_new,const Eigen::Vector3f& vec_old, float& Tx,bool debug,bool start);
+
   void getShiftedCylinder(Cylinder& c2,Cylinder& c3, Cylinder& result,bool dbg);
+  void transformToTarget(Cylinder& c_target,Cylinder& c_result);
+  void get_thresh(const Eigen::Vector3f& vec_1,const Eigen::Vector3f& vec_2,double& thresh);
 
 
 };

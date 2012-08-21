@@ -43,8 +43,8 @@ rosbuild_add_executable(keyframe_detector_node ros/src/keyframe_detector.cpp)
 #rosbuild_add_library(cob_3d_mapping_common_sv ros/src/shape_visualization.cpp)
 
 #~~~~~~~~~
-rosbuild_add_executable(cylinder common/src/cyl_test.cpp)
-target_link_libraries(cylinder cob_3d_mapping_common )
+#rosbuild_add_executable(cylinder common/src/cyl_test.cpp)
+#target_link_libraries(cylinder cob_3d_mapping_common )
 #~~~~~~~~~
 
 #common commands for building c++ executables and libraries
