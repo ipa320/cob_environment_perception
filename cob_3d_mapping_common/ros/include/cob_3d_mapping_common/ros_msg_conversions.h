@@ -248,7 +248,7 @@ namespace cob_3d_mapping
 
 
 
-    c.id = 0;
+    c.id = s.id;
     // c.centroid(0) = s.centroid.x;
     // c.centroid(1) = s.centroid.y;
     // c.centroid(2) = s.centroid.z;
