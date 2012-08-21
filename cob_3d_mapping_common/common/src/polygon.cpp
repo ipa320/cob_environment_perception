@@ -110,14 +110,14 @@ Polygon::computeAttributes(const Eigen::Vector3f &new_normal, const Eigen::Vecto
 {
 
 
-//  TODO: recomputation of centroid
+  //  TODO: recomputation of centroid
   normal=new_normal;
   centroid = new_centroid;
   d=fabs(centroid.head(3).dot(normal));
-//  d=centroid.norm();
+  //  d=centroid.norm();
 
   pcl::getTransformationFromTwoUnitVectorsAndOrigin(
-        this->normal.unitOrthogonal(),this->normal,this->centroid.head(3),this->transform_from_world_to_plane);
+      this->normal.unitOrthogonal(),this->normal,this->centroid.head(3),this->transform_from_world_to_plane);
 }
 
 
@@ -125,16 +125,16 @@ Polygon::computeAttributes(const Eigen::Vector3f &new_normal, const Eigen::Vecto
 void Polygon::transform2tf(const Eigen::Affine3f& trafo)
 {
   //transform contours
-    this->TransformContours(trafo);
+  this->TransformContours(trafo);
 
-    //transform parameters
-    //  transform parameters
-    Eigen::Vector3f tf_normal = trafo.rotation() *this->normal;
-    this->normal =tf_normal;
-    Eigen::Vector3f tf_centroid3f = this->centroid.head(3);
-    tf_centroid3f = trafo * tf_centroid3f;
-    this->centroid.head(3) = tf_centroid3f;
-    this->computeAttributes(this->normal,this->centroid);
+  //transform parameters
+  //  transform parameters
+  Eigen::Vector3f tf_normal = trafo.rotation() *this->normal;
+  this->normal =tf_normal;
+  Eigen::Vector3f tf_centroid3f = this->centroid.head(3);
+  tf_centroid3f = trafo * tf_centroid3f;
+  this->centroid.head(3) = tf_centroid3f;
+  this->computeAttributes(this->normal,this->centroid);
 }
 
 
@@ -191,8 +191,8 @@ Polygon::isMergeCandidate_intersect(Polygon& p_map)
 
 
   this->GpcStructureUsingMap(p_map.transform_from_world_to_plane, &gpc_p_merge);
-  // std::cout<<"map:"<<std::endl;
   p_map.GpcStructureUsingMap(p_map.transform_from_world_to_plane, &gpc_p_map);
+
   gpc_polygon_clip(GPC_INT,&gpc_p_merge,&gpc_p_map,&gpc_result);
 
   if(gpc_result.num_contours == 0)
@@ -339,7 +339,7 @@ Polygon::applyWeighting(const std::vector<PolygonPtr>& poly_vec, PolygonPtr & p_
   average_centroid=average_centroid/sum_w;
   average_d=average_d/sum_w;
   average_normal.normalize();
-//  average_d /= average_normal.norm();
+  //  average_d /= average_normal.norm();
 
   if (sum_merged < 9)
   {
@@ -481,6 +481,52 @@ Polygon::computeArea()
   return area;
 }
 
+
+void
+Polygon::computeAnchor(int& index_i,int&index_j)
+{
+  /*
+   * Compute Point with lowest x coordinates
+   * Use only for polygons in local coordinates!
+   */
+  float min_x = 10000;
+  for (int i = 0; i < contours.size(); ++i) {
+    for (int j = 0; j < contours[i].size(); ++j) {
+      if (contours[i][j][0] < min_x)
+      {
+        index_i = i;
+        index_j = j;
+      }
+
+    }
+  }
+}
+
+void
+Polygon::computeAnchor(const std::vector<std::vector<Eigen::Vector3f> >& in_contours,int& index_i,int&index_j)
+{
+  /*
+   * Compute Point with lowest x coordinates
+   * Use only for polygons in local coordinates!
+   *
+   *
+   */
+  float min_x = 10000;
+  for (int i = 0; i < in_contours.size(); ++i) {
+    for (int j = 0; j < in_contours[i].size(); ++j) {
+      if (in_contours[i][j][0] < min_x)
+      {
+        index_i = i;
+        index_j = j;
+      }
+
+    }
+  }
+}
+
+
+
+
 double
 Polygon::computeArea3d()
 {
@@ -600,10 +646,11 @@ Polygon::computePoseAndBoundingBox(Eigen::Affine3f& pose, Eigen::Vector4f& min_p
 
 void Polygon::debug_output(std::string name)
 {
-  std::ofstream os;
-  std::string path = "/home/goa-tz/debug/";
+  //  std::ofstream os;
+  std::string path = "/home/goa-tz/debug/dbg/";
   path.append(name.c_str());
-  os.open(path.c_str());
+  std::ofstream os(path.c_str());
+  //  os.open(path.c_str());
   //std::cout<< "name~~~~~~~~~~~~"<<std::endl;
   std::cout<<"saving polygon nodes to "<<path.c_str()<<std::endl;
 
