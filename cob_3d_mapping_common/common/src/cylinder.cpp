@@ -461,7 +461,7 @@ void Cylinder::makeCyl2D(bool debug)
 
     for (size_t k = 0; k < contours[j].size(); k++) {
 
-      std::cout<<"\n k= "<<k<<"\n\n";
+//      std::cout<<"\n k= "<<k<<"\n";
       Tx_1=0;
 
 
@@ -567,10 +567,10 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 
       c_map.transformToTarget(c1,c2);
       //      c2.recomputeNormal();
-      c1.makeCyl2D(true);
+      c1.makeCyl2D(false);
       c1.debug_output("MC_NEW");
 
-      c2.makeCyl2D(true);
+      c2.makeCyl2D(false);
       c2.debug_output("MC_MAP");
 
 
@@ -891,15 +891,26 @@ Cylinder::dump_params(std::string  name){
   path.append(name.c_str());
   std::ofstream os(path.c_str(),std::ofstream::app );
   //  os<<"$ r  origin  centroid  normal  sym_axis";
-  os<<r_<<" "<<
+  os<<frame_stamp<<" "<<r_<<" "<<
       this->origin_[0]<<" "<<this->origin_[1]<<" "<<this->origin_[2]<<" "<<
       this->centroid[0]<<" "<<this->centroid[1]<<" "<<this->centroid[2]<<" "<<
       this->normal[0]<<" "<<this->normal[1]<<" "<<this->normal[2]<<" "<<
       this->sym_axis[0]<<" "<<this->sym_axis[1]<<" "<<this->sym_axis[2]<<"\n";
-
-
-
   os.close();
+  std::string points= "points";
+  path.append(points.c_str());
+  std::ofstream os_points(path.c_str(),std::ofstream::app );
+
+  for (size_t i = 0; i < this->contours.size(); ++i) {
+    for (size_t j = 0; j < this->contours[i].size(); ++j) {
+
+      os_points << this->contours[i][j][0]<<" "<< this->contours[i][j][2]<<" "<< this->contours[i][j][2]<<"\n";
+
+    }
+  }
+  os_points.close();
+
+
 }
 
 
@@ -994,27 +1005,27 @@ void Cylinder::getTrafo2d(const Eigen::Vector3f& vec_new,const Eigen::Vector3f& 
     //    1st section ---> above x axis
 
     if ((a[1]>=0 && b[1]>=0) && (a[0]<b[0]) ) {
-      std::cout<<"sec 1\n";
+//      std::cout<<"sec 1\n";
       Tx*=-1;
     }
 
     //   2nd section --> positive x values
     else if ((a[0]>=0 && b[0]>=0) && (a[1]> b[1])) {
       Tx*=-1;
-      std::cout<<"sec 2\n";
+//      std::cout<<"sec 2\n";
 
     }
 
     //    3rd section --> negative y values
     else if ((a[1]<=0 && b[1]<=0) && (a[0]>b[0])) {
       Tx*=-1;
-      std::cout<<"sec3\n";
+//      std::cout<<"sec3\n";
 
     }
     //   4th section --> negative x values
     else if ((a[0]<=0 && b[0]<=0) && (a[1]< b[1])) {
       Tx*=-1;
-      std::cout<<"sec 4\n";
+//      std::cout<<"sec 4\n";
 
     }
 
