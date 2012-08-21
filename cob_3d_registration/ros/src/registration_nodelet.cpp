@@ -308,7 +308,8 @@ public:
       Eigen::Affine3d af;
       af.matrix()=reg_->getTransformation().cast<double>();
       tf::TransformEigenToTF(af,transform);
-      tf_br_.sendTransform(tf::StampedTransform(transform, transform.stamp_, world_id_, corrected_id_));
+      //std::cout << transform.stamp_ << std::endl;
+      tf_br_.sendTransform(tf::StampedTransform(transform, pc_in->header.stamp, world_id_, corrected_id_));
 
       ROS_WARN("registration successful");
     }

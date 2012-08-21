@@ -129,6 +129,10 @@ namespace cob_3d_mapping
      */
     void publishMapMarker();
 
+    void fillMarker(Polygon::Ptr p, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t);
+    void fillMarker(Cylinder::Ptr c, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t);
+    void fillMarker(ShapeCluster::Ptr sc, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t);
+
     ros::NodeHandle n_;
 
   protected:
