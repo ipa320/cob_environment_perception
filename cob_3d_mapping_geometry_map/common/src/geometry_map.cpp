@@ -106,7 +106,7 @@ GeometryMap::addMapEntry(Polygon::Ptr& p_ptr)
     p.getMergeCandidates(map_polygon_,intersections);
     if(intersections.size()>0) // if polygon has to be merged ...
     {
-      std::vector<boost::shared_ptr<Polygon> > merge_candidates;
+      std::vector<Polygon::Ptr> merge_candidates;
       for(int i=intersections.size()-1; i>=0 ;--i)
       {
         // copies pointer to polygon
@@ -118,29 +118,25 @@ GeometryMap::addMapEntry(Polygon::Ptr& p_ptr)
       }
       // merge polygon with merge candidates
       p.merge(merge_candidates); // merge all new candidates into p
-      p.id = new_id_;
+      p.id = new_id_++;
       map_polygon_.push_back(p_ptr); // add p to map, candidates were dropped!
-      ++new_id_;
     }
     else //if polygon does not have to be merged , add new polygon
     {
       p.computeAttributes(p.normal,p.centroid);
       p.assignWeight();
-      p.id = new_id_;
+      p.id = new_id_++;
       p.frame_stamp = frame_counter_;
       map_polygon_.push_back(p_ptr);
-      ++new_id_;
-      //  std::cout<<"size +1"<<std::endl;
     }
   }
   else
   {
     p.computeAttributes(p.normal,p.centroid);
     p.assignWeight();
-    p.id = new_id_;
+    p.id = new_id_++;
     p.frame_stamp = frame_counter_;
     map_polygon_.push_back(p_ptr);
-    ++new_id_;
   }
   if(save_to_file_) saveMap(file_path_);
 }
@@ -226,6 +222,43 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
   }
   std::cout<<"Map Size CYLINDER="<<map_cylinder_.size()<<std::endl;
   //	if(save_to_file_) saveMap(file_path_);
+}
+
+void
+GeometryMap::addMapEntry(ShapeCluster::Ptr& sc_ptr)
+{
+  sc_ptr->computeAttributes();
+  if (map_shape_cluster_.size())
+  {
+    std::vector<int> intersections;
+    sc_ptr->getMergeCandidates(map_shape_cluster_, intersections);
+    std::cout << intersections.size() << std::endl;
+    if(intersections.size())
+    {
+      std::vector<ShapeCluster::Ptr> do_merge;
+      for(int i=intersections.size()-1; i>=0; --i)
+      {
+        do_merge.push_back(map_shape_cluster_[intersections[i]]);
+        map_shape_cluster_[intersections[i]] = map_shape_cluster_.back();
+        map_shape_cluster_.pop_back();
+      }
+      sc_ptr->merge(do_merge);
+      sc_ptr->id = new_id_++;
+      map_shape_cluster_.push_back(sc_ptr);
+    }
+    else
+    {
+      sc_ptr->id = new_id_++;
+      sc_ptr->frame_stamp = frame_counter_;
+      map_shape_cluster_.push_back(sc_ptr);
+    }
+  }
+  else
+  {
+    sc_ptr->id = new_id_++;
+    sc_ptr->frame_stamp = frame_counter_;
+    map_shape_cluster_.push_back(sc_ptr);
+  }
 }
 
 bool
@@ -317,7 +350,7 @@ GeometryMap::computeTfError(const std::vector<Polygon::Ptr>& list_polygon, const
 void
 GeometryMap::cleanUp()
 {
-  int n_dropped = 0;
+  int n_dropped = 0, m_dropped = 0;
   for(int idx = map_polygon_.size() - 1 ; idx >= 0; --idx)
   {
     //std::cout << map_polygon_[idx]->merged <<", " << (frame_counter_ - 3) <<" > "<<(int)map_polygon_[idx]->frame_stamp<<std::endl;
@@ -328,7 +361,17 @@ GeometryMap::cleanUp()
       ++n_dropped;
     }
   }
-  std::cout << "Dropped " << n_dropped << "Polys" << std::endl;
+  for(int idx = map_shape_cluster_.size() - 1 ; idx >= 0; --idx)
+  {
+    std::cout << map_shape_cluster_[idx]->merged <<", " << (frame_counter_ - 3) <<" > "<<(int)map_shape_cluster_[idx]->frame_stamp<<std::endl;
+    if (map_shape_cluster_[idx]->merged <= 1 && (frame_counter_ - 3) > (int)map_shape_cluster_[idx]->frame_stamp)
+    {
+      map_shape_cluster_[idx] = map_shape_cluster_.back();
+      map_shape_cluster_.pop_back();
+      ++m_dropped;
+    }
+  }
+  std::cout << "Dropped " << n_dropped << " Polys, " << m_dropped << " Clusters" << std::endl;
   // TODO: clean up cylinders
 }
 

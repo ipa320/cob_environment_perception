@@ -75,6 +75,7 @@
 #include "cob_3d_mapping_geometry_map/vis/geometry_map_visualisation.h"
 #include "cob_3d_mapping_common/polygon.h"
 #include "cob_3d_mapping_common/cylinder.h"
+#include "cob_3d_mapping_common/shape_cluster.h"
 
 //#include "cob_3d_mapping_common/shape.h"
 
@@ -117,12 +118,9 @@ public:
     //outputFile.close();
   }
 
-  void
-  addMapEntry(cob_3d_mapping::Polygon::Ptr& p_ptr);
-
-
-  void
-  addMapEntry(boost::shared_ptr<cob_3d_mapping::Cylinder>& c_ptr);
+  void addMapEntry(cob_3d_mapping::Polygon::Ptr& p_ptr);
+  void addMapEntry(boost::shared_ptr<cob_3d_mapping::Cylinder>& c_ptr);
+  void addMapEntry(cob_3d_mapping::ShapeCluster::Ptr& sc_ptr);
 
   bool
   computeTfError(const std::vector<cob_3d_mapping::Polygon::Ptr>& list_polygon, const Eigen::Affine3f& tf_old, Eigen::Affine3f& adjust_tf);
@@ -175,6 +173,12 @@ public:
     return boost::make_shared< std::vector< cob_3d_mapping::CylinderPtr > >(map_cylinder_);
   }
 
+  boost::shared_ptr<std::vector<cob_3d_mapping::ShapeCluster::Ptr> >
+  getMap_shape_cluster()
+  {
+    return boost::make_shared<std::vector<cob_3d_mapping::ShapeCluster::Ptr> >(map_shape_cluster_);
+  }
+
 
   void
   setFilePath(std::string file_path)
@@ -200,6 +204,7 @@ public:
 protected:
   std::vector<cob_3d_mapping::Polygon::Ptr > map_polygon_;
   std::vector<boost::shared_ptr<cob_3d_mapping::Cylinder> > map_cylinder_;
+  std::vector<cob_3d_mapping::ShapeCluster::Ptr> map_shape_cluster_;
   unsigned int new_id_;
   // std::ofstream outputFile;
   int counter_output;

@@ -167,6 +167,8 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr s
 
   std::vector<Polygon::Ptr> polygon_list;
   std::vector<CylinderPtr> cylinder_list;
+  std::map<int, ShapeCluster::Ptr> sc_map;
+
 
   for(size_t i=0; i<sa->shapes.size(); ++i)
   {
@@ -174,22 +176,35 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr s
     {
     case cob_3d_mapping_msgs::Shape::POLYGON:
     {
-      polygon_list.push_back(Polygon::Ptr(new Polygon));
-      fromROSMsg(sa->shapes[i], *polygon_list.back());
-      polygon_list.back()->transform2tf(af_orig);
+      Polygon::Ptr p(new Polygon);
+      fromROSMsg(sa->shapes[i], *p);
+      p->transform2tf(af_orig);
+      if(p->id != 0)
+      {
+        if (sc_map.find(p->id) == sc_map.end()) sc_map[p->id] = ShapeCluster::Ptr(new ShapeCluster);
+        sc_map[p->id]->insert(boost::static_pointer_cast<Shape>(p));
+      }
+      else { polygon_list.push_back(p); }
       break;
     }
     case cob_3d_mapping_msgs::Shape::CYLINDER:
     {
-      cylinder_list.push_back(Cylinder::Ptr(new Cylinder));
-      fromROSMsg(sa->shapes[i], *cylinder_list.back());
-      cylinder_list.back()->transform2tf(af_orig);
+      Cylinder::Ptr c(new Cylinder);
+      fromROSMsg(sa->shapes[i], *c);
+      c->transform2tf(af_orig);
+      if(c->id != 0)
+      {
+        if (sc_map.find(c->id) == sc_map.end()) sc_map[c->id] = ShapeCluster::Ptr(new ShapeCluster);
+        sc_map[c->id]->insert(boost::static_pointer_cast<Shape>(c));
+      }
+      else { cylinder_list.push_back(c); }
       break;
     }
     default:
       break;
     }
   }
+
 
   Eigen::Affine3f af_new;
   // currently turned off, always returns false
@@ -208,6 +223,11 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr s
   {
     if(needs_adjustment) cylinder_list[i]->transform2tf(af_new);
     geometry_map_.addMapEntry(cylinder_list[i]);
+  }
+  for (std::map<int,ShapeCluster::Ptr>::iterator it=sc_map.begin(); it!=sc_map.end(); ++it)
+  {
+    if(needs_adjustment) it->second->transform2tf(af_new);
+    geometry_map_.addMapEntry(it->second);
   }
 
   geometry_map_.cleanUp();
@@ -335,6 +355,38 @@ GeometryMapNode::publishMap()
 }
 
 void
+GeometryMapNode::fillMarker(Polygon::Ptr p, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t)
+{ std::cout << "not implemented yet" << std::endl; }
+
+void
+GeometryMapNode::fillMarker(Cylinder::Ptr c, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t)
+{ std::cout << "not implemented yet" << std::endl; }
+
+void
+GeometryMapNode::fillMarker(ShapeCluster::Ptr sc, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t)
+{
+  m.action = visualization_msgs::Marker::ADD;
+  m.type = visualization_msgs::Marker::CUBE;
+  m.lifetime = ros::Duration();
+  m.header.frame_id = map_frame_id_;
+
+  m.pose.position.x = sc->centroid(0);
+  m.pose.position.y = sc->centroid(1);
+  m.pose.position.z = sc->centroid(2);
+  m.pose.orientation.x = 0.0;
+  m.pose.orientation.y = 0.0;
+  m.pose.orientation.z = 0.0;
+  m.pose.orientation.w = 1.0;
+  m.scale.x = sc->scale(0);
+  m.scale.y = sc->scale(1);
+  m.scale.z = sc->scale(2);
+  m.color.r = 0.95;
+  m.color.g = 0.95;
+  m.color.b = 0.95;
+  m.color.a = 0.5;
+}
+
+void
 GeometryMapNode::publishMapMarker()
 {
   visualization_msgs::Marker marker, t_marker;
@@ -412,9 +464,9 @@ GeometryMapNode::publishMapMarker()
       marker.id = ctr;
       if (pm.holes[j])
       {
-        marker.color.r /= static_cast<float>(j+2);
-        marker.color.g /= static_cast<float>(j+2);
-        marker.color.b /= static_cast<float>(j+2);
+        marker.color.r /= 2.0f;//static_cast<float>(j+2);
+        marker.color.g /= 2.0f;//static_cast<float>(j+2);
+        marker.color.b /= 2.0f;//static_cast<float>(j+2);
       }
 
       t_marker.id = t_ctr;
@@ -459,35 +511,8 @@ GeometryMapNode::publishMapMarker()
     marker.color.r=1;
     marker.color.g=0;
     marker.color.b=0;
-    //					if(color_ctr==0)
-    //					{
-    //						marker.color.r = 0;
-    //						marker.color.g = 0;
-    //						marker.color.b = 1;
-    //					}
-    //					else if(color_ctr==1)
-    //					{
-    //						marker.color.r = 0;
-    //						marker.color.g = 1;
-    //						marker.color.b = 0;
-    //					}
-    //					else if(color_ctr==2)
-    //					{
-    //						marker.color.r = 0;
-    //						marker.color.g = 1;
-    //						marker.color.b = 1;
-    //					}
-    //					else if(color_ctr==3)
-    //					{
-    //						marker.color.r = 1;
-    //						marker.color.g = 1;
-    //						marker.color.b = 0;
-    //					}
 
-
-    //			std::cout<<pm.d<<std::endl<<std::endl;
-
-    //					get 3dimensional contours
+    //get 3dimensional contours
     std::vector<std::vector<Eigen::Vector3f> > contours3d;
     cm.getCyl3D(contours3d);
 
@@ -528,6 +553,15 @@ GeometryMapNode::publishMapMarker()
       marker_pub_.publish(t_marker);
 
     }
+  }
+
+  boost::shared_ptr<std::vector<ShapeCluster::Ptr> > map_sc = geometry_map_.getMap_shape_cluster();
+  for(size_t i=0; i<map_sc->size(); ++i)
+  {
+    marker.id = i;
+    fillMarker( (*map_sc)[i], marker, t_marker);
+    marker_pub_.publish(marker);
+    std::cout << "Published Cube" << std::endl;
   }
 }
 
