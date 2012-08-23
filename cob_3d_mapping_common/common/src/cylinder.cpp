@@ -890,6 +890,7 @@ Cylinder::dump_params(std::string  name){
   std::string path = "/home/goa-tz/debug/eval/";
   path.append(name.c_str());
   std::ofstream os(path.c_str(),std::ofstream::app );
+
   //  os<<"$ r  origin  centroid  normal  sym_axis";
   os<<frame_stamp<<" "<<r_<<" "<<
       this->origin_[0]<<" "<<this->origin_[1]<<" "<<this->origin_[2]<<" "<<
@@ -897,18 +898,18 @@ Cylinder::dump_params(std::string  name){
       this->normal[0]<<" "<<this->normal[1]<<" "<<this->normal[2]<<" "<<
       this->sym_axis[0]<<" "<<this->sym_axis[1]<<" "<<this->sym_axis[2]<<"\n";
   os.close();
-  std::string points= "points";
-  path.append(points.c_str());
-  std::ofstream os_points(path.c_str(),std::ofstream::app );
-
-  for (size_t i = 0; i < this->contours.size(); ++i) {
-    for (size_t j = 0; j < this->contours[i].size(); ++j) {
-
-      os_points << this->contours[i][j][0]<<" "<< this->contours[i][j][2]<<" "<< this->contours[i][j][2]<<"\n";
-
-    }
-  }
-  os_points.close();
+//  std::string points= "points";
+//  path.append(points.c_str());
+//  std::ofstream os_points(path.c_str(),std::ofstream::app );
+//
+//  for (size_t i = 0; i < this->contours.size(); ++i) {
+//    for (size_t j = 0; j < this->contours[i].size(); ++j) {
+//
+//      os_points << this->contours[i][j][0]<<" "<< this->contours[i][j][2]<<" "<< this->contours[i][j][2]<<"\n";
+//
+//    }
+//  }
+//  os_points.close();
 
 
 }
