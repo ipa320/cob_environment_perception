@@ -431,7 +431,7 @@ public:
     for(unsigned int i=0; i<map_polygon->size(); i++)
     {
       Polygon& pm = *(map_polygon->at(i));
-      int color_ctr = i%4;
+      int color_ctr = 0;//i%4;
       //marker.id = pm.id;
       if(color_ctr==0)
       {
