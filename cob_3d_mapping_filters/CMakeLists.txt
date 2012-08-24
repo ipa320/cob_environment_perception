@@ -52,6 +52,7 @@ rosbuild_add_executable(test_intensity_filter common/test/test_intensity_filter.
 rosbuild_add_executable(test_jump_edge_filter common/test/test_jump_edge_filter.cpp)
 rosbuild_add_executable(test_speckle_filter common/test/test_speckle_filter.cpp)
 rosbuild_add_executable(test_statistical_outlier_removal_filter common/test/test_statistical_outlier_removal_filter.cpp)
+rosbuild_add_executable(profile_filters common/test/profile_filters.cpp)
 
 target_link_libraries(test_statistical_outlier_removal_filter ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${PCL_KDTREE_LIBRARY} ${PCL_SEARCH_LIBRARY} ${PCL_SURFACE_LIBRARY} ${PCL_FEATURES_LIBRARY}  ${PCL_FILTERS_LIBRARY})
 #rosbuild_link_boost(test_statistical_outlier_removal_filter program_options)
