@@ -334,7 +334,7 @@ bool Registration_Infobased<Point>::compute_transformation()
           return false;
       }
       else {
-        T = T.Identity();
+       // T = T.Identity();
         ROS_INFO("using odometry");
       }
 #endif
