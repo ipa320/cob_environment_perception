@@ -42,6 +42,7 @@
 #include "rviz/properties/bool_property.h"
 #include "rviz/properties/tf_frame_property.h"
 #include "rviz/properties/editable_enum_property.h"
+#include "rviz/properties/ros_topic_property.h"
 
 #include <OGRE/OgreViewport.h>
 #include <OGRE/OgreQuaternion.h>
@@ -65,36 +66,39 @@ static const float PITCH_LIMIT_HIGH = Ogre::Math::HALF_PI - 0.001;
 // Some convenience functions for Ogre / geometry_msgs conversions
 static inline Ogre::Vector3 vectorFromMsg(const geometry_msgs::Point &m) { return Ogre::Vector3(m.x, m.y, m.z); }
 static inline Ogre::Vector3 vectorFromMsg(const geometry_msgs::Vector3 &m) { return Ogre::Vector3(m.x, m.y, m.z); }
-static inline geometry_msgs::Point pointOgreToMsg(const Ogre::Vector3 &o) 
-{ 
-  geometry_msgs::Point m; 
-  m.x = o.x; m.y = o.y; m.z = o.z; 
+static inline geometry_msgs::Point pointOgreToMsg(const Ogre::Vector3 &o)
+{
+  geometry_msgs::Point m;
+  m.x = o.x; m.y = o.y; m.z = o.z;
   return m;
 }
+static inline void pointOgreToMsg(const Ogre::Vector3 &o, geometry_msgs::Point &m)  { m.x = o.x; m.y = o.y; m.z = o.z; }
 
-static inline geometry_msgs::Vector3 vectorOgreToMsg(const Ogre::Vector3 &o) 
-{ 
-  geometry_msgs::Vector3 m; 
-  m.x = o.x; m.y = o.y; m.z = o.z; 
+static inline geometry_msgs::Vector3 vectorOgreToMsg(const Ogre::Vector3 &o)
+{
+  geometry_msgs::Vector3 m;
+  m.x = o.x; m.y = o.y; m.z = o.z;
   return m;
 }
+static inline void vectorOgreToMsg(const Ogre::Vector3 &o, geometry_msgs::Vector3 &m) { m.x = o.x; m.y = o.y; m.z = o.z; }
 
 // -----------------------------------------------------------------------------
 
 
 FreeViewController::FreeViewController()
-  : animate_(false), dragging_( false )
+  : nh_(""), animate_(false), dragging_( false )
 {
   interaction_disabled_cursor_ = makeIconCursor( "package://rviz/icons/forbidden.png" );
 
-  interaction_enabled_property_ = new BoolProperty("Interaction Enabled", true,
+  mouse_enabled_property_ = new BoolProperty("Mouse Enabled", true,
                                    "Enables mouse control of the camera.",
                                    this);
-  interaction_mode_property_ = new EditableEnumProperty("Control Mode", "Orbit",
+  interaction_mode_property_ = new EditableEnumProperty("Control Mode", QString::fromStdString(MODE_ORBIT),
                                    "Select the style of mouse interaction.",
                                    this);
-  interaction_mode_property_->addOptionStd("Orbit");
-  interaction_mode_property_->addOptionStd("FPS");
+  interaction_mode_property_->addOptionStd(MODE_ORBIT);
+  interaction_mode_property_->addOptionStd(MODE_FPS);
+  interaction_mode_property_->setStdString(MODE_ORBIT);
 
   fixed_up_property_ = new BoolProperty( "Maintain Vertical Axis", true,
                                          "If enabled, the camera is not allowed to roll side-to-side.",
@@ -103,7 +107,7 @@ FreeViewController::FreeViewController()
                                                  TfFrameProperty::FIXED_FRAME_STRING,
                                                  "TF frame the camera is attached to.",
                                                  this, NULL, true );
-  eye_point_property_    = new VectorProperty( "Position", Ogre::Vector3( 5, 5, 10 ),
+  eye_point_property_    = new VectorProperty( "Eye", Ogre::Vector3( 5, 5, 10 ),
                                               "Position of the camera.", this );
   focus_point_property_ = new VectorProperty( "Focus", Ogre::Vector3::ZERO,
                                               "Position of the focus/orbit point.", this );
@@ -114,12 +118,29 @@ FreeViewController::FreeViewController()
   default_transition_time_property_ = new FloatProperty( "Transition Time", 0.5,
                                                          "The default time to use for camera transitions.",
                                                          this );
+  camera_placement_topic_property_ = new RosTopicProperty("Placement Topic", "/rviz/camera_placement",
+                                                          QString::fromStdString(ros::message_traits::datatype<rviz_view_controllers::CameraPlacement>() ),
+                                                          "Topic for CameraPlacement messages", this, SLOT(updateTopics()));
+
+  camera_placement_trajectory_topic_property_ = new RosTopicProperty("Trajectory Topic", "/rviz/camera_placement_trajectory",
+                                                          QString::fromStdString(ros::message_traits::datatype<rviz_view_controllers::CameraPlacementTrajectory>() ),
+                                                          "Topic for CameraPlacementTrajectory messages", this, SLOT(updateTopics()));
 }
 
 FreeViewController::~FreeViewController()
 {
     delete focal_shape_;
     context_->getSceneManager()->destroySceneNode( attached_scene_node_ );
+}
+
+void FreeViewController::updateTopics()
+{
+  trajectory_subscriber_ = nh_.subscribe<rviz_view_controllers::CameraPlacementTrajectory>
+                              (camera_placement_trajectory_topic_property_->getStdString(), 1,
+                              boost::bind(&FreeViewController::cameraPlacementTrajectoryCallback, this, _1));
+  placement_subscriber_  = nh_.subscribe<rviz_view_controllers::CameraPlacement>
+                              (camera_placement_topic_property_->getStdString(), 1,
+                              boost::bind(&FreeViewController::cameraPlacementCallback, this, _1));
 }
 
 void FreeViewController::onInitialize()
@@ -136,13 +157,7 @@ void FreeViewController::onInitialize()
     focal_shape_->setColor(1.0f, 1.0f, 0.0f, 0.5f);
     focal_shape_->getRootNode()->setVisible(false);
 
-    ros::NodeHandle nh;
-    trajectory_subscriber_ = nh.subscribe<rviz_view_controllers::CameraPlacementTrajectory>
-                                ("/rviz/camera_placement_trajectory", 1,
-                                boost::bind(&FreeViewController::cameraPlacementTrajectoryCallback, this, _1));
-    placement_subscriber_  = nh.subscribe<rviz_view_controllers::CameraPlacement>
-                                ("/rviz/camera_placement", 1,
-                                boost::bind(&FreeViewController::cameraPlacementCallback, this, _1));
+    updateTopics();
 }
 
 void FreeViewController::onActivate()
@@ -230,7 +245,7 @@ void FreeViewController::reset()
     eye_point_property_->setVector(Ogre::Vector3(5, 5, 10));
     focus_point_property_->setVector(Ogre::Vector3::ZERO);
     distance_property_->setFloat( getDistanceFromCameraToFocalPoint());
-    interaction_enabled_property_->setBool(true);
+    mouse_enabled_property_->setBool(true);
     interaction_mode_property_->setStdString(MODE_ORBIT);
 
 
@@ -245,7 +260,7 @@ void FreeViewController::reset()
 
 void FreeViewController::handleMouseEvent(ViewportMouseEvent& event)
 {
-  if( !interaction_enabled_property_->getBool() )
+  if( !mouse_enabled_property_->getBool() )
   {
     setCursor( interaction_disabled_cursor_ );
     return;
@@ -363,13 +378,12 @@ void FreeViewController::mimic( ViewController* source_view )
     if( source_view->getClassId() == "rviz/Orbit" )
     {
         distance_property_->setFloat( source_view->subProp( "Distance" )->getValue().toFloat() );
-        interaction_mode_property_->setStdString( MODE_ORBIT );
     }
     else
     {
         distance_property_->setFloat( position.length() );
-        interaction_mode_property_->setStdString( MODE_FPS );
     }
+    interaction_mode_property_->setStdString( MODE_ORBIT );
 
     Ogre::Vector3 direction = orientation * (Ogre::Vector3::NEGATIVE_UNIT_Z * distance_property_->getFloat() );
     focus_point_property_->setVector( position + direction );
@@ -418,9 +432,9 @@ void FreeViewController::cameraPlacementCallback(const CameraPlacementConstPtr &
     updateAttachedFrame();
   }
 
-  ROS_INFO_STREAM("Received a camera placement request! \n" << cp);
+  ROS_DEBUG_STREAM("Received a camera placement request! \n" << cp);
   transformCameraPlacementToAttachedFrame(cp);
-  ROS_INFO_STREAM("After transform, we have \n" << cp);
+  ROS_DEBUG_STREAM("After transform, we have \n" << cp);
 
   Ogre::Vector3 eye = vectorFromMsg(cp.eye.point); 
   Ogre::Vector3 focus = vectorFromMsg(cp.focus.point); 
@@ -432,10 +446,10 @@ void FreeViewController::cameraPlacementCallback(const CameraPlacementConstPtr &
 void FreeViewController::cameraPlacementTrajectoryCallback(const CameraPlacementTrajectoryConstPtr &cptptr)
 {
   CameraPlacementTrajectory cpt = *cptptr;
-  ROS_INFO_STREAM("Received a camera placement trajectory request! \n" << cpt);
+  ROS_DEBUG_STREAM("Received a camera placement trajectory request! \n" << cpt);
   
   // Handle control parameters
-  interaction_enabled_property_->setBool( cpt.interaction_enabled );
+  mouse_enabled_property_->setBool( cpt.interaction_enabled );
   fixed_up_property_->setBool( cpt.maintain_fixed_up_axis );
   if(cpt.mouse_interaction_mode != cpt.NO_CHANGE)
   {
@@ -500,7 +514,7 @@ void FreeViewController::transformCameraPlacementToAttachedFrame(CameraPlacement
 // We must assume that this point is in the Rviz Fixed frame since it came from Rviz...
 void FreeViewController::lookAt( const Ogre::Vector3& point )
 {
-  if( !interaction_enabled_property_->getBool() ) return;
+  if( !mouse_enabled_property_->getBool() ) return;
 
   Ogre::Vector3 new_point = fixedFrameToAttachedLocal(point);
 

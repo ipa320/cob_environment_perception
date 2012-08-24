@@ -1,6 +1,6 @@
 # When to start the camera placement trajectory
 # (There is no header here because the frame is specified per-camera-placement.)
-time stamp
+time start_time
 
 # The vector of camera placements
 # An empty vector can be sent if this message is being used to

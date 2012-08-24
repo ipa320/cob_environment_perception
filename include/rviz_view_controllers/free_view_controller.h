@@ -35,7 +35,9 @@
 #include "rviz_view_controllers/CameraPlacementTrajectory.h"
 #include "rviz/view_controller.h"
 
+
 #include <ros/subscriber.h>
+#include <ros/ros.h>
 
 #include <OGRE/OgreVector3.h>
 #include <OGRE/OgreQuaternion.h>
@@ -51,6 +53,7 @@ class VectorProperty;
 class QuaternionProperty;
 class TfFrameProperty;
 class EditableEnumProperty;
+class RosTopicProperty;
 
 /** @brief An un-constrained "flying" camera, controlled by a position and quaternion. */
 class FreeViewController : public ViewController
@@ -164,9 +167,15 @@ protected:  //methods
 
   Ogre::Quaternion getOrientation(); ///< Return a Quaternion
 
+protected Q_SLOTS:
+  void updateTopics();
+
+
 protected:    //members
 
-  BoolProperty* interaction_enabled_property_;      ///< If True, most user changes to camera state are disabled.
+  ros::NodeHandle nh_;
+
+  BoolProperty* mouse_enabled_property_;            ///< If True, most user changes to camera state are disabled.
   EditableEnumProperty* interaction_mode_property_; ///< Select between Orbit or FPS control style.
   BoolProperty* fixed_up_property_;                 ///< If True, "up" is fixed to ... up.
 
@@ -175,6 +184,9 @@ protected:    //members
   VectorProperty* focus_point_property_;            ///< The point around which the camera "orbits".
   VectorProperty* up_vector_property_;              ///< The up vector for the camera.
   FloatProperty* default_transition_time_property_; ///< A default time for any animation requests.
+
+  RosTopicProperty* camera_placement_topic_property_;
+  RosTopicProperty* camera_placement_trajectory_topic_property_;
 
   TfFrameProperty* attached_frame_property_;
   Ogre::SceneNode* attached_scene_node_;
