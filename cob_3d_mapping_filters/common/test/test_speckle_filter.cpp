@@ -18,6 +18,8 @@
 #include "cob_3d_mapping_common/stop_watch.h"
 #include <iostream>
 #include <fstream>
+#include <boost/random.hpp>
+#include <boost/random/normal_distribution.hpp>
 
 /* Methods for testing filters */
 
@@ -77,9 +79,73 @@ void DoSampleRun()
   pcl::io::savePCDFileASCII("/home/goa/Ubuntu One/diss/images/raw/filter_sequence_speckle2.pcd", *cloud_out);
 }
 
+void DoSampleRun2()
+{
+  cob_3d_mapping_filters::SpeckleFilter<PointXYZ> filter;
+  pcl::PointCloud<PointXYZ>::Ptr cloud(new pcl::PointCloud<PointXYZ> ());
+  pcl::PointCloud<PointXYZ>::Ptr cloud_out(new pcl::PointCloud<PointXYZ> ());
+  cloud->width = 640;
+  cloud->height = 480;
+  double x=0, y=0;
+  for(unsigned int i=0; i<cloud->width; i++, y+=0.001)
+  {
+    x=0;
+    for(unsigned int j=0; j<cloud->height; j++, x+=0.001)
+    {
+      PointXYZ pt;
+      pt.x = x;
+      pt.y = y;
+      pt.z = 1;
+      cloud->points.push_back(pt);
+    }
+  }
+  boost::mt19937 rng; // I don't seed it on purpouse (it's not relevant)
+  boost::normal_distribution<> nd(0.0, 0.05);
+  boost::variate_generator<boost::mt19937&, 
+                           boost::normal_distribution<> > var_nor(rng, nd);
+
+  for(unsigned int i=0; i<3000; i++)
+  	cloud->points[i*100].z += var_nor();
+  
+  //pcl::io::savePCDFileASCII("/tmp/spk_cloud.pcd", *cloud);
+  filter.setInputCloud(cloud);
+  for(unsigned int s=10; s<=100; s+=10)
+  {
+    std::stringstream ss;
+  	ss << "/tmp/spk_acc_" << s << ".txt";
+    std::ofstream file;
+  	file.open(ss.str().c_str());
+  	file << "thr\ttp\tfn\tfp\n";
+		for(double c=0.01; c<=0.1; c+=0.01)
+		{
+			filter.setFilterParam (s, c);
+			filter.filter(*cloud_out);
+			pcl::PointIndices::Ptr ind = filter.getRemovedIndices ();
+			std::cout << "Cloud size " << cloud_out->size() << ", ind: " << ind->indices.size() << std::endl;
+			int fn_ctr=0, tp_ctr=0;
+			for(unsigned int i=0; i<3000; i++)
+			{
+				bool found=false;
+				for(unsigned int j=0; j<ind->indices.size(); j++)
+				{
+					if(ind->indices[j] == i*100) {tp_ctr++;found=true;break;}
+				}
+				if(!found) fn_ctr++;
+			}
+			int fp_ctr = ind->indices.size()-tp_ctr;
+			double fn_ratio = (double)fn_ctr/3000;
+			double fp_ratio = (double)fp_ctr/3000;
+			double tp_ratio = (double)tp_ctr/3000;
+			file << c <<"\t"<< tp_ratio << "\t" << fn_ratio << "\t" << fp_ratio << "\n";
+			std::cout << "c: "<< c << " fn: " << fn_ratio << ", tp: " << tp_ratio << " fp: " << fp_ratio << std::endl;
+		}
+		file.close();
+  }
+}
+
 int main()
 {
-  DoSampleRun();
+  DoSampleRun2();
   //TestProcessingTimeOnce(10000, 1);
 }
 
