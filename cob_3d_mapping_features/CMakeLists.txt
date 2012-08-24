@@ -23,6 +23,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
     #/usr/include/vtk-5.8)
+rosbuild_add_boost_directories()
 
 
 ## include vtk
@@ -75,7 +76,8 @@ target_link_libraries(cob_3d_mapping_features_nodelets cob_3d_mapping_features $
 
 
 rosbuild_add_executable(test_plane_extraction common/apps/test_plane_extraction.cpp)
-target_link_libraries(test_plane_extraction cob_3d_mapping_features)
+target_link_libraries(test_plane_extraction cob_3d_mapping_features vtkCommon vtkFiltering)
+rosbuild_link_boost(test_plane_extraction program_options)
 
 rosbuild_add_executable(plane_extraction_action_client ros/src/plane_extraction_action_client.cpp)
 target_link_libraries(plane_extraction_action_client ${OpenCV_LIBS})
