@@ -548,15 +548,15 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
     Eigen::Vector3f connection=c_map.origin_-origin_;
 
 
-    //if ((fabs(c_map.sym_axis .dot(sym_axis)) > limits.angle_thresh)  && fabs(c_map.r_ - r_) < (0.01 ) )
-      Eigen::Vector3f d= c_map.origin_  - this->origin_   ;
+    if ((fabs(c_map.sym_axis .dot(sym_axis)) > limits.angle_thresh)  && fabs(c_map.r_ - r_) < (0.01 ) )
+    //  Eigen::Vector3f d= c_map.origin_  - this->origin_   ;
 
-    if (d.norm() > 0.05  && fabs(c_map.r_ - r_) < (0.01 ) )
+    //if (d.norm() > 0.05  && fabs(c_map.r_ - r_) < (0.01 ) )
 
 
     {
 
-        std::cout<<"D " <<d.norm()<<"\n";
+      //  std::cout<<"D " <<d.norm()<<"\n";
       Cylinder c1,c2;
 
       //      c_map.getShiftedCylinder(*this,*this,shifted_cylinder,false);
