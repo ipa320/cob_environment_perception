@@ -278,7 +278,6 @@ Cylinder::computeAttributes(const Eigen::Vector3f& sym_axis, const Eigen::Vector
 
 
 
-  //  TODO: recomputation of centroid
   origin_=new_origin;
   this ->sym_axis = sym_axis;
 
@@ -549,13 +548,16 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
     Eigen::Vector3f connection=c_map.origin_-origin_;
 
 
-    if ((fabs(c_map.sym_axis .dot(sym_axis)) > limits.angle_thresh)  && fabs(c_map.r_ - r_) < (0.01 ) )
+    //if ((fabs(c_map.sym_axis .dot(sym_axis)) > limits.angle_thresh)  && fabs(c_map.r_ - r_) < (0.01 ) )
+      Eigen::Vector3f d= c_map.origin_  - this->origin_   ;
+
+    if (d.norm() > 0.05  && fabs(c_map.r_ - r_) < (0.01 ) )
+
 
     {
 
-
+        std::cout<<"D " <<d.norm()<<"\n";
       Cylinder c1,c2;
-
 
       //      c_map.getShiftedCylinder(*this,*this,shifted_cylinder,false);
 
@@ -778,7 +780,6 @@ Cylinder::applyWeighting(std::vector<CylinderPtr>& merge_candidates)
   double   merge_weight_sum = this ->merge_weight_;
   double temp_r = merge_weight_sum * this->r_;
   int merged_sum = this->merged;
-  std::cout<<"r_new"<<this->r_<<"\n";
 
 
 
@@ -817,17 +818,22 @@ Cylinder::applyWeighting(std::vector<CylinderPtr>& merge_candidates)
   this->r_ = temp_r / merge_weight_sum;
   std::cout<<"r_ave"<<this->r_<<"\n";
 
-
-
-  if (merged_sum < 9)
+  merged_limit=50;
+  if (merged_sum < merged_limit)
   {
     this->merged=merged_sum;
+
   }
   else
   {
-    this->merged=9;
+    this->merged=merged_limit;
   }
 
+
+  std::cout<<"average params"<<"\n";
+  std::cout<<"merged = "<<this->merged<<"\n";
+  std::cout<<"normal = "<<this->normal[0]<<" "<<this->normal[1]<<" "<<this->normal[2]<<" "<<"\n";
+  std::cout<<"origin_ = "<<this->origin_[0]<<" "<<this->origin_[1]<<" "<<this->origin_[2]<<" "<<"\n";
 
 
   //  Eigen::Vector3f x_axis;
@@ -835,7 +841,7 @@ Cylinder::applyWeighting(std::vector<CylinderPtr>& merge_candidates)
   //  this->normal = this->sym_axis.cross(x_axis);
 
   //  !overide! use initial values for normal and sym_axis
-  //  this->normal = merge_candidates[0]->normal;
+//    this->normal = merge_candidates[0]->normal;
   //    this->sym_axis = merge_candidates[0]-> sym_axis;
   //    this->origin_ = merge_candidates[0]-> origin_;
 
