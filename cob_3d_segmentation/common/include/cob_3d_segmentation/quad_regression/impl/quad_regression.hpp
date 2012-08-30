@@ -577,6 +577,8 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
       poly.segments_.push_back(std::vector<Eigen::Vector3f>());
 #ifdef USE_BOOST_POLYGONS_
       poly.segments2d_.push_back(std::vector<BoostPoint>());
+#elif defined(BACK_CHECK_REPEAT)
+      poly.segments2d_.push_back(std::vector<Eigen::Vector2i>());
 #endif
 
       int x=out[n].x;
@@ -620,12 +622,12 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
           numb=back=0;
         }
       }
-      poly.segments_.back()[0](2)=back/(float)numb;
+      if(poly.segments_.back().size()>0) poly.segments_.back()[0](2)=back/(float)numb;
 
-      if(num<5 || (std::abs(x-start_x)+std::abs(y-start_y))>4 ) {
+      if(poly.segments_.back().size()<3 || (std::abs(x-start_x)+std::abs(y-start_y))>10 ) {
         poly.segments_.erase(poly.segments_.end()-1);
 
-#ifdef USE_BOOST_POLYGONS_
+#if defined(USE_BOOST_POLYGONS_) || defined(BACK_CHECK_REPEAT)
         poly.segments2d_.erase(poly.segments2d_.end()-1);
 #endif
       }
@@ -872,11 +874,9 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
       s.params.push_back(polygons_[i].proj2plane_.col(1)(1));
       s.params.push_back(polygons_[i].proj2plane_.col(1)(2));
 
-
-      SetLabeledPoint(s.color, i);
-      s.color.r/=255.f;
-      s.color.g/=255.f;
-      s.color.b/=255.f;
+      s.color.r=polygons_[i].color_[0];
+      s.color.g=polygons_[i].color_[1];
+      s.color.b=polygons_[i].color_[2];
       s.color.a=1.f;
       //s.color.a=std::min(1000.f,polygons_[i].weight_)/1000.f;
 
@@ -904,7 +904,7 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
               ma(2) = std::max(t(2),ma(2));
             }
           }
-          pt.z=0;
+          pt.z=polygons_[i].segments_[j][k](2);
           if(pcl_isfinite(pt.x) && pcl_isfinite(pt.y)) {
             pc.push_back(pt);
           }
@@ -919,8 +919,137 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
 
       //ROS_INFO("density %f",(mi-ma).squaredNorm()/(polygons_[i].weight_*polygons_[i].weight_));
       //if( (mi-ma).squaredNorm()/(polygons_[i].weight_*polygons_[i].weight_)<0.00002f)
-        sa.shapes.push_back(s);
+      sa.shapes.push_back(s);
     }
 
     return sa;
+  }
+
+
+  template <typename Point, typename PointLabel>
+  Segmentation_QuadRegression<Point,PointLabel>::operator visualization_msgs::Marker() const {
+    visualization_msgs::Marker m;
+    m.type = visualization_msgs::Marker::LINE_LIST;
+    m.id = 0;
+    m.action = visualization_msgs::Marker::ADD;
+    m.pose.position.x = 0;
+    m.pose.position.y = 0;
+    m.pose.position.z = 0;
+    m.pose.orientation.x = 0.0;
+    m.pose.orientation.y = 0.0;
+    m.pose.orientation.z = 0.0;
+    m.pose.orientation.w = 1.0;
+    m.scale.x = 0.02;
+    m.scale.y = 0.1;
+    m.scale.z = 0.1;
+    m.color.a = 1.0;
+    m.color.r = 1.0;
+    m.color.g = 1.0;
+    m.color.b = 1.0;
+
+    for(size_t i=0; i<polygons_.size(); i++) {
+
+//      std::cerr<<"OFF:\n"<<polygons_[i].param_.col(0)<<"\n";
+//      std::cerr<<"PLANE:\n"<<polygons_[i].proj2plane_<<"\n";
+//      std::cerr<<"P1:\n"<<polygons_[i].param_.col(1)<<"\n";
+//      std::cerr<<"P2:\n"<<polygons_[i].param_.col(2)<<"\n";
+
+      if(polygons_[i].segments_.size()<1) continue;
+
+      for(size_t j=0; j<polygons_[i].segments_.size(); j++) {
+
+        for(size_t k=0; k<polygons_[i].segments_[j].size(); k++)
+        {
+          std_msgs::ColorRGBA c;
+          geometry_msgs::Point p;
+          Eigen::Vector3f v1,v2;
+
+          c.r=polygons_[i].segments_[j][(k+1)%polygons_[i].segments_[j].size()](2);
+          c.g=0;
+          c.b=1-c.r;
+          c.a=1;
+
+          v1 = polygons_[i].project2world(polygons_[i].segments_[j][k].head<2>());
+          v2 = polygons_[i].project2world(polygons_[i].segments_[j][(k+1)%polygons_[i].segments_[j].size()].head<2>());
+
+
+//          std::cerr<<"s\n"<<polygons_[i].segments_[j][k].head<2>()<<"\n";
+//          std::cerr<<"P\n"<<v1<<"\n";
+
+          if(!pcl_isfinite(v1.sum()) || !pcl_isfinite(v2.sum()))
+            continue;
+
+          //          std::cout<<"O\n"<<v1<<"\n";
+
+          p.x = v1(0);
+          p.y = v1(1);
+          p.z = v1(2);
+          m.points.push_back(p);
+          m.colors.push_back(c);
+
+          p.x = v2(0);
+          p.y = v2(1);
+          p.z = v2(2);
+          m.points.push_back(p);
+          m.colors.push_back(c);
+        }
+      }
+    }
+
+    return m;
+  }
+
+  template <typename Point, typename PointLabel>
+  bool Segmentation_QuadRegression<Point,PointLabel>::extractImages() {
+#ifdef USE_COLOR
+    const pcl::PointCloud<Point> &pc = (*input_);
+
+    for(size_t i=0; i<polygons_.size(); i++) {
+      polygons_[i].img_.reset(new sensor_msgs::Image);
+
+      if(polygons_[i].segments2d_.size()<1 || polygons_[i].segments2d_[0].size()<3) continue;
+
+      //2d rect
+      int mix=input_->width, miy=input_->height, max=-1, may=-1;
+      for(size_t j=0; j<polygons_[i].segments2d_[0].size(); j++) { //outer hull
+        mix = std::min(mix, polygons_[i].segments2d_[0][j](0));
+        max = std::max(max, polygons_[i].segments2d_[0][j](0));
+        miy = std::min(miy, polygons_[i].segments2d_[0][j](1));
+        may = std::max(may, polygons_[i].segments2d_[0][j](1));
+      }
+#ifndef DO_NOT_DOWNSAMPLE_
+      mix*=2;
+      max*=2;
+      miy*=2;
+      may*=2;
+#endif
+
+      polygons_[i].img_->width  = max-mix+1;
+      polygons_[i].img_->height = may-miy+1;
+      polygons_[i].img_->encoding = "rgb8";
+      polygons_[i].img_->step = polygons_[i].img_->width*3;
+      polygons_[i].img_->is_bigendian = false;
+      polygons_[i].img_->data.resize( polygons_[i].img_->step*polygons_[i].img_->height );
+
+      polygons_[i].color_[0] = polygons_[i].color_[1] = polygons_[i].color_[2] = 0.f;
+      for(int x=mix; x<=max; x++) {
+        for(int y=miy; y<=may; y++) {
+          polygons_[i].img_->data[(y-miy)*polygons_[i].img_->step + 3*(x-mix) + 0] = pc[getIndPC(x,y)].r;
+          polygons_[i].img_->data[(y-miy)*polygons_[i].img_->step + 3*(x-mix) + 1] = pc[getIndPC(x,y)].g;
+          polygons_[i].img_->data[(y-miy)*polygons_[i].img_->step + 3*(x-mix) + 2] = pc[getIndPC(x,y)].b;
+
+          polygons_[i].color_[0] += pc[getIndPC(x,y)].r;
+          polygons_[i].color_[1] += pc[getIndPC(x,y)].g;
+          polygons_[i].color_[2] += pc[getIndPC(x,y)].b;
+        }
+      }
+
+      polygons_[i].color_[0] /= 255.f*polygons_[i].img_->width*polygons_[i].img_->height;
+      polygons_[i].color_[1] /= 255.f*polygons_[i].img_->width*polygons_[i].img_->height;
+      polygons_[i].color_[2] /= 255.f*polygons_[i].img_->width*polygons_[i].img_->height;
+    }
+  return true;
+#else
+  return false;
+#endif
   }
