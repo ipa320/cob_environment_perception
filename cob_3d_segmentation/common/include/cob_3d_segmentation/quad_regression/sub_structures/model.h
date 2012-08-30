@@ -8,6 +8,7 @@
 #ifndef MODEL_H_
 #define MODEL_H_
 
+#define USE_SVD_
 
 /**
  * Model contains data for regression calculations and parameters
@@ -34,14 +35,14 @@ struct Model {
   bool isLinearAndTo()
   {
     //Variance for both axis (spare small objects)
-//    const float Vx = (param.model_(1,1)-param.model_(0,1)*param.model_(0,1)/param.model_(0,0))/param.model_(0,0);
-//    const float Vy = (param.model_(3,3)-param.model_(0,3)*param.model_(0,3)/param.model_(0,0))/param.model_(0,0);
-//
-//    if(Vx<0.001f && Vy<0.001f)
-//    {
+    const float Vx = (param.model_(1,1)-param.model_(0,1)*param.model_(0,1)/param.model_(0,0))/param.model_(0,0);
+    const float Vy = (param.model_(3,3)-param.model_(0,3)*param.model_(0,3)/param.model_(0,0))/param.model_(0,0);
+
+    if(Vx<0.001f && Vy<0.001f)
+    {
 //      ROS_INFO("np1 %f %f", Vx, Vy);
-//      return false;
-//    }
+      return false;
+    }
 
     Model temp=*this;
     temp.getLinear2();
@@ -124,12 +125,43 @@ struct Model {
 //      getLinear2();
 //    }
     else {
+
+#ifdef USE_SVD_
+      bool bLDLT=false;
+      // compute the SVD:
+      Eigen::JacobiSVD<Param::Matrix6f> svd (param.model_, Eigen::ComputeFullU | Eigen::ComputeFullV);
+      const Param::Matrix6f& u = svd.matrixU(),
+          & v = svd.matrixV();
+      Param::Vector6f s = svd.singularValues();
+
+      const Param::Vector6f d = u.transpose()*param.z_;
+
+      //int index_map[6]={0,1,3,2,4,5};
+      // determine the effective rank r of A using singular values
+      int r = 0;
+      Param::Vector6f t = Param::Vector6f::Zero();
+      while( r < 6 && s(r) >= 0.0001f )
+      {
+        t(r) = d(r) / s(r);
+        r++;
+      }
+
+      p = v * t;
+
+#else
+//      std::cout<<"p\n"<<p<<"\n";
+//      std::cout<<"t\n"<<t<<"\n";
+//      std::cout<<"d\n"<<d<<"\n";
+//      std::cout<<"s\n"<<s<<"\n";
+//      std::cout<<"v\n"<<v<<"\n";
+
       bool bLDLT=param.z_(0)/param.model_(0)<1.2f;
 
       if(bLDLT)
         p=param.model_.ldlt().solve(param.z_);
       else
         p=param.model_.fullPivLu().solve(param.z_);
+#endif
 
       if(!pcl_isfinite(p(1))) {
         if(bLDLT)
