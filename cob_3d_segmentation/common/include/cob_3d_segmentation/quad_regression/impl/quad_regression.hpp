@@ -363,7 +363,6 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
 #else
         const float thr=(d*d+1.2f)*0.004f;
 #endif
-        const float thr=(d*d+1.2f)*0.0035f;
 
         if( hops>0 && x>0&&y>0&&x+1<(int)levels_[i].w&&y+1<(int)levels_[i].h &&
             d!=0.f && ((found<1&&first_lvl) ||
@@ -452,20 +451,31 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
 //            model.model(levels_[i].data[getInd(x,y)].model_(1)/levels_[i].data[getInd(x,y)].model_(0,0),
 //                        levels_[i].data[getInd(x,y)].model_(3)/levels_[i].data[getInd(x,y)].model_(0,0)));
 //        pt.back = (delta > -0.01f && levels_[i+2].data[getInd2(x/4,y/4)].v_min_<0.1f) || delta>2*(model.get_max_gradient(levels_[i].data[getInd(x,y)])*levels_[i].data[getInd(x,y)].z_(0)/levels_[i].data[getInd(x,y)].model_(0,0)*(1<<i)/kinect_params_.f+4*0.03f);
+        //                        levels_[i].data[getInd(x,y)].model_(3)/levels_[i].data[getInd(x,y)].model_(0,0)));
+        //        pt.back = (delta > -0.01f && levels_[i+2].data[getInd2(x/4,y/4)].v_min_<0.1f) || delta>2*(model.get_max_gradient(levels_[i].data[getInd(x,y)])*levels_[i].data[getInd(x,y)].z_(0)/levels_[i].data[getInd(x,y)].model_(0,0)*(1<<i)/kinect_params_.f+4*0.03f);
         pt.back = levels_[i+2].data[getInd2(x/4,y/4)].v_max_-
-                        model.model(levels_[i+2].data[getInd2(x/4,y/4)].model_(1)/levels_[i+2].data[getInd2(x/4,y/4)].model_(0,0),
-                                    levels_[i+2].data[getInd2(x/4,y/4)].model_(3)/levels_[i+2].data[getInd2(x/4,y/4)].model_(0,0))
-                                    > (model.get_max_gradient(levels_[i+2].data[getInd2(x/4,y/4)])*levels_[i+2].data[getInd2(x/4,y/4)].z_(0)/levels_[i+2].data[getInd2(x/4,y/4)].model_(0,0)*(1<<i)/kinect_params_.f+4*0.03f);
+            model.model(levels_[i+2].data[getInd2(x/4,y/4)].model_(1)/levels_[i+2].data[getInd2(x/4,y/4)].model_(0,0),
+                        levels_[i+2].data[getInd2(x/4,y/4)].model_(3)/levels_[i+2].data[getInd2(x/4,y/4)].model_(0,0))
+                        > (model.get_max_gradient(levels_[i+2].data[getInd2(x/4,y/4)])*levels_[i+2].data[getInd2(x/4,y/4)].z_(0)/levels_[i+2].data[getInd2(x/4,y/4)].model_(0,0)*(1<<i)/kinect_params_.f+4*0.03f);
         //TODO: improve this stupid thing (but it was easy :) )
 #endif
         outs.push_back(pt);
       }
 
       outline(ch_, levels_[i].w,levels_[i].h,outs,i, poly, model, mark);
-      if(poly.segments_.size()<1)
-        ROS_WARN("segment empty");
+//      if(poly.segments_.size()<1)
+//        ROS_WARN("segment empty");
 
-      polygons_.push_back(poly);
+      if(filter_>0.f) {
+        float area = poly.area();
+
+        //ROS_INFO("%f %f",poly.weight_*poly.model_.param.v_max_*poly.model_.param.v_max_/area,filter_);
+
+        if(poly.weight_*poly.model_.param.v_max_*poly.model_.param.v_max_/area>filter_)
+          polygons_.push_back(poly);
+      }
+      else
+        polygons_.push_back(poly);
 
       return;
     }
