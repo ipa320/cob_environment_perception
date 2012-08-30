@@ -5,7 +5,7 @@
  *      Author: josh
  */
 
-
+//#define USE_COLOR
 
 // ROS includes
 #include <ros/ros.h>
@@ -30,7 +30,7 @@ class As_Node
 protected:
   ros::NodeHandle n_;
 public:
-  As_Node() {
+  As_Node(): n_("~") {
   }
 
   virtual ~As_Node() {}
@@ -64,7 +64,7 @@ class QPPF_Node : public Parent
   typedef pcl::PointCloud<Point> PointCloud;
 
   ros::Subscriber point_cloud_sub_;
-  ros::Publisher  curved_pub_, shapes_pub_;
+  ros::Publisher  curved_pub_, shapes_pub_, outline_pub_, image_pub_;
 
   Segmentation::Segmentation_QuadRegression<Point, PointLabel> seg_;
 
@@ -87,11 +87,21 @@ public:
     this->start();
 
     ros::NodeHandle *n=&(this->n_);
+#ifdef USE_COLOR
+    point_cloud_sub_ = this->n_.subscribe("/camera/rgb/points", 1, &QPPF_Node<Point, PointLabel, Parent>::pointCloudSubCallback, this);
+#else
     point_cloud_sub_ = this->n_.subscribe("/camera/depth/points", 1, &QPPF_Node<Point, PointLabel, Parent>::pointCloudSubCallback, this);
+#endif
     curved_pub_ = n->advertise<cob_3d_mapping_msgs::CurvedPolygon_Array>("/curved_polygons", 1);
     shapes_pub_ = n->advertise<cob_3d_mapping_msgs::ShapeArray>("/shapes_array", 1);
+    outline_pub_= n->advertise<visualization_msgs::Marker>("/outline", 1);
+    image_pub_  = n->advertise<sensor_msgs::Image>("/image1", 1);
 
     as_.start();
+
+    double filter;
+    if(this->n_.getParam("filter",filter))
+      seg_.setFilter((float)filter);
   }
 
   void setGoal(const cob_3d_segmentation::ObjectWatchGoalConstPtr &goal)
@@ -124,6 +134,8 @@ public:
 
     seg_.setInputCloud(pc_in);
     seg_.compute();
+    seg_.extractImages();
+
     if(goal_)
     {
       cob_3d_segmentation::ObjectWatchFeedback feedback;
@@ -159,10 +171,26 @@ public:
       }
       as_.publishFeedback(feedback);
     }
+    if(image_pub_.getNumSubscribers()>0)
+    {
+      if(seg_.getPolygons().size()>0 && seg_.getPolygons()[0].img_) {
+        sensor_msgs::Image img = *seg_.getPolygons()[0].img_;
+        img.header = pc_in->header;
+        image_pub_.publish(img);
+      }
+    }
+    if(outline_pub_.getNumSubscribers()>0)
+    {
+      visualization_msgs::Marker m = seg_;
+      m.header = pc_in->header;
+      outline_pub_.publish(m);
+    }
     if(shapes_pub_.getNumSubscribers()>0)
     {
       cob_3d_mapping_msgs::ShapeArray sa = seg_;
-      sa.header.stamp = pc_in->header.stamp;
+      sa.header = pc_in->header;
+      for(size_t i=0; i<sa.shapes.size(); i++)
+        sa.shapes[i].header = pc_in->header;
       shapes_pub_.publish(sa);
     }
     if(curved_pub_.getNumSubscribers()>0)
@@ -183,15 +211,16 @@ public:
 #ifdef COMPILE_NODELET
 
 typedef QPPF_Node<pcl::PointXYZ,pcl::PointXYZRGB,As_Nodelet> QPPF_XYZ;
+typedef QPPF_Node<pcl::PointXYZRGB,pcl::PointXYZRGB,As_Nodelet> QPPF_XYZRGB;
 
-PLUGINLIB_DECLARE_CLASS(cob_3d_segmentation, QPPF_XYZ, QPPF_Node_XYZ, nodelet::Nodelet)
+PLUGINLIB_DECLARE_CLASS(cob_3d_segmentation, QPPF_XYZRGB, QPPF_Node_XYZ, nodelet::Nodelet)
 
 #else
 
 int main(int argc, char **argv) {
   ros::init(argc, argv, "qppf");
 
-  QPPF_Node<pcl::PointXYZ,pcl::PointXYZRGB,As_Node> sn("qppf");
+  QPPF_Node<pcl::PointXYZRGB,pcl::PointXYZRGB,As_Node> sn("qppf");
   sn.onInit();
 
   ros::spin();
