@@ -12,6 +12,7 @@
 #include <eigen3/Eigen/Dense>
 #include <unsupported/Eigen/NonLinearOptimization>
 #include <cob_3d_mapping_msgs/CurvedPolygon.h>
+#include "sub_structures/polypartition.h"
 
 namespace Segmentation
 {
@@ -37,6 +38,7 @@ namespace Segmentation
 
     Eigen::Matrix3f param_;
     std::vector<std::vector<Eigen::Vector3f> >  segments_;
+    std::vector<std::vector<Eigen::Vector2i> >  segments2d_;
 #ifdef USE_BOOST_POLYGONS_
     std::vector<std::vector<BoostPoint> >       segments2d_;
 #endif
@@ -46,9 +48,12 @@ namespace Segmentation
 #endif
     SubStructure::Model model_;
     Eigen::Vector3f middle_;
+    int mark_;
 
     Eigen::Matrix<float,3,2> proj2plane_;
     Vector6f param_xy_;
+    sensor_msgs::ImagePtr img_;
+    float color_[3];
 
 #ifdef USE_CLASSIFICATION_
     Classification::Form::Ptr form_;
@@ -60,7 +65,12 @@ namespace Segmentation
 #ifdef USE_CLASSIFICATION_
     :form_(new Classification::Form)
 #endif
-    {}
+    {
+      int color = rand();
+      color_[0] = ((color>>0)&0xff)/255.f;
+      color_[1] = ((color>>8)&0xff)/255.f;
+      color_[2] = ((color>>16)&0xff)/255.f;
+    }
 
     bool isLinear() const
     {
@@ -237,6 +247,23 @@ namespace Segmentation
       pt2(2)=pt(0)*pt(1);
 
       return param_.col(0) + proj2plane_*pt + proj2plane_.col(0).cross(proj2plane_.col(1)) * (pt2.dot(param_.col(2)) + pt.dot(param_.col(1).head<2>()));
+    }
+
+    Eigen::Vector3f normalAt(const Eigen::Vector2f &v) const {
+      Eigen::Vector3f r;
+
+      r(0) = -(param_.col(1)(0) + 2*v(0)*param_.col(2)(0)+v(1)*param_.col(2)(2));
+      r(1) = -(param_.col(1)(1) + 2*v(1)*param_.col(2)(1)+v(0)*param_.col(2)(2));
+      r(2) = 1;
+
+      r.normalize();
+
+      Eigen::Matrix3f M;
+      M.col(0) = proj2plane_.col(0);
+      M.col(1) = proj2plane_.col(1);
+      M.col(2) = proj2plane_.col(0).cross(proj2plane_.col(1));
+
+      return M*r;
     }
 
     float getFeature(Eigen::Vector2f &ra,Eigen::Vector2f &rb,Eigen::Vector3f &rc) const {
@@ -499,7 +526,7 @@ namespace Segmentation
                          param_.col(1)(0),param_.col(1)(1),
                          p(0),p(1),p(2)};
       Eigen::LevenbergMarquardt<MyFunctor, float> lm(functor);
-      lm.parameters.maxfev = 150;
+      lm.parameters.maxfev = 50;
       lm.minimize(r);
 
       return r;
@@ -581,6 +608,63 @@ namespace Segmentation
 //      ROS_INFO("%f %f   %f %f", w, h_ma-h_mi, h, w_ma-w_mi);
 
       return true;
+    }
+
+    float area() const {
+
+      TPPLPartition pp;
+      list<TPPLPoly> polys,result;
+
+      //std::cout << "id: " << new_message->id << std::endl;
+      //std::cout << new_message->centroid << std::endl;
+      //fill polys
+      for(size_t i=0; i<segments_.size(); i++) {
+        pcl::PointCloud<pcl::PointXYZ> pc;
+        TPPLPoly poly;
+
+        poly.Init(segments_[i].size());
+        poly.SetHole(i!=0);
+
+        for(size_t j=0; j<segments_[i].size(); j++) {
+          poly[j].x = segments_[i][j](0);
+          poly[j].y = segments_[i][j](1);
+        }
+        if(i!=0)
+          poly.SetOrientation(TPPL_CW);
+        else
+          poly.SetOrientation(TPPL_CCW);
+
+        polys.push_back(poly);
+      }
+
+      pp.Triangulate_EC(&polys,&result);
+
+      TPPLPoint p1,p2,p3;
+      Eigen::Vector3f v1,v2,v3;
+
+      float a=0.f;
+      for(std::list<TPPLPoly>::iterator it=result.begin(); it!=result.end(); it++) {
+        if(it->GetNumPoints()!=3) continue;
+
+        p1 = it->GetPoint(0);
+        p2 = it->GetPoint(1);
+        p3 = it->GetPoint(2);
+
+        v1(0) = p1.x;
+        v1(1) = p1.y;
+        v2(0) = p2.x;
+        v2(1) = p2.y;
+        v3(0) = p3.x;
+        v3(1) = p3.y;
+
+        v1 = project2world(v1.head<2>());
+        v2 = project2world(v2.head<2>());
+        v3 = project2world(v3.head<2>());
+
+        a += (v2-v1).cross(v3-v1).norm();
+      }
+
+      return a;
     }
 
   };
