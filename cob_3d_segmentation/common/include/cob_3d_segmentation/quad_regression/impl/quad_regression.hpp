@@ -5,13 +5,14 @@
 
 #include <cob_3d_mapping_common/stop_watch.h>
 
-//#define DO_NOT_DOWNSAMPLE_
 
 template <typename Point, typename PointLabel>
 Segmentation_QuadRegression<Point,PointLabel>::Segmentation_QuadRegression():
 MIN_LOD(8), FINAL_LOD(0), GO_DOWN_TO_LVL(3),
-ch_(NULL), outline_check_(0), outline_check_size_(0)
+ch_(NULL), outline_check_(0), outline_check_size_(0),
+filter_(-1.f)
 {
+  kinect_params_.f = 0.f;
   Contour2D::generateSpline2D();
 }
 
@@ -203,9 +204,11 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
   template <typename Point, typename PointLabel>
   void Segmentation_QuadRegression<Point,PointLabel>::calc() {
 
+#ifdef STOP_TIME
     execution_time_polyextraction_=0.;
     PrecisionStopWatch ssw;
     ssw.precisionStart();
+#endif
 
     for(int i=(int)levels_.size()-1; i>(int)(levels_.size()-GO_DOWN_TO_LVL); i--) {
 
@@ -235,9 +238,72 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
 
     }
 
+#ifdef STOP_TIME
     execution_time_growing_ = ssw.precisionStop();
+#endif
 
     //preparePolygons();
+#ifdef BACK_CHECK_REPEAT
+    back_check_repeat();
+#endif
+  }
+
+  template <typename Point, typename PointLabel>
+  void Segmentation_QuadRegression<Point,PointLabel>::back_check_repeat() {
+#ifdef BACK_CHECK_REPEAT
+    for(size_t i=0; i<polygons_.size(); i++) {
+      if(polygons_[i].segments_.size()<1) continue;
+
+
+      for(size_t j=0; j<polygons_[i].segments2d_.size(); j++) {
+
+        for(size_t k=0; k<polygons_[i].segments2d_[j].size(); k++)
+        {
+
+          Eigen::Vector2i start = polygons_[i].segments2d_[j][(k-1+polygons_[i].segments2d_[j].size())%polygons_[i].segments2d_[j].size()],
+              end = polygons_[i].segments2d_[j][k], pos;
+
+          const size_t n = std::max((size_t)1, (size_t)(sqrtf((end-start).squaredNorm())/5) );
+          float prob = 0.f;
+
+          for(size_t p=0; p<n; p++) {
+            //pos
+            pos = start + (end-start)*(p+1)/(float)(n+1);
+            if(pos(0)<0 || pos(1)<0 || pos(0)>=(int)levels_[0].w || pos(1)>=(int)levels_[0].h) continue;
+
+            int o;
+            for(int x=-11; x<=11; x+=2)
+              for(int y=-11; y<=11; y+=2)
+                if( (o = otherOccupied(0, pos(0)+x, pos(1)+y, polygons_[i].mark_)) != -1)
+                  break;
+
+            if(o<0||o==polygons_[i].mark_) continue;
+            //get here
+            Eigen::Vector2f pHere = polygons_[i].project2plane(((pos(0)<<(1))-kinect_params_.dx)/kinect_params_.f,
+                                                               ((pos(1)<<(1))-kinect_params_.dy)/kinect_params_.f,
+                                                               polygons_[i].model_,0.f).head(2);
+            Eigen::Vector3f vHere = polygons_[i].project2world(pHere), nHere = polygons_[i].normalAt(pHere);
+
+            //get there
+            Eigen::Vector2f pThere = polygons_[o].project2plane(((pos(0)<<(1))-kinect_params_.dx)/kinect_params_.f,
+                                                                ((pos(1)<<(1))-kinect_params_.dy)/kinect_params_.f,
+                                                                polygons_[o].model_,0.f).head(2);
+            Eigen::Vector3f vThere = polygons_[o].project2world(pHere), nThere = polygons_[o].normalAt(pHere);
+
+            const float d = std::min(vThere(2),vHere(2));
+
+            prob += (
+                (vThere(2)-vHere(2))>0.01f*d*d && nHere(2)>0.5f) ||
+                (std::abs(vThere(2)-vHere(2))<0.05f*d*d && nHere.dot(nThere)<0.8f)
+                ? 1.f:0.f;
+          }
+
+          polygons_[i].segments_[j][k](2) = prob/n;
+        }
+      }
+    }
+
+#endif
   }
 
   template <typename Point, typename PointLabel>
