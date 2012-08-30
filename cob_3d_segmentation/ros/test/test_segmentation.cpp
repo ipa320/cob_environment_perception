@@ -236,7 +236,9 @@ TEST(Segmentation, quad_regression)
     double et_quadtree, et_growing, et_extraction;
     size_t used, mem, points;
     seg.compute_accuracy(mean, var, used, mem, points, dist);
+#ifdef STOP_TIME
     seg.getExecutionTimes(et_quadtree, et_growing, et_extraction);
+#endif
 
     csv.add(fn_short);
     csv.add(mean);
@@ -245,9 +247,11 @@ TEST(Segmentation, quad_regression)
     csv.add(used);
     csv.add(mem);
     csv.add(points);
+#ifdef STOP_TIME
     csv.add(et_quadtree);
     csv.add(et_growing);
     csv.add(et_extraction);
+#endif
     csv.next();
 
     //saving ros msgs to bag-file
