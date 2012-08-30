@@ -357,6 +357,12 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
             std::abs(model.param.z_(0)/model.param.model_(0,0))
         );
 
+#ifdef SIMULATION_
+        if(d>20.f) continue;
+        const float thr=(d+2.f)*0.0015f;
+#else
+        const float thr=(d*d+1.2f)*0.004f;
+#endif
         const float thr=(d*d+1.2f)*0.0035f;
 
         if( hops>0 && x>0&&y>0&&x+1<(int)levels_[i].w&&y+1<(int)levels_[i].h &&
@@ -421,8 +427,10 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
       }
 
       S_POLYGON poly;
-      model.isLinearAndTo();
+      //model.isLinearAndTo();
       poly=model;
+      poly.mark_ = mark;
+
 #ifdef CHECK_CONNECTIVITY
       poly.connectivity_=connectivity;
 #endif
