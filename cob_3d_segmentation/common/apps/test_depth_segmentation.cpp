@@ -170,8 +170,8 @@ int main(int argc, char** argv)
   cc.setLabelCloudIn(l);
   cc.classify();
   g->clusters()->mapTypeColor(pt);
-  cc.mapUnusedPoints(pt);
-  cc.mapPointClasses(pt);
+  //cc.mapUnusedPoints(pt);
+  //cc.mapPointClasses(pt);
   g->clusters()->mapClusterBorders(pt);
   cout << t.precisionStop() << "s\t for depth segmentation" << endl;
 

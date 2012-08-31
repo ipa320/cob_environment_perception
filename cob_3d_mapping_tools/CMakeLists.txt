@@ -77,6 +77,13 @@ rosbuild_add_executable(evaluate_test_data common/src/evaluate_test_data.cpp)
 rosbuild_add_executable(generate_test_data common/src/generate_test_data.cpp)
 rosbuild_add_compile_flags(generate_test_data -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
 
+# plane segmentation evaluation tool:
+rosbuild_add_executable(evaluate_plane_segmentation common/src/evaluate_plane_segmentation.cpp)
+target_link_libraries(evaluate_plane_segmentation cob_3d_mapping_tools)
+
+# Gui:
+rosbuild_add_executable(test_gui_tool common/src/test_gui_tool.cpp)
+
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
 #target_link_libraries(${PROJECT_NAME} another_library)

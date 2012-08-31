@@ -129,6 +129,13 @@ int main(int argc, char** argv)
   pe.setAlpha(0.2);
   pe.extractPlanes(p_vox, v_cloud_hull, v_hull_polygons, v_coefficients_plane);
 
+  for (size_t i=0; i<v_coefficients_plane.size(); ++i)
+  {
+    std::cout << v_coefficients_plane[i].values[0] << ","
+              << v_coefficients_plane[i].values[1] << ","
+              << v_coefficients_plane[i].values[2] << std::endl;
+  }
+
   // colorize voxel cloud using extracted indices
   const float rand_max_inv = 1.0f/ RAND_MAX;
   for (size_t pl=0; pl<pe.extracted_planes_indices_.size(); ++pl)
