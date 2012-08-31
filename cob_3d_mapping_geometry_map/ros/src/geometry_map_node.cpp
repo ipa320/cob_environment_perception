@@ -409,7 +409,7 @@ GeometryMapNode::publishMapMarker()
   marker.scale.z = 1;
   marker.color.r = 0;
   marker.color.g = 0;
-  marker.color.b = 1;
+  marker.color.b = 0;
   marker.color.a = 1.0;
 
   geometry_msgs::Point pt;
@@ -424,6 +424,7 @@ GeometryMapNode::publishMapMarker()
   for(unsigned int i=0; i<map_polygon->size(); i++)
   {
     Polygon& pm = *(map_polygon->at(i));
+    /*
     int color_ctr = i%5;
     //marker.id = pm.id;
     switch(color_ctr)
@@ -454,7 +455,7 @@ GeometryMapNode::publishMapMarker()
       marker.color.b = 1;
       break;
     }
-
+    */
     //			std::cout<<pm.d<<std::endl<<std::endl;
 
     for(unsigned int j=0; j<pm.contours.size(); j++)
@@ -462,12 +463,12 @@ GeometryMapNode::publishMapMarker()
       //if(pm.contours.size()>1) std::cout << "id: " << ctr << ", " << pm.contours.size() << std::endl;
       //TODO: this is a workaround as the marker can't display more than one contour
       marker.id = ctr;
-      if (pm.holes[j])
+      /*if (pm.holes[j])
       {
         marker.color.r /= 2.0f;//static_cast<float>(j+2);
         marker.color.g /= 2.0f;//static_cast<float>(j+2);
         marker.color.b /= 2.0f;//static_cast<float>(j+2);
-      }
+        }*/
 
       t_marker.id = t_ctr;
       std::stringstream ss;

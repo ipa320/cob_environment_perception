@@ -17,7 +17,7 @@
  * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 11/2011
+ * Date of creation: 08/2012
  * ToDo:
  *
  *
@@ -52,85 +52,59 @@
  *
  ****************************************************************/
 
-// Boost:
-#include <boost/program_options.hpp>
-// PCL:
+#ifndef COB_3D_MAPPING_TOOLS_GUI_TOOL_H_
+#define COB_3D_MAPPING_TOOLS_GUI_TOOL_H_
+
+#include <boost/bind.hpp>
 #include <pcl/point_types.h>
-#include <pcl/io/pcd_io.h>
+#include <pcl/point_cloud.h>
 
-#include "cob_3d_mapping_tools/io.h"
+#include "cob_3d_mapping_tools/impl/gui_tool_helpers.hpp"
 
-using namespace std;
-using namespace pcl;
-
-vector<string> file_i(2, "");
-string file_o = "";
-bool remove_undef = false;
-
-
-void readOptions(int argc, char* argv[])
+namespace cob_3d_mapping_tools
 {
-  using namespace boost::program_options;
-  options_description options("Options");
-  options.add_options()
-    ("help", "produce help message")
-    ("rm_undef,R", "remove points labeled as undefined from point cloud")
-    ("in", value< vector<string> >(&file_i), "input files, first ppm, second pcd")
-    ("out", value<string> (&file_o), "output pcd file")
-    ;
+  namespace Gui
+  {
+    template<typename PointT>
+      class GuiTool
+    {
+    public:
+      typedef typename pcl::PointCloud<PointT> PointCloud;
+      typedef typename PointCloud::Ptr PointCloudPtr;
+      typedef typename PointCloud::ConstPtr PointCloudConstPtr;
 
-  positional_options_description p_opt;
-  p_opt.add("in", 2).add("out", 1);
-  variables_map vm;
-  store(command_line_parser(argc, argv).options(options).positional(p_opt).run(), vm);
-  notify(vm);
+    public:
+      GuiTool()
+        : z_min_(0.0)
+        , z_max_(0.0)
+        , enable_z_min_max_(false)
+      { }
 
-  if (vm.count("help"))
-  {
-    cout << "Reads a .ppm image and maps the color values on a point cloud" << endl;
-    cout << options << endl;
-    exit(0);
-  }
-  if (vm.count("rm_undef"))
-  {
-    remove_undef = true;
-  }
-  if (file_o == "")
-  {
-    cout << "no output file defined " << endl << options << endl;
-    exit(0);
-  }
-  if (file_i[0] == "" || file_i[1] == "")
-  {
-    cout << "no input files defined " << endl << options << endl;
-    exit(0);
+      void setPointCloud(const PointCloudConstPtr& cloud);
+      void enableDepthMinMaxSlider(bool enable) { enable_z_min_max_ = enable; }
+      void updateRGB();
+      void updateDepth();
+      void spin();
+      void init();
+
+    private:
+      static void cb_depth_trackbar(int value, void* userdata);
+      static void cb_mouse(int event, int x, int y, int flags, void* userdata);
+
+    private:
+      PointCloudConstPtr cloud_;
+      cv::Mat cvColor_;
+      cv::Mat cvDepth_;
+      float z_min_;
+      float z_max_;
+      float z_diff_;
+      bool enable_z_min_max_;
+      int z_focus_;
+      int z_range_;
+    };
   }
 }
 
-/*!
- * @brief Reads a .ppm image and maps the color values on a point cloud
- */
-int main(int argc, char** argv)
-{
-  readOptions(argc, argv);
+#include "cob_3d_mapping_tools/impl/gui_tool.hpp"
 
-  PointCloud<PointXYZ>::Ptr p(new PointCloud<PointXYZ>());
-  PointCloud<PointXYZRGB>::Ptr pc(new PointCloud<PointXYZRGB>());
-
-  PCDReader r;
-  if (r.read(file_i[1], *p) == -1) return(0);
-  copyPointCloud<PointXYZ, PointXYZRGB>(*p, *pc);
-  pc->height = p->height;
-  pc->width = p->width;
-  cob_3d_mapping_tools::PPMReader ppmR;
-  if (ppmR.mapRGB(file_i[0], *pc, remove_undef) == -1)
-  {
-    cout << "Mapping error" << endl;
-    return(0);
-  }
-  cout << "Mapped colors to \"" << file_o << "\" (Points: " << pc->points.size() << ", width: "
-       << pc->width << ", height: " << pc->height << ")" << endl;
-  PCDWriter w;
-  io::savePCDFileASCII(file_o, *pc);
-  return(0);
-}
+#endif

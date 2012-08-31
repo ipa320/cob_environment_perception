@@ -381,7 +381,7 @@ public:
     for(unsigned int i=0; i<v_cloud_hull.size(); i++)
     {
       Polygon p;
-      p.id = ctr;
+      p.id = 0;//ctr;
       p.color[0] = p.color[3] = 1;
       p.color[1] = p.color[2] = 0;
       for(unsigned int c=0; c<3; c++)
