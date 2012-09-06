@@ -224,8 +224,10 @@ cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>
 {
   std::vector<ClusterPtr> adj_list;
   graph_->getAdjacentClusters(c->id(), adj_list);
+  if (adj_list.size()) std::cout << c->size() << " : " << std::endl;
   for (typename std::vector<ClusterPtr>::iterator a_it = adj_list.begin(); a_it != adj_list.end(); ++a_it)
   {
+    std::cout << (*a_it)->size() << ", " << std::endl;
     computeBoundaryProperties(c, graph_->getConnection(c->id(), (*a_it)->id()));
   }
 }

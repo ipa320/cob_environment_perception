@@ -83,6 +83,7 @@ target_link_libraries(evaluate_plane_segmentation cob_3d_mapping_tools)
 
 # Gui:
 rosbuild_add_executable(test_gui_tool common/src/test_gui_tool.cpp)
+rosbuild_add_executable(test_gui common/src/test_gui.cpp)
 
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
