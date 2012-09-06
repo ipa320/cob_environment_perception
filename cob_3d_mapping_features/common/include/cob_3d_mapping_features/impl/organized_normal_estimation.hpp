@@ -84,7 +84,8 @@ cob_3d_mapping_features::OrganizedNormalEstimationHelper::computeSegmentNormal(
     {
       if (labels->points[idx].label != l_idx) { idx = idx - steps + 1; continue; }
       PointT const* p_idx = &(surface->points[idx]);
-      if (pcl_isnan(p_idx->x)) { idx = idx - steps + 1; continue; }
+      if (pcl_isnan(p_idx->z)) { idx = idx - steps + 1; continue; }
+      std::cout << p_idx->x <<","<< p_idx->y <<","<< p_idx->z << std::endl;
       accu[0] += p_idx->x * p_idx->x;
       accu[1] += p_idx->x * p_idx->y;
       accu[2] += p_idx->x * p_idx->z;

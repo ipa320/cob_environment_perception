@@ -158,17 +158,18 @@ int main(int argc, char** argv)
   seg.setClusterGraphOut(g);
   std::cout << "initial segmentation..." << std::endl;
   seg.performInitialSegmentation();
+  std::cout << "num initial clusters: " << g->clusters()->numClusters() << std::endl;
   g->clusters()->mapClusterColor(p2);
   std::cout << "refine segmentation.." << std::endl;
   seg.refineSegmentation();
   g->clusters()->mapClusterColor(p);
   g->edges()->mapBoundaryPoints(pbp,n_bp);
-  cob_3d_segmentation::ClusterClassifier<SegTypes::CH, SegTypes::Point, SegTypes::Normal, SegTypes::Label> cc;
+  /*cob_3d_segmentation::ClusterClassifier<SegTypes::CH, SegTypes::Point, SegTypes::Normal, SegTypes::Label> cc;
   cc.setClusterHandler(g->clusters());
   cc.setPointCloudIn(p);
   cc.setNormalCloudInOut(n);
   cc.setLabelCloudIn(l);
-  cc.classify();
+  cc.classify();*/
   g->clusters()->mapTypeColor(pt);
   //cc.mapUnusedPoints(pt);
   //cc.mapPointClasses(pt);

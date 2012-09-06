@@ -52,59 +52,22 @@
  *
  ****************************************************************/
 
-#ifndef COB_3D_MAPPING_TOOLS_GUI_TOOL_H_
-#define COB_3D_MAPPING_TOOLS_GUI_TOOL_H_
+#ifndef COB_3D_MAPPING_TOOLS_GUIE_VIEW_HPP_
+#define COB_3D_MAPPING_TOOLS_GUIE_VIEW_HPP_
 
-#include <boost/bind.hpp>
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
+#include "cob_3d_mapping_tools/gui/view.h"
+#include "cob_3d_mapping_tools/gui/view_spec.h"
 
-#include "cob_3d_mapping_tools/impl/gui_tool_helpers.hpp"
-
-namespace cob_3d_mapping_tools
+template<typename RT, typename VT>
+void Gui::View<RT,VT>::onDataChanged()
 {
-  namespace Gui
-  {
-    template<typename PointT>
-      class GuiTool
-    {
-    public:
-      typedef typename pcl::PointCloud<PointT> PointCloud;
-      typedef typename PointCloud::Ptr PointCloudPtr;
-      typedef typename PointCloud::ConstPtr PointCloudConstPtr;
-
-    public:
-      GuiTool()
-        : z_min_(0.0)
-        , z_max_(0.0)
-        , enable_z_min_max_(false)
-      { }
-
-      void setPointCloud(const PointCloudConstPtr& cloud);
-      void enableDepthMinMaxSlider(bool enable) { enable_z_min_max_ = enable; }
-      void updateRGB();
-      void updateDepth();
-      void spin();
-      void init();
-
-    private:
-      static void cb_depth_trackbar(int value, void* userdata);
-      static void cb_mouse(int event, int x, int y, int flags, void* userdata);
-
-    private:
-      PointCloudConstPtr cloud_;
-      cv::Mat cvColor_;
-      cv::Mat cvDepth_;
-      float z_min_;
-      float z_max_;
-      float z_diff_;
-      bool enable_z_min_max_;
-      int z_focus_;
-      int z_range_;
-    };
-  }
+  std::cout << "Something changed for " << name_ << std::endl;
 }
 
-#include "cob_3d_mapping_tools/impl/gui_tool.hpp"
+template<typename RT, typename VT>
+void Gui::View<RT,VT>::show()
+{
+  ViewSpec<RT,VT>::show(this);
+}
 
 #endif
