@@ -52,9 +52,64 @@
  *
  ****************************************************************/
 
+#include "cob_3d_mapping_tools/test_gui.h"
 
-#include "cob_3d_mapping_tools/gui/impl/core.hpp"
+bool MainApp::OnInit()
+{
+  gui = Gui::Core::Create();
 
+  f_main = new FrameMain( _("Test Gui"), wxPoint(200,50), wxSize(640, 480), this);
+  f_tools = new FrameTools( _("Tools"), wxPoint(10, 50), wxSize(100, 400), this);
+  f_main->Show(true);
+  f_tools->Show(true);
+  SetTopWindow(f_main);
+  return true;
+}
+
+FrameMain::FrameMain(const wxString& title, const wxPoint& pos, const wxSize& size, MainApp* app)
+  : wxFrame(NULL, -1, title, pos, size), app_(app)
+{
+  //stat_log = new wxTextCtrl(this, -1, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_RICH);
+  image_ = new wxImage(640, 480, true);
+
+  CreateStatusBar();
+  SetStatusText( _("Main Frame Status") );
+}
+
+FrameTools::FrameTools(const wxString& title, const wxPoint& pos, const wxSize& size, MainApp* app)
+  : wxMiniFrame(NULL, -1, title, pos, size, wxCAPTION | wxRESIZE_BORDER | wxCLOSE_BOX ), app_(app)
+{
+  bt_tool_open = new wxButton(this, BT_TOOL_Open, _("Open"), wxPoint(0,0), wxSize(90,50), 0);
+}
+
+
+void FrameTools::OnToolOpen(wxCommandEvent& event)
+{
+  wxFileDialog* file_dialog = new wxFileDialog(
+    this, _("Select a file to open"), wxEmptyString, wxEmptyString,
+    //_("Text files (*.txt)|*.txt|C++ Source Files (*.cpp, *.hpp)|*.cpp;*.hpp| C Source files (*.c)|*.c|C header files (*.h)|*.h"),
+    _("Images (*.ppm, *.png)|*.ppm;*.png"),
+    wxFD_OPEN, wxDefaultPosition);
+
+  if (file_dialog->ShowModal() == wxID_OK)
+  {
+    app_->f_main->new_file_ = file_dialog->GetPath();
+    app_->f_main->image_->LoadFile(app_->f_main->new_file_, wxBITMAP_TYPE_PNG);
+    //app_->f_main->SetTitle(wxString(_("Edit - ")) << file_dialog->GetFilename());
+  }
+  file_dialog->Destroy();
+}
+
+
+
+BEGIN_EVENT_TABLE(FrameTools, wxFrame)
+    EVT_BUTTON(BT_TOOL_Open,  FrameTools::OnToolOpen)
+END_EVENT_TABLE()
+
+
+IMPLEMENT_APP(MainApp)
+
+/*
 int main (int argc, char** argv)
 {
   typedef Gui::ResourceTypes::OrganizedPointCloud rOpc;
@@ -72,4 +127,8 @@ int main (int argc, char** argv)
   v1->show();
   v2->show();
   v3->show();
+
+  return 0;
 }
+*/
+

@@ -52,59 +52,53 @@
  *
  ****************************************************************/
 
-#ifndef COB_3D_MAPPING_TOOLS_GUI_VIEW_BASE_H_
-#define COB_3D_MAPPING_TOOLS_GUI_VIEW_BASE_H_
+#ifndef COB_3D_MAPPING_TOOLS_TEST_GUI_H_
+#define COB_3D_MAPPING_TOOLS_TEST_GUI_H_
 
-#include <string>
-#include <iostream>
-#include <boost/shared_ptr.hpp>
+#include <wx/wx.h>
+#include <wx/minifram.h>
+#include "cob_3d_mapping_tools/gui/impl/core.hpp"
 
-namespace Gui
+class FrameMain;
+class FrameTools;
+
+class MainApp: public wxApp
 {
-  class ViewBase
-  {
-   public:
-    typedef boost::shared_ptr<ViewBase> Ptr;
+    virtual bool OnInit();
 
-  protected:
-    ViewBase(const std::string& name) : name_(name) { }
-    ~ViewBase() { } // prevent user to call "delete ViewBase::Ptr::get()". No need to declare virtual.
+  public:
+    Gui::Core* gui;
+    FrameMain* f_main;
+    FrameTools* f_tools;
+};
 
-    virtual void onDataChanged()=0;
-    std::string name_;
-  };
-}
-
-
-
-
-
-
-
-
-
-/*
-namespace cob_3d_mapping_tools
+class FrameMain : public wxFrame
 {
-  namespace Gui
-  {
-    template<typename DataT>
-    class BaseView
-    {
-    public:
-      BaseView(DataT* data) : data_ptr(data) {}
-      virtual ~BaseView() {}
+public:
+  FrameMain(const wxString& title, const wxPoint& pos, const wxSize& size, MainApp* app);
 
-      void create();
-      virtual void createChild()=0;
-      virtual void onDataChanged()=0;
-      virtual void show()=0;
-      virtual void hide()=0;
 
-    protected:
-      DataT* data_ptr;
-    };
-  }
-}
-*/
+  MainApp* app_;
+  //wxTextCtrl* stat_log;
+  wxImage* image_;
+  wxString new_file_;
+};
+
+class FrameTools : public wxMiniFrame
+{
+public:
+  FrameTools(const wxString& title, const wxPoint& pos, const wxSize& size, MainApp* app);
+  void OnToolOpen(wxCommandEvent& event);
+
+  MainApp* app_;
+  wxButton* bt_tool_open;
+
+  DECLARE_EVENT_TABLE()
+};
+
+enum
+{
+  BT_TOOL_Open = wxID_HIGHEST + 1
+};
+
 #endif

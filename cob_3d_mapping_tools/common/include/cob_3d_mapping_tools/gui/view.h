@@ -80,6 +80,7 @@ namespace Gui
     View(const std::string& name, Resource<RT>* r) : ViewBase(name), r_ptr(r) { }
     ~View() { }
 
+  public:
     void onDataChanged();
     void show();
 
