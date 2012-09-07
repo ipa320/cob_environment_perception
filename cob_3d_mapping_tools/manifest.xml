@@ -17,6 +17,7 @@
   <depend package="cob_3d_mapping_features"/>
   <depend package="cob_3d_segmentation"/>
 
+  <rosdep name="wxwidgets"/>
 </package>
 
 
