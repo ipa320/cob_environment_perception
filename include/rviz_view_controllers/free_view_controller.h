@@ -129,6 +129,8 @@ protected Q_SLOTS:
   
   virtual void onEyePropertyChanged();
 
+  virtual void updateTopics();
+
 protected:  //methods
 
   /** @brief Called at 30Hz by ViewManager::update() while this view
@@ -166,10 +168,6 @@ protected:  //methods
   float getDistanceFromCameraToFocalPoint(); ///< Return the distance between camera and focal point.
 
   Ogre::Quaternion getOrientation(); ///< Return a Quaternion
-
-protected Q_SLOTS:
-  void updateTopics();
-
 
 protected:    //members
 

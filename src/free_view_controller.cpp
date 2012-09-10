@@ -103,7 +103,7 @@ FreeViewController::FreeViewController()
   fixed_up_property_ = new BoolProperty( "Maintain Vertical Axis", true,
                                          "If enabled, the camera is not allowed to roll side-to-side.",
                                           this);
-  attached_frame_property_ = new TfFrameProperty("Camera-Fixed Frame",
+  attached_frame_property_ = new TfFrameProperty("Target Frame",
                                                  TfFrameProperty::FIXED_FRAME_STRING,
                                                  "TF frame the camera is attached to.",
                                                  this, NULL, true );
