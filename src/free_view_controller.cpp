@@ -88,7 +88,7 @@ static inline void vectorOgreToMsg(const Ogre::Vector3 &o, geometry_msgs::Vector
 FreeViewController::FreeViewController()
   : nh_(""), animate_(false), dragging_( false )
 {
-  interaction_disabled_cursor_ = makeIconCursor( "package://rviz/icons/forbidden.png" );
+  interaction_disabled_cursor_ = makeIconCursor( "package://rviz/icons/forbidden.svg" );
 
   mouse_enabled_property_ = new BoolProperty("Mouse Enabled", true,
                                    "Enables mouse control of the camera.",
@@ -263,7 +263,17 @@ void FreeViewController::handleMouseEvent(ViewportMouseEvent& event)
   if( !mouse_enabled_property_->getBool() )
   {
     setCursor( interaction_disabled_cursor_ );
+    setStatus( "Mouse interaction is disabled. You can enable it in the Views panel." );
     return;
+  }
+
+  if ( event.shift() )
+  {
+    setStatus( "<b>Left-Click:</b> Move X/Y.  <b>Right-Click:</b>: Move Z." );
+  }
+  else
+  {
+    setStatus( "<b>Left-Click:</b> Rotate.  <b>Middle-Click:</b> Move X/Y.  <b>Right-Click:</b>: Zoom.  <b>Shift</b>: More options." );
   }
 
   float distance = distance_property_->getFloat();
