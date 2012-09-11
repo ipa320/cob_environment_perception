@@ -72,6 +72,8 @@
 // using odometry to determine keyframes -> set to one was workaround for "standing"-check
 #define USED_ODO_ 1
 
+#define USE_INFINITE_ 1
+
 
 template <typename Point>
 bool Registration_Infobased<Point>::compute_features()
@@ -106,6 +108,41 @@ bool Registration_Infobased<Point>::compute_features()
   if(!depth_map)
     depth_map=new unsigned char[pc.height*pc.width];
 
+
+#ifdef USE_INFINITE_
+  memset(depth_map,0,pc.height*pc.width);
+
+  //preprocess
+  for(int x=0; x<pc.width; x++) {
+    for(int y=0; y<pc.height; y++) {
+      int ind = getInd(x,y);
+      if(pcl_isfinite(pc.points[ind].z)&&pcl_isfinite(pc_old.points[ind].z))
+        break;
+      depth_map[ind]=0;
+    }
+    for(int y=pc.height-1; y>=0; y--) {
+      int ind = getInd(x,y);
+      if(pcl_isfinite(pc.points[ind].z)&&pcl_isfinite(pc_old.points[ind].z))
+        break;
+      depth_map[ind]=0;
+    }
+  }
+  for(int y=0; y<pc.height; y++) {
+    for(int x=0; x<pc.width; x++) {
+      int ind = getInd(x,y);
+      if(pcl_isfinite(pc.points[ind].z)&&pcl_isfinite(pc_old.points[ind].z))
+        break;
+      depth_map[ind]=0;
+    }
+    for(int x=pc.width-1; x>=0; x--) {
+      int ind = getInd(x,y);
+      if(pcl_isfinite(pc.points[ind].z)&&pcl_isfinite(pc_old.points[ind].z))
+        break;
+      depth_map[ind]=0xff;
+    }
+  }
+#endif
+
   //diff
   std::vector<int> indices_pos, indices_neg;
 
@@ -124,10 +161,18 @@ bool Registration_Infobased<Point>::compute_features()
 
       // threshold is calculated in consideration of quantization error
       const float di = std::max(pn.z,po.z) * threshold_diff_;
-      if(d>di) {
+      if(d>di
+#if USE_INFINITE_
+          ||(!pcl_isfinite(d)&&pcl_isfinite(po.z)&&!depth_map[ind])
+#endif
+          ) {
         depth_map[ind]=1;
         indices_pos.push_back(ind);}
-      else if(d<-di) {
+      else if(d<-di
+#if USE_INFINITE_
+          ||(!pcl_isfinite(d)&&pcl_isfinite(pn.z)&&!depth_map[ind])
+#endif
+          ) {
         depth_map[ind]=1;
         indices_neg.push_back(ind);
       }
@@ -291,9 +336,11 @@ bool Registration_Infobased<Point>::compute_transformation()
 
     pcl::PointCloud<Point> tmp_pc_old, tmp_pc_new;
     for(int i=0; i<indices_pos2.size(); i++)
-      tmp_pc_old.points.push_back(pc_old.points[indices_pos2[i]]);
+      if(pcl_isfinite(pc_old.points[indices_pos2[i]].z))
+        tmp_pc_old.points.push_back(pc_old.points[indices_pos2[i]]);
     for(int i=0; i<indices_neg2.size(); i++)
-      tmp_pc_new.points.push_back(pc.points[indices_neg2[i]]);
+      if(pcl_isfinite(pc.points[indices_neg2[i]].z))
+        tmp_pc_new.points.push_back(pc.points[indices_neg2[i]]);
 
     T = tf_est.compute(tmp_pc_old,tmp_pc_new).inverse();
 
@@ -329,12 +376,11 @@ bool Registration_Infobased<Point>::compute_transformation()
       if(bad>2) {
 #if EVALUATION_MODE_
         T=T.Identity();
+        ROS_INFO("using Identity");
 #else
         bad_counter_++;
         if(!use_odometry_ || this->failed_<10)
           return false;
-      }
-      else {
         T = T.Identity();
         ROS_INFO("using odometry");
       }
@@ -401,7 +447,7 @@ float Registration_Infobased<Point>:: getMaxDiff2(const pcl::PointCloud<Point> &
         continue;
       float f=pc.points[getInd(x+dx,y+dy)].z-z;
 #if USE_INFINITE_
-      if(!pcl_isfinite(f)) f=100;
+      if(!pcl_isfinite(f)) f=0;
 #endif
       m=std::max(m,f);
       f=std::abs(f);
