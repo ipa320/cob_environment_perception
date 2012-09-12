@@ -25,6 +25,7 @@
 #include <interactive_markers/interactive_marker_server.h>
 #include <interactive_markers/menu_handler.h>
 #include <cob_3d_mapping_msgs/ModifyMap.h>
+#include <cob_3d_visualization/shape_marker.h>
 
 
 #include <boost/shared_ptr.hpp>
@@ -38,16 +39,13 @@ class ShapeVisualization
 
     {
       shape_array_sub_ = nh_.subscribe ("shape_array", 1, &ShapeVisualization::shapeArrayCallback, this);
-      //viz_msg_pub_ = nh_.advertise<visualization_msgs::Marker> ("marker",10);
-      //marker_array_pub_ = nh_.advertise<visualization_msgs::MarkerArray> ("marker_array",10);
-      //    viz_msg_im_pub_ = nh_.advertise<visualization_msgs::InteractiveMarker> ("interactive_marker", 1);
-      //    shape_pub_ = nh_.advertise<cob_3d_mapping_msgs::Shape> ("shape", 1);
+      feedback_sub_ = nh_.subscribe("geometry_map/map/feedback",1,&ShapeVisualization::setShapePosition,this);
+//      shape_pub_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_array", 1);
       im_server_.reset (new interactive_markers::InteractiveMarkerServer ("geometry_map/map", "", false));
-      //std::cout << "Ptr in Vis: " << im_server_.get() << std::endl;
-      //    sha = cob_3d_mapping_msgs::ShapeArrayPtr(new cob_3d_mapping_msgs::ShapeArray) ;
 
+//      optionMenu();
+      moreOptions() ;
     }
-
     // Destructor
     ~ShapeVisualization ()
     {
@@ -55,18 +53,27 @@ class ShapeVisualization
     }
 
     void shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr& sa) ;
+    void setShapePosition(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);//,const cob_3d_mapping_msgs::Shape& shape) ;
+    void moreOptions();
+    void displayAllNormals(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+    void displayAllCentroids (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    void resetAll(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    void applyModifications (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    void optionMenu() ;
+
   protected:
 
-      ros::NodeHandle nh_;
+    ros::NodeHandle nh_;
+//    ros::Publisher shape_pub_ ;
+    ros::Subscriber shape_array_sub_; // sub for shape array msgs
+    ros::Subscriber feedback_sub_ ;
+    std::vector<boost::shared_ptr<ShapeMarker> > v_sm_;
+    cob_3d_mapping_msgs::ShapeArray sha ;
+    int ctr_for_shape_indexes ;
+    interactive_markers::MenuHandler menu_handler_for_text_;
 
-      ros::Subscriber shape_array_sub_; // sub for shape array msgs
-      std::vector<boost::shared_ptr<ShapeMarker> > v_sm_;
-      cob_3d_mapping_msgs::ShapeArray sha ;
-      int ctr_for_shape_indexes ;
-//      int counter ;
 
-
-      boost::shared_ptr<interactive_markers::InteractiveMarkerServer> im_server_; // server for interactive markers
+    boost::shared_ptr<interactive_markers::InteractiveMarkerServer> im_server_; // server for interactive markers
 
 };
 

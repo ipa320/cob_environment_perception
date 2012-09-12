@@ -47,8 +47,10 @@
 
 //#include <cob_3d_mapping_msgs/ShapeArray.h>
 #include <cob_3d_visualization/polypartition.h>
+#include <cob_3d_mapping_msgs/ModifyMap.h>
 #include <cob_3d_mapping_common/ros_msg_conversions.h>
 #include "cob_3d_mapping_common/polygon.h"
+//#include <cob_3d_visualization/shape_visualization.h>
 
 //#define PI 3.14159265
 
@@ -58,17 +60,15 @@ class ShapeMarker
   public:
 
     ShapeMarker(boost::shared_ptr<interactive_markers::InteractiveMarkerServer> im_server,
-        cob_3d_mapping_msgs::Shape& shape, int ctr, cob_3d_mapping_msgs::ShapeArray ShapeArr)
+        cob_3d_mapping_msgs::Shape& shape, int ctr)
     {
-      sa_ = ShapeArr;
       shape_ctr_ = ctr;
       im_server_ = im_server;
       shape_ = shape;
       createShapeMenu ();
       createInteractiveMarker();
-      MoreOptions();
-//      shape_indexes.resize(100) ;//(ShapeArr.shapes.size()) ;
-      display_arrow = 0 ;
+//      ShapeVisualization sv;
+//      sv.moreOptions();
 //      ctr_for_shape_indexes = 0 ;
     }
 
@@ -86,26 +86,22 @@ class ShapeMarker
       }
     }
 
-    void MoreOptions();
-    void DisplayAllNormals(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
-    void DisplayAllCentroids (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
-    void MoveMarker(int flag) ;//,const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
-    void GetPosition (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
-    double RandomValue (double min, double max) ;
 
-
+    void getPosition (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    void moveMarker(int flag) ;
     void createShapeMenu () ;
-    void OptionMenu() ;
-    void DeleteMarker(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    void deleteMarker(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
     void displayContour(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
-    TPPLPoint MsgToPoint2D (const pcl::PointXYZ &point) ;
+    TPPLPoint msgToPoint2D (const pcl::PointXYZ &point) ;
 
     void createMarker (list<TPPLPoly>& triangle_list,visualization_msgs::InteractiveMarkerControl& im_ctrl);
     void createInteractiveMarker () ;
 
     void displayNormalCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
     void displayCentroidCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
-    void Reset(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    void resetMarker(bool call_reset_marker,visualization_msgs::InteractiveMarker& imarker) ;
+
+    void getShape (cob_3d_mapping_msgs::Shape& shape) ;
 
 
 
@@ -117,26 +113,20 @@ class ShapeMarker
 
 
     visualization_msgs::InteractiveMarkerControl im_ctrl;
-//    visualization_msgs::InteractiveMarkerControl Im_ctrl;
 
     boost::shared_ptr<interactive_markers::InteractiveMarkerServer> im_server_;
-//    interactive_markers::InteractiveMarkerServer im_server_ ;
     cob_3d_mapping_msgs::Shape shape_;
 
-    // test
-    cob_3d_mapping_msgs::ShapeArray sa_ ;
-    // end test
+
     interactive_markers::MenuHandler menu_handler_;
-    interactive_markers::MenuHandler menu_handler_for_text_;
 
     Eigen::Affine3f transformation_;
     Eigen::Affine3f transformation_inv_;
-    int shape_ctr_ ;//ctr_ ;
-//    std::vector<int> shape_indexes;
+    int shape_ctr_ ;
+
 
     int ctr_for_shape_indexes ;
 
-    int display_arrow ;
 
 };
 
