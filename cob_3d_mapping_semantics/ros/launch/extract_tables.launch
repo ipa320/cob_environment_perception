@@ -3,7 +3,7 @@
   <node pkg="cob_3d_mapping_semantics" type="table_extraction_node" name="table_extraction" ns="table_extraction" output="screen">
   	<!--remap from="map" to="/aggregate_point_map/map"/-->
   	<remap from="shape_array" to="/get_tables_client/shape_array"/>
-  	<remap from="shape_array_pub" to="/semantic_extraction_node/get_geometry_map"/>
+  	<remap from="shape_array_pub" to="/table_extraction_node/table_array"/>
   	<remap from="marker" to="/semantic_extraction_node/shape_marker"/>
   	<remap from="marker_array" to="/semantic_extraction_node/map_marker_array"/>
   	<remap from="get_geometry_map" to="/geometry_map/get_map"/>
