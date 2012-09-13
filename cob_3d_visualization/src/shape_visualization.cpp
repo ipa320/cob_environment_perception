@@ -129,7 +129,6 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
       transInit.col(3).head(3) << oldCentroid(0) , oldCentroid(1), oldCentroid(2) ;
       transInit.row(3) << 0,0,0,1 ;
 
-//      Eigen::Matrix4f transInitInverse(transInit.inverse()) ;
       transInitInv = transInit.inverse() ;
       Eigen::Affine3f affineInitFinal (transInitInv) ;
       affineInit = affineInitFinal ;
@@ -369,17 +368,13 @@ void ShapeMarker::moveMarker(int flag)
   stringstream ss;
   ss.str("");
   ss.clear();
-  //  std::cout << "ss: \t" << ss.str() << "\n" ;
 
-//  ss << "arrows_" << shape_.id ;
-//  marker_.name = ss.str() ;
   marker_.header  = shape_.header ;
   marker_.header.frame_id = "/map" ;
 
 
   if (flag == 1) {
     ROS_INFO("Adding the arrows... ");
-    //  Im_ctrl.always_visible = true;
     im_ctrl.name = "arrow_markers" ;
 
     im_ctrl.orientation.w = 1;
@@ -468,8 +463,6 @@ void ShapeMarker::resetMarker(bool reset_marker,visualization_msgs::InteractiveM
 
   stringstream aa;
   stringstream ss;
-
-  interactive_markers::MenuHandler::CheckState Check_state;
 
   for (unsigned int j=1; j< imarker.menu_entries.size()-1;j++)
   {
@@ -616,7 +609,6 @@ void ShapeVisualization::displayAllNormals(const visualization_msgs::Interactive
       imarker.header = sha.shapes[i].header;
       ss.str("");
       ss.clear();
-      //marker_id_ = 0;
       visualization_msgs::Marker marker;
       marker.header =sha.shapes[i].header;
       marker.type = visualization_msgs::Marker::ARROW;
@@ -645,8 +637,6 @@ void ShapeVisualization::displayAllNormals(const visualization_msgs::Interactive
       marker.points[1].z = sha.shapes[i].centroid.z + sha.shapes[i].params[2];
 
 
-      //marker.id = shape_.id;
-
       visualization_msgs::InteractiveMarkerControl im_ctrl_n;
 
       im_ctrl_n.always_visible = true;
@@ -654,7 +644,6 @@ void ShapeVisualization::displayAllNormals(const visualization_msgs::Interactive
       im_ctrl_n.name = ss.str ();
       im_ctrl_n.description = "display_normal";
 
-      //im_ctrl_n.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
       im_ctrl_n.markers.push_back (marker);
       imarker.controls.push_back (im_ctrl_n);
       im_server_->insert (imarker);
@@ -791,7 +780,7 @@ ShapeMarker::createShapeMenu ()
 
 void ShapeVisualization::optionMenu() {
 
-  //  ROS_INFO("Creating menu for the box...") ;
+  //  ROS_INFO("Creating menu for the text...") ;
 
   interactive_markers::MenuHandler::EntryHandle eh_1, eh_2 , eh_3 ,eh_4 , eh_5;
 
