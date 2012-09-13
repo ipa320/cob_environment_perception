@@ -100,8 +100,8 @@ public:
     sa_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_array_pub", 10);
     s_marker_pub_ = n_.advertise<visualization_msgs::Marker> ("marker", 10);
 
-    //get_tables_server_ = n_.advertiseService ("get_objects_of_class", &TableExtractionNode::getTablesService, this);
-    get_tables_server_ = n_.advertiseService ("get_tables", &TableExtractionNode::getTablesService2, this);
+    get_tables_server_ = n_.advertiseService ("get_objects_of_class", &TableExtractionNode::getTablesService, this);
+    get_tables_server_2_ = n_.advertiseService ("get_tables", &TableExtractionNode::getTablesService2, this);
 
     ros::NodeHandle private_nh("~");
     private_nh.getParam ("tilt_angle", tilt_angle_);
@@ -142,21 +142,27 @@ public:
 
     ROS_INFO(" Total number of shapes received: %d ", sa_ptr->shapes.size());*/
 
-    cob_3d_mapping_msgs::ShapeArray sa, tables;
+    cob_3d_mapping_msgs::ShapeArray sa;
     sa.header = sa_ptr->header;
     table_ctr_old_ = table_ctr_;
     table_ctr_ = 0;
     for (unsigned int i = 0; i < sa_ptr->shapes.size (); i++)
     {
-      PolygonPtr poly_ptr = PolygonPtr (new Polygon ());
+      PolygonPtr poly_ptr(new Polygon());
 
       fromROSMsg(sa_ptr->shapes[i], *poly_ptr);
       te_.setInputPolygon(poly_ptr);
       if (te_.isTable())
       {
         table_ctr_++;
-        tables.shapes.push_back(sa_ptr->shapes[i]);
-        sa.shapes.push_back (sa_ptr->shapes[i]);
+        poly_ptr->color[0] = 1;
+        poly_ptr->color[1] = 0;
+        poly_ptr->color[2] = 0;
+        poly_ptr->color[3] = 1;
+        cob_3d_mapping_msgs::Shape s;
+        toROSMsg(*poly_ptr, s);
+        //tables.shapes.push_back(sa_ptr->shapes[i]);
+        sa.shapes.push_back (s);
       }
     }//end for
 
@@ -173,7 +179,7 @@ public:
    *
    * @return true if service successful
    */
-  /*bool
+  bool
   getTablesService (cob_3d_mapping_msgs::GetObjectsOfClassRequest &req,
                     cob_3d_mapping_msgs::GetObjectsOfClassResponse &res)
   {
@@ -192,19 +198,26 @@ public:
         if (te_.isTable())
         {
           table_ctr++;
+          poly_ptr->color[0] = 1;
+          poly_ptr->color[1] = 0;
+          poly_ptr->color[2] = 0;
+          poly_ptr->color[3] = 1;
+          cob_3d_mapping_msgs::Shape s;
+          s.header = sa.header;
+          toROSMsg(*poly_ptr,s);
           //ros::Duration (10).sleep ();
           //cob_3d_mapping_msgs::Shape s;
           //toROSMsg(*map[i], s);
           //convertPolygonToShape (*sem_exn_.PolygonMap[i], s);
           ROS_INFO("getTablesService: Polygon[%d] converted to shape",i);
-          res.objects.shapes.push_back (sa.shapes[i]);
+          res.objects.shapes.push_back (s);
         }
       }
-      publishShapeMarker (sa.shapes[i]);
-      ROS_INFO("Found %d tables", table_ctr_);
+      publishShapeMarker (res.objects);
+      ROS_INFO("Found %d tables", table_ctr);
     }
     return true;
-  }*/
+  }
 
   /**
    * @brief service offering table object candidates
@@ -225,16 +238,25 @@ public:
     {
       table_ctr_old_ = table_ctr_;
       table_ctr_ = 0;
+      tables.header = sa.header;
       for (unsigned int i = 0; i < sa.shapes.size (); i++)
       {
-        PolygonPtr poly_ptr = PolygonPtr (new Polygon());
+        //Polygon poly;
+        PolygonPtr poly_ptr(new Polygon());
         fromROSMsg(sa.shapes[i], *poly_ptr);
         //ROS_INFO("\n\tisTableObject....  : ");
         te_.setInputPolygon(poly_ptr);
         if (te_.isTable())
         {
           table_ctr_++;
-          tables.shapes.push_back(sa.shapes[i]);
+          poly_ptr->color[0] = 1;
+          poly_ptr->color[1] = 0;
+          poly_ptr->color[2] = 0;
+          poly_ptr->color[3] = 1;
+          cob_3d_mapping_msgs::Shape s;
+          s.header = sa.header;
+          toROSMsg(*poly_ptr,s);
+          tables.shapes.push_back(s);
           tabletop_object_detector::Table table;
           Eigen::Affine3f pose;
           Eigen::Vector4f min_pt;
@@ -267,6 +289,7 @@ public:
           res.tables.push_back(det);
         }
       }
+      sa_pub_.publish (tables);
       publishShapeMarker (tables);
       ROS_INFO("Found %d tables", table_ctr_);
     }
@@ -371,6 +394,7 @@ protected:
   ros::Publisher pc2_pub_;
   ros::Publisher s_marker_pub_;
   ros::ServiceServer get_tables_server_;
+  ros::ServiceServer get_tables_server_2_;
 
   TableExtraction te_;
 
