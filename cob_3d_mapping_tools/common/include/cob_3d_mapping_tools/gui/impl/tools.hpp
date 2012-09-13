@@ -52,41 +52,76 @@
  *
  ****************************************************************/
 
-#ifndef COB_3D_MAPPING_TOOLS_GUI_RESOURCE_HPP_
-#define COB_3D_MAPPING_TOOLS_GUI_RESOURCE_HPP_
+#ifndef COB_3D_MAPPING_TOOLS_GUI_TOOLS_HPP_
+#define COB_3D_MAPPING_TOOLS_GUI_TOOLS_HPP_
 
-#include "boost/make_shared.hpp"
-#include "cob_3d_mapping_tools/gui/resource.h"
+#include <limits>
 
-
-  /* ----------------------------*/
- /* --------- Resource ---------*/
-/* ----------------------------*/
-template<typename RT>
-void Gui::Resource<RT>::resourceChanged()
+template<typename PointT>
+void Gui::Tools::convertPointCloud2Cv(const typename pcl::PointCloud<PointT>::ConstPtr& cloud, cvImagePtr& image,
+                                                     boost::function<cv::Vec3b (int)>& converter)
 {
-  for(std::map<std::string, ViewBase*>::iterator it = views_.begin(); it != views_.end(); ++it)
-  { it->second->onDataChanged(); }
+  image = new cvImage(cloud->height, cloud->width, CV_8UC3);
+  int idx=0;
+  for (int row = 0; row < image->rows; row++)
+  {
+    for (int col = 0; col < image->cols; col++, idx++)
+    {
+      (*image)(row, col) = converter(idx);
+    }
+  }
 }
 
-template<typename RT>
-template<typename VT>
-Gui::View<RT,VT>* Gui::Resource<RT>::createView(const std::string& name, Gui::ViewTypes::View2D)
+template<typename PointT>
+void Gui::Tools::getMinMaxZ(const typename pcl::PointCloud<PointT>::ConstPtr& cloud, float& z_min, float& z_max)
 {
-  ViewBase* ptr = new ImageView<RT,VT>(name, this);
-  views_.insert(std::pair<std::string, ViewBase*>(name, ptr));
-  return static_cast<View<RT, VT>* >(ptr);
-}
-
-template<typename RT>
-template<typename VT>
-Gui::View<RT,VT>* Gui::Resource<RT>::createView(const std::string& name, Gui::ViewTypes::ViewText)
-{
-  ViewBase* ptr = new TextView<RT,VT>(name, this);
-  views_.insert(std::pair<std::string, ViewBase*>(name, ptr));
-  return static_cast<View<RT, VT>* >(ptr);
+  z_min = std::numeric_limits<float>::max();
+  z_max = std::numeric_limits<float>::min();
+  for(typename pcl::PointCloud<PointT>::const_iterator it=cloud->begin(); it!=cloud->end(); ++it)
+  {
+    z_min = std::min(z_min,it->z);
+    z_max = std::max(z_max,it->z);
+  }
 }
 
 
+
+uint32_t Gui::Tools::getGradientColor(float z_value, float z_min, float z_max, cv::Vec3b& bgr)
+{
+  return getGradientColor( (z_value - z_min) / (z_max - z_min), bgr );
+}
+
+// color is proportional to position  <0;1>
+// position means position of color in color gradient
+uint32_t Gui::Tools::getGradientColor(double position, cv::Vec3b& bgr)
+{
+  //if (position > 1) position = position - int(position);
+  if (position > 1) position = 1;
+  if (position < 0) position = 0;
+  // if position > 1 then we have repetition of colors
+  // it maybe useful
+  int n_bars_max = 4;
+  double m=n_bars_max * position;
+  int n=int(m); // integer of m
+  double f=m-n;  // fraction of m
+  uint8_t t=int(f*255);
+
+  switch (n)
+  {
+  case 0:
+  { bgr[2] = 255; bgr[1] = t; bgr[0] = 0; break; }
+  case 1:
+  { bgr[2] = 255 - t; bgr[1] = 255; bgr[0] = 0; break; }
+  case 2:
+  { bgr[2] = 0; bgr[1] = 255; bgr[0] = t; break; }
+  case 3:
+  { bgr[2] = 0; bgr[1] = 255 - t; bgr[0] = 255; break; }
+  case 4:
+  { bgr[2] = t; bgr[1] = 0; bgr[0] = 255; break; }
+  case 5:
+  { bgr[2] = 255; bgr[1] = 0; bgr[0] = 255 - t; break; }
+  };
+  return (bgr[2] << 16) | (bgr[1] << 8) | bgr[0];
+}
 
 #endif

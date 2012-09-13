@@ -52,39 +52,77 @@
  *
  ****************************************************************/
 
-#ifndef COB_3D_MAPPING_TOOLS_GUI_VIEW_BASE_H_
-#define COB_3D_MAPPING_TOOLS_GUI_VIEW_BASE_H_
+#ifndef COB_3D_MAPPING_TOOLS_GUI_TYPES_H_
+#define COB_3D_MAPPING_TOOLS_GUI_TYPES_H_
 
+#include <highgui.h>
+
+#include <pcl/point_types.h>
+#include <pcl/io/pcd_io.h>
 
 
 namespace Gui
 {
+  typedef cv::Mat_<cv::Vec3b> cvImage;
+  typedef boost::shared_ptr<cvImage> cvImagePtr;
+  typedef boost::shared_ptr<wxBitmap> wxBitmapPtr;
 
-}
-
-
-/*
-namespace cob_3d_mapping_tools
-{
-  namespace Gui
+  namespace ViewTypes
   {
-    template<typename DataT>
-    class BaseView
+    struct View2D {};
+    struct View3D {};
+    struct ViewText {};
+
+    struct Color : public View2D { static const std::string STR; };
+    struct Depth_Z : public View2D { static const std::string STR; };
+
+    // not implemented, totally different approach necessary! use OnIdle in MainApp -> wxApp
+    struct Depth_3D : public View3D { static const std::string STR; };
+    struct Histogram : public View2D { static const std::string STR; }; // not implemented
+    struct Curvature : public View2D { static const std::string STR; }; // not implemented
+    struct SomethingWithText : public ViewText { static const std::string STR; }; // not implemented
+
+    const std::string Color::STR = "Color View";
+    const std::string Depth_Z::STR = "Depth View";
+    const std::string Depth_3D::STR = "Depth3D View";
+    const std::string Histogram::STR = "Histogram View";
+    const std::string Curvature::STR = "Curvature View";
+    const std::string SomethingWithText::STR = "Text View";
+  }
+
+  namespace ResourceTypes
+  {
+    struct BaseCloud {};
+
+    template<typename PT>
+    struct PointCloud : public BaseCloud
     {
-    public:
-      BaseView(DataT* data) : data_ptr(data) {}
-      virtual ~BaseView() {}
-
-      void create();
-      virtual void createChild()=0;
-      virtual void onDataChanged()=0;
-      virtual void show()=0;
-      virtual void hide()=0;
-
-    protected:
-      DataT* data_ptr;
+      static const std::string STR;
+      typedef pcl::PointCloud<PT> DataTypeRaw;
+      typedef typename pcl::PointCloud<PT>::Ptr DataTypePtr;
+      typedef PT PointType; // special typedef for all base clouds
     };
+
+    template<typename PT>
+    struct OrganizedPointCloud  : public BaseCloud
+    {
+      static const std::string STR;
+      typedef pcl::PointCloud<PT> DataTypeRaw;
+      typedef typename pcl::PointCloud<PT>::Ptr DataTypePtr;
+      typedef PT PointType; // special typedef for all base clouds
+    };
+
+    struct Image
+    {
+      typedef cvImage DataTypeRaw;
+      typedef cvImagePtr DataTypePtr;
+      static const std::string STR;
+    };
+
+    template<typename PT> const std::string PointCloud<PT>::STR = "Cloud";
+    template<typename PT> const std::string OrganizedPointCloud<PT>::STR = "OrgaCloud";
+    const std::string Image::STR = "Image";
   }
 }
-*/
+
 #endif

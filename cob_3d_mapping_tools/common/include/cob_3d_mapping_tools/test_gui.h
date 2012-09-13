@@ -61,15 +61,17 @@
 
 class FrameMain;
 class FrameTools;
+class ImagePanel;
 
 class MainApp: public wxApp
 {
-    virtual bool OnInit();
+  virtual bool OnInit();
 
-  public:
-    Gui::Core* gui;
-    FrameMain* f_main;
-    FrameTools* f_tools;
+public:
+  Gui::Core* gui;
+  FrameMain* f_main;
+  FrameTools* f_tools;
+  ImagePanel* pane_;
 };
 
 class FrameMain : public wxFrame
@@ -77,11 +79,24 @@ class FrameMain : public wxFrame
 public:
   FrameMain(const wxString& title, const wxPoint& pos, const wxSize& size, MainApp* app);
 
-
   MainApp* app_;
   //wxTextCtrl* stat_log;
-  wxImage* image_;
+};
+
+class ImagePanel : public wxPanel
+{
+public:
+  ImagePanel(wxFrame* parent);
+
+  void paintEvent(wxPaintEvent& event);
+  void render(wxDC& dc);
+
+
   wxString new_file_;
+  wxImage img_;
+  wxBitmap bmp_;
+
+  DECLARE_EVENT_TABLE()
 };
 
 class FrameTools : public wxMiniFrame
@@ -92,13 +107,15 @@ public:
 
   MainApp* app_;
   wxButton* bt_tool_open;
+  wxButton* bt_tool_1;
 
   DECLARE_EVENT_TABLE()
 };
 
 enum
 {
-  BT_TOOL_Open = wxID_HIGHEST + 1
+  BT_TOOL_Open = wxID_HIGHEST + 1,
+  BT_TOOL_1,
 };
 
 #endif

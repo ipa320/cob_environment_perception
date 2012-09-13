@@ -62,20 +62,64 @@ namespace Gui
   template<typename RT, typename VT>
   struct ViewSpec
   {
-    static void show(View<RT,VT>* object);
+    static void show(View<RT,VT>* object, ViewTypes::View2D);
+    static void refresh(View<RT,VT>* object, ViewTypes::View2D);
+    static void reloadData(View<RT,VT>* object);
   };
 
+  template<>
+  struct ViewSpec<ResourceTypes::Image, ViewTypes::Color>
+  {
+    static void reloadData(View<ResourceTypes::Image, ViewTypes::Color>* object);
+  };
+
+
+  template<typename PointT>
+  struct ViewSpec<ResourceTypes::OrganizedPointCloud<PointT>, ViewTypes::Color>
+  {
+    static void reloadData(View<ResourceTypes::OrganizedPointCloud<PointT>, ViewTypes::Color>* object);
+  };
+
+
+  template<typename PointT>
+  struct ViewSpec<ResourceTypes::OrganizedPointCloud<PointT>, ViewTypes::Depth_Z>
+  {
+    static void reloadData(View<ResourceTypes::OrganizedPointCloud<PointT>, ViewTypes::Depth_Z>* object);
+  };
+
+/*
   template<typename RT>
   struct ViewSpec<RT, ViewTypes::Color>
   {
     static void show(View<RT, ViewTypes::Color>* object);
+    static void refresh(View<RT, ViewTypes::Color>* object);
+    static void reloadData(View<RT, ViewTypes::Color>* object);
   };
 
   template<>
-  struct ViewSpec<std::string, ViewTypes::Color>
+  struct ViewSpec<ResourceTypes::Image, ViewTypes::Color>
   {
-    static void show(View<std::string, ViewTypes::Color>* object);
+    static void show(View<ResourceTypes::Image, ViewTypes::Color>* object);
+    static void refresh(View<ResourceTypes::Image, ViewTypes::Color>* object);
+    static void reloadData(View<ResourceTypes::Image, ViewTypes::Color>* object);
   };
+
+  template<typename PointT>
+  struct ViewSpec<ResourceTypes::OrganizedPointCloud<PointT>, ViewTypes::Color>
+  {
+    static void show(View<ResourceTypes::OrganizedPointCloud<PointT>, ViewTypes::Color>* object);
+    static void refresh(View<ResourceTypes::OrganizedPointCloud<PointT>, ViewTypes::Color>* object);
+    static void reloadData(View<ResourceTypes::OrganizedPointCloud<PointT>, ViewTypes::Color>* object);
+  };
+
+  template<typename PointT>
+  struct ViewSpec<ResourceTypes::OrganizedPointCloud<PointT>, ViewTypes::Depth_Z>
+  {
+    static void show(View<ResourceTypes::OrganizedPointCloud<PointT>, ViewTypes::Depth_Z>* object);
+    static void refresh(View<ResourceTypes::OrganizedPointCloud<PointT>, ViewTypes::Depth_Z>* object);
+    static void reloadData(View<ResourceTypes::OrganizedPointCloud<PointT>, ViewTypes::Depth_Z>* object);
+  };
+*/
 }
 
 #endif

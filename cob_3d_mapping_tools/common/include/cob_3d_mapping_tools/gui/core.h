@@ -55,25 +55,73 @@
 #ifndef COB_3D_MAPPING_TOOLS_GUI_CORE_H_
 #define COB_3D_MAPPING_TOOLS_GUI_CORE_H_
 
+#include <wx/wx.h>
+#include <wx/minifram.h>
 #include "cob_3d_mapping_tools/gui/resource.h"
 
 namespace Gui
 {
+  class Window : public wxFrame
+  {
+  public:
+    Window(const std::string& title) : wxFrame(NULL, -1, wxString(title.c_str(), wxConvUTF8)), id(title)
+    { }
+
+    std::string id;
+  };
+
+  /* ---------------------------------*/
+ /* --------- WindowManager ---------*/
+/* ---------------------------------*/
+
+  class WindowManager
+  {
+  public:
+    ~WindowManager() { std::cout << "wm destroyed" << std::endl; }
+    template<typename RT, typename VT> void create(ImageView<RT,VT>* object, const std::string& status_msg="");
+  private:
+    WindowManager() { }
+    friend class Core;
+  };
+
+  /* -----------------------------------*/
+ /* --------- ResourceManager ---------*/
+/* -----------------------------------*/
+  class ResourceManager
+  {
+  public:
+    ~ResourceManager() { std::cout << "res manager destroyed" << std::endl; }
+
+    // --- delegated construction ---
+    template<typename RT> Resource<RT>* create(const std::string& name, const std::string& file) {return create<RT>(name,file,RT());}
+    template<typename RT> Resource<RT>* create(const std::string& name, const typename RT::DataTypePtr& data);
+
+    template<typename RT> void destroy(const std::string& name);
+
+  private:
+    ResourceManager() { }
+
+    template<typename RT> std::map<std::string, Resource<RT>* >* get();
+
+    // --- specializations ---
+    template<typename RT> Resource<RT>* create(const std::string& name, const std::string& file, ResourceTypes::BaseCloud);
+    template<typename RT> Resource<RT>* create(const std::string& name, const std::string& file, ResourceTypes::Image);
+
+    friend class Core;
+  };
+
+  /* ------------------------*/
+ /* --------- CORE ---------*/
+/* ------------------------*/
   class Core
   {
+  public:
+    ~Core() { std::cout << "Core Destroyed" << std::endl; }
+    static Core* Get() { static Core* c_ = new Core(); return c_; }
+    static WindowManager* wMan() { static WindowManager* wm_ = new WindowManager(); return wm_; }
+    static ResourceManager* rMan() { static ResourceManager* rm_ = new ResourceManager(); return rm_; }
   private:
     Core() { }
-    ~Core() { }
-  public:
-
-    static Core* Create() { static Core c_; return &c_; }
-    static void mainCvMouseCallback(int event, int x, int y, int flags, void* userdata) { }
-
-    template<typename RT>
-    typename Resource<RT>::Ptr addResource(const std::string& name, RT data) { return rm.create(name,data); }
-
-  private:
-    ResourceManager rm;
   };
 }
 

@@ -55,40 +55,104 @@
 #ifndef COB_3D_MAPPING_TOOLS_GUI_VIEW_H_
 #define COB_3D_MAPPING_TOOLS_GUI_VIEW_H_
 
-#include "cob_3d_mapping_tools/gui/view_base.h"
+#include <string>
+#include <iostream>
+#include <boost/shared_ptr.hpp>
+#include <boost/make_shared.hpp>
+#include <boost/signals.hpp>
+
+#include <wx/wx.h>
+#include <wx/rawbmp.h>
+
+#include "cob_3d_mapping_tools/gui/tools.h"
 
 namespace Gui
 {
-  namespace ViewTypes
-  {
-    struct Color {};
-    struct Depth_Z {};
-    struct Depth_3D {};
-    struct Histogram {};
-    struct Curvature {};
-  }
 
   // forward declaration:
+  class ResourceBase;
   template<typename RT> class Resource;
+
+  class ViewBase
+  {
+  public:
+    virtual void show()=0;
+    virtual void onDataChanged()=0;
+
+    ResourceBase* r_base_ptr;
+
+  protected:
+    ViewBase(const std::string& name) : name_(name) { }
+    ~ViewBase();
+
+    std::string name_;
+    friend class WindowManager;
+  };
+
+
 
   template<typename RT, typename VT>
   class View : public ViewBase
   {
   public:
-    typedef boost::shared_ptr<View<RT,VT> > Ptr;
+    View(const std::string& name, Resource<RT>* r) : ViewBase(name), r_ptr(r) { this->r_base_ptr = r; }
 
-    View(const std::string& name, Resource<RT>* r) : ViewBase(name), r_ptr(r) { }
-    ~View() { }
+    void show() { reloadData(RT(),VT()); show(VT()); }
+    void onDataChanged() { reloadData(RT(),VT()); refresh(VT()); }
+    boost::signals::connection registerMouseCallback(boost::function<void (wxMouseEvent&, Resource<RT>*)>);
 
+  protected:
+    ~View() { std::cout << "View destroyed" << std::endl; }
+
+    void show(ViewTypes::View2D);
+    void refresh(ViewTypes::View2D);
+
+    void reloadData(ResourceTypes::Image, ViewTypes::Color);
+    template<typename PT> void reloadData(ResourceTypes::OrganizedPointCloud<PT>, ViewTypes::Color);
+    template<typename PT> void reloadData(ResourceTypes::OrganizedPointCloud<PT>, ViewTypes::Depth_Z);
+
+    Resource<RT>* r_ptr;
+    boost::signal<void (wxMouseEvent&, Resource<RT>*)> mouse_sig_;
+
+    friend class WindowManager;
+  };
+
+
+
+  template<typename RT, typename VT>
+  class ImageView : public View<RT,VT> , public wxPanel
+  {
   public:
-    void onDataChanged();
-    void show();
+    ImageView(const std::string& name, Resource<RT>* r) : View<RT,VT>(name,r) { }
+    ~ImageView() { }
+    void render();
+
+    wxBitmapPtr bmp_;
 
   private:
-    Resource<RT>* r_ptr;
+    void render(wxDC& dc);
+    void mouseEvent(wxMouseEvent& event);
+    void paintEvent(wxPaintEvent& event);
 
-    template<typename, typename> friend struct ViewSpec;
+
+
+
+    friend class WindowManager;
+    DECLARE_EVENT_TABLE()
   };
+
+
+
+  template<typename RT, typename VT>
+  class TextView : public View<RT,VT>
+  {
+  public:
+    TextView(const std::string& name, Resource<RT>* r) : View<RT,VT>(name,r) { }
+    ~TextView() { }
+
+    friend class WindowManager;
+  };
+
 }
 
 #endif

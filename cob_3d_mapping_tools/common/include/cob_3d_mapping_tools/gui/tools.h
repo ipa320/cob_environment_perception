@@ -52,41 +52,83 @@
  *
  ****************************************************************/
 
-#ifndef COB_3D_MAPPING_TOOLS_GUI_RESOURCE_HPP_
-#define COB_3D_MAPPING_TOOLS_GUI_RESOURCE_HPP_
+#ifndef COB_3D_MAPPING_TOOLS_GUI_TOOLS_H_
+#define COB_3D_MAPPING_TOOLS_GUI_TOOLS_H_
 
-#include "boost/make_shared.hpp"
-#include "cob_3d_mapping_tools/gui/resource.h"
+#include <highgui.h>
 
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
+#include <boost/function.hpp>
+#include "cob_3d_mapping_tools/gui/types.h"
 
-  /* ----------------------------*/
- /* --------- Resource ---------*/
-/* ----------------------------*/
-template<typename RT>
-void Gui::Resource<RT>::resourceChanged()
+namespace Gui
 {
-  for(std::map<std::string, ViewBase*>::iterator it = views_.begin(); it != views_.end(); ++it)
-  { it->second->onDataChanged(); }
+  namespace Tools
+  {
+    uint32_t getGradientColor(float, float, float, cv::Vec3b&);
+    uint32_t getGradientColor(double, cv::Vec3b&);
+
+    /* --- converter base class --- */
+    template<typename PointT>
+    class PointConverterBase
+    {
+      public:
+      PointConverterBase(const typename pcl::PointCloud<PointT>::ConstPtr& cloud)
+        : cloud_(cloud) { }
+      virtual ~PointConverterBase() { }
+
+      virtual cv::Vec3b operator() (int)=0;
+
+      protected:
+      typename pcl::PointCloud<PointT>::ConstPtr cloud_;
+    };
+
+    /* --- RGB converter --- */
+    template<typename PointT>
+    class PointConverterRGB : public PointConverterBase<PointT>
+    {
+      public:
+      PointConverterRGB(const typename pcl::PointCloud<PointT>::ConstPtr& cloud) : PointConverterBase<PointT>(cloud) { }
+
+      cv::Vec3b operator() (int idx)
+      {
+        cv::Vec3b rgb;
+        rgb[0] = (*this->cloud_)[idx].b;
+        rgb[1] = (*this->cloud_)[idx].g;
+        rgb[2] = (*this->cloud_)[idx].r;
+        return rgb;
+      }
+    };
+
+    /* --- Depth converter --- */
+    template<typename PointT>
+    class PointConverterDepth : public PointConverterBase<PointT>
+    {
+      public:
+      PointConverterDepth(const typename pcl::PointCloud<PointT>::ConstPtr& cloud, float z_min, float z_max)
+        : PointConverterBase<PointT>(cloud), z_min_(z_min), z_max_(z_max)
+      { }
+
+      cv::Vec3b operator() (int idx)
+      {
+        cv::Vec3b bgr;
+        getGradientColor((*this->cloud_)[idx].z, z_min_, z_max_, bgr);
+        return bgr;
+      }
+
+      private:
+      float z_min_;
+      float z_max_;
+    };
+
+    template<typename PointT>
+    void convertPointCloud2Cv(const typename pcl::PointCloud<PointT>::ConstPtr& cloud, cvImagePtr& image,
+                                boost::function<cv::Vec3b (int)>& converter);
+
+    template<typename PointT>
+    void getMinMaxZ(const typename pcl::PointCloud<PointT>::ConstPtr& cloud, float& z_min, float& z_max);
+  }
 }
-
-template<typename RT>
-template<typename VT>
-Gui::View<RT,VT>* Gui::Resource<RT>::createView(const std::string& name, Gui::ViewTypes::View2D)
-{
-  ViewBase* ptr = new ImageView<RT,VT>(name, this);
-  views_.insert(std::pair<std::string, ViewBase*>(name, ptr));
-  return static_cast<View<RT, VT>* >(ptr);
-}
-
-template<typename RT>
-template<typename VT>
-Gui::View<RT,VT>* Gui::Resource<RT>::createView(const std::string& name, Gui::ViewTypes::ViewText)
-{
-  ViewBase* ptr = new TextView<RT,VT>(name, this);
-  views_.insert(std::pair<std::string, ViewBase*>(name, ptr));
-  return static_cast<View<RT, VT>* >(ptr);
-}
-
-
 
 #endif

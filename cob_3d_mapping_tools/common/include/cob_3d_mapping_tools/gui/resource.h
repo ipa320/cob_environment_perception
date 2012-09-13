@@ -56,52 +56,47 @@
 #define COB_3D_MAPPING_TOOLS_GUI_RESOURCE_H_
 
 #include <map>
+
 #include "cob_3d_mapping_tools/gui/view.h"
 
 namespace Gui
 {
-  namespace ResourceTypes
-  {
-    struct PointCloud {};
-    struct OrganizedPointCloud : PointCloud {};
-    struct Image {};
-  }
-
-  // forward declarations:
-  //template<typename RT, typename VT> class View;
-
-  template<typename RT>
-  class Resource
+  /* ------------------------*/
+ /* --------- Base ---------*/
+/* ------------------------*/
+  class ResourceBase
   {
   public:
-    typedef boost::shared_ptr<Resource<RT> > Ptr;
-
-    Resource(const std::string& name, RT data) : name_(name), data_(data) { }
-    ~Resource() { }
-
-    template<typename VT> typename View<RT, VT>::Ptr createView(const std::string& name, int options);
-
-    inline RT& getData() { return data_; }
-
-  private:
-    std::string name_;
-    RT data_;
-
-    std::map<std::string, ViewBase::Ptr> views_;
+    virtual void releaseView(const std::string&)=0;
+    virtual void resourceChanged()=0;
   };
 
-  class ResourceManager
+
+  /* ----------------------------*/
+ /* --------- Resource ---------*/
+/* ----------------------------*/
+  template<typename RT>
+  class Resource : public ResourceBase
   {
   public:
-    ~ResourceManager() { }
+    Resource(const std::string& name, const typename RT::DataTypePtr& data) : name_(name), data_(data) { }
+    ~Resource() { std::cout << "resource destroyed" << std::endl; }
+
+    // --- delegated construction ---
+    template<typename VT> View<RT, VT>* createView(const std::string& name) {return createView<VT>(name,VT());}
+
+    inline typename RT::DataTypePtr& getData() { return data_; }
+    void releaseView(const std::string& name) { views_.erase(name); }
+    void resourceChanged();
 
   private:
-    ResourceManager() { }
+    // --- specializations ---
+    template<typename VT> View<RT, VT>* createView(const std::string& name,ViewTypes::View2D);
+    template<typename VT> View<RT, VT>* createView(const std::string& name,ViewTypes::ViewText);
 
-    template<typename RT> std::map<std::string, Resource<RT> >* get();
-    template<typename RT> typename Resource<RT>::Ptr create(const std::string& name, const RT& data);
-
-    friend class Core;
+    std::string name_;
+    typename RT::DataTypePtr data_;
+    std::map<std::string, ViewBase*> views_;
   };
 }
 
