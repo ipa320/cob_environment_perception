@@ -21,7 +21,6 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <visualization_msgs/InteractiveMarker.h>
 #include <visualization_msgs/InteractiveMarkerControl.h>
-//#include <visualization_msgs/MenuEntry.h>
 #include <interactive_markers/interactive_marker_server.h>
 #include <interactive_markers/menu_handler.h>
 #include <cob_3d_mapping_msgs/ModifyMap.h>
@@ -42,8 +41,6 @@ class ShapeVisualization
       feedback_sub_ = nh_.subscribe("geometry_map/map/feedback",1,&ShapeVisualization::setShapePosition,this);
 //      shape_pub_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_array", 1);
       im_server_.reset (new interactive_markers::InteractiveMarkerServer ("geometry_map/map", "", false));
-
-//      optionMenu();
       moreOptions() ;
     }
     // Destructor
@@ -76,14 +73,6 @@ class ShapeVisualization
     boost::shared_ptr<interactive_markers::InteractiveMarkerServer> im_server_; // server for interactive markers
 
 };
-
-
-
-
-
-
-
-
 
 
 #endif /* SHAPE_VISUALIZATION_H_ */
