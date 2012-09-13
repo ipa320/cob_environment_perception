@@ -55,25 +55,47 @@
 #ifndef COB_3D_MAPPING_TOOLS_GUI_VIEW_SPEC_HPP_
 #define COB_3D_MAPPING_TOOLS_GUI_VIEW_SPEC_HPP_
 
-
 #include "cob_3d_mapping_tools/gui/view_spec.h"
 
+
 template<typename RT, typename VT>
-void Gui::ViewSpec<RT,VT>::show(Gui::View<RT,VT>* object)
+void Gui::ViewSpec<RT,VT>::reloadData(Gui::View<RT,VT>* object)
 {
-  std::cout << "default" << std::endl;
+  std::cout << "not implemented" << std::endl;
 }
 
-template<typename RT>
-void Gui::ViewSpec<RT,Gui::ViewTypes::Color>::show(Gui::View<RT, Gui::ViewTypes::Color>* object)
+/* ----------------------------------------------*/
+
+/* ----------------------------------------------*/
+
+void Gui::ViewSpec<Gui::ResourceTypes::Image, Gui::ViewTypes::Color>::reloadData(
+  Gui::View<Gui::ResourceTypes::Image, Gui::ViewTypes::Color>* object)
 {
-  std::cout << "This has color" << std::endl;
+
 }
 
-void Gui::ViewSpec<std::string,Gui::ViewTypes::Color>::show(Gui::View<std::string, Gui::ViewTypes::Color>* object)
+
+/* -----------------------------------------------------*/
+
+
+
+template<typename PointT>
+void Gui::ViewSpec<Gui::ResourceTypes::OrganizedPointCloud<PointT>,Gui::ViewTypes::Color>::reloadData(
+  Gui::View<Gui::ResourceTypes::OrganizedPointCloud<PointT>, Gui::ViewTypes::Color>* object)
 {
-  std::cout << "This has color and " << object->r_ptr->getData() << std::endl;
+
 }
 
+
+/* -----------------------------------------------------*/
+
+
+
+template<typename PointT>
+void Gui::ViewSpec<Gui::ResourceTypes::OrganizedPointCloud<PointT>,Gui::ViewTypes::Depth_Z>::reloadData(
+  Gui::View<Gui::ResourceTypes::OrganizedPointCloud<PointT>, Gui::ViewTypes::Depth_Z>* object)
+{
+
+}
 
 #endif

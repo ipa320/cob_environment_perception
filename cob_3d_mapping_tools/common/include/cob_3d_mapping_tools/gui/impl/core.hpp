@@ -56,8 +56,74 @@
 #define COB_3D_MAPPING_TOOLS_GUI_CORE_HPP_
 
 #include "cob_3d_mapping_tools/gui/core.h"
-#include "cob_3d_mapping_tools/gui/impl/view_spec.hpp"
 #include "cob_3d_mapping_tools/gui/impl/view.hpp"
 #include "cob_3d_mapping_tools/gui/impl/resource.hpp"
+#include "cob_3d_mapping_tools/gui/impl/tools.hpp"
+
+
+  /* ---------------------------------*/
+ /* --------- WindowManager ---------*/
+/* ---------------------------------*/
+template<typename RT, typename VT>
+void Gui::WindowManager::create(ImageView<RT,VT>* object, const std::string& status_msg)
+{
+  Window* w = new Window(object->name_);
+  wxStatusBar* sb = new wxStatusBar(w);
+  sb->SetStatusText(wxString(status_msg.c_str(), wxConvUTF8));
+  object->Create(w, -1, wxDefaultPosition, wxSize(object->bmp_->GetWidth(), object->bmp_->GetHeight()));
+  wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
+  sizer->Add(object, 0, wxEXPAND);
+  sizer->Add(sb, 0, 0, 0);
+  sizer->SetSizeHints(w);
+  w->SetSizer(sizer);
+  w->SetAutoLayout(true);
+  w->Show(true);
+}
+
+
+  /* -----------------------------------*/
+ /* --------- ResourceManager ---------*/
+/* -----------------------------------*/
+template<typename RT>
+std::map<std::string, Gui::Resource<RT>* >* Gui::ResourceManager::get()
+{
+  static std::map<std::string, Resource<RT>* > map; return &map;
+}
+
+
+template<typename RT>
+Gui::Resource<RT>* Gui::ResourceManager::create(const std::string& name, const typename RT::DataTypePtr& data)
+{
+  Resource<RT>* r = new Resource<RT>(name,data);
+  get<RT>()->insert(std::pair<std::string,Resource<RT>* >(name, r));
+  return r;
+}
+
+template<typename RT>
+Gui::Resource<RT>* Gui::ResourceManager::create(const std::string& name, const std::string& file, ResourceTypes::BaseCloud)
+{
+  typename RT::DataTypePtr tmp_data(new typename RT::DataTypeRaw);
+  if (pcl::io::loadPCDFile<RT::PointType>(file, *tmp_data) < 0) return NULL;
+  return create<RT>(name,tmp_data);
+}
+
+template<typename RT>
+Gui::Resource<RT>* Gui::ResourceManager::create(const std::string& name, const std::string& file, ResourceTypes::Image)
+{
+  typename RT::DataTypePtr tmp_data(new typename RT::DataTypeRaw);
+  *tmp_data = cv::imread(file);
+  if (tmp_data->data==NULL) return NULL;
+  return create<RT>(name,tmp_data);
+}
+
+
+template<typename RT>
+void Gui::ResourceManager::destroy(const std::string& name)
+{
+  typedef typename std::map<std::string,Resource<RT>*>::iterator iterator;
+  iterator it = get<RT>()->find(name);
+  delete it->second;
+  get<RT>()->erase(it);
+}
 
 #endif

@@ -56,13 +56,20 @@
 
 bool MainApp::OnInit()
 {
-  gui = Gui::Core::Create();
+  wxInitAllImageHandlers();
+  wxBoxSizer* sizer = new wxBoxSizer(wxHORIZONTAL);
 
   f_main = new FrameMain( _("Test Gui"), wxPoint(200,50), wxSize(640, 480), this);
+  pane_ = new ImagePanel(f_main);
+  sizer->Add(pane_, 1, wxEXPAND);
+  f_main->SetSizer(sizer);
+  f_main->SetAutoLayout(true);
+
   f_tools = new FrameTools( _("Tools"), wxPoint(10, 50), wxSize(100, 400), this);
+
   f_main->Show(true);
   f_tools->Show(true);
-  SetTopWindow(f_main);
+  //SetTopWindow(f_main);
   return true;
 }
 
@@ -70,16 +77,39 @@ FrameMain::FrameMain(const wxString& title, const wxPoint& pos, const wxSize& si
   : wxFrame(NULL, -1, title, pos, size), app_(app)
 {
   //stat_log = new wxTextCtrl(this, -1, wxEmptyString, wxDefaultPosition, wxDefaultSize, wxTE_MULTILINE | wxTE_RICH);
-  image_ = new wxImage(640, 480, true);
 
   CreateStatusBar();
   SetStatusText( _("Main Frame Status") );
 }
 
+ImagePanel::ImagePanel(wxFrame* parent) : wxPanel(parent)
+{
+  img_.Create(640, 480, true);
+  bmp_.Create(640, 480);
+}
+
+void ImagePanel::paintEvent(wxPaintEvent& event)
+{
+  wxPaintDC dc(this);
+  render(dc);
+}
+
+void ImagePanel::render(wxDC& dc)
+{
+  bmp_ = wxBitmap(img_);
+  dc.DrawBitmap(bmp_, 0, 0, false);
+}
+
 FrameTools::FrameTools(const wxString& title, const wxPoint& pos, const wxSize& size, MainApp* app)
   : wxMiniFrame(NULL, -1, title, pos, size, wxCAPTION | wxRESIZE_BORDER | wxCLOSE_BOX ), app_(app)
 {
-  bt_tool_open = new wxButton(this, BT_TOOL_Open, _("Open"), wxPoint(0,0), wxSize(90,50), 0);
+  wxBoxSizer* sizer = new wxBoxSizer(wxVERTICAL);
+  SetSizer(sizer);
+  SetAutoLayout(true);
+  bt_tool_open = new wxButton(this, BT_TOOL_Open, _("Open"));
+  bt_tool_1 = new wxButton(this, BT_TOOL_1, _("Tool1"));
+  sizer->Add(bt_tool_open, 1, wxEXPAND);
+  sizer->Add(bt_tool_1, 1, wxEXPAND);
 }
 
 
@@ -93,9 +123,10 @@ void FrameTools::OnToolOpen(wxCommandEvent& event)
 
   if (file_dialog->ShowModal() == wxID_OK)
   {
-    app_->f_main->new_file_ = file_dialog->GetPath();
-    app_->f_main->image_->LoadFile(app_->f_main->new_file_, wxBITMAP_TYPE_PNG);
+    app_->pane_->new_file_ = file_dialog->GetPath();
+    app_->pane_->img_.LoadFile(app_->pane_->new_file_, wxBITMAP_TYPE_ANY);
     //app_->f_main->SetTitle(wxString(_("Edit - ")) << file_dialog->GetFilename());
+    app_->pane_->Refresh();
   }
   file_dialog->Destroy();
 }
@@ -106,6 +137,9 @@ BEGIN_EVENT_TABLE(FrameTools, wxFrame)
     EVT_BUTTON(BT_TOOL_Open,  FrameTools::OnToolOpen)
 END_EVENT_TABLE()
 
+BEGIN_EVENT_TABLE(ImagePanel, wxPanel)
+    EVT_PAINT(ImagePanel::paintEvent)
+END_EVENT_TABLE()
 
 IMPLEMENT_APP(MainApp)
 
