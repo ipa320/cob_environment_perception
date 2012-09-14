@@ -115,6 +115,16 @@ public:
    * @a source_view must return a valid @c Ogre::Camera* from getCamera(). */
   virtual void mimic( ViewController* source_view );
 
+  /** @brief Called by ViewManager when this ViewController is being made current.
+   * @param previous_view is the previous "current" view, and will not be NULL.
+   *
+   * This gives ViewController subclasses an opportunity to implement
+   * a smooth transition from a previous viewpoint to the new
+   * viewpoint.
+   */
+  virtual void transitionFrom( ViewController* previous_view );
+
+
 protected Q_SLOTS:
   /** @brief Called when Target Frame property changes while view is
    * active.  Purpose is to change values in the view controller (like

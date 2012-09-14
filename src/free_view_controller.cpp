@@ -88,7 +88,7 @@ static inline void vectorOgreToMsg(const Ogre::Vector3 &o, geometry_msgs::Vector
 FreeViewController::FreeViewController()
   : nh_(""), animate_(false), dragging_( false )
 {
-  interaction_disabled_cursor_ = makeIconCursor( "package://rviz/icons/forbidden.svg" );
+  interaction_disabled_cursor_ = makeIconCursor( "package://rviz/icons/forbidden.png" );
 
   mouse_enabled_property_ = new BoolProperty("Mouse Enabled", true,
                                    "Enables mouse control of the camera.",
@@ -111,6 +111,8 @@ FreeViewController::FreeViewController()
                                               "Position of the camera.", this );
   focus_point_property_ = new VectorProperty( "Focus", Ogre::Vector3::ZERO,
                                               "Position of the focus/orbit point.", this );
+  up_vector_property_ = new VectorProperty( "Up", Ogre::Vector3::UNIT_Z,
+                                            "The vector which maps to \"up\" in the camera image plane.", this );
   distance_property_    = new FloatProperty( "Distance", getDistanceFromCameraToFocalPoint(),
                                              "The distance between the camera position and the focus point.",
                                              this );
@@ -157,7 +159,6 @@ void FreeViewController::onInitialize()
     focal_shape_->setColor(1.0f, 1.0f, 0.0f, 0.5f);
     focal_shape_->getRootNode()->setVisible(false);
 
-    updateTopics();
 }
 
 void FreeViewController::onActivate()
@@ -174,6 +175,10 @@ void FreeViewController::onActivate()
   connect( distance_property_, SIGNAL( changed() ), this, SLOT( onDistancePropertyChanged() ));
   connect( eye_point_property_, SIGNAL( changed() ), this, SLOT( onEyePropertyChanged() ));
   connect( focus_point_property_, SIGNAL( changed() ), this, SLOT( onFocusPropertyChanged() ));
+
+  // Only do this once activated!
+  updateTopics();
+
 }
 
 void FreeViewController::onEyePropertyChanged()
@@ -263,17 +268,20 @@ void FreeViewController::handleMouseEvent(ViewportMouseEvent& event)
   if( !mouse_enabled_property_->getBool() )
   {
     setCursor( interaction_disabled_cursor_ );
-    setStatus( "Mouse interaction is disabled. You can enable it in the Views panel." );
+    setStatus( "<b>Mouse interaction is disabled. You can enable it by checking the \"Mouse Enabled\" check-box in the Views panel." );
     return;
   }
-
-  if ( event.shift() )
+  else if ( event.shift() )
   {
-    setStatus( "<b>Left-Click:</b> Move X/Y.  <b>Right-Click:</b>: Move Z." );
+    setStatus( "TODO: Fix me! <b>Left-Click:</b> Move X/Y.  <b>Right-Click:</b>: Move Z." );
+  }
+  else if ( event.control() )
+  {
+    setStatus( "TODO: Fix me! <b>Left-Click:</b> Move X/Y.  <b>Right-Click:</b>: Move Z." );
   }
   else
   {
-    setStatus( "<b>Left-Click:</b> Rotate.  <b>Middle-Click:</b> Move X/Y.  <b>Right-Click:</b>: Zoom.  <b>Shift</b>: More options." );
+    setStatus( "TODO: Fix me! <b>Left-Click:</b> Rotate.  <b>Middle-Click:</b> Move X/Y.  <b>Right-Click:</b>: Zoom.  <b>Shift</b>: More options." );
   }
 
   float distance = distance_property_->getFloat();
@@ -333,12 +341,12 @@ void FreeViewController::handleMouseEvent(ViewportMouseEvent& event)
     if( event.shift() ||  (interaction_mode_property_->getStdString() == MODE_FPS) )
     {
       setCursor( MoveZ );
-      move_focus_and_eye(0.0f, 0.0f, diff_y * 0.1 * (distance / 10.0f));
+      move_focus_and_eye(0.0f, 0.0f, diff_y * 0.01 * distance);
     }
     else
     {
       setCursor( Zoom );
-      move_eye( 0, 0, diff_y * 0.1 * (distance / 10.0f) );
+      move_eye( 0, 0, diff_y * 0.01 * distance );
     }
   }
   else
@@ -349,12 +357,23 @@ void FreeViewController::handleMouseEvent(ViewportMouseEvent& event)
   if ( event.wheel_delta != 0 )
   {
     int diff = event.wheel_delta;
-    yaw_pitch_roll(0, 0, diff*0.001 );
 
+    if( event.shift() )
+    {
+      move_focus_and_eye(0, 0, -diff * 0.001 * distance );
+    }
+    else if(event.control())
+    {
+      yaw_pitch_roll(0, 0, diff*0.001 );
+    }
+    else
+    {
+      move_eye( 0, 0, -diff * 0.001 * distance );
+    }
     moved = true;
   }
 
-  if(event.type == QEvent::MouseButtonPress && event.left() && event.control())
+  if(event.type == QEvent::MouseButtonPress && event.left() && event.control() && event.shift())
   {
     bool was_orbit = (interaction_mode_property_->getStdString() == MODE_ORBIT);
     interaction_mode_property_->setStdString(was_orbit ? MODE_FPS : MODE_ORBIT );
@@ -401,6 +420,23 @@ void FreeViewController::mimic( ViewController* source_view )
     updateCamera();
 }
 
+void FreeViewController::transitionFrom( ViewController* previous_view )
+{
+  FreeViewController* fvc = dynamic_cast<FreeViewController*>(previous_view);
+  if(fvc)
+  {
+    Ogre::Vector3 new_eye =   eye_point_property_->getVector();
+    Ogre::Vector3 new_focus = focus_point_property_->getVector();
+    Ogre::Vector3 new_up =    up_vector_property_->getVector();
+
+    eye_point_property_->setVector(fvc->eye_point_property_->getVector());
+    focus_point_property_->setVector(fvc->focus_point_property_->getVector());
+    up_vector_property_->setVector(fvc->up_vector_property_->getVector());
+
+    beginNewTransition(new_eye, new_focus, new_up, ros::Duration(default_transition_time_property_->getFloat()));
+  }
+}
+
 void FreeViewController::beginNewTransition(const Ogre::Vector3 &eye, const Ogre::Vector3 &focus, const Ogre::Vector3 &up,
                                             const ros::Duration &transition_time)
 {
@@ -408,6 +444,7 @@ void FreeViewController::beginNewTransition(const Ogre::Vector3 &eye, const Ogre
   {
     eye_point_property_->setVector(eye);
     focus_point_property_->setVector(focus);
+    up_vector_property_->setVector(up);
     distance_property_->setFloat(getDistanceFromCameraToFocalPoint());
     return;
   }
@@ -486,16 +523,6 @@ void FreeViewController::cameraPlacementTrajectoryCallback(const CameraPlacement
 
 void FreeViewController::transformCameraPlacementToAttachedFrame(CameraPlacement &cp)
 {
-//  geometry_msgs::Pose eye_pose, focus_pose;
-//  eye_pose.position = cp.camera.point;
-//  focus_pose.position = cp.focus.point;
-//  Ogre::Vector3 eye, focus;
-//  // If I want to handle the up vector I need to pack it into the quaternion, since the vectors are translated.
-//  // No!! Bad!! Ogre::Vector3 up(cp.up.point.x, cp.up.point.y, cp.up.point.z);
-//  Ogre::Quaternion eye_q, focus_q;
-//  context_->getFrameManager()->transform(cp.camera.header.frame_id, ros::Time(0), eye_pose,   eye,   eye_q);
-//  context_->getFrameManager()->transform(cp.focus.header.frame_id,  ros::Time(0), focus_pose, focus, focus_q);
-
   Ogre::Vector3 position_fixed_eye, position_fixed_focus, position_fixed_up; // position_fixed_attached;
   Ogre::Quaternion rotation_fixed_eye, rotation_fixed_focus, rotation_fixed_up; // rotation_fixed_attached;
 
@@ -559,18 +586,23 @@ void FreeViewController::update(float dt, float ros_dt)
   if(animate_)
   {
     ros::Duration time_from_start = ros::Time::now() - transition_start_time_;
-    float progress = time_from_start.toSec()/current_transition_duration_.toSec();
+    float fraction = time_from_start.toSec()/current_transition_duration_.toSec();
     // make sure we get all the way there before turning off
-    if(progress > 1.0f)
+    if(fraction > 1.0f)
     {
-      progress = 1.0f;
+      fraction = 1.0f;
       animate_ = false;
     }
+
+    // TODO remap progress to progress_out, which can give us a new interpolation profile.
+    float progress = 0.5*(1-cos(fraction*M_PI));
+
     Ogre::Vector3 new_position = start_position_ + progress*(goal_position_ - start_position_);
     Ogre::Vector3 new_focus  = start_focus_ + progress*(goal_focus_ - start_focus_);
     Ogre::Vector3 new_up  = start_up_ + progress*(goal_up_ - start_up_);
     eye_point_property_->setVector( new_position );
     focus_point_property_->setVector( new_focus );
+    up_vector_property_->setVector(new_up);
     //
     camera_->setPosition( eye_point_property_->getVector() );
     camera_->setFixedYawAxis(true, new_up);
@@ -584,10 +616,6 @@ void FreeViewController::update(float dt, float ros_dt)
 
 void FreeViewController::updateCamera()
 {
-//  camera_->setPosition( eye_point_property_->getVector() + reference_position_);
-//  camera_->setFixedYawAxis(fixed_up_property_->getBool(), orientation_target_scene_node_->getOrientation() * Ogre::Vector3::UNIT_Z);
-//  camera_->setDirection(orientation_target_scene_node_->getOrientation() * (focus_point_property_->getVector() - eye_point_property_->getVector()));
-//  focal_shape_->setPosition( focus_point_property_->getVector() + reference_position_ );
   camera_->setPosition( eye_point_property_->getVector() );
   camera_->setFixedYawAxis(fixed_up_property_->getBool(), attached_scene_node_->getOrientation() * Ogre::Vector3::UNIT_Z);
   camera_->setDirection(attached_scene_node_->getOrientation() * (focus_point_property_->getVector() - eye_point_property_->getVector()));
