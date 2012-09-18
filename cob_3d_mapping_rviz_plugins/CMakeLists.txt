@@ -49,6 +49,8 @@ rosbuild_add_library(cob_3d_mapping_rviz_plugins src/shape_display.cpp
     src/init.cpp)
 rosbuild_add_executable(cob_3d_mapping_rviz_plugins_test src/test.cpp)
 
+rosbuild_add_executable(map_publisher src/map_publisher.cpp)
+
 #rosbuild_add_executable(but_service_server src/but_services/but_service_server.cpp)
 #target_link_libraries(but_service_server ${BUT_SERVICES_PROJECT_NAME})
 

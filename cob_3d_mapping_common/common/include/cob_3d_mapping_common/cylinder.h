@@ -151,6 +151,7 @@ public:
   Eigen::Vector3f origin_;
   //	Polygon unrolled_;
   bool debug_;
+  unsigned int merged_limit;
 
 private:
   //################ private methods for merging to avoid confusion by user################
