@@ -162,8 +162,8 @@ Polygon::getIntersection(const Polygon::Ptr& poly, gpc_polygon& gpc_intersection
 {
   gpc_polygon gpc_poly, gpc_here;
 
-  this->gpcStructureUsingMap(poly->transform_from_world_to_plane, &gpc_here);
-  poly->gpcStructureUsingMap(poly->transform_from_world_to_plane, &gpc_poly);
+  this->getGpcStructure(poly->transform_from_world_to_plane, &gpc_here);
+  poly->getGpcStructure(poly->transform_from_world_to_plane, &gpc_poly);
   gpc_polygon_clip(GPC_INT, &gpc_here, &gpc_poly, &gpc_intersection);
 }
 
@@ -171,8 +171,8 @@ bool
 Polygon::getContourOverlap(const Polygon::Ptr& poly, float& rel_overlap, int& abs_overlap) const
 {
   gpc_polygon gpc_a, gpc_b, gpc_res_int, gpc_res_union;
-  this->gpcStructureUsingMap(poly->transform_from_world_to_plane, &gpc_a);
-  poly->gpcStructureUsingMap(poly->transform_from_world_to_plane, &gpc_b);
+  this->getGpcStructure(poly->transform_from_world_to_plane, &gpc_a);
+  poly->getGpcStructure(poly->transform_from_world_to_plane, &gpc_b);
   gpc_polygon_clip(GPC_INT, &gpc_a, &gpc_b, &gpc_res_int);
   gpc_polygon_clip(GPC_UNION, &gpc_a, &gpc_b, &gpc_res_union);
 
@@ -228,12 +228,12 @@ void
 Polygon::merge_union(std::vector<Polygon::Ptr>& poly_vec,  Polygon::Ptr& p_average)
 {
   gpc_polygon gpc_C, gpc_B;
-  this->gpcStructureUsingMap(p_average->transform_from_world_to_plane, &gpc_C);
+  this->getGpcStructure(p_average->transform_from_world_to_plane, &gpc_C);
 
   for(size_t i=0;i<poly_vec.size();++i)
   {
     //std::cout << poly_vec[i]->contours.size() << " " << std::endl;
-    poly_vec[i]->gpcStructureUsingMap(p_average->transform_from_world_to_plane,&gpc_B);
+    poly_vec[i]->getGpcStructure(p_average->transform_from_world_to_plane,&gpc_B);
 
     gpc_polygon_clip(GPC_UNION, &gpc_B, &gpc_C, &gpc_C);
   }
@@ -247,32 +247,7 @@ Polygon::merge_union(std::vector<Polygon::Ptr>& poly_vec,  Polygon::Ptr& p_avera
   else { this->merged = 9; }
   this->merge_weight_ = p_average->merge_weight_;
 
-  // clear contours, at the end gpc_C contains everything we need!
-  this->contours.clear();
-  this->holes.clear();
-  for(int j=0; j<gpc_C.num_contours; ++j)
-  {
-    this->contours.push_back(std::vector<Eigen::Vector3f>());
-    this->holes.push_back(gpc_C.hole[j]);
-    float last_x = 0.0, last_y=0.0;
-    for (int k=0; k<gpc_C.contour[j].num_vertices; ++k)
-    {
-      // check if points are too close to each other (so remove similar points)
-      if (fabs(gpc_C.contour[j].vertex[k].x - last_x) < 0.0001 && fabs(gpc_C.contour[j].vertex[k].y - last_y) < 0.0001)
-        continue;
-      last_x = gpc_C.contour[j].vertex[k].x;
-      last_y = gpc_C.contour[j].vertex[k].y;
-      this->contours.back().push_back(p_average->transform_from_world_to_plane.inverse() * Eigen::Vector3f(last_x,last_y,0));
-    }
-
-    if (this->contours.back().size() <= 2)  // drop empty contour lists
-    {
-      std::cout << "Drop! New size: " << this->contours.size() - 1 << std::endl;
-      this->contours.pop_back();
-      this->holes.pop_back();
-    }
-  }
-  if (this->contours.size() == 0) std::cout << "!!!! NO CONTOURS ANYMORE" << std::endl;
+  this->applyGpcStructure(p_average->transform_from_world_to_plane.inverse(), &gpc_C);
 }
 
 void
@@ -356,7 +331,7 @@ Polygon::applyWeighting(const std::vector<Polygon::Ptr>& poly_vec, Polygon::Ptr 
 
 
 void
-Polygon::gpcStructureUsingMap(const Eigen::Affine3f& external_trafo, gpc_polygon* gpc_p) const
+Polygon::getGpcStructure(const Eigen::Affine3f& external_trafo, gpc_polygon* gpc_p) const
 {
   // get transformed contours
   std::vector< std::vector <Eigen::Vector3f> > transformed_contours;
@@ -380,6 +355,37 @@ Polygon::gpcStructureUsingMap(const Eigen::Affine3f& external_trafo, gpc_polygon
       gpc_p->contour[j].vertex[k].y = point_trans(1);
     }
   }
+}
+
+void
+Polygon::applyGpcStructure(const Eigen::Affine3f& external_trafo, const gpc_polygon* gpc_p)
+{
+  // clear contours, at the end gpc_C contains everything we need!
+  this->contours.clear();
+  this->holes.clear();
+  for(int j=0; j<gpc_p->num_contours; ++j)
+  {
+    this->contours.push_back(std::vector<Eigen::Vector3f>());
+    this->holes.push_back(gpc_p->hole[j]);
+    float last_x = 0.0, last_y=0.0;
+    for (int k=0; k<gpc_p->contour[j].num_vertices; ++k)
+    {
+      // check if points are too close to each other (so remove similar points)
+      if (fabs(gpc_p->contour[j].vertex[k].x - last_x) < 0.0001 && fabs(gpc_p->contour[j].vertex[k].y - last_y) < 0.0001)
+        continue;
+      last_x = gpc_p->contour[j].vertex[k].x;
+      last_y = gpc_p->contour[j].vertex[k].y;
+      this->contours.back().push_back(external_trafo * Eigen::Vector3f(last_x,last_y,0));
+    }
+
+    if (this->contours.back().size() <= 2)  // drop empty contour lists
+    {
+      //std::cout << "Drop! New size: " << this->contours.size() - 1 << std::endl;
+      this->contours.pop_back();
+      this->holes.pop_back();
+    }
+  }
+  //if (this->contours.size() == 0) std::cout << "!!!! THIS POLYGON HAS NO CONTOURS ANYMORE" << std::endl;
 }
 
 
@@ -418,8 +424,6 @@ double
 Polygon::computeArea() const
 {
   double xi, xi_1, yi, yi_1, area=0;
-
-  //area_. (poly_ptr_->contours.size ());
   double sum;
   for (unsigned int i = 0; i < contours.size (); i++)
   {
@@ -452,34 +456,23 @@ Polygon::computeArea() const
 double
 Polygon::computeArea3d() const
 {
-  Eigen::Vector3f vi, vi_1;
   double area=0;
-
-  //area_. (poly_ptr_->contours.size ());
-  for (unsigned int i = 0; i < contours.size (); i++)
+  for (size_t i=0; i<contours.size(); ++i)
   {
-    if(holes[i]) continue;
-    Eigen::Vector3f temp_vec;
-    temp_vec << 0, 0, 0;
+    Eigen::Vector3f vec_sum(Eigen::Vector3f::Zero());
 
-    //area_[i] = 0;
-    for (unsigned int j = 0; j < contours[i].size (); j++)
-    {
-      vi << contours[i][j][0],contours[i][j][1],contours[i][j][2];
+    for (int j=0; j<(int)contours[i].size()-1; ++j)
+      vec_sum += contours[i][j].cross(contours[i][j+1]);
 
-      if (j == (contours[i].size ()) - 1)
-      {
-        vi_1 << contours[i][0][0],contours[i][0][1],contours[i][0][2];
-      }
-      else
-      {
-        vi_1 << contours[i][j + 1][0],contours[i][j + 1][1],contours[i][j+1][2];
-      }
+    vec_sum += contours[ i ][ contours[i].size()-1 ].cross(contours[i][0]);
+    //std::cout << (holes[i] ? "Hole : " : "Outer: ") << 0.5 * normal.dot(vec_sum) << std::endl;
+    area += 0.5 * normal.dot(vec_sum);
 
-      temp_vec = temp_vec + (vi.cross(vi_1));
-    }
-    area += normal.dot(temp_vec) /2;
-    //std::cout << "\n\t*** Area of polygon ( " << i << " ) = " << area_[i] << std::endl;
+    // special cases for holes can be ignored, since their vertex orientation is opposite to the
+    // outer most contour. Therefore the their area sign are different.
+
+    //if(holes[i]) area -= 0.5d * fabs(normal.dot(temp_vec));
+    //else area += 0.5d * fabs(normal.dot(temp_vec));
   }
   return std::fabs(area);
 }
