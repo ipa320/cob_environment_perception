@@ -79,8 +79,11 @@ namespace Gui
   public:
     ~WindowManager() { std::cout << "wm destroyed" << std::endl; }
     template<typename RT, typename VT> void create(ImageView<RT,VT>* object, const std::string& status_msg="");
+    template<typename RT, typename VT> void moveWindow(View<RT,VT>* window_ptr, int x, int y);
   private:
     WindowManager() { }
+
+    template<typename RT, typename VT> void moveWindow(View<RT,VT>* w, const wxPoint& p, ViewTypes::View2D);
     friend class Core;
   };
 

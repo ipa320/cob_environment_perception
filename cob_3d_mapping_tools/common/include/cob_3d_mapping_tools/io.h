@@ -150,6 +150,13 @@ namespace cob_3d_mapping_tools
    * @return the rgb color value as combined integer
    */
   uint32_t getGradientColor(double position, uint8_t rgb[]);
+
+  std::string colorHumanReadable(int id)
+  {
+    std::stringstream ss;
+    ss << "0x" << std::setfill('0') << std::setw(6) << std::right << std::hex << id << std::dec;
+    return ss.str();
+  }
 }
 
 #endif // #ifndef COB_3D_MAPPING_TOOLS_IO_H_

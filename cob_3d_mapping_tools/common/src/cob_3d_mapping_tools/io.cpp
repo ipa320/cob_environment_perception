@@ -231,7 +231,7 @@ int cob_3d_mapping_tools::PPMReader::mapRGB(const string &file_name,
       {
         rgb = ((uint32_t)col[0] << 16 | (uint32_t)col[1] << 8 | (uint32_t) col[2]);
         cloud[point].rgba = rgb;
-        if (remove_undef_points && rgb == I_UNDEF)
+        if (remove_undef_points && rgb == LBL_UNDEF)
         {
           cloud.points[point].x = std::numeric_limits<float>::quiet_NaN();
           cloud.points[point].y = std::numeric_limits<float>::quiet_NaN();

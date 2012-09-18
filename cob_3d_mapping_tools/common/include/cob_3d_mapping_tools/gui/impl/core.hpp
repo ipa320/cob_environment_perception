@@ -80,6 +80,21 @@ void Gui::WindowManager::create(ImageView<RT,VT>* object, const std::string& sta
   w->Show(true);
 }
 
+template<typename RT, typename VT>
+void Gui::WindowManager::moveWindow(View<RT,VT>* window_ptr, int x, int y)
+{
+  moveWindow(window_ptr,wxPoint(x,y),VT());
+}
+
+template<typename RT, typename VT>
+void Gui::WindowManager::moveWindow(View<RT,VT>* w, const wxPoint& p, ViewTypes::View2D)
+{
+  wxWindow* wxW = static_cast<ImageView<RT,VT>*>(w);
+  while (!wxW->IsTopLevel())
+    wxW = wxW->GetParent();
+  wxW->SetPosition(p);
+}
+
 
   /* -----------------------------------*/
  /* --------- ResourceManager ---------*/

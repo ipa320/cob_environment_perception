@@ -323,6 +323,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
             << ", "<< plane_cluster_ptr->size() << std::endl;*/
           if(hull_polygons.size() > 1)
           {
+            extracted_planes_indices_.pop_back();
             continue;
             ROS_WARN("Extracted Polygon %d contours, separating ...", hull_polygons.size());
             pcl::PointCloud<Point>::Ptr cloud_hull_ptr = cloud_hull.makeShared();

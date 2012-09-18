@@ -128,6 +128,64 @@ std::ostream& operator<< (std::ostream& out, Cluster& c)
   return out;
 }
 
+void printForFile(ClusterMap& exp, ClusterMap& pred)
+{
+  int count_no = 0;
+
+  // format config:
+  const int padding = 3;
+  std::stringstream ss;
+  ss << exp.begin()->second;
+  int col = ss.str().length() + padding;
+  std::string sep = "|   ";
+  std::cout <<"  -  \t"<<"  - \t"<<"labeled\t"<<" - \t"<<" - \t"<<"-\t"<<"  - \t\t"
+            <<"plane extraction" << std::endl;
+  std::cout <<"color\t"<<"size\t"<<"    n_x\t"<<"n_y\t"<<"n_z\t"<<"d\t"<<"area\t\t"
+            <<"    n_x\t"<<"n_y\t"<<"n_z\t"<<"d\t"<<"area\t"<<"A_diff\t"<<"dot"<<std::endl;
+  for(ClusterMap::iterator it=exp.begin(); it!= exp.end(); ++it)
+  {
+    cob_3d_mapping::Polygon::Ptr p1 = it->second.poly;
+    float area1 = p1->computeArea3d();
+    std::cout << colorHumanReadable(it->second.id) << "\t"
+              << it->second.indices.size() << "\t"
+              << it->second.comp3[0] << "\t"
+              << it->second.comp3[1] << "\t"
+              << it->second.comp3[2] << "\t"
+              << it->second.centroid.dot(it->second.comp3) << "\t"
+              << area1 << "\t\t";
+    ClusterMap::iterator match = pred.find(it->first);
+    if (match == pred.end())
+    {
+      std::cout << "no match" << std::endl;
+      ++count_no;
+      continue;
+    }
+    float alpha = it->second.comp3.dot(match->second.comp3);
+    cob_3d_mapping::Polygon::Ptr p2 = match->second.poly;
+    float area2 = p2->computeArea3d();
+    float area_diff = 0;
+    gpc_polygon gpc_a, gpc_b, gpc_diff;
+    p1->getGpcStructure(p1->transform_from_world_to_plane, &gpc_a);
+    p2->getGpcStructure(p2->transform_from_world_to_plane, &gpc_b);
+    gpc_polygon_clip(GPC_XOR, &gpc_a, &gpc_b, &gpc_diff);
+
+    //cob_3d_mapping::Polygon::Ptr p_diff(new cob_3d_mapping::Polygon);
+    if(gpc_diff.num_contours != 0)
+    {
+      p1->applyGpcStructure(p1->transform_from_world_to_plane, &gpc_diff);
+      area_diff = p1->computeArea3d();
+    }
+
+    std::cout << match->second.comp3[0] << "\t"
+              << match->second.comp3[1] << "\t"
+              << match->second.comp3[2] << "\t"
+              << match->second.centroid.dot(match->second.comp3) << "\t"
+              << area2 << "\t"
+              << area_diff << "\t"
+              << alpha << std::endl;
+  }
+}
+
 void compare(ClusterMap& exp, ClusterMap& pred)
 {
   int count_no = 0;
@@ -268,7 +326,7 @@ void createClusters(PointCloud::Ptr cloud, ClusterMap& cmap)
         //std::cout << colorHumanReadable((*cloud)[idx+mask[i]].rgba) << ", ";
       }
       //std::cout << std::endl;
-      if (count <= 1) { it->second.addPoint(idx); }
+      if (count < 1) { it->second.addPoint(idx); }
       else { it->second.addBorder(x,y); }
     }
   }
@@ -345,6 +403,7 @@ void createClustersUsingPlaneExtraction(PointCloud::Ptr cloud, ClusterMap& cmap)
     cob_3d_mapping::Polygon& p = *it->second.poly;
     for(int c=0; c<3; c++) p.normal[c] = v_coef[i].values[c];
     p.d = v_coef[i].values[3];
+    it->second.centroid = it->second.comp3 * p.d;
     std::vector<Eigen::Vector3f> pts;
     for(int j=0; j<v_hull_pc[i].size(); j++)
       pts.push_back(v_hull_pc[i].points[j].getVector3fMap());
@@ -425,7 +484,7 @@ public:
     {
       std::cout << "you're done here..." <<std::endl;
       std::cout << "these are your results! Hope u like 'em :)\n"<<std::endl;
-      compare(exp, pred_new);
+      printForFile(exp, pred_new);
       return;
     }
     Gui::cvImagePtr cvmat = r_tmp->getData();
@@ -462,12 +521,27 @@ public:
   bool OnInit()
   {
     if (this->argc < 3) { std::cout << "command path_to_pointcloud.pcd path_to_groundtruth.ppm " << std::endl; exit(0); }
+    if (this->argc == 4)
+    {
+      std::string file_pcd(wxString(this->argv[1]).mb_str());
+      std::string file_ppm(wxString(this->argv[2]).mb_str());
+      std::string file_out(wxString(this->argv[3]).mb_str());
+      if (pcl::io::loadPCDFile<PT>(file_pcd, *pc_exp) < 0) exit(0);
+      cob_3d_mapping_tools::PPMReader ppm;
+      cob_3d_mapping_tools::PPMWriter wppm;
+      if (ppm.mapRGB(file_ppm, *pc_exp, true) == -1) { exit(0); }
+      *pc_pred = *pc_exp;
+      createClustersUsingPlaneExtraction(pc_pred, pred);
+      wppm.writeRGB(file_out, *pc_pred);
+      exit(0);
+    }
+
     std::string file_pcd(wxString(this->argv[1]).mb_str());
     std::string file_ppm(wxString(this->argv[2]).mb_str());
     if (pcl::io::loadPCDFile<PT>(file_pcd, *pc_exp) < 0) exit(0);
-    *pc_pred = *pc_exp;
     cob_3d_mapping_tools::PPMReader ppm;
-    if (ppm.mapRGB(file_ppm, *pc_exp, false) == -1) { exit(0); }
+    if (ppm.mapRGB(file_ppm, *pc_exp, true) == -1) { exit(0); }
+    *pc_pred = *pc_exp;
     std::cout << pc_exp->width << " " << pc_exp->height << std::endl;
     createClusters(pc_exp, exp);
     createClustersUsingPlaneExtraction(pc_pred, pred);
@@ -479,7 +553,6 @@ public:
     Gui::View<RPC,VCol>* v_exp = r_exp->createView<VCol>("Expectation");
     Gui::View<RPC,Gui::ViewTypes::Depth_Z>* v2_exp = r_exp->createView<Gui::ViewTypes::Depth_Z>("depth_exp");
     Gui::View<RPC,VCol>* v_pred = r_pred->createView<VCol>("Prediction");
-
     r_tmp = Gui::Core::rMan()->create<RImg>("res_copy", file_ppm);
     v_tmp = r_tmp->createView<VCol>("CurrentCluster");
 
@@ -489,7 +562,8 @@ public:
 
     v_exp->show();
     v_pred->show();
-    //v2_exp->show();
+    Gui::Core::wMan()->moveWindow(v_pred, 700, 0);
+    v2_exp->show();
     showNext();
     //v_tmp->show();
 
