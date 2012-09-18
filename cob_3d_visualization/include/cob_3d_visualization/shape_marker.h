@@ -60,16 +60,14 @@ class ShapeMarker
   public:
 
     ShapeMarker(boost::shared_ptr<interactive_markers::InteractiveMarkerServer> im_server,
-        cob_3d_mapping_msgs::Shape& shape, int ctr)
+        cob_3d_mapping_msgs::Shape& shape)
     {
-      shape_ctr_ = ctr;
+//      shape_ctr_ = ctr;
       im_server_ = im_server;
       shape_ = shape;
       createShapeMenu ();
       createInteractiveMarker();
-//      ShapeVisualization sv;
-//      sv.moreOptions();
-//      ctr_for_shape_indexes = 0 ;
+
     }
 
     ~ShapeMarker()
@@ -102,8 +100,8 @@ class ShapeMarker
     void resetMarker(bool call_reset_marker,visualization_msgs::InteractiveMarker& imarker) ;
 
     void getShape (cob_3d_mapping_msgs::Shape& shape) ;
-
-
+//    void findTables(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+    std::vector<int> getInteractedShapesNumber();
 
 
   protected:
@@ -122,7 +120,7 @@ class ShapeMarker
 
     Eigen::Affine3f transformation_;
     Eigen::Affine3f transformation_inv_;
-    int shape_ctr_ ;
+//    int shape_ctr_ ;
 
 
     int ctr_for_shape_indexes ;

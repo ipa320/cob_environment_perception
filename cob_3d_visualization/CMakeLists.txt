@@ -23,9 +23,11 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/include)
 
 rosbuild_add_executable(shape_visualization src/shape_visualization.cpp
-	src/polypartition.cpp)
+	src/polypartition.cpp
+	src/shape_marker.cpp)
+	
 rosbuild_add_executable(test_shape_array test/test_shape_array.cpp)
-rosbuild_add_executable(uv_angle_test test/uv_angle_test.cpp)
+#rosbuild_add_executable(uv_angle_test test/uv_angle_test.cpp)
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
 #target_link_libraries(${PROJECT_NAME} another_library)
