@@ -8,13 +8,16 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/cob_3d_mapping_tools</url>
-  
+
   <depend package="rosbag"/>
+  <depend package="opencv2"/>
   <depend package="pcl"/>
   <depend package="pcl_ros"/>
   <depend package="cob_3d_mapping_common"/>
   <depend package="cob_3d_mapping_features"/>
+  <depend package="cob_3d_segmentation"/>
 
+  <rosdep name="wxwidgets"/>
 </package>
 
 

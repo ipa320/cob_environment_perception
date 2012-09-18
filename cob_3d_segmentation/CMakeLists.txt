@@ -9,6 +9,10 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
 #set(ROS_BUILD_TYPE RelWithDebInfo)
 
+rosbuild_find_ros_package(actionlib_msgs)
+include(${actionlib_msgs_PACKAGE_PATH}/cmake/actionbuild.cmake)
+genaction()
+
 rosbuild_init()
 rosbuild_check_for_sse()
 
@@ -28,8 +32,7 @@ rosbuild_find_ros_package(dynamic_reconfigure)
 include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
 gencfg()
 
-#uncomment if you have defined messages
-#rosbuild_genmsg()
+rosbuild_genmsg()
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
@@ -50,6 +53,7 @@ target_link_libraries(cob_3d_segmentation_nodelets cob_3d_segmentation cob_3d_ma
 
 rosbuild_add_executable(segmentation_node ros/src/segmentation_node.cpp)
 target_link_libraries(segmentation_node cob_3d_segmentation)
+rosbuild_add_executable(qppf_node ros/src/qppf_node.cpp)
 
 
 # segmentation app:

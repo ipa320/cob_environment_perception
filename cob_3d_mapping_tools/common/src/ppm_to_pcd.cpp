@@ -95,20 +95,20 @@ void readOptions(int argc, char* argv[])
   {
     remove_undef = true;
   }
-  if (file_o == "") 
+  if (file_o == "")
   {
     cout << "no output file defined " << endl << options << endl;
     exit(0);
   }
-  if (file_i[0] == "" || file_i[1] == "") 
+  if (file_i[0] == "" || file_i[1] == "")
   {
     cout << "no input files defined " << endl << options << endl;
     exit(0);
   }
 }
 
-/*! 
- * @brief Reads a .ppm image and maps the color values on a point cloud 
+/*!
+ * @brief Reads a .ppm image and maps the color values on a point cloud
  */
 int main(int argc, char** argv)
 {
@@ -128,7 +128,7 @@ int main(int argc, char** argv)
     cout << "Mapping error" << endl;
     return(0);
   }
-  cout << "Mapped colors to \"" << file_o << "\" (Points: " << pc->points.size() << ", width: " 
+  cout << "Mapped colors to \"" << file_o << "\" (Points: " << pc->points.size() << ", width: "
        << pc->width << ", height: " << pc->height << ")" << endl;
   PCDWriter w;
   io::savePCDFileASCII(file_o, *pc);

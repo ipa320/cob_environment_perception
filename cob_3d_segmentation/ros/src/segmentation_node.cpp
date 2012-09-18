@@ -72,12 +72,21 @@ public:
     point_cloud_pub_ = n->advertise<PointCloud>("point_cloud_labeled", 1);
 
     //decide which algorithm should be used
+    seg_ = NULL;
+
     if(n->getParam("algorithm",algo_))
     {
       if(algo_=="quad regression")
       {
         seg_ = new Segmentation::Segmentation_QuadRegression<Point,PointLabel>();
       }
+      else
+        ROS_ERROR("%s is no valid segmentation algorithm", algo_.c_str());
+    }
+    else
+    {
+      ROS_ERROR("no valid segmentation algorithm selected");
+      seg_ = new Segmentation::Segmentation_QuadRegression<Point,PointLabel>();
     }
   }
 
@@ -92,7 +101,11 @@ public:
     seg_->setInputCloud(pc_in);
     seg_->compute();
     if(point_cloud_pub_.getNumSubscribers()>0)
-      point_cloud_pub_.publish(seg_->getOutputCloud());
+    {
+      pcl::PointCloud<PointLabel> pc_out = *seg_->getOutputCloud();
+      pc_out.header = pc_in->header;
+      point_cloud_pub_.publish(pc_out);
+    }
   }
 };
 

@@ -11,6 +11,9 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
 rosbuild_init()
 
+find_package(wxWidgets REQUIRED)
+include(${wxWidgets_USE_FILE})
+
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
@@ -35,8 +38,6 @@ rosbuild_add_executable(concat_fields_node ros/src/concat_fields.cpp)
 rosbuild_add_executable(bag_to_pcd ros/src/bag_to_pcd.cpp)
 rosbuild_add_executable(pointcloud_to_pcd ros/src/pointcloud_to_pcd.cpp)
 rosbuild_add_executable(pointcloud_bag_delayer ros/src/pointcloud_bag_delayer.cpp)
-#rosbuild_add_executable(shape_array_bag_delayer ros/src/shape_array_bag_delayer.cpp)
-
 
 rosbuild_add_executable(create_point_cloud common/src/create_point_cloud.cpp)
 rosbuild_add_executable(create_kitchen_point_cloud common/src/create_kitchen_point_cloud.cpp)
@@ -78,6 +79,18 @@ rosbuild_add_executable(sav_gol common/src/sav_gol_smoothing_filter.cpp)
 rosbuild_add_executable(evaluate_test_data common/src/evaluate_test_data.cpp)
 rosbuild_add_executable(generate_test_data common/src/generate_test_data.cpp)
 rosbuild_add_compile_flags(generate_test_data -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
+
+# plane segmentation evaluation tool:
+rosbuild_add_executable(evaluate_plane_segmentation common/src/evaluate_plane_segmentation.cpp)
+target_link_libraries(evaluate_plane_segmentation cob_3d_mapping_tools)
+
+# Gui:
+rosbuild_add_executable(test_gui_tool common/src/test_gui_tool.cpp)
+#rosbuild_add_executable(test_gui common/src/test_gui.cpp)
+#target_link_libraries(test_gui ${wxWidgets_LIBRARIES})
+
+rosbuild_add_executable(test_gui common/src/test_wx_gui.cpp)
+target_link_libraries(test_gui ${wxWidgets_LIBRARIES} cob_3d_mapping_tools)
 
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)

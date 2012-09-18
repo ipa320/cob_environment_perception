@@ -15,13 +15,13 @@
 	<arg name="start_manager" value="false"/>
 	<arg name="nodelet_manager" value="$(arg mapping_manager)"/>
   </include-->
-  <node pkg="nodelet" type="nodelet" name="segmentation"
-        args="load cob_3d_segmentation/SegmentationAllInOneNodelet $(arg mapping_manager)" output="screen">
-    <remap from="cloud_in" to="registration/pc_aligned" />
-    <param name="centroid_passthrough" type="double" value="3.0"/>
-  </node>
 
-  <!--node pkg="nodelet" type="nodelet" name="point_map"
+  <include file="$(find cob_3d_segmentation)/ros/launch/segmentation.launch">
+    <arg name="start_manager" value="false"/>
+    <arg name="nodelet_manager" value="$(arg mapping_manager)"/>
+  </include>
+
+  <node pkg="nodelet" type="nodelet" name="point_map"
         args="load cob_3d_mapping_point_map/PointMapNodelet $(arg mapping_manager)" output="screen">
     <remap from="point_cloud2" to="registration/pc_aligned" />
     <remap from="map" to="point/map" />

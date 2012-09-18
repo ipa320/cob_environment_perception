@@ -67,10 +67,10 @@
 #define EVALUATION_MODE_ 0
 
 // debug mode outputs more information on console and creates pointclouds of HIRN points
-#define DEBUG_SWITCH_ 0
+#define DEBUG_SWITCH_ 1
 
 // using odometry to determine keyframes -> set to one was workaround for "standing"-check
-#define USED_ODO_ 1
+#define USED_ODO_ 0
 
 
 template <typename Point>
@@ -330,11 +330,12 @@ bool Registration_Infobased<Point>::compute_transformation()
 #if EVALUATION_MODE_
         T=T.Identity();
 #else
+        bad_counter_++;
         if(!use_odometry_ || this->failed_<10)
           return false;
       }
       else {
-        T = T.Identity();
+        //T = T.Identity();
         ROS_INFO("using odometry");
       }
 #endif
@@ -347,7 +348,8 @@ bool Registration_Infobased<Point>::compute_transformation()
     T=T.Identity();
   if(Eigen::Quaternionf(T.topLeftCorner<3, 3> ()).angularDistance(Eigen::Quaternionf::Identity())>3*rmax_)
     T=T.Identity();
-
+  std::cout << this->transformation_ << std::endl;
+  std::cout << T << std::endl;
   this->transformation_ = this->transformation_*T;
 
   this->last_input_ = this->input_org_;

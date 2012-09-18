@@ -64,7 +64,7 @@
 #include "cob_3d_segmentation/edge_handler.h"
 
 namespace cob_3d_segmentation
-{ 
+{
   template <typename ClusterHandlerT, typename EdgeHandlerT>
   class ClusterGraphStructure
   {
@@ -79,13 +79,13 @@ namespace cob_3d_segmentation
     typedef boost::shared_ptr<ClusterGraphStructure<ClusterHandlerT, EdgeHandlerT> > Ptr;
 
   public:
-    ClusterGraphStructure() 
+    ClusterGraphStructure()
       : c_hdl_(new ClusterHandlerT)
       , e_hdl_(new EdgeHandlerT)
       , g_()
       , vid_()
     { }
-    
+
     ClusterGraphStructure(ClusterHandlerPtr c_hdl, EdgeHandlerPtr e_hdl)
       : c_hdl_(c_hdl)
       , e_hdl_(e_hdl)
@@ -129,7 +129,7 @@ namespace cob_3d_segmentation
       GraphVertex() { };
       GraphVertex(ClusterPtr it) : c_it(it) { };
 
-      ClusterPtr c_it; 
+      ClusterPtr c_it;
     };
 
     struct GraphEdge
