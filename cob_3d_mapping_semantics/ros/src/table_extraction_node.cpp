@@ -97,7 +97,7 @@ public:
     table_ctr_old_(0)
   {
     sa_sub_ = n_.subscribe ("shape_array", 10, &TableExtractionNode::callbackShapeArray, this);
-    sa_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_array_pub", 10);
+    sa_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_array_pub", 1); //10
     s_marker_pub_ = n_.advertise<visualization_msgs::Marker> ("marker", 10);
 
     get_tables_server_ = n_.advertiseService ("get_objects_of_class", &TableExtractionNode::getTablesService, this);
@@ -141,33 +141,33 @@ public:
         "\t-------------------------------------\n");
 
     ROS_INFO(" Total number of shapes received: %d ", sa_ptr->shapes.size());*/
-
-    cob_3d_mapping_msgs::ShapeArray sa;
-    sa.header = sa_ptr->header;
-    table_ctr_old_ = table_ctr_;
-    table_ctr_ = 0;
-    for (unsigned int i = 0; i < sa_ptr->shapes.size (); i++)
-    {
-      PolygonPtr poly_ptr(new Polygon());
-
-      fromROSMsg(sa_ptr->shapes[i], *poly_ptr);
-      te_.setInputPolygon(poly_ptr);
-      if (te_.isTable())
-      {
-        table_ctr_++;
-        poly_ptr->color[0] = 1;
-        poly_ptr->color[1] = 0;
-        poly_ptr->color[2] = 0;
-        poly_ptr->color[3] = 1;
-        cob_3d_mapping_msgs::Shape s;
-        toROSMsg(*poly_ptr, s);
-        //tables.shapes.push_back(sa_ptr->shapes[i]);
-        sa.shapes.push_back (s);
-      }
-    }//end for
-
-    ROS_INFO("Found %d tables", table_ctr_);
-    sa_pub_.publish (sa);
+//
+//    cob_3d_mapping_msgs::ShapeArray sa;
+//    sa.header = sa_ptr->header;
+//    table_ctr_old_ = table_ctr_;
+//    table_ctr_ = 0;
+//    for (unsigned int i = 0; i < sa_ptr->shapes.size (); i++)
+//    {
+//      PolygonPtr poly_ptr(new Polygon());
+//
+//      fromROSMsg(sa_ptr->shapes[i], *poly_ptr);
+//      te_.setInputPolygon(poly_ptr);
+//      if (te_.isTable())
+//      {
+//        table_ctr_++;
+//        poly_ptr->color[0] = 1;
+//        poly_ptr->color[1] = 0;
+//        poly_ptr->color[2] = 0;
+//        poly_ptr->color[3] = 1;
+//        cob_3d_mapping_msgs::Shape s;
+//        toROSMsg(*poly_ptr, s);
+//        //tables.shapes.push_back(sa_ptr->shapes[i]);
+//        sa.shapes.push_back (s);
+//      }
+//    }//end for
+//
+//    ROS_INFO("Found %d tables", table_ctr_);
+//    sa_pub_.publish (sa);
   }
 
 
@@ -239,6 +239,10 @@ public:
       table_ctr_old_ = table_ctr_;
       table_ctr_ = 0;
       tables.header = sa.header;
+      //test
+      tables.header.frame_id = "/map" ;
+      //end of test
+
       for (unsigned int i = 0; i < sa.shapes.size (); i++)
       {
         //Polygon poly;
@@ -257,6 +261,7 @@ public:
           s.header = sa.header;
           toROSMsg(*poly_ptr,s);
           tables.shapes.push_back(s);
+          
           tabletop_object_detector::Table table;
           Eigen::Affine3f pose;
           Eigen::Vector4f min_pt;
@@ -286,11 +291,15 @@ public:
 
           tabletop_object_detector::TabletopDetectionResult det;
           det.table = table;
+
           res.tables.push_back(det);
         }
       }
+
       sa_pub_.publish (tables);
       publishShapeMarker (tables);
+
+
       ROS_INFO("Found %d tables", table_ctr_);
     }
     return true;
@@ -357,9 +366,9 @@ public:
       marker.scale.x = 0.05;
       marker.scale.y = 0.05;
       marker.scale.z = 0;
-      marker.color.r = 1;
+      marker.color.r = 0;//1;
       marker.color.g = 0;
-      marker.color.b = 0;
+      marker.color.b = 1;
       marker.color.a = 1.0;
 
 
