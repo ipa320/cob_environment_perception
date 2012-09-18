@@ -260,12 +260,12 @@ Polygon::merge_union(std::vector<PolygonPtr>& poly_vec,  PolygonPtr& p_average)
 
     if (this->contours.back().size() <= 2)  // drop empty contour lists
     {
-      std::cout << "Drop! New size: " << this->contours.size() - 1 << std::endl;
+      //std::cout << "Drop! New size: " << this->contours.size() - 1 << std::endl;
       this->contours.pop_back();
       this->holes.pop_back();
     }
   }
-  if (this->contours.size() == 0) std::cout << "!!!! NO CONTOURS ANYMORE" << std::endl;
+  if (this->contours.size() == 0); //std::cout << "!!!! NO CONTOURS ANYMORE" << std::endl;
 }
 
 void
@@ -652,7 +652,7 @@ void Polygon::debug_output(std::string name)
   std::ofstream os(path.c_str());
   //  os.open(path.c_str());
   //std::cout<< "name~~~~~~~~~~~~"<<std::endl;
-  std::cout<<"saving polygon nodes to "<<path.c_str()<<std::endl;
+  //std::cout<<"saving polygon nodes to "<<path.c_str()<<std::endl;
 
   for (int i = 0; i < (int) this->contours.size(); ++i)
   {
