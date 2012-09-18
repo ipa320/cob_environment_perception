@@ -302,7 +302,7 @@ Cylinder::computeAttributes(const Eigen::Vector3f& sym_axis, const Eigen::Vector
   min = 1000;
   max = -1000;
   std::vector<std::vector<Eigen::Vector3f> > trans_contours;
-  trans_contours = this->getTransformedContours(this->transform_from_world_to_plane);
+  this->getTransformedContours(this->transform_from_world_to_plane, trans_contours);
   for (size_t i = 0; i < trans_contours.size(); ++i) {
     for (size_t j = 0; j < trans_contours[i].size(); ++j) {
       if (trans_contours[i][j][1]< min) min = trans_contours[i][j][1];
@@ -563,43 +563,36 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
     // Test for geometrical attributes of cylinders
     if(fabs(c_map.sym_axis.dot(this->sym_axis)) > limits.angle_thresh && (fabs(c_map.r_ - r_) < (0.1 )))
     {
-        std::cout<<"GEOMETRY\n";
-         // Test for spatial attributes of cylinders
-         if( d.norm() < (c_map.r_+0.1) || fabs(c_map.sym_axis .dot(connection)) > limits.angle_thresh )
-         {
-             std::cout<<"POSITION\n";
-            
+      std::cout<<"GEOMETRY\n";
+      // Test for spatial attributes of cylinders
+      if( d.norm() < (c_map.r_+0.1) || fabs(c_map.sym_axis .dot(connection)) > limits.angle_thresh )
+      {
+        std::cout<<"POSITION\n";
 
-         Cylinder c1,c2;
 
-         c1 = *this;
-
+        CylinderPtr c1(this);
+        CylinderPtr c2(new Cylinder);
 
 
 
-         c_map.transformToTarget(c1,c2);
-         c1.makeCyl2D(false);
-         c1.debug_output("MC_NEW");
+        c_map.transformToTarget(*c1,*c2);
+        c1->makeCyl2D(false);
+        c1->debug_output("MC_NEW");
 
-         c2.makeCyl2D(false);
-         c2.debug_output("MC_MAP");
+        c2->makeCyl2D(false);
+        c2->debug_output("MC_MAP");
 
 
 
 
 
 
-         bool is_intersected = c1.isMergeCandidate_intersect(
-             c2);
-
-         if (is_intersected == false) {
-           continue;
-         }
-         if (is_intersected == true) {
-           intersections.push_back(i);
-         }
-
-    }}//if
+        if (c1->isIntersectedWith(c2))
+          continue;
+        else
+          intersections.push_back(i);
+      }
+    }//if
     else
     {
       std::cout<<"merge_criteria_not fulfilled!!\n";
@@ -727,13 +720,13 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
     merge_cylinders.push_back(c_array[i]);
   }
 
-  //  cast CylinderPtr to PolygonPtr to use merge_union   -- is  a better way possible ?!
-  std::vector<PolygonPtr> merge_polygons;
+  //  cast CylinderPtr to Polygon::Ptr to use merge_union   -- is  a better way possible ?!
+  std::vector<Polygon::Ptr> merge_polygons;
   for (size_t i = 0; i < merge_cylinders.size(); ++i) {
-    PolygonPtr tmp_ptr= merge_cylinders[i];
+    Polygon::Ptr tmp_ptr= merge_cylinders[i];
     merge_polygons.push_back(tmp_ptr);
   }
-  PolygonPtr average_polygon= average_cyl;
+  Polygon::Ptr average_polygon= average_cyl;
 
 
   this->merge_union(merge_polygons,average_polygon);

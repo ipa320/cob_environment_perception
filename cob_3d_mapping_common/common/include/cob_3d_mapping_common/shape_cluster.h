@@ -14,10 +14,10 @@
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
- * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 03/2012
+ * Date of creation: 08/2012
  * ToDo:
  *
  *
@@ -53,48 +53,46 @@
  *
  ****************************************************************/
 
-#ifndef SHAPE_H_
-#define SHAPE_H_
+#ifndef SHAPE_CLUSTER_H_
+#define SHAPE_CLUSTER_H_
 
-#include <Eigen/Core>
-#include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
-
-#include <Eigen/Eigenvalues>
-#include <Eigen/Geometry>
-#include <vector>
+#include "cob_3d_mapping_common/shape.h"
+#include <list>
 
 namespace cob_3d_mapping
 {
-
-  class Shape
+  class ShapeCluster : public Shape
   {
   public:
-    typedef boost::shared_ptr<Shape> Ptr;
+    typedef boost::shared_ptr<ShapeCluster> Ptr;
+    typedef boost::shared_ptr<const ShapeCluster> ConstPtr;
 
   public:
-
-    Shape()
-      : id(0)
-      , merged(1)
-      , frame_stamp(0)
-      , centroid(Eigen::Vector4f::Zero())
-      , color(4,1)
+    ShapeCluster()
+      : shapes()
+      , scale(Eigen::Vector3f::Zero())
+      , d_(0.1)
     { }
 
-    virtual ~Shape() { }
-    virtual void transform2tf(const Eigen::Affine3f& trafo)=0;
+    void computeAttributes();
+    void transform2tf(const Eigen::Affine3f& trafo);
 
-    unsigned int id;
-    unsigned int merged;
-    unsigned int frame_stamp;
-    Eigen::Vector4f centroid;
-    std::vector<float> color;
+    void getMergeCandidates(const std::vector<ShapeCluster::Ptr>& sc_vec,
+                            std::vector<int>& intersections) const;
+    void merge(std::vector<ShapeCluster::Ptr>& sc_vec);
+    void insert(Shape::Ptr shape);
+
+    inline bool hasSimilarParametersWith(ShapeCluster::Ptr sc) const
+    {
+      return ( (this->centroid - sc->centroid).norm() < d_ );
+    }
+
+    std::list<Shape::Ptr> shapes;
+    Eigen::Vector3f scale;
+
+  private:
+    float d_;
   };
-
-  typedef boost::shared_ptr<Shape> ShapePtr;
-
 }
 
-
-#endif /* SHAPE_H_ */
+#endif

@@ -52,7 +52,7 @@
  *
  ****************************************************************/
 
-/*! 
+/*!
  * @brief Defines some commonly used labels for primitive geometrires
  *
  */
@@ -63,7 +63,7 @@
 
 // --- define colors ---
 #define LBL_NAN      0x999999
-#define LBL_BORDER   0xFF00FF
+#define LBL_BORDER   0xFF00FF // magenta
 #define LBL_PLANE    0x00CCFF // cyan
 #define LBL_EDGE     0x7F0000 // red
 #define LBL_EDGE_CVX 0xFF6600 // orange

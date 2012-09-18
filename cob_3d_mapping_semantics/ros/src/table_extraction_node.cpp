@@ -148,7 +148,7 @@ public:
     table_ctr_ = 0;
     for (unsigned int i = 0; i < sa_ptr->shapes.size (); i++)
     {
-      PolygonPtr poly_ptr = PolygonPtr (new Polygon ());
+      Polygon::Ptr poly_ptr = Polygon::Ptr (new Polygon ());
 
       fromROSMsg(sa_ptr->shapes[i], *poly_ptr);
       te_.setInputPolygon(poly_ptr);
@@ -185,7 +185,7 @@ public:
       int table_ctr = 0;
       for (unsigned int i = 0; i < sa.shapes.size (); i++)
       {
-        PolygonPtr poly_ptr = PolygonPtr (new Polygon());
+        Polygon::Ptr poly_ptr = Polygon::Ptr (new Polygon());
         fromROSMsg(sa.shapes[i], *poly_ptr);
         //ROS_INFO("\n\tisTableObject....  : ");
         te_.setInputPolygon(poly_ptr);
@@ -227,7 +227,7 @@ public:
       table_ctr_ = 0;
       for (unsigned int i = 0; i < sa.shapes.size (); i++)
       {
-        PolygonPtr poly_ptr = PolygonPtr (new Polygon());
+        Polygon::Ptr poly_ptr = Polygon::Ptr (new Polygon());
         fromROSMsg(sa.shapes[i], *poly_ptr);
         //ROS_INFO("\n\tisTableObject....  : ");
         te_.setInputPolygon(poly_ptr);
