@@ -60,6 +60,7 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <boost/function.hpp>
+
 #include "cob_3d_mapping_tools/gui/types.h"
 
 namespace Gui

@@ -151,10 +151,20 @@ void Gui::View<RT,VT>::reloadData(ResourceTypes::OrganizedPointCloud<PT>, ViewTy
   {
     for(int col = 0; col < w; ++col, ++pwx)
     {
-      Tools::getGradientColor((*this->r_ptr->getData())[col + row * w].z, z_min, z_max, bgr);
-      pwx.Red() = bgr[2];
-      pwx.Green() = bgr[1];
-      pwx.Blue() = bgr[0];
+      float z = (*this->r_ptr->getData())[col + row * w].z;
+      if(z != z)
+      {
+        pwx.Red() = 0;
+        pwx.Green() = 0;
+        pwx.Blue() = 0;
+      }
+      else
+      {
+        Tools::getGradientColor(z, z_min, z_max, bgr);
+        pwx.Red() = bgr[2];
+        pwx.Green() = bgr[1];
+        pwx.Blue() = bgr[0];
+      }
     }
   }
 }

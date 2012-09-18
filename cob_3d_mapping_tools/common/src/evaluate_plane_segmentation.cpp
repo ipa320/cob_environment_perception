@@ -172,6 +172,64 @@ void printNoMatch(Cluster& c)
   std::cout << "No Match: " << c << std::endl;
 }
 
+void printForFile(ClusterMap& exp, ClusterMap& pred)
+{
+  int count_no = 0;
+
+  // format config:
+  const int padding = 3;
+  std::stringstream ss;
+  ss << exp.begin()->second;
+  int col = ss.str().length() + padding;
+  std::string sep = "|   ";
+  std::cout <<"  -  \t"<<"  - \t"<<"labeled\t"<<" - \t"<<" - \t"<<"-\t"<<"  - \t\t"
+            <<"plane extraction" << std::endl;
+  std::cout <<"color\t"<<"size\t"<<"    n_x\t"<<"n_y\t"<<"n_z\t"<<"d\t"<<"area\t\t"
+            <<"    n_x\t"<<"n_y\t"<<"n_z\t"<<"d\t"<<"area\t"<<"A_diff\t"<<"dot"<<std::endl;
+  for(ClusterMap::iterator it=exp.begin(); it!= exp.end(); ++it)
+  {
+    cob_3d_mapping::Polygon::Ptr p1 = it->second.poly;
+    float area1 = p1->computeArea3d();
+    std::cout << colorHumanReadable(it->second.id) << "\t"
+              << it->second.indices.size() << "\t"
+              << it->second.comp3[0] << "\t"
+              << it->second.comp3[1] << "\t"
+              << it->second.comp3[2] << "\t"
+              << it->second.centroid.dot(it->second.comp3) << "\t"
+              << area1 << "\t\t";
+    ClusterMap::iterator match = pred.find(it->first);
+    if (match == pred.end())
+    {
+      std::cout << "no match" << std::endl;
+      ++count_no;
+      continue;
+    }
+    float alpha = it->second.comp3.dot(match->second.comp3);
+    cob_3d_mapping::Polygon::Ptr p2 = match->second.poly;
+    float area2 = p2->computeArea3d();
+    float area_diff = 0;
+    gpc_polygon gpc_a, gpc_b, gpc_diff;
+    p1->getGpcStructure(p1->transform_from_world_to_plane, &gpc_a);
+    p2->getGpcStructure(p2->transform_from_world_to_plane, &gpc_b);
+    gpc_polygon_clip(GPC_XOR, &gpc_a, &gpc_b, &gpc_diff);
+
+    //cob_3d_mapping::Polygon::Ptr p_diff(new cob_3d_mapping::Polygon);
+    if(gpc_diff.num_contours != 0)
+    {
+      p1->applyGpcStructure(p1->transform_from_world_to_plane, &gpc_diff);
+      area_diff = p1->computeArea3d();
+    }
+
+    std::cout << match->second.comp3[0] << "\t"
+              << match->second.comp3[1] << "\t"
+              << match->second.comp3[2] << "\t"
+              << match->second.centroid.dot(match->second.comp3) << "\t"
+              << area2 << "\t"
+              << area_diff << "\t"
+              << alpha << std::endl;
+  }
+}
+
 void compare(ClusterMap& exp, ClusterMap& pred)
 {
   int count_no = 0;
@@ -332,31 +390,6 @@ void createClusters(PointCloud::Ptr cloud, ClusterMap& cmap)
   }
 }
 
-void createClustersUsingPlaneExtraction(PointCloud::Ptr cloud, ClusterMap& cmap)
-{
-  /*
-  PointCloud::Ptr pc_copy(new PointCloud);
-  *pc_copy = *cloud;
-  pcl::VoxelGrid<PointT> voxel;
-  voxel.setSaveLeafLayout(true);
-  voxel.setInputCloud(cloud);
-  voxel.setLeafSize(0.03,0.03,0.03);
-  voxel.filter(*pc_copy);
-  for(PointCloud::iterator it = pc_copy->begin(); it != pc_copy->end(); ++it) { it->rgba = LBL_UNDEF; }
-
-  std::vector<PointCloud> v_hull_pc;
-  std::vector<std::vector<pcl::Vertices> > v_hull_poly;
-  std::vector<pcl::ModelCoefficents> v_coef;
-  PlaneExtraction pe;
-  pe.setSaveToFile(false);
-  pe.setClusterTolerance(0.06);
-  pe.setMinPlaneSize(150);
-  pe.setAlpha(0.2);
-  pe.extractPlanes(pc_copy, v_hull_pc, v_hull_poly, v_coef);
-  */
-  //for (;;)
-}
-
 int main(int argc, char** argv)
 {
   readOptions(argc, argv);
@@ -376,7 +409,7 @@ int main(int argc, char** argv)
   ClusterMap pred;
   createClusters(pc_pred, pred);
 
-  compare(exp, pred);
+  printForFile(exp, pred);
 
   return 0;
 }
