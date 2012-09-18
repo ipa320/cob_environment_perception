@@ -168,6 +168,8 @@ Cylinder::ParamsFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud ,
   //  seg.getOptimizeCoefficients();
   seg.segment(inliers,coeff);
 
+  double prob=seg.getProbability();
+  std::cout<<"propability = "<<prob<<"\n";
 
   //  origin in lcs
   Eigen::Vector3f l_origin,l_centroid;
@@ -547,18 +549,26 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 
     Eigen::Vector3f connection=c_map.origin_-origin_;
     connection.normalize();
+   
+    Eigen::Vector3f d= c_map.origin_  - this->origin_   ;
+   
+   // Debug Output for isMergeCandidate
+ //  std::cout<<"dot sym axis = "<<fabs(c_map.sym_axis.dot(this->sym_axis))<<"--"<<limits.angle_thresh<<"\n";
+ //  std::cout<<"r difference= "<<fabs(c_map.r_-this->r_)<<"--"<<"0.1"<<"\n";
+ //  std::cout<<"dot connection axis = "<<fabs(c_map.sym_axis.dot(connection))<<"--"<<limits.angle_thresh<<"\n";
+ //  std::cout<<"d difference= "<<d.norm()<<"--"<<"0.1"<<"\n";
+   
+   
     
     // Test for geometrical attributes of cylinders
-    if (
-        fabs(c_map.sym_axis.dot(this->sym_axis) > limits.angle_thresh)
-         && fabs(c_map.r_ - r_) < (0.01 )
-         )
+    if(fabs(c_map.sym_axis.dot(this->sym_axis)) > limits.angle_thresh && (fabs(c_map.r_ - r_) < (0.1 )))
     {
+        std::cout<<"GEOMETRY\n";
          // Test for spatial attributes of cylinders
-         Eigen::Vector3f d= c_map.origin_  - this->origin_   ;
-         if( d.norm() < 0.05 || fabs(c_map.sym_axis .dot(connection)) > limits.angle_thresh )
+         if( d.norm() < (c_map.r_+0.1) || fabs(c_map.sym_axis .dot(connection)) > limits.angle_thresh )
          {
-
+             std::cout<<"POSITION\n";
+            
 
          Cylinder c1,c2;
 
@@ -692,7 +702,7 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
 
     //    c_map.getShiftedCylinder(*c_array[0],*average_cyl,*shifted_cylinder,true);
     c_array[i]->transformToTarget(*average_cyl,*c_array[i]);
-
+    
 
     if(debug ==true)
     {
@@ -854,7 +864,7 @@ Cylinder::applyWeighting(std::vector<CylinderPtr>& merge_candidates)
   //  this->normal = this->sym_axis.cross(x_axis);
 
   //  !overide! use initial values for normal and sym_axis
-//    this->normal = merge_candidates[0]->normal;
+    this->normal = merge_candidates[0]->normal;
   //    this->sym_axis = merge_candidates[0]-> sym_axis;
   //    this->origin_ = merge_candidates[0]-> origin_;
 
@@ -906,7 +916,7 @@ void
 Cylinder::dump_params(std::string  name){
 
 
-  std::string path = "/home/goa-tz/debug/eval/";
+  std::string path = "/home/goa-tz/eval/params/";
   path.append(name.c_str());
   std::ofstream os(path.c_str(),std::ofstream::app );
 
@@ -998,7 +1008,7 @@ void Cylinder::getTrafo2d(const Eigen::Vector3f& vec_new,const Eigen::Vector3f& 
 
 
     if (start==true) {
-      alpha = acos((fabs(cos_alpha)));
+        alpha = acos((fabs(cos_alpha)));
 
     }
     else
@@ -1049,100 +1059,15 @@ void Cylinder::getTrafo2d(const Eigen::Vector3f& vec_new,const Eigen::Vector3f& 
 
     }
 
-
-
-    //    //    1st case
-    //    if ((a[1]>0 && b[1]> 0) && (a[0]>0 && b[0]>0)) {
-    //      if (a[1]>b[1]) {
-    //        Tx = -Tx;
-    //      }
-    //    }
-    //
-    //
-    //    //    2nd case
-    //    if ((a[1]>0 && b[1]>0) && (a[0]<0 && b[0] > 0)) {
-    //
-    //      Tx = -Tx;
-    //    }
-    //
-    //    //    3rd case
-    //    if ((a[1]>0 && b[1]>0) && (a[0]<0 && b[0]) < 0) {
-    //      if (a[1]<b[1]) {
-    //        Tx = -Tx;
-    //      }
-    //    }
-    //
-    //    //    4th case
-    //    if ((a[1]<0 && b[1]>0) && (a[0]<0 && b[0] < 0)) {
-    //
-    //      Tx =   -Tx;
-    //    }
-    //
-    //    //    5th case
-    //    if ((a[1]<0 && b[1]<0) && (a[0]<0 && b[0]) < 0) {
-    //      if (a[1]<b[1]) {
-    //        Tx =  -Tx;
-    //      }
-    //    }
-    //
-    //    //    6th case
-    //    if ((a[1]<0 && b[1]<0) && (a[0]>0 && b[0] < 0)) {
-    //
-    //      Tx = -Tx;
-    //    }
-    //
-    //    //    7th case
-    //    if ((a[1]<0 && b[1]<0) && (a[0]>0 && b[0]) > 0) {
-    //      if (a[1]>b[1]) {
-    //        Tx = -Tx;
-    //      }
-    //    }
-    //
-    //
-    //    //    8th case
-    //    if ((a[1]<0 && b[1]>0) && (a[0]<0 && b[0] < 0)) {
-    //
-    //      Tx = -Tx;
-    //    }
-
-
-
-
-    //    if (a[1] < 0 && b[1]> 0) {
-    //      Tx = -Tx;
-    ////      std::cout<<"corrected\n";
-    //    }
-    //    if (a[0] > 0 && b[0]< 0) {
-    //      Tx = -Tx;
-    ////      std::cout<<"corrected\n";
-    //
-    //    }
-    //
-    //
-    //    else if (d_ba[0]<0 && d_ba[1]<0) {
-    //      Tx = -Tx;
-    ////      std::cout<<"corrected\n";
-    //
-    //
-    //    }
-    //    else if (a[1]<0 || b[1]<0) {
-    //      if (a[0]<b[0]) {
-    //        Tx = -Tx;
-    ////        std::cout<<"corrected\n";
-    //
-    //      }
-    //    }
-    //    else {
-    //      if (a[0]>b[0])
-    //      {
-    //        Tx = -Tx;
-    ////        std::cout<<"corrected\n";
-    //
-    //      }
-    //    }
-
   }
 
+    if (start==true) {
+  std::cout<<"normal1 in pcs"<<vec_old<<"\n";
+  std::cout<<"normal2 in pcs"<<vec_new<<"\n";
+  std::cout<<"cos_alpha"<<cos_alpha<<"\n";
+  std::cout<<"alpha"<<alpha<<"\n";
+  std::cout<<"TX"<<Tx<<"\n";
+    }
 
 
   if (debug == true) {
@@ -1156,56 +1081,6 @@ void Cylinder::getTrafo2d(const Eigen::Vector3f& vec_new,const Eigen::Vector3f& 
   }
 
 }
-//void
-//Cylinder::getShiftedCylinder(Cylinder& c, Cylinder & shifted_cylinder) {
-//
-//  //        Transform normal of map polygon in cylinder system of THIS
-//
-//  //  LOCAL
-//
-//  Eigen::Vector3f transformed_normal =
-//      c.transform_from_world_to_plane.rotation()
-//      * normal;
-//
-//  //          calculate trafo parameters
-//  float x_shift, z_shift, alpha;
-//  Eigen::Vector3f temp_vec;
-//
-//  temp_vec = (c.origin_ - origin_);
-//  z_shift = temp_vec.norm();
-//
-//  getTrafo2d(transformed_normal, x_shift, alpha);
-//  //  std::cout<<"ALPHA = "<< alpha <<"\n";
-//  //  std::cout<<"X-shift = "<<x_shift<<"\n";
-//
-//  Eigen::Affine3f shift_trafo;
-//  pcl::getTransformation(x_shift, 0, z_shift, 0, alpha, 0, shift_trafo);
-//
-//
-//  shifted_cylinder.contours.resize(contours.size());
-//  shifted_cylinder.holes.resize(contours.size());
-//
-//  for (size_t j = 0; j < contours.size(); j++) {
-//    shifted_cylinder.contours[j].resize(contours[j].size());
-//
-//    for (size_t k = 0; k < contours[j].size(); k++) {
-//      //      Transform  Points in Cylinder Coordinate System
-//
-//
-//      shifted_cylinder.contours[j][k]   = c.transform_from_world_to_plane.inverse()
-//                                                                                                                                                              * (shift_trafo
-//                                                                                                                                                                  * c.transform_from_world_to_plane
-//                                                                                                                                                                  * contours[j][k]);
-//      //END LOCAL
-//
-//    }
-//  }
-//
-//  shifted_cylinder.merge_weight_=c.merge_weight_;
-//  shifted_cylinder.merged = c.merged;
-//  shifted_cylinder.computeAttributes(c.sym_axis, c.normal, origin_);
-//
-//}
 void
 Cylinder::getShiftedCylinder(Cylinder& c2,Cylinder& c3, Cylinder & result,bool dbg) {
 
@@ -1372,9 +1247,9 @@ Cylinder::transformToTarget(Cylinder& c_target,Cylinder& c_result)
   pcl::getEulerAngles(T12,roll,pitch,yaw);
   Eigen::Vector3f  t = pcl::getTranslation(T12);
 
-  std::cout<<"----TRAFO 2 TARGET-----\n";
-  std::cout<<"roll pitch yaw"<<roll <<" "<< pitch <<" "<< yaw <<" \n";
-  std::cout<<"trans "<<t<<"\n";
+//  std::cout<<"----TRAFO 2 TARGET-----\n";
+//  std::cout<<"roll pitch yaw"<<roll <<" "<< pitch <<" "<< yaw <<" \n";
+//  std::cout<<"trans "<<t<<"\n";
 
 
   c_result.contours.resize(this->contours.size());
