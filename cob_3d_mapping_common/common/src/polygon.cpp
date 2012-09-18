@@ -218,6 +218,7 @@ Polygon::computeSimilarity(const Polygon::Ptr& poly) const
 void
 Polygon::merge(std::vector<Polygon::Ptr>& poly_vec)
 {
+  std::cout << "Polymerge" << std::endl;
   Polygon::Ptr p_average= Polygon::Ptr(new Polygon);
   this->applyWeighting(poly_vec,p_average);
   this->merge_union(poly_vec,p_average);
