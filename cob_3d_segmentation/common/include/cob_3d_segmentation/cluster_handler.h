@@ -131,7 +131,7 @@ namespace cob_3d_segmentation
       for(reverse_iterator c = clusters_.rbegin(); c != clusters_.rend(); ++c, ++t)
       {
         if (c->id() == I_NAN || c->id() == I_BORDER) { rgb = color_tab_[c->id()]; --t; }
-        else { rgb = color_tab_[t]; }
+        else { rgb = color_tab_[t % (2048-NUM_LABELS) + NUM_LABELS]; }
         for(typename ClusterType::iterator it = c->begin(); it != c->end(); ++it)
         { color_cloud->points[*it].rgb = *reinterpret_cast<float*>(&rgb); }
       }

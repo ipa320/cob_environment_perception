@@ -20,9 +20,15 @@ void Path<NODE>::operator+=(typename OBJECT::Ptr obj)
 template<typename NODE>
 void Path<NODE>::finishFrame()
 {
+  act_ctxt_.update();
+
   //registration
-  typename DOF6::TYPE success_rate, error_rate;
-  local_.node_->registration(act_ctxt_, local_.link_, success_rate, error_rate);
+  //typename DOF6::TYPE success_rate, error_rate;
+  //local_.node_->registration(act_ctxt_, local_.link_, success_rate, error_rate);
+  {
+    std::map<typename OBJECT::Ptr,bool> used;
+    local_.node_->compute(act_ctxt_, local_.link_, used);
+  }
 
   if(needNewNode()) {
     // new node needed
@@ -39,13 +45,13 @@ void Path<NODE>::finishFrame()
     local_.node_->addLink(path_.back());
 
     //our new node gets some object (yummy)
-    local_.node_->addCtxt(act_ctxt_, local_.link_);
+    //local_.node_->addCtxt(act_ctxt_, local_.link_);
   }
   else
   {
     ROS_INFO("no new node");
 
-    local_.node_->addCtxt(act_ctxt_, local_.link_);
+    //local_.node_->addCtxt(act_ctxt_, local_.link_);
   }
 
 }

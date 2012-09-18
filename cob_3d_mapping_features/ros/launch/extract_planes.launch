@@ -28,7 +28,7 @@
     <remap from="object_cluster" to="plane_extraction/object_cluster"/>
     <remap from="polygons" to="plane_extraction/polygons"/>
     <remap from="polygon_array" to="plane_extraction/polygon_array"/>
-    <remap from="shape_array" to="plane_extraction/shape_array"/>
+    <remap from="shape_array" to="segmentation/shape_array"/>
     <!--remap from="point_cloud2" to="/aggregate_point_map/map"/-->
     <!--remap from="point_cloud2" to="/voxel_grid2/output"/-->
     <param name="file_path" type="string" value="/tmp"/>

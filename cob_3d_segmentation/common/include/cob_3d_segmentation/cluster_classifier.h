@@ -77,7 +77,7 @@ namespace cob_3d_segmentation
     typedef typename ClusterHandlerT::ClusterType ClusterType;
 
   public:
-    ClusterClassifier() 
+    ClusterClassifier()
     { }
 
     ~ClusterClassifier()
@@ -95,33 +95,33 @@ namespace cob_3d_segmentation
     {
       uint32_t color = LBL_COR;
       for (std::vector<int>::iterator it = test.begin(); it != test.end(); ++it)
-	points->points[*it].rgb = *reinterpret_cast<float*>(&color);
+        points->points[*it].rgb = *reinterpret_cast<float*>(&color);
     }
 
     void mapPointClasses(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points)
     {
       uint32_t color = LBL_COR;
       for (std::vector<int>::iterator it = test.begin(); it != test.end(); ++it)
-	points->points[*it].rgb = *reinterpret_cast<float*>(&color);
+        points->points[*it].rgb = *reinterpret_cast<float*>(&color);
 
       color = LBL_PLANE;
       for (std::vector<int>::iterator it = test_plane.begin(); it != test_plane.end(); ++it)
-	points->points[*it].rgb = *reinterpret_cast<float*>(&color);      
+        points->points[*it].rgb = *reinterpret_cast<float*>(&color);
 
       color = LBL_CYL;
       for (std::vector<int>::iterator it = test_cyl.begin(); it != test_cyl.end(); ++it)
-	points->points[*it].rgb = *reinterpret_cast<float*>(&color);
+        points->points[*it].rgb = *reinterpret_cast<float*>(&color);
 
       color = LBL_SPH;
       for (std::vector<int>::iterator it = test_sph.begin(); it != test_sph.end(); ++it)
-	points->points[*it].rgb = *reinterpret_cast<float*>(&color);
+        points->points[*it].rgb = *reinterpret_cast<float*>(&color);
     }
 
   private:
     void recomputeClusterNormals(ClusterPtr c);
     void recomputeClusterNormals(ClusterPtr c, int w_size, int steps);
-    bool computeClusterPointCurvature(int index, int r, int steps, 
-				      float& pc_min, float& pc_max, Eigen::Vector3f& pc_min_direction);
+    bool computeClusterPointCurvature(int index, int r, int steps,
+                                      float& pc_min, float& pc_max, Eigen::Vector3f& pc_min_direction);
 
 
     ClusterHdlPtr clusters_;

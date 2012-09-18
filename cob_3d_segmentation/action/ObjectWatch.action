@@ -1,0 +1,8 @@
+# Define the goal
+float32[] widths
+float32[] heights
+---
+# Define the result
+---
+# Define a feedback message
+geometry_msgs/PoseStamped[] objs

@@ -63,10 +63,12 @@
 #include <pcl/visualization/point_cloud_handlers.h>
 
 
+#include <cob_3d_mapping_common/label_defines.h>
 #include "cob_3d_mapping_features/plane_extraction.h"
 
 std::string file_in_;
 std::string label_out_;
+bool borders_;
 
 typedef pcl::PointXYZRGB PointT;
 
@@ -78,6 +80,7 @@ void readOptions(int argc, char* argv[])
     ("help", "produce help message")
     ("in,i", value<std::string>(&file_in_), "input pcd file")
     ("label_out,l", value<std::string>(&label_out_), "save labeled file to")
+    ("borders,b", "enable border visuaization")
     ;
 
   positional_options_description p_opt;
@@ -91,6 +94,8 @@ void readOptions(int argc, char* argv[])
     std::cout << options << std::endl;
     exit(0);
   }
+  if (vm.count("borders")) borders_=true;
+  else borders_=false;
 }
 
 int main(int argc, char** argv)
@@ -112,7 +117,7 @@ int main(int argc, char** argv)
   voxel.setLeafSize(0.03,0.03,0.03);
   voxel.filter(*p_vox);
 
-  for(pcl::PointCloud<PointT>::iterator it=p_vox->begin(); it!=p_vox->end(); ++it) { it->rgba = 0xff0000; }
+  for(pcl::PointCloud<PointT>::iterator it=p_vox->begin(); it!=p_vox->end(); ++it) { it->rgba = LBL_SPH; }
 
   std::vector<pcl::PointCloud<PointT>, Eigen::aligned_allocator<pcl::PointCloud<PointT> > > v_cloud_hull;
   std::vector<std::vector<pcl::Vertices> > v_hull_polygons;
@@ -120,10 +125,18 @@ int main(int argc, char** argv)
   PlaneExtraction pe;
   pe.setSaveToFile(false);
   pe.setClusterTolerance(0.06);
-  pe.setMinPlaneSize(50);
+  pe.setMinPlaneSize(150);
   pe.setAlpha(0.2);
   pe.extractPlanes(p_vox, v_cloud_hull, v_hull_polygons, v_coefficients_plane);
 
+  for (size_t i=0; i<v_coefficients_plane.size(); ++i)
+  {
+    std::cout << v_coefficients_plane[i].values[0] << ","
+              << v_coefficients_plane[i].values[1] << ","
+              << v_coefficients_plane[i].values[2] << std::endl;
+  }
+
+  // colorize voxel cloud using extracted indices
   const float rand_max_inv = 1.0f/ RAND_MAX;
   for (size_t pl=0; pl<pe.extracted_planes_indices_.size(); ++pl)
   {
@@ -137,10 +150,34 @@ int main(int argc, char** argv)
     }
   }
 
+  // extract color from voxelized cloud
   for (pcl::PointCloud<PointT>::iterator it=p_out->begin(); it!=p_out->end(); ++it)
   {
-    if (it->z != it->z) { it->rgba = 0xff0000; }
+    if (it->z != it->z) { it->rgba = LBL_UNDEF; }
     else { it->rgba = p_vox->points[voxel.getCentroidIndex(*it)].rgba; }
+  }
+
+  if (borders_)
+  {
+    // colorize borders
+    int mask[] = { -p_out->width, 1, p_out->width, -1 };
+    int x, y, count, curr_color;
+    pcl::PointCloud<PointT>::Ptr p_copy(new pcl::PointCloud<PointT>);
+    *p_copy = *p_out;
+    for (int idx=0; idx<p_out->size(); ++idx)
+    {
+      curr_color = (*p_copy)[idx].rgba;
+      x = idx % p_out->width; y = idx / p_out->width;
+      if (x==0 || y==0 || x == p_out->width-1 || y == p_out->height-1) { (*p_out)[idx].rgba = LBL_BORDER; continue; }
+      count = 0;
+      for(int i=0;i<4;++i) { if (curr_color != (*p_copy)[idx+mask[i]].rgba) { ++count; } }
+      if (count > 3 || count < 1)
+      {
+        if ((*p_copy)[idx].rgba != LBL_SPH) { (*p_out)[idx].rgba = LBL_PLANE; }
+        continue;
+      }
+      (*p_out)[idx].rgba = LBL_BORDER;
+    }
   }
 
   for (size_t pl=0; pl<v_cloud_hull.size(); ++pl)
@@ -149,7 +186,7 @@ int main(int argc, char** argv)
     int g = (float)rand() * rand_max_inv * 255;
     int b = (float)rand() * rand_max_inv * 255;
     int color = ( r << 16 | g << 8 | b );
-    std::cout << "Size hull: " << v_cloud_hull[pl].size() << std::endl;
+    //std::cout << "Size hull: " << v_cloud_hull[pl].size() << std::endl;
     for (size_t p_idx=0; p_idx<v_cloud_hull[pl].size(); ++p_idx)
     {
       p_hull->push_back(v_cloud_hull[pl].points[p_idx]);

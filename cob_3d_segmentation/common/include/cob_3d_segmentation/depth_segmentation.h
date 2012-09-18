@@ -149,6 +149,8 @@ namespace cob_3d_segmentation
 
     void refineSegmentation();
 
+    void getPotentialObjects(std::map<int,int>& objs, int max_size = 0);
+
   private:
     void addIfIsValid(int u, int v, int idx, int idx_prev, float dist_th, float p_z, Eigen::Vector3f& n,
                       SegmentationQueue& seg_queue, ClusterPtr c);
@@ -157,6 +159,7 @@ namespace cob_3d_segmentation
     void computeBoundaryProperties(ClusterPtr c);
     void computeEdgeSmoothness(EdgePtr e);
     void computeEdgeSmoothness();
+    void addSmallNeighbors(ClusterPtr c, std::map<int,int>& objs, std::set<int>& processed, int obj_counter, int max_size);
 
     //float max_angle_cos_; // between mean normal of cluster and point candidates of initial segmentation
     //float max_boundary_angle_;

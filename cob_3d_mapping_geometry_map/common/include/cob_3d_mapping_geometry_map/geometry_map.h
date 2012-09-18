@@ -75,6 +75,7 @@
 #include "cob_3d_mapping_geometry_map/vis/geometry_map_visualisation.h"
 #include "cob_3d_mapping_common/polygon.h"
 #include "cob_3d_mapping_common/cylinder.h"
+#include "cob_3d_mapping_common/shape_cluster.h"
 
 //#include "cob_3d_mapping_common/shape.h"
 
@@ -88,6 +89,8 @@
 class GeometryMap
 {
 public:
+  typedef std::vector<cob_3d_mapping::Polygon::Ptr>::iterator polygon_iterator;
+  typedef std::vector<cob_3d_mapping::Polygon::Ptr>::iterator cylinder_iterator;
   /*inline std::ostream& operator << (std::ostream& os, const MapEntry& m)
   {
     os << "(" << m.d << "," << m.normal << "," << ")";
@@ -104,6 +107,7 @@ public:
     , save_to_file_(false)
     , cos_angle_(0.97)
     , d_(0.01)
+    , last_tf_err_(Eigen::Affine3f::Identity())
   {
     //  outputFile.open("/home/goa-hh/test.txt");
   }
@@ -114,13 +118,12 @@ public:
     //outputFile.close();
   }
 
-  void
-  addMapEntry(boost::shared_ptr<cob_3d_mapping::Polygon>& p_ptr);
+  void addMapEntry(cob_3d_mapping::Polygon::Ptr& p_ptr);
+  void addMapEntry(boost::shared_ptr<cob_3d_mapping::Cylinder>& c_ptr);
+  void addMapEntry(cob_3d_mapping::ShapeCluster::Ptr& sc_ptr);
 
-
-  void
-  addMapEntry(boost::shared_ptr<cob_3d_mapping::Cylinder>& c_ptr);
-
+  bool
+  computeTfError(const std::vector<cob_3d_mapping::Polygon::Ptr>& list_polygon, const Eigen::Affine3f& tf_old, Eigen::Affine3f& adjust_tf);
 
   void
   computeCentroid(cob_3d_mapping::Polygon& p);
@@ -157,10 +160,10 @@ public:
   colorizeMap();
 
 
-  boost::shared_ptr<std::vector<cob_3d_mapping::PolygonPtr > >
+  boost::shared_ptr<std::vector<cob_3d_mapping::Polygon::Ptr > >
   getMap_polygon()
   {
-    return boost::make_shared< std::vector< cob_3d_mapping::PolygonPtr > >(map_polygon_);
+    return boost::make_shared< std::vector< cob_3d_mapping::Polygon::Ptr > >(map_polygon_);
   }
 
 
@@ -168,6 +171,12 @@ public:
   getMap_cylinder()
   {
     return boost::make_shared< std::vector< cob_3d_mapping::CylinderPtr > >(map_cylinder_);
+  }
+
+  boost::shared_ptr<std::vector<cob_3d_mapping::ShapeCluster::Ptr> >
+  getMap_shape_cluster()
+  {
+    return boost::make_shared<std::vector<cob_3d_mapping::ShapeCluster::Ptr> >(map_shape_cluster_);
   }
 
 
@@ -190,9 +199,12 @@ public:
     d_ = d;
   }
 
+  inline const Eigen::Affine3f& getLastError() { return last_tf_err_; }
+
 protected:
-  std::vector<boost::shared_ptr<cob_3d_mapping::Polygon> > map_polygon_;
+  std::vector<cob_3d_mapping::Polygon::Ptr > map_polygon_;
   std::vector<boost::shared_ptr<cob_3d_mapping::Cylinder> > map_cylinder_;
+  std::vector<cob_3d_mapping::ShapeCluster::Ptr> map_shape_cluster_;
   unsigned int new_id_;
   // std::ofstream outputFile;
   int counter_output;
@@ -200,7 +212,7 @@ protected:
   std::string file_path_;
   bool save_to_file_;
   double cos_angle_, d_;
-
+  Eigen::Affine3f last_tf_err_;
 };
 
 #endif //__GEOMETRY_MAP_H__

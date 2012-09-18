@@ -21,12 +21,6 @@ cob_3d_registration/src
 cob_3d_segmentation/src
 cob_table_object_cluster/src
 ROS_NOBUILD
-<<<<<<< HEAD
-cob_3d_mapping_pipeline/launch/mapping_sim_2.launch
-cob_3d_mapping_pipeline/launch/mapping_sim_new.launch
-cob_3d_mapping_features/ros/src/one_nodelet.cpp
-cob_3d_mapping_features/ros/include/cob_3d_mapping_features/one_nodelet.h
-=======
 cob_3d_segmentation/msg/ObjectWatchAction.msg
 cob_3d_segmentation/msg/ObjectWatchActionFeedback.msg
 cob_3d_segmentation/msg/ObjectWatchActionGoal.msg
@@ -34,4 +28,3 @@ cob_3d_segmentation/msg/ObjectWatchActionResult.msg
 cob_3d_segmentation/msg/ObjectWatchFeedback.msg
 cob_3d_segmentation/msg/ObjectWatchGoal.msg
 cob_3d_segmentation/msg/ObjectWatchResult.msg
->>>>>>> 842c24d... generalized bag file delayer

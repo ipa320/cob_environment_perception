@@ -439,6 +439,36 @@ TEST(DOF6, Source) {
   }
 }
 
+TEST(DOF6, Source_Combinations) {
+  time_t ti = time(NULL);
+  ROS_INFO("init Source with %d",(int)ti);
+  srand(ti);
+
+  for(int i=0; i<CYCLES; i++) {
+    DOF6::TFLinkvf rot1, rot2, res;
+    Eigen::AngleAxisf aa=createRandomAA();
+    Eigen::Vector3f t=createRandomT();
+    Eigen::Matrix4f tf1 = build_random_tflink(rot1,30,0,aa,t);
+
+    aa=createRandomAA();
+    t=createRandomT();
+    Eigen::Matrix4f tf2 = build_random_tflink(rot2,30,0,aa,t);
+
+    res = rot1+rot2;
+
+    std::cout<<"TF1\n"<<tf1<<"\n";
+    std::cout<<"TF2\n"<<tf2<<"\n";
+    std::cout<<"RES1\n"<<tf1*tf2<<"\n";
+
+    std::cout<<"RES2\n"<<res.getRotation()<<"\n";
+    std::cout<<"RES2\n"<<res.getTranslation()<<"\n";
+
+    std::cout<<"T TF1\n"<<tf1.inverse()<<"\n";
+    std::cout<<"T\n"<<rot1.transpose().getRotation()<<"\n";
+    std::cout<<"T\n"<<rot1.transpose().getTranslation()<<"\n";
+  }
+}
+
 int main(int argc, char **argv){
 
 #if 0
