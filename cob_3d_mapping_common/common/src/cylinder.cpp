@@ -570,9 +570,9 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
         std::cout<<"POSITION\n";
 
 
-        CylinderPtr c1(this);
+        CylinderPtr c1(new Cylinder);
         CylinderPtr c2(new Cylinder);
-
+        *c1 = *this;
 
 
         c_map.transformToTarget(*c1,*c2);
@@ -588,9 +588,12 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 
 
         if (c1->isIntersectedWith(c2))
-          continue;
-        else
+        {
+          std::cout<<"INTERSECTION\n";
           intersections.push_back(i);
+
+        }
+        else continue;
       }
     }//if
     else
@@ -644,11 +647,11 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 //
 //}
 void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
+  std::cout << "Start merging" <<std::endl;
   std::vector<CylinderPtr> merge_cylinders;
-
   //create average cylinder for  averaging
   CylinderPtr average_cyl =CylinderPtr(new Cylinder());
-  std::cout<<"BEFORE radius  ="<< this->r_<<"\n";
+  std::cout<<"BEFORE radius  ="<< this->r_<<std::endl;//"\n";
 
   *average_cyl = *this;
 
@@ -659,7 +662,7 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
 
   //  this->getShiftedCylinder(*c_array[0],*average_cyl,*shifted_cylinder,true);
 
-  std::cout<<"AFTER radius  ="<< this->r_<<"\n";
+  std::cout<<"AFTER radius  ="<< this->r_<<std::endl;//"\n";
   this->transformToTarget(*average_cyl,*this);
 
 
