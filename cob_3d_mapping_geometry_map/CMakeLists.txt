@@ -62,9 +62,6 @@ target_link_libraries(eval_feature_map cob_3d_mapping_common)
 #rosbuild_add_executable(geometry_test_map common/test/geometry_map_test.cpp)
 #target_link_libraries(geometry_test_map  geometry_map_vis_lib geometry_map_lib test_planes gpc)
 
-rosbuild_add_executable(eval_node ros/src/eval_node.cpp)
-target_link_libraries(eval_node cob_3d_mapping_common)
-
 
 #rosbuild_add_executable(get_map_client ros/src/get_map_client.cpp)
 

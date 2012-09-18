@@ -502,8 +502,6 @@ GeometryMapNode::publishMapMarker()
   ctr=0;
   t_ctr=2000;
 
-  //		std::cout<<"____________________________________________"<<std::endl;
-  //		std::cout<<"marker size: "<<map->size()<<std::endl;
   for(unsigned int i=0; i<map_cylinder->size(); i++)
   {
     Cylinder& cm = *(map_cylinder->at(i));
@@ -513,18 +511,11 @@ GeometryMapNode::publishMapMarker()
     marker.color.g=0;
     marker.color.b=0;
 
-    //get 3dimensional contours
-    std::vector<std::vector<Eigen::Vector3f> > contours3d;
-    cm.getCyl3D(contours3d);
-
-    for(unsigned int j=0; j<contours3d.size(); j++)
+    for(unsigned int j=0; j<cm.contours.size(); j++)
     {
       //if(pm.contours.size()>1) std::cout << "id: " << ctr << ", " << pm.contours.size() << std::endl;
       //TODO: this is a workaround as the marker can't display more than one contour
       marker.id = ctr;
-      //						marker.color.r /= j+1;
-      //						marker.color.g /= j+1;
-      //						marker.color.b /= j+1;
       marker.color.r=1;
       marker.color.g=0;
       marker.color.b=0;
@@ -536,26 +527,21 @@ GeometryMapNode::publishMapMarker()
       ctr++;
       t_ctr++;
 
-      for(unsigned int k=0; k<contours3d[j].size(); k++)
+      marker.points.resize(cm.contours[j].size()+1);
+      for(unsigned int k=0; k<cm.contours[j].size(); k++)
       {
-        marker.points.resize(contours3d[j].size()+1);
-        /*pt.x = contours3d[j][k](0);
-          pt.y = pm.contours[j][k](1);
-          pt.z = pm.contours[j][k](2);*/
-        marker.points[k].x = contours3d[j][k](0);
-        marker.points[k].y = contours3d[j][k](1);
-        marker.points[k].z = contours3d[j][k](2);
+        marker.points[k].x = cm.contours[j][k](0);
+        marker.points[k].y = cm.contours[j][k](1);
+        marker.points[k].z = cm.contours[j][k](2);
         //marker.points.push_back(pt);
       }
-      marker.points[contours3d[j].size()].x = contours3d[j][0](0);
-      marker.points[contours3d[j].size()].y = contours3d[j][0](1);
-      marker.points[contours3d[j].size()].z = contours3d[j][0](2);
+      marker.points[cm.contours[j].size()].x = cm.contours[j][0](0);
+      marker.points[cm.contours[j].size()].y = cm.contours[j][0](1);
+      marker.points[cm.contours[j].size()].z = cm.contours[j][0](2);
       marker_pub_.publish(marker);
       marker_pub_.publish(t_marker);
-
     }
   }
-
   boost::shared_ptr<std::vector<ShapeCluster::Ptr> > map_sc = geometry_map_.getMap_shape_cluster();
   for(size_t i=0; i<map_sc->size(); ++i)
   {
