@@ -144,6 +144,7 @@ GeometryMap::addMapEntry(Polygon::Ptr& p_ptr)
 void
 GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 {
+  std::cout << "add cylinder" << std::endl;
   Cylinder& c = *c_ptr;
 //  c.ParamsFromShapeMsg();
 //
@@ -165,7 +166,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
   if (map_cylinder_.size()> 0 )
   {
     c.isMergeCandidate(map_cylinder_,limits,intersections);
-    // std::cout<<"intersections size = "<<intersections.size()<<std::endl;
+    std::cout<<"intersections size = "<<intersections.size()<<std::endl;
     if (intersections.size() > 1) {
        std::cout<<"Intersection Size CYLINDER = "<<intersections.size()<<"\n";
      }
@@ -184,6 +185,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 
 
       }
+      std::cout << merge_candidates.size() << std::endl;
       // merge polygon with merge candidates
 //      c.debug_output("Pre");
       c.merge(merge_candidates);
