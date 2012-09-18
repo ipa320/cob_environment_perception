@@ -10,7 +10,7 @@ byte CYLINDER=5
 
 byte type
 int32 id
-
+int32 frame_stamp
 # define shape parameters
 # for plane
 # normal vector = params[0],params[1],params[2]
@@ -23,7 +23,7 @@ int32 id
 # z axis 	= params[3], params[4], params[5]
 # origin	= params[6], params[7], params[8]
 # radius	= params[9]
-#
+# 
 float64[] params
 
 sensor_msgs/PointCloud2[] points
