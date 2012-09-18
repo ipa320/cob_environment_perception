@@ -31,8 +31,12 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/ros/include
 
 #rosbuild_add_library(gpc common/src/gpc.c)
 
-rosbuild_add_library(cob_3d_mapping_common common/src/shape.cpp
-   common/src/polygon.cpp common/src/cylinder.cpp common/src/gpc.c)
+rosbuild_add_library(cob_3d_mapping_common
+	common/src/shape.cpp
+	common/src/shape_cluster.cpp
+	common/src/polygon.cpp
+	common/src/cylinder.cpp
+	common/src/gpc.c)
 #target_link_libraries(cob_3d_mapping_common gpc)
 
 
