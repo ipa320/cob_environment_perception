@@ -128,7 +128,7 @@ public:
     geometry_map_.setFilePath(file_path_);
     geometry_map_.setSaveToFile(save_to_file_);
 
-
+    primitive_pub_ = n_.advertise<visualization_msgs::Marker>("primitive_array",100);
 
 
 
@@ -229,7 +229,7 @@ public:
 
       if (sa->shapes[i].type == 5) {
         CylinderPtr cylinder_map_entry_ptr = CylinderPtr(new Cylinder());
-//        cylinder_map_entry_ptr->allocate();
+        //        cylinder_map_entry_ptr->allocate();
         if(!fromROSMsg(sa->shapes[i], *cylinder_map_entry_ptr)){
           continue;
         }
@@ -237,7 +237,7 @@ public:
         //prepare cylinder for geometry map
         cylinder_map_entry_ptr->transform2tf(af);
         cylinder_map_entry_ptr->ParamsFromShapeMsg();
-        cylinder_map_entry_ptr->makeCyl2D();
+        //        cylinder_map_entry_ptr->makeCyl2D();
 
 
         geometry_map_.addMapEntry(cylinder_map_entry_ptr);
@@ -266,6 +266,9 @@ public:
     //		std::cout<<"publishMap() DEACTIVATED!!"<<std::endl;
 
     publishMap();
+
+
+    publishPrimitives();
     ctr_++;
     //ROS_INFO("%d polygons received so far", ctr_);
   }
@@ -369,7 +372,93 @@ public:
 
 
 
+  void publishPrimitives()
+  {
 
+    visualization_msgs::Marker marker;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.type = visualization_msgs::Marker::CYLINDER;
+    marker.lifetime = ros::Duration();
+    marker.header.frame_id = map_frame_id_;
+
+
+
+    //create the marker in the table reference frame
+    //the caller is responsible for setting the pose of the marker to match
+
+
+
+    marker.color.a = 0.7;
+
+    geometry_msgs::Point pt;
+
+
+
+    boost::shared_ptr<std::vector<CylinderPtr> > map_cylinder = geometry_map_.getMap_cylinder();
+
+
+
+    int ctr=0;
+    int t_ctr=2000;
+
+    //    std::cout<<"____________________________________________"<<std::endl;
+    //    std::cout<<"marker size: "<<map->size()<<std::endl;
+    for(unsigned int i=0; i<map_cylinder->size(); i++)
+    {
+      Cylinder& cm = *(map_cylinder->at(i));
+
+      marker.id = cm.id;
+
+      marker.color.r=0;
+      marker.color.g=1;
+      marker.color.b=0;
+
+      marker.scale.x = cm.r_ *2;
+      marker.scale.y = cm.r_ *2;
+
+      marker.scale.z =  (cm.h_max_ - cm.h_min_);
+
+
+      Eigen::Affine3f rot;
+      Eigen::Vector3f trans;
+      float roll,pitch,yaw;
+      tf::Quaternion orientation;
+
+      rot  =cm.transform_from_world_to_plane.rotation();
+      pcl::getEulerAngles(rot,roll,pitch,yaw);
+
+      orientation= tf::createQuaternionFromRPY(roll,pitch,yaw);
+
+      trans = cm.transform_from_world_to_plane.translation();
+
+
+      //      marker.pose.orientation.x = orientation[0];
+      //      marker.pose.orientation.y = orientation[1];
+      //      marker.pose.orientation.z = orientation[2];
+      //      marker.pose.orientation.w = orientation[3];
+
+      marker.pose.position.x = cm.origin_[0];
+      marker.pose.position.y = cm.origin_[1];
+      marker.pose.position.z = cm.origin_[2];
+
+
+
+
+      marker.id = t_ctr;
+      std::stringstream ss;
+      ss << ctr;
+      marker.text = ss.str();
+      ctr++;
+      t_ctr++;
+
+
+      primitive_pub_.publish(marker);
+
+    }
+
+
+
+  }
 
   void publishMap()
   {
@@ -402,6 +491,7 @@ public:
       cob_3d_mapping_msgs::Shape s;
       toROSMsg(sm, s);
       s.header = map_msg.header;
+      s.type = 0;
       //s.color.b = 1;
       //s.color.a = 1;
       //map_msg.polygon_array.push_back(p);
@@ -416,6 +506,7 @@ public:
       cob_3d_mapping_msgs::Shape s;
       toROSMsg(sm, s);
       s.header = map_msg.header;
+      s.type = 5;
 
       //s.color.b = 1;
       //s.color.a = 1;
@@ -506,7 +597,6 @@ public:
       }
 
 
-      //			std::cout<<pm.d<<std::endl<<std::endl;
 
       for(unsigned int j=0; j<pm.contours.size(); j++)
       {
@@ -542,12 +632,12 @@ public:
         marker_pub_.publish(t_marker);
 
 
-
       }
     }
     //		only implemented for polygon
 
     boost::shared_ptr<std::vector<CylinderPtr> > map_cylinder = geometry_map_.getMap_cylinder();
+    //    std::cout<<"MAP CYLINDER SIZE = "<<map_cylinder->size()<<"\n";
 
 
 
@@ -559,6 +649,15 @@ public:
     for(unsigned int i=0; i<map_cylinder->size(); i++)
     {
       Cylinder& cm = *(map_cylinder->at(i));
+
+      bool debug = false;
+      if(debug ==true)
+      {
+        cm.makeCyl2D(false);
+
+      }
+
+
       int color_ctr = i%4;
       //marker.id = cm.id;
       marker.color.r=1;
@@ -575,7 +674,10 @@ public:
       //						marker.color.r = 0;
       //						marker.color.g = 1;
       //						marker.color.b = 0;
-      //					}
+      //					}/*
+
+
+
       //					else if(color_ctr==2)
       //					{
       //						marker.color.r = 0;
@@ -593,10 +695,9 @@ public:
       //			std::cout<<pm.d<<std::endl<<std::endl;
 
       //					get 3dimensional contours
-      std::vector<std::vector<Eigen::Vector3f> > contours3d;
-      cm.getCyl3D(contours3d);
+      //      cm.getCyl3D(contours3d);
 
-      for(unsigned int j=0; j<contours3d.size(); j++)
+      for(unsigned int j=0; j<cm.contours.size(); j++)
       {
         //if(pm.contours.size()>1) std::cout << "id: " << ctr << ", " << pm.contours.size() << std::endl;
         //TODO: this is a workaround as the marker can't display more than one contour
@@ -615,24 +716,31 @@ public:
         ctr++;
         t_ctr++;
 
-        for(unsigned int k=0; k<contours3d[j].size(); k++)
+        for(unsigned int k=0; k<cm.contours[j].size(); k++)
         {
-          marker.points.resize(contours3d[j].size()+1);
-          /*pt.x = contours3d[j][k](0);
-		                  pt.y = pm.contours[j][k](1);
-		                  pt.z = pm.contours[j][k](2);*/
-          marker.points[k].x = contours3d[j][k](0);
-          marker.points[k].y = contours3d[j][k](1);
-          marker.points[k].z = contours3d[j][k](2);
+          marker.points.resize(cm.contours[j].size()+1);
+          /*pt.x = cm.contours[j][k](0);
+		                  pt.y = pm.cm.contours[j][k](1);
+		                  pt.z = pm.cm.contours[j][k](2);*/
+          marker.points[k].x = cm.contours[j][k](0);
+          marker.points[k].y = cm.contours[j][k](1);
+          marker.points[k].z = cm.contours[j][k](2);
           //marker.points.push_back(pt);
         }
-        marker.points[contours3d[j].size()].x = contours3d[j][0](0);
-        marker.points[contours3d[j].size()].y = contours3d[j][0](1);
-        marker.points[contours3d[j].size()].z = contours3d[j][0](2);
+        marker.points[cm.contours[j].size()].x = cm.contours[j][0](0);
+        marker.points[cm.contours[j].size()].y = cm.contours[j][0](1);
+        marker.points[cm.contours[j].size()].z = cm.contours[j][0](2);
         marker_pub_.publish(marker);
         marker_pub_.publish(t_marker);
 
       }
+
+      if(debug==true)
+      {
+//        cm.makeCyl3D();
+
+      }
+
     }
 
   }
@@ -643,11 +751,15 @@ public:
 
 
 protected:
+
   ros::Subscriber shape_sub_;
   ros::Publisher map_pub_;
   ros::Publisher marker_pub_;
   ros::ServiceServer clear_map_server_;
   ros::ServiceServer get_map_server_;
+
+  // publisher for predefined primitives
+  ros::Publisher primitive_pub_;
 
 
 
