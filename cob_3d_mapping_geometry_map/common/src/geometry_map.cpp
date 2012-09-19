@@ -206,6 +206,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
       c.computeAttributes(c.sym_axis,c.normal,c.origin_);
       c.assignWeight();
       c.id = new_id_;
+      c.frame_stamp =frame_counter_; 
 
       map_cylinder_.push_back(c_ptr);
       new_id_++;
@@ -217,6 +218,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
     c.computeAttributes(c.sym_axis,c.normal,c.origin_);
     c.assignWeight();
     c.id = new_id_;
+    c.frame_stamp =frame_counter_; 
 
     map_cylinder_.push_back(c_ptr);
 
@@ -352,7 +354,7 @@ GeometryMap::computeTfError(const std::vector<Polygon::Ptr>& list_polygon, const
 void
 GeometryMap::cleanUp()
 {
-  int n_dropped = 0, m_dropped = 0;
+  int n_dropped = 0, m_dropped = 0, c_dropped=0;
   for(int idx = map_polygon_.size() - 1 ; idx >= 0; --idx)
   {
     //std::cout << map_polygon_[idx]->merged <<", " << (frame_counter_ - 3) <<" > "<<(int)map_polygon_[idx]->frame_stamp<<std::endl;
@@ -361,6 +363,16 @@ GeometryMap::cleanUp()
       map_polygon_[idx] = map_polygon_.back();
       map_polygon_.pop_back();
       ++n_dropped;
+    }
+  }
+  for(int idx = map_cylinder_.size() - 1 ; idx >= 0; --idx)
+  {
+      std::cout<<(int)map_cylinder_[idx]->merged<<" - "<<frame_counter_<<" - "<<(int)map_cylinder_[idx]->frame_stamp<<"\n";
+    if (map_cylinder_[idx]->merged <= 1 && (frame_counter_ - 1) > (int)map_cylinder_[idx]->frame_stamp)
+    {
+      map_cylinder_[idx] = map_cylinder_.back();
+      map_cylinder_.pop_back();
+      ++c_dropped;
     }
   }
   for(int idx = map_shape_cluster_.size() - 1 ; idx >= 0; --idx)
@@ -373,7 +385,7 @@ GeometryMap::cleanUp()
       ++m_dropped;
     }
   }
-  std::cout << "Dropped " << n_dropped << " Polys, " << m_dropped << " Clusters" << std::endl;
+  std::cout << "Dropped " << n_dropped << " Polys, "<<c_dropped<<" Cyls, " << m_dropped << " Clusters" << std::endl;
   // TODO: clean up cylinders
 }
 
