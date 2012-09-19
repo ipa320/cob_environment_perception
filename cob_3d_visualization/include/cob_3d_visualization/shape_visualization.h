@@ -69,6 +69,9 @@ class ShapeVisualization
     int ctr_for_shape_indexes ;
     interactive_markers::MenuHandler menu_handler_for_text_;
 
+    std::vector<unsigned int> moved_shapes_indices_;
+    std::vector<unsigned int> interacted_shapes_;
+
 
     boost::shared_ptr<interactive_markers::InteractiveMarkerServer> im_server_; // server for interactive markers
 

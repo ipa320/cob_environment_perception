@@ -56,17 +56,24 @@
 
 //using namespace cob_3d_mapping ;
 class ShapeMarker
+
 {
   public:
 
     ShapeMarker(boost::shared_ptr<interactive_markers::InteractiveMarkerServer> im_server,
-        cob_3d_mapping_msgs::Shape& shape, int ctr)
+        cob_3d_mapping_msgs::Shape& shape,
+        int ctr,
+        std::vector<int>& moved_shapes_indices,
+        std::vector<int>& interacted_shapes)
     {
+      id_ = shape.id;
       shape_ctr_ = ctr;
       im_server_ = im_server;
       shape_ = shape;
       createShapeMenu ();
       createInteractiveMarker();
+      moved_shapes_indices_ = moved_shapes_indices;
+      interacted_shapes_ = interacted_shapes ;
 //      ShapeVisualization sv;
 //      sv.moreOptions();
 //      ctr_for_shape_indexes = 0 ;
@@ -91,17 +98,24 @@ class ShapeMarker
     void moveMarker(int flag) ;
     void createShapeMenu () ;
     void deleteMarker(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
-    void displayContour(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    void displayContourCB(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    void displayContour();
+    void hideContour();
     TPPLPoint msgToPoint2D (const pcl::PointXYZ &point) ;
 
     void createMarker (list<TPPLPoly>& triangle_list,visualization_msgs::InteractiveMarkerControl& im_ctrl);
     void createInteractiveMarker () ;
 
     void displayNormalCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    void displayNormal();
+    void hideNormal();
     void displayCentroidCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    void displayCentroid();
+    void hideCentroid();
     void resetMarker(bool call_reset_marker,visualization_msgs::InteractiveMarker& imarker) ;
 
     void getShape (cob_3d_mapping_msgs::Shape& shape) ;
+    unsigned int getID() return id_;
 
 
 
@@ -124,9 +138,12 @@ class ShapeMarker
     Eigen::Affine3f transformation_inv_;
     int shape_ctr_ ;
 
-
     int ctr_for_shape_indexes ;
 
+    unsigned int id_;
+
+    std::vector<int>& moved_shapes_indices_;
+    std::vector<int>& interacted_shapes_ ;
 
 };
 
