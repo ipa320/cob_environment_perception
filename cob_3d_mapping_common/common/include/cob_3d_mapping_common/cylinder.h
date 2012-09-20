@@ -61,6 +61,7 @@
 
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
+#include <boost/lexical_cast.hpp>
 extern "C" {
 #include "cob_3d_mapping_common/gpc.h"
 }

@@ -169,7 +169,7 @@ Cylinder::ParamsFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud ,
   seg.segment(inliers,coeff);
 
   double prob=seg.getProbability();
-  std::cout<<"propability = "<<prob<<"\n";
+  //std::cout<<"propability = "<<prob<<"\n";
 
   //  origin in lcs
   Eigen::Vector3f l_origin,l_centroid;
@@ -306,7 +306,7 @@ Cylinder::computeAttributes(const Eigen::Vector3f& sym_axis, const Eigen::Vector
   for (size_t i = 0; i < trans_contours.size(); ++i) {
     for (size_t j = 0; j < trans_contours[i].size(); ++j) {
       if (trans_contours[i][j][1]< min) min = trans_contours[i][j][1];
-      if (trans_contours[i][j][1]> min) max = trans_contours[i][j][1];
+      if (trans_contours[i][j][1]> max) max = trans_contours[i][j][1];
     }
   }
 
@@ -545,7 +545,6 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
   for (size_t i = 0; i < cylinder_array.size(); i++) {
 
     Cylinder& c_map = *(cylinder_array[i]);
-    c_map.makeCyl2D(false);
 
     Eigen::Vector3f connection=c_map.origin_-origin_;
     connection.normalize();
@@ -563,11 +562,11 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
     // Test for geometrical attributes of cylinders
     if(fabs(c_map.sym_axis.dot(this->sym_axis)) > limits.angle_thresh && (fabs(c_map.r_ - r_) < (0.1 )))
     {
-      std::cout<<"GEOMETRY\n";
+      //std::cout<<"GEOMETRY\n";
       // Test for spatial attributes of cylinders
       if( d.norm() < (c_map.r_+0.1) || fabs(c_map.sym_axis .dot(connection)) > limits.angle_thresh )
       {
-        std::cout<<"POSITION\n";
+        //std::cout<<"POSITION\n";
 
 
         CylinderPtr c1(new Cylinder);
@@ -575,30 +574,32 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
         *c1 = *this;
 
 
-        c_map.transformToTarget(*c1,*c2);
+        //c_map.transformToTarget(*c1,*c2);
+        *c2= c_map;
+        c2->transform_from_world_to_plane = c1->transform_from_world_to_plane;
         c1->makeCyl2D(false);
-        c1->debug_output("MC_NEW");
 
         c2->makeCyl2D(false);
-        c2->debug_output("MC_MAP");
 
 
+        ///DEBUG OUTPUT FOR ISMERGEDANDIDATE POLYGONIAL CYLINDERS 
+        //std::string str1="new2D";
+        //str1+=boost::lexical_cast<std::string>(i);
+        //std::string str2="map2D";
+        //str2+=boost::lexical_cast<std::string>(i);
 
-
-
+        //c1->debug_output(str1);
+        //c2->debug_output(str2); 
 
         if (c1->isIntersectedWith(c2))
         {
-          std::cout<<"INTERSECTION\n";
+          //std::cout<<"INTERSECTION\n";
           intersections.push_back(i);
-
-        }
-        else continue;
-      }
+        }}
     }//if
     else
     {
-      std::cout<<"merge_criteria_not fulfilled!!\n";
+      //std::cout<<"merge_criteria_not fulfilled!!\n";
     }
 
   }//for
@@ -647,80 +648,43 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 //
 //}
 void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
-  std::cout << "Start merging" <<std::endl;
+  std::cout << "START MERGING" <<std::endl;
   std::vector<CylinderPtr> merge_cylinders;
+
   //create average cylinder for  averaging
   CylinderPtr average_cyl =CylinderPtr(new Cylinder());
-  std::cout<<"BEFORE radius  ="<< this->r_<<std::endl;//"\n";
 
+  //assign "this" cylinder to average cyl and apply weighting over all merge candidates
   *average_cyl = *this;
-
   average_cyl->applyWeighting(c_array);
-  //  average_cyl->recomputeNormal();
-  //  transform  to local system
 
+  //TEMPORARY OVERRIDE ---------------------------------------------------------------
+  this->transform_from_world_to_plane = average_cyl->transform_from_world_to_plane;
+  //----------------------------------------------------------------------------------
 
-  //  this->getShiftedCylinder(*c_array[0],*average_cyl,*shifted_cylinder,true);
-
-  std::cout<<"AFTER radius  ="<< this->r_<<std::endl;//"\n";
-  this->transformToTarget(*average_cyl,*this);
-
-
-  bool debug = true;
-  if(debug == true)
-  {
-    std::string s1;
-    s1= "s1.c";
-
-    this->debug_output(s1);
-
-  }
   this->makeCyl2D(false);
+  
+ std::string t_str="this";
+ this->debug_output(t_str);
 
-  if(debug == true)
-  {
-    std::string s1;
-
-    s1= "s1.p";
-
-    this->debug_output(s1);
-
-  }
 
 
   for (int i = 0; i < (int) c_array.size(); i++) {
 
-    //    std::cout<<"//////MERGE SIZE = "<<c_array.size()<<"\n";
-    //    Cylinder & c_map = *c_array[i];
-
-    //shifted cylinder is computed with respect to "this"- system
-
-
-    //    c_map.getShiftedCylinder(*c_array[0],*average_cyl,*shifted_cylinder,true);
-    c_array[i]->transformToTarget(*average_cyl,*c_array[i]);
-    
-
-    if(debug ==true)
-    {
-      std::string s2;
-      s2= "s2.c";
-
-      c_array[i]->debug_output(s2);
-    }
+  //TEMPORARY OVERRIDE---------------------------------------------------------------------
+    c_array[i]->transform_from_world_to_plane = average_cyl->transform_from_world_to_plane;    
+   // c_array[i]->transform_from_world_to_plane = this->transform_from_world_to_plane;
+  //-----------------------------------------------------------------------------------------
     c_array[i]->makeCyl2D(false);
 
 
-    if(debug ==true)
-    {
-      std::string s2;
-
-      s2= "s2.p";
-
-      c_array[i]->debug_output(s2);
-    }
-
-
     merge_cylinders.push_back(c_array[i]);
+    
+    std::string ca_str="c_array";
+    ca_str+=boost::lexical_cast<std::string>(i);
+    
+   c_array[i]->debug_output(ca_str);
+   
   }
 
   //  cast CylinderPtr to Polygon::Ptr to use merge_union   -- is  a better way possible ?!
@@ -729,36 +693,21 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
     Polygon::Ptr tmp_ptr= merge_cylinders[i];
     merge_polygons.push_back(tmp_ptr);
   }
+  //TEMPORARY OVERRIDE---------------------------------------------------------------------
   Polygon::Ptr average_polygon= average_cyl;
+    
 
-
+//TODO: THIS IS WHERE IT GOES DOOOWN
   this->merge_union(merge_polygons,average_polygon);
   this->GrabParams(*average_cyl);
   this->assignWeight();
 
-  if(debug ==true)
-  {
-    std::string s3;
 
-    s3= "s3.p";
-
-    this->debug_output(s3);
-  }
-  //  average_cyl->recomputeNormal();
-
+  std::string dstr="merged";
+  this->debug_output(dstr);  
   this->makeCyl3D();
-
-
-  if(debug ==true)
-  {
-    std::string s3;
-
-    s3= "s3.c";
-
-    this->debug_output(s3);
-  }
-  std::cout<<this->merge_weight_<<"\n";
-  //  std::cout<<" weight after merge: "<<this->merge_weight_<<std::endl;
+  dstr+="3d";
+  this->debug_output(dstr);
 
 
 }
@@ -791,21 +740,21 @@ Cylinder::applyWeighting(std::vector<CylinderPtr>& merge_candidates)
   double temp_r = merge_weight_sum * this->r_;
   int merged_sum = this->merged;
 
-  std::cout<<"NEW params"<<"\n";
-  std::cout<<"merged = "<<this->merged<<"\n";
-  std::cout<<"r = "<<this->r_<<"\n";
-  std::cout<<"normal = "<<this->normal[0]<<" "<<this->normal[1]<<" "<<this->normal[2]<<" "<<"\n";
-  std::cout<<"origin_ = "<<this->origin_[0]<<" "<<this->origin_[1]<<" "<<this->origin_[2]<<" "<<"\n";
+  //std::cout<<"NEW params"<<"\n";
+  //std::cout<<"merged = "<<this->merged<<"\n";
+  //std::cout<<"r = "<<this->r_<<"\n";
+  //std::cout<<"normal = "<<this->normal[0]<<" "<<this->normal[1]<<" "<<this->normal[2]<<" "<<"\n";
+  //std::cout<<"origin_ = "<<this->origin_[0]<<" "<<this->origin_[1]<<" "<<this->origin_[2]<<" "<<"\n";
 
 
 
   for (int i = 0; i < (int)merge_candidates.size(); ++i) {
 
-    std::cout<<"OLD params"<<"\n";
-    std::cout<<"merged = "<<merge_candidates[i]->merged<<"\n";
-    std::cout<<"r = "<<merge_candidates[0]->r_<<"\n";
-    std::cout<<"normal = "<<merge_candidates[i]->normal[0]<<" "<<merge_candidates[i]->normal[1]<<" "<<merge_candidates[i]->normal[2]<<" "<<"\n";
-    std::cout<<"origin_ = "<<merge_candidates[i]->origin_[0]<<" "<<merge_candidates[i]->origin_[1]<<" "<<merge_candidates[i]->origin_[2]<<" "<<"\n";
+    //std::cout<<"OLD params"<<"\n";
+    //std::cout<<"merged = "<<merge_candidates[i]->merged<<"\n";
+    //std::cout<<"r = "<<merge_candidates[0]->r_<<"\n";
+    //std::cout<<"normal = "<<merge_candidates[i]->normal[0]<<" "<<merge_candidates[i]->normal[1]<<" "<<merge_candidates[i]->normal[2]<<" "<<"\n";
+    //std::cout<<"origin_ = "<<merge_candidates[i]->origin_[0]<<" "<<merge_candidates[i]->origin_[1]<<" "<<merge_candidates[i]->origin_[2]<<" "<<"\n";
 
 
 
@@ -821,7 +770,7 @@ Cylinder::applyWeighting(std::vector<CylinderPtr>& merge_candidates)
     merged_sum  += merge_candidates[i]->merged;
 
     if (merge_candidates[i]->h_max_ > this-> h_max_)this->h_max_ = merge_candidates[i]->h_max_;
-    if (merge_candidates[i]->h_max_  < this-> h_min_)this->h_min_ = merge_candidates[i]->h_max_;
+    if (merge_candidates[i]->h_min_  < this-> h_min_)this->h_min_ = merge_candidates[i]->h_min_;
 
 
   }
@@ -848,11 +797,11 @@ Cylinder::applyWeighting(std::vector<CylinderPtr>& merge_candidates)
   }
 
 
-  std::cout<<"AVERAGE params"<<"\n";
-  std::cout<<"merged = "<<this->merged<<"\n";
-  std::cout<<"r = "<<this->r_<<"\n";
-  std::cout<<"normal = "<<this->normal[0]<<" "<<this->normal[1]<<" "<<this->normal[2]<<" "<<"\n";
-  std::cout<<"origin_ = "<<this->origin_[0]<<" "<<this->origin_[1]<<" "<<this->origin_[2]<<" "<<"\n";
+  //std::cout<<"AVERAGE params"<<"\n";
+  //std::cout<<"merged = "<<this->merged<<"\n";
+  //std::cout<<"r = "<<this->r_<<"\n";
+  //std::cout<<"normal = "<<this->normal[0]<<" "<<this->normal[1]<<" "<<this->normal[2]<<" "<<"\n";
+  //std::cout<<"origin_ = "<<this->origin_[0]<<" "<<this->origin_[1]<<" "<<this->origin_[2]<<" "<<"\n";
 
 
   //  Eigen::Vector3f x_axis;
@@ -860,7 +809,7 @@ Cylinder::applyWeighting(std::vector<CylinderPtr>& merge_candidates)
   //  this->normal = this->sym_axis.cross(x_axis);
 
   //  !overide! use initial values for normal and sym_axis
-    this->normal = merge_candidates[0]->normal;
+  // this->normal = merge_candidates[0]->normal;
   //    this->sym_axis = merge_candidates[0]-> sym_axis;
   //    this->origin_ = merge_candidates[0]-> origin_;
 
@@ -881,6 +830,8 @@ Cylinder::applyWeighting(std::vector<CylinderPtr>& merge_candidates)
   //  this->computeAttributes(this->sym_axis,this->normal,this->origin_);
 
   //  this->normal = this->normal;
+
+
 }
 
 void
@@ -1058,22 +1009,22 @@ void Cylinder::getTrafo2d(const Eigen::Vector3f& vec_new,const Eigen::Vector3f& 
   }
 
     if (start==true) {
-  std::cout<<"normal1 in pcs"<<vec_old<<"\n";
-  std::cout<<"normal2 in pcs"<<vec_new<<"\n";
-  std::cout<<"cos_alpha"<<cos_alpha<<"\n";
-  std::cout<<"alpha"<<alpha<<"\n";
-  std::cout<<"TX"<<Tx<<"\n";
+  //std::cout<<"normal1 in pcs"<<vec_old<<"\n";
+  //std::cout<<"normal2 in pcs"<<vec_new<<"\n";
+  //std::cout<<"cos_alpha"<<cos_alpha<<"\n";
+  //std::cout<<"alpha"<<alpha<<"\n";
+  //std::cout<<"TX"<<Tx<<"\n";
     }
 
 
   if (debug == true) {
     //  Debug Output
-    std::cout << " avec NEW\n"<<b << std::endl;
-    std::cout << " avec OLD\n" << a<<std::endl;
-    std::cout << "D avec\n" << b[0]-a[0]<<"\n"<<b[1]-a[1] << std::endl;
-    std::cout << "alpha = " << alpha << std::endl;
-    std::cout<<"TX = "<<Tx<<std::endl;
-
+//    std::cout << " avec NEW\n"<<b << std::endl;
+//    std::cout << " avec OLD\n" << a<<std::endl;
+//    std::cout << "D avec\n" << b[0]-a[0]<<"\n"<<b[1]-a[1] << std::endl;
+//    std::cout << "alpha = " << alpha << std::endl;
+//    std::cout<<"TX = "<<Tx<<std::endl;
+//
   }
 
 }
@@ -1139,14 +1090,14 @@ Cylinder::getShiftedCylinder(Cylinder& c2,Cylinder& c3, Cylinder & result,bool d
   shift[0] +=  c3.r_ * alpha;
   shift[1] = 0;
   if (dbg == true) {
-    std::cout<<"_____________________\n";
-    std::cout<<"roll= "<<roll<<" pitch= "<<pitch<<" yaw= "<<yaw<<std::endl;
+    //std::cout<<"_____________________\n";
+    //std::cout<<"roll= "<<roll<<" pitch= "<<pitch<<" yaw= "<<yaw<<std::endl;
 
-    std::cout<<"norma = \n"<<n12<<"\n";
-    std::cout<<"angles = \n";
-    std::cout<<"alpha = "<<pitch  <<"\n";
-    std::cout<<"tx = "<<shift[0]<<std::endl;
-    std::cout<<"_____________________\n";
+    //std::cout<<"norma = \n"<<n12<<"\n";
+    //std::cout<<"angles = \n";
+    //std::cout<<"alpha = "<<pitch  <<"\n";
+    //std::cout<<"tx = "<<shift[0]<<std::endl;
+    //std::cout<<"_____________________\n";
   }
 
   Eigen::Affine3f T12x ;
@@ -1212,8 +1163,12 @@ Cylinder::transformToTarget(Cylinder& c_target,Cylinder& c_result)
 
   //  transform parameters
 
-  c_result.GrabParams(c_target);
+  this->debug_output("this");
+  c_target.debug_output("target");
 
+
+  //c_result.GrabParams(c_target);
+  c_result.transform_from_world_to_plane = c_target.transform_from_world_to_plane;
   //Step 1______________________________
 
   Eigen::Vector3f n12 =
@@ -1243,16 +1198,21 @@ Cylinder::transformToTarget(Cylinder& c_target,Cylinder& c_result)
   pcl::getEulerAngles(T12,roll,pitch,yaw);
   Eigen::Vector3f  t = pcl::getTranslation(T12);
 
-//  std::cout<<"----TRAFO 2 TARGET-----\n";
-//  std::cout<<"roll pitch yaw"<<roll <<" "<< pitch <<" "<< yaw <<" \n";
-//  std::cout<<"trans "<<t<<"\n";
+  std::cout<<"----TRAFO 2 TARGET-----\n";
+  std::cout<<"normal pre\n"<<this->normal<<"\n normal after\n"<<n12<<"\n";
+  std::cout<<"roll pitch yaw"<<roll <<" "<< pitch <<" "<< yaw <<" \n";
+  std::cout<<"trans "<<t<<"\n";
 
+  //double tx=-yaw*this->r_;
+  //Eigen::Affine3f T_apply=pcl::getTransformation(tx,0,0,roll,pitch,yaw);
 
   c_result.contours.resize(this->contours.size());
   for (size_t i = 0; i < this->contours.size(); ++i) {
     c_result.contours[i].resize(this->contours[i].size());
     for (size_t j = 0; j < this->contours[i].size(); ++j) {
-      c_result.contours[i][j] = this-> transform_from_world_to_plane.inverse() *T12.inverse()*transform_from_world_to_plane * this->contours[i][j];
+     //c_result.contours[i][j] = this-> transform_from_world_to_plane.inverse() *T12.inverse()*this->transform_from_world_to_plane * this->contours[i][j];
+    //  c_result.contours[i][j] = this->transform_from_world_to_plane.inverse() *T_apply*this->transform_from_world_to_plane * this->contours[i][j];
+    c_result.contours[i][j]=this->contours[i][j];
     }
   }
 
