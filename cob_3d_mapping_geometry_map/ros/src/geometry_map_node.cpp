@@ -108,6 +108,8 @@ GeometryMapNode::GeometryMapNode()
   std::cout << file_path_ << std::endl;
   geometry_map_.setFilePath(file_path_);
   geometry_map_.setSaveToFile(save_to_file_);
+
+  primitive_pub_=n_.advertise<visualization_msgs::Marker>("primitives",100);
 }
 
 void
@@ -235,6 +237,7 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr s
 
   publishMapMarker();
   publishMap();
+  publishPrimitives();
   ctr_++;
 }
 
@@ -552,6 +555,95 @@ GeometryMapNode::publishMapMarker()
   }
 }
 
+  void GeometryMapNode::publishPrimitives()
+  {
+
+    visualization_msgs::Marker marker;
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.type = visualization_msgs::Marker::CYLINDER;
+    marker.lifetime = ros::Duration();
+    marker.header.frame_id = map_frame_id_;
+
+
+
+    //create the marker in the table reference frame
+    //the caller is responsible for setting the pose of the marker to match
+
+
+
+    marker.color.a = 0.3;
+
+    geometry_msgs::Point pt;
+
+
+
+    boost::shared_ptr<std::vector<CylinderPtr> > map_cylinder = geometry_map_.getMap_cylinder();
+
+
+
+    int ctr=0;
+    int t_ctr=2000;
+
+    //    std::cout<<"____________________________________________"<<std::endl;
+    //    std::cout<<"marker size: "<<map->size()<<std::endl;
+    for(unsigned int i=0; i<map_cylinder->size(); i++)
+    {
+      Cylinder& cm = *(map_cylinder->at(i));
+
+      marker.id = cm.id;
+
+      marker.color.r=1;
+      marker.color.g=0;
+      marker.color.b=0;
+
+      marker.scale.x = cm.r_ *2;
+      marker.scale.y = cm.r_ *2;
+      std::cout<<cm.h_max_ - cm.h_min_<<"\n";
+      marker.scale.z =  (cm.h_max_ - cm.h_min_);
+
+
+      Eigen::Affine3f rot;
+      Eigen::Vector3f trans;
+      float roll,pitch,yaw;
+      tf::Quaternion orientation;
+
+      rot  =cm.transform_from_world_to_plane.rotation();
+      pcl::getEulerAngles(rot,roll,pitch,yaw);
+    
+      // WATCH OUT!! Use primitives only for vertical cylinders - orientation is not set
+      //TODO: compute and set Orientation the right wy
+
+      //orientation= tf::createQuaternionFromRPY(roll,pitch,yaw);
+      ////std::cout<<roll<<"-"<<pitch<<"-"<<yaw<<"\n";
+
+
+      //      marker.pose.orientation.x = orientation[0];
+      //      marker.pose.orientation.y = orientation[1];
+      //      marker.pose.orientation.z = orientation[2];
+      //      marker.pose.orientation.w = orientation[3];
+
+      marker.pose.position.x = cm.origin_[0];
+      marker.pose.position.y = cm.origin_[1];
+      marker.pose.position.z = cm.origin_[2];
+
+
+
+
+      marker.id = t_ctr;
+      std::stringstream ss;
+      ss << ctr;
+      marker.text = ss.str();
+      ctr++;
+      t_ctr++;
+
+
+      primitive_pub_.publish(marker);
+
+    }
+
+
+
+  }
 int main (int argc, char** argv)
 {
   ros::init (argc, argv, "geometry_map_node");

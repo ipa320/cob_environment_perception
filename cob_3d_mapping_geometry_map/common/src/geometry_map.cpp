@@ -355,7 +355,6 @@ void
 GeometryMap::cleanUp()
 {
   int n_dropped = 0, m_dropped = 0, c_dropped=0;
-  bool drop_cyl=false;
   for(int idx = map_polygon_.size() - 1 ; idx >= 0; --idx)
   {
     //std::cout << map_polygon_[idx]->merged <<", " << (frame_counter_ - 3) <<" > "<<(int)map_polygon_[idx]->frame_stamp<<std::endl;
@@ -368,12 +367,13 @@ GeometryMap::cleanUp()
   }
   for(int idx = map_cylinder_.size() - 1 ; idx >= 0; --idx)
   {
+  bool drop_cyl=false;
       std::cout<<"merged:"<<(int)map_cylinder_[idx]->merged<<" frame ctr:"<<frame_counter_<<" frame st:"<<(int)map_cylinder_[idx]->frame_stamp<<" size:"<<(int)map_cylinder_[idx]->contours[0].size()<<"\n";
-    if (map_cylinder_[idx]->merged <= 1 && (frame_counter_ - 1) > (int)map_cylinder_[idx]->frame_stamp)
+    if (map_cylinder_[idx]->merged <= 1 && (frame_counter_ - 2) > (int)map_cylinder_[idx]->frame_stamp)
         {
         drop_cyl=true;
         }
-    if ((int)map_cylinder_[idx]->contours[0].size()<30 && map_cylinder_[idx]->merged <= 1)
+    if ((int)map_cylinder_[idx]->contours[0].size()<20 && (int)map_cylinder_[idx]->merged <= 1)
         {
          drop_cyl=true;
         }
