@@ -128,6 +128,7 @@ namespace cob_3d_mapping
      * @return nothing
      */
     void publishMapMarker();
+    void publishPrimitives();
 
     void fillMarker(Polygon::Ptr p, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t);
     void fillMarker(Cylinder::Ptr c, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t);
@@ -141,6 +142,8 @@ namespace cob_3d_mapping
     ros::Publisher marker_pub_;
     ros::ServiceServer clear_map_server_;
     ros::ServiceServer get_map_server_;
+    
+    ros::Publisher primitive_pub_;
 
     tf::TransformListener tf_listener_;
     bool enable_tf_;
