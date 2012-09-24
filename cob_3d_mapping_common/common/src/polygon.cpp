@@ -265,9 +265,13 @@ Polygon::assignWeight()
   }
   else if (std::strcmp(merge_settings_.weighting_method.c_str(), "AREA")== 0)
   {
-    //DO NOT USE
-    //THIS IS WORK IN PROGRESS
-    merge_weight_ = computeArea3d();
+    double area = computeArea3d();
+    merge_weight_=(merged*area);
+
+
+    
+
+
   }
   else if (std::strcmp(merge_settings_.weighting_method.c_str(), "COMBINED")== 0)
   {

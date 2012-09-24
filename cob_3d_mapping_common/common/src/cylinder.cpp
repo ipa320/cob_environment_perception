@@ -605,48 +605,6 @@ void Cylinder::isMergeCandidate(const std::vector<Cylinder::Ptr>& cylinder_array
   }//for
 
 }
-
-//void Cylinder::merge(std::vector<Cylinder::Ptr>& c_array) {
-//
-//  std::vector<Cylinder::Ptr> merge_cylinders;
-//
-//  //create average cylinder for  averaging
-//  Cylinder::Ptr average_cyl =CylinderPtr(new Cylinder());
-//  *average_cyl = *this;
-//  average_cyl->applyWeighting(c_array);
-//
-//  //	transform  to local system
-//  for (int i = 0; i < (int) c_array.size(); i++) {
-//    Cylinder & c_map = *c_array[i];
-//
-//    //shifted cylinder is computed with respect to "this"- system
-//
-//    Cylinder::Ptr shifted_cylinder = CylinderPtr(new Cylinder());
-//
-//    c_map.getShiftedCylinder(*average_cyl,*shifted_cylinder);
-//
-//    merge_cylinders.push_back(shifted_cylinder);
-//  }
-//
-//  //  cast Cylinder::Ptr to PolygonPtr to use merge_union   -- is  a better way possible ?!
-//  std::vector<PolygonPtr> merge_polygons;
-//  for (size_t i = 0; i < merge_cylinders.size(); ++i) {
-//    PolygonPtr tmp_ptr= merge_cylinders[i];
-//    merge_polygons.push_back(tmp_ptr);
-//  }
-//  PolygonPtr average_polygon= average_cyl;
-//
-//  this->merge_union(merge_polygons,average_polygon);
-//
-//  this->r_ = average_cyl->r_;
-//  this->computeCentroid();
-//  this->computeAttributes(average_cyl->sym_axis,average_cyl->normal,average_cyl->origin_);
-//  this->assignWeight();
-//
-//  //  std::cout<<" weight after merge: "<<this->merge_weight_<<std::endl;
-//
-//
-//}
 void Cylinder::merge(std::vector<Cylinder::Ptr>& c_array) {
   std::cout << "START MERGING" <<std::endl;
   std::vector<Cylinder::Ptr> merge_cylinders;
@@ -662,9 +620,10 @@ void Cylinder::merge(std::vector<Cylinder::Ptr>& c_array) {
   this->transform_from_world_to_plane = average_cyl->transform_from_world_to_plane;
   //----------------------------------------------------------------------------------
 
-  this->makeCyl2D(false);
-  
  std::string t_str="this";
+ this->debug_output(t_str);
+  this->makeCyl2D(false);
+     t_str.append("2d"); 
  this->debug_output(t_str);
 
 
@@ -748,20 +707,23 @@ Cylinder::applyWeighting(std::vector<Cylinder::Ptr>& merge_candidates)
   int merged_sum = this->merged;
 
   //std::cout<<"NEW params"<<"\n";
-  //std::cout<<"merged = "<<this->merged<<"\n";
+  //std::cout<<"merged = "<<this->merge_weight_<<"\n";
+  
   //std::cout<<"r = "<<this->r_<<"\n";
-  //std::cout<<"normal = "<<this->normal[0]<<" "<<this->normal[1]<<" "<<this->normal[2]<<" "<<"\n";
+  std::cout<<"normal = "<<this->normal[0]<<" "<<this->normal[1]<<" "<<this->normal[2]<<" "<<"\n";
   //std::cout<<"origin_ = "<<this->origin_[0]<<" "<<this->origin_[1]<<" "<<this->origin_[2]<<" "<<"\n";
+  //std::cout<<"sym_axis1 =\n "<<this->sym_axis[0]<<" "<<this->sym_axis[1]<<" "<<this->sym_axis[2]<<" "<<"\n";
 
 
 
   for (int i = 0; i < (int)merge_candidates.size(); ++i) {
 
     //std::cout<<"OLD params"<<"\n";
-    //std::cout<<"merged = "<<merge_candidates[i]->merged<<"\n";
+    //std::cout<<"merged = "<<merge_candidates[i]->merge_weight_<<"\n";
     //std::cout<<"r = "<<merge_candidates[0]->r_<<"\n";
-    //std::cout<<"normal = "<<merge_candidates[i]->normal[0]<<" "<<merge_candidates[i]->normal[1]<<" "<<merge_candidates[i]->normal[2]<<" "<<"\n";
+    std::cout<<"normal = "<<merge_candidates[i]->normal[0]<<" "<<merge_candidates[i]->normal[1]<<" "<<merge_candidates[i]->normal[2]<<" "<<"\n";
     //std::cout<<"origin_ = "<<merge_candidates[i]->origin_[0]<<" "<<merge_candidates[i]->origin_[1]<<" "<<merge_candidates[i]->origin_[2]<<" "<<"\n";
+  //std::cout<<"sym_axis2 =\n "<<merge_candidates[i]->sym_axis[0]<<" "<<merge_candidates[i]->sym_axis[1]<<" "<<merge_candidates[i]->sym_axis[2]<<" "<<"\n";
 
 
 
@@ -804,10 +766,11 @@ Cylinder::applyWeighting(std::vector<Cylinder::Ptr>& merge_candidates)
   }
 
 
+  //std::cout<<"sym_axis3 =\n "<<this->sym_axis[0]<<" "<<this->sym_axis[1]<<" "<<this->sym_axis[2]<<" "<<"\n";
   //std::cout<<"AVERAGE params"<<"\n";
-  //std::cout<<"merged = "<<this->merged<<"\n";
+  //std::cout<<"merged = "<<this->merge_weight_<<"\n";
   //std::cout<<"r = "<<this->r_<<"\n";
-  //std::cout<<"normal = "<<this->normal[0]<<" "<<this->normal[1]<<" "<<this->normal[2]<<" "<<"\n";
+  std::cout<<"normal = "<<this->normal[0]<<" "<<this->normal[1]<<" "<<this->normal[2]<<" "<<"\n";
   //std::cout<<"origin_ = "<<this->origin_[0]<<" "<<this->origin_[1]<<" "<<this->origin_[2]<<" "<<"\n";
 
 
