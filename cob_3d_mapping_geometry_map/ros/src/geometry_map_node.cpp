@@ -79,7 +79,6 @@
 
 // external includes
 #include <boost/timer.hpp>
-#include "cob_3d_mapping_common/stop_watch.h"
 #include <cob_3d_mapping_common/ros_msg_conversions.h>
 
 #include <tf_conversions/tf_eigen.h>
@@ -163,12 +162,10 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr s
   af_orig = geometry_map_.getLastError() * af_orig;
 
   static int ctr=0;
-  static double time = 0;
-  PrecisionStopWatch t;
   std::cout<<">>>>>>>>>new cloud>>>>>>>>>>\n";
 
   std::vector<Polygon::Ptr> polygon_list;
-  std::vector<CylinderPtr> cylinder_list;
+  std::vector<Cylinder::Ptr> cylinder_list;
   std::map<int, ShapeCluster::Ptr> sc_map;
 
 
@@ -259,7 +256,7 @@ bool
 GeometryMapNode::getMap(cob_3d_mapping_msgs::GetGeometricMap::Request &req, cob_3d_mapping_msgs::GetGeometricMap::Response &res)
 {
   boost::shared_ptr<std::vector<Polygon::Ptr> > map_polygon = geometry_map_.getMap_polygon();
-  boost::shared_ptr<std::vector<CylinderPtr> > map_cylinder = geometry_map_.getMap_cylinder();
+  boost::shared_ptr<std::vector<Cylinder::Ptr> > map_cylinder = geometry_map_.getMap_cylinder();
 
   res.map.header.stamp = ros::Time::now();
   res.map.header.frame_id = map_frame_id_;
@@ -314,7 +311,7 @@ GeometryMapNode::publishMap()
   //		if index = type 1 poly ptr , else cylinder ptr --> push back in shape vector?!
 
   boost::shared_ptr<std::vector<Polygon::Ptr> > map_polygon = geometry_map_.getMap_polygon();
-  boost::shared_ptr<std::vector<CylinderPtr> > map_cylinder = geometry_map_.getMap_cylinder();
+  boost::shared_ptr<std::vector<Cylinder::Ptr> > map_cylinder = geometry_map_.getMap_cylinder();
 
 
   geometry_map_.colorizeMap();
@@ -500,7 +497,7 @@ GeometryMapNode::publishMapMarker()
   }
   //		only implemented for polygon
 
-  boost::shared_ptr<std::vector<CylinderPtr> > map_cylinder = geometry_map_.getMap_cylinder();
+  boost::shared_ptr<std::vector<Cylinder::Ptr> > map_cylinder = geometry_map_.getMap_cylinder();
 
   ctr=0;
   t_ctr=2000;
@@ -577,7 +574,7 @@ GeometryMapNode::publishMapMarker()
 
 
 
-    boost::shared_ptr<std::vector<CylinderPtr> > map_cylinder = geometry_map_.getMap_cylinder();
+    boost::shared_ptr<std::vector<Cylinder::Ptr> > map_cylinder = geometry_map_.getMap_cylinder();
 
 
 

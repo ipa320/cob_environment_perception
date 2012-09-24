@@ -119,7 +119,7 @@ public:
   }
 
   void addMapEntry(cob_3d_mapping::Polygon::Ptr& p_ptr);
-  void addMapEntry(boost::shared_ptr<cob_3d_mapping::Cylinder>& c_ptr);
+  void addMapEntry(cob_3d_mapping::Cylinder::Ptr& c_ptr);
   void addMapEntry(cob_3d_mapping::ShapeCluster::Ptr& sc_ptr);
 
   bool
@@ -167,10 +167,10 @@ public:
   }
 
 
-  boost::shared_ptr<std::vector<cob_3d_mapping::CylinderPtr > >
+  boost::shared_ptr<std::vector<cob_3d_mapping::Cylinder::Ptr > >
   getMap_cylinder()
   {
-    return boost::make_shared< std::vector< cob_3d_mapping::CylinderPtr > >(map_cylinder_);
+    return boost::make_shared< std::vector< cob_3d_mapping::Cylinder::Ptr > >(map_cylinder_);
   }
 
   boost::shared_ptr<std::vector<cob_3d_mapping::ShapeCluster::Ptr> >
@@ -203,7 +203,7 @@ public:
 
 protected:
   std::vector<cob_3d_mapping::Polygon::Ptr > map_polygon_;
-  std::vector<boost::shared_ptr<cob_3d_mapping::Cylinder> > map_cylinder_;
+  std::vector<cob_3d_mapping::Cylinder::Ptr > map_cylinder_;
   std::vector<cob_3d_mapping::ShapeCluster::Ptr> map_shape_cluster_;
   unsigned int new_id_;
   // std::ofstream outputFile;
