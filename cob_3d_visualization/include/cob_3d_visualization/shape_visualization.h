@@ -42,11 +42,11 @@ class ShapeVisualization
     {
       shape_array_sub_ = nh_.subscribe ("shape_array", 1, &ShapeVisualization::shapeArrayCallback, this);
       feedback_sub_ = nh_.subscribe("geometry_map/map/feedback",1,&ShapeVisualization::setShapePosition,this);
-//      shape_pub_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_array", 1);
-//      get_table_subscriber_ = nh_.subscribe("shape_array", 1, &ShapeVisualization::findTables,this);
+      //      shape_pub_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_array", 1);
+      //      get_table_subscriber_ = nh_.subscribe("shape_array", 1, &ShapeVisualization::findTables,this);
       im_server_.reset (new interactive_markers::InteractiveMarkerServer ("geometry_map/map", "", false));
       moreOptions() ;
-//      findTables();//const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+      //      findTables();//const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
     }
     // Destructor
     ~ShapeVisualization ()
@@ -59,6 +59,7 @@ class ShapeVisualization
     void moreOptions();
     void displayAllNormals(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
     void displayAllCentroids (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    void displayAllContours (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
     void resetAll(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
     void applyModifications (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
     void optionMenu() ;
@@ -67,14 +68,17 @@ class ShapeVisualization
   protected:
 
     ros::NodeHandle nh_;
-//    ros::Publisher shape_pub_ ;
+    //    ros::Publisher shape_pub_ ;
     ros::Subscriber shape_array_sub_; // sub for shape array msgs
     ros::Subscriber feedback_sub_ ;
     std::vector<boost::shared_ptr<ShapeMarker> > v_sm_;
     cob_3d_mapping_msgs::ShapeArray sha ;
-    int ctr_for_shape_indexes ;
     interactive_markers::MenuHandler menu_handler_for_text_;
-//    ros::Subscriber get_table_subscriber_;
+    //    ros::Subscriber get_table_subscriber_;
+    int ctr_for_shape_indexes;
+    std::vector<unsigned int> moved_shapes_indices_;
+    std::vector<unsigned int> interacted_shapes_;
+
 
 
     boost::shared_ptr<interactive_markers::InteractiveMarkerServer> im_server_; // server for interactive markers
