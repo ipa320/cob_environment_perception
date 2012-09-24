@@ -46,9 +46,8 @@ void ShapeMarker::enableMovement (const visualization_msgs::InteractiveMarkerFee
   if (check_state == interactive_markers::MenuHandler::UNCHECKED)
   {
     displayArrows();
-    string title ;
-    menu_handler_.getTitle(feedback->menu_entry_id,title);
-    std::cout << "title: \t" << title << "\n";
+//    im_server_->setCallback(marker_.name,boost::bind (&ShapeMarker::setShapePosition, this, _1)
+//                              ,visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE);
     menu_handler_.setCheckState (feedback->menu_entry_id, interactive_markers::MenuHandler::CHECKED);
     interactedShapes.push_back(shape_.id) ;
     interactedShapes.push_back(check_state) ;
@@ -58,10 +57,6 @@ void ShapeMarker::enableMovement (const visualization_msgs::InteractiveMarkerFee
   {
     hideArrows();
     menu_handler_.setCheckState (feedback->menu_entry_id, interactive_markers::MenuHandler::UNCHECKED);
-
-    // if anything is unchecked, there is no need to reset it again!
-    interactedShapes.pop_back() ;
-    interactedShapes.pop_back() ;
 
   }
   menu_handler_.reApply (*im_server_);
@@ -74,7 +69,7 @@ void ShapeMarker::displayArrows()
   //  ros::NodeHandle nh;
   //  nh.subscribe("geometry_map/map/feedback",1,&ShapeMarker::setShapePosition,this);
 
-  arrows_ = true;
+//  arrows_ = true;
 
   visualization_msgs::InteractiveMarkerControl im_ctrl;
   stringstream ss;
@@ -155,9 +150,6 @@ void ShapeMarker::hideArrows()
 
 void ShapeMarker::resetMarker(){   //bool reset_marker,visualization_msgs::InteractiveMarker& imarker) {
 
-
-  //  std::cout << "shape_ Name :" << shape_.id << "\n" ;
-
   stringstream aa;
   stringstream ss;
 
@@ -165,7 +157,7 @@ void ShapeMarker::resetMarker(){   //bool reset_marker,visualization_msgs::Inter
   hideCentroid(0);
   hideContour(0);
 
-  interacted_shapes_.pop_back() ;
+//  interacted_shapes_.pop_back() ;
 
 }
 void
@@ -761,173 +753,172 @@ void ShapeMarker::hideContour(int untick){
 }
 //void ShapeMarker::setShapePosition(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
 //{
-//  cob_3d_mapping_msgs::ShapeArray map_msg;
-//  map_msg.header.frame_id="/map";
-//  map_msg.header.stamp = ros::Time::now();
+//  if (arrows_){
+//    ROS_INFO("In setShapePosition...") ;
 //
-//  int shape_id;
-//  float a;
-//  float b ;
-//  //  Eigen::Affine3f trans;
+//    cob_3d_mapping_msgs::ShapeArray map_msg;
+//    map_msg.header.frame_id="/map";
+//    map_msg.header.stamp = ros::Time::now();
 //
-//  cob_3d_mapping_msgs::ModifyMap::Request req ;
-//  cob_3d_mapping_msgs::ModifyMap::Response res;
-//  //
-//  Eigen::Quaternionf quatInit ;
-//  Eigen::Affine3f affineInit;
-//  Eigen::Matrix4f transInitInv;
-//  //  stringstream name(feedback->marker_name);
+//    //  int shape_id;
+//    //  Eigen::Affine3f trans;
 //
 //
-//  Eigen::MatrixXf rotationMatInit;
 //
-//  //  Eigen::Affine3f transformInit ;
+//    //  stringstream name(feedback->marker_name);
 //
-//  //  interactive_markers::MenuHandler::CheckState check_state;
-//  //  menu_handler_.getCheckState (feedback->menu_entry_id, check_state);
-//
-//  //  if (check_state == interactive_markers::MenuHandler::CHECKED)
-//  //  {
-//  //ROS_INFO(" entry state changed ");
-//  //    menu_handler_.setCheckState (feedback->menu_entry_id, interactive_markers::MenuHandler::CHECKED);
-//  //    if (feedback->marker_name != "Text"){
-//  //    name >> shape_id ;
-//
-//  cob_3d_mapping::Polygon p;
-//  cob_3d_mapping::fromROSMsg (shape_, p);
-//
-//  if (feedback->menu_entry_id == 5){
-//    //     if (arrows_){
-//    //       if (feedback->event_type == 2){
-//
-//    Eigen::Vector3f oldCentroid ;
-//    Eigen::Matrix4f transInit;
-//
-//    quatInit.x() = (feedback->pose.orientation.x) ;           //normalized
-//    quatInit.y() = (feedback->pose.orientation.y) ;
-//    quatInit.z() = (feedback->pose.orientation.z) ;
-//    quatInit.w() = (feedback->pose.orientation.w) ;
-//
-//    a = 10.0 ;
-//    std::cout << "a" << a << "\n" ;
-//
-//    oldCentroid (0) = feedback->pose.position.x ;
-//    oldCentroid (1) = feedback->pose.position.y ;
-//    oldCentroid (2) = feedback->pose.position.z ;
-//
-////    quatInit.normalize() ;
-//
-//    rotationMatInit = quatInit.toRotationMatrix() ;
-//
-//    transInit.block(0,0,3,3) << rotationMatInit ;
-//    transInit.col(3).head(3) << oldCentroid(0) , oldCentroid(1), oldCentroid(2) ;
-//    transInit.row(3) << 0,0,0,1 ;
-//
-//    transInitInv = transInit.inverse() ;
-//    //        Eigen::Affine3f affineInitFinal(transInitInv) ;
-//    affineInit = transInitInv ;
-//    std::cout << "transInit : " << "\n"    << affineInit.matrix() << "\n" ;
-//    //       }
-//  }
-//  if (feedback->menu_entry_id == 0){
-//
-//    std::cout << "a" << a << "\n" ;
 //
 //    Eigen::Quaternionf quat;
 //    Eigen::Matrix3f rotationMat;
+//    Eigen::MatrixXf rotationMatInit;
 //    Eigen::Vector3f vec;
 //    Eigen::Vector3f vecNew;
 //    Eigen::Vector3f newCentroid;
-//    Eigen::Matrix4f transSecondStep ;
+//    Eigen::Matrix4f transSecondStep;
+//    cob_3d_mapping_msgs::ShapeArray modified_shapes;
+//    //  Eigen::Affine3f transformInit ;
 //
-//    quat.x() = feedback->pose.orientation.x ;           //normalized
-//    quat.y() = feedback->pose.orientation.y ;
-//    quat.z() = feedback->pose.orientation.z ;
-//    quat.w() = feedback->pose.orientation.w ;
+//    //    if (feedback->marker_name != "Text"){
+//    //    name >> shape_id ;
 //
-//    quat.normalize() ;
-//
-//    rotationMat = quat.toRotationMatrix() ;
-//
-//    vec << shape_.params[0],                   //normalized
-//        shape_.params[1],
-//        shape_.params[2];
-//
-//    shape_.centroid.x = feedback->pose.position.x ;
-//    shape_.centroid.y = feedback->pose.position.y ;
-//    shape_.centroid.z = feedback->pose.position.z ;
-//
-//    newCentroid << shape_.centroid.x ,
-//        shape_.centroid.y ,
-//        shape_.centroid.z ;
+//    cob_3d_mapping::Polygon p;
+//    cob_3d_mapping::fromROSMsg (shape_, p);
 //
 //
-//    transSecondStep.block(0,0,3,3) << rotationMat ;
-//    transSecondStep.col(3).head(3) << newCentroid(0) , newCentroid(1), newCentroid(2) ;
-//    transSecondStep.row(3) << 0,0,0,1 ;
+//    if (feedback->menu_entry_id == 5){
+//      //     if (arrows_){
+//      //       if (feedback->event_type == 2){
 //
-//    Eigen::Affine3f affineSecondStep(transSecondStep) ;
+//      Eigen::Vector3f oldCentroid ;
+//      Eigen::Matrix4f transInit;
 //
-//    std::cout << "transfrom : " << "\n"    << affineSecondStep.matrix() << "\n" ;
+//      quatInit.x() = (feedback->pose.orientation.x) ;           //normalized
+//      quatInit.y() = (feedback->pose.orientation.y) ;
+//      quatInit.z() = (feedback->pose.orientation.z) ;
+//      quatInit.w() = (feedback->pose.orientation.w) ;
 //
-//    //        std::cout << "affineInit :" << "\n"    << affineInit.matrix() << "\n" ;
+//      oldCentroid (0) = feedback->pose.position.x ;
+//      oldCentroid (1) = feedback->pose.position.y ;
+//      oldCentroid (2) = feedback->pose.position.z ;
 //
-//    Eigen::Affine3f affineFinal(affineSecondStep*affineInit) ;
-//    Eigen::Matrix4f matFinal = (transSecondStep*affineInit.matrix());       //transInitInv) ;
+//      //    quatInit.normalize() ;
 //
-//    vecNew    = (matFinal.block(0,0,3,3))* vec;
-//    //      newCentroid  = transFinal *OldCentroid ;
+//      rotationMatInit = quatInit.toRotationMatrix() ;
 //
+//      transInit.block(0,0,3,3) << rotationMatInit ;
+//      transInit.col(3).head(3) << oldCentroid(0) , oldCentroid(1), oldCentroid(2) ;
+//      transInit.row(3) << 0,0,0,1 ;
 //
-//    shape_.centroid.x = newCentroid(0) ;
-//    shape_.centroid.y = newCentroid(1) ;
-//    shape_.centroid.z = newCentroid(2) ;
+//      transInitInv = transInit.inverse() ;
+//      Eigen::Affine3f affineInitFinal(transInitInv) ;
+//      affineInit = affineInitFinal ;
 //
-//
-//    shape_.params[0] = vecNew(0) ;
-//    shape_.params[1] = vecNew(1) ;
-//    shape_.params[2] = vecNew(2) ;
-//
-//
-//    std::cout << "transfromFinal : " << "\n"    << affineFinal.matrix() << "\n" ;
-//
-//    pcl::PointCloud<pcl::PointXYZ> pc;
-//    pcl::PointXYZ pt;
-//    sensor_msgs::PointCloud2 pc2;
-//
-//    for(unsigned int j=0; j<p.contours.size(); j++)
-//    {
-//      for(unsigned int k=0; k<p.contours[j].size(); k++)
-//      {
-//        p.contours[j][k] = affineFinal * p.contours[j][k];
-//        pt.x = p.contours[j][k][0] ;
-//        pt.y = p.contours[j][k][1] ;
-//        pt.z = p.contours[j][k][2] ;
-//        pc.push_back(pt) ;
-//      }
+//      //       }
 //    }
+//    if (feedback->event_type == 1){
 //
-//    pcl::toROSMsg (pc, pc2);
-//    shape_.points.clear() ;
-//    shape_.points.push_back (pc2);
+//      std::cout << "transInit : " << "\n"    << affineInit.matrix() << "\n" ;
 //
-//    // uncomment when using test_shape_array
+//      quat.x() = feedback->pose.orientation.x ;           //normalized
+//      quat.y() = feedback->pose.orientation.y ;
+//      quat.z() = feedback->pose.orientation.z ;
+//      quat.w() = feedback->pose.orientation.w ;
 //
-//    //      for(unsigned int i=0;i<sha.shapes.size();i++){
-//    //        map_msg.header = sha.shapes.at(i).header ;
-//    //        map_msg.shapes.push_back(sha.shapes.at(i)) ;
-//    //      }
-//    //      shape_pub_.publish(map_msg);
+//      quat.normalize() ;
 //
-//    // end uncomment
+//      rotationMat = quat.toRotationMatrix() ;
 //
-//    req.InMap.shapes.push_back(shape_);
-//    arrows_ = false;
+//      vec << shape_.params[0],                   //normalized
+//          shape_.params[1],
+//          shape_.params[2];
+//
+//      shape_.centroid.x = feedback->pose.position.x ;
+//      shape_.centroid.y = feedback->pose.position.y ;
+//      shape_.centroid.z = feedback->pose.position.z ;
+//
+//      newCentroid << shape_.centroid.x ,
+//          shape_.centroid.y ,
+//          shape_.centroid.z ;
+//
+//
+//      transSecondStep.block(0,0,3,3) << rotationMat ;
+//      transSecondStep.col(3).head(3) << newCentroid(0) , newCentroid(1), newCentroid(2) ;
+//      transSecondStep.row(3) << 0,0,0,1 ;
+//
+//      Eigen::Affine3f affineSecondStep(transSecondStep) ;
+//
+//      std::cout << "transfrom : " << "\n"    << affineSecondStep.matrix() << "\n" ;
+//
+//      //        std::cout << "affineInit :" << "\n"    << affineInit.matrix() << "\n" ;
+//
+//      Eigen::Affine3f affineFinal(affineSecondStep*affineInit) ;
+//      Eigen::Matrix4f matFinal = (transSecondStep*transInitInv);       //transInitInv) ;
+//
+//      vecNew    = (matFinal.block(0,0,3,3))* vec;
+//      //      newCentroid  = transFinal *OldCentroid ;
+//
+//
+//      shape_.centroid.x = newCentroid(0) ;
+//      shape_.centroid.y = newCentroid(1) ;
+//      shape_.centroid.z = newCentroid(2) ;
+//
+//
+//      shape_.params[0] = vecNew(0) ;
+//      shape_.params[1] = vecNew(1) ;
+//      shape_.params[2] = vecNew(2) ;
+//
+//
+//      std::cout << "transfromFinal : " << "\n"    << affineFinal.matrix() << "\n" ;
+//
+//      pcl::PointCloud<pcl::PointXYZ> pc;
+//      pcl::PointXYZ pt;
+//      sensor_msgs::PointCloud2 pc2;
+//
+//      for(unsigned int j=0; j<p.contours.size(); j++)
+//      {
+//        for(unsigned int k=0; k<p.contours[j].size(); k++)
+//        {
+//          p.contours[j][k] = affineFinal * p.contours[j][k];
+//          pt.x = p.contours[j][k][0] ;
+//          pt.y = p.contours[j][k][1] ;
+//          pt.z = p.contours[j][k][2] ;
+//          pc.push_back(pt) ;
+//        }
+//      }
+//
+//      pcl::toROSMsg (pc, pc2);
+//      shape_.points.clear() ;
+//      shape_.points.push_back (pc2);
+//
+//      // uncomment when using test_shape_array
+//
+//      //      for(unsigned int i=0;i<sha.shapes.size();i++){
+//      //        map_msg.header = sha.shapes.at(i).header ;
+//      //        map_msg.shapes.push_back(sha.shapes.at(i)) ;
+//      //      }
+//      //      shape_pub_.publish(map_msg);
+//
+//      // end uncomment
+//      //      quatInit.Identity() ;
+//      //      oldCentroid.Identity() ;
+//      //      transInit.Identity();
+//      //      affineInit.Identity();
+//      //      transInitInv.Identity();
+//
+//      modified_shapes_.shapes.push_back(shape_);
+//      std::cout << "modified_shapes_.shapes.size(): " << modified_shapes_.shapes.size() << "\n";
+//
+//      //    modified_shapes_.shapes.push_back(shape_);
+//      //      std::cout << "req.InMap.shapes.size()" << req.InMap.shapes.size() << "\n";
+//      //      arrows_ = false;
+//    }
+//    if (feedback->event_type == 5){
+//      //      modified_shapes_.shapes.push_back(shape_);
+//      //      std::cout << "modified_shapes_.shapes.size(): " << modified_shapes_.shapes.size() << "\n";
+//      arrows_ = false;
+//    }
 //  }
-//  //     }
 //}
-//  }
-//}
-//
-//
+
+
 
