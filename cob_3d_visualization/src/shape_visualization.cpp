@@ -257,7 +257,7 @@ void ShapeVisualization::resetAll(const visualization_msgs::InteractiveMarkerFee
           for (unsigned int j=0; j<v_sm_.size(); j++)
           {
             if(id == v_sm_[j]->getID())
-              v_sm_[j]->getMarker(id);
+              v_sm_[j]->createInteractiveMarker();
           }
     }
 
@@ -445,67 +445,67 @@ void ShapeVisualization::optionMenu() {
 
 }
 
-void ShapeVisualization::findTables(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback){
-  //  cob_3d_mapping_msgs::GetTables::Request req ;
-  //  cob_3d_mapping_msgs::GetTables::Response res;
-
-  cob_3d_mapping_msgs::GetObjectsOfClass::Request req;
-  cob_3d_mapping_msgs::GetObjectsOfClass::Response res;
-  std::vector<geometry_msgs::Pose> tablePose ;
-  stringstream aa;
-
-
-  //  interactive_markers::MenuHandler::CheckState check_state;
-  //  menu_handler_for_text_.getCheckState (feedback->menu_entry_id, check_state);
-
-  //  if (check_state == interactive_markers::MenuHandler::UNCHECKED)
-  //  {
-  //    menu_handler_for_text_.setCheckState (feedback->menu_entry_id, interactive_markers::MenuHandler::CHECKED);
-  if (ros::service::call("/table_extraction/get_objects_of_class",req,res))        ///table_extraction/get_tables
-  {
-    std::cout << "calling GetTables service..." << "\n" ;
-    //      shape_pub_.publish(sha);
-
-  }
-
-
-  tablePose.resize(res.objects.shapes.size()) ;
-  visualization_msgs::InteractiveMarker interactiveMarker;
-
-  for (unsigned int i=0;i<res.objects.shapes.size();i++){
-
-    //    shapeMarker->getShape(res.objects.shapes[i]);
-    aa.str("");
-    aa.clear();
-    aa << res.objects.shapes[i].id ;
-    interactiveMarker.name = aa.str() ;
-    //    im_server_->erase(aa.str()) ;
-    //    im_server_->applyChanges();
-    //    ros::Duration(2).sleep() ;
-
-    //    boost::shared_ptr<ShapeMarker> shapeMarker(new ShapeMarker(im_server_, res.objects.shapes[i]));
-
-    tablePose[i].position.x = res.objects.shapes[i].centroid.x;
-    tablePose[i].position.y = res.objects.shapes[i].centroid.y;
-    tablePose[i].position.z = res.objects.shapes[i].centroid.z;
-    ROS_INFO("Position of the Table[%d]: x:%f , y:%f , z:%f", i, tablePose[i].position.x, tablePose[i].position.y, tablePose[i].position.z);
-  }
-
-  //  boost::shared_ptr<ShapeMarker> shapeMarker(new ShapeMarker(im_server_, res.objects.shapes[i],i));
-  //      //      ShapeMarker sm(im_server_,sha.shapes.at(j),ctr);
-  //      shapeMarker->getShape(sha.shapes.at(j));
-  //      shapeMarker->resetMarker(true,Imarker);
-
-
-  //  }
-  //  else if (check_state == interactive_markers::MenuHandler::CHECKED)
-  //  {
-  //    menu_handler_for_text_.setCheckState (feedback->menu_entry_id, interactive_markers::MenuHandler::UNCHECKED);
-  //    res.tables.clear();
-  //  }
-  //  menu_handler_for_text_.reApply (*im_server_);
-  //  im_server_->applyChanges ();
-}
+//void ShapeVisualization::findTables(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback){
+//  //  cob_3d_mapping_msgs::GetTables::Request req ;
+//  //  cob_3d_mapping_msgs::GetTables::Response res;
+//
+//  cob_3d_mapping_msgs::GetObjectsOfClass::Request req;
+//  cob_3d_mapping_msgs::GetObjectsOfClass::Response res;
+//  std::vector<geometry_msgs::Pose> tablePose ;
+//  stringstream aa;
+//
+//
+//  //  interactive_markers::MenuHandler::CheckState check_state;
+//  //  menu_handler_for_text_.getCheckState (feedback->menu_entry_id, check_state);
+//
+//  //  if (check_state == interactive_markers::MenuHandler::UNCHECKED)
+//  //  {
+//  //    menu_handler_for_text_.setCheckState (feedback->menu_entry_id, interactive_markers::MenuHandler::CHECKED);
+//  if (ros::service::call("/table_extraction/get_objects_of_class",req,res))        ///table_extraction/get_tables
+//  {
+//    std::cout << "calling GetTables service..." << "\n" ;
+//    //      shape_pub_.publish(sha);
+//
+//  }
+//
+//
+//  tablePose.resize(res.objects.shapes.size()) ;
+//  visualization_msgs::InteractiveMarker interactiveMarker;
+//
+//  for (unsigned int i=0;i<res.objects.shapes.size();i++){
+//
+//    //    shapeMarker->getShape(res.objects.shapes[i]);
+//    aa.str("");
+//    aa.clear();
+//    aa << res.objects.shapes[i].id ;
+//    interactiveMarker.name = aa.str() ;
+//    //    im_server_->erase(aa.str()) ;
+//    //    im_server_->applyChanges();
+//    //    ros::Duration(2).sleep() ;
+//
+//    //    boost::shared_ptr<ShapeMarker> shapeMarker(new ShapeMarker(im_server_, res.objects.shapes[i]));
+//
+//    tablePose[i].position.x = res.objects.shapes[i].centroid.x;
+//    tablePose[i].position.y = res.objects.shapes[i].centroid.y;
+//    tablePose[i].position.z = res.objects.shapes[i].centroid.z;
+//    ROS_INFO("Position of the Table[%d]: x:%f , y:%f , z:%f", i, tablePose[i].position.x, tablePose[i].position.y, tablePose[i].position.z);
+//  }
+//
+//  //  boost::shared_ptr<ShapeMarker> shapeMarker(new ShapeMarker(im_server_, res.objects.shapes[i],i));
+//  //      //      ShapeMarker sm(im_server_,sha.shapes.at(j),ctr);
+//  //      shapeMarker->getShape(sha.shapes.at(j));
+//  //      shapeMarker->resetMarker(true,Imarker);
+//
+//
+//  //  }
+//  //  else if (check_state == interactive_markers::MenuHandler::CHECKED)
+//  //  {
+//  //    menu_handler_for_text_.setCheckState (feedback->menu_entry_id, interactive_markers::MenuHandler::UNCHECKED);
+//  //    res.tables.clear();
+//  //  }
+//  //  menu_handler_for_text_.reApply (*im_server_);
+//  //  im_server_->applyChanges ();
+//}
 
 void
 ShapeVisualization::shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr& sa)
