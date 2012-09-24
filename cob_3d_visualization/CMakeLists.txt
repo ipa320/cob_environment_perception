@@ -25,13 +25,19 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/include)
 rosbuild_add_executable(shape_visualization src/shape_visualization.cpp
 	src/polypartition.cpp
 	src/shape_marker.cpp)
+
+rosbuild_add_executable(table_visualization src/table_visualization.cpp)
+
 	
 rosbuild_add_executable(test_shape_array test/test_shape_array.cpp)
+#target_link_libraries(table_visualization cob_3d_visualization)
+#rosbuild_add_library(cob_3d_visualization  src/table_visualization.cpp)
 #rosbuild_add_executable(uv_angle_test test/uv_angle_test.cpp)
 #common commands for building c++ executables and libraries
-#rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
+#include <pcl/common/transforms.h>
+#include <pcl/common/transforms.h>
 #target_link_libraries(${PROJECT_NAME} another_library)
 #rosbuild_add_boost_directories()
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 #rosbuild_add_executable(example examples/example.cpp)
-#target_link_libraries(example ${PROJECT_NAME})
+rosbuild_add_roslaunch_check(launch)

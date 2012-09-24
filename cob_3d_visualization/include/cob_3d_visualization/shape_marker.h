@@ -60,11 +60,16 @@ class ShapeMarker
   public:
 
     ShapeMarker(boost::shared_ptr<interactive_markers::InteractiveMarkerServer> im_server,
-        cob_3d_mapping_msgs::Shape& shape)
+        cob_3d_mapping_msgs::Shape& shape,std::vector<unsigned int>& moved_shapes_indices,std::vector<unsigned int>& interacted_shapes,
+        bool arrow) :
+          interacted_shapes_(interacted_shapes) , moved_shapes_indices_(moved_shapes_indices)
     {
-//      shape_ctr_ = ctr;
+//      arrows_ = arrow ;
+      //      shape_ctr_ = ctr;
       im_server_ = im_server;
       shape_ = shape;
+      id_ = shape.id;
+//      feedback_sub_ = nh_.subscribe("geometry_map/map/feedback",1,&ShapeMarker::setShapePosition,this);
       createShapeMenu ();
       createInteractiveMarker();
 
@@ -73,35 +78,49 @@ class ShapeMarker
     ~ShapeMarker()
     {
       if(im_server_->erase(marker_.name)){
-//        ROS_INFO("Marker %s erased",marker_.name.c_str());
-      stringstream ss;
-      ss << "normal_" << shape_.id;
-      im_server_->erase(ss.str());
-      ss.str("");
-      ss.clear();
-      ss << "centroid_" << shape_.id;
-      im_server_->erase(ss.str());
+        //        ROS_INFO("Marker %s erased",marker_.name.c_str());
+        stringstream ss;
+        ss << "normal_" << shape_.id;
+        im_server_->erase(ss.str());
+        ss.str("");
+        ss.clear();
+        ss << "centroid_" << shape_.id;
+        im_server_->erase(ss.str());
       }
     }
 
 
-    void getPosition (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
-    void moveMarker(int flag) ;
+    void enableMovement (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    void displayArrows() ;
+    void hideArrows() ;
+
     void createShapeMenu () ;
     void deleteMarker(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
-    void displayContour(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+
     TPPLPoint msgToPoint2D (const pcl::PointXYZ &point) ;
 
     void createMarker (list<TPPLPoly>& triangle_list,visualization_msgs::InteractiveMarkerControl& im_ctrl);
     void createInteractiveMarker () ;
 
     void displayNormalCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
-    void displayCentroidCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
-    void resetMarker(bool call_reset_marker,visualization_msgs::InteractiveMarker& imarker) ;
+    void displayNormal();
+    void hideNormal(int flag_untick);
 
+    void displayCentroidCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    void displayCentroid();
+    void hideCentroid(int flag_untick);
+
+    void displayContourCB(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    void displayContour();
+    void hideContour(int flag_untick);
+
+    void resetMarker();//bool call_reset_marker,visualization_msgs::InteractiveMarker& imarker) ;
+
+//    void setShapePosition(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);//,const cob_3d_mapping_msgs::Shape& shape) ;
     void getShape (cob_3d_mapping_msgs::Shape& shape) ;
-//    void findTables(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
-    std::vector<int> getInteractedShapesNumber();
+    unsigned int getID() ;
+
+    //    std::vector<int> getInteractedShapesNumber();
 
 
   protected:
@@ -109,6 +128,8 @@ class ShapeMarker
     visualization_msgs::InteractiveMarker Imarker ;
     visualization_msgs::Marker marker;
 
+    ros::NodeHandle nh_;
+    ros::Subscriber feedback_sub_ ;
 
     visualization_msgs::InteractiveMarkerControl im_ctrl;
 
@@ -120,11 +141,23 @@ class ShapeMarker
 
     Eigen::Affine3f transformation_;
     Eigen::Affine3f transformation_inv_;
-//    int shape_ctr_ ;
+    //    int shape_ctr_ ;
 
 
-    int ctr_for_shape_indexes ;
+    //    int shape_ctr_ ;
+    unsigned int id_;
+    std::vector<unsigned int>& moved_shapes_indices_ ;
+    std::vector<unsigned int>& interacted_shapes_ ;
 
+    bool arrows_;
+//    cob_3d_mapping_msgs::ModifyMap::Request req ;
+//    cob_3d_mapping_msgs::ModifyMap::Response res;
+//    //
+//    Eigen::Quaternionf quatInit ;
+//    Eigen::Vector3f oldCentroid ;
+//    Eigen::Matrix4f transInit;
+//    Eigen::Affine3f affineInit;
+//    Eigen::Matrix4f transInitInv;
 
 };
 

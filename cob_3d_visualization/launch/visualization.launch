@@ -1,6 +1,7 @@
+<?xml version="1.0"?>
 <launch>
 
-
+	<!--shape visualization node-->
 	<node pkg="cob_3d_visualization" type="shape_visualization" name="shape_visualization" output="screen">
 
      <remap from="shape_array" to="geometry_map/map_array"/>
@@ -10,8 +11,17 @@
   	<remap from="marker" to="shape_visualization/marker"/>
   	<remap from="interactive_marker" to="shape_visualization/interactive_marker"/>
 	</node>
+	
 	<include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch"/>
 	<include file="$(find cob_3d_mapping_semantics)/ros/launch/extract_tables.launch"/>
-
+	
+	
+	<!--table visualization node-->
+	<node name="table_visualization" pkg="cob_3d_visualization" type="table_visualization">
+	<remap from="table_array" to="geometry_map/map_array"/>
+	
+	</node>
+	
+	
 
 </launch>
