@@ -11,8 +11,6 @@
 #include <vector>
 #include <algorithm>
 
-std::vector<int> interactedShapes ;
-
 void ShapeMarker::getShape (cob_3d_mapping_msgs::Shape& shape) {
   shape_ = shape ;
 }
@@ -20,20 +18,28 @@ unsigned int ShapeMarker::getID(){
   return id_;
 }
 
+void ShapeMarker::getMarker (int id) {
+  stringstream aa;
+  aa.clear();
+  aa.str("");
+  aa << id ;
+  im_server_->get(aa.str(),marker_);
+  im_server_->insert(marker_);
+  im_server_->applyChanges ();
+}
 void ShapeMarker::deleteMarker(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) {
 
   stringstream ss;
   ss << shape_.id ;// ctr_ ;
+  deleted_markers_indices_.push_back(shape_.id) ;
   visualization_msgs::InteractiveMarker interactiveMarker;
   interactiveMarker.name = ss.str() ;
   std::cout << "Marker" << interactiveMarker.name << " deleted..."<< std::endl ;
   im_server_->erase(ss.str());
   im_server_->applyChanges ();
-  //  menu_handler_.apply (*im_server_, interactiveMarker.name);
-  //  im_server_->applyChanges ();
-  interactedShapes.push_back(shape_.id);
-  //  interacted_shapes.push_back(check_state) ;
 }
+
+
 
 void ShapeMarker::enableMovement (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
 {
@@ -46,16 +52,14 @@ void ShapeMarker::enableMovement (const visualization_msgs::InteractiveMarkerFee
   if (check_state == interactive_markers::MenuHandler::UNCHECKED)
   {
     displayArrows();
-//    im_server_->setCallback(marker_.name,boost::bind (&ShapeMarker::setShapePosition, this, _1)
-//                              ,visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE);
+    //    im_server_->setCallback(marker_.name,boost::bind (&ShapeMarker::setShapePosition, this, _1)
+    //                              ,visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE);
     menu_handler_.setCheckState (feedback->menu_entry_id, interactive_markers::MenuHandler::CHECKED);
-    interactedShapes.push_back(shape_.id) ;
-    interactedShapes.push_back(check_state) ;
 
   }
   else if (check_state == interactive_markers::MenuHandler::CHECKED)
   {
-    hideArrows();
+    hideArrows(1);
     menu_handler_.setCheckState (feedback->menu_entry_id, interactive_markers::MenuHandler::UNCHECKED);
 
   }
@@ -69,7 +73,7 @@ void ShapeMarker::displayArrows()
   //  ros::NodeHandle nh;
   //  nh.subscribe("geometry_map/map/feedback",1,&ShapeMarker::setShapePosition,this);
 
-//  arrows_ = true;
+  //  arrows_ = true;
 
   visualization_msgs::InteractiveMarkerControl im_ctrl;
   stringstream ss;
@@ -123,7 +127,7 @@ void ShapeMarker::displayArrows()
 }
 
 //  else if (flag == 0)
-void ShapeMarker::hideArrows()
+void ShapeMarker::hideArrows(int untick)
 {
   ROS_INFO ("Deleting the Arrows ...") ;
 
@@ -137,12 +141,13 @@ void ShapeMarker::hideArrows()
   marker_.controls.pop_back() ;
   marker_.controls.pop_back() ;
 
-  for (unsigned int i=0;i< moved_shapes_indices_.size();i++){
-    if (moved_shapes_indices_.at(i) == shape_.id){
-      moved_shapes_indices_.erase(moved_shapes_indices_.begin()+i) ;
+  if (untick){
+    for (unsigned int i=0;i< moved_shapes_indices_.size();i++){
+      if (moved_shapes_indices_.at(i) == shape_.id){
+        moved_shapes_indices_.erase(moved_shapes_indices_.begin()+i) ;
+      }
     }
   }
-
   im_server_->insert (marker_);
   im_server_->applyChanges() ;
 }
@@ -157,7 +162,7 @@ void ShapeMarker::resetMarker(){   //bool reset_marker,visualization_msgs::Inter
   hideCentroid(0);
   hideContour(0);
 
-//  interacted_shapes_.pop_back() ;
+  //  interacted_shapes_.pop_back() ;
 
 }
 void
