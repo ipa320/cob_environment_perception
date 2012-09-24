@@ -118,7 +118,6 @@ class ShapeMarker
 //    void setShapePosition(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);//,const cob_3d_mapping_msgs::Shape& shape) ;
     void getShape (cob_3d_mapping_msgs::Shape& shape) ;
     unsigned int getID() ;
-    void getMarker (int id);
 
     //    std::vector<int> getInteractedShapesNumber();
 

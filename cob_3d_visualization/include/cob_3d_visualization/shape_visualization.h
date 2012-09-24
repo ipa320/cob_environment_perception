@@ -63,7 +63,7 @@ class ShapeVisualization
     void resetAll(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
     void applyModifications (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
     void optionMenu() ;
-    void findTables(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+//    void findTables(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
 
   protected:
 

@@ -18,15 +18,6 @@ unsigned int ShapeMarker::getID(){
   return id_;
 }
 
-void ShapeMarker::getMarker (int id) {
-  stringstream aa;
-  aa.clear();
-  aa.str("");
-  aa << id ;
-  im_server_->get(aa.str(),marker_);
-  im_server_->insert(marker_);
-  im_server_->applyChanges ();
-}
 void ShapeMarker::deleteMarker(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) {
 
   stringstream ss;
