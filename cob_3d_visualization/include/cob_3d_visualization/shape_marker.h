@@ -61,11 +61,10 @@ class ShapeMarker
 
     ShapeMarker(boost::shared_ptr<interactive_markers::InteractiveMarkerServer> im_server,
         cob_3d_mapping_msgs::Shape& shape,std::vector<unsigned int>& moved_shapes_indices,std::vector<unsigned int>& interacted_shapes,
-        bool arrow) :
-          interacted_shapes_(interacted_shapes) , moved_shapes_indices_(moved_shapes_indices)
+        std::vector<unsigned int>& deleted_markers_indices_) :
+          interacted_shapes_(interacted_shapes) , moved_shapes_indices_(moved_shapes_indices) , deleted_markers_indices_(deleted_markers_indices_)
     {
-//      arrows_ = arrow ;
-      //      shape_ctr_ = ctr;
+
       im_server_ = im_server;
       shape_ = shape;
       id_ = shape.id;
@@ -92,7 +91,7 @@ class ShapeMarker
 
     void enableMovement (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
     void displayArrows() ;
-    void hideArrows() ;
+    void hideArrows(int flag_untick) ;
 
     void createShapeMenu () ;
     void deleteMarker(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
@@ -119,6 +118,7 @@ class ShapeMarker
 //    void setShapePosition(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);//,const cob_3d_mapping_msgs::Shape& shape) ;
     void getShape (cob_3d_mapping_msgs::Shape& shape) ;
     unsigned int getID() ;
+    void getMarker (int id);
 
     //    std::vector<int> getInteractedShapesNumber();
 
@@ -148,8 +148,10 @@ class ShapeMarker
     unsigned int id_;
     std::vector<unsigned int>& moved_shapes_indices_ ;
     std::vector<unsigned int>& interacted_shapes_ ;
+    std::vector<unsigned int>& deleted_markers_indices_ ;
 
-    bool arrows_;
+
+//    bool arrows_;
 //    cob_3d_mapping_msgs::ModifyMap::Request req ;
 //    cob_3d_mapping_msgs::ModifyMap::Response res;
 //    //

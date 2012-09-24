@@ -248,10 +248,20 @@ void ShapeVisualization::resetAll(const visualization_msgs::InteractiveMarkerFee
     for (unsigned int j=0; j<v_sm_.size(); j++)
     {
       if(id == v_sm_[j]->getID())
-        v_sm_[j]->hideArrows();
+        v_sm_[j]->hideArrows(0);
+    }
+  }
+
+    for (unsigned int i=0; i< deleted_markers_indices_.size();i++){
+      unsigned int id = deleted_markers_indices_[i];
+          for (unsigned int j=0; j<v_sm_.size(); j++)
+          {
+            if(id == v_sm_[j]->getID())
+              v_sm_[j]->getMarker(id);
+          }
     }
 
-  }
+
 
 
   interacted_shapes_.clear();
@@ -511,7 +521,7 @@ ShapeVisualization::shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr
     sha.shapes.push_back(sa->shapes[i]);
     sha.shapes[i].id = i;
     //    ROS_INFO("id of Shape[%d] is: %d", i,sha.shapes[i].id);
-    boost::shared_ptr<ShapeMarker> sm(new ShapeMarker(im_server_, sa->shapes[i],moved_shapes_indices_,interacted_shapes_,false));
+    boost::shared_ptr<ShapeMarker> sm(new ShapeMarker(im_server_, sa->shapes[i],moved_shapes_indices_,interacted_shapes_,deleted_markers_indices_));
     v_sm_.push_back(sm);
   }
   im_server_->applyChanges(); //update changes

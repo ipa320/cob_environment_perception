@@ -78,6 +78,7 @@ class ShapeVisualization
     int ctr_for_shape_indexes;
     std::vector<unsigned int> moved_shapes_indices_;
     std::vector<unsigned int> interacted_shapes_;
+    std::vector<unsigned int> deleted_markers_indices_;
 
 
     Eigen::Quaternionf quatInit ;
