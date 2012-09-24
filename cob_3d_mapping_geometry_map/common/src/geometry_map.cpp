@@ -151,7 +151,8 @@ GeometryMap::addMapEntry(Cylinder::Ptr& c_ptr)
   cob_3d_mapping::merge_config  limits;
   limits.d_thresh=d_;
   limits.angle_thresh=cos_angle_;
-  limits.weighting_method="COUNTER";
+  //limits.weighting_method="COUNTER";
+  limits.weighting_method="AREA";
 
   c.merge_settings_ = limits;
 
