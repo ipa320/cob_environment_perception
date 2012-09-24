@@ -127,7 +127,6 @@ public:
   void recomputeNormal();
 
 
-
   //################## methods to roll and unroll cylinder###############
   void getCyl3D(Cylinder& c3d);
   void makeCyl2D(bool debug);
@@ -135,10 +134,10 @@ public:
   void getCyl2D(Cylinder& c2d,bool debug);
 
   //################## methods for merging############################
-  virtual void isMergeCandidate(const std::vector<boost::shared_ptr<Cylinder> >& cylinder_array,const merge_config& limits,std::vector<int>& intersections);
-  virtual void merge(std::vector<boost::shared_ptr<Cylinder> >& c_array);
+  virtual void isMergeCandidate(const std::vector<Cylinder::Ptr >& cylinder_array,const merge_config& limits,std::vector<int>& intersections);
+  virtual void merge(std::vector<Cylinder::Ptr >& c_array);
 
-  virtual void applyWeighting(std::vector<boost::shared_ptr<Cylinder> >& merge_candidates);
+  virtual void applyWeighting(std::vector<Cylinder::Ptr >& merge_candidates);
 
   //############## debugging methods ####################
   void dbg_out(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points,std::string& name);
@@ -169,7 +168,7 @@ private:
 
 
 
-typedef boost::shared_ptr<Cylinder> CylinderPtr;
+//typedef boost::shared_ptr<Cylinder> CylinderPtr;
 
 }
 

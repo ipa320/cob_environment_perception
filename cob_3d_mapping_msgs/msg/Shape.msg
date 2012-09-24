@@ -10,7 +10,6 @@ byte CYLINDER=5
 
 byte type
 int32 id
-int32 frame_stamp
 # define shape parameters
 # for plane
 # normal vector = params[0],params[1],params[2]

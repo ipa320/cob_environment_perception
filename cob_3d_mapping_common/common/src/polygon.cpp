@@ -231,9 +231,13 @@ Polygon::merge_union(std::vector<Polygon::Ptr>& poly_vec,  Polygon::Ptr& p_avera
   gpc_polygon gpc_C, gpc_B;
   this->getGpcStructure(p_average->transform_from_world_to_plane, &gpc_C);
 
+ // std::cout<<"CONTOURS---\n";
+ // std::cout<<"this"<<this->contours.size()<<"\n";
+
   for(size_t i=0;i<poly_vec.size();++i)
   {
-    //std::cout << poly_vec[i]->contours.size() << " " << std::endl;
+
+//    std::cout<<"p_vec"<<i<<" "<<poly_vec[i]->contours.size()<<"\n";
     poly_vec[i]->getGpcStructure(p_average->transform_from_world_to_plane,&gpc_B);
 
     gpc_polygon_clip(GPC_UNION, &gpc_B, &gpc_C, &gpc_C);
