@@ -68,18 +68,6 @@
 using namespace cob_3d_mapping;
 
 
-
-// Global variables needed for ModifyMap service
-cob_3d_mapping_msgs::ModifyMap::Request req ;
-cob_3d_mapping_msgs::ModifyMap::Response res;
-Eigen::Quaternionf quatInit ;
-Eigen::Vector3f oldCentroid ;
-Eigen::Matrix4f transInit;
-Eigen::Affine3f affineInit;
-Eigen::Matrix4f transInitInv;
-//   Eigen::Affine3f transformInit ;
-
-
 void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)//,const cob_3d_mapping_msgs::Shape& shape)
 {
 
@@ -90,6 +78,7 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
   int shape_id;
   //  Eigen::Affine3f trans;
   stringstream name(feedback->marker_name);
+
   Eigen::Quaternionf quat;
 
   Eigen::Matrix3f rotationMat;
@@ -99,7 +88,6 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
   Eigen::Vector3f vecNew;
   Eigen::Vector3f newCentroid;
   Eigen::Matrix4f transSecondStep;
-  //  Eigen::Affine3f transformInit ;
 
 
   if (feedback->marker_name != "Text"){

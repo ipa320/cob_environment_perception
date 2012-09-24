@@ -29,7 +29,6 @@ void ShapeMarker::deleteMarker(const visualization_msgs::InteractiveMarkerFeedba
   std::cout << "Marker" << interactiveMarker.name << " deleted..."<< std::endl ;
   im_server_->erase(ss.str());
   im_server_->applyChanges ();
-
   //  menu_handler_.apply (*im_server_, interactiveMarker.name);
   //  im_server_->applyChanges ();
   interactedShapes.push_back(shape_.id);
@@ -47,7 +46,9 @@ void ShapeMarker::enableMovement (const visualization_msgs::InteractiveMarkerFee
   if (check_state == interactive_markers::MenuHandler::UNCHECKED)
   {
     displayArrows();
-
+    string title ;
+    menu_handler_.getTitle(feedback->menu_entry_id,title);
+    std::cout << "title: \t" << title << "\n";
     menu_handler_.setCheckState (feedback->menu_entry_id, interactive_markers::MenuHandler::CHECKED);
     interactedShapes.push_back(shape_.id) ;
     interactedShapes.push_back(check_state) ;
@@ -628,6 +629,7 @@ void ShapeMarker::hideCentroid(int untick){
   //    std::cout << interacted_shapes_.at(i) << "\t" ;
   //  }
   //  std::cout << "\n" ;
+
 }
 
 void ShapeMarker::displayContourCB(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) {
@@ -642,6 +644,7 @@ void ShapeMarker::displayContourCB(const visualization_msgs::InteractiveMarkerFe
   }
   else if (check_state == interactive_markers::MenuHandler::CHECKED)
   {
+    menu_handler_.setCheckState (feedback->menu_entry_id, interactive_markers::MenuHandler::UNCHECKED);
     hideContour(1);
   }
   menu_handler_.reApply (*im_server_);
@@ -739,7 +742,6 @@ void ShapeMarker::displayContour(){
 
 void ShapeMarker::hideContour(int untick){
   stringstream ss;
-
   ss.clear() ;
   ss.str("");
   ss << "contour_" << shape_.id;

@@ -80,6 +80,14 @@ class ShapeVisualization
     std::vector<unsigned int> interacted_shapes_;
 
 
+    Eigen::Quaternionf quatInit ;
+    Eigen::Vector3f oldCentroid ;
+    Eigen::Matrix4f transInit;
+    Eigen::Affine3f affineInit;
+    Eigen::Matrix4f transInitInv;
+    cob_3d_mapping_msgs::ModifyMap::Request req ;
+    cob_3d_mapping_msgs::ModifyMap::Response res;
+
 
     boost::shared_ptr<interactive_markers::InteractiveMarkerServer> im_server_; // server for interactive markers
 
