@@ -311,7 +311,7 @@ GeometryMapNode::publishMap()
   //		if index = type 1 poly ptr , else cylinder ptr --> push back in shape vector?!
 
   boost::shared_ptr<std::vector<Polygon::Ptr> > map_polygon = geometry_map_.getMap_polygon();
-  boost::shared_ptr<std::vector<Cylinder::Ptr> > map_cylinder = geometry_map_.getMap_cylinder();
+  //boost::shared_ptr<std::vector<Cylinder::Ptr> > map_cylinder = geometry_map_.getMap_cylinder();
 
 
   geometry_map_.colorizeMap();
@@ -337,20 +337,20 @@ GeometryMapNode::publishMap()
     map_msg.shapes.push_back(s);
   }
 
-  //		cylinders
-  for(unsigned int i=0; i<map_cylinder->size(); i++)
-  {
-    Cylinder& sm = *(map_cylinder->at(i));
-    //cob_3d_mapping_msgs::PolygonArray p;
-    cob_3d_mapping_msgs::Shape s;
-    toROSMsg(sm, s);
-    s.header = map_msg.header;
+ // //		cylinders
+ // for(unsigned int i=0; i<map_cylinder->size(); i++)
+ // {
+ //   Cylinder& sm = *(map_cylinder->at(i));
+ //   //cob_3d_mapping_msgs::PolygonArray p;
+ //   cob_3d_mapping_msgs::Shape s;
+ //   toROSMsg(sm, s);
+ //   s.header = map_msg.header;
 
-    //s.color.b = 1;
-    //s.color.a = 1;
-    //map_msg.polygon_array.push_back(p);
-    map_msg.shapes.push_back(s);
-  }
+ //   //s.color.b = 1;
+ //   //s.color.a = 1;
+ //   //map_msg.polygon_array.push_back(p);
+ //   map_msg.shapes.push_back(s);
+ // }
   map_pub_.publish(map_msg);
 }
 
