@@ -77,7 +77,6 @@ namespace cob_3d_mapping
     Shape()
       : id(0)
       , merged(1)
-      , frame_stamp(0)
       , centroid(Eigen::Vector4f::Zero())
       , color(4,1)
     { }

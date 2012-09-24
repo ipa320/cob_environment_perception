@@ -53,7 +53,6 @@
  *
  ****************************************************************/
 #include "cob_3d_mapping_common/cylinder.h"
-
 namespace cob_3d_mapping {
 
 //##############Methods to initialize cylinder and its paramers#########
@@ -87,7 +86,7 @@ Cylinder::ContoursFromCloud(pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud)
     pts[j](1) = cloud->points[j].y;
     pts[j](2) = cloud->points[j].z;
   }
-  contours.push_back(pts);
+    contours.push_back(pts);
 
 }
 
@@ -97,7 +96,7 @@ Cylinder::ContoursFromList( std::vector<std::vector<Eigen::Vector3f> >& in_list)
 
   computeAttributes(sym_axis, normal, origin_); //  configure unrolled polygon
   contours.resize(in_list.size());
-  //    unrolled_.transform_from_world_to_plane=transformation_from_world_to_cylinder_;
+
   for (size_t j = 0; j < in_list.size(); j++) {
 
     contours[j].resize(in_list[j].size());
@@ -320,6 +319,7 @@ Cylinder::computeAttributes(const Eigen::Vector3f& sym_axis, const Eigen::Vector
 }
 
 
+
 void
 Cylinder::transform2tf(Eigen::Affine3f & trafo)
 {
@@ -538,7 +538,7 @@ void Cylinder::getCyl2D(Cylinder& c2d,bool debug)
 //################## methods for merging############################
 
 
-void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
+void Cylinder::isMergeCandidate(const std::vector<Cylinder::Ptr>& cylinder_array,
     const merge_config& limits, std::vector<int>& intersections) {
 
 
@@ -569,8 +569,8 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
         //std::cout<<"POSITION\n";
 
 
-        CylinderPtr c1(new Cylinder);
-        CylinderPtr c2(new Cylinder);
+        Cylinder::Ptr c1(new Cylinder);
+        Cylinder::Ptr c2(new Cylinder);
         *c1 = *this;
 
 
@@ -606,12 +606,12 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 
 }
 
-//void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
+//void Cylinder::merge(std::vector<Cylinder::Ptr>& c_array) {
 //
-//  std::vector<CylinderPtr> merge_cylinders;
+//  std::vector<Cylinder::Ptr> merge_cylinders;
 //
 //  //create average cylinder for  averaging
-//  CylinderPtr average_cyl =CylinderPtr(new Cylinder());
+//  Cylinder::Ptr average_cyl =CylinderPtr(new Cylinder());
 //  *average_cyl = *this;
 //  average_cyl->applyWeighting(c_array);
 //
@@ -621,14 +621,14 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 //
 //    //shifted cylinder is computed with respect to "this"- system
 //
-//    CylinderPtr shifted_cylinder = CylinderPtr(new Cylinder());
+//    Cylinder::Ptr shifted_cylinder = CylinderPtr(new Cylinder());
 //
 //    c_map.getShiftedCylinder(*average_cyl,*shifted_cylinder);
 //
 //    merge_cylinders.push_back(shifted_cylinder);
 //  }
 //
-//  //  cast CylinderPtr to PolygonPtr to use merge_union   -- is  a better way possible ?!
+//  //  cast Cylinder::Ptr to PolygonPtr to use merge_union   -- is  a better way possible ?!
 //  std::vector<PolygonPtr> merge_polygons;
 //  for (size_t i = 0; i < merge_cylinders.size(); ++i) {
 //    PolygonPtr tmp_ptr= merge_cylinders[i];
@@ -647,12 +647,12 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
 //
 //
 //}
-void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
+void Cylinder::merge(std::vector<Cylinder::Ptr>& c_array) {
   std::cout << "START MERGING" <<std::endl;
-  std::vector<CylinderPtr> merge_cylinders;
+  std::vector<Cylinder::Ptr> merge_cylinders;
 
   //create average cylinder for  averaging
-  CylinderPtr average_cyl =CylinderPtr(new Cylinder());
+  Cylinder::Ptr average_cyl =Cylinder::Ptr(new Cylinder());
 
   //assign "this" cylinder to average cyl and apply weighting over all merge candidates
   *average_cyl = *this;
@@ -675,19 +675,22 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
     c_array[i]->transform_from_world_to_plane = average_cyl->transform_from_world_to_plane;    
    // c_array[i]->transform_from_world_to_plane = this->transform_from_world_to_plane;
   //-----------------------------------------------------------------------------------------
+    std::string ca_str="c_array";
+    ca_str+=boost::lexical_cast<std::string>(i);
+    std::string ca_str3d = ca_str.append("3D");
+    c_array[i]->debug_output(ca_str3d);
     c_array[i]->makeCyl2D(false);
 
 
     merge_cylinders.push_back(c_array[i]);
     
-    std::string ca_str="c_array";
-    ca_str+=boost::lexical_cast<std::string>(i);
     
-   c_array[i]->debug_output(ca_str);
+    std::string ca_str2d = ca_str.append("2D");
+   c_array[i]->debug_output(ca_str2d);
    
   }
 
-  //  cast CylinderPtr to Polygon::Ptr to use merge_union   -- is  a better way possible ?!
+  //  cast Cylinder::Ptr to Polygon::Ptr to use merge_union   -- is  a better way possible ?!
   std::vector<Polygon::Ptr> merge_polygons;
   for (size_t i = 0; i < merge_cylinders.size(); ++i) {
     Polygon::Ptr tmp_ptr= merge_cylinders[i];
@@ -708,12 +711,16 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
   this->makeCyl3D();
   dstr+="3d";
   this->debug_output(dstr);
-
+  //exit(1);
 
 }
 
+
+
+
+
 void
-Cylinder::applyWeighting(std::vector<CylinderPtr>& merge_candidates)
+Cylinder::applyWeighting(std::vector<Cylinder::Ptr>& merge_candidates)
 {
   /*
    * Already weighted:
