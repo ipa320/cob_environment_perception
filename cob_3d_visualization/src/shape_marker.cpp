@@ -23,8 +23,10 @@ void ShapeMarker::deleteMarker(const visualization_msgs::InteractiveMarkerFeedba
   stringstream ss;
   ss << shape_.id ;// ctr_ ;
   deleted_markers_indices_.push_back(shape_.id) ;
+
   visualization_msgs::InteractiveMarker interactiveMarker;
   interactiveMarker.name = ss.str() ;
+
   std::cout << "Marker" << interactiveMarker.name << " deleted..."<< std::endl ;
   im_server_->erase(ss.str());
   im_server_->applyChanges ();
@@ -61,9 +63,6 @@ void ShapeMarker::enableMovement (const visualization_msgs::InteractiveMarkerFee
 
 void ShapeMarker::displayArrows()
 {
-  //  ros::NodeHandle nh;
-  //  nh.subscribe("geometry_map/map/feedback",1,&ShapeMarker::setShapePosition,this);
-
   //  arrows_ = true;
 
   visualization_msgs::InteractiveMarkerControl im_ctrl;
@@ -463,26 +462,29 @@ void ShapeMarker::displayNormal(){
 }
 
 void ShapeMarker::hideNormal(int untick){
+
   stringstream ss;
+  std::vector<unsigned int>::iterator iter;
+
   ss << "normal_" << shape_.id;
   im_server_->erase(ss.str());
   im_server_->applyChanges ();
 
   if(untick){
     // updating interacted_shapes_ vector
-    for (unsigned int i=0;i<interacted_shapes_.size();i++){
-      if (interacted_shapes_.at(i) == shape_.id){
-        interacted_shapes_.erase(interacted_shapes_.begin()+i) ;
-        break ;
-      }
+    iter = find (interacted_shapes_.begin(), interacted_shapes_.end(), shape_.id) ;
+    if (iter!=interacted_shapes_.end()){
+      interacted_shapes_.erase(interacted_shapes_.begin()+(iter-interacted_shapes_.begin())) ;
     }
   }
-  //
-  //  for (unsigned int i=0;i<interacted_shapes_.size();i++){
-  //    std::cout << interacted_shapes_.at(i) << "\t" ;
-  //  }
-  //  std::cout << "\n" ;
+//
+//  for (unsigned int i=0;i<interacted_shapes_.size();i++){
+//    std::cout << interacted_shapes_.at(i) << "\t" ;
+//  }
+//  std::cout << "\n" ;
 }
+//
+
 
 
 /**
@@ -564,21 +566,7 @@ void ShapeMarker::displayCentroid(){
   im_server_->insert (imarker);
 
   interacted_shapes_.push_back(shape_.id) ;
-  //  if (interacted_shapes_.empty()){
-  //    interacted_shapes_.push_back(id_) ;
-  //    std::cout << "empty!!!!!" << "\n" ;
-  //
-  //  }
-  //  else {
-  //    std::cout << "shape_.id" << shape_.id << "\n" ;
-  //    for (unsigned int i=0;i<interacted_shapes_.size() ;i++){
-  //      if (interacted_shapes_.at(i) != shape_.id){
-  //        std::cout << "interacted_shapes_.at" << "(" << i <<")"<< " = "<<  interacted_shapes_.at(i)<< "\n" ;
-  //        interacted_shapes_.push_back(shape_.id) ;
-  //        break ;
-  //      }
-  //    }
-  //  }
+
   //  if (interacted_shapes_.empty()){
   //    interacted_shapes_.push_back(shape_.id) ;
   //  }
@@ -597,6 +585,8 @@ void ShapeMarker::displayCentroid(){
 
 void ShapeMarker::hideCentroid(int untick){
   stringstream ss;
+  std::vector<unsigned int>::iterator iter;
+
   ss.clear();
   ss.str("");
   ss << "centroid_" << shape_.id;
@@ -605,19 +595,12 @@ void ShapeMarker::hideCentroid(int untick){
 
   if(untick){
     // updating interacted_shapes_ vector
-    for (unsigned int i=0;i<interacted_shapes_.size();i++){
-      if (interacted_shapes_.at(i) == shape_.id){
-        interacted_shapes_.erase(interacted_shapes_.begin()+i) ;
-        break;
-      }
+    iter = find (interacted_shapes_.begin(), interacted_shapes_.end(), shape_.id) ;
+    if (iter!=interacted_shapes_.end()){
+      interacted_shapes_.erase(interacted_shapes_.begin()+(iter-interacted_shapes_.begin())) ;
     }
   }
   //
-  //  for (unsigned int i=0;i<interacted_shapes_.size();i++){
-  //    std::cout << interacted_shapes_.at(i) << "\t" ;
-  //  }
-  //  std::cout << "\n" ;
-
 }
 
 void ShapeMarker::displayContourCB(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) {
@@ -730,6 +713,8 @@ void ShapeMarker::displayContour(){
 
 void ShapeMarker::hideContour(int untick){
   stringstream ss;
+  std::vector<unsigned int>::iterator iter;
+
   ss.clear() ;
   ss.str("");
   ss << "contour_" << shape_.id;
@@ -737,12 +722,9 @@ void ShapeMarker::hideContour(int untick){
   im_server_->applyChanges ();
 
   if(untick){
-    //   updating interacted_shapes_ vector
-    for (unsigned int i=0;i<interacted_shapes_.size();i++){
-      if (interacted_shapes_.at(i) == shape_.id){
-        interacted_shapes_.erase(interacted_shapes_.begin()+i) ;
-        break;
-      }
+    iter = find (interacted_shapes_.begin(), interacted_shapes_.end(), shape_.id) ;
+    if (iter!=interacted_shapes_.end()){
+      interacted_shapes_.erase(interacted_shapes_.begin()+(iter-interacted_shapes_.begin())) ;
     }
   }
 
