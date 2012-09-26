@@ -50,6 +50,7 @@ public:
 protected:
   virtual void onNewMessage(const MarkerConstPtr& old_message, const MarkerConstPtr& new_message);
 
+
   Ogre::SceneNode* scene_node_;
   Ogre::ManualObject* polygon_;
 };

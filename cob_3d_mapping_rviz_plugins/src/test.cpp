@@ -44,7 +44,7 @@ int main(int argc, char **argv) {
     s.header.frame_id="/map";
 
     s.color.r = 0;
-    s.color.g = 1;
+    s.color.g = 0.71;
     s.color.b = 0;
     s.color.a = 1;
 
@@ -85,6 +85,10 @@ int main(int argc, char **argv) {
 
     s.params[0]=1;
     s.params[1]=0;
+    sa.shapes.push_back(s);
+
+    s.params[0]=0;
+    s.params[1]=1;
     sa.shapes.push_back(s);
 
     pub.publish(sa);
