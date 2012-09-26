@@ -96,7 +96,7 @@ GeometryMap::addMapEntry(Polygon::Ptr& p_ptr)
   limits.d_thresh=d_;
   limits.angle_thresh=cos_angle_;
   //	limits.weighting_method="COMBINED";
-  limits.weighting_method="COUNTER";
+  limits.weighting_method="AREA";
   p.merge_settings_ = limits;
   p.assignWeight();
 
