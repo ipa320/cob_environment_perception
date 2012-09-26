@@ -119,7 +119,7 @@ public:
   }
 
   void addMapEntry(cob_3d_mapping::Polygon::Ptr& p_ptr);
-  void addMapEntry(boost::shared_ptr<cob_3d_mapping::Cylinder>& c_ptr);
+  void addMapEntry(cob_3d_mapping::Cylinder::Ptr& c_ptr);
   void addMapEntry(cob_3d_mapping::ShapeCluster::Ptr& sc_ptr);
 
   bool

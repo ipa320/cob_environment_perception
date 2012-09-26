@@ -146,16 +146,13 @@ GeometryMap::addMapEntry(Cylinder::Ptr& c_ptr)
 {
   std::cout << "add cylinder" << std::endl;
   Cylinder& c = *c_ptr;
-//  c.ParamsFromShapeMsg();
 //
-//  c.getCyl2D();
 
   cob_3d_mapping::merge_config  limits;
   limits.d_thresh=d_;
   limits.angle_thresh=cos_angle_;
-  //limits.weighting_method="AREA";
-  limits.weighting_method="COUNTER";
-  //	limits.weighting_method="COMBINED";
+  //limits.weighting_method="COUNTER";
+  limits.weighting_method="AREA";
 
   c.merge_settings_ = limits;
 
@@ -173,7 +170,7 @@ GeometryMap::addMapEntry(Cylinder::Ptr& c_ptr)
     // if polygon has to be merged ...
     if(intersections.size()>0)
     {
-      std::vector<boost::shared_ptr<Cylinder> > merge_candidates;
+      std::vector<Cylinder::Ptr> merge_candidates;
 
       for(int i=intersections.size()-1; i>=0 ;--i)
       {

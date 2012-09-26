@@ -263,7 +263,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
       s->type = cob_3d_mapping_msgs::Shape::CYLINDER;
       s->params.resize(10);
 
-      cob_3d_mapping::CylinderPtr  cyl = cob_3d_mapping::CylinderPtr(new cob_3d_mapping::Cylinder());
+      cob_3d_mapping::Cylinder::Ptr  cyl = cob_3d_mapping::Cylinder::Ptr(new cob_3d_mapping::Cylinder());
       Eigen::Vector3f centroid3f  = c->getCentroid();
       cyl->centroid << centroid3f[0] , centroid3f[1] , centroid3f[2] , 0;
 
