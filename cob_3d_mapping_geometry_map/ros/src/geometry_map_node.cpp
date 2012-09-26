@@ -79,7 +79,6 @@
 
 // external includes
 #include <boost/timer.hpp>
-#include "cob_3d_mapping_common/stop_watch.h"
 #include <cob_3d_mapping_common/ros_msg_conversions.h>
 
 #include <tf_conversions/tf_eigen.h>
@@ -163,8 +162,6 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr s
   af_orig = geometry_map_.getLastError() * af_orig;
 
   static int ctr=0;
-  static double time = 0;
-  PrecisionStopWatch t;
   std::cout<<">>>>>>>>>new cloud>>>>>>>>>>\n";
 
   std::vector<Polygon::Ptr> polygon_list;
