@@ -313,6 +313,9 @@ Polygon::merge_union(std::vector<Polygon::Ptr>& poly_vec,  Polygon::Ptr& p_avera
   gpc_polygon *gpc_C = new gpc_polygon, *smoothed = new gpc_polygon;
   this->getGpcStructure(p_average->transform_from_world_to_plane, gpc_C);
 
+ // std::cout<<"CONTOURS---\n";
+ // std::cout<<"this"<<this->contours.size()<<"\n";
+
   for(size_t i=0;i<poly_vec.size();++i)
   {
     gpc_polygon *gpc_B = new gpc_polygon;
@@ -346,9 +349,13 @@ Polygon::assignWeight()
   }
   else if (std::strcmp(merge_settings_.weighting_method.c_str(), "AREA")== 0)
   {
-    //DO NOT USE
-    //THIS IS WORK IN PROGRESS
-    merge_weight_ = computeArea3d();
+    double area = computeArea3d();
+    merge_weight_=(merged*area);
+
+
+    
+
+
   }
   else if (std::strcmp(merge_settings_.weighting_method.c_str(), "COMBINED")== 0)
   {

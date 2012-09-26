@@ -27,7 +27,7 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_gensrv()
 
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/ros/include
-    ${PROJECT_SOURCE_DIR}/common/include)
+    ${PROJECT_SOURCE_DIR}/common/include  )
 
 #rosbuild_add_library(gpc common/src/gpc.c)
 
@@ -37,7 +37,7 @@ rosbuild_add_library(cob_3d_mapping_common
 	common/src/polygon.cpp
 	common/src/cylinder.cpp
 	common/src/gpc.c)
-#target_link_libraries(cob_3d_mapping_common gpc)
+#target_link_libraries(cob_3d_mapping_common )
 
 
 
