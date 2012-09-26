@@ -77,7 +77,6 @@ namespace cob_3d_mapping
   toROSMsg(const Polygon& p, cob_3d_mapping_msgs::Shape& s)
   {
     s.id = p.id;
-    s.frame_stamp =p.frame_stamp;
 
     s.type = cob_3d_mapping_msgs::Shape::POLYGON;
     s.params.resize(4);
@@ -130,7 +129,6 @@ namespace cob_3d_mapping
   fromROSMsg(const cob_3d_mapping_msgs::Shape& s, Polygon& p)
   {
     p.id = s.id;
-    p.frame_stamp = s.frame_stamp;
     p.centroid(0) = s.centroid.x;
     p.centroid(1) = s.centroid.y;
     p.centroid(2) = s.centroid.z;
@@ -210,7 +208,6 @@ namespace cob_3d_mapping
     //std::cout << "d: " << p.d << std::endl << std::endl;
 
     s.id=c.id;
-    s.frame_stamp = c.frame_stamp;
     s.color.r=c.color[0];
     s.color.g=c.color[1];
     s.color.b=c.color[2];
@@ -251,7 +248,6 @@ namespace cob_3d_mapping
 
 
 
-    c.frame_stamp = s.frame_stamp;
     c.id = s.id;
     // c.centroid(0) = s.centroid.x;
     // c.centroid(1) = s.centroid.y;

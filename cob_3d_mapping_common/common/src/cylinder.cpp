@@ -53,7 +53,6 @@
  *
  ****************************************************************/
 #include "cob_3d_mapping_common/cylinder.h"
-
 namespace cob_3d_mapping {
 
 //##############Methods to initialize cylinder and its paramers#########
@@ -87,7 +86,7 @@ Cylinder::ContoursFromCloud(pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud)
     pts[j](1) = cloud->points[j].y;
     pts[j](2) = cloud->points[j].z;
   }
-  contours.push_back(pts);
+    contours.push_back(pts);
 
 }
 
@@ -97,7 +96,7 @@ Cylinder::ContoursFromList( std::vector<std::vector<Eigen::Vector3f> >& in_list)
 
   computeAttributes(sym_axis, normal, origin_); //  configure unrolled polygon
   contours.resize(in_list.size());
-  //    unrolled_.transform_from_world_to_plane=transformation_from_world_to_cylinder_;
+
   for (size_t j = 0; j < in_list.size(); j++) {
 
     contours[j].resize(in_list[j].size());
@@ -320,6 +319,7 @@ Cylinder::computeAttributes(const Eigen::Vector3f& sym_axis, const Eigen::Vector
 }
 
 
+
 void
 Cylinder::transform2tf(Eigen::Affine3f & trafo)
 {
@@ -538,7 +538,7 @@ void Cylinder::getCyl2D(Cylinder& c2d,bool debug)
 //################## methods for merging############################
 
 
-void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
+void Cylinder::isMergeCandidate(const std::vector<Cylinder::Ptr>& cylinder_array,
     const merge_config& limits, std::vector<int>& intersections) {
 
 
@@ -569,8 +569,8 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
         //std::cout<<"POSITION\n";
 
 
-        CylinderPtr c1(new Cylinder);
-        CylinderPtr c2(new Cylinder);
+        Cylinder::Ptr c1(new Cylinder);
+        Cylinder::Ptr c2(new Cylinder);
         *c1 = *this;
 
 
@@ -605,54 +605,12 @@ void Cylinder::isMergeCandidate(const std::vector<CylinderPtr>& cylinder_array,
   }//for
 
 }
-
-//void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
-//
-//  std::vector<CylinderPtr> merge_cylinders;
-//
-//  //create average cylinder for  averaging
-//  CylinderPtr average_cyl =CylinderPtr(new Cylinder());
-//  *average_cyl = *this;
-//  average_cyl->applyWeighting(c_array);
-//
-//  //	transform  to local system
-//  for (int i = 0; i < (int) c_array.size(); i++) {
-//    Cylinder & c_map = *c_array[i];
-//
-//    //shifted cylinder is computed with respect to "this"- system
-//
-//    CylinderPtr shifted_cylinder = CylinderPtr(new Cylinder());
-//
-//    c_map.getShiftedCylinder(*average_cyl,*shifted_cylinder);
-//
-//    merge_cylinders.push_back(shifted_cylinder);
-//  }
-//
-//  //  cast CylinderPtr to PolygonPtr to use merge_union   -- is  a better way possible ?!
-//  std::vector<PolygonPtr> merge_polygons;
-//  for (size_t i = 0; i < merge_cylinders.size(); ++i) {
-//    PolygonPtr tmp_ptr= merge_cylinders[i];
-//    merge_polygons.push_back(tmp_ptr);
-//  }
-//  PolygonPtr average_polygon= average_cyl;
-//
-//  this->merge_union(merge_polygons,average_polygon);
-//
-//  this->r_ = average_cyl->r_;
-//  this->computeCentroid();
-//  this->computeAttributes(average_cyl->sym_axis,average_cyl->normal,average_cyl->origin_);
-//  this->assignWeight();
-//
-//  //  std::cout<<" weight after merge: "<<this->merge_weight_<<std::endl;
-//
-//
-//}
-void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
+void Cylinder::merge(std::vector<Cylinder::Ptr>& c_array) {
   std::cout << "START MERGING" <<std::endl;
-  std::vector<CylinderPtr> merge_cylinders;
+  std::vector<Cylinder::Ptr> merge_cylinders;
 
   //create average cylinder for  averaging
-  CylinderPtr average_cyl =CylinderPtr(new Cylinder());
+  Cylinder::Ptr average_cyl =Cylinder::Ptr(new Cylinder());
 
   //assign "this" cylinder to average cyl and apply weighting over all merge candidates
   *average_cyl = *this;
@@ -662,9 +620,10 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
   this->transform_from_world_to_plane = average_cyl->transform_from_world_to_plane;
   //----------------------------------------------------------------------------------
 
-  this->makeCyl2D(false);
-  
  std::string t_str="this";
+ this->debug_output(t_str);
+  this->makeCyl2D(false);
+     t_str.append("2d"); 
  this->debug_output(t_str);
 
 
@@ -675,19 +634,22 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
     c_array[i]->transform_from_world_to_plane = average_cyl->transform_from_world_to_plane;    
    // c_array[i]->transform_from_world_to_plane = this->transform_from_world_to_plane;
   //-----------------------------------------------------------------------------------------
+    std::string ca_str="c_array";
+    ca_str+=boost::lexical_cast<std::string>(i);
+    std::string ca_str3d = ca_str.append("3D");
+    c_array[i]->debug_output(ca_str3d);
     c_array[i]->makeCyl2D(false);
 
 
     merge_cylinders.push_back(c_array[i]);
     
-    std::string ca_str="c_array";
-    ca_str+=boost::lexical_cast<std::string>(i);
     
-   c_array[i]->debug_output(ca_str);
+    std::string ca_str2d = ca_str.append("2D");
+   c_array[i]->debug_output(ca_str2d);
    
   }
 
-  //  cast CylinderPtr to Polygon::Ptr to use merge_union   -- is  a better way possible ?!
+  //  cast Cylinder::Ptr to Polygon::Ptr to use merge_union   -- is  a better way possible ?!
   std::vector<Polygon::Ptr> merge_polygons;
   for (size_t i = 0; i < merge_cylinders.size(); ++i) {
     Polygon::Ptr tmp_ptr= merge_cylinders[i];
@@ -708,12 +670,16 @@ void Cylinder::merge(std::vector<CylinderPtr>& c_array) {
   this->makeCyl3D();
   dstr+="3d";
   this->debug_output(dstr);
-
+  //exit(1);
 
 }
 
+
+
+
+
 void
-Cylinder::applyWeighting(std::vector<CylinderPtr>& merge_candidates)
+Cylinder::applyWeighting(std::vector<Cylinder::Ptr>& merge_candidates)
 {
   /*
    * Already weighted:
@@ -741,20 +707,23 @@ Cylinder::applyWeighting(std::vector<CylinderPtr>& merge_candidates)
   int merged_sum = this->merged;
 
   //std::cout<<"NEW params"<<"\n";
-  //std::cout<<"merged = "<<this->merged<<"\n";
+  //std::cout<<"merged = "<<this->merge_weight_<<"\n";
+  
   //std::cout<<"r = "<<this->r_<<"\n";
-  //std::cout<<"normal = "<<this->normal[0]<<" "<<this->normal[1]<<" "<<this->normal[2]<<" "<<"\n";
+  std::cout<<"normal = "<<this->normal[0]<<" "<<this->normal[1]<<" "<<this->normal[2]<<" "<<"\n";
   //std::cout<<"origin_ = "<<this->origin_[0]<<" "<<this->origin_[1]<<" "<<this->origin_[2]<<" "<<"\n";
+  //std::cout<<"sym_axis1 =\n "<<this->sym_axis[0]<<" "<<this->sym_axis[1]<<" "<<this->sym_axis[2]<<" "<<"\n";
 
 
 
   for (int i = 0; i < (int)merge_candidates.size(); ++i) {
 
     //std::cout<<"OLD params"<<"\n";
-    //std::cout<<"merged = "<<merge_candidates[i]->merged<<"\n";
+    //std::cout<<"merged = "<<merge_candidates[i]->merge_weight_<<"\n";
     //std::cout<<"r = "<<merge_candidates[0]->r_<<"\n";
-    //std::cout<<"normal = "<<merge_candidates[i]->normal[0]<<" "<<merge_candidates[i]->normal[1]<<" "<<merge_candidates[i]->normal[2]<<" "<<"\n";
+    std::cout<<"normal = "<<merge_candidates[i]->normal[0]<<" "<<merge_candidates[i]->normal[1]<<" "<<merge_candidates[i]->normal[2]<<" "<<"\n";
     //std::cout<<"origin_ = "<<merge_candidates[i]->origin_[0]<<" "<<merge_candidates[i]->origin_[1]<<" "<<merge_candidates[i]->origin_[2]<<" "<<"\n";
+  //std::cout<<"sym_axis2 =\n "<<merge_candidates[i]->sym_axis[0]<<" "<<merge_candidates[i]->sym_axis[1]<<" "<<merge_candidates[i]->sym_axis[2]<<" "<<"\n";
 
 
 
@@ -797,10 +766,11 @@ Cylinder::applyWeighting(std::vector<CylinderPtr>& merge_candidates)
   }
 
 
+  //std::cout<<"sym_axis3 =\n "<<this->sym_axis[0]<<" "<<this->sym_axis[1]<<" "<<this->sym_axis[2]<<" "<<"\n";
   //std::cout<<"AVERAGE params"<<"\n";
-  //std::cout<<"merged = "<<this->merged<<"\n";
+  //std::cout<<"merged = "<<this->merge_weight_<<"\n";
   //std::cout<<"r = "<<this->r_<<"\n";
-  //std::cout<<"normal = "<<this->normal[0]<<" "<<this->normal[1]<<" "<<this->normal[2]<<" "<<"\n";
+  std::cout<<"normal = "<<this->normal[0]<<" "<<this->normal[1]<<" "<<this->normal[2]<<" "<<"\n";
   //std::cout<<"origin_ = "<<this->origin_[0]<<" "<<this->origin_[1]<<" "<<this->origin_[2]<<" "<<"\n";
 
 
