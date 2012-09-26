@@ -6,10 +6,7 @@
  */
 
 #include <cob_3d_visualization/shape_marker.h>
-#include <math.h>
-#include <stdlib.h>
-#include <vector>
-#include <algorithm>
+
 
 void ShapeMarker::getShape (cob_3d_mapping_msgs::Shape& shape) {
   shape_ = shape ;
@@ -44,17 +41,15 @@ void ShapeMarker::enableMovement (const visualization_msgs::InteractiveMarkerFee
 
   if (check_state == interactive_markers::MenuHandler::UNCHECKED)
   {
-    displayArrows();
     //    im_server_->setCallback(marker_.name,boost::bind (&ShapeMarker::setShapePosition, this, _1)
     //                              ,visualization_msgs::InteractiveMarkerFeedback::POSE_UPDATE);
     menu_handler_.setCheckState (feedback->menu_entry_id, interactive_markers::MenuHandler::CHECKED);
-
+    displayArrows();
   }
   else if (check_state == interactive_markers::MenuHandler::CHECKED)
   {
-    hideArrows(1);
     menu_handler_.setCheckState (feedback->menu_entry_id, interactive_markers::MenuHandler::UNCHECKED);
-
+    hideArrows(1);
   }
   menu_handler_.reApply (*im_server_);
   im_server_->applyChanges();

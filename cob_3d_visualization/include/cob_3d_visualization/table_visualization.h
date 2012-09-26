@@ -18,6 +18,8 @@
 #include <ros/ros.h>
 #include <cob_3d_mapping_msgs/ShapeArray.h>
 #include <cob_3d_mapping_msgs/GetObjectsOfClass.h>
+#include <cob_3d_visualization/table_marker.h>
+
 //#include <cob_3d_mapping_msgs/GetTables.h>
 
 
@@ -29,7 +31,8 @@ class TableVisualization
 
     {
       ctr_ = 0 ;
-      shape_array_sub_ = nh_.subscribe ("table_array", 1, &TableVisualization::tableVisualizationCallback, this);
+      table_array_sub_ = nh_.subscribe ("table_array", 1, &TableVisualization::tableVisualizationCallback, this);
+      table_im_server_.reset (new interactive_markers::InteractiveMarkerServer ("geometry_map/map", "", false));
 
     }
     // Destructor
@@ -45,8 +48,10 @@ class TableVisualization
   protected:
 
      ros::NodeHandle nh_;
-     ros::Subscriber shape_array_sub_ ;
-     const cob_3d_mapping_msgs::ShapeArray sa;
+     ros::Subscriber table_array_sub_ ;
+     std::vector<boost::shared_ptr<TableMarker> > v_tm_;
+     boost::shared_ptr<interactive_markers::InteractiveMarkerServer> table_im_server_;
+
      int ctr_;
 };
 

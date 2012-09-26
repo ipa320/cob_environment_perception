@@ -14,7 +14,10 @@
 // standard includes
 #include <stdio.h>
 #include <sstream>
-
+#include <math.h>
+#include <stdlib.h>
+#include <vector>
+#include <algorithm>
 // ROS includes
 #include <ros/ros.h>
 //#include <sensor_msgs/PointCloud2.h>
