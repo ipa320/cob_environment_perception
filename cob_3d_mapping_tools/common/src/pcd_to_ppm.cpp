@@ -92,12 +92,12 @@ void readOptions(int argc, char* argv[])
     cout << options << endl;
     exit(0);
   }
-  if (file_i == "") 
+  if (file_i == "")
   {
     cout << "no input and output file defined " << endl << options << endl;
     exit(0);
   }
-  if (file_o[0] == "") 
+  if (file_o[0] == "")
   {
     cout << "no output file defined " << endl << options << endl;
     exit(0);

@@ -64,10 +64,14 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <queue>
+#include <functional>
 
 
 // external includes
 #include <boost/timer.hpp>
+#include <boost/tuple/tuple.hpp>
+#include <boost/tuple/tuple_comparison.hpp>
 #include <Eigen/Geometry>
 #include <pcl/win32_macros.h>
 //#include <pcl/common/transform.h>
@@ -78,114 +82,77 @@
 //#include <pcl/common/impl/transform.hpp>
 
 
-
+#include <cob_3d_mapping_slam/dof/tflink.h>
 #include "cob_3d_mapping_geometry_map/geometry_map.h"
 using namespace cob_3d_mapping;
 
 
 void
-GeometryMap::addMapEntry(boost::shared_ptr<Polygon>& p_ptr)
-
+GeometryMap::addMapEntry(Polygon::Ptr& p_ptr)
 {
-
-
   Polygon& p = *p_ptr;
-
 
   cob_3d_mapping::merge_config  limits;
   limits.d_thresh=d_;
   limits.angle_thresh=cos_angle_;
   //	limits.weighting_method="COMBINED";
   limits.weighting_method="COUNTER";
-
-
   p.merge_settings_ = limits;
   p.assignWeight();
 
-
-  // find out polygons, to merge with
   std::vector<int> intersections;
-
   if (map_polygon_.size()> 0)
   {
-    p.isMergeCandidate(map_polygon_,limits,intersections);
+    p.getMergeCandidates(map_polygon_,intersections);
     if(intersections.size()>0) // if polygon has to be merged ...
     {
-      std::vector<boost::shared_ptr<Polygon> > merge_candidates;
+      std::vector<Polygon::Ptr> merge_candidates;
       for(int i=intersections.size()-1; i>=0 ;--i)
       {
-
-        if (intersections.size() > 1) {
-//          std::cout<<"Intersection Size POLYGON= "<<intersections.size()<<"\n";
-        }
         // copies pointer to polygon
         merge_candidates.push_back(map_polygon_[intersections[i]]);
         // delete pointer in map, polygon still available. However there should be a better solution than
         // copying and deleting pointers manually.
         map_polygon_[intersections[i]] = map_polygon_.back();
         map_polygon_.pop_back();
-        //              os<<"_____________________"<<std::endl;
-        //              os<<"MAP:                "<<intersections[i]<<std::endl;
-        //
-        //              Polygon& p_new = *map_polygon_[intersections[i]];
-        //              os<<"ID: "<<p_new.id<<std::endl;
-        //              os<<"D:  "<<p_new.d<<std::endl;
-        //
-        //              os<<"_____________________"<<std::endl;
-        //              os<<"NEW POLYGON:\n"<<std::endl;
-        //
-        //              os<<"ID: "<<p_ptr->id<<std::endl;
-        //              os<<"D:  "<<p_ptr->d<<std::endl;
-
       }
       // merge polygon with merge candidates
-      //std::cout <<"c before: "<< p.centroid(0)<<", "<<p.centroid(1)<<", "<<p.centroid(2)<<std::endl;
       p.merge(merge_candidates); // merge all new candidates into p
-	p.id = new_id_;
+      p.id = new_id_++;
       map_polygon_.push_back(p_ptr); // add p to map, candidates were dropped!
-      ++new_id_;
-      //std::cout <<"c after : "<< p.centroid(0)<<", "<<p.centroid(1)<<", "<<p.centroid(2)<<std::endl;
-      //    std::cout<<"size +- "<< 1 -merge_candidates.size()<<std::endl;
     }
     else //if polygon does not have to be merged , add new polygon
     {
-      p.assignMembers();
+      p.computeAttributes(p.normal,p.centroid);
       p.assignWeight();
-	p.id = new_id_;
+      p.id = new_id_++;
+      p.frame_stamp = frame_counter_;
       map_polygon_.push_back(p_ptr);
-      new_id_++;
-      //  std::cout<<"size +1"<<std::endl;
     }
   }
   else
   {
-    p.assignMembers();
+    p.computeAttributes(p.normal,p.centroid);
     p.assignWeight();
-	p.id = new_id_;
+    p.id = new_id_++;
+    p.frame_stamp = frame_counter_;
     map_polygon_.push_back(p_ptr);
-    new_id_++;
   }
   if(save_to_file_) saveMap(file_path_);
-//  std::cout<<"Map Size POLYGON "<<map_polygon_.size()<<"\n";
 }
 
 void
-GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
-
+GeometryMap::addMapEntry(Cylinder::Ptr& c_ptr)
 {
-
-
+  std::cout << "add cylinder" << std::endl;
   Cylinder& c = *c_ptr;
-  c.ParamsFromShapeMsg();
-
-  c.getCyl2D();
+//
 
   cob_3d_mapping::merge_config  limits;
   limits.d_thresh=d_;
   limits.angle_thresh=cos_angle_;
-  //limits.weighting_method="AREA";
-  limits.weighting_method="COUNTER";
-  //	limits.weighting_method="COMBINED";
+  //limits.weighting_method="COUNTER";
+  limits.weighting_method="AREA";
 
   c.merge_settings_ = limits;
 
@@ -196,15 +163,14 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
   if (map_cylinder_.size()> 0 )
   {
     c.isMergeCandidate(map_cylinder_,limits,intersections);
-    // std::cout<<"intersections size = "<<intersections.size()<<std::endl;
-    if (intersections.size() > 1) {
+    /*if (intersections.size() > 1) {
        std::cout<<"Intersection Size CYLINDER = "<<intersections.size()<<"\n";
-     }
+       }*/
 
     // if polygon has to be merged ...
     if(intersections.size()>0)
     {
-      std::vector<boost::shared_ptr<Cylinder> > merge_candidates;
+      std::vector<Cylinder::Ptr> merge_candidates;
 
       for(int i=intersections.size()-1; i>=0 ;--i)
       {
@@ -216,12 +182,13 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 
       }
       // merge polygon with merge candidates
-
-      c.mergeCylinder(merge_candidates);
-	c.id = new_id_;
-
+//      c.debug_output("Pre");
+      c.merge(merge_candidates);
+      c.id = new_id_;
+//      c.debug_output("Post");
       map_cylinder_.push_back(c_ptr);
       new_id_ ++;
+
 
       //	  std::cout<<"size +- "<< 1 -merge_candidates.size()<<std::endl;
     }
@@ -231,36 +198,199 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
     {
 
 
-      c.assignMembers(c.axes_[1],c.axes_[2],c.origin_);
+      c.computeAttributes(c.sym_axis,c.normal,c.origin_);
       c.assignWeight();
-	c.id = new_id_;
+      c.id = new_id_;
+      c.frame_stamp =frame_counter_;
 
       map_cylinder_.push_back(c_ptr);
       new_id_++;
-
       //	std::cout<<"size +1"<<std::endl;
     }
   }
   else{
-
-    c.assignMembers(c.axes_[1],c.axes_[2],c.origin_);
+    //std::cout<<"ADD CYLINDER----\n";
+    c.computeAttributes(c.sym_axis,c.normal,c.origin_);
     c.assignWeight();
-	c.id = new_id_;
+    c.id = new_id_;
+    c.frame_stamp =frame_counter_;
 
     map_cylinder_.push_back(c_ptr);
 
     new_id_++;
   }
-  std::cout<<"Map Size CYLINDER="<<map_cylinder_.size()<<std::endl;
-
   //	if(save_to_file_) saveMap(file_path_);
+}
 
+void
+GeometryMap::addMapEntry(ShapeCluster::Ptr& sc_ptr)
+{
+  sc_ptr->computeAttributes();
+  if (map_shape_cluster_.size())
+  {
+    std::vector<int> intersections;
+    sc_ptr->getMergeCandidates(map_shape_cluster_, intersections);
+    std::cout << intersections.size() << std::endl;
+    if(intersections.size())
+    {
+      std::vector<ShapeCluster::Ptr> do_merge;
+      for(int i=intersections.size()-1; i>=0; --i)
+      {
+        do_merge.push_back(map_shape_cluster_[intersections[i]]);
+        map_shape_cluster_[intersections[i]] = map_shape_cluster_.back();
+        map_shape_cluster_.pop_back();
+      }
+      sc_ptr->merge(do_merge);
+      sc_ptr->id = new_id_++;
+      map_shape_cluster_.push_back(sc_ptr);
+    }
+    else
+    {
+      sc_ptr->id = new_id_++;
+      sc_ptr->frame_stamp = frame_counter_;
+      map_shape_cluster_.push_back(sc_ptr);
+    }
+  }
+  else
+  {
+    sc_ptr->id = new_id_++;
+    sc_ptr->frame_stamp = frame_counter_;
+    map_shape_cluster_.push_back(sc_ptr);
+  }
+}
 
+bool
+GeometryMap::computeTfError(const std::vector<Polygon::Ptr>& list_polygon, const Eigen::Affine3f& tf_old, Eigen::Affine3f& adjust_tf)
+{
+  return false;
+  if (map_polygon_.size() < 10)
+  {
+    adjust_tf = Eigen::Affine3f::Identity();
+    last_tf_err_ = Eigen::Affine3f::Identity();
+    return false;
+  }
+  cob_3d_mapping::merge_config  limits;
+  limits.d_thresh=d_;
+  limits.angle_thresh=cos_angle_;
+  limits.weighting_method="COUNTER";
+  // min heap to store polygons with max overlap (Landmark elements: overlap, num_vertices, idx_old, idx_new)
+  typedef boost::tuple<float,unsigned int,unsigned int> Landmark;
+  std::priority_queue<Landmark> landmarks_queue;
+  const size_t q_size = 3;
+  int sum_overlap = 0;
+  for (size_t p=0; p<map_polygon_.size(); ++p) // old polys
+  {
+    Polygon::Ptr pp = map_polygon_[p];
+
+    for (size_t q=0; q<list_polygon.size(); ++q) // new polys
+    {
+      Polygon::Ptr pq = list_polygon[q];
+      pq->merge_settings_=limits;
+      if ( !pp->hasSimilarParametersWith(pq) ) continue;
+      //if ( pq->contours[pq->outerContourIndex()].size() < 20 ) continue;
+      //int abs_overlap;
+      //float rel_overlap;
+      //if (!pp->getContourOverlap(pq, rel_overlap, abs_overlap)) continue;
+      //if (abs_overlap < 10) continue;
+      //if (rel_overlap < 0.3) continue;
+      //sum_overlap += abs_overlap;
+      float w = pp->computeSimilarity(pq);
+      std::cout << "Sim: " << w << std::endl;
+      if (w < 0.70) continue;
+      landmarks_queue.push( Landmark(w, p, q) );
+    }
+  }
+  if (landmarks_queue.size() < q_size) return false;
+
+  Landmark lm;
+  DOF6::TFLinkvf tfe;
+  Eigen::Vector3f n,m;
+  float d1, d2;
+  int i = 0;
+  while (landmarks_queue.size() != 0)
+  {
+    lm = landmarks_queue.top(); landmarks_queue.pop();
+    n = map_polygon_[lm.get<1>()]->normal;
+    m = list_polygon[lm.get<2>()]->normal;
+    d1 = map_polygon_[lm.get<1>()]->d;
+    d2 = list_polygon[lm.get<2>()]->d;
+    float weight = 2.0f/(fabs(d1)+fabs(d2));//(float)lm.get<0>();
+    tfe(DOF6::TFLinkvf::TFLinkObj( d2 * m , true, false, weight),
+        DOF6::TFLinkvf::TFLinkObj( d1 * n , true, false, weight));
+
+    std::cout<<"%Overlap: "<<lm.get<0>()<<" Weigth: "<<weight<<std::endl;
+    std::cout<<"%Area(old/new): "<<map_polygon_[lm.get<1>()]->computeArea3d()<<", "
+             <<list_polygon[lm.get<2>()]->computeArea3d()<<std::endl;
+    std::cout<<"vector_a"<<i<<" = ["<<n(0)<<","<<n(1)<<","<<n(2)<<"];"<<std::endl;
+    std::cout<<"vector_b"<<i<<" = ["<<m(0)<<","<<m(1)<<","<<m(2)<<"];"<<std::endl;
+    std::cout<<"origin_a"<<i<<" = "<<d1<<" * vector_a"<<i<<";"<<std::endl;
+    std::cout<<"origin_b"<<i<<" = "<<d2<<" * vector_b"<<i<<";"<<std::endl;
+    ++i;
+  }
+
+  tfe.finish();
+  Eigen::Affine3f tf;
+  tf.matrix().topLeftCorner<3,3>() = tfe.getRotation();
+  tf.matrix().topRightCorner<3,1>() = tfe.getTranslation();
+  tf.matrix().bottomLeftCorner<1,4>() << 0, 0, 0, 1;
+
+  float roll, pitch, yaw;
+  pcl::getEulerAngles(tf, roll, pitch, yaw);
+  std::cout<<"Angles: r="<<roll*180.0f/M_PI<<" p="<<pitch*180.0f/M_PI<<" y="<<yaw*180.0f/M_PI<<std::endl;
+
+  adjust_tf = tf;
+  last_tf_err_ = adjust_tf;
+
+  return true;
 }
 
 
-
-
+void
+GeometryMap::cleanUp()
+{
+  int n_dropped = 0, m_dropped = 0, c_dropped=0;
+  for(int idx = map_polygon_.size() - 1 ; idx >= 0; --idx)
+  {
+    //std::cout << map_polygon_[idx]->merged <<", " << (frame_counter_ - 3) <<" > "<<(int)map_polygon_[idx]->frame_stamp<<std::endl;
+    if (map_polygon_[idx]->merged <= 1 && (frame_counter_ - 3) > (int)map_polygon_[idx]->frame_stamp)
+    {
+      map_polygon_[idx] = map_polygon_.back();
+      map_polygon_.pop_back();
+      ++n_dropped;
+    }
+  }
+  for(int idx = map_cylinder_.size() - 1 ; idx >= 0; --idx)
+  {
+  bool drop_cyl=false;
+      std::cout<<"merged:"<<(int)map_cylinder_[idx]->merged<<" frame ctr:"<<frame_counter_<<" frame st:"<<(int)map_cylinder_[idx]->frame_stamp<<" size:"<<(int)map_cylinder_[idx]->contours[0].size()<<"\n";
+    if (map_cylinder_[idx]->merged <= 1 && (frame_counter_ - 2) > (int)map_cylinder_[idx]->frame_stamp)
+        {
+        drop_cyl=true;
+        }
+    if ((int)map_cylinder_[idx]->contours[0].size()<20 && (int)map_cylinder_[idx]->merged <= 1)
+        {
+         drop_cyl=true;
+        }
+    if ( drop_cyl==true)
+    {        
+      map_cylinder_[idx] = map_cylinder_.back();
+      map_cylinder_.pop_back();
+      ++c_dropped;
+    }
+  }
+  for(int idx = map_shape_cluster_.size() - 1 ; idx >= 0; --idx)
+  {
+    std::cout << map_shape_cluster_[idx]->merged <<", " << (frame_counter_ - 3) <<" > "<<(int)map_shape_cluster_[idx]->frame_stamp<<std::endl;
+    if (map_shape_cluster_[idx]->merged <= 1 && (frame_counter_ - 3) > (int)map_shape_cluster_[idx]->frame_stamp)
+    {
+      map_shape_cluster_[idx] = map_shape_cluster_.back();
+      map_shape_cluster_.pop_back();
+      ++m_dropped;
+    }
+  }
+  std::cout << "Dropped " << n_dropped << " Polys, "<<c_dropped<<" Cyls, " << m_dropped << " Clusters" << std::endl;
+  // TODO: clean up cylinders
+}
 
 
 void
@@ -393,40 +523,41 @@ GeometryMap::colorizeMap()
   //coloring for polygon
   for(unsigned int i=0; i<map_polygon_.size(); i++)
   {
+    if(map_polygon_[i]->color[3] == 1.0f) continue;
     if(fabs(map_polygon_[i]->normal[2]) < 0.1) //plane is vertical
     {
       map_polygon_[i]->color[0] = 0.75;
       map_polygon_[i]->color[1] = 0.75;
       map_polygon_[i]->color[2] = 0;
-      map_polygon_[i]->color[3] = 1;
+      map_polygon_[i]->color[3] = 0.8;
     }
     else if(fabs(map_polygon_[i]->normal[0]) < 0.12 && fabs(map_polygon_[i]->normal[1]) < 0.12 && fabs(map_polygon_[i]->normal[2]) > 0.9) //plane is horizontal
     {
       map_polygon_[i]->color[0] = 0;
       map_polygon_[i]->color[1] = 0.5;
       map_polygon_[i]->color[2] = 0;
-      map_polygon_[i]->color[3] = 1;
+      map_polygon_[i]->color[3] = 0.8;
     }
     else
     {
-      map_polygon_[i]->color[0] = 1;
-      map_polygon_[i]->color[1] = 1;
-      map_polygon_[i]->color[2] = 1;
-      map_polygon_[i]->color[3] = 1;
+      map_polygon_[i]->color[0] = 0.75;
+      map_polygon_[i]->color[1] = 0.75;
+      map_polygon_[i]->color[2] = 0.75;
+      map_polygon_[i]->color[3] = 0.8;
     }
   }
 
   //coloring for cylinder
   for(unsigned int i=0; i<map_cylinder_.size(); i++)
   {
-    if(fabs(map_cylinder_[i]->axes_[0][0]) < 0.1 && fabs(map_cylinder_[i]->axes_[0][1]) < 0.1) //cylinder is vertical
+    if(fabs(map_cylinder_[i]->normal[0]) < 0.1 && fabs(map_cylinder_[i]->normal[1]) < 0.1) //cylinder is vertical
     {
       map_cylinder_[i]->color[0] = 0.5;
       map_cylinder_[i]->color[1] = 0.5;
       map_cylinder_[i]->color[2] = 0;
       map_cylinder_[i]->color[3] = 1;
     }
-    else if(fabs(map_cylinder_[i]->axes_[0][2]) < 0.12) //plane is horizontal
+    else if(fabs(map_cylinder_[i]->normal[2]) < 0.12) //plane is horizontal
     {
       map_cylinder_[i]->color[0] = 0;
       map_cylinder_[i]->color[1] = 0.5;
@@ -435,10 +566,10 @@ GeometryMap::colorizeMap()
     }
     else
     {
-      map_cylinder_[i]->color[0] = 0.75;
-      map_cylinder_[i]->color[1] = 0.75;
-      map_cylinder_[i]->color[2] = 0.75;
-      map_cylinder_[i]->color[3] = 0.8;
+      map_cylinder_[i]->color[0] = 1;
+      map_cylinder_[i]->color[1] = 1;
+      map_cylinder_[i]->color[2] = 1;
+      map_cylinder_[i]->color[3] = 1;
     }
   }
 
@@ -455,7 +586,7 @@ int main (int argc, char** argv)
 
   Eigen::Vector3f v;
   std::vector<Eigen::Vector3f> vv;
-  PolygonPtr m_p1 = PolygonPtr(new Polygon());
+  Polygon::Ptr m_p1 = Polygon::Ptr(new Polygon());
   m_p1->id = 1;
   m_p1->normal << 0.000000,-1.000000,-0.000000;
   m_p1->d = 0;
@@ -473,7 +604,7 @@ int main (int argc, char** argv)
 
 
   vv.clear();
-  PolygonPtr m_p2 = PolygonPtr(new Polygon());
+  Polygon::Ptr m_p2 = Polygon::Ptr(new Polygon());
   m_p2->id = 2;
   m_p2->normal << -0.000000,1.000000,0.000000;
   m_p2->d = 0;
@@ -492,7 +623,3 @@ int main (int argc, char** argv)
   std::cout<<"done"<<std::endl;
   return 1;
 }
-
-
-
-
