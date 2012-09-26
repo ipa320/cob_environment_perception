@@ -160,24 +160,9 @@ public:
   colorizeMap();
 
 
-  boost::shared_ptr<std::vector<cob_3d_mapping::Polygon::Ptr > >
-  getMap_polygon()
-  {
-    return boost::make_shared< std::vector< cob_3d_mapping::Polygon::Ptr > >(map_polygon_);
-  }
-
-
-  boost::shared_ptr<std::vector<cob_3d_mapping::CylinderPtr > >
-  getMap_cylinder()
-  {
-    return boost::make_shared< std::vector< cob_3d_mapping::CylinderPtr > >(map_cylinder_);
-  }
-
-  boost::shared_ptr<std::vector<cob_3d_mapping::ShapeCluster::Ptr> >
-  getMap_shape_cluster()
-  {
-    return boost::make_shared<std::vector<cob_3d_mapping::ShapeCluster::Ptr> >(map_shape_cluster_);
-  }
+  inline std::vector<cob_3d_mapping::Polygon::Ptr>* getMap_polygon() { return &(map_polygon_); }
+  inline std::vector<cob_3d_mapping::Cylinder::Ptr>* getMap_cylinder() { return &(map_cylinder_); }
+  inline std::vector<cob_3d_mapping::ShapeCluster::Ptr>* getMap_shape_cluster() { return &(map_shape_cluster_); }
 
 
   void
@@ -202,8 +187,8 @@ public:
   inline const Eigen::Affine3f& getLastError() { return last_tf_err_; }
 
 protected:
-  std::vector<cob_3d_mapping::Polygon::Ptr > map_polygon_;
-  std::vector<boost::shared_ptr<cob_3d_mapping::Cylinder> > map_cylinder_;
+  std::vector<cob_3d_mapping::Polygon::Ptr> map_polygon_;
+  std::vector<cob_3d_mapping::Cylinder::Ptr> map_cylinder_;
   std::vector<cob_3d_mapping::ShapeCluster::Ptr> map_shape_cluster_;
   unsigned int new_id_;
   // std::ofstream outputFile;

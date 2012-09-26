@@ -107,6 +107,7 @@ namespace cob_3d_mapping
      */
     bool getMap(cob_3d_mapping_msgs::GetGeometricMap::Request &req, cob_3d_mapping_msgs::GetGeometricMap::Response &res);
 
+    void dumpPolygonContoursToFile(Polygon& m);
     /**
      * @brief output featuremap to dump file
      *

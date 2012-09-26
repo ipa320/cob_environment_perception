@@ -182,6 +182,10 @@ namespace cob_3d_segmentation
       c->addIndex(idx);
       c->sum_points_ += surface_->points[idx].getVector3fMap();
       c->sum_orientations_ += normals_->points[idx].getNormalVector3fMap();
+      c->sum_rgb_(0) += surface_->points[idx].r;
+      c->sum_rgb_(1) += surface_->points[idx].g;
+      c->sum_rgb_(2) += surface_->points[idx].b;
+      c->color_.addColor(surface_->points[idx].r, surface_->points[idx].g, surface_->points[idx].b);
     }
 
     inline void updateNormal(ClusterPtr c, const Eigen::Vector3f& normal) const { c->sum_orientations_ += normal; }

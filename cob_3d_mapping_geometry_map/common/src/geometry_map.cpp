@@ -142,7 +142,7 @@ GeometryMap::addMapEntry(Polygon::Ptr& p_ptr)
 }
 
 void
-GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
+GeometryMap::addMapEntry(Cylinder::Ptr& c_ptr)
 {
   std::cout << "add cylinder" << std::endl;
   Cylinder& c = *c_ptr;
@@ -166,10 +166,9 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
   if (map_cylinder_.size()> 0 )
   {
     c.isMergeCandidate(map_cylinder_,limits,intersections);
-    std::cout<<"intersections size = "<<intersections.size()<<std::endl;
-    if (intersections.size() > 1) {
+    /*if (intersections.size() > 1) {
        std::cout<<"Intersection Size CYLINDER = "<<intersections.size()<<"\n";
-     }
+       }*/
 
     // if polygon has to be merged ...
     if(intersections.size()>0)
@@ -185,7 +184,6 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
 
 
       }
-      std::cout << merge_candidates.size() << std::endl;
       // merge polygon with merge candidates
 //      c.debug_output("Pre");
       c.merge(merge_candidates);
@@ -206,7 +204,7 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
       c.computeAttributes(c.sym_axis,c.normal,c.origin_);
       c.assignWeight();
       c.id = new_id_;
-      c.frame_stamp =frame_counter_; 
+      c.frame_stamp =frame_counter_;
 
       map_cylinder_.push_back(c_ptr);
       new_id_++;
@@ -214,17 +212,16 @@ GeometryMap::addMapEntry(boost::shared_ptr<Cylinder>& c_ptr)
     }
   }
   else{
-    std::cout<<"ADD CYLINDER----\n";
+    //std::cout<<"ADD CYLINDER----\n";
     c.computeAttributes(c.sym_axis,c.normal,c.origin_);
     c.assignWeight();
     c.id = new_id_;
-    c.frame_stamp =frame_counter_; 
+    c.frame_stamp =frame_counter_;
 
     map_cylinder_.push_back(c_ptr);
 
     new_id_++;
   }
-  std::cout<<"Map Size CYLINDER="<<map_cylinder_.size()<<std::endl;
   //	if(save_to_file_) saveMap(file_path_);
 }
 
@@ -529,6 +526,7 @@ GeometryMap::colorizeMap()
   //coloring for polygon
   for(unsigned int i=0; i<map_polygon_.size(); i++)
   {
+    if(map_polygon_[i]->color[3] == 1.0f) continue;
     if(fabs(map_polygon_[i]->normal[2]) < 0.1) //plane is vertical
     {
       map_polygon_[i]->color[0] = 0.75;

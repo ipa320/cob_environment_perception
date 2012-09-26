@@ -203,6 +203,10 @@ void Gui::ImageView<RT,VT>::mouseEvent(wxMouseEvent& event)
     std::cout << "mouse click thing on " << this->name_ << " at " << p1.x << "," << p1.y << std::endl;
     this->mouse_sig_(event, this->r_ptr);
   }
+  else if(event.RightDClick())
+  {
+    this->mouse_sig_(event, this->r_ptr);
+  }
 }
 
 // Needed to fix these wxWidget macros (v2.8) to be able to use class templates in event table!
