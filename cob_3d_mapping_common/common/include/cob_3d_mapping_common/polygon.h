@@ -100,12 +100,12 @@ namespace cob_3d_mapping
     //##########methods for instantiation##############
     virtual void computeAttributes(const Eigen::Vector3f &new_normal, const Eigen::Vector4f & new_centroid);
     virtual void transform2tf(const Eigen::Affine3f& trafo);
-
+    void smoothPolygon();
 
     //###########methods for merging##################
     virtual void getMergeCandidates(const std::vector<Polygon::Ptr>& poly_vec, std::vector<int>& intersections) const;
     virtual bool isIntersectedWith(const Polygon::Ptr& poly) const;
-    void getIntersection(const Polygon::Ptr& poly, gpc_polygon& gpc_intersection) const;
+    void getIntersection(const Polygon::Ptr& poly, gpc_polygon* gpc_intersection) const;
     bool getContourOverlap(const Polygon::Ptr& poly, float& rel_overlap, int& abs_overlap) const;
     float computeSimilarity(const Polygon::Ptr& poly) const;
 
