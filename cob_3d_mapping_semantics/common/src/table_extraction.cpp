@@ -109,7 +109,7 @@ TableExtraction::isSizeOk ()
 
 
 /*void
-TableExtraction::calcPolyCentroid (PolygonPtr poly_ptr_)
+TableExtraction::calcPolyCentroid (Polygon::Ptr poly_ptr_)
 {
   //static int ctr = 0;
   double x0, y0, z0, xi, yi, zi, xi_1, yi_1, zi_1;

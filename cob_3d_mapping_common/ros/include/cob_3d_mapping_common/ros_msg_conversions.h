@@ -77,6 +77,7 @@ namespace cob_3d_mapping
   toROSMsg(const Polygon& p, cob_3d_mapping_msgs::Shape& s)
   {
     s.id = p.id;
+
     s.type = cob_3d_mapping_msgs::Shape::POLYGON;
     s.params.resize(4);
     s.params[0] = p.normal(0);
@@ -137,7 +138,7 @@ namespace cob_3d_mapping
     p.d = s.params[3];
     //std::cout << "normal: " << p.normal(0) << ","  << p.normal(1) << "," << p.normal(2) << std::endl;
     //std::cout << "d: " << p.d << std::endl << std::endl;
-    p.merged = 0;
+    p.merged = 1;
     p.color[0] = s.color.r;
     p.color[1] = s.color.g;
     p.color[2] = s.color.b;
@@ -179,14 +180,14 @@ namespace cob_3d_mapping
 
     s.params.resize(10);
     // x axis
-    s.params[0]=c.axes_[1][0];
-    s.params[1]=c.axes_[1][1];
-    s.params[2]=c.axes_[1][2];
+    s.params[0]=c.sym_axis[0];
+    s.params[1]=c.sym_axis[1];
+    s.params[2]=c.sym_axis[2];
 
 
-    s.params[3]=c.axes_[2][0];
-    s.params[4]=c.axes_[2][1];
-    s.params[5]=c.axes_[2][2];
+    s.params[3]=c.normal[0];
+    s.params[4]=c.normal[1];
+    s.params[5]=c.normal[2];
 
 
     s.params[6]=c.origin_[0];
@@ -195,12 +196,18 @@ namespace cob_3d_mapping
 
     s.params[9]=c.r_;
 
+    s.centroid.x = c.centroid[0];
+    s.centroid.y = c.centroid[1];
+    s.centroid.z = c.centroid[2];
+
+
+
+
 
     //std::cout << "normal: " << p.normal(0) << "," << p.normal(1) << "," << p.normal(2) << std::endl;
     //std::cout << "d: " << p.d << std::endl << std::endl;
 
     s.id=c.id;
-
     s.color.r=c.color[0];
     s.color.g=c.color[1];
     s.color.b=c.color[2];
@@ -241,24 +248,30 @@ namespace cob_3d_mapping
 
 
 
-    c.id = 0;
+    c.id = s.id;
     // c.centroid(0) = s.centroid.x;
     // c.centroid(1) = s.centroid.y;
     // c.centroid(2) = s.centroid.z;
 
-    c.axes_[1][0]= s.params[0];
-    c.axes_[1][1] = s.params[1];
-    c.axes_[1][2] = s.params[2];
+    c.sym_axis[0]= s.params[0];
+    c.sym_axis[1] = s.params[1];
+    c.sym_axis[2] = s.params[2];
 
-    c.axes_[2][0]= s.params[3];
-    c.axes_[2][1] = s.params[4];
-    c.axes_[2][2] = s.params[5];
+    c.normal[0]= s.params[3];
+    c.normal[1] = s.params[4];
+    c.normal[2] = s.params[5];
 
 
     c.origin_[0] = s.params[6];
     c.origin_[1] = s.params[7];
     c.origin_[2] = s.params[8];
     c.r_ = s.params[9];
+
+    c.centroid[0]=s.centroid.x;
+    c.centroid[1]=s.centroid.y;
+    c.centroid[2]=s.centroid.z;
+
+
 
 
     //std::cout << "normal: " << p.normal(0) << "," << p.normal(1) << "," << p.normal(2) << std::endl;

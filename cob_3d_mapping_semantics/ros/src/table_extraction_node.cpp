@@ -142,13 +142,13 @@ public:
 
     ROS_INFO(" Total number of shapes received: %d ", sa_ptr->shapes.size());*/
 
-    cob_3d_mapping_msgs::ShapeArray sa;
+    cob_3d_mapping_msgs::ShapeArray sa, tables;
     sa.header = sa_ptr->header;
     table_ctr_old_ = table_ctr_;
     table_ctr_ = 0;
     for (unsigned int i = 0; i < sa_ptr->shapes.size (); i++)
     {
-      PolygonPtr poly_ptr(new Polygon());
+      Polygon::Ptr poly_ptr = Polygon::Ptr (new Polygon ());
 
       fromROSMsg(sa_ptr->shapes[i], *poly_ptr);
       te_.setInputPolygon(poly_ptr);
@@ -191,7 +191,7 @@ public:
       int table_ctr = 0;
       for (unsigned int i = 0; i < sa.shapes.size (); i++)
       {
-        PolygonPtr poly_ptr = PolygonPtr (new Polygon());
+        Polygon::Ptr poly_ptr = Polygon::Ptr (new Polygon());
         fromROSMsg(sa.shapes[i], *poly_ptr);
         //ROS_INFO("\n\tisTableObject....  : ");
         te_.setInputPolygon(poly_ptr);
@@ -241,8 +241,7 @@ public:
       tables.header = sa.header;
       for (unsigned int i = 0; i < sa.shapes.size (); i++)
       {
-        //Polygon poly;
-        PolygonPtr poly_ptr(new Polygon());
+        Polygon::Ptr poly_ptr = Polygon::Ptr (new Polygon());
         fromROSMsg(sa.shapes[i], *poly_ptr);
         //ROS_INFO("\n\tisTableObject....  : ");
         te_.setInputPolygon(poly_ptr);
