@@ -131,7 +131,7 @@ namespace cob_3d_segmentation
       for(reverse_iterator c = clusters_.rbegin(); c != clusters_.rend(); ++c, ++t)
       {
         if (c->id() == I_NAN || c->id() == I_BORDER) { rgb = color_tab_[c->id()]; --t; }
-        else { rgb = color_tab_[t]; }
+        else { rgb = color_tab_[t % (2048-NUM_LABELS) + NUM_LABELS]; }
         for(typename ClusterType::iterator it = c->begin(); it != c->end(); ++it)
         { color_cloud->points[*it].rgb = *reinterpret_cast<float*>(&rgb); }
       }
@@ -182,6 +182,10 @@ namespace cob_3d_segmentation
       c->addIndex(idx);
       c->sum_points_ += surface_->points[idx].getVector3fMap();
       c->sum_orientations_ += normals_->points[idx].getNormalVector3fMap();
+      c->sum_rgb_(0) += surface_->points[idx].r;
+      c->sum_rgb_(1) += surface_->points[idx].g;
+      c->sum_rgb_(2) += surface_->points[idx].b;
+      c->color_.addColor(surface_->points[idx].r, surface_->points[idx].g, surface_->points[idx].b);
     }
 
     inline void updateNormal(ClusterPtr c, const Eigen::Vector3f& normal) const { c->sum_orientations_ += normal; }
@@ -219,13 +223,20 @@ namespace cob_3d_segmentation
         };
 
       int curr_label, count;
-      for (size_t idx = labels_->width; idx < ( labels_->size() - labels_->width ); ++idx)
+      for (size_t idx = 0; idx < labels_->size(); ++idx)
       {
         count = 0;
         curr_label = labels_->points[idx].label;
+        int x = static_cast<int>(idx % labels_->width);
+        int y = static_cast<int>(idx / labels_->width);
+        if (y == 0 || y == labels_->height - 1 || x == 0 || x == labels_->width -1)
+        {
+          id_to_cluster_[curr_label]->border_points.push_back(PolygonPoint(x, y));
+          continue;
+        }
         for(int i=0;i<4;++i) { if (curr_label!=labels_->points[idx+mask[i]].label) { ++count; } }
         if (count >= 4 || count < 1) continue;
-        id_to_cluster_[curr_label]->border_points.push_back(PolygonPoint(idx%labels_->width, idx/labels_->width));
+        id_to_cluster_[curr_label]->border_points.push_back(PolygonPoint(x, y));
       }
       /*
       for (size_t idx = labels_->width; idx < ( labels_->size() - labels_->width ); ++idx)

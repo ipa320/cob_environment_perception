@@ -1,7 +1,9 @@
 #!/usr/bin/python
 import sys
 import roslib
-roslib.load_manifest('cob_env_model_gazebo')
+roslib.load_manifest('cob_3d_mapping_gazebo')
+roslib.load_manifest('cob_gazebo_worlds')
+roslib.load_manifest('cob_script_server')
 
 import rospy
 import os

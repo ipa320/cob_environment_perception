@@ -157,7 +157,7 @@ struct ParamC {
 
   ParamC(const ParamC &p):w(p.w),h(p.h) {
     data=new Param[w*h];
-    for(int i=0; i<w*h; i++)
+    for(size_t i=0; i<w*h; i++)
       data[i]=p.data[i];
   }
 
