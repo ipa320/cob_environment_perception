@@ -199,21 +199,38 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
     else s->id = 0;
     s->points.resize(poly.polys_.size());
     s->header.frame_id = cloud->header.frame_id.c_str();
-
+    Eigen::Vector3f color = c->computeDominantColorVector().cast<float>();
+    float temp_inv = 1.0f/255.0f;
+    s->color.r = color(0) * temp_inv;
+    s->color.g = color(1) * temp_inv;
+    s->color.b = color(2) * temp_inv;
+    s->color.a = 1.0f;
     Eigen::Vector3f centroid = c->getCentroid();
     //    Eigen::Matrix3f M = Eigen::Matrix3f::Identity() - c->pca_point_comp3 * c->pca_point_comp3.transpose(); // projection
     for (int i = 0; i < (int)poly.polys_.size(); ++i)
     {
-      if (i == max_idx) s->holes.push_back(false);
-      else s->holes.push_back(true);
       pcl::PointXYZRGB p;
-      for (std::vector<PolygonPoint>::iterator it = poly.polys_[i].begin(); it != poly.polys_[i].end(); ++it)
+      if (i == max_idx)
       {
-        //        p.getVector3fMap() = M * (cloud->points[PolygonPoint::getInd(it->x, it->y)].getVector3fMap() - centroid) + centroid;
-        p.getVector3fMap() = cloud->points[PolygonPoint::getInd(it->x, it->y)].getVector3fMap();
-
-        hull_cloud->points.push_back(p);
-        hull->points.push_back(p);
+        s->holes.push_back(false);
+        std::vector<PolygonPoint>::iterator it = poly.polys_[i].begin();
+        for ( ; it != poly.polys_[i].end(); ++it)
+        {
+          p.getVector3fMap() = cloud->points[PolygonPoint::getInd(it->x, it->y)].getVector3fMap();
+          hull_cloud->points.push_back(p);
+          hull->points.push_back(p);
+        }
+      }
+      else
+      {
+        s->holes.push_back(true);
+        std::vector<PolygonPoint>::reverse_iterator it = poly.polys_[i].rbegin();
+        for ( ; it != poly.polys_[i].rend(); ++it)
+        {
+          p.getVector3fMap() = cloud->points[PolygonPoint::getInd(it->x, it->y)].getVector3fMap();
+          hull_cloud->points.push_back(p);
+          hull->points.push_back(p);
+        }
       }
       hull->height = 1;
       hull->width = hull->points.size();

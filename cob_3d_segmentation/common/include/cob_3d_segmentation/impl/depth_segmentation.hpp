@@ -171,6 +171,7 @@ cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>
 template <typename ClusterGraphT, typename PointT, typename PointNT, typename PointLabelT> void
 cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>::refineSegmentation()
 {
+  graph_->clusters()->addBorderIndicesToClusters();
   graph_->clusters()->sortBySize(); // Ascending order
   ClusterPtr c_it, c_end;
   for (boost::tie(c_it,c_end) = graph_->clusters()->getClusters(); c_it != c_end; ++c_it)
@@ -243,7 +244,7 @@ cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>
     /*float angle = fabs( atan2(bp_this.normal.cross(graph_->edges()->getBoundaryPoint(bp_this.brother).normal).norm(),
       bp_this.normal.dot(graph_->edges()->getBoundaryPoint(bp_this.brother).normal)) );*/
     //if (angle < max_boundary_angle_)
-    if (min_dot_boundary_ < bp_this.normal.dot(graph_->edges()->getBoundaryPoint(bp_this.brother).normal))
+    if (fabs(bp_this.normal.dot(graph_->edges()->getBoundaryPoint(bp_this.brother).normal)) > min_dot_boundary_)
       ++smooth_points;
   }
   e->smoothness = static_cast<float>(smooth_points) / static_cast<float>(e->size());

@@ -168,9 +168,8 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr s
   std::cout<<">>>>>>>>>new cloud>>>>>>>>>>\n";
 
   std::vector<Polygon::Ptr> polygon_list;
-  std::vector<CylinderPtr> cylinder_list;
+  std::vector<Cylinder::Ptr> cylinder_list;
   std::map<int, ShapeCluster::Ptr> sc_map;
-
 
   for(size_t i=0; i<sa->shapes.size(); ++i)
   {
@@ -211,7 +210,7 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr s
   Eigen::Affine3f af_new;
   // currently turned off, always returns false
   bool needs_adjustment = geometry_map_.computeTfError(polygon_list, af_orig, af_new);
-
+  int poly_merge_ctr=0, cyl_merge_ctr=0;
   for (size_t i=0; i<polygon_list.size(); ++i)
   {
     //Eigen::Vector3f n = polygon_list[i]->normal;
@@ -219,19 +218,29 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr s
     if(needs_adjustment) polygon_list[i]->transform2tf(af_new);
     //n = polygon_list[i]->normal;
     //std::cout<<"n:"<<n(0)<<","<<n(1)<<","<<n(2)<<" after"<<std::endl;
+    int bf_size = geometry_map_.getMap_polygon()->size();
+    //polygon_list[i]->smoothPolygon();
     geometry_map_.addMapEntry(polygon_list[i]);
+    poly_merge_ctr += bf_size - geometry_map_.getMap_polygon()->size() + 1;
   }
   for (size_t i=0; i<cylinder_list.size(); ++i)
   {
     if(needs_adjustment) cylinder_list[i]->transform2tf(af_new);
+    int bf_size = geometry_map_.getMap_cylinder()->size();
     geometry_map_.addMapEntry(cylinder_list[i]);
+    cyl_merge_ctr += bf_size - geometry_map_.getMap_cylinder()->size() + 1;
   }
   for (std::map<int,ShapeCluster::Ptr>::iterator it=sc_map.begin(); it!=sc_map.end(); ++it)
   {
     if(needs_adjustment) it->second->transform2tf(af_new);
     geometry_map_.addMapEntry(it->second);
   }
-
+  std::cout<<"Map Size C="<<geometry_map_.getMap_cylinder()->size()
+           <<" , C_NEW="<<cylinder_list.size()
+           <<" , C_MERGED="<<cyl_merge_ctr<<"\n"
+           <<"Map Size P="<<geometry_map_.getMap_polygon()->size()
+           <<" , P_NEW="<<polygon_list.size()
+           <<" , P_MERGED="<<poly_merge_ctr<<std::endl;
   geometry_map_.cleanUp();
   geometry_map_.incrFrame();
 
@@ -258,8 +267,8 @@ GeometryMapNode::clearMap(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Re
 bool
 GeometryMapNode::getMap(cob_3d_mapping_msgs::GetGeometricMap::Request &req, cob_3d_mapping_msgs::GetGeometricMap::Response &res)
 {
-  boost::shared_ptr<std::vector<Polygon::Ptr> > map_polygon = geometry_map_.getMap_polygon();
-  boost::shared_ptr<std::vector<CylinderPtr> > map_cylinder = geometry_map_.getMap_cylinder();
+  std::vector<Polygon::Ptr>* map_polygon = geometry_map_.getMap_polygon();
+  std::vector<Cylinder::Ptr>* map_cylinder = geometry_map_.getMap_cylinder();
 
   res.map.header.stamp = ros::Time::now();
   res.map.header.frame_id = map_frame_id_;
@@ -280,6 +289,27 @@ GeometryMapNode::getMap(cob_3d_mapping_msgs::GetGeometricMap::Request &req, cob_
   }
 
   return true;
+}
+
+void
+GeometryMapNode::dumpPolygonContoursToFile(Polygon& m)
+{
+  static int ctr=0;
+  std::stringstream ss;
+  ss << "/home/goa-sf/debug/polygon_" << ctr;
+  std::ofstream myfile;
+  myfile.open (ss.str().c_str());
+  for(unsigned int i=0; i<m.contours.size(); i++)
+  {
+    for(unsigned int j=0; j<m.contours[i].size(); j++)
+    {
+      myfile << m.contours[i][j](0) << "\n";
+      myfile << m.contours[i][j](1) << "\n";
+      myfile << m.contours[i][j](2) << "\n";
+    }
+  }
+  myfile.close();
+  ctr++;
 }
 
 void
@@ -313,8 +343,8 @@ GeometryMapNode::publishMap()
 {
   //		if index = type 1 poly ptr , else cylinder ptr --> push back in shape vector?!
 
-  boost::shared_ptr<std::vector<Polygon::Ptr> > map_polygon = geometry_map_.getMap_polygon();
-  boost::shared_ptr<std::vector<CylinderPtr> > map_cylinder = geometry_map_.getMap_cylinder();
+  std::vector<Polygon::Ptr>* map_polygon = geometry_map_.getMap_polygon();
+  std::vector<Cylinder::Ptr>* map_cylinder = geometry_map_.getMap_cylinder();
 
 
   geometry_map_.colorizeMap();
@@ -329,26 +359,12 @@ GeometryMapNode::publishMap()
   for(unsigned int i=0; i<map_polygon->size(); i++)
   {
     Polygon& sm = *(map_polygon->at(i));
+    //dumpPolygonContoursToFile(sm);
     //			std::cout<<sm.d<<std::endl<<std::endl;
     //cob_3d_mapping_msgs::PolygonArray p;
     cob_3d_mapping_msgs::Shape s;
     toROSMsg(sm, s);
     s.header = map_msg.header;
-    //s.color.b = 1;
-    //s.color.a = 1;
-    //map_msg.polygon_array.push_back(p);
-    map_msg.shapes.push_back(s);
-  }
-
-  //		cylinders
-  for(unsigned int i=0; i<map_cylinder->size(); i++)
-  {
-    Cylinder& sm = *(map_cylinder->at(i));
-    //cob_3d_mapping_msgs::PolygonArray p;
-    cob_3d_mapping_msgs::Shape s;
-    toROSMsg(sm, s);
-    s.header = map_msg.header;
-
     //s.color.b = 1;
     //s.color.a = 1;
     //map_msg.polygon_array.push_back(p);
@@ -407,8 +423,8 @@ GeometryMapNode::publishMapMarker()
   //create the marker in the table reference frame
   //the caller is responsible for setting the pose of the marker to match
 
-  marker.scale.x = 0.01;
-  marker.scale.y = 0.01;
+  marker.scale.x = 0.005;
+  marker.scale.y = 0.005;
   marker.scale.z = 1;
   marker.color.r = 0;
   marker.color.g = 0;
@@ -417,13 +433,13 @@ GeometryMapNode::publishMapMarker()
 
   geometry_msgs::Point pt;
 
-  //		only implemented for polygon
 
-  boost::shared_ptr<std::vector<Polygon::Ptr> > map_polygon = geometry_map_.getMap_polygon();
+  // now do the polygons:
+  std::vector<Polygon::Ptr>* map_polygon = geometry_map_.getMap_polygon();
 
   int ctr=0, t_ctr=2000;
-  //		std::cout<<"____________________________________________"<<std::endl;
-  //		std::cout<<"marker size: "<<map->size()<<std::endl;
+  // std::cout<<"____________________________________________"<<std::endl;
+  // std::cout<<"marker size: "<<map->size()<<std::endl;
   for(unsigned int i=0; i<map_polygon->size(); i++)
   {
     Polygon& pm = *(map_polygon->at(i));
@@ -484,8 +500,8 @@ GeometryMapNode::publishMapMarker()
       for(unsigned int k=0; k<pm.contours[j].size(); k++)
       {
         /*pt.x = pm.contours[j][k](0);
-          pt.y = pm.contours[j][k](1);
-          pt.z = pm.contours[j][k](2);*/
+        pt.y = pm.contours[j][k](1);
+        pt.z = pm.contours[j][k](2);*/
         marker.points[k].x = pm.contours[j][k](0);
         marker.points[k].y = pm.contours[j][k](1);
         marker.points[k].z = pm.contours[j][k](2);
@@ -494,13 +510,14 @@ GeometryMapNode::publishMapMarker()
       marker.points[pm.contours[j].size()].x = pm.contours[j][0](0);
       marker.points[pm.contours[j].size()].y = pm.contours[j][0](1);
       marker.points[pm.contours[j].size()].z = pm.contours[j][0](2);
-      marker_pub_.publish(marker);
       marker_pub_.publish(t_marker);
+      marker_pub_.publish(marker);
     }
   }
-  //		only implemented for polygon
 
-  boost::shared_ptr<std::vector<CylinderPtr> > map_cylinder = geometry_map_.getMap_cylinder();
+  std::cout << "Marker Counter: " << ctr << std::endl;
+  // now do the cylinders:
+  std::vector<Cylinder::Ptr>* map_cylinder = geometry_map_.getMap_cylinder();
 
   ctr=0;
   t_ctr=2000;
@@ -545,7 +562,9 @@ GeometryMapNode::publishMapMarker()
       marker_pub_.publish(t_marker);
     }
   }
-  boost::shared_ptr<std::vector<ShapeCluster::Ptr> > map_sc = geometry_map_.getMap_shape_cluster();
+
+  // now do the shape cluster:
+  std::vector<ShapeCluster::Ptr>* map_sc = geometry_map_.getMap_shape_cluster();
   for(size_t i=0; i<map_sc->size(); ++i)
   {
     marker.id = i;
@@ -555,95 +574,93 @@ GeometryMapNode::publishMapMarker()
   }
 }
 
-  void GeometryMapNode::publishPrimitives()
+void GeometryMapNode::publishPrimitives()
+{
+
+  visualization_msgs::Marker marker;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.type = visualization_msgs::Marker::CYLINDER;
+  marker.lifetime = ros::Duration();
+  marker.header.frame_id = map_frame_id_;
+
+
+
+  //create the marker in the table reference frame
+  //the caller is responsible for setting the pose of the marker to match
+
+
+
+  marker.color.a = 0.3;
+
+  geometry_msgs::Point pt;
+
+
+
+  std::vector<Cylinder::Ptr>* map_cylinder = geometry_map_.getMap_cylinder();
+
+
+
+  int ctr=0;
+  int t_ctr=2000;
+
+  //    std::cout<<"____________________________________________"<<std::endl;
+  //    std::cout<<"marker size: "<<map->size()<<std::endl;
+  for(unsigned int i=0; i<map_cylinder->size(); i++)
   {
+    Cylinder& cm = *(map_cylinder->at(i));
 
-    visualization_msgs::Marker marker;
-    marker.action = visualization_msgs::Marker::ADD;
-    marker.type = visualization_msgs::Marker::CYLINDER;
-    marker.lifetime = ros::Duration();
-    marker.header.frame_id = map_frame_id_;
+    marker.id = cm.id;
 
+    marker.color.r=1;
+    marker.color.g=0;
+    marker.color.b=0;
 
-
-    //create the marker in the table reference frame
-    //the caller is responsible for setting the pose of the marker to match
-
-
-
-    marker.color.a = 0.3;
-
-    geometry_msgs::Point pt;
+    marker.scale.x = cm.r_ *2;
+    marker.scale.y = cm.r_ *2;
+    //std::cout<<cm.h_max_ - cm.h_min_<<"\n";
+    marker.scale.z =  (cm.h_max_ - cm.h_min_);
 
 
+    Eigen::Affine3f rot;
+    Eigen::Vector3f trans;
+    float roll,pitch,yaw;
+    tf::Quaternion orientation;
 
-    boost::shared_ptr<std::vector<CylinderPtr> > map_cylinder = geometry_map_.getMap_cylinder();
+    rot  =cm.transform_from_world_to_plane.rotation();
+    pcl::getEulerAngles(rot,roll,pitch,yaw);
 
+    // WATCH OUT!! Use primitives only for vertical cylinders - orientation is not set
+    //TODO: compute and set Orientation the right wy
 
-
-    int ctr=0;
-    int t_ctr=2000;
-
-    //    std::cout<<"____________________________________________"<<std::endl;
-    //    std::cout<<"marker size: "<<map->size()<<std::endl;
-    for(unsigned int i=0; i<map_cylinder->size(); i++)
-    {
-      Cylinder& cm = *(map_cylinder->at(i));
-
-      marker.id = cm.id;
-
-      marker.color.r=1;
-      marker.color.g=0;
-      marker.color.b=0;
-
-      marker.scale.x = cm.r_ *2;
-      marker.scale.y = cm.r_ *2;
-      std::cout<<cm.h_max_ - cm.h_min_<<"\n";
-      marker.scale.z =  (cm.h_max_ - cm.h_min_);
+    //orientation= tf::createQuaternionFromRPY(roll,pitch,yaw);
+    ////std::cout<<roll<<"-"<<pitch<<"-"<<yaw<<"\n";
 
 
-      Eigen::Affine3f rot;
-      Eigen::Vector3f trans;
-      float roll,pitch,yaw;
-      tf::Quaternion orientation;
+    //      marker.pose.orientation.x = orientation[0];
+    //      marker.pose.orientation.y = orientation[1];
+    //      marker.pose.orientation.z = orientation[2];
+    //      marker.pose.orientation.w = orientation[3];
 
-      rot  =cm.transform_from_world_to_plane.rotation();
-      pcl::getEulerAngles(rot,roll,pitch,yaw);
-    
-      // WATCH OUT!! Use primitives only for vertical cylinders - orientation is not set
-      //TODO: compute and set Orientation the right wy
-
-      //orientation= tf::createQuaternionFromRPY(roll,pitch,yaw);
-      ////std::cout<<roll<<"-"<<pitch<<"-"<<yaw<<"\n";
-
-
-      //      marker.pose.orientation.x = orientation[0];
-      //      marker.pose.orientation.y = orientation[1];
-      //      marker.pose.orientation.z = orientation[2];
-      //      marker.pose.orientation.w = orientation[3];
-
-      marker.pose.position.x = cm.origin_[0];
-      marker.pose.position.y = cm.origin_[1];
-      marker.pose.position.z = cm.origin_[2];
+    marker.pose.position.x = cm.origin_[0];
+    marker.pose.position.y = cm.origin_[1];
+    marker.pose.position.z = cm.origin_[2];
 
 
 
 
-      marker.id = t_ctr;
-      std::stringstream ss;
-      ss << ctr;
-      marker.text = ss.str();
-      ctr++;
-      t_ctr++;
+    marker.id = t_ctr;
+    std::stringstream ss;
+    ss << ctr;
+    marker.text = ss.str();
+    ctr++;
+    t_ctr++;
 
 
-      primitive_pub_.publish(marker);
-
-    }
-
-
+    primitive_pub_.publish(marker);
 
   }
+}
+
 int main (int argc, char** argv)
 {
   ros::init (argc, argv, "geometry_map_node");
