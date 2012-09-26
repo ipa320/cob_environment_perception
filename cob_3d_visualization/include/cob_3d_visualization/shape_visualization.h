@@ -25,6 +25,7 @@
 #include <interactive_markers/menu_handler.h>
 #include <cob_3d_mapping_msgs/ModifyMap.h>
 #include <cob_3d_visualization/shape_marker.h>
+//#include <cob_3d_visualization/table_marker.h>
 #include <cob_3d_mapping_msgs/GetTables.h>
 #include <cob_3d_mapping_msgs/GetObjectsOfClass.h>
 
