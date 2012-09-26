@@ -351,11 +351,6 @@ Polygon::assignWeight()
   {
     double area = computeArea3d();
     merge_weight_=(merged*area);
-
-
-    
-
-
   }
   else if (std::strcmp(merge_settings_.weighting_method.c_str(), "COMBINED")== 0)
   {
