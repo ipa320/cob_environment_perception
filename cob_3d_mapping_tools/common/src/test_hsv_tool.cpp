@@ -34,7 +34,7 @@ class MainApp : public wxApp
   bool OnInit()
   {
     if (this->argc < 2) { std::cout << "Please provide an image" << std::endl; exit(0); }
-    
+
     std::string file(wxString(this->argv[1]).mb_str());
     Gui::Resource<Img>* res = Gui::Core::rMan()->create<Img>("res", file);
     Gui::View<Img,Col>* view = res->createView<Col>("Image");

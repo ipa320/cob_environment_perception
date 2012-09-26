@@ -75,10 +75,10 @@ namespace Gui
     class DominantColor
     {
       private:
-      enum { HIST_SIZE = 180 }; // hue is limited to 0 to 359
+      enum { HIST_SIZE = 180 }; // uint8_t limits hue to 0..255
 
       public:
-      DominantColor() : sum_colors_(0), sum_sat_(0), sum_val_(0), hue_histogram_(HIST_SIZE,0)
+      DominantColor() : sum_colors_(0), sum_sat_(0), sum_val_(0), hue_histogram_(HIST_SIZE,0), sat_values_(HIST_SIZE,0)
       { }
 
       ~DominantColor() { }
@@ -87,17 +87,27 @@ namespace Gui
       {
         int h,s,v;
         rgb2hsv(r,g,b,h,s,v);
-        incrBin(h);
+        int pos = incrBin(h);
+        sat_values_[pos] += s;
         sum_sat_ += s;
         sum_val_ += v;
         ++sum_colors_;
       }
 
       inline void getColor(uint8_t& r, uint8_t& g, uint8_t& b) const
-      { hsv2rgb( round(getMaxBin()*bin_size+bin_center), sum_sat_/sum_colors_, sum_val_/sum_colors_, r,g,b ); }
+      {
+        if(!sum_colors_) { r=0; g=0; b=0; return; }
+        int pos = getMaxBin();
+        hsv2rgb( round(pos*bin_size+bin_center), sat_values_[pos]/hue_histogram_[pos], sum_val_/sum_colors_, r,g,b );
+      }
 
-      inline void incrBin(uint8_t h)
-      { hue_histogram_[ (size_t)(h*inv_bin_size) ] += 1; }
+      inline int incrBin(int h)
+      {
+        int bin = h*inv_bin_size;
+        std::cout << "incBin:"<<bin<<" H:"<<(int)h<<"inv_bin"<<inv_bin_size<<std::endl;
+        hue_histogram_[(size_t)bin] += 1;
+        return bin;
+      }
 
       inline int getMaxBin() const
       {
@@ -110,29 +120,27 @@ namespace Gui
             max_bin = i;
           }
         }
-        std::cout<<"max_(bin/size): "<<max_bin<<"/"<<max_size<<std::endl; return max_bin;
+        std::cout<<"max_(bin/size): "<<max_bin<<"/"<<max_size<<std::endl;
+        return max_bin;
       }
 
       inline void rgb2hsv(uint8_t r, uint8_t g, uint8_t b, int& h, int& s, int& v) const
       {
         int rgb_min = min3(r,g,b);
         int rgb_max = max3(r,g,b);
+        int delta = rgb_max - rgb_min;
         v = rgb_max;
         if (v == 0) { s = h = 0; return; }
-
-        s = round(float(rgb_max-rgb_min) / float(v) * 100.0f);
+        s = round(float(delta) / float(v) * 100.0f);
         v /= 2.55f;
+        float h_tmp;
         if (s == 0) { h = 0; return; }
+        if      ((int)r == rgb_max)   h_tmp =     (float(g - b)) / (float(delta));
+        else if ((int)g == rgb_max)   h_tmp = 2.0f + (float(b - r)) / (float(delta));
+        else                          h_tmp = 4.0f + (float(r - g)) / (float(delta));
 
-        if (rgb_max == (int)r)
-        {
-          h =   0.0f + 60.0f * (float(g - b)) / (float(rgb_max - rgb_min)); if(h<0) h+=360;
-        }
-        else if (rgb_max == g)
-          h = 120.0f + 60.0f * (float(b - r)) / (float(rgb_max - rgb_min));
-        else
-          h = 240.0f + 60.0f * (float(r - g)) / (float(rgb_max - rgb_min));
-        //std::cout << "hsv: " << (int)h<<","<<(int)s<<","<<(int)v<<std::endl;
+        h = h_tmp * 60.0f;
+        if(h<0) h+=360;
       }
 
       inline void hsv2rgb(int h, int s, int v, uint8_t& r, uint8_t& g, uint8_t& b) const
@@ -169,6 +177,7 @@ namespace Gui
       int sum_sat_;
       int sum_val_;
       std::vector<int> hue_histogram_;
+      std::vector<int> sat_values_;
 
       static const float inv_bin_size = 1.0f / 360.0f * HIST_SIZE;
       static const float bin_size = 360.0f / HIST_SIZE;
