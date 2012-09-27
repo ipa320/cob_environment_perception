@@ -97,6 +97,9 @@ cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::c
   ClusterPtr c_it, c_end;
   float pc_min, pc_max;
   test.clear();
+  test_plane.clear();
+  test_cyl.clear();
+  test_sph.clear();
   for ( boost::tie(c_it,c_end) = clusters_->getClusters(); c_it != c_end; ++c_it)
   {
     if ( c_it->size() < 5 ) continue;
