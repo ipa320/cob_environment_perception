@@ -74,7 +74,7 @@
 #include "cob_3d_mapping_common/stop_watch.h"
 
 // internal includes
-#include "cob_3d_mapping_features/plane_extraction.h"
+#include "cob_3d_segmentation/plane_extraction.h"
 
 #ifdef PCL_VERSION_COMPARE //fuerte
   #include <pcl/common/eigen.h>

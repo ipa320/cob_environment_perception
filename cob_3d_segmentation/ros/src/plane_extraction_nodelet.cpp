@@ -97,7 +97,7 @@
 
 //#include <cob_3d_mapping_common/reconfigureable_node.h>
 #include <dynamic_reconfigure/server.h>
-#include <cob_3d_mapping_features/plane_extraction_nodeletConfig.h>
+#include <cob_3d_segmentation/plane_extraction_nodeletConfig.h>
 
 
 // ROS message includes
@@ -109,14 +109,14 @@
 #include <boost/timer.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 
-#include "cob_3d_mapping_features/plane_extraction.h"
+#include "cob_3d_segmentation/plane_extraction.h"
 #include "cob_3d_mapping_msgs/PlaneExtractionAction.h"
 #include <cob_3d_mapping_common/polygon.h>
 #include <cob_3d_mapping_common/ros_msg_conversions.h>
 
 
 using namespace tf;
-using namespace cob_3d_mapping_features;
+//using namespace cob_3d_mapping_features;
 using namespace cob_3d_mapping;
 
 //####################
@@ -145,7 +145,7 @@ public:
     if(as_) delete as_;
   }
 
-  void dynReconfCallback(cob_3d_mapping_features::plane_extraction_nodeletConfig &config, uint32_t level)
+  void dynReconfCallback(cob_3d_segmentation::plane_extraction_nodeletConfig &config, uint32_t level)
   {
     mode_action_ = config.mode_action;
     target_frame_ = config.target_frame;
@@ -178,7 +178,7 @@ public:
     PCLNodelet::onInit();
     n_ = getNodeHandle();
 
-    config_server_ = boost::shared_ptr<dynamic_reconfigure::Server<cob_3d_mapping_features::plane_extraction_nodeletConfig> >(new dynamic_reconfigure::Server<cob_3d_mapping_features::plane_extraction_nodeletConfig>(getPrivateNodeHandle()));
+    config_server_ = boost::shared_ptr<dynamic_reconfigure::Server<cob_3d_segmentation::plane_extraction_nodeletConfig> >(new dynamic_reconfigure::Server<cob_3d_segmentation::plane_extraction_nodeletConfig>(getPrivateNodeHandle()));
     config_server_->setCallback(boost::bind(&PlaneExtractionNodelet::dynReconfCallback, this, _1, _2));
     point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &PlaneExtractionNodelet::pointCloudSubCallback, this);
     viz_marker_pub_ = n_.advertise<visualization_msgs::Marker>("visualization_marker",10);
@@ -517,7 +517,7 @@ protected:
   ros::Subscriber point_cloud_sub_;
   ros::Publisher viz_marker_pub_;
   ros::Publisher shape_array_pub_;
-  boost::shared_ptr<dynamic_reconfigure::Server<cob_3d_mapping_features::plane_extraction_nodeletConfig> > config_server_;
+  boost::shared_ptr<dynamic_reconfigure::Server<cob_3d_segmentation::plane_extraction_nodeletConfig> > config_server_;
 
   ros::ServiceServer get_plane_;
 
@@ -548,4 +548,4 @@ protected:
   double passthrough_max_z_;
 };
 
-PLUGINLIB_DECLARE_CLASS(cob_3d_mapping_features, PlaneExtractionNodelet, PlaneExtractionNodelet, nodelet::Nodelet)
+PLUGINLIB_DECLARE_CLASS(cob_3d_segmentation, PlaneExtractionNodelet, PlaneExtractionNodelet, nodelet::Nodelet)

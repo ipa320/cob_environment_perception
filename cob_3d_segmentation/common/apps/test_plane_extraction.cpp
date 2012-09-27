@@ -64,7 +64,7 @@
 
 
 #include <cob_3d_mapping_common/label_defines.h>
-#include "cob_3d_mapping_features/plane_extraction.h"
+#include "cob_3d_segmentation/plane_extraction.h"
 
 std::string file_in_;
 std::string label_out_;
