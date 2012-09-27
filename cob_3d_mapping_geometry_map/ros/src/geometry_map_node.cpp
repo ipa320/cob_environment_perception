@@ -612,7 +612,8 @@ void GeometryMapNode::publishPrimitives()
     float roll,pitch,yaw;
 
     pcl::getTransformationFromTwoUnitVectors(y_axis,z_axis,rot);
-    Eigen::Vector3f euler = rot.eulerAngles(0,1,2);
+    //cm.transform_from_world_to_plane.rotation().eulerAngles(0,1,2);
+    Eigen::Vector3f euler = rot.rotation().eulerAngles(0,1,2);
     tf::Quaternion orientation= tf::createQuaternionFromRPY(euler(0),euler(1),euler(2));
 
     //set cylinder orientation

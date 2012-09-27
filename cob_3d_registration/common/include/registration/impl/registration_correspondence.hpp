@@ -131,7 +131,11 @@ template <typename Point>
   //rej.setInputTarget(keypoints_tgt);
   rej.setMaximumDistance (rejection_dis_);
   rej.setInputCorrespondences (all_correspondences);
+#ifdef PCL_VERSION_COMPARE
   rej.getCorrespondences (remaining_correspondences);
+#else
+  rej.getCorrespondeces (remaining_correspondences); // typo in old pcl version
+#endif
 
   ROS_INFO("rejectBadCorrespondences %d %d",all_correspondences->size(), remaining_correspondences.size());
 }
