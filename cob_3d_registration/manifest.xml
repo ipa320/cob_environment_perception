@@ -39,6 +39,7 @@
   <!-- rosdep name="ann"/ -->
   <!-- rosdep name="lapack"/ -->
   <rosdep name="tinyxml"/>
+  <rosdep name="libvtk" />
 
   <!-- depend package="rgbdslam"/ -->
 

@@ -89,11 +89,15 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/segmentation/extract_polygonal_prism_data.h>
 #include "pcl/filters/voxel_grid.h"
-#include <Eigen/StdVector>
+//#include <Eigen/StdVector>
+#include <pcl/common/eigen.h>
+#include <pcl/common/centroid.h>
+#include <ros/console.h>
+
 
 //#include <cob_3d_mapping_common/reconfigureable_node.h>
 #include <dynamic_reconfigure/server.h>
-#include <cob_3d_mapping_features/plane_extraction_nodeletConfig.h>
+#include <cob_3d_segmentation/plane_extraction_nodeletConfig.h>
 
 
 // ROS message includes
@@ -105,14 +109,14 @@
 #include <boost/timer.hpp>
 #include <boost/numeric/ublas/matrix.hpp>
 
-#include "cob_3d_mapping_features/plane_extraction.h"
+#include "cob_3d_segmentation/plane_extraction.h"
 #include "cob_3d_mapping_msgs/PlaneExtractionAction.h"
 #include <cob_3d_mapping_common/polygon.h>
 #include <cob_3d_mapping_common/ros_msg_conversions.h>
 
 
 using namespace tf;
-using namespace cob_3d_mapping_features;
+//using namespace cob_3d_mapping_features;
 using namespace cob_3d_mapping;
 
 //####################
@@ -141,7 +145,7 @@ public:
     if(as_) delete as_;
   }
 
-  void dynReconfCallback(cob_3d_mapping_features::plane_extraction_nodeletConfig &config, uint32_t level)
+  void dynReconfCallback(cob_3d_segmentation::plane_extraction_nodeletConfig &config, uint32_t level)
   {
     mode_action_ = config.mode_action;
     target_frame_ = config.target_frame;
@@ -174,7 +178,7 @@ public:
     PCLNodelet::onInit();
     n_ = getNodeHandle();
 
-    config_server_ = boost::shared_ptr<dynamic_reconfigure::Server<cob_3d_mapping_features::plane_extraction_nodeletConfig> >(new dynamic_reconfigure::Server<cob_3d_mapping_features::plane_extraction_nodeletConfig>(getPrivateNodeHandle()));
+    config_server_ = boost::shared_ptr<dynamic_reconfigure::Server<cob_3d_segmentation::plane_extraction_nodeletConfig> >(new dynamic_reconfigure::Server<cob_3d_segmentation::plane_extraction_nodeletConfig>(getPrivateNodeHandle()));
     config_server_->setCallback(boost::bind(&PlaneExtractionNodelet::dynReconfCallback, this, _1, _2));
     point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &PlaneExtractionNodelet::pointCloudSubCallback, this);
     viz_marker_pub_ = n_.advertise<visualization_msgs::Marker>("visualization_marker",10);
@@ -204,15 +208,7 @@ public:
                     std::vector<std::vector<pcl::Vertices> >& v_hull_polygons,
                     std::vector<pcl::ModelCoefficients>& v_coefficients_plane)
   {
-    // Downsample input
-    pcl::VoxelGrid<Point> voxel;
-    voxel.setInputCloud(pc_in);
-    voxel.setLeafSize (vox_leaf_size_, vox_leaf_size_, vox_leaf_size_);
-    voxel.setFilterFieldName("z");
-    voxel.setFilterLimits(passthrough_min_z_, passthrough_max_z_);
-    pcl::PointCloud<Point>::Ptr pc_vox = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>);
-    voxel.filter(*pc_vox);
-    pe.extractPlanes(pc_vox, v_cloud_hull, v_hull_polygons, v_coefficients_plane);
+    pe.extractPlanes(pc_in, v_cloud_hull, v_hull_polygons, v_coefficients_plane);
   }
 
   /**
@@ -237,6 +233,14 @@ public:
       //ROS_INFO(" pointCloudSubCallback not owning lock");
       return;
     }
+    // Downsample input
+    pcl::VoxelGrid<Point> voxel;
+    voxel.setInputCloud(pc_in);
+    voxel.setLeafSize (vox_leaf_size_, vox_leaf_size_, vox_leaf_size_);
+    voxel.setFilterFieldName("z");
+    voxel.setFilterLimits(passthrough_min_z_, passthrough_max_z_);
+    pcl::PointCloud<Point>::Ptr pc_vox = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>);
+    voxel.filter(*pc_vox);
     pcl::PointCloud<Point> pc_trans;
     //if(pc_in->header.frame_id!="/map")
     {
@@ -316,7 +320,9 @@ public:
     {
       ROS_ERROR("[plane_extraction] : %s",ex.what());
     }
-    btVector3 bt_rob_pose = transform.getOrigin();
+    //btVector3 bt_rob_pose = transform.getOrigin();
+    btVector3 bt_rob_pose( transform.getOrigin()[0], transform.getOrigin()[1], transform.getOrigin()[2]);
+
     Eigen::Vector3f rob_pose(bt_rob_pose.x(),bt_rob_pose.y(),bt_rob_pose.z());
     ROS_INFO("Rob pose: (%f,%f,%f)", bt_rob_pose.x(),bt_rob_pose.y(),bt_rob_pose.z());
     unsigned int idx = 0;
@@ -511,7 +517,7 @@ protected:
   ros::Subscriber point_cloud_sub_;
   ros::Publisher viz_marker_pub_;
   ros::Publisher shape_array_pub_;
-  boost::shared_ptr<dynamic_reconfigure::Server<cob_3d_mapping_features::plane_extraction_nodeletConfig> > config_server_;
+  boost::shared_ptr<dynamic_reconfigure::Server<cob_3d_segmentation::plane_extraction_nodeletConfig> > config_server_;
 
   ros::ServiceServer get_plane_;
 
@@ -542,4 +548,4 @@ protected:
   double passthrough_max_z_;
 };
 
-PLUGINLIB_DECLARE_CLASS(cob_3d_mapping_features, PlaneExtractionNodelet, PlaneExtractionNodelet, nodelet::Nodelet)
+PLUGINLIB_DECLARE_CLASS(cob_3d_segmentation, PlaneExtractionNodelet, PlaneExtractionNodelet, nodelet::Nodelet)

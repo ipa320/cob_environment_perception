@@ -86,7 +86,11 @@
 #include "parameters/parameters_bag.h"
 
 #include <registration/registration_icp.h>
-#ifndef PCL_DEPRECATED
+
+#include <vtkCommand.h>
+#include <pcl/features/feature.h>
+#include <pcl/point_traits.h>
+#ifndef GICP_ENABLE
 #include <registration/registration_icp_moments.h>
 #include <registration/registration_icp_fpfh.h>
 #include <registration/registration_icp_narf.h>
@@ -110,6 +114,17 @@
 #include <registration/measurements/measure.h>
 #include <cob_srvs/Trigger.h>
 #include <cob_3d_mapping_msgs/TriggerMappingAction.h>
+
+#ifdef PCL_VERSION_COMPARE
+  #include <pcl/kdtree/kdtree_flann.h>
+  #include <pcl/common/eigen.h>
+  #include <pcl/registration/correspondence_estimation.h>
+#endif
+
+
+
+
+
 
 using namespace tf;
 #define SHOW_MAP 0
@@ -566,7 +581,7 @@ public:
         break;
 
       case E_ALGO_ICP_MOMENTS:
-#ifndef PCL_DEPRECATED
+#ifndef GICP_ENABLE
         reg_ = new Registration_ICP_Moments<Point>();
 
         setSettings_ICP_Moments((Registration_ICP_Moments<Point>*)reg_);
@@ -576,7 +591,7 @@ public:
         break;
 
       case E_ALGO_ICP_FPFH:
-#ifndef PCL_DEPRECATED
+#ifndef GICP_ENABLE
         reg_ = new Registration_ICP_FPFH<Point>();
 
         setSettings_ICP_FPFH((Registration_ICP_FPFH<Point>*)reg_);
@@ -586,7 +601,7 @@ public:
         break;
 
       case E_ALGO_ICP_NARF:
-#ifndef PCL_DEPRECATED
+#ifndef GICP_ENABLE
         reg_ = new Registration_ICP_NARF<Point>();
 
         setSettings_ICP_NARF((Registration_ICP_NARF<Point>*)reg_);
@@ -596,7 +611,7 @@ public:
         break;
 
       case E_ALGO_ICP_EDGES:
-#ifndef PCL_DEPRECATED
+#ifndef GICP_ENABLE
 #if HAS_RGB
         reg_ = new Registration_ICP_Edges<Point>();
 
@@ -608,7 +623,7 @@ public:
         break;
 
         /*case E_ALGO_FASTSLAM:
-#ifndef PCL_DEPRECATED
+#ifndef GICP_ENABLE
         reg_ = new Registration_FastSLAM<Point>();
 
         //setSettings_ICP_FastSLAM((Registration_FastSLAM<Point>*)reg_);
@@ -624,7 +639,7 @@ public:
         break;
 
       case E_ALGO_INFO:
-#ifndef PCL_DEPRECATED
+#ifndef GICP_ENABLE
         reg_ = new Registration_Infobased<Point>();
 
         setSettings_Info((Registration_Infobased<Point>*)reg_);
@@ -634,11 +649,11 @@ public:
         break;
 
       case E_ALGO_COR:
-#ifndef PCL_DEPRECATED
+#ifndef GICP_ENABLE
         reg_ = new Registration_Corrospondence<Point>();
 
         //((Registration_Corrospondence<Point>*)reg_)->setKeypoints(new Keypoints_Segments<Point>);
-        ((Registration_Corrospondence<Point>*)reg_)->setKeypoints(new Keypoints_Narf<Point>);
+        //((Registration_Corrospondence<Point>*)reg_)->setKeypoints(new Keypoints_Narf<Point>);
 
         //setSettings_Cor((Registration_Corrospondence<Point>*)reg_);
 #else
@@ -671,20 +686,20 @@ public:
     }
 
     sensor_msgs::Image img;
-    {
-      FILE *fp = fopen(req.img_fn.c_str(), "rb");
-      if(!fp) return false;
-
-      struct stat filestatus;
-      stat(req.img_fn.c_str(), &filestatus );
-
-      uint8_t *up = new uint8_t[filestatus.st_size];
-      fread(up,filestatus.st_size,1,fp);
-      img.deserialize(up);
-      delete up;
-
-      fclose(fp);
-    }
+//    {
+//      FILE *fp = fopen(req.img_fn.c_str(), "rb");
+//      if(!fp) return false;
+//
+//      struct stat filestatus;
+//      stat(req.img_fn.c_str(), &filestatus );
+//
+//      uint8_t *up = new uint8_t[filestatus.st_size];
+//      fread(up,filestatus.st_size,1,fp);
+//      img.deserialize(up);
+//      delete up;
+//
+//      fclose(fp);
+//    }
 
     cv::Mat img_depth(pc.height, pc.width, CV_16UC1);
 #ifdef USE_DEPTH_IMG_
@@ -766,7 +781,7 @@ public:
 #endif
     }
 
-#ifndef PCL_DEPRECATED
+#ifndef GICP_ENABLE
     std::string s_algo;
     if(parameters_.getParam("algo",s_algo) && s_algo=="info") {
       pcl::PointCloud<Point> result = *((Registration_Infobased<Point>*)reg_)->getMarkers2();
@@ -777,7 +792,11 @@ public:
         publishLineMarker( ((Registration_Infobased<Point>*)reg_)->getSource().points[i].getVector3fMap(), ((Registration_Infobased<Point>*)reg_)->getTarget().points[i].getVector3fMap(), -i);
     }
     else if(parameters_.getParam("algo",s_algo) && s_algo=="cor") {
-      pcl::registration::Correspondences cor;
+	  #ifdef PCL_VERSION_COMPARE
+	    pcl::Correspondences cor;
+      #else
+      	pcl::registration::Correspondences cor;
+	  #endif
       ((Registration_Corrospondence<Point>*)reg_)->getKeypoints()->getCorrespondences(cor);
       for(int i=0; i<cor.size(); i++)
         publishLineMarker( ((Registration_Corrospondence<Point>*)reg_)->getKeypoints()->getSourcePoints()->points[cor[i].indexQuery].getVector3fMap(), ((Registration_Corrospondence<Point>*)reg_)->getKeypoints()->getTargetPoints()->points[cor[i].indexMatch].getVector3fMap(), -i);
@@ -1016,7 +1035,7 @@ protected:
     if(parameters_.getParam("use_only_last_refrence",i))
       pr->setUseOnlyLastReference(i!=0);
   }
-#ifndef PCL_DEPRECATED
+#ifndef GICP_ENABLE
   void setSettings_ICP_Moments(Registration_ICP_Moments<Point> *pr) {
     setSettings_ICP(pr);
 

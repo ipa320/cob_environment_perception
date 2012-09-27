@@ -19,13 +19,24 @@
   <!-- start nodelet manager -->
   <node if="$(arg start_manager)" pkg="nodelet" type="nodelet" name="$(arg nodelet_manager)"  args="manager" output="screen"/>
 
+   <node pkg="nodelet" type="nodelet" name="pass_through" args="load pcl/VoxelGrid $(arg nodelet_manager)" output="screen">
+    <remap from="~input" to="/cam3d/rgb/points" />
+    <rosparam>
+      leaf_size: 0.03
+      filter_field_name: z
+      filter_limit_min: 0.0
+      filter_limit_max: 5.0
+      keep_organized: false
+    </rosparam>
+  </node>
+
   <node pkg="nodelet" type="nodelet" name="registration_nodelet" args="load cob_3d_registration/RegistrationNodelet $(arg nodelet_manager)" output="screen">
 
     <remap from="camera_info" to="/cam3d/rgb/camera_info"/>
-    <remap from="point_cloud2" to="/cam3d/rgb/points"/>
+    <remap from="point_cloud2" to="/pass_through/output"/>
     <remap from="point_cloud2_aligned" to="registration/pc_aligned"/>
 
-      <param name="algo" value="info" />
+      <param name="algo" value="icp" />
       <param name="threshold_step" value="0.06" />
       <param name="threshold_diff" value="0.06" />
       <param name="min_info" value="1" />

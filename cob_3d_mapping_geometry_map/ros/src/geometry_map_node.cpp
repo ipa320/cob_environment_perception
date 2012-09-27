@@ -71,7 +71,11 @@
 #include <pcl/point_types.h>
 #include <pcl_ros/transforms.h>
 #include <pcl_ros/point_cloud.h>
-#include <pcl/common/transform.h>
+#ifdef PCL_VERSION_COMPARE
+  #include <pcl/common/transforms.h>
+#else
+  #include <pcl/common/transform.h>
+#endif
 #include <cob_3d_mapping_geometry_map/geometry_map_nodeConfig.h>
 #include "pcl/surface/convex_hull.h"
 #include "pcl/filters/project_inliers.h"
@@ -608,8 +612,8 @@ void GeometryMapNode::publishPrimitives()
     float roll,pitch,yaw;
 
     pcl::getTransformationFromTwoUnitVectors(y_axis,z_axis,rot);
-    pcl::getEulerAngles(rot,roll,pitch,yaw);
-    tf::Quaternion orientation= tf::createQuaternionFromRPY(roll,pitch,yaw);
+    Eigen::Vector3f euler = rot.eulerAngles(0,1,2);
+    tf::Quaternion orientation= tf::createQuaternionFromRPY(euler(0),euler(1),euler(2));
 
     //set cylinder orientation
     marker.pose.orientation.x = orientation[0];

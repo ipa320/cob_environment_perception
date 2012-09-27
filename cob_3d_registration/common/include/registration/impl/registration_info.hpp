@@ -58,6 +58,9 @@
 #include "../transf_est/tf_est_multi_cors.h"
 #include <pcl/registration/transformation_estimation_svd.h>
 #include "modified_icp.hpp"
+#ifdef PCL_VERSION_COMPARE
+  #include <pcl/point_traits.h>
+#endif
 
 
 // organized access to pointcloud
@@ -67,10 +70,10 @@
 #define EVALUATION_MODE_ 0
 
 // debug mode outputs more information on console and creates pointclouds of HIRN points
-#define DEBUG_SWITCH_ 1
+#define DEBUG_SWITCH_ 0
 
 // using odometry to determine keyframes -> set to one was workaround for "standing"-check
-#define USED_ODO_ 0
+#define USED_ODO_ 1
 
 
 template <typename Point>
@@ -348,8 +351,7 @@ bool Registration_Infobased<Point>::compute_transformation()
     T=T.Identity();
   if(Eigen::Quaternionf(T.topLeftCorner<3, 3> ()).angularDistance(Eigen::Quaternionf::Identity())>3*rmax_)
     T=T.Identity();
-  std::cout << this->transformation_ << std::endl;
-  std::cout << T << std::endl;
+
   this->transformation_ = this->transformation_*T;
 
   this->last_input_ = this->input_org_;
