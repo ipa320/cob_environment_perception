@@ -148,9 +148,8 @@ cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::c
         c_it->type = max_idx;
         c_it->type_probability = static_cast<float>(max) / static_cast<float>(valid_points);
         //std::cout << "Label: " << max_idx << " : #" << c_it->type_probability << std::endl;
-        if (c_it->type == I_CYL)
-        {
-          if(c_it->type_probability < 0.8) { c_it->type = I_SPHERE; }
+        
+          if(c_it->type_probability < 0.60) { c_it->type = I_SPHERE; }
           /*else
             {
             std::cout <<c_it->pca_inter_comp1(0) <<", "
@@ -158,7 +157,7 @@ cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::c
             <<c_it->pca_inter_comp1(2) <<" | " << valid_points << std::endl;
             }*/
           //else { clusters_->computeNormalIntersections(c_it); }
-        }
+        
       }
     }
     else c_it->type = I_PLANE;
