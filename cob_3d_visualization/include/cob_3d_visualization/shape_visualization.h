@@ -91,8 +91,6 @@ class ShapeVisualization
     cob_3d_mapping_msgs::ModifyMap::Request req ;
     cob_3d_mapping_msgs::ModifyMap::Response res;
 
-    std::vector<unsigned int> moved_shapes_indices_;
-    std::vector<unsigned int> interacted_shapes_;
 
 
     boost::shared_ptr<interactive_markers::InteractiveMarkerServer> im_server_; // server for interactive markers
