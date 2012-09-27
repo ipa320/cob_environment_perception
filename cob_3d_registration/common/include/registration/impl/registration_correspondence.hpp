@@ -52,7 +52,11 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
-
+#ifdef PCL_VERSION_COMPARE
+  #include <pcl/correspondence.h>
+  #include <pcl/search/kdtree.h>
+  #include <pcl/search/search.h>
+#endif
 #include <pcl/registration/correspondence_rejection_distance.h>
 #include <pcl/registration/transformation_estimation_svd.h>
 
@@ -69,7 +73,11 @@ bool Registration_Corrospondence<Point>::compute_features() {
 template <typename Point>
 bool Registration_Corrospondence<Point>::compute_corrospondences() {
 
-  all_correspondences_.reset(new pcl::registration::Correspondences);
+  #ifdef PCL_VERSION_COMPARE
+    all_correspondences_.reset(new pcl::Correspondences);
+  #else
+    all_correspondences_.reset(new pcl::registration::Correspondences);
+  #endif
   keypoints_->getCorrespondences (*all_correspondences_);
 
 //  ROS_INFO("rejectBadCorrespondences %d %d",all_correspondences->size(), remaining_correspondences.size());
@@ -82,7 +90,11 @@ bool Registration_Corrospondence<Point>::compute_transformation() {
   Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
 
   // Find correspondences between keypoints in FPFH space
-  pcl::registration::CorrespondencesPtr good_correspondences (new pcl::registration::Correspondences);
+  #ifdef PCL_VERSION_COMPARE
+    pcl::CorrespondencesPtr good_correspondences (new pcl::Correspondences);
+  #else
+    pcl::registration::CorrespondencesPtr good_correspondences (new pcl::registration::Correspondences);
+  #endif
 
   rejectBadCorrespondences(all_correspondences_, *good_correspondences);
 
@@ -106,15 +118,20 @@ bool Registration_Corrospondence<Point>::compute_transformation() {
 
 
 template <typename Point>
-void Registration_Corrospondence<Point>::rejectBadCorrespondences (const pcl::registration::CorrespondencesPtr &all_correspondences,
+#ifdef PCL_VERSION_COMPARE
+  void Registration_Corrospondence<Point>::rejectBadCorrespondences (const pcl::CorrespondencesPtr &all_correspondences,
+                          pcl::Correspondences &remaining_correspondences)
+#else
+  void Registration_Corrospondence<Point>::rejectBadCorrespondences (const pcl::registration::CorrespondencesPtr &all_correspondences,
                           pcl::registration::Correspondences &remaining_correspondences)
+#endif
 {
   pcl::registration::CorrespondenceRejectorDistance rej;
   //rej.setInputCloud(keypoints_src);
   //rej.setInputTarget(keypoints_tgt);
   rej.setMaximumDistance (rejection_dis_);
   rej.setInputCorrespondences (all_correspondences);
-  rej.getCorrespondeces (remaining_correspondences);
+  rej.getCorrespondences (remaining_correspondences);
 
   ROS_INFO("rejectBadCorrespondences %d %d",all_correspondences->size(), remaining_correspondences.size());
 }

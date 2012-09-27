@@ -66,6 +66,7 @@
 #include <pcl/visualization/histogram_visualizer.h>
 #include <pcl/visualization/point_cloud_handlers.h>
 #include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/kdtree/kdtree.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/features/fpfh.h>
 
@@ -178,7 +179,11 @@ void generateFeature(ft_config * cfg, PointCloud<PointXYZ>::Ptr & p_in,
 {
   PointCloud<FPFHSignature33>::Ptr fpfh (new PointCloud<FPFHSignature33>);
   vector<float> d;
-  KdTree<PointXYZ>::Ptr tree(new KdTreeFLANN<PointXYZ>());
+  #ifdef PCL_VERSION_COMPARE //fuerte
+    pcl::search::KdTree<PointXYZ>::Ptr tree (new pcl::search::KdTree<PointXYZ>());
+  #else //electric
+    pcl::KdTreeFLANN<PointXYZ>::Ptr tree (new pcl::KdTreeFLANN<PointXYZ> ());
+  #endif
   tree->setInputCloud(p_in);
 
   NormalEstimation<PointXYZ, Normal> norm;

@@ -306,7 +306,11 @@ int cob_3d_mapping_tools::PPMWriter::writeDepth(const string &file_name,
 
     for (size_t i = 0; i < cloud.points.size(); i++)
     {
-      if (!pcl::hasValidXYZ(cloud.points[i]))
+	  #ifdef PCL_VERSION_COMPARE
+		if (!pcl::isFinite(cloud.points[i]))
+	  #else
+        if (!pcl::hasValidXYZ(cloud.points[i]))
+	  #endif
         continue;
 
       if(!fixed_max_)
@@ -319,7 +323,11 @@ int cob_3d_mapping_tools::PPMWriter::writeDepth(const string &file_name,
     uint8_t rgb[3];
     for (size_t i = 0; i < cloud.points.size(); i++)
     {
-      if (pcl::hasValidXYZ(cloud.points[i]))
+	  #ifdef PCL_VERSION_COMPARE
+		if (!pcl::isFinite(cloud.points[i]))
+	  #else
+        if (!pcl::hasValidXYZ(cloud.points[i]))
+	  #endif
       {
         grd_position = (cloud.points[i].z - min_z_) / (max_z_ - min_z_);
         cob_3d_mapping_tools::getGradientColor(grd_position, rgb);
@@ -364,7 +372,11 @@ int cob_3d_mapping_tools::PPMWriter::writeDepthLinear(
     float max_z = 0, min_z = 10.0;
     for (size_t i = 0; i < cloud.points.size(); i++)
     {
-      if (!pcl::hasValidXYZ(cloud.points[i]))
+	  #ifdef PCL_VERSION_COMPARE
+		if (!pcl::isFinite(cloud.points[i]))
+	  #else
+        if (!pcl::hasValidXYZ(cloud.points[i]))
+	  #endif
         continue;
 
       max_z = max (cloud.points[i].z, max_z);
@@ -377,7 +389,11 @@ int cob_3d_mapping_tools::PPMWriter::writeDepthLinear(
     uint8_t rgb[3];
     for (size_t i = 0; i < cloud.points.size(); i++)
     {
-      if (pcl::hasValidXYZ(cloud.points[i]))
+	  #ifdef PCL_VERSION_COMPARE
+		if (!pcl::isFinite(cloud.points[i]))
+	  #else
+        if (!pcl::hasValidXYZ(cloud.points[i]))
+	  #endif
       {
         grd_position = ( round(1090.0 - (345.0 / cloud.points[i].z) ) - min_z) / (max_z - min_z);
         cob_3d_mapping_tools::getGradientColor(grd_position, rgb);

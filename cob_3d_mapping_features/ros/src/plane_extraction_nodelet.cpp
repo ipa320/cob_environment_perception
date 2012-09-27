@@ -89,7 +89,11 @@
 #include <pcl/segmentation/extract_clusters.h>
 #include <pcl/segmentation/extract_polygonal_prism_data.h>
 #include "pcl/filters/voxel_grid.h"
-#include <Eigen/StdVector>
+//#include <Eigen/StdVector>
+#include <pcl/common/eigen.h>
+#include <pcl/common/centroid.h>
+#include <ros/console.h>
+
 
 //#include <cob_3d_mapping_common/reconfigureable_node.h>
 #include <dynamic_reconfigure/server.h>
@@ -204,15 +208,7 @@ public:
                     std::vector<std::vector<pcl::Vertices> >& v_hull_polygons,
                     std::vector<pcl::ModelCoefficients>& v_coefficients_plane)
   {
-    // Downsample input
-    pcl::VoxelGrid<Point> voxel;
-    voxel.setInputCloud(pc_in);
-    voxel.setLeafSize (vox_leaf_size_, vox_leaf_size_, vox_leaf_size_);
-    voxel.setFilterFieldName("z");
-    voxel.setFilterLimits(passthrough_min_z_, passthrough_max_z_);
-    pcl::PointCloud<Point>::Ptr pc_vox = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>);
-    voxel.filter(*pc_vox);
-    pe.extractPlanes(pc_vox, v_cloud_hull, v_hull_polygons, v_coefficients_plane);
+    pe.extractPlanes(pc_in, v_cloud_hull, v_hull_polygons, v_coefficients_plane);
   }
 
   /**
@@ -237,6 +233,14 @@ public:
       //ROS_INFO(" pointCloudSubCallback not owning lock");
       return;
     }
+    // Downsample input
+    pcl::VoxelGrid<Point> voxel;
+    voxel.setInputCloud(pc_in);
+    voxel.setLeafSize (vox_leaf_size_, vox_leaf_size_, vox_leaf_size_);
+    voxel.setFilterFieldName("z");
+    voxel.setFilterLimits(passthrough_min_z_, passthrough_max_z_);
+    pcl::PointCloud<Point>::Ptr pc_vox = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>);
+    voxel.filter(*pc_vox);
     pcl::PointCloud<Point> pc_trans;
     //if(pc_in->header.frame_id!="/map")
     {
@@ -316,7 +320,9 @@ public:
     {
       ROS_ERROR("[plane_extraction] : %s",ex.what());
     }
-    btVector3 bt_rob_pose = transform.getOrigin();
+    //btVector3 bt_rob_pose = transform.getOrigin();
+    btVector3 bt_rob_pose( transform.getOrigin()[0], transform.getOrigin()[1], transform.getOrigin()[2]);
+
     Eigen::Vector3f rob_pose(bt_rob_pose.x(),bt_rob_pose.y(),bt_rob_pose.z());
     ROS_INFO("Rob pose: (%f,%f,%f)", bt_rob_pose.x(),bt_rob_pose.y(),bt_rob_pose.z());
     unsigned int idx = 0;

@@ -59,6 +59,8 @@
 #include <pcl/io/pcd_io.h>
 #include <cv_bridge/cv_bridge.h>
 #include <highgui.h>
+#include <iostream>
+#include <fstream>
 
 int main(int argc, char **argv) {
   if(argc<3) {
@@ -72,23 +74,30 @@ int main(int argc, char **argv) {
 
   sensor_msgs::ImageConstPtr last_img_ = tmp.toImageMsg();
 
-  //serialize image
-  FILE *fp = fopen(argv[2],"wb");
-  if(fp)
-  {
-    uint32_t len = last_img_->serializationLength();
+std::ofstream img_stream;
 
-    uint8_t *wptr = new uint8_t[len];
-    last_img_->serialize(wptr,0);
-    fwrite(wptr, 1, len, fp);
-    delete [] wptr;
+img_stream << *last_img_;
 
-    fclose(fp);
-  }
-  else {
-    ROS_ERROR("couldn't open %s", argv[2]);
-    return 1;
-  }
+img_stream.close();
+
+
+//  //serialize image
+//  FILE *fp = fopen(argv[2],"wb");
+//  if(fp)
+//  {
+//    uint32_t len = last_img_->serializationLength();
+//
+//    uint8_t *wptr = new uint8_t[len];
+//    last_img_->serialize(wptr,0);
+//    fwrite(wptr, 1, len, fp);
+//    delete [] wptr;
+//
+//    fclose(fp);
+//  }
+//  else {
+//    ROS_ERROR("couldn't open %s", argv[2]);
+//    return 1;
+//  }
 
   return 0;
 }

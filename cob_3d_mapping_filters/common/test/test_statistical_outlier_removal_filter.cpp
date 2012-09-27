@@ -84,9 +84,9 @@ void TestProcessingTime()
 
 void DoSampleRun()
 {
-  pcl::StatisticalOutlierRemoval<PointXYZA> filter;
-  pcl::PointCloud<PointXYZA>::Ptr cloud(new pcl::PointCloud<PointXYZA> ());
-  pcl::PointCloud<PointXYZA>::Ptr cloud_out(new pcl::PointCloud<PointXYZA> ());
+  pcl::StatisticalOutlierRemoval<PointXYZ> filter;
+  pcl::PointCloud<PointXYZ>::Ptr cloud(new pcl::PointCloud<PointXYZ> ());
+  pcl::PointCloud<PointXYZ>::Ptr cloud_out(new pcl::PointCloud<PointXYZ> ());
   pcl::io::loadPCDFile("/home/goa/Ubuntu One/diss/images/raw/filter_sequence_amplitude2.pcd", *cloud);
   filter.setInputCloud(cloud);
   filter.setStddevMulThresh(0.5);

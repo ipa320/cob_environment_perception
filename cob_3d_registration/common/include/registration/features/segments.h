@@ -9,7 +9,10 @@
 #define SEGMENTS_H_
 
 #include <pcl/filters/extract_indices.h>
-
+#ifdef PCL_VERSION_COMPARE
+  #include <pcl/registration/impl/correspondence_types.hpp>
+  #include <pcl/PointIndices.h>
+#endif
 #ifdef VISUALIZE_SEGMENTS_
 #include <pcl/visualization/cloud_viewer.h>
 #endif
@@ -82,10 +85,15 @@ public:
     ret(2) = kp.data_c[3*r+2];
     return ret;
   }
+  #ifdef PCL_VERSION_COMPARE
+    virtual void getCorrespondences(pcl::Correspondences &correspondences) {
 
-  virtual void getCorrespondences(std::vector<pcl::registration::Correspondence> &correspondences) {
+      pcl::Correspondence corr;
+  #else
+    virtual void getCorrespondences(std::vector<pcl::registration::Correspondence> &correspondences) {
 
-    pcl::registration::Correspondence corr;
+      pcl::registration::Correspondence corr;
+  #endif
     correspondences.clear();
 
     const float thr = 0.001;
@@ -116,9 +124,13 @@ public:
 
       if(f>thr)
         continue;
-
-      corr.indexQuery = i;
-      corr.indexMatch = mi;
+	  #ifdef PCL_VERSION_COMPARE
+        corr.index_query = i;
+        corr.index_match = mi;
+      #else
+        corr.indexQuery = i;
+        corr.indexMatch = mi;
+      #endif
       corr.distance = f;
       correspondences.push_back(corr);
 
