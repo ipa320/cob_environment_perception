@@ -361,6 +361,7 @@ Cylinder::GrabParams(Cylinder& c_src)
   this->merged = c_src.merged;
   this->frame_stamp = c_src.frame_stamp;
   this->holes = c_src.holes;
+  this->color=c_src.color;
 
 }
 
@@ -614,6 +615,7 @@ void Cylinder::merge(std::vector<Cylinder::Ptr>& c_array) {
 
   //assign "this" cylinder to average cyl and apply weighting over all merge candidates
   *average_cyl = *this;
+  average_cyl->GrabParams(*this);
   average_cyl->applyWeighting(c_array);
 
   //TEMPORARY OVERRIDE ---------------------------------------------------------------
