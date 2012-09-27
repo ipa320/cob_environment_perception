@@ -71,7 +71,11 @@
 #include <pcl/point_types.h>
 #include <pcl_ros/transforms.h>
 #include <pcl_ros/point_cloud.h>
-#include <pcl/common/transform.h>
+#ifdef PCL_VERSION_COMPARE
+  #include <pcl/common/transforms.h>
+#else
+  #include <pcl/common/transform.h>
+#endif
 #include <cob_3d_mapping_geometry_map/geometry_map_nodeConfig.h>
 #include "pcl/surface/convex_hull.h"
 #include "pcl/filters/project_inliers.h"
@@ -624,7 +628,8 @@ void GeometryMapNode::publishPrimitives()
     tf::Quaternion orientation;
 
     rot  =cm.transform_from_world_to_plane.rotation();
-    pcl::getEulerAngles(rot,roll,pitch,yaw);
+    Eigen::Vector3f euler = cm.transform_from_world_to_plane.rotation().eulerAngles(0,1,2);
+    //pcl::getEulerAngles(rot,roll,pitch,yaw);
 
     // WATCH OUT!! Use primitives only for vertical cylinders - orientation is not set
     //TODO: compute and set Orientation the right wy
