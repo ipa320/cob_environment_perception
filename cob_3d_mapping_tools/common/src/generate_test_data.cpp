@@ -59,6 +59,7 @@
 #include <pcl/point_types.h>
 
 #include <pcl/filters/passthrough.h>
+#include <pcl/kdtree/kdtree.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/surface/mls.h>
 #include <pcl/features/normal_3d_omp.h>
@@ -162,7 +163,11 @@ int main(int argc, char** argv)
     pass.setFilterLimits(0.0f, limit_);
     pass.filter(*in);
 
-    KdTree<PointXYZRGB>::Ptr tree(new KdTreeFLANN<PointXYZRGB>());
+    #ifdef PCL_VERSION_COMPARE //fuerte
+      pcl::search::KdTree<PointXYZRGB>::Ptr tree (new pcl::search::KdTree<PointXYZRGB>());
+    #else //electric
+      pcl::KdTreeFLANN<PointXYZRGB>::Ptr tree (new pcl::KdTreeFLANN<PointXYZRGB> ());
+    #endif
     tree->setInputCloud(in);
 
     for (float r_n = r_min_; r_n <= r_max_; r_n += r_step_)
@@ -195,7 +200,11 @@ int main(int argc, char** argv)
       io::savePCDFileASCII<PointXYZRGB>(folder_+"normals/"+scenes_[i]+
 					"/mls_"+scenes_[i]+"_"+str_rn+".pcd",*p_mls);
 
-      KdTree<PointXYZRGB>::Ptr tree_mls(new KdTreeFLANN<PointXYZRGB>());
+      #ifdef PCL_VERSION_COMPARE //fuerte
+        pcl::search::KdTree<PointXYZRGB>::Ptr tree_mls (new pcl::search::KdTree<PointXYZRGB>());
+      #else //electric
+        pcl::KdTreeFLANN<PointXYZRGB>::Ptr tree_mls (new pcl::KdTreeFLANN<PointXYZRGB> ());
+      #endif
       tree_mls->setInputCloud(p_mls);
       
       for (float r_f = r_n; r_f <= r_max_; r_f += r_step_)

@@ -57,6 +57,10 @@
 #define TF_EST_MULTI_CORS_H_
 
 #include <pcl/registration/registration.h>
+#ifdef PCL_VERSION_COMPARE
+  #include <pcl/registration/correspondence_estimation.h>
+  #include <pcl/registration/correspondence_types.h>
+#endif
 
 /**
  * global transformation estimation using HIRN implications
@@ -101,6 +105,10 @@ public:
 protected:
   virtual void
   computeTransformation (PointCloudSource &output);
+
+  virtual void
+  computeTransformation (PointCloudSource &output,const Eigen::Matrix4f& guess){};
+
 
   Eigen::Matrix4f findTF_fast
   (const pcl::PointCloud<Point> &pc_old, const pcl::PointCloud<Point> &pc_new,

@@ -44,7 +44,9 @@ rosbuild_add_executable(bag_to_pcd ros/src/bag_to_pcd.cpp)
 rosbuild_link_boost(bag_to_pcd system filesystem)
 rosbuild_add_executable(pointcloud_to_pcd ros/src/pointcloud_to_pcd.cpp)
 rosbuild_add_executable(pointcloud_bag_delayer ros/src/pointcloud_bag_delayer.cpp)
+rosbuild_link_boost(pointcloud_bag_delayer program_options)
 rosbuild_add_executable(shape_bag_delayer ros/src/shape_bag_delayer.cpp)
+rosbuild_link_boost(shape_bag_delayer program_options)
 
 rosbuild_add_executable(create_point_cloud common/src/create_point_cloud.cpp)
 rosbuild_add_executable(create_kitchen_point_cloud common/src/create_kitchen_point_cloud.cpp)
@@ -107,6 +109,7 @@ rosbuild_link_boost(generate_test_data program_options)
 # plane segmentation evaluation tool:
 rosbuild_add_executable(evaluate_plane_segmentation common/src/evaluate_plane_segmentation.cpp)
 target_link_libraries(evaluate_plane_segmentation cob_3d_mapping_tools)
+rosbuild_link_boost(evaluate_plane_segmentation program_options)
 
 # Gui:
 rosbuild_add_executable(test_gui_tool common/src/test_gui_tool.cpp)
@@ -115,8 +118,10 @@ rosbuild_add_executable(test_gui_tool common/src/test_gui_tool.cpp)
 
 rosbuild_add_executable(test_gui common/src/test_wx_gui.cpp)
 target_link_libraries(test_gui ${wxWidgets_LIBRARIES} cob_3d_mapping_tools)
+rosbuild_link_boost(test_gui program_options signals)
 rosbuild_add_executable(test_hsv_tool common/src/test_hsv_tool.cpp)
 target_link_libraries(test_hsv_tool ${wxWidgets_LIBRARIES} cob_3d_mapping_tools)
+rosbuild_link_boost(test_hsv_tool program_options signals)
 
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
