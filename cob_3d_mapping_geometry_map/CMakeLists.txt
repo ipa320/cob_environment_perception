@@ -21,6 +21,9 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
+find_package(VTK REQUIRED)
+include_directories(${VTK_INCLUDE_DIRS})
+
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include ${PROJECT_SOURCE_DIR}/ros/include)
 
 #uncomment if you have defined messages
@@ -42,11 +45,11 @@ rosbuild_add_library(geometry_map_vis_lib common/src/vis/geometry_map_visualisat
 
 
 rosbuild_add_executable(geometry_map common/src/geometry_map.cpp)
-target_link_libraries(geometry_map geometry_map_vis_lib )
+target_link_libraries(geometry_map geometry_map_vis_lib vtkCommon vtkRendering)
 
 
-rosbuild_add_executable(dynamic_geometry_map_node  ros/src/dynamic_geometry_map_node.cpp)
-target_link_libraries(dynamic_geometry_map_node geometry_map_lib geometry_map_vis_lib)
+#rosbuild_add_executable(dynamic_geometry_map_node  ros/src/dynamic_geometry_map_node.cpp)
+#target_link_libraries(dynamic_geometry_map_node geometry_map_lib geometry_map_vis_lib)
 
 
 rosbuild_add_executable(geometry_map_node ros/src/geometry_map_node.cpp)
