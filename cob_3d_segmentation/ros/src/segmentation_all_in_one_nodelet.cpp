@@ -61,7 +61,11 @@
 
 #include <pcl/io/io.h>
 #include <pcl/io/pcd_io.h>
-#include <pcl/ros/for_each_type.h>
+  #ifdef PCL_VERSION_COMPARE //fuerte
+    #include <pcl/for_each_type.h>
+  #else //electric
+    #include <pcl/ros/for_each_type.h>
+  #endif
 
 // Package includes
 #include <cob_3d_mapping_msgs/ShapeArray.h>

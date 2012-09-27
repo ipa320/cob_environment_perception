@@ -58,7 +58,13 @@
 #include <pcl/registration/icp.h>
 #include <pcl/kdtree/kdtree.h>
 #include "../feature_container.h"
-#ifdef PCL_DEPRECATED
+#ifdef PCL_VERSION_COMPARE
+  #include <pcl/registration/registration.h>
+  #include <pcl/features/feature.h>
+  #include <pcl/search/kdtree.h>
+  #include <pcl/search/search.h>
+#endif
+#ifdef GICP_ENABLE
 #include <pcl/registration/gicp.h>
 #include <pcl/registration/transformation_estimation_lm.h>
 #endif
@@ -84,7 +90,11 @@ class ModifiedICP_T : public ParentClass, public ModifiedICP_G {
    * own search tree which passes down search calls
    */
   template <typename PointT2>
-  class FeatureSearch : public pcl::KdTree<PointT2>
+  #ifdef PCL_VERSION_COMPARE
+    class FeatureSearch: public pcl::KdTreeFLANN<PointT2>
+  #else
+    class FeatureSearch : public pcl::KdTree<PointT2>
+  #endif
   {
     FeatureContainerInterface* features_;
 
@@ -137,7 +147,7 @@ class ModifiedICP_T : public ParentClass, public ModifiedICP_G {
 
   /// use LM instead of SVD (since pcl 1.3)
   void setLM() {
-#ifdef PCL_DEPRECATED
+#ifdef GICP_ENABLE
     this->min_number_correspondences_ = 4;
     this->reg_name_ = "IterativeClosestPointNonLinear";
 
@@ -161,7 +171,8 @@ class ModifiedICP : public ModifiedICP_T<pcl::IterativeClosestPoint<PointT,Point
 {
 };
 
-#ifdef PCL_DEPRECATED
+
+#ifdef GICP_ENABLE
 /**
  * modified icp with gicp
  * LM and features are not supported!

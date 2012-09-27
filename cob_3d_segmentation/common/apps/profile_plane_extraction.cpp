@@ -61,7 +61,7 @@
 // stack includes:
 #include "cob_3d_mapping_common/stop_watch.h"
 #include "cob_3d_mapping_common/point_types.h"
-#include "cob_3d_mapping_features/plane_extraction.h"
+#include "cob_3d_segmentation/plane_extraction.h"
 
 
 typedef pcl::PointXYZRGB PointT;

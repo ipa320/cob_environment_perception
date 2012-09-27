@@ -175,7 +175,11 @@ int main(int argc, char** argv)
   else
   {
     t.restart();
-    KdTreeFLANN<PointXYZRGB>::Ptr tree(new KdTreeFLANN<PointXYZRGB>);
+    #ifdef PCL_VERSION_COMPARE //fuerte
+      pcl::search::KdTree<PointXYZRGB>::Ptr tree (new pcl::search::KdTree<PointXYZRGB>());
+    #else //electric
+      pcl::KdTreeFLANN<PointXYZRGB>::Ptr tree (new pcl::KdTreeFLANN<PointXYZRGB> ());
+    #endif
     NormalEstimation<PointXYZRGB, Normal> ne;
     ne.setRadiusSearch(rn_);
     ne.setSearchMethod(tree);
