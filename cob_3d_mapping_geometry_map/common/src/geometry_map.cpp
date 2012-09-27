@@ -148,6 +148,7 @@ GeometryMap::addMapEntry(Cylinder::Ptr& c_ptr)
   Cylinder& c = *c_ptr;
 //
 
+  c.frame_stamp = frame_counter_;
   cob_3d_mapping::merge_config  limits;
   limits.d_thresh=d_;
   limits.angle_thresh=cos_angle_;
@@ -359,18 +360,31 @@ GeometryMap::cleanUp()
       ++n_dropped;
     }
   }
+
+
+
   for(int idx = map_cylinder_.size() - 1 ; idx >= 0; --idx)
   {
   bool drop_cyl=false;
       std::cout<<"merged:"<<(int)map_cylinder_[idx]->merged<<" frame ctr:"<<frame_counter_<<" frame st:"<<(int)map_cylinder_[idx]->frame_stamp<<" size:"<<(int)map_cylinder_[idx]->contours[0].size()<<"\n";
+
     if (map_cylinder_[idx]->merged <= 1 && (frame_counter_ - 2) > (int)map_cylinder_[idx]->frame_stamp)
         {
         drop_cyl=true;
         }
-    if ((int)map_cylinder_[idx]->contours[0].size()<20 && (int)map_cylinder_[idx]->merged <= 1)
+    // TODO<<<<WATCH OUT<<<<< presentation configuration - hard coded limits >>>>>>>>>>>>>>>>>>
+    if ((int)map_cylinder_[idx]->contours[0].size()<30 && (int)map_cylinder_[idx]->merged <= 1)
         {
          drop_cyl=true;
         }
+    if (map_cylinder_[idx]->r_ < 0.1 || map_cylinder_[idx]->r_>0.2)
+        {
+        drop_cyl=true;
+        } 
+   // if (map_cylinder_[idx]->sym_axis.dot(dummy)<0.80)
+   //     {
+   //     drop_cyl = true;
+   //     }
     if ( drop_cyl==true)
     {        
       map_cylinder_[idx] = map_cylinder_.back();
@@ -550,6 +564,7 @@ GeometryMap::colorizeMap()
   //coloring for cylinder
   for(unsigned int i=0; i<map_cylinder_.size(); i++)
   {
+    if(map_cylinder_[i]->color[3] == 1.0f) continue;
     if(fabs(map_cylinder_[i]->normal[0]) < 0.1 && fabs(map_cylinder_[i]->normal[1]) < 0.1) //cylinder is vertical
     {
       map_cylinder_[i]->color[0] = 0.5;
