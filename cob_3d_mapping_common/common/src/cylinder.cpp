@@ -1040,11 +1040,12 @@ Cylinder::getShiftedCylinder(Cylinder& c2,Cylinder& c3, Cylinder & result,bool d
   Eigen::Affine3f T12;
   pcl::getTransformationFromTwoUnitVectorsAndOrigin(s12,n12,o12,T12);
   //  Debug
-  float roll,pitch,yaw;
-  pcl::getEulerAngles(T12,roll,pitch,yaw);
+  //float roll,pitch,yaw;
+  Eigen::Vector3f euler = T12.rotation().eulerAngles(0,1,2);
+  //pcl::getEulerAngles(T12,roll,pitch,yaw);
 
   float alpha;
-  alpha = -pitch;
+  alpha = -euler(1);//-pitch;
   if (n12[0]>0 && n12[2] <0 ) {
     alpha = M_PI -  alpha ;
   }
@@ -1056,7 +1057,7 @@ Cylinder::getShiftedCylinder(Cylinder& c2,Cylinder& c3, Cylinder & result,bool d
 
   //Step2___________________________________
   Eigen::Vector3f  shift;
-  shift = pcl::getTranslation(T12);
+  shift = T12.translation();//shift = pcl::getTranslation(T12);
   shift[0] +=  c3.r_ * alpha;
   shift[1] = 0;
   if (dbg == true) {
@@ -1071,7 +1072,7 @@ Cylinder::getShiftedCylinder(Cylinder& c2,Cylinder& c3, Cylinder & result,bool d
   }
 
   Eigen::Affine3f T12x ;
-  pcl::getTransformation(shift[0],shift[1],shift[2],roll,pitch,yaw,T12x);
+  pcl::getTransformation(shift[0],shift[1],shift[2],euler(0),euler(1),euler(2),T12x);
 
 
   //Step3________________________________
@@ -1164,13 +1165,14 @@ Cylinder::transformToTarget(Cylinder& c_target,Cylinder& c_result)
   pcl::getTransformationFromTwoUnitVectorsAndOrigin(s12,n12,o12,T12);
 
   //debug output
-  float roll,pitch, yaw;
-  pcl::getEulerAngles(T12,roll,pitch,yaw);
-  Eigen::Vector3f  t = pcl::getTranslation(T12);
+  //float roll,pitch, yaw;
+  Eigen::Vector3f euler = T12.rotation().eulerAngles(0,1,2);
+  //pcl::getEulerAngles(T12,roll,pitch,yaw);
+  Eigen::Vector3f  t = T12.translation();//pcl::getTranslation(T12);
 
   std::cout<<"----TRAFO 2 TARGET-----\n";
   std::cout<<"normal pre\n"<<this->normal<<"\n normal after\n"<<n12<<"\n";
-  std::cout<<"roll pitch yaw"<<roll <<" "<< pitch <<" "<< yaw <<" \n";
+  std::cout<<"roll pitch yaw"<<euler(0) <<" "<< euler(1) <<" "<< euler(2) <<" \n";
   std::cout<<"trans "<<t<<"\n";
 
   //double tx=-yaw*this->r_;
