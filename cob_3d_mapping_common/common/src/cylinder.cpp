@@ -64,6 +64,7 @@ namespace cob_3d_mapping {
 
 /**
 * Assign points from pointcloud to contours of this cylinder.
+* \param cloud Pointcloud containing contour points.
 */
 void
 Cylinder::ContoursFromCloud(pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud)
@@ -83,6 +84,7 @@ Cylinder::ContoursFromCloud(pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud)
 
 /**
 * Assign points from input list to contours of this cylinder.
+* \param in_list List Vector containing contour points.
 */
 void
 Cylinder::ContoursFromList( std::vector<std::vector<Eigen::Vector3f> >& in_list)
@@ -109,6 +111,8 @@ Cylinder::ContoursFromList( std::vector<std::vector<Eigen::Vector3f> >& in_list)
 *
 * Estimation uses pcl::SACSegmentation.Parameters assigned
 * to cylinder accordingly.
+* \param in_cloud Input pointcloud
+* \param indices Indices of contour points
 */
 
 void
@@ -185,6 +189,9 @@ Cylinder::ParamsFromShapeMsg()
 * \brief Compute Attributes of cylinder.
 *
 * Compute attributes of cylinder depending on input parameters.
+* \param sym_axis Symmetry axis of cylinder
+* \param new_normal Normal of 2d representation of cylinder
+* \param new_origin Origin of cylinder
 */
 void
 Cylinder::computeAttributes(const Eigen::Vector3f& sym_axis, const Eigen::Vector3f &new_normal, const Eigen::Vector3f& new_origin)
@@ -220,6 +227,7 @@ Cylinder::computeAttributes(const Eigen::Vector3f& sym_axis, const Eigen::Vector
 /**
 * \brief Transform cylinder to target frame.
 *
+* \param trafo Transformation from source frame to target frame.
 */
 void
 Cylinder::transform2tf(Eigen::Affine3f & trafo)
@@ -247,6 +255,7 @@ Cylinder::transform2tf(Eigen::Affine3f & trafo)
 
 /**
 * \brief Grab parameters from source cylinder.
+* \param c_src Source cylinder
 */
 void
 Cylinder::GrabParams(Cylinder& c_src)
@@ -274,6 +283,7 @@ Cylinder::GrabParams(Cylinder& c_src)
 * \brief Get 3d cylinder from 2d shape
 *
 * 2d shape is transformed to 3d shape and copied.
+* \param c3d Cylinder, 3d cylinder is copied to.
 * \see Cylinder::makeCyl3D()
 */
 void Cylinder::getCyl3D(Cylinder& c3d)
@@ -392,6 +402,7 @@ void Cylinder::makeCyl2D()
 * \brief Get 2d cylinder from 3d shape
 *
 * 3d shape is transformed to 3d shape and copied.
+* \param c2d cylinder , the 2d-shape is copied to.
 * \see Cylinder::makeCyl2D()
 */
 void
