@@ -7,7 +7,7 @@
 	<remap from="get_geometry_map" to="/geometry_map/get_map"/>
 	</node>
 	
-	<include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch"/>
-	<include file="$(find cob_3d_mapping_semantics)/ros/launch/extract_tables.launch"/>
+	<!--include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch"/>
+	<include file="$(find cob_3d_mapping_semantics)/ros/launch/extract_tables.launch"/-->
 	
 </launch>
