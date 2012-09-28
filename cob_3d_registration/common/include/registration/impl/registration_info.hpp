@@ -58,7 +58,9 @@
 #include "../transf_est/tf_est_multi_cors.h"
 #include <pcl/registration/transformation_estimation_svd.h>
 #include "modified_icp.hpp"
-#include <pcl/point_traits.h>
+#ifdef PCL_VERSION_COMPARE
+  #include <pcl/point_traits.h>
+#endif
 
 
 // organized access to pointcloud
@@ -331,11 +333,12 @@ bool Registration_Infobased<Point>::compute_transformation()
 #if EVALUATION_MODE_
         T=T.Identity();
 #else
+        bad_counter_++;
         if(!use_odometry_ || this->failed_<10)
           return false;
       }
       else {
-        T = T.Identity();
+        //T = T.Identity();
         ROS_INFO("using odometry");
       }
 #endif

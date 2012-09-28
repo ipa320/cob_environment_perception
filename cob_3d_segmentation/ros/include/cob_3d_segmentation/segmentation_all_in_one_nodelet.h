@@ -83,11 +83,8 @@ namespace cob_3d_segmentation
   {
   public:
     typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloud;
-
     typedef pcl::PointCloud<pcl::Normal> NormalCloud;
-
     typedef pcl::PointCloud<PointLabel> LabelCloud;
-
     typedef PredefinedSegmentationTypes ST;
 
 
@@ -101,8 +98,6 @@ namespace cob_3d_segmentation
       , classified_(new PointCloud)
       , normals_(new NormalCloud)
       , labels_(new LabelCloud)
-      , target_frame_id_("/map")
-      , enable_tf_(false)
       , centroid_passthrough_(5.0f)
     { }
 
@@ -115,7 +110,7 @@ namespace cob_3d_segmentation
     void configCallback(cob_3d_segmentation::segmentation_nodeletConfig& config, uint32_t level);
 
     void receivedCloudCallback(PointCloud::ConstPtr cloud);
-    void publishShapeArray(ST::CH::Ptr cluster_handler, PointCloud::ConstPtr cloud, Eigen::Affine3f& tf);
+    void publishShapeArray(ST::CH::Ptr cluster_handler, std::map<int,int>& objs, PointCloud::ConstPtr cloud);
 
     //boost::mutex mutex_;
     ros::NodeHandle nh_;
@@ -124,6 +119,7 @@ namespace cob_3d_segmentation
     ros::Publisher pub_classified_;
     ros::Publisher pub_shape_array_;
     ros::Publisher pub_chull_;
+    ros::Publisher pub_chull_dense_;
 
     boost::shared_ptr<dynamic_reconfigure::Server<cob_3d_segmentation::segmentation_nodeletConfig> > config_server_;
 
@@ -139,9 +135,6 @@ namespace cob_3d_segmentation
     LabelCloud::Ptr labels_;
 
 
-    tf::TransformListener tf_listener_;
-    std::string target_frame_id_;
-    bool enable_tf_;
     float centroid_passthrough_;
 
     boost::mutex mutex_;

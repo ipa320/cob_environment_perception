@@ -4,6 +4,7 @@
 
 // PCL:
 #include <pcl/io/pcd_io.h>
+#include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/kdtree/kdtree.h>
 #include <pcl/surface/mls.h>
 #include <pcl/visualization/pcl_visualizer.h>
@@ -75,8 +76,11 @@ int main(int argc, char** argv)
   {
     t.precisionStart();
     // MLS
-    //KdTree<PointXYZRGB>::Ptr tree(new KdTreeFLANN<PointXYZRGB>);
-    pcl::search::KdTree<PointXYZRGB>::Ptr tree (new pcl::search::KdTree<PointXYZRGB>());
+    #ifdef PCL_VERSION_COMPARE //fuerte
+      pcl::search::KdTree<PointXYZRGB>::Ptr tree (new pcl::search::KdTree<PointXYZRGB>());
+    #else //electric
+      pcl::KdTreeFLANN<PointXYZRGB>::Ptr tree (new pcl::KdTreeFLANN<PointXYZRGB> ());
+    #endif
     tree->setInputCloud(p);
     MovingLeastSquares<PointXYZRGB, Normal> mls;
     mls.setInputCloud(p);
@@ -131,7 +135,7 @@ int main(int argc, char** argv)
     ColorHdlRGB col_hdl(p);
 
     /* --- Viewports: ---
-     *  1y
+     *  1y 
      *    | 1 | 3 |
      * .5 ----+----
      *    | 2 | 4 |

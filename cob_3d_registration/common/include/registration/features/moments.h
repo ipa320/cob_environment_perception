@@ -41,7 +41,11 @@ public:
 #ifdef GICP_ENABLE
       boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree<Point>);
 #else
-      boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree<Point>);
+  #ifdef PCL_VERSION_COMPARE
+    boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree<Point>);
+  #else
+      boost::shared_ptr<pcl::KdTree<Point> > tree (new pcl::KdTreeFLANN<Point>);
+  #endif
 #endif
 
       est.setInputCloud(this->org_in_.makeShared());
@@ -57,7 +61,11 @@ public:
 #ifdef GICP_ENABLE
       boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree<Point>);
 #else
-      boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree<Point>);
+  #ifdef PCL_VERSION_COMPARE
+    boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree<Point>);
+  #else
+      boost::shared_ptr<pcl::KdTree<Point> > tree (new pcl::KdTreeFLANN<Point>);
+  #endif
 #endif
 
       est.setInputCloud(this->org_out_.makeShared());

@@ -159,12 +159,11 @@ TableObjectCluster::calculateBoundingBoxes(pcl::PointCloud<Point>::Ptr& pc_roi_r
 {
   ROS_INFO("Calculate bb");
 
-
-  // for ros electric
-  //pcl::KdTree<Point>::Ptr clusters_tree;
-  //	for ros fuerte
-  pcl::search::KdTree<Point>::Ptr clusters_tree;
-  clusters_tree = boost::make_shared<pcl::search::KdTree<Point> > ();
+  #ifdef PCL_VERSION_COMPARE //fuerte
+    pcl::search::KdTree<Point>::Ptr clusters_tree (new pcl::search::KdTree<Point>());
+  #else //electric
+    pcl::KdTreeFLANN<Point>::Ptr clusters_tree (new pcl::KdTreeFLANN<Point> ());
+  #endif
 
   pcl::EuclideanClusterExtraction<Point> cluster_obj;
 
@@ -181,6 +180,7 @@ TableObjectCluster::calculateBoundingBoxes(pcl::PointCloud<Point>::Ptr& pc_roi_r
     pcl::PointCloud<pcl::PointXYZ> bb;
     Eigen::Vector4f min_pt, max_pt;
     pcl::getMinMax3D(*pc_roi_red, object_clusters[i], min_pt, max_pt);
+    if(fabs(max_pt(2)-min_pt(2))<0.03) continue;
     pcl::PointXYZ p;
     p.x = min_pt(0);
     p.y = min_pt(1);

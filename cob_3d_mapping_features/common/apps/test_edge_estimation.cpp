@@ -64,20 +64,23 @@ int main(int argc, char** argv)
 
   PCDReader r;
   if(r.read(file_points, *p) == -1) return(0);
-  //for electric
-  //KdTreeFLANN<PointXYZRGB>::Ptr tree(new KdTreeFLANN<PointXYZRGB>);
-  //for fuerte
-  pcl::search::KdTree<PointXYZRGB>::Ptr tree(new  pcl::search::KdTree<PointXYZRGB>);
 
+  #ifdef PCL_VERSION_COMPARE //fuerte
+    pcl::search::KdTree<PointXYZRGB>::Ptr tree (new pcl::search::KdTree<PointXYZRGB>());
+  #else //electric
+    pcl::KdTreeFLANN<PointXYZRGB>::Ptr tree (new pcl::KdTreeFLANN<PointXYZRGB> ());
+  #endif
   NormalEstimation<PointXYZRGB, Normal> ne;
   ne.setRadiusSearch(normal_radius);
   ne.setSearchMethod(tree);
   ne.setInputCloud(p);
   ne.compute(*n);
-  //for electric
-  //OrganizedDataIndex<PointXYZRGB>::Ptr oTree (new OrganizedDataIndex<PointXYZRGB> );
-  //for fuerte
-  search::OrganizedNeighbor<PointXYZRGB>::Ptr oTree (new search::OrganizedNeighbor<PointXYZRGB> );
+
+  #ifdef PCL_VERSION_COMPARE //fuerte
+    search::OrganizedNeighbor<PointXYZRGB>::Ptr oTree (new search::OrganizedNeighbor<PointXYZRGB> );
+  #else //electric
+    OrganizedDataIndex<PointXYZRGB>::Ptr oTree (new OrganizedDataIndex<PointXYZRGB> );
+  #endif
   cob_3d_mapping_features::EdgeEstimation3D<PointXYZRGB, Normal, InterestPoint> ee;
   ee.setRadiusSearch(0.04);
   ee.setSearchMethod(oTree);

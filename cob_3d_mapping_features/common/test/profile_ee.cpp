@@ -31,11 +31,12 @@ int main(int argc, char** argv)
   ne.compute(*n);
 
   t.precisionStart();
-  //for electric
-  //OrganizedDataIndex<PointXYZRGB>::Ptr oTree (new OrganizedDataIndex<PointXYZRGB> );
-  // for fuerte
-  search::OrganizedNeighbor<PointXYZRGB>::Ptr oTree (new search::OrganizedNeighbor<PointXYZRGB> );
-  cob_3d_mapping_features::EdgeEstimation3D<PointXYZRGB, pcl::Normal, pcl::InterestPoint> ee;
+  #ifdef PCL_VERSION_COMPARE //fuerte
+    search::OrganizedNeighbor<PointXYZRGB>::Ptr oTree (new search::OrganizedNeighbor<PointXYZRGB> );
+  #else //electric
+    OrganizedDataIndex<PointXYZRGB>::Ptr oTree (new OrganizedDataIndex<PointXYZRGB> );
+  #endif
+  cob_3d_mapping_features::EdgeEstimation3D<PointXYZRGB, Normal, InterestPoint> ee;
   ee.setRadiusSearch(0.04);
   ee.setSearchMethod(oTree);
   ee.setInputCloud(p);

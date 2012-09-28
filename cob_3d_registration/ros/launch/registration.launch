@@ -3,6 +3,17 @@
 
 <launch>
 
+  <node pkg="cob_3d_mapping_common" type="keyframe_detector_node" name="keyframe_detector_node" output="screen">
+    <remap from="camera_info" to="/cam3d/rgb/camera_info"/>
+
+    <param name="r_limit_" type="double" value="0.013" />
+    <param name="p_limit_" type="double" value="0.013" />
+    <param name="y_limit" type="double" value="0.013" />
+    <param name="distance_limit_" type="double" value="0.025"/>
+    <param name="trigger_always" type="bool" value="false"/>
+  </node>
+
+  <!-- Start registration point map -->
   <arg name="start_manager" default="true"/>
   <arg name="nodelet_manager" default="registration_manager"/>
   <!-- start nodelet manager -->
@@ -16,16 +27,6 @@
       filter_limit_max: 5.0
       keep_organized: true
     </rosparam>
-  </node>
-
-  <node pkg="cob_3d_mapping_common" type="keyframe_detector_node" name="keyframe_detector_node" output="screen">
-    <remap from="camera_info" to="/cam3d/rgb/camera_info"/>
-
-    <param name="r_limit_" type="double" value="0.013" />
-    <param name="p_limit_" type="double" value="0.013" />
-    <param name="y_limit" type="double" value="0.013" />
-    <param name="distance_limit_" type="double" value="0.025"/>
-    <param name="trigger_always" type="bool" value="false"/>
   </node>
 
   <node pkg="nodelet" type="nodelet" name="registration_nodelet" args="load cob_3d_registration/RegistrationNodelet $(arg nodelet_manager)" output="screen">

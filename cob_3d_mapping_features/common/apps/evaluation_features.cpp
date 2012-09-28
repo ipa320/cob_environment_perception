@@ -248,10 +248,12 @@ void processFPFH(const PointCloud<PointXYZRGB>::Ptr in,
     vox.filter(*ref_out);
   }
 
-  //for electric
+  #ifdef PCL_VERSION_COMPARE //fuerte
+    pcl::search::KdTree<PointXYZRGB>::Ptr tree (new pcl::search::KdTree<PointXYZRGB>());
+  #else //electric
+    pcl::KdTreeFLANN<PointXYZRGB>::Ptr tree (new pcl::KdTreeFLANN<PointXYZRGB> ());
+  #endif
   //KdTree<PointXYZRGB>::Ptr tree(new KdTreeFLANN<PointXYZRGB>());
-  //for fuerte
-  pcl::search::KdTree<PointXYZRGB>::Ptr tree(new pcl::search::KdTree<PointXYZRGB>);
   tree->setInputCloud(ref_out);
 
   // Optional surface smoothing
@@ -286,11 +288,11 @@ void processFPFH(const PointCloud<PointXYZRGB>::Ptr in,
   }
 
   // FPFH estimation
-  // for electric
-  //tree.reset(new KdTreeFLANN<PointXYZRGB>());
-  // for fuerte	
-  tree.reset(new pcl::search::KdTree<PointXYZRGB>);
-
+  #ifdef PCL_VERSION_COMPARE //fuerte
+    tree.reset(new pcl::search::KdTree<PointXYZRGB>());
+  #else //electric
+    tree.reset(new KdTreeFLANN<PointXYZRGB> ());
+  #endif
   tree->setInputCloud(ref_out);
   cout << "FPFH: estimation (with " << ref_out->points.size() << " points)" << endl;
   FPFHEstimation<PointXYZRGB, Normal, FPFHSignature33> fpfhE;
@@ -421,10 +423,12 @@ void processPC(const PointCloud<PointXYZRGB>::Ptr in,
     vox.setLeafSize(pc_vox_, pc_vox_, pc_vox_);
     vox.filter(*ref_out);
   }
-  //for electric
-  //KdTree<PointXYZRGB>::Ptr tree(new KdTreeFLANN<PointXYZRGB>());
-  // for fuerte
-  pcl::search::KdTree<PointXYZRGB>::Ptr tree(new pcl::search::KdTree<PointXYZRGB>);
+
+  #ifdef PCL_VERSION_COMPARE //fuerte
+    pcl::search::KdTree<PointXYZRGB>::Ptr tree (new pcl::search::KdTree<PointXYZRGB>());
+  #else //electric
+    KdTreeFLANN<PointXYZRGB>::Ptr tree (new pcl::KdTreeFLANN<PointXYZRGB> ());
+  #endif
   tree->setInputCloud(ref_out);
 
   // Optional surface smoothing
@@ -459,12 +463,11 @@ void processPC(const PointCloud<PointXYZRGB>::Ptr in,
   }
 
   // estimate PC
-  //for electric
-  //tree.reset(new KdTreeFLANN<PointXYZRGB>());
-  //for fuerte
-  tree.reset(new pcl::search::KdTree<PointXYZRGB>);
-
-
+  #ifdef PCL_VERSION_COMPARE //fuerte
+    tree.reset(new pcl::search::KdTree<PointXYZRGB>());
+  #else //electric
+    tree.reset(new KdTreeFLANN<PointXYZRGB> ());
+  #endif
   tree->setInputCloud(ref_out);
   cout << "PC: estimation (with " << ref_out->points.size() << " points)" << endl;
   PrincipalCurvaturesEstimation<PointXYZRGB, Normal, PrincipalCurvatures> pcE;
@@ -602,12 +605,11 @@ void processRSD(const PointCloud<PointXYZRGB>::Ptr in,
     vox.filter(*ref_out);
   }
 
-  //for electric
-  //KdTree<PointXYZRGB>::Ptr tree(new KdTreeFLANN<PointXYZRGB>());
-  // for fuerte
-  pcl::search::KdTree<PointXYZRGB>::Ptr tree(new pcl::search::KdTree<PointXYZRGB>);
-
-
+  #ifdef PCL_VERSION_COMPARE //fuerte
+    pcl::search::KdTree<PointXYZRGB>::Ptr tree (new pcl::search::KdTree<PointXYZRGB>());
+  #else //electric
+    KdTreeFLANN<PointXYZRGB>::Ptr tree (new pcl::KdTreeFLANN<PointXYZRGB> ());
+  #endif
   tree->setInputCloud(ref_out);
 
   // optional surface smoothing

@@ -76,7 +76,7 @@ float r_min_, r_max_, r_step_, limit_;
 
 string fl2label(float f, size_t precision)
 {
-  if (f == 0)
+  if (f == 0) 
     return string(precision, '0');
 
   stringstream ss;
@@ -153,7 +153,7 @@ int main(int argc, char** argv)
   PointCloud<FPFHSignature33>::Ptr fpfh(new PointCloud<FPFHSignature33>);
   PointCloud<PrincipalCurvatures>::Ptr pc(new PointCloud<PrincipalCurvatures>);
   PointCloud<PrincipalRadiiRSD>::Ptr rsd(new PointCloud<PrincipalRadiiRSD>);
-
+  
   for (size_t i = 0; i < scenes_.size(); i++)
   {
     io::loadPCDFile<PointXYZRGB>(folder_ + "raw_labeled/" + scenes_[i] + ".pcd", *in);
@@ -163,8 +163,11 @@ int main(int argc, char** argv)
     pass.setFilterLimits(0.0f, limit_);
     pass.filter(*in);
 
-    //KdTree<PointXYZRGB>::Ptr tree(new KdTreeFLANN<PointXYZRGB>());
-    pcl::search::KdTree<PointXYZRGB>::Ptr tree (new pcl::search::KdTree<PointXYZRGB>());
+    #ifdef PCL_VERSION_COMPARE //fuerte
+      pcl::search::KdTree<PointXYZRGB>::Ptr tree (new pcl::search::KdTree<PointXYZRGB>());
+    #else //electric
+      pcl::KdTreeFLANN<PointXYZRGB>::Ptr tree (new pcl::KdTreeFLANN<PointXYZRGB> ());
+    #endif
     tree->setInputCloud(in);
 
     for (float r_n = r_min_; r_n <= r_max_; r_n += r_step_)
@@ -188,7 +191,7 @@ int main(int argc, char** argv)
       mls.reconstruct(*p_mls);
       for (size_t p = 0; p < n_mls->points.size(); ++p)
       {
-	flipNormalTowardsViewpoint(p_mls->points[p], 0.0f, 0.0f, 0.0f,
+	flipNormalTowardsViewpoint(p_mls->points[p], 0.0f, 0.0f, 0.0f, 
 				   n_mls->points[p].normal[0],
 				   n_mls->points[p].normal[1],
 				   n_mls->points[p].normal[2]);
@@ -197,10 +200,13 @@ int main(int argc, char** argv)
       io::savePCDFileASCII<PointXYZRGB>(folder_+"normals/"+scenes_[i]+
 					"/mls_"+scenes_[i]+"_"+str_rn+".pcd",*p_mls);
 
-      //KdTree<PointXYZRGB>::Ptr tree_mls(new KdTreeFLANN<PointXYZRGB>());
-      pcl::search::KdTree<PointXYZRGB>::Ptr tree_mls (new pcl::search::KdTree<PointXYZRGB>());
+      #ifdef PCL_VERSION_COMPARE //fuerte
+        pcl::search::KdTree<PointXYZRGB>::Ptr tree_mls (new pcl::search::KdTree<PointXYZRGB>());
+      #else //electric
+        pcl::KdTreeFLANN<PointXYZRGB>::Ptr tree_mls (new pcl::KdTreeFLANN<PointXYZRGB> ());
+      #endif
       tree_mls->setInputCloud(p_mls);
-
+      
       for (float r_f = r_n; r_f <= r_max_; r_f += r_step_)
       {
 	cout << "scene: " << scenes_[i] << "\tnormals: " << r_n << "\tfeatures: " << r_f << endl;
@@ -213,10 +219,10 @@ int main(int argc, char** argv)
 	fpfh_est.setSearchMethod(tree);
 	fpfh_est.setRadiusSearch(r_f);
 	fpfh_est.compute(*fpfh);
-	// filename example:
+	// filename example: 
 	//    <folder_>/fpfh/kitchen01/fpfh_kitchen01_020rn_025rf.pcd
 	//    <folder_>/fpfh/kitchen02/fpfh_kitchen02_030rnmls_060rf.pcd
-	io::savePCDFileASCII<FPFHSignature33>(folder_ + "0_fpfh/" + scenes_[i] +
+	io::savePCDFileASCII<FPFHSignature33>(folder_ + "0_fpfh/" + scenes_[i] + 
 					      "/fpfh_" + scenes_[i] +"_"+str_rn+"_"+str_rf+".pcd",
 					      *fpfh);
 
@@ -227,17 +233,17 @@ int main(int argc, char** argv)
 	fpfh_est_mls.setSearchMethod(tree_mls);
 	fpfh_est_mls.setRadiusSearch(r_f);
 	fpfh_est_mls.compute(*fpfh);
-	io::savePCDFileASCII<FPFHSignature33>(folder_ + "0_fpfh/" + scenes_[i] +
+	io::savePCDFileASCII<FPFHSignature33>(folder_ + "0_fpfh/" + scenes_[i] + 
 					      "/fpfh_" + scenes_[i] +"_"+str_rn+"mls_"+str_rf+".pcd",
 					      *fpfh);
-
+	
 	PrincipalCurvaturesEstimation<PointXYZRGB, Normal, PrincipalCurvatures> pc_est;
 	pc_est.setInputCloud(in);
 	pc_est.setInputNormals(n);
 	pc_est.setSearchMethod(tree);
 	pc_est.setRadiusSearch(r_f);
 	pc_est.compute(*pc);
-	io::savePCDFileASCII<PrincipalCurvatures>(folder_ + "0_pc/" + scenes_[i] +
+	io::savePCDFileASCII<PrincipalCurvatures>(folder_ + "0_pc/" + scenes_[i] + 
 					      "/pc_" + scenes_[i] +"_"+str_rn+"_"+str_rf+".pcd",
 					      *pc);
 
@@ -247,7 +253,7 @@ int main(int argc, char** argv)
 	pc_est_mls.setSearchMethod(tree_mls);
 	pc_est_mls.setRadiusSearch(r_f);
 	pc_est_mls.compute(*pc);
-	io::savePCDFileASCII<PrincipalCurvatures>(folder_ + "0_pc/" + scenes_[i] +
+	io::savePCDFileASCII<PrincipalCurvatures>(folder_ + "0_pc/" + scenes_[i] + 
 					      "/pc_" + scenes_[i] +"_"+str_rn+"mls_"+str_rf+".pcd",
 					      *pc);
 
@@ -258,7 +264,7 @@ int main(int argc, char** argv)
 	rsd_est.setPlaneRadius(0.5);
 	rsd_est.setRadiusSearch(r_f);
 	rsd_est.compute(*rsd);
-	io::savePCDFileASCII<PrincipalRadiiRSD>(folder_ + "0_rsd/" + scenes_[i] +
+	io::savePCDFileASCII<PrincipalRadiiRSD>(folder_ + "0_rsd/" + scenes_[i] + 
 						"/rsd_" + scenes_[i] +"_"+str_rn+"_"+str_rf+".pcd",
 						*rsd);
 
@@ -269,7 +275,7 @@ int main(int argc, char** argv)
 	rsd_est_mls.setPlaneRadius(0.5);
 	rsd_est_mls.setRadiusSearch(r_f);
 	rsd_est_mls.compute(*rsd);
-	io::savePCDFileASCII<PrincipalRadiiRSD>(folder_ + "0_rsd/" + scenes_[i] +
+	io::savePCDFileASCII<PrincipalRadiiRSD>(folder_ + "0_rsd/" + scenes_[i] + 
 						"/rsd_" + scenes_[i] +"_"+str_rn+"mls_"+str_rf+".pcd",
 						*rsd);
       }

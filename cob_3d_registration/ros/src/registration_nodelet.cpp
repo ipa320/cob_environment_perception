@@ -115,10 +115,11 @@
 #include <cob_srvs/Trigger.h>
 #include <cob_3d_mapping_msgs/TriggerMappingAction.h>
 
-
-#include <pcl/kdtree/kdtree_flann.h>
-#include <pcl/common/eigen.h>
-#include <pcl/registration/correspondence_estimation.h>
+#ifdef PCL_VERSION_COMPARE
+  #include <pcl/kdtree/kdtree_flann.h>
+  #include <pcl/common/eigen.h>
+  #include <pcl/registration/correspondence_estimation.h>
+#endif
 
 
 
@@ -207,7 +208,7 @@ public:
   onInit()
   {
     PCLNodelet::onInit();
-    parameters_.setNodeHandle(getNodeHandle());
+    parameters_.setNodeHandle(n_);
     n_ = getNodeHandle();
 
     parameters_.addParameter("world_frame_id");
@@ -282,7 +283,7 @@ public:
    */
   bool
   reset(cob_srvs::Trigger::Request &req,
-           cob_srvs::Trigger::Response &res)
+        cob_srvs::Trigger::Response &res)
   {
     //TODO: add mutex
     ROS_INFO("Resetting transformation...");
@@ -305,6 +306,9 @@ public:
   {
     pc_frame_id_=pc_in->header.frame_id;
 
+    if(reg_==0 || pc_in==0 || pc_in->size()<1 || !is_running_)
+      return;
+
     reg_->setInputOginalCloud(pc_in);
 
     if(do_register(*pc_in,cv_bridge::CvImagePtr(),NULL)||ctr_==0) {
@@ -319,7 +323,8 @@ public:
       Eigen::Affine3d af;
       af.matrix()=reg_->getTransformation().cast<double>();
       tf::TransformEigenToTF(af,transform);
-      tf_br_.sendTransform(tf::StampedTransform(transform, transform.stamp_, world_id_, corrected_id_));
+      //std::cout << transform.stamp_ << std::endl;
+      tf_br_.sendTransform(tf::StampedTransform(transform, pc_in->header.stamp, world_id_, corrected_id_));
 
       ROS_WARN("registration successful");
     }
@@ -346,13 +351,13 @@ public:
                           cob_srvs::Trigger::Response &res)
   {
     res.success.data = false;
-    if(pc_frame_id_.size()<1)
+
+    if(reg_==0 || pc_frame_id_.size()<1 || !is_running_)
       return true;
 
     StampedTransform transform;
     try
     {
-      //std::cout << world_id_ << "," << pc_in_->header.frame_id << std::endl;
       std::stringstream ss2;
       tf_listener_.waitForTransform(world_id_, pc_frame_id_, ros::Time(0), ros::Duration(0.1));
       tf_listener_.lookupTransform(world_id_, pc_frame_id_, ros::Time(0), transform);
@@ -769,7 +774,7 @@ public:
 
     if(marker_pub_.getNumSubscribers()&&reg_->getMarkers()) {
       for(int i=0; i<reg_->getMarkers()->size(); i++)
-#if HAS_RGBPCL_DEPRECATED
+#if HAS_RGB
         publishMarkerPoint(reg_->getMarkers()->points[i], i, reg_->getMarkers()->points[i].r/255., reg_->getMarkers()->points[i].g/255., reg_->getMarkers()->points[i].b/255.);
 #else
       publishMarkerPoint(reg_->getMarkers()->points[i], i, 1,0,0);
@@ -787,7 +792,11 @@ public:
         publishLineMarker( ((Registration_Infobased<Point>*)reg_)->getSource().points[i].getVector3fMap(), ((Registration_Infobased<Point>*)reg_)->getTarget().points[i].getVector3fMap(), -i);
     }
     else if(parameters_.getParam("algo",s_algo) && s_algo=="cor") {
-      pcl::Correspondences cor;
+	  #ifdef PCL_VERSION_COMPARE
+	    pcl::Correspondences cor;
+      #else
+      	pcl::registration::Correspondences cor;
+	  #endif
       ((Registration_Corrospondence<Point>*)reg_)->getKeypoints()->getCorrespondences(cor);
       for(int i=0; i<cor.size(); i++)
         publishLineMarker( ((Registration_Corrospondence<Point>*)reg_)->getKeypoints()->getSourcePoints()->points[cor[i].indexQuery].getVector3fMap(), ((Registration_Corrospondence<Point>*)reg_)->getKeypoints()->getTargetPoints()->points[cor[i].indexMatch].getVector3fMap(), -i);

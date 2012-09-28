@@ -39,7 +39,11 @@ public:
 #ifdef GICP_ENABLE
       boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree <Point>);
 #else
-      boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree<Point>);
+	  #ifdef PCL_VERSION_COMPARE
+		boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree<Point>);
+	  #else
+        boost::shared_ptr<pcl::KdTree<Point> > tree (new pcl::KdTreeFLANN<Point>);
+	  #endif
 #endif
       pcl::PointCloud<pcl::Normal>::Ptr normals (new pcl::PointCloud<pcl::Normal> ());
 
@@ -66,10 +70,18 @@ public:
 
     ROS_INFO("calc fpfh for target");
     {
-#ifdef GICP_ENABLE
+#ifdef PCL_VERSION_COMPARE
+  #ifdef GICP_ENABLE
       boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree<Point>);
+#  else
+      boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree<Point>);
+  #endif
 #else
-      boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree<Point>);
+  #ifdef GICP_ENABLE
+      boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::KdTreeFLANN<Point>);
+  #else
+      boost::shared_ptr<pcl::KdTree<Point> > tree (new pcl::KdTreeFLANN<Point>);
+  #endif
 #endif
       pcl::PointCloud<pcl::Normal>::Ptr normals (new pcl::PointCloud<pcl::Normal> ());
 

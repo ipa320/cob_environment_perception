@@ -12,6 +12,7 @@
 #include <gtest/gtest.h>
 
 #include <pcl/io/pcd_io.h>
+#include <rosbag/bag.h>
 
 //includes needed for segmentation (things to test)
 #include <cob_3d_segmentation/general_segmentation.h>
@@ -125,7 +126,7 @@ public:
   {
     const ::testing::TestInfo* const test_info =
       ::testing::UnitTest::GetInstance()->current_test_info();
-    fn = "test/results/csv_"+std::string(test_info->test_case_name())+"_"+std::string(test_info->name())+".csv";
+    fn = "test/results/csv_"+std::string(test_info->test_case_name())+"_"+std::string(test_info->name())+"_"+fn+".csv";
     fp = fopen(fn.c_str(),"w");
   }
 
@@ -219,6 +220,8 @@ TEST(Segmentation, quad_regression)
   pcl::PointCloud<Point>::Ptr pc(new pcl::PointCloud<Point>);
   Segmentation::Segmentation_QuadRegression<Point,PointL> seg;
 
+  static Testing_CSV csv = Testing_CSV::create_table("accuracy","filename,mean,variance,average distance,used points, memory for representation,points,execution time: quadtree,execution time: growing,execution time: extraction");
+
   ROS_INFO("starting segmentation");
   size_t ind=0;
   std::string fn;
@@ -226,7 +229,35 @@ TEST(Segmentation, quad_regression)
   {
     if(pc->size()<1) continue;
     ROS_INFO("processing pc %d ...",(int)ind-1);
-    segment_pointcloud<Point,PointL>(&seg,pc, std::string(fn.begin()+(fn.find_last_of("/")+1),fn.end()));
+    std::string fn_short(fn.begin()+(fn.find_last_of("/")+1),fn.end());
+    segment_pointcloud<Point,PointL>(&seg,pc, fn_short);
+
+    Testing_PCDLoader::get().writePC<PointL>("reconstructed_"+fn_short, seg.getReconstructedOutputCloud());
+
+    float mean, var, dist;
+    double et_quadtree, et_growing, et_extraction;
+    size_t used, mem, points;
+    seg.compute_accuracy(mean, var, used, mem, points, dist);
+    seg.getExecutionTimes(et_quadtree, et_growing, et_extraction);
+
+    csv.add(fn_short);
+    csv.add(mean);
+    csv.add(var);
+    csv.add(dist);
+    csv.add(used);
+    csv.add(mem);
+    csv.add(points);
+    csv.add(et_quadtree);
+    csv.add(et_growing);
+    csv.add(et_extraction);
+    csv.next();
+
+    //saving ros msgs to bag-file
+    rosbag::Bag bag_out;
+    bag_out.open("test/labeled/"+fn_short+".bag", rosbag::bagmode::Write);
+    bag_out.write("shapes_array", ros::Time(1342850029.582334425+0.1), (cob_3d_mapping_msgs::ShapeArray)seg);
+    bag_out.write("shapes_array", ros::Time(1342850029.582334425+0.2), (cob_3d_mapping_msgs::ShapeArray)seg);
+    bag_out.write("shapes_array", ros::Time(1342850029.582334425+0.4), (cob_3d_mapping_msgs::ShapeArray)seg);
   }
 }
 

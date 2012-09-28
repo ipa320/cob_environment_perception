@@ -52,15 +52,15 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
-//additional includes
+
 #include <pcl/io/pcd_io.h>
 #ifdef GICP_ENABLE
 #include <pcl/io/ply_io.h>
 #endif
 #include <pcl/point_types.h>
 #include <sys/stat.h>
-   #include <ros/assert.h>
-   #include <ros/console.h>
+#include <ros/assert.h>
+#include <ros/console.h>
 #include <iostream>
 #include <fstream>
 
@@ -89,8 +89,6 @@ int main(int argc, char **argv) {
 
     fclose(fp);
   }
-
-
 
   {
     FILE *fp = fopen(argv[1], "rb");

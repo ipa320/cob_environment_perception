@@ -1,20 +1,20 @@
 cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
-# Set the build type.  Options are:
-#  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
-#  Debug          : w/ debug symbols, w/o optimization
-#  Release        : w/o debug symbols, w/ optimization
-#  RelWithDebInfo : w/ debug symbols, w/ optimization
-#  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
+# Set the build type. Options are:
+# Coverage : w/ debug symbols, w/o optimization, w/ code-coverage
+# Debug : w/ debug symbols, w/o optimization
+# Release : w/o debug symbols, w/ optimization
+# RelWithDebInfo : w/ debug symbols, w/ optimization
+# MinSizeRel : w/o debug symbols, w/ optimization, stripped binaries
 #set(ROS_BUILD_TYPE RelWithDebInfo)
 
 rosbuild_init()
 
 # add dynamic reconfigure api
-rosbuild_find_ros_package(dynamic_reconfigure)
-include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
-gencfg()
+#rosbuild_find_ros_package(dynamic_reconfigure)
+#include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
+#gencfg()
 
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
@@ -22,8 +22,8 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/ros/include)
     #/usr/include/vtk-5.8)
+rosbuild_add_boost_directories()
 
 
 ## include vtk
@@ -40,46 +40,35 @@ find_package(OpenCV REQUIRED)
 find_package(VTK REQUIRED)
 include_directories(${VTK_INCLUDE_DIRS})
 
+
 #uncomment if you have defined messages
 #rosbuild_genmsg()
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
 rosbuild_add_library(cob_3d_mapping_features
-	common/src/range_image_border_extractor.cpp
-	common/src/fast_edge_estimation_3d.cpp
-	common/src/edge_estimation_3d.cpp
-	common/src/edge_estimation_2d.cpp
-	common/src/edge_extraction.cpp
-	common/src/plane_extraction.cpp
-	common/src/knn_classifier.cpp
-	common/src/most_discriminating_data_points.cpp
-	common/src/organized_curvature_estimation.cpp
-	common/src/organized_normal_estimation.cpp)
+common/src/range_image_border_extractor.cpp
+common/src/fast_edge_estimation_3d.cpp
+common/src/edge_estimation_3d.cpp
+common/src/edge_estimation_2d.cpp
+common/src/edge_extraction.cpp
+common/src/knn_classifier.cpp
+common/src/most_discriminating_data_points.cpp
+common/src/organized_curvature_estimation.cpp
+common/src/organized_normal_estimation.cpp)
 target_link_libraries(cob_3d_mapping_features ${OpenCV_LIBS})
 
-rosbuild_add_library(cob_3d_mapping_features_nodelets
-	ros/src/plane_extraction_nodelet.cpp)
 
 rosbuild_add_library(cob_3d_mapping_features_omp
-	common/src/organized_curvature_estimation_omp.cpp
-	common/src/organized_normal_estimation_omp.cpp
-	common/src/fast_edge_estimation_3d_omp.cpp)
+common/src/organized_curvature_estimation_omp.cpp
+common/src/organized_normal_estimation_omp.cpp
+common/src/fast_edge_estimation_3d_omp.cpp)
 
 
 rosbuild_add_openmp_flags(cob_3d_mapping_features_omp)
 
 rosbuild_add_boost_directories()
 
-target_link_libraries(cob_3d_mapping_features_nodelets cob_3d_mapping_features ${OpenCV_LIBS})
-
-
-rosbuild_add_executable(test_plane_extraction common/apps/test_plane_extraction.cpp)
-target_link_libraries(test_plane_extraction cob_3d_mapping_features ${OpenCV_LIBS} vtkCommon vtkFiltering)
-rosbuild_link_boost(test_plane_extraction program_options)
-
-rosbuild_add_executable(plane_extraction_action_client ros/src/plane_extraction_action_client.cpp)
-target_link_libraries(plane_extraction_action_client ${OpenCV_LIBS})
 
 rosbuild_add_executable(test_organized_curvature_estimation common/apps/test_organized_curvature_estimation.cpp)
 target_link_libraries(test_organized_curvature_estimation cob_3d_mapping_features cob_3d_mapping_features_omp vtkCommon vtkFiltering ${OpenCV_LIBS})
@@ -134,10 +123,6 @@ target_link_libraries(profile_ee cob_3d_mapping_features vtkCommon vtkFiltering 
 
 rosbuild_add_executable(profile_ne common/test/profile_ne.cpp)
 target_link_libraries(profile_ne cob_3d_mapping_features_omp cob_3d_mapping_features)
-
-
-# PCL RANSAC Tutorial:
-#rosbuild_add_executable(planar_segmentation common/src/planar_segementation.cpp)
 
 
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)

@@ -65,6 +65,7 @@
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/histogram_visualizer.h>
 #include <pcl/visualization/point_cloud_handlers.h>
+#include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/kdtree/kdtree.h>
 #include <pcl/features/normal_3d.h>
 #include <pcl/features/fpfh.h>
@@ -101,7 +102,7 @@ struct ft_config
 void readOptions(int argc, char* argv[])
 {
   using namespace boost::program_options;
-
+  
   options_description cmd_line("Options");
   cmd_line.add_options()
     ("help,h", "produce help messsage")
@@ -110,9 +111,9 @@ void readOptions(int argc, char* argv[])
     ("noise,g", value<float>(&noise_)->default_value(0.0f), "add gaussian noise")
     ("normal,n", value<float>(&rn_)->default_value(0.015f),
      "neighborood radius normal estimation")
-    ("feature,f", value<float>(&rf_)->default_value(0.025f),
+    ("feature,f", value<float>(&rf_)->default_value(0.025f), 
      "neighborood radius feature estimation")
-    ("shaperadius,r", value<float>(&r_)->default_value(0.05f),
+    ("shaperadius,r", value<float>(&r_)->default_value(0.05f), 
      "radius for size of cylinder and spheres")
     ("vis,v", "enable visualization")
     ("plane,P", "enable plane")
@@ -151,7 +152,7 @@ void readOptions(int argc, char* argv[])
 // convert a float to string
 string fl2label(const float & f, const size_t & precision)
 {
-  if (f == 0)
+  if (f == 0) 
     return string(precision, '0');
 
   stringstream ss;
@@ -165,8 +166,8 @@ string fl2label(const float & f, const size_t & precision)
 
 void generateName(ft_config * cfg, string shape)
 {
-  string name = fl2label(cfg->rf, 3) + "rf_"
-    + fl2label(cfg->rn, 3) + "rn_"
+  string name = fl2label(cfg->rf, 3) + "rf_" 
+    + fl2label(cfg->rn, 3) + "rn_" 
     + fl2label(cfg->rng, 4) + "rng_"
     + fl2label(cfg->s, 4) + "s_"
     + shape + ".pcd";
@@ -178,8 +179,11 @@ void generateFeature(ft_config * cfg, PointCloud<PointXYZ>::Ptr & p_in,
 {
   PointCloud<FPFHSignature33>::Ptr fpfh (new PointCloud<FPFHSignature33>);
   vector<float> d;
-  //KdTree<PointXYZ>::Ptr tree(new KdTreeFLANN<PointXYZ>());
-  pcl::search::KdTree<PointXYZ>::Ptr tree (new pcl::search::KdTree<PointXYZ>());
+  #ifdef PCL_VERSION_COMPARE //fuerte
+    pcl::search::KdTree<PointXYZ>::Ptr tree (new pcl::search::KdTree<PointXYZ>());
+  #else //electric
+    pcl::KdTreeFLANN<PointXYZ>::Ptr tree (new pcl::KdTreeFLANN<PointXYZ> ());
+  #endif
   tree->setInputCloud(p_in);
 
   NormalEstimation<PointXYZ, Normal> norm;
@@ -198,7 +202,7 @@ void generateFeature(ft_config * cfg, PointCloud<PointXYZ>::Ptr & p_in,
   if (!folder_.empty()) io::savePCDFileASCII<FPFHSignature33>(folder_ + cfg->file_name, *fpfh);
 }
 
-void plane (ft_config * cfg, PointCloud<PointXYZ>::Ptr & out,
+void plane (ft_config * cfg, PointCloud<PointXYZ>::Ptr & out, 
 	    PointCloud<Normal>::Ptr & normal_out)
 {
   cob_3d_mapping_tools::PointGenerator<PointXYZ> pg;
@@ -209,7 +213,7 @@ void plane (ft_config * cfg, PointCloud<PointXYZ>::Ptr & out,
   generateFeature(cfg, out, normal_out);
 }
 
-void edge (ft_config * cfg, PointCloud<PointXYZ>::Ptr & out,
+void edge (ft_config * cfg, PointCloud<PointXYZ>::Ptr & out, 
 		 PointCloud<Normal>::Ptr & normal_out)
 {
   Vec o(0.0, 0.0, 0.25);
@@ -222,7 +226,7 @@ void edge (ft_config * cfg, PointCloud<PointXYZ>::Ptr & out,
   generateFeature(cfg, out, normal_out);
 }
 
-void edge_concave(ft_config * cfg, PointCloud<PointXYZ>::Ptr & out,
+void edge_concave(ft_config * cfg, PointCloud<PointXYZ>::Ptr & out, 
 		  PointCloud<Normal>::Ptr & normal_out)
 {
   Vec o(0.0, 0.0, 0.25);
@@ -234,7 +238,7 @@ void edge_concave(ft_config * cfg, PointCloud<PointXYZ>::Ptr & out,
   generateFeature(cfg, out, normal_out);
 }
 
-void corner(ft_config * cfg, PointCloud<PointXYZ>::Ptr & out,
+void corner(ft_config * cfg, PointCloud<PointXYZ>::Ptr & out, 
 		   PointCloud<Normal>::Ptr & normal_out)
 {
   Vec o(0.0, 0.25, 0.25);
@@ -249,7 +253,7 @@ void corner(ft_config * cfg, PointCloud<PointXYZ>::Ptr & out,
   generateFeature(cfg, out, normal_out);
 }
 
-void corner_concave(ft_config * cfg, PointCloud<PointXYZ>::Ptr & out,
+void corner_concave(ft_config * cfg, PointCloud<PointXYZ>::Ptr & out, 
 		    PointCloud<Normal>::Ptr & normal_out)
 {
   Vec o(0.0, 0.0, 0.25);
@@ -259,13 +263,13 @@ void corner_concave(ft_config * cfg, PointCloud<PointXYZ>::Ptr & out,
   pg.generateCorner(cfg->s, o,
 		    Vec::UnitX() - Vec::UnitZ(),
 		    Vec::UnitY(),
-		    -Vec::UnitX() - Vec::UnitZ(),
+		    -Vec::UnitX() - Vec::UnitZ(), 
 		    0.05f);
   generateName(cfg, "edge_concave_");
   generateFeature(cfg, out, normal_out);
 }
 
-void cylinder(ft_config * cfg, PointCloud<PointXYZ>::Ptr & out,
+void cylinder(ft_config * cfg, PointCloud<PointXYZ>::Ptr & out, 
 	      PointCloud<Normal>::Ptr & normal_out, float r)
 {
   Vec o(0.0, 0.0, 0.25);
@@ -281,7 +285,7 @@ void cylinder(ft_config * cfg, PointCloud<PointXYZ>::Ptr & out,
   generateFeature(cfg, out, normal_out);
 }
 
-void cylinder_convex(ft_config * cfg, PointCloud<PointXYZ>::Ptr & out,
+void cylinder_convex(ft_config * cfg, PointCloud<PointXYZ>::Ptr & out, 
 		     PointCloud<Normal>::Ptr & normal_out, float r)
 {
   Vec o(0.0, 0.0, 2.0);
@@ -293,7 +297,7 @@ void cylinder_convex(ft_config * cfg, PointCloud<PointXYZ>::Ptr & out,
   generateFeature(cfg, out, normal_out);
 }
 
-void sphere(ft_config * cfg, PointCloud<PointXYZ>::Ptr & out,
+void sphere(ft_config * cfg, PointCloud<PointXYZ>::Ptr & out, 
 		   PointCloud<Normal>::Ptr & normal_out, float r)
 {
   Vec o(0.0, 0.0, 0.25+r);
@@ -307,7 +311,7 @@ void sphere(ft_config * cfg, PointCloud<PointXYZ>::Ptr & out,
   generateFeature(cfg, out, normal_out);
 }
 
-void sphere_concave(ft_config * cfg, PointCloud<PointXYZ>::Ptr & out,
+void sphere_concave(ft_config * cfg, PointCloud<PointXYZ>::Ptr & out, 
 		   PointCloud<Normal>::Ptr & normal_out, float r)
 {
   Vec o(0.0, 0.0, 0.25);
