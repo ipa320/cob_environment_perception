@@ -110,7 +110,11 @@ bool Registration_ICP<Point>::compute_corrospondences()
   float radius_=0.1;
 
   // Initialize estimators for surface normals and FPFH features
-  boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree<Point>);
+  #ifdef PCL_VERSION_COMPARE
+    boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree<Point>);
+  #else
+    boost::shared_ptr<pcl::KdTreeFLANN<Point> > tree (new pcl::KdTreeFLANN<Point>);
+  #endif
 
   pcl::NormalEstimation<Point, pcl::Normal> norm_est;
   norm_est.setSearchMethod (tree);

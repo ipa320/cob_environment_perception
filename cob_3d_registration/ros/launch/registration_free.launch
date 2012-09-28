@@ -1,0 +1,31 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- Start registration point map -->
+  <arg name="start_manager" default="true"/>
+  <arg name="nodelet_manager" default="point_map_manager"/>
+  <!-- start nodelet manager -->
+  <node if="$(arg start_manager)" pkg="nodelet" type="nodelet" name="$(arg
+                                                                     nodelet_manager)"  args="manager" output="screen"/>
+
+  <node pkg="nodelet" type="nodelet" name="registration_nodelet"
+        args="load cob_3d_registration/RegistrationNodelet $(arg
+              nodelet_manager)" output="screen">
+
+    <param name="algo" value="info" />
+    <param name="threshold_step" value="0.07" />
+    <param name="threshold_diff" value="0.07" />
+    <param name="min_info" value="1" />
+    <param name="max_info" value="17" />
+    <param name="corrected_frame_id" value="/cam3d_link" />
+
+    <remap from="camera_info" to="/cam3d/depth_registered/camera_info"/>
+    <remap from="point_cloud2" to="/cam3d/depth_registered/points"/>
+    <remap from="point_cloud2_aligned" to="/registration/pc_aligned"/>
+
+  </node>
+
+  <!--node pkg="cob_3d_mapping_point_map" type="trigger_mapping.py"
+        name="trigger_mapping.py" args="start" output="screen" /-->
+
+</launch>

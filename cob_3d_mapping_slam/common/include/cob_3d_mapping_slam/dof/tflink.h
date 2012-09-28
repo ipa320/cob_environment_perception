@@ -1,5 +1,7 @@
 #pragma once
 
+#include <ros/console.h>
+#include <ros/assert.h>
 #include <eigen3/Eigen/Dense>
 
 //! collecting descirptive transformations for 6-DOFs
@@ -26,7 +28,7 @@ namespace DOF6
 
     Vector var_x_, var_y_;
     INPUT sum_x_, sum_y_;
-    TYPE rot_sum_, rot_var_, tr_var_, accumlated_weight_;
+    TYPE rot_sum_, rot_var_, tr_var_, accumlated_weight_, accumlated_weight_t_;
 #ifdef DEBUG_
     bool initialized_;
 #endif
@@ -101,7 +103,7 @@ namespace DOF6
 
       rot_ = Matrix::Identity();
       tr_.fill(0);
-      accumlated_weight_ = 0;
+      accumlated_weight_t_ = accumlated_weight_ = 0;
 
       rot_sum_ = 0;
       covariance_.fill(0);
@@ -122,7 +124,9 @@ namespace DOF6
 
     void operator()(const TFLinkObj &obj, const TFLinkObj &cor_obj);    /// adding objects
     TFLink operator+(const TFLink &o) const;    /// create chain of tf-links
+    void operator+=(const TFLink &o);    /// add tf-links
 
+    TFLink<INPUT> transpose();   /// returns inverse
     void finish();      /// calculate normalized covariance for rotation
 
     inline Matrix getRotation() const {return rot_;}

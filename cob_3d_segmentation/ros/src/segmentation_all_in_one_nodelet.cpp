@@ -61,7 +61,11 @@
 
 #include <pcl/io/io.h>
 #include <pcl/io/pcd_io.h>
-#include <pcl/for_each_type.h>
+  #ifdef PCL_VERSION_COMPARE //fuerte
+    #include <pcl/for_each_type.h>
+  #else //electric
+    #include <pcl/ros/for_each_type.h>
+  #endif
 
 // Package includes
 #include <cob_3d_mapping_msgs/ShapeArray.h>
@@ -93,46 +97,26 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::onInit()
 
 
   sub_points_ = nh_.subscribe<PointCloud>("cloud_in", 1, boost::bind(&SegmentationAllInOneNodelet::receivedCloudCallback, this, _1));
-  pub_segmented_ = nh_.advertise<PointCloud>("segmentation_cloud", 1);
-  pub_classified_ = nh_.advertise<PointCloud>("classified_cloud", 1);
-  pub_shape_array_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray>("/plane_extraction/shape_array",1);
-  pub_chull_ = nh_.advertise<PointCloud>("concave_hull", 1);
+  pub_segmented_ = nh_.advertise<PointCloud>("/segmentation/segmented_cloud", 1);
+  pub_classified_ = nh_.advertise<PointCloud>("/segmentation/classified_cloud", 1);
+  pub_shape_array_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray>("/segmentation/shape_array",1);
+  pub_chull_ = nh_.advertise<PointCloud>("/segmentation/concave_hull", 1);
+  pub_chull_dense_ = nh_.advertise<PointCloud>("/segmentation/concave_hull_dense", 1);
   std::cout << "Loaded segmentation nodelet" << std::endl;
 }
 
 void
 cob_3d_segmentation::SegmentationAllInOneNodelet::configCallback(
-  cob_3d_segmentation::segmentation_nodeletConfig& config,
-  uint32_t level)
+    cob_3d_segmentation::segmentation_nodeletConfig& config,
+    uint32_t level)
 {
   NODELET_INFO("[segmentation]: received new parameters");
-  target_frame_id_ = config.target_frame_id;
-  enable_tf_ = config.enable_tf;
   centroid_passthrough_ = config.centroid_passthrough;
 }
 
 void
 cob_3d_segmentation::SegmentationAllInOneNodelet::receivedCloudCallback(PointCloud::ConstPtr cloud)
 {
-  tf::StampedTransform trf_map;
-  Eigen::Affine3f af = Eigen::Affine3f::Identity();
-  if (enable_tf_)
-  {
-    try
-    {
-      tf_listener_.waitForTransform(target_frame_id_, cloud->header.frame_id, cloud->header.stamp, ros::Duration(2));
-      tf_listener_.lookupTransform(target_frame_id_, cloud->header.frame_id, cloud->header.stamp, trf_map);
-    }
-    catch (tf::TransformException ex)
-    {
-      ROS_ERROR("[segmentation] : %s",ex.what());
-      return;
-    }
-    Eigen::Affine3d ad;
-    tf::TransformTFToEigen(trf_map, ad);
-    af = ad.cast<float>();
-  }
-
   PrecisionStopWatch t;
   t.precisionStart();
   NODELET_INFO("Start with segmentation .... ");
@@ -144,12 +128,16 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::receivedCloudCallback(PointClo
   seg_.setInputCloud(cloud);
   seg_.performInitialSegmentation();
   seg_.refineSegmentation();
+  std::map<int,int> objects;
+  //seg_.getPotentialObjects(objects, 500);
+  std::cout << "Found " << objects.size() << " potentail objects" << std::endl;
   NODELET_INFO("Done with segmentation .... ");
   graph_->clusters()->mapClusterColor(segmented_);
 
   cc_.setPointCloudIn(cloud);
   cc_.classify();
   graph_->clusters()->mapTypeColor(classified_);
+  graph_->clusters()->mapClusterBorders(classified_);
   NODELET_INFO("publish first cloud .... ");
   pub_segmented_.publish(segmented_);
   NODELET_INFO("publish second cloud .... ");
@@ -163,7 +151,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::receivedCloudCallback(PointClo
   ss << "/share/goa-sf/pcd_data/bags/pcd_borders/borders_"<<cloud->header.stamp<<".pcd";
   pcl::io::savePCDFileASCII(ss.str(), *bp);
    */
-  publishShapeArray(graph_->clusters(), cloud, af);
+  publishShapeArray(graph_->clusters(), objects, cloud);
 
   NODELET_INFO("Done with publishing .... ");
 
@@ -171,24 +159,30 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::receivedCloudCallback(PointClo
 
 void
 cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
-    ST::CH::Ptr cluster_handler, PointCloud::ConstPtr cloud, Eigen::Affine3f& tf)
+  ST::CH::Ptr cluster_handler, std::map<int,int>& objs, PointCloud::ConstPtr cloud)
 {
   cob_3d_mapping_msgs::ShapeArray sa;
   sa.header = cloud->header;
-  sa.header.frame_id = target_frame_id_.c_str();
+  sa.header.frame_id = cloud->header.frame_id.c_str();
+  std::cout<<"[SN]-->CLOUD FRAME"<<cloud->header.frame_id.c_str()<<"\n";
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull(new pcl::PointCloud<pcl::PointXYZRGB>);
+  pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud_dense(new pcl::PointCloud<pcl::PointXYZRGB>);
 
   for (ST::CH::ClusterPtr c = cluster_handler->begin(); c != cluster_handler->end(); ++c)
   {
     // compute hull:
     if (c->getCentroid()[2] > centroid_passthrough_) continue;
-    if (c->type != I_PLANE /*&& c->type != I_CYL*/) continue;
+    if (c->type != I_PLANE && c->type != I_CYL) continue;
     if (c->size() <= ceil(1.1f * static_cast<float>(c->border_points.size())))
     {
       std::cout <<"[ " << c->size() <<" | "<< c->border_points.size() << " ]" << std::endl;
       continue;
     }
+
+    for (size_t i = 0; i < c->border_points.size(); ++i)
+      hull_cloud_dense->push_back((*segmented_)[c->border_points[i].y * segmented_->width + c->border_points[i].x]);
+
     PolygonContours<PolygonPoint> poly;
     std::cout << "Get outline for " << c->size() << " Points with "<< c->border_points.size() << " border points" << std::endl;
     pe_.outline(cloud->width, cloud->height, c->border_points, poly);
@@ -205,32 +199,51 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
 
     sa.shapes.push_back(cob_3d_mapping_msgs::Shape());
     cob_3d_mapping_msgs::Shape* s = &sa.shapes.back();
+    if (objs.find(c->id()) != objs.end()) s->id = objs[c->id()] + 1;
+    else s->id = 0;
     s->points.resize(poly.polys_.size());
-    s->header.frame_id = target_frame_id_.c_str();
-
-    Eigen::Vector3f centroid = Eigen::Vector3f::Zero();
+    s->header.frame_id = cloud->header.frame_id.c_str();
+    Eigen::Vector3f color = c->computeDominantColorVector().cast<float>();
+    float temp_inv = 1.0f/255.0f;
+    s->color.r = color(0) * temp_inv;
+    s->color.g = color(1) * temp_inv;
+    s->color.b = color(2) * temp_inv;
+    s->color.a = 1.0f;
+    Eigen::Vector3f centroid = c->getCentroid();
+    //    Eigen::Matrix3f M = Eigen::Matrix3f::Identity() - c->pca_point_comp3 * c->pca_point_comp3.transpose(); // projection
     for (int i = 0; i < (int)poly.polys_.size(); ++i)
     {
-      if (i == max_idx) s->holes.push_back(false);
-      else s->holes.push_back(true);
       pcl::PointXYZRGB p;
-      for (std::vector<PolygonPoint>::iterator it = poly.polys_[i].begin(); it != poly.polys_[i].end(); ++it)
+      if (i == max_idx)
       {
-        p.getVector3fMap() = tf * cloud->points[PolygonPoint::getInd(it->x, it->y)].getVector3fMap();
-        if (i==max_idx) { centroid += p.getVector3fMap(); }
-        hull_cloud->points.push_back(p);
-        hull->points.push_back(p);
+        s->holes.push_back(false);
+        std::vector<PolygonPoint>::iterator it = poly.polys_[i].begin();
+        for ( ; it != poly.polys_[i].end(); ++it)
+        {
+          p.getVector3fMap() = cloud->points[PolygonPoint::getInd(it->x, it->y)].getVector3fMap();
+          hull_cloud->points.push_back(p);
+          hull->points.push_back(p);
+        }
+      }
+      else
+      {
+        s->holes.push_back(true);
+        std::vector<PolygonPoint>::reverse_iterator it = poly.polys_[i].rbegin();
+        for ( ; it != poly.polys_[i].rend(); ++it)
+        {
+          p.getVector3fMap() = cloud->points[PolygonPoint::getInd(it->x, it->y)].getVector3fMap();
+          hull_cloud->points.push_back(p);
+          hull->points.push_back(p);
+        }
       }
       hull->height = 1;
       hull->width = hull->points.size();
       pcl::toROSMsg(*hull, s->points[i]);
       hull->clear();
     }
-    centroid /= poly.polys_[max_idx].size();
-    Eigen::Vector3f tf_centroid = tf * c->getCentroid();//centroid;
-    s->centroid.x = tf_centroid[0];
-    s->centroid.y = tf_centroid[1];
-    s->centroid.z = tf_centroid[2];
+    s->centroid.x = centroid[0];
+    s->centroid.y = centroid[1];
+    s->centroid.z = centroid[2];
 
     // Set type specific parameters:
     switch(c->type)
@@ -241,7 +254,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
       s->type = cob_3d_mapping_msgs::Shape::POLYGON;
 
       s->params.resize(4);
-      Eigen::Vector3f orientation = tf.rotation() * c->pca_point_comp3;
+      Eigen::Vector3f orientation =  c->pca_point_comp3;
       s->params[0] = orientation(0); // n_x
       s->params[1] = orientation(1); // n_y
       s->params[2] = orientation(2); // n_z
@@ -254,32 +267,28 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
       s->type = cob_3d_mapping_msgs::Shape::CYLINDER;
       s->params.resize(10);
 
-      cob_3d_mapping::CylinderPtr  cyl = cob_3d_mapping::CylinderPtr(new cob_3d_mapping::Cylinder());
+      cob_3d_mapping::Cylinder::Ptr  cyl = cob_3d_mapping::Cylinder::Ptr(new cob_3d_mapping::Cylinder());
       Eigen::Vector3f centroid3f  = c->getCentroid();
       cyl->centroid << centroid3f[0] , centroid3f[1] , centroid3f[2] , 0;
 
-      cyl->axes_.resize(3);
-      cyl->axes_[1] =  c->pca_inter_comp1;
+      cyl->sym_axis =  c->pca_inter_comp1;
+      std::cout<<"sym axis\n"<<cyl->sym_axis<<"\n";
+      std::cout<<"centroid\n"<<cyl->centroid<<"\n";
       cyl->ParamsFromCloud(cloud,c->indices_);
 
 
       //write parameters to msg - after transformation to target frame
-      Eigen::Vector3f tf_axes_1 = tf.rotation() * cyl->axes_[1];
-      s->params[0] =  tf_axes_1[0];
-      s->params[1] = tf_axes_1[1];
-      s->params[2] = tf_axes_1[2];
+      s->params[0] = cyl->sym_axis[0];
+      s->params[1] = cyl->sym_axis[1];
+      s->params[2] = cyl->sym_axis[2];
 
-      Eigen::Vector3f tf_axes_2 = tf.rotation() * cyl->axes_[2];
+      s->params[3] = cyl->normal[0];
+      s->params[4] = cyl->normal[1];
+      s->params[5] = cyl->normal[2];
 
-      s->params[3] = tf_axes_2[0];
-      s->params[4] = tf_axes_2[1];
-      s->params[5] = tf_axes_2[2];
-
-
-      Eigen::Vector3f tf_origin = tf * cyl->origin_;
-      s->params[6] =  tf_origin[0];
-      s->params[7] =  tf_origin[1];
-      s->params[8] =  tf_origin[2];
+      s->params[6] = cyl->origin_[0];
+      s->params[7] = cyl->origin_[1];
+      s->params[8] = cyl->origin_[2];
 
       s->params[9]= cyl->r_;
 
@@ -301,8 +310,13 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
   hull_cloud->header = cloud->header;
   hull_cloud->height = 1;
   hull_cloud->width = hull_cloud->size();
+  hull_cloud_dense->header = cloud->header;
+  hull_cloud_dense->height = 1;
+  hull_cloud_dense->width = hull_cloud_dense->size();
   pub_chull_.publish(hull_cloud);
+  pub_chull_dense_.publish(hull_cloud_dense);
   pub_shape_array_.publish(sa);
+  std::cout<<"[SN]-->sa array frame set to"<<sa.header.frame_id.c_str()<<"\n";
 }
 
 

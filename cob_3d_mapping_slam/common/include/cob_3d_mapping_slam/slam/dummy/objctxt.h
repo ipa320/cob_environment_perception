@@ -26,12 +26,13 @@ namespace Dummy
       return false;
     }
 
-    bool add(const OBJCTXT &ctxt, const DOF6 &tf){
+    bool merge(const OBJCTXT &ctxt, const DOF6 &tf, std::map<typename OBJECT::Ptr,bool> &used) {
       return false;
     }
 
     size_t getNumObjs() const {return 0;}
 
+    const int getBoundingBox() const {return (const int)0;}
   };
 }
 

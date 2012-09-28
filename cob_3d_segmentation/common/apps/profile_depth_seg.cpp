@@ -78,13 +78,13 @@ public:
   {
     one.setOutputLabels(l);
     one.setPixelSearchRadius(8,2,2); //radius,pixel,circle
-    one.setSkipDistantPointThreshold(6.0);    
+    one.setSkipDistantPointThreshold(6.0);
     seg.setNormalCloudIn(n);
     seg.setLabelCloudInOut(l);
     seg.setClusterGraphOut(g);
   }
-  
-  void 
+
+  void
   computeForOneCloud(PointCloud<PointXYZRGB>::ConstPtr cloud)
   {
     PrecisionStopWatch t;
@@ -95,7 +95,7 @@ public:
     t.precisionStart();
     seg.setInputCloud(cloud);
     seg.performInitialSegmentation();
-    seg.refineSegmentation();    
+    seg.refineSegmentation();
     std::cout << t.precisionStop() << std::endl;
   }
 

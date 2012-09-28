@@ -1,6 +1,6 @@
 /****************************************************************
  *
- * Copyright (c) 2010
+ * Copyright (c) 2011
  *
  * Fraunhofer Institute for Manufacturing Engineering
  * and Automation (IPA)
@@ -8,18 +8,17 @@
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
  * Project name: care-o-bot
- * ROS stack name: cob_3d_environment_perception_intern
- * ROS package name: cob_3d_mapping_demonstrator
- * Description: Feature Map for storing and handling geometric features
+ * ROS stack name: cob_environment_perception_intern
+ * ROS package name: cob_3d_mapping_tools
+ * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
- * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 03/2012
+ * Date of creation: 08/2012
  * ToDo:
- *
  *
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -53,17 +52,41 @@
  *
  ****************************************************************/
 
-#include "rviz/plugin/type_registry.h"
+#ifndef COB_3D_MAPPING_TOOLS_GUI_RESOURCE_HPP_
+#define COB_3D_MAPPING_TOOLS_GUI_RESOURCE_HPP_
 
-#include "cob_3d_mapping_demonstrator/rviz_buttons.h"
-#include "cob_3d_mapping_demonstrator/rviz_title.h"
-#include "cob_3d_mapping_demonstrator/rviz_logo.h"
+#include "boost/make_shared.hpp"
+#include "cob_3d_mapping_tools/gui/resource.h"
 
-extern "C" void rvizPluginInit(rviz::TypeRegistry* reg)
+
+  /* ----------------------------*/
+ /* --------- Resource ---------*/
+/* ----------------------------*/
+template<typename RT>
+void Gui::Resource<RT>::resourceChanged()
 {
-  reg->registerDisplay<rviz::RvizButtons>("RvizButtons");
-  reg->registerDisplay<rviz::RvizTitle>("RvizTitle");
-  reg->registerDisplay<rviz::RvizLogo>("RvizLogo");
+  for(std::map<std::string, ViewBase*>::iterator it = views_.begin(); it != views_.end(); ++it)
+  { it->second->onDataChanged(); }
+}
+
+template<typename RT>
+template<typename VT>
+Gui::View<RT,VT>* Gui::Resource<RT>::createView(const std::string& name, Gui::ViewTypes::View2D)
+{
+  ViewBase* ptr = new ImageView<RT,VT>(name, this);
+  views_.insert(std::pair<std::string, ViewBase*>(name, ptr));
+  return static_cast<View<RT, VT>* >(ptr);
+}
+
+template<typename RT>
+template<typename VT>
+Gui::View<RT,VT>* Gui::Resource<RT>::createView(const std::string& name, Gui::ViewTypes::ViewText)
+{
+  ViewBase* ptr = new TextView<RT,VT>(name, this);
+  views_.insert(std::pair<std::string, ViewBase*>(name, ptr));
+  return static_cast<View<RT, VT>* >(ptr);
 }
 
 
+
+#endif

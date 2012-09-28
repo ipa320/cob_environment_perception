@@ -9,6 +9,7 @@
 #define NARF_KP_H_
 
 #include <ros/console.h>
+#ifdef PCL_VERSION_COMPARE
  #include <pcl/point_types.h>
  #include <pcl/point_cloud.h>
  #include <pcl/io/pcd_io.h>
@@ -32,7 +33,16 @@ struct NarfKPoint
                                     (float[33], fpfh,fpfh)
 
  )
+#else
+struct EIGEN_ALIGN16 NarfKPoint
+{
+  PCL_ADD_POINT4D; // This adds the members x,y,z which can also be accessed using the point (which is float[4])
 
+  pcl::FPFHSignature33 fpfh;
+
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+};
+#endif
 
 template<typename Point>
 class Keypoints_Narf : public RegKeypointCorrespondence<Point, NarfKPoint>
@@ -75,8 +85,11 @@ public:
 
     return this->keypoints_src_.size()>0 && this->keypoints_tgt_.size()>0;
   }
-
-  virtual void getCorrespondences(pcl::Correspondences &correspondences) {
+  #ifdef PCL_VERSION_COMPARE
+    virtual void getCorrespondences(pcl::Correspondences &correspondences) {
+  #else
+    virtual void getCorrespondences(std::vector<pcl::registration::Correspondence> &correspondences) {
+  #endif
     pcl::PointCloud<pcl::FPFHSignature33> tsrc, ttgt;
 
     if(this->keypoints_src_.size()<1||this->keypoints_tgt_.size()<1) {
@@ -100,15 +113,14 @@ public:
         (*indices_)[i]=i;
 
       // setup tree for reciprocal search
-//      for electrioc
-//      pcl::KdTreeFLANN<pcl::FPFHSignature33> tree_reciprocal;
-       pcl::search::KdTree<pcl::FPFHSignature33> tree_reciprocal;
-
+	  #ifdef PCL_VERSION_COMPARE
+	    pcl::search::KdTree<pcl::FPFHSignature33> tree_reciprocal;
+        pcl::search::KdTree<pcl::FPFHSignature33> tree_;
+      #else
+        pcl::KdTreeFLANN<pcl::FPFHSignature33> tree_reciprocal;
+        pcl::KdTreeFLANN<pcl::FPFHSignature33> tree_;
+      #endif
       tree_reciprocal.setInputCloud(tsrc.makeShared(), indices_);
-
-//      pcl::KdTreeFLANN<pcl::FPFHSignature33> tree_;
-      pcl::search::KdTree<pcl::FPFHSignature33> tree_;
-
       tree_.setInputCloud(ttgt.makeShared());
 
       correspondences.resize(indices_->size());
@@ -116,7 +128,11 @@ public:
       std::vector<float> distance(1);
       std::vector<int> index_reciprocal(1);
       std::vector<float> distance_reciprocal(1);
-      pcl::Correspondence corr;
+	  #ifdef PCL_VERSION_COMPARE
+	 	pcl::Correspondence corr;
+	  #else
+        pcl::registration::Correspondence corr;
+	  #endif
       unsigned int nr_valid_correspondences = 0;
 
       for (unsigned int i = 0; i < indices_->size(); ++i)
@@ -126,8 +142,13 @@ public:
 
         if ( (*indices_)[i] == index_reciprocal[0] )
         {
-          corr.index_query = (*indices_)[i];
-          corr.index_match = index[0];
+		  #ifdef PCL_VERSION_COMPARE
+			corr.index_query = (*indices_)[i];
+            corr.index_match = index[0];
+		  #else
+            corr.indexQuery = (*indices_)[i];
+            corr.indexMatch = index[0];
+		  #endif
           corr.distance = (this->keypoints_tgt_[index[0]].getVector3fMap()-this->keypoints_src_[(*indices_)[i]].getVector3fMap()).squaredNorm();
           correspondences[nr_valid_correspondences] = corr;
           ++nr_valid_correspondences;

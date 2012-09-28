@@ -67,18 +67,20 @@
 #include <pcl/ModelCoefficients.h>
 #include <pcl/sample_consensus/method_types.h>
 #include <pcl/sample_consensus/model_types.h>
+#include <pcl/filters/voxel_grid.h>
 
 // external includes
 //#include <boost/timer.hpp>
 #include "cob_3d_mapping_common/stop_watch.h"
 
 // internal includes
-#include "cob_3d_mapping_features/plane_extraction.h"
+#include "cob_3d_segmentation/plane_extraction.h"
 
-// additional includes
-#include <pcl/common/eigen.h>
-#include <pcl/common/centroid.h>
-#include <pcl/kdtree/kdtree_flann.h>
+#ifdef PCL_VERSION_COMPARE //fuerte
+  #include <pcl/common/eigen.h>
+  #include <pcl/common/centroid.h>
+  #include <pcl/kdtree/kdtree_flann.h>
+#endif
 
 
 PlaneExtraction::PlaneExtraction()
@@ -86,7 +88,7 @@ PlaneExtraction::PlaneExtraction()
   file_path_("/tmp"),
   save_to_file_(false),
   plane_constraint_(NONE),
-  cluster_tolerance_(0.05),
+  cluster_tolerance_(0.06),
   min_plane_size_(50),
   radius_(0.1),
   //normal_distance_weight_(0.05),
@@ -94,20 +96,24 @@ PlaneExtraction::PlaneExtraction()
   distance_threshold_(0.04),
   alpha_(0.2)
 {
-  //for ros electric
- // pcl::KdTreeFLANN<Point>::Ptr tree (new pcl::KdTreeFLANN<Point> ());
-  // ros fuerte
-  pcl::search::KdTree<Point>::Ptr tree (new pcl::search::KdTree<Point>());
+  #ifdef PCL_VERSION_COMPARE //fuerte
+    pcl::search::KdTree<Point>::Ptr tree (new pcl::search::KdTree<Point>());
+  #else //electric
+    pcl::KdTreeFLANN<Point>::Ptr tree (new pcl::KdTreeFLANN<Point> ());
+  #endif
+  
 
   // Init clustering of full cloud
   cluster_.setClusterTolerance (cluster_tolerance_);
   cluster_.setMinClusterSize (min_plane_size_);
   cluster_.setSearchMethod (tree);
 
-  //for ros electric
-  //pcl::KdTree<Point>::Ptr clusters_plane_tree(new pcl::KdTreeFLANN<Point> ());
-  // for ros fuerte
-  pcl::search::KdTree<Point>::Ptr clusters_plane_tree(new pcl::search::KdTree<Point>());
+  // Init clustering of planes
+  #ifdef PCL_VERSION_COMPARE //fuerte
+    pcl::search::KdTree<Point>::Ptr clusters_plane_tree (new pcl::search::KdTree<Point>());
+  #else //electric
+    pcl::KdTreeFLANN<Point>::Ptr clusters_plane_tree (new pcl::KdTreeFLANN<Point> ());
+  #endif
   cluster_plane_.setClusterTolerance (cluster_tolerance_);
   cluster_plane_.setMinClusterSize (min_plane_size_);
   cluster_plane_.setSearchMethod (clusters_plane_tree);
@@ -209,7 +215,7 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
   proj_.setInputCloud (pc_in);
 
   // Go through all clusters and search for planes
-
+  extracted_planes_indices_.clear();
   for(unsigned int i = 0; i < clusters.size(); ++i)
   {
     ROS_DEBUG("Processing cluster no. %u", i);
@@ -299,6 +305,8 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
         cluster_plane_.extract (plane_clusters);
 
         extract_.setInputCloud(cloud_projected);
+        /*std::cout << "projected: " << cloud_projected->size() << std::endl;
+        std::cout << "inliers_plane: " << inliers_plane->indices.size() << std::endl;*/
         for(unsigned int j=0; j<plane_clusters.size(); j++)
         {
           pcl::PointCloud<Point> plane_cluster;
@@ -309,6 +317,16 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
           if(plane_cluster_ptr->size() < min_plane_size_) continue;
           //else std::cout << "plane cluster has " << plane_cluster_ptr->size() << " points" << std::endl;
 
+          // <evaluation_stuff>
+          extracted_planes_indices_.push_back(std::vector<int>());
+          //std::cout << "plane_cluster: " << plane_clusters[j].indices.size() << std::endl;
+          for (size_t idx = 0; idx < plane_clusters[j].indices.size(); ++idx)
+          {
+            //std::cout << plane_clusters[j].indices[idx] << " ";
+            extracted_planes_indices_.back().push_back(inliers_plane->indices[ plane_clusters[j].indices[idx] ]);
+          }
+          // </evaluation_stuff>
+
           // Create a Concave Hull representation of the projected inliers
           pcl::PointCloud<Point> cloud_hull;
           std::vector< pcl::Vertices > hull_polygons;
@@ -316,9 +334,12 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
           //TODO: parameter
 
           chull_.reconstruct (cloud_hull, hull_polygons);
+          /*std::cout << "Hull: " << cloud_hull.size() << ", " << hull_polygons[0].vertices.size()
+            << ", "<< plane_cluster_ptr->size() << std::endl;*/
           if(hull_polygons.size() > 1)
           {
-		continue;
+            extracted_planes_indices_.pop_back();
+            continue;
             ROS_WARN("Extracted Polygon %d contours, separating ...", hull_polygons.size());
             pcl::PointCloud<Point>::Ptr cloud_hull_ptr = cloud_hull.makeShared();
             pcl::ExtractIndices<Point> extract_2;
@@ -400,9 +421,9 @@ PlaneExtraction::extractPlanes(const pcl::PointCloud<Point>::ConstPtr& pc_in,
     ctr_++;
   }
   double step_time = t.precisionStop();
-  ROS_INFO("Plane extraction took %f", step_time);
+  //ROS_INFO("Plane extraction took %f", step_time);
   time += step_time;
-  ROS_INFO("[plane extraction] Accumulated time at step %d: %f s", ctr, time);
+  //ROS_INFO("[plane extraction] Accumulated time at step %d: %f s", ctr, time);
   ctr++;
   return;
 }
@@ -480,6 +501,3 @@ PlaneExtraction::findClosestTable(std::vector<pcl::PointCloud<Point>, Eigen::ali
     }
   }
 }
-
-
-

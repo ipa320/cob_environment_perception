@@ -51,7 +51,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
- 
+
 #ifndef __COB_3D_SEGMENTATION_EDGE_HANDLER_H__
 #define __COB_3D_SEGMENTATION_EDGE_HANDLER_H__
 
@@ -109,11 +109,11 @@ namespace cob_3d_segmentation
     typedef typename PointCloud::ConstPtr PointCloudConstPtr;
 
   public:
-    BoundaryPointsEdgeHandler() 
+    BoundaryPointsEdgeHandler()
       : edge_validator(BoundarySmoothnessValidator(0.8f))
       ,boundary_points_()
     { };
-    
+
     ~BoundaryPointsEdgeHandler() { };
 
     void mapBoundaryPoints(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points)
@@ -121,7 +121,7 @@ namespace cob_3d_segmentation
       uint32_t color = LBL_BORDER;
       for(std::map<int,BoundaryPoint>::iterator b_it = boundary_points_.begin(); b_it != boundary_points_.end(); ++b_it)
       {
-	points->points[b_it->first].rgb = *reinterpret_cast<float*>(&color);
+        points->points[b_it->first].rgb = *reinterpret_cast<float*>(&color);
       }
     }
 
@@ -135,11 +135,11 @@ namespace cob_3d_segmentation
       points->height = normals->height = boundary_points_.size();
       pcl::PointCloud<pcl::PointXYZRGB>::iterator p_it = points->begin();
       pcl::PointCloud<pcl::Normal>::iterator n_it = normals->begin();
-      for(std::map<int,BoundaryPoint>::iterator b_it = boundary_points_.begin(); 
-	  b_it != boundary_points_.end(); ++b_it, ++p_it, ++n_it)
+      for(std::map<int,BoundaryPoint>::iterator b_it = boundary_points_.begin();
+          b_it != boundary_points_.end(); ++b_it, ++p_it, ++n_it)
       {
-	*p_it = surface_->points[b_it->first];
-	n_it->getNormalVector3fMap() = b_it->second.normal;
+        *p_it = surface_->points[b_it->first];
+        n_it->getNormalVector3fMap() = b_it->second.normal;
       }
     }
 
@@ -175,7 +175,7 @@ namespace cob_3d_segmentation
       inline bool operator() (EdgePtr e) { return (e->smoothness > min_smoothness_); }
     private:
       float min_smoothness_;
-    };    
+    };
   };
 }
 

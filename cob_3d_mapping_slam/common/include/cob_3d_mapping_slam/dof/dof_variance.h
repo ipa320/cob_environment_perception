@@ -30,6 +30,7 @@ namespace DOF6
     typedef boost::shared_ptr<SOURCE2> Source2_Ptr;
     typedef boost::shared_ptr<const SOURCE1> Source1_ConstPtr;
     typedef boost::shared_ptr<const SOURCE2> Source2_ConstPtr;
+    typedef EulerAngles<TYPE> TROTATION;
 
   private:
     Source1_Ptr src1_;
