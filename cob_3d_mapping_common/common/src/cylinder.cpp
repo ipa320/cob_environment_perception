@@ -1,57 +1,61 @@
-/****************************************************************
- *
- * Copyright (c) 2011
- *
- * Fraunhofer Institute for Manufacturing Engineering
- * and Automation (IPA)
- *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
- * Project name: care-o-bot
- * ROS stack name: cob_environment_perception
- * ROS package name: cob_3d_mapping_common
- * Description:
- *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
- * Author: goa-tz
- * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
- *
- * Date of creation: 05/2012
- * ToDo:
- *
- *
- *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Fraunhofer Institute for Manufacturing
- *       Engineering and Automation (IPA) nor the names of its
- *       contributors may be used to endorse or promote products derived from
- *       this software without specific prior written permission.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License LGPL as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License LGPL for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License LGPL along with this program.
- * If not, see <http://www.gnu.org/licenses/>.
- *
- ****************************************************************/
+/*!
+*****************************************************************
+* \file
+*
+* \note
+* Copyright (c) 2012 \n
+* Fraunhofer Institute for Manufacturing Engineering
+* and Automation (IPA) \n\n
+*
+*****************************************************************
+*
+* \note
+* Project name: Care-O-bot
+* \note
+* ROS stack name: cob_environment_perception
+* \note
+* ROS package name: cob_3d_mapping_common
+*
+* \author
+* Author: Thomas Zwölfer, email:georg.arbeiter@ipa.fhg.de
+* \author
+* Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+*
+* \date Date of creation: 06/2012
+*
+* \brief
+* Class representing cylinder shapes
+*
+*****************************************************************
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
+*
+* - Redistributions of source code must retain the above copyright
+* notice, this list of conditions and the following disclaimer. \n
+* - Redistributions in binary form must reproduce the above copyright
+* notice, this list of conditions and the following disclaimer in the
+* documentation and/or other materials provided with the distribution. \n
+* - Neither the name of the Fraunhofer Institute for Manufacturing
+* Engineering and Automation (IPA) nor the names of its
+* contributors may be used to endorse or promote products derived from
+* this software without specific prior written permission. \n
+*
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU Lesser General Public License LGPL as
+* published by the Free Software Foundation, either version 3 of the
+* License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU Lesser General Public License LGPL for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License LGPL along with this program.
+* If not, see <http://www.gnu.org/licenses/>.
+*
+****************************************************************/
 #include "cob_3d_mapping_common/cylinder.h"
 namespace cob_3d_mapping {
 
@@ -548,17 +552,17 @@ void Cylinder::isMergeCandidate(const std::vector<Cylinder::Ptr>& cylinder_array
 
     Eigen::Vector3f connection=c_map.origin_-origin_;
     connection.normalize();
-   
+
     Eigen::Vector3f d= c_map.origin_  - this->origin_   ;
-   
+
    // Debug Output for isMergeCandidate
  //  std::cout<<"dot sym axis = "<<fabs(c_map.sym_axis.dot(this->sym_axis))<<"--"<<limits.angle_thresh<<"\n";
  //  std::cout<<"r difference= "<<fabs(c_map.r_-this->r_)<<"--"<<"0.1"<<"\n";
  //  std::cout<<"dot connection axis = "<<fabs(c_map.sym_axis.dot(connection))<<"--"<<limits.angle_thresh<<"\n";
  //  std::cout<<"d difference= "<<d.norm()<<"--"<<"0.1"<<"\n";
-   
-   
-    
+
+
+
     // Test for geometrical attributes of cylinders
     if(fabs(c_map.sym_axis.dot(this->sym_axis)) > limits.angle_thresh && (fabs(c_map.r_ - r_) < (0.1 )))
     {
@@ -582,14 +586,14 @@ void Cylinder::isMergeCandidate(const std::vector<Cylinder::Ptr>& cylinder_array
         c2->makeCyl2D(false);
 
 
-        ///DEBUG OUTPUT FOR ISMERGEDANDIDATE POLYGONIAL CYLINDERS 
+        ///DEBUG OUTPUT FOR ISMERGEDANDIDATE POLYGONIAL CYLINDERS
         //std::string str1="new2D";
         //str1+=boost::lexical_cast<std::string>(i);
         //std::string str2="map2D";
         //str2+=boost::lexical_cast<std::string>(i);
 
         //c1->debug_output(str1);
-        //c2->debug_output(str2); 
+        //c2->debug_output(str2);
 
         if (c1->isIntersectedWith(c2))
         {
@@ -623,7 +627,7 @@ void Cylinder::merge(std::vector<Cylinder::Ptr>& c_array) {
  std::string t_str="this";
  this->debug_output(t_str);
   this->makeCyl2D(false);
-     t_str.append("2d"); 
+     t_str.append("2d");
  this->debug_output(t_str);
 
 
@@ -631,7 +635,7 @@ void Cylinder::merge(std::vector<Cylinder::Ptr>& c_array) {
   for (int i = 0; i < (int) c_array.size(); i++) {
 
   //TEMPORARY OVERRIDE---------------------------------------------------------------------
-    c_array[i]->transform_from_world_to_plane = average_cyl->transform_from_world_to_plane;    
+    c_array[i]->transform_from_world_to_plane = average_cyl->transform_from_world_to_plane;
    // c_array[i]->transform_from_world_to_plane = this->transform_from_world_to_plane;
   //-----------------------------------------------------------------------------------------
     std::string ca_str="c_array";
@@ -642,11 +646,11 @@ void Cylinder::merge(std::vector<Cylinder::Ptr>& c_array) {
 
 
     merge_cylinders.push_back(c_array[i]);
-    
-    
+
+
     std::string ca_str2d = ca_str.append("2D");
    c_array[i]->debug_output(ca_str2d);
-   
+
   }
 
   //  cast Cylinder::Ptr to Polygon::Ptr to use merge_union   -- is  a better way possible ?!
@@ -657,7 +661,7 @@ void Cylinder::merge(std::vector<Cylinder::Ptr>& c_array) {
   }
   //TEMPORARY OVERRIDE---------------------------------------------------------------------
   Polygon::Ptr average_polygon= average_cyl;
-    
+
 
 //TODO: THIS IS WHERE IT GOES DOOOWN
   this->merge_union(merge_polygons,average_polygon);
@@ -666,7 +670,7 @@ void Cylinder::merge(std::vector<Cylinder::Ptr>& c_array) {
 
 
   std::string dstr="merged";
-  this->debug_output(dstr);  
+  this->debug_output(dstr);
   this->makeCyl3D();
   dstr+="3d";
   this->debug_output(dstr);
@@ -708,7 +712,7 @@ Cylinder::applyWeighting(std::vector<Cylinder::Ptr>& merge_candidates)
 
   //std::cout<<"NEW params"<<"\n";
   //std::cout<<"merged = "<<this->merge_weight_<<"\n";
-  
+
   //std::cout<<"r = "<<this->r_<<"\n";
   std::cout<<"normal = "<<this->normal[0]<<" "<<this->normal[1]<<" "<<this->normal[2]<<" "<<"\n";
   //std::cout<<"origin_ = "<<this->origin_[0]<<" "<<this->origin_[1]<<" "<<this->origin_[2]<<" "<<"\n";
