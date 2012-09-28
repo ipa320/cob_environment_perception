@@ -133,4 +133,4 @@ target_link_libraries(profile_ne cob_3d_mapping_features_omp cob_3d_mapping_feat
 #target_link_libraries(example ${PROJECT_NAME})
 
 # rostest
-rosbuild_add_roslaunch_check(ros/launch)
+#rosbuild_add_roslaunch_check(ros/launch)
