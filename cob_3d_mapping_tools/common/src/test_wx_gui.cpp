@@ -54,7 +54,7 @@
 
 #include "cob_3d_mapping_common/label_defines.h"
 #include "cob_3d_mapping_common/polygon.h"
-#include "cob_3d_mapping_features/plane_extraction.h"
+#include "cob_3d_segmentation/plane_extraction.h"
 #include "cob_3d_segmentation/polygon_extraction/polygon_types.h"
 #include "cob_3d_segmentation/polygon_extraction/polygon_extraction.h"
 #include "cob_3d_mapping_tools/io.h"
