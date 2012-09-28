@@ -194,6 +194,7 @@ public:
         }
 
         //				calculate missing attributes
+
         geometry_map_.addMapEntry(cylinder_map_entry_ptr);
 
 
@@ -372,6 +373,7 @@ public:
       //map_msg.polygon_array.push_back(p);
       map_msg.shapes.push_back(s);
     }
+    ROS_INFO("Published map has %d shapes.", map_msg.shapes.size());
     map_pub_.publish(map_msg);
   }
 
