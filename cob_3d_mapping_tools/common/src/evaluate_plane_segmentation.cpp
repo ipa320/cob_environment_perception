@@ -67,7 +67,7 @@
 #include "cob_3d_mapping_tools/io.h"
 #include "cob_3d_segmentation/polygon_extraction/polygon_types.h"
 #include "cob_3d_segmentation/polygon_extraction/polygon_extraction.h"
-#include "cob_3d_mapping_features/plane_extraction.h"
+#include "cob_3d_segmentation/plane_extraction.h"
 
 typedef pcl::PointXYZRGB PointT;
 typedef pcl::PointCloud<PointT> PointCloud;
