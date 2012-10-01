@@ -73,9 +73,9 @@
 #include <tf_conversions/tf_kdl.h>
 #include <pcl/io/pcd_io.h>
 #include "cob_3d_registration/RegistrationPCD.h"
-#include "registration/preprocessing/kinect_error.h"
+#include "cob_3d_registration/preprocessing/kinect_error.h"
 
-#include <registration/registration_icp.h>
+#include <cob_3d_registration/registration_icp.h>
 
 
 using namespace tf;

@@ -106,9 +106,11 @@
 #include <cv_bridge/cv_bridge.h>
 #include <sys/stat.h>
 
-#include <registration/measurements/measure.h>
+#include <cob_3d_registration/measurements/measure.h>
 #include <cob_srvs/Trigger.h>
 #include <cob_3d_mapping_msgs/TriggerMappingAction.h>
+
+#include <sensor_msgs/CameraInfo.h>
 
 using namespace tf;
 #define SHOW_MAP 0
