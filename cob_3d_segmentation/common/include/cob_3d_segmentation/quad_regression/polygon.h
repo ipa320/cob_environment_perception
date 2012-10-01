@@ -587,8 +587,8 @@ namespace Segmentation
       P.col(1).normalize();
       P.col(2) = P.col(0).cross(P.col(1));
 
-      float h_ma = std::numeric_limits<float>::min(), h_mi = std::numeric_limits<float>::max();
-      float w_ma = std::numeric_limits<float>::min(), w_mi = std::numeric_limits<float>::max();
+      float h_ma = -std::numeric_limits<float>::max(), h_mi = std::numeric_limits<float>::max();
+      float w_ma = -std::numeric_limits<float>::max(), w_mi = std::numeric_limits<float>::max();
 
       for(size_t i=0; i<segments_[0].size(); i++)
       {

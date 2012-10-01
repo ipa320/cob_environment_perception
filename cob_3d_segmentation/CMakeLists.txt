@@ -29,20 +29,18 @@ rosbuild_genmsg()
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
-rosbuild_add_library(cob_3d_segmentation  ros/src/segmentation_node.cpp)
-rosbuild_add_executable(segmentation_node ros/src/segmentation_node.cpp)
-rosbuild_add_executable(qppf_node ros/src/qppf_node.cpp)
+#rosbuild_add_library(cob_3d_segmentation  ros/src/segmentation_node.cpp)
+#rosbuild_add_executable(segmentation_node ros/src/segmentation_node.cpp)
 rosbuild_add_executable(qppf_node ros/src/qppf_node.cpp common/src/polypartition.cpp)
 
-rosbuild_add_compile_flags(cob_3d_segmentation -D__LINUX__ -DCOMPILE_NODELET)
+#rosbuild_add_compile_flags(cob_3d_segmentation -D__LINUX__ -DCOMPILE_NODELET)
 
 rosbuild_add_roslaunch_check(ros/launch)
 
 #######################  TESTING  #######################
 rosbuild_add_executable(test_segmentation ros/test/test_segmentation.cpp common/src/polypartition.cpp)
-rosbuild_add_executable(test_segmentation ros/test/test_segmentation.cpp)
 rosbuild_add_compile_flags(test_segmentation ${SSE_FLAGS})
 target_link_libraries(test_segmentation gtest)
 
-rosbuild_add_executable(test_polygon_extraction ros/test/test_polygon_extraction.cpp)
-target_link_libraries(test_polygon_extraction gtest)
+#rosbuild_add_executable(test_polygon_extraction ros/test/test_polygon_extraction.cpp)
+#target_link_libraries(test_polygon_extraction gtest)

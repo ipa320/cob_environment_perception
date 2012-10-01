@@ -315,7 +315,9 @@ Eigen::Matrix4f build_random_tflink(DOF6::TFLinkvf &tflink, const int N=2, const
   return r;
 }
 
-TEST(DOF6, tflink_basic){
+//TEST(DOF6, tflink_basic)
+void t5()
+{
   time_t ti = time(NULL);
   ROS_INFO("init tflink_basic with %d",(int)ti);
   srand(ti);
@@ -330,7 +332,9 @@ TEST(DOF6, tflink_basic){
   }
 }
 
-TEST(DOF6, tflink_noise){
+//TEST(DOF6, tflink_noise)
+void t4()
+{
   time_t ti = time(NULL);
   ROS_INFO("init tflink_ with %d",(int)ti);
   srand(ti);
@@ -359,7 +363,9 @@ TEST(DOF6, tflink_noise){
   plot.set_style("boxes").plot_x(y,"deviaton").showonscreen();
 }
 
-TEST(DOF6, tflink_adding){
+//TEST(DOF6, tflink_adding)
+void t3()
+{
   time_t ti = time(NULL);
   ROS_INFO("init tflink_adding with %d",(int)ti);
   srand(ti);
@@ -367,7 +373,9 @@ TEST(DOF6, tflink_adding){
 //TODO:
 }
 
-TEST(DOF6, euler) {
+//TEST(DOF6, euler)
+void t2()
+{
   time_t ti = time(NULL);
   ROS_INFO("init euler with %d",(int)ti);
   srand(ti);
@@ -388,7 +396,9 @@ TEST(DOF6, euler) {
   }
 }
 
-TEST(DOF6, Source) {
+//TEST(DOF6, Source)
+void t1()
+{
   time_t ti = time(NULL);
   ROS_INFO("init Source with %d",(int)ti);
   srand(ti);

@@ -124,7 +124,7 @@ namespace DOF6
     TFLink operator+(const TFLink &o) const;    /// create chain of tf-links
     void operator+=(const TFLink &o);    /// add tf-links
 
-    TFLink<INPUT> transpose();   /// returns inverse
+    TFLink<INPUT> transpose() const;   /// returns inverse
     void finish();      /// calculate normalized covariance for rotation
 
     inline Matrix getRotation() const {return rot_;}
@@ -162,6 +162,8 @@ namespace DOF6
     {
       return getTranslationVariance();
     }
+
+    bool isSet() const {return accumlated_weight_t_!=0;}
 
   };
 

@@ -23,6 +23,7 @@ namespace DOF6
   {
     typedef Eigen::Matrix<TYPE,3,1> Vector;
     typedef Eigen::Matrix<TYPE,3,3> Matrix;
+    typedef Eigen::Matrix<TYPE,4,4> Matrix4;
 
     TYPE translation_speed_, rotation_speed_; /// speed per second
     double start_time_, end_time_;
@@ -53,6 +54,26 @@ namespace DOF6
     void deepCopy(const DOF6_Uncertainty &o)
     {
       *this = o;
+    }
+
+    DOF6_Uncertainty transpose() const {
+      DOF6_Uncertainty r = *this;
+      Matrix4 M = getTF4().inverse();
+      r.tr_ = M.col(3).head(3);
+      r.rot_ = (EulerAngles<TYPE>)M.topLeftCorner(3,3);
+      return r;
+    }
+
+    DOF6_Uncertainty operator+(const DOF6_Uncertainty &o) const    /// create chain of tf-links
+    {
+      DOF6_Uncertainty r = *this;
+      r.var_rot_off_= var_rot_off_+ o.var_rot_off_;
+      r.var_tr_off_ = var_tr_off_ + o.var_tr_off_;
+      r.start_time_ = r.end_time_;
+      Matrix4 M = getTF4()*o.getTF4();
+      r.tr_ = M.col(3).head(3);
+      r.rot_ = (EulerAngles<TYPE>)M.topLeftCorner(3,3);
+      return r;
     }
 
     TYPE getRotationVariance() const
@@ -109,6 +130,13 @@ namespace DOF6
       rot_ = rot;
       tr_ = tr;
       start_time_ = end_time_;
+    }
+
+    Matrix4 getTF4() const {
+      Matrix4 r=Matrix4::Identity();
+      r.topLeftCorner(3,3) = (Eigen::Matrix3f)getRotation();
+      r.col(3).head(3)     = getTranslation();
+      return r;
     }
 
     inline bool isRealSource() const {return true;}

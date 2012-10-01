@@ -38,23 +38,23 @@ rosbuild_add_library(cob_3d_registration
 	ros/src/registration_nodelet.cpp)
 
 
-rosbuild_add_executable(capture ros/src/capture.cpp)
-rosbuild_add_executable(filter ros/src/filter.cpp)
-rosbuild_add_executable(png2img ros/src/png_to_img.cpp)
-rosbuild_add_executable(ply2pcd ros/src/ply_to_pcd.cpp)
-rosbuild_add_executable(testing ros/src/test.cpp)
-rosbuild_add_executable(eval_svd ros/src/test_svd.cpp)
+#rosbuild_add_executable(capture ros/src/capture.cpp)
+#rosbuild_add_executable(filter ros/src/filter.cpp)
+#rosbuild_add_executable(png2img ros/src/png_to_img.cpp)
+#rosbuild_add_executable(ply2pcd ros/src/ply_to_pcd.cpp)
+#rosbuild_add_executable(testing ros/src/test.cpp)
+#rosbuild_add_executable(eval_svd ros/src/test_svd.cpp)
 
-rosbuild_add_gtest(test_frir ros/test/test_frir.cpp)
+#rosbuild_add_gtest(test_frir ros/test/test_frir.cpp)
 SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
-rosbuild_add_executable(example ros/src/example2.cpp)
-rosbuild_add_executable(frir_freehand ros/src/frir_freehand.cpp)
+#rosbuild_add_executable(example ros/src/example2.cpp)
+#rosbuild_add_executable(frir_freehand ros/src/frir_freehand.cpp)
 
 rosbuild_add_compile_flags(cob_3d_registration -D__LINUX__ ${SSE_FLAGS})
-rosbuild_add_compile_flags(frir_freehand -D__LINUX__ ${SSE_FLAGS})
+#rosbuild_add_compile_flags(frir_freehand -D__LINUX__ ${SSE_FLAGS})
 
 #target_link_libraries(registration ann  cob_vision_slam cob_sensor_fusion cob_camera_sensors cob_3d_mapping_features_omp)
-target_link_libraries(cob_3d_registration  cob_3d_mapping_features_omp)
+target_link_libraries(cob_3d_registration cob_3d_mapping_features_omp)
 
 rosbuild_add_roslaunch_check(ros/launch)

@@ -323,6 +323,39 @@ poly.segments2d_.back().push_back(p2);
         }
 
       }
+#if 0
+      for(int xx=-8; xx<9; xx++)
+        for(int yy=-8; yy<9; yy++)
+          if(fact*x+xx>=0 && fact*y+yy>=0 && fact*x+xx<(int)pc.width && fact*y+yy<(int)pc.height) {
+            Eigen::Vector3f p = poly.project2plane((((fact*x+xx)<<(i))-kinect_params_.dx)/kinect_params_.f,
+                                                   (((fact*y+yy)<<(i))-kinect_params_.dy)/kinect_params_.f,
+                                                   model,v);
+
+            if( (poly.project2world(p.head<2>())-pc[getIndPC(fact*x+xx,fact*y+yy)].getVector3fMap()).squaredNorm()<std::max(0.0005f,0.0005f*d)
+            && (poly.project2world(p.head<2>())-vp).squaredNorm()<0.02f)
+            {
+              poly.segments_.back().push_back(p);
+
+              //            std::cout<<"P\n"<<poly.project2world(p.head<2>())<<"\n";
+              //            std::cout<<"C\n"<<pc[getIndPC(2*x+xx,2*y+yy)].getVector3fMap()<<"\n";
+
+              //            std::cout<<"P\n"<<poly.project2world(p.head<2>())<<"\n";
+              //            std::cout<<"C\n"<<pc[getIndPC(2*x+xx,2*y+yy)].getVector3fMap()<<"\n";
+
+#ifdef USE_BOOST_POLYGONS_
+              poly.segments2d_.back().push_back(BoostPoint(x,y));
+#elif defined(BACK_CHECK_REPEAT)
+              Eigen::Vector2i p2;
+              p2(0) = x+xx/fact;
+              p2(1) = y+yy/fact;
+              poly.segments2d_.back().push_back(p2);
+#endif
+
+              return;
+            }
+          }
+#endif
+
       if(poly.normalAt(p.head<2>())(2)>0.5f)
       {
         poly.segments_.back().push_back(p);

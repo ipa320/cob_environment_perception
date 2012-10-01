@@ -140,7 +140,7 @@ struct Model {
       // determine the effective rank r of A using singular values
       int r = 0;
       Param::Vector6f t = Param::Vector6f::Zero();
-      while( r < 6 && s(r) >= 0.0001f )
+      while( r < 6 && s(r) >= 0.000025f )
       {
         t(r) = d(r) / s(r);
         r++;
