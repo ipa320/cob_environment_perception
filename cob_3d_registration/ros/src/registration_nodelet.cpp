@@ -98,7 +98,6 @@
 #include <registration/registration_icp_edges.h>
 #include <registration/registration_info.h>
 #include <registration/registration_correspondence.h>
-#include <registration_rgbdslam.h>
 #endif
 
 #include <pcl/filters/voxel_grid.h>
@@ -527,8 +526,6 @@ public:
       //        e_algo=E_ALGO_FASTSLAM;
       else if(s_algo=="icp_edges")
         e_algo=E_ALGO_ICP_EDGES;
-      else if(s_algo=="rgbdslam")
-        e_algo=E_ALGO_RGBDSLAM;
       else if(s_algo=="info")
         e_algo=E_ALGO_INFO;
       else if(s_algo=="cor")
@@ -615,12 +612,6 @@ public:
         ROS_ERROR("not supported");
 #endif
         break;*/
-
-      case E_ALGO_RGBDSLAM:
-        reg_ = new Registration_RGBDSLAM<Point>(n_);
-
-        //setSettings_ICP_Edges((Registration_ICP_Edges<Point>*)reg_);
-        break;
 
       case E_ALGO_INFO:
 #ifndef PCL_DEPRECATED
@@ -997,7 +988,7 @@ protected:
 
   std::string corrected_id_, world_id_, pc_frame_id_;
 
-  enum {E_ALGO_ICP=1,E_ALGO_ICP_LM=2,E_ALGO_GICP=3,E_ALGO_ICP_MOMENTS=4,E_ALGO_ICP_FPFH=5, E_ALGO_ICP_NARF=6, E_ALGO_FASTSLAM=7, E_ALGO_ICP_EDGES=8, E_ALGO_RGBDSLAM=9, E_ALGO_INFO=10, E_ALGO_COR=11, E_ALGO_NONE=0};
+  enum {E_ALGO_ICP=1,E_ALGO_ICP_LM=2,E_ALGO_GICP=3,E_ALGO_ICP_MOMENTS=4,E_ALGO_ICP_FPFH=5, E_ALGO_ICP_NARF=6, E_ALGO_FASTSLAM=7, E_ALGO_ICP_EDGES=8, E_ALGO_INFO=10, E_ALGO_COR=11, E_ALGO_NONE=0};
 
   //settings
   void setSettings_ICP(Registration_ICP<Point> *pr) {
