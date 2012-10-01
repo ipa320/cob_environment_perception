@@ -60,6 +60,13 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 
+#include <pcl/kdtree/kdtree.h>
+#include <pcl/filters/voxel_grid.h>
+#include "transf_est/tf_est_multi_cors.h"
+#include <pcl/registration/transformation_estimation_svd.h>
+#include "impl/modified_icp.hpp"
+
+namespace cob_3d_registration {
 
 /**
  * registration based on HIRN
@@ -217,5 +224,7 @@ private:
 #include "impl/registration_info.hpp"
 
 typedef Registration_Infobased<pcl::PointXYZ> Registration_HIRN_XYZ;
+
+}
 
 #endif /* REGISTRATION_INFO_H_ */

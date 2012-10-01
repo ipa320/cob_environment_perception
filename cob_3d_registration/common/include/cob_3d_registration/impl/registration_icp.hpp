@@ -64,26 +64,6 @@
 #ifndef REGISTRATION_ICP_HPP_
 #define REGISTRATION_ICP_HPP_
 
-//#include "cob_env_model/table_object_cluster.h"
-
-//#include <ros/ros.h>
-//#include <tf/transform_listener.h>
-//#include <visualization_msgs/Marker.h>
-//#include <cob_env_model_msgs/GetFieldOfView.h>
-#include <Eigen/Core>
-
-//#include <pcl/segmentation/extract_polygonal_prism_data.h>
-//#include <pcl/filters/extract_indices.h>
-#include <pcl/io/io.h>
-//#include <pcl/common/common.h>
-#include <pcl/kdtree/kdtree_flann.h>
-//#include <pcl/segmentation/extract_clusters.h>
-#include <pcl/registration/ia_ransac.h>
-#include <pcl/sample_consensus/sac_model_plane.h>
-#include <pcl/io/pcd_io.h>
-#include <pcl/registration/icp.h>
-#include <pcl/features/fpfh.h>
-#include <pcl/features/normal_3d.h>
 
 template <typename Point>
 bool Registration_ICP<Point>::compute_features()

@@ -54,15 +54,6 @@
  ****************************************************************/
 
 
-#include <pcl/features/normal_3d.h>
-#include <cob_3d_mapping_features/edge_estimation_3d.h>
-#include <cob_3d_mapping_features/edge_estimation_2d.h>
-#include <cob_3d_mapping_features/edge_extraction.h>
-#include <cob_3d_mapping_features/segmentation.h>
-#include <cob_3d_mapping_common/point_types.h>
-#include <pcl/kdtree/kdtree.h>
-#include <pcl/common/pca.h>
-
 
 template<typename Point>
 void Keypoints_Segments<Point>::extractFeatures(const pcl::PointCloud<Point>& point_cloud, pcl::PointCloud<Point> &cloud_out2, pcl::PointCloud<PCAPoint> &mids) {

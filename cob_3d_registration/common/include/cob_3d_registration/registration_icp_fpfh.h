@@ -11,6 +11,8 @@
 #include "registration_icp.h"
 #include "features/fast_pfh.h"
 
+namespace cob_3d_registration {
+
 template <typename Point>
 class Registration_ICP_FPFH : public Registration_ICP_Features<Point>
 {
@@ -44,5 +46,6 @@ protected:
   }
 };
 
+}
 
 #endif /* REGISTRATION_ICP_NORMALS_H_ */

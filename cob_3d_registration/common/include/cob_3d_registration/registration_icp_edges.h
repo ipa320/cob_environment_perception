@@ -15,6 +15,7 @@
 #include <pcl/visualization/cloud_viewer.h>
 #include <pcl/filters/passthrough.h>
 
+namespace cob_3d_registration {
 
 template <typename Point>
 class Registration_ICP_Edges : public Registration_ICP_Features<Point>
@@ -125,5 +126,7 @@ protected:
     return b;
   }
 };
+
+}
 
 #endif /* REGISTRATION_EDGES_H_ */

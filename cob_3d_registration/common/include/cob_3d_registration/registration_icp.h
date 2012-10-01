@@ -61,6 +61,18 @@
 #include "feature_container.h"
 #include <pcl/point_cloud.h>
 
+#include <Eigen/Core>
+#include <pcl/io/io.h>
+#include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/registration/ia_ransac.h>
+#include <pcl/sample_consensus/sac_model_plane.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/registration/icp.h>
+#include <pcl/features/fpfh.h>
+#include <pcl/features/normal_3d.h>
+
+namespace cob_3d_registration {
+
 /**
  * encapsulates icp with extension
  * extending icp to allow featurebased matching, as keypoint matching
@@ -164,5 +176,7 @@ protected:
 
 
 #include "impl/registration_icp.hpp"
+
+}
 
 #endif

@@ -14,6 +14,17 @@
 #include <pcl/visualization/cloud_viewer.h>
 #endif
 
+#include <pcl/features/normal_3d.h>
+#include <cob_3d_mapping_features/edge_estimation_3d.h>
+#include <cob_3d_mapping_features/edge_estimation_2d.h>
+#include <cob_3d_mapping_features/edge_extraction.h>
+#include <cob_3d_mapping_features/segmentation.h>
+#include <cob_3d_mapping_common/point_types.h>
+#include <pcl/kdtree/kdtree.h>
+#include <pcl/common/pca.h>
+
+namespace cob_3d_registration {
+
 struct EIGEN_ALIGN16 PCAPoint
 {
   PCL_ADD_POINT4D; // This adds the members x,y,z which can also be accessed using the point (which is float[4])
@@ -133,5 +144,7 @@ public:
 };
 
 #include "impl/segments.hpp"
+
+}
 
 #endif /* SEGMENTS_H_ */

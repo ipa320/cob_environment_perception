@@ -53,13 +53,6 @@
  *
  ****************************************************************/
 
-#include <pcl/features/normal_3d.h>
-#include <cob_3d_mapping_features/fast_edge_estimation_3d_omp.h>
-#include <cob_3d_mapping_common/point_types.h>
-#include <pcl/kdtree/kdtree.h>
-#include <pcl/features/integral_image_normal.h>
-
-#include <pcl/visualization/cloud_viewer.h>
 
 template<typename Point>
 void Feature_Edges<Point>::extractFeatures(const pcl::PointCloud<Point>& point_cloud, pcl::PointCloud<Point> &edges) {

@@ -11,6 +11,9 @@
 #include "registration_icp.h"
 #include "features/narf.h"
 
+
+namespace cob_3d_registration {
+
 template <typename Point>
 class Registration_ICP_NARF : public Registration_ICP_Features<Point>
 {
@@ -75,5 +78,7 @@ protected:
     return b;
   }
 };
+
+}
 
 #endif /* REGISTRATION_ICP_NARF_H_ */
