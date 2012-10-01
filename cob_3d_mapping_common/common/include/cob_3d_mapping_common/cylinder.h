@@ -143,10 +143,10 @@ public:
   Eigen::Vector3f sym_axis; /**< Symmetry axis of cylinder. Direction Vector of symmetry axis. */
   Eigen::Vector3f origin_; /**< Origin of cylinder. */
   int merged_limit; /**< Limit for merge counter */
-private:
-
+protected:
   //################ private methods for merging to avoid confusion by user################
   void getArc(const Eigen::Vector3f& goal,const Eigen::Vector3f& start, float& Tx,bool first);
+  void compensate_offset(Cylinder::Ptr& c_ref);
 
 };
 }
