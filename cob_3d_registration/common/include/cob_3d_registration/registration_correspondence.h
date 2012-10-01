@@ -57,7 +57,10 @@
 #define REGISTRATION_CORRESPONDENCE_H_
 
 #include <pcl/registration/correspondence_estimation.h>
+#include <pcl/registration/correspondence_rejection_distance.h>
+#include <pcl/registration/transformation_estimation_svd.h>
 
+namespace cob_3d_registration {
 
 template <typename Point>
 class RegKeypointCorrespondenceAbstract
@@ -139,6 +142,7 @@ protected:
 
 
 #include "impl/registration_correspondence.hpp"
+}
 
 //keypoints...
 #include "features/segments.h"

@@ -17,6 +17,9 @@
 #include <pcl/kdtree/kdtree.h>
 #endif
 
+
+namespace cob_3d_registration {
+
 template<typename Point>
 class Feature_FPFH : public FeatureContainerInterface_Euclidean<Point>
 {
@@ -112,5 +115,6 @@ public:
 
 };
 
+}
 
 #endif /* FAST_PFH_H_ */

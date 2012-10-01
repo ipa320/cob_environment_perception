@@ -13,6 +13,8 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 
+namespace cob_3d_registration {
+
 template <typename Point>
 class Registration_FastSLAM : public GeneralRegistration<Point>
 {
@@ -346,6 +348,6 @@ private:
 
 
 };
-
+}
 
 #endif /* REGISTRATION_FASTSLAM_H_ */

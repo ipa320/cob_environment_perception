@@ -60,6 +60,8 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 
+namespace cob_3d_registration {
+
 /**
  * a general abstract class for registration purpose of 3d pointclouds
  * as input it's espected to provide ...
@@ -144,3 +146,5 @@ protected:
   bool moved_, scene_changed_;
 
 };
+
+}

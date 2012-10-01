@@ -53,12 +53,6 @@
  *
  ****************************************************************/
 
-#include <pcl/kdtree/kdtree.h>
-#include <pcl/filters/voxel_grid.h>
-#include "../transf_est/tf_est_multi_cors.h"
-#include <pcl/registration/transformation_estimation_svd.h>
-#include "modified_icp.hpp"
-
 
 // organized access to pointcloud
 #define getInd(x, y) ((x)+(y)*pc.width)

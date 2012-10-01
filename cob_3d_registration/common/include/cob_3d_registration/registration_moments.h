@@ -11,6 +11,8 @@
 #include "registration_icp.h"
 #include "features/moments.h"
 
+namespace cob_3d_registration {
+
 template <typename Point>
 class Registration_ICP_Features : public Registration_ICP<Point>
 {
@@ -21,5 +23,7 @@ protected:
 
   virtual void setSettingsForICP(ModifiedICP<Point> &icp);
 };
+
+}
 
 #endif /* REGISTRATION_MOMENTS_H_ */

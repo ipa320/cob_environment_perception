@@ -8,6 +8,8 @@
 #ifndef NARF_KP_H_
 #define NARF_KP_H_
 
+namespace cob_3d_registration {
+
 struct EIGEN_ALIGN16 NarfKPoint
 {
   PCL_ADD_POINT4D; // This adds the members x,y,z which can also be accessed using the point (which is float[4])
@@ -121,5 +123,6 @@ public:
 };
 
 #include "impl/narf_kp.hpp"
+}
 
 #endif /* NARF_KP_H_ */
