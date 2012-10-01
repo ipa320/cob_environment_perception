@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+
+  <node pkg="cob_3d_mapping_slam" type="slam_node" name="slam" output="screen" >
+  	<param name="frame_id" value="/map" />
+  	<param name="world_id" value="/camera_depth_optical_frame" />
+  </node>
+
+</launch>
+
