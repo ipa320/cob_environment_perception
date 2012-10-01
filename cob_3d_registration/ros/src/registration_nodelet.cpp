@@ -85,23 +85,23 @@
 #include "cob_3d_registration/EvaluationResult.h"
 #include "parameters/parameters_bag.h"
 
-#include <registration/registration_icp.h>
+#include <cob_3d_registration/registration_icp.h>
 #ifndef PCL_DEPRECATED
-#include <registration/registration_icp_moments.h>
-#include <registration/registration_icp_fpfh.h>
-#include <registration/registration_icp_narf.h>
+#include <cob_3d_registration/registration_icp_moments.h>
+#include <cob_3d_registration/registration_icp_fpfh.h>
+#include <cob_3d_registration/registration_icp_narf.h>
 
 //#include <registration/registration_fastslam.h>
 //#include <cob_vision_utils/VisionUtils.h>
 #include <opencv/cv.h>
 
-#include <registration/registration_icp_edges.h>
-#include <registration/registration_info.h>
-#include <registration/registration_correspondence.h>
+#include <cob_3d_registration/registration_icp_edges.h>
+#include <cob_3d_registration/registration_info.h>
+#include <cob_3d_registration/registration_correspondence.h>
 #endif
 
 #include <pcl/filters/voxel_grid.h>
-#include <registration/preprocessing/kinect_error.h>
+#include <cob_3d_registration/preprocessing/kinect_error.h>
 
 #include <cv_bridge/cv_bridge.h>
 #include <sys/stat.h>
