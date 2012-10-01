@@ -5,6 +5,7 @@
  *      Author: josh
  */
 
+#define USE_COLOR
 
 //includes needed for testing
 #include <gtest/gtest.h>
@@ -212,7 +213,7 @@ void segment_pointcloud(GeneralSegmentation<Point, PointLabel> *seg, typename pc
 
 TEST(Segmentation, quad_regression)
 {
-  typedef pcl::PointXYZ Point;
+  typedef pcl::PointXYZRGB Point;
   typedef pcl::PointXYZRGB PointL;
 
   pcl::PointCloud<Point>::Ptr pc(new pcl::PointCloud<Point>);
@@ -229,6 +230,8 @@ TEST(Segmentation, quad_regression)
     ROS_INFO("processing pc %d ...",(int)ind-1);
     std::string fn_short(fn.begin()+(fn.find_last_of("/")+1),fn.end());
     segment_pointcloud<Point,PointL>(&seg,pc, fn_short);
+
+    seg.extractImages();
 
     Testing_PCDLoader::get().writePC<PointL>("reconstructed_"+fn_short, seg.getReconstructedOutputCloud());
 

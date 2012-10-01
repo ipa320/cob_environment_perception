@@ -172,6 +172,43 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
               ++num;
             }
 
+            //revalidate
+            j=getIndPC(2*x,2*y);
+            if((pc[j].getVector3fMap()-p/num).squaredNorm()>0.005f)
+            {
+              p(0)-=pc[j].x;
+              p(1)-=pc[j].y;
+              p(2)-=pc[j].z;
+              --num;
+            }
+
+            j=getIndPC(2*x,2*y+1);
+            if((pc[j].getVector3fMap()-p/num).squaredNorm()>0.005f)
+            {
+              p(0)-=pc[j].x;
+              p(1)-=pc[j].y;
+              p(2)-=pc[j].z;
+              --num;
+            }
+
+            j=getIndPC(2*x+1,2*y);
+            if((pc[j].getVector3fMap()-p/num).squaredNorm()>0.005f)
+            {
+              p(0)-=pc[j].x;
+              p(1)-=pc[j].y;
+              p(2)-=pc[j].z;
+              --num;
+            }
+
+            j=getIndPC(2*x+1,2*y+1);
+            if((pc[j].getVector3fMap()-p/num).squaredNorm()>0.005f)
+            {
+              p(0)-=pc[j].x;
+              p(1)-=pc[j].y;
+              p(2)-=pc[j].z;
+              --num;
+            }
+
             j=getInd(x,y);
             lvl->data[j]=p/num;
 
@@ -254,6 +291,7 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
     for(size_t i=0; i<polygons_.size(); i++) {
       if(polygons_[i].segments_.size()<1) continue;
 
+      //ROS_ERROR("start");
 
       for(size_t j=0; j<polygons_[i].segments2d_.size(); j++) {
 
@@ -266,18 +304,27 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
           const size_t n = std::max((size_t)1, (size_t)(sqrtf((end-start).squaredNorm())/5) );
           float prob = 0.f;
 
+          //ROS_ERROR("n %d",n);
+          //int m=0;
+
           for(size_t p=0; p<n; p++) {
             //pos
             pos = start + (end-start)*(p+1)/(float)(n+1);
+
+            //ROS_ERROR("pos %d %d",pos(0),pos(1));
+
             if(pos(0)<0 || pos(1)<0 || pos(0)>=(int)levels_[0].w || pos(1)>=(int)levels_[0].h) continue;
 
             int o;
-            for(int x=-11; x<=11; x+=2)
-              for(int y=-11; y<=11; y+=2)
+            for(int x=-12; x<=12; x+=3)
+              for(int y=-12; y<=12; y+=3)
                 if( (o = otherOccupied(0, pos(0)+x, pos(1)+y, polygons_[i].mark_)) != -1)
                   break;
 
             if(o<0||o==polygons_[i].mark_) continue;
+            //ROS_ERROR("o %d",o);
+            //++m;
+
             //get here
             Eigen::Vector2f pHere = polygons_[i].project2plane(((pos(0)<<(1))-kinect_params_.dx)/kinect_params_.f,
                                                                ((pos(1)<<(1))-kinect_params_.dy)/kinect_params_.f,
@@ -293,12 +340,14 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
             const float d = std::min(vThere(2),vHere(2));
 
             prob += (
-                (vThere(2)-vHere(2))>0.01f*d*d && nHere(2)>0.5f) ||
-                (std::abs(vThere(2)-vHere(2))<0.05f*d*d && nHere.dot(nThere)<0.8f)
+                (vThere(2)-vHere(2))>0.01f*d*d && std::abs(nHere(2))>0.7f) ||
+                (std::abs(vThere(2)-vHere(2))<0.1f*d*d && nHere.dot(nThere)<0.8f)
                 ? 1.f:0.f;
           }
 
           polygons_[i].segments_[j][k](2) = prob/n;
+          //ROS_ERROR("m %d",m);
+
         }
       }
     }
@@ -365,7 +414,11 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
 #endif
 
         if( hops>0 && x>0&&y>0&&x+1<(int)levels_[i].w&&y+1<(int)levels_[i].h &&
-            d!=0.f && ((found<1&&first_lvl) ||
+            d!=0.f && ((found<1&&first_lvl
+//#ifdef USE_MIN_MAX_RECHECK_
+//                &&(levels_[i].data[getInd(x,y)].v_max_-levels_[i].data[getInd(x,y)].v_min_)<0.02f*(1<<i)*std::abs(levels_[i].data[getInd(x,y)].z_(0)/levels_[i].data[getInd(x,y)].model_(0,0))
+//#endif
+        ) ||
                 (
 #ifdef USE_MIN_MAX_RECHECK_
                     (levels_[i].data[getInd(x,y)].v_max_-levels_[i].data[getInd(x,y)].v_min_)< 2*(model.get_max_gradient(levels_[i].data[getInd(x,y)])*d*(1<<i)/kinect_params_.f+4*thr) /*std::min(0.5f,std::max(0.02f,0.05f*d))*/ //TODO: in anbhaengigkeit der steigung
@@ -447,10 +500,8 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
 
         pt.x=x;pt.y=y;
 #ifdef USE_MIN_MAX_RECHECK_
-//        const float delta = (levels_[i+2].data[getInd2(x/4,y/4)].v_max_-
-//            model.model(levels_[i].data[getInd(x,y)].model_(1)/levels_[i].data[getInd(x,y)].model_(0,0),
-//                        levels_[i].data[getInd(x,y)].model_(3)/levels_[i].data[getInd(x,y)].model_(0,0)));
-//        pt.back = (delta > -0.01f && levels_[i+2].data[getInd2(x/4,y/4)].v_min_<0.1f) || delta>2*(model.get_max_gradient(levels_[i].data[getInd(x,y)])*levels_[i].data[getInd(x,y)].z_(0)/levels_[i].data[getInd(x,y)].model_(0,0)*(1<<i)/kinect_params_.f+4*0.03f);
+        //        const float delta = (levels_[i+2].data[getInd2(x/4,y/4)].v_max_-
+        //            model.model(levels_[i].data[getInd(x,y)].model_(1)/levels_[i].data[getInd(x,y)].model_(0,0),
         //                        levels_[i].data[getInd(x,y)].model_(3)/levels_[i].data[getInd(x,y)].model_(0,0)));
         //        pt.back = (delta > -0.01f && levels_[i+2].data[getInd2(x/4,y/4)].v_min_<0.1f) || delta>2*(model.get_max_gradient(levels_[i].data[getInd(x,y)])*levels_[i].data[getInd(x,y)].z_(0)/levels_[i].data[getInd(x,y)].model_(0,0)*(1<<i)/kinect_params_.f+4*0.03f);
         pt.back = levels_[i+2].data[getInd2(x/4,y/4)].v_max_-
@@ -535,6 +586,10 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
   template <typename Point, typename PointLabel>
   void Segmentation_QuadRegression<Point,PointLabel>::outline(int *ch, const int w, const int h, std::vector<SubStructure::SXY> &out, const int i, S_POLYGON &poly, const SubStructure::Model &model, const int mark)
   {
+//    std::cout<<"OFF:\n"<<poly.param_.col(0)<<"\n";
+//    std::cout<<"PLANE:\n"<<poly.proj2plane_<<"\n";
+//    std::cout<<"P1:\n"<<poly.param_.col(1)<<"\n";
+//    std::cout<<"P2:\n"<<poly.param_.col(2)<<"\n";
 
 #ifdef STOP_TIME
     PrecisionStopWatch ssw;
@@ -635,6 +690,13 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
 
     }
 
+//    for(size_t j=0; j<poly.segments_.size(); j++)
+//      for(size_t k=0; k<poly.segments_[j].size(); k++)
+//      {
+//        std::cout<<"s\n"<<poly.segments_[j][k].head<2>()<<"\n";
+//        std::cout<<"p\n"<<poly.project2world(poly.segments_[j][k].head<2>())<<"\n";
+//      }
+
     for(size_t j=0; j<out.size(); j++) {
       ch[ getInd(out[j].x,out[j].y) ]=0;
     }
@@ -713,6 +775,26 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
         else
           (*out)(x,y).x = (*out)(x,y).y = (*out)(x,y).z = 0;
         SetLabeledPoint<PointLabel>( (*out)(x,y), mark);
+
+        if(mark>0 && mark<(int)polygons_.size())
+        {
+          const float z_model = polygons_[mark].model_.model(
+              levels_[0].data[getInd(x,y)].model_(0,1)/levels_[0].data[getInd(x,y)].model_(0,0),
+              levels_[0].data[getInd(x,y)].model_(0,3)/levels_[0].data[getInd(x,y)].model_(0,0)
+          );
+          const float z = levels_[0].data[getInd(x,y)].z_(0)/levels_[0].data[getInd(x,y)].model_(0,0);
+
+          Eigen::Vector3f p;
+          p(0) =
+              levels_[0].data[getInd(x,y)].model_(0,1)/levels_[0].data[getInd(x,y)].model_(0,0);
+          p(1) =
+              levels_[0].data[getInd(x,y)].model_(0,3)/levels_[0].data[getInd(x,y)].model_(0,0);
+          p(2) = z;
+          const float d = std::min(std::abs(z - z_model), (polygons_[i].project2world(polygons_[i].nextPoint(p))-p).norm());
+
+          //(*out)(x,y).r = (*out)(x,y).g = (*out)(x,y).b = d/0.1f * 255;
+        }
+
       }
     }
 
@@ -844,10 +926,11 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
   template <typename Point, typename PointLabel>
   Segmentation_QuadRegression<Point,PointLabel>::operator cob_3d_mapping_msgs::ShapeArray() const {
     cob_3d_mapping_msgs::ShapeArray sa;
-    sa.header.frame_id="/openni_rgb_frame";
 
     cob_3d_mapping_msgs::Shape s;
-    s.header.frame_id="/openni_rgb_frame";
+    s.type = cob_3d_mapping_msgs::Shape::CURVED;
+
+    sa.header.frame_id = s.header.frame_id = "/test";
 
     for(size_t i=0; i<polygons_.size(); i++) {
       if(polygons_[i].segments_.size()<1) continue;
@@ -859,7 +942,7 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
       s.centroid.y=(polygons_[i].param_.col(0)(1));
       s.centroid.z=(polygons_[i].param_.col(0)(2));
 
-      s.params.push_back(polygons_[i].param_.col(1)(0));
+      /*s.params.push_back(polygons_[i].param_.col(1)(0));
       s.params.push_back(polygons_[i].param_.col(1)(1));
 
       s.params.push_back(polygons_[i].param_.col(2)(0));
@@ -872,7 +955,13 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
 
       s.params.push_back(polygons_[i].proj2plane_.col(1)(0));
       s.params.push_back(polygons_[i].proj2plane_.col(1)(1));
-      s.params.push_back(polygons_[i].proj2plane_.col(1)(2));
+      s.params.push_back(polygons_[i].proj2plane_.col(1)(2));*/
+
+
+      for(int k=0; k<6; k++)
+        s.params.push_back(polygons_[i].model_.p(k));
+
+      s.weight = polygons_[i].weight_;
 
       s.color.r=polygons_[i].color_[0];
       s.color.g=polygons_[i].color_[1];
@@ -889,6 +978,7 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
         for(size_t k=0; k<polygons_[i].segments_[j].size(); k++) {
           pt.x=polygons_[i].segments_[j][k](0);
           pt.y=polygons_[i].segments_[j][k](1);
+          pt.z=polygons_[i].segments_[j][k](2);
           if(j==0) {
             backs+=polygons_[i].segments_[j][k](2);
             if(k==0)
@@ -904,7 +994,6 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
               ma(2) = std::max(t(2),ma(2));
             }
           }
-          pt.z=polygons_[i].segments_[j][k](2);
           if(pcl_isfinite(pt.x) && pcl_isfinite(pt.y)) {
             pc.push_back(pt);
           }
@@ -1023,6 +1112,12 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
       miy*=2;
       may*=2;
 #endif
+
+      int w=max-mix, h=may-miy;
+      max-=w/4;
+      mix+=w/4;
+      may-=h/4;
+      miy+=h/4;
 
       polygons_[i].img_->width  = max-mix+1;
       polygons_[i].img_->height = may-miy+1;

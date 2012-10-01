@@ -5,7 +5,7 @@
  *      Author: josh
  */
 
-//#define USE_COLOR
+#define USE_COLOR
 
 // ROS includes
 #include <ros/ros.h>

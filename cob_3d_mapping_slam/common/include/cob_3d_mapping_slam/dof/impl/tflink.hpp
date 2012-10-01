@@ -5,8 +5,18 @@ void TFLink<INPUT>::operator()(const TFLinkObj &obj, const TFLinkObj &cor_obj)
   ROS_ASSERT(obj.weight_R_==cor_obj.weight_R_);
   ROS_ASSERT(obj.weight_t_==cor_obj.weight_t_);
 
-  if(!obj.length_ || !obj.length_)
+  if(!obj.length_ || !obj.length_ || !pcl_isfinite( obj.weight_R_ ) || !pcl_isfinite( cor_obj.weight_R_ ) || !pcl_isfinite( obj.weight_t_ ) || !pcl_isfinite( cor_obj.weight_t_ ))
     return;
+
+  ROS_ASSERT(pcl_isfinite( obj.next_point_.sum() ));
+  ROS_ASSERT(pcl_isfinite( cor_obj.next_point_.sum() ));
+  ROS_ASSERT(pcl_isfinite( obj.rotation_n_.sum() ));
+  ROS_ASSERT(pcl_isfinite( cor_obj.rotation_n_.sum() ));
+
+  ROS_ASSERT(pcl_isfinite( obj.weight_R_ ));
+  ROS_ASSERT(pcl_isfinite( cor_obj.weight_R_ ));
+  ROS_ASSERT(pcl_isfinite( obj.weight_t_ ));
+  ROS_ASSERT(pcl_isfinite( cor_obj.weight_t_ ));
 
   if(!obj.plane_) {
     sum_x_ += obj.weight_R_*cor_obj.next_point_;
@@ -20,18 +30,15 @@ void TFLink<INPUT>::operator()(const TFLinkObj &obj, const TFLinkObj &cor_obj)
     variance_y_ += obj.weight_R_*obj.rotation_n_ * obj.rotation_n_.transpose() /(obj.length_*obj.length_);
   }
   else {
-    ROS_INFO("inverse");
     covariance_ -= obj.weight_R_*cor_obj.rotation_n_ * obj.rotation_n_.transpose() /(cor_obj.length_*obj.length_);
     variance_y_ -= obj.weight_R_*obj.rotation_n_ * obj.rotation_n_.transpose() /(obj.length_*obj.length_);
   }
   accumlated_weight_ += obj.weight_R_;
 
-
   translation_ += obj.weight_t_*cor_obj.translation_M_;
   var_x_ += obj.weight_t_*cor_obj.next_point_;
   var_y_ += obj.weight_t_*obj.next_point_;
   accumlated_weight_t_ += obj.weight_t_;
-
 }
 
 template<typename INPUT>
@@ -114,9 +121,24 @@ TFLink<INPUT> TFLink<INPUT>::operator+(const TFLink &o) const
 //  r.var_y_ = o.var_y_;
 //  r.translation_ = o.translation_;
 
-  r.var_x_ = o.getRotation()*(var_x_ +  translation_*getRotation()*o.getTranslation()) + getRotation()*o.var_x_+o.translation_*getTranslation();
-  r.var_y_ = var_y_ + o.var_y_;
-  r.translation_ = o.getRotation()*translation_ + o.translation_;
+
+  //TODO: wrong
+//  r.var_x_ = o.getRotation()*(var_x_ +  translation_*getRotation()*o.getTranslation()) + getRotation()*o.var_x_+o.translation_*getTranslation();
+//  r.var_y_ = var_y_ + o.var_y_;
+//  r.translation_ = o.getRotation()*translation_ + o.translation_;
+
+    r.var_x_ = var_x_ + translation_ * getRotation() * o.getTranslation();
+    r.var_y_ = o.getRotation().transpose()*var_y_;
+    r.translation_ = translation_;
+
+
+//  r.var_x_ = getRotation() * o.var_x_;// + getRotation() * o.translation_ * getTranslation();
+//  r.var_y_ = o.var_y_;
+//  r.translation_ = getRotation() * o.translation_;
+
+//      r.var_x_ = o.var_x_ + o.translation_ * o.getRotation() * getTranslation();
+//      r.var_y_ = getRotation().transpose()*o.var_y_;
+//      r.translation_ = getRotation().transpose()*o.translation_.transpose()*getRotation();
 
   //#error
   //  Vector temp = var_x_ - rot_*var_y_;
@@ -124,12 +146,26 @@ TFLink<INPUT> TFLink<INPUT>::operator+(const TFLink &o) const
 
   r.finish();
 
+  //r.tr_ = tr_ + getRotation()*o.tr_;
+  r.rot_var_= rot_var_+ o.rot_var_;
+  r.tr_var_ = tr_var_ + o.tr_var_;
+
   return r;
 }
 
 template<typename INPUT>
 void TFLink<INPUT>::operator+=(const TFLink &o)
 {
+
+#ifdef DEBUG_OUTPUT_
+  std::cout<<"+=VAR X1\n"<<var_x_<<"\n";
+  std::cout<<"+=VAR X2\n"<<o.var_x_<<"\n";
+  std::cout<<"+=VAR Y1\n"<<var_y_<<"\n";
+  std::cout<<"+=VAR Y2\n"<<o.var_y_<<"\n";
+  std::cout<<"+=VAR T1\n"<<translation_<<"\n";
+  std::cout<<"+=VAR T2\n"<<o.translation_<<"\n";
+#endif
+
   covariance_ += o.covariance_;
   variance_x_ += o.variance_x_;
   variance_y_ += o.variance_y_;
@@ -139,11 +175,12 @@ void TFLink<INPUT>::operator+=(const TFLink &o)
   translation_ += o.translation_;
   accumlated_weight_t_ += o.accumlated_weight_t_;
 
+
   finish();
 }
 
 template<typename INPUT>
-TFLink<INPUT>  TFLink<INPUT>::transpose() {
+TFLink<INPUT>  TFLink<INPUT>::transpose() const {
   TFLink<INPUT> r;
 
   r.covariance_ = covariance_.transpose();
@@ -192,17 +229,20 @@ void TFLink<INPUT>::finish() {
 
   rot_var_ = std::max(
       /*svd.singularValues().squaredNorm()<0.01f*accumlated_weight_*accumlated_weight_ || */
-      svd.singularValues()(1)*svd.singularValues()(1)<=0.0005f*svd.singularValues().squaredNorm() ? 100000. : 0.,
+      svd.singularValues()(1)*svd.singularValues()(1)<=0.00001f*svd.singularValues().squaredNorm() ? 100000. : 0.,
       //svd.singularValues().squaredNorm()<0.01f ? 100000. : 0.,
           M_PI*sqrtf((variance_y_-(rot_.transpose()*variance_x_*rot_)).squaredNorm()/variance_y_.squaredNorm()));
 
   if(!pcl_isfinite(rot_var_))
     rot_var_ = 100000;
 
+#ifdef DEBUG_OUTPUT_
+  std::cout<<"ROT\n"<<rot_<<"\n";
   std::cout<<"SING VALS\n"<<svd.singularValues()<<"\n";
     std::cout<<"ROT_DIS "<<sqrtf((variance_y_-(rot_.transpose()*variance_x_*rot_)).squaredNorm()/variance_y_.squaredNorm())<<"\n";
-//    std::cout<<"ROT1 \n"<<(variance_y_)<<"\n";
-//    std::cout<<"ROT2 \n"<<((rot_.transpose()*variance_x_*rot_))<<"\n";
+    std::cout<<"ROT1 \n"<<(variance_y_)<<"\n";
+    std::cout<<"ROT2 \n"<<((rot_.transpose()*variance_x_*rot_))<<"\n";
+#endif
 
   // ------------- TRANSLATION ------------------
 
@@ -212,11 +252,15 @@ void TFLink<INPUT>::finish() {
 
   ROS_ASSERT(pcl_isfinite(temp.sum()));
 
-  std::cout<<"rot_var. "<<tr_var_<<"\n";
+#ifdef DEBUG_OUTPUT_
+  std::cout<<"rot_var. "<<rot_var_<<"\n";
   std::cout<<"TRANSLATION MATRIX\n"<<translation_<<"\n";
-  std::cout<<"TRANSLATION VECTOR\n"<<temp<<"\n";
+  std::cout<<"TRANSLATION VECTOR1\n"<<temp<<"\n";
+  std::cout<<"TRANSLATION VECTOR2\n"<<translation_*tr_<<"\n";
   std::cout<<"det. "<<translation_.determinant()<<"\n";
   std::cout<<"should det. "<<(0.2*accumlated_weight_*accumlated_weight_)<<"\n";
+#endif
+
   if(translation_.determinant()<(TYPE)0.04*accumlated_weight_*accumlated_weight_) // rang to low
     tr_var_ += 10000;
 
@@ -235,6 +279,7 @@ template<typename INPUT>
 void TFLink<INPUT>::check() const {
   Matrix R = getRotation();
 
+#ifdef DEBUG_OUTPUT_
   std::cout<<"V1\n"<<variance_y_<<"\n";
   std::cout<<"U1\n"<<variance_x_<<"\n";
 
@@ -243,6 +288,8 @@ void TFLink<INPUT>::check() const {
 
   std::cout<<"C\n"<<(variance_y_-(R.transpose()*variance_x_*R)).norm()<<"\n";
   std::cout<<"C\n"<<(variance_x_-(R*variance_y_*R.transpose())).norm()<<"\n";
+#endif
+
 }
 
 template<typename INPUT>

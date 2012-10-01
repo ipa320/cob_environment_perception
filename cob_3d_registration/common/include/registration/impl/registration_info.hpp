@@ -67,7 +67,7 @@
 #define EVALUATION_MODE_ 0
 
 // debug mode outputs more information on console and creates pointclouds of HIRN points
-#define DEBUG_SWITCH_ 0
+#define DEBUG_SWITCH_ 1
 
 // using odometry to determine keyframes -> set to one was workaround for "standing"-check
 #define USED_ODO_ 1
@@ -207,7 +207,7 @@ bool Registration_Infobased<Point>::compute_features()
     if( info<max_info_ && info>min_info_) {
       if(getMaxDiff(pc_old, indices_pos[i])>threshold_step_)
         indices_pos2.push_back(indices_pos[i]);
-      else if(getMaxDiff2(pc, indices_pos[i], pc_old, mi)>threshold_step_)
+      if(getMaxDiff2(pc, indices_pos[i], pc_old, mi)>threshold_step_)
         indices_neg2.push_back(mi);
     }
   }
@@ -218,15 +218,28 @@ bool Registration_Infobased<Point>::compute_features()
       if(getMaxDiff(pc, indices_neg[i])>threshold_step_) {
         indices_neg2.push_back(indices_neg[i]);
       }
-      else if(getMaxDiff2(pc_old, indices_neg[i], pc, mi)>threshold_step_)
+      if(getMaxDiff2(pc_old, indices_neg[i], pc, mi)>threshold_step_)
         indices_pos2.push_back(mi);
     }
   }
 
 #if DEBUG_SWITCH_
   markers_.clear();
-  for(int i=0; i<indices_pos2.size(); i++)
-  {
+//  float mz=100000;
+//  for(int i=0; i<this->last_input2_->size(); i+=7) {
+//    markers_.push_back(this->last_input2_->points[i]);
+//    markers_.points.back().g=markers_.points.back().b=0;
+//    markers_.points.back().r=255;
+//    mz=std::min(mz,markers_.points.back().y);
+//  }
+//  ROS_INFO("min %f",mz);
+//  for(int i=0; i<this->input_org_->size(); i+=7) {
+//    markers_.push_back(this->input_org_->points[i]);
+//    markers_.points.back().g=markers_.points.back().r=0;
+//    markers_.points.back().b=255;
+//  }
+    for(int i=0; i<indices_pos2.size(); i++)
+    {
     pcl::PointXYZRGB p;
     p.x=pc_old.points[indices_pos2[i]].x;
     p.y=pc_old.points[indices_pos2[i]].y;
@@ -255,8 +268,6 @@ bool Registration_Infobased<Point>::compute_features()
 
 #if USED_ODO_
   return this->moved_;
-#elif USE_INFINITE_
-  return std::min(indices_pos2.size(), indices_neg2.size())>400;
 #else
   return std::min(indices_pos2.size(), indices_neg2.size())>200;
 #endif
@@ -370,9 +381,10 @@ bool Registration_Infobased<Point>::compute_transformation()
         else
           icp.align(result);
         T = icp.getFinalTransformation();
+
+        checkSamples(T, &bad);
       }
 
-      checkSamples(T, &bad);
       if(bad>2) {
 #if EVALUATION_MODE_
         T=T.Identity();
@@ -383,8 +395,8 @@ bool Registration_Infobased<Point>::compute_transformation()
           return false;
         T = T.Identity();
         ROS_INFO("using odometry");
-      }
 #endif
+      }
     }
 
 
@@ -396,10 +408,10 @@ bool Registration_Infobased<Point>::compute_transformation()
     T=T.Identity();
 
   this->transformation_ = this->transformation_*T;
-
   this->last_input_ = this->input_org_;
   this->odometry_last_ = this->odometry_;
   this->failed_ = 0;
+  this->moved_ = false;
 
   return true;
 }
@@ -552,28 +564,48 @@ bool Registration_Infobased<Point>::checkSamples(const Eigen::Matrix4f &T, int *
   const pcl::PointCloud<Point> &pc_old  = *this->last_input2_;
   const pcl::PointCloud<Point> &pc      = *this->input_org_;
 
+//  markers_.clear();
   //raycast result to compare
   int found=0, bad=0;
   for(int xx=0; xx<pc.width; xx+=8) {
     for(int yy=0; yy<pc.height; yy+=8) {
       int ind = getInd(xx,yy);
       if(pcl_isfinite(pc[ind].z)) {
-        Eigen::Vector4f v=T*pc[ind].getVector4fMap();
+        Eigen::Vector4f v=pc[ind].getVector4fMap();
+        v(3)=1;
+        v=T*v;
 
         if(v(2)>10.f) continue;
 
-        int x=kinect_f_*v(0)/v(2)+kinect_dx_;
-        int y=kinect_f_*v(1)/v(2)+kinect_dy_;
+        int x=round(kinect_f_*v(0)/v(2)+kinect_dx_);
+        int y=round(kinect_f_*v(1)/v(2)+kinect_dy_);
 
         if(x<0||x>=pc_old.width || y<0||y>=pc_old.height)
           continue;
 
         ++found;
-        if( std::abs(pc_old[getInd(x,y)].z-v(2))>threshold_diff_*v(2)*0.5 )
+        if( std::abs(pc_old[getInd(x,y)].z-v(2))>threshold_diff_*v(2)*v(2)*0.5 ) {
           bad++;
+//          pcl::PointXYZRGB p;
+//          p.x=pc_old[getInd(x,y)].x;
+//          p.y=pc_old[getInd(x,y)].y;
+//          p.z=pc_old[getInd(x,y)].z;
+//          p.g=p.b=0;
+//          p.r=255;
+//          markers_.points.push_back(p);
+//          p.x=v(0);
+//          p.y=v(1);
+//          p.z=v(2);
+//          p.g=p.r=0;
+//          p.b=255;
+//          markers_.points.push_back(p);
+        }
       }
     }
   }
+
+//  markers_.width=markers_.size();
+//  markers_.height=1;
 
   if(found<10)
     return false;
@@ -614,9 +646,10 @@ void Registration_Infobased<Point>::reproject()
   if(!use_odometry_ || this->kinect_f_==0)
     return;
 
-  const Eigen::Matrix4f T = (this->odometry_last_.inverse()*this->odometry_).inverse();
-  if( fabs ((T).sum ()) < 0.01 )
-    return;
+  Eigen::Matrix4f T = (this->odometry_last_*this->odometry_.inverse()).inverse();
+
+  //if( fabs ((T).sum ()) < 0.01 )
+  //  return;
 
   pcl::PointCloud<Point> pc  = *this->last_input_;
   boost::shared_ptr<pcl::PointCloud<Point> > pc_old_new(pc.makeShared());
@@ -630,7 +663,9 @@ void Registration_Infobased<Point>::reproject()
     for(int yy=0; yy<pc.height; yy++) {
       int ind = getInd(xx,yy);
       if(pcl_isfinite(pc[ind].z)) {
-        Eigen::Vector4f v=T*pc[ind].getVector4fMap();
+        Eigen::Vector4f v=pc[ind].getVector4fMap();
+        v(3)=1;
+        v=T*v;
 
         int x=round(kinect_f_*v(0)/v(2)+kinect_dx_);
         int y=round(kinect_f_*v(1)/v(2)+kinect_dy_);
@@ -641,6 +676,7 @@ void Registration_Infobased<Point>::reproject()
         (*pc_old_new)[getInd(x,y)].x = v(0);
         (*pc_old_new)[getInd(x,y)].y = v(1);
         (*pc_old_new)[getInd(x,y)].z = v(2);
+
       }
     }
   }

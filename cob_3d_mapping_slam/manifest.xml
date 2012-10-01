@@ -14,8 +14,12 @@
 	<depend package="pcl_ros" />
   	<depend package="cob_3d_mapping_msgs"/>
   	<depend package="nav_msgs"/>
+    <depend package="tf"/>
+    <depend package="tf_conversions"/>
 	
 	<depend package="dynamic_tutorials" /> <!-- voruebergehend -->
+
+    <rosdep name="nurbs++" />
 
 	<export>
 		<rosdoc config="rosdoc.yaml" />
