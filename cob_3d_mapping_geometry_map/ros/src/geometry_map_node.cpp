@@ -371,6 +371,20 @@ GeometryMapNode::publishMap()
     //map_msg.polygon_array.push_back(p);
     map_msg.shapes.push_back(s);
   }
+  for(unsigned int i=0; i<map_cylinder->size(); i++)
+  {
+    Cylinder& sm = *(map_cylinder->at(i));
+    //dumpPolygonContoursToFile(sm);
+    //			std::cout<<sm.d<<std::endl<<std::endl;
+    //cob_3d_mapping_msgs::PolygonArray p;
+    cob_3d_mapping_msgs::Shape s;
+    toROSMsg(sm, s);
+    s.header = map_msg.header;
+    //s.color.b = 1;
+    //s.color.a = 1;
+    //map_msg.polygon_array.push_back(p);
+    map_msg.shapes.push_back(s);
+  }
   map_pub_.publish(map_msg);
 }
 
