@@ -462,6 +462,7 @@ Cylinder::isMergeCandidate(const std::vector<Cylinder::Ptr>& cylinder_array,
 * \brief Merge cylinders.
 *
 * This cylinder is merged with cylinders in input array. The result is weighted,merged cylinder.
+* \param c_array Array of cylinders, cylinder object is merged with.
 */
 void
 Cylinder::merge(std::vector<Cylinder::Ptr>& c_array) 
@@ -475,18 +476,12 @@ Cylinder::merge(std::vector<Cylinder::Ptr>& c_array)
   average_cyl->GrabParams(*this);
   average_cyl->applyWeighting(c_array);
 
-  //TEMPORARY OVERRIDE ---------------------------------------------------------------
-  this->transform_from_world_to_plane = average_cyl->transform_from_world_to_plane;
-  //----------------------------------------------------------------------------------
-
+  this->compensate_offset(average_cyl);
   this->makeCyl2D();
 
   for (int i = 0; i < (int) c_array.size(); i++) 
   {
-  //TEMPORARY OVERRIDE---------------------------------------------------------------------
-    c_array[i]->transform_from_world_to_plane = average_cyl->transform_from_world_to_plane;
-   // c_array[i]->transform_from_world_to_plane = this->transform_from_world_to_plane;
-  //-----------------------------------------------------------------------------------------
+    c_array[i]->compensate_offset(average_cyl);
     c_array[i]->makeCyl2D();
     merge_cylinders.push_back(c_array[i]);
   }
@@ -497,10 +492,10 @@ Cylinder::merge(std::vector<Cylinder::Ptr>& c_array)
     Polygon::Ptr tmp_ptr= merge_cylinders[i];
     merge_polygons.push_back(tmp_ptr);
   }
-  //TEMPORARY OVERRIDE---------------------------------------------------------------------
   Polygon::Ptr average_polygon= average_cyl;
 
   this->merge_union(merge_polygons,average_polygon);
+  this->assignID(merge_polygons);
   this->GrabParams(*average_cyl);
   this->assignWeight();
   this->makeCyl3D();
@@ -685,4 +680,39 @@ void Cylinder::getArc(const Eigen::Vector3f& goal,const Eigen::Vector3f& start, 
     }
   }
 }
+
+/**
+* \brief Compensate offset
+*
+* Transformation accounting for offset in symmetry axis and x,y -direction of origin
+* \param c_ref Reference Cylinder
+*/
+void
+Cylinder::compensate_offset(Cylinder::Ptr& c_ref)
+{
+    Eigen::Vector3f n12 = c_ref->transform_from_world_to_plane.rotation()* c_ref->normal;                          
+    Eigen::Vector3f s12 = c_ref->transform_from_world_to_plane.rotation()* this->sym_axis;
+                                        
+    Eigen::Vector3f o12 = c_ref->transform_from_world_to_plane* this->origin_;
+    o12[1]=0;
+                                                      
+    Eigen::Affine3f T12;
+    n12.normalize();
+    s12.normalize();
+    pcl::getTransformationFromTwoUnitVectorsAndOrigin(s12,n12,o12,T12);
+                                                              
+    for (size_t i = 0; i < this->contours.size(); ++i) 
+    {
+        for (size_t j = 0; j < this->contours[i].size(); ++j)
+        {
+            this->contours[i][j] = this-> transform_from_world_to_plane.inverse() * T12.inverse() * transform_from_world_to_plane * this->contours[i][j];
+        }
+    }
+   this->transform_from_world_to_plane=c_ref->transform_from_world_to_plane;                                                       
+                                                           
+}
+
+
+
+    
 }//namespace

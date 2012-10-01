@@ -116,6 +116,7 @@ namespace cob_3d_mapping
     virtual void merge(std::vector<Polygon::Ptr>& poly_vec);
     void merge_union(std::vector<Polygon::Ptr>& poly_vec, Polygon::Ptr&  p_average);
     void assignWeight();
+    void assignID(const std::vector<Polygon::Ptr>& poly_vec);
     virtual void applyWeighting(const std::vector<Polygon::Ptr>& poly_vec, Polygon::Ptr& p_average);
     void getGpcStructure(const Eigen::Affine3f& external_trafo, gpc_polygon* gpc_p) const;
     void applyGpcStructure(const Eigen::Affine3f& external_trafo, const gpc_polygon* gpc_p);

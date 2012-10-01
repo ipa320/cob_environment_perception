@@ -309,6 +309,7 @@ Polygon::merge(std::vector<Polygon::Ptr>& poly_vec)
   this->applyWeighting(poly_vec,p_average);
   this->merge_union(poly_vec,p_average);
   this->assignWeight();
+  this->assignID(poly_vec);
 }
 
 void
@@ -376,6 +377,22 @@ Polygon::assignWeight()
   }
 }
 
+/**
+* \brief Assign ID to polygon
+*
+* Lowest ID of input vector is assigned to polygon.
+* \param poly_vec Vector with polygon pointers.
+*/
+void
+Polygon::assignID(const std::vector<Polygon::Ptr>& poly_vec)
+{
+   unsigned int tmp_id=poly_vec[0]->id; 
+   for(size_t i=0;i<poly_vec.size();++i)
+   {
+        if(poly_vec[i]->id<tmp_id)tmp_id=poly_vec[i]->id;
+   }
+   this->id=tmp_id;
+}
 
 void
 Polygon::applyWeighting(const std::vector<Polygon::Ptr>& poly_vec, Polygon::Ptr & p_average)
