@@ -77,7 +77,9 @@ namespace cob_3d_mapping
     typedef boost::shared_ptr<Shape> Ptr;
 
   public:
-
+    /**
+    * \brief Constructor of shape object.
+    */
     Shape()
       : id(0)
       , merged(1)
@@ -85,17 +87,20 @@ namespace cob_3d_mapping
       , color(4,1)
     { }
 
+    /**
+    * \brief Destructor of shape.
+    */
     virtual ~Shape() { }
     virtual void transform2tf(const Eigen::Affine3f& trafo)=0;
 
-    unsigned int id;
-    unsigned int merged;
-    unsigned int frame_stamp;
-    Eigen::Vector4f centroid;
-    std::vector<float> color;
+    unsigned int id;/**< ID of shape.*/
+    unsigned int merged;/**< Number of times, shape has been merged.*/
+    unsigned int frame_stamp;/**< Frame, shape was created or merged the last time.*/
+    Eigen::Vector4f centroid;/**< Cenroid of shape. */
+    std::vector<float> color;/**< Color of shape as RGB vector. */
   };
 
-  typedef boost::shared_ptr<Shape> ShapePtr;
+  typedef boost::shared_ptr<Shape> ShapePtr;/**< Boosted shared pointer to shape. */
 
 }
 
