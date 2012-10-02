@@ -17,14 +17,14 @@ class FeatureContainer : public FeatureContainerInterface
 {
 public:
   typedef typename pcl::PointCloud<FeatureType>::ConstPtr FeatureCloudConstPtr;
-//  typedef typename pcl::<FeatureType> KdTree;
-//  typedef typename pcl::search::Search<FeatureType> KdTree;
-    typedef typename pcl::search::KdTree<FeatureType> KdTree;
 
-//  typedef typename pcl::KdTree<FeatureType>::Ptr KdTreePtr;
-//  typedef typename pcl::search::Search<FeatureType>::Ptr KdTreePtr;
-    typedef typename pcl::search::KdTree<FeatureType>::Ptr KdTreePtr;
-
+#ifdef PCL_VERSION_COMPARE
+  typedef typename pcl::search::KdTree<FeatureType> KdTree;
+  typedef typename pcl::search::KdTree<FeatureType>::Ptr KdTreePtr;
+#else
+  typedef typename pcl::KdTree<FeatureType> KdTree;
+  typedef typename pcl::KdTree<FeatureType>::Ptr KdTreePtr;
+#endif
   typedef boost::function<int (const pcl::PointCloud<FeatureType> &, int, std::vector<int> &,
                                std::vector<float> &)> SearchMethod;
 
@@ -120,7 +120,11 @@ protected:
   bool build_;
   float radius2_;
   pcl::PointCloud<Point> org_in_, org_out_;
+#ifdef PCL_VERSION_COMPARE
   boost::shared_ptr<pcl::search::KdTree<Point> > tree_;
+#else
+  boost::shared_ptr<pcl::KdTree<Point> > tree_;
+#endif
 public:
 
   FeatureContainerInterface_Euclidean():
@@ -134,7 +138,11 @@ public:
     org_in_=src;
     org_out_=tgt;
 
+#ifdef PCL_VERSION_COMPARE
     tree_.reset (new pcl::search::KdTree<Point>);
+#else
+    tree_.reset (new pcl::KdTreeFLANN<Point>);
+#endif
     if(org_in_.size()>0) tree_->setInputCloud(org_in_.makeShared());
 
     build_ = hidden_build();
