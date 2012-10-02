@@ -55,9 +55,9 @@
 
 #include "rviz/plugin/type_registry.h"
 
-#include "cob_3d_mapping_demonstrator/rviz_buttons.h"
-#include "cob_3d_mapping_demonstrator/rviz_title.h"
-#include "cob_3d_mapping_demonstrator/rviz_logo.h"
+#include "cob_3d_mapping_demonstrator/wx_rviz_buttons.h"
+#include "cob_3d_mapping_demonstrator/wx_rviz_title.h"
+#include "cob_3d_mapping_demonstrator/wx_rviz_logo.h"
 
 extern "C" void rvizPluginInit(rviz::TypeRegistry* reg)
 {

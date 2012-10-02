@@ -21,7 +21,7 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include
     ${PROJECT_SOURCE_DIR}/ros/include)
 
 exec_program("rosversion -d; echo" OUTPUT_VARIABLE ROS_VERSION)
-#message("${ROS_VERSION}")
+message("${ROS_VERSION}")
 
 if(ROS_VERSION MATCHES "fuerte")
     find_package(Qt4 COMPONENTS QtCore QtGui REQUIRED)
@@ -48,7 +48,7 @@ elseif(ROS_VERSION MATCHES "electric")
     include(${wxWidgets_USE_FILE})
     include_directories( ${wxWidgets_INCLUDE_DIRS} )
 
-    rosbuild_add_library(cob_3d_mapping_demonstrator_rviz ros/src/rviz_buttons.cpp
+    rosbuild_add_library(cob_3d_mapping_demonstrator_rviz ros/src/wx_rviz_buttons.cpp
         ros/src/wx_rviz_buttons_panel.cpp
         ros/src/wx_rviz_title.cpp
         ros/src/wx_rviz_logo.cpp

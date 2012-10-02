@@ -53,7 +53,7 @@
  *
  ****************************************************************/
 
-#include "cob_3d_mapping_demonstrator/rviz_title.h"
+#include "cob_3d_mapping_demonstrator/wx_rviz_title.h"
 #include "rviz/visualization_manager.h"
 #include "rviz/window_manager_interface.h"
 
