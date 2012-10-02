@@ -124,6 +124,7 @@ Cylinder::ParamsFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud ,
   Eigen::Vector3f centroid3f ;
   centroid3f <<centroid[0] , centroid[1] , centroid[2];
   ////  transform  points to horizontal coordinate system
+  this->getTransformationFromPlaneToWorld(sym_axis,centroid3f,trafo_hor2w);
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr trans_cloud( new pcl::PointCloud<pcl::PointXYZRGB>() );
   pcl::transformPointCloud(*in_cloud,indices,*trans_cloud,trafo_hor2w.inverse());
 
@@ -146,9 +147,9 @@ Cylinder::ParamsFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud ,
   // Give as input the filtered point cloud
   seg.setInputCloud (trans_cloud);
   // Call the segmenting method
+  std::cout<<"debug 1\n";
   seg.segment(inliers,coeff);
 
-  double prob=seg.getProbability();
 
   //  origin in lcs
   Eigen::Vector3f l_origin,l_centroid;
@@ -418,6 +419,7 @@ Cylinder::getCyl2D(Cylinder& c2d)
 /**
 * \brief Check for merge candidates.
 *
+* \param poly_vec Vector of cylinders, that are checked.
 */
 void
 Cylinder::isMergeCandidate(const std::vector<Cylinder::Ptr>& cylinder_array,

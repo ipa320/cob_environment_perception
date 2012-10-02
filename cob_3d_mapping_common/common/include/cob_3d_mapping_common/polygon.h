@@ -84,10 +84,14 @@ namespace cob_3d_mapping
   class Polygon : public Shape
   {
   public:
-    typedef boost::shared_ptr<Polygon> Ptr;
-    typedef boost::shared_ptr<const Polygon> ConstPtr;
+    typedef boost::shared_ptr<Polygon> Ptr;/**< Polygon pointer. Boost shared pointer to polygon. */
+
+    typedef boost::shared_ptr<const Polygon> ConstPtr;/**< Const. Polygon pointer. Const boost shared pointer to polygon. */
 
   public:
+  /**
+  * \brief Constructor for polygon object
+  */
     Polygon()
       : normal(Eigen::Vector3f::Zero())
       , d(0.0)
@@ -121,6 +125,11 @@ namespace cob_3d_mapping
     void getGpcStructure(const Eigen::Affine3f& external_trafo, gpc_polygon* gpc_p) const;
     void applyGpcStructure(const Eigen::Affine3f& external_trafo, const gpc_polygon* gpc_p);
 
+    /**
+    * \brief Check for similar polygon parameters.
+    *
+    * Check is performed based on merge settings of polygons.
+    */
     inline bool hasSimilarParametersWith(const Polygon::Ptr& poly) const
     {
       Eigen::Vector3f d = (this->centroid - poly->centroid).head(3);
@@ -132,8 +141,6 @@ namespace cob_3d_mapping
     //#######methods for calculation#####################
 
     void computeCentroid();
-    void computeAnchor(int& index_i,int&index_);
-    void computeAnchor(const std::vector<std::vector<Eigen::Vector3f> >& in_contours,int& index_i,int&index_j);
 
     double computeArea() const;  // http://paulbourke.net/geometry/polyarea/
     double computeArea3d() const;
@@ -152,15 +159,13 @@ namespace cob_3d_mapping
     //########## member variables#################
     //needed for 32-bit systems: see http://eigen.tuxfamily.org/dox/TopicStructHavingEigenMembers.html
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-      std::vector<std::vector<Eigen::Vector3f> > contours;
-    Eigen::Vector3f normal;
+      std::vector<std::vector<Eigen::Vector3f> > contours;/**< Contours of polygon sturcure. */
+    Eigen::Vector3f normal;/**< Normal of polygons structure. */
     double d;
-    Eigen::Affine3f transform_from_world_to_plane;
-    std::vector<bool> holes;
-    double merge_weight_;
-    merge_config merge_settings_;
-
-  private:
+    Eigen::Affine3f transform_from_world_to_plane;/**< Transformation from world coordinate system to cvoordinate system on polygon. */
+    std::vector<bool> holes;/**< Bool vector indicating holes in polygon structure*/
+    double merge_weight_;/**< Merge weight of polygon - regulating its influence in merge processes.*/
+    merge_config merge_settings_;/** Merge settings - configuring assignment of weight and merge processes*/
 
   };
 }
