@@ -53,7 +53,7 @@
  *
  ****************************************************************/
 
-#include "cob_3d_mapping_demonstrator/rviz_buttons_panel.h"
+#include "cob_3d_mapping_demonstrator/wx_rviz_buttons_panel.h"
 #include <wx/sizer.h>
 
 using namespace std;

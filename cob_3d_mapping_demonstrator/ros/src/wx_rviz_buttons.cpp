@@ -17,7 +17,7 @@
  * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 04/2012
+ * Date of creation: 03/2012
  * ToDo:
  *
  *
@@ -53,10 +53,9 @@
  *
  ****************************************************************/
 
-#include "cob_3d_mapping_demonstrator/rviz_logo.h"
+#include "cob_3d_mapping_demonstrator/wx_rviz_buttons.h"
 #include "rviz/visualization_manager.h"
 #include "rviz/window_manager_interface.h"
-#include <ros/package.h>
 
 using namespace std;
 
@@ -64,20 +63,25 @@ using namespace std;
 namespace rviz
 {
 
-  RvizLogo::~RvizLogo() {
+  const int ID_BUTTON_START(101);
+  const int ID_BUTTON_STOP(102);
+  const int ID_BUTTON_RESET(103);
+  const int ID_BUTTON_CLEAR(104);
+  const int ID_BUTTON_RECOVER(105);
+
+  RvizButtons::~RvizButtons() {
 
   }
 
   /**
  Constructor
    */
-  RvizLogo::RvizLogo(const std::string& name, VisualizationManager* manager/*wxWindow *parent, const wxString& title, rviz::WindowManagerInterface * wmi */)
-  : Display( "logo", manager ),
+  RvizButtons::RvizButtons(const std::string& name, VisualizationManager* manager/*wxWindow *parent, const wxString& title, rviz::WindowManagerInterface * wmi */)
+  : Display( name, manager ),
     frame_(0)
   //: wxPanel( parent, wxID_ANY, wxDefaultPosition, wxSize(280, 180), wxTAB_TRAVERSAL, title)
   //, m_wmi( wmi )
   {
-    string path = ros::package::getPath("cob_3d_mapping_demonstrator") + "/ros/files/logo_title.jpg";
     // Create controls
     //m_button = new wxButton(this, ID_RESET_BUTTON, wxT("Reset map"));
     wxWindow* parent = 0;
@@ -89,26 +93,74 @@ namespace rviz
     }
     else
     {
-      frame_ = new wxFrame(0, wxID_ANY, wxString::FromAscii(""), wxDefaultPosition, wxDefaultSize, wxMINIMIZE_BOX | wxMAXIMIZE_BOX | wxRESIZE_BORDER | wxCAPTION | wxCLIP_CHILDREN);
+      frame_ = new wxFrame(0, wxID_ANY, wxString::FromAscii(name.c_str()), wxDefaultPosition, wxDefaultSize, wxMINIMIZE_BOX | wxMAXIMIZE_BOX | wxRESIZE_BORDER | wxCAPTION | wxCLIP_CHILDREN);
       parent = frame_;
     }
 
-    panel_ = new wxImagePanel(parent, wxString::FromAscii(path.c_str()),wxBITMAP_TYPE_JPEG);
-    //if (!pic_.LoadFile(wxT("/home/goa/git/cob_environment_perception_intern/cob_3d_mapping_demonstrator/lib/logo.jpg"),wxBITMAP_TYPE_JPEG)) ROS_ERROR("Image file not found!");
-    //logo_ = new wxStaticBitmap(panel_, wxID_ANY, pic_);
-    //wxSizer *vsizer = new wxBoxSizer(wxVERTICAL);
-    //vsizer->Add(logo_, 1, wxALIGN_CENTER);
-
-    //vsizer->SetSizeHints(panel_);
-    //panel_->SetSizerAndFit(vsizer);
-
+    panel_ = new RvizButtonsPanel(parent, wxString()/*parent, false, this*/);
+    //render_panel_->SetSize(wxSize(640, 480));
     if (wm)
     {
       wm->addPane(name, panel_);
     }
+
+    //parent_ = parent;
+
+    /*button_start_ = new wxButton(this, ID_BUTTON_START, wxT("New"),wxDefaultPosition,wxDefaultSize,wxBU_EXACTFIT);
+    button_stop_ = new wxButton(this, ID_BUTTON_STOP, wxT("Plan"),wxDefaultPosition,wxDefaultSize,wxBU_EXACTFIT);
+    button_reset_ = new wxButton(this, ID_BUTTON_RESET, wxT("Play"),wxDefaultPosition,wxDefaultSize,wxBU_EXACTFIT);
+    button_clear_ = new wxButton(this, ID_BUTTON_CLEAR, wxT("Execute"),wxDefaultPosition,wxDefaultSize,wxBU_EXACTFIT);
+    button_recover_ = new wxButton(this, ID_BUTTON_RECOVER, wxT("Reset"),wxDefaultPosition,wxDefaultSize,wxBU_EXACTFIT);*/
+
+    /*m_text_status = new wxStaticText(this, -1, wxT("status: waiting"));
+    m_text_object = new wxStaticText(this, -1, wxT("object: none"));
+    m_text_timeout = new wxStaticText(this, -1, wxT("timeout: none"));
+    m_text_dist = new wxStaticText(this, -1, wxT("closest pos.: none"));*/
+
+    /*button_start_->Enable(false);
+    button_stop_->Enable(false);
+    button_reset_->Enable(false);
+    button_clear_->Enable(false);
+    button_recover_->Enable(false);*/
+
+    //wxSizer *vsizer = new wxBoxSizer(wxVERTICAL); // top sizer
+
+
+    /*wxSizer *vsizer_top = new wxStaticBoxSizer(wxVERTICAL,this,wxT("Trajectory planning"));
+    wxSizer *hsizer_traj_top = new wxBoxSizer(wxHORIZONTAL);
+    wxSizer *hsizer_traj_mid = new wxBoxSizer(wxHORIZONTAL);
+    wxSizer *hsizer_traj_bot = new wxBoxSizer(wxHORIZONTAL);*/
+
+
+    //wxSizer *vsizer_mes = new wxStaticBoxSizer(wxVERTICAL,this,wxT("Messages"));
+
+    //wxSizer *hsizer_add = new wxStaticBoxSizer(wxHORIZONTAL,this,wxT("Additional controls"));
+
+
+    /* Trajectory planning related buttons, on top*/
+    /*vsizer->Add(button_start_, ID_BUTTON_START);
+    vsizer->Add(button_stop_, ID_BUTTON_STOP);
+    vsizer->Add(button_reset_, ID_BUTTON_RESET);
+    vsizer->Add(button_clear_, ID_BUTTON_CLEAR);
+    vsizer->Add(button_recover_, ID_BUTTON_RECOVER);*/
+
+
+    /* Status messages*/
+    /*vsizer_mes->Add(m_text_status);
+    vsizer_mes->Add(m_text_object);
+    vsizer_mes->Add(m_text_timeout);
+    vsizer_mes->Add(m_text_dist);*/
+
+
+    //vsizer->SetSizeHints(this);
+    ///*this->*/panel_->SetSizerAndFit(vsizer);
+
+    //ros::NodeHandle nh;
+    //service_start_ = nh.advertiseService("arm_nav_start",&RvizButtons::nav_start,this);
+
   }
 
-  void RvizLogo::onEnable()
+  void RvizButtons::onEnable()
   {
     if (frame_)
     {
@@ -121,7 +173,7 @@ namespace rviz
     }
   }
 
-  void RvizLogo::onDisable()
+  void RvizButtons::onDisable()
   {
     if (frame_)
     {

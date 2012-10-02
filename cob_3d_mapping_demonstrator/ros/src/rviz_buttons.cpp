@@ -53,139 +53,137 @@
  *
  ****************************************************************/
 
+#include <QPushButton>
+#include <QVBoxLayout>
+
 #include "cob_3d_mapping_demonstrator/rviz_buttons.h"
-#include "rviz/visualization_manager.h"
-#include "rviz/window_manager_interface.h"
+
 
 using namespace std;
 
 
-namespace rviz
+namespace cob_environment_perception
 {
 
-  const int ID_BUTTON_START(101);
-  const int ID_BUTTON_STOP(102);
-  const int ID_BUTTON_RESET(103);
-  const int ID_BUTTON_CLEAR(104);
-  const int ID_BUTTON_RECOVER(105);
+
+  /**
+ Constructor
+   */
+  RvizButtons::RvizButtons( QWidget* parent )
+  : rviz::Panel( parent )
+  {
+
+    QPushButton* start_button = new QPushButton("Start");
+    start_button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    QPushButton* stop_button = new QPushButton("Stop");
+    stop_button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    QPushButton* step_button = new QPushButton("Step");
+    step_button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    QPushButton* reset_button = new QPushButton("Reset");
+    reset_button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    QPushButton* clear_button = new QPushButton("Clear");
+    clear_button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+    QPushButton* recover_button = new QPushButton("Recover");
+    recover_button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
+
+    QVBoxLayout* layout = new QVBoxLayout;
+    layout->addWidget(start_button);
+    layout->addWidget(stop_button);
+    layout->addWidget(step_button);
+    layout->addWidget(reset_button);
+    layout->addWidget(clear_button);
+    layout->addWidget(recover_button);
+    setLayout( layout );
+
+    connect( start_button, SIGNAL( clicked() ), this, SLOT( onStart() ));
+    connect( stop_button, SIGNAL( clicked() ), this, SLOT( onStop() ));
+    connect( step_button, SIGNAL( clicked() ), this, SLOT( onStep() ));
+    connect( reset_button, SIGNAL( clicked() ), this, SLOT( onReset() ));
+    connect( clear_button, SIGNAL( clicked() ), this, SLOT( onClear() ));
+    connect( recover_button, SIGNAL( clicked() ), this, SLOT( onRecover() ));
+
+    action_client_ = new actionlib::SimpleActionClient<cob_script_server::ScriptAction>("cob_3d_mapping_demonstrator", true);
+  }
+
 
   RvizButtons::~RvizButtons() {
 
   }
 
-  /**
- Constructor
-   */
-  RvizButtons::RvizButtons(const std::string& name, VisualizationManager* manager/*wxWindow *parent, const wxString& title, rviz::WindowManagerInterface * wmi */)
-  : Display( name, manager ),
-    frame_(0)
-  //: wxPanel( parent, wxID_ANY, wxDefaultPosition, wxSize(280, 180), wxTAB_TRAVERSAL, title)
-  //, m_wmi( wmi )
+  void RvizButtons::onStart()
   {
-    // Create controls
-    //m_button = new wxButton(this, ID_RESET_BUTTON, wxT("Reset map"));
-    wxWindow* parent = 0;
-
-    WindowManagerInterface* wm = vis_manager_->getWindowManager();
-    if (wm)
-    {
-      parent = wm->getParentWindow();
-    }
-    else
-    {
-      frame_ = new wxFrame(0, wxID_ANY, wxString::FromAscii(name.c_str()), wxDefaultPosition, wxDefaultSize, wxMINIMIZE_BOX | wxMAXIMIZE_BOX | wxRESIZE_BORDER | wxCAPTION | wxCLIP_CHILDREN);
-      parent = frame_;
-    }
-
-    panel_ = new RvizButtonsPanel(parent, wxString()/*parent, false, this*/);
-    //render_panel_->SetSize(wxSize(640, 480));
-    if (wm)
-    {
-      wm->addPane(name, panel_);
-    }
-
-    //parent_ = parent;
-
-    /*button_start_ = new wxButton(this, ID_BUTTON_START, wxT("New"),wxDefaultPosition,wxDefaultSize,wxBU_EXACTFIT);
-    button_stop_ = new wxButton(this, ID_BUTTON_STOP, wxT("Plan"),wxDefaultPosition,wxDefaultSize,wxBU_EXACTFIT);
-    button_reset_ = new wxButton(this, ID_BUTTON_RESET, wxT("Play"),wxDefaultPosition,wxDefaultSize,wxBU_EXACTFIT);
-    button_clear_ = new wxButton(this, ID_BUTTON_CLEAR, wxT("Execute"),wxDefaultPosition,wxDefaultSize,wxBU_EXACTFIT);
-    button_recover_ = new wxButton(this, ID_BUTTON_RECOVER, wxT("Reset"),wxDefaultPosition,wxDefaultSize,wxBU_EXACTFIT);*/
-
-    /*m_text_status = new wxStaticText(this, -1, wxT("status: waiting"));
-    m_text_object = new wxStaticText(this, -1, wxT("object: none"));
-    m_text_timeout = new wxStaticText(this, -1, wxT("timeout: none"));
-    m_text_dist = new wxStaticText(this, -1, wxT("closest pos.: none"));*/
-
-    /*button_start_->Enable(false);
-    button_stop_->Enable(false);
-    button_reset_->Enable(false);
-    button_clear_->Enable(false);
-    button_recover_->Enable(false);*/
-
-    //wxSizer *vsizer = new wxBoxSizer(wxVERTICAL); // top sizer
-
-
-    /*wxSizer *vsizer_top = new wxStaticBoxSizer(wxVERTICAL,this,wxT("Trajectory planning"));
-    wxSizer *hsizer_traj_top = new wxBoxSizer(wxHORIZONTAL);
-    wxSizer *hsizer_traj_mid = new wxBoxSizer(wxHORIZONTAL);
-    wxSizer *hsizer_traj_bot = new wxBoxSizer(wxHORIZONTAL);*/
-
-
-    //wxSizer *vsizer_mes = new wxStaticBoxSizer(wxVERTICAL,this,wxT("Messages"));
-
-    //wxSizer *hsizer_add = new wxStaticBoxSizer(wxHORIZONTAL,this,wxT("Additional controls"));
-
-
-    /* Trajectory planning related buttons, on top*/
-    /*vsizer->Add(button_start_, ID_BUTTON_START);
-    vsizer->Add(button_stop_, ID_BUTTON_STOP);
-    vsizer->Add(button_reset_, ID_BUTTON_RESET);
-    vsizer->Add(button_clear_, ID_BUTTON_CLEAR);
-    vsizer->Add(button_recover_, ID_BUTTON_RECOVER);*/
-
-
-    /* Status messages*/
-    /*vsizer_mes->Add(m_text_status);
-    vsizer_mes->Add(m_text_object);
-    vsizer_mes->Add(m_text_timeout);
-    vsizer_mes->Add(m_text_dist);*/
-
-
-    //vsizer->SetSizeHints(this);
-    ///*this->*/panel_->SetSizerAndFit(vsizer);
-
-    //ros::NodeHandle nh;
-    //service_start_ = nh.advertiseService("arm_nav_start",&RvizButtons::nav_start,this);
-
+     ROS_INFO("On start");
+     cob_script_server::ScriptGoal goal;
+     goal.function_name = "start";
+     // Fill in goal here
+     action_client_->sendGoal(goal);
+     action_client_->waitForResult(ros::Duration(1.0));
+     if (action_client_->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+       ROS_INFO("Demonstrator was started");
+     ROS_INFO("Current State: %s\n", action_client_->getState().toString().c_str());
   }
 
-  void RvizButtons::onEnable()
+  void RvizButtons::onStop()
   {
-    if (frame_)
-    {
-      frame_->Show(true);
-    }
-    else
-    {
-      WindowManagerInterface* wm = vis_manager_->getWindowManager();
-      wm->showPane(panel_);
-    }
+     ROS_INFO("On stop");
+     action_client_->cancelGoal();
   }
 
-  void RvizButtons::onDisable()
+  void RvizButtons::onStep()
   {
-    if (frame_)
-    {
-      frame_->Show(false);
-    }
-    else
-    {
-      WindowManagerInterface* wm = vis_manager_->getWindowManager();
-      wm->closePane(panel_);
-    }
+     ROS_INFO("On step");
+     cob_script_server::ScriptGoal goal;
+     goal.function_name = "step";
+     // Fill in goal here
+     action_client_->sendGoal(goal);
+     action_client_->waitForResult(ros::Duration(1.0));
+     if (action_client_->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+       ROS_INFO("Demonstrator step");
+     ROS_INFO("Current State: %s\n", action_client_->getState().toString().c_str());
+  }
+
+  void RvizButtons::onReset()
+  {
+     ROS_INFO("On reset");
+     cob_script_server::ScriptGoal goal;
+     goal.function_name = "reset";
+     // Fill in goal here
+     action_client_->sendGoal(goal);
+     action_client_->waitForResult(ros::Duration(1.0));
+     if (action_client_->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+       ROS_INFO("Demonstrator was recovered");
+     ROS_INFO("Current State: %s\n", action_client_->getState().toString().c_str());
+  }
+
+  void RvizButtons::onClear()
+  {
+     ROS_INFO("On clear");
+     cob_script_server::ScriptGoal goal;
+     goal.function_name = "clear";
+     // Fill in goal here
+     action_client_->sendGoal(goal);
+     action_client_->waitForResult(ros::Duration(1.0));
+     if (action_client_->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+       ROS_INFO("Demonstrator was recovered");
+     ROS_INFO("Current State: %s\n", action_client_->getState().toString().c_str());
+  }
+
+  void RvizButtons::onRecover()
+  {
+     ROS_INFO("On recover");
+     cob_script_server::ScriptGoal goal;
+     goal.function_name = "recover";
+     // Fill in goal here
+     action_client_->sendGoal(goal);
+     action_client_->waitForResult(ros::Duration(1.0));
+     if (action_client_->getState() == actionlib::SimpleClientGoalState::SUCCEEDED)
+       ROS_INFO("Demonstrator was recovered");
+     ROS_INFO("Current State: %s\n", action_client_->getState().toString().c_str());
+
   }
 
 }
-///////////////////////////////////////////////////////////////////////////////
+
+#include <pluginlib/class_list_macros.h>
+PLUGINLIB_DECLARE_CLASS( cob_3d_mapping_demonstrator, Buttons, cob_environment_perception::RvizButtons, rviz::Panel )
 

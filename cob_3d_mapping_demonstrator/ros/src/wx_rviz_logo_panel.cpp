@@ -52,7 +52,7 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
-#include "cob_3d_mapping_demonstrator/rviz_logo_panel.h"
+#include "cob_3d_mapping_demonstrator/wx_rviz_logo_panel.h"
 
 BEGIN_EVENT_TABLE(wxImagePanel, wxPanel)
 // some useful events
