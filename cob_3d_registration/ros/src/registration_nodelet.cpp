@@ -89,7 +89,6 @@
 
 #include <vtkCommand.h>
 #include <pcl/features/feature.h>
-#include <pcl/point_traits.h>
 #ifndef GICP_ENABLE
 #include <registration/registration_icp_moments.h>
 #include <registration/registration_icp_fpfh.h>
@@ -116,6 +115,7 @@
 #include <cob_3d_mapping_msgs/TriggerMappingAction.h>
 
 #ifdef PCL_VERSION_COMPARE
+  #include <pcl/point_traits.h>
   #include <pcl/kdtree/kdtree_flann.h>
   #include <pcl/common/eigen.h>
   #include <pcl/registration/correspondence_estimation.h>
