@@ -112,7 +112,11 @@ void Keypoints_Narf<Point>::extractFeatures(const pcl::PointCloud<Point>& point_
 #ifdef GICP_ENABLE
       boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree<Point>);
 #else
+  #ifdef PCL_VERSION_COMPARE
       boost::shared_ptr<pcl::search::KdTree<Point> > tree (new pcl::search::KdTree<Point>);
+  #else
+      boost::shared_ptr<pcl::KdTree<Point> > tree (new pcl::KdTreeFLANN<Point>);
+  #endif
 #endif
       pcl::PointCloud<pcl::Normal>::Ptr normals (new pcl::PointCloud<pcl::Normal> ());
 
@@ -146,8 +150,11 @@ void Keypoints_Narf<Point>::extractFeatures(const pcl::PointCloud<Point>& point_
 
       ROS_INFO("finishing...");
 
-
+#ifdef PCL_VERSION_COMPARE
       tree.reset(new pcl::search::KdTree<Point>);
+#else
+      tree.reset(new pcl::KdTreeFLANN<Point>);
+#endif
       tree->setInputCloud(point_cloud.makeShared());
 
       narf_descriptors.clear();
