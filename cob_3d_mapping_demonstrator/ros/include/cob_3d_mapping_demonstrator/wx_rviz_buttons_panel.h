@@ -53,64 +53,45 @@
  *
  ****************************************************************/
 
-#ifndef RVIZ_BUTTONS_H
-#define RVIZ_BUTTONS_H
+#ifndef RVIZ_BUTTONS_PANEL_H
+#define RVIZ_BUTTONS_PANEL_H
 
-#include <rviz/panel.h>
+#include <wx/panel.h>
+#include <wx/button.h>
+#include <ros/ros.h>
 
 #include <cob_script_server/ScriptAction.h>
 #include <actionlib/client/simple_action_client.h>
 
-#include <ros/ros.h>
-#include <string.h>
 
-//#include "cob_3d_mapping_demonstrator/rviz_buttons_panel.h"
-
-namespace cob_environment_perception
+namespace rviz
 {
-  class RvizButtons : public rviz::Panel
-{
-    Q_OBJECT
-public:
-    /// Constructor
-    RvizButtons(QWidget* parent = 0);
-    ~RvizButtons();
+class RvizButtonsPanel : public wxPanel
+  {
+  public:
+    RvizButtonsPanel(wxWindow *parent, const wxString& title);
+    ~RvizButtonsPanel();
 
-protected Q_SLOTS:
-  void onStart();
-  void onStep();
-  void onStop();
-  void onReset();
-  void onClear();
-  void onRecover();
+    virtual void OnStart(wxCommandEvent& event);
+    virtual void OnStep(wxCommandEvent& event);
+    virtual void OnStop(wxCommandEvent& event);
+    virtual void OnReset(wxCommandEvent& event);
+    virtual void OnClear(wxCommandEvent& event);
+    virtual void OnRecover(wxCommandEvent& event);
 
-
-protected:
-    //! stored window manager interface pointer
-    //rviz::WindowManagerInterface * m_wmi;
-
-
-    /*wxStaticText *m_text_status;
-    wxStaticText *m_text_object;
-    wxStaticText *m_text_timeout;
-    wxStaticText *m_text_dist; // distance to closest pregrasp position*/
-
-    //ros::ServiceServer service_start_;
-    //ros::ServiceServer service_timeout_;
+  protected:
+    wxButton * button_start_;
+    wxButton * button_step_;
+    wxButton * button_stop_;
+    wxButton * button_reset_;
+    wxButton * button_clear_;
+    wxButton * button_recover_;
 
     actionlib::SimpleActionClient<cob_script_server::ScriptAction>* action_client_;
 
-    //wxWindow *parent_;
-    //RvizButtonsPanel* panel_;
-    //wxFrame* frame_; // temp
-
-
-
-
-//private:
-//    DECLARE_EVENT_TABLE()
-
-};
+  private:
+    DECLARE_EVENT_TABLE()
+  };
 }
 
-#endif // RVIZ_BUTTONS_H
+#endif //RVIZ_BUTTONS_PANEL_H

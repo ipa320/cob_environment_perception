@@ -56,43 +56,30 @@
 #ifndef RVIZ_TITLE_H
 #define RVIZ_TITLE_H
 
-#include <wx/wx.h>
-//#include <wx/menu.h>
-//#include <wx/dialog.h>
-//#include <wx/msgdlg.h>
+#include <rviz/panel.h>
+
+#include <ros/ros.h>
+
 #include <string.h>
-#include "rviz/display.h"
 
-namespace rviz
+class QPixmap;
+class QLabel;
+
+namespace cob_environment_perception
 {
-  class RvizTitle : public Display
-{
-public:
+  class RvizTitle : public rviz::Panel
+  {
+    Q_OBJECT
+  public:
     /// Constructor
-    RvizTitle(const std::string& name, VisualizationManager* manager/*wxWindow *parent, const wxString& title, rviz::WindowManagerInterface * wmi*/);
-    ~RvizTitle();
+    RvizTitle(QWidget* parent = 0);
+    ~RvizTitle() {};
 
-    void onEnable();
+  protected:
+    QPixmap* image_;
+    QLabel* image_label_;
 
-    void onDisable();
-
-
-    void targetFrameChanged()
-    {
-    }
-
-    void fixedFrameChanged()
-    {
-    }
-
-
-protected:
-
-    wxStaticText *title_;
-    wxPanel* panel_;
-    wxFrame* frame_; // temp
-
-};
+  };
 }
 
 #endif // RVIZ_TITLE_H

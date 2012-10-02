@@ -72,6 +72,8 @@ int main(int argc, char **argv) {
   tmp.encoding="rgb8";
   tmp.image = cv::imread(argv[1],-1);
 
+
+
   sensor_msgs::ImageConstPtr last_img_ = tmp.toImageMsg();
 
 std::ofstream img_stream;

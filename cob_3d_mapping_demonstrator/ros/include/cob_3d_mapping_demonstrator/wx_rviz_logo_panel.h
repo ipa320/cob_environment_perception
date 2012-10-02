@@ -17,7 +17,7 @@
  * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 03/2012
+ * Date of creation: 04/2012
  * ToDo:
  *
  *
@@ -53,64 +53,35 @@
  *
  ****************************************************************/
 
-#ifndef RVIZ_BUTTONS_H
-#define RVIZ_BUTTONS_H
+#include <wx/wx.h>
+#include <wx/sizer.h>
 
-#include <rviz/panel.h>
-
-#include <cob_script_server/ScriptAction.h>
-#include <actionlib/client/simple_action_client.h>
-
-#include <ros/ros.h>
-#include <string.h>
-
-//#include "cob_3d_mapping_demonstrator/rviz_buttons_panel.h"
-
-namespace cob_environment_perception
+class wxImagePanel : public wxPanel
 {
-  class RvizButtons : public rviz::Panel
-{
-    Q_OBJECT
+    wxImage image;
+    wxBitmap resized;
+    int w, h;
+
 public:
-    /// Constructor
-    RvizButtons(QWidget* parent = 0);
-    ~RvizButtons();
+    wxImagePanel(wxWindow* parent, wxString file, wxBitmapType format);
 
-protected Q_SLOTS:
-  void onStart();
-  void onStep();
-  void onStop();
-  void onReset();
-  void onClear();
-  void onRecover();
+    void paintEvent(wxPaintEvent & evt);
+    void paintNow();
+    void OnSize(wxSizeEvent& event);
+    void render(wxDC& dc);
 
+    // some useful events
+    /*
+     void mouseMoved(wxMouseEvent& event);
+     void mouseDown(wxMouseEvent& event);
+     void mouseWheelMoved(wxMouseEvent& event);
+     void mouseReleased(wxMouseEvent& event);
+     void rightClick(wxMouseEvent& event);
+     void mouseLeftWindow(wxMouseEvent& event);
+     void keyPressed(wxKeyEvent& event);
+     void keyReleased(wxKeyEvent& event);
+     */
 
-protected:
-    //! stored window manager interface pointer
-    //rviz::WindowManagerInterface * m_wmi;
-
-
-    /*wxStaticText *m_text_status;
-    wxStaticText *m_text_object;
-    wxStaticText *m_text_timeout;
-    wxStaticText *m_text_dist; // distance to closest pregrasp position*/
-
-    //ros::ServiceServer service_start_;
-    //ros::ServiceServer service_timeout_;
-
-    actionlib::SimpleActionClient<cob_script_server::ScriptAction>* action_client_;
-
-    //wxWindow *parent_;
-    //RvizButtonsPanel* panel_;
-    //wxFrame* frame_; // temp
-
-
-
-
-//private:
-//    DECLARE_EVENT_TABLE()
-
+    DECLARE_EVENT_TABLE()
 };
-}
 
-#endif // RVIZ_BUTTONS_H

@@ -36,6 +36,8 @@ rosbuild_genmsg()
 #uncomment if you have defined services
 #rosbuild_gensrv()
 
+rosbuild_add_boost_directories()
+
 rosbuild_add_library(cob_3d_segmentation
 	common/src/segmentation.cpp # Old segmentation
 	common/src/cluster_handler.cpp

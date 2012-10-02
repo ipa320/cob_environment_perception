@@ -17,7 +17,7 @@
  * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 03/2012
+ * Date of creation: 04/2012
  * ToDo:
  *
  *
@@ -53,64 +53,87 @@
  *
  ****************************************************************/
 
-#ifndef RVIZ_BUTTONS_H
-#define RVIZ_BUTTONS_H
+#include "cob_3d_mapping_demonstrator/wx_rviz_logo.h"
+#include "rviz/visualization_manager.h"
+#include "rviz/window_manager_interface.h"
+#include <ros/package.h>
 
-#include <rviz/panel.h>
+using namespace std;
 
-#include <cob_script_server/ScriptAction.h>
-#include <actionlib/client/simple_action_client.h>
 
-#include <ros/ros.h>
-#include <string.h>
-
-//#include "cob_3d_mapping_demonstrator/rviz_buttons_panel.h"
-
-namespace cob_environment_perception
+namespace rviz
 {
-  class RvizButtons : public rviz::Panel
-{
-    Q_OBJECT
-public:
-    /// Constructor
-    RvizButtons(QWidget* parent = 0);
-    ~RvizButtons();
 
-protected Q_SLOTS:
-  void onStart();
-  void onStep();
-  void onStop();
-  void onReset();
-  void onClear();
-  void onRecover();
+  RvizLogo::~RvizLogo() {
 
+  }
 
-protected:
-    //! stored window manager interface pointer
-    //rviz::WindowManagerInterface * m_wmi;
+  /**
+ Constructor
+   */
+  RvizLogo::RvizLogo(const std::string& name, VisualizationManager* manager/*wxWindow *parent, const wxString& title, rviz::WindowManagerInterface * wmi */)
+  : Display( "logo", manager ),
+    frame_(0)
+  //: wxPanel( parent, wxID_ANY, wxDefaultPosition, wxSize(280, 180), wxTAB_TRAVERSAL, title)
+  //, m_wmi( wmi )
+  {
+    string path = ros::package::getPath("cob_3d_mapping_demonstrator") + "/ros/files/logo_title.jpg";
+    // Create controls
+    //m_button = new wxButton(this, ID_RESET_BUTTON, wxT("Reset map"));
+    wxWindow* parent = 0;
 
+    WindowManagerInterface* wm = vis_manager_->getWindowManager();
+    if (wm)
+    {
+      parent = wm->getParentWindow();
+    }
+    else
+    {
+      frame_ = new wxFrame(0, wxID_ANY, wxString::FromAscii(""), wxDefaultPosition, wxDefaultSize, wxMINIMIZE_BOX | wxMAXIMIZE_BOX | wxRESIZE_BORDER | wxCAPTION | wxCLIP_CHILDREN);
+      parent = frame_;
+    }
 
-    /*wxStaticText *m_text_status;
-    wxStaticText *m_text_object;
-    wxStaticText *m_text_timeout;
-    wxStaticText *m_text_dist; // distance to closest pregrasp position*/
+    panel_ = new wxImagePanel(parent, wxString::FromAscii(path.c_str()),wxBITMAP_TYPE_JPEG);
+    //if (!pic_.LoadFile(wxT("/home/goa/git/cob_environment_perception_intern/cob_3d_mapping_demonstrator/lib/logo.jpg"),wxBITMAP_TYPE_JPEG)) ROS_ERROR("Image file not found!");
+    //logo_ = new wxStaticBitmap(panel_, wxID_ANY, pic_);
+    //wxSizer *vsizer = new wxBoxSizer(wxVERTICAL);
+    //vsizer->Add(logo_, 1, wxALIGN_CENTER);
 
-    //ros::ServiceServer service_start_;
-    //ros::ServiceServer service_timeout_;
+    //vsizer->SetSizeHints(panel_);
+    //panel_->SetSizerAndFit(vsizer);
 
-    actionlib::SimpleActionClient<cob_script_server::ScriptAction>* action_client_;
+    if (wm)
+    {
+      wm->addPane(name, panel_);
+    }
+  }
 
-    //wxWindow *parent_;
-    //RvizButtonsPanel* panel_;
-    //wxFrame* frame_; // temp
+  void RvizLogo::onEnable()
+  {
+    if (frame_)
+    {
+      frame_->Show(true);
+    }
+    else
+    {
+      WindowManagerInterface* wm = vis_manager_->getWindowManager();
+      wm->showPane(panel_);
+    }
+  }
 
+  void RvizLogo::onDisable()
+  {
+    if (frame_)
+    {
+      frame_->Show(false);
+    }
+    else
+    {
+      WindowManagerInterface* wm = vis_manager_->getWindowManager();
+      wm->closePane(panel_);
+    }
+  }
 
-
-
-//private:
-//    DECLARE_EVENT_TABLE()
-
-};
 }
+///////////////////////////////////////////////////////////////////////////////
 
-#endif // RVIZ_BUTTONS_H
