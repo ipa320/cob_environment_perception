@@ -20,24 +20,45 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include
     ${PROJECT_SOURCE_DIR}/ros/include)
 
-find_package(Qt4 COMPONENTS QtCore QtGui REQUIRED)
-include(${QT_USE_FILE})
+exec_program("rosversion -d; echo" OUTPUT_VARIABLE ROS_VERSION)
+#message("${ROS_VERSION}")
 
-## I prefer the Qt signals and slots to avoid defining "emit", "slots",
-## etc because they can conflict with boost signals, so define QT_NO_KEYWORDS here.
-add_definitions(-DQT_NO_KEYWORDS)
+if(ROS_VERSION MATCHES "fuerte")
+    find_package(Qt4 COMPONENTS QtCore QtGui REQUIRED)
+    include(${QT_USE_FILE})
 
-## Here we specify which header files need to be run through "moc",
-## Qt's meta-object compiler.
-qt4_wrap_cpp(MOC_FILES
-ros/include/cob_3d_mapping_demonstrator/rviz_title.h
-ros/include/cob_3d_mapping_demonstrator/rviz_buttons.h)
+    ## I prefer the Qt signals and slots to avoid defining "emit", "slots",
+    ## etc because they can conflict with boost signals, so define QT_NO_KEYWORDS here.
+    add_definitions(-DQT_NO_KEYWORDS)
 
-#add project executables
-rosbuild_add_library(cob_3d_mapping_demonstrator_rviz ros/src/rviz_buttons.cpp
-    ros/src/rviz_title.cpp
-    ${MOC_FILES})
-target_link_libraries(cob_3d_mapping_demonstrator_rviz  ${QT_LIBRARIES})
+    ## Here we specify which header files need to be run through "moc",
+    ## Qt's meta-object compiler.
+    qt4_wrap_cpp(MOC_FILES
+    ros/include/cob_3d_mapping_demonstrator/rviz_title.h
+    ros/include/cob_3d_mapping_demonstrator/rviz_buttons.h)
+
+    #add project executables
+    rosbuild_add_library(cob_3d_mapping_demonstrator_rviz ros/src/rviz_buttons.cpp
+        ros/src/rviz_title.cpp
+        ${MOC_FILES})
+    target_link_libraries(cob_3d_mapping_demonstrator_rviz  ${QT_LIBRARIES})
+elseif(ROS_VERSION MATCHES "electric")
+    # Add wx widgets
+    find_package(wxWidgets REQUIRED)
+    include(${wxWidgets_USE_FILE})
+    include_directories( ${wxWidgets_INCLUDE_DIRS} )
+
+    rosbuild_add_library(cob_3d_mapping_demonstrator_rviz ros/src/rviz_buttons.cpp
+        ros/src/wx_rviz_buttons_panel.cpp
+        ros/src/wx_rviz_title.cpp
+        ros/src/wx_rviz_logo.cpp
+        ros/src/wx_rviz_logo_panel.cpp
+        ros/src/wx_init.cpp)
+else()
+    message("Unsupported ROS version for visualization")
+endif()
+
+
 rosbuild_add_executable(${PROJECT_NAME} ros/src/MapDemonDriver.cpp common/src/MapDemonCtrl.cpp common/src/SerialDevice.cpp)
 rosbuild_add_executable(testClient ros/test/test_client.cpp)
 rosbuild_add_executable(testClientPOS ros/test/test_clientPOS.cpp)
