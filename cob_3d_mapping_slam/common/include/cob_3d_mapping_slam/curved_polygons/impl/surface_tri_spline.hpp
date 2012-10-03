@@ -43,11 +43,22 @@ bool SurfaceTriSpline::TRIANGLE::update(const std::vector<Eigen::Vector3f> &pts,
 
 Eigen::Vector3f SurfaceTriSpline::TRIANGLE::project2world(const Eigen::Vector2f &pt) const
 {
-  Eigen::Vector2f px = 2*pt(0)*add_cp_tp_x_ - 2*pt(0)*pt(0)*add_cp_tp_x_;
-  px(0) += pt(0)*pt(0);
+  const float wx[2]= { 2*pt(0)*(1-pt(0)), pt(0)*pt(0) }; // not 0, but 1, 2
+  const float wy[2]= { 2*pt(1)*(1-pt(1)), pt(1)*pt(1) };
+//
+//  const float wx[3]= { (1-pt(0))*(1-pt(0)), 2*pt(0)*(1-pt(0)), pt(0)*pt(0) };
+//  const float wy[3]= { (1-pt(1))*(1-pt(1)), 2*pt(1)*(1-pt(1)), pt(1)*pt(1) };
 
-  Eigen::Vector2f py = 2*pt(1)*add_cp_tp_y_ - 2*pt(1)*pt(1)*add_cp_tp_y_;
-  py(0) += pt(1)*pt(1);
+  Eigen::Vector3f tpt;
+  tpt(0) = add_cp_tp_tensor_(0)*wx[0] + wx[1];
+  tpt(1) = add_cp_tp_tensor_(1)*wy[0] + wy[1];
+  tpt(2) = add_cp_tp_tensor_(2)*(wx[0] + wy[0]);
+
+//  Eigen::Vector2f px = 2*pt(0)*add_cp_tp_x_ - 2*pt(0)*pt(0)*add_cp_tp_x_;
+//  px(0) += pt(0)*pt(0);
+//
+//  Eigen::Vector2f py = 2*pt(1)*add_cp_tp_y_ - 2*pt(1)*pt(1)*add_cp_tp_y_;
+//  py(0) += pt(1)*pt(1);
 }
 
 
