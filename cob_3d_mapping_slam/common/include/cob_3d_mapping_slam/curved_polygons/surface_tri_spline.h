@@ -27,13 +27,17 @@ namespace Slam_Surface
     struct TRIANGLE {
       size_t i_[3];
       Eigen::Vector3f add_cp_; //temporary control point, calculated from the normals
-      Eigen::Vector3f add_cp_tp_; //temporary control point, calculated from add_cp_ on plane
+      float add_cp_tp_;
+      Eigen::Matrix3f _T_; //temporary inverse matrix for barycentric coordinates
 
-      bool update(const std::vector<Eigen::Vector3f> &pts, const std::vector<Eigen::Vector3f> &normals);
-      Eigen::Vector3f project2world(const Eigen::Vector2f &pt) const;
+      bool update(const std::vector<Eigen::Vector3f> &pts, const std::vector<Eigen::Vector3f> &normals, const std::vector<Eigen::Vector2f> &uv_pts);
+      void getWeight(const Eigen::Vector3f &pt, Eigen::Matrix3f &w) const;
+      float project2height(const Eigen::Vector3f &pt) const;
+      Eigen::Vector3f project2world(const Eigen::Vector2f &pt, const std::vector<Eigen::Vector3f> &pts) const;
     };
 
     std::vector<Eigen::Vector3f> pts_, normals_;
+    std::vector<Eigen::Vector2f> uv_pts_;
     std::vector<TRIANGLE> triangles_;
 
   public:

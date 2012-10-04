@@ -7,8 +7,17 @@
 
 
 
-bool SurfaceTriSpline::TRIANGLE::update(const std::vector<Eigen::Vector3f> &pts, const std::vector<Eigen::Vector3f> &normals)
+bool SurfaceTriSpline::TRIANGLE::update(const std::vector<Eigen::Vector3f> &pts, const std::vector<Eigen::Vector3f> &normals, const std::vector<Eigen::Vector2f> &uv_pts)
 {
+  //update barycentric coordinates transformation
+  _T_.col(0) = uv_pts[i_[0]]-uv_pts[i_[2]];
+  _T_.col(1) = uv_pts[i_[1]]-uv_pts[i_[2]];
+  _T_ = _T_.inverse().eval();
+
+  //normal of tensor
+  add_cross_ = ( pts[i_[1]]-pts[i_[0]] ).cross( pts[i_[2]]-pts[i_[0]] );
+  add_cross_.normalize();
+
   //check if data are valid
   float v1,v2;
   v1 = ( pts[i_[1]]-pts[i_[0]] ).dot( normals[i_[0]] );
@@ -34,35 +43,56 @@ bool SurfaceTriSpline::TRIANGLE::update(const std::vector<Eigen::Vector3f> &pts,
   //intersection of last plane with line
   float r = (pts[i_[2]]-pts[i_[0]]-vp).dot(normals[i_[2]]) / (normals[i_[2]].dot(np));
 
-  add_cp_ = r*np + vp + pts[i_[0]];
+  add_cp_ = r*np + vp;
+  add_cp_tp_ = add_cp_.dot(add_cross_);
+  add_cp_+= pts[i_[0]];
 
-  add_cp_tp_
-
-  return pcl_isfinite(add_cp_tp_.sum());
+  return pcl_isfinite(add_cp_.sum()+_T_.sum());
 }
 
-Eigen::Vector3f SurfaceTriSpline::TRIANGLE::project2world(const Eigen::Vector2f &pt) const
+void SurfaceTriSpline::TRIANGLE::getWeight(const Eigen::Vector3f &pt, Eigen::Matrix3f &w) const
 {
-  const float wx[2]= { 2*pt(0)*(1-pt(0)), pt(0)*pt(0) }; // not 0, but 1, 2
-  const float wy[2]= { 2*pt(1)*(1-pt(1)), pt(1)*pt(1) };
-//
-//  const float wx[3]= { (1-pt(0))*(1-pt(0)), 2*pt(0)*(1-pt(0)), pt(0)*pt(0) };
-//  const float wy[3]= { (1-pt(1))*(1-pt(1)), 2*pt(1)*(1-pt(1)), pt(1)*pt(1) };
-
-  Eigen::Vector3f tpt;
-  tpt(0) = add_cp_tp_tensor_(0)*wx[0] + wx[1];
-  tpt(1) = add_cp_tp_tensor_(1)*wy[0] + wy[1];
-  tpt(2) = add_cp_tp_tensor_(2)*(wx[0] + wy[0]);
-
-//  Eigen::Vector2f px = 2*pt(0)*add_cp_tp_x_ - 2*pt(0)*pt(0)*add_cp_tp_x_;
-//  px(0) += pt(0)*pt(0);
-//
-//  Eigen::Vector2f py = 2*pt(1)*add_cp_tp_y_ - 2*pt(1)*pt(1)*add_cp_tp_y_;
-//  py(0) += pt(1)*pt(1);
+  for(int i=0; i<3; i++) {
+    w(i,0) = (pt(i)-1)*(pt(i)-1);
+    w(i,1) = (pt(i)  )*(pt(i)-1);
+    w(i,2) = (pt(i)  )*(pt(i)  );
+  }
 }
 
+float SurfaceTriSpline::TRIANGLE::project2height(const Eigen::Vector3f &pt) const
+{
+  //pt in bayrcentric coordinates
+  //weights for each side
+  Eigen::Matrix3f w;
+  getWeight(pt, w);
+
+  return add_cp_tp_tensor_*w.col(1).sum();
+}
+
+
+Eigen::Vector3f SurfaceTriSpline::TRIANGLE::project2world(const Eigen::Vector2f &pt, const std::vector<Eigen::Vector3f> &pts) const
+{
+  //1. bayrcentric coordinates 2D -> 3D
+  Eigen::Vector3f br;
+  br.head<2>() = _T_*(pt-uv_pts_[i_[2]])
+  br(2) = 1-br(0)-br(1);
+
+  return (br(0)*pts[i_[0]] + br(1)*pts[i_[1]] + br(2)*pts[i_[2]]) + project2height(br)*add_cross_;
+
+  /*
+  //inside: br(0)>=0 && br(0)<1 && br(1)>=0 && br(1)<1 && br(2)>=0 && br(2)<1
+   */
+}
 
 void SurfaceTriSpline::init(const boost::array<float, 6> &params, const float min_x, const float max_x, const float min_y, const float max_y, const float weight)
 {
 
 }
+
+/*
+ * merging rules:
+ *
+ * generate merge pts + normals of all input data (including mid pts ???)
+ * build topology with valid connections (TODO)
+ * check
+ */
