@@ -26,51 +26,66 @@ namespace Slam_Surface
 
     struct TRIANGLE {
       size_t i_[3];
-      Eigen::Vector3f add_cp_; //temporary control point, calculated from the normals
+      Eigen::Vector3f add_cp_, add_cross_; //temporary control point, calculated from the normals
       Eigen::Vector4f add_cp_tp_;
-      Eigen::Matrix3f _T_; //temporary inverse matrix for barycentric coordinates
+      Eigen::Matrix2f _T_; //temporary inverse matrix for barycentric coordinates
+
+      TRIANGLE(const size_t i1, const size_t i2, const size_t i3) {
+        i_[0] = i1;
+        i_[1] = i2;
+        i_[2] = i3;
+      }
 
       bool update(const std::vector<Eigen::Vector3f> &pts, const std::vector<Eigen::Vector3f> &normals, const std::vector<Eigen::Vector2f> &uv_pts);
       void getWeight(const Eigen::Vector3f &pt, Eigen::Matrix3f &w) const;
       void getWeightD1(const Eigen::Vector3f &pt, Eigen::Matrix3f &w) const;
       Eigen::Vector4f project2tensor(const Eigen::Vector3f &pt) const;
-      Eigen::Vector3f project2world(const Eigen::Vector2f &pt, const std::vector<Eigen::Vector3f> &pts) const;
+      Eigen::Vector3f project2world(const Eigen::Vector2f &pt, const std::vector<Eigen::Vector3f> &pts, const std::vector<Eigen::Vector2f> &uv_pts) const;
+      void transform(const Eigen::Matrix3f &rot, const Eigen::Vector3f &tr) {add_cp_=rot*add_cp_+tr; add_cross_=rot*add_cross_;}
+
+      bool isIn(const Eigen::Vector2f &pt, const std::vector<Eigen::Vector2f> &uv_pts) const;
     };
 
     std::vector<Eigen::Vector3f> pts_, normals_;
     std::vector<Eigen::Vector2f> uv_pts_;
     std::vector<TRIANGLE> triangles_;
 
+    void addTriangle(const size_t i1, const size_t i2, const size_t i3);
+    void addPoint(
+        const Eigen::Vector3f &p1, const Eigen::Vector3f &n1, const Eigen::Vector2f &uv1
+        );
+
   public:
 
     /// init with 6 parameters
     virtual void init(const boost::array<float, 6> &params, const float min_x, const float max_x, const float min_y, const float max_y, const float weight);
+    virtual void init(const PolynomialSurface *params, const float min_x, const float max_x, const float min_y, const float max_y, const float weight);
 
     /// get implementation details
     virtual int getSurfaceType() const {return 3;}
     virtual const char *getName() const {return "Triangular B-Spline";}
 
     /// find nearest point to manifold
-    virtual Eigen::Vector2f nextPoint(const Eigen::Vector3f &v) const ;
+    virtual Eigen::Vector2f nextPoint(const Eigen::Vector3f &v) const {return Eigen::Vector2f();}
 
     /// project a 2D point to 3D
     virtual Eigen::Vector3f project2world(const Eigen::Vector2f &pt) const ;
 
     /// get normal at 2D point
-    virtual Eigen::Vector3f normalAt(const Eigen::Vector2f &v) const ;
+    virtual Eigen::Vector3f normalAt(const Eigen::Vector2f &v) const  {return Eigen::Vector3f();}
 
     /// merge parameters
-    virtual float merge(const Surface &o, const float this_w, const float o_w, const SWINDOW &wind_t, const SWINDOW &wind_o);
-    virtual float _merge(SurfaceNurbs o, const float this_w, const float o_w, const SWINDOW &wind_t, const SWINDOW &wind_o);
+    virtual float merge(const Surface &o, const float this_w, const float o_w, const SWINDOW &wind_t, const SWINDOW &wind_o) {return 0;}
+    virtual float _merge(SurfaceNurbs o, const float this_w, const float o_w, const SWINDOW &wind_t, const SWINDOW &wind_o) {return 0;}
 
     /// transform basis
     virtual void transform(const Eigen::Matrix3f &rot, const Eigen::Vector3f &tr);
 
     /// check form against
-//    virtual bool fitsCurvature(const Surface &o, const float thr) const;
+    virtual bool fitsCurvature(const Surface &o, const float thr) const {return true;}
 
     /// calc approx. area
-//    virtual float area() const {return nurbs_.area(0.0001f,20);}
+    virtual float area() const {return 1;}
   };
 
 #include "impl/surface_tri_spline.hpp"
