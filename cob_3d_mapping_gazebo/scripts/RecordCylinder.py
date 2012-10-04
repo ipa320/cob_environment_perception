@@ -11,16 +11,13 @@ import time
 
 from gazebo.srv import *
 from simple_script_server import *
-#from subprocess import call
 
 import getopt
-
-
 import tf
+
 class broadcaster (object):
 
     def __init__(self,in_frame,out_frame):
-        #rospy.init_node("trafo_")
         self.br = tf.TransformBroadcaster()
         self.in_frame= in_frame
         self.out_frame = out_frame
@@ -37,7 +34,8 @@ class broadcaster (object):
                     
      
 
-
+##
+# Class to record cylinder
 class RecordCylinderScript(script):
 
     def __init__(self,num_steps,intervall):
@@ -64,9 +62,7 @@ class RecordCylinderScript(script):
         
         
         if do_tf ==True:
-           # self.tf_br = broadcaster("/head_cam3d_link","/map",)
             self.tf_br = broadcaster("/map","/odom_combined",)
-#            self.tf_br = broadcaster("/map","/head_cam3d_link")
 
         
         
@@ -434,13 +430,3 @@ if __name__ == "__main__":
         SCRIPT.RunCircle(center,radius)
         SCRIPT.PitchHead("down")
         SCRIPT.RunCircle(center,radius)
-
-        
-          
-      
-
-
-        
-
-
-

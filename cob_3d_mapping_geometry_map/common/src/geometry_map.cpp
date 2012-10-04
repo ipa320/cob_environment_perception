@@ -96,7 +96,7 @@ GeometryMap::addMapEntry(Polygon::Ptr& p_ptr)
   limits.d_thresh=d_;
   limits.angle_thresh=cos_angle_;
   //	limits.weighting_method="COMBINED";
-  limits.weighting_method="COUNTER";
+  limits.weighting_method="AREA";
   p.merge_settings_ = limits;
   p.assignWeight();
 
@@ -118,7 +118,6 @@ GeometryMap::addMapEntry(Polygon::Ptr& p_ptr)
       }
       // merge polygon with merge candidates
       p.merge(merge_candidates); // merge all new candidates into p
-      p.id = new_id_++;
       map_polygon_.push_back(p_ptr); // add p to map, candidates were dropped!
     }
     else //if polygon does not have to be merged , add new polygon
@@ -144,10 +143,10 @@ GeometryMap::addMapEntry(Polygon::Ptr& p_ptr)
 void
 GeometryMap::addMapEntry(Cylinder::Ptr& c_ptr)
 {
-  std::cout << "add cylinder" << std::endl;
   Cylinder& c = *c_ptr;
 //
 
+  c.frame_stamp = frame_counter_;
   cob_3d_mapping::merge_config  limits;
   limits.d_thresh=d_;
   limits.angle_thresh=cos_angle_;
@@ -163,10 +162,6 @@ GeometryMap::addMapEntry(Cylinder::Ptr& c_ptr)
   if (map_cylinder_.size()> 0 )
   {
     c.isMergeCandidate(map_cylinder_,limits,intersections);
-    /*if (intersections.size() > 1) {
-       std::cout<<"Intersection Size CYLINDER = "<<intersections.size()<<"\n";
-       }*/
-
     // if polygon has to be merged ...
     if(intersections.size()>0)
     {
@@ -178,47 +173,31 @@ GeometryMap::addMapEntry(Cylinder::Ptr& c_ptr)
         merge_candidates.push_back(map_cylinder_[intersections[i]]);
         map_cylinder_[intersections[i]] = map_cylinder_.back();
         map_cylinder_.pop_back();
+       }
 
-
-      }
-      // merge polygon with merge candidates
-//      c.debug_output("Pre");
       c.merge(merge_candidates);
-      c.id = new_id_;
-//      c.debug_output("Post");
       map_cylinder_.push_back(c_ptr);
-      new_id_ ++;
-
-
-      //	  std::cout<<"size +- "<< 1 -merge_candidates.size()<<std::endl;
     }
-    //	}
     //if polygon does not have to be merged , add new polygon
     else
     {
-
-
       c.computeAttributes(c.sym_axis,c.normal,c.origin_);
       c.assignWeight();
-      c.id = new_id_;
+      c.id = new_id_++;
       c.frame_stamp =frame_counter_;
-
       map_cylinder_.push_back(c_ptr);
-      new_id_++;
-      //	std::cout<<"size +1"<<std::endl;
     }
   }
-  else{
-    //std::cout<<"ADD CYLINDER----\n";
+  else
+  {
     c.computeAttributes(c.sym_axis,c.normal,c.origin_);
     c.assignWeight();
-    c.id = new_id_;
+
+    c.id = new_id_++;
     c.frame_stamp =frame_counter_;
-
     map_cylinder_.push_back(c_ptr);
-
-    new_id_++;
   }
+  
   //	if(save_to_file_) saveMap(file_path_);
 }
 
@@ -359,18 +338,31 @@ GeometryMap::cleanUp()
       ++n_dropped;
     }
   }
+
+
+
   for(int idx = map_cylinder_.size() - 1 ; idx >= 0; --idx)
   {
   bool drop_cyl=false;
       std::cout<<"merged:"<<(int)map_cylinder_[idx]->merged<<" frame ctr:"<<frame_counter_<<" frame st:"<<(int)map_cylinder_[idx]->frame_stamp<<" size:"<<(int)map_cylinder_[idx]->contours[0].size()<<"\n";
+
     if (map_cylinder_[idx]->merged <= 1 && (frame_counter_ - 2) > (int)map_cylinder_[idx]->frame_stamp)
         {
         drop_cyl=true;
         }
-    if ((int)map_cylinder_[idx]->contours[0].size()<20 && (int)map_cylinder_[idx]->merged <= 1)
+    // TODO<<<<WATCH OUT<<<<< presentation configuration - hard coded limits >>>>>>>>>>>>>>>>>>
+    if ((int)map_cylinder_[idx]->contours[0].size()<30 && (int)map_cylinder_[idx]->merged <= 1)
         {
          drop_cyl=true;
         }
+    if (map_cylinder_[idx]->r_ < 0.1 || map_cylinder_[idx]->r_>0.2)
+        {
+        drop_cyl=true;
+        } 
+   // if (map_cylinder_[idx]->sym_axis.dot(dummy)<0.80)
+   //     {
+   //     drop_cyl = true;
+   //     }
     if ( drop_cyl==true)
     {        
       map_cylinder_[idx] = map_cylinder_.back();
@@ -550,6 +542,7 @@ GeometryMap::colorizeMap()
   //coloring for cylinder
   for(unsigned int i=0; i<map_cylinder_.size(); i++)
   {
+    if(map_cylinder_[i]->color[3] == 1.0f) continue;
     if(fabs(map_cylinder_[i]->normal[0]) < 0.1 && fabs(map_cylinder_[i]->normal[1]) < 0.1) //cylinder is vertical
     {
       map_cylinder_[i]->color[0] = 0.5;
