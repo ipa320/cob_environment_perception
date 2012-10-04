@@ -44,10 +44,11 @@ bool SurfaceTriSpline::TRIANGLE::update(const std::vector<Eigen::Vector3f> &pts,
   float r = (pts[i_[2]]-pts[i_[0]]-vp).dot(normals[i_[2]]) / (normals[i_[2]].dot(np));
 
   add_cp_ = r*np + vp;
-  add_cp_tp_ = add_cp_.dot(add_cross_);
+  add_cp_tp_(0) = ;
+  add_cp_tp_(3) = add_cp_.dot(add_cross_);
   add_cp_+= pts[i_[0]];
 
-  return pcl_isfinite(add_cp_.sum()+_T_.sum());
+  return pcl_isfinite(add_cp_.sum()+_T_.sum()+add_cp_tp_.sum());
 }
 
 void SurfaceTriSpline::TRIANGLE::getWeight(const Eigen::Vector3f &pt, Eigen::Matrix3f &w) const
@@ -59,14 +60,27 @@ void SurfaceTriSpline::TRIANGLE::getWeight(const Eigen::Vector3f &pt, Eigen::Mat
   }
 }
 
-float SurfaceTriSpline::TRIANGLE::project2height(const Eigen::Vector3f &pt) const
+void SurfaceTriSpline::TRIANGLE::getWeightD1(const Eigen::Vector3f &pt, Eigen::Matrix3f &w) const
+{
+  for(int i=0; i<3; i++) {
+    w(i,0) = (pt(i)-1)*(pt(i)-1);
+    w(i,1) = (pt(i)  )*(pt(i)-1);
+    w(i,2) = (pt(i)  )*(pt(i)  );
+  }
+}
+
+Eigen::Vector4f SurfaceTriSpline::TRIANGLE::project2tensor(const Eigen::Vector3f &pt) const
 {
   //pt in bayrcentric coordinates
   //weights for each side
   Eigen::Matrix3f w;
   getWeight(pt, w);
 
-  return add_cp_tp_tensor_*w.col(1).sum();
+  Eigen::Vector4f r;
+  for(int i=0; i<3; i++)
+    r(i) = w.col(1)(i)*add_cp_tp_(i) + w.col(2)(i); //(second is 1)
+  r(3) = add_cp_tp_(3)*w.col(1).sum();
+  return r;
 }
 
 
@@ -77,7 +91,9 @@ Eigen::Vector3f SurfaceTriSpline::TRIANGLE::project2world(const Eigen::Vector2f 
   br.head<2>() = _T_*(pt-uv_pts_[i_[2]])
   br(2) = 1-br(0)-br(1);
 
-  return (br(0)*pts[i_[0]] + br(1)*pts[i_[1]] + br(2)*pts[i_[2]]) + project2height(br)*add_cross_;
+  Eigen::Vector4f t = project2tensor(br);
+
+  return (t(0)*pts[i_[0]] + t(1)*pts[i_[1]] + t(2)*pts[i_[2]]) + t(3)*add_cross_;
 
   /*
   //inside: br(0)>=0 && br(0)<1 && br(1)>=0 && br(1)<1 && br(2)>=0 && br(2)<1
