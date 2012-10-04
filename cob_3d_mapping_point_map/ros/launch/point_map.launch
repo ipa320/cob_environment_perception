@@ -14,7 +14,7 @@
   	<!-- remap from="point_cloud2" to="/cam3d/rgb/points"/-->
   	<!-- remap from="camera_info" to="/camera/depth_registered/camera_info"/-->
   	<!--remap from="point_cloud2" to="/registration/pc_aligned"/-->
-  	<remap from="point_cloud2" to="/cam3d/depth_registered/points"/>
+  	<remap from="point_cloud2" to="/cam3d/rgb/points"/>
   	<remap from="map" to="point_map/map"/>
   	<!-- remap from="point_cloud2_aligned" to="point_map/pc_aligned"/-->
   	<remap from="clear_map" to="point_map/clear_map"/>

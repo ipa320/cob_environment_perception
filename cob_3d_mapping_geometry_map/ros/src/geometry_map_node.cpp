@@ -371,6 +371,20 @@ GeometryMapNode::publishMap()
     //map_msg.polygon_array.push_back(p);
     map_msg.shapes.push_back(s);
   }
+  for(unsigned int i=0; i<map_cylinder->size(); i++)
+  {
+    Cylinder& sm = *(map_cylinder->at(i));
+    //dumpPolygonContoursToFile(sm);
+    //			std::cout<<sm.d<<std::endl<<std::endl;
+    //cob_3d_mapping_msgs::PolygonArray p;
+    cob_3d_mapping_msgs::Shape s;
+    toROSMsg(sm, s);
+    s.header = map_msg.header;
+    //s.color.b = 1;
+    //s.color.a = 1;
+    //map_msg.polygon_array.push_back(p);
+    map_msg.shapes.push_back(s);
+  }
   map_pub_.publish(map_msg);
 }
 
@@ -577,77 +591,64 @@ GeometryMapNode::publishMapMarker()
 
 void GeometryMapNode::publishPrimitives()
 {
-
+  // initialize marker of type cylinder
   visualization_msgs::Marker marker;
   marker.action = visualization_msgs::Marker::ADD;
   marker.type = visualization_msgs::Marker::CYLINDER;
   marker.lifetime = ros::Duration();
   marker.header.frame_id = map_frame_id_;
 
-
-
-  //create the marker in the table reference frame
-  //the caller is responsible for setting the pose of the marker to match
-
-
-
-  marker.color.a = 0.3;
-
-  geometry_msgs::Point pt;
-
-
-
+  // get cylinder map array
   std::vector<Cylinder::Ptr>* map_cylinder = geometry_map_.getMap_cylinder();
-
 
 
   int ctr=0;
   int t_ctr=2000;
 
-  //    std::cout<<"____________________________________________"<<std::endl;
-  //    std::cout<<"marker size: "<<map->size()<<std::endl;
   for(unsigned int i=0; i<map_cylinder->size(); i++)
   {
     Cylinder& cm = *(map_cylinder->at(i));
-
     marker.id = cm.id;
 
-    marker.color.r=1;
-    marker.color.g=0;
-    marker.color.b=0;
+    //set primitive color to color of shape
+    marker.color.r=cm.color[0];
+    marker.color.g=cm.color[1];
+    marker.color.b=cm.color[2];
+    marker.color.a = 0.8;
 
-    marker.scale.x = cm.r_ *2;
-    marker.scale.y = cm.r_ *2;
-    //std::cout<<cm.h_max_ - cm.h_min_<<"\n";
-    marker.scale.z =  (cm.h_max_ - cm.h_min_);
+    //compute orientation quaternion
 
+    Eigen::Vector3f z_axis=cm.sym_axis;
+    //Eigen::Vector3f y_axis= z_axis.unitOrthogonal();
+    Eigen::Vector3f y_axis= cm.normal;
 
     Eigen::Affine3f rot;
-    Eigen::Vector3f trans;
     float roll,pitch,yaw;
-    tf::Quaternion orientation;
 
-    rot  =cm.transform_from_world_to_plane.rotation();
-    Eigen::Vector3f euler = cm.transform_from_world_to_plane.rotation().eulerAngles(0,1,2);
-    //pcl::getEulerAngles(rot,roll,pitch,yaw);
+    pcl::getTransformationFromTwoUnitVectors(y_axis,z_axis,rot);
+    //cm.transform_from_world_to_plane.rotation().eulerAngles(0,1,2);
+    Eigen::Vector3f euler = rot.rotation().eulerAngles(0,1,2);
+    tf::Quaternion orientation= tf::createQuaternionFromRPY(euler(0),euler(1),euler(2));
 
-    // WATCH OUT!! Use primitives only for vertical cylinders - orientation is not set
-    //TODO: compute and set Orientation the right wy
-
-    //orientation= tf::createQuaternionFromRPY(roll,pitch,yaw);
-    ////std::cout<<roll<<"-"<<pitch<<"-"<<yaw<<"\n";
-
-
-    //      marker.pose.orientation.x = orientation[0];
-    //      marker.pose.orientation.y = orientation[1];
-    //      marker.pose.orientation.z = orientation[2];
-    //      marker.pose.orientation.w = orientation[3];
-
+    //set cylinder orientation
+    marker.pose.orientation.x = orientation[0];
+    marker.pose.orientation.y = orientation[1];
+    marker.pose.orientation.z = orientation[2];
+    marker.pose.orientation.w = orientation[3];
+    //set cylinder position
     marker.pose.position.x = cm.origin_[0];
     marker.pose.position.y = cm.origin_[1];
     marker.pose.position.z = cm.origin_[2];
+    // TODO<<<<WATCH OUT<<<<< presentation configuration - hard coded limits >>>>>>>>>>>>>>>>>>
+    marker.pose.position.z = cm.origin_[2]-0.03;
 
 
+    //TODO: eliminate offset in z direction
+
+    //set shape of cylinder 
+    marker.scale.x = cm.r_ *2;
+    marker.scale.y = cm.r_ *2;
+    marker.scale.z =  (cm.h_max_ - cm.h_min_);
 
 
     marker.id = t_ctr;
@@ -656,7 +657,6 @@ void GeometryMapNode::publishPrimitives()
     marker.text = ss.str();
     ctr++;
     t_ctr++;
-
 
     primitive_pub_.publish(marker);
 
