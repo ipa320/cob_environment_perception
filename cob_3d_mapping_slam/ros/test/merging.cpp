@@ -27,6 +27,8 @@
 #include <gtest/gtest.h>
 #include <unsupported/Eigen/NonLinearOptimization>
 
+#include <cob_3d_mapping_slam/curved_polygons/surface_tri_spline.h>
+
 //#define ENABLE_TEST_1
 //#define ENABLE_TEST_2
 //#define ENABLE_TEST_3
@@ -42,7 +44,8 @@
 //#define ENABLE_TEST_14
 //#define ENABLE_TEST_15
 //#define ENABLE_TEST_16
-#define ENABLE_TEST_17
+//#define ENABLE_TEST_17
+#define ENABLE_TEST_18
 
 
 struct MyFunctor
@@ -739,6 +742,56 @@ void test12()
   p2(1) = 0.7;
   //p=inst._project2world(p2);
   inst.nextPoint(p);
+}
+
+
+#ifdef ENABLE_TEST_18
+TEST(TriSplineSurface, Basics1)
+#else
+void test18()
+#endif
+{
+  boost::array<float, 6> params;
+  for(int i=0; i<6; i++)
+    params[i] = (rand()%10000-5000)/10000.f;
+  //params[1] = 0;
+  params[2] = 0;
+  //params[3] = 0;
+  params[4] = 0;
+  params[5] = 0;
+
+  Slam_Surface::PolynomialSurface poly;
+  Slam_Surface::SurfaceTriSpline inst;
+
+  poly.init(params,-10,10, -10,10, 1);
+  inst.init(&poly,-10,10, -10,10, 1);
+
+  Eigen::Vector3f p1,p2;
+  Eigen::Vector2f p3;
+
+  for(int i=0; i<4; i++) {
+    p3(0) = -10+(i&1)*20;
+    p3(1) = -10+(i&2)*10;
+
+    p1=inst.project2world(p3);
+    p2=poly.project2world(p3);
+
+    std::cout<<"got\n"<<p1<<"\n";
+    std::cout<<"should\n"<<p2<<"\n";
+
+    EXPECT_NEAR( (p1-p2).squaredNorm(), 0, 0.01f);
+  }
+
+  p3(0) = 1;
+  p3(1) = 2;
+
+  p1=inst.project2world(p3);
+  p2=poly.project2world(poly.nextPoint(p1));
+
+  std::cout<<"got\n"<<p1<<"\n";
+  std::cout<<"should\n"<<p2<<"\n";
+
+  //inst.nextPoint(p);
 }
 
 template<typename T>
