@@ -53,85 +53,53 @@
  *
  ****************************************************************/
 
+#include <QLabel>
+#include <QPixmap>
+#include <QHBoxLayout>
+#include <QDesktopWidget>
+#include <QRect>
+#include <QSize>
+#include <QApplication>
+
+#include <ros/package.h>
+
 #include "cob_3d_mapping_demonstrator/rviz_title.h"
-#include "rviz/visualization_manager.h"
-#include "rviz/window_manager_interface.h"
 
 using namespace std;
 
 
-namespace rviz
+namespace cob_environment_perception
 {
-
-  RvizTitle::~RvizTitle() {
-
-  }
 
   /**
  Constructor
    */
-  RvizTitle::RvizTitle(const std::string& name, VisualizationManager* manager/*wxWindow *parent, const wxString& title, rviz::WindowManagerInterface * wmi */)
-  : Display( "title", manager ),
-    frame_(0)
-  //: wxPanel( parent, wxID_ANY, wxDefaultPosition, wxSize(280, 180), wxTAB_TRAVERSAL, title)
-  //, m_wmi( wmi )
+  RvizTitle::RvizTitle( QWidget* parent )
+  :   rviz::Panel( parent )
   {
-    // Create controls
-    //m_button = new wxButton(this, ID_RESET_BUTTON, wxT("Reset map"));
-    wxWindow* parent = 0;
+    string path = ros::package::getPath("cob_3d_mapping_demonstrator") + "/ros/files/logo_title.jpg";
 
-    WindowManagerInterface* wm = vis_manager_->getWindowManager();
-    if (wm)
-    {
-      parent = wm->getParentWindow();
-    }
-    else
-    {
-      frame_ = new wxFrame(0, wxID_ANY, wxString::FromAscii(""), wxDefaultPosition, wxDefaultSize, wxMINIMIZE_BOX | wxMAXIMIZE_BOX | wxRESIZE_BORDER | wxCAPTION | wxCLIP_CHILDREN);
-      parent = frame_;
-    }
+    QPixmap pixmap(path.c_str());
+    //resize image if it is larger than screen size.
+    //QDesktopWidget* desktopWidget = QApplication::desktop();
+    QRect rect(0,0,1500,100);// = desktopWidget->availableGeometry();
 
-    panel_ = new wxPanel(parent, wxID_ANY, wxDefaultPosition, wxSize(280, 180), wxTAB_TRAVERSAL, wxString::FromAscii(""));
-    title_ = new wxStaticText(panel_, wxID_ANY, wxString::FromAscii("3-D Umgebungserfassung"), wxDefaultPosition, wxDefaultSize);
-    title_->SetFont(wxFont(48, wxSWISS, wxNORMAL, wxBOLD));
-    wxSizer *vsizer = new wxBoxSizer(wxVERTICAL);
-    vsizer->Add(title_, 1, wxALIGN_CENTER);
+    QSize size(rect.width() , rect.height());
+    //resize as per your requirement..
 
-    vsizer->SetSizeHints(panel_);
-    panel_->SetSizerAndFit(vsizer);
+    image_ = new QPixmap(pixmap.scaledToWidth(1500));
+    image_label_ = new QLabel();
 
-    if (wm)
-    {
-      wm->addPane(name, panel_);
-    }
-  }
+    image_label_->setScaledContents ( true );
+    image_label_->setPixmap(*image_);
 
-  void RvizTitle::onEnable()
-  {
-    if (frame_)
-    {
-      frame_->Show(true);
-    }
-    else
-    {
-      WindowManagerInterface* wm = vis_manager_->getWindowManager();
-      wm->showPane(panel_);
-    }
-  }
-
-  void RvizTitle::onDisable()
-  {
-    if (frame_)
-    {
-      frame_->Show(false);
-    }
-    else
-    {
-      WindowManagerInterface* wm = vis_manager_->getWindowManager();
-      wm->closePane(panel_);
-    }
+    QHBoxLayout* main_layout = new QHBoxLayout;
+    main_layout->addWidget(image_label_);
+    setLayout(main_layout);
   }
 
 }
-///////////////////////////////////////////////////////////////////////////////
+
+#include <pluginlib/class_list_macros.h>
+PLUGINLIB_DECLARE_CLASS( cob_3d_mapping_demonstrator, Title, cob_environment_perception::RvizTitle, rviz::Panel )
 

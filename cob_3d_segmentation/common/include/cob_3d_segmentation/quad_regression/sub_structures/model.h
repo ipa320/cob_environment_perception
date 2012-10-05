@@ -66,6 +66,7 @@
 #ifndef MODEL_H_
 #define MODEL_H_
 
+#include <ros/console.h>
 
 /**
  * Model contains data for regression calculations and parameters
