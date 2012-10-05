@@ -89,6 +89,7 @@
 
 #include <vtkCommand.h>
 #include <pcl/features/feature.h>
+#include <pcl/ros/point_traits.h>
 #ifndef GICP_ENABLE
 #include <registration/registration_icp_moments.h>
 #include <registration/registration_icp_fpfh.h>

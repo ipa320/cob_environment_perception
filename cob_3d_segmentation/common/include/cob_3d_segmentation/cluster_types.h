@@ -66,107 +66,112 @@ namespace cob_3d_segmentation
   template<typename T>
     inline T max3(const T& a, const T& b, const T& c) { return ( a > b ? std::max<T>(a,c) : std::max<T>(b,c) ); }
 
-  class DominantColor
-  {
-  private:
-    enum { HIST_SIZE = 180 }; // uint8_t limits hue to 0..255
-
-  public:
-    DominantColor() : sum_colors_(0), sum_sat_(0), sum_val_(0), hue_histogram_(HIST_SIZE,0)
-    { }
-
-    ~DominantColor() { }
-
-    void addColor(uint8_t r, uint8_t g, uint8_t b)
+    class DominantColor
     {
-      int h,s,v;
-      rgb2hsv(r,g,b,h,s,v);
-      incrBin(h);
-      sum_sat_ += s;
-      sum_val_ += v;
-      ++sum_colors_;
-    }
+      private:
+      enum { HIST_SIZE = 180 }; // uint8_t limits hue to 0..255
 
-    inline void getColor(uint8_t& r, uint8_t& g, uint8_t& b) const
-    {
-      if(!sum_colors_) { r=0; g=0; b=0; return; }
-      hsv2rgb( round(getMaxBin()*bin_size+bin_center), sum_sat_/sum_colors_, sum_val_/sum_colors_, r,g,b );
-    }
+      public:
+      DominantColor() : sum_colors_(0), sum_sat_(0), sum_val_(0), hue_histogram_(HIST_SIZE,0), sat_values_(HIST_SIZE,0)
+      { }
 
-    inline void incrBin(uint8_t h)
-    { hue_histogram_[ (size_t)(h*inv_bin_size) ] += 1; }
+      ~DominantColor() { }
 
-    inline int getMaxBin() const
-    {
-      int max_bin=0, max_size=0;
-      for(int i=0;i<HIST_SIZE;++i)
+      void addColor(uint8_t r, uint8_t g, uint8_t b)
       {
-        if (hue_histogram_[i] >= max_size)
+        int h,s,v;
+        rgb2hsv(r,g,b,h,s,v);
+        int pos = incrBin(h);
+        sat_values_[pos] += s;
+        sum_sat_ += s;
+        sum_val_ += v;
+        ++sum_colors_;
+      }
+
+      inline void getColor(uint8_t& r, uint8_t& g, uint8_t& b) const
+      {
+        if(!sum_colors_) { r=0; g=0; b=0; return; }
+        int pos = getMaxBin();
+        hsv2rgb( round(pos*bin_size+bin_center), sat_values_[pos]/hue_histogram_[pos], sum_val_/sum_colors_, r,g,b );
+      }
+
+      inline int incrBin(int h)
+      { int bin = h*inv_bin_size; hue_histogram_[bin] += 1; return bin; }
+
+      inline int getMaxBin() const
+      {
+        int max_bin=0, max_size=0;
+        for(int i=0;i<HIST_SIZE;++i)
         {
-          max_size = hue_histogram_[i];
-          max_bin = i;
+          if (hue_histogram_[i] >= max_size)
+          {
+            max_size = hue_histogram_[i];
+            max_bin = i;
+          }
+        }
+        std::cout<<"max_(bin/size): "<<max_bin<<"/"<<max_size<<std::endl;
+        return max_bin;
+      }
+
+      inline void rgb2hsv(uint8_t r, uint8_t g, uint8_t b, int& h, int& s, int& v) const
+      {
+        int rgb_min = min3(r,g,b);
+        int rgb_max = max3(r,g,b);
+        int delta = rgb_max - rgb_min;
+        v = rgb_max;
+        if (v == 0) { s = h = 0; return; }
+        s = round(float(delta) / float(v) * 100.0f);
+        v /= 2.55f;
+        float h_tmp;
+        if (s == 0) { h = 0; return; }
+        if      ((int)r == rgb_max)   h_tmp =     (float(g - b)) / (float(delta));
+        else if ((int)g == rgb_max)   h_tmp = 2.0f + (float(b - r)) / (float(delta));
+        else                          h_tmp = 4.0f + (float(r - g)) / (float(delta));
+
+        h = h_tmp * 60.0f;
+        if(h<0) h+=360;
+      }
+
+      inline void hsv2rgb(int h, int s, int v, uint8_t& r, uint8_t& g, uint8_t& b) const
+      {
+        if (s == 0) { r = g = b = v; return; }
+
+        float hh = h / 60.0f; // sector 0..5
+        int i = floor(hh);
+        float f = hh - i;
+        v = round(v*2.55f);
+        int p = v * (100 - s) * 0.01f;
+        int q = v * (100 - s * f) * 0.01f;
+        int t = v * (100 - s * (1.0f - f)) * 0.01f;
+
+        switch(i)
+        {
+        case 0:
+        { r = v; g = t; b = p; break; }
+        case 1:
+        { r = q; g = v; b = p; break; }
+        case 2:
+        { r = p; g = v; b = t; break; }
+        case 3:
+        { r = p; g = q; b = v; break; }
+        case 4:
+        { r = t; g = p; b = v; break; }
+        default:// case 5:
+        { r = v; g = p; b = q; break; }
         }
       }
-      std::cout<<"max_(bin/size): "<<max_bin<<"/"<<max_size<<std::endl; return max_bin;
-    }
 
-    inline void rgb2hsv(uint8_t r, uint8_t g, uint8_t b, int& h, int& s, int& v) const
-    {
-      int rgb_min = min3(r,g,b);
-      int rgb_max = max3(r,g,b);
-      int delta = rgb_max - rgb_min;
-      v = rgb_max;
-      if (v == 0) { s = h = 0; return; }
-      s = round(float(delta) / float(v) * 100.0f);
-      v /= 2.55f;
-      if (s == 0) { h = 0; return; }
-      if      ((int)r == rgb_max)   h =     (float(g - b)) / (float(delta));
-      else if ((int)g == rgb_max)   h = 2 + (float(b - r)) / (float(delta));
-      else                          h = 4 + (float(r - g)) / (float(delta));
+      private:
+      int sum_colors_;
+      int sum_sat_;
+      int sum_val_;
+      std::vector<int> hue_histogram_;
+      std::vector<int> sat_values_;
 
-      h *= 60.0f;
-      if(h<0) h+=360;
-    }
-
-    inline void hsv2rgb(int h, int s, int v, uint8_t& r, uint8_t& g, uint8_t& b) const
-    {
-      if (s == 0) { r = g = b = v; return; }
-
-      float hh = h / 60.0f; // sector 0..5
-      int i = floor(hh);
-      float f = hh - i;
-      v = round(v*2.55f);
-      int p = v * (100 - s) * 0.01f;
-      int q = v * (100 - s * f) * 0.01f;
-      int t = v * (100 - s * (1.0f - f)) * 0.01f;
-
-      switch(i)
-      {
-      case 0:
-      { r = v; g = t; b = p; break; }
-      case 1:
-      { r = q; g = v; b = p; break; }
-      case 2:
-      { r = p; g = v; b = t; break; }
-      case 3:
-      { r = p; g = q; b = v; break; }
-      case 4:
-      { r = t; g = p; b = v; break; }
-      default:// case 5:
-      { r = v; g = p; b = q; break; }
-      }
-    }
-
-  private:
-    int sum_colors_;
-    int sum_sat_;
-    int sum_val_;
-    std::vector<int> hue_histogram_;
-
-    static const float inv_bin_size = 1.0f / 360.0f * HIST_SIZE;
-    static const float bin_size = 360.0f / HIST_SIZE;
-    static const float bin_center = ((360.0f / HIST_SIZE) - 1.0f) * 0.5f;
-  };
+      static const float inv_bin_size = 1.0f / 360.0f * HIST_SIZE;
+      static const float bin_size = 360.0f / HIST_SIZE;
+      static const float bin_center = ((360.0f / HIST_SIZE) - 1.0f) * 0.5f;
+    };
 
 
   class ClusterBase
