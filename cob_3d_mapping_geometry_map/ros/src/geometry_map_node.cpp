@@ -383,6 +383,7 @@ GeometryMapNode::publishMap()
     //s.color.b = 1;
     //s.color.a = 1;
     //map_msg.polygon_array.push_back(p);
+    std::cout<<"cylinder pushed back....\n";
     map_msg.shapes.push_back(s);
   }
   map_pub_.publish(map_msg);
