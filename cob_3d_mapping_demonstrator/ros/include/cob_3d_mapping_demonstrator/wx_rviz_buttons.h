@@ -53,17 +53,67 @@
  *
  ****************************************************************/
 
-#include "rviz/plugin/type_registry.h"
+#ifndef RVIZ_BUTTONS_H
+#define RVIZ_BUTTONS_H
 
-#include "cob_3d_mapping_demonstrator/rviz_buttons.h"
-#include "cob_3d_mapping_demonstrator/rviz_title.h"
-#include "cob_3d_mapping_demonstrator/rviz_logo.h"
+#include <wx/wx.h>
+#include <wx/menu.h>
+//#include <wx/panel.h>
+#include <wx/dialog.h>
+#include <wx/msgdlg.h>
+//#include <wx/sizer.h>
+#include <ros/ros.h>
+#include <string.h>
+#include "rviz/display.h"
+#include "cob_3d_mapping_demonstrator/rviz_buttons_panel.h"
 
-extern "C" void rvizPluginInit(rviz::TypeRegistry* reg)
+namespace rviz
 {
-  reg->registerDisplay<rviz::RvizButtons>("RvizButtons");
-  reg->registerDisplay<rviz::RvizTitle>("RvizTitle");
-  reg->registerDisplay<rviz::RvizLogo>("RvizLogo");
+  class RvizButtons : public Display
+{
+public:
+    /// Constructor
+    RvizButtons(const std::string& name, VisualizationManager* manager/*wxWindow *parent, const wxString& title, rviz::WindowManagerInterface * wmi*/);
+    ~RvizButtons();
+
+    void onEnable();
+
+    void onDisable();
+
+
+    void targetFrameChanged()
+    {
+    }
+
+    void fixedFrameChanged()
+    {
+    }
+
+
+protected:
+    //! stored window manager interface pointer
+    //rviz::WindowManagerInterface * m_wmi;
+
+
+    /*wxStaticText *m_text_status;
+    wxStaticText *m_text_object;
+    wxStaticText *m_text_timeout;
+    wxStaticText *m_text_dist; // distance to closest pregrasp position*/
+
+    ros::ServiceServer service_start_;
+    ros::ServiceServer service_timeout_;
+
+    //wxWindow *parent_;
+    RvizButtonsPanel* panel_;
+    wxFrame* frame_; // temp
+
+
+
+
+//private:
+//    DECLARE_EVENT_TABLE()
+
+};
 }
 
-
+#endif // RVIZ_BUTTONS_H

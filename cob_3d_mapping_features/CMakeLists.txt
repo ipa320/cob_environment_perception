@@ -12,9 +12,9 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 rosbuild_init()
 
 # add dynamic reconfigure api
-rosbuild_find_ros_package(dynamic_reconfigure)
-include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
-gencfg()
+#rosbuild_find_ros_package(dynamic_reconfigure)
+#include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
+#gencfg()
 
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
@@ -33,9 +33,9 @@ rosbuild_add_boost_directories()
 #include(/opt/ros/fuerte/include/pcl-1.5)
 #include(/opt/ros/fuerte/stacks/geometry/tf/include)
 
-#find_package(Eigen REQUIRED)
-#include_directories(${EIGEN_INCLUDE_DIRS})
-#add_definitions(${EIGEN_DEFINITIONS})
+find_package(Eigen REQUIRED)
+include_directories(${EIGEN_INCLUDE_DIRS})
+add_definitions(${EIGEN_DEFINITIONS})
 find_package(OpenCV REQUIRED)
 find_package(VTK REQUIRED)
 include_directories(${VTK_INCLUDE_DIRS})
@@ -133,4 +133,4 @@ target_link_libraries(profile_ne cob_3d_mapping_features_omp cob_3d_mapping_feat
 #target_link_libraries(example ${PROJECT_NAME})
 
 # rostest
-rosbuild_add_roslaunch_check(ros/launch)
+#rosbuild_add_roslaunch_check(ros/launch)

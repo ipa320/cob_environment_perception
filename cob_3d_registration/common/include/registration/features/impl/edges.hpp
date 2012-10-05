@@ -88,10 +88,15 @@ void Feature_Edges<Point>::extractFeatures(const pcl::PointCloud<Point>& point_c
   ne.compute(*n);
 
   ROS_INFO("edges...");
-#ifdef PCL_DEPRECATED
+#ifdef GICP_ENABLE
   boost::shared_ptr<pcl::search::OrganizedNeighbor<Point> > oTree (new pcl::search::OrganizedNeighbor<Point> );
 #else
-  boost::shared_ptr<pcl::OrganizedDataIndex<Point> > oTree (new pcl::OrganizedDataIndex<Point> );
+  #ifdef PCL_VERSION_COMPARE
+    boost::shared_ptr<search::OrganizedNeighbor<Point> > oTree (new search::OrganizedNeighbor<Point> );
+  #else
+    boost::shared_ptr<pcl::OrganizedDataIndex<Point> > oTree (new pcl::OrganizedDataIndex<Point> );
+  #endif
+
 #endif
   cob_3d_mapping_features::FastEdgeEstimation3DOMP<Point, Normal, InterestPoint> ee;
   /*ee.setRadiusSearch(radius_);

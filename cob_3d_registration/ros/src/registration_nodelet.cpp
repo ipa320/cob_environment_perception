@@ -124,6 +124,7 @@
 #include <cob_3d_mapping_msgs/TriggerMappingAction.h>
 
 #ifdef PCL_VERSION_COMPARE
+  #include <pcl/point_traits.h>
   #include <pcl/kdtree/kdtree_flann.h>
   #include <pcl/common/eigen.h>
   #include <pcl/registration/correspondence_estimation.h>

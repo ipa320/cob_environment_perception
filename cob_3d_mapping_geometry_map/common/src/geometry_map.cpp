@@ -126,7 +126,6 @@ GeometryMap::addMapEntry(Polygon::Ptr& p_ptr)
       }
       // merge polygon with merge candidates
       p.merge(merge_candidates); // merge all new candidates into p
-      p.id = new_id_++;
       map_polygon_.push_back(p_ptr); // add p to map, candidates were dropped!
     }
     else //if polygon does not have to be merged , add new polygon
@@ -152,7 +151,6 @@ GeometryMap::addMapEntry(Polygon::Ptr& p_ptr)
 void
 GeometryMap::addMapEntry(Cylinder::Ptr& c_ptr)
 {
-  std::cout << "add cylinder" << std::endl;
   Cylinder& c = *c_ptr;
 //
 
@@ -172,10 +170,6 @@ GeometryMap::addMapEntry(Cylinder::Ptr& c_ptr)
   if (map_cylinder_.size()> 0 )
   {
     c.isMergeCandidate(map_cylinder_,limits,intersections);
-    /*if (intersections.size() > 1) {
-       std::cout<<"Intersection Size CYLINDER = "<<intersections.size()<<"\n";
-       }*/
-
     // if polygon has to be merged ...
     if(intersections.size()>0)
     {
@@ -187,47 +181,31 @@ GeometryMap::addMapEntry(Cylinder::Ptr& c_ptr)
         merge_candidates.push_back(map_cylinder_[intersections[i]]);
         map_cylinder_[intersections[i]] = map_cylinder_.back();
         map_cylinder_.pop_back();
+       }
 
-
-      }
-      // merge polygon with merge candidates
-//      c.debug_output("Pre");
       c.merge(merge_candidates);
-      c.id = new_id_;
-//      c.debug_output("Post");
       map_cylinder_.push_back(c_ptr);
-      new_id_ ++;
-
-
-      //	  std::cout<<"size +- "<< 1 -merge_candidates.size()<<std::endl;
     }
-    //	}
     //if polygon does not have to be merged , add new polygon
     else
     {
-
-
       c.computeAttributes(c.sym_axis,c.normal,c.origin_);
       c.assignWeight();
-      c.id = new_id_;
+      c.id = new_id_++;
       c.frame_stamp =frame_counter_;
-
       map_cylinder_.push_back(c_ptr);
-      new_id_++;
-      //	std::cout<<"size +1"<<std::endl;
     }
   }
-  else{
-    //std::cout<<"ADD CYLINDER----\n";
+  else
+  {
     c.computeAttributes(c.sym_axis,c.normal,c.origin_);
     c.assignWeight();
-    c.id = new_id_;
+
+    c.id = new_id_++;
     c.frame_stamp =frame_counter_;
-
     map_cylinder_.push_back(c_ptr);
-
-    new_id_++;
   }
+  
   //	if(save_to_file_) saveMap(file_path_);
 }
 
