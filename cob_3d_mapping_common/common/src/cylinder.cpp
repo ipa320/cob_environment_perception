@@ -349,7 +349,7 @@ void Cylinder::makeCyl3D()
 /**
 * \brief Transform 3d cylinder to 2d shape.
 *
-* Projection of cylinder onto play , by means of arclength.
+* Projection of cylinder onto plane , by means of arclength.
 */
 void Cylinder::makeCyl2D()
 {

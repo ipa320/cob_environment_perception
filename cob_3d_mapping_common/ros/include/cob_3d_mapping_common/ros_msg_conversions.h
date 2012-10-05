@@ -212,6 +212,7 @@ namespace cob_3d_mapping
     //std::cout << "d: " << p.d << std::endl << std::endl;
 
     s.id=c.id;
+    s.type = cob_3d_mapping_msgs::Shape::CYLINDER;
     s.color.r=c.color[0];
     s.color.g=c.color[1];
     s.color.b=c.color[2];
@@ -274,8 +275,6 @@ namespace cob_3d_mapping
     c.centroid[0]=s.centroid.x;
     c.centroid[1]=s.centroid.y;
     c.centroid[2]=s.centroid.z;
-
-
 
 
     //std::cout << "normal: " << p.normal(0) << "," << p.normal(1) << "," << p.normal(2) << std::endl;

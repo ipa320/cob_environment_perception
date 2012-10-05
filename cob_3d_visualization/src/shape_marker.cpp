@@ -332,74 +332,90 @@ ShapeMarker::createInteractiveMarker ()
   //  ROS_INFO("\tcreating interactive marker for shape < %d >", shape_.id);
 
   /* get normal and centroid */
-  cob_3d_mapping::Polygon p;
-  cob_3d_mapping::fromROSMsg (shape_, p);
 
   /* transform shape points to 2d and store 2d point in triangle list */
   TPPLPartition pp;
   list<TPPLPoly> polys, tri_list;
 
   Eigen::Vector3f v, normal, origin;
-  if (shape_.params.size () == 4)
+
+  switch (shape_.type)
   {
-    normal (0) = shape_.params[0];
-    normal (1) = shape_.params[1];
-    normal (2) = shape_.params[2];
-    origin (0) = shape_.centroid.x;
-    origin (1) = shape_.centroid.y;
-    origin (2) = shape_.centroid.z;
-    v = normal.unitOrthogonal ();
-
-    pcl::getTransformationFromTwoUnitVectorsAndOrigin (v, normal, origin, transformation_);
-    transformation_inv_ = transformation_.inverse ();
-  }
-
-  for (size_t i = 0; i < shape_.points.size (); i++)
-  {
-    pcl::PointCloud<pcl::PointXYZ> pc;
-    TPPLPoly poly;
-    pcl::fromROSMsg (shape_.points[i], pc);
-    poly.Init (pc.points.size ());
-    poly.SetHole (shape_.holes[i]);
-
-    for (size_t j = 0; j < pc.points.size (); j++)
+    case cob_3d_mapping_msgs::Shape::CYLINDER:
     {
-      poly[j] = msgToPoint2D (pc[j]);
+        std::cout<<"CYLINDER"<<std::endl;
+        cob_3d_mapping::Cylinder c;
+        cob_3d_mapping::fromROSMsg (shape_, c);
+        c.ParamsFromShapeMsg();
+        // make trinagulated cylinder strip
+        
     }
-    if (shape_.holes[i])
-      poly.SetOrientation (TPPL_CW);
-    else
-      poly.SetOrientation (TPPL_CCW);
+    case cob_3d_mapping_msgs::Shape::POLYGON:
+    {
+        cob_3d_mapping::Polygon p;
+        
+      if (shape_.params.size () == 4)
+      {
+        cob_3d_mapping::fromROSMsg (shape_, p);
+        normal (0) = shape_.params[0];
+        normal (1) = shape_.params[1];
+        normal (2) = shape_.params[2];
+        origin (0) = shape_.centroid.x;
+        origin (1) = shape_.centroid.y;
+        origin (2) = shape_.centroid.z;
+        v = normal.unitOrthogonal ();
 
-    polys.push_back (poly);
-  }
-  pp.Triangulate_EC (&polys, &tri_list);
+        pcl::getTransformationFromTwoUnitVectorsAndOrigin (v, normal, origin, transformation_);
+        transformation_inv_ = transformation_.inverse ();
+      }
 
-  /* create interactive marker for *this shape */
-  stringstream ss;
-  ss << shape_.id ;
-  marker_.name = ss.str ();
-  marker_.header = shape_.header;
-  marker_.header.stamp = ros::Time::now() ;
+      for (size_t i = 0; i < shape_.points.size (); i++)
+      {
+        pcl::PointCloud<pcl::PointXYZ> pc;
+        TPPLPoly poly;
+        pcl::fromROSMsg (shape_.points[i], pc);
+        poly.Init (pc.points.size ());
+        poly.SetHole (shape_.holes[i]);
 
-  ss.str ("");
-  im_ctrl.always_visible = true;
-  ss << "shape_" << shape_.id << "_control";
-  im_ctrl.name = ss.str ();
-  im_ctrl.description = "shape_markers";
-  im_ctrl.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
+        for (size_t j = 0; j < pc.points.size (); j++)
+        {
+          poly[j] = msgToPoint2D (pc[j]);
+        }
+        if (shape_.holes[i])
+          poly.SetOrientation (TPPL_CW);
+        else
+          poly.SetOrientation (TPPL_CCW);
+
+        polys.push_back (poly);
+      }
+      pp.Triangulate_EC (&polys, &tri_list);
+
+      /* create interactive marker for *this shape */
+      stringstream ss;
+      ss << shape_.id ;
+      marker_.name = ss.str ();
+      marker_.header = shape_.header;
+      marker_.header.stamp = ros::Time::now() ;
+
+      ss.str ("");
+      im_ctrl.always_visible = true;
+      ss << "shape_" << shape_.id << "_control";
+      im_ctrl.name = ss.str ();
+      im_ctrl.description = "shape_markers";
+      im_ctrl.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
 
 
-  /* create marker */
-  createMarker (tri_list, im_ctrl);
+      /* create marker */
+      createMarker (tri_list, im_ctrl);
 
 
-  marker_.controls.push_back (im_ctrl);
-  im_server_->insert (marker_ );
-  /* create menu for *this shape */
-  im_server_ ->applyChanges() ;
-  menu_handler_.apply (*im_server_, marker_.name);
-
+      marker_.controls.push_back (im_ctrl);
+      im_server_->insert (marker_ );
+      /* create menu for *this shape */
+      im_server_ ->applyChanges() ;
+      menu_handler_.apply (*im_server_, marker_.name);
+        }//Polygon
+    }//switch
 }
 
 
