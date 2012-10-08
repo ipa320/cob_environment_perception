@@ -277,12 +277,40 @@ ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::In
 
     //draw each triangle
     marker.points.resize (it->GetNumPoints ());
-    for (long i = 0; i < it->GetNumPoints (); i++)
+    switch(shape_.type)
     {
-      pt = it->GetPoint (i);
-      marker.points[i].x = pt.x;
-      marker.points[i].y = pt.y;
-      marker.points[i].z = 0;
+        case(cob_3d_mapping_msgs::Shape::POLYGON):
+        {
+            for (long i = 0; i < it->GetNumPoints (); i++)
+            {
+              pt = it->GetPoint (i);
+              marker.points[i].x = pt.x;
+              marker.points[i].y = pt.y;
+              marker.points[i].z = 0;
+            }
+        }
+        case(cob_3d_mapping_msgs::Shape::CYLINDER):
+        {
+            break;
+            for (long i = 0; i < it->GetNumPoints (); i++)
+            {
+              pt = it->GetPoint(i);
+              
+              //apply rerolling of cylinder analogous to cylinder class
+              double r=shape_.params[9];
+              double alpha=pt.x/r;
+
+              //marker.points[i].x = r*sin(-alpha);
+              //marker.points[i].y = pt.y;
+              //marker.points[i].z = r*cos(-alpha);
+              marker.points[i].x = pt.x;
+              marker.points[i].y = pt.y;
+              marker.points[i].z = 0;
+              //TODO: Visualization this way not possible, polygons have different orientations in 3
+              // Triangle list cannot handle this
+            }
+        }
+
     }
     im_ctrl.markers.push_back (marker);
   }
@@ -304,6 +332,7 @@ ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::In
  * @brief Create menu entries for each shape
  *
  * @param point 3D point to be transformed
+
  * @param transformation transformation matrix for this shape
  *
  * @return return transformed 2D TPPLPoint
@@ -343,12 +372,33 @@ ShapeMarker::createInteractiveMarker ()
   {
     case cob_3d_mapping_msgs::Shape::CYLINDER:
     {
-        std::cout<<"CYLINDER"<<std::endl;
+        break;
         cob_3d_mapping::Cylinder c;
         cob_3d_mapping::fromROSMsg (shape_, c);
         c.ParamsFromShapeMsg();
         // make trinagulated cylinder strip
+        //transform cylinder in local coordinate system
+        c.transform2tf(c.transform_from_world_to_plane);
+        c.makeCyl2D();
+        //TODO: WATCH OUT NO HANDLING FOR MULTY CONTOUR CYLINDERS AND HOLES
+        TPPLPoly poly;
+        TPPLPoint pt;
+        poly.Init(c.contours[0].size());
         
+
+        for(size_t i;i<c.contours[0].size();++i){
+            
+            pt.x=c.contours[0][i][0];
+            pt.y=c.contours[0][i][1];
+
+            poly[i]=pt;
+            poly.SetOrientation (TPPL_CCW);
+
+        }
+        polys.push_back(poly);
+
+        transformation_inv_ = c.transform_from_world_to_plane.inverse();
+
     }
     case cob_3d_mapping_msgs::Shape::POLYGON:
     {
@@ -388,35 +438,38 @@ ShapeMarker::createInteractiveMarker ()
 
         polys.push_back (poly);
       }
-      pp.Triangulate_EC (&polys, &tri_list);
 
-      /* create interactive marker for *this shape */
-      stringstream ss;
-      ss << shape_.id ;
-      marker_.name = ss.str ();
-      marker_.header = shape_.header;
-      marker_.header.stamp = ros::Time::now() ;
-
-      ss.str ("");
-      im_ctrl.always_visible = true;
-      ss << "shape_" << shape_.id << "_control";
-      im_ctrl.name = ss.str ();
-      im_ctrl.description = "shape_markers";
-      im_ctrl.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
-
-
-      /* create marker */
-      createMarker (tri_list, im_ctrl);
-
-
-      marker_.controls.push_back (im_ctrl);
-      im_server_->insert (marker_ );
-      /* create menu for *this shape */
-      im_server_ ->applyChanges() ;
-      menu_handler_.apply (*im_server_, marker_.name);
         }//Polygon
     }//switch
+      pp.Triangulate_EC (&polys, &tri_list);
+
+    /* create interactive marker for *this shape */
+    stringstream ss;
+    ss << shape_.id ;
+    marker_.name = ss.str ();
+    marker_.header = shape_.header;
+    marker_.header.stamp = ros::Time::now() ;
+
+    ss.str ("");
+    im_ctrl.always_visible = true;
+    ss << "shape_" << shape_.id << "_control";
+    im_ctrl.name = ss.str ();
+    im_ctrl.description = "shape_markers";
+    im_ctrl.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
+
+
+    /* create marker */
+
+    createMarker (tri_list, im_ctrl);
+
+
+    marker_.controls.push_back (im_ctrl);
+    im_server_->insert (marker_ );
+    /* create menu for *this shape */
+    im_server_ ->applyChanges() ;
+    menu_handler_.apply (*im_server_, marker_.name);
 }
+
 
 
 /**
@@ -714,6 +767,7 @@ void ShapeMarker::displayContour(){
   cob_3d_mapping::fromROSMsg (shape_, p);
 
   visualization_msgs::InteractiveMarker imarker;
+  visualization_msgs::InteractiveMarkerControl im_ctrl_ ;
   for(unsigned int i=0; i<p.contours.size(); i++)
   {
     marker.id = ctr ;
@@ -729,11 +783,12 @@ void ShapeMarker::displayContour(){
     marker.points[p.contours[i].size()].x = p.contours[i][0](0);
     marker.points[p.contours[i].size()].y = p.contours[i][0](1);
     marker.points[p.contours[i].size()].z = p.contours[i][0](2);
+    im_ctrl_.markers.push_back(marker);
+
   }
 
   // Interactive Marker for contours
 
-  visualization_msgs::InteractiveMarkerControl im_ctrl_ ;
   im_ctrl_.always_visible = true ;
   im_ctrl_.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
 
@@ -741,7 +796,6 @@ void ShapeMarker::displayContour(){
   imarker.name = ss.str() ;
 
   imarker.header  = shape_.header ;
-  im_ctrl_.markers.push_back(marker);
   imarker.controls.push_back(im_ctrl_);
   im_server_->insert (imarker);
 

@@ -124,6 +124,7 @@ public:
   void makeCyl2D();
   void makeCyl3D();
   void getCyl2D(Cylinder& c2d);
+  void getPt3D(Eigen::Vector3f& pt2d,Eigen::Vector3f& pt3d);
 
   //################## methods for merging############################
   virtual void isMergeCandidate(const std::vector<Cylinder::Ptr >& cylinder_array,const merge_config& limits,std::vector<int>& intersections);
