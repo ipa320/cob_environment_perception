@@ -147,7 +147,6 @@ Cylinder::ParamsFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud ,
   // Give as input the filtered point cloud
   seg.setInputCloud (trans_cloud);
   // Call the segmenting method
-  std::cout<<"debug 1\n";
   seg.segment(inliers,coeff);
 
 
