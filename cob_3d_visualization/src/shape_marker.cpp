@@ -58,6 +58,41 @@
 #include <cob_3d_visualization/shape_marker.h>
 
 
+
+void triangle_refinement(list<TPPLPoly>& i_list,list<TPPLPoly>& o_list){
+  TPPLPoly tri_new,tri_temp;
+  TPPLPoint ptM,ptM01,ptM12,ptM20;
+  for (std::list<TPPLPoly>::iterator it = i_list.begin (); it != i_list.end (); it++){
+              int n[4]={0,1,2,0};
+
+              ptM.x=(it->GetPoint(n[0]).x,it->GetPoint(n[1]).x,it->GetPoint(n[2]).x)/3;
+              ptM.y=(it->GetPoint(n[0]).y,it->GetPoint(n[1]).y,it->GetPoint(n[2]).y)/3;
+
+              ptM01.x=(it->GetPoint(n[0]).x,it->GetPoint(n[1]).x)/2;
+              ptM01.y=(it->GetPoint(n[0]).y,it->GetPoint(n[1]).y)/2;
+
+              ptM12.x=(it->GetPoint(n[1]).x,it->GetPoint(n[2]).x)/2;
+              ptM12.y=(it->GetPoint(n[1]).y,it->GetPoint(n[2]).y)/2;
+
+              ptM20.x=(it->GetPoint(n[2]).x,it->GetPoint(n[3]).x)/2;
+              ptM20.y=(it->GetPoint(n[2]).y,it->GetPoint(n[3]).y)/2;
+              tri_temp.Triangle(ptM01,ptM12,ptM20);
+
+        //for every old triangle 6! new triangles are created
+        for (long i = 0; i < it->GetNumPoints (); i++){
+             tri_new.Triangle(tri_temp.GetPoint(n[i]),ptM,it->GetPoint(n[i])); 
+             //push new triangle in trinagle list
+             o_list.push_back(tri_new);
+             tri_new.Triangle(tri_temp.GetPoint(n[i]),it->GetPoint(n[i+1]),ptM); 
+             //push new triangle in trinagle list
+             o_list.push_back(tri_new);
+        }
+  }
+
+
+}
+
+
 void ShapeMarker::getShape (cob_3d_mapping_msgs::Shape& shape) {
   shape_ = shape ;
 }
@@ -291,21 +326,26 @@ ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::In
         }
         case(cob_3d_mapping_msgs::Shape::CYLINDER):
         {
-            break;
             for (long i = 0; i < it->GetNumPoints (); i++)
             {
               pt = it->GetPoint(i);
               
               //apply rerolling of cylinder analogous to cylinder class
               double r=shape_.params[9];
+              if(r<0.001 ||r>2){
+                  break;
+              }
               double alpha=pt.x/r;
+              
 
-              //marker.points[i].x = r*sin(-alpha);
-              //marker.points[i].y = pt.y;
-              //marker.points[i].z = r*cos(-alpha);
-              marker.points[i].x = pt.x;
+            //break;// this section causes rviz to crash
+              marker.points[i].x = r*sin(-alpha);
               marker.points[i].y = pt.y;
-              marker.points[i].z = 0;
+              marker.points[i].z = r*cos(-alpha);
+
+              //marker.points[i].x = pt.x;
+              //marker.points[i].y = pt.y;
+              //marker.points[i].z = 0;
               //TODO: Visualization this way not possible, polygons have different orientations in 3
               // Triangle list cannot handle this
             }
@@ -372,32 +412,47 @@ ShapeMarker::createInteractiveMarker ()
   {
     case cob_3d_mapping_msgs::Shape::CYLINDER:
     {
-        break;
         cob_3d_mapping::Cylinder c;
         cob_3d_mapping::fromROSMsg (shape_, c);
         c.ParamsFromShapeMsg();
         // make trinagulated cylinder strip
         //transform cylinder in local coordinate system
-        c.transform2tf(c.transform_from_world_to_plane);
         c.makeCyl2D();
+        c.TransformContours(c.transform_from_world_to_plane);
+        //c.transform2tf(c.transform_from_world_to_plane);
         //TODO: WATCH OUT NO HANDLING FOR MULTY CONTOUR CYLINDERS AND HOLES
         TPPLPoly poly;
         TPPLPoint pt;
-        poly.Init(c.contours[0].size());
-        
 
-        for(size_t i;i<c.contours[0].size();++i){
+
+        for(size_t j=0;j<c.contours.size();j++){
             
-            pt.x=c.contours[0][i][0];
-            pt.y=c.contours[0][i][1];
+        poly.Init(c.contours[j].size());
+        poly.SetHole (shape_.holes[j]);
+
+            
+        for(size_t i=0;i<c.contours[j].size();++i){
+              
+            pt.x=c.contours[j][i][0];
+            pt.y=c.contours[j][i][1];
 
             poly[i]=pt;
-            poly.SetOrientation (TPPL_CCW);
 
         }
+        if (shape_.holes[j])
+          poly.SetOrientation (TPPL_CW);
+        else
+          poly.SetOrientation (TPPL_CCW);
         polys.push_back(poly);
+        }
+        // triangualtion itno monotone triangles
+        pp.Triangulate_EC (&polys, &tri_list);
 
         transformation_inv_ = c.transform_from_world_to_plane.inverse();
+       //// optional refinement step
+       // list<TPPLPoly> refined_tri_list;
+       // triangle_refinement(tri_list,refined_tri_list);
+       // tri_list=refined_tri_list;
 
     }
     case cob_3d_mapping_msgs::Shape::POLYGON:
@@ -438,10 +493,10 @@ ShapeMarker::createInteractiveMarker ()
 
         polys.push_back (poly);
       }
+      pp.Triangulate_EC (&polys, &tri_list);
 
         }//Polygon
     }//switch
-      pp.Triangulate_EC (&polys, &tri_list);
 
     /* create interactive marker for *this shape */
     stringstream ss;
