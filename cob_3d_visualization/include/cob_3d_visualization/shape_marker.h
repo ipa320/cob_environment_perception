@@ -124,7 +124,7 @@ class ShapeMarker
     unsigned int getID() ;
 
     //    std::vector<int> getInteractedShapesNumber();
-
+    void triangle_refinement(list<TPPLPoly>& i_list,list<TPPLPoly>& o_list);
 
   protected:
     visualization_msgs::InteractiveMarker marker_ ;
