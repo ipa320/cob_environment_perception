@@ -8,89 +8,94 @@
 #include <cob_3d_visualization/table_marker.h>
 
 
-
+/**
+ * @brief Publish interactive markers for a table detected by table_extractiion node using interactive marker server
+ */
 void TableMarker::createInteractiveMarkerForTable ()
 {
-//  ctr_ ++;
+  float offset(0.1);
+  //  ctr_ ++;
   cob_3d_mapping::Polygon p;
   cob_3d_mapping::fromROSMsg (table_, p);
 
   //  /* transform shape points to 2d and store 2d point in triangle list */
-    TPPLPartition pp;
-    list<TPPLPoly> polys, tri_list;
+  TPPLPartition pp;
+  list<TPPLPoly> polys, tri_list;
 
-    Eigen::Vector3f v, normal, origin;
-    if (table_.params.size () == 4)
+  Eigen::Vector3f v, normal, origin;
+  if (table_.params.size () == 4)
+  {
+    normal (0) = table_.params[0];
+    normal (1) = table_.params[1];
+    normal (2) = table_.params[2];
+    origin (0) = table_.centroid.x + offset ;
+    origin (1) = table_.centroid.y + offset ;
+    origin (2) = table_.centroid.z + offset ;
+    v = normal.unitOrthogonal ();
+
+    pcl::getTransformationFromTwoUnitVectorsAndOrigin (v, normal, origin, transformation_);
+    transformation_inv_ = transformation_.inverse ();
+  }
+
+  for (size_t i = 0; i < table_.points.size (); i++)
+  {
+    pcl::PointCloud<pcl::PointXYZ> pc;
+    TPPLPoly poly;
+    pcl::fromROSMsg (table_.points[i], pc);
+    poly.Init (pc.points.size ());
+    poly.SetHole (table_.holes[i]);
+
+    for (size_t j = 0; j < pc.points.size (); j++)
     {
-      normal (0) = table_.params[0];
-      normal (1) = table_.params[1];
-      normal (2) = table_.params[2];
-      origin (0) = table_.centroid.x;
-      origin (1) = table_.centroid.y;
-      origin (2) = table_.centroid.z;
-      v = normal.unitOrthogonal ();
-
-      pcl::getTransformationFromTwoUnitVectorsAndOrigin (v, normal, origin, transformation_);
-      transformation_inv_ = transformation_.inverse ();
+      poly[j] = msgToPoint2DforTable (pc[j]);
     }
+    if (table_.holes[i])
+      poly.SetOrientation (TPPL_CW);
+    else
+      poly.SetOrientation (TPPL_CCW);
 
-    for (size_t i = 0; i < table_.points.size (); i++)
-    {
-      pcl::PointCloud<pcl::PointXYZ> pc;
-      TPPLPoly poly;
-      pcl::fromROSMsg (table_.points[i], pc);
-      poly.Init (pc.points.size ());
-      poly.SetHole (table_.holes[i]);
+    polys.push_back (poly);
+  }
+  pp.Triangulate_EC (&polys, &tri_list);
 
-      for (size_t j = 0; j < pc.points.size (); j++)
-      {
-        poly[j] = msgToPoint2DforTable (pc[j]);
-      }
-      if (table_.holes[i])
-        poly.SetOrientation (TPPL_CW);
-      else
-        poly.SetOrientation (TPPL_CCW);
+  /* create interactive marker for *this shape */
+  stringstream ss;
+  ss << "table_"<< id_ ; //ctr_ ;
+  table_int_marker_.name = ss.str ();
+  table_int_marker_.header = table_.header;
+  table_int_marker_.header.stamp = ros::Time::now() ;
 
-      polys.push_back (poly);
-    }
-    pp.Triangulate_EC (&polys, &tri_list);
-
-    /* create interactive marker for *this shape */
-    stringstream ss;
-    ss << "table_"<< id_ ; //ctr_ ;
-    table_int_marker_.name = ss.str ();
-    table_int_marker_.header = table_.header;
-    table_int_marker_.header.stamp = ros::Time::now() ;
-
-    ss.str ("");
-    im_ctrl.always_visible = true;
-    ss << "table_" << id_ << "_control";
-    im_ctrl.name = ss.str ();
-    im_ctrl.description = "table_markers";
-    im_ctrl.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
+  ss.str ("");
+  im_ctrl.always_visible = true;
+  ss << "table_" << id_ << "_control";
+  im_ctrl.name = ss.str ();
+  im_ctrl.description = "table_markers";
+  im_ctrl.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
 
 
-    /* create marker */
-    createMarkerforTable (tri_list, im_ctrl);
+  /* create marker */
+  createMarkerforTable (tri_list, im_ctrl);
 
 
-    table_int_marker_.controls.push_back (im_ctrl);
-    table_im_server_->insert (table_int_marker_);
-    /* create menu for *this shape */
-    table_im_server_->setCallback(table_int_marker_.name ,boost::bind (&TableMarker::tableFeedbackCallback, this, _1),
-                                  visualization_msgs::InteractiveMarkerFeedback::BUTTON_CLICK) ;
+  table_int_marker_.controls.push_back (im_ctrl);
+  table_im_server_->insert (table_int_marker_);
+  /* create menu for *this shape */
+  //  table_im_server_->setCallback(table_int_marker_.name ,boost::bind (&TableMarker::tableFeedbackCallback, this, _1),
+  //      visualization_msgs::InteractiveMarkerFeedback::BUTTON_CLICK) ;
 
-    table_im_server_ ->applyChanges() ;
-    table_menu_handler_.apply (*table_im_server_, table_int_marker_.name);
-
+  table_im_server_ ->applyChanges() ;
+  table_menu_handler_.apply (*table_im_server_, table_int_marker_.name);
 }
-
-
+/**
+ * @brief Create marker for the table and add it to the interactive marker control
+ *
+ * @param triangle_list triangulated list of poly points
+ * @param im_ctrl interactive marker control
+ *
+ */
 void
 TableMarker::createMarkerforTable (list<TPPLPoly>& triangle_list, visualization_msgs::InteractiveMarkerControl& im_ctrl)
 {
-//  int ctr(1000);
-  //ROS_INFO(" creating markers for this shape.....");
   TPPLPoint pt;
   for (std::list<TPPLPoly>::iterator it = triangle_list.begin (); it != triangle_list.end (); it++)
   {
@@ -139,8 +144,6 @@ TableMarker::createMarkerforTable (list<TPPLPoly>& triangle_list, visualization_
     }
     im_ctrl.markers.push_back (table_marker_);
   }
-
-
   // Added For displaying the arrows on Marker Position
   //  table_int_marker_.pose.position.x = table_marker_.pose.position.x ;
   //  table_int_marker_.pose.position.y = table_marker_.pose.position.y ;
@@ -150,8 +153,14 @@ TableMarker::createMarkerforTable (list<TPPLPoly>& triangle_list, visualization_
   //  table_int_marker_.pose.orientation.y = table_marker_.pose.orientation.y ;
   //  table_int_marker_.pose.orientation.z = table_marker_.pose.orientation.z ;
   // end
-
 }
+/**
+ * @brief Create menu entries for each shape
+ *
+ * @param point 3D point to be transformed
+ *
+ * @return return transformed 2D TPPLPoint
+ */
 TPPLPoint
 TableMarker::msgToPoint2DforTable (const pcl::PointXYZ &point)
 {
@@ -163,13 +172,40 @@ TableMarker::msgToPoint2DforTable (const pcl::PointXYZ &point)
   //std::cout << "\n transformed point : \n" << p << std::endl;
   return pt;
 }
-
+/**
+ * @brief callback function when there is a mouse click on interactive marker
+ *
+ * @param feedback feedback from rviz when there is a mouse click on interactive marker
+ */
 void TableMarker::tableFeedbackCallback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) {
 
   ROS_INFO("%s position : x= %f, y= %f, z= %f", table_int_marker_.name.c_str(), table_.centroid.x,table_.centroid.y,table_.centroid.z);
 
 }
+void TableMarker::createTableMenu() {
 
+  interactive_markers::MenuHandler::EntryHandle eh_1;
+  eh_1 = table_menu_handler_.insert ("Move to this table",boost::bind (&TableMarker::MoveToTheTable, this, _1));
 
+  table_menu_handler_.setVisible (eh_1, true);
+  table_menu_handler_.setCheckState (eh_1, interactive_markers::MenuHandler::NO_CHECKBOX);
+}
 
+void TableMarker::MoveToTheTable(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) {
+  std::cout << "in MovingToTable..." << "\n" ;
+
+  ROS_INFO("Moving to table %d...",id_) ;
+
+  cob_3d_mapping_msgs::MoveToTable::Request  reqMoveToTable;
+  cob_3d_mapping_msgs::MoveToTable::Response resMoveToTable;
+
+  reqMoveToTable.targetTable = table_msg_ ;
+  reqMoveToTable.tableCentroid.position.x = table_.centroid.x ;
+  reqMoveToTable.tableCentroid.position.y = table_.centroid.y ;
+  reqMoveToTable.tableCentroid.position.z = table_.centroid.z ;
+
+  if (ros::service::call("/move_to_table",reqMoveToTable,resMoveToTable)){
+      // Calling move_to_table Service...
+    }
+}
 
