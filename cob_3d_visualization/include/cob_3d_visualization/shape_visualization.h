@@ -81,6 +81,7 @@ class ShapeVisualization
     std::vector<unsigned int> interacted_shapes_;
     std::vector<unsigned int> deleted_markers_indices_;
     cob_3d_mapping_msgs::ShapeArray modified_shapes_;
+//    unsigned int deleted_ ;
 
 
     Eigen::Quaternionf quatInit ;
@@ -88,8 +89,8 @@ class ShapeVisualization
     Eigen::Matrix4f transInit;
     Eigen::Affine3f affineInit;
     Eigen::Matrix4f transInitInv;
-    cob_3d_mapping_msgs::ModifyMap::Request req ;
-    cob_3d_mapping_msgs::ModifyMap::Response res;
+//    cob_3d_mapping_msgs::ModifyMap::Request req ;
+//    cob_3d_mapping_msgs::ModifyMap::Response res;
 
 
     boost::shared_ptr<interactive_markers::InteractiveMarkerServer> im_server_; // server for interactive markers
