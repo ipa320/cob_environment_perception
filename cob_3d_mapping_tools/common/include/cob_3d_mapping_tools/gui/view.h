@@ -108,6 +108,7 @@ namespace Gui
     void show() { reloadData(RT(),VT()); show(VT()); }
     void onDataChanged() { reloadData(RT(),VT()); refresh(VT()); }
     boost::signals::connection registerMouseCallback(boost::function<void (wxMouseEvent&, Resource<RT>*)>);
+    boost::signals::connection registerKeyCallback(boost::function<void (wxKeyEvent&, Resource<RT>*)>);
 
   protected:
     ~View() { std::cout << "View destroyed" << std::endl; }
@@ -121,6 +122,7 @@ namespace Gui
 
     Resource<RT>* r_ptr;
     boost::signal<void (wxMouseEvent&, Resource<RT>*)> mouse_sig_;
+    boost::signal<void (wxKeyEvent&, Resource<RT>*)> key_sig_;
 
     friend class WindowManager;
   };
@@ -139,11 +141,9 @@ namespace Gui
 
   private:
     void render(wxDC& dc);
-    void mouseEvent(wxMouseEvent& event);
     void paintEvent(wxPaintEvent& event);
-
-
-
+    void mouseEvent(wxMouseEvent& event);
+    void keyEvent(wxKeyEvent& event);
 
     friend class WindowManager;
     DECLARE_EVENT_TABLE()

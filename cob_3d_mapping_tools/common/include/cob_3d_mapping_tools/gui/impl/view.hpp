@@ -80,6 +80,10 @@ boost::signals::connection Gui::View<RT,VT>::registerMouseCallback(boost::functi
 { return mouse_sig_.connect(f); }
 
 template<typename RT, typename VT>
+boost::signals::connection Gui::View<RT,VT>::registerKeyCallback(boost::function<void (wxKeyEvent&, Resource<RT>*)> f)
+{ return key_sig_.connect(f); }
+
+template<typename RT, typename VT>
 void Gui::View<RT,VT>::show(Gui::ViewTypes::View2D)
 { Core::wMan()->create(static_cast<Gui::ImageView<RT,VT>*>(this),std::string(RT::STR + VT::STR)); }
 
@@ -208,13 +212,19 @@ void Gui::ImageView<RT,VT>::mouseEvent(wxMouseEvent& event)
   if(event.LeftDClick())
   {
     wxPoint p1 = event.GetPosition();
-    std::cout << "mouse click thing on " << this->name_ << " at " << p1.x << "," << p1.y << std::endl;
+    //std::cout << "mouse click thing on " << this->name_ << " at " << p1.x << "," << p1.y << std::endl;
     this->mouse_sig_(event, this->r_ptr);
   }
   else if(event.RightDClick())
   {
     this->mouse_sig_(event, this->r_ptr);
   }
+}
+
+template<typename RT, typename VT>
+void Gui::ImageView<RT,VT>::keyEvent(wxKeyEvent& event)
+{
+  this->key_sig_(event, this->r_ptr);
 }
 
 // Needed to fix these wxWidget macros (v2.8) to be able to use class templates in event table!
@@ -258,6 +268,17 @@ wx__DECLARE_EVT0(
 wx__DECLARE_EVT0(
   wxEVT_MOUSEWHEEL,
   (wxObjectEventFunction)(wxEventFunction) static_cast<wxMouseEventFunction>(&Gui::ImageView<RT,VT>::mouseEvent))
+
+wx__DECLARE_EVT0(
+  wxEVT_KEY_DOWN,
+  (wxObjectEventFunction)(wxEventFunction) static_cast<wxCharEventFunction>(&Gui::ImageView<RT,VT>::keyEvent))
+wx__DECLARE_EVT0(
+  wxEVT_KEY_UP,
+  (wxObjectEventFunction)(wxEventFunction) static_cast<wxCharEventFunction>(&Gui::ImageView<RT,VT>::keyEvent))
+wx__DECLARE_EVT0(
+  wxEVT_CHAR,
+  (wxObjectEventFunction)(wxEventFunction) static_cast<wxCharEventFunction>(&Gui::ImageView<RT,VT>::keyEvent))
+
 END_EVENT_TABLE()
 
 #endif
