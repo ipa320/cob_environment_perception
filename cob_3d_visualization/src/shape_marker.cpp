@@ -59,37 +59,54 @@
 
 
 
-void triangle_refinement(list<TPPLPoly>& i_list,list<TPPLPoly>& o_list){
+/**
+* @brief subdivides a list of triangles.
+*
+* Based on a threshold in x-Direction, triangles are subdivided.
+* @param[in] i_list Input triangle list.
+* @param[out] o_list Output triangle list.
+* @return nothing
+*/
+void
+ShapeMarker::triangle_refinement(list<TPPLPoly>& i_list,list<TPPLPoly>& o_list){
+
   TPPLPoly tri_new,tri_temp;
   TPPLPoint ptM,ptM01,ptM12,ptM20;
   for (std::list<TPPLPoly>::iterator it = i_list.begin (); it != i_list.end (); it++){
               int n[4]={0,1,2,0};
 
-              ptM.x=(it->GetPoint(n[0]).x,it->GetPoint(n[1]).x,it->GetPoint(n[2]).x)/3;
-              ptM.y=(it->GetPoint(n[0]).y,it->GetPoint(n[1]).y,it->GetPoint(n[2]).y)/3;
+              ptM.x  =(it->GetPoint(n[0]).x+it->GetPoint(n[1]).x+it->GetPoint(n[2]).x)/3;
+              ptM.y  =(it->GetPoint(n[0]).y+it->GetPoint(n[1]).y+it->GetPoint(n[2]).y)/3;
 
-              ptM01.x=(it->GetPoint(n[0]).x,it->GetPoint(n[1]).x)/2;
-              ptM01.y=(it->GetPoint(n[0]).y,it->GetPoint(n[1]).y)/2;
+              ptM01.x=(it->GetPoint(n[0]).x+it->GetPoint(n[1]).x)/2;
+              ptM01.y=(it->GetPoint(n[0]).y+it->GetPoint(n[1]).y)/2;
 
-              ptM12.x=(it->GetPoint(n[1]).x,it->GetPoint(n[2]).x)/2;
-              ptM12.y=(it->GetPoint(n[1]).y,it->GetPoint(n[2]).y)/2;
+              ptM12.x=(it->GetPoint(n[1]).x+it->GetPoint(n[2]).x)/2;
+              ptM12.y=(it->GetPoint(n[1]).y+it->GetPoint(n[2]).y)/2;
 
-              ptM20.x=(it->GetPoint(n[2]).x,it->GetPoint(n[3]).x)/2;
-              ptM20.y=(it->GetPoint(n[2]).y,it->GetPoint(n[3]).y)/2;
+              ptM20.x=(it->GetPoint(n[2]).x+it->GetPoint(n[3]).x)/2;
+              ptM20.y=(it->GetPoint(n[2]).y+it->GetPoint(n[3]).y)/2;
+
               tri_temp.Triangle(ptM01,ptM12,ptM20);
 
+
+        double thresh = shape_.params[9]/6;
+        if(fabs(it->GetPoint(n[0]).x-ptM.x)>thresh || fabs(it->GetPoint(n[1]).x-ptM.x)>thresh || fabs(it->GetPoint(n[2]).x-ptM.x)>thresh){
         //for every old triangle 6! new triangles are created
-        for (long i = 0; i < it->GetNumPoints (); i++){
-             tri_new.Triangle(tri_temp.GetPoint(n[i]),ptM,it->GetPoint(n[i])); 
-             //push new triangle in trinagle list
-             o_list.push_back(tri_new);
-             tri_new.Triangle(tri_temp.GetPoint(n[i]),it->GetPoint(n[i+1]),ptM); 
-             //push new triangle in trinagle list
-             o_list.push_back(tri_new);
+            for (long i = 0; i < it->GetNumPoints (); i++){
+                 tri_new.Triangle(tri_temp.GetPoint(n[i]),ptM,it->GetPoint(n[i])); 
+                 //push new triangle in trinagle list
+                 o_list.push_back(tri_new);
+                 tri_new.Triangle(tri_temp.GetPoint(n[i]),it->GetPoint(n[i+1]),ptM); 
+                 //push new triangle in trinagle list
+                 o_list.push_back(tri_new);
+            }
         }
-  }
-
-
+        else{
+            tri_new.Triangle(it->GetPoint(n[0]),it->GetPoint(n[1]),it->GetPoint(n[2]));
+            o_list.push_back(tri_new);
+        }
+    }
 }
 
 
@@ -101,7 +118,6 @@ unsigned int ShapeMarker::getID(){
 }
 
 void ShapeMarker::deleteMarker(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) {
-
   stringstream ss;
   ss << shape_.id ;// ctr_ ;
   deleted_markers_indices_.push_back(shape_.id) ;
@@ -326,28 +342,28 @@ ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::In
         }
         case(cob_3d_mapping_msgs::Shape::CYLINDER):
         {
+            
+            
             for (long i = 0; i < it->GetNumPoints (); i++)
             {
               pt = it->GetPoint(i);
               
               //apply rerolling of cylinder analogous to cylinder class
-              double r=shape_.params[9];
-              if(r<0.001 ||r>2){
+              if(shape_.params.size()!=10){
                   break;
               }
-              double alpha=pt.x/r;
+              
+              double alpha=pt.x/shape_.params[9];;
               
 
-            //break;// this section causes rviz to crash
-              marker.points[i].x = r*sin(-alpha);
+              marker.points[i].x = shape_.params[9]*sin(-alpha);
               marker.points[i].y = pt.y;
-              marker.points[i].z = r*cos(-alpha);
+              marker.points[i].z = shape_.params[9]*cos(-alpha);
 
+              ////Keep Cylinder flat - Debuging
               //marker.points[i].x = pt.x;
               //marker.points[i].y = pt.y;
               //marker.points[i].z = 0;
-              //TODO: Visualization this way not possible, polygons have different orientations in 3
-              // Triangle list cannot handle this
             }
         }
 
@@ -449,10 +465,10 @@ ShapeMarker::createInteractiveMarker ()
         pp.Triangulate_EC (&polys, &tri_list);
 
         transformation_inv_ = c.transform_from_world_to_plane.inverse();
-       //// optional refinement step
-       // list<TPPLPoly> refined_tri_list;
-       // triangle_refinement(tri_list,refined_tri_list);
-       // tri_list=refined_tri_list;
+      // optional refinement step
+       list<TPPLPoly> refined_tri_list;
+       triangle_refinement(tri_list,refined_tri_list);
+       tri_list=refined_tri_list;
 
     }
     case cob_3d_mapping_msgs::Shape::POLYGON:
