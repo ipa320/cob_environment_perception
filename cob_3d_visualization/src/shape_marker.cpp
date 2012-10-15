@@ -58,6 +58,58 @@
 #include <cob_3d_visualization/shape_marker.h>
 
 
+
+/**
+* @brief subdivides a list of triangles.
+*
+* Based on a threshold in x-Direction, triangles are subdivided.
+* @param[in] i_list Input triangle list.
+* @param[out] o_list Output triangle list.
+* @return nothing
+*/
+void
+ShapeMarker::triangle_refinement(list<TPPLPoly>& i_list,list<TPPLPoly>& o_list){
+
+  TPPLPoly tri_new,tri_temp;
+  TPPLPoint ptM,ptM01,ptM12,ptM20;
+  for (std::list<TPPLPoly>::iterator it = i_list.begin (); it != i_list.end (); it++){
+              int n[4]={0,1,2,0};
+
+              ptM.x  =(it->GetPoint(n[0]).x+it->GetPoint(n[1]).x+it->GetPoint(n[2]).x)/3;
+              ptM.y  =(it->GetPoint(n[0]).y+it->GetPoint(n[1]).y+it->GetPoint(n[2]).y)/3;
+
+              ptM01.x=(it->GetPoint(n[0]).x+it->GetPoint(n[1]).x)/2;
+              ptM01.y=(it->GetPoint(n[0]).y+it->GetPoint(n[1]).y)/2;
+
+              ptM12.x=(it->GetPoint(n[1]).x+it->GetPoint(n[2]).x)/2;
+              ptM12.y=(it->GetPoint(n[1]).y+it->GetPoint(n[2]).y)/2;
+
+              ptM20.x=(it->GetPoint(n[2]).x+it->GetPoint(n[3]).x)/2;
+              ptM20.y=(it->GetPoint(n[2]).y+it->GetPoint(n[3]).y)/2;
+
+              tri_temp.Triangle(ptM01,ptM12,ptM20);
+
+
+        double thresh = shape_.params[9]/6;
+        if(fabs(it->GetPoint(n[0]).x-ptM.x)>thresh || fabs(it->GetPoint(n[1]).x-ptM.x)>thresh || fabs(it->GetPoint(n[2]).x-ptM.x)>thresh){
+        //for every old triangle 6! new triangles are created
+            for (long i = 0; i < it->GetNumPoints (); i++){
+                 tri_new.Triangle(tri_temp.GetPoint(n[i]),ptM,it->GetPoint(n[i])); 
+                 //push new triangle in trinagle list
+                 o_list.push_back(tri_new);
+                 tri_new.Triangle(tri_temp.GetPoint(n[i]),it->GetPoint(n[i+1]),ptM); 
+                 //push new triangle in trinagle list
+                 o_list.push_back(tri_new);
+            }
+        }
+        else{
+            tri_new.Triangle(it->GetPoint(n[0]),it->GetPoint(n[1]),it->GetPoint(n[2]));
+            o_list.push_back(tri_new);
+        }
+    }
+}
+
+
 void ShapeMarker::getShape (cob_3d_mapping_msgs::Shape& shape) {
   shape_ = shape ;
 }
@@ -66,7 +118,6 @@ unsigned int ShapeMarker::getID(){
 }
 
 void ShapeMarker::deleteMarker(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) {
-
   stringstream ss;
   ss << shape_.id ;// ctr_ ;
   deleted_markers_indices_.push_back(shape_.id) ;
@@ -277,12 +328,45 @@ ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::In
 
     //draw each triangle
     marker.points.resize (it->GetNumPoints ());
-    for (long i = 0; i < it->GetNumPoints (); i++)
+    switch(shape_.type)
     {
-      pt = it->GetPoint (i);
-      marker.points[i].x = pt.x;
-      marker.points[i].y = pt.y;
-      marker.points[i].z = 0;
+        case(cob_3d_mapping_msgs::Shape::POLYGON):
+        {
+            for (long i = 0; i < it->GetNumPoints (); i++)
+            {
+              pt = it->GetPoint (i);
+              marker.points[i].x = pt.x;
+              marker.points[i].y = pt.y;
+              marker.points[i].z = 0;
+            }
+        }
+        case(cob_3d_mapping_msgs::Shape::CYLINDER):
+        {
+            
+            
+            for (long i = 0; i < it->GetNumPoints (); i++)
+            {
+              pt = it->GetPoint(i);
+              
+              //apply rerolling of cylinder analogous to cylinder class
+              if(shape_.params.size()!=10){
+                  break;
+              }
+              
+              double alpha=pt.x/shape_.params[9];;
+              
+
+              marker.points[i].x = shape_.params[9]*sin(-alpha);
+              marker.points[i].y = pt.y;
+              marker.points[i].z = shape_.params[9]*cos(-alpha);
+
+              ////Keep Cylinder flat - Debuging
+              //marker.points[i].x = pt.x;
+              //marker.points[i].y = pt.y;
+              //marker.points[i].z = 0;
+            }
+        }
+
     }
     im_ctrl.markers.push_back (marker);
   }
@@ -304,6 +388,7 @@ ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::In
  * @brief Create menu entries for each shape
  *
  * @param point 3D point to be transformed
+
  * @param transformation transformation matrix for this shape
  *
  * @return return transformed 2D TPPLPoint
@@ -332,75 +417,130 @@ ShapeMarker::createInteractiveMarker ()
   //  ROS_INFO("\tcreating interactive marker for shape < %d >", shape_.id);
 
   /* get normal and centroid */
-  cob_3d_mapping::Polygon p;
-  cob_3d_mapping::fromROSMsg (shape_, p);
 
   /* transform shape points to 2d and store 2d point in triangle list */
   TPPLPartition pp;
   list<TPPLPoly> polys, tri_list;
 
   Eigen::Vector3f v, normal, origin;
-  if (shape_.params.size () == 4)
+
+  switch (shape_.type)
   {
-    normal (0) = shape_.params[0];
-    normal (1) = shape_.params[1];
-    normal (2) = shape_.params[2];
-    origin (0) = shape_.centroid.x;
-    origin (1) = shape_.centroid.y;
-    origin (2) = shape_.centroid.z;
-    v = normal.unitOrthogonal ();
-
-    pcl::getTransformationFromTwoUnitVectorsAndOrigin (v, normal, origin, transformation_);
-    transformation_inv_ = transformation_.inverse ();
-  }
-
-  for (size_t i = 0; i < shape_.points.size (); i++)
-  {
-    pcl::PointCloud<pcl::PointXYZ> pc;
-    TPPLPoly poly;
-    pcl::fromROSMsg (shape_.points[i], pc);
-    poly.Init (pc.points.size ());
-    poly.SetHole (shape_.holes[i]);
-
-    for (size_t j = 0; j < pc.points.size (); j++)
+    case cob_3d_mapping_msgs::Shape::CYLINDER:
     {
-      poly[j] = msgToPoint2D (pc[j]);
+        cob_3d_mapping::Cylinder c;
+        cob_3d_mapping::fromROSMsg (shape_, c);
+        c.ParamsFromShapeMsg();
+        // make trinagulated cylinder strip
+        //transform cylinder in local coordinate system
+        c.makeCyl2D();
+        c.TransformContours(c.transform_from_world_to_plane);
+        //c.transform2tf(c.transform_from_world_to_plane);
+        //TODO: WATCH OUT NO HANDLING FOR MULTY CONTOUR CYLINDERS AND HOLES
+        TPPLPoly poly;
+        TPPLPoint pt;
+
+
+        for(size_t j=0;j<c.contours.size();j++){
+            
+        poly.Init(c.contours[j].size());
+        poly.SetHole (shape_.holes[j]);
+
+            
+        for(size_t i=0;i<c.contours[j].size();++i){
+              
+            pt.x=c.contours[j][i][0];
+            pt.y=c.contours[j][i][1];
+
+            poly[i]=pt;
+
+        }
+        if (shape_.holes[j])
+          poly.SetOrientation (TPPL_CW);
+        else
+          poly.SetOrientation (TPPL_CCW);
+        polys.push_back(poly);
+        }
+        // triangualtion itno monotone triangles
+        pp.Triangulate_EC (&polys, &tri_list);
+
+        transformation_inv_ = c.transform_from_world_to_plane.inverse();
+      // optional refinement step
+       list<TPPLPoly> refined_tri_list;
+       triangle_refinement(tri_list,refined_tri_list);
+       tri_list=refined_tri_list;
+
     }
-    if (shape_.holes[i])
-      poly.SetOrientation (TPPL_CW);
-    else
-      poly.SetOrientation (TPPL_CCW);
+    case cob_3d_mapping_msgs::Shape::POLYGON:
+    {
+        cob_3d_mapping::Polygon p;
+        
+      if (shape_.params.size () == 4)
+      {
+        cob_3d_mapping::fromROSMsg (shape_, p);
+        normal (0) = shape_.params[0];
+        normal (1) = shape_.params[1];
+        normal (2) = shape_.params[2];
+        origin (0) = shape_.centroid.x;
+        origin (1) = shape_.centroid.y;
+        origin (2) = shape_.centroid.z;
+        v = normal.unitOrthogonal ();
 
-    polys.push_back (poly);
-  }
-  pp.Triangulate_EC (&polys, &tri_list);
+        pcl::getTransformationFromTwoUnitVectorsAndOrigin (v, normal, origin, transformation_);
+        transformation_inv_ = transformation_.inverse ();
+      }
 
-  /* create interactive marker for *this shape */
-  stringstream ss;
-  ss << shape_.id ;
-  marker_.name = ss.str ();
-  marker_.header = shape_.header;
-  marker_.header.stamp = ros::Time::now() ;
+      for (size_t i = 0; i < shape_.points.size (); i++)
+      {
+        pcl::PointCloud<pcl::PointXYZ> pc;
+        TPPLPoly poly;
+        pcl::fromROSMsg (shape_.points[i], pc);
+        poly.Init (pc.points.size ());
+        poly.SetHole (shape_.holes[i]);
 
-  ss.str ("");
-  im_ctrl.always_visible = true;
-  ss << "shape_" << shape_.id << "_control";
-  im_ctrl.name = ss.str ();
-  im_ctrl.description = "shape_markers";
-  im_ctrl.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
+        for (size_t j = 0; j < pc.points.size (); j++)
+        {
+          poly[j] = msgToPoint2D (pc[j]);
+        }
+        if (shape_.holes[i])
+          poly.SetOrientation (TPPL_CW);
+        else
+          poly.SetOrientation (TPPL_CCW);
+
+        polys.push_back (poly);
+      }
+      pp.Triangulate_EC (&polys, &tri_list);
+
+        }//Polygon
+    }//switch
+
+    /* create interactive marker for *this shape */
+    stringstream ss;
+    ss << shape_.id ;
+    marker_.name = ss.str ();
+    marker_.header = shape_.header;
+    marker_.header.stamp = ros::Time::now() ;
+
+    ss.str ("");
+    im_ctrl.always_visible = true;
+    ss << "shape_" << shape_.id << "_control";
+    im_ctrl.name = ss.str ();
+    im_ctrl.description = "shape_markers";
+    im_ctrl.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
 
 
-  /* create marker */
-  createMarker (tri_list, im_ctrl);
+    /* create marker */
+
+    createMarker (tri_list, im_ctrl);
 
 
-  marker_.controls.push_back (im_ctrl);
-  im_server_->insert (marker_ );
-  /* create menu for *this shape */
-  im_server_ ->applyChanges() ;
-  menu_handler_.apply (*im_server_, marker_.name);
-
+    marker_.controls.push_back (im_ctrl);
+    im_server_->insert (marker_ );
+    /* create menu for *this shape */
+    im_server_ ->applyChanges() ;
+    menu_handler_.apply (*im_server_, marker_.name);
 }
+
 
 
 /**
@@ -698,6 +838,7 @@ void ShapeMarker::displayContour(){
   cob_3d_mapping::fromROSMsg (shape_, p);
 
   visualization_msgs::InteractiveMarker imarker;
+  visualization_msgs::InteractiveMarkerControl im_ctrl_ ;
   for(unsigned int i=0; i<p.contours.size(); i++)
   {
     marker.id = ctr ;
@@ -713,11 +854,12 @@ void ShapeMarker::displayContour(){
     marker.points[p.contours[i].size()].x = p.contours[i][0](0);
     marker.points[p.contours[i].size()].y = p.contours[i][0](1);
     marker.points[p.contours[i].size()].z = p.contours[i][0](2);
+    im_ctrl_.markers.push_back(marker);
+
   }
 
   // Interactive Marker for contours
 
-  visualization_msgs::InteractiveMarkerControl im_ctrl_ ;
   im_ctrl_.always_visible = true ;
   im_ctrl_.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
 
@@ -725,7 +867,6 @@ void ShapeMarker::displayContour(){
   imarker.name = ss.str() ;
 
   imarker.header  = shape_.header ;
-  im_ctrl_.markers.push_back(marker);
   imarker.controls.push_back(im_ctrl_);
   im_server_->insert (imarker);
 
