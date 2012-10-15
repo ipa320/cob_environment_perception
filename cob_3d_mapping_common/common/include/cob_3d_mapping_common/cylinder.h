@@ -97,27 +97,16 @@ namespace cob_3d_mapping{
 
 class Cylinder: public Polygon
 
-/*
- * Cylinder:
- *
- * Members:
- *        sym_axis .............................3x1 ........ symmetry axis of cylinder
- * 				normal		........................... 3x1 ........ second axis of cylinder, normal of the polygon, which represents the cylinder
- *        r         ........................... 1x1 ......... radius of the cylinder
- *
- */
-
-
-
 {
 
 public:
-  typedef boost::shared_ptr<Cylinder> Ptr;
+  typedef boost::shared_ptr<Cylinder> Ptr; /**< Cylinder pointer. Boost shared pointer to cylinder. */
 
-  Cylinder():debug_(false)
+  /**
+  * Constructor
+  */
+  Cylinder():merged_limit(50)
   {
-
-
   }
 
   //##############Methods to initialize cylinder and its paramers#########
@@ -128,19 +117,18 @@ public:
   virtual void computeAttributes(const Eigen::Vector3f & sym_axis,const Eigen::Vector3f &new_normal, const Eigen::Vector3f & new_origin);
   virtual void transform2tf(Eigen::Affine3f & tf);
   void GrabParams(Cylinder& c_src);
-  void recomputeNormal();
 
 
   //################## methods to roll and unroll cylinder###############
   void getCyl3D(Cylinder& c3d);
-  void makeCyl2D(bool debug);
+  void makeCyl2D();
   void makeCyl3D();
-  void getCyl2D(Cylinder& c2d,bool debug);
+  void getCyl2D(Cylinder& c2d);
+  void getPt3D(Eigen::Vector3f& pt2d,Eigen::Vector3f& pt3d);
 
   //################## methods for merging############################
   virtual void isMergeCandidate(const std::vector<Cylinder::Ptr >& cylinder_array,const merge_config& limits,std::vector<int>& intersections);
   virtual void merge(std::vector<Cylinder::Ptr >& c_array);
-
   virtual void applyWeighting(std::vector<Cylinder::Ptr >& merge_candidates);
 
   //############## debugging methods ####################
@@ -150,30 +138,18 @@ public:
 
 
   //################# member variables########################
-  double r_;
-  double h_min_,h_max_;
-  Eigen::Vector3f sym_axis;
-  Eigen::Vector3f origin_;
-  //	Polygon unrolled_;
-  bool debug_;
-  unsigned int merged_limit;
-
-private:
+  double r_; /**< Radius of cylinder. */
+  double h_min_; /**< Point at the bottom of cylinder.*/
+  double h_max_; /**< Point on top of cylinder */
+  Eigen::Vector3f sym_axis; /**< Symmetry axis of cylinder. Direction Vector of symmetry axis. */
+  Eigen::Vector3f origin_; /**< Origin of cylinder. */
+  int merged_limit; /**< Limit for merge counter */
+protected:
   //################ private methods for merging to avoid confusion by user################
-//  void getTrafo2d(const Eigen::Vector3f& vec3d, float& Tx, float& alpha);
-  void getTrafo2d(const Eigen::Vector3f& vec_new,const Eigen::Vector3f& vec_old, float& Tx,bool debug,bool start);
-
-  void getShiftedCylinder(Cylinder& c2,Cylinder& c3, Cylinder& result,bool dbg);
-  void transformToTarget(Cylinder& c_target,Cylinder& c_result);
-  void get_thresh(const Eigen::Vector3f& vec_1,const Eigen::Vector3f& vec_2,double& thresh);
-
+  void getArc(const Eigen::Vector3f& goal,const Eigen::Vector3f& start, float& Tx,bool first);
+  void compensate_offset(Cylinder::Ptr& c_ref);
 
 };
-
-
-
-//typedef boost::shared_ptr<Cylinder> CylinderPtr;
-
 }
 
 #endif

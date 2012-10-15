@@ -1307,7 +1307,7 @@ int TPPLPartition::MonotonePartition(list<TPPLPoly> *inpolys, list<TPPLPoly> *mo
 				vnext = &(vertices[vnext->next]);
 				size++;
 			}
-			mpoly.Init(size);
+
 			v = &(vertices[i]);
 			mpoly[0] = v->p;
 			vnext = &(vertices[v->next]);

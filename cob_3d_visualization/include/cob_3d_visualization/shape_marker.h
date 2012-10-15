@@ -53,6 +53,7 @@
 #include <cob_3d_mapping_msgs/ModifyMap.h>
 #include <cob_3d_mapping_common/ros_msg_conversions.h>
 #include "cob_3d_mapping_common/polygon.h"
+#include "cob_3d_mapping_common/cylinder.h"
 //#include <cob_3d_visualization/shape_visualization.h>
 
 //#define PI 3.14159265
@@ -123,7 +124,7 @@ class ShapeMarker
     unsigned int getID() ;
 
     //    std::vector<int> getInteractedShapesNumber();
-
+    void triangle_refinement(list<TPPLPoly>& i_list,list<TPPLPoly>& o_list);
 
   protected:
     visualization_msgs::InteractiveMarker marker_ ;
