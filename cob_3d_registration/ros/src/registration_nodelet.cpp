@@ -289,7 +289,7 @@ public:
   {
     //TODO: add mutex
     ROS_INFO("Resetting transformation...");
-    if(reg_) reg_->setTransformation(Eigen::Matrix4f::Identity());
+    if(reg_) buildAlgo();
     return true;
   }
 
