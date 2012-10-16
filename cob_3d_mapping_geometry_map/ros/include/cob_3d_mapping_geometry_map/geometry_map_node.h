@@ -75,9 +75,13 @@ namespace cob_3d_mapping
   class GeometryMapNode //: protected Reconfigurable_Node<cob_3d_mapping_geometry_map::geometry_map_nodeConfig>
   {
   public:
-    // Constructor
+    /**
+    * @brief Constructor
+    */
     GeometryMapNode();
-    // Destructor
+    /**
+    * brief Destructor
+    */
     ~GeometryMapNode() { };
 
     void dynReconfCallback(cob_3d_mapping_geometry_map::geometry_map_nodeConfig &config, uint32_t level);
@@ -138,25 +142,25 @@ namespace cob_3d_mapping
     ros::NodeHandle n_;
 
   protected:
-    ros::Subscriber shape_sub_;
-    ros::Publisher map_pub_;
-    ros::Publisher marker_pub_;
-    ros::ServiceServer clear_map_server_;
+    ros::Subscriber shape_sub_;                 ///< Subscription to shape message to be processed.                 
+    ros::Publisher map_pub_;                    ///< Publish Map array as shape message.                
+    ros::Publisher marker_pub_;                 ///< Publish Map array as visualization markers.
+    ros::Publisher primitive_pub_;              ///< Publish Cylinder primitive visualization markers.
+    ros::ServiceServer clear_map_server_;      
     ros::ServiceServer get_map_server_;
     
-    ros::Publisher primitive_pub_;
 
-    tf::TransformListener tf_listener_;
-    bool enable_tf_;
+    tf::TransformListener tf_listener_;         ///< Retrieves transformations.
+    bool enable_tf_;                            ///< If true transformation to target frame is performed.
 
     dynamic_reconfigure::Server<cob_3d_mapping_geometry_map::geometry_map_nodeConfig> config_server_;
 
-    GeometryMap geometry_map_;      /// map containing geometrys (polygons)
+    GeometryMap geometry_map_;                   ///< Map containing geometrys (polygons,cylinders)
 
-    unsigned int ctr_;            /// counter how many polygons are received
+    unsigned int ctr_;                          ///< Counter how many polygons are received
     std::string file_path_;
     bool save_to_file_;
-    std::string map_frame_id_;
+    std::string map_frame_id_;                  ///< Name of target frame
   };
 }
 
