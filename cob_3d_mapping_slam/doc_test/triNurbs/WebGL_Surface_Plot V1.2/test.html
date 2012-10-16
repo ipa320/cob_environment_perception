@@ -163,19 +163,35 @@ function triNurbsBasis1(	bc,	//bayrcentric coordinates
 	for(var i=0; i<3; i++)
 		for(var j=0; j<3; j++)
 			r[j] += pts[i][j]*bc[i];
-	var w1 = (bc[indx]+bc[(indx+1)%3])/1.5;
+	//var w1 = 3*(bc[indx]+bc[(indx+1)%3])-2.;
+
+	var m = [ (pts[indx][0]+pts[(indx+1)%3][0])/2, (pts[indx][1]+pts[(indx+1)%3][1])/2, (pts[indx][2]+pts[(indx+1)%3][2])/2 ];
+
 	var w2 = ((r[0]-pts[indx][0])*(pts[(indx+1)%3][0]-pts[indx][0]) + (r[1]-pts[indx][1])*(pts[(indx+1)%3][1]-pts[indx][1]));
 	w2/= q(pts[(indx+1)%3][0]-pts[indx][0]) + q(pts[(indx+1)%3][1]-pts[indx][1]);
 
-if(w2>1||w2<0) {alert("err "+w2);printPt(pts[(indx+2)%3]);printPt(pts[(indx+1)%3]);printPt(pts[(indx)%3]);printPt(r);}
+if(w2>1||w2<0) {alert("err2 "+w2);printPt(pts[(indx+2)%3]);printPt(pts[(indx+1)%3]);printPt(pts[(indx)%3]);printPt(r);}
+
+	var n = [ w2*(pts[(indx+1)%3][0]-pts[indx][0])+pts[indx][0], w2*(pts[(indx+1)%3][1]-pts[indx][1])+pts[indx][1] ];
 
 	if(w2<border) w2 /= border;
 	else w2 = (1-w2) / (1-border);
 
+	for(var i=0; i<3; i++) m[i] = w2*(pts[(indx+2)%3][i]-m[i]);
+
+	var w1 = ((r[0]-n[0])*(m[0]) + (r[1]-n[1])*(m[1])); //only here true
+	w1/= q(m[0]) + q(m[1]);
+	w1 = (1-w1)*(3*(bc[indx]+bc[(indx+1)%3])-2.);
+
+
+//if(w1>1.001||w1<-0.001) {alert("err1 "+w1);
+//printPt(pts[(indx+2)%3]);printPt(m);printPt(r);}
+
+
 	w2*=0.5;
 
-	var w3 = 2*w1*w2*(1-w2);
-	r[2] = w3*height + (1-w3)*r[2];
+	var w3 = 2*w2*(1-w2);
+	r[2] = w1*w3*height + (1-w1)*r[2];
 
 	return r;
 }
@@ -203,7 +219,8 @@ function bayrcentric(uv, p) {
 				var d = 360 / numRows;
 				var idx = 0;
 
-				var pts= [ [-1,0,0], [1,0,0], [0,2,0], [0,1,2] ];
+				var pts= [ [-1,0,0], [1,0,0], [0,2,0], [0,1,3] ];
+				var pts3= [ [0,0,0], [0.5,1,2], [-0.5,1,2] ];
 				
 				for (var i = 0; i < numRows; i++) 
 				{
@@ -226,18 +243,35 @@ if( bc[k]>1.0||bc[k]<-0.0) ign=true;
 }
 
 if(ign) values[i][j] = undefined;
-else {
+else if(0){
 						var p = [triNurbsBasis1(bc,[pts[0],pts[1],pts[3]], 0.5, 0, 0), triNurbsBasis1(bc,[pts[3],pts[1],pts[2]], 0.5, 2, 1), triNurbsBasis1(bc,[pts[0],pts[3],pts[2]], 0.5, 2, 2)];
 
 //alert(p[0][0]+" "+p[0][1]+" "+p[0][2]);
 						var bc2= bayrcentric([i/(numRows-1.)*2-1,j/(numCols-1.)*2], p);
 						values[i][j] = triNurbsBasis(bc2,p)[2];
-//if( j>1)
+
+if( (Math.abs(bc[0]-0.333)<0.015 && Math.abs(bc[1]-0.333)<0.015 && Math.abs(bc[2]-0.333)<0.015) ||
+0//Math.abs(bc[0]-0.5)<0.015 && Math.abs(bc[1]-0.)<0.015 && Math.abs(bc[2]-0.5)<0.015
+ ) {
+alert(bc2[0]+" "+bc2[1]+" "+bc2[2]);
+for(k=0; k<3; k++) printPt(p[k]);
+printPt(triNurbsBasis(bc2,p));
+alert(i/(numRows-1.)*2-1+" "+j/(numCols-1.)*2);
+}
+//if( j>1)*/
 //	values[i][j] = undefined;
 //else if(j==0) {
 //alert(bc[0]+" "+bc[1]+" "+bc[2]);
 //alert(p[0][0]+" "+p[0][1]+" "+p[0][2]);
 //}
+}
+else if(1) {
+						var p = [triNurbsBasis(bc,[pts[0],pts3[0],pts3[2]]), triNurbsBasis(bc,[pts3[0],pts[1],pts3[1]]), triNurbsBasis(bc,[pts3[2],pts3[1],pts[2]])];
+
+//alert(p[0][0]+" "+p[0][1]+" "+p[0][2]);
+						var bc2= bayrcentric([i/(numRows-1.)*2-1,j/(numCols-1.)*2], p);
+						values[i][j] = triNurbsBasis(bc,p)[2];
+
 }
 //value / 4.0 + 0.25;
 						values2[i][j] = value2 / 4.0 + 0.25;

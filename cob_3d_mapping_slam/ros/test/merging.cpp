@@ -751,27 +751,36 @@ TEST(TriSplineSurface, Basics1)
 void test18()
 #endif
 {
+  srand(clock());
+
   boost::array<float, 6> params;
   for(int i=0; i<6; i++)
-    params[i] = (rand()%10000-5000)/10000.f;
-  //params[1] = 0;
-  params[2] = 0;
-  //params[3] = 0;
-  params[4] = 0;
+    params[i] = (rand()%10000-5000)/2000.f;
+  /*params[1] = 0;
+  params[2] = 1;
+  params[3] = 0;
+  params[4] = 1;
   params[5] = 0;
+  params[0] = 0;*/
+//  params[1] = 0;
+//  params[3] = 0;
+  params[5] = 0;
+  //params[2] = 0;
+  //params[4] = 0;
 
   Slam_Surface::PolynomialSurface poly;
   Slam_Surface::SurfaceTriSpline inst;
 
-  poly.init(params,-10,10, -10,10, 1);
-  inst.init(&poly,-10,10, -10,10, 1);
+  const float Fsize = 1;
+  poly.init(params,-Fsize,Fsize, -Fsize,Fsize, 1);
+  inst.init(&poly,-Fsize,Fsize, -Fsize,Fsize, 1);
 
   Eigen::Vector3f p1,p2;
   Eigen::Vector2f p3;
 
   for(int i=0; i<4; i++) {
-    p3(0) = -10+(i&1)*20;
-    p3(1) = -10+(i&2)*10;
+    p3(0) = -Fsize+(i&1)*2*Fsize;
+    p3(1) = -Fsize+(i&2)*Fsize;
 
     p1=inst.project2world(p3);
     p2=poly.project2world(p3);
@@ -782,16 +791,43 @@ void test18()
     EXPECT_NEAR( (p1-p2).squaredNorm(), 0, 0.01f);
   }
 
-  p3(0) = 1;
-  p3(1) = 2;
+  p3(0) = 0;
+  p3(1) = 0;
 
   p1=inst.project2world(p3);
   p2=poly.project2world(poly.nextPoint(p1));
 
   std::cout<<"got\n"<<p1<<"\n";
   std::cout<<"should\n"<<p2<<"\n";
+  std::cout<<"should\n"<<poly.project2world(p3)<<"\n";
 
-  //inst.nextPoint(p);
+  pcl::PointCloud<pcl::PointXYZRGB> pc;
+  for(float x=-Fsize; x<=Fsize; x+=Fsize/100) {
+    for(float y=-Fsize; y<=Fsize; y+=Fsize/100) {
+      pcl::PointXYZRGB p;
+    Eigen::Vector3f v;
+
+    p3(0) = x;
+    p3(1) = y;
+    v = inst.project2world(p3);
+    p.r = 255;
+    p.g = p.b = 0;
+    p.x = v(0);
+    p.y = v(1);
+    p.z = v(2);
+    pc.points.push_back(p);
+
+    v = poly.project2world(p3);
+    p.g = 255;
+    p.r = p.b = 0;
+    p.x = v(0);
+    p.y = v(1);
+    p.z = v(2);
+    pc.points.push_back(p);
+    }
+  }
+
+  pcl::io::savePCDFile("test18.pcd",pc);
 }
 
 template<typename T>

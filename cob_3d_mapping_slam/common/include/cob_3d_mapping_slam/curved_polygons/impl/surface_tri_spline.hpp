@@ -18,6 +18,68 @@ bool SurfaceTriSpline::TRIANGLE::update(const std::vector<Eigen::Vector3f> &pts,
   add_cross_ = ( pts[i_[1]]-pts[i_[0]] ).cross( pts[i_[2]]-pts[i_[0]] );
   add_cross_.normalize();
 
+  Eigen::Vector3f v;
+  Eigen::Vector2f v2,r;
+  Eigen::Matrix2f M;
+  v2(0)=1;v2(1)=0;
+  float l;
+
+  for(int i=0; i<3; i++)
+  {
+    /*v=pts[i_[(1+i)%3]]-pts[i_[i]];
+    l=v.norm();
+    v/=l;
+
+    v2(0)=l;
+
+    M.row(1)(0) = v.dot(normals[i_[i]]);
+    M.row(1)(1) = v.dot(normals[i_[(1+i)%3]]);
+
+    M.row(0)(0) = std::sqrt( 1 - M.row(1)(0)*M.row(1)(0) );
+    M.row(0)(1) = std::sqrt( 1 - M.row(1)(1)*M.row(1)(1) );
+
+    r = M.inverse()*v2;
+
+    if(!pcl_isfinite(r(0)))
+      I_[i] = 0.5f*(pts[i_[(1+i)%3]]+pts[i_[i]]);
+        //return false;
+    else
+
+    I_[i] = -M.row(1)(0)*r(0) * add_cross_ + (r(0)*pts[i_[(1+i)%3]] + r(1)*pts[i_[i]])/r.sum();
+
+    std::cout<<"p\n"<<pts[i_[(1+i)%3]]<<"\n"<<pts[i_[i]]<<"\n";
+    std::cout<<"n\n"<<normals[i_[(1+i)%3]]<<"\n"<<normals[i_[i]]<<"\n";
+    std::cout<<"I\n"<<I_[i]<<"\n";
+
+    std::cout<<"v\n"<<v<<"\n";
+    std::cout<<"l\n"<<l<<"\n";
+    std::cout<<"M\n"<<M<<"\n";
+    std::cout<<"r\n"<<r<<"\n";*/
+
+    Eigen::Matrix<float,3,2> A;
+    A.col(0) = add_cross_.cross(pts[i_[(1+i)%3]]-pts[i_[i]]).cross(normals[i_[i]]);
+    A.col(1) = -add_cross_.cross(pts[i_[i]]-pts[i_[(1+i)%3]]).cross(normals[i_[(1+i)%3]]);
+    r = A.colPivHouseholderQr().solve(pts[i_[(1+i)%3]]-pts[i_[i]]).head<2>();
+
+    I_[i] = r(0)*A.col(0) + pts[i_[i]];
+
+    std::cout<<"p\n"<<pts[i_[(1+i)%3]]<<"\n"<<pts[i_[i]]<<"\n";
+    std::cout<<"n\n"<<normals[i_[(1+i)%3]]<<"\n"<<normals[i_[i]]<<"\n";
+    std::cout<<"I\n"<<I_[i]<<"\n";
+    std::cout<<"I2\n"<<-r(1)*A.col(1) + pts[i_[(1+i)%3]]<<"\n";
+
+    std::cout<<"r\n"<<r<<"\n";
+    std::cout<<"A\n"<<A<<"\n";
+
+    std::cout<<"d\n"<<(pts[i_[(1+i)%3]]-pts[i_[i]])<<"\n";
+    std::cout<<"d1\n"<<A.col(0).dot(normals[i_[i]])<<"\n";
+    std::cout<<"d2\n"<<A.col(1).dot(normals[i_[(1+i)%3]])<<"\n";
+  }
+
+  return true;
+
+#if 0
+
   //check if data are valid
   float v1,v2;
   v1 = ( pts[i_[1]]-pts[i_[0]] ).dot( normals[i_[0]] );
@@ -64,7 +126,8 @@ bool SurfaceTriSpline::TRIANGLE::update(const std::vector<Eigen::Vector3f> &pts,
   ROS_ASSERT(pcl_isfinite(_T_.sum()));
   ROS_ASSERT(pcl_isfinite(add_cp_tp_.sum()));
 
-  return pcl_isfinite(add_cp_.sum()+_T_.sum()+add_cp_tp_.sum());
+  return pcl_isfinite(add_cp_.sum())&&pcl_isfinite(_T_.sum())&&pcl_isfinite(add_cp_tp_.sum());
+#endif
 }
 
 void SurfaceTriSpline::TRIANGLE::getWeight(const Eigen::Vector3f &pt, Eigen::Matrix3f &w) const
@@ -86,24 +149,9 @@ void SurfaceTriSpline::TRIANGLE::getWeightD1(const Eigen::Vector3f &pt, Eigen::M
   }
 }
 
-Eigen::Vector4f SurfaceTriSpline::TRIANGLE::project2tensor(const Eigen::Vector3f &pt) const
+Eigen::Vector3f SurfaceTriSpline::TRIANGLE::triNurbsBasis(const Eigen::Vector3f &bc, const Eigen::Vector3f &p1, const Eigen::Vector3f &p2, const Eigen::Vector3f &p3) const
 {
-  //pt in bayrcentric coordinates
-  //weights for each side
-  Eigen::Matrix3f w;
-  getWeight(pt, w);
-
-  std::cout<<w<<"\n";
-  std::cout<<add_cp_tp_<<"\n";
-
-  Eigen::Vector4f r;
-  for(int i=0; i<3; i++)
-    r(i) = w.col(1)(i)*add_cp_tp_(i) + w.col(2)(i); //(second is 1)
-  r(3) = add_cp_tp_(3) * (w.col(1)(0)*pt(0) + w.col(1)(1)*pt(1) + w.col(1)(2)*pt(2));
-
-  r.head<3>() /= r.head<3>().sum();
-
-  return r;
+  return bc(0)*p1 + bc(1)*p2 + bc(2)*p3;
 }
 
 
@@ -119,11 +167,11 @@ Eigen::Vector3f SurfaceTriSpline::TRIANGLE::project2world(const Eigen::Vector2f 
   std::cout<<br<<"\n";
   std::cout<<br(0)*uv_pts[i_[0]]+br(1)*uv_pts[i_[1]]+br(2)*uv_pts[i_[2]]<<"\n\n";
 
-  Eigen::Vector4f t = project2tensor(br);
+  Eigen::Vector3f p1 = triNurbsBasis(br, pts[i_[0]], I_[0], I_[2]);
+  Eigen::Vector3f p2 = triNurbsBasis(br, I_[0], pts[i_[1]], I_[1]);
+  Eigen::Vector3f p3 = triNurbsBasis(br, I_[2], I_[1], pts[i_[2]]);
 
-  std::cout<<t<<"\n";
-
-  return (t(0)*pts[i_[0]] + t(1)*pts[i_[1]] + t(2)*pts[i_[2]]) + t(3)*add_cross_;
+  return triNurbsBasis(br, p1,p2,p3);
 
   /*
   //inside: br(0)>=0 && br(0)<1 && br(1)>=0 && br(1)<1 && br(2)>=0 && br(2)<1
