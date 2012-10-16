@@ -264,7 +264,6 @@ GeometryMapNode::clearMap(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Re
   return true;
 }
 
-
 bool
 GeometryMapNode::getMap(cob_3d_mapping_msgs::GetGeometricMap::Request &req, cob_3d_mapping_msgs::GetGeometricMap::Response &res)
 {
