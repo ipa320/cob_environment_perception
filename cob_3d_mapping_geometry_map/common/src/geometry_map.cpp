@@ -58,7 +58,6 @@
 //#### includes ####
 
 // standard includes
-//--
 #include <sstream>
 #include <cmath>
 #include <vector>
@@ -74,19 +73,27 @@
 #include <boost/tuple/tuple_comparison.hpp>
 #include <Eigen/Geometry>
 #include <pcl/win32_macros.h>
-//#include <pcl/common/transform.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/common/centroid.h>
-//#include <pcl/common/impl/transform.hpp>
 
 
 #include <cob_3d_mapping_slam/dof/tflink.h>
 #include "cob_3d_mapping_geometry_map/geometry_map.h"
+
+
 using namespace cob_3d_mapping;
 
 
+/**
+* \brief Add polygon to map.
+*
+* Method adds new polygon to map or initiates merge process 
+* with existing polygons in map. Weighting and merging configuration are set.
+*
+* \param[in] p_ptr Polygon, that is added to map.
+*/
 void
 GeometryMap::addMapEntry(Polygon::Ptr& p_ptr)
 {
@@ -140,11 +147,17 @@ GeometryMap::addMapEntry(Polygon::Ptr& p_ptr)
   if(save_to_file_) saveMap(file_path_);
 }
 
+/**
+* \brief Add cylinder to map.
+*
+* Method adds new cylinder to map or initiates merge process 
+* with existing cylinders in map. Weighting and merging configuration are set.
+* \param[in] c_ptr Cylinder, that is added to map.
+*/
 void
 GeometryMap::addMapEntry(Cylinder::Ptr& c_ptr)
 {
   Cylinder& c = *c_ptr;
-//
 
   c.frame_stamp = frame_counter_;
   cob_3d_mapping::merge_config  limits;
@@ -197,10 +210,17 @@ GeometryMap::addMapEntry(Cylinder::Ptr& c_ptr)
     c.frame_stamp =frame_counter_;
     map_cylinder_.push_back(c_ptr);
   }
-  
-  //	if(save_to_file_) saveMap(file_path_);
+ 
 }
 
+
+/**
+* \brief Add shape cluster to map.
+*
+* Method adds new shape cluster to map or initiates merge process 
+* with existing shape clusters in map. Weighting and merging configuration are set.
+* \param[in] sc_ptr Shape Cluster, that is added to map.
+*/
 void
 GeometryMap::addMapEntry(ShapeCluster::Ptr& sc_ptr)
 {
@@ -238,6 +258,12 @@ GeometryMap::addMapEntry(ShapeCluster::Ptr& sc_ptr)
   }
 }
 
+/**
+* \brief Transformation error is calculated.
+*
+* The error Transformation between two polygons from different
+* input frames is calculated.
+*/
 bool
 GeometryMap::computeTfError(const std::vector<Polygon::Ptr>& list_polygon, const Eigen::Affine3f& tf_old, Eigen::Affine3f& adjust_tf)
 {
@@ -324,6 +350,12 @@ GeometryMap::computeTfError(const std::vector<Polygon::Ptr>& list_polygon, const
 }
 
 
+/**
+* \brief Remove clutter from map.
+* 
+* Geometry map is cleaned using criterias like:
+* Minimal size of shape, plausible parameters, repeated detection.
+*/
 void
 GeometryMap::cleanUp()
 {
@@ -338,7 +370,6 @@ GeometryMap::cleanUp()
       ++n_dropped;
     }
   }
-
 
 
   for(int idx = map_cylinder_.size() - 1 ; idx >= 0; --idx)
@@ -359,10 +390,6 @@ GeometryMap::cleanUp()
         {
         drop_cyl=true;
         } 
-   // if (map_cylinder_[idx]->sym_axis.dot(dummy)<0.80)
-   //     {
-   //     drop_cyl = true;
-   //     }
     if ( drop_cyl==true)
     {        
       map_cylinder_[idx] = map_cylinder_.back();
@@ -381,61 +408,14 @@ GeometryMap::cleanUp()
     }
   }
   std::cout << "Dropped " << n_dropped << " Polys, "<<c_dropped<<" Cyls, " << m_dropped << " Clusters" << std::endl;
-  // TODO: clean up cylinders
 }
 
 
-void
-GeometryMap::printMapEntry(cob_3d_mapping::Polygon& p)
-{
-  for(int i=0; i< (int)p.contours.size(); i++)
-  {
-    std::cout << i << std::endl;
-    for(int j=0; j< (int)p.contours[i].size(); j++)
-    {
-      std::cout << "(" << p.contours[i][j](0) << ", " << p.contours[i][j](1) << ", " << p.contours[i][j](2) << ")\n";
-    }
-  }
-  std::cout << "Normal: (" << p.normal(0) << ", " << p.normal(1) << ", " << p.normal(2) << ")\n";
-  std::cout << "d: " << p.d << std::endl;
-  std::cout << "Transformation:\n" << p.transform_from_world_to_plane.matrix() << "\n";
-}
-
-
-void
-GeometryMap::printMap()
-{
-  std::stringstream ss;
-
-  ss << "/home/goa-tz/GM_test/map/outputfile_" << counter_output << ".txt";
-  std::ofstream outputFile2;
-  outputFile2.open(ss.str().c_str());
-
-
-  for(int i=0; i< (int)map_polygon_.size(); i++)
-  {
-
-    Polygon& p =*map_polygon_[i];
-
-    outputFile2 <<"ID: " << i << "trafo " << std::endl <<  p.transform_from_world_to_plane.matrix() <<std::endl;
-    outputFile2 << "normal:" << std::endl << p.normal << std::endl << "d: " << p.d << std::endl;
-    outputFile2 << "Polygon:\n";
-    for(int i=0; i< (int)p.contours.size(); i++)
-    {
-      outputFile2 << i << std::endl;
-      for(int j=0; j< (int)p.contours[i].size(); j++)
-      {
-        outputFile2 << "(" << p.contours[i][j](0) << ", " << p.contours[i][j](1) << ", " << p.contours[i][j](2) << ")\n";
-      }
-    }
-    outputFile2 << "----------------------------";
-
-  }
-  outputFile2.close();
-  counter_output++;
-}
-
-
+/**
+* \brief Debug output of polygon map to file.
+* \param[in] path path Name of output file.
+* \param[in] p Polygon that is saved.
+*/
 void
 GeometryMap::saveMapEntry(std::string path, int ctr, cob_3d_mapping::Polygon& p)
 {
@@ -459,14 +439,17 @@ GeometryMap::saveMapEntry(std::string path, int ctr, cob_3d_mapping::Polygon& p)
       pt.z = p.contours[i][j](2);
       pc.points.push_back(pt);
     }
-    //std::cout << ss.str() << std::endl;
     pcl::io::savePCDFileASCII (ss.str(), pc);
     ss.str("");
     ss.clear();
   }
 }
 
-
+/**
+* \brief Debug output of whole polygon map.
+*
+* \param[in] path Name of output file.
+*/
 void
 GeometryMap::saveMap(std::string path)
 {
@@ -475,7 +458,6 @@ GeometryMap::saveMap(std::string path)
   static int ctr=0;
   std::stringstream ss;
   ss << path << "/" << ctr << "_";
-  //std::cout << ctr << " Saving map with " << map_.size() << " entries..." << std::endl;
   for(size_t i=0; i< map_polygon_.size(); i++)
   {
     saveMapEntry(ss.str(), i, *map_polygon_[i]);
@@ -484,6 +466,9 @@ GeometryMap::saveMap(std::string path)
 }
 
 
+/**
+* \brief Remove all shapes from map.
+*/
 void
 GeometryMap::clearMap()
 {
@@ -493,7 +478,9 @@ GeometryMap::clearMap()
 
 
 
-
+/**
+* \brief Customized rounding operation.
+*/
 float
 GeometryMap::rounding(float x)
 
@@ -507,6 +494,9 @@ GeometryMap::rounding(float x)
 
 
 
+/**
+* \brief Colorize shapes in map.
+*/
 void
 GeometryMap::colorizeMap()
 {
@@ -568,6 +558,7 @@ GeometryMap::colorizeMap()
 
 
 }
+
 
 
 
