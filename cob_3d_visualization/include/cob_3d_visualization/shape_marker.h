@@ -99,9 +99,17 @@ class ShapeMarker
     void displayNormal();
     void hideNormal(int flag_untick);
 
+    void displaySymAxisCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    void displaySymAxis();
+    void hideSymAxis(int flag_untick);
+
     void displayCentroidCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
     void displayCentroid();
     void hideCentroid(int flag_untick);
+
+    void displayOriginCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    void displayOrigin();
+    void hideOrigin(int flag_untick);
 
     void displayContourCB(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
     void displayContour();
