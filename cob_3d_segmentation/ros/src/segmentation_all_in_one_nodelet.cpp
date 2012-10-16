@@ -278,13 +278,14 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
 
 
       //write parameters to msg - after transformation to target frame
-      s->params[0] = cyl->sym_axis[0];
-      s->params[1] = cyl->sym_axis[1];
-      s->params[2] = cyl->sym_axis[2];
+      s->params[0] = cyl->normal[0];
+      s->params[1] = cyl->normal[1];
+      s->params[2] = cyl->normal[2];
 
-      s->params[3] = cyl->normal[0];
-      s->params[4] = cyl->normal[1];
-      s->params[5] = cyl->normal[2];
+      s->params[3] = cyl->sym_axis[0];
+      s->params[4] = cyl->sym_axis[1];
+      s->params[5] = cyl->sym_axis[2];
+
 
       s->params[6] = cyl->origin_[0];
       s->params[7] = cyl->origin_[1];

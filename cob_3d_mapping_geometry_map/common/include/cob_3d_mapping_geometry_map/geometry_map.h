@@ -67,23 +67,10 @@
 #include <Eigen/Eigenvalues>
 #include <Eigen/Geometry>
 
-// internal includes
-//extern "C" {
-//#include "cob_3d_mapping_common/include/gpc.h"
-//}
-//#ifndef __GEOMETRY_MAP_VISUALISATION_H__
 #include "cob_3d_mapping_geometry_map/vis/geometry_map_visualisation.h"
 #include "cob_3d_mapping_common/polygon.h"
 #include "cob_3d_mapping_common/cylinder.h"
 #include "cob_3d_mapping_common/shape_cluster.h"
-
-//#include "cob_3d_mapping_common/shape.h"
-
-
-
-//#endif
-//#include "cob_3d_mapping_geometry_map/vis/TestPlanes.h"
-
 
 
 class GeometryMap
@@ -91,17 +78,13 @@ class GeometryMap
 public:
   typedef std::vector<cob_3d_mapping::Polygon::Ptr>::iterator polygon_iterator;
   typedef std::vector<cob_3d_mapping::Polygon::Ptr>::iterator cylinder_iterator;
-  /*inline std::ostream& operator << (std::ostream& os, const MapEntry& m)
-  {
-    os << "(" << m.d << "," << m.normal << "," << ")";
-    return (os);
-  }*/
-//  typedef boost::shared_ptr<MapEntry> MapEntryPtr;
 
     // Constructor
+  /**
+  * \brief Constructor for geometry map object.
+  */
   GeometryMap()
     : new_id_(0)
-    , counter_output(0)
     , frame_counter_(0)
     , file_path_("./")
     , save_to_file_(false)
@@ -109,13 +92,13 @@ public:
     , d_(0.01)
     , last_tf_err_(Eigen::Affine3f::Identity())
   {
-    //  outputFile.open("/home/goa-hh/test.txt");
   }
 
-  // Destructor
+  /**
+  * \brief Destructor for geometry map object.
+  */
   ~GeometryMap()
   {
-    //outputFile.close();
   }
 
   void addMapEntry(cob_3d_mapping::Polygon::Ptr& p_ptr);
@@ -125,20 +108,15 @@ public:
   bool
   computeTfError(const std::vector<cob_3d_mapping::Polygon::Ptr>& list_polygon, const Eigen::Affine3f& tf_old, Eigen::Affine3f& adjust_tf);
 
-  void
-  computeCentroid(cob_3d_mapping::Polygon& p);
 
+  /**
+  * \brief Increment frame counter.
+  */
   inline void
   incrFrame() { ++frame_counter_; };
 
   void
   cleanUp();
-
-  void
-  printMapEntry(cob_3d_mapping::Polygon& p);
-
-  void
-  printMap();
 
 
 
@@ -160,23 +138,44 @@ public:
   colorizeMap();
 
 
+  /**
+  * \brief Return polygon map.
+  */  
   inline std::vector<cob_3d_mapping::Polygon::Ptr>* getMap_polygon() { return &(map_polygon_); }
+  /**
+  * \brief Return polygon map.
+  */  
   inline std::vector<cob_3d_mapping::Cylinder::Ptr>* getMap_cylinder() { return &(map_cylinder_); }
+  /**
+  * \brief Return polygon map.
+  */  
   inline std::vector<cob_3d_mapping::ShapeCluster::Ptr>* getMap_shape_cluster() { return &(map_shape_cluster_); }
 
 
+  /**
+  * \brief Fiele path is set.
+  * \param[in] file_path  Filepath
+  */
   void
   setFilePath(std::string file_path)
   {
     file_path_ = file_path;
   }
 
+  /**
+  * \brief Set option if map is saved to file.
+  */
   void
   setSaveToFile(bool save_to_file)
   {
     save_to_file_ = save_to_file;
   }
 
+  /**
+  * \brief Set merging thresholds.
+  * \param[in] cos_angle Angular limit.
+  * \param[in] d Distance limit.
+  */
   void
   setMergeThresholds(double cos_angle, double d)
   {
@@ -184,20 +183,23 @@ public:
     d_ = d;
   }
 
+  /**
+  * \brief Last transformation error is returned.
+  */
   inline const Eigen::Affine3f& getLastError() { return last_tf_err_; }
 
 protected:
-  std::vector<cob_3d_mapping::Polygon::Ptr> map_polygon_;
-  std::vector<cob_3d_mapping::Cylinder::Ptr> map_cylinder_;
-  std::vector<cob_3d_mapping::ShapeCluster::Ptr> map_shape_cluster_;
-  unsigned int new_id_;
-  // std::ofstream outputFile;
-  int counter_output;
-  int frame_counter_;
-  std::string file_path_;
-  bool save_to_file_;
-  double cos_angle_, d_;
-  Eigen::Affine3f last_tf_err_;
+  std::vector<cob_3d_mapping::Polygon::Ptr> map_polygon_; /**< Array containing all polygon structures. */
+  std::vector<cob_3d_mapping::Cylinder::Ptr> map_cylinder_; /**< Array containing all cylinder structures. */
+  std::vector<cob_3d_mapping::ShapeCluster::Ptr> map_shape_cluster_; /**< Array containing all shape clusters. */
+  unsigned int new_id_; /**< Counter for shape IDs*/
+  //int counter_output;
+  int frame_counter_; /**< Counter for frame_stamp of shapes. */
+  std::string file_path_; /**< Path for file output. */
+  bool save_to_file_; /**< Boolean for file output. */
+  double cos_angle_; /**< Angle limit, used during merging. */
+  double  d_; /**< Distance threshold, used during merging. */
+  Eigen::Affine3f last_tf_err_; /**< Transformation error. */
 };
 
 #endif //__GEOMETRY_MAP_H__
