@@ -89,7 +89,6 @@
 
 #include <vtkCommand.h>
 #include <pcl/features/feature.h>
-#include <pcl/ros/point_traits.h>
 #ifndef GICP_ENABLE
 #include <registration/registration_icp_moments.h>
 #include <registration/registration_icp_fpfh.h>
@@ -120,6 +119,8 @@
   #include <pcl/kdtree/kdtree_flann.h>
   #include <pcl/common/eigen.h>
   #include <pcl/registration/correspondence_estimation.h>
+#else
+  #include <pcl/ros/point_traits.h>
 #endif
 
 
@@ -288,7 +289,7 @@ public:
   {
     //TODO: add mutex
     ROS_INFO("Resetting transformation...");
-    if(reg_) reg_->setTransformation(Eigen::Matrix4f::Identity());
+    if(reg_) buildAlgo();
     return true;
   }
 
