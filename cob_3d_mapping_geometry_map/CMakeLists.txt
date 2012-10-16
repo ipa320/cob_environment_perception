@@ -75,6 +75,7 @@ target_link_libraries(eval_node cob_3d_mapping_common)
 #rosbuild_add_executable(cluster2shape_node ros/src/cluster2shape_node.cpp)
 
 
+#rosbuild_add_executable(mesher common/test/mesh_test.cpp)
 
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
