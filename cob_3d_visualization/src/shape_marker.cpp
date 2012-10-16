@@ -58,6 +58,32 @@
 #include <cob_3d_visualization/shape_marker.h>
 
 
+/**
+* @brief Constructor of ShapeMarker.
+*/
+
+ShapeMarker::ShapeMarker(	boost::shared_ptr<interactive_markers::InteractiveMarkerServer> im_server,
+		cob_3d_mapping_msgs::Shape& shape,
+		std::vector<unsigned int>& moved_shapes_indices,
+		std::vector<unsigned int>& interacted_shapes,
+		std::vector<unsigned int>& deleted_markers_indices_) :	  interacted_shapes_(interacted_shapes) ,
+								  moved_shapes_indices_(moved_shapes_indices) ,
+								  deleted_markers_indices_(deleted_markers_indices_)
+{
+
+      im_server_ = im_server;
+
+      shape_ = shape;
+      id_ = shape.id;
+//      feedback_sub_ = nh_.subscribe("geometry_map/map/feedback",1,&ShapeMarker::setShapePosition,this);
+      createShapeMenu ();
+      createInteractiveMarker();
+
+}
+
+
+
+
 
 /**
 * @brief subdivides a list of triangles.
@@ -69,6 +95,7 @@
 */
 void
 ShapeMarker::triangle_refinement(list<TPPLPoly>& i_list,list<TPPLPoly>& o_list){
+  int n_circle = 20;
 
   TPPLPoly tri_new,tri_temp;
   TPPLPoint ptM,ptM01,ptM12,ptM20;
@@ -90,7 +117,7 @@ ShapeMarker::triangle_refinement(list<TPPLPoly>& i_list,list<TPPLPoly>& o_list){
               tri_temp.Triangle(ptM01,ptM12,ptM20);
 
 
-        double thresh = shape_.params[9]/6;
+        double thresh = (2*M_PI*shape_.params[9])/(2*n_circle);
         if(fabs(it->GetPoint(n[0]).x-ptM.x)>thresh || fabs(it->GetPoint(n[1]).x-ptM.x)>thresh || fabs(it->GetPoint(n[2]).x-ptM.x)>thresh){
         //for every old triangle 6! new triangles are created
             for (long i = 0; i < it->GetNumPoints (); i++){
@@ -328,9 +355,9 @@ ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::In
 
     //draw each triangle
     marker.points.resize (it->GetNumPoints ());
-    switch(shape_.type)
-    {
-        case(cob_3d_mapping_msgs::Shape::POLYGON):
+
+
+        if(shape_.type==cob_3d_mapping_msgs::Shape::POLYGON)
         {
             for (long i = 0; i < it->GetNumPoints (); i++)
             {
@@ -340,21 +367,13 @@ ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::In
               marker.points[i].z = 0;
             }
         }
-        case(cob_3d_mapping_msgs::Shape::CYLINDER):
+        if(shape_.type==cob_3d_mapping_msgs::Shape::CYLINDER)
         {
-            
-            
             for (long i = 0; i < it->GetNumPoints (); i++)
             {
               pt = it->GetPoint(i);
-              
               //apply rerolling of cylinder analogous to cylinder class
-              if(shape_.params.size()!=10){
-                  break;
-              }
-              
               double alpha=pt.x/shape_.params[9];;
-              
 
               marker.points[i].x = shape_.params[9]*sin(-alpha);
               marker.points[i].y = pt.y;
@@ -367,9 +386,8 @@ ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::In
             }
         }
 
-    }
     im_ctrl.markers.push_back (marker);
-  }
+}
 
 
   // Added For displaying the arrows on Marker Position
@@ -424,9 +442,7 @@ ShapeMarker::createInteractiveMarker ()
 
   Eigen::Vector3f v, normal, origin;
 
-  switch (shape_.type)
-  {
-    case cob_3d_mapping_msgs::Shape::CYLINDER:
+    if(shape_.type== cob_3d_mapping_msgs::Shape::CYLINDER)
     {
         cob_3d_mapping::Cylinder c;
         cob_3d_mapping::fromROSMsg (shape_, c);
@@ -442,13 +458,10 @@ ShapeMarker::createInteractiveMarker ()
 
 
         for(size_t j=0;j<c.contours.size();j++){
-            
         poly.Init(c.contours[j].size());
         poly.SetHole (shape_.holes[j]);
 
-            
         for(size_t i=0;i<c.contours[j].size();++i){
-              
             pt.x=c.contours[j][i][0];
             pt.y=c.contours[j][i][1];
 
@@ -471,10 +484,9 @@ ShapeMarker::createInteractiveMarker ()
        tri_list=refined_tri_list;
 
     }
-    case cob_3d_mapping_msgs::Shape::POLYGON:
+    if(shape_.type== cob_3d_mapping_msgs::Shape::POLYGON)
     {
         cob_3d_mapping::Polygon p;
-        
       if (shape_.params.size () == 4)
       {
         cob_3d_mapping::fromROSMsg (shape_, p);
@@ -512,7 +524,6 @@ ShapeMarker::createInteractiveMarker ()
       pp.Triangulate_EC (&polys, &tri_list);
 
         }//Polygon
-    }//switch
 
     /* create interactive marker for *this shape */
     stringstream ss;

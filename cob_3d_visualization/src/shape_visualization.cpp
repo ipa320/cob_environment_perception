@@ -521,6 +521,7 @@ ShapeVisualization::shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr
   {
     sha.shapes.push_back(sa->shapes[i]);
     sha.shapes[i].id = i;
+
     boost::shared_ptr<ShapeMarker> sm(new ShapeMarker(im_server_, sa->shapes[i],moved_shapes_indices_,interacted_shapes_,deleted_markers_indices_));
     v_sm_.push_back(sm);
   }
