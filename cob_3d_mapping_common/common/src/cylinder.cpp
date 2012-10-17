@@ -82,15 +82,15 @@ void
 Cylinder::ContoursFromList( std::vector<std::vector<Eigen::Vector3f> >& in_list)
 {
 
-  computeAttributes(sym_axis, normal, origin_); 
+  computeAttributes(sym_axis, normal, origin_);
   contours.resize(in_list.size());
 
-  for (size_t j = 0; j < in_list.size(); j++) 
+  for (size_t j = 0; j < in_list.size(); j++)
   {
 
     contours[j].resize(in_list[j].size());
     holes.resize(in_list[j].size());
-    for (size_t k = 0; k < in_list[j].size(); k++) 
+    for (size_t k = 0; k < in_list[j].size(); k++)
     {
       contours[j][k] =in_list[j][k];
     }
@@ -250,7 +250,7 @@ void Cylinder::getCyl3D(Cylinder& c3d)
 
 
 
-void Cylinder::makeCyl3D() 
+void Cylinder::makeCyl3D()
 {
   //Transform to local coordinate system
   Polygon poly_plane;
@@ -282,14 +282,8 @@ void Cylinder::makeCyl3D()
       float alpha;
       Eigen::Vector3f point_temp;
       getPt3D(poly_plane.contours[j][k],point_temp);
-     // alpha = poly_plane.contours[j][k][0]/ r_ ;
-     // //         use polar coordinates to create cylinder points
-     // point_temp <<  r_ * sin(-alpha), poly_plane.contours[j][k][1],  r_*  cos(-alpha);
-
-     // //        transform back in world system
       point_temp = transform_from_world_to_plane.inverse() * point_temp;
       contours[j][k] = point_temp;
-      //      contours3D[j][k] = contours[j][k];
     }
   }
 }
@@ -309,12 +303,12 @@ void Cylinder::makeCyl2D()
   Eigen::Vector3f z_axis,p_0;
 
 
-  for (size_t j = 0; j < contours.size(); j++) 
+  for (size_t j = 0; j < contours.size(); j++)
   {
 
     Tx_0 = 0;
 
-    for (size_t k = 0; k < contours[j].size(); k++) 
+    for (size_t k = 0; k < contours[j].size(); k++)
     {
 
       Tx_1=0;
@@ -362,10 +356,10 @@ Cylinder::getCyl2D(Cylinder& c2d)
 
 void
 Cylinder::isMergeCandidate(const std::vector<Cylinder::Ptr>& cylinder_array,
-    const merge_config& limits, std::vector<int>& intersections) 
+    const merge_config& limits, std::vector<int>& intersections)
 {
 
-  for (size_t i = 0; i < cylinder_array.size(); i++) 
+  for (size_t i = 0; i < cylinder_array.size(); i++)
   {
     Cylinder& c_map = *(cylinder_array[i]);
     Eigen::Vector3f connection=c_map.origin_-origin_;
@@ -400,7 +394,7 @@ Cylinder::isMergeCandidate(const std::vector<Cylinder::Ptr>& cylinder_array,
 
 
 void
-Cylinder::merge(std::vector<Cylinder::Ptr>& c_array) 
+Cylinder::merge(std::vector<Cylinder::Ptr>& c_array)
 {
   std::cout << "START MERGING" <<std::endl;
   std::vector<Cylinder::Ptr> merge_cylinders;
@@ -414,7 +408,7 @@ Cylinder::merge(std::vector<Cylinder::Ptr>& c_array)
   this->compensate_offset(average_cyl);
   this->makeCyl2D();
 
-  for (int i = 0; i < (int) c_array.size(); i++) 
+  for (int i = 0; i < (int) c_array.size(); i++)
   {
     c_array[i]->compensate_offset(average_cyl);
     c_array[i]->makeCyl2D();
@@ -422,7 +416,7 @@ Cylinder::merge(std::vector<Cylinder::Ptr>& c_array)
   }
 
   std::vector<Polygon::Ptr> merge_polygons;
-  for (size_t i = 0; i < merge_cylinders.size(); ++i) 
+  for (size_t i = 0; i < merge_cylinders.size(); ++i)
   {
     Polygon::Ptr tmp_ptr= merge_cylinders[i];
     merge_polygons.push_back(tmp_ptr);
@@ -544,7 +538,7 @@ Cylinder::printAttributes(std::string & name)
 }
 
 
-void Cylinder::getArc(const Eigen::Vector3f& goal,const Eigen::Vector3f& start, float& Tx,bool first) 
+void Cylinder::getArc(const Eigen::Vector3f& goal,const Eigen::Vector3f& start, float& Tx,bool first)
 {
   Eigen::Vector2f a, b;
   a << start[0], start[2];
@@ -604,27 +598,23 @@ void Cylinder::getArc(const Eigen::Vector3f& goal,const Eigen::Vector3f& start, 
 void
 Cylinder::compensate_offset(Cylinder::Ptr& c_ref)
 {
-    Eigen::Vector3f n12 = c_ref->transform_from_world_to_plane.rotation()* c_ref->normal;                          
+    Eigen::Vector3f n12 = c_ref->transform_from_world_to_plane.rotation()* c_ref->normal;
     Eigen::Vector3f s12 = c_ref->transform_from_world_to_plane.rotation()* this->sym_axis;
-                                        
     Eigen::Vector3f o12 = c_ref->transform_from_world_to_plane* this->origin_;
     o12[1]=0;
-                                                      
     Eigen::Affine3f T12;
     n12.normalize();
     s12.normalize();
     pcl::getTransformationFromTwoUnitVectorsAndOrigin(s12,n12,o12,T12);
-                                                              
-    for (size_t i = 0; i < this->contours.size(); ++i) 
+    for (size_t i = 0; i < this->contours.size(); ++i)
     {
         for (size_t j = 0; j < this->contours[i].size(); ++j)
         {
             this->contours[i][j] = this-> transform_from_world_to_plane.inverse() * T12.inverse() * transform_from_world_to_plane * this->contours[i][j];
         }
     }
-   this->transform_from_world_to_plane=c_ref->transform_from_world_to_plane;                                                       
-                                                           
+   this->transform_from_world_to_plane=c_ref->transform_from_world_to_plane;
 }
 
-    
+
 }//namespace

@@ -56,8 +56,9 @@
 * If not, see <http://www.gnu.org/licenses/>.
 *
 ****************************************************************/
-
+//cob includes
 #include "cob_3d_mapping_common/polygon.h"
+//pcl includes
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #ifdef PCL_VERSION_COMPARE
@@ -69,8 +70,11 @@
 #endif
 #include <pcl/common/centroid.h>
 #include <pcl/common/eigen.h>
+
+//boost includes
 #include <boost/shared_ptr.hpp>
 
+//custom definitons
 #define MOD(a,b) ( ((a%b)+b)%b )
 
 namespace cob_3d_mapping
@@ -384,7 +388,7 @@ Polygon::assignWeight()
 void
 Polygon::assignID(const std::vector<Polygon::Ptr>& poly_vec)
 {
-   unsigned int tmp_id=poly_vec[0]->id; 
+   unsigned int tmp_id=poly_vec[0]->id;
    for(size_t i=0;i<poly_vec.size();++i)
    {
         if(poly_vec[i]->id<tmp_id)tmp_id=poly_vec[i]->id;
