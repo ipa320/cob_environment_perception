@@ -62,10 +62,6 @@ namespace cob_3d_mapping {
 //##############Methods to initialize cylinder and its paramers#########
 
 
-/**
-* Assign points from pointcloud to contours of this cylinder.
-* \param cloud Pointcloud containing contour points.
-*/
 void
 Cylinder::ContoursFromCloud(pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud)
 {
@@ -82,10 +78,6 @@ Cylinder::ContoursFromCloud(pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud)
 }
 
 
-/**
-* Assign points from input list to contours of this cylinder.
-* \param in_list List Vector containing contour points.
-*/
 void
 Cylinder::ContoursFromList( std::vector<std::vector<Eigen::Vector3f> >& in_list)
 {
@@ -106,14 +98,6 @@ Cylinder::ContoursFromList( std::vector<std::vector<Eigen::Vector3f> >& in_list)
 }
 
 
-/**
-* \brief Paramter estimation and assignment from pointcloud. 
-*
-* Estimation uses pcl::SACSegmentation.Parameters assigned
-* to cylinder accordingly.
-* \param in_cloud Input pointcloud
-* \param indices Indices of contour points
-*/
 
 void
 Cylinder::ParamsFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud , std::vector<int>& indices)
@@ -165,12 +149,6 @@ Cylinder::ParamsFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud ,
   this->computeAttributes(sym_axis, normal, origin_);
 }
 
-/**
-* \brief Assign paramters from shape message to cylinder
-*
-* Assignment and completion of parameter set from shape
-* message to cylinder.
-*/
 void
 Cylinder::ParamsFromShapeMsg()
 {
@@ -185,14 +163,6 @@ Cylinder::ParamsFromShapeMsg()
   this->computeAttributes(sym_axis, normal, origin_);
 }
 
-/**
-* \brief Compute Attributes of cylinder.
-*
-* Compute attributes of cylinder depending on input parameters.
-* \param sym_axis Symmetry axis of cylinder
-* \param new_normal Normal of 2d representation of cylinder
-* \param new_origin Origin of cylinder
-*/
 void
 Cylinder::computeAttributes(const Eigen::Vector3f& sym_axis, const Eigen::Vector3f &new_normal, const Eigen::Vector3f& new_origin)
 {
@@ -224,11 +194,6 @@ Cylinder::computeAttributes(const Eigen::Vector3f& sym_axis, const Eigen::Vector
 
 
 
-/**
-* \brief Transform cylinder to target frame.
-*
-* \param trafo Transformation from source frame to target frame.
-*/
 void
 Cylinder::transform2tf(Eigen::Affine3f & trafo)
 {
@@ -253,10 +218,6 @@ Cylinder::transform2tf(Eigen::Affine3f & trafo)
 
 }
 
-/**
-* \brief Grab parameters from source cylinder.
-* \param c_src Source cylinder
-*/
 void
 Cylinder::GrabParams(Cylinder& c_src)
 {
@@ -279,13 +240,6 @@ Cylinder::GrabParams(Cylinder& c_src)
 
 //################## methods to roll and unroll cylinder###############
 
-/**
-* \brief Get 3d cylinder from 2d shape
-*
-* 2d shape is transformed to 3d shape and copied.
-* \param c3d Cylinder, 3d cylinder is copied to.
-* \see Cylinder::makeCyl3D()
-*/
 void Cylinder::getCyl3D(Cylinder& c3d)
 {
 
@@ -296,11 +250,6 @@ void Cylinder::getCyl3D(Cylinder& c3d)
 
 
 
-/** 
-*\brief Transformation to 3d of 2d shape
-*
-* Transformation of 2d shape to 3d using polar coordinates.
-*/
 void Cylinder::makeCyl3D() 
 {
   //Transform to local coordinate system
@@ -345,12 +294,6 @@ void Cylinder::makeCyl3D()
   }
 }
 
-/**
-* \brief Transform Point from 2D to 3D
-*
-* Transformation of Point, that is part of cylinder
-* from flat/2D shape to 3D shape.
-*/
 void Cylinder::getPt3D(Eigen::Vector3f& pt2d,Eigen::Vector3f& pt3d){
 
       double alpha = pt2d[0]/ r_ ;
@@ -359,11 +302,6 @@ void Cylinder::getPt3D(Eigen::Vector3f& pt2d,Eigen::Vector3f& pt3d){
 
 }
 
-/**
-* \brief Transform 3d cylinder to 2d shape.
-*
-* Projection of cylinder onto plane , by means of arclength.
-*/
 void Cylinder::makeCyl2D()
 {
   bool start; // bool to indicate first point of contour
@@ -412,13 +350,6 @@ void Cylinder::makeCyl2D()
   }
 }
 
-/**
-* \brief Get 2d cylinder from 3d shape
-*
-* 3d shape is transformed to 3d shape and copied.
-* \param c2d cylinder , the 2d-shape is copied to.
-* \see Cylinder::makeCyl2D()
-*/
 void
 Cylinder::getCyl2D(Cylinder& c2d)
 {
@@ -429,11 +360,6 @@ Cylinder::getCyl2D(Cylinder& c2d)
 
 //################## methods for merging############################
 
-/**
-* \brief Check for merge candidates.
-*
-* \param poly_vec Vector of cylinders, that are checked.
-*/
 void
 Cylinder::isMergeCandidate(const std::vector<Cylinder::Ptr>& cylinder_array,
     const merge_config& limits, std::vector<int>& intersections) 
@@ -473,12 +399,6 @@ Cylinder::isMergeCandidate(const std::vector<Cylinder::Ptr>& cylinder_array,
 }
 
 
-/**
-* \brief Merge cylinders.
-*
-* This cylinder is merged with cylinders in input array. The result is weighted,merged cylinder.
-* \param c_array Array of cylinders, cylinder object is merged with.
-*/
 void
 Cylinder::merge(std::vector<Cylinder::Ptr>& c_array) 
 {
@@ -519,9 +439,6 @@ Cylinder::merge(std::vector<Cylinder::Ptr>& c_array)
 
 
 
-/**
-* \brief Weighting of cylinders to be merged.
-*/
 void
 Cylinder::applyWeighting(std::vector<Cylinder::Ptr>& merge_candidates)
 {
@@ -574,9 +491,6 @@ Cylinder::applyWeighting(std::vector<Cylinder::Ptr>& merge_candidates)
 
 //##############Methods for Debug #################################################
 
-/**
-* \brief Debug output of points to file.
-*/
 void
 Cylinder::dbg_out(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points,std::string & name){
 
@@ -598,9 +512,6 @@ Cylinder::dbg_out(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points,std::string & na
 }
 
 
-/**
-* \brief Debug output of parameters to file.
-*/
 void
 Cylinder::dump_params(std::string  name)
 {
@@ -618,9 +529,6 @@ Cylinder::dump_params(std::string  name)
 }
 
 
-/**
-* \brief Debug Output to terminal.
-*/
 void
 Cylinder::printAttributes(std::string & name)
 {
@@ -636,9 +544,6 @@ Cylinder::printAttributes(std::string & name)
 }
 
 
-/**
-* \brief Compute arclength between 2 points.
-*/
 void Cylinder::getArc(const Eigen::Vector3f& goal,const Eigen::Vector3f& start, float& Tx,bool first) 
 {
   Eigen::Vector2f a, b;
@@ -696,12 +601,6 @@ void Cylinder::getArc(const Eigen::Vector3f& goal,const Eigen::Vector3f& start, 
   }
 }
 
-/**
-* \brief Compensate offset
-*
-* Transformation accounting for offset in symmetry axis and x,y -direction of origin
-* \param c_ref Reference Cylinder
-*/
 void
 Cylinder::compensate_offset(Cylinder::Ptr& c_ref)
 {
@@ -726,8 +625,6 @@ Cylinder::compensate_offset(Cylinder::Ptr& c_ref)
    this->transform_from_world_to_plane=c_ref->transform_from_world_to_plane;                                                       
                                                            
 }
-
-
 
     
 }//namespace
