@@ -83,6 +83,7 @@ class ShapeMarker
     }
 
 
+
     void enableMovement (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
     void displayArrows() ;
     void hideArrows(int flag_untick) ;
