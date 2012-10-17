@@ -98,16 +98,22 @@ extern "C" {
 
 namespace cob_3d_mapping{
 /**
-* \detail Class representing cylinder shapes.
-* Cylinder Parameter Estimation can be performed.
-* Cylinder Merging is handled.
+* \brief Class representing Cylinder shapes.
+* \note Cylinder Parameter Estimation can be performed.
+* \note Cylinder Merging is handled.
 */
 class Cylinder: public Polygon
 
 {
 
 public:
-  typedef boost::shared_ptr<Cylinder> Ptr; /**< Cylinder pointer. Boost shared pointer to cylinder. */
+ /**
+ * \brief Cylinder pointer.
+ * \details  Boost shared pointer to cylinder.
+ */
+  typedef boost::shared_ptr<Cylinder> Ptr;
+
+
 
   /**
   * \brief Constructor of Cylinder object.
@@ -135,7 +141,7 @@ public:
   /**
   * \brief Paramter estimation and assignment from pointcloud.
   *
-  * \detail Estimation uses pcl::SACSegmentation.Parameters assigned
+  * \details Estimation uses pcl::SACSegmentation.Parameters assigned
   * to cylinder accordingly.
   * \param[in] in_cloud Input pointcloud
   * \param[in] indices Indices of contour points
@@ -146,7 +152,7 @@ public:
   /**
   * \brief Assign paramters from shape message to cylinder.
   *
-  * \detail Assignment and completion of parameter set from shape
+  * \details Assignment and completion of parameter set from shape
   * message to cylinder.
   */
   void ParamsFromShapeMsg();
@@ -155,7 +161,7 @@ public:
   /**
   * \brief Compute Attributes of cylinder.
   *
-  * \detail Compute attributes of cylinder depending on input parameters.
+  * \details Compute attributes of cylinder depending on input parameters.
   * \param[in] sym_axis Symmetry axis of cylinder
   * \param[in] new_normal Normal of 2d representation of cylinder
   * \param[in] new_origin Origin of cylinder
@@ -182,7 +188,7 @@ public:
   /**
   * \brief Get 3d cylinder from 2d shape
   *
-  * \detail 2D shape is transformed to 3D shape and copied.
+  * \details 2D shape is transformed to 3D shape and copied.
   * \param[out] c3d Cylinder, 3D cylinder is copied to.
   * \see Cylinder::makeCyl3D()
   */
@@ -192,7 +198,7 @@ public:
   /**
   *\brief Transformation to 3D of 2D shape
   *
-  * \detail Transformation of 2D shape to 3D using polar coordinates.
+  * \details Transformation of 2D shape to 3D using polar coordinates.
   */
   void makeCyl3D();
 
@@ -200,7 +206,7 @@ public:
   /**
   * \brief Transform 3D cylinder to 2D shape.
   *
-  * \detail Projection of cylinder onto plane , by means of arclength.
+  * \details Projection of cylinder onto plane , by means of arclength.
   * This way treatment as a polygon is possible.
   */
   void makeCyl2D();
@@ -209,7 +215,7 @@ public:
   /**
   * \brief Get 2D cylinder from 3D shape
   *
-  * \detail 3D shape is transformed to 3D shape and copied.
+  * \details 3D shape is transformed to 3D shape and copied.
   * \param[out] c2d cylinder , the 2D-shape is copied to.
   * \see Cylinder::makeCyl2D()
   */
@@ -219,7 +225,7 @@ public:
    /**
   * \brief Transform Point from 2D to 3D
   *
-  * \detail Transformation of Point, that is part of cylinder
+  * \details Transformation of Point, that is part of cylinder
   * from flat/2D shape to 3D shape.
   * \note Transformation depends on
   * position relative to normal and radius of the cylinder.
@@ -235,7 +241,7 @@ public:
   /**
   * \brief Check for merge candidates.
   *
-  * \detail  Cylinders are checked, if they have to be merged with
+  * \details  Cylinders are checked, if they have to be merged with
   * this cylinder under the given merge configuration.
   * Parameters of the Cylinders are compared as well if their contours are
   * intersected.
@@ -249,7 +255,7 @@ public:
   /**
   * \brief Merge cylinders.
   *
-  * \detail This cylinder is merged with cylinders in input array.
+  * \details This cylinder is merged with cylinders in input array.
   * Therefore cylinders are transformed to flat polygons. Then the
   * Polygon merge process is applied.
   * The result is weighted,merged cylinder.
@@ -261,7 +267,7 @@ public:
 
   /**
   * \brief Weighting of cylinders to be merged.
-  * \detail According to the merge weights of the individual cylinders,
+  * \details According to the merge weights of the individual cylinders,
   * this cylinder is assigned a merge weight.
   * \param[in] merge_candidates Cylinders, that the merge weight of this Cylinder depends on.
   * \see assignWeight()
@@ -318,7 +324,7 @@ protected:
   /**
   * \brief Compensate offset
   *
-  * \detail Transformation accounting for offset in symmetry axis and x,y -direction of origin.
+  * \details Transformation accounting for offset in symmetry axis and x,y -direction of origin.
   * This Cylinder is transformed to the Reference Cylinder.
   * \param[in] c_ref Reference Cylinder
   * \note Apply this, when two cylinders  have to be merged, whose origin and symmetry axis are not perfectly
