@@ -72,9 +72,9 @@
 #include <pcl_ros/transforms.h>
 #include <pcl_ros/point_cloud.h>
 #ifdef PCL_VERSION_COMPARE
-  #include <pcl/common/transforms.h>
+#include <pcl/common/transforms.h>
 #else
-  #include <pcl/common/transform.h>
+#include <pcl/common/transform.h>
 #endif
 #include <cob_3d_mapping_geometry_map/geometry_map_nodeConfig.h>
 #include "pcl/surface/convex_hull.h"
@@ -95,8 +95,8 @@
 using namespace cob_3d_mapping;
 
 /**
-* \brief Constructor of Geometry Map
-*/
+ * \brief Constructor of Geometry Map
+ */
 GeometryMapNode::GeometryMapNode()
 {
   enable_tf_=true;
@@ -108,6 +108,7 @@ GeometryMapNode::GeometryMapNode()
   marker_pub_ = n_.advertise<visualization_msgs::Marker>("geometry_marker",100);
   clear_map_server_ = n_.advertiseService("clear_map", &GeometryMapNode::clearMap, this);
   get_map_server_ = n_.advertiseService("get_map", &GeometryMapNode::getMap, this);
+  modify_map_server_ = n_.advertiseService("modify_map", &GeometryMapNode::modifyMap, this);
   ros::param::param("~file_path" , file_path_ , std::string("/home/goa-tz/tmp/"));
   ros::param::param("~save_to_file" , save_to_file_ , false);
   //ros::param::param("~map_frame_id", map_frame_id_, "/map");
@@ -119,16 +120,16 @@ GeometryMapNode::GeometryMapNode()
 }
 
 /**
-* @brief callback for dynamic reconfigure
-*
-* everytime the dynamic reconfiguration changes this function will be called
-*
-* @param inst instance of AggregatePointMap which parameters should be changed
-* @param config data of configuration
-* @param level bit descriptor which notifies which parameter changed
-*
-* @return nothing
-*/
+ * @brief callback for dynamic reconfigure
+ *
+ * everytime the dynamic reconfiguration changes this function will be called
+ *
+ * @param inst instance of AggregatePointMap which parameters should be changed
+ * @param config data of configuration
+ * @param level bit descriptor which notifies which parameter changed
+ *
+ * @return nothing
+ */
 void
 GeometryMapNode::dynReconfCallback(cob_3d_mapping_geometry_map::geometry_map_nodeConfig &config, uint32_t level)
 {
@@ -140,13 +141,13 @@ GeometryMapNode::dynReconfCallback(cob_3d_mapping_geometry_map::geometry_map_nod
 }
 
 /**
-* @brief Callback for shape arrays
-*
-* This is where the shape processing chain starts.
-* @param[in] sa Shape array message, containing the shape data
-*/
+ * @brief Callback for shape arrays
+ *
+ * This is where the shape processing chain starts.
+ * @param[in] sa Shape array message, containing the shape data
+ */
 void
-GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr sa)
+GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& sa)
 {
   tf::StampedTransform trf_map;
   Eigen::Affine3f af_orig = Eigen::Affine3f::Identity();
@@ -164,7 +165,7 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr s
   af_orig = geometry_map_.getLastError() * af_orig;
 
   static int ctr=0;
-  std::cout<<">>>>>>>>>new cloud>>>>>>>>>>\n";
+//  std::cout<<">>>>>>>>>new cloud>>>>>>>>>>\n";
 
   std::vector<Polygon::Ptr> polygon_list;
   std::vector<Cylinder::Ptr> cylinder_list;
@@ -174,34 +175,34 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr s
   {
     switch (sa->shapes[i].type)
     {
-    case cob_3d_mapping_msgs::Shape::POLYGON:
-    {
-      Polygon::Ptr p(new Polygon);
-      fromROSMsg(sa->shapes[i], *p);
-      p->transform2tf(af_orig);
-      if(p->id != 0)
+      case cob_3d_mapping_msgs::Shape::POLYGON:
       {
-        if (sc_map.find(p->id) == sc_map.end()) sc_map[p->id] = ShapeCluster::Ptr(new ShapeCluster);
-        sc_map[p->id]->insert(boost::static_pointer_cast<Shape>(p));
+        Polygon::Ptr p(new Polygon);
+        fromROSMsg(sa->shapes[i], *p);
+        p->transform2tf(af_orig);
+        if(p->id != 0)
+        {
+          if (sc_map.find(p->id) == sc_map.end()) sc_map[p->id] = ShapeCluster::Ptr(new ShapeCluster);
+          sc_map[p->id]->insert(boost::static_pointer_cast<Shape>(p));
+        }
+        else { polygon_list.push_back(p); }
+        break;
       }
-      else { polygon_list.push_back(p); }
-      break;
-    }
-    case cob_3d_mapping_msgs::Shape::CYLINDER:
-    {
-      Cylinder::Ptr c(new Cylinder);
-      fromROSMsg(sa->shapes[i], *c);
-      c->transform2tf(af_orig);
-      if(c->id != 0)
+      case cob_3d_mapping_msgs::Shape::CYLINDER:
       {
-        if (sc_map.find(c->id) == sc_map.end()) sc_map[c->id] = ShapeCluster::Ptr(new ShapeCluster);
-        sc_map[c->id]->insert(boost::static_pointer_cast<Shape>(c));
+        Cylinder::Ptr c(new Cylinder);
+        fromROSMsg(sa->shapes[i], *c);
+        c->transform2tf(af_orig);
+        if(c->id != 0)
+        {
+          if (sc_map.find(c->id) == sc_map.end()) sc_map[c->id] = ShapeCluster::Ptr(new ShapeCluster);
+          sc_map[c->id]->insert(boost::static_pointer_cast<Shape>(c));
+        }
+        else { cylinder_list.push_back(c); }
+        break;
       }
-      else { cylinder_list.push_back(c); }
-      break;
-    }
-    default:
-      break;
+      default:
+        break;
     }
   }
 
@@ -235,11 +236,11 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr s
     geometry_map_.addMapEntry(it->second);
   }
   std::cout<<"Map Size C="<<geometry_map_.getMap_cylinder()->size()
-           <<" , C_NEW="<<cylinder_list.size()
-           <<" , C_MERGED="<<cyl_merge_ctr<<"\n"
-           <<"Map Size P="<<geometry_map_.getMap_polygon()->size()
-           <<" , P_NEW="<<polygon_list.size()
-           <<" , P_MERGED="<<poly_merge_ctr<<std::endl;
+               <<" , C_NEW="<<cylinder_list.size()
+               <<" , C_MERGED="<<cyl_merge_ctr<<"\n"
+               <<"Map Size P="<<geometry_map_.getMap_polygon()->size()
+               <<" , P_NEW="<<polygon_list.size()
+               <<" , P_MERGED="<<poly_merge_ctr<<std::endl;
   geometry_map_.cleanUp();
   geometry_map_.incrFrame();
 
@@ -250,9 +251,9 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr s
 }
 
 /**
-* @brief Clear map arrays
-* @return true if sussesful
-*/
+ * @brief Clear map arrays
+ * @return true if sussesful
+ */
 bool
 GeometryMapNode::clearMap(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res)
 {
@@ -266,15 +267,11 @@ GeometryMapNode::clearMap(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Re
   return true;
 }
 
-<<<<<<< HEAD
-=======
-
 /**
-* @brief Get map arrays
-*
-* @return true if succesful
-*/
->>>>>>> e8d5003f3077aa1348f1583781cb55aa4aa159d1
+ * @brief Get map arrays
+ *
+ * @return true if succesful
+ */
 bool
 GeometryMapNode::getMap(cob_3d_mapping_msgs::GetGeometricMap::Request &req, cob_3d_mapping_msgs::GetGeometricMap::Response &res)
 {
@@ -301,10 +298,104 @@ GeometryMapNode::getMap(cob_3d_mapping_msgs::GetGeometricMap::Request &req, cob_
 
   return true;
 }
+/**
+ * @brief service callback for MofiyMap service
+ *
+ * Fills the service response of the ModifyMap service with the modified map
+ *
+ * @param req request to modify map
+ * @param res the modified geometric map
+ *
+ * @return nothing
+ */
+
+bool
+GeometryMapNode::modifyMap(cob_3d_mapping_msgs::ModifyMap::Request &req,
+    cob_3d_mapping_msgs::ModifyMap::Response &res) {
+
+  ROS_INFO ("Modifying the map...") ;
+  std::vector<Polygon::Ptr>* map_polygon = geometry_map_.getMap_polygon();
+  ROS_WARN("size of the map: %d", map_polygon->size()) ;
+
+  if(req.action == cob_3d_mapping_msgs::ModifyMapRequest::MODIFY){
+    ROS_INFO("modify action...") ;
+    res.OutMap.header.stamp = ros::Time::now();
+    res.OutMap.header.frame_id = "/map";
+    unsigned int moved(0);
+
+    for(unsigned int i=0; i<map_polygon->size(); i++)
+    {
+      Polygon& sm = *(map_polygon->at(i));
+      cob_3d_mapping_msgs::Shape s;
+      toROSMsg(sm,s);
+      for(unsigned int j=0; j< req.InMap.shapes.size(); j++)
+      {
+        if (s.id == req.InMap.shapes.at(j).id){
+          moved = j ;
+          break;
+        }
+        else {
+          moved = req.InMap.shapes.size() ;
+        }
+      }
+      if (moved!=req.InMap.shapes.size())
+      {
+        Polygon poly;
+        fromROSMsg(req.InMap.shapes.at(moved),poly);
+        *(map_polygon->at(i)) = poly;
+        req.InMap.header = res.OutMap.header ;
+        req.InMap.header.frame_id = "/map";
+        res.OutMap.shapes.push_back(req.InMap.shapes.at(moved)) ;
+      }
+      else
+      {
+        s.header = res.OutMap.header ;
+        s.header.frame_id = "/map";
+        res.OutMap.shapes.push_back(s);
+      }
+
+    }
+    map_pub_.publish(res.OutMap);
+  }
+  if(req.action == cob_3d_mapping_msgs::ModifyMapRequest::DELETE){
+    unsigned int deleted(0);
+
+    for(unsigned int i=0; i<map_polygon->size(); i++)
+    {
+      Polygon& sm = *(map_polygon->at(i));
+      cob_3d_mapping_msgs::Shape s;
+      toROSMsg(sm,s);
+      for(unsigned int j=0; j< req.InMap.shapes.size(); j++)
+      {
+        if (s.id == req.InMap.shapes.at(j).id){
+          ROS_INFO("delete action...") ;
+          deleted = j;
+          break;
+        }
+        else{
+          deleted = req.InMap.shapes.size() ;
+        }
+      }
+      if (deleted!=req.InMap.shapes.size()){
+        Polygon poly;
+        *(map_polygon->at(i)) = poly ;
+      }
+      else{
+        s.header = res.OutMap.header ;
+        s.header.frame_id = "/map";
+        res.OutMap.shapes.push_back(s) ;
+      }
+    }
+    //        }
+    map_pub_.publish(res.OutMap);
+  }
+  ROS_INFO("OutMap size is: %d" , res.OutMap.shapes.size());
+  return true;
+}
 
 /**
-* @brief Debug out put of polygon contours to file.
-*/
+ * @brief Debug out put of polygon contours to file.
+ */
 void
 GeometryMapNode::dumpPolygonContoursToFile(Polygon& m)
 {
@@ -327,8 +418,8 @@ GeometryMapNode::dumpPolygonContoursToFile(Polygon& m)
 }
 
 /**
-* @brief Debug outbut for polygon contours and parameters.
-*/
+ * @brief Debug outbut for polygon contours and parameters.
+ */
 void
 GeometryMapNode::dumpPolygonToFile(Polygon& m)
 {
@@ -356,10 +447,10 @@ GeometryMapNode::dumpPolygonToFile(Polygon& m)
 }
 
 /**
-* @brief Map arrays are published.
-*
-* Shape message is generated and published to specified topic.
-*/
+ * @brief Map arrays are published.
+ *
+ * Shape message is generated and published to specified topic.
+ */
 void
 GeometryMapNode::publishMap()
 {
@@ -367,6 +458,7 @@ GeometryMapNode::publishMap()
 
   std::vector<Polygon::Ptr>* map_polygon = geometry_map_.getMap_polygon();
   std::vector<Cylinder::Ptr>* map_cylinder = geometry_map_.getMap_cylinder();
+  ROS_WARN("Map polygon Size : %d", map_polygon->size()) ;
 
 
   geometry_map_.colorizeMap();
@@ -410,22 +502,22 @@ GeometryMapNode::publishMap()
 }
 
 /**
-* @brief Polygon marker is filled out. NOT YET IMPLEMENTED
-*/
+ * @brief Polygon marker is filled out. NOT YET IMPLEMENTED
+ */
 void
 GeometryMapNode::fillMarker(Polygon::Ptr p, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t)
 { std::cout << "not implemented yet" << std::endl; }
 
 /**
-* @brief Cylinder marker is filled out. NOT YET IMPLEMENTED
-*/
+ * @brief Cylinder marker is filled out. NOT YET IMPLEMENTED
+ */
 void
 GeometryMapNode::fillMarker(Cylinder::Ptr c, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t)
 { std::cout << "not implemented yet" << std::endl; }
 
 /**
-* @brief Shape cluster  marker is filled out.
-*/
+ * @brief Shape cluster  marker is filled out.
+ */
 void
 GeometryMapNode::fillMarker(ShapeCluster::Ptr sc, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t)
 {
@@ -451,11 +543,11 @@ GeometryMapNode::fillMarker(ShapeCluster::Ptr sc, visualization_msgs::Marker& m,
 }
 
 /**
-* @brief Map is published as marker.
-*
-* Shape contours are transformed to
-* line strips of visualization markers.
-*/
+ * @brief Map is published as marker.
+ *
+ * Shape contours are transformed to
+ * line strips of visualization markers.
+ */
 void
 GeometryMapNode::publishMapMarker()
 {
@@ -525,7 +617,7 @@ GeometryMapNode::publishMapMarker()
       marker.color.b = 1;
       break;
     }
-    */
+     */
     //			std::cout<<pm.d<<std::endl<<std::endl;
 
     for(unsigned int j=0; j<pm.contours.size(); j++)
@@ -566,7 +658,7 @@ GeometryMapNode::publishMapMarker()
     }
   }
 
-  std::cout << "Marker Counter: " << ctr << std::endl;
+//  std::cout << "Marker Counter: " << ctr << std::endl;
   // now do the cylinders:
   std::vector<Cylinder::Ptr>* map_cylinder = geometry_map_.getMap_cylinder();
 
@@ -621,15 +713,15 @@ GeometryMapNode::publishMapMarker()
     marker.id = i;
     fillMarker( (*map_sc)[i], marker, t_marker);
     marker_pub_.publish(marker);
-    std::cout << "Published Cube" << std::endl;
+//    std::cout << "Published Cube" << std::endl;
   }
 }
 
 /**
-* @brief Cylinder primitives are published
-*
-* Visualization markers of Cylinder shapes are created and published.
-*/
+ * @brief Cylinder primitives are published
+ *
+ * Visualization markers of Cylinder shapes are created and published.
+ */
 void GeometryMapNode::publishPrimitives()
 {
   // initialize marker of type cylinder
