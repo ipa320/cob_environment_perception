@@ -158,14 +158,14 @@ public:
   void ParamsFromShapeMsg();
 
 
-  /**
-  * \brief Compute Attributes of cylinder.
-  *
-  * \details Compute attributes of cylinder depending on input parameters.
-  * \param[in] sym_axis Symmetry axis of cylinder
-  * \param[in] new_normal Normal of 2d representation of cylinder
-  * \param[in] new_origin Origin of cylinder
-  */
+/**
+* \brief Compute Attributes of cylinder.
+*
+* \details Compute attributes of cylinder depending on input parameters.
+* \param[in] sym_axis Symmetry axis of cylinder
+* \param[in] new_normal Normal of 2d representation of cylinder
+* \param[in] new_origin Origin of cylinder
+*/
   virtual void computeAttributes(const Eigen::Vector3f & sym_axis,const Eigen::Vector3f &new_normal, const Eigen::Vector3f & new_origin);
 
 
