@@ -86,14 +86,6 @@
 using namespace cob_3d_mapping;
 
 
-/**
-* \brief Add polygon to map.
-*
-* Method adds new polygon to map or initiates merge process 
-* with existing polygons in map. Weighting and merging configuration are set.
-*
-* \param[in] p_ptr Polygon, that is added to map.
-*/
 void
 GeometryMap::addMapEntry(Polygon::Ptr& p_ptr)
 {
@@ -147,13 +139,6 @@ GeometryMap::addMapEntry(Polygon::Ptr& p_ptr)
   if(save_to_file_) saveMap(file_path_);
 }
 
-/**
-* \brief Add cylinder to map.
-*
-* Method adds new cylinder to map or initiates merge process 
-* with existing cylinders in map. Weighting and merging configuration are set.
-* \param[in] c_ptr Cylinder, that is added to map.
-*/
 void
 GeometryMap::addMapEntry(Cylinder::Ptr& c_ptr)
 {
@@ -213,14 +198,6 @@ GeometryMap::addMapEntry(Cylinder::Ptr& c_ptr)
  
 }
 
-
-/**
-* \brief Add shape cluster to map.
-*
-* Method adds new shape cluster to map or initiates merge process 
-* with existing shape clusters in map. Weighting and merging configuration are set.
-* \param[in] sc_ptr Shape Cluster, that is added to map.
-*/
 void
 GeometryMap::addMapEntry(ShapeCluster::Ptr& sc_ptr)
 {
@@ -258,12 +235,6 @@ GeometryMap::addMapEntry(ShapeCluster::Ptr& sc_ptr)
   }
 }
 
-/**
-* \brief Transformation error is calculated.
-*
-* The error Transformation between two polygons from different
-* input frames is calculated.
-*/
 bool
 GeometryMap::computeTfError(const std::vector<Polygon::Ptr>& list_polygon, const Eigen::Affine3f& tf_old, Eigen::Affine3f& adjust_tf)
 {
@@ -350,12 +321,6 @@ GeometryMap::computeTfError(const std::vector<Polygon::Ptr>& list_polygon, const
 }
 
 
-/**
-* \brief Remove clutter from map.
-* 
-* Geometry map is cleaned using criterias like:
-* Minimal size of shape, plausible parameters, repeated detection.
-*/
 void
 GeometryMap::cleanUp()
 {
@@ -411,11 +376,6 @@ GeometryMap::cleanUp()
 }
 
 
-/**
-* \brief Debug output of polygon map to file.
-* \param[in] path path Name of output file.
-* \param[in] p Polygon that is saved.
-*/
 void
 GeometryMap::saveMapEntry(std::string path, int ctr, cob_3d_mapping::Polygon& p)
 {
@@ -445,11 +405,6 @@ GeometryMap::saveMapEntry(std::string path, int ctr, cob_3d_mapping::Polygon& p)
   }
 }
 
-/**
-* \brief Debug output of whole polygon map.
-*
-* \param[in] path Name of output file.
-*/
 void
 GeometryMap::saveMap(std::string path)
 {
@@ -466,9 +421,6 @@ GeometryMap::saveMap(std::string path)
 }
 
 
-/**
-* \brief Remove all shapes from map.
-*/
 void
 GeometryMap::clearMap()
 {
@@ -478,9 +430,6 @@ GeometryMap::clearMap()
 
 
 
-/**
-* \brief Customized rounding operation.
-*/
 float
 GeometryMap::rounding(float x)
 
@@ -494,9 +443,6 @@ GeometryMap::rounding(float x)
 
 
 
-/**
-* \brief Colorize shapes in map.
-*/
 void
 GeometryMap::colorizeMap()
 {
