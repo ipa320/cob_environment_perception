@@ -762,11 +762,12 @@ void test18()
   params[4] = 1;
   params[5] = 0;
   params[0] = 0;*/
-//  params[1] = 0;
-//  params[3] = 0;
-  params[5] = 0;
-  //params[2] = 0;
-  //params[4] = 0;
+  params[0] = 0;
+    params[1] = 0;
+    params[3] = 0;
+  params[5] = 1;
+  params[2] = 1;
+  params[4] = 1;
 
   Slam_Surface::PolynomialSurface poly;
   Slam_Surface::SurfaceTriSpline inst;
@@ -791,6 +792,16 @@ void test18()
     EXPECT_NEAR( (p1-p2).squaredNorm(), 0, 0.01f);
   }
 
+  p3(0) = -1;
+  p3(1) = 0;
+  std::cout<<"normal\n"<<inst.normalAt(p3)<<"\n";
+  std::cout<<"pt\n"<<(p2=inst.project2world(p3))<<"\n";
+  std::cout<<"normal\n"<<poly.normalAt(p3)<<"\n";
+  std::cout<<"pt\n"<<poly.project2world(p3)<<"\n";
+  p3 = poly.nextPoint(p2);
+  std::cout<<"normal\n"<<poly.normalAt(p3)<<"\n";
+  std::cout<<"pt\n"<<poly.project2world(p3)<<"\n";
+
   p3(0) = 0;
   p3(1) = 0;
 
@@ -802,28 +813,41 @@ void test18()
   std::cout<<"should\n"<<poly.project2world(p3)<<"\n";
 
   pcl::PointCloud<pcl::PointXYZRGB> pc;
-  for(float x=-Fsize; x<=Fsize; x+=Fsize/100) {
-    for(float y=-Fsize; y<=Fsize; y+=Fsize/100) {
-      pcl::PointXYZRGB p;
-    Eigen::Vector3f v;
+  pcl::PointXYZRGB p;
+  p.b = 255;
+  p.g = p.r = 0;
+  for(size_t i=0; i<inst.getTriangles().size(); i++) {
+    for(int j=0; j<3; j++) {
+      Eigen::Vector3f v = inst.getTriangles()[i].I_[j];
+      p.x = v(0);
+      p.y = v(1);
+      p.z = v(2);
+      pc.points.push_back(p);
+    }
+  }
 
-    p3(0) = x;
-    p3(1) = y;
-    v = inst.project2world(p3);
-    p.r = 255;
-    p.g = p.b = 0;
-    p.x = v(0);
-    p.y = v(1);
-    p.z = v(2);
-    pc.points.push_back(p);
+  for(float x=-Fsize*1.5f; x<=Fsize*1.5f; x+=Fsize/100) {
+    for(float y=-Fsize*1.5f; y<=Fsize*1.5f; y+=Fsize/100) {
+      Eigen::Vector3f v;
 
-    v = poly.project2world(p3);
-    p.g = 255;
-    p.r = p.b = 0;
-    p.x = v(0);
-    p.y = v(1);
-    p.z = v(2);
-    pc.points.push_back(p);
+      p3(0) = x;
+      p3(1) = y;
+      v = inst.project2world(p3);
+      p.r = 255*std::abs(inst.normalAt(p3)(2));
+      p.g = p.b = 0;
+      p.x = v(0);
+      p.y = v(1);
+      p.z = v(2);
+      //if(x>=-Fsize && x<=Fsize && y>=-Fsize && y<=Fsize)
+        pc.points.push_back(p);
+
+      v = poly.project2world(p3);
+      p.g = 255;
+      p.r = p.b = 0;
+      p.x = v(0);
+      p.y = v(1);
+      p.z = v(2);
+      pc.points.push_back(p);
     }
   }
 
@@ -935,13 +959,13 @@ void test17()
             f=n.dot(p3-map[j][k])/n.dot(map[j][k+1]-map[j][k]);
             if(f>=0&&f<1) num++;
           }
-          }
+        }
 
         std::cout<<num<<"\n";
       }
     }
-  //nurbs_.writeVRML97("torus.wrl");
-}
+    //nurbs_.writeVRML97("torus.wrl");
+  }
 
 
   ros::Time::init();
@@ -1036,19 +1060,19 @@ void test17()
     pcl::PointCloud<pcl::PointXYZ> pc1, pc2;
     pcl::PointXYZ p;
     for(int i=0; i<10; i++)
-    for(int j=0; j<10; j++) {
-      p.x=i;
-      p.y=j;
-      p.z=0;
-      pc1.push_back(p);
-    }
+      for(int j=0; j<10; j++) {
+        p.x=i;
+        p.y=j;
+        p.z=0;
+        pc1.push_back(p);
+      }
     for(int i=0; i<10; i++)
-    for(int j=0; j<10; j++) {
-      p.x=i;
-      p.y=j/2+3;
-      p.z=i-3;
-      pc2.push_back(p);
-    }
+      for(int j=0; j<10; j++) {
+        p.x=i;
+        p.y=j/2+3;
+        p.z=i-3;
+        pc2.push_back(p);
+      }
     BoundingBox::OOBB bb1,bb2;
     bb1.set(pc1);
     bb2.set(pc2);
