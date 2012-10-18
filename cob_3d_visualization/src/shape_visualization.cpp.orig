@@ -81,6 +81,7 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
   map_msg.header.stamp = ros::Time::now();
 
   int shape_id;
+  // the name of the marker_ is arrows_shape_.id, so we need to erase the "arrows_" part
 
 
   Eigen::Quaternionf quat;
@@ -102,9 +103,6 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
     stringstream name(feedback->marker_name);
 
     name >> shape_id ;
-
-    cob_3d_mapping::Polygon p;
-    cob_3d_mapping::fromROSMsg (sha.shapes.at(shape_id), p);
 
     if (feedback->event_type == 2 && feedback->menu_entry_id == 5){
       quatInit.x() = (float)feedback->pose.orientation.x ;           //normalized
@@ -306,14 +304,17 @@ void ShapeVisualization::resetAll(const visualization_msgs::InteractiveMarkerFee
         v_sm_[j]->hideArrows(0);
     }
   }
-
   for (unsigned int i=0; i< deleted_markers_indices_.size();i++){
     unsigned int id = deleted_markers_indices_[i];
     for (unsigned int j=0; j<v_sm_.size(); j++)
     {
       if(id == v_sm_[j]->getID())
         deleted_markers_indices_.erase(deleted_markers_indices_.begin()+i);
+<<<<<<< HEAD
+      v_sm_[j]->createInteractiveMarker();
+=======
         v_sm_[j]->createInteractiveMarker();
+>>>>>>> 97f4c8a6bee7995a4ba60cfb81958d87a63eda36
     }
   }
 
@@ -322,7 +323,10 @@ void ShapeVisualization::resetAll(const visualization_msgs::InteractiveMarkerFee
   deleted_markers_indices_.clear() ;
   moved_shapes_indices_.clear() ;
   modified_shapes_.shapes.clear() ;
+<<<<<<< HEAD
 
+=======
+>>>>>>> 97f4c8a6bee7995a4ba60cfb81958d87a63eda36
   im_server_->applyChanges ();
 
 }
@@ -517,11 +521,14 @@ void ShapeVisualization::optionMenu() {
 
 }
 
+<<<<<<< HEAD
+=======
 /**
  * @brief Callback for shape array messages
  *
  * @param sa received shape array message
  */
+>>>>>>> 97f4c8a6bee7995a4ba60cfb81958d87a63eda36
 void
 ShapeVisualization::shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr& sa)
 {
@@ -535,8 +542,13 @@ ShapeVisualization::shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr
   {
     sha.shapes.push_back(sa->shapes[i]);
     sha.shapes[i].id = i;
+<<<<<<< HEAD
+    ROS_WARN("shape id : %d",sa->shapes[i].id);
+    boost::shared_ptr<ShapeMarker> sm(new ShapeMarker(im_server_, sa->shapes[i],moved_shapes_indices_,interacted_shapes_,deleted_markers_indices_));
+=======
     boost::shared_ptr<ShapeMarker> sm(new ShapeMarker(im_server_, sa->shapes[i],moved_shapes_indices_
                                                      ,interacted_shapes_,deleted_markers_indices_)) ;//,deleted_));
+>>>>>>> 97f4c8a6bee7995a4ba60cfb81958d87a63eda36
     v_sm_.push_back(sm);
   }
 //  im_server_->applyChanges(); //update changes

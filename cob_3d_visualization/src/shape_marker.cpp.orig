@@ -57,6 +57,7 @@
 
 #include <cob_3d_visualization/shape_marker.h>
 
+<<<<<<< HEAD
 
 
 /**
@@ -110,9 +111,18 @@ ShapeMarker::triangle_refinement(list<TPPLPoly>& i_list,list<TPPLPoly>& o_list){
 }
 
 
+=======
+/**
+ * @brief copies shape into global variable shape_
+ * @param shape represents input shape msg
+ */
+>>>>>>> 97f4c8a6bee7995a4ba60cfb81958d87a63eda36
 void ShapeMarker::getShape (cob_3d_mapping_msgs::Shape& shape) {
   shape_ = shape ;
 }
+//visualization_msgs::Marker ShapeMarker::getMarker(){
+//  return marker ;
+//}
 /**
  * @brief returns the shape id
  */
@@ -124,17 +134,23 @@ unsigned int ShapeMarker::getID(){
  * @param feedback feedback from rviz when the Delete Marker menu entry of a shape is chose
  */
 void ShapeMarker::deleteMarker(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) {
+<<<<<<< HEAD
   stringstream ss;
   ss << shape_.id ;// ctr_ ;
+=======
+  //
+  //  deleted_ = 1;
+
+>>>>>>> 97f4c8a6bee7995a4ba60cfb81958d87a63eda36
   deleted_markers_indices_.push_back(shape_.id) ;
 
-  visualization_msgs::InteractiveMarker interactiveMarker;
-  interactiveMarker.name = ss.str() ;
+  stringstream ss;
+  ss << marker_.name ;
+  std::cout << "Marker" << marker_.name << " deleted..."<< std::endl ;
 
-  std::cout << "Marker" << interactiveMarker.name << " deleted..."<< std::endl ;
+  //  im_server_->erase(marker_.name);
   im_server_->erase(ss.str());
   im_server_->applyChanges ();
-
 
 
   //
@@ -232,9 +248,8 @@ void ShapeMarker::displayArrows()
   marker_.controls.push_back (im_ctrl);
 
   // Save the ids of shapes that have been moved
-  //    movedShapesIndexes.push_back(shape_.id) ;
-
   moved_shapes_indices_.push_back(shape_.id) ;
+  std::cout << "shape_.id : " << shape_.id << "\n" ;
 
   im_server_->insert (marker_);
   im_server_->applyChanges() ;
@@ -331,6 +346,16 @@ ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::In
 {
   //ROS_INFO(" creating markers for this shape.....");
   TPPLPoint pt;
+  std::vector<unsigned int>::iterator iter;
+
+  //  visualization_msgs::Marker marker;
+  //  marker.points.clear() ;
+
+  marker.header = shape_.header;
+  marker.header.stamp = ros::Time::now() ;
+  marker.type = visualization_msgs::Marker::TRIANGLE_LIST;
+  marker.ns = "shape visualization";
+  marker.action = visualization_msgs::Marker::ADD;
 
   for (std::list<TPPLPoly>::iterator it = triangle_list.begin (); it != triangle_list.end (); it++)
   {
@@ -419,17 +444,16 @@ ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::In
 
     }
     im_ctrl.markers.push_back (marker);
+    // Added For displaying the arrows on Marker Position
+    marker_.pose.position.x = marker.pose.position.x ;
+    marker_.pose.position.y = marker.pose.position.y ;
+    marker_.pose.position.z = marker.pose.position.z ;
+
+    marker_.pose.orientation.x = marker.pose.orientation.x ;
+    marker_.pose.orientation.y = marker.pose.orientation.y ;
+    marker_.pose.orientation.z = marker.pose.orientation.z ;
+    // end
   }
-
-  // Added For displaying the arrows on Marker Position
-  marker_.pose.position.x = marker.pose.position.x ;
-  marker_.pose.position.y = marker.pose.position.y ;
-  marker_.pose.position.z = marker.pose.position.z ;
-
-  marker_.pose.orientation.x = marker.pose.orientation.x ;
-  marker_.pose.orientation.y = marker.pose.orientation.y ;
-  marker_.pose.orientation.z = marker.pose.orientation.z ;
-  // end
 
 }
 
@@ -437,6 +461,11 @@ ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::In
  * @brief Create menu entries for each shape
  *
  * @param point 3D point to be transformed
+<<<<<<< HEAD
+
+ * @param transformation transformation matrix for this shape
+=======
+>>>>>>> 97f4c8a6bee7995a4ba60cfb81958d87a63eda36
  *
  * @return return transformed 2D TPPLPoint
  */
@@ -460,7 +489,14 @@ ShapeMarker::createInteractiveMarker ()
 {
   //  ROS_INFO("\tcreating interactive marker for shape < %d >", shape_.id);
 
+<<<<<<< HEAD
+  /* get normal and centroid */
+=======
   std::vector<unsigned int>::iterator iter;
+  cob_3d_mapping::Polygon p;
+  cob_3d_mapping::fromROSMsg (shape_, p);
+>>>>>>> 97f4c8a6bee7995a4ba60cfb81958d87a63eda36
+
   /* transform shape points to 2d and store 2d point in triangle list */
   TPPLPartition pp;
   list<TPPLPoly> polys, tri_list;
@@ -554,6 +590,7 @@ ShapeMarker::createInteractiveMarker ()
       }
       pp.Triangulate_EC (&polys, &tri_list);
 
+<<<<<<< HEAD
         }//Polygon
     }//switch
 
@@ -571,10 +608,43 @@ ShapeMarker::createInteractiveMarker ()
     im_ctrl.description = "shape_markers";
     im_ctrl.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
 
+=======
+  /* create interactive marker for *this shape */
+  stringstream ss;
+  iter = find(deleted_markers_indices_.begin(),deleted_markers_indices_.end(),shape_.id);
+  if(iter == deleted_markers_indices_.end()) {
+    //      ROS_INFO("first time...") ;
+    ss << shape_.id ;
+    marker_.name = ss.str ();
+  }
+
+  marker_.header = shape_.header;
+  marker_.header.stamp = ros::Time::now() ;
+
+
+  ss.str ("");
+  ss << "shape_" << shape_.id << "_control";
+  im_ctrl.name = ss.str ();
+  im_ctrl.always_visible = true;
+  im_ctrl.description = "shape_markers";
+  im_ctrl.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
+
+  /* create marker */
+  createMarker (tri_list, im_ctrl);
+>>>>>>> 97f4c8a6bee7995a4ba60cfb81958d87a63eda36
 
     /* create marker */
 
+<<<<<<< HEAD
     createMarker (tri_list, im_ctrl);
+=======
+  marker_.controls.push_back (im_ctrl);
+  im_server_->insert (marker_ );
+
+
+  im_server_ ->applyChanges() ;
+  menu_handler_.apply (*im_server_, marker_.name);
+>>>>>>> 97f4c8a6bee7995a4ba60cfb81958d87a63eda36
 
 
     marker_.controls.push_back (im_ctrl);
