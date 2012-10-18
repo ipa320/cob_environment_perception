@@ -118,17 +118,6 @@ GeometryMapNode::GeometryMapNode()
   primitive_pub_=n_.advertise<visualization_msgs::Marker>("primitives",100);
 }
 
-/**
-* @brief callback for dynamic reconfigure
-*
-* everytime the dynamic reconfiguration changes this function will be called
-*
-* @param inst instance of AggregatePointMap which parameters should be changed
-* @param config data of configuration
-* @param level bit descriptor which notifies which parameter changed
-*
-* @return nothing
-*/
 void
 GeometryMapNode::dynReconfCallback(cob_3d_mapping_geometry_map::geometry_map_nodeConfig &config, uint32_t level)
 {
@@ -139,12 +128,6 @@ GeometryMapNode::dynReconfCallback(cob_3d_mapping_geometry_map::geometry_map_nod
   enable_tf_ = config.enable_tf;
 }
 
-/**
-* @brief Callback for shape arrays
-*
-* This is where the shape processing chain starts.
-* @param[in] sa Shape array message, containing the shape data
-*/
 void
 GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr sa)
 {
@@ -249,10 +232,6 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr s
   ctr_++;
 }
 
-/**
-* @brief Clear map arrays
-* @return true if sussesful
-*/
 bool
 GeometryMapNode::clearMap(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res)
 {
@@ -266,12 +245,6 @@ GeometryMapNode::clearMap(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Re
   return true;
 }
 
-
-/**
-* @brief Get map arrays
-*
-* @return true if succesful
-*/
 bool
 GeometryMapNode::getMap(cob_3d_mapping_msgs::GetGeometricMap::Request &req, cob_3d_mapping_msgs::GetGeometricMap::Response &res)
 {
@@ -299,9 +272,6 @@ GeometryMapNode::getMap(cob_3d_mapping_msgs::GetGeometricMap::Request &req, cob_
   return true;
 }
 
-/**
-* @brief Debug out put of polygon contours to file.
-*/
 void
 GeometryMapNode::dumpPolygonContoursToFile(Polygon& m)
 {
@@ -323,9 +293,6 @@ GeometryMapNode::dumpPolygonContoursToFile(Polygon& m)
   ctr++;
 }
 
-/**
-* @brief Debug outbut for polygon contours and parameters.
-*/
 void
 GeometryMapNode::dumpPolygonToFile(Polygon& m)
 {
@@ -352,11 +319,6 @@ GeometryMapNode::dumpPolygonToFile(Polygon& m)
   ctr++;
 }
 
-/**
-* @brief Map arrays are published.
-*
-* Shape message is generated and published to specified topic.
-*/
 void
 GeometryMapNode::publishMap()
 {
@@ -409,23 +371,14 @@ GeometryMapNode::publishMap()
 
 }
 
-/**
-* @brief Polygon marker is filled out. NOT YET IMPLEMENTED
-*/
 void
 GeometryMapNode::fillMarker(Polygon::Ptr p, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t)
 { std::cout << "not implemented yet" << std::endl; }
 
-/**
-* @brief Cylinder marker is filled out. NOT YET IMPLEMENTED
-*/
 void
 GeometryMapNode::fillMarker(Cylinder::Ptr c, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t)
 { std::cout << "not implemented yet" << std::endl; }
 
-/**
-* @brief Shape cluster  marker is filled out.
-*/
 void
 GeometryMapNode::fillMarker(ShapeCluster::Ptr sc, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t)
 {
@@ -450,12 +403,6 @@ GeometryMapNode::fillMarker(ShapeCluster::Ptr sc, visualization_msgs::Marker& m,
   m.color.a = 0.5;
 }
 
-/**
-* @brief Map is published as marker.
-*
-* Shape contours are transformed to
-* line strips of visualization markers.
-*/
 void
 GeometryMapNode::publishMapMarker()
 {
@@ -625,11 +572,6 @@ GeometryMapNode::publishMapMarker()
   }
 }
 
-/**
-* @brief Cylinder primitives are published
-*
-* Visualization markers of Cylinder shapes are created and published.
-*/
 void GeometryMapNode::publishPrimitives()
 {
   // initialize marker of type cylinder
@@ -684,7 +626,6 @@ void GeometryMapNode::publishPrimitives()
     marker.pose.position.z = cm.origin_[2]-0.03;
 
 
-    //TODO: eliminate offset in z direction
 
     //set shape of cylinder 
     marker.scale.x = cm.r_ *2;

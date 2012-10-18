@@ -72,6 +72,12 @@
 
 namespace cob_3d_mapping
 {
+  /**
+  * @brief Ros node for GeometryMap.
+  * @details Node handles input Shape arrays and provides output Shape arrays.\n
+  * Input topics: /tf, /shape_array\n
+  * Output topics: /map_array , /geometry_marker, /primitives
+  */
   class GeometryMapNode //: protected Reconfigurable_Node<cob_3d_mapping_geometry_map::geometry_map_nodeConfig>
   {
   public:
@@ -84,8 +90,29 @@ namespace cob_3d_mapping
     */
     ~GeometryMapNode() { };
 
+    /**
+    * @brief callback for dynamic reconfigure
+    *
+    * everytime the dynamic reconfiguration changes this function will be called
+    *
+    * @param inst instance of AggregatePointMap which parameters should be changed
+    * @param config data of configuration
+    * @param level bit descriptor which notifies which parameter changed
+    *
+    * @return nothing
+    */
     void dynReconfCallback(cob_3d_mapping_geometry_map::geometry_map_nodeConfig &config, uint32_t level);
+
+
+    /**
+    * @brief Callback for shape arrays
+    *
+    * This is where the shape processing chain starts.
+    * @param[in] sa Shape array message, containing the shape data
+    */
     void shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr sa);
+
+
 
     /**
      * @brief clears map
@@ -99,6 +126,8 @@ namespace cob_3d_mapping
      */
     bool clearMap(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res);
 
+
+
     /**
      * @brief service callback for GetGeometricMap service
      *
@@ -111,7 +140,13 @@ namespace cob_3d_mapping
      */
     bool getMap(cob_3d_mapping_msgs::GetGeometricMap::Request &req, cob_3d_mapping_msgs::GetGeometricMap::Response &res);
 
+
+    /**
+    * @brief Debug out put of polygon contours to file.
+    */
     void dumpPolygonContoursToFile(Polygon& m);
+
+
     /**
      * @brief output featuremap to dump file
      *
@@ -123,7 +158,14 @@ namespace cob_3d_mapping
      */
     void dumpPolygonToFile(Polygon& m);
 
+
+    /**
+    * @brief Map arrays are published.
+    *
+    * Shape message is generated and published to specified topic.
+    */
     void publishMap();
+
 
     /**
      * @brief publishes the contour of the polygons
@@ -133,34 +175,69 @@ namespace cob_3d_mapping
      * @return nothing
      */
     void publishMapMarker();
+
+
+    /**
+    * @brief Cylinder primitives are published
+    *
+    * Visualization markers of Cylinder shapes are created and published.
+    */
     void publishPrimitives();
 
+    /**
+    * @brief Polygon marker is filled out.
+    * @note Method is not yet implemented.
+    * @param[in] p Polygon, whose marker is to be filled.
+    * @param[in] m Corresponding marker.
+    * @param[out] m_t Filled marker.
+    */
     void fillMarker(Polygon::Ptr p, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t);
+
+
+    /**
+    * @brief ShapeCluster marker is filled out.
+    * @note Method is not yet implemented.
+    * @param[in] p Cylinder, whose marker is to be filled.
+    * @param[in] m Corresponding marker.
+    * @param[out] m_t Filled marker.
+    */
     void fillMarker(Cylinder::Ptr c, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t);
+
+
+    /**
+    * @brief ShapeCluster marker is filled out.
+    * @note Method is not yet implemented.
+    * @param[in] p ShapeCluster, whose marker is to be filled.
+    * @param[in] m Corresponding marker.
+    * @param[out] m_t Filled marker.
+    */
     void fillMarker(ShapeCluster::Ptr sc, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t);
 
-    ros::NodeHandle n_;
+    ros::NodeHandle n_;                         ///< Ros node handle.
 
   protected:
-    ros::Subscriber shape_sub_;                 ///< Subscription to shape message to be processed.                 
-    ros::Publisher map_pub_;                    ///< Publish Map array as shape message.                
+    ros::Subscriber shape_sub_;                 ///< Subscription to shape message to be processed.
+    ros::Publisher map_pub_;                    ///< Publish Map array as shape message.
     ros::Publisher marker_pub_;                 ///< Publish Map array as visualization markers.
     ros::Publisher primitive_pub_;              ///< Publish Cylinder primitive visualization markers.
-    ros::ServiceServer clear_map_server_;      
-    ros::ServiceServer get_map_server_;
-    
+    ros::ServiceServer clear_map_server_;       ///< Service Server to clar map.
+    ros::ServiceServer get_map_server_;         ///< Service Server to get map array.
+
 
     tf::TransformListener tf_listener_;         ///< Retrieves transformations.
     bool enable_tf_;                            ///< If true transformation to target frame is performed.
 
+    /**
+    * @brief Dynamic Reconfigure server
+    */
     dynamic_reconfigure::Server<cob_3d_mapping_geometry_map::geometry_map_nodeConfig> config_server_;
 
     GeometryMap geometry_map_;                   ///< Map containing geometrys (polygons,cylinders)
 
-    unsigned int ctr_;                          ///< Counter how many polygons are received
-    std::string file_path_;
-    bool save_to_file_;
-    std::string map_frame_id_;                  ///< Name of target frame
+    unsigned int ctr_;                          ///< Counter how many polygons are received.
+    std::string file_path_;                     ///< Path out output file.
+    bool save_to_file_;                         ///< True if file output is enabled.
+    std::string map_frame_id_;                  ///< Name of target frame.
   };
 }
 
