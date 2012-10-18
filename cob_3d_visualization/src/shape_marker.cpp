@@ -331,6 +331,7 @@ ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::In
 {
   //ROS_INFO(" creating markers for this shape.....");
   TPPLPoint pt;
+  std::vector<unsigned int>::iterator iter;
 
   for (std::list<TPPLPoly>::iterator it = triangle_list.begin (); it != triangle_list.end (); it++)
   {
