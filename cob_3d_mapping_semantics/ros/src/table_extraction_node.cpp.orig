@@ -86,6 +86,39 @@ using namespace cob_3d_mapping;
 
 class TableExtractionNode
 {
+<<<<<<< HEAD
+public:
+
+  // Constructor
+  TableExtractionNode () :
+    tilt_angle_ (3.0),
+    height_min_ (0.6),
+    height_max_ (1.2),
+    area_min_ (0.5),
+    area_max_ (3),
+    table_ctr_(0),
+    table_ctr_old_(0)
+  {
+    sa_sub_ = n_.subscribe ("shape_array", 10, &TableExtractionNode::callbackShapeArray, this);
+    sa_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_array_pub", 10);
+    s_marker_pub_ = n_.advertise<visualization_msgs::Marker> ("marker", 10);
+
+    get_tables_server_ = n_.advertiseService ("get_objects_of_class", &TableExtractionNode::getTablesService, this);
+    get_tables_server_2_ = n_.advertiseService ("get_tables", &TableExtractionNode::getTablesService2, this);
+
+    ros::NodeHandle private_nh("~");
+    private_nh.getParam ("tilt_angle", tilt_angle_);
+    private_nh.getParam ("height_min", height_min_);
+    private_nh.getParam ("height_max", height_max_);
+    private_nh.getParam ("area_min", area_min_);
+    private_nh.getParam ("area_max", area_max_);
+
+    te_.setNormalBounds (tilt_angle_);
+    te_.setHeightMin (height_min_);
+    te_.setHeightMax (height_max_);
+    te_.setAreaMin (area_min_);
+    te_.setAreaMax (area_max_);
+=======
   public:
 
     // Constructor
@@ -117,6 +150,7 @@ class TableExtractionNode
       te_.setHeightMax (height_max_);
       te_.setAreaMin (area_min_);
       te_.setAreaMax (area_max_);
+>>>>>>> 97f4c8a6bee7995a4ba60cfb81958d87a63eda36
 
     }
 
@@ -143,6 +177,37 @@ class TableExtractionNode
         "\t-------------------------------------\n");
 
     ROS_INFO(" Total number of shapes received: %d ", sa_ptr->shapes.size());*/
+<<<<<<< HEAD
+
+    cob_3d_mapping_msgs::ShapeArray sa, tables;
+    sa.header = sa_ptr->header;
+    table_ctr_old_ = table_ctr_;
+    table_ctr_ = 0;
+    for (unsigned int i = 0; i < sa_ptr->shapes.size (); i++)
+    {
+      Polygon::Ptr poly_ptr = Polygon::Ptr (new Polygon ());
+
+      fromROSMsg(sa_ptr->shapes[i], *poly_ptr);
+      te_.setInputPolygon(poly_ptr);
+      if (te_.isTable())
+      {
+        table_ctr_++;
+        poly_ptr->color[0] = 1;
+        poly_ptr->color[1] = 0;
+        poly_ptr->color[2] = 0;
+        poly_ptr->color[3] = 1;
+        cob_3d_mapping_msgs::Shape s;
+        toROSMsg(*poly_ptr, s);
+        //tables.shapes.push_back(sa_ptr->shapes[i]);
+        sa.shapes.push_back (s);
+      }
+    }//end for
+
+    ROS_INFO("Found %d tables", table_ctr_);
+    sa_pub_.publish (sa);
+  }
+
+=======
       //
       //    cob_3d_mapping_msgs::ShapeArray sa;
       //    sa.header = sa_ptr->header;
@@ -171,6 +236,7 @@ class TableExtractionNode
       //    ROS_INFO("Found %d tables", table_ctr_);
       //    sa_pub_.publish (sa);
     }
+>>>>>>> 97f4c8a6bee7995a4ba60cfb81958d87a63eda36
 
 
     /**
@@ -190,8 +256,16 @@ class TableExtractionNode
       cob_3d_mapping_msgs::ShapeArray sa, tables;
       if (getMapService (sa))
       {
+<<<<<<< HEAD
+        Polygon::Ptr poly_ptr = Polygon::Ptr (new Polygon());
+        fromROSMsg(sa.shapes[i], *poly_ptr);
+        //ROS_INFO("\n\tisTableObject....  : ");
+        te_.setInputPolygon(poly_ptr);
+        if (te_.isTable())
+=======
         int table_ctr = 0;
         for (unsigned int i = 0; i < sa.shapes.size (); i++)
+>>>>>>> 97f4c8a6bee7995a4ba60cfb81958d87a63eda36
         {
           PolygonPtr poly_ptr = PolygonPtr (new Polygon());
           fromROSMsg(sa.shapes[i], *poly_ptr);
@@ -233,6 +307,47 @@ class TableExtractionNode
     getTablesService2 (cob_3d_mapping_msgs::GetTablesRequest &req,
         cob_3d_mapping_msgs::GetTablesResponse &res)
     {
+<<<<<<< HEAD
+      table_ctr_old_ = table_ctr_;
+      table_ctr_ = 0;
+      tables.header = sa.header;
+      for (unsigned int i = 0; i < sa.shapes.size (); i++)
+      {
+        Polygon::Ptr poly_ptr = Polygon::Ptr (new Polygon());
+        fromROSMsg(sa.shapes[i], *poly_ptr);
+        //ROS_INFO("\n\tisTableObject....  : ");
+        te_.setInputPolygon(poly_ptr);
+        if (te_.isTable())
+        {
+          table_ctr_++;
+          poly_ptr->color[0] = 1;
+          poly_ptr->color[1] = 0;
+          poly_ptr->color[2] = 0;
+          poly_ptr->color[3] = 1;
+          cob_3d_mapping_msgs::Shape s;
+          s.header = sa.header;
+          toROSMsg(*poly_ptr,s);
+          tables.shapes.push_back(s);
+          tabletop_object_detector::Table table;
+          Eigen::Affine3f pose;
+          Eigen::Vector4f min_pt;
+          Eigen::Vector4f max_pt;
+          poly_ptr->computePoseAndBoundingBox(pose, min_pt, max_pt);
+          table.pose.pose.position.x = poly_ptr->centroid[0];
+          table.pose.pose.position.y = poly_ptr->centroid[1];
+          table.pose.pose.position.z = poly_ptr->centroid[2];
+          Eigen::Quaternionf quat(pose.rotation());
+          table.pose.pose.orientation.x = quat.x();
+          table.pose.pose.orientation.y = quat.y();
+          table.pose.pose.orientation.z = quat.z();
+          table.pose.pose.orientation.w = quat.w();
+          table.x_min = min_pt(0);
+          table.x_max = max_pt(0);
+          table.y_min = min_pt(1);
+          table.y_max = max_pt(1);
+          table.convex_hull.type = arm_navigation_msgs::Shape::MESH;
+          for( unsigned int j=0; j<poly_ptr->contours[0].size(); j++)
+=======
       ROS_INFO("table detection started....");
 
       cob_3d_mapping_msgs::ShapeArray sa, tables;
@@ -253,6 +368,7 @@ class TableExtractionNode
           //ROS_INFO("\n\tisTableObject....  : ");
           te_.setInputPolygon(poly_ptr);
           if (te_.isTable())
+>>>>>>> 97f4c8a6bee7995a4ba60cfb81958d87a63eda36
           {
             table_ctr_++;
             poly_ptr->color[0] = 1;
@@ -311,6 +427,17 @@ class TableExtractionNode
 
             res.tables.push_back(det);
           }
+<<<<<<< HEAD
+
+          tabletop_object_detector::TabletopDetectionResult det;
+          det.table = table;
+          res.tables.push_back(det);
+        }
+      }
+      sa_pub_.publish (tables);
+      publishShapeMarker (tables);
+      ROS_INFO("Found %d tables", table_ctr_);
+=======
         }
 
         //        sa_pub_.publish (tables);
@@ -320,6 +447,7 @@ class TableExtractionNode
         ROS_INFO("Found %d tables", table_ctr_);
       }
       return true;
+>>>>>>> 97f4c8a6bee7995a4ba60cfb81958d87a63eda36
     }
     /**
      * @brief service offering table object candidates
@@ -370,6 +498,34 @@ class TableExtractionNode
     void
     publishShapeMarker (const cob_3d_mapping_msgs::ShapeArray& sa)
     {
+<<<<<<< HEAD
+      visualization_msgs::Marker marker;
+      marker.action = visualization_msgs::Marker::ADD;
+      marker.type = visualization_msgs::Marker::LINE_STRIP;
+      marker.lifetime = ros::Duration ();
+      marker.header.frame_id = "/map";
+      marker.ns = "shape_marker";
+      marker.header.stamp = ros::Time::now ();
+
+      marker.id = i;
+      marker.scale.x = 0.05;
+      marker.scale.y = 0.05;
+      marker.scale.z = 0;
+      marker.color.r = 1;
+      marker.color.g = 0;
+      marker.color.b = 0;
+      marker.color.a = 1.0;
+
+
+      // sensor_msgs::PointCloud2 pc2;
+      pcl::PointCloud<pcl::PointXYZ> cloud;
+
+      pcl::fromROSMsg (sa.shapes[i].points[0], cloud);
+
+      geometry_msgs::Point p;
+      //marker.points.resize (cloud.size()+1);
+      for (unsigned int j = 0; j < cloud.size(); j++)
+=======
       for(unsigned int i=0; i<table_ctr_old_; i++)
       {
         visualization_msgs::Marker marker;
@@ -378,6 +534,7 @@ class TableExtractionNode
         s_marker_pub_.publish (marker);
       }
       for(unsigned int i=0; i<sa.shapes.size(); i++)
+>>>>>>> 97f4c8a6bee7995a4ba60cfb81958d87a63eda36
       {
         visualization_msgs::Marker marker;
         marker.action = visualization_msgs::Marker::ADD;
@@ -395,7 +552,6 @@ class TableExtractionNode
         marker.color.g = 0;
         marker.color.b = 1;
         marker.color.a = 1.0;
-
 
 
         // sensor_msgs::PointCloud2 pc2;
