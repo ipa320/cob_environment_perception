@@ -1,14 +1,14 @@
 Header header
 
-byte POLYGON=0
-byte LINE=1
-byte CURVED=2
-byte MESH=3
-byte OTHER=4
-byte CYLINDER=5
+uint8 POLYGON=0
+uint8 LINE=1
+uint8 CURVED=2
+uint8 MESH=3
+uint8 OTHER=4
+uint8 CYLINDER=5
 # potential extensions: SPHERE, CYLINDER, BOX
 
-byte type
+uint8 type
 int32 id
 # define shape parameters
 # for plane
