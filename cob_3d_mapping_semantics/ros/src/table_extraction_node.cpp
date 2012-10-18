@@ -193,7 +193,7 @@ class TableExtractionNode
         int table_ctr = 0;
         for (unsigned int i = 0; i < sa.shapes.size (); i++)
         {
-          PolygonPtr poly_ptr = PolygonPtr (new Polygon());
+          Polygon::Ptr poly_ptr(new Polygon());
           fromROSMsg(sa.shapes[i], *poly_ptr);
           //ROS_INFO("\n\tisTableObject....  : ");
           te_.setInputPolygon(poly_ptr);
@@ -248,7 +248,7 @@ class TableExtractionNode
         for (unsigned int i = 0; i < sa.shapes.size (); i++)
         {
           //Polygon poly;
-          PolygonPtr poly_ptr(new Polygon());
+          Polygon::Ptr poly_ptr(new Polygon());
           fromROSMsg(sa.shapes[i], *poly_ptr);
           //ROS_INFO("\n\tisTableObject....  : ");
           te_.setInputPolygon(poly_ptr);

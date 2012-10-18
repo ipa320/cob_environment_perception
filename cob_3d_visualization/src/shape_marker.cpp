@@ -75,8 +75,8 @@ ShapeMarker::triangle_refinement(list<TPPLPoly>& i_list,list<TPPLPoly>& o_list){
   for (std::list<TPPLPoly>::iterator it = i_list.begin (); it != i_list.end (); it++){
               int n[4]={0,1,2,0};
 
-              ptM.x  =(it->GetPoint(n[0]).x+it->GetPoint(n[1]).x+it->GetPoint(n[2]).x)/3;
-              ptM.y  =(it->GetPoint(n[0]).y+it->GetPoint(n[1]).y+it->GetPoint(n[2]).y)/3;
+              ptM.x =(it->GetPoint(n[0]).x+it->GetPoint(n[1]).x+it->GetPoint(n[2]).x)/3;
+              ptM.y =(it->GetPoint(n[0]).y+it->GetPoint(n[1]).y+it->GetPoint(n[2]).y)/3;
 
               ptM01.x=(it->GetPoint(n[0]).x+it->GetPoint(n[1]).x)/2;
               ptM01.y=(it->GetPoint(n[0]).y+it->GetPoint(n[1]).y)/2;
@@ -94,10 +94,10 @@ ShapeMarker::triangle_refinement(list<TPPLPoly>& i_list,list<TPPLPoly>& o_list){
         if(fabs(it->GetPoint(n[0]).x-ptM.x)>thresh || fabs(it->GetPoint(n[1]).x-ptM.x)>thresh || fabs(it->GetPoint(n[2]).x-ptM.x)>thresh){
         //for every old triangle 6! new triangles are created
             for (long i = 0; i < it->GetNumPoints (); i++){
-                 tri_new.Triangle(tri_temp.GetPoint(n[i]),ptM,it->GetPoint(n[i])); 
+                 tri_new.Triangle(tri_temp.GetPoint(n[i]),ptM,it->GetPoint(n[i]));
                  //push new triangle in trinagle list
                  o_list.push_back(tri_new);
-                 tri_new.Triangle(tri_temp.GetPoint(n[i]),it->GetPoint(n[i+1]),ptM); 
+                 tri_new.Triangle(tri_temp.GetPoint(n[i]),it->GetPoint(n[i+1]),ptM);
                  //push new triangle in trinagle list
                  o_list.push_back(tri_new);
             }
@@ -108,7 +108,6 @@ ShapeMarker::triangle_refinement(list<TPPLPoly>& i_list,list<TPPLPoly>& o_list){
         }
     }
 }
-
 
 void ShapeMarker::getShape (cob_3d_mapping_msgs::Shape& shape) {
   shape_ = shape ;
@@ -331,34 +330,24 @@ ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::In
 {
   //ROS_INFO(" creating markers for this shape.....");
   TPPLPoint pt;
-  std::vector<unsigned int>::iterator iter;
-
   for (std::list<TPPLPoly>::iterator it = triangle_list.begin (); it != triangle_list.end (); it++)
   {
-    //    visualization_msgs::Marker marker ;
+    marker.id = shape_.id;
 
-    //    marker.lifetime = ros::Duration ();
+    marker.header = shape_.header;
+    marker.header.stamp = ros::Time::now() ;
+
+    marker.type = visualization_msgs::Marker::TRIANGLE_LIST;
+    marker.ns = "shape visualization";
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.lifetime = ros::Duration ();
 
     //set color
-    iter = find(deleted_markers_indices_.begin(),deleted_markers_indices_.end(),shape_.id);
-    if(iter == deleted_markers_indices_.end()) {
-      //      std::cout << "no deleted shapes..." << "\n" ;
-      marker.id = shape_.id;
-      marker.color.r = shape_.color.r;
-      marker.color.g = shape_.color.g;
-      marker.color.b = shape_.color.b;
-      marker.color.a = shape_.color.a;
-    }
-    else {
-      //      ROS_INFO("Color changed...") ;
-      //      i++;
-      //      ROS_WARN("i : %d", i) ;
-      //      marker.id = shape_.id + 1000;
-      marker.color.r = shape_.color.r;
-      marker.color.g = shape_.color.g;
-      marker.color.b = shape_.color.b;
-      marker.color.a = 0.4;
-    }
+    marker.color.r = shape_.color.r;
+    marker.color.g = shape_.color.g;
+    marker.color.b = shape_.color.b;
+    marker.color.a = shape_.color.a;
+
     //set scale
     marker.scale.x = 1;
     marker.scale.y = 1;
@@ -422,6 +411,7 @@ ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::In
     im_ctrl.markers.push_back (marker);
   }
 
+
   // Added For displaying the arrows on Marker Position
   marker_.pose.position.x = marker.pose.position.x ;
   marker_.pose.position.y = marker.pose.position.y ;
@@ -433,7 +423,6 @@ ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::In
   // end
 
 }
-
 /**
  * @brief Create menu entries for each shape
  *
@@ -459,9 +448,10 @@ ShapeMarker::msgToPoint2D (const pcl::PointXYZ &point)
 void
 ShapeMarker::createInteractiveMarker ()
 {
-  //  ROS_INFO("\tcreating interactive marker for shape < %d >", shape_.id);
+  // ROS_INFO("\tcreating interactive marker for shape < %d >", shape_.id);
 
-  std::vector<unsigned int>::iterator iter;
+  /* get normal and centroid */
+
   /* transform shape points to 2d and store 2d point in triangle list */
   TPPLPartition pp;
   list<TPPLPoly> polys, tri_list;
@@ -584,9 +574,6 @@ ShapeMarker::createInteractiveMarker ()
     im_server_ ->applyChanges() ;
     menu_handler_.apply (*im_server_, marker_.name);
 }
-
-
-
 /**
  * @brief Feedback callback for Display Normal menu entry
  * @param feedback feedback from rviz when the Display Normal menu entry of a shape is changed
@@ -924,29 +911,6 @@ void ShapeMarker::displayContour(){
 
   interacted_shapes_.push_back(shape_.id) ;
 
-  //  if (interacted_shapes_.empty()){
-  //    interacted_shapes_.push_back(shape_.id) ;
-  //  }
-  //  else {
-  //    iter = find (interacted_shapes_.begin(), interacted_shapes_.end(), id_) ;
-  //    if (iter == interacted_shapes_.end()) {
-  //      interacted_shapes_.push_back(shape_.id) ;
-  //    }
-  //  }
-  //  else {
-  //    std::cout <<"shape_.id" << shape_.id << "\n" ;
-  //    for (unsigned int i=0;i<interacted_shapes_.size() ;i++){
-  //      if (interacted_shapes_.at(i) != shape_.id){
-  //        std::cout << "interacted_shapes_.at" << "(" << i <<")"<< " = "<<  interacted_shapes_.at(i)<< "\n" ;
-  //        interacted_shapes_.push_back(shape_.id) ;
-  //        break ;
-  //      }
-  //    }
-  //  }
-  //  for (unsigned int i=0;i<interacted_shapes_.size();i++){
-  //    std::cout << interacted_shapes_.at(i) << "\t" ;
-  //  }
-  //  std::cout << "\n" ;
 }
 /**
  * @brief Remove contour of a shape
