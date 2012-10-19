@@ -52,6 +52,8 @@
 
 #include <cob_3d_mapping_common/ros_msg_conversions.h>
 #include "cob_3d_mapping_common/polygon.h"
+#include <cob_3d_mapping_msgs/MoveToTable.h>
+
 
 
 
@@ -60,14 +62,19 @@ class TableMarker
 {
   public:
     // Constructor
-    TableMarker (boost::shared_ptr<interactive_markers::InteractiveMarkerServer> server,cob_3d_mapping_msgs::Shape& table,int ctr)
+    TableMarker (boost::shared_ptr<interactive_markers::InteractiveMarkerServer> server,cob_3d_mapping_msgs::Shape& table,int ctr,
+        tabletop_object_detector::Table& tableMsg)
     //: ctr_(ctr)
     {
       id_ = ctr ;
       table_im_server_ = server ;
       table_ = table ;
+
+      createTableMenu();
       createInteractiveMarkerForTable();
 
+      //Table msg
+      table_msg_ = tableMsg ;
     }
     // Destructor
     ~TableMarker ()
@@ -79,6 +86,8 @@ class TableMarker
     void createInteractiveMarkerForTable();
     TPPLPoint msgToPoint2DforTable (const pcl::PointXYZ &point);
     void tableFeedbackCallback(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+    void createTableMenu();
+    void MoveToTheTable(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
 
   protected:
     visualization_msgs::InteractiveMarker table_int_marker_ ;
@@ -96,6 +105,10 @@ class TableMarker
     Eigen::Affine3f transformation_inv_;
 
     int id_;
+
+    // Table Parameters
+    tabletop_object_detector::Table table_msg_;
+
 };
 
 

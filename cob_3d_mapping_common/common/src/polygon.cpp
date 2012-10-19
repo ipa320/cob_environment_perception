@@ -56,8 +56,9 @@
 * If not, see <http://www.gnu.org/licenses/>.
 *
 ****************************************************************/
-
+//cob includes
 #include "cob_3d_mapping_common/polygon.h"
+//pcl includes
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #ifdef PCL_VERSION_COMPARE
@@ -69,8 +70,11 @@
 #endif
 #include <pcl/common/centroid.h>
 #include <pcl/common/eigen.h>
+
+//boost includes
 #include <boost/shared_ptr.hpp>
 
+//custom definitons
 #define MOD(a,b) ( ((a%b)+b)%b )
 
 namespace cob_3d_mapping
@@ -192,19 +196,12 @@ smoothGpcStructure(const gpc_polygon* gpc_in, gpc_polygon* gpc_out)
       }
       ++num_iteration;
     }
-    std::cout << "Needed " << num_iteration << " iterations for polygon of size " << l << std::endl;
+    ROS_DEBUG_STREAM( "Needed " << num_iteration << " iterations for polygon of size " << l );
   }
 }
 
 
 //##########methods for instantiation##############
-/**
-* \brief Compute attributes for polygon.
-*
-* Set of attributes is completed with respect to the input paramers.
-* \param new_normal Normal of polygon.
-* \param new_centroid Centroid of polygon.
-*/
 void
 Polygon::computeAttributes(const Eigen::Vector3f &new_normal, const Eigen::Vector4f& new_centroid)
 {
@@ -217,13 +214,6 @@ Polygon::computeAttributes(const Eigen::Vector3f &new_normal, const Eigen::Vecto
       this->normal.unitOrthogonal(),this->normal,this->centroid.head(3),this->transform_from_world_to_plane);
 }
 
-/**
-* \brief Transform polygon to target coordinate system.
-*
-* Polygon is transformed with input transformation.
-* Operation is applied to both parameters and contour points.
-* \param trafo Affine transformation to target coordinate system
-*/
 void Polygon::transform2tf(const Eigen::Affine3f& trafo)
 {
   //transform contours
@@ -239,12 +229,6 @@ void Polygon::transform2tf(const Eigen::Affine3f& trafo)
 }
 
 
-/**
-* \brief Smooth contours of polygon.
-*
-* Outline of polygon is smoothed.
-* \see smoothGpcStructure()
-*/
 void
 Polygon::smoothPolygon()
 {
@@ -260,12 +244,6 @@ Polygon::smoothPolygon()
 //###########methods for merging##################
 
 
-/**
-* \brief Check for merge candidates.
-*
-* \param poly_vec Vector of polygons, that are checked.
-* \param intersections Vector with indices of merge candidates.
-*/
 void
 Polygon::getMergeCandidates(const std::vector<Polygon::Ptr>& poly_vec, std::vector<int>& intersections) const
 {
@@ -275,9 +253,6 @@ Polygon::getMergeCandidates(const std::vector<Polygon::Ptr>& poly_vec, std::vect
   }
 }
 
-/**
-* \brief Check for intersection of two polygons.
-*/
 bool
 Polygon::isIntersectedWith(const Polygon::Ptr& poly) const
 {
@@ -289,9 +264,6 @@ Polygon::isIntersectedWith(const Polygon::Ptr& poly) const
 }
 
 
-/**
-* \brief Get intersection of two polygons.
-*/
 void
 Polygon::getIntersection(const Polygon::Ptr& poly, gpc_polygon* gpc_intersection) const
 {
@@ -304,14 +276,6 @@ Polygon::getIntersection(const Polygon::Ptr& poly, gpc_polygon* gpc_intersection
   gpc_free_polygon(gpc_here);
 }
 
-/**
-* \brief Compute overlap of two polygons.
-*
-* Relative overlap and absolute overlap of two polygons is computed.
-* \param[in] Polygon, the overlap is computed with.
-* \param[out] Relative overlap of the polygons.
-* \param[out] Absolute overlap of the polygons.
-*/
 bool
 Polygon::getContourOverlap(const Polygon::Ptr& poly, float& rel_overlap, int& abs_overlap) const
 {
@@ -343,8 +307,8 @@ Polygon::getContourOverlap(const Polygon::Ptr& poly, float& rel_overlap, int& ab
   }
   rel_overlap = (float)overlap/(float)gpc_res_int->contour[i_int].num_vertices;
   abs_overlap = overlap;
-  std::cout << "Overlap: " << overlap << "/"<<gpc_res_int->contour[i_int].num_vertices << " -> "
-            << (float)overlap/(float)gpc_res_int->contour[i_int].num_vertices << std::endl;
+  ROS_DEBUG_STREAM("Overlap: " << overlap << "/"<<gpc_res_int->contour[i_int].num_vertices << " -> "
+            << (float)overlap/(float)gpc_res_int->contour[i_int].num_vertices );
   gpc_free_polygon(gpc_a);
   gpc_free_polygon(gpc_b);
   gpc_free_polygon(gpc_res_int);
@@ -353,12 +317,6 @@ Polygon::getContourOverlap(const Polygon::Ptr& poly, float& rel_overlap, int& ab
 }
 
 
-/**
-* \brief Compute similarity of two polygons.
-*
-* Similarity of Polygons is computed based on parameters and overlap.
-* \param[in] poly Polygon, the similarity is calculated with.
-*/
 float
 Polygon::computeSimilarity(const Polygon::Ptr& poly) const
 {
@@ -372,13 +330,6 @@ Polygon::computeSimilarity(const Polygon::Ptr& poly) const
   return ( 3.0f / (1.0f / normal + 1.0f / d + 1.0f / overlap) );
 }
 
-/**
-* \brief Merging of polygons.
-*
-* Complete merge process for this polygon with a vector of merge candidates.
-* Merging is performed relative to an average polygon.
-* \param[in] poly_vec Vector with merge candidate polygons
-*/
 void
 Polygon::merge(std::vector<Polygon::Ptr>& poly_vec)
 {
@@ -389,15 +340,6 @@ Polygon::merge(std::vector<Polygon::Ptr>& poly_vec)
   this->assignID(poly_vec);
 }
 
-/**
-* \brief Calculate merge union of polygons.
-*
-* The union of contours and the resultant parameters are computed
-* with respect to an average polygon.Results are stored in polygon
-* object the method is called for.
-* \param[in] poly_vec Vector of merge candidate polygons.
-* \param[in] p_average Polygon providing the resultant parameters.
-*/
 void
 Polygon::merge_union(std::vector<Polygon::Ptr>& poly_vec,  Polygon::Ptr& p_average)
 {
@@ -429,11 +371,6 @@ Polygon::merge_union(std::vector<Polygon::Ptr>& poly_vec,  Polygon::Ptr& p_avera
 
 
 
-/**
-* \brief assign merge weight to polygon.
-*
-* Assignment of merge weight to polygon object depending on weighting method.
-*/
 void
 Polygon::assignWeight()
 {
@@ -448,16 +385,10 @@ Polygon::assignWeight()
   }
 }
 
-/**
-* \brief Assign ID to polygon
-*
-* Lowest ID of input vector is assigned to polygon.
-* \param[in] poly_vec Vector with polygon pointers.
-*/
 void
 Polygon::assignID(const std::vector<Polygon::Ptr>& poly_vec)
 {
-   unsigned int tmp_id=poly_vec[0]->id; 
+   unsigned int tmp_id=poly_vec[0]->id;
    for(size_t i=0;i<poly_vec.size();++i)
    {
         if(poly_vec[i]->id<tmp_id)tmp_id=poly_vec[i]->id;
@@ -465,13 +396,6 @@ Polygon::assignID(const std::vector<Polygon::Ptr>& poly_vec)
    this->id=tmp_id;
 }
 
-/**
-* \brief Average polygon is calculated.
-*
-* Calculation of average polygon based on merge weights of individual polygons.
-* \param[in] poly_vec Polygons, that weighting is performed with
-* \param[out] p_average Resultant polygon.
-*/
 void
 Polygon::applyWeighting(const std::vector<Polygon::Ptr>& poly_vec, Polygon::Ptr & p_average)
 {
@@ -515,13 +439,6 @@ Polygon::applyWeighting(const std::vector<Polygon::Ptr>& poly_vec, Polygon::Ptr 
   p_average->computeAttributes(average_normal,average_centroid);
 }
 
-/**
-* \brief Get 2D GPC structure from polygon.
-* 
-* Transformation from 3D to 2D is performed with given transformation.
-* \param[in] external_trafo Affine transformation.
-*\param[out] Resultant GPS structure.
-*/
 void
 Polygon::getGpcStructure(const Eigen::Affine3f& external_trafo, gpc_polygon* gpc_p) const
 {
@@ -532,10 +449,8 @@ Polygon::getGpcStructure(const Eigen::Affine3f& external_trafo, gpc_polygon* gpc
   gpc_p->num_contours = contours.size();
   gpc_p->hole = (int*)malloc(contours.size()*sizeof(int));
   gpc_p->contour = (gpc_vertex_list*)malloc(contours.size()*sizeof(gpc_vertex_list));
-  //std::cout << "num_contours: " << gpc_p->num_contours << std::endl;
   for(size_t j=0; j<contours.size(); ++j)
   {
-    //std::cout << j << std::endl;
     gpc_p->hole[j] = holes[j];
     gpc_p->contour[j].num_vertices = contours[j].size();
     gpc_p->contour[j].vertex = (gpc_vertex*)malloc(gpc_p->contour[j].num_vertices*sizeof(gpc_vertex));
@@ -550,13 +465,6 @@ Polygon::getGpcStructure(const Eigen::Affine3f& external_trafo, gpc_polygon* gpc
 }
 
 
-/**
-* \brief Conversion from GPC structure to polygon.
-*
-* Transformation from 2D GPC structure to 3D polygon object using an external transformation.
-* \param[in] external_trafo from 2D to 3D
-* \param[in] gpc_p Input GPC structure 
-*/
 void
 Polygon::applyGpcStructure(const Eigen::Affine3f& external_trafo, const gpc_polygon* gpc_p)
 {
@@ -580,20 +488,15 @@ Polygon::applyGpcStructure(const Eigen::Affine3f& external_trafo, const gpc_poly
 
     if (this->contours.back().size() <= 2)  // drop empty contour lists
     {
-      //std::cout << "Drop! New size: " << this->contours.size() - 1 << std::endl;
       this->contours.pop_back();
       this->holes.pop_back();
     }
   }
-  //if (this->contours.size() == 0) std::cout << "!!!! THIS POLYGON HAS NO CONTOURS ANYMORE" << std::endl;
 }
 
 
 //#######methods for calculation#####################
 
-/**
-* \brief Computation of centroid of polygn
-*/
 void
 Polygon::computeCentroid()
 {
@@ -624,12 +527,6 @@ Polygon::computeCentroid()
 }
 
 
-/**
-* \brief Computation of area of 2D polygon.
-*
-* This method is only suitable for polygons with no expansion
-* in z-direction.
-*/
 double
 Polygon::computeArea() const
 {
@@ -658,20 +555,11 @@ Polygon::computeArea() const
 
     }
     area += fabs (sum / 2);
-    //std::cout << "\n\t*** Area of polygon ( " << i << " ) = " << area_[i] << std::endl;
   }
   return area;
 }
 
 
-
-
-
-/**
-* \brief Computation of area of 3D polygon.
-*
-* This method is suitable for all polygons.
-*/
 
 double
 Polygon::computeArea3d() const
@@ -685,7 +573,6 @@ Polygon::computeArea3d() const
       vec_sum += contours[i][j].cross(contours[i][j+1]);
 
     vec_sum += contours[ i ][ contours[i].size()-1 ].cross(contours[i][0]);
-    //std::cout << (holes[i] ? "Hole : " : "Outer: ") << 0.5 * normal.dot(vec_sum) << std::endl;
     area += 0.5 * normal.dot(vec_sum);
 
     // special cases for holes can be ignored, since their vertex orientation is opposite to the
@@ -697,10 +584,6 @@ Polygon::computeArea3d() const
   return std::fabs(area);
 }
 
-/**
-* \brief compute Transformation from world coordinate system to coordinate
-* system on polygon plane.
-*/
 void
 Polygon::getTransformationFromPlaneToWorld(
   const Eigen::Vector3f &normal,
@@ -709,15 +592,10 @@ Polygon::getTransformationFromPlaneToWorld(
 {
   Eigen::Vector3f u, v;
   getCoordinateSystemOnPlane(normal, u, v);
-  // std::cout << "u " << u << std::endl << " v " << v << std::endl;
   pcl::getTransformationFromTwoUnitVectorsAndOrigin(v, normal, origin, transformation);
   transformation = transformation.inverse();
 }
 
-/**
-* \brief compute Transformation from world coordinate system to coordinate
-* system on polygon plane.
-*/
 void
 Polygon::getTransformationFromPlaneToWorld(
   const Eigen::Vector3f z_axis,
@@ -730,9 +608,6 @@ Polygon::getTransformationFromPlaneToWorld(
   transformation = transformation.inverse();
 }
 
-/**
-* \brief Transform polygon contours with given transformation.
-*/    
 void
 Polygon::TransformContours(const Eigen::Affine3f& trafo)
 {
@@ -746,9 +621,6 @@ Polygon::TransformContours(const Eigen::Affine3f& trafo)
   }
 }
 
-/**
-* \brief Transform polygon contours with given transformation and return copy.
-*/
 void
 Polygon::getTransformedContours(const Eigen::Affine3f& trafo, std::vector< std::vector<Eigen::Vector3f> >& new_contours) const
 {
@@ -763,9 +635,6 @@ Polygon::getTransformedContours(const Eigen::Affine3f& trafo, std::vector< std::
   }
 }
 
-/**
-* \brief Computation of bounding box of structure.
-*/
 void
 Polygon::computePoseAndBoundingBox(Eigen::Affine3f& pose, Eigen::Vector4f& min_pt, Eigen::Vector4f& max_pt)
 {
@@ -793,11 +662,6 @@ Polygon::computePoseAndBoundingBox(Eigen::Affine3f& pose, Eigen::Vector4f& min_p
 
 //#############debugging methods#######################
 
-/**
-* \brief Output of contour vertices to file.
-* \param[in] name Name of output file
-* \todo Change output path to value on individual system
-*/
 void Polygon::debug_output(std::string name)
 {
   std::string path = "/home/goa-tz/debug/dbg/";
