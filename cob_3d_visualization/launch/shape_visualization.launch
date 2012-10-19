@@ -3,8 +3,8 @@
 
 	<!--shape visualization node-->
 	<!--node pkg="cob_3d_visualization" type="shape_visualization" name="shape_visualization" output="screen"-->
-	<node pkg="cob_3d_visualization" type="shape_visualization" name="shape_visualization" output="screen">
-
+	<node pkg="cob_3d_visualization" launch-prefix="xterm -e gdb --args" type="shape_visualization" name="shape_visualization" output="screen">
+	
      <remap from="shape_array" to="geometry_map/map_array"/>
      <remap from="shape" to="shape_visualization/shape"/>
   	<!--remap from="point_cloud" to="/cam3d/rgb/points"/-->
@@ -13,6 +13,6 @@
   	<remap from="interactive_marker" to="shape_visualization/interactive_marker"/>
 	</node>
 		
-	<!--include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch"/-->	
+	<include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch"/>	
 
 </launch>

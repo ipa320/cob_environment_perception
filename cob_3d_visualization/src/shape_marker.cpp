@@ -137,11 +137,11 @@ void ShapeMarker::deleteMarker(const visualization_msgs::InteractiveMarkerFeedba
 
 
   //
-  ros::Duration(2).sleep() ;
+//  ros::Duration(2).sleep() ;
 
   //  createShapeMenu();
-  createInteractiveMarker() ;
-  im_server_->applyChanges ();
+//  createInteractiveMarker() ;
+//  im_server_->applyChanges ();
   //  visualization_msgs::InteractiveMarker intMarker;
   //    im_server_->get(ss.str(),marker_) ;
   //  im_server_->insert(marker_) ;
