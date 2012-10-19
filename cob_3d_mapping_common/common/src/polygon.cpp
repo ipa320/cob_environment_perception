@@ -196,7 +196,7 @@ smoothGpcStructure(const gpc_polygon* gpc_in, gpc_polygon* gpc_out)
       }
       ++num_iteration;
     }
-    std::cout << "Needed " << num_iteration << " iterations for polygon of size " << l << std::endl;
+    ROS_DEBUG_STREAM( "Needed " << num_iteration << " iterations for polygon of size " << l );
   }
 }
 
@@ -307,8 +307,8 @@ Polygon::getContourOverlap(const Polygon::Ptr& poly, float& rel_overlap, int& ab
   }
   rel_overlap = (float)overlap/(float)gpc_res_int->contour[i_int].num_vertices;
   abs_overlap = overlap;
-  std::cout << "Overlap: " << overlap << "/"<<gpc_res_int->contour[i_int].num_vertices << " -> "
-            << (float)overlap/(float)gpc_res_int->contour[i_int].num_vertices << std::endl;
+  ROS_DEBUG_STREAM("Overlap: " << overlap << "/"<<gpc_res_int->contour[i_int].num_vertices << " -> "
+            << (float)overlap/(float)gpc_res_int->contour[i_int].num_vertices );
   gpc_free_polygon(gpc_a);
   gpc_free_polygon(gpc_b);
   gpc_free_polygon(gpc_res_int);
@@ -449,10 +449,8 @@ Polygon::getGpcStructure(const Eigen::Affine3f& external_trafo, gpc_polygon* gpc
   gpc_p->num_contours = contours.size();
   gpc_p->hole = (int*)malloc(contours.size()*sizeof(int));
   gpc_p->contour = (gpc_vertex_list*)malloc(contours.size()*sizeof(gpc_vertex_list));
-  //std::cout << "num_contours: " << gpc_p->num_contours << std::endl;
   for(size_t j=0; j<contours.size(); ++j)
   {
-    //std::cout << j << std::endl;
     gpc_p->hole[j] = holes[j];
     gpc_p->contour[j].num_vertices = contours[j].size();
     gpc_p->contour[j].vertex = (gpc_vertex*)malloc(gpc_p->contour[j].num_vertices*sizeof(gpc_vertex));
@@ -490,12 +488,10 @@ Polygon::applyGpcStructure(const Eigen::Affine3f& external_trafo, const gpc_poly
 
     if (this->contours.back().size() <= 2)  // drop empty contour lists
     {
-      //std::cout << "Drop! New size: " << this->contours.size() - 1 << std::endl;
       this->contours.pop_back();
       this->holes.pop_back();
     }
   }
-  //if (this->contours.size() == 0) std::cout << "!!!! THIS POLYGON HAS NO CONTOURS ANYMORE" << std::endl;
 }
 
 
@@ -559,7 +555,6 @@ Polygon::computeArea() const
 
     }
     area += fabs (sum / 2);
-    //std::cout << "\n\t*** Area of polygon ( " << i << " ) = " << area_[i] << std::endl;
   }
   return area;
 }
@@ -578,7 +573,6 @@ Polygon::computeArea3d() const
       vec_sum += contours[i][j].cross(contours[i][j+1]);
 
     vec_sum += contours[ i ][ contours[i].size()-1 ].cross(contours[i][0]);
-    //std::cout << (holes[i] ? "Hole : " : "Outer: ") << 0.5 * normal.dot(vec_sum) << std::endl;
     area += 0.5 * normal.dot(vec_sum);
 
     // special cases for holes can be ignored, since their vertex orientation is opposite to the
@@ -598,7 +592,6 @@ Polygon::getTransformationFromPlaneToWorld(
 {
   Eigen::Vector3f u, v;
   getCoordinateSystemOnPlane(normal, u, v);
-  // std::cout << "u " << u << std::endl << " v " << v << std::endl;
   pcl::getTransformationFromTwoUnitVectorsAndOrigin(v, normal, origin, transformation);
   transformation = transformation.inverse();
 }
