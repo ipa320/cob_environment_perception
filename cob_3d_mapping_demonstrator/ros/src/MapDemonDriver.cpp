@@ -96,7 +96,7 @@ public:
 	///Destructor
 	~MappingDemonstratorNode()
 	{
-
+		delete md_ctrl_;
 	}
 
 	///Get ROS parameters from parameter server

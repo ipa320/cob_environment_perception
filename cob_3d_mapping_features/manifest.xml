@@ -26,6 +26,7 @@
   <depend package="visualization_msgs"/>
 
 	<!--rosdep name="pcl"/-->
+	<rosdep name="eigen"/>
 
   <export>
   	<cpp cflags="-I${prefix}/common/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcob_3d_mapping_features"/>

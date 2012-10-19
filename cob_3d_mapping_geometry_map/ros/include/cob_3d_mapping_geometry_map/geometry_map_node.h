@@ -64,6 +64,7 @@
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
 #include <cob_3d_mapping_msgs/GetGeometricMap.h>
+#include <cob_3d_mapping_msgs/ModifyMap.h>
 #include <cob_3d_mapping_msgs/ShapeArray.h>
 #include <cob_srvs/Trigger.h>
 
@@ -102,17 +103,7 @@ namespace cob_3d_mapping
     * @return nothing
     */
     void dynReconfCallback(cob_3d_mapping_geometry_map::geometry_map_nodeConfig &config, uint32_t level);
-
-
-    /**
-    * @brief Callback for shape arrays
-    *
-    * This is where the shape processing chain starts.
-    * @param[in] sa Shape array message, containing the shape data
-    */
-    void shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr sa);
-
-
+    void shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& sa);
 
     /**
      * @brief clears map
@@ -139,6 +130,7 @@ namespace cob_3d_mapping
      * @return nothing
      */
     bool getMap(cob_3d_mapping_msgs::GetGeometricMap::Request &req, cob_3d_mapping_msgs::GetGeometricMap::Response &res);
+    bool modifyMap(cob_3d_mapping_msgs::ModifyMap::Request &req, cob_3d_mapping_msgs::ModifyMap::Response &res) ;
 
 
     /**
@@ -220,9 +212,10 @@ namespace cob_3d_mapping
     ros::Publisher map_pub_;                    ///< Publish Map array as shape message.
     ros::Publisher marker_pub_;                 ///< Publish Map array as visualization markers.
     ros::Publisher primitive_pub_;              ///< Publish Cylinder primitive visualization markers.
-    ros::ServiceServer clear_map_server_;       ///< Service Server to clar map.
-    ros::ServiceServer get_map_server_;         ///< Service Server to get map array.
-
+    ros::ServiceServer clear_map_server_;      
+    ros::ServiceServer get_map_server_;
+    ros::ServiceServer modify_map_server_ ;
+    
 
     tf::TransformListener tf_listener_;         ///< Retrieves transformations.
     bool enable_tf_;                            ///< If true transformation to target frame is performed.
