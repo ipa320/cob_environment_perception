@@ -80,7 +80,7 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
   map_msg.header.frame_id="/map";
   map_msg.header.stamp = ros::Time::now();
 
-  int shape_id;
+  int shape_id, index;
 
 
   Eigen::Quaternionf quat;
@@ -104,7 +104,15 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
     name >> shape_id ;
 
     cob_3d_mapping::Polygon p;
-    cob_3d_mapping::fromROSMsg (sha.shapes.at(shape_id), p);
+
+    for(int i=0;i<sha.shapes.size();++i)
+    {
+      if (sha.shapes[i].id == shape_id)
+      {
+        index = i;
+      }
+    }
+    cob_3d_mapping::fromROSMsg (sha.shapes.at(index), p);
 
     if (feedback->event_type == 2 && feedback->menu_entry_id == 5){
       quatInit.x() = (float)feedback->pose.orientation.x ;           //normalized
@@ -139,7 +147,14 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
 
       name >> shape_id ;
       cob_3d_mapping::Polygon p;
-      cob_3d_mapping::fromROSMsg (sha.shapes.at(shape_id), p);
+      for(int i=0;i<sha.shapes.size();++i)
+      {
+        if (sha.shapes[i].id == shape_id)
+        {
+          index = i;
+        }
+      }
+      cob_3d_mapping::fromROSMsg (sha.shapes.at(index), p);
 
       quat.x() = (float)feedback->pose.orientation.x ;           //normalized
       quat.y() = (float)feedback->pose.orientation.y ;
@@ -150,9 +165,9 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
 
       rotationMat = quat.toRotationMatrix() ;
 
-      normalVec << sha.shapes.at(shape_id).params[0],                   //normalized
-          sha.shapes.at(shape_id).params[1],
-          sha.shapes.at(shape_id).params[2];
+      normalVec << sha.shapes.at(index).params[0],                   //normalized
+          sha.shapes.at(index).params[1],
+          sha.shapes.at(index).params[2];
 
       newCentroid << (float)feedback->pose.position.x ,
           (float)feedback->pose.position.y ,
@@ -174,14 +189,14 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
       //      newCentroid  = transFinal *OldCentroid ;
 
 
-      sha.shapes.at(shape_id).centroid.x = newCentroid(0) ;
-      sha.shapes.at(shape_id).centroid.y = newCentroid(1) ;
-      sha.shapes.at(shape_id).centroid.z = newCentroid(2) ;
+      sha.shapes.at(index).centroid.x = newCentroid(0) ;
+      sha.shapes.at(index).centroid.y = newCentroid(1) ;
+      sha.shapes.at(index).centroid.z = newCentroid(2) ;
 
 
-      sha.shapes.at(shape_id).params[0] = normalVecNew(0) ;
-      sha.shapes.at(shape_id).params[1] = normalVecNew(1) ;
-      sha.shapes.at(shape_id).params[2] = normalVecNew(2) ;
+      sha.shapes.at(index).params[0] = normalVecNew(0) ;
+      sha.shapes.at(index).params[1] = normalVecNew(1) ;
+      sha.shapes.at(index).params[2] = normalVecNew(2) ;
 
 
       std::cout << "transfromFinal : " << "\n"    << affineFinal.matrix() << "\n" ;
@@ -203,8 +218,8 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
       }
 
       pcl::toROSMsg (pc, pc2);
-      sha.shapes.at(shape_id).points.clear() ;
-      sha.shapes.at(shape_id).points.push_back (pc2);
+      sha.shapes.at(index).points.clear() ;
+      sha.shapes.at(index).points.push_back (pc2);
 
       // uncomment when using test_shape_array
 
@@ -216,7 +231,7 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
 
       // end uncomment
 
-      modified_shapes_.shapes.push_back(sha.shapes.at(shape_id));
+      modified_shapes_.shapes.push_back(sha.shapes.at(index));
     }
 
   }
@@ -313,7 +328,7 @@ void ShapeVisualization::resetAll(const visualization_msgs::InteractiveMarkerFee
     {
       if(id == v_sm_[j]->getID())
         deleted_markers_indices_.erase(deleted_markers_indices_.begin()+i);
-        v_sm_[j]->createInteractiveMarker();
+      v_sm_[j]->createInteractiveMarker();
     }
   }
 
@@ -534,13 +549,14 @@ ShapeVisualization::shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr
   for (unsigned int i = 0; i < sa->shapes.size (); i++)
   {
     sha.shapes.push_back(sa->shapes[i]);
-    sha.shapes[i].id = i;
+    sha.shapes[i].id = sa->shapes[i].id;
+
     std::cout << "shape id" << sa->shapes[i].id << "\n" ;
     boost::shared_ptr<ShapeMarker> sm(new ShapeMarker(im_server_, sa->shapes[i],moved_shapes_indices_
-                                                     ,interacted_shapes_,deleted_markers_indices_)) ;//,deleted_));
+        ,interacted_shapes_,deleted_markers_indices_)) ;//,deleted_));
     v_sm_.push_back(sm);
   }
-//  im_server_->applyChanges(); //update changes
+  //  im_server_->applyChanges(); //update changes
 }
 
 int
