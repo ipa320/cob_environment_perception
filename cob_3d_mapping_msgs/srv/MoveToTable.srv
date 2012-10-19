@@ -1,0 +1,3 @@
+tabletop_object_detector/Table targetTable
+geometry_msgs/Pose tableCentroid
+---

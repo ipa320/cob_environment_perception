@@ -81,8 +81,8 @@ namespace cob_3d_mapping
   toROSMsg(const Polygon& p, cob_3d_mapping_msgs::Shape& s)
   {
     s.id = p.id;
-
     s.type = cob_3d_mapping_msgs::Shape::POLYGON;
+
     s.params.resize(4);
     s.params[0] = p.normal(0);
     s.params[1] = p.normal(1);
@@ -95,6 +95,7 @@ namespace cob_3d_mapping
     s.color.g = p.color[1];
     s.color.b = p.color[2];
     s.color.a = p.color[3];
+
     s.points.resize(p.contours.size());
     s.holes.resize(p.holes.size());
     for(unsigned int i=0; i<p.contours.size(); i++)

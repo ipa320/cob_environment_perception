@@ -71,9 +71,18 @@
 namespace cob_3d_mapping
 {
 
+  /**
+  * \brief Class, representing Shape objects.
+  * \note Base class for Cylinder and Polygon classes
+  */
   class Shape
+
   {
   public:
+    /**
+    * \brief Shape Pointer.
+    * \details Boost shared pointer to shape object.
+    */
     typedef boost::shared_ptr<Shape> Ptr;
 
   public:
@@ -91,6 +100,11 @@ namespace cob_3d_mapping
     * \brief Destructor of shape.
     */
     virtual ~Shape() { }
+
+    /**
+    * \brief Transform shape to target frame.
+    * \param[in] trafo Transformatuon, which is applied.
+    */
     virtual void transform2tf(const Eigen::Affine3f& trafo)=0;
 
     unsigned int id;/**< ID of shape.*/
