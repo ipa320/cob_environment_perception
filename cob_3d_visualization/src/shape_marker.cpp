@@ -182,8 +182,8 @@ void ShapeMarker::displayArrows()
   ss.str("");
   ss.clear();
 
-  ss << "arrows_" << shape_.id;
-  marker_.name = ss.str() ;
+  //ss << "arrows_" << shape_.id;
+  //marker_.name = ss.str() ;
 
   marker_.header  = shape_.header ;
   marker_.header.frame_id = "/map" ;
@@ -234,6 +234,7 @@ void ShapeMarker::displayArrows()
  * @param untick flag shows whether Enable Movement is unticked
  */
 void ShapeMarker::hideArrows(int untick)
+
 {
   ROS_INFO ("Deleting the Arrows ...") ;
   stringstream ss;
@@ -241,9 +242,18 @@ void ShapeMarker::hideArrows(int untick)
 
   ss.clear() ;
   ss.str("");
-  ss << "arrows_" << shape_.id;
-  im_server_->erase(ss.str());
-  im_server_->applyChanges ();
+ marker_.controls.pop_back();
+ marker_.controls.pop_back();
+ marker_.controls.pop_back();
+ marker_.controls.pop_back();
+ marker_.controls.pop_back();
+ marker_.controls.pop_back();
+
+
+  //ss << "arrows_" << shape_.id;
+  //im_server_->erase(ss.str());
+im_server_->insert(marker_);
+im_server_->applyChanges ();
 
   if (untick){
     for (unsigned int i=0;i< moved_shapes_indices_.size();i++){
@@ -420,10 +430,13 @@ ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::In
     marker_.pose.orientation.x = marker.pose.orientation.x ;
     marker_.pose.orientation.y = marker.pose.orientation.y ;
     marker_.pose.orientation.z = marker.pose.orientation.z ;
+    marker_.pose.position.x = marker.pose.position.x ;
+    marker_.pose.position.y = marker.pose.position.y ;
+    marker_.pose.position.z = marker.pose.position.z ;
     // end
   }
 
-}
+
 
 /**
  * @brief Create menu entries for each shape
