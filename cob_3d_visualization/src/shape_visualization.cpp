@@ -105,16 +105,25 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
 	{
 		index = i;
 	}
+
     }
 
 
     // temporary fix.
     //do nothing if index of shape is not found
     // this is not supposed to occur , but apparently it does
-    if(index==-1) return;
+    if(index==-1){
+
+    //std::cout<<"BROKEN SHAPE ID"<<shape_id<<"\n";
+    //for(int i=0;i<sha.shapes.size();++i)
+    //{
+    //std::cout<<sha.shapes[i].id<<"\n";
+    //}
+    return;
+	}
 
 
-
+std::cout<<"index"<<index<<"\n";
     cob_3d_mapping::fromROSMsg (sha.shapes.at(index), p);
 
     if (feedback->event_type == 2 && feedback->menu_entry_id == 5){
@@ -151,7 +160,7 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
 
       name >> shape_id ;
       cob_3d_mapping::Polygon p;
-      cob_3d_mapping::fromROSMsg (sha.shapes.at(shape_id), p);
+      cob_3d_mapping::fromROSMsg (sha.shapes.at(index), p);
 
       quat.x() = (float)feedback->pose.orientation.x ;           //normalized
       quat.y() = (float)feedback->pose.orientation.y ;
@@ -548,7 +557,7 @@ ShapeVisualization::shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr
     sha.shapes.push_back(sa->shapes[i]);
     sha.shapes[i].id = sa->shapes[i].id;
 
-
+    
     boost::shared_ptr<ShapeMarker> sm(new ShapeMarker(im_server_, sa->shapes[i],moved_shapes_indices_,interacted_shapes_,deleted_markers_indices_));
     v_sm_.push_back(sm);
   }
