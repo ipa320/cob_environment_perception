@@ -56,30 +56,39 @@
 #ifndef __GEOMETRY_MAP_H__
 #define __GEOMETRY_MAP_H__
 
-//##################
-//#### includes ####
-
 // external includes
+
 #include <Eigen/Core>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
-
 #include <Eigen/Eigenvalues>
 #include <Eigen/Geometry>
 
+//cob includes
 #include "cob_3d_mapping_geometry_map/vis/geometry_map_visualisation.h"
 #include "cob_3d_mapping_common/polygon.h"
 #include "cob_3d_mapping_common/cylinder.h"
 #include "cob_3d_mapping_common/shape_cluster.h"
 
-
+/**
+* \brief Class for GeometryMap
+* \details The class GeometryMap handles storage of Shape objects of types
+* Polygon,Cylinder,ShapeCluster.
+*/
 class GeometryMap
 {
 public:
+  /**
+  * \brief Polygon iterator.
+  */
   typedef std::vector<cob_3d_mapping::Polygon::Ptr>::iterator polygon_iterator;
+
+
+  /**
+  * \brief Cylinder iterator.
+  */
   typedef std::vector<cob_3d_mapping::Polygon::Ptr>::iterator cylinder_iterator;
 
-    // Constructor
   /**
   * \brief Constructor for geometry map object.
   */
@@ -94,6 +103,8 @@ public:
   {
   }
 
+
+
   /**
   * \brief Destructor for geometry map object.
   */
@@ -101,10 +112,45 @@ public:
   {
   }
 
+
+  /**
+  * \brief Add polygon to map.
+  *
+  * \details Method adds new polygon to map or initiates merge process
+  * with existing polygons in map. Weighting and merging configuration are set.
+  *
+  * \param[in] p_ptr Polygon, that is added to map.
+  */
   void addMapEntry(cob_3d_mapping::Polygon::Ptr& p_ptr);
+
+
+  /**
+  * \brief Add cylinder to map.
+  *
+  * \details Method adds new cylinder to map or initiates merge process
+  * with existing cylinders in map. Weighting and merging configuration are set.
+  * \param[in] c_ptr Cylinder, that is added to map.
+  */
   void addMapEntry(cob_3d_mapping::Cylinder::Ptr& c_ptr);
+
+  /**
+  * \brief Add shape cluster to map.
+  *
+  * \details Method adds new shape cluster to map or initiates merge process
+  * with existing shape clusters in map. Weighting and merging configuration are set.
+  * \param[in] sc_ptr Shape Cluster, that is added to map.
+  */
   void addMapEntry(cob_3d_mapping::ShapeCluster::Ptr& sc_ptr);
 
+  /**
+  * \brief Transformation error is calculated.
+  *
+  * \details The error Transformation between two polygons from different
+  * input frames is calculated.
+  * param[in] list_polygon List of Polygons to be checked for similarity.
+  * param[in] tf_old Original transformation
+  * param[out] adjust_tf The correctional transformation, calculated by this function.
+  */
   bool
   computeTfError(const std::vector<cob_3d_mapping::Polygon::Ptr>& list_polygon, const Eigen::Affine3f& tf_old, Eigen::Affine3f& adjust_tf);
 
@@ -115,45 +161,75 @@ public:
   inline void
   incrFrame() { ++frame_counter_; };
 
+
+
+/**
+* \brief Remove clutter from map.
+*
+* \details Geometry map is cleaned using criterias like:
+* Minimal size of shape, plausible parameters, repeated detection.
+*/
   void
   cleanUp();
 
 
-
-
+/**
+* \brief Debug output of polygon map to file.
+* \param[in] path path Name of output file.
+* \param[in] p Polygon that is saved.
+*/
   void
   saveMapEntry(std::string path, int ctr, cob_3d_mapping::Polygon& p);
 
+/**
+* \brief Debug output of whole polygon map.
+*
+* \param[in] path Name of output file.
+*/
   void
   saveMap(std::string path);
 
+
+
+/**
+* \brief Remove all shapes from map.
+*/
   void
   clearMap();
 
 
+/**
+* \brief Customized rounding operation.
+*/
   float
   rounding(float x);
 
+/**
+* \brief Colorize shapes in map.
+*/
   void
   colorizeMap();
 
 
   /**
-  * \brief Return polygon map.
-  */  
+  * \brief Return Polygon map.
+  * \return Polygon Pointer to array with Polygons contained in map.
+  */
   inline std::vector<cob_3d_mapping::Polygon::Ptr>* getMap_polygon() { return &(map_polygon_); }
   /**
-  * \brief Return polygon map.
-  */  
+  * \brief Return Cylinder map.
+  * \return Cylinder Pointer to array with Cylinders contained in map.
+  */
   inline std::vector<cob_3d_mapping::Cylinder::Ptr>* getMap_cylinder() { return &(map_cylinder_); }
   /**
-  * \brief Return polygon map.
-  */  
+  * \brief Return ShapeCluster map.
+  * \return ShapeCluster Pointer to array with ShapeClusters contained in map.
+  */
   inline std::vector<cob_3d_mapping::ShapeCluster::Ptr>* getMap_shape_cluster() { return &(map_shape_cluster_); }
 
 
   /**
-  * \brief Fiele path is set.
+  * \brief File path is set.
   * \param[in] file_path  Filepath
   */
   void
@@ -162,14 +238,17 @@ public:
     file_path_ = file_path;
   }
 
+
   /**
   * \brief Set option if map is saved to file.
+  * \param[in] save_to_file Set to true, to enable file output.
   */
   void
   setSaveToFile(bool save_to_file)
   {
     save_to_file_ = save_to_file;
   }
+
 
   /**
   * \brief Set merging thresholds.
@@ -185,6 +264,7 @@ public:
 
   /**
   * \brief Last transformation error is returned.
+  * \return Latest error transformation matrix.
   */
   inline const Eigen::Affine3f& getLastError() { return last_tf_err_; }
 
