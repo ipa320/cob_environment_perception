@@ -80,8 +80,8 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
   map_msg.header.frame_id="/map";
   map_msg.header.stamp = ros::Time::now();
 
-  int shape_id, index;
-
+  int shape_id,index;
+  stringstream name(feedback->marker_name);
 
   Eigen::Quaternionf quat;
 
@@ -102,15 +102,14 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
     stringstream name(feedback->marker_name);
 
     name >> shape_id ;
-
     cob_3d_mapping::Polygon p;
 
     for(int i=0;i<sha.shapes.size();++i)
     {
-      if (sha.shapes[i].id == shape_id)
-      {
-        index = i;
-      }
+    	if (sha.shapes[i].id == shape_id)
+	{
+		index = i;
+	}
     }
     cob_3d_mapping::fromROSMsg (sha.shapes.at(index), p);
 
@@ -288,6 +287,7 @@ void ShapeVisualization::applyModifications(const visualization_msgs::Interactiv
     std::cout<< "deleted_markers_indices_ size : " << deleted_markers_indices_.size() << "\n" ;
     std::cout << "req size" << req.InMap.shapes.size() << "\n" ;
   }
+  std ::cout << "size of request: " << req.InMap.shapes.size() << "\n" ;
 
   im_server_->applyChanges() ;
 }
@@ -413,6 +413,7 @@ void ShapeVisualization::displayAllNormals(const visualization_msgs::Interactive
 
     for (unsigned int j=0; j<v_sm_.size(); j++)
     {
+    std::cout<<j<<std::endl;
       v_sm_[j]->displayNormal();
     }
   }
@@ -551,12 +552,11 @@ ShapeVisualization::shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr
     sha.shapes.push_back(sa->shapes[i]);
     sha.shapes[i].id = sa->shapes[i].id;
 
-    std::cout << "shape id" << sa->shapes[i].id << "\n" ;
-    boost::shared_ptr<ShapeMarker> sm(new ShapeMarker(im_server_, sa->shapes[i],moved_shapes_indices_
-        ,interacted_shapes_,deleted_markers_indices_)) ;//,deleted_));
+
+    boost::shared_ptr<ShapeMarker> sm(new ShapeMarker(im_server_, sa->shapes[i],moved_shapes_indices_,interacted_shapes_,deleted_markers_indices_));
     v_sm_.push_back(sm);
   }
-  //  im_server_->applyChanges(); //update changes
+  im_server_->applyChanges(); //update changes
 }
 
 int
