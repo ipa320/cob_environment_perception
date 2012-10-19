@@ -118,8 +118,9 @@ class ShapeMarker
 
     void resetMarker();//bool call_reset_marker,visualization_msgs::InteractiveMarker& imarker) ;
 
-//    void setShapePosition(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);//,const cob_3d_mapping_msgs::Shape& shape) ;
+    //    void setShapePosition(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);//,const cob_3d_mapping_msgs::Shape& shape) ;
     void getShape (cob_3d_mapping_msgs::Shape& shape) ;
+    visualization_msgs::Marker getMarker() ;
     unsigned int getID() ;
 
     //    std::vector<int> getInteractedShapesNumber();
@@ -130,8 +131,9 @@ class ShapeMarker
     visualization_msgs::InteractiveMarker Imarker ;
     visualization_msgs::Marker marker;
 
-    ros::NodeHandle nh_;
-    ros::Subscriber feedback_sub_ ;
+    //    ros::NodeHandle nh_;
+    //    ros::Subscriber feedback_sub_ ;
+    //    ros::Publisher marker_pub_ ;
 
     visualization_msgs::InteractiveMarkerControl im_ctrl;
 
@@ -151,17 +153,17 @@ class ShapeMarker
     std::vector<unsigned int>& moved_shapes_indices_ ;
     std::vector<unsigned int>& interacted_shapes_ ;
     std::vector<unsigned int>& deleted_markers_indices_ ;
+//    unsigned int& deleted_ ;
 
-
-//    bool arrows_;
-//    cob_3d_mapping_msgs::ModifyMap::Request req ;
-//    cob_3d_mapping_msgs::ModifyMap::Response res;
-//    //
-//    Eigen::Quaternionf quatInit ;
-//    Eigen::Vector3f oldCentroid ;
-//    Eigen::Matrix4f transInit;
-//    Eigen::Affine3f affineInit;
-//    Eigen::Matrix4f transInitInv;
+    //    bool arrows_;
+    //    cob_3d_mapping_msgs::ModifyMap::Request req ;
+    //    cob_3d_mapping_msgs::ModifyMap::Response res;
+    //    //
+    //    Eigen::Quaternionf quatInit ;
+    //    Eigen::Vector3f oldCentroid ;
+    //    Eigen::Matrix4f transInit;
+    //    Eigen::Affine3f affineInit;
+    //    Eigen::Matrix4f transInitInv;
 
 };
 

@@ -18,6 +18,7 @@
 #include <ros/ros.h>
 #include <cob_3d_mapping_msgs/ShapeArray.h>
 #include <cob_3d_mapping_msgs/GetObjectsOfClass.h>
+#include <cob_3d_mapping_msgs/GetTables.h>
 #include <cob_3d_visualization/table_marker.h>
 
 //#include <cob_3d_mapping_msgs/GetTables.h>
@@ -47,12 +48,14 @@ class TableVisualization
 
   protected:
 
-     ros::NodeHandle nh_;
-     ros::Subscriber table_array_sub_ ;
-     std::vector<boost::shared_ptr<TableMarker> > v_tm_;
-     boost::shared_ptr<interactive_markers::InteractiveMarkerServer> table_im_server_;
+    ros::NodeHandle nh_;
+    ros::Subscriber table_array_sub_ ;
+    std::vector<boost::shared_ptr<TableMarker> > v_tm_;
+    boost::shared_ptr<interactive_markers::InteractiveMarkerServer> table_im_server_;
 
-     int ctr_;
+
+
+    int ctr_;
 };
 
 #endif /* TABLE_VISUALIZATION_H_ */
