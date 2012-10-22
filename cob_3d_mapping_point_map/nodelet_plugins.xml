@@ -4,13 +4,7 @@
   Nodelet for point map aggregation
   </description>
   </class>
-  
-  <class name="cob_3d_mapping_point_map/SegmentFieldOfView" type="SegmentFieldOfView" base_class_type="nodelet::Nodelet">
-  <description>
-  Nodelet for field of view segmentation
-  </description>
-  </class>
-  
+
   <class name="cob_3d_mapping_point_map/DifferenceSegmentation" type="DifferenceSegmentation" base_class_type="nodelet::Nodelet">
   <description>
   Nodelet for finding the difference map
