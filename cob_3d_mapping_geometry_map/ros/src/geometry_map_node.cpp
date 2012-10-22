@@ -94,9 +94,6 @@
 
 using namespace cob_3d_mapping;
 
-/**
- * \brief Constructor of Geometry Map
- */
 GeometryMapNode::GeometryMapNode()
 {
   enable_tf_=true;
@@ -139,14 +136,10 @@ GeometryMapNode::dynReconfCallback(cob_3d_mapping_geometry_map::geometry_map_nod
   geometry_map_.setMergeThresholds(config.cos_angle, config.d);
   map_frame_id_ = config.map_frame_id;
   enable_tf_ = config.enable_tf;
+  enable_cyl_= config.enable_cyl;
+  enable_poly_=config.enable_poly;
 }
 
-/**
- * @brief Callback for shape arrays
- *
- * This is where the shape processing chain starts.
- * @param[in] sa Shape array message, containing the shape data
- */
 void
 GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& sa)
 {
@@ -177,6 +170,7 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& 
     {
       case cob_3d_mapping_msgs::Shape::POLYGON:
       {
+        if(enable_poly_==false)continue;
         Polygon::Ptr p(new Polygon);
         fromROSMsg(sa->shapes[i], *p);
         p->transform2tf(af_orig);
@@ -190,6 +184,7 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& 
       }
       case cob_3d_mapping_msgs::Shape::CYLINDER:
       {
+        if(enable_cyl_==false)continue;
         Cylinder::Ptr c(new Cylinder);
         fromROSMsg(sa->shapes[i], *c);
         c->transform2tf(af_orig);
@@ -248,10 +243,6 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& 
   ctr_++;
 }
 
-/**
- * @brief Clear map arrays
- * @return true if successful
- */
 bool
 GeometryMapNode::clearMap(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res)
 {
@@ -265,13 +256,8 @@ GeometryMapNode::clearMap(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Re
   return true;
 }
 
-/**
- * @brief Get map arrays
- *
- * @return true if successful
- */
 bool
-GeometryMapNode::getMap(cob_3d_mapping_msgs::GetGeometryMap::Request &req, cob_3d_mapping_msgs::GetGeometryMap::Response &res)
+GeometryMapNode::getMap(cob_3d_mapping_msgs::GetGeometricMap::Request &req, cob_3d_mapping_msgs::GetGeometricMap::Response &res)
 {
   std::vector<Polygon::Ptr>* map_polygon = geometry_map_.getMap_polygon();
   std::vector<Cylinder::Ptr>* map_cylinder = geometry_map_.getMap_cylinder();
@@ -297,11 +283,6 @@ GeometryMapNode::getMap(cob_3d_mapping_msgs::GetGeometryMap::Request &req, cob_3
   return true;
 }
 
-/**
- * @brief Set map arrays
- *
- * @return true if successful
- */
 bool
 GeometryMapNode::setMap(cob_3d_mapping_msgs::SetGeometryMap::Request &req, cob_3d_mapping_msgs::SetGeometryMap::Response &res)
 {
@@ -329,17 +310,6 @@ GeometryMapNode::setMap(cob_3d_mapping_msgs::SetGeometryMap::Request &req, cob_3
   publishMap();
   return true;
 }
-
-/**
- * @brief service callback for MofiyMap service
- *
- * Fills the service response of the ModifyMap service with the modified map
- *
- * @param req request to modify map
- * @param res the modified geometric map
- *
- * @return nothing
- */
 
 bool
 GeometryMapNode::modifyMap(cob_3d_mapping_msgs::ModifyMap::Request &req,
@@ -425,64 +395,7 @@ GeometryMapNode::modifyMap(cob_3d_mapping_msgs::ModifyMap::Request &req,
   return true;
 }
 
-/**
- * @brief Debug out put of polygon contours to file.
- */
-void
-GeometryMapNode::dumpPolygonContoursToFile(Polygon& m)
-{
-  static int ctr=0;
-  std::stringstream ss;
-  ss << "/home/goa-sf/debug/polygon_" << ctr;
-  std::ofstream myfile;
-  myfile.open (ss.str().c_str());
-  for(unsigned int i=0; i<m.contours.size(); i++)
-  {
-    for(unsigned int j=0; j<m.contours[i].size(); j++)
-    {
-      myfile << m.contours[i][j](0) << "\n";
-      myfile << m.contours[i][j](1) << "\n";
-      myfile << m.contours[i][j](2) << "\n";
-    }
-  }
-  myfile.close();
-  ctr++;
-}
 
-/**
- * @brief Debug outbut for polygon contours and parameters.
- */
-void
-GeometryMapNode::dumpPolygonToFile(Polygon& m)
-{
-  static int ctr=0;
-  std::stringstream ss;
-  ss << "/home/goa/tmp/polygon_" << ctr << ".txt";
-  std::ofstream myfile;
-  myfile.open (ss.str().c_str());
-  myfile << m.id << "\n";
-  myfile << m.normal(0) << "\n" << m.normal(1) << "\n" << m.normal(2) << "\n";
-  myfile << m.contours[0].size() << "\n";
-  for(unsigned int i=0; i<m.contours.size(); i++)
-  {
-    for(unsigned int j=0; j<m.contours[i].size(); j++)
-    {
-      myfile << m.contours[i][j](0) << " ";
-      myfile << m.contours[i][j](1) << " ";
-      myfile << m.contours[i][j](2) << "\n";
-    }
-  }
-
-  myfile.close();
-
-  ctr++;
-}
-
-/**
- * @brief Map arrays are published.
- *
- * Shape message is generated and published to specified topic.
- */
 void
 GeometryMapNode::publishMap()
 {
@@ -503,7 +416,6 @@ GeometryMapNode::publishMap()
   for(unsigned int i=0; i<map_polygon->size(); i++)
   {
     Polygon& sm = *(map_polygon->at(i));
-    //dumpPolygonContoursToFile(sm);
     //cob_3d_mapping_msgs::PolygonArray p;
     cob_3d_mapping_msgs::Shape s;
     toROSMsg(sm, s);
@@ -516,7 +428,6 @@ GeometryMapNode::publishMap()
   for(unsigned int i=0; i<map_cylinder->size(); i++)
   {
     Cylinder& sm = *(map_cylinder->at(i));
-    //dumpPolygonContoursToFile(sm);
     //cob_3d_mapping_msgs::PolygonArray p;
     cob_3d_mapping_msgs::Shape s;
     toROSMsg(sm, s);
@@ -529,23 +440,14 @@ GeometryMapNode::publishMap()
   map_pub_.publish(map_msg);
 }
 
-/**
- * @brief Polygon marker is filled out. NOT YET IMPLEMENTED
- */
 void
 GeometryMapNode::fillMarker(Polygon::Ptr p, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t)
 { ROS_DEBUG( "not implemented yet" ); }
 
-/**
- * @brief Cylinder marker is filled out. NOT YET IMPLEMENTED
- */
 void
 GeometryMapNode::fillMarker(Cylinder::Ptr c, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t)
 { ROS_DEBUG( "not implemented yet" ); }
 
-/**
- * @brief Shape cluster  marker is filled out.
- */
 void
 GeometryMapNode::fillMarker(ShapeCluster::Ptr sc, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t)
 {
@@ -570,12 +472,6 @@ GeometryMapNode::fillMarker(ShapeCluster::Ptr sc, visualization_msgs::Marker& m,
   m.color.a = 0.5;
 }
 
-/**
- * @brief Map is published as marker.
- *
- * Shape contours are transformed to
- * line strips of visualization markers.
- */
 void
 GeometryMapNode::publishMapMarker()
 {
@@ -589,7 +485,6 @@ GeometryMapNode::publishMapMarker()
   t_marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
   t_marker.lifetime = ros::Duration();
   t_marker.header.frame_id = map_frame_id_;
-  //marker.header.stamp = stamp;
 
   //create the marker in the table reference frame
   //the caller is responsible for setting the pose of the marker to match
@@ -738,11 +633,6 @@ GeometryMapNode::publishMapMarker()
   }
 }
 
-/**
- * @brief Cylinder primitives are published
- *
- * Visualization markers of Cylinder shapes are created and published.
- */
 void GeometryMapNode::publishPrimitives()
 {
   // initialize marker of type cylinder
@@ -797,7 +687,7 @@ void GeometryMapNode::publishPrimitives()
 
 
 
-    //set shape of cylinder
+    //set shape of cylinder 
     marker.scale.x = cm.r_ *2;
     marker.scale.y = cm.r_ *2;
     marker.scale.z =  (cm.h_max_ - cm.h_min_);
