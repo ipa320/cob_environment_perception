@@ -53,67 +53,73 @@
  *
  ****************************************************************/
 
+namespace cob_3d_registration {
 
-template <typename Point>
-bool Registration_Corrospondence<Point>::compute_features() {
-  if(register_.size()<1) {
-    register_ = *this->input_org_;
+  template <typename Point>
+  bool Registration_Corrospondence<Point>::compute_features() {
+    if(register_.size()<1) {
+      register_ = *this->input_org_;
+      return true;
+    }
+
+    return keypoints_ && keypoints_->compute(register_, *this->input_org_);
+  }
+
+  template <typename Point>
+  bool Registration_Corrospondence<Point>::compute_corrospondences() {
+
+    all_correspondences_.reset(new pcl::registration::Correspondences);
+    keypoints_->getCorrespondences (*all_correspondences_);
+
+    //  ROS_INFO("rejectBadCorrespondences %d %d",all_correspondences->size(), remaining_correspondences.size());
+
     return true;
   }
 
-  return keypoints_ && keypoints_->compute(register_, *this->input_org_);
-}
+  template <typename Point>
+  bool Registration_Corrospondence<Point>::compute_transformation() {
+    Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
 
-template <typename Point>
-bool Registration_Corrospondence<Point>::compute_corrospondences() {
+    // Find correspondences between keypoints in FPFH space
+    pcl::registration::CorrespondencesPtr good_correspondences (new pcl::registration::Correspondences);
 
-  all_correspondences_.reset(new pcl::registration::Correspondences);
-  keypoints_->getCorrespondences (*all_correspondences_);
+    rejectBadCorrespondences(all_correspondences_, *good_correspondences);
 
-//  ROS_INFO("rejectBadCorrespondences %d %d",all_correspondences->size(), remaining_correspondences.size());
+    if(good_correspondences->size()<3) {
+      ROS_ERROR("not enough coresspondences");
+      return false;
+    }
 
-  return true;
-}
+    // Obtain the best transformation between the two sets of keypoints given the remaining correspondences
+    pcl::registration::TransformationEstimationSVD<Point, Point> trans_est;
+    trans_est.estimateRigidTransformation (*keypoints_->getSourcePoints(), *keypoints_->getTargetPoints(), *good_correspondences, transform);
 
-template <typename Point>
-bool Registration_Corrospondence<Point>::compute_transformation() {
-  Eigen::Matrix4f transform = Eigen::Matrix4f::Identity();
+    this->transformation_ = transform*this->transformation_;
 
-  // Find correspondences between keypoints in FPFH space
-  pcl::registration::CorrespondencesPtr good_correspondences (new pcl::registration::Correspondences);
+    std::cout<<"transf\n"<<this->transformation_<<"\n";
 
-  rejectBadCorrespondences(all_correspondences_, *good_correspondences);
+    register_ = *this->input_org_;
 
-  if(good_correspondences->size()<3) {
-    ROS_ERROR("not enough coresspondences");
-    return false;
+    return true;
   }
 
-  // Obtain the best transformation between the two sets of keypoints given the remaining correspondences
-  pcl::registration::TransformationEstimationSVD<Point, Point> trans_est;
-  trans_est.estimateRigidTransformation (*keypoints_->getSourcePoints(), *keypoints_->getTargetPoints(), *good_correspondences, transform);
 
-  this->transformation_ = transform*this->transformation_;
+  template <typename Point>
+  void Registration_Corrospondence<Point>::rejectBadCorrespondences (const pcl::registration::CorrespondencesPtr &all_correspondences,
+                                                                     pcl::registration::Correspondences &remaining_correspondences)
+                                                                     {
+    pcl::registration::CorrespondenceRejectorDistance rej;
+    //rej.setInputCloud(keypoints_src);
+    //rej.setInputTarget(keypoints_tgt);
+    rej.setMaximumDistance (rejection_dis_);
+    rej.setInputCorrespondences (all_correspondences);
+    rej.getCorrespondeces (remaining_correspondences);
 
-  std::cout<<"transf\n"<<this->transformation_<<"\n";
+    ROS_INFO("rejectBadCorrespondences %d %d", (int)all_correspondences->size(), (int)remaining_correspondences.size());
+                                                                     }
 
-  register_ = *this->input_org_;
 
-  return true;
 }
 
-
-template <typename Point>
-void Registration_Corrospondence<Point>::rejectBadCorrespondences (const pcl::registration::CorrespondencesPtr &all_correspondences,
-                          pcl::registration::Correspondences &remaining_correspondences)
-{
-  pcl::registration::CorrespondenceRejectorDistance rej;
-  //rej.setInputCloud(keypoints_src);
-  //rej.setInputTarget(keypoints_tgt);
-  rej.setMaximumDistance (rejection_dis_);
-  rej.setInputCorrespondences (all_correspondences);
-  rej.getCorrespondeces (remaining_correspondences);
-
-  ROS_INFO("rejectBadCorrespondences %d %d", (int)all_correspondences->size(), (int)remaining_correspondences.size());
-}
+#define PCL_INSTANTIATE_Registration_Corrospondence(T) template class PCL_EXPORTS cob_3d_registration::Registration_Corrospondence<T>;
 

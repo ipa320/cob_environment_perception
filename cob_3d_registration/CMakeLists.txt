@@ -34,6 +34,11 @@ file(GLOB registration_SRC1
 #rosbuild_add_executable(registration ros/src/registration_node.cpp ${registration_SRC1})
 #rosbuild_add_executable(registration ros/src/registration_node.cpp)
 
+rosbuild_add_library(cob_3d_registration_lib
+	common/src/registration_icp.cpp
+	common/src/registration_correspondence.cpp
+	common/src/registration_info.cpp)
+	
 rosbuild_add_library(cob_3d_registration
 	ros/src/registration_nodelet.cpp)
 
@@ -53,6 +58,6 @@ rosbuild_add_executable(example ros/src/example2.cpp)
 rosbuild_add_compile_flags(cob_3d_registration -D__LINUX__ ${SSE_FLAGS})
 
 #target_link_libraries(registration ann  cob_vision_slam cob_sensor_fusion cob_camera_sensors cob_3d_mapping_features_omp)
-target_link_libraries(cob_3d_registration  cob_3d_mapping_features_omp)
+target_link_libraries(cob_3d_registration  cob_3d_mapping_features_omp cob_3d_registration_lib)
 
 rosbuild_add_roslaunch_check(ros/launch)

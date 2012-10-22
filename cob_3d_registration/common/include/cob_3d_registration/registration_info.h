@@ -222,10 +222,9 @@ private:
   inline int getI(const int ind, const pcl::PointCloud<Point> &pc);
 };
 
-#include "impl/registration_info.hpp"
-
 typedef Registration_Infobased<pcl::PointXYZ> Registration_HIRN_XYZ;
 
 }
+
 
 #endif /* REGISTRATION_INFO_H_ */
