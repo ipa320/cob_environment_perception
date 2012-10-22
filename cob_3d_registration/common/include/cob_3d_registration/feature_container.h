@@ -9,6 +9,15 @@
 #define FEATURE_CONTAINER_H_
 
 
+#include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/range_image/range_image.h>
+#include <pcl/features/fpfh.h>
+#include <pcl/features/narf.h>
+#include <pcl/features/narf_descriptor.h>
+#include "pcl/keypoints/narf_keypoint.h"
+#include <pcl/features/range_image_border_extractor.h>
+
+
 class FeatureContainerInterface
 {
 public:

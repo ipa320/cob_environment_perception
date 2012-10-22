@@ -140,8 +140,6 @@ protected:
   pcl::registration::CorrespondencesPtr all_correspondences_;
 };
 
-
-#include "impl/registration_correspondence.hpp"
 }
 
 //keypoints...

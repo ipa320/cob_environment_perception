@@ -64,177 +64,178 @@
 #ifndef REGISTRATION_ICP_HPP_
 #define REGISTRATION_ICP_HPP_
 
+namespace cob_3d_registration {
 
-template <typename Point>
-bool Registration_ICP<Point>::compute_features()
-{
+  template <typename Point>
+  bool Registration_ICP<Point>::compute_features()
+  {
 
-  //pre-transform input data to achieve incremental transformation
-  boost::shared_ptr<pcl::PointCloud<Point> > transformed_pc(new pcl::PointCloud<Point>);
-  pcl::transformPointCloud(*this->input_, *transformed_pc, this->transformation_);
-  this->setInputCloud(transformed_pc);
+    //pre-transform input data to achieve incremental transformation
+    boost::shared_ptr<pcl::PointCloud<Point> > transformed_pc(new pcl::PointCloud<Point>);
+    pcl::transformPointCloud(*this->input_, *transformed_pc, this->transformation_);
+    this->setInputCloud(transformed_pc);
 
-  return true;
-}
+    return true;
+  }
 
-template <typename Point>
-bool Registration_ICP<Point>::compute_corrospondences()
-{
-  return true;
+  template <typename Point>
+  bool Registration_ICP<Point>::compute_corrospondences()
+  {
+    return true;
 #if 0
-  if(register_.size()==0) { //first time
-    register_ = *this->input_;
-    return true;
-  }
+    if(register_.size()==0) { //first time
+      register_ = *this->input_;
+      return true;
+    }
 
-  float radius_=0.1;
+    float radius_=0.1;
 
-  // Initialize estimators for surface normals and FPFH features
-  boost::shared_ptr<pcl::KdTreeFLANN<Point> > tree (new pcl::KdTreeFLANN<Point>);
+    // Initialize estimators for surface normals and FPFH features
+    boost::shared_ptr<pcl::KdTreeFLANN<Point> > tree (new pcl::KdTreeFLANN<Point>);
 
-  pcl::NormalEstimation<Point, pcl::Normal> norm_est;
-  norm_est.setSearchMethod (tree);
-  norm_est.setRadiusSearch (radius_);
-  pcl::PointCloud<pcl::Normal> normals;
+    pcl::NormalEstimation<Point, pcl::Normal> norm_est;
+    norm_est.setSearchMethod (tree);
+    norm_est.setRadiusSearch (radius_);
+    pcl::PointCloud<pcl::Normal> normals;
 
-  pcl::FPFHEstimation<Point, pcl::Normal, pcl::FPFHSignature33> fpfh_est;
-  fpfh_est.setSearchMethod (tree);
-  fpfh_est.setRadiusSearch (radius_);
-  pcl::PointCloud<pcl::FPFHSignature33> features_source, features_target;
+    pcl::FPFHEstimation<Point, pcl::Normal, pcl::FPFHSignature33> fpfh_est;
+    fpfh_est.setSearchMethod (tree);
+    fpfh_est.setRadiusSearch (radius_);
+    pcl::PointCloud<pcl::FPFHSignature33> features_source, features_target;
 
-  // Estimate the FPFH features for the source cloud
-  norm_est.setInputCloud (this->input_);
-  norm_est.compute (normals);
-  ROS_INFO("abc 1");
-  fpfh_est.setInputCloud (this->input_);
-  fpfh_est.setInputNormals (normals.makeShared ());
-  fpfh_est.compute (features_source);
+    // Estimate the FPFH features for the source cloud
+    norm_est.setInputCloud (this->input_);
+    norm_est.compute (normals);
+    ROS_INFO("abc 1");
+    fpfh_est.setInputCloud (this->input_);
+    fpfh_est.setInputNormals (normals.makeShared ());
+    fpfh_est.compute (features_source);
 
-  // Estimate the FPFH features for the target cloud
-  norm_est.setInputCloud (register_.makeShared());
-  norm_est.compute (normals);
-  ROS_INFO("abc 2");
-  fpfh_est.setInputCloud (register_.makeShared());
-  fpfh_est.setInputNormals (normals.makeShared ());
-  fpfh_est.compute (features_target);
+    // Estimate the FPFH features for the target cloud
+    norm_est.setInputCloud (register_.makeShared());
+    norm_est.compute (normals);
+    ROS_INFO("abc 2");
+    fpfh_est.setInputCloud (register_.makeShared());
+    fpfh_est.setInputNormals (normals.makeShared ());
+    fpfh_est.compute (features_target);
 
-  // Initialize Sample Consensus Initial Alignment (SAC-IA)
-  pcl::SampleConsensusInitialAlignment<Point, Point, pcl::FPFHSignature33> reg;
-  reg.setMinSampleDistance (radius_);
-  reg.setMaxCorrespondenceDistance (icp_max_corr_dist_);
-  reg.setMaximumIterations (1000);
+    // Initialize Sample Consensus Initial Alignment (SAC-IA)
+    pcl::SampleConsensusInitialAlignment<Point, Point, pcl::FPFHSignature33> reg;
+    reg.setMinSampleDistance (radius_);
+    reg.setMaxCorrespondenceDistance (icp_max_corr_dist_);
+    reg.setMaximumIterations (1000);
 
-  reg.setInputCloud (this->input_);
-  reg.setInputTarget (register_.makeShared());
-  reg.setSourceFeatures (features_source.makeShared ());
-  reg.setTargetFeatures (features_target.makeShared ());
+    reg.setInputCloud (this->input_);
+    reg.setInputTarget (register_.makeShared());
+    reg.setSourceFeatures (features_source.makeShared ());
+    reg.setTargetFeatures (features_target.makeShared ());
 
-  // Register
-  pcl::PointCloud<Point> result;
-  reg.align (result);
+    // Register
+    pcl::PointCloud<Point> result;
+    reg.align (result);
 
-  this->transformation_ = reg.getFinalTransformation();
+    this->transformation_ = reg.getFinalTransformation();
 
-  std::cout<<"transf\n"<<this->transformation_<<"\n";
+    std::cout<<"transf\n"<<this->transformation_<<"\n";
 
-  register_ += result;
-#endif
-  return true;
-}
-
-template <typename Point>
-bool Registration_ICP<Point>::compute_transformation()
-{
-  if(register_.size()==0) { //first time
-    register_ = *this->input_;
-    return true;
-  }
-
-  //do ICP
-  ModifiedICP<Point> icp_;
-  pcl::IterativeClosestPoint<Point,Point> *icp = &icp_;
-
-#ifdef PCL_DEPRECATED
-  ModifiedGICP<Point> gicp_;
-  if(use_gicp_)
-    icp = &gicp_;
-  setSettingsForICP(&gicp_);
-#else
-  setSettingsForICP(&icp_);
-#endif
-
-  icp->setInputCloud( this->input_);
-  //icp->setIndices(boost::make_shared<pcl::PointIndices>(indices));
-  icp->setInputTarget(register_.makeShared());
-  icp->setMaximumIterations(icp_max_iterations_);
-  icp->setRANSACOutlierRejectionThreshold(outlier_rejection_threshold_);
-  icp->setMaxCorrespondenceDistance(icp_max_corr_dist_);
-  icp->setTransformationEpsilon (icp_trf_epsilon_);
-
-  ROS_INFO("icp with %d, %d", (int)register_.size(), (int)this->input_->size());
-
-  pcl::PointCloud<Point> result;
-  icp->align(result);
-
-  bool res = false;
-
-#ifdef PCL_DEPRECATED
-  if(use_gicp_)
-    res=gicp_.getMaximumIterations()!=gicp_.getNeededIterations()&&gicp_.getNeededIterations()>0;
-  else
-#endif
-    res=icp_.getMaximumIterations()!=icp_.getNeededIterations()&&icp_.getNeededIterations()>0;
-
-  if(!res)
-    return false;
-
-  this->transformation_ = this->transformation_*icp->getFinalTransformation();
-
-  std::cout<<"transf\n"<<this->transformation_<<"\n";
-
-  if(use_only_last_refrence_)
-    register_ = result;
-  else
     register_ += result;
+#endif
+    return true;
+  }
 
-  return res;
-}
+  template <typename Point>
+  bool Registration_ICP<Point>::compute_transformation()
+  {
+    if(register_.size()==0) { //first time
+      register_ = *this->input_;
+      return true;
+    }
 
-template <typename Point>
-void Registration_ICP<Point>::setSettingsForICP(ModifiedICP_G *icp) {
-  if(non_linear_)
-    icp->setLM();
-}
+    //do ICP
+    ModifiedICP<Point> icp_;
+    pcl::IterativeClosestPoint<Point,Point> *icp = &icp_;
 
-template <typename Point>
-void Registration_ICP_Features<Point>::setSettingsForICP(ModifiedICP_G *icp) {
-  Registration_ICP<Point>::setSettingsForICP(icp);
+#ifdef PCL_DEPRECATED
+    ModifiedGICP<Point> gicp_;
+    if(use_gicp_)
+      icp = &gicp_;
+    setSettingsForICP(&gicp_);
+#else
+    setSettingsForICP(&icp_);
+#endif
 
-  this->Registration_ICP<Point>::setSettingsForICP(icp);
+    icp->setInputCloud( this->input_);
+    //icp->setIndices(boost::make_shared<pcl::PointIndices>(indices));
+    icp->setInputTarget(register_.makeShared());
+    icp->setMaximumIterations(icp_max_iterations_);
+    icp->setRANSACOutlierRejectionThreshold(outlier_rejection_threshold_);
+    icp->setMaxCorrespondenceDistance(icp_max_corr_dist_);
+    icp->setTransformationEpsilon (icp_trf_epsilon_);
 
-  if(features_)
-    icp->setSearchFeatures(features_);
-}
+    ROS_INFO("icp with %d, %d", (int)register_.size(), (int)this->input_->size());
+
+    pcl::PointCloud<Point> result;
+    icp->align(result);
+
+    bool res = false;
+
+#ifdef PCL_DEPRECATED
+    if(use_gicp_)
+      res=gicp_.getMaximumIterations()!=gicp_.getNeededIterations()&&gicp_.getNeededIterations()>0;
+    else
+#endif
+      res=icp_.getMaximumIterations()!=icp_.getNeededIterations()&&icp_.getNeededIterations()>0;
+
+    if(!res)
+      return false;
+
+    this->transformation_ = this->transformation_*icp->getFinalTransformation();
+
+    std::cout<<"transf\n"<<this->transformation_<<"\n";
+
+    if(use_only_last_refrence_)
+      register_ = result;
+    else
+      register_ += result;
+
+    return res;
+  }
+
+  template <typename Point>
+  void Registration_ICP<Point>::setSettingsForICP(ModifiedICP_G *icp) {
+    if(non_linear_)
+      icp->setLM();
+  }
+
+  template <typename Point>
+  void Registration_ICP_Features<Point>::setSettingsForICP(ModifiedICP_G *icp) {
+    Registration_ICP<Point>::setSettingsForICP(icp);
+
+    this->Registration_ICP<Point>::setSettingsForICP(icp);
+
+    if(features_)
+      icp->setSearchFeatures(features_);
+  }
 
 
-template <typename Point, typename FeatureType>
-bool Registration_ICP_Features_Extra<Point,FeatureType>::compute_features()
-{
-  boost::shared_ptr<pcl::PointCloud<Point> > inp = boost::shared_ptr<pcl::PointCloud<Point> >(new pcl::PointCloud<Point>);
-  boost::shared_ptr<pcl::PointCloud<Point> > out = boost::shared_ptr<pcl::PointCloud<Point> >(new pcl::PointCloud<Point>);
+  template <typename Point, typename FeatureType>
+  bool Registration_ICP_Features_Extra<Point,FeatureType>::compute_features()
+  {
+    boost::shared_ptr<pcl::PointCloud<Point> > inp = boost::shared_ptr<pcl::PointCloud<Point> >(new pcl::PointCloud<Point>);
+    boost::shared_ptr<pcl::PointCloud<Point> > out = boost::shared_ptr<pcl::PointCloud<Point> >(new pcl::PointCloud<Point>);
 
-  if(!calculateFeature(((Registration_ICP_Features<Point>*)this)->input, inp, ((Registration_ICP_Features<Point>*)this)->features_.getTargetFeature()))
-    return false;
+    if(!calculateFeature(((Registration_ICP_Features<Point>*)this)->input, inp, ((Registration_ICP_Features<Point>*)this)->features_.getTargetFeature()))
+      return false;
 
-  if(!calculateFeature(((Registration_ICP_Features<Point>*)this)->register_, out, ((Registration_ICP_Features<Point>*)this)->features_.getSourceFeature()))
-    return false;
+    if(!calculateFeature(((Registration_ICP_Features<Point>*)this)->register_, out, ((Registration_ICP_Features<Point>*)this)->features_.getSourceFeature()))
+      return false;
 
-  ((Registration_ICP_Features<Point>*)this)->input_    = inp;
-  ((Registration_ICP_Features<Point>*)this)->register_ = out;
+    ((Registration_ICP_Features<Point>*)this)->input_    = inp;
+    ((Registration_ICP_Features<Point>*)this)->register_ = out;
 
-  return true;
-}
-/*
+    return true;
+  }
+  /*
 template <typename Point, typename FeatureType>
 bool Registration_ICP_Features_Extra<Point,FeatureType>::calculateFeature(boost::shared_ptr<pcl::PointCloud<Point> > input, boost::shared_ptr<pcl::PointCloud<Point> > output, boost::shared_ptr<pcl::PointCloud<FeatureType> > features)
 {
@@ -243,5 +244,12 @@ bool Registration_ICP_Features_Extra<Point,FeatureType>::calculateFeature(boost:
   findFeatureCorrespondences
 
 }
-*/
+   */
+
+
+}
+
+#define PCL_INSTANTIATE_Registration_ICP(T) template class PCL_EXPORTS cob_3d_registration::Registration_ICP<T>;
+
+
 #endif

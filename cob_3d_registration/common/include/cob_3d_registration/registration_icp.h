@@ -174,9 +174,6 @@ protected:
 };
 
 
-
-#include "impl/registration_icp.hpp"
-
 }
 
 #endif
