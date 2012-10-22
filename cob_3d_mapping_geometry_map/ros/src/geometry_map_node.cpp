@@ -108,11 +108,12 @@ GeometryMapNode::GeometryMapNode()
   marker_pub_ = n_.advertise<visualization_msgs::Marker>("geometry_marker",100);
   clear_map_server_ = n_.advertiseService("clear_map", &GeometryMapNode::clearMap, this);
   get_map_server_ = n_.advertiseService("get_map", &GeometryMapNode::getMap, this);
+  set_map_server_ = n_.advertiseService("set_map", &GeometryMapNode::setMap, this);
   modify_map_server_ = n_.advertiseService("modify_map", &GeometryMapNode::modifyMap, this);
   ros::param::param("~file_path" , file_path_ , std::string("/home/goa-tz/tmp/"));
   ros::param::param("~save_to_file" , save_to_file_ , false);
   //ros::param::param("~map_frame_id", map_frame_id_, "/map");
-  ROS_DEBUG_STREAM(file_path_);
+  //ROS_DEBUG_STREAM(file_path_);
   geometry_map_.setFilePath(file_path_);
   geometry_map_.setSaveToFile(save_to_file_);
 
@@ -270,7 +271,7 @@ GeometryMapNode::clearMap(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Re
  * @return true if successful
  */
 bool
-GeometryMapNode::getMap(cob_3d_mapping_msgs::GetGeometricMap::Request &req, cob_3d_mapping_msgs::GetGeometricMap::Response &res)
+GeometryMapNode::getMap(cob_3d_mapping_msgs::GetGeometryMap::Request &req, cob_3d_mapping_msgs::GetGeometryMap::Response &res)
 {
   std::vector<Polygon::Ptr>* map_polygon = geometry_map_.getMap_polygon();
   std::vector<Cylinder::Ptr>* map_cylinder = geometry_map_.getMap_cylinder();
@@ -295,6 +296,39 @@ GeometryMapNode::getMap(cob_3d_mapping_msgs::GetGeometricMap::Request &req, cob_
 
   return true;
 }
+
+/**
+ * @brief Set map arrays
+ *
+ * @return true if successful
+ */
+bool
+GeometryMapNode::setMap(cob_3d_mapping_msgs::SetGeometryMap::Request &req, cob_3d_mapping_msgs::SetGeometryMap::Response &res)
+{
+  geometry_map_.clearMap();
+  std::vector<Polygon::Ptr>* map_polygon = geometry_map_.getMap_polygon();
+  std::vector<Cylinder::Ptr>* map_cylinder = geometry_map_.getMap_cylinder();
+
+  //res.map.header.stamp = ros::Time::now();
+  //res.map.header.frame_id = map_frame_id_;
+  for(unsigned int i=0; i<req.map.shapes.size(); i++)
+  {
+    if(req.map.shapes[i].type==cob_3d_mapping_msgs::Shape::POLYGON)
+    {
+      Polygon::Ptr p(new Polygon);
+      fromROSMsg(req.map.shapes[i],*p);
+      map_polygon->push_back(p);
+    }
+    else if(req.map.shapes[i].type==cob_3d_mapping_msgs::Shape::CYLINDER)
+    {
+      Cylinder::Ptr c(new Cylinder);
+      fromROSMsg(req.map.shapes[i],*c);
+      map_cylinder->push_back(c);
+    }
+  }
+  return true;
+}
+
 /**
  * @brief service callback for MofiyMap service
  *
@@ -762,7 +796,7 @@ void GeometryMapNode::publishPrimitives()
 
 
 
-    //set shape of cylinder 
+    //set shape of cylinder
     marker.scale.x = cm.r_ *2;
     marker.scale.y = cm.r_ *2;
     marker.scale.z =  (cm.h_max_ - cm.h_min_);
