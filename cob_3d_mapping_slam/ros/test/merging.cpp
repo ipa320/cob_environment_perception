@@ -763,11 +763,11 @@ void test18()
   params[5] = 0;
   params[0] = 0;*/
   params[0] = 0;
-    params[1] = 0;
-    params[3] = 0;
+  params[1] = 0;
+  params[3] = 0;
   params[5] = 1;
-  params[2] = 1;
-  params[4] = 1;
+  params[2] = 0;
+  params[4] = 0;
 
   Slam_Surface::PolynomialSurface poly;
   Slam_Surface::SurfaceTriSpline inst;
@@ -823,6 +823,12 @@ void test18()
       p.y = v(1);
       p.z = v(2);
       pc.points.push_back(p);
+
+      v = inst.getTriangles()[i].pb_[j];
+      p.x = v(0);
+      p.y = v(1);
+      p.z = v(2);
+      pc.points.push_back(p);
     }
   }
 
@@ -839,7 +845,7 @@ void test18()
       p.y = v(1);
       p.z = v(2);
       //if(x>=-Fsize && x<=Fsize && y>=-Fsize && y<=Fsize)
-        pc.points.push_back(p);
+      pc.points.push_back(p);
 
       v = poly.project2world(p3);
       p.g = 255;

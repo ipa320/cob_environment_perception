@@ -32,6 +32,7 @@ namespace Slam_Surface
       Eigen::Matrix2f _T_; //temporary inverse matrix for barycentric coordinates
 
       Eigen::Vector3f I_[3]; /// intersection of normal planes at line
+      Eigen::Vector3f nI_[3]; /// intersection of normal planes at line
 
       Eigen::Vector3f pS_, nS_; /// apex point
       Eigen::Vector3f pb_[3];
