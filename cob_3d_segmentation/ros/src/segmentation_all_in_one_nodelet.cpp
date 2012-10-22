@@ -176,7 +176,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
     if (c->type != I_PLANE && c->type != I_CYL) continue;
     if (c->size() <= ceil(1.1f * static_cast<float>(c->border_points.size())))
     {
-      std::cout <<"[ " << c->size() <<" | "<< c->border_points.size() << " ]" << std::endl;
+      //std::cout <<"[ " << c->size() <<" | "<< c->border_points.size() << " ]" << std::endl;
       continue;
     }
 
@@ -184,18 +184,18 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
       hull_cloud_dense->push_back((*segmented_)[c->border_points[i].y * segmented_->width + c->border_points[i].x]);
 
     PolygonContours<PolygonPoint> poly;
-    std::cout << "Get outline for " << c->size() << " Points with "<< c->border_points.size() << " border points" << std::endl;
+    //std::cout << "Get outline for " << c->size() << " Points with "<< c->border_points.size() << " border points" << std::endl;
     pe_.outline(cloud->width, cloud->height, c->border_points, poly);
     if (!poly.polys_.size()) continue; // continue, if no contours were found
 
     int max_idx=0, max_size=0;
-    std::cout << "Polys: ";
+    //std::cout << "Polys: ";
     for (int i = 0; i < (int)poly.polys_.size(); ++i)
     {
-      std::cout << poly.polys_[i].size() << " ";
+      //std::cout << poly.polys_[i].size() << " ";
       if ((int)poly.polys_[i].size() > max_size) { max_idx = i; max_size = poly.polys_[i].size(); }
     }
-    std::cout << std::endl;
+    //std::cout << std::endl;
 
     sa.shapes.push_back(cob_3d_mapping_msgs::Shape());
     cob_3d_mapping_msgs::Shape* s = &sa.shapes.back();
