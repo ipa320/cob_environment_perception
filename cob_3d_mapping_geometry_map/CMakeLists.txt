@@ -69,7 +69,7 @@ rosbuild_add_executable(set_geometry_map ros/src/set_geometry_map.cpp)
 #target_link_libraries(geometry_test_map  geometry_map_vis_lib geometry_map_lib test_planes gpc)
 
 
-rosbuild_add_executable(get_map_client ros/src/get_map_client.cpp)
+rosbuild_add_executable(get_geometry_map ros/src/get_geometry_map.cpp)
 
 
 #rosbuild_add_executable(cluster2shape_node ros/src/cluster2shape_node.cpp)
