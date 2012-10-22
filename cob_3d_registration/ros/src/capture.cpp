@@ -534,9 +534,6 @@ void Capture::run()
     //getchar(); //testing...
 
     Eigen::Matrix3f t =absolute_rot_.toRotationMatrix();
-    float rx = atan2(t(2,1), t(2,2));
-    float ry = asin(-t(2,0));
-    float rz = atan2(t(1,0), t(0,0));
 
     /*std::cout<<"origin: \n"<<absolute_pos_<<"\n";
     std::cout<<"rot: "

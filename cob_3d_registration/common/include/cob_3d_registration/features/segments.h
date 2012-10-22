@@ -84,6 +84,8 @@ public:
 #ifdef VISUALIZE_SEGMENTS_
     show(dummy.makeShared(), dummy2.makeShared());
 #endif
+
+    return true;
   }
 
   inline Eigen::Vector3f getEigenVector(const PCAPoint &kp, const int r) {

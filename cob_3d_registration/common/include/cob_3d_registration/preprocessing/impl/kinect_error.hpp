@@ -75,8 +75,8 @@ preprocessing::KinectErrorGenerator<PointT>::applyFilter (PointCloud &pc_out)
     pc_out = *input_;
 
   //Go through all points and discard points with amplitude outside filter limits
-  for(int x=0; x<input_->width; x++) {
-    for(int y=0; y<input_->height; y++) {
+  for(int x=0; x<(int)input_->width; x++) {
+    for(int y=0; y<(int)input_->height; y++) {
 
       //step 1: deviation
 
@@ -84,8 +84,8 @@ preprocessing::KinectErrorGenerator<PointT>::applyFilter (PointCloud &pc_out)
       int num=0;
       for(int dx=-2; dx<2; dx++) {
         for(int dy=-2; dy<2; dy++) {
-          if(dx+x<0||dx+x>=input_->width
-              || dy+y<0||dy+y>=input_->height)
+          if(dx+x<0||dx+x>=(int)input_->width
+              || dy+y<0||dy+y>=(int)input_->height)
             continue;
 
           diff += input_->points[x+y*input_->width].z -

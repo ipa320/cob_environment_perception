@@ -155,6 +155,8 @@ public:
     filter.filter(pc);
 
     pcl::io::savePCDFileASCII(req.img_fn, pc);
+
+    return true;
   }
 
 

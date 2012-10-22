@@ -93,7 +93,7 @@ public:
 
   virtual boost::shared_ptr<pcl::PointCloud<Point> > getSourcePoints() {
     boost::shared_ptr<pcl::PointCloud<Point> > ret(new pcl::PointCloud<Point>);
-    for(int i=0; i<keypoints_src_.size(); i++)
+    for(int i=0; i<(int)keypoints_src_.size(); i++)
       ret->points.push_back(getPointForKeypointSrc(i));
     ret->height=1;
     ret->width=ret->size();
@@ -102,7 +102,7 @@ public:
 
   virtual boost::shared_ptr<pcl::PointCloud<Point> > getTargetPoints() {
     boost::shared_ptr<pcl::PointCloud<Point> > ret(new pcl::PointCloud<Point>);
-    for(int i=0; i<keypoints_tgt_.size(); i++)
+    for(int i=0; i<(int)keypoints_tgt_.size(); i++)
       ret->points.push_back(getPointForKeypointTgt(i));
     ret->height=1;
     ret->width=ret->size();

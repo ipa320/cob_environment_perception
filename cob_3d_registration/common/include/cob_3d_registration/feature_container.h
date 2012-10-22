@@ -159,7 +159,7 @@ public:
     float min_dis=border_*border_;
     Eigen::VectorXf b = getFeatureOut(index);
     int mi=inds[0];
-    for(int i=0; i<inds.size(); i++) {
+    for(int i=0; i<(int)inds.size(); i++) {
       Eigen::VectorXf a = getFeatureIn(inds[i]);
       if( (a-b).squaredNorm()*(a-b).squaredNorm()*(org_in_.points[inds[i]].getVector3fMap()-org_out_.points[index].getVector3fMap()).squaredNorm()<min_dis ) {
         min_dis = (a-b).squaredNorm()*(a-b).squaredNorm()*(org_in_.points[inds[i]].getVector3fMap()-org_out_.points[index].getVector3fMap()).squaredNorm();
@@ -169,7 +169,7 @@ public:
     if(mi!=-1)
       correspondence_indices.push_back(mi);
 
-    for(int i=0; i<correspondence_indices.size(); i++) {
+    for(int i=0; i<(int)correspondence_indices.size(); i++) {
       distances.push_back( (org_in_.points[correspondence_indices[i]].getVector3fMap()-org_out_.points[index].getVector3fMap()).squaredNorm() );
     }
   }

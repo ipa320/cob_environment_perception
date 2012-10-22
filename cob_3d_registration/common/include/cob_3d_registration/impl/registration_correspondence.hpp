@@ -114,6 +114,6 @@ void Registration_Corrospondence<Point>::rejectBadCorrespondences (const pcl::re
   rej.setInputCorrespondences (all_correspondences);
   rej.getCorrespondeces (remaining_correspondences);
 
-  ROS_INFO("rejectBadCorrespondences %d %d",all_correspondences->size(), remaining_correspondences.size());
+  ROS_INFO("rejectBadCorrespondences %d %d", (int)all_correspondences->size(), (int)remaining_correspondences.size());
 }
 
