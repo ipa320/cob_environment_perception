@@ -171,7 +171,7 @@ bool Registration_ICP<Point>::compute_transformation()
   icp->setMaxCorrespondenceDistance(icp_max_corr_dist_);
   icp->setTransformationEpsilon (icp_trf_epsilon_);
 
-  ROS_INFO("icp with %d, %d", register_.size(), this->input_->size());
+  ROS_INFO("icp with %d, %d", (int)register_.size(), (int)this->input_->size());
 
   pcl::PointCloud<Point> result;
   icp->align(result);

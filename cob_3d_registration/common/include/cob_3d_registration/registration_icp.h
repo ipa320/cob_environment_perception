@@ -82,13 +82,13 @@ class Registration_ICP : public GeneralRegistration<Point>
 {
 public:
   Registration_ICP():
-    non_linear_(false),
-    use_gicp_(false),
-    use_only_last_refrence_(false),
     icp_max_iterations_(50),
     icp_max_corr_dist_(0.05),
+    outlier_rejection_threshold_(0.01),
     icp_trf_epsilon_(0.0001),
-    outlier_rejection_threshold_(0.01)
+    non_linear_(false),
+    use_only_last_refrence_(false),
+    use_gicp_(false)
   {}
 
   /// non linear uses LM instead of SVD

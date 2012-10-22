@@ -60,9 +60,6 @@ void Keypoints_Narf<Point>::extractFeatures(const pcl::PointCloud<Point>& point_
   float support_size = 0.3f;
   pcl::RangeImage::CoordinateFrame coordinate_frame = pcl::RangeImage::CAMERA_FRAME;
   bool setUnseenToMaxRange = false;
-  bool rotation_invariant = true;
-
-
 
   // ------------------------------
   // -----Setting viewpoint up-----
@@ -123,7 +120,7 @@ void Keypoints_Narf<Point>::extractFeatures(const pcl::PointCloud<Point>& point_
       ne.setRadiusSearch (0.05);
 
       std::vector<int> kp_indices;
-      for(int i=0; i<keypoint_indices.size(); i++)
+      for(int i=0; i<(int)keypoint_indices.size(); i++)
         kp_indices.push_back(keypoint_indices.points[i]);
 
       ROS_INFO("normal...");
@@ -151,7 +148,7 @@ void Keypoints_Narf<Point>::extractFeatures(const pcl::PointCloud<Point>& point_
       tree->setInputCloud(point_cloud.makeShared());
 
       narf_descriptors.clear();
-      for(int i=0; i<keypoint_indices.size(); i++) {
+      for(int i=0; i<(int)keypoint_indices.size(); i++) {
         int ind=keypoint_indices.points[i];
 
         Point pp;

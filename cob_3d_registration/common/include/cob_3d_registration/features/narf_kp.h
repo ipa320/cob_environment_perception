@@ -46,17 +46,17 @@ public:
   void setDisThreshold(float v) {dist_threshold_ = v;}
 
   virtual bool compute(const pcl::PointCloud<Point> &src, const pcl::PointCloud<Point> &tgt) {
-    ROS_INFO("calc narf for source %d", src.size());
+    ROS_INFO("calc narf for source %d", (int)src.size());
     {
       extractFeatures(src, this->keypoints_src_);
     }
 
-    ROS_INFO("calc narf for target %d", tgt.size());
+    ROS_INFO("calc narf for target %d", (int)tgt.size());
     {
       extractFeatures(tgt, this->keypoints_tgt_);
     }
 
-    ROS_INFO("%d %d", this->keypoints_src_.size(), this->keypoints_tgt_.size());
+    ROS_INFO("%d %d", (int)this->keypoints_src_.size(), (int)this->keypoints_tgt_.size());
 
     return this->keypoints_src_.size()>0 && this->keypoints_tgt_.size()>0;
   }
@@ -69,9 +69,9 @@ public:
       return;
     }
 
-    for(int i=0; i<this->keypoints_src_.size(); i++)
+    for(int i=0; i<(int)this->keypoints_src_.size(); i++)
       tsrc.points.push_back(this->keypoints_src_.points[i].fpfh);
-    for(int i=0; i<this->keypoints_tgt_.size(); i++)
+    for(int i=0; i<(int)this->keypoints_tgt_.size(); i++)
       ttgt.points.push_back(this->keypoints_tgt_.points[i].fpfh);
     tsrc.height=ttgt.height=1;
     ttgt.width=ttgt.size();
@@ -81,7 +81,7 @@ public:
       IndicesPtr indices_;
       indices_.reset (new std::vector<int>);
       indices_->resize (tsrc.points.size ());
-      for(int i=0; i<tsrc.size(); i++)
+      for(int i=0; i<(int)tsrc.size(); i++)
         (*indices_)[i]=i;
 
       // setup tree for reciprocal search
@@ -115,7 +115,7 @@ public:
       correspondences.resize(nr_valid_correspondences);
     }
 
-    ROS_INFO("cor found %d",correspondences.size());
+    ROS_INFO("cor found %d",(int)correspondences.size());
   }
 
   Point getPointForKeypointSrc(const int ind) {return keypoint2point(this->keypoints_src_[ind]);}

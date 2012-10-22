@@ -104,8 +104,8 @@ bool Registration_Infobased<Point>::compute_features()
   std::vector<int> indices_pos, indices_neg;
 
   pcl::PointCloud<Point> _p;
-  for(int y=0; y<pc.height; y++) {
-    for(int x=0; x<pc.width; x++) {
+  for(int y=0; y<(int)pc.height; y++) {
+    for(int x=0; x<(int)pc.width; x++) {
 
       int ind = getInd(x,y);
       const Point &pn=pc.points[ind];
@@ -135,7 +135,7 @@ bool Registration_Infobased<Point>::compute_features()
   ROS_INFO("found  %d %d", indices_pos.size(), indices_neg.size());
 #endif
 
-  if(indices_pos.size()+indices_neg.size()<min_changes_ /*|| std::min(indices_pos.size(), indices_neg.size())<100*/)
+  if((int)(indices_pos.size()+indices_neg.size())<min_changes_ /*|| std::min(indices_pos.size(), indices_neg.size())<100*/)
   {
     if(this->moved_)
     {
@@ -238,9 +238,9 @@ bool Registration_Infobased<Point>::compute_transformation()
     const pcl::PointCloud<Point> &pc      = *this->input_org_;
 
     pcl::PointCloud<Point> tmp_pc_old, tmp_pc_new;
-    for(int i=0; i<indices_pos2.size(); i++)
+    for(int i=0; i<(int)indices_pos2.size(); i++)
       tmp_pc_old.points.push_back(pc_old.points[indices_pos2[i]]);
-    for(int i=0; i<indices_neg2.size(); i++)
+    for(int i=0; i<(int)indices_neg2.size(); i++)
       tmp_pc_new.points.push_back(pc.points[indices_neg2[i]]);
 
     icp.setInputCloud( tmp_pc_new.makeShared() );
@@ -284,9 +284,9 @@ bool Registration_Infobased<Point>::compute_transformation()
     const pcl::PointCloud<Point> &pc      = *this->input_org_;
 
     pcl::PointCloud<Point> tmp_pc_old, tmp_pc_new;
-    for(int i=0; i<indices_pos2.size(); i++)
+    for(int i=0; i<(int)indices_pos2.size(); i++)
       tmp_pc_old.points.push_back(pc_old.points[indices_pos2[i]]);
-    for(int i=0; i<indices_neg2.size(); i++)
+    for(int i=0; i<(int)indices_neg2.size(); i++)
       tmp_pc_new.points.push_back(pc.points[indices_neg2[i]]);
 
     T = tf_est.compute(tmp_pc_old,tmp_pc_new).inverse();
@@ -358,7 +358,7 @@ template <typename Point>
 float Registration_Infobased<Point>::getMaxDiff(const pcl::PointCloud<Point> &pc,const int ind) {
   int x=ind%pc.width;
   int y=ind/pc.width;
-  if(x<INFO_SEARCH_RADIUS_||y<INFO_SEARCH_RADIUS_||x>=pc.width-INFO_SEARCH_RADIUS_||y>=pc.height-INFO_SEARCH_RADIUS_)
+  if(x<INFO_SEARCH_RADIUS_||y<INFO_SEARCH_RADIUS_||x>=(int)pc.width-INFO_SEARCH_RADIUS_||y>=(int)pc.height-INFO_SEARCH_RADIUS_)
     return 0.f;
 
   float z=pc.points[ind].z;
@@ -383,7 +383,7 @@ template <typename Point>
 float Registration_Infobased<Point>:: getMaxDiff2(const pcl::PointCloud<Point> &pc,const int ind,const pcl::PointCloud<Point> &pc2, int &mi) {
   int x=ind%pc.width;
   int y=ind/pc.width;
-  if(x<INFO_SEARCH_RADIUS_||y<INFO_SEARCH_RADIUS_||x>=pc.width-INFO_SEARCH_RADIUS_||y>=pc.height-INFO_SEARCH_RADIUS_)
+  if(x<INFO_SEARCH_RADIUS_||y<INFO_SEARCH_RADIUS_||x>=(int)pc.width-INFO_SEARCH_RADIUS_||y>=(int)pc.height-INFO_SEARCH_RADIUS_)
     return 0.f;
 
   float z=pc2.points[ind].z;
@@ -417,7 +417,7 @@ template <typename Point>
 int Registration_Infobased<Point>::getI(const int ind, const pcl::PointCloud<Point> &pc) {
   int x=ind%pc.width;
   int y=ind/pc.width;
-  if(x<2||y<2||x>=pc.width-2||y>=pc.height-2)
+  if(x<2||y<2||x>=(int)pc.width-2||y>=(int)pc.height-2)
     return 25;
 
   int r=0;
@@ -435,15 +435,17 @@ int Registration_Infobased<Point>::getI(const int ind, const pcl::PointCloud<Poi
 template <typename Point>
 void Registration_Infobased<Point>::getKinectParameters()
 {
-  const pcl::PointCloud<Point> &pc_old  = *this->last_input_;
   const pcl::PointCloud<Point> &pc      = *this->input_org_;
 
   //get kinect paramters
   Point p1,p2;
+  p1.x=p2.x=0.f;
+  p1.y=p2.y=0.f;
+  p1.z=p2.z=0.f;
   int i1=-1, i2=-1;
 
-  for(int x=0; x<pc.width; x+=8) {
-    for(int y=0; y<pc.height; y+=8) {
+  for(int x=0; x<(int)pc.width; x+=8) {
+    for(int y=0; y<(int)pc.height; y+=8) {
       int ind = getInd(x,y);
       if(pcl_isfinite(pc[ind].z)) {
         p1=pc[ind];
@@ -471,7 +473,6 @@ void Registration_Infobased<Point>::getKinectParameters()
     return;
   }
 
-  float f,dx,dy;
   float ax1,ax2, bx1,bx2;
   float ay1,ay2, by1,by2;
 
@@ -491,7 +492,7 @@ void Registration_Infobased<Point>::getKinectParameters()
 
   this->kinect_dx_ = (ax1-ax2)/(bx1-bx2);
   this->kinect_dy_ = (ay1-ay2)/(by1-by2);
-  this->kinect_f_ = ax1 - bx1*dx;
+  this->kinect_f_ = ax1 - bx1*this->kinect_dx_;
 }
 
 template <typename Point>
@@ -502,8 +503,8 @@ bool Registration_Infobased<Point>::checkSamples(const Eigen::Matrix4f &T, int *
 
   //raycast result to compare
   int found=0, bad=0;
-  for(int xx=0; xx<pc.width; xx+=8) {
-    for(int yy=0; yy<pc.height; yy+=8) {
+  for(int xx=0; xx<(int)pc.width; xx+=8) {
+    for(int yy=0; yy<(int)pc.height; yy+=8) {
       int ind = getInd(xx,yy);
       if(pcl_isfinite(pc[ind].z)) {
         Eigen::Vector4f v=T*pc[ind].getVector4fMap();
@@ -513,7 +514,7 @@ bool Registration_Infobased<Point>::checkSamples(const Eigen::Matrix4f &T, int *
         int x=kinect_f_*v(0)/v(2)+kinect_dx_;
         int y=kinect_f_*v(1)/v(2)+kinect_dy_;
 
-        if(x<0||x>=pc_old.width || y<0||y>=pc_old.height)
+        if(x<0||x>=(int)pc_old.width || y<0||y>=(int)pc_old.height)
           continue;
 
         ++found;
@@ -569,13 +570,13 @@ void Registration_Infobased<Point>::reproject()
   pcl::PointCloud<Point> pc  = *this->last_input_;
   boost::shared_ptr<pcl::PointCloud<Point> > pc_old_new(pc.makeShared());
 
-  for(int xx=0; xx<pc.width; xx++)
-    for(int yy=0; yy<pc.height; yy++)
+  for(int xx=0; xx<(int)pc.width; xx++)
+    for(int yy=0; yy<(int)pc.height; yy++)
       (*pc_old_new)[getInd(xx,yy)].x = (*pc_old_new)[getInd(xx,yy)].y = (*pc_old_new)[getInd(xx,yy)].z = std::numeric_limits<float>::quiet_NaN();
 
   //raycast
-  for(int xx=0; xx<pc.width; xx++) {
-    for(int yy=0; yy<pc.height; yy++) {
+  for(int xx=0; xx<(int)pc.width; xx++) {
+    for(int yy=0; yy<(int)pc.height; yy++) {
       int ind = getInd(xx,yy);
       if(pcl_isfinite(pc[ind].z)) {
         Eigen::Vector4f v=T*pc[ind].getVector4fMap();
@@ -583,7 +584,7 @@ void Registration_Infobased<Point>::reproject()
         int x=round(kinect_f_*v(0)/v(2)+kinect_dx_);
         int y=round(kinect_f_*v(1)/v(2)+kinect_dy_);
 
-        if(x<0||x>=pc.width || y<0||y>=pc.height)
+        if(x<0||x>=(int)pc.width || y<0||y>=(int)pc.height)
           continue;
 
         (*pc_old_new)[getInd(x,y)].x = v(0);

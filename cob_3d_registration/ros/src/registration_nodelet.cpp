@@ -165,13 +165,13 @@ class RegistrationNodelet : public pcl_ros::PCLNodelet
 public:
   // Constructor
   RegistrationNodelet():
-    reg_(NULL), ctr_(0), is_running_(false)
+    ctr_(0), reg_(NULL), is_running_(false)
   {
     //onInit();
   }
 
   RegistrationNodelet(bool dummy):
-    reg_(NULL), ctr_(0), is_running_(false)
+    ctr_(0), reg_(NULL), is_running_(false)
   {
   }
 
@@ -537,7 +537,7 @@ public:
 
     }
     else
-      ROS_WARN("using algo icp", e_algo);
+      ROS_WARN("using algo icp");
 
     //init: settings
     ROS_INFO("init %s", s_algo.c_str());
@@ -657,7 +657,7 @@ public:
     pcl::PointCloud<Point> pc;
     pcl::io::loadPCDFile(req.pcd_fn, pc);
 
-    for(int i=0; i<pc.size(); i++) {
+    for(int i=0; i<(int)pc.size(); i++) {
       if(pc[i].z==0||pc[i].z>10)
         pc[i].z=pc[i].y=pc[i].x=std::numeric_limits<float>::quiet_NaN();
     }
@@ -703,8 +703,8 @@ public:
 
     ipa_Utils::ConvertToShowImage(cv_pc, img_depth, 1, 0., 5.);
 #else
-    for(int x=0; x<pc.width; x++)
-      for(int y=0; y<pc.height; y++) {
+    for(int x=0; x<(int)pc.width; x++)
+      for(int y=0; y<(int)pc.height; y++) {
         int raw_depth = std::max(0, (int)(((1./pc.points[x+y*pc.width].z)-3.3309495161)/-0.0030711016));
         *(img_depth.ptr<unsigned short>(y)+x) = raw_depth<2048?raw_depth:0;
       }
@@ -891,7 +891,7 @@ protected:
       voxel.setLeafSize(voxelsize,voxelsize,voxelsize);
       voxel.filter(pc);
 
-      ROS_INFO("resulting pc with %d points", pc.size());
+      ROS_INFO("resulting pc with %d points", (int)pc.size());
 
       if(((cob_3d_registration::Registration_ICP<Point>*)reg_)->getMap()) {
         voxel.setInputCloud(((cob_3d_registration::Registration_ICP<Point>*)reg_)->getMap());
@@ -994,8 +994,8 @@ protected:
 
   //settings
   void setSettings_ICP(cob_3d_registration::Registration_ICP<Point> *pr) {
-    double d;
-    int i;
+    double d=0.;
+    int i=0;
 
     if(parameters_.getParam("corr_dist",d))
       pr->setCorrDist(d);
@@ -1012,7 +1012,7 @@ protected:
   void setSettings_ICP_Moments(cob_3d_registration::Registration_ICP_Moments<Point> *pr) {
     setSettings_ICP(pr);
 
-    double d;
+    double d=0.;
 
     if(parameters_.getParam("moments_radius",d))
       pr->setMomentRadius(d);
@@ -1020,7 +1020,7 @@ protected:
   void setSettings_ICP_FPFH(cob_3d_registration::Registration_ICP_FPFH<Point> *pr) {
     setSettings_ICP(pr);
 
-    double d;
+    double d=0.;
 
     if(parameters_.getParam("fpfh_radius",d))
       pr->setFPFHRadius(d);
@@ -1029,7 +1029,7 @@ protected:
     setSettings_ICP(pr);
   }
   void setSettings_ICP_Edges(cob_3d_registration::Registration_ICP_Edges<Point> *pr) {
-    double d;
+    double d=0.;
 
     if(parameters_.getParam("edge_radius",d))
       pr->setRadius(d);
@@ -1040,8 +1040,8 @@ protected:
     setSettings_ICP(pr);
   }
   void setSettings_Info(cob_3d_registration::Registration_Infobased<Point> *pr) {
-    int i;
-    double f;
+    int i=0;
+    double f=0.;
 
     //if(parameters_.getParam("use_icp",i))
     //  pr->setUseICP(i!=0);

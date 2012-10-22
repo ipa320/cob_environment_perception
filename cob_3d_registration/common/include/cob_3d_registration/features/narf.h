@@ -28,11 +28,11 @@ public:
 
   virtual bool hidden_build() {
 
-    ROS_INFO("calc narf for source %d", this->org_in_.size());
+    ROS_INFO("calc narf for source %d", (int)this->org_in_.size());
     {
       extractFeatures(this->org_in_, feature_in_);
       this->org_in_.points.clear();
-      for(int i=0; i<feature_in_.size(); i++) {
+      for(int i=0; i<(int)feature_in_.size(); i++) {
         Point p;
         memset(&p,0,sizeof(Point));
         p.x=feature_in_.points[i].x;
@@ -44,11 +44,11 @@ public:
       this->org_in_.width=this->org_in_.size();
     }
 
-    ROS_INFO("calc narf for target %d", this->org_out_.size());
+    ROS_INFO("calc narf for target %d", (int)this->org_out_.size());
     {
       extractFeatures(this->org_out_, feature_out_);
       this->org_out_.points.clear();
-      for(int i=0; i<feature_out_.size(); i++) {
+      for(int i=0; i<(int)feature_out_.size(); i++) {
         Point p;
         memset(&p,0,sizeof(Point));
         p.x=feature_out_.points[i].x;
@@ -61,7 +61,7 @@ public:
     }
 
     //need to rebuild tree
-    ROS_INFO("build tree %d %d", this->org_in_.size(), this->org_out_.size());
+    ROS_INFO("build tree %d %d", (int)this->org_in_.size(), (int)this->org_out_.size());
     this->tree_.reset (new pcl::KdTreeFLANN<Point>);
     this->tree_->setInputCloud(this->org_in_.makeShared());
     ROS_INFO("build tree done");
