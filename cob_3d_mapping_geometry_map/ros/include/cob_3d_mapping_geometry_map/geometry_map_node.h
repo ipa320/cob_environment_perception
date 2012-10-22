@@ -103,6 +103,12 @@ namespace cob_3d_mapping
     * @return nothing
     */
     void dynReconfCallback(cob_3d_mapping_geometry_map::geometry_map_nodeConfig &config, uint32_t level);
+   /**
+    * @brief Callback for shape arrays
+    *
+    * This is where the shape processing chain starts.
+    * @param[in] sa Shape array message, containing the shape data
+    */
     void shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& sa);
 
     /**
@@ -130,25 +136,18 @@ namespace cob_3d_mapping
      * @return nothing
      */
     bool getMap(cob_3d_mapping_msgs::GetGeometricMap::Request &req, cob_3d_mapping_msgs::GetGeometricMap::Response &res);
+   /**
+    * @brief service callback for MofiyMap service
+    *
+    * Fills the service response of the ModifyMap service with the modified map
+    *
+    * @param req request to modify map
+    * @param res the modified geometric map
+    *
+    * @return nothing
+    */
     bool modifyMap(cob_3d_mapping_msgs::ModifyMap::Request &req, cob_3d_mapping_msgs::ModifyMap::Response &res) ;
 
-
-    /**
-    * @brief Debug out put of polygon contours to file.
-    */
-    void dumpPolygonContoursToFile(Polygon& m);
-
-
-    /**
-     * @brief output featuremap to dump file
-     *
-     * output featuremap to dump file, path is hard coded
-     *
-     * @param m feature map
-     *
-     * @return nothing
-     */
-    void dumpPolygonToFile(Polygon& m);
 
 
     /**
