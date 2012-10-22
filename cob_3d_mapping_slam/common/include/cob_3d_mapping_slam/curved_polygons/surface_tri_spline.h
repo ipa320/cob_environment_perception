@@ -33,13 +33,20 @@ namespace Slam_Surface
 
       Eigen::Vector3f I_[3]; /// intersection of normal planes at line
 
+      Eigen::Vector3f pS_, nS_; /// apex point
+      Eigen::Vector3f pb_[3];
+      Eigen::Matrix2f _Tb_[3]; //temporary inverse matrix for barycentric coordinates
+
       TRIANGLE(const size_t i1, const size_t i2, const size_t i3) {
         i_[0] = i1;
         i_[1] = i2;
         i_[2] = i3;
       }
 
-      bool update(const std::vector<Eigen::Vector3f> &pts, const std::vector<Eigen::Vector3f> &normals, const std::vector<Eigen::Vector2f> &uv_pts,
+      bool update1(const std::vector<Eigen::Vector3f> &pts, const std::vector<Eigen::Vector3f> &normals, const std::vector<Eigen::Vector2f> &uv_pts,
+                  const Surface *surf=NULL);
+
+      bool update2(const std::vector<Eigen::Vector3f> &pts, const std::vector<Eigen::Vector3f> &normals, const std::vector<Eigen::Vector2f> &uv_pts,
                   const Surface *surf=NULL);
 
       void getWeight(const Eigen::Vector3f &pt, Eigen::Matrix3f &w) const;
