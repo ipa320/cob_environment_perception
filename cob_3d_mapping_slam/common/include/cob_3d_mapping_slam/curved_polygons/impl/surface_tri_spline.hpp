@@ -6,13 +6,99 @@
  */
 
 
+bool SurfaceTriSpline::TRIANGLE::update2(const std::vector<Eigen::Vector3f> &pts, const std::vector<Eigen::Vector3f> &normals, const std::vector<Eigen::Vector2f> &uv_pts, const Surface *surf)
+{
+  Eigen::Vector3f line_eq[6];
 
-bool SurfaceTriSpline::TRIANGLE::update(const std::vector<Eigen::Vector3f> &pts, const std::vector<Eigen::Vector3f> &normals, const std::vector<Eigen::Vector2f> &uv_pts, const Surface *surf)
+  for(int i=0; i<3; i++)
+  {
+    //intersection of 2 planes --> line
+    Eigen::Vector3f np = normals[i_[i]].cross( nS_ );
+    const float dot = normals[i_[i]].dot( nS_ );
+    const float h2 = nS_.dot( pS_-pts[i_[i]] );
+    const float dot2 = (1-dot*dot);
+    if(dot2) {
+      Eigen::Vector3f vp =
+          ( (-h2*dot)*normals[i_[i]] + (h2)*nS_ )/dot2 + pts[i_[i]];
+
+      if(np.squaredNorm()<0.00001f) {
+        np = (pS_-pts[i_[i]]).cross( (nS_+normals[i_[i]])*0.5f );
+        vp = (pS_+pts[i_[i]])*0.5f;
+      }
+
+      //line: p = r*np + vp
+
+      std::cout<<"np\n"<<np<<"\n";
+      std::cout<<"vp\n"<<vp<<"\n";
+
+      line_eq[i*2+0] = np;
+      line_eq[i*2+1] = vp;
+    }
+    else {
+      ROS_ASSERT(0);
+    }
+  }
+
+  Eigen::Matrix<float,6,3> toSolve_M;
+  Eigen::Matrix<float,6,1> toSolve_v;
+
+  bool set[3];
+  for(int i=0; i<3; i++)
+  {
+    set[i]=false;
+    Eigen::Vector3f v = (pts[i_[(1+i)%3]]-pts[i_[i]]);
+    float x = ( normals[i_[(1+i)%3]].dot( v ) )/( (normals[i_[(1+i)%3]]-normals[i_[i]]).dot( v ) );
+    if(!pcl_isfinite(x)) {
+      I_[i] = (pts[i_[(1+i)%3]] + pts[i_[i]])*0.5f;
+      x=0.5f;
+    }
+    else
+      set[i]=true;
+
+    toSolve_M.row(i)(i) = line_eq[2*i + 0 ].dot(normals[i_[i]]);
+    toSolve_M.row(i)((1+i)%3) = 0;
+    toSolve_M.row(i)((2+i)%3) = 0;
+
+    toSolve_M.row(i+3)(i) = line_eq[2*i + 0 ].dot(normals[i_[i]]);
+    toSolve_M.row(i+3)((1+i)%3) = line_eq[2*((1+i)%3) + 0 ].dot(normals[i_[i]]);
+    toSolve_M.row(i+3)((2+i)%3) = 0;
+
+    toSolve_v(i) = (pts[i_[i]]-line_eq[2*i + 1 ]).dot(normals[i_[i]]);
+
+    toSolve_v(i+3) = (2*pts[i_[i]]-line_eq[2*i + 1 ]-line_eq[2*((1+i)%3) + 1 ]).dot(normals[i_[i]]);
+  }
+
+  Eigen::Vector3f p = toSolve_M.colPivHouseholderQr().solve(toSolve_v); //toSolve_M.inverse()*toSolve_v;//
+
+  for(int i=0; i<3; i++)
+  {
+    if(set[i])
+      pb_[i] = line_eq[2*i+0]*p(i)+line_eq[2*i+1];
+
+    std::cout<<"p\n"<<pts[i_[(1+i)%3]]<<"\n"<<pts[i_[i]]<<"\n";
+    std::cout<<"n\n"<<normals[i_[(1+i)%3]]<<"\n"<<normals[i_[i]]<<"\n";
+    std::cout<<"pb_\n"<<pb_[i]<<"\n";
+  }
+  std::cout<<"toSolve_M\n"<<toSolve_M<<"\n";
+  std::cout<<"toSolve_v\n"<<toSolve_v<<"\n";
+  std::cout<<"params\n"<<p<<"\n";
+
+  return true;
+}
+
+bool SurfaceTriSpline::TRIANGLE::update1(const std::vector<Eigen::Vector3f> &pts, const std::vector<Eigen::Vector3f> &normals, const std::vector<Eigen::Vector2f> &uv_pts, const Surface *surf)
 {
   //update barycentric coordinates transformation
   _T_.col(0) = uv_pts[i_[0]]-uv_pts[i_[2]];
   _T_.col(1) = uv_pts[i_[1]]-uv_pts[i_[2]];
   _T_ = _T_.inverse().eval();
+
+  //update barycentric coordinates transformation
+  for(int i=0; i<3; i++) {
+    _Tb_[i].col(0) = uv_pts[i_[0]]-uv_pts[i_[2]];
+    _Tb_[i].col(1) = uv_pts[i_[1]]-uv_pts[i_[2]];
+    _Tb_[i] = _T_[i].inverse().eval();
+  }
 
   //normal of tensor
   add_cross_ = ( pts[i_[1]]-pts[i_[0]] ).cross( pts[i_[2]]-pts[i_[0]] );
@@ -28,7 +114,7 @@ bool SurfaceTriSpline::TRIANGLE::update(const std::vector<Eigen::Vector3f> &pts,
     Eigen::Vector2f v2,r;
     Eigen::Matrix2f M;
     v2(0)=1;v2(1)=0;
-    float l;
+    //float l;
     Eigen::Vector3f line_eq[6];
 
     for(int i=0; i<3; i++)
@@ -229,7 +315,21 @@ bool SurfaceTriSpline::TRIANGLE::update(const std::vector<Eigen::Vector3f> &pts,
     }
   }
 
-  return true;
+  //calculate apex
+  {
+    Eigen::Vector3f br;
+    br.fill( 1.f/3 );
+
+    Eigen::Vector3f p1 = triNurbsBasis(br, pts[i_[0]], I_[0], I_[2]);
+    Eigen::Vector3f p2 = triNurbsBasis(br, I_[0], pts[i_[1]], I_[1]);
+    Eigen::Vector3f p3 = triNurbsBasis(br, I_[2], I_[1], pts[i_[2]]);
+
+    pS_ = triNurbsBasis(br, p1,p2,p3);
+    nS_ = (p2-p1).cross(p3-p1);
+    nS_.normalize();
+  }
+
+  return update2(pts,normals,uv_pts, surf);
 
 #if 0
 
@@ -310,21 +410,29 @@ Eigen::Vector3f SurfaceTriSpline::TRIANGLE::triNurbsBasis(const Eigen::Vector3f 
 
 Eigen::Vector3f SurfaceTriSpline::TRIANGLE::project2world(const Eigen::Vector2f &pt, const std::vector<Eigen::Vector3f> &pts, const std::vector<Eigen::Vector2f> &uv_pts) const
 {
-  //1. bayrcentric coordinates 2D -> 3D
-  Eigen::Vector3f br;
-  br.head<2>() = _T_*(pt-uv_pts[i_[2]]);
-  br(2) = 1-br(0)-br(1);
+  for(int i=0; i<3; i++) {
+    //1. bayrcentric coordinates 2D -> 3D
+    Eigen::Vector3f br;
+    br.head<2>() = _Tb_[i]*(pt-uv_pts[i_[2]]);
+    br(2) = 1-br(0)-br(1);
 
-  //  std::cout<<_T_<<"\n";
-  //  std::cout<<(pt-uv_pts[i_[2]])<<"\n\n";
-  //  std::cout<<br<<"\n";
-  //  std::cout<<br(0)*uv_pts[i_[0]]+br(1)*uv_pts[i_[1]]+br(2)*uv_pts[i_[2]]<<"\n\n";
+    if(!( br(0)>=0 && br(0)<=1 && br(1)>=0 && br(1)<=1 && br(2)>=0 && br(2)<=1) ) continue;
 
-  Eigen::Vector3f p1 = triNurbsBasis(br, pts[i_[0]], I_[0], I_[2]);
-  Eigen::Vector3f p2 = triNurbsBasis(br, I_[0], pts[i_[1]], I_[1]);
-  Eigen::Vector3f p3 = triNurbsBasis(br, I_[2], I_[1], pts[i_[2]]);
+    //  std::cout<<_T_<<"\n";
+    //  std::cout<<(pt-uv_pts[i_[2]])<<"\n\n";
+    //  std::cout<<br<<"\n";
+    //  std::cout<<br(0)*uv_pts[i_[0]]+br(1)*uv_pts[i_[1]]+br(2)*uv_pts[i_[2]]<<"\n\n";
 
-  return triNurbsBasis(br, p1,p2,p3);
+    Eigen::Vector3f p1 = triNurbsBasis(br, pts[i_[0]], I_[0], I_[2]);
+    Eigen::Vector3f p2 = triNurbsBasis(br, I_[0], pts[i_[1]], I_[1]);
+    Eigen::Vector3f p3 = triNurbsBasis(br, I_[2], I_[1], pts[i_[2]]);
+
+    return triNurbsBasis(br, p1,p2,p3);
+  }
+
+  //ROS_ASSERT(0);
+  return Eigen::Vector3f::Zero();
+
   //  Eigen::Vector3f r = triNurbsBasis(br, p1,p2,p3);
   //
   //  return -(r-triNurbsBasis(br, pts[i_[0]], pts[i_[1]], pts[i_[2]])).dot(add_cross_)*add_cross_ + triNurbsBasis(br, pts[i_[0]], pts[i_[1]], pts[i_[2]]);
@@ -408,7 +516,7 @@ void SurfaceTriSpline::addTriangle(const size_t i1, const size_t i2, const size_
   ROS_ASSERT(i3<pts_.size());
 
   triangles_.push_back( TRIANGLE(i1,i2,i3) );
-  ROS_ASSERT( triangles_.back().update(pts_,normals_,uv_pts_, surf) );
+  ROS_ASSERT( triangles_.back().update1(pts_,normals_,uv_pts_, surf) );
 }
 
 /// transform basis
