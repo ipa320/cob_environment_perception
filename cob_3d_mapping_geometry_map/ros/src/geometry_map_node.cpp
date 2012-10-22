@@ -138,6 +138,8 @@ GeometryMapNode::dynReconfCallback(cob_3d_mapping_geometry_map::geometry_map_nod
   geometry_map_.setMergeThresholds(config.cos_angle, config.d);
   map_frame_id_ = config.map_frame_id;
   enable_tf_ = config.enable_tf;
+  enable_cyl_= config.enable_cyl;
+  enable_poly_=config.enable_poly;
 }
 
 /**
@@ -176,6 +178,7 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& 
     {
       case cob_3d_mapping_msgs::Shape::POLYGON:
       {
+      if(enable_poly_==false)continue;
         Polygon::Ptr p(new Polygon);
         fromROSMsg(sa->shapes[i], *p);
         p->transform2tf(af_orig);
@@ -186,9 +189,11 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& 
         }
         else { polygon_list.push_back(p); }
         break;
+
       }
       case cob_3d_mapping_msgs::Shape::CYLINDER:
       {
+       if(enable_cyl_==false)continue;
         Cylinder::Ptr c(new Cylinder);
         fromROSMsg(sa->shapes[i], *c);
         c->transform2tf(af_orig);
@@ -199,7 +204,8 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& 
         }
         else { cylinder_list.push_back(c); }
         break;
-      }
+        }
+
       default:
         break;
     }

@@ -212,13 +212,15 @@ namespace cob_3d_mapping
     ros::Publisher map_pub_;                    ///< Publish Map array as shape message.
     ros::Publisher marker_pub_;                 ///< Publish Map array as visualization markers.
     ros::Publisher primitive_pub_;              ///< Publish Cylinder primitive visualization markers.
-    ros::ServiceServer clear_map_server_;      
+    ros::ServiceServer clear_map_server_;
     ros::ServiceServer get_map_server_;
     ros::ServiceServer modify_map_server_ ;
-    
+
 
     tf::TransformListener tf_listener_;         ///< Retrieves transformations.
     bool enable_tf_;                            ///< If true transformation to target frame is performed.
+    bool enable_cyl_;                           ///< If true , processing of cylinders is activated.
+    bool enable_poly_;                          ///< If true , processing of polygons is activated.
 
     /**
     * @brief Dynamic Reconfigure server
