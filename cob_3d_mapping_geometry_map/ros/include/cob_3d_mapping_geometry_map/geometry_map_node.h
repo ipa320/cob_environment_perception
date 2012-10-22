@@ -63,7 +63,8 @@
 // ROS message includes
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/MarkerArray.h>
-#include <cob_3d_mapping_msgs/GetGeometricMap.h>
+#include <cob_3d_mapping_msgs/GetGeometryMap.h>
+#include <cob_3d_mapping_msgs/SetGeometryMap.h>
 #include <cob_3d_mapping_msgs/ModifyMap.h>
 #include <cob_3d_mapping_msgs/ShapeArray.h>
 #include <cob_srvs/Trigger.h>
@@ -129,7 +130,21 @@ namespace cob_3d_mapping
      *
      * @return nothing
      */
-    bool getMap(cob_3d_mapping_msgs::GetGeometricMap::Request &req, cob_3d_mapping_msgs::GetGeometricMap::Response &res);
+    bool getMap(cob_3d_mapping_msgs::GetGeometryMap::Request &req, cob_3d_mapping_msgs::GetGeometryMap::Response &res);
+
+    /**
+     * @brief service callback for SetGeometryMap service
+     *
+     * Sets the GeometryMap with the service request
+     *
+     * @param req request to set map
+     * @param res service response (empty)
+     *
+     * @return true if successful
+     */
+    bool
+    setMap(cob_3d_mapping_msgs::SetGeometryMap::Request &req, cob_3d_mapping_msgs::SetGeometryMap::Response &res);
+
     bool modifyMap(cob_3d_mapping_msgs::ModifyMap::Request &req, cob_3d_mapping_msgs::ModifyMap::Response &res) ;
 
 
@@ -212,10 +227,11 @@ namespace cob_3d_mapping
     ros::Publisher map_pub_;                    ///< Publish Map array as shape message.
     ros::Publisher marker_pub_;                 ///< Publish Map array as visualization markers.
     ros::Publisher primitive_pub_;              ///< Publish Cylinder primitive visualization markers.
-    ros::ServiceServer clear_map_server_;      
+    ros::ServiceServer clear_map_server_;
     ros::ServiceServer get_map_server_;
+    ros::ServiceServer set_map_server_;
     ros::ServiceServer modify_map_server_ ;
-    
+
 
     tf::TransformListener tf_listener_;         ///< Retrieves transformations.
     bool enable_tf_;                            ///< If true transformation to target frame is performed.
