@@ -326,6 +326,7 @@ GeometryMapNode::setMap(cob_3d_mapping_msgs::SetGeometryMap::Request &req, cob_3
       map_cylinder->push_back(c);
     }
   }
+  publishMap();
   return true;
 }
 
