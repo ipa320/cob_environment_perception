@@ -257,7 +257,7 @@ GeometryMapNode::clearMap(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Re
 }
 
 bool
-GeometryMapNode::getMap(cob_3d_mapping_msgs::GetGeometricMap::Request &req, cob_3d_mapping_msgs::GetGeometricMap::Response &res)
+GeometryMapNode::getMap(cob_3d_mapping_msgs::GetGeometryMap::Request &req, cob_3d_mapping_msgs::GetGeometryMap::Response &res)
 {
   std::vector<Polygon::Ptr>* map_polygon = geometry_map_.getMap_polygon();
   std::vector<Cylinder::Ptr>* map_cylinder = geometry_map_.getMap_cylinder();
@@ -586,7 +586,6 @@ GeometryMapNode::publishMapMarker()
   for(unsigned int i=0; i<map_cylinder->size(); i++)
   {
     Cylinder& cm = *(map_cylinder->at(i));
-    int color_ctr = i%4;
     //marker.id = cm.id;
     marker.color.r=1;
     marker.color.g=0;
@@ -687,7 +686,7 @@ void GeometryMapNode::publishPrimitives()
 
 
 
-    //set shape of cylinder 
+    //set shape of cylinder
     marker.scale.x = cm.r_ *2;
     marker.scale.y = cm.r_ *2;
     marker.scale.z =  (cm.h_max_ - cm.h_min_);
