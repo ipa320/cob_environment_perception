@@ -19,6 +19,7 @@
   	<!-- remap from="point_cloud2_aligned" to="point_map/pc_aligned"/-->
   	<remap from="clear_map" to="point_map/clear_map"/>
   	<remap from="get_map" to="point_map/get_map"/>
+  	<remap from="set_map" to="point_map/set_map"/>
 
   	<param name="file_path" type="string" value="/tmp"/>
   	<param name="save" type="bool" value="false"/>

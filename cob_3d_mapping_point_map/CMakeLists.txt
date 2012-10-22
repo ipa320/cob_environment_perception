@@ -39,8 +39,8 @@ rosbuild_add_library(cob_3d_mapping_point_map_nodelets
 	ros/src/point_map_nodelet_2.cpp)
 	#ros/src/difference_segmentation.cpp)
 
-rosbuild_add_executable(set_reference_map_client ros/src/set_reference_map.cpp)
-rosbuild_add_executable(get_map_client ros/src/get_map_client.cpp)
+rosbuild_add_executable(set_point_map ros/src/set_point_map.cpp)
+rosbuild_add_executable(get_point_map ros/src/get_point_map.cpp)
 
 rosbuild_add_compile_flags(cob_3d_mapping_point_map ${SSE_FLAGS})
 

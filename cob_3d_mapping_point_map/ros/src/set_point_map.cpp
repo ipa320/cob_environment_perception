@@ -14,10 +14,10 @@
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
- * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ * Author: Joshua Hampp, email:joshua.hampp@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 11/2011
+ * Date of creation: 09/2011
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
@@ -55,48 +55,55 @@
 
 // ROS includes
 #include <ros/ros.h>
+#include <actionlib/client/simple_action_client.h>
+#include <actionlib/client/terminal_state.h>
 
 // ROS message includes
-#include <cob_3d_mapping_msgs/GetPointMap.h>
+#include <cob_3d_mapping_msgs/SetPointMap.h>
 
 // PCL includes
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 
+// Other includes
+#include "cob_3d_mapping_point_map/point_map.h"
+
 int main (int argc, char **argv)
 {
   if(argc<1) {
-    ROS_ERROR("Please specify output file\nrosrun cob_3d_mapping_point_map get_map_client myfile.pcd");
+    ROS_ERROR("Please specify path to map file\nrosrun cob_env_model set_point_map myfile.pcd");
     return -1;
   }
-  ros::init(argc, argv, "get_point_map");
+  ros::init(argc, argv, "set_point_map");
 
   ros::NodeHandle nh;
 
   ROS_INFO("Waiting for service server to start.");
-  ros::service::waitForService("/point_map/get_map"); //will wait for infinite time
+  // wait for the server to start
+  ros::service::waitForService("/point_map/set_map"); //will wait for infinite time
 
-  ROS_INFO("Server started, polling map.");
+  ROS_INFO("Server started, sending map.");
 
-  //build message
-  cob_3d_mapping_msgs::GetPointMapRequest req;
-  cob_3d_mapping_msgs::GetPointMapResponse resp;
+  //create message
+  cob_3d_mapping_msgs::SetReferenceMapRequest req;
 
-  if (ros::service::call("/point_map/get_map", req,resp))
+  pcl::PointCloud<PointMap::Point> map;
+  if(pcl::io::loadPCDFile(argv[1], map)!=0) {
+    ROS_ERROR("Couldn't open pcd file. Sorry.");
+    return -1;
+  }
+
+  pcl::toROSMsg(map,req.map);
+  req.map.header.frame_id ="/map";
+  cob_3d_mapping_msgs::SetReferenceMapResponse resp;
+
+  if (ros::service::call("/point_map/set_map", req,resp))
   {
     ROS_INFO("Service call finished.");
   }
   else
-  {
-    ROS_INFO("[get map client]: Service call failed.");
-    return 0;
-  }
+    ROS_INFO("[set point map]: Service call failed.");
 
-  pcl::PointCloud<pcl::PointXYZRGB> map;
-  pcl::fromROSMsg(resp.map, map);
-  pcl::io::savePCDFile(argv[1],map,false);
-
-  //exit
   return 0;
 }
 

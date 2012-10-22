@@ -82,7 +82,7 @@
 //#include <visualization_msgs/Marker.h>
 
 // ROS message includes
-#include <cob_3d_mapping_msgs/SetReferenceMap.h>
+#include <cob_3d_mapping_msgs/SetPointMap.h>
 #include <cob_3d_mapping_msgs/GetPointMap.h>
 #include <cob_srvs/Trigger.h>
 
@@ -149,6 +149,7 @@ public:
     map_pub_ = n_.advertise<pcl::PointCloud<Point> >("map",1);
     clear_map_server_ = n_.advertiseService("clear_map", &PointMapNodelet::clearMap, this);
     get_map_server_ = n_.advertiseService("get_map", &PointMapNodelet::getMap, this);
+    set_map_server_ = n_.advertiseService("set_map", &PointMapNodelet::setMap, this);
 
     //n_.param("aggregate_point_map/file_path" ,file_path_ ,std::string("~/pcl_daten/table/icp/map_"));
     //n_.param("aggregate_point_map/save_",save_ , false);
@@ -306,11 +307,12 @@ public:
    * @return nothing
    */
   bool
-  setReferenceMap(cob_3d_mapping_msgs::SetReferenceMap::Request &req,
-                  cob_3d_mapping_msgs::SetReferenceMap::Response &res)
+  setMap(cob_3d_mapping_msgs::SetPointMap::Request &req,
+                  cob_3d_mapping_msgs::SetPointMap::Response &res)
   {
     pcl::fromROSMsg(req.map, map_);
     downsampleMap();
+    map_pub_.publish(map_);
     //ROS_WARN("not needed");
     return true;
   }
@@ -341,6 +343,7 @@ protected:
   ros::Publisher map_pub_;		//publisher for map
   ros::ServiceServer clear_map_server_;
   ros::ServiceServer get_map_server_;
+  ros::ServiceServer set_map_server_;
 
   boost::shared_ptr<dynamic_reconfigure::Server<cob_3d_mapping_point_map::point_map_nodeletConfig> > config_server_;
 
