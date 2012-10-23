@@ -291,10 +291,9 @@ void ShapeMarker::hideArrows(int untick)
     /**end**/
   }
   if (untick){
-    for (unsigned int i=0;i< moved_shapes_indices_.size();i++){
-      if (moved_shapes_indices_.at(i) == shape_.id){
-        moved_shapes_indices_.erase(moved_shapes_indices_.begin()+i) ;
-      }
+    iter = find (moved_shapes_indices_.begin(), moved_shapes_indices_.end(), shape_.id) ;
+    if (iter!=moved_shapes_indices_.end()){
+      moved_shapes_indices_.erase(moved_shapes_indices_.begin()+(iter-moved_shapes_indices_.begin())) ;
     }
   }
 }
@@ -411,7 +410,7 @@ ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::In
     switch(shape_.type)
     {
       case(cob_3d_mapping_msgs::Shape::POLYGON):
-                                                                      {
+                                                                          {
         for (long i = 0; i < it->GetNumPoints (); i++)
         {
           pt = it->GetPoint (i);
@@ -419,9 +418,9 @@ ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::In
           marker.points[i].y = pt.y;
           marker.points[i].z = 0;
         }
-                                                                      }
+                                                                          }
       case(cob_3d_mapping_msgs::Shape::CYLINDER):
-                                                                      {
+                                                                          {
 
 
         for (long i = 0; i < it->GetNumPoints (); i++)
@@ -445,7 +444,7 @@ ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::In
           //marker.points[i].y = pt.y;
           //marker.points[i].z = 0;
         }
-                                                                      }
+                                                                          }
 
     }
     im_ctrl.markers.push_back (marker);
@@ -981,10 +980,10 @@ void ShapeMarker::hideContour(int untick){
   im_server_->erase(ss.str());
   im_server_->applyChanges ();
   if(!untick){ // when ResetAll is activated
-      menu_handler_.setCheckState (4, interactive_markers::MenuHandler::UNCHECKED);  //4th menu Entry is display Contour
-      menu_handler_.reApply (*im_server_);
-      im_server_->applyChanges() ;
-    }
+    menu_handler_.setCheckState (4, interactive_markers::MenuHandler::UNCHECKED);  //4th menu Entry is display Contour
+    menu_handler_.reApply (*im_server_);
+    im_server_->applyChanges() ;
+  }
 
   if(untick){
     iter = find (interacted_shapes_.begin(), interacted_shapes_.end(), shape_.id) ;
