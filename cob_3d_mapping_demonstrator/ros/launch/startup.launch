@@ -19,7 +19,9 @@
   <node name="execute_button_commands" type="execute_button_commands.py" pkg="cob_3d_mapping_demonstrator" output="screen"/>
   <include file="$(find cob_3d_mapping_pipeline)/launch/mapping_demo.launch"/>
   <node name="kill" type="kill_xtion.sh" pkg="cob_3d_mapping_demonstrator"/>
-	<include file="$(find cob_3d_mapping_demonstrator)/ros/launch/openni.launch"/>
+  <include file="$(find cob_3d_mapping_demonstrator)/ros/launch/openni.launch"/>
+  <include file="$(find cob_3d_visualization)/launch/shape_visualization.launch"/>
+	
 
 	<!--node ns="cob_3d_mapping_demonstrator_controller" pkg="cob_teleop" type="teleop_cob" name="spawn_teleop_keyboard" output="screen"/-->
 
