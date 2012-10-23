@@ -74,7 +74,7 @@
 
 //internal includes
 #include <cob_3d_mapping_msgs/ShapeArray.h>
-#include <cob_3d_mapping_msgs/GetGeometricMap.h>
+#include <cob_3d_mapping_msgs/GetGeometryMap.h>
 #include <cob_3d_mapping_msgs/GetObjectsOfClass.h>
 #include <cob_3d_mapping_msgs/GetTables.h>
 //#include <cob_3d_mapping_msgs/MoveToTable.h>
@@ -344,8 +344,8 @@ class TableExtractionNode
       ROS_INFO("Server started, polling map.");
 
       //build message
-      cob_3d_mapping_msgs::GetGeometricMapRequest req;
-      cob_3d_mapping_msgs::GetGeometricMapResponse res;
+      cob_3d_mapping_msgs::GetGeometryMapRequest req;
+      cob_3d_mapping_msgs::GetGeometryMapResponse res;
 
       if (ros::service::call ("get_geometry_map", req, res))
       {
