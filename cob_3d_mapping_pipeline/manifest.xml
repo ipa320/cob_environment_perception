@@ -14,9 +14,10 @@
   <depend package="cob_3d_mapping_msgs"/>
   <depend package="cob_3d_mapping_point_map"/>
   <depend package="cob_3d_mapping_geometry_map"/>
-  <depend package="cob_3d_mapping_features"/>
+  <!-- depend package="cob_3d_mapping_features"/-->
 	<depend package="cob_3d_mapping_common"/>
 	<depend package="cob_3d_registration"/>
+	<depend package="cob_3d_segmentation"/>
  	<depend package="smach"/>
 	<depend package="smach_ros"/>
 
