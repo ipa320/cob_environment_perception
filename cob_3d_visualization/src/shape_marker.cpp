@@ -273,11 +273,12 @@ void ShapeMarker::hideArrows(int untick)
     ROS_INFO ("Deleting the Arrows ...") ;
     marker_.controls.erase(marker_.controls.end()-6,marker_.controls.end()) ;
     im_server_->insert(marker_) ;
-//    im_server_->applyChanges() ;
+    //    im_server_->applyChanges() ;
 
     if (!untick){ // when the ResetAll option is used
+      menu_handler_.setCheckState (5, interactive_markers::MenuHandler::UNCHECKED);
       menu_handler_.reApply (*im_server_);
-//      im_server_->applyChanges() ;
+      //      im_server_->applyChanges() ;
     }
 
     /**deleting the Transparent Marker**/
@@ -410,7 +411,7 @@ ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::In
     switch(shape_.type)
     {
       case(cob_3d_mapping_msgs::Shape::POLYGON):
-                                                                {
+                                                                      {
         for (long i = 0; i < it->GetNumPoints (); i++)
         {
           pt = it->GetPoint (i);
@@ -418,9 +419,9 @@ ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::In
           marker.points[i].y = pt.y;
           marker.points[i].z = 0;
         }
-                                                                }
+                                                                      }
       case(cob_3d_mapping_msgs::Shape::CYLINDER):
-                                                                {
+                                                                      {
 
 
         for (long i = 0; i < it->GetNumPoints (); i++)
@@ -444,7 +445,7 @@ ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::In
           //marker.points[i].y = pt.y;
           //marker.points[i].z = 0;
         }
-                                                                }
+                                                                      }
 
     }
     im_ctrl.markers.push_back (marker);
@@ -750,6 +751,11 @@ void ShapeMarker::hideNormal(int untick){
   ss << "normal_" << shape_.id;
   im_server_->erase(ss.str());
   im_server_->applyChanges ();
+  if(!untick){ // when ResetAll is activated
+    menu_handler_.setCheckState (2, interactive_markers::MenuHandler::UNCHECKED);//second menu Entry is display Contour
+    menu_handler_.reApply (*im_server_);
+    im_server_->applyChanges() ;
+  }
 
   if(untick){
     // updating interacted_shapes_ vector
@@ -855,6 +861,12 @@ void ShapeMarker::hideCentroid(int untick){
   ss << "centroid_" << shape_.id;
   im_server_->erase(ss.str());
   im_server_->applyChanges ();
+
+  if(!untick){ // when ResetAll is activated
+    menu_handler_.setCheckState (3, interactive_markers::MenuHandler::UNCHECKED); //third menu Entry is display Contour
+    menu_handler_.reApply (*im_server_);
+    im_server_->applyChanges() ;
+  }
 
   if(untick){
     // updating interacted_shapes_ vector
@@ -968,6 +980,11 @@ void ShapeMarker::hideContour(int untick){
   ss << "contour_" << shape_.id;
   im_server_->erase(ss.str());
   im_server_->applyChanges ();
+  if(!untick){ // when ResetAll is activated
+      menu_handler_.setCheckState (4, interactive_markers::MenuHandler::UNCHECKED);  //4th menu Entry is display Contour
+      menu_handler_.reApply (*im_server_);
+      im_server_->applyChanges() ;
+    }
 
   if(untick){
     iter = find (interacted_shapes_.begin(), interacted_shapes_.end(), shape_.id) ;
