@@ -17,7 +17,7 @@
 //#include <sensor_msgs/PointCloud2.h>
 //#include <cob_3d_mapping_msgs/GetFieldOfView.h>
 //#include "cob_3d_mapping_msgs/TriggerMappingAction.h"
-#include <cob_3d_mapping_msgs/SetReferenceMap.h>
+//#include <cob_3d_mapping_msgs/SetReferenceMap.h>
 //#include <cob_srvs/Trigger.h>
 
 // external includes
@@ -75,7 +75,7 @@ public:
    *
    * @return nothing
    */
-  bool setReferenceMap(cob_3d_mapping_msgs::SetReferenceMap::Request &req);
+  //bool setReferenceMap(cob_3d_mapping_msgs::SetReferenceMap::Request &req);
 
   /**
    * @brief test function to shift the cloud to test if better results are possible
