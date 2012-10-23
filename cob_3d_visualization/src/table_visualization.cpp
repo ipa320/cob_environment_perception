@@ -13,7 +13,7 @@
 #include <cob_3d_mapping_msgs/GetTables.h>
 
 
-#include <cob_3d_mapping_msgs/GetGeometricMap.h>
+#include <cob_3d_mapping_msgs/GetGeometryMap.h>
 
 
 void TableVisualization::tableVisualizationCallback (const cob_3d_mapping_msgs::ShapeArrayPtr& ta) {
