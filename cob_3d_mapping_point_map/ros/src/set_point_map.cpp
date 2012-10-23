@@ -85,7 +85,7 @@ int main (int argc, char **argv)
   ROS_INFO("Server started, sending map.");
 
   //create message
-  cob_3d_mapping_msgs::SetReferenceMapRequest req;
+  cob_3d_mapping_msgs::SetPointMapRequest req;
 
   pcl::PointCloud<PointMap::Point> map;
   if(pcl::io::loadPCDFile(argv[1], map)!=0) {
@@ -95,7 +95,7 @@ int main (int argc, char **argv)
 
   pcl::toROSMsg(map,req.map);
   req.map.header.frame_id ="/map";
-  cob_3d_mapping_msgs::SetReferenceMapResponse resp;
+  cob_3d_mapping_msgs::SetPointMapResponse resp;
 
   if (ros::service::call("/point_map/set_map", req,resp))
   {

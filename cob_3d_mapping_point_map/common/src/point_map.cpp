@@ -7,7 +7,7 @@
 
 //#include "cob_env_model/table_object_cluster.h"
 
-//#include <ros/ros.h>
+#include <ros/console.h>
 //#include <tf/transform_listener.h>
 //#include <visualization_msgs/Marker.h>
 //#include <cob_env_model_msgs/GetFieldOfView.h>
