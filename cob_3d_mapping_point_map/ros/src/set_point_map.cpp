@@ -65,8 +65,6 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 
-// Other includes
-#include "cob_3d_mapping_point_map/point_map.h"
 
 int main (int argc, char **argv)
 {
@@ -87,7 +85,7 @@ int main (int argc, char **argv)
   //create message
   cob_3d_mapping_msgs::SetPointMapRequest req;
 
-  pcl::PointCloud<PointMap::Point> map;
+  pcl::PointCloud<pcl::PointXYZRGB> map;
   if(pcl::io::loadPCDFile(argv[1], map)!=0) {
     ROS_ERROR("Couldn't open pcd file. Sorry.");
     return -1;
