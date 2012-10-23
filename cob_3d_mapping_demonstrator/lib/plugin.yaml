@@ -11,10 +11,6 @@ displays:
     display_name: RvizTitle
     description: |
       Shows a title
-  -
-    class_name: RvizLogo
-    display_name: RvizLogo
-    description: |
-      Shows the IPA logo
+
 
       
