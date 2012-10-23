@@ -72,6 +72,7 @@
 #include <message_filters/synchronizer.h>
 //#include <message_filters/sync_policies/approximate_time.h>
 #include <pcl/segmentation/segment_differences.h>
+#include <pcl/kdtree/kdtree_flann.h>
 
 
 
