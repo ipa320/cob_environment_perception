@@ -64,10 +64,22 @@ class ShapeMarker
   public:
 
     ShapeMarker(boost::shared_ptr<interactive_markers::InteractiveMarkerServer> im_server,
-		cob_3d_mapping_msgs::Shape& shape,
-		std::vector<unsigned int>& moved_shapes_indices,
-		std::vector<unsigned int>& interacted_shapes,
-		std::vector<unsigned int>& deleted_markers_indices_);
+        cob_3d_mapping_msgs::Shape& shape,std::vector<unsigned int>& moved_shapes_indices,std::vector<unsigned int>& interacted_shapes,
+        std::vector<unsigned int>& deleted_markers_indices, bool arrows,bool deleted) ://, unsigned int& deleted) :
+          interacted_shapes_(interacted_shapes) , moved_shapes_indices_(moved_shapes_indices) , deleted_markers_indices_(deleted_markers_indices)
+//        ,deleted_(deleted)
+    {
+      arrows_ = arrows ;
+      deleted_ = deleted ;
+      //      deleted_ = 0;
+      im_server_ = im_server;
+      shape_ = shape;
+      id_ = shape.id;
+      //      feedback_sub_ = nh_.subscribe("geometry_map/map/feedback",1,&ShapeMarker::setShapePosition,this);
+      createShapeMenu ();
+      createInteractiveMarker();
+    }
+
     ~ShapeMarker()
     {
       if(im_server_->erase(marker_.name)){
@@ -81,7 +93,6 @@ class ShapeMarker
         im_server_->erase(ss.str());
       }
     }
-
 
 
     void enableMovement (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
@@ -100,17 +111,9 @@ class ShapeMarker
     void displayNormal();
     void hideNormal(int flag_untick);
 
-    void displaySymAxisCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
-    void displaySymAxis();
-    void hideSymAxis(int flag_untick);
-
     void displayCentroidCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
     void displayCentroid();
     void hideCentroid(int flag_untick);
-
-    void displayOriginCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
-    void displayOrigin();
-    void hideOrigin(int flag_untick);
 
     void displayContourCB(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
     void displayContour();
@@ -118,20 +121,28 @@ class ShapeMarker
 
     void resetMarker();//bool call_reset_marker,visualization_msgs::InteractiveMarker& imarker) ;
 
-//    void setShapePosition(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);//,const cob_3d_mapping_msgs::Shape& shape) ;
+    //    void setShapePosition(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);//,const cob_3d_mapping_msgs::Shape& shape) ;
     void getShape (cob_3d_mapping_msgs::Shape& shape) ;
+    visualization_msgs::Marker getMarker() ;
     unsigned int getID() ;
+    bool getArrows();
+    bool setArrows();
+
+    bool getDeleted();
+    bool setDeleted();
 
     //    std::vector<int> getInteractedShapesNumber();
     void triangle_refinement(list<TPPLPoly>& i_list,list<TPPLPoly>& o_list);
 
   protected:
     visualization_msgs::InteractiveMarker marker_ ;
-    visualization_msgs::InteractiveMarker Imarker ;
+    visualization_msgs::InteractiveMarker imarker_ ;
+    visualization_msgs::InteractiveMarker deleted_imarker_ ;
     visualization_msgs::Marker marker;
 
-    ros::NodeHandle nh_;
-    ros::Subscriber feedback_sub_ ;
+    //    ros::NodeHandle nh_;
+    //    ros::Subscriber feedback_sub_ ;
+    //    ros::Publisher marker_pub_ ;
 
     visualization_msgs::InteractiveMarkerControl im_ctrl;
 
@@ -151,18 +162,19 @@ class ShapeMarker
     std::vector<unsigned int>& moved_shapes_indices_ ;
     std::vector<unsigned int>& interacted_shapes_ ;
     std::vector<unsigned int>& deleted_markers_indices_ ;
-//    unsigned int& deleted_ ;
+    //    unsigned int& deleted_ ;
 
 
-//    bool arrows_;
-//    cob_3d_mapping_msgs::ModifyMap::Request req ;
-//    cob_3d_mapping_msgs::ModifyMap::Response res;
-//    //
-//    Eigen::Quaternionf quatInit ;
-//    Eigen::Vector3f oldCentroid ;
-//    Eigen::Matrix4f transInit;
-//    Eigen::Affine3f affineInit;
-//    Eigen::Matrix4f transInitInv;
+    bool arrows_;
+    bool deleted_ ;
+    //    cob_3d_mapping_msgs::ModifyMap::Request req ;
+    //    cob_3d_mapping_msgs::ModifyMap::Response res;
+    //    //
+    //    Eigen::Quaternionf quatInit ;
+    //    Eigen::Vector3f oldCentroid ;
+    //    Eigen::Matrix4f transInit;
+    //    Eigen::Affine3f affineInit;
+    //    Eigen::Matrix4f transInitInv;
 
 };
 
