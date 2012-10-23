@@ -64,7 +64,7 @@
 //#include <pcl_ros/point_cloud.h>
 #include <pcl_ros/pcl_nodelet.h>
 #include <pcl_ros/transforms.h>
-#include <pcl/common/io.h>
+#include <pcl/io/io.h>
 #include <pluginlib/class_list_macros.h>
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_eigen.h>
