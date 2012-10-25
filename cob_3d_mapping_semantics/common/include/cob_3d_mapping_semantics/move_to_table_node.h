@@ -39,7 +39,6 @@ class MoveToTableNode
       table_im_server_.reset (new interactive_markers::InteractiveMarkerServer ("geometry_map/map", "", false));
 
     }
-
     // Destructor
     ~MoveToTableNode ()
     {
