@@ -279,7 +279,9 @@ bool MoveToTableNode::moveToTableService (cob_3d_mapping_msgs::MoveToTable::Requ
   // test
   robotPose_.position.x = 1 ;
   robotPose_.position.y = 1 ;
-  robotPose_.position.z = (float)req.tableCentroid.position.z ;
+  robotPose_.position.z = 0 ;
+
+  ROS_ERROR("table.z : %f",req.tableCentroid.position.x) ;
 
   table_ = req.targetTable ;
 
@@ -293,7 +295,7 @@ bool MoveToTableNode::moveToTableService (cob_3d_mapping_msgs::MoveToTable::Requ
 
 
   geometry_msgs::Pose targetPointInTableCoordinateSys = findSafeTargetPoint() ;
-  targetPointInTableCoordinateSys.position.z = req.tableCentroid.position.z ;
+//  targetPointInTableCoordinateSys.position.z = req.tableCentroid.position.z ;
 
   vec << targetPointInTableCoordinateSys.position.x ,
       targetPointInTableCoordinateSys.position.y ,
