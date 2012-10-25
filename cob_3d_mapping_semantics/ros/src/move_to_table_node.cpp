@@ -5,14 +5,14 @@
  *      Author: goa-sn
  */
 #include <cob_3d_mapping_semantics/move_to_table_node.h>
-
-geometry_msgs::Pose MoveToTableNode::calculateNavGoal(tabletop_object_detector::Table &table,geometry_msgs::Pose &tableCentroid
-    ,geometry_msgs::Pose &robPose) {
-
-  geometry_msgs::Pose NavGoal;
-  return NavGoal ;
-}
-
+/**
+ * @brief transforms a point to table coordinate system
+ *
+ * @param table table msg
+ * @param pose the pose which needs to be transformed ro table coordinate system
+ *
+ * @return the transformed point
+ */
 geometry_msgs::Pose MoveToTableNode::transformToTableCoordinateSystem(tabletop_object_detector::Table &table,geometry_msgs::Pose &Pose)
 {
 
@@ -51,6 +51,11 @@ geometry_msgs::Pose MoveToTableNode::transformToTableCoordinateSystem(tabletop_o
   return translatedPose ;
 
 }
+/**
+ * @brief finds whether there is an intersection between the line through the robot pose and table centroid and the boundies of the table
+ *
+ * @return true if there exists an Intersection
+ */
 bool MoveToTableNode::doIntersect(float line){
 
   bool intersection(false) ;
@@ -108,8 +113,8 @@ bool MoveToTableNode::doIntersect(float line){
       point4.position.x,point4.position.y,1,
       robotPoseInTableCoordinateSys_.position.x,robotPoseInTableCoordinateSys_.position.y,1;
 
-  ROS_WARN("determinant is : %f",mat1.determinant()*mat2.determinant()) ;
-  ROS_WARN("determinant is : %f",mat3.determinant()*mat4.determinant()) ;
+  //  ROS_WARN("determinant is : %f",mat1.determinant()*mat2.determinant()) ;
+  //  ROS_WARN("determinant is : %f",mat3.determinant()*mat4.determinant()) ;
   if (mat1.determinant()*mat2.determinant() <0 &&
       mat3.determinant()*mat4.determinant() <0) {
 
@@ -117,7 +122,11 @@ bool MoveToTableNode::doIntersect(float line){
   }
   return intersection ;
 }
-
+/**
+ * @brief finds the intersection between the line through the robot pose and table centroid and the boundies of the table
+ *
+ * @return the intersection point
+ */
 geometry_msgs::Pose MoveToTableNode::findIntersectionPoint(){
 
   geometry_msgs::Pose IntersectionPoint ;
@@ -156,16 +165,24 @@ geometry_msgs::Pose MoveToTableNode::findIntersectionPoint(){
   return IntersectionPoint ;
 
 }
-
+/**
+ * @brief finds a safe position in the vicinity of the table as the target
+ *
+ * @return the position of the target point
+ */
 geometry_msgs::Pose MoveToTableNode::findSafeTargetPoint(){
 
   geometry_msgs::Pose intersectionPoint = findIntersectionPoint() ;
   geometry_msgs::Pose finalTarget ;
-  // solve the quadratic equation to find the point which its distance to the intersection point is safeDist_
+
+  // solve the quadratic equation to find the point which its distance to the intersection point equals to safeDist_
+
   float a((robotPoseInTableCoordinateSys_.position.x*robotPoseInTableCoordinateSys_.position.x)+
       (robotPoseInTableCoordinateSys_.position.y*robotPoseInTableCoordinateSys_.position.y));
+
   float b ((-2*(intersectionPoint.position.x *robotPoseInTableCoordinateSys_.position.x))-
       (2*(intersectionPoint.position.y *robotPoseInTableCoordinateSys_.position.y)));
+
   float c((intersectionPoint.position.x*intersectionPoint.position.x)+(intersectionPoint.position.y*intersectionPoint.position.y)
       -(safe_dist_*safe_dist_));
 
@@ -184,14 +201,69 @@ geometry_msgs::Pose MoveToTableNode::findSafeTargetPoint(){
     finalTarget.position.y = t * robotPoseInTableCoordinateSys_.position.y ;
   }
 
- return finalTarget ;
+  return finalTarget ;
 
 }
+/**
+ * @brief adds a marker for showing the final target
+ * @return nothing
+ */
+void MoveToTableNode::addMarkerForFinalPose(geometry_msgs::Pose finalPose) {
+
+  std::stringstream ss;
+  visualization_msgs::InteractiveMarker imarker;
+  ss.str("");
+  ss.clear();
+  ss << "target";
+
+  imarker.name = ss.str();
+//  imarker.header = shape_.header;
+
+  imarker.header.frame_id = "/map" ;
+
+  visualization_msgs::Marker marker;
+//  marker.header = shape_.header;
+  marker.header.frame_id = "/map" ;
+
+  marker.type = visualization_msgs::Marker::SPHERE;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.lifetime = ros::Duration ();
+
+  //set color
+  marker.color.r = 0;
+  marker.color.g = 1;
+  marker.color.b = 0;
+  marker.color.a = 1;
+
+  //set scale
+  marker.scale.x = 0.04;
+  marker.scale.y = 0.04;
+  marker.scale.z = 0.04;
+
+  //set pose
+  marker.pose.position.x = finalPose.position.x;
+  marker.pose.position.y = finalPose.position.y;
+  marker.pose.position.z = finalPose.position.z;
 
 
+  visualization_msgs::InteractiveMarkerControl im_ctrl;
 
+  im_ctrl.always_visible = true;
+  ss << "target_ctrl_" ;
+  im_ctrl.name = ss.str ();
+  im_ctrl.markers.push_back (marker);
+  imarker.controls.push_back (im_ctrl);
 
-
+  table_im_server_->insert (imarker);
+  table_im_server_->applyChanges() ;
+}
+/**
+ * @brief service callback for MoveToTable service
+ * @param req request  to move to table
+ * @param res empty response
+ *
+ * @return nothing
+ */
 bool MoveToTableNode::moveToTableService (cob_3d_mapping_msgs::MoveToTable::Request &req,
     cob_3d_mapping_msgs::MoveToTable::Response &res)
 {
@@ -200,23 +272,43 @@ bool MoveToTableNode::moveToTableService (cob_3d_mapping_msgs::MoveToTable::Requ
   geometry_msgs::Pose finalTargetInMapCoordinateSys;
 
   // test
-  robotPoseInTableCoordinateSys_.position.x =  2.0;
-  robotPoseInTableCoordinateSys_.position.y = -1.0;
-  robotPoseInTableCoordinateSys_.position.z = (float)req.tableCentroid.position.z ;
+  //  robotPoseInTableCoordinateSys_.position.x =  2.0;
+  //  robotPoseInTableCoordinateSys_.position.y = -1.0;
+  //  robotPoseInTableCoordinateSys_.position.z = (float)req.tableCentroid.position.z ;
+
+  // test
+  robotPose_.position.x = 1 ;
+  robotPose_.position.y = 1 ;
+  robotPose_.position.z = (float)req.tableCentroid.position.z ;
+
   table_ = req.targetTable ;
+
+  robotPoseInTableCoordinateSys_ = transformToTableCoordinateSystem(table_,robotPose_) ;
+
+  ROS_WARN("robotPoseInTableCoordinateSys: x=%f , y= %f , z= %f",robotPoseInTableCoordinateSys_.position.x
+      ,robotPoseInTableCoordinateSys_.position.y
+      ,robotPoseInTableCoordinateSys_.position.z);
+
+
+
 
   geometry_msgs::Pose targetPointInTableCoordinateSys = findSafeTargetPoint() ;
   targetPointInTableCoordinateSys.position.z = req.tableCentroid.position.z ;
 
   vec << targetPointInTableCoordinateSys.position.x ,
-         targetPointInTableCoordinateSys.position.y ,
-         targetPointInTableCoordinateSys.position.z ,
-         1;
+      targetPointInTableCoordinateSys.position.y ,
+      targetPointInTableCoordinateSys.position.z ,
+      1;
   vecFinal << transformToTableCoordinateSys_.inverse() * vec ;
 
   finalTargetInMapCoordinateSys.position.x = vecFinal (0) ;
   finalTargetInMapCoordinateSys.position.y = vecFinal (1) ;
   finalTargetInMapCoordinateSys.position.z = vecFinal (2) ;
+  ROS_WARN("Final Target point: x=%f , y= %f , z= %f",finalTargetInMapCoordinateSys.position.x
+      ,finalTargetInMapCoordinateSys.position.y
+      ,finalTargetInMapCoordinateSys.position.z);
+
+  addMarkerForFinalPose (finalTargetInMapCoordinateSys) ;
 
   return true;
 }
