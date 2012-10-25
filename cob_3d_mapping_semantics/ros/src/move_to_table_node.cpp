@@ -236,9 +236,9 @@ void MoveToTableNode::addMarkerForFinalPose(geometry_msgs::Pose finalPose) {
   marker.color.a = 1;
 
   //set scale
-  marker.scale.x = 0.04;
-  marker.scale.y = 0.04;
-  marker.scale.z = 0.04;
+  marker.scale.x = 0.1;
+  marker.scale.y = 0.1;
+  marker.scale.z = 0.1;
 
   //set pose
   marker.pose.position.x = finalPose.position.x;
@@ -280,8 +280,6 @@ bool MoveToTableNode::moveToTableService (cob_3d_mapping_msgs::MoveToTable::Requ
   robotPose_.position.x = 1 ;
   robotPose_.position.y = 1 ;
   robotPose_.position.z = 0 ;
-
-  ROS_ERROR("table.z : %f",req.tableCentroid.position.x) ;
 
   table_ = req.targetTable ;
 
