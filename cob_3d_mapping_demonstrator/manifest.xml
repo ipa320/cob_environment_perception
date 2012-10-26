@@ -29,8 +29,8 @@
   <depend package="nodelet"/>
 
   <export>
-    <rviz plugin="${prefix}/plugin_description.xml"/>
-    <!--rviz plugin="${prefix}/lib/plugin.yaml"/-->
+    <!-- fuerte --><rviz plugin="${prefix}/plugin_description.xml"/>
+    <!-- electric --><!--rviz plugin="${prefix}/lib/plugin.yaml"/-->
   </export>
 
 
