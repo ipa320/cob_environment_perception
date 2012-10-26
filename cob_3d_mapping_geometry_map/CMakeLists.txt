@@ -63,6 +63,8 @@ rosbuild_add_executable(eval_node ros/src/eval_node_2.cpp)
 target_link_libraries(eval_node cob_3d_mapping_common)
 
 rosbuild_add_executable(set_geometry_map ros/src/set_geometry_map.cpp)
+
+#rosbuild_add_executable(cylinder_client ros/src/cylinder_client.cpp)
 #target_link_libraries(cylinder_client cob_3d_mapping_common)
 
 #rosbuild_add_executable(geometry_test_map common/test/geometry_map_test.cpp)
