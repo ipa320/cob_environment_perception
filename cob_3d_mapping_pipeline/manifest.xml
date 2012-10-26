@@ -20,6 +20,8 @@
 	<depend package="cob_3d_segmentation"/>
  	<depend package="smach"/>
 	<depend package="smach_ros"/>
+	<depend package="pcl_ros"/>
+	<depend package="rosbag"/>
 
 </package>
 
