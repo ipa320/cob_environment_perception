@@ -70,8 +70,8 @@ using namespace cob_3d_mapping;
 
 class TransformShapeArray
 {
-protected:
-  ros::NodeHandle nh_;
+//protected:
+//  ros::NodeHandle nh_;
 
 public:
   string target_frame_;
@@ -83,10 +83,10 @@ public:
   TransformShapeArray() :
     target_frame_("/map")
   {
-    pub_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray>("output",1);
-    sub_ = nh_.subscribe ("input", 1,  &TransformShapeArray::cloud_cb, this);
-
     ros::NodeHandle private_nh("~");
+    pub_ = private_nh.advertise<cob_3d_mapping_msgs::ShapeArray>("output",1);
+    sub_ = private_nh.subscribe ("input", 1,  &TransformShapeArray::cloud_cb, this);
+
     private_nh.getParam ("target_frame", target_frame_);
   }
 

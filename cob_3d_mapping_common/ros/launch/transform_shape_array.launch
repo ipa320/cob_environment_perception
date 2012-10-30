@@ -2,6 +2,6 @@
 <launch>
   <node pkg="cob_3d_mapping_common" type="transform_shape_array" name="transform_shape_array" output="screen">
 		<param name="target_frame" type="string" value="/map" />
-		<remap from="input" to="/segmentation/shape_array"/>
+		<remap from="~input" to="/segmentation/shape_array"/>
 	</node>
 </launch>
