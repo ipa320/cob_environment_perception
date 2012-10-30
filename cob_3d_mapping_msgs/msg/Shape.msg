@@ -9,6 +9,8 @@ uint8 CYLINDER=5
 # potential extensions: SPHERE, CYLINDER, BOX
 
 uint8 type
+
+
 int32 id
 # define shape parameters
 # for plane

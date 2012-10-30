@@ -79,12 +79,11 @@ void TableMarker::createInteractiveMarkerForTable ()
 
   table_int_marker_.controls.push_back (im_ctrl);
   table_im_server_->insert (table_int_marker_);
-  /* create menu for *this shape */
-  //  table_im_server_->setCallback(table_int_marker_.name ,boost::bind (&TableMarker::tableFeedbackCallback, this, _1),
-  //      visualization_msgs::InteractiveMarkerFeedback::BUTTON_CLICK) ;
 
-  table_im_server_ ->applyChanges() ;
+
   table_menu_handler_.apply (*table_im_server_, table_int_marker_.name);
+  table_im_server_ ->applyChanges() ;
+
 }
 /**
  * @brief Create marker for the table and add it to the interactive marker control
@@ -144,15 +143,6 @@ TableMarker::createMarkerforTable (list<TPPLPoly>& triangle_list, visualization_
     }
     im_ctrl.markers.push_back (table_marker_);
   }
-  // Added For displaying the arrows on Marker Position
-  //  table_int_marker_.pose.position.x = table_marker_.pose.position.x ;
-  //  table_int_marker_.pose.position.y = table_marker_.pose.position.y ;
-  //  table_int_marker_.pose.position.z = table_marker_.pose.position.z ;
-  //
-  //  table_int_marker_.pose.orientation.x = table_marker_.pose.orientation.x ;
-  //  table_int_marker_.pose.orientation.y = table_marker_.pose.orientation.y ;
-  //  table_int_marker_.pose.orientation.z = table_marker_.pose.orientation.z ;
-  // end
 }
 /**
  * @brief Create menu entries for each shape

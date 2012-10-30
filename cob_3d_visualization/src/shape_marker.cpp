@@ -1,45 +1,61 @@
-/*
- * shape_marker.cpp
+/****************************************************************
  *
- *  Created on: Sep 18, 2012
- *      Author: goa-sn
- */
+ * Copyright (c) 2010
+ *
+ * Fraunhofer Institute for Manufacturing Engineering
+ * and Automation (IPA)
+ *
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *
+ * Project name: care-o-bot
+ * ROS stack name: cob_environment_perception_intern
+ * ROS package name: cob_3d_mapping_common
+ * Description:
+ *
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *
+ * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ *
+ * Date of creation: 09/2012
+ * ToDo:
+ *
+ *
+ * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * * Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer.
+ * * Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution.
+ * * Neither the name of the Fraunhofer Institute for Manufacturing
+ * Engineering and Automation (IPA) nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission.
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License LGPL as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License LGPL for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License LGPL along with this program.
+ * If not, see <http://www.gnu.org/licenses/>.
+ *
+ ****************************************************************/
+
+//##################
+//#### includes ####
 
 #include <cob_3d_visualization/shape_marker.h>
-
-
-/**
-* @brief Constructor of ShapeMarker.
-*/
-
-ShapeMarker::ShapeMarker(	boost::shared_ptr<interactive_markers::InteractiveMarkerServer> im_server,
-		cob_3d_mapping_msgs::Shape& shape,
-		std::vector<unsigned int>& moved_shapes_indices,
-		std::vector<unsigned int>& interacted_shapes,
-		std::vector<unsigned int>& deleted_markers_indices_) :	  interacted_shapes_(interacted_shapes) ,
-								  moved_shapes_indices_(moved_shapes_indices) ,
-								  deleted_markers_indices_(deleted_markers_indices_)
-{
-
-      im_server_ = im_server;
-
-      shape_ = shape;
-//      if(shape.type==cob_3d_mapping_msgs::Shape::POLYGON){
-//      s_(new cob_3d_mapping::Polygon);
-//      fromROSMsg(shape, *s_);
-//      }
-//      if(shape.type==cob_3d_mapping_msgs::Shape::CYLINDER){
-//      s_(new cob_3d_mapping::Cylinder);
-//      fromROSMsg(shape,*s_);
-//      }
-      id_ = shape.id;
-//      feedback_sub_ = nh_.subscribe("geometry_map/map/feedback",1,&ShapeMarker::setShapePosition,this);
-      createShapeMenu ();
-      createInteractiveMarker();
-
-}
-
-
 
 
 
@@ -53,54 +69,75 @@ ShapeMarker::ShapeMarker(	boost::shared_ptr<interactive_markers::InteractiveMark
 */
 void
 ShapeMarker::triangle_refinement(list<TPPLPoly>& i_list,list<TPPLPoly>& o_list){
-  int n_circle = 20;
 
   TPPLPoly tri_new,tri_temp;
   TPPLPoint ptM,ptM01,ptM12,ptM20;
   for (std::list<TPPLPoly>::iterator it = i_list.begin (); it != i_list.end (); it++){
-              int n[4]={0,1,2,0};
+    int n[4]={0,1,2,0};
 
-              ptM.x  =(it->GetPoint(n[0]).x+it->GetPoint(n[1]).x+it->GetPoint(n[2]).x)/3;
-              ptM.y  =(it->GetPoint(n[0]).y+it->GetPoint(n[1]).y+it->GetPoint(n[2]).y)/3;
+    ptM.x =(it->GetPoint(n[0]).x+it->GetPoint(n[1]).x+it->GetPoint(n[2]).x)/3;
+    ptM.y =(it->GetPoint(n[0]).y+it->GetPoint(n[1]).y+it->GetPoint(n[2]).y)/3;
 
-              ptM01.x=(it->GetPoint(n[0]).x+it->GetPoint(n[1]).x)/2;
-              ptM01.y=(it->GetPoint(n[0]).y+it->GetPoint(n[1]).y)/2;
+    ptM01.x=(it->GetPoint(n[0]).x+it->GetPoint(n[1]).x)/2;
+    ptM01.y=(it->GetPoint(n[0]).y+it->GetPoint(n[1]).y)/2;
 
-              ptM12.x=(it->GetPoint(n[1]).x+it->GetPoint(n[2]).x)/2;
-              ptM12.y=(it->GetPoint(n[1]).y+it->GetPoint(n[2]).y)/2;
+    ptM12.x=(it->GetPoint(n[1]).x+it->GetPoint(n[2]).x)/2;
+    ptM12.y=(it->GetPoint(n[1]).y+it->GetPoint(n[2]).y)/2;
 
-              ptM20.x=(it->GetPoint(n[2]).x+it->GetPoint(n[3]).x)/2;
-              ptM20.y=(it->GetPoint(n[2]).y+it->GetPoint(n[3]).y)/2;
+    ptM20.x=(it->GetPoint(n[2]).x+it->GetPoint(n[3]).x)/2;
+    ptM20.y=(it->GetPoint(n[2]).y+it->GetPoint(n[3]).y)/2;
 
-              tri_temp.Triangle(ptM01,ptM12,ptM20);
+    tri_temp.Triangle(ptM01,ptM12,ptM20);
 
 
-        double thresh = (2*M_PI*shape_.params[9])/(2*n_circle);
-        if(fabs(it->GetPoint(n[0]).x-ptM.x)>thresh || fabs(it->GetPoint(n[1]).x-ptM.x)>thresh || fabs(it->GetPoint(n[2]).x-ptM.x)>thresh){
-        //for every old triangle 6! new triangles are created
-            for (long i = 0; i < it->GetNumPoints (); i++){
-                 tri_new.Triangle(tri_temp.GetPoint(n[i]),ptM,it->GetPoint(n[i])); 
-                 //push new triangle in trinagle list
-                 o_list.push_back(tri_new);
-                 tri_new.Triangle(tri_temp.GetPoint(n[i]),it->GetPoint(n[i+1]),ptM); 
-                 //push new triangle in trinagle list
-                 o_list.push_back(tri_new);
-            }
-        }
-        else{
-            tri_new.Triangle(it->GetPoint(n[0]),it->GetPoint(n[1]),it->GetPoint(n[2]));
-            o_list.push_back(tri_new);
-        }
+    double thresh = shape_.params[9]/6;
+    if(fabs(it->GetPoint(n[0]).x-ptM.x)>thresh || fabs(it->GetPoint(n[1]).x-ptM.x)>thresh || fabs(it->GetPoint(n[2]).x-ptM.x)>thresh){
+      //for every old triangle 6! new triangles are created
+      for (long i = 0; i < it->GetNumPoints (); i++){
+        tri_new.Triangle(tri_temp.GetPoint(n[i]),ptM,it->GetPoint(n[i]));
+        //push new triangle in trinagle list
+        o_list.push_back(tri_new);
+        tri_new.Triangle(tri_temp.GetPoint(n[i]),it->GetPoint(n[i+1]),ptM);
+        //push new triangle in trinagle list
+        o_list.push_back(tri_new);
+      }
     }
+    else{
+      tri_new.Triangle(it->GetPoint(n[0]),it->GetPoint(n[1]),it->GetPoint(n[2]));
+      o_list.push_back(tri_new);
+    }
+  }
 }
-
 
 void ShapeMarker::getShape (cob_3d_mapping_msgs::Shape& shape) {
   shape_ = shape ;
 }
-//visualization_msgs::Marker ShapeMarker::getMarker(){
-//  return marker ;
-//}
+/**
+ * @brief returns the golabal variable arrows_
+ */
+bool ShapeMarker::getArrows (){
+  return arrows_ ;
+}
+/**
+ * @brief sets the global varibale arrows_ to false
+ */
+bool ShapeMarker::setArrows (){
+  arrows_ = false ;
+  return arrows_ ;
+}
+/**
+ * @brief returns global variable deleted_
+ */
+bool ShapeMarker::getDeleted (){
+  return deleted_ ;
+}
+/**
+ * @brief sets the global varibale arrows_ to false
+ */
+bool ShapeMarker::setDeleted (){
+  deleted_ = false ;
+  return deleted_ ;
+}
 /**
  * @brief returns the shape id
  */
@@ -112,32 +149,26 @@ unsigned int ShapeMarker::getID(){
  * @param feedback feedback from rviz when the Delete Marker menu entry of a shape is chose
  */
 void ShapeMarker::deleteMarker(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) {
-  //
-  //  deleted_ = 1;
 
-  deleted_markers_indices_.push_back(shape_.id) ;
+  deleted_ = true ;
 
   stringstream ss;
-  ss << marker_.name ;
-  std::cout << "Marker" << marker_.name << " deleted..."<< std::endl ;
+  ss << shape_.id ;// ctr_ ;
+  deleted_markers_indices_.push_back(shape_.id) ;
 
-  //  im_server_->erase(marker_.name);
+  visualization_msgs::InteractiveMarker interactiveMarker;
+  interactiveMarker.name = ss.str() ;
+
+  std::cout << "Marker" << interactiveMarker.name << " deleted..."<< std::endl ;
+
+
   im_server_->erase(ss.str());
   im_server_->applyChanges ();
 
-
-  //
-  ros::Duration(2).sleep() ;
-
-  //  createShapeMenu();
-  createInteractiveMarker() ;
+  // create a transparent interactive marker
+  createInteractiveMarker () ;
   im_server_->applyChanges ();
-  //  visualization_msgs::InteractiveMarker intMarker;
-  //    im_server_->get(ss.str(),marker_) ;
-  //  im_server_->insert(marker_) ;
-  //  im_server_->applyChanges ();
 
-  //  std::cout << "shape color: " << shape_.color.a << "\n" ;
 }
 
 /**
@@ -173,21 +204,21 @@ void ShapeMarker::enableMovement (const visualization_msgs::InteractiveMarkerFee
  */
 void ShapeMarker::displayArrows()
 {
-  //  arrows_ = true ;
+  arrows_ = true ;
+  moved_shapes_indices_.push_back(shape_.id) ;
 
-  ROS_INFO("shape id: %d",shape_.id);
+  /*Creating a transparent marker at the original position*/
+  createInteractiveMarker () ;
+  /**/
+
   visualization_msgs::InteractiveMarkerControl im_ctrl;
 
-  stringstream ss;
-  ss.str("");
-  ss.clear();
+  //    stringstream ss;
+  //    ss.str("");
+  //    ss.clear();
 
-  //ss << "arrows_" << shape_.id;
-  //marker_.name = ss.str() ;
-
-  marker_.header  = shape_.header ;
-  marker_.header.frame_id = "/map" ;
-
+  //  ss << "arrows_" << shape_.id;
+  //  marker_.name = ss.str() ;
 
   ROS_INFO("Adding the arrows... ");
   im_ctrl.name = "arrow_markers" ;
@@ -219,9 +250,6 @@ void ShapeMarker::displayArrows()
   im_ctrl.interaction_mode = visualization_msgs::InteractiveMarkerControl::MOVE_AXIS;
   marker_.controls.push_back (im_ctrl);
 
-  // Save the ids of shapes that have been moved
-  moved_shapes_indices_.push_back(shape_.id) ;
-  std::cout << "shape_.id : " << shape_.id << "\n" ;
 
   im_server_->insert (marker_);
   im_server_->applyChanges() ;
@@ -234,32 +262,38 @@ void ShapeMarker::displayArrows()
  * @param untick flag shows whether Enable Movement is unticked
  */
 void ShapeMarker::hideArrows(int untick)
-
 {
-  ROS_INFO ("Deleting the Arrows ...") ;
+  arrows_ = false ;
   stringstream ss;
+  stringstream aa;
   std::vector<unsigned int>::iterator iter;
 
-  ss.clear() ;
-  ss.str("");
- marker_.controls.pop_back();
- marker_.controls.pop_back();
- marker_.controls.pop_back();
- marker_.controls.pop_back();
- marker_.controls.pop_back();
- marker_.controls.pop_back();
+  /**delete the arrows**/
+  if(marker_.controls.size()>1){
+    ROS_INFO ("Deleting the Arrows ...") ;
+    marker_.controls.erase(marker_.controls.end()-6,marker_.controls.end()) ;
+    im_server_->insert(marker_) ;
+    //    im_server_->applyChanges() ;
 
+    if (!untick){ // when the ResetAll option is used
+      menu_handler_.setCheckState (5, interactive_markers::MenuHandler::UNCHECKED);
+      menu_handler_.reApply (*im_server_);
+      //      im_server_->applyChanges() ;
+    }
 
-  //ss << "arrows_" << shape_.id;
-  //im_server_->erase(ss.str());
-im_server_->insert(marker_);
-im_server_->applyChanges ();
+    /**deleting the Transparent Marker**/
+    ss.str("");
+    ss.clear();
+    ss << "second_marker_"<< shape_.id;
+    im_server_->erase(ss.str());
 
+    im_server_->applyChanges() ;
+    /**end**/
+  }
   if (untick){
-    for (unsigned int i=0;i< moved_shapes_indices_.size();i++){
-      if (moved_shapes_indices_.at(i) == shape_.id){
-        moved_shapes_indices_.erase(moved_shapes_indices_.begin()+i) ;
-      }
+    iter = find (moved_shapes_indices_.begin(), moved_shapes_indices_.end(), shape_.id) ;
+    if (iter!=moved_shapes_indices_.end()){
+      moved_shapes_indices_.erase(moved_shapes_indices_.begin()+(iter-moved_shapes_indices_.begin())) ;
     }
   }
 }
@@ -287,9 +321,7 @@ ShapeMarker::createShapeMenu ()
 {
   //  ROS_INFO(" creating menu .....");
 
-
   interactive_markers::MenuHandler::EntryHandle eh_1, eh_2, eh_3, eh_4, eh_5, eh_6;
-
 
   eh_1 = menu_handler_.insert ("Menu");
   eh_2 = menu_handler_.insert (eh_1, "Display Normal",boost::bind (&ShapeMarker::displayNormalCB, this, _1));
@@ -297,7 +329,7 @@ ShapeMarker::createShapeMenu ()
   eh_4 = menu_handler_.insert (eh_1, "Display Contour",boost::bind (&ShapeMarker::displayContourCB, this, _1));
   eh_5 = menu_handler_.insert (eh_1, "Enable Movement",boost::bind (&ShapeMarker::enableMovement, this, _1));
   eh_6 = menu_handler_.insert (eh_1, "Delete Marker",boost::bind (&ShapeMarker::deleteMarker, this, _1));
-
+  //    eh_6 = menu_handler_.insert (eh_1, "Fix to this Position",boost::bind (&ShapeMarker::setShapePosition, this, _1));
 
   menu_handler_.setVisible (eh_1, true);
   menu_handler_.setCheckState (eh_1, interactive_markers::MenuHandler::NO_CHECKBOX);
@@ -330,49 +362,43 @@ ShapeMarker::createShapeMenu ()
   menu_handler_.setCheckState (eh_8, interactive_markers::MenuHandler::UNCHECKED);
   }
 }
-
+/**
+ * @brief Create marker for the shape and add it to the interactive marker control
+ *
+ * @param triangle_list triangulated list of poly points
+ * @param im_ctrl interactive marker control
+ *
+ */
 void
 ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::InteractiveMarkerControl& im_ctrl)
 {
   //ROS_INFO(" creating markers for this shape.....");
   TPPLPoint pt;
-  std::vector<unsigned int>::iterator iter;
-
-  //  visualization_msgs::Marker marker;
-  //  marker.points.clear() ;
-
-  marker.header = shape_.header;
-  marker.header.stamp = ros::Time::now() ;
-  marker.type = visualization_msgs::Marker::TRIANGLE_LIST;
-  marker.ns = "shape visualization";
-  marker.action = visualization_msgs::Marker::ADD;
-
   for (std::list<TPPLPoly>::iterator it = triangle_list.begin (); it != triangle_list.end (); it++)
   {
-    //    visualization_msgs::Marker marker ;
+    marker.id = shape_.id;
 
-    //    marker.lifetime = ros::Duration ();
+    marker.header = shape_.header;
+    marker.header.stamp = ros::Time::now() ;
+
+    marker.type = visualization_msgs::Marker::TRIANGLE_LIST;
+    marker.ns = "shape visualization";
+    marker.action = visualization_msgs::Marker::ADD;
+    marker.lifetime = ros::Duration ();
 
     //set color
-    iter = find(deleted_markers_indices_.begin(),deleted_markers_indices_.end(),shape_.id);
-    if(iter == deleted_markers_indices_.end()) {
-      //      std::cout << "no deleted shapes..." << "\n" ;
-      marker.id = shape_.id;
-      marker.color.r = shape_.color.r;
-      marker.color.g = shape_.color.g;
-      marker.color.b = shape_.color.b;
+    marker.color.g = shape_.color.g;
+    marker.color.b = shape_.color.b;
+    marker.color.r = shape_.color.r;
+    if (arrows_ || deleted_){
+      marker.color.a = 0.5;
+    }
+    else
+    {
       marker.color.a = shape_.color.a;
+      //      marker.color.r = shape_.color.r;
     }
-    else {
-      //      ROS_INFO("Color changed...") ;
-      //      i++;
-      //      ROS_WARN("i : %d", i) ;
-      //      marker.id = shape_.id + 1000;
-      marker.color.r = shape_.color.r;
-      marker.color.g = shape_.color.g;
-      marker.color.b = shape_.color.b;
-      marker.color.a = 0.4;
-    }
+
     //set scale
     marker.scale.x = 1;
     marker.scale.y = 1;
@@ -393,56 +419,64 @@ ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::In
 
     //draw each triangle
     marker.points.resize (it->GetNumPoints ());
-
-
-        if(shape_.type==cob_3d_mapping_msgs::Shape::POLYGON)
+    switch(shape_.type)
+    {
+      case(cob_3d_mapping_msgs::Shape::POLYGON):
+                                                                          {
+        for (long i = 0; i < it->GetNumPoints (); i++)
         {
-            for (long i = 0; i < it->GetNumPoints (); i++)
-            {
-              pt = it->GetPoint (i);
-              marker.points[i].x = pt.x;
-              marker.points[i].y = pt.y;
-              marker.points[i].z = 0;
-            }
+          pt = it->GetPoint (i);
+          marker.points[i].x = pt.x;
+          marker.points[i].y = pt.y;
+          marker.points[i].z = 0;
         }
-        if(shape_.type==cob_3d_mapping_msgs::Shape::CYLINDER)
+                                                                          }
+      case(cob_3d_mapping_msgs::Shape::CYLINDER):
+                                                                          {
+
+
+        for (long i = 0; i < it->GetNumPoints (); i++)
         {
-            for (long i = 0; i < it->GetNumPoints (); i++)
-            {
-              pt = it->GetPoint(i);
-              //apply rerolling of cylinder analogous to cylinder class
-              double alpha=pt.x/shape_.params[9];;
+          pt = it->GetPoint(i);
 
-              marker.points[i].x = shape_.params[9]*sin(-alpha);
-              marker.points[i].y = pt.y;
-              marker.points[i].z = shape_.params[9]*cos(-alpha);
+          //apply rerolling of cylinder analogous to cylinder class
+          if(shape_.params.size()!=10){
+            break;
+          }
 
-              ////Keep Cylinder flat - Debuging
-              //marker.points[i].x = pt.x;
-              //marker.points[i].y = pt.y;
-              //marker.points[i].z = 0;
-            }
+          double alpha=pt.x/shape_.params[9];
+
+
+          marker.points[i].x = shape_.params[9]*sin(-alpha);
+          marker.points[i].y = pt.y;
+          marker.points[i].z = shape_.params[9]*cos(-alpha);
+
+          ////Keep Cylinder flat - Debuging
+          //marker.points[i].x = pt.x;
+          //marker.points[i].y = pt.y;
+          //marker.points[i].z = 0;
         }
+                                                                          }
 
+    }
     im_ctrl.markers.push_back (marker);
-}
-
-    marker_.pose.orientation.x = marker.pose.orientation.x ;
-    marker_.pose.orientation.y = marker.pose.orientation.y ;
-    marker_.pose.orientation.z = marker.pose.orientation.z ;
-    marker_.pose.position.x = marker.pose.position.x ;
-    marker_.pose.position.y = marker.pose.position.y ;
-    marker_.pose.position.z = marker.pose.position.z ;
-    // end
   }
 
+  //  if(!arrows_) {
+  // Added For displaying the arrows on Marker Position
+  marker_.pose.position.x = marker.pose.position.x ;
+  marker_.pose.position.y = marker.pose.position.y ;
+  marker_.pose.position.z = marker.pose.position.z ;
 
-
+  marker_.pose.orientation.x = marker.pose.orientation.x ;
+  marker_.pose.orientation.y = marker.pose.orientation.y ;
+  marker_.pose.orientation.z = marker.pose.orientation.z ;
+  // end
+}
 /**
  * @brief Create menu entries for each shape
  *
  * @param point 3D point to be transformed
-
  *
  * @return return transformed 2D TPPLPoint
  */
@@ -464,11 +498,8 @@ ShapeMarker::msgToPoint2D (const pcl::PointXYZ &point)
 void
 ShapeMarker::createInteractiveMarker ()
 {
-  //  ROS_INFO("\tcreating interactive marker for shape < %d >", shape_.id);
-
-  std::vector<unsigned int>::iterator iter;
-  cob_3d_mapping::Polygon p;
-  cob_3d_mapping::fromROSMsg (shape_, p);
+  visualization_msgs::InteractiveMarker imarker ;
+  // ROS_INFO("\tcreating interactive marker for shape < %d >", shape_.id);
 
   /* transform shape points to 2d and store 2d point in triangle list */
   TPPLPartition pp;
@@ -476,30 +507,35 @@ ShapeMarker::createInteractiveMarker ()
 
   Eigen::Vector3f v, normal, origin;
 
-    if(shape_.type== cob_3d_mapping_msgs::Shape::CYLINDER)
+  switch (shape_.type)
+  {
+    case cob_3d_mapping_msgs::Shape::CYLINDER:
     {
-        cob_3d_mapping::Cylinder c;
-        cob_3d_mapping::fromROSMsg (shape_, c);
-        c.ParamsFromShapeMsg();
-        // make trinagulated cylinder strip
-        //transform cylinder in local coordinate system
-        c.makeCyl2D();
-        c.TransformContours(c.transform_from_world_to_plane);
-        //c.transform2tf(c.transform_from_world_to_plane);
-        //TODO: WATCH OUT NO HANDLING FOR MULTY CONTOUR CYLINDERS AND HOLES
-        TPPLPoly poly;
-        TPPLPoint pt;
+      cob_3d_mapping::Cylinder c;
+      cob_3d_mapping::fromROSMsg (shape_, c);
+      c.ParamsFromShapeMsg();
+      // make trinagulated cylinder strip
+      //transform cylinder in local coordinate system
+      c.makeCyl2D();
+      c.TransformContours(c.transform_from_world_to_plane);
+      //c.transform2tf(c.transform_from_world_to_plane);
+      //TODO: WATCH OUT NO HANDLING FOR MULTY CONTOUR CYLINDERS AND HOLES
+      TPPLPoly poly;
+      TPPLPoint pt;
 
 
-        for(size_t j=0;j<c.contours.size();j++){
+      for(size_t j=0;j<c.contours.size();j++){
+
         poly.Init(c.contours[j].size());
         poly.SetHole (shape_.holes[j]);
 
-        for(size_t i=0;i<c.contours[j].size();++i){
-            pt.x=c.contours[j][i][0];
-            pt.y=c.contours[j][i][1];
 
-            poly[i]=pt;
+        for(size_t i=0;i<c.contours[j].size();++i){
+
+          pt.x=c.contours[j][i][0];
+          pt.y=c.contours[j][i][1];
+
+          poly[i]=pt;
 
         }
         if (shape_.holes[j])
@@ -507,20 +543,21 @@ ShapeMarker::createInteractiveMarker ()
         else
           poly.SetOrientation (TPPL_CCW);
         polys.push_back(poly);
-        }
-        // triangualtion itno monotone triangles
-        pp.Triangulate_EC (&polys, &tri_list);
+      }
+      // triangualtion itno monotone triangles
+      pp.Triangulate_EC (&polys, &tri_list);
 
-        transformation_inv_ = c.transform_from_world_to_plane.inverse();
+      transformation_inv_ = c.transform_from_world_to_plane.inverse();
       // optional refinement step
-       list<TPPLPoly> refined_tri_list;
-       triangle_refinement(tri_list,refined_tri_list);
-       tri_list=refined_tri_list;
+      list<TPPLPoly> refined_tri_list;
+      triangle_refinement(tri_list,refined_tri_list);
+      tri_list=refined_tri_list;
 
     }
-    if(shape_.type== cob_3d_mapping_msgs::Shape::POLYGON)
+    case cob_3d_mapping_msgs::Shape::POLYGON:
     {
-        cob_3d_mapping::Polygon p;
+      cob_3d_mapping::Polygon p;
+
       if (shape_.params.size () == 4)
       {
         cob_3d_mapping::fromROSMsg (shape_, p);
@@ -557,15 +594,46 @@ ShapeMarker::createInteractiveMarker ()
       }
       pp.Triangulate_EC (&polys, &tri_list);
 
-        }//Polygon
+    }//Polygon
+  }//switch
 
-    /* create interactive marker for *this shape */
-    stringstream ss;
+  /* create interactive marker for *this shape */
+  stringstream ss;
+  if(!arrows_ && !deleted_) {
+    ss.str("");
+    ss.clear() ;
     ss << shape_.id ;
     marker_.name = ss.str ();
     marker_.header = shape_.header;
     marker_.header.stamp = ros::Time::now() ;
+  }
 
+  else if(arrows_)
+  {
+    ROS_INFO("Second Marker... ") ;
+    ss.str("");
+    ss.clear() ;
+    ss << "second_marker_" <<shape_.id ;
+    imarker_.name = ss.str ();
+    imarker_.header = shape_.header;
+    imarker_.header.stamp = ros::Time::now() ;
+  }
+  else if(deleted_)
+  {
+    ROS_INFO("Deleted Marker... ") ;
+    ss.str("");
+    ss.clear() ;
+    ss << "deleted_marker_" <<shape_.id ;
+    deleted_imarker_.name = ss.str ();
+    deleted_imarker_.header = shape_.header;
+    deleted_imarker_.header.stamp = ros::Time::now() ;
+  }
+  visualization_msgs::InteractiveMarkerControl im_ctrl_for_second_marker;
+
+  /* create marker */
+  if (!deleted_ && !arrows_) {
+    ss.str("");
+    ss.clear() ;
     ss.str ("");
     im_ctrl.always_visible = true;
     ss << "shape_" << shape_.id << "_control";
@@ -573,17 +641,12 @@ ShapeMarker::createInteractiveMarker ()
     im_ctrl.description = "shape_markers";
     im_ctrl.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
 
-
-    /* create marker */
-
     createMarker (tri_list, im_ctrl);
-
-
-    marker_.controls.push_back (im_ctrl);
+    marker_.controls.push_back(im_ctrl) ;
     im_server_->insert (marker_ );
-    /* create menu for *this shape */
     im_server_ ->applyChanges() ;
     menu_handler_.apply (*im_server_, marker_.name);
+  }
 }
 
 
@@ -725,7 +788,9 @@ void ShapeMarker::hideSymAxis(int untick){
     }
   }
 }
-//
+/**
+ * @brief Display the normal vector of a shape
+ */
 void ShapeMarker::displayNormal(){
 
   ROS_INFO(" displayNormalCB from shape[ %d ]...", shape_.id);
@@ -779,21 +844,6 @@ void ShapeMarker::displayNormal(){
   im_server_->insert (imarker);
 
   interacted_shapes_.push_back(shape_.id) ;
-  //  if (interacted_shapes_.empty()){
-  //    interacted_shapes_.push_back(shape_.id) ;
-  //  }
-  //  else {
-  //    iter = find (interacted_shapes_.begin(), interacted_shapes_.end(), id_) ;
-  //    if (iter == interacted_shapes_.end()) {
-  //      interacted_shapes_.push_back(shape_.id) ;
-  //    }
-  //  }
-  //
-  //  for (unsigned int i=0;i<interacted_shapes_.size();i++){
-  //    std::cout << interacted_shapes_.at(i) << "\t" ;
-  //  }
-  //  std::cout << "\n" ;
-
 }
 /**
  * @brief Remove the normal vector of a shape
@@ -806,6 +856,11 @@ void ShapeMarker::hideNormal(int untick){
   ss << "normal_" << shape_.id;
   im_server_->erase(ss.str());
   im_server_->applyChanges ();
+  if(!untick){ // when ResetAll is activated
+    menu_handler_.setCheckState (2, interactive_markers::MenuHandler::UNCHECKED);//second menu Entry is display Contour
+    menu_handler_.reApply (*im_server_);
+    im_server_->applyChanges() ;
+  }
 
   if(untick){
     // updating interacted_shapes_ vector
@@ -814,11 +869,6 @@ void ShapeMarker::hideNormal(int untick){
       interacted_shapes_.erase(interacted_shapes_.begin()+(iter-interacted_shapes_.begin())) ;
     }
   }
-  //
-  //  for (unsigned int i=0;i<interacted_shapes_.size();i++){
-  //    std::cout << interacted_shapes_.at(i) << "\t" ;
-  //  }
-  //  std::cout << "\n" ;
 }
 //
 
@@ -1004,21 +1054,6 @@ void ShapeMarker::displayCentroid(){
   im_server_->insert (imarker);
 
   interacted_shapes_.push_back(shape_.id) ;
-
-  //  if (interacted_shapes_.empty()){
-  //    interacted_shapes_.push_back(shape_.id) ;
-  //  }
-  //  else {
-  //    iter = find (interacted_shapes_.begin(), interacted_shapes_.end(), id_) ;
-  //    if (iter == interacted_shapes_.end()) {
-  //      interacted_shapes_.push_back(shape_.id) ;
-  //    }
-  //  }
-  //
-  //  for (unsigned int i=0;i<interacted_shapes_.size();i++){
-  //    std::cout << interacted_shapes_.at(i) << "\t" ;
-  //  }
-  //  std::cout << "\n" ;
 }
 /**
  * @brief Remove the centroid of a shape
@@ -1033,6 +1068,12 @@ void ShapeMarker::hideCentroid(int untick){
   im_server_->erase(ss.str());
   im_server_->applyChanges ();
 
+  if(!untick){ // when ResetAll is activated
+    menu_handler_.setCheckState (3, interactive_markers::MenuHandler::UNCHECKED); //third menu Entry is display Contour
+    menu_handler_.reApply (*im_server_);
+    im_server_->applyChanges() ;
+  }
+
   if(untick){
     // updating interacted_shapes_ vector
     iter = find (interacted_shapes_.begin(), interacted_shapes_.end(), shape_.id) ;
@@ -1040,7 +1081,6 @@ void ShapeMarker::hideCentroid(int untick){
       interacted_shapes_.erase(interacted_shapes_.begin()+(iter-interacted_shapes_.begin())) ;
     }
   }
-  //
 }
 /**
  * @brief Feedback callback for Display Contour menu entry
@@ -1116,8 +1156,6 @@ void ShapeMarker::displayContour(){
     marker.points[p.contours[i].size()].y = p.contours[i][0](1);
     marker.points[p.contours[i].size()].z = p.contours[i][0](2);
     im_ctrl_.markers.push_back(marker);
-  // Interactive Marker for contours
-
 
   }
 
@@ -1131,32 +1169,8 @@ void ShapeMarker::displayContour(){
   imarker.controls.push_back(im_ctrl_);
   im_server_->insert (imarker);
 
-
   interacted_shapes_.push_back(shape_.id) ;
 
-  //  if (interacted_shapes_.empty()){
-  //    interacted_shapes_.push_back(shape_.id) ;
-  //  }
-  //  else {
-  //    iter = find (interacted_shapes_.begin(), interacted_shapes_.end(), id_) ;
-  //    if (iter == interacted_shapes_.end()) {
-  //      interacted_shapes_.push_back(shape_.id) ;
-  //    }
-  //  }
-  //  else {
-  //    std::cout <<"shape_.id" << shape_.id << "\n" ;
-  //    for (unsigned int i=0;i<interacted_shapes_.size() ;i++){
-  //      if (interacted_shapes_.at(i) != shape_.id){
-  //        std::cout << "interacted_shapes_.at" << "(" << i <<")"<< " = "<<  interacted_shapes_.at(i)<< "\n" ;
-  //        interacted_shapes_.push_back(shape_.id) ;
-  //        break ;
-  //      }
-  //    }
-  //  }
-  //  for (unsigned int i=0;i<interacted_shapes_.size();i++){
-  //    std::cout << interacted_shapes_.at(i) << "\t" ;
-  //  }
-  //  std::cout << "\n" ;
 }
 /**
  * @brief Remove contour of a shape
@@ -1170,6 +1184,11 @@ void ShapeMarker::hideContour(int untick){
   ss << "contour_" << shape_.id;
   im_server_->erase(ss.str());
   im_server_->applyChanges ();
+  if(!untick){ // when ResetAll is activated
+    menu_handler_.setCheckState (4, interactive_markers::MenuHandler::UNCHECKED);  //4th menu Entry is display Contour
+    menu_handler_.reApply (*im_server_);
+    im_server_->applyChanges() ;
+  }
 
   if(untick){
     iter = find (interacted_shapes_.begin(), interacted_shapes_.end(), shape_.id) ;
