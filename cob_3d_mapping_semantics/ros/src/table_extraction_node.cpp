@@ -273,10 +273,10 @@ class TableExtractionNode
             table.pose.pose.position.y = pose.translation()(1) ;//poly_ptr->centroid[1];
             table.pose.pose.position.z = pose.translation()(2) ;//poly_ptr->centroid[2];
             Eigen::Quaternionf quat(pose.rotation());
-            ROS_WARN("poly_ptr->centroid[0]");
-            std::cout << poly_ptr->centroid[0]<< "\n";
-            ROS_WARN("pose.translation()");
-            std::cout << pose.translation() << "\n" ;
+//            ROS_WARN("poly_ptr->centroid[0]");
+//            std::cout << poly_ptr->centroid[0]<< "\n";
+//            ROS_WARN("pose.translation()");
+//            std::cout << pose.translation() << "\n" ;
 
             table.pose.pose.orientation.x = quat.x();
             table.pose.pose.orientation.y = quat.y();
@@ -286,15 +286,6 @@ class TableExtractionNode
             table.x_max = max_pt(0);
             table.y_min = min_pt(1);
             table.y_max = max_pt(1);
-
-            ROS_WARN("table.x_min");
-            std::cout << table.x_min<< "\n";
-            ROS_WARN("table.x_max");
-            std::cout << table.x_max << "\n" ;
-            ROS_WARN("table.y_min");
-            std::cout << table.y_min<< "\n";
-            ROS_WARN("table.y_max");
-            std::cout << table.y_max << "\n" ;
 
             table.convex_hull.type = arm_navigation_msgs::Shape::MESH;
             for( unsigned int j=0; j<poly_ptr->contours[0].size(); j++)
