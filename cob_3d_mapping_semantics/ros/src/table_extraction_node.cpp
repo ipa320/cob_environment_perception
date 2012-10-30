@@ -60,8 +60,8 @@
 // ROS includes
 #include <ros/ros.h>
 #include <rosbag/bag.h>
-#include <tf_conversions/tf_eigen.h>
-#include <tf/transform_listener.h>
+//#include <tf_conversions/tf_eigen.h>
+//#include <tf/transform_listener.h>
 #include <dynamic_reconfigure/server.h>
 
 // ros message includes
@@ -167,14 +167,18 @@ public:
   void
   callbackShapeArray (const cob_3d_mapping_msgs::ShapeArray::ConstPtr sa_ptr)
   {
-    table_ctr_old_ = table_ctr_;
-    table_ctr_ = 0;
+    if(sa_ptr->header.frame_id != target_frame_id_)
+    {
+      ROS_ERROR("Frame IDs do not match, aborting...");
+      return;
+    }
     cob_3d_mapping_msgs::ShapeArray tables;
     tables.header = sa_ptr->header;
     tables.header.frame_id = target_frame_id_ ;
     processMap(*sa_ptr, tables);
     publishShapeMarker (tables);
     sa_pub_.publish (tables);
+    table_ctr_ = tables.shapes.size();
     ROS_INFO("Found %u tables", (unsigned int)tables.shapes.size());
   }
 
@@ -198,6 +202,7 @@ public:
     {
       processMap(sa, res.objects);
       publishShapeMarker (res.objects);
+      table_ctr_ = res.objects.shapes.size();
       ROS_INFO("Found %u tables", (unsigned int)res.objects.shapes.size());
       return true;
     }
@@ -222,8 +227,6 @@ public:
     cob_3d_mapping_msgs::ShapeArray sa, tables;
     if (getMapService (sa))
     {
-      table_ctr_old_ = table_ctr_;
-      table_ctr_ = 0;
       tables.header = sa.header;
       //test
       tables.header.frame_id = "/map" ;
@@ -276,7 +279,7 @@ public:
       }
       //        sa_pub_.publish (tables);
       publishShapeMarker (tables);
-
+      table_ctr_ = tables.shapes.size();
 
       ROS_INFO("Found %d tables", table_ctr_);
       return true;
@@ -338,8 +341,8 @@ public:
       marker.action = visualization_msgs::Marker::ADD;
       marker.type = visualization_msgs::Marker::LINE_STRIP;
       marker.lifetime = ros::Duration ();
-      marker.header.frame_id = "/map";
-      marker.ns = "shape_marker";
+      marker.header.frame_id = target_frame_id_;
+      marker.ns = "table_marker";
       marker.header.stamp = ros::Time::now ();
 
       marker.id = i;
@@ -385,7 +388,7 @@ public:
   void
   processMap(const cob_3d_mapping_msgs::ShapeArray& sa, cob_3d_mapping_msgs::ShapeArray& tables)
   {
-    Eigen::Affine3f af_target = Eigen::Affine3f::Identity();
+    /*Eigen::Affine3f af_target = Eigen::Affine3f::Identity();
     if(sa.header.frame_id != target_frame_id_)
     {
       tf::StampedTransform trf_map;
@@ -400,21 +403,17 @@ public:
       Eigen::Affine3d ad;
       tf::TransformTFToEigen(trf_map, ad);
       af_target = ad.cast<float>();
-    }
-
-
-    int table_ctr = 0;
+    }*/
     for (unsigned int i = 0; i < sa.shapes.size (); i++)
     {
       Polygon::Ptr poly_ptr (new Polygon());
       fromROSMsg(sa.shapes[i], *poly_ptr);
-      if(sa.header.frame_id!="/map")
-        poly_ptr->transform2tf(af_target);
+      //if(sa.header.frame_id!="/map")
+      //  poly_ptr->transform2tf(af_target);
       //ROS_INFO("\n\tisTableObject....  : ");
       te_.setInputPolygon(poly_ptr);
       if (te_.isTable())
       {
-        table_ctr++;
         poly_ptr->color[0] = 1;
         poly_ptr->color[1] = 0;
         poly_ptr->color[2] = 0;
@@ -442,7 +441,7 @@ protected:
   ros::Publisher s_marker_pub_;
   ros::ServiceServer get_tables_server_;
   ros::ServiceServer get_tables_server_2_;
-  tf::TransformListener tf_listener_;         ///< Retrieves transformations.
+  //tf::TransformListener tf_listener_;         ///< Retrieves transformations.
 
   /**
   * @brief Dynamic Reconfigure server
