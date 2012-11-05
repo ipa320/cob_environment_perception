@@ -1,9 +1,57 @@
-/*
- * move_to_table_node.cpp
+/*!
+ *****************************************************************
+ * \file
  *
- *  Created on: Oct 9, 2012
- *      Author: goa-sn
- */
+ * \note
+ * Copyright (c) 2012 \n
+ * Fraunhofer Institute for Manufacturing Engineering
+ * and Automation (IPA) \n\n
+ *
+ *****************************************************************
+ *
+ * \note
+ * Project name: Care-O-bot
+ * \note
+ * ROS stack name: cob_environment_perception
+ * \note
+ * ROS package name: cob_3d_mapping_semantics
+ *
+ * \author
+ * Author: Shaghayegh Nazari, email:georg.arbeiter@ipa.fhg.de
+ * \author
+ * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ *
+ * \date Date of creation: 10/2012
+ *****************************************************************
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * - Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer. \n
+ * - Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution. \n
+ * - Neither the name of the Fraunhofer Institute for Manufacturing
+ * Engineering and Automation (IPA) nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission. \n
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License LGPL as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License LGPL for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License LGPL along with this program.
+ * If not, see <http://www.gnu.org/licenses/>.
+ *
+ ****************************************************************/
 #include <cob_3d_mapping_semantics/move_to_table_node.h>
 /**
  * @brief transforms a point to table coordinate system
@@ -221,7 +269,7 @@ void MoveToTableNode::addMarkerForFinalPose(geometry_msgs::Pose finalPose) {
   //  marker.header = shape_.header;
   marker.header.frame_id = "/map" ;
 
-  marker.type = visualization_msgs::Marker::SPHERE;
+  marker.type = visualization_msgs::Marker::LINE_STRIP;
   marker.action = visualization_msgs::Marker::ADD;
   marker.lifetime = ros::Duration ();
 
@@ -237,9 +285,19 @@ void MoveToTableNode::addMarkerForFinalPose(geometry_msgs::Pose finalPose) {
   marker.scale.z = 0.1;
 
   //set pose
-  marker.pose.position.x = finalPose.position.x;
-  marker.pose.position.y = finalPose.position.y;
-  marker.pose.position.z = finalPose.position.z;
+  marker.points.resize (2);
+  marker.points[0].x = robotPose_.position.x ;
+  marker.points[0].y = robotPose_.position.y ;
+  marker.points[0].z = robotPose_.position.z ;
+//
+  marker.points[1].x = finalPose.position.x;
+  marker.points[1].y = finalPose.position.y ;
+  marker.points[1].z = finalPose.position.z;
+
+
+//    marker.pose.position.x = robotPose_.position.x;
+//    marker.pose.position.y = robotPose_.position.y;
+//    marker.pose.position.z = robotPose_.position.z;
 
 
   visualization_msgs::InteractiveMarkerControl im_ctrl;
@@ -274,8 +332,8 @@ bool MoveToTableNode::moveToTableService (cob_3d_mapping_msgs::MoveToTable::Requ
   tf::TransformListener listener;
   tf::StampedTransform transform ;
 
-  listener.waitForTransform("/base_link", "/map", ros::Time::now(), ros::Duration(3.0));  //The listener needs to get the information first before it can transform.
-  listener.lookupTransform("/base_link","/map",ros::Time(0), transform);
+  listener.waitForTransform("/map", "/base_link", ros::Time::now(), ros::Duration(3.0));  //The listener needs to get the information first before it can transform.
+  listener.lookupTransform("/map","/base_link",ros::Time(0), transform);
 
   robotPose_.position.x = transform.getOrigin().x() ;
   robotPose_.position.y = transform.getOrigin().y() ;
@@ -308,12 +366,11 @@ bool MoveToTableNode::moveToTableService (cob_3d_mapping_msgs::MoveToTable::Requ
 
   finalTargetInMapCoordinateSys.position.x = vecFinal (0) ;
   finalTargetInMapCoordinateSys.position.y = vecFinal (1) ;
-  finalTargetInMapCoordinateSys.position.z = vecFinal (2) ;
+  //  finalTargetInMapCoordinateSys.position.z = vecFinal (2) ;
   ROS_WARN("Final Target point: x=%f , y= %f , z= %f",finalTargetInMapCoordinateSys.position.x
       ,finalTargetInMapCoordinateSys.position.y
       ,finalTargetInMapCoordinateSys.position.z);
 
-  addMarkerForFinalPose (finalTargetInMapCoordinateSys) ;
   finalPose.header.frame_id = "/map" ;
   //  res.goalPoint.header.frame_id = "/map" ;
 
@@ -325,6 +382,8 @@ bool MoveToTableNode::moveToTableService (cob_3d_mapping_msgs::MoveToTable::Requ
   finalPose.pose.orientation.y = 0;
   finalPose.pose.orientation.z = 0;
   finalPose.pose.orientation.w = 1;
+
+  addMarkerForFinalPose (finalTargetInMapCoordinateSys) ;
 
   navigation_goal_pub_.publish(finalPose) ;
   return true;
