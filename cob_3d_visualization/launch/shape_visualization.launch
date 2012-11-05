@@ -13,6 +13,6 @@
   	<remap from="interactive_marker" to="shape_visualization/interactive_marker"/>
 	</node>
 	
-	<include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch"/>	
+	<!--include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch"/-->	
 
 </launch>

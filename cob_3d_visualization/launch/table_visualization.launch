@@ -11,4 +11,4 @@
 	<include file="$(find cob_3d_mapping_semantics)/ros/launch/extract_tables.launch"/>
 	<include file="$(find cob_3d_mapping_semantics)/ros/launch/move_to_table.launch"/>
 	
-</launch
+</launch>
