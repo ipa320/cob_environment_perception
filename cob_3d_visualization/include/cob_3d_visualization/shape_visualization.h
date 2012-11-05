@@ -29,11 +29,6 @@
 #include <cob_3d_mapping_msgs/GetTables.h>
 #include <cob_3d_mapping_msgs/GetObjectsOfClass.h>
 #include <tf/transform_listener.h>
-#include <costmap_2d/costmap_2d_ros.h>
-
-
-
-
 #include <boost/shared_ptr.hpp>
 
 
