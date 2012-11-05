@@ -15,7 +15,6 @@
  */
 geometry_msgs::Pose MoveToTableNode::transformToTableCoordinateSystem(tabletop_object_detector::Table &table,geometry_msgs::Pose &Pose)
 {
-
   Eigen::Matrix4f transformationMat ;
   Eigen::Quaternionf quat ;
   Eigen::Vector4f poseInTableCoordinateSys ;
@@ -34,13 +33,13 @@ geometry_msgs::Pose MoveToTableNode::transformToTableCoordinateSystem(tabletop_o
   quat.z() = table.pose.pose.orientation.z ;
   quat.w() = table.pose.pose.orientation.w ;
 
+  quat.normalize() ;
+
   transformationMat.block(0,0,3,3) = quat.toRotationMatrix();
   transformationMat.col(3).head(3) <<  table.pose.pose.position.x,table.pose.pose.position.y,table.pose.pose.position.z ;
   transformationMat.row(3) << 0,0,0,1 ;
 
   transformToTableCoordinateSys_ = transformationMat ;
-
-  //  Eigen::Affine3f transformationAffine(transformationMat) ;
 
   poseInTableCoordinateSys = transformationMat*poseInOwnCoordinateSys ;
 
@@ -113,8 +112,6 @@ bool MoveToTableNode::doIntersect(float line){
       point4.position.x,point4.position.y,1,
       robotPoseInTableCoordinateSys_.position.x,robotPoseInTableCoordinateSys_.position.y,1;
 
-  //  ROS_WARN("determinant is : %f",mat1.determinant()*mat2.determinant()) ;
-  //  ROS_WARN("determinant is : %f",mat3.determinant()*mat4.determinant()) ;
   if (mat1.determinant()*mat2.determinant() <0 &&
       mat3.determinant()*mat4.determinant() <0) {
 
@@ -124,7 +121,6 @@ bool MoveToTableNode::doIntersect(float line){
 }
 /**
  * @brief finds the intersection between the line through the robot pose and table centroid and the boundies of the table
- *
  * @return the intersection point
  */
 geometry_msgs::Pose MoveToTableNode::findIntersectionPoint(){
@@ -217,12 +213,12 @@ void MoveToTableNode::addMarkerForFinalPose(geometry_msgs::Pose finalPose) {
   ss << "target";
 
   imarker.name = ss.str();
-//  imarker.header = shape_.header;
+  //  imarker.header = shape_.header;
 
   imarker.header.frame_id = "/map" ;
 
   visualization_msgs::Marker marker;
-//  marker.header = shape_.header;
+  //  marker.header = shape_.header;
   marker.header.frame_id = "/map" ;
 
   marker.type = visualization_msgs::Marker::SPHERE;
@@ -271,15 +267,24 @@ bool MoveToTableNode::moveToTableService (cob_3d_mapping_msgs::MoveToTable::Requ
   Eigen::Vector4f vec,vecFinal;
   geometry_msgs::Pose finalTargetInMapCoordinateSys;
 
-  // test
-  //  robotPoseInTableCoordinateSys_.position.x =  2.0;
-  //  robotPoseInTableCoordinateSys_.position.y = -1.0;
-  //  robotPoseInTableCoordinateSys_.position.z = (float)req.tableCentroid.position.z ;
+  geometry_msgs::PoseStamped finalPose ;
+
+
+  // get robot position
+  tf::TransformListener listener;
+  tf::StampedTransform transform ;
+
+  listener.waitForTransform("/base_link", "/map", ros::Time::now(), ros::Duration(3.0));  //The listener needs to get the information first before it can transform.
+  listener.lookupTransform("/base_link","/map",ros::Time(0), transform);
+
+  robotPose_.position.x = transform.getOrigin().x() ;
+  robotPose_.position.y = transform.getOrigin().y() ;
+  robotPose_.position.z = transform.getOrigin().z() ;
 
   // test
-  robotPose_.position.x = 1 ;
-  robotPose_.position.y = 1 ;
-  robotPose_.position.z = 0 ;
+  //  robotPose_.position.x = 1 ;
+  //  robotPose_.position.y = 1 ;
+  //  robotPose_.position.z = 0 ;
 
   table_ = req.targetTable ;
 
@@ -293,7 +298,7 @@ bool MoveToTableNode::moveToTableService (cob_3d_mapping_msgs::MoveToTable::Requ
 
 
   geometry_msgs::Pose targetPointInTableCoordinateSys = findSafeTargetPoint() ;
-//  targetPointInTableCoordinateSys.position.z = req.tableCentroid.position.z ;
+  //  targetPointInTableCoordinateSys.position.z = req.tableCentroid.position.z ;
 
   vec << targetPointInTableCoordinateSys.position.x ,
       targetPointInTableCoordinateSys.position.y ,
@@ -309,7 +314,19 @@ bool MoveToTableNode::moveToTableService (cob_3d_mapping_msgs::MoveToTable::Requ
       ,finalTargetInMapCoordinateSys.position.z);
 
   addMarkerForFinalPose (finalTargetInMapCoordinateSys) ;
+  finalPose.header.frame_id = "/map" ;
+  //  res.goalPoint.header.frame_id = "/map" ;
 
+  finalPose.pose.position.x = vecFinal (0) ;
+  finalPose.pose.position.y = vecFinal (1) ;
+  finalPose.pose.position.z = 0;//vecFinal (2) ;
+
+  finalPose.pose.orientation.x = 0;
+  finalPose.pose.orientation.y = 0;
+  finalPose.pose.orientation.z = 0;
+  finalPose.pose.orientation.w = 1;
+
+  navigation_goal_pub_.publish(finalPose) ;
   return true;
 }
 
@@ -319,8 +336,9 @@ main (int argc, char** argv)
   ros::init (argc, argv, "move_to_table_node");
   ROS_INFO("move_to_table node started....");
   MoveToTableNode mtt;
-  while (ros::ok())
-  {
-    ros::spinOnce ();
+
+
+  while (ros::ok()){
+    ros::spin();
   }
 }

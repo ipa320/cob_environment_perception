@@ -359,7 +359,7 @@ void ShapeVisualization::resetAll(const visualization_msgs::InteractiveMarkerFee
       {
         if(id == v_sm_[j]->getID()){
           v_sm_[j]->hideArrows(0);
-//          im_server_->applyChanges ();
+          //          im_server_->applyChanges ();
         }
       }
     }
@@ -388,7 +388,7 @@ void ShapeVisualization::resetAll(const visualization_msgs::InteractiveMarkerFee
     deleted_markers_indices_.clear() ;
   }
 
-//  im_server_->applyChanges ();
+  //  im_server_->applyChanges ();
 
 
 }
@@ -616,5 +616,6 @@ main (int argc, char** argv)
   ros::init (argc, argv, "shape_visualization");
   ROS_INFO("shape_visualization node started....");
   ShapeVisualization sv;
+
   ros::spin();
 }
