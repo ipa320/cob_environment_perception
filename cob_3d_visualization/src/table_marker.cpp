@@ -196,6 +196,7 @@ void TableMarker::MoveToTheTable(const visualization_msgs::InteractiveMarkerFeed
 
   if (ros::service::call("/move_to_table",reqMoveToTable,resMoveToTable)){
       // Calling move_to_table Service...
-    }
+  }
+
 }
 

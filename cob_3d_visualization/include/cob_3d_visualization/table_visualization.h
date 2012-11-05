@@ -32,8 +32,12 @@ class TableVisualization
 
     {
       ctr_ = 0 ;
+//      simple_nh_("move_base_linear_simple") ;
+
       table_array_sub_ = nh_.subscribe ("table_array", 1, &TableVisualization::tableVisualizationCallback, this);
       table_im_server_.reset (new interactive_markers::InteractiveMarkerServer ("geometry_map/map", "", false));
+//      goal_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/move_base_linear_simple/goal", 1);
+
 
     }
     // Destructor
@@ -49,7 +53,9 @@ class TableVisualization
   protected:
 
     ros::NodeHandle nh_;
+//    ros::NodeHandle simple_nh_;
     ros::Subscriber table_array_sub_ ;
+    ros::Publisher goal_pub_ ;
     std::vector<boost::shared_ptr<TableMarker> > v_tm_;
     boost::shared_ptr<interactive_markers::InteractiveMarkerServer> table_im_server_;
 
