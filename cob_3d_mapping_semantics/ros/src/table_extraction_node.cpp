@@ -185,7 +185,7 @@ class TableExtractionNode
     getTablesService (cob_3d_mapping_msgs::GetObjectsOfClassRequest &req,
         cob_3d_mapping_msgs::GetObjectsOfClassResponse &res)
     {
-      ROS_INFO("service get_objects_of_class started....");
+//      ROS_INFO("service get_objects_of_class started....");
 
       cob_3d_mapping_msgs::ShapeArray sa, tables;
       if (getMapService (sa))
@@ -233,7 +233,7 @@ class TableExtractionNode
     getTablesService2 (cob_3d_mapping_msgs::GetTablesRequest &req,
         cob_3d_mapping_msgs::GetTablesResponse &res)
     {
-      ROS_INFO("table detection started....");
+//      ROS_INFO("table detection started....");
 
       cob_3d_mapping_msgs::ShapeArray sa, tables;
       if (getMapService (sa))
@@ -329,10 +329,10 @@ class TableExtractionNode
     bool
     getMapService (cob_3d_mapping_msgs::ShapeArray& sa)
     {
-      ROS_INFO("Waiting for service server to start.");
+//      ROS_INFO("Waiting for service server to start.");
       ros::service::waitForService ("get_geometry_map", 10); //will wait for infinite time
 
-      ROS_INFO("Server started, polling map.");
+//      ROS_INFO("Server started, polling map.");
 
       //build message
       cob_3d_mapping_msgs::GetGeometricMapRequest req;
@@ -340,7 +340,7 @@ class TableExtractionNode
 
       if (ros::service::call ("get_geometry_map", req, res))
       {
-        ROS_INFO("Service call finished.");
+//        ROS_INFO("Service call finished.");
       }
       else
       {
