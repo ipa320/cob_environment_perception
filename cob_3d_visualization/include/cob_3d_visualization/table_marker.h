@@ -70,6 +70,9 @@ class TableMarker
       table_im_server_ = server ;
       table_ = table ;
 
+      goal_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/move_base_linear_simple/goal", 1);
+
+
       createTableMenu();
       createInteractiveMarkerForTable();
 
@@ -96,6 +99,9 @@ class TableMarker
     ros::NodeHandle nh_;
 
     cob_3d_mapping_msgs::Shape table_;
+
+    ros::Publisher goal_pub_ ;
+
 
     visualization_msgs::InteractiveMarkerControl im_ctrl;
     boost::shared_ptr<interactive_markers::InteractiveMarkerServer> table_im_server_;

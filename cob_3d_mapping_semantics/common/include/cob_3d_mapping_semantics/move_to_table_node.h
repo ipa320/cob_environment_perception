@@ -20,11 +20,14 @@
 #include <ros/ros.h>
 #include <cob_3d_mapping_msgs/MoveToTable.h>
 #include <cob_3d_mapping_msgs/GetTables.h>
+#include <tf/transform_broadcaster.h>
 
 #include <visualization_msgs/Marker.h>
 #include <visualization_msgs/InteractiveMarker.h>
 #include <visualization_msgs/InteractiveMarkerControl.h>
 #include <interactive_markers/interactive_marker_server.h>
+//#include <cob_script_server/ScriptAction.h>
+#include <tf/transform_listener.h>
 
 
 class MoveToTableNode
@@ -35,8 +38,9 @@ class MoveToTableNode
 
     {
       move_to_table_server_ = n_.advertiseService ("move_to_table", &MoveToTableNode::moveToTableService, this);
-      safe_dist_ = 0.2 ; // should be set to a predefined safe distance
+      safe_dist_ = 0.7 ; // should be set to a predefined safe distance
       table_im_server_.reset (new interactive_markers::InteractiveMarkerServer ("geometry_map/map", "", false));
+      navigation_goal_pub_ = n_.advertise<geometry_msgs::PoseStamped> ("move_base_simple/goal", 1);
 
     }
     // Destructor
@@ -64,6 +68,7 @@ class MoveToTableNode
   protected:
     ros::ServiceServer move_to_table_server_ ;
     boost::shared_ptr<interactive_markers::InteractiveMarkerServer> table_im_server_;
+    ros::Publisher navigation_goal_pub_ ;
 
 };
 
