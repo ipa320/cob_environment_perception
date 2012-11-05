@@ -5,6 +5,8 @@
  *      Author: goa-sn
  */
 #include <cob_3d_mapping_semantics/move_to_table_node.h>
+#include <cob_3d_mapping_common/ros_msg_conversions.h>
+#include <cob_3d_mapping_common/polygon.h>
 /**
  * @brief transforms a point to table coordinate system
  *
@@ -286,7 +288,25 @@ bool MoveToTableNode::moveToTableService (cob_3d_mapping_msgs::MoveToTable::Requ
   //  robotPose_.position.y = 1 ;
   //  robotPose_.position.z = 0 ;
 
-  table_ = req.targetTable ;
+  cob_3d_mapping::Polygon p;
+  fromROSMsg(req.targetTable, p);
+  Eigen::Affine3f pose;
+  Eigen::Vector4f min_pt;
+  Eigen::Vector4f max_pt;
+  p.computePoseAndBoundingBox(pose,min_pt, max_pt);
+  table_.pose.pose.position.x = pose.translation()(0); //poly_ptr->centroid[0];
+  table_.pose.pose.position.y = pose.translation()(1) ;//poly_ptr->centroid[1];
+  table_.pose.pose.position.z = pose.translation()(2) ;//poly_ptr->centroid[2];
+  Eigen::Quaternionf quat(pose.rotation());
+
+  table_.pose.pose.orientation.x = quat.x();
+  table_.pose.pose.orientation.y = quat.y();
+  table_.pose.pose.orientation.z = quat.z();
+  table_.pose.pose.orientation.w = quat.w();
+  table_.x_min = min_pt(0);
+  table_.x_max = max_pt(0);
+  table_.y_min = min_pt(1);
+  table_.y_max = max_pt(1);
 
   robotPoseInTableCoordinateSys_ = transformToTableCoordinateSystem(table_,robotPose_) ;
 
