@@ -189,10 +189,10 @@ void TableMarker::MoveToTheTable(const visualization_msgs::InteractiveMarkerFeed
   cob_3d_mapping_msgs::MoveToTable::Request  reqMoveToTable;
   cob_3d_mapping_msgs::MoveToTable::Response resMoveToTable;
 
-  //reqMoveToTable.targetTable = table_msg_ ;
-  reqMoveToTable.tableCentroid.position.x = table_.centroid.x ;
+  reqMoveToTable.targetTable = table_ ;
+  /*reqMoveToTable.tableCentroid.position.x = table_.centroid.x ;
   reqMoveToTable.tableCentroid.position.y = table_.centroid.y ;
-  reqMoveToTable.tableCentroid.position.z = table_.centroid.z ;
+  reqMoveToTable.tableCentroid.position.z = table_.centroid.z ;*/
 
   if (ros::service::call("/move_to_table",reqMoveToTable,resMoveToTable)){
       // Calling move_to_table Service...
