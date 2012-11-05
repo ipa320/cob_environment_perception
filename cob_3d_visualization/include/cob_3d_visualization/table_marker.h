@@ -70,7 +70,7 @@ class TableMarker
       table_im_server_ = server ;
       table_ = table ;
 
-      goal_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/move_base_linear_simple/goal", 1);
+      //goal_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/move_base_linear_simple/goal", 1);
 
 
       createTableMenu();
@@ -113,7 +113,7 @@ class TableMarker
     int id_;
 
     // Table Parameters
-    tabletop_object_detector::Table table_msg_;
+    //tabletop_object_detector::Table table_msg_;
 
 };
 
