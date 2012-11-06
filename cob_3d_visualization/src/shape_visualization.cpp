@@ -601,6 +601,7 @@ ShapeVisualization::shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr
     boost::shared_ptr<ShapeMarker> sm(new ShapeMarker(im_server_, sa->shapes[i],moved_shapes_indices_
         ,interacted_shapes_,deleted_markers_indices_,false,false)) ;//,deleted_));
     v_sm_.push_back(sm);
+    marker_pub_.publish(sm->getMarker());
   }
   //    im_server_->applyChanges(); //update changes
 }

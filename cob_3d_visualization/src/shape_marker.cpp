@@ -60,13 +60,13 @@
 
 
 /**
-* @brief subdivides a list of triangles.
-*
-* Based on a threshold in x-Direction, triangles are subdivided.
-* @param[in] i_list Input triangle list.
-* @param[out] o_list Output triangle list.
-* @return nothing
-*/
+ * @brief subdivides a list of triangles.
+ *
+ * Based on a threshold in x-Direction, triangles are subdivided.
+ * @param[in] i_list Input triangle list.
+ * @param[out] o_list Output triangle list.
+ * @return nothing
+ */
 void
 ShapeMarker::triangle_refinement(list<TPPLPoly>& i_list,list<TPPLPoly>& o_list){
 
@@ -351,15 +351,15 @@ ShapeMarker::createShapeMenu ()
 
 
   if(shape_.type==cob_3d_mapping_msgs::Shape::CYLINDER){
-  interactive_markers::MenuHandler::EntryHandle eh_7,eh_8;
+    interactive_markers::MenuHandler::EntryHandle eh_7,eh_8;
 
-  eh_7 = menu_handler_.insert (eh_1, "Show Symmetry Axis",boost::bind (&ShapeMarker::displaySymAxisCB, this, _1));
-  menu_handler_.setVisible (eh_7, true);
-  menu_handler_.setCheckState (eh_7, interactive_markers::MenuHandler::UNCHECKED);
+    eh_7 = menu_handler_.insert (eh_1, "Show Symmetry Axis",boost::bind (&ShapeMarker::displaySymAxisCB, this, _1));
+    menu_handler_.setVisible (eh_7, true);
+    menu_handler_.setCheckState (eh_7, interactive_markers::MenuHandler::UNCHECKED);
 
-  eh_8 = menu_handler_.insert (eh_1, "Show Cylinder Origin",boost::bind (&ShapeMarker::displayOriginCB, this, _1));
-  menu_handler_.setVisible (eh_8,true);
-  menu_handler_.setCheckState (eh_8, interactive_markers::MenuHandler::UNCHECKED);
+    eh_8 = menu_handler_.insert (eh_1, "Show Cylinder Origin",boost::bind (&ShapeMarker::displayOriginCB, this, _1));
+    menu_handler_.setVisible (eh_8,true);
+    menu_handler_.setCheckState (eh_8, interactive_markers::MenuHandler::UNCHECKED);
   }
 }
 /**
@@ -373,68 +373,68 @@ void
 ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::InteractiveMarkerControl& im_ctrl)
 {
   //ROS_INFO(" creating markers for this shape.....");
+  marker.id = shape_.id;
+
+  marker.header = shape_.header;
+  //marker.header.stamp = ros::Time::now() ;
+
+  marker.type = visualization_msgs::Marker::TRIANGLE_LIST;
+  marker.ns = "shape visualization";
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.lifetime = ros::Duration ();
+
+  //set color
+  marker.color.g = shape_.color.g;
+  marker.color.b = shape_.color.b;
+  marker.color.r = shape_.color.r;
+  if (arrows_ || deleted_){
+    marker.color.a = 0.5;
+  }
+  else
+  {
+    marker.color.a = shape_.color.a;
+    //      marker.color.r = shape_.color.r;
+  }
+
+  //set scale
+  marker.scale.x = 1;
+  marker.scale.y = 1;
+  marker.scale.z = 1;
+
+  //set pose
+  Eigen::Quaternionf quat (transformation_inv_.rotation ());
+  Eigen::Vector3f trans (transformation_inv_.translation ());
+
+  marker.pose.position.x = trans (0);
+  marker.pose.position.y = trans (1);
+  marker.pose.position.z = trans (2);
+
+  marker.pose.orientation.x = quat.x ();
+  marker.pose.orientation.y = quat.y ();
+  marker.pose.orientation.z = quat.z ();
+  marker.pose.orientation.w = quat.w ();
+  marker.points.resize (/*it->GetNumPoints ()*/triangle_list.size()*3);
   TPPLPoint pt;
+  int ctr=0;
   for (std::list<TPPLPoly>::iterator it = triangle_list.begin (); it != triangle_list.end (); it++)
   {
-    marker.id = shape_.id;
-
-    marker.header = shape_.header;
-    marker.header.stamp = ros::Time::now() ;
-
-    marker.type = visualization_msgs::Marker::TRIANGLE_LIST;
-    marker.ns = "shape visualization";
-    marker.action = visualization_msgs::Marker::ADD;
-    marker.lifetime = ros::Duration ();
-
-    //set color
-    marker.color.g = shape_.color.g;
-    marker.color.b = shape_.color.b;
-    marker.color.r = shape_.color.r;
-    if (arrows_ || deleted_){
-      marker.color.a = 0.5;
-    }
-    else
-    {
-      marker.color.a = shape_.color.a;
-      //      marker.color.r = shape_.color.r;
-    }
-
-    //set scale
-    marker.scale.x = 1;
-    marker.scale.y = 1;
-    marker.scale.z = 1;
-
-    //set pose
-    Eigen::Quaternionf quat (transformation_inv_.rotation ());
-    Eigen::Vector3f trans (transformation_inv_.translation ());
-
-    marker.pose.position.x = trans (0);
-    marker.pose.position.y = trans (1);
-    marker.pose.position.z = trans (2);
-
-    marker.pose.orientation.x = quat.x ();
-    marker.pose.orientation.y = quat.y ();
-    marker.pose.orientation.z = quat.z ();
-    marker.pose.orientation.w = quat.w ();
 
     //draw each triangle
-    marker.points.resize (it->GetNumPoints ());
     switch(shape_.type)
     {
       case(cob_3d_mapping_msgs::Shape::POLYGON):
-                                                                          {
+      {
         for (long i = 0; i < it->GetNumPoints (); i++)
         {
           pt = it->GetPoint (i);
-          marker.points[i].x = pt.x;
-          marker.points[i].y = pt.y;
-          marker.points[i].z = 0;
+          marker.points[3*ctr+i].x = pt.x;
+          marker.points[3*ctr+i].y = pt.y;
+          marker.points[3*ctr+i].z = 0;
         }
-                                                                          }
+        std::cout << marker.points.size() << std::endl;
+      }
       case(cob_3d_mapping_msgs::Shape::CYLINDER):
-                                                                          {
-
-
+      {
         for (long i = 0; i < it->GetNumPoints (); i++)
         {
           pt = it->GetPoint(i);
@@ -447,20 +447,20 @@ ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::In
           double alpha=pt.x/shape_.params[9];
 
 
-          marker.points[i].x = shape_.params[9]*sin(-alpha);
-          marker.points[i].y = pt.y;
-          marker.points[i].z = shape_.params[9]*cos(-alpha);
+          marker.points[3*ctr+i].x = shape_.params[9]*sin(-alpha);
+          marker.points[3*ctr+i].y = pt.y;
+          marker.points[3*ctr+i].z = shape_.params[9]*cos(-alpha);
 
           ////Keep Cylinder flat - Debuging
           //marker.points[i].x = pt.x;
           //marker.points[i].y = pt.y;
           //marker.points[i].z = 0;
         }
-                                                                          }
-
+      }
     }
-    im_ctrl.markers.push_back (marker);
+    ctr++;
   }
+  im_ctrl.markers.push_back (marker);
 
   //  if(!arrows_) {
   // Added For displaying the arrows on Marker Position
@@ -593,6 +593,7 @@ ShapeMarker::createInteractiveMarker ()
         polys.push_back (poly);
       }
       pp.Triangulate_EC (&polys, &tri_list);
+      std::cout << "trilist:" << tri_list.size() << std::endl;
 
     }//Polygon
   }//switch
