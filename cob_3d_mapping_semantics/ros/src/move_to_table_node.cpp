@@ -61,6 +61,33 @@
  *
  * @return the transformed point
  */
+Eigen::Quaternionf MoveToTableNode::faceTable(geometry_msgs::Pose finalPose){
+
+  Eigen::Vector2f finalTarget ;
+  finalTarget(0) = finalPose.position.x;
+  finalTarget(1) = finalPose.position.y;
+
+  Eigen::Vector2f robotPose ;
+  robotPose(0) = robotPose_.position.x;
+  robotPose(1) = robotPose_.position.y;
+
+
+  Eigen::Vector2f direction = finalTarget - robotPose ;
+  direction.normalize() ;
+
+  float angle = atan2(direction(1), direction(0));
+  Eigen::Matrix2f rotMat;
+  //  Eigen::Rotation2D RotMat(angle);
+  rotMat << std::cos(angle) , -1*std::sin(angle),
+      std::sin(angle) ,  std::cos(angle) ;
+
+  Eigen::Affine2f aff(rotMat) ;
+  Eigen::Quaternionf quat(aff.matrix());
+
+  return quat ;
+
+}
+
 geometry_msgs::Pose MoveToTableNode::transformToTableCoordinateSystem(tabletop_object_detector::Table &table,geometry_msgs::Pose &Pose)
 {
   Eigen::Matrix4f transformationMat ;
@@ -289,15 +316,15 @@ void MoveToTableNode::addMarkerForFinalPose(geometry_msgs::Pose finalPose) {
   marker.points[0].x = robotPose_.position.x ;
   marker.points[0].y = robotPose_.position.y ;
   marker.points[0].z = robotPose_.position.z ;
-//
+  //
   marker.points[1].x = finalPose.position.x;
   marker.points[1].y = finalPose.position.y ;
   marker.points[1].z = finalPose.position.z;
 
 
-//    marker.pose.position.x = robotPose_.position.x;
-//    marker.pose.position.y = robotPose_.position.y;
-//    marker.pose.position.z = robotPose_.position.z;
+  //    marker.pose.position.x = robotPose_.position.x;
+  //    marker.pose.position.y = robotPose_.position.y;
+  //    marker.pose.position.z = robotPose_.position.z;
 
 
   visualization_msgs::InteractiveMarkerControl im_ctrl;
@@ -339,6 +366,12 @@ bool MoveToTableNode::moveToTableService (cob_3d_mapping_msgs::MoveToTable::Requ
   robotPose_.position.y = transform.getOrigin().y() ;
   robotPose_.position.z = transform.getOrigin().z() ;
 
+  robotPose_.orientation.x = transform.getRotation().x() ;
+  robotPose_.orientation.y = transform.getRotation().y() ;
+  robotPose_.orientation.z = transform.getRotation().z() ;
+  robotPose_.orientation.w = transform.getRotation().w() ;
+
+
   // test
   //  robotPose_.position.x = 1 ;
   //  robotPose_.position.y = 1 ;
@@ -372,16 +405,19 @@ bool MoveToTableNode::moveToTableService (cob_3d_mapping_msgs::MoveToTable::Requ
       ,finalTargetInMapCoordinateSys.position.z);
 
   finalPose.header.frame_id = "/map" ;
-  //  res.goalPoint.header.frame_id = "/map" ;
 
+  // set position
   finalPose.pose.position.x = vecFinal (0) ;
   finalPose.pose.position.y = vecFinal (1) ;
   finalPose.pose.position.z = 0;//vecFinal (2) ;
 
-  finalPose.pose.orientation.x = 0;
-  finalPose.pose.orientation.y = 0;
-  finalPose.pose.orientation.z = 0;
-  finalPose.pose.orientation.w = 1;
+  // set orientation
+  Eigen::Quaternionf quat = faceTable(finalTargetInMapCoordinateSys) ;
+
+  finalPose.pose.orientation.x = quat.x();
+  finalPose.pose.orientation.y = quat.y();
+  finalPose.pose.orientation.z = quat.z();
+  finalPose.pose.orientation.w = quat.w();
 
   addMarkerForFinalPose (finalTargetInMapCoordinateSys) ;
 
