@@ -64,6 +64,7 @@
 #include <Eigen/Core>
 #include <Eigen/Dense>
 #include <Eigen/LU>
+#include <Eigen/Eigenvalues>
 // ROS includes
 #include <ros/ros.h>
 #include <cob_3d_mapping_msgs/MoveToTable.h>
@@ -76,7 +77,7 @@
 #include <interactive_markers/interactive_marker_server.h>
 //#include <cob_script_server/ScriptAction.h>
 #include <tf/transform_listener.h>
-
+#include <Eigen/Eigenvalues>
 
 class MoveToTableNode
 {
@@ -104,6 +105,7 @@ class MoveToTableNode
     geometry_msgs::Pose findIntersectionPoint() ;
     geometry_msgs::Pose findSafeTargetPoint() ;
     void addMarkerForFinalPose(geometry_msgs::Pose finalPose) ;
+    Eigen::Quaternionf faceTable (geometry_msgs::Pose finalPose);
 
     ros::NodeHandle n_;
     tabletop_object_detector::Table table_;
