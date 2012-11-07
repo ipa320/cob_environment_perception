@@ -53,6 +53,7 @@
  *
  ****************************************************************/
 #include <cob_3d_mapping_semantics/move_to_table_node.h>
+using namespace std ;
 /**
  * @brief transforms a point to table coordinate system
  *
@@ -76,10 +77,9 @@ Eigen::Quaternionf MoveToTableNode::faceTable(geometry_msgs::Pose finalPose){
   direction.normalize() ;
 
   float angle = atan2(direction(1), direction(0));
-  Eigen::Matrix2f rotMat;
-  //  Eigen::Rotation2D RotMat(angle);
-  rotMat << std::cos(angle) , -1*std::sin(angle),
-      std::sin(angle) ,  std::cos(angle) ;
+
+  Eigen::AngleAxis <float> ax1(angle, Eigen::Vector3f::UnitZ());
+  Eigen::Matrix3f rotMat = ax1.toRotationMatrix().block(0,0,2,2);
 
   Eigen::Affine2f aff(rotMat) ;
   Eigen::Quaternionf quat(aff.matrix());
