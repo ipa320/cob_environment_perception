@@ -81,9 +81,7 @@ Eigen::Quaternionf MoveToTableNode::faceTable(geometry_msgs::Pose finalPose){
   Eigen::AngleAxis <float> ax1(angle, Eigen::Vector3f::UnitZ());
   Eigen::Matrix3f rotMat = ax1.toRotationMatrix().block(0,0,2,2);
 
-  Eigen::Affine2f aff(rotMat) ;
-  Eigen::Quaternionf quat(aff.matrix());
-
+  Eigen::Quaternionf quat(rotMat);
   return quat ;
 
 }
