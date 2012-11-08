@@ -85,8 +85,9 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
   map_msg.header.frame_id="/map";
   map_msg.header.stamp = ros::Time::now();
 
-  int shape_id(0), index(0);
-
+  int shape_id,index;
+  index=-1;
+  stringstream name(feedback->marker_name);
 
   Eigen::Quaternionf quat;
 
@@ -100,23 +101,29 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
 
 
   if (feedback->marker_name != "Text"){
-    std::cout << "marker_name : " << feedback->marker_name << "\n" ;
-
-    //    string strName(feedback->marker_name);
-    //    strName.erase(strName.begin(),strName.begin()+7);
-    stringstream name(feedback->marker_name);
-
     name >> shape_id ;
-
     cob_3d_mapping::Polygon p;
 
     for(unsigned int i=0;i<sha.shapes.size();++i)
     {
-      if (sha.shapes[i].id == shape_id)
-      {
-        index = i;
-      }
+    	if (sha.shapes[i].id == shape_id)
+	{
+		index = i;
+	}
+
     }
+
+
+    // temporary fix.
+    //do nothing if index of shape is not found
+    // this is not supposed to occur , but apparently it does
+    if(index==-1){
+
+    ROS_WARN("shape not in map array");
+    return;
+	}
+
+
     cob_3d_mapping::fromROSMsg (sha.shapes.at(index), p);
 
     if (feedback->event_type == 2 && feedback->menu_entry_id == 5){
@@ -145,6 +152,11 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
     }
 
     if (feedback->event_type == 5){
+      /* the name of the marker is arrows_shape_.id, we need to erase the "arrows_" part */
+      //string strName(feedback->marker_name);
+      //strName.erase(strName.begin(),strName.begin()+7);
+//      stringstream name(strName);
+	stringstream name(feedback->marker_name);
 
       /* the name of the marker is arrows_shape_.id, we need to erase the "arrows_" part */
       //      int test ;

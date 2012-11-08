@@ -279,7 +279,6 @@ void Cylinder::makeCyl3D()
 
     for (size_t k = 0; k < poly_plane.contours[j].size(); k++) {
 
-      float alpha;
       Eigen::Vector3f point_temp;
       getPt3D(poly_plane.contours[j][k],point_temp);
       point_temp = transform_from_world_to_plane.inverse() * point_temp;
@@ -396,7 +395,7 @@ Cylinder::isMergeCandidate(const std::vector<Cylinder::Ptr>& cylinder_array,
 void
 Cylinder::merge(std::vector<Cylinder::Ptr>& c_array)
 {
-  std::cout << "START MERGING" <<std::endl;
+  ROS_DEBUG_STREAM("START MERGING");
   std::vector<Cylinder::Ptr> merge_cylinders;
 
   //create average cylinder for  averaging
@@ -526,15 +525,15 @@ Cylinder::dump_params(std::string  name)
 void
 Cylinder::printAttributes(std::string & name)
 {
-  std::cout<< "_______"<<name.c_str() <<"______\n";
-  std::cout<<"origin = \n"<< this->origin_<<"\n";
-  std::cout<< "centroid = \n"<<this->centroid<<"\n";
-  std::cout<<"radius = "<< this->r_<<"\n";
-  std::cout<<"normal = "<< this->normal<<"\n";
-  std::cout<<"sym_axis = "<< this->sym_axis<<"\n";
-  std::cout<<"merged = " << this->merged<<"\n";
-  std::cout<<"merge_weight = "<<this->merge_weight_<<"\n";
-  std::cout<< "_________________\n";
+  ROS_DEBUG_STREAM( "_______"<<name.c_str() <<"______\n");
+  ROS_DEBUG_STREAM("origin = \n"<< this->origin_<<"\n");
+  ROS_DEBUG_STREAM( "centroid = \n"<<this->centroid<<"\n");
+  ROS_DEBUG_STREAM("radius = "<< this->r_<<"\n");
+  ROS_DEBUG_STREAM("normal = "<< this->normal<<"\n");
+  ROS_DEBUG_STREAM("sym_axis = "<< this->sym_axis<<"\n");
+  ROS_DEBUG_STREAM("merged = " << this->merged<<"\n");
+  ROS_DEBUG_STREAM("merge_weight = "<<this->merge_weight_<<"\n");
+  ROS_DEBUG_STREAM( "_________________\n");
 }
 
 

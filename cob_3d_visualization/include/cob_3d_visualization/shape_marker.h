@@ -111,9 +111,17 @@ class ShapeMarker
     void displayNormal();
     void hideNormal(int flag_untick);
 
+    void displaySymAxisCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    void displaySymAxis();
+    void hideSymAxis(int flag_untick);
+
     void displayCentroidCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
     void displayCentroid();
     void hideCentroid(int flag_untick);
+
+    void displayOriginCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    void displayOrigin();
+    void hideOrigin(int flag_untick);
 
     void displayContourCB(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
     void displayContour();
@@ -121,7 +129,6 @@ class ShapeMarker
 
     void resetMarker();//bool call_reset_marker,visualization_msgs::InteractiveMarker& imarker) ;
 
-    //    void setShapePosition(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);//,const cob_3d_mapping_msgs::Shape& shape) ;
     void getShape (cob_3d_mapping_msgs::Shape& shape) ;
     visualization_msgs::Marker getMarker() ;
     unsigned int getID() ;
@@ -131,7 +138,6 @@ class ShapeMarker
     bool getDeleted();
     bool setDeleted();
 
-    //    std::vector<int> getInteractedShapesNumber();
     void triangle_refinement(list<TPPLPoly>& i_list,list<TPPLPoly>& o_list);
 
   protected:
@@ -140,9 +146,6 @@ class ShapeMarker
     visualization_msgs::InteractiveMarker deleted_imarker_ ;
     visualization_msgs::Marker marker;
 
-    //    ros::NodeHandle nh_;
-    //    ros::Subscriber feedback_sub_ ;
-    //    ros::Publisher marker_pub_ ;
 
     visualization_msgs::InteractiveMarkerControl im_ctrl;
 
@@ -154,27 +157,14 @@ class ShapeMarker
 
     Eigen::Affine3f transformation_;
     Eigen::Affine3f transformation_inv_;
-    //    int shape_ctr_ ;
 
-
-    //    int shape_ctr_ ;
     unsigned int id_;
     std::vector<unsigned int>& moved_shapes_indices_ ;
     std::vector<unsigned int>& interacted_shapes_ ;
     std::vector<unsigned int>& deleted_markers_indices_ ;
-    //    unsigned int& deleted_ ;
-
 
     bool arrows_;
     bool deleted_ ;
-    //    cob_3d_mapping_msgs::ModifyMap::Request req ;
-    //    cob_3d_mapping_msgs::ModifyMap::Response res;
-    //    //
-    //    Eigen::Quaternionf quatInit ;
-    //    Eigen::Vector3f oldCentroid ;
-    //    Eigen::Matrix4f transInit;
-    //    Eigen::Affine3f affineInit;
-    //    Eigen::Matrix4f transInitInv;
 
 };
 
