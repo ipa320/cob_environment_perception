@@ -130,7 +130,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::receivedCloudCallback(PointClo
   seg_.refineSegmentation();
   std::map<int,int> objects;
   //seg_.getPotentialObjects(objects, 500);
-  std::cout << "Found " << objects.size() << " potentail objects" << std::endl;
+  //std::cout << "Found " << objects.size() << " potentail objects" << std::endl;
   NODELET_INFO("Done with segmentation .... ");
   graph_->clusters()->mapClusterColor(segmented_);
 
@@ -138,11 +138,12 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::receivedCloudCallback(PointClo
   cc_.classify();
   graph_->clusters()->mapTypeColor(classified_);
   graph_->clusters()->mapClusterBorders(classified_);
-  NODELET_INFO("publish first cloud .... ");
+  std::cout << "segmentation took " << t.precisionStop() << " s." << std::endl;
+  //NODELET_INFO("publish first cloud .... ");
   pub_segmented_.publish(segmented_);
-  NODELET_INFO("publish second cloud .... ");
+  //NODELET_INFO("publish second cloud .... ");
   pub_classified_.publish(classified_);
-  NODELET_INFO("publish shape array .... ");
+  //NODELET_INFO("publish shape array .... ");
   /*
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr bp (new pcl::PointCloud<pcl::PointXYZRGB>);
    *bp = *cloud;
@@ -164,7 +165,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
   cob_3d_mapping_msgs::ShapeArray sa;
   sa.header = cloud->header;
   sa.header.frame_id = cloud->header.frame_id.c_str();
-  std::cout<<"[SN]-->CLOUD FRAME"<<cloud->header.frame_id.c_str()<<"\n";
+  //std::cout<<"[SN]-->CLOUD FRAME"<<cloud->header.frame_id.c_str()<<"\n";
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull(new pcl::PointCloud<pcl::PointXYZRGB>);
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud_dense(new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -263,7 +264,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
     }
     case I_CYL:
     {
-      std::cout<<"CLYINDER is published\n";
+      //std::cout<<"CLYINDER is published\n";
       s->type = cob_3d_mapping_msgs::Shape::CYLINDER;
       s->params.resize(10);
 
@@ -272,8 +273,8 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
       cyl->centroid << centroid3f[0] , centroid3f[1] , centroid3f[2] , 0;
 
       cyl->sym_axis =  c->pca_inter_comp1;
-      std::cout<<"sym axis\n"<<cyl->sym_axis<<"\n";
-      std::cout<<"centroid\n"<<cyl->centroid<<"\n";
+      //std::cout<<"sym axis\n"<<cyl->sym_axis<<"\n";
+      //std::cout<<"centroid\n"<<cyl->centroid<<"\n";
       cyl->ParamsFromCloud(cloud,c->indices_);
 
 
@@ -317,7 +318,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
   pub_chull_.publish(hull_cloud);
   pub_chull_dense_.publish(hull_cloud_dense);
   pub_shape_array_.publish(sa);
-  std::cout<<"[SN]-->sa array frame set to"<<sa.header.frame_id.c_str()<<"\n";
+  //std::cout<<"[SN]-->sa array frame set to"<<sa.header.frame_id.c_str()<<"\n";
 }
 
 
