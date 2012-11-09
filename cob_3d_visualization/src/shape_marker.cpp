@@ -431,7 +431,7 @@ ShapeMarker::createMarker (list<TPPLPoly>& triangle_list, visualization_msgs::In
           marker.points[3*ctr+i].y = pt.y;
           marker.points[3*ctr+i].z = 0;
         }
-        std::cout << marker.points.size() << std::endl;
+        //std::cout << marker.points.size() << std::endl;
       }
       case(cob_3d_mapping_msgs::Shape::CYLINDER):
       {
@@ -552,7 +552,6 @@ ShapeMarker::createInteractiveMarker ()
       list<TPPLPoly> refined_tri_list;
       triangle_refinement(tri_list,refined_tri_list);
       tri_list=refined_tri_list;
-
     }
     case cob_3d_mapping_msgs::Shape::POLYGON:
     {
@@ -594,6 +593,7 @@ ShapeMarker::createInteractiveMarker ()
       }
       pp.Triangulate_EC (&polys, &tri_list);
       std::cout << "trilist:" << tri_list.size() << std::endl;
+	if(tri_list.size() == 0) return;
 
     }//Polygon
   }//switch
