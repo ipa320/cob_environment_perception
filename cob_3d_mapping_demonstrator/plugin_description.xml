@@ -3,4 +3,10 @@
     <description>
       Buttons
     </description>
+  </class>
+  <class name="cob_3d_mapping_demonstrator/Title" type="cob_environment_perception::RvizTitle" base_class_type="rviz::Panel">
+    <description>
+      Title
+    </description>
+  </class>
 </library>

@@ -75,6 +75,14 @@
   //aditional includes
 #include <ros/console.h>
 
+struct null_deleter
+{
+    void operator()(void const *) const
+    {
+    }
+};
+
+
 void
 TableObjectCluster::extractTableRoi(pcl::PointCloud<Point>::Ptr& pc_in,
                                     pcl::PointCloud<Point>::Ptr& hull,
@@ -84,7 +92,7 @@ TableObjectCluster::extractTableRoi(pcl::PointCloud<Point>::Ptr& pc_in,
   // Consider only objects in a given layer above the table
   //TODO: check if valid values
   //TODO: does not work for planes other than horizontal, PrismExtraction has to be modified
-  ROS_INFO("height limits: %f, %f ", height_min_, height_max_);
+  //ROS_INFO("height limits: %f, %f ", height_min_, height_max_);
   prism.setHeightLimits(height_min_, height_max_);
   // ---[ Get the objects on top of the table
   pcl::PointIndices roi_indices;
@@ -163,10 +171,9 @@ TableObjectCluster::removeKnownObjects(pcl::PointCloud<Point>::Ptr& pc_roi,
 
 void
 TableObjectCluster::calculateBoundingBoxes(pcl::PointCloud<Point>::Ptr& pc_roi_red,
+                                           std::vector<pcl::PointCloud<Point>::Ptr >& object_clusters,
                    std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > >& bounding_boxes)
 {
-  ROS_INFO("Calculate bb");
-
   #ifdef PCL_VERSION_COMPARE //fuerte
     pcl::search::KdTree<Point>::Ptr clusters_tree (new pcl::search::KdTree<Point>());
   #else //electric
@@ -179,15 +186,21 @@ TableObjectCluster::calculateBoundingBoxes(pcl::PointCloud<Point>::Ptr& pc_roi_r
   cluster_obj.setClusterTolerance (cluster_tolerance_);
   cluster_obj.setMinClusterSize (min_cluster_size_);
   cluster_obj.setSearchMethod (clusters_tree);
-  std::vector<pcl::PointIndices> object_clusters;
+  std::vector<pcl::PointIndices> object_cluster_indices;
   cluster_obj.setInputCloud (pc_roi_red);
-  cluster_obj.extract (object_clusters);
-  ROS_INFO("%d object clusters found", object_clusters.size());
-  for(unsigned int i = 0; i < object_clusters.size(); ++i)
+  cluster_obj.extract (object_cluster_indices);
+  pcl::ExtractIndices<Point> ei;
+  ei.setInputCloud(pc_roi_red);
+  for(unsigned int i = 0; i < object_cluster_indices.size(); ++i)
   {
+    boost::shared_ptr<pcl::PointIndices> ind_ptr(&object_cluster_indices[i], null_deleter());
+    ei.setIndices(ind_ptr);
+    pcl::PointCloud<Point>::Ptr cluster_ptr(new pcl::PointCloud<Point>);
+    ei.filter(*cluster_ptr);
+    object_clusters.push_back(cluster_ptr);
     pcl::PointCloud<pcl::PointXYZ> bb;
     Eigen::Vector4f min_pt, max_pt;
-    pcl::getMinMax3D(*pc_roi_red, object_clusters[i], min_pt, max_pt);
+    pcl::getMinMax3D(*pc_roi_red, object_cluster_indices[i], min_pt, max_pt);
     if(fabs(max_pt(2)-min_pt(2))<0.03) continue;
     pcl::PointXYZ p;
     p.x = min_pt(0);

@@ -71,6 +71,9 @@
 
 // ROS includes
 #include <ros/ros.h>
+#include <message_filters/subscriber.h>
+#include <message_filters/synchronizer.h>
+#include <message_filters/sync_policies/exact_time.h>
 //#include <pluginlib/class_list_macros.h>
 //#include <pcl_ros/pcl_nodelet.h>
 #include <pcl/io/io.h>
@@ -84,12 +87,15 @@
 #include <dynamic_reconfigure/server.h>
 //#include <cob_3d_mapping_common/reconfigureable_node.h>
 #include <cob_table_object_cluster/table_object_cluster_nodeletConfig.h>
-
+#include <cob_3d_mapping_common/polygon.h>
+#include <cob_3d_mapping_common/ros_msg_conversions.h>
 
 
 // ROS message includes
 //#include <sensor_msgs/PointCloud2.h>
 #include <cob_3d_mapping_msgs/GetPointMap.h>
+#include <cob_3d_mapping_msgs/ShapeArray.h>
+#include <cob_perception_msgs/PointCloud2Array.h>
 #include <visualization_msgs/Marker.h>
 //#include <cob_3d_mapping_msgs/GetBoundingBoxes.h>
 
@@ -101,6 +107,7 @@
 #include "cob_3d_mapping_msgs/TableObjectClusterAction.h"
 
 using namespace cob_table_object_cluster;
+using namespace cob_3d_mapping;
 
 
 //####################
@@ -108,7 +115,9 @@ using namespace cob_table_object_cluster;
 class TableObjectClusterNode //: protected Reconfigurable_Node<table_object_cluster_nodeletConfig>
 {
 public:
-  typedef pcl::PointXYZ Point;
+  typedef pcl::PointXYZRGB Point;
+  typedef pcl::PointCloud<Point> PointCloud;
+  typedef message_filters::sync_policies::ExactTime<PointCloud, cob_3d_mapping_msgs::ShapeArray > MySyncPolicy;
   // Constructor
   TableObjectClusterNode()
   : as_(0),
@@ -118,10 +127,17 @@ public:
 
     //n_ = getNodeHandle();
     bb_pub_ = n_.advertise<visualization_msgs::Marker>("bb_marker",100);
+    object_cluster_pub_ = n_.advertise<cob_perception_msgs::PointCloud2Array>("cluster_array",1);
     get_point_map_client_ = n_.serviceClient<cob_3d_mapping_msgs::GetPointMap>("get_point_map");
     //get_bb_client_ = n_.serviceClient<cob_3d_mapping_msgs::GetBoundingBoxes>("get_known_objects");
     as_= new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TableObjectClusterAction>(n_, "table_object_cluster", boost::bind(&TableObjectClusterNode::actionCallback, this, _1), false);
     as_->start();
+
+    pc_sub_.subscribe(n_,"point_cloud",10);
+    sa_sub_.subscribe(n_,"table_array",10);
+    sync_ = boost::make_shared <message_filters::Synchronizer<MySyncPolicy> >(100);
+    sync_->connectInput(pc_sub_, sa_sub_);
+    sync_->registerCallback(boost::bind(&TableObjectClusterNode::topicCallback, this, _1, _2));
   }
 
   // Destructor
@@ -220,8 +236,9 @@ public:
       pc_roi_red = pc_roi;
     }*/
 
-    std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > > bounding_boxes;
-    toc.calculateBoundingBoxes(pc_roi,bounding_boxes);
+    std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > > bounding_boxes;
+    std::vector<PointCloud::Ptr> object_clusters;
+    toc.calculateBoundingBoxes(pc_roi, object_clusters, bounding_boxes);
     for(unsigned int i=0; i< bounding_boxes.size(); i++)
     {
       sensor_msgs::PointCloud2 bb;
@@ -260,6 +277,83 @@ public:
     as_->setSucceeded(result);
   }
 
+  void
+  topicCallback(const PointCloud::ConstPtr& pc, const cob_3d_mapping_msgs::ShapeArray::ConstPtr& sa)
+  {
+    //PointCloud pc_in = *pc;
+    PointCloud::Ptr pc_in_ptr = pc->makeShared();
+    for( unsigned int i=0; i< sa->shapes.size(); i++)
+    {
+      Polygon::Ptr p(new Polygon());
+      fromROSMsg(sa->shapes[i], *p);
+      //TODO: check holes
+      int no_contour=-1;
+      for( unsigned int j=0; j<p->contours.size(); j++)
+      {
+        if( p->holes[j] == 0 )
+        {
+          no_contour = j;
+          break;
+        }
+      }
+      if( no_contour == -1)
+      {
+        ROS_ERROR("Polygon has no positive contour, aborting...");
+        return;
+      }
+      PointCloud::Ptr hull(new PointCloud);
+      for( unsigned int j=0; j<p->contours[no_contour].size(); j++)
+      {
+        Point pt;
+        pt.x = p->contours[no_contour][j][0];
+        pt.y = p->contours[no_contour][j][1];
+        pt.z = p->contours[no_contour][j][2];
+        hull->points.push_back(pt);
+      }
+      hull->width = hull->size();
+      hull->height = 1;
+      PointCloud::Ptr pc_roi(new PointCloud);
+      toc.extractTableRoi(pc_in_ptr, hull, *pc_roi);
+      std::stringstream ss;
+      if(save_to_file_)
+      {
+        ss << file_path_ << "/pc.pcd";
+        pcl::io::savePCDFileASCII (ss.str(), *pc);
+        ss.str("");
+        ss.clear();
+        ss << file_path_ << "/hull.pcd";
+        pcl::io::savePCDFileASCII (ss.str(), *hull);
+        ss.str("");
+        ss.clear();
+        ss << file_path_ << "/table_roi.pcd";
+        pcl::io::savePCDFileASCII (ss.str(), *pc_roi);
+        ss.str("");
+        ss.clear();
+      }
+      std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > > bounding_boxes;
+      std::vector<PointCloud::Ptr> object_clusters;
+      toc.calculateBoundingBoxes(pc_roi, object_clusters, bounding_boxes);
+      ROS_INFO("Computed %d bounding boxes", object_clusters.size());
+      cob_perception_msgs::PointCloud2Array pca;
+      pca.header = pc->header;
+      for(unsigned int j=0; j<object_clusters.size(); j++)
+      {
+        sensor_msgs::PointCloud2 pc_msg;
+        pcl::toROSMsg(*object_clusters[j], pc_msg);
+        pc_msg.header = pc->header;
+        pca.segments.push_back(pc_msg);
+        if(save_to_file_)
+        {
+          ss << file_path_ << "/bb_" << j << ".pcd";
+          pcl::io::savePCDFileASCII (ss.str(), *object_clusters[j]);
+          ss.str("");
+          ss.clear();
+        }
+      }
+      object_cluster_pub_.publish(pca);
+    }
+  }
+
   /**
    * @brief publishes a bounding box
    *
@@ -268,7 +362,7 @@ public:
    * @return nothing
    */
   void
-  publishMarker(pcl::PointCloud<Point>& bb)
+  publishMarker(pcl::PointCloud<pcl::PointXYZ>& bb)
   {
     visualization_msgs::Marker marker;
     marker.action = visualization_msgs::Marker::ADD;
@@ -334,6 +428,10 @@ protected:
   actionlib::SimpleActionServer<cob_3d_mapping_msgs::TableObjectClusterAction>* as_;
   ros::ServiceClient get_point_map_client_;
   ros::Publisher bb_pub_;
+  ros::Publisher object_cluster_pub_;
+  boost::shared_ptr<message_filters::Synchronizer<MySyncPolicy> > sync_;
+  message_filters::Subscriber<PointCloud> pc_sub_;
+  message_filters::Subscriber<cob_3d_mapping_msgs::ShapeArray> sa_sub_;
   dynamic_reconfigure::Server<table_object_cluster_nodeletConfig> config_server_;
   //ros::ServiceClient get_bb_client_;
   boost::mutex mutex_;

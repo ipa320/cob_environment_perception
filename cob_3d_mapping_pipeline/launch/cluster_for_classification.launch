@@ -25,19 +25,14 @@
     </rosparam>
   </node-->
 
-  <include file="$(find cob_3d_registration)/ros/launch/registration.launch">
-    <arg name="start_manager" value="false"/>
-    <arg name="nodelet_manager" value="$(arg mapping_manager)"/>
-  </include>
-	<include file="$(find cob_3d_mapping_point_map)/ros/launch/point_map.launch">
-		<arg name="start_manager" value="false"/>
-		<arg name="nodelet_manager" value="$(arg mapping_manager)"/>
-	</include>
+  <include file="$(find cob_3d_mapping_tools)/ros/launch/transform_pointcloud.launch"/>
 	<include file="$(find cob_3d_segmentation)/ros/launch/segmentation.launch">
 		<arg name="start_manager" value="false"/>
 		<arg name="nodelet_manager" value="$(arg mapping_manager)"/>
+		<remap from="cloud_in" to="transform_pointcloud/output"/>
 	</include>
-	<include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch"/>
+	<include file="$(find cob_3d_mapping_semantics)/ros/launch/extract_tables.launch"/>
+	<include file="$(find cob_table_object_cluster)/ros/launch/tabletop_object_cluster.launch"/>
 
 
 

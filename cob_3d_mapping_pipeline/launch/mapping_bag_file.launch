@@ -38,7 +38,7 @@
     <param name="filter_field_name" type="string" value="z" />
     <param name="filter_limit_min" type="double" value="0.1" />
     <param name="filter_limit_max" type="double" value="5.0" />
-  </node-->
+  </node>
   <!--include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch"/-->
 
   <node pkg="rosbag" type="play" name="rosbag_play" cwd="node" respawn="false" output="screen"

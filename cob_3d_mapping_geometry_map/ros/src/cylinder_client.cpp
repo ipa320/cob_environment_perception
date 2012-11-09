@@ -78,9 +78,12 @@
 #include <ros/ros.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
-#include <pcl_ros/transforms.h>
-#include <pcl_ros/point_cloud.h>
+#ifdef PCL_VERSION_COMPARE
+#include <pcl/common/transforms.h>
+#else
 #include <pcl/common/transform.h>
+#endif
+#include <pcl_ros/point_cloud.h>
 #include <dynamic_reconfigure/server.h>
 #include <cob_3d_mapping_geometry_map/geometry_map_nodeConfig.h>
 
@@ -133,7 +136,7 @@ public:
 	}
 
 	void
-	transformCylinder(CylinderPtr & c_ptr,Eigen::Affine3f& trafo)
+	transformCylinder(Cylinder::Ptr & c_ptr,Eigen::Affine3f& trafo)
 	{
 
 
@@ -153,7 +156,7 @@ public:
 
 		for (int i = 0; i < 3; ++i) {
 
-			c.axes_[i]=trafo.rotation()*c.axes_[i];
+			c.sym_axis[i]=trafo.rotation()*c.sym_axis[i];
 			//	std::cout<<"axis -"<<i<<" \n"<<c.axes_[i]<<std::endl;
 		}
 		c.normal=trafo.rotation()*c.normal;
@@ -162,12 +165,12 @@ public:
 		pcl::getTranslationAndEulerAngles(trafo,x,y,z,roll,pitch,yaw);
 		//	std::cout<<" x= "<<x<<" y= "<<z<<" z= "<<z<<" roll= "<<roll<<" pitch= "<<pitch<<" yaw= "<<yaw<<std::endl;
 
-		c.assignMembers(c.axes_[1], c.axes_[2], c.origin_);	//	configure unrolled polygon
+		c.assignMembers(c.sym_axis[1], c.sym_axis[2], c.origin_);	//	configure unrolled polygon
 	}
 
 
 	void
-	makePolygon(PolygonPtr& p1)
+	makePolygon(Polygon::Ptr& p1)
 	{
 		Eigen::Vector3f v;
 			std::vector<Eigen::Vector3f> vv;
@@ -189,7 +192,7 @@ public:
 
 
 	void
-	makeCylinder(CylinderPtr& c1)
+	makeCylinder(Cylinder::Ptr& c1)
 	{
 
 
@@ -361,7 +364,7 @@ public:
 
 
 
-		CylinderPtr  c1  =CylinderPtr(new Cylinder());
+		Cylinder::Ptr  c1  =Cylinder::Ptr(new Cylinder());
 		makeCylinder(c1);
 		toROSMsg(*c1, s);
 		s.header = map_msg.header;

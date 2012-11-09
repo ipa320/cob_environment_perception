@@ -73,7 +73,7 @@
 class TableObjectCluster
 {
 public:
-  typedef pcl::PointXYZ Point;
+  typedef pcl::PointXYZRGB Point;
 
   TableObjectCluster()
   {
@@ -148,6 +148,7 @@ public:
    */
   void
   calculateBoundingBoxes(pcl::PointCloud<Point>::Ptr& pc_roi_red,
+                         std::vector<pcl::PointCloud<Point>::Ptr >& object_clusters,
                      std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > >& bounding_boxes);
 
   /**
