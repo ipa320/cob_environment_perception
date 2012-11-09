@@ -117,7 +117,7 @@ namespace cob_3d_segmentation
             max_bin = i;
           }
         }
-        std::cout<<"max_(bin/size): "<<max_bin<<"/"<<max_size<<std::endl;
+        //std::cout<<"max_(bin/size): "<<max_bin<<"/"<<max_size<<std::endl;
         return max_bin;
       }
 

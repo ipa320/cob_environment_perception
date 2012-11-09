@@ -14,14 +14,14 @@
  * \note
  *  ROS stack name: cob_environment_perception
  * \note
- *  ROS package name: cob_3d_mapping_geometry_map
+ *  ROS package name: cob_3d_mapping_point_map
  *
  * \author
  *  Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  * \author
  *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * \date Date of creation: 12/2011
+ * \date Date of creation: 11/2011
  *
  * \brief
  * Description:
@@ -62,95 +62,46 @@
 
 // ROS includes
 #include <ros/ros.h>
-#include <rosbag/bag.h>
 
 // ROS message includes
-#include <cob_3d_mapping_msgs/GetGeometricMap.h>
-#include <cob_3d_mapping_msgs/ShapeArray.h>
+#include <cob_3d_mapping_msgs/GetPointMap.h>
 
 // PCL includes
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 
-#include <iostream>
-#include <fstream>
-
-void writeToFile(cob_3d_mapping_msgs::Shape& s, std::ofstream& fs)
-{
-  //static int ctr=0;
-  //std::stringstream ss;
-  //ss << "/home/goa/pcl_daten/kitchen_kinect/polygons/polygon_" << ctr << ".txt";
-  //std::ofstream myfile;
-  //myfile.open (ss.str().c_str());
-  fs << (int)s.type << "\n";
-  for(unsigned int i=0; i<s.params.size(); i++)
-    fs << s.params[i] << " ";
-
-  //myfile.close();
-
-}
-
-
 int main (int argc, char **argv)
 {
   if(argc<1) {
-    ROS_ERROR("Please specify output file\nrosrun cob_3d_mapping_geometry_map get_map_client myfile.bag");
+    ROS_ERROR("Please specify output file\nrosrun cob_3d_mapping_point_map get_map_client myfile.pcd");
     return -1;
   }
-  ros::init(argc, argv, "get_geoemtry_map");
+  ros::init(argc, argv, "get_point_map");
 
   ros::NodeHandle nh;
 
   ROS_INFO("Waiting for service server to start.");
-  ros::service::waitForService("/geometry_map/get_map"); //will wait for infinite time
+  ros::service::waitForService("/point_map/get_map"); //will wait for infinite time
 
   ROS_INFO("Server started, polling map.");
 
   //build message
-  cob_3d_mapping_msgs::GetGeometricMapRequest req;
-  cob_3d_mapping_msgs::GetGeometricMapResponse resp;
+  cob_3d_mapping_msgs::GetPointMapRequest req;
+  cob_3d_mapping_msgs::GetPointMapResponse resp;
 
-  if (ros::service::call("/geometry_map/get_map", req,resp))
+  if (ros::service::call("/point_map/get_map", req,resp))
   {
     ROS_INFO("Service call finished.");
   }
   else
   {
-    ROS_INFO("Service call failed.");
+    ROS_INFO("[get point map]: Service call failed.");
     return 0;
   }
 
-  // maybe better dump to bag file?
-  /*for(unsigned int i=0; i<resp.shapes.size(); i++)
-  {
-    std::stringstream ss;
-    ss << "shape_" << i << ".txt";
-    std::ofstream fs;
-    fs.open (ss.str().c_str());
-    writeToFile(resp.shapes[i], fs);
-    fs.close();
-    for(unsigned int j=0; j<resp.shapes[i].points.size(); j++)
-    {
-      std::stringstream ss1;
-      ss1 << "shape_" << i << "_" << j << ".pcd";
-      pcl::PointCloud<pcl::PointXYZ> map;
-      pcl::fromROSMsg(resp.shapes[i].points[j], map);
-      pcl::io::savePCDFile(ss1.str(),map,false);
-    }
-  }*/
-  //cob_3d_mapping_msgs::ShapeArray& sa;
-  //cob_3d_mapping_msgs::ShapeArray sa = resp.shapes.shapes;
-  //sa.header.stamp = ros::Time(1.0);
-  //std::cout << sa.header.stamp << std::endl;
-  //sa.header.frame_id = "/map";
-  /*for(unsigned int i=0; i<resp.shapes.size(); i++)
-    sa.shapes.push_back(resp.shapes[i]);*/
-
-  rosbag::Bag bag;
-  bag.open(argv[1], rosbag::bagmode::Write);
-  bag.write("geometry_map", resp.map.header.stamp, resp.map);
-
-  bag.close();
+  pcl::PointCloud<pcl::PointXYZRGB> map;
+  pcl::fromROSMsg(resp.map, map);
+  pcl::io::savePCDFile(argv[1],map,false);
 
   //exit
   return 0;

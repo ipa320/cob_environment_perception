@@ -66,7 +66,6 @@
 //#### includes ####
 
 // standard includes
-//--
 #include <sstream>
 #include <cmath>
 #include <vector>
@@ -82,16 +81,16 @@
 #include <boost/tuple/tuple_comparison.hpp>
 #include <Eigen/Geometry>
 #include <pcl/win32_macros.h>
-//#include <pcl/common/transform.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/common/centroid.h>
-//#include <pcl/common/impl/transform.hpp>
 
 
 #include <cob_3d_mapping_slam/dof/tflink.h>
 #include "cob_3d_mapping_geometry_map/geometry_map.h"
+
+
 using namespace cob_3d_mapping;
 
 
@@ -152,7 +151,6 @@ void
 GeometryMap::addMapEntry(Cylinder::Ptr& c_ptr)
 {
   Cylinder& c = *c_ptr;
-//
 
   c.frame_stamp = frame_counter_;
   cob_3d_mapping::merge_config  limits;
@@ -205,8 +203,7 @@ GeometryMap::addMapEntry(Cylinder::Ptr& c_ptr)
     c.frame_stamp =frame_counter_;
     map_cylinder_.push_back(c_ptr);
   }
-  
-  //	if(save_to_file_) saveMap(file_path_);
+ 
 }
 
 void
@@ -217,7 +214,7 @@ GeometryMap::addMapEntry(ShapeCluster::Ptr& sc_ptr)
   {
     std::vector<int> intersections;
     sc_ptr->getMergeCandidates(map_shape_cluster_, intersections);
-    std::cout << intersections.size() << std::endl;
+    ROS_DEBUG_STREAM(intersections.size());
     if(intersections.size())
     {
       std::vector<ShapeCluster::Ptr> do_merge;
@@ -282,7 +279,7 @@ GeometryMap::computeTfError(const std::vector<Polygon::Ptr>& list_polygon, const
       //if (rel_overlap < 0.3) continue;
       //sum_overlap += abs_overlap;
       float w = pp->computeSimilarity(pq);
-      std::cout << "Sim: " << w << std::endl;
+      ROS_DEBUG_STREAM("Sim: " << w);
       if (w < 0.70) continue;
       landmarks_queue.push( Landmark(w, p, q) );
     }
@@ -305,13 +302,13 @@ GeometryMap::computeTfError(const std::vector<Polygon::Ptr>& list_polygon, const
     tfe(DOF6::TFLinkvf::TFLinkObj( d2 * m , true, false, weight),
         DOF6::TFLinkvf::TFLinkObj( d1 * n , true, false, weight));
 
-    std::cout<<"%Overlap: "<<lm.get<0>()<<" Weigth: "<<weight<<std::endl;
-    std::cout<<"%Area(old/new): "<<map_polygon_[lm.get<1>()]->computeArea3d()<<", "
-             <<list_polygon[lm.get<2>()]->computeArea3d()<<std::endl;
-    std::cout<<"vector_a"<<i<<" = ["<<n(0)<<","<<n(1)<<","<<n(2)<<"];"<<std::endl;
-    std::cout<<"vector_b"<<i<<" = ["<<m(0)<<","<<m(1)<<","<<m(2)<<"];"<<std::endl;
-    std::cout<<"origin_a"<<i<<" = "<<d1<<" * vector_a"<<i<<";"<<std::endl;
-    std::cout<<"origin_b"<<i<<" = "<<d2<<" * vector_b"<<i<<";"<<std::endl;
+    ROS_DEBUG_STREAM("%Overlap: "<<lm.get<0>()<<" Weigth: "<<weight);
+    ROS_DEBUG_STREAM("%Area(old/new): "<<map_polygon_[lm.get<1>()]->computeArea3d()<<", "
+    <<list_polygon[lm.get<2>()]->computeArea3d());
+    ROS_DEBUG_STREAM("vector_a"<<i<<" = ["<<n(0)<<","<<n(1)<<","<<n(2)<<"];");
+    ROS_DEBUG_STREAM("vector_b"<<i<<" = ["<<m(0)<<","<<m(1)<<","<<m(2)<<"];");
+    ROS_DEBUG_STREAM("origin_a"<<i<<" = "<<d1<<" * vector_a"<<i<<";");
+    ROS_DEBUG_STREAM("origin_b"<<i<<" = "<<d2<<" * vector_b"<<i<<";");
     ++i;
   }
 
@@ -323,7 +320,7 @@ GeometryMap::computeTfError(const std::vector<Polygon::Ptr>& list_polygon, const
 
   float roll, pitch, yaw;
   pcl::getEulerAngles(tf, roll, pitch, yaw);
-  std::cout<<"Angles: r="<<roll*180.0f/M_PI<<" p="<<pitch*180.0f/M_PI<<" y="<<yaw*180.0f/M_PI<<std::endl;
+  ROS_DEBUG_STREAM("Angles: r="<<roll*180.0f/M_PI<<" p="<<pitch*180.0f/M_PI<<" y="<<yaw*180.0f/M_PI);
 
   adjust_tf = tf;
   last_tf_err_ = adjust_tf;
@@ -338,7 +335,6 @@ GeometryMap::cleanUp()
   int n_dropped = 0, m_dropped = 0, c_dropped=0;
   for(int idx = map_polygon_.size() - 1 ; idx >= 0; --idx)
   {
-    //std::cout << map_polygon_[idx]->merged <<", " << (frame_counter_ - 3) <<" > "<<(int)map_polygon_[idx]->frame_stamp<<std::endl;
     if (map_polygon_[idx]->merged <= 1 && (frame_counter_ - 3) > (int)map_polygon_[idx]->frame_stamp)
     {
       map_polygon_[idx] = map_polygon_.back();
@@ -348,11 +344,10 @@ GeometryMap::cleanUp()
   }
 
 
-
   for(int idx = map_cylinder_.size() - 1 ; idx >= 0; --idx)
   {
   bool drop_cyl=false;
-      std::cout<<"merged:"<<(int)map_cylinder_[idx]->merged<<" frame ctr:"<<frame_counter_<<" frame st:"<<(int)map_cylinder_[idx]->frame_stamp<<" size:"<<(int)map_cylinder_[idx]->contours[0].size()<<"\n";
+      ROS_DEBUG_STREAM("merged:"<<(int)map_cylinder_[idx]->merged<<" frame ctr:"<<frame_counter_<<" frame st:"<<(int)map_cylinder_[idx]->frame_stamp<<" size:"<<(int)map_cylinder_[idx]->contours[0].size());
 
     if (map_cylinder_[idx]->merged <= 1 && (frame_counter_ - 2) > (int)map_cylinder_[idx]->frame_stamp)
         {
@@ -367,10 +362,6 @@ GeometryMap::cleanUp()
         {
         drop_cyl=true;
         } 
-   // if (map_cylinder_[idx]->sym_axis.dot(dummy)<0.80)
-   //     {
-   //     drop_cyl = true;
-   //     }
     if ( drop_cyl==true)
     {        
       map_cylinder_[idx] = map_cylinder_.back();
@@ -380,7 +371,7 @@ GeometryMap::cleanUp()
   }
   for(int idx = map_shape_cluster_.size() - 1 ; idx >= 0; --idx)
   {
-    std::cout << map_shape_cluster_[idx]->merged <<", " << (frame_counter_ - 3) <<" > "<<(int)map_shape_cluster_[idx]->frame_stamp<<std::endl;
+    ROS_DEBUG_STREAM( map_shape_cluster_[idx]->merged <<", " << (frame_counter_ - 3) <<" > "<<(int)map_shape_cluster_[idx]->frame_stamp);
     if (map_shape_cluster_[idx]->merged <= 1 && (frame_counter_ - 3) > (int)map_shape_cluster_[idx]->frame_stamp)
     {
       map_shape_cluster_[idx] = map_shape_cluster_.back();
@@ -388,59 +379,7 @@ GeometryMap::cleanUp()
       ++m_dropped;
     }
   }
-  std::cout << "Dropped " << n_dropped << " Polys, "<<c_dropped<<" Cyls, " << m_dropped << " Clusters" << std::endl;
-  // TODO: clean up cylinders
-}
-
-
-void
-GeometryMap::printMapEntry(cob_3d_mapping::Polygon& p)
-{
-  for(int i=0; i< (int)p.contours.size(); i++)
-  {
-    std::cout << i << std::endl;
-    for(int j=0; j< (int)p.contours[i].size(); j++)
-    {
-      std::cout << "(" << p.contours[i][j](0) << ", " << p.contours[i][j](1) << ", " << p.contours[i][j](2) << ")\n";
-    }
-  }
-  std::cout << "Normal: (" << p.normal(0) << ", " << p.normal(1) << ", " << p.normal(2) << ")\n";
-  std::cout << "d: " << p.d << std::endl;
-  std::cout << "Transformation:\n" << p.transform_from_world_to_plane.matrix() << "\n";
-}
-
-
-void
-GeometryMap::printMap()
-{
-  std::stringstream ss;
-
-  ss << "/home/goa-tz/GM_test/map/outputfile_" << counter_output << ".txt";
-  std::ofstream outputFile2;
-  outputFile2.open(ss.str().c_str());
-
-
-  for(int i=0; i< (int)map_polygon_.size(); i++)
-  {
-
-    Polygon& p =*map_polygon_[i];
-
-    outputFile2 <<"ID: " << i << "trafo " << std::endl <<  p.transform_from_world_to_plane.matrix() <<std::endl;
-    outputFile2 << "normal:" << std::endl << p.normal << std::endl << "d: " << p.d << std::endl;
-    outputFile2 << "Polygon:\n";
-    for(int i=0; i< (int)p.contours.size(); i++)
-    {
-      outputFile2 << i << std::endl;
-      for(int j=0; j< (int)p.contours[i].size(); j++)
-      {
-        outputFile2 << "(" << p.contours[i][j](0) << ", " << p.contours[i][j](1) << ", " << p.contours[i][j](2) << ")\n";
-      }
-    }
-    outputFile2 << "----------------------------";
-
-  }
-  outputFile2.close();
-  counter_output++;
+  ROS_DEBUG_STREAM("Dropped " << n_dropped << " Polys, "<<c_dropped<<" Cyls, " << m_dropped << " Clusters" );
 }
 
 
@@ -467,13 +406,11 @@ GeometryMap::saveMapEntry(std::string path, int ctr, cob_3d_mapping::Polygon& p)
       pt.z = p.contours[i][j](2);
       pc.points.push_back(pt);
     }
-    //std::cout << ss.str() << std::endl;
     pcl::io::savePCDFileASCII (ss.str(), pc);
     ss.str("");
     ss.clear();
   }
 }
-
 
 void
 GeometryMap::saveMap(std::string path)
@@ -483,7 +420,6 @@ GeometryMap::saveMap(std::string path)
   static int ctr=0;
   std::stringstream ss;
   ss << path << "/" << ctr << "_";
-  //std::cout << ctr << " Saving map with " << map_.size() << " entries..." << std::endl;
   for(size_t i=0; i< map_polygon_.size(); i++)
   {
     saveMapEntry(ss.str(), i, *map_polygon_[i]);
@@ -498,7 +434,6 @@ GeometryMap::clearMap()
   map_polygon_.clear();
   map_cylinder_.clear();
 }
-
 
 
 
@@ -579,6 +514,7 @@ GeometryMap::colorizeMap()
 
 
 
+
 int main (int argc, char** argv)
 {
   GeometryMap gm;
@@ -621,6 +557,5 @@ int main (int argc, char** argv)
   m_p2->holes.push_back(0);
   gm.addMapEntry(m_p2);
 
-  std::cout<<"done"<<std::endl;
   return 1;
 }

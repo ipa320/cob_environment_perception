@@ -9,7 +9,7 @@
 	<include file="$(find cob_3d_mapping_demonstrator)/ros/launch/upload_params.launch"/>
 	
 	<!-- start dashboards -->
-	<node pkg="cob_dashboard" type="cob_dashboard" name="$(anon dashboard_node)" cwd="node" respawn="false" output="screen" />
+	<!--node pkg="cob_dashboard" type="cob_dashboard" name="$(anon dashboard_node)" cwd="node" respawn="false" output="screen" /-->
 	<node pkg="cob_command_gui" type="knoeppkes.py" name="$(anon command_gui_node)" ns="dashboard" cwd="node" respawn="false" output="screen" />
 	
 </launch>

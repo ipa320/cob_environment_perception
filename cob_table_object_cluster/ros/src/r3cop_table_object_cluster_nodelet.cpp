@@ -106,7 +106,7 @@ using namespace cob_table_object_cluster;
 class TableObjectClusterNodelet : public pcl_ros::PCLNodelet
 {
 public:
-  typedef pcl::PointXYZ Point;
+  typedef pcl::PointXYZRGB Point;
   // Constructor
   TableObjectClusterNodelet()
   : as_(0)
@@ -204,10 +204,10 @@ public:
     cob_3d_mapping_msgs::GetBoundingBoxes srv2;
     if(get_bb_client_.call(srv2))
     {
-      std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > > known_objs;
+      std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > > known_objs;
       for(unsigned int i=0; i<srv2.response.bounding_boxes.size(); i++)
       {
-        pcl::PointCloud<Point> obj;
+        pcl::PointCloud<pcl::PointXYZ> obj;
         pcl::fromROSMsg(srv2.response.bounding_boxes[i], obj);
         known_objs.push_back(obj);
       }
@@ -230,7 +230,7 @@ public:
       pc_roi_red = pc_roi;
     }
 
-    std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > > bounding_boxes;
+    std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > > bounding_boxes;
     toc.calculateBoundingBoxes(pc_roi_red,bounding_boxes);
     for(unsigned int i=0; i< bounding_boxes.size(); i++)
     {

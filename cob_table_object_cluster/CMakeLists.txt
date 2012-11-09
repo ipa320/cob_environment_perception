@@ -23,6 +23,8 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
 
+rosbuild_add_boost_directories()
+
 #uncomment if you have defined messages
 #rosbuild_genmsg()
 #uncomment if you have defined services
@@ -30,11 +32,12 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
 
 rosbuild_add_library(cob_table_object_cluster
 	common/src/table_object_cluster.cpp)
-rosbuild_add_library(cob_table_object_cluster_nodelets
-	ros/src/r3cop_table_object_cluster_nodelet.cpp)
+#rosbuild_add_library(cob_table_object_cluster_nodelets
+#	ros/src/r3cop_table_object_cluster_nodelet.cpp)
 
 rosbuild_add_executable(table_object_cluster_action_client ros/src/table_object_cluster_action_client.cpp)
 rosbuild_add_executable(table_object_cluster_node  ros/src/table_object_cluster_node.cpp)
+rosbuild_link_boost(table_object_cluster_node signals)
 
 target_link_libraries(table_object_cluster_node cob_table_object_cluster)
 

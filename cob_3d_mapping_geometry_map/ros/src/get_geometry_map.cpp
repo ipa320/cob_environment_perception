@@ -14,14 +14,14 @@
  * \note
  *  ROS stack name: cob_environment_perception
  * \note
- *  ROS package name: cob_3d_mapping_point_map
+ *  ROS package name: cob_3d_mapping_geometry_map
  *
  * \author
  *  Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  * \author
  *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * \date Date of creation: 11/2011
+ * \date Date of creation: 12/2011
  *
  * \brief
  * Description:
@@ -62,46 +62,51 @@
 
 // ROS includes
 #include <ros/ros.h>
+#include <rosbag/bag.h>
 
 // ROS message includes
-#include <cob_3d_mapping_msgs/GetPointMap.h>
+#include <cob_3d_mapping_msgs/GetGeometryMap.h>
+#include <cob_3d_mapping_msgs/ShapeArray.h>
 
 // PCL includes
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 
+
 int main (int argc, char **argv)
 {
   if(argc<1) {
-    ROS_ERROR("Please specify output file\nrosrun cob_3d_mapping_point_map get_map_client myfile.pcd");
+    ROS_ERROR("Please specify output file\nrosrun cob_3d_mapping_geometry_map get_map_client myfile.bag");
     return -1;
   }
-  ros::init(argc, argv, "get_point_map");
+  ros::init(argc, argv, "get_geoemtry_map");
 
   ros::NodeHandle nh;
 
   ROS_INFO("Waiting for service server to start.");
-  ros::service::waitForService("/point_map/get_map"); //will wait for infinite time
+  ros::service::waitForService("/geometry_map/get_map"); //will wait for infinite time
 
   ROS_INFO("Server started, polling map.");
 
   //build message
-  cob_3d_mapping_msgs::GetPointMapRequest req;
-  cob_3d_mapping_msgs::GetPointMapResponse resp;
+  cob_3d_mapping_msgs::GetGeometryMapRequest req;
+  cob_3d_mapping_msgs::GetGeometryMapResponse resp;
 
-  if (ros::service::call("/point_map/get_map", req,resp))
+  if (ros::service::call("/geometry_map/get_map", req,resp))
   {
     ROS_INFO("Service call finished.");
   }
   else
   {
-    ROS_INFO("[get map client]: Service call failed.");
+    ROS_INFO("Service call failed.");
     return 0;
   }
 
-  pcl::PointCloud<pcl::PointXYZRGB> map;
-  pcl::fromROSMsg(resp.map, map);
-  pcl::io::savePCDFile(argv[1],map,false);
+  rosbag::Bag bag;
+  bag.open(argv[1], rosbag::bagmode::Write);
+  bag.write("/geometry_map/map_array", resp.map.header.stamp, resp.map);
+
+  bag.close();
 
   //exit
   return 0;
