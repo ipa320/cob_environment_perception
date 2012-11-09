@@ -126,7 +126,7 @@ template<typename RT>
 Gui::Resource<RT>* Gui::ResourceManager::create(const std::string& name, const std::string& file, ResourceTypes::BaseCloud)
 {
   typename RT::DataTypePtr tmp_data(new typename RT::DataTypeRaw);
-  if (pcl::io::loadPCDFile<RT::PointType>(file, *tmp_data) < 0) return NULL;
+  if (pcl::io::loadPCDFile<typename RT::PointType>(file, *tmp_data) < 0) return NULL;
   return create<RT>(name,tmp_data);
 }
 

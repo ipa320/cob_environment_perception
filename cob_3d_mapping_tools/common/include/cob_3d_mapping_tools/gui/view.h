@@ -119,6 +119,7 @@ namespace Gui
     void reloadData(ResourceTypes::Image, ViewTypes::Color);
     template<typename PT> void reloadData(ResourceTypes::OrganizedPointCloud<PT>, ViewTypes::Color);
     template<typename PT> void reloadData(ResourceTypes::OrganizedPointCloud<PT>, ViewTypes::Depth_Z);
+    template<typename PT, size_t Channel> void reloadData(ResourceTypes::OrganizedPointCloud<PT>, ViewTypes::Normal<Channel>);
 
     Resource<RT>* r_ptr;
     boost::signal<void (wxMouseEvent&, Resource<RT>*)> mouse_sig_;
