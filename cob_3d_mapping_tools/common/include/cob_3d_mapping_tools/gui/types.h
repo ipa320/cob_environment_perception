@@ -83,6 +83,8 @@ namespace Gui
 
     struct Color : public View2D { static const std::string STR; };
     struct Depth_Z : public View2D { static const std::string STR; };
+    template<size_t Channel>
+    struct Normal : public View2D { static const std::string STR; };
 
     // not implemented, totally different approach necessary! use OnIdle in MainApp -> wxApp
     struct Depth_3D : public View3D { static const std::string STR; };
@@ -92,6 +94,9 @@ namespace Gui
 
     const std::string Color::STR = "Color View";
     const std::string Depth_Z::STR = "Depth View";
+    template<> const std::string Normal<0>::STR = "Normal x View";
+    template<> const std::string Normal<1>::STR = "Normal y View";
+    template<> const std::string Normal<2>::STR = "Normal z View";
     const std::string Depth_3D::STR = "Depth3D View";
     const std::string Histogram::STR = "Histogram View";
     const std::string Curvature::STR = "Curvature View";

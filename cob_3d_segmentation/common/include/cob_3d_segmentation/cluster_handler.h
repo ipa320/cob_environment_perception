@@ -273,7 +273,6 @@ namespace cob_3d_segmentation
         for(std::vector<PolygonPoint>::iterator bp = c->border_points.begin(); bp != c->border_points.end(); ++bp)
         {
           points->points[PolygonPoint::getInd(bp->x,bp->y)].rgb = LBL_BORDER;
-//surface_->points[PolygonPoint::getInd(bp->x,bp->y)].rgb;
         }
       }
     }

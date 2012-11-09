@@ -127,6 +127,9 @@ rosbuild_link_boost(test_hsv_tool program_options signals)
 rosbuild_add_executable(bag_gui ros/src/bag_gui.cpp)
 target_link_libraries(bag_gui ${wxWidgets_LIBRARIES} cob_3d_mapping_tools)
 
+rosbuild_add_executable(gui_normals common/src/gui_normals.cpp)
+target_link_libraries(gui_normals ${wxWidgets_LIBRARIES} cob_3d_mapping_tools)
+
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
 #target_link_libraries(${PROJECT_NAME} another_library)

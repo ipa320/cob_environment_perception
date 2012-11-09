@@ -182,6 +182,43 @@ void Gui::View<RT,VT>::reloadData(ResourceTypes::OrganizedPointCloud<PT>, ViewTy
 }
 
 
+/* --------- Res: Organized PC -|- View: Normal ---------*/
+/* -----------------------------------------------------*/
+template<typename RT, typename VT>
+template<typename PT, size_t Channel>
+void Gui::View<RT,VT>::reloadData(ResourceTypes::OrganizedPointCloud<PT>, ViewTypes::Normal<Channel>)
+{
+  typedef Gui::ImageView<Gui::ResourceTypes::OrganizedPointCloud<PT>, Gui::ViewTypes::Normal<Channel> > IV;
+
+  int w = this->r_ptr->getData()->width;
+  int h = this->r_ptr->getData()->height;
+  static_cast<IV*>(this)->bmp_.reset(new wxBitmap(w,h));
+  wxNativePixelData data(*(static_cast<IV*>(this)->bmp_));
+  wxNativePixelData::Iterator pwx(data);
+  cv::Vec3b bgr;
+  for(int row = 0; row < h; ++row)
+  {
+    for(int col = 0; col < w; ++col, ++pwx)
+    {
+      PT* ppc = &(*this->r_ptr->getData())[col + row * w];
+      if(ppc->normal[Channel] != ppc->normal[Channel])
+      {
+        pwx.Red() = 0;
+        pwx.Green() = 255.0f;
+        pwx.Blue() = 0;
+      }
+      else
+      {
+        int n_n = (ppc->normal[Channel] + 1.0f) * 127.5f;
+        pwx.Red() = n_n;
+        pwx.Green() = n_n;
+        pwx.Blue() = n_n;
+      }
+    }
+  }
+}
+
+
   /* -----------------------------*/
  /* --------- ImageView ---------*/
 /* -----------------------------*/
