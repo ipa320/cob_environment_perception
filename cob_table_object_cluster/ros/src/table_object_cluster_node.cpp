@@ -228,7 +228,7 @@ public:
       pc_roi_red = pc_roi;
     }*/
 
-    std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > > bounding_boxes;
+    std::vector<pcl::PointCloud<pcl::PointXYZ> > bounding_boxes;
     std::vector<PointCloud::Ptr> object_clusters;
     toc.calculateBoundingBoxes(pc_roi, object_clusters, bounding_boxes);
     for(unsigned int i=0; i< bounding_boxes.size(); i++)
@@ -236,8 +236,8 @@ public:
       sensor_msgs::PointCloud2 bb;
       pcl::toROSMsg(bounding_boxes[i], bb);
       result.bounding_boxes.push_back(bb);
-      publishMarker(bounding_boxes[i]);
     }
+    publishMarker(bounding_boxes);
 
     if(save_to_file_)
     {
@@ -273,6 +273,7 @@ public:
   topicCallback(const PointCloud::ConstPtr& pc, const cob_3d_mapping_msgs::ShapeArray::ConstPtr& sa)
   {
     //PointCloud pc_in = *pc;
+    frame_id_ = sa->header.frame_id;
     PointCloud::Ptr pc_in_ptr = pc->makeShared();
     for( unsigned int i=0; i< sa->shapes.size(); i++)
     {
@@ -322,7 +323,7 @@ public:
         ss.str("");
         ss.clear();
       }
-      std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > > bounding_boxes;
+      std::vector<pcl::PointCloud<pcl::PointXYZ> > bounding_boxes;
       std::vector<PointCloud::Ptr> object_clusters;
       toc.calculateBoundingBoxes(pc_roi, object_clusters, bounding_boxes);
       ROS_INFO("Computed %d bounding boxes", object_clusters.size());
@@ -336,13 +337,18 @@ public:
         pca.segments.push_back(pc_msg);
         if(save_to_file_)
         {
-          ss << file_path_ << "/bb_" << j << ".pcd";
+          ss << file_path_ << "/cl_" << j << ".pcd";
           pcl::io::savePCDFileASCII (ss.str(), *object_clusters[j]);
+          ss.str("");
+          ss.clear();
+          ss << file_path_ << "/bb_" << j << ".pcd";
+          pcl::io::savePCDFileASCII (ss.str(), bounding_boxes[j]);
           ss.str("");
           ss.clear();
         }
       }
       object_cluster_pub_.publish(pca);
+      publishMarker(bounding_boxes);
     }
   }
 
@@ -354,50 +360,52 @@ public:
    * @return nothing
    */
   void
-  publishMarker(pcl::PointCloud<pcl::PointXYZ>& bb)
+  publishMarker(std::vector<pcl::PointCloud<pcl::PointXYZ> >& bb)
   {
-    visualization_msgs::Marker marker;
-    marker.action = visualization_msgs::Marker::ADD;
-    marker.type = visualization_msgs::Marker::LINE_LIST;
-    marker.lifetime = ros::Duration();
-    marker.header.frame_id = "/map";
-    marker.id = ctr_;
+    for(unsigned int i=0; i<bb.size(); i++)
+    {
+      visualization_msgs::Marker marker;
+      marker.action = visualization_msgs::Marker::ADD;
+      marker.type = visualization_msgs::Marker::LINE_LIST;
+      marker.lifetime = ros::Duration();
+      marker.header.frame_id = frame_id_;
+      marker.id = i;
 
-    //marker.header.stamp = stamp;
+      //marker.header.stamp = stamp;
 
-    //create the marker in the table reference frame
-    //the caller is responsible for setting the pose of the marker to match
+      //create the marker in the table reference frame
+      //the caller is responsible for setting the pose of the marker to match
 
-    marker.scale.x = 0.02;
-    marker.color.r = 0;
-    marker.color.g = 1;
-    marker.color.b = 0;
-    marker.color.a = 1.0;
+      marker.scale.x = 0.02;
+      marker.color.r = 0;
+      marker.color.g = 1;
+      marker.color.b = 0;
+      marker.color.a = 1.0;
 
-    marker.points.resize(24);
-    geometry_msgs::Point pt;
-    pt.x = bb.points[0].x;
-    pt.y = bb.points[0].y;
-    pt.z = bb.points[0].z;
-    marker.points[0] = marker.points[2] = marker.points[4] = pt;
-    pt.x = bb.points[1].x;
-    marker.points[1] = marker.points[12] = marker.points[14] = pt;
-    pt.y = bb.points[1].y;
-    marker.points[11] = marker.points[15] = marker.points[19] = pt;
-    pt.z = bb.points[1].z;
-    marker.points[6] = marker.points[8] = marker.points[10] = pt;
-    pt.x = bb.points[0].x;
-    marker.points[7] = marker.points[17] = marker.points[23] = pt;
-    pt.y = bb.points[0].y;
-    marker.points[5] = marker.points[20] = marker.points[22] = pt;
-    pt.x = bb.points[1].x;
-    marker.points[9] = marker.points[13] = marker.points[21] = pt;
-    pt.x = bb.points[0].x;
-    pt.y = bb.points[1].y;
-    pt.z = bb.points[0].z;
-    marker.points[3] = marker.points[16] = marker.points[18] = pt;
-    bb_pub_.publish(marker);
-    ctr_++;
+      marker.points.resize(24);
+      geometry_msgs::Point pt;
+      pt.x = bb[i].points[0].x;
+      pt.y = bb[i].points[0].y;
+      pt.z = bb[i].points[0].z;
+      marker.points[0] = marker.points[2] = marker.points[4] = pt;
+      pt.x = bb[i].points[1].x;
+      marker.points[1] = marker.points[12] = marker.points[14] = pt;
+      pt.y = bb[i].points[1].y;
+      marker.points[11] = marker.points[15] = marker.points[19] = pt;
+      pt.z = bb[i].points[1].z;
+      marker.points[6] = marker.points[8] = marker.points[10] = pt;
+      pt.x = bb[i].points[0].x;
+      marker.points[7] = marker.points[17] = marker.points[23] = pt;
+      pt.y = bb[i].points[0].y;
+      marker.points[5] = marker.points[20] = marker.points[22] = pt;
+      pt.x = bb[i].points[1].x;
+      marker.points[9] = marker.points[13] = marker.points[21] = pt;
+      pt.x = bb[i].points[0].x;
+      pt.y = bb[i].points[1].y;
+      pt.z = bb[i].points[0].z;
+      marker.points[3] = marker.points[16] = marker.points[18] = pt;
+      bb_pub_.publish(marker);
+    }
   }
 
   void
@@ -430,6 +438,7 @@ protected:
 
   TableObjectCluster toc;       /// class for actual calculation
   unsigned int ctr_;
+  std::string frame_id_;
 
   bool save_to_file_;
   std::string file_path_;

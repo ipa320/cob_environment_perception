@@ -63,6 +63,7 @@
 #include <pcl/sample_consensus/sac_model_plane.h>
 #include <pcl/surface/convex_hull.h>
 #include <pcl/io/pcd_io.h>
+//#include <pcl/search/organized.h>
 
   //aditional includes
 #include <ros/console.h>
@@ -164,10 +165,11 @@ TableObjectCluster::removeKnownObjects(pcl::PointCloud<Point>::Ptr& pc_roi,
 void
 TableObjectCluster::calculateBoundingBoxes(pcl::PointCloud<Point>::Ptr& pc_roi_red,
                                            std::vector<pcl::PointCloud<Point>::Ptr >& object_clusters,
-                   std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > >& bounding_boxes)
+                   std::vector<pcl::PointCloud<pcl::PointXYZ> >& bounding_boxes)
 {
   #ifdef PCL_VERSION_COMPARE //fuerte
     pcl::search::KdTree<Point>::Ptr clusters_tree (new pcl::search::KdTree<Point>());
+    //pcl::search::OrganizedNeighbor<Point>::Ptr clusters_tree( new pcl::search::OrganizedNeighbor<Point>());
   #else //electric
     pcl::KdTreeFLANN<Point>::Ptr clusters_tree (new pcl::KdTreeFLANN<Point> ());
   #endif
@@ -193,7 +195,7 @@ TableObjectCluster::calculateBoundingBoxes(pcl::PointCloud<Point>::Ptr& pc_roi_r
     pcl::PointCloud<pcl::PointXYZ> bb;
     Eigen::Vector4f min_pt, max_pt;
     pcl::getMinMax3D(*pc_roi_red, object_cluster_indices[i], min_pt, max_pt);
-    if(fabs(max_pt(2)-min_pt(2))<0.03) continue;
+    //if(fabs(max_pt(2)-min_pt(2))<0.03) continue;
     pcl::PointXYZ p;
     p.x = min_pt(0);
     p.y = min_pt(1);
