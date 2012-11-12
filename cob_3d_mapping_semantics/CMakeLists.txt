@@ -27,14 +27,17 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
 #rosbuild_genmsg()
 #uncomment if you have defined services
 rosbuild_gensrv()
-rosbuild_add_library(cob_3d_mapping_semantics common/src/table_extraction.cpp)
+rosbuild_add_library(cob_3d_mapping_semantics common/src/table_extraction.cpp
+    common/src/supporting_plane_extraction.cpp)
 
 #rosbuild_add_executable(semantic_extraction common/src/semantic_extraction.cpp)
 rosbuild_add_executable(table_extraction_node ros/src/table_extraction_node.cpp)
+rosbuild_add_executable(supporting_plane_extraction_node ros/src/supporting_plane_extraction_node.cpp)
 rosbuild_add_executable(get_tables_client ros/src/get_tables_client.cpp)
 rosbuild_add_executable(move_to_table_node ros/src/move_to_table_node.cpp)
 
 target_link_libraries(table_extraction_node cob_3d_mapping_semantics)
+target_link_libraries(supporting_plane_extraction_node cob_3d_mapping_semantics)
 #target_link_libraries(map_client cob_3d_mapping_semantics)
 
 #common commands for building c++ executables and libraries
