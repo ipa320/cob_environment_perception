@@ -54,14 +54,17 @@
  ****************************************************************/
 #include <cob_3d_mapping_semantics/move_to_table_node.h>
 using namespace std ;
-/**
- * @brief transforms a point to table coordinate system
- *
- * @param table table msg
- * @param pose the pose which needs to be transformed ro table coordinate system
- *
- * @return the transformed point
- */
+
+/*
+ * MoveToTable constructor
+ * */
+MoveToTableNode::MoveToTableNode(){
+  move_to_table_server_ = n_.advertiseService ("move_to_table", &MoveToTableNode::moveToTableService, this);
+  safe_dist_ = 0.7 ; // should be set to a predefined safe distance
+  table_im_server_.reset (new interactive_markers::InteractiveMarkerServer ("geometry_map/map", "", false));
+  navigation_goal_pub_ = n_.advertise<geometry_msgs::PoseStamped> ("move_base_simple/goal", 1);
+}
+
 Eigen::Quaternionf MoveToTableNode::faceTable(geometry_msgs::Pose finalPose){
 
   Eigen::Vector2f finalTarget ;
@@ -123,11 +126,7 @@ geometry_msgs::Pose MoveToTableNode::transformToTableCoordinateSystem(tabletop_o
   return translatedPose ;
 
 }
-/**
- * @brief finds whether there is an intersection between the line through the robot pose and table centroid and the boundies of the table
- *
- * @return true if there exists an Intersection
- */
+
 bool MoveToTableNode::doIntersect(float line){
 
   bool intersection(false) ;
@@ -192,10 +191,7 @@ bool MoveToTableNode::doIntersect(float line){
   }
   return intersection ;
 }
-/**
- * @brief finds the intersection between the line through the robot pose and table centroid and the boundies of the table
- * @return the intersection point
- */
+
 geometry_msgs::Pose MoveToTableNode::findIntersectionPoint(){
 
   geometry_msgs::Pose IntersectionPoint ;
@@ -234,11 +230,7 @@ geometry_msgs::Pose MoveToTableNode::findIntersectionPoint(){
   return IntersectionPoint ;
 
 }
-/**
- * @brief finds a safe position in the vicinity of the table as the target
- *
- * @return the position of the target point
- */
+
 geometry_msgs::Pose MoveToTableNode::findSafeTargetPoint(){
 
   geometry_msgs::Pose intersectionPoint = findIntersectionPoint() ;
@@ -273,10 +265,7 @@ geometry_msgs::Pose MoveToTableNode::findSafeTargetPoint(){
   return finalTarget ;
 
 }
-/**
- * @brief adds a marker for showing the final target
- * @return nothing
- */
+
 void MoveToTableNode::addMarkerForFinalPose(geometry_msgs::Pose finalPose) {
 
   std::stringstream ss;
@@ -319,12 +308,6 @@ void MoveToTableNode::addMarkerForFinalPose(geometry_msgs::Pose finalPose) {
   marker.points[1].y = finalPose.position.y ;
   marker.points[1].z = finalPose.position.z;
 
-
-  //    marker.pose.position.x = robotPose_.position.x;
-  //    marker.pose.position.y = robotPose_.position.y;
-  //    marker.pose.position.z = robotPose_.position.z;
-
-
   visualization_msgs::InteractiveMarkerControl im_ctrl;
 
   im_ctrl.always_visible = true;
@@ -336,13 +319,7 @@ void MoveToTableNode::addMarkerForFinalPose(geometry_msgs::Pose finalPose) {
   table_im_server_->insert (imarker);
   table_im_server_->applyChanges() ;
 }
-/**
- * @brief service callback for MoveToTable service
- * @param req request  to move to table
- * @param res empty response
- *
- * @return nothing
- */
+
 bool MoveToTableNode::moveToTableService (cob_3d_mapping_msgs::MoveToTable::Request &req,
     cob_3d_mapping_msgs::MoveToTable::Response &res)
 {
