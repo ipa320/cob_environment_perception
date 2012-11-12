@@ -57,25 +57,56 @@
 #include <cob_3d_visualization/table_marker.h>
 
 TableMarker::TableMarker (boost::shared_ptr<interactive_markers::InteractiveMarkerServer> server,cob_3d_mapping_msgs::Shape& table,int ctr,
-        tabletop_object_detector::Table& tableMsg)
-    {
-      id_ = ctr ;
-      table_im_server_ = server ;
-      table_ = table ;
-      goal_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/move_base_linear_simple/goal", 1);
+    tabletop_object_detector::Table& tableMsg)
+{
+  id_ = ctr ;
+  table_im_server_ = server ;
+  table_ = table ;
+  goal_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/move_base_linear_simple/goal", 1);
 
-      createTableMenu();
-      createInteractiveMarkerForTable();
-      //Table msg
-      table_msg_ = tableMsg ;
-    }
+  createTableMenu();
+  createInteractiveMarkerForTable();
+  //Table msg
+  table_msg_ = tableMsg ;
+}
 
 void TableMarker::createInteractiveMarkerForTable ()
 {
-  float offset(0.1);
-  //  ctr_ ++;
   cob_3d_mapping::Polygon p;
   cob_3d_mapping::fromROSMsg (table_, p);
+
+
+
+  /* create interactive marker for *this shape */
+  stringstream ss;
+  ss << "table_"<< id_ ; //ctr_ ;
+  table_int_marker_.name = ss.str ();
+  table_int_marker_.header = table_.header;
+  table_int_marker_.header.stamp = ros::Time::now() ;
+
+  ss.str ("");
+  im_ctrl.always_visible = true;
+  ss << "table_" << id_ << "_control";
+  im_ctrl.name = ss.str ();
+  im_ctrl.description = "table_markers";
+  im_ctrl.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
+
+  /* create marker */
+  createMarkerforTable (im_ctrl);
+
+  table_int_marker_.controls.push_back (im_ctrl);
+  table_im_server_->insert (table_int_marker_);
+
+
+  table_menu_handler_.apply (*table_im_server_, table_int_marker_.name);
+  table_im_server_ ->applyChanges() ;
+
+}
+
+void
+TableMarker::createMarkerforTable (visualization_msgs::InteractiveMarkerControl& im_ctrl)
+{
+  float offset(0.1);
 
   //  /* transform shape points to 2d and store 2d point in triangle list */
   TPPLPartition pp;
@@ -116,38 +147,8 @@ void TableMarker::createInteractiveMarkerForTable ()
     polys.push_back (poly);
   }
   pp.Triangulate_EC (&polys, &tri_list);
-
-  /* create interactive marker for *this shape */
-  stringstream ss;
-  ss << "table_"<< id_ ; //ctr_ ;
-  table_int_marker_.name = ss.str ();
-  table_int_marker_.header = table_.header;
-  table_int_marker_.header.stamp = ros::Time::now() ;
-
-  ss.str ("");
-  im_ctrl.always_visible = true;
-  ss << "table_" << id_ << "_control";
-  im_ctrl.name = ss.str ();
-  im_ctrl.description = "table_markers";
-  im_ctrl.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
-
-  /* create marker */
-  createMarkerforTable (tri_list, im_ctrl);
-
-  table_int_marker_.controls.push_back (im_ctrl);
-  table_im_server_->insert (table_int_marker_);
-
-
-  table_menu_handler_.apply (*table_im_server_, table_int_marker_.name);
-  table_im_server_ ->applyChanges() ;
-
-}
-
-void
-TableMarker::createMarkerforTable (list<TPPLPoly>& triangle_list, visualization_msgs::InteractiveMarkerControl& im_ctrl)
-{
   TPPLPoint pt;
-  for (std::list<TPPLPoly>::iterator it = triangle_list.begin (); it != triangle_list.end (); it++)
+  for (std::list<TPPLPoly>::iterator it = tri_list.begin (); it != tri_list.end (); it++)
   {
     table_marker_.id = id_ ; //ctr_;
 
@@ -236,7 +237,7 @@ void TableMarker::MoveToTheTable(const visualization_msgs::InteractiveMarkerFeed
   reqMoveToTable.tableCentroid.position.z = table_.centroid.z ;
 
   if (ros::service::call("/move_to_table",reqMoveToTable,resMoveToTable)){
-      // Calling move_to_table Service...
+    // Calling move_to_table Service...
   }
 
 }

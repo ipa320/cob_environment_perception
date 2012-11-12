@@ -198,7 +198,7 @@ class ShapeMarker
      * @param[in] im_ctrl interactive marker control
      *
      */
-    void createMarker (list<TPPLPoly>& triangle_list,visualization_msgs::InteractiveMarkerControl& im_ctrl);
+    void createMarker (visualization_msgs::InteractiveMarkerControl& im_ctrl);
     /**
      * @brief Publish interactive markers for a shape message using interactive marker server
      */
