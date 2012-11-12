@@ -119,7 +119,7 @@ class TableMarker
      * @param[in] im_ctrl interactive marker control
      *
      */
-    void createMarkerforTable (list<TPPLPoly>& triangle_list,visualization_msgs::InteractiveMarkerControl& im_ctrl);
+    void createMarkerforTable (visualization_msgs::InteractiveMarkerControl& im_ctrl);
     /**
      * @brief Publish interactive markers for a table detected by table_extractiion node using interactive marker server
      */
