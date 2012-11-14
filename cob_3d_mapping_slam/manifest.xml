@@ -20,6 +20,7 @@
 	<depend package="dynamic_tutorials" /> <!-- voruebergehend -->
 
     <rosdep name="nurbs++" />
+    <rosdep name="libcgal-dev" />
 
 	<export>
 		<rosdoc config="rosdoc.yaml" />
