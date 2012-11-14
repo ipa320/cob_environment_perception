@@ -46,7 +46,7 @@
 //#define ENABLE_TEST_16
 //#define ENABLE_TEST_17
 #define ENABLE_TEST_18
-
+#define ENABLE_TEST_19
 
 struct MyFunctor
 {
@@ -744,6 +744,31 @@ void test12()
   inst.nextPoint(p);
 }
 
+#include <cob_3d_mapping_slam/trispline/trispline.h>
+
+
+void Surface2PCD(const Slam_Surface::Surface *surf, pcl::PointCloud<pcl::PointXYZRGB> &pc, const float Fsize, const int r, const int g, const int b) {
+
+  pcl::PointXYZRGB p;
+  p.r = r;
+  p.g = g;
+  p.b = b;
+  Eigen::Vector2f p3;
+
+  for(float x=-Fsize*1.f; x<=Fsize*1.f; x+=Fsize/100) {
+    for(float y=-Fsize*1.f; y<=Fsize*1.f; y+=Fsize/100) {
+      Eigen::Vector3f v;
+
+      p3(0) = x;
+      p3(1) = y;
+      v = surf->project2world(p3);
+      p.x = v(0);
+      p.y = v(1);
+      p.z = v(2);
+      pc.points.push_back(p);
+    }
+  }
+}
 
 #ifdef ENABLE_TEST_18
 TEST(TriSplineSurface, Basics1)
@@ -753,21 +778,34 @@ void test18()
 {
   srand(clock());
 
+#if 0
+  {
+    ParametricSurface::TriSpline2_Fade abc;
+
+    Eigen::Vector3f v;
+    v.fill(0);
+    v(0)=1;
+    std::cout<<"TEMPLATE\n"<<abc(v)<<"\n";
+    exit(0);
+  }
+#endif
+
   boost::array<float, 6> params;
   for(int i=0; i<6; i++)
     params[i] = (rand()%10000-5000)/2000.f;
-  /*params[1] = 0;
+  /*params[0] = 0;
+  params[1] = 0;
   params[2] = 1;
   params[3] = 0;
-  params[4] = 1;
-  params[5] = 0;
-  params[0] = 0;*/
-  params[0] = 0;
-  params[1] = 0;
-  params[3] = 0;
-  params[5] = 1;
-  params[2] = 0;
   params[4] = 0;
+  params[5] = 0;
+  /*params[0] = 0;
+  params[0] = 1;
+  params[1] = 1;
+  params[3] = 1;
+  params[5] = 1;
+  params[2] = 1;
+  params[4] = 1;*/
 
   Slam_Surface::PolynomialSurface poly;
   Slam_Surface::SurfaceTriSpline inst;
@@ -776,20 +814,28 @@ void test18()
   poly.init(params,-Fsize,Fsize, -Fsize,Fsize, 1);
   inst.init(&poly,-Fsize,Fsize, -Fsize,Fsize, 1);
 
+  {
+    Eigen::AngleAxisf aa(0.3f, Eigen::Vector3f::Identity());
+    //poly.transform(aa.toRotationMatrix(), Eigen::Vector3f::Identity());
+    //inst.transform(aa.toRotationMatrix(), Eigen::Vector3f::Identity());
+  }
+
   Eigen::Vector3f p1,p2;
   Eigen::Vector2f p3;
 
-  for(int i=0; i<4; i++) {
-    p3(0) = -Fsize+(i&1)*2*Fsize;
-    p3(1) = -Fsize+(i&2)*Fsize;
+  for(int i=0; i<3; i++) {
+    for(int j=0; j<3; j++) {
+      p3(0) = -Fsize+i*Fsize;
+      p3(1) = -Fsize+j*Fsize;
 
-    p1=inst.project2world(p3);
-    p2=poly.project2world(p3);
+      p1=inst.project2world(p3);
+      p2=poly.project2world(p3);
 
-    std::cout<<"got\n"<<p1<<"\n";
-    std::cout<<"should\n"<<p2<<"\n";
+      std::cout<<"got\n"<<p1<<"\n";
+      std::cout<<"should\n"<<p2<<"\n";
 
-    EXPECT_NEAR( (p1-p2).squaredNorm(), 0, 0.01f);
+      EXPECT_NEAR( (p1-p2).squaredNorm(), 0, 0.01f);
+    }
   }
 
   p3(0) = -1;
@@ -802,21 +848,36 @@ void test18()
   std::cout<<"normal\n"<<poly.normalAt(p3)<<"\n";
   std::cout<<"pt\n"<<poly.project2world(p3)<<"\n";
 
-  p3(0) = 0;
-  p3(1) = 0;
+  for(int i=0; i<10; i++) {
+    p3(0) = 1;i/10.f+3;
+    p3(1) = 1;(rand()%20)/20.f+3;
 
-  p1=inst.project2world(p3);
-  p2=poly.project2world(poly.nextPoint(p1));
+    Eigen::Vector3f v=inst.project2world(p3);
+    float mi = (rand()%20)/10.f;
+    v(0) += mi;
+    std::cout<<"FIRST\n";
+    Eigen::Vector2f g2 = poly.nextPoint(v);
+    p2=poly.project2world(g2);
 
-  std::cout<<"got\n"<<p1<<"\n";
-  std::cout<<"should\n"<<p2<<"\n";
-  std::cout<<"should\n"<<poly.project2world(p3)<<"\n";
+    std::cout<<"FIRST\n";
+    p3=inst.nextPoint(v);
+    p1=inst.project2world(p3);
+
+    std::cout<<"search\n"<<v<<"\n";
+    std::cout<<"dist "<<(p2-v).norm()<<" "<<(p1-v).norm()<<" "<<mi<<"\n";
+    std::cout<<"should\n"<<g2<<"\n";
+    std::cout<<"got\n"<<p3<<"\n";
+    std::cout<<"got\n"<<p2<<"\n";
+    std::cout<<"should\n"<<p1<<"\n";
+    std::cout<<"should\n"<<poly.project2world(p3)<<"\n";
+  }
+  exit(0);
 
   pcl::PointCloud<pcl::PointXYZRGB> pc;
   pcl::PointXYZRGB p;
   p.b = 255;
   p.g = p.r = 0;
-  for(size_t i=0; i<inst.getTriangles().size(); i++) {
+  /*for(size_t i=0; i<inst.getTriangles().size(); i++) {
     for(int j=0; j<3; j++) {
       Eigen::Vector3f v = inst.getTriangles()[i].I_[j];
       p.x = v(0);
@@ -830,10 +891,10 @@ void test18()
       p.z = v(2);
       pc.points.push_back(p);
     }
-  }
+  }*/
 
-  for(float x=-Fsize*1.5f; x<=Fsize*1.5f; x+=Fsize/100) {
-    for(float y=-Fsize*1.5f; y<=Fsize*1.5f; y+=Fsize/100) {
+  for(float x=-Fsize*1.f; x<=Fsize*1.f; x+=Fsize/100) {
+    for(float y=-Fsize*1.f; y<=Fsize*1.f; y+=Fsize/100) {
       Eigen::Vector3f v;
 
       p3(0) = x;
@@ -859,6 +920,58 @@ void test18()
 
   pcl::io::savePCDFile("test18.pcd",pc);
 }
+
+#ifdef ENABLE_TEST_19
+TEST(TriSplineSurface, Basics2)
+#else
+void test19()
+#endif
+{
+  srand(clock());
+
+  boost::array<float, 6> params;
+  for(int i=0; i<6; i++)
+    params[i] = 0;
+
+  params[0] = 1;
+
+  Slam_Surface::PolynomialSurface poly;
+
+  const float Fsize = 0.7f;
+  poly.init(params,-Fsize,Fsize, -Fsize,Fsize, 1);
+
+  Slam_Surface::SurfaceTriSpline res;
+
+  const float angle = 0.1f;
+  const int steps = 20;
+
+  Eigen::Vector3f x = Eigen::Vector3f::Zero(); x(0)=1;
+
+  pcl::PointCloud<pcl::PointXYZRGB> pc;
+  for(int i=0; i<steps; i++) {
+    Slam_Surface::SurfaceTriSpline inst;
+    inst.init(&poly,-Fsize,Fsize, -Fsize,Fsize, 1);
+
+    Slam_Surface::Surface::SWINDOW w;
+    res.merge(inst,0,0,w,w);
+
+    Eigen::AngleAxisf aa(angle, x);
+    poly.transform(aa.toRotationMatrix(), Eigen::Vector3f::Zero());
+
+    char buf[128];
+    sprintf(buf,"test19_%d.pcd", i);
+    Surface2PCD(&inst, pc, Fsize, 0, 255, 0);
+    Surface2PCD(&res, pc, Fsize, 255, 0, 0);
+    pcl::io::savePCDFile(buf,pc);
+  }
+
+  res.print();
+
+  //pcl::PointCloud<pcl::PointXYZRGB> pc;
+  Surface2PCD(&res, pc, Fsize, 255, 0, 0);
+  pcl::io::savePCDFile("test19.pcd",pc);
+}
+
 
 template<typename T>
 void addBB(visualization_msgs::Marker &marker, const T&bb, const ::std_msgs::ColorRGBA &col, const Eigen::Matrix3f &tmp_rot, const Eigen::Vector3f &tmp_tr) {
