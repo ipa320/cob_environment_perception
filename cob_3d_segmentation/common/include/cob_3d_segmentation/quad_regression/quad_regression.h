@@ -107,6 +107,7 @@ namespace Segmentation
     bool *outline_check_;         ///needed for outline, no need to reallocate every time
     size_t outline_check_size_;    ///remember size for var. above
     float filter_;                /// ratio points per area
+    bool only_planes_;            /// filter option
 
 #ifdef STOP_TIME
     double execution_time_quadtree_, execution_time_growing_, execution_time_polyextraction_;
@@ -433,6 +434,7 @@ poly.segments2d_.back().push_back(p2);
 #endif
 
     void setFilter(const float f) {filter_=f;}
+    bool setOnlyPlanes(const bool b) {only_planes_=b;}
 
   };
 

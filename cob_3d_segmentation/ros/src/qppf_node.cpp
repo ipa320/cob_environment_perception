@@ -102,6 +102,10 @@ public:
     double filter;
     if(this->n_.getParam("filter",filter))
       seg_.setFilter((float)filter);
+
+    bool only_planes;
+    if(this->n_.getParam("only_planes",only_planes))
+      seg_.setOnlyPlanes(only_planes);
   }
 
   void setGoal(const cob_3d_segmentation::ObjectWatchGoalConstPtr &goal)
