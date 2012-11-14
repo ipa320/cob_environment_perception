@@ -32,18 +32,20 @@ rosbuild_add_executable(slam_node
 	common/src/curved_polygons/polygon_merger.cpp
 	common/src/lib/polypartition.cpp
 )
-target_link_libraries(slam_node nurbsf matrix matrixN matrixI)
-
-rosbuild_add_compile_flags(slam_node ${SSE_FLAGS})
+target_link_libraries(slam_node nurbsf matrix matrixN matrixI CGAL)
+rosbuild_add_compile_flags(slam_node ${SSE_FLAGS} -frounding-math)
 
 
 #	TESTING
 #rosbuild_add_gtest(Tatoms ros/test/atoms.cpp)
 rosbuild_add_executable(test_atoms ros/test/atoms.cpp)
-target_link_libraries(test_atoms gtest)
+target_link_libraries(test_atoms gtest CGAL)
+rosbuild_add_compile_flags(test_atoms ${SSE_FLAGS} -frounding-math)
 
 rosbuild_add_executable(test_merging ros/test/merging.cpp)
-target_link_libraries(test_merging gtest nurbsf matrix matrixN matrixI)
+target_link_libraries(test_merging gtest nurbsf matrix matrixN matrixI CGAL CGAL_PDB CGAL_Core)
+rosbuild_add_compile_flags(test_merging ${SSE_FLAGS} -frounding-math)
 
 rosbuild_add_executable(test_slam ros/test/slam.cpp common/src/curved_polygons/polygon_merger.cpp common/src/lib/polypartition.cpp)
-target_link_libraries(test_slam gtest nurbsf matrix matrixN matrixI ${SSE_FLAGS})
+target_link_libraries(test_slam gtest nurbsf matrix matrixN matrixI CGAL ${SSE_FLAGS})
+rosbuild_add_compile_flags(test_slam ${SSE_FLAGS} -frounding-math)
