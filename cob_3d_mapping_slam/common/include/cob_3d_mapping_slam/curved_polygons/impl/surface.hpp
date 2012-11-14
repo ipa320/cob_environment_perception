@@ -53,6 +53,23 @@ Eigen::Vector3f PolynomialSurface::normalAt(const Eigen::Vector2f &v) const {
   return M*r;
 }
 
+Eigen::Vector3f PolynomialSurface::normalAt2(const Eigen::Vector2f &v) const {
+  Eigen::Vector3f r;
+
+  r(0) = -(2*param_.col(2)(0));
+  r(1) = -(2*param_.col(2)(1));
+  r(2) = 0;
+
+  //r.normalize();
+
+  Eigen::Matrix3f M;
+  M.col(0) = proj2plane_.col(0);
+  M.col(1) = proj2plane_.col(1);
+  M.col(2) = proj2plane_.col(0).cross(proj2plane_.col(1));
+
+  return M*r;
+}
+
 void PolynomialSurface::transform(const Eigen::Matrix3f &rot, const Eigen::Vector3f &tr)
 {
   param_.col(0) = rot * param_.col(0)+tr;
