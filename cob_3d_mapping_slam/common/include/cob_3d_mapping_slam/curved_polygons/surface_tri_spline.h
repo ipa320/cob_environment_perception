@@ -8,6 +8,8 @@
 #ifndef SURFACE_TRI_SPLINE_H_
 #define SURFACE_TRI_SPLINE_H_
 
+#include <cob_3d_mapping_slam/trispline/trispline.h>
+#include <cob_3d_mapping_slam/trispline/topology.h>
 
 
 namespace Slam_Surface
@@ -23,7 +25,9 @@ namespace Slam_Surface
    */
   class SurfaceTriSpline : public Surface
   {
-
+#if 1
+    ParametricSurface::Topology top_;
+#else
   public:
     struct TRIANGLE {
       size_t i_[3];
@@ -72,8 +76,10 @@ namespace Slam_Surface
         );
 
     std::vector<TRIANGLE> &getTriangles() {return triangles_;}
-
+#endif
   public:
+
+    SurfaceTriSpline(): top_(0.1f) {}
 
     /// init with 6 parameters
     virtual void init(const boost::array<float, 6> &params, const float min_x, const float max_x, const float min_y, const float max_y, const float weight);
@@ -84,7 +90,7 @@ namespace Slam_Surface
     virtual const char *getName() const {return "Triangular B-Spline";}
 
     /// find nearest point to manifold
-    virtual Eigen::Vector2f nextPoint(const Eigen::Vector3f &v) const {return Eigen::Vector2f();}
+    virtual Eigen::Vector2f nextPoint(const Eigen::Vector3f &v) const;
 
     /// project a 2D point to 3D
     virtual Eigen::Vector3f project2world(const Eigen::Vector2f &pt) const ;
@@ -93,7 +99,7 @@ namespace Slam_Surface
     virtual Eigen::Vector3f normalAt(const Eigen::Vector2f &v) const ;
 
     /// merge parameters
-    virtual float merge(const Surface &o, const float this_w, const float o_w, const SWINDOW &wind_t, const SWINDOW &wind_o) {return 0;}
+    virtual float merge(const Surface &o, const float this_w, const float o_w, const SWINDOW &wind_t, const SWINDOW &wind_o);
     virtual float _merge(SurfaceNurbs o, const float this_w, const float o_w, const SWINDOW &wind_t, const SWINDOW &wind_o) {return 0;}
 
     /// transform basis
@@ -104,6 +110,8 @@ namespace Slam_Surface
 
     /// calc approx. area
     virtual float area() const {return 1;}
+
+    void print() const {top_.print();}
   };
 
 #include "impl/surface_tri_spline.hpp"
