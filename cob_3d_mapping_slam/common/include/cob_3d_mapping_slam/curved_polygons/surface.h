@@ -111,6 +111,9 @@ namespace Slam_Surface
     /// get normal at 2D point
     virtual Eigen::Vector3f normalAt(const Eigen::Vector2f &v) const ;
 
+    /// get normal (2nd derivate) at 2D point
+    virtual Eigen::Vector3f normalAt2(const Eigen::Vector2f &v) const ;
+
     /// merge parameters
     virtual float merge(const Surface &o, const float this_w, const float o_w, const SWINDOW &wind_t, const SWINDOW &wind_o) {return 0.f;}
 
