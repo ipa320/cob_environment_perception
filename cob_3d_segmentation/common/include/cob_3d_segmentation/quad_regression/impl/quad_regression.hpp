@@ -517,16 +517,18 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
 //      if(poly.segments_.size()<1)
 //        ROS_WARN("segment empty");
 
-      if(filter_>0.f) {
-        float area = poly.area();
+      if(!only_planes_ || model.isLinearAndTo()) {
+        if(filter_>0.f) {
+          float area = poly.area();
 
-        //ROS_INFO("%f %f",poly.weight_*poly.model_.param.v_max_*poly.model_.param.v_max_/area,filter_);
+          //ROS_INFO("%f %f",poly.weight_*poly.model_.param.v_max_*poly.model_.param.v_max_/area,filter_);
 
-        if(poly.weight_*poly.model_.param.v_max_*poly.model_.param.v_max_/area>filter_)
+          if(poly.weight_*poly.model_.param.v_max_*poly.model_.param.v_max_/area>filter_)
+            polygons_.push_back(poly);
+        }
+        else
           polygons_.push_back(poly);
       }
-      else
-        polygons_.push_back(poly);
 
       return;
     }
@@ -928,7 +930,10 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
     cob_3d_mapping_msgs::ShapeArray sa;
 
     cob_3d_mapping_msgs::Shape s;
-    s.type = cob_3d_mapping_msgs::Shape::CURVED;
+    if(only_planes_)
+      s.type = cob_3d_mapping_msgs::Shape::CURVED;
+    else
+      s.type = cob_3d_mapping_msgs::Shape::PLANE;
 
     sa.header.frame_id = s.header.frame_id = "/test";
 
@@ -958,8 +963,13 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
       s.params.push_back(polygons_[i].proj2plane_.col(1)(2));*/
 
 
-      for(int k=0; k<6; k++)
-        s.params.push_back(polygons_[i].model_.p(k));
+      if(only_planes_) {
+
+      }
+      else {
+        for(int k=0; k<6; k++)
+          s.params.push_back(polygons_[i].model_.p(k));
+      }
 
       s.weight = polygons_[i].weight_;
 
