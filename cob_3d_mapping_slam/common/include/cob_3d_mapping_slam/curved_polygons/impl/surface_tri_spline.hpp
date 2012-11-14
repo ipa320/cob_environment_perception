@@ -5,12 +5,45 @@
  *      Author: josh
  */
 
-
+#if 0
 bool SurfaceTriSpline::TRIANGLE::update2(const std::vector<Eigen::Vector3f> &pts, const std::vector<Eigen::Vector3f> &normals, const std::vector<Eigen::Vector2f> &uv_pts, const Surface *surf)
 {
   std::cout<<"pS_\n"<<pS_<<"\n";
   std::cout<<"nS_\n"<<nS_<<"\n";
 
+  Eigen::Matrix<float,9,9> toSolve_M;
+  Eigen::Matrix<float,9,1> toSolve_v;
+
+  toSolve_M.fill(0);
+  toSolve_v.fill(0);
+
+  for(int i=0; i<3; i++)
+  {
+    for(int j=0; j<3; j++) toSolve_M.row(i*3+0)(3*i+j) = nI_[i](j);
+    for(int j=0; j<3; j++) toSolve_M.row(i*3+0)(3*((i+1)%3)+j) = -nI_[i](j);
+
+    for(int j=0; j<3; j++) toSolve_M.row(i*3+1)(3*i+j) = nI_[i](j);
+    toSolve_v(i*3+1) = nI_[i].dot(I_[i]);
+
+    for(int j=0; j<3; j++) toSolve_M.row(i*3+2)(3*i+j) = normals[i_[i]](j);
+    toSolve_v(i*3+2) = normals[i_[i]].dot(pts[i_[i]]);
+  }
+
+  Eigen::Matrix<float,9,1> p = toSolve_M.colPivHouseholderQr().solve(toSolve_v); //toSolve_M.inverse()*toSolve_v;//
+
+  for(int i=0; i<3; i++)
+  {
+    for(int j=0; j<3; j++)
+      pb_[i](j) = p(i*3+j);
+
+    std::cout<<"pb_\n"<<pb_[i]<<"\n";
+  }
+  std::cout<<"toSolve_M\n"<<toSolve_M<<"\n";
+  std::cout<<"toSolve_v\n"<<toSolve_v<<"\n";
+  std::cout<<"params\n"<<p<<"\n";
+  std::cout<<"result\n"<<toSolve_M*p-toSolve_v<<"\n";
+
+#if 0
   Eigen::Vector3f line_eq[6];
 
   for(int i=0; i<3; i++)
@@ -42,23 +75,26 @@ bool SurfaceTriSpline::TRIANGLE::update2(const std::vector<Eigen::Vector3f> &pts
 
     line_eq[i*2+0] = np;
     line_eq[i*2+1] = vp;
+
+
+    float r = (pts[(i+2)%3]-vp).dot(normals[i_[(i+2)%3]]) / (normals[i_[(i+2)%3]].dot(np));
+    if(pcl_isfinite(r))
+      pb_[i] = np*r+vp;
+    else
+      pb_[i] = (I_[i] + pts[i_[i]])*0.5f;
+
+    std::cout<<"r "<<r<<"\n";
+    std::cout<<"pb_\n"<<pb_[i]<<"\n";
   }
+
+#if 0
 
   Eigen::Matrix3f toSolve_M;
   Eigen::Vector3f toSolve_v;
 
-  bool set[3];
   for(int i=0; i<3; i++)
   {
-    set[i]=false;
-    Eigen::Vector3f v = (I_[i]-pts[i_[i]]);
-    float x = ( nI_[i].dot( v ) )/( (nI_[i]-normals[i_[i]]).dot( v ) );
-    if(!pcl_isfinite(x)) {
-      pb_[i] = (I_[i] + pts[i_[i]])*0.5f;
-      x=0.5f;
-    }
-    else
-      set[i]=true;
+    pb_[i] = (I_[i] + pts[i_[i]])*0.5f;
 
     toSolve_M.row(i)(i) = line_eq[2*i + 0 ].dot(nI_[(i+2)%3]);
     toSolve_M.row(i)((1+i)%3) = 0;
@@ -71,17 +107,16 @@ bool SurfaceTriSpline::TRIANGLE::update2(const std::vector<Eigen::Vector3f> &pts
 
   for(int i=0; i<3; i++)
   {
-    if(set[i])
+    if(pcl_isfinite(p(i)))
       pb_[i] = line_eq[2*i+0]*p(i)+line_eq[2*i+1];
 
-    std::cout<<"p\n"<<pts[i_[(1+i)%3]]<<"\n"<<pts[i_[i]]<<"\n";
-    std::cout<<"n\n"<<normals[i_[(1+i)%3]]<<"\n"<<normals[i_[i]]<<"\n";
     std::cout<<"pb_\n"<<pb_[i]<<"\n";
   }
   std::cout<<"toSolve_M\n"<<toSolve_M<<"\n";
   std::cout<<"toSolve_v\n"<<toSolve_v<<"\n";
   std::cout<<"params\n"<<p<<"\n";
-
+#endif
+#endif
   return true;
 }
 
@@ -474,6 +509,7 @@ bool SurfaceTriSpline::TRIANGLE::isIn(const Eigen::Vector2f &pt, const std::vect
 
   return br(0)>=0 && br(0)<=1 && br(1)>=0 && br(1)<=1 && br(2)>=0 && br(2)<=1;
 }
+#endif
 
 void SurfaceTriSpline::init(const boost::array<float, 6> &params, const float min_x, const float max_x, const float min_y, const float max_y, const float weight)
 {
@@ -489,20 +525,56 @@ void SurfaceTriSpline::init(const PolynomialSurface *params, const float min_x, 
   uv[4](0) = (min_x+max_x)*0.5f;
   uv[4](1) = (min_y+max_y)*0.5f;
 
+#if 1
+  ParametricSurface::Topology::POINT p;
+
+  p.uv(0) = min_x;
+  p.uv(1) = min_y;
+  p.pt = params->project2world(p.uv);
+  p.n = params->normalAt(p.uv);
+  p.n2 = params->normalAt2(p.uv);
+  top_.insertPointWithoutUpdate(p);
+
+  p.uv(0) = max_x;
+  p.uv(1) = min_y;
+  p.pt = params->project2world(p.uv);
+  p.n = params->normalAt(p.uv);
+  p.n2 = params->normalAt2(p.uv);
+  top_.insertPointWithoutUpdate(p);
+
+  p.uv(0) = max_x;
+  p.uv(1) = max_y;
+  p.pt = params->project2world(p.uv);
+  p.n = params->normalAt(p.uv);
+  p.n2 = params->normalAt2(p.uv);
+  top_.insertPointWithoutUpdate(p);
+
+  p.uv(0) = min_x;
+  p.uv(1) = max_y;
+  p.pt = params->project2world(p.uv);
+  p.n = params->normalAt(p.uv);
+  p.n2 = params->normalAt2(p.uv);
+  top_.insertPoint(p);
+
+  //top_.finish();
+
+#else
   for(int i=0; i<5; i++)
     addPoint(
         params->project2world(uv[i]),-params->normalAt(uv[i]),uv[i]
     );
 
   addTriangle(0,1,2, params);
-  addTriangle(0,3,2, params);
+  //addTriangle(0,3,2, params);
 
   //  addTriangle(0,1,4);
   //  addTriangle(1,4,2);
   //  addTriangle(2,3,4);
   //  addTriangle(0,3,4);
+#endif
 }
 
+#if 0
 void SurfaceTriSpline::addPoint(
     const Eigen::Vector3f &p1, const Eigen::Vector3f &n1, const Eigen::Vector2f &uv1
 )
@@ -520,20 +592,28 @@ void SurfaceTriSpline::addTriangle(const size_t i1, const size_t i2, const size_
   triangles_.push_back( TRIANGLE(i1,i2,i3) );
   ROS_ASSERT( triangles_.back().update1(pts_,normals_,uv_pts_, surf) );
 }
+#endif
 
 /// transform basis
 void SurfaceTriSpline::transform(const Eigen::Matrix3f &rot, const Eigen::Vector3f &tr)
 {
+#if 1
+  top_.transform(rot,tr);
+#else
   for(size_t i=0; i<pts_.size(); i++) {
     pts_[i] = rot*pts_[i]+tr;
     normals_[i] = rot*normals_[i];
   }
   for(size_t i=0; i<triangles_.size(); i++)
     triangles_[i].transform(rot,tr);
+#endif
 }
 
 Eigen::Vector3f SurfaceTriSpline::project2world(const Eigen::Vector2f &pt) const
 {
+#if 1
+  return top_.project2world(pt);
+#else
   size_t next=0;
   float dis = std::numeric_limits<float>::max();
 
@@ -554,10 +634,14 @@ Eigen::Vector3f SurfaceTriSpline::project2world(const Eigen::Vector2f &pt) const
   return triangles_[next].project2world(pt,pts_,uv_pts_);
 
   ROS_ASSERT(0);
+#endif
 }
 
 Eigen::Vector3f SurfaceTriSpline::normalAt(const Eigen::Vector2f &pt) const
 {
+#if 1
+  return top_.normalAt(pt);
+#else
   size_t next=0;
   float dis = std::numeric_limits<float>::max();
 
@@ -578,6 +662,16 @@ Eigen::Vector3f SurfaceTriSpline::normalAt(const Eigen::Vector2f &pt) const
   return triangles_[next].normalAt(pt,pts_,uv_pts_);
 
   ROS_ASSERT(0);
+#endif
+}
+
+Eigen::Vector2f SurfaceTriSpline::nextPoint(const Eigen::Vector3f &v) const {
+  return top_.nextPoint(v);
+}
+
+float SurfaceTriSpline::merge(const Surface &o, const float this_w, const float o_w, const SWINDOW &wind_t, const SWINDOW &wind_o) {
+  top_ += ((SurfaceTriSpline*)(&o))->top_;
+  return 0.f;
 }
 
 /*
