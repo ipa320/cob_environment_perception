@@ -19,7 +19,11 @@ SerialDevice::SerialDevice()
 
 SerialDevice::~SerialDevice()
 {
-
+ /*std::cout << "destructor" << std::endl;
+  PutString("L\n");
+  FlushInBuffer();
+  FlushOutBuffer();
+  closePort();*/
 }
 
 int SerialDevice::openPort(std::string device, int baud, int Parity, int StopBits)
@@ -108,6 +112,9 @@ int SerialDevice::openPort(std::string device, int baud, int Parity, int StopBit
 	}
 	
 	/// alles richtig!
+	FlushInBuffer();
+	FlushOutBuffer();
+	PutString("E\n");
 	return 0;
 }
 

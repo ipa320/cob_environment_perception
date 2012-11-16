@@ -60,7 +60,7 @@
 #include <ros/ros.h>
 #include <pcl/point_types.h>
 #include <geometry_msgs/Twist.h>
-
+#include <sensor_msgs/Image.h>
 #include <tf/transform_listener.h>
 #include <Eigen/Core>
 #include <Eigen/Geometry>
@@ -69,6 +69,7 @@
 #include <pcl_ros/point_cloud.h>
 #include <pcl/io/pcd_io.h>
 #include <gazebo/GetModelState.h>
+#include <iostream>
 
 class Capture
 {
@@ -194,19 +195,25 @@ public:
     pcl::fromROSMsg(*last_pc_,pc);
     pcl::io::savePCDFileASCII (fn_pcd, pc);
 
-    //serialize image
-    FILE *fp = fopen(fn_img,"wb");
-    if(fp)
-    {
-      uint32_t len = last_img_->serializationLength();
+    #ifdef PCL_VERSION_COMPARE
+      std::ofstream stream(fn_img);
+	  stream << *last_img_;
+	  stream.close();
+	#else
+      //serialize image
+      FILE *fp = fopen(fn_img,"wb");
+      if(fp)
+      {
+        uint32_t len = last_img_->serializationLength();
 
-      uint8_t *wptr = new uint8_t[len];
-      last_img_->serialize(wptr,0);
-      fwrite(wptr, 1, len, fp);
-      delete [] wptr;
+        uint8_t *wptr = new uint8_t[len];
+        last_img_->serialize(wptr,0);
+        fwrite(wptr, 1, len, fp);
+        delete [] wptr;
 
-      fclose(fp);
-    }
+        fclose(fp);
+      }
+	#endif
 
     /*fp = fopen(fn_img_depth,"wb");
     if(fp)

@@ -16,15 +16,21 @@ int PolygonExtraction::getPos(int *ch, const int xx, const int yy, const int w, 
   return p;
 }
 
+bool PolygonExtraction::hasMultiplePositions(unsigned int i)
+{
+  return !((i != 0) && ((i & (~i + 1)) == i));
+}
+
 template<typename TPoint, typename TPolygon>
 void PolygonExtraction::outline(const int w, const int h, std::vector<TPoint> out, TPolygon &poly)
 {
   std::sort(out.begin(),out.end());
-
+  //std::cout <<"--> D 1"<<std::endl;
   if(ch_size_<w*h) {
     delete [] ch_;
     ch_ = new int[w*h];
     ch_size_=w*h;
+    memset(ch_,0,sizeof(int)*ch_size_);
   }
 
   for(size_t j=0; j<out.size(); j++) {
@@ -39,7 +45,8 @@ void PolygonExtraction::outline(const int w, const int h, std::vector<TPoint> ou
   memset(outline_check_,false,out.size());
 
   int n=-1;
-  while(n+1<(int)out.size()) {
+  while(n+1<(int)out.size())
+  {
     ++n;
     if(outline_check_[n])
       continue;
@@ -53,36 +60,59 @@ void PolygonExtraction::outline(const int w, const int h, std::vector<TPoint> ou
     int start_x=x, start_y=y;
 
     poly.addPoint(x,y);
-    int num=0;
-
-    while(1) {
-
+    //int num=0;
+    std::stack<std::pair<int,Contour2D::spline2D> > forked_states;
+    std::stack<typename std::vector<TPoint>::size_type> forked_points;
+    while(1)
+    {
       if(x<0 || y<0 || x>=w || y>=h || ch_[ TPoint::getInd(x,y) ]<1) {
         break;
       }
 
+      int ch_old = ch_[ TPoint::getInd(x,y) ];
       outline_check_[ch_[ TPoint::getInd(x,y) ]-1]=true;
       ch_[ TPoint::getInd(x,y) ]=-2;
+
       int p=getPos<TPoint>(ch_,x,y,w,h);
 
       if(p==0|| (!Contour2D::g_Splines[bf][p].x&&!Contour2D::g_Splines[bf][p].y) )
       {
-        break;
+        // There is no valid next point:
+        if (forked_states.size() == 0 || (std::abs(x-start_x)+std::abs(y-start_y)) <= 4) { break; }
+        //std::cout << "--> Back to fork!" << std::endl;
+        // Go back to last forked state
+        v = forked_states.top().second.v;
+        x = forked_states.top().second.x;
+        y = forked_states.top().second.y;
+        bf = forked_states.top().second.bf;
+        ch_ [ TPoint::getInd(x,y) ] = forked_states.top().first;
+        forked_states.pop();
+        poly.removeLastPoints(forked_points.top());
+        forked_points.pop();
+        continue;
+      }
+      if (hasMultiplePositions((unsigned int)p))
+      {
+        Contour2D::spline2D s = {v, x, y, bf};
+        forked_states.push(std::pair<int,Contour2D::spline2D>(ch_old, s));
+        forked_points.push(0);
       }
 
       v+=v+Contour2D::g_Splines[bf][p].v;
       x+=Contour2D::g_Splines[bf][p].x;
       y+=Contour2D::g_Splines[bf][p].y;
       bf=Contour2D::g_Splines[bf][p].bf;
-      ++num;
+      //++num;
 
       if(std::abs(v)>5) {
         v=0;
+        ++(forked_points.top());
         poly.addPoint(x,y);
       }
     }
 
-    if(num<5 || (std::abs(x-start_x)+std::abs(y-start_y))>4 ) {
+    if(poly.polys_.back().size() < 4 || (std::abs(x-start_x)+std::abs(y-start_y))>4 )
+    {
       poly.removePolygon();
     }
 

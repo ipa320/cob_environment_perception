@@ -56,53 +56,24 @@
 //##################
 //#### includes ####
 
-// standard includes
-//--
-#include <sstream>
-#include <fstream>
-
-
 // ROS includes
-#include <ros/ros.h>
+//#include <ros/ros.h>
 #include <ros/console.h>
-#include <actionlib/server/simple_action_server.h>
-#include <pcl/io/pcd_io.h>
-#include <pcl/point_types.h>
-#include <pcl/registration/icp.h>
-#include <tf/transform_listener.h>
-#include <tf_conversions/tf_kdl.h>
-#include <cob_3d_mapping_common/point_types.h>
-#include "pcl/filters/voxel_grid.h"
-#include <pcl_ros/transforms.h>
-#include <pcl_ros/point_cloud.h>
-#include <pluginlib/class_list_macros.h>
+//#include <pcl/io/pcd_io.h>
+//#include <pcl/point_types.h>
+//#include <pcl_ros/point_cloud.h>
 #include <pcl_ros/pcl_nodelet.h>
-#include <cob_3d_mapping_point_map/impl/field_of_view_segmentation.hpp>
-#include <pcl/filters/extract_indices.h>
-//#include <visualization_msgs/Marker.h>
-#include <pcl/filters/voxel_grid.h>
-
-// ROS message includes
-//#include <sensor_msgs/PointCloud2.h>
-#include <cob_3d_mapping_msgs/GetFieldOfView.h>
-#include "cob_3d_mapping_msgs/TriggerMappingAction.h"
-#include <cob_3d_mapping_msgs/SetReferenceMap.h>
-#include <cob_3d_mapping_msgs/GetPointMap.h>
-#include <cob_srvs/Trigger.h>
-
-// external includes
-#include <boost/timer.hpp>
-#include <boost/numeric/ublas/matrix.hpp>
-
-#include "cob_3d_mapping_point_map/point_map.h"
-
-#include "cob_3d_mapping_common/reconfigureable_node.h"
-#include <cob_3d_mapping_point_map/point_map_nodeletConfig.h>
+#include <pcl_ros/transforms.h>
+#include <pcl/io/io.h>
+#include <pluginlib/class_list_macros.h>
+#include <tf/transform_listener.h>
+#include <tf_conversions/tf_eigen.h>
 
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
-#include <message_filters/sync_policies/approximate_time.h>
+//#include <message_filters/sync_policies/approximate_time.h>
 #include <pcl/segmentation/segment_differences.h>
+#include <pcl/kdtree/kdtree_flann.h>
 
 
 
@@ -132,37 +103,6 @@ public:
     /// void
   }
 
-  /**
-   * @brief callback for dynamic reconfigure
-   *
-   * everytime the dynamic reconfiguration changes this function will be called
-   *
-   * @param inst instance of PointMapNodelet which parameters should be changed
-   * @param config data of configuration
-   * @param level bit descriptor which notifies which parameter changed
-   *
-   * @return nothing
-   */
-  static void callback(DifferenceSegmentation *inst, cob_3d_mapping_point_map::point_map_nodeletConfig &config, uint32_t level)
-  {
-    if(!inst)
-      return;
-
-    inst->file_path_ = config.file_path;
-    inst->save_ = config.save;
-
-  }
-
-  // callback for dynamic reconfigure
-  static void callback_get(DifferenceSegmentation *inst, cob_3d_mapping_point_map::point_map_nodeletConfig &config)
-  {
-    if(!inst)
-      return;
-
-    config.file_path=inst->file_path_;
-    config.save = inst->save_;
-
-  }
 
 
   /**
@@ -179,20 +119,20 @@ public:
     n_ = getNodeHandle();
 
     map_diff_pub_ = n_.advertise<PointCloud >("output",1);
-    diff_maps_pub_ = n_.advertise<PointCloud >("diff_maps",1);
-    map_sub_.subscribe(n_,"target",1);
-    pc_aligned_sub_.subscribe(n_,"input",1);
+    //diff_maps_pub_ = n_.advertise<PointCloud >("diff_maps",1);
+    map_sub_.subscribe(n_,"target",10);
+    pc_aligned_sub_.subscribe(n_,"input",10);
     sync_ = boost::make_shared <message_filters::Synchronizer<MySyncPolicy> >(10);
     sync_->connectInput(map_sub_, pc_aligned_sub_);
     sync_->registerCallback(boost::bind(&DifferenceSegmentation::pointCloudSubCallback, this, _1, _2));
 
-    n_.param("aggregate_point_map/file_path" ,file_path_ ,std::string("~/pcl_daten/table/icp/map_"));
-    n_.param("aggregate_point_map/save",save_ , false);
-
+#ifdef PCL_VERSION_COMPARE //fuerte
+    pcl::search::KdTree<Point>::Ptr tree (new pcl::search::KdTree<Point> ());
+#else //electric
     pcl::KdTreeFLANN<Point>::Ptr tree (new pcl::KdTreeFLANN<Point> ());
+#endif
     sd_.setSearchMethod(tree);
-    sd_.setDistanceThreshold(0.001);
-    diff_maps_.header.frame_id="/map";
+    sd_.setDistanceThreshold(0.01);
   }
 
   /**
@@ -208,62 +148,63 @@ public:
   void
   pointCloudSubCallback(const PointCloud::ConstPtr& map, const PointCloud::ConstPtr& pc_aligned)
   {
-    static int ctr=0;
+    PointCloud::Ptr pc_trans(new PointCloud);
+    tf::StampedTransform trf_map;
+    try
+    {
+      std::stringstream ss2;
+      tf_listener_.waitForTransform(map->header.frame_id, pc_aligned->header.frame_id, pc_aligned->header.stamp, ros::Duration(2.0));
+      tf_listener_.lookupTransform(map->header.frame_id, pc_aligned->header.frame_id, pc_aligned->header.stamp, trf_map);
+    }
+    catch (tf::TransformException ex)
+    {
+      ROS_ERROR("[difference_segmentation] : %s",ex.what());
+      return;
+    }
+    Eigen::Affine3d af;
+    tf::TransformTFToEigen(trf_map, af);
+    Eigen::Matrix4f trf = af.matrix().cast<float>();
+    pcl::transformPointCloud(*pc_aligned, *pc_trans, trf);
+
     PointCloud pc_diff;
-    std::cout << "map size:" << map->size() << std::endl;
+    /*std::cout << "map size:" << map->size() << std::endl;
     std::cout << map->header.stamp << std::endl;
     std::cout << "pc_aligned size:" << pc_aligned->size() << std::endl;
-    std::cout << pc_aligned->header.stamp << std::endl;
-    //pcl::fromROSMsg(pc_aligned_msg, pc_aligned);
-    //pcl::SegmentDifferences<Point> sd;
+    std::cout << pc_aligned->header.stamp << std::endl;*/
+    /*if(map->header.frame_id != pc_aligned->header.frame_id)
+    {
+      ROS_ERROR("Frame IDs do not match, aborting...");
+      return;
+    }*/
+    //diff_maps_.header.frame_id=map->header.frame_id;
     sd_.setTargetCloud(map_.makeShared());
-    sd_.setInputCloud(pc_aligned);
+    sd_.setInputCloud(pc_trans);
     sd_.segment(pc_diff);
+    pc_diff.header = map->header;
     std::cout << pc_diff.size() << std::endl;
     if(pc_diff.size()>0)
     {
-      /*std::stringstream ss;
-      ss << "/home/goa/pcl_daten/diff_map/diff_" << ctr << ".pcd";
-      pcl::io::savePCDFileASCII (ss.str(), pc_diff);
-      std::stringstream ss1;
-      ss1 << "/home/goa/pcl_daten/diff_map/map_" << ctr << ".pcd";
-      if(map_.size()>0)
-        pcl::io::savePCDFileASCII (ss1.str(), map_);
-      std::stringstream ss2;
-      ss2 << "/home/goa/pcl_daten/diff_map/pc_aligned_" << ctr << ".pcd";
-      pcl::io::savePCDFileASCII (ss2.str(), *pc_aligned);
-      ctr++;*/
-      //pc_in_ = *pc_in;
       map_diff_pub_.publish(pc_diff);
-      //diff_maps_ += pc_diff;
-      //diff_maps_pub_.publish(diff_maps_);
     }
     pcl::copyPointCloud(*map, map_);
   }
 
 
   ros::NodeHandle n_;
-  ros::Time stamp_;
 
 
 protected:
   message_filters::Subscriber<PointCloud > map_sub_;
   message_filters::Subscriber<PointCloud > pc_aligned_sub_;
   ros::Publisher map_diff_pub_;		//publisher for map
-  ros::Publisher diff_maps_pub_;
+  //ros::Publisher diff_maps_pub_;
   boost::shared_ptr<message_filters::Synchronizer<MySyncPolicy> > sync_;
 
   TransformListener tf_listener_;
 
   pcl::PointCloud<Point> map_;
-  pcl::PointCloud<Point> diff_maps_;
+  //pcl::PointCloud<Point> diff_maps_;
   pcl::SegmentDifferences<Point> sd_;
-
-
-  // Parameters for file saving
-  std::string file_path_;
-  bool save_;
-
 
 
 };

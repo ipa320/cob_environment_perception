@@ -78,12 +78,10 @@ namespace cob_3d_mapping_tools
      * @param[out] cloud the point cloud with RGB fields to which the .ppm is mapped
      * @return < 0 (-1) on error, else 0
      */
-    int mapRGB (const std::string &file_name, 
-		pcl::PointCloud<pcl::PointXYZRGB> &cloud, 
-		bool remove_undef_points = false);
-
+    int mapLabels (const std::string &file_name, pcl::PointCloud<pcl::PointXYZRGB>& cloud, bool remove_undef_points=false);
+    int mapRGB(const std::string &file_name, pcl::PointCloud<pcl::PointXYZRGB>& cloud, bool remove_undef_points=false);
   };
-  
+
   /*! @brief 2D image PPM file format writer.
    */
   class PPMWriter
@@ -104,28 +102,21 @@ namespace cob_3d_mapping_tools
      */
     int writeRGB (const std::string &file_name, const pcl::PointCloud<pcl::PointXYZRGB> &cloud);
 
-    /*! @brief Writes the depth information of a point cloud to an ASCII formated .ppm 
+    /*! @brief Writes the depth information of a point cloud to an ASCII formated .ppm
      *         2D color image
      *
      * The Z values of the point cloud are encoded as a color gradient with the minimum value defined
      * by @a setMinZ as @a RGB(255,0,0) and the maximum value defined by @a setMaxZ as @a RGB(0,0,255).
-     * If no values are defined, the minimum and maximum values of the point cloud are determined 
+     * If no values are defined, the minimum and maximum values of the point cloud are determined
      * automatically.
      *
      * @param[in] file_name the output .ppm filename
      * @param[in] cloud the input organized point cloud
      * @return < 0 (-1) on error, else 0
      */
-    int 
-      writeDepth (
-	const std::string &file_name, 
-	const pcl::PointCloud<pcl::PointXYZRGB> &cloud);
+    int writeDepth (const std::string &file_name, const pcl::PointCloud<pcl::PointXYZRGB> &cloud);
 
-    
-    int 
-      writeDepthLinear (
-	const std::string &file_name, 
-	const pcl::PointCloud<pcl::PointXYZRGB> &cloud);
+    int writeDepthLinear (const std::string &file_name, const pcl::PointCloud<pcl::PointXYZRGB> &cloud);
 
     /*! @brief Sets the maximum Z value for the color gradient
      *
@@ -150,7 +141,7 @@ namespace cob_3d_mapping_tools
 
   /*! @brief Converts a normalized Z value into an RGB color value
    *
-   * @param[in] position the normalized Z value to be represented as color 
+   * @param[in] position the normalized Z value to be represented as color
    *     (0.0 for red, 1 for blue)
    * @param[out] the output rgb color value separated
    *      - @a rgb[0]: red (0..255)
@@ -159,6 +150,13 @@ namespace cob_3d_mapping_tools
    * @return the rgb color value as combined integer
    */
   uint32_t getGradientColor(double position, uint8_t rgb[]);
+
+  std::string colorHumanReadable(int id)
+  {
+    std::stringstream ss;
+    ss << "0x" << std::setfill('0') << std::setw(6) << std::right << std::hex << id << std::dec;
+    return ss.str();
+  }
 }
 
 #endif // #ifndef COB_3D_MAPPING_TOOLS_IO_H_

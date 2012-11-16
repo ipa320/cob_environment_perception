@@ -7,6 +7,8 @@
 
 
 //includes needed for testing
+#include <ros/console.h>
+#include <ros/assert.h>
 #include <gtest/gtest.h>
 
 #include <pcl/io/pcd_io.h>
@@ -36,14 +38,14 @@ class Testing_PCDLoader
 
   Testing_PCDLoader()
   {
-    load("test/kitchen01_close_raw.pcd");
-    load("test/kitchen01_far_raw.pcd");
+    load("/home/goa/tmp/bild_jan.pcd");
+    /*load("test/kitchen01_far_raw.pcd");
     load("test/office01_close_raw.pcd");
     load("test/office01_far_raw.pcd");
     load("test/shelves01_close_raw.pcd");
     load("test/shelves01_far_raw.pcd");
     load("test/table01_close1m_raw.pcd");
-    load("test/table01_far_raw.pcd");
+    load("test/table01_far_raw.pcd");*/
   }
 
 public:
@@ -82,7 +84,7 @@ public:
       ::testing::UnitTest::GetInstance()->current_test_info();
 
     char fn[512];
-    sprintf(fn,"test/labeled/pc_%s_%s_%s",test_info->test_case_name(), test_info->name(), pc_fn.c_str());
+    sprintf(fn,"test/labeled/pc_%s_%s_%s.pcd",test_info->test_case_name(), test_info->name(), pc_fn.c_str());
     pcl::io::savePCDFile(fn,*pc);
   }
 };

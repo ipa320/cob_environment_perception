@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<robot name="simple cylinder">
+  <link name="my_cylinder">
+    <visual>
+      <geometry>
+        <cylinder length="0.5" radius="0.05"/>
+      </geometry>
+    </visual>
+    <collision>
+      <geometry>
+        <cylinder length="0.5" radius="0.05"/>
+      </geometry>
+    </collision>
+   <inertial>
+      <mass value="1"/>
+      <inertia ixx="1.0" ixy="0.0" ixz="0.0" iyy="1.0" iyz="0.0" izz="5000.0"/>
+    </inertial>
+  </link>
+  <gazebo reference="my_cylinder">
+    <material>Gazebo/Blue</material>
+  </gazebo>
+</robot>

@@ -77,6 +77,8 @@ namespace cob_3d_mapping_filters
     SpeckleFilter () :
       speckle_size_ (40), speckle_range_ (0.2)
     {
+      points_to_remove_ = pcl::PointIndices::Ptr(new pcl::PointIndices ());
+      //pp_remove_ = pcl::IndicesConstPtr(&(points_to_remove_->indices));
       //
     }
     ;
@@ -103,6 +105,11 @@ namespace cob_3d_mapping_filters
     }
 
     void applyFilter (pcl::PointIndices::Ptr points_to_remove);
+    
+    pcl::PointIndices::Ptr getRemovedIndices ()
+    {
+    	return points_to_remove_;
+    }
 
   protected:
 
@@ -111,6 +118,8 @@ namespace cob_3d_mapping_filters
 
     int speckle_size_;
     double speckle_range_;
+    pcl::PointIndices::Ptr points_to_remove_;
+    pcl::IndicesConstPtr pp_remove_;
   };
 
   template<>

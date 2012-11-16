@@ -56,38 +56,33 @@
 #ifndef RVIZ_BUTTONS_H
 #define RVIZ_BUTTONS_H
 
-#include <wx/wx.h>
-#include <wx/menu.h>
-//#include <wx/panel.h>
-#include <wx/dialog.h>
-#include <wx/msgdlg.h>
-//#include <wx/sizer.h>
+#include <rviz/panel.h>
+
+#include <cob_script_server/ScriptAction.h>
+#include <actionlib/client/simple_action_client.h>
+
 #include <ros/ros.h>
 #include <string.h>
-#include "rviz/display.h"
-#include "cob_3d_mapping_demonstrator/rviz_buttons_panel.h"
 
-namespace rviz
+//#include "cob_3d_mapping_demonstrator/rviz_buttons_panel.h"
+
+namespace cob_environment_perception
 {
-  class RvizButtons : public Display
+  class RvizButtons : public rviz::Panel
 {
+    Q_OBJECT
 public:
     /// Constructor
-    RvizButtons(const std::string& name, VisualizationManager* manager/*wxWindow *parent, const wxString& title, rviz::WindowManagerInterface * wmi*/);
+    RvizButtons(QWidget* parent = 0);
     ~RvizButtons();
 
-    void onEnable();
-
-    void onDisable();
-
-
-    void targetFrameChanged()
-    {
-    }
-
-    void fixedFrameChanged()
-    {
-    }
+protected Q_SLOTS:
+  void onStart();
+  void onStep();
+  void onStop();
+  void onReset();
+  void onClear();
+  void onRecover();
 
 
 protected:
@@ -100,12 +95,14 @@ protected:
     wxStaticText *m_text_timeout;
     wxStaticText *m_text_dist; // distance to closest pregrasp position*/
 
-    ros::ServiceServer service_start_;
-    ros::ServiceServer service_timeout_;
+    //ros::ServiceServer service_start_;
+    //ros::ServiceServer service_timeout_;
+
+    actionlib::SimpleActionClient<cob_script_server::ScriptAction>* action_client_;
 
     //wxWindow *parent_;
-    RvizButtonsPanel* panel_;
-    wxFrame* frame_; // temp
+    //RvizButtonsPanel* panel_;
+    //wxFrame* frame_; // temp
 
 
 

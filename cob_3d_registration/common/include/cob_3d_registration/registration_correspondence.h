@@ -55,7 +55,9 @@
 
 #ifndef REGISTRATION_CORRESPONDENCE_H_
 #define REGISTRATION_CORRESPONDENCE_H_
-
+#ifdef PCL_VERSION_COMPARE
+  #include <pcl/correspondence.h>
+#endif
 #include <pcl/registration/correspondence_estimation.h>
 #include <pcl/registration/correspondence_rejection_distance.h>
 #include <pcl/registration/transformation_estimation_svd.h>
@@ -68,8 +70,12 @@ class RegKeypointCorrespondenceAbstract
 public:
   virtual boost::shared_ptr<pcl::PointCloud<Point> > getSourcePoints()=0;
   virtual boost::shared_ptr<pcl::PointCloud<Point> > getTargetPoints()=0;
-
-  virtual void getCorrespondences(std::vector<pcl::registration::Correspondence> &correspondences)=0;
+  
+  #ifdef PCL_VERSION_COMPARE
+    virtual void getCorrespondences(pcl::Correspondences &correspondences)=0;
+  #else
+    virtual void getCorrespondences(std::vector<pcl::registration::Correspondence> &correspondences)=0;
+  #endif
 
   virtual bool compute(const pcl::PointCloud<Point> &src, const pcl::PointCloud<Point> &tgt)=0;
 };
@@ -84,7 +90,11 @@ protected:
   virtual Point getPointForKeypointTgt(const int ind)=0;
 
 public:
-  virtual void getCorrespondences(std::vector<pcl::registration::Correspondence> &correspondences) {
+  #ifdef PCL_VERSION_COMPARE
+    virtual void getCorrespondences(pcl::Correspondences &correspondences) {
+  #else
+    virtual void getCorrespondences(std::vector<pcl::registration::Correspondence> &correspondences) {
+  #endif
     pcl::registration::CorrespondenceEstimation<Keypoint, Keypoint> est;
     est.setInputCloud (keypoints_src_.makeShared());
     est.setInputTarget (keypoints_tgt_.makeShared());
@@ -127,9 +137,14 @@ protected:
   virtual bool compute_features();
   virtual bool compute_corrospondences();
   virtual bool compute_transformation();
-
-  void rejectBadCorrespondences (const pcl::registration::CorrespondencesPtr &all_correspondences,
+  
+  #ifdef PCL_VERSION_COMPARE
+    void rejectBadCorrespondences (const pcl::CorrespondencesPtr &all_correspondences,
+                                 pcl::Correspondences &remaining_correspondences);
+  #else
+    void rejectBadCorrespondences (const pcl::registration::CorrespondencesPtr &all_correspondences,
                                  pcl::registration::Correspondences &remaining_correspondences);
+  #endif
 
   //internal states
   pcl::PointCloud<Point> register_;
@@ -137,7 +152,11 @@ protected:
   float rejection_dis_;
 
   RegKeypointCorrespondenceAbstract<Point> *keypoints_;
-  pcl::registration::CorrespondencesPtr all_correspondences_;
+  #ifdef PCL_VERSION_COMPARE
+    pcl::CorrespondencesPtr all_correspondences_;
+  #else
+    pcl::registration::CorrespondencesPtr all_correspondences_;
+  #endif
 };
 
 }

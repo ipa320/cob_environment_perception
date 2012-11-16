@@ -180,13 +180,12 @@ cob_3d_mapping_filters::SpeckleFilter<PointT>::applyFilter (PointCloud &pc_out)
   pc_out.points.resize(input_->points.size());
   pc_out.header = input_->header;
 
-  pcl::PointIndices::Ptr points_to_remove (new pcl::PointIndices ());
-
-  applyFilter(points_to_remove);
+	points_to_remove_->indices.clear();
+  applyFilter(points_to_remove_);
 
   pcl::ExtractIndices< PointT > extractIndices;
   extractIndices.setInputCloud (input_ );
-  extractIndices.setIndices ( points_to_remove );
+  extractIndices.setIndices ( points_to_remove_ );
   extractIndices.setNegative(true);
   extractIndices.filter (pc_out);
 

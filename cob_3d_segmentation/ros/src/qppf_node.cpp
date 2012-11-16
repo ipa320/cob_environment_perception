@@ -17,7 +17,7 @@
 
 #include <cob_3d_segmentation/quad_regression/quad_regression.h>
 #include <cob_3d_mapping_msgs/CurvedPolygon_Array.h>
-#include <cob_3d_mapping_msgs/FilterObject.h>
+//#include <cob_3d_mapping_msgs/FilterObject.h>
 
 #include <actionlib/server/simple_action_server.h>
 #include <cob_3d_segmentation/ObjectWatchGoal.h>
@@ -68,7 +68,7 @@ class QPPF_Node : public Parent
 
   Segmentation::Segmentation_QuadRegression<Point, PointLabel> seg_;
 
-  std::vector<cob_3d_mapping_msgs::FilterObject> filter_;
+  //std::vector<cob_3d_mapping_msgs::FilterObject> filter_;
 
   actionlib::SimpleActionServer<cob_3d_segmentation::ObjectWatchAction> as_;
   cob_3d_segmentation::ObjectWatchGoalConstPtr  goal_;

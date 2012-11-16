@@ -31,20 +31,19 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
 
 rosbuild_check_for_sse()
 
-rosbuild_add_library(cob_3d_mapping_point_map
-	common/src/point_map.cpp)
+#rosbuild_add_library(cob_3d_mapping_point_map
+#	common/src/point_map.cpp)
 
 rosbuild_add_library(cob_3d_mapping_point_map_nodelets
-	#ros/src/point_map_nodelet.cpp
-	ros/src/point_map_nodelet_2.cpp
+	ros/src/point_map_nodelet.cpp
 	ros/src/difference_segmentation.cpp)
 
-rosbuild_add_executable(set_reference_map_client ros/src/set_reference_map.cpp)
-rosbuild_add_executable(get_map_client ros/src/get_map_client.cpp)
+rosbuild_add_executable(set_point_map ros/src/set_point_map.cpp)
+rosbuild_add_executable(get_point_map ros/src/get_point_map.cpp)
 
-rosbuild_add_compile_flags(cob_3d_mapping_point_map ${SSE_FLAGS})
+#rosbuild_add_compile_flags(cob_3d_mapping_point_map ${SSE_FLAGS})
 
-target_link_libraries(cob_3d_mapping_point_map_nodelets cob_3d_mapping_point_map pcl_registration pcl_segmentation)
+target_link_libraries(cob_3d_mapping_point_map_nodelets pcl_registration pcl_segmentation)
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
 #target_link_libraries(${PROJECT_NAME} another_library)
@@ -52,7 +51,5 @@ target_link_libraries(cob_3d_mapping_point_map_nodelets cob_3d_mapping_point_map
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 #rosbuild_add_executable(example examples/example.cpp)
 #target_link_libraries(example ${PROJECT_NAME})
+rosbuild_add_roslaunch_check(ros/launch)
 
-#INSTALL(TARGETS cob_3d_mapping_point_map cob_3d_mapping_point_map_nodelets EXPORT cob_3d_mapping_point_map
-#   LIBRARY DESTINATION "${CMAKE_INSTALL_PREFIX}/cob_3d_mapping_point_map/lib"
-#)

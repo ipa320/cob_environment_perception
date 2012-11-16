@@ -11,55 +11,19 @@
 
 
 //includes needed for segmentation (things to test)
+#include <cob_3d_segmentation/polygon_extraction/polygon_types.h>
 #include <cob_3d_segmentation/polygon_extraction/polygon_extraction.h>
 
 
-struct testSXY
+
+TEST(cob_3d_segmentation, polygon_extraction)
 {
-  int x,y;
+  cob_3d_segmentation::PolygonExtraction pe;
 
-  inline bool operator<(const testSXY& rhs) const
-      {
-    if(y==rhs.y)
-      return x<rhs.x;
-    return y<rhs.y;
-      }
-
-  static int getInd(const int x, const int y)
-  {
-    return x*60+y;
-  }
-};
-
-struct testPOLYGON
-{
-  std::vector<std::vector<testSXY> > polys_;
-
-  void addPolygon()
-  {
-    polys_.push_back(std::vector<testSXY>());
-  }
-
-  void removePolygon()
-  {
-    polys_.erase(polys_.end()-1);
-  }
-
-  void addPoint(int x, int y)
-  {
-    testSXY xy={x,y};
-    polys_.back().push_back(xy);
-  }
-};
-
-TEST(Segmentation, polygon_extraction)
-{
-  Segmentation::PolygonExtraction pe;
-
-  std::vector<testSXY> outs;
+  std::vector<cob_3d_segmentation::PolygonPoint> outs;
   for(int i=0; i<30; i++)
   {
-    testSXY xy;
+    cob_3d_segmentation::PolygonPoint xy;
 
     xy.x=i+10;
     xy.y=10;
@@ -78,7 +42,7 @@ TEST(Segmentation, polygon_extraction)
     outs.push_back(xy);
   }
 
-  testPOLYGON poly;
+  cob_3d_segmentation::PolygonContours<cob_3d_segmentation::PolygonPoint> poly;
   pe.outline(60,60, outs, poly);
 
   printf("%d polygons first with %d points\n", (int)poly.polys_.size(), (int)poly.polys_[0].size());
