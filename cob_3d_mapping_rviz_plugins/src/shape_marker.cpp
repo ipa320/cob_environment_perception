@@ -135,7 +135,11 @@ namespace rviz
       pt.x = p3(0);
       pt.y = p3(1);
     }
-    else if(new_message->params.size()==5||new_message->params.size()==6) {
+    else if(new_message->params.size()==11) {
+      pt.x=point.x;
+      pt.y=point.y;
+    }
+    else if(new_message->params.size()==6) {
       pt.x=point.x;
       pt.y=point.y;
     }
@@ -168,41 +172,59 @@ namespace rviz
       p3(2)=0;
       pos = transformation*p3;
     }
-    else if(new_message->params.size()==5||new_message->params.size()==6) {
-      Eigen::Vector2f v;
+    else if(new_message->params.size()==11) {
+      Eigen::Vector2f v,n1;
       Eigen::Vector3f v2,n2;
       v(0)=pt.x;
       v(1)=pt.y;
       v2(2)=0.f;
       v2(0)=v(0)*v(0);
       v2(1)=v(1)*v(1);
-      if(new_message->params.size()==6)
-        v2(2)=v(0)*v(1);
+      v2(2)=v(0)*v(1);
       n2(2)=0.f;
-      n2(0)=new_message->params[3];
-      n2(1)=new_message->params[4];
-      if(new_message->params.size()==6)
-        n2(2)=new_message->params[5];
+      n2(0)=new_message->params[2];
+      n2(1)=new_message->params[3];
+        n2(2)=new_message->params[4];
 
-      normal(0)=new_message->params[0];
-      normal(1)=new_message->params[1];
-      normal(2)=new_message->params[2];
+      n1(0)=new_message->params[0];
+      n1(1)=new_message->params[1];
 
-      Eigen::Vector3f x,y, origin;
-      x(0)=1.f;
-      y(1)=1.f;
-      x(1)=x(2)=y(0)=y(2)=0.f;
+      Eigen::Vector3f origin;
 
       Eigen::Matrix<float,3,2> proj2plane_;
-      proj2plane_.col(0)=normal.cross(y);
-      proj2plane_.col(1)=normal.cross(x);
+      proj2plane_.col(0)(0) = new_message->params[5];
+      proj2plane_.col(0)(1) = new_message->params[6];
+      proj2plane_.col(0)(2) = new_message->params[7];
+
+      proj2plane_.col(1)(0) = new_message->params[8];
+      proj2plane_.col(1)(1) = new_message->params[9];
+      proj2plane_.col(1)(2) = new_message->params[10];
 
       origin(0)=new_message->centroid.x;
       origin(1)=new_message->centroid.y;
       origin(2)=new_message->centroid.z;
 
-      pos = origin+proj2plane_*v + normal*(v2.dot(n2));
-      normal += normal*(2*v(0)*n2(0)+v(1)*n2(2) + 2*v(1)*n2(1)+v(0)*n2(2));
+      pos = origin + proj2plane_*v +
+          proj2plane_.col(0).cross(proj2plane_.col(1)) * (v2.dot(n2) +v.dot(n1));
+      //pos = origin+proj2plane_*v + normal*(v2.dot(n2));
+      //normal += normal*(2*v(0)*n2(0)+v(1)*n2(2) + 2*v(1)*n2(1)+v(0)*n2(2));
+    }
+    else if(new_message->params.size()==6) {
+      Eigen::Vector2f v,v2;
+      v(0)=pt.x;
+      v(1)=pt.y;
+
+      v2(0)=v(0)*v(0);
+      v2(1)=v(1)*v(1);
+
+      pos(0) = pt.x;
+      pos(1) = pt.y;
+      pos(2) = new_message->params[0]
+                                   + new_message->params[1]*v(0) + new_message->params[2]*v2(0)
+                                   + new_message->params[3]*v(1) + new_message->params[4]*v2(1)
+                                   + new_message->params[5]*v(0)*v(1);
+      //pos = origin+proj2plane_*v + normal*(v2.dot(n2));
+      //normal += normal*(2*v(0)*n2(0)+v(1)*n2(2) + 2*v(1)*n2(1)+v(0)*n2(2));
     }
   }
 
