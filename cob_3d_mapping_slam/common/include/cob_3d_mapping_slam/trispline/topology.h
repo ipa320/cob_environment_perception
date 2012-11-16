@@ -49,6 +49,7 @@ namespace ParametricSurface {
       Eigen::Vector2f uv;
       Eigen::Vector3f pt, n, n2;
       Vertex_handle vh;
+      float weight_;
 
       void transform(const Eigen::Matrix3f &rot, const Eigen::Vector3f &tr) {
         pt = rot*pt + tr;
@@ -176,13 +177,13 @@ namespace ParametricSurface {
 
         Eigen::Matrix3f M;
         M.col(0) = vx;
-        M.col(1) = vy;
+        M.col(1) = -vy;
         M.col(2) = p.col(3).head<3>();
 
-        fjac.row(0) = (M.inverse()*(p.col(0).head<3>()-pt_)).head<2>();
+        fjac.row(0) = 2*(M.inverse()*(p.col(0).head<3>()-pt_)).head<2>();
 
-//        fjac(0,0) = 2*( p.col(1)(3)* p.col(3).head<3>().dot(p.col(0).head<3>()-pt_) + vx.dot(p.col(0).head<3>()-pt_));
-//        fjac(0,1) = -2*( p.col(2)(3)* p.col(3).head<3>().dot(p.col(0).head<3>()-pt_) + vy.dot(p.col(0).head<3>()-pt_));
+        //        fjac(0,0) = 2*( p.col(1)(3)* p.col(3).head<3>().dot(p.col(0).head<3>()-pt_) + vx.dot(p.col(0).head<3>()-pt_));
+        //        fjac(0,1) = -2*( p.col(2)(3)* p.col(3).head<3>().dot(p.col(0).head<3>()-pt_) + vy.dot(p.col(0).head<3>()-pt_));
         fjac(1,0) = fjac(1,1) = 0;
 
         std::cout<<"o1 "<<vx.dot(p.col(0).head<3>()-pt_)<<"\n";
@@ -195,6 +196,51 @@ namespace ParametricSurface {
       int inputs() const { return 2; }
       int values() const { return 2; } // number of constraints
     };
+
+    static float sqDistLinePt(const Eigen::Vector2f &uv, const Eigen::Vector2f &r1, const Eigen::Vector2f &r2) {
+      float f = (uv-r1).dot(r2-r1) / (r2-r1).dot(r2-r1);
+      if(f>1) f=1;
+      else if(f<0) f=0;
+      return (uv - f*(r2-r1) - r1).squaredNorm();
+    }
+
+    inline ParametricSurface::TriSpline2_Fade* locate(const Eigen::Vector2f &uv) const {
+      bool inside;
+      return locate(uv,inside);
+    }
+    inline ParametricSurface::TriSpline2_Fade* locate(const Eigen::Vector2f &uv, bool &inside) const {
+      Face_handle sh = del_.locate( Point(uv(0),uv(1)) );
+
+      if(map_tris_.find(&*sh)==map_tris_.end()) {
+        ParametricSurface::TriSpline2_Fade* r=NULL;
+        inside=false;
+
+        float mi = std::numeric_limits<float>::max();
+        for(std::map< Face*, boost::shared_ptr<ParametricSurface::TriSpline2_Fade> >::const_iterator it = map_tris_.begin();
+            it!=map_tris_.end(); ++it)
+        {
+
+          Eigen::Vector2f p1 = it->second->getUV(0),p2=it->second->getUV(1),p3=it->second->getUV(2);
+
+          const float dist = std::min( sqDistLinePt(uv, p1,p2), std::min(sqDistLinePt(uv, p2,p3), sqDistLinePt(uv, p3,p1)));
+
+          std::cout<<"dist "<<dist<<"\n";
+          if(dist<mi) {
+            mi = dist;
+            r = it->second.get();
+          }
+
+        }
+
+        ROS_ASSERT(r);
+        return r;
+      }
+      else {
+        inside=true;
+        return (ParametricSurface::TriSpline2_Fade*)map_tris_.find(&*sh)->second.get();
+      }
+
+    }
 
   public:
 
@@ -223,7 +269,12 @@ namespace ParametricSurface {
       ROS_INFO("insert pt");
       pts_.push_back(boost::shared_ptr<POINT>( new POINT(pt)));
       pts_.back()->vh = del_.insert(Point(pt.uv(0),pt.uv(1)));
-      ROS_ASSERT( map_pts_.find(&*pts_.back()->vh)==map_pts_.end() );
+      pts_.back()->weight_ = 1.f; //TODO:
+      if(map_pts_.find(&*pts_.back()->vh)!=map_pts_.end()) {
+        ROS_WARN("pt (%f, %f) already there", pt.uv(0), pt.uv(1));
+        pts_.erase(pts_.end()-1);
+        return;
+      }
       //pts_.back()->vh->pp = pts_.back().get();
       map_pts_[&*pts_.back()->vh] = pts_.back();
     }
@@ -254,7 +305,17 @@ namespace ParametricSurface {
     inline Eigen::Vector2f nextPoint(const Eigen::Vector3f &p) const {
       //std::cout<<"nP\n"<<p<<"\n";
       Eigen::VectorXf r(2);
-      r.fill(0);
+
+      float dis = std::numeric_limits<float>::max();
+      for(std::map< Face*, boost::shared_ptr<ParametricSurface::TriSpline2_Fade> >::const_iterator it = map_tris_.begin();
+          it!=map_tris_.end(); ++it)
+      {
+        const float d = (it->second->getMid()-p).squaredNorm();
+        if(d<dis) {
+          dis = d;
+          r = it->second->getMidUV();
+        }
+      }
       Functor functor(*this, p);
       Eigen::LevenbergMarquardt<Functor, float> lm(functor);
       lm.parameters.maxfev = 50; //not to often (performance)
@@ -264,30 +325,19 @@ namespace ParametricSurface {
     }
 
     inline Eigen::Vector3f project2world(const Eigen::Vector2f &uv) const {
-      Face_handle sh = del_.locate( Point(uv(0),uv(1)) );
-      //ROS_ASSERT(sh->pp);
-      //return (*((ParametricSurface::TriSpline2_Fade*)sh->pp))(uv);
-      //return (*tris_[0])(uv);
-      if(map_tris_.find(&*sh)==map_tris_.end())
-        sh = del_.locate( del_.nearest_vertex(Point(uv(0),uv(1)))->point() );
-      ROS_ASSERT(map_tris_.find(&*sh)!=map_tris_.end());
-      return (*(ParametricSurface::TriSpline2_Fade*)map_tris_.find(&*sh)->second.get())(uv);
+      return (*locate(uv))(uv);
     }
 
     inline Eigen::Vector3f normalAt(const Eigen::Vector2f &uv) const {
-      Face_handle sh = del_.locate(Point(uv(0),uv(1)));
-      if(map_tris_.find(&*sh)==map_tris_.end())
-        sh = del_.locate( del_.nearest_vertex(Point(uv(0),uv(1)))->point() );
-      ROS_ASSERT(map_tris_.find(&*sh)!=map_tris_.end());
-      return ((ParametricSurface::TriSpline2_Fade*)map_tris_.find(&*sh)->second.get())->normalAt(uv);
+      return locate(uv)->normalAt(uv);
+    }
+
+    inline Eigen::Vector3f normalAt2(const Eigen::Vector2f &uv, bool &inside) const {
+      return locate(uv, inside)->normalAt2(uv);
     }
 
     inline Eigen::Matrix4f normalAtUV(const Eigen::Vector2f &uv) const {
-      Face_handle sh = del_.locate(Point(uv(0),uv(1)));
-      if(map_tris_.find(&*sh)==map_tris_.end())
-        sh = del_.locate( del_.nearest_vertex(Point(uv(0),uv(1)))->point() );
-      ROS_ASSERT(map_tris_.find(&*sh)!=map_tris_.end());
-      return ((ParametricSurface::TriSpline2_Fade*)map_tris_.find(&*sh)->second.get())->normalAtUV(uv);
+      return locate(uv)->normalAtUV(uv);
     }
 
     void operator+=(const Topology &o) {
@@ -307,13 +357,48 @@ namespace ParametricSurface {
         for(size_t i=0; i<o.pts_.size(); i++) {
           POINT p = *o.pts_[i];
           p.uv = nextPoint(p.pt);
+          bool inside;
+          Eigen::Vector3f t = normalAt2(p.uv,inside);
+          std::cout<<"normal2 "<<t<<"\n";
+          if(inside) {
+            float w=1;
+            p.n2 = (p.weight_*p.n2 + w*t)/(p.weight_+w);
+
+            std::cout<<"w "<<p.weight_<<"\n";
+            std::cout<<"n bef\n"<<p.n<<"\n";
+
+            t = normalAt(p.uv);
+            p.n = (p.weight_*p.n + w*t)/(p.weight_+w);
+            p.n.normalize();
+
+            std::cout<<"n after\n"<<p.n<<"\n";
+
+            t = project2world(p.uv);
+            p.pt = (p.weight_*p.pt + w*t)/(p.weight_+w);
+          }
           temp.push_back(p);
+        }
+        for(size_t i=0; i<pts_.size(); i++) {
+          Eigen::Vector2f uv = o.nextPoint(pts_[i]->pt);
+          bool inside;
+          Eigen::Vector3f t = o.normalAt2(uv,inside);
+          if(inside) {
+            float w=1;
+            pts_[i]->n2 = (pts_[i]->weight_*pts_[i]->n2 + w*t)/(pts_[i]->weight_+w);
+
+            t = o.normalAt(uv);
+            pts_[i]->n = (pts_[i]->weight_*pts_[i]->n + w*t)/(pts_[i]->weight_+w);
+            pts_[i]->n.normalize();
+
+            t = o.project2world(uv);
+            pts_[i]->pt = (pts_[i]->weight_*pts_[i]->pt + w*t)/(pts_[i]->weight_+w);
+          }
         }
         for(size_t i=0; i<temp.size(); i++) insertPointWithoutUpdate(temp[i]);
       }
       update();
 
-      finish();
+      //finish();
     }
 
     void transform(const Eigen::Matrix3f &rot, const Eigen::Vector3f &tr) {
