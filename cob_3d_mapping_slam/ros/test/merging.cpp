@@ -29,6 +29,7 @@
 
 #include <cob_3d_mapping_slam/curved_polygons/surface_tri_spline.h>
 
+
 //#define ENABLE_TEST_1
 //#define ENABLE_TEST_2
 //#define ENABLE_TEST_3
@@ -755,9 +756,14 @@ void Surface2PCD(const Slam_Surface::Surface *surf, pcl::PointCloud<pcl::PointXY
   p.b = b;
   Eigen::Vector2f p3;
 
-  for(float x=-Fsize*1.f; x<=Fsize*1.f; x+=Fsize/100) {
-    for(float y=-Fsize*1.f; y<=Fsize*1.f; y+=Fsize/100) {
+  const float F=1;
+
+  for(float x=-Fsize*F; x<=Fsize*F; x+=Fsize/100) {
+    for(float y=-Fsize*F; y<=Fsize*F; y+=Fsize/100) {
       Eigen::Vector3f v;
+
+      p.r = (x+F*Fsize)/(2*F*Fsize)*255;
+      p.g = (y+F*Fsize)/(2*F*Fsize)*255;
 
       p3(0) = x;
       p3(1) = y;
@@ -793,11 +799,11 @@ void test18()
   boost::array<float, 6> params;
   for(int i=0; i<6; i++)
     params[i] = (rand()%10000-5000)/2000.f;
-  /*params[0] = 0;
+  params[0] = 0;
   params[1] = 0;
   params[2] = 1;
   params[3] = 0;
-  params[4] = 0;
+  params[4] = 1;
   params[5] = 0;
   /*params[0] = 0;
   params[0] = 1;
@@ -816,8 +822,8 @@ void test18()
 
   {
     Eigen::AngleAxisf aa(0.3f, Eigen::Vector3f::Identity());
-    //poly.transform(aa.toRotationMatrix(), Eigen::Vector3f::Identity());
-    //inst.transform(aa.toRotationMatrix(), Eigen::Vector3f::Identity());
+    poly.transform(aa.toRotationMatrix(), Eigen::Vector3f::Identity());
+    inst.transform(aa.toRotationMatrix(), Eigen::Vector3f::Identity());
   }
 
   Eigen::Vector3f p1,p2;
@@ -871,7 +877,7 @@ void test18()
     std::cout<<"should\n"<<p1<<"\n";
     std::cout<<"should\n"<<poly.project2world(p3)<<"\n";
   }
-  exit(0);
+  //exit(0);
 
   pcl::PointCloud<pcl::PointXYZRGB> pc;
   pcl::PointXYZRGB p;
@@ -927,6 +933,7 @@ TEST(TriSplineSurface, Basics2)
 void test19()
 #endif
 {
+  ros::Time::init();
   srand(clock());
 
   boost::array<float, 6> params;
@@ -934,6 +941,8 @@ void test19()
     params[i] = 0;
 
   params[0] = 1;
+  params[4] = -1.3f;
+  params[2] = -0.03f;
 
   Slam_Surface::PolynomialSurface poly;
 
@@ -943,11 +952,10 @@ void test19()
   Slam_Surface::SurfaceTriSpline res;
 
   const float angle = 0.1f;
-  const int steps = 20;
+  const int steps = 30;
 
   Eigen::Vector3f x = Eigen::Vector3f::Zero(); x(0)=1;
 
-  pcl::PointCloud<pcl::PointXYZRGB> pc;
   for(int i=0; i<steps; i++) {
     Slam_Surface::SurfaceTriSpline inst;
     inst.init(&poly,-Fsize,Fsize, -Fsize,Fsize, 1);
@@ -958,16 +966,23 @@ void test19()
     Eigen::AngleAxisf aa(angle, x);
     poly.transform(aa.toRotationMatrix(), Eigen::Vector3f::Zero());
 
+    pcl::PointCloud<pcl::PointXYZRGB> pc;
     char buf[128];
     sprintf(buf,"test19_%d.pcd", i);
     Surface2PCD(&inst, pc, Fsize, 0, 255, 0);
     Surface2PCD(&res, pc, Fsize, 255, 0, 0);
     pcl::io::savePCDFile(buf,pc);
+
+    std::cout<<"STEP\n";
+    res.print();
+
+    sprintf(buf,"test19_%d.bag", i);
+    cob_3d_marker::MarkerContainer()<<new cob_3d_marker::MarkerList_Line(2)<<new cob_3d_marker::MarkerList_Arrow(3)<<res >>&cob_3d_marker::MarkerBagfile(&rosbag::Bag(buf, rosbag::bagmode::Write));
+
+    if(i==15) exit(0);
   }
 
-  res.print();
-
-  //pcl::PointCloud<pcl::PointXYZRGB> pc;
+  pcl::PointCloud<pcl::PointXYZRGB> pc;
   Surface2PCD(&res, pc, Fsize, 255, 0, 0);
   pcl::io::savePCDFile("test19.pcd",pc);
 }
