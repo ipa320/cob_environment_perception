@@ -17,6 +17,7 @@
 //Own includes
 #include <cob_3d_mapping_demonstrator/MapDemonCtrlParams.h>
 #include <cob_3d_mapping_demonstrator/MapDemonCtrl.h>
+#include <cob_3d_mapping_demonstrator/MapDemonCtrl_Maestro.h>
 #include <cob_3d_mapping_demonstrator/SerialDevice.h>
 
 //using namespace serial_com;
