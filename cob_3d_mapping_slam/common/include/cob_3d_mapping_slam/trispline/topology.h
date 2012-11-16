@@ -17,6 +17,8 @@
 #include <unsupported/Eigen/NonLinearOptimization>
 #include <eigen3/Eigen/Jacobi>
 
+#include <cob_3d_mapping_slam/marker/marker_container.h>
+
 namespace ParametricSurface {
 
   class Topology
@@ -329,6 +331,53 @@ namespace ParametricSurface {
     void print() const {
       for(size_t i=0; i<pts_.size(); i++) {
         std::cout<<"uv\n"<<pts_[i]->uv<<"\n";
+        std::cout<<"pt\n"<<pts_[i]->pt<<"\n";
+      }
+    }
+
+    void add(cob_3d_marker::MarkerList_Line &ml) const {
+      for(std::map< Face*, boost::shared_ptr<ParametricSurface::TriSpline2_Fade> >::const_iterator it = map_tris_.begin();
+          it!=map_tris_.end(); ++it)
+      {
+        ParametricSurface::_Line l[6];
+        it->second->test_setup(l);
+        for(int i=0; i<6; i++)
+          ml.addLine( l[i].o, l[i].o+l[i].u, 0,1,0);
+        for(int i=0; i<3; i++) {
+          ml.addLine( it->second->getEdge(i), it->second->getEdge((i+1)%3) );
+
+          ml.addLine( it->second->getEdge(i), it->second->getFade(i)(1,0) , 0.8f,0.1f,0.1f);
+          ml.addLine( it->second->getFade(i)(1,0), it->second->getFade(i)(0,1) , 0.8f,0.1f,0.1f);
+          ml.addLine( it->second->getFade(i)(0,1), it->second->getEdge((i+1)%3) , 0.8f,0.1f,0.1f);
+        }
+      }
+    }
+
+    void add(cob_3d_marker::MarkerList_Triangles &mt) const {
+      for(std::map< Face*, boost::shared_ptr<ParametricSurface::TriSpline2_Fade> >::const_iterator it = map_tris_.begin();
+          it!=map_tris_.end(); ++it)
+      {
+        /*for(int i=0; i<5; i++) {
+          mt.addTriangle( it->second->getEdge(i), it->second->getEdge((i+1)%3) );
+
+          ml.addLine( it->second->getEdge(i), it->second->getFade(i)(1,0) , 0.8f,0.1f,0.1f);
+          ml.addLine( it->second->getFade(i)(1,0), it->second->getFade(i)(0,1) , 0.8f,0.1f,0.1f);
+          ml.addLine( it->second->getFade(i)(0,1), it->second->getEdge((i+1)%3) , 0.8f,0.1f,0.1f);
+        }*/
+      }
+    }
+
+    void add(cob_3d_marker::MarkerList_Arrow &ma) const {
+      int j=0;
+      for(std::map< Face*, boost::shared_ptr<ParametricSurface::TriSpline2_Fade> >::const_iterator it = map_tris_.begin();
+          it!=map_tris_.end(); ++it)
+      {
+        ++j;
+        for(int i=0; i<3; i++) {
+          ma.addArrow(it->second->getEdge(i), it->second->getEdge(i)+it->second->getNormal(i));
+
+          ma.addArrow(it->second->getEdge(i), it->second->getEdge(i)+it->second->getNormal2(i), 1,0,0);
+        }
       }
     }
 
