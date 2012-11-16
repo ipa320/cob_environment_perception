@@ -41,7 +41,7 @@ file(GLOB registration_SRC1
 
 #rosbuild_add_executable(registration ros/src/registration_node.cpp common/src/rgbdslam.cpp)
 #rosbuild_add_executable(registration ros/src/registration_node.cpp ${registration_SRC1})
-#rosbuild_add_executable(registration ros/src/registration_node.cpp)
+rosbuild_add_executable(cob_3d_registration ros/src/registration_nodelet.cpp)
 
 rosbuild_add_library(cob_3d_registration_lib
 	common/src/registration_icp.cpp
@@ -50,6 +50,7 @@ rosbuild_add_library(cob_3d_registration_lib
 	
 target_link_libraries(cob_3d_registration_lib vtkCommon )
 
+target_link_libraries(cob_3d_registration cob_3d_registration_lib )
 
 rosbuild_add_executable(capture ros/src/capture.cpp)
 rosbuild_add_executable(filter ros/src/filter.cpp)
