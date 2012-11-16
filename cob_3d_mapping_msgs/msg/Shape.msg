@@ -1,7 +1,9 @@
 Header header
 
+byte PLANE=0
 byte POLYGON=0
 byte LINE=1
+byte CURVED=2	#from QPFF
 byte CURVED=2
 byte MESH=3
 byte OTHER=4
@@ -10,6 +12,7 @@ byte CYLINDER=5
 
 byte type
 int32 id
+float32 weight
 
 # define shape parameters
 # for plane
@@ -17,6 +20,8 @@ int32 id
 #	d = params[3]
 # for line
 # direction vector = params[0],params[1],params[2]
+# for curved
+# 3 for plane, 6 for polynom 2nd degree, ...
 #
 #for cylinder
 # symmetry axis = params[0],params[1],params[2]
