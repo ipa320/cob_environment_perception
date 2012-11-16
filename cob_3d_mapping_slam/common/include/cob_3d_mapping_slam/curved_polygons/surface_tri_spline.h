@@ -23,7 +23,7 @@ namespace Slam_Surface
    * outer points are 0 on tensor product, 4th control point has value z on x,y
    * B-Spline on tri.-plane
    */
-  class SurfaceTriSpline : public Surface
+  class SurfaceTriSpline : public Surface, public cob_3d_marker::MarkerCreator
   {
 #if 1
     ParametricSurface::Topology top_;
@@ -112,6 +112,11 @@ namespace Slam_Surface
     virtual float area() const {return 1;}
 
     void print() const {top_.print();}
+
+    void marker(cob_3d_marker::MarkerContainer &mc) {
+      top_.add( *(cob_3d_marker::MarkerList_Line*)mc.get(2).get() );
+      top_.add( *(cob_3d_marker::MarkerList_Arrow*)mc.get(3).get() );
+    }
   };
 
 #include "impl/surface_tri_spline.hpp"
