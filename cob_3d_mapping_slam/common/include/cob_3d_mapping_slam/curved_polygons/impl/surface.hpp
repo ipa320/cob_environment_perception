@@ -60,6 +60,10 @@ Eigen::Vector3f PolynomialSurface::normalAt2(const Eigen::Vector2f &v) const {
   r(1) = -(2*param_.col(2)(1));
   r(2) = 0;
 
+  r(0) = 0;
+  r(1) = 0;
+  r(2) = 1;
+
   //r.normalize();
 
   Eigen::Matrix3f M;
