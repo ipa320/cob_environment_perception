@@ -85,11 +85,14 @@
 #include "cob_3d_registration/EvaluationResult.h"
 #include "parameters/parameters_bag.h"
 
-#include <cob_3d_registration/registration_icp.h>
-#ifndef PCL_DEPRECATED
-#include <cob_3d_registration/registration_icp_moments.h>
-#include <cob_3d_registration/registration_icp_fpfh.h>
-#include <cob_3d_registration/registration_icp_narf.h>
+#include <registration/registration_icp.h>
+
+#include <vtkCommand.h>
+#include <pcl/features/feature.h>
+#ifndef GICP_ENABLE
+#include <registration/registration_icp_moments.h>
+#include <registration/registration_icp_fpfh.h>
+#include <registration/registration_icp_narf.h>
 
 //#include <registration/registration_fastslam.h>
 //#include <cob_vision_utils/VisionUtils.h>
@@ -110,7 +113,19 @@
 #include <cob_srvs/Trigger.h>
 #include <cob_3d_mapping_msgs/TriggerMappingAction.h>
 
-#include <sensor_msgs/CameraInfo.h>
+#ifdef PCL_VERSION_COMPARE
+  #include <pcl/point_traits.h>
+  #include <pcl/kdtree/kdtree_flann.h>
+  #include <pcl/common/eigen.h>
+  #include <pcl/registration/correspondence_estimation.h>
+#else
+  #include <pcl/ros/point_traits.h>
+#endif
+
+
+
+
+
 
 using namespace tf;
 #define SHOW_MAP 0
@@ -273,7 +288,7 @@ public:
   {
     //TODO: add mutex
     ROS_INFO("Resetting transformation...");
-    if(reg_) reg_->setTransformation(Eigen::Matrix4f::Identity());
+    if(reg_) buildAlgo();
     return true;
   }
 
@@ -309,7 +324,8 @@ public:
       Eigen::Affine3d af;
       af.matrix()=reg_->getTransformation().cast<double>();
       tf::TransformEigenToTF(af,transform);
-      tf_br_.sendTransform(tf::StampedTransform(transform, transform.stamp_, world_id_, corrected_id_));
+      //std::cout << transform.stamp_ << std::endl;
+      tf_br_.sendTransform(tf::StampedTransform(transform, pc_in->header.stamp, world_id_, corrected_id_));
 
       ROS_WARN("registration successful");
     }
@@ -564,7 +580,7 @@ public:
         break;
 
       case E_ALGO_ICP_MOMENTS:
-#ifndef PCL_DEPRECATED
+#ifndef GICP_ENABLE
         reg_ = new cob_3d_registration::Registration_ICP_Moments<Point>();
 
         setSettings_ICP_Moments((cob_3d_registration::Registration_ICP_Moments<Point>*)reg_);
@@ -574,7 +590,7 @@ public:
         break;
 
       case E_ALGO_ICP_FPFH:
-#ifndef PCL_DEPRECATED
+#ifndef GICP_ENABLE
         reg_ = new cob_3d_registration::Registration_ICP_FPFH<Point>();
 
         setSettings_ICP_FPFH((cob_3d_registration::Registration_ICP_FPFH<Point>*)reg_);
@@ -584,7 +600,7 @@ public:
         break;
 
       case E_ALGO_ICP_NARF:
-#ifndef PCL_DEPRECATED
+#ifndef GICP_ENABLE
         reg_ = new cob_3d_registration::Registration_ICP_NARF<Point>();
 
         setSettings_ICP_NARF((cob_3d_registration::Registration_ICP_NARF<Point>*)reg_);
@@ -594,7 +610,7 @@ public:
         break;
 
       case E_ALGO_ICP_EDGES:
-#ifndef PCL_DEPRECATED
+#ifndef GICP_ENABLE
 #if HAS_RGB
         reg_ = new cob_3d_registration::Registration_ICP_Edges<Point>();
 
@@ -606,7 +622,7 @@ public:
         break;
 
         /*case E_ALGO_FASTSLAM:
-#ifndef PCL_DEPRECATED
+#ifndef GICP_ENABLE
         reg_ = new cob_3d_registration::Registration_FastSLAM<Point>();
 
         //setSettings_ICP_FastSLAM((cob_3d_registration::Registration_FastSLAM<Point>*)reg_);
@@ -616,7 +632,7 @@ public:
         break;*/
 
       case E_ALGO_INFO:
-#ifndef PCL_DEPRECATED
+#ifndef GICP_ENABLE
         reg_ = new cob_3d_registration::Registration_Infobased<Point>();
 
         setSettings_Info((cob_3d_registration::Registration_Infobased<Point>*)reg_);
@@ -626,11 +642,11 @@ public:
         break;
 
       case E_ALGO_COR:
-#ifndef PCL_DEPRECATED
+#ifndef GICP_ENABLE
         reg_ = new cob_3d_registration::Registration_Corrospondence<Point>();
 
-        //((cob_3d_registration::Registration_Corrospondence<Point>*)reg_)->setKeypoints(new Keypoints_Segments<Point>);
-        ((cob_3d_registration::Registration_Corrospondence<Point>*)reg_)->setKeypoints(new cob_3d_registration::Keypoints_Narf<Point>);
+        //((Registration_Corrospondence<Point>*)reg_)->setKeypoints(new Keypoints_Segments<Point>);
+        //((Registration_Corrospondence<Point>*)reg_)->setKeypoints(new Keypoints_Narf<Point>);
 
         //setSettings_Cor((cob_3d_registration::Registration_Corrospondence<Point>*)reg_);
 #else
@@ -663,20 +679,20 @@ public:
     }
 
     sensor_msgs::Image img;
-    {
-      FILE *fp = fopen(req.img_fn.c_str(), "rb");
-      if(!fp) return false;
-
-      struct stat filestatus;
-      stat(req.img_fn.c_str(), &filestatus );
-
-      uint8_t *up = new uint8_t[filestatus.st_size];
-      fread(up,filestatus.st_size,1,fp);
-      img.deserialize(up);
-      delete up;
-
-      fclose(fp);
-    }
+//    {
+//      FILE *fp = fopen(req.img_fn.c_str(), "rb");
+//      if(!fp) return false;
+//
+//      struct stat filestatus;
+//      stat(req.img_fn.c_str(), &filestatus );
+//
+//      uint8_t *up = new uint8_t[filestatus.st_size];
+//      fread(up,filestatus.st_size,1,fp);
+//      img.deserialize(up);
+//      delete up;
+//
+//      fclose(fp);
+//    }
 
     cv::Mat img_depth(pc.height, pc.width, CV_16UC1);
 #ifdef USE_DEPTH_IMG_
@@ -758,7 +774,7 @@ public:
 #endif
     }
 
-#ifndef PCL_DEPRECATED
+#ifndef GICP_ENABLE
     std::string s_algo;
     if(parameters_.getParam("algo",s_algo) && s_algo=="info") {
       pcl::PointCloud<Point> result = *((cob_3d_registration::Registration_Infobased<Point>*)reg_)->getMarkers2();
@@ -769,8 +785,17 @@ public:
         publishLineMarker( ((cob_3d_registration::Registration_Infobased<Point>*)reg_)->getSource().points[i].getVector3fMap(), ((cob_3d_registration::Registration_Infobased<Point>*)reg_)->getTarget().points[i].getVector3fMap(), -i);
     }
     else if(parameters_.getParam("algo",s_algo) && s_algo=="cor") {
+<<<<<<< HEAD
       pcl::registration::Correspondences cor;
       ((cob_3d_registration::Registration_Corrospondence<Point>*)reg_)->getKeypoints()->getCorrespondences(cor);
+=======
+	  #ifdef PCL_VERSION_COMPARE
+	    pcl::Correspondences cor;
+      #else
+      	pcl::registration::Correspondences cor;
+	  #endif
+      ((Registration_Corrospondence<Point>*)reg_)->getKeypoints()->getCorrespondences(cor);
+>>>>>>> c285c39739b5ef6f5f1d65e9944b974d01b58685
       for(int i=0; i<cor.size(); i++)
         publishLineMarker( ((cob_3d_registration::Registration_Corrospondence<Point>*)reg_)->getKeypoints()->getSourcePoints()->points[cor[i].indexQuery].getVector3fMap(), ((cob_3d_registration::Registration_Corrospondence<Point>*)reg_)->getKeypoints()->getTargetPoints()->points[cor[i].indexMatch].getVector3fMap(), -i);
     }
@@ -1008,8 +1033,13 @@ protected:
     if(parameters_.getParam("use_only_last_refrence",i))
       pr->setUseOnlyLastReference(i!=0);
   }
+<<<<<<< HEAD
 #ifndef PCL_DEPRECATED
   void setSettings_ICP_Moments(cob_3d_registration::Registration_ICP_Moments<Point> *pr) {
+=======
+#ifndef GICP_ENABLE
+  void setSettings_ICP_Moments(Registration_ICP_Moments<Point> *pr) {
+>>>>>>> c285c39739b5ef6f5f1d65e9944b974d01b58685
     setSettings_ICP(pr);
 
     double d=0.;

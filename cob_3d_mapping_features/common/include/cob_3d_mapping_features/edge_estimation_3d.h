@@ -56,7 +56,8 @@
 #define __EDGE_ESTIMATION_3D_H__
 
 #include <pcl/features/feature.h>
-#include <Eigen/Geometry>
+#include <pcl/common/eigen.h>
+//#include <Eigen/Geometry>
 
 namespace cob_3d_mapping_features
 {
@@ -177,6 +178,9 @@ namespace cob_3d_mapping_features
         */
       void 
       computeFeature (PointCloudOut &output);
+
+      void
+      computeFeatureEigen (pcl::PointCloud<Eigen::MatrixXf> &output) { PCL_ERROR("[pcl::%s::computeFeatureEigen] Not implemented\n", getClassName().c_str()); }
   };
 }
 

@@ -54,7 +54,6 @@
  ****************************************************************/
 
 
-
 template<typename Point>
 void Keypoints_Segments<Point>::extractFeatures(const pcl::PointCloud<Point>& point_cloud, pcl::PointCloud<Point> &cloud_out2, pcl::PointCloud<PCAPoint> &mids) {
 
@@ -63,8 +62,11 @@ void Keypoints_Segments<Point>::extractFeatures(const pcl::PointCloud<Point>& po
   pcl::PointCloud<InterestPoint>::Ptr ip3d(new pcl::PointCloud<InterestPoint>);
   {
     pcl::PointCloud<Normal>::Ptr n(new pcl::PointCloud<Normal>);
-
-    boost::shared_ptr<pcl::KdTreeFLANN<Point> > tree(new pcl::KdTreeFLANN<Point>);
+    #ifdef PCL_VERSION_COMPARE
+      boost::shared_ptr<pcl::search::KdTree<Point> > tree(new pcl::search::KdTree<Point>);
+    #else
+      boost::shared_ptr<pcl::KdTreeFLANN<Point> > tree(new pcl::KdTreeFLANN<Point>);
+    #endif
     pcl::NormalEstimation<Point, Normal> ne;
     ne.setRadiusSearch(radius_);
     ne.setSearchMethod(tree);
@@ -73,10 +75,14 @@ void Keypoints_Segments<Point>::extractFeatures(const pcl::PointCloud<Point>& po
 
     ROS_INFO("normals done");
 
-#ifdef PCL_DEPRECATED
+#ifdef GICP_ENABLE
     boost::shared_ptr<pcl::search::OrganizedNeighbor<Point> > oTree (new pcl::search::OrganizedNeighbor<Point> );
 #else
-    boost::shared_ptr<pcl::OrganizedDataIndex<Point> > oTree (new pcl::OrganizedDataIndex<Point> );
+    #ifdef PCL_VERSION_COMPARE
+      boost::shared_ptr<pcl::search::OrganizedNeighbor<Point> > oTree (new pcl::search::OrganizedNeighbor<Point> );
+    #else
+      boost::shared_ptr<pcl::OrganizedDataIndex<Point> > oTree (new pcl::OrganizedDataIndex<Point> );
+    #endif
 #endif
     cob_3d_mapping_features::EdgeEstimation3D<Point, Normal, InterestPoint> ee;
     ee.setRadiusSearch(radius_);
@@ -106,7 +112,7 @@ void Keypoints_Segments<Point>::extractFeatures(const pcl::PointCloud<Point>& po
   edge_ext.extractEdges(*edges);
 
   //segmentation
-  cob_3d_mapping_features::Segmentation seg;
+  cob_3d_segmentation::Segmentation seg;
   seg.propagateWavefront2(edges);
 
   std::vector<pcl::PointIndices> clusters;
@@ -115,7 +121,11 @@ void Keypoints_Segments<Point>::extractFeatures(const pcl::PointCloud<Point>& po
 
   mids.clear();
   for(int i=0; i<clusters.size(); i++) {
-    if(clusters[i].get_indices_size()<point_cloud.size()*0.001)
+    #ifdef PCL_VERSION_COMPARE
+      if(clusters[i].indices.size()<point_cloud.size()*0.001)
+    #else
+      if(clusters[i].get_indices_size()<point_cloud.size()*0.001)
+    #endif
       continue;
 
     pcl::PointCloud<Point> temp;

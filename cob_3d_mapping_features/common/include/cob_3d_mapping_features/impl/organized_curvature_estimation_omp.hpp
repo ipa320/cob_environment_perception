@@ -79,9 +79,15 @@ cob_3d_mapping_features::OrganizedCurvatureEstimationOMP<PointInT,PointNT,PointL
   for (size_t i=0; i < indices_->size(); ++i)
   {
     std::vector<int> nn_indices;
-    if (this->searchForNeighborsInRange(*surface_, (*indices_)[i], nn_indices) != -1)
+    std::vector<float> nn_distances;
+    if (pcl_isnan(surface_->points[(*indices_)[i]].z) ||
+	pcl_isnan(normals_->points[(*indices_)[i]].normal[2]))
     {
-      computePointCurvatures(*normals_, (*indices_)[i], nn_indices,
+      labels_->points[(*indices_)[i]].label = I_NAN;
+    }
+    else if (this->searchForNeighborsInRange((*indices_)[i], nn_indices, nn_distances) != -1)
+    {
+      computePointCurvatures(*normals_, (*indices_)[i], nn_indices, nn_distances,
 			     output.points[(*indices_)[i]].principal_curvature[0],
 			     output.points[(*indices_)[i]].principal_curvature[1],
 			     output.points[(*indices_)[i]].principal_curvature[2],

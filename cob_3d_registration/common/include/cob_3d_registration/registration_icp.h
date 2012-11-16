@@ -100,7 +100,7 @@ public:
   /// switch backend to gicp
   void setUseGICP(bool b) {
     use_gicp_=b;
-#ifndef PCL_DEPRECATED
+#ifndef GICP_ENABLE
     ROS_ERROR("GICP is not supported by this version");
 #endif
   }

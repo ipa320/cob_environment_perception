@@ -1,5 +1,7 @@
 #pragma once
 
+#include <ros/console.h>
+#include <ros/assert.h>
 #include <eigen3/Eigen/Dense>
 
 //! collecting descirptive transformations for 6-DOFs

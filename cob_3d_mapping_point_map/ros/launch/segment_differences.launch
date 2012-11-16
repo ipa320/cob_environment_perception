@@ -1,8 +1,15 @@
 <?xml version="1.0"?>
-<launch> 
-  <node pkg="nodelet" type="nodelet" name="" args="standalone cob_3d_mapping_point_map/DifferenceSegmentation " output="screen">
+<launch>
+  <node pkg="nodelet" type="nodelet" name="diff_manager"  args="manager" output="screen"/>
+  <node pkg="nodelet" type="nodelet" name="voxel_diff" args="load pcl/VoxelGrid diff_manager" output="screen">
+    <remap from="~input" to="/registration/pc_aligned" />
+    <rosparam>
+      leaf_size: 0.01
+    </rosparam>
+  </node>
+  <node pkg="nodelet" type="nodelet" name="" args="load cob_3d_mapping_point_map/DifferenceSegmentation diff_manager" output="screen">
   	<remap from="target" to="/point_map/map" />
-    <remap from="input" to="/point_map/pc_aligned_vox" />
+    <remap from="input" to="/voxel_diff/output" />
     <remap from="output" to="/point_map/map_diff" />
     <rosparam>
       distance_threshold: 0.1

@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+
+<!--Launchfile for MappingDemon-->
+
+<launch>
+
+	<param name="robot_description" command="$(find xacro)/xacro.py '$(find cob_3d_mapping_demonstrator)/md.urdf.xacro'" />
+	<include file="$(find cob_3d_mapping_demonstrator)/ros/launch/upload_params.launch"/>
+
+	<node name="cob_3d_mapping_demonstrator_controller" type="cob_3d_mapping_demonstrator" pkg="cob_3d_mapping_demonstrator" output="screen">
+		<rosparam file="$(find cob_3d_mapping_demonstrator)/ros/launch/config.yaml"/>
+	</node>
+
+	<node name="state_publisher" type="state_publisher" pkg="robot_state_publisher" output="screen">
+		<remap from="joint_states" to="/cob_3d_mapping_demonstrator_controller/joint_states"/>
+	</node>
+  <remap from="base_controller/command" to="cob_3d_mapping_demonstrator/command_vel" />
+
+  <node name="execute_button_commands" type="execute_button_commands.py" pkg="cob_3d_mapping_demonstrator" output="screen"/>
+  <include file="$(find cob_3d_mapping_pipeline)/launch/mapping_demo.launch"/>
+  <node name="kill" type="kill_xtion.sh" pkg="cob_3d_mapping_demonstrator"/>
+  <include file="$(find cob_3d_mapping_demonstrator)/ros/launch/openni_electric.launch"/>
+  <include file="$(find cob_3d_visualization)/launch/shape_visualization.launch"/>
+	
+
+	<!--node ns="cob_3d_mapping_demonstrator_controller" pkg="cob_teleop" type="teleop_cob" name="spawn_teleop_keyboard" output="screen"/-->
+
+	<!-- node ns="cob_3d_mapping_demonstrator_controller" name="joint_trajectory_controller" pkg="cob_trajectory_controller" type="cob_trajectory_controller"  respawn="false" output="screen" /-->
+
+</launch>
