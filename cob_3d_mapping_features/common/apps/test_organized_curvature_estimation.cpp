@@ -200,7 +200,7 @@ int main(int argc, char** argv)
   oce.setInputNormals(n);
   oce.setPixelSearchRadius(8,2,2);
   oce.setSkipDistantPointThreshold(12);
-  
+
   //KdTreeFLANN<PointXYZRGB>::Ptr tree(new KdTreeFLANN<PointXYZRGB>);
   //ne.setRadiusSearch(rn_);
   //ne.setSearchMethod(tree);
@@ -219,22 +219,22 @@ int main(int argc, char** argv)
       std::cout << "cluster " << i << " has " << indices[i].indices.size() << " points" << std::endl;
       if(i==3)
       {
-	/*for(unsigned int j=0; j<indices[i].indices.size(); j++)
-	  std::cout << indices[i].indices[j] << ",";
-	  std::cout << std::endl;*/
-	//cout << i << ": " << indices[i].indices.front() << "!" << endl;
-	t.restart();
-	boost::shared_ptr<PointIndices> ind_ptr = boost::make_shared<PointIndices>(indices[i]);
-	std::cout << ind_ptr->indices.size() << std::endl;
-	oce.setIndices(ind_ptr);
-	oce.setOutputLabels(l);
-	oce.compute(*pc);
-	cout << t.elapsed() << "s\t for principal curvature estimation" << endl;
+        /*for(unsigned int j=0; j<indices[i].indices.size(); j++)
+          std::cout << indices[i].indices[j] << ",";
+          std::cout << std::endl;*/
+        //cout << i << ": " << indices[i].indices.front() << "!" << endl;
+        t.restart();
+        boost::shared_ptr<PointIndices> ind_ptr = boost::make_shared<PointIndices>(indices[i]);
+        std::cout << ind_ptr->indices.size() << std::endl;
+        oce.setIndices(ind_ptr);
+        oce.setOutputLabels(l);
+        oce.compute(*pc);
+        cout << t.elapsed() << "s\t for principal curvature estimation" << endl;
 
-	cob_3d_mapping_features::CurvatureClassifier<PrincipalCurvatures, PointLabel>cc;
-	cc.setInputCloud(pc);
-	cc.setIndices(ind_ptr);
-	cc.classify(*l);
+        cob_3d_mapping_features::CurvatureClassifier<PrincipalCurvatures, PointLabel>cc;
+        cc.setInputCloud(pc);
+        cc.setIndices(ind_ptr);
+        cc.classify(*l);
       }
     }
   }

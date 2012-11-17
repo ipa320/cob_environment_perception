@@ -21,7 +21,7 @@
  * \author
  *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * \date Date of creation: 05/2012
+ * \date Date of creation: 11/2012
  *
  * \brief
  * Description:
@@ -60,9 +60,8 @@
  *
  ****************************************************************/
 
-#ifndef __SEGMENTATION_ALL_IN_ONE_NODELET_H__
-#define __SEGMENTATION_ALL_IN_ONE_NODELET_H__
-
+#ifndef __SIMPLE_SEGMENTATION_NODELET_H__
+#define __SIMPLE_SEGMENTATION_NODELET_H__
 
 // ROS includes
 #include <pcl_ros/pcl_nodelet.h>
@@ -73,80 +72,59 @@
 #include <cob_3d_segmentation/segmentation_nodeletConfig.h>
 
 // PCL includes
-#include <pcl/surface/concave_hull.h>
+//#include <pcl/surface/concave_hull.h>
 #include <pcl/point_types.h>
 
 // Package includes
 #include "cob_3d_mapping_common/point_types.h"
 #include "cob_3d_mapping_features/organized_normal_estimation_omp.h"
-#include "cob_3d_segmentation/depth_segmentation.h"
-#include "cob_3d_segmentation/cluster_classifier.h"
-#include "cob_3d_segmentation/polygon_extraction/polygon_types.h"
-#include "cob_3d_segmentation/polygon_extraction/polygon_extraction.h"
-
+#include "cob_3d_segmentation/impl/fast_segmentation.hpp"
+//#include "cob_3d_segmentation/polygon_extraction/polygon_types.h"
+//#include "cob_3d_segmentation/polygon_extraction/polygon_extraction.h"
 
 namespace cob_3d_segmentation
 {
-  class SegmentationAllInOneNodelet : public pcl_ros::PCLNodelet
+  class SimpleSegmentationNodelet : public pcl_ros::PCLNodelet
   {
-  public:
+    public:
     typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloud;
     typedef pcl::PointCloud<pcl::Normal> NormalCloud;
     typedef pcl::PointCloud<PointLabel> LabelCloud;
-    typedef PredefinedSegmentationTypes ST;
 
-
-  public:
-    SegmentationAllInOneNodelet()
+    public:
+    SimpleSegmentationNodelet()
       : one_()
       , seg_()
-      , graph_(new ST::Graph)
-      , pe_()
       , segmented_(new PointCloud)
-      , classified_(new PointCloud)
       , normals_(new NormalCloud)
       , labels_(new LabelCloud)
-      , centroid_passthrough_(5.0f)
     { }
 
-    ~SegmentationAllInOneNodelet()
+    ~SimpleSegmentationNodelet()
     { }
 
-
-  protected:
+    protected:
     void onInit();
-    void configCallback(cob_3d_segmentation::segmentation_nodeletConfig& config, uint32_t level);
+    void configCallback(cob_3d_segmentation::segmentation_nodeletConfig& config, uint32_t levels);
 
     void receivedCloudCallback(PointCloud::ConstPtr cloud);
-    void publishShapeArray(ST::CH::Ptr cluster_handler, std::map<int,int>& objs, PointCloud::ConstPtr cloud);
 
-    //boost::mutex mutex_;
+
     ros::NodeHandle nh_;
     ros::Subscriber sub_points_;
     ros::Publisher pub_segmented_;
-    ros::Publisher pub_classified_;
-    ros::Publisher pub_shape_array_;
-    ros::Publisher pub_chull_;
-    ros::Publisher pub_chull_dense_;
 
     boost::shared_ptr<dynamic_reconfigure::Server<cob_3d_segmentation::segmentation_nodeletConfig> > config_server_;
 
     cob_3d_mapping_features::OrganizedNormalEstimationOMP<pcl::PointXYZRGB, pcl::Normal, PointLabel> one_;
-    DepthSegmentation<ST::Graph, ST::Point, ST::Normal, ST::Label> seg_;
-    ClusterClassifier<ST::CH, ST::Point, ST::Normal, ST::Label> cc_;
-    ST::Graph::Ptr graph_;
-    PolygonExtraction pe_;
+    FastSegmentation<pcl::PointXYZRGB, pcl::Normal, PointLabel> seg_;
 
     PointCloud::Ptr segmented_;
-    PointCloud::Ptr classified_;
     NormalCloud::Ptr normals_;
     LabelCloud::Ptr labels_;
 
-
-    float centroid_passthrough_;
   };
-
 }
 
 
-#endif  //__COB_3D_MAPPING_FEATURES_SEGMENTATION_NODELET_H__
+#endif

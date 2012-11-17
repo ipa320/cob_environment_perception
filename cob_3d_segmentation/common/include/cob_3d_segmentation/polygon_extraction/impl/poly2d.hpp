@@ -56,6 +56,10 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
+
+#ifndef __IMPL_POLY2D_HPP__
+#define __IMPL_POLY2D_HPP__
+
 namespace cob_3d_segmentation
 {
   namespace Contour2D {
@@ -163,3 +167,5 @@ namespace cob_3d_segmentation
 
   }
 }
+
+#endif
