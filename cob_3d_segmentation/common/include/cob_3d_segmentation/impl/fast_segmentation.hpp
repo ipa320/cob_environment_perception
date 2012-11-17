@@ -71,23 +71,25 @@
 #include "cob_3d_mapping_common/label_defines.h"
 #include "cob_3d_segmentation/fast_segmentation.h"
 
-template <typename PointT, typename PointNT, typename PointLabelT> void
-cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT>::createSeedPoints()
+#define LISTMOD(a,b) ( ((a%b)+b)%b )
+
+template <typename PointT, typename PointNT, typename PointLabelT, typename SensorT, typename ClusterHdlT> void
+cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT,SensorT,ClusterHdlT>::createSeedPoints()
 {
   int n = labels_->width * labels_->height;
-  p_seeds_.clear();
   seeds_.clear();
+  p_seeds_.resize(n);
   switch (seed_method_)
   {
   case SEED_RANDOM:
   {
-    p_seeds_.push_back(seeds_.insert(seeds_.end(), 0));
+    p_seeds_[0] = seeds_.insert(seeds_.end(), 0);
     for(unsigned int i = 1; i<n; ++i)
     {
       if(surface_->points[i].z != surface_->points[i].z)
-        p_seeds_.push_back(p_seeds_[rand()%i]);
+        p_seeds_[i] = p_seeds_[rand()%i];
       else
-        p_seeds_.push_back(seeds_.insert(p_seeds_[rand()%i],i));
+        p_seeds_[i] = seeds_.insert(p_seeds_[rand()%i],i);
     }
     p_seeds_[0] = seeds_.insert(p_seeds_[rand()%n],0);
     seeds_.pop_back();
@@ -99,50 +101,69 @@ cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT>::createSeedPoi
     for(unsigned int i = 0; i<n; ++i)
     {
       if(surface_->points[i].z != surface_->points[i].z)
-        p_seeds_.push_back(seeds_.end());
+        p_seeds_[i] = seeds_.end();
       else
-        p_seeds_.push_back(seeds_.insert(seeds_.end(),i));
+        p_seeds_[i] = seeds_.insert(seeds_.end(),i);
     }
     break;
   }
-}
-
-template <typename PointT, typename PointNT, typename PointLabelT> void
-cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT>::addIfIsValid(
-  int u, int v, int idx, int idx_prev, float dist_th, float p_z, Eigen::Vector3f& n,
-  SegmentationQueue& seg_queue, ClusterPtr c)
-{
-  if (p_z < 1.2)
-  {
-    if (fabs(p_z - surface_->points[idx].z) > (dist_th + 0.01f)) return;
-  }
-  else if (fabs(p_z - surface_->points[idx].z) > dist_th) return;
-  int* p_label = &(labels_->points[idx].label);
-  if (*p_label == I_UNDEF)
-  {
-    float dot_value = fabs( n.dot(normals_->points[idx].getNormalVector3fMap()) );
-    if ( (int)c->size() < min_cluster_size_ || dot_value > min_dot_normals_)
-    {
-      *p_label = c->id();
-      seg_queue.push( SegmentationCandidate::Ptr(new SegmentationCandidate(u, v, dot_value)) );
-    }
-  }
-  else if (*p_label > I_EDGE && c->id() != *p_label)
-  {
-    graph_->edges()->updateProperties(graph_->connect(c->id(), *p_label), c->id(), idx_prev, *p_label, idx);
   }
 }
 
-template <typename PointT, typename PointNT, typename PointLabelT> bool
-cob_3d_segmentation::FastSegmentation::compute()
+
+template <typename PointT, typename PointNT, typename PointLabelT, typename SensorT, typename ClusterHdlT> bool
+cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT,SensorT,ClusterHdlT>::compute()
 {
-  int w = labels_->width, h = labels_->height;
+  int w = labels_->width, h = labels_->height, s = 1;
+  int mask[4][3] = { { -s, -w,  s }, // from below
+                     { -w,  s,  w }, // from left
+                     {  s,  w, -s }, // from above
+                     {  w, -s, -w } }; // from right
+  int mask_size = 3;
+
   clusters_->clear();
   while(seeds_.size() != 0)
   {
-    unsigned int i = seeds_.front();
+    unsigned int idx = seeds_.front();
     seeds_.pop_front();
-    
+    ClusterPtr c = clusters_->createCluster();
+    SegmentationQueue seg_q;
+    //std::list<SeedPoint::Ptr> seg_q;
+    //seg_q.push_back( SeedPoint::Ptr(new SeedPoint(idx, 0, 0.0)) );
+    seg_q.push( SeedPoint::Ptr(new SeedPoint(idx, 0, 0.0)) );
+    clusters_->addPoint(c, idx);
+    (*labels_)[idx].label = c->id();
+
+    while(seg_q.size() != 0)
+    {
+      //SeedPoint p = *seg_q.front();
+      SeedPoint p = *seg_q.top();
+      //seg_q.pop_front();
+      seg_q.pop();
+      for(int i=0; i<mask_size; ++i)
+      {
+        int i_idx = p.idx + mask[p.i_came_from][i];
+        if (i_idx >= w*h) continue;
+
+        int* p_label = &(labels_->points[ i_idx ]).label;
+        if(*p_label != I_UNDEF) continue;
+        //if(!SensorT::areNeighbors((*surface_)[p.idx].z, (*surface_)[i_idx].z)) continue;
+        Eigen::Vector3f i_n = c->getOrientation();
+        Eigen::Vector3f i_c = c->getCentroid();
+        float d = ((*surface_)[i_idx].getVector3fMap() - i_c).dot(i_n);
+        if(!SensorT::areNeighbors((*surface_)[p.idx].z, (*surface_)[p.idx].z + d)) { continue; }
+        float dot_value = fabs( i_n.dot((*normals_)[i_idx].getNormalVector3fMap()) );
+        if(dot_value > n_threshold(c->size()))
+        {
+          //seg_q.push_back( SeedPoint::Ptr(new SeedPoint(i_idx, LISTMOD(i + p.i_came_from - 1, 4), dot_value)) );
+          seg_q.push( SeedPoint::Ptr(new SeedPoint(i_idx, LISTMOD(i + p.i_came_from - 1, 4), dot_value)) );
+          clusters_->addPoint(c,i_idx);
+          seeds_.erase(p_seeds_[i_idx]);
+          *p_label = c->id();
+        }
+      }
+    }
   }
 }
 
+#endif

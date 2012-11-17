@@ -70,7 +70,9 @@
 #include <pcl/point_types.h>
 
 #include "cob_3d_mapping_common/point_types.h"
+#include "cob_3d_mapping_common/sensor_model.h"
 #include "cob_3d_segmentation/general_segmentation.h"
+#include "cob_3d_segmentation/cluster_handler.h"
 
 namespace cob_3d_segmentation
 {
@@ -80,43 +82,86 @@ namespace cob_3d_segmentation
     SEED_LINEAR
   };
 
-  template <typename PointT, typename PointNT, typename PointLabelT, typename ClusterHdlT>
-  class FastSegmentation : public GeneralSegmentation<PointT, PointLabelT>
+  struct SeedPoint
   {
-  public:
+    typedef boost::shared_ptr<SeedPoint> Ptr;
+    SeedPoint(int idx_, int from_, float value_) : idx(idx_), i_came_from(from_), value(value_) { }
+    int idx;
+    int i_came_from;
+    float value;
+  };
+
+  inline const bool operator<  (const SeedPoint& lhs, const SeedPoint& rhs) { return lhs.value < rhs.value; }
+  inline const bool operator>  (const SeedPoint& lhs, const SeedPoint& rhs) { return  operator< (rhs, lhs); }
+  inline const bool operator<= (const SeedPoint& lhs, const SeedPoint& rhs) { return !operator> (lhs, rhs); }
+  inline const bool operator>= (const SeedPoint& lhs, const SeedPoint& rhs) { return !operator< (lhs, rhs); }
+
+  struct ptr_deref
+  {
+    template<typename T>
+    bool operator() (const boost::shared_ptr<T>& lhs, const boost::shared_ptr<T>& rhs) const { return operator< (*lhs, *rhs); }
+  };
+
+  typedef std::priority_queue<SeedPoint::Ptr, std::vector<SeedPoint::Ptr>, ptr_deref> SegmentationQueue;
+
+
+  template<
+    typename PointT,
+    typename PointNT,
+    typename PointLabelT,
+    typename SensorT = cob_3d_mapping::PrimeSense,
+    typename ClusterHdlT = cob_3d_segmentation::DepthClusterHandler<PointLabelT, PointT, PointNT>
+    >
+    class FastSegmentation : public GeneralSegmentation<PointT, PointLabelT>
+  {
+    public:
     typedef pcl::PointCloud<PointT> PointCloud;
     typedef typename PointCloud::ConstPtr PointCloudConstPtr;
     typedef pcl::PointCloud<PointNT> NormalCloud;
     typedef typename NormalCloud::ConstPtr NormalCloudConstPtr;
     typedef pcl::PointCloud<PointLabelT> LabelCloud;
-    typedef typename PointCloud::Ptr LabelCloudPtr;
+    typedef typename LabelCloud::Ptr LabelCloudPtr;
+    typedef typename LabelCloud::ConstPtr LabelCloudConstPtr;
 
     typedef typename ClusterHdlT::Ptr ClusterHdlPtr;
+    typedef typename ClusterHdlT::ClusterPtr ClusterPtr;
 
-  public:
+    public:
     FastSegmentation ()
-      : min_dot_normals_(cos(22.0f / 180.0f * M_PI))
-      , min_cluster_size_(5)
-      , seed_method_(SEED_LINEAR)
+    : clusters_(new ClusterHdlT)
+    , min_angle_(cos(30.0f / 180.0f * M_PI))
+    , max_angle_(cos(45.0f / 180.0f * M_PI)) // threshold converges with increasing cluster size from max_angle_ to min_angle_
+    , min_cluster_size_(200)
+    , seed_method_(SEED_LINEAR)
     { }
     ~FastSegmentation () { }
 
-    virtual void setInputCloud(const PointCloudConstPtr& points) { surface_ = points; }
+    virtual void setInputCloud(const PointCloudConstPtr& points) { surface_ = points; clusters_->setPointCloudIn(points); }
     virtual LabelCloudConstPtr getOutputCloud() { return labels_; }
     virtual bool compute();
 
-    void setSeedMethod(SeedMethod type) { seed_method_ = type; }
 
-  private:
-    void addIfIsValid(int u, int v, int idx, int idx_prev, float dist_th, float p_z, Eigen::Vector3f& n,
-                      SegmentationQueue& seg_queue);
+    void setNormalCloudIn(const NormalCloudConstPtr& normals) { normals_ = normals; clusters_->setNormalCloudIn(normals); }
+    void setLabelCloudInOut(const LabelCloudPtr & labels) { labels_ = labels; clusters_->setLabelCloudInOut(labels); }
+    void setSeedMethod(SeedMethod type) { seed_method_ = type; }
+    void createSeedPoints();
+    void mapSegmentColor(pcl::PointCloud<PointXYZRGB>::Ptr color_cloud) { clusters_->mapClusterColor(color_cloud); }
+
+    private:
+    inline float n_threshold(int size)
+    { // currently linear degression of angle threshold
+      if(size > min_cluster_size_) size = min_cluster_size_;
+      return (min_angle_ - max_angle_) / min_cluster_size_ * size + max_angle_;
+    }
+
 
     ClusterHdlPtr clusters_;
     PointCloudConstPtr surface_;
     NormalCloudConstPtr normals_;
     LabelCloudPtr labels_;
 
-    float min_dot_normals_;
+    float min_angle_;
+    float max_angle_;
     float min_cluster_size_;
     SeedMethod seed_method_;
     std::vector<std::list<unsigned int>::iterator> p_seeds_;

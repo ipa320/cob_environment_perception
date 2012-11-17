@@ -57,6 +57,9 @@
  *
  ****************************************************************/
 
+#ifndef __IMPL_POLYGON_EXTRACTION__
+#define __IMPL_POLYGON_EXTRACTION__
+
 template <typename TPoint>
 int PolygonExtraction::getPos(int *ch, const int xx, const int yy, const int w, const int h) {
   int p=0;
@@ -181,3 +184,5 @@ void PolygonExtraction::outline(const int w, const int h, std::vector<TPoint> ou
   }
 
 }
+
+#endif
