@@ -30,7 +30,7 @@ int SerialDevice::openPort(std::string device, int baud, int Parity, int StopBit
 {
 	int BAUD, DATABITS, STOPBITS, PARITYON, PARITY;
 	struct termios config;
-	
+
 	// Adapt baud to termios.h baudrate enum
 	switch(baud)
 	{
@@ -133,7 +133,7 @@ int SerialDevice::PutString(std::string str)
 	int res;
 	
 	/// write(3) returns the number of bytes that were actually written
-	res = write(m_fd, str.c_str(), str.length());
+	res = write(m_fd, str.c_str(), str.size());
 	
 	return res;
 }
@@ -151,6 +151,21 @@ void SerialDevice::GetString( std::string& rxstr )
 			break;
 		rxstr.push_back(buf[i]);	
 	}
+}
+
+void SerialDevice::GetStringWithEndline( std::string& rxstr )
+{
+        char buf[255];
+        size_t nbytes;
+
+        nbytes = read(m_fd, buf, 255);
+        //printf("Nbytes: %d", (int)nbytes);
+        for(unsigned int i=0; i<nbytes; i++)
+        {
+                //if(buf[i] == '\n')
+                //      break;
+                rxstr.push_back(buf[i]);
+        }
 }
 
 bool SerialDevice::FlushInBuffer()
