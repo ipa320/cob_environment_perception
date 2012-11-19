@@ -430,7 +430,7 @@ namespace ParametricSurface {
 #else
 
       pts_[0] = p1.intersection(_Line(na2,0.5f*(a+b)));
-      pts_[1] = p1.intersection(_Line(nb2,0.5f*(a+b)));
+      pts_[1] = p2.intersection(_Line(nb2,0.5f*(a+b)));
 
 #endif
 
