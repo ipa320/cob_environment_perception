@@ -105,7 +105,7 @@ class MoveToTableNode
      *
      * @return the transformed point
      */
-    geometry_msgs::Pose transformToTableCoordinateSystem(tabletop_object_detector::Table &table,geometry_msgs::Pose &Pose);
+    geometry_msgs::Pose transformToTableCoordinateSystem(cob_3d_mapping_msgs::Table &table,geometry_msgs::Pose &Pose);
     /**
      * @brief finds whether there is an intersection between the line through the robot pose and table centroid and the boundies of the table
      * @param[in] line the line which needs to be checked for the intersection
@@ -142,7 +142,7 @@ class MoveToTableNode
     Eigen::Quaternionf faceTable (geometry_msgs::Pose finalPose);
 
     ros::NodeHandle n_;
-    tabletop_object_detector::Table table_;
+    cob_3d_mapping_msgs::Table table_;
     geometry_msgs::Pose robotPoseInTableCoordinateSys_;
     geometry_msgs::Pose robotPose_;
 
