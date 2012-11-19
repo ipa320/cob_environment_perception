@@ -85,14 +85,16 @@
 #include "cob_3d_registration/EvaluationResult.h"
 #include "parameters/parameters_bag.h"
 
-#include <registration/registration_icp.h>
+#include <sensor_msgs/CameraInfo.h>
+
+#include <cob_3d_registration/registration_icp.h>
 
 #include <vtkCommand.h>
 #include <pcl/features/feature.h>
 #ifndef GICP_ENABLE
-#include <registration/registration_icp_moments.h>
-#include <registration/registration_icp_fpfh.h>
-#include <registration/registration_icp_narf.h>
+#include <cob_3d_registration/registration_icp_moments.h>
+#include <cob_3d_registration/registration_icp_fpfh.h>
+#include <cob_3d_registration/registration_icp_narf.h>
 
 //#include <registration/registration_fastslam.h>
 //#include <cob_vision_utils/VisionUtils.h>
@@ -100,7 +102,7 @@
 
 #include <cob_3d_registration/registration_icp_edges.h>
 #include <cob_3d_registration/registration_info.h>
-#include <cob_3d_registration/registration_correspondence.h>
+//#include <cob_3d_registration/registration_correspondence.h>
 #endif
 
 #include <pcl/filters/voxel_grid.h>
@@ -642,7 +644,8 @@ public:
         break;
 
       case E_ALGO_COR:
-#ifndef GICP_ENABLE
+//#ifndef GICP_ENABLE
+#if 0
         reg_ = new cob_3d_registration::Registration_Corrospondence<Point>();
 
         //((Registration_Corrospondence<Point>*)reg_)->setKeypoints(new Keypoints_Segments<Point>);
@@ -651,7 +654,6 @@ public:
         //setSettings_Cor((cob_3d_registration::Registration_Corrospondence<Point>*)reg_);
 #else
         ROS_ERROR("not supported");
-
 #endif
         break;
 
@@ -785,17 +787,12 @@ public:
         publishLineMarker( ((cob_3d_registration::Registration_Infobased<Point>*)reg_)->getSource().points[i].getVector3fMap(), ((cob_3d_registration::Registration_Infobased<Point>*)reg_)->getTarget().points[i].getVector3fMap(), -i);
     }
     else if(parameters_.getParam("algo",s_algo) && s_algo=="cor") {
-<<<<<<< HEAD
+#ifdef PCL_VERSION_COMPARE
+      pcl::Correspondences cor;
+#else
       pcl::registration::Correspondences cor;
-      ((cob_3d_registration::Registration_Corrospondence<Point>*)reg_)->getKeypoints()->getCorrespondences(cor);
-=======
-	  #ifdef PCL_VERSION_COMPARE
-	    pcl::Correspondences cor;
-      #else
-      	pcl::registration::Correspondences cor;
-	  #endif
+#endif
       ((Registration_Corrospondence<Point>*)reg_)->getKeypoints()->getCorrespondences(cor);
->>>>>>> c285c39739b5ef6f5f1d65e9944b974d01b58685
       for(int i=0; i<cor.size(); i++)
         publishLineMarker( ((cob_3d_registration::Registration_Corrospondence<Point>*)reg_)->getKeypoints()->getSourcePoints()->points[cor[i].indexQuery].getVector3fMap(), ((cob_3d_registration::Registration_Corrospondence<Point>*)reg_)->getKeypoints()->getTargetPoints()->points[cor[i].indexMatch].getVector3fMap(), -i);
     }
@@ -1033,13 +1030,9 @@ protected:
     if(parameters_.getParam("use_only_last_refrence",i))
       pr->setUseOnlyLastReference(i!=0);
   }
-<<<<<<< HEAD
-#ifndef PCL_DEPRECATED
-  void setSettings_ICP_Moments(cob_3d_registration::Registration_ICP_Moments<Point> *pr) {
-=======
+
 #ifndef GICP_ENABLE
-  void setSettings_ICP_Moments(Registration_ICP_Moments<Point> *pr) {
->>>>>>> c285c39739b5ef6f5f1d65e9944b974d01b58685
+  void setSettings_ICP_Moments(cob_3d_registration::Registration_ICP_Moments<Point> *pr) {
     setSettings_ICP(pr);
 
     double d=0.;

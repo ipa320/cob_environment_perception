@@ -45,12 +45,16 @@ rosbuild_add_executable(cob_3d_registration ros/src/registration_nodelet.cpp)
 
 rosbuild_add_library(cob_3d_registration_lib
 	common/src/registration_icp.cpp
-	common/src/registration_correspondence.cpp
+	common/src/registration_icp_moments.cpp
+	common/src/registration_icp_fpfh.cpp
+	common/src/registration_icp_narf.cpp
+	common/src/registration_icp_edges.cpp
+#	common/src/registration_correspondence.cpp
 	common/src/registration_info.cpp)
 	
-target_link_libraries(cob_3d_registration_lib vtkCommon )
+target_link_libraries(cob_3d_registration_lib vtkCommon cob_3d_mapping_features_omp)
 
-target_link_libraries(cob_3d_registration cob_3d_registration_lib )
+target_link_libraries(cob_3d_registration cob_3d_registration_lib cob_3d_mapping_features_omp)
 
 rosbuild_add_executable(capture ros/src/capture.cpp)
 rosbuild_add_executable(filter ros/src/filter.cpp)
@@ -70,6 +74,5 @@ rosbuild_add_compile_flags(cob_3d_registration -D__LINUX__ ${SSE_FLAGS})
 #rosbuild_add_compile_flags(frir_freehand -D__LINUX__ ${SSE_FLAGS})
 
 #target_link_libraries(registration ann  cob_vision_slam cob_sensor_fusion cob_camera_sensors cob_3d_mapping_features_omp)
-target_link_libraries(cob_3d_registration  cob_3d_mapping_features_omp cob_3d_registration_lib)
 
 rosbuild_add_roslaunch_check(ros/launch)
