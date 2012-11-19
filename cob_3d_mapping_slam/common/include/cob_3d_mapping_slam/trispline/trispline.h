@@ -306,8 +306,8 @@ namespace ParametricSurface {
 
   class SplineFade
   {
-    Eigen::Vector3f pts_[2];
   public:
+    Eigen::Vector3f pts_[2];
 
     inline Eigen::Vector3f delta() const {return pts_[0]-pts_[1];}
 
@@ -636,11 +636,9 @@ namespace ParametricSurface {
 
     Eigen::Vector3f normalAt(const Eigen::Vector2f &pt) {
       //1. bayrcentric coordinates 2D -> 3D
-      Eigen::Vector3f br;
-      br.head<2>() = _T_*(pt-uv_[2]);
-      br(2) = 1-br(0)-br(1);
+      Eigen::Matrix<float,3,2> M = normalBC( _T_*(pt-uv_[2]) );
 
-      return normalAt(br);
+      return M.col(0).cross( M.col(1) );
     }
 
     Eigen::Vector3f normalAt2(const Eigen::Vector2f &pt) {
@@ -682,6 +680,49 @@ namespace ParametricSurface {
       M.col(0).head<3>() = (*this)(br);
 //      M.col(1).head<3>().normalize();
 //      M.col(2).head<3>().normalize();
+      return M;
+    }
+
+    inline float POW2(const float f) {return f*f;}
+
+    inline Eigen::Matrix<float,3,2> normal(const Eigen::Vector2f &uv) {
+      Eigen::Matrix3f M;
+      M.topLeftCorner<3,2>() = normalBC(_T_*(uv-uv_[2]));
+//      M.col(0).normalize();
+//      M.col(1).normalize();
+      M.col(2) = M.col(0).cross(M.col(1));
+
+      //Eigen::Matrix2f T = _T_;//.inverse();
+      Eigen::Matrix<float,3,2> R;
+      Eigen::Vector3f v;
+      v(2)=0;
+
+      std::cout<<"T\n"<<_T_<<"\n";
+      std::cout<<"M\n"<<M<<"\n";
+
+      v.head<2>() = _T_.col(0);//T.col(0).norm();
+      //v(1) *= -1;
+      R.col(0) = M*v;
+
+      v.head<2>() = _T_.col(1);//T.col(1).norm();
+      //v(1) *= -1;
+      R.col(1) = M*v;
+
+      return R;
+    }
+
+    inline Eigen::Matrix<float,3,2> normalBC(const Eigen::Vector2f &bc) {
+      static const size_t ind[3] = { indAB(0,ORDER), indAB(ORDER,ORDER), indAB(0,0) };
+
+      Eigen::Matrix<float,3,2> M;
+      M.col(0) = -(-bc(1)-bc(0)+1)*pts_[ind[2]]+(-bc(1)-bc(0)+1)*(-pts_[ind[2]]+bc(0)*(sf_[2].pts_[1]/(1-bc(1))-sf_[2].pts_[0]/(1-bc(1)))+(bc(0)*sf_[2].pts_[1])/(1-bc(1))+((-bc(1)-bc(0)+1)*sf_[2].pts_[0])/(1-bc(1))+bc(1)*(((-bc(1)-bc(0)+1)*sf_[1].pts_[1])/POW2(1-bc(0))-sf_[1].pts_[1]/(1-bc(0))+(bc(1)*sf_[1].pts_[0])/POW2(1-bc(0))))+bc(0)*
+          ((-bc(1)-bc(0)+1)*(sf_[2].pts_[1]/(1-bc(1))-sf_[2].pts_[0]/(1-bc(1)))-(bc(0)*sf_[2].pts_[1])/(1-bc(1))-((-bc(1)-bc(0)+1)*sf_[2].pts_[0])/(1-bc(1))+bc(1)*(-(bc(1)*sf_[0].pts_[1])/POW2(bc(1)+bc(0))+sf_[0].pts_[0]/(bc(1)+bc(0))-(bc(0)*sf_[0].pts_[0])/POW2(bc(1)+bc(0)))+pts_[ind[0]])+(-bc(1)-bc(0)+1)*((bc(0)*sf_[2].pts_[1])/(1-bc(1))+((-bc(1)-bc(0)+1)*sf_[2].pts_[0])/(1-bc(1)))-bc(0)*((bc(0)*sf_[2].pts_[1])/(1-bc(1))+((-bc(1)-bc(0)+1)*sf_[2].pts_[0])/(1-bc(1)))+bc(1)*
+          ((-bc(1)-bc(0)+1)*(((-bc(1)-bc(0)+1)*sf_[1].pts_[1])/POW2(1-bc(0))-sf_[1].pts_[1]/(1-bc(0))+(bc(1)*sf_[1].pts_[0])/POW2(1-bc(0)))-((-bc(1)-bc(0)+1)*sf_[1].pts_[1])/(1-bc(0))-(bc(1)*sf_[1].pts_[0])/(1-bc(0))+bc(0)*(-(bc(1)*sf_[0].pts_[1])/POW2(bc(1)+bc(0))+sf_[0].pts_[0]/(bc(1)+bc(0))-(bc(0)*sf_[0].pts_[0])/POW2(bc(1)+bc(0)))+(bc(1)*sf_[0].pts_[1])/(bc(1)+bc(0))+(bc(0)*sf_[0].pts_[0])/(bc(1)+bc(0)))-bc(1)*(((-bc(1)-bc(0)+1)*sf_[1].pts_[1])/(1-bc(0))+(bc(1)*sf_[1].pts_[0])/(1-bc(0)))+bc(1)*((bc(1)*sf_[0].pts_[1])/(bc(1)+bc(0))+(bc(0)*sf_[0].pts_[0])/(bc(1)+bc(0)))+bc(0)*pts_[ind[0]];
+      M.col(1) = -(-bc(1)-bc(0)+1)*pts_[ind[2]]+(-bc(1)-bc(0)+1)*(-pts_[ind[2]]+bc(0)*((bc(0)*sf_[2].pts_[1])/POW2(1-bc(1))+((-bc(1)-bc(0)+1)*sf_[2].pts_[0])/POW2(1-bc(1))-sf_[2].pts_[0]/(1-bc(1)))+bc(1)*(sf_[1].pts_[0]/(1-bc(0))-sf_[1].pts_[1]/(1-bc(0)))+((-bc(1)-bc(0)+1)*sf_[1].pts_[1])/(1-bc(0))+(bc(1)*sf_[1].pts_[0])/(1-bc(0)))+bc(1)*
+          (pts_[ind[1]]+(-bc(1)-bc(0)+1)*(sf_[1].pts_[0]/(1-bc(0))-sf_[1].pts_[1]/(1-bc(0)))-((-bc(1)-bc(0)+1)*sf_[1].pts_[1])/(1-bc(0))-(bc(1)*sf_[1].pts_[0])/(1-bc(0))+bc(0)*(sf_[0].pts_[1]/(bc(1)+bc(0))-(bc(1)*sf_[0].pts_[1])/POW2(bc(1)+bc(0))-(bc(0)*sf_[0].pts_[0])/POW2(bc(1)+bc(0))))+bc(1)*pts_[ind[1]]+bc(0)*
+          ((-bc(1)-bc(0)+1)*((bc(0)*sf_[2].pts_[1])/POW2(1-bc(1))+((-bc(1)-bc(0)+1)*sf_[2].pts_[0])/POW2(1-bc(1))-sf_[2].pts_[0]/(1-bc(1)))-(bc(0)*sf_[2].pts_[1])/(1-bc(1))-((-bc(1)-bc(0)+1)*sf_[2].pts_[0])/(1-bc(1))+bc(1)*(sf_[0].pts_[1]/(bc(1)+bc(0))-(bc(1)*sf_[0].pts_[1])/POW2(bc(1)+bc(0))-(bc(0)*sf_[0].pts_[0])/POW2(bc(1)+bc(0)))+(bc(1)*sf_[0].pts_[1])/(bc(1)+bc(0))+(bc(0)*sf_[0].pts_[0])/(bc(1)+bc(0)))-bc(0)*((bc(0)*sf_[2].pts_[1])/(1-bc(1))+((-bc(1)-bc(0)+1)*sf_[2].pts_[0])/(1-bc(1)))-bc(1)*(((-bc(1)-bc(0)+1)*sf_[1].pts_[1])/(1-bc(0))+(bc(1)*sf_[1].pts_[0])/(1-bc(0)))+
+          (-bc(1)-bc(0)+1)*(((-bc(1)-bc(0)+1)*sf_[1].pts_[1])/(1-bc(0))+(bc(1)*sf_[1].pts_[0])/(1-bc(0)))+bc(0)*((bc(1)*sf_[0].pts_[1])/(bc(1)+bc(0))+(bc(0)*sf_[0].pts_[0])/(bc(1)+bc(0)));
+
       return M;
     }
 
