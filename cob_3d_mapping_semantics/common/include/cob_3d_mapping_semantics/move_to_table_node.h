@@ -51,14 +51,14 @@ class MoveToTableNode
 
     bool moveToTableService (cob_3d_mapping_msgs::MoveToTable::Request &req,cob_3d_mapping_msgs::MoveToTable::Response &res) ;
 
-    geometry_msgs::Pose transformToTableCoordinateSystem(tabletop_object_detector::Table &table,geometry_msgs::Pose &Pose);
+    geometry_msgs::Pose transformToTableCoordinateSystem(cob_3d_mapping_msgs::Table &table,geometry_msgs::Pose &Pose);
     bool doIntersect(float line) ;
     geometry_msgs::Pose findIntersectionPoint() ;
     geometry_msgs::Pose findSafeTargetPoint() ;
     void addMarkerForFinalPose(geometry_msgs::Pose finalPose) ;
 
     ros::NodeHandle n_;
-    tabletop_object_detector::Table table_;
+    cob_3d_mapping_msgs::Table table_;
     geometry_msgs::Pose robotPoseInTableCoordinateSys_;
     geometry_msgs::Pose robotPose_;
 

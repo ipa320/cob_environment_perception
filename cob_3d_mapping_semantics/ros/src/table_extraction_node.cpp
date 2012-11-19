@@ -239,7 +239,7 @@ public:
         Polygon::Ptr poly_ptr(new Polygon());
         fromROSMsg(tables.shapes[i], *poly_ptr);
 
-        tabletop_object_detector::Table table;
+        cob_3d_mapping_msgs::Table table;
         Eigen::Affine3f pose;
         Eigen::Vector4f min_pt;
         Eigen::Vector4f max_pt;
@@ -272,7 +272,7 @@ public:
           table.convex_hull.vertices.push_back(p);
         }
 
-        tabletop_object_detector::TabletopDetectionResult det;
+        cob_3d_mapping_msgs::TabletopDetectionResult det;
         det.table = table;
 
         res.tables.push_back(det);

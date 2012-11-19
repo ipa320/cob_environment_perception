@@ -15,7 +15,7 @@
  *
  * @return the transformed point
  */
-geometry_msgs::Pose MoveToTableNode::transformToTableCoordinateSystem(tabletop_object_detector::Table &table,geometry_msgs::Pose &Pose)
+geometry_msgs::Pose MoveToTableNode::transformToTableCoordinateSystem(cob_3d_mapping_msgs::Table &table,geometry_msgs::Pose &Pose)
 {
   Eigen::Matrix4f transformationMat ;
   Eigen::Quaternionf quat ;
