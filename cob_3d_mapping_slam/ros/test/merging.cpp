@@ -799,11 +799,11 @@ void test18()
   boost::array<float, 6> params;
   for(int i=0; i<6; i++)
     params[i] = (rand()%10000-5000)/2000.f;
-  params[0] = 0;
+  /*params[0] = 0;
   params[1] = 0;
   params[2] = 1;
-  params[3] = 0;
-  params[4] = 1;
+  params[3] = 1;
+  params[4] = 0;
   params[5] = 0;
   /*params[0] = 0;
   params[0] = 1;
@@ -855,8 +855,8 @@ void test18()
   std::cout<<"pt\n"<<poly.project2world(p3)<<"\n";
 
   for(int i=0; i<10; i++) {
-    p3(0) = 1;i/10.f+3;
-    p3(1) = 1;(rand()%20)/20.f+3;
+    p3(0) = i/10.f+3;
+    p3(1) = (rand()%20)/20.f+3;
 
     Eigen::Vector3f v=inst.project2world(p3);
     float mi = (rand()%20)/10.f;
@@ -876,6 +876,9 @@ void test18()
     std::cout<<"got\n"<<p2<<"\n";
     std::cout<<"should\n"<<p1<<"\n";
     std::cout<<"should\n"<<poly.project2world(p3)<<"\n";
+
+    std::cout<<"normal\n"<<inst.normalAt(p3)<<"\n";
+    std::cout<<"normal\n"<<poly.normalAt(p3)<<"\n";
   }
   //exit(0);
 
@@ -941,7 +944,7 @@ void test19()
     params[i] = 0;
 
   params[0] = 1;
-  params[4] = -1.3f;
+  //params[4] = -0.8f;
   params[2] = -0.03f;
 
   Slam_Surface::PolynomialSurface poly;
@@ -958,7 +961,7 @@ void test19()
 
   for(int i=0; i<steps; i++) {
     Slam_Surface::SurfaceTriSpline inst;
-    inst.init(&poly,-Fsize,Fsize, -Fsize,Fsize, 1);
+    inst.init(&poly,-Fsize+i/100.f,Fsize-i/100.f, -Fsize,Fsize, 1);
 
     Slam_Surface::Surface::SWINDOW w;
     res.merge(inst,0,0,w,w);
@@ -979,7 +982,7 @@ void test19()
     sprintf(buf,"test19_%d.bag", i);
     cob_3d_marker::MarkerContainer()<<new cob_3d_marker::MarkerList_Line(2)<<new cob_3d_marker::MarkerList_Arrow(3)<<res >>&cob_3d_marker::MarkerBagfile(&rosbag::Bag(buf, rosbag::bagmode::Write));
 
-    if(i==15) exit(0);
+    //if(i==15) exit(0);
   }
 
   pcl::PointCloud<pcl::PointXYZRGB> pc;
