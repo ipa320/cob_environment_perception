@@ -250,6 +250,7 @@ bool Registration_ICP_Features_Extra<Point,FeatureType>::calculateFeature(boost:
 }
 
 #define PCL_INSTANTIATE_Registration_ICP(T) template class PCL_EXPORTS cob_3d_registration::Registration_ICP<T>;
+#define PCL_INSTANTIATE_Registration_ICP_Features(T) template class PCL_EXPORTS cob_3d_registration::Registration_ICP_Features<T>;
 
 
 #endif

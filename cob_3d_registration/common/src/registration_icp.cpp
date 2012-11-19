@@ -16,3 +16,4 @@
 #include "cob_3d_registration/impl/registration_icp.hpp"
 
 PCL_INSTANTIATE(Registration_ICP, PCL_XYZ_POINT_TYPES)
+PCL_INSTANTIATE(Registration_ICP_Features, PCL_XYZ_POINT_TYPES)
