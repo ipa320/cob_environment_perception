@@ -56,6 +56,8 @@
 * If not, see <http://www.gnu.org/licenses/>.
 *
 ****************************************************************/
+//ros includes
+#include <ros/console.h>
 //cob includes
 #include "cob_3d_mapping_common/polygon.h"
 //pcl includes

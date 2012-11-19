@@ -63,14 +63,14 @@
 
 // ROS message includes
 #include <cob_3d_mapping_msgs/ShapeArray.h>
-#include <cob_3d_mapping_msgs/GetGeometricMap.h>
+#include <cob_3d_mapping_msgs/GetGeometryMap.h>
 
 std::string file_path;
 cob_3d_mapping_msgs::ShapeArray::ConstPtr sa;
 
 bool
-getMap(cob_3d_mapping_msgs::GetGeometricMap::Request &req,
-       cob_3d_mapping_msgs::GetGeometricMap::Response &res)
+getMap(cob_3d_mapping_msgs::GetGeometryMap::Request &req,
+       cob_3d_mapping_msgs::GetGeometryMap::Response &res)
 {
   res.map = *sa;
   return true;

@@ -1,0 +1,7 @@
+<library path="lib/librviz_view_controllers">
+  <class name="rviz/Free" type="rviz::FreeViewController" base_class_type="rviz::ViewController">
+    <description>
+      Control a "free" camera in a variety of modes.
+    </description>
+  </class>
+</library>

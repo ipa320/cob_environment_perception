@@ -56,6 +56,7 @@
 * If not, see <http://www.gnu.org/licenses/>.
 *
 ****************************************************************/
+#include <ros/console.h>
 #include "cob_3d_mapping_common/cylinder.h"
 namespace cob_3d_mapping {
 

@@ -84,11 +84,6 @@ ShapeVisualization::ShapeVisualization () :ctr_for_shape_indexes (0)
 void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)//,const cob_3d_mapping_msgs::Shape& shape)
 {
 
-  //  int id ;
-  //  stringstream name(feedback->marker_name);
-  //  name >> id ;
-
-  //        interacted_shapes_.pop_back();
   cob_3d_mapping_msgs::ShapeArray map_msg;
   map_msg.header.frame_id="/map";
   map_msg.header.stamp = ros::Time::now();
@@ -585,6 +580,7 @@ ShapeVisualization::shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr
     boost::shared_ptr<ShapeMarker> sm(new ShapeMarker(im_server_, sa->shapes[i],moved_shapes_indices_
         ,interacted_shapes_,deleted_markers_indices_,false,false)) ;//,deleted_));
     v_sm_.push_back(sm);
+    marker_pub_.publish(sm->getMarker());
   }
   //    im_server_->applyChanges(); //update changes
 }

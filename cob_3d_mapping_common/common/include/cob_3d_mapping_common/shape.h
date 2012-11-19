@@ -107,6 +107,8 @@ namespace cob_3d_mapping
     */
     virtual void transform2tf(const Eigen::Affine3f& trafo)=0;
 
+    double computeDistanceFromViewpoint() {return centroid.norm();}
+
     unsigned int id;/**< ID of shape.*/
     unsigned int merged;/**< Number of times, shape has been merged.*/
     unsigned int frame_stamp;/**< Frame, shape was created or merged the last time.*/
