@@ -290,6 +290,9 @@ class ShapeMarker
     visualization_msgs::InteractiveMarker deleted_imarker_ ;
     visualization_msgs::Marker marker;
 
+    //    ros::NodeHandle nh_;
+    //    ros::Subscriber feedback_sub_ ;
+    //    ros::Publisher marker_pub_ ;
 
     visualization_msgs::InteractiveMarkerControl im_ctrl;
 
@@ -301,14 +304,27 @@ class ShapeMarker
 
     Eigen::Affine3f transformation_;
     Eigen::Affine3f transformation_inv_;
+    //    int shape_ctr_ ;
 
+
+    //    int shape_ctr_ ;
     unsigned int id_;
     std::vector<unsigned int>& moved_shapes_indices_ ;
     std::vector<unsigned int>& interacted_shapes_ ;
     std::vector<unsigned int>& deleted_markers_indices_ ;
+    //    unsigned int& deleted_ ;
+
 
     bool arrows_;
     bool deleted_ ;
+    //    cob_3d_mapping_msgs::ModifyMap::Request req ;
+    //    cob_3d_mapping_msgs::ModifyMap::Response res;
+    //    //
+    //    Eigen::Quaternionf quatInit ;
+    //    Eigen::Vector3f oldCentroid ;
+    //    Eigen::Matrix4f transInit;
+    //    Eigen::Affine3f affineInit;
+    //    Eigen::Matrix4f transInitInv;
 
 };
 

@@ -1,0 +1,7 @@
+<library path="lib/libcob_3d_mapping_rviz_plugins">
+  <class name="rviz/GetRvizCameraView" type="rviz::GetRvizCameraView" base_class_type="rviz::ViewController" base_class_type="rviz::Display">
+    <description>
+      gets rviz camera view
+    </description>
+  </class>
+</library>

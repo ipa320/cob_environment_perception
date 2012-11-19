@@ -91,7 +91,9 @@
 #include <Eigen/Core>
 
 //#include <cob_3d_visualization/polypartition.h>
+//#include <cob_3d_mapping_msgs/ShapeArray.h>
 #include <cob_3d_visualization/shape_marker.h>
+//#include <cob_3d_mapping_msgs/ModifyMap.h>
 
 #include <cob_3d_mapping_common/ros_msg_conversions.h>
 #include "cob_3d_mapping_common/polygon.h"
@@ -147,22 +149,27 @@ class TableMarker
     void MoveToTheTable(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
 
   protected:
+    visualization_msgs::InteractiveMarker table_int_marker_ ;
+    visualization_msgs::Marker table_marker_;
 
     ros::NodeHandle nh_;
+
     cob_3d_mapping_msgs::Shape table_;
+
     ros::Publisher goal_pub_ ;
 
 
     visualization_msgs::InteractiveMarkerControl im_ctrl;
     boost::shared_ptr<interactive_markers::InteractiveMarkerServer> table_im_server_;
     interactive_markers::MenuHandler table_menu_handler_;
-    visualization_msgs::InteractiveMarker table_int_marker_ ;
-    visualization_msgs::Marker table_marker_;
-    tabletop_object_detector::Table table_msg_;
+
     Eigen::Affine3f transformation_;
     Eigen::Affine3f transformation_inv_;
 
     int id_;
+
+    // Table Parameters
+    //tabletop_object_detector::Table table_msg_;
 
 };
 

@@ -63,13 +63,23 @@
 
 // ROS includes
 #include <ros/ros.h>
+//#include <sensor_msgs/PointCloud2.h>
 #include <visualization_msgs/Marker.h>
+#include <visualization_msgs/MarkerArray.h>
 #include <visualization_msgs/InteractiveMarker.h>
 #include <visualization_msgs/InteractiveMarkerControl.h>
 #include <interactive_markers/interactive_marker_server.h>
 #include <interactive_markers/menu_handler.h>
 #include <cob_3d_mapping_msgs/ModifyMap.h>
 #include <cob_3d_visualization/shape_marker.h>
+//#include <cob_3d_visualization/table_marker.h>
+#include <cob_3d_mapping_msgs/GetTables.h>
+#include <cob_3d_mapping_msgs/GetObjectsOfClass.h>
+#include <tf/transform_listener.h>
+
+
+
+
 #include <boost/shared_ptr.hpp>
 
 
@@ -81,7 +91,7 @@ class ShapeVisualization
     // Destructor
     ~ShapeVisualization ()
     {
-
+      /// void
     }
     /**
      * @brief Callback for shape array messages
@@ -130,12 +140,15 @@ class ShapeVisualization
      * @brief Create menu entries for the text
      */
     void optionMenu() ;
+//    void findTables(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
 
   protected:
 
     ros::NodeHandle nh_;
+    //    ros::Publisher shape_pub_ ;
     ros::Subscriber shape_array_sub_; // sub for shape array msgs
     ros::Subscriber feedback_sub_ ;
+    ros::Publisher marker_pub_;
     std::vector<boost::shared_ptr<ShapeMarker> > v_sm_;
     cob_3d_mapping_msgs::ShapeArray sha ;
     interactive_markers::MenuHandler menu_handler_for_text_;
@@ -145,6 +158,7 @@ class ShapeVisualization
     std::vector<unsigned int> interacted_shapes_;
     std::vector<unsigned int> deleted_markers_indices_;
     cob_3d_mapping_msgs::ShapeArray modified_shapes_;
+//    unsigned int deleted_ ;
 
 
     Eigen::Quaternionf quatInit ;
@@ -152,6 +166,8 @@ class ShapeVisualization
     Eigen::Matrix4f transInit;
     Eigen::Affine3f affineInit;
     Eigen::Matrix4f transInitInv;
+//    cob_3d_mapping_msgs::ModifyMap::Request req ;
+//    cob_3d_mapping_msgs::ModifyMap::Response res;
 
 
 
