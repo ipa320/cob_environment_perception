@@ -89,7 +89,7 @@ Eigen::Quaternionf MoveToTableNode::faceTable(geometry_msgs::Pose finalPose){
 
 }
 
-geometry_msgs::Pose MoveToTableNode::transformToTableCoordinateSystem(tabletop_object_detector::Table &table,geometry_msgs::Pose &Pose)
+geometry_msgs::Pose MoveToTableNode::transformToTableCoordinateSystem(cob_3d_mapping_msgs::Table &table,geometry_msgs::Pose &Pose)
 {
   Eigen::Matrix4f transformationMat ;
   Eigen::Quaternionf quat ;
@@ -361,12 +361,12 @@ bool MoveToTableNode::moveToTableService (cob_3d_mapping_msgs::MoveToTable::Requ
   table_.pose.pose.position.x = pose.translation()(0); //poly_ptr->centroid[0];
   table_.pose.pose.position.y = pose.translation()(1) ;//poly_ptr->centroid[1];
   table_.pose.pose.position.z = pose.translation()(2) ;//poly_ptr->centroid[2];
-  Eigen::Quaternionf quat(pose.rotation());
+  Eigen::Quaternionf quaternion(pose.rotation());
 
-  table_.pose.pose.orientation.x = quat.x();
-  table_.pose.pose.orientation.y = quat.y();
-  table_.pose.pose.orientation.z = quat.z();
-  table_.pose.pose.orientation.w = quat.w();
+  table_.pose.pose.orientation.x = quaternion.x();
+  table_.pose.pose.orientation.y = quaternion.y();
+  table_.pose.pose.orientation.z = quaternion.z();
+  table_.pose.pose.orientation.w = quaternion.w();
   table_.x_min = min_pt(0);
   table_.x_max = max_pt(0);
   table_.y_min = min_pt(1);
