@@ -166,6 +166,7 @@ namespace ParametricSurface {
       int df(const Eigen::VectorXf &x, Eigen::MatrixXf &fjac) const
       {
         //Jacobian
+#if 0
         Eigen::Matrix4f p = top_.normalAtUV(x);
 
         Eigen::Vector3f vx, vy;
@@ -182,14 +183,24 @@ namespace ParametricSurface {
 
         fjac.row(0) = 2*(M.inverse()*(p.col(0).head<3>()-pt_)).head<2>();
 
+        std::cout<<"o1 "<<vx.dot(p.col(0).head<3>()-pt_)<<"\n";
+        std::cout<<"o2 "<<vx.dot(p.col(1).head<3>()-pt_)<<"\n";
+        std::cout<<"p\n"<<p<<"\n";
+#else
+        Eigen::Vector3f v = top_.project2world(x);
+        Eigen::Matrix<float,3,2> M = top_.normal(x);
+
+        fjac(0,0) = 2*M.col(0).dot( v-pt_ );
+        fjac(0,1) = 2*M.col(1).dot( v-pt_ );
+#endif
+
         //        fjac(0,0) = 2*( p.col(1)(3)* p.col(3).head<3>().dot(p.col(0).head<3>()-pt_) + vx.dot(p.col(0).head<3>()-pt_));
         //        fjac(0,1) = -2*( p.col(2)(3)* p.col(3).head<3>().dot(p.col(0).head<3>()-pt_) + vy.dot(p.col(0).head<3>()-pt_));
         fjac(1,0) = fjac(1,1) = 0;
 
-        std::cout<<"o1 "<<vx.dot(p.col(0).head<3>()-pt_)<<"\n";
-        std::cout<<"o2 "<<vx.dot(p.col(1).head<3>()-pt_)<<"\n";
-        std::cout<<"p\n"<<p<<"\n";
         std::cout<<"fjac\n"<<fjac<<"\n";
+        std::cout<<"d\n"<<M<<"\n";
+
         return 0;
       }
 
