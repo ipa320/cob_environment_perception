@@ -8,6 +8,10 @@
 #include <stdlib.h>
 #include <math.h>
 
+#include <termios.h>
+#include <fcntl.h>
+#include <unistd.h>
+
 // own includes
 #include <cob_3d_mapping_demonstrator/MapDemonCtrl_Maestro.h>
 
@@ -92,13 +96,23 @@ bool MapDemonCtrl_Maestro::Init(MapDemonCtrlParams * params)
   std::cout << std::endl << "============================================================================== " << std::endl;
 
   /// now open serial port
-  int spres = m_sd->openPort(SerialDeviceName.c_str(), SerialBaudrate, 2, 0);
-  if(spres == -1)
-  {
+
+  m_fd =  open(SerialDeviceName.c_str(), O_RDWR | O_NOCTTY);
+
+  /// open(2) returns <0 if the port could NOT be opened
+  if (m_fd == -1 ) {
     errorMsg << "Could not open device " << SerialDeviceName;
     m_ErrorMessage = errorMsg.str();
     return false;
   }
+
+  struct termios options;
+  tcgetattr(m_fd, &options);
+  options.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
+  options.c_oflag &= ~(ONLCR | OCRNL);
+  tcsetattr(m_fd, TCSANOW, &options);
+
+  usleep(10000);
 
   if(!UpdatePositions()) return false;
 
@@ -128,7 +142,8 @@ bool MapDemonCtrl_Maestro::MovePos( const std::vector<double>& target_positions 
   int DOF = m_params_->GetDOF();
 
   for(int i=0; i<DOF; i++) {
-    unsigned char list[2] = {(unsigned short)target_positions[i] & 0x7F, (unsigned short)target_positions[i] >> 7 & 0x7F};
+    int pos = rad2int(target_positions[i], i);
+    unsigned char list[2] = {(unsigned short)pos & 0x7F, (unsigned short)(pos >> 7) & 0x7F};
     writeCmd(SET_TARGET, i, list, 2);
   }
 
@@ -164,7 +179,16 @@ bool MapDemonCtrl_Maestro::UpdatePositions()
     unsigned int ctr=0;
     while(str.size()<2)
     {
-      m_sd->GetString(str);
+      char buf[255];
+      size_t nbytes;
+
+      nbytes = read(m_fd, buf, 255);
+      str += std::string(buf, nbytes);
+
+//      std::cout<<"recv: ";
+//      for(int i=0; i<str.size(); i++)
+//        printf("%x ",(int)(unsigned char)str[i]);
+//      std::cout<<"\n";
 
       ++ctr;
       usleep(10000);
@@ -177,6 +201,11 @@ bool MapDemonCtrl_Maestro::UpdatePositions()
 
     m_positions[i] = (unsigned char)str[0] + ((unsigned char)str[1])*256;
   }
+
+//  std::vector<double> p;
+//  p.push_back(100);
+//  p.push_back(100);
+//  MovePos(p);
 
   return true;
 }
@@ -222,5 +251,12 @@ void MapDemonCtrl_Maestro::writeCmd(const unsigned char cmd, const unsigned char
   s.push_back(channel);
   for(int i=0; i<size; i++)
     s.push_back(data[i]);
-  m_sd->PutString(s);
+
+//  std::cout<<"writing: ";
+//  for(int i=0; i<s.size(); i++)
+//    printf("%x ",(int)(unsigned char)s[i]);
+//  std::cout<<"\n";
+
+  if(write(m_fd, s.c_str(), s.size())!=s.size())
+    ROS_WARN("could not send to serial");
 }

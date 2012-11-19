@@ -40,16 +40,23 @@ private:
     SET_TARGET=0x84
   };
 
+  int m_fd;
+
   const double STEP_WIDTH;
 
   void writeCmd(const unsigned char cmd, const unsigned char channel, const unsigned char *data=NULL, const int size=0);
 
   int rad2int(const double v, const int dof) {
-    return round( (v-m_params_->GetOffsets()[dof])*STEP_WIDTH);
+    double rad = v;
+    rad+=M_PI;
+    if(rad<0) rad = 2*M_PI+rad;
+    return round( 2*4900*rad/(2*M_PI) + 1000);
+    //return round( (v-m_params_->GetOffsets()[dof])*STEP_WIDTH);
   }
 
   int rad2int(const int v, const int dof) {
-    return (v/STEP_WIDTH)+m_params_->GetOffsets()[dof];
+    return v-1000*(2*M_PI)/(2*4900) - M_PI;
+    //return (v/STEP_WIDTH)+m_params_->GetOffsets()[dof];
   }
 };
 
