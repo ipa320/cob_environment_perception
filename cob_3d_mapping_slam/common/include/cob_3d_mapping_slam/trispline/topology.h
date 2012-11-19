@@ -340,16 +340,22 @@ namespace ParametricSurface {
     }
 
     inline Eigen::Vector3f normalAt(const Eigen::Vector2f &uv) const {
-      return locate(uv)->normalAt(uv);
+      Eigen::Vector3f v = locate(uv)->normalAt(uv);
+      v.normalize();
+      return v;
+    }
+
+    inline Eigen::Matrix<float,3,2> normal(const Eigen::Vector2f &uv) const {
+      return locate(uv)->normal(uv);
     }
 
     inline Eigen::Vector3f normalAt2(const Eigen::Vector2f &uv, bool &inside) const {
       return locate(uv, inside)->normalAt2(uv);
     }
 
-    inline Eigen::Matrix4f normalAtUV(const Eigen::Vector2f &uv) const {
+    /*inline Eigen::Matrix4f normalAtUV(const Eigen::Vector2f &uv) const {
       return locate(uv)->normalAtUV(uv);
-    }
+    }*/
 
     void operator+=(const Topology &o) {
       ROS_INFO("merge");
