@@ -11,5 +11,6 @@
   <depend stack="ros_comm" /> <!-- rosbag, std_msgs -->
   <depend stack="visualization" /> <!-- rviz -->
   <depend stack="cob_common" /> <!-- cob_srvs -->
+  <depend stack="arm_navigation" /> <!-- arm_navigation_msgs -->
 
 </stack>
