@@ -1,7 +1,0 @@
-<?xml version="1.0"?>
-<launch>
-
-	<!--test_rviz node-->
-	<node pkg="cob_3d_visualization" type="test_rviz_node" name="test_rviz_node" output="screen"/> 
-
-</launch>

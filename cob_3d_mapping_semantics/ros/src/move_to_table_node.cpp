@@ -352,7 +352,7 @@ bool MoveToTableNode::moveToTableService (cob_3d_mapping_msgs::MoveToTable::Requ
   //  robotPose_.position.y = 1 ;
   //  robotPose_.position.z = 0 ;
 
-  cob_3d_mapping::Polygon p;
+  cob_3d_mapping::::Polygon p;
   fromROSMsg(req.targetTable, p);
   Eigen::Affine3f pose;
   Eigen::Vector4f min_pt;
