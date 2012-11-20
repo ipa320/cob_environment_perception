@@ -1,20 +1,94 @@
-/*
- * move_to_table_node.cpp
+/*!
+ *****************************************************************
+ * \file
  *
- *  Created on: Oct 9, 2012
- *      Author: goa-sn
- */
+ * \note
+ * Copyright (c) 2012 \n
+ * Fraunhofer Institute for Manufacturing Engineering
+ * and Automation (IPA) \n\n
+ *
+ *****************************************************************
+ *
+ * \note
+ * Project name: Care-O-bot
+ * \note
+ * ROS stack name: cob_environment_perception
+ * \note
+ * ROS package name: cob_3d_mapping_semantics
+ *
+ * \author
+ * Author: Shaghayegh Nazari, email:georg.arbeiter@ipa.fhg.de
+ * \author
+ * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ *
+ * \date Date of creation: 10/2012
+ *****************************************************************
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ * - Redistributions of source code must retain the above copyright
+ * notice, this list of conditions and the following disclaimer. \n
+ * - Redistributions in binary form must reproduce the above copyright
+ * notice, this list of conditions and the following disclaimer in the
+ * documentation and/or other materials provided with the distribution. \n
+ * - Neither the name of the Fraunhofer Institute for Manufacturing
+ * Engineering and Automation (IPA) nor the names of its
+ * contributors may be used to endorse or promote products derived from
+ * this software without specific prior written permission. \n
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License LGPL as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License LGPL for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License LGPL along with this program.
+ * If not, see <http://www.gnu.org/licenses/>.
+ *
+ ****************************************************************/
 #include <cob_3d_mapping_semantics/move_to_table_node.h>
-#include <cob_3d_mapping_common/ros_msg_conversions.h>
-#include <cob_3d_mapping_common/polygon.h>
-/**
- * @brief transforms a point to table coordinate system
- *
- * @param table table msg
- * @param pose the pose which needs to be transformed ro table coordinate system
- *
- * @return the transformed point
- */
+using namespace std ;
+
+/*
+ * MoveToTable constructor
+ * */
+MoveToTableNode::MoveToTableNode(){
+  move_to_table_server_ = n_.advertiseService ("move_to_table", &MoveToTableNode::moveToTableService, this);
+  safe_dist_ = 0.7 ; // should be set to a predefined safe distance
+  table_im_server_.reset (new interactive_markers::InteractiveMarkerServer ("geometry_map/map", "", false));
+  navigation_goal_pub_ = n_.advertise<geometry_msgs::PoseStamped> ("move_base_simple/goal", 1);
+}
+
+Eigen::Quaternionf MoveToTableNode::faceTable(geometry_msgs::Pose finalPose){
+
+  Eigen::Vector2f finalTarget ;
+  finalTarget(0) = finalPose.position.x;
+  finalTarget(1) = finalPose.position.y;
+
+  Eigen::Vector2f robotPose ;
+  robotPose(0) = robotPose_.position.x;
+  robotPose(1) = robotPose_.position.y;
+
+
+  Eigen::Vector2f direction = finalTarget - robotPose ;
+  direction.normalize() ;
+
+  float angle = atan2(direction(1), direction(0));
+
+  Eigen::AngleAxis <float> ax1(angle, Eigen::Vector3f::UnitZ());
+  Eigen::Matrix3f rotMat = ax1.toRotationMatrix().block(0,0,2,2);
+
+  Eigen::Quaternionf quat(rotMat);
+  return quat ;
+
+}
+
 geometry_msgs::Pose MoveToTableNode::transformToTableCoordinateSystem(cob_3d_mapping_msgs::Table &table,geometry_msgs::Pose &Pose)
 {
   Eigen::Matrix4f transformationMat ;
@@ -52,11 +126,7 @@ geometry_msgs::Pose MoveToTableNode::transformToTableCoordinateSystem(cob_3d_map
   return translatedPose ;
 
 }
-/**
- * @brief finds whether there is an intersection between the line through the robot pose and table centroid and the boundies of the table
- *
- * @return true if there exists an Intersection
- */
+
 bool MoveToTableNode::doIntersect(float line){
 
   bool intersection(false) ;
@@ -121,10 +191,7 @@ bool MoveToTableNode::doIntersect(float line){
   }
   return intersection ;
 }
-/**
- * @brief finds the intersection between the line through the robot pose and table centroid and the boundies of the table
- * @return the intersection point
- */
+
 geometry_msgs::Pose MoveToTableNode::findIntersectionPoint(){
 
   geometry_msgs::Pose IntersectionPoint ;
@@ -163,11 +230,7 @@ geometry_msgs::Pose MoveToTableNode::findIntersectionPoint(){
   return IntersectionPoint ;
 
 }
-/**
- * @brief finds a safe position in the vicinity of the table as the target
- *
- * @return the position of the target point
- */
+
 geometry_msgs::Pose MoveToTableNode::findSafeTargetPoint(){
 
   geometry_msgs::Pose intersectionPoint = findIntersectionPoint() ;
@@ -202,10 +265,7 @@ geometry_msgs::Pose MoveToTableNode::findSafeTargetPoint(){
   return finalTarget ;
 
 }
-/**
- * @brief adds a marker for showing the final target
- * @return nothing
- */
+
 void MoveToTableNode::addMarkerForFinalPose(geometry_msgs::Pose finalPose) {
 
   std::stringstream ss;
@@ -223,7 +283,7 @@ void MoveToTableNode::addMarkerForFinalPose(geometry_msgs::Pose finalPose) {
   //  marker.header = shape_.header;
   marker.header.frame_id = "/map" ;
 
-  marker.type = visualization_msgs::Marker::SPHERE;
+  marker.type = visualization_msgs::Marker::LINE_STRIP;
   marker.action = visualization_msgs::Marker::ADD;
   marker.lifetime = ros::Duration ();
 
@@ -239,10 +299,14 @@ void MoveToTableNode::addMarkerForFinalPose(geometry_msgs::Pose finalPose) {
   marker.scale.z = 0.1;
 
   //set pose
-  marker.pose.position.x = finalPose.position.x;
-  marker.pose.position.y = finalPose.position.y;
-  marker.pose.position.z = finalPose.position.z;
-
+  marker.points.resize (2);
+  marker.points[0].x = robotPose_.position.x ;
+  marker.points[0].y = robotPose_.position.y ;
+  marker.points[0].z = robotPose_.position.z ;
+  //
+  marker.points[1].x = finalPose.position.x;
+  marker.points[1].y = finalPose.position.y ;
+  marker.points[1].z = finalPose.position.z;
 
   visualization_msgs::InteractiveMarkerControl im_ctrl;
 
@@ -255,13 +319,7 @@ void MoveToTableNode::addMarkerForFinalPose(geometry_msgs::Pose finalPose) {
   table_im_server_->insert (imarker);
   table_im_server_->applyChanges() ;
 }
-/**
- * @brief service callback for MoveToTable service
- * @param req request  to move to table
- * @param res empty response
- *
- * @return nothing
- */
+
 bool MoveToTableNode::moveToTableService (cob_3d_mapping_msgs::MoveToTable::Request &req,
     cob_3d_mapping_msgs::MoveToTable::Response &res)
 {
@@ -276,19 +334,25 @@ bool MoveToTableNode::moveToTableService (cob_3d_mapping_msgs::MoveToTable::Requ
   tf::TransformListener listener;
   tf::StampedTransform transform ;
 
-  listener.waitForTransform("/base_link", "/map", ros::Time::now(), ros::Duration(3.0));  //The listener needs to get the information first before it can transform.
-  listener.lookupTransform("/base_link","/map",ros::Time(0), transform);
+  listener.waitForTransform("/map", "/base_link", ros::Time::now(), ros::Duration(3.0));  //The listener needs to get the information first before it can transform.
+  listener.lookupTransform("/map","/base_link",ros::Time(0), transform);
 
   robotPose_.position.x = transform.getOrigin().x() ;
   robotPose_.position.y = transform.getOrigin().y() ;
   robotPose_.position.z = transform.getOrigin().z() ;
+
+  robotPose_.orientation.x = transform.getRotation().x() ;
+  robotPose_.orientation.y = transform.getRotation().y() ;
+  robotPose_.orientation.z = transform.getRotation().z() ;
+  robotPose_.orientation.w = transform.getRotation().w() ;
+
 
   // test
   //  robotPose_.position.x = 1 ;
   //  robotPose_.position.y = 1 ;
   //  robotPose_.position.z = 0 ;
 
-  cob_3d_mapping::Polygon p;
+  cob_3d_mapping::::Polygon p;
   fromROSMsg(req.targetTable, p);
   Eigen::Affine3f pose;
   Eigen::Vector4f min_pt;
@@ -297,12 +361,12 @@ bool MoveToTableNode::moveToTableService (cob_3d_mapping_msgs::MoveToTable::Requ
   table_.pose.pose.position.x = pose.translation()(0); //poly_ptr->centroid[0];
   table_.pose.pose.position.y = pose.translation()(1) ;//poly_ptr->centroid[1];
   table_.pose.pose.position.z = pose.translation()(2) ;//poly_ptr->centroid[2];
-  Eigen::Quaternionf quat(pose.rotation());
+  Eigen::Quaternionf quaternion(pose.rotation());
 
-  table_.pose.pose.orientation.x = quat.x();
-  table_.pose.pose.orientation.y = quat.y();
-  table_.pose.pose.orientation.z = quat.z();
-  table_.pose.pose.orientation.w = quat.w();
+  table_.pose.pose.orientation.x = quaternion.x();
+  table_.pose.pose.orientation.y = quaternion.y();
+  table_.pose.pose.orientation.z = quaternion.z();
+  table_.pose.pose.orientation.w = quaternion.w();
   table_.x_min = min_pt(0);
   table_.x_max = max_pt(0);
   table_.y_min = min_pt(1);
@@ -328,7 +392,7 @@ bool MoveToTableNode::moveToTableService (cob_3d_mapping_msgs::MoveToTable::Requ
 
   finalTargetInMapCoordinateSys.position.x = vecFinal (0) ;
   finalTargetInMapCoordinateSys.position.y = vecFinal (1) ;
-  finalTargetInMapCoordinateSys.position.z = vecFinal (2) ;
+  //  finalTargetInMapCoordinateSys.position.z = vecFinal (2) ;
   ROS_WARN("Final Target point: x=%f , y= %f , z= %f",finalTargetInMapCoordinateSys.position.x
       ,finalTargetInMapCoordinateSys.position.y
       ,finalTargetInMapCoordinateSys.position.z);
@@ -337,14 +401,20 @@ bool MoveToTableNode::moveToTableService (cob_3d_mapping_msgs::MoveToTable::Requ
   finalPose.header.frame_id = "/map" ;
   //  res.goalPoint.header.frame_id = "/map" ;
 
+  // set position
   finalPose.pose.position.x = vecFinal (0) ;
   finalPose.pose.position.y = vecFinal (1) ;
   finalPose.pose.position.z = 0;//vecFinal (2) ;
 
-  finalPose.pose.orientation.x = 0;
-  finalPose.pose.orientation.y = 0;
-  finalPose.pose.orientation.z = 0;
-  finalPose.pose.orientation.w = 1;
+  // set orientation
+  Eigen::Quaternionf quat = faceTable(finalTargetInMapCoordinateSys) ;
+
+  finalPose.pose.orientation.x = quat.x();
+  finalPose.pose.orientation.y = quat.y();
+  finalPose.pose.orientation.z = quat.z();
+  finalPose.pose.orientation.w = quat.w();
+
+  addMarkerForFinalPose (finalTargetInMapCoordinateSys) ;
 
   navigation_goal_pub_.publish(finalPose) ;
   return true;
