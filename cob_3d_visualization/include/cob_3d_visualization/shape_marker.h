@@ -136,6 +136,7 @@ class ShapeMarker
      * @return nothing
      */
     void triangle_refinement(list<TPPLPoly>& i_list,list<TPPLPoly>& o_list);
+    void getShape (cob_3d_mapping_msgs::Shape& shape);
     /**
      * @brief returns the global variable arrows_
      * @param[out] global variable arrows_
@@ -280,6 +281,8 @@ class ShapeMarker
      *
      */
     void resetMarker();
+
+    visualization_msgs::Marker& getMarker() {return marker;};
 
 
 

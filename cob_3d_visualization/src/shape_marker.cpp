@@ -657,7 +657,7 @@ ShapeMarker::displayNormalCB (const visualization_msgs::InteractiveMarkerFeedbac
 
 }
 
-void ShapeMarker::displaySymAxis(){
+/*void ShapeMarker::displaySymAxis(){
 
   ROS_INFO(" displaySymAxis from shape[ %d ]...", shape_.id);
 
@@ -712,9 +712,9 @@ void ShapeMarker::displaySymAxis(){
   interacted_shapes_.push_back(shape_.id) ;
 
 
-}
+}*/
 
-void ShapeMarker::hideSymAxis(int untick){
+/*void ShapeMarker::hideSymAxis(int untick){
 
   stringstream ss;
   std::vector<unsigned int>::iterator iter;
@@ -730,7 +730,7 @@ void ShapeMarker::hideSymAxis(int untick){
       interacted_shapes_.erase(interacted_shapes_.begin()+(iter-interacted_shapes_.begin())) ;
     }
   }
-}
+}*/
 /**
  * @brief Display the normal vector of a shape
  */
@@ -813,7 +813,7 @@ void ShapeMarker::hideNormal(int untick){
 }
 //
 
-void
+/*void
 ShapeMarker::displayOriginCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
 {
   stringstream ss;
@@ -835,9 +835,9 @@ ShapeMarker::displayOriginCB (const visualization_msgs::InteractiveMarkerFeedbac
   im_server_->applyChanges ();
 
 
-}
+}*/
 
-void ShapeMarker::displayOrigin(){
+/*void ShapeMarker::displayOrigin(){
 
   ROS_INFO(" displayOriginCB from shape[ %d ]...", shape_.id);
   std::vector<unsigned int>::iterator iter;
@@ -886,9 +886,9 @@ void ShapeMarker::displayOrigin(){
 
   interacted_shapes_.push_back(shape_.id) ;
 
-}
+}*/
 
-void ShapeMarker::hideOrigin(int untick){
+/*void ShapeMarker::hideOrigin(int untick){
   stringstream ss;
   std::vector<unsigned int>::iterator iter;
 
@@ -906,7 +906,7 @@ void ShapeMarker::hideOrigin(int untick){
     }
   }
   //
-}
+}*/
 
 
 /**

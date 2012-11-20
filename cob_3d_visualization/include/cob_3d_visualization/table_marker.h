@@ -107,8 +107,8 @@ class TableMarker
 {
   public:
     // Constructor
-    TableMarker (boost::shared_ptr<interactive_markers::InteractiveMarkerServer> server,cob_3d_mapping_msgs::Shape& table,int ctr,
-        tabletop_object_detector::Table& tableMsg) ;
+    TableMarker (boost::shared_ptr<interactive_markers::InteractiveMarkerServer> server,cob_3d_mapping_msgs::Shape& table,int ctr/*,
+        tabletop_object_detector::Table& tableMsg*/) ;
     // Destructor
     ~TableMarker ()
     {
