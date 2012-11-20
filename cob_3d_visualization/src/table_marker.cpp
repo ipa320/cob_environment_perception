@@ -56,18 +56,18 @@
 
 #include <cob_3d_visualization/table_marker.h>
 
-TableMarker::TableMarker (boost::shared_ptr<interactive_markers::InteractiveMarkerServer> server,cob_3d_mapping_msgs::Shape& table,int ctr,
-    tabletop_object_detector::Table& tableMsg)
+TableMarker::TableMarker (boost::shared_ptr<interactive_markers::InteractiveMarkerServer> server,cob_3d_mapping_msgs::Shape& table,int ctr/*,
+    tabletop_object_detector::Table& tableMsg*/)
 {
   id_ = ctr ;
   table_im_server_ = server ;
   table_ = table ;
-  goal_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/move_base_linear_simple/goal", 1);
+  //goal_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("/move_base_linear_simple/goal", 1);
 
   createTableMenu();
   createInteractiveMarkerForTable();
   //Table msg
-  table_msg_ = tableMsg ;
+  //table_msg_ = tableMsg ;
 }
 
 void TableMarker::createInteractiveMarkerForTable ()
