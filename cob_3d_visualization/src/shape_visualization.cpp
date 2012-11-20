@@ -14,7 +14,9 @@
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
+ *\author
  * Author: Waqas Tanveer, email:Waqas.Tanveer@ipa.fhg.de
+ * \author
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
  * Date of creation: 04/2012
@@ -68,11 +70,17 @@
 
 using namespace cob_3d_mapping;
 
-/**
- * @brief Callback for feedback subscriber for getting the transformation of moved markers
- *
- * @param feedback subscribed from geometry_map/map/feedback
- */
+ShapeVisualization::ShapeVisualization () :ctr_for_shape_indexes (0)
+
+    {
+      shape_array_sub_ = nh_.subscribe ("shape_array", 1, &ShapeVisualization::shapeArrayCallback, this);
+      feedback_sub_ = nh_.subscribe("geometry_map/map/feedback",1,&ShapeVisualization::setShapePosition,this);
+      //      shape_pub_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_array", 1);
+      //      get_table_subscriber_ = nh_.subscribe("shape_array", 1, &ShapeVisualization::findTables,this);
+      im_server_.reset (new interactive_markers::InteractiveMarkerServer ("geometry_map/map", "", false));
+      moreOptions() ;
+    }
+
 void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)//,const cob_3d_mapping_msgs::Shape& shape)
 {
 
@@ -80,8 +88,9 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
   map_msg.header.frame_id="/map";
   map_msg.header.stamp = ros::Time::now();
 
-  int shape_id(0), index(0);
-
+  int shape_id,index;
+  index=-1;
+  stringstream name(feedback->marker_name);
 
   Eigen::Quaternionf quat;
 
@@ -95,23 +104,24 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
 
 
   if (feedback->marker_name != "Text"){
-    std::cout << "marker_name : " << feedback->marker_name << "\n" ;
-
-    //    string strName(feedback->marker_name);
-    //    strName.erase(strName.begin(),strName.begin()+7);
-    stringstream name(feedback->marker_name);
-
     name >> shape_id ;
-
     cob_3d_mapping::Polygon p;
 
     for(unsigned int i=0;i<sha.shapes.size();++i)
     {
-      if (sha.shapes[i].id == shape_id)
-      {
-        index = i;
-      }
+    	if (sha.shapes[i].id == shape_id)
+	{
+		index = i;
+	}
     }
+    // temporary fix.
+    //do nothing if index of shape is not found
+    // this is not supposed to occur , but apparently it does
+    if(index==-1){
+    ROS_WARN("shape not in map array");
+    return;
+	}
+
     cob_3d_mapping::fromROSMsg (sha.shapes.at(index), p);
 
     if (feedback->event_type == 2 && feedback->menu_entry_id == 5){
@@ -140,6 +150,11 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
     }
 
     if (feedback->event_type == 5){
+      /* the name of the marker is arrows_shape_.id, we need to erase the "arrows_" part */
+      //string strName(feedback->marker_name);
+      //strName.erase(strName.begin(),strName.begin()+7);
+//      stringstream name(strName);
+	stringstream name(feedback->marker_name);
 
       /* the name of the marker is arrows_shape_.id, we need to erase the "arrows_" part */
       //      int test ;
@@ -241,11 +256,7 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
     }
   }
 }
-/**
- * @brief Feedback callback for Apply map modifications menu entry
- *
- * @param feedback feedback from rviz when the Apply map modifications menu entry of the text is changed
- */
+
 void ShapeVisualization::applyModifications(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
 {
   cob_3d_mapping_msgs::ModifyMap::Request req ;
@@ -320,11 +331,7 @@ void ShapeVisualization::applyModifications(const visualization_msgs::Interactiv
   }
   im_server_->applyChanges() ;
 }
-/**
- * @brief Feedback callback for Reset all Controls menu entry
- *
- * @param feedback feedback from rviz when the Reset all Controls menu entry of the text is changed
- */
+
 void ShapeVisualization::resetAll(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
 {
   stringstream aa;
@@ -382,14 +389,9 @@ void ShapeVisualization::resetAll(const visualization_msgs::InteractiveMarkerFee
     }
     deleted_markers_indices_.clear() ;
   }
-
   //  im_server_->applyChanges ();
-
-
 }
-/**
- * @brief creats a text for applying controls on all of the markers
- **/
+
 void ShapeVisualization::moreOptions()
 {
   optionMenu();
@@ -441,11 +443,7 @@ void ShapeVisualization::moreOptions()
   menu_handler_for_text_.apply (*im_server_,imarkerText.name);
 
 }
-/**
- * @brief Feedback callback for All Normals Controls menu entry
- *
- * @param feedback feedback from rviz when the All Normals menu entry of the text is changed
- */
+
 void ShapeVisualization::displayAllNormals(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) {
 
   interactive_markers::MenuHandler::CheckState check_state;
@@ -453,7 +451,6 @@ void ShapeVisualization::displayAllNormals(const visualization_msgs::Interactive
   menu_handler_for_text_.getCheckState (feedback->menu_entry_id, check_state);
   if (check_state == interactive_markers::MenuHandler::UNCHECKED)
   {
-    //ROS_INFO(" entry state changed ");
     ROS_INFO ("Displaying all Normals...");
     menu_handler_for_text_.setCheckState (feedback->menu_entry_id, interactive_markers::MenuHandler::CHECKED);
 
@@ -464,7 +461,6 @@ void ShapeVisualization::displayAllNormals(const visualization_msgs::Interactive
   }
   else if (check_state == interactive_markers::MenuHandler::CHECKED)
   {
-    //ROS_INFO(" entry state changed ");
     menu_handler_for_text_.setCheckState (feedback->menu_entry_id, interactive_markers::MenuHandler::UNCHECKED);
     ROS_INFO ("Deleting all Normals...");
     for (unsigned int j=0; j<v_sm_.size(); j++)
@@ -475,11 +471,7 @@ void ShapeVisualization::displayAllNormals(const visualization_msgs::Interactive
   menu_handler_for_text_.reApply (*im_server_);
   im_server_->applyChanges ();
 }
-/**
- * @brief Feedback callback for All Centroids Controls menu entry
- *
- * @param feedback feedback from rviz when the All Centroids menu entry of the text is changed
- */
+
 void
 ShapeVisualization::displayAllCentroids (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
 {
@@ -501,7 +493,6 @@ ShapeVisualization::displayAllCentroids (const visualization_msgs::InteractiveMa
     for (unsigned int i=0; i< sha.shapes.size();i++)
     {
 
-      //ROS_INFO(" entry state changed ");
       for (unsigned int j=0; j<v_sm_.size(); j++)
       {
         v_sm_[j]->hideCentroid(0);
@@ -511,11 +502,7 @@ ShapeVisualization::displayAllCentroids (const visualization_msgs::InteractiveMa
   menu_handler_for_text_.reApply (*im_server_);
   im_server_->applyChanges ();
 }
-/**
- * @brief Feedback callback for All Contours Controls menu entry
- *
- * @param feedback feedback from rviz when the All Contours menu entry of the text is changed
- */
+
 void
 ShapeVisualization::displayAllContours (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback){
 
@@ -536,7 +523,6 @@ ShapeVisualization::displayAllContours (const visualization_msgs::InteractiveMar
     for (unsigned int i=0; i< sha.shapes.size();i++)
     {
 
-      //ROS_INFO(" entry state changed ");
       for (unsigned int j=0; j<v_sm_.size(); j++)
       {
         v_sm_[j]->hideContour(0);
@@ -546,9 +532,7 @@ ShapeVisualization::displayAllContours (const visualization_msgs::InteractiveMar
   menu_handler_for_text_.reApply (*im_server_);
   im_server_->applyChanges ();
 }
-/**
- * @brief Create menu entries for the text
- */
+
 void ShapeVisualization::optionMenu() {
 
   //  ROS_INFO("Creating menu for the text...") ;
@@ -578,11 +562,6 @@ void ShapeVisualization::optionMenu() {
 
 }
 
-/**
- * @brief Callback for shape array messages
- *
- * @param sa received shape array message
- */
 void
 ShapeVisualization::shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr& sa)
 {
