@@ -167,7 +167,7 @@ cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::c
 template <typename ClusterHandlerT, typename PointT, typename NormalT, typename LabelT> void
 cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::recomputeClusterNormals(ClusterPtr c)
 {
-  int w_size = std::min( std::floor(sqrt(c->size() / 16.0f)) + 5, 30.0f);
+  int w_size = std::min( std::floor(std::sqrt(c->size() / 16.0f)) + 5, 30.0f);
   int steps = std::floor(w_size / 5);
   recomputeClusterNormals(c, w_size, steps);
 }
