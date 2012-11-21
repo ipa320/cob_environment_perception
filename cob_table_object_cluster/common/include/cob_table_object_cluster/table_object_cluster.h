@@ -89,9 +89,8 @@ public:
    * @return nothing
    */
   void
-  extractTableRoi(pcl::PointCloud<Point>::Ptr& pc_in,
-                  pcl::PointCloud<Point>::Ptr& hull,
-                  pcl::PointCloud<Point>& pc_roi);
+  extractTableRoi(pcl::PointCloud<Point>::Ptr& hull,
+                  pcl::PointIndices& pc_roi);
 
   /**
    * @brief extracts objects at top of a plane
@@ -139,9 +138,13 @@ public:
    * @return nothing
    */
   void
-  calculateBoundingBoxes(pcl::PointCloud<Point>::Ptr& pc_roi_red,
+  calculateBoundingBoxes(pcl::PointIndices::Ptr& pc_roi,
                          std::vector<pcl::PointCloud<Point>::Ptr >& object_clusters,
                      std::vector<pcl::PointCloud<pcl::PointXYZ> >& bounding_boxes);
+
+
+  void
+  setInputCloud(const pcl::PointCloud<Point>::Ptr&  cloud) {input_ = cloud;}
 
   /**
    * @brief sets parameters for filtering
@@ -178,6 +181,7 @@ public:
   }
 
 protected:
+  pcl::PointCloud<Point>::Ptr input_;
   double height_min_;           /// paramter for object detection
   double height_max_;           /// paramter for object detection
   int min_cluster_size_;        /// paramter for object detection

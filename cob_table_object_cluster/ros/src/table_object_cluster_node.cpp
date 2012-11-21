@@ -98,6 +98,9 @@
 #include "cob_table_object_cluster/table_object_cluster.h"
 #include "cob_3d_mapping_msgs/TableObjectClusterAction.h"
 
+#include <cob_3d_mapping_common/stop_watch.h>
+#include <pcl/filters/extract_indices.h>
+
 using namespace cob_table_object_cluster;
 using namespace cob_3d_mapping;
 
@@ -126,7 +129,7 @@ public:
     as_->start();
 
     pc_sub_.subscribe(n_,"point_cloud",10);
-    sa_sub_.subscribe(n_,"table_array",10);
+    sa_sub_.subscribe(n_,"shape_array",10);
     sync_ = boost::make_shared <message_filters::Synchronizer<MySyncPolicy> >(100);
     sync_->connectInput(pc_sub_, sa_sub_);
     sync_->registerCallback(boost::bind(&TableObjectClusterNode::topicCallback, this, _1, _2));
@@ -193,10 +196,11 @@ public:
                                  srv.response.plane_coeffs[3].data);*/
     ROS_INFO("Hull size: %d", hull->size());
 
-    pcl::PointCloud<Point>::Ptr pc_roi(new pcl::PointCloud<Point>);
-    toc.extractTableRoi(map, hull, *pc_roi);
+    toc.setInputCloud(map);
+    pcl::PointIndices::Ptr pc_roi(new pcl::PointIndices);
+    toc.extractTableRoi(hull, *pc_roi);
     //toc.extractTableRoi2(pc, hull, plane_coeffs, *pc_roi);
-    ROS_INFO("ROI size: %d", pc_roi->size());
+    //ROS_INFO("ROI size: %d", pc_roi->size());
     //TODO: proceed also if no bbs are sent
     pcl::PointCloud<Point>::Ptr pc_roi_red(new pcl::PointCloud<Point>);
     /*cob_3d_mapping_msgs::GetBoundingBoxes srv2;
@@ -250,10 +254,10 @@ public:
       pcl::io::savePCDFileASCII (ss.str(), *hull);
       ss.str("");
       ss.clear();
-      ss << file_path_ << "/table_roi.pcd";
+      /*ss << file_path_ << "/table_roi.pcd";
       pcl::io::savePCDFileASCII (ss.str(), *pc_roi);
       ss.str("");
-      ss.clear();
+      ss.clear();*/
       ss << file_path_ << "/table_roi_red.pcd";
       pcl::io::savePCDFileASCII (ss.str(), *pc_roi_red);
       ss.str("");
@@ -275,6 +279,7 @@ public:
     //PointCloud pc_in = *pc;
     frame_id_ = sa->header.frame_id;
     PointCloud::Ptr pc_in_ptr = pc->makeShared();
+    toc.setInputCloud(pc_in_ptr);
     for( unsigned int i=0; i< sa->shapes.size(); i++)
     {
       Polygon::Ptr p(new Polygon());
@@ -305,8 +310,14 @@ public:
       }
       hull->width = hull->size();
       hull->height = 1;
-      PointCloud::Ptr pc_roi(new PointCloud);
-      toc.extractTableRoi(pc_in_ptr, hull, *pc_roi);
+      //PointCloud::Ptr pc_roi(new PointCloud);
+      pcl::PointIndices::Ptr pc_roi(new pcl::PointIndices());
+      PrecisionStopWatch sw;
+      sw.precisionStart();
+      toc.extractTableRoi(hull, *pc_roi);
+      ROS_DEBUG("ROI took %f seconds", sw.precisionStop());
+      ROS_DEBUG("ROI has %d points", pc_roi->indices.size());
+      if(pc_roi->indices.size() == 0) return;
       std::stringstream ss;
       if(save_to_file_)
       {
@@ -319,13 +330,20 @@ public:
         ss.str("");
         ss.clear();
         ss << file_path_ << "/table_roi.pcd";
-        pcl::io::savePCDFileASCII (ss.str(), *pc_roi);
+        PointCloud roi;
+        pcl::ExtractIndices<Point> extract_roi;
+        extract_roi.setInputCloud (pc_in_ptr);
+        extract_roi.setIndices (pc_roi);
+        extract_roi.filter (roi);
+        pcl::io::savePCDFileASCII (ss.str(), roi);
         ss.str("");
         ss.clear();
       }
       std::vector<pcl::PointCloud<pcl::PointXYZ> > bounding_boxes;
       std::vector<PointCloud::Ptr> object_clusters;
+      sw.precisionStart();
       toc.calculateBoundingBoxes(pc_roi, object_clusters, bounding_boxes);
+      ROS_DEBUG("BB took %f seconds", sw.precisionStop());
       ROS_INFO("Computed %d bounding boxes", object_clusters.size());
       cob_perception_msgs::PointCloud2Array pca;
       pca.header = pc->header;
