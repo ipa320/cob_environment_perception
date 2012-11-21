@@ -109,9 +109,9 @@ cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::c
 
     if (!c_it->is_save_plane)
     {
-      int w_size = std::min( std::floor(sqrt(c_it->size() / 16.0f)) + 5, 30.0f );
+      int w_size = std::min( std::floor(std::sqrt(c_it->size() / 16.0f)) + 5, 30.0f );
       int steps = std::floor(w_size / 5);
-      int w_size_n = std::min( std::floor(sqrt(c_it->size() / 16.0f)) + 8, 30.0f );
+      int w_size_n = std::min( std::floor(std::sqrt(c_it->size() / 16.0f)) + 8, 30.0f );
       int steps_n = std::floor(w_size / 5);
       recomputeClusterNormals(c_it, w_size_n, steps_n);
       std::vector<int> geometry(NUM_LABELS, 0);
