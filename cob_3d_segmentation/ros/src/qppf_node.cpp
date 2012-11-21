@@ -10,7 +10,7 @@
 // ROS includes
 #include <ros/ros.h>
 #include <pluginlib/class_list_macros.h>
-#include <pcl_ros/pcl_nodelet.h>
+#include <nodelet/nodelet.h>
 #include <pcl/point_types.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_cloud.h>
@@ -42,7 +42,7 @@ public:
   }
 };
 
-class As_Nodelet : public  pcl_ros::PCLNodelet
+class As_Nodelet : public  nodelet::Nodelet
 {
 protected:
   ros::NodeHandle n_;
@@ -53,7 +53,7 @@ public:
   virtual ~As_Nodelet() {}
 
   void start() {
-    PCLNodelet::onInit();
+    //PCLNodelet::onInit();
     n_ = getNodeHandle();
   }
 };
