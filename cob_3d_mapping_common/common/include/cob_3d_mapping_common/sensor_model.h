@@ -71,10 +71,10 @@ namespace cob_3d_mapping
     PrimeSense() {}
     ~PrimeSense() {}
 
-    static bool areNeighbors(float query, float neighbor)
+    static bool areNeighbors(float query, float neighbor, float tolerance = 2.0f)
     {
-      float dist_th = 2.0f * 0.003f * query * query;
-      if (query < 1.2) dist_th += 0.01f;
+      float dist_th = tolerance * 0.003f * query * query;
+      //if (query < 1.2) dist_th += 0.01f;
       return (fabs(query - neighbor) < dist_th);
     }
   };
