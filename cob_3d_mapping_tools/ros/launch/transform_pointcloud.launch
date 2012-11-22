@@ -1,0 +1,5 @@
+<launch>
+	<node pkg="cob_3d_mapping_tools" type="transform_pointcloud" name="transform_pointcloud" output="screen">
+    <remap from="~input" to="cam3d/rgb/points" />
+  </node>
+</launch>

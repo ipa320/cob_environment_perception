@@ -109,9 +109,9 @@ cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::c
 
     if (!c_it->is_save_plane)
     {
-      int w_size = std::min( std::floor(sqrt(c_it->size() / 16.0f)) + 5, 30.0 );
+      int w_size = std::min( std::floor(std::sqrt(c_it->size() / 16.0f)) + 5, 30.0f );
       int steps = std::floor(w_size / 5);
-      int w_size_n = std::min( std::floor(sqrt(c_it->size() / 16.0f)) + 8, 30.0 );
+      int w_size_n = std::min( std::floor(std::sqrt(c_it->size() / 16.0f)) + 8, 30.0f );
       int steps_n = std::floor(w_size / 5);
       recomputeClusterNormals(c_it, w_size_n, steps_n);
       std::vector<int> geometry(NUM_LABELS, 0);
@@ -148,7 +148,7 @@ cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::c
         c_it->type = max_idx;
         c_it->type_probability = static_cast<float>(max) / static_cast<float>(valid_points);
         //std::cout << "Label: " << max_idx << " : #" << c_it->type_probability << std::endl;
-        
+
           if(c_it->type_probability < 0.60) { c_it->type = I_SPHERE; }
           /*else
             {
@@ -157,7 +157,7 @@ cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::c
             <<c_it->pca_inter_comp1(2) <<" | " << valid_points << std::endl;
             }*/
           //else { clusters_->computeNormalIntersections(c_it); }
-        
+
       }
     }
     else c_it->type = I_PLANE;
@@ -167,7 +167,7 @@ cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::c
 template <typename ClusterHandlerT, typename PointT, typename NormalT, typename LabelT> void
 cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::recomputeClusterNormals(ClusterPtr c)
 {
-  int w_size = std::min( std::floor(sqrt(c->size() / 16.0f)) + 5, 30.0);
+  int w_size = std::min( std::floor(std::sqrt(c->size() / 16.0f)) + 5, 30.0f);
   int steps = std::floor(w_size / 5);
   recomputeClusterNormals(c, w_size, steps);
 }

@@ -77,11 +77,12 @@ class TransformPointCloud
     ros::Subscriber sub_;
     ros::Publisher pub_;
 
-    TransformPointCloud()
+    TransformPointCloud() :
+      nh_("~")
     {
-      cloud_topic_sub_="point_cloud2";
-      cloud_topic_pub_="point_cloud2_trans";
-      target_frame_ = "/base_link";
+      cloud_topic_sub_="input";
+      cloud_topic_pub_="output";
+      target_frame_ = "/map";
 
       pub_ = nh_.advertise<sensor_msgs::PointCloud2>(cloud_topic_pub_,1);
       sub_ = nh_.subscribe (cloud_topic_sub_, 1,  &TransformPointCloud::cloud_cb, this);
@@ -94,6 +95,7 @@ class TransformPointCloud
     {
       sensor_msgs::PointCloud2 cloud_out;
       pcl_ros::transformPointCloud (target_frame_, *cloud, cloud_out, tf_listener_);
+      cloud_out.header.stamp = cloud->header.stamp;
       pub_.publish(cloud_out);
     }
 
