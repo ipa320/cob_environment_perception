@@ -146,6 +146,7 @@ namespace cob_3d_segmentation
     void setSeedMethod(SeedMethod type) { seed_method_ = type; }
     void createSeedPoints();
     void mapSegmentColor(pcl::PointCloud<PointXYZRGB>::Ptr color_cloud) { clusters_->mapClusterColor(color_cloud); }
+    ClusterHdlPtr clusters() { return clusters_; }
 
     private:
     inline float n_threshold(int size)
