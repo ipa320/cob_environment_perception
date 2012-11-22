@@ -442,6 +442,7 @@ ShapeMarker::createMarker (visualization_msgs::InteractiveMarkerControl& im_ctrl
 
   }//Polygon
 
+  if(tri_list.size()==0) return;
   //ROS_INFO(" creating markers for this shape.....");
   marker.id = shape_.id;
 

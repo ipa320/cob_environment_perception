@@ -70,14 +70,16 @@
 
 using namespace cob_3d_mapping;
 
-ShapeVisualization::ShapeVisualization () :ctr_for_shape_indexes (0)
-
+ShapeVisualization::ShapeVisualization () :
+	ctr_for_shape_indexes (0),
+	nh_("~")
     {
       shape_array_sub_ = nh_.subscribe ("shape_array", 1, &ShapeVisualization::shapeArrayCallback, this);
-      feedback_sub_ = nh_.subscribe("geometry_map/map/feedback",1,&ShapeVisualization::setShapePosition,this);
+      feedback_sub_ = nh_.subscribe("shape_i_marker/feedback",1,&ShapeVisualization::setShapePosition,this);
+      marker_pub_ = nh_.advertise<visualization_msgs::Marker> ("marker", 1);
       //      shape_pub_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_array", 1);
       //      get_table_subscriber_ = nh_.subscribe("shape_array", 1, &ShapeVisualization::findTables,this);
-      im_server_.reset (new interactive_markers::InteractiveMarkerServer ("geometry_map/map", "", false));
+      im_server_.reset (new interactive_markers::InteractiveMarkerServer ("shape_i_marker", "", false));
       moreOptions() ;
     }
 
