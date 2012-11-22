@@ -127,41 +127,52 @@ cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT,SensorT,Cluster
     unsigned int idx = seeds_.front();
     seeds_.pop_front();
     ClusterPtr c = clusters_->createCluster();
-    SegmentationQueue seg_q;
-    //std::list<SeedPoint::Ptr> seg_q;
-    //seg_q.push_back( SeedPoint::Ptr(new SeedPoint(idx, 0, 0.0)) );
-    seg_q.push( SeedPoint::Ptr(new SeedPoint(idx, 0, 0.0)) );
+    //SegmentationQueue seg_q;
+    //seg_q.push( SeedPoint::Ptr(new SeedPoint(idx, 0, 0.0)) );
+    std::list<SeedPoint::Ptr> seg_q;
+    seg_q.push_back( SeedPoint::Ptr(new SeedPoint(idx, 0, 0.0)) );
     clusters_->addPoint(c, idx);
     (*labels_)[idx].label = c->id();
 
     while(seg_q.size() != 0)
     {
-      //SeedPoint p = *seg_q.front();
-      SeedPoint p = *seg_q.top();
-      //seg_q.pop_front();
-      seg_q.pop();
+      SeedPoint p = *seg_q.front();
+      seg_q.pop_front();
+      //SeedPoint p = *seg_q.top();
+      //seg_q.pop();
+      bool is_border_point = false;
       for(int i=0; i<mask_size; ++i)
       {
         int i_idx = p.idx + mask[p.i_came_from][i];
         if (i_idx >= w*h) continue;
 
         int* p_label = &(labels_->points[ i_idx ]).label;
-        if(*p_label != I_UNDEF) continue;
-        //if(!SensorT::areNeighbors((*surface_)[p.idx].z, (*surface_)[i_idx].z)) continue;
+        if(*p_label != I_UNDEF)
+        {
+          if(*p_label != c->id())
+          {
+            clusters_->getCluster(*p_label)->border_points.push_back(PolygonPoint(i_idx % w, i_idx / w));
+            is_border_point = true;
+          }
+          continue;
+        }
+
         Eigen::Vector3f i_n = c->getOrientation();
         Eigen::Vector3f i_c = c->getCentroid();
-        float d = ((*surface_)[i_idx].getVector3fMap() - i_c).dot(i_n);
-        if(!SensorT::areNeighbors((*surface_)[p.idx].z, (*surface_)[p.idx].z + d)) { continue; }
+        //float d = ((*surface_)[i_idx].getVector3fMap() - i_c).dot(i_n);
+        if(!SensorT::areNeighbors((*surface_)[p.idx].z, (*surface_)[i_idx].z)) continue;
+        //if(!SensorT::areNeighbors(i_c(2) + d, i_c(2), 6.0f)) { continue; }
         float dot_value = fabs( i_n.dot((*normals_)[i_idx].getNormalVector3fMap()) );
         if(dot_value > n_threshold(c->size()))
         {
-          //seg_q.push_back( SeedPoint::Ptr(new SeedPoint(i_idx, LISTMOD(i + p.i_came_from - 1, 4), dot_value)) );
-          seg_q.push( SeedPoint::Ptr(new SeedPoint(i_idx, LISTMOD(i + p.i_came_from - 1, 4), dot_value)) );
+          seg_q.push_back( SeedPoint::Ptr(new SeedPoint(i_idx, LISTMOD(i + p.i_came_from - 1, 4), dot_value)) );
+          //seg_q.push( SeedPoint::Ptr(new SeedPoint(i_idx, LISTMOD(i + p.i_came_from - 1, 4), dot_value)) );
           clusters_->addPoint(c,i_idx);
           seeds_.erase(p_seeds_[i_idx]);
           *p_label = c->id();
         }
       }
+      if(is_border_point) c->border_points.push_back(PolygonPoint(p.idx % w, p.idx / w));
     }
   }
 }

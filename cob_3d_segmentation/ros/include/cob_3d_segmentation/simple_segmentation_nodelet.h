@@ -79,8 +79,7 @@
 #include "cob_3d_mapping_common/point_types.h"
 #include "cob_3d_mapping_features/organized_normal_estimation_omp.h"
 #include "cob_3d_segmentation/impl/fast_segmentation.hpp"
-//#include "cob_3d_segmentation/polygon_extraction/polygon_types.h"
-//#include "cob_3d_segmentation/polygon_extraction/polygon_extraction.h"
+#include <cob_3d_segmentation/polygon_extraction/polygon_extraction.h>
 
 namespace cob_3d_segmentation
 {
@@ -90,6 +89,7 @@ namespace cob_3d_segmentation
     typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloud;
     typedef pcl::PointCloud<pcl::Normal> NormalCloud;
     typedef pcl::PointCloud<PointLabel> LabelCloud;
+    typedef FastSegmentation<pcl::PointXYZRGB, pcl::Normal, PointLabel>::ClusterPtr ClusterPtr;
 
     public:
     SimpleSegmentationNodelet()
@@ -98,6 +98,7 @@ namespace cob_3d_segmentation
       , segmented_(new PointCloud)
       , normals_(new NormalCloud)
       , labels_(new LabelCloud)
+      , centroid_passthrough_(5.0f)
     { }
 
     ~SimpleSegmentationNodelet()
@@ -113,15 +114,19 @@ namespace cob_3d_segmentation
     ros::NodeHandle nh_;
     ros::Subscriber sub_points_;
     ros::Publisher pub_segmented_;
+    ros::Publisher pub_shape_array_;
 
     boost::shared_ptr<dynamic_reconfigure::Server<cob_3d_segmentation::segmentation_nodeletConfig> > config_server_;
 
     cob_3d_mapping_features::OrganizedNormalEstimationOMP<pcl::PointXYZRGB, pcl::Normal, PointLabel> one_;
     FastSegmentation<pcl::PointXYZRGB, pcl::Normal, PointLabel> seg_;
+    PolygonExtraction pe_;
 
     PointCloud::Ptr segmented_;
     NormalCloud::Ptr normals_;
     LabelCloud::Ptr labels_;
+
+    float centroid_passthrough_;
 
   };
 }
