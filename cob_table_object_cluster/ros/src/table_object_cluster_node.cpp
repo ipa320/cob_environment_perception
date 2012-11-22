@@ -278,7 +278,7 @@ public:
   {
     //PointCloud pc_in = *pc;
     frame_id_ = sa->header.frame_id;
-    PointCloud::Ptr pc_in_ptr = pc->makeShared();
+    PointCloud::Ptr pc_in_ptr(boost::const_pointer_cast<PointCloud> (pc));//->makeShared());
     toc.setInputCloud(pc_in_ptr);
     for( unsigned int i=0; i< sa->shapes.size(); i++)
     {
