@@ -60,6 +60,7 @@
 #include <pcl/point_cloud.h>
 #include <Eigen/StdVector>
 #include <pcl/ModelCoefficients.h>
+#include <pcl/PointIndices.h>
 
 
 class TableObjectCluster
