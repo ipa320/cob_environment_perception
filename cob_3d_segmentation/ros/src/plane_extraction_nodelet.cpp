@@ -64,7 +64,7 @@
 // ROS includes
 #include <ros/ros.h>
 #include <pluginlib/class_list_macros.h>
-#include <pcl_ros/pcl_nodelet.h>
+#include <nodelet/nodelet.h>
 #include <pcl/io/io.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
@@ -121,7 +121,7 @@ using namespace cob_3d_mapping;
 
 //####################
 //#### nodelet class ####
-class PlaneExtractionNodelet : public pcl_ros::PCLNodelet//, protected Reconfigurable_Node<plane_extraction_nodeletConfig>
+class PlaneExtractionNodelet : public nodelet::Nodelet//, protected Reconfigurable_Node<plane_extraction_nodeletConfig>
 {
 public:
   typedef pcl::PointXYZRGB Point;
@@ -175,7 +175,7 @@ public:
    */
   void onInit()
   {
-    PCLNodelet::onInit();
+    //PCLNodelet::onInit();
     n_ = getNodeHandle();
 
     config_server_ = boost::shared_ptr<dynamic_reconfigure::Server<cob_3d_segmentation::plane_extraction_nodeletConfig> >(new dynamic_reconfigure::Server<cob_3d_segmentation::plane_extraction_nodeletConfig>(getPrivateNodeHandle()));

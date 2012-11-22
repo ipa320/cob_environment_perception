@@ -63,32 +63,40 @@
 #include <pcl/sample_consensus/sac_model_plane.h>
 #include <pcl/surface/convex_hull.h>
 #include <pcl/io/pcd_io.h>
+//#include <pcl/search/organized.h>
 
   //aditional includes
 #include <ros/console.h>
 
+struct null_deleter
+{
+    void operator()(void const *) const
+    {
+    }
+};
+
+
 void
-TableObjectCluster::extractTableRoi(pcl::PointCloud<Point>::Ptr& pc_in,
-                                    pcl::PointCloud<Point>::Ptr& hull,
-                                    pcl::PointCloud<Point>& pc_roi)
+TableObjectCluster::extractTableRoi(pcl::PointCloud<Point>::Ptr& hull,
+                                    pcl::PointIndices& pc_roi)
 {
   pcl::ExtractPolygonalPrismData<Point> prism;
   // Consider only objects in a given layer above the table
   //TODO: check if valid values
   //TODO: does not work for planes other than horizontal, PrismExtraction has to be modified
-  ROS_INFO("height limits: %f, %f ", height_min_, height_max_);
+  //ROS_INFO("height limits: %f, %f ", height_min_, height_max_);
   prism.setHeightLimits(height_min_, height_max_);
   // ---[ Get the objects on top of the table
-  pcl::PointIndices roi_indices;
-  prism.setInputCloud(pc_in);
+  //pcl::PointIndices roi_indices;
+  prism.setInputCloud(input_);
   prism.setInputPlanarHull(hull);
-  prism.segment(roi_indices);
+  prism.segment(pc_roi);
   //ROS_INFO("Number of ROI inliers: %d", roi_indices.indices.size());
 
-  pcl::ExtractIndices<Point> extract_roi;
+  /*pcl::ExtractIndices<Point> extract_roi;
   extract_roi.setInputCloud (pc_in);
   extract_roi.setIndices (boost::make_shared<const pcl::PointIndices> (roi_indices));
-  extract_roi.filter (pc_roi);
+  extract_roi.filter (pc_roi);*/
 }
 
 void
@@ -154,13 +162,14 @@ TableObjectCluster::removeKnownObjects(pcl::PointCloud<Point>::Ptr& pc_roi,
 }
 
 void
-TableObjectCluster::calculateBoundingBoxes(pcl::PointCloud<Point>::Ptr& pc_roi_red,
-                   std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > >& bounding_boxes)
+TableObjectCluster::calculateBoundingBoxes(pcl::PointIndices::Ptr& pc_roi,
+                                           std::vector<pcl::PointCloud<Point>::Ptr >& object_clusters,
+                   std::vector<pcl::PointCloud<pcl::PointXYZ> >& bounding_boxes)
 {
-  ROS_INFO("Calculate bb");
-
+  ROS_INFO("roi: %d", pc_roi->indices.size());
   #ifdef PCL_VERSION_COMPARE //fuerte
-    pcl::search::KdTree<Point>::Ptr clusters_tree (new pcl::search::KdTree<Point>());
+    //pcl::search::KdTree<Point>::Ptr clusters_tree (new pcl::search::KdTree<Point>());
+    pcl::search::OrganizedNeighbor<Point>::Ptr clusters_tree( new pcl::search::OrganizedNeighbor<Point>());
   #else //electric
     pcl::KdTreeFLANN<Point>::Ptr clusters_tree (new pcl::KdTreeFLANN<Point> ());
   #endif
@@ -170,17 +179,24 @@ TableObjectCluster::calculateBoundingBoxes(pcl::PointCloud<Point>::Ptr& pc_roi_r
   // Table clustering parameters
   cluster_obj.setClusterTolerance (cluster_tolerance_);
   cluster_obj.setMinClusterSize (min_cluster_size_);
-  cluster_obj.setSearchMethod (clusters_tree);
-  std::vector<pcl::PointIndices> object_clusters;
-  cluster_obj.setInputCloud (pc_roi_red);
-  cluster_obj.extract (object_clusters);
-  ROS_INFO("%d object clusters found", object_clusters.size());
-  for(unsigned int i = 0; i < object_clusters.size(); ++i)
+  cluster_obj.setInputCloud (input_);
+  cluster_obj.setIndices(pc_roi);
+  //cluster_obj.setSearchMethod (clusters_tree);
+  std::vector<pcl::PointIndices> object_cluster_indices;
+  cluster_obj.extract (object_cluster_indices);
+  pcl::ExtractIndices<Point> ei;
+  ei.setInputCloud(input_);
+  for(unsigned int i = 0; i < object_cluster_indices.size(); ++i)
   {
+    boost::shared_ptr<pcl::PointIndices> ind_ptr(&object_cluster_indices[i], null_deleter());
+    ei.setIndices(ind_ptr);
+    pcl::PointCloud<Point>::Ptr cluster_ptr(new pcl::PointCloud<Point>);
+    ei.filter(*cluster_ptr);
+    object_clusters.push_back(cluster_ptr);
     pcl::PointCloud<pcl::PointXYZ> bb;
     Eigen::Vector4f min_pt, max_pt;
-    pcl::getMinMax3D(*pc_roi_red, object_clusters[i], min_pt, max_pt);
-    if(fabs(max_pt(2)-min_pt(2))<0.03) continue;
+    pcl::getMinMax3D(*input_, object_cluster_indices[i], min_pt, max_pt);
+    //if(fabs(max_pt(2)-min_pt(2))<0.03) continue;
     pcl::PointXYZ p;
     p.x = min_pt(0);
     p.y = min_pt(1);
