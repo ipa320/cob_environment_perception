@@ -102,8 +102,9 @@ cob_3d_segmentation::SimpleSegmentationNodelet::configCallback(
 void
 cob_3d_segmentation::SimpleSegmentationNodelet::receivedCloudCallback(PointCloud::ConstPtr cloud)
 {
-  PrecisionStopWatch t;
+  PrecisionStopWatch t, t2;
   NODELET_INFO("Start with segmentation .... ");
+  t2.precisionStart();
   one_.setInputCloud(cloud);
   one_.compute(*normals_);
 
@@ -123,9 +124,10 @@ cob_3d_segmentation::SimpleSegmentationNodelet::receivedCloudCallback(PointCloud
   sa.header.frame_id = cloud->header.frame_id.c_str();
   for (ClusterPtr c = seg_.clusters()->begin(); c != seg_.clusters()->end(); ++c)
   {
+    if(c->size() < 20) continue;
     Eigen::Vector3f centroid = c->getCentroid();
     if(centroid(2) > centroid_passthrough_) continue;
-    if(c->size() <= ceil(1.1f * (float)c->border_points.size())) { std::cout << "Size: "<< c->size() << std::endl; continue; }
+    if(c->size() <= ceil(1.1f * (float)c->border_points.size())) { /*std::cout << "Size: "<< c->size() << std::endl;*/ continue; }
 
     PolygonContours<PolygonPoint> poly;
     pe_.outline(cloud->width, cloud->height, c->border_points, poly);
@@ -178,9 +180,11 @@ cob_3d_segmentation::SimpleSegmentationNodelet::receivedCloudCallback(PointCloud
     s->params[0] = c->pca_point_comp3(0);
     s->params[1] = c->pca_point_comp3(1);
     s->params[2] = c->pca_point_comp3(2);
+    s->params[3] = fabs(centroid.dot(c->pca_point_comp3)); // d
   }
 
   pub_shape_array_.publish(sa);
+  std::cout << "total nodelet time: " << t2.precisionStop() << std::endl;
 }
 
 PLUGINLIB_DECLARE_CLASS(cob_3d_segmentation, SimpleSegmentationNodelet, cob_3d_segmentation::SimpleSegmentationNodelet, nodelet::Nodelet);

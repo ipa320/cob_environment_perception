@@ -60,8 +60,22 @@
 #ifndef __IMPL_POLYGON_EXTRACTION__
 #define __IMPL_POLYGON_EXTRACTION__
 
+#include <cstring>
+#include <cob_3d_segmentation/polygon_extraction/polygon_extraction.h>
+#include <cob_3d_segmentation/polygon_extraction/impl/poly2d.hpp>
+#include <cob_3d_segmentation/polygon_extraction/polygon_types.h>
+
+cob_3d_segmentation::PolygonExtraction::PolygonExtraction()
+ : ch_(NULL),ch_size_(0)
+ , outline_check_(NULL)
+ , outline_check_size_(0)
+{
+  Contour2D::generateSpline2D();
+}
+
+
 template <typename TPoint>
-int PolygonExtraction::getPos(int *ch, const int xx, const int yy, const int w, const int h) {
+int cob_3d_segmentation::PolygonExtraction::getPos(int *ch, const int xx, const int yy, const int w, const int h) {
   int p=0;
   const int i=0;
   for(int x=-1; x<=1; x++) {
@@ -72,18 +86,12 @@ int PolygonExtraction::getPos(int *ch, const int xx, const int yy, const int w, 
         p |= (1<<Contour2D::SplineMap[ (y+1)*3 + x+1]);
       }
     }
-
   }
   return p;
 }
 
-bool PolygonExtraction::hasMultiplePositions(unsigned int i)
-{
-  return !((i != 0) && ((i & (~i + 1)) == i));
-}
-
 template<typename TPoint, typename TPolygon>
-void PolygonExtraction::outline(const int w, const int h, std::vector<TPoint> out, TPolygon &poly)
+void cob_3d_segmentation::PolygonExtraction::outline(const int w, const int h, std::vector<TPoint> out, TPolygon &poly)
 {
   std::sort(out.begin(),out.end());
   //std::cout <<"--> D 1"<<std::endl;
@@ -184,5 +192,11 @@ void PolygonExtraction::outline(const int w, const int h, std::vector<TPoint> ou
   }
 
 }
+
+// explicit instantiation of template member functions:
+
+template void cob_3d_segmentation::PolygonExtraction::outline<cob_3d_segmentation::PolygonPoint, cob_3d_segmentation::PolygonContours<cob_3d_segmentation::PolygonPoint> >(const int w, const int h, std::vector<cob_3d_segmentation::PolygonPoint> out, cob_3d_segmentation::PolygonContours<cob_3d_segmentation::PolygonPoint> &poly);
+
+template int cob_3d_segmentation::PolygonExtraction::getPos<cob_3d_segmentation::PolygonPoint>(int *ch, const int xx, const int yy, const int w, const int h);
 
 #endif

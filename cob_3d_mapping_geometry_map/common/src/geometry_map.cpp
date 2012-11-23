@@ -361,9 +361,9 @@ GeometryMap::cleanUp()
     if (map_cylinder_[idx]->r_ < 0.1 || map_cylinder_[idx]->r_>0.2)
         {
         drop_cyl=true;
-        } 
+        }
     if ( drop_cyl==true)
-    {        
+    {
       map_cylinder_[idx] = map_cylinder_.back();
       map_cylinder_.pop_back();
       ++c_dropped;

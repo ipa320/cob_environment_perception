@@ -39,6 +39,7 @@ rosbuild_genmsg()
 rosbuild_add_boost_directories()
 
 rosbuild_add_library(cob_3d_segmentation
+	common/src/polygon_extraction.cpp
 	common/src/segmentation.cpp # Old segmentation
 	common/src/cluster_handler.cpp
 	common/src/edge_handler.cpp
@@ -66,7 +67,7 @@ target_link_libraries(plane_extraction_action_client ${OpenCV_LIBS})
 
 # segmentation app:
 rosbuild_add_executable(test_depth_segmentation common/apps/test_depth_segmentation.cpp)
-target_link_libraries(test_depth_segmentation cob_3d_segmentation cob_3d_mapping_features cob_3d_mapping_features_omp vtkCommon vtkRendering)
+target_link_libraries(test_depth_segmentation cob_3d_segmentation vtkCommon vtkRendering)
 rosbuild_link_boost(test_depth_segmentation program_options)
 
 # node for segmentation visualization:
@@ -89,7 +90,7 @@ rosbuild_add_compile_flags(test_segmentation ${SSE_FLAGS})
 target_link_libraries(test_segmentation gtest)
 
 rosbuild_add_executable(test_polygon_extraction ros/test/test_polygon_extraction.cpp)
-target_link_libraries(test_polygon_extraction gtest)
+target_link_libraries(test_polygon_extraction cob_3d_segmentation gtest)
 
 rosbuild_add_executable(test_plane_extraction common/apps/test_plane_extraction.cpp)
 target_link_libraries(test_plane_extraction cob_3d_segmentation vtkCommon vtkFiltering)

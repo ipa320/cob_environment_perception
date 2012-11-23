@@ -281,7 +281,7 @@ public:
   topicCallback(const PointCloud::ConstPtr& pc, const cob_3d_mapping_msgs::ShapeArray::ConstPtr& sa)
   {
     //PointCloud pc_in = *pc;
-    PointCloud::Ptr pc_in_ptr = pc->makeShared();
+    //PointCloud::Ptr pc_in_ptr = pc->makeShared();
     for( unsigned int i=0; i< sa->shapes.size(); i++)
     {
       Polygon::Ptr p(new Polygon());
@@ -313,7 +313,7 @@ public:
       hull->width = hull->size();
       hull->height = 1;
       PointCloud::Ptr pc_roi(new PointCloud);
-      toc.extractTableRoi(pc_in_ptr, hull, *pc_roi);
+      toc.extractTableRoi(pc, hull, *pc_roi);
       std::stringstream ss;
       if(save_to_file_)
       {
