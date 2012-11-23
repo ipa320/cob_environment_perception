@@ -84,7 +84,7 @@ struct null_deleter
 
 
 void
-TableObjectCluster::extractTableRoi(pcl::PointCloud<Point>::Ptr& pc_in,
+TableObjectCluster::extractTableRoi(const pcl::PointCloud<Point>::ConstPtr& pc_in,
                                     pcl::PointCloud<Point>::Ptr& hull,
                                     pcl::PointCloud<Point>& pc_roi)
 {
@@ -108,7 +108,7 @@ TableObjectCluster::extractTableRoi(pcl::PointCloud<Point>::Ptr& pc_in,
 }
 
 void
-TableObjectCluster::extractTableRoi2(pcl::PointCloud<Point>::Ptr& pc_in,
+TableObjectCluster::extractTableRoi2(const pcl::PointCloud<Point>::ConstPtr& pc_in,
                                     pcl::PointCloud<Point>::Ptr& hull,
                                     Eigen::Vector4f& plane_coeffs,
                                     pcl::PointCloud<Point>& pc_roi)

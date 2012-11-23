@@ -60,15 +60,13 @@
 #ifndef __IMPL_POLY2D_HPP__
 #define __IMPL_POLY2D_HPP__
 
+#include <cob_3d_segmentation/polygon_extraction/poly2d.h>
+
 namespace cob_3d_segmentation
 {
-  namespace Contour2D {
-
-    struct spline2D { int v, x, y, bf; };
-
-    spline2D g_Splines[9][256];
-
-    int SplineMap[]={
+  namespace Contour2D
+  {
+    int SplineMap[9]={
       4, 5,  6,
       3, -1, 7,
       2, 1,  0
@@ -78,7 +76,10 @@ namespace cob_3d_segmentation
         4, 5,  6*/
     };
 
-    bool generateSpline2D() {
+    spline2D g_Splines[9][256];
+
+    bool generateSpline2D()
+    {
       int mapX[]={2,1,0, 0,0, 1, 2,2};
       int mapY[]={2,2,2, 1, 0,0,0, 1};
       //int mapY[]={0,0,0, 1, 2,2,2, 1};

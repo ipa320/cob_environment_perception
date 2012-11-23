@@ -56,54 +56,22 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
-/*
- * polygon_extraction.h
- *
- *  Created on: 22.06.2012
- *      Author: josh
- */
 
-#ifndef POLYGON_EXTRACTION_H_
-#define POLYGON_EXTRACTION_H_
 
-#include <vector>
-#include <stack>
-#include <algorithm>
+#ifndef __POLY2D_H__
+#define __POLY2D_H__
 
 namespace cob_3d_segmentation
 {
-  /*
-   * point has to have integer x,y and must be sortable
-   *
-   * polygon must have following methods:
-   *    -
-   */
-
-  class PolygonExtraction
+  namespace Contour2D
   {
-    int *ch_; /// mark-array
-    size_t ch_size_;
-    bool *outline_check_;         ///needed for outline, no need to reallocate every time
-    size_t outline_check_size_;    ///remember size for var. above
+    struct spline2D { int v, x, y, bf; };
 
-    template <typename TPoint>
-    static int getPos(int *ch, const int xx, const int yy, const int w, const int h);
+    extern int SplineMap[9];
 
-    inline bool hasMultiplePositions(unsigned int i) { return !((i != 0) && ((i & (~i + 1)) == i)); }
-
-  public:
-    PolygonExtraction();
-
-    virtual ~PolygonExtraction()
-    {
-      delete [] ch_;
-      delete [] outline_check_;
-    }
-
-    template<typename TPoint, typename TPolygon>
-    void outline(const int w, const int h, std::vector<TPoint> out, TPolygon &poly);
-
-  };
+    extern spline2D g_Splines[9][256];
+    bool generateSpline2D();
+  }
 }
 
-#endif /* POLYGON_EXTRACTION_H_ */
+#endif
