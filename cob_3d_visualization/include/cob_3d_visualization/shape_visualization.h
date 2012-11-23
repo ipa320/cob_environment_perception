@@ -10,18 +10,18 @@
  *****************************************************************
  *
  * \note
- *  Project name: TODO FILL IN PROJECT NAME HERE
+ *  Project name: care-o-bot
  * \note
- *  ROS stack name: TODO FILL IN STACK NAME HERE
+ *  ROS stack name: cob_environment_perception
  * \note
- *  ROS package name: TODO FILL IN PACKAGE NAME HERE
+ *  ROS package name: cob_3d_visualization
  *
  * \author
- *  Author: TODO FILL IN AUTHOR NAME HERE
+ *  Author: Waqas Tanveer, email:Waqas.Tanveer@ipa.fhg.de
  * \author
- *  Supervised by: TODO FILL IN CO-AUTHOR NAME(S) HERE
+ *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * \date Date of creation: TODO FILL IN DATE HERE
+ * \date Date of creation: 04/2012
  *
  * \brief
  *
@@ -56,12 +56,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
-/*
- * shape_visualization.h
- *
- *  Created on: Jul 25, 2012
- *      Author: goa-sn
- */
 
 #ifndef SHAPE_VISUALIZATION_H_
 #define SHAPE_VISUALIZATION_H_
@@ -86,6 +80,8 @@
 //#include <cob_3d_visualization/table_marker.h>
 #include <cob_3d_mapping_msgs/GetTables.h>
 #include <cob_3d_mapping_msgs/GetObjectsOfClass.h>
+#include <tf/transform_listener.h>
+
 
 
 
@@ -96,31 +92,58 @@ class ShapeVisualization
 {
   public:
     // Constructor
-    ShapeVisualization () :ctr_for_shape_indexes (0)
-
-    {
-      shape_array_sub_ = nh_.subscribe ("shape_array", 1, &ShapeVisualization::shapeArrayCallback, this);
-      feedback_sub_ = nh_.subscribe("geometry_map/map/feedback",1,&ShapeVisualization::setShapePosition,this);
-      //      shape_pub_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_array", 1);
-      //      get_table_subscriber_ = nh_.subscribe("shape_array", 1, &ShapeVisualization::findTables,this);
-      im_server_.reset (new interactive_markers::InteractiveMarkerServer ("geometry_map/map", "", false));
-      moreOptions() ;
-      //      findTables();//const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
-    }
+    ShapeVisualization () ;
     // Destructor
     ~ShapeVisualization ()
     {
       /// void
     }
-
+    /**
+     * @brief Callback for shape array messages
+     *
+     * @param sa received shape array message
+     */
     void shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr& sa) ;
-    void setShapePosition(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);//,const cob_3d_mapping_msgs::Shape& shape) ;
+    /**
+     * @brief Callback for feedback subscriber for getting the transformation of moved markers
+     * @param[in] feedback subscribed from geometry_map/map/feedback
+     */
+    void setShapePosition(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+    /**
+     * @brief creats a text for applying controls on all of the markers
+     **/
     void moreOptions();
+    /**
+     * @brief Feedback callback for All Normals Controls menu entry
+     *
+     * @param feedback feedback from rviz when the All Normals menu entry of the text is changed
+     */
     void displayAllNormals(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+    /**
+     * @brief Feedback callback for All Centroids Controls menu entry
+     *
+     * @param feedback feedback from rviz when the All Centroids menu entry of the text is changed
+     */
     void displayAllCentroids (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    /**
+     * @brief Feedback callback for All Contours Controls menu entry
+     *
+     * @param feedback feedback from rviz when the All Contours menu entry of the text is changed
+     */
     void displayAllContours (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+    /**
+     * @brief Feedback callback for Reset all Controls menu entry
+     * @param[in] feedback feedback from rviz when the Reset all Controls menu entry of the text is changed
+     */
     void resetAll(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    /**
+     * @brief Feedback callback for Apply map modifications menu entry
+     * @param[in] feedback feedback from rviz when the Apply map modifications menu entry of the text is changed
+     */
     void applyModifications (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    /**
+     * @brief Create menu entries for the text
+     */
     void optionMenu() ;
 //    void findTables(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
 
@@ -130,15 +153,17 @@ class ShapeVisualization
     //    ros::Publisher shape_pub_ ;
     ros::Subscriber shape_array_sub_; // sub for shape array msgs
     ros::Subscriber feedback_sub_ ;
+    ros::Publisher marker_pub_;
     std::vector<boost::shared_ptr<ShapeMarker> > v_sm_;
     cob_3d_mapping_msgs::ShapeArray sha ;
     interactive_markers::MenuHandler menu_handler_for_text_;
-    //    ros::Subscriber get_table_subscriber_;
+
     int ctr_for_shape_indexes;
     std::vector<unsigned int> moved_shapes_indices_;
     std::vector<unsigned int> interacted_shapes_;
     std::vector<unsigned int> deleted_markers_indices_;
     cob_3d_mapping_msgs::ShapeArray modified_shapes_;
+//    unsigned int deleted_ ;
 
 
     Eigen::Quaternionf quatInit ;
@@ -146,8 +171,8 @@ class ShapeVisualization
     Eigen::Matrix4f transInit;
     Eigen::Affine3f affineInit;
     Eigen::Matrix4f transInitInv;
-    cob_3d_mapping_msgs::ModifyMap::Request req ;
-    cob_3d_mapping_msgs::ModifyMap::Response res;
+//    cob_3d_mapping_msgs::ModifyMap::Request req ;
+//    cob_3d_mapping_msgs::ModifyMap::Response res;
 
 
 

@@ -63,10 +63,14 @@
 
 //##################
 //#### includes ####
+#include <algorithm>
 
 // ROS includes
 #include <ros/ros.h>
 #include <rosbag/bag.h>
+//#include <tf_conversions/tf_eigen.h>
+//#include <tf/transform_listener.h>
+#include <dynamic_reconfigure/server.h>
 
 // ros message includes
 #include <sensor_msgs/PointCloud.h>
@@ -81,10 +85,12 @@
 
 //internal includes
 #include <cob_3d_mapping_msgs/ShapeArray.h>
-#include <cob_3d_mapping_msgs/GetGeometricMap.h>
+#include <cob_3d_mapping_msgs/GetGeometryMap.h>
 #include <cob_3d_mapping_msgs/GetObjectsOfClass.h>
 #include <cob_3d_mapping_msgs/GetTables.h>
+//#include <cob_3d_mapping_msgs/MoveToTable.h>
 #include <cob_3d_mapping_semantics/table_extraction.h>
+#include <cob_3d_mapping_semantics/table_extraction_nodeConfig.h>
 #include <cob_3d_mapping_common/ros_msg_conversions.h>
 //#include <tabletop_object_detector/TabletopDetection.h>
 
@@ -96,22 +102,26 @@ public:
 
   // Constructor
   TableExtractionNode () :
-    tilt_angle_ (3.0),
+    target_frame_id_ ("/map"),
+    /*tilt_angle_ (3.0),
     height_min_ (0.6),
     height_max_ (1.2),
     area_min_ (0.5),
-    area_max_ (3),
+    area_max_ (3),*/
     table_ctr_(0),
     table_ctr_old_(0)
   {
+    config_server_.setCallback(boost::bind(&TableExtractionNode::dynReconfCallback, this, _1, _2));
+
     sa_sub_ = n_.subscribe ("shape_array", 10, &TableExtractionNode::callbackShapeArray, this);
-    sa_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_array_pub", 10);
+    sa_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_array_pub", 1); //10
     s_marker_pub_ = n_.advertise<visualization_msgs::Marker> ("marker", 10);
 
     get_tables_server_ = n_.advertiseService ("get_objects_of_class", &TableExtractionNode::getTablesService, this);
     get_tables_server_2_ = n_.advertiseService ("get_tables", &TableExtractionNode::getTablesService2, this);
 
-    ros::NodeHandle private_nh("~");
+    /*ros::NodeHandle private_nh("~");
+    private_nh.getParam ("target_frame", target_frame_id_);
     private_nh.getParam ("tilt_angle", tilt_angle_);
     private_nh.getParam ("height_min", height_min_);
     private_nh.getParam ("height_max", height_max_);
@@ -122,7 +132,7 @@ public:
     te_.setHeightMin (height_min_);
     te_.setHeightMax (height_max_);
     te_.setAreaMin (area_min_);
-    te_.setAreaMax (area_max_);
+    te_.setAreaMax (area_max_);*/
 
   }
 
@@ -132,7 +142,28 @@ public:
     /// void
   }
 
-  //TODO: get map also by service
+  /**
+   * @brief callback for dynamic reconfigure
+   *
+   * everytime the dynamic reconfiguration changes this function will be called
+   *
+   * @param config data of configuration
+   * @param level bit descriptor which notifies which parameter changed
+   *
+   * @return nothing
+   */
+  void
+  dynReconfCallback(cob_3d_mapping_semantics::table_extraction_nodeConfig &config, uint32_t level)
+  {
+    ROS_INFO("[table_extraction]: received new parameters");
+    target_frame_id_ = config.target_frame_id;
+    te_.setNormalBounds (config.tilt_angle);
+    te_.setHeightMin (config.height_min);
+    te_.setHeightMax (config.height_max);
+    te_.setAreaMin (config.area_min);
+    te_.setAreaMax (config.area_max);
+  }
+
   /**
    * @brief callback for ShapeArray messages
    *
@@ -144,38 +175,19 @@ public:
   void
   callbackShapeArray (const cob_3d_mapping_msgs::ShapeArray::ConstPtr sa_ptr)
   {
-    /*ROS_INFO( "\n\t-------------------------------------\n"
-        "\t|       NEW MESSAGE RECEIVED        |\n"
-        "\t-------------------------------------\n");
-
-    ROS_INFO(" Total number of shapes received: %d ", sa_ptr->shapes.size());*/
-
-    cob_3d_mapping_msgs::ShapeArray sa, tables;
-    sa.header = sa_ptr->header;
-    table_ctr_old_ = table_ctr_;
-    table_ctr_ = 0;
-    for (unsigned int i = 0; i < sa_ptr->shapes.size (); i++)
+    if(sa_ptr->header.frame_id != target_frame_id_)
     {
-      Polygon::Ptr poly_ptr = Polygon::Ptr (new Polygon ());
-
-      fromROSMsg(sa_ptr->shapes[i], *poly_ptr);
-      te_.setInputPolygon(poly_ptr);
-      if (te_.isTable())
-      {
-        table_ctr_++;
-        poly_ptr->color[0] = 1;
-        poly_ptr->color[1] = 0;
-        poly_ptr->color[2] = 0;
-        poly_ptr->color[3] = 1;
-        cob_3d_mapping_msgs::Shape s;
-        toROSMsg(*poly_ptr, s);
-        //tables.shapes.push_back(sa_ptr->shapes[i]);
-        sa.shapes.push_back (s);
-      }
-    }//end for
-
-    ROS_INFO("Found %d tables", table_ctr_);
-    sa_pub_.publish (sa);
+      ROS_ERROR("Frame IDs do not match, aborting...");
+      return;
+    }
+    cob_3d_mapping_msgs::ShapeArray tables;
+    tables.header = sa_ptr->header;
+    tables.header.frame_id = target_frame_id_ ;
+    processMap(*sa_ptr, tables);
+    publishShapeMarker (tables);
+    sa_pub_.publish (tables);
+    table_ctr_ = tables.shapes.size();
+    ROS_INFO("Found %u tables", (unsigned int)tables.shapes.size());
   }
 
 
@@ -191,40 +203,19 @@ public:
   getTablesService (cob_3d_mapping_msgs::GetObjectsOfClassRequest &req,
                     cob_3d_mapping_msgs::GetObjectsOfClassResponse &res)
   {
-    ROS_INFO("service get_objects_of_class started....");
+    ROS_INFO("service get_tables started....");
 
-    cob_3d_mapping_msgs::ShapeArray sa, tables;
+    cob_3d_mapping_msgs::ShapeArray sa;
     if (getMapService (sa))
     {
-      int table_ctr = 0;
-      for (unsigned int i = 0; i < sa.shapes.size (); i++)
-      {
-        Polygon::Ptr poly_ptr = Polygon::Ptr (new Polygon());
-        fromROSMsg(sa.shapes[i], *poly_ptr);
-        //ROS_INFO("\n\tisTableObject....  : ");
-        te_.setInputPolygon(poly_ptr);
-        if (te_.isTable())
-        {
-          table_ctr++;
-          poly_ptr->color[0] = 1;
-          poly_ptr->color[1] = 0;
-          poly_ptr->color[2] = 0;
-          poly_ptr->color[3] = 1;
-          cob_3d_mapping_msgs::Shape s;
-          s.header = sa.header;
-          toROSMsg(*poly_ptr,s);
-          //ros::Duration (10).sleep ();
-          //cob_3d_mapping_msgs::Shape s;
-          //toROSMsg(*map[i], s);
-          //convertPolygonToShape (*sem_exn_.PolygonMap[i], s);
-          ROS_INFO("getTablesService: Polygon[%d] converted to shape",i);
-          res.objects.shapes.push_back (s);
-        }
-      }
+      processMap(sa, res.objects);
       publishShapeMarker (res.objects);
-      ROS_INFO("Found %d tables", table_ctr);
+      table_ctr_ = res.objects.shapes.size();
+      ROS_INFO("Found %u tables", (unsigned int)res.objects.shapes.size());
+      return true;
     }
-    return true;
+    else
+      return false;
   }
 
   /**
@@ -244,63 +235,65 @@ public:
     cob_3d_mapping_msgs::ShapeArray sa, tables;
     if (getMapService (sa))
     {
-      table_ctr_old_ = table_ctr_;
-      table_ctr_ = 0;
       tables.header = sa.header;
-      for (unsigned int i = 0; i < sa.shapes.size (); i++)
-      {
-        Polygon::Ptr poly_ptr = Polygon::Ptr (new Polygon());
-        fromROSMsg(sa.shapes[i], *poly_ptr);
-        //ROS_INFO("\n\tisTableObject....  : ");
-        te_.setInputPolygon(poly_ptr);
-        if (te_.isTable())
-        {
-          table_ctr_++;
-          poly_ptr->color[0] = 1;
-          poly_ptr->color[1] = 0;
-          poly_ptr->color[2] = 0;
-          poly_ptr->color[3] = 1;
-          cob_3d_mapping_msgs::Shape s;
-          s.header = sa.header;
-          toROSMsg(*poly_ptr,s);
-          tables.shapes.push_back(s);
-          tabletop_object_detector::Table table;
-          Eigen::Affine3f pose;
-          Eigen::Vector4f min_pt;
-          Eigen::Vector4f max_pt;
-          poly_ptr->computePoseAndBoundingBox(pose, min_pt, max_pt);
-          table.pose.pose.position.x = poly_ptr->centroid[0];
-          table.pose.pose.position.y = poly_ptr->centroid[1];
-          table.pose.pose.position.z = poly_ptr->centroid[2];
-          Eigen::Quaternionf quat(pose.rotation());
-          table.pose.pose.orientation.x = quat.x();
-          table.pose.pose.orientation.y = quat.y();
-          table.pose.pose.orientation.z = quat.z();
-          table.pose.pose.orientation.w = quat.w();
-          table.x_min = min_pt(0);
-          table.x_max = max_pt(0);
-          table.y_min = min_pt(1);
-          table.y_max = max_pt(1);
-          table.convex_hull.type = arm_navigation_msgs::Shape::MESH;
-          for( unsigned int j=0; j<poly_ptr->contours[0].size(); j++)
-          {
-            geometry_msgs::Point p;
-            p.x = poly_ptr->contours[0][j](0);
-            p.y = poly_ptr->contours[0][j](1);
-            p.z = poly_ptr->contours[0][j](2);
-            table.convex_hull.vertices.push_back(p);
-          }
+      //test
+      tables.header.frame_id = "/map" ;
+      //end of test
+      processMap(sa, tables);
 
-          tabletop_object_detector::TabletopDetectionResult det;
-          det.table = table;
-          res.tables.push_back(det);
+      for (unsigned int i = 0; i < tables.shapes.size (); i++)
+      {
+        //Polygon poly;
+        Polygon::Ptr poly_ptr(new Polygon());
+        fromROSMsg(tables.shapes[i], *poly_ptr);
+
+        cob_3d_mapping_msgs::Table table;
+        Eigen::Affine3f pose;
+        Eigen::Vector4f min_pt;
+        Eigen::Vector4f max_pt;
+        poly_ptr->computePoseAndBoundingBox(pose,min_pt, max_pt);
+        table.pose.pose.position.x = pose.translation()(0); //poly_ptr->centroid[0];
+        table.pose.pose.position.y = pose.translation()(1) ;//poly_ptr->centroid[1];
+        table.pose.pose.position.z = pose.translation()(2) ;//poly_ptr->centroid[2];
+        Eigen::Quaternionf quat(pose.rotation());
+        //            ROS_WARN("poly_ptr->centroid[0]");
+        //            std::cout << poly_ptr->centroid[0]<< "\n";
+        //            ROS_WARN("pose.translation()");
+        //            std::cout << pose.translation() << "\n" ;
+
+        table.pose.pose.orientation.x = quat.x();
+        table.pose.pose.orientation.y = quat.y();
+        table.pose.pose.orientation.z = quat.z();
+        table.pose.pose.orientation.w = quat.w();
+        table.x_min = min_pt(0);
+        table.x_max = max_pt(0);
+        table.y_min = min_pt(1);
+        table.y_max = max_pt(1);
+
+        table.convex_hull.type = arm_navigation_msgs::Shape::MESH;
+        for( unsigned int j=0; j<poly_ptr->contours[0].size(); j++)
+        {
+          geometry_msgs::Point p;
+          p.x = poly_ptr->contours[0][j](0);
+          p.y = poly_ptr->contours[0][j](1);
+          p.z = poly_ptr->contours[0][j](2);
+          table.convex_hull.vertices.push_back(p);
         }
+
+        cob_3d_mapping_msgs::TabletopDetectionResult det;
+        det.table = table;
+
+        res.tables.push_back(det);
       }
-      sa_pub_.publish (tables);
+      //        sa_pub_.publish (tables);
       publishShapeMarker (tables);
+      table_ctr_ = tables.shapes.size();
+
       ROS_INFO("Found %d tables", table_ctr_);
+      return true;
     }
-    return true;
+    else
+      return false;
   }
 
   /**
@@ -317,8 +310,8 @@ public:
     ROS_INFO("Server started, polling map.");
 
     //build message
-    cob_3d_mapping_msgs::GetGeometricMapRequest req;
-    cob_3d_mapping_msgs::GetGeometricMapResponse res;
+    cob_3d_mapping_msgs::GetGeometryMapRequest req;
+    cob_3d_mapping_msgs::GetGeometryMapResponse res;
 
     if (ros::service::call ("get_geometry_map", req, res))
     {
@@ -356,17 +349,17 @@ public:
       marker.action = visualization_msgs::Marker::ADD;
       marker.type = visualization_msgs::Marker::LINE_STRIP;
       marker.lifetime = ros::Duration ();
-      marker.header.frame_id = "/map";
-      marker.ns = "shape_marker";
+      marker.header.frame_id = target_frame_id_;
+      marker.ns = "table_marker";
       marker.header.stamp = ros::Time::now ();
 
       marker.id = i;
       marker.scale.x = 0.05;
       marker.scale.y = 0.05;
       marker.scale.z = 0;
-      marker.color.r = 1;
+      marker.color.r = 0;//1;
       marker.color.g = 0;
-      marker.color.b = 0;
+      marker.color.b = 1;
       marker.color.a = 1.0;
 
 
@@ -390,7 +383,61 @@ public:
       marker.points.push_back(p);
       s_marker_pub_.publish (marker);
     }
+  }
 
+  /**
+   * @brief processes a shape array in order to find tables
+   *
+   * @param sa input shape array
+   * @param tables output shape array containing tables
+   *
+   * @return nothing
+   */
+  void
+  processMap(const cob_3d_mapping_msgs::ShapeArray& sa, cob_3d_mapping_msgs::ShapeArray& tables)
+  {
+    /*Eigen::Affine3f af_target = Eigen::Affine3f::Identity();
+    if(sa.header.frame_id != target_frame_id_)
+    {
+      tf::StampedTransform trf_map;
+
+      try
+      {
+        tf_listener_.waitForTransform(target_frame_id_, sa.header.frame_id, sa.header.stamp, ros::Duration(2));
+        tf_listener_.lookupTransform(target_frame_id_, sa.header.frame_id, sa.header.stamp, trf_map);
+      }
+      catch (tf::TransformException ex) { ROS_ERROR("[geometry map node] : %s",ex.what()); return; }
+
+      Eigen::Affine3d ad;
+      tf::TransformTFToEigen(trf_map, ad);
+      af_target = ad.cast<float>();
+    }*/
+    for (unsigned int i = 0; i < sa.shapes.size (); i++)
+    {
+      Polygon::Ptr poly_ptr (new Polygon());
+      fromROSMsg(sa.shapes[i], *poly_ptr);
+      //if(sa.header.frame_id!="/map")
+      //  poly_ptr->transform2tf(af_target);
+      //ROS_INFO("\n\tisTableObject....  : ");
+      te_.setInputPolygon(poly_ptr);
+      if (te_.isTable())
+      {
+        poly_ptr->color[0] = 1;
+        poly_ptr->color[1] = 0;
+        poly_ptr->color[2] = 0;
+        poly_ptr->color[3] = 1;
+        cob_3d_mapping_msgs::Shape s;
+        s.header = sa.header;
+        s.header.frame_id = target_frame_id_;
+        toROSMsg(*poly_ptr,s);
+        //ros::Duration (10).sleep ();
+        //cob_3d_mapping_msgs::Shape s;
+        //toROSMsg(*map[i], s);
+        //convertPolygonToShape (*sem_exn_.PolygonMap[i], s);
+        ROS_INFO("getTablesService: Polygon[%d] converted to shape",i);
+        tables.shapes.push_back (s);
+      }
+    }
   }
 
   ros::NodeHandle n_;
@@ -402,12 +449,19 @@ protected:
   ros::Publisher s_marker_pub_;
   ros::ServiceServer get_tables_server_;
   ros::ServiceServer get_tables_server_2_;
+  //tf::TransformListener tf_listener_;         ///< Retrieves transformations.
+
+  /**
+  * @brief Dynamic Reconfigure server
+  */
+  dynamic_reconfigure::Server<cob_3d_mapping_semantics::table_extraction_nodeConfig> config_server_;
 
   TableExtraction te_;
 
-  double tilt_angle_;
+  std::string target_frame_id_;
+  /*double tilt_angle_;
   double height_min_, height_max_;
-  double area_min_, area_max_;
+  double area_min_, area_max_;*/
 
   unsigned int table_ctr_;
   unsigned int table_ctr_old_;

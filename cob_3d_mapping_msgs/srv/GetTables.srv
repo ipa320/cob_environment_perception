@@ -1,2 +1,2 @@
 ---
-tabletop_object_detector/TabletopDetectionResult[] tables
+cob_3d_mapping_msgs/TabletopDetectionResult[] tables

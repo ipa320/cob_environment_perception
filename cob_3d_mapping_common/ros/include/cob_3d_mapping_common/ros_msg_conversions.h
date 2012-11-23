@@ -81,8 +81,8 @@ namespace cob_3d_mapping
   toROSMsg(const Polygon& p, cob_3d_mapping_msgs::Shape& s)
   {
     s.id = p.id;
-
     s.type = cob_3d_mapping_msgs::Shape::POLYGON;
+
     s.params.resize(4);
     s.params[0] = p.normal(0);
     s.params[1] = p.normal(1);
@@ -95,6 +95,7 @@ namespace cob_3d_mapping
     s.color.g = p.color[1];
     s.color.b = p.color[2];
     s.color.a = p.color[3];
+
     s.points.resize(p.contours.size());
     s.holes.resize(p.holes.size());
     for(unsigned int i=0; i<p.contours.size(); i++)
@@ -184,15 +185,15 @@ namespace cob_3d_mapping
 
     s.params.resize(10);
     // x axis
-    s.params[0]=c.sym_axis[0];
-    s.params[1]=c.sym_axis[1];
-    s.params[2]=c.sym_axis[2];
 
 
-    s.params[3]=c.normal[0];
-    s.params[4]=c.normal[1];
-    s.params[5]=c.normal[2];
+    s.params[0]=c.normal[0];
+    s.params[1]=c.normal[1];
+    s.params[2]=c.normal[2];
 
+    s.params[3]=c.sym_axis[0];
+    s.params[4]=c.sym_axis[1];
+    s.params[5]=c.sym_axis[2];
 
     s.params[6]=c.origin_[0];
     s.params[7]=c.origin_[1];
@@ -212,6 +213,7 @@ namespace cob_3d_mapping
     //std::cout << "d: " << p.d << std::endl << std::endl;
 
     s.id=c.id;
+    s.type = cob_3d_mapping_msgs::Shape::CYLINDER;
     s.color.r=c.color[0];
     s.color.g=c.color[1];
     s.color.b=c.color[2];
@@ -257,14 +259,13 @@ namespace cob_3d_mapping
     // c.centroid(1) = s.centroid.y;
     // c.centroid(2) = s.centroid.z;
 
-    c.sym_axis[0]= s.params[0];
-    c.sym_axis[1] = s.params[1];
-    c.sym_axis[2] = s.params[2];
+    c.normal[0] = s.params[0];
+    c.normal[1] = s.params[1];
+    c.normal[2] = s.params[2];
 
-    c.normal[0]= s.params[3];
-    c.normal[1] = s.params[4];
-    c.normal[2] = s.params[5];
-
+    c.sym_axis[0]= s.params[3];
+    c.sym_axis[1] = s.params[4];
+    c.sym_axis[2] = s.params[5];
 
     c.origin_[0] = s.params[6];
     c.origin_[1] = s.params[7];
@@ -274,8 +275,6 @@ namespace cob_3d_mapping
     c.centroid[0]=s.centroid.x;
     c.centroid[1]=s.centroid.y;
     c.centroid[2]=s.centroid.z;
-
-
 
 
     //std::cout << "normal: " << p.normal(0) << "," << p.normal(1) << "," << p.normal(2) << std::endl;
