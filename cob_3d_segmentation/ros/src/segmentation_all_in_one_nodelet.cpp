@@ -75,6 +75,8 @@
     #include <pcl/ros/for_each_type.h>
   #endif
 
+#include <pcl_ros/point_cloud.h>
+
 // Package includes
 #include <cob_3d_mapping_msgs/ShapeArray.h>
 #include <cob_3d_mapping_common/cylinder.h>
@@ -85,7 +87,7 @@
 void
 cob_3d_segmentation::SegmentationAllInOneNodelet::onInit()
 {
-  PCLNodelet::onInit();
+  //PCLNodelet::onInit();
   nh_ = getNodeHandle();
 
   config_server_.reset(new dynamic_reconfigure::Server<segmentation_nodeletConfig>(getPrivateNodeHandle()));
