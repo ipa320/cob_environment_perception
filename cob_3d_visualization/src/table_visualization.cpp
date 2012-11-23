@@ -10,18 +10,18 @@
  *****************************************************************
  *
  * \note
- *  Project name: TODO FILL IN PROJECT NAME HERE
+ *  Project name: care-o-bot
  * \note
- *  ROS stack name: TODO FILL IN STACK NAME HERE
+ *  ROS stack name: cob_environment_perception
  * \note
- *  ROS package name: TODO FILL IN PACKAGE NAME HERE
+ *  ROS package name: cob_3d_visualization
  *
  * \author
- *  Author: TODO FILL IN AUTHOR NAME HERE
+ *  Author: Shaghayegh Nazari, email:georg.arbeiter@ipa.fhg.de
  * \author
- *  Supervised by: TODO FILL IN CO-AUTHOR NAME(S) HERE
+ *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * \date Date of creation: TODO FILL IN DATE HERE
+ * \date Date of creation: 09/2012
  *
  * \brief
  *
@@ -56,53 +56,71 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
-/*
- * table_visualization_node.cpp
- *
- *  Created on: Sep 19, 2012
- *      Author: goa-sn
- */
+
 // ROS includes
 #include <ros/ros.h>
 
 #include <cob_3d_visualization/table_visualization.h>
 #include <cob_3d_mapping_msgs/GetObjectsOfClass.h>
-#include <cob_3d_mapping_msgs/GetGeometricMap.h>
+#include <cob_3d_mapping_msgs/MoveToTable.h>
+#include <cob_3d_mapping_msgs/GetTables.h>
+
+
+#include <cob_3d_mapping_msgs/GetGeometryMap.h>
 
 
 void TableVisualization::tableVisualizationCallback (const cob_3d_mapping_msgs::ShapeArrayPtr& ta) {
 
-  cob_3d_mapping_msgs::GetObjectsOfClass::Request req;
-  cob_3d_mapping_msgs::GetObjectsOfClass::Response res;
-  cob_3d_mapping_msgs::ShapeArrayPtr tables ;
+  // Service request and response
+  /*cob_3d_mapping_msgs::GetObjectsOfClass::Request reqObject;
+  cob_3d_mapping_msgs::GetObjectsOfClass::Response resObject;
 
-  if (ros::service::call("/table_extraction/get_objects_of_class",req,res)){
+  cob_3d_mapping_msgs::GetTables::Request reqTable ;
+  cob_3d_mapping_msgs::GetTables::Response resTable;
+
+  //
+  if (ros::service::call("/table_extraction/get_objects_of_class",reqObject,resObject)){
     ROS_INFO("Service called...");
   }
 
-  //  cob_3d_mapping_msgs::GetGeometricMapRequest req;
-  //  cob_3d_mapping_msgs::GetGeometricMapResponse res;
+  if (ros::service::call("/table_extraction/get_tables",reqTable,resTable)){
+    ROS_INFO("Service called...");
+  }*/
 
-  std::cout << "response size: "<< "\t" << res.objects.shapes.size() << "\n" ;
-  if (!res.objects.shapes.empty()){
-  for (unsigned int i=0;i<res.objects.shapes.size();i++){
-    ROS_WARN("table id : %d", i) ;//res.objects.shapes[i].id) ;
+  //  std::cout << "response size: "<< "\t" << res.tables.size() << "\n" ;
+  /*if (!resTable.tables.empty()){
+    for (unsigned int i=0;i<resTable.tables.size();i++){
+      ROS_WARN("table id : %d", i) ;//res.objects.shapes[i].id) ;
+//      ROS_WARN("table x_min is: %f , table y_min is: %f", resTable.tables[i].table.x_min , resTable.tables[i].table.y_min);
+    }
+  }*/
+  //    tables->shapes[i] = res.objects.shapes[i] ;
+  //      boost::shared_ptr<TableMarker> tm(new TableMarker(table_im_server_,res.objects.shapes[i],i)) ;//,ctr_));
+  //      v_tm_.push_back(tm) ;
+  //    ctr_ ++ ;
 
-//    tables->shapes[i] = res.objects.shapes[i] ;
-    boost::shared_ptr<TableMarker> tm(new TableMarker(table_im_server_,res.objects.shapes[i],i)) ;//,ctr_));
-    v_tm_.push_back(tm) ;
-//    ctr_ ++ ;
-  }
+
+
+  //  std::cout << "response size: "<< "\t" << res.objects.shapes.size() << "\n" ;
+  if (!ta->shapes.empty()){
+    for (unsigned int i=0;i<ta->shapes.size();i++){
+      ROS_WARN("table id : %d", i) ;//res.objects.shapes[i].id) ;
+
+      //    tables->shapes[i] = res.objects.shapes[i] ;
+      boost::shared_ptr<TableMarker> tm(new TableMarker(table_im_server_,ta->shapes[i],i/*,resTable.tables[i].table*/)) ;//,ctr_));
+      v_tm_.push_back(tm) ;
+      //    ctr_ ++ ;
+    }
   }
 }
 
 
-  int main (int argc, char** argv){
-    ros::init (argc, argv, "table_visualization");
-    ROS_INFO("table_visualization node started....");
-    TableVisualization tablevis;
-    ros::spin();
-  }
+int main (int argc, char** argv){
+  ros::init (argc, argv, "table_visualization");
+  ROS_INFO("table_visualization node started....");
+  TableVisualization tablevis;
+  ros::spin();
+}
 
 
 

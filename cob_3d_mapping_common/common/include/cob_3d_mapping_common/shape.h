@@ -71,13 +71,24 @@
 namespace cob_3d_mapping
 {
 
+  /**
+  * \brief Class, representing Shape objects.
+  * \note Base class for Cylinder and Polygon classes
+  */
   class Shape
+
   {
   public:
+    /**
+    * \brief Shape Pointer.
+    * \details Boost shared pointer to shape object.
+    */
     typedef boost::shared_ptr<Shape> Ptr;
 
   public:
-
+    /**
+    * \brief Constructor of shape object.
+    */
     Shape()
       : id(0)
       , merged(1)
@@ -85,17 +96,27 @@ namespace cob_3d_mapping
       , color(4,1)
     { }
 
+    /**
+    * \brief Destructor of shape.
+    */
     virtual ~Shape() { }
+
+    /**
+    * \brief Transform shape to target frame.
+    * \param[in] trafo Transformatuon, which is applied.
+    */
     virtual void transform2tf(const Eigen::Affine3f& trafo)=0;
 
-    unsigned int id;
-    unsigned int merged;
-    unsigned int frame_stamp;
-    Eigen::Vector4f centroid;
-    std::vector<float> color;
+    double computeDistanceFromViewpoint() {return centroid.norm();}
+
+    unsigned int id;/**< ID of shape.*/
+    unsigned int merged;/**< Number of times, shape has been merged.*/
+    unsigned int frame_stamp;/**< Frame, shape was created or merged the last time.*/
+    Eigen::Vector4f centroid;/**< Cenroid of shape. */
+    std::vector<float> color;/**< Color of shape as RGB vector. */
   };
 
-  typedef boost::shared_ptr<Shape> ShapePtr;
+  typedef boost::shared_ptr<Shape> ShapePtr;/**< Boosted shared pointer to shape. */
 
 }
 

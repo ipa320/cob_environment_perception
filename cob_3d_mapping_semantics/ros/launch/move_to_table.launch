@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<launch>
+	<node name="move_to_table" pkg="cob_3d_mapping_semantics" type="move_to_table_node" output="screen"/>
+</launch>

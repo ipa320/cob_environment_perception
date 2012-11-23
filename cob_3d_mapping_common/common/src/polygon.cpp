@@ -56,8 +56,11 @@
 * If not, see <http://www.gnu.org/licenses/>.
 *
 ****************************************************************/
-
+//ros includes
+#include <ros/console.h>
+//cob includes
 #include "cob_3d_mapping_common/polygon.h"
+//pcl includes
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #ifdef PCL_VERSION_COMPARE
@@ -69,13 +72,24 @@
 #endif
 #include <pcl/common/centroid.h>
 #include <pcl/common/eigen.h>
+
+//boost includes
 #include <boost/shared_ptr.hpp>
 
+//custom definitons
 #define MOD(a,b) ( ((a%b)+b)%b )
 
 namespace cob_3d_mapping
 {
 // NON MEMBER FUNCTIONS
+
+/**
+* \brief Get point on polygon.
+*
+* Point on polygon is calculated with distance d in normal direction.
+* \param normal Normal of the polygon
+* \param d Parameter from plane equation ax+by+cz=d
+*/
 void
 getPointOnPolygon(const Eigen::Vector3f &normal,double d,Eigen::Vector3f &point)
 {
@@ -99,6 +113,14 @@ getPointOnPolygon(const Eigen::Vector3f &normal,double d,Eigen::Vector3f &point)
   point(direction)=-d/normal(direction);
 }
 
+/**
+* \brief Get axes of coordinate system on plane.
+*
+* Calculation of axes cartesian coordinate system using one given axis.
+* \param normal Axis coordinate system is oriented to.
+* \param v Axis orthogonal to normal
+* \param u Axis completing the Gaussian three-leg
+*/
 void
 getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
     Eigen::Vector3f &u, Eigen::Vector3f &v)
@@ -107,6 +129,10 @@ getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
   u = normal.cross (v);
 }
 
+
+/**
+* \brief Copy GPC structure
+*/
 void
 copyGpcStructure(const gpc_polygon* source, gpc_polygon* dest)
 {
@@ -127,6 +153,13 @@ copyGpcStructure(const gpc_polygon* source, gpc_polygon* dest)
   }
 }
 
+/**
+* \brief Smooth contours of GPC structure
+*
+* Outline of GPC structure is smoothed using a path smoothing algorithm.
+* \param gpc_in Input GPC structure
+* \param gpc_out Output GPC structure
+*/
 void
 smoothGpcStructure(const gpc_polygon* gpc_in, gpc_polygon* gpc_out)
 {
@@ -165,19 +198,15 @@ smoothGpcStructure(const gpc_polygon* gpc_in, gpc_polygon* gpc_out)
       }
       ++num_iteration;
     }
-    std::cout << "Needed " << num_iteration << " iterations for polygon of size " << l << std::endl;
+    ROS_DEBUG_STREAM( "Needed " << num_iteration << " iterations for polygon of size " << l );
   }
 }
 
 
 //##########methods for instantiation##############
-
 void
 Polygon::computeAttributes(const Eigen::Vector3f &new_normal, const Eigen::Vector4f& new_centroid)
 {
-
-
-//  TODO: recomputation of centroid
   this->d = new_centroid.head(3).dot(new_normal);
   if (this->d > 0) { this->normal = -new_normal; d = -d; }
   else { this->normal = new_normal; }
@@ -187,13 +216,11 @@ Polygon::computeAttributes(const Eigen::Vector3f &new_normal, const Eigen::Vecto
       this->normal.unitOrthogonal(),this->normal,this->centroid.head(3),this->transform_from_world_to_plane);
 }
 
-
 void Polygon::transform2tf(const Eigen::Affine3f& trafo)
 {
   //transform contours
   this->TransformContours(trafo);
 
-  //transform parameters
   //  transform parameters
   Eigen::Vector3f tf_normal = trafo.rotation() *this->normal;
   this->normal =tf_normal;
@@ -202,6 +229,7 @@ void Polygon::transform2tf(const Eigen::Affine3f& trafo)
   this->centroid.head(3) = tf_centroid3f;
   this->computeAttributes(this->normal,this->centroid);
 }
+
 
 void
 Polygon::smoothPolygon()
@@ -215,8 +243,8 @@ Polygon::smoothPolygon()
 }
 
 
-
 //###########methods for merging##################
+
 
 void
 Polygon::getMergeCandidates(const std::vector<Polygon::Ptr>& poly_vec, std::vector<int>& intersections) const
@@ -236,6 +264,7 @@ Polygon::isIntersectedWith(const Polygon::Ptr& poly) const
   gpc_free_polygon(gpc_res);
   return (res);
 }
+
 
 void
 Polygon::getIntersection(const Polygon::Ptr& poly, gpc_polygon* gpc_intersection) const
@@ -280,14 +309,15 @@ Polygon::getContourOverlap(const Polygon::Ptr& poly, float& rel_overlap, int& ab
   }
   rel_overlap = (float)overlap/(float)gpc_res_int->contour[i_int].num_vertices;
   abs_overlap = overlap;
-  std::cout << "Overlap: " << overlap << "/"<<gpc_res_int->contour[i_int].num_vertices << " -> "
-            << (float)overlap/(float)gpc_res_int->contour[i_int].num_vertices << std::endl;
+  ROS_DEBUG_STREAM("Overlap: " << overlap << "/"<<gpc_res_int->contour[i_int].num_vertices << " -> "
+            << (float)overlap/(float)gpc_res_int->contour[i_int].num_vertices );
   gpc_free_polygon(gpc_a);
   gpc_free_polygon(gpc_b);
   gpc_free_polygon(gpc_res_int);
   gpc_free_polygon(gpc_res_union);
   return true;
 }
+
 
 float
 Polygon::computeSimilarity(const Polygon::Ptr& poly) const
@@ -309,6 +339,7 @@ Polygon::merge(std::vector<Polygon::Ptr>& poly_vec)
   this->applyWeighting(poly_vec,p_average);
   this->merge_union(poly_vec,p_average);
   this->assignWeight();
+  this->assignID(poly_vec);
 }
 
 void
@@ -316,9 +347,6 @@ Polygon::merge_union(std::vector<Polygon::Ptr>& poly_vec,  Polygon::Ptr& p_avera
 {
   gpc_polygon *gpc_C = new gpc_polygon, *smoothed = new gpc_polygon;
   this->getGpcStructure(p_average->transform_from_world_to_plane, gpc_C);
-
- // std::cout<<"CONTOURS---\n";
- // std::cout<<"this"<<this->contours.size()<<"\n";
 
   for(size_t i=0;i<poly_vec.size();++i)
   {
@@ -343,12 +371,13 @@ Polygon::merge_union(std::vector<Polygon::Ptr>& poly_vec,  Polygon::Ptr& p_avera
   gpc_free_polygon(smoothed);
 }
 
+
+
 void
 Polygon::assignWeight()
 {
   if (std::strcmp(merge_settings_.weighting_method.c_str(), "COUNTER")== 0)
   {
-    //USE
     merge_weight_=merged;
   }
   else if (std::strcmp(merge_settings_.weighting_method.c_str(), "AREA")== 0)
@@ -356,31 +385,22 @@ Polygon::assignWeight()
     double area = computeArea3d();
     merge_weight_=(merged*area);
   }
-  else if (std::strcmp(merge_settings_.weighting_method.c_str(), "COMBINED")== 0)
-  {
-    //USE
-    merge_weight_ = merged + sqrt(computeArea3d());
-  }
-  else if (std::strcmp(merge_settings_.weighting_method.c_str(), "DIST")== 0)
-  {
-    // Do not use d has to be substituted with value for distance to sensor , not distance in global
-    // coordinate system
-    float dist_factor=d*d;
-
-    if (fabs(d)<0.5) {
-      dist_factor=0.5;
-    }
-    dist_factor *= 0.5;
-    dist_factor=1/dist_factor;
-    merge_weight_ =merged + dist_factor;
-  }
 }
 
+void
+Polygon::assignID(const std::vector<Polygon::Ptr>& poly_vec)
+{
+   unsigned int tmp_id=poly_vec[0]->id;
+   for(size_t i=0;i<poly_vec.size();++i)
+   {
+        if(poly_vec[i]->id<tmp_id)tmp_id=poly_vec[i]->id;
+   }
+   this->id=tmp_id;
+}
 
 void
 Polygon::applyWeighting(const std::vector<Polygon::Ptr>& poly_vec, Polygon::Ptr & p_average)
 {
-  //std::cout<<"MERGE WEIGHT: "<<merge_weight_<<std::endl;
   Eigen::Vector3f average_normal=normal*merge_weight_;
   Eigen::Vector4f average_centroid=centroid*merge_weight_;
   double average_d=d*merge_weight_;
@@ -421,7 +441,6 @@ Polygon::applyWeighting(const std::vector<Polygon::Ptr>& poly_vec, Polygon::Ptr 
   p_average->computeAttributes(average_normal,average_centroid);
 }
 
-
 void
 Polygon::getGpcStructure(const Eigen::Affine3f& external_trafo, gpc_polygon* gpc_p) const
 {
@@ -432,10 +451,8 @@ Polygon::getGpcStructure(const Eigen::Affine3f& external_trafo, gpc_polygon* gpc
   gpc_p->num_contours = contours.size();
   gpc_p->hole = (int*)malloc(contours.size()*sizeof(int));
   gpc_p->contour = (gpc_vertex_list*)malloc(contours.size()*sizeof(gpc_vertex_list));
-  //std::cout << "num_contours: " << gpc_p->num_contours << std::endl;
   for(size_t j=0; j<contours.size(); ++j)
   {
-    //std::cout << j << std::endl;
     gpc_p->hole[j] = holes[j];
     gpc_p->contour[j].num_vertices = contours[j].size();
     gpc_p->contour[j].vertex = (gpc_vertex*)malloc(gpc_p->contour[j].num_vertices*sizeof(gpc_vertex));
@@ -448,6 +465,7 @@ Polygon::getGpcStructure(const Eigen::Affine3f& external_trafo, gpc_polygon* gpc
     }
   }
 }
+
 
 void
 Polygon::applyGpcStructure(const Eigen::Affine3f& external_trafo, const gpc_polygon* gpc_p)
@@ -472,16 +490,15 @@ Polygon::applyGpcStructure(const Eigen::Affine3f& external_trafo, const gpc_poly
 
     if (this->contours.back().size() <= 2)  // drop empty contour lists
     {
-      //std::cout << "Drop! New size: " << this->contours.size() - 1 << std::endl;
       this->contours.pop_back();
       this->holes.pop_back();
     }
   }
-  //if (this->contours.size() == 0) std::cout << "!!!! THIS POLYGON HAS NO CONTOURS ANYMORE" << std::endl;
 }
 
 
 //#######methods for calculation#####################
+
 void
 Polygon::computeCentroid()
 {
@@ -540,54 +557,9 @@ Polygon::computeArea() const
 
     }
     area += fabs (sum / 2);
-    //std::cout << "\n\t*** Area of polygon ( " << i << " ) = " << area_[i] << std::endl;
   }
   return area;
 }
-
-
-void
-Polygon::computeAnchor(int& index_i,int&index_j)
-{
-  /*
-   * Compute Point with lowest x coordinates
-   * Use only for polygons in local coordinates!
-   */
-  float min_x = 10000;
-  for (int i = 0; i < contours.size(); ++i) {
-    for (int j = 0; j < contours[i].size(); ++j) {
-      if (contours[i][j][0] < min_x)
-      {
-        index_i = i;
-        index_j = j;
-      }
-
-    }
-  }
-}
-
-void
-Polygon::computeAnchor(const std::vector<std::vector<Eigen::Vector3f> >& in_contours,int& index_i,int&index_j)
-{
-  /*
-   * Compute Point with lowest x coordinates
-   * Use only for polygons in local coordinates!
-   *
-   *
-   */
-  float min_x = 10000;
-  for (int i = 0; i < in_contours.size(); ++i) {
-    for (int j = 0; j < in_contours[i].size(); ++j) {
-      if (in_contours[i][j][0] < min_x)
-      {
-        index_i = i;
-        index_j = j;
-      }
-
-    }
-  }
-}
-
 
 
 
@@ -603,7 +575,6 @@ Polygon::computeArea3d() const
       vec_sum += contours[i][j].cross(contours[i][j+1]);
 
     vec_sum += contours[ i ][ contours[i].size()-1 ].cross(contours[i][0]);
-    //std::cout << (holes[i] ? "Hole : " : "Outer: ") << 0.5 * normal.dot(vec_sum) << std::endl;
     area += 0.5 * normal.dot(vec_sum);
 
     // special cases for holes can be ignored, since their vertex orientation is opposite to the
@@ -623,7 +594,6 @@ Polygon::getTransformationFromPlaneToWorld(
 {
   Eigen::Vector3f u, v;
   getCoordinateSystemOnPlane(normal, u, v);
-  // std::cout << "u " << u << std::endl << " v " << v << std::endl;
   pcl::getTransformationFromTwoUnitVectorsAndOrigin(v, normal, origin, transformation);
   transformation = transformation.inverse();
 }
@@ -635,9 +605,6 @@ Polygon::getTransformationFromPlaneToWorld(
   const Eigen::Vector3f &origin,
   Eigen::Affine3f &transformation)
 {
-  // Eigen::Vector3f u, v;
-  // getCoordinateSystemOnPlane(normal, u, v);
-  // std::cout << "u " << u << std::endl << " v " << v << std::endl;
   this->normal = normal;
   pcl::getTransformationFromTwoUnitVectorsAndOrigin(z_axis, normal, origin, transformation);
   transformation = transformation.inverse();
@@ -651,7 +618,6 @@ Polygon::TransformContours(const Eigen::Affine3f& trafo)
   {
     for(size_t k=0; k<contours[j].size(); k++)
     {
-      // std::cout<<trafo.matrix()<<std::endl;
       contours[j][k] = trafo * contours[j][k];
     }
   }
@@ -689,12 +655,10 @@ Polygon::computePoseAndBoundingBox(Eigen::Affine3f& pose, Eigen::Vector4f& min_p
   EIGEN_ALIGN16 Eigen::Vector3f eigen_values;
   EIGEN_ALIGN16 Eigen::Matrix3f eigen_vectors;
   pcl::eigen33 (cov, eigen_vectors, eigen_values);
-  //Eigen::Affine3f pose;
   pcl::getTransformationFromTwoUnitVectorsAndOrigin(eigen_vectors.col(1),eigen_vectors.col(0),centroid.head(3),pose);
 
   pcl::PointCloud<pcl::PointXYZ> cloud_trans;
   pcl::transformPointCloud(poly_cloud, cloud_trans, pose);
-  //Eigen::Vector4f min_pt, max_pt;
   pcl::getMinMax3D(cloud_trans, min_pt, max_pt);
 }
 
@@ -702,13 +666,9 @@ Polygon::computePoseAndBoundingBox(Eigen::Affine3f& pose, Eigen::Vector4f& min_p
 
 void Polygon::debug_output(std::string name)
 {
-  //  std::ofstream os;
   std::string path = "/home/goa-tz/debug/dbg/";
   path.append(name.c_str());
   std::ofstream os(path.c_str());
-  //  os.open(path.c_str());
-  //std::cout<< "name~~~~~~~~~~~~"<<std::endl;
-  //std::cout<<"saving polygon nodes to "<<path.c_str()<<std::endl;
 
   for (int i = 0; i < (int) this->contours.size(); ++i)
   {

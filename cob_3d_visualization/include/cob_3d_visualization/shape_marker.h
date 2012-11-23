@@ -10,18 +10,18 @@
  *****************************************************************
  *
  * \note
- *  Project name: TODO FILL IN PROJECT NAME HERE
+ *  Project name: care-o-bot
  * \note
- *  ROS stack name: TODO FILL IN STACK NAME HERE
+ *  ROS stack name: cob_environment_perception
  * \note
- *  ROS package name: TODO FILL IN PACKAGE NAME HERE
+ *  ROS package name: cob_3d_mapping_common
  *
  * \author
- *  Author: TODO FILL IN AUTHOR NAME HERE
+ *  Author: Waqas Tanveer, email:Waqas.Tanveer@ipa.fhg.de
  * \author
- *  Supervised by: TODO FILL IN CO-AUTHOR NAME(S) HERE
+ *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * \date Date of creation: TODO FILL IN DATE HERE
+ * \date Date of creation: 09/2012
  *
  * \brief
  *
@@ -56,12 +56,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
-/*
- * shape_marker.h
- *
- *  Created on: Jul 25, 2012
- *      Author: goa-sn
- */
 
 #ifndef SHAPE_MARKER_H_
 #define SHAPE_MARKER_H_
@@ -111,6 +105,7 @@
 #include <cob_3d_mapping_msgs/ModifyMap.h>
 #include <cob_3d_mapping_common/ros_msg_conversions.h>
 #include "cob_3d_mapping_common/polygon.h"
+#include "cob_3d_mapping_common/cylinder.h"
 //#include <cob_3d_visualization/shape_visualization.h>
 
 //#define PI 3.14159265
@@ -122,19 +117,7 @@ class ShapeMarker
 
     ShapeMarker(boost::shared_ptr<interactive_markers::InteractiveMarkerServer> im_server,
         cob_3d_mapping_msgs::Shape& shape,std::vector<unsigned int>& moved_shapes_indices,std::vector<unsigned int>& interacted_shapes,
-        std::vector<unsigned int>& deleted_markers_indices_) :
-          interacted_shapes_(interacted_shapes) , moved_shapes_indices_(moved_shapes_indices) , deleted_markers_indices_(deleted_markers_indices_)
-    {
-
-      im_server_ = im_server;
-      shape_ = shape;
-      id_ = shape.id;
-//      feedback_sub_ = nh_.subscribe("geometry_map/map/feedback",1,&ShapeMarker::setShapePosition,this);
-      createShapeMenu ();
-      createInteractiveMarker();
-
-    }
-
+        std::vector<unsigned int>& deleted_markers_indices, bool arrows,bool deleted);
     ~ShapeMarker()
     {
       if(im_server_->erase(marker_.name)){
@@ -149,47 +132,175 @@ class ShapeMarker
       }
     }
 
-
-    void enableMovement (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
-    void displayArrows() ;
-    void hideArrows(int flag_untick) ;
-
-    void createShapeMenu () ;
-    void deleteMarker(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
-
-    TPPLPoint msgToPoint2D (const pcl::PointXYZ &point) ;
-
-    void createMarker (list<TPPLPoly>& triangle_list,visualization_msgs::InteractiveMarkerControl& im_ctrl);
-    void createInteractiveMarker () ;
-
-    void displayNormalCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
-    void displayNormal();
-    void hideNormal(int flag_untick);
-
-    void displayCentroidCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
-    void displayCentroid();
-    void hideCentroid(int flag_untick);
-
-    void displayContourCB(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
-    void displayContour();
-    void hideContour(int flag_untick);
-
-    void resetMarker();//bool call_reset_marker,visualization_msgs::InteractiveMarker& imarker) ;
-
-//    void setShapePosition(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);//,const cob_3d_mapping_msgs::Shape& shape) ;
-    void getShape (cob_3d_mapping_msgs::Shape& shape) ;
+    /**
+     * @brief subdivides a list of triangles.
+     *
+     * Based on a threshold in x-Direction, triangles are subdivided.
+     * @param[in] i_list Input triangle list.
+     * @param[out] o_list Output triangle list.
+     * @return nothing
+     */
+    void triangle_refinement(list<TPPLPoly>& i_list,list<TPPLPoly>& o_list);
+    void getShape (cob_3d_mapping_msgs::Shape& shape);
+    /**
+     * @brief returns the global variable arrows_
+     * @param[out] global variable arrows_
+     */
+    bool getArrows();
+    /**
+     * @brief sets the global variable arrows_ to false
+     * @param[out] global variable arrows_
+     */
+    bool setArrows();
+    /**
+     * @brief returns global variable deleted_
+     * @param[out] global variable deleted_
+     */
+    bool getDeleted();
+    /**
+     * @brief sets the global variable deleted_ to false
+     * @param[out] global variable deleted_
+     */
+    bool setDeleted();
+    /**
+     * @brief returns id of the shape msg
+     * @param[out] shape msg id
+     */
     unsigned int getID() ;
+    /**
+     * @brief Feedback callback for Enable Movement menu entry
+     * @param[in] feedback feedback from rviz when the Enable Movement menu entry of a shape is changed
+     */
+    void enableMovement (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    /**
+     * @brief Display arrows for interactive marker movement
+     */
+    void displayArrows() ;
+    /**
+     * @brief Remove arrows for interactive marker movement
+     * @param[in] flag_untick a flag which shows whether Enable Movement is unticked
+     */
+    void hideArrows(int flag_untick) ;
+    /**
+     * @brief Create menu entries for each shape
+     */
+    void createShapeMenu () ;
+    /**
+     * @brief feedback callback for Delete Marker menu entry
+     * @param[in] feedback feedback from rviz when the Delete Marker menu entry of a shape is chosen
+     */
+    void deleteMarker(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    /**
+     * @brief Create menu entries for each shape
+     *
+     * @param[in] point 3D point to be transformed
+     * @return returns transformed 2D TPPLPoint
+     */
+    TPPLPoint msgToPoint2D (const pcl::PointXYZ &point) ;
+    /**
+     * @brief Create marker for the shape and add it to the interactive marker control
+     *
+     * @param[in] triangle_list triangulated list of poly points
+     * @param[in] im_ctrl interactive marker control
+     *
+     */
+    void createMarker (visualization_msgs::InteractiveMarkerControl& im_ctrl);
+    /**
+     * @brief Publish interactive markers for a shape message using interactive marker server
+     */
+    void createInteractiveMarker () ;
+    /**
+     * @brief Feedback callback for normal menu entry
+     *
+     * @param[in] feedback feedback from rviz when the normal menu entry of a shape is changed
+     */
+    void displayNormalCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    /**
+     * @brief Display the normal vector of a shape
+     */
+    void displayNormal();
+    /**
+     * @brief Remove the normal vector of a shape
+     * param[in] flag_untick a flag which shows whether Enable Movement is unticked
+     */
+    void hideNormal(int flag_untick);
+    /**
+     * @brief Feedback callback for symmetry axis menu entry with cylinders
+     *
+     * @param[in] feedback feedback from rviz when the symmetry axis menu entry of a shape is changed
+     */
+    void displaySymAxisCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    /**
+     * @brief Display the Symmetry axis of a cylinder
+     */
+    void displaySymAxis();
+    /**
+     * @brief Remove the Symmetry axis of a cylinder
+     * param[in] flag_untick a flag which shows whether Enable Movement is unticked
+     */
+    void hideSymAxis(int flag_untick);
+    /**
+     * @brief Feedback callback for Display Centroid menu entry
+     *
+     * @param[in] feedback feedback from rviz when the Display Centroid menu entry of a shape is changed
+     */
+    void displayCentroidCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    /**
+     * @brief Display the centroid of a shape
+     */
+    void displayCentroid();
+    /**
+     * @brief Remove the centroid of a shape
+     */
+    void hideCentroid(int flag_untick);
+    /**
+     * @brief Feedback callback for origin  menu entry
+     *
+     * @param[in] feedback feedback from rviz when the centroid menu entry of a shape is changed
+     */
+    void displayOriginCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    /**
+     * @brief Display the origin of a cylinder
+     */
+    void displayOrigin();
+    /**
+     * @brief Remove the origin of a cylinder
+     */
+    void hideOrigin(int flag_untick);
+    /**
+     * @brief Feedback callback for Display Contour menu entry
+     *
+     * @param[in] feedback feedback from rviz when the Display Contour menu entry of a shape is changed
+     */
+    void displayContourCB(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback) ;
+    /**
+     * @brief Display contour of a shape
+     */
+    void displayContour();
+    /**
+     * @brief Remove contour of a shape
+     */
+    void hideContour(int flag_untick);
+    /**
+     * @brief Resets all controls activated for Interactive marker
+     *
+     */
+    void resetMarker();
 
-    //    std::vector<int> getInteractedShapesNumber();
+    visualization_msgs::Marker& getMarker() {return marker;};
+
+
 
 
   protected:
     visualization_msgs::InteractiveMarker marker_ ;
-    visualization_msgs::InteractiveMarker Imarker ;
+    visualization_msgs::InteractiveMarker imarker_ ;
+    visualization_msgs::InteractiveMarker deleted_imarker_ ;
     visualization_msgs::Marker marker;
 
-    ros::NodeHandle nh_;
-    ros::Subscriber feedback_sub_ ;
+    //    ros::NodeHandle nh_;
+    //    ros::Subscriber feedback_sub_ ;
+    //    ros::Publisher marker_pub_ ;
 
     visualization_msgs::InteractiveMarkerControl im_ctrl;
 
@@ -209,17 +320,19 @@ class ShapeMarker
     std::vector<unsigned int>& moved_shapes_indices_ ;
     std::vector<unsigned int>& interacted_shapes_ ;
     std::vector<unsigned int>& deleted_markers_indices_ ;
+    //    unsigned int& deleted_ ;
 
 
-//    bool arrows_;
-//    cob_3d_mapping_msgs::ModifyMap::Request req ;
-//    cob_3d_mapping_msgs::ModifyMap::Response res;
-//    //
-//    Eigen::Quaternionf quatInit ;
-//    Eigen::Vector3f oldCentroid ;
-//    Eigen::Matrix4f transInit;
-//    Eigen::Affine3f affineInit;
-//    Eigen::Matrix4f transInitInv;
+    bool arrows_;
+    bool deleted_ ;
+    //    cob_3d_mapping_msgs::ModifyMap::Request req ;
+    //    cob_3d_mapping_msgs::ModifyMap::Response res;
+    //    //
+    //    Eigen::Quaternionf quatInit ;
+    //    Eigen::Vector3f oldCentroid ;
+    //    Eigen::Matrix4f transInit;
+    //    Eigen::Affine3f affineInit;
+    //    Eigen::Matrix4f transInitInv;
 
 };
 

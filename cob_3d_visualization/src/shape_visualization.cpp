@@ -12,9 +12,9 @@
  * \note
  *  Project name: care-o-bot
  * \note
- *  ROS stack name: cob_environment_perception_intern
+ *  ROS stack name: cob_environment_perception
  * \note
- *  ROS package name: cob_3d_mapping_common
+ *  ROS package name: cob_3d_visualization
  *
  * \author
  *  Author: Waqas Tanveer, email:Waqas.Tanveer@ipa.fhg.de
@@ -76,6 +76,18 @@
 
 using namespace cob_3d_mapping;
 
+ShapeVisualization::ShapeVisualization () :
+	ctr_for_shape_indexes (0),
+	nh_("~")
+    {
+      shape_array_sub_ = nh_.subscribe ("shape_array", 1, &ShapeVisualization::shapeArrayCallback, this);
+      feedback_sub_ = nh_.subscribe("shape_i_marker/feedback",1,&ShapeVisualization::setShapePosition,this);
+      marker_pub_ = nh_.advertise<visualization_msgs::Marker> ("marker", 1);
+      //      shape_pub_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_array", 1);
+      //      get_table_subscriber_ = nh_.subscribe("shape_array", 1, &ShapeVisualization::findTables,this);
+      im_server_.reset (new interactive_markers::InteractiveMarkerServer ("shape_i_marker", "", false));
+      moreOptions() ;
+    }
 
 void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)//,const cob_3d_mapping_msgs::Shape& shape)
 {
@@ -84,7 +96,8 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
   map_msg.header.frame_id="/map";
   map_msg.header.stamp = ros::Time::now();
 
-  int shape_id;
+  int shape_id,index;
+  index=-1;
   stringstream name(feedback->marker_name);
 
   Eigen::Quaternionf quat;
@@ -100,9 +113,24 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
 
   if (feedback->marker_name != "Text"){
     name >> shape_id ;
-
     cob_3d_mapping::Polygon p;
-    cob_3d_mapping::fromROSMsg (sha.shapes.at(shape_id), p);
+
+    for(unsigned int i=0;i<sha.shapes.size();++i)
+    {
+    	if (sha.shapes[i].id == shape_id)
+	{
+		index = i;
+	}
+    }
+    // temporary fix.
+    //do nothing if index of shape is not found
+    // this is not supposed to occur , but apparently it does
+    if(index==-1){
+    ROS_WARN("shape not in map array");
+    return;
+	}
+
+    cob_3d_mapping::fromROSMsg (sha.shapes.at(index), p);
 
     if (feedback->event_type == 2 && feedback->menu_entry_id == 5){
       quatInit.x() = (float)feedback->pose.orientation.x ;           //normalized
@@ -130,6 +158,32 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
     }
 
     if (feedback->event_type == 5){
+      /* the name of the marker is arrows_shape_.id, we need to erase the "arrows_" part */
+      //string strName(feedback->marker_name);
+      //strName.erase(strName.begin(),strName.begin()+7);
+//      stringstream name(strName);
+	stringstream name(feedback->marker_name);
+
+      /* the name of the marker is arrows_shape_.id, we need to erase the "arrows_" part */
+      //      int test ;
+      //      string strName(feedback->marker_name);
+      //      strName.erase(strName.begin(),strName.begin()+7);
+      //      stringstream nameTest(strName);
+      //      std::cout << "nameTest : " << nameTest.str() << "\n" ;
+      //      nameTest >> test ;
+      //      std::cout << "test : " << test << "\n" ;
+
+      //      name >> shape_id ;
+      cob_3d_mapping::Polygon p;
+      //      for(size_t i=0;i<sha.shapes.size();++i)
+      //      {
+      //        if (sha.shapes[i].id == shape_id)
+      //        {
+      //          index = i;
+      //        }
+      //      }
+      std::cout << "index is : " << index << "\n" ;
+      cob_3d_mapping::fromROSMsg (sha.shapes.at(index), p);
 
       quat.x() = (float)feedback->pose.orientation.x ;           //normalized
       quat.y() = (float)feedback->pose.orientation.y ;
@@ -140,9 +194,9 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
 
       rotationMat = quat.toRotationMatrix() ;
 
-      normalVec << sha.shapes.at(shape_id).params[0],                   //normalized
-          sha.shapes.at(shape_id).params[1],
-          sha.shapes.at(shape_id).params[2];
+      normalVec << sha.shapes.at(index).params[0],                   //normalized
+          sha.shapes.at(index).params[1],
+          sha.shapes.at(index).params[2];
 
       newCentroid << (float)feedback->pose.position.x ,
           (float)feedback->pose.position.y ,
@@ -164,14 +218,14 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
       //      newCentroid  = transFinal *OldCentroid ;
 
 
-      sha.shapes.at(shape_id).centroid.x = newCentroid(0) ;
-      sha.shapes.at(shape_id).centroid.y = newCentroid(1) ;
-      sha.shapes.at(shape_id).centroid.z = newCentroid(2) ;
+      sha.shapes.at(index).centroid.x = newCentroid(0) ;
+      sha.shapes.at(index).centroid.y = newCentroid(1) ;
+      sha.shapes.at(index).centroid.z = newCentroid(2) ;
 
 
-      sha.shapes.at(shape_id).params[0] = normalVecNew(0) ;
-      sha.shapes.at(shape_id).params[1] = normalVecNew(1) ;
-      sha.shapes.at(shape_id).params[2] = normalVecNew(2) ;
+      sha.shapes.at(index).params[0] = normalVecNew(0) ;
+      sha.shapes.at(index).params[1] = normalVecNew(1) ;
+      sha.shapes.at(index).params[2] = normalVecNew(2) ;
 
 
       std::cout << "transfromFinal : " << "\n"    << affineFinal.matrix() << "\n" ;
@@ -193,8 +247,8 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
       }
 
       pcl::toROSMsg (pc, pc2);
-      sha.shapes.at(shape_id).points.clear() ;
-      sha.shapes.at(shape_id).points.push_back (pc2);
+      sha.shapes.at(index).points.clear() ;
+      sha.shapes.at(index).points.push_back (pc2);
 
       // uncomment when using test_shape_array
 
@@ -206,78 +260,145 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
 
       // end uncomment
 
-      modified_shapes_.shapes.push_back(sha.shapes.at(shape_id));
+      modified_shapes_.shapes.push_back(sha.shapes.at(index));
     }
-
   }
 }
 
 void ShapeVisualization::applyModifications(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
 {
-  for(int i=0;i<modified_shapes_.shapes.size();i++){
-    req.InMap.shapes.push_back(modified_shapes_.shapes.at(i)) ;
+  cob_3d_mapping_msgs::ModifyMap::Request req ;
+  cob_3d_mapping_msgs::ModifyMap::Response res;
+  visualization_msgs::InteractiveMarker imarker;
+  stringstream aa;
+  int index ;
+
+  /*****Modify shapes*****/
+  if (!modified_shapes_.shapes.empty()){
+    //    ROS_INFO("modify action...");
+    for(unsigned int i=0;i<modified_shapes_.shapes.size();i++){
+      req.InMap.shapes.push_back(modified_shapes_.shapes.at(i)) ;
+      /*erase the second marker created at the original position of the Marker*/
+      aa.str("");
+      aa.clear();
+      aa << "second_marker_" << modified_shapes_.shapes[i].id ;
+      imarker.name = aa.str() ;
+      im_server_->erase(imarker.name) ;
+      im_server_->applyChanges();
+      /*end*/
+    }
+    req.action = cob_3d_mapping_msgs::ModifyMapRequest::MODIFY ;
+    std ::cout << "size of request: " << req.InMap.shapes.size() << "\n" ;
+    if (ros::service::call("geometry_map/modify_map",req,res))
+    {
+      std::cout << "calling ModifyMap service..." << "\n" ;
+    }
+    while (!req.InMap.shapes.empty()){
+      req.InMap.shapes.pop_back() ;
+      modified_shapes_.shapes.pop_back() ;
+    }
   }
 
-  std ::cout << "size of request: " << req.InMap.shapes.size() << "\n" ;
+  /*****Delete shapes*****/
+  if (!deleted_markers_indices_.empty()){
 
-  if (ros::service::call("geometry_map/modify_map",req,res))
-  {
-    std::cout << "calling ModifyMap service..." << "\n" ;
+    std::cout<< "deleted_markers_indices_ size : " << deleted_markers_indices_.size() << "\n" ;
+    //    ROS_INFO("delete action...");
+    req.action = cob_3d_mapping_msgs::ModifyMapRequest::DELETE ;
+    for(unsigned int i=0;i<deleted_markers_indices_.size();i++){
+      /*erase the transparent marker*/
+      aa.str("");
+      aa.clear();
+      aa << "deleted_marker_" << deleted_markers_indices_.at(i) ;
+      imarker.name = aa.str() ;
+      im_server_->erase(imarker.name) ;
+      im_server_->applyChanges();
+      /*end*/
+      for(unsigned int j=0;j<sha.shapes.size();++j)
+      {
+        if (sha.shapes[j].id == deleted_markers_indices_.at(i))
+        {
+          index = j;
+        }
+      }
+      req.InMap.shapes.push_back(sha.shapes.at(index)) ;
+    }
+
+    if (ros::service::call("geometry_map/modify_map",req,res))
+    {
+      std::cout << "calling ModifyMap service..." << "\n" ;
+    }
+
+    while (!req.InMap.shapes.empty()){
+      req.InMap.shapes.pop_back() ;
+      deleted_markers_indices_.pop_back() ;
+
+    }
+    std::cout<< "deleted_markers_indices_ size : " << deleted_markers_indices_.size() << "\n" ;
+    std::cout << "req size" << req.InMap.shapes.size() << "\n" ;
   }
-
-  while (!req.InMap.shapes.empty()){
-    req.InMap.shapes.pop_back() ;
-    modified_shapes_.shapes.pop_back() ;
-
-  }
-  std ::cout << "size of request: " << req.InMap.shapes.size() << "\n" ;
-
   im_server_->applyChanges() ;
 }
 
 void ShapeVisualization::resetAll(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
 {
   stringstream aa;
-  std::cout <<"interacted_shapes_.size() = " << interacted_shapes_.size() <<"\n" ;
+  modified_shapes_.shapes.clear() ;
+  //  std::cout <<"interacted_shapes_.size() = " << interacted_shapes_.size() <<"\n" ;
 
-  for (unsigned int i=0; i< interacted_shapes_.size();i++)
-  {
-    unsigned int id = interacted_shapes_[i];
-    for (unsigned int j=0; j<v_sm_.size(); j++)
+  if(!interacted_shapes_.empty()) {
+    for (unsigned int i=0; i< interacted_shapes_.size();i++)
     {
-      if(id == v_sm_[j]->getID())
-        v_sm_[j]->resetMarker();
-      //        interacted_shapes_.pop_back();
-    }
+      unsigned int id = interacted_shapes_[i];
+      for (unsigned int j=0; j<v_sm_.size(); j++)
+      {
+        if(id == v_sm_[j]->getID())
+          v_sm_[j]->resetMarker();
+        //        interacted_shapes_.pop_back();
+      }
 
-  }
-  for (unsigned int i=0; i< moved_shapes_indices_.size();i++){
-
-    unsigned int id = moved_shapes_indices_[i];
-    for (unsigned int j=0; j<v_sm_.size(); j++)
-    {
-      if(id == v_sm_[j]->getID())
-        v_sm_[j]->hideArrows(0);
     }
+    interacted_shapes_.clear();
   }
 
-  for (unsigned int i=0; i< deleted_markers_indices_.size();i++){
-    unsigned int id = deleted_markers_indices_[i];
-    for (unsigned int j=0; j<v_sm_.size(); j++)
-    {
-      if(id == v_sm_[j]->getID())
-        v_sm_[j]->createInteractiveMarker();
+  if(!moved_shapes_indices_.empty()) {
+    for (unsigned int i=0; i< moved_shapes_indices_.size();i++){
+
+      unsigned int id = moved_shapes_indices_[i];
+      for (unsigned int j=0; j<v_sm_.size(); j++)
+      {
+        if(id == v_sm_[j]->getID()){
+          v_sm_[j]->hideArrows(0);
+          //          im_server_->applyChanges ();
+        }
+      }
     }
+    moved_shapes_indices_.clear() ;
   }
 
+  if(!deleted_markers_indices_.empty()) {
 
+    for (unsigned int i=0; i< deleted_markers_indices_.size();i++){
+      unsigned int id = deleted_markers_indices_[i];
+      for (unsigned int j=0; j<v_sm_.size(); j++)
+      {
+        if(id == v_sm_[j]->getID()){
+          v_sm_[j]->setDeleted() ;
+          aa.str("");
+          aa.clear() ;
+          aa << "deleted_marker_"<< id ;
+          im_server_->erase(aa.str()) ;
+          //retrieve the deleted Marker
+          v_sm_[j]->createInteractiveMarker();
+          im_server_->applyChanges ();
 
-
-  interacted_shapes_.clear();
-  im_server_->applyChanges ();
-
+        }
+      }
+    }
+    deleted_markers_indices_.clear() ;
+  }
+  //  im_server_->applyChanges ();
 }
-
 
 void ShapeVisualization::moreOptions()
 {
@@ -338,7 +459,6 @@ void ShapeVisualization::displayAllNormals(const visualization_msgs::Interactive
   menu_handler_for_text_.getCheckState (feedback->menu_entry_id, check_state);
   if (check_state == interactive_markers::MenuHandler::UNCHECKED)
   {
-    //ROS_INFO(" entry state changed ");
     ROS_INFO ("Displaying all Normals...");
     menu_handler_for_text_.setCheckState (feedback->menu_entry_id, interactive_markers::MenuHandler::CHECKED);
 
@@ -349,7 +469,6 @@ void ShapeVisualization::displayAllNormals(const visualization_msgs::Interactive
   }
   else if (check_state == interactive_markers::MenuHandler::CHECKED)
   {
-    //ROS_INFO(" entry state changed ");
     menu_handler_for_text_.setCheckState (feedback->menu_entry_id, interactive_markers::MenuHandler::UNCHECKED);
     ROS_INFO ("Deleting all Normals...");
     for (unsigned int j=0; j<v_sm_.size(); j++)
@@ -382,7 +501,6 @@ ShapeVisualization::displayAllCentroids (const visualization_msgs::InteractiveMa
     for (unsigned int i=0; i< sha.shapes.size();i++)
     {
 
-      //ROS_INFO(" entry state changed ");
       for (unsigned int j=0; j<v_sm_.size(); j++)
       {
         v_sm_[j]->hideCentroid(0);
@@ -413,7 +531,6 @@ ShapeVisualization::displayAllContours (const visualization_msgs::InteractiveMar
     for (unsigned int i=0; i< sha.shapes.size();i++)
     {
 
-      //ROS_INFO(" entry state changed ");
       for (unsigned int j=0; j<v_sm_.size(); j++)
       {
         v_sm_[j]->hideContour(0);
@@ -434,7 +551,6 @@ void ShapeVisualization::optionMenu() {
   eh_2 = menu_handler_for_text_.insert (eh_1, "All Normals",boost::bind (&ShapeVisualization::displayAllNormals, this, _1));
   eh_3 = menu_handler_for_text_.insert (eh_1, "All Centroids",boost::bind (&ShapeVisualization::displayAllCentroids, this, _1));
   eh_4 = menu_handler_for_text_.insert (eh_1, "All Contours",boost::bind (&ShapeVisualization::displayAllContours, this, _1));
-  //  eh_4 = menu_handler_for_text_.insert (eh_1, "Find tables",boost::bind (&ShapeVisualization::findTables, this, _1));
   eh_5 = menu_handler_for_text_.insert (eh_1, "Apply map modifications",boost::bind (&ShapeVisualization::applyModifications, this, _1));
   eh_6 = menu_handler_for_text_.insert (eh_1, "Reset all Controls",boost::bind (&ShapeVisualization::resetAll, this, _1));
 
@@ -454,68 +570,6 @@ void ShapeVisualization::optionMenu() {
 
 }
 
-//void ShapeVisualization::findTables(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback){
-//  //  cob_3d_mapping_msgs::GetTables::Request req ;
-//  //  cob_3d_mapping_msgs::GetTables::Response res;
-//
-//  cob_3d_mapping_msgs::GetObjectsOfClass::Request req;
-//  cob_3d_mapping_msgs::GetObjectsOfClass::Response res;
-//  std::vector<geometry_msgs::Pose> tablePose ;
-//  stringstream aa;
-//
-//
-//  //  interactive_markers::MenuHandler::CheckState check_state;
-//  //  menu_handler_for_text_.getCheckState (feedback->menu_entry_id, check_state);
-//
-//  //  if (check_state == interactive_markers::MenuHandler::UNCHECKED)
-//  //  {
-//  //    menu_handler_for_text_.setCheckState (feedback->menu_entry_id, interactive_markers::MenuHandler::CHECKED);
-//  if (ros::service::call("/table_extraction/get_objects_of_class",req,res))        ///table_extraction/get_tables
-//  {
-//    std::cout << "calling GetTables service..." << "\n" ;
-//    //      shape_pub_.publish(sha);
-//
-//  }
-//
-//
-//  tablePose.resize(res.objects.shapes.size()) ;
-//  visualization_msgs::InteractiveMarker interactiveMarker;
-//
-//  for (unsigned int i=0;i<res.objects.shapes.size();i++){
-//
-//    //    shapeMarker->getShape(res.objects.shapes[i]);
-//    aa.str("");
-//    aa.clear();
-//    aa << res.objects.shapes[i].id ;
-//    interactiveMarker.name = aa.str() ;
-//    //    im_server_->erase(aa.str()) ;
-//    //    im_server_->applyChanges();
-//    //    ros::Duration(2).sleep() ;
-//
-//    //    boost::shared_ptr<ShapeMarker> shapeMarker(new ShapeMarker(im_server_, res.objects.shapes[i]));
-//
-//    tablePose[i].position.x = res.objects.shapes[i].centroid.x;
-//    tablePose[i].position.y = res.objects.shapes[i].centroid.y;
-//    tablePose[i].position.z = res.objects.shapes[i].centroid.z;
-//    ROS_INFO("Position of the Table[%d]: x:%f , y:%f , z:%f", i, tablePose[i].position.x, tablePose[i].position.y, tablePose[i].position.z);
-//  }
-//
-//  //  boost::shared_ptr<ShapeMarker> shapeMarker(new ShapeMarker(im_server_, res.objects.shapes[i],i));
-//  //      //      ShapeMarker sm(im_server_,sha.shapes.at(j),ctr);
-//  //      shapeMarker->getShape(sha.shapes.at(j));
-//  //      shapeMarker->resetMarker(true,Imarker);
-//
-//
-//  //  }
-//  //  else if (check_state == interactive_markers::MenuHandler::CHECKED)
-//  //  {
-//  //    menu_handler_for_text_.setCheckState (feedback->menu_entry_id, interactive_markers::MenuHandler::UNCHECKED);
-//  //    res.tables.clear();
-//  //  }
-//  //  menu_handler_for_text_.reApply (*im_server_);
-//  //  im_server_->applyChanges ();
-//}
-
 void
 ShapeVisualization::shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr& sa)
 {
@@ -528,11 +582,15 @@ ShapeVisualization::shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr
   for (unsigned int i = 0; i < sa->shapes.size (); i++)
   {
     sha.shapes.push_back(sa->shapes[i]);
-    sha.shapes[i].id = i;
-    boost::shared_ptr<ShapeMarker> sm(new ShapeMarker(im_server_, sa->shapes[i],moved_shapes_indices_,interacted_shapes_,deleted_markers_indices_));
+    sha.shapes[i].id = sa->shapes[i].id;
+
+    std::cout << "shape id: " << sa->shapes[i].id << "\n" ;
+    boost::shared_ptr<ShapeMarker> sm(new ShapeMarker(im_server_, sa->shapes[i],moved_shapes_indices_
+        ,interacted_shapes_,deleted_markers_indices_,false,false)) ;//,deleted_));
     v_sm_.push_back(sm);
+    marker_pub_.publish(sm->getMarker());
   }
-  im_server_->applyChanges(); //update changes
+  //    im_server_->applyChanges(); //update changes
 }
 
 int
@@ -541,5 +599,6 @@ main (int argc, char** argv)
   ros::init (argc, argv, "shape_visualization");
   ROS_INFO("shape_visualization node started....");
   ShapeVisualization sv;
+
   ros::spin();
 }
