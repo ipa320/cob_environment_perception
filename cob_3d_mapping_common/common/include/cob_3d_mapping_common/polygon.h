@@ -67,6 +67,7 @@ extern "C" {
 #include "cob_3d_mapping_common/gpc.h"
 }
 #include <fstream>
+#include <iostream>
 
 //#include "cob_3d_mapping_common/stop_watch.h"
 
@@ -123,6 +124,7 @@ namespace cob_3d_mapping
     inline bool hasSimilarParametersWith(const Polygon::Ptr& poly) const
     {
       Eigen::Vector3f d = (this->centroid - poly->centroid).head(3);
+      std::cout << d(0) <<","<<d(1)<<","<<d(2)<< std::endl;
       return ( fabs(poly->normal.dot(this->normal)) > this->merge_settings_.angle_thresh &&
                fabs( d.dot(this->normal) ) < this->merge_settings_.d_thresh &&
                fabs( d.dot(poly->normal) ) < this->merge_settings_.d_thresh );
