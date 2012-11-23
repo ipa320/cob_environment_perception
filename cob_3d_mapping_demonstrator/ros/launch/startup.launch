@@ -21,6 +21,7 @@
   <node name="kill" type="kill_xtion.sh" pkg="cob_3d_mapping_demonstrator"/>
   <include file="$(find cob_3d_mapping_demonstrator)/ros/launch/openni.launch"/>
   <include file="$(find cob_3d_visualization)/launch/shape_visualization.launch"/>
+	<node name="rviz" type="rviz" pkg="rviz" output="screen" args="$(find cob_3d_mapping_demonstrator)/rviz.vcg"/>
 	
 
 	<!--node ns="cob_3d_mapping_demonstrator_controller" pkg="cob_teleop" type="teleop_cob" name="spawn_teleop_keyboard" output="screen"/-->
