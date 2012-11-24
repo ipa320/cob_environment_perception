@@ -95,10 +95,14 @@ namespace cob_3d_segmentation
     SimpleSegmentationNodelet()
       : one_()
       , seg_()
+      , down_(new PointCloud)
       , segmented_(new PointCloud)
       , normals_(new NormalCloud)
       , labels_(new LabelCloud)
       , centroid_passthrough_(5.0f)
+      , min_cluster_size_(100)
+      , filter_(false)
+      , downsample_(false)
     { }
 
     ~SimpleSegmentationNodelet()
@@ -122,12 +126,15 @@ namespace cob_3d_segmentation
     FastSegmentation<pcl::PointXYZRGB, pcl::Normal, PointLabel> seg_;
     PolygonExtraction pe_;
 
+    PointCloud::Ptr down_;
     PointCloud::Ptr segmented_;
     NormalCloud::Ptr normals_;
     LabelCloud::Ptr labels_;
 
     float centroid_passthrough_;
-
+    int min_cluster_size_;
+    bool filter_;
+    bool downsample_;
   };
 }
 

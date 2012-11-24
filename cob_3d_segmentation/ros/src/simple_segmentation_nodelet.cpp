@@ -67,6 +67,7 @@
 #include <cob_3d_mapping_msgs/ShapeArray.h>
 #include <cob_3d_mapping_common/stop_watch.h>
 #include "cob_3d_segmentation/simple_segmentation_nodelet.h"
+#include "cob_3d_mapping_filters/downsample_filter.h"
 
 void
 cob_3d_segmentation::SimpleSegmentationNodelet::onInit()
@@ -97,20 +98,35 @@ cob_3d_segmentation::SimpleSegmentationNodelet::configCallback(
 {
   NODELET_INFO("[segmentation]: received new parameters");
   centroid_passthrough_ = config.centroid_passthrough;
+  filter_ = config.filter;
+  min_cluster_size_ = config.min_cluster_size;
+  downsample_ = config.downsample;
 }
 
 void
 cob_3d_segmentation::SimpleSegmentationNodelet::receivedCloudCallback(PointCloud::ConstPtr cloud)
 {
   PrecisionStopWatch t, t2;
-  NODELET_INFO("Start with segmentation .... ");
+  NODELET_INFO("Start with downsampling .... ");
   t2.precisionStart();
-  one_.setInputCloud(cloud);
+  if(downsample_)
+  {
+    cob_3d_mapping_filters::DownsampleFilter<pcl::PointXYZRGB> down;
+    down_->header = cloud->header;
+    down.setInputCloud(cloud);
+    down.filter(*down_);
+    *segmented_ = *down_;
+  }
+  else
+  {
+    *segmented_ = *down_ = *cloud;
+  }
+
+  NODELET_INFO("Start with segmentation .... ");
+  one_.setInputCloud(down_);
   one_.compute(*normals_);
 
-  *segmented_ = *cloud;
-  seg_.setInputCloud(cloud);
-  seg_.createSeedPoints();
+  seg_.setInputCloud(down_);
   t.precisionStart();
   seg_.compute();
   std::cout << "segmentation took " << t.precisionStop() << " s." << std::endl;
@@ -118,19 +134,24 @@ cob_3d_segmentation::SimpleSegmentationNodelet::receivedCloudCallback(PointCloud
 
   pub_segmented_.publish(segmented_);
 
+  // --- start shape array publisher: ---
   PointCloud::Ptr hull(new PointCloud);
   cob_3d_mapping_msgs::ShapeArray sa;
-  sa.header = cloud->header;
-  sa.header.frame_id = cloud->header.frame_id.c_str();
+  sa.header = down_->header;
+  sa.header.frame_id = down_->header.frame_id.c_str();
   for (ClusterPtr c = seg_.clusters()->begin(); c != seg_.clusters()->end(); ++c)
   {
-    if(c->size() < 20) continue;
+    if(c->size() < min_cluster_size_) continue;
     Eigen::Vector3f centroid = c->getCentroid();
     if(centroid(2) > centroid_passthrough_) continue;
-    if(c->size() <= ceil(1.1f * (float)c->border_points.size())) { /*std::cout << "Size: "<< c->size() << std::endl;*/ continue; }
+    if(c->size() <= ceil(1.1f * (float)c->border_points.size()))  continue;
+
+    seg_.clusters()->computeClusterComponents(c);
+    if(filter_ && !c->is_save_plane) continue;
+
 
     PolygonContours<PolygonPoint> poly;
-    pe_.outline(cloud->width, cloud->height, c->border_points, poly);
+    pe_.outline(down_->width, down_->height, c->border_points, poly);
     if(!poly.polys_.size()) continue; // continue, if no contours were found
     int max_idx=0, max_size=0;
     for (int i = 0; i < (int)poly.polys_.size(); ++i)
@@ -142,12 +163,12 @@ cob_3d_segmentation::SimpleSegmentationNodelet::receivedCloudCallback(PointCloud
     cob_3d_mapping_msgs::Shape* s = &sa.shapes.back();
     s->id = 0;
     s->points.resize(poly.polys_.size());
-    s->header.frame_id = cloud->header.frame_id.c_str();
-    Eigen::Vector3f color = c->computeDominantColorVector().cast<float>();
+    s->header.frame_id = down_->header.frame_id.c_str();
+    /*Eigen::Vector3f color = c->computeDominantColorVector().cast<float>();
     float tmp_inv = 1.0f / 255.0f;
     s->color.r = color(0) * tmp_inv;
     s->color.g = color(1) * tmp_inv;
-    s->color.b = color(2) * tmp_inv;
+    s->color.b = color(2) * tmp_inv;*/
 
     for (int i = 0; i < (int)poly.polys_.size(); ++i)
     {
@@ -155,22 +176,23 @@ cob_3d_segmentation::SimpleSegmentationNodelet::receivedCloudCallback(PointCloud
       {
         s->holes.push_back(false);
         std::vector<PolygonPoint>::iterator it = poly.polys_[i].begin();
-        for ( ; it != poly.polys_[i].end(); ++it)
-          hull->push_back( cloud->points[PolygonPoint::getInd(it->x, it->y)] );
+        for ( ; it != poly.polys_[i].end(); ++it) {
+          hull->push_back( down_->points[ it->x + it->y * down_->width ] );
+        }
       }
       else
       {
         s->holes.push_back(true);
         std::vector<PolygonPoint>::reverse_iterator it = poly.polys_[i].rbegin();
-        for ( ; it != poly.polys_[i].rend(); ++it)
-          hull->push_back( cloud->points[PolygonPoint::getInd(it->x, it->y)] );
+        for ( ; it != poly.polys_[i].rend(); ++it) {
+          hull->push_back( down_->points[ it->x + it->y * down_->width ] );
+        }
       }
       hull->height = 1;
       hull->width = hull->size();
       pcl::toROSMsg(*hull, s->points[i]);
       hull->clear();
     }
-    seg_.clusters()->computeClusterComponents(c);
 
     s->centroid.x = centroid[0];
     s->centroid.y = centroid[1];

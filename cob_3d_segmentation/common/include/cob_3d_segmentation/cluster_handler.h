@@ -190,10 +190,10 @@ namespace cob_3d_segmentation
       c->addIndex(idx);
       c->sum_points_ += surface_->points[idx].getVector3fMap();
       c->sum_orientations_ += normals_->points[idx].getNormalVector3fMap();
-      c->sum_rgb_(0) += surface_->points[idx].r;
+      /*c->sum_rgb_(0) += surface_->points[idx].r;
       c->sum_rgb_(1) += surface_->points[idx].g;
       c->sum_rgb_(2) += surface_->points[idx].b;
-      c->color_.addColor(surface_->points[idx].r, surface_->points[idx].g, surface_->points[idx].b);
+      c->color_.addColor(surface_->points[idx].r, surface_->points[idx].g, surface_->points[idx].b);*/
     }
 
     inline void updateNormal(ClusterPtr c, const Eigen::Vector3f& normal) const { c->sum_orientations_ += normal; }
@@ -222,15 +222,24 @@ namespace cob_3d_segmentation
 
     void addBorderIndicesToClusters()
     {
-      int mask[] =
-        {
-          -labels_->width, 1, labels_->width, -1
-          /*-labels_->width - 1, -labels_->width, -labels_->width + 1,
-          -1, 1,
-          labels_->width - 1, labels_->width, labels_->width + 1*/
-        };
-
+      int w = labels_->width;
+      int mask[] = { -w, 1, w, -1 };
       int curr_label, count;
+
+      for (size_t y = w; y < labels_->size() - w; y+=w)
+      {
+        for (size_t i=y+1; i < y+w-1; ++i)
+        {
+          curr_label = (*labels_)[i].label;
+          if(curr_label == I_NAN) continue;
+          count = 0;
+          for (int m=0; m<4; ++m) count += (curr_label != (*labels_)[ i+mask[m] ].label);
+          if(count >= 4 || count < 1) continue;
+          id_to_cluster_[curr_label]->border_points.push_back(PolygonPoint(i%w,i/w));
+        }
+      }
+
+      /*
       for (size_t idx = 0; idx < labels_->size(); ++idx)
       {
         count = 0;
@@ -246,6 +255,7 @@ namespace cob_3d_segmentation
         if (count >= 4 || count < 1) continue;
         id_to_cluster_[curr_label]->border_points.push_back(PolygonPoint(x, y));
       }
+      */
       /*
       for (size_t idx = labels_->width; idx < ( labels_->size() - labels_->width ); ++idx)
       {
