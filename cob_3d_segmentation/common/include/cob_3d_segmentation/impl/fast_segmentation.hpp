@@ -77,6 +77,13 @@ template <typename PointT, typename PointNT, typename PointLabelT, typename Sens
 cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT,SensorT,ClusterHdlT>::createSeedPoints()
 {
   int n = labels_->width * labels_->height;
+  for(size_t i = 0; i<labels_->width; ++i)
+    (*labels_)[i].label = I_NAN;
+  for(size_t i = labels_->size() - labels_->width; i<labels_->size(); ++i)
+    (*labels_)[i].label = I_NAN;
+  for(size_t i = labels_->width; i<labels_->size(); i+=labels_->width) {
+    (*labels_)[i].label = I_NAN; (*labels_)[i+labels_->width-1].label = I_NAN; }
+
   seeds_.clear();
   p_seeds_.resize(n);
   switch (seed_method_)
@@ -86,10 +93,16 @@ cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT,SensorT,Cluster
     p_seeds_[0] = seeds_.insert(seeds_.end(), 0);
     for(unsigned int i = 1; i<n; ++i)
     {
-      if(surface_->points[i].z != surface_->points[i].z)
+      //if(surface_->points[i].z != surface_->points[i].z)
+      if((*labels_)[i].label == I_NAN) {
         p_seeds_[i] = p_seeds_[rand()%i];
-      else
+      } else if((*normals_)[i].normal[2] != (*normals_)[i].normal[2]) {
+        (*labels_)[i].label = I_NAN;
+        p_seeds_[i] = p_seeds_[rand()%i];
+        //std::cout << "NAN---" << std::endl;
+      } else {
         p_seeds_[i] = seeds_.insert(p_seeds_[rand()%i],i);
+      }
     }
     p_seeds_[0] = seeds_.insert(p_seeds_[rand()%n],0);
     seeds_.pop_back();
@@ -100,7 +113,8 @@ cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT,SensorT,Cluster
   {
     for(unsigned int i = 0; i<n; ++i)
     {
-      if(surface_->points[i].z != surface_->points[i].z)
+      //if(surface_->points[i].z != surface_->points[i].z)
+      if((*labels_)[i].label == I_NAN)
         p_seeds_[i] = seeds_.end();
       else
         p_seeds_[i] = seeds_.insert(seeds_.end(),i);
@@ -114,6 +128,8 @@ cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT,SensorT,Cluster
 template <typename PointT, typename PointNT, typename PointLabelT, typename SensorT, typename ClusterHdlT> bool
 cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT,SensorT,ClusterHdlT>::compute()
 {
+  createSeedPoints();
+
   int w = labels_->width, h = labels_->height, s = 1;
   int mask[4][3] = { { -s, -w,  s }, // from below
                      { -w,  s,  w }, // from left
@@ -140,22 +156,14 @@ cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT,SensorT,Cluster
       seg_q.pop_front();
       //SeedPoint p = *seg_q.top();
       //seg_q.pop();
-      bool is_border_point = false;
+
       for(int i=0; i<mask_size; ++i)
       {
         int i_idx = p.idx + mask[p.i_came_from][i];
         if (i_idx >= w*h) continue;
 
         int* p_label = &(labels_->points[ i_idx ]).label;
-        if(*p_label != I_UNDEF)
-        {
-          if(*p_label != c->id())
-          {
-            clusters_->getCluster(*p_label)->border_points.push_back(PolygonPoint(i_idx % w, i_idx / w));
-            is_border_point = true;
-          }
-          continue;
-        }
+        if(*p_label != I_UNDEF) continue;
 
         Eigen::Vector3f i_n = c->getOrientation();
         Eigen::Vector3f i_c = c->getCentroid();
@@ -163,6 +171,11 @@ cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT,SensorT,Cluster
         if(!SensorT::areNeighbors((*surface_)[p.idx].z, (*surface_)[i_idx].z)) continue;
         //if(!SensorT::areNeighbors(i_c(2) + d, i_c(2), 6.0f)) { continue; }
         float dot_value = fabs( i_n.dot((*normals_)[i_idx].getNormalVector3fMap()) );
+        /*if(i_n(2) != i_n(2))
+          std::cout << "----------  NAN" << std::endl;
+        if( (*normals_)[i_idx].normal[2] != (*normals_)[i_idx].normal[2] )
+          std::cout << "----------  NAN  !!!!" << std::endl;
+        */
         if(dot_value > n_threshold(c->size()))
         {
           seg_q.push_back( SeedPoint::Ptr(new SeedPoint(i_idx, LISTMOD(i + p.i_came_from - 1, 4), dot_value)) );
@@ -172,9 +185,9 @@ cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT,SensorT,Cluster
           *p_label = c->id();
         }
       }
-      if(is_border_point) c->border_points.push_back(PolygonPoint(p.idx % w, p.idx / w));
     }
   }
+  clusters_->addBorderIndicesToClusters();
 }
 
 #endif

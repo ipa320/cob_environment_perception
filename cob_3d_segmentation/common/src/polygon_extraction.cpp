@@ -80,8 +80,7 @@ int cob_3d_segmentation::PolygonExtraction::getPos(int *ch, const int xx, const 
   const int i=0;
   for(int x=-1; x<=1; x++) {
     for(int y=-1; y<=1; y++) {
-      if( xx+x>=0 && yy+y>=0 && xx+x<w && yy+y<h &&
-          (x||y) && ch[TPoint::getInd(xx+x,yy+y)]>0)
+      if( xx+x>=0 && yy+y>=0 && xx+x<w && yy+y<h && (x||y) && ch[xx+x + (yy+y)*w]>0)
       {
         p |= (1<<Contour2D::SplineMap[ (y+1)*3 + x+1]);
       }
@@ -103,7 +102,7 @@ void cob_3d_segmentation::PolygonExtraction::outline(const int w, const int h, s
   }
 
   for(size_t j=0; j<out.size(); j++) {
-    ch_[ TPoint::getInd(out[j].x,out[j].y) ]=(int)j+1;
+    ch_[ out[j].x + out[j].y * w ]=(int)j+1;
   }
 
   if(outline_check_size_<out.size()) {
@@ -134,13 +133,13 @@ void cob_3d_segmentation::PolygonExtraction::outline(const int w, const int h, s
     std::stack<typename std::vector<TPoint>::size_type> forked_points;
     while(1)
     {
-      if(x<0 || y<0 || x>=w || y>=h || ch_[ TPoint::getInd(x,y) ]<1) {
+      if(x<0 || y<0 || x>=w || y>=h || ch_[ x + y * w ]<1) {
         break;
       }
 
-      int ch_old = ch_[ TPoint::getInd(x,y) ];
-      outline_check_[ch_[ TPoint::getInd(x,y) ]-1]=true;
-      ch_[ TPoint::getInd(x,y) ]=-2;
+      int ch_old = ch_[ x+y*w ];
+      outline_check_[ch_[ x+y*w ]-1]=true;
+      ch_[ x+y*w ]=-2;
 
       int p=getPos<TPoint>(ch_,x,y,w,h);
 
@@ -154,7 +153,7 @@ void cob_3d_segmentation::PolygonExtraction::outline(const int w, const int h, s
         x = forked_states.top().second.x;
         y = forked_states.top().second.y;
         bf = forked_states.top().second.bf;
-        ch_ [ TPoint::getInd(x,y) ] = forked_states.top().first;
+        ch_ [ x+y*w ] = forked_states.top().first;
         forked_states.pop();
         poly.removeLastPoints(forked_points.top());
         forked_points.pop();
@@ -188,7 +187,7 @@ void cob_3d_segmentation::PolygonExtraction::outline(const int w, const int h, s
   }
 
   for(size_t j=0; j<out.size(); j++) {
-    ch_[ TPoint::getInd(out[j].x,out[j].y) ]=0;
+    ch_[ out[j].x + out[j].y * w ]=0;
   }
 
 }
