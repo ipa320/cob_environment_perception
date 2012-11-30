@@ -1,40 +1,48 @@
-/****************************************************************
+/*!
+ *****************************************************************
+ * \file
  *
- * Copyright (c) 2011
+ * \note
+ *   Copyright (c) 2012 \n
+ *   Fraunhofer Institute for Manufacturing Engineering
+ *   and Automation (IPA) \n\n
  *
- * Fraunhofer Institute for Manufacturing Engineering
- * and Automation (IPA)
+ *****************************************************************
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ * \note
+ *  Project name: care-o-bot
+ * \note
+ *  ROS stack name: cob_environment_perception_intern
+ * \note
+ *  ROS package name: cob_3d_mapping_features
  *
- * Project name: care-o-bot
- * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_features
+ * \author
+ *  Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
+ * \author
+ *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ *
+ * \date Date of creation: 04/2012
+ *
+ * \brief
  * Description:
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
- * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
- * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
- *
- * Date of creation: 04/2012
  * ToDo:
  *
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *****************************************************************
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
+ *     - Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer. \n
+ *     - Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Fraunhofer Institute for Manufacturing
+ *       documentation and/or other materials provided with the distribution. \n
+ *     - Neither the name of the Fraunhofer Institute for Manufacturing
  *       Engineering and Automation (IPA) nor the names of its
  *       contributors may be used to endorse or promote products derived from
- *       this software without specific prior written permission.
+ *       this software without specific prior written permission. \n
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License LGPL as
@@ -43,7 +51,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License LGPL for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
@@ -182,10 +190,10 @@ namespace cob_3d_segmentation
       c->addIndex(idx);
       c->sum_points_ += surface_->points[idx].getVector3fMap();
       c->sum_orientations_ += normals_->points[idx].getNormalVector3fMap();
-      c->sum_rgb_(0) += surface_->points[idx].r;
+      /*c->sum_rgb_(0) += surface_->points[idx].r;
       c->sum_rgb_(1) += surface_->points[idx].g;
       c->sum_rgb_(2) += surface_->points[idx].b;
-      c->color_.addColor(surface_->points[idx].r, surface_->points[idx].g, surface_->points[idx].b);
+      c->color_.addColor(surface_->points[idx].r, surface_->points[idx].g, surface_->points[idx].b);*/
     }
 
     inline void updateNormal(ClusterPtr c, const Eigen::Vector3f& normal) const { c->sum_orientations_ += normal; }
@@ -214,15 +222,24 @@ namespace cob_3d_segmentation
 
     void addBorderIndicesToClusters()
     {
-      int mask[] =
-        {
-          -labels_->width, 1, labels_->width, -1
-          /*-labels_->width - 1, -labels_->width, -labels_->width + 1,
-          -1, 1,
-          labels_->width - 1, labels_->width, labels_->width + 1*/
-        };
-
+      int w = labels_->width;
+      int mask[] = { -w, 1, w, -1 };
       int curr_label, count;
+
+      for (size_t y = w; y < labels_->size() - w; y+=w)
+      {
+        for (size_t i=y+1; i < y+w-1; ++i)
+        {
+          curr_label = (*labels_)[i].label;
+          if(curr_label == I_NAN) continue;
+          count = 0;
+          for (int m=0; m<4; ++m) count += (curr_label != (*labels_)[ i+mask[m] ].label);
+          if(count >= 4 || count < 1) continue;
+          id_to_cluster_[curr_label]->border_points.push_back(PolygonPoint(i%w,i/w));
+        }
+      }
+
+      /*
       for (size_t idx = 0; idx < labels_->size(); ++idx)
       {
         count = 0;
@@ -238,6 +255,7 @@ namespace cob_3d_segmentation
         if (count >= 4 || count < 1) continue;
         id_to_cluster_[curr_label]->border_points.push_back(PolygonPoint(x, y));
       }
+      */
       /*
       for (size_t idx = labels_->width; idx < ( labels_->size() - labels_->width ); ++idx)
       {
@@ -265,7 +283,6 @@ namespace cob_3d_segmentation
         for(std::vector<PolygonPoint>::iterator bp = c->border_points.begin(); bp != c->border_points.end(); ++bp)
         {
           points->points[PolygonPoint::getInd(bp->x,bp->y)].rgb = LBL_BORDER;
-//surface_->points[PolygonPoint::getInd(bp->x,bp->y)].rgb;
         }
       }
     }
