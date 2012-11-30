@@ -398,7 +398,7 @@ namespace cob_3d_mapping
     //########## member variables#################
     //needed for 32-bit systems: see http://eigen.tuxfamily.org/dox/TopicStructHavingEigenMembers.html
     EIGEN_MAKE_ALIGNED_OPERATOR_NEW
-    std::vector<std::vector<Eigen::Vector3f> > contours;/**< Contours of polygon sturcure. */
+    std::vector<std::vector<Eigen::Vector3f> > contours;/**< Contours of polygon structure. */
     Eigen::Vector3f normal;/**< Normal of polygons structure. */
     double d;
     Eigen::Affine3f transform_from_world_to_plane;/**< Transformation from world coordinate system to cvoordinate system on polygon. */
