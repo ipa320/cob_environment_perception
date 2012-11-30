@@ -33,7 +33,8 @@ namespace Slam_CurvedPolygon
   {
   public:
 
-    typedef Slam_Surface::SurfaceNurbs SURFACE;
+    //typedef Slam_Surface::SurfaceNurbs SURFACE;
+    typedef Slam_Surface::SurfaceTriSpline SURFACE;
     typedef BoundingBox::OOBB BB;
 
     Slam_Surface::Surface::SWINDOW getWindow() const {
@@ -117,6 +118,7 @@ namespace Slam_CurvedPolygon
 
       {
         Slam_Surface::Surface::SWINDOW w=getWindow();
+#ifdef INIT0
         if(data_.polyline.size())
           surface_->init(data_.parameter ,w.min_x,w.max_x, w.min_y,w.max_y, data_.weight);
         else {
@@ -142,6 +144,12 @@ namespace Slam_CurvedPolygon
           p1.add(data_.polyline[i].x,data_.polyline[i].y);
         }
         data_.weight *= 100*100/area(p1);
+#else
+        Slam_Surface::PolynomialSurface ps;
+        ps.init(data_.parameter ,w.min_x,w.max_x, w.min_y,w.max_y, data_.weight);
+
+        surface_->init(&ps, outline_.get());
+#endif
       }
 
       update_points3d();
@@ -686,6 +694,7 @@ namespace Slam_CurvedPolygon
 
     void getControlPoints(std::vector<std::vector<Eigen::Vector3f> > &pts) const
     {
+#ifdef SURFACE_NURBS
       for(int i=0; i<surface_->getNurbs().ctrlPnts().rows(); i++) {
         pts.push_back(std::vector<Eigen::Vector3f>());
         for(int j=0; j<surface_->getNurbs().ctrlPnts().cols(); j++) {
@@ -695,6 +704,7 @@ namespace Slam_CurvedPolygon
           pts.back().push_back(surface_->_project2world(v2));
         }
       }
+#endif
     }
 
     bool canMerge(const ex_curved_polygon &o, const float diff=0.001f, bool *sw=NULL) const {
