@@ -8,8 +8,8 @@
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
  * Project name: care-o-bot
- * ROS stack name: cob_environment_perception
- * ROS package name: cob_3d_mapping_pipeline_fake
+ * ROS stack name: cob_environment_perception_intern
+ * ROS package name: cob_3d_mapping_semantics
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -17,7 +17,7 @@
  * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 12/2011
+ * Date of creation: 11/2012
  * ToDo:
  *
  *
@@ -53,47 +53,122 @@
  *
  ****************************************************************/
 
+#ifndef SUPPORTING_PLANE_EXTRACTION_H_
+#define SUPPORTING_PLANE_EXTRACTION_H_
+
 //##################
 //#### includes ####
 
-// ROS includes
-#include <ros/ros.h>
-#include <rosbag/bag.h>
-#include <rosbag/view.h>
+//standard includes
+#include <iostream>
+#include <fstream>
+#include <sstream>
+#include <string>
+#include <vector>
+#include <math.h>
 
-// ROS message includes
-#include <cob_3d_mapping_msgs/ShapeArray.h>
-#include <cob_3d_mapping_msgs/GetGeometryMap.h>
+//PCL includes
+#include "pcl/point_types.h"
+#include "pcl/common/centroid.h"
+#include "pcl/common/eigen.h"
 
-std::string file_path;
-cob_3d_mapping_msgs::ShapeArray::ConstPtr sa;
+//other includes
+#include <Eigen/Core>
 
-bool
-getMap(cob_3d_mapping_msgs::GetGeometryMap::Request &req,
-       cob_3d_mapping_msgs::GetGeometryMap::Response &res)
+#include <cob_3d_mapping_common/polygon.h>
+
+using namespace cob_3d_mapping;
+
+class SupportingPlaneExtraction
 {
-  res.map = *sa;
-  return true;
-}
 
-int main (int argc, char **argv)
-{
-  ros::init(argc, argv, "geometry_map_node");
-  ros::NodeHandle nh;
+public:
 
-  ros::param::get("~file_path", file_path);
-  rosbag::Bag bag;
-  bag.open(file_path, rosbag::bagmode::Read);
-  rosbag::View view(bag, rosbag::TopicQuery("/geometry_map/map_array"));
-  rosbag::MessageInstance m = *(view.begin());
-  sa = m.instantiate<cob_3d_mapping_msgs::ShapeArray>();
-  bag.close();
+  /**
+   * @brief Constructor
+   */
+  SupportingPlaneExtraction ()
+  :distance_min_ (0.4),
+   distance_max_ (3),
+   area_min_ (0.3),
+   area_max_ (3)
+  {
+    /// void
+  }
 
-  ros::ServiceServer get_map_server = nh.advertiseService("get_map", &getMap);
-  ros::Publisher pub = nh.advertise<cob_3d_mapping_msgs::ShapeArray>("map_array",1);
-  ros::Duration(0.5).sleep();
-  pub.publish(*sa);
-  ros::spin();
+  /**
+   * @brief Destructor
+   */
+  ~SupportingPlaneExtraction ()
+  {
 
-  return 0;
-}
+    /// void
+  }
+
+
+  /**
+   * @brief Set Minimum threshold for distance
+   *
+   * @param distance_min minimum threshold value
+   *
+   */
+  void
+  setDistanceMin (double distance_min)
+  {
+    distance_min_ = distance_min;
+  }
+
+  /**
+   * @brief Set Maximum threshold for distance
+   *
+   * @param distance_man maximum threshold value
+   *
+   */
+  void
+  setDistanceMax (double distance_max)
+  {
+    distance_max_ = distance_max;
+  }
+  /**
+   * @brief Set Minimum threshold for area of a polygon
+   *
+   * @param area_min minimum threshold value
+   *
+   */
+  void
+  setAreaMin (double area_min)
+  {
+    area_min_ = area_min;
+  }
+
+  /**
+   * @brief Set Maximum threshold for area of a polygon
+   *
+   * @param area_max maximum threshold value
+   *
+   */
+  void
+  setAreaMax (double area_max)
+  {
+    area_max_ = area_max;
+  }
+
+
+  /**
+   * @brief extract the supporting plane
+   *
+   * @return ID of the support plane
+   */
+  bool
+  getSupportingPlane(std::vector<Polygon::Ptr>& polys, Polygon& sp);
+
+
+protected:
+
+  double distance_min_, distance_max_;
+  double area_min_, area_max_;
+
+
+};
+
+#endif /* SUPPORTING_PLANE_EXTRACTION_H_ */

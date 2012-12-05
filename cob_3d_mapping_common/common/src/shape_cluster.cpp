@@ -17,14 +17,14 @@
 * ROS package name: cob_3d_mapping_common
 *
 * \author
-* Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+* Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
 * \author
 * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
 *
-* \date Date of creation: 03/2012
+* \date Date of creation: 08/2012
 *
 * \brief
-* Parent class representing geometric shapes
+* Class representing ShapeCluster shapes
 *
 *****************************************************************
 *
@@ -56,69 +56,57 @@
 * If not, see <http://www.gnu.org/licenses/>.
 *
 ****************************************************************/
+#include "cob_3d_mapping_common/shape_cluster.h"
+#include <iostream>
 
-#ifndef SHAPE_H_
-#define SHAPE_H_
-
-#include <Eigen/Core>
-#include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
-
-#include <Eigen/Eigenvalues>
-#include <Eigen/Geometry>
-#include <vector>
-
-namespace cob_3d_mapping
+void
+cob_3d_mapping::ShapeCluster::computeAttributes()
 {
-
-  /**
-  * \brief Class, representing Shape objects.
-  * \note Base class for Cylinder and Polygon classes
-  */
-  class Shape
-
+  // TODO: proper computation of bounding box size
+  scale = Eigen::Vector3f(0.1,0.1,0.1);
+  this->centroid = Eigen::Vector4f::Zero();
+  int i = 0;
+  for(std::list<Shape::Ptr>::iterator it=shapes.begin(); it!=shapes.end(); ++it)
   {
-  public:
-    /**
-    * \brief Shape Pointer.
-    * \details Boost shared pointer to shape object.
-    */
-    typedef boost::shared_ptr<Shape> Ptr;
-
-  public:
-    /**
-    * \brief Constructor of shape object.
-    */
-    Shape()
-      : id(0)
-      , merged(1)
-      , centroid(Eigen::Vector4f::Zero())
-      , color(4,1)
-    { }
-
-    /**
-    * \brief Destructor of shape.
-    */
-    virtual ~Shape() { }
-
-    /**
-    * \brief Transform shape to target frame.
-    * \param[in] trafo Transformatuon, which is applied.
-    */
-    virtual void transform2tf(const Eigen::Affine3f& trafo)=0;
-
-    double computeDistanceFromViewpoint() {return centroid.norm();}
-
-    unsigned int id;/**< ID of shape.*/
-    unsigned int merged;/**< Number of times, shape has been merged.*/
-    unsigned int frame_stamp;/**< Frame, shape was created or merged the last time.*/
-    Eigen::Vector4f centroid;/**< Cenroid of shape. */
-    std::vector<float> color;/**< Color of shape as RGB vector. */
-  };
-
-  typedef boost::shared_ptr<Shape> ShapePtr;/**< Boosted shared pointer to shape. */
-
+    this->centroid += (*it)->centroid;
+    ++i;
+  }
+  this->centroid /= static_cast<float>(i);
 }
 
+void
+cob_3d_mapping::ShapeCluster::transform2tf(const Eigen::Affine3f& trafo)
+{
+  for(std::list<Shape::Ptr>::iterator i=shapes.begin(); i!=shapes.end(); ++i) (*i)->transform2tf(trafo);
+}
 
-#endif /* SHAPE_H_ */
+void
+cob_3d_mapping::ShapeCluster::getMergeCandidates(const std::vector<ShapeCluster::Ptr>& sc_vec,
+                                                 std::vector<int>& intersections) const
+{
+  for(size_t i=0; i<sc_vec.size(); ++i)
+  {
+    //float length = (this->centroid.head(3) - sc_vec[i]->centroid.head(3)).norm();
+    //std::cout << length << std::endl;
+    if ( this->hasSimilarParametersWith(sc_vec[i]) ) intersections.push_back(i);
+  }
+}
+
+void
+cob_3d_mapping::ShapeCluster::merge(std::vector<ShapeCluster::Ptr>&sc_vec)
+{
+  int new_merged = 1;
+  for(size_t i=0; i<sc_vec.size(); ++i)
+  {
+    this->shapes.insert(this->shapes.end(), sc_vec[i]->shapes.begin(), sc_vec[i]->shapes.end());
+    new_merged += sc_vec[i]->merged;
+  }
+  this->merged = new_merged;
+  this->computeAttributes();
+}
+
+void
+cob_3d_mapping::ShapeCluster::insert(Shape::Ptr shape)
+{
+  shapes.push_back(shape);
+}

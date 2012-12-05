@@ -1,57 +1,61 @@
-/****************************************************************
- *
- * Copyright (c) 2011
- *
- * Fraunhofer Institute for Manufacturing Engineering
- * and Automation (IPA)
- *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
- * Project name: care-o-bot
- * ROS stack name: cob_environment_perception
- * ROS package name: cob_3d_mapping_common
- * Description:
- *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
- * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
- * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
- *
- * Date of creation: 03/2012
- * ToDo:
- *
- *
- *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
- *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Fraunhofer Institute for Manufacturing
- *       Engineering and Automation (IPA) nor the names of its
- *       contributors may be used to endorse or promote products derived from
- *       this software without specific prior written permission.
- *
- * This program is free software: you can redistribute it and/or modify
- * it under the terms of the GNU Lesser General Public License LGPL as
- * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
- *
- * This program is distributed in the hope that it will be useful,
- * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Lesser General Public License LGPL for more details.
- *
- * You should have received a copy of the GNU Lesser General Public
- * License LGPL along with this program.
- * If not, see <http://www.gnu.org/licenses/>.
- *
- ****************************************************************/
+/*!
+*****************************************************************
+* \file
+*
+* \note
+* Copyright (c) 2012 \n
+* Fraunhofer Institute for Manufacturing Engineering
+* and Automation (IPA) \n\n
+*
+*****************************************************************
+*
+* \note
+* Project name: Care-O-bot
+* \note
+* ROS stack name: cob_environment_perception
+* \note
+* ROS package name: cob_3d_mapping_common
+*
+* \author
+* Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+* \author
+* Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+*
+* \date Date of creation: 03/2012
+*
+* \brief
+* Conversion functions between shape message and class representations
+*
+*****************************************************************
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
+*
+* - Redistributions of source code must retain the above copyright
+* notice, this list of conditions and the following disclaimer. \n
+* - Redistributions in binary form must reproduce the above copyright
+* notice, this list of conditions and the following disclaimer in the
+* documentation and/or other materials provided with the distribution. \n
+* - Neither the name of the Fraunhofer Institute for Manufacturing
+* Engineering and Automation (IPA) nor the names of its
+* contributors may be used to endorse or promote products derived from
+* this software without specific prior written permission. \n
+*
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU Lesser General Public License LGPL as
+* published by the Free Software Foundation, either version 3 of the
+* License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU Lesser General Public License LGPL for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License LGPL along with this program.
+* If not, see <http://www.gnu.org/licenses/>.
+*
+****************************************************************/
 
 #ifndef ROS_MSG_CONV_H_
 #define ROS_MSG_CONV_H_
@@ -78,6 +82,7 @@ namespace cob_3d_mapping
   {
     s.id = p.id;
     s.type = cob_3d_mapping_msgs::Shape::POLYGON;
+
     s.params.resize(4);
     s.params[0] = p.normal(0);
     s.params[1] = p.normal(1);
@@ -90,6 +95,7 @@ namespace cob_3d_mapping
     s.color.g = p.color[1];
     s.color.b = p.color[2];
     s.color.a = p.color[3];
+
     s.points.resize(p.contours.size());
     s.holes.resize(p.holes.size());
     for(unsigned int i=0; i<p.contours.size(); i++)
@@ -137,7 +143,7 @@ namespace cob_3d_mapping
     p.d = s.params[3];
     //std::cout << "normal: " << p.normal(0) << ","  << p.normal(1) << "," << p.normal(2) << std::endl;
     //std::cout << "d: " << p.d << std::endl << std::endl;
-    p.merged = 0;
+    p.merged = 1;
     p.color[0] = s.color.r;
     p.color[1] = s.color.g;
     p.color[2] = s.color.b;
@@ -179,15 +185,15 @@ namespace cob_3d_mapping
 
     s.params.resize(10);
     // x axis
-    s.params[0]=c.axes_[1][0];
-    s.params[1]=c.axes_[1][1];
-    s.params[2]=c.axes_[1][2];
 
 
-    s.params[3]=c.axes_[2][0];
-    s.params[4]=c.axes_[2][1];
-    s.params[5]=c.axes_[2][2];
+    s.params[0]=c.normal[0];
+    s.params[1]=c.normal[1];
+    s.params[2]=c.normal[2];
 
+    s.params[3]=c.sym_axis[0];
+    s.params[4]=c.sym_axis[1];
+    s.params[5]=c.sym_axis[2];
 
     s.params[6]=c.origin_[0];
     s.params[7]=c.origin_[1];
@@ -195,12 +201,19 @@ namespace cob_3d_mapping
 
     s.params[9]=c.r_;
 
+    s.centroid.x = c.centroid[0];
+    s.centroid.y = c.centroid[1];
+    s.centroid.z = c.centroid[2];
+
+
+
+
 
     //std::cout << "normal: " << p.normal(0) << "," << p.normal(1) << "," << p.normal(2) << std::endl;
     //std::cout << "d: " << p.d << std::endl << std::endl;
 
     s.id=c.id;
-
+    s.type = cob_3d_mapping_msgs::Shape::CYLINDER;
     s.color.r=c.color[0];
     s.color.g=c.color[1];
     s.color.b=c.color[2];
@@ -241,24 +254,27 @@ namespace cob_3d_mapping
 
 
 
-    c.id = 0;
+    c.id = s.id;
     // c.centroid(0) = s.centroid.x;
     // c.centroid(1) = s.centroid.y;
     // c.centroid(2) = s.centroid.z;
 
-    c.axes_[1][0]= s.params[0];
-    c.axes_[1][1] = s.params[1];
-    c.axes_[1][2] = s.params[2];
+    c.normal[0] = s.params[0];
+    c.normal[1] = s.params[1];
+    c.normal[2] = s.params[2];
 
-    c.axes_[2][0]= s.params[3];
-    c.axes_[2][1] = s.params[4];
-    c.axes_[2][2] = s.params[5];
-
+    c.sym_axis[0]= s.params[3];
+    c.sym_axis[1] = s.params[4];
+    c.sym_axis[2] = s.params[5];
 
     c.origin_[0] = s.params[6];
     c.origin_[1] = s.params[7];
     c.origin_[2] = s.params[8];
     c.r_ = s.params[9];
+
+    c.centroid[0]=s.centroid.x;
+    c.centroid[1]=s.centroid.y;
+    c.centroid[2]=s.centroid.z;
 
 
     //std::cout << "normal: " << p.normal(0) << "," << p.normal(1) << "," << p.normal(2) << std::endl;

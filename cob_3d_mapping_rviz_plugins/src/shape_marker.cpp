@@ -63,18 +63,6 @@ namespace rviz
     polygon_ = manager->getSceneManager()->createManualObject( ss.str() );
     polygon_->setDynamic( true );
     scene_node_->attachObject( polygon_ );
-
-    if(count==1) {
-      Ogre::Light* directionalLight = manager->getSceneManager()->createLight("directionalLight");
-      if(directionalLight) {
-        directionalLight->setType(Ogre::Light::LT_DIRECTIONAL);
-        directionalLight->setDiffuseColour(Ogre::ColourValue(0.5,0.5,0.5));
-        directionalLight->setSpecularColour(Ogre::ColourValue(1,1,1));
-        directionalLight->setDirection(Ogre::Vector3( 0, -1, 0 ));
-      }
-      else
-        ROS_ERROR("couldn't create directionalLight");
-    }
   }
 
   ShapeMarker::~ShapeMarker()
@@ -91,15 +79,14 @@ namespace rviz
 
     Ogre::ColourValue color( r,g,b,a );
     Ogre::MaterialPtr mat = Ogre::MaterialManager::getSingleton().create( buf, Ogre::ResourceGroupManager::DEFAULT_RESOURCE_GROUP_NAME );
-
+    mat->getTechnique(0)->setAmbient(color*0.5/*color * 0.01f*/);
+    //mat->setDiffuse(color);
     mat->getTechnique(0)->setLightingEnabled(true);
-    mat->getTechnique(0)->setAmbient(color /*color * 0.01f*/);
     mat->setReceiveShadows(false);
-    mat->setCullingMode(Ogre::CULL_NONE);
-    mat->getTechnique(0)->setDiffuse( color );
-    //mat->getTechnique(0)->setSpecular( color );
+    //mat->setCullingMode(Ogre::CULL_NONE);
+     mat->getTechnique(0)->setDiffuse( color );
 
-    if ( true || color.a < 0.9998 )
+    if ( color.a < 0.9998 )
     {
       mat->getTechnique(0)->setSceneBlending( Ogre::SBT_TRANSPARENT_ALPHA );
       mat->getTechnique(0)->setDepthWriteEnabled( false );
