@@ -132,6 +132,7 @@ namespace Slam_Surface
 }
 
 #include "surface_nurbs.h"
+#include "surface_tri_spline.h"
 
 
 #endif /* SURFACE_H_ */
