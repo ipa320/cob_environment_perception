@@ -79,11 +79,12 @@ namespace Slam_Surface
 #endif
   public:
 
-    SurfaceTriSpline(): top_(0.1f) {}
+    SurfaceTriSpline(): top_(0.025f) {}
 
     /// init with 6 parameters
     virtual void init(const boost::array<float, 6> &params, const float min_x, const float max_x, const float min_y, const float max_y, const float weight);
     virtual void init(const PolynomialSurface *params, const float min_x, const float max_x, const float min_y, const float max_y, const float weight);
+    virtual void init(const PolynomialSurface *params, const std::vector<Eigen::Vector3f> &pts);
 
     /// get implementation details
     virtual int getSurfaceType() const {return 3;}
@@ -100,22 +101,29 @@ namespace Slam_Surface
 
     /// merge parameters
     virtual float merge(const Surface &o, const float this_w, const float o_w, const SWINDOW &wind_t, const SWINDOW &wind_o);
-    virtual float _merge(SurfaceNurbs o, const float this_w, const float o_w, const SWINDOW &wind_t, const SWINDOW &wind_o) {return 0;}
+    virtual float _merge(SurfaceNurbs o, const float this_w, const float o_w, const SWINDOW &wind_t, const SWINDOW &wind_o) {ROS_ASSERT(0);return 0;}
 
     /// transform basis
     virtual void transform(const Eigen::Matrix3f &rot, const Eigen::Vector3f &tr);
 
     /// check form against
-    virtual bool fitsCurvature(const Surface &o, const float thr) const {return true;}
+    virtual bool fitsCurvature(const Surface &o, const float thr) const {ROS_ASSERT(0);return true;}
 
     /// calc approx. area
-    virtual float area() const {return 1;}
+    virtual float area() const {ROS_ASSERT(0);return 1;}
 
     void print() const {top_.print();}
 
-    void marker(cob_3d_marker::MarkerContainer &mc) {
-      top_.add( *(cob_3d_marker::MarkerList_Line*)mc.get(2).get() );
-      top_.add( *(cob_3d_marker::MarkerList_Arrow*)mc.get(3).get() );
+    void marker(cob_3d_marker::MarkerContainer &mc) const {
+      if(mc.get(0))
+        top_.add( *(cob_3d_marker::MarkerList_Triangles*)mc.get(0).get() );
+
+      if(mc.get(2))
+        top_.add( *(cob_3d_marker::MarkerList_Line*)mc.get(2).get() );
+      if(mc.get(3))
+        top_.add( *(cob_3d_marker::MarkerList_Arrow*)mc.get(3).get() );
+      if(mc.get(4))
+        top_.add( *(cob_3d_marker::MarkerList_Text*)mc.get(4).get() );
     }
   };
 
