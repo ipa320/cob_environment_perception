@@ -86,6 +86,7 @@ namespace cob_3d_marker {
 
     MarkerList_Triangles(const int id):MarkerList(id) {
       marker_tmpl_.type = visualization_msgs::Marker::TRIANGLE_LIST;
+      marker_tmpl_.scale.x=marker_tmpl_.scale.y=marker_tmpl_.scale.z=1;
       marker_.push_back(marker_tmpl_);
     }
 
@@ -132,9 +133,9 @@ namespace cob_3d_marker {
       geometry_msgs::Point line_p;
       ::std_msgs::ColorRGBA col;
 
-      m.scale.x = 0.05;
-      m.scale.y = 0.1;
-      m.scale.z = 0.2;
+      m.scale.x = 0.025;
+      m.scale.y = 0.05;
+      m.scale.z = 0.1;
 
       m.color.r = r;
       m.color.g = g;
@@ -150,6 +151,32 @@ namespace cob_3d_marker {
       line_p.y = vb(1);
       line_p.z = vb(2);
       m.points.push_back(line_p);
+
+      m.id = getNewId();
+
+      marker_.push_back(m);
+    }
+
+  };
+
+  class MarkerList_Text : public MarkerList {
+  public:
+
+    MarkerList_Text(const int id):MarkerList(id)
+    {
+      marker_tmpl_.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+    }
+
+    void addText(const Eigen::Vector3f &pos, const std::string &text, const float size=0.1f, const float r=1, const float g=1, const float b=1, const float a=1) {
+      visualization_msgs::Marker m = marker_tmpl_;
+
+      m.pose.position.x = pos(0);
+      m.pose.position.y = pos(1);
+      m.pose.position.z = pos(2);
+
+      m.text = text;
+
+      m.scale.z = size;
 
       m.id = getNewId();
 
