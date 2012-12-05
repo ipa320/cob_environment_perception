@@ -8,8 +8,8 @@
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
  * Project name: care-o-bot
- * ROS stack name: cob_environment_perception
- * ROS package name: cob_3d_mapping_pipeline_fake
+ * ROS stack name: cob_environment_perception_intern
+ * ROS package name: cob_3d_mapping_semantics
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -17,7 +17,7 @@
  * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * Date of creation: 12/2011
+ * Date of creation: 11/2012
  * ToDo:
  *
  *
@@ -52,48 +52,51 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
+//internal include
+#include "cob_3d_mapping_semantics/supporting_plane_extraction.h"
+#include <ros/console.h>
 
-//##################
-//#### includes ####
-
-// ROS includes
-#include <ros/ros.h>
-#include <rosbag/bag.h>
-#include <rosbag/view.h>
-
-// ROS message includes
-#include <cob_3d_mapping_msgs/ShapeArray.h>
-#include <cob_3d_mapping_msgs/GetGeometryMap.h>
-
-std::string file_path;
-cob_3d_mapping_msgs::ShapeArray::ConstPtr sa;
+using namespace cob_3d_mapping;
 
 bool
-getMap(cob_3d_mapping_msgs::GetGeometryMap::Request &req,
-       cob_3d_mapping_msgs::GetGeometryMap::Response &res)
+SupportingPlaneExtraction::getSupportingPlane(std::vector<Polygon::Ptr>& polys, Polygon& sp)
 {
-  res.map = *sa;
-  return true;
+  if(polys.size() == 0)
+  {
+    ROS_ERROR("Input polygons not set, aborting...");
+    return false;
+  }
+  std::vector<Polygon::Ptr> cands;
+  for( unsigned int i=0; i<polys.size(); i++)
+  {
+    double a = polys[i]->computeArea();
+    std::cout << "Poly " << i << " (id " << polys[i]->id << " has an area of " << a << std::endl;
+    if( a > area_min_ && a < area_max_)
+    {
+      std::cout << "\tadding" << std::endl;
+      cands.push_back(polys[i]);
+    }
+  }
+  if( cands.size() == 0) return false;
+  int index = -1;
+  double dist_min = distance_max_;
+  for( unsigned int i=0; i<cands.size(); i++)
+  {
+    double d = cands[i]->computeDistanceFromViewpoint();
+    std::cout << "Cand " << i << " has a distance of " << d << std::endl;
+    if(d < distance_max_ && d > distance_min_ && d < dist_min)
+    {
+      dist_min = d;
+      index = i;
+    }
+  }
+  if( index == -1) return false;
+  //TODO: check distance
+  std::cout << cands[index]->computeArea() << ", " << cands[index]->computeDistanceFromViewpoint() << std::endl;
+  sp = *cands[index];
+  return true;//polys[index]->id;
 }
 
-int main (int argc, char **argv)
-{
-  ros::init(argc, argv, "geometry_map_node");
-  ros::NodeHandle nh;
 
-  ros::param::get("~file_path", file_path);
-  rosbag::Bag bag;
-  bag.open(file_path, rosbag::bagmode::Read);
-  rosbag::View view(bag, rosbag::TopicQuery("/geometry_map/map_array"));
-  rosbag::MessageInstance m = *(view.begin());
-  sa = m.instantiate<cob_3d_mapping_msgs::ShapeArray>();
-  bag.close();
 
-  ros::ServiceServer get_map_server = nh.advertiseService("get_map", &getMap);
-  ros::Publisher pub = nh.advertise<cob_3d_mapping_msgs::ShapeArray>("map_array",1);
-  ros::Duration(0.5).sleep();
-  pub.publish(*sa);
-  ros::spin();
 
-  return 0;
-}

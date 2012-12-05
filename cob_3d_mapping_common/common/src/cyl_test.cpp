@@ -1,9 +1,61 @@
-/*
- * cyl_test.cpp
- *
- *  Created on: May 24, 2012
- *      Author: goa-tz
- */
+/*!
+*****************************************************************
+* \file
+*
+* \note
+* Copyright (c) 2012 \n
+* Fraunhofer Institute for Manufacturing Engineering
+* and Automation (IPA) \n\n
+*
+*****************************************************************
+*
+* \note
+* Project name: Care-O-bot
+* \note
+* ROS stack name: cob_environment_perception
+* \note
+* ROS package name: cob_3d_mapping_common
+*
+* \author
+* Author: Thomas Zwölfer, email:georg.arbeiter@ipa.fhg.de
+* \author
+* Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+*
+* \date Date of creation: 05/2012
+*
+* \brief
+* ?
+*
+*****************************************************************
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
+*
+* - Redistributions of source code must retain the above copyright
+* notice, this list of conditions and the following disclaimer. \n
+* - Redistributions in binary form must reproduce the above copyright
+* notice, this list of conditions and the following disclaimer in the
+* documentation and/or other materials provided with the distribution. \n
+* - Neither the name of the Fraunhofer Institute for Manufacturing
+* Engineering and Automation (IPA) nor the names of its
+* contributors may be used to endorse or promote products derived from
+* this software without specific prior written permission. \n
+*
+* This program is free software: you can redistribute it and/or modify
+* it under the terms of the GNU Lesser General Public License LGPL as
+* published by the Free Software Foundation, either version 3 of the
+* License, or (at your option) any later version.
+*
+* This program is distributed in the hope that it will be useful,
+* but WITHOUT ANY WARRANTY; without even the implied warranty of
+* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+* GNU Lesser General Public License LGPL for more details.
+*
+* You should have received a copy of the GNU Lesser General Public
+* License LGPL along with this program.
+* If not, see <http://www.gnu.org/licenses/>.
+*
+****************************************************************/
 
 
 #include "cob_3d_mapping_common/cylinder.h"
@@ -32,18 +84,17 @@ transform_cylinder(CylinderPtr & c_ptr,Eigen::Affine3f& trafo)
 c.origin_=trafo*c.origin_;
 std::cout<<"transformed origin\n"<<c.origin_<<std::endl;
 
-for (int i = 0; i < 3; ++i) {
 
-	c.axes_[i]=trafo.rotation()*c.axes_[i];
+	c.sym_axis=trafo.rotation()*c.sym_axis;
+	c.normal = trafo.rotation()*c.normal;
 //	std::cout<<"axis -"<<i<<" \n"<<c.axes_[i]<<std::endl;
-}
 c.normal=trafo.rotation()*c.normal;
 
 float roll,pitch,yaw,x,y,z;
 pcl::getTranslationAndEulerAngles(trafo,x,y,z,roll,pitch,yaw);
 //	std::cout<<" x= "<<x<<" y= "<<z<<" z= "<<z<<" roll= "<<roll<<" pitch= "<<pitch<<" yaw= "<<yaw<<std::endl;
 
-c.assignMembers(c.axes_[1], c.axes_[2], c.origin_);	//	configure unrolled polygon
+c.computeAttributes(c.sym_axis, c.normal, c.origin_);	//	configure unrolled polygon
 }
 
 
@@ -74,7 +125,8 @@ Eigen::Vector3f origin1;
  		z_axis1 << 0,1,0;
  		axes1.push_back(z_axis1);
 
- 		c1->axes_=axes1;
+ 		c1->sym_axis = y_axis1;
+ 		c1->normal = z_axis1;
  		c1->r_=1;
 
 
@@ -92,7 +144,7 @@ Eigen::Vector3f origin1;
  		v1 << -1, 0 ,-1;
  		contour1.push_back(v1);
 
- 		c1->merged=1;
+ 		c1->merged=0;
  		origin1 << 0,0,0;
  		c1->origin_=origin1;
 
@@ -150,8 +202,9 @@ Eigen::Vector3f origin1;
   		z_axis2 << 0,1,0;
   		axes2.push_back(z_axis2);
 
-  		c2->axes_=axes2;
-  		c2->r_=1;
+c2->sym_axis=y_axis2;
+c2->normal = z_axis2;
+c2->r_=1;
 
 
 
@@ -168,7 +221,7 @@ Eigen::Vector3f origin1;
   		v2 << -1, 0 ,-1;
   		contour2.push_back(v2);
 
-  		c2->merged=1;
+  		c2->merged=0;
   		origin1 << 0,0,0;
   		c2->origin_=origin2;
 
@@ -214,10 +267,8 @@ transform_cylinder(c2,trafo);
 
 
 std::string s_c1 = "c1->unrolled";
-c1->debug_output(s_c1);
 
 std::string s_c2 = "c2->unrolled";
-  c2->debug_output(s_c2);
 //#######################################################
 //  completion test
 //  c1->completeCylinder();
@@ -287,7 +338,6 @@ Cylinder& result=*merge_candidates[0];
 //
 
 
-result.debug_output("result");
 
 
 std::vector<std::vector<Eigen::Vector3f> > con3d;

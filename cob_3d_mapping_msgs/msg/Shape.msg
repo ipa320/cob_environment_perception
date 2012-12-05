@@ -1,13 +1,11 @@
 Header header
 
-byte PLANE=0
-byte POLYGON=0
-byte LINE=1
-byte CURVED=2	#from QPFF
-byte CURVED=2
-byte MESH=3
-byte OTHER=4
-byte CYLINDER=5
+uint8 POLYGON=0
+uint8 LINE=1
+uint8 CURVED=2
+uint8 MESH=3
+uint8 OTHER=4
+uint8 CYLINDER=5
 # potential extensions: SPHERE, CYLINDER, BOX
 
 byte type
@@ -28,7 +26,7 @@ float32 weight
 # z axis 	= params[3], params[4], params[5]
 # origin	= params[6], params[7], params[8]
 # radius	= params[9]
-#
+# 
 float64[] params
 
 sensor_msgs/PointCloud2[] points

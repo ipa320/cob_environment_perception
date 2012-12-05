@@ -1,3 +1,5 @@
+//TODO: deprecated, can probably be deleted
+
 #pragma once
 
 #include <dynamic_reconfigure/server.h>

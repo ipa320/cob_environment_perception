@@ -2,12 +2,13 @@
 <launch>
   <node pkg="cob_3d_mapping_semantics" type="table_extraction_node" name="table_extraction" ns="table_extraction" output="screen">
   	<!--remap from="map" to="/aggregate_point_map/map"/-->
-  	<remap from="shape_array" to="/get_tables_client/shape_array"/>
-  	<remap from="shape_array_pub" to="/semantic_extraction_node/get_geometry_map"/>
-  	<remap from="marker" to="/semantic_extraction_node/shape_marker"/>
+  	<remap from="shape_array" to="/segmentation/shape_array"/>      <!--to="/get_tables_client/shape_array"/-->
+  	<remap from="shape_array_pub" to="/table_extraction/table_array"/>  <!--to="/table_extraction_node/table_array"/-->
+  	<remap from="marker" to="shape_visualization/marker"/>        <!--/semantic_extraction_node/shape_marker"/-->
   	<remap from="marker_array" to="/semantic_extraction_node/map_marker_array"/>
   	<remap from="get_geometry_map" to="/geometry_map/get_map"/>
 
+    <param name="target_frame_id" type="string" value="/map" />
   	<param name="tilt_angle" type = "double" value= "5.0" /><!--tilt angle in degrees-->
   	<param name="height_min" type = "double" value= "0.5"/>
   	<param name="height_max" type = "double" value= "1.8" />
