@@ -13,6 +13,8 @@
 #include <CGAL/Homogeneous_d.h>
 #include <CGAL/leda_integer.h>
 #include <CGAL/Delaunay_triangulation_2.h>
+#include <CGAL/Triangulation_vertex_base_with_info_2.h>
+#include <CGAL/Triangulation_face_base_with_info_2.h>
 
 #include <unsupported/Eigen/NonLinearOptimization>
 #include <eigen3/Eigen/Jacobi>
@@ -23,18 +25,30 @@ namespace ParametricSurface {
 
   class Topology
   {
+  public:
+
+    class POINT;
+
+  private:
+
     //typedef leda_integer RT;
     typedef float RT;
     //typedef CGAL::Exact_predicates_inexact_constructions_kernel Kernel;
     typedef CGAL::Cartesian<double>                               Kernel;
     //typedef CGAL::Homogeneous_d<double>                               Kernel;
-    typedef CGAL::Delaunay_triangulation_2<Kernel> Delaunay_d;
+
+    typedef CGAL::Triangulation_vertex_base_with_info_2<boost::shared_ptr<POINT>, Kernel>    Vb;
+    typedef CGAL::Triangulation_face_base_with_info_2<boost::shared_ptr<ParametricSurface::TriSpline2_Fade>, Kernel>    Vbb;
+    typedef CGAL::Triangulation_data_structure_2<Vb, Vbb>                    Tds;
+
+    typedef CGAL::Delaunay_triangulation_2<Kernel, Tds> Delaunay_d;
     typedef Delaunay_d::Point Point;
     typedef Kernel::Vector_2 Vector;
     typedef Delaunay_d::Vertex Vertex;
     typedef Delaunay_d::Face Face;
     typedef Delaunay_d::Face_handle Face_handle;
     typedef Delaunay_d::Face_iterator Face_iterator;
+    typedef Delaunay_d::All_edges_iterator Edge_iterator;
 
     //typedef Delaunay_d::Simplex_handle Simplex_handle;
     //typedef Delaunay_d::Simplex_const_iterator Simplex_const_iterator;
@@ -43,7 +57,7 @@ namespace ParametricSurface {
     typedef Delaunay_d::Vertex_handle Vertex_handle;
     typedef Delaunay_d::Face_circulator Face_circulator;
 
-  public:
+    public:
 
     struct  POINT {
       Eigen::Vector2f uv;
@@ -58,13 +72,14 @@ namespace ParametricSurface {
       }
     };
 
-  private:
+
+    private:
 
     Delaunay_d del_;
     std::vector< boost::shared_ptr<POINT> > pts_;
     std::vector< boost::shared_ptr<ParametricSurface::TriSpline2_Fade> > tris_;
-    std::map< Vertex*, boost::shared_ptr<POINT> > map_pts_;
-    std::map< Face*, boost::shared_ptr<ParametricSurface::TriSpline2_Fade> > map_tris_;
+    //    std::map< Vertex*, boost::shared_ptr<POINT> > map_pts_;
+    //    std::map< Face*, boost::shared_ptr<ParametricSurface::TriSpline2_Fade> > map_tris_;
     float thr_;
 
 
