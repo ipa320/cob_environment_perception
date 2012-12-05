@@ -513,6 +513,23 @@ bool SurfaceTriSpline::TRIANGLE::isIn(const Eigen::Vector2f &pt, const std::vect
 
 void SurfaceTriSpline::init(const boost::array<float, 6> &params, const float min_x, const float max_x, const float min_y, const float max_y, const float weight)
 {
+  ROS_ASSERT(0);
+}
+
+void SurfaceTriSpline::init(const PolynomialSurface *params, const std::vector<Eigen::Vector3f> &pts) {
+
+  for(size_t i=0; i<pts.size(); i++) {
+    ParametricSurface::Topology::POINT p;
+
+    p.uv = pts[i].head<2>();
+    p.pt = params->project2world(p.uv);
+    p.n = params->normalAt(p.uv);
+    p.n2 = params->normalAt2(p.uv);
+    top_.insertPointWithoutUpdate(p);
+  }
+
+  top_.update();
+  top_.finish();
 }
 
 void SurfaceTriSpline::init(const PolynomialSurface *params, const float min_x, const float max_x, const float min_y, const float max_y, const float weight)
@@ -670,8 +687,7 @@ Eigen::Vector2f SurfaceTriSpline::nextPoint(const Eigen::Vector3f &v) const {
 }
 
 float SurfaceTriSpline::merge(const Surface &o, const float this_w, const float o_w, const SWINDOW &wind_t, const SWINDOW &wind_o) {
-  top_ += ((SurfaceTriSpline*)(&o))->top_;
-  return 0.f;
+  return (top_ += ((SurfaceTriSpline*)(&o))->top_);
 }
 
 /*
