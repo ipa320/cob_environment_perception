@@ -63,8 +63,13 @@
 #ifndef __SENSOR_MODEL_H__
 #define __SENSOR_MODEL_H__
 
+#include "cob_3d_mapping_common/polygon.h"
+
 namespace cob_3d_mapping
 {
+  /* data structure used by ScanlinePolygonFill
+   * represents a line of a 2D polygon
+   */
   class ScanlineEdge
   {
     public:
@@ -91,6 +96,11 @@ namespace cob_3d_mapping
   inline const bool operator<= (const ScanlineEdge& lhs, const ScanlineEdge& rhs) { return !operator> (lhs, rhs); }
   inline const bool operator>= (const ScanlineEdge& lhs, const ScanlineEdge& rhs) { return !operator< (lhs, rhs); }
 
+  /* Algorithm for rasterization of 2D images consisting of polygon lines
+   * Source: http://en.wikipedia.org/wiki/Flood_fill
+   *         common practice in computer graphics
+   * Output: image of which each pixel consists of a vector of ids
+   */
   class ScanlinePolygonFill
   {
     public:
@@ -108,11 +118,11 @@ namespace cob_3d_mapping
     }
 
     inline int x2w(float x) const {
-      return int((x - xmin) / (xmax - xmin) * w)
+      return int((x - xmin) / (xmax - xmin) * w);
     }
 
     inline int y2h(float y) const {
-      return int((y - ymin) / (ymax - ymin) * h)
+      return int((y - ymin) / (ymax - ymin) * h);
     }
 
     void fill(std::vector<std::vector<int> >& out)
@@ -130,11 +140,11 @@ namespace cob_3d_mapping
         while (ycurr->ymin < y)
         {
           if(ycurr->ymax < y) {
-            ycurr = yque.erase(curr);
+            ycurr = yque.erase(ycurr);
           }
           else {
-            xque.push_back(std::pair<float,int>(ycurr.intersection(y),ycurr.id));
-            ++curr;
+            xque.push_back(std::pair<float,int>(ycurr->intersection(y),ycurr->id));
+            ++ycurr;
           }
         }
 
@@ -143,7 +153,7 @@ namespace cob_3d_mapping
         std::set<int> curr_ids;
         while (xcurr!=xque.end())
         {
-          std::pair<std::set<int>::iterator, bool> res = curr_ids.insert(xprev.second);
+          std::pair<std::set<int>::iterator, bool> res = curr_ids.insert(xprev->second);
           if( !res.second ) curr_ids.erase(res.first);
           if( curr_ids.size() )
           {
@@ -159,6 +169,7 @@ namespace cob_3d_mapping
       }
     }
 
+    private:
     int w;
     int h;
     float xmin;
@@ -167,6 +178,138 @@ namespace cob_3d_mapping
     float ymax;
     std::list<ScanlineEdge> yque;
   };
+
+  /* 2D/3D line clipping algorithm
+   * Source: http://en.wikipedia.org/wiki/Cohen-Sutherland (did not find a paper about it)
+   */
+  class CohenSutherlandClipping
+  {
+    public:
+    CohenSutherlandClipping()
+      : xmin(-1.0f)
+      , xmax( 1.0f)
+      , ymin(-1.0f)
+      , ymax( 1.0f)
+      , zmin(-1.0f)
+      , zmax( 1.0f)
+    { }
+
+    void setBorders(float x_min, float x_max, float y_min, float y_max, float z_min, float z_max)
+    {
+      xmin = x_min; xmax = x_max; ymin = y_min; ymax = y_max; zmin = z_min; zmax = z_max;
+    }
+
+    int computeCode(float x, float y, float z=0.0f)
+    {
+      int code = 0;
+      if( x < xmin )     code |= LEFT;
+      else if( x > xmax) code |= RIGHT;
+      if( y < ymin )     code |= TOP;
+      else if( y > ymax) code |= BOTTOM;
+      if( z < zmin )     code |= NEAR;
+      else if( z > zmax) code |= FAR;
+
+      return code;
+    }
+
+    bool clip(const Eigen::Vector3f& p0, const Eigen::Vector3f& p1, Eigen::Vector3f& q0, Eigen::Vector3f& q1)
+    {
+      int code0 = computeCode(p0(0),p0(1),p0(2));
+      int code1 = computeCode(p1(0),p1(1),p1(2));
+      bool accept = false;
+
+      if( !(code0 | code1) ) { // trivial accept
+        accept = true;
+        q0 = p0;
+        q1 = p1;
+      }
+      else if( !(code0 & code1) ) {
+        /* Line:  q = (p1 - p0) * d + p0
+         * Plane: (q - c).dot(n)           c: point on plane, n: normal of plane
+         *
+         *           (p0 - c).dot(n)
+         * => d =  ------------------
+         *          (p1 - p0).dot(n)
+         */
+        float x, y, z, d;
+        int outcode;
+        Eigen::Vector3f *pnew, *pold;
+        if(code0) { // check which point lies outside
+          outcode = code0;
+          pnew = &q0;
+          pold = &q1;
+        }
+        else {
+          outcode = code1;
+          pold = &q0;
+          pnew = &q1;
+        }
+
+        if(outcode & FAR) {
+          d = (zmax - p0(2)) / (p1(2) - p0(2));
+          (*pnew)(0) = (p1(0) - p0(0)) * d + p0(0);
+          (*pnew)(1) = (p1(1) - p0(1)) * d + p0(1);
+          (*pnew)(2) = zmax;
+        }
+        else if(outcode & NEAR) {
+          d = (zmin - p0(2)) / (p1(2) - p0(2));
+          (*pnew)(0) = (p1(0) - p0(0)) * d + p0(0);
+          (*pnew)(1) = (p1(1) - p0(1)) * d + p0(1);
+          (*pnew)(2) = zmin;
+        }
+        else if(outcode & BOTTOM) {
+          d = (ymax - p0(1)) / (p1(1) - p0(1));
+          (*pnew)(0) = (p1(0) - p0(0)) * d + p0(0);
+          (*pnew)(1) = ymax;
+          (*pnew)(2) = (p1(2) - p0(2)) * d + p0(2);
+        }
+        else if(outcode & TOP) {
+          d = (ymin - p0(1)) / (p1(1) - p0(1));
+          (*pnew)(0) = (p1(0) - p0(0)) * d + p0(0);
+          (*pnew)(1) = ymin;
+          (*pnew)(2) = (p1(2) - p0(2)) * d + p0(2);
+        }
+        else if(outcode & RIGHT) {
+          d = (xmax - p0(0)) / (p1(0) - p0(0));
+          (*pnew)(0) = xmax;
+          (*pnew)(1) = (p1(1) - p0(1)) * d + p0(1);
+          (*pnew)(2) = (p1(2) - p0(2)) * d + p0(2);
+        }
+        else if(outcode & LEFT) {
+          d = (xmin - p0(0)) / (p1(0) - p0(0));
+          (*pnew)(0) = xmin;
+          (*pnew)(1) = (p1(1) - p0(1)) * d + p0(1);
+          (*pnew)(2) = (p1(2) - p0(2)) * d + p0(2);
+        }
+
+        accept = clip(*pold,*pnew,q0,q1);
+      }
+
+      return accept;
+    }
+
+    private:
+    float xmin;
+    float xmax;
+    float ymin;
+    float ymax;
+    float zmin;
+    float zmax;
+
+    static const int FAR;    // 10 00 00
+    static const int NEAR;   // 01 00 00
+    static const int TOP;    // 00 10 00
+    static const int BOTTOM; // 00 01 00
+    static const int RIGHT;  // 00 00 10
+    static const int LEFT;   // 00 00 01
+  };
+
+  const int CohenSutherlandClipping::FAR    = 32;
+  const int CohenSutherlandClipping::NEAR   = 16;
+  const int CohenSutherlandClipping::TOP    =  8;
+  const int CohenSutherlandClipping::BOTTOM =  4;
+  const int CohenSutherlandClipping::RIGHT  =  2;
+  const int CohenSutherlandClipping::LEFT   =  1;
 
   class PrimeSense
   {
@@ -188,22 +331,35 @@ namespace cob_3d_mapping
                                       std::vector<std::vector<int> >& projection) // image vector with polygon ids
     {
       // create transformation matrix from sensor position and camera parameters
-      Eigen::Matrix4f proj = Eigen::Matrix4f( &PrimeSense::mat ) * camera_transform;
+      Eigen::Matrix4f proj = Eigen::Map<const Eigen::Matrix4f>( PrimeSense::mat ) * camera_transform;
       // transform polygons to clipping space and reject outliers ( space: x,y,z E [-1,1] )
+      CohenSutherlandClipping csc;
+      ScanlinePolygonFill spf(w,h);
+      Eigen::Vector3f p0, p1, q0, q1;
       for(int i=0; i<polygons.size(); ++i)
       {
+        int id = polygons[i]->id;
         for(int c=0; c<polygons[i]->contours.size(); ++c)
         {
-          Eigen::Vector4f pprev = proj * Eigen::Vector4f(polygons[i]->contours[c][polygons[i]->contours[c].size()-1], 1);
-          for(int p=0; p<polygons[i]->contours[c].size(); ++p)
+          std::vector<Eigen::Vector3f>* ptr_c = &polygons[i]->contours[c];
+          Eigen::Vector4f pprev = proj * Eigen::Vector4f( (*ptr_c)[ ptr_c->size()-1 ](0),
+                                                          (*ptr_c)[ ptr_c->size()-1 ](1),
+                                                          (*ptr_c)[ ptr_c->size()-1 ](2), 1);
+          for(int p=0; p<ptr_c->size(); ++p)
           {
-            Eigen::Vector4f pcurr = proj * Eigen::Vector4f(polygons[i]->contours[c][p], 1);
+            Eigen::Vector4f pcurr = proj * Eigen::Vector4f( (*ptr_c)[p](0), (*ptr_c)[p](1), (*ptr_c)[p](2), 1);
             if(pcurr(3) != 1.0) std::cout << pcurr(3) << std::endl;
-            //if(pcurr(
+            p0 << pprev(0), pprev(1), pprev(2);
+            p1 << pcurr(0), pcurr(1), pcurr(2);
+            if(csc.clip(p0,p1,q0,q1)) {
+              spf.addEdge(id, q0(0), q0(1), q1(0), q1(1));
+            }
+            pprev = pcurr;
           }
         }
       }
       // rasterize remaining polygons using scanline rendering algorithm
+      spf.fill(projection);
     }
 
     // frustum parameters:
