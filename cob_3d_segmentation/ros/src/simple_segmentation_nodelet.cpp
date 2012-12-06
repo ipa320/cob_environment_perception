@@ -12,9 +12,9 @@
  * \note
  *  Project name: care-o-bot
  * \note
- *  ROS stack name: cob_vision
+ *  ROS stack name: cob_environment_perception_intern
  * \note
- *  ROS package name: cob_env_model
+ *  ROS package name: cob_3d_segmentation
  *
  * \author
  *  Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
