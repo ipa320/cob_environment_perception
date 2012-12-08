@@ -64,6 +64,7 @@
 #define __SENSOR_MODEL_H__
 
 #include "cob_3d_mapping_common/polygon.h"
+#include <list>
 
 namespace cob_3d_mapping
 {
@@ -75,6 +76,10 @@ namespace cob_3d_mapping
     public:
     ScanlineEdge(int id_, float x1, float y1, float x2, float y2)
       : id(id_)
+      , x1_(x1)
+      , y1_(y1)
+      , x2_(x2)
+      , y2_(y2)
     {
       if(y1>y2) { ymax = y1; ymin = y2; }
       else { ymax = y2; ymin = y1; }
@@ -82,13 +87,17 @@ namespace cob_3d_mapping
       t = mInv*y1/x1;
     }
 
-    inline float intersection(float y) const { return mInv*y-t; }
+    inline float intersection(float y) const { return mInv*(y-y1_)+x1_; }
 
     int id;
     float ymin;
     float ymax;
     float mInv;
     float t;
+    float x1_;
+    float y1_;
+    float x2_;
+    float y2_;
   };
 
   inline const bool operator<  (const ScanlineEdge& lhs, const ScanlineEdge& rhs) { return lhs.ymin < rhs.ymin; }
@@ -118,11 +127,37 @@ namespace cob_3d_mapping
     }
 
     inline int x2w(float x) const {
-      return int((x - xmin) / (xmax - xmin) * w);
+      return int((x - xmin) / (xmax - xmin) * float(w));
     }
 
     inline int y2h(float y) const {
-      return int((y - ymin) / (ymax - ymin) * h);
+      return int((y - ymin) / (ymax - ymin) * float(h));
+    }
+
+    void draw(std::vector<std::vector<int> >& out)
+    {
+      out.resize(w*h);
+      yque.sort();
+
+      float xstep = (xmax - xmin) / float(w);
+      float ystep = (ymax - ymin) / float(h);
+      for(float y=ymin + 0.5f * ystep; y<ymax; y+=ystep)
+      {
+        //std::cout << "Line: "<< y2h(y) <<" y="<< y << std::endl;
+        int yidx = y2h(y)*w;
+        std::list<std::pair<float,int> > xque;
+        std::list<ScanlineEdge>::iterator ycurr = yque.begin();
+        while (ycurr != yque.end() && ycurr->ymin < y)
+        {
+          if(ycurr->ymax <= y) {
+            ycurr = yque.erase(ycurr);
+          }
+          else {
+            out[ yidx + x2w(ycurr->intersection(y)) ].push_back(ycurr->id);
+            ++ycurr;
+          }
+        }
+      }
     }
 
     void fill(std::vector<std::vector<int> >& out)
@@ -132,22 +167,25 @@ namespace cob_3d_mapping
 
       float xstep = (xmax - xmin) / float(w);
       float ystep = (ymax - ymin) / float(h);
-      int idx_y = 0;
-      for(float y=ymin + 0.5f * ystep; y<ymax; y+=ystep, ++idx_y)
+      for(float y=ymin + 0.5f * ystep; y<ymax; y+=ystep)
       {
+        //std::cout << "Line: "<< y2h(y) <<" y="<< y << std::endl;
+        int yidx = y2h(y)*w;
         std::list<std::pair<float,int> > xque;
         std::list<ScanlineEdge>::iterator ycurr = yque.begin();
-        while (ycurr->ymin < y)
+        while (ycurr != yque.end() && ycurr->ymin < y)
         {
-          if(ycurr->ymax < y) {
+          if(ycurr->ymax <= y) {
             ycurr = yque.erase(ycurr);
           }
           else {
+            //std::cout << ycurr->x1_ <<","<< ycurr->y1_ <<" --- "<< ycurr->x2_ <<","<< ycurr->y2_
+            //          << " -> " << ycurr->intersection(y) << "," << y << std::endl;
             xque.push_back(std::pair<float,int>(ycurr->intersection(y),ycurr->id));
             ++ycurr;
           }
         }
-
+        xque.sort();
         std::list<std::pair<float,int> >::iterator xcurr = xque.begin();
         std::list<std::pair<float,int> >::iterator xprev = xcurr++;
         std::set<int> curr_ids;
@@ -160,7 +198,7 @@ namespace cob_3d_mapping
             for(float x=xprev->first; x<xcurr->first; x+=xstep)
             {
               for(std::set<int>::iterator id = curr_ids.begin(); id != curr_ids.end(); ++id) {
-                out[ y * h + x2w(x) ].push_back(*id);
+                out[ yidx + x2w(x) ].push_back(*id);
               }
             }
           }
@@ -233,15 +271,16 @@ namespace cob_3d_mapping
          */
         float x, y, z, d;
         int outcode;
-        Eigen::Vector3f *pnew, *pold;
+        Eigen::Vector3f *pnew;
+        const Eigen::Vector3f *pold;
         if(code0) { // check which point lies outside
           outcode = code0;
           pnew = &q0;
-          pold = &q1;
+          pold = &p1;
         }
         else {
           outcode = code1;
-          pold = &q0;
+          pold = &p0;
           pnew = &q1;
         }
 
@@ -275,7 +314,7 @@ namespace cob_3d_mapping
           (*pnew)(1) = (p1(1) - p0(1)) * d + p0(1);
           (*pnew)(2) = (p1(2) - p0(2)) * d + p0(2);
         }
-        else if(outcode & LEFT) {
+        else /*(outcode & LEFT)*/ {
           d = (xmin - p0(0)) / (p1(0) - p0(0));
           (*pnew)(0) = xmin;
           (*pnew)(1) = (p1(1) - p0(1)) * d + p0(1);
@@ -331,7 +370,7 @@ namespace cob_3d_mapping
                                       std::vector<std::vector<int> >& projection) // image vector with polygon ids
     {
       // create transformation matrix from sensor position and camera parameters
-      Eigen::Matrix4f proj = Eigen::Map<const Eigen::Matrix4f>( PrimeSense::mat ) * camera_transform;
+      Eigen::Matrix4f proj = Eigen::Map<const Eigen::Matrix<float,4,4,Eigen::RowMajor> >( PrimeSense::mat ) * camera_transform;
       // transform polygons to clipping space and reject outliers ( space: x,y,z E [-1,1] )
       CohenSutherlandClipping csc;
       ScanlinePolygonFill spf(w,h);
@@ -345,13 +384,50 @@ namespace cob_3d_mapping
           Eigen::Vector4f pprev = proj * Eigen::Vector4f( (*ptr_c)[ ptr_c->size()-1 ](0),
                                                           (*ptr_c)[ ptr_c->size()-1 ](1),
                                                           (*ptr_c)[ ptr_c->size()-1 ](2), 1);
+          pprev /= pprev(3);
+          bool was_clipped = false;
+          Eigen::Vector3f last_clip;
           for(int p=0; p<ptr_c->size(); ++p)
           {
             Eigen::Vector4f pcurr = proj * Eigen::Vector4f( (*ptr_c)[p](0), (*ptr_c)[p](1), (*ptr_c)[p](2), 1);
-            if(pcurr(3) != 1.0) std::cout << pcurr(3) << std::endl;
+            //if(pcurr(3) != 1.0) std::cout << pcurr(3) << std::endl;
+            pcurr /= pcurr(3);
             p0 << pprev(0), pprev(1), pprev(2);
             p1 << pcurr(0), pcurr(1), pcurr(2);
-            if(csc.clip(p0,p1,q0,q1)) {
+            if(csc.clip(p0,p1,q0,q1)) // TODO: polygon clipping might be better here 
+            { /*
+              if(q0 != p0)
+              {
+                if(was_clipped)
+                {
+                  was_clipped = false;
+                  spf.addEdge(id, q0(0), q0(1), last_clip(0), last_clip(1));
+                }
+                else
+                {
+                  was_clipped = true;
+                  last_clip = q0;
+                  spf.addEdge(id, q0(0), q0(1), q1(0), q1(1));
+                }
+              }
+              else if(q1 != p1)
+              {
+                if(was_clipped)
+                {
+                  was_clipped = false;
+                  spf.addEdge(id, last_clip(0), last_clip(1), q1(0), q1(1));
+                }
+                else
+                {
+                  was_clipped = true;
+                  last_clip = q1;
+                  spf.addEdge(id, q0(0), q0(1), q1(0), q1(1));
+                }
+              }
+              else
+              {
+                spf.addEdge(id, q0(0), q0(1), q1(0), q1(1));
+                }*/
               spf.addEdge(id, q0(0), q0(1), q1(0), q1(1));
             }
             pprev = pcurr;
@@ -359,6 +435,8 @@ namespace cob_3d_mapping
         }
       }
       // rasterize remaining polygons using scanline rendering algorithm
+      //spf.addEdge(10, -1.0f, -1.0f, 0.0f, 1.0f);
+      //spf.addEdge(10,  0.0f,  1.0f, 1.0f, -1.0f);
       spf.fill(projection);
     }
 
@@ -371,24 +449,40 @@ namespace cob_3d_mapping
     static const float r; // right
     static const float t; // top
     static const float b; // bottom
+    static const float w;
+    static const float h;
+    static const float aspect;
     static const float mat[]; // transformation from view frustum to unit cube
   };
 
-  const float PrimeSense::horizontal = 57.0f / 180.0f * M_PI;
+  const float PrimeSense::horizontal = 49.0f / 180.0f * M_PI;
   const float PrimeSense::vertical = 43.0f / 180.0f * M_PI;
   const float PrimeSense::f = 5.0f;
-  const float PrimeSense::n = 0.8f;
+  const float PrimeSense::n = 0.5f;
   const float PrimeSense::r = PrimeSense::n * tan(PrimeSense::horizontal * 0.5f);
   const float PrimeSense::l = - PrimeSense::r;
   const float PrimeSense::t = PrimeSense::n * tan(PrimeSense::vertical * 0.5f);
   const float PrimeSense::b = - PrimeSense::t;
+  const float PrimeSense::w = 640.0f;
+  const float PrimeSense::h = 480.0f;
+  const float PrimeSense::aspect = PrimeSense::w / PrimeSense::h;
+
+/*
+  const float PrimeSense::mat[] = {
+    2.0f*PrimeSense::n/(PrimeSense::r-PrimeSense::l), 0, - (PrimeSense::r+PrimeSense::l)/(PrimeSense::r-PrimeSense::l), 0,
+    0, 2.0f*PrimeSense::n/(PrimeSense::t-PrimeSense::b), - (PrimeSense::t+PrimeSense::b)/(PrimeSense::t-PrimeSense::b), 0,
+    0, 0, (PrimeSense::n+PrimeSense::f)/(PrimeSense::n-PrimeSense::f), -2.0f*PrimeSense::f*PrimeSense::n/(PrimeSense::n-PrimeSense::f),
+    0, 0, 1, 0
+    };
+*/
 
   const float PrimeSense::mat[] = {
-    2*PrimeSense::n/(PrimeSense::r-PrimeSense::l), 0, - (PrimeSense::r+PrimeSense::l)/(PrimeSense::r-PrimeSense::l), 0,
-    0, 2*PrimeSense::n/(PrimeSense::t-PrimeSense::b), - (PrimeSense::t+PrimeSense::b)/(PrimeSense::t-PrimeSense::b), 0,
-    0, 0, (PrimeSense::n+PrimeSense::f)/(PrimeSense::n-PrimeSense::f), -2*PrimeSense::f*PrimeSense::n/(PrimeSense::n-PrimeSense::f),
+    1.0f / ( PrimeSense::aspect * tan(0.5f * PrimeSense::horizontal) ), 0, 0, 0,
+    0, 1.0f / ( tan(0.5f * PrimeSense::horizontal) ), 0, 0,
+    0, 0, (PrimeSense::n+PrimeSense::f)/(PrimeSense::n-PrimeSense::f), -2.0f*PrimeSense::f*PrimeSense::n/(PrimeSense::n-PrimeSense::f),
     0, 0, 1, 0
   };
+
 }
 
 #endif
