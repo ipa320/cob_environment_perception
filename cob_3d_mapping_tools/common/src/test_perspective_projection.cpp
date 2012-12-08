@@ -63,27 +63,32 @@
 #include <pcl/io/pcd_io.h>
 
 #include <cob_3d_mapping_common/point_types.h>
+#include "cob_3d_mapping_common/stop_watch.h"
 
 #include <cob_3d_mapping_features/organized_normal_estimation_omp.h>
 #include <cob_3d_segmentation/impl/fast_segmentation.hpp>
 #include <cob_3d_segmentation/polygon_extraction/polygon_extraction.h>
 
-typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloud;
-typedef pcl::PointCloud<pcl::Normal> NormalCloud;
-typedef pcl::PointCloud<PointLabel> LabelCloud;
+typedef pcl::PointCloud<pcl::PointXYZRGB> PointC;
+typedef pcl::PointCloud<pcl::Normal> NormalC;
+typedef pcl::PointCloud<PointLabel> LabelC;
 typedef cob_3d_segmentation::FastSegmentation<pcl::PointXYZRGB, pcl::Normal, PointLabel>::ClusterPtr ClusterPtr;
 
 int main (int argc, char** argv)
 {
-  PointCloud::Ptr p(new PointCloud);
-  NormalCloud::Ptr n(new NormalCloud);
-  LabelCloud::Ptr l(new LabelCloud);
+  PrecisionStopWatch t;
+
+  PointC::Ptr p(new PointC);
+  PointC::Ptr s(new PointC);
+  NormalC::Ptr n(new NormalC);
+  LabelC::Ptr l(new LabelC);
 
   pcl::PCDReader r;
-  r.read(argv[1], p);
+  r.read(argv[1], *p);
+  *s = *p;
 
   cob_3d_mapping_features::OrganizedNormalEstimationOMP<pcl::PointXYZRGB, pcl::Normal, PointLabel> one;
-  one.setOuputLabels(l);
+  one.setOutputLabels(l);
   one.setPixelSearchRadius(8,2,2);
   one.setSkipDistantPointThreshold(8);
   one.setInputCloud(p);
@@ -95,8 +100,9 @@ int main (int argc, char** argv)
   seg.setSeedMethod(cob_3d_segmentation::SEED_RANDOM);
   seg.setInputCloud(p);
   seg.compute();
+  seg.mapSegmentColor(s);
 
-  PolygonExtraction pe;
+  cob_3d_segmentation::PolygonExtraction pe;
   std::vector<cob_3d_mapping::Polygon::Ptr> polygons;
 
   for(ClusterPtr c = seg.clusters()->begin(); c != seg.clusters()->end(); ++c)
@@ -109,7 +115,7 @@ int main (int argc, char** argv)
     seg.clusters()->computeClusterComponents(c);
     if(!c->is_save_plane) continue;
 
-    PolygonContours<PolygonPoint> poly;
+    cob_3d_segmentation::PolygonContours<cob_3d_segmentation::PolygonPoint> poly;
     pe.outline(p->width,p->height,c->border_points,poly);
     if(!poly.polys_.size()) continue;
     int max_idx=0, max_size=0;
@@ -117,43 +123,61 @@ int main (int argc, char** argv)
     {
       if( (int)poly.polys_[i].size() > max_size) {
         max_idx = i;
-        max_size = poly.polys_[i].size():
+        max_size = poly.polys_[i].size();
       }
     }
 
-    cob_3d_mapping::Polygon::Ptr p(new cob_3d_mapping::Polygon);
-    p->id = c->id();
+    cob_3d_mapping::Polygon::Ptr pg(new cob_3d_mapping::Polygon);
+    pg->id = c->id();
     for(int i=0; i<(int)poly.polys_.size(); ++i)
     {
       if (i==max_idx)
       {
-        p->holes.push_back(false);
-        p->contours.push_back(std::vector<Eigen::Vector3f>);
-        for(std::vector<PolygonPoint>::iterator it = poly.polys_[i].begin(); it!=poly.polys_[i].end(); ++it)
+        pg->holes.push_back(false);
+        pg->contours.push_back(std::vector<Eigen::Vector3f>());
+        std::vector<cob_3d_segmentation::PolygonPoint>::iterator it = poly.polys_[i].begin();
+        for( ; it!=poly.polys_[i].end(); ++it)
         {
-          p->contours.back().push_back( (*p)[it->x + it->y * p->width].getVector3fMap() );
+          pg->contours.back().push_back( (*p)[it->x + it->y * p->width].getVector3fMap() );
         }
       }
       else
       {
-        p->holes.push_back(true);
-        p->contours.push_back(std::vector<Eigen::Vector3f>);
-        for(std::vector<PolygonPoint>::reverse_iterator it = poly.polys_[i].rbegin(); it!=poly.polys_[i].rend(); ++it)
+        pg->holes.push_back(true);
+        pg->contours.push_back(std::vector<Eigen::Vector3f>());
+        std::vector<cob_3d_segmentation::PolygonPoint>::reverse_iterator it = poly.polys_[i].rbegin();
+        for( ; it!=poly.polys_[i].rend(); ++it)
         {
-          p->contours.back().push_back( (*p)[it->x + it->y * p->width].getVector3fMap() );
+          pg->contours.back().push_back( (*p)[it->x + it->y * p->width].getVector3fMap() );
         }
       }
     }
-    p->centroid = centroid;
-    p->normal = c->pca_point_comp3;
-    p->d = fabs(centroid.dot(c->pca_point_comp3));
-    polygons.push_back(p);
+    pg->centroid << centroid(0), centroid(1), centroid(2), 1;
+    pg->normal = c->pca_point_comp3;
+    pg->d = fabs(centroid.dot(c->pca_point_comp3));
+    polygons.push_back(pg);
   }
 
   Eigen::Matrix4f tf = Eigen::Matrix4f::Identity();
   std::vector<std::vector<int> > projection;
-  //PrimeSense::perspectiveProjection(tf, polygons, p->width, p->height, projection);
+  t.precisionStart();
+  cob_3d_mapping::PrimeSense::perspectiveProjection(tf, polygons, p->width, p->height, projection);
+  std::cout << "Projection: "<< t.precisionStop() << std::endl;
 
-  // TODO: save projected results as image
+  for(int i=0; i<projection.size(); ++i)
+  {
+    if(projection[i].size() > 1)
+    {
+      //for(int j=0; j<projection[i].size(); ++j) std::cout << projection[i][j] << ", ";
+      //std::cout << std::endl;
+    }
+    if(projection[i].size())
+      (*p)[i].rgb = (*s)[ seg.clusters()->getCluster(projection[i][0])->indices_[0] ].rgb;
+  }
+
+  pcl::PCDWriter w;
+  w.write("segmented.pcd", *s);
+  w.write("projected.pcd", *p);
+
   return 0;
 }

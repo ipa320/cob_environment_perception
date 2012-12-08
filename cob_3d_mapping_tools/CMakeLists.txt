@@ -130,6 +130,9 @@ target_link_libraries(bag_gui ${wxWidgets_LIBRARIES} cob_3d_mapping_tools)
 rosbuild_add_executable(gui_normals common/src/gui_normals.cpp)
 target_link_libraries(gui_normals ${wxWidgets_LIBRARIES} cob_3d_mapping_tools)
 
+
+rosbuild_add_executable(test_perspective_projection common/src/test_perspective_projection.cpp)
+
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
 #target_link_libraries(${PROJECT_NAME} another_library)
