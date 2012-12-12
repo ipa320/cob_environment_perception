@@ -78,7 +78,16 @@ public:
     {
       if(algo_=="quad regression")
       {
-        seg_ = new Segmentation::Segmentation_QuadRegression<Point,PointLabel>();
+        Segmentation::Segmentation_QuadRegression<Point,PointLabel> *seg = new Segmentation::Segmentation_QuadRegression<Point,PointLabel>();
+        seg_ = seg;
+
+        double filter;
+        if(this->n_.getParam("filter",filter))
+          seg->setFilter((float)filter);
+
+        bool only_planes;
+        if(this->n_.getParam("only_planes",only_planes))
+          seg->setOnlyPlanes(only_planes);
       }
       else
         ROS_ERROR("%s is no valid segmentation algorithm", algo_.c_str());
