@@ -434,7 +434,7 @@ poly.segments2d_.back().push_back(p2);
 #endif
 
     void setFilter(const float f) {filter_=f;}
-    bool setOnlyPlanes(const bool b) {only_planes_=b;}
+    void setOnlyPlanes(const bool b) {only_planes_=b;}
 
   };
 

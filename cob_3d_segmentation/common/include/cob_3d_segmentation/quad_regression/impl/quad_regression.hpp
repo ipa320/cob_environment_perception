@@ -10,7 +10,7 @@ template <typename Point, typename PointLabel>
 Segmentation_QuadRegression<Point,PointLabel>::Segmentation_QuadRegression():
 MIN_LOD(8), FINAL_LOD(0), GO_DOWN_TO_LVL(3),
 ch_(NULL), outline_check_(0), outline_check_size_(0),
-filter_(-1.f)
+filter_(-1.f), only_planes_(false)
 {
   kinect_params_.f = 0.f;
   Contour2D::generateSpline2D();
@@ -478,6 +478,9 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
         return;
       }
 
+      if(only_planes_ && !model.isLinearAndTo())
+        return;
+
       S_POLYGON poly;
       //model.isLinearAndTo();
       poly=model;
@@ -517,7 +520,6 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
 //      if(poly.segments_.size()<1)
 //        ROS_WARN("segment empty");
 
-      if(!only_planes_ || model.isLinearAndTo()) {
         if(filter_>0.f) {
           float area = poly.area();
 
@@ -528,7 +530,6 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
         }
         else
           polygons_.push_back(poly);
-      }
 
       return;
     }
@@ -931,9 +932,9 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
 
     cob_3d_mapping_msgs::Shape s;
     if(only_planes_)
-      s.type = cob_3d_mapping_msgs::Shape::CURVED;
+      s.type = cob_3d_mapping_msgs::Shape::POLYGON;
     else
-      s.type = cob_3d_mapping_msgs::Shape::PLANE;
+      s.type = cob_3d_mapping_msgs::Shape::CURVED;
 
     sa.header.frame_id = s.header.frame_id = "/test";
 
@@ -964,7 +965,15 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
 
 
       if(only_planes_) {
+        ROS_ASSERT( std::abs(polygons_[i].model_.p(2))<0.001f &&
+                    std::abs(polygons_[i].model_.p(4))<0.001f &&
+                    std::abs(polygons_[i].model_.p(5))<0.001f );
 
+        Eigen::Vector3f n = polygons_[i].model_.getNormal(0,0), v;
+        v.fill(0);
+        v(2) = polygons_[i].model_.p(0);
+        for(int i=0; i<3; i++) s.params.push_back(n(i));
+        s.params.push_back(n.dot(v));
       }
       else {
         for(int k=0; k<6; k++)
