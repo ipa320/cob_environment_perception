@@ -68,6 +68,26 @@
 
 namespace cob_3d_mapping
 {
+  inline Eigen::Vector4f makeVector4f(const Eigen::Vector3f& v, float last=1.0f) {
+    return Eigen::Vector4f(v(0),v(1),v(2),last);
+  }
+
+  class ScanlinePolygon
+  {
+    public:
+    ScanlinePolygon(const Eigen::Vector3f& n_, float d_)
+    {
+      float invN2 = 1.0f / n_(2);
+      c(0) = d_ * invN2;
+      c(1) = n_(0) * invN2;
+      c(2) = n_(1) * invN2;
+    }
+
+    inline float intersection(float x, float y) const { return c(0) - c(1)*x - c(2)*y; }
+
+    Eigen::Vector3f c;
+  };
+
   /* data structure used by ScanlinePolygonFill
    * represents a line of a 2D polygon
    */
@@ -106,6 +126,7 @@ namespace cob_3d_mapping
   inline const bool operator>= (const ScanlineEdge& lhs, const ScanlineEdge& rhs) { return !operator< (lhs, rhs); }
 
   /* Algorithm for rasterization of 2D images consisting of polygon lines
+   * UPDATE: now modified to perform x,y,z clipping
    * Source: http://en.wikipedia.org/wiki/Flood_fill
    *         common practice in computer graphics
    * Output: image of which each pixel consists of a vector of ids
@@ -120,10 +141,18 @@ namespace cob_3d_mapping
       , xmax( 1.0f)
       , ymin(-1.0f)
       , ymax( 1.0f)
+      , zmin(-1.0f)
+      , zmax( 1.0f)
+      , zthr( 0.2f)
     { }
 
     inline void addEdge(int id, float x1, float y1, float x2, float y2) {
       yque.push_back(ScanlineEdge(id,x1,y1,x2,y2));
+    }
+
+    inline bool addPolygon(int id, const Eigen::Vector3f& normal, float d) {
+      //std::cout << "addPolygon: " << id <<": "<<normal(0)<<" x + "<<normal(1)<<" y + "<<normal(2)<<" z = "<<d<<std::endl;
+      return polys.insert( std::pair<int,ScanlinePolygon>(id, ScanlinePolygon(normal,d)) ).second;
     }
 
     inline int x2w(float x) const {
@@ -153,7 +182,10 @@ namespace cob_3d_mapping
             ycurr = yque.erase(ycurr);
           }
           else {
-            out[ yidx + x2w(ycurr->intersection(y)) ].push_back(ycurr->id);
+            float x = ycurr->intersection(y);
+            if(x>xmin && x<xmax) {
+              out[ yidx + x2w(x) ].push_back(ycurr->id);
+            }
             ++ycurr;
           }
         }
@@ -167,44 +199,75 @@ namespace cob_3d_mapping
 
       float xstep = (xmax - xmin) / float(w);
       float ystep = (ymax - ymin) / float(h);
+      // process each row
       for(float y=ymin + 0.5f * ystep; y<ymax; y+=ystep)
       {
-        //std::cout << "Line: "<< y2h(y) <<" y="<< y << std::endl;
         int yidx = y2h(y)*w;
         std::list<std::pair<float,int> > xque;
         std::list<ScanlineEdge>::iterator ycurr = yque.begin();
+
+        // compute intersections of all edges with the current row
         while (ycurr != yque.end() && ycurr->ymin < y)
         {
           if(ycurr->ymax <= y) {
             ycurr = yque.erase(ycurr);
           }
           else {
-            //std::cout << ycurr->x1_ <<","<< ycurr->y1_ <<" --- "<< ycurr->x2_ <<","<< ycurr->y2_
-            //          << " -> " << ycurr->intersection(y) << "," << y << std::endl;
             xque.push_back(std::pair<float,int>(ycurr->intersection(y),ycurr->id));
             ++ycurr;
           }
         }
-        xque.sort();
+
+        xque.sort(); // create consecutive intersection pairs
         std::list<std::pair<float,int> >::iterator xcurr = xque.begin();
         std::list<std::pair<float,int> >::iterator xprev = xcurr++;
         std::set<int> curr_ids;
-        while (xcurr!=xque.end())
+
+        // run ahead until xcurr is in picture, ( x-clipping )
+        while(xcurr->first < xmin && xcurr!=xque.end()) {
+          std::pair<std::set<int>::iterator, bool> res = curr_ids.insert(xprev->second);
+          if( !res.second ) curr_ids.erase(res.first);
+          xprev = xcurr++;
+        }
+
+        // run while xprev is in picture
+        // process each consecutive intersection pair
+        while (xprev->first < xmax && xcurr!=xque.end())
         {
           std::pair<std::set<int>::iterator, bool> res = curr_ids.insert(xprev->second);
           if( !res.second ) curr_ids.erase(res.first);
           if( curr_ids.size() )
           {
-            for(float x=xprev->first; x<xcurr->first; x+=xstep)
+            float xstart = (xprev->first<xmin ? xmin : xprev->first);
+            float xstop  = (xcurr->first>xmax ? xmax : xcurr->first);
+            for(float x=xstart; x<=xstop; x+=xstep) // fill row
             {
+              std::list<std::pair<float,int> > zque;
+
+              // find min z value at curr x,y ( + z-clipping )
               for(std::set<int>::iterator id = curr_ids.begin(); id != curr_ids.end(); ++id) {
-                out[ yidx + x2w(x) ].push_back(*id);
+                float z = polys.find(*id)->second.intersection(x,y);
+                if(z > zmin && z < zmax) zque.push_back(std::pair<float,int>(z, *id));
+              }
+
+              zque.sort();
+              std::list<std::pair<float,int> >::iterator zcurr = zque.begin();
+
+              // add ids withing a threshold of min z
+              while(zcurr != zque.end()) {
+                if(zcurr->first < (zque.begin()->first + zthr)) {
+                  out[ yidx + x2w(x) ].push_back(zcurr->second);
+                }
+                else {
+                  break; // done
+                }
+                ++zcurr;
               }
             }
           }
           xprev = xcurr++;
-        }
-      }
+        } // done with current intersection pair
+      } // done with current row
     }
 
     private:
@@ -214,7 +277,11 @@ namespace cob_3d_mapping
     float xmax;
     float ymin;
     float ymax;
+    float zmin;
+    float zmax;
+    float zthr;
     std::list<ScanlineEdge> yque;
+    std::map<int,ScanlinePolygon> polys;
   };
 
   /* 2D/3D line clipping algorithm
@@ -372,71 +439,46 @@ namespace cob_3d_mapping
       // create transformation matrix from sensor position and camera parameters
       Eigen::Matrix4f proj = Eigen::Map<const Eigen::Matrix<float,4,4,Eigen::RowMajor> >( PrimeSense::mat ) * camera_transform;
       // transform polygons to clipping space and reject outliers ( space: x,y,z E [-1,1] )
-      CohenSutherlandClipping csc;
       ScanlinePolygonFill spf(w,h);
-      Eigen::Vector3f p0, p1, q0, q1;
+      Eigen::Vector4f projected;
+      float xprev, yprev, xcurr, ycurr;
       for(int i=0; i<polygons.size(); ++i)
       {
         int id = polygons[i]->id;
+
+        Eigen::Vector4f p1 = proj * makeVector4f( (polygons[i]->contours[0])[1] );
+        Eigen::Vector4f p2 = proj * makeVector4f( (polygons[i]->contours[0])[2] );
+        Eigen::Vector4f p3 = proj * makeVector4f( (polygons[i]->contours[0])[0] );
+
+        p1 /= p1(3);
+        p2 /= p2(3);
+        p3 /= p3(3);
+
+        Eigen::Vector3f normal = ( (p2.head<3>() - p1.head<3>()).cross(p3.head<3>() - p1.head<3>()) ).normalized();
+        float d = p1.head<3>().dot(normal);
+        spf.addPolygon(id, normal, d);
+
         for(int c=0; c<polygons[i]->contours.size(); ++c)
         {
           std::vector<Eigen::Vector3f>* ptr_c = &polygons[i]->contours[c];
-          Eigen::Vector4f pprev = proj * Eigen::Vector4f( (*ptr_c)[ ptr_c->size()-1 ](0),
-                                                          (*ptr_c)[ ptr_c->size()-1 ](1),
-                                                          (*ptr_c)[ ptr_c->size()-1 ](2), 1);
-          pprev /= pprev(3);
-          bool was_clipped = false;
-          Eigen::Vector3f last_clip;
+          projected = proj * makeVector4f( (*ptr_c)[ ptr_c->size()-1 ] );
+          float inv_w = 1.0f / projected(3);
+          xprev = projected(0) * inv_w;
+          yprev = projected(1) * inv_w;
+
           for(int p=0; p<ptr_c->size(); ++p)
           {
-            Eigen::Vector4f pcurr = proj * Eigen::Vector4f( (*ptr_c)[p](0), (*ptr_c)[p](1), (*ptr_c)[p](2), 1);
-            //if(pcurr(3) != 1.0) std::cout << pcurr(3) << std::endl;
-            pcurr /= pcurr(3);
-            p0 << pprev(0), pprev(1), pprev(2);
-            p1 << pcurr(0), pcurr(1), pcurr(2);
-            if(csc.clip(p0,p1,q0,q1)) // TODO: polygon clipping might be better here 
-            { /*
-              if(q0 != p0)
-              {
-                if(was_clipped)
-                {
-                  was_clipped = false;
-                  spf.addEdge(id, q0(0), q0(1), last_clip(0), last_clip(1));
-                }
-                else
-                {
-                  was_clipped = true;
-                  last_clip = q0;
-                  spf.addEdge(id, q0(0), q0(1), q1(0), q1(1));
-                }
-              }
-              else if(q1 != p1)
-              {
-                if(was_clipped)
-                {
-                  was_clipped = false;
-                  spf.addEdge(id, last_clip(0), last_clip(1), q1(0), q1(1));
-                }
-                else
-                {
-                  was_clipped = true;
-                  last_clip = q1;
-                  spf.addEdge(id, q0(0), q0(1), q1(0), q1(1));
-                }
-              }
-              else
-              {
-                spf.addEdge(id, q0(0), q0(1), q1(0), q1(1));
-                }*/
-              spf.addEdge(id, q0(0), q0(1), q1(0), q1(1));
-            }
-            pprev = pcurr;
+            projected = proj * makeVector4f((*ptr_c)[p]);
+            inv_w = 1.0f / projected(3);
+            xcurr = projected(0) * inv_w;
+            ycurr = projected(1) * inv_w;
+            spf.addEdge(id, xprev, yprev, xcurr, ycurr);
+            xprev = xcurr;
+            yprev = ycurr;
           }
         }
       }
       // rasterize remaining polygons using scanline rendering algorithm
-      //spf.addEdge(10, -1.0f, -1.0f, 0.0f, 1.0f);
-      //spf.addEdge(10,  0.0f,  1.0f, 1.0f, -1.0f);
       spf.fill(projection);
     }
 
@@ -466,15 +508,6 @@ namespace cob_3d_mapping
   const float PrimeSense::w = 640.0f;
   const float PrimeSense::h = 480.0f;
   const float PrimeSense::aspect = PrimeSense::w / PrimeSense::h;
-
-/*
-  const float PrimeSense::mat[] = {
-    2.0f*PrimeSense::n/(PrimeSense::r-PrimeSense::l), 0, - (PrimeSense::r+PrimeSense::l)/(PrimeSense::r-PrimeSense::l), 0,
-    0, 2.0f*PrimeSense::n/(PrimeSense::t-PrimeSense::b), - (PrimeSense::t+PrimeSense::b)/(PrimeSense::t-PrimeSense::b), 0,
-    0, 0, (PrimeSense::n+PrimeSense::f)/(PrimeSense::n-PrimeSense::f), -2.0f*PrimeSense::f*PrimeSense::n/(PrimeSense::n-PrimeSense::f),
-    0, 0, 1, 0
-    };
-*/
 
   const float PrimeSense::mat[] = {
     1.0f / ( PrimeSense::aspect * tan(0.5f * PrimeSense::horizontal) ), 0, 0, 0,
