@@ -129,6 +129,7 @@ int main (int argc, char** argv)
 
     cob_3d_mapping::Polygon::Ptr pg(new cob_3d_mapping::Polygon);
     pg->id = c->id();
+    Eigen::Matrix3f M = Eigen::Matrix3f::Identity() - c->pca_point_comp3 * c->pca_point_comp3.transpose();
     for(int i=0; i<(int)poly.polys_.size(); ++i)
     {
       if (i==max_idx)
@@ -138,7 +139,8 @@ int main (int argc, char** argv)
         std::vector<cob_3d_segmentation::PolygonPoint>::iterator it = poly.polys_[i].begin();
         for( ; it!=poly.polys_[i].end(); ++it)
         {
-          pg->contours.back().push_back( (*p)[it->x + it->y * p->width].getVector3fMap() );
+          pg->contours.back().push_back( M * ( (*p)[it->x + it->y * p->width].getVector3fMap() - centroid ) );
+          pg->contours.back().back() += centroid;
         }
       }
       else
@@ -148,11 +150,12 @@ int main (int argc, char** argv)
         std::vector<cob_3d_segmentation::PolygonPoint>::reverse_iterator it = poly.polys_[i].rbegin();
         for( ; it!=poly.polys_[i].rend(); ++it)
         {
-          pg->contours.back().push_back( (*p)[it->x + it->y * p->width].getVector3fMap() );
+          pg->contours.back().push_back( M * ( (*p)[it->x + it->y * p->width].getVector3fMap() - centroid ) );
+          pg->contours.back().back() += centroid;
         }
       }
     }
-    pg->centroid << centroid(0), centroid(1), centroid(2), 1;
+    pg->centroid << centroid(0), centroid(1), centroid(2), 1.0f;
     pg->normal = c->pca_point_comp3;
     pg->d = fabs(centroid.dot(c->pca_point_comp3));
     polygons.push_back(pg);
