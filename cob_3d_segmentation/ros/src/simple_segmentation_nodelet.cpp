@@ -85,6 +85,8 @@ cob_3d_segmentation::SimpleSegmentationNodelet::onInit()
   seg_.setLabelCloudInOut(labels_);
   seg_.setSeedMethod(SEED_RANDOM);
 
+  cc_.setClusterHandler(seg_.clusters());
+
   sub_points_ = nh_.subscribe<PointCloud>("cloud_in", 1, boost::bind(&SimpleSegmentationNodelet::receivedCloudCallback, this, _1));
   pub_segmented_ = nh_.advertise<PointCloud>("/segmentation/segmented_cloud", 1);
   pub_shape_array_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray>("/segmentation/shape_array",1);
@@ -135,7 +137,7 @@ cob_3d_segmentation::SimpleSegmentationNodelet::receivedCloudCallback(PointCloud
   pub_segmented_.publish(segmented_);
 
   // --- start shape array publisher: ---
-  PointCloud::Ptr hull(new PointCloud);
+  cc_.setInputCloud(down_);
   cob_3d_mapping_msgs::ShapeArray sa;
   sa.header = down_->header;
   sa.header.frame_id = down_->header.frame_id.c_str();
@@ -143,66 +145,16 @@ cob_3d_segmentation::SimpleSegmentationNodelet::receivedCloudCallback(PointCloud
   {
     if(c->size() < min_cluster_size_) continue;
     Eigen::Vector3f centroid = c->getCentroid();
-    if(centroid(2) > centroid_passthrough_) continue;
+    if(c->getCentroid()(2) > centroid_passthrough_) continue;
     if(c->size() <= ceil(1.1f * (float)c->border_points.size()))  continue;
 
     seg_.clusters()->computeClusterComponents(c);
     if(filter_ && !c->is_save_plane) continue;
 
-
-    PolygonContours<PolygonPoint> poly;
-    pe_.outline(down_->width, down_->height, c->border_points, poly);
-    if(!poly.polys_.size()) continue; // continue, if no contours were found
-    int max_idx=0, max_size=0;
-    for (int i = 0; i < (int)poly.polys_.size(); ++i)
-    {
-      if ((int)poly.polys_[i].size() > max_size) { max_idx = i; max_size = poly.polys_[i].size(); }
-    }
-
     sa.shapes.push_back(cob_3d_mapping_msgs::Shape());
-    cob_3d_mapping_msgs::Shape* s = &sa.shapes.back();
-    s->id = 0;
-    s->points.resize(poly.polys_.size());
-    s->header.frame_id = down_->header.frame_id.c_str();
-    /*Eigen::Vector3f color = c->computeDominantColorVector().cast<float>();
-    float tmp_inv = 1.0f / 255.0f;
-    s->color.r = color(0) * tmp_inv;
-    s->color.g = color(1) * tmp_inv;
-    s->color.b = color(2) * tmp_inv;*/
-
-    for (int i = 0; i < (int)poly.polys_.size(); ++i)
-    {
-      if (i == max_idx)
-      {
-        s->holes.push_back(false);
-        std::vector<PolygonPoint>::iterator it = poly.polys_[i].begin();
-        for ( ; it != poly.polys_[i].end(); ++it) {
-          hull->push_back( down_->points[ it->x + it->y * down_->width ] );
-        }
-      }
-      else
-      {
-        s->holes.push_back(true);
-        std::vector<PolygonPoint>::reverse_iterator it = poly.polys_[i].rbegin();
-        for ( ; it != poly.polys_[i].rend(); ++it) {
-          hull->push_back( down_->points[ it->x + it->y * down_->width ] );
-        }
-      }
-      hull->height = 1;
-      hull->width = hull->size();
-      pcl::toROSMsg(*hull, s->points[i]);
-      hull->clear();
+    if(!cc_.clusterToShapeMsg(c,sa.shapes.back())) {
+      sa.shapes.pop_back();
     }
-
-    s->centroid.x = centroid[0];
-    s->centroid.y = centroid[1];
-    s->centroid.z = centroid[2];
-    s->type = cob_3d_mapping_msgs::Shape::POLYGON;
-    s->params.resize(4);
-    s->params[0] = c->pca_point_comp3(0);
-    s->params[1] = c->pca_point_comp3(1);
-    s->params[2] = c->pca_point_comp3(2);
-    s->params[3] = fabs(centroid.dot(c->pca_point_comp3)); // d
   }
 
   pub_shape_array_.publish(sa);
