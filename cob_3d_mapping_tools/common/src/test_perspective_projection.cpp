@@ -60,6 +60,8 @@
  *
  ****************************************************************/
 
+#include <cob_3d_segmentation/segmentation_conversion.h>
+
 #include <pcl/io/pcd_io.h>
 
 #include <cob_3d_mapping_common/point_types.h>
@@ -67,11 +69,12 @@
 
 #include <cob_3d_mapping_features/organized_normal_estimation_omp.h>
 #include <cob_3d_segmentation/impl/fast_segmentation.hpp>
-#include <cob_3d_segmentation/polygon_extraction/polygon_extraction.h>
+
 
 typedef pcl::PointCloud<pcl::PointXYZRGB> PointC;
 typedef pcl::PointCloud<pcl::Normal> NormalC;
 typedef pcl::PointCloud<PointLabel> LabelC;
+typedef cob_3d_segmentation::FastSegmentation<pcl::PointXYZRGB, pcl::Normal, PointLabel>::ClusterHdlPtr ClusterHdlPtr;
 typedef cob_3d_segmentation::FastSegmentation<pcl::PointXYZRGB, pcl::Normal, PointLabel>::ClusterPtr ClusterPtr;
 
 int main (int argc, char** argv)
@@ -102,64 +105,13 @@ int main (int argc, char** argv)
   seg.compute();
   seg.mapSegmentColor(s);
 
-  cob_3d_segmentation::PolygonExtraction pe;
   std::vector<cob_3d_mapping::Polygon::Ptr> polygons;
-
-  for(ClusterPtr c = seg.clusters()->begin(); c != seg.clusters()->end(); ++c)
-  {
-    if(c->size() < 100) continue;
-    Eigen::Vector3f centroid = c->getCentroid();
-    if(centroid(2) > 5.0f) continue;
-    if(c->size() <= ceil(1.1f * (float)c->border_points.size())) continue;
-
-    seg.clusters()->computeClusterComponents(c);
-    if(!c->is_save_plane) continue;
-
-    cob_3d_segmentation::PolygonContours<cob_3d_segmentation::PolygonPoint> poly;
-    pe.outline(p->width,p->height,c->border_points,poly);
-    if(!poly.polys_.size()) continue;
-    int max_idx=0, max_size=0;
-    for (int i=0; i<(int)poly.polys_.size(); ++i)
-    {
-      if( (int)poly.polys_[i].size() > max_size) {
-        max_idx = i;
-        max_size = poly.polys_[i].size();
-      }
-    }
-
-    cob_3d_mapping::Polygon::Ptr pg(new cob_3d_mapping::Polygon);
-    pg->id = c->id();
-    Eigen::Matrix3f M = Eigen::Matrix3f::Identity() - c->pca_point_comp3 * c->pca_point_comp3.transpose();
-    for(int i=0; i<(int)poly.polys_.size(); ++i)
-    {
-      if (i==max_idx)
-      {
-        pg->holes.push_back(false);
-        pg->contours.push_back(std::vector<Eigen::Vector3f>());
-        std::vector<cob_3d_segmentation::PolygonPoint>::iterator it = poly.polys_[i].begin();
-        for( ; it!=poly.polys_[i].end(); ++it)
-        {
-          pg->contours.back().push_back( M * ( (*p)[it->x + it->y * p->width].getVector3fMap() - centroid ) );
-          pg->contours.back().back() += centroid;
-        }
-      }
-      else
-      {
-        pg->holes.push_back(true);
-        pg->contours.push_back(std::vector<Eigen::Vector3f>());
-        std::vector<cob_3d_segmentation::PolygonPoint>::reverse_iterator it = poly.polys_[i].rbegin();
-        for( ; it!=poly.polys_[i].rend(); ++it)
-        {
-          pg->contours.back().push_back( M * ( (*p)[it->x + it->y * p->width].getVector3fMap() - centroid ) );
-          pg->contours.back().back() += centroid;
-        }
-      }
-    }
-    pg->centroid << centroid(0), centroid(1), centroid(2), 1.0f;
-    pg->normal = c->pca_point_comp3;
-    pg->d = fabs(centroid.dot(c->pca_point_comp3));
-    polygons.push_back(pg);
-  }
+  cob_3d_segmentation::ClusterConversion<> cc;
+  cc.setClusterHandler(seg.clusters());
+  cc.setInputCloud(p);
+  cc.setMinClusterSize(100);
+  cc.setMaxCentroidDistance(5.0f);
+  cc.convertToPolygons(polygons);
 
   Eigen::Matrix4f tf = Eigen::Matrix4f::Identity();
   std::vector<std::vector<int> > projection;
