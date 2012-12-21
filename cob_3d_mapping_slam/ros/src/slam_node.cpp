@@ -117,7 +117,8 @@ class SLAM_Node : public Parent
 
   ros::Subscriber curved_poly_sub_;
   ros::Subscriber shapes_sub_;
-  ros::Publisher  map_pub_, debug_pub_, outline_pub_;
+  ros::Publisher  map_pub_, debug_pub_, debug2_pub_, outline_pub_, collision_map_pub_;
+
 
   std::string world_id_, frame_id_;
 
@@ -171,8 +172,8 @@ public:
     map_pub_ = n->advertise<visualization_msgs::Marker>("map", 1);
     debug_pub_ = n->advertise<visualization_msgs::Marker>("debug", 1);
     outline_pub_ = n->advertise<visualization_msgs::Marker>("outline", 1);
+    collision_map_pub_ = n->advertise<arm_navigation_msgs::CollisionMap>("collision_map", 10);
 
-    double tr_dist = 0.6, rot_dist=0.3;
     double tr_speed = 0.6, rot_speed=0.6;
 
     n->getParam("translation_size",tr_dist);
@@ -478,7 +479,33 @@ public:
 
           addBB(marker_dbg, n->node_->getContext().getObjs()[i]->getData().getBB(), col, tmp_rot,tmp_tr);
         }
+
+        {
+        arm_navigation_msgs::OrientedBoundingBox box;
+
+        box.center.x = n->node_->getContext().getObjs()[i]->getData().getBB().getCenter()(0);
+        box.center.y = n->node_->getContext().getObjs()[i]->getData().getBB().getCenter()(1);
+        box.center.z = n->node_->getContext().getObjs()[i]->getData().getBB().getCenter()(2);
+
+        box.extents.x = n->node_->getContext().getObjs()[i]->getData().getBB().getExtension()(0);
+        box.extents.y = n->node_->getContext().getObjs()[i]->getData().getBB().getExtension()(1);
+        box.extents.z = n->node_->getContext().getObjs()[i]->getData().getBB().getExtension()(2);
+
+        Eigen::AngleAxisf aa(n->node_->getContext().getObjs()[i]->getData().getBB().getAxis());
+        box.axis.x = aa.axis()(0);
+        box.axis.y = aa.axis()(1);
+        box.axis.z = aa.axis()(2);
+        box.angle = aa.angle();
+
+        collision_map.boxes.push_back(box);
+        }
       }
+      marker_cont>>&marker_pub;
+
+      collision_map.header = cpa->header;
+      //TODO: check frame_id
+      if(collision_map_pub_.getNumSubscribers()>0)
+        collision_map_pub_.publish(collision_map);
 
       //BB of node
       //::std_msgs::ColorRGBA col;

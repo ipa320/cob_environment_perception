@@ -282,6 +282,10 @@ namespace BoundingBox {
       for(int i=0; i<3; i++) e_(i)=std::max(e_(i),0.001f);
     }
 
+    Eigen::Vector3f getCenter() const {return m_;}
+    Eigen::Vector3f getExtension() const {return e_;}
+    Eigen::Matrix3f getAxis() const {return axis_;}
+
     float preassumption(const OOBB &o) const {
       //preassumption
       int m1=0;
