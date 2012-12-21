@@ -60,7 +60,7 @@
  *
  ****************************************************************/
 
-#include <cob_3d_segmentation/segmentation_conversion.h>
+#include <cob_3d_segmentation/cluster_conversion.h>
 
 #include <pcl/io/pcd_io.h>
 

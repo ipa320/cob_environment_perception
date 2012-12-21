@@ -60,8 +60,8 @@
  *
  ****************************************************************/
 
-#ifndef SEGMENTATION_CONVERSTION_H__
-#define SEGMENTATION_CONVERSTION_H__
+#ifndef CLUSTER_CONVERSION_H__
+#define CLUSTER_CONVERSION_H__
 
 #include <pcl/point_types.h>
 
