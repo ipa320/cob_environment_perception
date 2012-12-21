@@ -539,8 +539,9 @@ namespace Slam_CurvedPolygon
 #endif
       }
 
-      if(!merge(o,o2))
+      if(!merge(o,o2) || invalid())
       {
+        *this = o2;
         //        surface_ = o2.surface_;
         //        data_.parameter = o2.data_.parameter;
 #ifdef DEBUG_OUT_
