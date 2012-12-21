@@ -372,6 +372,7 @@ TEST(Slam,bag_run)
 
       rosbag::View view(bag, rosbag::TopicQuery(topics));
 
+      cob_3d_marker::MarkerContainer marker_cont;
       visualization_msgs::Marker marker_text, marker_points, marker_planes, marker_cor1, marker_cor2, marker_del, marker_map, marker_map2;
       visualization_msgs::Marker *pmarkers[]={
                                              &marker_text, &marker_points, &marker_planes, &marker_cor1, &marker_cor2, &marker_del, &marker_map, &marker_map2
@@ -462,7 +463,8 @@ TEST(Slam,bag_run)
             ROS_INFO("new frame");
 
             last=s->header.stamp;
-            Debug::Interface::get().setTime((last-start).toSec());
+            Debug::Interface::get().setTime(ros::Time::now().toSec());
+            //Debug::Interface::get().setTime((last-start).toSec());
             if(first) {
               first=false;
               start = s->header.stamp;
@@ -593,6 +595,12 @@ TEST(Slam,bag_run)
               bag_out.write("groundtruth", ros::Time(odos.front().timestamp), odo);
             }
 
+#ifdef EXTRA_MARKER
+            marker_cont << cob_3d_marker::MarkerClean();
+            marker_cont.clear();
+            marker_cont<<new cob_3d_marker::MarkerList_Line(2)<<new cob_3d_marker::MarkerList_Arrow(3)<<new cob_3d_marker::MarkerList_Text(4)<<new cob_3d_marker::MarkerList_Text(5);
+#endif
+
             tmp_rot = Eigen::Matrix3f::Identity();
             tmp_rot2 = Eigen::Matrix3f::Identity();
             tmp_tr  = Eigen::Vector3f::Zero();
@@ -698,6 +706,10 @@ TEST(Slam,bag_run)
                   marker_map.points.push_back(line_p);
                   marker_map.colors.push_back(col);
                 }
+
+#ifdef EXTRA_MARKER
+                marker_cont<<n->node_->getContext().getObjs()[i]->getData().getSurface();
+#endif
               }
 
               size_t next_id = n->id_-1;
@@ -710,6 +722,10 @@ TEST(Slam,bag_run)
               n = n2;
               //break;
             }
+
+#ifdef EXTRA_MARKER
+            marker_cont>>new cob_3d_marker::MarkerBagfile(&bag_out,"/markers2",last);
+#endif
 
             while(memory_sa.size()>0 && memory_sa.front().header.stamp<last)
             {
