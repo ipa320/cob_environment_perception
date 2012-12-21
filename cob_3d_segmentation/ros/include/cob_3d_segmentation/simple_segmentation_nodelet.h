@@ -79,7 +79,7 @@
 #include "cob_3d_mapping_common/point_types.h"
 #include "cob_3d_mapping_features/organized_normal_estimation_omp.h"
 #include "cob_3d_segmentation/impl/fast_segmentation.hpp"
-#include <cob_3d_segmentation/segmentation_ros_conversion.h>
+#include <cob_3d_segmentation/cluster_ros_conversion.h>
 
 namespace cob_3d_segmentation
 {

@@ -60,10 +60,10 @@
  *
  ****************************************************************/
 
-#ifndef SEGMENTATION_ROS_CONVERSTION_H__
-#define SEGMENTATION_ROS_CONVERSTION_H__
+#ifndef CLUSTER_ROS_CONVERSION_H__
+#define CLUSTER_ROS_CONVERSION_H__
 
-#include <cob_3d_segmentation/segmentation_conversion.h>
+#include <cob_3d_segmentation/cluster_conversion.h>
 #include <cob_3d_mapping_msgs/ShapeArray.h>
 
 namespace cob_3d_segmentation
