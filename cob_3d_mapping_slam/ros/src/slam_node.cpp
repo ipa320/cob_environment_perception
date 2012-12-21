@@ -112,7 +112,7 @@ public:
 template <typename Parent>
 class SLAM_Node : public Parent
 {
-  typedef DOF6::DOF6_Source<DOF6::TFLinkvf,DOF6::DOF6_Uncertainty<Dummy::RobotParameters,float> > DOF6;
+  typedef DOF6::DOF6_Source<DOF6::TFLinkvf,DOF6::DOF6_Uncertainty<Dummy::RobotParametersSlow,float> > DOF6;
   typedef Slam::Node<Slam_CurvedPolygon::OBJCTXT<DOF6> > Node;
 
 
@@ -120,6 +120,8 @@ class SLAM_Node : public Parent
   ros::Subscriber shapes_sub_;
   ros::Publisher  map_pub_, debug_pub_, debug2_pub_, outline_pub_, collision_map_pub_;
 
+  cob_3d_marker::MarkerContainer marker_cont;
+  cob_3d_marker::MarkerPublisher marker_pub;
 
   std::string world_id_, frame_id_;
 
@@ -138,6 +140,8 @@ class SLAM_Node : public Parent
     cob_3d_mapping_msgs::CurvedPolygon r;
     r.ID = sh.id;
     r.weight = sh.weight;
+
+    ROS_ASSERT_MSG(r.parameter.size()==6, "incompatible parameters");
     for(int i=0; i<6; i++)
       r.parameter[i] = sh.params[i];
 
@@ -157,7 +161,8 @@ class SLAM_Node : public Parent
 
 public:
   // Constructor
-  SLAM_Node(): first_(true), invert_(false), use_real_world_color_(true), use_odometry_(false), dbg_show_grid_(true)
+  SLAM_Node(): first_(true), invert_(false), use_real_world_color_(true), use_odometry_(false), dbg_show_grid_(true),
+  marker_pub(debug2_pub_)
   {
   }
 
@@ -170,11 +175,13 @@ public:
     ros::NodeHandle *n=&(this->n_);
     //curved_poly_sub_ = this->n_.subscribe("/curved_polygons", 1, &SLAM_Node<Parent>::cbPolygons, this);
     shapes_sub_ = this->n_.subscribe("/shapes_array", 1, &SLAM_Node<Parent>::cbShapes, this);
-    map_pub_ = n->advertise<visualization_msgs::Marker>("map", 1);
+    map_pub_ = n->advertise<visualization_msgs::Marker>("map", 10);
     debug_pub_ = n->advertise<visualization_msgs::Marker>("debug", 1);
+    debug2_pub_ = n->advertise<visualization_msgs::Marker>("debug2", 100);
     outline_pub_ = n->advertise<visualization_msgs::Marker>("outline", 1);
     collision_map_pub_ = n->advertise<arm_navigation_msgs::CollisionMap>("collision_map", 10);
 
+    double tr_dist = 1.f, rot_dist=0.8f;
     double tr_speed = 0.6, rot_speed=0.6;
 
     n->getParam("translation_size",tr_dist);
@@ -201,8 +208,11 @@ public:
     std::vector< ::std_msgs::ColorRGBA> color;
     cob_3d_mapping_msgs::CurvedPolygon_Array::Ptr ar(new cob_3d_mapping_msgs::CurvedPolygon_Array());
     for(size_t i=0; i<cpa->shapes.size(); i++) {
-      ar->polygons.push_back(convert(cpa->shapes[i]));
-      color.push_back(cpa->shapes[i].color);
+      if(cpa->shapes[i].weight>500)
+      {
+        ar->polygons.push_back(convert(cpa->shapes[i]));
+        color.push_back(cpa->shapes[i].color);
+      }
     }
     ar->header = cpa->header;
     cbPolygons2(ar, color);
@@ -269,9 +279,9 @@ public:
           M = M*ctxt_->getPath().getLocal().link_.getTF4();
 
           ctxt_->getPath().getLocal().link_.setVariance(
-              std::max(ctxt_->getPath().getLocal().link_.getSource2()->getTranslationVariance()/4, 0.05f),
+              std::max(ctxt_->getPath().getLocal().link_.getSource2()->getTranslationVariance()*0.8f, 0.05f),
               M.col(3).head<3>(),
-              ctxt_->getPath().getLocal().link_.getSource2()->getRotationVariance()/4,
+              ctxt_->getPath().getLocal().link_.getSource2()->getRotationVariance()*0.8f,
               (typename DOF6::TROTATION)(M.topLeftCorner(3,3))
           );
           M_last_ = _M;
@@ -376,6 +386,13 @@ public:
         col.b=((rnd>>16)&0xff)/255.;
       }
 
+      marker_cont << cob_3d_marker::MarkerClean();
+      marker_cont>>&marker_pub;
+      marker_cont.clear();
+      marker_cont<<new cob_3d_marker::MarkerList_Line(2)<<new cob_3d_marker::MarkerList_Arrow(3)<<new cob_3d_marker::MarkerList_Text(4)<<new cob_3d_marker::MarkerList_Text(5);
+
+      arm_navigation_msgs::CollisionMap collision_map;
+
       for(size_t i=0; i<n->node_->getContext().getObjs().size(); i++)
       {
 
@@ -469,6 +486,19 @@ public:
           }
         }
 
+
+        if(debug2_pub_.getNumSubscribers()>0) {
+          marker_cont<<n->node_->getContext().getObjs()[i]->getData().getSurface();
+
+          char buffer[128];
+          static int nth=0;
+          sprintf(buffer, "%d",nth++);
+          n->node_->getContext().getObjs()[i]->getData().getOutline().debug_svg(buffer);
+
+          ((cob_3d_marker::MarkerList_Text*)marker_cont.get(5).get())->addText(n->node_->getContext().getObjs()[i]->getData().getNearestPoint(), buffer, 0.05f);
+
+        }
+
         //BB
         {
           ::std_msgs::ColorRGBA col;
@@ -513,6 +543,12 @@ public:
       col.g = col.r = col.b=0;
       col.g = 1.f;
       col.b = 1.f;
+
+      if(node_num==2)
+      {
+        col.g = col.r = col.b=0;
+        col.r = 1.f;
+      }
 
       addBB(marker_dbg, n->node_->getContext().getBoundingBox(), col, tmp_rot,tmp_tr);
 
