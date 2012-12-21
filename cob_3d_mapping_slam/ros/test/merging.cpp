@@ -29,6 +29,9 @@
 
 #include <cob_3d_mapping_slam/curved_polygons/surface_tri_spline.h>
 
+#ifndef NDEBUG
+//#error
+#endif
 
 //#define ENABLE_TEST_1
 //#define ENABLE_TEST_2
@@ -46,8 +49,9 @@
 //#define ENABLE_TEST_15
 //#define ENABLE_TEST_16
 //#define ENABLE_TEST_17
-#define ENABLE_TEST_18
-#define ENABLE_TEST_19
+//#define ENABLE_TEST_18
+//#define ENABLE_TEST_19
+#define ENABLE_TEST_20
 
 struct MyFunctor
 {
@@ -758,8 +762,8 @@ void Surface2PCD(const Slam_Surface::Surface *surf, pcl::PointCloud<pcl::PointXY
 
   const float F=1;
 
-  for(float x=-Fsize*F; x<=Fsize*F; x+=Fsize/100) {
-    for(float y=-Fsize*F; y<=Fsize*F; y+=Fsize/100) {
+  for(float x=-Fsize*F; x<=Fsize*F; x+=Fsize/20) {
+    for(float y=-Fsize*F; y<=Fsize*F; y+=Fsize/20) {
       Eigen::Vector3f v;
 
       p.r = (x+F*Fsize)/(2*F*Fsize)*255;
@@ -798,11 +802,11 @@ void test18()
 
   boost::array<float, 6> params;
   for(int i=0; i<6; i++)
-    params[i] = (rand()%10000-5000)/2000.f;
+    params[i] = (rand()%10000-5000)/20000.f;
   /*params[0] = 0;
   params[1] = 0;
   params[2] = 1;
-  params[3] = 1;
+  params[3] = 0;
   params[4] = 0;
   params[5] = 0;
   /*params[0] = 0;
@@ -816,11 +820,11 @@ void test18()
   Slam_Surface::PolynomialSurface poly;
   Slam_Surface::SurfaceTriSpline inst;
 
-  const float Fsize = 1;
+  const float Fsize = 0.017;
   poly.init(params,-Fsize,Fsize, -Fsize,Fsize, 1);
   inst.init(&poly,-Fsize,Fsize, -Fsize,Fsize, 1);
 
-  {
+  if(0){
     Eigen::AngleAxisf aa(0.3f, Eigen::Vector3f::Identity());
     poly.transform(aa.toRotationMatrix(), Eigen::Vector3f::Identity());
     inst.transform(aa.toRotationMatrix(), Eigen::Vector3f::Identity());
@@ -877,6 +881,11 @@ void test18()
     std::cout<<"should\n"<<p1<<"\n";
     std::cout<<"should\n"<<poly.project2world(p3)<<"\n";
 
+    if( (p2-v).norm()<(p1-v).norm() )
+      EXPECT_NEAR( (p1-p2).squaredNorm(), 0, 0.01f);
+    else
+      std::cout<<"is even better\n";
+
     std::cout<<"normal\n"<<inst.normalAt(p3)<<"\n";
     std::cout<<"normal\n"<<poly.normalAt(p3)<<"\n";
   }
@@ -902,8 +911,8 @@ void test18()
     }
   }*/
 
-  for(float x=-Fsize*1.f; x<=Fsize*1.f; x+=Fsize/100) {
-    for(float y=-Fsize*1.f; y<=Fsize*1.f; y+=Fsize/100) {
+  for(float x=-Fsize*3.f; x<=Fsize*3.f; x+=Fsize/100) {
+    for(float y=-Fsize*3.f; y<=Fsize*3.f; y+=Fsize/100) {
       Eigen::Vector3f v;
 
       p3(0) = x;
@@ -944,7 +953,7 @@ void test19()
     params[i] = 0;
 
   params[0] = 1;
-  //params[4] = -0.8f;
+  params[4] = -0.8f;
   params[2] = -0.03f;
 
   Slam_Surface::PolynomialSurface poly;
@@ -961,7 +970,11 @@ void test19()
 
   for(int i=0; i<steps; i++) {
     Slam_Surface::SurfaceTriSpline inst;
-    inst.init(&poly,-Fsize+i/100.f,Fsize-i/100.f, -Fsize,Fsize, 1);
+    inst.init(&poly,-Fsize
+              //+i/100.f
+              ,Fsize
+              //-i/100.f
+              , -Fsize,Fsize, 1);
 
     Slam_Surface::Surface::SWINDOW w;
     res.merge(inst,0,0,w,w);
@@ -980,7 +993,7 @@ void test19()
     res.print();
 
     sprintf(buf,"test19_%d.bag", i);
-    cob_3d_marker::MarkerContainer()<<new cob_3d_marker::MarkerList_Line(2)<<new cob_3d_marker::MarkerList_Arrow(3)<<res >>&cob_3d_marker::MarkerBagfile(&rosbag::Bag(buf, rosbag::bagmode::Write));
+    cob_3d_marker::MarkerContainer()<<new cob_3d_marker::MarkerList_Triangles(0)<<new cob_3d_marker::MarkerList_Text(4)<<new cob_3d_marker::MarkerList_Line(2)<<new cob_3d_marker::MarkerList_Arrow(3)<<res >>&cob_3d_marker::MarkerBagfile(&rosbag::Bag(buf, rosbag::bagmode::Write));
 
     //if(i==15) exit(0);
   }
@@ -990,6 +1003,118 @@ void test19()
   pcl::io::savePCDFile("test19.pcd",pc);
 }
 
+#include <omp.h>
+#ifdef ENABLE_TEST_20
+TEST(TriSplineSurface, Basics3)
+#else
+void test20()
+#endif
+{
+  ros::Time::init();
+  srand(clock());
+
+  omp_set_num_threads(4);
+
+  boost::array<float, 6> params;
+  for(int i=0; i<6; i++)
+    params[i] = (rand()%10000-5000)/10000.f;
+
+  Slam_Surface::PolynomialSurface poly;
+  Slam_Surface::SurfaceTriSpline inst;
+
+  const float Fsize = 1.;
+  poly.init(params,-Fsize,Fsize, -Fsize,Fsize, 1);
+  inst.init(&poly,-Fsize,Fsize, -Fsize,Fsize, 1);
+
+  const size_t num = 10000;
+
+  double start = ros::Time::now().toSec();
+
+#pragma omp parallel for
+  for(size_t i=0; i<num; i++) {
+    Eigen::Vector3f p, p2;
+    Eigen::Vector2f r;
+    p2(0) = (rand()%2000-1000)/1000.f;
+    p2(1) = (rand()%2000-1000)/1000.f;
+    p2(2) = 0;//(rand()%2000-1000)/100.f;
+
+    p = inst.project2world(p2.head<2>());
+    r = inst.nextPoint(p);
+
+//    std::cout<<"should\n"<<p2.head<2>()<<"\n";
+//    std::cout<<"got\n"<<r<<"\n";
+    EXPECT_NEAR( (r-p2.head<2>()).squaredNorm(), 0, 0.01f);
+
+    ;
+  }
+
+  ROS_INFO("MIXED: Op. per 100ms %f", num*0.03/(ros::Time::now().toSec()-start));
+
+  start = ros::Time::now().toSec();
+
+  #pragma omp parallel for
+    for(size_t i=0; i<num; i++) {
+      Eigen::Vector3f p, p2;
+      Eigen::Vector2f r;
+      p2(0) = (rand()%2000-1000)/1000.f;
+      p2(1) = (rand()%2000-1000)/1000.f;
+      p2(2) = 0;//(rand()%2000-1000)/100.f;
+
+      p = poly.project2world(p2.head<2>());
+      r = poly.nextPoint(p);
+
+  //    std::cout<<"should\n"<<p2.head<2>()<<"\n";
+  //    std::cout<<"got\n"<<r<<"\n";
+      EXPECT_NEAR( (r-p2.head<2>()).squaredNorm(), 0, 0.01f);
+
+      ;
+    }
+
+    ROS_INFO("POLY MIXED: Op. per 100ms %f", num*0.03/(ros::Time::now().toSec()-start));
+
+//  params[1]=10;
+//  params[3]=0.1;
+  params[2]=params[4]=params[5]=0;
+  start = ros::Time::now().toSec();
+
+#pragma omp parallel for
+  for(size_t i=0; i<num; i++) {
+    Eigen::Vector3f p, p2;
+    Eigen::Vector2f r;
+    p2(0) = (rand()%2000-1000)/1000.f;
+    p2(1) = (rand()%2000-1000)/1000.f;
+    p2(2) = 0;//p(2) = (rand()%2000-1000)/100.f;
+
+    p = inst.project2world(p2.head<2>());
+    r = inst.nextPoint(p);
+
+//    std::cout<<"should\n"<<p2.head<2>()<<"\n";
+//    std::cout<<"got\n"<<r<<"\n";
+    EXPECT_NEAR( (r-p2.head<2>()).squaredNorm(), 0, 0.01f);
+  }
+
+  ROS_INFO("PLANE: Op. per 100ms %f", num*0.03/(ros::Time::now().toSec()-start));
+
+    start = ros::Time::now().toSec();
+
+  #pragma omp parallel for
+    for(size_t i=0; i<num; i++) {
+      Eigen::Vector3f p, p2;
+      Eigen::Vector2f r;
+      p2(0) = (rand()%2000-1000)/1000.f;
+      p2(1) = (rand()%2000-1000)/1000.f;
+      p2(2) = 0;//p(2) = (rand()%2000-1000)/100.f;
+
+      p = poly.project2world(p2.head<2>());
+      r = poly.nextPoint(p);
+
+  //    std::cout<<"should\n"<<p2.head<2>()<<"\n";
+  //    std::cout<<"got\n"<<r<<"\n";
+      EXPECT_NEAR( (r-p2.head<2>()).squaredNorm(), 0, 0.01f);
+    }
+
+    ROS_INFO("POLY PLANE: Op. per 100ms %f", num*0.03/(ros::Time::now().toSec()-start));
+}
 
 template<typename T>
 void addBB(visualization_msgs::Marker &marker, const T&bb, const ::std_msgs::ColorRGBA &col, const Eigen::Matrix3f &tmp_rot, const Eigen::Vector3f &tmp_tr) {
