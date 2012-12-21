@@ -19,6 +19,7 @@
 #include <cob_3d_mapping_msgs/ShapeArray.h>
 #include <cob_3d_mapping_msgs/CurvedPolygon_Array.h>
 #include <visualization_msgs/Marker.h>
+#include <arm_navigation_msgs/CollisionMap.h>
 
 //DEBUG
 #ifdef DEBUG_
