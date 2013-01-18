@@ -87,7 +87,6 @@
 void
 cob_3d_segmentation::SegmentationAllInOneNodelet::onInit()
 {
-  //PCLNodelet::onInit();
   nh_ = getNodeHandle();
 
   config_server_.reset(new dynamic_reconfigure::Server<segmentation_nodeletConfig>(getPrivateNodeHandle()));
