@@ -76,7 +76,11 @@
 
 
 
-
+/*
+ * PCL 1.7 now requries each field to support arithmetic operators +=, -=, *=, /=
+ * except for arrays
+ */
+/*
 struct NarfKPoint
  {
    PCL_ADD_POINT4D;                  // preferred way of adding a XYZ+padding
@@ -91,12 +95,28 @@ struct NarfKPoint
                                     (float[33], fpfh,fpfh)
 
  )
+*/
+struct NarfKPoint
+ {
+   PCL_ADD_POINT4D;                  // preferred way of adding a XYZ+padding
+   float histogram[33];
+   EIGEN_MAKE_ALIGNED_OPERATOR_NEW   // make sure our new allocators are aligned
+ } EIGEN_ALIGN16;                    // enforce SSE padding for correct memory alignment
+
+ POINT_CLOUD_REGISTER_POINT_STRUCT (NarfKPoint,           // here we assume a XYZ + "test" (as fields)
+                                    (float, x, x)
+                                    (float, y, y)
+                                    (float, z, z)
+                                    (float[33], histogram,fpfh)
+
+ )
 #else
 struct EIGEN_ALIGN16 NarfKPoint
 {
   PCL_ADD_POINT4D; // This adds the members x,y,z which can also be accessed using the point (which is float[4])
 
-  pcl::FPFHSignature33 fpfh;
+  float histogram[33];
+  //pcl::FPFHSignature33 fpfh;
 
   EIGEN_MAKE_ALIGNED_OPERATOR_NEW
 };
@@ -155,10 +175,13 @@ public:
       return;
     }
 
+    tsrc.resize(this->keypoints_src_.size());
+    ttgt.resize(this->keypoints_tgt_.size());
     for(int i=0; i<this->keypoints_src_.size(); i++)
-      tsrc.points.push_back(this->keypoints_src_.points[i].fpfh);
+      memcpy(tsrc.points[i].histogram, this->keypoints_src_.points[i].histogram, 33*sizeof(float));
     for(int i=0; i<this->keypoints_tgt_.size(); i++)
-      ttgt.points.push_back(this->keypoints_tgt_.points[i].fpfh);
+      memcpy(ttgt.points[i].histogram, this->keypoints_tgt_.points[i].histogram, 33*sizeof(float));
+    //ttgt.points.push_back(this->keypoints_tgt_.points[i].fpfh);
     tsrc.height=ttgt.height=1;
     ttgt.width=ttgt.size();
     tsrc.width=tsrc.size();

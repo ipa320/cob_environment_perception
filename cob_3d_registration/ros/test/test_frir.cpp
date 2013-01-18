@@ -63,7 +63,7 @@
 
 #include <ros/ros.h>
 #include <pluginlib/class_list_macros.h>
-#include <pcl_ros/pcl_nodelet.h>
+#include <nodelet/nodelet.h>
 #include <tf_conversions/tf_eigen.h>
 #include <tf/transform_broadcaster.h>
 #include <actionlib/server/simple_action_server.h>

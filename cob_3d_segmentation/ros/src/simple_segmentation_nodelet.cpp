@@ -72,7 +72,7 @@
 void
 cob_3d_segmentation::SimpleSegmentationNodelet::onInit()
 {
-  PCLNodelet::onInit();
+  //PCLNodelet::onInit();
   nh_ = getNodeHandle();
   config_server_.reset(new dynamic_reconfigure::Server<segmentation_nodeletConfig>(getPrivateNodeHandle()));
   config_server_->setCallback(boost::bind(&SimpleSegmentationNodelet::configCallback, this, _1, _2));

@@ -63,17 +63,18 @@
 #ifndef __SIMPLE_SEGMENTATION_NODELET_H__
 #define __SIMPLE_SEGMENTATION_NODELET_H__
 
+// PCL includes
+//#include <pcl/surface/concave_hull.h>
+#include <pcl/point_types.h>
+
 // ROS includes
-#include <pcl_ros/pcl_nodelet.h>
+#include <nodelet/nodelet.h>
 #include <pcl_ros/transforms.h>
-#include <tf/transform_listener.h>
+#include <pcl_ros/point_cloud.h>
 #include <tf_conversions/tf_eigen.h>
 #include <dynamic_reconfigure/server.h>
 #include <cob_3d_segmentation/segmentation_nodeletConfig.h>
 
-// PCL includes
-//#include <pcl/surface/concave_hull.h>
-#include <pcl/point_types.h>
 
 // Package includes
 #include "cob_3d_mapping_common/point_types.h"
@@ -83,7 +84,7 @@
 
 namespace cob_3d_segmentation
 {
-  class SimpleSegmentationNodelet : public pcl_ros::PCLNodelet
+  class SimpleSegmentationNodelet : public nodelet::Nodelet
   {
     public:
     typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloud;
