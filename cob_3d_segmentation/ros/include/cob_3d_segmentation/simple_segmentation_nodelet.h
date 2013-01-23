@@ -64,8 +64,9 @@
 #define __SIMPLE_SEGMENTATION_NODELET_H__
 
 // ROS includes
-#include <pcl_ros/pcl_nodelet.h>
+#include <nodelet/nodelet.h>
 #include <pcl_ros/transforms.h>
+#include <pcl_ros/point_cloud.h>
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_eigen.h>
 #include <dynamic_reconfigure/server.h>
@@ -83,7 +84,7 @@
 
 namespace cob_3d_segmentation
 {
-  class SimpleSegmentationNodelet : public pcl_ros::PCLNodelet
+  class SimpleSegmentationNodelet : public nodelet::Nodelet
   {
     public:
     typedef pcl::PointCloud<pcl::PointXYZRGB> PointCloud;
