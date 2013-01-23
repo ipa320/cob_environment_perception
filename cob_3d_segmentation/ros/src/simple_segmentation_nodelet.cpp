@@ -72,7 +72,7 @@
 void
 cob_3d_segmentation::SimpleSegmentationNodelet::onInit()
 {
-  PCLNodelet::onInit();
+  //PCLNodelet::onInit();
   nh_ = getNodeHandle();
   config_server_.reset(new dynamic_reconfigure::Server<segmentation_nodeletConfig>(getPrivateNodeHandle()));
   config_server_->setCallback(boost::bind(&SimpleSegmentationNodelet::configCallback, this, _1, _2));
@@ -139,6 +139,7 @@ cob_3d_segmentation::SimpleSegmentationNodelet::receivedCloudCallback(PointCloud
   cob_3d_mapping_msgs::ShapeArray sa;
   sa.header = down_->header;
   sa.header.frame_id = down_->header.frame_id.c_str();
+  unsigned int id = 0;
   for (ClusterPtr c = seg_.clusters()->begin(); c != seg_.clusters()->end(); ++c)
   {
     if(c->size() < min_cluster_size_) continue;
@@ -161,14 +162,15 @@ cob_3d_segmentation::SimpleSegmentationNodelet::receivedCloudCallback(PointCloud
 
     sa.shapes.push_back(cob_3d_mapping_msgs::Shape());
     cob_3d_mapping_msgs::Shape* s = &sa.shapes.back();
-    s->id = 0;
+    s->id = id++;
     s->points.resize(poly.polys_.size());
     s->header.frame_id = down_->header.frame_id.c_str();
     /*Eigen::Vector3f color = c->computeDominantColorVector().cast<float>();
-    float tmp_inv = 1.0f / 255.0f;
-    s->color.r = color(0) * tmp_inv;
-    s->color.g = color(1) * tmp_inv;
-    s->color.b = color(2) * tmp_inv;*/
+    float tmp_inv = 1.0f / 255.0f;*/
+    s->color.r = 0;//color(0) * tmp_inv;
+    s->color.g = 0;//color(1) * tmp_inv;
+    s->color.b = 1.0f;//color(2) * tmp_inv;
+    s->color.a = 1.0f;
 
     for (int i = 0; i < (int)poly.polys_.size(); ++i)
     {
@@ -203,6 +205,12 @@ cob_3d_segmentation::SimpleSegmentationNodelet::receivedCloudCallback(PointCloud
     s->params[1] = c->pca_point_comp3(1);
     s->params[2] = c->pca_point_comp3(2);
     s->params[3] = fabs(centroid.dot(c->pca_point_comp3)); // d
+    Eigen::Vector3f color = c->computeDominantColorVector().cast<float>();
+    float temp_inv = 1.0f/255.0f;
+    s->color.r = color(0) * temp_inv;
+    s->color.g = color(1) * temp_inv;
+    s->color.b = color(2) * temp_inv;
+    s->color.a = 1.0f;
   }
 
   pub_shape_array_.publish(sa);
