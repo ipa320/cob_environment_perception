@@ -57,6 +57,7 @@
 
 #include <visualization_msgs/MarkerArray.h>
 
+#include <pcl/kdtree/kdtree_flann.h>
 #include "../general_segmentation.h"
 
 #define USE_MIN_MAX_RECHECK_
