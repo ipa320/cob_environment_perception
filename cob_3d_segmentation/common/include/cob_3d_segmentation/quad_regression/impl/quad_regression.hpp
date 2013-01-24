@@ -809,6 +809,13 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
   {
     typename pcl::PointCloud<PointLabel>::Ptr out(new pcl::PointCloud<PointLabel>);
 
+    pcl::KdTreeFLANN<Point> kdtree;
+
+    std::vector<int> pointIdxNKNSearch(1);
+    std::vector<float> pointNKNSquaredDistance(1);
+
+    kdtree.setInputCloud (input_);
+
     ROS_ASSERT(levels_.size()>0);
 
     out->resize(levels_[0].w*levels_[0].h);
@@ -843,9 +850,15 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
           p(1) =
               levels_[0].data[getInd(x,y)].model_(0,3)/levels_[0].data[getInd(x,y)].model_(0,0);
           p(2) = z;
-          const float d = std::min(std::abs(z - z_model), (polygons_[i].project2world(polygons_[i].nextPoint(p))-p).norm());
 
-          if(pcl_isfinite(d))
+          Point ps;
+          ps.x = p(0);
+          ps.y = p(1);
+          ps.z = z_model;
+          kdtree.nearestKSearch(ps, 1, pointIdxNKNSearch, pointNKNSquaredDistance);
+          const float d = std::min(pointNKNSquaredDistance[0], std::min(std::abs(z - z_model), (polygons_[i].project2world(polygons_[i].nextPoint(p))-p).norm()));
+
+          if(pcl_isfinite(d) && pcl_isfinite(z))
           {
             rstat.Push(d);
             avg_dist += z;
