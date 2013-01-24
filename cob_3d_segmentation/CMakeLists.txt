@@ -42,7 +42,7 @@ rosbuild_add_roslaunch_check(ros/launch)
 #######################  TESTING  #######################
 rosbuild_add_executable(test_segmentation ros/test/test_segmentation.cpp common/src/polypartition.cpp)
 rosbuild_add_compile_flags(test_segmentation ${SSE_FLAGS})
-target_link_libraries(test_segmentation gtest)
+target_link_libraries(test_segmentation gtest ${PCL_LIBRARIES})
 
 #rosbuild_add_executable(test_polygon_extraction ros/test/test_polygon_extraction.cpp)
 #target_link_libraries(test_polygon_extraction gtest)
