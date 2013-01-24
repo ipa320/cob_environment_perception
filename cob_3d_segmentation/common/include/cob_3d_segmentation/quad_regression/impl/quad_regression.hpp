@@ -48,7 +48,9 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
 
   template <typename Point, typename PointLabel>
   void Segmentation_QuadRegression<Point,PointLabel>::getKinectParams(const pcl::PointCloud<Point> &pc) {
-    Point p1,p2;
+    Point p1, p2;
+    p1=p1;
+    p2=p2;
     int i1=-1, i2=-1;
 
     for(size_t x=0; x<pc.width; x+=8) {
@@ -473,7 +475,7 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
       return;
     }
 
-    if(i==FINAL_LOD) {
+    if(i==(int)FINAL_LOD) {
       if(!list.size)
       {
         ROS_ASSERT(0);
@@ -783,10 +785,6 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
 
         if(mark>0 && mark<(int)polygons_.size())
         {
-          const float z_model = polygons_[mark].model_.model(
-              levels_[0].data[getInd(x,y)].model_(0,1)/levels_[0].data[getInd(x,y)].model_(0,0),
-              levels_[0].data[getInd(x,y)].model_(0,3)/levels_[0].data[getInd(x,y)].model_(0,0)
-          );
           const float z = levels_[0].data[getInd(x,y)].z_(0)/levels_[0].data[getInd(x,y)].model_(0,0);
 
           Eigen::Vector3f p;
