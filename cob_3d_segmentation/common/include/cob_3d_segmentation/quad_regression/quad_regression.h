@@ -285,7 +285,7 @@ poly.segments2d_.back().push_back(p2);
       const pcl::PointCloud<Point> &pc = *input_;
       //      for(int xx=-4; xx<5; xx++)
       //        for(int yy=-4; yy<5; yy++)
-      for(int i=0; i<sizeof(rel_motion_pattern)/sizeof(rel_motion_pattern[0]); i++) {
+      for(size_t i=0; i<sizeof(rel_motion_pattern)/sizeof(rel_motion_pattern[0]); i++) {
         int xx=rel_motion_pattern[i][0];
         int yy=rel_motion_pattern[i][1];
 
