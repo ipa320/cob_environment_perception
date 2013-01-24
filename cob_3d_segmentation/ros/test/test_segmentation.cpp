@@ -16,6 +16,7 @@
 //includes needed for segmentation (things to test)
 #include <cob_3d_segmentation/general_segmentation.h>
 #include <cob_3d_segmentation/quad_regression/quad_regression.h>
+#include <cob_3d_segmentation/ransac/ransac.h>
 
 /**
  * little helper to load pcd files from test folder
@@ -157,6 +158,7 @@ public:
       col=0;
       ++row;
     }
+    fflush(fp);
   }
 
   static Testing_CSV create_table(const std::string &fn, std::string cols)
@@ -263,6 +265,43 @@ TEST(Segmentation, quad_regression)
     bag_out.write("shapes_array", ros::Time(1342850029.582334425+0.1), (cob_3d_mapping_msgs::ShapeArray)seg);
     bag_out.write("shapes_array", ros::Time(1342850029.582334425+0.2), (cob_3d_mapping_msgs::ShapeArray)seg);
     bag_out.write("shapes_array", ros::Time(1342850029.582334425+0.4), (cob_3d_mapping_msgs::ShapeArray)seg);
+  }
+}
+
+TEST(Segmentation, ransac)
+{
+  typedef pcl::PointXYZRGB Point;
+  typedef pcl::PointXYZRGB PointL;
+
+  pcl::PointCloud<Point>::Ptr pc(new pcl::PointCloud<Point>);
+  Segmentation::Segmentation_RANSAC<Point,PointL> seg;
+
+  static Testing_CSV csv = Testing_CSV::create_table("accuracy","filename,mean,variance,average distance,used points, memory for representation,points");
+
+  ROS_INFO("starting segmentation");
+  size_t ind=0;
+  std::string fn;
+  while(Testing_PCDLoader::get().getPC<Point>(ind++, pc, fn))
+  {
+    if(pc->size()<1) continue;
+    ROS_INFO("processing pc %d ...",(int)ind-1);
+    std::string fn_short(fn.begin()+(fn.find_last_of("/")+1),fn.end());
+    segment_pointcloud<Point,PointL>(&seg,pc, fn_short);
+
+    Testing_PCDLoader::get().writePC<PointL>("reconstructed_"+fn_short, seg.getReconstructedOutputCloud());
+
+    float mean, var, dist;
+    size_t used, mem, points;
+    seg.compute_accuracy(mean, var, used, mem, points, dist);
+
+    csv.add(fn_short);
+    csv.add(mean);
+    csv.add(var);
+    csv.add(dist);
+    csv.add(used);
+    csv.add(mem);
+    csv.add(points);
+    csv.next();
   }
 }
 
