@@ -3,6 +3,7 @@ namespace Contour2D {
 
   struct spline2D {
     int v, x,y, bf;
+    spline2D():v(0),x(0),y(0),bf(0) {}
   };
 
   spline2D g_Splines[9][256];
@@ -26,7 +27,7 @@ namespace Contour2D {
       bool b[8];
       for(int j=0; j<8; j++)
         b[j]=i&(1<<j);
-      spline2D s={};
+      spline2D s;
       if(!i) {
         g_Splines[8][i]=s;
         continue;
@@ -70,7 +71,7 @@ namespace Contour2D {
         bool b[8];
         for(int j=0; j<8; j++)
           b[j]=i&(1<<j);
-        spline2D s={};
+        spline2D s;
         if(!i) {
           g_Splines[a][i]=s;
           continue;
