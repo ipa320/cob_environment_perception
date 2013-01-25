@@ -14,20 +14,19 @@
  * \note
  *  ROS stack name: cob_environment_perception
  * \note
- *  ROS package name: cob_3d_mapping_pipeline_fake
+ *  ROS package name: cob_3d_mapping_common
  *
  * \author
- *  Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ *  Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
  * \author
  *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * \date Date of creation: 12/2011
+ * \date Date of creation: 11/2012
  *
  * \brief
  * Description:
  *
  * ToDo:
- *
  *
  *
  *****************************************************************
@@ -61,47 +60,24 @@
  *
  ****************************************************************/
 
-//##################
-//#### includes ####
+#ifndef __SENSOR_MODEL_H__
+#define __SENSOR_MODEL_H__
 
-// ROS includes
-#include <ros/ros.h>
-#include <rosbag/bag.h>
-#include <rosbag/view.h>
-
-// ROS message includes
-#include <cob_3d_mapping_msgs/ShapeArray.h>
-#include <cob_3d_mapping_msgs/GetGeometryMap.h>
-
-std::string file_path;
-cob_3d_mapping_msgs::ShapeArray::ConstPtr sa;
-
-bool
-getMap(cob_3d_mapping_msgs::GetGeometryMap::Request &req,
-       cob_3d_mapping_msgs::GetGeometryMap::Response &res)
+namespace cob_3d_mapping
 {
-  res.map = *sa;
-  return true;
+  class PrimeSense
+  {
+    public:
+    PrimeSense() {}
+    ~PrimeSense() {}
+
+    static bool areNeighbors(float query, float neighbor, float tolerance = 2.0f)
+    {
+      float dist_th = tolerance * 0.003f * query * query;
+      //if (query < 1.2) dist_th += 0.01f;
+      return (fabs(query - neighbor) < dist_th);
+    }
+  };
 }
 
-int main (int argc, char **argv)
-{
-  ros::init(argc, argv, "geometry_map_node");
-  ros::NodeHandle nh;
-
-  ros::param::get("~file_path", file_path);
-  rosbag::Bag bag;
-  bag.open(file_path, rosbag::bagmode::Read);
-  rosbag::View view(bag, rosbag::TopicQuery("/geometry_map/map_array"));
-  rosbag::MessageInstance m = *(view.begin());
-  sa = m.instantiate<cob_3d_mapping_msgs::ShapeArray>();
-  bag.close();
-
-  ros::ServiceServer get_map_server = nh.advertiseService("get_map", &getMap);
-  ros::Publisher pub = nh.advertise<cob_3d_mapping_msgs::ShapeArray>("map_array",1);
-  ros::Duration(0.5).sleep();
-  pub.publish(*sa);
-  ros::spin();
-
-  return 0;
-}
+#endif

@@ -1,42 +1,48 @@
-/****************************************************************
+/*!
+ *****************************************************************
+ * \file
  *
- * Copyright (c) 2010
+ * \note
+ *   Copyright (c) 2012 \n
+ *   Fraunhofer Institute for Manufacturing Engineering
+ *   and Automation (IPA) \n\n
  *
- * Fraunhofer Institute for Manufacturing Engineering
- * and Automation (IPA)
+ *****************************************************************
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ * \note
+ *  Project name: care-o-bot
+ * \note
+ *  ROS stack name: cob_environment_perception
+ * \note
+ *  ROS package name: cob_3d_visualization
  *
- * Project name: care-o-bot
- * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_common
+ * \author
+ *  Author: Waqas Tanveer, email:Waqas.Tanveer@ipa.fhg.de
+ * \author
+ *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ *
+ * \date Date of creation: 04/2012
+ *
+ * \brief
  * Description:
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
- *\author
- * Author: Waqas Tanveer, email:Waqas.Tanveer@ipa.fhg.de
- * \author
- * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
- *
- * Date of creation: 04/2012
  * ToDo:
  *
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *****************************************************************
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- * * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- * * Redistributions in binary form must reproduce the above copyright
- * notice, this list of conditions and the following disclaimer in the
- * documentation and/or other materials provided with the distribution.
- * * Neither the name of the Fraunhofer Institute for Manufacturing
- * Engineering and Automation (IPA) nor the names of its
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
+ *     - Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer. \n
+ *     - Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution. \n
+ *     - Neither the name of the Fraunhofer Institute for Manufacturing
+ *       Engineering and Automation (IPA) nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission. \n
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License LGPL as
@@ -72,7 +78,8 @@ using namespace cob_3d_mapping;
 
 ShapeVisualization::ShapeVisualization () :
 	ctr_for_shape_indexes (0),
-	nh_("~")
+	nh_("~"),
+	frame_id_("map")
     {
       shape_array_sub_ = nh_.subscribe ("shape_array", 1, &ShapeVisualization::shapeArrayCallback, this);
       feedback_sub_ = nh_.subscribe("shape_i_marker/feedback",1,&ShapeVisualization::setShapePosition,this);
@@ -87,7 +94,7 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
 {
 
   cob_3d_mapping_msgs::ShapeArray map_msg;
-  map_msg.header.frame_id="/map";
+  map_msg.header.frame_id = frame_id_;
   map_msg.header.stamp = ros::Time::now();
 
   int shape_id,index;
@@ -402,7 +409,7 @@ void ShapeVisualization::moreOptions()
   Text.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
   Text.action = visualization_msgs::Marker::ADD;
   Text.lifetime = ros::Duration ();
-  Text.header.frame_id = "/map" ;
+  Text.header.frame_id = frame_id_;
 
   Text.id = 0;
   Text.ns = "text";
@@ -572,6 +579,7 @@ ShapeVisualization::shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr
   sha.shapes.clear() ;
   im_server_->applyChanges();
   ROS_INFO("shape array with %d shapes received", sa->shapes.size());
+  frame_id_ = sa->header.frame_id;
 
   for (unsigned int i = 0; i < sa->shapes.size (); i++)
   {

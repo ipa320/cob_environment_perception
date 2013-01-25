@@ -67,6 +67,7 @@ extern "C" {
 #include "cob_3d_mapping_common/gpc.h"
 }
 #include <fstream>
+#include <iostream>
 
 //#include "cob_3d_mapping_common/stop_watch.h"
 
