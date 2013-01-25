@@ -65,7 +65,9 @@
 #include <pcl/common/file_io.h>
 #include <pcl/search/organized.h>
 #include <pcl/features/normal_3d.h>
+#include <pcl/features/integral_image_normal.h>
 #include <pcl/segmentation/organized_multi_plane_segmentation.h>
+#include <pcl/segmentation/edge_aware_plane_comparator.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/point_cloud_handlers.h>
 
@@ -85,21 +87,29 @@ int main (int argc, char** argv)
   PCDReader r;
   PointCloud<PointXYZRGB>::Ptr p(new PointCloud<PointXYZRGB>);
   PointCloud<Normal>::Ptr n(new PointCloud<Normal>);
+  float* distance_map;
   PointCloud<PointLabel>::Ptr l(new PointCloud<PointLabel>);
   PointCloud<Label>::Ptr l2(new PointCloud<Label>);
 
   r.read( argv[1], *p);
 
   PrecisionStopWatch t;
-
   std::cout << "Computing Normals..." << std::endl;
   t.precisionStart();
-  search::OrganizedNeighbor<PointXYZRGB>::Ptr tree(new search::OrganizedNeighbor<PointXYZRGB>);
+  /*search::OrganizedNeighbor<PointXYZRGB>::Ptr tree(new search::OrganizedNeighbor<PointXYZRGB>);
   NormalEstimation<PointXYZRGB, Normal> ne;
   ne.setSearchMethod(tree);
-  ne.setKSearch(200); // 17 x 17 mask
+  ne.setKSearch(200);
+  ne.setInputCloud(p);
+  ne.compute(*n);*/
+  IntegralImageNormalEstimation<PointXYZRGB, Normal> ne;
+  ne.setNormalEstimationMethod(ne.COVARIANCE_MATRIX);
+  ne.setMaxDepthChangeFactor(0.02f);
+  //ne.setDepthDependentSmoothing(true);
+  ne.setNormalSmoothingSize(40.0f);
   ne.setInputCloud(p);
   ne.compute(*n);
+  distance_map = ne.getDistanceMap();
   std::cout << "Took: " << t.precisionStop() << std::endl;
 
   std::cout << "Computing segments..." << std::endl;
@@ -108,11 +118,13 @@ int main (int argc, char** argv)
   std::vector<ModelCoefficients> coef;
   std::vector<PointIndices> inlier_indices, label_indices, boundary_indices;
   OrganizedMultiPlaneSegmentation<PointXYZRGB, Normal, Label> omps;
+  EdgeAwarePlaneComparator<PointXYZRGB, Normal>::Ptr comparator(new EdgeAwarePlaneComparator<PointXYZRGB, Normal>(distance_map));
+  omps.setComparator(comparator);
   omps.setInputCloud(p);
   omps.setInputNormals(n);
   omps.setMinInliers(100);
-  omps.setAngularThreshold(25.0f/180.0f*M_PI);
-  omps.setMaximumCurvature(0.1);
+  omps.setAngularThreshold(5.0f/180.0f*M_PI);
+  omps.setMaximumCurvature(0.1); // default 0.001
   omps.setDistanceThreshold(0.02f);
   omps.segmentAndRefine(regions, coef, inlier_indices, l2, label_indices, boundary_indices);
   std::cout << "Took: " << t.precisionStop() << std::endl;
@@ -137,7 +149,7 @@ int main (int argc, char** argv)
   {
     for (size_t j=0; j<inlier_indices[i].indices.size(); ++j)
     {
-      (*p)[ inlier_indices[i].indices[j] ].rgb = colors[ i ];
+      (*p)[ inlier_indices[i].indices[j] ].rgba = colors[ i ];
     }
   }
 
