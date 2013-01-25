@@ -1,40 +1,48 @@
-/****************************************************************
+/*!
+ *****************************************************************
+ * \file
  *
- * Copyright (c) 2011
+ * \note
+ *   Copyright (c) 2012 \n
+ *   Fraunhofer Institute for Manufacturing Engineering
+ *   and Automation (IPA) \n\n
  *
- * Fraunhofer Institute for Manufacturing Engineering
- * and Automation (IPA)
+ *****************************************************************
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ * \note
+ *  Project name: care-o-bot
+ * \note
+ *  ROS stack name: cob_environment_perception_intern
+ * \note
+ *  ROS package name: cob_3d_mapping_tools
  *
- * Project name: care-o-bot
- * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_tools
+ * \author
+ *  Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
+ * \author
+ *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ *
+ * \date Date of creation: 08/2012
+ *
+ * \brief
  * Description:
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
- * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
- * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
- *
- * Date of creation: 08/2012
  * ToDo:
  *
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *****************************************************************
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
+ *     - Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer. \n
+ *     - Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Fraunhofer Institute for Manufacturing
+ *       documentation and/or other materials provided with the distribution. \n
+ *     - Neither the name of the Fraunhofer Institute for Manufacturing
  *       Engineering and Automation (IPA) nor the names of its
  *       contributors may be used to endorse or promote products derived from
- *       this software without specific prior written permission.
+ *       this software without specific prior written permission. \n
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License LGPL as
@@ -43,7 +51,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License LGPL for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
@@ -75,6 +83,8 @@ namespace Gui
 
     struct Color : public View2D { static const std::string STR; };
     struct Depth_Z : public View2D { static const std::string STR; };
+    template<size_t Channel>
+    struct Normal : public View2D { static const std::string STR; };
 
     // not implemented, totally different approach necessary! use OnIdle in MainApp -> wxApp
     struct Depth_3D : public View3D { static const std::string STR; };
@@ -84,6 +94,9 @@ namespace Gui
 
     const std::string Color::STR = "Color View";
     const std::string Depth_Z::STR = "Depth View";
+    template<> const std::string Normal<0>::STR = "Normal x View";
+    template<> const std::string Normal<1>::STR = "Normal y View";
+    template<> const std::string Normal<2>::STR = "Normal z View";
     const std::string Depth_3D::STR = "Depth3D View";
     const std::string Histogram::STR = "Histogram View";
     const std::string Curvature::STR = "Curvature View";

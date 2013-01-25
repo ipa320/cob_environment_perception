@@ -109,6 +109,9 @@ rosbuild_add_executable(test_edge_estimation common/apps/test_edge_estimation.cp
 rosbuild_add_compile_flags(test_edge_estimation -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
 target_link_libraries(test_edge_estimation cob_3d_mapping_features vtkCommon vtkFiltering ${OpenCV_LIBS})
 rosbuild_link_boost(test_edge_estimation program_options)
+rosbuild_add_executable(test_edge_sharpening common/apps/test_edge_sharpening.cpp)
+target_link_libraries(test_edge_sharpening cob_3d_mapping_features vtkCommon vtkRendering)
+rosbuild_link_boost(test_edge_sharpening program_options)
 
 # Profiling old EdgeEstimation and FastEdgeEstimation
 # Only computation, no visualization or output.

@@ -1,40 +1,48 @@
-/****************************************************************
+/*!
+ *****************************************************************
+ * \file
  *
- * Copyright (c) 2011
+ * \note
+ *   Copyright (c) 2012 \n
+ *   Fraunhofer Institute for Manufacturing Engineering
+ *   and Automation (IPA) \n\n
  *
- * Fraunhofer Institute for Manufacturing Engineering
- * and Automation (IPA)
+ *****************************************************************
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ * \note
+ *  Project name: care-o-bot
+ * \note
+ *  ROS stack name: cob_vision
+ * \note
+ *  ROS package name: cob_env_model
  *
- * Project name: care-o-bot
- * ROS stack name: cob_vision
- * ROS package name: cob_env_model
+ * \author
+ *  Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ * \author
+ *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ *
+ * \date Date of creation: 08/2011
+ *
+ * \brief
  * Description:
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
- * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
- * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
- *
- * Date of creation: 08/2011
  * ToDo:
  *
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *****************************************************************
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
+ *     - Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer. \n
+ *     - Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Fraunhofer Institute for Manufacturing
+ *       documentation and/or other materials provided with the distribution. \n
+ *     - Neither the name of the Fraunhofer Institute for Manufacturing
  *       Engineering and Automation (IPA) nor the names of its
  *       contributors may be used to endorse or promote products derived from
- *       this software without specific prior written permission.
+ *       this software without specific prior written permission. \n
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License LGPL as
@@ -43,7 +51,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License LGPL for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
@@ -60,12 +68,13 @@
 #include <pcl/point_cloud.h>
 #include <Eigen/StdVector>
 #include <pcl/ModelCoefficients.h>
+#include <pcl/PointIndices.h>
 
 
 class TableObjectCluster
 {
 public:
-  typedef pcl::PointXYZ Point;
+  typedef pcl::PointXYZRGB Point;
 
   TableObjectCluster()
   {
@@ -89,9 +98,8 @@ public:
    * @return nothing
    */
   void
-  extractTableRoi(pcl::PointCloud<Point>::Ptr& pc_in,
-                  pcl::PointCloud<Point>::Ptr& hull,
-                  pcl::PointCloud<Point>& pc_roi);
+  extractTableRoi(pcl::PointCloud<Point>::Ptr& hull,
+                  pcl::PointIndices& pc_roi);
 
   /**
    * @brief extracts objects at top of a plane
@@ -106,10 +114,10 @@ public:
    * @return nothing
    */
   void
-  extractTableRoi2(pcl::PointCloud<Point>::Ptr& pc_in,
-                                      pcl::PointCloud<Point>::Ptr& hull,
-                                      Eigen::Vector4f& plane_coeffs,
-                                      pcl::PointCloud<Point>& pc_roi);
+  extractTableRoi2(const pcl::PointCloud<Point>::ConstPtr& pc_in,
+                   pcl::PointCloud<Point>::Ptr& hull,
+                   Eigen::Vector4f& plane_coeffs,
+                   pcl::PointCloud<Point>& pc_roi);
 
   /**
    * @brief removes known objects by bounding box
@@ -139,8 +147,13 @@ public:
    * @return nothing
    */
   void
-  calculateBoundingBoxes(pcl::PointCloud<Point>::Ptr& pc_roi_red,
-                     std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > >& bounding_boxes);
+  calculateBoundingBoxes(pcl::PointIndices::Ptr& pc_roi,
+                         std::vector<pcl::PointCloud<Point>::Ptr >& object_clusters,
+                     std::vector<pcl::PointCloud<pcl::PointXYZ> >& bounding_boxes);
+
+
+  void
+  setInputCloud(const pcl::PointCloud<Point>::Ptr&  cloud) {input_ = cloud;}
 
   /**
    * @brief sets parameters for filtering
@@ -177,6 +190,7 @@ public:
   }
 
 protected:
+  pcl::PointCloud<Point>::Ptr input_;
   double height_min_;           /// paramter for object detection
   double height_max_;           /// paramter for object detection
   int min_cluster_size_;        /// paramter for object detection

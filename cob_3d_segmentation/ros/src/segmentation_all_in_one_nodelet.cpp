@@ -1,40 +1,48 @@
-/****************************************************************
+/*!
+ *****************************************************************
+ * \file
  *
- * Copyright (c) 2011
+ * \note
+ *   Copyright (c) 2012 \n
+ *   Fraunhofer Institute for Manufacturing Engineering
+ *   and Automation (IPA) \n\n
  *
- * Fraunhofer Institute for Manufacturing Engineering
- * and Automation (IPA)
+ *****************************************************************
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ * \note
+ *  Project name: care-o-bot
+ * \note
+ *  ROS stack name: cob_vision
+ * \note
+ *  ROS package name: cob_env_model
  *
- * Project name: care-o-bot
- * ROS stack name: cob_vision
- * ROS package name: cob_env_model
+ * \author
+ *  Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
+ * \author
+ *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ *
+ * \date Date of creation: 05/2012
+ *
+ * \brief
  * Description:
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
- * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
- * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
- *
- * Date of creation: 05/2012
  * ToDo:
  *
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *****************************************************************
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
+ *     - Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer. \n
+ *     - Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Fraunhofer Institute for Manufacturing
+ *       documentation and/or other materials provided with the distribution. \n
+ *     - Neither the name of the Fraunhofer Institute for Manufacturing
  *       Engineering and Automation (IPA) nor the names of its
  *       contributors may be used to endorse or promote products derived from
- *       this software without specific prior written permission.
+ *       this software without specific prior written permission. \n
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License LGPL as
@@ -43,7 +51,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License LGPL for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
@@ -67,6 +75,8 @@
     #include <pcl/ros/for_each_type.h>
   #endif
 
+#include <pcl_ros/point_cloud.h>
+
 // Package includes
 #include <cob_3d_mapping_msgs/ShapeArray.h>
 #include <cob_3d_mapping_common/cylinder.h>
@@ -77,7 +87,7 @@
 void
 cob_3d_segmentation::SegmentationAllInOneNodelet::onInit()
 {
-  PCLNodelet::onInit();
+  //PCLNodelet::onInit();
   nh_ = getNodeHandle();
 
   config_server_.reset(new dynamic_reconfigure::Server<segmentation_nodeletConfig>(getPrivateNodeHandle()));
@@ -130,7 +140,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::receivedCloudCallback(PointClo
   seg_.refineSegmentation();
   std::map<int,int> objects;
   //seg_.getPotentialObjects(objects, 500);
-  std::cout << "Found " << objects.size() << " potentail objects" << std::endl;
+  //std::cout << "Found " << objects.size() << " potentail objects" << std::endl;
   NODELET_INFO("Done with segmentation .... ");
   graph_->clusters()->mapClusterColor(segmented_);
 
@@ -138,11 +148,12 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::receivedCloudCallback(PointClo
   cc_.classify();
   graph_->clusters()->mapTypeColor(classified_);
   graph_->clusters()->mapClusterBorders(classified_);
-  NODELET_INFO("publish first cloud .... ");
+  std::cout << "segmentation took " << t.precisionStop() << " s." << std::endl;
+  //NODELET_INFO("publish first cloud .... ");
   pub_segmented_.publish(segmented_);
-  NODELET_INFO("publish second cloud .... ");
+  //NODELET_INFO("publish second cloud .... ");
   pub_classified_.publish(classified_);
-  NODELET_INFO("publish shape array .... ");
+  //NODELET_INFO("publish shape array .... ");
   /*
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr bp (new pcl::PointCloud<pcl::PointXYZRGB>);
    *bp = *cloud;
@@ -164,7 +175,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
   cob_3d_mapping_msgs::ShapeArray sa;
   sa.header = cloud->header;
   sa.header.frame_id = cloud->header.frame_id.c_str();
-  std::cout<<"[SN]-->CLOUD FRAME"<<cloud->header.frame_id.c_str()<<"\n";
+  //std::cout<<"[SN]-->CLOUD FRAME"<<cloud->header.frame_id.c_str()<<"\n";
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull(new pcl::PointCloud<pcl::PointXYZRGB>);
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud_dense(new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -263,7 +274,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
     }
     case I_CYL:
     {
-      std::cout<<"CLYINDER is published\n";
+      //std::cout<<"CLYINDER is published\n";
       s->type = cob_3d_mapping_msgs::Shape::CYLINDER;
       s->params.resize(10);
 
@@ -272,8 +283,8 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
       cyl->centroid << centroid3f[0] , centroid3f[1] , centroid3f[2] , 0;
 
       cyl->sym_axis =  c->pca_inter_comp1;
-      std::cout<<"sym axis\n"<<cyl->sym_axis<<"\n";
-      std::cout<<"centroid\n"<<cyl->centroid<<"\n";
+      //std::cout<<"sym axis\n"<<cyl->sym_axis<<"\n";
+      //std::cout<<"centroid\n"<<cyl->centroid<<"\n";
       cyl->ParamsFromCloud(cloud,c->indices_);
 
 
@@ -317,7 +328,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
   pub_chull_.publish(hull_cloud);
   pub_chull_dense_.publish(hull_cloud_dense);
   pub_shape_array_.publish(sa);
-  std::cout<<"[SN]-->sa array frame set to"<<sa.header.frame_id.c_str()<<"\n";
+  //std::cout<<"[SN]-->sa array frame set to"<<sa.header.frame_id.c_str()<<"\n";
 }
 
 
