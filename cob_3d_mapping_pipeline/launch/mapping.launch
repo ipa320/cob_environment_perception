@@ -2,6 +2,7 @@
 <launch>
   <!-- start environment modelling -->
   <arg name="mapping_manager" value="mapping_manager"/>
+  <arg name="points_in" default="/cam3d/depth_registered/points"/>
   <node pkg="nodelet" type="nodelet" name="$(arg mapping_manager)"  args="manager" output="screen"/>
 
   <!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
