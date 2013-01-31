@@ -178,7 +178,7 @@ void ShapeMarker::enableMovement (const visualization_msgs::InteractiveMarkerFee
   menu_handler_.getCheckState (feedback->menu_entry_id, check_state);
 
   shape_.header = marker_.header ;
-  shape_.header.frame_id = "/map" ;
+  //shape_.header.frame_id = "/map" ;
 
   if (check_state == interactive_markers::MenuHandler::UNCHECKED)
   {
@@ -1055,7 +1055,7 @@ void ShapeMarker::displayContour(){
   marker.type = visualization_msgs::Marker::LINE_STRIP;
   marker.lifetime = ros::Duration();
   marker.header = shape_.header ;
-  marker.header.frame_id = "/map";
+  //marker.header.frame_id = "/map";
   marker.ns = "contours" ;
 
   marker.scale.x = 0.02;

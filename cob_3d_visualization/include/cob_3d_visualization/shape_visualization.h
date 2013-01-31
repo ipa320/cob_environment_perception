@@ -163,6 +163,7 @@ class ShapeVisualization
     std::vector<unsigned int> interacted_shapes_;
     std::vector<unsigned int> deleted_markers_indices_;
     cob_3d_mapping_msgs::ShapeArray modified_shapes_;
+    std::string frame_id_;
 //    unsigned int deleted_ ;
 
 

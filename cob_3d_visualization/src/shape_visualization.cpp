@@ -78,7 +78,8 @@ using namespace cob_3d_mapping;
 
 ShapeVisualization::ShapeVisualization () :
 	ctr_for_shape_indexes (0),
-	nh_("~")
+	nh_("~"),
+	frame_id_("map")
     {
       shape_array_sub_ = nh_.subscribe ("shape_array", 1, &ShapeVisualization::shapeArrayCallback, this);
       feedback_sub_ = nh_.subscribe("shape_i_marker/feedback",1,&ShapeVisualization::setShapePosition,this);
@@ -93,7 +94,7 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
 {
 
   cob_3d_mapping_msgs::ShapeArray map_msg;
-  map_msg.header.frame_id="/map";
+  map_msg.header.frame_id = frame_id_;
   map_msg.header.stamp = ros::Time::now();
 
   int shape_id,index;
@@ -408,7 +409,7 @@ void ShapeVisualization::moreOptions()
   Text.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
   Text.action = visualization_msgs::Marker::ADD;
   Text.lifetime = ros::Duration ();
-  Text.header.frame_id = "/map" ;
+  Text.header.frame_id = frame_id_;
 
   Text.id = 0;
   Text.ns = "text";
@@ -578,6 +579,7 @@ ShapeVisualization::shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr
   sha.shapes.clear() ;
   im_server_->applyChanges();
   ROS_INFO("shape array with %d shapes received", sa->shapes.size());
+  frame_id_ = sa->header.frame_id;
 
   for (unsigned int i = 0; i < sa->shapes.size (); i++)
   {
