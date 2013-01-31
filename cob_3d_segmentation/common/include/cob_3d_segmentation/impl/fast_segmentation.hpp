@@ -168,7 +168,7 @@ cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT,SensorT,Cluster
         Eigen::Vector3f i_n = c->getOrientation();
         Eigen::Vector3f i_c = c->getCentroid();
         //float d = ((*surface_)[i_idx].getVector3fMap() - i_c).dot(i_n);
-        if(!SensorT::areNeighbors((*surface_)[p.idx].z, (*surface_)[i_idx].z)) continue;
+        if(!SensorT::areNeighbors((*surface_)[p.idx].getVector3fMap(), (*surface_)[i_idx].getVector3fMap(),4.0f)) continue;
         //if(!SensorT::areNeighbors(i_c(2) + d, i_c(2), 6.0f)) { continue; }
         float dot_value = fabs( i_n.dot((*normals_)[i_idx].getNormalVector3fMap()) );
         /*if(i_n(2) != i_n(2))
