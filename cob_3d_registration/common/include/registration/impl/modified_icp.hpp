@@ -148,7 +148,7 @@ class ModifiedICP_T : public ParentClass, public ModifiedICP_G {
     radiusSearch (int index, double radius, std::vector<int> &k_indices,
                   std::vector<float> &k_sqr_distances, int max_nn = INT_MAX) const {error();return 0;}
 
-    virtual const std::string& getName() const {return "ICP Feature";}
+    virtual std::string getName() const {return "ICP Feature";}
 
   };
 
