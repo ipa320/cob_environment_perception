@@ -79,11 +79,11 @@ using namespace cob_3d_mapping;
 ShapeVisualization::ShapeVisualization () :
 	ctr_for_shape_indexes (0),
 	nh_("~"),
-	frame_id_("map")
+	frame_id_("/map")
     {
       shape_array_sub_ = nh_.subscribe ("shape_array", 1, &ShapeVisualization::shapeArrayCallback, this);
       feedback_sub_ = nh_.subscribe("shape_i_marker/feedback",1,&ShapeVisualization::setShapePosition,this);
-      marker_pub_ = nh_.advertise<visualization_msgs::Marker> ("marker", 1);
+      marker_pub_ = nh_.advertise<visualization_msgs::Marker> ("marker", 100);
       //      shape_pub_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_array", 1);
       //      get_table_subscriber_ = nh_.subscribe("shape_array", 1, &ShapeVisualization::findTables,this);
       im_server_.reset (new interactive_markers::InteractiveMarkerServer ("shape_i_marker", "", false));
@@ -586,7 +586,7 @@ ShapeVisualization::shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr
     sha.shapes.push_back(sa->shapes[i]);
     sha.shapes[i].id = sa->shapes[i].id;
 
-    std::cout << "shape id: " << sa->shapes[i].id << "\n" ;
+    std::cout << i << ": shape id: " << sa->shapes[i].id << "\n" ;
     boost::shared_ptr<ShapeMarker> sm(new ShapeMarker(im_server_, sa->shapes[i],moved_shapes_indices_
         ,interacted_shapes_,deleted_markers_indices_,false,false)) ;//,deleted_));
     v_sm_.push_back(sm);
