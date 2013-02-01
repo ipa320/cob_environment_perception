@@ -90,7 +90,7 @@
 #include <pcl/filters/voxel_grid.h>
 #include <pcl_ros/transforms.h>
 #include <pcl_ros/point_cloud.h>
-#include <pcl_ros/pcl_nodelet.h>
+#include <nodelet/nodelet.h>
 //#include <pcl/filters/extract_indices.h>
 //#include <visualization_msgs/Marker.h>
 
@@ -102,7 +102,7 @@
 
 //####################
 //#### node class ####
-class PointMapNodelet : public pcl_ros::PCLNodelet//, protected Reconfigurable_Node<cob_3d_mapping_point_map::point_map_nodeletConfig>
+class PointMapNodelet : public nodelet::Nodelet//, protected Reconfigurable_Node<cob_3d_mapping_point_map::point_map_nodeletConfig>
 {
   typedef pcl::PointXYZRGB Point;
 
@@ -152,7 +152,6 @@ public:
   void
   onInit()
   {
-    PCLNodelet::onInit();
     n_ = getNodeHandle();
 
     config_server_ = boost::shared_ptr<dynamic_reconfigure::Server<cob_3d_mapping_point_map::point_map_nodeletConfig> >(new dynamic_reconfigure::Server<cob_3d_mapping_point_map::point_map_nodeletConfig>(getPrivateNodeHandle()));

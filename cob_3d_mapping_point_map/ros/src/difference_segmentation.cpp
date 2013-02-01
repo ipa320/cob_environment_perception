@@ -69,8 +69,9 @@
 #include <ros/console.h>
 //#include <pcl/io/pcd_io.h>
 //#include <pcl/point_types.h>
-//#include <pcl_ros/point_cloud.h>
-#include <pcl_ros/pcl_nodelet.h>
+
+#include <nodelet/nodelet.h>
+#include <pcl_ros/point_cloud.h>
 #include <pcl_ros/transforms.h>
 #include <pcl/io/io.h>
 #include <pluginlib/class_list_macros.h>
@@ -79,6 +80,7 @@
 
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
+#include <message_filters/sync_policies/exact_time.h>
 //#include <message_filters/sync_policies/approximate_time.h>
 #include <pcl/segmentation/segment_differences.h>
 #include <pcl/kdtree/kdtree_flann.h>
@@ -90,7 +92,7 @@ using namespace tf;
 
 //####################
 //#### node class ####
-class DifferenceSegmentation : public pcl_ros::PCLNodelet//, protected Reconfigurable_Node<cob_3d_mapping_point_map::point_map_nodeletConfig>
+class DifferenceSegmentation : public nodelet::Nodelet//, protected Reconfigurable_Node<cob_3d_mapping_point_map::point_map_nodeletConfig>
 {
   typedef pcl::PointXYZRGB Point;
   typedef pcl::PointCloud<Point> PointCloud;
@@ -123,15 +125,14 @@ public:
   void
   onInit()
   {
-    PCLNodelet::onInit();
     n_ = getNodeHandle();
 
-    map_diff_pub_ = n_.advertise<PointCloud >("output",1);
+    map_diff_pub_ = n_.advertise<PointCloud>("output",1);
     //diff_maps_pub_ = n_.advertise<PointCloud >("diff_maps",1);
     map_sub_.subscribe(n_,"target",10);
     pc_aligned_sub_.subscribe(n_,"input",10);
-    sync_ = boost::make_shared <message_filters::Synchronizer<MySyncPolicy> >(10);
-    sync_->connectInput(map_sub_, pc_aligned_sub_);
+    sync_.reset(new message_filters::Synchronizer<MySyncPolicy>(MySyncPolicy(10), map_sub_, pc_aligned_sub_));
+    //sync_->connectInput(map_sub_, pc_aligned_sub_);
     sync_->registerCallback(boost::bind(&DifferenceSegmentation::pointCloudSubCallback, this, _1, _2));
 
 #ifdef PCL_VERSION_COMPARE //fuerte
@@ -174,7 +175,7 @@ public:
     Eigen::Matrix4f trf = af.matrix().cast<float>();
     pcl::transformPointCloud(*pc_aligned, *pc_trans, trf);
 
-    PointCloud pc_diff;
+    PointCloud::Ptr pc_diff(new PointCloud);
     /*std::cout << "map size:" << map->size() << std::endl;
     std::cout << map->header.stamp << std::endl;
     std::cout << "pc_aligned size:" << pc_aligned->size() << std::endl;
@@ -187,10 +188,10 @@ public:
     //diff_maps_.header.frame_id=map->header.frame_id;
     sd_.setTargetCloud(map_.makeShared());
     sd_.setInputCloud(pc_trans);
-    sd_.segment(pc_diff);
-    pc_diff.header = map->header;
-    std::cout << pc_diff.size() << std::endl;
-    if(pc_diff.size()>0)
+    sd_.segment(*pc_diff);
+    pc_diff->header = map->header;
+    std::cout << pc_diff->size() << std::endl;
+    if(pc_diff->size()>0)
     {
       map_diff_pub_.publish(pc_diff);
     }

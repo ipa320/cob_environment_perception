@@ -60,6 +60,8 @@
  *
  ****************************************************************/
 
+#include <cstdlib>
+
 #include <cob_3d_mapping_common/label_defines.h>
 #include <cob_3d_mapping_common/label_results.h>
 
@@ -75,8 +77,8 @@
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/surface/mls.h>
 #include <pcl/features/normal_3d.h>
-#include <pcl/features/rsd.h>
 #include <pcl/features/principal_curvatures.h>
+#include <pcl/features/rsd.h>
 #include <pcl/features/fpfh.h>
 
 #include <pcl/visualization/pcl_visualizer.h>
@@ -268,14 +270,20 @@ void processFPFH(const PointCloud<PointXYZRGB>::Ptr in,
   if(fpfh_mls_enable_)
   {
     cout << "FPFH: MLS (with " << ref_out->points.size() << " points)" << endl;
-    MovingLeastSquares<PointXYZRGB, Normal> mls;
-    mls.setInputCloud(ref_out);
-    mls.setOutputNormals(n);
-    mls.setPolynomialFit(true);
-    mls.setPolynomialOrder(2);
-    mls.setSearchMethod(tree);
-    mls.setSearchRadius(fpfh_rn_);
-    mls.reconstruct(*ref_out);
+
+    #ifdef PCL_VERSION_COMPARE
+      std::cerr << "MLS has changed completely in PCL 1.7! Requires redesign of entire program" << std::endl;
+      exit(0);
+    #else
+      MovingLeastSquares<PointXYZRGB, Normal> mls;
+      mls.setInputCloud(ref_out);
+      mls.setOutputNormals(n);
+      mls.setPolynomialFit(true);
+      mls.setPolynomialOrder(2);
+      mls.setSearchMethod(tree);
+      mls.setSearchRadius(fpfh_rn_);
+      mls.reconstruct(*ref_out);
+    #endif
     cout << "FPFH: flip normals (with " << ref_out->points.size() << " points)" << endl;
     for (size_t i = 0; i < ref_out->points.size(); ++i)
     {
@@ -443,14 +451,20 @@ void processPC(const PointCloud<PointXYZRGB>::Ptr in,
   if(pc_mls_enable_)
   {
     cout << "PC: MLS (with " << ref_out->points.size() << " points)" << endl;
-    MovingLeastSquares<PointXYZRGB, Normal> mls;
-    mls.setInputCloud(ref_out);
-    mls.setOutputNormals(n);
-    mls.setPolynomialFit(true);
-    mls.setPolynomialOrder(2);
-    mls.setSearchMethod(tree);
-    mls.setSearchRadius(pc_rn_);
-    mls.reconstruct(*ref_out);
+
+    #ifdef PCL_VERSION_COMPARE
+      std::cerr << "MLS has changed completely in PCL 1.7! Requires redesign of entire program" << std::endl;
+      exit(0);
+    #else
+      MovingLeastSquares<PointXYZRGB, Normal> mls;
+      mls.setInputCloud(ref_out);
+      mls.setOutputNormals(n);
+      mls.setPolynomialFit(true);
+      mls.setPolynomialOrder(2);
+      mls.setSearchMethod(tree);
+      mls.setSearchRadius(pc_rn_);
+      mls.reconstruct(*ref_out);
+    #endif
     cout << "PC: flip normals (with " << ref_out->points.size() << " points)" << endl;
     for (size_t i = 0; i < ref_out->points.size(); ++i)
     {
@@ -624,14 +638,21 @@ void processRSD(const PointCloud<PointXYZRGB>::Ptr in,
   if(rsd_mls_enable_)
   {
     cout << "RSD: MLS (with " << ref_out->points.size() << " points)" << endl;
-    MovingLeastSquares<PointXYZRGB, Normal> mls;
-    mls.setInputCloud(ref_out);
-    mls.setOutputNormals(n);
-    mls.setPolynomialFit(true);
-    mls.setPolynomialOrder(2);
-    mls.setSearchMethod(tree);
-    mls.setSearchRadius(rsd_rn_);
-    mls.reconstruct(*ref_out);
+
+    #ifdef PCL_VERSION_COMPARE
+      std::cerr << "MLS has changed completely in PCL 1.7! Requires redesign of entire program" << std::endl;
+      exit(0);
+    #else
+      MovingLeastSquares<PointXYZRGB, Normal> mls;
+      mls.setInputCloud(ref_out);
+      mls.setOutputNormals(n);
+      mls.setPolynomialFit(true);
+      mls.setPolynomialOrder(2);
+      mls.setSearchMethod(tree);
+      mls.setSearchRadius(rsd_rn_);
+      mls.reconstruct(*ref_out);
+    #endif
+
     cout << "RSD: flip normals (with " << ref_out->points.size() << " points)" << endl;
     for (size_t i = 0; i < ref_out->points.size(); ++i)
     {
