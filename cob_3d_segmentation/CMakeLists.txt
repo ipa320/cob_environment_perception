@@ -96,4 +96,4 @@ rosbuild_add_executable(test_plane_extraction common/apps/test_plane_extraction.
 target_link_libraries(test_plane_extraction cob_3d_segmentation vtkCommon vtkFiltering)
 rosbuild_link_boost(test_plane_extraction program_options)
 
-rosbuild_add_executable(test_pcl_segmentation common/src/test_pcl_segmentation.cpp)
+#rosbuild_add_executable(test_pcl_segmentation common/src/test_pcl_segmentation.cpp)
