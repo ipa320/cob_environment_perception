@@ -63,12 +63,13 @@
 //pcl includes
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#ifdef PCL_VERSION_COMPARE
-#include <pcl/common/transforms.h>
-#else
 #include <pcl/common/common.h>
-#include <pcl/common/transform.h>
-#include <pcl/registration/transforms.h>
+
+#ifdef PCL_VERSION_COMPARE
+  #include <pcl/common/transforms.h>
+#else
+  #include <pcl/common/transform.h>
+  #include <pcl/registration/transforms.h>
 #endif
 #include <pcl/common/centroid.h>
 #include <pcl/common/eigen.h>
