@@ -65,6 +65,7 @@
 // cob_3d_mapping_filters includes
 #include "cob_3d_mapping_filters/amplitude_filter.h"
 
+
 template<typename PointT>
   void
   cob_3d_mapping_filters::AmplitudeFilter<PointT>::applyFilter (PointCloud &pc_out)

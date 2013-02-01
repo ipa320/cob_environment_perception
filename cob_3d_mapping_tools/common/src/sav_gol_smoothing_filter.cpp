@@ -130,8 +130,11 @@ int main(int argc, char** argv)
   if (r.read(file_, *p) == -1) return(0);
   *p2 = *p;
   PrecisionStopWatch t;
+
   if (mls_)
   {
+    #ifdef PCL_MINOR_VERSION
+    #if PCL_MINOR_VERSION < 7
     t.precisionStart();
     // MLS
     #ifdef PCL_VERSION_COMPARE //fuerte
@@ -148,7 +151,12 @@ int main(int argc, char** argv)
     mls.setSearchRadius(0.05);
     mls.reconstruct(*out3);
     cout << t.precisionStop() << "s\t for MLS" << endl;
+    #else
+    cout << "massive interface change of MLS in PCL1.7" << endl;
+    #endif
+    #endif
   }
+
 
 
   // SavGol on default depth data
