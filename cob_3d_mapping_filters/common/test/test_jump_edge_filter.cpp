@@ -65,7 +65,7 @@
 
 //AmplitudeFilter
 #include <cob_3d_mapping_filters/jump_edge_filter.h>
-#include <cob_3d_mapping_filters/impl/jump_edge_filter.hpp>
+//#include <cob_3d_mapping_filters/impl/jump_edge_filter.hpp>
 
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>

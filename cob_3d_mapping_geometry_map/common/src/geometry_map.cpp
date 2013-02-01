@@ -80,7 +80,7 @@
 #include <boost/tuple/tuple.hpp>
 #include <boost/tuple/tuple_comparison.hpp>
 #include <Eigen/Geometry>
-#include <pcl/win32_macros.h>
+//#include <pcl/win32_macros.h> // not available anymore in pcl 1.7
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>

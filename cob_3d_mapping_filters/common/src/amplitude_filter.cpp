@@ -67,7 +67,8 @@
 // cob_3d_mapping_filters includes
 #include "cob_3d_mapping_filters/amplitude_filter.h"
 #include "cob_3d_mapping_filters/impl/amplitude_filter.hpp"
-
+#include <pcl/impl/pcl_base.hpp>
+#include <pcl/filters/impl/filter.hpp>
 
 void
 cob_3d_mapping_filters::AmplitudeFilter<sensor_msgs::PointCloud2>::applyFilter (PointCloud2 &pc_out)

@@ -74,7 +74,7 @@
 // ROS includes
 #include <ros/ros.h>
 #include <pluginlib/class_list_macros.h>
-#include <pcl_ros/pcl_nodelet.h>
+#include <nodelet/nodelet.h>
 #include <tf_conversions/tf_eigen.h>
 #include <tf/transform_broadcaster.h>
 #include <actionlib/server/simple_action_server.h>
@@ -178,7 +178,7 @@ public:
 
 //####################
 //#### node class ####
-class RegistrationNodelet : public pcl_ros::PCLNodelet
+class RegistrationNodelet : public nodelet::Nodelet
 {
 #if HAS_RGB
   typedef pcl::PointXYZRGB Point;
@@ -217,7 +217,7 @@ public:
   void
   onInit()
   {
-    PCLNodelet::onInit();
+    //PCLNodelet::onInit();
     parameters_.setNodeHandle(n_);
     n_ = getNodeHandle();
 
@@ -1002,6 +1002,7 @@ protected:
   ros::Subscriber point_cloud_sub_;             /// subscriber to input data
   ros::ServiceServer register_ser_;             /// service for evaluation of registration
   tf::TransformBroadcaster tf_br_;
+  tf::TransformListener tf_listener_;
   ros::Publisher point_cloud_pub_;              /// publisher for map
   ros::Publisher marker2_pub_;                  /// publish markers for visualization as pc
   ros::Publisher marker_pub_;                   /// publish markers for visualization
