@@ -337,6 +337,7 @@ GeometryMap::cleanUp()
   {
     if (map_polygon_[idx]->merged <= 1 && (frame_counter_ - 3) > (int)map_polygon_[idx]->frame_stamp)
     {
+      ROS_INFO("cleaning id %d",idx);
       map_polygon_[idx] = map_polygon_.back();
       map_polygon_.pop_back();
       ++n_dropped;
