@@ -89,7 +89,7 @@
 #include <pcl_ros/transforms.h>
 #include <pcl_ros/point_cloud.h>
 #include <pluginlib/class_list_macros.h>
-#include <pcl_ros/pcl_nodelet.h>
+#include <nodelet/nodelet.h>
 #include <cob_env_model/field_of_view_segmentation.hpp>
 #include <pcl/filters/extract_indices.h>
 #include <visualization_msgs/Marker.h>

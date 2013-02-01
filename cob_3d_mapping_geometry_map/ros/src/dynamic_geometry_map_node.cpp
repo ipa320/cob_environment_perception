@@ -79,7 +79,7 @@
 #include <tf/transform_listener.h>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
-#include <pcl_ros/pcl_nodelet.h>
+#include <nodelet/nodelet.h>
 #include <pcl/common/eigen.h>
 
 
@@ -112,7 +112,7 @@
 
 
 
-class DynamicGeometryMapNode: public pcl_ros::PCLNodelet
+class DynamicGeometryMapNode: public nodelet::Nodelet
 {
 public:
 
@@ -132,7 +132,7 @@ public:
   void
     onInit()
     {
-      PCLNodelet::onInit();
+      //PCLNodelet::onInit();
       n_ = getNodeHandle();
       polygon_sub_ = n_.subscribe("/geometry_map/geometry_map", 1, &DynamicGeometryMapNode::geometryMapCallback, this);
       get_fov_srv_client_ = n_.serviceClient<cob_3d_mapping_msgs::GetFieldOfView>("get_fov");

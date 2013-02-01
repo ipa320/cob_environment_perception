@@ -75,7 +75,7 @@
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/exact_time.h>
 //#include <pluginlib/class_list_macros.h>
-//#include <pcl_ros/pcl_nodelet.h>
+//#include <nodelet/nodelet.h>
 #include <pcl/io/io.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>

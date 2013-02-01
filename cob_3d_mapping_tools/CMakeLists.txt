@@ -112,10 +112,6 @@ target_link_libraries(evaluate_plane_segmentation cob_3d_mapping_tools)
 rosbuild_link_boost(evaluate_plane_segmentation program_options)
 
 # Gui:
-rosbuild_add_executable(test_gui_tool common/src/test_gui_tool.cpp)
-#rosbuild_add_executable(test_gui common/src/test_gui.cpp)
-#target_link_libraries(test_gui ${wxWidgets_LIBRARIES})
-
 rosbuild_add_executable(test_gui common/src/test_wx_gui.cpp)
 target_link_libraries(test_gui ${wxWidgets_LIBRARIES} cob_3d_mapping_tools)
 rosbuild_link_boost(test_gui program_options signals)
