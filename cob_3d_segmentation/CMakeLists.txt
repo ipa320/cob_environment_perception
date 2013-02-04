@@ -81,6 +81,8 @@ target_link_libraries(profile_depth_seg cob_3d_mapping_features cob_3d_mapping_f
 rosbuild_add_executable(profile_plane_extraction common/apps/profile_plane_extraction.cpp)
 target_link_libraries(profile_plane_extraction cob_3d_segmentation vtkCommon vtkFiltering ${OpenCV_LIBS})
 
+rosbuild_add_executable(profile_multi_plane_seg common/apps/profile_multi_plane_seg.cpp)
+
 rosbuild_add_compile_flags(cob_3d_segmentation -D__LINUX__ -DCOMPILE_NODELET)
 rosbuild_add_roslaunch_check(ros/launch)
 
@@ -96,4 +98,4 @@ rosbuild_add_executable(test_plane_extraction common/apps/test_plane_extraction.
 target_link_libraries(test_plane_extraction cob_3d_segmentation vtkCommon vtkFiltering)
 rosbuild_link_boost(test_plane_extraction program_options)
 
-rosbuild_add_executable(test_pcl_segmentation common/src/test_pcl_segmentation.cpp)
+rosbuild_add_executable(test_pcl_segmentation common/apps/test_pcl_segmentation.cpp)
