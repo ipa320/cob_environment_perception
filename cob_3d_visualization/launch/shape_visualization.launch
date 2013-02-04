@@ -1,12 +1,14 @@
 <?xml version="1.0"?>
 <launch>
 
+  <arg name="shape_array_in" default="geometry_map/map_array" />
+  <arg name="name" default="shape_visualization" />
 	<!--shape visualization node-->
 	<!--node pkg="cob_3d_visualization" type="shape_visualization" name="shape_visualization" output="screen"-->
-	<node pkg="cob_3d_visualization" type="shape_visualization" name="shape_visualization" output="screen">
+	<node pkg="cob_3d_visualization" type="shape_visualization" name="$(arg name)" output="screen">
 
      <!--remap from="~shape_array" to="structure_extraction/shape_array"/-->
-     <remap from="~shape_array" to="geometry_map/map_array"/>
+     <remap from="~shape_array" to="$(arg shape_array_in)"/>
      <!-- remap from="shape" to="shape_visualization/shape"/-->
   	<!--remap from="point_cloud" to="/cam3d/rgb/points"/-->
 

@@ -99,13 +99,15 @@ public:
 
   // Constructor
   StructureExtractionNode () :
-    target_frame_id_ ("/map")
+    target_frame_id_ ("/map"),
+    remove_floor_("false"),
+    colorize_("false")
   {
     config_server_.setCallback(boost::bind(&StructureExtractionNode::dynReconfCallback, this, _1, _2));
 
     sa_sub_ = n_.subscribe ("shape_array", 10, &StructureExtractionNode::callbackShapeArray, this);
     sa_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_array_pub", 1); //10
-    s_marker_pub_ = n_.advertise<visualization_msgs::Marker> ("marker", 10);
+    //s_marker_pub_ = n_.advertise<visualization_msgs::Marker> ("marker", 10);
   }
 
   // Destructor
@@ -132,6 +134,7 @@ public:
     se_.setFloorHeight (config.floor_height);
     se_.setCeilingHeight (config.ceiling_height);
     remove_floor_ = config.remove_floor;
+    colorize_ = config.colorize;
   }
 
   /**
@@ -163,30 +166,33 @@ public:
       se_.setInputPolygon(poly_ptr);
       unsigned int label;
       se_.classify(label);
-      switch (label)
+      if(colorize_)
       {
-        case 1:
-          poly_ptr->color[0] = 1;
-          poly_ptr->color[1] = 1;
-          poly_ptr->color[2] = 1;
-          poly_ptr->color[3] = 0.5;
-        case 2:
-          poly_ptr->color[0] = 0.5;
-          poly_ptr->color[1] = 0.5;
-          poly_ptr->color[2] = 0.5;
-          poly_ptr->color[3] = 1;
-        case 3:
-          poly_ptr->color[0] = 0;
-          poly_ptr->color[1] = 0;
-          poly_ptr->color[2] = 1;
-          poly_ptr->color[3] = 1;
+        switch (label)
+        {
+          case 1:
+            poly_ptr->color[0] = 1;
+            poly_ptr->color[1] = 1;
+            poly_ptr->color[2] = 1;
+            poly_ptr->color[3] = 0.5;
+          case 2:
+            poly_ptr->color[0] = 0.5;
+            poly_ptr->color[1] = 0.5;
+            poly_ptr->color[2] = 0.5;
+            poly_ptr->color[3] = 1;
+          case 3:
+            poly_ptr->color[0] = 0;
+            poly_ptr->color[1] = 0;
+            poly_ptr->color[2] = 1;
+            poly_ptr->color[3] = 1;
+        }
       }
       cob_3d_mapping_msgs::Shape s;
       s.header = sa_ptr->header;
       s.header.frame_id = target_frame_id_;
       toROSMsg(*poly_ptr,s);
       if(label == 2 && remove_floor_)
-        std::cout << "removing floor" << std::endl;
+        {}//std::cout << "removing floor" << std::endl;
       else
         sa_out.shapes.push_back (s);
     }
@@ -259,7 +265,7 @@ public:
 protected:
   ros::Subscriber sa_sub_;
   ros::Publisher sa_pub_;
-  ros::Publisher s_marker_pub_;
+  //ros::Publisher s_marker_pub_;
 
   /**
   * @brief Dynamic Reconfigure server
@@ -270,6 +276,7 @@ protected:
 
   std::string target_frame_id_;
   bool remove_floor_;
+  bool colorize_;
 
 };
 
