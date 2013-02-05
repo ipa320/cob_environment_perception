@@ -807,8 +807,7 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
           p(1) =
               levels_[0].data[getInd(x,y)].model_(0,3)/levels_[0].data[getInd(x,y)].model_(0,0);
           p(2) = z;
-          const float d = std::min(std::abs(z - z_model), (polygons_[i].project2world(polygons_[i].nextPoint(p))-p).norm());
-
+          //const float d = std::min(std::abs(z - z_model), (polygons_[i].project2world(polygons_[i].nextPoint(p))-p).norm());
           //(*out)(x,y).r = (*out)(x,y).g = (*out)(x,y).b = d/0.1f * 255;
         }
 
