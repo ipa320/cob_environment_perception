@@ -107,8 +107,6 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
 
   template <typename Point, typename PointLabel>
   void Segmentation_QuadRegression<Point,PointLabel>::buildTree(const pcl::PointCloud<Point> &pc) {
-    int j;
-
 #ifdef STOP_TIME
     PrecisionStopWatch ssw;
     ssw.precisionStart();
@@ -120,11 +118,10 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
       SubStructure::ParamC *lvl = &levels_[i];
       if(i==0) {  ///lowest-level: take points
         Eigen::Vector3f p,t;
-        for(size_t x=0; x<lvl->w; x++) {
-          for(size_t y=0; y<lvl->h; y++) {
+        int j = 0;
+        for(size_t y=0; y<lvl->h; y++) {
+          for(size_t x=0; x<lvl->w; x++) {
 #ifdef DO_NOT_DOWNSAMPLE_
-            j=getInd(x,y);
-
             if(pcl_isfinite(pc[j].z))
             {
               lvl->data[j]=pc[j].getVector3fMap();
@@ -135,6 +132,8 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
             }
 
             lvl->data[j].occopied=-1;
+
+            ++j;
 #else
             int num=0;
             p(0)=p(1)=p(2)=0.f;
@@ -224,13 +223,16 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
       else { //other levels take lower level
         SubStructure::ParamC *lvl_prev = &levels_[i-1];
 
-        for(size_t x=0; x<lvl->w; x++) {
-          for(size_t y=0; y<lvl->h; y++) {
-            j=getInd(x,y);
-            lvl->data[j] = lvl_prev->data[getInd1(x*2,y*2)];
-            lvl->data[j]+= lvl_prev->data[getInd1(x*2,y*2+1)];
-            lvl->data[j]+= lvl_prev->data[getInd1(x*2+1,y*2)];
-            lvl->data[j]+= lvl_prev->data[getInd1(x*2+1,y*2+1)];
+        int j=0, k=0;
+        for(size_t y=0; y<lvl->h; y++) {
+          for(size_t x=0; x<lvl->w; x++) {
+            //j=getInd(x,y);
+            lvl->data[j] = lvl_prev->data[k];    //getInd1(x*2,y*2)
+            lvl->data[j]+= lvl_prev->data[k+1]; //getInd1(x*2,y*2+1)
+            lvl->data[j]+= lvl_prev->data[k+levels_[i-1]];    //getInd1(x*2+1,y*2)
+            lvl->data[j]+= lvl_prev->data[k+levels_[i-1]+1];        //getInd1(x*2+1,y*2+1)
+            ++j;
+            k+=2;
           }
         }
       }
