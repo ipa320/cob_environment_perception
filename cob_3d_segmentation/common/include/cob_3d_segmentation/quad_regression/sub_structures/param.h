@@ -14,11 +14,22 @@
  * contains data for regression of 6 parameters
  */
 struct Param {
+#ifdef MIN_EIGEN_VECTOR
   typedef Eigen::Matrix<float, 6, 1>    Vector6f;
   typedef Eigen::Matrix<float, 6, 6>    Matrix6f;
 
-  Matrix6f model_;        /// regression data
-  Vector6f z_;              /// result vector
+  typedef Vector6f VectorU;
+  typedef Matrix6f MatrixU;
+#else
+  typedef Eigen::Matrix<float, 8, 1>    Vector8f;
+  typedef Eigen::Matrix<float, 8, 8>    Matrix8f;
+
+  typedef Vector8f VectorU;
+  typedef Matrix8f MatrixU;
+#endif
+
+  MatrixU model_;        /// regression data
+  VectorU z_;              /// result vector
 #ifdef USE_MIN_MAX_RECHECK_
   float v_min_,v_max_;
 #endif
@@ -26,18 +37,33 @@ struct Param {
 
   /// constructor, sets everything to 0
   Param() {
-    for(int i=0; i<6; i++)
-    {z_(i)=0; for(int j=0; j<6; j++) model_(i,j)=0;}
+    for(int i=0; i<model_.rows(); i++)
+    {z_(i)=0; for(int j=0; j<model_.cols(); j++) model_(i,j)=0;}
   }
 
   /// init. with point
   inline void operator=(const Eigen::Vector3f &p) {
+    if(pcl_isfinite(p(2))) {
+
 #ifdef USE_MIN_MAX_RECHECK_
     v_min_=v_max_=p(2);
 #endif
 
-    if(pcl_isfinite(p(2))) {
+      /*
+#ifndef MIN_EIGEN_VECTOR
+      VectorU t;
+      t(0) = 1;
+      t(1) = p(0);
+      t(2) = p(0)*p(0);
+      t(3) = p(1);
+      t(4) = p(1)*p(1);
+      t(5) = p(0)*p(1);
 
+      for(int i=0; i<6; i++)
+        z_(i) = p(2)*t(i);
+      model_ = t*t.transpose();
+
+#else*/
       float x=p(0);
       float x2=x*x;
       float y=p(1);
@@ -49,32 +75,31 @@ struct Param {
       z_(3) = p(2)*y;
       z_(4) = p(2)*y2;
 #ifndef DONT_USE_6TH
-z_(5) = p(2)*x*y;
+      z_(5) = p(2)*x*y;
 #endif
 
-for(int i=0; i<6; i++) {
-  float m=1;
-  switch(i) {
-    case 1: m=x;break;
-    case 2: m=x2;break;
-    case 3: m=y;break;
-    case 4: m=y2;break;
+      for(int i=0; i<6; i++) {
+        float m=1;
+        switch(i) {
+          case 1: m=x;break;
+          case 2: m=x2;break;
+          case 3: m=y;break;
+          case 4: m=y2;break;
 #ifndef DONT_USE_6TH
-    case 5: m=x*y;break;
+          case 5: m=x*y;break;
 #else
-    case 5: m=0.f;break;
+          case 5: m=0.f;break;
 #endif
-  }
-  model_(i,0)=m;
-  model_(i,1)=x*m;
-  model_(i,2)=x2*m;
-  model_(i,3)=y*m;
-  model_(i,4)=y2*m;
+        }
+        model_(i,0)=m;
+        model_(i,1)=x*m;
+        model_(i,2)=x2*m;
+        model_(i,3)=y*m;
+        model_(i,4)=y2*m;
 #ifndef DONT_USE_6TH
-  model_(i,5)=x*y*m;
+        model_(i,5)=x*y*m;
 #endif
-}
-
+      }
     }
     else {
 #ifdef USE_MIN_MAX_RECHECK_
@@ -87,7 +112,7 @@ for(int i=0; i<6; i++) {
   }
 
   /// add point
-  inline void operator+=(const Eigen::Vector3f &p) {
+  /*inline void operator+=(const Eigen::Vector3f &p) {
     if(pcl_isfinite(p(2))) {
 #ifdef USE_MIN_MAX_RECHECK_
       if(p(2)<v_min_||v_min_==0.f) v_min_=p(2);
@@ -132,7 +157,7 @@ for(int i=0; i<6; i++) {
       }
 
     }
-  }
+  }*/
 
   ///add leave
   inline void operator+=(const Param &p) {

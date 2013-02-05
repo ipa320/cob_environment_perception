@@ -14,7 +14,7 @@
  * Model contains data for regression calculations and parameters
  */
 struct Model {
-  Param::Vector6f p;
+  Param::VectorU p;
   Param param;
 
   Model() {}
@@ -129,17 +129,17 @@ struct Model {
 #ifdef USE_SVD_
       bool bLDLT=false;
       // compute the SVD:
-      Eigen::JacobiSVD<Param::Matrix6f> svd (param.model_, Eigen::ComputeFullU | Eigen::ComputeFullV);
-      const Param::Matrix6f& u = svd.matrixU(),
+      Eigen::JacobiSVD<Param::MatrixU> svd (param.model_, Eigen::ComputeFullU | Eigen::ComputeFullV);
+      const Param::MatrixU& u = svd.matrixU(),
           & v = svd.matrixV();
-      Param::Vector6f s = svd.singularValues();
+      Param::VectorU s = svd.singularValues();
 
-      const Param::Vector6f d = u.transpose()*param.z_;
+      const Param::VectorU d = u.transpose()*param.z_;
 
       //int index_map[6]={0,1,3,2,4,5};
       // determine the effective rank r of A using singular values
       int r = 0;
-      Param::Vector6f t = Param::Vector6f::Zero();
+      Param::VectorU t = Param::VectorU::Zero();
       while( r < 6 && s(r) >= 0.000025f )
       {
         t(r) = d(r) / s(r);

@@ -65,6 +65,7 @@
 #define BACK_CHECK_REPEAT
 //#define DO_NOT_DOWNSAMPLE_
 //#define SIMULATION_
+//#define MIN_EIGEN_VECTOR
 
 #include "polygon.h"
 
