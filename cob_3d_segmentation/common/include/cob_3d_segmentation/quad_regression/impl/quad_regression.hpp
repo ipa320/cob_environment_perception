@@ -418,9 +418,11 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
             std::abs(model.param.z_(0)/model.param.model_(0,0))
         );
 
-#ifdef SIMULATION_
+#if defined(SIMULATION_)
         if(d>20.f) continue;
         const float thr=(d+2.f)*0.0015f;
+#elif defined(DO_NOT_DOWNSAMPLE_)
+        const float thr=(d*d+1.2f)*0.004f;      //TODO: check
 #else
         const float thr=(d*d+1.2f)*0.004f;
 #endif
@@ -433,7 +435,11 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
         ) ||
                 (
 #ifdef USE_MIN_MAX_RECHECK_
+#ifdef DO_NOT_DOWNSAMPLE_
+                    (levels_[i].data[getInd(x,y)].v_max_-levels_[i].data[getInd(x,y)].v_min_)< (model.get_max_gradient(levels_[i].data[getInd(x,y)])*d*(1<<i)/kinect_params_.f+4*thr) /*std::min(0.5f,std::max(0.02f,0.05f*d))*/ //TODO: in anbhaengigkeit der steigung
+#else
                     (levels_[i].data[getInd(x,y)].v_max_-levels_[i].data[getInd(x,y)].v_min_)< 2*(model.get_max_gradient(levels_[i].data[getInd(x,y)])*d*(1<<i)/kinect_params_.f+4*thr) /*std::min(0.5f,std::max(0.02f,0.05f*d))*/ //TODO: in anbhaengigkeit der steigung
+#endif
                     //&& std::abs(model.model(levels_[i].data[getInd(x,y)].v_min_(0),levels_[i].data[getInd(x,y)].v_min_(1))-levels_[i].data[getInd(x,y)].v_min_(2))<thr
                     //&& std::abs(model.model(levels_[i].data[getInd(x,y)].v_max_(0),levels_[i].data[getInd(x,y)].v_max_(1))-levels_[i].data[getInd(x,y)].v_max_(2))<thr
                     &&
