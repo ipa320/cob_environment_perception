@@ -291,6 +291,12 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
 #endif
   }
 
+#ifdef DO_NOT_DOWNSAMPLE_
+#define SHIFT   0
+#else
+#define SHIFT   1
+#endif
+
   template <typename Point, typename PointLabel>
   void Segmentation_QuadRegression<Point,PointLabel>::back_check_repeat() {
 #ifdef BACK_CHECK_REPEAT
@@ -332,14 +338,14 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
             //++m;
 
             //get here
-            Eigen::Vector2f pHere = polygons_[i].project2plane(((pos(0)<<(1))-kinect_params_.dx)/kinect_params_.f,
-                                                               ((pos(1)<<(1))-kinect_params_.dy)/kinect_params_.f,
+            Eigen::Vector2f pHere = polygons_[i].project2plane(((pos(0)<<(SHIFT))-kinect_params_.dx)/kinect_params_.f,
+                                                               ((pos(1)<<(SHIFT))-kinect_params_.dy)/kinect_params_.f,
                                                                polygons_[i].model_,0.f).head(2);
             Eigen::Vector3f vHere = polygons_[i].project2world(pHere), nHere = polygons_[i].normalAt(pHere);
 
             //get there
-            Eigen::Vector2f pThere = polygons_[o].project2plane(((pos(0)<<(1))-kinect_params_.dx)/kinect_params_.f,
-                                                                ((pos(1)<<(1))-kinect_params_.dy)/kinect_params_.f,
+            Eigen::Vector2f pThere = polygons_[o].project2plane(((pos(0)<<(SHIFT))-kinect_params_.dx)/kinect_params_.f,
+                                                                ((pos(1)<<(SHIFT))-kinect_params_.dy)/kinect_params_.f,
                                                                 polygons_[o].model_,0.f).head(2);
             Eigen::Vector3f vThere = polygons_[o].project2world(pHere), nThere = polygons_[o].normalAt(pHere);
 
