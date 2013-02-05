@@ -323,7 +323,7 @@ namespace Segmentation
 
     void operator=(const SubStructure::Model &model) {
       feature_.fill(0);
-      param_xy_ = model.p;
+      param_xy_ = model.p.head<6>();
       model_ = model;
 
       //      if(std::abs(model.p(5))<0.0001f) {
