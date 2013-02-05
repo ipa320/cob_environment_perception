@@ -355,7 +355,10 @@ Polygon::merge_union(std::vector<Polygon::Ptr>& poly_vec,  Polygon::Ptr& p_avera
     poly_vec[i]->getGpcStructure(p_average->transform_from_world_to_plane, gpc_B);
     gpc_polygon_clip(GPC_UNION, gpc_B, gpc_C, gpc_C);
     gpc_free_polygon(gpc_B);
+    d_color_.addColor(poly_vec[i]->color[0]*255,poly_vec[i]->color[1]*255,poly_vec[i]->color[2]*255);
+    //std::cout << "\t" << poly_vec[i]->color[0] << "," << poly_vec[i]->color[1] << "," << poly_vec[i]->color[2] << std::endl;
   }
+  d_color_.addColor(this->color[0]*255,this->color[1]*255,this->color[2]*255);
 
   // fill in parameters for "this" polygon
   this->transform_from_world_to_plane = p_average->transform_from_world_to_plane;
@@ -370,6 +373,15 @@ Polygon::merge_union(std::vector<Polygon::Ptr>& poly_vec,  Polygon::Ptr& p_avera
   this->applyGpcStructure(p_average->transform_from_world_to_plane.inverse(), smoothed);
   gpc_free_polygon(gpc_C);
   gpc_free_polygon(smoothed);
+  uint8_t r,g,b;
+  d_color_.getColor(r,g,b);
+  //std::cout << "\t" << (int)r << "," << (int)g << "," << (int)b << std::endl;
+  float temp_inv = 1.0f/255.0f;
+  //std::cout << r* temp_inv << "," << g* temp_inv << "," << b* temp_inv << std::endl;
+  this->color[0] = r * temp_inv;
+  this->color[1] = g * temp_inv;
+  this->color[2] = b * temp_inv;
+  //d_color_.getColor(this->color[0],this->color[1],this->color[2]);
 }
 
 
