@@ -6,8 +6,9 @@
 
 	<node pkg="cob_table_object_cluster" type="table_object_cluster_node" name="table_object_cluster" output="screen" >
 	  <remap from="/get_point_map" to="/point_map/get_map"/>
-	  <remap from="point_cloud" to="cam3d/rgb/points"/>
+	  <remap from="point_cloud" to="cam3d/depth_registered/points"/>
 	  <remap from="shape_array" to="supporting_plane_extraction/shape_array_pub"/>
+	  <remap from="cluster_array" to="tabletop_object_cluster/cluster_array"/>
 		<param name="file_path" type="string" value="/home/goa/tmp/"/>
   	<param name="save_to_file" type="bool" value="false"/>
   	<param name="height_min" type="double" value="0.03"/>
