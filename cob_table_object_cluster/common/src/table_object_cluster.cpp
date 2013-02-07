@@ -88,6 +88,11 @@ void
 TableObjectCluster::extractTableRoi(pcl::PointCloud<Point>::Ptr& hull,
                                     pcl::PointIndices& pc_roi)
 {
+  pcl::ConvexHull<Point> chull;
+  chull.setDimension(2);
+  chull.setInputCloud(hull);
+  pcl::PointCloud<Point>::Ptr conv_hull(new pcl::PointCloud<Point>);
+  chull.reconstruct(*conv_hull);
   pcl::ExtractPolygonalPrismData<Point> prism;
   // Consider only objects in a given layer above the table
   //TODO: check if valid values
@@ -97,7 +102,7 @@ TableObjectCluster::extractTableRoi(pcl::PointCloud<Point>::Ptr& hull,
   // ---[ Get the objects on top of the table
   //pcl::PointIndices roi_indices;
   prism.setInputCloud(input_);
-  prism.setInputPlanarHull(hull);
+  prism.setInputPlanarHull(conv_hull);
   prism.segment(pc_roi);
   //ROS_INFO("Number of ROI inliers: %d", roi_indices.indices.size());
 
