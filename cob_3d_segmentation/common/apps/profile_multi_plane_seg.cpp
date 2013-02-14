@@ -61,6 +61,9 @@
  ****************************************************************/
 
 // PCL:
+
+#ifdef PCL_MINOR_VERSION >= 6
+
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/common/file_io.h>
@@ -171,3 +174,13 @@ int main (int argc, char** argv)
 
   return 0;
 }
+
+#else
+// Better: check in CMakeLists for pcl version!
+#include <iostream>
+int main (int argc, char** argv)
+{
+  std::cout << "not supported by PCL older than 1.7" << std::endl;
+}
+
+#endif
