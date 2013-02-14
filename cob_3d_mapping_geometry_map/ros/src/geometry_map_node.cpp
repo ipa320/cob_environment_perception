@@ -151,6 +151,7 @@ GeometryMapNode::dynReconfCallback(cob_3d_mapping_geometry_map::geometry_map_nod
 void
 GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& sa)
 {
+  ROS_INFO("Adding %d new shapes",sa->shapes.size());
   tf::StampedTransform trf_map;
   Eigen::Affine3f af_orig = Eigen::Affine3f::Identity();
 
@@ -190,8 +191,7 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& 
           if (sc_map.find(p->id) == sc_map.end()) sc_map[p->id] = ShapeCluster::Ptr(new ShapeCluster);
           sc_map[p->id]->insert(boost::static_pointer_cast<Shape>(p));
         }
-        else { polygon_list.push_back(p); }*/
-        polygon_list.push_back(p);
+        else {*/ polygon_list.push_back(p); //}
         break;
       }
       case cob_3d_mapping_msgs::Shape::CYLINDER:
@@ -205,8 +205,7 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& 
           if (sc_map.find(c->id) == sc_map.end()) sc_map[c->id] = ShapeCluster::Ptr(new ShapeCluster);
           sc_map[c->id]->insert(boost::static_pointer_cast<Shape>(c));
         }
-        else { cylinder_list.push_back(c); }*/
-        cylinder_list.push_back(c);
+        else {*/ cylinder_list.push_back(c);// }
         break;
       }
       default:
@@ -247,7 +246,7 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& 
                <<"Map Size P="<<geometry_map_.getMap_polygon()->size()
                <<" , P_NEW="<<polygon_list.size()
                <<" , P_MERGED="<<poly_merge_ctr);
-  geometry_map_.cleanUp();
+  //geometry_map_.cleanUp();
   geometry_map_.incrFrame();
 
   publishMapMarker();
@@ -299,6 +298,7 @@ GeometryMapNode::getMap(cob_3d_mapping_msgs::GetGeometryMap::Request &req, cob_3
 bool
 GeometryMapNode::setMap(cob_3d_mapping_msgs::SetGeometryMap::Request &req, cob_3d_mapping_msgs::SetGeometryMap::Response &res)
 {
+  ROS_INFO("Setting map with %d shapes.",req.map.shapes.size());
   geometry_map_.clearMap();
   std::vector<Polygon::Ptr>* map_polygon = geometry_map_.getMap_polygon();
   std::vector<Cylinder::Ptr>* map_cylinder = geometry_map_.getMap_cylinder();
