@@ -37,7 +37,7 @@
 	<include file="$(find cob_3d_segmentation)/ros/launch/simple_segmentation.launch">
 		<arg name="start_manager" value="false"/>
 		<arg name="nodelet_manager" value="$(arg mapping_manager)"/>
-		<arg name="cloud_in" value="/registration/pc_aligned"/>
+		<arg name="cloud_in" value="/registration_pass_through/output"/>
 	</include>
 	<include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch"/>
 	<include file="$(find cob_3d_visualization)/launch/shape_visualization.launch"/>

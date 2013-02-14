@@ -373,8 +373,11 @@ public:
           ss.clear();
         }
       }
-      object_cluster_pub_.publish(pca);
-      publishMarker(bounding_boxes);
+      if(pca.segments.size() != 0)
+      {
+        object_cluster_pub_.publish(pca);
+        publishMarker(bounding_boxes);
+      }
     }
   }
 
