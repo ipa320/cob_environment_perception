@@ -61,8 +61,11 @@
  ****************************************************************/
 
 #include <pcl/features/integral_image_normal.h>
+
+#ifdef PCL_MINOR_VERSION >= 6
 #include <pcl/segmentation/organized_multi_plane_segmentation.h>
 #include <pcl/segmentation/edge_aware_plane_comparator.h>
+#endif
 
 #include "cob_3d_mapping_common/label_defines.h"
 #include "cob_3d_mapping_common/polygon.h"
