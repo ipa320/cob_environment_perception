@@ -563,6 +563,8 @@ public:
       //break;
     }
 
+    std::cout<<"TF AFTER ALL\n"<<tmp_rot<<"\n"<<tmp_tr<<std::endl;
+
     map_pub_.publish(marker_map);
     outline_pub_.publish(marker_outline);
 

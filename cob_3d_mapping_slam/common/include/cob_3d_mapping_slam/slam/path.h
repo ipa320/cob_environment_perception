@@ -85,6 +85,8 @@ namespace Slam  /// namespace for all Slam related stuff
     SWAY<NODE> &getLocal() {return local_;}
 
     bool getTF(DOF6 &tf, const SWAY<NODE> *start, const SWAY<NODE> *end);
+
+    void test();
   };
 
 #include "impl/path.hpp"

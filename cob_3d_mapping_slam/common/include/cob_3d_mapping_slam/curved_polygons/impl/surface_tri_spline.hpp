@@ -516,7 +516,7 @@ void SurfaceTriSpline::init(const boost::array<float, 6> &params, const float mi
   ROS_ASSERT(0);
 }
 
-void SurfaceTriSpline::init(const PolynomialSurface *params, const std::vector<Eigen::Vector3f> &pts) {
+void SurfaceTriSpline::init(const PolynomialSurface *params, const std::vector<Eigen::Vector3f> &pts, const float weight) {
 
   for(size_t i=0; i<pts.size(); i++) {
     ParametricSurface::Topology::POINT p;
@@ -525,6 +525,7 @@ void SurfaceTriSpline::init(const PolynomialSurface *params, const std::vector<E
     p.pt = params->project2world(p.uv);
     p.n = params->normalAt(p.uv);
     p.n2 = params->normalAt2(p.uv);
+    p.weight_ = weight;
     top_.insertPointWithoutUpdate(p);
   }
 
@@ -568,6 +569,13 @@ void SurfaceTriSpline::init(const PolynomialSurface *params, const float min_x, 
 
   p.uv(0) = min_x;
   p.uv(1) = max_y;
+  p.pt = params->project2world(p.uv);
+  p.n = params->normalAt(p.uv);
+  p.n2 = params->normalAt2(p.uv);
+  top_.insertPointWithoutUpdate(p);
+
+  p.uv(0) = (min_x+max_x)*0.5f;
+  p.uv(1) = (min_y+max_y)*0.5f;
   p.pt = params->project2world(p.uv);
   p.n = params->normalAt(p.uv);
   p.n2 = params->normalAt2(p.uv);
@@ -683,6 +691,7 @@ Eigen::Vector3f SurfaceTriSpline::normalAt(const Eigen::Vector2f &pt) const
 }
 
 Eigen::Vector2f SurfaceTriSpline::nextPoint(const Eigen::Vector3f &v) const {
+  ___CTR___++;
   return top_.nextPoint(v);
 }
 

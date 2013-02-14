@@ -56,9 +56,9 @@ Eigen::Vector3f PolynomialSurface::normalAt(const Eigen::Vector2f &v) const {
 Eigen::Vector3f PolynomialSurface::normalAt2(const Eigen::Vector2f &v) const {
   Eigen::Vector3f r;
 
-  r(0) = -(2*param_.col(2)(0));
-  r(1) = -(2*param_.col(2)(1));
-  r(2) = 0;
+//  r(0) = -(2*param_.col(2)(0));
+//  r(1) = -(2*param_.col(2)(1));
+//  r(2) = 0;
 
   r(0) = 0;
   r(1) = 0;
@@ -94,6 +94,7 @@ Eigen::Vector2f PolynomialSurface::_nextPoint(const Eigen::Vector3f &v, Eigen::V
 {
   Eigen::VectorXf r(2);
   r = v.head<2>();
+  //r.fill(1);
   MyFunctor functor={param_.col(2)(0),param_.col(2)(1),param_.col(2)(2),
                      param_.col(1)(0),param_.col(1)(1),
                      p(0),p(1),p(2)};

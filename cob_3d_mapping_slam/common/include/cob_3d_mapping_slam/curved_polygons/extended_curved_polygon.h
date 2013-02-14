@@ -11,6 +11,7 @@
 #define DEBUG_LEVEL 30
 
 //#define DEBUG_SVG 1
+#define PROB_FACT(x)       1
 
 #include <cob_3d_mapping_msgs/CurvedPolygon.h>
 #include <cob_3d_mapping_msgs/Shape.h>
@@ -87,7 +88,7 @@ namespace Slam_CurvedPolygon
         Eigen::Vector3f pt3;
         pt3(0) = data_.polyline[i].x;
         pt3(1) = data_.polyline[i].y;
-        pt3(2) = data_.polyline[i].edge_prob;
+        pt3(2) = PROB_FACT(data_.polyline[i].edge_prob);
         outline_ += pt3;
       }
 
@@ -148,7 +149,7 @@ namespace Slam_CurvedPolygon
         Slam_Surface::PolynomialSurface ps;
         ps.init(data_.parameter ,w.min_x,w.max_x, w.min_y,w.max_y, data_.weight);
 
-        surface_->init(&ps, outline_.get());
+        surface_->init(&ps, outline_.get(), data_.weight);
 #endif
       }
 
@@ -184,13 +185,18 @@ namespace Slam_CurvedPolygon
         Eigen::Vector3f pt3;
         pt3(0) = pt(0) = data_.polyline[i].x;
         pt3(1) = pt(1) = data_.polyline[i].y;
-        pt3(2) = data_.polyline[i].edge_prob;
+        pt3(2) = PROB_FACT(data_.polyline[i].edge_prob);
         outline_ += pt3;
         points3d_.push_back( surface_->project2world(pt) );
         //        ROS_ERROR("%f %f",pt(0),pt(1));
         //        ROS_ERROR("%f %f %f %f %f %f",data_.parameter[0],data_.parameter[1],data_.parameter[2],data_.parameter[3],data_.parameter[4],data_.parameter[5]);
         //        ROS_ERROR("%f %f",points3d_.back()(2), modelAt(pt(0),pt(1)));
         //        ROS_ASSERT( std::abs(points3d_.back()(2)-modelAt(pt(0),pt(1))) < 0.01f );
+//        std::cout<<"uv\n"<<pt<<std::endl;
+//        std::cout<<"pt\n"<<points3d_.back()<<std::endl;
+        //ROS_ASSERT( points3d_.back().squaredNorm()<2 || points3d_.back()(2)>0 );
+        if(! (points3d_.back().squaredNorm()<2 || points3d_.back()(2)>0) )
+          ROS_ERROR("points3d_.back().squaredNorm()<2 || points3d_.back()(2)>0");
         mid_point_ += points3d_.back();
       }
       mid_point_/=data_.polyline.size();
@@ -371,12 +377,19 @@ namespace Slam_CurvedPolygon
       {
         //if(o1.segments_[i](2)>0.5f)
         {
-          Eigen::Vector3f p;
-          p.head<2>() = surface_->nextPoint(o1.surface_->project2world(o1.outline_.segments_[i].head<2>() ));
-          p(2) = p1.weight_*o1.outline_.segments_[i](2);
+          Eigen::Vector3f p = o1.surface_->project2world(o1.outline_.segments_[i].head<2>());
+          if( (p-surface_->project2world(o1.outline_.segments_[i].head<2>())).squaredNorm()<0.005f*0.005f)
+            p.head<2>() = o1.outline_.segments_[i].head<2>();
+          else
+            p.head<2>() = surface_->nextPoint(p);
+          p(2) = p1.weight_*PROB_FACT(o1.outline_.segments_[i](2));
           p1 += p;
 
-          //          ROS_INFO("dist %f", (o1.surface_->project2world(o1.outline_.segments_[i].head<2>())-surface_->project2world(p.head<2>())).norm() );
+          //ROS_INFO("distA1 %f", (o1.surface_->project2world(o1.outline_.segments_[i].head<2>())-surface_->project2world(p.head<2>())).norm() );
+          //ROS_ASSERT( (surface_->project2world(p.head<2>())-o1.surface_->project2world(o1.outline_.segments_[i].head<2>())).squaredNorm()<0.1f );
+          if(!((surface_->project2world(p.head<2>())-o1.surface_->project2world(o1.outline_.segments_[i].head<2>())).squaredNorm()<0.1f))
+            ROS_ERROR("(surface_->project2world(p.head<2>())-o1.surface_->project2world(o1.outline_.segments_[i].head<2>())).squaredNorm()<0.1f");
+
         }
       }
 
@@ -384,30 +397,54 @@ namespace Slam_CurvedPolygon
       {
         //if(o2.segments_[i](2)>0.5f)
         {
-          Eigen::Vector3f p;
-          p.head<2>() = surface_->nextPoint(o2.surface_->project2world(o2.outline_.segments_[i].head<2>() ));
-          p(2) = p2.weight_*o2.outline_.segments_[i](2);
+          Eigen::Vector3f p = o2.surface_->project2world(o2.outline_.segments_[i].head<2>());
+          if( (p-surface_->project2world(o2.outline_.segments_[i].head<2>())).squaredNorm()<0.005f*0.005f)
+            p.head<2>() = o2.outline_.segments_[i].head<2>();
+          else
+            p.head<2>() = surface_->nextPoint(p);
+          p(2) = p2.weight_*PROB_FACT(o2.outline_.segments_[i](2));
           p2 += p;
 
-          //          ROS_INFO("dist %f", (o2.surface_->project2world(o2.outline_.segments_[i].head<2>())-surface_->project2world(p.head<2>())).norm() );
+          //ROS_INFO("distA2 %f", (o2.surface_->project2world(o2.outline_.segments_[i].head<2>())-surface_->project2world(p.head<2>())).norm() );
+          //ROS_ASSERT( (surface_->project2world(p.head<2>())-o2.surface_->project2world(o2.outline_.segments_[i].head<2>())).squaredNorm()<0.1f );
+          if(!((surface_->project2world(p.head<2>())-o2.surface_->project2world(o2.outline_.segments_[i].head<2>())).squaredNorm()<0.1f))
+            ROS_ERROR("(surface_->project2world(p.head<2>())-o2.surface_->project2world(o2.outline_.segments_[i].head<2>())).squaredNorm()<0.1f");
         }
       }
 
-      static int cnt=0;
-      ++cnt;
-      char buffer[128];
-      //      sprintf(buffer,"%dA.svg",cnt);
-      //      p1.debug_svg(buffer);
-      //      sprintf(buffer,"%dB.svg",cnt);
-      //      p2.debug_svg(buffer);
+//      static int cnt=0;
+//      ++cnt;
+//      char buffer[128];
+//            sprintf(buffer,"%dA.svg",cnt);
+//            p1.debug_svg(buffer,300,600);
+//            sprintf(buffer,"%dB.svg",cnt);
+//            p2.debug_svg(buffer,300,600);
 
       //      p1.reverse(); //TODO: change alog. instead of this
       //      p2.reverse();
       outline_ = p1+p2;
       //      outline_.reverse();
+//      sprintf(buffer,"%dC.svg",cnt);
+//      outline_.debug_svg(buffer,300,600);
 
       //      for(size_t i=0; i<outline_.segments_.size(); i++)
       //        outline_.segments_[i](2) /= std::max(o1.data_.weight, o2.data_.weight);
+
+#ifdef DEBUG_
+      if(!outline_.check()) {
+        char buffer[128];
+        static int n=0;
+        sprintf(buffer, "error%dA1.svg",n*2);
+        o1.outline_.debug_svg(buffer,300,600);
+        sprintf(buffer, "error%dA2.svg",n*2);
+        p1.debug_svg(buffer,300,600);
+        sprintf(buffer, "error%dB1.svg",n*2);
+        o2.outline_.debug_svg(buffer,300,600);
+        sprintf(buffer, "error%dB2.svg",n*2);
+        p2.debug_svg(buffer,300,600);
+        ++n;
+      }
+#endif
 
 #ifdef DEBUG_SVG
       sprintf(buffer,"%f %dC.svg",Debug::Interface::get().getTime(), cnt);
@@ -512,6 +549,7 @@ namespace Slam_CurvedPolygon
           status=2;
           return false;
         }
+        ROS_INFO("merge2 %f",dist);
 
 #ifdef DEBUG_
         Debug::Interface::get().addArrow(o2.getNearestPoint(), o.getNearestPoint(), 255,0,0);
@@ -533,6 +571,7 @@ namespace Slam_CurvedPolygon
           status=2;
           return false;
         }
+        ROS_INFO("merge2 %f",dist);
 
 #ifdef DEBUG_
         Debug::Interface::get().addArrow(o2.getNearestPoint(), o.getNearestPoint(), 0,0,255);
@@ -550,6 +589,7 @@ namespace Slam_CurvedPolygon
         status=3;
         return false;
       }
+      //ROS_ASSERT(invalid());
 
       color_.r = (data_.weight*color_.r+o.data_.weight*o.color_.r)/(data_.weight + o.data_.weight);
       color_.g = (data_.weight*color_.g+o.data_.weight*o.color_.g)/(data_.weight + o.data_.weight);
@@ -558,6 +598,8 @@ namespace Slam_CurvedPolygon
       ID_ += o.ID_;
 
       data_.weight += o.data_.weight;
+
+      ROS_INFO("succesfully merged");
 
       return true;
     }
@@ -746,10 +788,12 @@ namespace Slam_CurvedPolygon
       float er2=0;
       int bad_ctr = 0;
 
+      Eigen::Vector3f _last1_, _last2_;
+
       for(size_t i=0; i<p3.get().size()/2; i++)
       {
         Eigen::Vector2f v1, v3;
-        Eigen::Vector3f t, n, v2, normal;
+        Eigen::Vector3f t, n, v2, normal, n2;
         v1(0)=p3.get()[i*2+0];
         v1(1)=p3.get()[i*2+1];
         //        v2(0) = ((v1(0)*proj2plane_(0,0)+param_.col(0)(0))-o.param_.col(0)(0))/o.proj2plane_(0,0);
@@ -759,25 +803,40 @@ namespace Slam_CurvedPolygon
         Eigen::Vector2f np = o.surface_->nextPoint(t);
         v2 = o.surface_->project2world(np);
         normal = surface_->normalAt(v1);
+        n2= o.surface_->normalAt(np);
 
         v1(0)=p3.get()[(i*2+2)%p3.get().size()];
         v1(1)=p3.get()[(i*2+3)%p3.get().size()];
         n = surface_->project2world(v1);
 
-        if(
+        int color=255;
+        //ROS_INFO("merge (%f %f %f)  (%f %f %f)",t(0),t(1),t(2), v2(0),v2(1),v2(2));
+        if( n2.squaredNorm()>0.5f && normal.squaredNorm()>0.5f &&
             //(t-v2).norm() > 0.03f+diff*getNearestPoint().squaredNorm() ||
-            o.surface_->normalAt(np).dot(normal) < 0.9f
+            n2.dot(normal) < 0.88f
         )
         {
+          color=0;
           ++bad_ctr;
-          //if(bad_ctr>1)
+          if(bad_ctr>0)
           {
 #ifndef DEBUG_OUT_
-            ROS_INFO("merge break 2 %f",o.surface_->normalAt(np).dot(normal));
+            ROS_INFO("merge break 2 %f %f %f (%f %f %d)",n2.dot(normal),
+                     n2.squaredNorm(), normal.squaredNorm(), np(0),np(1),i);
 #endif
             return false;
           }
         }
+
+        if(i>0) {
+          Debug::Interface::get().addArrow(_last1_, t, color, 0, 0);
+          Debug::Interface::get().addArrow(_last2_, v2, color, 0, 0);
+        }
+        Debug::Interface::get().addArrow(t,t+normal*0.1, color, 0, 0);
+        Debug::Interface::get().addArrow(v2,v2+n2*0.1, color, 0, 0);
+
+        _last1_ = t;
+        _last2_ = v2;
 
         float dist2 = 1/(std::max(0.1f,  o.surface_->normalAt(np).dot(normal) ) + 0.1f);
 
@@ -793,6 +852,9 @@ namespace Slam_CurvedPolygon
         if(i==0) lfirst = l;
 
       }
+
+      if(bad_ctr>0)
+        return false;
       //      Outline p3 = outline_|o.outline_;
       //
       //      float lges=0.f, er=0.f, erlast=0.f, lfirst=0.f;

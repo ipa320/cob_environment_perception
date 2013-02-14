@@ -229,11 +229,12 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
             //j=getInd(x,y);
             lvl->data[j] = lvl_prev->data[k];    //getInd1(x*2,y*2)
             lvl->data[j]+= lvl_prev->data[k+1]; //getInd1(x*2,y*2+1)
-            lvl->data[j]+= lvl_prev->data[k+levels_[i-1]];    //getInd1(x*2+1,y*2)
-            lvl->data[j]+= lvl_prev->data[k+levels_[i-1]+1];        //getInd1(x*2+1,y*2+1)
+            lvl->data[j]+= lvl_prev->data[k+levels_[i-1].w];    //getInd1(x*2+1,y*2)
+            lvl->data[j]+= lvl_prev->data[k+levels_[i-1].w+1];        //getInd1(x*2+1,y*2+1)
             ++j;
             k+=2;
           }
+          k+=levels_[i-1].w;
         }
       }
 
@@ -436,7 +437,7 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
                 (
 #ifdef USE_MIN_MAX_RECHECK_
 #ifdef DO_NOT_DOWNSAMPLE_
-                    (levels_[i].data[getInd(x,y)].v_max_-levels_[i].data[getInd(x,y)].v_min_)< (model.get_max_gradient(levels_[i].data[getInd(x,y)])*d*(1<<i)/kinect_params_.f+4*thr) /*std::min(0.5f,std::max(0.02f,0.05f*d))*/ //TODO: in anbhaengigkeit der steigung
+                    (levels_[i].data[getInd(x,y)].v_max_-levels_[i].data[getInd(x,y)].v_min_)< (model.get_max_gradient(levels_[i].data[getInd(x,y)])*d*(1<<i)/kinect_params_.f+2*thr) /*std::min(0.5f,std::max(0.02f,0.05f*d))*/ //TODO: in anbhaengigkeit der steigung
 #else
                     (levels_[i].data[getInd(x,y)].v_max_-levels_[i].data[getInd(x,y)].v_min_)< 2*(model.get_max_gradient(levels_[i].data[getInd(x,y)])*d*(1<<i)/kinect_params_.f+4*thr) /*std::min(0.5f,std::max(0.02f,0.05f*d))*/ //TODO: in anbhaengigkeit der steigung
 #endif
@@ -807,6 +808,28 @@ void Segmentation_QuadRegression<Point,PointLabel>::prepare(const pcl::PointClou
           p(1) =
               levels_[0].data[getInd(x,y)].model_(0,3)/levels_[0].data[getInd(x,y)].model_(0,0);
           p(2) = z;
+
+          /*const float z_model = polygons_[mark].model_.model(
+              levels_[0].data[getInd(x,y)].model_(0,1)/levels_[0].data[getInd(x,y)].model_(0,0),
+              levels_[0].data[getInd(x,y)].model_(0,3)/levels_[0].data[getInd(x,y)].model_(0,0)
+          );
+          Point ps;
+          ps.x = (*out)(x,y).x;
+          ps.y = (*out)(x,y).y;
+          ps.z = (*out)(x,y).z;
+          kdtree.nearestKSearch(ps, 1, pointIdxNKNSearch, pointNKNSquaredDistance);
+          const float d = std::min(pointNKNSquaredDistance[0], std::min(std::abs(z - z_model), (polygons_[i].project2world(polygons_[i].nextPoint(p))-p).norm()));
+
+          if(pcl_isfinite(d)) {
+            if(d<0.1)
+              (*out)(x,y).x = (*out)(x,y).y = (*out)(x,y).z = 0;
+            else {
+              std::cout<<"meas\n"<<p<<"\n\n";
+              std::cout<<"z\n"<<z_model<<"\n";
+              std::cout<<"p\n"<<polygons_[i].project2world(polygons_[i].nextPoint(p))<<"\n\n";
+            }
+          }*/
+
           //const float d = std::min(std::abs(z - z_model), (polygons_[i].project2world(polygons_[i].nextPoint(p))-p).norm());
           //(*out)(x,y).r = (*out)(x,y).g = (*out)(x,y).b = d/0.1f * 255;
         }

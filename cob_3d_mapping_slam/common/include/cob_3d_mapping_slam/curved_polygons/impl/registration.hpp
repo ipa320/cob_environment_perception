@@ -556,6 +556,11 @@ void OBJCTXT<_DOF6>::findCorrespondences3(const OBJCTXT &ctxt, std::vector<SCOR>
 
 #ifdef DEBUG_
   ROS_INFO("found %d correspondences (%d %d)", (int)cors.size(), (int)objs_.size(), (int)ctxt.objs_.size());
+
+  for(typename std::vector<SCOR>::iterator it = cors.begin(); it!=cors.end(); it++)
+  {
+    Debug::Interface::get().addArrow(it->a->getNearestPoint(),it->b->getNearestPoint(), 0,255,0);
+  }
 #endif
 
 }
@@ -622,7 +627,7 @@ _DOF6 OBJCTXT<_DOF6>::optimizeLink3(const OBJCTXT &ctxt, std::vector<SCOR> &cors
       }
     }
 
-    const float w = std::log(ctxt.objs_[i]->getData().getWeight());
+    //const float w = std::log(ctxt.objs_[i]->getData().getWeight());
     float wsum = 0.f;
     for(typename OBJECT::TFLIST::const_iterator k = list.begin(); k!=list.end(); k++)
     {
@@ -719,6 +724,10 @@ _DOF6 OBJCTXT<_DOF6>::optimizeLink3(const OBJCTXT &ctxt, std::vector<SCOR> &cors
 
     return tf;
   }
+
+  //DEBUGGING
+  //tf.getSource1()->setRotation(tf.getSource2()->getRotation());
+  //tf.getSource1()->setTranslation(tf.getSource2()->getTranslation());
 
   return tf;
 }

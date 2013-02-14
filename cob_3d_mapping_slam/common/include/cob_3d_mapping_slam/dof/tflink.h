@@ -27,6 +27,8 @@ namespace DOF6
     Vector var_x_, var_y_;
     INPUT sum_x_, sum_y_;
     TYPE rot_sum_, rot_var_, tr_var_, accumlated_weight_, accumlated_weight_t_;
+
+    std::vector<Vector> corsA_, corsB_;
 #ifdef DEBUG_
     bool initialized_;
 #endif
@@ -114,6 +116,9 @@ namespace DOF6
 
       variance_x_.fill(0);
       variance_y_.fill(0);
+
+      corsA_.clear();
+      corsB_.clear();
     }
 
     void debug_print() {

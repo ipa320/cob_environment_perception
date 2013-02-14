@@ -73,7 +73,9 @@ namespace Slam_Surface
         fvec(0) = std::pow((-z0+b*x(1)*x(1)+c*x(0)*x(1)+a*x(0)*x(0)+d*x(0)+e*x(1)),2)+std::pow(x(1)-y0,2)+std::pow(x(0)-x0,2);
         fvec(1) = 0;
 
-        //        std::cout<<"fvec\n"<<fvec<<std::endl;
+//        std::cout<<"x\n"<<x<<"\n";
+//        std::cout<<"dist "<<fvec(0)<<"\n";
+
         return 0;
       }
 
@@ -84,6 +86,10 @@ namespace Slam_Surface
         fjac(0,0) = 2*(c*x(1)+2*a*x(0)+d)*(-z0+b*x(1)*x(1)+c*x(0)*x(1)+a*x(0)*x(0)+d*x(0)+e*x(1))+2*(x(0)-x0);
         fjac(0,1) = 2*(2*b*x(1)+c*x(0)+e)*(-z0+b*x(1)*x(1)+c*x(0)*x(1)+a*x(0)*x(0)+d*x(0)+e*x(1))+2*(x(1)-y0);
         fjac(1,0) = fjac(1,1) = 0;
+
+//        std::cout<<"x\n"<<x<<"\n";
+//        std::cout<<"fjac\n"<<fjac<<"\n";
+
         return 0;
       }
 
