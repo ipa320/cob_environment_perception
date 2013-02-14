@@ -39,6 +39,11 @@ void TFLink<INPUT>::operator()(const TFLinkObj &obj, const TFLinkObj &cor_obj)
   var_x_ += obj.weight_t_*cor_obj.next_point_;
   var_y_ += obj.weight_t_*obj.next_point_;
   accumlated_weight_t_ += obj.weight_t_;
+
+  if(obj.next_point_.squaredNorm()||cor_obj.next_point_.squaredNorm()) {
+    corsA_.push_back(obj.next_point_);
+    corsB_.push_back(cor_obj.next_point_);
+  }
 }
 
 template<typename INPUT>
@@ -231,10 +236,9 @@ void TFLink<INPUT>::finish() {
       /*svd.singularValues().squaredNorm()<0.01f*accumlated_weight_*accumlated_weight_ || */
       svd.singularValues()(1)*svd.singularValues()(1)<=0.00001f*svd.singularValues().squaredNorm() ? 100000. : 0.,
       //svd.singularValues().squaredNorm()<0.01f ? 100000. : 0.,
-          M_PI*sqrtf((variance_y_-(rot_.transpose()*variance_x_*rot_)).squaredNorm()/variance_y_.squaredNorm()));
-
-  if(!pcl_isfinite(rot_var_))
-    rot_var_ = 100000;
+          //M_PI*sqrtf((variance_y_-(rot_.transpose()*variance_x_*rot_)).squaredNorm()/variance_y_.squaredNorm())
+          0.
+  );
 
 #ifdef DEBUG_OUTPUT_
   std::cout<<"ROT\n"<<rot_<<"\n";
@@ -248,9 +252,23 @@ void TFLink<INPUT>::finish() {
 
   Vector temp = var_x_ - rot_*var_y_;
   tr_ = translation_.fullPivLu().solve(temp);
-  tr_var_ = (temp-translation_*tr_).norm() + tr_.norm()*rot_var_/(2*M_PI);
+  tr_var_ = 0;
+  //tr_var_ = (temp-translation_*tr_).norm() + tr_.norm()*rot_var_/(2*M_PI);
 
   ROS_ASSERT(pcl_isfinite(temp.sum()));
+
+
+  if(!rot_var_) {
+    for(size_t i=0; i<corsA_.size(); i++) {
+      Eigen::Vector3f a = rot_*corsA_[i] + tr_;
+      float f = std::abs(std::acos( a.dot(corsB_[i])/(a.norm()*corsB_[i].norm()) ));
+      if(pcl_isfinite(f)) rot_var_+=f;
+    }
+    rot_var_ /= corsA_.size();
+  }
+
+  if(!pcl_isfinite(rot_var_))
+    rot_var_ = 100000;
 
 #ifdef DEBUG_OUTPUT_
   std::cout<<"rot_var. "<<rot_var_<<"\n";
@@ -263,6 +281,14 @@ void TFLink<INPUT>::finish() {
 
   if(translation_.determinant()<(TYPE)0.04*accumlated_weight_*accumlated_weight_) // rang to low
     tr_var_ += 10000;
+
+  if(!tr_var_) {
+    for(size_t i=0; i<corsA_.size(); i++) {
+      Eigen::Vector3f a = rot_*corsA_[i] + tr_;
+      tr_var_+=std::abs( a.norm()-corsB_[i].norm() );
+    }
+    tr_var_ /= corsA_.size();
+  }
 
   if(!pcl_isfinite(tr_var_) || !pcl_isfinite(tr_.sum()))
     tr_var_ = 100000;

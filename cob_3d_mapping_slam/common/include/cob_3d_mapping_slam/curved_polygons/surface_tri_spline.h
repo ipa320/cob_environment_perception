@@ -49,10 +49,10 @@ namespace Slam_Surface
       }
 
       bool update1(const std::vector<Eigen::Vector3f> &pts, const std::vector<Eigen::Vector3f> &normals, const std::vector<Eigen::Vector2f> &uv_pts,
-                  const Surface *surf=NULL);
+                   const Surface *surf=NULL);
 
       bool update2(const std::vector<Eigen::Vector3f> &pts, const std::vector<Eigen::Vector3f> &normals, const std::vector<Eigen::Vector2f> &uv_pts,
-                  const Surface *surf=NULL);
+                   const Surface *surf=NULL);
 
       void getWeight(const Eigen::Vector3f &pt, Eigen::Matrix3f &w) const;
       void getWeightD1(const Eigen::Vector3f &pt, Eigen::Matrix3f &w) const;
@@ -73,7 +73,7 @@ namespace Slam_Surface
     void addTriangle(const size_t i1, const size_t i2, const size_t i3, const Surface *surf=NULL);
     void addPoint(
         const Eigen::Vector3f &p1, const Eigen::Vector3f &n1, const Eigen::Vector2f &uv1
-        );
+    );
 
     std::vector<TRIANGLE> &getTriangles() {return triangles_;}
 #endif
@@ -84,7 +84,7 @@ namespace Slam_Surface
     /// init with 6 parameters
     virtual void init(const boost::array<float, 6> &params, const float min_x, const float max_x, const float min_y, const float max_y, const float weight);
     virtual void init(const PolynomialSurface *params, const float min_x, const float max_x, const float min_y, const float max_y, const float weight);
-    virtual void init(const PolynomialSurface *params, const std::vector<Eigen::Vector3f> &pts);
+    virtual void init(const PolynomialSurface *params, const std::vector<Eigen::Vector3f> &pts, const float weight);
 
     /// get implementation details
     virtual int getSurfaceType() const {return 3;}

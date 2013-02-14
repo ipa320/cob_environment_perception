@@ -46,7 +46,7 @@ namespace Slam_CurvedPolygon
       }
     } BB;
 
-  private:
+    private:
 
     struct SCOR
     {
@@ -74,6 +74,9 @@ namespace Slam_CurvedPolygon
     size_t frames_;
     BB bb_;                                  /// allows fast intersection tests
 
+    //paramters
+    bool enabled_all_merge_;
+
     typename DOF6::TYPE check_assumption(typename SCOR_MEMBER::Ptr m1, typename SCOR_MEMBER::Ptr m2) const;
 
     /**
@@ -82,9 +85,9 @@ namespace Slam_CurvedPolygon
      *   - search by similarity score
      */
     void findCorrespondences1(const OBJCTXT &ctxt, std::list<SCOR> &cors,
-                             const DOF6 &tf) const;
+                              const DOF6 &tf) const;
     void findCorrespondences3(const OBJCTXT &ctxt, std::vector<SCOR> &cors,
-                             const DOF6 &tf);
+                              const DOF6 &tf);
 
 
     /**
@@ -93,7 +96,7 @@ namespace Slam_CurvedPolygon
      *   - takes all correspondences in account
      */
     DOF6 optimizeLink1(const DOF6 &tf, std::list<SCOR> &cors, const typename DOF6::TYPE &thr_rot, const typename DOF6::TYPE &thr_tr /*=std::numeric_limits<typename DOF6::TYPE>::quiet_NaN()*/, const Eigen::Matrix3f &rot, const Eigen::Vector3f &tr,
-                      const int depth=0) const;
+                       const int depth=0) const;
 
     /**
      * optimize link 2
@@ -101,10 +104,10 @@ namespace Slam_CurvedPolygon
      *   - only uses most probable correspondences
      */
     DOF6 optimizeLink2(const DOF6 &tf, std::list<SCOR> &cors, const typename DOF6::TYPE &thr_rot, const typename DOF6::TYPE &thr_tr /*=std::numeric_limits<typename DOF6::TYPE>::quiet_NaN()*/, const Eigen::Matrix3f &rot, const Eigen::Vector3f &tr,
-                      const int depth=0) const;
+                       const int depth=0) const;
 
     DOF6 optimizeLink3(const OBJCTXT &ctxt, std::vector<SCOR> &cors, const DOF6 &tf, const typename DOF6::TYPE &thr_rot, const typename DOF6::TYPE &thr_tr /*=std::numeric_limits<typename DOF6::TYPE>::quiet_NaN()*/, const Eigen::Matrix3f &rot, const Eigen::Vector3f &tr,
-                      const int depth=0) const;
+                       const int depth=0) const;
 
 
     /// remove "noise" like seldom seend objects
@@ -113,13 +116,14 @@ namespace Slam_CurvedPolygon
     /// update the bounding box (pyramid)
     void updateBB();
 
-  public:
+    public:
 
-    OBJCTXT():frames_(0)
+    OBJCTXT():frames_(0), enabled_all_merge_(true)
     {}
 
     void operator+=(typename OBJECT::Ptr obj) {
-      //ROS_ASSERT(!obj->getData().invalid());
+//      if(!obj->getData().invalid())
+//        ROS_ERROR("invaild object");
       objs_.push_back(obj);
     }
 

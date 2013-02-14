@@ -36,6 +36,7 @@ rosbuild_add_executable(qppf_node ros/src/qppf_node.cpp common/src/polypartition
 #rosbuild_add_compile_flags(cob_3d_segmentation -D__LINUX__ -DCOMPILE_NODELET)
 
 rosbuild_add_compile_flags(segmentation_node ${SSE_FLAGS})
+rosbuild_add_compile_flags(segmentation_node ${SSE_FLAGS})
 
 rosbuild_add_roslaunch_check(ros/launch)
 

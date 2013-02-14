@@ -45,6 +45,7 @@ namespace Slam_CurvedPolygon
     void operator+=(const Eigen::Vector3f &v) {
       segments_.push_back(v);
       if(!pcl_isfinite(segments_.back()(2)) ) {
+        std::cout<<"v is not finite\n"<<segments_.back()<<std::endl;
         ROS_ERROR("v is not finite");
         segments_.back()(2) = 0.f;
       }
@@ -578,9 +579,12 @@ namespace Slam_CurvedPolygon
         }
       }
 
-//      if(!ASS) {
-//        debug_svg("error.svg",300,600);
-//      }
+      if(!ASS) {
+        char buffer[128];
+        static int n=0;
+        sprintf(buffer, "error%d.svg",n++);
+        debug_svg(buffer,300,600);
+      }
 
       return ASS;
     }
@@ -1341,6 +1345,7 @@ namespace Slam_CurvedPolygon
     inline size_t size() const {return segments_.size();}
     inline Eigen::Vector3f &operator[](const size_t ind) {return segments_[ind];}
     inline Eigen::Vector3f operator[](const size_t ind) const {return segments_[ind];}
+    inline const std::vector<Eigen::Vector3f> &get() const {return segments_;}
 
     Eigen::Vector3f nextPoint(const Eigen::Vector3f &search) const {
       bool out = false;

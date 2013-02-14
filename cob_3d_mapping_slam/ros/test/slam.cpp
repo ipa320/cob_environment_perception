@@ -451,8 +451,8 @@ TEST(Slam,bag_run)
             pmarkers[i]->header.frame_id = s->header.frame_id;
 
 //          ROS_INFO("time %f",s->header.stamp.toSec());
-//          if(s->header.stamp.toSec()<1311867723.916822)
-//            continue;
+          if(s->header.stamp.toSec()<1311867724.916822)
+            continue;
 
           //          if(!(std::abs((s->stamp-start).toSec()-0)<0.001 || first || std::abs((s->stamp-start).toSec()-3.15)<0.001 || std::abs((s->stamp-start).toSec()-3.7)<0.1))
           //            continue;

@@ -306,6 +306,8 @@ Eigen::Matrix4f build_random_tflink(DOF6::TFLinkvf &tflink, const int N=2, const
   dis2+=d2;
   dis3+=d3;
 
+  std::cout<<tflink<<"\n";
+
   std::cout<<"tfl: "<<d2<<"\n";
   std::cout<<"tfc: "<<d3<<"\n";
 
@@ -396,8 +398,8 @@ void t2()
   }
 }
 
-//TEST(DOF6, Source)
-void t1()
+TEST(DOF6, Source)
+//void t1()
 {
   time_t ti = time(NULL);
   ROS_INFO("init Source with %d",(int)ti);
@@ -449,7 +451,9 @@ void t1()
   }
 }
 
-TEST(DOF6, Source_Combinations) {
+//TEST(DOF6, Source_Combinations)
+void abc1()
+{
   time_t ti = time(NULL);
   ROS_INFO("init Source with %d",(int)ti);
   srand(ti);

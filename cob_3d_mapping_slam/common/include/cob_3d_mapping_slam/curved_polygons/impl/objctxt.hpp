@@ -8,6 +8,7 @@ bool OBJCTXT<_DOF6>::registration(const OBJCTXT &ctxt, DOF6 &tf, typename DOF6::
 #ifdef DEBUG_
   ROS_INFO("registration %d %d",(int)objs_.size(), (int)ctxt.objs_.size());
   Debug::Interface::get().sayTook("reg. start");
+  ROS_INFO("nextPoint ctr %d", Slam_Surface::___CTR___);
 #endif
 
   tf.getSource1()->reset();
@@ -18,6 +19,7 @@ bool OBJCTXT<_DOF6>::registration(const OBJCTXT &ctxt, DOF6 &tf, typename DOF6::
   findCorrespondences3(ctxt, used_cors_, tf);
 
   Debug::Interface::get().sayTook("reg. cor");
+  ROS_INFO("nextPoint ctr %d", Slam_Surface::___CTR___);
 
   //2. optimize
   //tf = optimizeLink(tf, cors);
@@ -31,6 +33,7 @@ bool OBJCTXT<_DOF6>::registration(const OBJCTXT &ctxt, DOF6 &tf, typename DOF6::
 #endif
 
   Debug::Interface::get().sayTook("reg. opt");
+  ROS_INFO("nextPoint ctr %d", Slam_Surface::___CTR___);
 
   std::cout<<"INPUT TF\n"<<tf<<"\n";
 
@@ -58,6 +61,7 @@ template<typename _DOF6>
 bool OBJCTXT<_DOF6>::merge(const OBJCTXT &ctxt, const DOF6 &tf, std::map<typename OBJECT::Ptr,bool> &used_out, const BoundingBox::TransformedFoVBB &fov, const bool only_merge)
 {
   Debug::Interface::get().sayTook("merge start");
+  ROS_INFO("nextPoint ctr %d", (int)Slam_Surface::___CTR___);
 
   ++frames_;
 
@@ -67,7 +71,7 @@ bool OBJCTXT<_DOF6>::merge(const OBJCTXT &ctxt, const DOF6 &tf, std::map<typenam
   if(old>0 && (tf.getTranslationVariance()+tf.getRotationVariance())>0.3f )// && (tf.getSource1()->getTranslationVariance()+tf.getSource1()->getRotationVariance())>0.3 )
     return false;
 
-  ROS_INFO("add ctxt %d", used_out.size());
+  ROS_INFO("add ctxt %d", (int)used_out.size());
   std::cout<<tf<<"\n";
 
   Eigen::Vector3f edges[8];
@@ -79,6 +83,9 @@ bool OBJCTXT<_DOF6>::merge(const OBJCTXT &ctxt, const DOF6 &tf, std::map<typenam
       for(size_t i=0; i<8; i++)
         if(fov&edges[i]) {in=true; break;}
     }
+
+    if(objs_[i]->getBB().extension()>2.5f)
+      in=false;
 
     if( in ) {
 #ifdef DEBUG_OUTPUT_
@@ -95,6 +102,7 @@ bool OBJCTXT<_DOF6>::merge(const OBJCTXT &ctxt, const DOF6 &tf, std::map<typenam
   }
 
   Debug::Interface::get().sayTook("merge 1");
+  ROS_INFO("nextPoint ctr %d", (int)Slam_Surface::___CTR___);
 
   std::map<typename OBJECT::Ptr,std::vector<typename OBJECT::Ptr> > used;
 
@@ -104,25 +112,30 @@ bool OBJCTXT<_DOF6>::merge(const OBJCTXT &ctxt, const DOF6 &tf, std::map<typenam
   {
     if(!it->a || !it->b || !it->used_) continue;
 
-    used_out[it->b] = true;
+    //used_out[it->b] = true;
 
     typename OBJECT::Ptr o=it->b->makeShared();
     o->transform(tmp_link.getRotation(), tmp_link.getTranslation(),
                  tf.getRotationVariance()+uncertainity, tf.getTranslationVariance()+uncertainity);
 
+    it->a->used();
+
     if(((*it->a) += *o)
     )
     {
+      used_out[it->b] = true;
+
       used[it->b].push_back(it->a);
       ROS_INFO("update object");
     }
     else {
-      it->a->used();
+      //it->a->used();
       ROS_INFO("NOT update object");
     }
   }
 
   Debug::Interface::get().sayTook("merge 2");
+  ROS_INFO("nextPoint ctr %d", (int)Slam_Surface::___CTR___);
 
   for(size_t i=0; i<ctxt.objs_.size(); i++)
   {
@@ -187,29 +200,39 @@ bool OBJCTXT<_DOF6>::merge(const OBJCTXT &ctxt, const DOF6 &tf, std::map<typenam
       }
     }
   }
+  Debug::Interface::get().sayTook("merge up2");
 
-
-  for(size_t i=0; i<objs_.size(); i++)
-    for(size_t j=i+1; j<objs_.size(); j++)
-    {
-      int n=-1;
-      if( (objs_[i]->getBB()&(objs_[j]->getBB().setMinSize(0.05f)
-      )) &&
-      (((*objs_[i]).op_plus(*objs_[j],n)) //&& objs_[j]->getData().isPlane()==o->getData().isPlane()
-      ) )
+  if(enabled_all_merge_) {
+    for(size_t i=0; i<objs_.size(); i++)
+      for(size_t j=i+1; j<objs_.size(); j++)
       {
-        objs_.erase(objs_.begin() + j);
-        --j;
-        ROS_INFO("erase object");
-      }
-      else if(n!=-1) {
-        switch(n) {
-          case 0:Debug::Interface::get().addArrow(objs_[i]->getNearestPoint(),objs_[j]->getNearestPoint(),255,0,0);break;
-          case 1:Debug::Interface::get().addArrow(objs_[i]->getNearestPoint(),objs_[j]->getNearestPoint(),0,0,0);break;
-          case 2:Debug::Interface::get().addArrow(objs_[i]->getNearestPoint(),objs_[j]->getNearestPoint(),0,0,255);break;
+        int n=-1;
+        bool b1, b2, b3;
+        if( (b1=(objs_[i]->getBB().changeSize(0.7f)&(objs_[j]->getBB().setMinSize(0.05f).changeSize(0.7f))
+        )) &&
+        (b2=(objs_[j]->getBB().preassumption(objs_[i]->getData().getBB())>=std::cos(objs_[i]->getData().getBB().ratio()))) &&
+        (((*objs_[i]).op_plus(*objs_[j],n)) //&& objs_[j]->getData().isPlane()==o->getData().isPlane()
+        ) )
+        {
+          objs_.erase(objs_.begin() + j);
+          --j;
+          ROS_INFO("erase objectA23");
+        }
+        else if(n!=-1) {
+          switch(n) {
+            case 0:Debug::Interface::get().addArrow(objs_[i]->getNearestPoint(),objs_[j]->getNearestPoint(),255,0,0);break;
+            case 1:Debug::Interface::get().addArrow(objs_[i]->getNearestPoint(),objs_[j]->getNearestPoint(),0,0,0);break;
+            case 2:Debug::Interface::get().addArrow(objs_[i]->getNearestPoint(),objs_[j]->getNearestPoint(),0,0,255);break;
+            case -1:
+              if(!b1)
+                Debug::Interface::get().addArrow(objs_[i]->getNearestPoint(),objs_[j]->getNearestPoint(),128,0,0);
+              else if(!b2)
+                Debug::Interface::get().addArrow(objs_[i]->getNearestPoint(),objs_[j]->getNearestPoint(),128,44,255);
+              break;
+          }
         }
       }
-    }
+  }
 
   //  for(typename std::vector<SCOR>::const_iterator it = used_cors_.begin(); it!=used_cors_.end(); it++)
   //  {
@@ -217,10 +240,13 @@ bool OBJCTXT<_DOF6>::merge(const OBJCTXT &ctxt, const DOF6 &tf, std::map<typenam
   //  }
 
   Debug::Interface::get().sayTook("merge up");
+  ROS_INFO("nextPoint ctr %d", (int)Slam_Surface::___CTR___);
 
   update();
 
   Debug::Interface::get().sayTook("merge stop");
+  ROS_INFO("nextPoint ctr %d", (int)Slam_Surface::___CTR___);
+  Slam_Surface::___CTR___=0;
 
   return true;
 }

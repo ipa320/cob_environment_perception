@@ -146,3 +146,109 @@ bool Path<NODE>::getTF(DOF6 &tf, const SWAY<NODE> *start, const SWAY<NODE> *end)
 
   return false;
 }
+
+
+template<typename NODE>
+void Path<NODE>::test() {
+  Eigen::Matrix4f M = Eigen::Matrix4f::Identity();
+  Eigen::AngleAxisf aa(1,Eigen::Vector3f::Identity());
+
+  M.topLeftCorner(3,3) = aa.toRotationMatrix();
+  M.col(3).head<3>() = Eigen::Vector3f::Identity();
+
+  local_.link_.setVariance(
+      0,
+      M.col(3).head<3>(),
+      0,
+      (typename DOF6::TROTATION)(M.topLeftCorner(3,3)));
+
+  //store node
+  path_.push_back(local_);
+
+  //create new node
+  newNode();
+  local_.link_.setTime(last_time_);
+
+  //add path to new node (straight-forwared)
+  local_.node_->addLink(path_.back());
+
+
+  M = M.inverse().eval();
+  local_.link_.setVariance(
+      0,
+      M.col(3).head<3>(),
+      0,
+      (typename DOF6::TROTATION)(M.topLeftCorner(3,3)));
+
+
+  const SWAY<NODE> * add = NULL;
+  DOF6 l;
+  //check if we can reuse existing node
+  for(size_t i=0; i<local_.node_->getConnections().size(); i++)
+  {
+    //TODO: take nearest
+
+    //get updated tf
+    if(!getTF(l, &local_.node_->getConnections()[i], &local_))
+      continue;
+
+    std::cout<<"CHECKING LINK\n"<<l<<"\n";
+
+    l = l+local_.link_;
+
+    std::cout<<"CHECKING LINK\n"<<l<<"\n";
+
+    if(
+        //translation
+        l.getTranslation().norm() + l.getTranslationVariance() < translation_res_
+        &&
+        //rotation
+        l.getRotation().norm() + l.getRotationVariance() < rotation_res_
+    )
+    {
+      add = &local_.node_->getConnections()[i];
+      break;
+    }
+  }
+
+  if(add)
+  {
+    // reuse node
+    ROS_INFO("reuse node");
+
+    //store node
+    path_.push_back(local_);
+
+    std::cout<<"REUSED LINK\n"<<l<<"\n";
+
+    local_ = *add;
+    local_.link_.deepCopy(l);
+//      *local_.link_.getSource1() = *path_.back().link_.getSource1() + *l.getSource1();
+//      local_.link_.setVariance(local_.link_.getSource1()->getTranslationVariance(),
+//                           local_.link_.getSource1()->getTranslation(),
+//                           local_.link_.getSource1()->getRotationVariance(),
+//                           (typename DOF6::TROTATION)( local_.link_.getSource1()->getRotation()) );
+
+    //add path to new node (straight-forwared)
+    local_.node_->addLink(path_.back());
+  }
+  else
+  {
+    // new node needed
+
+    //store node
+    path_.push_back(local_);
+
+    //create new node
+    newNode();
+    local_.link_.setTime(last_time_);
+
+    //add path to new node (straight-forwared)
+    local_.node_->addLink(path_.back());
+
+    //our new node gets some object (yummy)
+    //local_.node_->addCtxt(act_ctxt_, local_.link_);
+
+    ROS_INFO("new node %d", local_.id_);
+  }
+}

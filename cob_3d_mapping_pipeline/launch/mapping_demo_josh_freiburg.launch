@@ -1,12 +1,12 @@
 <?xml version="1.0"?>
 <launch>
 
-  <node pkg="cob_3d_segmentation" type="qppf_node" name="segmentation_qppf" output="screen" >
+  <!--node pkg="cob_3d_segmentation" type="qppf_node" name="segmentation_qppf" output="screen" >
   	<param name="filter" value="20000" />
   	<param name="only_planes" value="false" />
-  </node>
+  </node-->
 
-  <node pkg="cob_3d_mapping_slam" type="slam_node" name="slam" output="screen" >
+  <node pkg="cob_3d_mapping_slam" type="slam_node" name="slam" output="screen">
   	<param name="frame_id" value="/world" />
   	<param name="world_id" value="/openni_depth_optical_frame" />
 
