@@ -545,6 +545,8 @@ Polygon::computeCentroid()
 double
 Polygon::computeArea() const
 {
+  // IMPORTANT: computes area only for the projection of the polygon onto XY plane
+  // therefore  the resulting area is not the true area of the polygon
   double xi, xi_1, yi, yi_1, area=0;
   double sum;
   for (unsigned int i = 0; i < contours.size (); i++)
