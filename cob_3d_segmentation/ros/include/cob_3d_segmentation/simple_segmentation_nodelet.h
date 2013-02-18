@@ -104,6 +104,7 @@ namespace cob_3d_segmentation
       , min_cluster_size_(100)
       , filter_(false)
       , downsample_(false)
+      , colorize_(true)
     { }
 
     ~SimpleSegmentationNodelet()
@@ -136,6 +137,7 @@ namespace cob_3d_segmentation
     int min_cluster_size_;
     bool filter_;
     bool downsample_;
+    bool colorize_;
   };
 }
 
