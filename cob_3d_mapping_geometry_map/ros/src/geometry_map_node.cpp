@@ -155,17 +155,20 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& 
   tf::StampedTransform trf_map;
   Eigen::Affine3f af_orig = Eigen::Affine3f::Identity();
 
-  try
+  if(enable_tf_)
   {
-    tf_listener_.waitForTransform(map_frame_id_, sa->header.frame_id, sa->header.stamp, ros::Duration(0.1));
-    tf_listener_.lookupTransform(map_frame_id_, sa->header.frame_id, sa->header.stamp, trf_map);
-  }
-  catch (tf::TransformException ex) { ROS_ERROR("[geometry map node] : %s",ex.what()); return; }
+    try
+    {
+      tf_listener_.waitForTransform(map_frame_id_, sa->header.frame_id, sa->header.stamp, ros::Duration(0.2));
+      tf_listener_.lookupTransform(map_frame_id_, sa->header.frame_id, sa->header.stamp, trf_map);
+    }
+    catch (tf::TransformException ex) { ROS_ERROR("[geometry map node] : %s",ex.what()); return; }
 
-  Eigen::Affine3d ad;
-  tf::TransformTFToEigen(trf_map, ad);
-  af_orig = ad.cast<float>();
-  af_orig = geometry_map_.getLastError() * af_orig;
+    Eigen::Affine3d ad;
+    tf::TransformTFToEigen(trf_map, ad);
+    af_orig = ad.cast<float>();
+    af_orig = geometry_map_.getLastError() * af_orig;
+  }
 
   static int ctr=0;
 
@@ -232,11 +235,11 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& 
     geometry_map_.addMapEntry(cylinder_list[i]);
     cyl_merge_ctr += bf_size - geometry_map_.getMap_cylinder()->size() + 1;
   }
-  /*for (std::map<int,ShapeCluster::Ptr>::iterator it=sc_map.begin(); it!=sc_map.end(); ++it)
+  for (std::map<int,ShapeCluster::Ptr>::iterator it=sc_map.begin(); it!=sc_map.end(); ++it)
   {
     if(needs_adjustment) it->second->transform2tf(af_new);
     geometry_map_.addMapEntry(it->second);
-  }*/
+  }
   ROS_DEBUG_STREAM("Map Size C="<<geometry_map_.getMap_cylinder()->size()
                <<" , C_NEW="<<cylinder_list.size()
                <<" , C_MERGED="<<cyl_merge_ctr<<"\n"
@@ -720,13 +723,12 @@ int main (int argc, char** argv)
 
   GeometryMapNode gmn;
 
-  ros::spin();
-  /*ros::Rate loop_rate(10);
+  ros::Rate loop_rate(10);
   while (ros::ok())
   {
     ros::spinOnce ();
     loop_rate.sleep();
-  }*/
+  }
 }
 
 //PLUGINLIB_DECLARE_CLASS(cob_env_model, FeatureMap, FeatureMap, nodelet::Nodelet)
