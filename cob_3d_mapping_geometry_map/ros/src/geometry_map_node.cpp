@@ -155,17 +155,20 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& 
   tf::StampedTransform trf_map;
   Eigen::Affine3f af_orig = Eigen::Affine3f::Identity();
 
-  try
+  if(enable_tf_)
   {
-    tf_listener_.waitForTransform(map_frame_id_, sa->header.frame_id, sa->header.stamp, ros::Duration(2));
-    tf_listener_.lookupTransform(map_frame_id_, sa->header.frame_id, sa->header.stamp, trf_map);
-  }
-  catch (tf::TransformException ex) { ROS_ERROR("[geometry map node] : %s",ex.what()); return; }
+    try
+    {
+      tf_listener_.waitForTransform(map_frame_id_, sa->header.frame_id, sa->header.stamp, ros::Duration(2));
+      tf_listener_.lookupTransform(map_frame_id_, sa->header.frame_id, sa->header.stamp, trf_map);
+    }
+    catch (tf::TransformException ex) { ROS_ERROR("[geometry map node] : %s",ex.what()); return; }
 
-  Eigen::Affine3d ad;
-  tf::TransformTFToEigen(trf_map, ad);
-  af_orig = ad.cast<float>();
-  af_orig = geometry_map_.getLastError() * af_orig;
+    Eigen::Affine3d ad;
+    tf::TransformTFToEigen(trf_map, ad);
+    af_orig = ad.cast<float>();
+    af_orig = geometry_map_.getLastError() * af_orig;
+  }
 
   static int ctr=0;
 
