@@ -234,8 +234,8 @@ void readOptions(int argc, char* argv[])
  * @param[out] fpfh_out the labeled point cloud after the classifing process
  */
 void processFPFH(const PointCloud<PointXYZRGB>::Ptr in,
-		 PointCloud<PointXYZRGB>::Ptr ref_out,
-		 PointCloud<PointXYZRGB>::Ptr fpfh_out)
+                 PointCloud<PointXYZRGB>::Ptr ref_out,
+                 PointCloud<PointXYZRGB>::Ptr fpfh_out)
 {
   PointCloud<Normal>::Ptr n(new PointCloud<Normal>());
   PointCloud<FPFHSignature33>::Ptr fpfh(new PointCloud<FPFHSignature33>());
@@ -288,9 +288,9 @@ void processFPFH(const PointCloud<PointXYZRGB>::Ptr in,
     for (size_t i = 0; i < ref_out->points.size(); ++i)
     {
       flipNormalTowardsViewpoint(ref_out->points[i], 0.0f, 0.0f, 0.0f, 
-				 n->points[i].normal[0],
-				 n->points[i].normal[1],
-				 n->points[i].normal[2]);
+                                 n->points[i].normal[0],
+                                 n->points[i].normal[1],
+                                 n->points[i].normal[2]);
     }
   }
   else

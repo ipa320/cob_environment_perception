@@ -136,8 +136,8 @@ public:
     as_= new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TableObjectClusterAction>(n_, "table_object_cluster", boost::bind(&TableObjectClusterNode::actionCallback, this, _1), false);
     as_->start();
 
-    pc_sub_.subscribe(n_,"point_cloud",10);
-    sa_sub_.subscribe(n_,"shape_array",10);
+    pc_sub_.subscribe(n_,"point_cloud",1);
+    sa_sub_.subscribe(n_,"shape_array",1);
     sync_ = boost::make_shared <message_filters::Synchronizer<MySyncPolicy> >(100);
     sync_->connectInput(pc_sub_, sa_sub_);
     sync_->registerCallback(boost::bind(&TableObjectClusterNode::topicCallback, this, _1, _2));
@@ -373,8 +373,11 @@ public:
           ss.clear();
         }
       }
-      object_cluster_pub_.publish(pca);
-      publishMarker(bounding_boxes);
+      if(pca.segments.size() != 0)
+      {
+        object_cluster_pub_.publish(pca);
+        publishMarker(bounding_boxes);
+      }
     }
   }
 
