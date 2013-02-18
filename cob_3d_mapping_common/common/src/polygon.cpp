@@ -336,18 +336,31 @@ Polygon::computeSimilarity(const Polygon::Ptr& poly) const
 void
 Polygon::merge(std::vector<Polygon::Ptr>& poly_vec)
 {
+  this->assignID(poly_vec);
+  //if(this->id==0) std::cout << "merge_weight before: " << this->merge_weight_ << "," << merged << std::endl;
   Polygon::Ptr p_average= Polygon::Ptr(new Polygon);
   this->applyWeighting(poly_vec,p_average);
   this->merge_union(poly_vec,p_average);
   this->assignWeight();
-  this->assignID(poly_vec);
+  //if(this->id==0) std::cout << "merge_weight after: " << this->merge_weight_ << "," << merged  << std::endl;
 }
 
 void
 Polygon::merge_union(std::vector<Polygon::Ptr>& poly_vec,  Polygon::Ptr& p_average)
 {
+  //if(this->id==0) std::cout << "\tthis rgb: " << this->color[0]*255 << "," << this->color[1]*255 << "," << this->color[2]*255 << std::endl;
+  d_color_.reset();
+  d_color_.setID(this->id);
   gpc_polygon *gpc_C = new gpc_polygon, *smoothed = new gpc_polygon;
   this->getGpcStructure(p_average->transform_from_world_to_plane, gpc_C);
+
+  double min_weight = this->merge_weight_;
+  for(size_t i=0;i<poly_vec.size();++i)
+  {
+    if(poly_vec[i]->merge_weight_ < min_weight)
+      min_weight = poly_vec[i]->merge_weight_;
+  }
+  double normalizer = 1/min_weight;
 
   for(size_t i=0;i<poly_vec.size();++i)
   {
@@ -355,10 +368,11 @@ Polygon::merge_union(std::vector<Polygon::Ptr>& poly_vec,  Polygon::Ptr& p_avera
     poly_vec[i]->getGpcStructure(p_average->transform_from_world_to_plane, gpc_B);
     gpc_polygon_clip(GPC_UNION, gpc_B, gpc_C, gpc_C);
     gpc_free_polygon(gpc_B);
-    d_color_.addColor(poly_vec[i]->color[0]*255,poly_vec[i]->color[1]*255,poly_vec[i]->color[2]*255);
-    //std::cout << "\t" << poly_vec[i]->color[0] << "," << poly_vec[i]->color[1] << "," << poly_vec[i]->color[2] << std::endl;
+    d_color_.addColor(poly_vec[i]->color[0]*255,poly_vec[i]->color[1]*255,poly_vec[i]->color[2]*255, round(normalizer*poly_vec[i]->merge_weight_));
+    //if(id==0) std::cout << "\tm_weight " << poly_vec[i]->id << ": " << poly_vec[i]->merge_weight_ << "," << poly_vec[i]->computeArea3d() << std::endl;
   }
-  d_color_.addColor(this->color[0]*255,this->color[1]*255,this->color[2]*255);
+  d_color_.addColor(this->color[0]*255,this->color[1]*255,this->color[2]*255,round(normalizer*this->merge_weight_));
+  //if(id==0) std::cout << "\tm_weight " << this->merge_weight_ <<  "," << this->computeArea3d() << std::endl;
 
   // fill in parameters for "this" polygon
   this->transform_from_world_to_plane = p_average->transform_from_world_to_plane;
@@ -367,7 +381,7 @@ Polygon::merge_union(std::vector<Polygon::Ptr>& poly_vec,  Polygon::Ptr& p_avera
   this->centroid = p_average->centroid;
   if(this->merged<9) { this->merged = p_average->merged; }
   else { this->merged = 9; }
-  this->merge_weight_ = p_average->merge_weight_;
+  //this->merge_weight_ = p_average->merge_weight_;
   copyGpcStructure(gpc_C, smoothed);
   smoothGpcStructure(gpc_C, smoothed);
   this->applyGpcStructure(p_average->transform_from_world_to_plane.inverse(), smoothed);
@@ -381,7 +395,7 @@ Polygon::merge_union(std::vector<Polygon::Ptr>& poly_vec,  Polygon::Ptr& p_avera
   this->color[0] = r * temp_inv;
   this->color[1] = g * temp_inv;
   this->color[2] = b * temp_inv;
-  //d_color_.getColor(this->color[0],this->color[1],this->color[2]);
+  //if(this->id==0) std::cout << "\tthis rgb: " << this->color[0]*255 << "," << this->color[1]*255 << "," << this->color[2]*255 << std::endl;
 }
 
 
