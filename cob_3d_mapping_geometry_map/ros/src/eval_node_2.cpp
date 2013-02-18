@@ -69,11 +69,35 @@
 #include <rosbag/bag.h>
 #include <rosbag/view.h>
 #include <boost/foreach.hpp>
+#include <Eigen/Core>
 
 // ROS message includes
 #include <cob_3d_mapping_msgs/ShapeArray.h>
 
 std::string file_path;
+std::vector<cob_3d_mapping_msgs::Shape> map;
+std::vector<cob_3d_mapping_msgs::Shape> seg;
+
+void shapeCallback1(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& sa)
+{
+  for(unsigned int i=0; i<sa->shapes.size(); i++)
+  {
+      //seg.push_back(sa->shapes[i]);
+      Eigen::Vector3f n(sa->shapes[i].params[0],sa->shapes[i].params[1],sa->shapes[i].params[2]);
+      Eigen::Vector3f n_true(0,-1,0);
+      double dangle = std::acos(n.dot(n_true)/n.norm());
+      double dd = sa->shapes[i].params[3];
+      std::cout << dangle << "\t" << dd << std::endl;
+  }
+}
+
+void shapeCallback2(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& sa)
+{
+  for(unsigned int i=0; i<sa->shapes.size(); i++)
+  {
+      map.push_back(sa->shapes[i]);
+  }
+}
 
 
 int main (int argc, char **argv)
@@ -82,22 +106,27 @@ int main (int argc, char **argv)
   ros::NodeHandle nh;
 
   ros::param::get("~file_path", file_path);
-  file_path="/home/develop/plane_sim_geo.bag";
-  
-  std::vector< std::vector<cob_3d_mapping_msgs::Shape> > map;
-  map.resize(100);
-  std::vector< std::vector<cob_3d_mapping_msgs::Shape> > seg;
-  seg.resize(100);
-  
+  file_path="/home/goa/pcl_daten/merge_planes/planes_merged.bag";
+
+  ros::Subscriber seg_sub = nh.subscribe("/geometry_map/map_array", 10, shapeCallback1);
+  //ros::Subscriber map_sub = nh.subscribe("shape_array_2", 10, shapeCallback2);
+
+  ros::spin();
+
+  /*std::vector<cob_3d_mapping_msgs::Shape> map;
+  //map.resize(100);
+  std::vector<cob_3d_mapping_msgs::Shape> seg;
+  //seg.resize(100);
+
   rosbag::Bag bag;
   bag.open(file_path, rosbag::bagmode::Read);
   std::vector<std::string> topics;
-  topics.push_back(std::string("/geometry_map/out_shape_array"));
+  topics.push_back(std::string("/segmentation/shape_array"));
   topics.push_back(std::string("/geometry_map/map_array"));
   //rosbag::View view(bag, rosbag::TopicQuery("/geometry_map/map_array"));
   rosbag::View view(bag, rosbag::TopicQuery("/geometry_map/map_array"));
-  
-  unsigned int max_id=0;
+
+  //unsigned int max_id=0;
   BOOST_FOREACH(rosbag::MessageInstance const m, view)
   {
     //rosbag::MessageInstance m = *(view.begin());
@@ -105,14 +134,14 @@ int main (int argc, char **argv)
     for(unsigned int i=0; i<sa->shapes.size(); i++)
     {
         //cob_3d_mapping_msgs::Shape::Ptr s_ptr(&sa->shapes[i]);
-        map[sa->shapes[i].id].push_back(sa->shapes[i]);
-        if(sa->shapes[i].id>max_id) max_id=sa->shapes[i].id;
+        map.push_back(sa->shapes[i]);
+        //if(sa->shapes[i].id>max_id) max_id=sa->shapes[i].id;
     }
   }
-  map.resize(max_id+1);
-  
-  rosbag::View view2(bag, rosbag::TopicQuery("/geometry_map/out_shape_array"));
-  max_id=0;
+  //map.resize(max_id+1);
+
+  rosbag::View view2(bag, rosbag::TopicQuery("/segmentation/shape_array"));
+  //max_id=0;
   BOOST_FOREACH(rosbag::MessageInstance const m, view)
   {
     //rosbag::MessageInstance m = *(view.begin());
@@ -120,23 +149,30 @@ int main (int argc, char **argv)
     for(unsigned int i=0; i<sa->shapes.size(); i++)
     {
         //cob_3d_mapping_msgs::Shape::Ptr s_ptr(&sa->shapes[i]);
-        seg[sa->shapes[i].id].push_back(sa->shapes[i]);
-        if(sa->shapes[i].id>max_id) max_id=sa->shapes[i].id;
+        seg.push_back(sa->shapes[i]);
+        //if(sa->shapes[i].id>max_id) max_id=sa->shapes[i].id;
     }
   }
-  seg.resize(max_id+1);
+  //seg.resize(max_id+1);
   bag.close();
-  
+
   std::cout << seg.size() << "," << map.size() << std::endl;
-  
-  for(unsigned int i=0; i<map.size(); i++)
+  std::cout << "alpha_seg\td_seg\talpha_map\talpha_seg" << std::endl;
+
+  for(unsigned int i=0; i<seg.size(); i++)
   {
-    if(map[i].size() == 0 || seg[i].size() == 0) continue;
-    std::cout << i << ":" << map[i][0].params[0] << "," << map[i][0].params[1] << "," << map[i][0].params[2] << "," << map[i][0].params[3] << std::endl << std::endl;
-    for(unsigned int j=0; j < seg[i].size(); j++)
-        std::cout << i << ":" << seg[i][j].params[0] << "," << seg[i][j].params[1] << "," << seg[i][j].params[2] << "," << seg[i][j].params[3] << std::endl;
-    std::cout << std::endl;
-  }
+    std::cout << seg[i].params[0] << "," << seg[i].params[1] << "," << seg[i].params[2] <<  "," << seg[i].params[3] << std::endl;
+    Eigen::Vector3f n(seg[i].params[0],seg[i].params[1],seg[i].params[2]);
+    Eigen::Vector3f n_true(0,-1,0);
+    double dangle = std::acos(n.dot(n_true)/n.norm());
+    double dd = seg[i].params[3];
+
+    Eigen::Vector3f n_m(map[i].params[0],map[i].params[1],map[i].params[2]);
+    double dangle2 = std::acos(n_m.dot(n_true)/n_m.norm());
+    double dd2 = map[i].params[3];
+    std::cout << dangle << "\t" << dd << "\t" << dangle2 << "\t" << dd2<< std::endl;
+  }*/
+
 
 
   return 0;

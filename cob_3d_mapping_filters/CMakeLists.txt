@@ -37,15 +37,15 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
 
 rosbuild_add_library(cob_3d_mapping_filters
 	common/src/amplitude_filter.cpp
-	common/src/intensity_filter.cpp)
-#	common/src/jump_edge_filter.cpp
-#	common/src/speckle_filter.cpp)
+	common/src/intensity_filter.cpp
+	common/src/jump_edge_filter.cpp
+	common/src/speckle_filter.cpp)
 
 rosbuild_add_library(cob_3d_mapping_filter_nodelets
 	ros/src/amplitude_filter.cpp
-	ros/src/intensity_filter.cpp)
-#	ros/src/jump_edge_filter.cpp
-#	ros/src/speckle_filter.cpp)
+	ros/src/intensity_filter.cpp
+	ros/src/jump_edge_filter.cpp
+	ros/src/speckle_filter.cpp)
 
 #rosbuild_add_executable(test_amplitude_filter common/test/test_amplitude_filter.cpp)
 #target_link_libraries(test_amplitude_filter cob_3d_mapping_filters)
