@@ -69,7 +69,7 @@
 #include "cob_3d_mapping_filters/impl/amplitude_filter.hpp"
 #include <pcl/filters/impl/filter.hpp>
 
-#ifdef PCL_VERSION_COMPARE
+#if defined(PCL_VERSION_COMPARE) && PCL_MINOR_VERSION >= 6
 #include <pcl/impl/pcl_base.hpp>
 #endif
 
