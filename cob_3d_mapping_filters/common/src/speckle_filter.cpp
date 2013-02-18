@@ -71,8 +71,11 @@
 
 #include <pcl/filters/extract_indices.h>
 #include <pcl/filters/impl/extract_indices.hpp>
-#include <pcl/impl/pcl_base.hpp>
 #include <pcl/filters/impl/filter.hpp>
+
+#if defined(PCL_VERSION_COMPARE) && PCL_MINOR_VERSION >= 6
+#include <pcl/impl/pcl_base.hpp>
+#endif
 
 void
 cob_3d_mapping_filters::SpeckleFilter<sensor_msgs::PointCloud2>::applyFilter (PointCloud2 &pc_out)

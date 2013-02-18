@@ -125,6 +125,10 @@ target_link_libraries(bag_gui ${wxWidgets_LIBRARIES} cob_3d_mapping_tools)
 
 rosbuild_add_executable(gui_normals common/src/gui_normals.cpp)
 target_link_libraries(gui_normals ${wxWidgets_LIBRARIES} cob_3d_mapping_tools)
+rosbuild_link_boost(gui_normals signals)
+
+rosbuild_add_executable(noise_gen ros/src/noise_gen.cpp)
+rosbuild_link_boost(noise_gen signals)
 
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)

@@ -67,8 +67,12 @@
 // cob_3d_mapping_filters includes
 #include "cob_3d_mapping_filters/intensity_filter.h"
 #include "cob_3d_mapping_filters/impl/intensity_filter.hpp"
-//#include <pcl/impl/pcl_base.hpp>
 #include <pcl/filters/impl/filter.hpp>
+
+#if defined(PCL_VERSION_COMPARE) && PCL_MINOR_VERSION >= 6
+#include <pcl/impl/pcl_base.hpp>
+#endif
+
 
 void
 cob_3d_mapping_filters::IntensityFilter<sensor_msgs::PointCloud2>::applyFilter (PointCloud2 &pc_out)

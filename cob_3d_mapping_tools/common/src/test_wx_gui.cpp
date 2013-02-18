@@ -61,8 +61,11 @@
  ****************************************************************/
 
 #include <pcl/features/integral_image_normal.h>
+
+#ifdef PCL_MINOR_VERSION >= 6
 #include <pcl/segmentation/organized_multi_plane_segmentation.h>
 #include <pcl/segmentation/edge_aware_plane_comparator.h>
+#endif
 
 #include "cob_3d_mapping_common/label_defines.h"
 #include "cob_3d_mapping_common/polygon.h"
@@ -427,6 +430,8 @@ void createClustersUsingPlaneExtraction(PointCloud::Ptr cloud, ClusterMap& cmap)
   }
 }
 
+
+#ifdef PCL_VERSION_COMPARE
 void createClustersUsingMultiPlaneSegmentation(PointCloud::Ptr cloud, ClusterMap& cmap)
 {
   pcl::PointCloud<pcl::Normal>::Ptr n(new pcl::PointCloud<pcl::Normal>);
@@ -493,6 +498,7 @@ void createClustersUsingMultiPlaneSegmentation(PointCloud::Ptr cloud, ClusterMap
     p.computeAttributes(it->second.comp3, p.centroid);
   }
 }
+#endif
 
 
 
@@ -642,8 +648,11 @@ public:
     *pc_pred = *pc_exp;
     std::cout << pc_exp->width << " " << pc_exp->height << std::endl;
     createClusters(pc_exp, exp);
-    //createClustersUsingPlaneExtraction(pc_pred, pred);
+    #ifdef PCL_VERSION_COMPARE
     createClustersUsingMultiPlaneSegmentation(pc_pred, pred);
+    #else
+    createClustersUsingPlaneExtraction(pc_pred, pred);
+    #endif
     c_it = exp.begin();
 
     Gui::Resource<RPC>* r_exp = Gui::Core::rMan()->create<RPC>("res_expected", pc_exp);
