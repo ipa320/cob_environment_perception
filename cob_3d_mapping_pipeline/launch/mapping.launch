@@ -41,7 +41,9 @@
     <arg name="cloud_in" value="/registration_pass_through/output"/>
   </include>
   <include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch"/>
-  <include file="$(find cob_3d_visualization)/launch/shape_visualization.launch"/>
+  <include file="$(find cob_3d_visualization)/launch/shape_visualization.launch">
+    <arg name="shape_array_in" value="/geometry_map/map_array"/>
+  </include>
 
 
 

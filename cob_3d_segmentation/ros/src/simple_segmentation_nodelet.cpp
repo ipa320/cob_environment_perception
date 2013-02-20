@@ -143,19 +143,19 @@ cob_3d_segmentation::SimpleSegmentationNodelet::receivedCloudCallback(PointCloud
   unsigned int id = 0;
   for (ClusterPtr c = seg_.clusters()->begin(); c != seg_.clusters()->end(); ++c)
   {
-    if(c->size() < min_cluster_size_) {std::cout << "da1" << std::endl;continue;}
+    if(c->size() < min_cluster_size_) {/*std::cout << "da1" << std::endl;*/continue;}
     Eigen::Vector3f centroid = c->getCentroid();
-    if(centroid(2) > centroid_passthrough_) {std::cout << "da2" << std::endl;continue;}
-    if(c->size() <= ceil(1.1f * (float)c->border_points.size()))  {std::cout << "da3" << std::endl;continue;}
+    if(centroid(2) > centroid_passthrough_) {/*std::cout << "da2" << std::endl;*/continue;}
+    if(c->size() <= ceil(1.1f * (float)c->border_points.size()))  {/*std::cout << "da3" << std::endl;*/continue;}
 
     seg_.clusters()->computeClusterComponents(c);
-    if(filter_ && !c->is_save_plane) {std::cout << "da4" << std::endl;continue;}
+    if(filter_ && !c->is_save_plane) {/*std::cout << "da4" << std::endl;*/continue;}
 
 
     PolygonContours<PolygonPoint> poly;
     std::cout << c->border_points.size() << std::endl;
     pe_.outline(down_->width, down_->height, c->border_points, poly);
-    if(!poly.polys_.size()) {std::cout << "da5" << std::endl;continue;} // continue, if no contours were found
+    if(!poly.polys_.size()) {/*std::cout << "da5" << std::endl;*/continue;} // continue, if no contours were found
     int max_idx=0, max_size=0;
     for (int i = 0; i < (int)poly.polys_.size(); ++i)
     {
