@@ -33,9 +33,12 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/ros/include
     ${PROJECT_SOURCE_DIR}/common/include  )
 
 #common commands for building c++ executables and libraries
-rosbuild_add_library(fov common/src/field_of_view.cpp)
+rosbuild_add_library(fov common/src/field_of_view.cpp
+    common/src/fov_segmentation.cpp)
 rosbuild_add_executable(fov_node ros/src/field_of_view_node.cpp)
 target_link_libraries(fov_node fov)
+rosbuild_add_executable(fov_segmentation_node ros/src/fov_segmentation_node.cpp)
+target_link_libraries(fov_segmentation_node fov)
 #rosbuild_add_boost_directories()
 #rosbuild_link_boost(${PROJECT_NAME} thread)
 #rosbuild_add_executable(example examples/example.cpp)

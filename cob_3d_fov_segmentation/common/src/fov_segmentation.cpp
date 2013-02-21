@@ -24,7 +24,7 @@
  * \date Date of creation: 02/2013
  *
  * \brief
- * Computes field of view of camera sensors.
+ * Computes field of view segmentation of a shape array.
  *
  *****************************************************************
  *
@@ -61,28 +61,64 @@
 //##################
 //#### includes ####
 
-#include <cob_3d_fov_segmentation/field_of_view.h>
+#include <cob_3d_fov_segmentation/fov_segmentation.h>
 
 using namespace cob_3d_mapping;
 
-void FieldOfView::computeFieldOfView()
+
+// Constructor
+FOVSegmentation::FOVSegmentation()
 {
-  double fovHorFrac = sensor_fov_hor_/2;
-  double fovVerFrac = sensor_fov_ver_/2;
-
-  p_1_cam_(0) = p_0_(0) + tan(fovHorFrac)*sensor_max_range_;
-  p_1_cam_(1) = -tan(fovVerFrac)*sensor_max_range_;
-  p_1_cam_(2) = sensor_max_range_;
-
-  p_2_cam_(0) = -p_1_cam_(0);
-  p_2_cam_(1) = p_1_cam_(1);
-  p_2_cam_(2) = sensor_max_range_;
-
-  p_3_cam_(0) = -p_1_cam_(0);
-  p_3_cam_(1) = -p_1_cam_(1);
-  p_3_cam_(2) = sensor_max_range_;
-
-  p_4_cam_(0) = p_1_cam_(0);
-  p_4_cam_(1) = -p_1_cam_(1);
-  p_4_cam_(2) = sensor_max_range_;
 }
+
+void FOVSegmentation::compute(std::vector<Polygon::Ptr>& polygons)
+{
+  for(polygon_iterator it = polygons_in_.begin(); it != polygons_in_.end(); it++)
+  {
+    std::vector<Eigen::Vector3f> intersections;
+    clipFOVandPlane(*it, intersections);
+    if( intersections.size() == 0) continue;
+    Polygon::Ptr fov_poly(new Polygon(**it));
+    fov_poly->contours.clear();
+    fov_poly->holes.clear();
+    fov_poly->contours.push_back(intersections);
+    fov_poly->holes.push_back(false);
+    (*it)->merge_difference(fov_poly);
+    polygons.push_back(fov_poly);
+  }
+}
+
+void FOVSegmentation::clipFOVandPlane(Polygon::Ptr& poly, std::vector<Eigen::Vector3f>& intersections)
+{
+  std::vector<Eigen::Vector3d> p(5);
+  /*Eigen::Vector3d p_1;
+  Eigen::Vector3d p_2;
+  Eigen::Vector3d p_3;
+  Eigen::Vector3d p_4;*/
+  fov_.getFOV(p[0], p[1], p[2], p[3], p[4]);
+
+  for( unsigned int i=1; i<p.size(); i++)
+  {
+    double div = poly->normal.cast<double>().dot(p[i]-p[0]);
+    if ( div = 0 ) continue;
+    double lambda = (poly->normal.cast<double>().dot(poly->centroid.topLeftCorner(3, 1).cast<double>() - p[0]))/div;
+    if ( lambda > 1 || lambda < 0) continue;
+    Eigen::Vector3d intersection = p[0] + lambda*(p[i]-p[0]);
+    intersections.push_back(intersection.cast<float>());
+    unsigned int j = i;
+    if ( j == p.size()-1 ) j = 1;
+    div = poly->normal.cast<double>().dot(p[j+1]-p[j]);
+    if ( div = 0 ) continue;
+    lambda = (poly->normal.cast<double>().dot(poly->centroid.topLeftCorner(3, 1).cast<double>() - p[j]))/div;
+    if ( lambda > 1  || lambda < 0) continue;
+    Eigen::Vector3d intersection2 = p[j] + lambda*(p[j+1]-p[j]);
+    intersections.push_back(intersection2.cast<float>());
+  }
+}
+
+void FOVSegmentation::clipPolygons()
+{
+
+}
+
+
