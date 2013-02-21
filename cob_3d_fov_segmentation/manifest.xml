@@ -1,0 +1,19 @@
+<package>
+  <description brief="cob_3d_fov_segmentation">
+
+     cob_3d_fov_segmentation
+
+  </description>
+  <author>Georg Arbeiter</author>
+  <license>IPA</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/cob_3d_fov_segmentation</url>
+
+  <depend package="tf_conversions"/>
+  <depend package="dynamic_reconfigure"/>
+
+  <rosdep name="eigen"/>
+
+</package>
+
+
