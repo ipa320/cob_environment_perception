@@ -24,7 +24,7 @@
  * \date Date of creation: 02/2013
  *
  * \brief
- * Computes field of view of camera sensors.
+ * Computes field of view segmentation of a shape array.
  *
  *****************************************************************
  *
@@ -57,32 +57,63 @@
  *
  ****************************************************************/
 
+#ifndef __FOV_SEGMENTATION_H__
+#define __FOV_SEGMENTATION_H__
 
 //##################
 //#### includes ####
 
+/*#include <Eigen/Core>
+#include <Eigen/Geometry>
+#include <iostream>*/
+#include <cob_3d_mapping_common/polygon.h>
 #include <cob_3d_fov_segmentation/field_of_view.h>
 
-using namespace cob_3d_mapping;
-
-void FieldOfView::computeFieldOfView()
+namespace cob_3d_mapping
 {
-  double fovHorFrac = sensor_fov_hor_/2;
-  double fovVerFrac = sensor_fov_ver_/2;
 
-  p_1_cam_(0) = p_0_(0) + tan(fovHorFrac)*sensor_max_range_;
-  p_1_cam_(1) = -tan(fovVerFrac)*sensor_max_range_;
-  p_1_cam_(2) = sensor_max_range_;
+  //####################
+  //#### class ####
+  class FOVSegmentation
+  {
+  public:
+    typedef std::vector<Polygon::Ptr>::iterator polygon_iterator;
+    // Constructor
+    FOVSegmentation();
 
-  p_2_cam_(0) = -p_1_cam_(0);
-  p_2_cam_(1) = p_1_cam_(1);
-  p_2_cam_(2) = sensor_max_range_;
 
-  p_3_cam_(0) = -p_1_cam_(0);
-  p_3_cam_(1) = -p_1_cam_(1);
-  p_3_cam_(2) = sensor_max_range_;
+    // Destructor
+    ~FOVSegmentation()
+    {
+      /// void
+    }
 
-  p_4_cam_(0) = p_1_cam_(0);
-  p_4_cam_(1) = -p_1_cam_(1);
-  p_4_cam_(2) = sensor_max_range_;
-}
+    void setFOV(FieldOfView& fov) {
+      fov_ = fov;
+    }
+
+    void setShapeArray(std::vector<Polygon::Ptr>& polygons)
+    {
+      polygons_in_ = polygons;
+    }
+
+
+    void compute(std::vector<Polygon::Ptr>& polygons);
+
+
+
+  protected:
+    void clipFOVandPlane(Polygon::Ptr& poly, std::vector<Eigen::Vector3f>& intersections);
+    void clipPolygons();
+
+    std::vector<Polygon::Ptr> polygons_in_;
+    std::vector<Polygon::Ptr> polygons_fov_;
+    FieldOfView fov_;
+
+  };
+
+
+} //namespace
+
+#endif //__FOV_SEGMENTATION_H__
+

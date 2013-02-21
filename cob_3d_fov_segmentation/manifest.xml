@@ -11,6 +11,7 @@
 
   <depend package="tf_conversions"/>
   <depend package="dynamic_reconfigure"/>
+  <depend package="cob_3d_mapping_common"/>
 
   <rosdep name="eigen"/>
 
