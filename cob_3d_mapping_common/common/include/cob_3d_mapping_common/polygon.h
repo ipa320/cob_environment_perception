@@ -68,6 +68,7 @@ extern "C" {
 }
 #include <fstream>
 #include <iostream>
+#include <stdint.h>
 
 //#include "cob_3d_mapping_common/stop_watch.h"
 
@@ -273,6 +274,8 @@ namespace cob_3d_mapping
       , merge_weight_(1.0)
     { }
 
+    //Polygon(Polygon::Ptr polygon);
+
 
     /**
     * \brief Get index of first non-hole conour.
@@ -385,6 +388,7 @@ namespace cob_3d_mapping
     */
     void merge_union(std::vector<Polygon::Ptr>& poly_vec, Polygon::Ptr&  p_average);
 
+    void merge_difference(Polygon::Ptr& p_merge);
 
     /**
     * \brief Assign merge weight to Polygon.
