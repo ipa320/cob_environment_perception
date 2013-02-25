@@ -73,7 +73,7 @@
 #include <pcl/filters/impl/extract_indices.hpp>
 #include <pcl/filters/impl/filter.hpp>
 
-#if defined(PCL_VERSION_COMPARE) && PCL_MINOR_VERSION >= 6
+#if defined(PCL_VERSION_COMPARE) && PCL_MINOR_VERSION >= 7
 #include <pcl/impl/pcl_base.hpp>
 #endif
 
