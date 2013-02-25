@@ -99,7 +99,7 @@ class ModifiedICP_T : public ParentClass, public ModifiedICP_G {
    */
   template <typename PointT2>
   #ifdef PCL_VERSION_COMPARE
-    #if PCL_MINOR_VERSION >= 6 // not tested with pcl 1.4 yet
+    #if PCL_MINOR_VERSION > 6 // not tested with pcl 1.4 yet
       class FeatureSearch: public pcl::search::KdTree<PointT2>
     #else
       class FeatureSearch: public pcl::KdTreeFLANN<PointT2>
@@ -148,7 +148,7 @@ class ModifiedICP_T : public ParentClass, public ModifiedICP_G {
     radiusSearch (int index, double radius, std::vector<int> &k_indices,
                   std::vector<float> &k_sqr_distances, int max_nn = INT_MAX) const {error();return 0;}
 
-    #if PCL_MINOR_VERSION >= 6
+    #if PCL_MINOR_VERSION > 6
     virtual const std::string& getName() const {return "ICP Feature";}
     #else
     virtual std::string getName() const {return "ICP Feature";}
