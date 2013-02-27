@@ -103,8 +103,8 @@ namespace cob_3d_mapping
 
 
   protected:
+    bool ccw(Eigen::Vector2f& a, Eigen::Vector2f& b, Eigen::Vector2f& c);
     void clipFOVandPlane(Polygon::Ptr& poly, std::vector<Eigen::Vector3f>& intersections);
-    void clipPolygons();
 
     std::vector<Polygon::Ptr> polygons_in_;
     std::vector<Polygon::Ptr> polygons_fov_;

@@ -82,6 +82,7 @@
 
 namespace cob_3d_mapping
 {
+
 // NON MEMBER FUNCTIONS
 
 /**
@@ -205,6 +206,14 @@ smoothGpcStructure(const gpc_polygon* gpc_in, gpc_polygon* gpc_out)
 
 
 //##########methods for instantiation##############
+/*Polygon::Polygon(Polygon::Ptr polygon)
+  {
+    this->normal = polygon->normal;
+    this->d = polygon->d;
+    this->transform_from_world_to_plane = polygon->transform_from_world_to_plane;
+    this->merge_weight_ = polygon->merge_weight_;
+  }*/
+
 void
 Polygon::computeAttributes(const Eigen::Vector3f &new_normal, const Eigen::Vector4f& new_centroid)
 {
@@ -343,6 +352,33 @@ Polygon::merge(std::vector<Polygon::Ptr>& poly_vec)
   this->merge_union(poly_vec,p_average);
   this->assignWeight();
   //if(this->id==0) std::cout << "merge_weight after: " << this->merge_weight_ << "," << merged  << std::endl;
+}
+
+void
+Polygon::merge_difference(Polygon::Ptr& p_merge)
+{
+  gpc_polygon *gpc_C = new gpc_polygon;
+  this->getGpcStructure(this->transform_from_world_to_plane, gpc_C);
+  //std::cout << this->transform_from_world_to_plane.matrix() << std::endl;
+
+  gpc_polygon *gpc_B = new gpc_polygon;
+  p_merge->getGpcStructure(this->transform_from_world_to_plane, gpc_B);
+  /*std::cout << "contoursC: " << gpc_C->contour[0].vertex[0].x << "," << gpc_C->contour[0].vertex[0].y << std::endl;
+  std::cout << "contoursC: " << gpc_C->contour[0].vertex[1].x << "," << gpc_C->contour[0].vertex[1].y << std::endl;
+  std::cout << "contoursC: " << gpc_C->contour[0].vertex[2].x << "," << gpc_C->contour[0].vertex[2].y << std::endl;
+  std::cout << "contoursC: " << gpc_C->contour[0].vertex[3].x << "," << gpc_C->contour[0].vertex[3].y << std::endl;
+  std::cout << "contoursB: " << gpc_B->contour[0].vertex[0].x << "," << gpc_B->contour[0].vertex[0].y << std::endl;
+  std::cout << "contoursB: " << gpc_B->contour[0].vertex[1].x << "," << gpc_B->contour[0].vertex[1].y << std::endl;
+  std::cout << "contoursB: " << gpc_B->contour[0].vertex[2].x << "," << gpc_B->contour[0].vertex[2].y << std::endl;
+  std::cout << "contoursB: " << gpc_B->contour[0].vertex[3].x << "," << gpc_B->contour[0].vertex[3].y << std::endl;*/
+  gpc_polygon_clip(GPC_DIFF, gpc_C, gpc_B, gpc_B);
+  //std::cout << "contours: " << gpc_B->num_contours << std::endl;
+  gpc_free_polygon(gpc_C);
+  //copyGpcStructure(gpc_C, smoothed);
+  //smoothGpcStructure(gpc_C, smoothed);
+  p_merge->applyGpcStructure(p_merge->transform_from_world_to_plane.inverse(), gpc_B);
+  gpc_free_polygon(gpc_B);
+  //gpc_free_polygon(smoothed);
 }
 
 void
