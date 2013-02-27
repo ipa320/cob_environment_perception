@@ -71,8 +71,8 @@ void FieldOfView::computeFieldOfView()
   double fovVerFrac = sensor_fov_ver_/2;
 
   p_1_cam_(0) = p_0_(0) + tan(fovHorFrac)*sensor_max_range_;
-  p_1_cam_(1) = -tan(fovVerFrac)*sensor_max_range_;
-  p_1_cam_(2) = sensor_max_range_;
+  p_1_cam_(1) = p_0_(1) -tan(fovVerFrac)*sensor_max_range_;
+  p_1_cam_(2) = p_0_(2) + sensor_max_range_;
 
   p_2_cam_(0) = -p_1_cam_(0);
   p_2_cam_(1) = p_1_cam_(1);
@@ -85,4 +85,10 @@ void FieldOfView::computeFieldOfView()
   p_4_cam_(0) = p_1_cam_(0);
   p_4_cam_(1) = -p_1_cam_(1);
   p_4_cam_(2) = sensor_max_range_;
+
+  p_0_ = p_0_cam_;
+  p_1_ = p_1_cam_;
+  p_2_ = p_2_cam_;
+  p_3_ = p_3_cam_;
+  p_4_ = p_4_cam_;
 }
