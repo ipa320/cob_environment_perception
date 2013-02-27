@@ -110,7 +110,7 @@ GeometryMapNode::GeometryMapNode()
   ctr_ = 0;
   shape_sub_ = n_.subscribe("shape_array", 10, &GeometryMapNode::shapeCallback, this);
   map_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("map_array",1);
-  marker_pub_ = n_.advertise<visualization_msgs::Marker>("geometry_marker",100);
+  //marker_pub_ = n_.advertise<visualization_msgs::Marker>("geometry_marker",100);
   clear_map_server_ = n_.advertiseService("clear_map", &GeometryMapNode::clearMap, this);
   get_map_server_ = n_.advertiseService("get_map", &GeometryMapNode::getMap, this);
   set_map_server_ = n_.advertiseService("set_map", &GeometryMapNode::setMap, this);
@@ -122,7 +122,7 @@ GeometryMapNode::GeometryMapNode()
   geometry_map_.setFilePath(file_path_);
   geometry_map_.setSaveToFile(save_to_file_);
 
-  primitive_pub_=n_.advertise<visualization_msgs::Marker>("primitives",100);
+  //primitive_pub_=n_.advertise<visualization_msgs::Marker>("primitives",100);
 }
 
 /**
@@ -249,9 +249,9 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& 
   //geometry_map_.cleanUp();
   geometry_map_.incrFrame();
 
-  publishMapMarker();
+  //publishMapMarker();
   publishMap();
-  publishPrimitives();
+  //publishPrimitives();
   ctr_++;
 }
 
@@ -311,6 +311,7 @@ GeometryMapNode::setMap(cob_3d_mapping_msgs::SetGeometryMap::Request &req, cob_3
     {
       Polygon::Ptr p(new Polygon);
       fromROSMsg(req.map.shapes[i],*p);
+      p->merged = 9;
       map_polygon->push_back(p);
     }
     else if(req.map.shapes[i].type==cob_3d_mapping_msgs::Shape::CYLINDER)
