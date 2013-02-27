@@ -151,57 +151,28 @@ FOVSegmentationNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstP
   Eigen::Affine3d trafo;
   TransformTFToEigen(st_trf, trafo);
   fov_.transformFOV(trafo);
-  /*ROS_INFO("Adding %d new shapes",sa->shapes.size());
-  tf::StampedTransform trf_map;
-  Eigen::Affine3f af_orig = Eigen::Affine3f::Identity();
-
-  if(enable_tf_)
+  fov_seg_.setFOV(fov_);
+  std::vector<Polygon::Ptr> polys;
+  for( unsigned int i=0; i<sa->shapes.size(); i++ )
   {
-    try
-    {
-      tf_listener_.waitForTransform(map_frame_id_, sa->header.frame_id, sa->header.stamp, ros::Duration(0.2));
-      tf_listener_.lookupTransform(map_frame_id_, sa->header.frame_id, sa->header.stamp, trf_map);
-    }
-    catch (tf::TransformException ex) { ROS_ERROR("[geometry map node] : %s",ex.what()); return; }
-
-    Eigen::Affine3d ad;
-    tf::TransformTFToEigen(trf_map, ad);
-    af_orig = ad.cast<float>();
-    af_orig = geometry_map_.getLastError() * af_orig;
+    Polygon::Ptr p(new Polygon);
+    fromROSMsg(sa->shapes[i], *p);
+    polys.push_back(p);
   }
-
-  static int ctr=0;
-
-  std::vector<Polygon::Ptr> polygon_list;
-  std::vector<Cylinder::Ptr> cylinder_list;
-  std::map<int, ShapeCluster::Ptr> sc_map;
-
-  for(size_t i=0; i<sa->shapes.size(); ++i)
+  //std::cout << polys[0]->contours[0][0] << std::endl;
+  fov_seg_.setShapeArray(polys);
+  std::vector<Polygon::Ptr> polys_out;
+  fov_seg_.compute(polys_out);
+  cob_3d_mapping_msgs::ShapeArray sa_out;
+  sa_out.header = sa->header;
+  for( unsigned int i=0; i<polys_out.size(); i++ )
   {
-    switch (sa->shapes[i].type)
-    {
-      case cob_3d_mapping_msgs::Shape::POLYGON:
-      {
-        if(enable_poly_==false)continue;
-        Polygon::Ptr p(new Polygon);
-        fromROSMsg(sa->shapes[i], *p);
-        p->transform2tf(af_orig);
-        polygon_list.push_back(p); //}
-        break;
-      }
-      case cob_3d_mapping_msgs::Shape::CYLINDER:
-      {
-        if(enable_cyl_==false)continue;
-        Cylinder::Ptr c(new Cylinder);
-        fromROSMsg(sa->shapes[i], *c);
-        c->transform2tf(af_orig);
-        cylinder_list.push_back(c);// }
-        break;
-      }
-      default:
-        break;
-    }
-  }*/
+    cob_3d_mapping_msgs::Shape s;
+    s.header = sa->header;
+    toROSMsg(*polys_out[i], s);
+    sa_out.shapes.push_back(s);
+  }
+  shape_pub_.publish(sa_out);
 }
 
 

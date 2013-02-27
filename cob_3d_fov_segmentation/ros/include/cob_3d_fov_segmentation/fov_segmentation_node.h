@@ -73,6 +73,7 @@
 
 #include "cob_3d_mapping_common/polygon.h"
 #include "cob_3d_fov_segmentation/field_of_view.h"
+#include "cob_3d_fov_segmentation/fov_segmentation.h"
 
 namespace cob_3d_mapping
 {
@@ -123,6 +124,7 @@ namespace cob_3d_mapping
     dynamic_reconfigure::Server<cob_3d_fov_segmentation::fov_segmentationConfig> config_server_;
 
     FieldOfView fov_;                   ///< Map containing geometrys (polygons,cylinders)
+    FOVSegmentation fov_seg_;
 
     std::string camera_frame_;
     std::string target_frame_;
