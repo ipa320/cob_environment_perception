@@ -311,6 +311,7 @@ GeometryMapNode::setMap(cob_3d_mapping_msgs::SetGeometryMap::Request &req, cob_3
     {
       Polygon::Ptr p(new Polygon);
       fromROSMsg(req.map.shapes[i],*p);
+      p->merged = 9;
       map_polygon->push_back(p);
     }
     else if(req.map.shapes[i].type==cob_3d_mapping_msgs::Shape::CYLINDER)
