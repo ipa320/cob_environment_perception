@@ -61,7 +61,9 @@
 //##################
 //#### includes ####
 
+#include <map>
 #include <cob_3d_fov_segmentation/fov_segmentation.h>
+//#include <pcl/surface/convex_hull.h>
 
 using namespace cob_3d_mapping;
 
@@ -157,10 +159,10 @@ void FOVSegmentation::clipFOVandPlane(Polygon::Ptr& poly, std::vector<Eigen::Vec
     //std::cout << "lambda: " << lambda << std::endl;
     if ( lambda > 1 || lambda < 0) continue;
     Eigen::Vector3d intersection = p[0] + lambda*(p[i]-p[0]);
-    std::cout << i << ": " << intersection(0) << "," << intersection(1) << "," << intersection(2) << std::endl;
+    //std::cout << i << ": " << intersection(0) << "," << intersection(1) << "," << intersection(2) << std::endl;
     intersections.push_back(intersection.cast<float>());
   }
-  std::cout << std::endl;
+  //std::cout << std::endl;
   for( unsigned int i=1; i<p.size(); i++)
   {
     unsigned int j = i+1;
@@ -170,16 +172,57 @@ void FOVSegmentation::clipFOVandPlane(Polygon::Ptr& poly, std::vector<Eigen::Vec
     double lambda = (poly->normal.cast<double>().dot(poly->centroid.topLeftCorner(3, 1).cast<double>() - p[i]))/div;
     if ( lambda > 1  || lambda < 0) continue;
     Eigen::Vector3d intersection = p[i] + lambda*(p[j]-p[i]);
-    std::cout << i <<"," << j << ": " << intersection(0) << "," << intersection(1) << "," << intersection(2) << std::endl;
-    std::cout << "div, l: "<< div << "," << lambda << std::endl;
+    //std::cout << i <<"," << j << ": " << intersection(0) << "," << intersection(1) << "," << intersection(2) << std::endl;
+    /*std::cout << "div, l: "<< div << "," << lambda << std::endl;
     std::cout << "p" << i << ": " << p[i](0) << "," << p[i](1) << "," << p[i](2) << std::endl;
-    std::cout << "p" << j << ": " << p[j](0) << "," << p[j](1) << "," << p[j](2) << std::endl;
+    std::cout << "p" << j << ": " << p[j](0) << "," << p[j](1) << "," << p[j](2) << std::endl;*/
     intersections.push_back(intersection.cast<float>());
   }
   std::cout << "found " << intersections.size() << "intersecting points for ID " << poly->id << std::endl;
   if(intersections.size() == 5)
   {
-    //TODO: also sort
+    //calc angle rel. to centroid
+    std::vector<Eigen::Vector2f> cs;
+    Eigen::Vector2f cent(0,0);
+    for(unsigned int i=0; i<intersections.size(); i++)
+      {
+        cs.push_back((poly->transform_from_world_to_plane * intersections[i]).head(2));
+        //std::cout << "cs" << i << ": " << (poly->transform_from_world_to_plane * intersections[i]).head(2)(0) << "," << (poly->transform_from_world_to_plane * intersections[i]).head(2)(1) << std::endl;
+        cent = cent + (poly->transform_from_world_to_plane * intersections[i]).head(2);
+      }
+
+    cent = cent/5;
+    //std::cout << "centroid " << cent(0) << "," << cent(1) << std::endl;
+    Eigen::Vector2f ref = (cs[0] - cent).normalized();
+    std::map<double, unsigned int> angles1;
+    std::map<double, unsigned int> angles2;
+    for(unsigned int i=1; i<cs.size(); i++)
+    {
+      if(ccw(cent, cs[0], cs[i]))
+      {
+        angles1.insert(std::pair<double, unsigned int>((cs[i]-cent).normalized().dot(ref),i));
+        //std::cout << "angle1 " << i << ": " << acos((cs[i]-cent).normalized().dot(ref))*180/3.14159 << std::endl;
+      }
+      else
+      {
+        angles2.insert(std::pair<double, unsigned int>((cs[i]-cent).normalized().dot(ref),i));
+        //std::cout << "angle2 " << i << ": " << acos((cs[i]-cent).normalized().dot(ref))*180/3.14159 << std::endl;
+      }
+    }
+    std::vector<unsigned int> sorted;
+    sorted.push_back(0);
+    for(std::map<double, unsigned int>::reverse_iterator it = angles1.rbegin(); it != angles1.rend(); it++)
+      sorted.push_back(it->second);
+    for(std::map<double, unsigned int>::const_iterator it = angles2.begin(); it != angles2.end(); it++)
+      sorted.push_back(it->second);
+    std::vector<Eigen::Vector3f> inters_temp(sorted.size());
+    for(unsigned int i=0; i<sorted.size(); i++)
+    {
+      inters_temp[i] = intersections[sorted[i]];
+    }
+    intersections.swap(inters_temp);
+    //for(unsigned int i=0; i<intersections.size(); i++)
+    //  std::cout << "inter: " << intersections[i](0) << "," << intersections[i](1) << "," << intersections[i](2) << std::endl;
   }
   if(intersections.size() == 4)
   {
@@ -206,7 +249,6 @@ void FOVSegmentation::clipFOVandPlane(Polygon::Ptr& poly, std::vector<Eigen::Vec
       else std::swap(intersections[0],intersections[2]);
     }
   }
-  //TODO: sort intersection points clockwise or counterclockwise
 }
 
 
