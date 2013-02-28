@@ -8,25 +8,93 @@
 #ifndef PARAM_H_
 #define PARAM_H_
 
+#define FAK( x ) ((x+2)*(x+1)/2)
+#define ROUND_UP_POW2( x ) (x<=2?2:(x<=4?4:(x<=8?8:(x<=16?16:(x<=32?32:(x<=64?64:(x<128?128:x)))))))
 
 /**
  * leaf of quad-tree
  * contains data for regression of 6 parameters
  */
+template<int Degree>
 struct Param {
 #ifdef MIN_EIGEN_VECTOR
-  typedef Eigen::Matrix<float, 6, 1>    Vector6f;
-  typedef Eigen::Matrix<float, 6, 6>    Matrix6f;
-
-  typedef Vector6f VectorU;
-  typedef Matrix6f MatrixU;
+  typedef Eigen::Matrix<float, FAK(Degree), 1>    VectorU;
+  typedef Eigen::Matrix<float, FAK(Degree), FAK(Degree)>    MatrixU;
 #else
-  typedef Eigen::Matrix<float, 8, 1>    Vector8f;
-  typedef Eigen::Matrix<float, 8, 8>    Matrix8f;
-
-  typedef Vector8f VectorU;
-  typedef Matrix8f MatrixU;
+  typedef Eigen::Matrix<float, (ROUND_UP_POW2( FAK(Degree) )), 1>    VectorU;
+  typedef Eigen::Matrix<float, (ROUND_UP_POW2( FAK(Degree) )), (ROUND_UP_POW2( FAK(Degree) ))>    MatrixU;
 #endif
+
+  enum {NUM=FAK(Degree)};       /// number of parameters for degree
+
+  MatrixU model_;               /// regression data
+  VectorU z_;                   /// result vector
+#ifdef USE_MIN_MAX_RECHECK_
+  float v_min_,v_max_;          /// min. z/max. z value of added data
+#endif
+  int occopied;                 /// mark
+
+  /// constructor, sets everything to 0
+  Param() {
+    z_.fill(0);
+    model_.fill(0);
+  }
+
+  /// init. with point
+  inline void operator=(const Eigen::Vector3f &p) {
+    if(pcl_isfinite(p(2))) {
+
+#ifdef USE_MIN_MAX_RECHECK_
+      v_min_=v_max_=p(2);
+#endif
+
+      for(int i=0; i<=Degree; i++)
+        for(int j=0; j<=i; j++)
+          z_(i*(i+1)/2+j) = std::pow(p(0),j)*std::pow(p(1),i-j);
+
+      model_ = z_*z_.transpose();
+      z_ *= p(2);
+    }
+    else {
+#ifdef USE_MIN_MAX_RECHECK_
+      v_min_=v_max_=0.f;
+#endif
+      z_.fill(0);
+      model_.fill(0);
+    }
+  }
+
+  ///add leave
+  inline void operator+=(const Param<Degree> &p) {
+    model_+=p.model_;
+    z_+=p.z_;
+#ifdef USE_MIN_MAX_RECHECK_
+    if((p.v_min_!=0.f && p.v_min_<v_min_)||v_min_==0.f) v_min_=p.v_min_;
+    if(p.v_max_>v_max_||v_max_==0.f) v_max_=p.v_max_;
+#endif
+  }
+
+  inline float x() const {return model_(0,2)/model_(0,0);}      /// gets averaged x of current model (center point)
+  inline float y() const {return model_(0,1)/model_(0,0);}      /// gets averaged y of current model (center point)
+  inline float z() const {return z_(0)/model_(0,0);}            /// gets averaged z of current model (center point)
+};
+
+
+/**
+ * leaf of quad-tree
+ * contains data for regression of 6 parameters
+ */
+template< >
+struct Param<2> {
+#ifdef MIN_EIGEN_VECTOR
+  typedef Eigen::Matrix<float, FAK(6), 1>    VectorU;
+  typedef Eigen::Matrix<float, FAK(2), FAK(2)>    MatrixU;
+#else
+  typedef Eigen::Matrix<float, (ROUND_UP_POW2( FAK(2) )), 1>    VectorU;
+  typedef Eigen::Matrix<float, (ROUND_UP_POW2( FAK(2) )), (ROUND_UP_POW2( FAK(2) ))>    MatrixU;
+#endif
+
+  enum {NUM=FAK(2)};
 
   MatrixU model_;        /// regression data
   VectorU z_;              /// result vector
@@ -46,24 +114,9 @@ struct Param {
     if(pcl_isfinite(p(2))) {
 
 #ifdef USE_MIN_MAX_RECHECK_
-    v_min_=v_max_=p(2);
+      v_min_=v_max_=p(2);
 #endif
 
-      /*
-#ifndef MIN_EIGEN_VECTOR
-      VectorU t;
-      t(0) = 1;
-      t(1) = p(0);
-      t(2) = p(0)*p(0);
-      t(3) = p(1);
-      t(4) = p(1)*p(1);
-      t(5) = p(0)*p(1);
-
-      for(int i=0; i<6; i++)
-        z_(i) = p(2)*t(i);
-      model_ = t*t.transpose();
-
-#else*/
       float x=p(0);
       float x2=x*x;
       float y=p(1);
@@ -111,56 +164,8 @@ struct Param {
     }
   }
 
-  /// add point
-  /*inline void operator+=(const Eigen::Vector3f &p) {
-    if(pcl_isfinite(p(2))) {
-#ifdef USE_MIN_MAX_RECHECK_
-      if(p(2)<v_min_||v_min_==0.f) v_min_=p(2);
-      if(p(2)>v_max_||v_max_==0.f) v_max_=p(2);
-#endif
-
-      float x=p(0);
-      float x2=p(0)*p(0);
-      float y=p(1);
-      float y2=p(1)*p(1);
-
-      z_(0) += p(2);
-      z_(1) += p(2)*x;
-      z_(2) += p(2)*x2;
-      z_(3) += p(2)*y;
-      z_(4) += p(2)*y2;
-#ifndef DONT_USE_6TH
-      z_(5) += p(2)*x*y;
-#endif
-
-      for(int i=0; i<5; i++) {
-        float m=1;
-        switch(i) {
-          case 1: m=x;break;
-          case 2: m=x2;break;
-          case 3: m=y;break;
-          case 4: m=y2;break;
-#ifndef DONT_USE_6TH
-          case 5: m=x*y;break;
-#else
-          case 5: m=0.f;break;
-#endif
-        }
-        model_(i,0)+=m;
-        model_(i,1)+=x*m;
-        model_(i,2)+=x2*m;
-        model_(i,3)+=y*m;
-        model_(i,4)+=y2*m;
-#ifndef DONT_USE_6TH
-        model_(i,5)+=x*y*m;
-#endif
-      }
-
-    }
-  }*/
-
   ///add leave
-  inline void operator+=(const Param &p) {
+  inline void operator+=(const Param<2> &p) {
     model_+=p.model_;
     z_+=p.z_;
 #ifdef USE_MIN_MAX_RECHECK_
@@ -168,7 +173,12 @@ struct Param {
     if(p.v_max_>v_max_||v_max_==0.f) v_max_=p.v_max_;
 #endif
   }
+
+  inline float x() const {return model_(0,1)/model_(0,0);}
+  inline float y() const {return model_(0,3)/model_(0,0);}
+  inline float z() const {return z_(0)/model_(0,0);}
 };
+
 
 /**
  * contains level of quad-tree
@@ -176,25 +186,24 @@ struct Param {
  * h: height
  * data: nodes/leaves
  */
+template<int Degree>
 struct ParamC {
-  Param *data;
+  Param<Degree> *data;
   unsigned int w,h;
 
   ParamC(const ParamC &p):w(p.w),h(p.h) {
-    data=new Param[w*h];
+    data=new Param<Degree>[w*h];
     for(size_t i=0; i<w*h; i++)
       data[i]=p.data[i];
   }
 
   ParamC(unsigned int w, unsigned int h):w(w),h(h) {
-    data=new Param[w*h];
+    data=new Param<Degree>[w*h];
   }
 
   ~ParamC() {
     delete [] data;
   }
-
 };
-
 
 #endif /* PARAM_H_ */

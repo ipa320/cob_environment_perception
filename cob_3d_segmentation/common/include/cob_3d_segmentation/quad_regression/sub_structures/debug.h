@@ -12,6 +12,9 @@
 namespace QQPF_Debug
 {
 
+  /*
+   * debug function to output occopy map to ppm file
+   */
   void ppm(const char *fn, const int w, const int h, const int *ch) {
     //ppm
     FILE *fp = fopen(fn,"w");

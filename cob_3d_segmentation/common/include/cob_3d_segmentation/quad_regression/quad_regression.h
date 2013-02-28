@@ -56,21 +56,65 @@
 #define SEGMENTATION_QUAD_REGR_H_
 
 #include <visualization_msgs/MarkerArray.h>
-
-#include <pcl/kdtree/kdtree_flann.h>
-#include "../general_segmentation.h"
-
-#define USE_MIN_MAX_RECHECK_
-#define STOP_TIME
-#define BACK_CHECK_REPEAT
-//#define DO_NOT_DOWNSAMPLE_
-//#define SIMULATION_
-//#define MIN_EIGEN_VECTOR
-
-#include "polygon.h"
+#include "quad_regression_algo.h"
 
 namespace Segmentation
 {
+
+
+  //example for parent: QPPF::QuadRegression<QPPF::Degree2, Point, QPPF::CameraModel_Kinect<Point> >
+
+  /**
+   * a segmentation implementation based on quad-trees and regression
+   */
+  template <typename Point, typename PointLabel, typename Parent>
+  class Segmentation_QuadRegression : public GeneralSegmentation<Point, PointLabel>, public Parent
+  {
+
+    void back_check_repeat(); /// repeat back check on model
+
+    boost::shared_ptr<const pcl::PointCloud<PointLabel> > compute_labeled_pc();
+    boost::shared_ptr<const pcl::PointCloud<PointLabel> > compute_reconstructed_pc();
+
+  public:
+    /// destructor
+    virtual ~Segmentation_QuadRegression() {
+    }
+
+    /// gets preprocessed output cloud
+    virtual boost::shared_ptr<const pcl::PointCloud<PointLabel> > getOutputCloud() {
+      return compute_labeled_pc();
+    }
+
+    /// gets reconstructed output cloud
+    virtual boost::shared_ptr<const pcl::PointCloud<PointLabel> > getReconstructedOutputCloud() {
+      return compute_reconstructed_pc();
+    }
+
+    /// sets preprocessed input cloud
+    virtual void setInputCloud (const boost::shared_ptr<const pcl::PointCloud<Point> > &cloud)
+    {
+      this->Parent::setInputCloud(cloud);
+    }
+
+    virtual bool compute();
+
+    virtual bool extractImages();
+
+    /// convert to ROS message
+    operator cob_3d_mapping_msgs::ShapeArray() const;
+
+    /// convert edges to ROS message
+    operator visualization_msgs::Marker() const;
+
+    /*** evaluation purposes ***/
+    void compute_accuracy(float &mean, float &var, float &mean_weighted, float &var_weighted, size_t &used, size_t &mem, size_t &points, float &avg_dist, const boost::shared_ptr<const pcl::PointCloud<PointLabel> > &labeled_pc, double &true_positive, double &false_positive);
+
+  };
+
+#include "impl/quad_regression.hpp"
+
+#if 0
 
 #define getInd(x, y) ((x)+(y)*levels_[i].w)
 #define getInd1(x, y) ((x)+(y)*levels_[i-1].w)
@@ -446,7 +490,7 @@ poly.segments2d_.back().push_back(p2);
 #undef getInd1
 #undef getInd2
 #undef getIndPC
-
+#endif
 }
 
 #endif /* SEGMENTATION_QUAD_REGR_H_ */

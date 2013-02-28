@@ -99,7 +99,8 @@ namespace Segmentation
     /// sets preprocessed input cloud
     virtual void setInputCloud (const boost::shared_ptr<const pcl::PointCloud<Point> > &cloud)
     {
-      pcl::PointCloud<Point> *pc = new pcl::PointCloud<Point>;
+      input_ = cloud;
+     /* pcl::PointCloud<Point> *pc = new pcl::PointCloud<Point>;
       pc->header = cloud->header;
       pc->width  = cloud->width /2;
       pc->height = cloud->height/2;
@@ -114,7 +115,7 @@ namespace Segmentation
         }
       }
 
-      input_.reset(pc);
+      input_.reset(pc);*/
     }
 
     virtual bool compute();
@@ -123,7 +124,7 @@ namespace Segmentation
     operator visualization_msgs::Marker() const;
 
     /*** evaluation purposes ***/
-    void compute_accuracy(float &mean, float &var, size_t &used, size_t &mem, size_t &points, float &avg_dist);
+    void compute_accuracy(float &mean, float &var, float &mean_weighted, float &var_weighted, size_t &used, size_t &mem, size_t &points, float &avg_dist, const boost::shared_ptr<const pcl::PointCloud<PointLabel> > &labeled_pc, double &true_positive, double &false_positive);
 
     void enablePlanes(const bool b) {planes_=b;}
     void enableSpheres(const bool b) {spheres_=b;}

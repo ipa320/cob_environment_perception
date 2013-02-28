@@ -64,9 +64,9 @@ class QPPF_Node : public Parent
   typedef pcl::PointCloud<Point> PointCloud;
 
   ros::Subscriber point_cloud_sub_;
-  ros::Publisher  curved_pub_, shapes_pub_, outline_pub_, image_pub_;
+  ros::Publisher  curved_pub_, shapes_pub_, outline_pub_, image_pub_, label_pub_;
 
-  Segmentation::Segmentation_QuadRegression<Point, PointLabel> seg_;
+  Segmentation::Segmentation_QuadRegression<Point, PointLabel, Segmentation::QPPF::QuadRegression<2, Point, Segmentation::QPPF::CameraModel_Kinect<Point> > > seg_;
 
   std::vector<cob_3d_mapping_msgs::FilterObject> filter_;
 
@@ -96,6 +96,7 @@ public:
     shapes_pub_ = n->advertise<cob_3d_mapping_msgs::ShapeArray>("/shapes_array", 1);
     outline_pub_= n->advertise<visualization_msgs::Marker>("/outline", 1);
     image_pub_  = n->advertise<sensor_msgs::Image>("/image1", 1);
+    label_pub_  = n->advertise< pcl::PointCloud<PointLabel> >("/labeled_pc", 1);
 
     as_.start();
 
@@ -209,6 +210,11 @@ public:
       cpa.header = pc_in->header;
       curved_pub_.publish(cpa);
     }
+    if(label_pub_.getNumSubscribers()>0) {
+      pcl::PointCloud<PointLabel> pc = *seg_.getReconstructedOutputCloud();
+      pc.header = pc_in->header;
+      label_pub_.publish(pc);
+    }
   }
 };
 
@@ -224,7 +230,11 @@ PLUGINLIB_DECLARE_CLASS(cob_3d_segmentation, QPPF_XYZRGB, QPPF_Node_XYZ, nodelet
 int main(int argc, char **argv) {
   ros::init(argc, argv, "qppf");
 
+#ifdef USE_COLOR
   QPPF_Node<pcl::PointXYZRGB,pcl::PointXYZRGB,As_Node> sn("qppf");
+#else
+  QPPF_Node<pcl::PointXYZ,pcl::PointXYZRGB,As_Node> sn("qppf");
+#endif
   sn.onInit();
 
   ros::spin();
