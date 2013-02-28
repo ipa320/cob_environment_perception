@@ -1,4 +1,5 @@
 
+/// binary mapping from $\delta x, \delta y$ to binary pattern
 namespace Contour2D {
 
   struct spline2D {
@@ -6,22 +7,18 @@ namespace Contour2D {
     spline2D():v(0),x(0),y(0),bf(0) {}
   };
 
+  /// global spline pattern (computed once, 8 for each direction + 1 for start)
   spline2D g_Splines[9][256];
 
   int SplineMap[]={
                    4, 5,  6,
                    3, -1, 7,
                    2, 1,  0
-
-                   /*2, 1,  0,
-                 3, -1, 7,
-                 4, 5,  6*/
   };
 
   void generateSpline2D() {
     int mapX[]={2,1,0, 0,0, 1, 2,2};
     int mapY[]={2,2,2, 1, 0,0,0, 1};
-    //int mapY[]={0,0,0, 1, 2,2,2, 1};
 
     for(int i=0; i<256; i++) {
       bool b[8];

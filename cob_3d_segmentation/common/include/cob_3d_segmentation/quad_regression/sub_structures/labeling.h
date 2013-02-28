@@ -8,6 +8,7 @@
 #ifndef LABELING_H_
 #define LABELING_H_
 
+// convert mark to "some" color
 template<typename Point>
 void SetLabeledPoint(Point &pt, const int mark)
 {
