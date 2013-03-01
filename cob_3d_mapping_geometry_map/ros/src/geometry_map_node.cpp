@@ -281,6 +281,7 @@ GeometryMapNode::getMap(cob_3d_mapping_msgs::GetGeometryMap::Request &req, cob_3
     Polygon& sm = *(map_polygon->at(i));
     cob_3d_mapping_msgs::Shape s;
     toROSMsg(sm,s);
+    s.header = res.map.header;
     res.map.shapes.push_back(s);
   }
 
@@ -289,6 +290,7 @@ GeometryMapNode::getMap(cob_3d_mapping_msgs::GetGeometryMap::Request &req, cob_3
     Cylinder& sm = *(map_cylinder->at(i));
     cob_3d_mapping_msgs::Shape s;
     toROSMsg(sm,s);
+    s.header = res.map.header;
     res.map.shapes.push_back(s);
   }
 
