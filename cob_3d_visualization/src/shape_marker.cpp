@@ -390,18 +390,6 @@ ShapeMarker::createMarker (visualization_msgs::InteractiveMarkerControl& im_ctrl
   marker.scale.y = 1;
   marker.scale.z = 1;
 
-  //set pose
-  Eigen::Quaternionf quat (transformation_inv_.rotation ());
-  Eigen::Vector3f trans (transformation_inv_.translation ());
-
-  marker.pose.position.x = trans (0);
-  marker.pose.position.y = trans (1);
-  marker.pose.position.z = trans (2);
-
-  marker.pose.orientation.x = quat.x ();
-  marker.pose.orientation.y = quat.y ();
-  marker.pose.orientation.z = quat.z ();
-  marker.pose.orientation.w = quat.w ();
   /* transform shape points to 2d and store 2d point in triangle list */
   TPPLPartition pp;
   list<TPPLPoly> polys, tri_list;
@@ -549,6 +537,19 @@ ShapeMarker::createMarker (visualization_msgs::InteractiveMarkerControl& im_ctrl
     }
     ctr++;
   }
+  //set pose
+  Eigen::Quaternionf quat (transformation_inv_.rotation ());
+  Eigen::Vector3f trans (transformation_inv_.translation ());
+
+  marker.pose.position.x = trans (0);
+  marker.pose.position.y = trans (1);
+  marker.pose.position.z = trans (2);
+
+  marker.pose.orientation.x = quat.x ();
+  marker.pose.orientation.y = quat.y ();
+  marker.pose.orientation.z = quat.z ();
+  marker.pose.orientation.w = quat.w ();
+
   im_ctrl.markers.push_back (marker);
 
   //  if(!arrows_) {

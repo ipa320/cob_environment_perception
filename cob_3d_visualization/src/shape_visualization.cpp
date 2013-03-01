@@ -576,6 +576,7 @@ void
 ShapeVisualization::shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr& sa)
 {
   //  ctr_for_shape_indexes = 0 ;
+  std::vector<unsigned int> new_ids;
   v_sm_.clear();
   sha.shapes.clear() ;
   im_server_->applyChanges();
@@ -594,11 +595,36 @@ ShapeVisualization::shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr
         ,interacted_shapes_,deleted_markers_indices_,false,false)) ;//,deleted_));
     //std::cout << sa->shapes[i].header.frame_id << std::endl;
     v_sm_.push_back(sm);
+    new_ids.push_back(sa->shapes[i].id);
     //marker_pub_.publish(sm->getMarker());
     ma.markers.push_back(sm->getMarker());
+
+  }
+  //find markers to delete
+  for( unsigned int i=0; i<marker_ids_.size(); i++)
+  {
+    bool found = false;
+    for( unsigned int j=0; j<new_ids.size(); j++)
+    {
+      if( marker_ids_[i] == new_ids[j])
+      {
+        found = true;
+        break;
+      }
+    }
+    if (!found)
+    {
+      visualization_msgs::Marker marker;
+      marker.id = marker_ids_[i];
+      marker.header = sa->header;
+      marker.action = visualization_msgs::Marker::DELETE;
+      ma.markers.push_back(marker);
+      ROS_INFO("Deleting marker %d", marker.id);
+    }
   }
   //    im_server_->applyChanges(); //update changes
   marker_pub_.publish(ma);
+  marker_ids_.swap(new_ids);
 }
 
 int
