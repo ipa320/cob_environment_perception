@@ -287,6 +287,10 @@ class ShapeMarker
      */
     void resetMarker();
 
+    void displayIDCB(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback);
+    void displayID();
+    void hideID(int flag_untick);
+
     visualization_msgs::Marker& getMarker() {return marker;};
 
 
