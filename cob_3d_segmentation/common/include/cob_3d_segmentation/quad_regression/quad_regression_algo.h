@@ -64,6 +64,7 @@
 #define DO_NOT_DOWNSAMPLE_
 //#define SIMULATION_
 //#define MIN_EIGEN_VECTOR
+#define EVALUATE
 
 #include "polygon.h"
 
@@ -302,6 +303,7 @@ poly.segments2d_.back().push_back(p2);
         Eigen::Vector3f p = poly.project2plane(((x<<(i+fact-1))-camera_.dx)/camera_.f,
                                                ((y<<(i+fact-1))-camera_.dy)/camera_.f,
                                                model,v);
+#ifndef EVALUATE
 
 #if 0
         poly.segments_.back().push_back(p);
@@ -402,6 +404,7 @@ poly.segments2d_.back().push_back(p2);
                 return;
               }
             }
+#endif
 #endif
 
         if(poly.normalAt(p.head<2>())(2)>0.5f)
