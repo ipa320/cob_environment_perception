@@ -253,7 +253,7 @@
           if(labeled_pc && pointIdxNKNSearch[0]<(int)labeled_pc->size())
             bc.addMark(mark, (*labeled_pc)[pointIdxNKNSearch[0]].label);
 
-          if(pcl_isfinite(d) && pcl_isfinite(z))
+          if(pcl_isfinite(d) && pcl_isfinite(z) && d<0.25f)
           {
             rstat.Push(d);
             rstat_weighted.Push(d, 1/z_model);
