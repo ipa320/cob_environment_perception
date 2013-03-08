@@ -734,7 +734,11 @@ void QuadRegression<Degree, Point, CameraModel>::outline(int *ch, const int w, c
       bf=Contour2D::g_Splines[bf][p].bf;
       ++num;
 
-      if(std::abs(v)>3) {
+#ifdef EVALUATE
+      if(std::abs(v)>6) {
+#else
+        if(std::abs(v)>3) {
+#endif
         v=0;
         Eigen::Vector2f tv;
         tv(0)=x;tv(1)=y;
