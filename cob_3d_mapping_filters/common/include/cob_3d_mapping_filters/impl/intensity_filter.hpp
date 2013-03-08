@@ -59,10 +59,10 @@
 template <typename PointT> void
 cob_3d_mapping_filters::IntensityFilter<PointT>::applyFilter (PointCloud &pc_out)
 {
-	if(negative_) {
-	   negativeApplyFilter(pc_out);
-	   return;
-   }
+  if(negative_) {
+    negativeApplyFilter(pc_out);
+    return;
+  }
   // set the parameters for output poincloud (pc_out)
   pc_out.points.resize(input_->points.size());
   pc_out.header = input_->header;
@@ -71,16 +71,17 @@ cob_3d_mapping_filters::IntensityFilter<PointT>::applyFilter (PointCloud &pc_out
   //Go through all points and discard points with intensity value above filter limit
   for (unsigned int i = 0; i < input_->points.size(); i++)
   {
-	  if (input_->points[i].intensity > intensity_min_threshold_ &&
-		  input_->points[i].intensity < intensity_max_threshold_)
-    pc_out.points[nr_p++] = input_->points[i];
+    if (input_->points[i].intensity > intensity_min_threshold_ &&
+        input_->points[i].intensity < intensity_max_threshold_)
+      pc_out.points[i] = input_->points[i];
+    else
+      pc_out.points[i].x = pc_out.points[i].y = pc_out.points[i].z = std::numeric_limits<float>::quiet_NaN();
   }
 
   //resize pc_out according to filtered points
-  pc_out.width = nr_p;
-  pc_out.height = 1;
-  pc_out.points.resize(nr_p);
-  pc_out.is_dense = true;
+  pc_out.width = input_->width;
+  pc_out.height = input_->height;
+  pc_out.is_dense = input_->is_dense;
 }
 
 template <typename PointT> void
@@ -94,8 +95,8 @@ cob_3d_mapping_filters::IntensityFilter<PointT>::negativeApplyFilter (PointCloud
   //Go through all points and discard points with intensity value below filter limit
   for (unsigned int i = 0; i < input_->points.size(); i++)
   {
-	  if (input_->points[i].intensity > intensity_max_threshold_ || input_->points[i].intensity < intensity_min_threshold_)
-          pc_out.points[nr_p++] = input_->points[i];
+    if (input_->points[i].intensity > intensity_max_threshold_ || input_->points[i].intensity < intensity_min_threshold_)
+      pc_out.points[nr_p++] = input_->points[i];
   }
 
   //resize pc_out according to filtered points
