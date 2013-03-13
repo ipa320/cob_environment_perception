@@ -145,7 +145,11 @@ void CameraModel_SR4500<Point>::getParams(const pcl::PointCloud<Point> &pc) {
 
 template <int Degree, typename Point, typename CameraModel>
 QuadRegression<Degree, Point, CameraModel>::QuadRegression():
+#ifdef SICK
+MIN_LOD(4), FINAL_LOD(0), GO_DOWN_TO_LVL(4),
+#else
 MIN_LOD(8), FINAL_LOD(0), GO_DOWN_TO_LVL(3),
+#endif
 ch_(NULL), outline_check_(0), outline_check_size_(0),
 filter_(-1.f), only_planes_(false)
 {
@@ -528,6 +532,7 @@ void QuadRegression<Degree, Point, CameraModel>::grow(SubStructure::VISITED_LIST
               //#endif
           ) ||
           (
+#ifndef SICK
 #ifdef USE_MIN_MAX_RECHECK_
 #ifdef DO_NOT_DOWNSAMPLE_
 
@@ -547,6 +552,7 @@ void QuadRegression<Degree, Point, CameraModel>::grow(SubStructure::VISITED_LIST
                       //&& std::abs(model.model(levels_[i].data[getInd(x,y)].v_min_(0),levels_[i].data[getInd(x,y)].v_min_(1))-levels_[i].data[getInd(x,y)].v_min_(2))<thr
                       //&& std::abs(model.model(levels_[i].data[getInd(x,y)].v_max_(0),levels_[i].data[getInd(x,y)].v_max_(1))-levels_[i].data[getInd(x,y)].v_max_(2))<thr
                       &&
+#endif
 #endif
                       (
                           //checkModelAt(model, i,x,y, thr)
@@ -761,7 +767,7 @@ void QuadRegression<Degree, Point, CameraModel>::outline(int *ch, const int w, c
     poly.segments_.push_back(std::vector<Eigen::Vector3f>());
 #ifdef USE_BOOST_POLYGONS_
     poly.segments2d_.push_back(std::vector<BoostPoint>());
-#elif defined(BACK_CHECK_REPEAT)
+#else
     poly.segments2d_.push_back(std::vector<Eigen::Vector2i>());
 #endif
 
