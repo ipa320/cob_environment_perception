@@ -83,7 +83,7 @@ namespace Segmentation
 
   public:
     /// constructor, setups variables
-    Segmentation_MarchingCubes() : leafSize_(0.025), isoLevel_(0.01f)
+    Segmentation_MarchingCubes() : leafSize_(0.025), isoLevel_(0.02f)
     {}
 
     /// destructor
