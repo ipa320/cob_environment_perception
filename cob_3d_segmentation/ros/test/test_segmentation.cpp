@@ -265,9 +265,14 @@ void test_QPPF()
     if(pc->size()<1) continue;
 
     pcl::PointCloud<PointL>::Ptr labeled_pc(new pcl::PointCloud<PointL>);
+    bool loaded = false;
     try {
-      Testing_PCDLoader::get().getPC<PointL>(ind-1, labeled_pc, fn);
-    } catch(...) {}
+      loaded = Testing_PCDLoader::get().getPC<PointL>(ind-1, labeled_pc, fn);
+    } catch(...) {
+    }
+    if(!loaded) {
+	ROS_INFO("will not evaluate segmentation");
+	labeled_pc.reset();}
 
     ROS_INFO("processing pc %d ...",(int)ind-1);
     std::string fn_short(fn.begin()+(fn.find_last_of("/")+1),fn.end());
