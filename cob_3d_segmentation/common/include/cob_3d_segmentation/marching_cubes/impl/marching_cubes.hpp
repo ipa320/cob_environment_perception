@@ -40,7 +40,6 @@ bool Segmentation_MarchingCubes<Point, PointTypeNormal, PointLabel>::compute() {
 
   mesh_ = mesh;
 
-
   std::cout<<mesh_.polygons.size()<<"\n";
 
   return true;
@@ -102,6 +101,9 @@ void Segmentation_MarchingCubes<Point, PointTypeNormal, PointLabel>::compute_acc
       avg_dist += s(2);
       ++points;
     }
+
+    if(j%100==0)
+      printf("\r%d\%", j*100/input_->size());
 
     /*boost::shared_ptr<pcl::SampleConsensusModel<Point> >
       model;
