@@ -137,11 +137,12 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::receivedCloudCallback(PointClo
   seg_.setInputCloud(cloud);
   seg_.performInitialSegmentation();
   seg_.refineSegmentation();
-  std::map<int,int> objects;
+  graph_->clusters()->mapClusterColor(segmented_);
+
   //seg_.getPotentialObjects(objects, 500);
   //std::cout << "Found " << objects.size() << " potentail objects" << std::endl;
   NODELET_INFO("Done with segmentation .... ");
-  graph_->clusters()->mapClusterColor(segmented_);
+
 
   cc_.setPointCloudIn(cloud);
   cc_.classify();
@@ -161,7 +162,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::receivedCloudCallback(PointClo
   ss << "/share/goa-sf/pcd_data/bags/pcd_borders/borders_"<<cloud->header.stamp<<".pcd";
   pcl::io::savePCDFileASCII(ss.str(), *bp);
    */
-  publishShapeArray(graph_->clusters(), objects, cloud);
+  publishShapeArray(graph_->clusters(), cloud);
 
   NODELET_INFO("Done with publishing .... ");
 
@@ -169,7 +170,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::receivedCloudCallback(PointClo
 
 void
 cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
-  ST::CH::Ptr cluster_handler, std::map<int,int>& objs, PointCloud::ConstPtr cloud)
+  ST::CH::Ptr cluster_handler, PointCloud::ConstPtr cloud)
 {
   cob_3d_mapping_msgs::ShapeArray sa;
   sa.header = cloud->header;
@@ -179,6 +180,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull(new pcl::PointCloud<pcl::PointXYZRGB>);
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud_dense(new pcl::PointCloud<pcl::PointXYZRGB>);
 
+  unsigned int id = 0;
   for (ST::CH::ClusterPtr c = cluster_handler->begin(); c != cluster_handler->end(); ++c)
   {
     // compute hull:
@@ -209,8 +211,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
 
     sa.shapes.push_back(cob_3d_mapping_msgs::Shape());
     cob_3d_mapping_msgs::Shape* s = &sa.shapes.back();
-    if (objs.find(c->id()) != objs.end()) s->id = objs[c->id()] + 1;
-    else s->id = 0;
+    s->id = id++;
     s->points.resize(poly.polys_.size());
     s->header.frame_id = cloud->header.frame_id.c_str();
     Eigen::Vector3f color = c->computeDominantColorVector().cast<float>();
