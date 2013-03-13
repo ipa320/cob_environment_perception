@@ -53,21 +53,16 @@
  *
  ****************************************************************/
 
-#ifndef MARCHING_CUBES_H_
-#define MARCHING_CUBES_H_
+#ifndef RANSAC_H_
+#define RANSAC_H_
 
 #include <visualization_msgs/MarkerArray.h>
 
-#include <pcl/surface/marching_cubes.h>
-#ifdef USE_GREEDY
-#include <pcl/surface/marching_cubes_greedy.h>
-#define MARCHING_CUBES_INST MarchingCubesGreedy
-#else
-#include <pcl/surface/marching_cubes_rbf.h>
-#define MARCHING_CUBES_INST MarchingCubesRBF
-#endif
-#include <pcl/features/normal_3d.h>
-#include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/search/organized.h>
+#include <pcl/features/integral_image_normal.h>
+#include <pcl/segmentation/organized_multi_plane_segmentation.h>
+#include <pcl/segmentation/edge_aware_plane_comparator.h>
+#include <pcl/filters/extract_indices.h>
 
 #include "../general_segmentation.h"
 
@@ -78,39 +73,29 @@ namespace Segmentation
    * a segmentation implementation based on quad-trees and regression
    */
   template <typename Point, typename PointTypeNormal, typename PointLabel>
-  class Segmentation_MarchingCubes : public GeneralSegmentation<Point, PointLabel>
+  class Segmentation_MultiPlane : public GeneralSegmentation<Point, PointTypeNormal, PointLabel>
   {
+    std::vector<typename pcl::PlanarRegion<Point>, Eigen::aligned_allocator<pcl::PlanarRegion<PointT> > > regions;
+    std::vector<pcl::ModelCoefficients> coef;
+    std::vector<pcl::PointIndices> inlier_indices;
+    std::vector<pcl::PointIndices> label_indices;
+    std::vector<pcl::PointIndices> boundary_indices;
 
     boost::shared_ptr<const pcl::PointCloud<Point> > input_;
-    pcl::PolygonMesh mesh_;
-
-    float leafSize_;
-    float isoLevel_;
 
   public:
     /// constructor, setups variables
-    Segmentation_MarchingCubes() : leafSize_(0.025), isoLevel_(0.02f)
+    Segmentation_MultiPlane()
     {}
 
     /// destructor
-    virtual ~Segmentation_MarchingCubes() {
+    virtual ~Segmentation_MultiPlane() {
     }
 
     /// sets preprocessed input cloud
     virtual void setInputCloud (const boost::shared_ptr<const pcl::PointCloud<Point> > &cloud)
     {
-      pcl::PointCloud<Point> *pc = new pcl::PointCloud<Point>;
-      pc->header = cloud->header;
-      pc->height  = 1;
-
-      for(size_t x=0; x<cloud->size(); x++) {
-          if(pcl_isfinite((*cloud)[x].x))
-            pc->push_back((*cloud)[x]);
-      }
-
-      pc->width = pc->size();
-
-      input_.reset(pc);
+      input_ = cloud;
     }
 
     virtual bool compute();
@@ -119,7 +104,11 @@ namespace Segmentation
     operator visualization_msgs::Marker() const;
 
     /*** evaluation purposes ***/
-    void compute_accuracy(float &mean, float &var, size_t &used, size_t &mem, size_t &points, float &avg_dist);
+    void compute_accuracy(float &mean, float &var, float &mean_weighted, float &var_weighted, size_t &used, size_t &mem, size_t &points, float &avg_dist, const boost::shared_ptr<const pcl::PointCloud<PointLabel> > &labeled_pc, double &true_positive, double &false_positive);
+
+    void enablePlanes(const bool b) {planes_=b;}
+    void enableSpheres(const bool b) {spheres_=b;}
+    void enableCylinders(const bool b) {cylinders_=b;}
 
     /// gets reconstructed output cloud
     virtual boost::shared_ptr<const pcl::PointCloud<PointLabel> > getReconstructedOutputCloud();
@@ -131,10 +120,10 @@ namespace Segmentation
     virtual operator cob_3d_mapping_msgs::ShapeArray() const {return cob_3d_mapping_msgs::ShapeArray();}
   };
 
-#include "impl/marching_cubes.hpp"
+#include "impl/multi_plane.hpp"
 
 }
 
 
 
-#endif /* MARCHING_CUBES_H_ */
+#endif /* RANSAC_H_ */

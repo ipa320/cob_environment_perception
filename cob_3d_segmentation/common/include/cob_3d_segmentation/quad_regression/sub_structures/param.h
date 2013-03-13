@@ -104,9 +104,9 @@ struct Param<2> {
   int occopied;             /// mark
 
   /// constructor, sets everything to 0
-  Param() {
-    for(int i=0; i<model_.rows(); i++)
-    {z_(i)=0; for(int j=0; j<model_.cols(); j++) model_(i,j)=0;}
+  Param(): z_(VectorU::Zero()), model_(MatrixU::Zero()) {
+    //for(int i=0; i<model_.rows(); i++)
+    //{z_(i)=0; for(int j=0; j<model_.cols(); j++) model_(i,j)=0;}
   }
 
   /// init. with point
@@ -116,11 +116,23 @@ struct Param<2> {
 #ifdef USE_MIN_MAX_RECHECK_
       v_min_=v_max_=p(2);
 #endif
-
       float x=p(0);
       float x2=x*x;
       float y=p(1);
       float y2=y*y;
+
+#if 0
+      z_(0) = 1;
+      z_(1) = x;
+      z_(2) = x2;
+      z_(3) = y;
+      z_(4) = y2;
+      z_(5) = x*y;
+
+      model_ = z_*z_.transpose();
+      z_ *= p(2);
+
+#else
 
       z_(0) = p(2);
       z_(1) = p(2)*x;
@@ -153,14 +165,17 @@ struct Param<2> {
         model_(i,5)=x*y*m;
 #endif
       }
+#endif
     }
     else {
 #ifdef USE_MIN_MAX_RECHECK_
       v_min_=v_max_=0.f;
 #endif
-      z_(0)=z_(1)=z_(2)=z_(3)=z_(4)=z_(5)=0.f;
-      for(int i=0; i<6; i++) for(int j=0; j<6; j++)
-        model_(i,j)=0.f;
+      z_.fill(0.f);
+      model_.fill(0.f);
+//      z_(0)=z_(1)=z_(2)=z_(3)=z_(4)=z_(5)=0.f;
+//      for(int i=0; i<6; i++) for(int j=0; j<6; j++)
+//        model_(i,j)=0.f;
     }
   }
 
