@@ -246,7 +246,7 @@ namespace cob_3d_segmentation
     { uint8_t r,g,b; color_.getColor(r,g,b); return Eigen::Vector3i(r,g,b); }
 
   public:
-    int type;
+    int type, label_color;
     float type_probability;
     bool is_save_plane;
     float max_curvature;

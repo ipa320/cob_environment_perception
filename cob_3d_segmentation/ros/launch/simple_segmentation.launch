@@ -2,7 +2,7 @@
   <arg name="debug_mode" default="false"/>
   <arg name="start_manager" default="true"/>
   <arg name="nodelet_manager" default="segmentation_nodelet_manager"/>
-  <arg name="cloud_in" default="/cam3d/depth_registered/points"/>
+  <arg name="cloud_in" default="/camera/depth_registered/points"/>
   <group if="$(arg start_manager)">
     <node if="$(arg debug_mode)" pkg="nodelet" type="nodelet" name="$(arg nodelet_manager)"  args="manager" output="screen"
           launch-prefix="gdb -ex run --args"/>

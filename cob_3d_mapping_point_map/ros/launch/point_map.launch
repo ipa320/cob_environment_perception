@@ -11,9 +11,9 @@
 
 	<!-- Start point map -->
   <node pkg="nodelet" type="nodelet" name="point_map_nodelet" args="load cob_3d_mapping_point_map/PointMapNodelet $(arg nodelet_manager)" output="screen">
-  	<!-- remap from="point_cloud2" to="/cam3d/rgb/points"/-->
+  	<remap from="point_cloud2" to="/cam3d/depth_registered/points"/>
   	<!-- remap from="camera_info" to="/camera/depth_registered/camera_info"/-->
-  	<remap from="point_cloud2" to="/registration/pc_aligned"/>
+  	<!--remap from="point_cloud2" to="/registration/pc_aligned"/-->
   	<!--remap from="point_cloud2" to="/cam3d/rgb/points"/-->
   	<remap from="map" to="point_map/map"/>
   	<!-- remap from="point_cloud2_aligned" to="point_map/pc_aligned"/-->
@@ -21,9 +21,9 @@
   	<remap from="get_map" to="point_map/get_map"/>
   	<remap from="set_map" to="point_map/set_map"/>
 
-  	<param name="file_path" type="string" value="/tmp"/>
-  	<param name="save" type="bool" value="false"/>
-  	<param name="voxel_leafsize" type="double" value="0.03" />
+  	<param name="file_path" type="string" value="/share/goa-sf/temp"/>
+  	<param name="save" type="bool" value="true"/>
+  	<param name="voxel_leafsize" type="double" value="0.01" />
   </node>
 
   <!-- node pkg="nodelet" type="nodelet" name="voxel" args="standalone pcl/VoxelGrid " output="screen">
