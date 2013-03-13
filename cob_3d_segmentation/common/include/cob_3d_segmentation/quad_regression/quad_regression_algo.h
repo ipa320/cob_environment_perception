@@ -64,6 +64,7 @@
 #define DO_NOT_DOWNSAMPLE_
 //#define SIMULATION_
 //#define MIN_EIGEN_VECTOR
+#define EVALUATE
 
 #include "polygon.h"
 
@@ -90,6 +91,29 @@ namespace Segmentation
       void getParams(const pcl::PointCloud<Point> &pc);
 
       inline static float std(const float dist) {return 0.0075f+0.001425f*dist*dist;}   //after "Accuracy analysis of kinect depth data"
+
+      /** DEBUG **/
+      template<typename APoint>
+      friend std::ostream &operator<<(ostream &os, const CameraModel_Kinect<APoint> &cmk);
+    };
+
+    /**
+     * camera model for SR4500
+     *
+     *  - extracts parameters from pc
+     *  - states standard deviation for a given distance
+     */
+    template<typename Point>
+    class CameraModel_SR4500 {
+    public:
+      float f,dx,dy;
+
+      CameraModel_SR4500(): f(0.f) {}
+
+      /// calculate kinect parameters
+      void getParams(const pcl::PointCloud<Point> &pc);
+
+      inline static float std(const float dist) {return 0.03f+0.03f*dist;}   //after "Accuracy analysis of kinect depth data"
 
       /** DEBUG **/
       template<typename APoint>
@@ -302,6 +326,48 @@ poly.segments2d_.back().push_back(p2);
         Eigen::Vector3f p = poly.project2plane(((x<<(i+fact-1))-camera_.dx)/camera_.f,
                                                ((y<<(i+fact-1))-camera_.dy)/camera_.f,
                                                model,v);
+#if 1
+	bool found = false;
+	const float thr = 9*camera_.std(p(2))*camera_.std(p(2));
+        Eigen::Vector3f vp = poly.project2world(p.head<2>());
+
+        static const int rel_motion_pattern[][2] = { {0,0}, {-1,-1}, {-1,0}, {-1,1}, {0,-1}, {0,1}, {1,-1}, {1,0}, {1,1}
+        , {-2,-2}, {-2,-1}, {-2,0}, {-2,1}, {-2,2}, {-1,-2}, {-1,2}, {0,-2}, {0,2}, {1,-2}, {1,2}, {2,-2}, {2,-1}, {2,0}, {2,1}, {2,2}
+        //, {-3,-3}, {-3,-2}, {-3,-1}, {-3,0}, {-3,1}, {-3,2}, {-3,3}, {-2,-3}, {-2,3}, {-1,-3}, {-1,3}, {0,-3}, {0,3}, {1,-3}, {1,3}, {2,-3}, {2,3}, {3,-3}, {3,-2}, {3,-1}, {3,0}, {3,1}, {3,2}, {3,3}, {-4,-4}, {-4,-3}, {-4,-2}, {-4,-1}, {-4,0}, {-4,1}, {-4,2}, {-4,3}, {-4,4}, {-3,-4}, {-3,4}, {-2,-4}, {-2,4}, {-1,-4}, {-1,4}, {0,-4}, {0,4}, {1,-4}, {1,4}, {2,-4}, {2,4}, {3,-4}, {3,4}, {4,-4}, {4,-3}, {4,-2}, {4,-1}, {4,0}, {4,1}, {4,2}, {4,3}, {4,4}
+        };
+
+        const pcl::PointCloud<Point> &pc = *input_;
+        for(size_t j=0; j<sizeof(rel_motion_pattern)/sizeof(rel_motion_pattern[0]); j++) {
+          int xx=rel_motion_pattern[j][0];
+          int yy=rel_motion_pattern[j][1];
+
+          if(x+xx>=0 && y+yy>=0 && x+xx<(int)pc.width && y+yy<(int)pc.height) {
+
+            if( (vp-pc(x+xx,y+yy).getVector3fMap()).squaredNorm() < thr )
+            {
+              found = true;
+              break;
+            }
+          }
+        }
+
+
+        if(found)
+        {
+          poly.segments_.back().push_back(p);
+#ifdef USE_BOOST_POLYGONS_
+          poly.segments2d_.back().push_back(BoostPoint(x,y));
+#else
+          Eigen::Vector2i p2;
+          p2(0) = x;
+          p2(1) = y;
+          poly.segments2d_.back().push_back(p2);
+#endif
+        }
+
+
+#else
+#ifndef EVALUATE
 
 #if 0
         poly.segments_.back().push_back(p);
@@ -359,7 +425,7 @@ poly.segments2d_.back().push_back(p2);
 
 #ifdef USE_BOOST_POLYGONS_
               poly.segments2d_.back().push_back(BoostPoint(x,y));
-#elif defined(BACK_CHECK_REPEAT)
+#else
               Eigen::Vector2i p2;
               p2(0) = x+xx/fact;
               p2(1) = y+yy/fact;
@@ -403,19 +469,23 @@ poly.segments2d_.back().push_back(p2);
               }
             }
 #endif
+#endif
 
-        if(poly.normalAt(p.head<2>())(2)>0.5f)
+const float zzz=poly.project2world(p.head<2>())(2);
+if(zzz>0.4f && zzz<8.f)
+        if(poly.normalAt(p.head<2>())(2)>0.35f)
         {
           poly.segments_.back().push_back(p);
 #ifdef USE_BOOST_POLYGONS_
           poly.segments2d_.back().push_back(BoostPoint(x,y));
-#elif defined(BACK_CHECK_REPEAT)
+#else
           Eigen::Vector2i p2;
           p2(0) = x;
           p2(1) = y;
           poly.segments2d_.back().push_back(p2);
 #endif
         }
+#endif
       }
 
       int getPos(int *ch, const int xx, const int yy, const int w, const int h);
