@@ -18,7 +18,9 @@
 #include <cob_3d_segmentation/quad_regression/quad_regression.h>
 #include <cob_3d_segmentation/ransac/ransac.h>
 #include <cob_3d_segmentation/marching_cubes/marching_cubes.h>
-
+#ifdef PCL_MINOR_VERSION >= 6
+#include <cob_3d_segmentation/multi_plane/multi_plane.h>
+#endif
 
 
 struct PointXYZRGBLabel
@@ -253,7 +255,7 @@ void test_QPPF()
   typedef PointXYZRGBLabel PointL;
 
   pcl::PointCloud<Point>::Ptr pc(new pcl::PointCloud<Point>);
-  Segmentation::Segmentation_QuadRegression<Point, PointL, Segmentation::QPPF::QuadRegression<Degree, Point, Segmentation::QPPF::CameraModel_Kinect<Point> > > seg;
+  static Segmentation::Segmentation_QuadRegression<Point, PointL, Segmentation::QPPF::QuadRegression<Degree, Point, Segmentation::QPPF::CameraModel_Kinect<Point> > > seg;
 
   static Testing_CSV csv = Testing_CSV::create_table("accuracy","filename,mean,variance,weighted mean,weighted variance,average distance,used points, memory for representation,points,true positive rate, false positive rate,execution time: quadtree,execution time: growing,execution time: extraction,number of segments");
 
@@ -375,6 +377,54 @@ TEST(Segmentation, ransac)
     csv.next();
   }
 }
+
+#ifdef PCL_MINOR_VERSION >= 6
+TEST(Segmentation, multi_plane)
+{
+  typedef pcl::PointXYZRGB Point;
+  typedef pcl::PointXYZRGBNormal PointN;
+  typedef PointXYZRGBLabel PointL;
+
+  pcl::PointCloud<Point>::Ptr pc(new pcl::PointCloud<Point>);
+  Segmentation::Segmentation_MultiPlaneExtraction<Point,PointN,PointL> seg;
+
+  static Testing_CSV csv = Testing_CSV::create_table("accuracy","filename,mean,variance,average distance,used points, memory for representation,points,true positive rate, false positive rate");
+
+  ROS_INFO("starting segmentation");
+  size_t ind=0;
+  std::string fn;
+  while(Testing_PCDLoader::get().getPC<Point>(ind++, pc, fn))
+  {
+    if(pc->size()<1) continue;
+    ROS_INFO("processing pc %d ...",(int)ind-1);
+    std::string fn_short(fn.begin()+(fn.find_last_of("/")+1),fn.end());
+    segment_pointcloud<Point,PointL>(&seg,pc, fn_short);
+
+    pcl::PointCloud<PointL>::Ptr labeled_pc(new pcl::PointCloud<PointL>);
+    try {
+      Testing_PCDLoader::get().getPC<PointL>(ind-1, labeled_pc, fn);
+    } catch(...) {}
+
+    Testing_PCDLoader::get().writePC<PointL>("reconstructed_"+fn_short, seg.getReconstructedOutputCloud());
+
+    float mean, var, mean_weighted, var_weighted, dist;
+    double true_positive, false_positive;
+    size_t used, mem, points;
+    seg.compute_accuracy(mean, var, mean_weighted, var_weighted, used, mem, points, dist, labeled_pc, true_positive, false_positive);
+
+    csv.add(fn_short);
+    csv.add(mean);
+    csv.add(var);
+    csv.add(dist);
+    csv.add(used);
+    csv.add(mem);
+    csv.add(points);
+    csv.add(true_positive);
+    csv.add(false_positive);
+    csv.next();
+  }
+}
+#endif
 
 TEST(Segmentation, marching_cubes)
 {
