@@ -97,6 +97,29 @@ namespace Segmentation
       friend std::ostream &operator<<(ostream &os, const CameraModel_Kinect<APoint> &cmk);
     };
 
+    /**
+     * camera model for SR4500
+     *
+     *  - extracts parameters from pc
+     *  - states standard deviation for a given distance
+     */
+    template<typename Point>
+    class CameraModel_SR4500 {
+    public:
+      float f,dx,dy;
+
+      CameraModel_SR4500(): f(0.f) {}
+
+      /// calculate kinect parameters
+      void getParams(const pcl::PointCloud<Point> &pc);
+
+      inline static float std(const float dist) {return 0.03f+0.03f*dist;}   //after "Accuracy analysis of kinect depth data"
+
+      /** DEBUG **/
+      template<typename APoint>
+      friend std::ostream &operator<<(ostream &os, const CameraModel_Kinect<APoint> &cmk);
+    };
+
     template<typename Point>
     std::ostream &operator<<(ostream &os, const CameraModel_Kinect<Point> &cmk) {
       os<<"Kinect Camera\n";
