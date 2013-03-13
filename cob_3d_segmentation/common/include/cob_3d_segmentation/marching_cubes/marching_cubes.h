@@ -59,7 +59,13 @@
 #include <visualization_msgs/MarkerArray.h>
 
 #include <pcl/surface/marching_cubes.h>
+#ifdef USE_GREEDY
 #include <pcl/surface/marching_cubes_greedy.h>
+#define MARCHING_CUBES_INST MarchingCubesGreedy
+#else
+#include <pcl/surface/marching_cubes_rbf.h>
+#define MARCHING_CUBES_INST MarchingCubesRBF
+#endif
 #include <pcl/features/normal_3d.h>
 #include <pcl/kdtree/kdtree_flann.h>
 
