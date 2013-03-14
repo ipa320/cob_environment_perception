@@ -22,4 +22,10 @@
   		Nodelet for point cloud filtering (jump edges)
   	</description>
   </class>
+
+  <class name="cob_3d_mapping_filters/SmoothingFilter" type="SmoothingFilter" base_class_type="nodelet::Nodelet">
+  	<description>
+  		Nodelet for point cloud filtering (smoothing)
+  	</description>
+  </class>
 </library>
