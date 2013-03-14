@@ -58,6 +58,10 @@
 
 #include <visualization_msgs/MarkerArray.h>
 
+#ifndef PCL_VERSION_COMPARE
+#define USE_GREEDY
+#endif
+
 #include <pcl/surface/marching_cubes.h>
 #ifdef USE_GREEDY
 #include <pcl/surface/marching_cubes_greedy.h>
