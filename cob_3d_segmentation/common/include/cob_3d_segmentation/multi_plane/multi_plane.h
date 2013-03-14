@@ -1,4 +1,3 @@
-
 /****************************************************************
  *
  * Copyright (c) 2011
@@ -53,8 +52,8 @@
  *
  ****************************************************************/
 
-#ifndef RANSAC_H_
-#define RANSAC_H_
+#ifndef MULTIPLANE_H_
+#define MULTIPLANE_H_
 
 #include <visualization_msgs/MarkerArray.h>
 
@@ -73,13 +72,14 @@ namespace Segmentation
    * a segmentation implementation based on quad-trees and regression
    */
   template <typename Point, typename PointTypeNormal, typename PointLabel>
-  class Segmentation_MultiPlane : public GeneralSegmentation<Point, PointTypeNormal, PointLabel>
+  class Segmentation_MultiPlane : public GeneralSegmentation<Point, PointLabel>
   {
-    std::vector<typename pcl::PlanarRegion<Point>, Eigen::aligned_allocator<pcl::PlanarRegion<PointT> > > regions;
+    std::vector<typename pcl::PlanarRegion<Point>, Eigen::aligned_allocator<typename pcl::PlanarRegion<Point> > > regions;
     std::vector<pcl::ModelCoefficients> coef;
     std::vector<pcl::PointIndices> inlier_indices;
     std::vector<pcl::PointIndices> label_indices;
     std::vector<pcl::PointIndices> boundary_indices;
+    pcl::PointCloud<pcl::Label>::Ptr l;
 
     boost::shared_ptr<const pcl::PointCloud<Point> > input_;
 
@@ -105,10 +105,6 @@ namespace Segmentation
 
     /*** evaluation purposes ***/
     void compute_accuracy(float &mean, float &var, float &mean_weighted, float &var_weighted, size_t &used, size_t &mem, size_t &points, float &avg_dist, const boost::shared_ptr<const pcl::PointCloud<PointLabel> > &labeled_pc, double &true_positive, double &false_positive);
-
-    void enablePlanes(const bool b) {planes_=b;}
-    void enableSpheres(const bool b) {spheres_=b;}
-    void enableCylinders(const bool b) {cylinders_=b;}
 
     /// gets reconstructed output cloud
     virtual boost::shared_ptr<const pcl::PointCloud<PointLabel> > getReconstructedOutputCloud();
