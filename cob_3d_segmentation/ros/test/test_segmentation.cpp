@@ -396,7 +396,7 @@ TEST(Segmentation, multi_plane)
   typedef PointXYZRGBLabel PointL;
 
   pcl::PointCloud<Point>::Ptr pc(new pcl::PointCloud<Point>);
-  Segmentation::Segmentation_MultiPlaneExtraction<Point,PointN,PointL> seg;
+  Segmentation::Segmentation_MultiPlane<Point,PointN,PointL> seg;
 
   static Testing_CSV csv = Testing_CSV::create_table("accuracy","filename,mean,variance,average distance,used points, memory for representation,points,true positive rate, false positive rate");
 
