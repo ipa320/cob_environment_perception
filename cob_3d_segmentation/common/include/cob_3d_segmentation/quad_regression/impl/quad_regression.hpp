@@ -10,6 +10,8 @@
 #define SHIFT   1
 #endif
 
+#define KDTREE pcl::KdTreeFLANN
+
   template <typename Point, typename PointLabel, typename Parent>
   void Segmentation_QuadRegression<Point,PointLabel,Parent>::back_check_repeat() {
 #ifdef BACK_CHECK_REPEAT
@@ -198,7 +200,7 @@
   {
     typename pcl::PointCloud<PointLabel>::Ptr out(new pcl::PointCloud<PointLabel>);
 
-    pcl::KdTreeFLANN<Point> kdtree;
+    KDTREE<Point> kdtree;
 
     std::vector<int> pointIdxNKNSearch(1);
     std::vector<float> pointNKNSquaredDistance(1);
@@ -247,10 +249,11 @@
           ps.x = p(0);
           ps.y = p(1);
           ps.z = z_model;
+          if(pcl_isfinite(ps.x) && pcl_isfinite(ps.y) && pcl_isfinite(z)) {
           kdtree.nearestKSearch(ps, 1, pointIdxNKNSearch, pointNKNSquaredDistance);
           const float d = std::min(pointNKNSquaredDistance[0], std::min(std::abs(z - z_model), (this->polygons_[i].project2world(this->polygons_[i].nextPoint(p))-p).norm()));
 
-          if(labeled_pc && pointIdxNKNSearch[0]<(int)labeled_pc->size())
+          if(labeled_pc && pointIdxNKNSearch.size()>0 && pointIdxNKNSearch[0]<(int)labeled_pc->size())
             bc.addMark(mark, (*labeled_pc)[pointIdxNKNSearch[0]].label);
 
           if(pcl_isfinite(d) && pcl_isfinite(z) && d<0.25f)
@@ -258,7 +261,7 @@
             rstat.Push(d);
             rstat_weighted.Push(d, 1/z_model);
             avg_dist += z;
-          }
+          }}
         }
 
         if(this->levels_[0].data[this->getInd(i, x,y)].z_(0)/this->levels_[0].data[this->getInd(i, x,y)].model_(0,0)>0 && pcl_isfinite(this->levels_[0].data[this->getInd(i, x,y)].z_(0)/this->levels_[0].data[this->getInd(i, x,y)].model_(0,0)))

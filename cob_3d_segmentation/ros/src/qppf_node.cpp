@@ -66,7 +66,11 @@ class QPPF_Node : public Parent
   ros::Subscriber point_cloud_sub_;
   ros::Publisher  curved_pub_, shapes_pub_, outline_pub_, image_pub_, label_pub_;
 
+#ifdef SICK
+  Segmentation::Segmentation_QuadRegression<Point, PointLabel, Segmentation::QPPF::QuadRegression<2, Point, Segmentation::QPPF::CameraModel_SR4500<Point> > > seg_;
+#else
   Segmentation::Segmentation_QuadRegression<Point, PointLabel, Segmentation::QPPF::QuadRegression<2, Point, Segmentation::QPPF::CameraModel_Kinect<Point> > > seg_;
+#endif
 
   std::vector<cob_3d_mapping_msgs::FilterObject> filter_;
 
