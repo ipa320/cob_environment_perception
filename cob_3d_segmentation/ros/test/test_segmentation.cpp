@@ -118,6 +118,11 @@ public:
     const ::testing::TestInfo* const test_info =
       ::testing::UnitTest::GetInstance()->current_test_info();
 
+    if(pc->size()<1) {
+	ROS_ERROR("cannot save empty pc (%s_%s_%s)", test_info->test_case_name(), test_info->name(), pc_fn.c_str());
+	return;
+    }
+
     char fn[512];
     sprintf(fn,"test/labeled/pc_%s_%s_%s",test_info->test_case_name(), test_info->name(), pc_fn.c_str());
     pcl::io::savePCDFile(fn,*pc);
