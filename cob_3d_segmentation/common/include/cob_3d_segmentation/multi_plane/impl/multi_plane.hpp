@@ -18,11 +18,11 @@ bool Segmentation_MultiPlane<Point, PointTypeNormal,PointLabel>::compute() {
   typename pcl::IntegralImageNormalEstimation<Point, PointTypeNormal> ne;
   typename pcl::PointCloud<PointTypeNormal>::Ptr n(new pcl::PointCloud<PointTypeNormal>());
 
-l.reset(new pcl::PointCloud<pcl::Label>());
+  l.reset(new pcl::PointCloud<pcl::Label>());
 
-    ne.setNormalEstimationMethod(ne.COVARIANCE_MATRIX);
-    ne.setMaxDepthChangeFactor(0.02f);
-    ne.setNormalSmoothingSize(40.0f);
+  ne.setNormalEstimationMethod(ne.COVARIANCE_MATRIX);
+  ne.setMaxDepthChangeFactor(0.02f);
+  ne.setNormalSmoothingSize(40.0f);
 
   ne.setInputCloud(input_);
   ne.compute(*n);
@@ -31,10 +31,10 @@ l.reset(new pcl::PointCloud<pcl::Label>());
   typename pcl::EdgeAwarePlaneComparator<Point, PointTypeNormal>::Ptr comparator;
   typename pcl::OrganizedMultiPlaneSegmentation<Point, PointTypeNormal, pcl::Label> omps;
 
-    omps.setAngularThreshold(2.5f/180.0f*M_PI);
-    omps.setMaximumCurvature(0.01); // default 0.001
-    omps.setDistanceThreshold(0.01f);
-    omps.setMinInliers(100);
+  omps.setAngularThreshold(2.5f/180.0f*M_PI);
+  omps.setMaximumCurvature(0.01); // default 0.001
+  omps.setDistanceThreshold(0.01f);
+  omps.setMinInliers(100);
 
   comparator.reset(new pcl::EdgeAwarePlaneComparator<Point, PointTypeNormal>(distance_map));
   omps.setComparator(comparator);
@@ -52,15 +52,15 @@ boost::shared_ptr<const pcl::PointCloud<PointLabel> > Segmentation_MultiPlane<Po
   boost::shared_ptr<pcl::PointCloud<PointLabel> > cloud (new pcl::PointCloud<PointLabel>);
   cloud->header = input_->header;
 
-for(size_t i=0; i<inlier_indices.size(); i++) {
+  for(size_t i=0; i<inlier_indices.size(); i++) {
     boost::shared_ptr<pcl::SampleConsensusModel<Point> >
     model;
     pcl::PointCloud<Point> temp;
     pcl::PointCloud<PointLabel> temp2;
 
-	for(size_t j=0; j<inlier_indices[i].indices.size(); j++) {
-		temp.push_back( (*input_)[inlier_indices[i].indices[j]] );
-	}
+    for(size_t j=0; j<inlier_indices[i].indices.size(); j++) {
+      temp.push_back( (*input_)[inlier_indices[i].indices[j]] );
+    }
 
     temp2.width = temp.width;
     temp2.height = temp.height;
@@ -91,21 +91,31 @@ void Segmentation_MultiPlane<Point,PointTypeNormal,PointLabel>::compute_accuracy
 
   bc.addPC(labeled_pc);
 
-std::cout<<l->size()<<"\n";
+  std::cout<<l->size()<<"\n";
   for(size_t i=0; i<l->size(); i++) {
-      if(labeled_pc)
-        bc.addMark((*l)[i].label, (*labeled_pc)[i].label);
+    if(labeled_pc)
+      bc.addMark((*l)[i].label, (*labeled_pc)[i].label);
 
-	if(pcl_isfinite((*input_)[i].z)) {
-      	++points;
-      	avg_dist += (*input_)[i].z;}
+    if(pcl_isfinite((*input_)[i].z)) {
+      ++points;
+      avg_dist += (*input_)[i].z;}
   }
 
-   for(size_t ind=0; ind<regions.size(); ind++) {
-  for(size_t i=0; i<regions[ind].getContour ().size(); i++) {
-		float d = std::abs( regions[ind].getCoefficients().head(3).dot( regions[ind].getContour ()[i].getVector3fMap() ) + regions[ind].getCoefficients()(3) );
-      		rstat.Push(d);}
-  }
+  ROS_ASSERT(label_indices.size()==regions.size());
+  for(size_t ind=0; ind<label_indices.size(); ind++) {
+      Eigen::Vector4f m = regions[ind].getCoefficients();
+      const float l = m.head<3>().norm();
+      m.head /= l;
+      for(size_t i=0; i<label_indices[ind].indices.size(); i++) {
+        float d = std::abs( m.head<3>().dot( label_indices[ind].indices[i].getVector3fMap() ) + m(3) );
+        rstat.Push(d);}
+    }
+
+  /*for(size_t ind=0; ind<regions.size(); ind++) {
+    for(size_t i=0; i<regions[ind].getContour ().size(); i++) {
+      float d = std::abs( regions[ind].getCoefficients().head(3).dot( regions[ind].getContour ()[i].getVector3fMap() ) + regions[ind].getCoefficients()(3) );
+      rstat.Push(d);}
+  }*/
 
 #if 0
   for(size_t i=0; i<shapes_.size(); i++) {
