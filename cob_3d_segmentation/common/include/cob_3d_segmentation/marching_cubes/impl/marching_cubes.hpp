@@ -7,8 +7,11 @@
 
 #include <cob_3d_segmentation/eval.h>
 
-//#define KDTREE pcl::KdTreeFLANN
+#ifdef PCL_VERSION_COMPARE
+#define KDTREE pcl::KdTreeFLANN
+#else
 #define KDTREE pcl::search::KdTree
+#endif
 
 
 template <typename Point, typename PointTypeNormal, typename PointLabel>
