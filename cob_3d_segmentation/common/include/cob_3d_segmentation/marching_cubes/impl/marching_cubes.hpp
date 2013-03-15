@@ -7,7 +7,7 @@
 
 #include <cob_3d_segmentation/eval.h>
 
-#ifdef PCL_VERSION_COMPARE
+#ifndef PCL_VERSION_COMPARE
 #define KDTREE pcl::KdTreeFLANN
 #else
 #define KDTREE pcl::search::KdTree
@@ -87,6 +87,8 @@ void Segmentation_MarchingCubes<Point, PointTypeNormal, PointLabel>::compute_acc
     float dmax = std::numeric_limits<float>::max();
     for(size_t i=0; i<mesh_.polygons.size(); i++) {
       Eigen::Vector3f a,b,c,d;
+
+mem+= 3*3*4;
 
       a = tmp[mesh_.polygons[i].vertices[0]].getVector3fMap();
       b = tmp[mesh_.polygons[i].vertices[1]].getVector3fMap();
