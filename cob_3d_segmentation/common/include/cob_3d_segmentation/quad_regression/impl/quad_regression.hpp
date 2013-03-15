@@ -251,15 +251,17 @@
           ps.z = z_model;
           if(pcl_isfinite(ps.x) && pcl_isfinite(ps.y) && pcl_isfinite(z)) {
           kdtree.nearestKSearch(ps, 1, pointIdxNKNSearch, pointNKNSquaredDistance);
-          const float d = std::min(pointNKNSquaredDistance[0], std::min(std::abs(z - z_model), (this->polygons_[i].project2world(this->polygons_[i].nextPoint(p))-p).norm()));
+          const float d = std::min(std::sqrt(pointNKNSquaredDistance[0]), std::min(std::abs(z - z_model), (this->polygons_[i].project2world(this->polygons_[i].nextPoint(p))-p).norm()));
 
           if(labeled_pc && pointIdxNKNSearch.size()>0 && pointIdxNKNSearch[0]<(int)labeled_pc->size())
             bc.addMark(mark, (*labeled_pc)[pointIdxNKNSearch[0]].label);
 
           if(pcl_isfinite(d) && pcl_isfinite(z) && d<0.25f)
           {
-            rstat.Push(d);
-            rstat_weighted.Push(d, 1/z_model);
+            if(d<0.05f) {
+              rstat.Push(d);
+              rstat_weighted.Push(d, 1/z_model);
+            }
             avg_dist += z;
           }}
         }

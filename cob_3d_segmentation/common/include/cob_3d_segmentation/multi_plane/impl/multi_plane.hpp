@@ -101,16 +101,26 @@ std::cout<<l->size()<<"\n";
       	avg_dist += (*input_)[i].z;}
   }
 
-   for(size_t ind=0; ind<regions.size(); ind++) {
+  ROS_ASSERT(label_indices.size()==regions.size());
+  for(size_t ind=0; ind<label_indices.size(); ind++) {
 mem += 4*4;
-  for(size_t i=0; i<regions[ind].getContour ().size(); i++) {
-		float d = std::abs( regions[ind].getCoefficients().head(3).dot( regions[ind].getContour ()[i].getVector3fMap() ) + regions[ind].getCoefficients()(3) );
-      		rstat.Push(d);}
-  }
+      Eigen::Vector4f m = regions[ind].getCoefficients();
+      const float l = m.head<3>().norm();
+      m.head /= l;
+      for(size_t i=0; i<label_indices[ind].indices.size(); i++) {
+        float d = std::abs( m.head<3>().dot( label_indices[ind].indices[i].getVector3fMap() ) + m(3) );
+        rstat.Push(d);}
+    }
 
 for(size_t i=0; i<boundary_indices.size(); i++)
   mem += 4*boundary_indices[i].indices.size();
 
+  /*for(size_t ind=0; ind<regions.size(); ind++) {
+mem += 4*4;
+    for(size_t i=0; i<regions[ind].getContour ().size(); i++) {
+      float d = std::abs( regions[ind].getCoefficients().head(3).dot( regions[ind].getContour ()[i].getVector3fMap() ) + regions[ind].getCoefficients()(3) );
+      rstat.Push(d);}
+  }*/
 #if 0
   for(size_t i=0; i<shapes_.size(); i++) {
     boost::shared_ptr<pcl::SampleConsensusModel<Point> >
