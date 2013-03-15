@@ -101,15 +101,21 @@ std::cout<<l->size()<<"\n";
       	avg_dist += (*input_)[i].z;}
   }
 
-  ROS_ASSERT(label_indices.size()==regions.size());
-  for(size_t ind=0; ind<label_indices.size(); ind++) {
+  for(size_t j=0; j<label_indices.size(); j++) {
 mem += 4*4;
+      for(size_t i=0; i<label_indices[j].indices.size(); i++) {
+
+float mind = std::numeric_limits<float>::max();
+for(size_t ind=0; ind<regions.size(); ind++) {
+
       Eigen::Vector4f m = regions[ind].getCoefficients();
       const float l = m.head<3>().norm();
       m /= l;
-      for(size_t i=0; i<label_indices[ind].indices.size(); i++) {
-        float d = std::abs( m.head<3>().dot( (*input_)[label_indices[ind].indices[i]].getVector3fMap() ) + m(3) );
-        rstat.Push(d);}
+
+        float d = std::abs( m.head<3>().dot( (*input_)[label_indices[j].indices[i]].getVector3fMap() ) + m(3) );
+mind = std::min(d,mind);
+}
+        rstat.Push(mind);}
     }
 
 for(size_t i=0; i<boundary_indices.size(); i++)
