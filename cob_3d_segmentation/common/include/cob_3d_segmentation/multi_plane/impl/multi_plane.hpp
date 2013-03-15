@@ -102,10 +102,14 @@ std::cout<<l->size()<<"\n";
   }
 
    for(size_t ind=0; ind<regions.size(); ind++) {
+mem += 4*4;
   for(size_t i=0; i<regions[ind].getContour ().size(); i++) {
 		float d = std::abs( regions[ind].getCoefficients().head(3).dot( regions[ind].getContour ()[i].getVector3fMap() ) + regions[ind].getCoefficients()(3) );
       		rstat.Push(d);}
   }
+
+for(size_t i=0; i<boundary_indices.size(); i++)
+  mem += 4*boundary_indices[i].indices.size();
 
 #if 0
   for(size_t i=0; i<shapes_.size(); i++) {
