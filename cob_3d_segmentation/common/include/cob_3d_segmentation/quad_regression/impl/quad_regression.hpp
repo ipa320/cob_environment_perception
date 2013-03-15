@@ -3,7 +3,6 @@
 #include "../sub_structures/labeling.h"
 #include "../sub_structures/debug.h"
 
-
 #ifdef DO_NOT_DOWNSAMPLE_
 #define SHIFT   0
 #else
@@ -115,6 +114,9 @@
         //color/label
         int mark = this->isOccupied(0,x,y);
         SetLabeledPoint<PointLabel>( (*out)(x,y), mark);
+#ifdef SICK
+        (*out)(x,y).label = mark;
+#endif
       }
     }
 
@@ -343,6 +345,8 @@
       s.color.g=this->polygons_[i].color_[1];
       s.color.b=this->polygons_[i].color_[2];
       s.color.a=1.f;
+
+      s.id = i;
       //s.color.a=std::min(1000.f,this->polygons_[i].weight_)/1000.f;
 
       s.points.clear();
@@ -413,6 +417,7 @@
     m.color.b = 1.0;
 
     for(size_t i=0; i<this->polygons_.size(); i++) {
+
 
 //      std::cerr<<"OFF:\n"<<this->polygons_[i].param_.col(0)<<"\n";
 //      std::cerr<<"PLANE:\n"<<this->polygons_[i].proj2plane_<<"\n";
