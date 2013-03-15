@@ -106,9 +106,9 @@ std::cout<<l->size()<<"\n";
 mem += 4*4;
       Eigen::Vector4f m = regions[ind].getCoefficients();
       const float l = m.head<3>().norm();
-      m.head /= l;
+      m /= l;
       for(size_t i=0; i<label_indices[ind].indices.size(); i++) {
-        float d = std::abs( m.head<3>().dot( label_indices[ind].indices[i].getVector3fMap() ) + m(3) );
+        float d = std::abs( m.head<3>().dot( (*input_)[label_indices[ind].indices[i]].getVector3fMap() ) + m(3) );
         rstat.Push(d);}
     }
 
