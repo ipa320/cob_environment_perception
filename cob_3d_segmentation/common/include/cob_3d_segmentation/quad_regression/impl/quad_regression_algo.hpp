@@ -82,63 +82,9 @@ template <typename Point>
 void CameraModel_SR4500<Point>::getParams(const pcl::PointCloud<Point> &pc) {
   if(f != 0.f) return;
 
-  Point p1, p2;
-  p1=p1;
-  p2=p2;
-  int i1=-1, i2=-1;
-
-  // find one point
-  for(size_t x=0; x<pc.width; x+=8) {
-    for(size_t y=0; y<pc.height; y+=8) {
-      int ind = ((x)+(y)*pc.width);
-      if(pcl_isfinite(pc[ind].z)&&pc[ind].z<10.f) {
-        p1=pc[ind];
-        i1=ind;
-        x=pc.width;
-        break;
-      }
-    }
-  }
-
-  // find another point
-  for(int x=pc.width-1; x>=0; x-=8) {
-    for(int y=pc.height-1; y>=0; y-=8) {
-      int ind = ((x)+(y)*pc.width);
-      if(pcl_isfinite(pc[ind].z)&&pc[ind].z!=p1.z&&pc[ind].z<10.f) {
-        p2=pc[ind];
-        i2=ind;
-        x=-1;
-        break;
-      }
-    }
-  }
-
-  if(i1==-1||i2==-1) {
-    ROS_WARN("no valid points");
-    return;
-  }
-
-  //solve equation $...$ to retrieve f, dx and dy of camera
-  int x=i1%pc.width;
-  int y=i1/pc.width;
-  float ax1,ax2, bx1,bx2;
-  float ay1,ay2, by1,by2;
-
-  ax1=p1.z/p1.x*x;
-  bx1=p1.z/p1.x;
-  ay1=p1.z/p1.y*y;
-  by1=p1.z/p1.y;
-
-  x=i2%pc.width;
-  y=i2/pc.width;
-  ax2=p2.z/p2.x*x;
-  bx2=p2.z/p2.x;
-  ay2=p2.z/p2.y*y;
-  by2=p2.z/p2.y;
-
-  dx = (ax1-ax2)/(bx1-bx2);
-  dy = (ay1-ay2)/(by1-by2);
-  f = ax1 - bx1*dx;
+  dx = 176/2;
+  dy = 144/2;
+  f = 1/std::tan(0.39f*M_PI/180);
 }
 
 // ------------- QUAD REGRESSION -------------
@@ -532,7 +478,6 @@ void QuadRegression<Degree, Point, CameraModel>::grow(SubStructure::VISITED_LIST
               //#endif
           ) ||
           (
-#ifndef SICK
 #ifdef USE_MIN_MAX_RECHECK_
 #ifdef DO_NOT_DOWNSAMPLE_
 
@@ -552,7 +497,6 @@ void QuadRegression<Degree, Point, CameraModel>::grow(SubStructure::VISITED_LIST
                       //&& std::abs(model.model(levels_[i].data[getInd(x,y)].v_min_(0),levels_[i].data[getInd(x,y)].v_min_(1))-levels_[i].data[getInd(x,y)].v_min_(2))<thr
                       //&& std::abs(model.model(levels_[i].data[getInd(x,y)].v_max_(0),levels_[i].data[getInd(x,y)].v_max_(1))-levels_[i].data[getInd(x,y)].v_max_(2))<thr
                       &&
-#endif
 #endif
                       (
                           //checkModelAt(model, i,x,y, thr)
