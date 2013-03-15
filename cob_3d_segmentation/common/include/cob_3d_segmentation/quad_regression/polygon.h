@@ -449,7 +449,7 @@ namespace Segmentation
     /// find nearest point to manifold (Newton)
     Eigen::Vector2f nextPoint(const Eigen::Vector3f &v) const
     {
-      Eigen::Vector3f p, pos0 = project2world(v.head<2>()), n0 = normalAt(v.head<2>()), n0x, n0y;
+      /*Eigen::Vector3f p, pos0 = project2world(v.head<2>()), n0 = normalAt(v.head<2>()), n0x, n0y;
 
       n0x = n0y = model_.getNormal_(v(0),v(1));
       n0x(1) = 0;
@@ -459,16 +459,16 @@ namespace Segmentation
 
       p(0) = (v-pos0).dot(n0x);
       p(1) = (v-pos0).dot(n0y);
-      p(2) = (v-pos0).dot(n0);
+      p(2) = (v-pos0).dot(n0);*/
 
-      Eigen::Vector2f r = _nextPoint(p, p);
+      Eigen::Vector2f r = _nextPoint(v, v);
 
-      float e1 = (v-project2world(p.head<2>())).norm();
+      float e1 = (v-project2world(v.head<2>())).norm();
       float e2 = (v-project2world(r)).norm();
 
       if(e1<e2)
       {
-        return p.head<2>();
+        return v.head<2>();
       }
 
       return r;
