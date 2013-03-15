@@ -113,10 +113,8 @@ namespace Segmentation
     }
 
     Eigen::Vector2f project2plane(const float x, const float y, const SubStructure::Model<Degree> &model) {
-
-      ROS_ERROR("TODO:");//TODO:
-      return Eigen::Vector2f::Zero();
-      /*Eigen::Vector2f mv;
+      ROS_ERROR("TODO:");
+      Eigen::Vector2f mv;
       mv(0)=x;
       mv(1)=y;
       float mz;
@@ -125,19 +123,9 @@ namespace Segmentation
       Eigen::Vector3f v;
       v.head<2>() = mz * mv;
       v(2) = mz;
-      mv(0) = (v-param_.col(0)).dot(proj2plane_.col(0))/proj2plane_.col(0).squaredNorm();
-      mv(1) = (v-param_.col(0)).dot(proj2plane_.col(1))/proj2plane_.col(1).squaredNorm();
-#if DEBUG_LEVEL >70
-      if(!pcl_isfinite(mv(0))) {
-        ROS_ERROR("mist");
-        std::cerr<<x<<","<<y<<","<<mz<<"\nmv:\n";
-        std::cerr<<mv<<"\np\n";
-        std::cerr<<model.p<<"\n";
-        std::cerr<<"mz: "<<mz<<"\nmv:\n";
-        //getchar();
-      }
-#endif
-      return mv;*/
+      //mv(0) = (v-param_.col(0)).dot(proj2plane_.col(0))/proj2plane_.col(0).squaredNorm();
+      //mv(1) = (v-param_.col(0)).dot(proj2plane_.col(1))/proj2plane_.col(1).squaredNorm();
+      return mv;
     }
 
 #ifdef USE_BOOST_POLYGONS_
@@ -207,24 +195,12 @@ namespace Segmentation
       Eigen::Vector3f mv3;
       mv(0)=x;
       mv(1)=y;
-      mv3(2)=b;
       float mz;
       mz=model.intersect(mv(0), mv(1));
 
       mv3(0) = mv(0)*mz;
       mv3(1) = mv(1)*mz;
       mv3(2) = mz;
-
-#if DEBUG_LEVEL >70
-      if(!pcl_isfinite(mv(0))) {
-        ROS_ERROR("mist");
-        std::cerr<<x<<","<<y<<","<<mz<<"\nmv:\n";
-        std::cerr<<mv<<"\np\n";
-        std::cerr<<model.p<<"\n";
-        std::cerr<<"mz: "<<mz<<"\n";
-        //getchar();
-      }
-#endif
 
       return mv3;
     }
