@@ -49,7 +49,7 @@ namespace intern {
   /// ray cast surface with ray $z = (mx my 1)$ --> null points of polynomial equation (=roots)
   template<>
   inline float _intersect<1>(const float mx, const float my, const typename Param<1>::VectorU &p) {
-    return -p(0)/(my*p(1)+mx*p(2));
+    return -p(0)/(my*p(1)+mx*p(2)-1);
   }
 }
 

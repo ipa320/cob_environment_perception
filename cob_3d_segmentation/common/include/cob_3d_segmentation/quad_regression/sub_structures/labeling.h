@@ -19,6 +19,11 @@ void SetLabeledPoint(Point &pt, const int mark)
   pt.b=(color>>16)&0xff;
 }
 
+template<>
+void SetLabeledPoint<PointXYZLabel>(PointXYZLabel &pt, const int mark)
+{
+}
+
 
 //TODO: alternatives
 

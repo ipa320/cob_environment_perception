@@ -64,7 +64,8 @@
 #define DO_NOT_DOWNSAMPLE_
 //#define SIMULATION_
 //#define MIN_EIGEN_VECTOR
-#define EVALUATE
+//#define EVALUATE
+//#define USE_BOOST_POLYGONS_
 
 #include "polygon.h"
 

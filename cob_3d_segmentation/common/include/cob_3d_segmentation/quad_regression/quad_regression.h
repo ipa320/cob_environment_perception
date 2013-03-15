@@ -55,7 +55,9 @@
 #ifndef SEGMENTATION_QUAD_REGR_H_
 #define SEGMENTATION_QUAD_REGR_H_
 
+
 #include <visualization_msgs/MarkerArray.h>
+#include <point_types.h>
 #include "quad_regression_algo.h"
 
 namespace Segmentation
