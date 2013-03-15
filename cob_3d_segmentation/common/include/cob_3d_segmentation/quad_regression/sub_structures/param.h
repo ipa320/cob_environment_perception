@@ -104,7 +104,7 @@ struct Param<2> {
   int occopied;             /// mark
 
   /// constructor, sets everything to 0
-  Param(): z_(VectorU::Zero()), model_(MatrixU::Zero()) {
+  Param(): model_(MatrixU::Zero()) ,z_(VectorU::Zero()){
     //for(int i=0; i<model_.rows(); i++)
     //{z_(i)=0; for(int j=0; j<model_.cols(); j++) model_(i,j)=0;}
   }

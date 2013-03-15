@@ -18,6 +18,10 @@
   <depend package="geometry_msgs"/>
   <depend package="actionlib"/>
 
+  <export>
+  	<cpp cflags="-I${prefix}/common/include -I${prefix}/ros/include" />
+  </export>
+  
 </package>
 
 
