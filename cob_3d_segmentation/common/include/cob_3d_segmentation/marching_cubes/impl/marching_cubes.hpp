@@ -7,6 +7,12 @@
 
 #include <cob_3d_segmentation/eval.h>
 
+#ifndef PCL_VERSION_COMPARE
+#define KDTREE pcl::KdTreeFLANN
+#else
+#define KDTREE pcl::search::KdTree
+#endif
+
 
 template <typename Point, typename PointTypeNormal, typename PointLabel>
 bool Segmentation_MarchingCubes<Point, PointTypeNormal, PointLabel>::compute() {
@@ -14,7 +20,7 @@ bool Segmentation_MarchingCubes<Point, PointTypeNormal, PointLabel>::compute() {
   // Normal estimation*
   pcl::NormalEstimation<Point, PointTypeNormal> norm_est;
   boost::shared_ptr<pcl::PointCloud<PointTypeNormal> > pointcloudNormal (new pcl::PointCloud<PointTypeNormal>);
-  boost::shared_ptr<pcl::KdTreeFLANN<Point> > tree (new pcl::KdTreeFLANN<Point>);
+  boost::shared_ptr<KDTREE<Point> > tree (new KDTREE<Point>);
   tree->setInputCloud (input_);
   norm_est.setInputCloud (input_);
   norm_est.setSearchMethod (tree);
@@ -25,13 +31,19 @@ bool Segmentation_MarchingCubes<Point, PointTypeNormal, PointLabel>::compute() {
   pcl::copyPointCloud (*input_, *pointcloudNormal);
 
   // Create the search method
-  boost::shared_ptr<pcl::KdTreeFLANN<PointTypeNormal> > tree2 (new pcl::KdTreeFLANN<PointTypeNormal>);
+  boost::shared_ptr<KDTREE<PointTypeNormal> > tree2 (new KDTREE<PointTypeNormal>);
   tree2->setInputCloud (pointcloudNormal);
 
   // Initialize objects
-  pcl::MarchingCubesGreedy<PointTypeNormal> mc;
+  pcl::MARCHING_CUBES_INST<PointTypeNormal> mc;
   // Set parameters
+#ifdef USE_GREEDY
   mc.setLeafSize(leafSize_);
+#else
+  mc.setOffSurfaceDisplacement(leafSize_);
+mc.setGridResolution(1,1,1);
+mc.setPercentageExtendGrid(0.01f);
+#endif
   mc.setIsoLevel(isoLevel_);   //ISO: must be between 0 and 1.0
   mc.setSearchMethod(tree2);
   mc.setInputCloud(pointcloudNormal);
@@ -39,6 +51,7 @@ bool Segmentation_MarchingCubes<Point, PointTypeNormal, PointLabel>::compute() {
   mc.reconstruct (mesh);
 
   mesh_ = mesh;
+
 
   std::cout<<mesh_.polygons.size()<<"\n";
 
@@ -75,6 +88,8 @@ void Segmentation_MarchingCubes<Point, PointTypeNormal, PointLabel>::compute_acc
     for(size_t i=0; i<mesh_.polygons.size(); i++) {
       Eigen::Vector3f a,b,c,d;
 
+mem+= 3*3*4;
+
       a = tmp[mesh_.polygons[i].vertices[0]].getVector3fMap();
       b = tmp[mesh_.polygons[i].vertices[1]].getVector3fMap();
       c = tmp[mesh_.polygons[i].vertices[2]].getVector3fMap();
@@ -101,9 +116,6 @@ void Segmentation_MarchingCubes<Point, PointTypeNormal, PointLabel>::compute_acc
       avg_dist += s(2);
       ++points;
     }
-
-    if(j%100==0)
-      printf("\r%d\%", j*100/input_->size());
 
     /*boost::shared_ptr<pcl::SampleConsensusModel<Point> >
       model;
