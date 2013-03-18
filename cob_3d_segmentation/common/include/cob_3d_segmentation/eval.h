@@ -156,16 +156,16 @@ public:
 
   void Push(double x, double w)
   {
-    m_n+=w;
-
     // See Knuth TAOCP vol 2, 3rd edition, page 232
-    if (m_n == 1)
+    if (m_n == 0)
     {
+      m_n+=w;
       m_oldM = m_newM = w*x;
       m_oldS = 0.0;
     }
     else
     {
+      m_n+=w;
       m_newM = m_oldM + (w*x - m_oldM)/m_n;
       m_newS = m_oldS + (w*x - m_oldM)*(w*x - m_newM);
 
