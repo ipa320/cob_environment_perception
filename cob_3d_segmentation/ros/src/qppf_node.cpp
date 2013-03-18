@@ -247,7 +247,7 @@ int main(int argc, char **argv) {
   QPPF_Node<pcl::PointXYZRGB,pcl::PointXYZRGB,As_Node> sn("qppf");
 #else
 #ifdef SICK
-  QPPF_Node<pcl::PointXYZ,PointXYZLabel,As_Node> sn("qppf");
+  QPPF_Node<pcl::PointXYZI,PointXYZILabel,As_Node> sn("qppf");
 #else
   QPPF_Node<pcl::PointXYZ,pcl::PointXYZRGB,As_Node> sn("qppf");
 #endif
