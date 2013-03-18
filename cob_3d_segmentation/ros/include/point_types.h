@@ -54,4 +54,21 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(
     (float, z, z)
     (uint32_t, label, label));
 
+
+struct PointXYZILabel
+{
+  PCL_ADD_POINT4D; // This adds the members x,y,z which can also be accessed using the point (which is float[4])
+  uint32_t intensity;
+  uint32_t label;
+  EIGEN_MAKE_ALIGNED_OPERATOR_NEW
+} EIGEN_ALIGN16;
+
+POINT_CLOUD_REGISTER_POINT_STRUCT(
+    PointXYZILabel,
+    (float, x, x)
+    (float, y, y)
+    (float, z, z)
+    (uint32_t, intensity, intensity)
+    (uint32_t, label, label));
+
 #endif /* POINT_TYPES_H_ */
