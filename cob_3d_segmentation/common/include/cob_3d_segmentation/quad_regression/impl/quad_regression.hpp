@@ -117,6 +117,7 @@
         int mark = this->isOccupied(0,x,y);
         SetLabeledPoint<PointLabel>( (*out)(x,y), mark);
 #ifdef SICK
+        (*out)(x,y).intensity = (*input_)(x,y).intensity;
         (*out)(x,y).label = mark;
 #endif
       }
