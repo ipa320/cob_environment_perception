@@ -41,8 +41,8 @@ bool Segmentation_MarchingCubes<Point, PointTypeNormal, PointLabel>::compute() {
   mc.setLeafSize(leafSize_);
 #else
   mc.setOffSurfaceDisplacement(leafSize_);
-mc.setGridResolution(1,1,1);
-mc.setPercentageExtendGrid(0.01f);
+  mc.setGridResolution(1,1,1);
+  mc.setPercentageExtendGrid(0.01f);
 #endif
   mc.setIsoLevel(isoLevel_);   //ISO: must be between 0 and 1.0
   mc.setSearchMethod(tree2);
@@ -88,15 +88,9 @@ void Segmentation_MarchingCubes<Point, PointTypeNormal, PointLabel>::compute_acc
     for(size_t i=0; i<mesh_.polygons.size(); i++) {
       Eigen::Vector3f a,b,c,d;
 
-mem+= 3*3*4;
-
       a = tmp[mesh_.polygons[i].vertices[0]].getVector3fMap();
       b = tmp[mesh_.polygons[i].vertices[1]].getVector3fMap();
       c = tmp[mesh_.polygons[i].vertices[2]].getVector3fMap();
-
-//      std::cout<<a<<"\n";
-//      std::cout<<b<<"\n";
-//      std::cout<<c<<"\n\n";
 
       float x = (s-a).dot(b-a)/(b-a).squaredNorm();
       float y = (s-a).dot(c-a)/(c-a).squaredNorm();
@@ -112,7 +106,11 @@ mem+= 3*3*4;
     }
 
     if(dmax<0.5) {
+      mem+= 3*3*4;
       rstat.Push(dmax);
+    }
+
+    if(pcl_isfinite(s(2))) {
       avg_dist += s(2);
       ++points;
     }
