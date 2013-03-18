@@ -143,8 +143,8 @@ struct Model {
         //if(i!=j) dy += p(i*(i+1)/2+j)*(j-1<=0?1:std::pow(x,j-1))*(i-j-1<=0?1:std::pow(y,i-j-1));        //not the correct derivate (on purpose)
         //if(j!=0) dx += p(i*(i+1)/2+j)*(j-1<=0?1:std::pow(x,j-1))*(i-j-1<=0?1:std::pow(y,i-j-1));
 
-        if(i!=j) dy += (i-j)* p(i*(i+1)/2+j)*std::pow(x,j) * std::pow(y,i-j-1);
-        if(j!=0) dx += j* p(i*(i+1)/2+j)*std::pow(y,i-j) * std::pow(x,j-1);
+        if(i!=j) dy += p(i*(i+1)/2+j)*std::pow(x,j) * std::pow(y,i-j-1);
+        if(j!=0) dx += p(i*(i+1)/2+j)*std::pow(y,i-j) * std::pow(x,j-1);
       }
 
     Eigen::Vector3f r;
@@ -225,8 +225,8 @@ struct Model {
     n(0)=n(1)=0;
     for(int i=1; i<=Degree; i++)
       for(int j=0; j<=i; j++) {
-        if(i!=j) n(0) -= (i-j)* p(i*(i+1)/2+j)*std::pow(x,j) * std::pow(y,i-j-1);
-        if(j!=0) n(1) -= j* p(i*(i+1)/2+j)*std::pow(y,i-j) * std::pow(x,j-1);
+        if(i!=j) n(1) -= (i-j)* p(i*(i+1)/2+j)*std::pow(x,j) * std::pow(y,i-j-1);
+        if(j!=0) n(0) -= j* p(i*(i+1)/2+j)*std::pow(y,i-j) * std::pow(x,j-1);
       }
     return n;
   }
