@@ -24,6 +24,11 @@ void SetLabeledPoint<PointXYZLabel>(PointXYZLabel &pt, const int mark)
 {
 }
 
+template<>
+void SetLabeledPoint<PointXYZILabel>(PointXYZILabel &pt, const int mark)
+{
+}
+
 
 //TODO: alternatives
 
