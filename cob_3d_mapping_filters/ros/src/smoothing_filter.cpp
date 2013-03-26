@@ -103,6 +103,7 @@ public:
 
     n_.param ("/smoothing_filter_nodelet/edge_threshold", edge_threshold_, 0.05);
     n_.param ("/smoothing_filter_nodelet/smoothing_factor", smoothing_factor_, 0.25);
+    n_.param ("/smoothing_filter_nodelet/integral_factor", integral_factor_, 0.25);
 
   }
 
@@ -113,7 +114,7 @@ public:
     cob_3d_mapping_filters::SmoothingFilter<pcl::PointXYZI> filter;
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZI>());
     filter.setInputCloud (pc);
-    filter.setFilterLimits (edge_threshold_, smoothing_factor_);
+    filter.setFilterLimits (edge_threshold_, smoothing_factor_, integral_factor_);
     filter.applyFilter (*cloud_filtered);
 
     point_cloud_pub_.publish (cloud_filtered);
@@ -135,6 +136,7 @@ protected:
   /** \filter limit */
   double edge_threshold_;
   double smoothing_factor_;
+  double integral_factor_;
   bool t_check;
 };
 

@@ -68,8 +68,6 @@ cob_3d_mapping_filters::SmoothingFilter<PointT>::applyFilter (PointCloud &pc_out
   pc_out.height = input_->height;
   pc_out.is_dense = input_->is_dense;
 
-  int nr_p = 0;
-
   Eigen::Matrix3f F;
   F.fill(smoothing_factor_);
   F(1,1) = 1;
@@ -83,14 +81,19 @@ cob_3d_mapping_filters::SmoothingFilter<PointT>::applyFilter (PointCloud &pc_out
       float nz = 0;
       for(int a=0; a<3; a++)
         for(int b=0; b<3; b++)
-          if( (x+a-1)>=0 && (x+a-1)<input_->width && (y+b-1)>=0 && (y+b-1)<input_->height && std::abs((*input_)(x+a-1, y+b-1).z-z)<edge_threshold_)
+          if( (x+a-1)<input_->width && (y+b-1)<input_->height && std::abs((*input_)(x+a-1, y+b-1).z-z)<edge_threshold_)
             nz += (*input_)(x+a-1, y+b-1).z*F(a,b);
           else
             nz += z*F(a,b);
 
         pc_out(x,y) = (*input_)(x, y);
         pc_out(x,y).z = nz/sum;
+
+        if(last_pc_.width == input_->width && last_pc_.height == input_->height && std::abs(last_pc_(x,y).z-pc_out(x,y).z)<edge_threshold_)
+          pc_out(x,y).z = (1-integral_factor_)*pc_out(x,y).z + integral_factor_*last_pc_(x,y).z;
     }
+
+  last_pc_ = pc_out;
 }
 
 #define PCL_INSTANTIATE_SmoothingFilter(T) template class cob_3d_mapping_filters::SmoothingFilter<T>;
