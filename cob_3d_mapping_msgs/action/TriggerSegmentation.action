@@ -1,0 +1,9 @@
+#Trigger Segmentation
+#goal definition
+bool next
+---
+#result definition
+bool success
+---
+#feedback
+std_msgs/String currentStep
