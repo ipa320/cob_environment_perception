@@ -15,5 +15,6 @@
     <param name="min_cluster_size" type="int" value="100"/>
     <param name="filter" type="bool" value="True"/>
     <param name="downsample" type="bool" value="True"/>
+    <param name="enable_action_mode" type="bool" value="True"/>
   </node>
 </launch>
