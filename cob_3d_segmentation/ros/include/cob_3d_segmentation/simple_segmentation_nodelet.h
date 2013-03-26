@@ -63,6 +63,8 @@
 #ifndef __SIMPLE_SEGMENTATION_NODELET_H__
 #define __SIMPLE_SEGMENTATION_NODELET_H__
 
+#include <boost/thread.hpp>
+
 // PCL includes
 //#include <pcl/surface/concave_hull.h>
 #include <pcl/point_types.h>
@@ -73,14 +75,15 @@
 #include <pcl_ros/point_cloud.h>
 #include <tf_conversions/tf_eigen.h>
 #include <dynamic_reconfigure/server.h>
-#include <cob_3d_segmentation/segmentation_nodeletConfig.h>
-
+#include <actionlib/server/simple_action_server.h>
 
 // Package includes
+#include "cob_3d_mapping_msgs/TriggerSegmentationAction.h"
 #include "cob_3d_mapping_common/point_types.h"
 #include "cob_3d_mapping_features/organized_normal_estimation_omp.h"
 #include "cob_3d_segmentation/impl/fast_segmentation.hpp"
 #include <cob_3d_segmentation/polygon_extraction/polygon_extraction.h>
+#include <cob_3d_segmentation/segmentation_nodeletConfig.h>
 
 namespace cob_3d_segmentation
 {
@@ -104,22 +107,27 @@ namespace cob_3d_segmentation
       , min_cluster_size_(100)
       , filter_(false)
       , downsample_(false)
+      , enable_action_mode_(false)
     { }
 
     ~SimpleSegmentationNodelet()
-    { }
+    { if(as_) delete as_; }
 
     protected:
     void onInit();
     void configCallback(cob_3d_segmentation::segmentation_nodeletConfig& config, uint32_t levels);
 
-    void receivedCloudCallback(PointCloud::ConstPtr cloud);
+    void actionCallback(const cob_3d_mapping_msgs::TriggerSegmentationGoalConstPtr& goal);
+    void topicCallback(PointCloud::ConstPtr cloud);
+    void computeAndPublish();
 
+    boost::mutex mutex_;
 
     ros::NodeHandle nh_;
     ros::Subscriber sub_points_;
     ros::Publisher pub_segmented_;
     ros::Publisher pub_shape_array_;
+    actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerSegmentationAction>* as_;
 
     boost::shared_ptr<dynamic_reconfigure::Server<cob_3d_segmentation::segmentation_nodeletConfig> > config_server_;
 
@@ -136,6 +144,7 @@ namespace cob_3d_segmentation
     int min_cluster_size_;
     bool filter_;
     bool downsample_;
+    bool enable_action_mode_;
   };
 }
 
