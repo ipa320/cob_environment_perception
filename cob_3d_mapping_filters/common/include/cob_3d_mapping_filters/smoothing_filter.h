@@ -77,17 +77,19 @@ namespace cob_3d_mapping_filters
     /** \constructor */
     SmoothingFilter()
     : edge_threshold_ (0.05),
-      smoothing_factor_ (0.25)
+      smoothing_factor_ (0.25),
+      integral_factor_ (0.25)
     {};
 
     //virtual ~IntensityFilter();
 
     /** \sets the filter limit */
     inline void
-    setFilterLimits (double edge_threshold, double smoothing_factor)
+    setFilterLimits (double edge_threshold, double smoothing_factor, double integral_factor)
     {
       edge_threshold_ = edge_threshold;
       smoothing_factor_ = smoothing_factor;
+      integral_factor_ = integral_factor;
     }
 
     /** \gets the filter minimum limit */
@@ -104,6 +106,17 @@ namespace cob_3d_mapping_filters
       return smoothing_factor_;
     }
 
+    /** \gets the filter integral */
+    inline double
+    getIntegralFactor ()
+    {
+      return integral_factor_;
+    }
+
+  private:
+
+    PointCloud last_pc_;
+
 
   public:
 
@@ -117,6 +130,7 @@ namespace cob_3d_mapping_filters
     /** \filter limit */
     float edge_threshold_;
     float smoothing_factor_;
+    float integral_factor_;
 
   };
 
