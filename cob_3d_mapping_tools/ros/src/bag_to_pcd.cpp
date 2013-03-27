@@ -89,7 +89,8 @@ int
     return (-1);
   }
 
-  view.addQuery (bag, rosbag::TypeQuery ("sensor_msgs/PointCloud2"));
+  //view.addQuery (bag, rosbag::TypeQuery ("sensor_msgs/PointCloud2"));
+  view.addQuery (bag, rosbag::TopicQuery(argv[2]));
   view.addQuery (bag, rosbag::TypeQuery ("tf/tfMessage"));
   view_it = view.begin ();
 
