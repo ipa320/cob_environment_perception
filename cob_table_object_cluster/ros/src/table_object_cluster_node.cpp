@@ -124,7 +124,7 @@ using namespace cob_3d_mapping;
 class TableObjectClusterNode //: protected Reconfigurable_Node<table_object_cluster_nodeletConfig>
 {
 public:
-  typedef pcl::PointXYZRGB Point;
+  typedef pcl::PointXYZ Point;
   typedef pcl::PointCloud<Point> PointCloud;
   typedef message_filters::sync_policies::ExactTime<PointCloud, cob_3d_mapping_msgs::ShapeArray > MySyncPolicy;
   // Constructor
@@ -200,8 +200,8 @@ public:
       PrecisionStopWatch sw;
       sw.precisionStart();
       toc.extractTableRoi(hull, *pc_roi);
-      ROS_DEBUG("ROI took %f seconds", sw.precisionStop());
-      ROS_DEBUG("ROI has %d points", pc_roi->indices.size());
+      ROS_INFO("ROI took %f seconds", sw.precisionStop());
+      ROS_INFO("ROI has %d points", pc_roi->indices.size());
       if(!pc_roi->indices.size()) return;
       std::stringstream ss;
       if(save_to_file_)
@@ -230,7 +230,7 @@ public:
       std::vector<PointCloud::Ptr> object_clusters;
       sw.precisionStart();
       toc.calculateBoundingBoxes(pc_roi, object_clusters, bounding_boxes);
-      ROS_DEBUG("BB took %f seconds", sw.precisionStop());
+      ROS_INFO("BB took %f seconds", sw.precisionStop());
       ROS_INFO("Computed %d bounding boxes", object_clusters.size());
 
       //cob_perception_msgs::PointCloud2Array pca;
@@ -341,6 +341,8 @@ public:
 
     last_sa_ = sa; // copy shape array pointer
 
+    ROS_INFO("Saved new PointCloud and %d potential tables", sa->shapes.size());
+
     if(enable_action_mode_) { return; }
 
     std::vector<pcl::PointCloud<pcl::PointXYZ> > bba;
@@ -437,7 +439,7 @@ protected:
 
   boost::mutex mutex_;
 
-  TableObjectCluster toc;       /// class for actual calculation
+  TableObjectCluster<Point> toc;       /// class for actual calculation
   unsigned int ctr_;
 
   bool save_to_file_;
