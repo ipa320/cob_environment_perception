@@ -1,12 +1,12 @@
 cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
-# Set the build type.  Options are:
-#  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
-#  Debug          : w/ debug symbols, w/o optimization
-#  Release        : w/o debug symbols, w/ optimization
-#  RelWithDebInfo : w/ debug symbols, w/ optimization
-#  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
+# Set the build type. Options are:
+# Coverage : w/ debug symbols, w/o optimization, w/ code-coverage
+# Debug : w/ debug symbols, w/o optimization
+# Release : w/o debug symbols, w/ optimization
+# RelWithDebInfo : w/ debug symbols, w/ optimization
+# MinSizeRel : w/o debug symbols, w/ optimization, stripped binaries
 #set(ROS_BUILD_TYPE RelWithDebInfo)
 
 rosbuild_init()
@@ -41,7 +41,10 @@ file(GLOB registration_SRC1
 
 #rosbuild_add_executable(registration ros/src/registration_node.cpp common/src/rgbdslam.cpp)
 #rosbuild_add_executable(registration ros/src/registration_node.cpp ${registration_SRC1})
-rosbuild_add_executable(cob_3d_registration ros/src/registration_nodelet.cpp)
+#rosbuild_add_executable(cob_3d_registration ros/src/registration_nodelet.cpp)
+
+rosbuild_add_library(cob_3d_registration
+ros/src/registration_nodelet.cpp)
 
 rosbuild_add_library(cob_3d_registration_lib
 	common/src/registration_icp.cpp
@@ -54,7 +57,7 @@ rosbuild_add_library(cob_3d_registration_lib
 	
 target_link_libraries(cob_3d_registration_lib vtkCommon cob_3d_mapping_features_omp)
 
-target_link_libraries(cob_3d_registration cob_3d_registration_lib cob_3d_mapping_features_omp)
+target_link_libraries(cob_3d_registration cob_3d_registration_lib cob_3d_mapping_features_omp vtkCommon)
 
 rosbuild_add_executable(capture ros/src/capture.cpp)
 rosbuild_add_executable(filter ros/src/filter.cpp)
