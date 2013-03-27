@@ -256,6 +256,8 @@ namespace Slam_CurvedPolygon
       points3d_ = o.points3d_;
       bb_ = o.bb_;
       surface_.reset(new SURFACE(*o.surface_));
+
+      return *this;
     }
 
     virtual ~ex_curved_polygon()
