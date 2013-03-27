@@ -547,13 +547,12 @@ namespace cob_3d_registration {
       return;
 
     std::vector<int> _cor_inds;
-    float _cor_inds_qual;
     const pcl::PointCloud<Point> &pc_old  = *this->last_input2_;
     const pcl::PointCloud<Point> &pc      = *this->input_org_;
 
-    for(int i=0; i<indices_pos2.size(); i++)
+    for(size_t i=0; i<indices_pos2.size(); i++)
       tmp_pc_old.points.push_back(pc_old.points[indices_pos2[i]]);
-    for(int i=0; i<indices_neg2.size(); i++)
+    for(size_t i=0; i<indices_neg2.size(); i++)
       tmp_pc_new.points.push_back(pc.points[indices_neg2[i]]);
   }
 

@@ -274,7 +274,7 @@ public:
 	  {
 	    std::vector<double> pos = md_ctrl_->GetPositions();
 	    //ROS_INFO("%f, %f", traj.points[0].positions[0]-pos[0], traj.points[0].positions[1]-pos[1]);
-	    if( fabs(traj.points[0].positions[0]-pos[0])<0.005 &&  fabs(traj.points[0].positions[1]-pos[1])<0.008 )
+	    if( fabs(traj.points[0].positions[0]-pos[0])<0.05 &&  fabs(traj.points[0].positions[1]-pos[1])<0.05 )
 	      isMoving = false;
 	    if ( as_.isPreemptRequested() || stopped_)
 	    {

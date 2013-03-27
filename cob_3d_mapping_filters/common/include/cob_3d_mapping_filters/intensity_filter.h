@@ -117,7 +117,7 @@ namespace cob_3d_mapping_filters
        }
 
 
-  protected:
+  public:
 
     /** \Points with Intensity values above the filter limit will be discarded
      *  \Points with Intensity values below the filter limit will be the output PointCloud

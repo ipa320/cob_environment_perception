@@ -59,14 +59,50 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl_ros/transforms.h>
+#include <pluginlib/class_list_macros.h>
+#include <pcl_ros/pcl_nodelet.h>
+
+#include <sensor_msgs/PointCloud2.h>
 
 
 using namespace std;
 
-class TransformPointCloud
+class As_Node
 {
-  protected:
-    ros::NodeHandle nh_;
+protected:
+  ros::NodeHandle n_;
+public:
+  As_Node(): n_("~") {
+  }
+
+  virtual ~As_Node() {}
+
+  virtual void onInit()=0;
+
+  void start() {
+
+  }
+};
+
+class As_Nodelet : public  pcl_ros::PCLNodelet
+{
+protected:
+  ros::NodeHandle n_;
+public:
+  As_Nodelet() {
+  }
+
+  virtual ~As_Nodelet() {}
+
+  void start() {
+    PCLNodelet::onInit();
+    n_ = getNodeHandle();
+  }
+};
+
+template <typename Parent>
+class TransformPointCloud : public Parent
+{
 
   public:
     string cloud_topic_sub_;
@@ -80,12 +116,16 @@ class TransformPointCloud
     TransformPointCloud() :
       nh_("~")
     {
-      cloud_topic_sub_="input";
-      cloud_topic_pub_="output";
-      target_frame_ = "/map";
+    }
 
-      pub_ = nh_.advertise<sensor_msgs::PointCloud2>(cloud_topic_pub_,1);
-      sub_ = nh_.subscribe (cloud_topic_sub_, 1,  &TransformPointCloud::cloud_cb, this);
+    void onInit() {
+      cloud_topic_sub_="point_cloud2";
+      cloud_topic_pub_="point_cloud2_trans";
+      target_frame_ = "/base_link";
+
+      ros::NodeHandle *n=&(this->n_);
+      pub_ = n->advertise<sensor_msgs::PointCloud2>(cloud_topic_pub_,1);
+      sub_ = this->n_.subscribe (cloud_topic_sub_, 1,  &TransformPointCloud::cloud_cb, this);
     }
 
     ////////////////////////////////////////////////////////////////////////////////
@@ -101,15 +141,23 @@ class TransformPointCloud
 
 };
 
-/* ---[ */
-int
-  main (int argc, char** argv)
-{
+#ifdef COMPILE_NODELET
+
+typedef TransformPointCloud<As_Nodelet> TransformPointCloudN;
+
+PLUGINLIB_DECLARE_CLASS(cob_3d_mapping_tools, TransformPointCloud, TransformPointCloudN, nodelet::Nodelet)
+
+#else
+
+int main(int argc, char **argv) {
   ros::init (argc, argv, "transform_pointcloud", ros::init_options::AnonymousName);
 
-  TransformPointCloud b;
-  ros::spin ();
+  TransformPointCloud<As_Node> sn;
+  sn.onInit();
 
-  return (0);
+  ros::spin();
+
+  return 0;
 }
-/* ]--- */
+
+#endif
