@@ -71,10 +71,13 @@
 #include <pcl/PointIndices.h>
 
 
+template<typename Point>
 class TableObjectCluster
 {
 public:
-  typedef pcl::PointXYZRGB Point;
+
+  typedef typename pcl::PointCloud<Point>::Ptr PointCloudPtr;
+  typedef typename pcl::PointCloud<Point>::ConstPtr PointCloudConstPtr;
 
   TableObjectCluster()
   {
@@ -98,7 +101,7 @@ public:
    * @return nothing
    */
   void
-  extractTableRoi(pcl::PointCloud<Point>::Ptr& hull,
+  extractTableRoi(PointCloudPtr& hull,
                   pcl::PointIndices& pc_roi);
 
   /**
@@ -114,8 +117,8 @@ public:
    * @return nothing
    */
   void
-  extractTableRoi2(const pcl::PointCloud<Point>::ConstPtr& pc_in,
-                   pcl::PointCloud<Point>::Ptr& hull,
+  extractTableRoi2(const PointCloudConstPtr& pc_in,
+                   PointCloudPtr& hull,
                    Eigen::Vector4f& plane_coeffs,
                    pcl::PointCloud<Point>& pc_roi);
 
@@ -131,7 +134,7 @@ public:
    * @return nothing
    */
   void
-  removeKnownObjects(pcl::PointCloud<Point>::Ptr& pc_roi,
+  removeKnownObjects(PointCloudPtr& pc_roi,
                      std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > >& bounding_boxes,
                      pcl::PointCloud<Point>& pc_roi_red);
 
@@ -148,12 +151,12 @@ public:
    */
   void
   calculateBoundingBoxes(pcl::PointIndices::Ptr& pc_roi,
-                         std::vector<pcl::PointCloud<Point>::Ptr >& object_clusters,
+                         std::vector<PointCloudPtr >& object_clusters,
                      std::vector<pcl::PointCloud<pcl::PointXYZ> >& bounding_boxes);
 
 
   void
-  setInputCloud(const pcl::PointCloud<Point>::Ptr&  cloud) {input_ = cloud;}
+  setInputCloud(const PointCloudPtr&  cloud) {input_ = cloud;}
 
   /**
    * @brief sets parameters for filtering
@@ -190,7 +193,7 @@ public:
   }
 
 protected:
-  pcl::PointCloud<Point>::Ptr input_;
+  PointCloudPtr input_;
   double height_min_;           /// paramter for object detection
   double height_max_;           /// paramter for object detection
   int min_cluster_size_;        /// paramter for object detection

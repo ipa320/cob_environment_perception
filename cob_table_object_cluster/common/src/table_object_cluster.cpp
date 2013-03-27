@@ -84,15 +84,15 @@ struct null_deleter
 };
 
 
-void
-TableObjectCluster::extractTableRoi(pcl::PointCloud<Point>::Ptr& hull,
+template<typename Point> void
+TableObjectCluster<Point>::extractTableRoi(PointCloudPtr& hull,
                                     pcl::PointIndices& pc_roi)
 {
   #ifdef PCL_MINOR_VERSION >= 6
   pcl::ConvexHull<Point> chull;
   chull.setDimension(2);
   chull.setInputCloud(hull);
-  pcl::PointCloud<Point>::Ptr conv_hull(new pcl::PointCloud<Point>);
+  PointCloudPtr conv_hull(new pcl::PointCloud<Point>);
   chull.reconstruct(*conv_hull);
   #endif
 
@@ -108,6 +108,8 @@ TableObjectCluster::extractTableRoi(pcl::PointCloud<Point>::Ptr& hull,
 
   #ifdef PCL_MINOR_VERSION >= 6
   prism.setInputPlanarHull(conv_hull);
+  #else
+  prism.setInputPlanarHull(hull);
   #endif
 
   prism.segment(pc_roi);
@@ -119,9 +121,9 @@ TableObjectCluster::extractTableRoi(pcl::PointCloud<Point>::Ptr& hull,
   extract_roi.filter (pc_roi);*/
 }
 
-void
-TableObjectCluster::extractTableRoi2(const pcl::PointCloud<Point>::ConstPtr& pc_in,
-                                    pcl::PointCloud<Point>::Ptr& hull,
+template<typename Point> void
+TableObjectCluster<Point>::extractTableRoi2(const PointCloudConstPtr& pc_in,
+                                    PointCloudPtr& hull,
                                     Eigen::Vector4f& plane_coeffs,
                                     pcl::PointCloud<Point>& pc_roi)
 {
@@ -159,8 +161,8 @@ TableObjectCluster::extractTableRoi2(const pcl::PointCloud<Point>::ConstPtr& pc_
   extract_roi.filter (pc_roi);
 }
 
-void
-TableObjectCluster::removeKnownObjects(pcl::PointCloud<Point>::Ptr& pc_roi,
+template<typename Point> void
+TableObjectCluster<Point>::removeKnownObjects(PointCloudPtr& pc_roi,
                    std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > >& bounding_boxes,
                    pcl::PointCloud<Point>& pc_roi_red)
 {
@@ -181,17 +183,17 @@ TableObjectCluster::removeKnownObjects(pcl::PointCloud<Point>::Ptr& pc_roi,
   }
 }
 
-void
-TableObjectCluster::calculateBoundingBoxes(pcl::PointIndices::Ptr& pc_roi,
-                                           std::vector<pcl::PointCloud<Point>::Ptr >& object_clusters,
+template<typename Point> void
+TableObjectCluster<Point>::calculateBoundingBoxes(pcl::PointIndices::Ptr& pc_roi,
+                                           std::vector<PointCloudPtr >& object_clusters,
                    std::vector<pcl::PointCloud<pcl::PointXYZ> >& bounding_boxes)
 {
   ROS_INFO("roi: %d", pc_roi->indices.size());
   #ifdef PCL_VERSION_COMPARE //fuerte
     //pcl::search::KdTree<Point>::Ptr clusters_tree (new pcl::search::KdTree<Point>());
-    pcl::search::OrganizedNeighbor<Point>::Ptr clusters_tree( new pcl::search::OrganizedNeighbor<Point>());
+    typename pcl::search::OrganizedNeighbor<Point>::Ptr clusters_tree( new pcl::search::OrganizedNeighbor<Point>());
   #else //electric
-    pcl::KdTreeFLANN<Point>::Ptr clusters_tree (new pcl::KdTreeFLANN<Point> ());
+    typename pcl::KdTreeFLANN<Point>::Ptr clusters_tree (new pcl::KdTreeFLANN<Point> ());
   #endif
 
   pcl::EuclideanClusterExtraction<Point> cluster_obj;
@@ -210,7 +212,7 @@ TableObjectCluster::calculateBoundingBoxes(pcl::PointIndices::Ptr& pc_roi,
   {
     boost::shared_ptr<pcl::PointIndices> ind_ptr(&object_cluster_indices[i], null_deleter());
     ei.setIndices(ind_ptr);
-    pcl::PointCloud<Point>::Ptr cluster_ptr(new pcl::PointCloud<Point>);
+    PointCloudPtr cluster_ptr(new pcl::PointCloud<Point>);
     ei.filter(*cluster_ptr);
     object_clusters.push_back(cluster_ptr);
     pcl::PointCloud<pcl::PointXYZ> bb;
@@ -229,3 +231,7 @@ TableObjectCluster::calculateBoundingBoxes(pcl::PointIndices::Ptr& pc_roi,
     bounding_boxes.push_back(bb);
   }
 }
+
+template class TableObjectCluster<pcl::PointXYZ>;
+
+template class TableObjectCluster<pcl::PointXYZRGB>;
