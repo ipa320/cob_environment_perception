@@ -55,9 +55,9 @@ target_link_libraries(cob_3d_segmentation cob_3d_mapping_features cob_3d_mapping
 target_link_libraries(cob_3d_segmentation_nodelets cob_3d_segmentation cob_3d_mapping_common)
 
 
-rosbuild_add_executable(segmentation_node ros/src/segmentation_node.cpp)
+rosbuild_add_executable(segmentation_node ros/src/segmentation_node.cpp common/src/polypartition.cpp)
 target_link_libraries(segmentation_node cob_3d_segmentation)
-rosbuild_add_executable(qppf_node ros/src/qppf_node.cpp)
+rosbuild_add_executable(qppf_node ros/src/qppf_node.cpp common/src/polypartition.cpp)
 
 rosbuild_add_executable(plane_extraction_action_client ros/src/plane_extraction_action_client.cpp)
 target_link_libraries(plane_extraction_action_client ${OpenCV_LIBS})
@@ -85,7 +85,7 @@ rosbuild_add_roslaunch_check(ros/launch)
 #######################  TESTING  #######################
 rosbuild_add_executable(test_segmentation ros/test/test_segmentation.cpp)
 rosbuild_add_compile_flags(test_segmentation ${SSE_FLAGS})
-target_link_libraries(test_segmentation gtest)
+target_link_libraries(test_segmentation gtest ${PCL_LIBRARIES})
 
 rosbuild_add_executable(test_polygon_extraction ros/test/test_polygon_extraction.cpp)
 target_link_libraries(test_polygon_extraction gtest)
@@ -93,3 +93,4 @@ target_link_libraries(test_polygon_extraction gtest)
 rosbuild_add_executable(test_plane_extraction common/apps/test_plane_extraction.cpp)
 target_link_libraries(test_plane_extraction cob_3d_segmentation vtkCommon vtkFiltering)
 rosbuild_link_boost(test_plane_extraction program_options)
+

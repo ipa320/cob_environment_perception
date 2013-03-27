@@ -61,14 +61,14 @@ public:
     }
 
     //need to rebuild tree
-    ROS_INFO("build tree %d %d", this->org_in_.size(), this->org_out_.size());
+    //ROS_INFO("build tree %d %d", this->org_in_.size(), this->org_out_.size());
 #ifdef PCL_VERSION_COMPARE
     this->tree_.reset (new pcl::search::KdTree<Point>);
 #else
 	this->tree_.reset (new pcl::KdTreeFLANN<Point>);
 #endif
     this->tree_->setInputCloud(this->org_in_.makeShared());
-    ROS_INFO("build tree done");
+    //ROS_INFO("build tree done");
 
     return true;
   }

@@ -76,6 +76,22 @@ namespace DOF6
       return C1 - C1*C1/(C1+C2);
     }
 
+    DOF6_Source<SOURCE1,SOURCE2> transpose() const //TODO: rename to inverse
+    {
+      DOF6_Source r;
+      *r.src1_ = src1_->transpose();
+      *r.src2_ = src2_->transpose();
+      return r;
+    }
+
+    DOF6_Source<SOURCE1,SOURCE2> operator+(const DOF6_Source<SOURCE1,SOURCE2> &o) const    /// create chain of tf-links
+    {
+      DOF6_Source r;
+      *r.src1_ = *src1_ + *o.src1_;
+      *r.src2_ = *src2_ + *o.src2_;
+      return r;
+    }
+
     EulerAngles<TYPE> getRotation() const
     {
       if(src1_->isRealSource() && src2_->isRealSource())
@@ -125,6 +141,13 @@ namespace DOF6
     {
       src1_->setVariance(Tvar, tr, Rvar, rot);
       src2_->setVariance(Tvar, tr, Rvar, rot);
+    }
+
+    Eigen::Matrix4f getTF4() const {
+      Eigen::Matrix4f r=Eigen::Matrix4f::Identity();
+      r.topLeftCorner(3,3) = (Eigen::Matrix3f)getRotation();
+      r.col(3).head<3>()   = getTranslation();
+      return r;
     }
 
   };

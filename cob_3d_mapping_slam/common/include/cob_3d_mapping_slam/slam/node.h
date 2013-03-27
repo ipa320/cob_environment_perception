@@ -10,6 +10,7 @@
 
 
 #include "way.h"
+#include "../curved_polygons/bb.h"
 
 namespace Slam
 {
@@ -36,6 +37,9 @@ namespace Slam
     std::vector<SWAY<Node> > connections_;      /// connections to other nodes
     OBJCTXT ctxt_;                              /// context includes all operators for objects (registration, correspondences,...) + objects
 
+    bool _register(const OBJCTXT &ctxt, DOF6 &link, std::map<typename OBJECT::Ptr,bool> &used, std::map<const Node*,bool> &_visited_list_, const bool only_merge=false, const int depth=0);
+    void _merge(const OBJCTXT &ctxt, const DOF6 &link, std::map<typename OBJECT::Ptr,bool> &used, std::map<const Node*,bool> &_visited_list_, const bool only_merge=false, const int depth=0);
+
   public:
 
     void addLink(const SWAY<Node> &con) {
@@ -43,7 +47,7 @@ namespace Slam
     }
 
     bool registration(const OBJCTXT &ctxt, DOF6 &tf, typename DOF6::TYPE &probability_success_rate, typename DOF6::TYPE &probability_error_rate);
-    bool merge(const OBJCTXT &ctxt, DOF6 &tf, std::map<typename OBJECT::Ptr,bool> &used, const bool only_merge);
+    bool merge(const OBJCTXT &ctxt, const DOF6 &tf, std::map<typename OBJECT::Ptr,bool> &used, const BoundingBox::TransformedFoVBB &fov, const bool only_merge);
 
     bool addCtxt(const OBJCTXT &ctxt, const DOF6 &tf);
 
@@ -53,7 +57,7 @@ namespace Slam
 
     const OBJECT_CONTEXT &getContext() const {return ctxt_;}
 
-    bool compute(const OBJCTXT &ctxt, DOF6 &link, std::map<typename OBJECT::Ptr,bool> &used, const bool only_merge=false, const int depth=0);
+    bool compute(const OBJCTXT &ctxt, DOF6 &link, std::map<typename OBJECT::Ptr,bool> &used, std::map<const Node*,bool> &_visited_list_, const bool only_merge=false, const int depth=0);
   };
 
 #include "impl/node.hpp"

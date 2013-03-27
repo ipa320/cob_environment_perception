@@ -46,7 +46,7 @@ struct VISITED_LIST {
   }
 
   inline void add(const VALUE &v) {
-    if(size>=vals.size())
+    if((size_t)size>=vals.size())
       vals.push_back(v);
     else
       vals[size]=v;

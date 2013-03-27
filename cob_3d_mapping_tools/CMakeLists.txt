@@ -38,6 +38,7 @@ rosbuild_add_library(cob_3d_mapping_tools
 	common/src/cob_3d_mapping_tools/point_generator.cpp)
 
 rosbuild_add_executable(transform_pointcloud ros/src/transform_pointcloud.cpp)
+rosbuild_add_executable(transform_pointcloud_node ros/src/transform_pointcloud.cpp)
 rosbuild_add_executable(concat_fields_node ros/src/concat_fields.cpp)
 rosbuild_link_boost(concat_fields_node program_options signals)
 rosbuild_add_executable(bag_to_pcd ros/src/bag_to_pcd.cpp)
@@ -47,6 +48,8 @@ rosbuild_add_executable(pointcloud_bag_delayer ros/src/pointcloud_bag_delayer.cp
 rosbuild_link_boost(pointcloud_bag_delayer program_options)
 rosbuild_add_executable(shape_bag_delayer ros/src/shape_bag_delayer.cpp)
 rosbuild_link_boost(shape_bag_delayer program_options)
+
+rosbuild_add_compile_flags(transform_pointcloud -D__LINUX__ -DCOMPILE_NODELET)
 
 rosbuild_add_executable(create_point_cloud common/src/create_point_cloud.cpp)
 rosbuild_add_executable(create_kitchen_point_cloud common/src/create_kitchen_point_cloud.cpp)

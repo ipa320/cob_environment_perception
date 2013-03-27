@@ -44,6 +44,7 @@ rosbuild_add_library(cob_3d_mapping_filters
 rosbuild_add_library(cob_3d_mapping_filter_nodelets
 	ros/src/amplitude_filter.cpp
 	ros/src/intensity_filter.cpp
+	ros/src/smoothing_filter.cpp
 	ros/src/jump_edge_filter.cpp
 	ros/src/speckle_filter.cpp)
 

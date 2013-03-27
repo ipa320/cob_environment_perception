@@ -5,6 +5,7 @@
  *      Author: josh
  */
 
+//#define USE_COLOR
 
 //includes needed for testing
 #include <ros/console.h>
@@ -17,6 +18,13 @@
 //includes needed for segmentation (things to test)
 #include <cob_3d_segmentation/general_segmentation.h>
 #include <cob_3d_segmentation/quad_regression/quad_regression.h>
+#include <cob_3d_segmentation/ransac/ransac.h>
+#include <cob_3d_segmentation/marching_cubes/marching_cubes.h>
+#if PCL_MINOR_VERSION >= 6
+#include <cob_3d_segmentation/multi_plane/multi_plane.h>
+#endif
+
+
 
 /**
  * little helper to load pcd files from test folder
@@ -82,6 +90,11 @@ public:
   {
     const ::testing::TestInfo* const test_info =
       ::testing::UnitTest::GetInstance()->current_test_info();
+
+    if(pc->size()<1) {
+	ROS_ERROR("cannot save empty pc (%s_%s_%s)", test_info->test_case_name(), test_info->name(), pc_fn.c_str());
+	return;
+    }
 
     char fn[512];
     sprintf(fn,"test/labeled/pc_%s_%s_%s.pcd",test_info->test_case_name(), test_info->name(), pc_fn.c_str());
@@ -158,6 +171,7 @@ public:
       col=0;
       ++row;
     }
+    fflush(fp);
   }
 
   static Testing_CSV create_table(const std::string &fn, std::string cols)
@@ -212,15 +226,199 @@ void segment_pointcloud(GeneralSegmentation<Point, PointLabel> *seg, typename pc
   Testing_PCDLoader::get().writePC<PointLabel>(fn, seg->getOutputCloud());
 }
 
-TEST(Segmentation, quad_regression)
+template <int Degree>
+void test_QPPF()
 {
   typedef pcl::PointXYZ Point;
+  typedef PointXYZRGBLabel PointL;
+
+  pcl::PointCloud<Point>::Ptr pc(new pcl::PointCloud<Point>);
+  static Segmentation::Segmentation_QuadRegression<Point, PointL, Segmentation::QPPF::QuadRegression<Degree, Point, Segmentation::QPPF::CameraModel_Kinect<Point> > > seg;
+
+  static Testing_CSV csv = Testing_CSV::create_table("accuracy","filename,mean,variance,weighted mean,weighted variance,average distance,used points, memory for representation,points,true positive rate, false positive rate,execution time: quadtree,execution time: growing,execution time: extraction,number of segments");
+
+  ROS_INFO("starting segmentation");
+  size_t ind=0;
+  std::string fn;
+  while(Testing_PCDLoader::get().getPC<Point>(ind++, pc, fn))
+  {
+    if(pc->size()<1) continue;
+
+    pcl::PointCloud<PointL>::Ptr labeled_pc(new pcl::PointCloud<PointL>);
+    bool loaded = false;
+    try {
+      loaded = Testing_PCDLoader::get().getPC<PointL>(ind-1, labeled_pc, fn);
+    } catch(...) {
+    }
+    if(!loaded) {
+	ROS_INFO("will not evaluate segmentation");
+	labeled_pc.reset();}
+
+    ROS_INFO("processing pc %d ...",(int)ind-1);
+    std::string fn_short(fn.begin()+(fn.find_last_of("/")+1),fn.end());
+
+    //for(size_t i=0; i<pc->size(); i++) if(pcl_isfinite((*pc)[i].z)) (*pc)[i].z = (*pc)[i].x*(*pc)[i].y;
+
+    segment_pointcloud<Point,PointL>(&seg,pc, fn_short);
+
+    seg.extractImages();
+
+    Testing_PCDLoader::get().writePC<PointL>("reconstructed_"+fn_short, seg.getReconstructedOutputCloud());
+
+    float mean, var, mean_weighted, var_weighted, dist;
+    double et_quadtree, et_growing, et_extraction;
+    double true_positive, false_positive;
+    size_t used, mem, points;
+    seg.compute_accuracy(mean, var, mean_weighted, var_weighted, used, mem, points, dist, labeled_pc, true_positive, false_positive);
+#ifdef STOP_TIME
+    seg.getExecutionTimes(et_quadtree, et_growing, et_extraction);
+#endif
+
+    csv.add(fn_short);
+    csv.add(mean);
+    csv.add(var_weighted);
+    csv.add(mean_weighted);
+    csv.add(var);
+    csv.add(dist);
+    csv.add(used);
+    csv.add(mem);
+    csv.add(points);
+    csv.add(true_positive);
+    csv.add(false_positive);
+#ifdef STOP_TIME
+    csv.add(et_quadtree);
+    csv.add(et_growing);
+    csv.add(et_extraction);
+#endif
+    csv.add(seg.getPolygons().size());
+    csv.next();
+
+    //saving ros msgs to bag-file
+    rosbag::Bag bag_out;
+    bag_out.open("test/labeled/"+fn_short+".bag", rosbag::bagmode::Write);
+    bag_out.write("shapes_array", ros::Time(1342850029.582334425+0.1), (cob_3d_mapping_msgs::ShapeArray)seg);
+    bag_out.write("shapes_array", ros::Time(1342850029.582334425+0.2), (cob_3d_mapping_msgs::ShapeArray)seg);
+    bag_out.write("shapes_array", ros::Time(1342850029.582334425+0.4), (cob_3d_mapping_msgs::ShapeArray)seg);
+  }
+}
+
+//TEST(Segmentation, quad_regression1)
+//{ test_QPPF<1>(); }
+//TEST(Segmentation, quad_regression2)
+//{ test_QPPF<2>(); }
+//TEST(Segmentation, quad_regression3)
+//{ test_QPPF<3>(); }
+//TEST(Segmentation, quad_regression4)
+//{ test_QPPF<4>(); }
+//TEST(Segmentation, quad_regression6)
+//{ test_QPPF<6>(); }
+
+//degree 10 didn't work on my nb
+
+TEST(Segmentation, ransac)
+{
+  return;
+  typedef pcl::PointXYZRGB Point;
+  typedef PointXYZRGBLabel PointL;
+
+  pcl::PointCloud<Point>::Ptr pc(new pcl::PointCloud<Point>);
+  Segmentation::Segmentation_RANSAC<Point,PointL> seg;
+
+  static Testing_CSV csv = Testing_CSV::create_table("accuracy","filename,mean,variance,average distance,used points, memory for representation,points,true positive rate, false positive rate");
+
+  ROS_INFO("starting segmentation");
+  size_t ind=0;
+  std::string fn;
+  while(Testing_PCDLoader::get().getPC<Point>(ind++, pc, fn))
+  {
+    if(pc->size()<1) continue;
+    ROS_INFO("processing pc %d ...",(int)ind-1);
+    std::string fn_short(fn.begin()+(fn.find_last_of("/")+1),fn.end());
+    segment_pointcloud<Point,PointL>(&seg,pc, fn_short);
+
+    pcl::PointCloud<PointL>::Ptr labeled_pc(new pcl::PointCloud<PointL>);
+    try {
+      Testing_PCDLoader::get().getPC<PointL>(ind-1, labeled_pc, fn);
+    } catch(...) {}
+
+    Testing_PCDLoader::get().writePC<PointL>("reconstructed_"+fn_short, seg.getReconstructedOutputCloud());
+
+    float mean, var, mean_weighted, var_weighted, dist;
+    double true_positive, false_positive;
+    size_t used, mem, points;
+    seg.compute_accuracy(mean, var, mean_weighted, var_weighted, used, mem, points, dist, labeled_pc, true_positive, false_positive);
+
+    csv.add(fn_short);
+    csv.add(mean);
+    csv.add(var);
+    csv.add(dist);
+    csv.add(used);
+    csv.add(mem);
+    csv.add(points);
+    csv.add(true_positive);
+    csv.add(false_positive);
+    csv.next();
+  }
+}
+
+#if PCL_MINOR_VERSION >= 6
+TEST(Segmentation, multi_plane)
+{
+  typedef pcl::PointXYZRGB Point;
+  typedef pcl::PointXYZRGBNormal PointN;
+  typedef PointXYZRGBLabel PointL;
+
+  pcl::PointCloud<Point>::Ptr pc(new pcl::PointCloud<Point>);
+  Segmentation::Segmentation_MultiPlane<Point,PointN,PointL> seg;
+
+  static Testing_CSV csv = Testing_CSV::create_table("accuracy","filename,mean,variance,average distance,used points, memory for representation,points,true positive rate, false positive rate");
+
+  ROS_INFO("starting segmentation");
+  size_t ind=0;
+  std::string fn;
+  while(Testing_PCDLoader::get().getPC<Point>(ind++, pc, fn))
+  {
+    if(pc->size()<1) continue;
+    ROS_INFO("processing pc %d ...",(int)ind-1);
+    std::string fn_short(fn.begin()+(fn.find_last_of("/")+1),fn.end());
+    segment_pointcloud<Point,PointL>(&seg,pc, fn_short);
+
+    pcl::PointCloud<PointL>::Ptr labeled_pc(new pcl::PointCloud<PointL>);
+    try {
+      Testing_PCDLoader::get().getPC<PointL>(ind-1, labeled_pc, fn);
+    } catch(...) {}
+
+    Testing_PCDLoader::get().writePC<PointL>("reconstructed_"+fn_short, seg.getReconstructedOutputCloud());
+
+    float mean, var, mean_weighted, var_weighted, dist;
+    double true_positive, false_positive;
+    size_t used, mem, points;
+    seg.compute_accuracy(mean, var, mean_weighted, var_weighted, used, mem, points, dist, labeled_pc, true_positive, false_positive);
+
+    csv.add(fn_short);
+    csv.add(mean);
+    csv.add(var);
+    csv.add(dist);
+    csv.add(used);
+    csv.add(mem);
+    csv.add(points);
+    csv.add(true_positive);
+    csv.add(false_positive);
+    csv.next();
+  }
+}
+#endif
+
+TEST(Segmentation, marching_cubes)
+{
+  typedef pcl::PointXYZRGB Point;
+  typedef pcl::PointXYZRGBNormal PointN;
   typedef pcl::PointXYZRGB PointL;
 
   pcl::PointCloud<Point>::Ptr pc(new pcl::PointCloud<Point>);
-  Segmentation::Segmentation_QuadRegression<Point,PointL> seg;
+  Segmentation::Segmentation_MarchingCubes<Point,PointN,PointL> seg;
 
-  static Testing_CSV csv = Testing_CSV::create_table("accuracy","filename,mean,variance,average distance,used points, memory for representation,points,execution time: quadtree,execution time: growing,execution time: extraction");
+  static Testing_CSV csv = Testing_CSV::create_table("accuracy","filename,mean,variance,average distance,used points, memory for representation,points");
 
   ROS_INFO("starting segmentation");
   size_t ind=0;
@@ -235,10 +433,8 @@ TEST(Segmentation, quad_regression)
     Testing_PCDLoader::get().writePC<PointL>("reconstructed_"+fn_short, seg.getReconstructedOutputCloud());
 
     float mean, var, dist;
-    double et_quadtree, et_growing, et_extraction;
     size_t used, mem, points;
     seg.compute_accuracy(mean, var, used, mem, points, dist);
-    seg.getExecutionTimes(et_quadtree, et_growing, et_extraction);
 
     csv.add(fn_short);
     csv.add(mean);
@@ -247,17 +443,7 @@ TEST(Segmentation, quad_regression)
     csv.add(used);
     csv.add(mem);
     csv.add(points);
-    csv.add(et_quadtree);
-    csv.add(et_growing);
-    csv.add(et_extraction);
     csv.next();
-
-    //saving ros msgs to bag-file
-    rosbag::Bag bag_out;
-    bag_out.open("test/labeled/"+fn_short+".bag", rosbag::bagmode::Write);
-    bag_out.write("shapes_array", ros::Time(1342850029.582334425+0.1), (cob_3d_mapping_msgs::ShapeArray)seg);
-    bag_out.write("shapes_array", ros::Time(1342850029.582334425+0.2), (cob_3d_mapping_msgs::ShapeArray)seg);
-    bag_out.write("shapes_array", ros::Time(1342850029.582334425+0.4), (cob_3d_mapping_msgs::ShapeArray)seg);
   }
 }
 

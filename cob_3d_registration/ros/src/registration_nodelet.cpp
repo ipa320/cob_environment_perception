@@ -260,9 +260,7 @@ public:
     as_= boost::shared_ptr<actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerMappingAction> >(new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerMappingAction>(n_, "trigger_mapping", boost::bind(&RegistrationNodelet::actionCallback, this, _1), false));
     as_->start();
     //point_cloud_pub_ = n_.advertise<pcl::PointCloud<Point> >("result_pc",1);
-#if SHOW_MAP
-    marker2_pub_ = n_.advertise<pcl::PointCloud<Point> >("result_marker",1);
-#endif
+    marker_pub_ = n_.advertise<pcl::PointCloud<Point> >("result_marker",1);
     //point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &RegistrationNodelet::pointCloudSubCallback, this);
     //register_ser_ = n_.advertiseService("registration_process", &RegistrationNodelet::registerService, this);
     //marker_pub_ = n_.advertise<visualization_msgs::Marker>("markers", 1);
@@ -294,6 +292,7 @@ public:
     return true;
   }
 
+  double _time_;
   /**
    * @brief callback for point cloud subroutine
    *
@@ -314,6 +313,28 @@ public:
 
     reg_->setInputOginalCloud(pc_in);
 
+    /*StampedTransform transform, transform2;
+    try
+    {
+      tf_listener_.waitForTransform(pc_frame_id_, world_id_, pc_in->header.stamp, ros::Duration(0.1));
+      tf_listener_.lookupTransform(pc_frame_id_, world_id_, pc_in->header.stamp, transform);
+
+      ROS_DEBUG("Registering new point cloud");
+
+      Eigen::Affine3d af;
+      tf::TransformTFToEigen(transform, af);
+      ROS_INFO("got odometry");
+      _time_ = transform.stamp_.toSec();
+      reg_->setOdometry(af.matrix().cast<float>());
+    }
+    catch (tf::TransformException ex)
+    {
+      ROS_ERROR("[registration] : %s",ex.what());
+      return;
+    }
+
+    ROS_INFO("ts diff %f",pc_in->header.stamp.toSec()-_time_);*/
+
     if(do_register(*pc_in,cv_bridge::CvImagePtr(),NULL)||ctr_==0) {
       if(point_cloud_pub_aligned_.getNumSubscribers()>0) {
         pcl::PointCloud<Point> pc;
@@ -325,6 +346,7 @@ public:
       StampedTransform transform;
       Eigen::Affine3d af;
       af.matrix()=reg_->getTransformation().cast<double>();
+      //std::cout<<reg_->getTransformation()<<"\n";
       tf::TransformEigenToTF(af,transform);
       //std::cout << transform.stamp_ << std::endl;
       tf_br_.sendTransform(tf::StampedTransform(transform, pc_in->header.stamp, world_id_, corrected_id_));
@@ -334,6 +356,16 @@ public:
     else
       ROS_WARN("registration not successful");
     ctr_++;
+
+    if(marker_pub_.getNumSubscribers()>0)
+    {
+      std::string s_algo;
+      if(parameters_.getParam("algo",s_algo) && s_algo=="info") {
+        pcl::PointCloud<Point> result = *((cob_3d_registration::Registration_Infobased<Point>*)reg_)->getMarkers2();
+        result.header=pc_in->header;
+        marker_pub_.publish(result);
+      }
+    }
   }
 
   /**
@@ -1079,6 +1111,8 @@ protected:
       ((cob_3d_registration::Registration_Infobased<Point>*)reg_)->setMaxInfo(i);
     if(parameters_.getParam("always_relevant_changes",i))
       ((cob_3d_registration::Registration_Infobased<Point>*)reg_)->SetAlwaysRelevantChanges(i!=0);
+    if(parameters_.getParam("check_samples",i))
+      ((cob_3d_registration::Registration_Infobased<Point>*)reg_)->setCheckBySamples(i!=0);
   }
 #endif
 
