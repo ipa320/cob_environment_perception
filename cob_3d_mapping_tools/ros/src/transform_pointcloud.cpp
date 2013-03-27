@@ -150,7 +150,7 @@ PLUGINLIB_DECLARE_CLASS(cob_3d_mapping_tools, TransformPointCloud, TransformPoin
 int main(int argc, char **argv) {
   ros::init (argc, argv, "transform_pointcloud", ros::init_options::AnonymousName);
 
-  TransformPointCloud<As_Node> sn("transform_pointcloud");
+  TransformPointCloud<As_Node> sn;
   sn.onInit();
 
   ros::spin();
