@@ -147,7 +147,7 @@ cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>
       } // end while
 
       // merge small clusters
-/*
+      /*
       if (c->size() < min_cluster_size_)
       {
         std::vector<ClusterPtr> adj_list;
@@ -164,7 +164,7 @@ cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>
           graph_->merge( c->id(), max_cluster_id );
         }
       }
-*/
+      */
     }
     else if(labels_->points[i].label <= I_EDGE)
     {
@@ -252,7 +252,8 @@ cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>
     /*float angle = fabs( atan2(bp_this.normal.cross(graph_->edges()->getBoundaryPoint(bp_this.brother).normal).norm(),
       bp_this.normal.dot(graph_->edges()->getBoundaryPoint(bp_this.brother).normal)) );*/
     //if (angle < max_boundary_angle_)
-    if (fabs(bp_this.normal.dot(graph_->edges()->getBoundaryPoint(bp_this.brother).normal)) > min_dot_boundary_)
+    // No fabs for dot product here, normals are correct aligned
+    if (bp_this.normal.dot(graph_->edges()->getBoundaryPoint(bp_this.brother).normal) > min_dot_boundary_)
       ++smooth_points;
   }
   e->smoothness = static_cast<float>(smooth_points) / static_cast<float>(e->size());
