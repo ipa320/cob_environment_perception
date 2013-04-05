@@ -138,6 +138,21 @@ public:
                      std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > >& bounding_boxes,
                      pcl::PointCloud<Point>& pc_roi_red);
 
+
+  void
+  calculateBoundingBox(const PointCloudPtr& cloud,
+                       const pcl::PointIndices& indices,
+                       const Eigen::Vector3f& plane_normal,
+                       const Eigen::Vector3f& plane_point,
+                       Eigen::Vector3f& position,
+                       Eigen::Quaternion<float>& orientation,
+                       Eigen::Vector3f& size);
+
+  void
+  extractClusters(const pcl::PointIndices::Ptr& pc_roi,
+                  std::vector<PointCloudPtr>& object_clusters,
+                  std::vector<pcl::PointIndices>& object_cluster_indices);
+
   /**
    * @brief removes known objects by bounding box
    *
@@ -150,7 +165,7 @@ public:
    * @return nothing
    */
   void
-  calculateBoundingBoxes(pcl::PointIndices::Ptr& pc_roi,
+  calculateBoundingBoxesOld(pcl::PointIndices::Ptr& pc_roi,
                          std::vector<PointCloudPtr >& object_clusters,
                      std::vector<pcl::PointCloud<pcl::PointXYZ> >& bounding_boxes);
 
