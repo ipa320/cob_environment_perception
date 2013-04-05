@@ -1,0 +1,18 @@
+<?xml version="1.0"?>
+<launch>
+  <node pkg="cob_3d_mapping_semantics" type="structure_extraction_node" name="structure_extraction" ns="structure_extraction" output="screen">
+  	<!--remap from="map" to="/aggregate_point_map/map"/-->
+  	<remap from="shape_array" to="/geometry_map/map_array"/>      <!--to="/get_tables_client/shape_array"/-->
+  	<remap from="shape_array_pub" to="/structure_extraction/shape_array"/>  <!--to="/table_extraction_node/table_array"/-->
+  	<!--remap from="marker" to="shape_visualization/marker"/>
+  	<remap from="marker_array" to="/semantic_extraction_node/map_marker_array"/-->
+
+    <param name="target_frame_id" type="string" value="/map" />
+    <param name="remove_floor" type="bool" value="true" />
+    <param name="floor_height" type="double" value="0.05" />
+  </node>
+  <include file="$(find cob_3d_visualization)/launch/shape_visualization.launch">
+    <arg name="shape_array_in" value="/structure_extraction/shape_array"/>
+    <arg name="name" value="structure_visualization"/>
+  </include>
+</launch>

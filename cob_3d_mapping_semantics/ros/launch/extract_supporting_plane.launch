@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<launch>
+  <node pkg="cob_3d_mapping_semantics" type="supporting_plane_extraction_node" name="supporting_plane_extraction" output="screen">
+  	<!--remap from="map" to="/aggregate_point_map/map"/-->
+  	<remap from="~shape_array" to="/segmentation/shape_array"/>      <!--to="/get_tables_client/shape_array"/-->
+  	<!-- remap from="~shape_array_pub" to="/table_extraction/table_array"/-->  <!--to="/table_extraction_node/table_array"/-->
+  	<remap from="~marker" to="shape_visualization/marker"/>        <!--/semantic_extraction_node/shape_marker"/-->
+  	<remap from="~marker_array" to="/semantic_extraction_node/map_marker_array"/>
+  	<remap from="~get_geometry_map" to="/geometry_map/get_map"/>
+
+  	<param name="distance_min" type = "double" value= "0.3"/>
+  	<param name="distance_max" type = "double" value= "1.8" />
+  	<param name="area_min" type = "double" value= "0.15" />
+  	<param name="area_max" type = "double" value= "3.0" />
+  </node>
+</launch>
