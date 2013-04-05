@@ -62,6 +62,7 @@
 
 #include "cob_table_object_cluster/table_object_cluster.h"
 
+#include <cob_3d_mapping_common/minimal_rectangle_2d.h>
 #include <pcl/segmentation/extract_polygonal_prism_data.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/io/io.h>
@@ -163,7 +164,7 @@ TableObjectCluster<Point>::extractTableRoi2(const PointCloudConstPtr& pc_in,
 
 template<typename Point> void
 TableObjectCluster<Point>::removeKnownObjects(PointCloudPtr& pc_roi,
-                   std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > >& bounding_boxes,
+                                              std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > >& bounding_boxes,
                    pcl::PointCloud<Point>& pc_roi_red)
 {
   pcl::copyPointCloud(*pc_roi,pc_roi_red);
@@ -184,9 +185,109 @@ TableObjectCluster<Point>::removeKnownObjects(PointCloudPtr& pc_roi,
 }
 
 template<typename Point> void
-TableObjectCluster<Point>::calculateBoundingBoxes(pcl::PointIndices::Ptr& pc_roi,
-                                           std::vector<PointCloudPtr >& object_clusters,
-                   std::vector<pcl::PointCloud<pcl::PointXYZ> >& bounding_boxes)
+TableObjectCluster<Point>::calculateBoundingBox(
+  const PointCloudPtr& cloud,
+  const pcl::PointIndices& indices,
+  const Eigen::Vector3f& plane_normal,
+  const Eigen::Vector3f& plane_point,
+  Eigen::Vector3f& position,
+  Eigen::Quaternion<float>& orientation,
+  Eigen::Vector3f& size)
+{
+  // transform to table coordinate frame and project points on X-Y, save max height
+  Eigen::Affine3f tf;
+  pcl::getTransformationFromTwoUnitVectorsAndOrigin(plane_normal.unitOrthogonal(), plane_normal, plane_point, tf);
+  pcl::PointCloud<pcl::PointXYZ>::Ptr pc2d(new pcl::PointCloud<pcl::PointXYZ>);
+  float height = 0.0;
+  for(std::vector<int>::const_iterator it=indices.indices.begin(); it != indices.indices.end(); ++it)
+  {
+    Eigen::Vector3f tmp = tf * (*cloud)[*it].getVector3fMap();
+    height = std::max<float>(height, fabs(tmp(2)));
+    pc2d->push_back(pcl::PointXYZ(tmp(0),tmp(1),0.0));
+  }
+
+  // create convex hull of projected points
+  #ifdef PCL_MINOR_VERSION >= 6
+  pcl::PointCloud<pcl::PointXYZ>::Ptr conv_hull(new pcl::PointCloud<pcl::PointXYZ>);
+  pcl::ConvexHull<pcl::PointXYZ> chull;
+  chull.setDimension(2);
+  chull.setInputCloud(pc2d);
+  chull.reconstruct(*conv_hull);
+  #endif
+
+  // find the minimal bounding rectangle in 2D and table coordinates
+  Eigen::Vector2f p1, p2, p3;
+  cob_3d_mapping::MinimalRectangle2D mr2d;
+  mr2d.setConvexHull(conv_hull->points);
+  mr2d.rotatingCalipers(p2, p1, p3);
+
+  // compute center of rectangle
+  position[0] = 0.5f*(p1[0] + p3[0]);
+  position[1] = 0.5f*(p1[1] + p3[1]);
+  position[2] = 0.0f;
+  // transform back
+  Eigen::Affine3f inv_tf = tf.inverse();
+  position = inv_tf * position;
+  // set size of bounding box
+  size[0] = (p3-p2).norm() * 0.5f;
+  size[1] = (p1-p2).norm() * 0.5f;
+  size[2] = -height;
+  // BoundingBox coordinates: X:= main direction, Z:= table normal
+  Eigen::Vector3f direction; // y direction
+  if (size[0] > size[1]) direction = Eigen::Vector3f(p3[0]-p2[0], p3[1]-p2[1], 0) / (2.0f *size[0]);
+  else direction = Eigen::Vector3f(p1[0]-p2[0], p1[1]-p2[1], 0) / (2.0f *size[1]);
+  direction = inv_tf.rotation() * direction;
+  orientation = pcl::getTransformationFromTwoUnitVectors(direction, plane_normal).rotation();
+
+  return;
+  Eigen::Matrix3f M = Eigen::Matrix3f::Identity() - plane_normal * plane_normal.transpose();
+  Eigen::Vector3f xn = M * Eigen::Vector3f::UnitX(); // X-axis project on normal
+  Eigen::Vector3f xxn = M * direction;
+  float cos_phi = acos(xn.normalized().dot(xxn.normalized())); // angle between xn and main direction
+  cos_phi = cos(0.5f * cos_phi);
+  float sin_phi = sqrt(1.0f-cos_phi*cos_phi);
+  //orientation.w() = cos_phi;
+  //orientation.x() = sin_phi * plane_normal(0);
+  //orientation.y() = sin_phi * plane_normal(1);
+  //orientation.z() = sin_phi * plane_normal(2);
+}
+
+template<typename Point> void
+TableObjectCluster<Point>::extractClusters(
+  const pcl::PointIndices::Ptr& pc_roi,
+  std::vector<PointCloudPtr>& object_clusters,
+  std::vector<pcl::PointIndices>& object_cluster_indices)
+{
+  #ifdef PCL_VERSION_COMPARE //fuerte
+    typename pcl::search::OrganizedNeighbor<Point>::Ptr clusters_tree( new pcl::search::OrganizedNeighbor<Point>());
+  #else //electric
+    typename pcl::KdTreeFLANN<Point>::Ptr clusters_tree (new pcl::KdTreeFLANN<Point> ());
+  #endif
+
+  pcl::EuclideanClusterExtraction<Point> cluster_obj;
+  cluster_obj.setClusterTolerance (cluster_tolerance_);
+  cluster_obj.setMinClusterSize (min_cluster_size_);
+  cluster_obj.setInputCloud (input_);
+  cluster_obj.setIndices(pc_roi);
+  cluster_obj.setSearchMethod (clusters_tree);
+  cluster_obj.extract (object_cluster_indices);
+
+  pcl::ExtractIndices<Point> ei;
+  ei.setInputCloud(input_);
+  for(unsigned int i = 0; i < object_cluster_indices.size(); ++i)
+  {
+    PointCloudPtr cluster_ptr(new pcl::PointCloud<Point>);
+    boost::shared_ptr<pcl::PointIndices> ind_ptr(&object_cluster_indices[i], null_deleter());
+    ei.setIndices(ind_ptr);
+    ei.filter(*cluster_ptr);
+    object_clusters.push_back(cluster_ptr);
+  }
+}
+
+template<typename Point> void
+TableObjectCluster<Point>::calculateBoundingBoxesOld(pcl::PointIndices::Ptr& pc_roi,
+                                                  std::vector<PointCloudPtr >& object_clusters,
+                                                  std::vector<pcl::PointCloud<pcl::PointXYZ> >& bounding_boxes)
 {
   ROS_INFO("roi: %d", pc_roi->indices.size());
   #ifdef PCL_VERSION_COMPARE //fuerte

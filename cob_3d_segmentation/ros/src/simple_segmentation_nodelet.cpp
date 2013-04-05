@@ -85,9 +85,9 @@ cob_3d_segmentation::SimpleSegmentationNodelet::onInit()
   seg_.setLabelCloudInOut(labels_);
   seg_.setSeedMethod(SEED_RANDOM);
 
-  sub_points_ = nh_.subscribe<PointCloud>("cloud_in", 1, boost::bind(&SimpleSegmentationNodelet::topicCallback, this, _1));
-  pub_segmented_ = nh_.advertise<PointCloud>("/segmentation/segmented_cloud", 1);
-  pub_shape_array_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray>("/segmentation/shape_array",1);
+  sub_points_ = nh_.subscribe<PointCloud>("point_cloud", 1, boost::bind(&SimpleSegmentationNodelet::topicCallback, this, _1));
+  pub_segmented_ = nh_.advertise<PointCloud>("segmented_cloud", 1);
+  pub_shape_array_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray>("shape_array",1);
   as_ = new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerSegmentationAction>(nh_, "trigger_segmentation", boost::bind(&SimpleSegmentationNodelet::actionCallback, this, _1), false);
   as_->start();
 }
@@ -109,7 +109,7 @@ cob_3d_segmentation::SimpleSegmentationNodelet::configCallback(
 void
 cob_3d_segmentation::SimpleSegmentationNodelet::actionCallback(const cob_3d_mapping_msgs::TriggerSegmentationGoalConstPtr& goal)
 {
-  boost::lock_guard<boost::mutex> guard(mutex_);
+  //boost::lock_guard<boost::mutex> guard(mutex_);
   cob_3d_mapping_msgs::TriggerSegmentationFeedback feedback;
   cob_3d_mapping_msgs::TriggerSegmentationResult result;
   if(enable_action_mode_)
