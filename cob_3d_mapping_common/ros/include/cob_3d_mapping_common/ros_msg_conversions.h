@@ -168,6 +168,8 @@ namespace cob_3d_mapping
           pts[j](2) = cloud.points[j].z;
         }
         p.contours.push_back(pts);
+        pcl::getTransformationFromTwoUnitVectorsAndOrigin(
+            p.normal.unitOrthogonal(),p.normal,p.centroid.head(3),p.transform_from_world_to_plane);
       }
       else
       {

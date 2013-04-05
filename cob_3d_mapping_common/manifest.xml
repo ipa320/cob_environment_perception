@@ -9,9 +9,9 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/cob_3d_mapping_common</url>
 
-  <depend package="roscpp"/>
   <depend package="pcl"/>
   <depend package="pcl_ros"/>
+  <depend package="roscpp"/>
   <depend package="dynamic_reconfigure"/>
   <depend package="tf"/>
   <depend package="tf_conversions"/>

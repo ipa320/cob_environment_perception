@@ -43,7 +43,12 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/ros/conversions.h>
-#include <pcl/common/transform.h>
+
+#ifdef PCL_VERSION_COMPARE //fuerte
+  #include <pcl/common/transforms.h>
+#else // electric
+  #include <pcl/common/transform.h>
+#endif
 
 #include <sensor_msgs/PointCloud2.h>
 

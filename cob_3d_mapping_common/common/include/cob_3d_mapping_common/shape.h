@@ -112,7 +112,7 @@ namespace cob_3d_mapping
     unsigned int id;/**< ID of shape.*/
     unsigned int merged;/**< Number of times, shape has been merged.*/
     unsigned int frame_stamp;/**< Frame, shape was created or merged the last time.*/
-    Eigen::Vector4f centroid;/**< Cenroid of shape. */
+    Eigen::Vector4f centroid;/**< Centroid of shape. */
     std::vector<float> color;/**< Color of shape as RGB vector. */
   };
 
