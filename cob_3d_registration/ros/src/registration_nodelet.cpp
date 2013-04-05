@@ -1,41 +1,49 @@
-/****************************************************************
+/*!
+ *****************************************************************
+ * \file
  *
- * Copyright (c) 2011
+ * \note
+ *   Copyright (c) 2012 \n
+ *   Fraunhofer Institute for Manufacturing Engineering
+ *   and Automation (IPA) \n\n
  *
- * Fraunhofer Institute for Manufacturing Engineering
- * and Automation (IPA)
+ *****************************************************************
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ * \note
+ *  Project name: care-o-bot
+ * \note
+ *  ROS stack name: cob_vision
+ * \note
+ *  ROS package name: dynamic_tutorials
  *
- * Project name: care-o-bot
- * ROS stack name: cob_vision
- * ROS package name: dynamic_tutorials
+ * \author
+ *  Author: goa-jh
+ * \author
+ *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ *
+ * \date Date of creation: Nov 7, 2011
+ *
+ * \brief
  * Description:
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
- * Author: goa-jh
- * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
- *
- * Date of creation: Nov 7, 2011
  * ToDo:
  *
  *
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *****************************************************************
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
+ *     - Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer. \n
+ *     - Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Fraunhofer Institute for Manufacturing
+ *       documentation and/or other materials provided with the distribution. \n
+ *     - Neither the name of the Fraunhofer Institute for Manufacturing
  *       Engineering and Automation (IPA) nor the names of its
  *       contributors may be used to endorse or promote products derived from
- *       this software without specific prior written permission.
+ *       this software without specific prior written permission. \n
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License LGPL as
@@ -44,7 +52,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License LGPL for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
@@ -66,7 +74,7 @@
 // ROS includes
 #include <ros/ros.h>
 #include <pluginlib/class_list_macros.h>
-#include <pcl_ros/pcl_nodelet.h>
+#include <nodelet/nodelet.h>
 #include <tf_conversions/tf_eigen.h>
 #include <tf/transform_broadcaster.h>
 #include <actionlib/server/simple_action_server.h>
@@ -171,7 +179,7 @@ public:
 
 //####################
 //#### node class ####
-class RegistrationNodelet : public pcl_ros::PCLNodelet
+class RegistrationNodelet : public nodelet::Nodelet
 {
 #if HAS_RGB
   typedef pcl::PointXYZRGB Point;
@@ -210,7 +218,7 @@ public:
   void
   onInit()
   {
-    PCLNodelet::onInit();
+    //PCLNodelet::onInit();
     parameters_.setNodeHandle(n_);
     n_ = getNodeHandle();
 
@@ -1019,6 +1027,7 @@ protected:
   ros::Subscriber point_cloud_sub_;             /// subscriber to input data
   ros::ServiceServer register_ser_;             /// service for evaluation of registration
   tf::TransformBroadcaster tf_br_;
+  tf::TransformListener tf_listener_;
   ros::Publisher point_cloud_pub_;              /// publisher for map
   ros::Publisher marker2_pub_;                  /// publish markers for visualization as pc
   ros::Publisher marker_pub_;                   /// publish markers for visualization

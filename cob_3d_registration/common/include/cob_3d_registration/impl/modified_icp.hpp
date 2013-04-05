@@ -1,41 +1,49 @@
-/****************************************************************
+/*!
+ *****************************************************************
+ * \file
  *
- * Copyright (c) 2011
+ * \note
+ *   Copyright (c) 2012 \n
+ *   Fraunhofer Institute for Manufacturing Engineering
+ *   and Automation (IPA) \n\n
  *
- * Fraunhofer Institute for Manufacturing Engineering
- * and Automation (IPA)
+ *****************************************************************
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ * \note
+ *  Project name: care-o-bot
+ * \note
+ *  ROS stack name: cob_vision
+ * \note
+ *  ROS package name: dynamic_tutorials
  *
- * Project name: care-o-bot
- * ROS stack name: cob_vision
- * ROS package name: dynamic_tutorials
+ * \author
+ *  Author: goa-jh
+ * \author
+ *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ *
+ * \date Date of creation: Oct 26, 2011
+ *
+ * \brief
  * Description:
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
- * Author: goa-jh
- * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
- *
- * Date of creation: Oct 26, 2011
  * ToDo:
  *
  *
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *****************************************************************
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
+ *     - Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer. \n
+ *     - Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Fraunhofer Institute for Manufacturing
+ *       documentation and/or other materials provided with the distribution. \n
+ *     - Neither the name of the Fraunhofer Institute for Manufacturing
  *       Engineering and Automation (IPA) nor the names of its
  *       contributors may be used to endorse or promote products derived from
- *       this software without specific prior written permission.
+ *       this software without specific prior written permission. \n
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License LGPL as
@@ -44,7 +52,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License LGPL for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
@@ -91,7 +99,11 @@ class ModifiedICP_T : public ParentClass, public ModifiedICP_G {
    */
   template <typename PointT2>
   #ifdef PCL_VERSION_COMPARE
-    class FeatureSearch: public pcl::KdTreeFLANN<PointT2>
+    #if PCL_MINOR_VERSION > 6 // not tested with pcl 1.4 yet
+      class FeatureSearch: public pcl::search::KdTree<PointT2>
+    #else
+      class FeatureSearch: public pcl::KdTreeFLANN<PointT2>
+    #endif
   #else
     class FeatureSearch : public pcl::KdTree<PointT2>
   #endif
@@ -103,7 +115,7 @@ class ModifiedICP_T : public ParentClass, public ModifiedICP_G {
   public:
     FeatureSearch(FeatureContainerInterface* features):
       features_(features)
-    {}
+      { }
 
     /// searching through feature container
     virtual int
@@ -136,7 +148,11 @@ class ModifiedICP_T : public ParentClass, public ModifiedICP_G {
     radiusSearch (int index, double radius, std::vector<int> &k_indices,
                   std::vector<float> &k_sqr_distances, int max_nn = INT_MAX) const {error();return 0;}
 
+    #if PCL_MINOR_VERSION > 6
+    virtual const std::string& getName() const {return "ICP Feature";}
+    #else
     virtual std::string getName() const {return "ICP Feature";}
+    #endif
 
   };
 
@@ -158,7 +174,8 @@ class ModifiedICP_T : public ParentClass, public ModifiedICP_G {
   /// setup distance metric (hack for features)
   void setSearchFeatures(FeatureContainerInterface* features) {
     this->features_ = features;
-    this->tree_.reset(new FeatureSearch<PointT>(features));
+    //this->tree_.reset( static_cast<typename FeatureSearch<PointT>::BaseSearch*>(new FeatureSearch<PointT>(features)) );
+    this->tree_.reset( new FeatureSearch<PointT>(features) );
   }
 
 };

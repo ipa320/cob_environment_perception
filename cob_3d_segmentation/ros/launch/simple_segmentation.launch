@@ -1,0 +1,20 @@
+<launch>
+  <arg name="debug_mode" default="false"/>
+  <arg name="start_manager" default="true"/>
+  <arg name="nodelet_manager" default="segmentation_nodelet_manager"/>
+  <arg name="cloud_in" default="/cam3d/depth_registered/points"/>
+  <group if="$(arg start_manager)">
+    <node if="$(arg debug_mode)" pkg="nodelet" type="nodelet" name="$(arg nodelet_manager)"  args="manager" output="screen"
+          launch-prefix="gdb -ex run --args"/>
+    <node unless="$(arg debug_mode)" pkg="nodelet" type="nodelet" name="$(arg nodelet_manager)"  args="manager" output="screen"/>
+  </group>
+  <node pkg="nodelet" type="nodelet" name="segmentation"
+        args="load cob_3d_segmentation/SimpleSegmentationNodelet $(arg nodelet_manager)" output="screen">
+    <remap from="cloud_in" to="$(arg cloud_in)"/>
+    <param name="centroid_passthrough" type="double" value="5.0"/>
+    <param name="min_cluster_size" type="int" value="100"/>
+    <param name="filter" type="bool" value="True"/>
+    <param name="downsample" type="bool" value="True"/>
+    <param name="colorize" type="bool" value="True"/>
+  </node>
+</launch>

@@ -23,7 +23,7 @@
 
   	<param name="file_path" type="string" value="/tmp"/>
   	<param name="save" type="bool" value="false"/>
-  	<param name="voxel_leafsize" type="double" value="0.01" />
+  	<param name="voxel_leafsize" type="double" value="0.03" />
   </node>
 
   <!-- node pkg="nodelet" type="nodelet" name="voxel" args="standalone pcl/VoxelGrid " output="screen">

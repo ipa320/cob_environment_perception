@@ -4,6 +4,11 @@
       Nodelet for segmentation
     </description>
   </class>
+  <class name="cob_3d_segmentation/SimpleSegmentationNodelet" type="cob_3d_segmentation::SimpleSegmentationNodelet" base_class_type="nodelet::Nodelet">
+    <description>
+      Nodelet for segmentation
+    </description>
+  </class>
   <class name="cob_3d_segmentation/PlaneExtractionNodelet" type="PlaneExtractionNodelet" base_class_type="nodelet::Nodelet">
     <description>
       Nodelet for planar segmentation

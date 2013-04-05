@@ -48,13 +48,18 @@ rosbuild_add_library(cob_3d_mapping_filter_nodelets
 	ros/src/jump_edge_filter.cpp
 	ros/src/speckle_filter.cpp)
 
-rosbuild_add_executable(test_amplitude_filter common/test/test_amplitude_filter.cpp)
+#rosbuild_add_executable(test_amplitude_filter common/test/test_amplitude_filter.cpp)
+#target_link_libraries(test_amplitude_filter cob_3d_mapping_filters)
 rosbuild_add_executable(test_intensity_filter common/test/test_intensity_filter.cpp)
-rosbuild_add_executable(test_jump_edge_filter common/test/test_jump_edge_filter.cpp)
-rosbuild_add_executable(test_speckle_filter common/test/test_speckle_filter.cpp)
-rosbuild_add_executable(test_statistical_outlier_removal_filter common/test/test_statistical_outlier_removal_filter.cpp)
-rosbuild_add_executable(profile_filters common/test/profile_filters.cpp)
+target_link_libraries(test_intensity_filter cob_3d_mapping_filters)
+#rosbuild_add_executable(test_jump_edge_filter common/test/test_jump_edge_filter.cpp)
+#target_link_libraries(test_jump_edge_filter cob_3d_mapping_filters)
+#rosbuild_add_executable(test_speckle_filter common/test/test_speckle_filter.cpp)
+#target_link_libraries(test_speckle_filter cob_3d_mapping_filters)
+#rosbuild_add_executable(profile_filters common/test/profile_filters.cpp)
+#target_link_libraries(profile_filters cob_3d_mapping_filters)
 
+rosbuild_add_executable(test_statistical_outlier_removal_filter common/test/test_statistical_outlier_removal_filter.cpp)
 target_link_libraries(test_statistical_outlier_removal_filter ${PCL_COMMON_LIBRARIES} ${PCL_IO_LIBRARIES} ${PCL_KDTREE_LIBRARY} ${PCL_SEARCH_LIBRARY} ${PCL_SURFACE_LIBRARY} ${PCL_FEATURES_LIBRARY}  ${PCL_FILTERS_LIBRARY})
 #rosbuild_link_boost(test_statistical_outlier_removal_filter program_options)
 

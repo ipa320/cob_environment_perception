@@ -23,6 +23,7 @@
   <depend stack="ros_comm" /> <!-- rosbag, rospy, roscpp -->
   <depend stack="simulator_gazebo" /> <!-- gazebo -->
   <depend stack="vision_opencv" /> <!-- opencv2, cv_bridge -->
+  <depend stack="cob_perception_common" /> <!-- cob_perception_msgs -->
   <!--depend stack="visualization" /--> <!-- rviz -->
 
 </stack>
