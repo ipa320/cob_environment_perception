@@ -1,40 +1,48 @@
-/****************************************************************
+/*!
+ *****************************************************************
+ * \file
  *
- * Copyright (c) 2011
+ * \note
+ *   Copyright (c) 2012 \n
+ *   Fraunhofer Institute for Manufacturing Engineering
+ *   and Automation (IPA) \n\n
  *
- * Fraunhofer Institute for Manufacturing Engineering
- * and Automation (IPA)
+ *****************************************************************
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ * \note
+ *  Project name: care-o-bot
+ * \note
+ *  ROS stack name: cob_environment_perception_intern
+ * \note
+ *  ROS package name: cob_3d_segmentation
  *
- * Project name: care-o-bot
- * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_segmentation
+ * \author
+ *  Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
+ * \author
+ *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ *
+ * \date Date of creation: 05/2012
+ *
+ * \brief
  * Description:
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
- * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
- * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
- *
- * Date of creation: 05/2012
  * ToDo:
  *
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *****************************************************************
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
+ *     - Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer. \n
+ *     - Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Fraunhofer Institute for Manufacturing
+ *       documentation and/or other materials provided with the distribution. \n
+ *     - Neither the name of the Fraunhofer Institute for Manufacturing
  *       Engineering and Automation (IPA) nor the names of its
  *       contributors may be used to endorse or promote products derived from
- *       this software without specific prior written permission.
+ *       this software without specific prior written permission. \n
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License LGPL as
@@ -43,7 +51,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License LGPL for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
@@ -109,9 +117,9 @@ cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::c
 
     if (!c_it->is_save_plane)
     {
-      int w_size = std::min( std::floor(sqrt(c_it->size() / 16.0f)) + 5, 30.0 );
+      int w_size = std::min( std::floor(std::sqrt(c_it->size() / 16.0f)) + 5, 30.0f );
       int steps = std::floor(w_size / 5);
-      int w_size_n = std::min( std::floor(sqrt(c_it->size() / 16.0f)) + 8, 30.0 );
+      int w_size_n = std::min( std::floor(std::sqrt(c_it->size() / 16.0f)) + 8, 30.0f );
       int steps_n = std::floor(w_size / 5);
       recomputeClusterNormals(c_it, w_size_n, steps_n);
       std::vector<int> geometry(NUM_LABELS, 0);
@@ -148,7 +156,7 @@ cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::c
         c_it->type = max_idx;
         c_it->type_probability = static_cast<float>(max) / static_cast<float>(valid_points);
         //std::cout << "Label: " << max_idx << " : #" << c_it->type_probability << std::endl;
-        
+
           if(c_it->type_probability < 0.60) { c_it->type = I_SPHERE; }
           /*else
             {
@@ -157,7 +165,7 @@ cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::c
             <<c_it->pca_inter_comp1(2) <<" | " << valid_points << std::endl;
             }*/
           //else { clusters_->computeNormalIntersections(c_it); }
-        
+
       }
     }
     else c_it->type = I_PLANE;
@@ -167,7 +175,7 @@ cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::c
 template <typename ClusterHandlerT, typename PointT, typename NormalT, typename LabelT> void
 cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::recomputeClusterNormals(ClusterPtr c)
 {
-  int w_size = std::min( std::floor(sqrt(c->size() / 16.0f)) + 5, 30.0);
+  int w_size = std::min( std::floor(std::sqrt(c->size() / 16.0f)) + 5, 30.0f);
   int steps = std::floor(w_size / 5);
   recomputeClusterNormals(c, w_size, steps);
 }

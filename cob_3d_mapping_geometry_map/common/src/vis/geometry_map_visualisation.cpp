@@ -1,56 +1,64 @@
-/****************************************************************
-*
-* Copyright (c) 2010
-*
-* Fraunhofer Institute for Manufacturing Engineering
-* and Automation (IPA)
-*
-* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-*
-* Project name: care-o-bot
-* ROS stack name: cob_vision
-* ROS package name: cob_env_model
+/*!
+ *****************************************************************
+ * \file
+ *
+ * \note
+ *   Copyright (c) 2012 \n
+ *   Fraunhofer Institute for Manufacturing Engineering
+ *   and Automation (IPA) \n\n
+ *
+ *****************************************************************
+ *
+ * \note
+ *  Project name: care-o-bot
+ * \note
+ *  ROS stack name: cob_vision
+ * \note
+ *  ROS package name: cob_env_model
+ *
+ * \author
+ *  Author: Heiko Hönnige,
+ * \author
+ *  Supervised by: *
+ * \date Date of creation: 10/2011
+ *
+ * \brief
 * Description: Feature Map for storing and handling geometric features
 *
-* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-*
-* Author: Heiko Hönnige,
-*
-* Date of creation: 10/2011
 * ToDo:
 *
 *
 *
-* +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
-*
-* Redistribution and use in source and binary forms, with or without
-* modification, are permitted provided that the following conditions are met:
-*
-* * Redistributions of source code must retain the above copyright
-* notice, this list of conditions and the following disclaimer.
-* * Redistributions in binary form must reproduce the above copyright
-* notice, this list of conditions and the following disclaimer in the
-* documentation and/or other materials provided with the distribution.
-* * Neither the name of the Fraunhofer Institute for Manufacturing
-* Engineering and Automation (IPA) nor the names of its
-* contributors may be used to endorse or promote products derived from
-* this software without specific prior written permission.
-*
-* This program is free software: you can redistribute it and/or modify
-* it under the terms of the GNU Lesser General Public License LGPL as
-* published by the Free Software Foundation, either version 3 of the
-* License, or (at your option) any later version.
-*
-* This program is distributed in the hope that it will be useful,
-* but WITHOUT ANY WARRANTY; without even the implied warranty of
-* MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
-* GNU Lesser General Public License LGPL for more details.
-*
-* You should have received a copy of the GNU Lesser General Public
-* License LGPL along with this program.
-* If not, see <http://www.gnu.org/licenses/>.
-*
-****************************************************************/
+ *****************************************************************
+ *
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ *
+ *     - Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer. \n
+ *     - Redistributions in binary form must reproduce the above copyright
+ *       notice, this list of conditions and the following disclaimer in the
+ *       documentation and/or other materials provided with the distribution. \n
+ *     - Neither the name of the Fraunhofer Institute for Manufacturing
+ *       Engineering and Automation (IPA) nor the names of its
+ *       contributors may be used to endorse or promote products derived from
+ *       this software without specific prior written permission. \n
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Lesser General Public License LGPL as
+ * published by the Free Software Foundation, either version 3 of the
+ * License, or (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
+ * GNU Lesser General Public License LGPL for more details.
+ *
+ * You should have received a copy of the GNU Lesser General Public
+ * License LGPL along with this program.
+ * If not, see <http://www.gnu.org/licenses/>.
+ *
+ ****************************************************************/
 
 
 //##################
@@ -68,18 +76,18 @@
 // external includes
 #include <boost/timer.hpp>
 #include <Eigen/Geometry>
-#include <pcl/win32_macros.h>
+//#include <pcl/win32_macros.h> // not available anymore in pcl 1.7
+#include <pcl/io/pcd_io.h>
+#include <pcl/point_types.h>
+#include <pcl/point_cloud.h>
+#include <pcl/visualization/cloud_viewer.h>
+
 #ifdef PCL_VERSION_COMPARE
   #include <pcl/common/transforms.h>
 #else
   #include <pcl/common/transform.h>
 #endif
-#include <pcl/io/pcd_io.h>
-#include <pcl/point_types.h>
-#include <pcl/point_cloud.h>
-#include <pcl/visualization/cloud_viewer.h>
-//#include <pcl/common/impl/transform.hpp>
-//#include "pcl/transforms.h"
+
 #include "cob_3d_mapping_geometry_map/vis/geometry_map_visualisation.h"
 
 

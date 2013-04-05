@@ -1,40 +1,48 @@
-/****************************************************************
+/*!
+ *****************************************************************
+ * \file
  *
- * Copyright (c) 2011
+ * \note
+ *   Copyright (c) 2012 \n
+ *   Fraunhofer Institute for Manufacturing Engineering
+ *   and Automation (IPA) \n\n
  *
- * Fraunhofer Institute for Manufacturing Engineering
- * and Automation (IPA)
+ *****************************************************************
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ * \note
+ *  Project name: care-o-bot
+ * \note
+ *  ROS stack name: cob_environment_perception_intern
+ * \note
+ *  ROS package name: cob_table_object_cluster
  *
- * Project name: care-o-bot
- * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_table_object_cluster
+ * \author
+ *  Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ * \author
+ *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ *
+ * \date Date of creation: 03/2012
+ *
+ * \brief
  * Description:
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
- * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
- * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
- *
- * Date of creation: 03/2012
  * ToDo:
  *
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *****************************************************************
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
+ *     - Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer. \n
+ *     - Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Fraunhofer Institute for Manufacturing
+ *       documentation and/or other materials provided with the distribution. \n
+ *     - Neither the name of the Fraunhofer Institute for Manufacturing
  *       Engineering and Automation (IPA) nor the names of its
  *       contributors may be used to endorse or promote products derived from
- *       this software without specific prior written permission.
+ *       this software without specific prior written permission. \n
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License LGPL as
@@ -43,7 +51,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License LGPL for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
@@ -67,7 +75,7 @@
 #include <message_filters/synchronizer.h>
 #include <message_filters/sync_policies/exact_time.h>
 //#include <pluginlib/class_list_macros.h>
-//#include <pcl_ros/pcl_nodelet.h>
+//#include <nodelet/nodelet.h>
 #include <pcl/io/io.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
@@ -98,6 +106,9 @@
 #include "cob_table_object_cluster/table_object_cluster.h"
 #include "cob_3d_mapping_msgs/TableObjectClusterAction.h"
 
+#include <cob_3d_mapping_common/stop_watch.h>
+#include <pcl/filters/extract_indices.h>
+
 using namespace cob_table_object_cluster;
 using namespace cob_3d_mapping;
 
@@ -125,8 +136,8 @@ public:
     as_= new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TableObjectClusterAction>(n_, "table_object_cluster", boost::bind(&TableObjectClusterNode::actionCallback, this, _1), false);
     as_->start();
 
-    pc_sub_.subscribe(n_,"point_cloud",10);
-    sa_sub_.subscribe(n_,"table_array",10);
+    pc_sub_.subscribe(n_,"point_cloud",1);
+    sa_sub_.subscribe(n_,"shape_array",1);
     sync_ = boost::make_shared <message_filters::Synchronizer<MySyncPolicy> >(100);
     sync_->connectInput(pc_sub_, sa_sub_);
     sync_->registerCallback(boost::bind(&TableObjectClusterNode::topicCallback, this, _1, _2));
@@ -193,10 +204,11 @@ public:
                                  srv.response.plane_coeffs[3].data);*/
     ROS_INFO("Hull size: %d", hull->size());
 
-    pcl::PointCloud<Point>::Ptr pc_roi(new pcl::PointCloud<Point>);
-    toc.extractTableRoi(map, hull, *pc_roi);
+    toc.setInputCloud(map);
+    pcl::PointIndices::Ptr pc_roi(new pcl::PointIndices);
+    toc.extractTableRoi(hull, *pc_roi);
     //toc.extractTableRoi2(pc, hull, plane_coeffs, *pc_roi);
-    ROS_INFO("ROI size: %d", pc_roi->size());
+    //ROS_INFO("ROI size: %d", pc_roi->size());
     //TODO: proceed also if no bbs are sent
     pcl::PointCloud<Point>::Ptr pc_roi_red(new pcl::PointCloud<Point>);
     /*cob_3d_mapping_msgs::GetBoundingBoxes srv2;
@@ -250,10 +262,10 @@ public:
       pcl::io::savePCDFileASCII (ss.str(), *hull);
       ss.str("");
       ss.clear();
-      ss << file_path_ << "/table_roi.pcd";
+      /*ss << file_path_ << "/table_roi.pcd";
       pcl::io::savePCDFileASCII (ss.str(), *pc_roi);
       ss.str("");
-      ss.clear();
+      ss.clear();*/
       ss << file_path_ << "/table_roi_red.pcd";
       pcl::io::savePCDFileASCII (ss.str(), *pc_roi_red);
       ss.str("");
@@ -274,7 +286,8 @@ public:
   {
     //PointCloud pc_in = *pc;
     frame_id_ = sa->header.frame_id;
-    PointCloud::Ptr pc_in_ptr = pc->makeShared();
+    PointCloud::Ptr pc_in_ptr(boost::const_pointer_cast<PointCloud> (pc));//->makeShared());
+    toc.setInputCloud(pc_in_ptr);
     for( unsigned int i=0; i< sa->shapes.size(); i++)
     {
       Polygon::Ptr p(new Polygon());
@@ -305,8 +318,14 @@ public:
       }
       hull->width = hull->size();
       hull->height = 1;
-      PointCloud::Ptr pc_roi(new PointCloud);
-      toc.extractTableRoi(pc_in_ptr, hull, *pc_roi);
+      //PointCloud::Ptr pc_roi(new PointCloud);
+      pcl::PointIndices::Ptr pc_roi(new pcl::PointIndices());
+      PrecisionStopWatch sw;
+      sw.precisionStart();
+      toc.extractTableRoi(hull, *pc_roi);
+      ROS_DEBUG("ROI took %f seconds", sw.precisionStop());
+      ROS_DEBUG("ROI has %d points", pc_roi->indices.size());
+      if(pc_roi->indices.size() == 0) return;
       std::stringstream ss;
       if(save_to_file_)
       {
@@ -319,13 +338,20 @@ public:
         ss.str("");
         ss.clear();
         ss << file_path_ << "/table_roi.pcd";
-        pcl::io::savePCDFileASCII (ss.str(), *pc_roi);
+        PointCloud roi;
+        pcl::ExtractIndices<Point> extract_roi;
+        extract_roi.setInputCloud (pc_in_ptr);
+        extract_roi.setIndices (pc_roi);
+        extract_roi.filter (roi);
+        pcl::io::savePCDFileASCII (ss.str(), roi);
         ss.str("");
         ss.clear();
       }
       std::vector<pcl::PointCloud<pcl::PointXYZ> > bounding_boxes;
       std::vector<PointCloud::Ptr> object_clusters;
+      sw.precisionStart();
       toc.calculateBoundingBoxes(pc_roi, object_clusters, bounding_boxes);
+      ROS_DEBUG("BB took %f seconds", sw.precisionStop());
       ROS_INFO("Computed %d bounding boxes", object_clusters.size());
       cob_perception_msgs::PointCloud2Array pca;
       pca.header = pc->header;
@@ -347,8 +373,11 @@ public:
           ss.clear();
         }
       }
-      object_cluster_pub_.publish(pca);
-      publishMarker(bounding_boxes);
+      if(pca.segments.size() != 0)
+      {
+        object_cluster_pub_.publish(pca);
+        publishMarker(bounding_boxes);
+      }
     }
   }
 

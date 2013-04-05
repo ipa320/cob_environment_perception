@@ -1,40 +1,48 @@
-/****************************************************************
+/*!
+ *****************************************************************
+ * \file
  *
- * Copyright (c) 2011
+ * \note
+ *   Copyright (c) 2012 \n
+ *   Fraunhofer Institute for Manufacturing Engineering
+ *   and Automation (IPA) \n\n
  *
- * Fraunhofer Institute for Manufacturing Engineering
- * and Automation (IPA)
+ *****************************************************************
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ * \note
+ *  Project name: care-o-bot
+ * \note
+ *  ROS stack name: cob_environment_perception_intern
+ * \note
+ *  ROS package name: cob_3d_mapping_features
  *
- * Project name: care-o-bot
- * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_features
+ * \author
+ *  Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
+ * \author
+ *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ *
+ * \date Date of creation: 02/2012
+ *
+ * \brief
  * Description:
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
- * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
- * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
- *
- * Date of creation: 02/2012
  * ToDo:
  *
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *****************************************************************
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
+ *     - Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer. \n
+ *     - Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Fraunhofer Institute for Manufacturing
+ *       documentation and/or other materials provided with the distribution. \n
+ *     - Neither the name of the Fraunhofer Institute for Manufacturing
  *       Engineering and Automation (IPA) nor the names of its
  *       contributors may be used to endorse or promote products derived from
- *       this software without specific prior written permission.
+ *       this software without specific prior written permission. \n
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License LGPL as
@@ -43,7 +51,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License LGPL for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
@@ -51,6 +59,8 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
+
+#include <cstdlib>
 
 #include <cob_3d_mapping_common/label_defines.h>
 #include <cob_3d_mapping_common/label_results.h>
@@ -67,8 +77,8 @@
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/surface/mls.h>
 #include <pcl/features/normal_3d.h>
-#include <pcl/features/rsd.h>
 #include <pcl/features/principal_curvatures.h>
+#include <pcl/features/rsd.h>
 #include <pcl/features/fpfh.h>
 
 #include <pcl/visualization/pcl_visualizer.h>
@@ -224,8 +234,8 @@ void readOptions(int argc, char* argv[])
  * @param[out] fpfh_out the labeled point cloud after the classifing process
  */
 void processFPFH(const PointCloud<PointXYZRGB>::Ptr in,
-		 PointCloud<PointXYZRGB>::Ptr ref_out,
-		 PointCloud<PointXYZRGB>::Ptr fpfh_out)
+                 PointCloud<PointXYZRGB>::Ptr ref_out,
+                 PointCloud<PointXYZRGB>::Ptr fpfh_out)
 {
   PointCloud<Normal>::Ptr n(new PointCloud<Normal>());
   PointCloud<FPFHSignature33>::Ptr fpfh(new PointCloud<FPFHSignature33>());
@@ -260,21 +270,27 @@ void processFPFH(const PointCloud<PointXYZRGB>::Ptr in,
   if(fpfh_mls_enable_)
   {
     cout << "FPFH: MLS (with " << ref_out->points.size() << " points)" << endl;
-    MovingLeastSquares<PointXYZRGB, Normal> mls;
-    mls.setInputCloud(ref_out);
-    mls.setOutputNormals(n);
-    mls.setPolynomialFit(true);
-    mls.setPolynomialOrder(2);
-    mls.setSearchMethod(tree);
-    mls.setSearchRadius(fpfh_rn_);
-    mls.reconstruct(*ref_out);
+
+    #ifdef PCL_VERSION_COMPARE
+      std::cerr << "MLS has changed completely in PCL 1.7! Requires redesign of entire program" << std::endl;
+      exit(0);
+    #else
+      MovingLeastSquares<PointXYZRGB, Normal> mls;
+      mls.setInputCloud(ref_out);
+      mls.setOutputNormals(n);
+      mls.setPolynomialFit(true);
+      mls.setPolynomialOrder(2);
+      mls.setSearchMethod(tree);
+      mls.setSearchRadius(fpfh_rn_);
+      mls.reconstruct(*ref_out);
+    #endif
     cout << "FPFH: flip normals (with " << ref_out->points.size() << " points)" << endl;
     for (size_t i = 0; i < ref_out->points.size(); ++i)
     {
       flipNormalTowardsViewpoint(ref_out->points[i], 0.0f, 0.0f, 0.0f, 
-				 n->points[i].normal[0],
-				 n->points[i].normal[1],
-				 n->points[i].normal[2]);
+                                 n->points[i].normal[0],
+                                 n->points[i].normal[1],
+                                 n->points[i].normal[2]);
     }
   }
   else
@@ -435,14 +451,20 @@ void processPC(const PointCloud<PointXYZRGB>::Ptr in,
   if(pc_mls_enable_)
   {
     cout << "PC: MLS (with " << ref_out->points.size() << " points)" << endl;
-    MovingLeastSquares<PointXYZRGB, Normal> mls;
-    mls.setInputCloud(ref_out);
-    mls.setOutputNormals(n);
-    mls.setPolynomialFit(true);
-    mls.setPolynomialOrder(2);
-    mls.setSearchMethod(tree);
-    mls.setSearchRadius(pc_rn_);
-    mls.reconstruct(*ref_out);
+
+    #ifdef PCL_VERSION_COMPARE
+      std::cerr << "MLS has changed completely in PCL 1.7! Requires redesign of entire program" << std::endl;
+      exit(0);
+    #else
+      MovingLeastSquares<PointXYZRGB, Normal> mls;
+      mls.setInputCloud(ref_out);
+      mls.setOutputNormals(n);
+      mls.setPolynomialFit(true);
+      mls.setPolynomialOrder(2);
+      mls.setSearchMethod(tree);
+      mls.setSearchRadius(pc_rn_);
+      mls.reconstruct(*ref_out);
+    #endif
     cout << "PC: flip normals (with " << ref_out->points.size() << " points)" << endl;
     for (size_t i = 0; i < ref_out->points.size(); ++i)
     {
@@ -616,14 +638,21 @@ void processRSD(const PointCloud<PointXYZRGB>::Ptr in,
   if(rsd_mls_enable_)
   {
     cout << "RSD: MLS (with " << ref_out->points.size() << " points)" << endl;
-    MovingLeastSquares<PointXYZRGB, Normal> mls;
-    mls.setInputCloud(ref_out);
-    mls.setOutputNormals(n);
-    mls.setPolynomialFit(true);
-    mls.setPolynomialOrder(2);
-    mls.setSearchMethod(tree);
-    mls.setSearchRadius(rsd_rn_);
-    mls.reconstruct(*ref_out);
+
+    #ifdef PCL_VERSION_COMPARE
+      std::cerr << "MLS has changed completely in PCL 1.7! Requires redesign of entire program" << std::endl;
+      exit(0);
+    #else
+      MovingLeastSquares<PointXYZRGB, Normal> mls;
+      mls.setInputCloud(ref_out);
+      mls.setOutputNormals(n);
+      mls.setPolynomialFit(true);
+      mls.setPolynomialOrder(2);
+      mls.setSearchMethod(tree);
+      mls.setSearchRadius(rsd_rn_);
+      mls.reconstruct(*ref_out);
+    #endif
+
     cout << "RSD: flip normals (with " << ref_out->points.size() << " points)" << endl;
     for (size_t i = 0; i < ref_out->points.size(); ++i)
     {

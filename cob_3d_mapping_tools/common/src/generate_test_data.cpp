@@ -1,40 +1,48 @@
-/****************************************************************
+/*!
+ *****************************************************************
+ * \file
  *
- * Copyright (c) 2011
+ * \note
+ *   Copyright (c) 2012 \n
+ *   Fraunhofer Institute for Manufacturing Engineering
+ *   and Automation (IPA) \n\n
  *
- * Fraunhofer Institute for Manufacturing Engineering
- * and Automation (IPA)
+ *****************************************************************
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ * \note
+ *  Project name: care-o-bot
+ * \note
+ *  ROS stack name: cob_environment_perception_intern
+ * \note
+ *  ROS package name: cob_3d_mapping_features
  *
- * Project name: care-o-bot
- * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_features
+ * \author
+ *  Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
+ * \author
+ *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ *
+ * \date Date of creation: 11/2011
+ *
+ * \brief
  * Description:
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
- * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
- * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
- *
- * Date of creation: 11/2011
  * ToDo:
  *
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *****************************************************************
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
+ *     - Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer. \n
+ *     - Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Fraunhofer Institute for Manufacturing
+ *       documentation and/or other materials provided with the distribution. \n
+ *     - Neither the name of the Fraunhofer Institute for Manufacturing
  *       Engineering and Automation (IPA) nor the names of its
  *       contributors may be used to endorse or promote products derived from
- *       this software without specific prior written permission.
+ *       this software without specific prior written permission. \n
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License LGPL as
@@ -43,7 +51,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License LGPL for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
@@ -52,6 +60,7 @@
  *
  ****************************************************************/
 
+#include <stdlib.h>
 #include <fstream>
 #include <boost/program_options.hpp>
 
@@ -181,6 +190,11 @@ int main(int argc, char** argv)
       norm.setRadiusSearch(r_n);
       norm.compute(*n);
 
+      #ifdef PCL_MINOR_VERSION
+      #if PCL_MINOR_VERSION  >=7
+      std::cerr << "current implementation of mls doesn't work with pcl1.7" << std::endl;
+      exit(-1);
+      #else
       MovingLeastSquares<PointXYZRGB, Normal> mls;
       mls.setInputCloud(in);
       mls.setOutputNormals(n_mls);
@@ -189,95 +203,98 @@ int main(int argc, char** argv)
       mls.setSearchMethod(tree);
       mls.setSearchRadius(r_n);
       mls.reconstruct(*p_mls);
+      #endif
+      #endif
+
       for (size_t p = 0; p < n_mls->points.size(); ++p)
       {
-	flipNormalTowardsViewpoint(p_mls->points[p], 0.0f, 0.0f, 0.0f, 
-				   n_mls->points[p].normal[0],
-				   n_mls->points[p].normal[1],
-				   n_mls->points[p].normal[2]);
+        flipNormalTowardsViewpoint(p_mls->points[p], 0.0f, 0.0f, 0.0f, 
+                                   n_mls->points[p].normal[0],
+                                   n_mls->points[p].normal[1],
+                                   n_mls->points[p].normal[2]);
       }
 
       io::savePCDFileASCII<PointXYZRGB>(folder_+"normals/"+scenes_[i]+
-					"/mls_"+scenes_[i]+"_"+str_rn+".pcd",*p_mls);
+                                        "/mls_"+scenes_[i]+"_"+str_rn+".pcd",*p_mls);
 
-      #ifdef PCL_VERSION_COMPARE //fuerte
-        pcl::search::KdTree<PointXYZRGB>::Ptr tree_mls (new pcl::search::KdTree<PointXYZRGB>());
-      #else //electric
-        pcl::KdTreeFLANN<PointXYZRGB>::Ptr tree_mls (new pcl::KdTreeFLANN<PointXYZRGB> ());
-      #endif
+#ifdef PCL_VERSION_COMPARE //fuerte
+      pcl::search::KdTree<PointXYZRGB>::Ptr tree_mls (new pcl::search::KdTree<PointXYZRGB>());
+#else //electric
+      pcl::KdTreeFLANN<PointXYZRGB>::Ptr tree_mls (new pcl::KdTreeFLANN<PointXYZRGB> ());
+#endif
       tree_mls->setInputCloud(p_mls);
       
       for (float r_f = r_n; r_f <= r_max_; r_f += r_step_)
       {
-	cout << "scene: " << scenes_[i] << "\tnormals: " << r_n << "\tfeatures: " << r_f << endl;
-	string str_rf = fl2label(r_f,3) + "rf";
+        cout << "scene: " << scenes_[i] << "\tnormals: " << r_n << "\tfeatures: " << r_f << endl;
+        string str_rf = fl2label(r_f,3) + "rf";
 
-	FPFHEstimationOMP<PointXYZRGB, Normal, FPFHSignature33> fpfh_est;
-	fpfh_est.setNumberOfThreads(1);
-	fpfh_est.setInputCloud(in);
-	fpfh_est.setInputNormals(n);
-	fpfh_est.setSearchMethod(tree);
-	fpfh_est.setRadiusSearch(r_f);
-	fpfh_est.compute(*fpfh);
-	// filename example: 
-	//    <folder_>/fpfh/kitchen01/fpfh_kitchen01_020rn_025rf.pcd
-	//    <folder_>/fpfh/kitchen02/fpfh_kitchen02_030rnmls_060rf.pcd
-	io::savePCDFileASCII<FPFHSignature33>(folder_ + "0_fpfh/" + scenes_[i] + 
-					      "/fpfh_" + scenes_[i] +"_"+str_rn+"_"+str_rf+".pcd",
-					      *fpfh);
+        FPFHEstimationOMP<PointXYZRGB, Normal, FPFHSignature33> fpfh_est;
+        fpfh_est.setNumberOfThreads(1);
+        fpfh_est.setInputCloud(in);
+        fpfh_est.setInputNormals(n);
+        fpfh_est.setSearchMethod(tree);
+        fpfh_est.setRadiusSearch(r_f);
+        fpfh_est.compute(*fpfh);
+        // filename example: 
+        //    <folder_>/fpfh/kitchen01/fpfh_kitchen01_020rn_025rf.pcd
+        //    <folder_>/fpfh/kitchen02/fpfh_kitchen02_030rnmls_060rf.pcd
+        io::savePCDFileASCII<FPFHSignature33>(folder_ + "0_fpfh/" + scenes_[i] + 
+                                              "/fpfh_" + scenes_[i] +"_"+str_rn+"_"+str_rf+".pcd",
+                                              *fpfh);
 
-	FPFHEstimationOMP<PointXYZRGB, Normal, FPFHSignature33> fpfh_est_mls;
-	fpfh_est_mls.setNumberOfThreads(1);
-	fpfh_est_mls.setInputCloud(p_mls);
-	fpfh_est_mls.setInputNormals(n_mls);
-	fpfh_est_mls.setSearchMethod(tree_mls);
-	fpfh_est_mls.setRadiusSearch(r_f);
-	fpfh_est_mls.compute(*fpfh);
-	io::savePCDFileASCII<FPFHSignature33>(folder_ + "0_fpfh/" + scenes_[i] + 
-					      "/fpfh_" + scenes_[i] +"_"+str_rn+"mls_"+str_rf+".pcd",
-					      *fpfh);
-	
-	PrincipalCurvaturesEstimation<PointXYZRGB, Normal, PrincipalCurvatures> pc_est;
-	pc_est.setInputCloud(in);
-	pc_est.setInputNormals(n);
-	pc_est.setSearchMethod(tree);
-	pc_est.setRadiusSearch(r_f);
-	pc_est.compute(*pc);
-	io::savePCDFileASCII<PrincipalCurvatures>(folder_ + "0_pc/" + scenes_[i] + 
-					      "/pc_" + scenes_[i] +"_"+str_rn+"_"+str_rf+".pcd",
-					      *pc);
+        FPFHEstimationOMP<PointXYZRGB, Normal, FPFHSignature33> fpfh_est_mls;
+        fpfh_est_mls.setNumberOfThreads(1);
+        fpfh_est_mls.setInputCloud(p_mls);
+        fpfh_est_mls.setInputNormals(n_mls);
+        fpfh_est_mls.setSearchMethod(tree_mls);
+        fpfh_est_mls.setRadiusSearch(r_f);
+        fpfh_est_mls.compute(*fpfh);
+        io::savePCDFileASCII<FPFHSignature33>(folder_ + "0_fpfh/" + scenes_[i] + 
+                                              "/fpfh_" + scenes_[i] +"_"+str_rn+"mls_"+str_rf+".pcd",
+                                              *fpfh);
 
-	PrincipalCurvaturesEstimation<PointXYZRGB, Normal, PrincipalCurvatures> pc_est_mls;
-	pc_est_mls.setInputCloud(p_mls);
-	pc_est_mls.setInputNormals(n_mls);
-	pc_est_mls.setSearchMethod(tree_mls);
-	pc_est_mls.setRadiusSearch(r_f);
-	pc_est_mls.compute(*pc);
-	io::savePCDFileASCII<PrincipalCurvatures>(folder_ + "0_pc/" + scenes_[i] + 
-					      "/pc_" + scenes_[i] +"_"+str_rn+"mls_"+str_rf+".pcd",
-					      *pc);
+        PrincipalCurvaturesEstimation<PointXYZRGB, Normal, PrincipalCurvatures> pc_est;
+        pc_est.setInputCloud(in);
+        pc_est.setInputNormals(n);
+        pc_est.setSearchMethod(tree);
+        pc_est.setRadiusSearch(r_f);
+        pc_est.compute(*pc);
+        io::savePCDFileASCII<PrincipalCurvatures>(folder_ + "0_pc/" + scenes_[i] + 
+                                                  "/pc_" + scenes_[i] +"_"+str_rn+"_"+str_rf+".pcd",
+                                                  *pc);
 
-	RSDEstimation<PointXYZRGB, Normal, PrincipalRadiiRSD> rsd_est;
-	rsd_est.setInputCloud(in);
-	rsd_est.setInputNormals(n);
-	rsd_est.setSearchMethod(tree);
-	rsd_est.setPlaneRadius(0.5);
-	rsd_est.setRadiusSearch(r_f);
-	rsd_est.compute(*rsd);
-	io::savePCDFileASCII<PrincipalRadiiRSD>(folder_ + "0_rsd/" + scenes_[i] + 
-						"/rsd_" + scenes_[i] +"_"+str_rn+"_"+str_rf+".pcd",
-						*rsd);
+        PrincipalCurvaturesEstimation<PointXYZRGB, Normal, PrincipalCurvatures> pc_est_mls;
+        pc_est_mls.setInputCloud(p_mls);
+        pc_est_mls.setInputNormals(n_mls);
+        pc_est_mls.setSearchMethod(tree_mls);
+        pc_est_mls.setRadiusSearch(r_f);
+        pc_est_mls.compute(*pc);
+        io::savePCDFileASCII<PrincipalCurvatures>(folder_ + "0_pc/" + scenes_[i] + 
+                                                  "/pc_" + scenes_[i] +"_"+str_rn+"mls_"+str_rf+".pcd",
+                                                  *pc);
 
-	RSDEstimation<PointXYZRGB, Normal, PrincipalRadiiRSD> rsd_est_mls;
-	rsd_est_mls.setInputCloud(p_mls);
-	rsd_est_mls.setInputNormals(n_mls);
-	rsd_est_mls.setSearchMethod(tree_mls);
-	rsd_est_mls.setPlaneRadius(0.5);
-	rsd_est_mls.setRadiusSearch(r_f);
-	rsd_est_mls.compute(*rsd);
-	io::savePCDFileASCII<PrincipalRadiiRSD>(folder_ + "0_rsd/" + scenes_[i] + 
-						"/rsd_" + scenes_[i] +"_"+str_rn+"mls_"+str_rf+".pcd",
-						*rsd);
+        RSDEstimation<PointXYZRGB, Normal, PrincipalRadiiRSD> rsd_est;
+        rsd_est.setInputCloud(in);
+        rsd_est.setInputNormals(n);
+        rsd_est.setSearchMethod(tree);
+        rsd_est.setPlaneRadius(0.5);
+        rsd_est.setRadiusSearch(r_f);
+        rsd_est.compute(*rsd);
+        io::savePCDFileASCII<PrincipalRadiiRSD>(folder_ + "0_rsd/" + scenes_[i] + 
+                                                "/rsd_" + scenes_[i] +"_"+str_rn+"_"+str_rf+".pcd",
+                                                *rsd);
+
+        RSDEstimation<PointXYZRGB, Normal, PrincipalRadiiRSD> rsd_est_mls;
+        rsd_est_mls.setInputCloud(p_mls);
+        rsd_est_mls.setInputNormals(n_mls);
+        rsd_est_mls.setSearchMethod(tree_mls);
+        rsd_est_mls.setPlaneRadius(0.5);
+        rsd_est_mls.setRadiusSearch(r_f);
+        rsd_est_mls.compute(*rsd);
+        io::savePCDFileASCII<PrincipalRadiiRSD>(folder_ + "0_rsd/" + scenes_[i] + 
+                                                "/rsd_" + scenes_[i] +"_"+str_rn+"mls_"+str_rf+".pcd",
+                                                *rsd);
       }
     }
   }

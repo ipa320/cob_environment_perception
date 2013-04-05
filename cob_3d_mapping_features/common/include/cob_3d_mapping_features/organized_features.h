@@ -1,40 +1,48 @@
-/****************************************************************
+/*!
+ *****************************************************************
+ * \file
  *
- * Copyright (c) 2011
+ * \note
+ *   Copyright (c) 2012 \n
+ *   Fraunhofer Institute for Manufacturing Engineering
+ *   and Automation (IPA) \n\n
  *
- * Fraunhofer Institute for Manufacturing Engineering
- * and Automation (IPA)
+ *****************************************************************
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ * \note
+ *  Project name: care-o-bot
+ * \note
+ *  ROS stack name: cob_environment_perception_intern
+ * \note
+ *  ROS package name: cob_3d_mapping_features
  *
- * Project name: care-o-bot
- * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_features
+ * \author
+ *  Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
+ * \author
+ *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ *
+ * \date Date of creation: 12/2011
+ *
+ * \brief
  * Description:
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
- * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
- * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
- *
- * Date of creation: 12/2011
  * ToDo:
  *
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *****************************************************************
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
+ *     - Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer. \n
+ *     - Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Fraunhofer Institute for Manufacturing
+ *       documentation and/or other materials provided with the distribution. \n
+ *     - Neither the name of the Fraunhofer Institute for Manufacturing
  *       Engineering and Automation (IPA) nor the names of its
  *       contributors may be used to endorse or promote products derived from
- *       this software without specific prior written permission.
+ *       this software without specific prior written permission. \n
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License LGPL as
@@ -43,7 +51,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License LGPL for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
@@ -56,6 +64,7 @@
 #define __ORGANIZED_FEATURES_H__
 
 #include <pcl/pcl_base.h>
+#include <pcl/console/print.h>
 
 namespace cob_3d_mapping_features
 {
@@ -76,47 +85,47 @@ namespace cob_3d_mapping_features
     public:
       /** \brief Empty constructor. */
       OrganizedFeatures () : pixel_search_radius_(2)
-	,pixel_steps_(1)
-	,circle_steps_(1)
-	,mask_()
-	,n_points_(0)
-	,inv_width_(0.0)
-	,skip_distant_point_threshold_(4.0)
-	,fake_surface_(true)
-	,mask_changed(false)
+        ,pixel_steps_(1)
+        ,circle_steps_(1)
+        ,mask_()
+        ,n_points_(0)
+        ,inv_width_(0.0)
+        ,skip_distant_point_threshold_(4.0)
+        ,fake_surface_(true)
+        ,mask_changed(false)
       { };
 
       inline void
-      setSearchSurface(const PointCloudInConstPtr cloud)
+        setSearchSurface(const PointCloudInConstPtr cloud)
       {
-	surface_ = cloud;
-	fake_surface_ = false;
+        surface_ = cloud;
+        fake_surface_ = false;
       }
 
       inline void
-      setPixelWindowSize(int size, int pixel_steps=1, int circle_steps=1)
+        setPixelWindowSize(int size, int pixel_steps=1, int circle_steps=1)
       {
-	pixel_search_radius_ = size / 2;
-	pixel_steps_ = pixel_steps;
-	circle_steps_ = circle_steps;
-	mask_changed = true;
+        pixel_search_radius_ = size / 2;
+        pixel_steps_ = pixel_steps;
+        circle_steps_ = circle_steps;
+        mask_changed = true;
       }
 
       inline void
-      setPixelSearchRadius(int pixel_radius, int pixel_steps=1, int circle_steps=1)
+        setPixelSearchRadius(int pixel_radius, int pixel_steps=1, int circle_steps=1)
       {
-	pixel_search_radius_ = pixel_radius;
-	pixel_steps_ = pixel_steps;
-	circle_steps_ = circle_steps;
-	mask_changed = true;
+        pixel_search_radius_ = pixel_radius;
+        pixel_steps_ = pixel_steps;
+        circle_steps_ = circle_steps;
+        mask_changed = true;
       }
 
       // Ignore points in window with high distance
       // Value represents the quantization steps of Kinect (approximately)
       inline void
-	setSkipDistantPointThreshold(float th)
+        setSkipDistantPointThreshold(float th)
       {
-	skip_distant_point_threshold_ = th;
+        skip_distant_point_threshold_ = th;
       }
 
       void compute(PointCloudOut &output);
@@ -133,28 +142,28 @@ namespace cob_3d_mapping_features
     protected:
 
       virtual inline bool
-	initCompute();
+        initCompute();
 
       virtual inline bool
-	deinitCompute();
-      
+        deinitCompute();
+
       inline bool
-	isInRange (const PointInT &pi, const PointInT &pq, float distance_th_sqr)
+        isInRange (const PointInT &pi, const PointInT &pq, float distance_th_sqr)
       {
-	float dx = pi.x - pq.x;
-	float dy = pi.y - pq.y;
-	float dz = pi.z - pq.z;
-	return ( (dx*dx + dy*dy + dz*dz) < distance_th_sqr);
+        float dx = pi.x - pq.x;
+        float dy = pi.y - pq.y;
+        float dz = pi.z - pq.z;
+        return ( (dx*dx + dy*dy + dz*dz) < distance_th_sqr);
       }
 
       inline bool
-	isInImage (int u, int v)
+        isInImage (int u, int v)
       {
-	return ( v >= 0 && v < (int)input_->height && u >= 0 && u < (int)input_->width );
+        return ( v >= 0 && v < (int)input_->height && u >= 0 && u < (int)input_->width );
       }
 
       inline const std::string&
-	getClassName () const { return (feature_name_); }
+        getClassName () const { return (feature_name_); }
 
       PointCloudInConstPtr surface_;
 
@@ -173,7 +182,7 @@ namespace cob_3d_mapping_features
 
     private:
       virtual void
-	computeFeature (PointCloudOut &output) = 0;
+        computeFeature (PointCloudOut &output) = 0;
   };
 }
 

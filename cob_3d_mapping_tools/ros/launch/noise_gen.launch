@@ -1,0 +1,6 @@
+<launch>
+	<node pkg="cob_3d_mapping_tools" type="noise_gen" name="noise_gen" output="screen">
+    <remap from="cloud_in" to="/cam3d/depth_registered/points" />
+    <remap from="cloud_out" to="/cam3d/depth_registered/points_noised" />
+  </node>
+</launch>

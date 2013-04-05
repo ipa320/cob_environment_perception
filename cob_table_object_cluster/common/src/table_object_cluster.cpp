@@ -1,40 +1,48 @@
-/****************************************************************
+/*!
+ *****************************************************************
+ * \file
  *
- * Copyright (c) 2011
+ * \note
+ *   Copyright (c) 2012 \n
+ *   Fraunhofer Institute for Manufacturing Engineering
+ *   and Automation (IPA) \n\n
  *
- * Fraunhofer Institute for Manufacturing Engineering
- * and Automation (IPA)
+ *****************************************************************
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ * \note
+ *  Project name: care-o-bot
+ * \note
+ *  ROS stack name: cob_vision
+ * \note
+ *  ROS package name: cob_env_model
  *
- * Project name: care-o-bot
- * ROS stack name: cob_vision
- * ROS package name: cob_env_model
+ * \author
+ *  Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ * \author
+ *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ *
+ * \date Date of creation: 08/2011
+ *
+ * \brief
  * Description:
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
- * Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
- * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
- *
- * Date of creation: 08/2011
  * ToDo:
  *
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *****************************************************************
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
+ *     - Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer. \n
+ *     - Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Fraunhofer Institute for Manufacturing
+ *       documentation and/or other materials provided with the distribution. \n
+ *     - Neither the name of the Fraunhofer Institute for Manufacturing
  *       Engineering and Automation (IPA) nor the names of its
  *       contributors may be used to endorse or promote products derived from
- *       this software without specific prior written permission.
+ *       this software without specific prior written permission. \n
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License LGPL as
@@ -43,7 +51,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License LGPL for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
@@ -77,10 +85,17 @@ struct null_deleter
 
 
 void
-TableObjectCluster::extractTableRoi(pcl::PointCloud<Point>::Ptr& pc_in,
-                                    pcl::PointCloud<Point>::Ptr& hull,
-                                    pcl::PointCloud<Point>& pc_roi)
+TableObjectCluster::extractTableRoi(pcl::PointCloud<Point>::Ptr& hull,
+                                    pcl::PointIndices& pc_roi)
 {
+  #ifdef PCL_MINOR_VERSION >= 6
+  pcl::ConvexHull<Point> chull;
+  chull.setDimension(2);
+  chull.setInputCloud(hull);
+  pcl::PointCloud<Point>::Ptr conv_hull(new pcl::PointCloud<Point>);
+  chull.reconstruct(*conv_hull);
+  #endif
+
   pcl::ExtractPolygonalPrismData<Point> prism;
   // Consider only objects in a given layer above the table
   //TODO: check if valid values
@@ -88,20 +103,24 @@ TableObjectCluster::extractTableRoi(pcl::PointCloud<Point>::Ptr& pc_in,
   //ROS_INFO("height limits: %f, %f ", height_min_, height_max_);
   prism.setHeightLimits(height_min_, height_max_);
   // ---[ Get the objects on top of the table
-  pcl::PointIndices roi_indices;
-  prism.setInputCloud(pc_in);
-  prism.setInputPlanarHull(hull);
-  prism.segment(roi_indices);
+  //pcl::PointIndices roi_indices;
+  prism.setInputCloud(input_);
+
+  #ifdef PCL_MINOR_VERSION >= 6
+  prism.setInputPlanarHull(conv_hull);
+  #endif
+
+  prism.segment(pc_roi);
   //ROS_INFO("Number of ROI inliers: %d", roi_indices.indices.size());
 
-  pcl::ExtractIndices<Point> extract_roi;
+  /*pcl::ExtractIndices<Point> extract_roi;
   extract_roi.setInputCloud (pc_in);
   extract_roi.setIndices (boost::make_shared<const pcl::PointIndices> (roi_indices));
-  extract_roi.filter (pc_roi);
+  extract_roi.filter (pc_roi);*/
 }
 
 void
-TableObjectCluster::extractTableRoi2(pcl::PointCloud<Point>::Ptr& pc_in,
+TableObjectCluster::extractTableRoi2(const pcl::PointCloud<Point>::ConstPtr& pc_in,
                                     pcl::PointCloud<Point>::Ptr& hull,
                                     Eigen::Vector4f& plane_coeffs,
                                     pcl::PointCloud<Point>& pc_roi)
@@ -163,13 +182,14 @@ TableObjectCluster::removeKnownObjects(pcl::PointCloud<Point>::Ptr& pc_roi,
 }
 
 void
-TableObjectCluster::calculateBoundingBoxes(pcl::PointCloud<Point>::Ptr& pc_roi_red,
+TableObjectCluster::calculateBoundingBoxes(pcl::PointIndices::Ptr& pc_roi,
                                            std::vector<pcl::PointCloud<Point>::Ptr >& object_clusters,
                    std::vector<pcl::PointCloud<pcl::PointXYZ> >& bounding_boxes)
 {
+  ROS_INFO("roi: %d", pc_roi->indices.size());
   #ifdef PCL_VERSION_COMPARE //fuerte
-    pcl::search::KdTree<Point>::Ptr clusters_tree (new pcl::search::KdTree<Point>());
-    //pcl::search::OrganizedNeighbor<Point>::Ptr clusters_tree( new pcl::search::OrganizedNeighbor<Point>());
+    //pcl::search::KdTree<Point>::Ptr clusters_tree (new pcl::search::KdTree<Point>());
+    pcl::search::OrganizedNeighbor<Point>::Ptr clusters_tree( new pcl::search::OrganizedNeighbor<Point>());
   #else //electric
     pcl::KdTreeFLANN<Point>::Ptr clusters_tree (new pcl::KdTreeFLANN<Point> ());
   #endif
@@ -179,12 +199,13 @@ TableObjectCluster::calculateBoundingBoxes(pcl::PointCloud<Point>::Ptr& pc_roi_r
   // Table clustering parameters
   cluster_obj.setClusterTolerance (cluster_tolerance_);
   cluster_obj.setMinClusterSize (min_cluster_size_);
-  cluster_obj.setSearchMethod (clusters_tree);
+  cluster_obj.setInputCloud (input_);
+  cluster_obj.setIndices(pc_roi);
+  //cluster_obj.setSearchMethod (clusters_tree);
   std::vector<pcl::PointIndices> object_cluster_indices;
-  cluster_obj.setInputCloud (pc_roi_red);
   cluster_obj.extract (object_cluster_indices);
   pcl::ExtractIndices<Point> ei;
-  ei.setInputCloud(pc_roi_red);
+  ei.setInputCloud(input_);
   for(unsigned int i = 0; i < object_cluster_indices.size(); ++i)
   {
     boost::shared_ptr<pcl::PointIndices> ind_ptr(&object_cluster_indices[i], null_deleter());
@@ -194,7 +215,7 @@ TableObjectCluster::calculateBoundingBoxes(pcl::PointCloud<Point>::Ptr& pc_roi_r
     object_clusters.push_back(cluster_ptr);
     pcl::PointCloud<pcl::PointXYZ> bb;
     Eigen::Vector4f min_pt, max_pt;
-    pcl::getMinMax3D(*pc_roi_red, object_cluster_indices[i], min_pt, max_pt);
+    pcl::getMinMax3D(*input_, object_cluster_indices[i], min_pt, max_pt);
     //if(fabs(max_pt(2)-min_pt(2))<0.03) continue;
     pcl::PointXYZ p;
     p.x = min_pt(0);

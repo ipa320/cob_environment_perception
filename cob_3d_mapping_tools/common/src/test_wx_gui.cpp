@@ -1,40 +1,48 @@
-/****************************************************************
+/*!
+ *****************************************************************
+ * \file
  *
- * Copyright (c) 2011
+ * \note
+ *   Copyright (c) 2012 \n
+ *   Fraunhofer Institute for Manufacturing Engineering
+ *   and Automation (IPA) \n\n
  *
- * Fraunhofer Institute for Manufacturing Engineering
- * and Automation (IPA)
+ *****************************************************************
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ * \note
+ *  Project name: care-o-bot
+ * \note
+ *  ROS stack name: cob_environment_perception_intern
+ * \note
+ *  ROS package name: cob_3d_mapping_tools
  *
- * Project name: care-o-bot
- * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_tools
+ * \author
+ *  Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
+ * \author
+ *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ *
+ * \date Date of creation: 08/2012
+ *
+ * \brief
  * Description:
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
- *
- * Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
- * Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
- *
- * Date of creation: 08/2012
  * ToDo:
  *
  *
- * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+ *****************************************************************
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
  *
- *     * Redistributions of source code must retain the above copyright
- *       notice, this list of conditions and the following disclaimer.
- *     * Redistributions in binary form must reproduce the above copyright
+ *     - Redistributions of source code must retain the above copyright
+ *       notice, this list of conditions and the following disclaimer. \n
+ *     - Redistributions in binary form must reproduce the above copyright
  *       notice, this list of conditions and the following disclaimer in the
- *       documentation and/or other materials provided with the distribution.
- *     * Neither the name of the Fraunhofer Institute for Manufacturing
+ *       documentation and/or other materials provided with the distribution. \n
+ *     - Neither the name of the Fraunhofer Institute for Manufacturing
  *       Engineering and Automation (IPA) nor the names of its
  *       contributors may be used to endorse or promote products derived from
- *       this software without specific prior written permission.
+ *       this software without specific prior written permission. \n
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Lesser General Public License LGPL as
@@ -43,7 +51,7 @@
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
- * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE. See the
  * GNU Lesser General Public License LGPL for more details.
  *
  * You should have received a copy of the GNU Lesser General Public
@@ -51,6 +59,13 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
+
+#include <pcl/features/integral_image_normal.h>
+
+#ifdef PCL_MINOR_VERSION >= 6
+#include <pcl/segmentation/organized_multi_plane_segmentation.h>
+#include <pcl/segmentation/edge_aware_plane_comparator.h>
+#endif
 
 #include "cob_3d_mapping_common/label_defines.h"
 #include "cob_3d_mapping_common/polygon.h"
@@ -416,6 +431,76 @@ void createClustersUsingPlaneExtraction(PointCloud::Ptr cloud, ClusterMap& cmap)
 }
 
 
+#ifdef PCL_VERSION_COMPARE
+void createClustersUsingMultiPlaneSegmentation(PointCloud::Ptr cloud, ClusterMap& cmap)
+{
+  pcl::PointCloud<pcl::Normal>::Ptr n(new pcl::PointCloud<pcl::Normal>);
+  pcl::PointCloud<pcl::Label>::Ptr l(new pcl::PointCloud<pcl::Label>);
+  float* distance_map;
+
+  pcl::IntegralImageNormalEstimation<pcl::PointXYZRGB, pcl::Normal> ne;
+  ne.setNormalEstimationMethod(ne.COVARIANCE_MATRIX);
+  ne.setMaxDepthChangeFactor(0.02f);
+  ne.setNormalSmoothingSize(40.0f);
+  ne.setInputCloud(cloud);
+  ne.compute(*n);
+  distance_map = ne.getDistanceMap();
+
+  std::vector<pcl::PlanarRegion<pcl::PointXYZRGB>, Eigen::aligned_allocator<pcl::PlanarRegion<pcl::PointXYZRGB> > > regions;
+  std::vector<pcl::ModelCoefficients> coef;
+  std::vector<pcl::PointIndices> inlier_indices, label_indices, boundary_indices;
+  pcl::OrganizedMultiPlaneSegmentation<pcl::PointXYZRGB, pcl::Normal, pcl::Label> omps;
+  pcl::EdgeAwarePlaneComparator<pcl::PointXYZRGB, pcl::Normal>::Ptr comparator(new pcl::EdgeAwarePlaneComparator<pcl::PointXYZRGB, pcl::Normal>(distance_map));
+  omps.setComparator(comparator);
+  omps.setInputCloud(cloud);
+  omps.setInputNormals(n);
+  omps.setMinInliers(100);
+  omps.setAngularThreshold(5.0f/180.0f*M_PI);
+  omps.setMaximumCurvature(0.1); // default 0.001
+  omps.setDistanceThreshold(0.02f);
+  omps.segmentAndRefine(regions, coef, inlier_indices, l, label_indices, boundary_indices);
+
+  for(pcl::PointCloud<PT>::iterator it = cloud->begin(); it!=cloud->end(); ++it)
+    it->rgba = LBL_UNDEF;
+
+  const float rand_max_inv = 1.0f/ RAND_MAX;
+  std::vector<int> temp_ids;
+  for (size_t i = 0; i < inlier_indices.size(); ++i)
+  {
+    int r = (float)rand() * rand_max_inv * 255;
+    int g = (float)rand() * rand_max_inv * 255;
+    int b = (float)rand() * rand_max_inv * 255;
+    int color = (r << 16 | b << 8 | b);
+    for (size_t j=0; j<inlier_indices[i].indices.size(); ++j)
+    {
+      (*cloud)[ inlier_indices[i].indices[j] ].rgba = color;
+    }
+    temp_ids.push_back(color);
+  }
+
+  for(int i=0;i<boundary_indices.size();++i)
+  {
+    ClusterMap::iterator it = cmap.insert( std::pair<int,Cluster>(temp_ids[i], Cluster(temp_ids[i])) ).first;
+    it->second.comp3 = Eigen::Vector3f(coef[i].values[0], coef[i].values[1], coef[i].values[2]);
+    cob_3d_mapping::Polygon& p = *it->second.poly;
+    for(int c=0; c<3; c++) p.normal[c] = coef[i].values[c];
+    p.d = coef[i].values[3];
+    it->second.centroid = it->second.comp3 * p.d;
+    std::vector<Eigen::Vector3f> pts;
+    for(int j=0; j<boundary_indices[i].indices.size(); ++j)
+      pts.push_back((*cloud)[boundary_indices[i].indices[j]].getVector3fMap());
+    for(int j=0; j<inlier_indices[i].indices.size(); ++j)
+      it->second.indices.push_back(inlier_indices[i].indices[j]);
+
+    p.contours.push_back(pts);
+    p.holes.push_back(false);
+    p.computeCentroid();
+    p.computeAttributes(it->second.comp3, p.centroid);
+  }
+}
+#endif
+
+
 
   /*--------------------------*/
  /*---------- MAIN ----------*/
@@ -485,6 +570,23 @@ public:
       std::cout << "you're done here..." <<std::endl;
       std::cout << "these are your results! Hope u like 'em :)\n"<<std::endl;
       printForFile(exp, pred_new);
+
+      if(this->argc == 4)
+      {
+        ClusterMap::iterator it = pred_new.begin();
+        while(it!=pred_new.end())
+        {
+          for(int i=0; i<it->second.indices.size(); ++i)
+          {
+            (*pc_pred)[it->second.indices[i]].rgba = it->second.id;
+          }
+          ++it;
+        }
+        std::string file_out(wxString(this->argv[3]).mb_str());
+        cob_3d_mapping_tools::PPMWriter wppm;
+        wppm.writeRGB(file_out, *pc_pred);
+      }
+
       return;
     }
     Gui::cvImagePtr cvmat = r_tmp->getData();
@@ -521,7 +623,7 @@ public:
   bool OnInit()
   {
     if (this->argc < 3) { std::cout << "command path_to_pointcloud.pcd path_to_groundtruth.ppm " << std::endl; exit(0); }
-    if (this->argc == 4)
+    /*if (this->argc == 4)
     {
       std::string file_pcd(wxString(this->argv[1]).mb_str());
       std::string file_ppm(wxString(this->argv[2]).mb_str());
@@ -531,10 +633,12 @@ public:
       cob_3d_mapping_tools::PPMWriter wppm;
       if (ppm.mapRGB(file_ppm, *pc_exp, true) == -1) { exit(0); }
       *pc_pred = *pc_exp;
-      createClustersUsingPlaneExtraction(pc_pred, pred);
+      //createClustersUsingPlaneExtraction(pc_pred, pred);
+      createClustersUsingMultiPlaneSegmentation(pc_pred, pred);
       wppm.writeRGB(file_out, *pc_pred);
       exit(0);
-    }
+      }
+    */
 
     std::string file_pcd(wxString(this->argv[1]).mb_str());
     std::string file_ppm(wxString(this->argv[2]).mb_str());
@@ -544,7 +648,11 @@ public:
     *pc_pred = *pc_exp;
     std::cout << pc_exp->width << " " << pc_exp->height << std::endl;
     createClusters(pc_exp, exp);
+    #ifdef PCL_VERSION_COMPARE
+    createClustersUsingMultiPlaneSegmentation(pc_pred, pred);
+    #else
     createClustersUsingPlaneExtraction(pc_pred, pred);
+    #endif
     c_it = exp.begin();
 
     Gui::Resource<RPC>* r_exp = Gui::Core::rMan()->create<RPC>("res_expected", pc_exp);
