@@ -1,7 +1,7 @@
 <stack>
   <description brief="cob_environment_perception">cob_environment_perception</description>
   <author>Maintained by Georg Arbeiter</author>
-  <license>BSD</license>  
+  <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/cob_environment_perception</url>
   <depend stack="common" /> <!-- actionlib -->

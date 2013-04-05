@@ -57,8 +57,8 @@
 *
 ****************************************************************/
 
-#ifndef ROS_MSG_CONV_H_
-#define ROS_MSG_CONV_H_
+#ifndef COB_3D_MAPPING_ROS_MSG_CONV_H_
+#define COB_3D_MAPPING_ROS_MSG_CONV_H_
 
 #include <cob_3d_mapping_msgs/Shape.h>
 #include <cob_3d_mapping_msgs/ShapeArray.h>
