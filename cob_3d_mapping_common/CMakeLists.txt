@@ -44,6 +44,8 @@ rosbuild_add_executable(field_of_view_node ros/src/field_of_view.cpp)
 rosbuild_add_executable(keyframe_detector_node ros/src/keyframe_detector.cpp)
 rosbuild_add_executable(transform_shape_array ros/src/transform_shape_array.cpp)
 target_link_libraries(transform_shape_array cob_3d_mapping_common )
+rosbuild_add_executable(transform_pointcloud ros/src/transform_pointcloud.cpp)
+rosbuild_add_executable(test_minimal_rectangle ros/src/test_minimal_rectangle.cpp)
 #rosbuild_add_library(cob_3d_mapping_common_sv ros/src/shape_visualization.cpp)
 
 #~~~~~~~~~
