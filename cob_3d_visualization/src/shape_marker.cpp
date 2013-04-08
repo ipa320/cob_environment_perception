@@ -312,12 +312,13 @@ ShapeMarker::createShapeMenu ()
 {
   //  ROS_INFO(" creating menu .....");
 
-  interactive_markers::MenuHandler::EntryHandle eh_1, eh_2, eh_3, eh_4, eh_5, eh_6;
+  interactive_markers::MenuHandler::EntryHandle eh_1, eh_2, eh_3, eh_4, eh_5, eh_6, eh_7;
 
   eh_1 = menu_handler_.insert ("Menu");
   eh_2 = menu_handler_.insert (eh_1, "Display Normal",boost::bind (&ShapeMarker::displayNormalCB, this, _1));
   eh_3 = menu_handler_.insert (eh_1, "Display Centroid",boost::bind (&ShapeMarker::displayCentroidCB, this, _1));
   eh_4 = menu_handler_.insert (eh_1, "Display Contour",boost::bind (&ShapeMarker::displayContourCB, this, _1));
+  eh_7 = menu_handler_.insert (eh_1, "Show ID",boost::bind (&ShapeMarker::displayIDCB, this, _1));
   eh_5 = menu_handler_.insert (eh_1, "Enable Movement",boost::bind (&ShapeMarker::enableMovement, this, _1));
   eh_6 = menu_handler_.insert (eh_1, "Delete Marker",boost::bind (&ShapeMarker::deleteMarker, this, _1));
   //    eh_6 = menu_handler_.insert (eh_1, "Fix to this Position",boost::bind (&ShapeMarker::setShapePosition, this, _1));
@@ -340,6 +341,9 @@ ShapeMarker::createShapeMenu ()
   menu_handler_.setVisible (eh_6, true);
   menu_handler_.setCheckState (eh_6, interactive_markers::MenuHandler::NO_CHECKBOX);
 
+  menu_handler_.setVisible (eh_7, true);
+  menu_handler_.setCheckState (eh_7, interactive_markers::MenuHandler::UNCHECKED);
+
 
   if(shape_.type==cob_3d_mapping_msgs::Shape::CYLINDER){
     interactive_markers::MenuHandler::EntryHandle eh_7,eh_8;
@@ -357,6 +361,35 @@ ShapeMarker::createShapeMenu ()
 void
 ShapeMarker::createMarker (visualization_msgs::InteractiveMarkerControl& im_ctrl)
 {
+  marker.id = shape_.id;
+
+  marker.header = shape_.header;
+  //std::cout << marker.header.frame_id << std::endl;
+  //marker.header.stamp = ros::Time::now() ;
+
+  marker.type = visualization_msgs::Marker::TRIANGLE_LIST;
+  marker.ns = "shape visualization";
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.lifetime = ros::Duration ();
+
+  //set color
+  marker.color.g = shape_.color.g;
+  marker.color.b = shape_.color.b;
+  marker.color.r = shape_.color.r;
+  if (arrows_ || deleted_){
+    marker.color.a = 0.5;
+  }
+  else
+  {
+    marker.color.a = shape_.color.a;
+    //      marker.color.r = shape_.color.r;
+  }
+
+  //set scale
+  marker.scale.x = 1;
+  marker.scale.y = 1;
+  marker.scale.z = 1;
+
   /* transform shape points to 2d and store 2d point in triangle list */
   TPPLPartition pp;
   list<TPPLPoly> polys, tri_list;
@@ -450,48 +483,12 @@ ShapeMarker::createMarker (visualization_msgs::InteractiveMarkerControl& im_ctrl
 
   }//Polygon
 
-  if(tri_list.size()==0) return;
-  //ROS_INFO(" creating markers for this shape.....");
-  marker.id = shape_.id;
-
-  marker.header = shape_.header;
-  //marker.header.stamp = ros::Time::now() ;
-
-  marker.type = visualization_msgs::Marker::TRIANGLE_LIST;
-  marker.ns = "shape visualization";
-  marker.action = visualization_msgs::Marker::ADD;
-  marker.lifetime = ros::Duration ();
-
-  //set color
-  marker.color.g = shape_.color.g;
-  marker.color.b = shape_.color.b;
-  marker.color.r = shape_.color.r;
-  if (arrows_ || deleted_){
-    marker.color.a = 0.5;
-  }
-  else
+  if(tri_list.size()==0)
   {
-    marker.color.a = shape_.color.a;
-    //      marker.color.r = shape_.color.r;
+    ROS_WARN("Could not triangulate, will not display this shape! (ID: %d)", shape_.id);
   }
+  //ROS_INFO(" creating markers for this shape.....");
 
-  //set scale
-  marker.scale.x = 1;
-  marker.scale.y = 1;
-  marker.scale.z = 1;
-
-  //set pose
-  Eigen::Quaternionf quat (transformation_inv_.rotation ());
-  Eigen::Vector3f trans (transformation_inv_.translation ());
-
-  marker.pose.position.x = trans (0);
-  marker.pose.position.y = trans (1);
-  marker.pose.position.z = trans (2);
-
-  marker.pose.orientation.x = quat.x ();
-  marker.pose.orientation.y = quat.y ();
-  marker.pose.orientation.z = quat.z ();
-  marker.pose.orientation.w = quat.w ();
   marker.points.resize (/*it->GetNumPoints ()*/tri_list.size()*3);
   TPPLPoint pt;
   int ctr=0;
@@ -509,6 +506,7 @@ ShapeMarker::createMarker (visualization_msgs::InteractiveMarkerControl& im_ctrl
           marker.points[3*ctr+i].x = pt.x;
           marker.points[3*ctr+i].y = pt.y;
           marker.points[3*ctr+i].z = 0;
+          //if(shape_.id == 39) std::cout << pt.x << "," << pt.y << std::endl;
         }
         //std::cout << marker.points.size() << std::endl;
       }
@@ -539,6 +537,19 @@ ShapeMarker::createMarker (visualization_msgs::InteractiveMarkerControl& im_ctrl
     }
     ctr++;
   }
+  //set pose
+  Eigen::Quaternionf quat (transformation_inv_.rotation ());
+  Eigen::Vector3f trans (transformation_inv_.translation ());
+
+  marker.pose.position.x = trans (0);
+  marker.pose.position.y = trans (1);
+  marker.pose.position.z = trans (2);
+
+  marker.pose.orientation.x = quat.x ();
+  marker.pose.orientation.y = quat.y ();
+  marker.pose.orientation.z = quat.z ();
+  marker.pose.orientation.w = quat.w ();
+
   im_ctrl.markers.push_back (marker);
 
   //  if(!arrows_) {
@@ -1126,7 +1137,6 @@ void ShapeMarker::hideContour(int untick){
       interacted_shapes_.erase(interacted_shapes_.begin()+(iter-interacted_shapes_.begin())) ;
     }
   }
-
 }
 
 void
@@ -1330,5 +1340,99 @@ void ShapeMarker::hideOrigin(int untick){
     im_server_->applyChanges() ;
   }
   //
+}
+
+void ShapeMarker::displayIDCB(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
+{
+
+  interactive_markers::MenuHandler::CheckState check_state;
+  menu_handler_.getCheckState (feedback->menu_entry_id, check_state);
+  if (check_state == interactive_markers::MenuHandler::UNCHECKED)
+  {
+    //ROS_INFO(" entry state changed ");
+    menu_handler_.setCheckState (feedback->menu_entry_id, interactive_markers::MenuHandler::CHECKED);
+    displayID();
+  }
+  else if (check_state == interactive_markers::MenuHandler::CHECKED)
+  {
+    menu_handler_.setCheckState (feedback->menu_entry_id, interactive_markers::MenuHandler::UNCHECKED);
+    hideID(1);
+  }
+  menu_handler_.reApply (*im_server_);
+  im_server_->applyChanges ();
+}
+
+
+void ShapeMarker::displayID()
+{
+  ROS_INFO(" displayID from shape[ %d ]...", shape_.id);
+  std::vector<unsigned int>::iterator iter ;
+
+  stringstream aa;
+  stringstream ss;
+  int ctr = 0;
+
+  visualization_msgs::Marker marker;
+  marker.action = visualization_msgs::Marker::ADD;
+  marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
+  marker.lifetime = ros::Duration();
+  marker.header = shape_.header ;
+  //marker.header.frame_id = "/map";
+  marker.ns = "contours" ;
+
+  //set pose
+  marker.pose.position.x = shape_.centroid.x;
+  marker.pose.position.y = shape_.centroid.y;
+  marker.pose.position.z = shape_.centroid.z;
+
+  marker.scale.z = 0.1;
+
+  marker.color.r = 0;
+  marker.color.g = 0;
+  marker.color.b = 1;
+  marker.color.a = 1.0;
+
+
+  visualization_msgs::InteractiveMarker imarker;
+  visualization_msgs::InteractiveMarkerControl im_ctrl_ ;
+
+  im_ctrl_.markers.push_back(marker);
+
+  im_ctrl_.always_visible = true ;
+  im_ctrl_.interaction_mode = visualization_msgs::InteractiveMarkerControl::BUTTON;
+
+  ss << "id_" << shape_.id;
+  imarker.name = ss.str() ;
+
+  imarker.header  = shape_.header ;
+  imarker.controls.push_back(im_ctrl_);
+  im_server_->insert (imarker);
+
+  interacted_shapes_.push_back(shape_.id) ;
+
+}
+
+void ShapeMarker::hideID(int untick)
+{
+  stringstream ss;
+  std::vector<unsigned int>::iterator iter;
+
+  ss.clear() ;
+  ss.str("");
+  ss << "id_" << shape_.id;
+  im_server_->erase(ss.str());
+  im_server_->applyChanges ();
+  if(!untick){ // when ResetAll is activated
+    menu_handler_.setCheckState (4, interactive_markers::MenuHandler::UNCHECKED);  //4th menu Entry is display Contour
+    menu_handler_.reApply (*im_server_);
+    im_server_->applyChanges() ;
+  }
+
+  if(untick){
+    iter = find (interacted_shapes_.begin(), interacted_shapes_.end(), shape_.id) ;
+    if (iter!=interacted_shapes_.end()){
+      interacted_shapes_.erase(interacted_shapes_.begin()+(iter-interacted_shapes_.begin())) ;
+    }
+  }
 }
 
