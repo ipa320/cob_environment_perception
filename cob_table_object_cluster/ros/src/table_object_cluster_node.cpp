@@ -144,8 +144,6 @@ public:
 
     // Services and Actions
     get_bb_client_ = n_.serviceClient<cob_3d_mapping_msgs::GetBoundingBoxes>("get_known_objects");
-    as_= new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TableObjectClusterAction>(n_, "table_object_cluster", boost::bind(&TableObjectClusterNode::actionCallback, this, _1), false);
-    as_->start();
   }
 
   // Destructor
@@ -172,6 +170,11 @@ public:
     min_cluster_size_ = config.min_cluster_size;
     cluster_tolerance_ = config.cluster_tolerance;*/
     enable_action_mode_ = config.enable_action_mode;
+    if(enable_action_mode_)
+    {
+      as_= new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TableObjectClusterAction>(n_, "table_object_cluster", boost::bind(&TableObjectClusterNode::actionCallback, this, _1), false);
+      as_->start();
+    }
     toc.setPrismHeight(config.height_min, config.height_max);
     toc.setClusterParams(config.min_cluster_size, config.cluster_tolerance);
   }
@@ -338,6 +341,7 @@ public:
       result.bounding_boxes.push_back(bb);
     }
     */
+    result.bounding_boxes = bba;
     as_->setSucceeded(result);
   }
 

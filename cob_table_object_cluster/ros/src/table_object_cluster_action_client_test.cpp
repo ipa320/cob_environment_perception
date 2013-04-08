@@ -68,18 +68,19 @@
 #include <actionlib/client/simple_action_client.h>
 #include <actionlib/client/terminal_state.h>
 #include <cob_3d_mapping_msgs/TableObjectClusterAction.h>
-#include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
+
+#include <cob_3d_mapping_common/stop_watch.h>
 
 int main (int argc, char **argv)
 {
-  ros::init(argc, argv, "test_table_object_cluster");
+  ros::init(argc, argv, "table_object_cluster_action_client");
   ros::NodeHandle nh;
 
 
   // create the action client
   // true causes the client to spin its own thread
-  actionlib::SimpleActionClient<cob_3d_mapping_msgs::TableObjectClusterAction> ac("table_object_cluster", true);
+  actionlib::SimpleActionClient<cob_3d_mapping_msgs::TableObjectClusterAction> ac("tabletop_object_cluster_trigger", true);
 
   ROS_INFO("Waiting for action server to start.");
   // wait for the action server to start
@@ -89,10 +90,11 @@ int main (int argc, char **argv)
   // send a goal to the action
   cob_3d_mapping_msgs::TableObjectClusterGoal goal; // no information needed
   ac.sendGoal(goal);
-
+  PrecisionStopWatch sw;
+  sw.precisionStart();
   //wait for the action to return
   bool finished_before_timeout = ac.waitForResult(ros::Duration(30.0));
-
+  ROS_INFO("Action took %f seconds", sw.precisionStop());
   if (finished_before_timeout)
   {
     actionlib::SimpleClientGoalState state = ac.getState();
