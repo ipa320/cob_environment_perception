@@ -9,14 +9,14 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/cob_env_model_msgs</url>
 
-	<depend package="geometry_msgs"/>
-	<depend package="sensor_msgs"/>
-	<depend package="std_msgs"/>
-	<depend package="actionlib_msgs"/>
-	<depend package="arm_navigation_msgs"/>
-	<depend package="household_objects_database_msgs"/>
-	<!--depend package="tabletop_object_detector"/-->
-	
+  <depend package="geometry_msgs"/>
+  <depend package="sensor_msgs"/>
+  <depend package="std_msgs"/>
+  <depend package="actionlib_msgs"/>
+  <depend package="arm_navigation_msgs"/>
+  <depend package="household_objects_database_msgs"/>
+  <!--depend package="tabletop_object_detector"/-->
+  <depend package="cob_object_detection_msgs"/>
   <export>
     <cpp cflags="-I${prefix}/msg_gen/cpp -I${prefix}/srv_gen/cpp"/>
   </export>

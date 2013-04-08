@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Input/Output Topics: -->
+  <arg name="input" default="cam3d/rgb/points"/>
+  <arg name="output" default="/transformed/point_cloud"/>
+
+  <node pkg="cob_3d_mapping_common" type="transform_pointcloud" name="transform_pointcloud" output="screen">
+    <remap from="~input" to="$(arg input)"/>
+    <remap from="~output" to="$(arg output)"/>
+  </node>
+</launch>
