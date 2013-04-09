@@ -63,6 +63,8 @@
 #ifndef __SIMPLE_SEGMENTATION_NODELET_H__
 #define __SIMPLE_SEGMENTATION_NODELET_H__
 
+#include <boost/thread.hpp>
+
 // PCL includes
 //#include <pcl/surface/concave_hull.h>
 #include <pcl/point_types.h>
@@ -74,9 +76,10 @@
 #include <tf_conversions/tf_eigen.h>
 #include <dynamic_reconfigure/server.h>
 #include <cob_3d_segmentation/segmentation_nodeletConfig.h>
-
-
+#include <actionlib/server/simple_action_server.h>
+ 
 // Package includes
+#include "cob_3d_mapping_msgs/TriggerAction.h"
 #include "cob_3d_mapping_common/point_types.h"
 #include "cob_3d_mapping_features/organized_normal_estimation_omp.h"
 #include "cob_3d_segmentation/impl/fast_segmentation.hpp"
@@ -105,22 +108,27 @@ namespace cob_3d_segmentation
       , filter_(false)
       , downsample_(false)
       , colorize_(true)
+      , enable_action_mode_(false)
     { }
 
     ~SimpleSegmentationNodelet()
-    { }
+    { if(as_) delete as_; }
 
     protected:
     void onInit();
     void configCallback(cob_3d_segmentation::segmentation_nodeletConfig& config, uint32_t levels);
 
-    void receivedCloudCallback(PointCloud::ConstPtr cloud);
+    void actionCallback(const cob_3d_mapping_msgs::TriggerGoalConstPtr& goal);
+    void topicCallback(PointCloud::ConstPtr cloud);
+    void computeAndPublish();
 
+    boost::mutex mutex_;
 
     ros::NodeHandle nh_;
     ros::Subscriber sub_points_;
     ros::Publisher pub_segmented_;
     ros::Publisher pub_shape_array_;
+    actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerAction>* as_;
 
     boost::shared_ptr<dynamic_reconfigure::Server<cob_3d_segmentation::segmentation_nodeletConfig> > config_server_;
 
@@ -138,6 +146,7 @@ namespace cob_3d_segmentation
     bool filter_;
     bool downsample_;
     bool colorize_;
+    bool enable_action_mode_;
   };
 }
 
