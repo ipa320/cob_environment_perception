@@ -83,7 +83,7 @@ class execute_button_commands():
     self.script_action_server = actionlib.SimpleActionServer("cob_3d_mapping_demonstrator", ScriptAction, self.execute_cb, False)
     self.script_action_server.register_preempt_callback(self.execute_stop)
     self.script_action_server.start()
-    self.trigger_client = actionlib.SimpleActionClient('trigger_mapping', TriggerMappingAction)
+    self.trigger_client = actionlib.SimpleActionClient('trigger_mapping', TriggerAction)
     self.step = 0.1
 
 #------------------- Actionlib section -------------------#
@@ -125,7 +125,7 @@ class execute_button_commands():
     print "start"
     self.execute_reset()
     sss.move("cob_3d_mapping_demonstrator",[[-0.5,0]])
-    goal = TriggerMappingGoal()
+    goal = TriggerGoal()
     if not self.trigger_client.wait_for_server(rospy.Duration.from_sec(2.0)):
       rospy.logerr('server not available')
       #return False
@@ -178,7 +178,7 @@ class execute_button_commands():
   def execute_reset(self):
     print "reset"
     self.execute_stop()
-    goal = TriggerMappingGoal()
+    goal = TriggerGoal()
     goal.start = False
     self.trigger_client.send_goal(goal)
     if not self.trigger_client.wait_for_result(rospy.Duration.from_sec(2.0)):
@@ -222,7 +222,7 @@ class execute_button_commands():
     if self.step==0.1:
       self.execute_clear()
     print "step"
-    goal = TriggerMappingGoal()
+    goal = TriggerGoal()
     if not self.trigger_client.wait_for_server(rospy.Duration.from_sec(2.0)):
       rospy.logerr('server not available')
       #return False
