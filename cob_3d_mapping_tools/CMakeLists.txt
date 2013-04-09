@@ -37,7 +37,6 @@ rosbuild_add_library(cob_3d_mapping_tools
 	common/src/cob_3d_mapping_tools/io.cpp
 	common/src/cob_3d_mapping_tools/point_generator.cpp)
 
-rosbuild_add_executable(transform_pointcloud ros/src/transform_pointcloud.cpp)
 rosbuild_add_executable(concat_fields_node ros/src/concat_fields.cpp)
 rosbuild_link_boost(concat_fields_node program_options signals)
 rosbuild_add_executable(bag_to_pcd ros/src/bag_to_pcd.cpp)

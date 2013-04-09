@@ -1,0 +1,38 @@
+<?xml version="1.0"?>
+<launch>
+  <include file="$(find cob_table_object_cluster)/ros/launch/tabletop_object_cluster_action_server.launch">
+    <arg name="point_cloud" value="/cam3d/depth_registered/points"/>
+    <arg name="triggered_point_cloud" value="/action_trigger/point_cloud"/>
+    <arg name="bounding_box_array" value="/tabletop_object_cluster/bounding_box_array"/>
+  </include>
+
+  <include file="$(find cob_3d_segmentation)/ros/launch/simple_segmentation.launch">
+    <arg name="point_cloud" value="/action_trigger/point_cloud"/>
+    <arg name="segmented_cloud" value="/segmentation/segmented_cloud"/>
+    <arg name="shape_array" value="/segmentation/shape_array"/>
+  </include>
+
+  <include file="$(find cob_3d_mapping_common)/ros/launch/transform_pointcloud.launch">
+    <arg name="input" value="/action_trigger/point_cloud"/>
+    <arg name="output" value="/transformed/point_cloud"/>
+  </include>
+
+  <include file="$(find cob_3d_mapping_common)/ros/launch/transform_shape_array.launch">
+    <arg name="input" value="/segmentation/shape_array"/>
+    <arg name="output" value="/transformed/shape_array"/>
+  </include>
+
+  <include file="$(find cob_3d_mapping_semantics)/ros/launch/extract_tables.launch">
+    <arg name="shape_array" value="/transformed/shape_array"/>
+    <arg name="shape_array_pub" value="/table_extraction/shape_array"/>
+    <arg name="marker" value="shape_visualization/marker"/>
+    <arg name="marker_array" value="/semantic_extraction_node/map_marker_array"/>
+  </include>
+
+  <include file="$(find cob_table_object_cluster)/ros/launch/tabletop_object_cluster.launch">
+    <arg name="point_cloud" value="/transformed/point_cloud"/>
+    <arg name="shape_array" value="/table_extraction/shape_array"/>
+    <arg name="cluster_array" value="tabletop_object_cluster/cluster_array"/>
+    <arg name="bounding_box_array" value="tabletop_object_cluster/bounding_box_array"/>
+  </include>
+</launch>
