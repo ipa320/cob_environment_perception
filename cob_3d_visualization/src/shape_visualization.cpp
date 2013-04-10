@@ -83,7 +83,8 @@ ShapeVisualization::ShapeVisualization () :
     {
       shape_array_sub_ = nh_.subscribe ("shape_array", 1, &ShapeVisualization::shapeArrayCallback, this);
       feedback_sub_ = nh_.subscribe("shape_i_marker/feedback",1,&ShapeVisualization::setShapePosition,this);
-      marker_pub_ = nh_.advertise<visualization_msgs::Marker> ("marker", 100);
+      //marker_pub_ = nh_.advertise<visualization_msgs::Marker> ("marker", 100);
+      marker_pub_ = nh_.advertise<visualization_msgs::MarkerArray> ("marker_array", 1);
       //      shape_pub_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_array", 1);
       //      get_table_subscriber_ = nh_.subscribe("shape_array", 1, &ShapeVisualization::findTables,this);
       im_server_.reset (new interactive_markers::InteractiveMarkerServer ("shape_i_marker", "", false));
@@ -575,24 +576,55 @@ void
 ShapeVisualization::shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr& sa)
 {
   //  ctr_for_shape_indexes = 0 ;
+  std::vector<unsigned int> new_ids;
   v_sm_.clear();
   sha.shapes.clear() ;
   im_server_->applyChanges();
   ROS_INFO("shape array with %d shapes received", sa->shapes.size());
   frame_id_ = sa->header.frame_id;
+  visualization_msgs::MarkerArray ma;
 
   for (unsigned int i = 0; i < sa->shapes.size (); i++)
   {
     sha.shapes.push_back(sa->shapes[i]);
     sha.shapes[i].id = sa->shapes[i].id;
+    sa->shapes[i].header = sa->header;
 
     //std::cout << "shape id: " << sa->shapes[i].id << "\n" ;
     boost::shared_ptr<ShapeMarker> sm(new ShapeMarker(im_server_, sa->shapes[i],moved_shapes_indices_
         ,interacted_shapes_,deleted_markers_indices_,false,false)) ;//,deleted_));
+    //std::cout << sa->shapes[i].header.frame_id << std::endl;
     v_sm_.push_back(sm);
-    marker_pub_.publish(sm->getMarker());
+    new_ids.push_back(sa->shapes[i].id);
+    //marker_pub_.publish(sm->getMarker());
+    ma.markers.push_back(sm->getMarker());
+
+  }
+  //find markers to delete
+  for( unsigned int i=0; i<marker_ids_.size(); i++)
+  {
+    bool found = false;
+    for( unsigned int j=0; j<new_ids.size(); j++)
+    {
+      if( marker_ids_[i] == new_ids[j])
+      {
+        found = true;
+        break;
+      }
+    }
+    if (!found)
+    {
+      visualization_msgs::Marker marker;
+      marker.id = marker_ids_[i];
+      marker.header = sa->header;
+      marker.action = visualization_msgs::Marker::DELETE;
+      ma.markers.push_back(marker);
+      ROS_INFO("Deleting marker %d", marker.id);
+    }
   }
   //    im_server_->applyChanges(); //update changes
+  marker_pub_.publish(ma);
+  marker_ids_.swap(new_ids);
 }
 
 int
