@@ -618,6 +618,7 @@ ShapeVisualization::shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr
       visualization_msgs::Marker marker;
       marker.id = marker_ids_[i];
       marker.header = sa->header;
+      marker.ns = "shape visualization";
       marker.action = visualization_msgs::Marker::DELETE;
       ma.markers.push_back(marker);
       ROS_INFO("Deleting marker %d", marker.id);
