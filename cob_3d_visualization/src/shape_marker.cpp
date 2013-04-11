@@ -291,7 +291,8 @@ void ShapeMarker::hideArrows(int untick)
   }
 }
 
-void ShapeMarker::resetMarker(){
+void ShapeMarker::resetMarker()
+{
 
   stringstream aa;
   stringstream ss;
@@ -486,6 +487,7 @@ ShapeMarker::createMarker (visualization_msgs::InteractiveMarkerControl& im_ctrl
   if(tri_list.size()==0)
   {
     ROS_WARN("Could not triangulate, will not display this shape! (ID: %d)", shape_.id);
+    return;
   }
   //ROS_INFO(" creating markers for this shape.....");
 
