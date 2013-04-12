@@ -132,9 +132,11 @@ namespace cob_3d_segmentation
     DepthSegmentation ()
       //: max_angle_cos_(35.0f / 180.0f * M_PI)
       //, max_boundary_angle_cos_(50.0f / 180.0f * M_PI)
-      : min_dot_normals_(cos(22.0f / 180.0f * M_PI))
+      //: min_dot_normals_(cos(22.0f / 180.0f * M_PI))
+      : min_dot_normals_(35.0f / 180.0f * M_PI)
       , min_dot_boundary_(cos(50.0f / 180.0f * M_PI))
-      , min_cluster_size_(5)
+      //, min_cluster_size_(5)
+      , min_cluster_size_(150)
     { };
 
     ~DepthSegmentation ()
