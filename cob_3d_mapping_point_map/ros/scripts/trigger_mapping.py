@@ -12,10 +12,10 @@ if __name__ == '__main__':
         print "Please provide the input argument \"start\" or \"stop.\""
         sys.exit()
     rospy.init_node('trigger_mapping')
-    client = actionlib.SimpleActionClient('trigger_mapping', TriggerMappingAction)
+    client = actionlib.SimpleActionClient('trigger_mapping', TriggerAction)
     client.wait_for_server()
 
-    goal = TriggerMappingGoal()
+    goal = TriggerGoal()
     if sys.argv[1] == "start":
         goal.start = True
     elif sys.argv[1] == "stop":

@@ -117,7 +117,7 @@ namespace cob_3d_segmentation
     void configCallback(cob_3d_segmentation::segmentation_nodeletConfig& config, uint32_t level);
 
     void receivedCloudCallback(PointCloud::ConstPtr cloud);
-    void publishShapeArray(ST::CH::Ptr cluster_handler, std::map<int,int>& objs, PointCloud::ConstPtr cloud);
+    void publishShapeArray(ST::CH::Ptr cluster_handler, PointCloud::ConstPtr cloud);
 
     //boost::mutex mutex_;
     ros::NodeHandle nh_;

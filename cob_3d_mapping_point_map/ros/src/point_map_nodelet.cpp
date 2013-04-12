@@ -242,11 +242,11 @@ public:
    * @return nothing
    */
   /*void
-  actionCallback(const cob_3d_mapping_msgs::TriggerMappingGoalConstPtr &goal)
+  actionCallback(const cob_3d_mapping_msgs::TriggerGoalConstPtr &goal)
   {
     //boost::mutex::scoped_lock l(m_mutex_actionCallback);
 
-    cob_3d_mapping_msgs::TriggerMappingResult result;
+    cob_3d_mapping_msgs::TriggerResult result;
     if(goal->start && !is_running_)
     {
       ROS_INFO("Starting mapping...");
