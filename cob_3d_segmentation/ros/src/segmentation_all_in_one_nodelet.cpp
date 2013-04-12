@@ -104,14 +104,21 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::onInit()
   cc_.setNormalCloudInOut(normals_);
   cc_.setLabelCloudIn(labels_);
 
-
-  sub_points_ = nh_.subscribe<PointCloud>("cloud_in", 1, boost::bind(&SegmentationAllInOneNodelet::receivedCloudCallback, this, _1));
+  if(!is_running_ && !enable_action_mode_)
+  {
+    ROS_INFO("Starting segmentation...");
+    sub_points_ = nh_.subscribe("cloud_in", 1, &SegmentationAllInOneNodelet::receivedCloudCallback, this);
+    is_running_ = true;
+  }
   pub_segmented_ = nh_.advertise<PointCloud>("/segmentation/segmented_cloud", 1);
   pub_classified_ = nh_.advertise<PointCloud>("/segmentation/classified_cloud", 1);
   pub_shape_array_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray>("/segmentation/shape_array",1);
   pub_chull_ = nh_.advertise<PointCloud>("/segmentation/concave_hull", 1);
   pub_chull_dense_ = nh_.advertise<PointCloud>("/segmentation/concave_hull_dense", 1);
   std::cout << "Loaded segmentation nodelet" << std::endl;
+
+  as_ = new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerAction>(nh_, "segmentation/trigger", boost::bind(&SegmentationAllInOneNodelet::actionCallback, this, _1), false);
+  as_->start();
 }
 
 void
@@ -121,7 +128,31 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::configCallback(
 {
   NODELET_INFO("[segmentation]: received new parameters");
   centroid_passthrough_ = config.centroid_passthrough;
+  enable_action_mode_ = config.enable_action_mode;
 }
+
+
+void
+cob_3d_segmentation::SegmentationAllInOneNodelet::actionCallback(
+  const cob_3d_mapping_msgs::TriggerGoalConstPtr& goal)
+{
+  cob_3d_mapping_msgs::TriggerResult result;
+  if(goal->start && !is_running_)
+  {
+    ROS_INFO("Starting segmentation...");
+    sub_points_ = nh_.subscribe("cloud_in", 1, &SegmentationAllInOneNodelet::receivedCloudCallback, this);
+    is_running_ = true;
+  }
+  else if(!goal->start && is_running_)
+  {
+    ROS_INFO("Stopping segmentation...");
+    sub_points_.shutdown();
+    is_running_ = false;
+  }
+
+  as_->setSucceeded(result);
+}
+
 
 void
 cob_3d_segmentation::SegmentationAllInOneNodelet::receivedCloudCallback(PointCloud::ConstPtr cloud)

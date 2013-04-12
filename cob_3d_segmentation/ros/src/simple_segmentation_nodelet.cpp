@@ -88,7 +88,7 @@ cob_3d_segmentation::SimpleSegmentationNodelet::onInit()
   sub_points_ = nh_.subscribe<PointCloud>("point_cloud", 1, boost::bind(&SimpleSegmentationNodelet::topicCallback, this, _1));
   pub_segmented_ = nh_.advertise<PointCloud>("segmented_cloud", 1);
   pub_shape_array_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray>("shape_array",1);
-  as_ = new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerAction>(nh_, "trigger_segmentation", boost::bind(&SimpleSegmentationNodelet::actionCallback, this, _1), false);
+  as_ = new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerAction>(nh_, "segmentation/trigger", boost::bind(&SimpleSegmentationNodelet::actionCallback, this, _1), false);
   as_->start();
 }
 
@@ -105,24 +105,33 @@ cob_3d_segmentation::SimpleSegmentationNodelet::configCallback(
   downsample_ = config.downsample;
   colorize_ = config.colorize;
   enable_action_mode_ = config.enable_action_mode;
+  if(!is_running_ && !enable_action_mode_)
+  { // Start immediately
+    ROS_INFO("Starting segmentation...");
+    sub_points_ = nh_.subscribe("point_cloud", 1, &SimpleSegmentationNodelet::topicCallback, this);
+    is_running_ = true;
+  }
 }
 
 void
 cob_3d_segmentation::SimpleSegmentationNodelet::actionCallback(const cob_3d_mapping_msgs::TriggerGoalConstPtr& goal)
 {
   //boost::lock_guard<boost::mutex> guard(mutex_);
-  cob_3d_mapping_msgs::TriggerFeedback feedback;
   cob_3d_mapping_msgs::TriggerResult result;
-  if(enable_action_mode_)
+  if(goal->start && !is_running_)
   {
-    computeAndPublish();
-    as_->setSucceeded(result);
+    ROS_INFO("Starting segmentation...");
+    sub_points_ = nh_.subscribe("point_cloud", 1, &SimpleSegmentationNodelet::topicCallback, this);
+    is_running_ = true;
   }
-  else
+  else if(!goal->start && is_running_)
   {
-    std::cout << "Segmentation not in ActionMode" << std::endl;
-    as_->setAborted(result);
+    ROS_INFO("Stopping segmentation...");
+    sub_points_.shutdown();
+    is_running_ = false;
   }
+
+  as_->setSucceeded(result);
 }
 
 void
@@ -145,7 +154,7 @@ cob_3d_segmentation::SimpleSegmentationNodelet::topicCallback(PointCloud::ConstP
     *segmented_ = *down_ = *cloud;
   }
   std::cout << "Downsampling took " << t.precisionStop() << " s." << std::endl;
-  if(!enable_action_mode_) computeAndPublish();
+  computeAndPublish();
 }
 
 void
