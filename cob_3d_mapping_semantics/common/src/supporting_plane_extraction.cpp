@@ -69,7 +69,7 @@ SupportingPlaneExtraction::getSupportingPlane(std::vector<Polygon::Ptr>& polys, 
   std::vector<Polygon::Ptr> cands;
   for( unsigned int i=0; i<polys.size(); i++)
   {
-    double a = polys[i]->computeArea();
+    double a = polys[i]->computeArea3d();
     std::cout << "Poly " << i << " (id " << polys[i]->id << " has an area of " << a << std::endl;
     if( a > area_min_ && a < area_max_)
     {

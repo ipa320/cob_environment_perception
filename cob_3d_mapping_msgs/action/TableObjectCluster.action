@@ -1,9 +1,9 @@
 #Trigger Table Object Cluster
 #goal definition
-sensor_msgs/PointCloud2 table_hull
+bool start
 ---
 #result definition
-sensor_msgs/PointCloud2[] bounding_boxes
+cob_object_detection_msgs/DetectionArray bounding_boxes
 ---
 #feedback
 std_msgs/String currentStep
