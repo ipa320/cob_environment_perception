@@ -77,7 +77,7 @@
 #include <dynamic_reconfigure/server.h>
 #include <cob_3d_segmentation/segmentation_nodeletConfig.h>
 #include <actionlib/server/simple_action_server.h>
- 
+
 // Package includes
 #include "cob_3d_mapping_msgs/TriggerAction.h"
 #include "cob_3d_mapping_common/point_types.h"
@@ -109,6 +109,7 @@ namespace cob_3d_segmentation
       , downsample_(false)
       , colorize_(true)
       , enable_action_mode_(false)
+      , is_running_(false)
     { }
 
     ~SimpleSegmentationNodelet()
@@ -147,6 +148,7 @@ namespace cob_3d_segmentation
     bool downsample_;
     bool colorize_;
     bool enable_action_mode_;
+    bool is_running_;
   };
 }
 
