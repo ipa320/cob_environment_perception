@@ -127,6 +127,10 @@ class execute_button_commands():
     sss.move("cob_3d_mapping_demonstrator",[[-0.5,0]])
     goal = TriggerGoal()
     if not self.trigger_client.wait_for_server(rospy.Duration.from_sec(2.0)):
+      print "switched to /segmentation/trigger"
+      self.trigger_client = actionlib.SimpleActionClient('/segmentation/trigger', TriggerAction)
+
+    if not self.trigger_client.wait_for_server(rospy.Duration.from_sec(2.0)):
       rospy.logerr('server not available')
       #return False
     else:
