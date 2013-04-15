@@ -244,7 +244,7 @@ public:
       for (unsigned int i = 0; i < tables.shapes.size (); i++)
       {
         //Polygon poly;
-        Polygon::Ptr poly_ptr(new Polygon());
+        /*Polygon::Ptr poly_ptr(new Polygon());
         fromROSMsg(tables.shapes[i], *poly_ptr);
 
         cob_3d_mapping_msgs::Table table;
@@ -265,11 +265,13 @@ public:
         table.pose.pose.orientation.y = quat.y();
         table.pose.pose.orientation.z = quat.z();
         table.pose.pose.orientation.w = quat.w();
+//TODO: compute proper BB
         table.x_min = min_pt(0);
         table.x_max = max_pt(0);
         table.y_min = min_pt(1);
         table.y_max = max_pt(1);
 
+//TODO: also add other contours => change msg type
         table.convex_hull.type = arm_navigation_msgs::Shape::MESH;
         for( unsigned int j=0; j<poly_ptr->contours[0].size(); j++)
         {
@@ -278,10 +280,10 @@ public:
           p.y = poly_ptr->contours[0][j](1);
           p.z = poly_ptr->contours[0][j](2);
           table.convex_hull.vertices.push_back(p);
-        }
+        }*/
 
         cob_3d_mapping_msgs::TabletopDetectionResult det;
-        det.table = table;
+        det.table = tables.shapes[i];//table;
 
         res.tables.push_back(det);
       }
