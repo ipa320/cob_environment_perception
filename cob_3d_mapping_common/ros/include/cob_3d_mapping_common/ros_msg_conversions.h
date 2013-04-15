@@ -255,7 +255,7 @@ namespace cob_3d_mapping
   fromROSMsg(const cob_3d_mapping_msgs::Shape& s,Cylinder& c){
 
 
-
+    //TODO: probably not all params are calculated
     c.id = s.id;
     // c.centroid(0) = s.centroid.x;
     // c.centroid(1) = s.centroid.y;
