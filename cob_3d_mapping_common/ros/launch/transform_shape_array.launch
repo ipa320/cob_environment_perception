@@ -1,7 +1,13 @@
 <?xml version="1.0"?>
 <launch>
+  <!-- Input/Output Topics: -->
+  <arg name="input" default="/segmentation/shape_array"/>
+  <arg name="output" default="/transformed/shape_array"/>
+
   <node pkg="cob_3d_mapping_common" type="transform_shape_array" name="transform_shape_array" output="screen">
-		<param name="target_frame" type="string" value="/map" />
-		<remap from="~input" to="/segmentation/shape_array"/>
-	</node>
+    <remap from="~input" to="$(arg input)"/>
+    <remap from="~output" to="$(arg output)"/>
+
+    <param name="target_frame" type="string" value="/map" />
+  </node>
 </launch>

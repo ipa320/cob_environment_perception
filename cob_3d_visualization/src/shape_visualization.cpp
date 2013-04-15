@@ -597,7 +597,8 @@ ShapeVisualization::shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr
     v_sm_.push_back(sm);
     new_ids.push_back(sa->shapes[i].id);
     //marker_pub_.publish(sm->getMarker());
-    ma.markers.push_back(sm->getMarker());
+    if(sm->getMarker().points.size())
+      ma.markers.push_back(sm->getMarker());
 
   }
   //find markers to delete
@@ -617,6 +618,7 @@ ShapeVisualization::shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr
       visualization_msgs::Marker marker;
       marker.id = marker_ids_[i];
       marker.header = sa->header;
+      marker.ns = "shape visualization";
       marker.action = visualization_msgs::Marker::DELETE;
       ma.markers.push_back(marker);
       ROS_INFO("Deleting marker %d", marker.id);

@@ -1,7 +1,7 @@
 # Contains all the information from one run of the tabletop detection node
 
 # The information for the plane that has been detected
-Table table
+cob_3d_mapping_msgs/Shape table
 
 # The raw clusters detected in the scan 
 sensor_msgs/PointCloud[] clusters
