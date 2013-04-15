@@ -25,19 +25,22 @@
     </rosparam>
   </node-->
 
-  <include file="$(find cob_3d_registration)/ros/launch/registration_demo.launch">
+  <!--include file="$(find cob_3d_registration)/ros/launch/registration_demo.launch">
     <arg name="start_manager" value="false"/>
     <arg name="nodelet_manager" value="$(arg mapping_manager)"/>
+  </include-->
+  <include file="$(find cob_3d_mapping_point_map)/ros/launch/point_map.launch">
+    <arg name="start_manager" value="false"/>
+    <arg name="nodelet_manager" value="$(arg mapping_manager)"/>
+    <arg name="point_cloud" value="/camera/depth_registered/points"/>
   </include>
-	<include file="$(find cob_3d_mapping_point_map)/ros/launch/point_map.launch">
-		<arg name="start_manager" value="false"/>
-		<arg name="nodelet_manager" value="$(arg mapping_manager)"/>
-	</include>
-	<include file="$(find cob_3d_segmentation)/ros/launch/segmentation.launch">
-		<arg name="start_manager" value="false"/>
-		<arg name="nodelet_manager" value="$(arg mapping_manager)"/>
-	</include>
-	<include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch"/>
+  <include file="$(find cob_3d_segmentation)/ros/launch/segmentation.launch">
+    <arg name="start_manager" value="false"/>
+    <arg name="nodelet_manager" value="$(arg mapping_manager)"/>
+    <arg name="point_cloud_in" value="/camera/depth_registered/points"/>
+  </include>
+  <param name="enable_action_mode" type="bool" value="True"/>
+  <include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch"/>
 
 
 
