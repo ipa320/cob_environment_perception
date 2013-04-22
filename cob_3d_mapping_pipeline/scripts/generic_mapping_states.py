@@ -81,7 +81,7 @@ class UpdateEnvMap(smach.State):
       self,
       outcomes=['succeeded', 'failed'],
       input_keys=['angle_range']) #good angle value: 0.4
-    self.client = actionlib.SimpleActionClient('trigger_mapping', TriggerMappingAction)
+    self.client = actionlib.SimpleActionClient('trigger_mapping', TriggerAction)
 
   def execute(self, userdata):
     #scan_position = [-1.3, -1.0, 3.14]
@@ -101,7 +101,7 @@ class UpdateEnvMap(smach.State):
       resp1 = clear_geom_map()
     except rospy.ServiceException, e:
       print "Service call failed: %s"%e
-    goal = TriggerMappingGoal()
+    goal = TriggerGoal()
     goal.start = True
     if not self.client.wait_for_server():#rospy.Duration.from_sec(5.0)):
       rospy.logerr('server not available')
@@ -151,7 +151,7 @@ class Map360(smach.State):
       self,
       outcomes=['succeeded', 'failed'],
       input_keys=['angle_range']) #good angle value: 0.4
-    self.client = actionlib.SimpleActionClient('trigger_mapping', TriggerMappingAction)
+    self.client = actionlib.SimpleActionClient('trigger_mapping', TriggerAction)
 
   def execute(self, userdata):
     scan_pose = [0, -0.5, 0]
@@ -160,7 +160,7 @@ class Map360(smach.State):
     sss.move("head","front")
     sss.move("tray","down")
     #sss.move("base",scan_position)
-    goal = TriggerMappingGoal()
+    goal = TriggerGoal()
     goal.start = True
     if not self.client.wait_for_server():#rospy.Duration.from_sec(5.0)):
       rospy.logerr('server not available')
@@ -199,7 +199,7 @@ class Map180(smach.State):
       self,
       outcomes=['succeeded', 'failed'],
       input_keys=['angle_range']) #good angle value: 0.4
-    self.client = actionlib.SimpleActionClient('trigger_mapping', TriggerMappingAction)
+    self.client = actionlib.SimpleActionClient('trigger_mapping', TriggerAction)
 
   def execute(self, userdata):
     scan_pose = [0, -1, 0]
@@ -209,7 +209,7 @@ class Map180(smach.State):
     sss.move("base",scan_pose)
     #sss.move("base",scan_position)
     raw_input("Press any key")
-    goal = TriggerMappingGoal()
+    goal = TriggerGoal()
     goal.start = True
     if not self.client.wait_for_server():#rospy.Duration.from_sec(5.0)):
       rospy.logerr('server not available')
@@ -251,7 +251,7 @@ class Map90(smach.State):
       self,
       outcomes=['succeeded', 'failed'],
       input_keys=['angle_range']) #good angle value: 0.4
-    self.client = actionlib.SimpleActionClient('trigger_mapping', TriggerMappingAction)
+    self.client = actionlib.SimpleActionClient('trigger_mapping', TriggerAction)
 
   def execute(self, userdata):
     scan_pose = [0.515, -1, 1.583]
@@ -260,7 +260,7 @@ class Map90(smach.State):
     sss.move("head","front")
     sss.move("base",scan_pose)
     #sss.move("base",scan_position)
-    goal = TriggerMappingGoal()
+    goal = TriggerGoal()
     goal.start = True
     if not self.client.wait_for_server():#rospy.Duration.from_sec(5.0)):
       rospy.logerr('server not available')

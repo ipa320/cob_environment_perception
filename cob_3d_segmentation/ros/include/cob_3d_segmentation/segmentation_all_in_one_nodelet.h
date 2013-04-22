@@ -71,12 +71,14 @@
 #include <tf_conversions/tf_eigen.h>
 #include <dynamic_reconfigure/server.h>
 #include <cob_3d_segmentation/segmentation_nodeletConfig.h>
+#include <actionlib/server/simple_action_server.h>
 
 // PCL includes
 #include <pcl/surface/concave_hull.h>
 #include <pcl/point_types.h>
 
 // Package includes
+#include "cob_3d_mapping_msgs/TriggerAction.h"
 #include "cob_3d_mapping_common/point_types.h"
 #include "cob_3d_mapping_features/organized_normal_estimation_omp.h"
 #include "cob_3d_segmentation/depth_segmentation.h"
@@ -106,18 +108,21 @@ namespace cob_3d_segmentation
       , normals_(new NormalCloud)
       , labels_(new LabelCloud)
       , centroid_passthrough_(5.0f)
+      , enable_action_mode_(false)
+      , is_running_(false)
     { }
 
     ~SegmentationAllInOneNodelet()
-    { }
+    { if(as_) delete as_; }
 
 
   protected:
     void onInit();
     void configCallback(cob_3d_segmentation::segmentation_nodeletConfig& config, uint32_t level);
 
+    void actionCallback(const cob_3d_mapping_msgs::TriggerGoalConstPtr& goal);
     void receivedCloudCallback(PointCloud::ConstPtr cloud);
-    void publishShapeArray(ST::CH::Ptr cluster_handler, std::map<int,int>& objs, PointCloud::ConstPtr cloud);
+    void publishShapeArray(ST::CH::Ptr cluster_handler, PointCloud::ConstPtr cloud);
 
     //boost::mutex mutex_;
     ros::NodeHandle nh_;
@@ -127,6 +132,7 @@ namespace cob_3d_segmentation
     ros::Publisher pub_shape_array_;
     ros::Publisher pub_chull_;
     ros::Publisher pub_chull_dense_;
+    actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerAction>* as_;
 
     boost::shared_ptr<dynamic_reconfigure::Server<cob_3d_segmentation::segmentation_nodeletConfig> > config_server_;
 
@@ -143,6 +149,8 @@ namespace cob_3d_segmentation
 
 
     float centroid_passthrough_;
+    bool enable_action_mode_;
+    bool is_running_;
   };
 
 }

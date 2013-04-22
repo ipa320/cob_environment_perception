@@ -133,6 +133,13 @@ namespace cob_3d_segmentation
       return (id_to_cluster_[max_cid_] = --clusters_.end());
     }
 
+    std::string colorHumanReadable(int id)
+    {
+      std::stringstream ss;
+      ss << "0x" << std::setfill('0') << std::setw(6) << std::right << std::hex << id << std::dec;
+      return ss.str();
+    }
+
     void mapClusterColor(pcl::PointCloud<PointXYZRGB>::Ptr color_cloud)
     {
       uint32_t rgb; int t = 4;
@@ -142,6 +149,7 @@ namespace cob_3d_segmentation
         else { rgb = color_tab_[t % (2048-NUM_LABELS) + NUM_LABELS]; }
         for(typename ClusterType::iterator it = c->begin(); it != c->end(); ++it)
         { color_cloud->points[*it].rgb = *reinterpret_cast<float*>(&rgb); }
+        c->label_color = rgb;
       }
     }
 
