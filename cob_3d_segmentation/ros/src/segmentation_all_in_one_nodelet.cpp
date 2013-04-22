@@ -179,6 +179,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull(new pcl::PointCloud<pcl::PointXYZRGB>);
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud_dense(new pcl::PointCloud<pcl::PointXYZRGB>);
 
+unsigned int ctr=0;
   for (ST::CH::ClusterPtr c = cluster_handler->begin(); c != cluster_handler->end(); ++c)
   {
     // compute hull:
@@ -211,6 +212,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
     cob_3d_mapping_msgs::Shape* s = &sa.shapes.back();
     if (objs.find(c->id()) != objs.end()) s->id = objs[c->id()] + 1;
     else s->id = 0;
+    s->id = ctr++;
     s->points.resize(poly.polys_.size());
     s->header.frame_id = cloud->header.frame_id.c_str();
     Eigen::Vector3f color = c->computeDominantColorVector().cast<float>();
