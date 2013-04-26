@@ -135,11 +135,12 @@ cob_3d_segmentation::SimpleSegmentationNodelet::actionCallback(const cob_3d_mapp
 }
 
 void
-cob_3d_segmentation::SimpleSegmentationNodelet::topicCallback(PointCloud::ConstPtr cloud)
+cob_3d_segmentation::SimpleSegmentationNodelet::topicCallback(const PointCloud::ConstPtr& cloud)
 {
   boost::lock_guard<boost::mutex> guard(mutex_);
   PrecisionStopWatch t;
   NODELET_INFO("Received PointCloud. Start downsampling .... ");
+
   t.precisionStart();
   if(downsample_)
   {
@@ -206,11 +207,18 @@ cob_3d_segmentation::SimpleSegmentationNodelet::computeAndPublish()
     s->id = id++;
     s->points.resize(poly.polys_.size());
     s->header.frame_id = down_->header.frame_id.c_str();
-    /*Eigen::Vector3f color = c->computeDominantColorVector().cast<float>();
-    float tmp_inv = 1.0f / 255.0f;*/
-    s->color.r = 0;//color(0) * tmp_inv;
-    s->color.g = 0;//color(1) * tmp_inv;
-    s->color.b = 0.0f;//color(2) * tmp_inv;
+
+    /* // turn off color calc:
+    s->color.r = 0;
+    s->color.g = 0;
+    s->color.b = 0.0f; */
+    // turn on color calc:
+    Eigen::Vector3f color = c->computeDominantColorVector().cast<float>();
+    float tmp_inv = 1.0f / 255.0f;
+    //std::cout << color << std::endl;;
+    s->color.r = color(0) * tmp_inv;
+    s->color.g = color(1) * tmp_inv;
+    s->color.b = color(2) * tmp_inv;
     s->color.a = 1.0f;
 
     for (int i = 0; i < (int)poly.polys_.size(); ++i)
