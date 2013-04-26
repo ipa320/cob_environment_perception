@@ -142,7 +142,7 @@ namespace cob_3d_segmentation
 
       inline void hsv2rgb(int h, int s, int v, uint8_t& r, uint8_t& g, uint8_t& b) const
       {
-        if (s == 0) { r = g = b = v; return; }
+        if (s == 0) { r = g = b = v*2.55f; return; }
 
         float hh = h / 60.0f; // sector 0..5
         int i = floor(hh);
