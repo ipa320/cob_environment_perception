@@ -47,22 +47,22 @@ include_directories(${VTK_INCLUDE_DIRS})
 #rosbuild_gensrv()
 
 rosbuild_add_library(cob_3d_mapping_features
-common/src/range_image_border_extractor.cpp
-common/src/fast_edge_estimation_3d.cpp
-common/src/edge_estimation_3d.cpp
-common/src/edge_estimation_2d.cpp
-common/src/edge_extraction.cpp
-common/src/knn_classifier.cpp
-common/src/most_discriminating_data_points.cpp
-common/src/organized_curvature_estimation.cpp
-common/src/organized_normal_estimation.cpp)
+  common/src/range_image_border_extractor.cpp
+  common/src/fast_edge_estimation_3d.cpp
+  common/src/edge_estimation_3d.cpp
+  common/src/edge_estimation_2d.cpp
+  common/src/edge_extraction.cpp
+  common/src/knn_classifier.cpp
+  common/src/most_discriminating_data_points.cpp
+  common/src/organized_curvature_estimation.cpp
+  common/src/organized_normal_estimation.cpp)
+
 target_link_libraries(cob_3d_mapping_features ${OpenCV_LIBS})
 
-
 rosbuild_add_library(cob_3d_mapping_features_omp
-common/src/organized_curvature_estimation_omp.cpp
-common/src/organized_normal_estimation_omp.cpp
-common/src/fast_edge_estimation_3d_omp.cpp)
+  common/src/organized_curvature_estimation_omp.cpp
+  common/src/organized_normal_estimation_omp.cpp
+  common/src/fast_edge_estimation_3d_omp.cpp)
 
 
 rosbuild_add_openmp_flags(cob_3d_mapping_features_omp)
@@ -110,7 +110,8 @@ rosbuild_add_compile_flags(test_edge_estimation -DEIGEN_YES_I_KNOW_SPARSE_MODULE
 target_link_libraries(test_edge_estimation cob_3d_mapping_features vtkCommon vtkFiltering ${OpenCV_LIBS})
 rosbuild_link_boost(test_edge_estimation program_options)
 rosbuild_add_executable(test_edge_sharpening common/apps/test_edge_sharpening.cpp)
-target_link_libraries(test_edge_sharpening cob_3d_mapping_features)
+target_link_libraries(test_edge_sharpening cob_3d_mapping_features vtkCommon vtkRendering)
+rosbuild_link_boost(test_edge_sharpening program_options)
 
 # Profiling old EdgeEstimation and FastEdgeEstimation
 # Only computation, no visualization or output.

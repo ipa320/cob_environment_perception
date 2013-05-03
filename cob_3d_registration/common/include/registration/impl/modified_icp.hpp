@@ -99,7 +99,11 @@ class ModifiedICP_T : public ParentClass, public ModifiedICP_G {
    */
   template <typename PointT2>
   #ifdef PCL_VERSION_COMPARE
-    class FeatureSearch: public pcl::KdTreeFLANN<PointT2>
+    #if PCL_MINOR_VERSION > 6 // not tested with pcl 1.4 yet
+      class FeatureSearch: public pcl::search::KdTree<PointT2>
+    #else
+      class FeatureSearch: public pcl::KdTreeFLANN<PointT2>
+    #endif
   #else
     class FeatureSearch : public pcl::KdTree<PointT2>
   #endif
@@ -111,7 +115,7 @@ class ModifiedICP_T : public ParentClass, public ModifiedICP_G {
   public:
     FeatureSearch(FeatureContainerInterface* features):
       features_(features)
-    {}
+      { }
 
     /// searching through feature container
     virtual int
@@ -144,7 +148,11 @@ class ModifiedICP_T : public ParentClass, public ModifiedICP_G {
     radiusSearch (int index, double radius, std::vector<int> &k_indices,
                   std::vector<float> &k_sqr_distances, int max_nn = INT_MAX) const {error();return 0;}
 
+    #if PCL_MINOR_VERSION > 6
+    virtual const std::string& getName() const {return "ICP Feature";}
+    #else
     virtual std::string getName() const {return "ICP Feature";}
+    #endif
 
   };
 
@@ -166,7 +174,8 @@ class ModifiedICP_T : public ParentClass, public ModifiedICP_G {
   /// setup distance metric (hack for features)
   void setSearchFeatures(FeatureContainerInterface* features) {
     this->features_ = features;
-    this->tree_.reset(new FeatureSearch<PointT>(features));
+    //this->tree_.reset( static_cast<typename FeatureSearch<PointT>::BaseSearch*>(new FeatureSearch<PointT>(features)) );
+    this->tree_.reset( new FeatureSearch<PointT>(features) );
   }
 
 };

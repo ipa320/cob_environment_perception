@@ -75,8 +75,9 @@
 // pcl includes
 #include <pcl/point_types.h>
 #include <pluginlib/class_list_macros.h>
-#include <pcl_ros/pcl_nodelet.h>
+#include <nodelet/nodelet.h>
 #include <pcl/io/pcd_io.h>
+#include <pcl_ros/point_cloud.h>
 
 // cob_3d_mapping_filters includes
 #include <cob_3d_mapping_common/point_types.h>
@@ -85,7 +86,7 @@
 
 //######################
 //#### nodelet class####
-class IntensityFilter : public pcl_ros::PCLNodelet
+class IntensityFilter : public nodelet::Nodelet
 {
 public:
   // Constructor
@@ -104,7 +105,6 @@ public:
   void
   onInit ()
   {
-    PCLNodelet::onInit ();
     n_ = getNodeHandle ();
 
     point_cloud_sub_ = n_.subscribe ("point_cloud2", 1, &IntensityFilter::PointCloudSubCallback, this);

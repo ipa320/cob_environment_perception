@@ -69,6 +69,11 @@
 #include "cob_3d_mapping_common/point_types.h"
 #include "cob_3d_mapping_filters/jump_edge_filter.h"
 #include "cob_3d_mapping_filters/impl/jump_edge_filter.hpp"
+#include <pcl/filters/impl/filter.hpp>
+
+#if defined(PCL_VERSION_COMPARE) && PCL_MINOR_VERSION >= 7
+#include <pcl/impl/pcl_base.hpp>
+#endif
 
 void
 cob_3d_mapping_filters::JumpEdgeFilter<sensor_msgs::PointCloud2>::applyFilter (PointCloud2 &pc_out)
@@ -207,6 +212,7 @@ cob_3d_mapping_filters::JumpEdgeFilter<sensor_msgs::PointCloud2>::applyFilter (P
 
 using namespace pcl;
 PCL_INSTANTIATE(ExtractIndices, (PointXYZCI));
-PCL_INSTANTIATE(ExtractIndices, PCL_XYZ_POINT_TYPES);
-PCL_INSTANTIATE(JumpEdgeFilter, (PointXYZCI));
+//PCL_INSTANTIATE(ExtractIndices, PCL_XYZ_POINT_TYPES);
+PCL_INSTANTIATE_JumpEdgeFilter(PointXYZCI);
+//PCL_INSTANTIATE_JumpEdgeFilter(PointXYZA);
 PCL_INSTANTIATE(JumpEdgeFilter, PCL_XYZ_POINT_TYPES);

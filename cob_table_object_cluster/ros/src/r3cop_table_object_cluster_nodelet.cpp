@@ -72,7 +72,7 @@
 // ROS includes
 #include <ros/ros.h>
 #include <pluginlib/class_list_macros.h>
-#include <pcl_ros/pcl_nodelet.h>
+#include <nodelet/nodelet.h>
 #include <pcl/io/io.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
@@ -103,7 +103,7 @@ using namespace cob_table_object_cluster;
 
 //####################
 //#### nodelet class ####
-class TableObjectClusterNodelet : public pcl_ros::PCLNodelet
+class TableObjectClusterNodelet : public nodelet::Nodelet
 {
 public:
   typedef pcl::PointXYZRGB Point;
@@ -151,7 +151,7 @@ public:
    */
   void onInit()
   {
-    PCLNodelet::onInit();
+    //PCLNodelet::onInit();
     n_ = getNodeHandle();
 
     config_server_.setCallback(boost::bind(&TableObjectClusterNodelet::dynReconfCallback, this, _1, _2));
