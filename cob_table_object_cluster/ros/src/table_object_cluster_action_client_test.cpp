@@ -10,23 +10,21 @@
  *****************************************************************
  *
  * \note
- *  Project name: care-o-bot
+ *  Project name: TODO FILL IN PROJECT NAME HERE
  * \note
- *  ROS stack name: cob_driver
+ *  ROS stack name: TODO FILL IN STACK NAME HERE
  * \note
- *  ROS package name: cob_env_model
+ *  ROS package name: TODO FILL IN PACKAGE NAME HERE
  *
  * \author
- *  Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ *  Author: TODO FILL IN AUTHOR NAME HERE
  * \author
- *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
+ *  Supervised by: TODO FILL IN CO-AUTHOR NAME(S) HERE
  *
- * \date Date of creation: September 2011
+ * \date Date of creation: TODO FILL IN DATE HERE
  *
  * \brief
- * Description:
  *
- * ToDo:
  *
  *****************************************************************
  *
@@ -58,66 +56,58 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
+/*
+ * plane_extraction_action_client.cpp
+ *
+ *  Created on: 26.08.2011
+ *      Author: goa
+ */
 
-// ROS core
+
 #include <ros/ros.h>
-#include <tf/transform_listener.h>
-// PCL includes
-#include <pcl/io/io.h>
-#include <pcl/io/pcd_io.h>
+#include <actionlib/client/simple_action_client.h>
+#include <actionlib/client/terminal_state.h>
+#include <cob_3d_mapping_msgs/TableObjectClusterAction.h>
 #include <pcl/point_types.h>
-#include <pcl_ros/transforms.h>
 
+#include <cob_3d_mapping_common/stop_watch.h>
 
-using namespace std;
-
-class TransformPointCloud
+int main (int argc, char **argv)
 {
-  protected:
-    ros::NodeHandle nh_;
+  ros::init(argc, argv, "table_object_cluster_action_client");
+  ros::NodeHandle nh;
 
-  public:
-    string cloud_topic_sub_;
-    string cloud_topic_pub_;
-    string target_frame_;
 
-    tf::TransformListener tf_listener_;
-    ros::Subscriber sub_;
-    ros::Publisher pub_;
+  // create the action client
+  // true causes the client to spin its own thread
+  actionlib::SimpleActionClient<cob_3d_mapping_msgs::TableObjectClusterAction> ac("tabletop_object_cluster_trigger", true);
 
-    TransformPointCloud() :
-      nh_("~")
-    {
-      cloud_topic_sub_="input";
-      cloud_topic_pub_="output";
-      target_frame_ = "/map";
+  ROS_INFO("Waiting for action server to start.");
+  // wait for the action server to start
+  ac.waitForServer(); //will wait for infinite time
 
-      pub_ = nh_.advertise<sensor_msgs::PointCloud2>(cloud_topic_pub_,1);
-      sub_ = nh_.subscribe (cloud_topic_sub_, 1,  &TransformPointCloud::cloud_cb, this);
-    }
+  ROS_INFO("Action server started, sending goal.");
+  // send a goal to the action
+  cob_3d_mapping_msgs::TableObjectClusterGoal goal; // no information needed
+  ac.sendGoal(goal);
+  PrecisionStopWatch sw;
+  sw.precisionStart();
+  //wait for the action to return
+  bool finished_before_timeout = ac.waitForResult(ros::Duration(30.0));
+  ROS_INFO("Action took %f seconds", sw.precisionStop());
+  if (finished_before_timeout)
+  {
+    actionlib::SimpleClientGoalState state = ac.getState();
+    ROS_INFO("Action finished: %s",state.toString().c_str());
+  }
+  else
+  {
+    ROS_INFO("Action did not finish before the time out.");
+    return 0;
+  }
+  cob_3d_mapping_msgs::TableObjectClusterResultConstPtr res = ac.getResult();
 
-    ////////////////////////////////////////////////////////////////////////////////
-    // Callback
-    void
-      cloud_cb (const sensor_msgs::PointCloud2ConstPtr& cloud)
-    {
-      sensor_msgs::PointCloud2 cloud_out;
-      pcl_ros::transformPointCloud (target_frame_, *cloud, cloud_out, tf_listener_);
-      cloud_out.header.stamp = cloud->header.stamp;
-      pub_.publish(cloud_out);
-    }
-
-};
-
-/* ---[ */
-int
-  main (int argc, char** argv)
-{
-  ros::init (argc, argv, "transform_pointcloud", ros::init_options::AnonymousName);
-
-  TransformPointCloud b;
-  ros::spin ();
-
-  return (0);
+  //exit
+  return 0;
 }
-/* ]--- */
+

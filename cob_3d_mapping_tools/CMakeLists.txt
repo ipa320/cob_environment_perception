@@ -37,7 +37,6 @@ rosbuild_add_library(cob_3d_mapping_tools
 	common/src/cob_3d_mapping_tools/io.cpp
 	common/src/cob_3d_mapping_tools/point_generator.cpp)
 
-rosbuild_add_executable(transform_pointcloud ros/src/transform_pointcloud.cpp)
 rosbuild_add_executable(concat_fields_node ros/src/concat_fields.cpp)
 rosbuild_link_boost(concat_fields_node program_options signals)
 rosbuild_add_executable(bag_to_pcd ros/src/bag_to_pcd.cpp)
@@ -112,10 +111,6 @@ target_link_libraries(evaluate_plane_segmentation cob_3d_mapping_tools)
 rosbuild_link_boost(evaluate_plane_segmentation program_options)
 
 # Gui:
-rosbuild_add_executable(test_gui_tool common/src/test_gui_tool.cpp)
-#rosbuild_add_executable(test_gui common/src/test_gui.cpp)
-#target_link_libraries(test_gui ${wxWidgets_LIBRARIES})
-
 rosbuild_add_executable(test_gui common/src/test_wx_gui.cpp)
 target_link_libraries(test_gui ${wxWidgets_LIBRARIES} cob_3d_mapping_tools)
 rosbuild_link_boost(test_gui program_options signals)
@@ -125,10 +120,15 @@ target_link_libraries(test_hsv_tool ${wxWidgets_LIBRARIES} cob_3d_mapping_tools)
 rosbuild_link_boost(test_hsv_tool program_options signals)
 
 rosbuild_add_executable(bag_gui ros/src/bag_gui.cpp)
-target_link_libraries(bag_gui ${wxWidgets_LIBRARIES} cob_3d_mapping_tools)
+target_link_libraries(bag_gui ${wxWidgets_LIBRARIES} cob_3d_mapping_tools cob_3d_mapping_features_omp)
+rosbuild_link_boost(bag_gui signals)
 
 rosbuild_add_executable(gui_normals common/src/gui_normals.cpp)
-target_link_libraries(gui_normals ${wxWidgets_LIBRARIES} cob_3d_mapping_tools)
+target_link_libraries(gui_normals ${wxWidgets_LIBRARIES} cob_3d_mapping_tools cob_3d_mapping_features_omp)
+rosbuild_link_boost(gui_normals signals)
+
+rosbuild_add_executable(noise_gen ros/src/noise_gen.cpp)
+rosbuild_link_boost(noise_gen signals)
 
 
 rosbuild_add_executable(test_perspective_projection common/src/test_perspective_projection.cpp)

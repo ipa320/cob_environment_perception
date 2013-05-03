@@ -65,7 +65,7 @@
 
 //AmplitudeFilter
 #include <cob_3d_mapping_filters/amplitude_filter.h>
-#include <cob_3d_mapping_filters/impl/amplitude_filter.hpp>
+//#include <cob_3d_mapping_filters/impl/amplitude_filter.hpp>
 
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
@@ -82,31 +82,31 @@
 double TestProcessingTimeOnce(unsigned int cloud_size, unsigned int iterations)
 {
   cob_3d_mapping_filters::AmplitudeFilter<PointXYZA> filter;
-    pcl::PointCloud<PointXYZA>::Ptr cloud(new pcl::PointCloud<PointXYZA> ());
-    pcl::PointCloud<PointXYZA>::Ptr cloud_out(new pcl::PointCloud<PointXYZA> ());
+  pcl::PointCloud<PointXYZA>::Ptr cloud(new pcl::PointCloud<PointXYZA> ());
+  pcl::PointCloud<PointXYZA>::Ptr cloud_out(new pcl::PointCloud<PointXYZA> ());
 
-    cloud->points.resize(cloud_size);
-    cloud->width = cloud_size;
-    cloud->height = 1;
-    for(unsigned int i=0; i<cloud_size; i++)
-    {
-      PointXYZA pt;
-      pt.x = pt.y = pt.z = pt.amplitude = 1;
-      cloud->points[i] = pt;
-    }
-    filter.setInputCloud(cloud);
-    //boost::timer t;
-    double time=0;
-    for(unsigned int i=0; i<iterations; i++)
-    {
-      PrecisionStopWatch sw;
-      sw.precisionStart();
-      filter.filter(*cloud_out);
-      time += sw.precisionStop();
-    }
-    time /= iterations;
-    std::cout << "Cloud size " << cloud_size << ": " << time << " s" << std::endl;
-    return time;
+  cloud->points.resize(cloud_size);
+  cloud->width = cloud_size;
+  cloud->height = 1;
+  for(unsigned int i=0; i<cloud_size; i++)
+  {
+    PointXYZA pt;
+    pt.x = pt.y = pt.z = pt.amplitude = 1;
+    cloud->points[i] = pt;
+  }
+  filter.setInputCloud(cloud);
+  //boost::timer t;
+  double time=0;
+  for(unsigned int i=0; i<iterations; i++)
+  {
+    PrecisionStopWatch sw;
+    sw.precisionStart();
+    filter.filter(*cloud_out);
+    time += sw.precisionStop();
+  }
+  time /= iterations;
+  std::cout << "Cloud size " << cloud_size << ": " << time << " s" << std::endl;
+  return time;
 }
 
 void TestProcessingTime()

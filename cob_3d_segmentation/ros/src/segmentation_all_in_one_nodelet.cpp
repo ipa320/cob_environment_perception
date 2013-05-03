@@ -87,7 +87,6 @@
 void
 cob_3d_segmentation::SegmentationAllInOneNodelet::onInit()
 {
-  //PCLNodelet::onInit();
   nh_ = getNodeHandle();
 
   config_server_.reset(new dynamic_reconfigure::Server<segmentation_nodeletConfig>(getPrivateNodeHandle()));
@@ -105,14 +104,21 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::onInit()
   cc_.setNormalCloudInOut(normals_);
   cc_.setLabelCloudIn(labels_);
 
-
-  sub_points_ = nh_.subscribe<PointCloud>("cloud_in", 1, boost::bind(&SegmentationAllInOneNodelet::receivedCloudCallback, this, _1));
+  if(!is_running_ && !enable_action_mode_)
+  {
+    ROS_INFO("Starting segmentation...");
+    sub_points_ = nh_.subscribe("cloud_in", 1, &SegmentationAllInOneNodelet::receivedCloudCallback, this);
+    is_running_ = true;
+  }
   pub_segmented_ = nh_.advertise<PointCloud>("/segmentation/segmented_cloud", 1);
   pub_classified_ = nh_.advertise<PointCloud>("/segmentation/classified_cloud", 1);
   pub_shape_array_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray>("/segmentation/shape_array",1);
   pub_chull_ = nh_.advertise<PointCloud>("/segmentation/concave_hull", 1);
   pub_chull_dense_ = nh_.advertise<PointCloud>("/segmentation/concave_hull_dense", 1);
   std::cout << "Loaded segmentation nodelet" << std::endl;
+
+  as_ = new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerAction>(nh_, "segmentation/trigger", boost::bind(&SegmentationAllInOneNodelet::actionCallback, this, _1), false);
+  as_->start();
 }
 
 void
@@ -122,7 +128,31 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::configCallback(
 {
   NODELET_INFO("[segmentation]: received new parameters");
   centroid_passthrough_ = config.centroid_passthrough;
+  enable_action_mode_ = config.enable_action_mode;
 }
+
+
+void
+cob_3d_segmentation::SegmentationAllInOneNodelet::actionCallback(
+  const cob_3d_mapping_msgs::TriggerGoalConstPtr& goal)
+{
+  cob_3d_mapping_msgs::TriggerResult result;
+  if(goal->start && !is_running_)
+  {
+    ROS_INFO("Starting segmentation...");
+    sub_points_ = nh_.subscribe("cloud_in", 1, &SegmentationAllInOneNodelet::receivedCloudCallback, this);
+    is_running_ = true;
+  }
+  else if(!goal->start && is_running_)
+  {
+    ROS_INFO("Stopping segmentation...");
+    sub_points_.shutdown();
+    is_running_ = false;
+  }
+
+  as_->setSucceeded(result);
+}
+
 
 void
 cob_3d_segmentation::SegmentationAllInOneNodelet::receivedCloudCallback(PointCloud::ConstPtr cloud)
@@ -138,11 +168,12 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::receivedCloudCallback(PointClo
   seg_.setInputCloud(cloud);
   seg_.performInitialSegmentation();
   seg_.refineSegmentation();
-  std::map<int,int> objects;
+  graph_->clusters()->mapClusterColor(segmented_);
+
   //seg_.getPotentialObjects(objects, 500);
   //std::cout << "Found " << objects.size() << " potentail objects" << std::endl;
   NODELET_INFO("Done with segmentation .... ");
-  graph_->clusters()->mapClusterColor(segmented_);
+
 
   cc_.setPointCloudIn(cloud);
   cc_.classify();
@@ -162,7 +193,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::receivedCloudCallback(PointClo
   ss << "/share/goa-sf/pcd_data/bags/pcd_borders/borders_"<<cloud->header.stamp<<".pcd";
   pcl::io::savePCDFileASCII(ss.str(), *bp);
    */
-  publishShapeArray(graph_->clusters(), objects, cloud);
+  publishShapeArray(graph_->clusters(), cloud);
 
   NODELET_INFO("Done with publishing .... ");
 
@@ -170,7 +201,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::receivedCloudCallback(PointClo
 
 void
 cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
-  ST::CH::Ptr cluster_handler, std::map<int,int>& objs, PointCloud::ConstPtr cloud)
+  ST::CH::Ptr cluster_handler, PointCloud::ConstPtr cloud)
 {
   cob_3d_mapping_msgs::ShapeArray sa;
   sa.header = cloud->header;
@@ -180,6 +211,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull(new pcl::PointCloud<pcl::PointXYZRGB>);
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud_dense(new pcl::PointCloud<pcl::PointXYZRGB>);
 
+  unsigned int id = 0;
   for (ST::CH::ClusterPtr c = cluster_handler->begin(); c != cluster_handler->end(); ++c)
   {
     // compute hull:
@@ -210,8 +242,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
 
     sa.shapes.push_back(cob_3d_mapping_msgs::Shape());
     cob_3d_mapping_msgs::Shape* s = &sa.shapes.back();
-    if (objs.find(c->id()) != objs.end()) s->id = objs[c->id()] + 1;
-    else s->id = 0;
+    s->id = id++;
     s->points.resize(poly.polys_.size());
     s->header.frame_id = cloud->header.frame_id.c_str();
     Eigen::Vector3f color = c->computeDominantColorVector().cast<float>();

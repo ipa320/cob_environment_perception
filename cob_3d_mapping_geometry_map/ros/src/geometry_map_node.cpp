@@ -110,7 +110,7 @@ GeometryMapNode::GeometryMapNode()
   ctr_ = 0;
   shape_sub_ = n_.subscribe("shape_array", 10, &GeometryMapNode::shapeCallback, this);
   map_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("map_array",1);
-  marker_pub_ = n_.advertise<visualization_msgs::Marker>("geometry_marker",100);
+  //marker_pub_ = n_.advertise<visualization_msgs::Marker>("geometry_marker",100);
   clear_map_server_ = n_.advertiseService("clear_map", &GeometryMapNode::clearMap, this);
   get_map_server_ = n_.advertiseService("get_map", &GeometryMapNode::getMap, this);
   set_map_server_ = n_.advertiseService("set_map", &GeometryMapNode::setMap, this);
@@ -122,7 +122,7 @@ GeometryMapNode::GeometryMapNode()
   geometry_map_.setFilePath(file_path_);
   geometry_map_.setSaveToFile(save_to_file_);
 
-  primitive_pub_=n_.advertise<visualization_msgs::Marker>("primitives",100);
+  //primitive_pub_=n_.advertise<visualization_msgs::Marker>("primitives",100);
 }
 
 /**
@@ -151,20 +151,24 @@ GeometryMapNode::dynReconfCallback(cob_3d_mapping_geometry_map::geometry_map_nod
 void
 GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& sa)
 {
+  ROS_INFO("Adding %d new shapes",sa->shapes.size());
   tf::StampedTransform trf_map;
   Eigen::Affine3f af_orig = Eigen::Affine3f::Identity();
 
-  try
+  if(enable_tf_)
   {
-    tf_listener_.waitForTransform(map_frame_id_, sa->header.frame_id, sa->header.stamp, ros::Duration(2));
-    tf_listener_.lookupTransform(map_frame_id_, sa->header.frame_id, sa->header.stamp, trf_map);
-  }
-  catch (tf::TransformException ex) { ROS_ERROR("[geometry map node] : %s",ex.what()); return; }
+    try
+    {
+      tf_listener_.waitForTransform(map_frame_id_, sa->header.frame_id, sa->header.stamp, ros::Duration(0.2));
+      tf_listener_.lookupTransform(map_frame_id_, sa->header.frame_id, sa->header.stamp, trf_map);
+    }
+    catch (tf::TransformException ex) { ROS_ERROR("[geometry map node] : %s",ex.what()); return; }
 
-  Eigen::Affine3d ad;
-  tf::TransformTFToEigen(trf_map, ad);
-  af_orig = ad.cast<float>();
-  af_orig = geometry_map_.getLastError() * af_orig;
+    Eigen::Affine3d ad;
+    tf::TransformTFToEigen(trf_map, ad);
+    af_orig = ad.cast<float>();
+    af_orig = geometry_map_.getLastError() * af_orig;
+  }
 
   static int ctr=0;
 
@@ -182,12 +186,12 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& 
         Polygon::Ptr p(new Polygon);
         fromROSMsg(sa->shapes[i], *p);
         p->transform2tf(af_orig);
-        if(p->id != 0)
+        /*if(p->id != 0)
         {
           if (sc_map.find(p->id) == sc_map.end()) sc_map[p->id] = ShapeCluster::Ptr(new ShapeCluster);
           sc_map[p->id]->insert(boost::static_pointer_cast<Shape>(p));
         }
-        else { polygon_list.push_back(p); }
+        else {*/ polygon_list.push_back(p); //}
         break;
       }
       case cob_3d_mapping_msgs::Shape::CYLINDER:
@@ -196,12 +200,12 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& 
         Cylinder::Ptr c(new Cylinder);
         fromROSMsg(sa->shapes[i], *c);
         c->transform2tf(af_orig);
-        if(c->id != 0)
+        /*if(c->id != 0)
         {
           if (sc_map.find(c->id) == sc_map.end()) sc_map[c->id] = ShapeCluster::Ptr(new ShapeCluster);
           sc_map[c->id]->insert(boost::static_pointer_cast<Shape>(c));
         }
-        else { cylinder_list.push_back(c); }
+        else {*/ cylinder_list.push_back(c);// }
         break;
       }
       default:
@@ -245,9 +249,9 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& 
   geometry_map_.cleanUp();
   geometry_map_.incrFrame();
 
-  publishMapMarker();
+  //publishMapMarker();
   publishMap();
-  publishPrimitives();
+  //publishPrimitives();
   ctr_++;
 }
 
@@ -277,6 +281,7 @@ GeometryMapNode::getMap(cob_3d_mapping_msgs::GetGeometryMap::Request &req, cob_3
     Polygon& sm = *(map_polygon->at(i));
     cob_3d_mapping_msgs::Shape s;
     toROSMsg(sm,s);
+    s.header = res.map.header;
     res.map.shapes.push_back(s);
   }
 
@@ -285,6 +290,7 @@ GeometryMapNode::getMap(cob_3d_mapping_msgs::GetGeometryMap::Request &req, cob_3
     Cylinder& sm = *(map_cylinder->at(i));
     cob_3d_mapping_msgs::Shape s;
     toROSMsg(sm,s);
+    s.header = res.map.header;
     res.map.shapes.push_back(s);
   }
 
@@ -294,6 +300,7 @@ GeometryMapNode::getMap(cob_3d_mapping_msgs::GetGeometryMap::Request &req, cob_3
 bool
 GeometryMapNode::setMap(cob_3d_mapping_msgs::SetGeometryMap::Request &req, cob_3d_mapping_msgs::SetGeometryMap::Response &res)
 {
+  ROS_INFO("Setting map with %d shapes.",req.map.shapes.size());
   geometry_map_.clearMap();
   std::vector<Polygon::Ptr>* map_polygon = geometry_map_.getMap_polygon();
   std::vector<Cylinder::Ptr>* map_cylinder = geometry_map_.getMap_cylinder();
@@ -306,6 +313,7 @@ GeometryMapNode::setMap(cob_3d_mapping_msgs::SetGeometryMap::Request &req, cob_3
     {
       Polygon::Ptr p(new Polygon);
       fromROSMsg(req.map.shapes[i],*p);
+      p->merged = 9;
       map_polygon->push_back(p);
     }
     else if(req.map.shapes[i].type==cob_3d_mapping_msgs::Shape::CYLINDER)

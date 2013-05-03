@@ -85,11 +85,14 @@ cob_3d_segmentation::DepthClusterHandler<LabelT,PointT,PointNT>::computeClusterC
   c->pca_point_comp2 = eigenvectors.col(1);
   c->pca_point_comp3 = eigenvectors.col(0);
   c->pca_point_values = eigenvalues;
+  
+  //std::cout << c->id() <<"("<< colorHumanReadable(c->label_color) <<") "<<c->size()<<" | "<< eigenvalues(0) <<", "<< eigenvalues(1) <<", "<< eigenvalues(2)<<" | ";
   if ( eigenvalues(0) / (eigenvalues(0)+eigenvalues(1)+eigenvalues(2)) < 0.001 * centroid(2) * centroid(2) )
   {
     c->type = I_PLANE;
     c->is_save_plane = true;
   }
+  //std::cout << c->is_save_plane << std::endl;
 }
 
 template<typename LabelT, typename PointT, typename PointNT> void

@@ -2,6 +2,8 @@
 <launch>
   <!-- start environment modelling -->
   <arg name="mapping_manager" value="mapping_manager"/>
+  <arg name="points_in" default="/cam3d/depth_registered/points"/>
+  <arg name="enable_point_map" default="false"/>
   <node pkg="nodelet" type="nodelet" name="$(arg mapping_manager)"  args="manager" output="screen"/>
 
   <!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
@@ -29,15 +31,19 @@
     <arg name="start_manager" value="false"/>
     <arg name="nodelet_manager" value="$(arg mapping_manager)"/>
   </include>
-	<include file="$(find cob_3d_mapping_point_map)/ros/launch/point_map.launch">
-		<arg name="start_manager" value="false"/>
-		<arg name="nodelet_manager" value="$(arg mapping_manager)"/>
-	</include>
-	<include file="$(find cob_3d_segmentation)/ros/launch/segmentation.launch">
-		<arg name="start_manager" value="false"/>
-		<arg name="nodelet_manager" value="$(arg mapping_manager)"/>
-	</include>
-	<include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch"/>
+  <include if="$(arg enable_point_map)" file="$(find cob_3d_mapping_point_map)/ros/launch/point_map.launch">
+    <arg name="start_manager" value="false"/>
+    <arg name="nodelet_manager" value="$(arg mapping_manager)"/>
+  </include>
+  <include file="$(find cob_3d_segmentation)/ros/launch/simple_segmentation.launch">
+    <arg name="start_manager" value="false"/>
+    <arg name="nodelet_manager" value="$(arg mapping_manager)"/>
+    <arg name="cloud_in" value="/registration_pass_through/output"/>
+  </include>
+  <include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch"/>
+  <include file="$(find cob_3d_visualization)/launch/shape_visualization.launch">
+    <arg name="shape_array_in" value="/geometry_map/map_array"/>
+  </include>
 
 
 

@@ -180,7 +180,7 @@ void Keypoints_Narf<Point>::extractFeatures(const pcl::PointCloud<Point>& point_
           continue;
 
         int ind2 = k_indices[0];
-        p.fpfh = pc_fpfh[ind2];
+        memcpy(p.histogram,pc_fpfh[ind2].histogram, 33*sizeof(float));
         narf_descriptors.push_back(p);
       }
 
