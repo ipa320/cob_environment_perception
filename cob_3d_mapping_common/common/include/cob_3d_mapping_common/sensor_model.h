@@ -65,6 +65,7 @@
 
 #include "cob_3d_mapping_common/polygon.h"
 #include <list>
+#include <algorithm>
 
 namespace cob_3d_mapping
 {
@@ -428,6 +429,13 @@ namespace cob_3d_mapping
       float dist_th = tolerance * 0.003f * query * query;
       //if (query < 1.2) dist_th += 0.01f;
       return (fabs(query - neighbor) < dist_th);
+    }
+
+    static bool areNeighbors(const Eigen::Vector3f& query, const Eigen::Vector3f&  neighbor, float tolerance = 4.0f)
+    {
+      tolerance += std::max( 0.0, 1.0f * (4.0f - std::min(fabs(query(0)),fabs(query(1))) * 10.0f) );
+      float dist_th =  tolerance * 0.003f * query(2) * query(2);
+      return (fabs(query(2) - neighbor(2)) < dist_th);
     }
 
     // specialized for cob_3d_mapping::Polygon
