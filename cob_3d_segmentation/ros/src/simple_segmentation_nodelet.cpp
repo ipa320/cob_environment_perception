@@ -85,7 +85,7 @@ cob_3d_segmentation::SimpleSegmentationNodelet::onInit()
   seg_.setLabelCloudInOut(labels_);
   seg_.setSeedMethod(SEED_RANDOM);
 
-  sub_points_ = nh_.subscribe<PointCloud>("point_cloud", 1, boost::bind(&SimpleSegmentationNodelet::topicCallback, this, _1));
+  //sub_points_ = nh_.subscribe<PointCloud>("point_cloud", 1, boost::bind(&SimpleSegmentationNodelet::topicCallback, this, _1));
   pub_segmented_ = nh_.advertise<PointCloud>("segmented_cloud", 1);
   pub_shape_array_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray>("shape_array",1);
   as_ = new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerAction>(nh_, "segmentation/trigger", boost::bind(&SimpleSegmentationNodelet::actionCallback, this, _1), false);
