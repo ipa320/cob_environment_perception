@@ -175,14 +175,14 @@ TableObjectCluster<Point>::removeKnownObjects(const PointCloudConstPtr& pc_roi,
     std::vector<int> indices;
     Eigen::Vector4f min_pt(bb.points[0].x, bb.points[0].y, bb.points[0].z, 1);
     Eigen::Vector4f max_pt(bb.points[1].x, bb.points[1].y, bb.points[1].z, 1);
-    pcl::getPointsInBox(pc_roi_red, min_pt, max_pt, indices);
+    pcl::getPointsInBox(*pc_roi, min_pt, max_pt, indices);
 		all_indices->indices.insert(all_indices->indices.end(), indices.begin(), indices.end());
   }
   pcl::ExtractIndices<Point> extract;
   extract.setInputCloud(pc_roi);
   extract.setIndices(all_indices);
   extract.setNegative(true);
-  extract.filter(pc_roi_red);
+  extract.filter(*pc_roi_red);
 }
 
 template<typename Point> void

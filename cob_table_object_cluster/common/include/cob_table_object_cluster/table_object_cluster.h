@@ -134,9 +134,9 @@ public:
    * @return nothing
    */
   void
-  removeKnownObjects(PointCloudPtr& pc_roi,
-                     std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > >& bounding_boxes,
-                     pcl::PointCloud<Point>& pc_roi_red);
+  removeKnownObjects(const PointCloudConstPtr& pc_roi,
+                     std::vector<pcl::PointCloud<pcl::PointXYZ> >& bounding_boxes,
+                     const PointCloudPtr& pc_roi_red);
 
 
   void
