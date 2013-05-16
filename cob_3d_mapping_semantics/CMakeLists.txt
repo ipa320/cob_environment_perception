@@ -36,7 +36,7 @@ rosbuild_add_executable(table_extraction_node ros/src/table_extraction_node.cpp)
 rosbuild_add_executable(supporting_plane_extraction_node ros/src/supporting_plane_extraction_node.cpp)
 rosbuild_add_executable(structure_extraction_node ros/src/structure_extraction_node.cpp)
 rosbuild_add_executable(get_tables_client ros/src/get_tables_client.cpp)
-rosbuild_add_executable(move_to_table_node ros/src/move_to_table_node.cpp)
+#rosbuild_add_executable(move_to_table_node ros/src/move_to_table_node.cpp)
 
 target_link_libraries(table_extraction_node cob_3d_mapping_semantics)
 target_link_libraries(supporting_plane_extraction_node cob_3d_mapping_semantics)
