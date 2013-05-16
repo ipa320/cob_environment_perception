@@ -163,25 +163,26 @@ TableObjectCluster<Point>::extractTableRoi2(const PointCloudConstPtr& pc_in,
 }
 
 template<typename Point> void
-TableObjectCluster<Point>::removeKnownObjects(PointCloudPtr& pc_roi,
-                                              std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > >& bounding_boxes,
-                   pcl::PointCloud<Point>& pc_roi_red)
+TableObjectCluster<Point>::removeKnownObjects(const PointCloudConstPtr& pc_roi,
+                   std::vector<pcl::PointCloud<pcl::PointXYZ> >& bounding_boxes,
+                   const PointCloudPtr& pc_roi_red)
 {
-  pcl::copyPointCloud(*pc_roi,pc_roi_red);
+  //pcl::copyPointCloud(*pc_roi,pc_roi_red);
+	boost::shared_ptr<pcl::PointIndices> all_indices(new pcl::PointIndices);
   for(unsigned int i=0; i<bounding_boxes.size(); i++)
   {
     pcl::PointCloud<pcl::PointXYZ>& bb = bounding_boxes[i];
     std::vector<int> indices;
     Eigen::Vector4f min_pt(bb.points[0].x, bb.points[0].y, bb.points[0].z, 1);
     Eigen::Vector4f max_pt(bb.points[1].x, bb.points[1].y, bb.points[1].z, 1);
-    pcl::PointIndices obj_indices;
-    pcl::getPointsInBox(pc_roi_red, min_pt, max_pt, obj_indices.indices);
-    pcl::ExtractIndices<Point> extract;
-    extract.setInputCloud(pc_roi_red.makeShared());
-    extract.setIndices(boost::make_shared<const pcl::PointIndices> (obj_indices));
-    extract.setNegative(true);
-    extract.filter(pc_roi_red);
+    pcl::getPointsInBox(pc_roi_red, min_pt, max_pt, indices);
+		all_indices->indices.insert(all_indices->indices.end(), indices.begin(), indices.end());
   }
+  pcl::ExtractIndices<Point> extract;
+  extract.setInputCloud(pc_roi);
+  extract.setIndices(all_indices);
+  extract.setNegative(true);
+  extract.filter(pc_roi_red);
 }
 
 template<typename Point> void
