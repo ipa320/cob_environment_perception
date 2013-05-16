@@ -65,6 +65,7 @@
 #include <cob_3d_mapping_common/minimal_rectangle_2d.h>
 #include <pcl/segmentation/extract_polygonal_prism_data.h>
 #include <pcl/filters/extract_indices.h>
+#include <pcl/filters/crop_box.h>
 #include <pcl/io/io.h>
 #include <pcl/common/common.h>
 #include <pcl/kdtree/kdtree_flann.h>
@@ -164,19 +165,20 @@ TableObjectCluster<Point>::extractTableRoi2(const PointCloudConstPtr& pc_in,
 
 template<typename Point> void
 TableObjectCluster<Point>::removeKnownObjects(const PointCloudConstPtr& pc_roi,
-                   std::vector<pcl::PointCloud<pcl::PointXYZ> >& bounding_boxes,
+                   std::vector<BoundingBox>& bounding_boxes,
                    const PointCloudPtr& pc_roi_red)
 {
   //pcl::copyPointCloud(*pc_roi,pc_roi_red);
 	boost::shared_ptr<pcl::PointIndices> all_indices(new pcl::PointIndices);
+  pcl::CropBox<Point> cb;
   for(unsigned int i=0; i<bounding_boxes.size(); i++)
   {
-    pcl::PointCloud<pcl::PointXYZ>& bb = bounding_boxes[i];
     std::vector<int> indices;
-    Eigen::Vector4f min_pt(bb.points[0].x, bb.points[0].y, bb.points[0].z, 1);
-    Eigen::Vector4f max_pt(bb.points[1].x, bb.points[1].y, bb.points[1].z, 1);
-    pcl::getPointsInBox(*pc_roi, min_pt, max_pt, indices);
-		all_indices->indices.insert(all_indices->indices.end(), indices.begin(), indices.end());
+    cb.setMin(bounding_boxes[i].min_pt);
+    cb.setMax(bounding_boxes[i].max_pt);
+    cb.setTransform(bounding_boxes[i].pose);
+    cb.filter(indices);
+    all_indices->indices.insert(all_indices->indices.end(), indices.begin(), indices.end());
   }
   pcl::ExtractIndices<Point> extract;
   extract.setInputCloud(pc_roi);
