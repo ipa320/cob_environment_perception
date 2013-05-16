@@ -70,6 +70,13 @@
 #include <pcl/ModelCoefficients.h>
 #include <pcl/PointIndices.h>
 
+struct BoundingBox
+{
+  Eigen::Vector4f min_pt;
+  Eigen::Vector4f max_pt;
+  Eigen::Affine3f pose;
+};
+
 
 template<typename Point>
 class TableObjectCluster
@@ -134,9 +141,9 @@ public:
    * @return nothing
    */
   void
-  removeKnownObjects(PointCloudPtr& pc_roi,
-                     std::vector<pcl::PointCloud<pcl::PointXYZ>, Eigen::aligned_allocator<pcl::PointCloud<pcl::PointXYZ> > >& bounding_boxes,
-                     pcl::PointCloud<Point>& pc_roi_red);
+  removeKnownObjects(const PointCloudConstPtr& pc_roi,
+                     std::vector<BoundingBox>& bounding_boxes,
+                     const PointCloudPtr& pc_roi_red);
 
 
   void

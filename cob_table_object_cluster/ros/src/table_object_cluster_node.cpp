@@ -81,6 +81,7 @@
 #include <pcl/point_types.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl/PointIndices.h>
+#include <eigen_conversions/eigen_msg.h>
 
 //#include <cob_3d_mapping_common/reconfigureable_node.h>
 #include <cob_table_object_cluster/table_object_cluster_nodeletConfig.h>
@@ -91,7 +92,7 @@
 // ROS message includes
 //#include <sensor_msgs/PointCloud2.h>
 #include <cob_3d_mapping_msgs/GetPointMap.h>
-#include <cob_3d_mapping_msgs/GetBoundingBoxes.h>
+#include <cob_3d_mapping_msgs/SetBoundingBoxes.h>
 #include <cob_3d_mapping_msgs/ShapeArray.h>
 #include <cob_perception_msgs/PointCloud2Array.h>
 #include <cob_object_detection_msgs/Detection.h>
@@ -144,7 +145,7 @@ public:
 
     // Services and Actions
     //get_bb_client_ = n_.serviceClient<cob_3d_mapping_msgs::GetBoundingBoxes>("get_known_objects");
-		set_known_objects_server_ = n_.advertiseService("set_known_objects", &TableObjectClusterNode::setKnownObjects, this);
+    set_known_objects_server_ = n_.advertiseService("set_known_objects", &TableObjectClusterNode::setKnownObjects, this);
   }
 
   // Destructor
@@ -173,26 +174,32 @@ public:
     enable_action_mode_ = config.enable_action_mode;
     if(enable_action_mode_)
     {
-      as_= new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TableObjectClusterAction>(n_, "table_object_cluster", boost::bind(&TableObjectClusterNode::actionCallback, this, _1), false);
-      as_->start();
+      std::cout << "action mode not supported" << std::endl;
+      //as_= new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TableObjectClusterAction>(n_, "table_object_cluster", boost::bind(&TableObjectClusterNode::actionCallback, this, _1), false);
+      //as_->start();
     }
     toc.setPrismHeight(config.height_min, config.height_max);
     toc.setClusterParams(config.min_cluster_size, config.cluster_tolerance);
   }
 
-	void
-	setKnownObjects(cob_object_detection_msgs::DetectionArray& known_objects)
-	{
-		known_objects_.clear();
-    for(unsigned int i=0; i<known_objects.detections.size(); i++)
+  bool
+  setKnownObjects(cob_3d_mapping_msgs::SetBoundingBoxes::Request& req, cob_3d_mapping_msgs::SetBoundingBoxes::Response& res)
+  {
+    known_objects_.clear();
+    for(unsigned int i=0; i<req.bounding_boxes.detections.size(); i++)
     {
-      pcl::PointCloud<pcl::PointXYZ> obj;
-			pcl::PointXYZ p;
-			//TODO: convert to 8 corner points
-      pcl::fromROSMsg(srv.response.bounding_boxes[i], obj);
-      known_objects_.push_back(obj);
+      BoundingBox bb;
+      bb.min_pt = Eigen::Vector4f(-req.bounding_boxes.detections[i].bounding_box_lwh.x,
+                                  -req.bounding_boxes.detections[i].bounding_box_lwh.y, 0, 1.0);
+      bb.max_pt = Eigen::Vector4f(req.bounding_boxes.detections[i].bounding_box_lwh.x,
+                                  req.bounding_boxes.detections[i].bounding_box_lwh.y,
+                                  req.bounding_boxes.detections[i].bounding_box_lwh.z, 1.0);
+      Eigen::Affine3d tf;
+      tf::poseMsgToEigen(req.bounding_boxes.detections[i].pose.pose , tf);
+      bb.pose = tf.cast<float>();
+      known_objects_.push_back(bb);
     }
-	}
+  }
 
   void
   compute(cob_object_detection_msgs::DetectionArray& bba,
@@ -441,7 +448,7 @@ protected:
 
   PointCloud::Ptr last_pc_;
   cob_3d_mapping_msgs::ShapeArray::ConstPtr last_sa_;
-	std::vector<pcl::PointCloud<pcl::PointXYZ> > known_objects_;
+	std::vector<BoundingBox> known_objects_;
 };
 
 

@@ -335,7 +335,8 @@ GeometryMap::cleanUp()
   int n_dropped = 0, m_dropped = 0, c_dropped=0;
   for(int idx = map_polygon_.size() - 1 ; idx >= 0; --idx)
   {
-    if (map_polygon_[idx]->merged <= 1 && (frame_counter_ - 3) > (int)map_polygon_[idx]->frame_stamp)
+    if (map_polygon_[idx]->merged <= 1 && (frame_counter_ - 3) > (int)map_polygon_[idx]->frame_stamp
+        && (int)map_polygon_[idx]->frame_stamp > 1)
     {
       ROS_INFO("cleaning id %d",idx);
       map_polygon_[idx] = map_polygon_.back();
@@ -351,18 +352,18 @@ GeometryMap::cleanUp()
       ROS_DEBUG_STREAM("merged:"<<(int)map_cylinder_[idx]->merged<<" frame ctr:"<<frame_counter_<<" frame st:"<<(int)map_cylinder_[idx]->frame_stamp<<" size:"<<(int)map_cylinder_[idx]->contours[0].size());
 
     if (map_cylinder_[idx]->merged <= 1 && (frame_counter_ - 2) > (int)map_cylinder_[idx]->frame_stamp)
-        {
-        drop_cyl=true;
-        }
+    {
+      drop_cyl=true;
+    }
     // TODO<<<<WATCH OUT<<<<< presentation configuration - hard coded limits >>>>>>>>>>>>>>>>>>
     if ((int)map_cylinder_[idx]->contours[0].size()<30 && (int)map_cylinder_[idx]->merged <= 1)
-        {
-         drop_cyl=true;
-        }
+    {
+      drop_cyl=true;
+    }
     if (map_cylinder_[idx]->r_ < 0.1 || map_cylinder_[idx]->r_>0.2)
-        {
-        drop_cyl=true;
-        }
+    {
+      drop_cyl=true;
+    }
     if ( drop_cyl==true)
     {
       map_cylinder_[idx] = map_cylinder_.back();
