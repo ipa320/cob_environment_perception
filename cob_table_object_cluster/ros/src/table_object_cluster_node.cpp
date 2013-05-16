@@ -143,7 +143,8 @@ public:
     object_cluster_pub_ = n_.advertise<cob_perception_msgs::PointCloud2Array>("cluster_array",1);
 
     // Services and Actions
-    get_bb_client_ = n_.serviceClient<cob_3d_mapping_msgs::GetBoundingBoxes>("get_known_objects");
+    //get_bb_client_ = n_.serviceClient<cob_3d_mapping_msgs::GetBoundingBoxes>("get_known_objects");
+		set_known_objects_server_ = n_.advertiseService("set_known_objects", &TableObjectClusterNode::setKnownObjects, this);
   }
 
   // Destructor
@@ -179,11 +180,28 @@ public:
     toc.setClusterParams(config.min_cluster_size, config.cluster_tolerance);
   }
 
+	void
+	setKnownObjects(cob_object_detection_msgs::DetectionArray& known_objects)
+	{
+		known_objects_.clear();
+    for(unsigned int i=0; i<known_objects.detections.size(); i++)
+    {
+      pcl::PointCloud<pcl::PointXYZ> obj;
+			pcl::PointXYZ p;
+			//TODO: convert to 8 corner points
+      pcl::fromROSMsg(srv.response.bounding_boxes[i], obj);
+      known_objects_.push_back(obj);
+    }
+	}
+
   void
   compute(cob_object_detection_msgs::DetectionArray& bba,
           cob_perception_msgs::PointCloud2Array& pca)
   {
-    toc.setInputCloud(last_pc_);
+    pcl::PointCloud<Point>::Ptr pc_red(new pcl::PointCloud<Point>);
+    toc.removeKnownObjects(last_pc_, known_objects_, pc_red);
+    //*last_pc_ = *pc_red;
+    toc.setInputCloud(pc_red);
     for(size_t i=0; i<last_sa_->shapes.size(); ++i)
     {
       //convert shape msgs to point cloud
@@ -199,6 +217,7 @@ public:
       ROS_INFO("ROI took %f seconds", sw.precisionStop());
       ROS_INFO("ROI has %d points", pc_roi->indices.size());
       if(!pc_roi->indices.size()) return;
+
       std::stringstream ss;
       if(save_to_file_)
       {
@@ -289,13 +308,13 @@ public:
   /**
    * @brief detects objects on table and recognizes them
    *
-   * detects objects on table and recognizes them
+   * DEPRECATED
    *
    * @param goal unused
    *
    * @return nothing
    */
-  void
+  /*void
   actionCallback(const cob_3d_mapping_msgs::TableObjectClusterGoalConstPtr &goal)
   {
     //boost::lock_guard<boost::mutex> guard(mutex_);
@@ -332,18 +351,9 @@ public:
     bba_pub_.publish(bba);
     publishMarker(bba);
     object_cluster_pub_.publish(pca);
-
-    /*
-    for(unsigned int i=0; i< bba.size(); ++i)
-    {
-      sensor_msgs::PointCloud2 bb;
-      pcl::toROSMsg(bba[i], bb);
-      result.bounding_boxes.push_back(bb);
-    }
-    */
     result.bounding_boxes = bba;
     as_->setSucceeded(result);
-  }
+  }*/
 
   void
   topicCallback(const PointCloud::ConstPtr& pc, const cob_3d_mapping_msgs::ShapeArray::ConstPtr& sa)
@@ -406,7 +416,8 @@ public:
 
 protected:
   actionlib::SimpleActionServer<cob_3d_mapping_msgs::TableObjectClusterAction>* as_;
-  ros::ServiceClient get_bb_client_;
+  //ros::ServiceClient get_bb_client_;
+	ros::ServiceServer set_known_objects_server_;
   ros::Publisher bba_pub_;
   ros::Publisher marker_pub_;
   ros::Publisher object_cluster_pub_;
@@ -430,6 +441,7 @@ protected:
 
   PointCloud::Ptr last_pc_;
   cob_3d_mapping_msgs::ShapeArray::ConstPtr last_sa_;
+	std::vector<pcl::PointCloud<pcl::PointXYZ> > known_objects_;
 };
 
 
