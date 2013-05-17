@@ -67,6 +67,8 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <cob_3d_mapping_common/point_types.h>
+#include <cob_3d_mapping_msgs/ShapeArray.h>
+#include <cob_3d_mapping_msgs/Shape.h>
 
 /**
  * a general abstract class for segmentation purpose of 3d pointclouds
@@ -82,6 +84,9 @@ public:
   virtual boost::shared_ptr<const pcl::PointCloud<PointLabel> > getOutputCloud () =0;
 
   virtual bool compute()=0;
+
+  /// convert to ROS message
+  virtual operator cob_3d_mapping_msgs::ShapeArray() const = 0;
 };
 
 

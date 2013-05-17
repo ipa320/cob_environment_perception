@@ -19,30 +19,30 @@ public:
 	MapDemonCtrl(MapDemonCtrlParams * params, SerialDevice * sd);
 
 	/// Destructor
-	~MapDemonCtrl();
+	virtual ~MapDemonCtrl();
 
 	pthread_mutex_t m_mutex;
 
-	bool Init(MapDemonCtrlParams * params);
+	virtual bool Init(MapDemonCtrlParams * params);
 
-	bool isInitialized() const
+	virtual bool isInitialized() const
 	{
 		return m_Initialized;
 	}
 
-	bool RunCalibration() ;
+	virtual bool RunCalibration() ;
 
-	bool MovePos( const std::vector<double>& target_positions );
-	bool MoveVel( const std::vector<double>& target_velocities );
+	virtual bool MovePos( const std::vector<double>& target_positions );
+	virtual bool MoveVel( const std::vector<double>& target_velocities );
 
-	std::string getErrorMessage() const
+	virtual std::string getErrorMessage() const
 	{
 		return m_ErrorMessage;
 	}
 
-	bool Close() ;
-	bool Stop();
-	bool Recover() ;
+	virtual bool Close() ;
+	virtual bool Stop();
+	virtual bool Recover() ;
 
 	//////////////////////////////////
 	// functions to set parameters: //
@@ -59,7 +59,7 @@ public:
 	/*!
 	 * \brief Gets the current positions
 	 */
-	std::vector<double> GetPositions()
+	virtual std::vector<double> GetPositions()
 	{
 		return m_positions;
 	}
@@ -67,15 +67,15 @@ public:
 	/*!
 	 * \brief Gets the current velcities
 	 */
-	std::vector<double> GetVelocities()
+	virtual std::vector<double> GetVelocities()
 	{
 		return m_velocities;
 	}
 
-	bool UpdatePositions();
+	virtual bool UpdatePositions();
 
 
-private:
+protected:
 	bool m_Initialized;
 	int m_DeviceHandle;
 	bool m_SerialDeviceOpened;
