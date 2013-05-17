@@ -11,7 +11,5 @@
   <depend stack="ros_comm" /> <!-- rosbag, std_msgs -->
   <depend stack="visualization" /> <!-- rviz -->
   <depend stack="cob_common" /> <!-- cob_srvs -->
-  <depend stack="arm_navigation" /> <!-- arm_navigation_msgs -->
-  <depend stack="object_manipulation" /> <!-- household_object_database_msgs -->
   <depend stack="cob_perception_common" /> <!-- cob_object_detection_msgs -->
 </stack>

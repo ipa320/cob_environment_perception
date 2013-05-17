@@ -86,7 +86,7 @@
 //internal includes
 #include <cob_3d_mapping_msgs/ShapeArray.h>
 #include <cob_3d_mapping_msgs/GetGeometryMap.h>
-#include <cob_3d_mapping_msgs/GetObjectsOfClass.h>
+//#include <cob_3d_mapping_msgs/GetObjectsOfClass.h>
 #include <cob_3d_mapping_msgs/GetTables.h>
 //#include <cob_3d_mapping_msgs/MoveToTable.h>
 #include <cob_3d_mapping_semantics/table_extraction.h>
@@ -117,8 +117,8 @@ public:
     sa_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_array_pub", 1); //10
     s_marker_pub_ = n_.advertise<visualization_msgs::Marker> ("marker", 10);
 
-    get_tables_server_ = n_.advertiseService ("get_objects_of_class", &TableExtractionNode::getTablesService, this);
-    get_tables_server_2_ = n_.advertiseService ("get_tables", &TableExtractionNode::getTablesService2, this);
+    get_tables_server_ = n_.advertiseService ("get_tables", &TableExtractionNode::getTablesService, this);
+    //get_tables_server_2_ = n_.advertiseService ("get_tables", &TableExtractionNode::getTablesService2, this);
 
     /*ros::NodeHandle private_nh("~");
     private_nh.getParam ("target_frame", target_frame_id_);
@@ -200,18 +200,24 @@ public:
    * @return true if service successful
    */
   bool
-  getTablesService (cob_3d_mapping_msgs::GetObjectsOfClassRequest &req,
-                    cob_3d_mapping_msgs::GetObjectsOfClassResponse &res)
+  getTablesService (cob_3d_mapping_msgs::GetTablesRequest &req,
+                    cob_3d_mapping_msgs::GetTablesResponse &res)
   {
-    ROS_INFO("service get_tables started....");
+    ROS_INFO("table detection started...");
 
     cob_3d_mapping_msgs::ShapeArray sa;
     if (getMapService (sa))
     {
-      processMap(sa, res.objects);
-      publishShapeMarker (res.objects);
-      table_ctr_ = res.objects.shapes.size();
-      ROS_INFO("Found %u tables", (unsigned int)res.objects.shapes.size());
+    	if(sa.header.frame_id != target_frame_id_)
+    	{
+      		ROS_ERROR("Frame IDs do not match, aborting...");
+      		return false;
+    	}
+      processMap(sa, res.tables);
+      res.tables.header = sa.header;
+      publishShapeMarker (res.tables);
+      table_ctr_ = res.tables.shapes.size();
+      ROS_INFO("Found %u tables", table_ctr_);
       return true;
     }
     else
@@ -226,7 +232,7 @@ public:
    *
    * @return true if service successful
    */
-  bool
+  /*bool
   getTablesService2 (cob_3d_mapping_msgs::GetTablesRequest &req,
                      cob_3d_mapping_msgs::GetTablesResponse &res)
   {
@@ -243,45 +249,6 @@ public:
 
       for (unsigned int i = 0; i < tables.shapes.size (); i++)
       {
-        //Polygon poly;
-        /*Polygon::Ptr poly_ptr(new Polygon());
-        fromROSMsg(tables.shapes[i], *poly_ptr);
-
-        cob_3d_mapping_msgs::Table table;
-        Eigen::Affine3f pose;
-        Eigen::Vector4f min_pt;
-        Eigen::Vector4f max_pt;
-        poly_ptr->computePoseAndBoundingBox(pose,min_pt, max_pt);
-        table.pose.pose.position.x = pose.translation()(0); //poly_ptr->centroid[0];
-        table.pose.pose.position.y = pose.translation()(1) ;//poly_ptr->centroid[1];
-        table.pose.pose.position.z = pose.translation()(2) ;//poly_ptr->centroid[2];
-        Eigen::Quaternionf quat(pose.rotation());
-        //            ROS_WARN("poly_ptr->centroid[0]");
-        //            std::cout << poly_ptr->centroid[0]<< "\n";
-        //            ROS_WARN("pose.translation()");
-        //            std::cout << pose.translation() << "\n" ;
-
-        table.pose.pose.orientation.x = quat.x();
-        table.pose.pose.orientation.y = quat.y();
-        table.pose.pose.orientation.z = quat.z();
-        table.pose.pose.orientation.w = quat.w();
-//TODO: compute proper BB
-        table.x_min = min_pt(0);
-        table.x_max = max_pt(0);
-        table.y_min = min_pt(1);
-        table.y_max = max_pt(1);
-
-//TODO: also add other contours => change msg type
-        table.convex_hull.type = arm_navigation_msgs::Shape::MESH;
-        for( unsigned int j=0; j<poly_ptr->contours[0].size(); j++)
-        {
-          geometry_msgs::Point p;
-          p.x = poly_ptr->contours[0][j](0);
-          p.y = poly_ptr->contours[0][j](1);
-          p.z = poly_ptr->contours[0][j](2);
-          table.convex_hull.vertices.push_back(p);
-        }*/
-
         cob_3d_mapping_msgs::TabletopDetectionResult det;
         det.table = tables.shapes[i];//table;
 
@@ -296,7 +263,7 @@ public:
     }
     else
       return false;
-  }
+  }*/
 
   /**
    * @brief service offering geometry map of the scene
@@ -345,6 +312,7 @@ public:
       marker.id = i;
       s_marker_pub_.publish (marker);
     }
+    table_ctr_old_ = table_ctr_;
     for(unsigned int i=0; i<sa.shapes.size(); i++)
     {
       visualization_msgs::Marker marker;
@@ -356,8 +324,8 @@ public:
       marker.header.stamp = ros::Time::now ();
 
       marker.id = i;
-      marker.scale.x = 0.05;
-      marker.scale.y = 0.05;
+      marker.scale.x = 0.03;
+      marker.scale.y = 0.03;
       marker.scale.z = 0;
       marker.color.r = 0;//1;
       marker.color.g = 0;
