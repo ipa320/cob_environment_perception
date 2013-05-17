@@ -66,6 +66,7 @@
 #ifndef LABELING_H_
 #define LABELING_H_
 
+// convert mark to "some" color
 template<typename Point>
 void SetLabeledPoint(Point &pt, const int mark)
 {
@@ -74,6 +75,16 @@ void SetLabeledPoint(Point &pt, const int mark)
   pt.r= (color>>0)&0xff;
   pt.g= (color>>8)&0xff;
   pt.b=(color>>16)&0xff;
+}
+
+template<>
+void SetLabeledPoint<PointXYZLabel>(PointXYZLabel &pt, const int mark)
+{
+}
+
+template<>
+void SetLabeledPoint<PointXYZILabel>(PointXYZILabel &pt, const int mark)
+{
 }
 
 

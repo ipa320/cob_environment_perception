@@ -23,6 +23,7 @@ public:
 	bool checkIfStillThere();
 	
 	void GetString( std::string& rxstr );
+	void GetStringWithEndline( std::string& rxstr );
 
 	unsigned char GetChar();
 	

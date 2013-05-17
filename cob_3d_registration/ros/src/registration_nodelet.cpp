@@ -93,32 +93,33 @@
 #include "cob_3d_registration/EvaluationResult.h"
 #include "parameters/parameters_bag.h"
 
-#include <registration/registration_icp.h>
+#include <sensor_msgs/CameraInfo.h>
+
+#include <cob_3d_registration/registration_icp.h>
 
 #include <vtkCommand.h>
 #include <pcl/features/feature.h>
 #ifndef GICP_ENABLE
-#include <registration/registration_icp_moments.h>
-#include <registration/registration_icp_fpfh.h>
-#include <registration/registration_icp_narf.h>
+#include <cob_3d_registration/registration_icp_moments.h>
+#include <cob_3d_registration/registration_icp_fpfh.h>
+#include <cob_3d_registration/registration_icp_narf.h>
 
 //#include <registration/registration_fastslam.h>
 //#include <cob_vision_utils/VisionUtils.h>
 #include <opencv/cv.h>
 
-#include <registration/registration_icp_edges.h>
-#include <registration/registration_info.h>
-#include <registration/registration_correspondence.h>
-#include <registration_rgbdslam.h>
+#include <cob_3d_registration/registration_icp_edges.h>
+#include <cob_3d_registration/registration_info.h>
+//#include <cob_3d_registration/registration_correspondence.h>
 #endif
 
 #include <pcl/filters/voxel_grid.h>
-#include <registration/preprocessing/kinect_error.h>
+#include <cob_3d_registration/preprocessing/kinect_error.h>
 
 #include <cv_bridge/cv_bridge.h>
 #include <sys/stat.h>
 
-#include <registration/measurements/measure.h>
+#include <cob_3d_registration/measurements/measure.h>
 #include <cob_srvs/Trigger.h>
 #include <cob_3d_mapping_msgs/TriggerAction.h>
 
@@ -189,13 +190,13 @@ class RegistrationNodelet : public nodelet::Nodelet
 public:
   // Constructor
   RegistrationNodelet():
-    reg_(NULL), ctr_(0), is_running_(false)
+    ctr_(0), reg_(NULL), is_running_(false)
   {
     //onInit();
   }
 
   RegistrationNodelet(bool dummy):
-    reg_(NULL), ctr_(0), is_running_(false)
+    ctr_(0), reg_(NULL), is_running_(false)
   {
   }
 
@@ -267,9 +268,7 @@ public:
     as_= boost::shared_ptr<actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerAction> >(new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerAction>(n_, "trigger_mapping", boost::bind(&RegistrationNodelet::actionCallback, this, _1), false));
     as_->start();
     //point_cloud_pub_ = n_.advertise<pcl::PointCloud<Point> >("result_pc",1);
-#if SHOW_MAP
-    marker2_pub_ = n_.advertise<pcl::PointCloud<Point> >("result_marker",1);
-#endif
+    marker_pub_ = n_.advertise<pcl::PointCloud<Point> >("result_marker",1);
     //point_cloud_sub_ = n_.subscribe("point_cloud2", 1, &RegistrationNodelet::pointCloudSubCallback, this);
     //register_ser_ = n_.advertiseService("registration_process", &RegistrationNodelet::registerService, this);
     //marker_pub_ = n_.advertise<visualization_msgs::Marker>("markers", 1);
@@ -301,6 +300,7 @@ public:
     return true;
   }
 
+  double _time_;
   /**
    * @brief callback for point cloud subroutine
    *
@@ -321,6 +321,28 @@ public:
 
     reg_->setInputOginalCloud(pc_in);
 
+    /*StampedTransform transform, transform2;
+    try
+    {
+      tf_listener_.waitForTransform(pc_frame_id_, world_id_, pc_in->header.stamp, ros::Duration(0.1));
+      tf_listener_.lookupTransform(pc_frame_id_, world_id_, pc_in->header.stamp, transform);
+
+      ROS_DEBUG("Registering new point cloud");
+
+      Eigen::Affine3d af;
+      tf::TransformTFToEigen(transform, af);
+      ROS_INFO("got odometry");
+      _time_ = transform.stamp_.toSec();
+      reg_->setOdometry(af.matrix().cast<float>());
+    }
+    catch (tf::TransformException ex)
+    {
+      ROS_ERROR("[registration] : %s",ex.what());
+      return;
+    }
+
+    ROS_INFO("ts diff %f",pc_in->header.stamp.toSec()-_time_);*/
+
     if(do_register(*pc_in,cv_bridge::CvImagePtr(),NULL)||ctr_==0) {
       if(point_cloud_pub_aligned_.getNumSubscribers()>0) {
         pcl::PointCloud<Point> pc;
@@ -332,6 +354,7 @@ public:
       StampedTransform transform;
       Eigen::Affine3d af;
       af.matrix()=reg_->getTransformation().cast<double>();
+      //std::cout<<reg_->getTransformation()<<"\n";
       tf::TransformEigenToTF(af,transform);
       //std::cout << transform.stamp_ << std::endl;
       tf_br_.sendTransform(tf::StampedTransform(transform, pc_in->header.stamp, world_id_, corrected_id_));
@@ -341,6 +364,16 @@ public:
     else
       ROS_WARN("registration not successful");
     ctr_++;
+
+    if(marker_pub_.getNumSubscribers()>0)
+    {
+      std::string s_algo;
+      if(parameters_.getParam("algo",s_algo) && s_algo=="info") {
+        pcl::PointCloud<Point> result = *((cob_3d_registration::Registration_Infobased<Point>*)reg_)->getMarkers2();
+        result.header=pc_in->header;
+        marker_pub_.publish(result);
+      }
+    }
   }
 
   /**
@@ -553,8 +586,6 @@ public:
       //        e_algo=E_ALGO_FASTSLAM;
       else if(s_algo=="icp_edges")
         e_algo=E_ALGO_ICP_EDGES;
-      else if(s_algo=="rgbdslam")
-        e_algo=E_ALGO_RGBDSLAM;
       else if(s_algo=="info")
         e_algo=E_ALGO_INFO;
       else if(s_algo=="cor")
@@ -564,37 +595,37 @@ public:
 
     }
     else
-      ROS_WARN("using algo icp", e_algo);
+      ROS_WARN("using algo icp");
 
     //init: settings
     ROS_INFO("init %s", s_algo.c_str());
     switch(e_algo) {
       case E_ALGO_ICP:
-        reg_ = new Registration_ICP<Point>();
+        reg_ = new cob_3d_registration::Registration_ICP<Point>();
 
-        setSettings_ICP((Registration_ICP<Point>*)reg_);
+        setSettings_ICP((cob_3d_registration::Registration_ICP<Point>*)reg_);
         break;
 
       case E_ALGO_GICP:
-        reg_ = new Registration_ICP<Point>();
+        reg_ = new cob_3d_registration::Registration_ICP<Point>();
 
-        setSettings_ICP((Registration_ICP<Point>*)reg_);
-        ((Registration_ICP<Point>*)reg_)->setUseGICP(true);
+        setSettings_ICP((cob_3d_registration::Registration_ICP<Point>*)reg_);
+        ((cob_3d_registration::Registration_ICP<Point>*)reg_)->setUseGICP(true);
 
         break;
 
       case E_ALGO_ICP_LM:
-        reg_ = new Registration_ICP<Point>();
-        ((Registration_ICP<Point>*)reg_)->setNonLinear(true);
+        reg_ = new cob_3d_registration::Registration_ICP<Point>();
+        ((cob_3d_registration::Registration_ICP<Point>*)reg_)->setNonLinear(true);
 
-        setSettings_ICP((Registration_ICP<Point>*)reg_);
+        setSettings_ICP((cob_3d_registration::Registration_ICP<Point>*)reg_);
         break;
 
       case E_ALGO_ICP_MOMENTS:
 #ifndef GICP_ENABLE
-        reg_ = new Registration_ICP_Moments<Point>();
+        reg_ = new cob_3d_registration::Registration_ICP_Moments<Point>();
 
-        setSettings_ICP_Moments((Registration_ICP_Moments<Point>*)reg_);
+        setSettings_ICP_Moments((cob_3d_registration::Registration_ICP_Moments<Point>*)reg_);
 #else
         ROS_ERROR("not supported");
 #endif
@@ -602,9 +633,9 @@ public:
 
       case E_ALGO_ICP_FPFH:
 #ifndef GICP_ENABLE
-        reg_ = new Registration_ICP_FPFH<Point>();
+        reg_ = new cob_3d_registration::Registration_ICP_FPFH<Point>();
 
-        setSettings_ICP_FPFH((Registration_ICP_FPFH<Point>*)reg_);
+        setSettings_ICP_FPFH((cob_3d_registration::Registration_ICP_FPFH<Point>*)reg_);
 #else
         ROS_ERROR("not supported");
 #endif
@@ -612,9 +643,9 @@ public:
 
       case E_ALGO_ICP_NARF:
 #ifndef GICP_ENABLE
-        reg_ = new Registration_ICP_NARF<Point>();
+        reg_ = new cob_3d_registration::Registration_ICP_NARF<Point>();
 
-        setSettings_ICP_NARF((Registration_ICP_NARF<Point>*)reg_);
+        setSettings_ICP_NARF((cob_3d_registration::Registration_ICP_NARF<Point>*)reg_);
 #else
         ROS_ERROR("not supported");
 #endif
@@ -623,9 +654,9 @@ public:
       case E_ALGO_ICP_EDGES:
 #ifndef GICP_ENABLE
 #if HAS_RGB
-        reg_ = new Registration_ICP_Edges<Point>();
+        reg_ = new cob_3d_registration::Registration_ICP_Edges<Point>();
 
-        setSettings_ICP_Edges((Registration_ICP_Edges<Point>*)reg_);
+        setSettings_ICP_Edges((cob_3d_registration::Registration_ICP_Edges<Point>*)reg_);
 #endif
 #else
         ROS_ERROR("not supported");
@@ -634,41 +665,35 @@ public:
 
         /*case E_ALGO_FASTSLAM:
 #ifndef GICP_ENABLE
-        reg_ = new Registration_FastSLAM<Point>();
+        reg_ = new cob_3d_registration::Registration_FastSLAM<Point>();
 
-        //setSettings_ICP_FastSLAM((Registration_FastSLAM<Point>*)reg_);
+        //setSettings_ICP_FastSLAM((cob_3d_registration::Registration_FastSLAM<Point>*)reg_);
 #else
         ROS_ERROR("not supported");
 #endif
         break;*/
 
-      case E_ALGO_RGBDSLAM:
-        reg_ = new Registration_RGBDSLAM<Point>(n_);
-
-        //setSettings_ICP_Edges((Registration_ICP_Edges<Point>*)reg_);
-        break;
-
       case E_ALGO_INFO:
 #ifndef GICP_ENABLE
-        reg_ = new Registration_Infobased<Point>();
+        reg_ = new cob_3d_registration::Registration_Infobased<Point>();
 
-        setSettings_Info((Registration_Infobased<Point>*)reg_);
+        setSettings_Info((cob_3d_registration::Registration_Infobased<Point>*)reg_);
 #else
         ROS_ERROR("not supported");
 #endif
         break;
 
       case E_ALGO_COR:
-#ifndef GICP_ENABLE
-        reg_ = new Registration_Corrospondence<Point>();
+//#ifndef GICP_ENABLE
+#if 0
+        reg_ = new cob_3d_registration::Registration_Corrospondence<Point>();
 
         //((Registration_Corrospondence<Point>*)reg_)->setKeypoints(new Keypoints_Segments<Point>);
         //((Registration_Corrospondence<Point>*)reg_)->setKeypoints(new Keypoints_Narf<Point>);
 
-        //setSettings_Cor((Registration_Corrospondence<Point>*)reg_);
+        //setSettings_Cor((cob_3d_registration::Registration_Corrospondence<Point>*)reg_);
 #else
         ROS_ERROR("not supported");
-
 #endif
         break;
 
@@ -690,7 +715,7 @@ public:
     pcl::PointCloud<Point> pc;
     pcl::io::loadPCDFile(req.pcd_fn, pc);
 
-    for(int i=0; i<pc.size(); i++) {
+    for(int i=0; i<(int)pc.size(); i++) {
       if(pc[i].z==0||pc[i].z>10)
         pc[i].z=pc[i].y=pc[i].x=std::numeric_limits<float>::quiet_NaN();
     }
@@ -736,8 +761,8 @@ public:
 
     ipa_Utils::ConvertToShowImage(cv_pc, img_depth, 1, 0., 5.);
 #else
-    for(int x=0; x<pc.width; x++)
-      for(int y=0; y<pc.height; y++) {
+    for(int x=0; x<(int)pc.width; x++)
+      for(int y=0; y<(int)pc.height; y++) {
         int raw_depth = std::max(0, (int)(((1./pc.points[x+y*pc.width].z)-3.3309495161)/-0.0030711016));
         *(img_depth.ptr<unsigned short>(y)+x) = raw_depth<2048?raw_depth:0;
       }
@@ -794,22 +819,22 @@ public:
 #ifndef GICP_ENABLE
     std::string s_algo;
     if(parameters_.getParam("algo",s_algo) && s_algo=="info") {
-      pcl::PointCloud<Point> result = *((Registration_Infobased<Point>*)reg_)->getMarkers2();
+      pcl::PointCloud<Point> result = *((cob_3d_registration::Registration_Infobased<Point>*)reg_)->getMarkers2();
       result.header.frame_id="/head_cam3d_frame";
       marker2_pub_.publish(result);
 
-      for(int i=0; i<((Registration_Infobased<Point>*)reg_)->getSource().size(); i++)
-        publishLineMarker( ((Registration_Infobased<Point>*)reg_)->getSource().points[i].getVector3fMap(), ((Registration_Infobased<Point>*)reg_)->getTarget().points[i].getVector3fMap(), -i);
+      for(int i=0; i<((cob_3d_registration::Registration_Infobased<Point>*)reg_)->getSource().size(); i++)
+        publishLineMarker( ((cob_3d_registration::Registration_Infobased<Point>*)reg_)->getSource().points[i].getVector3fMap(), ((cob_3d_registration::Registration_Infobased<Point>*)reg_)->getTarget().points[i].getVector3fMap(), -i);
     }
     else if(parameters_.getParam("algo",s_algo) && s_algo=="cor") {
-	  #ifdef PCL_VERSION_COMPARE
-	    pcl::Correspondences cor;
-      #else
-      	pcl::registration::Correspondences cor;
-	  #endif
+#ifdef PCL_VERSION_COMPARE
+      pcl::Correspondences cor;
+#else
+      pcl::registration::Correspondences cor;
+#endif
       ((Registration_Corrospondence<Point>*)reg_)->getKeypoints()->getCorrespondences(cor);
       for(int i=0; i<cor.size(); i++)
-        publishLineMarker( ((Registration_Corrospondence<Point>*)reg_)->getKeypoints()->getSourcePoints()->points[cor[i].indexQuery].getVector3fMap(), ((Registration_Corrospondence<Point>*)reg_)->getKeypoints()->getTargetPoints()->points[cor[i].indexMatch].getVector3fMap(), -i);
+        publishLineMarker( ((cob_3d_registration::Registration_Corrospondence<Point>*)reg_)->getKeypoints()->getSourcePoints()->points[cor[i].indexQuery].getVector3fMap(), ((cob_3d_registration::Registration_Corrospondence<Point>*)reg_)->getKeypoints()->getTargetPoints()->points[cor[i].indexMatch].getVector3fMap(), -i);
     }
 #endif
 
@@ -928,10 +953,10 @@ protected:
       voxel.setLeafSize(voxelsize,voxelsize,voxelsize);
       voxel.filter(pc);
 
-      ROS_INFO("resulting pc with %d points", pc.size());
+      ROS_INFO("resulting pc with %d points", (int)pc.size());
 
-      if(((Registration_ICP<Point>*)reg_)->getMap()) {
-        voxel.setInputCloud(((Registration_ICP<Point>*)reg_)->getMap());
+      if(((cob_3d_registration::Registration_ICP<Point>*)reg_)->getMap()) {
+        voxel.setInputCloud(((cob_3d_registration::Registration_ICP<Point>*)reg_)->getMap());
         voxel.setLeafSize(voxelsize,voxelsize,voxelsize);
         voxel.filter(*reg_->getMap());
       }
@@ -988,7 +1013,7 @@ protected:
     std::string s_algo;
     if(parameters_.getParam("algo",s_algo) && s_algo=="info")
 
-      ((Registration_Infobased<Point>*)reg_)->setKinectParameters(
+      ((cob_3d_registration::Registration_Infobased<Point>*)reg_)->setKinectParameters(
           ci->P[0],
           ci->P[2],
           ci->P[6]
@@ -1013,7 +1038,7 @@ protected:
   ParameterBucket parameters_;
 
   /// registration algorithm
-  GeneralRegistration<Point> *reg_;
+  cob_3d_registration::GeneralRegistration<Point> *reg_;
 
   bool is_running_;
 
@@ -1028,12 +1053,12 @@ protected:
 
   std::string corrected_id_, world_id_, pc_frame_id_;
 
-  enum {E_ALGO_ICP=1,E_ALGO_ICP_LM=2,E_ALGO_GICP=3,E_ALGO_ICP_MOMENTS=4,E_ALGO_ICP_FPFH=5, E_ALGO_ICP_NARF=6, E_ALGO_FASTSLAM=7, E_ALGO_ICP_EDGES=8, E_ALGO_RGBDSLAM=9, E_ALGO_INFO=10, E_ALGO_COR=11, E_ALGO_NONE=0};
+  enum {E_ALGO_ICP=1,E_ALGO_ICP_LM=2,E_ALGO_GICP=3,E_ALGO_ICP_MOMENTS=4,E_ALGO_ICP_FPFH=5, E_ALGO_ICP_NARF=6, E_ALGO_FASTSLAM=7, E_ALGO_ICP_EDGES=8, E_ALGO_INFO=10, E_ALGO_COR=11, E_ALGO_NONE=0};
 
   //settings
-  void setSettings_ICP(Registration_ICP<Point> *pr) {
-    double d;
-    int i;
+  void setSettings_ICP(cob_3d_registration::Registration_ICP<Point> *pr) {
+    double d=0.;
+    int i=0;
 
     if(parameters_.getParam("corr_dist",d))
       pr->setCorrDist(d);
@@ -1046,28 +1071,29 @@ protected:
     if(parameters_.getParam("use_only_last_refrence",i))
       pr->setUseOnlyLastReference(i!=0);
   }
+
 #ifndef GICP_ENABLE
-  void setSettings_ICP_Moments(Registration_ICP_Moments<Point> *pr) {
+  void setSettings_ICP_Moments(cob_3d_registration::Registration_ICP_Moments<Point> *pr) {
     setSettings_ICP(pr);
 
-    double d;
+    double d=0.;
 
     if(parameters_.getParam("moments_radius",d))
       pr->setMomentRadius(d);
   }
-  void setSettings_ICP_FPFH(Registration_ICP_FPFH<Point> *pr) {
+  void setSettings_ICP_FPFH(cob_3d_registration::Registration_ICP_FPFH<Point> *pr) {
     setSettings_ICP(pr);
 
-    double d;
+    double d=0.;
 
     if(parameters_.getParam("fpfh_radius",d))
       pr->setFPFHRadius(d);
   }
-  void setSettings_ICP_NARF(Registration_ICP_NARF<Point> *pr) {
+  void setSettings_ICP_NARF(cob_3d_registration::Registration_ICP_NARF<Point> *pr) {
     setSettings_ICP(pr);
   }
-  void setSettings_ICP_Edges(Registration_ICP_Edges<Point> *pr) {
-    double d;
+  void setSettings_ICP_Edges(cob_3d_registration::Registration_ICP_Edges<Point> *pr) {
+    double d=0.;
 
     if(parameters_.getParam("edge_radius",d))
       pr->setRadius(d);
@@ -1077,9 +1103,9 @@ protected:
       pr->setDisThreshold(d);
     setSettings_ICP(pr);
   }
-  void setSettings_Info(Registration_Infobased<Point> *pr) {
-    int i;
-    double f;
+  void setSettings_Info(cob_3d_registration::Registration_Infobased<Point> *pr) {
+    int i=0;
+    double f=0.;
 
     //if(parameters_.getParam("use_icp",i))
     //  pr->setUseICP(i!=0);
@@ -1087,13 +1113,15 @@ protected:
     if(parameters_.getParam("threshold_diff",f))
       pr->setThresholdDiff(f);
     if(parameters_.getParam("threshold_step",f))
-      ((Registration_Infobased<Point>*)reg_)->setThresholdStep(f);
+      ((cob_3d_registration::Registration_Infobased<Point>*)reg_)->setThresholdStep(f);
     if(parameters_.getParam("min_info",i))
-      ((Registration_Infobased<Point>*)reg_)->setMinInfo(i);
+      ((cob_3d_registration::Registration_Infobased<Point>*)reg_)->setMinInfo(i);
     if(parameters_.getParam("max_info",i))
-      ((Registration_Infobased<Point>*)reg_)->setMaxInfo(i);
+      ((cob_3d_registration::Registration_Infobased<Point>*)reg_)->setMaxInfo(i);
     if(parameters_.getParam("always_relevant_changes",i))
-      ((Registration_Infobased<Point>*)reg_)->SetAlwaysRelevantChanges(i!=0);
+      ((cob_3d_registration::Registration_Infobased<Point>*)reg_)->SetAlwaysRelevantChanges(i!=0);
+    if(parameters_.getParam("check_samples",i))
+      ((cob_3d_registration::Registration_Infobased<Point>*)reg_)->setCheckBySamples(i!=0);
   }
 #endif
 

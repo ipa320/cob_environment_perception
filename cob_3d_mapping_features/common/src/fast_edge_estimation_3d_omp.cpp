@@ -66,7 +66,9 @@
 #include "cob_3d_mapping_features/impl/fast_edge_estimation_3d_omp.hpp"
 
 // Instantiations of specific point types
-PCL_INSTANTIATE_FastEdgeEstimation3DOMP(pcl::PointXYZRGBNormal,pcl::PointXYZRGBNormal,pcl::InterestPoint)
-PCL_INSTANTIATE_FastEdgeEstimation3DOMP(pcl::PointXYZRGB,pcl::PointXYZRGBNormal,pcl::InterestPoint)
-PCL_INSTANTIATE_FastEdgeEstimation3DOMP(pcl::PointXYZRGB,pcl::Normal,pcl::InterestPoint)
+#define PCL_INSTANTIATE_FastEdgeEstimation3DOMP_N(T) PCL_INSTANTIATE_FastEdgeEstimation3DOMP(T,pcl::Normal,pcl::InterestPoint)
+#define PCL_INSTANTIATE_FastEdgeEstimation3DOMP_NRGB(T) PCL_INSTANTIATE_FastEdgeEstimation3DOMP(T,pcl::PointXYZRGBNormal,pcl::InterestPoint)
 
+// Instantiations of specific point types
+PCL_INSTANTIATE(FastEdgeEstimation3DOMP_N, PCL_XYZ_POINT_TYPES)
+PCL_INSTANTIATE(FastEdgeEstimation3DOMP_NRGB, PCL_XYZ_POINT_TYPES)

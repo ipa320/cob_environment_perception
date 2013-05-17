@@ -106,6 +106,7 @@ template <typename Point, typename PointLabel, typename Parent>
 class Segmentation_Node : public Parent
 {
   typedef pcl::PointCloud<Point> PointCloud;
+  typedef Segmentation::Segmentation_QuadRegression<Point, PointLabel, Segmentation::QPPF::QuadRegression<2, Point, Segmentation::QPPF::CameraModel_Kinect<Point> > > TYPE_QPPF;
 
   ros::Subscriber point_cloud_sub_;
   ros::Publisher  point_cloud_pub_;
@@ -136,7 +137,16 @@ public:
     {
       if(algo_=="quad regression")
       {
-        seg_ = new Segmentation::Segmentation_QuadRegression<Point,PointLabel>();
+        TYPE_QPPF *seg = new TYPE_QPPF();
+        seg_ = seg;
+
+        double filter;
+        if(this->n_.getParam("filter",filter))
+          seg->setFilter((float)filter);
+
+        bool only_planes;
+        if(this->n_.getParam("only_planes",only_planes))
+          seg->setOnlyPlanes(only_planes);
       }
       else
         ROS_ERROR("%s is no valid segmentation algorithm", algo_.c_str());
@@ -144,7 +154,6 @@ public:
     else
     {
       ROS_ERROR("no valid segmentation algorithm selected");
-      seg_ = new Segmentation::Segmentation_QuadRegression<Point,PointLabel>();
     }
   }
 

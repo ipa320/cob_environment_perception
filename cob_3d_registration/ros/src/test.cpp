@@ -74,7 +74,7 @@
 #include <pcl/kdtree/kdtree.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/registration/transformation_estimation_svd.h>
-#include <registration/feature_container.h>
+#include <cob_3d_registration/feature_container.h>
 //#include <registration/registration_correspondence.h>
 #include <pcl/visualization/cloud_viewer.h>
 
