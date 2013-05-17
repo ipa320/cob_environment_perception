@@ -127,7 +127,11 @@ namespace rviz
       pt.x = p3(0);
       pt.y = p3(1);
     }
-    else if(new_message->params.size()==5) {
+    else if(new_message->params.size()==11) {
+      pt.x=point.x;
+      pt.y=point.y;
+    }
+    else if(new_message->params.size()==6) {
       pt.x=point.x;
       pt.y=point.y;
     }
@@ -142,6 +146,7 @@ namespace rviz
       normal(0)=new_message->params[0];
       normal(1)=new_message->params[1];
       normal(2)=new_message->params[2];
+      normal.normalize();
       origin(0)=new_message->centroid.x;
       origin(1)=new_message->centroid.y;
       origin(2)=new_message->centroid.z;
@@ -159,36 +164,59 @@ namespace rviz
       p3(2)=0;
       pos = transformation*p3;
     }
-    else if(new_message->params.size()==5) {
-      Eigen::Vector2f v,v2,n2;
+    else if(new_message->params.size()==11) {
+      Eigen::Vector2f v,n1;
+      Eigen::Vector3f v2,n2;
       v(0)=pt.x;
       v(1)=pt.y;
-      v2=v;
-      v2(0)*=v2(0);
-      v2(1)*=v2(1);
-      n2(0)=new_message->params[3];
-      n2(1)=new_message->params[4];
+      v2(2)=0.f;
+      v2(0)=v(0)*v(0);
+      v2(1)=v(1)*v(1);
+      v2(2)=v(0)*v(1);
+      n2(2)=0.f;
+      n2(0)=new_message->params[2];
+      n2(1)=new_message->params[3];
+        n2(2)=new_message->params[4];
 
-      //dummy normal
-      normal(0)=new_message->params[0];
-      normal(1)=new_message->params[1];
-      normal(2)=new_message->params[2];
+      n1(0)=new_message->params[0];
+      n1(1)=new_message->params[1];
 
-      Eigen::Vector3f x,y, origin;
-      x(0)=1.f;
-      y(1)=1.f;
-      x(1)=x(2)=y(0)=y(2)=0.f;
+      Eigen::Vector3f origin;
 
       Eigen::Matrix<float,3,2> proj2plane_;
-      proj2plane_.col(0)=normal.cross(y);
-      proj2plane_.col(1)=normal.cross(x);
+      proj2plane_.col(0)(0) = new_message->params[5];
+      proj2plane_.col(0)(1) = new_message->params[6];
+      proj2plane_.col(0)(2) = new_message->params[7];
+
+      proj2plane_.col(1)(0) = new_message->params[8];
+      proj2plane_.col(1)(1) = new_message->params[9];
+      proj2plane_.col(1)(2) = new_message->params[10];
 
       origin(0)=new_message->centroid.x;
       origin(1)=new_message->centroid.y;
       origin(2)=new_message->centroid.z;
 
-      pos = origin+proj2plane_*v + normal*(v2.dot(n2));
-      normal += normal*(v).dot(n2);
+      pos = origin + proj2plane_*v +
+          proj2plane_.col(0).cross(proj2plane_.col(1)) * (v2.dot(n2) +v.dot(n1));
+      //pos = origin+proj2plane_*v + normal*(v2.dot(n2));
+      //normal += normal*(2*v(0)*n2(0)+v(1)*n2(2) + 2*v(1)*n2(1)+v(0)*n2(2));
+    }
+    else if(new_message->params.size()==6) {
+      Eigen::Vector2f v,v2;
+      v(0)=pt.x;
+      v(1)=pt.y;
+
+      v2(0)=v(0)*v(0);
+      v2(1)=v(1)*v(1);
+
+      pos(0) = pt.x;
+      pos(1) = pt.y;
+      pos(2) = new_message->params[0]
+                                   + new_message->params[1]*v(0) + new_message->params[2]*v2(0)
+                                   + new_message->params[3]*v(1) + new_message->params[4]*v2(1)
+                                   + new_message->params[5]*v(0)*v(1);
+      //pos = origin+proj2plane_*v + normal*(v2.dot(n2));
+      //normal += normal*(2*v(0)*n2(0)+v(1)*n2(2) + 2*v(1)*n2(1)+v(0)*n2(2));
     }
   }
 
@@ -204,6 +232,22 @@ namespace rviz
     }
 
     return origin;
+  }
+
+  void triangle(const cob_3d_mapping_msgs::Shape::ConstPtr& new_message, Ogre::ManualObject* polygon_, TPPLPoint p1, TPPLPoint p2, TPPLPoint p3) {
+    Eigen::Vector3f pp, normal;
+
+    MsgToPoint3D(p1,new_message,pp,normal);
+    polygon_->position(pp(0),pp(1),pp(2));  // start position
+    polygon_->normal(normal(0),normal(1),normal(2));
+
+    MsgToPoint3D(p2,new_message,pp,normal);
+    polygon_->position(pp(0),pp(1),pp(2));  // start position
+    polygon_->normal(normal(0),normal(1),normal(2));
+
+    MsgToPoint3D(p3,new_message,pp,normal);
+    polygon_->position(pp(0),pp(1),pp(2));  // start position
+    polygon_->normal(normal(0),normal(1),normal(2));
   }
 
   void ShapeMarker::onNewMessage( const MarkerConstPtr& old_message,
@@ -242,19 +286,31 @@ namespace rviz
     polygon_->clear();
     polygon_->begin(createMaterialIfNotExists(new_message->color.r,new_message->color.g,new_message->color.b,new_message->color.a), Ogre::RenderOperation::OT_TRIANGLE_LIST);
 
-    TPPLPoint p1;
+    TPPLPoint p1,p2,p3,p4, p12,p23,p31;
 
     for(std::list<TPPLPoly>::iterator it=result.begin(); it!=result.end(); it++) {
       //draw each triangle
-      for(long i=0;i<it->GetNumPoints();i++) {
-        p1 = it->GetPoint(i);
+      if(it->GetNumPoints()!=3) continue;
 
-        Eigen::Vector3f p3, normal;
-        MsgToPoint3D(p1,new_message,p3,normal);
+      p1 = it->GetPoint(0);
+      p2 = it->GetPoint(1);
+      p3 = it->GetPoint(2);
+      p4.x = (p1.x+p2.x+p3.x)/3;
+      p4.y = (p1.y+p2.y+p3.y)/3;
+      p12.x = (p1.x+p2.x)/2;
+      p12.y = (p1.y+p2.y)/2;
+      p23.x = (p3.x+p2.x)/2;
+      p23.y = (p3.y+p2.y)/2;
+      p31.x = (p1.x+p3.x)/2;
+      p31.y = (p1.y+p3.y)/2;
 
-        polygon_->position(p3(0),p3(1),p3(2));  // start position
-        polygon_->normal(normal(0),normal(1),normal(2));
-      }
+      triangle(new_message,polygon_,p1,p12,p4);
+      triangle(new_message,polygon_,p1,p31,p4);
+      triangle(new_message,polygon_,p3,p23,p4);
+
+      triangle(new_message,polygon_,p12,p2,p4);
+      triangle(new_message,polygon_,p31,p3,p4);
+      triangle(new_message,polygon_,p23,p2,p4);
     }
 
     for(std::list<TPPLPoly>::iterator it=result.begin(); it!=result.end(); it++) {

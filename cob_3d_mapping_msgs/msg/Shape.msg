@@ -8,16 +8,18 @@ uint8 OTHER=4
 uint8 CYLINDER=5
 # potential extensions: SPHERE, CYLINDER, BOX
 
-uint8 type
-
-
+byte type
 int32 id
+float32 weight
+
 # define shape parameters
 # for plane
 # normal vector = params[0],params[1],params[2]
 #	d = params[3]
 # for line
 # direction vector = params[0],params[1],params[2]
+# for curved
+# 3 for plane, 6 for polynom 2nd degree, ...
 #
 #for cylinder
 # symmetry axis = params[0],params[1],params[2]
