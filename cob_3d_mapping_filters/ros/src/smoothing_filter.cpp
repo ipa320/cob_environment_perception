@@ -66,7 +66,7 @@
 // pcl includes
 #include <pcl/point_types.h>
 #include <pluginlib/class_list_macros.h>
-#include <pcl_ros/pcl_nodelet.h>
+#include <nodelet/nodelet.h>
 #include <pcl/io/pcd_io.h>
 
 // cob_3d_mapping_filters includes
@@ -76,7 +76,7 @@
 
 //######################
 //#### nodelet class####
-class SmoothingFilter : public pcl_ros::PCLNodelet
+class SmoothingFilter : public nodelet::Nodelet
 {
 public:
   // Constructor
@@ -95,7 +95,6 @@ public:
   void
   onInit ()
   {
-    PCLNodelet::onInit ();
     n_ = getNodeHandle ();
 
     point_cloud_sub_ = n_.subscribe ("point_cloud2", 1, &SmoothingFilter::PointCloudSubCallback, this);
@@ -108,16 +107,20 @@ public:
   }
 
   void
-  PointCloudSubCallback (pcl::PointCloud<pcl::PointXYZI>::ConstPtr pc)
+  PointCloudSubCallback (sensor_msgs::PointCloud2::ConstPtr pc2)
   {
-    //ROS_INFO("PointCloudSubCallback");
+    pcl::PointCloud<pcl::PointXYZI> pc;
+    pcl::fromROSMsg(*pc2,pc);
+
     cob_3d_mapping_filters::SmoothingFilter<pcl::PointXYZI> filter;
     pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZI>());
-    filter.setInputCloud (pc);
+    filter.setInputCloud (pc.makeShared());
     filter.setFilterLimits (edge_threshold_, smoothing_factor_, integral_factor_);
     filter.applyFilter (*cloud_filtered);
 
-    point_cloud_pub_.publish (cloud_filtered);
+    sensor_msgs::PointCloud2 msg;
+    pcl::toROSMsg(*cloud_filtered, msg);
+    point_cloud_pub_.publish (msg);
     if (t_check == 0)
     {
       ROS_INFO("Time elapsed (Intensity_Filter) : %f", t.elapsed());
