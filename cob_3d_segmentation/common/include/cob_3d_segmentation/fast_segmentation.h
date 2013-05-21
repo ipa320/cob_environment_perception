@@ -148,6 +148,11 @@ namespace cob_3d_segmentation
     void mapSegmentColor(pcl::PointCloud<PointXYZRGB>::Ptr color_cloud) { clusters_->mapClusterColor(color_cloud); }
     ClusterHdlPtr clusters() { return clusters_; }
 
+    /// convert to ROS message
+    virtual operator cob_3d_mapping_msgs::ShapeArray() const {
+      return cob_3d_mapping_msgs::ShapeArray(); //TODO:
+    }
+
     private:
     inline float n_threshold(int size)
     { // currently linear degression of angle threshold

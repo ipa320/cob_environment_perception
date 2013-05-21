@@ -1,4 +1,4 @@
-serial_device: ttyUSB0
+serial_device: /dev/ttyACM0
 serial_baudrate: 57600
 joint_names: ['stepper', 'servo']
 #fixed_velocities: [1.02, 1.02]

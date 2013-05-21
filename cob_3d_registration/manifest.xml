@@ -8,10 +8,10 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/registration</url>
-  <depend package="roscpp"/>
-  <depend package="nodelet"/>
   <depend package="pcl"/>
   <depend package="pcl_ros"/>
+  <depend package="roscpp"/>
+  <depend package="nodelet"/>
   <depend package="dynamic_reconfigure"/>
   <depend package="tf"/>
   <depend package="tf_conversions"/>

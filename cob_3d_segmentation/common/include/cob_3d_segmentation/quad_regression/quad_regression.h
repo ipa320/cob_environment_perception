@@ -63,18 +63,68 @@
 #ifndef SEGMENTATION_QUAD_REGR_H_
 #define SEGMENTATION_QUAD_REGR_H_
 
-#include <cob_3d_mapping_msgs/ShapeArray.h>
-#include <cob_3d_mapping_msgs/Shape.h>
 
-#include "../general_segmentation.h"
-
-#define USE_MIN_MAX_RECHECK_
-#define STOP_TIME
-
-#include "polygon.h"
+#include <visualization_msgs/MarkerArray.h>
+#include <point_types.h>
+#include "quad_regression_algo.h"
 
 namespace Segmentation
 {
+
+
+  //example for parent: QPPF::QuadRegression<QPPF::Degree2, Point, QPPF::CameraModel_Kinect<Point> >
+
+  /**
+   * a segmentation implementation based on quad-trees and regression
+   */
+  template <typename Point, typename PointLabel, typename Parent>
+  class Segmentation_QuadRegression : public GeneralSegmentation<Point, PointLabel>, public Parent
+  {
+
+    void back_check_repeat(); /// repeat back check on model
+
+    boost::shared_ptr<const pcl::PointCloud<PointLabel> > compute_labeled_pc();
+    boost::shared_ptr<const pcl::PointCloud<PointLabel> > compute_reconstructed_pc();
+
+  public:
+    /// destructor
+    virtual ~Segmentation_QuadRegression() {
+    }
+
+    /// gets preprocessed output cloud
+    virtual boost::shared_ptr<const pcl::PointCloud<PointLabel> > getOutputCloud() {
+      return compute_labeled_pc();
+    }
+
+    /// gets reconstructed output cloud
+    virtual boost::shared_ptr<const pcl::PointCloud<PointLabel> > getReconstructedOutputCloud() {
+      return compute_reconstructed_pc();
+    }
+
+    /// sets preprocessed input cloud
+    virtual void setInputCloud (const boost::shared_ptr<const pcl::PointCloud<Point> > &cloud)
+    {
+      this->Parent::setInputCloud(cloud);
+    }
+
+    virtual bool compute();
+
+    virtual bool extractImages();
+
+    /// convert to ROS message
+    operator cob_3d_mapping_msgs::ShapeArray() const;
+
+    /// convert edges to ROS message
+    operator visualization_msgs::Marker() const;
+
+    /*** evaluation purposes ***/
+    void compute_accuracy(float &mean, float &var, float &mean_weighted, float &var_weighted, size_t &used, size_t &mem, size_t &points, float &avg_dist, const boost::shared_ptr<const pcl::PointCloud<PointLabel> > &labeled_pc, double &true_positive, double &false_positive);
+
+  };
+
+#include "impl/quad_regression.hpp"
+
+#if 0
 
 #define getInd(x, y) ((x)+(y)*levels_[i].w)
 #define getInd1(x, y) ((x)+(y)*levels_[i-1].w)
@@ -112,6 +162,8 @@ namespace Segmentation
 
     bool *outline_check_;         ///needed for outline, no need to reallocate every time
     size_t outline_check_size_;    ///remember size for var. above
+    float filter_;                /// ratio points per area
+    bool only_planes_;            /// filter option
 
 #ifdef STOP_TIME
     double execution_time_quadtree_, execution_time_growing_, execution_time_polyextraction_;
@@ -122,6 +174,7 @@ namespace Segmentation
 
     void buildTree(const pcl::PointCloud<Point> &pc); ///build quad-tree
     void calc(); /// segmentation on quad-tree
+    void back_check_repeat(); /// repeat back check on model
 
     void grow(SubStructure::Model &model, const int i, const int x, const int y);
     void grow(SubStructure::VISITED_LIST<SubStructure::SVALUE> &list, SubStructure::Model &model, const int i, const int mark, bool first_lvl);
@@ -132,6 +185,14 @@ namespace Segmentation
       if(levels_[i].data[getInd(x,y)].occopied==mark)
         return true;
       return filterOccupied(i+1,x/2,y/2,mark);
+    }
+
+    inline int otherOccupied(const int i, const int x, const int y, const int mark) const {
+      if(i>=(int)levels_.size() || x<0 || y<0 || x>=(int)levels_[i].w || y>=(int)levels_[i].h)
+        return -1;
+      if(levels_[i].data[getInd(x,y)].occopied>=0 && levels_[i].data[getInd(x,y)].occopied!=mark)
+        return levels_[i].data[getInd(x,y)].occopied;
+      return otherOccupied(i+1,x/2,y/2,mark);
     }
 
     inline int isOccupied(const int i, const int x, const int y) const {
@@ -154,9 +215,6 @@ namespace Segmentation
     }
 
     inline void addPoint(const int i, const int x, const int y, const int mark, S_POLYGON &poly, const SubStructure::Model &model, const float v=0.f) {
-#ifdef USE_BOOST_POLYGONS_
-      poly.segments2d_.back().push_back(BoostPoint(x,y));
-#endif
 
 #if 0
       for(int xx=-1; xx<2; xx++)
@@ -227,10 +285,146 @@ Eigen::Vector2f vv;
       //            return;
       //          }
 #endif
-      Eigen::Vector3f p = poly.project2plane(((x<<(i+1))-kinect_params_.dx)/kinect_params_.f,
-                                             ((y<<(i+1))-kinect_params_.dy)/kinect_params_.f,
-                                             model,v);
+
+#ifdef DO_NOT_DOWNSAMPLE_
+      const int fact=1;
+#else
+      const int fact=2;
+#endif
+
+      /*{
+        Eigen::Vector3f p = poly.project2plane(((x<<(i+fact-1))-kinect_params_.dx)/kinect_params_.f,
+                                               ((y<<(i+fact-1))-kinect_params_.dy)/kinect_params_.f,
+                                               model,v);
       poly.segments_.back().push_back(p);
+#ifdef USE_BOOST_POLYGONS_
+poly.segments2d_.back().push_back(BoostPoint(x,y));
+#elif defined(BACK_CHECK_REPEAT)
+Eigen::Vector2i p2;
+p2(0) = x;
+p2(1) = y;
+poly.segments2d_.back().push_back(p2);
+#endif
+      }
+      return;*/
+
+      Eigen::Vector3f p = poly.project2plane(((x<<(i+fact-1))-kinect_params_.dx)/kinect_params_.f,
+                                             ((y<<(i+fact-1))-kinect_params_.dy)/kinect_params_.f,
+                                             model,v);
+
+#if 0
+      poly.segments_.back().push_back(p);
+#ifdef USE_BOOST_POLYGONS_
+      poly.segments2d_.back().push_back(BoostPoint(x,y));
+#elif defined(BACK_CHECK_REPEAT)
+      Eigen::Vector2i p2;
+      p2(0) = x;
+      p2(1) = y;
+      poly.segments2d_.back().push_back(p2);
+#endif
+
+      return;
+#endif
+
+      Eigen::Vector3f vp = poly.project2world(p.head<2>());
+
+      float d = poly.middle_(2);
+      d*=d;
+
+      static const int rel_motion_pattern[][2] = { {0,0}, {-1,-1}, {-1,0}, {-1,1}, {0,-1}, {0,1}, {1,-1}, {1,0}, {1,1}
+      //, {-2,-2}, {-2,-1}, {-2,0}, {-2,1}, {-2,2}, {-1,-2}, {-1,2}, {0,-2}, {0,2}, {1,-2}, {1,2}, {2,-2}, {2,-1}, {2,0}, {2,1}, {2,2}
+      //, {-3,-3}, {-3,-2}, {-3,-1}, {-3,0}, {-3,1}, {-3,2}, {-3,3}, {-2,-3}, {-2,3}, {-1,-3}, {-1,3}, {0,-3}, {0,3}, {1,-3}, {1,3}, {2,-3}, {2,3}, {3,-3}, {3,-2}, {3,-1}, {3,0}, {3,1}, {3,2}, {3,3}, {-4,-4}, {-4,-3}, {-4,-2}, {-4,-1}, {-4,0}, {-4,1}, {-4,2}, {-4,3}, {-4,4}, {-3,-4}, {-3,4}, {-2,-4}, {-2,4}, {-1,-4}, {-1,4}, {0,-4}, {0,4}, {1,-4}, {1,4}, {2,-4}, {2,4}, {3,-4}, {3,4}, {4,-4}, {4,-3}, {4,-2}, {4,-1}, {4,0}, {4,1}, {4,2}, {4,3}, {4,4}
+      };
+
+
+      const pcl::PointCloud<Point> &pc = *input_;
+      //      for(int xx=-4; xx<5; xx++)
+      //        for(int yy=-4; yy<5; yy++)
+      for(size_t i=0; i<sizeof(rel_motion_pattern)/sizeof(rel_motion_pattern[0]); i++) {
+        int xx=rel_motion_pattern[i][0];
+        int yy=rel_motion_pattern[i][1];
+
+        if(fact*x+xx>=0 && fact*y+yy>=0 && fact*x+xx<(int)pc.width && fact*y+yy<(int)pc.height) {
+          Eigen::Vector3f p = poly.project2plane((((fact*x+xx)<<(i))-kinect_params_.dx)/kinect_params_.f,
+                                                 (((fact*y+yy)<<(i))-kinect_params_.dy)/kinect_params_.f,
+                                                 model,v);
+
+          if( (poly.project2world(p.head<2>())-pc[getIndPC(fact*x+xx,fact*y+yy)].getVector3fMap()).squaredNorm()<std::max(0.0005f,0.0005f*d)
+          && (poly.project2world(p.head<2>())-vp).squaredNorm()<0.02f)
+          {
+            poly.segments_.back().push_back(p);/*
+          Eigen::Vector2f p = poly.nextPoint(pc[getIndPC(fact*x+xx,fact*y+yy)].getVector3fMap());
+
+          if( (poly.project2world(p)-pc[getIndPC(fact*x+xx,fact*y+yy)].getVector3fMap()).squaredNorm()<std::max(0.0005f,0.0005f*d)
+          && (poly.project2world(p)-vp).squaredNorm()<0.02f
+          )
+          {
+            Eigen::Vector3f p3;
+            p3.head<2>()=p;
+            poly.segments_.back().push_back(p3);*/
+
+            //            std::cout<<"P\n"<<poly.project2world(p.head<2>())<<"\n";
+            //            std::cout<<"C\n"<<pc[getIndPC(2*x+xx,2*y+yy)].getVector3fMap()<<"\n";
+
+#ifdef USE_BOOST_POLYGONS_
+            poly.segments2d_.back().push_back(BoostPoint(x,y));
+#elif defined(BACK_CHECK_REPEAT)
+            Eigen::Vector2i p2;
+            p2(0) = x+xx/fact;
+            p2(1) = y+yy/fact;
+            poly.segments2d_.back().push_back(p2);
+#endif
+
+            return;
+          }
+        }
+
+      }
+#if 0
+      for(int xx=-8; xx<9; xx++)
+        for(int yy=-8; yy<9; yy++)
+          if(fact*x+xx>=0 && fact*y+yy>=0 && fact*x+xx<(int)pc.width && fact*y+yy<(int)pc.height) {
+            Eigen::Vector3f p = poly.project2plane((((fact*x+xx)<<(i))-kinect_params_.dx)/kinect_params_.f,
+                                                   (((fact*y+yy)<<(i))-kinect_params_.dy)/kinect_params_.f,
+                                                   model,v);
+
+            if( (poly.project2world(p.head<2>())-pc[getIndPC(fact*x+xx,fact*y+yy)].getVector3fMap()).squaredNorm()<std::max(0.0005f,0.0005f*d)
+            && (poly.project2world(p.head<2>())-vp).squaredNorm()<0.02f)
+            {
+              poly.segments_.back().push_back(p);
+
+              //            std::cout<<"P\n"<<poly.project2world(p.head<2>())<<"\n";
+              //            std::cout<<"C\n"<<pc[getIndPC(2*x+xx,2*y+yy)].getVector3fMap()<<"\n";
+
+              //            std::cout<<"P\n"<<poly.project2world(p.head<2>())<<"\n";
+              //            std::cout<<"C\n"<<pc[getIndPC(2*x+xx,2*y+yy)].getVector3fMap()<<"\n";
+
+#ifdef USE_BOOST_POLYGONS_
+              poly.segments2d_.back().push_back(BoostPoint(x,y));
+#elif defined(BACK_CHECK_REPEAT)
+              Eigen::Vector2i p2;
+              p2(0) = x+xx/fact;
+              p2(1) = y+yy/fact;
+              poly.segments2d_.back().push_back(p2);
+#endif
+
+              return;
+            }
+          }
+#endif
+
+      if(poly.normalAt(p.head<2>())(2)>0.5f)
+      {
+        poly.segments_.back().push_back(p);
+#ifdef USE_BOOST_POLYGONS_
+        poly.segments2d_.back().push_back(BoostPoint(x,y));
+#elif defined(BACK_CHECK_REPEAT)
+        Eigen::Vector2i p2;
+        p2(0) = x;
+        p2(1) = y;
+        poly.segments2d_.back().push_back(p2);
+#endif
+      }
     }
 
     int getPos(int *ch, const int xx, const int yy, const int w, const int h);
@@ -256,6 +450,8 @@ Eigen::Vector2f vv;
       input_ = cloud;
       if(levels_.size()==0)
         prepare(*cloud);
+      else if(kinect_params_.f == 0.f)
+        getKinectParams(*cloud);
     }
 
     /// gets preprocessed output cloud
@@ -270,8 +466,13 @@ Eigen::Vector2f vv;
 
     virtual bool compute();
 
+    virtual bool extractImages();
+
     /// convert to ROS message
     operator cob_3d_mapping_msgs::ShapeArray() const;
+
+    /// convert edges to ROS message
+    operator visualization_msgs::Marker() const;
 
     /// get polygons
     const std::vector<Segmentation::S_POLYGON> &getPolygons() const {return polygons_;}
@@ -288,6 +489,9 @@ Eigen::Vector2f vv;
     }
 #endif
 
+    void setFilter(const float f) {filter_=f;}
+    void setOnlyPlanes(const bool b) {only_planes_=b;}
+
   };
 
 #include "impl/quad_regression.hpp"
@@ -296,7 +500,7 @@ Eigen::Vector2f vv;
 #undef getInd1
 #undef getInd2
 #undef getIndPC
-
+#endif
 }
 
 #endif /* SEGMENTATION_QUAD_REGR_H_ */

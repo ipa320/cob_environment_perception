@@ -78,7 +78,7 @@ namespace Debug
     };
 
     std::vector<ARROW> arrows_;
-    float time_;
+    double time_;
   public:
     void addArrow(const Eigen::Vector3f &from, const Eigen::Vector3f &to, int r=255, int g=255, int b=255)
     {
@@ -105,8 +105,11 @@ namespace Debug
       arrows_.clear();
     }
 
-    void setTime(const float t) {time_ = t;}
-    float getTime() const {return time_;}
+    void setTime(const double t) {time_ = t;}
+    double getTime() const {return time_;}
+    void sayTook(const char *str) const {
+      std::cout<<"took "<<str<<": "<<(ros::Time::now().toSec()-getTime())<<"\n";
+    }
 
     static Interface &get() {
       static Interface intf;

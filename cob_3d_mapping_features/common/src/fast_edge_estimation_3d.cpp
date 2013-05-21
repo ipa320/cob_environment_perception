@@ -65,8 +65,10 @@
 #include "cob_3d_mapping_features/fast_edge_estimation_3d.h"
 #include "cob_3d_mapping_features/impl/fast_edge_estimation_3d.hpp"
 
+#define PCL_INSTANTIATE_FastEdgeEstimation3D_N(T) PCL_INSTANTIATE_FastEdgeEstimation3D(T,pcl::Normal,pcl::InterestPoint)
+#define PCL_INSTANTIATE_FastEdgeEstimation3D_NRGB(T) PCL_INSTANTIATE_FastEdgeEstimation3D(T,pcl::PointXYZRGBNormal,pcl::InterestPoint)
+
 // Instantiations of specific point types
-PCL_INSTANTIATE_FastEdgeEstimation3D(pcl::PointXYZRGBNormal,pcl::PointXYZRGBNormal,pcl::InterestPoint)
-PCL_INSTANTIATE_FastEdgeEstimation3D(pcl::PointXYZRGB,pcl::PointXYZRGBNormal,pcl::InterestPoint)
-PCL_INSTANTIATE_FastEdgeEstimation3D(pcl::PointXYZRGB,pcl::Normal,pcl::InterestPoint)
+PCL_INSTANTIATE(FastEdgeEstimation3D_N, PCL_XYZ_POINT_TYPES)
+PCL_INSTANTIATE(FastEdgeEstimation3D_NRGB, PCL_XYZ_POINT_TYPES)
 
