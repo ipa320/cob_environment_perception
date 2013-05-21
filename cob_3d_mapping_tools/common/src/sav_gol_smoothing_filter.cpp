@@ -134,7 +134,7 @@ int main(int argc, char** argv)
   if (mls_)
   {
     #ifdef PCL_MINOR_VERSION
-    #if PCL_MINOR_VERSION < 7
+    #if PCL_MINOR_VERSION < 6
     t.precisionStart();
     // MLS
     #ifdef PCL_VERSION_COMPARE //fuerte

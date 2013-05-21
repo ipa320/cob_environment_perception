@@ -191,7 +191,7 @@ int main(int argc, char** argv)
       norm.compute(*n);
 
       #ifdef PCL_MINOR_VERSION
-      #if PCL_MINOR_VERSION  >=7
+      #if PCL_MINOR_VERSION  >=6
       std::cerr << "current implementation of mls doesn't work with pcl1.7" << std::endl;
       exit(-1);
       #else

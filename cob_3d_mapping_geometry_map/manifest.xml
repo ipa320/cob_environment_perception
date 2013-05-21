@@ -9,10 +9,10 @@
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/cob_3d_mapping_geometry_map</url>
 
-  <depend package="roscpp"/>
-  <depend package="rospy"/>
   <depend package="pcl"/>
   <depend package="pcl_ros"/>
+  <depend package="roscpp"/>
+  <depend package="rospy"/>
   <depend package="rosbag"/>
   <depend package="dynamic_reconfigure" />
   <depend package="visualization_msgs"/>
