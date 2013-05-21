@@ -120,7 +120,7 @@ namespace cob_3d_segmentation
     void configCallback(cob_3d_segmentation::segmentation_nodeletConfig& config, uint32_t levels);
 
     void actionCallback(const cob_3d_mapping_msgs::TriggerGoalConstPtr& goal);
-    void topicCallback(PointCloud::ConstPtr cloud);
+    void topicCallback(const PointCloud::ConstPtr& cloud);
     void computeAndPublish();
 
     boost::mutex mutex_;
