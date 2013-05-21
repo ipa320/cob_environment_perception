@@ -246,7 +246,7 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& 
                <<"Map Size P="<<geometry_map_.getMap_polygon()->size()
                <<" , P_NEW="<<polygon_list.size()
                <<" , P_MERGED="<<poly_merge_ctr);
-  //geometry_map_.cleanUp();
+  geometry_map_.cleanUp();
   geometry_map_.incrFrame();
 
   //publishMapMarker();

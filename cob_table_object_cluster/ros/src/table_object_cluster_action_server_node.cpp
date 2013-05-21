@@ -65,6 +65,7 @@
 
 
 #include <cob_object_detection_msgs/DetectionArray.h>
+#include <cob_3d_mapping_msgs/SetBoundingBoxes.h>
 #include <cob_3d_mapping_msgs/TableObjectClusterAction.h>
 
 class TableObjectClusterActionServerNode
@@ -87,6 +88,8 @@ public:
 
     pub_pc = nh.advertise<PointCloud>("triggered_point_cloud", 1);
 
+    set_bb_client_ = nh.serviceClient<cob_3d_mapping_msgs::SetBoundingBoxes>("set_known_objects");
+
     as.registerGoalCallback(boost::bind(&TableObjectClusterActionServerNode::goalCallback, this));
     as.registerPreemptCallback(boost::bind(&TableObjectClusterActionServerNode::preemptCallback, this));
     as.start();
@@ -102,8 +105,16 @@ public:
     }
     action_timeout = ros::Time::now() + ros::Duration(5.0);
     action_started = true;
-    as.acceptNewGoal();
-    pub_pc.publish(last_pc);
+    cob_3d_mapping_msgs::SetBoundingBoxes srv;
+    srv.request.bounding_boxes = as.acceptNewGoal()->known_objects;
+    if(set_bb_client_.call(srv))
+    {
+      pub_pc.publish(last_pc);
+    }
+    else
+    {
+      ROS_WARN("Failed to set bounding boxes of known objects");
+    }
   }
 
   void preemptCallback()
@@ -145,6 +156,7 @@ private:
   ros::Subscriber sub_pc;
   ros::Subscriber sub_bba;
   ros::Publisher pub_pc;
+  ros::ServiceClient set_bb_client_;
 
   actionlib::SimpleActionServer<cob_3d_mapping_msgs::TableObjectClusterAction> as;
 
