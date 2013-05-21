@@ -78,6 +78,7 @@
 #include <pcl/point_types.h>
 #include <pcl/registration/icp.h>
 #include <tf/transform_listener.h>
+#include <tf_conversions/tf_eigen.h>
 //#include <tf_conversions/tf_kdl.h>
 #include <pcl_ros/transforms.h>
 #include <pcl_ros/point_cloud.h>
@@ -328,11 +329,13 @@ public:
     {
       ROS_ERROR("[plane_extraction] : %s",ex.what());
     }
+    Eigen::Affine3d ad;
+    tf::TransformTFToEigen(transform, ad);
     //btVector3 bt_rob_pose = transform.getOrigin();
-    btVector3 bt_rob_pose( transform.getOrigin()[0], transform.getOrigin()[1], transform.getOrigin()[2]);
+    //btVector3 bt_rob_pose( transform.getOrigin()[0], transform.getOrigin()[1], transform.getOrigin()[2]);
 
-    Eigen::Vector3f rob_pose(bt_rob_pose.x(),bt_rob_pose.y(),bt_rob_pose.z());
-    ROS_INFO("Rob pose: (%f,%f,%f)", bt_rob_pose.x(),bt_rob_pose.y(),bt_rob_pose.z());
+    Eigen::Vector3f rob_pose = ad.translation().cast<float>();//(bt_rob_pose.x(),bt_rob_pose.y(),bt_rob_pose.z());
+    ROS_INFO("Rob pose: (%f,%f,%f)", rob_pose(0),rob_pose(1),rob_pose(2));
     unsigned int idx = 0;
     pe.findClosestTable(v_cloud_hull, v_coefficients_plane, rob_pose, idx);
     ROS_INFO("Hull %d size: %d", idx, (unsigned int)v_cloud_hull[idx].size());

@@ -63,6 +63,7 @@
 
 #pragma once
 
+#include <ros/console.h>
 #include <opencv2/core/core.hpp>
 #include <pcl/common/common.h>
 #include <pcl/point_types.h>
