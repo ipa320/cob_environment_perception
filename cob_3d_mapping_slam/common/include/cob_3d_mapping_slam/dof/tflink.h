@@ -87,6 +87,8 @@ namespace DOF6
     Vector var_x_, var_y_;
     INPUT sum_x_, sum_y_;
     TYPE rot_sum_, rot_var_, tr_var_, accumlated_weight_, accumlated_weight_t_;
+
+    std::vector<Vector> corsA_, corsB_;
 #ifdef DEBUG_
     bool initialized_;
 #endif
@@ -174,6 +176,9 @@ namespace DOF6
 
       variance_x_.fill(0);
       variance_y_.fill(0);
+
+      corsA_.clear();
+      corsB_.clear();
     }
 
     void debug_print() {
@@ -184,7 +189,7 @@ namespace DOF6
     TFLink operator+(const TFLink &o) const;    /// create chain of tf-links
     void operator+=(const TFLink &o);    /// add tf-links
 
-    TFLink<INPUT> transpose();   /// returns inverse
+    TFLink<INPUT> transpose() const;   /// returns inverse
     void finish();      /// calculate normalized covariance for rotation
 
     inline Matrix getRotation() const {return rot_;}
@@ -222,6 +227,8 @@ namespace DOF6
     {
       return getTranslationVariance();
     }
+
+    bool isSet() const {return accumlated_weight_t_!=0;}
 
   };
 

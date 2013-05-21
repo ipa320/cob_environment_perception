@@ -160,11 +160,15 @@ template <typename PointT> void
       continue;
     }
   }
-  pcl::ExtractIndices<PointT> extractIndices;
-  extractIndices.setInputCloud(input_);
-  extractIndices.setIndices(points_to_remove);
-  extractIndices.setNegative(true);
-  extractIndices.filter(pc_out);
+
+  if(&pc_out != input_.get())
+    pc_out = *input_;
+
+  for(size_t i=0; i<points_to_remove->indices.size(); i++) {
+    size_t j = points_to_remove->indices[i];
+    pc_out[j].x = pc_out[j].y = pc_out[j].z = std::numeric_limits<float>::quiet_NaN();
+  }
+  points_to_remove->indices.clear ();
  }
 
 #define PCL_INSTANTIATE_JumpEdgeFilter(T) template class cob_3d_mapping_filters::JumpEdgeFilter<T>;

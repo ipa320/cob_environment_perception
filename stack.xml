@@ -15,7 +15,7 @@
   <depend stack="executive_smach" /> <!-- smach_ros, smach -->
   <depend stack="geometry" /> <!-- tf, tf_conversions -->
   <depend stack="nodelet_core" /> <!-- nodelet -->
-  <depend stack="openni_kinect" /> <!-- openni_launch -->
+  <depend stack="openni_launch" /> 
   <depend stack="perception_pcl" /> <!-- pcl, pcl_ros -->
   <depend stack="pr2_controllers" /> <!-- pr2_controllers_msgs -->
   <depend stack="robot_model" /> <!-- robot_state_publisher, urdf -->

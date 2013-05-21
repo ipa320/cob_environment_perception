@@ -135,11 +135,11 @@ class JumpEdgeFilter : public nodelet::Nodelet
   // Test specialized template for sensor_msgs::PointCloud2 point_type
 
   void
-  PointCloudSubCallback (sensor_msgs::PointCloud2::ConstPtr pc)
+  PointCloudSubCallback (pcl::PointCloud<pcl::PointXYZI>::ConstPtr pc)
   {
     //ROS_INFO("PointCloudSubCallback");
-    cob_3d_mapping_filters::JumpEdgeFilter<sensor_msgs::PointCloud2> filter;
-    sensor_msgs::PointCloud2::Ptr cloud_filtered (new sensor_msgs::PointCloud2 ());
+    cob_3d_mapping_filters::JumpEdgeFilter<pcl::PointXYZI> filter;
+    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZI>());
 
     filter.setInputCloud (pc);
     filter.setUpperAngle(upper_angle_);

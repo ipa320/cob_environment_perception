@@ -67,6 +67,8 @@
 #define SUB_STRUCTURES_H_
 
 
+#include <unsupported/Eigen/Polynomials>
+
 namespace Segmentation
 {
 

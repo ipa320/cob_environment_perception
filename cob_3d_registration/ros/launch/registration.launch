@@ -38,12 +38,8 @@
     <remap from="point_cloud2_aligned" to="registration/pc_aligned"/>
     <remap from="reset" to="/registration/reset"/>
 
-      <param name="algo" value="info" />
-      <param name="threshold_step" value="0.06" />
-      <param name="threshold_diff" value="0.06" />
-      <param name="min_info" value="1" />
-      <param name="max_info" value="17" />
-      <param name="always_relevant_changes" value="1" />
+	<arg name="algo" value="frir" />
+	<include  file="$(find cob_3d_registration)/ros/config/$(arg algo).xml" />
 
   </node>
 

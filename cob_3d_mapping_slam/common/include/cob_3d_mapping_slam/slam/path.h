@@ -114,8 +114,11 @@ namespace Slam  /// namespace for all Slam related stuff
 
     /// resets local node
     void newNode() {
+      static size_t id = 0;
       local_.node_.reset(new NODE());
       local_.link_ = DOF6();
+      local_.id_ = id;
+      id++;
     }
 
   public:
@@ -137,7 +140,11 @@ namespace Slam  /// namespace for all Slam related stuff
     void finishFrame();
 
     const SWAY<NODE> &getLocal() const {return local_;}
+    SWAY<NODE> &getLocal() {return local_;}
 
+    bool getTF(DOF6 &tf, const SWAY<NODE> *start, const SWAY<NODE> *end);
+
+    void test();
   };
 
 #include "impl/path.hpp"
