@@ -154,6 +154,7 @@ namespace cob_3d_segmentation
 
     inline bool hasLabel(int label_new, int label_this, int idx_new, int idx_this, Options::ComputeGraph t)
     {
+      if (label_new == I_UNDEF) return false;
       if (label_new != label_this)
       {
         graph_->edges()->updateProperties(graph_->connect(label_this, label_new), label_this, idx_this, label_new, idx_new);
