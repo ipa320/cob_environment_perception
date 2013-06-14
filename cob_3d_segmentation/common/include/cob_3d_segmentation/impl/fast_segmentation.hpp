@@ -77,6 +77,7 @@ template <typename PointT, typename PointNT, typename PointLabelT, typename Opti
 cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT,OptionsT,SensorT,ClusterHdlT>::createSeedPoints()
 {
   int n = labels_->width * labels_->height;
+  // make sure, image border are NANs
   for(size_t i = 0; i<labels_->width; ++i)
     (*labels_)[i].label = I_NAN;
   for(size_t i = labels_->size() - labels_->width; i<labels_->size(); ++i)
@@ -144,6 +145,7 @@ cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT,OptionsT,Sensor
   int mask_size = 3;
 
   clusters_->clear();
+  clusters_->createCluster(I_NAN);
   while(seeds_.size() != 0)
   {
     unsigned int idx = seeds_.front();
