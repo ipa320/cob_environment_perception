@@ -15,7 +15,7 @@ and incrementally builds an octomap. The data is sent out in different represent
 		<!-- data source to integrate (PointCloud2) -->
 		<!--remap from="cloud_in" to="/narrow_stereo/points_filtered2" /-->
 		<!--remap from="cloud_in" to="/camera/depth_registered/points" /-->
-		<remap from="cloud_in" to="/registration/pc_aligned" />
+		<remap from="cloud_in" to="/cam3d/rgb/points" />
 	
 	</node>
 </launch>

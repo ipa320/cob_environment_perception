@@ -329,7 +329,7 @@ public:
       ROS_ERROR("[plane_extraction] : %s",ex.what());
     }
     //btVector3 bt_rob_pose = transform.getOrigin();
-    btVector3 bt_rob_pose( transform.getOrigin()[0], transform.getOrigin()[1], transform.getOrigin()[2]);
+    tf::Vector3 bt_rob_pose( transform.getOrigin()[0], transform.getOrigin()[1], transform.getOrigin()[2]);
 
     Eigen::Vector3f rob_pose(bt_rob_pose.x(),bt_rob_pose.y(),bt_rob_pose.z());
     ROS_INFO("Rob pose: (%f,%f,%f)", bt_rob_pose.x(),bt_rob_pose.y(),bt_rob_pose.z());

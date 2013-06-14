@@ -165,7 +165,7 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& 
     catch (tf::TransformException ex) { ROS_ERROR("[geometry map node] : %s",ex.what()); return; }
 
     Eigen::Affine3d ad;
-    tf::TransformTFToEigen(trf_map, ad);
+    tf::transformTFToEigen(trf_map, ad);
     af_orig = ad.cast<float>();
     af_orig = geometry_map_.getLastError() * af_orig;
   }
