@@ -193,8 +193,8 @@ public:
     viz_marker_pub_ = n_.advertise<visualization_msgs::Marker>("visualization_marker",10);
     shape_array_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("shape_array",1);
 
-    as_= new actionlib::SimpleActionServer<cob_3d_mapping_msgs::PlaneExtractionAction>(n_, "plane_extraction", boost::bind(&PlaneExtractionNodelet::actionCallback, this, _1), false);
-    as_->start();
+    //as_= new actionlib::SimpleActionServer<cob_3d_mapping_msgs::PlaneExtractionAction>(n_, "plane_extraction", boost::bind(&PlaneExtractionNodelet::actionCallback, this, _1), false);
+    //as_->start();
 
     get_plane_ = n_.advertiseService("get_plane", &PlaneExtractionNodelet::srvCallback, this);
   }
@@ -292,21 +292,14 @@ public:
    *
    * @return nothing
    */
-  void
+  /*void
   actionCallback(const cob_3d_mapping_msgs::PlaneExtractionGoalConstPtr &goal)
   {
     //boost::mutex::scoped_lock l1(m_mutex_actionCallback);
 
     ROS_INFO("action callback");
     boost::mutex::scoped_lock lock(mutex_);
-    /*if(!lock)
-    //if(!lock.owns_lock())
-    {
-      ROS_INFO(" actionCallback not owning lock");
-      return;
-    }
-    else
-      ROS_INFO(" actionCallback owns lock");*/
+
     feedback_.currentStep.data = std::string("plane extraction");
     std::vector<pcl::PointCloud<Point>, Eigen::aligned_allocator<pcl::PointCloud<Point> > > v_cloud_hull;
     std::vector<std::vector<pcl::Vertices> > v_hull_polygons;
@@ -331,8 +324,6 @@ public:
     }
     Eigen::Affine3d ad;
     tf::TransformTFToEigen(transform, ad);
-    //btVector3 bt_rob_pose = transform.getOrigin();
-    //btVector3 bt_rob_pose( transform.getOrigin()[0], transform.getOrigin()[1], transform.getOrigin()[2]);
 
     Eigen::Vector3f rob_pose = ad.translation().cast<float>();//(bt_rob_pose.x(),bt_rob_pose.y(),bt_rob_pose.z());
     ROS_INFO("Rob pose: (%f,%f,%f)", rob_pose(0),rob_pose(1),rob_pose(2));
@@ -342,7 +333,7 @@ public:
     pcl::copyPointCloud(v_cloud_hull[idx], hull_);
     plane_coeffs_ = v_coefficients_plane[idx];
     as_->setSucceeded(result_);
-  }
+  }*/
 
   /**
    * @brief publishes nearest table
@@ -397,21 +388,34 @@ public:
     unsigned int ctr = 0;
     for(unsigned int i=0; i<v_cloud_hull.size(); i++)
     {
-      Polygon p;
-      p.id = 0;//ctr;
-      p.color[0] = p.color[3] = 1;
-      p.color[1] = p.color[2] = 0;
+      Eigen::Vector3f normal;
       for(unsigned int c=0; c<3; c++)
-        p.normal[c] = v_coefficients_plane[i].values[c];
-      p.d =  v_coefficients_plane[i].values[3];
-      std::vector<Eigen::Vector3f> pts;
+        normal[c] = v_coefficients_plane[i].values[c];
+      //p.id_ = 0;//ctr;
+      std::vector<float> color(4);
+      color[0] = color[3] = 1;
+      color[1] = color[2] = 0;
+      //p.d_ =  v_coefficients_plane[i].values[3];
+      //p.computePose();
+      //std::vector<Eigen::Vector2f> pts;
+      pcl::PointCloud<pcl::PointXYZ> hull;
+      //pcl::transformPointCloud(v_cloud_hull[i], hull_tr, p.pose_);
       for(unsigned int j=0; j<v_cloud_hull[i].size(); j++)
       {
-        pts.push_back(v_cloud_hull[i].points[j].getVector3fMap());
+        //Eigen::Vector2f pt(hull_tr[j].x, hull_tr[j].y);
+        pcl::PointXYZ pt;
+        pt.x = v_cloud_hull[i][j].x;
+        pt.y = v_cloud_hull[i][j].y;
+        pt.z = v_cloud_hull[i][j].z;
+        hull.push_back(pt);
       }
-      p.contours.push_back(pts);
-      p.holes.push_back(false);
-      p.computeCentroid();
+      //std::vector<std::vector<Eigen::Vector2f> > hull;
+      //hull.push_back(pts);
+      //p.contours_.push_back(pts);
+      //p.holes_.push_back(false);
+      std::vector<bool> holes(1, false);
+      std::vector<pcl::PointCloud<pcl::PointXYZ> > hull_v(1, hull);
+      Polygon p(0, normal, v_coefficients_plane[i].values[3], hull_v, holes, color);
 
       cob_3d_mapping_msgs::Shape s;
       s.header = header;
