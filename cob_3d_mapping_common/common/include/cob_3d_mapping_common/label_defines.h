@@ -66,6 +66,8 @@
 #ifndef COB_3D_MAPPING_COMMON_LABEL_DEFINES_H_
 #define COB_3D_MAPPING_COMMON_LABEL_DEFINES_H_
 
+#include <map>
+#include <boost/assign.hpp>
 
 // --- define colors ---
 #define LBL_NAN      0x999999
@@ -118,5 +120,22 @@
 #define I_SPHERE 6
 #define I_CORNER 7
 #define NUM_LABELS 8
+
+
+namespace LabelColorMap
+{
+
+  const std::map<int,int> m = boost::assign::map_list_of
+    ( I_UNDEF, LBL_UNDEF )
+    ( I_NAN, LBL_NAN )
+    ( I_BORDER, LBL_BORDER )
+    ( I_EDGE, LBL_EDGE )
+    ( I_PLANE, LBL_PLANE )
+    ( I_CYL, LBL_CYL )
+    ( I_SPHERE, LBL_SPH )
+    ( I_CORNER, LBL_COR )
+    ;
+
+}
 
 #endif
