@@ -92,21 +92,13 @@ namespace cob_3d_segmentation
       , color_tab_()
     {
       const float rand_max_inv = 1.0f/ RAND_MAX;
-      color_tab_.resize(2048);
-      color_tab_[I_UNDEF] = LBL_UNDEF;
-      color_tab_[I_NAN] = LBL_NAN;
-      color_tab_[I_BORDER] = LBL_BORDER;
-      color_tab_[I_EDGE] = LBL_EDGE;
-      color_tab_[I_PLANE] = LBL_PLANE;
-      color_tab_[I_CYL] = LBL_CYL;
-      color_tab_[I_SPHERE] = LBL_SPH;
-      color_tab_[I_CORNER] = LBL_COR;
-      for (size_t i=NUM_LABELS; i<2048 - NUM_LABELS; ++i)
+
+      for (size_t i=0; i<2048; ++i)
       {
         int r = (float)rand() * rand_max_inv * 255;
         int g = (float)rand() * rand_max_inv * 255;
         int b = (float)rand() * rand_max_inv * 255;
-        color_tab_[i] = ( r << 16 | g << 8 | b );
+        color_tab_.push_back( r << 16 | g << 8 | b );
       }
     }
     virtual ~ClusterHandlerBase() { };
@@ -142,11 +134,12 @@ namespace cob_3d_segmentation
 
     void mapClusterColor(pcl::PointCloud<PointXYZRGB>::Ptr color_cloud)
     {
-      uint32_t rgb; int t = 4;
+      uint32_t rgb; int t = 0;
       for(reverse_iterator c = clusters_.rbegin(); c != clusters_.rend(); ++c, ++t)
       {
-        if (c->id() == I_NAN || c->id() == I_BORDER) { rgb = color_tab_[c->id()]; --t; }
-        else { rgb = color_tab_[t % (2048-NUM_LABELS) + NUM_LABELS]; }
+        if (c->id() == I_NAN) { rgb = LabelColorMap::m.at(I_NAN); }
+        else if (c->id() == I_BORDER) { rgb = LabelColorMap::m.at(I_BORDER); }
+        else { rgb = color_tab_[t]; }
         for(typename ClusterType::iterator it = c->begin(); it != c->end(); ++it)
         { color_cloud->points[*it].rgb = *reinterpret_cast<float*>(&rgb); }
         c->label_color = rgb;
@@ -158,7 +151,7 @@ namespace cob_3d_segmentation
       uint32_t rgb;
       for(ClusterPtr c = clusters_.begin(); c != clusters_.end(); ++c)
       {
-        rgb = color_tab_[c->type];
+        rgb = LabelColorMap::m.at(c->type);
         for (typename ClusterType::iterator it = c->begin(); it != c->end(); ++it)
           color_cloud->points[*it].rgb = *reinterpret_cast<float*>(&rgb);
       }

@@ -119,36 +119,36 @@ using namespace cob_3d_mapping;
 class cylinder_client
 {
 public:
-   typedef boost::normal_distribution<double> NormalDistribution;
-   typedef boost::mt19937 RandomGenerator;
-   typedef boost::variate_generator<RandomGenerator&, \
-                           NormalDistribution> GaussianGenerator;
+  typedef boost::normal_distribution<double> NormalDistribution;
+  typedef boost::mt19937 RandomGenerator;
+  typedef boost::variate_generator<RandomGenerator&, \
+      NormalDistribution> GaussianGenerator;
 
-	// Constructor
-	cylinder_client() :
-	  rng(static_cast<unsigned> (time(0))),
-	  gaussian_dist(0, 0.015),
-	  generator(rng, gaussian_dist)
-	{
-
-
-		map_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("SA",1);
+  // Constructor
+  cylinder_client() :
+    rng(static_cast<unsigned> (time(0))),
+    gaussian_dist(0, 0.015),
+    generator(rng, gaussian_dist)
+  {
 
 
-	}
-
-	// Destructor
-	~cylinder_client()
-	{
-		/// void
-	}
-
-	void
-	transformCylinder(Cylinder::Ptr & c_ptr,Eigen::Affine3f& trafo)
-	{
+    map_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("/geometry_map/map_array",1);
 
 
-		/*Cylinder & c=*c_ptr;
+  }
+
+  // Destructor
+  ~cylinder_client()
+  {
+    /// void
+  }
+
+  void
+  transformCylinder(Cylinder::Ptr & c_ptr,Eigen::Affine3f& trafo)
+  {
+
+
+    /*Cylinder & c=*c_ptr;
 
 		for (int i = 0; i < (int) c.contours.size(); ++i) {
 			for (int j = 0; j < (int) c.contours[i].size(); ++j) {
@@ -174,45 +174,65 @@ public:
 		//	std::cout<<" x= "<<x<<" y= "<<z<<" z= "<<z<<" roll= "<<roll<<" pitch= "<<pitch<<" yaw= "<<yaw<<std::endl;
 
 		c.assignMembers(c.sym_axis[1], c.sym_axis[2], c.origin_);	//	configure unrolled polygon*/
-	}
+  }
 
 
-	void
-	makePolygon(Polygon::Ptr& p1)
-	{
-	  double dx = generator();
-	  double dy = generator();
-	  double dz = generator();
-	  double dd = generator();
-		Eigen::Vector3f v;
-			std::vector<Eigen::Vector3f> vv;
-			p1->id = 1;
-			p1->normal << 0.000000+dx,-1.000000+dy,-0.000000+dz;
-			p1->d = 0+dd;
-			v << 0.500000,0.010000,0.500000;
-			vv.push_back(v);
-			v << 0.500000,0.010000,-0.500000;
-			vv.push_back(v);
-			v << -0.500000,0.010000,-0.500000;
-			vv.push_back(v);
-			v << -0.500000,0.010000,0.500000;
-			vv.push_back(v);
-			p1->contours.push_back(vv);
-			p1->holes.push_back(0);
+  void
+  makePolygonNoised(Polygon::Ptr& p1)
+  {
+    double dx = generator();
+    double dy = generator();
+    double dz = generator();
+    double dd = generator();
+    Eigen::Vector3f v;
+    std::vector<Eigen::Vector3f> vv;
+    p1->id = 1;
+    p1->normal << 0.000000+dx,-1.000000+dy,-0.000000+dz;
+    p1->d = 0+dd;
+    v << 0.500000,0.010000,0.500000;
+    vv.push_back(v);
+    v << 0.500000,0.010000,-0.500000;
+    vv.push_back(v);
+    v << -0.500000,0.010000,-0.500000;
+    vv.push_back(v);
+    v << -0.500000,0.010000,0.500000;
+    vv.push_back(v);
+    p1->contours.push_back(vv);
+    p1->holes.push_back(0);
+  }
 
-	}
+  void
+  makePolygon(Polygon::Ptr& p1)
+  {
+    Eigen::Vector3f v;
+    std::vector<Eigen::Vector3f> vv;
+    p1->id = 1;
+    p1->normal << 0,0,1;
+    p1->d = -1;
+    v << -2,-2,1;
+    vv.push_back(v);
+    v << -2,2,1;
+    vv.push_back(v);
+    v << 2,2,1;
+    vv.push_back(v);
+    v << 2,-2,1;
+    vv.push_back(v);
+    p1->contours.push_back(vv);
+    p1->holes.push_back(0);
+    p1->centroid << 0,0,1,0;
+  }
 
 
-	void
-	makeCylinder(Cylinder::Ptr& c1)
-	{
+  void
+  makeCylinder(Cylinder::Ptr& c1)
+  {
 
 
-		//####################################################
-		//Cylinder #1
+    //####################################################
+    //Cylinder #1
 
 
-		/*c1->id = 0;
+    /*c1->id = 0;
 
 		Eigen::Vector3f x_axis1,y_axis1,z_axis1;
 		std::vector<Eigen::Vector3f> axes1;
@@ -348,64 +368,64 @@ public:
 
 
 
-	}
+  }
 
 
-	void
-	publishShapes()
-	{
-	  std::cout << "da" << std::endl;
-		cob_3d_mapping_msgs::ShapeArray map_msg;
-		map_msg.header.frame_id="/map";
-		map_msg.header.stamp = ros::Time::now();
-		cob_3d_mapping_msgs::Shape s;
-
-
-
-//		PolygonPtr p1 = PolygonPtr(new Polygon());
-//		map_msg.header.stamp = ros::Time::now();
-//		makePolygon(p1);
-//		toROSMsg(*p1,s);
-//		s.header=map_msg.header;
-//		s.color.r=0.5;
-//		s.color.g=1;
-//		s.color.a=1;
-//		s.type=cob_3d_mapping_msgs::Shape::POLYGON;
-//		map_msg.shapes.push_back(s);
+  void
+  publishShapes()
+  {
+    std::cout << "da" << std::endl;
+    cob_3d_mapping_msgs::ShapeArray map_msg;
+    map_msg.header.frame_id="/head_cam3d_link";
+    map_msg.header.stamp = ros::Time::now();
+    cob_3d_mapping_msgs::Shape s;
 
 
 
+    //		PolygonPtr p1 = PolygonPtr(new Polygon());
+    //		map_msg.header.stamp = ros::Time::now();
+    //		makePolygon(p1);
+    //		toROSMsg(*p1,s);
+    //		s.header=map_msg.header;
+    //		s.color.r=0.5;
+    //		s.color.g=1;
+    //		s.color.a=1;
+    //		s.type=cob_3d_mapping_msgs::Shape::POLYGON;
+    //		map_msg.shapes.push_back(s);
 
 
-		//Cylinder::Ptr  c1  =Cylinder::Ptr(new Cylinder());
-		//makeCylinder(c1);
-		Polygon::Ptr p1(new Polygon());
-		makePolygon(p1);
-		toROSMsg(*p1, s);
-		s.header = map_msg.header;
-		s.color.b = 1;
-		s.color.a = 1;
-		s.type=cob_3d_mapping_msgs::Shape::POLYGON;
-		map_msg.shapes.push_back(s);
-
-		map_pub_.publish(map_msg);
 
 
-	}
+
+    //Cylinder::Ptr  c1  =Cylinder::Ptr(new Cylinder());
+    //makeCylinder(c1);
+    Polygon::Ptr p1(new Polygon());
+    makePolygon(p1);
+    toROSMsg(*p1, s);
+    s.header = map_msg.header;
+    s.color.b = 1;
+    s.color.a = 1;
+    s.type=cob_3d_mapping_msgs::Shape::POLYGON;
+    map_msg.shapes.push_back(s);
+
+    map_pub_.publish(map_msg);
 
 
-	ros::NodeHandle n_;
+  }
+
+
+  ros::NodeHandle n_;
 
 
 protected:
-	ros::Publisher map_pub_;
+  ros::Publisher map_pub_;
 
 
-	//GeometryMap geometry_map_;      /// map containing geometrys (polygons)
+  //GeometryMap geometry_map_;      /// map containing geometrys (polygons)
 
-	RandomGenerator rng;
-        NormalDistribution gaussian_dist;
-        GaussianGenerator generator;
+  RandomGenerator rng;
+  NormalDistribution gaussian_dist;
+  GaussianGenerator generator;
 
 
 
@@ -414,18 +434,18 @@ protected:
 int main (int argc, char** argv)
 {
 
-	ros::init (argc, argv, "cylinder_client");
+  ros::init (argc, argv, "cylinder_client");
 
-	cylinder_client cc;
+  cylinder_client cc;
 
 
-	ros::Rate loop_rate(1);
-	while (ros::ok())
-	{
-		cc.publishShapes();
-		ros::spinOnce ();
-		loop_rate.sleep();
-	}
+  ros::Rate loop_rate(1);
+  while (ros::ok())
+  {
+    cc.publishShapes();
+    ros::spinOnce ();
+    loop_rate.sleep();
+  }
 }
 
 //PLUGINLIB_DECLARE_CLASS(cob_env_model, FeatureMap, FeatureMap, nodelet::Nodelet)
