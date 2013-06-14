@@ -355,7 +355,7 @@ public:
       Eigen::Affine3d af;
       af.matrix()=reg_->getTransformation().cast<double>();
       //std::cout<<reg_->getTransformation()<<"\n";
-      tf::TransformEigenToTF(af,transform);
+      tf::transformEigenToTF(af,transform);
       //std::cout << transform.stamp_ << std::endl;
       tf_br_.sendTransform(tf::StampedTransform(transform, pc_in->header.stamp, world_id_, corrected_id_));
 
@@ -408,7 +408,7 @@ public:
       ROS_DEBUG("Registering new point cloud");
 
       Eigen::Affine3d af;
-      tf::TransformTFToEigen(transform, af);
+      tf::transformTFToEigen(transform, af);
       reg_->setOdometry(af.matrix().cast<float>());
       reg_->setMoved(true);
 

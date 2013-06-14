@@ -171,7 +171,7 @@ public:
       return;
     }
     Eigen::Affine3d af;
-    tf::TransformTFToEigen(trf_map, af);
+    tf::transformTFToEigen(trf_map, af);
     Eigen::Matrix4f trf = af.matrix().cast<float>();
     pcl::transformPointCloud(*pc_aligned, *pc_trans, trf);
 
