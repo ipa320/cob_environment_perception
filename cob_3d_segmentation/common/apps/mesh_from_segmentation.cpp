@@ -47,6 +47,20 @@ namespace cob_3d_segmentation
     inline LabelCloud::Ptr getCloudLabels() { return labels_; }
 
 
+    int what(int idx, int* mask, int mm)
+    {
+      int curr_label;
+      int next_label = (*labels_)[idx].label;
+      int res = 0;
+      for(int i = 0; i<mm; ++i)
+      {
+        curr_label = next_label;
+        next_label = (*labels_)[idx + mask[i]].label;
+        res |= (curr_label != next_label) << i; // flip i-th bit if not equal
+      }
+      return res;
+    }
+
     void performSegmentation(const PointCloud::ConstPtr& input)
     {
       PrecisionStopWatch t;
@@ -70,6 +84,61 @@ namespace cob_3d_segmentation
       std::cout << "segmentation took " << t.precisionStop() << " s." << std::endl;
 
       int w = labels_->width;
+      int mask[] = { 1, 1+w, w, 0};
+      int update[16];
+      update[0] = update[1] = update[2] = update[4] = update[8] = 0; // nothing
+      update[3] = update[6] = update[9] = update[12] = 4; // 2 clusters (3+1)
+      update[5] = update[10] = 1; // 2 clusters (2+2)
+      update[7] = update[11] = update[13] = update[14] = update[15] = 16; // 3 and 4 clusters
+      borders_.reset(new LabelCloud);
+      borders_->resize(labels_->size());
+      for (size_t y = 0; y < labels_->size() - w; y+=w)
+      {
+        for (size_t i=y; i < y+w-1; ++i)
+        {
+          int res = update[what(i, mask, 4)];
+          (*borders_)[ i + mask[1] ].label = res;
+          (*borders_)[ i + mask[2] ].label += res;
+          (*borders_)[ i + mask[3] ].label += res;
+          (*borders_)[ i + mask[0] ].label += res;
+        }
+      }
+
+      for (int i=0; i<borders_->size(); ++i)
+      {
+        switch( (*borders_)[i].label )
+        {
+        case 2: // straight
+        { (*down_)[i].rgba = LBL_CYL; break; } //green
+
+        case 5: // 45°/90° outer corner
+        { (*down_)[i].rgba = LBL_EDGE_CVX; break; } //orange
+
+        case 6: // 90° inner corner
+        { (*down_)[i].rgba = LBL_EDGE; break; } //red
+
+        case 9: // begin/end of curve
+        { (*down_)[i].rgba = LBL_BORDER; break; } //magenta
+
+        case 12: // 45° diagonal
+        { (*down_)[i].rgba = LBL_SPH_CVX; break; } //purple
+
+        default:
+        {
+          if( (*borders_)[i].label > 16 ) // edge point
+          {
+            (*down_)[i].rgba = LBL_SPH; //blue
+          }
+          else // nothing
+          {
+            (*down_)[i].rgba = LBL_NAN;
+          }
+          break;
+        }
+        }
+      }
+
+      /*
       int mask[] = { -w, 1, w, -1 };
       int curr_label, count;
       Eigen::Vector3f curr_p;
@@ -108,6 +177,7 @@ namespace cob_3d_segmentation
           }
         }
       }
+      */
     }
 
     cob_3d_mapping_features::OrganizedNormalEstimationOMP<pcl::PointXYZRGB, pcl::Normal, PointLabel> one_;
@@ -120,6 +190,7 @@ namespace cob_3d_segmentation
     PointCloud::Ptr segmented_;
     NormalCloud::Ptr normals_;
     LabelCloud::Ptr labels_;
+    LabelCloud::Ptr borders_;
   };
 }
 
