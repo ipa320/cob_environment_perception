@@ -80,10 +80,10 @@ target_link_libraries(evaluation_fpfh_svm_trainer ${OpenCV_LIBS} )
 rosbuild_link_boost(evaluation_fpfh_svm_trainer program_options)
 
 
-rosbuild_add_executable(evaluation_features common/apps/evaluation_features.cpp)
-rosbuild_add_compile_flags(evaluation_features -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
-target_link_libraries(evaluation_features vtkCommon vtkFiltering ${OpenCV_LIBS} )
-rosbuild_link_boost(evaluation_features program_options)
+#rosbuild_add_executable(evaluation_features common/apps/evaluation_features.cpp)
+#rosbuild_add_compile_flags(evaluation_features -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
+#target_link_libraries(evaluation_features vtkCommon vtkFiltering ${OpenCV_LIBS} )
+#rosbuild_link_boost(evaluation_features program_options)
 
 #libopencv_ml.so libopencv_core.so)
 

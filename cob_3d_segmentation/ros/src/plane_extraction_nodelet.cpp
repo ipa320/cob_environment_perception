@@ -323,7 +323,7 @@ public:
       ROS_ERROR("[plane_extraction] : %s",ex.what());
     }
     Eigen::Affine3d ad;
-    tf::TransformTFToEigen(transform, ad);
+    tf::transformTFToEigen(transform, ad);
 
     Eigen::Vector3f rob_pose = ad.translation().cast<float>();//(bt_rob_pose.x(),bt_rob_pose.y(),bt_rob_pose.z());
     ROS_INFO("Rob pose: (%f,%f,%f)", rob_pose(0),rob_pose(1),rob_pose(2));
