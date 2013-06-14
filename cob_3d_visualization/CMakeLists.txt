@@ -22,16 +22,14 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_gensrv()
 INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/include)
 
-rosbuild_add_library(cob_3d_visualization src/table_visualization.cpp)
+#rosbuild_add_library(cob_3d_visualization src/table_visualization.cpp)
 
 rosbuild_add_executable(shape_visualization src/shape_visualization.cpp
-    src/shape_marker.cpp
-	src/polypartition.cpp)
-rosbuild_add_executable(table_visualization src/table_visualization.cpp
-						src/table_marker.cpp
-						src/polypartition.cpp)
+    src/shape_marker.cpp)
+#rosbuild_add_executable(table_visualization src/table_visualization.cpp
+#						src/table_marker.cpp)
 rosbuild_add_executable(test_shape_array test/test_shape_array.cpp)
-target_link_libraries(table_visualization cob_3d_visualization)
+#target_link_libraries(table_visualization cob_3d_visualization)
 
 #rosbuild_add_library(cob_3d_visualization  src/table_visualization.cpp)
 #rosbuild_add_executable(uv_angle_test test/uv_angle_test.cpp)

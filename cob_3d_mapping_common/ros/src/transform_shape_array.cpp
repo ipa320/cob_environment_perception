@@ -105,7 +105,7 @@ public:
         tf_listener_.waitForTransform(target_frame_, sa_in->header.frame_id, sa_in->header.stamp, ros::Duration(2));
         tf_listener_.lookupTransform(target_frame_, sa_in->header.frame_id, sa_in->header.stamp, trf_map);
       }
-      catch (tf::TransformException ex) { ROS_ERROR("[transform shape array] : %s",ex.what()); return; }
+      catch (tf::TransformException& ex) { ROS_ERROR("[transform shape array] : %s",ex.what()); return; }
 
       Eigen::Affine3d ad;
       tf::TransformTFToEigen(trf_map, ad);
@@ -122,14 +122,14 @@ public:
         {
           Polygon::Ptr poly_ptr (new Polygon());
           fromROSMsg(sa_in->shapes[i], *poly_ptr);
-          poly_ptr->transform2tf(af_target);
+          poly_ptr->transform(af_target);
           toROSMsg(*poly_ptr,s);
         }
         else if( sa_in->shapes[i].type == cob_3d_mapping_msgs::Shape::CYLINDER)
         {
           Cylinder::Ptr cyl_ptr (new Cylinder());
           fromROSMsg(sa_in->shapes[i], *cyl_ptr);
-          cyl_ptr->transform2tf(af_target);
+          cyl_ptr->transform(af_target);
           toROSMsg(*cyl_ptr,s);
         }
         sa_out.shapes.push_back (s);

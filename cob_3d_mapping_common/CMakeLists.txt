@@ -33,10 +33,12 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/ros/include
 
 rosbuild_add_library(cob_3d_mapping_common
 	common/src/shape.cpp
-	common/src/shape_cluster.cpp
+	#common/src/shape_cluster.cpp
 	common/src/polygon.cpp
 	common/src/cylinder.cpp
-	common/src/gpc.c)
+	common/src/gpc.c
+	common/src/polypartition.cpp
+	common/src/dominant_color.cpp)
 #target_link_libraries(cob_3d_mapping_common )
 
 
@@ -44,8 +46,14 @@ rosbuild_add_executable(keyframe_detector_node ros/src/keyframe_detector.cpp)
 rosbuild_add_executable(transform_shape_array ros/src/transform_shape_array.cpp)
 target_link_libraries(transform_shape_array cob_3d_mapping_common )
 rosbuild_add_executable(transform_pointcloud ros/src/transform_pointcloud.cpp)
-rosbuild_add_executable(test_minimal_rectangle ros/src/test_minimal_rectangle.cpp)
+rosbuild_add_executable(test_minimal_rectangle common/test/test_minimal_rectangle.cpp)
 #rosbuild_add_library(cob_3d_mapping_common_sv ros/src/shape_visualization.cpp)
+
+#Unit tests
+rosbuild_add_executable(test_polygon common/test/test_polygon.cpp)
+target_link_libraries(test_polygon cob_3d_mapping_common gtest)
+rosbuild_add_executable(test_cylinder common/test/test_cylinder.cpp)
+target_link_libraries(test_cylinder cob_3d_mapping_common gtest)
 
 #~~~~~~~~~
 #rosbuild_add_executable(cylinder common/src/cyl_test.cpp)

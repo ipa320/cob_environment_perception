@@ -141,7 +141,7 @@ namespace cob_3d_mapping
     */
     inline bool hasSimilarParametersWith(ShapeCluster::Ptr sc) const
     {
-      return ( (this->centroid - sc->centroid).norm() < d_ );
+      return ( (this->pose_.translation() - sc->pose_.translation()).norm() < d_ );
     }
 
     /**
