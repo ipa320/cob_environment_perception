@@ -136,7 +136,7 @@ public:
       ROS_ERROR("%s",ex.what());
     }
     Eigen::Affine3d trafo;
-    TransformTFToEigen(st_trf, trafo);
+    transformTFToEigen(st_trf, trafo);
     fov_.transformFOV(trafo);
     publishMarker();
   }
