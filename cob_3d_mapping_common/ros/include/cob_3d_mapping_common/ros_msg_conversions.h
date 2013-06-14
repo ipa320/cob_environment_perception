@@ -116,6 +116,7 @@ namespace cob_3d_mapping
     s.color.g = p.color[1];
     s.color.b = p.color[2];
     s.color.a = p.color[3];
+
     s.points.resize(p.contours.size());
     s.holes.resize(p.holes.size());
 
