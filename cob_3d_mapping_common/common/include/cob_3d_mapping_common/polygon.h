@@ -137,8 +137,7 @@ namespace cob_3d_mapping
       : Shape(),
         normal_(Eigen::Vector3f::Zero()),
         d_(0.0),
-        merge_weight_(1.0),
-        merged_limit_(10)
+        merge_weight_(1.0)
     { }
 
     Polygon(unsigned int id,
@@ -440,7 +439,6 @@ namespace cob_3d_mapping
     std::vector<bool> holes_;/**< Bool vector indicating holes in polygon structure*/
     double merge_weight_;/**< Merge weight of polygon - regulating its influence in merge processes.*/
     MergeConfig merge_settings_;/** Merge settings - configuring assignment of weight and merge processes*/
-    int merged_limit_;                /**< Limit for merge counter */
     DominantColor d_color_;
 
   protected:

@@ -220,8 +220,7 @@ getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
                    std::vector<float> color)
   : normal_(Eigen::Vector3f::Zero()),
     d_(0.0),
-    merge_weight_(1.0),
-    merged_limit_(10)
+    merge_weight_(1.0)
   {
     id_ = id;
     normal_ = normal;
@@ -240,8 +239,7 @@ getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
                    std::vector<float> color)
   : normal_(Eigen::Vector3f::Zero()),
     d_(0.0),
-    merge_weight_(1.0),
-    merged_limit_(10)
+    merge_weight_(1.0)
   {
     id_ = id;
     normal_ = normal;
