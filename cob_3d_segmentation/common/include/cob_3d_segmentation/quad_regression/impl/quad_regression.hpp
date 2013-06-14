@@ -367,9 +367,9 @@
 
       s.params.clear();
       //TODO: check: always zero?
-      s.centroid.x=0;//(this->polygons_[i].param_.col(0)(0));
-      s.centroid.y=0;//(this->polygons_[i].param_.col(0)(1));
-      s.centroid.z=0;//(this->polygons_[i].param_.col(0)(2));
+      //s.centroid.x=0;//(this->polygons_[i].param_.col(0)(0));
+      //s.centroid.y=0;//(this->polygons_[i].param_.col(0)(1));
+      //s.centroid.z=0;//(this->polygons_[i].param_.col(0)(2));
 
       /*s.params.push_back(this->polygons_[i].param_.col(1)(0));
       s.params.push_back(this->polygons_[i].param_.col(1)(1));

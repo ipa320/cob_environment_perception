@@ -259,9 +259,9 @@ public:
       Eigen::Vector3f normal(last_sa_->shapes[i].params[0],
                              last_sa_->shapes[i].params[1],
                              last_sa_->shapes[i].params[2]);
-      Eigen::Vector3f point(last_sa_->shapes[i].centroid.x,
-                            last_sa_->shapes[i].centroid.y,
-                            last_sa_->shapes[i].centroid.z);
+      Eigen::Vector3f point(last_sa_->shapes[i].pose.position.x,
+                            last_sa_->shapes[i].pose.position.y,
+                            last_sa_->shapes[i].pose.position.z);
 
       bba.detections.clear();
       bba.header.stamp = last_pc_->header.stamp;

@@ -106,14 +106,14 @@ rosbuild_add_compile_flags(generate_test_data -DEIGEN_YES_I_KNOW_SPARSE_MODULE_I
 rosbuild_link_boost(generate_test_data program_options)
 
 # plane segmentation evaluation tool:
-rosbuild_add_executable(evaluate_plane_segmentation common/src/evaluate_plane_segmentation.cpp)
-target_link_libraries(evaluate_plane_segmentation cob_3d_mapping_tools)
-rosbuild_link_boost(evaluate_plane_segmentation program_options)
+#rosbuild_add_executable(evaluate_plane_segmentation common/src/evaluate_plane_segmentation.cpp)
+#target_link_libraries(evaluate_plane_segmentation cob_3d_mapping_tools)
+#rosbuild_link_boost(evaluate_plane_segmentation program_options)
 
 # Gui:
-rosbuild_add_executable(test_gui common/src/test_wx_gui.cpp)
-target_link_libraries(test_gui ${wxWidgets_LIBRARIES} cob_3d_mapping_tools)
-rosbuild_link_boost(test_gui program_options signals)
+#rosbuild_add_executable(test_gui common/src/test_wx_gui.cpp)
+#target_link_libraries(test_gui ${wxWidgets_LIBRARIES} cob_3d_mapping_tools)
+#rosbuild_link_boost(test_gui program_options signals)
 
 rosbuild_add_executable(test_hsv_tool common/src/test_hsv_tool.cpp)
 target_link_libraries(test_hsv_tool ${wxWidgets_LIBRARIES} cob_3d_mapping_tools)
