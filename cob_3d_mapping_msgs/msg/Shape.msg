@@ -12,6 +12,8 @@ byte type
 int32 id
 float32 weight
 
+geometry_msgs/Pose pose
+
 # define shape parameters
 # for plane
 # normal vector = params[0],params[1],params[2]
@@ -23,10 +25,9 @@ float32 weight
 #
 #for cylinder
 # symmetry axis = params[0],params[1],params[2]
-# z axis 	= params[3], params[4], params[5]
-# origin	= params[6], params[7], params[8]
-# radius	= params[9]
-# 
+# radius	= params[3]
+# min and max height (rel to origin) = params[4], params[5]
+#
 float64[] params
 
 sensor_msgs/PointCloud2[] points
@@ -35,6 +36,6 @@ sensor_msgs/PointCloud2[] points
 # each three entries form a triangle; indices of points are stored
 int32[] vertices
 
-geometry_msgs/Point32 centroid
+#geometry_msgs/Point32 centroid
 std_msgs/ColorRGBA color
 bool[] holes

@@ -70,7 +70,7 @@ SupportingPlaneExtraction::getSupportingPlane(std::vector<Polygon::Ptr>& polys, 
   for( unsigned int i=0; i<polys.size(); i++)
   {
     double a = polys[i]->computeArea3d();
-    std::cout << "Poly " << i << " (id " << polys[i]->id << " has an area of " << a << std::endl;
+    std::cout << "Poly " << i << " (id " << polys[i]->id_ << " has an area of " << a << std::endl;
     if( a > area_min_ && a < area_max_)
     {
       std::cout << "\tadding" << std::endl;

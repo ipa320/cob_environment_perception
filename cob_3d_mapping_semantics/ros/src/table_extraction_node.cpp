@@ -392,10 +392,10 @@ public:
       te_.setInputPolygon(poly_ptr);
       if (te_.isTable())
       {
-        poly_ptr->color[0] = 1;
-        poly_ptr->color[1] = 0;
-        poly_ptr->color[2] = 0;
-        poly_ptr->color[3] = 1;
+        poly_ptr->color_[0] = 1;
+        poly_ptr->color_[1] = 0;
+        poly_ptr->color_[2] = 0;
+        poly_ptr->color_[3] = 1;
         cob_3d_mapping_msgs::Shape s;
         s.header = sa.header;
         s.header.frame_id = target_frame_id_;

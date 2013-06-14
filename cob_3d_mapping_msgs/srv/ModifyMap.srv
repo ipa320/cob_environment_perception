@@ -3,6 +3,5 @@ uint8 MODIFY=1
 uint8 DELETE=2
 
 int32 action
-cob_3d_mapping_msgs/ShapeArray InMap
+cob_3d_mapping_msgs/ShapeArray shapes
 ---
-cob_3d_mapping_msgs/ShapeArray OutMap

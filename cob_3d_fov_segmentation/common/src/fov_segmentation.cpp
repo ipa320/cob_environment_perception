@@ -84,6 +84,8 @@ void FOVSegmentation::compute(std::vector<Polygon::Ptr>& polygons)
   {
     std::vector<Eigen::Vector3f> intersections;
     clipFOVandPlane(*it, intersections);
+    std::vector<std::vector<Eigen::Vector3f> > intersections2;
+    intersections2.push_back(intersections);
     /*if( intersections.size() < 3)
     {
       //check if centroid is inside tetraeder
@@ -124,13 +126,14 @@ void FOVSegmentation::compute(std::vector<Polygon::Ptr>& polygons)
     if(intersections.size() != 0)
     {
       Polygon::Ptr fov_poly(new Polygon(**it));
-      fov_poly->contours.clear();
-      fov_poly->holes.clear();
-      fov_poly->contours.push_back(intersections);
-      fov_poly->holes.push_back(false);
-      (*it)->merge_difference(fov_poly);
-      std::cout << "clipped poly:" << fov_poly->contours.size() << std::endl;
-      if (fov_poly->contours.size() > 0)
+      fov_poly->contours_.clear();
+      fov_poly->holes_.clear();
+      //fov_poly->contours_.push_back(intersections);
+      fov_poly->setContours3D(intersections2);
+      fov_poly->holes_.push_back(false);
+      (*it)->mergeDifference(fov_poly);
+      std::cout << "clipped poly:" << fov_poly->contours_.size() << std::endl;
+      if (fov_poly->contours_.size() > 0)
         polygons.push_back(fov_poly);
     }
     else
@@ -149,13 +152,13 @@ void FOVSegmentation::clipFOVandPlane(Polygon::Ptr& poly, std::vector<Eigen::Vec
 
   for( unsigned int i=1; i<p.size(); i++)
   {
-    double div = poly->normal.cast<double>().dot(p[i]-p[0]);
+    double div = poly->normal_.cast<double>().dot(p[i]-p[0]);
     /*std::cout << poly->normal << std::endl;
     std::cout << p[i] << std::endl;
     std::cout << p[0] << std::endl;*/
     //std::cout << "div: " << div << std::endl;
     if ( div == 0 ) continue;
-    double lambda = (poly->normal.cast<double>().dot(poly->centroid.topLeftCorner(3, 1).cast<double>() - p[0]))/div;
+    double lambda = (poly->normal_.cast<double>().dot(poly->pose_.translation().cast<double>() - p[0]))/div;
     //std::cout << "lambda: " << lambda << std::endl;
     if ( lambda > 1 || lambda < 0) continue;
     Eigen::Vector3d intersection = p[0] + lambda*(p[i]-p[0]);
@@ -167,9 +170,9 @@ void FOVSegmentation::clipFOVandPlane(Polygon::Ptr& poly, std::vector<Eigen::Vec
   {
     unsigned int j = i+1;
     if ( j == p.size() ) j = 1;
-    double div = poly->normal.cast<double>().dot(p[j]-p[i]);
+    double div = poly->normal_.cast<double>().dot(p[j]-p[i]);
     if ( div == 0 ) continue;
-    double lambda = (poly->normal.cast<double>().dot(poly->centroid.topLeftCorner(3, 1).cast<double>() - p[i]))/div;
+    double lambda = (poly->normal_.cast<double>().dot(poly->pose_.translation().cast<double>() - p[i]))/div;
     if ( lambda > 1  || lambda < 0) continue;
     Eigen::Vector3d intersection = p[i] + lambda*(p[j]-p[i]);
     //std::cout << i <<"," << j << ": " << intersection(0) << "," << intersection(1) << "," << intersection(2) << std::endl;
@@ -178,7 +181,7 @@ void FOVSegmentation::clipFOVandPlane(Polygon::Ptr& poly, std::vector<Eigen::Vec
     std::cout << "p" << j << ": " << p[j](0) << "," << p[j](1) << "," << p[j](2) << std::endl;*/
     intersections.push_back(intersection.cast<float>());
   }
-  std::cout << "found " << intersections.size() << "intersecting points for ID " << poly->id << std::endl;
+  std::cout << "found " << intersections.size() << "intersecting points for ID " << poly->id_ << std::endl;
   if(intersections.size() == 5)
   {
     //calc angle rel. to centroid
@@ -186,9 +189,9 @@ void FOVSegmentation::clipFOVandPlane(Polygon::Ptr& poly, std::vector<Eigen::Vec
     Eigen::Vector2f cent(0,0);
     for(unsigned int i=0; i<intersections.size(); i++)
       {
-        cs.push_back((poly->transform_from_world_to_plane * intersections[i]).head(2));
+        cs.push_back((poly->pose_.inverse() * intersections[i]).head(2));
         //std::cout << "cs" << i << ": " << (poly->transform_from_world_to_plane * intersections[i]).head(2)(0) << "," << (poly->transform_from_world_to_plane * intersections[i]).head(2)(1) << std::endl;
-        cent = cent + (poly->transform_from_world_to_plane * intersections[i]).head(2);
+        cent = cent + (poly->pose_.inverse() * intersections[i]).head(2);
       }
 
     cent = cent/5;
@@ -226,10 +229,10 @@ void FOVSegmentation::clipFOVandPlane(Polygon::Ptr& poly, std::vector<Eigen::Vec
   }
   if(intersections.size() == 4)
   {
-    Eigen::Vector2f c1 = (poly->transform_from_world_to_plane * intersections[0]).head(2);
-    Eigen::Vector2f c2 = (poly->transform_from_world_to_plane * intersections[1]).head(2);
-    Eigen::Vector2f c3 = (poly->transform_from_world_to_plane * intersections[2]).head(2);
-    Eigen::Vector2f c4 = (poly->transform_from_world_to_plane * intersections[3]).head(2);
+    Eigen::Vector2f c1 = (poly->pose_.inverse() * intersections[0]).head(2);
+    Eigen::Vector2f c2 = (poly->pose_.inverse() * intersections[1]).head(2);
+    Eigen::Vector2f c3 = (poly->pose_.inverse() * intersections[2]).head(2);
+    Eigen::Vector2f c4 = (poly->pose_.inverse() * intersections[3]).head(2);
     if(ccw(c1,c2,c3))
     {
       if(ccw(c1,c3,c4)) ;

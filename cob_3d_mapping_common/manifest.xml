@@ -15,6 +15,7 @@
   <depend package="dynamic_reconfigure"/>
   <depend package="tf"/>
   <depend package="tf_conversions"/>
+  <depend package="eigen_conversions"/>
   <depend package="visualization_msgs"/>
   <depend package="nodelet"/>
   <depend package="cob_srvs"/>

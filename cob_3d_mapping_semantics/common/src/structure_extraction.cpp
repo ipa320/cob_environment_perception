@@ -70,7 +70,7 @@ bool
 StructureExtraction::isWall()
 {
   //Check if the plane spanned by the polygon is horizontal or not
-  if (fabs(poly_ptr_->normal(2)) < 0.1 && poly_ptr_->computeArea() > 1)
+  if (fabs(poly_ptr_->normal_(2)) < 0.1 && poly_ptr_->computeArea3d() > 1)
     return true;
   else
     return false;
@@ -79,7 +79,7 @@ StructureExtraction::isWall()
 bool
 StructureExtraction::isFloor ()
 {
-  if (fabs(poly_ptr_->normal(0)) < 0.12 && fabs(poly_ptr_->normal(1)) < 0.12 && fabs(poly_ptr_->normal(2)) > 0.9 && poly_ptr_->centroid(2) <= floor_height_)
+  if (fabs(poly_ptr_->normal_(0)) < 0.12 && fabs(poly_ptr_->normal_(1)) < 0.12 && fabs(poly_ptr_->normal_(2)) > 0.9 && poly_ptr_->pose_.translation()(2) <= floor_height_)
     return true;
   else
     return false;
@@ -88,7 +88,7 @@ StructureExtraction::isFloor ()
 bool
 StructureExtraction::isCeiling ()
 {
-  if (fabs(poly_ptr_->normal(0)) < 0.12 && fabs(poly_ptr_->normal(1)) < 0.12 && fabs(poly_ptr_->normal(2)) > 0.9 && poly_ptr_->centroid(2) >= ceiling_height_)
+  if (fabs(poly_ptr_->normal_(0)) < 0.12 && fabs(poly_ptr_->normal_(1)) < 0.12 && fabs(poly_ptr_->normal_(2)) > 0.9 && poly_ptr_->pose_.translation()(2) >= ceiling_height_)
     return true;
   else
     return false;

@@ -219,20 +219,19 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
       normalVecNew    = (matFinal.block(0,0,3,3))* normalVec;
       //      newCentroid  = transFinal *OldCentroid ;
 
-
-      sha.shapes.at(index).centroid.x = newCentroid(0) ;
+      sha.shapes[index].pose =  feedback->pose;
+      /*sha.shapes.at(index).centroid.x = newCentroid(0) ;
       sha.shapes.at(index).centroid.y = newCentroid(1) ;
-      sha.shapes.at(index).centroid.z = newCentroid(2) ;
-
+      sha.shapes.at(index).centroid.z = newCentroid(2) ;*/
 
       sha.shapes.at(index).params[0] = normalVecNew(0) ;
       sha.shapes.at(index).params[1] = normalVecNew(1) ;
       sha.shapes.at(index).params[2] = normalVecNew(2) ;
 
 
-      std::cout << "transfromFinal : " << "\n"    << affineFinal.matrix() << "\n" ;
+      std::cout << "transformFinal : " << "\n"    << affineFinal.matrix() << "\n" ;
 
-      pcl::PointCloud<pcl::PointXYZ> pc;
+      /*pcl::PointCloud<pcl::PointXYZ> pc;
       pcl::PointXYZ pt;
       sensor_msgs::PointCloud2 pc2;
 
@@ -250,7 +249,7 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
 
       pcl::toROSMsg (pc, pc2);
       sha.shapes.at(index).points.clear() ;
-      sha.shapes.at(index).points.push_back (pc2);
+      sha.shapes.at(index).points.push_back (pc2);*/
 
       // uncomment when using test_shape_array
 
@@ -279,7 +278,7 @@ void ShapeVisualization::applyModifications(const visualization_msgs::Interactiv
   if (!modified_shapes_.shapes.empty()){
     //    ROS_INFO("modify action...");
     for(unsigned int i=0;i<modified_shapes_.shapes.size();i++){
-      req.InMap.shapes.push_back(modified_shapes_.shapes.at(i)) ;
+      req.shapes.shapes.push_back(modified_shapes_.shapes.at(i)) ;
       /*erase the second marker created at the original position of the Marker*/
       aa.str("");
       aa.clear();
@@ -290,13 +289,13 @@ void ShapeVisualization::applyModifications(const visualization_msgs::Interactiv
       /*end*/
     }
     req.action = cob_3d_mapping_msgs::ModifyMapRequest::MODIFY ;
-    std ::cout << "size of request: " << req.InMap.shapes.size() << "\n" ;
+    std ::cout << "size of request: " << req.shapes.shapes.size() << "\n" ;
     if (ros::service::call("geometry_map/modify_map",req,res))
     {
       std::cout << "calling ModifyMap service..." << "\n" ;
     }
-    while (!req.InMap.shapes.empty()){
-      req.InMap.shapes.pop_back() ;
+    while (!req.shapes.shapes.empty()){
+      req.shapes.shapes.pop_back() ;
       modified_shapes_.shapes.pop_back() ;
     }
   }
@@ -323,7 +322,7 @@ void ShapeVisualization::applyModifications(const visualization_msgs::Interactiv
           index = j;
         }
       }
-      req.InMap.shapes.push_back(sha.shapes.at(index)) ;
+      req.shapes.shapes.push_back(sha.shapes.at(index)) ;
     }
 
     if (ros::service::call("geometry_map/modify_map",req,res))
@@ -331,13 +330,13 @@ void ShapeVisualization::applyModifications(const visualization_msgs::Interactiv
       std::cout << "calling ModifyMap service..." << "\n" ;
     }
 
-    while (!req.InMap.shapes.empty()){
-      req.InMap.shapes.pop_back() ;
+    while (!req.shapes.shapes.empty()){
+      req.shapes.shapes.pop_back() ;
       deleted_markers_indices_.pop_back() ;
 
     }
     std::cout<< "deleted_markers_indices_ size : " << deleted_markers_indices_.size() << "\n" ;
-    std::cout << "req size" << req.InMap.shapes.size() << "\n" ;
+    std::cout << "req size" << req.shapes.shapes.size() << "\n" ;
   }
   im_server_->applyChanges() ;
 }

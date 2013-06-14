@@ -28,7 +28,7 @@
 
 using namespace std;
 
-#include "cob_3d_visualization/polypartition.h"
+#include "cob_3d_mapping_common/polypartition.h"
 
 #define TPPL_VERTEXTYPE_REGULAR 0
 #define TPPL_VERTEXTYPE_START 1
