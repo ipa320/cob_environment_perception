@@ -108,7 +108,7 @@ public:
       catch (tf::TransformException& ex) { ROS_ERROR("[transform shape array] : %s",ex.what()); return; }
 
       Eigen::Affine3d ad;
-      tf::TransformTFToEigen(trf_map, ad);
+      tf::transformTFToEigen(trf_map, ad);
       af_target = ad.cast<float>();
       cob_3d_mapping_msgs::ShapeArray sa_out;
       sa_out.header = sa_in->header;
