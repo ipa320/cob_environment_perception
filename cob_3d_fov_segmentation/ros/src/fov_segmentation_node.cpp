@@ -149,7 +149,7 @@ FOVSegmentationNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstP
     ROS_ERROR("%s",ex.what());
   }
   Eigen::Affine3d trafo;
-  TransformTFToEigen(st_trf, trafo);
+  transformTFToEigen(st_trf, trafo);
   fov_.transformFOV(trafo);
   fov_seg_.setFOV(fov_);
   std::vector<Polygon::Ptr> polys;
