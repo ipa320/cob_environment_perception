@@ -91,6 +91,7 @@ namespace cob_3d_mapping
     Shape()
       : id_(0)
       , merged_(1)
+    , merged_limit_(10)
       , frame_stamp_(0)
       , pose_(Eigen::Affine3f::Identity())
       , color_(4,1)
@@ -111,6 +112,7 @@ namespace cob_3d_mapping
 
     unsigned int id_;/**< ID of shape.*/
     unsigned int merged_;/**< Number of times, shape has been merged.*/
+    unsigned int merged_limit_;                /**< Limit for merge counter */
     unsigned int frame_stamp_;/**< Frame, shape was created or merged the last time.*/
     //Eigen::Vector4f centroid;/**< Centroid of shape. */
     Eigen::Affine3f pose_; /**<The pose of the shape. Transforms points into the shape coordinate system. */
