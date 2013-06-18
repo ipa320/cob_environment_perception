@@ -25,17 +25,18 @@
     </rosparam>
   </node-->
 
-  <include file="$(find cob_3d_registration)/ros/launch/registration_sim.launch">
+  <!--include file="$(find cob_3d_registration)/ros/launch/registration_sim.launch">
     <arg name="start_manager" value="false"/>
     <arg name="nodelet_manager" value="$(arg mapping_manager)"/>
   </include>
-  <include file="$(find cob_3d_mapping_point_map)/ros/launch/point_map.launch">
+  <include file="$(find cob_3d_mapping_point_map)/ros/launch/point_map.launch"-->
     <arg name="start_manager" value="false"/>
     <arg name="nodelet_manager" value="$(arg mapping_manager)"/>
   </include>
-  <include file="$(find cob_3d_segmentation)/ros/launch/segmentation.launch">
+  <include file="$(find cob_3d_segmentation)/ros/launch/simple_segmentation.launch">
 	<arg name="start_manager" value="false"/>
 	<arg name="nodelet_manager" value="$(arg mapping_manager)"/>
+  <arg name="cloud_in" value="/cam3d/depth_registered/points"/>
   </include>
   <include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch"/>
 
