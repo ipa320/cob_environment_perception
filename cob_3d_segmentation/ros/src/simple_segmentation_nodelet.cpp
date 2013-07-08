@@ -193,7 +193,7 @@ cob_3d_segmentation::SimpleSegmentationNodelet::computeAndPublish()
 
 
     PolygonContours<PolygonPoint> poly;
-    std::cout << c->border_points.size() << std::endl;
+    //std::cout << c->border_points.size() << std::endl;
     pe_.outline(down_->width, down_->height, c->border_points, poly);
     if(!poly.polys_.size()) {/*std::cout << "da5" << std::endl;*/continue;} // continue, if no contours were found
     int max_idx=0, max_size=0;
