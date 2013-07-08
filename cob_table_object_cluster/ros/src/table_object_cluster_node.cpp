@@ -199,6 +199,7 @@ public:
       bb.pose = tf.cast<float>();
       known_objects_.push_back(bb);
     }
+    return true;
   }
 
   void

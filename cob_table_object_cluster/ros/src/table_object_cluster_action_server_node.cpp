@@ -126,6 +126,7 @@ public:
   // buffer last camera point cloud
   void inputCallback(const PointCloud::ConstPtr& pc)
   {
+    //ROS_INFO("PC received");
     last_pc = pc;
   }
 

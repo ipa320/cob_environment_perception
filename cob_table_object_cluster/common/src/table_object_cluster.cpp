@@ -261,8 +261,10 @@ TableObjectCluster<Point>::extractClusters(
   std::vector<PointCloudPtr>& object_clusters,
   std::vector<pcl::PointIndices>& object_cluster_indices)
 {
+//ROS_INFO("input: %d,%d", input_->width, input_->height);
   #ifdef PCL_VERSION_COMPARE //fuerte
-    typename pcl::search::OrganizedNeighbor<Point>::Ptr clusters_tree( new pcl::search::OrganizedNeighbor<Point>());
+    //typename pcl::search::OrganizedNeighbor<Point>::Ptr clusters_tree( new pcl::search::OrganizedNeighbor<Point>());
+    typename pcl::search::KdTree<Point>::Ptr clusters_tree (new pcl::search::KdTree<Point>());
   #else //electric
     typename pcl::KdTreeFLANN<Point>::Ptr clusters_tree (new pcl::KdTreeFLANN<Point> ());
   #endif
@@ -294,8 +296,8 @@ TableObjectCluster<Point>::calculateBoundingBoxesOld(pcl::PointIndices::Ptr& pc_
 {
   ROS_INFO("roi: %d", pc_roi->indices.size());
   #ifdef PCL_VERSION_COMPARE //fuerte
-    //pcl::search::KdTree<Point>::Ptr clusters_tree (new pcl::search::KdTree<Point>());
-    typename pcl::search::OrganizedNeighbor<Point>::Ptr clusters_tree( new pcl::search::OrganizedNeighbor<Point>());
+    typename pcl::search::KdTree<Point>::Ptr clusters_tree (new pcl::search::KdTree<Point>());
+    //typename pcl::search::OrganizedNeighbor<Point>::Ptr clusters_tree( new pcl::search::OrganizedNeighbor<Point>());
   #else //electric
     typename pcl::KdTreeFLANN<Point>::Ptr clusters_tree (new pcl::KdTreeFLANN<Point> ());
   #endif
