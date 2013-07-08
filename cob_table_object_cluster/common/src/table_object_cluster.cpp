@@ -218,11 +218,17 @@ TableObjectCluster<Point>::calculateBoundingBox(
   chull.reconstruct(*conv_hull);
   #endif
 
+  /*for(int i=0; i<conv_hull->size(); ++i)
+    std::cout << (*conv_hull)[i].x << "," << (*conv_hull)[i].y << std::endl;*/
+
   // find the minimal bounding rectangle in 2D and table coordinates
   Eigen::Vector2f p1, p2, p3;
   cob_3d_mapping::MinimalRectangle2D mr2d;
   mr2d.setConvexHull(conv_hull->points);
   mr2d.rotatingCalipers(p2, p1, p3);
+  /*std::cout << "BB: \n" << p1[0] << "," << p1[1] <<"\n"
+            << p2[0] << "," << p2[1] <<"\n"
+            << p3[0] << "," << p3[1] <<"\n ---" << std::endl;*/
 
   // compute center of rectangle
   position[0] = 0.5f*(p1[0] + p3[0]);
@@ -232,15 +238,27 @@ TableObjectCluster<Point>::calculateBoundingBox(
   Eigen::Affine3f inv_tf = tf.inverse();
   position = inv_tf * position;
   // set size of bounding box
-  size[0] = (p3-p2).norm() * 0.5f;
-  size[1] = (p1-p2).norm() * 0.5f;
-  size[2] = -height;
+  float norm_1 = (p3-p2).norm();
+  float norm_2 = (p1-p2).norm();
   // BoundingBox coordinates: X:= main direction, Z:= table normal
   Eigen::Vector3f direction; // y direction
-  if (size[0] > size[1]) direction = Eigen::Vector3f(p3[0]-p2[0], p3[1]-p2[1], 0) / (2.0f *size[0]);
-  else direction = Eigen::Vector3f(p1[0]-p2[0], p1[1]-p2[1], 0) / (2.0f *size[1]);
+  if (norm_1 < norm_2)
+  {
+    direction = Eigen::Vector3f(p3[0]-p2[0], p3[1]-p2[1], 0) / (norm_1);
+    size[0] = norm_2 * 0.5f;
+    size[1] = norm_1 * 0.5f;
+  }
+  else
+  {
+    direction = Eigen::Vector3f(p1[0]-p2[0], p1[1]-p2[1], 0) / (norm_2);
+    size[0] = norm_1 * 0.5f;
+    size[1] = norm_2 * 0.5f;
+  }
+  size[2] = -height;
+
+
   direction = inv_tf.rotation() * direction;
-  orientation = pcl::getTransformationFromTwoUnitVectors(direction, plane_normal).rotation();
+  orientation = pcl::getTransformationFromTwoUnitVectors(direction, plane_normal).rotation(); // (y, z-direction)
 
   return;
   Eigen::Matrix3f M = Eigen::Matrix3f::Identity() - plane_normal * plane_normal.transpose();

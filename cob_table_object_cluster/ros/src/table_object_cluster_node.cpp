@@ -288,7 +288,6 @@ public:
         cob_perception_common::EigenToROSMsg(pos,rot,bba.detections.back().pose.pose);
         cob_perception_common::EigenToROSMsg(size, bba.detections.back().bounding_box_lwh);
 
-
         pcl::toROSMsg(*object_clusters[j], pca.segments[j]);
         pca.segments[j].header = last_pc_->header;
 
