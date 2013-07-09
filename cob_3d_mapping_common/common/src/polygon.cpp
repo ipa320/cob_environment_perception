@@ -90,7 +90,7 @@ namespace cob_3d_mapping
    * \param normal Normal of the polygon
    * \param d Parameter from plane equation ax+by+cz=d
    */
-  void
+  /*void
   getPointOnPolygon(const Eigen::Vector3f &normal,double d,Eigen::Vector3f &point)
   {
     float value=fabs(normal(0));
@@ -111,7 +111,7 @@ namespace cob_3d_mapping
     }
     point << 0,0,0;
     point(direction)=-d/normal(direction);
-  }
+  }*/
 
   /**
    * \brief Get axes of coordinate system on plane.
@@ -133,7 +133,7 @@ getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
   /**
    * \brief Copy GPC structure
    */
-  void
+  /*void
   copyGpcStructure(const gpc_polygon* source, gpc_polygon* dest)
   {
     dest->num_contours = source->num_contours;
@@ -151,7 +151,7 @@ getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
         dest->contour[j].vertex[k].y = source->contour[j].vertex[k].y;
       }
     }
-  }
+  }*/
 
   /**
    * \brief Smooth contours of GPC structure
@@ -160,47 +160,10 @@ getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
    * \param gpc_in Input GPC structure
    * \param gpc_out Output GPC structure
    */
-  void
+  /*void
   smoothGpcStructure(const gpc_polygon* gpc_in, gpc_polygon* gpc_out)
   {
-    copyGpcStructure(gpc_in, gpc_out);
-    float weight_data = 0.5, weight_smooth = 0.01, tolerance = 1.0f;
-    float change = tolerance;
-
-    for(int j=0; j<gpc_in->num_contours; ++j)
-    {
-      int num_iteration=0;
-      int l = gpc_in->contour[j].num_vertices; // length
-      gpc_vertex* pn = gpc_out->contour[j].vertex; // new polygon
-      gpc_vertex* po = gpc_in->contour[j].vertex; // old polygon
-
-      while(change >= tolerance && num_iteration<=5)
-      {
-        change = 0.0f;
-        for(int k=0; k<l; ++k)
-        {
-          //if( !k%10 ) continue;
-          // do x value:
-          float before = pn[k].x;
-          pn[k].x += weight_data * (po[k].x - pn[k].x);
-          pn[k].x += weight_smooth * (pn[ MOD(k-1,l) ].x + pn[ (k+1)%l ].x - (2.0f * pn[k].x));
-          pn[k].x += 0.5f * weight_smooth * (2.0f * pn[ MOD(k-1,l) ].x - pn[ MOD(k-2,l) ].x - pn[k].x);
-          pn[k].x += 0.5f * weight_smooth * (2.0f * pn[    (k+1)%l ].x - pn[    (k+2)%l ].x - pn[k].x);
-          change += fabs(before - pn[k].x);
-
-          // do y value:
-          before = pn[k].y;
-          pn[k].y += weight_data * (po[k].y - pn[k].y);
-          pn[k].y += weight_smooth * (pn[ MOD(k-1,l) ].y + pn[ (k+1)%l ].y - (2.0f * pn[k].y));
-          pn[k].y += 0.5f * weight_smooth * (2.0f * pn[ MOD(k-1,l) ].y - pn[ MOD(k-2,l) ].y - pn[k].y);
-          pn[k].y += 0.5f * weight_smooth * (2.0f * pn[    (k+1)%l ].y - pn[    (k+2)%l ].y - pn[k].y);
-          change += fabs(before - pn[k].y);
-        }
-        ++num_iteration;
-      }
-      ROS_DEBUG_STREAM( "Needed " << num_iteration << " iterations for polygon of size " << l );
-    }
-  }
+  }*/
 
 
   //##########methods for instantiation##############
@@ -346,15 +309,50 @@ getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
 
 
   void
-  Polygon::smoothPolygon()
+  Polygon::smoothContours()
   {
-    gpc_polygon *before = new gpc_polygon();
+    /*gpc_polygon *before = new gpc_polygon();
     gpc_polygon *after = new gpc_polygon();
     this->getGpcStructure(before, contours_);
-    smoothGpcStructure(before,after);
-    this->applyGpcStructure(after);
-    gpc_free_polygon(before);
-    gpc_free_polygon(after);
+    copyGpcStructure(gpc_in, gpc_out);*/
+    std::vector<std::vector<Eigen::Vector2f> > contours_sm = contours_;
+    float weight_data = 0.5, weight_smooth = 0.01, tolerance = 1.0f;
+    float change = tolerance;
+
+    for(unsigned int j = 0; j < contours_.size(); ++j)
+    {
+      int num_iteration = 0;
+      int l = contours_[j].size(); // length
+      //gpc_vertex* contours_sm[j] = gpc_out->contour[j].vertex; // new polygon
+      //gpc_vertex* po = gpc_in->contour[j].vertex; // old polygon
+
+      while(change >= tolerance && num_iteration <= 5)
+      {
+        change = 0.0f;
+        for(int k=0; k<l; ++k)
+        {
+          //if( !k%10 ) continue;
+          // do x value:
+          float before = contours_sm[j][k](0);
+          contours_sm[j][k](0) += weight_data * (contours_[j][k](0) - contours_sm[j][k](0));
+          contours_sm[j][k](0) += weight_smooth * (contours_sm[j][ MOD(k-1,l) ](0) + contours_sm[j][ (k+1)%l ](0) - (2.0f * contours_sm[j][k](0)));
+          contours_sm[j][k](0) += 0.5f * weight_smooth * (2.0f * contours_sm[j][ MOD(k-1,l) ](0) - contours_sm[j][ MOD(k-2,l) ](0) - contours_sm[j][k](0));
+          contours_sm[j][k](0) += 0.5f * weight_smooth * (2.0f * contours_sm[j][    (k+1)%l ](0) - contours_sm[j][    (k+2)%l ](0) - contours_sm[j][k](0));
+          change += fabs(before - contours_sm[j][k](0));
+
+          // do y value:
+          before = contours_sm[j][k](1);
+          contours_sm[j][k](1) += weight_data * (contours_[j][k](1) - contours_sm[j][k](1));
+          contours_sm[j][k](1) += weight_smooth * (contours_sm[j][ MOD(k-1,l) ](1) + contours_sm[j][ (k+1)%l ](1) - (2.0f * contours_sm[j][k](1)));
+          contours_sm[j][k](1) += 0.5f * weight_smooth * (2.0f * contours_sm[j][ MOD(k-1,l) ](1) - contours_sm[j][ MOD(k-2,l) ](1) - contours_sm[j][k](1));
+          contours_sm[j][k](1) += 0.5f * weight_smooth * (2.0f * contours_sm[j][    (k+1)%l ](1) - contours_sm[j][    (k+2)%l ](1) - contours_sm[j][k](1));
+          change += fabs(before - contours_sm[j][k](1));
+        }
+        ++num_iteration;
+      }
+      ROS_DEBUG_STREAM( "Needed " << num_iteration << " iterations for polygon of size " << l );
+    }
+    contours_ = contours_sm;
   }
 
 
@@ -464,12 +462,12 @@ getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
   void
   Polygon::merge(std::vector<Polygon::Ptr>& poly_vec)
   {
-    this->assignID(poly_vec);
+    assignID(poly_vec);
     //if(this->id==0) std::cout << "merge_weight before: " << this->merge_weight_ << "," << merged << std::endl;
     Polygon::Ptr p_average = Polygon::Ptr(new Polygon);
-    this->computeAverage(poly_vec, p_average);
-    this->mergeUnion(poly_vec, p_average);
-    this->assignWeight();
+    computeAverage(poly_vec, p_average);
+    mergeUnion(poly_vec, p_average);
+    assignWeight();
     //if(this->id==0) std::cout << "merge_weight after: " << this->merge_weight_ << "," << merged  << std::endl;
   }
 
@@ -484,14 +482,7 @@ getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
 
     gpc_polygon *gpc_B = new gpc_polygon;
     p_merge->getGpcStructure(gpc_B, p_merge->contours_);
-    /*std::cout << "contoursC: " << gpc_C->contour[0].vertex[0].x << "," << gpc_C->contour[0].vertex[0].y << std::endl;
-  std::cout << "contoursC: " << gpc_C->contour[0].vertex[1].x << "," << gpc_C->contour[0].vertex[1].y << std::endl;
-  std::cout << "contoursC: " << gpc_C->contour[0].vertex[2].x << "," << gpc_C->contour[0].vertex[2].y << std::endl;
-  std::cout << "contoursC: " << gpc_C->contour[0].vertex[3].x << "," << gpc_C->contour[0].vertex[3].y << std::endl;
-  std::cout << "contoursB: " << gpc_B->contour[0].vertex[0].x << "," << gpc_B->contour[0].vertex[0].y << std::endl;
-  std::cout << "contoursB: " << gpc_B->contour[0].vertex[1].x << "," << gpc_B->contour[0].vertex[1].y << std::endl;
-  std::cout << "contoursB: " << gpc_B->contour[0].vertex[2].x << "," << gpc_B->contour[0].vertex[2].y << std::endl;
-  std::cout << "contoursB: " << gpc_B->contour[0].vertex[3].x << "," << gpc_B->contour[0].vertex[3].y << std::endl;*/
+
     gpc_polygon_clip(GPC_DIFF, gpc_C, gpc_B, gpc_B);
     //std::cout << "contours: " << gpc_B->num_contours << std::endl;
     gpc_free_polygon(gpc_C);
@@ -633,7 +624,7 @@ getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
     Eigen::Vector3f average_centroid = pose_.translation()*merge_weight_;
     double average_d = d_*merge_weight_;
     double sum_w = merge_weight_;
-    int sum_merged = merged_;
+    unsigned int sum_merged = merged_;
     //std::cout << "poly centroid" << pose_.translation()(0) << "," << pose_.translation()(1) << "," << pose_.translation()(2) << "," << std::endl;
     //std::cout << "poly normal" << normal_(0) << "," << normal_(1) << "," << normal_(2) << "," << std::endl;
     //std::cout << pose_.translation()*merge_weight_ << std::endl;
@@ -771,8 +762,10 @@ Polygon::computePose()
   Eigen::Vector3f
   Polygon::computeCentroid()
   {
+    std::vector<std::vector<Eigen::Vector3f> > contours_3d = getContours3D();
+    return computeCentroid(contours_3d);
     //find largest non-hole contour
-    unsigned int idx = 0;
+    /*unsigned int idx = 0;
     for (unsigned int i = 0; i < contours_.size (); i++)
     {
       int max_pts = 0;
@@ -792,14 +785,11 @@ Polygon::computePose()
       pt_c_4f.head(2) = contours_[idx][j];
       pcl::PointXYZ p;
       p.getVector4fMap() = pose_*pt_c_4f;
-      /*p.x = contours_[idx][j][0];
-    p.y = contours_[idx][j][1];
-    p.z = contours_[idx][j][2];*/
       poly_cloud.push_back(p);
     }
     Eigen::Vector4f centroid;
     pcl::compute3DCentroid(poly_cloud, centroid);
-    return centroid.head(3);
+    return centroid.head(3);*/
   }
 
   Eigen::Vector3f
@@ -833,35 +823,18 @@ Polygon::computePose()
 
 
   double
-  Polygon::computeArea() const
+  Polygon::computeArea3d() const
   {
-    // IMPORTANT: computes area only for the projection of the polygon onto XY plane
-    // therefore  the resulting area is not the true area of the polygon
-    double xi, xi_1, yi, yi_1, area=0;
-    double sum;
-    for (unsigned int i = 0; i < contours_.size (); i++)
-    {
-      if(holes_[i]) continue;
-      sum = 0;
-      //area_[i] = 0;
-      for (unsigned int j = 0; j < contours_[i].size (); j++)
-      {
-        xi = contours_[i][j][0];
-        yi = contours_[i][j][1];
-        if (j == (contours_[i].size ()) - 1)
-        {
-          xi_1 = contours_[i][0][0];
-          yi_1 = contours_[i][0][1];
-        }
-        else
-        {
-          xi_1 = contours_[i][j + 1][0];
-          yi_1 = contours_[i][j + 1][1];
-        }
-        sum = sum + (xi * yi_1 - xi_1 * yi);
+    double area = 0;
 
-      }
-      area += fabs (sum / 2);
+    list<TPPLPoly> tri_list;
+    triangulate(tri_list);
+    for (std::list<TPPLPoly>::iterator it = tri_list.begin (); it != tri_list.end (); it++)
+    {
+      TPPLPoint pt1 = it->GetPoint(0);
+      TPPLPoint pt2 = it->GetPoint(1);
+      TPPLPoint pt3 = it->GetPoint(2);
+      area += 0.5*fabs((pt2.x - pt1.x)*(pt3.y - pt1.y) - (pt3.x -pt1.x)*(pt2.y - pt1.y));
     }
     return area;
   }
@@ -894,124 +867,6 @@ Polygon::computePose()
     pp.Triangulate_EC (&polys, &tri_list);
   }
 
-  double
-  Polygon::computeArea3d() const
-  {
-    double area = 0;
-
-    list<TPPLPoly> tri_list;
-    triangulate(tri_list);
-    for (std::list<TPPLPoly>::iterator it = tri_list.begin (); it != tri_list.end (); it++)
-    {
-      TPPLPoint pt1 = it->GetPoint(0);
-      TPPLPoint pt2 = it->GetPoint(1);
-      TPPLPoint pt3 = it->GetPoint(2);
-      area += 0.5*fabs((pt2.x - pt1.x)*(pt3.y - pt1.y) - (pt3.x -pt1.x)*(pt2.y - pt1.y));
-    }
-    return area;
-
-    /*double area = 0;
-  for (size_t i = 0; i<contours_.size(); ++i)
-  {
-    Eigen::Vector2f vec_sum(Eigen::Vector2f::Zero());
-
-    for (int j = 0; j < (int)contours_[i].size()-1; ++j)
-      vec_sum += contours_[i][j].cross(contours_[i][j+1]);
-
-    vec_sum += contours_[ i ][ contours_[i].size()-1 ].cross(contours_[i][0]);
-    area += 0.5 * normal_.dot(vec_sum);
-
-    // special cases for holes can be ignored, since their vertex orientation is opposite to the
-    // outer most contour. Therefore the their area sign are different.
-
-    //if(holes[i]) area -= 0.5d * fabs(normal.dot(temp_vec));
-    //else area += 0.5d * fabs(normal.dot(temp_vec));
-  }
-  return std::fabs(area);*/
-  }
-
-  /*void
-Polygon::getTransformationFromPlaneToWorld(
-  const Eigen::Vector3f &normal,
-  const Eigen::Vector3f &origin,
-  Eigen::Affine3f &transformation) const
-{
-  Eigen::Vector3f u, v;
-  getCoordinateSystemOnPlane(normal, u, v);
-  pcl::getTransformationFromTwoUnitVectorsAndOrigin(v, normal, origin, transformation);
-  transformation = transformation.inverse();
-}
-
-void
-Polygon::getTransformationFromPlaneToWorld(
-  const Eigen::Vector3f z_axis,
-  const Eigen::Vector3f &normal,
-  const Eigen::Vector3f &origin,
-  Eigen::Affine3f &transformation)
-{
-  this->normal_ = normal;
-  pcl::getTransformationFromTwoUnitVectorsAndOrigin(z_axis, normal, origin, transformation);
-  transformation = transformation.inverse();
-}*/
-
-  /*void
-Polygon::TransformContours(const Eigen::Affine3f& trafo)
-{
-
-  for(size_t j=0; j<contours.size(); j++)
-  {
-    for(size_t k=0; k<contours[j].size(); k++)
-    {
-      contours[j][k] = trafo * contours[j][k];
-    }
-  }
-}
-
-void
-Polygon::getTransformedContours(const Eigen::Affine3f& trafo, std::vector< std::vector<Eigen::Vector3f> >& new_contours) const
-{
-  new_contours.resize(contours.size());
-  for(size_t j=0; j<contours.size(); j++)
-  {
-    new_contours[j].resize(contours[j].size());
-    for(size_t k=0; k<contours[j].size(); k++)
-    {
-      new_contours[j][k] = trafo*contours[j][k];
-    }
-  }
-}*/
-
-  void
-  Polygon::computePoseAndBoundingBox(Eigen::Affine3f& pose, Eigen::Vector4f& min_pt, Eigen::Vector4f& max_pt)
-  {
-    pcl::PointCloud<pcl::PointXYZ> poly_cloud;
-    unsigned int idx = 0;
-    for (unsigned int j = 0; j < contours_[idx].size () ; j++)
-    {
-      Eigen::Vector4f pt_c_4f(Eigen::Vector4f::Zero());
-      pt_c_4f.head(2) = contours_[idx][j];
-      pcl::PointXYZ p;
-      p.getVector4fMap() = pose_*pt_c_4f;
-      /*pcl::PointXYZ p;
-    p.x = contours[idx][j][0];
-    p.y = contours[idx][j][1];
-    p.z = contours[idx][j][2];*/
-      poly_cloud.push_back(p);
-    }
-    Eigen::Matrix3f cov;
-    Eigen::Vector4f centroid(Eigen::Vector4f::Zero());
-    centroid.head(3) = pose_.translation();
-    pcl::computeCovarianceMatrix (poly_cloud, centroid, cov);
-    EIGEN_ALIGN16 Eigen::Vector3f eigen_values;
-    EIGEN_ALIGN16 Eigen::Matrix3f eigen_vectors;
-    pcl::eigen33 (cov, eigen_vectors, eigen_values);
-    pcl::getTransformationFromTwoUnitVectorsAndOrigin(eigen_vectors.col(1),eigen_vectors.col(0),pose_.translation(),pose);
-
-    pcl::PointCloud<pcl::PointXYZ> cloud_trans;
-    pcl::transformPointCloud(poly_cloud, cloud_trans, pose);
-    pcl::getMinMax3D(cloud_trans, min_pt, max_pt);
-  }
-
   //#############debugging methods#######################
 
   void Polygon::debugOutput(std::string name)
@@ -1032,3 +887,117 @@ Polygon::getTransformedContours(const Eigen::Affine3f& trafo, std::vector< std::
   }
 
 }//namespace
+
+
+
+/*double
+Polygon::computeArea() const
+{
+  // IMPORTANT: computes area only for the projection of the polygon onto XY plane
+  // therefore  the resulting area is not the true area of the polygon
+  double xi, xi_1, yi, yi_1, area=0;
+  double sum;
+  for (unsigned int i = 0; i < contours_.size (); i++)
+  {
+    if(holes_[i]) continue;
+    sum = 0;
+    //area_[i] = 0;
+    for (unsigned int j = 0; j < contours_[i].size (); j++)
+    {
+      xi = contours_[i][j][0];
+      yi = contours_[i][j][1];
+      if (j == (contours_[i].size ()) - 1)
+      {
+        xi_1 = contours_[i][0][0];
+        yi_1 = contours_[i][0][1];
+      }
+      else
+      {
+        xi_1 = contours_[i][j + 1][0];
+        yi_1 = contours_[i][j + 1][1];
+      }
+      sum = sum + (xi * yi_1 - xi_1 * yi);
+
+    }
+    area += fabs (sum / 2);
+  }
+  return area;
+}*/
+
+/*void
+Polygon::computePoseAndBoundingBox(Eigen::Affine3f& pose, Eigen::Vector4f& min_pt, Eigen::Vector4f& max_pt)
+{
+  pcl::PointCloud<pcl::PointXYZ> poly_cloud;
+  unsigned int idx = 0;
+  for (unsigned int j = 0; j < contours_[idx].size () ; j++)
+  {
+    Eigen::Vector4f pt_c_4f(Eigen::Vector4f::Zero());
+    pt_c_4f.head(2) = contours_[idx][j];
+    pcl::PointXYZ p;
+    p.getVector4fMap() = pose_*pt_c_4f;
+    poly_cloud.push_back(p);
+  }
+  Eigen::Matrix3f cov;
+  Eigen::Vector4f centroid(Eigen::Vector4f::Zero());
+  centroid.head(3) = pose_.translation();
+  pcl::computeCovarianceMatrix (poly_cloud, centroid, cov);
+  EIGEN_ALIGN16 Eigen::Vector3f eigen_values;
+  EIGEN_ALIGN16 Eigen::Matrix3f eigen_vectors;
+  pcl::eigen33 (cov, eigen_vectors, eigen_values);
+  pcl::getTransformationFromTwoUnitVectorsAndOrigin(eigen_vectors.col(1),eigen_vectors.col(0),pose_.translation(),pose);
+
+  pcl::PointCloud<pcl::PointXYZ> cloud_trans;
+  pcl::transformPointCloud(poly_cloud, cloud_trans, pose);
+  pcl::getMinMax3D(cloud_trans, min_pt, max_pt);
+}*/
+
+/*void
+Polygon::getTransformationFromPlaneToWorld(
+const Eigen::Vector3f &normal,
+const Eigen::Vector3f &origin,
+Eigen::Affine3f &transformation) const
+{
+Eigen::Vector3f u, v;
+getCoordinateSystemOnPlane(normal, u, v);
+pcl::getTransformationFromTwoUnitVectorsAndOrigin(v, normal, origin, transformation);
+transformation = transformation.inverse();
+}
+
+void
+Polygon::getTransformationFromPlaneToWorld(
+const Eigen::Vector3f z_axis,
+const Eigen::Vector3f &normal,
+const Eigen::Vector3f &origin,
+Eigen::Affine3f &transformation)
+{
+this->normal_ = normal;
+pcl::getTransformationFromTwoUnitVectorsAndOrigin(z_axis, normal, origin, transformation);
+transformation = transformation.inverse();
+}*/
+
+/*void
+Polygon::TransformContours(const Eigen::Affine3f& trafo)
+{
+
+for(size_t j=0; j<contours.size(); j++)
+{
+  for(size_t k=0; k<contours[j].size(); k++)
+  {
+    contours[j][k] = trafo * contours[j][k];
+  }
+}
+}
+
+void
+Polygon::getTransformedContours(const Eigen::Affine3f& trafo, std::vector< std::vector<Eigen::Vector3f> >& new_contours) const
+{
+new_contours.resize(contours.size());
+for(size_t j=0; j<contours.size(); j++)
+{
+  new_contours[j].resize(contours[j].size());
+  for(size_t k=0; k<contours[j].size(); k++)
+  {
+    new_contours[j][k] = trafo*contours[j][k];
+  }
+}
+}*/
