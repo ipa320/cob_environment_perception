@@ -199,6 +199,7 @@ public:
       bb.pose = tf.cast<float>();
       known_objects_.push_back(bb);
     }
+    return true;
   }
 
   void
@@ -286,7 +287,6 @@ public:
         bba.detections.back().pose.header.frame_id = last_pc_->header.frame_id;
         cob_perception_common::EigenToROSMsg(pos,rot,bba.detections.back().pose.pose);
         cob_perception_common::EigenToROSMsg(size, bba.detections.back().bounding_box_lwh);
-
 
         pcl::toROSMsg(*object_clusters[j], pca.segments[j]);
         pca.segments[j].header = last_pc_->header;
