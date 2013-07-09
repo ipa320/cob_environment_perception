@@ -1,7 +1,7 @@
 <!-- Launch octomap_server for mapping: Listens to incoming PointCloud2 data
 and incrementally builds an octomap. The data is sent out in different representations. -->
 <launch>
-  <arg name="point_cloud_in" default="/cam3d/depth_registered/points"/>
+  <arg name="point_cloud_in" default="/cam3d/depth/points"/>
   <arg name="debug_mode" default="false"/>
   <arg name="prefix" value="gdb -ex run --args" if="$(arg debug_mode)"/>
   <arg name="prefix" value="" unless="$(arg debug_mode)"/>
