@@ -63,7 +63,7 @@
 #include <pcl/point_types.h>
 #include <pcl_ros/point_cloud.h>
 
-
+#include <cob_srvs/Trigger.h>
 #include <cob_object_detection_msgs/DetectionArray.h>
 #include <cob_3d_mapping_msgs/SetBoundingBoxes.h>
 #include <cob_3d_mapping_msgs/TableObjectClusterAction.h>
