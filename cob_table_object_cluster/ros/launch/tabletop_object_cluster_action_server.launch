@@ -8,5 +8,6 @@
     <remap from="point_cloud" to="$(arg point_cloud)"/>
     <remap from="triggered_point_cloud" to="$(arg triggered_point_cloud)"/>
     <remap from="bounding_box_array" to="$(arg bounding_box_array)"/>
+    <remap from="start_pc_sub" to="tabletop_object_cluster/start_pc_sub"/>
   </node>
 </launch>
