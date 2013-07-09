@@ -186,7 +186,6 @@ cob_3d_segmentation::SimpleSegmentationNodelet::computeAndPublish()
   unsigned int id = 0;
   for (ClusterPtr c = seg_.clusters()->begin(); c != seg_.clusters()->end(); ++c)
   {
-    //std::cout << "da" << std::endl;
     if(c->size() < min_cluster_size_) {continue;}
     Eigen::Vector3f centroid = c->getCentroid();
     if(centroid(2) > centroid_passthrough_) {continue;}
@@ -204,45 +203,15 @@ cob_3d_segmentation::SimpleSegmentationNodelet::computeAndPublish()
     {
       if ((int)poly.polys_[i].size() > max_size) { max_idx = i; max_size = poly.polys_[i].size(); }
     }
-    //std::cout << "max idx " << max_idx << std::endl;
 
     sa.shapes.push_back(cob_3d_mapping_msgs::Shape());
     cob_3d_mapping_msgs::Shape* s = &sa.shapes.back();
-    //s->id = id++;
-    //s->points.resize(poly.polys_.size());
     s->header = down_->header;
 
-    /*// turn off color calc:
-    s->color.r = 0;
-    s->color.g = 0;
-    s->color.b = 0.0f; */
-    // turn on color calc:
-    //Eigen::Vector3f col_tmp = c->computeDominantColorVector().cast<float>();
-    //float tmp_inv = 1.0f / 255.0f;
-    //std::cout << color << std::endl;;
-    /*s->color.r = color(0) * tmp_inv;
-    s->color.g = color(1) * tmp_inv;
-    s->color.b = color(2) * tmp_inv;
-    s->color.a = 1.0f;*/
-
-    //Eigen::Vector3f normal(c->pca_point_comp3(0), c->pca_point_comp3(1), c->pca_point_comp3(2));
-    /*Eigen::Affine3f pose_inv;
-    pcl::getTransformationFromTwoUnitVectorsAndOrigin(
-        normal.unitOrthogonal(), normal, centroid, pose_inv);
-    tf::poseEigenToMsg(pose_inv.inverse().cast<double>(), s->pose);
-    s->type = cob_3d_mapping_msgs::Shape::POLYGON;
-    s->params.resize(4);
-    s->params[0] = c->pca_point_comp3(0);
-    s->params[1] = c->pca_point_comp3(1);
-    s->params[2] = c->pca_point_comp3(2);*/
-
-    //PointCloud down_tr;
     std::vector<pcl::PointCloud<pcl::PointXYZ> > contours_3d;
     std::vector<bool> holes;
-    //pcl::transformPointCloud(*down_, down_tr, pose_inv);
     for (int i = 0; i < (int)poly.polys_.size(); ++i)
     {
-      std::cout << i << std::endl;
       pcl::PointCloud<pcl::PointXYZ> contour;
       if (i == max_idx)
       {
@@ -252,7 +221,6 @@ cob_3d_segmentation::SimpleSegmentationNodelet::computeAndPublish()
           pcl::PointXYZ pt;
           pt.getVector3fMap() = down_->points[ it->x + it->y * down_->width ].getVector3fMap();
           contour.push_back( pt );
-          //std::cout << "pos " << pt.x << "," << pt.y << "," << pt.z << std::endl;
         }
       }
       else
@@ -263,31 +231,21 @@ cob_3d_segmentation::SimpleSegmentationNodelet::computeAndPublish()
           pcl::PointXYZ pt;
           pt.getVector3fMap() = down_->points[ it->x + it->y * down_->width ].getVector3fMap();
           contour.push_back( pt );
-          //contour.push_back( down_->points[ it->x + it->y * down_->width ] );
-          //std::cout << "neg " << pt.x << "," << pt.y << "," << pt.z << std::endl;
         }
       }
       contour.height = 1;
       contour.width = contour.size();
       contours_3d.push_back(contour);
-      //pcl::toROSMsg(*hull, s->points[i]);
-      //hull->clear();
     }
 
     std::vector<float> color(4, 1);
-    //color[3] = 1.0f;
     if(colorize_)
     {
-      //s->params[3] = fabs(centroid.dot(c->pca_point_comp3)); // d
       Eigen::Vector3f col_tmp = c->computeDominantColorVector().cast<float>();
       float temp_inv = 1.0f/255.0f;
       color[0] = col_tmp(0) * temp_inv;
       color[1] = col_tmp(1) * temp_inv;
       color[2] = col_tmp(2) * temp_inv;
-      /*s->color.r = color(0) * temp_inv;
-      s->color.g = color(1) * temp_inv;
-      s->color.b = color(2) * temp_inv;
-      s->color.a = 1.0f;*/
     }
     else
     {
