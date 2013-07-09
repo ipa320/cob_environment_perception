@@ -8,7 +8,7 @@
 #include <brics_actuator/JointPositions.h>
 #include <brics_actuator/JointVelocities.h>
 #include <diagnostic_msgs/DiagnosticArray.h>
-#include <pr2_controllers_msgs/JointTrajectoryAction.h>
+#include <control_msgs/FollowJointTrajectoryAction.h>
 
 //ROS Service Includes
 #include <cob_srvs/Trigger.h>
@@ -43,10 +43,10 @@ public:
 	ros::ServiceServer srvServer_Recover_;
 	ros::ServiceServer srvServer_OperationMode_;
 
-	actionlib::SimpleActionServer<pr2_controllers_msgs::JointTrajectoryAction> as_;
+	actionlib::SimpleActionServer<control_msgs::FollowJointTrajectoryAction> as_;
 
 	/// handle for 3d-mapping-demon ctrl
-	MapDemonCtrl* md_ctrl_;
+	MapDemonCtrl_Maestro* md_ctrl_;
 
 	/// handle for 3d-mapping-demon parameters
 	MapDemonCtrlParams* md_params_;
@@ -65,13 +65,13 @@ public:
 	///Constructor
 	MappingDemonstratorNode()
 	  :n_("~"),
-	   as_(n_, "joint_trajectory_action", boost::bind(&MappingDemonstratorNode::executeTrajectory, this, _1), true)
+	   as_(n_, "follow_joint_trajectory", boost::bind(&MappingDemonstratorNode::executeTrajectory, this, _1), true)
 	{
 		//n_ = ros::NodeHandle("~");
 		md_sd_ = new SerialDevice();
 
 		md_params_ = new MapDemonCtrlParams();
-		md_ctrl_ = new MapDemonCtrl(md_params_, md_sd_);
+		md_ctrl_ = new MapDemonCtrl_Maestro(md_params_, md_sd_);
 
 		/// implementation of topics to publish
 		topicPub_JointState_ = n_.advertise<sensor_msgs::JointState> ("joint_states", 1);
@@ -255,7 +255,7 @@ public:
 
 	}
 
-	void executeTrajectory(const pr2_controllers_msgs::JointTrajectoryGoalConstPtr &goal)
+	void executeTrajectory(const control_msgs::FollowJointTrajectoryGoalConstPtr &goal)
 	{
 	  trajectory_msgs::JointTrajectory traj = goal->trajectory;
 	  brics_actuator::JointPositions::Ptr joint_pos(new brics_actuator::JointPositions());
@@ -273,7 +273,7 @@ public:
 	  while(isMoving)
 	  {
 	    std::vector<double> pos = md_ctrl_->GetPositions();
-	    //ROS_INFO("%f, %f", traj.points[0].positions[0]-pos[0], traj.points[0].positions[1]-pos[1]);
+	    //ROS_INFO("%f, %f", traj.points[0].positions[0], pos[0]/*, traj.points[0].positions[1]-pos[1]*/);
 	    if( fabs(traj.points[0].positions[0]-pos[0])<0.05 &&  fabs(traj.points[0].positions[1]-pos[1])<0.05 )
 	      isMoving = false;
 	    if ( as_.isPreemptRequested() || stopped_)

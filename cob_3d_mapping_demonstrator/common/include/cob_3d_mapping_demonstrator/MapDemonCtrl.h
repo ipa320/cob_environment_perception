@@ -53,7 +53,7 @@ public:
 	 *
 	 * A Value of 0.5 is already pretty fast, you probably don't want anything more than one...
 	 */
-	bool setMaxVelocity(double velocity);
+	virtual bool setMaxVelocity(double velocity) {};
 	bool setMaxVelocity(const std::vector<double>& velocities);
 
 	/*!

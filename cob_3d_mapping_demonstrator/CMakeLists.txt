@@ -23,7 +23,7 @@ INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include
 exec_program("rosversion -d; echo" OUTPUT_VARIABLE ROS_VERSION)
 message("${ROS_VERSION}")
 
-if(ROS_VERSION MATCHES "fuerte")
+#if(ROS_VERSION MATCHES "fuerte")
     find_package(Qt4 COMPONENTS QtCore QtGui REQUIRED)
     include(${QT_USE_FILE})
 
@@ -42,21 +42,21 @@ if(ROS_VERSION MATCHES "fuerte")
         ros/src/rviz_title.cpp
         ${MOC_FILES})
     target_link_libraries(cob_3d_mapping_demonstrator_rviz  ${QT_LIBRARIES})
-elseif(ROS_VERSION MATCHES "electric")
+#elseif(ROS_VERSION MATCHES "electric")
     # Add wx widgets
-    find_package(wxWidgets REQUIRED)
-    include(${wxWidgets_USE_FILE})
-    include_directories( ${wxWidgets_INCLUDE_DIRS} )
+#    find_package(wxWidgets REQUIRED)
+#    include(${wxWidgets_USE_FILE})
+#    include_directories( ${wxWidgets_INCLUDE_DIRS} )
 
-    rosbuild_add_library(cob_3d_mapping_demonstrator_rviz ros/src/wx_rviz_buttons.cpp
-        ros/src/wx_rviz_buttons_panel.cpp
-        ros/src/wx_rviz_title.cpp
-        ros/src/wx_rviz_logo.cpp
-        ros/src/wx_rviz_logo_panel.cpp
-        ros/src/wx_init.cpp)
-else()
-    message("Unsupported ROS version for visualization")
-endif()
+#    rosbuild_add_library(cob_3d_mapping_demonstrator_rviz ros/src/wx_rviz_buttons.cpp
+#        ros/src/wx_rviz_buttons_panel.cpp
+#        ros/src/wx_rviz_title.cpp
+#        ros/src/wx_rviz_logo.cpp
+#        ros/src/wx_rviz_logo_panel.cpp
+#        ros/src/wx_init.cpp)
+#else()
+#    message("Unsupported ROS version for visualization")
+#endif()
 
 
 rosbuild_add_executable(${PROJECT_NAME} ros/src/MapDemonDriver.cpp common/src/MapDemonCtrl.cpp common/src/MapDemonCtrl_Maestro.cpp common/src/SerialDevice.cpp)
