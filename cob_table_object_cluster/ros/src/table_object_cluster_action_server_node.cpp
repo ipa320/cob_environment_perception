@@ -97,7 +97,7 @@ public:
     as.start();
   }
 
-  void startPCSub(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res)
+  bool startPCSub(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res)
   {
     if(!subscribed_)
     {
@@ -107,6 +107,7 @@ public:
     {
       sub_pc.shutdown();
     }
+    return true;
   }
 
   void goalCallback()
