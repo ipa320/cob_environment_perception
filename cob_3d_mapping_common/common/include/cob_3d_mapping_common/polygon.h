@@ -203,7 +203,7 @@ namespace cob_3d_mapping
     * \details Outline of polygon is smoothed.
     * \see smoothGpcStructure()
     */
-    void smoothPolygon();
+    void smoothContours();
 
 
     //###########methods for merging##################
@@ -223,14 +223,6 @@ namespace cob_3d_mapping
     */
     virtual bool isIntersectedWith(const Polygon::Ptr& poly) const;
 
-
-    /**
-    * \brief Get intersection of two polygons.
-    * \details GPC methods are used to calculate the intersection.
-    * \param[in] poly Polygon for calculation of intersection.
-    * \param[out] gpc_intersection GPC structure of the intersection of the Polygons.
-    */
-    void getIntersection(const Polygon::Ptr& poly, gpc_polygon* gpc_intersection) const;
 
 
     /**
@@ -265,17 +257,6 @@ namespace cob_3d_mapping
     virtual void merge(std::vector<Polygon::Ptr>& poly_vec);
 
 
-    /**
-    * \brief Calculate merge union of Polygons.
-    *
-    * The union of contours and the resultant parameters are computed
-    * with respect to an average Polygon.Results are stored in Polygon
-    * object the method is called for.
-    * \param[in] poly_vec Vector of merge candidate Polygons.
-    * \param[in] p_average Polygon providing the resultant parameters.
-    */
-    void mergeUnion(std::vector<Polygon::Ptr>& poly_vec, Polygon::Ptr&  p_average);
-
     void mergeDifference(Polygon::Ptr& p_merge);
 
     virtual void projectContour(const Polygon& p, std::vector<std::vector<Eigen::Vector2f> >& contours) const;
@@ -290,34 +271,7 @@ namespace cob_3d_mapping
     void assignWeight();
 
 
-    /**
-    * \brief Assign ID to Polygon
-    *
-    * \details Lowest ID of input vector is assigned to Polygon.
-    * \param[in] poly_vec Vector with Polygon pointers.
-    */
-    void assignID(const std::vector<Polygon::Ptr>& poly_vec);
-
     virtual void setParamsFrom(Polygon::Ptr& p);
-
-    /**
-    * \brief Get 2D GPC structure from polygon.
-    *
-    * \details Transformation from 3D to 2D is performed with given transformation.
-    * \param[in] external_trafo Affine transformation.
-    * \param[out] Resultant GPC structure.
-    */
-    void getGpcStructure(gpc_polygon* gpc_p, const std::vector<std::vector<Eigen::Vector2f> >& contours) const;
-
-
-    /**
-    * \brief Conversion from GPC structure to polygon.
-    *
-    * \details Transformation from 2D GPC structure to 3D polygon object using an external transformation.
-    * \param[in] external_trafo from 2D to 3D
-    * \param[in] gpc_p Input GPC structure
-    */
-    void applyGpcStructure(const gpc_polygon* gpc_p);
 
 
     /**
@@ -355,10 +309,9 @@ namespace cob_3d_mapping
     * This method is only suitable for polygons with no expansion
     * in z-direction.
     */
-    double computeArea() const;  // http://paulbourke.net/geometry/polyarea/
+    //double computeArea() const;  // http://paulbourke.net/geometry/polyarea/
 
 
-    virtual void triangulate(list<TPPLPoly>& tri_list) const;
     /**
     * \brief Computation of area of 3D polygon.
     *
@@ -367,46 +320,7 @@ namespace cob_3d_mapping
     double computeArea3d() const;
 
 
-    /**
-    * \brief compute Transformation from world coordinate system to coordinate
-    * system on polygon plane.
-    * \note The coordinate system on the plane is determined by the orgin and the normal,
-    * which serves as one axis. The other axes are calculated arbitrarily.
-    * \param[in] normal Normal of plane, serves as one axis.
-    * \param[in] origin Origin of coordinate system on plane.
-    * \param[out] transformation The resultant transformation.
-    */
-    //void getTransformationFromPlaneToWorld(const Eigen::Vector3f &normal,const Eigen::Vector3f &origin,
-    //                                       Eigen::Affine3f &transformation) const;
-
-
-    /**
-    * \brief compute Transformation from world coordinate system to coordinate
-    * system on polygon plane.
-    * \note The coordinate system on the plane is determined by the orgin and the Z-axis.
-    * The other axes are calculated arbitrarily.
-    * \param[in] z_axis Z-Axis of the coordinate system on the plane.
-    * \param[in] origin Origin of coordinate system on plane.
-    * \param[out] transformation The resultant transformation.
-    */
-    //void getTransformationFromPlaneToWorld(const Eigen::Vector3f z_axis,const Eigen::Vector3f &normal,
-    //                                       const Eigen::Vector3f &origin, Eigen::Affine3f &transformation);
-
-
-    /**
-    * \brief Transform polygon contours with given transformation and return copy.
-    * \param[in] trafo Transformation, which is applied.
-    * \param[out] new_contours Transformed copy of the contours of this Polygon.
-    */
-    //void getTransformedContours(const Eigen::Affine3f& trafo, std::vector<std::vector<Eigen::Vector3f> >& new_contours ) const;
-
-
-    /**
-    * \brief Transform polygon contours with given transformation.
-    * \param[in] trafo Transformation, that is applied to the contours of this Polygon.
-    */
-    //void TransformContours(const Eigen::Affine3f& trafo);
-
+    virtual void triangulate(list<TPPLPoly>& tri_list) const;
 
     /**
     * \brief Computation of bounding box and pose of structure.
@@ -414,7 +328,7 @@ namespace cob_3d_mapping
     * \param[out] min_pt Minimal boundary of bounding box.
     * \param[out] max_pt Maximal boundary of bounding box.
     */
-    void computePoseAndBoundingBox(Eigen::Affine3f& pose, Eigen::Vector4f& min_pt, Eigen::Vector4f& max_pt);
+    //void computePoseAndBoundingBox(Eigen::Affine3f& pose, Eigen::Vector4f& min_pt, Eigen::Vector4f& max_pt);
 
 
 
@@ -439,7 +353,6 @@ namespace cob_3d_mapping
     std::vector<bool> holes_;/**< Bool vector indicating holes in polygon structure*/
     double merge_weight_;/**< Merge weight of polygon - regulating its influence in merge processes.*/
     MergeConfig merge_settings_;/** Merge settings - configuring assignment of weight and merge processes*/
-    DominantColor d_color_;
 
   protected:
     /**
@@ -452,6 +365,54 @@ namespace cob_3d_mapping
     * \see assignWeight()
     */
     virtual void computeAverage(const std::vector<Polygon::Ptr>& poly_vec, Polygon::Ptr& p_average);
+
+    /**
+    * \brief Get intersection of two polygons.
+    * \details GPC methods are used to calculate the intersection.
+    * \param[in] poly Polygon for calculation of intersection.
+    * \param[out] gpc_intersection GPC structure of the intersection of the Polygons.
+    */
+    void getIntersection(const Polygon::Ptr& poly, gpc_polygon* gpc_intersection) const;
+
+    /**
+    * \brief Calculate merge union of Polygons.
+    *
+    * The union of contours and the resultant parameters are computed
+    * with respect to an average Polygon.Results are stored in Polygon
+    * object the method is called for.
+    * \param[in] poly_vec Vector of merge candidate Polygons.
+    * \param[in] p_average Polygon providing the resultant parameters.
+    */
+    void mergeUnion(std::vector<Polygon::Ptr>& poly_vec, Polygon::Ptr&  p_average);
+
+    /**
+    * \brief Get 2D GPC structure from polygon.
+    *
+    * \details Transformation from 3D to 2D is performed with given transformation.
+    * \param[in] external_trafo Affine transformation.
+    * \param[out] Resultant GPC structure.
+    */
+    void getGpcStructure(gpc_polygon* gpc_p, const std::vector<std::vector<Eigen::Vector2f> >& contours) const;
+
+
+    /**
+    * \brief Conversion from GPC structure to polygon.
+    *
+    * \details Transformation from 2D GPC structure to 3D polygon object using an external transformation.
+    * \param[in] external_trafo from 2D to 3D
+    * \param[in] gpc_p Input GPC structure
+    */
+    void applyGpcStructure(const gpc_polygon* gpc_p);
+
+    /**
+    * \brief Assign ID to Polygon
+    *
+    * \details Lowest ID of input vector is assigned to Polygon.
+    * \param[in] poly_vec Vector with Polygon pointers.
+    */
+    void assignID(const std::vector<Polygon::Ptr>& poly_vec);
+
+    DominantColor d_color_;
 
 
   };

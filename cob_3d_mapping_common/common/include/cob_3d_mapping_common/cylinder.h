@@ -148,17 +148,6 @@ namespace cob_3d_mapping{
     virtual void setContours3D(std::vector<std::vector<Eigen::Vector3f> >& contours_3d);
     virtual std::vector<std::vector<Eigen::Vector3f> > getContours3D();
 
-    void computePose(Eigen::Vector3f origin, Eigen::Vector3f z_axis);
-
-    void computePose(Eigen::Vector3f origin, std::vector<std::vector<Eigen::Vector3f> >& contours_3d);
-
-    void computeHeight();
-
-
-
-
-
-
     /**
      * \brief Compute Attributes (pose, sym axis) of cylinder.
      *
@@ -169,19 +158,12 @@ namespace cob_3d_mapping{
      */
     virtual void updateAttributes(const Eigen::Vector3f &sym_axis, const Eigen::Vector3f &origin, const Eigen::Vector3f &z_axis);
 
-
-    virtual void setParamsFrom(Polygon::Ptr& p);
-
     /**
      * \brief Transform cylinder to target frame.
      *
      * \param[in] trafo Transformation from source frame to target frame.
      */
     virtual void transform(Eigen::Affine3f & tf);
-
-    void triangulate(list<TPPLPoly>& tri_list) const;
-
-
 
     //################## methods for merging############################
     /**
@@ -209,6 +191,16 @@ namespace cob_3d_mapping{
      */
     virtual void merge(std::vector<Polygon::Ptr>& poly_vec);
 
+    virtual void setParamsFrom(Polygon::Ptr& p);
+
+
+    void computePose(Eigen::Vector3f origin, Eigen::Vector3f z_axis);
+
+    void computePose(Eigen::Vector3f origin, std::vector<std::vector<Eigen::Vector3f> >& contours_3d);
+
+    void computeHeight();
+
+    void triangulate(list<TPPLPoly>& tri_list) const;
 
 
     //############## debugging methods ####################
