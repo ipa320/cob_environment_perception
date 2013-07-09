@@ -116,6 +116,7 @@ bool MapDemonCtrl_Maestro::Init(MapDemonCtrlParams * params)
 
   if(!UpdatePositions()) return false;
 
+  setMaxVelocity(0.1);
   m_Initialized = true;
 
   return true;
@@ -198,8 +199,7 @@ bool MapDemonCtrl_Maestro::UpdatePositions()
         return false;
       }
     }
-
-    m_positions[i] = (unsigned char)str[0] + ((unsigned char)str[1])*256;
+    m_positions[i] = int2rad((unsigned char)str[0] + ((unsigned char)str[1])*256);
   }
 
 //  std::vector<double> p;
@@ -240,6 +240,16 @@ bool MapDemonCtrl_Maestro::Recover()
     m_sd->closePort();
     m_ErrorMessage = errorMsg.str();
     return false;
+  }
+}
+
+bool MapDemonCtrl_Maestro::setMaxVelocity(double velocity)
+{
+  int DOF = m_params_->GetDOF();
+  for(int i=0; i<DOF; i++) {
+    unsigned int v = 50;
+    unsigned char vel[2] = {(unsigned short)v & 0x7F, (unsigned short)(v >> 7) & 0x7F};
+    writeCmd(SET_VEL, i, vel, 2);
   }
 }
 

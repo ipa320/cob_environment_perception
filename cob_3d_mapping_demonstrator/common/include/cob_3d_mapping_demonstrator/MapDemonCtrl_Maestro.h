@@ -31,13 +31,16 @@ public:
   virtual bool Stop();
   virtual bool Recover() ;
 
+  virtual bool setMaxVelocity(double velocity);
+
   virtual bool UpdatePositions();
 
 private:
 
   enum {
     GET_POSITION=0x90,
-    SET_TARGET=0x84
+    SET_TARGET=0x84,
+    SET_VEL=0x87
   };
 
   int m_fd;
@@ -46,7 +49,7 @@ private:
 
   void writeCmd(const unsigned char cmd, const unsigned char channel, const unsigned char *data=NULL, const int size=0);
 
-  int rad2int(const double v, const int dof) {
+  int rad2int(const double v, const int dof = 0) {
     double rad = v;
     rad+=M_PI;
     if(rad<0) rad = 2*M_PI+rad;
@@ -54,8 +57,8 @@ private:
     //return round( (v-m_params_->GetOffsets()[dof])*STEP_WIDTH);
   }
 
-  int rad2int(const int v, const int dof) {
-    return v-1000*(2*M_PI)/(2*4900) - M_PI;
+  double int2rad(const int v, const int dof = 0) {
+    return (v-1000)*(2*M_PI)/(2*4900) - M_PI;
     //return (v/STEP_WIDTH)+m_params_->GetOffsets()[dof];
   }
 };
