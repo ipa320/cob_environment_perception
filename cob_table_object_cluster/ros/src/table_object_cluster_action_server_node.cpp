@@ -102,10 +102,12 @@ public:
     if(!subscribed_)
     {
       sub_pc = nh.subscribe<PointCloud>("point_cloud", 1, boost::bind(&TableObjectClusterActionServerNode::inputCallback,this,_1));
+      subscribed_ = true;
     }
     else
     {
       sub_pc.shutdown();
+      subscribed_ = false;
     }
     return true;
   }
