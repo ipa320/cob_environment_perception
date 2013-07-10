@@ -322,6 +322,7 @@ public:
       marker.header.frame_id = target_frame_id_;
       marker.ns = "table_marker";
       marker.header.stamp = ros::Time::now ();
+      marker.pose = sa.shapes[i].pose;
 
       marker.id = i;
       marker.scale.x = 0.03;
