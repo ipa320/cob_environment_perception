@@ -92,7 +92,7 @@ SupportingPlaneExtraction::getSupportingPlane(std::vector<Polygon::Ptr>& polys, 
   }
   if( index == -1) return false;
   //TODO: check distance
-  std::cout << cands[index]->computeArea() << ", " << cands[index]->computeDistanceFromViewpoint() << std::endl;
+  std::cout << cands[index]->computeArea3d() << ", " << cands[index]->computeDistanceFromViewpoint() << std::endl;
   sp = *cands[index];
   return true;//polys[index]->id;
 }

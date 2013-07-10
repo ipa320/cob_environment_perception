@@ -108,7 +108,7 @@ TableExtraction::isHeightOk ()
 bool
 TableExtraction::isSizeOk ()
 {
-  double area = poly_ptr_->computeArea();
+  double area = poly_ptr_->computeArea3d();
   if (area >= area_min_ && area <= area_max_)
     return true;
   return false;
