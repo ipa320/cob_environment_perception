@@ -318,7 +318,7 @@ public:
       visualization_msgs::Marker marker;
       marker.action = visualization_msgs::Marker::ADD;
       marker.type = visualization_msgs::Marker::LINE_STRIP;
-      marker.lifetime = ros::Duration ();
+      marker.lifetime = ros::Duration (15);
       marker.header.frame_id = target_frame_id_;
       marker.ns = "table_marker";
       marker.header.stamp = ros::Time::now ();
