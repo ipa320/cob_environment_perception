@@ -76,7 +76,7 @@
 #include <pcl/point_cloud.h>
 
 #include <cob_3d_segmentation/quad_regression/quad_regression.h>
-#include <cob_3d_mapping_msgs/CurvedPolygon_Array.h>
+#include <cob_3d_mapping_msgs/CurvedPolygonArray.h>
 //#include <cob_3d_mapping_msgs/FilterObject.h>
 
 #include <actionlib/server/simple_action_server.h>
@@ -157,7 +157,7 @@ public:
 #else
     point_cloud_sub_ = this->n_.subscribe("/camera/depth/points", 1, &QPPF_Node<Point, PointLabel, Parent>::pointCloudSubCallback, this);
 #endif
-    curved_pub_ = n->advertise<cob_3d_mapping_msgs::CurvedPolygon_Array>("/curved_polygons", 1);
+    curved_pub_ = n->advertise<cob_3d_mapping_msgs::CurvedPolygonArray>("/curved_polygons", 1);
     shapes_pub_ = n->advertise<cob_3d_mapping_msgs::ShapeArray>("/shapes_array", 1);
     outline_pub_= n->advertise<visualization_msgs::Marker>("/outline", 1);
     image_pub_  = n->advertise<sensor_msgs::Image>("/image1", 1);
@@ -266,7 +266,7 @@ public:
     }
     if(curved_pub_.getNumSubscribers()>0)
     {
-      cob_3d_mapping_msgs::CurvedPolygon_Array cpa;
+      cob_3d_mapping_msgs::CurvedPolygonArray cpa;
       for(size_t i=0; i<seg_.getPolygons().size(); i++)
       {
         cob_3d_mapping_msgs::CurvedPolygon cp;
