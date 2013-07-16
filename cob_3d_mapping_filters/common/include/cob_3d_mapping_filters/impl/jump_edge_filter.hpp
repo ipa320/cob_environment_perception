@@ -83,7 +83,7 @@ template <typename PointT> void
   double lower_angle_thresh = (180-upper_angle_deg_)/180*M_PI;
   for (unsigned int i = 0; i < input_->points.size(); i++)
   {
-    if(i< input_->width || i%input_->width==0 || i%input_->width==3 || i>input_->width*(input_->height-1)) continue; //skip border points
+    if(i < input_->width || i%input_->width==0 || i%input_->width==(input_->height-1) || i > input_->width*(input_->height-1)) continue; //skip border points
     Eigen::Vector3f v_m(input_->points[i].x,input_->points[i].y,input_->points[i].z);
     Eigen::Vector3f v_m_n = v_m.normalized();
     int index = i-input_->width-1;
