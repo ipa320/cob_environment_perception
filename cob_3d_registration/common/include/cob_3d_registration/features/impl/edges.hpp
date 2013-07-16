@@ -91,7 +91,7 @@ void Feature_Edges<Point>::extractFeatures(const pcl::PointCloud<Point>& point_c
   #endif
 
 #endif
-  cob_3d_mapping_features::FastEdgeEstimation3DOMP<Point, Normal, InterestPoint> ee;
+  cob_3d_features::FastEdgeEstimation3DOMP<Point, Normal, InterestPoint> ee;
   /*ee.setRadiusSearch(radius_);
   ee.dist_threshold_ = dist_threshold_;
   ee.setSearchMethod(oTree);*/

@@ -70,7 +70,7 @@
 
 #include "cob_3d_mapping_common/label_defines.h"
 #include "cob_3d_segmentation/depth_segmentation.h"
-#include "cob_3d_mapping_features/organized_normal_estimation.h"
+#include "cob_3d_features/organized_normal_estimation.h"
 
 template <typename ClusterGraphT, typename PointT, typename PointNT, typename PointLabelT> void
 cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>::addIfIsValid(
@@ -223,7 +223,7 @@ cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>
                                     + pow(c->getCentroid()(2), 2) + 5.0, 30.0) );
   for (std::list<int>::iterator b_it = e->boundary_pairs[c->id()].begin(); b_it != e->boundary_pairs[c->id()].end(); ++b_it)
   {
-    cob_3d_mapping_features::OrganizedNormalEstimationHelper::computeSegmentNormal<PointT,PointLabelT>(
+    cob_3d_features::OrganizedNormalEstimationHelper::computeSegmentNormal<PointT,PointLabelT>(
       graph_->edges()->getBoundaryPoint(*b_it).normal, *b_it, surface_, labels_, window_size, 1);
   }
 }

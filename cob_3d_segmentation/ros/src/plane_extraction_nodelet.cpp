@@ -125,7 +125,7 @@
 
 
 using namespace tf;
-//using namespace cob_3d_mapping_features;
+//using namespace cob_3d_features;
 using namespace cob_3d_mapping;
 
 //####################

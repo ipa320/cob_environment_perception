@@ -64,7 +64,7 @@
 #define __IMPL_CLUSTER_CLASSIFIER_HPP__
 
 #include "cob_3d_segmentation/cluster_classifier.h"
-#include <cob_3d_mapping_features/organized_normal_estimation.h>
+#include <cob_3d_features/organized_normal_estimation.h>
 
 #include <pcl/common/eigen.h>
 
@@ -190,7 +190,7 @@ cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::r
   for (typename ClusterType::iterator idx = c->begin(); idx != c->end(); ++ idx)
   {
     Eigen::Vector3f new_normal;
-    cob_3d_mapping_features::OrganizedNormalEstimationHelper::computeSegmentNormal<PointT,LabelT>(
+    cob_3d_features::OrganizedNormalEstimationHelper::computeSegmentNormal<PointT,LabelT>(
       new_normal, *idx, surface_, labels_, w_size, steps);
     normals_->points[*idx].getNormalVector3fMap() = new_normal;
     clusters_->updateNormal(c, new_normal);

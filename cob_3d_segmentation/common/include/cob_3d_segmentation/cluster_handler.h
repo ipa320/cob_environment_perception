@@ -14,7 +14,7 @@
  * \note
  *  ROS stack name: cob_environment_perception_intern
  * \note
- *  ROS package name: cob_3d_mapping_features
+ *  ROS package name: cob_3d_features
  *
  * \author
  *  Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de

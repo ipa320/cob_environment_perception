@@ -92,7 +92,7 @@ void Keypoints_Segments<Point>::extractFeatures(const pcl::PointCloud<Point>& po
       boost::shared_ptr<pcl::OrganizedDataIndex<Point> > oTree (new pcl::OrganizedDataIndex<Point> );
     #endif
 #endif
-    cob_3d_mapping_features::EdgeEstimation3D<Point, Normal, InterestPoint> ee;
+    cob_3d_features::EdgeEstimation3D<Point, Normal, InterestPoint> ee;
     ee.setRadiusSearch(radius_);
     ee.setSearchMethod(oTree);
     ee.setInputCloud(point_cloud.makeShared());
@@ -105,13 +105,13 @@ void Keypoints_Segments<Point>::extractFeatures(const pcl::PointCloud<Point>& po
   ROS_INFO("2d edges");
   pcl::PointCloud<InterestPoint>::Ptr ip2d(new pcl::PointCloud<InterestPoint>);
   {
-    cob_3d_mapping_features::EdgeEstimation2D<Point, InterestPoint> ee;
+    cob_3d_features::EdgeEstimation2D<Point, InterestPoint> ee;
     ee.setInputCloud(point_cloud.makeShared());
     ee.computeEdges(*ip2d);
   }
 
   ROS_INFO("segmentation");
-  cob_3d_mapping_features::EdgeExtraction<InterestPoint,PointLabel> edge_ext;
+  cob_3d_features::EdgeExtraction<InterestPoint,PointLabel> edge_ext;
   edge_ext.setInput3DEdges(ip3d);
   edge_ext.setInput2DEdges(ip2d);
   edge_ext.setThreshold(thr_);

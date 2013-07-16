@@ -81,7 +81,7 @@
 // Package includes
 #include "cob_3d_mapping_msgs/TriggerAction.h"
 #include "cob_3d_mapping_common/point_types.h"
-#include "cob_3d_mapping_features/organized_normal_estimation_omp.h"
+#include "cob_3d_features/organized_normal_estimation_omp.h"
 #include "cob_3d_segmentation/impl/fast_segmentation.hpp"
 #include <cob_3d_segmentation/polygon_extraction/polygon_extraction.h>
 
@@ -133,7 +133,7 @@ namespace cob_3d_segmentation
 
     boost::shared_ptr<dynamic_reconfigure::Server<cob_3d_segmentation::segmentation_nodeletConfig> > config_server_;
 
-    cob_3d_mapping_features::OrganizedNormalEstimationOMP<pcl::PointXYZRGB, pcl::Normal, PointLabel> one_;
+    cob_3d_features::OrganizedNormalEstimationOMP<pcl::PointXYZRGB, pcl::Normal, PointLabel> one_;
     FastSegmentation<pcl::PointXYZRGB, pcl::Normal, PointLabel> seg_;
     PolygonExtraction pe_;
 

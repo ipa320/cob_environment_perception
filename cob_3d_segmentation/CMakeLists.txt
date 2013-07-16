@@ -53,8 +53,8 @@ rosbuild_add_library(cob_3d_segmentation_nodelets
 	ros/src/plane_extraction_nodelet.cpp
 	ros/src/simple_segmentation_nodelet.cpp)
 
-target_link_libraries(cob_3d_segmentation cob_3d_mapping_features cob_3d_mapping_features_omp)
-target_link_libraries(cob_3d_segmentation_nodelets cob_3d_segmentation cob_3d_mapping_common)
+#target_link_libraries(cob_3d_segmentation cob_3d_features cob_3d_features_omp)
+target_link_libraries(cob_3d_segmentation_nodelets cob_3d_segmentation) #cob_3d_mapping_common)
 
 
 rosbuild_add_executable(segmentation_node ros/src/segmentation_node.cpp common/src/polypartition.cpp)
@@ -76,7 +76,7 @@ target_link_libraries(segmentation_visualizer vtkCommon vtkRendering)
 
 # Executables for profiling:
 rosbuild_add_executable(profile_depth_seg common/apps/profile_depth_seg.cpp)
-target_link_libraries(profile_depth_seg cob_3d_mapping_features cob_3d_mapping_features_omp cob_3d_segmentation)
+target_link_libraries(profile_depth_seg cob_3d_segmentation) #cob_3d_features cob_3d_features_omp cob_3d_segmentation)
 
 rosbuild_add_executable(profile_plane_extraction common/apps/profile_plane_extraction.cpp)
 target_link_libraries(profile_plane_extraction cob_3d_segmentation vtkCommon vtkFiltering ${OpenCV_LIBS})

@@ -56,13 +56,13 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
-#include "cob_3d_mapping_features/segmentation.h"
+#include "cob_3d_features/segmentation.h"
 #include <pcl/io/pcd_io.h>
 #include <highgui.h>
 
 int main()
 {
-  cob_3d_mapping_features::Segmentation seg;
+  cob_3d_features::Segmentation seg;
   pcl::PointCloud<PointLabel>::Ptr cloud_in = pcl::PointCloud<PointLabel>::Ptr (new pcl::PointCloud<PointLabel>);
   cv::Mat seg_img;
   std::vector<pcl::PointIndices> cluster_indices;
