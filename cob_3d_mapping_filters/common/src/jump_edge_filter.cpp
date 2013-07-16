@@ -104,8 +104,7 @@ cob_3d_mapping_filters::JumpEdgeFilter<sensor_msgs::PointCloud2>::applyFilter (P
 
   for (unsigned int i = 0; i < total_points; i++)
   {
-    if (i < input_->width || i % input_->width == 0 || i % input_->width == 3 || i > input_->width * (input_->height
-        - 1))
+    if (i < input_->width || i % input_->width == 0 || i % input_->width == (input_->height-1) || i > input_->width * (input_->height- 1))
       continue; //skip border points
     Eigen::Vector3f v_m (*(float*)&input_->data[i * input_->point_step + x_offset],
                          *(float*)&input_->data[i* input_->point_step + y_offset],
