@@ -31,7 +31,7 @@
   <!-- depend package="cob_vision_features"/ -->
   <!-- depend package="cob_camera_sensors"/ -->
 
-  <depend package="cob_3d_mapping_features"/>
+  <depend package="cob_3d_features"/>
   <!--depend package="cob_3d_segmentation"/-->
   <depend package="cob_3d_mapping_common"/>
 
