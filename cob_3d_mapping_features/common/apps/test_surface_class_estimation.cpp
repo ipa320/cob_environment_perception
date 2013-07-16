@@ -74,9 +74,9 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/point_cloud_handlers.h>
-#include <pcl/features/normal_3d.h>
+/*#include <pcl/features/normal_3d.h>
 #include <pcl/features/normal_3d_omp.h>
-#include <pcl/features/integral_image_normal.h>
+#include <pcl/features/integral_image_normal.h>*/
 
 // Package Includes:
 #include "cob_3d_mapping_common/point_types.h"
