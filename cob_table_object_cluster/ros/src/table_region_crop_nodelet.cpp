@@ -73,6 +73,8 @@
 #include <ros/ros.h>
 #include <nodelet/nodelet.h>
 #include <pluginlib/class_list_macros.h>
+#include <tf/transform_listener.h>
+#include <tf_conversions/tf_eigen.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/segmentation/extract_polygonal_prism_data.h>
@@ -93,8 +95,12 @@ public:
   // Constructor
   TableRegionCropNodelet()
   : target_frame_id_("/map"),
+    table_frame_id_("/bookshelf_bottom_link"),
+    height_min_(0.01),
+    height_max_(0.5),
     hull_(new PointCloud)
   {
+    hull_points_.resize(4);
     hull_->resize(4);
   }
 
@@ -111,26 +117,53 @@ public:
 
     ros::NodeHandle pn = getPrivateNodeHandle();
     pn.getParam("target_frame_id", target_frame_id_);
+    pn.getParam("table_frame_id", table_frame_id_);
+    pn.getParam("height_min", height_min_);
+    pn.getParam("height_max", height_max_);
     XmlRpc::XmlRpcValue v;
-    pn.getParam("hull_points", v);
-    if( v.size() < 12)
+    pn.getParam("table_dimensions", v);
+    if( v.size() < 3)
     {
       ROS_ERROR("Hull points not set correctly, nodelet will not work");
       return;
     }
-    for(int i = 0; i < v.size(); i+=3)
+    double x ,y, z;
+    x = (double)v[0];
+    y = (double)v[1];
+    z = (double)v[2];
+    Eigen::Vector3d p;
+    p << -x/2, -y/2, z;
+    hull_points_[0] = p;
+    p << -x/2, y/2, z;
+    hull_points_[1] = p;
+    p << x/2, y/2, z;
+    hull_points_[2] = p;
+    p << x/2, -y/2, z;
+    hull_points_[3] = p;
+
+    tf::StampedTransform trf_table;
+    try
+    {
+      tf_listener_.waitForTransform(target_frame_id_, table_frame_id_, ros::Time(), ros::Duration(2));
+      tf_listener_.lookupTransform(target_frame_id_, table_frame_id_, ros::Time(), trf_table);
+    }
+    catch (tf::TransformException& ex) { ROS_ERROR("[transform region crop] : %s",ex.what()); return; }
+    Eigen::Affine3d ad;
+    tf::transformTFToEigen(trf_table, ad);
+
+    for(int i = 0; i < hull_points_.size(); i++)
     {
       Point p;
-      p.x = (double)(v[i]);
-      p.y = (double)(v[i+1]);
-      p.z = (double)(v[i+2]);
-      hull_->points[i/3] = p;
+      p.getVector3fMap() = (ad*hull_points_[i]).cast<float>();
+      hull_->points[i] = p;
     }
 
     pc_sub_ = n_.subscribe<PointCloud>("point_cloud_in", 1, boost::bind(&TableRegionCropNodelet::topicCallback, this, _1));
     pc_pub_ = n_.advertise<PointCloud>("point_cloud_out", 1);
 
     eppd_.setInputPlanarHull(hull_);
+    eppd_.setHeightLimits(height_min_, height_max_);
+    eppd_.setViewPoint(0,0,5);
   }
 
   void
@@ -145,8 +178,6 @@ public:
     PointCloud::Ptr pc_out(new PointCloud);
     pcl::PointIndices::Ptr ind_out(new pcl::PointIndices);
     eppd_.setInputCloud(pc_in);
-    eppd_.setHeightLimits(0.01, 0.5);
-    eppd_.setViewPoint(0,0,5);
     eppd_.segment(*ind_out);
     ei_.setInputCloud(pc_in);
     ei_.setIndices(ind_out);
@@ -159,8 +190,12 @@ protected:
   ros::NodeHandle n_;
   ros::Subscriber pc_sub_;
   ros::Publisher pc_pub_;
+  tf::TransformListener tf_listener_;
   std::string target_frame_id_;
+  std::string table_frame_id_;
+  double height_min_, height_max_;
 
+  std::vector<Eigen::Vector3d> hull_points_;
   PointCloud::Ptr hull_;
   pcl::ExtractPolygonalPrismData<Point> eppd_;
   pcl::ExtractIndices<Point> ei_;
