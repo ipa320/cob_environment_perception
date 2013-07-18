@@ -20,6 +20,10 @@
   <depend package="cob_object_detection_msgs"/>
   <depend package="cob_vision_utils"/>
 
+  <export>
+    <nodelet plugin="${prefix}/nodelet_plugins.xml" />
+  </export>
+
 </package>
 
 

@@ -1,0 +1,6 @@
+# target frame id
+# string
+target_frame_id: /map
+
+hull_points: [-1.0,-1.0,0.8,-1.0,1.0,0.8,1.0,1.0,0.8,1.0,-1.0,0.8]
+
