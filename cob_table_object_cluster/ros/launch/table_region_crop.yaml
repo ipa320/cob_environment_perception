@@ -1,6 +1,10 @@
 # target frame id
 # string
 target_frame_id: /map
+table_frame_id: /bookshelf_bottom_link
 
-hull_points: [-1.0,-1.0,0.8,-1.0,1.0,0.8,1.0,1.0,0.8,1.0,-1.0,0.8]
+height_min: 0.01
+height_max: 0.5
+
+table_dimensions: [0.45, 1.55, 0.8]
 
