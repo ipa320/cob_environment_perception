@@ -83,7 +83,7 @@
 #include "cob_3d_mapping_common/point_types.h"
 #include "cob_3d_features/organized_normal_estimation_omp.h"
 #include "cob_3d_segmentation/impl/fast_segmentation.hpp"
-#include <cob_3d_segmentation/cluster_ros_conversion.h>
+#include <cob_3d_segmentation/cluster_conversion.h>
 
 namespace cob_3d_segmentation
 {
@@ -136,7 +136,7 @@ namespace cob_3d_segmentation
 
     cob_3d_features::OrganizedNormalEstimationOMP<pcl::PointXYZRGB, pcl::Normal, PointLabel> one_;
     FastSegmentation<pcl::PointXYZRGB, pcl::Normal, PointLabel> seg_;
-    PolygonExtraction pe_;
+    ClusterConversion<pcl::PointXYZRGB> conv_;
 
     PointCloud::Ptr down_;
     PointCloud::Ptr segmented_;
