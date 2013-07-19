@@ -1,11 +1,14 @@
 <?xml version="1.0"?>
 <launch>
 
-  <arg name="shape_array_in" default="geometry_map/map_array" />
+  <arg name="shape_array_in" default="geometry_map/map" />
   <arg name="name" default="shape_visualization" />
+  <arg name="debug_mode" default="false"/>
+  <arg name="prefix" value="gdb -ex run --args" if="$(arg debug_mode)"/>
+  <arg name="prefix" value="" unless="$(arg debug_mode)"/>
 	<!--shape visualization node-->
 	<!--node pkg="cob_3d_visualization" type="shape_visualization" name="shape_visualization" output="screen"-->
-	<node pkg="cob_3d_visualization" type="shape_visualization" name="$(arg name)" output="screen">
+	<node pkg="cob_3d_visualization" type="shape_visualization" name="$(arg name)" output="screen" launch-prefix="$(arg prefix)">
 
      <!--remap from="~shape_array" to="structure_extraction/shape_array"/-->
      <remap from="~shape_array" to="$(arg shape_array_in)"/>

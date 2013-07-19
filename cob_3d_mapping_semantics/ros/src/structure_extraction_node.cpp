@@ -171,20 +171,23 @@ public:
         switch (label)
         {
           case 1:
-            poly_ptr->color[0] = 1;
-            poly_ptr->color[1] = 1;
-            poly_ptr->color[2] = 1;
-            poly_ptr->color[3] = 0.5;
+            poly_ptr->color_[0] = 1;
+            poly_ptr->color_[1] = 1;
+            poly_ptr->color_[2] = 1;
+            poly_ptr->color_[3] = 0.5;
+            break;
           case 2:
-            poly_ptr->color[0] = 0.5;
-            poly_ptr->color[1] = 0.5;
-            poly_ptr->color[2] = 0.5;
-            poly_ptr->color[3] = 1;
+            poly_ptr->color_[0] = 0.5;
+            poly_ptr->color_[1] = 0.5;
+            poly_ptr->color_[2] = 0.5;
+            poly_ptr->color_[3] = 1;
+            break;
           case 3:
-            poly_ptr->color[0] = 0;
-            poly_ptr->color[1] = 0;
-            poly_ptr->color[2] = 1;
-            poly_ptr->color[3] = 1;
+            poly_ptr->color_[0] = 0;
+            poly_ptr->color_[1] = 0;
+            poly_ptr->color_[2] = 1;
+            poly_ptr->color_[3] = 1;
+            break;
         }
       }
       cob_3d_mapping_msgs::Shape s;

@@ -13,8 +13,8 @@
   <depend package="sensor_msgs"/>
   <depend package="std_msgs"/>
   <depend package="actionlib_msgs"/>
-  <depend package="arm_navigation_msgs"/>
-  <depend package="household_objects_database_msgs"/>
+  <!--depend package="arm_navigation_msgs"/>
+  <depend package="household_objects_database_msgs"/-->
   <!--depend package="tabletop_object_detector"/-->
   <depend package="cob_object_detection_msgs"/>
   <export>

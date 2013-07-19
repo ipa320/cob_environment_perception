@@ -64,6 +64,7 @@
 //#### includes ####
 
 #include <cob_3d_visualization/shape_marker.h>
+#include <pcl/common/transforms.h>
 
 ShapeMarker::ShapeMarker(boost::shared_ptr<interactive_markers::InteractiveMarkerServer> im_server,
     cob_3d_mapping_msgs::Shape& shape,std::vector<unsigned int>& moved_shapes_indices,std::vector<unsigned int>& interacted_shapes,
@@ -401,7 +402,12 @@ ShapeMarker::createMarker (visualization_msgs::InteractiveMarkerControl& im_ctrl
   {
     cob_3d_mapping::Cylinder c;
     cob_3d_mapping::fromROSMsg (shape_, c);
-    c.ParamsFromShapeMsg();
+    /*for(unsigned int i=0; i<c.contours_[0].size(); i++)
+    {
+      std::cout << c.contours_[0][i](0) << "," << c.contours_[0][i](1) << std::endl;
+    }*/
+    c.triangulate(tri_list);
+    /*c.ParamsFromShapeMsg();
     // make trinagulated cylinder strip
     //transform cylinder in local coordinate system
     c.makeCyl2D();
@@ -439,7 +445,7 @@ ShapeMarker::createMarker (visualization_msgs::InteractiveMarkerControl& im_ctrl
     // optional refinement step
     list<TPPLPoly> refined_tri_list;
     triangle_refinement(tri_list,refined_tri_list);
-    tri_list=refined_tri_list;
+    tri_list=refined_tri_list;*/
 
   }
   if(shape_.type== cob_3d_mapping_msgs::Shape::POLYGON)
@@ -449,7 +455,7 @@ ShapeMarker::createMarker (visualization_msgs::InteractiveMarkerControl& im_ctrl
     if (shape_.params.size () == 4)
     {
       cob_3d_mapping::fromROSMsg (shape_, p);
-      normal (0) = shape_.params[0];
+      /*normal (0) = shape_.params[0];
       normal (1) = shape_.params[1];
       normal (2) = shape_.params[2];
       origin (0) = shape_.centroid.x;
@@ -458,10 +464,15 @@ ShapeMarker::createMarker (visualization_msgs::InteractiveMarkerControl& im_ctrl
       v = normal.unitOrthogonal ();
 
       pcl::getTransformationFromTwoUnitVectorsAndOrigin (v, normal, origin, transformation_);
-      transformation_inv_ = transformation_.inverse ();
+      transformation_inv_ = transformation_.inverse ();*/
     }
-
-    for (size_t i = 0; i < shape_.points.size (); i++)
+    else
+    {
+      ROS_WARN("Unsupported polygon type, aborting...");
+      return;
+    }
+    p.triangulate(tri_list);
+    /*for (size_t i = 0; i < shape_.points.size (); i++)
     {
       pcl::PointCloud<pcl::PointXYZ> pc;
       TPPLPoly poly;
@@ -480,11 +491,11 @@ ShapeMarker::createMarker (visualization_msgs::InteractiveMarkerControl& im_ctrl
 
       polys.push_back (poly);
     }
-    pp.Triangulate_EC (&polys, &tri_list);
+    pp.Triangulate_EC (&polys, &tri_list);*/
 
   }//Polygon
 
-  if(tri_list.size()==0)
+  if(tri_list.size() == 0)
   {
     ROS_WARN("Could not triangulate, will not display this shape! (ID: %d)", shape_.id);
     return;
@@ -511,6 +522,7 @@ ShapeMarker::createMarker (visualization_msgs::InteractiveMarkerControl& im_ctrl
           //if(shape_.id == 39) std::cout << pt.x << "," << pt.y << std::endl;
         }
         //std::cout << marker.points.size() << std::endl;
+        break;
       }
       case(cob_3d_mapping_msgs::Shape::CYLINDER):
       {
@@ -519,28 +531,29 @@ ShapeMarker::createMarker (visualization_msgs::InteractiveMarkerControl& im_ctrl
           pt = it->GetPoint(i);
 
           //apply rerolling of cylinder analogous to cylinder class
-          if(shape_.params.size()!=10){
+          /*if(shape_.params.size()!=10){
             break;
-          }
+          }*/
+          double r = shape_.params[3];
+          double alpha = pt.x / r;
 
-          double alpha=pt.x/shape_.params[9];
-
-
-          marker.points[3*ctr+i].x = shape_.params[9]*sin(-alpha);
+          marker.points[3*ctr+i].x = sin(alpha) * r;
           marker.points[3*ctr+i].y = pt.y;
-          marker.points[3*ctr+i].z = shape_.params[9]*cos(-alpha);
+          marker.points[3*ctr+i].z = cos(alpha) * r;
 
           ////Keep Cylinder flat - Debuging
           //marker.points[i].x = pt.x;
           //marker.points[i].y = pt.y;
           //marker.points[i].z = 0;
         }
+        break;
       }
     }
     ctr++;
   }
   //set pose
-  Eigen::Quaternionf quat (transformation_inv_.rotation ());
+  marker.pose = shape_.pose;
+  /*Eigen::Quaternionf quat (transformation_inv_.rotation ());
   Eigen::Vector3f trans (transformation_inv_.translation ());
 
   marker.pose.position.x = trans (0);
@@ -550,19 +563,20 @@ ShapeMarker::createMarker (visualization_msgs::InteractiveMarkerControl& im_ctrl
   marker.pose.orientation.x = quat.x ();
   marker.pose.orientation.y = quat.y ();
   marker.pose.orientation.z = quat.z ();
-  marker.pose.orientation.w = quat.w ();
+  marker.pose.orientation.w = quat.w ();*/
 
   im_ctrl.markers.push_back (marker);
 
   //  if(!arrows_) {
   // Added For displaying the arrows on Marker Position
-  marker_.pose.position.x = marker.pose.position.x ;
+  marker_.pose = marker.pose;
+  /*marker_.pose.position.x = marker.pose.position.x ;
   marker_.pose.position.y = marker.pose.position.y ;
   marker_.pose.position.z = marker.pose.position.z ;
 
   marker_.pose.orientation.x = marker.pose.orientation.x ;
   marker_.pose.orientation.y = marker.pose.orientation.y ;
-  marker_.pose.orientation.z = marker.pose.orientation.z ;
+  marker_.pose.orientation.z = marker.pose.orientation.z ;*/
   // end
 }
 
@@ -789,13 +803,11 @@ void ShapeMarker::displayNormal(){
 
   //set pose
   marker.points.resize (2);
-  marker.points[0].x = shape_.centroid.x;
-  marker.points[0].y = shape_.centroid.y;
-  marker.points[0].z = shape_.centroid.z;
+  marker.points[0] = shape_.pose.position;
 
-  marker.points[1].x = shape_.centroid.x + shape_.params[0];
-  marker.points[1].y = shape_.centroid.y + shape_.params[1];
-  marker.points[1].z = shape_.centroid.z + shape_.params[2];
+  marker.points[1].x = shape_.pose.position.x + shape_.params[0];
+  marker.points[1].y = shape_.pose.position.y + shape_.params[1];
+  marker.points[1].z = shape_.pose.position.z + shape_.params[2];
 
   visualization_msgs::InteractiveMarkerControl im_ctrl_n;
 
@@ -994,9 +1006,7 @@ void ShapeMarker::displayCentroid(){
   marker.scale.z = 0.04;
 
   //set pose
-  marker.pose.position.x = shape_.centroid.x;
-  marker.pose.position.y = shape_.centroid.y;
-  marker.pose.position.z = shape_.centroid.z;
+  marker.pose.position = shape_.pose.position;
 
 
   visualization_msgs::InteractiveMarkerControl im_ctrl;
@@ -1080,26 +1090,29 @@ void ShapeMarker::displayContour(){
   marker.color.b = 1;
   marker.color.a = 1.0;
 
+  marker.pose = shape_.pose;
+
   cob_3d_mapping::Polygon p;
   cob_3d_mapping::fromROSMsg (shape_, p);
 
   visualization_msgs::InteractiveMarker imarker;
   visualization_msgs::InteractiveMarkerControl im_ctrl_ ;
-  for(unsigned int i=0; i<p.contours.size(); i++)
+  for(unsigned int i=0; i<p.contours_.size(); i++)
   {
     marker.id = ctr ;
     ctr ++ ;
-    for(unsigned int j=0; j<p.contours[i].size(); j++)
+    for(unsigned int j=0; j<p.contours_[i].size(); j++)
     {
-      marker.points.resize(p.contours[i].size()+1);
-
-      marker.points[j].x = p.contours[i][j](0);
-      marker.points[j].y = p.contours[i][j](1);
-      marker.points[j].z = p.contours[i][j](2);
+      //pcl::PointCloud<pcl::PointXYZ> contour_3d;
+      //pcl::TranformPointCloud(p.contours_[i], contour_3d, p.pose_.cast<double>());
+      marker.points.resize(p.contours_[i].size()+1);
+      marker.points[j].x = p.contours_[i][j](0);
+      marker.points[j].y = p.contours_[i][j](1);
+      marker.points[j].z = 0;//p.contours_[i][j](2);
     }
-    marker.points[p.contours[i].size()].x = p.contours[i][0](0);
-    marker.points[p.contours[i].size()].y = p.contours[i][0](1);
-    marker.points[p.contours[i].size()].z = p.contours[i][0](2);
+    marker.points[p.contours_[i].size()].x = p.contours_[i][0](0);
+    marker.points[p.contours_[i].size()].y = p.contours_[i][0](1);
+    marker.points[p.contours_[i].size()].z = 0;//p.contours[i][0](2);
     im_ctrl_.markers.push_back(marker);
 
   }
@@ -1383,9 +1396,10 @@ void ShapeMarker::displayID()
   marker.ns = "contours" ;
 
   //set pose
-  marker.pose.position.x = shape_.centroid.x;
+  marker.pose = shape_.pose;
+  /*marker.pose.position.x = shape_.centroid.x;
   marker.pose.position.y = shape_.centroid.y;
-  marker.pose.position.z = shape_.centroid.z;
+  marker.pose.position.z = shape_.centroid.z;*/
 
   marker.scale.z = 0.1;
 
