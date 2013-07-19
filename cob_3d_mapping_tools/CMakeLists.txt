@@ -56,7 +56,7 @@ rosbuild_link_boost(extract_feature_values program_options)
 
 # extracts pc from organized cloud and saves as ppm:
 rosbuild_add_executable(extract_organized_curvatures common/src/extract_organized_curvatures.cpp)
-target_link_libraries(extract_organized_curvatures cob_3d_mapping_tools cob_3d_mapping_features)
+target_link_libraries(extract_organized_curvatures cob_3d_mapping_tools cob_3d_features)
 rosbuild_link_boost(extract_organized_curvatures program_options)
 
 # some tools for fpfh training:
@@ -68,7 +68,7 @@ rosbuild_add_executable(merge_fpfh_training_data common/src/merge_fpfh_training_
 rosbuild_link_boost(merge_fpfh_training_data program_options)
 rosbuild_add_executable(reduce_fpfh_training_data common/src/reduce_fpfh_training_data.cpp)
 rosbuild_link_boost(reduce_fpfh_training_data program_options)
-target_link_libraries(reduce_fpfh_training_data cob_3d_mapping_features)
+target_link_libraries(reduce_fpfh_training_data cob_3d_features)
 rosbuild_add_executable(fpfh_primitives common/src/fpfh_primitives.cpp)
 target_link_libraries(fpfh_primitives cob_3d_mapping_tools vtkCommon vtkFiltering vtkRendering)
 rosbuild_link_boost(fpfh_primitives program_options)
@@ -120,11 +120,11 @@ target_link_libraries(test_hsv_tool ${wxWidgets_LIBRARIES} cob_3d_mapping_tools)
 rosbuild_link_boost(test_hsv_tool program_options signals)
 
 rosbuild_add_executable(bag_gui ros/src/bag_gui.cpp)
-target_link_libraries(bag_gui ${wxWidgets_LIBRARIES} cob_3d_mapping_tools cob_3d_mapping_features_omp)
+target_link_libraries(bag_gui ${wxWidgets_LIBRARIES} cob_3d_mapping_tools cob_3d_features_omp)
 rosbuild_link_boost(bag_gui signals)
 
 rosbuild_add_executable(gui_normals common/src/gui_normals.cpp)
-target_link_libraries(gui_normals ${wxWidgets_LIBRARIES} cob_3d_mapping_tools cob_3d_mapping_features_omp)
+target_link_libraries(gui_normals ${wxWidgets_LIBRARIES} cob_3d_mapping_tools cob_3d_features_omp)
 rosbuild_link_boost(gui_normals signals)
 
 rosbuild_add_executable(noise_gen ros/src/noise_gen.cpp)
