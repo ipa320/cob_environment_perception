@@ -61,7 +61,7 @@
  ****************************************************************/
 
 
-#include "cob_3d_mapping_features/most_discriminating_data_points.h"
+#include "cob_3d_features/most_discriminating_data_points.h"
 #include <boost/program_options.hpp>
 
 #include <pcl/point_types.h>
@@ -116,7 +116,7 @@ int main(int argc, char** argv)
 			       sizeof(f_in->points[n].histogram) / sizeof(float));
   }
   cout << "copied fpfh" << endl;
-  cob_3d_mapping_features::MostDiscriminatingDataPoints md;
+  cob_3d_features::MostDiscriminatingDataPoints md;
   md.setInputData(&d_in);
   md.setK(k_);
   md.computeDataPoints(&d_out);
