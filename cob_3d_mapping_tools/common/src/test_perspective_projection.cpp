@@ -67,7 +67,7 @@
 #include <cob_3d_mapping_common/point_types.h>
 #include "cob_3d_mapping_common/stop_watch.h"
 
-#include <cob_3d_mapping_features/organized_normal_estimation_omp.h>
+#include <cob_3d_features/organized_normal_estimation_omp.h>
 #include <cob_3d_segmentation/impl/fast_segmentation.hpp>
 
 
@@ -90,7 +90,7 @@ int main (int argc, char** argv)
   r.read(argv[1], *p);
   *s = *p;
 
-  cob_3d_mapping_features::OrganizedNormalEstimationOMP<pcl::PointXYZRGB, pcl::Normal, PointLabel> one;
+  cob_3d_features::OrganizedNormalEstimationOMP<pcl::PointXYZRGB, pcl::Normal, PointLabel> one;
   one.setOutputLabels(l);
   one.setPixelSearchRadius(8,2,2);
   one.setSkipDistantPointThreshold(8);

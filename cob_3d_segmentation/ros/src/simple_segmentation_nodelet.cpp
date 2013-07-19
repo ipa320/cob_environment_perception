@@ -186,86 +186,29 @@ cob_3d_segmentation::SimpleSegmentationNodelet::computeAndPublish()
   cob_3d_mapping_msgs::ShapeArray sa;
   sa.header = down_->header;
   sa.header.frame_id = down_->header.frame_id.c_str();
-  unsigned int id = 0;
+  //unsigned int id = 0;
   for (ClusterPtr c = seg_.clusters()->begin(); c != seg_.clusters()->end(); ++c)
   {
     if(c->size() < min_cluster_size_) {continue;}
-    Eigen::Vector3f centroid = c->getCentroid();
-    if(centroid(2) > centroid_passthrough_) {continue;}
+    if(c->getCentroid()(2) > centroid_passthrough_) {continue;}
     if(c->size() <= ceil(1.1f * (float)c->border_points.size()))  {continue;}
 
     seg_.clusters()->computeClusterComponents(c);
     if(filter_ && !c->is_save_plane) {continue;}
 
-
-    PolygonContours<PolygonPoint> poly;
-    pe_.outline(down_->width, down_->height, c->border_points, poly);
-    if(!poly.polys_.size()) {continue;} // continue, if no contours were found
-    int max_idx=0, max_size=0;
-    for (int i = 0; i < (int)poly.polys_.size(); ++i)
-    {
-      if ((int)poly.polys_[i].size() > max_size) { max_idx = i; max_size = poly.polys_[i].size(); }
-    }
-
     sa.shapes.push_back(cob_3d_mapping_msgs::Shape());
     cob_3d_mapping_msgs::Shape* s = &sa.shapes.back();
     s->header = down_->header;
 
-    std::vector<pcl::PointCloud<pcl::PointXYZ> > contours_3d;
-    std::vector<bool> holes;
-    for (int i = 0; i < (int)poly.polys_.size(); ++i)
-    {
-      pcl::PointCloud<pcl::PointXYZ> contour;
-      if (i == max_idx)
-      {
-        holes.push_back(false);
-        std::vector<PolygonPoint>::iterator it = poly.polys_[i].begin();
-        for ( ; it != poly.polys_[i].end(); ++it) {
-          pcl::PointXYZ pt;
-          pt.getVector3fMap() = down_->points[ it->x + it->y * down_->width ].getVector3fMap();
-          contour.push_back( pt );
-        }
-      }
-      else
-      {
-        holes.push_back(true);
-        std::vector<PolygonPoint>::reverse_iterator it = poly.polys_[i].rbegin();
-        for ( ; it != poly.polys_[i].rend(); ++it) {
-          pcl::PointXYZ pt;
-          pt.getVector3fMap() = down_->points[ it->x + it->y * down_->width ].getVector3fMap();
-          contour.push_back( pt );
-        }
-      }
-      contour.height = 1;
-      contour.width = contour.size();
-      contours_3d.push_back(contour);
-    }
-
-    std::vector<float> color(4, 1);
-    if(colorize_)
-    {
-      Eigen::Vector3f col_tmp = c->computeDominantColorVector().cast<float>();
-      float temp_inv = 1.0f/255.0f;
-      color[0] = col_tmp(0) * temp_inv;
-      color[1] = col_tmp(1) * temp_inv;
-      color[2] = col_tmp(2) * temp_inv;
-    }
-    else
-    {
-      color[0] = 0.0f;
-      color[1] = 0.0f;
-      color[2] = 1.0f;
-    }
-    cob_3d_mapping::Polygon::Ptr  p(new cob_3d_mapping::Polygon(id,
-                                                                c->pca_point_comp3,
-                                                                fabs(c->getCentroid().dot(c->pca_point_comp3)),
-                                                                contours_3d,
-                                                                holes,
-                                                                color));
+    cob_3d_mapping::Polygon::Ptr p;
+    conv_.setColor(colorize_);
+    conv_.setInputCloud(down_);
+    conv_.clusterToPolygon(c, p);
+    //p->id_ = id;
 
     //computeTexture(c, p->pose_, id);
     cob_3d_mapping::toROSMsg(*p, *s);
-    id++;
+    //id++;
   }
 
   pub_shape_array_.publish(sa);

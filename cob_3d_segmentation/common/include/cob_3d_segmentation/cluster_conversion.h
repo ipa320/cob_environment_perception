@@ -88,6 +88,7 @@ namespace cob_3d_segmentation
     ClusterConversion()
     : min_size_(100)
     , max_dist_(5.0f)
+    , colorize_(false)
     {}
 
     virtual ~ClusterConversion() {}
@@ -96,8 +97,9 @@ namespace cob_3d_segmentation
     inline void setInputCloud(const PointCloudConstPtr& p) { p_ = p; }
     inline void setMinClusterSize(int size) { min_size_ = size; }
     inline void setMaxCentroidDistance(float z_distance) { max_dist_ = z_distance; }
+    inline void setColor(bool enable) { colorize_ = enable; }
 
-    bool clusterToPolygon(const ClusterPtr& c, cob_3d_mapping::Polygon& pg)
+    bool clusterToPolygon(const ClusterPtr& c, cob_3d_mapping::Polygon::Ptr& pg)
     {
       cob_3d_segmentation::PolygonContours<cob_3d_segmentation::PolygonPoint> poly;
       pe_.outline(p_->width,p_->height,c->border_points,poly);
@@ -105,44 +107,56 @@ namespace cob_3d_segmentation
       int max_idx=0, max_size=0;
       for (int i=0; i<(int)poly.polys_.size(); ++i)
       {
-        if( (int)poly.polys_[i].size() > max_size) {
+        if( (int)poly.polys_[i].size() > max_size)
+        {
           max_idx = i;
           max_size = poly.polys_[i].size();
         }
       }
 
-      Eigen::Vector3f centroid = c->getCentroid();
-
-      pg.id = c->id();
-      Eigen::Matrix3f M = Eigen::Matrix3f::Identity() - c->pca_point_comp3 * c->pca_point_comp3.transpose();
-      for(int i=0; i<(int)poly.polys_.size(); ++i)
+      std::vector<pcl::PointCloud<pcl::PointXYZ> > contours_3d;
+      std::vector<bool> holes;
+      for (int i = 0; i < (int)poly.polys_.size(); ++i)
       {
-        if (i==max_idx)
+        int n_points = poly.polys_[i].size();
+        int reverse;
+        pcl::PointCloud<pcl::PointXYZ> contour;
+        contour.resize(n_points);
+        if (i == max_idx) { holes.push_back(false); reverse = 0; }
+        else              { holes.push_back(true);  reverse = n_points - 1; }
+
+        for (int idx = 0; idx < n_points; ++idx)
         {
-          pg.holes.push_back(false);
-          pg.contours.push_back(std::vector<Eigen::Vector3f>());
-          std::vector<cob_3d_segmentation::PolygonPoint>::iterator it = poly.polys_[i].begin();
-          for( ; it!=poly.polys_[i].end(); ++it)
-          {
-            pg.contours.back().push_back( M * ( (*p_)[it->x + it->y * p_->width].getVector3fMap() - centroid ) );
-            pg.contours.back().back() += centroid;
-          }
+          PolygonPoint& pp = (poly.polys_[i])[abs(reverse - idx)];
+          contour[idx].getVector3fMap() = p_->points[ pp.x + pp.y * p_->width ].getVector3fMap();
         }
-        else
-        {
-          pg.holes.push_back(true);
-          pg.contours.push_back(std::vector<Eigen::Vector3f>());
-          std::vector<cob_3d_segmentation::PolygonPoint>::reverse_iterator it = poly.polys_[i].rbegin();
-          for( ; it!=poly.polys_[i].rend(); ++it)
-          {
-            pg.contours.back().push_back( M * ( (*p_)[it->x + it->y * p_->width].getVector3fMap() - centroid ) );
-            pg.contours.back().back() += centroid;
-          }
-        }
+        contour.height = 1;
+        contour.width = contour.size();
+        contours_3d.push_back(contour);
       }
-      pg.centroid << centroid(0), centroid(1), centroid(2), 1.0f;
-      pg.normal = c->pca_point_comp3;
-      pg.d = fabs(centroid.dot(c->pca_point_comp3));
+
+      std::vector<float> color(4, 1);
+      if(colorize_)
+      {
+        Eigen::Vector3i col_tmp( c->computeDominantColorVector() );
+        float temp_inv = 1.0f/255.0f;
+        color[0] = float(col_tmp(0)) * temp_inv;
+        color[1] = float(col_tmp(1)) * temp_inv;
+        color[2] = float(col_tmp(2)) * temp_inv;
+      }
+      else
+      {
+        color[0] = 0.0f;
+        color[1] = 0.0f;
+        color[2] = 1.0f;
+      }
+      pg.reset(new cob_3d_mapping::Polygon(c->id(),
+                                           c->pca_point_comp3,
+                                           fabs(c->getCentroid().dot(c->pca_point_comp3)),
+                                           contours_3d,
+                                           holes,
+                                           color));
+
       return true;
     }
 
@@ -157,8 +171,8 @@ namespace cob_3d_segmentation
         ch_->computeClusterComponents(c);
         if(!c->is_save_plane) continue;
 
-        cob_3d_mapping::Polygon::Ptr p(new cob_3d_mapping::Polygon);
-        if(clusterToPolygon(c, *p)) {
+        cob_3d_mapping::Polygon::Ptr p;
+        if(clusterToPolygon(c, p)) {
           polygons.push_back(p);
         }
       }
@@ -167,6 +181,7 @@ namespace cob_3d_segmentation
     protected:
     int min_size_;
     float max_dist_;
+    bool colorize_;
 
     PolygonExtraction pe_;
     ClusterHdlPtr ch_;
