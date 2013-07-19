@@ -84,9 +84,9 @@ TableExtraction::isTable()
 bool
 TableExtraction::isHorizontal ()
 {
-  //check components of normal vector with threshold values
-  if ((poly_ptr_->normal (2) >= norm_z_max_ || poly_ptr_->normal (2) <= norm_z_min_) && (poly_ptr_->normal (0) < norm_x_max_
-      && poly_ptr_->normal (0) > norm_x_min_) && (poly_ptr_->normal (1) < norm_y_max_ && poly_ptr_->normal (1) > norm_y_min_))
+  //check components of normal_ vector with threshold values
+  if ((poly_ptr_->normal_ (2) >= norm_z_max_ || poly_ptr_->normal_ (2) <= norm_z_min_) && (poly_ptr_->normal_ (0) < norm_x_max_
+      && poly_ptr_->normal_ (0) > norm_x_min_) && (poly_ptr_->normal_ (1) < norm_y_max_ && poly_ptr_->normal_ (1) > norm_y_min_))
   {
     return true;
   }
@@ -99,7 +99,7 @@ TableExtraction::isHorizontal ()
 bool
 TableExtraction::isHeightOk ()
 {
-  if(poly_ptr_->centroid(2) > height_min_ && poly_ptr_->centroid(2) < height_max_)
+  if(poly_ptr_->pose_.translation()(2) > height_min_ && poly_ptr_->pose_.translation()(2) < height_max_)
     return true;
   else return false;
 }
@@ -108,7 +108,7 @@ TableExtraction::isHeightOk ()
 bool
 TableExtraction::isSizeOk ()
 {
-  double area = poly_ptr_->computeArea();
+  double area = poly_ptr_->computeArea3d();
   if (area >= area_min_ && area <= area_max_)
     return true;
   return false;
@@ -129,7 +129,7 @@ TableExtraction::calcPolyCentroid (Polygon::Ptr poly_ptr_)
   double tri_area;
   double mag_cross_p;
 
-  centroid_.resize (poly_ptr_->poly_points.size ());
+  pose_.translation()_.resize (poly_ptr_->poly_points.size ());
   for (unsigned int i = 0; i < poly_ptr_->poly_points.size (); i++)
   {
     //initialize variables
@@ -186,15 +186,15 @@ TableExtraction::calcPolyCentroid (Polygon::Ptr poly_ptr_)
       area = area + tri_area;
 
     }
-    centroid_[i].x = (sum1 / area);
-    centroid_[i].y = (sum2 / area);
-    centroid_[i].z = (sum3 / area);
-    poly_ptr_->centroid = centroid_;
+    pose_.translation()_[i].x = (sum1 / area);
+    pose_.translation()_[i].y = (sum2 / area);
+    pose_.translation()_[i].z = (sum3 / area);
+    poly_ptr_->pose_.translation() = pose_.translation()_;
 
     std::cout << "\n\t*** Centroid of polygon ( " << i << " ) " << std::endl;
-    std::cout << "\tCx:" << centroid_[i].x;
-    std::cout << "\tCy:" << centroid_[i].y;
-    std::cout << "\tCz:" << centroid_[i].z << std::endl;
+    std::cout << "\tCx:" << pose_.translation()_[i].x;
+    std::cout << "\tCy:" << pose_.translation()_[i].y;
+    std::cout << "\tCz:" << pose_.translation()_[i].z << std::endl;
     std::cout << "\n\t*** Area of polygon ( " << i << " ) = "<< area << std::endl;
 
   }

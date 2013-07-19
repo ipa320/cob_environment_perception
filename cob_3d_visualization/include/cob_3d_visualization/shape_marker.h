@@ -101,7 +101,7 @@
 #include <Eigen/Core>
 
 //#include <cob_3d_mapping_msgs/ShapeArray.h>
-#include <cob_3d_visualization/polypartition.h>
+//#include <cob_3d_mapping_common/polypartition.h>
 #include <cob_3d_mapping_msgs/ModifyMap.h>
 #include <cob_3d_mapping_common/ros_msg_conversions.h>
 #include "cob_3d_mapping_common/polygon.h"

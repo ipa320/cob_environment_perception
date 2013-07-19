@@ -64,9 +64,11 @@
 #include <cob_3d_mapping_msgs/ShapeArray.h>
 #include "cob_3d_mapping_common/polygon.h"
 #include "cob_3d_mapping_common/cylinder.h"
+#include <eigen_conversions/eigen_msg.h>
 
 namespace cob_3d_mapping
 {
+  //TODO: purpose? where used? is this the correct place?
   // should work for cob_3d_mapping_msgs::Shape, Polygon, Cylinder
   template<typename ShapeT>
   inline int getHullIndex(const ShapeT& s)
@@ -102,35 +104,37 @@ namespace cob_3d_mapping
   inline void
   toROSMsg(const Polygon& p, cob_3d_mapping_msgs::Shape& s)
   {
-    s.id = p.id;
+    s.id = p.id_;
     s.type = cob_3d_mapping_msgs::Shape::POLYGON;
     s.params.resize(4);
-    s.params[0] = p.normal(0);
-    s.params[1] = p.normal(1);
-    s.params[2] = p.normal(2);
-    s.params[3] = p.d;
-    s.centroid.x = p.centroid(0);
-    s.centroid.y = p.centroid(1);
-    s.centroid.z = p.centroid(2);
-    s.color.r = p.color[0];
-    s.color.g = p.color[1];
-    s.color.b = p.color[2];
-    s.color.a = p.color[3];
+    s.params[0] = p.normal_(0);
+    s.params[1] = p.normal_(1);
+    s.params[2] = p.normal_(2);
+    s.params[3] = p.d_;
+    tf::poseEigenToMsg(p.pose_.cast<double>(), s.pose);
+    //s.centroid.x = p.centroid(0);
+    //s.centroid.y = p.centroid(1);
+    //s.centroid.z = p.centroid(2);
+    s.color.r = p.color_[0];
+    s.color.g = p.color_[1];
+    s.color.b = p.color_[2];
+    s.color.a = p.color_[3];
+    s.weight = p.merge_weight_;
 
-    s.points.resize(p.contours.size());
-    s.holes.resize(p.holes.size());
+    s.points.resize(p.contours_.size());
+    s.holes.resize(p.holes_.size());
 
-    for(unsigned int i=0; i<p.contours.size(); i++)
+    for(unsigned int i=0; i < p.contours_.size(); i++)
     {
-      s.holes[i] = p.holes[i];
+      s.holes[i] = p.holes_[i];
       //s.points[i].points.resize(p.contours[i].size());
       pcl::PointCloud<pcl::PointXYZ> cloud;
-      for(unsigned int j=0; j<p.contours[i].size(); j++)
+      for(unsigned int j=0; j<p.contours_[i].size(); j++)
       {
         pcl::PointXYZ pt;
-        pt.x = p.contours[i][j](0);
-        pt.y = p.contours[i][j](1);
-        pt.z = p.contours[i][j](2);
+        pt.x = p.contours_[i][j](0);
+        pt.y = p.contours_[i][j](1);
+        pt.z = 0;//p.contours[i][j](2);
         cloud.points.push_back(pt);
         /*s.points[i].points[j].x = p.contours[i][j](0);
         s.points[i].points[j].y = p.contours[i][j](1);
@@ -155,42 +159,46 @@ namespace cob_3d_mapping
   inline bool
   fromROSMsg(const cob_3d_mapping_msgs::Shape& s, Polygon& p)
   {
-    p.id = s.id;
-    p.centroid(0) = s.centroid.x;
+    p.id_ = s.id;
+    /*p.centroid(0) = s.centroid.x;
     p.centroid(1) = s.centroid.y;
-    p.centroid(2) = s.centroid.z;
-    p.normal(0) = s.params[0];
-    p.normal(1) = s.params[1];
-    p.normal(2) = s.params[2];
-    p.d = s.params[3];
-    p.merged = 1;
-    p.color[0] = s.color.r;
-    p.color[1] = s.color.g;
-    p.color[2] = s.color.b;
-    p.color[3] = s.color.a;
+    p.centroid(2) = s.centroid.z;*/
+    Eigen::Affine3d pose;
+    tf::poseMsgToEigen(s.pose, pose);
+    p.pose_ = pose.cast<float>();
+    p.normal_(0) = s.params[0];
+    p.normal_(1) = s.params[1];
+    p.normal_(2) = s.params[2];
+    p.d_ = s.params[3];
+    //p.merged_ = 1;
+    p.color_[0] = s.color.r;
+    p.color_[1] = s.color.g;
+    p.color_[2] = s.color.b;
+    p.color_[3] = s.color.a;
+    p.merge_weight_ = s.weight;
     //p.contours.resize(p.polygons.size());
     for(unsigned int i=0; i<s.points.size(); i++)
     {
-      p.holes.push_back(s.holes[i]);
+      p.holes_.push_back(s.holes[i]);
       if(s.points[i].data.size())
       {
         pcl::PointCloud<pcl::PointXYZ> cloud;
         pcl::fromROSMsg(s.points[i], cloud);
-        std::vector<Eigen::Vector3f> pts;
+        std::vector<Eigen::Vector2f> pts;
         pts.resize(cloud.points.size());
         for(unsigned int j=0; j<cloud.points.size(); j++)
         {
           pts[j](0) = cloud.points[j].x;
           pts[j](1) = cloud.points[j].y;
-          pts[j](2) = cloud.points[j].z;
+          //pts[j](2) = cloud.points[j].z;
         }
-        p.contours.push_back(pts);
-        pcl::getTransformationFromTwoUnitVectorsAndOrigin(
-            p.normal.unitOrthogonal(),p.normal,p.centroid.head(3),p.transform_from_world_to_plane);
+        p.contours_.push_back(pts);
+        //pcl::getTransformationFromTwoUnitVectorsAndOrigin(
+        //    p.normal_.unitOrthogonal(),p.normal_,p.centroid.head(3),p.transform_from_world_to_plane);
       }
       else
       {
-        std::cout << "shape has no points" << std::endl;
+        std::cout << "Polygon has no points" << std::endl;
         return false;
       }
     }
@@ -200,41 +208,43 @@ namespace cob_3d_mapping
   inline void
   toROSMsg(const Cylinder& c, cob_3d_mapping_msgs::Shape& s)
   {
-    s.params.resize(10);
-    s.params[0]=c.normal[0];
-    s.params[1]=c.normal[1];
-    s.params[2]=c.normal[2];
-    s.params[3]=c.sym_axis[0];
-    s.params[4]=c.sym_axis[1];
-    s.params[5]=c.sym_axis[2];
-    s.params[6]=c.origin_[0];
+    s.params.resize(6);
+    /*s.params[0]=c.normal_[0];
+    s.params[1]=c.normal_[1];
+    s.params[2]=c.normal_[2];*/
+    s.params[0] = c.sym_axis_[0];
+    s.params[1] = c.sym_axis_[1];
+    s.params[2] = c.sym_axis_[2];
+    /*s.params[6]=c.origin_[0];
     s.params[7]=c.origin_[1];
-    s.params[8]=c.origin_[2];
-    s.params[9]=c.r_;
-    s.centroid.x = c.centroid[0];
-    s.centroid.y = c.centroid[1];
-    s.centroid.z = c.centroid[2];
-    s.id=c.id;
+    s.params[8]=c.origin_[2];*/
+    s.params[3] = c.r_;
+    s.params[4] = c.h_min_;
+    s.params[5] = c.h_max_;
+    tf::poseEigenToMsg(c.pose_.cast<double>(), s.pose);
+    s.id = c.id_;
     s.type = cob_3d_mapping_msgs::Shape::CYLINDER;
-    s.color.r=c.color[0];
-    s.color.g=c.color[1];
-    s.color.b=c.color[2];
-    s.color.a=c.color[3];
-    s.points.resize(c.contours.size());
-    s.holes.resize(c.holes.size());
+    s.weight = c.merge_weight_;
+    s.color.r = c.color_[0];
+    s.color.g = c.color_[1];
+    s.color.b = c.color_[2];
+    s.color.a = c.color_[3];
+    s.points.resize(c.contours_.size());
+    s.holes.resize(c.holes_.size());
 
-    for(unsigned int i=0; i<c.contours.size(); i++)
+    for(unsigned int i=0; i<c.contours_.size(); i++)
     {
-      s.holes[i] = c.holes[i];
+      s.holes[i] = c.holes_[i];
       //s.points[i].points.resize(p.contours[i].size());
       pcl::PointCloud<pcl::PointXYZ> cloud;
-      for(unsigned int j=0; j<c.contours[i].size(); j++)
+      for(unsigned int j=0; j<c.contours_[i].size(); j++)
       {
         pcl::PointXYZ pt;
-        pt.x = c.contours[i][j](0);
-        pt.y = c.contours[i][j](1);
-        pt.z = c.contours[i][j](2);
+        pt.x = c.contours_[i][j](0);
+        pt.y = c.contours_[i][j](1);
+        pt.z = 0;
         cloud.points.push_back(pt);
+        //std::cout << pt.x << "," << pt.y << std::endl;
       }
       sensor_msgs::PointCloud2 cloud_msg;
       pcl::toROSMsg(cloud, cloud_msg);
@@ -245,55 +255,54 @@ namespace cob_3d_mapping
   inline bool
   fromROSMsg(const cob_3d_mapping_msgs::Shape& s,Cylinder& c)
   {
-    c.id = s.id;
-    c.normal[0] = s.params[0];
-    c.normal[1] = s.params[1];
-    c.normal[2] = s.params[2];
-    c.sym_axis[0]= s.params[3];
-    c.sym_axis[1] = s.params[4];
-    c.sym_axis[2] = s.params[5];
-    c.origin_[0] = s.params[6];
+    c.id_ = s.id;
+    /*c.normal_[0] = s.params[0];
+    c.normal_[1] = s.params[1];
+    c.normal_[2] = s.params[2];*/
+    c.sym_axis_[0]= s.params[0];
+    c.sym_axis_[1] = s.params[1];
+    c.sym_axis_[2] = s.params[2];
+    /*c.origin_[0] = s.params[6];
     c.origin_[1] = s.params[7];
-    c.origin_[2] = s.params[8];
-    c.r_ = s.params[9];
-    c.centroid[0]=s.centroid.x;
-    c.centroid[1]=s.centroid.y;
-    c.centroid[2]=s.centroid.z;
-    c.merged = 1;
-    c.color[0] = s.color.r;
-    c.color[1] = s.color.g;
-    c.color[2] = s.color.b;
-    c.color[3] = s.color.a;
+    c.origin_[2] = s.params[8];*/
+    c.r_ = s.params[3];
+    c.h_min_ = s.params[4];
+    c.h_max_ = s.params[5];
+    Eigen::Affine3d pose;
+    tf::poseMsgToEigen(s.pose, pose);
+    c.pose_ = pose.cast<float>();
+    //c.merged_ = 1;
+    c.merge_weight_ = s.weight;
+    c.color_[0] = s.color.r;
+    c.color_[1] = s.color.g;
+    c.color_[2] = s.color.b;
+    c.color_[3] = s.color.a;
 
     for(unsigned int i=0; i<s.points.size(); i++)
     {
-      c.holes.push_back(s.holes[i]);
+      c.holes_.push_back(s.holes[i]);
       if(s.points[i].data.size())
       {
         pcl::PointCloud<pcl::PointXYZ> cloud;
         pcl::fromROSMsg(s.points[i], cloud);
-        std::vector<Eigen::Vector3f> pts;
+        std::vector<Eigen::Vector2f> pts;
         pts.resize(cloud.points.size());
         for(unsigned int j=0; j<cloud.points.size(); j++)
         {
           pts[j](0) = cloud.points[j].x;
           pts[j](1) = cloud.points[j].y;
-          pts[j](2) = cloud.points[j].z;
+          //pts[j](2) = 0;
         }
-        c.contours.push_back(pts);
+        c.contours_.push_back(pts);
       }
       else
       {
-        std::cout << "cylinder has no points" << std::endl;
+        std::cout << "Cylinder has no points" << std::endl;
         return false;
       }
     }
     return true;
   }
-
-
-
-
 }
 
 #endif

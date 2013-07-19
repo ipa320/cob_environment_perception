@@ -79,34 +79,25 @@
 #include <dynamic_reconfigure/server.h>
 #include <cob_3d_mapping_common/keyframe_detectorConfig.h>
 
-
-
 using namespace tf;
 using namespace cob_3d_mapping_common;
 
 //####################
 //#### node class ####
-class KeyframeDetector //: protected Reconfigurable_Node<keyframe_detectorConfig>
+class KeyframeDetector
 {
 
 public:
   // Constructor
   KeyframeDetector()
-  : first_(true), trigger_always_(false)
-    {
+  : first_(true),
+    trigger_always_(false)
+  {
     config_server_.setCallback(boost::bind(&KeyframeDetector::dynReconfCallback, this, _1, _2));
     point_cloud_sub_ = n_.subscribe("camera_info", 1, &KeyframeDetector::pointCloudSubCallback, this);
     transform_sub_ = n_.subscribe("/tf", 1, &KeyframeDetector::transformSubCallback, this);
     keyframe_trigger_client_ = n_.serviceClient<cob_srvs::Trigger>("trigger_keyframe");
-
-    /*n_.param("aggregate_point_map/r_limit",r_limit_,0.01);
-    n_.param("aggregate_point_map/y_limit",y_limit_,0.01);
-    n_.param("aggregate_point_map/p_limit",p_limit_,0.01);
-    n_.param("aggregate_point_map/distance_limit",distance_limit_,0.03);
-    n_.param("aggregate_point_map/trigger_always",trigger_always_,false);*/
-
-    //setReconfigureCallback(boost::bind(&callback, this, _1, _2));
-    }
+  }
 
 
   // Destructor
@@ -124,22 +115,6 @@ public:
     trigger_always_ = config.trigger_always;
   }
 
-  // callback for dynamic reconfigure
-  /*static void callback(KeyframeDetector *inst, keyframe_detectorConfig &config, uint32_t level)
-  {
-    if(!inst)
-      return;
-
-    boost::mutex::scoped_lock l2(inst->m_mutex_pointCloudSubCallback);
-
-    inst->r_limit_ = config.r_limit;
-    inst->p_limit_ = config.p_limit;
-    inst->y_limit_ = config.y_limit;
-    inst->distance_limit_ = config.distance_limit;
-    inst->trigger_always_ = config.trigger_always;
-
-  }*/
-
   void
   pointCloudSubCallback(sensor_msgs::CameraInfo::ConstPtr pc_in)
   {
@@ -150,33 +125,15 @@ public:
   void
   transformSubCallback(const tf::tfMessageConstPtr& msg)
   {
-    r_limit_=p_limit_=y_limit_=distance_limit_=0.01;
     boost::mutex::scoped_lock l(m_mutex_pointCloudSubCallback);
 
-    if(frame_id_.size()<1) {
-      ROS_WARN("frame id is missing");
-	//frame_id_="head_cam3d_link";
+    if(frame_id_.size() < 1) {
+      ROS_WARN("KeyframeDetector: Frame id is missing, no key frame detected");
       return;
     }
-
-    //pcl::PointCloud<Point>::Ptr pc = pcl::PointCloud<Point>::Ptr(new pcl::PointCloud<Point>);
-
     StampedTransform transform;
-    /*
-          std::string mapped_src = assert_resolved(tf_prefix_, source_frame);
-
-          if (mapped_tgt == mapped_src) {
-                  transform.setIdentity();
-                  transform.child_frame_id_ = mapped_src;
-                  transform.frame_id_       = mapped_tgt;
-                  transform.stamp_          = now();
-                  return;
-          }
-          */
     try
     {
-      //ROS_INFO("%s", frame_id_.c_str());
-      std::stringstream ss2;
       tf_listener_.waitForTransform("/map", frame_id_, ros::Time(0), ros::Duration(0.1));
       tf_listener_.lookupTransform("/map", frame_id_, ros::Time(0), transform);
       KDL::Frame frame_KDL, frame_KDL_old;
@@ -202,9 +159,6 @@ public:
     }
   }
 
-  ros::NodeHandle n_;
-  ros::Time stamp_;
-
   bool triggerKeyFrame() {
     cob_srvs::Trigger::Request req;
     cob_srvs::Trigger::Response res;
@@ -217,12 +171,13 @@ public:
       ROS_WARN("KeyFrame service called [FAILED].", res.success.data);
       return false;
     }
-
     return res.success.data;
   }
 
 
 protected:
+  ros::NodeHandle n_;
+  ros::Time stamp_;
   ros::Subscriber point_cloud_sub_, transform_sub_;             //subscriber for input pc
   TransformListener tf_listener_;
   ros::ServiceClient keyframe_trigger_client_;

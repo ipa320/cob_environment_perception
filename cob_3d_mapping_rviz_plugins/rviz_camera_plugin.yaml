@@ -1,8 +1,0 @@
-name: cob_3d_mapping_rviz_plugins
-library: cob_3d_mapping_rviz_plugins
-view controllers:
-  -
-    class_name: GetRvizCamera
-    description: |
-      Can set rviz camera
-

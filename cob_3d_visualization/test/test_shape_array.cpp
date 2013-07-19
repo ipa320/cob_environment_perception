@@ -17,12 +17,14 @@
 #include <math.h>
 #include <Eigen/Core>
 #include <boost/shared_ptr.hpp>
+#include <pcl/common/eigen.h>
+#include <eigen_conversions/eigen_msg.h>
 
 #define PI 3.14159265
 using namespace std;
 
 void
-firstShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vector3f color)
+firstShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f origin, Eigen::Vector3f normal, Eigen::Vector3f x_axis, Eigen::Vector3f color)
 {
   pcl::PointXYZ pt;
   pcl::PointCloud<pcl::PointXYZ> pc;
@@ -30,18 +32,22 @@ firstShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vector
 
   s.id = 0;
 
+  Eigen::Affine3f t;
+  pcl::getTransformationFromTwoUnitVectorsAndOrigin(normal.cross(x_axis), normal, origin, t);
+  tf::poseEigenToMsg(t.inverse().cast<double>(), s.pose);
+
   //first shape
   s.params[0] = normal[0];
   s.params[1] = normal[1];
   s.params[2] = normal[2];
-  s.params[3] = 0;
+  s.params[3] = origin.dot(normal);
 
   s.color.r = color[0];
   s.color.g = color[1];
   s.color.b = color[2];
   s.color.a = 1;
 
-  float z = 2;
+  float z = 0;
 
   pt.x = 0.0;
   pt.y = 0.0;
@@ -63,37 +69,34 @@ firstShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vector
   pt.z = z;
   pc.push_back (pt);
 
-  /*
-   pt.x = 0.0;
-   pt.y = 0.0;
-   pt.z = z;
-   pc.push_back (pt);
-   */
-  Eigen::VectorXf centroid;
-  pcl::computeNDCentroid (pc, centroid);
-  //std::cout<<" centroid : "<<centroid<<"\n X: "<<centroid[0]<<"\n Y: "<<centroid[1]<<"\n Z: "<<centroid[2]<<std::endl;
-
-  s.centroid.x = centroid[0];
-  s.centroid.y = centroid[1];
-  s.centroid.z = centroid[2];
+  pt.x = 0.7;
+  pt.y = 0.7;
+  pt.z = z;
+  pc.push_back (pt);
 
   pcl::toROSMsg (pc, pc2);
   s.points.push_back (pc2);
+
+  s.holes.push_back(false);
 }
 
 void
-secondShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vector3f color)
+secondShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f origin, Eigen::Vector3f normal, Eigen::Vector3f x_axis, Eigen::Vector3f color)
 {
   pcl::PointXYZ pt;
-  pcl::PointCloud<pcl::PointXYZ> pc;
-  sensor_msgs::PointCloud2 pc2;
+  pcl::PointCloud<pcl::PointXYZ> pc, pc_h;
+  sensor_msgs::PointCloud2 pc2, pc2_h;
 
   s.id = 1;
 
   s.params[0] = normal[0];
   s.params[1] = normal[1];
   s.params[2] = normal[2];
-  s.params[3] = 0;
+  s.params[3] = origin.dot(normal);
+
+  Eigen::Affine3f t;
+  pcl::getTransformationFromTwoUnitVectorsAndOrigin(normal.cross(x_axis), normal, origin, t);
+  tf::poseEigenToMsg(t.inverse().cast<double>(), s.pose);
 
   s.color.r = color[0];
   s.color.g = color[1];
@@ -102,44 +105,45 @@ secondShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vecto
 
   pt.x = 0;
   pt.y = 0;
-  pt.z = -1;
+  pt.z = 0;
   pc.push_back (pt);
 
   pt.x = 2;
   pt.y = 0;
-  pt.z = -1;
   pc.push_back (pt);
 
   pt.x = 2;
   pt.y = 2;
-  pt.z = -1;
   pc.push_back (pt);
 
   pt.x = 0;
   pt.y = 2;
-  pt.z = 1;
   pc.push_back (pt);
 
-  /*
-   pt.x = 2;
-   pt.y = 2;
-   pt.z = 2;
-   pc.push_back (pt);
-   */
-  Eigen::VectorXf centroid;
-  pcl::computeNDCentroid (pc, centroid);
-  //std::cout<<" centroid : "<<centroid<<"--> X: "<<centroid[0]<<"--> Y: "<<centroid[1]<<"--> Z: "<<centroid[2]<<std::endl;
+  pt.x = 0.5;
+  pt.y = 0.5;
+  pc_h.push_back(pt);
 
-  s.centroid.x = centroid[0];
-  s.centroid.y = centroid[1];
-  s.centroid.z = centroid[2];
+  pt.x = 0.5;
+  pt.y = 1;
+  pc_h.push_back(pt);
+
+  pt.x = 1;
+  pt.y = 0.5;
+  pc_h.push_back(pt);
 
   pcl::toROSMsg (pc, pc2);
   s.points.push_back (pc2);
+
+  pcl::toROSMsg (pc_h, pc2_h);
+  s.points.push_back (pc2_h);
+
+  s.holes.push_back(false);
+  s.holes.push_back(true);
 }
 
 void
-thirdShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vector3f color)
+thirdShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f origin, Eigen::Vector3f normal, Eigen::Vector3f x_axis, Eigen::Vector3f color)
 {
   pcl::PointXYZ pt;
   pcl::PointCloud<pcl::PointXYZ> pc;
@@ -150,7 +154,11 @@ thirdShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vector
   s.params[0] = normal[0];
   s.params[1] = normal[1];
   s.params[2] = normal[2];
-  s.params[3] = 0;
+  s.params[3] = origin.dot(normal);
+
+  Eigen::Affine3f t;
+  pcl::getTransformationFromTwoUnitVectorsAndOrigin(normal.cross(x_axis), normal, origin, t);
+  tf::poseEigenToMsg(t.inverse().cast<double>(), s.pose);
 
   s.color.r = color[0];
   s.color.g = color[1];
@@ -159,33 +167,35 @@ thirdShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vector
 
   pt.x = -5;
   pt.y = -5;
-  pt.z = -2;
+  pt.z = 0;
   pc.push_back (pt);
 
   pt.x = -5;
   pt.y = -1;
-  pt.z = -2;
+  pt.z = 0;
   pc.push_back (pt);
 
   pt.x = -6;
   pt.y = -5;
-  pt.z = -2;
+  pt.z = 0;
   pc.push_back (pt);
 
-  Eigen::VectorXf centroid;
-  pcl::computeNDCentroid (pc, centroid);
+  //Eigen::VectorXf centroid;
+  //pcl::computeNDCentroid (pc, centroid);
   //std::cout<<" centroid : "<<centroid<<"--> X: "<<centroid[0]<<"--> Y: "<<centroid[1]<<"--> Z: "<<centroid[2]<<std::endl;
 
-  s.centroid.x = centroid[0];
+  /*s.centroid.x = centroid[0];
   s.centroid.y = centroid[1];
-  s.centroid.z = centroid[2];
+  s.centroid.z = centroid[2];*/
 
   pcl::toROSMsg (pc, pc2);
   s.points.push_back (pc2);
+
+  s.holes.push_back(false);
 }
 
 void
-fourthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vector3f color)
+fourthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f origin, Eigen::Vector3f normal, Eigen::Vector3f x_axis, Eigen::Vector3f color)
 {
   pcl::PointXYZ pt;
   pcl::PointCloud<pcl::PointXYZ> pc;
@@ -211,7 +221,11 @@ fourthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vecto
   s.params[0] = normal[0];
   s.params[1] = normal[1];
   s.params[2] = normal[2];
-  s.params[3] = 0;
+  s.params[3] = origin.dot(normal);
+
+  Eigen::Affine3f t;
+  pcl::getTransformationFromTwoUnitVectorsAndOrigin(normal.cross(x_axis), normal, origin, t);
+  tf::poseEigenToMsg(t.inverse().cast<double>(), s.pose);
 
   s.color.r = color[0];
   s.color.g = color[1];
@@ -254,7 +268,7 @@ fourthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vecto
   pc.push_back (pt);
 
   //x = v4[0], y = v4[1], z = v4[2];
-  x = 0, y = 0, z = 1;
+  x = 0, y = 0, z = 0;
   pt.x = x;
   pt.y = y;
   pt.z = z;
@@ -273,20 +287,21 @@ fourthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vecto
    pt.z = z;
    pc.push_back (pt);
    */
-  Eigen::VectorXf centroid;
-  pcl::computeNDCentroid (pc, centroid);
+  //Eigen::VectorXf centroid;
+  //pcl::computeNDCentroid (pc, centroid);
   //std::cout << " centroid : \n" << centroid << std::endl;
   //std::cout << " point cloud : \n" << pc << std::endl;
-  s.centroid.x = centroid[0];
+  /*s.centroid.x = centroid[0];
   s.centroid.y = centroid[1];
-  s.centroid.z = centroid[2];
+  s.centroid.z = centroid[2];*/
   pcl::toROSMsg (pc, pc2);
   s.points.push_back (pc2);
 
+  s.holes.push_back(false);
 }
 
 void
-fifthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vector3f color)
+fifthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f origin, Eigen::Vector3f normal, Eigen::Vector3f x_axis, Eigen::Vector3f color)
 {
   pcl::PointXYZ pt;
   pcl::PointCloud<pcl::PointXYZ> pc;
@@ -297,7 +312,11 @@ fifthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vector
   s.params[0] = normal[0];
   s.params[1] = normal[1];
   s.params[2] = normal[2];
-  s.params[3] = 0;
+  s.params[3] = origin.dot(normal);
+
+  Eigen::Affine3f t;
+  pcl::getTransformationFromTwoUnitVectorsAndOrigin(normal.cross(x_axis), normal, origin, t);
+  tf::poseEigenToMsg(t.inverse().cast<double>(), s.pose);
 
   s.color.r = color[0];
   s.color.g = color[1];
@@ -339,7 +358,7 @@ fifthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vector
   pt.z = z;
   pc.push_back (pt);
 
-  x = 1.5 , y = -1, z = 0.5;
+  x = 1.5 , y = -1, z = 0;
 
   pt.x = x;
   pt.y = y;
@@ -347,56 +366,57 @@ fifthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vector
   pc.push_back (pt);
 
 
-  x = 0.8 , y = -1, z = 1.2;
+  x = 0.8 , y = -1, z = 0;
 
   pt.x = x;
   pt.y = y;
   pt.z = z;
   pc.push_back (pt);
 
-  x = 0.5 , y = -1, z = 1.5;
+  x = 0.5 , y = -1, z = 0;
   pt.x = x;
   pt.y = y;
   pt.z = z;
   pc.push_back (pt);
 
-  x = 0 , y = -1, z = 1;
+  x = 0 , y = -1, z = 0;
   pt.x = x;
   pt.y = y;
   pt.z = z;
   pc.push_back (pt);
 
-  x = -1 , y = -1, z = 2;
+  x = -1 , y = -1, z = 0;
   pt.x = x;
   pt.y = y;
   pt.z = z;
   pc.push_back (pt);
 
-  x = 0 , y = -1, z = 0.5;
+  x = 0 , y = -1, z = 0;
   pt.x = x;
   pt.y = y;
   pt.z = z;
   pc.push_back (pt);
 
-  x = -0.5 , y = -1, z = -0.5;
+  x = -0.5 , y = -1, z = 0;
   pt.x = x;
   pt.y = y;
   pt.z = z;
   pc.push_back (pt);
-  Eigen::VectorXf centroid;
-  pcl::computeNDCentroid (pc, centroid);
+  //Eigen::VectorXf centroid;
+  //pcl::computeNDCentroid (pc, centroid);
   //std::cout << " centroid : \n" << centroid << std::endl;
 
-  s.centroid.x = centroid[0];
+  /*s.centroid.x = centroid[0];
   s.centroid.y = centroid[1];
-  s.centroid.z = centroid[2];
+  s.centroid.z = centroid[2];*/
   pcl::toROSMsg (pc, pc2);
   s.points.push_back (pc2);
 
+  s.holes.push_back(false);
 }
 
 void
-sixthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vector3f color)
+sixthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f origin, Eigen::Vector3f normal, Eigen::Vector3f x_axis, Eigen::Vector3f color)
 {
 
   pcl::PointXYZ pt;
@@ -408,7 +428,11 @@ sixthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vector
   s.params[0] = normal[0];
   s.params[1] = normal[1];
   s.params[2] = normal[2];
-  s.params[3] = 0;
+  s.params[3] = origin.dot(normal);
+
+  Eigen::Affine3f t;
+  pcl::getTransformationFromTwoUnitVectorsAndOrigin(normal.cross(x_axis), normal, origin, t);
+  tf::poseEigenToMsg(t.inverse().cast<double>(), s.pose);
 
   s.color.r = color[0];
   s.color.g = color[1];
@@ -427,26 +451,19 @@ sixthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f normal, Eigen::Vector
   pt.z = z;
   pc.push_back (pt);
 
-  x = 2, y = 1, z = 1;
+  x = 2, y = 1, z = 0;
   pt.x = x;
   pt.y = y;
   pt.z = z;
   pc.push_back (pt);
 
-  x = 2, y = 0, z = 1;
+  x = 2, y = 0, z = 0;
   pt.x = x;
   pt.y = y;
   pt.z = z;
   pc.push_back (pt);
 
-  Eigen::VectorXf centroid;
-  pcl::computeNDCentroid (pc, centroid);
-
-  s.centroid.x = centroid[0];
-  s.centroid.y = centroid[1];
-  s.centroid.z = centroid[2];
-  pcl::toROSMsg (pc, pc2);
-  s.points.push_back (pc2);
+  s.holes.push_back(false);
 }
 
 int
@@ -476,55 +493,62 @@ main (int argc, char **argv)
     s.header.stamp = sa.header.stamp;
 
     s.type = cob_3d_mapping_msgs::Shape::POLYGON;
-    s.holes.push_back (false);
+    //s.holes.push_back (false);
 
     Eigen::Vector3f normal (0, 0, 1);
+    Eigen::Vector3f origin (0, 0, 0);
+    Eigen::Vector3f x_axis (1, 0, 0);
     Eigen::Vector3f color (1, 0, 0);
 
-    firstShape (s, normal, color);
+    firstShape (s, origin, normal, x_axis, color);
     sa.shapes.push_back (s);
     s.points.clear ();
+    s.holes.clear();
 
     color[0] = 0;
     color[1] = 1;
     color[2] = 0;
+    origin(2) = 1;
 
-    secondShape (s, normal, color);
+    secondShape (s, origin, normal, x_axis, color);
     sa.shapes.push_back (s);
     s.points.clear ();
+    s.holes.clear();
 
     color[0] = 1;
     color[1] = 1;
     color[2] = 0;
+    origin(1) = 1;
+    normal = Eigen::Vector3f(0,1,1);
+    normal.normalize();
 
-    thirdShape (s, normal, color);
+    thirdShape (s, origin, normal, x_axis, color);
     sa.shapes.push_back (s);
     s.points.clear ();
+    s.holes.clear();
 
     normal[0] = 0.707;
     normal[1] = 0.707;
     normal[2] = 0.707;
+    origin = Eigen::Vector3f(-1,-1,-1);
 
     color[0] = 0;
     color[1] = 0;
     color[2] = 1;
 
-    fourthShape (s, normal, color);
+    fourthShape (s, origin, normal, x_axis, color);
     sa.shapes.push_back (s);
     s.points.clear ();
-/*
-    normal[0] = 0.866;
-    normal[1] = 0.5;
-    normal[2] = 0.5;
-*/
-    normal[0] = 0;
+    s.holes.clear();
+
+    /*normal[0] = 0;
     normal[1] = 1;
     normal[2] = 0;
 
     color[0] = 1;
     color[1] = 1;
     color[2] = 1;
-    fifthShape (s, normal, color);
+    fifthShape (s, origin, normal, x_axis, color);
     sa.shapes.push_back (s);
     s.points.clear ();
 
@@ -535,9 +559,9 @@ main (int argc, char **argv)
     color[0] = 0;
     color[1] = 1;
     color[2] = 1;
-    sixthShape (s, normal, color);
+    sixthShape (s, origin, normal, x_axis, color);
     sa.shapes.push_back (s);
-    s.points.clear ();
+    s.points.clear ();*/
 
     pub.publish (sa);
     loop_rate.sleep ();

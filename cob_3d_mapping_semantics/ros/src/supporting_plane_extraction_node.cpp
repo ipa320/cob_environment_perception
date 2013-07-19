@@ -226,6 +226,7 @@ public:
       marker.lifetime = ros::Duration (2);
       marker.header = sa.header;
       marker.ns = "table_marker";
+			marker.pose = sa.shapes[i].pose;
       //marker.header.stamp = ros::Time::now ();
 
       marker.id = i;

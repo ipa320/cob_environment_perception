@@ -3,11 +3,15 @@
   <!-- Input/Output Topics: -->
   <arg name="input" default="/segmentation/shape_array"/>
   <arg name="output" default="/transformed/shape_array"/>
+  <arg name="target_frame" default="/map"/>
+  <arg name="debug_mode" default="false"/>
+  <arg name="prefix" value="gdb -ex run --args" if="$(arg debug_mode)"/>
+  <arg name="prefix" value="" unless="$(arg debug_mode)"/>
 
-  <node pkg="cob_3d_mapping_common" type="transform_shape_array" name="transform_shape_array" output="screen">
+  <node pkg="cob_3d_mapping_common" type="transform_shape_array" name="transform_shape_array" output="screen"  launch-prefix="$(arg prefix)">
     <remap from="~input" to="$(arg input)"/>
     <remap from="~output" to="$(arg output)"/>
 
-    <param name="target_frame" type="string" value="/map" />
+    <param name="target_frame" type="string" value="$(arg target_frame)" />
   </node>
 </launch>

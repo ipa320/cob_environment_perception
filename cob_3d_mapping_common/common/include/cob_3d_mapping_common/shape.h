@@ -85,15 +85,16 @@ namespace cob_3d_mapping
     */
     typedef boost::shared_ptr<Shape> Ptr;
 
-  public:
     /**
     * \brief Constructor of shape object.
     */
     Shape()
-      : id(0)
-      , merged(1)
-      , centroid(Eigen::Vector4f::Zero())
-      , color(4,1)
+      : id_(0)
+      , merged_(1)
+    , merged_limit_(10)
+      , frame_stamp_(0)
+      , pose_(Eigen::Affine3f::Identity())
+      , color_(4,1)
     { }
 
     /**
@@ -105,15 +106,17 @@ namespace cob_3d_mapping
     * \brief Transform shape to target frame.
     * \param[in] trafo Transformatuon, which is applied.
     */
-    virtual void transform2tf(const Eigen::Affine3f& trafo)=0;
+    virtual void transform(const Eigen::Affine3f& trafo)=0;
 
-    double computeDistanceFromViewpoint() {return centroid.norm();}
+    double computeDistanceFromViewpoint() {return pose_.translation().norm();}
 
-    unsigned int id;/**< ID of shape.*/
-    unsigned int merged;/**< Number of times, shape has been merged.*/
-    unsigned int frame_stamp;/**< Frame, shape was created or merged the last time.*/
-    Eigen::Vector4f centroid;/**< Centroid of shape. */
-    std::vector<float> color;/**< Color of shape as RGB vector. */
+    unsigned int id_;/**< ID of shape.*/
+    unsigned int merged_;/**< Number of times, shape has been merged.*/
+    unsigned int merged_limit_;                /**< Limit for merge counter */
+    unsigned int frame_stamp_;/**< Frame, shape was created or merged the last time.*/
+    //Eigen::Vector4f centroid;/**< Centroid of shape. */
+    Eigen::Affine3f pose_; /**<The pose of the shape. Transforms points into the shape coordinate system. */
+    std::vector<float> color_;/**< Color of shape as RGB vector. */
   };
 
   typedef boost::shared_ptr<Shape> ShapePtr;/**< Boosted shared pointer to shape. */
