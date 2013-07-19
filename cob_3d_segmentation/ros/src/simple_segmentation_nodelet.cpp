@@ -65,6 +65,9 @@
 #include <pluginlib/class_list_macros.h>
 #include <eigen_conversions/eigen_msg.h>
 #include <pcl/common/transforms.h>
+#include <pcl/filters/extract_indices.h>
+#include <pcl/io/pcd_io.h>
+#include <opencv2/opencv.hpp>
 
 #include <cob_3d_mapping_msgs/ShapeArray.h>
 #include <cob_3d_mapping_common/stop_watch.h>
@@ -259,12 +262,67 @@ cob_3d_segmentation::SimpleSegmentationNodelet::computeAndPublish()
                                                                 contours_3d,
                                                                 holes,
                                                                 color));
+
+    //computeTexture(c, p->pose_, id);
     cob_3d_mapping::toROSMsg(*p, *s);
     id++;
   }
 
   pub_shape_array_.publish(sa);
   std::cout << "total nodelet time: " << t2.precisionStop() << std::endl;
+}
+
+void
+cob_3d_segmentation::SimpleSegmentationNodelet::computeTexture(ClusterPtr &c, Eigen::Affine3f &trf, unsigned int id)
+{
+  pcl::ExtractIndices<pcl::PointXYZRGB> ei;
+  ei.setInputCloud(down_);
+  pcl::IndicesPtr ind_ptr(new std::vector<int>);
+  for(unsigned int i=0; i<c->indices_.size(); i++)
+    ind_ptr->push_back(c->indices_[i]);
+  ei.setIndices(ind_ptr);
+  PointCloud::Ptr segment(new PointCloud);
+  ei.filter(*segment);
+  PointCloud::Ptr segment_tr(new PointCloud);
+  pcl::transformPointCloud(*segment, *segment_tr, trf.inverse());
+  std::stringstream ss;
+  ss << "/tmp/seg_" << id << ".pcd";
+  pcl::io::savePCDFileBinary(ss.str(), *segment_tr);
+  double mToPx = 500;
+  int min_u = std::numeric_limits<int>::max(), max_u = std::numeric_limits<int>::min(), min_v = std::numeric_limits<int>::max(), max_v  = std::numeric_limits<int>::min();
+  for (unsigned int i=0; i<segment_tr->size(); i++)
+  {
+    int u = round(segment_tr->points[i].x * mToPx);
+    int v = round(segment_tr->points[i].y * mToPx);
+    if(u < min_u) min_u = u;
+    if(u > max_u) max_u = u;
+    if(v < min_v) min_v = v;
+    if(v > max_v) max_v = v;
+    //std::cout << segment_tr->points[i].x << "," << segment_tr->points[i].y << ":" << u << "," << v << std::endl;
+  }
+  //TODO: save min/max u v for transforming back
+  //std::cout << "u(min, max): " << min_u << "," << max_u << " v(min,max): " << min_v << "," << max_v << std::endl;
+  cv::Mat img(abs(max_u - min_u) +1 , abs(max_v - min_v) + 1, CV_8UC3, cv::Scalar(-1));
+  //std::cout << "im size: " << img.rows << "," << img.cols << std::endl;
+  for (unsigned int i=0; i<segment_tr->size(); i++)
+  {
+    //TODO: handle case that both u_min and u-Max are negative (same for v)
+    int u = round(segment_tr->points[i].x * mToPx) - min_u;
+    int v = round(segment_tr->points[i].y * mToPx) - min_v;
+    //std::cout << "u,v" << u << "," << v << std::endl;
+    img.at<cv::Vec3b>(u,v)[0] = segment_tr->points[i].r;
+    img.at<cv::Vec3b>(u,v)[1] = segment_tr->points[i].g;
+    img.at<cv::Vec3b>(u,v)[2] = segment_tr->points[i].b;
+  }
+  std::stringstream ss1;
+  ss1 << "/tmp/seg_" << id << ".png";
+  cv::imwrite(ss1.str(), img);
+
+  cv::Mat img_dil(abs(max_u - min_u) +1 , abs(max_v - min_v) + 1, CV_8UC3);
+  cv::dilate(img, img_dil, cv::Mat(), cv::Point(-1,-1), 3);
+  std::stringstream ss2;
+  ss2 << "/tmp/seg_dil_" << id << ".png";
+  cv::imwrite(ss2.str(), img_dil);
 }
 
 PLUGINLIB_DECLARE_CLASS(cob_3d_segmentation, SimpleSegmentationNodelet, cob_3d_segmentation::SimpleSegmentationNodelet, nodelet::Nodelet);
