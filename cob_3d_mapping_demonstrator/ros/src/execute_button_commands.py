@@ -94,6 +94,7 @@ class execute_button_commands():
   def execute_cb(self, server_goal):
     server_result = ScriptActionResult().result
     if server_goal.function_name == "start":
+      print "start"
       ret=self.execute_start()
     #elif server_goal.function_name == "stop":
     #  ret=self.execute_stop()
@@ -123,7 +124,7 @@ class execute_button_commands():
 
   def execute_start(self):
     print "start"
-    self.execute_reset()
+    #self.execute_reset()
     sss.move("cob_3d_mapping_demonstrator",[[-0.5,0]])
     goal = TriggerGoal()
     if not self.trigger_client.wait_for_server(rospy.Duration.from_sec(2.0)):

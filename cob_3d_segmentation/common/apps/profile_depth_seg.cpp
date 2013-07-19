@@ -68,7 +68,7 @@
 // stack includes:
 #include "cob_3d_mapping_common/stop_watch.h"
 #include "cob_3d_mapping_common/point_types.h"
-#include "cob_3d_mapping_features/organized_normal_estimation_omp.h"
+#include "cob_3d_features/organized_normal_estimation_omp.h"
 #include "cob_3d_segmentation/depth_segmentation.h"
 #include "cob_3d_segmentation/cluster_classifier.h"
 
@@ -112,7 +112,7 @@ private:
   PointCloud<Normal>::Ptr n;
   ST::Graph::Ptr g;
   cob_3d_segmentation::DepthSegmentation<ST::Graph, ST::Point, ST::Normal, ST::Label> seg;
-  cob_3d_mapping_features::OrganizedNormalEstimationOMP<PointXYZRGB, Normal, PointLabel> one;
+  cob_3d_features::OrganizedNormalEstimationOMP<PointXYZRGB, Normal, PointLabel> one;
 
 };
 

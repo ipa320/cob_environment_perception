@@ -199,6 +199,7 @@ public:
       bb.pose = tf.cast<float>();
       known_objects_.push_back(bb);
     }
+    return true;
   }
 
   void
@@ -259,9 +260,9 @@ public:
       Eigen::Vector3f normal(last_sa_->shapes[i].params[0],
                              last_sa_->shapes[i].params[1],
                              last_sa_->shapes[i].params[2]);
-      Eigen::Vector3f point(last_sa_->shapes[i].centroid.x,
-                            last_sa_->shapes[i].centroid.y,
-                            last_sa_->shapes[i].centroid.z);
+      Eigen::Vector3f point(last_sa_->shapes[i].pose.position.x,
+                            last_sa_->shapes[i].pose.position.y,
+                            last_sa_->shapes[i].pose.position.z);
 
       bba.detections.clear();
       bba.header.stamp = last_pc_->header.stamp;
@@ -286,7 +287,6 @@ public:
         bba.detections.back().pose.header.frame_id = last_pc_->header.frame_id;
         cob_perception_common::EigenToROSMsg(pos,rot,bba.detections.back().pose.pose);
         cob_perception_common::EigenToROSMsg(size, bba.detections.back().bounding_box_lwh);
-
 
         pcl::toROSMsg(*object_clusters[j], pca.segments[j]);
         pca.segments[j].header = last_pc_->header;

@@ -1,0 +1,36 @@
+<package>
+  <description brief="cob_3d_features">
+
+     cob_3d_features
+
+  </description>
+  <author>Georg Arbeiter</author>
+  <license>BSD</license>
+  <review status="unreviewed" notes=""/>
+  <url>http://ros.org/wiki/cob_3d_features</url>
+
+  <depend package="pcl"/>
+  <depend package="pcl_ros"/>
+  <depend package="roscpp"/>
+  <depend package="tf"/>
+  <depend package="nodelet"/>
+  <depend package="actionlib"/>
+  <depend package="actionlib_msgs"/>
+  <depend package="dynamic_reconfigure"/>
+  <depend package="opencv2"/>
+  <depend package="cv_bridge"/>
+  <depend package="image_transport"/>
+  <depend package="cob_3d_mapping_msgs"/>
+  <depend package="cob_3d_mapping_common"/>
+
+  <depend package="visualization_msgs"/>
+
+	<!--rosdep name="pcl"/-->
+	<rosdep name="eigen"/>
+
+  <export>
+  	<cpp cflags="-I${prefix}/common/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcob_3d_features -lcob_3d_features_omp"/>
+  </export>
+</package>
+
+

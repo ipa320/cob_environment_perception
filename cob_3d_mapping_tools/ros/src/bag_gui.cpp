@@ -65,7 +65,7 @@
 #include <sensor_msgs/PointCloud2.h>
 
 #include "cob_3d_mapping_common/point_types.h"
-#include "cob_3d_mapping_features/organized_normal_estimation_omp.h"
+#include "cob_3d_features/organized_normal_estimation_omp.h"
 #include "cob_3d_segmentation/depth_segmentation.h"
 
 #include "cob_3d_mapping_tools/gui/impl/core.hpp"
@@ -100,7 +100,7 @@ class MainApp : public wxApp
   std::list<rosbag::View::iterator> timeline;
   std::list<rosbag::View::iterator>::iterator tl_it;
 
-  cob_3d_mapping_features::OrganizedNormalEstimationOMP<PT, pcl::Normal, PointLabel> one_;
+  cob_3d_features::OrganizedNormalEstimationOMP<PT, pcl::Normal, PointLabel> one_;
   cob_3d_segmentation::DepthSegmentation<ST::Graph, ST::Point, ST::Normal, ST::Label> seg_;
   ST::Graph::Ptr graph_;
 

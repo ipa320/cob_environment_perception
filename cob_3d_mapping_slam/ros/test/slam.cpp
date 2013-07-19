@@ -114,6 +114,9 @@ static const char *BAGFILES[][512]={
                                      //"test/cp4_moving.bag",
                                      //"test/cp4_room.bag",
                                      "test/cp4_rgbd_dataset_freiburg2_rpy2.bag",
+                                     //"test/cp4_rgbd_dataset_freiburg2_dishes.bag",
+                                     //"test/cp4_cylinder.bag",
+                                     //"test/cp4_office3.bag",
                                      //"test/cp3_rgbd_dataset_freiburg2_xyz.bag",
                                      //"test/cp3_rgbd_dataset_freiburg1_plant.bag",
                                      //"test/cp2_rgbd_dataset_freiburg2_dishes.bag",
@@ -151,7 +154,9 @@ float MATRIX_DISTANCE(const Matrix &a, const Matrix &b, const float thr=0.05) {
 }
 
 
-TEST(Slam,merging)
+#if 0
+//TEST(Slam,merging)
+void test1()
 {
 
   cob_3d_mapping_msgs::feature ft;
@@ -312,7 +317,7 @@ TEST(Slam,merging)
   r(1) = -1;
   EXPECT_NEAR( (xp1.getFeatures()[8].v_-r).norm(), 0, 0.05 );
 }
-
+#endif
 
 struct SOdomotry_Data
 {
@@ -323,12 +328,65 @@ struct SOdomotry_Data
 
 #include <visualization_msgs/Marker.h>
 #include <nav_msgs/Odometry.h>
+#ifdef VIS_
 #include "pcl/visualization/pcl_visualizer.h"
 #include <pcl/visualization/cloud_viewer.h>
+#endif
+
+
+TEST(Slam,dummy_registration)
+//void t4()
+{
+  //setup slam
+  typedef DOF6::DOF6_Source<DOF6::TFLinkvf,DOF6::DOF6_Uncertainty<Dummy::RobotParameters,float> > DOF6;
+  typedef Slam::Node<Dummy::OBJCTXT<DOF6> > Node;
+
+  Slam::Context<Slam_CurvedPolygon::KEY<DOF6>, Node> ctxt(.60,.30);
+
+  for(int i=0; i<6; i++)
+  {
+    ROS_INFO("new frame");
+    ctxt.startFrame(i);
+    ctxt.finishFrame();
+
+    //check path
+    Eigen::Matrix3f tmp_rot = Eigen::Matrix3f::Identity();
+    Eigen::Matrix3f tmp_rot2 = Eigen::Matrix3f::Identity();
+    Eigen::Vector3f tmp_tr  = Eigen::Vector3f::Zero();
+    const Slam::SWAY<Node> *n = &ctxt.getPath().getLocal();
+    while(n)
+    {
+
+      tmp_tr = tmp_rot2*tmp_tr + n->link_.getTranslation();
+      tmp_rot = ((Eigen::Matrix3f)n->link_.getRotation())*tmp_rot;
+      tmp_rot2= ((Eigen::Matrix3f)n->link_.getRotation());
+
+      std::cout<<"ROTn\n"<<(::DOF6::EulerAnglesf)n->link_.getRotation()<<"\n";
+      std::cout<<"TRn\n"<<n->link_.getTranslation()<<"\n";
+
+      std::cout<<"con\n";
+      size_t next_id = n->id_-1;
+      const Slam::SWAY<Node> *n2 = NULL;
+      for(size_t i=0; i<n->node_->getConnections().size(); i++)
+        if(n->node_->getConnections()[i].id_ == next_id) {
+          n2 = &n->node_->getConnections()[i];
+          break;
+        }
+      n = n2;
+    }
+    std::cout<<"ROT1\n"<<(::DOF6::EulerAnglesf)tmp_rot<<"\n";
+    std::cout<<"TR1\n"<<tmp_tr<<"\n";
+  }
+  //exit(0);
+}
+
+
 TEST(Slam,bag_run)
 //void t3()
 {
+#ifdef VIS_
   pcl::visualization::CloudViewer viewer("abc");
+#endif
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr rgb(new pcl::PointCloud<pcl::PointXYZRGB>);
 
   int bg_file=0;
@@ -357,7 +415,8 @@ TEST(Slam,bag_run)
     }
 
     rosbag::Bag bag, bag_out;
-    try {
+    //try
+    {
       //read file
       bag.    open(BAGFILES[0][bg_file],                         rosbag::bagmode::Read);
       bag_out.open(std::string(BAGFILES[0][bg_file])+".odo.bag", rosbag::bagmode::Write);
@@ -371,7 +430,11 @@ TEST(Slam,bag_run)
 
       rosbag::View view(bag, rosbag::TopicQuery(topics));
 
-      visualization_msgs::Marker marker_text, marker_points, marker_planes, marker_cor1, marker_cor2, marker_del, marker_map;
+      cob_3d_marker::MarkerContainer marker_cont;
+      visualization_msgs::Marker marker_text, marker_points, marker_planes, marker_cor1, marker_cor2, marker_del, marker_map, marker_map2;
+      visualization_msgs::Marker *pmarkers[]={
+                                             &marker_text, &marker_points, &marker_planes, &marker_cor1, &marker_cor2, &marker_del, &marker_map, &marker_map2
+      };
       marker_text.header.frame_id = "/openni_rgb_frame";
       marker_text.pose.position.x = 0;
       marker_text.pose.position.y = 0;
@@ -382,7 +445,7 @@ TEST(Slam,bag_run)
       marker_text.pose.orientation.w = 1.0;
       marker_text.action = visualization_msgs::Marker::ADD;
       marker_text.type = visualization_msgs::Marker::LINE_LIST;
-      marker_text.scale.x = marker_text.scale.y = marker_text.scale.z = 0.01;
+      marker_text.scale.x = marker_text.scale.y = marker_text.scale.z = 0.005;
       marker_text.color.r = marker_text.color.g = marker_text.color.b =  marker_text.color.a = 1;
 
       marker_map = marker_del = marker_cor1 =  marker_cor2 = marker_points = marker_planes = marker_text;
@@ -394,6 +457,8 @@ TEST(Slam,bag_run)
       marker_del.action = visualization_msgs::Marker::DELETE;
       marker_map.type = visualization_msgs::Marker::TRIANGLE_LIST;
       marker_map.scale.x = marker_map.scale.y = marker_map.scale.z = 1;
+      marker_map2 = marker_map;
+      marker_cor2.scale.x = marker_cor2.scale.y = marker_cor2.scale.z = 0.01;
 
       marker_text.id = 0;
       marker_points.id = 1;
@@ -401,12 +466,14 @@ TEST(Slam,bag_run)
       marker_cor1.id = 3;
       marker_cor2.id = 4;
       marker_map.id = 5;
+      marker_map2.id = 6;
 
       //setup slam
       typedef DOF6::DOF6_Source<DOF6::TFLinkvf,DOF6::DOF6_Uncertainty<Dummy::RobotParameters,float> > DOF6;
       typedef Slam::Node<Slam_CurvedPolygon::OBJCTXT<DOF6> > Node;
 
       Slam::Context<Slam_CurvedPolygon::KEY<DOF6>, Node> ctxt(.60,.30);
+      //Slam::Context<Slam_CurvedPolygon::KEY<DOF6>, Node> ctxt(.30,.15);
 
       Eigen::Vector3f last_tr = Eigen::Vector3f::Zero();
       Eigen::Matrix3f last_rot= Eigen::Matrix3f::Identity();
@@ -426,8 +493,8 @@ TEST(Slam,bag_run)
         cob_3d_mapping_msgs::ShapeArray::ConstPtr sa = m.instantiate<cob_3d_mapping_msgs::ShapeArray>();
         if (sa != NULL)
         {
-          if(sa->header.stamp.toSec()<1311867724.916822)
-            continue;
+//          if(sa->header.stamp.toSec()<1311867723.916822)
+//            continue;
           memory_sa.push_back(*sa);
           continue;
         }
@@ -438,6 +505,10 @@ TEST(Slam,bag_run)
         cob_3d_mapping_msgs::CurvedPolygon_Array::ConstPtr s = m.instantiate<cob_3d_mapping_msgs::CurvedPolygon_Array>();
         if (s != NULL)
         {
+          for(size_t i=0; i<sizeof(pmarkers)/sizeof(pmarkers[0]); i++)
+            pmarkers[i]->header.frame_id = s->header.frame_id;
+
+//          ROS_INFO("time %f",s->header.stamp.toSec());
           if(s->header.stamp.toSec()<1311867724.916822)
             continue;
 
@@ -450,7 +521,8 @@ TEST(Slam,bag_run)
             ROS_INFO("new frame");
 
             last=s->header.stamp;
-            Debug::Interface::get().setTime((last-start).toSec());
+            Debug::Interface::get().setTime(ros::Time::now().toSec());
+            //Debug::Interface::get().setTime((last-start).toSec());
             if(first) {
               first=false;
               start = s->header.stamp;
@@ -461,6 +533,7 @@ TEST(Slam,bag_run)
             ROS_INFO("timestamp %f (%d)", (last-start).toSec(), ctr);
             ctr++;
 
+            std_msgs::ColorRGBA line_c;
             pcl::PointXYZRGB p;
             Eigen::Vector3f from,to,temp;
             while(Debug::Interface::get().getArrow(from,to,p.r,p.g,p.b))
@@ -468,11 +541,19 @@ TEST(Slam,bag_run)
               line_p.x = from(0);
               line_p.y = from(1);
               line_p.z = from(2);
-              p.r>100?marker_cor1.points.push_back(line_p):marker_cor2.points.push_back(line_p);
+              line_c.r=p.r/255.f;
+              line_c.g=p.g/255.f;
+              line_c.b=p.b/255.f;
+              line_c.a=1;
+              //p.r>100?marker_cor1.points.push_back(line_p):marker_cor2.points.push_back(line_p);
+              marker_cor2.points.push_back(line_p);
+              marker_cor2.colors.push_back(line_c);
               line_p.x = to(0);
               line_p.y = to(1);
               line_p.z = to(2);
-              p.r>100?marker_cor1.points.push_back(line_p):marker_cor2.points.push_back(line_p);
+              //p.r>100?marker_cor1.points.push_back(line_p):marker_cor2.points.push_back(line_p);
+              marker_cor2.points.push_back(line_p);
+              marker_cor2.colors.push_back(line_c);
               temp = to-from;
               //              from -= temp*0.1;
               //              temp *= 1.2;
@@ -500,16 +581,32 @@ TEST(Slam,bag_run)
               tmp_rot = ((Eigen::Matrix3f)n->link_.getRotation())*tmp_rot;
               tmp_rot2= ((Eigen::Matrix3f)n->link_.getRotation());
 
+              std::cout<<"ROTn\n"<<(::DOF6::EulerAnglesf)n->link_.getRotation()<<"\n";
+              std::cout<<"TRn\n"<<n->link_.getTranslation()<<"\n";
+
               std::cout<<"con\n";
-              n = n->node_->getConnections().size()?&n->node_->getConnections()[0]:NULL;
+              size_t next_id = n->id_-1;
+              const Slam::SWAY<Node> *n2 = NULL;
+              for(size_t i=0; i<n->node_->getConnections().size(); i++)
+                if(n->node_->getConnections()[i].id_ == next_id) {
+                  n2 = &n->node_->getConnections()[i];
+                  break;
+                }
+              n = n2;
             }
             std::cout<<"ROT1\n"<<(::DOF6::EulerAnglesf)tmp_rot<<"\n";
             std::cout<<"TR1\n"<<tmp_tr<<"\n";
 
+            {
+//              DOF6 tf;
+//              slam.getPath().getTF(tf, );
+//              std::cout<<"CMP\n"<<
+            }
+
             Eigen::Quaternionf quat((Eigen::Matrix3f)tmp_rot.inverse());
 
             nav_msgs::Odometry odo;
-            odo.header.frame_id = "/openni_rgb_frame";
+            odo.header.frame_id = s->header.frame_id;
             odo.header.stamp = last;
             odo.pose.pose.position.x = -tmp_tr(0);
             odo.pose.pose.position.y = -tmp_tr(1);
@@ -556,6 +653,12 @@ TEST(Slam,bag_run)
               bag_out.write("groundtruth", ros::Time(odos.front().timestamp), odo);
             }
 
+#ifdef EXTRA_MARKER
+            marker_cont << cob_3d_marker::MarkerClean();
+            marker_cont.clear();
+            marker_cont<<new cob_3d_marker::MarkerList_Line(2)<<new cob_3d_marker::MarkerList_Arrow(3)<<new cob_3d_marker::MarkerList_Text(4)<<new cob_3d_marker::MarkerList_Text(5);
+#endif
+
             tmp_rot = Eigen::Matrix3f::Identity();
             tmp_rot2 = Eigen::Matrix3f::Identity();
             tmp_tr  = Eigen::Vector3f::Zero();
@@ -572,11 +675,8 @@ TEST(Slam,bag_run)
                 //                if( n->node_->getContext().getObjs()[i]->getUsedCounter()<7)
                 //                  continue;
 
-                std::vector<Eigen::Vector3f> tris;
-                n->node_->getContext().getObjs()[i]->getData().getTriangles(tris);
-                ROS_ASSERT(tris.size()%3==0);
-
                 ::std_msgs::ColorRGBA col;
+
                 unsigned int rnd=(((i+1)*11)<<12)+(i+3)*i*7;//rand();
                 ROS_ASSERT(n->node_->getContext().getObjs()[i]->getUsedCounter() <= n->node_->getContext().getObjs()[i]->getCreationCounter());
                 col.a = std::log(n->node_->getContext().getObjs()[i]->getUsedCounter())/(std::log(n->node_->getContext().getObjs()[i]->getCreationCounter())+0.1f);
@@ -585,9 +685,74 @@ TEST(Slam,bag_run)
                   col.a = 1.f;
                   ROS_ERROR("color not finite %d %d",n->node_->getContext().getObjs()[i]->getUsedCounter(),n->node_->getContext().getObjs()[i]->getCreationCounter());
                 }
+
                 col.r = ((rnd>>0)&0xff)/255.f;
                 col.g = ((rnd>>8)&0xff)/255.f;
                 col.b = ((rnd>>16)%0xff)/255.f;
+
+                {
+                  std::vector<std::vector<Eigen::Vector3f> > pts;
+                  n->node_->getContext().getObjs()[i]->getData().getControlPoints(pts);
+                  for(size_t j=0; j<pts.size(); j++)
+                  {
+                    for(size_t k=0; k<pts[j].size()-1; k++)
+                    {
+                      Eigen::Vector3f v=tmp_rot*pts[j][k]+tmp_tr;
+                    line_p.x = v(0);
+                    line_p.y = v(1);
+                    line_p.z = v(2);
+                    line_c=col;
+                    marker_cor1.points.push_back(line_p);
+                    marker_cor1.colors.push_back(line_c);
+
+                    v=tmp_rot*pts[j][k+1]+tmp_tr;
+                    line_p.x = v(0);
+                    line_p.y = v(1);
+                    line_p.z = v(2);
+                    marker_cor1.points.push_back(line_p);
+                    marker_cor1.colors.push_back(line_c);
+
+                    if(j+1!=pts.size()) {
+                      v=tmp_rot*pts[j][k]+tmp_tr;
+                    line_p.x = v(0);
+                    line_p.y = v(1);
+                    line_p.z = v(2);
+                      line_c=col;
+                      marker_cor1.points.push_back(line_p);
+                      marker_cor1.colors.push_back(line_c);
+                      v=tmp_rot*pts[j+1][k]+tmp_tr;
+                      line_p.x = v(0);
+                      line_p.y = v(1);
+                      line_p.z = v(2);
+                      line_c=col;
+                      marker_cor1.points.push_back(line_p);
+                      marker_cor1.colors.push_back(line_c);
+                    }
+
+//                    v=tmp_rot*pts[j][k]+tmp_tr;
+//                    line_p.x = v(0);
+//                    line_p.y = v(1);
+//                    line_p.z = v(2);
+//                    marker_map.points.push_back(line_p);
+//                    marker_map.colors.push_back(col);
+//                    line_p.x = v(0)+0.03f;
+//                    line_p.y = v(1);
+//                    line_p.z = v(2);
+//                    marker_map.points.push_back(line_p);
+//                    marker_map.colors.push_back(col);
+//                    line_p.x = v(0);
+//                    line_p.y = v(1)+0.03f;
+//                    line_p.z = v(2);
+//                    marker_map.points.push_back(line_p);
+//                    marker_map.colors.push_back(col);
+                  }
+                  }
+                }
+
+                std::vector<Eigen::Vector3f> tris;
+                n->node_->getContext().getObjs()[i]->getData().getTriangles(tris);
+                ROS_ASSERT(tris.size()%3==0);
+
                 for(size_t j=0; j<tris.size(); j++)
                 {
                   //Eigen::Vector3f v=((Eigen::Matrix3f)n->link_.getRotation())*tris[j]+n->link_.getTranslation();
@@ -599,26 +764,43 @@ TEST(Slam,bag_run)
                   marker_map.points.push_back(line_p);
                   marker_map.colors.push_back(col);
                 }
+
+#ifdef EXTRA_MARKER
+                marker_cont<<n->node_->getContext().getObjs()[i]->getData().getSurface();
+#endif
               }
 
-              n = n->node_->getConnections().size()?&n->node_->getConnections()[0]:NULL;
+              size_t next_id = n->id_-1;
+              const Slam::SWAY<Node> *n2 = NULL;
+              for(size_t i=0; i<n->node_->getConnections().size(); i++)
+                if(n->node_->getConnections()[i].id_ == next_id) {
+                  n2 = &n->node_->getConnections()[i];
+                  break;
+                }
+              n = n2;
               //break;
             }
 
-            while(memory_sa.size()>0 && memory_sa.front().header.stamp<=last)
+#ifdef EXTRA_MARKER
+            marker_cont>>new cob_3d_marker::MarkerBagfile(&bag_out,"/markers2",last);
+#endif
+
+            while(memory_sa.size()>0 && memory_sa.front().header.stamp<last)
             {
               bag_out.write("shapes_array", last, memory_sa.front());
               ROS_INFO("shapes_array %d",memory_sa.front().shapes.size());
               memory_sa.erase(memory_sa.begin());
             }
-            for(int i=0; i<6; i++)
+            for(int i=0; i<7; i++)
             {
               marker_del.id = i;
               if(i<5) bag_out.write("/markers", last, marker_del);
-              else bag_out.write("/map", last, marker_del);
+              else if(i<6) bag_out.write("/map", last, marker_del);
+              else bag_out.write("/input", last, marker_del);
             }
             bag_out.write("/markers", last, marker_points);
             bag_out.write("/markers", last, marker_planes);
+            bag_out.write("/input", last, marker_map2);
             bag_out.write("/markers", last, marker_cor1);
             bag_out.write("/markers", last, marker_cor2);
             bag_out.write("/map", last, marker_map);
@@ -626,8 +808,12 @@ TEST(Slam,bag_run)
             marker_planes.points.clear();
             marker_cor1.points.clear();
             marker_cor2.points.clear();
+            marker_cor1.colors.clear();
+            marker_cor2.colors.clear();
             marker_map.points.clear();
             marker_map.colors.clear();
+            marker_map2.points.clear();
+            marker_map2.colors.clear();
             //OUTPUT-------------------
 
 
@@ -649,7 +835,9 @@ TEST(Slam,bag_run)
             {
               //              Eigen::Quaternionf q((Eigen::Matrix3f)tmp_rot.inverse());
               //              pcl::transformPointCloud(*rgb,*rgb, -tmp_tr, q);
+#ifdef VIS_
               viewer.showCloud(rgb);
+#endif
               std::cerr<<"press any key\n";
               //              if((last-start).toSec()>31.8)
               if(getchar()=='q')
@@ -670,8 +858,31 @@ TEST(Slam,bag_run)
 
             Slam_CurvedPolygon::ex_curved_polygon xp = s->polygons[k];
 
-            if(xp.invalid())
+            if(xp.invalid() || xp.getNearestPoint().squaredNorm()>20*20)
               continue;
+
+            {
+              std::vector<Eigen::Vector3f> tris;
+              xp.getTriangles(tris);
+              ROS_ASSERT(tris.size()%3==0);
+
+              ::std_msgs::ColorRGBA col;
+              size_t i=marker_map2.points.size();
+              unsigned int rnd=(((i+1)*11)<<12)+(i+3)*i*7;//rand();
+              col.a = 1.f;
+              col.r = ((rnd>>0)&0xff)/255.f;
+              col.g = ((rnd>>8)&0xff)/255.f;
+              col.b = ((rnd>>16)%0xff)/255.f;
+              for(size_t j=0; j<tris.size(); j++)
+              {
+                Eigen::Vector3f v=tris[j];
+                line_p.x = v(0);
+                line_p.y = v(1);
+                line_p.z = v(2);
+                marker_map2.points.push_back(line_p);
+                marker_map2.colors.push_back(col);
+              }
+            }
 
             //        if(    std::abs(xp.getNearestPoint().norm()-1.2)>0.2
             //            || std::abs(xp.getNearestPoint()(0))>0.4
@@ -687,8 +898,9 @@ TEST(Slam,bag_run)
             //        if(xp.getNearestPoint().norm()>4)
             //          continue;
 
-            ctxt += s->polygons[k];
+            ctxt += xp;//s->polygons[k];
 
+#ifdef VIS_
             line_p.x = xp.getNearestPoint()(0);
             line_p.y = xp.getNearestPoint()(1);
             line_p.z = xp.getNearestPoint()(2);
@@ -768,6 +980,7 @@ TEST(Slam,bag_run)
               if(p.getVector3fMap().squaredNorm()<100)
                 rgb->push_back(p);
             }
+#endif
           }
         }
 
@@ -777,11 +990,11 @@ TEST(Slam,bag_run)
 
       bag.close();
     }
-    catch(...) {
+    /*catch(...) {
       bag_out.close();
       std::cout<<"failed to load: "<<BAGFILES[0][bg_file]<<"\n";
       ASSERT_TRUE(false);
-    }
+    }*/
 
     bg_file++;
   }

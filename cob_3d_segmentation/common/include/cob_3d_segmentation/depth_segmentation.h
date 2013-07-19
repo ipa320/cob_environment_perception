@@ -161,6 +161,9 @@ namespace cob_3d_segmentation
 
     void getPotentialObjects(std::map<int,int>& objs, int max_size = 0);
 
+    /// convert to ROS message
+    virtual operator cob_3d_mapping_msgs::ShapeArray() const {ROS_ERROR("TODO: do it"); return cob_3d_mapping_msgs::ShapeArray();}
+
   private:
     void addIfIsValid(int u, int v, int idx, int idx_prev, float dist_th, float p_z, Eigen::Vector3f& n,
                       SegmentationQueue& seg_queue, ClusterPtr c);

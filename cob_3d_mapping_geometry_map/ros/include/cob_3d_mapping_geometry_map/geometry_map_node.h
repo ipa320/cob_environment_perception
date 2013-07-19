@@ -69,8 +69,8 @@
 #include <dynamic_reconfigure/server.h>
 
 // ROS message includes
-#include <visualization_msgs/Marker.h>
-#include <visualization_msgs/MarkerArray.h>
+//#include <visualization_msgs/Marker.h>
+//#include <visualization_msgs/MarkerArray.h>
 #include <cob_3d_mapping_msgs/GetGeometryMap.h>
 #include <cob_3d_mapping_msgs/SetGeometryMap.h>
 #include <cob_3d_mapping_msgs/ModifyMap.h>
@@ -88,13 +88,14 @@ namespace cob_3d_mapping
   * Input topics: /tf, /shape_array\n
   * Output topics: /map_array , /geometry_marker, /primitives
   */
-  class GeometryMapNode //: protected Reconfigurable_Node<cob_3d_mapping_geometry_map::geometry_map_nodeConfig>
+  class GeometryMapNode
   {
   public:
     /**
     * @brief Constructor
     */
     GeometryMapNode();
+
     /**
     * brief Destructor
     */
@@ -112,6 +113,14 @@ namespace cob_3d_mapping
     * @return nothing
     */
     void dynReconfCallback(cob_3d_mapping_geometry_map::geometry_map_nodeConfig &config, uint32_t level);
+
+    /**
+     * @brief Callback for incoming shapes.
+     *
+     * @param sa The incoming shape array.
+     *
+     * @return nothing
+     */
     void shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& sa);
 
     /**
@@ -125,8 +134,6 @@ namespace cob_3d_mapping
      * @return nothing
      */
     bool clearMap(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res);
-
-
 
     /**
      * @brief service callback for GetGeometricMap service
@@ -165,8 +172,6 @@ namespace cob_3d_mapping
     */
     bool modifyMap(cob_3d_mapping_msgs::ModifyMap::Request &req, cob_3d_mapping_msgs::ModifyMap::Response &res) ;
 
-
-
     /**
     * @brief Map arrays are published.
     *
@@ -176,21 +181,11 @@ namespace cob_3d_mapping
 
 
     /**
-     * @brief publishes the contour of the polygons
-     *
-     * publishes the contour of the polygons
-     *
-     * @return nothing
-     */
-    void publishMapMarker();
-
-
-    /**
     * @brief Cylinder primitives are published
     *
     * Visualization markers of Cylinder shapes are created and published.
     */
-    void publishPrimitives();
+    //void publishPrimitives();
 
     /**
     * @brief Polygon marker is filled out.
@@ -199,7 +194,7 @@ namespace cob_3d_mapping
     * @param[in] m Corresponding marker.
     * @param[out] m_t Filled marker.
     */
-    void fillMarker(Polygon::Ptr p, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t);
+    //void fillMarker(Polygon::Ptr p, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t);
 
 
     /**
@@ -209,7 +204,7 @@ namespace cob_3d_mapping
     * @param[in] m Corresponding marker.
     * @param[out] m_t Filled marker.
     */
-    void fillMarker(Cylinder::Ptr c, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t);
+    //void fillMarker(Cylinder::Ptr c, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t);
 
 
     /**
@@ -219,23 +214,18 @@ namespace cob_3d_mapping
     * @param[in] m Corresponding marker.
     * @param[out] m_t Filled marker.
     */
-    void fillMarker(ShapeCluster::Ptr sc, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t);
+    //void fillMarker(ShapeCluster::Ptr sc, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t);
 
     ros::NodeHandle n_;                         ///< Ros node handle.
 
   protected:
     ros::Subscriber shape_sub_;                 ///< Subscription to shape message to be processed.
     ros::Publisher map_pub_;                    ///< Publish Map array as shape message.
-    ros::Publisher marker_pub_;                 ///< Publish Map array as visualization markers.
-    ros::Publisher primitive_pub_;              ///< Publish Cylinder primitive visualization markers.
     ros::ServiceServer clear_map_server_;
     ros::ServiceServer get_map_server_;
     ros::ServiceServer set_map_server_;
     ros::ServiceServer modify_map_server_ ;
 
-
-    tf::TransformListener tf_listener_;         ///< Retrieves transformations.
-    bool enable_tf_;                            ///< If true transformation to target frame is performed.
     bool enable_cyl_;                           ///< If true , processing of cylinders is activated.
     bool enable_poly_;                          ///< If true , processing of polygons is activated.
 
@@ -245,10 +235,6 @@ namespace cob_3d_mapping
     dynamic_reconfigure::Server<cob_3d_mapping_geometry_map::geometry_map_nodeConfig> config_server_;
 
     GeometryMap geometry_map_;                   ///< Map containing geometrys (polygons,cylinders)
-
-    unsigned int ctr_;                          ///< Counter how many polygons are received.
-    std::string file_path_;                     ///< Path out output file.
-    bool save_to_file_;                         ///< True if file output is enabled.
     std::string map_frame_id_;                  ///< Name of target frame.
   };
 }

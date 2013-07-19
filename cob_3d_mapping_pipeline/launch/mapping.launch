@@ -40,7 +40,13 @@
     <arg name="nodelet_manager" value="$(arg mapping_manager)"/>
     <arg name="cloud_in" value="/registration_pass_through/output"/>
   </include>
-  <include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch"/>
+  <include file="$(find cob_3d_mapping_common)/ros/launch/transform_shape_array.launch">
+    <arg name="input" value="/segmentation/shape_array"/>
+    <arg name="output" value="/transformed/shape_array"/>
+  </include>
+  <include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch">
+    <arg name="shape_array_in" value="/transformed/shape_array"/>
+  </include>
   <include file="$(find cob_3d_visualization)/launch/shape_visualization.launch">
     <arg name="shape_array_in" value="/geometry_map/map_array"/>
   </include>

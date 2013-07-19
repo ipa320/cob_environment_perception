@@ -14,10 +14,15 @@
   <depend package="actionlib"/>
   <depend package="nodelet"/>
   <depend package="eigen_conversions"/>
+  <depend package="cob_srvs"/>
   <depend package="cob_3d_mapping_common"/>
   <depend package="cob_perception_msgs"/>
   <depend package="cob_object_detection_msgs"/>
   <depend package="cob_vision_utils"/>
+
+  <export>
+    <nodelet plugin="${prefix}/nodelet_plugins.xml" />
+  </export>
 
 </package>
 

@@ -78,8 +78,6 @@
 #include <ros/ros.h>
 #include <ros/console.h>
 //#include <actionlib/server/simple_action_server.h>
-#include <tf/transform_listener.h>
-#include <tf_conversions/tf_eigen.h>
 #include <pluginlib/class_list_macros.h>
 #include <dynamic_reconfigure/server.h>
 #include <cob_3d_mapping_point_map/point_map_nodeletConfig.h>
@@ -88,7 +86,6 @@
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/filters/voxel_grid.h>
-#include <pcl_ros/transforms.h>
 #include <pcl_ros/point_cloud.h>
 #include <nodelet/nodelet.h>
 //#include <pcl/filters/extract_indices.h>
@@ -191,23 +188,11 @@ public:
       ROS_WARN("[point_map] Incoming point cloud is empty, skipping map update.");
       return;
     }
-    tf::StampedTransform trf_map;
-    try
+    if(pc->header.frame_id != map_frame_id_)
     {
-      std::stringstream ss2;
-      tf_listener_.waitForTransform(map_frame_id_, pc->header.frame_id, pc->header.stamp, ros::Duration(2.0));
-      tf_listener_.lookupTransform(map_frame_id_, pc->header.frame_id, pc->header.stamp/*ros::Time(0)*/, trf_map);
-    }
-    catch (tf::TransformException ex)
-    {
-      ROS_ERROR("[aggregate_point_map] : %s",ex.what());
+      ROS_ERROR("Frame ID of incoming point cloud does not match map frame ID, aborting...");
       return;
     }
-    Eigen::Affine3d af;
-    tf::TransformTFToEigen(trf_map, af);
-    Eigen::Matrix4f trf = af.matrix().cast<float>();
-    pcl::transformPointCloud(*pc, *pc, trf);
-    pc->header.frame_id = map_frame_id_;
 
     updateMap(pc);
     map_pub_.publish(map_);
@@ -358,8 +343,6 @@ protected:
   ros::ServiceServer set_map_server_;
 
   boost::shared_ptr<dynamic_reconfigure::Server<cob_3d_mapping_point_map::point_map_nodeletConfig> > config_server_;
-
-  tf::TransformListener tf_listener_;
 
   unsigned int ctr_;
   bool is_running_;

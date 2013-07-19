@@ -80,7 +80,7 @@
 // Package includes
 #include "cob_3d_mapping_msgs/TriggerAction.h"
 #include "cob_3d_mapping_common/point_types.h"
-#include "cob_3d_mapping_features/organized_normal_estimation_omp.h"
+#include "cob_3d_features/organized_normal_estimation_omp.h"
 #include "cob_3d_segmentation/depth_segmentation.h"
 #include "cob_3d_segmentation/cluster_classifier.h"
 #include <cob_3d_segmentation/polygon_extraction/polygon_extraction.h>
@@ -136,7 +136,7 @@ namespace cob_3d_segmentation
 
     boost::shared_ptr<dynamic_reconfigure::Server<cob_3d_segmentation::segmentation_nodeletConfig> > config_server_;
 
-    cob_3d_mapping_features::OrganizedNormalEstimationOMP<pcl::PointXYZRGB, pcl::Normal, PointLabel> one_;
+    cob_3d_features::OrganizedNormalEstimationOMP<pcl::PointXYZRGB, pcl::Normal, PointLabel> one_;
     DepthSegmentation<ST::Graph, ST::Point, ST::Normal, ST::Label> seg_;
     ClusterClassifier<ST::CH, ST::Point, ST::Normal, ST::Label> cc_;
     ST::Graph::Ptr graph_;
@@ -156,4 +156,4 @@ namespace cob_3d_segmentation
 }
 
 
-#endif  //__COB_3D_MAPPING_FEATURES_SEGMENTATION_NODELET_H__
+#endif  //__cob_3d_features_SEGMENTATION_NODELET_H__

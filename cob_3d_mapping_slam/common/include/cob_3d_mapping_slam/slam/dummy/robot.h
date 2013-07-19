@@ -69,21 +69,39 @@
 
 namespace Dummy
 {
+
   class RobotParameters
   {
   public:
 
     static float getMaxSpeedTranslationPerSecond()
     {
-      return 0.5f;
+      return 0.7f;
     }
 
     static float getMaxSpeedRotationPerSecond()
     {
-      return 0.4f;
+      return 0.5f;
     }
 
   };
+
+  class RobotParametersSlow
+  {
+  public:
+
+    static float getMaxSpeedTranslationPerSecond()
+    {
+      return 0.3f;
+    }
+
+    static float getMaxSpeedRotationPerSecond()
+    {
+      return 0.25f;
+    }
+
+  };
+
 }
 
 

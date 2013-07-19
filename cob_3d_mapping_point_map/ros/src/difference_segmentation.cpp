@@ -72,11 +72,8 @@
 
 #include <nodelet/nodelet.h>
 #include <pcl_ros/point_cloud.h>
-#include <pcl_ros/transforms.h>
 #include <pcl/io/io.h>
 #include <pluginlib/class_list_macros.h>
-#include <tf/transform_listener.h>
-#include <tf_conversions/tf_eigen.h>
 
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
@@ -85,10 +82,6 @@
 #include <pcl/segmentation/segment_differences.h>
 #include <pcl/kdtree/kdtree_flann.h>
 
-
-
-
-using namespace tf;
 
 //####################
 //#### node class ####
@@ -101,19 +94,14 @@ class DifferenceSegmentation : public nodelet::Nodelet//, protected Reconfigurab
 public:
   // Constructor
   DifferenceSegmentation()
-  //: Reconfigurable_Node<cob_3d_mapping_point_map::point_map_nodeletConfig>("PointMapNodelet")
-    {
-    //setReconfigureCallback2(boost::bind(&callback, this, _1, _2), boost::bind(&callback_get, this, _1));
-    }
-
+  {
+  }
 
   // Destructor
   ~DifferenceSegmentation()
   {
     /// void
   }
-
-
 
   /**
    * @brief initializes parameters
@@ -141,6 +129,7 @@ public:
     pcl::KdTreeFLANN<Point>::Ptr tree (new pcl::KdTreeFLANN<Point> ());
 #endif
     sd_.setSearchMethod(tree);
+    //TODO: set to a value derived from the map resolution
     sd_.setDistanceThreshold(0.01);
   }
 
@@ -157,24 +146,11 @@ public:
   void
   pointCloudSubCallback(const PointCloud::ConstPtr& map, const PointCloud::ConstPtr& pc_aligned)
   {
-    PointCloud::Ptr pc_trans(new PointCloud);
-    tf::StampedTransform trf_map;
-    try
+    if(pc_aligned->header.frame_id != map->header.frame_id)
     {
-      std::stringstream ss2;
-      tf_listener_.waitForTransform(map->header.frame_id, pc_aligned->header.frame_id, pc_aligned->header.stamp, ros::Duration(2.0));
-      tf_listener_.lookupTransform(map->header.frame_id, pc_aligned->header.frame_id, pc_aligned->header.stamp, trf_map);
-    }
-    catch (tf::TransformException ex)
-    {
-      ROS_ERROR("[difference_segmentation] : %s",ex.what());
+      ROS_ERROR("Frame ID of incoming point cloud does not match map frame ID, aborting...");
       return;
     }
-    Eigen::Affine3d af;
-    tf::TransformTFToEigen(trf_map, af);
-    Eigen::Matrix4f trf = af.matrix().cast<float>();
-    pcl::transformPointCloud(*pc_aligned, *pc_trans, trf);
-
     PointCloud::Ptr pc_diff(new PointCloud);
     /*std::cout << "map size:" << map->size() << std::endl;
     std::cout << map->header.stamp << std::endl;
@@ -187,7 +163,7 @@ public:
     }*/
     //diff_maps_.header.frame_id=map->header.frame_id;
     sd_.setTargetCloud(map_.makeShared());
-    sd_.setInputCloud(pc_trans);
+    sd_.setInputCloud(pc_aligned);
     sd_.segment(*pc_diff);
     pc_diff->header = map->header;
     std::cout << pc_diff->size() << std::endl;
@@ -198,24 +174,17 @@ public:
     pcl::copyPointCloud(*map, map_);
   }
 
-
-  ros::NodeHandle n_;
-
-
 protected:
+  ros::NodeHandle n_;
   message_filters::Subscriber<PointCloud > map_sub_;
   message_filters::Subscriber<PointCloud > pc_aligned_sub_;
   ros::Publisher map_diff_pub_;		//publisher for map
   //ros::Publisher diff_maps_pub_;
   boost::shared_ptr<message_filters::Synchronizer<MySyncPolicy> > sync_;
 
-  TransformListener tf_listener_;
-
   pcl::PointCloud<Point> map_;
   //pcl::PointCloud<Point> diff_maps_;
   pcl::SegmentDifferences<Point> sd_;
-
-
 };
 
 PLUGINLIB_DECLARE_CLASS(cob_3d_mapping_point_map, DifferenceSegmentation, DifferenceSegmentation, nodelet::Nodelet)
