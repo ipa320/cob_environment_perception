@@ -63,9 +63,15 @@
 #include <sstream>
 #include <ros/ros.h>
 #include <pluginlib/class_list_macros.h>
+#include <eigen_conversions/eigen_msg.h>
+#include <pcl/common/transforms.h>
+#include <pcl/filters/extract_indices.h>
+#include <pcl/io/pcd_io.h>
+#include <opencv2/opencv.hpp>
 
 #include <cob_3d_mapping_msgs/ShapeArray.h>
 #include <cob_3d_mapping_common/stop_watch.h>
+#include <cob_3d_mapping_common/ros_msg_conversions.h>
 #include "cob_3d_segmentation/simple_segmentation_nodelet.h"
 #include "cob_3d_mapping_filters/downsample_filter.h"
 
@@ -137,11 +143,11 @@ cob_3d_segmentation::SimpleSegmentationNodelet::actionCallback(const cob_3d_mapp
 void
 cob_3d_segmentation::SimpleSegmentationNodelet::topicCallback(const PointCloud::ConstPtr& cloud)
 {
-  boost::lock_guard<boost::mutex> guard(mutex_);
+  //boost::lock_guard<boost::mutex> guard(mutex_);
   PrecisionStopWatch t;
   NODELET_INFO("Received PointCloud. Start downsampling .... ");
 
-  t.precisionStart();
+  //t.precisionStart();
   if(downsample_)
   {
     cob_3d_mapping_filters::DownsampleFilter<pcl::PointXYZRGB> down;
@@ -154,7 +160,7 @@ cob_3d_segmentation::SimpleSegmentationNodelet::topicCallback(const PointCloud::
   {
     *segmented_ = *down_ = *cloud;
   }
-  std::cout << "Downsampling took " << t.precisionStop() << " s." << std::endl;
+  //std::cout << "Downsampling took " << t.precisionStop() << " s." << std::endl;
   computeAndPublish();
 }
 
@@ -168,9 +174,9 @@ cob_3d_segmentation::SimpleSegmentationNodelet::computeAndPublish()
   one_.compute(*normals_);
 
   seg_.setInputCloud(down_);
-  t.precisionStart();
+  //t.precisionStart();
   seg_.compute();
-  std::cout << "segmentation took " << t.precisionStop() << " s." << std::endl;
+  //std::cout << "segmentation took " << t.precisionStop() << " s." << std::endl;
   seg_.mapSegmentColor(segmented_);
 
   pub_segmented_.publish(segmented_);
@@ -183,19 +189,18 @@ cob_3d_segmentation::SimpleSegmentationNodelet::computeAndPublish()
   unsigned int id = 0;
   for (ClusterPtr c = seg_.clusters()->begin(); c != seg_.clusters()->end(); ++c)
   {
-    if(c->size() < min_cluster_size_) {/*std::cout << "da1" << std::endl;*/continue;}
+    if(c->size() < min_cluster_size_) {continue;}
     Eigen::Vector3f centroid = c->getCentroid();
-    if(centroid(2) > centroid_passthrough_) {/*std::cout << "da2" << std::endl;*/continue;}
-    if(c->size() <= ceil(1.1f * (float)c->border_points.size()))  {/*std::cout << "da3" << std::endl;*/continue;}
+    if(centroid(2) > centroid_passthrough_) {continue;}
+    if(c->size() <= ceil(1.1f * (float)c->border_points.size()))  {continue;}
 
     seg_.clusters()->computeClusterComponents(c);
-    if(filter_ && !c->is_save_plane) {/*std::cout << "da4" << std::endl;*/continue;}
+    if(filter_ && !c->is_save_plane) {continue;}
 
 
     PolygonContours<PolygonPoint> poly;
-    std::cout << c->border_points.size() << std::endl;
     pe_.outline(down_->width, down_->height, c->border_points, poly);
-    if(!poly.polys_.size()) {/*std::cout << "da5" << std::endl;*/continue;} // continue, if no contours were found
+    if(!poly.polys_.size()) {continue;} // continue, if no contours were found
     int max_idx=0, max_size=0;
     for (int i = 0; i < (int)poly.polys_.size(); ++i)
     {
@@ -204,69 +209,120 @@ cob_3d_segmentation::SimpleSegmentationNodelet::computeAndPublish()
 
     sa.shapes.push_back(cob_3d_mapping_msgs::Shape());
     cob_3d_mapping_msgs::Shape* s = &sa.shapes.back();
-    s->id = id++;
-    s->points.resize(poly.polys_.size());
-    s->header.frame_id = down_->header.frame_id.c_str();
+    s->header = down_->header;
 
-    /* // turn off color calc:
-    s->color.r = 0;
-    s->color.g = 0;
-    s->color.b = 0.0f; */
-    // turn on color calc:
-    Eigen::Vector3f color = c->computeDominantColorVector().cast<float>();
-    float tmp_inv = 1.0f / 255.0f;
-    //std::cout << color << std::endl;;
-    s->color.r = color(0) * tmp_inv;
-    s->color.g = color(1) * tmp_inv;
-    s->color.b = color(2) * tmp_inv;
-    s->color.a = 1.0f;
-
+    std::vector<pcl::PointCloud<pcl::PointXYZ> > contours_3d;
+    std::vector<bool> holes;
     for (int i = 0; i < (int)poly.polys_.size(); ++i)
     {
+      pcl::PointCloud<pcl::PointXYZ> contour;
       if (i == max_idx)
       {
-        s->holes.push_back(false);
+        holes.push_back(false);
         std::vector<PolygonPoint>::iterator it = poly.polys_[i].begin();
         for ( ; it != poly.polys_[i].end(); ++it) {
-          hull->push_back( down_->points[ it->x + it->y * down_->width ] );
+          pcl::PointXYZ pt;
+          pt.getVector3fMap() = down_->points[ it->x + it->y * down_->width ].getVector3fMap();
+          contour.push_back( pt );
         }
       }
       else
       {
-        s->holes.push_back(true);
+        holes.push_back(true);
         std::vector<PolygonPoint>::reverse_iterator it = poly.polys_[i].rbegin();
         for ( ; it != poly.polys_[i].rend(); ++it) {
-          hull->push_back( down_->points[ it->x + it->y * down_->width ] );
+          pcl::PointXYZ pt;
+          pt.getVector3fMap() = down_->points[ it->x + it->y * down_->width ].getVector3fMap();
+          contour.push_back( pt );
         }
       }
-      hull->height = 1;
-      hull->width = hull->size();
-      pcl::toROSMsg(*hull, s->points[i]);
-      hull->clear();
+      contour.height = 1;
+      contour.width = contour.size();
+      contours_3d.push_back(contour);
     }
 
-    s->centroid.x = centroid[0];
-    s->centroid.y = centroid[1];
-    s->centroid.z = centroid[2];
-    s->type = cob_3d_mapping_msgs::Shape::POLYGON;
-    s->params.resize(4);
-    s->params[0] = c->pca_point_comp3(0);
-    s->params[1] = c->pca_point_comp3(1);
-    s->params[2] = c->pca_point_comp3(2);
+    std::vector<float> color(4, 1);
     if(colorize_)
     {
-      s->params[3] = fabs(centroid.dot(c->pca_point_comp3)); // d
-      Eigen::Vector3f color = c->computeDominantColorVector().cast<float>();
+      Eigen::Vector3f col_tmp = c->computeDominantColorVector().cast<float>();
       float temp_inv = 1.0f/255.0f;
-      s->color.r = color(0) * temp_inv;
-      s->color.g = color(1) * temp_inv;
-      s->color.b = color(2) * temp_inv;
-      s->color.a = 1.0f;
+      color[0] = col_tmp(0) * temp_inv;
+      color[1] = col_tmp(1) * temp_inv;
+      color[2] = col_tmp(2) * temp_inv;
     }
+    else
+    {
+      color[0] = 0.0f;
+      color[1] = 0.0f;
+      color[2] = 1.0f;
+    }
+    cob_3d_mapping::Polygon::Ptr  p(new cob_3d_mapping::Polygon(id,
+                                                                c->pca_point_comp3,
+                                                                fabs(c->getCentroid().dot(c->pca_point_comp3)),
+                                                                contours_3d,
+                                                                holes,
+                                                                color));
+
+    //computeTexture(c, p->pose_, id);
+    cob_3d_mapping::toROSMsg(*p, *s);
+    id++;
   }
 
   pub_shape_array_.publish(sa);
   std::cout << "total nodelet time: " << t2.precisionStop() << std::endl;
+}
+
+void
+cob_3d_segmentation::SimpleSegmentationNodelet::computeTexture(ClusterPtr &c, Eigen::Affine3f &trf, unsigned int id)
+{
+  pcl::ExtractIndices<pcl::PointXYZRGB> ei;
+  ei.setInputCloud(down_);
+  pcl::IndicesPtr ind_ptr(new std::vector<int>);
+  for(unsigned int i=0; i<c->indices_.size(); i++)
+    ind_ptr->push_back(c->indices_[i]);
+  ei.setIndices(ind_ptr);
+  PointCloud::Ptr segment(new PointCloud);
+  ei.filter(*segment);
+  PointCloud::Ptr segment_tr(new PointCloud);
+  pcl::transformPointCloud(*segment, *segment_tr, trf.inverse());
+  std::stringstream ss;
+  ss << "/tmp/seg_" << id << ".pcd";
+  pcl::io::savePCDFileBinary(ss.str(), *segment_tr);
+  double mToPx = 500;
+  int min_u = std::numeric_limits<int>::max(), max_u = std::numeric_limits<int>::min(), min_v = std::numeric_limits<int>::max(), max_v  = std::numeric_limits<int>::min();
+  for (unsigned int i=0; i<segment_tr->size(); i++)
+  {
+    int u = round(segment_tr->points[i].x * mToPx);
+    int v = round(segment_tr->points[i].y * mToPx);
+    if(u < min_u) min_u = u;
+    if(u > max_u) max_u = u;
+    if(v < min_v) min_v = v;
+    if(v > max_v) max_v = v;
+    //std::cout << segment_tr->points[i].x << "," << segment_tr->points[i].y << ":" << u << "," << v << std::endl;
+  }
+  //TODO: save min/max u v for transforming back
+  //std::cout << "u(min, max): " << min_u << "," << max_u << " v(min,max): " << min_v << "," << max_v << std::endl;
+  cv::Mat img(abs(max_u - min_u) +1 , abs(max_v - min_v) + 1, CV_8UC3, cv::Scalar(-1));
+  //std::cout << "im size: " << img.rows << "," << img.cols << std::endl;
+  for (unsigned int i=0; i<segment_tr->size(); i++)
+  {
+    //TODO: handle case that both u_min and u-Max are negative (same for v)
+    int u = round(segment_tr->points[i].x * mToPx) - min_u;
+    int v = round(segment_tr->points[i].y * mToPx) - min_v;
+    //std::cout << "u,v" << u << "," << v << std::endl;
+    img.at<cv::Vec3b>(u,v)[0] = segment_tr->points[i].r;
+    img.at<cv::Vec3b>(u,v)[1] = segment_tr->points[i].g;
+    img.at<cv::Vec3b>(u,v)[2] = segment_tr->points[i].b;
+  }
+  std::stringstream ss1;
+  ss1 << "/tmp/seg_" << id << ".png";
+  cv::imwrite(ss1.str(), img);
+
+  cv::Mat img_dil(abs(max_u - min_u) +1 , abs(max_v - min_v) + 1, CV_8UC3);
+  cv::dilate(img, img_dil, cv::Mat(), cv::Point(-1,-1), 3);
+  std::stringstream ss2;
+  ss2 << "/tmp/seg_dil_" << id << ".png";
+  cv::imwrite(ss2.str(), img_dil);
 }
 
 PLUGINLIB_DECLARE_CLASS(cob_3d_segmentation, SimpleSegmentationNodelet, cob_3d_segmentation::SimpleSegmentationNodelet, nodelet::Nodelet);

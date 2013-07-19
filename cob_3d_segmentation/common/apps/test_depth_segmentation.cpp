@@ -74,7 +74,7 @@
 #include "cob_3d_mapping_common/stop_watch.h"
 #include "cob_3d_mapping_common/point_types.h"
 #include "cob_3d_mapping_common/label_defines.h"
-#include "cob_3d_mapping_features/organized_normal_estimation.h"
+#include "cob_3d_features/organized_normal_estimation.h"
 #include "cob_3d_segmentation/depth_segmentation.h"
 #include "cob_3d_segmentation/cluster_classifier.h"
 //#include "cob_3d_segmentation/polygon_extraction/polygon_types.h"
@@ -148,7 +148,7 @@ int main(int argc, char** argv)
   *pt = *p2 = *p;
   PrecisionStopWatch t;
   t.precisionStart();
-  cob_3d_mapping_features::OrganizedNormalEstimation<PointXYZRGB, Normal, PointLabel>one;
+  cob_3d_features::OrganizedNormalEstimation<PointXYZRGB, Normal, PointLabel>one;
   one.setInputCloud(p);
   one.setOutputLabels(l);
   one.setPixelSearchRadius(8,2,2); //radius,pixel,circle

@@ -31,7 +31,8 @@ rosbuild_add_boost_directories()
 #rosbuild_gensrv()
 
 rosbuild_add_library(cob_table_object_cluster
-	common/src/table_object_cluster.cpp)
+	common/src/table_object_cluster.cpp
+	ros/src/table_region_crop_nodelet.cpp)
 #rosbuild_add_library(cob_table_object_cluster_nodelets
 #	ros/src/r3cop_table_object_cluster_nodelet.cpp)
 

@@ -63,7 +63,7 @@
 #include <pcl/point_types.h>
 #include <pcl_ros/point_cloud.h>
 
-
+#include <cob_srvs/Trigger.h>
 #include <cob_object_detection_msgs/DetectionArray.h>
 #include <cob_3d_mapping_msgs/SetBoundingBoxes.h>
 #include <cob_3d_mapping_msgs/TableObjectClusterAction.h>
@@ -78,21 +78,38 @@ public:
     : action_name(name)
     , action_started(false)
     , as(nh, name, false)
+    , subscribed_(false)
   { onInit(); }
 
   void onInit()
   {
-    sub_pc = nh.subscribe<PointCloud>("point_cloud", 1, boost::bind(&TableObjectClusterActionServerNode::inputCallback,this,_1));
+    //sub_pc = nh.subscribe<PointCloud>("point_cloud", 1, boost::bind(&TableObjectClusterActionServerNode::inputCallback,this,_1));
     sub_bba = nh.subscribe<BoundingBoxes>("bounding_box_array", 1,
                                           boost::bind(&TableObjectClusterActionServerNode::outputCallback,this,_1));
 
     pub_pc = nh.advertise<PointCloud>("triggered_point_cloud", 1);
 
     set_bb_client_ = nh.serviceClient<cob_3d_mapping_msgs::SetBoundingBoxes>("set_known_objects");
+    start_pc_sub_ = nh.advertiseService("start_pc_sub", &TableObjectClusterActionServerNode::startPCSub, this);
 
     as.registerGoalCallback(boost::bind(&TableObjectClusterActionServerNode::goalCallback, this));
     as.registerPreemptCallback(boost::bind(&TableObjectClusterActionServerNode::preemptCallback, this));
     as.start();
+  }
+
+  bool startPCSub(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res)
+  {
+    if(!subscribed_)
+    {
+      sub_pc = nh.subscribe<PointCloud>("point_cloud", 1, boost::bind(&TableObjectClusterActionServerNode::inputCallback,this,_1));
+      subscribed_ = true;
+    }
+    else
+    {
+      sub_pc.shutdown();
+      subscribed_ = false;
+    }
+    return true;
   }
 
   void goalCallback()
@@ -126,6 +143,7 @@ public:
   // buffer last camera point cloud
   void inputCallback(const PointCloud::ConstPtr& pc)
   {
+    //ROS_INFO("PC received");
     last_pc = pc;
   }
 
@@ -157,6 +175,7 @@ private:
   ros::Subscriber sub_bba;
   ros::Publisher pub_pc;
   ros::ServiceClient set_bb_client_;
+  ros::ServiceServer start_pc_sub_;
 
   actionlib::SimpleActionServer<cob_3d_mapping_msgs::TableObjectClusterAction> as;
 
@@ -165,6 +184,7 @@ private:
   std::string action_name;
   bool action_started;
   ros::Time action_timeout;
+  bool subscribed_;
 };
 
 int main (int argc, char **argv)

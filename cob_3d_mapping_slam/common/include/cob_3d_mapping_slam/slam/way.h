@@ -77,6 +77,7 @@ namespace Slam  /// namespace for all Slam related stuff
 
     typename NODE::Ptr node_;
     DOF6 link_;
+    size_t id_;
   };
 }
 

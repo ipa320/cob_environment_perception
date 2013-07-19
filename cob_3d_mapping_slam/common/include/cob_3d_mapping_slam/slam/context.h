@@ -115,6 +115,7 @@ namespace Slam  /// namespace for all Slam related stuff
     }
 
     const PATH &getPath() const {return path_;}
+    PATH &getPath() {return path_;}
   };
 
 #include "impl/context.hpp"

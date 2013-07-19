@@ -59,7 +59,7 @@
 //#include <boost/bind.hpp>
 
 #include "cob_3d_mapping_common/point_types.h"
-#include "cob_3d_mapping_features/organized_normal_estimation_omp.h"
+#include "cob_3d_features/organized_normal_estimation_omp.h"
 #include "cob_3d_mapping_tools/gui/impl/core.hpp"
 
 class MainApp : public wxApp
@@ -91,7 +91,7 @@ class MainApp : public wxApp
 
     PCDReader r;
     r.read(file,*p);
-    cob_3d_mapping_features::OrganizedNormalEstimationOMP<PointT, NormalT, PointLabel> one;
+    cob_3d_features::OrganizedNormalEstimationOMP<PointT, NormalT, PointLabel> one;
     one.setInputCloud(p);
     one.setOutputLabels(l);
     one.setPixelSearchRadius(8,2,2); //radius,pixel,circle

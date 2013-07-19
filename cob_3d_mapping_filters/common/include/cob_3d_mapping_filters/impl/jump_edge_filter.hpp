@@ -83,7 +83,7 @@ template <typename PointT> void
   double lower_angle_thresh = (180-upper_angle_deg_)/180*M_PI;
   for (unsigned int i = 0; i < input_->points.size(); i++)
   {
-    if(i< input_->width || i%input_->width==0 || i%input_->width==3 || i>input_->width*(input_->height-1)) continue; //skip border points
+    if(i < input_->width || i%input_->width==0 || i%input_->width==(input_->height-1) || i > input_->width*(input_->height-1)) continue; //skip border points
     Eigen::Vector3f v_m(input_->points[i].x,input_->points[i].y,input_->points[i].z);
     Eigen::Vector3f v_m_n = v_m.normalized();
     int index = i-input_->width-1;
@@ -160,11 +160,15 @@ template <typename PointT> void
       continue;
     }
   }
-  pcl::ExtractIndices<PointT> extractIndices;
-  extractIndices.setInputCloud(input_);
-  extractIndices.setIndices(points_to_remove);
-  extractIndices.setNegative(true);
-  extractIndices.filter(pc_out);
+
+  if(&pc_out != input_.get())
+    pc_out = *input_;
+
+  for(size_t i=0; i<points_to_remove->indices.size(); i++) {
+    size_t j = points_to_remove->indices[i];
+    pc_out[j].x = pc_out[j].y = pc_out[j].z = std::numeric_limits<float>::quiet_NaN();
+  }
+  points_to_remove->indices.clear ();
  }
 
 #define PCL_INSTANTIATE_JumpEdgeFilter(T) template class cob_3d_mapping_filters::JumpEdgeFilter<T>;

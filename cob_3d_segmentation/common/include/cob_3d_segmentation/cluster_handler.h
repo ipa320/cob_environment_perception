@@ -14,7 +14,7 @@
  * \note
  *  ROS stack name: cob_environment_perception_intern
  * \note
- *  ROS package name: cob_3d_mapping_features
+ *  ROS package name: cob_3d_features
  *
  * \author
  *  Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
@@ -229,6 +229,7 @@ namespace cob_3d_segmentation
 
       for (size_t y = w; y < labels_->size() - w; y+=w)
       {
+        //std::cout << "adding border points for cluster " << (*labels_)[y].label << std::endl;
         for (size_t i=y+1; i < y+w-1; ++i)
         {
           curr_label = (*labels_)[i].label;
