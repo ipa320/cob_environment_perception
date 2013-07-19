@@ -122,6 +122,7 @@ namespace cob_3d_segmentation
     void actionCallback(const cob_3d_mapping_msgs::TriggerGoalConstPtr& goal);
     void topicCallback(const PointCloud::ConstPtr& cloud);
     void computeAndPublish();
+    void computeTexture(ClusterPtr &c, Eigen::Affine3f &trf, unsigned int id);
 
     boost::mutex mutex_;
 
