@@ -98,6 +98,7 @@ int readOptions(int argc, char** argv)
   { std::cout << options << std::endl; return(-1); }
 }
 
+// based on: Surface Simplification Using Quadric Error Metrics, M Garland, P S Heckbert
 template<typename PointT>
 class MeshSimplification
 {
@@ -116,16 +117,16 @@ public:
   typedef typename boost::graph_traits<GraphT>::edge_descriptor EdgeID;
   typedef typename std::list<F>::iterator FacePtr;
 
-  struct V
+  struct V // a Vertex
   {
-    V(const Eigen::Vector4f& point) : idx(0), Q(Eigen::Matrix4f::Zeros()) { v = point; }
+    V(const Eigen::Vector4f& point) : idx(0), Q(Eigen::Matrix4f::Zeros()) { p = point; }
 
-    Eigen::Vector4f v;
-    Eigen::Matrix4f Q;
+    Eigen::Vector4f p; // x,y,z,1 component of vertex (paper: v)
+    Eigen::Matrix4f Q; // Q-Matrix, see Paper
     int idx;
   };
 
-  struct E
+  struct E // a Edge connecting 2 Vertices
   {
     E() : cost(0) { }
 
@@ -133,12 +134,9 @@ public:
     std::vector<FacePtr> faces;
   };
 
-  struct F
+  struct F // a Face build by 3 Vertices
   {
     F() : adjacent_faces(0) { }
-
-    V*& operator[](size_t idx) { return vertices[idx]; }
-    V*const operator[](size_t idx) const { return vertices[idx]; }
 
     V* vertices[3];
     int adjacent_faces;
@@ -153,6 +151,23 @@ public:
     GraphT* g_;
   };
 
+protected:
+  // some helper functions to make my code more readable;
+  inline V& getVertex(const F& face, int idx) { return *(face.vertices[idx]); }
+  bool thereIsStillWork()
+    {
+      if(g_[heap_.top()].cost > max_cost_)
+      {
+        std::cout << "[MeshSimplification] Terminated: reached maximum cost: " << max_cost_ << std::endl;
+        return false;
+      }
+      else if(boost::num_vertices(g_) <= min_vertices_)
+      {
+        std::cout << "[MeshSimplification] Terminated: reached minimum number of vertices: " << min_vertices_ << std::endl;
+        return false;
+      }
+      return true;
+    }
 
 public:
   MeshSimplification()
@@ -162,40 +177,93 @@ public:
 
   void initializeGraph(const pcl::PolygonMesh& mesh)
     {
-      input = new PointCloud;
-      pcl::fromROSMsg(mesh.cloud, *input);
+      input_.reset(new PointCloud);
+      pcl::fromROSMsg(mesh.cloud, *input_);
       initialzeGraph(mesh.polygons);
     }
 
   void initializeGraph(const std::vector<pcl::Vertices>& faces)
     {
       std::vector<std::pair<bool,VertexID> > added(input_->size(), std::pair<bool,VertexID>(false,VertexID()));
-      for(std::vector<pcl::Vertices>::iterator it = faces.begin(); it != faces.end(); ++it)
+      for(std::vector<pcl::Vertices>::iterator it = faces.begin(); it != faces.end(); ++it) // work faces
       {
-        VertexID v[3];
+        VertexID vid[3];
         Eigen::Vector3f p;
-        FacePtr f = faces_.insert(faces_.end(), F());
+        FacePtr f = faces_.insert(faces_.end(), F()); // add new, empty face
 
-        for(int i=0; i<=2; ++i)
+        for(int i=0; i<=2; ++i) // work 3 vertices of current face
         {
           int idx = it->vertices[i];
-          if( added[idx].first ) { v[i] = added[idx].second; }
+          if( added[idx].first ) { vid[i] = added[idx].second; } // already added by another face
           else
           {
             p = (*input_)[idx].getVector3fMap();
-            v[i] = boost::add_vertex(V(Eigen::Vector4f( p(0), p(1), p(2), 1.0 )), g_);
+            vid[i] = boost::add_vertex(V(Eigen::Vector4f( p(0), p(1), p(2), 1.0 )), g_);
             added[idx].first = true;
-            added[idx].second = v[i];
+            added[idx].second = vid[i];
           }
-          (*f)[i] = &g_[v[i]];
+          getVertex(*f,i) = &g_[vid[i]];
         }
+        // compute plane coefficents of current face and update all 3 vertices
+        // Q_v = sum_overall_faces_adjacent_to_v(coef * coef.transpose())
+        Eigen::Vector3f n = (getVertex(*f,2).p - getVertex(*f,1).p).cross(getVertex(*f,3).p - getVertex(*f,1).p);
+        n = n.normalize();
+        float d = (n.transpose() * getVertex(*f,1).p * n).norm();
+        Eigen::Matrix4f q_tmp = Eigen::Vector4f(n(0), n(1), n(2), d) * Eigen::Vector4f(n(0), n(1), n(2), d).transpose();
+        for( i=0; i<=2; ++i) { getVertex(*f, i).Q += q_tmp; }
 
-        g_[ boost::add_edge(v[0], v[1], g_)->first ].faces.push_back(f);
-        g_[ boost::add_edge(v[1], v[2], g_)->first ].faces.push_back(f);
-        g_[ boost::add_edge(v[2], v[0], g_)->first ].faces.push_back(f);
+        g_[ boost::add_edge(vid[0], vid[1], g_)->first ].faces.push_back(f);
+        g_[ boost::add_edge(vid[1], vid[2], g_)->first ].faces.push_back(f);
+        g_[ boost::add_edge(vid[2], vid[0], g_)->first ].faces.push_back(f);
       }
     }
 
+  void contractEdge(const EdgeID& eid)
+    {
+      // src will be deleted
+      // all edges src will be connected to trg
+      // trg gets a new Q
+      // all edges of trg get updated costs
+      // faces of eid get deleted
+      // dublicate edges get updated faces
+
+      VertexID src = boost::source(eid, g_);
+      VertexID trg = boost::target(eid, g_);
+
+      boost::remove_edge(src, trg, g_);
+      // iterate edges of source and relocate them
+      typename boost::graph_traits<GraphT>::out_edge_iterator oe_it, oe_end;
+      EdgeID new_eid; bool ok;
+      for(boost::tie(oe_it, oe_end) = boost::out_edges(src, g_); oe_it != oe_end; ++oe_it)
+      {
+        boost::tie(new_eid,ok) = boost::add_edge(trg, boost::target(*oe_it, g_), g_); // try to add new edge
+        if(ok) // vertices were not yet connected
+        {
+          // everything is fine
+        }
+        else // connection already existed
+        {
+          // merge edges:
+        }
+      }
+
+      boost::clear_vertex(src, g_); // removes all out edges, but vertex still exists
+      boost::remove_vertex(src, g_);
+    }
+
+  void simplify()
+    {
+      // init graph
+      // init heap
+      while(thereIsStillWork())
+      {
+        EdgeID eid = heap_.top();
+        heap_.pop();
+        contractEdge(eid);
+      }
+    }
+
+  // get results
   void convertGraph(pcl::PolygonMesh& mesh)
     {
       PointCloud out;
@@ -204,24 +272,20 @@ public:
       typename boost::graph_traits<GraphT>::vertex_iterator v_it, v_end;
       for (boost::tie(v_it,v_end) = boost::vertices(g_); v_it != v_end; ++v_it)
       {
-        Eigen::Vector4f p = g_[*v_it].v;
+        Eigen::Vector4f p = g_[*v_it].p;
         out[idx].x = p(0);
         out[idx].y = p(1);
         out[idx].z = p(2);
-        g_[*v_it].idx = idx;
+        g_[*v_it].idx = idx++; // remember association with point cloud
       }
       pcl::toROSMsg(out, mesh.cloud);
       idx = 0;
       mesh.polygons.resize(faces_.size());
       for (FacePtr f = faces_.begin(); f != faces_.end(); ++f)
       {
-        for(int i=0; i<=2; ++i) { mesh.polygons[idx].vertices.push_back( (*f)[i]->idx ); }
+        for(int i=0; i<=2; ++i) { mesh.polygons[idx].vertices.push_back( getVertex(*f, i).idx ); }
         ++idx;
       }
-    }
-
-  inline Eigen::Matrix4f computeQ(const pcl::Vertices& face)
-    {
     }
 
 private:
@@ -231,6 +295,9 @@ private:
   GraphT g_;
   std::priority_queue<EdgeID, std::vector<EdgeID>, CompareEdgeCost> heap_;
   std::list<F> faces_;
+
+  int max_iteration_;
+  float max_cost_;
 
 };
 
