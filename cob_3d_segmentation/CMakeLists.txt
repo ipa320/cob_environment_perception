@@ -69,8 +69,8 @@ target_link_libraries(plane_extraction_action_client ${OpenCV_LIBS})
 #target_link_libraries(mesh_from_segmentation cob_3d_segmentation)
 #rosbuild_link_boost(mesh_from_segmentation program_options)
 
-#rosbuild_add_executable(mesh_decimation common/apps/mesh_decimation.cpp)
-#rosbuild_link_boost(mesh_decimation program_options)
+rosbuild_add_executable(mesh_decimation common/apps/mesh_decimation.cpp)
+rosbuild_link_boost(mesh_decimation program_options)
 
 # segmentation app:
 rosbuild_add_executable(test_depth_segmentation common/apps/test_depth_segmentation.cpp)
