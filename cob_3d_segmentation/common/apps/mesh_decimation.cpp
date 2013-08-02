@@ -63,17 +63,22 @@
 #include <boost/program_options.hpp>
 
 #include <pcl/io/pcd_io.h>
-#include <pcl/ros/conversions.h>
 
 //#include <pcl/geometry/triangle_mesh.h>
 //#include <pcl/geometry/mesh_conversion.h>
 #include <pcl/surface/organized_fast_mesh.h>
+#include <pcl/PolygonMesh.h>
 
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/point_cloud_handlers.h>
 
+#include <OpenMesh/Core/IO/MeshIO.hh>
+#include <OpenMesh/Core/Mesh/TriMesh_ArrayKernelT.hh>
+
+
 #include <cob_3d_mapping_filters/downsample_filter.h>
 #include <cob_3d_mapping_common/stop_watch.h>
+#include <cob_3d_mapping_common/sensor_model.h>
 
 std::string file_in_;
 std::string file_out_;
@@ -96,6 +101,8 @@ int readOptions(int argc, char** argv)
 
   if(vm.count("help") || argc == 1)
   { std::cout << options << std::endl; return(-1); }
+
+  return 0;
 }
 
 // based on: Surface Simplification Using Quadric Error Metrics, M Garland, P S Heckbert
@@ -107,103 +114,165 @@ public:
   typedef typename PointCloud::Ptr PointCloudPtr;
   typedef typename PointCloud::ConstPtr PointCloudConstPtr;
 
-  struct V; // vertex
-  struct E; // edge
-  struct F; // face
-
-  // adjacencs_list< OutEdgeList, VertexList, TransitionType[, VertexProperties, EdgeProperties, GraphProperties, EdgeList] >
-  typedef boost::adjacency_list<boost::setS, boost::listS, boost::undirectedS, V, E> GraphT;
-  typedef typename boost::graph_traits<GraphT>::vertex_descriptor VertexID;
-  typedef typename boost::graph_traits<GraphT>::edge_descriptor EdgeID;
-  typedef typename std::list<F>::iterator FacePtr;
+  typedef OpenMesh::TriMesh_ArrayKernelT<> Mesh; // Triangle Mesh
+  typedef boost::shared_ptr<Mesh> MeshPtr;
 
   struct V // a Vertex
   {
-    V(const Eigen::Vector4f& point) : idx(0), Q(Eigen::Matrix4f::Zeros()) { p = point; }
+    V(const Eigen::Vector4f& point) : idx(0), Q(Eigen::Matrix4f::Zero()) { p = point; }
 
     Eigen::Vector4f p; // x,y,z,1 component of vertex (paper: v)
     Eigen::Matrix4f Q; // Q-Matrix, see Paper
     int idx;
   };
 
-  struct E // a Edge connecting 2 Vertices
-  {
-    E() : cost(0) { }
-
-    float cost;
-    std::vector<FacePtr> faces;
-  };
-
-  struct F // a Face build by 3 Vertices
-  {
-    F() : adjacent_faces(0) { }
-
-    V* vertices[3];
-    int adjacent_faces;
-  };
-
-  struct CompareEdgeCost
-  {
-    CompareEdgeCost(GraphT* g) { g_ = g; }
-
-    bool operator() (const EdgeID& e1, const EdgeID& e2) const { return (*g_)[e1].cost < (*g_)[e2].cost; }
-
-    GraphT* g_;
-  };
-
-protected:
-  // some helper functions to make my code more readable;
-  inline V& getVertex(const F& face, int idx) { return *(face.vertices[idx]); }
-  bool thereIsStillWork()
-    {
-      if(g_[heap_.top()].cost > max_cost_)
-      {
-        std::cout << "[MeshSimplification] Terminated: reached maximum cost: " << max_cost_ << std::endl;
-        return false;
-      }
-      else if(boost::num_vertices(g_) <= min_vertices_)
-      {
-        std::cout << "[MeshSimplification] Terminated: reached minimum number of vertices: " << min_vertices_ << std::endl;
-        return false;
-      }
-      return true;
-    }
-
 public:
   MeshSimplification()
     { }
-
-  inline void setInputCloud(const PointCloudConstPtr& input) { input_ = input; }
-
-  void initializeGraph(const pcl::PolygonMesh& mesh)
+  void initializeMesh(const PointCloudPtr& input)
     {
-      input_.reset(new PointCloud);
-      pcl::fromROSMsg(mesh.cloud, *input_);
-      initialzeGraph(mesh.polygons);
+      input_ = input;
+      int rows = input_->height - 1; // last row
+      int cols = input_->width - 1; // last column
+      int row_offset;
+      std::vector<std::vector<bool> > h(rows+1, std::vector<bool>(cols,true)); // horizontal edge check
+      std::vector<std::vector<bool> > v(rows, std::vector<bool>(cols+1,true)); // vertical edge check
+      std::vector<std::vector<bool> > l(rows, std::vector<bool>(cols,true)); // left diagonal edge check
+      std::vector<std::vector<bool> > r(rows, std::vector<bool>(cols,true)); // right diagonal edge check
+
+      std::vector<std::vector<Mesh::VertexHandle> > vh(rows+1, std::vector<Mesh::VertexHandle>(cols+1)); // vertex handles
+      std::vector<std::vector<Mesh::VertexHandle> > fh;
+
+      /*
+       * +--+--+   p00  h00  p01  h01  p02
+       * |  |  |   v00 lr00  v01 lr01  v02
+       * +--+--+   p10  h10  p11  h11  p12
+       * |  |  |   v10 lr10  v11 lr11  v12
+       * +--+--+   p20  h20  p21  h21  p22
+       */
+
+      mesh_.reset(new Mesh);
+
+      // corners
+      h.front().front() = v.front().front() = r.front().front() = false;
+      h.front().back()  = v.front().back()  = l.front().back()  = false;
+      h.back().front() = v.back().front() = l.back().front() = false;
+      h.back().back()  = v.back().back()  = r.back().back()  = false;
+
+      // first and last row
+      for(int x = 1; x<cols; ++x)
+      {
+        h.front()[x-1] = h.front()[x] = v.front()[x] = l.front()[x-1] = r.front()[x] = false;
+        h.back()[x-1] = h.back()[x] = v.back()[x] = r.back()[x-1] = l.back()[x] = false;
+      }
+
+      for(int y = 1; y<rows; ++y)
+      {
+        // left column and right column
+        h[y].front() = v[y-1].front() = v[y].front() = l[y-1].front() = r[y].front() = false;
+        h[y].back() = v[y-1].back() = v[y].back() = r[y-1].back() = l[y].back() = false;
+
+        row_offset = y*cols;
+        // iterate remaining
+        for(int x=1; x<cols; ++x)
+        {
+          const PointT* p = &(*input_)[row_offset+x];
+          if( p->z != p->z )
+            v[y-1][x] = v[y][x] = h[y][x-1] = h[y][x] = l[y-1][x] = l[y][x-1] = r[y-1][x-1] = r[y][x] = false;
+          else
+            vh[y][x] = mesh_->add_vertex(Mesh::Point(p->x, p->y, p->z));
+        }
+      }
+      // iterate h and v to check if edge is valid
+      typename std::vector<PointT, Eigen::aligned_allocator_indirection<PointT> >::const_iterator pii = input_->points.begin();
+      typename std::vector<PointT, Eigen::aligned_allocator_indirection<PointT> >::const_iterator pij = pii + 1; // right
+      typename std::vector<PointT, Eigen::aligned_allocator_indirection<PointT> >::const_iterator pji = pii + cols; // below
+      typename std::vector<PointT, Eigen::aligned_allocator_indirection<PointT> >::const_iterator pjj = pji + 1; // below right
+      for(int y=0; y<rows; ++y)
+      {
+        for(int x=0; x<cols; ++x)
+        {
+          // check horizontal and vertical
+          if(h[y][x]) { h[y][x] = cob_3d_mapping::PrimeSense::areNeighbors(pii->getVector3fMap(), pij->getVector3fMap()); }
+          if(v[y][x]) { v[y][x] = cob_3d_mapping::PrimeSense::areNeighbors(pii->getVector3fMap(), pji->getVector3fMap()); }
+
+          // check diagonal
+          unsigned char status = (l[y][x] << 1) | r[y][x];
+          switch(status)
+          {
+          case 0b00:
+            break;
+          case 0b01:
+            r[y][x] = cob_3d_mapping::PrimeSense::areNeighbors(pii->getVector3fMap(), pjj->getVector3fMap());
+            break;
+          case 0b10:
+            l[y][x] = cob_3d_mapping::PrimeSense::areNeighbors(pij->getVector3fMap(), pji->getVector3fMap());
+            break;
+          case 0b11:
+            if( (pij->z - pji->z) > (pii->z - pjj->z) )
+            {
+              r[y][x] = false;
+              l[y][x] = cob_3d_mapping::PrimeSense::areNeighbors(pij->getVector3fMap(), pji->getVector3fMap());
+            }
+            else
+            {
+              l[y][x] = false;
+              r[y][x] = cob_3d_mapping::PrimeSense::areNeighbors(pii->getVector3fMap(), pjj->getVector3fMap());
+            }
+            break;
+          }
+          ++pii; ++pij; ++pji; ++pjj;
+        }
+        ++pii; ++pij; ++pji; ++pjj; // note that in the very last iteration, pjj points beyond end()
+      }
+
+      for(int y=0; y<rows; ++y)
+      {
+        for(int x=0; x<cols; ++x)
+        {
+          if(l[y][x])
+          {
+            /*  +-+  ii - ji - ij
+             *  |/
+             *  +    */
+            if(h[y][x] && v[y][x])
+            {
+              fh.push_back(std::vector<Mesh::VertexHandle>());
+              fh.back().push_back(vh[y][x]); fh.back().push_back(vh[y+1][x]); fh.back().push_back(vh[y][x+1]);
+            }//mesh_->add_face(vh[y][x], vh[y+1][x], vh[y][x+1]);
+            /*    +  ij - ji - jj
+             *   /|
+             *  +-+   */
+            if(h[y+1][x] && v[y][x+1])
+            {
+              fh.push_back(std::vector<Mesh::VertexHandle>());
+              fh.back().push_back(vh[y][x]); fh.back().push_back(vh[y+1][x]); fh.back().push_back(vh[y][x+1]);
+            }//mesh_->add_face(vh[y][x+1], vh[y+1][x], vh[y+1][x+1]);
+          }
+          else if(r[y][x])
+          {
+            /*  +-+  ii - jj - ij
+             *   \|
+             *    +  */
+            if(h[y][x] && v[y][x+1])
+            {
+              fh.push_back(std::vector<Mesh::VertexHandle>());
+              fh.back().push_back(vh[y][x]); fh.back().push_back(vh[y+1][x]); fh.back().push_back(vh[y][x+1]);
+            }//mesh_->add_face(vh[y][x], vh[y+1][x+1], vh[y][x+1]);
+            /*  +  ii - ji - jj
+             *  |\
+             *  +-+  */
+            if(v[y][x] && h[y+1][x])
+            {
+              fh.push_back(std::vector<Mesh::VertexHandle>());
+              fh.back().push_back(vh[y][x]); fh.back().push_back(vh[y+1][x]); fh.back().push_back(vh[y][x+1]);
+            }//mesh_->add_face(vh[y][x], vh[y+1][x], vh[y+1][x+1]);
+          }
+        }
+      }
     }
 
-  void initializeGraph(const std::vector<pcl::Vertices>& faces)
-    {
-      std::vector<std::pair<bool,VertexID> > added(input_->size(), std::pair<bool,VertexID>(false,VertexID()));
-      for(std::vector<pcl::Vertices>::iterator it = faces.begin(); it != faces.end(); ++it) // work faces
-      {
-        VertexID vid[3];
-        Eigen::Vector3f p;
-        FacePtr f = faces_.insert(faces_.end(), F()); // add new, empty face
-
-        for(int i=0; i<=2; ++i) // work 3 vertices of current face
-        {
-          int idx = it->vertices[i];
-          if( added[idx].first ) { vid[i] = added[idx].second; } // already added by another face
-          else
-          {
-            p = (*input_)[idx].getVector3fMap();
-            vid[i] = boost::add_vertex(V(Eigen::Vector4f( p(0), p(1), p(2), 1.0 )), g_);
-            added[idx].first = true;
-            added[idx].second = vid[i];
-          }
-          getVertex(*f,i) = &g_[vid[i]];
-        }
+/*
         // compute plane coefficents of current face and update all 3 vertices
         // Q_v = sum_overall_faces_adjacent_to_v(coef * coef.transpose())
         Eigen::Vector3f n = (getVertex(*f,2).p - getVertex(*f,1).p).cross(getVertex(*f,3).p - getVertex(*f,1).p);
@@ -211,90 +280,14 @@ public:
         float d = (n.transpose() * getVertex(*f,1).p * n).norm();
         Eigen::Matrix4f q_tmp = Eigen::Vector4f(n(0), n(1), n(2), d) * Eigen::Vector4f(n(0), n(1), n(2), d).transpose();
         for( i=0; i<=2; ++i) { getVertex(*f, i).Q += q_tmp; }
+*/
 
-        g_[ boost::add_edge(vid[0], vid[1], g_)->first ].faces.push_back(f);
-        g_[ boost::add_edge(vid[1], vid[2], g_)->first ].faces.push_back(f);
-        g_[ boost::add_edge(vid[2], vid[0], g_)->first ].faces.push_back(f);
-      }
-    }
-
-  void contractEdge(const EdgeID& eid)
-    {
-      // src will be deleted
-      // all edges src will be connected to trg
-      // trg gets a new Q
-      // all edges of trg get updated costs
-      // faces of eid get deleted
-      // dublicate edges get updated faces
-
-      VertexID src = boost::source(eid, g_);
-      VertexID trg = boost::target(eid, g_);
-
-      boost::remove_edge(src, trg, g_);
-      // iterate edges of source and relocate them
-      typename boost::graph_traits<GraphT>::out_edge_iterator oe_it, oe_end;
-      EdgeID new_eid; bool ok;
-      for(boost::tie(oe_it, oe_end) = boost::out_edges(src, g_); oe_it != oe_end; ++oe_it)
-      {
-        boost::tie(new_eid,ok) = boost::add_edge(trg, boost::target(*oe_it, g_), g_); // try to add new edge
-        if(ok) // vertices were not yet connected
-        {
-          // everything is fine
-        }
-        else // connection already existed
-        {
-          // merge edges:
-        }
-      }
-
-      boost::clear_vertex(src, g_); // removes all out edges, but vertex still exists
-      boost::remove_vertex(src, g_);
-    }
-
-  void simplify()
-    {
-      // init graph
-      // init heap
-      while(thereIsStillWork())
-      {
-        EdgeID eid = heap_.top();
-        heap_.pop();
-        contractEdge(eid);
-      }
-    }
-
-  // get results
-  void convertGraph(pcl::PolygonMesh& mesh)
-    {
-      PointCloud out;
-      out.resize(boost::num_vertices(g_));
-      int idx = 0;
-      typename boost::graph_traits<GraphT>::vertex_iterator v_it, v_end;
-      for (boost::tie(v_it,v_end) = boost::vertices(g_); v_it != v_end; ++v_it)
-      {
-        Eigen::Vector4f p = g_[*v_it].p;
-        out[idx].x = p(0);
-        out[idx].y = p(1);
-        out[idx].z = p(2);
-        g_[*v_it].idx = idx++; // remember association with point cloud
-      }
-      pcl::toROSMsg(out, mesh.cloud);
-      idx = 0;
-      mesh.polygons.resize(faces_.size());
-      for (FacePtr f = faces_.begin(); f != faces_.end(); ++f)
-      {
-        for(int i=0; i<=2; ++i) { mesh.polygons[idx].vertices.push_back( getVertex(*f, i).idx ); }
-        ++idx;
-      }
-    }
+  inline MeshPtr getMesh() { return mesh_; }
 
 private:
 
   PointCloudConstPtr input_;
-
-  GraphT g_;
-  std::priority_queue<EdgeID, std::vector<EdgeID>, CompareEdgeCost> heap_;
-  std::list<F> faces_;
+  MeshPtr mesh_;
 
   int max_iteration_;
   float max_cost_;
@@ -310,8 +303,6 @@ int main(int argc, char** argv)
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr down_(new pcl::PointCloud<pcl::PointXYZRGB>);
   r.read(file_in_, *input);
 
-  pcl::PolygonMesh tmp_mesh;
-
 
   PrecisionStopWatch t;
   t.precisionStart();
@@ -322,20 +313,32 @@ int main(int argc, char** argv)
   //*segmented_ = *down_;
   std::cout << "downsampling took " << t.precisionStop() << "s." << std::endl;
 
+
+  pcl::PolygonMesh pcl_mesh;
   t.precisionStart();
   pcl::OrganizedFastMesh<pcl::PointXYZRGB> ofm;
   ofm.setInputCloud(down_);
   ofm.setTriangulationType(pcl::OrganizedFastMesh<pcl::PointXYZRGB>::TRIANGLE_ADAPTIVE_CUT);
-  ofm.reconstruct(tmp_mesh);
-  std::cout << "Fast Mesh took " << t.precisionStop() << "s." << std::endl;
+  ofm.reconstruct(pcl_mesh);
+  std::cout << "OrganizedFastMesh took " << t.precisionStop() << "s." << std::endl;
 
-  pcl::visualization::PCLVisualizer v;
-  v.addPolygonMesh(tmp_mesh);
+  t.precisionStart();
+  MeshSimplification<pcl::PointXYZRGB> ms;
+  ms.initializeMesh(down_);
+  std::cout << "My mesh initialization took " << t.precisionStop() << "s." << std::endl;
 
-  while(!v.wasStopped())
+  try
   {
-    v.spinOnce(100);
-    usleep(100000);
+    if ( !OpenMesh::IO::write_mesh(*(ms.getMesh()), file_out_) )
+    {
+      std::cerr << "Cannot write mesh to file " << file_out_ << std::endl;
+      return 1;
+    }
+  }
+  catch( std::exception& x )
+  {
+    std::cerr << x.what() << std::endl;
+    return 1;
   }
 
   return 0;
