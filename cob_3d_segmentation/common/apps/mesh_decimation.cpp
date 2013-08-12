@@ -63,6 +63,7 @@
 #include <boost/program_options.hpp>
 
 #include <pcl/io/pcd_io.h>
+#include <pcl/io/ply_io.h>
 
 //#include <pcl/geometry/triangle_mesh.h>
 //#include <pcl/geometry/mesh_conversion.h>
@@ -82,6 +83,7 @@
 
 std::string file_in_;
 std::string file_out_;
+bool save_pcl_;
 
 int readOptions(int argc, char** argv)
 {
@@ -91,6 +93,7 @@ int readOptions(int argc, char** argv)
     ("help,h", "produce help message")
     ("in,i", value<std::string>(&file_in_), "input folder with data points")
     ("out,o", value<std::string>(&file_out_), "out file with data points")
+    ("pcl", "save pcl results")
     ;
 
   positional_options_description p_opt;
@@ -101,6 +104,8 @@ int readOptions(int argc, char** argv)
 
   if(vm.count("help") || argc == 1)
   { std::cout << options << std::endl; return(-1); }
+  if(vm.count("pcl")) save_pcl_ = true;
+  else save_pcl_ = false;
 
   return 0;
 }
@@ -141,7 +146,6 @@ public:
       std::vector<std::vector<bool> > r(rows, std::vector<bool>(cols,true)); // right diagonal edge check
 
       std::vector<std::vector<Mesh::VertexHandle> > vh(rows+1, std::vector<Mesh::VertexHandle>(cols+1)); // vertex handles
-      std::vector<std::vector<Mesh::VertexHandle> > fh;
 
       /*
        * +--+--+   p00  h00  p01  h01  p02
@@ -172,7 +176,7 @@ public:
         h[y].front() = v[y-1].front() = v[y].front() = l[y-1].front() = r[y].front() = false;
         h[y].back() = v[y-1].back() = v[y].back() = r[y-1].back() = l[y].back() = false;
 
-        row_offset = y*cols;
+        row_offset = y*(cols+1);
         // iterate remaining
         for(int x=1; x<cols; ++x)
         {
@@ -186,7 +190,7 @@ public:
       // iterate h and v to check if edge is valid
       typename std::vector<PointT, Eigen::aligned_allocator_indirection<PointT> >::const_iterator pii = input_->points.begin();
       typename std::vector<PointT, Eigen::aligned_allocator_indirection<PointT> >::const_iterator pij = pii + 1; // right
-      typename std::vector<PointT, Eigen::aligned_allocator_indirection<PointT> >::const_iterator pji = pii + cols; // below
+      typename std::vector<PointT, Eigen::aligned_allocator_indirection<PointT> >::const_iterator pji = pii + 1 + cols; // below
       typename std::vector<PointT, Eigen::aligned_allocator_indirection<PointT> >::const_iterator pjj = pji + 1; // below right
       for(int y=0; y<rows; ++y)
       {
@@ -235,38 +239,24 @@ public:
             /*  +-+  ii - ji - ij
              *  |/
              *  +    */
-            if(h[y][x] && v[y][x])
-            {
-              fh.push_back(std::vector<Mesh::VertexHandle>());
-              fh.back().push_back(vh[y][x]); fh.back().push_back(vh[y+1][x]); fh.back().push_back(vh[y][x+1]);
-            }//mesh_->add_face(vh[y][x], vh[y+1][x], vh[y][x+1]);
+            if(h[y][x] && v[y][x]) mesh_->add_face(vh[y][x], vh[y+1][x], vh[y][x+1]);
+
             /*    +  ij - ji - jj
              *   /|
              *  +-+   */
-            if(h[y+1][x] && v[y][x+1])
-            {
-              fh.push_back(std::vector<Mesh::VertexHandle>());
-              fh.back().push_back(vh[y][x]); fh.back().push_back(vh[y+1][x]); fh.back().push_back(vh[y][x+1]);
-            }//mesh_->add_face(vh[y][x+1], vh[y+1][x], vh[y+1][x+1]);
+            if(h[y+1][x] && v[y][x+1]) mesh_->add_face(vh[y][x+1], vh[y+1][x], vh[y+1][x+1]);
           }
           else if(r[y][x])
           {
             /*  +-+  ii - jj - ij
              *   \|
              *    +  */
-            if(h[y][x] && v[y][x+1])
-            {
-              fh.push_back(std::vector<Mesh::VertexHandle>());
-              fh.back().push_back(vh[y][x]); fh.back().push_back(vh[y+1][x]); fh.back().push_back(vh[y][x+1]);
-            }//mesh_->add_face(vh[y][x], vh[y+1][x+1], vh[y][x+1]);
+            if(h[y][x] && v[y][x+1]) mesh_->add_face(vh[y][x], vh[y+1][x+1], vh[y][x+1]);
+
             /*  +  ii - ji - jj
              *  |\
              *  +-+  */
-            if(v[y][x] && h[y+1][x])
-            {
-              fh.push_back(std::vector<Mesh::VertexHandle>());
-              fh.back().push_back(vh[y][x]); fh.back().push_back(vh[y+1][x]); fh.back().push_back(vh[y][x+1]);
-            }//mesh_->add_face(vh[y][x], vh[y+1][x], vh[y+1][x+1]);
+            if(v[y][x] && h[y+1][x]) mesh_->add_face(vh[y][x], vh[y+1][x], vh[y+1][x+1]);
           }
         }
       }
@@ -329,10 +319,14 @@ int main(int argc, char** argv)
 
   try
   {
-    if ( !OpenMesh::IO::write_mesh(*(ms.getMesh()), file_out_) )
+    if(save_pcl_) pcl::io::savePLYFile(file_out_, pcl_mesh);
+    else
     {
-      std::cerr << "Cannot write mesh to file " << file_out_ << std::endl;
-      return 1;
+      if ( !OpenMesh::IO::write_mesh(*(ms.getMesh()), file_out_) )
+      {
+        std::cerr << "Cannot write mesh to file " << file_out_ << std::endl;
+        return 1;
+      }
     }
   }
   catch( std::exception& x )
