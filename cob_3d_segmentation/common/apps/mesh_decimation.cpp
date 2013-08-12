@@ -60,6 +60,8 @@
  *
  ****************************************************************/
 
+#define OM_STATIC_BUILD
+
 #include <boost/program_options.hpp>
 
 #include <pcl/io/pcd_io.h>
@@ -75,6 +77,8 @@
 
 #include <OpenMesh/Core/IO/MeshIO.hh>
 #include <OpenMesh/Core/Mesh/TriMesh_ArrayKernelT.hh>
+#include <OpenMesh/Tools/Decimater/DecimaterT.hh>
+#include <OpenMesh/Tools/Decimater/ModQuadricT.hh>
 
 
 #include <cob_3d_mapping_filters/downsample_filter.h>
@@ -84,6 +88,7 @@
 std::string file_in_;
 std::string file_out_;
 bool save_pcl_;
+int n_vertices_;
 
 int readOptions(int argc, char** argv)
 {
@@ -93,6 +98,7 @@ int readOptions(int argc, char** argv)
     ("help,h", "produce help message")
     ("in,i", value<std::string>(&file_in_), "input folder with data points")
     ("out,o", value<std::string>(&file_out_), "out file with data points")
+    ("n_vertices,n", value<int>(&n_vertices_)->default_value(10000), "decimate to n vertices")
     ("pcl", "save pcl results")
     ;
 
@@ -121,6 +127,9 @@ public:
 
   typedef OpenMesh::TriMesh_ArrayKernelT<> Mesh; // Triangle Mesh
   typedef boost::shared_ptr<Mesh> MeshPtr;
+  typedef OpenMesh::Decimater::DecimaterT<Mesh> Decimater;
+  typedef boost::shared_ptr<Decimater> DecimaterPtr;
+  typedef typename OpenMesh::Decimater::ModQuadricT<Mesh>::Handle ModHandle;
 
   struct V // a Vertex
   {
@@ -132,8 +141,10 @@ public:
   };
 
 public:
-  MeshSimplification()
+  MeshSimplification() :
+    mesh_(new Mesh())
     { }
+
   void initializeMesh(const PointCloudPtr& input)
     {
       input_ = input;
@@ -155,7 +166,6 @@ public:
        * +--+--+   p20  h20  p21  h21  p22
        */
 
-      mesh_.reset(new Mesh);
 
       // corners
       h.front().front() = v.front().front() = r.front().front() = false;
@@ -187,6 +197,7 @@ public:
             vh[y][x] = mesh_->add_vertex(Mesh::Point(p->x, p->y, p->z));
         }
       }
+
       // iterate h and v to check if edge is valid
       typename std::vector<PointT, Eigen::aligned_allocator_indirection<PointT> >::const_iterator pii = input_->points.begin();
       typename std::vector<PointT, Eigen::aligned_allocator_indirection<PointT> >::const_iterator pij = pii + 1; // right
@@ -197,8 +208,8 @@ public:
         for(int x=0; x<cols; ++x)
         {
           // check horizontal and vertical
-          if(h[y][x]) { h[y][x] = cob_3d_mapping::PrimeSense::areNeighbors(pii->getVector3fMap(), pij->getVector3fMap()); }
-          if(v[y][x]) { v[y][x] = cob_3d_mapping::PrimeSense::areNeighbors(pii->getVector3fMap(), pji->getVector3fMap()); }
+          if(h[y][x]) { h[y][x] = isNeighbor(pii->getVector3fMap(), pij->getVector3fMap()); }
+          if(v[y][x]) { v[y][x] = isNeighbor(pii->getVector3fMap(), pji->getVector3fMap()); }
 
           // check diagonal
           unsigned char status = (l[y][x] << 1) | r[y][x];
@@ -207,21 +218,21 @@ public:
           case 0b00:
             break;
           case 0b01:
-            r[y][x] = cob_3d_mapping::PrimeSense::areNeighbors(pii->getVector3fMap(), pjj->getVector3fMap());
+            r[y][x] = isNeighbor(pii->getVector3fMap(), pjj->getVector3fMap());
             break;
           case 0b10:
-            l[y][x] = cob_3d_mapping::PrimeSense::areNeighbors(pij->getVector3fMap(), pji->getVector3fMap());
+            l[y][x] = isNeighbor(pij->getVector3fMap(), pji->getVector3fMap());
             break;
           case 0b11:
             if( (pij->z - pji->z) > (pii->z - pjj->z) )
             {
               r[y][x] = false;
-              l[y][x] = cob_3d_mapping::PrimeSense::areNeighbors(pij->getVector3fMap(), pji->getVector3fMap());
+              l[y][x] = isNeighbor(pij->getVector3fMap(), pji->getVector3fMap());
             }
             else
             {
               l[y][x] = false;
-              r[y][x] = cob_3d_mapping::PrimeSense::areNeighbors(pii->getVector3fMap(), pjj->getVector3fMap());
+              r[y][x] = isNeighbor(pii->getVector3fMap(), pjj->getVector3fMap());
             }
             break;
           }
@@ -262,6 +273,33 @@ public:
       }
     }
 
+  void decimate()
+    {
+      if(!mesh_->has_face_normals()) mesh_->request_face_normals();
+      mesh_->update_face_normals();
+      std::cout << "Vertices: " << mesh_->n_vertices() << "\n"
+                << "Faces: " << mesh_->n_faces() << "\n"
+                << "Edges: " << mesh_->n_edges() << std::endl;
+      dec_.reset(new Decimater(*mesh_));
+      dec_->add(mod_);
+
+      dec_->module(mod_).set_binary(false);
+      dec_->initialize();
+      dec_->decimate_to(n_vertices_);
+      mesh_->garbage_collection();
+      std::cout << "Vertices: " << dec_->mesh().n_vertices() << "\n"
+                << "Faces: " << dec_->mesh().n_faces() << "\n"
+                << "Edges: " << dec_->mesh().n_edges() << std::endl;
+
+    }
+
+  inline bool isNeighbor(const Eigen::Vector3f& a, const Eigen::Vector3f& b)
+    {
+      //Eigen::Vector3f ab = b - a;
+      //return ( fabs(a.dot(ab) / (a.norm() * ab.norm())) < 0.9762f);
+      return cob_3d_mapping::PrimeSense::areNeighbors(a,b);
+    }
+
 /*
         // compute plane coefficents of current face and update all 3 vertices
         // Q_v = sum_overall_faces_adjacent_to_v(coef * coef.transpose())
@@ -272,12 +310,14 @@ public:
         for( i=0; i<=2; ++i) { getVertex(*f, i).Q += q_tmp; }
 */
 
-  inline MeshPtr getMesh() { return mesh_; }
+  inline Mesh& getMesh() { return dec_->mesh(); }
 
 private:
 
-  PointCloudConstPtr input_;
   MeshPtr mesh_;
+  DecimaterPtr dec_;
+  ModHandle mod_;
+  PointCloudConstPtr input_;
 
   int max_iteration_;
   float max_cost_;
@@ -303,6 +343,11 @@ int main(int argc, char** argv)
   //*segmented_ = *down_;
   std::cout << "downsampling took " << t.precisionStop() << "s." << std::endl;
 
+  t.precisionStart();
+  MeshSimplification<pcl::PointXYZRGB> ms;
+  ms.initializeMesh(down_);
+  ms.decimate();
+  std::cout << "My mesh initialization took " << t.precisionStop() << "s." << std::endl;
 
   pcl::PolygonMesh pcl_mesh;
   t.precisionStart();
@@ -312,17 +357,13 @@ int main(int argc, char** argv)
   ofm.reconstruct(pcl_mesh);
   std::cout << "OrganizedFastMesh took " << t.precisionStop() << "s." << std::endl;
 
-  t.precisionStart();
-  MeshSimplification<pcl::PointXYZRGB> ms;
-  ms.initializeMesh(down_);
-  std::cout << "My mesh initialization took " << t.precisionStop() << "s." << std::endl;
 
   try
   {
     if(save_pcl_) pcl::io::savePLYFile(file_out_, pcl_mesh);
     else
     {
-      if ( !OpenMesh::IO::write_mesh(*(ms.getMesh()), file_out_) )
+      if ( !OpenMesh::IO::write_mesh(ms.getMesh(), file_out_) )
       {
         std::cerr << "Cannot write mesh to file " << file_out_ << std::endl;
         return 1;
