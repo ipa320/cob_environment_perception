@@ -80,8 +80,11 @@ cob_3d_segmentation::SimpleSegmentationNodelet::onInit()
 {
   //PCLNodelet::onInit();
   nh_ = getNodeHandle();
-  config_server_.reset(new dynamic_reconfigure::Server<segmentation_nodeletConfig>(getPrivateNodeHandle()));
-  config_server_->setCallback(boost::bind(&SimpleSegmentationNodelet::configCallback, this, _1, _2));
+  config_server_.reset(
+    new dynamic_reconfigure::Server<segmentation_nodeletConfig>(
+      getPrivateNodeHandle()));
+  config_server_->setCallback(
+    boost::bind(&SimpleSegmentationNodelet::configCallback, this, _1, _2));
 
   one_.setOutputLabels(labels_);
   one_.setPixelSearchRadius(8,2,2);
@@ -91,10 +94,11 @@ cob_3d_segmentation::SimpleSegmentationNodelet::onInit()
   seg_.setLabelCloudInOut(labels_);
   seg_.setSeedMethod(SEED_RANDOM);
 
-  //sub_points_ = nh_.subscribe<PointCloud>("point_cloud", 1, boost::bind(&SimpleSegmentationNodelet::topicCallback, this, _1));
   pub_segmented_ = nh_.advertise<PointCloud>("segmented_cloud", 1);
   pub_shape_array_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray>("shape_array",1);
-  as_ = new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerAction>(nh_, "segmentation/trigger", boost::bind(&SimpleSegmentationNodelet::actionCallback, this, _1), false);
+  as_ = new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerAction>(
+    nh_, "segmentation/trigger",
+    boost::bind(&SimpleSegmentationNodelet::actionCallback, this, _1), false);
   as_->start();
 }
 
@@ -120,7 +124,8 @@ cob_3d_segmentation::SimpleSegmentationNodelet::configCallback(
 }
 
 void
-cob_3d_segmentation::SimpleSegmentationNodelet::actionCallback(const cob_3d_mapping_msgs::TriggerGoalConstPtr& goal)
+cob_3d_segmentation::SimpleSegmentationNodelet::actionCallback(
+  const cob_3d_mapping_msgs::TriggerGoalConstPtr& goal)
 {
   //boost::lock_guard<boost::mutex> guard(mutex_);
   cob_3d_mapping_msgs::TriggerResult result;
@@ -141,7 +146,8 @@ cob_3d_segmentation::SimpleSegmentationNodelet::actionCallback(const cob_3d_mapp
 }
 
 void
-cob_3d_segmentation::SimpleSegmentationNodelet::topicCallback(const PointCloud::ConstPtr& cloud)
+cob_3d_segmentation::SimpleSegmentationNodelet::topicCallback(
+  const PointCloud::ConstPtr& cloud)
 {
   //boost::lock_guard<boost::mutex> guard(mutex_);
   PrecisionStopWatch t;
@@ -216,7 +222,8 @@ cob_3d_segmentation::SimpleSegmentationNodelet::computeAndPublish()
 }
 
 void
-cob_3d_segmentation::SimpleSegmentationNodelet::computeTexture(ClusterPtr &c, Eigen::Affine3f &trf, unsigned int id)
+cob_3d_segmentation::SimpleSegmentationNodelet::computeTexture(
+  ClusterPtr &c, Eigen::Affine3f &trf, unsigned int id)
 {
   pcl::ExtractIndices<pcl::PointXYZRGB> ei;
   ei.setInputCloud(down_);
@@ -268,4 +275,6 @@ cob_3d_segmentation::SimpleSegmentationNodelet::computeTexture(ClusterPtr &c, Ei
   cv::imwrite(ss2.str(), img_dil);
 }
 
-PLUGINLIB_DECLARE_CLASS(cob_3d_segmentation, SimpleSegmentationNodelet, cob_3d_segmentation::SimpleSegmentationNodelet, nodelet::Nodelet);
+PLUGINLIB_DECLARE_CLASS(cob_3d_segmentation, SimpleSegmentationNodelet,
+                        cob_3d_segmentation::SimpleSegmentationNodelet,
+                        nodelet::Nodelet);

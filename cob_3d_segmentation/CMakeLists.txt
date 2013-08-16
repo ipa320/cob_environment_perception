@@ -71,6 +71,7 @@ target_link_libraries(plane_extraction_action_client ${OpenCV_LIBS})
 
 rosbuild_add_executable(mesh_decimation common/apps/mesh_decimation.cpp)
 rosbuild_link_boost(mesh_decimation program_options)
+target_link_libraries(mesh_decimation cob_3d_segmentation)
 
 # segmentation app:
 rosbuild_add_executable(test_depth_segmentation common/apps/test_depth_segmentation.cpp)
@@ -83,7 +84,8 @@ target_link_libraries(segmentation_visualizer vtkCommon vtkRendering)
 
 # Executables for profiling:
 rosbuild_add_executable(profile_depth_seg common/apps/profile_depth_seg.cpp)
-target_link_libraries(profile_depth_seg cob_3d_segmentation) #cob_3d_features cob_3d_features_omp cob_3d_segmentation)
+target_link_libraries(profile_depth_seg cob_3d_segmentation)
+ #cob_3d_features cob_3d_features_omp cob_3d_segmentation)
 
 rosbuild_add_executable(profile_plane_extraction common/apps/profile_plane_extraction.cpp)
 target_link_libraries(profile_plane_extraction cob_3d_segmentation vtkCommon vtkFiltering ${OpenCV_LIBS})

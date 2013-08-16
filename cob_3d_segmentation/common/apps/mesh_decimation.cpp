@@ -66,26 +66,18 @@
 
 #include <pcl/io/pcd_io.h>
 #include <pcl/io/ply_io.h>
-
-//#include <pcl/geometry/triangle_mesh.h>
-//#include <pcl/geometry/mesh_conversion.h>
 #include <pcl/surface/organized_fast_mesh.h>
 #include <pcl/PolygonMesh.h>
-
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/point_cloud_handlers.h>
-
-#include <OpenMesh/Core/IO/MeshIO.hh>
-#include <OpenMesh/Core/Mesh/TriMesh_ArrayKernelT.hh>
-#include <OpenMesh/Tools/Decimater/DecimaterT.hh>
-#include <OpenMesh/Tools/Decimater/ModBaseT.hh>
-#include <OpenMesh/Tools/Decimater/ModQuadricT.hh>
 
 #include <cob_3d_mapping_filters/downsample_filter.h>
 #include <cob_3d_mapping_common/point_types.h>
 #include <cob_3d_mapping_common/stop_watch.h>
 #include <cob_3d_mapping_common/sensor_model.h>
 #include <cob_3d_features/organized_normal_estimation_omp.h>
+#include <cob_3d_segmentation/mesh_decimation.h>
+#include <cob_3d_segmentation/impl/fast_segmentation.hpp>
 
 
 //== GLOBAL VARS ===============================================================
@@ -123,96 +115,30 @@ int readOptions(int argc, char** argv)
   return 0;
 }
 
+
 namespace OpenMesh {
 namespace Decimater {
 
 template<typename MeshT>
-class ModNormalQuadricT : public OpenMesh::Decimater::ModBaseT<MeshT>
-{
-public:
-
-  // Defines the types Self, Handle, Base, Mesh, and CollapseInfo
-  // and the memberfunction name()
-  DECIMATING_MODULE( ModNormalQuadricT, MeshT, NormalQuadric );
-
-public:
-  ModNormalQuadricT( MeshT &_mesh )
-    : Base(_mesh, false)
-  {
-    unset_max_err();
-    Base::mesh().add_property( quadrics_ );
-  }
-
-  virtual ~ModNormalQuadricT()
-  {
-    Base::mesh().remove_property(quadrics_);
-  }
-
-public: // inherited
-
-  virtual void initialize(void);
-
-  virtual float collapse_priority(const CollapseInfo& _ci)
-  {
-    using namespace OpenMesh;
-    typedef Geometry::QuadricT<double> Q;
-
-    Q q = Base::mesh().property(quadrics_, _ci.v0);
-    q += Base::mesh().property(quadrics_, _ci.v1);
-    double err = q(_ci.p1);
-
-    return float( (err < max_err_) ? err : float( Base::ILLEGAL_COLLAPSE ) );
-  }
-
-  virtual void postprocess_collapse(const CollapseInfo& _ci)
-  {
-    Base::mesh().property(quadrics_, _ci.v1) +=
-      Base::mesh().property(quadrics_, _ci.v0);
-
-    Base::mesh().point(_ci.v1) += Base::mesh().point(_ci.v0);
-    Base::mesh().point(_ci.v1) *= 0.5;
-  }
-
-  void set_error_tolerance_factor(double _factor);
-
-public: // specific methods
-
-  void set_max_err(double _err, bool _binary=true)
-  {
-    max_err_ = _err;
-    Base::set_binary(_binary);
-  }
-
-  void set_normal_property(const VPropHandleT<Vec3d>& normals)
-  {
-    normals_ = normals;
-  }
-
-  /// Unset maximum quadric error constraint and restore non-binary mode.
-  /// \see set_max_err()
-  void unset_max_err(void)
-  {
-    max_err_ = DBL_MAX;
-    Base::set_binary(false);
-  }
-
-  /// Return value of max. allowed error.
-  double max_err() const { return max_err_; }
-
-
-private:
-
-  // maximum quadric error
-  double max_err_;
-
-  // this vertex property stores a quadric for each vertex
-  VPropHandleT< Geometry::QuadricT<double> >  quadrics_;
-  VPropHandleT< Vec3d > normals_;
-};
-
-template<typename MeshT>
 void ModNormalQuadricT<MeshT>::initialize()
 {
+  /*
+  using OpenMesh::Geometry::Quadricd;
+  if (!quadrics_.is_valid())
+    Base::mesh().add_property( quadrics_ );
+
+  typename MeshT::VertexIter v_it  = Base::mesh().vertices_begin();
+  typename MeshT::VertexIter v_end = Base::mesh().vertices_end();
+
+  for (; v_it!=v_end; ++v_it)
+  {
+    Vec4f p = Base::mesh().property(normals_, v_it);
+    //std::cout << p << std::endl;
+    Base::mesh().property(quadrics_, v_it)
+      = Quadricd(p[0], p[1], p[2], p[3]);
+  }
+  */
+
   using OpenMesh::Geometry::Quadricd;
   if (!quadrics_.is_valid())
     Base::mesh().add_property( quadrics_ );
@@ -227,27 +153,35 @@ void ModNormalQuadricT<MeshT>::initialize()
   typename Mesh::FaceIter f_end = Base::mesh().faces_end();
   typename Mesh::FaceVertexIter fv_it;
   typename Mesh::VertexHandle vh0, vh1, vh2;
-  Vec3d n;
-  double d;
+  Vec4f n;
 
   for (; f_it!=f_end; ++f_it)
   {
     fv_it = Base::mesh().fv_iter(f_it.handle());
+    for (int i=0; i<3; ++i, ++fv_it)
+    {
+      vh0 = fv_it.handle();
+      n = Base::mesh().property(normals_, vh0);
+      Base::mesh().property(quadrics_, vh0) += Quadricd(n);
+    }
+
+    /*
     vh0 = fv_it.handle(); ++fv_it;
     vh1 = fv_it.handle(); ++fv_it;
     vh2 = fv_it.handle();
 
-    n =  Base::mesh().property(normals_, vh0);
-    n += Base::mesh().property(normals_, vh1);
-    n += Base::mesh().property(normals_, vh2);
-    n /= 3.0;
-    d = -(vector_cast<Vec3d>(Base::mesh().point(vh0))|n);
+    n1 = Base::mesh().property(normals_, vh0);
+    n2 = Base::mesh().property(normals_, vh1);
+    n3 = Base::mesh().property(normals_, vh2);
 
-    Quadricd q(n[0], n[1], n[2], d);
+    Quadricd q1(n1);
+    Quadricd q2(n2);
+    Quadricd q3(n3);
 
-    Base::mesh().property(quadrics_, vh0) += q;
-    Base::mesh().property(quadrics_, vh1) += q;
-    Base::mesh().property(quadrics_, vh2) += q;
+    Base::mesh().property(quadrics_, vh0) += q1;
+    Base::mesh().property(quadrics_, vh1) += q2;
+    Base::mesh().property(quadrics_, vh2) += q3;
+    */
   }
 }
 
@@ -268,70 +202,16 @@ void ModNormalQuadricT<MeshT>::set_error_tolerance_factor(double _factor)
   }
 }
 
-//=============================================================================
-} // END_NS_DECIMATER
-} // END_NS_OPENMESH
-//=============================================================================
+}
+}
 
 
-// based on: Surface Simplification Using Quadric Error Metrics,
-// M Garland, P S Heckbert
-template<typename PointT, typename NormalT>
-class MeshSimplification
-{
-public:
-  typedef typename pcl::PointCloud<PointT>::Ptr PointCloudPtr;
-  typedef typename pcl::PointCloud<PointT>::ConstPtr PointCloudConstPtr;
-  typedef typename pcl::PointCloud<NormalT>::ConstPtr NormalCloudConstPtr;
-
-  typedef OpenMesh::TriMesh_ArrayKernelT<> Mesh; // Triangle Mesh
-  typedef boost::shared_ptr<Mesh> MeshPtr;
-  typedef OpenMesh::Decimater::DecimaterT<Mesh> Decimater;
-  typedef boost::shared_ptr<Decimater> DecimaterPtr;
-  typedef OpenMesh::Decimater::ModNormalQuadricT<Mesh> ModT;
-  typedef typename ModT::Handle ModHandle;
-  typedef OpenMesh::VPropHandleT<OpenMesh::Vec3d> PropNormalHandle;
-
-public:
-  MeshSimplification()
-    : mesh_(new Mesh())
-    , dec_(new Decimater(*mesh_))
-    , mod_()
-    , p_normals_()
-  {
-    mesh_->add_property(p_normals_, "Normals");
-    dec_->add(mod_);
-    dec_->module(mod_).set_binary(false);
-    dec_->module(mod_).set_normal_property(p_normals_);
-  }
-
-  ~MeshSimplification() { }
-
-  void initializeMesh(const PointCloudConstPtr& input,
-                      const NormalCloudConstPtr& normals);
-  void decimate();
-
-  inline bool isNeighbor(const Eigen::Vector3f& a, const Eigen::Vector3f& b)
-  {
-    //Eigen::Vector3f ab = b - a;
-    //return ( fabs(a.dot(ab) / (a.norm() * ab.norm())) < 0.9762f);
-    return cob_3d_mapping::PrimeSense::areNeighbors(a,b);
-  }
-
-  inline Mesh& getMesh() { return dec_->mesh(); }
-
-private:
-
-  MeshPtr mesh_;
-  DecimaterPtr dec_;
-  ModHandle mod_;
-  PropNormalHandle p_normals_;
-};
-
-template<typename PointT, typename NormalT>
-void MeshSimplification<PointT,NormalT>::initializeMesh(
+template<typename PointT, typename NormalT, typename LabelT>
+void MeshSimplification<PointT,NormalT,LabelT>::initializeMesh(
   const PointCloudConstPtr& input,
-  const NormalCloudConstPtr& normals)
+  const LabelCloudConstPtr& labels,
+  const NormalCloudConstPtr& normals,
+  const std::map<int,Eigen::Vector4f>& params)
 {
   int rows = input->height - 1; // last row
   int cols = input->width - 1; // last column
@@ -405,10 +285,19 @@ void MeshSimplification<PointT,NormalT>::initializeMesh(
       }
       else
       {
-        NormalT n = (*normals)[row_offset+x];
         vh[y][x] = mesh_->add_vertex(Mesh::Point(p->x, p->y, p->z));
-        mesh_->property(p_normals_, vh[y][x])
-          = OpenMesh::Vec3d(n.normal_x, n.normal_y, n.normal_z);
+        Eigen::Vector4f nd;
+        if(params.find((*labels)[row_offset+x].label) != params.end())
+          nd = params.find((*labels)[row_offset+x].label)->second;
+        else
+        {
+          Eigen::Vector3f n = (*normals)[row_offset+x].getNormalVector3fMap();
+          float d = p->getVector3fMap().dot(n);
+          nd = Eigen::Vector4f(n(0),n(1),n(2),d);
+        }
+
+        mesh_->property(p_normals_,vh[y][x]) = PropNormalT(nd(0), nd(1), nd(2), nd(3));
+        mesh_->property(p_labels_, vh[y][x]) = (*labels)[row_offset+x].label;
       }
     }
   }
@@ -491,10 +380,11 @@ void MeshSimplification<PointT,NormalT>::initializeMesh(
   }
 }
 
-template<typename PointT, typename NormalT>
-void MeshSimplification<PointT,NormalT>::decimate()
+template<typename PointT, typename NormalT, typename LabelT>
+void MeshSimplification<PointT,NormalT,LabelT>::decimate()
 {
   dec_->initialize();
+  dec_->module(mod_).set_binary(false);
   dec_->decimate_to(n_vertices_);
   mesh_->garbage_collection();
   std::cout << "Vertices: " << dec_->mesh().n_vertices() << "\n"
@@ -517,11 +407,14 @@ int main(int argc, char** argv)
   cob_3d_features::OrganizedNormalEstimationOMP
     <pcl::PointXYZRGB, pcl::Normal, PointLabel> one;
 
+  cob_3d_segmentation::FastSegmentation
+    <pcl::PointXYZRGB, pcl::Normal, PointLabel> seg;
+
   cob_3d_mapping_filters::DownsampleFilter
     <pcl::PointXYZRGB> dsf;
 
   MeshSimplification
-    <pcl::PointXYZRGB, pcl::Normal> ms;
+    <pcl::PointXYZRGB, pcl::Normal, PointLabel> ms;
 
   pcl::OrganizedFastMesh
     <pcl::PointXYZRGB> ofm;
@@ -529,8 +422,9 @@ int main(int argc, char** argv)
   pcl::PCDReader r;
   r.read(file_in_, *input);
 
-  PrecisionStopWatch t;
+  PrecisionStopWatch t, tt;
 
+  tt.precisionStart();
   t.precisionStart();
   dsf.setInputCloud(input);
   dsf.filter(*down);
@@ -547,10 +441,37 @@ int main(int argc, char** argv)
             << t.precisionStop() << "s." << std::endl;
 
   t.precisionStart();
-  ms.initializeMesh(down, normals);
+  seg.setInputCloud(down);
+  seg.setNormalCloudIn(normals);
+  seg.setLabelCloudInOut(labels);
+  seg.setSeedMethod(cob_3d_segmentation::SEED_RANDOM);
+  seg.compute();
+
+  std::map<int,Eigen::Vector4f> params;
+
+  typedef typename cob_3d_segmentation::FastSegmentation
+    <pcl::PointXYZRGB, pcl::Normal, PointLabel>::ClusterPtr ClusterPtr;
+  for (ClusterPtr c = seg.clusters()->begin(); c!=seg.clusters()->end(); ++c)
+  {
+    if(c->size() < 5) {continue;}
+    seg.clusters()->computeClusterComponents(c);
+    float d = fabs(c->getCentroid().dot(c->pca_point_comp3));
+    params[c->id()] = Eigen::Vector4f(c->pca_point_comp3(0),
+                                      c->pca_point_comp3(1),
+                                      c->pca_point_comp3(2),
+                                      d);
+  }
+  std::cout << "FastSegmentation took "
+            << t.precisionStop() << "s." << std::endl;
+
+  t.precisionStart();
+  ms.initializeMesh(down, labels, normals, params);
   ms.decimate();
   std::cout << "MeshSimplification took "
             << t.precisionStop() << "s." << std::endl;
+
+  std::cout << "Total Process took "
+            << tt.precisionStop() << "s." << std::endl;
 
   pcl::PolygonMesh pcl_mesh;
   t.precisionStart();
