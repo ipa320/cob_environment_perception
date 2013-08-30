@@ -1,9 +1,11 @@
 serial_device: /dev/ttyACM0
 serial_baudrate: 57600
-joint_names: ['stepper', 'servo']
+joint_names: ['servo_pan', 'servo_tilt']
 #fixed_velocities: [1.02, 1.02]
-fixed_velocities: [0.5, 0.5]
+#velocities: [0.14, 0.14]
+velocities: [0.28, 0.28]
+accelerations: [0.05, 0.05]
 auto_initialize: true
-operation_mode: position
+#operation_mode: position
 min_publish_duration: 0.01
 frequency: 50

@@ -10,55 +10,59 @@
 
 #include "MapDemonCtrl.h"
 
-class MapDemonCtrl_Maestro : public MapDemonCtrl
+class MapDemonCtrlMaestro : public MapDemonCtrl
 {
 public:
 
   /// Constructor
-  MapDemonCtrl_Maestro(MapDemonCtrlParams * params, SerialDevice * sd);
+  MapDemonCtrlMaestro(MapDemonCtrlParams * params);
 
   /// Destructor
-  virtual ~MapDemonCtrl_Maestro();
+  virtual ~MapDemonCtrlMaestro();
 
-  virtual bool Init(MapDemonCtrlParams * params);
+  virtual bool init(MapDemonCtrlParams * params);
 
-  virtual bool RunCalibration() ;
+  virtual bool runCalibration();
 
-  virtual bool MovePos( const std::vector<double>& target_positions );
-  virtual bool MoveVel( const std::vector<double>& target_velocities );
+  virtual bool movePos( const std::vector<double>& target_positions );
+  //virtual bool MoveVel( const std::vector<double>& target_velocities );
 
-  virtual bool Close() ;
-  virtual bool Stop();
-  virtual bool Recover() ;
+  virtual bool close() ;
+  virtual bool stop();
+  virtual bool recover();
 
-  virtual bool setMaxVelocity(double velocity);
+  virtual void setVelocity();
+  virtual void setAcceleration();
 
-  virtual bool UpdatePositions();
+  virtual bool updatePositions();
 
 private:
 
   enum {
     GET_POSITION=0x90,
     SET_TARGET=0x84,
-    SET_VEL=0x87
+    SET_VEL=0x87,
+    SET_ACCEL=0x89
   };
 
-  int m_fd;
+  int fd_;
 
-  const double STEP_WIDTH;
+  //const double STEP_WIDTH;
 
   void writeCmd(const unsigned char cmd, const unsigned char channel, const unsigned char *data=NULL, const int size=0);
 
   int rad2int(const double v, const int dof = 0) {
     double rad = v;
-    rad+=M_PI;
-    if(rad<0) rad = 2*M_PI+rad;
-    return round( 2*4900*rad/(2*M_PI) + 1000);
+    //rad+=M_PI;
+    //if(rad<0) rad = 2*M_PI+rad;
+    return round((2/M_PI*rad*900 + 1500)*4);
+    //return round( 2*4900*rad/(2*M_PI) + 1000);
     //return round( (v-m_params_->GetOffsets()[dof])*STEP_WIDTH);
   }
 
   double int2rad(const int v, const int dof = 0) {
-    return (v-1000)*(2*M_PI)/(2*4900) - M_PI;
+    return (v/4-1500)*M_PI/1800;
+    //return (v-1000)*(2*M_PI)/(2*4900) - M_PI;
     //return (v/STEP_WIDTH)+m_params_->GetOffsets()[dof];
   }
 };

@@ -15,44 +15,39 @@
 // own includes
 #include <cob_3d_mapping_demonstrator/MapDemonCtrl_Maestro.h>
 
-MapDemonCtrl_Maestro::MapDemonCtrl_Maestro(MapDemonCtrlParams * params, SerialDevice * sd):
-MapDemonCtrl(params, sd), STEP_WIDTH(255/(2*M_PI))
+MapDemonCtrlMaestro::MapDemonCtrlMaestro(MapDemonCtrlParams * params):
+MapDemonCtrl(params)
 {
 }
 
 /// Destructor
-MapDemonCtrl_Maestro::~MapDemonCtrl_Maestro()
+MapDemonCtrlMaestro::~MapDemonCtrlMaestro()
 {
 }
 
 /*!
  * \brief Initializing
  */
-bool MapDemonCtrl_Maestro::Init(MapDemonCtrlParams * params)
+bool MapDemonCtrlMaestro::init(MapDemonCtrlParams * params)
 {
   /// get serial port configurable parameters
-  std::string SerialDeviceName = m_params_->GetSerialDevice();
-  int SerialBaudrate = m_params_->GetBaudRate();
+  //std::string SerialDeviceName = m_params_->GetSerialDevice();
+  //int SerialBaudrate = m_params_->GetBaudRate();
   std::ostringstream errorMsg;
 
-  int DOF = m_params_->GetDOF();
-  std::vector<std::string> JointNames = m_params_->GetJointNames();
-  std::vector<double> MaxVel = m_params_->GetMaxVel();
-  std::vector<double> FixedVel = m_params_->GetFixedVels();
-  std::vector<double> Offsets = m_params_->GetOffsets();
-  std::vector<double> LowerLimits = m_params_->GetLowerLimits();
-  std::vector<double> UpperLimits = m_params_->GetUpperLimits();
+  int DOF = params_->getDOF();
+  positions_.resize(DOF, 0);
+  old_positions_.resize(DOF, 0);
+  velocities_.resize(DOF, 0);
 
 
-  m_positions.resize(DOF);
-  m_positions[0] = 0;
-  m_positions[1] = 0;
-  m_old_positions.resize(DOF);
-  m_old_positions[0] = 0;
-  m_old_positions[1] = 0;
-  m_velocities.resize(DOF);
-  m_velocities[0] = 0;
-  m_velocities[1] = 0;
+  std::vector<std::string> JointNames = params_->getJointNames();
+  std::vector<double> MaxVel = params_->getMaxVel();
+  std::vector<double> FixedVel = params_->getVels();
+  std::vector<double> Offsets = params_->getOffsets();
+  std::vector<double> LowerLimits = params_->getLowerLimits();
+  std::vector<double> UpperLimits = params_->getUpperLimits();
+
 
   std::cout << "============================================================================== " << std::endl;
   std::cout << "Mapping Demonstrator Init: Trying to initialize with the following parameters: " << std::endl;
@@ -97,27 +92,28 @@ bool MapDemonCtrl_Maestro::Init(MapDemonCtrlParams * params)
 
   /// now open serial port
 
-  m_fd =  open(SerialDeviceName.c_str(), O_RDWR | O_NOCTTY);
+  fd_ = open(params_->getSerialDevice().c_str(), O_RDWR | O_NOCTTY);
 
   /// open(2) returns <0 if the port could NOT be opened
-  if (m_fd == -1 ) {
-    errorMsg << "Could not open device " << SerialDeviceName;
-    m_ErrorMessage = errorMsg.str();
+  if (fd_ == -1 ) {
+    errorMsg << "Could not open device " << params_->getSerialDevice();
+    error_message_ = errorMsg.str();
     return false;
   }
 
   struct termios options;
-  tcgetattr(m_fd, &options);
+  tcgetattr(fd_, &options);
   options.c_lflag &= ~(ECHO | ECHONL | ICANON | ISIG | IEXTEN);
   options.c_oflag &= ~(ONLCR | OCRNL);
-  tcsetattr(m_fd, TCSANOW, &options);
+  tcsetattr(fd_, TCSANOW, &options);
 
   usleep(10000);
 
-  if(!UpdatePositions()) return false;
+  if(!updatePositions()) return false;
 
-  setMaxVelocity(0.1);
-  m_Initialized = true;
+  setVelocity();
+  setAcceleration();
+  initialized_ = true;
 
   return true;
 }
@@ -127,7 +123,7 @@ bool MapDemonCtrl_Maestro::Init(MapDemonCtrlParams * params)
  *
  *
  */
-bool MapDemonCtrl_Maestro::RunCalibration()
+bool MapDemonCtrlMaestro::runCalibration()
 {
   return true;
 }
@@ -138,12 +134,20 @@ bool MapDemonCtrl_Maestro::RunCalibration()
  * This will use the velocity defined in parameter server as Velocity
  * \param JointNames Vector target_positions Vector
  */
-bool MapDemonCtrl_Maestro::MovePos( const std::vector<double>& target_positions )
+bool MapDemonCtrlMaestro::movePos( const std::vector<double>& target_positions )
 {
-  int DOF = m_params_->GetDOF();
+  int DOF = params_->getDOF();
 
   for(int i=0; i<DOF; i++) {
+    if(target_positions[i] > params_->getUpperLimits()[i] || target_positions[i] < params_->getLowerLimits()[i])
+    {
+      std::stringstream error_msg;
+      error_msg << "Position " << target_positions[i] << " exceeds limit for axis " << i;
+      error_message_ = error_msg.str();
+      return false;
+    }
     int pos = rad2int(target_positions[i], i);
+    //ROS_INFO("move pos %f", target_positions[i]);
     unsigned char list[2] = {(unsigned short)pos & 0x7F, (unsigned short)(pos >> 7) & 0x7F};
     writeCmd(SET_TARGET, i, list, 2);
   }
@@ -157,11 +161,11 @@ bool MapDemonCtrl_Maestro::MovePos( const std::vector<double>& target_positions 
  * Calculating positions and times by desired value of the cob_trajectory_controller
  * \param velocities Vector
  */
-bool MapDemonCtrl_Maestro::MoveVel(const std::vector<double>& target_velocities)
+/*bool MapDemonCtrlMaestro::MoveVel(const std::vector<double>& target_velocities)
 {
   ROS_ERROR("not supported yet");
   return false;
-}
+}*/
 
 /*
  * \brief Queries the robot its real position
@@ -169,21 +173,28 @@ bool MapDemonCtrl_Maestro::MoveVel(const std::vector<double>& target_velocities)
  * The robot answers p, e, t
  * \param
  */
-bool MapDemonCtrl_Maestro::UpdatePositions()
+bool MapDemonCtrlMaestro::updatePositions()
 {
-  int DOF = m_params_->GetDOF();
+  int DOF = params_->getDOF();
 
   for(int i=0; i<DOF; i++) {
     writeCmd(GET_POSITION, i);
 
     std::string str("");
-    unsigned int ctr=0;
+
+    char buf[2];
+    if(read(fd_,buf,2) != 2)
+    {
+      ROS_ERROR("error reading");
+      return false;
+    }
+    /*unsigned int ctr=0;
     while(str.size()<2)
     {
       char buf[255];
       size_t nbytes;
 
-      nbytes = read(m_fd, buf, 255);
+      nbytes = read(fd_, buf, 255);
       str += std::string(buf, nbytes);
 
 //      std::cout<<"recv: ";
@@ -198,64 +209,73 @@ bool MapDemonCtrl_Maestro::UpdatePositions()
         ROS_ERROR("failed to connect to device");
         return false;
       }
-    }
-    m_positions[i] = int2rad((unsigned char)str[0] + ((unsigned char)str[1])*256);
+    }*/
+    positions_[i] = int2rad(buf[0] + 256*buf[1]/*(unsigned char)str[0] + ((unsigned char)str[1])*256*/);
   }
-
-//  std::vector<double> p;
-//  p.push_back(100);
-//  p.push_back(100);
-//  MovePos(p);
 
   return true;
 }
 
-bool MapDemonCtrl_Maestro::Stop()
+bool MapDemonCtrlMaestro::stop()
 {
-  ROS_ERROR("not implemented");
-
+  //updatePositions();
+  //ROS_INFO("pos: %f, %f", positions_[0], positions_[1]);
+  movePos(positions_);
+  //ROS_ERROR("not implemented");
   return true;
 }
 /*!
  * \brief Close
  */
-bool MapDemonCtrl_Maestro::Close()
+bool MapDemonCtrlMaestro::close()
 {
-  m_Initialized = false;
-  m_sd->closePort();
-  m_SerialDeviceOpened = false;
+  initialized_ = false;
+  sd_->closePort();
+  serial_device_opened_ = false;
   return true;
 }
 
 /*!
  * \brief Recovery after emergency stop or power supply failure
  */
-bool MapDemonCtrl_Maestro::Recover()
+bool MapDemonCtrlMaestro::recover()
 {
   std::ostringstream errorMsg;
 
-  if( !m_sd->checkIfStillThere() )
+  if( !sd_->checkIfStillThere() )
   {
     errorMsg << "COB3DMD not detected anymore.";
-    m_sd->closePort();
-    m_ErrorMessage = errorMsg.str();
+    sd_->closePort();
+    error_message_ = errorMsg.str();
     return false;
   }
 }
 
-bool MapDemonCtrl_Maestro::setMaxVelocity(double velocity)
+void MapDemonCtrlMaestro::setVelocity()
 {
-  int DOF = m_params_->GetDOF();
+  int DOF = params_->getDOF();
   for(int i=0; i<DOF; i++) {
-    unsigned int v = 50;
+    unsigned int v = params_->getVels()[i]*72;
+    //ROS_INFO("Setting vel to %d.", v);
     unsigned char vel[2] = {(unsigned short)v & 0x7F, (unsigned short)(v >> 7) & 0x7F};
     writeCmd(SET_VEL, i, vel, 2);
   }
 }
 
-void MapDemonCtrl_Maestro::writeCmd(const unsigned char cmd, const unsigned char channel, const unsigned char *data, const int size)
+void MapDemonCtrlMaestro::setAcceleration()
 {
-  ROS_ASSERT(m_sd);
+  int DOF = params_->getDOF();
+  for(int i=0; i<DOF; i++) {
+    unsigned int v = params_->getAccels()[i]*228.6;
+    ROS_INFO("Setting accel to %d.", v);
+    unsigned char accel[2] = {(unsigned short)v & 0x7F, (unsigned short)(v >> 7) & 0x7F};
+    writeCmd(SET_ACCEL, i, accel, 2);
+  }
+}
+
+void MapDemonCtrlMaestro::writeCmd(const unsigned char cmd, const unsigned char channel, const unsigned char *data, const int size)
+{
+  ROS_ASSERT(sd_);
   std::string s;
   s.push_back(cmd);
   s.push_back(channel);
@@ -267,6 +287,6 @@ void MapDemonCtrl_Maestro::writeCmd(const unsigned char cmd, const unsigned char
 //    printf("%x ",(int)(unsigned char)s[i]);
 //  std::cout<<"\n";
 
-  if(write(m_fd, s.c_str(), s.size())!=s.size())
+  if(write(fd_, s.c_str(), s.size())!=s.size())
     ROS_WARN("could not send to serial");
 }

@@ -67,10 +67,10 @@ int SerialDevice::openPort(std::string device, int baud, int Parity, int StopBit
 	device = device.insert(0,"/dev/");	/// inserts '/dev/' infront of device name
 
 	/// attempt to open the serial device
-	m_fd = open(device.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
+	fd_ = open(device.c_str(), O_RDWR | O_NOCTTY | O_NDELAY);
 
 	/// open(2) returns <0 if the port could NOT be opened
-	if (m_fd == -1 ) {
+	if (fd_ == -1 ) {
 		return -1;
 	}
 	
@@ -78,9 +78,9 @@ int SerialDevice::openPort(std::string device, int baud, int Parity, int StopBit
 //	int flags;
 //	flags = fcntl(m_fd,F_GETFL,0);
 
-	fcntl(m_fd, F_SETFL, 0);// flags | O_NONBLOCK);	/// O_NONBLOCK makes read return even if there is no data
+	fcntl(fd_, F_SETFL, 0);// flags | O_NONBLOCK);	/// O_NONBLOCK makes read return even if there is no data
 
-	tcgetattr(m_fd, &config);
+	tcgetattr(fd_, &config);
 	
 	/// sets serial port baudrate
 	cfsetispeed(&config, BAUD);	/// for input
@@ -106,7 +106,7 @@ int SerialDevice::openPort(std::string device, int baud, int Parity, int StopBit
    // config.c_cc[VTIME] = 1;	//timeout after 3s without receiving new characters*/
     	/// load configuration. tcsetattr(3) returns <0 if error
     
-	if(tcsetattr(m_fd, TCSANOW, &config) < 0)
+	if(tcsetattr(fd_, TCSANOW, &config) < 0)
 	{
 		return -1;
 	}
@@ -120,12 +120,12 @@ int SerialDevice::openPort(std::string device, int baud, int Parity, int StopBit
 
 void SerialDevice::closePort()
 {
-	close(m_fd);
+	close(fd_);
 }
 
 bool SerialDevice::checkIfStillThere()
 {
-	return isatty(m_fd);
+	return isatty(fd_);
 }
 
 int SerialDevice::PutString(std::string str)
@@ -133,7 +133,7 @@ int SerialDevice::PutString(std::string str)
 	int res;
 	
 	/// write(3) returns the number of bytes that were actually written
-	res = write(m_fd, str.c_str(), str.size());
+	res = write(fd_, str.c_str(), str.size());
 	
 	return res;
 }
@@ -143,7 +143,7 @@ void SerialDevice::GetString( std::string& rxstr )
 	char buf[255];
 	size_t nbytes;
 
-	nbytes = read(m_fd, buf, 255);
+	nbytes = read(fd_, buf, 255);
 	//printf("Nbytes: %d", (int)nbytes);
 	for(unsigned int i=0; i<nbytes; i++)
 	{	
@@ -158,7 +158,7 @@ void SerialDevice::GetStringWithEndline( std::string& rxstr )
         char buf[255];
         size_t nbytes;
 
-        nbytes = read(m_fd, buf, 255);
+        nbytes = read(fd_, buf, 255);
         //printf("Nbytes: %d", (int)nbytes);
         for(unsigned int i=0; i<nbytes; i++)
         {
@@ -170,7 +170,7 @@ void SerialDevice::GetStringWithEndline( std::string& rxstr )
 
 bool SerialDevice::FlushInBuffer()
 {
-	if( tcflush(m_fd, TCIFLUSH) == -1 )
+	if( tcflush(fd_, TCIFLUSH) == -1 )
 		return 0;
 	else
 		return 1;	
@@ -179,7 +179,7 @@ bool SerialDevice::FlushInBuffer()
 
 bool SerialDevice::FlushOutBuffer()
 {
-	if( tcflush(m_fd, TCOFLUSH) == -1 )
+	if( tcflush(fd_, TCOFLUSH) == -1 )
 		return 0;
 	else
 		return 1;	
@@ -189,7 +189,7 @@ unsigned char SerialDevice::GetChar()
 {
 	unsigned char c;
 	size_t n_bytes;
-	n_bytes = read(m_fd, &c, 1);
+	n_bytes = read(fd_, &c, 1);
 	
 	return c;
 }
