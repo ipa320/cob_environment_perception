@@ -92,6 +92,7 @@ class execute_button_commands():
   # \param server_goal ScriptActionGoal
   #
   def execute_cb(self, server_goal):
+    print "execute_cb"
     server_result = ScriptActionResult().result
     if server_goal.function_name == "start":
       print "start"
