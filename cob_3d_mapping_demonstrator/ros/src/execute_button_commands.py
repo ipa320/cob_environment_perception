@@ -126,60 +126,50 @@ class execute_button_commands():
   def execute_start(self):
     print "start"
     #self.execute_reset()
-    sss.move("cob_3d_mapping_demonstrator",[[-0.5,0]])
-    goal = TriggerGoal()
-    if not self.trigger_client.wait_for_server(rospy.Duration.from_sec(2.0)):
-      print "switched to /segmentation/trigger"
-      self.trigger_client = actionlib.SimpleActionClient('/segmentation/trigger', TriggerAction)
-
-    if not self.trigger_client.wait_for_server(rospy.Duration.from_sec(2.0)):
-      rospy.logerr('server not available')
-      #return False
-    else:
-      goal.start = True
-      self.trigger_client.send_goal(goal)
-      if not self.trigger_client.wait_for_result(rospy.Duration.from_sec(2.0)):
-        print "no result"
+    #sss.move("cob_3d_mapping_demonstrator",[[-0.5,0]])
         #return False
-    if self.script_action_server.is_preempt_requested():
-      self.script_action_server.set_preempted()
-      return False
-    sss.move("cob_3d_mapping_demonstrator","home")
-    if self.script_action_server.is_preempt_requested():
-      self.script_action_server.set_preempted()
-      sss.stop("cob_3d_mapping_demonstrator")
-      return False
-    sss.move("cob_3d_mapping_demonstrator",[[0.5,0]])
-    if self.script_action_server.is_preempt_requested():
-      self.script_action_server.set_preempted()
-      sss.stop("cob_3d_mapping_demonstrator")
-      return False
-    sss.move("cob_3d_mapping_demonstrator",[[0.5,-0.5]])
-    if self.script_action_server.is_preempt_requested():
-      self.script_action_server.set_preempted()
-      sss.stop("cob_3d_mapping_demonstrator")
-      return False
-    sss.move("cob_3d_mapping_demonstrator",[[0,-0.5]])
-    if self.script_action_server.is_preempt_requested():
-      self.script_action_server.set_preempted()
-      sss.stop("cob_3d_mapping_demonstrator")
-      return False
-    sss.move("cob_3d_mapping_demonstrator",[[-0.5,-0.5]])
-    if self.script_action_server.is_preempt_requested():
-      self.script_action_server.set_preempted()
-      sss.stop("cob_3d_mapping_demonstrator")
-      return False
-    sss.move("cob_3d_mapping_demonstrator","home")
-    goal.start = False
-    self.trigger_client.send_goal(goal)
-    if not self.trigger_client.wait_for_result(rospy.Duration.from_sec(2.0)):
-      return False
-    return True
+    #if self.script_action_server.is_preempt_requested():
+    #  self.script_action_server.set_preempted()
+    #  return False
+    print self.script_action_server.is_preempt_requested()
+    while not self.script_action_server.is_preempt_requested():
+      print "move"
+      sss.move("cob_3d_mapping_demonstrator",[[0.5,0],[-0.5,0],[-0.5,-0.5],[0.5,-0.5],[0,0]])
+      sss.sleep(0.5)
+    #sss.move("cob_3d_mapping_demonstrator","home")
+    #if self.script_action_server.is_preempt_requested():
+    #  self.script_action_server.set_preempted()
+    #  sss.stop("cob_3d_mapping_demonstrator")
+    #  return False
+    #sss.move("cob_3d_mapping_demonstrator",[[0.5,0]])
+    #sss.sleep(0.5)
+    #if self.script_action_server.is_preempt_requested():
+    #  self.script_action_server.set_preempted()
+    #  sss.stop("cob_3d_mapping_demonstrator")
+    #  return False
+    #sss.move("cob_3d_mapping_demonstrator",[[0.5,-0.5]])
+    #if self.script_action_server.is_preempt_requested():
+    #  self.script_action_server.set_preempted()
+    #  sss.stop("cob_3d_mapping_demonstrator")
+    #  return False
+    #sss.move("cob_3d_mapping_demonstrator",[[0,-0.5]])
+    #if self.script_action_server.is_preempt_requested():
+    #  self.script_action_server.set_preempted()
+    #  sss.stop("cob_3d_mapping_demonstrator")
+    #  return False
+    #sss.move("cob_3d_mapping_demonstrator",[[-0.5,-0.5]])
+    #if self.script_action_server.is_preempt_requested():
+    #  self.script_action_server.set_preempted()
+    #  sss.stop("cob_3d_mapping_demonstrator")
+    #  return False
+    #sss.move("cob_3d_mapping_demonstrator","home")
+
 
   def execute_stop(self):
     print "stop"
     self.script_action_server.set_preempted()
     sss.stop("cob_3d_mapping_demonstrator")
+    return True
 
   def execute_reset(self):
     print "reset"
@@ -190,9 +180,9 @@ class execute_button_commands():
     if not self.trigger_client.wait_for_result(rospy.Duration.from_sec(2.0)):
       print "mapping not running"
       return False
-    sss.move("cob_3d_mapping_demonstrator","home")
-    self.execute_clear()
-    self.step = 0.1
+    #sss.move("cob_3d_mapping_demonstrator","home")
+    #self.execute_clear()
+    #self.step = 0.1
     return True
 
     #TODO: move to home, stop mapping, clear map
@@ -220,12 +210,26 @@ class execute_button_commands():
     return True
 
   def execute_recover(self):
-    print "recover"
-    sss.recover("cob_3d_mapping_demonstrator")
+    goal = TriggerGoal()
+    if not self.trigger_client.wait_for_server(rospy.Duration.from_sec(2.0)):
+      print "switched to /segmentation/trigger"
+      self.trigger_client = actionlib.SimpleActionClient('/segmentation/trigger', TriggerAction)
+
+    if not self.trigger_client.wait_for_server(rospy.Duration.from_sec(2.0)):
+      rospy.logerr('server not available')
+      #return False
+    else:
+      goal.start = True
+      self.trigger_client.send_goal(goal)
+      if not self.trigger_client.wait_for_result(rospy.Duration.from_sec(2.0)):
+        print "no result"
+    #print "recover"
+    #sss.recover("cob_3d_mapping_demonstrator")
     return True
 
   def execute_step(self):
-    if self.step==0.1:
+    sss.move("cob_3d_mapping_demonstrator",[[0, -0.5]])
+    """if self.step==0.1:
       self.execute_clear()
     print "step"
     goal = TriggerGoal()
@@ -238,7 +242,7 @@ class execute_button_commands():
       if not self.trigger_client.wait_for_result(rospy.Duration.from_sec(2.0)):
         print "no result"
     sss.move("cob_3d_mapping_demonstrator",[[self.step,-0.3]])
-    self.step += 0.1
+    self.step += 0.1"""
 
 ## Main routine for running the script server
 #

@@ -180,13 +180,14 @@ bool MapDemonCtrlMaestro::updatePositions()
   for(int i=0; i<DOF; i++) {
     writeCmd(GET_POSITION, i);
 
-    std::string str("");
+    //std::string str("");
 
-    char buf[2];
-    if(read(fd_,buf,2) != 2)
+    unsigned char buf[2];
+    while(read(fd_,buf,sizeof(buf)) != sizeof(buf))
     {
+      usleep(1000);
       ROS_ERROR("error reading");
-      return false;
+      //return false;
     }
     /*unsigned int ctr=0;
     while(str.size()<2)
@@ -210,8 +211,31 @@ bool MapDemonCtrlMaestro::updatePositions()
         return false;
       }
     }*/
-    positions_[i] = int2rad(buf[0] + 256*buf[1]/*(unsigned char)str[0] + ((unsigned char)str[1])*256*/);
+    positions_[i] = int2rad(buf[0] | buf[1]<<8/*(unsigned char)str[0] + ((unsigned char)str[1])*256*/);
   }
+  is_moving_ = isMoving();
+  return true;
+}
+
+bool MapDemonCtrlMaestro::isMoving()
+{
+  //int DOF = params_->getDOF();
+
+  //for(int i=0; i<DOF; i++) {
+    writeCmd(IS_MOVING);
+
+    //std::string str("");
+
+    unsigned char buf[1];
+    while(read(fd_,buf,sizeof(buf)) != sizeof(buf))
+    {
+      usleep(1000);
+      ROS_ERROR("error reading");
+    }
+    //std::cout << "isM: " << (unsigned int)buf[0] << std::endl;
+    if((unsigned int)buf[0] == 1) return true;
+    else return false;
+  //}
 
   return true;
 }
@@ -229,9 +253,9 @@ bool MapDemonCtrlMaestro::stop()
  */
 bool MapDemonCtrlMaestro::close()
 {
-  initialized_ = false;
+  /*initialized_ = false;
   sd_->closePort();
-  serial_device_opened_ = false;
+  serial_device_opened_ = false;*/
   return true;
 }
 
@@ -240,7 +264,7 @@ bool MapDemonCtrlMaestro::close()
  */
 bool MapDemonCtrlMaestro::recover()
 {
-  std::ostringstream errorMsg;
+  /*std::ostringstream errorMsg;
 
   if( !sd_->checkIfStillThere() )
   {
@@ -248,7 +272,8 @@ bool MapDemonCtrlMaestro::recover()
     sd_->closePort();
     error_message_ = errorMsg.str();
     return false;
-  }
+  }*/
+  return true;
 }
 
 void MapDemonCtrlMaestro::setVelocity()
@@ -275,17 +300,19 @@ void MapDemonCtrlMaestro::setAcceleration()
 
 void MapDemonCtrlMaestro::writeCmd(const unsigned char cmd, const unsigned char channel, const unsigned char *data, const int size)
 {
-  ROS_ASSERT(sd_);
+  //ROS_ASSERT(sd_);
   std::string s;
   s.push_back(cmd);
-  s.push_back(channel);
+  if( channel != 255)
+    s.push_back(channel);
   for(int i=0; i<size; i++)
     s.push_back(data[i]);
 
-//  std::cout<<"writing: ";
-//  for(int i=0; i<s.size(); i++)
-//    printf("%x ",(int)(unsigned char)s[i]);
-//  std::cout<<"\n";
+
+  /*std::cout<<"writing: ";
+  for(unsigned int i=0; i<s.size(); i++)
+    printf("%x ",(int)(unsigned char)s[i]);
+  std::cout<<"\n";*/
 
   if(write(fd_, s.c_str(), s.size())!=s.size())
     ROS_WARN("could not send to serial");

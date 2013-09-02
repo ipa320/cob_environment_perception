@@ -65,7 +65,7 @@ public:
   ///Constructor
   DemonstratorNode()
   :n_("~"),
-   as_(n_, "follow_joint_trajectory", boost::bind(&DemonstratorNode::executeTrajectory, this, _1), true)
+   as_(n_, "follow_joint_trajectory", boost::bind(&DemonstratorNode::executeTrajectory, this, _1), false)
   {
     //n_ = ros::NodeHandle("~");
     //md_sd_ = new SerialDevice();
@@ -87,6 +87,8 @@ public:
     srv_server_stop_ = n_.advertiseService("stop", &DemonstratorNode::srvCallbackStop, this);
     srv_server_recover_ = n_.advertiseService("recover", &DemonstratorNode::srvCallbackRecover, this);
     //srv_server_operation_mode_ = n_.advertiseService("set_operation_mode", &DemonstratorNode::srvCallbackSetOperationMode, this);
+
+    as_.start();
 
     initialized_ = false;
     stopped_ = true;
@@ -269,23 +271,31 @@ public:
 
   void executeTrajectory(const control_msgs::FollowJointTrajectoryGoalConstPtr &goal)
   {
+    //ROS_INFO("trajectory");
+    stopped_ = false;
     trajectory_msgs::JointTrajectory traj = goal->trajectory;
-    brics_actuator::JointPositions::Ptr joint_pos(new brics_actuator::JointPositions());
-    for(unsigned int i=0; i<traj.joint_names.size(); i++)
+    for( unsigned int j = 0; j <traj.points.size(); j++)
     {
-      brics_actuator::JointValue jv;
-      jv.joint_uri = traj.joint_names[i];
-      jv.unit = "rad";
-      jv.value = traj.points[0].positions[i];
-      joint_pos->positions.push_back(jv);
-    }
-    topicCallbackCommandPos(joint_pos);
-    bool is_moving = true;
-    stopped_=false;
-    while(is_moving)
+      brics_actuator::JointPositions::Ptr joint_pos(new brics_actuator::JointPositions());
+      for(unsigned int i=0; i<traj.joint_names.size(); i++)
+      {
+        brics_actuator::JointValue jv;
+        jv.joint_uri = traj.joint_names[i];
+        jv.unit = "rad";
+        jv.value = traj.points[j].positions[i];
+        joint_pos->positions.push_back(jv);
+      }
+      topicCallbackCommandPos(joint_pos);
+      while(!md_ctrl_->is_moving_ && !stopped_) usleep(1000);
+      while(md_ctrl_->is_moving_)
+      {
+        //is_moving_ = md_ctrl_->is_moving_;
+        usleep(10000);
+      }
+    /*while(is_moving)
     {
       std::vector<double> pos = md_ctrl_->getPositions();
-      //ROS_INFO("%f, %f", traj.points[0].positions[0], pos[0]/*, traj.points[0].positions[1]-pos[1]*/);
+      //ROS_INFO("%f, %f", traj.points[0].positions[0], pos[0]);
       if( fabs(traj.points[0].positions[0]-pos[0])<0.05 &&  fabs(traj.points[0].positions[1]-pos[1])<0.05 )
         is_moving = false;
       if ( as_.isPreemptRequested() || stopped_)
@@ -294,6 +304,7 @@ public:
         return;
       }
       usleep(1000);
+    }*/
     }
     as_.setSucceeded();
   }
@@ -307,6 +318,7 @@ public:
       ROS_WARN("Skipping command: mapping_demonstrator is not initialized");
       return;
     }
+    if(stopped_) return;
 
     unsigned int DOF = md_params_->getDOF();
     std::vector<std::string> joint_names = md_params_->getJointNames();
@@ -475,11 +487,12 @@ public:
   {
     if( initialized_ )
     {
+      stopped_ = true;
       if( md_ctrl_->stop() )
       {
         ROS_INFO("Stopping COB3DMD successful");
         res.success.data = true;	//Trigger.srv response
-        stopped_ = true;
+        //stopped_ = true;
       }
       else
       {
