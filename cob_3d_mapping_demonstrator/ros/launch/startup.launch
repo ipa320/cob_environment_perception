@@ -14,13 +14,15 @@
 	<node name="state_publisher" type="robot_state_publisher" pkg="robot_state_publisher" output="screen">
 		<remap from="joint_states" to="/cob_3d_mapping_demonstrator_controller/joint_states"/>
 	</node>
-  <remap from="base_controller/command" to="cob_3d_mapping_demonstrator/command_vel" />
+  <!-- remap from="base_controller/command" to="cob_3d_mapping_demonstrator/command_vel" /-->
 
   <node name="execute_button_commands" type="execute_button_commands.py" pkg="cob_3d_mapping_demonstrator" output="screen"/>
-  <!-- include file="$(find cob_3d_mapping_pipeline)/launch/mapping_demo.launch"/-->
+  <include file="$(find cob_3d_mapping_pipeline)/launch/mapping_demo.launch"/>
   <node name="kill" type="kill_xtion.sh" pkg="cob_3d_mapping_demonstrator"/>
   <include file="$(find cob_3d_mapping_demonstrator)/ros/launch/openni.launch"/>
-  <include file="$(find cob_3d_visualization)/launch/shape_visualization.launch"/>
+  <include file="$(find cob_3d_visualization)/launch/shape_visualization.launch">
+    <arg name="shape_array_in" value="segmentation/shape_array" />
+  </include>
   <!-- node name="rviz" type="rviz" pkg="rviz" output="screen" args="$(find cob_3d_mapping_demonstrator)/rviz.vcg"/-->
 
 	<!--node ns="cob_3d_mapping_demonstrator_controller" pkg="cob_teleop" type="teleop_cob" name="spawn_teleop_keyboard" output="screen"/-->

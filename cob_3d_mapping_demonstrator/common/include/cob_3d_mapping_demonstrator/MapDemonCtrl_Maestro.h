@@ -35,6 +35,9 @@ public:
   virtual void setAcceleration();
 
   virtual bool updatePositions();
+  virtual bool isMoving();
+
+  bool is_moving_;
 
 private:
 
@@ -42,14 +45,15 @@ private:
     GET_POSITION=0x90,
     SET_TARGET=0x84,
     SET_VEL=0x87,
-    SET_ACCEL=0x89
+    SET_ACCEL=0x89,
+    IS_MOVING=0x93
   };
 
   int fd_;
 
   //const double STEP_WIDTH;
 
-  void writeCmd(const unsigned char cmd, const unsigned char channel, const unsigned char *data=NULL, const int size=0);
+  void writeCmd(const unsigned char cmd, const unsigned char channel=255, const unsigned char *data=NULL, const int size=0);
 
   int rad2int(const double v, const int dof = 0) {
     double rad = v;
