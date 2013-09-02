@@ -4,6 +4,7 @@
   <arg name="point_cloud" default="/cam3d/depth_registered/points"/>
   <arg name="segmented_cloud" default="/segmentation/segmented_cloud"/>
   <arg name="shape_array" default="/segmentation/shape_array"/>
+  <arg name="enable_action_mode" default="False"/>
 
   <arg name="debug_mode" default="false"/>
   <arg name="start_manager" default="true"/>
@@ -26,6 +27,6 @@
     <param name="filter" type="bool" value="True"/>
     <param name="downsample" type="bool" value="True"/>
     <param name="colorize" type="bool" value="True"/>
-    <param name="enable_action_mode" type="bool" value="False"/>
+    <param name="enable_action_mode" type="bool" value="$(arg enable_action_mode)"/>
   </node>
 </launch>
