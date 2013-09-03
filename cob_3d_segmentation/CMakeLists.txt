@@ -64,15 +64,6 @@ rosbuild_add_executable(qppf_node ros/src/qppf_node.cpp common/src/polypartition
 rosbuild_add_executable(plane_extraction_action_client ros/src/plane_extraction_action_client.cpp)
 target_link_libraries(plane_extraction_action_client ${OpenCV_LIBS})
 
-# meshing app (test):
-#rosbuild_add_executable(mesh_from_segmentation common/apps/mesh_from_segmentation.cpp)
-#target_link_libraries(mesh_from_segmentation cob_3d_segmentation)
-#rosbuild_link_boost(mesh_from_segmentation program_options)
-
-rosbuild_add_executable(mesh_decimation common/apps/mesh_decimation.cpp)
-rosbuild_link_boost(mesh_decimation program_options)
-target_link_libraries(mesh_decimation cob_3d_segmentation)
-
 # segmentation app:
 rosbuild_add_executable(test_depth_segmentation common/apps/test_depth_segmentation.cpp)
 target_link_libraries(test_depth_segmentation cob_3d_segmentation vtkCommon vtkRendering)
