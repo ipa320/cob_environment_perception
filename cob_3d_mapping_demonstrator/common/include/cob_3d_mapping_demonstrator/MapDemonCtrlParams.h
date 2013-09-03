@@ -9,121 +9,131 @@ public:
 	{
 
 	}
-	
+
 	///Destructor
 	~MapDemonCtrlParams();
-	
+
 	///Initilizing
-	void Init(std::string SerialDevice, int BaudRate)
+	void init(std::string SerialDevice, int BaudRate)
 	{
-		SetSerialDevice(SerialDevice);
-		SetBaudRate(BaudRate);		
+		setSerialDevice(SerialDevice);
+		setBaudRate(BaudRate);
 	}
-	
+
 	///Sets the name of serial device
-	void SetSerialDevice(std::string SerialDeviceName) {
-		m_SerialDeviceName = SerialDeviceName;
-	}	
+	void setSerialDevice(std::string SerialDeviceName) {
+		serial_device_name_ = SerialDeviceName;
+	}
 	///Gets the name of the serial device
-	std::string GetSerialDevice() {
-		return m_SerialDeviceName;
+	std::string getSerialDevice() {
+		return serial_device_name_;
 	}
-	
+
 	///Sets the BaudRate
-	void SetBaudRate(int BaudRate) {
-		m_BaudRate = BaudRate;
-	}	
-	///Gets the BaudRate
-	int GetBaudRate() {
-		return m_BaudRate;
+	void setBaudRate(int BaudRate) {
+		baud_rate_ = BaudRate;
 	}
-	
+	///Gets the BaudRate
+	int getBaudRate() {
+		return baud_rate_;
+	}
+
 	///Sets the operation mode
-	void SetOperationMode(std::string opMode) {
+	/*void SetOperationMode(std::string opMode) {
 		m_operationMode = opMode;
 	}
 	///Gets the operation mode
 	std::string GetOperationMode() {
 		return m_operationMode;
-	}
-	
+	}*/
+
 	/// Sets the DOF value
-	void SetDOF(int DOF) {
-		m_DOF = DOF;
+	void setDOF(int DOF) {
+		dof_ = DOF;
 	}
 
 	/// Gets the DOF value
-	unsigned int GetDOF() {
-		return m_DOF;
+	unsigned int getDOF() {
+		return dof_;
 	}
-	
+
 	/// Sets the joint names
-	void SetJointNames(std::vector<std::string> JointNames) {
-		m_JointNames = JointNames;
+	void setJointNames(std::vector<std::string> JointNames) {
+		joint_names_ = JointNames;
 	}
 	/// Gets the joint names
-	std::vector<std::string> GetJointNames() {
-		return m_JointNames;
+	std::vector<std::string> getJointNames() {
+		return joint_names_;
 	}
-	
+
 	/// Sets the upper angular limits (rad) for the joints
-	void SetUpperLimits(std::vector<double> UpperLimits) {
-		m_UpperLimits = UpperLimits;
+	void setUpperLimits(std::vector<double> UpperLimits) {
+		upper_limits_ = UpperLimits;
 	}
 	/// Gets the upper angular limits (rad) for the joints
-	std::vector<double> GetUpperLimits() {
-		return m_UpperLimits;
+	std::vector<double> getUpperLimits() {
+		return upper_limits_;
 	}
-		
+
 	/// Sets the lower angular limits (rad) for the joints
-	void SetLowerLimits(std::vector<double> LowerLimits) {
-		m_LowerLimits = LowerLimits;
+	void setLowerLimits(std::vector<double> LowerLimits) {
+		lower_limits_ = LowerLimits;
 	}
 	/// Gets the lower angular limits (rad) for the joints
-	std::vector<double> GetLowerLimits() {
-		return m_LowerLimits;
+	std::vector<double> getLowerLimits() {
+		return lower_limits_;
 	}
-	
+
 	/// Sets the max. angular velocities (rad/s) for the joints
-	void SetMaxVel(std::vector<double> MaxVel) {
-		m_MaxVel = MaxVel;
+	void setMaxVel(std::vector<double> MaxVel) {
+		max_vel_ = MaxVel;
 	}
 	/// Gets the max. angular velocities
-	std::vector<double> GetMaxVel()
+	std::vector<double> getMaxVel()
 	{
-		return m_MaxVel;
+		return max_vel_;
 	}
-	
+
 	/// Gets the offsets
-	void SetOffsets(std::vector<double> Offsets)	{
-		m_Offsets = Offsets;
+	void setOffsets(std::vector<double> Offsets)	{
+		offsets_ = Offsets;
 	}
 	/// Sets the offsets
-	std::vector<double> GetOffsets() {
-		return m_Offsets;
+	std::vector<double> getOffsets() {
+		return offsets_;
 	}
 
 	/// Gets the fixed velocities
-	void SetFixedVels( std::vector<double> fixedVelocities )	{
-		m_fixedVels = fixedVelocities;
+	void setVels( std::vector<double> velocities )	{
+		vels_ = velocities;
 	}
 	/// Sets the offsets
-	std::vector<double> GetFixedVels() {
-		return m_fixedVels;
+	std::vector<double> getVels() {
+		return vels_;
 	}
-	
+
+        /// Gets the fixed velocities
+        void setAccels( std::vector<double> accels )  {
+                accels_ = accels;
+        }
+        /// Sets the offsets
+        std::vector<double> getAccels() {
+                return accels_;
+        }
+
 private:
-	std::string m_SerialDeviceName;
-	int m_BaudRate;
-	std::string m_operationMode;
-	
-	unsigned int m_DOF;
-	std::vector<std::string> m_JointNames;
-	std::vector<double> m_UpperLimits;
-	std::vector<double> m_LowerLimits;
-	std::vector<double> m_MaxVel;
-	std::vector<double> m_fixedVels;
-	std::vector<double> m_Offsets;
+	std::string serial_device_name_;
+	int baud_rate_;
+	//std::string m_operationMode;
+
+	unsigned int dof_;
+	std::vector<std::string> joint_names_;
+	std::vector<double> upper_limits_;
+	std::vector<double> lower_limits_;
+	std::vector<double> max_vel_;
+	std::vector<double> vels_;
+	std::vector<double> accels_;
+	std::vector<double> offsets_;
 };
 
 #endif
