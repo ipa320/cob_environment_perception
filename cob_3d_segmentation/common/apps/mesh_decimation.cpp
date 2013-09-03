@@ -286,7 +286,7 @@ void MeshSimplification<PointT,NormalT,LabelT>::initializeMesh(
       else
       {
         vh[y][x] = mesh_->add_vertex(Mesh::Point(p->x, p->y, p->z));
-        Eigen::Vector4f nd;
+        /*Eigen::Vector4f nd;
         if(params.find((*labels)[row_offset+x].label) != params.end())
           nd = params.find((*labels)[row_offset+x].label)->second;
         else
@@ -297,7 +297,7 @@ void MeshSimplification<PointT,NormalT,LabelT>::initializeMesh(
         }
 
         mesh_->property(p_normals_,vh[y][x]) = PropNormalT(nd(0), nd(1), nd(2), nd(3));
-        mesh_->property(p_labels_, vh[y][x]) = (*labels)[row_offset+x].label;
+        mesh_->property(p_labels_, vh[y][x]) = (*labels)[row_offset+x].label;*/
       }
     }
   }
