@@ -453,11 +453,12 @@ namespace cob_3d_mapping
       float xprev, yprev, xcurr, ycurr;
       for(int i=0; i<polygons.size(); ++i)
       {
-        int id = polygons[i]->id;
+        int id = polygons[i]->id_;
+        std::vector<std::vector<Eigen::Vector3f> > contours = polygons[i]->getContours3D();
 
-        Eigen::Vector4f p1 = proj * makeVector4f( (polygons[i]->contours[0])[1] );
-        Eigen::Vector4f p2 = proj * makeVector4f( (polygons[i]->contours[0])[2] );
-        Eigen::Vector4f p3 = proj * makeVector4f( (polygons[i]->contours[0])[0] );
+        Eigen::Vector4f p1 = proj * makeVector4f( contours[0][1] );
+        Eigen::Vector4f p2 = proj * makeVector4f( contours[0][2] );
+        Eigen::Vector4f p3 = proj * makeVector4f( contours[0][0] );
 
         p1 /= p1(3);
         p2 /= p2(3);
@@ -467,9 +468,9 @@ namespace cob_3d_mapping
         float d = p1.head<3>().dot(normal);
         spf.addPolygon(id, normal, d);
 
-        for(int c=0; c<polygons[i]->contours.size(); ++c)
+        for(int c=0; c<contours.size(); ++c)
         {
-          std::vector<Eigen::Vector3f>* ptr_c = &polygons[i]->contours[c];
+          std::vector<Eigen::Vector3f>* ptr_c = &contours[c];
           projected = proj * makeVector4f( (*ptr_c)[ ptr_c->size()-1 ] );
           float inv_w = 1.0f / projected(3);
           xprev = projected(0) * inv_w;
