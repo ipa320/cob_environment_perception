@@ -177,7 +177,7 @@ getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
 
   Polygon::Polygon(unsigned int id,
                    Eigen::Vector3f normal,
-                   double d,
+                   Eigen::Vector3f centroid,
                    std::vector<std::vector<Eigen::Vector3f> >& contours_3d,
                    std::vector<bool> holes,
                    std::vector<float> color)
@@ -186,8 +186,12 @@ getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
     merge_weight_(1.0)
   {
     id_ = id;
-    normal_ = normal;
-    d_ = d;
+    d_ = centroid.dot(normal);
+    if (d_ > 0) {
+      normal_ = -normal;
+      d_ = -d_;
+    }
+    else { normal_ = normal; }
     holes_ = holes;
     color_ = color;
     computePose(contours_3d);
