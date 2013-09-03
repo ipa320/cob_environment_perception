@@ -338,7 +338,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
     {
       cob_3d_mapping::Polygon::Ptr  poly(new cob_3d_mapping::Polygon(id,
                                                                      c->pca_point_comp3,
-                                                                     fabs(c->getCentroid().dot(c->pca_point_comp3)),
+                                                                     c->getCentroid()/*fabs(c->getCentroid().dot(c->pca_point_comp3))*/,
                                                                      contours_3d,
                                                                      holes,
                                                                      color));
