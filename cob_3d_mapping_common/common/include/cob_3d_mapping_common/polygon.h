@@ -149,7 +149,7 @@ namespace cob_3d_mapping
 
     Polygon(unsigned int id,
             Eigen::Vector3f normal,
-            double d,
+            Eigen::Vector3f centroid,
             std::vector<pcl::PointCloud<pcl::PointXYZ> >& contours_3d,
             std::vector<bool> holes,
             std::vector<float> color);

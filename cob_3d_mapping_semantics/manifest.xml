@@ -12,6 +12,7 @@
 	<depend package="roscpp"/>
 	<depend package="pcl"/>
 	<depend package="pcl_ros"/>
+	<depend package="rosbag"/>
 	<depend package="visualization_msgs"/>
 	<depend package="cob_3d_mapping_msgs"/>
 	<depend package="cob_3d_mapping_common"/>
