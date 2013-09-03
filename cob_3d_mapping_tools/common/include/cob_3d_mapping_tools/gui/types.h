@@ -86,11 +86,15 @@ namespace Gui
     template<size_t Channel>
     struct Normal : public View2D { static const std::string STR; };
 
-    // not implemented, totally different approach necessary! use OnIdle in MainApp -> wxApp
+    // not implemented, totally different approach necessary!
+    // use OnIdle in MainApp -> wxApp
     struct Depth_3D : public View3D { static const std::string STR; };
-    struct Histogram : public View2D { static const std::string STR; }; // not implemented
-    struct Curvature : public View2D { static const std::string STR; }; // not implemented
-    struct SomethingWithText : public ViewText { static const std::string STR; }; // not implemented
+    struct Histogram : public View2D { static const std::string STR; };
+    // not implemented
+    struct Curvature : public View2D { static const std::string STR; };
+    // not implemented
+    struct SomethingWithText : public ViewText { static const std::string STR; };
+    // not implemented
 
     const std::string Color::STR = "Color View";
     const std::string Depth_Z::STR = "Depth View";
