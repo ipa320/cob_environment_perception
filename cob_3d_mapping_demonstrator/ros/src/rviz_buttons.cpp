@@ -73,26 +73,26 @@ namespace cob_environment_perception
   : rviz::Panel( parent )
   {
 
-    QPushButton* start_button = new QPushButton("Start");
+    QPushButton* start_button = new QPushButton("Start Movement");
     start_button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     QPushButton* stop_button = new QPushButton("Stop");
     stop_button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    QPushButton* step_button = new QPushButton("Step");
+    QPushButton* step_button = new QPushButton("Down");
     step_button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    QPushButton* reset_button = new QPushButton("Reset");
+    QPushButton* reset_button = new QPushButton("Stop Processing");
     reset_button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     QPushButton* clear_button = new QPushButton("Clear");
     clear_button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    QPushButton* recover_button = new QPushButton("Recover");
+    QPushButton* recover_button = new QPushButton("Start Processing");
     recover_button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
 
     QVBoxLayout* layout = new QVBoxLayout;
+    layout->addWidget(recover_button);
+    layout->addWidget(reset_button);
     layout->addWidget(start_button);
     layout->addWidget(stop_button);
     layout->addWidget(step_button);
-    layout->addWidget(reset_button);
     layout->addWidget(clear_button);
-    layout->addWidget(recover_button);
     setLayout( layout );
 
     connect( start_button, SIGNAL( clicked() ), this, SLOT( onStart() ));

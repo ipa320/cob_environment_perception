@@ -6,7 +6,7 @@
   <url>http://ros.org/wiki/cob_environment_perception_intern</url>
   <depend stack="cob_command_tools" /> <!-- cob_command_gui, cob_dashboard, cob_script_server -->
   <depend stack="cob_common" /> <!-- cob_srvs, brics_actuator -->
-  <depend stack="cob_driver" /> <!-- cob_trajectory_controller -->
+  <!--depend stack="cob_driver" /--> <!-- cob_trajectory_controller -->
   <depend stack="cob_environment_perception" /> <!-- cob_3d_mapping_msgs -->
   <depend stack="cob_environments" /> <!-- cob_gazebo_objects -->
   <depend stack="common" /> <!-- actionlib -->
