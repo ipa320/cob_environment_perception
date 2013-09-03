@@ -106,9 +106,10 @@ public: // inherited
 
     Q q = Base::mesh().property(quadrics_, _ci.v0);
     q += Base::mesh().property(quadrics_, _ci.v1);
-    Vec3f v = (_ci.p1 + _ci.p0);
+    /*Vec3f v = (_ci.p1 + _ci.p0);
     v = v * 0.5;
-    double err = q(v);
+    double err = q(v);*/
+    double err = q(_ci.p1);
     //std::cout << v << " Err: " << err << std::endl;
 
     return float( (err < max_err_) ? err : float( Base::ILLEGAL_COLLAPSE ) );
@@ -119,8 +120,8 @@ public: // inherited
     Base::mesh().property(quadrics_, _ci.v1) +=
       Base::mesh().property(quadrics_, _ci.v0);
 
-    Base::mesh().point(_ci.v1) += Base::mesh().point(_ci.v0);
-    Base::mesh().point(_ci.v1) *= 0.5;
+    //Base::mesh().point(_ci.v1) += Base::mesh().point(_ci.v0);
+    //Base::mesh().point(_ci.v1) *= 0.5;
   }
 
   void set_error_tolerance_factor(double _factor);
@@ -176,7 +177,8 @@ public:
   typedef boost::shared_ptr<Mesh> MeshPtr;
   typedef OpenMesh::Decimater::DecimaterT<Mesh> Decimater;
   typedef boost::shared_ptr<Decimater> DecimaterPtr;
-  typedef OpenMesh::Decimater::ModNormalQuadricT<Mesh> ModT;
+  //typedef OpenMesh::Decimater::ModNormalQuadricT<Mesh> ModT;
+  typedef OpenMesh::Decimater::ModQuadricT<Mesh> ModT;
   typedef typename ModT::Handle ModHandle;
   typedef OpenMesh::Vec4f PropNormalT;
   typedef OpenMesh::VPropHandleT<PropNormalT> PropNormalHandle;
@@ -194,8 +196,8 @@ public:
     mesh_->add_property(p_labels_, "Labels");
     dec_->add(mod_);
     dec_->module(mod_).set_binary(false);
-    dec_->module(mod_).set_normal_property(p_normals_);
-    dec_->module(mod_).set_label_property(p_labels_);
+    //dec_->module(mod_).set_normal_property(p_normals_);
+    //dec_->module(mod_).set_label_property(p_labels_);
   }
 
   ~MeshSimplification() { }
