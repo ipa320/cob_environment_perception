@@ -59,7 +59,7 @@ message("${ROS_VERSION}")
 #endif()
 
 
-rosbuild_add_executable(${PROJECT_NAME} ros/src/MapDemonDriver.cpp common/src/MapDemonCtrl.cpp common/src/MapDemonCtrl_Maestro.cpp common/src/SerialDevice.cpp)
+rosbuild_add_executable(${PROJECT_NAME} ros/src/demonstrator_node.cpp common/src/MapDemonCtrl.cpp common/src/MapDemonCtrl_Maestro.cpp common/src/SerialDevice.cpp)
 rosbuild_add_executable(testClient ros/test/test_client.cpp)
 rosbuild_add_executable(testClientPOS ros/test/test_clientPOS.cpp)
 

@@ -15,9 +15,9 @@
   <depend package="diagnostic_msgs"/>
   <depend package="cob_srvs"/>
   <depend package="brics_actuator"/>
-  <depend package="cob_trajectory_controller"/>
+  <!--depend package="cob_trajectory_controller"/-->
   <depend package="cob_dashboard"/>
-  <depend package="cob_command_gui"/>
+  <!--depend package="cob_command_gui"/-->
   <depend package="actionlib"/>
   <depend package="pr2_controllers_msgs"/>
   <depend package="robot_state_publisher"/>

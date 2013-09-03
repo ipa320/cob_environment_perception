@@ -133,33 +133,33 @@
 			<child link="base" />
 			<origin xyz="0 0 0" rpy="0 0 0"/>
 		</joint>
-		<joint name="stepper" type="revolute">
+		<joint name="servo_pan" type="revolute">
 			<parent link="base"/>
 			<child link="pan" />
 			<origin xyz="0 0 1.42" rpy="0 3.14 0"/>
-			<limit lower="-7" upper="7" velocity="1.02" effort="0"/>
+			<limit lower="-1.57" upper="1.57" velocity="1.0" effort="0"/>
 			<!--calibration rising="-0.9"/-->
 			<calibration rising="0"/>
 			<!-- max vel is 5.23 -->
 			<axis xyz="0 0 1"/>
 		</joint>
 
-		<joint name="servo" type="revolute">
+		<joint name="servo_tilt" type="revolute">
 			<parent link="pan"/>
 			<child link="tilt"/>
-			<origin xyz="0 0 -0.066" rpy="-1.57 0 0"/>
+			<origin xyz="0 0 -0.02" rpy="-1.57 0 0"/>
 			<axis xyz="0 0 1"/>
-			<limit lower="-1.56" upper="1.56" velocity="1.02" effort="0"/>
+			<limit lower="-1.05" upper="1.05" velocity="1.0" effort="0"/>
 			<!-- max vel is 12.31-->
-			<calibration rising="0.04"/>
-			<!--calibration rising="0"/-->
+			<!--calibration rising="0.04"/-->
+			<calibration rising="0"/>
 			<!--max vel is 12.32 -->
 		</joint>
 
 		<joint name="camjoint" type="fixed">
 			<parent link="tilt"/>
 			<child link="camera_link"/>
-			<origin xyz="0 0.068 -0.0075" rpy="-1.57 0 0"/>
+			<origin xyz="0 0.068 0.0" rpy="-1.57 0 0"/>
 		</joint>
 
 		  <!--joint name="base_camera_joint" type="fixed">
