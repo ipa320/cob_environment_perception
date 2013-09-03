@@ -415,7 +415,7 @@ public:
       //p.holes_.push_back(false);
       std::vector<bool> holes(1, false);
       std::vector<pcl::PointCloud<pcl::PointXYZ> > hull_v(1, hull);
-      Polygon p(0, normal, v_coefficients_plane[i].values[3], hull_v, holes, color);
+      Polygon p(0, normal, hull_v[0].points[0].getVector3fMap(), hull_v, holes, color);
 
       cob_3d_mapping_msgs::Shape s;
       s.header = header;
