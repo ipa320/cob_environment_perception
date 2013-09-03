@@ -14,86 +14,86 @@ class MapDemonCtrl
 {
 public:
 
-	/// Constructor
-	MapDemonCtrl(MapDemonCtrlParams * params);
-	MapDemonCtrl(MapDemonCtrlParams * params, SerialDevice * sd);
+  /// Constructor
+  MapDemonCtrl(MapDemonCtrlParams * params);
+  //MapDemonCtrl(MapDemonCtrlParams * params, SerialDevice * sd);
 
-	/// Destructor
-	virtual ~MapDemonCtrl();
+  /// Destructor
+  virtual ~MapDemonCtrl();
 
-	pthread_mutex_t m_mutex;
+  pthread_mutex_t m_mutex;
 
-	virtual bool Init(MapDemonCtrlParams * params);
+  virtual bool init(MapDemonCtrlParams * params);
 
-	virtual bool isInitialized() const
-	{
-		return m_Initialized;
-	}
+  virtual bool isInitialized() const
+  {
+    return initialized_;
+  }
 
-	virtual bool RunCalibration() ;
+  virtual bool runCalibration() ;
 
-	virtual bool MovePos( const std::vector<double>& target_positions );
-	virtual bool MoveVel( const std::vector<double>& target_velocities );
+  virtual bool movePos( const std::vector<double>& target_positions );
+  //virtual bool MoveVel( const std::vector<double>& target_velocities );
 
-	virtual std::string getErrorMessage() const
-	{
-		return m_ErrorMessage;
-	}
+  virtual std::string getErrorMessage() const
+  {
+    return error_message_;
+  }
 
-	virtual bool Close() ;
-	virtual bool Stop();
-	virtual bool Recover() ;
+  virtual bool close() ;
+  virtual bool stop();
+  virtual bool recover() ;
 
-	//////////////////////////////////
-	// functions to set parameters: //
-	//////////////////////////////////
+  //////////////////////////////////
+  // functions to set parameters: //
+  //////////////////////////////////
 
-	/*!
-	 * \brief Sets the maximum angular velocity (rad/s) for the Joints, use with care!
-	 *
-	 * A Value of 0.5 is already pretty fast, you probably don't want anything more than one...
-	 */
-	virtual bool setMaxVelocity(double velocity) {};
-	bool setMaxVelocity(const std::vector<double>& velocities);
+  /*!
+   * \brief Sets the maximum angular velocity (rad/s) for the Joints, use with care!
+   *
+   * A Value of 0.5 is already pretty fast, you probably don't want anything more than one...
+   */
+  virtual void setVelocity() {};
+  bool setMaxVelocity(const std::vector<double>& velocities);
 
-	/*!
-	 * \brief Gets the current positions
-	 */
-	virtual std::vector<double> GetPositions()
-	{
-		return m_positions;
-	}
+  /*!
+   * \brief Gets the current positions
+   */
+  virtual std::vector<double> getPositions()
+	    {
+    return positions_;
+	    }
 
-	/*!
-	 * \brief Gets the current velcities
-	 */
-	virtual std::vector<double> GetVelocities()
-	{
-		return m_velocities;
-	}
+  /*!
+   * \brief Gets the current velcities
+   */
+  virtual std::vector<double> getVelocities()
+	    {
+    return velocities_;
+	    }
 
-	virtual bool UpdatePositions();
+  virtual bool updatePositions();
 
 
 protected:
-	bool m_Initialized;
-	int m_DeviceHandle;
-	bool m_SerialDeviceOpened;
+  bool initialized_;
+  int device_handle_;
+  bool serial_device_opened_;
 
-	MapDemonCtrlParams* m_params_;
+  MapDemonCtrlParams* params_;
 
-	SerialDevice * m_sd;
+  SerialDevice * sd_;
 
-	std::vector<double> m_positions;
-	std::vector<double> m_old_positions;
+  std::vector<double> positions_;
+  std::vector<double> old_positions_;
 
-	std::vector<double> m_velocities;
+  std::vector<double> velocities_;
 
-	double m_encoder;
+  double encoder_;
 
-	ros::Time m_last_time_pub;
+  ros::Time last_time_pub_;
 
-	std::string m_ErrorMessage;
+  std::string error_message_;
 
 
 };

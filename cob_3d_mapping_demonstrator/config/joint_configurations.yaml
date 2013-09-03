@@ -1,17 +1,17 @@
-joint_names: ["stepper","servo"]
+joint_names: ["servo_pan","servo_tilt"]
 
 # single positions
 home: [[0,0]]
-left: [[-1.6,0]]
-leftdown: [[-1.6,-0.8]]
-right: [[1.6,0]]
-rightdown: [[1.6,-0.8]]
+left: [[-1.57,0]]
+leftdown: [[-1.57,-0.8]]
+right: [[1.57,0]]
+rightdown: [[1.57,-0.8]]
 down: [[0,-0.8]]
 downhalf: [[0,-0.4]]
 up: [[0,0.8]]
 uphalf: [[0,0.4]]
-rightdownhalf: [[1.6,-0.4]]
-leftdownhalf: [[-1.6,-0.4]]
+rightdownhalf: [[1.57,-0.4]]
+leftdownhalf: [[-1.57,-0.4]]
 
 # trajectories
 scan: [one_rot,home]
