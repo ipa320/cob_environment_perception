@@ -107,13 +107,15 @@ bool MapDemonCtrlMaestro::init(DemonstratorParams * params)
   options.c_oflag &= ~(ONLCR | OCRNL);
   tcsetattr(fd_, TCSANOW, &options);
 
-  usleep(10000);
+  usleep(500000);
 
   //if(!updatePositions()) return false;
 
   setVelocity();
-  //setAcceleration();
-  writeCmd(GO_HOME);
+  setAcceleration();
+  //writeCmd(GO_HOME);
+  std::vector<double> target_positions(2,0);
+  movePos(target_positions);
   initialized_ = true;
 
   return true;
