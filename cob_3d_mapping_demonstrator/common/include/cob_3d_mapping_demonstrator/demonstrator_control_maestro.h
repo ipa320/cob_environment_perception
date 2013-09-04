@@ -8,19 +8,19 @@
 #ifndef MAPDEMONCTRL_MAESTRO_H_
 #define MAPDEMONCTRL_MAESTRO_H_
 
-#include "MapDemonCtrl.h"
+#include "cob_3d_mapping_demonstrator/demonstrator_control.h"
 
 class MapDemonCtrlMaestro : public MapDemonCtrl
 {
 public:
 
   /// Constructor
-  MapDemonCtrlMaestro(MapDemonCtrlParams * params);
+  MapDemonCtrlMaestro(DemonstratorParams * params);
 
   /// Destructor
   virtual ~MapDemonCtrlMaestro();
 
-  virtual bool init(MapDemonCtrlParams * params);
+  virtual bool init(DemonstratorParams * params);
 
   virtual bool runCalibration();
 
@@ -46,7 +46,8 @@ private:
     SET_TARGET=0x84,
     SET_VEL=0x87,
     SET_ACCEL=0x89,
-    IS_MOVING=0x93
+    IS_MOVING=0x93,
+    GO_HOME=0xA2
   };
 
   int fd_;

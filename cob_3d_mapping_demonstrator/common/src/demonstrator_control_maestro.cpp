@@ -13,9 +13,9 @@
 #include <unistd.h>
 
 // own includes
-#include <cob_3d_mapping_demonstrator/MapDemonCtrl_Maestro.h>
+#include <cob_3d_mapping_demonstrator/demonstrator_control_maestro.h>
 
-MapDemonCtrlMaestro::MapDemonCtrlMaestro(MapDemonCtrlParams * params):
+MapDemonCtrlMaestro::MapDemonCtrlMaestro(DemonstratorParams * params):
 MapDemonCtrl(params)
 {
 }
@@ -28,7 +28,7 @@ MapDemonCtrlMaestro::~MapDemonCtrlMaestro()
 /*!
  * \brief Initializing
  */
-bool MapDemonCtrlMaestro::init(MapDemonCtrlParams * params)
+bool MapDemonCtrlMaestro::init(DemonstratorParams * params)
 {
   /// get serial port configurable parameters
   //std::string SerialDeviceName = m_params_->GetSerialDevice();
@@ -109,10 +109,11 @@ bool MapDemonCtrlMaestro::init(MapDemonCtrlParams * params)
 
   usleep(10000);
 
-  if(!updatePositions()) return false;
+  //if(!updatePositions()) return false;
 
   setVelocity();
-  setAcceleration();
+  //setAcceleration();
+  writeCmd(GO_HOME);
   initialized_ = true;
 
   return true;
