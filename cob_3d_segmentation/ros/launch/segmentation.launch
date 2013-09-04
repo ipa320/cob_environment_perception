@@ -16,6 +16,6 @@
     <remap from="cloud_in" to="$(arg point_cloud_in)"/>
     <param name="enable_action_mode" type="bool" value="$(arg enable_action_mode)"/>
 
-    <param name="centroid_passthrough" type="double" value="4.0"/>
+    <param name="centroid_passthrough" type="double" value="5.0"/>
   </node>
 </launch>

@@ -134,8 +134,8 @@ class execute_button_commands():
     print self.script_action_server.is_preempt_requested()
     while not self.script_action_server.is_preempt_requested():
       print "move"
-      sss.move("cob_3d_mapping_demonstrator",[[0.5,0],[-0.5,0],[-0.5,-0.5],[0.5,-0.5],[0,0]])
-      sss.sleep(0.5)
+      sss.move("cob_3d_mapping_demonstrator",[[0.5,0],[-0.5,0],[-0.5,-0.5],[0.5,-0.5],[0.5,0],[0,0]])
+      sss.sleep(1.0)
     #sss.move("cob_3d_mapping_demonstrator","home")
     #if self.script_action_server.is_preempt_requested():
     #  self.script_action_server.set_preempted()
