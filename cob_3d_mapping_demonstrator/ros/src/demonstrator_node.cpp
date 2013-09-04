@@ -15,9 +15,9 @@
 #include <cob_srvs/SetOperationMode.h>
 
 //Own includes
-#include <cob_3d_mapping_demonstrator/MapDemonCtrlParams.h>
-#include <cob_3d_mapping_demonstrator/MapDemonCtrl.h>
-#include <cob_3d_mapping_demonstrator/MapDemonCtrl_Maestro.h>
+#include <cob_3d_mapping_demonstrator/demonstrator_params.h>
+#include <cob_3d_mapping_demonstrator/demonstrator_control.h>
+#include <cob_3d_mapping_demonstrator/demonstrator_control_maestro.h>
 //#include <cob_3d_mapping_demonstrator/SerialDevice.h>
 
 //using namespace serial_com;
@@ -49,7 +49,7 @@ public:
   MapDemonCtrlMaestro* md_ctrl_;
 
   /// handle for 3d-mapping-demon parameters
-  MapDemonCtrlParams* md_params_;
+  DemonstratorParams* md_params_;
 
   /// handle for Serial port
   //SerialDevice* md_sd_;
@@ -70,7 +70,7 @@ public:
     //n_ = ros::NodeHandle("~");
     //md_sd_ = new SerialDevice();
 
-    md_params_ = new MapDemonCtrlParams();
+    md_params_ = new DemonstratorParams();
     md_ctrl_ = new MapDemonCtrlMaestro(md_params_);
 
     /// implementation of topics to publish
@@ -287,7 +287,7 @@ public:
       }
       topicCallbackCommandPos(joint_pos);
       while(!md_ctrl_->is_moving_ && !stopped_) usleep(1000);
-      while(md_ctrl_->is_moving_)
+      while(md_ctrl_->is_moving_ && !stopped_)
       {
         //is_moving_ = md_ctrl_->is_moving_;
         usleep(10000);

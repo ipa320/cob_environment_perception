@@ -6,16 +6,16 @@
 #include <string>
 
 //own includes
-#include <cob_3d_mapping_demonstrator/MapDemonCtrl.h>
-#include <cob_3d_mapping_demonstrator/MapDemonCtrlParams.h>
-#include <cob_3d_mapping_demonstrator/SerialDevice.h>
+//#include <cob_3d_mapping_demonstrator/MapDemonCtrl.h>
+#include <cob_3d_mapping_demonstrator/demonstrator_params.h>
+#include <cob_3d_mapping_demonstrator/serial_device.h>
 
 class MapDemonCtrl
 {
 public:
 
   /// Constructor
-  MapDemonCtrl(MapDemonCtrlParams * params);
+  MapDemonCtrl(DemonstratorParams * params);
   //MapDemonCtrl(MapDemonCtrlParams * params, SerialDevice * sd);
 
   /// Destructor
@@ -23,7 +23,7 @@ public:
 
   pthread_mutex_t m_mutex;
 
-  virtual bool init(MapDemonCtrlParams * params);
+  virtual bool init(DemonstratorParams * params);
 
   virtual bool isInitialized() const
   {
@@ -80,7 +80,7 @@ protected:
   int device_handle_;
   bool serial_device_opened_;
 
-  MapDemonCtrlParams* params_;
+  DemonstratorParams* params_;
 
   SerialDevice * sd_;
 
