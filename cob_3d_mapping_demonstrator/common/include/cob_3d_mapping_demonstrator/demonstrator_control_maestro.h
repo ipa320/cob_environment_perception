@@ -50,6 +50,7 @@ private:
     GO_HOME=0xA2
   };
 
+  // Handle for serial device
   int fd_;
 
   //const double STEP_WIDTH;
@@ -60,7 +61,7 @@ private:
     double rad = v;
     //rad+=M_PI;
     //if(rad<0) rad = 2*M_PI+rad;
-    return round((2/M_PI*rad*900 + 1500)*4);
+    return round((1/M_PI*rad*1800 + 1500)*4);
     //return round( 2*4900*rad/(2*M_PI) + 1000);
     //return round( (v-m_params_->GetOffsets()[dof])*STEP_WIDTH);
   }

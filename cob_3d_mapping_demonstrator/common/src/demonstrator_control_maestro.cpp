@@ -41,12 +41,12 @@ bool MapDemonCtrlMaestro::init(DemonstratorParams * params)
   velocities_.resize(DOF, 0);
 
 
-  std::vector<std::string> JointNames = params_->getJointNames();
-  std::vector<double> MaxVel = params_->getMaxVel();
-  std::vector<double> FixedVel = params_->getVels();
-  std::vector<double> Offsets = params_->getOffsets();
-  std::vector<double> LowerLimits = params_->getLowerLimits();
-  std::vector<double> UpperLimits = params_->getUpperLimits();
+  std::vector<std::string> joint_names = params_->getJointNames();
+  //std::vector<double> MaxVel = params_->getMaxVel();
+  std::vector<double> vels = params_->getVels();
+  std::vector<double> offsets = params_->getOffsets();
+  std::vector<double> lower_limits = params_->getLowerLimits();
+  std::vector<double> upper_limits = params_->getUpperLimits();
 
 
   std::cout << "============================================================================== " << std::endl;
@@ -55,37 +55,37 @@ bool MapDemonCtrlMaestro::init(DemonstratorParams * params)
   std::cout << std::endl << "Joint Names:\t\t";
   for (int i = 0; i < DOF; i++)
   {
-    std::cout << JointNames[i] << "\t";
+    std::cout << joint_names[i] << "\t";
   }
 
-  std::cout << std::endl << "maxVel     :\t\t";
+  /*std::cout << std::endl << "maxVel     :\t\t";
   for (int i = 0; i < DOF; i++)
   {
     std::cout << MaxVel[i] << "\t";
-  }
+  }*/
 
-  std::cout << std::endl << "fixedVel   :\t\t";
+  std::cout << std::endl << "velocities:\t\t";
   for (int i = 0; i < DOF; i++)
   {
-    std::cout << FixedVel[i] << "\t";
+    std::cout << vels[i] << "\t";
   }
 
   std::cout << std::endl << "upperLimits:\t\t";
   for (int i = 0; i < DOF; i++)
   {
-    std::cout << UpperLimits[i] << "\t";
+    std::cout << upper_limits[i] << "\t";
   }
 
   std::cout << std::endl << "lowerLimits:\t\t";
   for (int i = 0; i < DOF; i++)
   {
-    std::cout << LowerLimits[i] << "\t";
+    std::cout << lower_limits[i] << "\t";
   }
 
   std::cout << std::endl << "offsets    :\t\t";
   for (int i = 0; i < DOF; i++)
   {
-    std::cout << Offsets[i] << "\t";
+    std::cout << offsets[i] << "\t";
   }
 
   std::cout << std::endl << "============================================================================== " << std::endl;
