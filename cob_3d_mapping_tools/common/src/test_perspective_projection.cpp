@@ -117,7 +117,7 @@ int main (int argc, char** argv)
   std::vector<std::vector<int> > projection;
   t.precisionStart();
   cob_3d_mapping::PerspectiveProjection<cob_3d_mapping::PrimeSense>
-    ::compute(tf, polygons, p->width, p->height, projection)
+    ::compute(tf, p->width, p->height, polygons, projection)
 ;
   std::cout << "Projection: "<< t.precisionStop() << std::endl;
 
