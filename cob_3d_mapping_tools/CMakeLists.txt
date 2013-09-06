@@ -130,6 +130,9 @@ rosbuild_link_boost(gui_normals signals)
 rosbuild_add_executable(noise_gen ros/src/noise_gen.cpp)
 rosbuild_link_boost(noise_gen signals)
 
+
+rosbuild_add_executable(test_perspective_projection common/src/test_perspective_projection.cpp)
+
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
 #target_link_libraries(${PROJECT_NAME} another_library)
