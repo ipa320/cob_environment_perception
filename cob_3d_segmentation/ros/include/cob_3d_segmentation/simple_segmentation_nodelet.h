@@ -122,6 +122,7 @@ namespace cob_3d_segmentation
     void actionCallback(const cob_3d_mapping_msgs::TriggerGoalConstPtr& goal);
     void topicCallback(const PointCloud::ConstPtr& cloud);
     void computeAndPublish();
+    void publishClassifiedCloud();
     void computeTexture(ClusterPtr &c, Eigen::Affine3f &trf, unsigned int id);
 
     boost::mutex mutex_;
@@ -129,6 +130,7 @@ namespace cob_3d_segmentation
     ros::NodeHandle nh_;
     ros::Subscriber sub_points_;
     ros::Publisher pub_segmented_;
+    ros::Publisher pub_classified_;
     ros::Publisher pub_shape_array_;
     actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerAction>* as_;
 

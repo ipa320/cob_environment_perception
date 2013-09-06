@@ -93,6 +93,7 @@ cob_3d_segmentation::SimpleSegmentationNodelet::onInit()
 
   //sub_points_ = nh_.subscribe<PointCloud>("point_cloud", 1, boost::bind(&SimpleSegmentationNodelet::topicCallback, this, _1));
   pub_segmented_ = nh_.advertise<PointCloud>("segmented_cloud", 1);
+  pub_classified_ = nh_.advertise<PointCloud>("classified_cloud", 1);
   pub_shape_array_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray>("shape_array",1);
   as_ = new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerAction>(nh_, "segmentation/trigger", boost::bind(&SimpleSegmentationNodelet::actionCallback, this, _1), false);
   as_->start();
@@ -258,7 +259,7 @@ cob_3d_segmentation::SimpleSegmentationNodelet::computeAndPublish()
     }
     cob_3d_mapping::Polygon::Ptr  p(new cob_3d_mapping::Polygon(id,
                                                                 c->pca_point_comp3,
-                                                                fabs(c->getCentroid().dot(c->pca_point_comp3)),
+                                                                c->getCentroid()/*fabs(c->getCentroid().dot(c->pca_point_comp3))*/,
                                                                 contours_3d,
                                                                 holes,
                                                                 color));
@@ -269,7 +270,56 @@ cob_3d_segmentation::SimpleSegmentationNodelet::computeAndPublish()
   }
 
   pub_shape_array_.publish(sa);
+  publishClassifiedCloud();
   std::cout << "total nodelet time: " << t2.precisionStop() << std::endl;
+}
+
+
+void
+cob_3d_segmentation::SimpleSegmentationNodelet::publishClassifiedCloud()
+{
+  seg_.clusters()->mapTypeColor(down_);
+  seg_.clusters()->mapClusterBorders(down_);
+//  for (ClusterPtr c = seg_.clusters()->begin(); c != seg_.clusters()->end(); ++c)
+//  {
+//    Eigen::Vector3f centroid = c->getCentroid();
+//    //if(centroid(2) > centroid_passthrough_) {continue;}
+//    //seg_.clusters()->computeClusterComponents(c);
+//    uint32_t color = LBL_BORDER;
+//    // not a plane
+//    //if(/*c->size() < min_cluster_size_ || c->size() <= ceil(1.1f * (float)c->border_points.size()) ||*/ (filter_ && !c->is_save_plane))
+//    /*{
+//      color = LBL_SPH;
+//    }
+//    else
+//    {
+//      color = LBL_PLANE;
+//    }*/
+//    if(c->id() == I_NAN) color = LBL_BORDER;
+//    /*for(unsigned int i = 0; i < c->indices_.size(); i++)
+//    {
+//      down_->points[c->indices_[i]].rgb = color;
+//    }*/
+//    PolygonContours<PolygonPoint> poly;
+//    pe_.outline(down_->width, down_->height, c->border_points, poly);
+//    for (int i = 0; i < (int)poly.polys_.size(); ++i)
+//    {
+//      std::vector<PolygonPoint>::iterator it = poly.polys_[i].begin();
+//      for ( ; it != poly.polys_[i].end(); ++it)
+//        down_->points[ it->x + it->y * down_->width ].rgb = LBL_BORDER;;
+//    }
+//    for(std::vector<PolygonPoint>::iterator bp = c->border_points.begin(); bp != c->border_points.end(); ++bp)
+//    {
+//      down_->points[PolygonPoint::getInd(bp->x,bp->y)].rgb = LBL_BORDER;
+//    }
+//    /*for(unsigned int i = 0; i < c->border_points.size(); i++)
+//    {
+//      down_->points[PolygonPoint::getInd(c->border_points[i].x,c->border_points[i].y)].r = 255;
+//      down_->points[PolygonPoint::getInd(c->border_points[i].x,c->border_points[i].y)].g = 0;
+//      down_->points[PolygonPoint::getInd(c->border_points[i].x,c->border_points[i].y)].b = 0;
+//    }*/
+//  }
+  pub_classified_.publish(down_);
 }
 
 void

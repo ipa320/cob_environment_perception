@@ -13,9 +13,9 @@
 #include <unistd.h>
 
 // own includes
-#include <cob_3d_mapping_demonstrator/MapDemonCtrl_Maestro.h>
+#include <cob_3d_mapping_demonstrator/demonstrator_control_maestro.h>
 
-MapDemonCtrlMaestro::MapDemonCtrlMaestro(MapDemonCtrlParams * params):
+MapDemonCtrlMaestro::MapDemonCtrlMaestro(DemonstratorParams * params):
 MapDemonCtrl(params)
 {
 }
@@ -28,7 +28,7 @@ MapDemonCtrlMaestro::~MapDemonCtrlMaestro()
 /*!
  * \brief Initializing
  */
-bool MapDemonCtrlMaestro::init(MapDemonCtrlParams * params)
+bool MapDemonCtrlMaestro::init(DemonstratorParams * params)
 {
   /// get serial port configurable parameters
   //std::string SerialDeviceName = m_params_->GetSerialDevice();
@@ -41,12 +41,12 @@ bool MapDemonCtrlMaestro::init(MapDemonCtrlParams * params)
   velocities_.resize(DOF, 0);
 
 
-  std::vector<std::string> JointNames = params_->getJointNames();
-  std::vector<double> MaxVel = params_->getMaxVel();
-  std::vector<double> FixedVel = params_->getVels();
-  std::vector<double> Offsets = params_->getOffsets();
-  std::vector<double> LowerLimits = params_->getLowerLimits();
-  std::vector<double> UpperLimits = params_->getUpperLimits();
+  std::vector<std::string> joint_names = params_->getJointNames();
+  //std::vector<double> MaxVel = params_->getMaxVel();
+  std::vector<double> vels = params_->getVels();
+  std::vector<double> offsets = params_->getOffsets();
+  std::vector<double> lower_limits = params_->getLowerLimits();
+  std::vector<double> upper_limits = params_->getUpperLimits();
 
 
   std::cout << "============================================================================== " << std::endl;
@@ -55,37 +55,37 @@ bool MapDemonCtrlMaestro::init(MapDemonCtrlParams * params)
   std::cout << std::endl << "Joint Names:\t\t";
   for (int i = 0; i < DOF; i++)
   {
-    std::cout << JointNames[i] << "\t";
+    std::cout << joint_names[i] << "\t";
   }
 
-  std::cout << std::endl << "maxVel     :\t\t";
+  /*std::cout << std::endl << "maxVel     :\t\t";
   for (int i = 0; i < DOF; i++)
   {
     std::cout << MaxVel[i] << "\t";
-  }
+  }*/
 
-  std::cout << std::endl << "fixedVel   :\t\t";
+  std::cout << std::endl << "velocities:\t\t";
   for (int i = 0; i < DOF; i++)
   {
-    std::cout << FixedVel[i] << "\t";
+    std::cout << vels[i] << "\t";
   }
 
   std::cout << std::endl << "upperLimits:\t\t";
   for (int i = 0; i < DOF; i++)
   {
-    std::cout << UpperLimits[i] << "\t";
+    std::cout << upper_limits[i] << "\t";
   }
 
   std::cout << std::endl << "lowerLimits:\t\t";
   for (int i = 0; i < DOF; i++)
   {
-    std::cout << LowerLimits[i] << "\t";
+    std::cout << lower_limits[i] << "\t";
   }
 
   std::cout << std::endl << "offsets    :\t\t";
   for (int i = 0; i < DOF; i++)
   {
-    std::cout << Offsets[i] << "\t";
+    std::cout << offsets[i] << "\t";
   }
 
   std::cout << std::endl << "============================================================================== " << std::endl;
@@ -107,12 +107,15 @@ bool MapDemonCtrlMaestro::init(MapDemonCtrlParams * params)
   options.c_oflag &= ~(ONLCR | OCRNL);
   tcsetattr(fd_, TCSANOW, &options);
 
-  usleep(10000);
+  usleep(500000);
 
-  if(!updatePositions()) return false;
+  //if(!updatePositions()) return false;
 
   setVelocity();
   setAcceleration();
+  //writeCmd(GO_HOME);
+  std::vector<double> target_positions(2,0);
+  movePos(target_positions);
   initialized_ = true;
 
   return true;
