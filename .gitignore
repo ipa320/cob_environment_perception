@@ -14,6 +14,7 @@ cmake_install.cmake
 cob_3d_mapping_common/src
 cob_3d_mapping_msgs/src
 cob_3d_mapping_semantics/src
+cob_3d_fov_segmentation/src
 cob_3d_mapping_msgs/msg/PlaneExtractionAction.msg
 cob_3d_mapping_msgs/msg/PlaneExtractionActionFeedback.msg
 cob_3d_mapping_msgs/msg/PlaneExtractionActionGoal.msg
