@@ -1,17 +1,17 @@
 #ifndef __3D_MAP_DEMON_PARAMS_H_
 #define __3D_MAP_DEMON_PARAMS_H_
 
-class MapDemonCtrlParams
+class DemonstratorParams
 {
 public:
 	/// Constructor
-	MapDemonCtrlParams()
+	DemonstratorParams()
 	{
 
 	}
 
 	///Destructor
-	~MapDemonCtrlParams();
+	~DemonstratorParams();
 
 	///Initilizing
 	void init(std::string SerialDevice, int BaudRate)

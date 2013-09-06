@@ -8,19 +8,19 @@
 #ifndef MAPDEMONCTRL_MAESTRO_H_
 #define MAPDEMONCTRL_MAESTRO_H_
 
-#include "MapDemonCtrl.h"
+#include "cob_3d_mapping_demonstrator/demonstrator_control.h"
 
 class MapDemonCtrlMaestro : public MapDemonCtrl
 {
 public:
 
   /// Constructor
-  MapDemonCtrlMaestro(MapDemonCtrlParams * params);
+  MapDemonCtrlMaestro(DemonstratorParams * params);
 
   /// Destructor
   virtual ~MapDemonCtrlMaestro();
 
-  virtual bool init(MapDemonCtrlParams * params);
+  virtual bool init(DemonstratorParams * params);
 
   virtual bool runCalibration();
 
@@ -46,9 +46,11 @@ private:
     SET_TARGET=0x84,
     SET_VEL=0x87,
     SET_ACCEL=0x89,
-    IS_MOVING=0x93
+    IS_MOVING=0x93,
+    GO_HOME=0xA2
   };
 
+  // Handle for serial device
   int fd_;
 
   //const double STEP_WIDTH;
@@ -59,7 +61,7 @@ private:
     double rad = v;
     //rad+=M_PI;
     //if(rad<0) rad = 2*M_PI+rad;
-    return round((2/M_PI*rad*900 + 1500)*4);
+    return round((1/M_PI*rad*1800 + 1500)*4);
     //return round( 2*4900*rad/(2*M_PI) + 1000);
     //return round( (v-m_params_->GetOffsets()[dof])*STEP_WIDTH);
   }

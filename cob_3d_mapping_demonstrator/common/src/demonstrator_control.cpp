@@ -9,9 +9,9 @@
 #include <math.h>
 
 // own includes
-#include <cob_3d_mapping_demonstrator/MapDemonCtrl.h>
+#include <cob_3d_mapping_demonstrator/demonstrator_control.h>
 
-MapDemonCtrl::MapDemonCtrl(MapDemonCtrlParams * params)
+MapDemonCtrl::MapDemonCtrl(DemonstratorParams * params)
 {
   serial_device_opened_ = false;
   initialized_ = false;
@@ -34,7 +34,7 @@ MapDemonCtrl::~MapDemonCtrl()
 /*!
  * \brief Initializing
  */
-bool MapDemonCtrl::init(MapDemonCtrlParams * params)
+bool MapDemonCtrl::init(DemonstratorParams * params)
 {
   /// get serial port configurable parameters
   std::string SerialDeviceName = params_->getSerialDevice();

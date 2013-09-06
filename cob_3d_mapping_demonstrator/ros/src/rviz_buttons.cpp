@@ -75,7 +75,7 @@ namespace cob_environment_perception
 
     QPushButton* start_button = new QPushButton("Start Movement");
     start_button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
-    QPushButton* stop_button = new QPushButton("Stop");
+    QPushButton* stop_button = new QPushButton("Stop Movement");
     stop_button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
     QPushButton* step_button = new QPushButton("Down");
     step_button->setSizePolicy(QSizePolicy::Expanding, QSizePolicy::Expanding);
