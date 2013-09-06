@@ -60,15 +60,15 @@
  *
  ****************************************************************/
 
-#include <cob_3d_segmentation/cluster_conversion.h>
-
 #include <pcl/io/pcd_io.h>
 
 #include <cob_3d_mapping_common/point_types.h>
-#include "cob_3d_mapping_common/stop_watch.h"
+#include <cob_3d_mapping_common/stop_watch.h>
+#include <cob_3d_fov_segmentation/projection.h>
 
 #include <cob_3d_features/organized_normal_estimation_omp.h>
 #include <cob_3d_segmentation/impl/fast_segmentation.hpp>
+#include <cob_3d_segmentation/cluster_conversion.h>
 
 
 typedef pcl::PointCloud<pcl::PointXYZRGB> PointC;
@@ -116,7 +116,9 @@ int main (int argc, char** argv)
   Eigen::Matrix4f tf = Eigen::Matrix4f::Identity();
   std::vector<std::vector<int> > projection;
   t.precisionStart();
-  cob_3d_mapping::PrimeSense::perspectiveProjection(tf, polygons, p->width, p->height, projection);
+  cob_3d_mapping::PerspectiveProjection<cob_3d_mapping::PrimeSense>
+    ::compute(tf, polygons, p->width, p->height, projection)
+;
   std::cout << "Projection: "<< t.precisionStop() << std::endl;
 
   for(int i=0; i<projection.size(); ++i)

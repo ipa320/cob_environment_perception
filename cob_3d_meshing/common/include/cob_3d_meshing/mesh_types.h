@@ -63,99 +63,85 @@
 #ifndef COB_MESH_TYPES_H
 #define COB_MESH_TYPES_H
 
-#include <OpenMesh/Core/IO/MeshIO.hh>
-#include <OpenMesh/Core/Mesh/TriMesh_ArrayKernelT.hh>
+#include "cob_3d_meshing/mesh_property_types.h"
 
 namespace cob_3d_meshing
 {
-  namespace MeshProperties
+  /* TODO:
+   * Empty Base Class Optimization(EBCO) to remove storage overhead
+   * for empty properties */
+  template<typename PT1 = MeshProperties::NullT<>,
+           typename PT2 = MeshProperties::NullT<>,
+           typename PT3 = MeshProperties::NullT<>,
+           typename PT4 = MeshProperties::NullT<>,
+           typename PT5 = MeshProperties::NullT<>,
+           typename PT6 = MeshProperties::NullT<>,
+           typename MeshTraits = DefaultMeshTraits >
+  class Mesh
   {
+  public:
+    typedef typename MeshTraits::MeshT MeshT;
+    typedef typename MeshTraits::VertexHandle VertexHandle;
+    typedef typename MeshTraits::FaceHandle FaceHandle;
+
+    template<typename U> friend class MeshDecimation;
+
+    Mesh(const PT1& prop1 = PT1(),
+         const PT2& prop2 = PT2(),
+         const PT3& prop3 = PT3(),
+         const PT4& prop4 = PT4(),
+         const PT5& prop5 = PT5(),
+         const PT6& prop6 = PT6())
+      : mesh_()
+      , prop1_(prop1)
+      , prop2_(prop2)
+      , prop3_(prop3)
+      , prop4_(prop4)
+      , prop5_(prop5)
+      , prop6_(prop6)
+    {
+      prop1_.init(&mesh_);
+      prop2_.init(&mesh_);
+      prop3_.init(&mesh_);
+      prop4_.init(&mesh_);
+      prop5_.init(&mesh_);
+      prop6_.init(&mesh_);
+    }
+
     template<typename PointT>
-    class Points
+    VertexHandle addVertex(int idx, const PointT& p)
     {
-    public:
-      typedef PropertyTraits<Points<PointT> >::MeshT MeshT;
-      typedef PropertyTraits<Points<PointT> >::VertexHandle VertexHandle;
+      VertexHandle vh = mesh_.add_vertex(typename MeshT::Point(p.x,p.y,p.z));
+      prop1_.setVertex(vh,idx);
+      prop2_.setVertex(vh,idx);
+      prop3_.setVertex(vh,idx);
+      prop4_.setVertex(vh,idx);
+      prop5_.setVertex(vh,idx);
+      prop6_.setVertex(vh,idx);
+      return vh;
+    }
 
-      void init(MeshT* mesh_hdl) { return; }
-      void update(const VertexHandle& vertex_handle, int idx) { return; }
-
-    };
-
-    template<typename PointNormalT>
-    class Normals
+    FaceHandle addFace(const VertexHandle& v1,
+                       const VertexHandle& v2,
+                       const VertexHandle& v3)
     {
-    public:
-      typedef PropertyTraits<Normals<PointNormalT> >::MeshT MeshT;
-      typedef PropertyTraits<Normals<PointNormalT> >::VertexHandle VertexHandle;
+      return mesh_.add_face(v1,v2,v3);
+    }
 
-      typedef typename pcl::PointCloud<PointNormalT>::ConstPtr CloudPtr;
-      typedef OpenMesh::Vec3f PropType;
-      typedef OpenMesh::VPropHandleT<PropType> PropHandle;
-
-      Normal(const CloudPtr& normals){ }
-
-      void init(MeshT* mesh_hdl)
-      {
-        mesh_hdl->add_property(prop_hdl_, "Normals");
-      }
-
-      void update(const VertexHandle& vertex_hdl, int idx)
-      {
-        Eigen::Vector3f n = (*cloud_)[idx].getNormalVector3fMap();
-        mesh_hdl->property(prop_hdl_, vertex_hdl) = PropType(n(0), n(1), n(2));
-      }
-
-    private:
-      CloudPtr cloud_;
-      PropHandle prop_hdl_;
-    };
-
-    template<typename PropT> struct PropertyTraits;
-
-    template<>
-      struct PropertyTraits<Points>
+    bool savePLY(const std::string& file)
     {
-      typedef OpenMesh::TriMesh_ArrayKernelT<> MeshT;
-      typedef MeshT::VertexHandle VertexHandle;
+      return OpenMesh::IO::write_mesh(mesh_, file);
+    }
 
-      static std::string name() { return "Points"; }
-    };
-
-
-    template<>
-    template<typename PointNormalT>
-      struct PropertyTraits<Normals<PointNormalT> >
-    {
-      typedef OpenMesh::TriMesh_ArrayKernelT<> MeshT;
-      typedef MeshT::VertexHandle VertexHandle;
-
-      static std::string name() { return "Normals"; }
-    };
-  }
-
-
-template<typename PropT>
-class Mesh
-{
-public:
-  typedef typename MeshProperties::PropertyTraits<PropT>::MeshT MeshT;
-
-public:
-  Mesh(const PropT& properties)
-    : mesh_()
-  {
-    prop_handler_ = properties;
-    prop_handler_.init(&mesh_);
-  }
-
-  ~Mesh() {}
-
-
-private:
-  MeshT mesh_;
-  PropT prop_handler_;
-};
+  private:
+    MeshT mesh_;
+    PT1 prop1_;
+    PT2 prop2_;
+    PT3 prop3_;
+    PT4 prop4_;
+    PT5 prop5_;
+    PT6 prop6_;
+  };
 
 }
 

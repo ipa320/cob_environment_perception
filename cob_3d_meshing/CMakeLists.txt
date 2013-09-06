@@ -10,6 +10,7 @@ include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 #set(ROS_BUILD_TYPE RelWithDebInfo)
 
 rosbuild_init()
+rosbuild_check_for_sse()
 
 #set the default path for built executables to the "bin" directory
 set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
@@ -20,6 +21,13 @@ set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 #rosbuild_genmsg()
 #uncomment if you have defined services
 #rosbuild_gensrv()
+
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include
+                    ${PROJECT_SOURCE_DIR}/ros/include)
+rosbuild_add_boost_directories()
+
+rosbuild_add_executable(test_meshing common/src/test_meshing.cpp)
+rosbuild_link_boost(test_meshing program_options)
 
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
