@@ -63,12 +63,22 @@
 #ifndef COB_MESH_CONVERSION_H
 #define COB_MESH_CONVERSION_H
 
+#include <cob_3d_mapping_common/sensor_model.h>
+
 namespace cob_3d_meshing
 {
+  template<typename SensorT = cob_3d_mapping::PrimeSense>
   class MeshConversion
   {
-    template<typename CloudT, typename MeshT>
-      static void fromPointCloud(const CloudT& pc, MeshT& mesh)
+  public:
+    static inline bool isNeighbor(const Eigen::Vector3f& a, const Eigen::Vector3f& b)
+    {
+      return SensorT::areNeighbors(a,b);
+    }
+
+    template<typename PointT, typename MeshT>
+    static void fromPointCloud(
+      const typename pcl::PointCloud<PointT>::ConstPtr& pc, MeshT& mesh);
   };
 }
 

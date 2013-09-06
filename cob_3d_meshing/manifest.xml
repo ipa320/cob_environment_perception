@@ -8,6 +8,12 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/cob_3d_meshing</url>
+  <depend package="pcl"/>
+  <depend package="cob_3d_mapping_common"/>
+  <depend package="cob_3d_mapping_filters"/>
+  <depend package="cob_3d_features"/>
+  <depend package="cob_3d_segmentation"/>
+  <depend package="libopenmesh"/>
 
 </package>
 

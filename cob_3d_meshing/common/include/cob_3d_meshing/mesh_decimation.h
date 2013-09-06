@@ -14,14 +14,14 @@
  * \note
  *  ROS stack name: cob_environment_perception_intern
  * \note
- *  ROS package name: cob_3d_segmentation
+ *  ROS package name: cob_3d_meshing
  *
  * \author
  *  Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
  * \author
  *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * \date Date of creation: 08/2013
+ * \date Date of creation: 09/2013
  *
  * \brief
  * Description:
@@ -63,78 +63,35 @@
 #ifndef COB_MESH_DECIMATION_H
 #define COB_MESH_DECIMATION_H
 
-#include <OpenMesh/Core/IO/MeshIO.hh>
-#include <OpenMesh/Core/Mesh/TriMesh_ArrayKernelT.hh>
+
 #include <OpenMesh/Tools/Decimater/DecimaterT.hh>
-#include <OpenMesh/Tools/Decimater/ModBaseT.hh>
 #include <OpenMesh/Tools/Decimater/ModQuadricT.hh>
 
-#include <pcl/point_types.h>
+#include "cob_3d_meshing/decimation_modules.h"
+#include "cob_3d_meshing/mesh_types.h"
 
-
-
-// based on: Surface Simplification Using Quadric Error Metrics,
-// M Garland, P S Heckbert
-template<typename PointT, typename NormalT, typename LabelT>
-class MeshSimplification
+namespace cob_3d_meshing
 {
-public:
-  typedef typename pcl::PointCloud<PointT>::Ptr PointCloudPtr;
-  typedef typename pcl::PointCloud<PointT>::ConstPtr PointCloudConstPtr;
-  typedef typename pcl::PointCloud<NormalT>::ConstPtr NormalCloudConstPtr;
-  typedef typename pcl::PointCloud<LabelT>::ConstPtr LabelCloudConstPtr;
-
-  typedef OpenMesh::TriMesh_ArrayKernelT<> Mesh; // Triangle Mesh
-  typedef boost::shared_ptr<Mesh> MeshPtr;
-  typedef OpenMesh::Decimater::DecimaterT<Mesh> Decimater;
-  typedef boost::shared_ptr<Decimater> DecimaterPtr;
-  //typedef OpenMesh::Decimater::ModNormalQuadricT<Mesh> ModT;
-  typedef OpenMesh::Decimater::ModQuadricT<Mesh> ModT;
-  typedef typename ModT::Handle ModHandle;
-  typedef OpenMesh::Vec4f PropNormalT;
-  typedef OpenMesh::VPropHandleT<PropNormalT> PropNormalHandle;
-  typedef OpenMesh::VPropHandleT< int > PropLabelHandle;
-
-public:
-  MeshSimplification()
-    : mesh_(new Mesh())
-    , dec_(new Decimater(*mesh_))
-    , mod_()
-    , p_normals_()
-    , p_labels_()
+  template<typename MeshT>
+  class MeshDecimation
   {
-    mesh_->add_property(p_normals_, "Normals");
-    mesh_->add_property(p_labels_, "Labels");
-    dec_->add(mod_);
-    dec_->module(mod_).set_binary(false);
-    //dec_->module(mod_).set_normal_property(p_normals_);
-    //dec_->module(mod_).set_label_property(p_labels_);
-  }
+    typedef typename MeshT::MeshT OpenMeshT;
+    typedef OpenMesh::Decimater::DecimaterT<OpenMeshT> Decimater;
 
-  ~MeshSimplification() { }
-
-  void initializeMesh(const PointCloudConstPtr& input,
-                      const LabelCloudConstPtr& labels,
-                      const NormalCloudConstPtr& normals,
-                      const std::map<int,Eigen::Vector4f>& params);
-  void decimate();
-
-  inline bool isNeighbor(const Eigen::Vector3f& a, const Eigen::Vector3f& b)
-  {
-    //Eigen::Vector3f ab = b - a;
-    //return ( fabs(a.dot(ab) / (a.norm() * ab.norm())) < 0.9762f);
-    return cob_3d_mapping::PrimeSense::areNeighbors(a,b);
-  }
-
-  inline Mesh& getMesh() { return dec_->mesh(); }
-
-private:
-
-  MeshPtr mesh_;
-  DecimaterPtr dec_;
-  ModHandle mod_;
-  PropNormalHandle p_normals_;
-  PropLabelHandle p_labels_;
-};
+  public:
+    static void quadratic(MeshT* mesh_hdl, int n)
+    {
+      typedef OpenMesh::Decimater::ModQuadricT<OpenMeshT> ModuleT;
+      typedef typename ModuleT::Handle ModuleHandle;
+      Decimater dec(mesh_hdl->mesh_);
+      ModuleHandle mod;
+      dec.add(mod);
+      dec.initialize();
+      dec.module(mod).set_binary(false);
+      dec.decimate_to(n);
+      mesh_hdl->mesh_.garbage_collection();
+    }
+  };
+}
 
 #endif

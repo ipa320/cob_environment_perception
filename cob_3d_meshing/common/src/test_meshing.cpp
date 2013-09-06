@@ -72,8 +72,11 @@
 #include <cob_3d_mapping_common/stop_watch.h>
 #include <cob_3d_mapping_common/sensor_model.h>
 #include <cob_3d_features/organized_normal_estimation_omp.h>
-#include <cob_3d_segmentation/mesh_decimation.h>
 #include <cob_3d_segmentation/impl/fast_segmentation.hpp>
+
+#include <cob_3d_meshing/mesh_types.h>
+#include <cob_3d_meshing/mesh_conversion.h>
+#include <cob_3d_meshing/mesh_decimation.h>
 
 
 //== GLOBAL VARS ===============================================================
@@ -114,7 +117,7 @@ int readOptions(int argc, char** argv)
 
 int main(int argc, char** argv)
 {
-  if(readOptions(argc, argv)<0) return;
+  if(readOptions(argc, argv)<0) return 0;
 
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr
     input(new pcl::PointCloud<pcl::PointXYZRGB>);
@@ -182,22 +185,13 @@ int main(int argc, char** argv)
   std::cout << "FastSegmentation took "
             << t.precisionStop() << "s." << std::endl;
 
-/* How to create a mesh:
-   * - select desired mesh properties from predefined classes
-   * - create new property handle and provide the
-   *   necessary info using the constructor
-   * - create new mesh object and provide the property handle
-   * - use one of the MeshConversion functions to fill in data
-   */
-  typedef cob_3d_meshing::MeshProperties::Normal<pcl::Normal> PropT;
-  PropT normals_probs(normals);
-  cob_3d_meshing::Mesh<PropT> mesh(normals_probs);
-  cob_3d_meshing::MeshConversion::fromPointCloud(points,mesh);
-  
-
   t.precisionStart();
-  ms.initializeMesh(down, labels, normals, params);
-  ms.decimate();
+  typedef cob_3d_meshing::MeshProperties::Normals<pcl::Normal> PropNormalT;
+  typedef cob_3d_meshing::Mesh<PropNormalT> MeshT;
+  PropNormalT prop_normal_hdl(normals);
+  MeshT mesh( prop_normal_hdl );
+  cob_3d_meshing::MeshConversion<>::fromPointCloud<pcl::PointXYZRGB,MeshT>(down,mesh);
+  cob_3d_meshing::MeshDecimation<MeshT>::quadratic(&mesh, n_vertices_);
   std::cout << "MeshSimplification took "
             << t.precisionStop() << "s." << std::endl;
 
@@ -218,7 +212,7 @@ int main(int argc, char** argv)
     if(save_pcl_) pcl::io::savePLYFile(file_out_, pcl_mesh);
     else
     {
-      if ( !OpenMesh::IO::write_mesh(ms.getMesh(), file_out_) )
+      if ( !mesh.savePLY(file_out_) )
       {
         std::cerr << "Cannot write mesh to file " << file_out_ << std::endl;
         return 1;

@@ -60,8 +60,8 @@
  *
  ****************************************************************/
 
-#ifndef COB_DECIMATOR_MODULES_H
-#define COB_DECIMATOR_MODULES_H
+#ifndef COB_DECIMATION_MODULES_H
+#define COB_DECIMATION_MODULES_H
 
 #include <OpenMesh/Tools/Decimater/ModBaseT.hh>
 

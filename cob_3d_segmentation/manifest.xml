@@ -19,7 +19,6 @@
   <depend package="cob_3d_mapping_filters"/>
   <depend package="geometry_msgs"/>
   <depend package="actionlib"/>
-  <depend package="libopenmesh"/>
 
   <rosdep name="tinyxml"/>
   <rosdep name="libvtk"/>

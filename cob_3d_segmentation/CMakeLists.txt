@@ -19,7 +19,8 @@ rosbuild_check_for_sse()
 find_package(VTK REQUIRED)
 include_directories(${VTK_INCLUDE_DIRS})
 
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include ${PROJECT_SOURCE_DIR}/ros/include)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include
+                    ${PROJECT_SOURCE_DIR}/ros/include)
 
 
 #set the default path for built executables to the "bin" directory
