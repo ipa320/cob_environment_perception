@@ -360,18 +360,18 @@ cob_3d_segmentation::SimpleSegmentationNodelet::computeTexture(ClusterPtr &c, Ei
     int u = round(segment_tr->points[i].x * mToPx) - min_u;
     int v = round(segment_tr->points[i].y * mToPx) - min_v;
     //std::cout << "u,v" << u << "," << v << std::endl;
-    img.at<cv::Vec3b>(u,v)[0] = segment_tr->points[i].r;
+    img.at<cv::Vec3b>(u,v)[2] = segment_tr->points[i].r;
     img.at<cv::Vec3b>(u,v)[1] = segment_tr->points[i].g;
-    img.at<cv::Vec3b>(u,v)[2] = segment_tr->points[i].b;
+    img.at<cv::Vec3b>(u,v)[0] = segment_tr->points[i].b;
   }
   std::stringstream ss1;
   ss1 << "/tmp/seg_" << id << ".png";
   cv::imwrite(ss1.str(), img);
 
   cv::Mat img_dil(abs(max_u - min_u) +1 , abs(max_v - min_v) + 1, CV_8UC3);
-  cv::dilate(img, img_dil, cv::Mat(), cv::Point(-1,-1), 3);
+  cv::dilate(img, img_dil, cv::Mat(), cv::Point(-1,-1), 2);
   std::stringstream ss2;
-  ss2 << "/tmp/seg_dil_" << id << ".png";
+  ss2 << "/tmp/seg_" << id << "_dil.png";
   cv::imwrite(ss2.str(), img_dil);
 }
 
