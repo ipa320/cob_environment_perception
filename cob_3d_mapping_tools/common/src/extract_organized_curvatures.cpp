@@ -71,8 +71,8 @@
 // Package Includes:
 #include "cob_3d_mapping_common/point_types.h"
 #include "cob_3d_mapping_common/stop_watch.h"
-#include "cob_3d_mapping_features/organized_normal_estimation.h"
-#include "cob_3d_mapping_features/organized_curvature_estimation.h"
+#include "cob_3d_features/organized_normal_estimation.h"
+#include "cob_3d_features/organized_curvature_estimation.h"
 #include "cob_3d_mapping_tools/io.h"
 
 using namespace std;
@@ -138,7 +138,7 @@ int main(int argc, char** argv)
 
   PrecisionStopWatch t;
   t.precisionStart();
-  cob_3d_mapping_features::OrganizedNormalEstimation<PointXYZRGB, Normal, PointLabel>one;
+  cob_3d_features::OrganizedNormalEstimation<PointXYZRGB, Normal, PointLabel>one;
   one.setInputCloud(p);
   one.setOutputLabels(l);
   one.setPixelSearchRadius(radius_,1,circle_); //radius,pixel,circle
@@ -147,7 +147,7 @@ int main(int argc, char** argv)
   cout << t.precisionStop() << "s\t for Organized Normal Estimation" << endl;
 
   t.precisionStart();
-  cob_3d_mapping_features::OrganizedCurvatureEstimation<PointXYZRGB,Normal,PointLabel,PrincipalCurvatures>oce;
+  cob_3d_features::OrganizedCurvatureEstimation<PointXYZRGB,Normal,PointLabel,PrincipalCurvatures>oce;
   oce.setInputCloud(p);
   oce.setInputNormals(n);
   oce.setOutputLabels(l);

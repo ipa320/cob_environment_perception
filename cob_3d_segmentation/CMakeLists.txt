@@ -19,7 +19,8 @@ rosbuild_check_for_sse()
 find_package(VTK REQUIRED)
 include_directories(${VTK_INCLUDE_DIRS})
 
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include ${PROJECT_SOURCE_DIR}/ros/include)
+INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include
+                    ${PROJECT_SOURCE_DIR}/ros/include)
 
 
 #set the default path for built executables to the "bin" directory
@@ -64,7 +65,6 @@ rosbuild_add_executable(qppf_node ros/src/qppf_node.cpp common/src/polypartition
 rosbuild_add_executable(plane_extraction_action_client ros/src/plane_extraction_action_client.cpp)
 target_link_libraries(plane_extraction_action_client ${OpenCV_LIBS})
 
-
 # segmentation app:
 rosbuild_add_executable(test_depth_segmentation common/apps/test_depth_segmentation.cpp)
 target_link_libraries(test_depth_segmentation cob_3d_segmentation vtkCommon vtkRendering)
@@ -76,7 +76,8 @@ target_link_libraries(segmentation_visualizer vtkCommon vtkRendering)
 
 # Executables for profiling:
 rosbuild_add_executable(profile_depth_seg common/apps/profile_depth_seg.cpp)
-target_link_libraries(profile_depth_seg cob_3d_segmentation) #cob_3d_features cob_3d_features_omp cob_3d_segmentation)
+target_link_libraries(profile_depth_seg cob_3d_segmentation)
+ #cob_3d_features cob_3d_features_omp cob_3d_segmentation)
 
 rosbuild_add_executable(profile_plane_extraction common/apps/profile_plane_extraction.cpp)
 target_link_libraries(profile_plane_extraction cob_3d_segmentation vtkCommon vtkFiltering ${OpenCV_LIBS})
