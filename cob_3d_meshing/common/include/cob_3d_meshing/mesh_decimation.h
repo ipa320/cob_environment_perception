@@ -14,14 +14,14 @@
  * \note
  *  ROS stack name: cob_environment_perception_intern
  * \note
- *  ROS package name: cob_3d_mapping_tools
+ *  ROS package name: cob_3d_meshing
  *
  * \author
  *  Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
  * \author
  *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * \date Date of creation: 01/2012
+ * \date Date of creation: 09/2013
  *
  * \brief
  * Description:
@@ -60,75 +60,38 @@
  *
  ****************************************************************/
 
+#ifndef COB_MESH_DECIMATION_H
+#define COB_MESH_DECIMATION_H
 
-#include "cob_3d_features/most_discriminating_data_points.h"
-#include <boost/program_options.hpp>
 
-#include <pcl/point_types.h>
-#include <pcl/io/pcd_io.h>
+#include <OpenMesh/Tools/Decimater/DecimaterT.hh>
+#include <OpenMesh/Tools/Decimater/ModQuadricT.hh>
 
-using namespace std;
-using namespace pcl;
+#include "cob_3d_meshing/decimation_modules.h"
+#include "cob_3d_meshing/mesh_types.h"
 
-string in_, out_;
-int k_;
-
-void readOptions(int argc, char* argv[])
+namespace cob_3d_meshing
 {
-  using namespace boost::program_options;
-  options_description options("Options");
-  options.add_options()
-    ("help", "produce help message")
-    ("in", value<string>(&in_), "input fpfh pcd")
-    ("out", value<string>(&out_), "output fpfh pcd")
-    ("intervals,k", value<int>(&k_)->default_value(100), "k means value")
-    ;
-
-  positional_options_description p_opt;
-  p_opt.add("in",1).add("out", 1);
-  variables_map vm;
-  store(command_line_parser(argc, argv).options(options).positional(p_opt).run(), vm);
-  notify(vm);
-
-  if (vm.count("help"))
+  template<typename MeshT>
+  class MeshDecimation
   {
-    cout << options << endl;
-    exit(0);
-  }
+    typedef typename MeshT::MeshT OpenMeshT;
+    typedef OpenMesh::Decimater::DecimaterT<OpenMeshT> Decimater;
+
+  public:
+    static void quadratic(MeshT* mesh_hdl, int n)
+    {
+      typedef OpenMesh::Decimater::ModQuadricT<OpenMeshT> ModuleT;
+      typedef typename ModuleT::Handle ModuleHandle;
+      Decimater dec(mesh_hdl->mesh_);
+      ModuleHandle mod;
+      dec.add(mod);
+      dec.initialize();
+      dec.module(mod).set_binary(false);
+      dec.decimate_to(n);
+      mesh_hdl->mesh_.garbage_collection();
+    }
+  };
 }
 
-int main(int argc, char** argv)
-{
-  readOptions(argc, argv);
-  PointCloud<FPFHSignature33>::Ptr f_in (new PointCloud<FPFHSignature33>);
-  PointCloud<FPFHSignature33>::Ptr f_out (new PointCloud<FPFHSignature33>);
-
-  io::loadPCDFile<FPFHSignature33>(in_, *f_in);
-  cout << "loaded fpfh" << endl;
-  vector<vector<float> > d_in;
-  vector<vector<float> > d_out;
-
-  d_in.resize(f_in->size());
-  for (size_t n=0;n<f_in->size();n++)
-  {
-    d_in.at(n) = vector<float>(f_in->points[n].histogram,
-			       f_in->points[n].histogram +
-			       sizeof(f_in->points[n].histogram) / sizeof(float));
-  }
-  cout << "copied fpfh" << endl;
-  cob_3d_features::MostDiscriminatingDataPoints md;
-  md.setInputData(&d_in);
-  md.setK(k_);
-  md.computeDataPoints(&d_out);
-  cout << "computed kmeans" << endl;
-
-  f_out->points.resize(k_);
-
-  for (size_t k=0; k<k_; k++)
-  {
-    for (size_t m=0;m<33;m++) f_out->points[k].histogram[m] = d_out.at(k).at(m);
-  }
-  cout << "saved fpfh" << endl;
-  io::savePCDFileASCII<FPFHSignature33>(out_, *f_out);
-  return (0);
-}
+#endif

@@ -12,9 +12,9 @@
  * \note
  *  Project name: care-o-bot
  * \note
- *  ROS stack name: cob_vision
+ *  ROS stack name: cob_environment_perception_intern
  * \note
- *  ROS package name: cob_env_model
+ *  ROS package name: cob_3d_segmentation
  *
  * \author
  *  Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
@@ -80,8 +80,11 @@ cob_3d_segmentation::SimpleSegmentationNodelet::onInit()
 {
   //PCLNodelet::onInit();
   nh_ = getNodeHandle();
-  config_server_.reset(new dynamic_reconfigure::Server<segmentation_nodeletConfig>(getPrivateNodeHandle()));
-  config_server_->setCallback(boost::bind(&SimpleSegmentationNodelet::configCallback, this, _1, _2));
+  config_server_.reset(
+    new dynamic_reconfigure::Server<segmentation_nodeletConfig>(
+      getPrivateNodeHandle()));
+  config_server_->setCallback(
+    boost::bind(&SimpleSegmentationNodelet::configCallback, this, _1, _2));
 
   one_.setOutputLabels(labels_);
   one_.setPixelSearchRadius(8,2,2);
@@ -91,11 +94,12 @@ cob_3d_segmentation::SimpleSegmentationNodelet::onInit()
   seg_.setLabelCloudInOut(labels_);
   seg_.setSeedMethod(SEED_RANDOM);
 
-  //sub_points_ = nh_.subscribe<PointCloud>("point_cloud", 1, boost::bind(&SimpleSegmentationNodelet::topicCallback, this, _1));
   pub_segmented_ = nh_.advertise<PointCloud>("segmented_cloud", 1);
   pub_classified_ = nh_.advertise<PointCloud>("classified_cloud", 1);
   pub_shape_array_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray>("shape_array",1);
-  as_ = new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerAction>(nh_, "segmentation/trigger", boost::bind(&SimpleSegmentationNodelet::actionCallback, this, _1), false);
+  as_ = new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerAction>(
+    nh_, "segmentation/trigger",
+    boost::bind(&SimpleSegmentationNodelet::actionCallback, this, _1), false);
   as_->start();
 }
 
@@ -121,7 +125,8 @@ cob_3d_segmentation::SimpleSegmentationNodelet::configCallback(
 }
 
 void
-cob_3d_segmentation::SimpleSegmentationNodelet::actionCallback(const cob_3d_mapping_msgs::TriggerGoalConstPtr& goal)
+cob_3d_segmentation::SimpleSegmentationNodelet::actionCallback(
+  const cob_3d_mapping_msgs::TriggerGoalConstPtr& goal)
 {
   //boost::lock_guard<boost::mutex> guard(mutex_);
   cob_3d_mapping_msgs::TriggerResult result;
@@ -142,7 +147,8 @@ cob_3d_segmentation::SimpleSegmentationNodelet::actionCallback(const cob_3d_mapp
 }
 
 void
-cob_3d_segmentation::SimpleSegmentationNodelet::topicCallback(const PointCloud::ConstPtr& cloud)
+cob_3d_segmentation::SimpleSegmentationNodelet::topicCallback(
+  const PointCloud::ConstPtr& cloud)
 {
   //boost::lock_guard<boost::mutex> guard(mutex_);
   PrecisionStopWatch t;
@@ -187,86 +193,29 @@ cob_3d_segmentation::SimpleSegmentationNodelet::computeAndPublish()
   cob_3d_mapping_msgs::ShapeArray sa;
   sa.header = down_->header;
   sa.header.frame_id = down_->header.frame_id.c_str();
-  unsigned int id = 0;
+  //unsigned int id = 0;
   for (ClusterPtr c = seg_.clusters()->begin(); c != seg_.clusters()->end(); ++c)
   {
     if(c->size() < min_cluster_size_) {continue;}
-    Eigen::Vector3f centroid = c->getCentroid();
-    if(centroid(2) > centroid_passthrough_) {continue;}
+    if(c->getCentroid()(2) > centroid_passthrough_) {continue;}
     if(c->size() <= ceil(1.1f * (float)c->border_points.size()))  {continue;}
 
     seg_.clusters()->computeClusterComponents(c);
     if(filter_ && !c->is_save_plane) {continue;}
 
-
-    PolygonContours<PolygonPoint> poly;
-    pe_.outline(down_->width, down_->height, c->border_points, poly);
-    if(!poly.polys_.size()) {continue;} // continue, if no contours were found
-    int max_idx=0, max_size=0;
-    for (int i = 0; i < (int)poly.polys_.size(); ++i)
-    {
-      if ((int)poly.polys_[i].size() > max_size) { max_idx = i; max_size = poly.polys_[i].size(); }
-    }
-
     sa.shapes.push_back(cob_3d_mapping_msgs::Shape());
     cob_3d_mapping_msgs::Shape* s = &sa.shapes.back();
     s->header = down_->header;
 
-    std::vector<pcl::PointCloud<pcl::PointXYZ> > contours_3d;
-    std::vector<bool> holes;
-    for (int i = 0; i < (int)poly.polys_.size(); ++i)
-    {
-      pcl::PointCloud<pcl::PointXYZ> contour;
-      if (i == max_idx)
-      {
-        holes.push_back(false);
-        std::vector<PolygonPoint>::iterator it = poly.polys_[i].begin();
-        for ( ; it != poly.polys_[i].end(); ++it) {
-          pcl::PointXYZ pt;
-          pt.getVector3fMap() = down_->points[ it->x + it->y * down_->width ].getVector3fMap();
-          contour.push_back( pt );
-        }
-      }
-      else
-      {
-        holes.push_back(true);
-        std::vector<PolygonPoint>::reverse_iterator it = poly.polys_[i].rbegin();
-        for ( ; it != poly.polys_[i].rend(); ++it) {
-          pcl::PointXYZ pt;
-          pt.getVector3fMap() = down_->points[ it->x + it->y * down_->width ].getVector3fMap();
-          contour.push_back( pt );
-        }
-      }
-      contour.height = 1;
-      contour.width = contour.size();
-      contours_3d.push_back(contour);
-    }
-
-    std::vector<float> color(4, 1);
-    if(colorize_)
-    {
-      Eigen::Vector3f col_tmp = c->computeDominantColorVector().cast<float>();
-      float temp_inv = 1.0f/255.0f;
-      color[0] = col_tmp(0) * temp_inv;
-      color[1] = col_tmp(1) * temp_inv;
-      color[2] = col_tmp(2) * temp_inv;
-    }
-    else
-    {
-      color[0] = 0.0f;
-      color[1] = 0.0f;
-      color[2] = 1.0f;
-    }
-    cob_3d_mapping::Polygon::Ptr  p(new cob_3d_mapping::Polygon(id,
-                                                                c->pca_point_comp3,
-                                                                c->getCentroid()/*fabs(c->getCentroid().dot(c->pca_point_comp3))*/,
-                                                                contours_3d,
-                                                                holes,
-                                                                color));
+    cob_3d_mapping::Polygon::Ptr p;
+    conv_.setColor(colorize_);
+    conv_.setInputCloud(down_);
+    conv_.clusterToPolygon(c, p);
+    //p->id_ = id;
 
     //computeTexture(c, p->pose_, id);
     cob_3d_mapping::toROSMsg(*p, *s);
-    id++;
+    //id++;
   }
 
   pub_shape_array_.publish(sa);
@@ -323,7 +272,8 @@ cob_3d_segmentation::SimpleSegmentationNodelet::publishClassifiedCloud()
 }
 
 void
-cob_3d_segmentation::SimpleSegmentationNodelet::computeTexture(ClusterPtr &c, Eigen::Affine3f &trf, unsigned int id)
+cob_3d_segmentation::SimpleSegmentationNodelet::computeTexture(
+  ClusterPtr &c, Eigen::Affine3f &trf, unsigned int id)
 {
   pcl::ExtractIndices<pcl::PointXYZRGB> ei;
   ei.setInputCloud(down_);
@@ -375,4 +325,6 @@ cob_3d_segmentation::SimpleSegmentationNodelet::computeTexture(ClusterPtr &c, Ei
   cv::imwrite(ss2.str(), img_dil);
 }
 
-PLUGINLIB_DECLARE_CLASS(cob_3d_segmentation, SimpleSegmentationNodelet, cob_3d_segmentation::SimpleSegmentationNodelet, nodelet::Nodelet);
+PLUGINLIB_DECLARE_CLASS(cob_3d_segmentation, SimpleSegmentationNodelet,
+                        cob_3d_segmentation::SimpleSegmentationNodelet,
+                        nodelet::Nodelet);
