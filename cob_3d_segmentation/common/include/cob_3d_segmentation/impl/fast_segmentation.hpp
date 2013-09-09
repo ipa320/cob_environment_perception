@@ -165,7 +165,7 @@ cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT,OptionsT,Sensor
       for(int i=0; i<mask_size; ++i)
       {
         int i_idx = p.idx + mask[p.i_came_from][i];
-        if (i_idx >= w*h) continue;
+        if (i_idx >= w*h || i_idx < 0) continue;
 
         if(!SensorT::areNeighbors((*surface_)[p.idx].getVector3fMap(), (*surface_)[i_idx].getVector3fMap(),4.0f)) continue;
 
