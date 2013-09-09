@@ -107,7 +107,8 @@ namespace cob_3d_segmentation
     inline ClusterPtr end() { return clusters_.end(); }
     inline reverse_iterator rbegin() { return clusters_.rbegin(); }
     inline reverse_iterator rend() { return clusters_.rend(); }
-    inline std::pair<ClusterPtr,ClusterPtr> getClusters() { return std::make_pair(clusters_.begin(),clusters_.end()); }
+    inline std::pair<ClusterPtr,ClusterPtr> getClusters()
+    { return std::make_pair(clusters_.begin(),clusters_.end()); }
     inline std::pair<reverse_iterator, reverse_iterator> getClustersReverse()
     { return std::make_pair(clusters_.rbegin(), clusters_.rend()); }
 
@@ -117,7 +118,11 @@ namespace cob_3d_segmentation
     virtual void erase(ClusterPtr c) { clusters_.erase(c); }
 
     inline ClusterPtr getCluster(const int id)
-    { return ( (id_to_cluster_.find(id) == id_to_cluster_.end()) ? clusters_.end() : id_to_cluster_.find(id)->second ); }
+    {
+      return ( (id_to_cluster_.find(id) == id_to_cluster_.end())
+               ? clusters_.end()
+               : id_to_cluster_.find(id)->second );
+    }
 
     inline ClusterPtr createCluster(int id = 0)
     {
@@ -128,7 +133,8 @@ namespace cob_3d_segmentation
     std::string colorHumanReadable(int id)
     {
       std::stringstream ss;
-      ss << "0x" << std::setfill('0') << std::setw(6) << std::right << std::hex << id << std::dec;
+      ss << "0x" << std::setfill('0') << std::setw(6) << std::right
+         << std::hex << id << std::dec;
       return ss.str();
     }
 
@@ -194,11 +200,20 @@ namespace cob_3d_segmentation
       c->sum_rgb_(0) += surface_->points[idx].r;
       c->sum_rgb_(1) += surface_->points[idx].g;
       c->sum_rgb_(2) += surface_->points[idx].b;
-      c->color_.addColor(surface_->points[idx].r, surface_->points[idx].g, surface_->points[idx].b);
+      c->color_.addColor(surface_->points[idx].r,
+                         surface_->points[idx].g,
+                         surface_->points[idx].b);
     }
 
-    inline void updateNormal(ClusterPtr c, const Eigen::Vector3f& normal) const { c->sum_orientations_ += normal; }
-    inline void clearOrientation(ClusterPtr c) const { c->sum_orientations_ = Eigen::Vector3f::Zero(); }
+    inline void updateNormal(ClusterPtr c, const Eigen::Vector3f& normal) const
+    {
+      c->sum_orientations_ += normal;
+    }
+
+    inline void clearOrientation(ClusterPtr c) const
+    {
+      c->sum_orientations_ = Eigen::Vector3f::Zero();
+    }
 
     inline void merge(ClusterPtr source, ClusterPtr target)
     {
@@ -240,41 +255,6 @@ namespace cob_3d_segmentation
           id_to_cluster_[curr_label]->border_points.push_back(PolygonPoint(i%w,i/w));
         }
       }
-
-      /*
-      for (size_t idx = 0; idx < labels_->size(); ++idx)
-      {
-        count = 0;
-        curr_label = labels_->points[idx].label;
-        int x = static_cast<int>(idx % labels_->width);
-        int y = static_cast<int>(idx / labels_->width);
-        if (y == 0 || y == labels_->height - 1 || x == 0 || x == labels_->width -1)
-        {
-          id_to_cluster_[curr_label]->border_points.push_back(PolygonPoint(x, y));
-          continue;
-        }
-        for(int i=0;i<4;++i) { if (curr_label!=labels_->points[idx+mask[i]].label) { ++count; } }
-        if (count >= 4 || count < 1) continue;
-        id_to_cluster_[curr_label]->border_points.push_back(PolygonPoint(x, y));
-      }
-      */
-      /*
-      for (size_t idx = labels_->width; idx < ( labels_->size() - labels_->width ); ++idx)
-      {
-        count = 0;
-        curr_label = labels_->points[idx].label;
-        if (labels_->points[idx - labels_->width + 1].label != curr_label) { ++count; }
-        if (labels_->points[idx - labels_->width - 1].label != curr_label) { ++count; }
-        if (labels_->points[idx + labels_->width + 1].label != curr_label) { ++count; }
-        if (labels_->points[idx + labels_->width - 1].label != curr_label) { ++count; }
-        if (count > 2) continue;
-        if (count > 0 || labels_->points[idx + 1].label != curr_label || labels_->points[idx + labels_->width].label != curr_label
-            || labels_->points[idx - 1].label != curr_label || labels_->points[idx - labels_->width].label != curr_label)
-        {
-          id_to_cluster_[curr_label]->border_points.push_back(PolygonPoint(idx%labels_->width, idx/labels_->width));
-        }
-      }
-      */
     }
 
     void mapClusterBorders(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points)
@@ -282,7 +262,8 @@ namespace cob_3d_segmentation
       uint32_t color = LBL_BORDER;
       for (ClusterPtr c = clusters_.begin(); c != clusters_.end(); ++c)
       {
-        for(std::vector<PolygonPoint>::iterator bp = c->border_points.begin(); bp != c->border_points.end(); ++bp)
+        for(std::vector<PolygonPoint>::iterator bp = c->border_points.begin();
+            bp != c->border_points.end(); ++bp)
         {
           points->points[bp->y*points->width+bp->x].rgb = LBL_BORDER;
         }
@@ -297,8 +278,10 @@ namespace cob_3d_segmentation
       pcl::PointCloud<pcl::PointXYZ>::Ptr centroids,
       pcl::PointCloud<pcl::Normal>::Ptr connection)
     {
-      ints_centroids->width = comp1->width = comp2->width = comp3->width = centroids->width = connection->width = numClusters();
-      ints_centroids->height = comp1->height = comp2->height = comp3->height = centroids->width = connection->height = 1;
+      ints_centroids->width = comp1->width = comp2->width = comp3->width
+        = centroids->width = connection->width = numClusters();
+      ints_centroids->height = comp1->height = comp2->height = comp3->height
+        = centroids->width = connection->height = 1;
       ints_centroids->resize(numClusters());
       comp1->resize(numClusters());
       comp2->resize(numClusters());
