@@ -259,7 +259,7 @@ namespace cob_3d_segmentation
 
     void mapClusterBorders(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points)
     {
-      uint32_t color = LBL_BORDER;
+      //uint32_t color = LBL_BORDER;
       for (ClusterPtr c = clusters_.begin(); c != clusters_.end(); ++c)
       {
         for(std::vector<PolygonPoint>::iterator bp = c->border_points.begin();

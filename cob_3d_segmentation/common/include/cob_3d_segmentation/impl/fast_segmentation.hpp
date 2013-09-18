@@ -173,7 +173,7 @@ cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT,OptionsT,Sensor
         if( hasLabel(*p_label, c->id(), i_idx, p.idx, OptionsT()) ) continue;
 
         Eigen::Vector3f i_n = c->getOrientation();
-        Eigen::Vector3f i_c = c->getCentroid();
+        //Eigen::Vector3f i_c = c->getCentroid();
 
         float dot_value = fabs( i_n.dot((*normals_)[i_idx].getNormalVector3fMap()) );
 
@@ -188,6 +188,7 @@ cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT,OptionsT,Sensor
     }
   }
   clusters_->addBorderIndicesToClusters();
+  return true;
 }
 
 #endif

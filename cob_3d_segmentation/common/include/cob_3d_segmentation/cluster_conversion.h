@@ -104,8 +104,17 @@ namespace cob_3d_segmentation
       cob_3d_segmentation::PolygonContours<cob_3d_segmentation::PolygonPoint> poly;
       pe_.outline(p_->width,p_->height,c->border_points,poly);
       if(!poly.polys_.size()) return false;
+      /*for (int i = 0; i < (int)poly.polys_.size(); ++i)
+      {
+        std::cout << "c " << i << ": " << std::endl;
+        for (int idx = 0; idx < poly.polys_[i].size(); ++idx)
+        {
+          std::cout << poly.polys_[i][idx].x << "," << poly.polys_[i][idx].y << "->";
+        }
+        std::cout << std::endl;
+      }*/
       int max_idx=0, max_size=0;
-      for (int i=0; i<(int)poly.polys_.size(); ++i)
+      /*for (int i=0; i<(int)poly.polys_.size(); ++i)
       {
         if( (int)poly.polys_[i].size() > max_size)
         {
@@ -113,6 +122,8 @@ namespace cob_3d_segmentation
           max_size = poly.polys_[i].size();
         }
       }
+      std::cout << "max_idx " << max_idx << std::endl;*/
+      //std::cout << c->border_points.size() << "->" << poly.polys_[0].size() << std::endl;
 
       std::vector<pcl::PointCloud<pcl::PointXYZ> > contours_3d;
       std::vector<bool> holes;

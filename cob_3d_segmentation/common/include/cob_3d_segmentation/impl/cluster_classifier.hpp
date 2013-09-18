@@ -81,7 +81,7 @@ cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::c
 
     clusters_->computeClusterComponents(c_it);
 
-    if (!c_it->is_save_plane)
+    if (!c_it->is_planar_)
     {
 
       recomputeClusterNormals(c_it);
@@ -115,7 +115,7 @@ cob_3d_segmentation::ClusterClassifier<ClusterHandlerT,PointT,NormalT,LabelT>::c
 
     clusters_->computeClusterComponents(c_it);
 
-    if (!c_it->is_save_plane)
+    if (!c_it->is_planar_)
     {
       int w_size = std::min( std::floor(std::sqrt(c_it->size() / 16.0f)) + 5, 30.0f );
       int steps = std::floor(w_size / 5);
