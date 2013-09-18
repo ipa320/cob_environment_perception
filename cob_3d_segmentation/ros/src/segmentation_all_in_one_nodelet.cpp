@@ -231,6 +231,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
     //std::cout << "Get outline for " << c->size() << " Points with "<< c->border_points.size() << " border points" << std::endl;
     pe_.outline(cloud->width, cloud->height, c->border_points, poly);
     if (!poly.polys_.size()) continue; // continue, if no contours were found
+    //std::cout << "border -> outline: " << c->border_points.size() << " -> " << poly.polys_[0].size() << std::endl;
 
     int max_idx=0, max_size=0;
     //std::cout << "Polys: ";

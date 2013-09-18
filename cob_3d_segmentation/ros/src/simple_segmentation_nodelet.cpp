@@ -66,6 +66,9 @@
 #include <eigen_conversions/eigen_msg.h>
 #include <pcl/common/transforms.h>
 #include <pcl/filters/extract_indices.h>
+#include <pcl/surface/organized_fast_mesh.h>
+#include <pcl/io/ply_io.h>
+#include <pcl/io/vtk_io.h>
 #include <pcl/io/pcd_io.h>
 #include <opencv2/opencv.hpp>
 
@@ -196,24 +199,24 @@ cob_3d_segmentation::SimpleSegmentationNodelet::computeAndPublish()
   //unsigned int id = 0;
   for (ClusterPtr c = seg_.clusters()->begin(); c != seg_.clusters()->end(); ++c)
   {
-    if(c->size() < min_cluster_size_) {continue;}
-    if(c->getCentroid()(2) > centroid_passthrough_) {continue;}
-    if(c->size() <= ceil(1.1f * (float)c->border_points.size()))  {continue;}
+    if(c->size() < min_cluster_size_) {continue;} //segment too small
+    if(c->getCentroid()(2) > centroid_passthrough_) {continue;} //segment too far away
+    if(c->border_points.size() > ceil(0.9f * (float)c->size()))  {continue;} //ratio of border points too high => long and thin segment
 
     seg_.clusters()->computeClusterComponents(c);
-    if(filter_ && !c->is_save_plane) {continue;}
+    if(filter_ && !c->is_planar_) {continue;} //segment is not a plane
+
+    cob_3d_mapping::Polygon::Ptr p;
+    //std::cout << "cluster id " << c->id() << std::endl;
+    conv_.setColor(colorize_);
+    conv_.setInputCloud(down_);
+    if(!conv_.clusterToPolygon(c, p)) continue;
 
     sa.shapes.push_back(cob_3d_mapping_msgs::Shape());
     cob_3d_mapping_msgs::Shape* s = &sa.shapes.back();
     s->header = down_->header;
 
-    cob_3d_mapping::Polygon::Ptr p;
-    conv_.setColor(colorize_);
-    conv_.setInputCloud(down_);
-    conv_.clusterToPolygon(c, p);
-    //p->id_ = id;
-
-    //computeTexture(c, p->pose_, id);
+    //computeTexture(c, p->pose_, p->id_);
     cob_3d_mapping::toROSMsg(*p, *s);
     //id++;
   }
@@ -323,6 +326,25 @@ cob_3d_segmentation::SimpleSegmentationNodelet::computeTexture(
   std::stringstream ss2;
   ss2 << "/tmp/seg_" << id << "_dil.png";
   cv::imwrite(ss2.str(), img_dil);
+
+  pcl::OrganizedFastMesh<pcl::PointXYZRGB> ofm;
+  pcl::PolygonMesh pcl_mesh;
+  ofm.setInputCloud(down_);
+  //ofm.setIndices(ind_ptr);
+  ofm.setTriangulationType(pcl::OrganizedFastMesh<pcl::PointXYZRGB>::TRIANGLE_ADAPTIVE_CUT);
+  ofm.reconstruct(pcl_mesh);
+  try
+  {
+    std::stringstream ss3;
+    ss3 << "/tmp/mesh_" << id << ".vtk";
+    pcl::io::saveVTKFile(ss3.str(), pcl_mesh);
+  }
+  catch( std::exception& x )
+  {
+    std::cerr << x.what() << std::endl;
+    return;
+  }
+
 }
 
 PLUGINLIB_DECLARE_CLASS(cob_3d_segmentation, SimpleSegmentationNodelet,
