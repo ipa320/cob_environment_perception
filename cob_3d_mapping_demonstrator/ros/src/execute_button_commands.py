@@ -164,6 +164,59 @@ class execute_button_commands():
     #  return False
     #sss.move("cob_3d_mapping_demonstrator","home")
 
+  def execute_start_map(self):
+    print "start"
+    goal = TriggerGoal()
+    if not self.trigger_client.wait_for_server(rospy.Duration.from_sec(2.0)):
+      print "switched to /segmentation/trigger"
+      self.trigger_client = actionlib.SimpleActionClient('/segmentation/trigger', TriggerAction)
+
+    if not self.trigger_client.wait_for_server(rospy.Duration.from_sec(2.0)):
+      rospy.logerr('server not available')
+      #return False
+    else:
+      goal.start = True
+      self.trigger_client.send_goal(goal)
+      if not self.trigger_client.wait_for_result(rospy.Duration.from_sec(2.0)):
+        print "no result"
+        #return False
+    sss.move("cob_3d_mapping_demonstrator",[[-0.5,0]])
+    if self.script_action_server.is_preempt_requested():
+      self.script_action_server.set_preempted()
+      return False
+    sss.move("cob_3d_mapping_demonstrator","home")
+    if self.script_action_server.is_preempt_requested():
+      self.script_action_server.set_preempted()
+      sss.stop("cob_3d_mapping_demonstrator")
+      return False
+    sss.move("cob_3d_mapping_demonstrator",[[0.5,0]])
+    sss.sleep(0.5)
+    if self.script_action_server.is_preempt_requested():
+      self.script_action_server.set_preempted()
+      sss.stop("cob_3d_mapping_demonstrator")
+      return False
+    sss.move("cob_3d_mapping_demonstrator",[[0.5,-0.5]])
+    if self.script_action_server.is_preempt_requested():
+      self.script_action_server.set_preempted()
+      sss.stop("cob_3d_mapping_demonstrator")
+      return False
+    sss.move("cob_3d_mapping_demonstrator",[[0,-0.5]])
+    if self.script_action_server.is_preempt_requested():
+      self.script_action_server.set_preempted()
+      sss.stop("cob_3d_mapping_demonstrator")
+      return False
+    sss.move("cob_3d_mapping_demonstrator",[[-0.5,-0.5]])
+    if self.script_action_server.is_preempt_requested():
+      self.script_action_server.set_preempted()
+      sss.stop("cob_3d_mapping_demonstrator")
+      return False
+    sss.move("cob_3d_mapping_demonstrator","home")
+    goal.start = False
+    self.trigger_client.send_goal(goal)
+    if not self.trigger_client.wait_for_result(rospy.Duration.from_sec(2.0)):
+      return False
+    return True
+
 
   def execute_stop(self):
     print "stop"
