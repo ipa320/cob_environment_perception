@@ -190,7 +190,7 @@ public:
     }
     if(pc->header.frame_id != map_frame_id_)
     {
-      ROS_ERROR("Frame ID of incoming point cloud does not match map frame ID, aborting...");
+      ROS_ERROR("[point_map] Frame ID of incoming point cloud (%s) does not match map frame ID (%s), aborting...", pc->header.frame_id.c_str(), map_frame_id_.c_str());
       return;
     }
 
