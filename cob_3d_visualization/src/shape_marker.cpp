@@ -578,6 +578,52 @@ ShapeMarker::createMarker (visualization_msgs::InteractiveMarkerControl& im_ctrl
   marker_.pose.orientation.y = marker.pose.orientation.y ;
   marker_.pose.orientation.z = marker.pose.orientation.z ;*/
   // end
+
+  delete_contour_marker_ = contour_marker_;
+  for (unsigned int i=0; i<delete_contour_marker_.markers.size(); i++)
+  {
+    delete_contour_marker_.markers[i].action = visualization_msgs::Marker::DELETE;
+  }
+  visualization_msgs::Marker cmarker;
+  cmarker.action = visualization_msgs::Marker::ADD;
+  cmarker.type = visualization_msgs::Marker::LINE_STRIP;
+  cmarker.lifetime = ros::Duration();
+  cmarker.header = shape_.header ;
+  //cmarker.header.frame_id = "/map";
+  cmarker.ns = "contours" ;
+
+  cmarker.scale.x = 0.02;
+  cmarker.scale.y = 0.02;
+  cmarker.scale.z = 1;
+
+  cmarker.color.r = 0;
+  cmarker.color.g = 0;
+  cmarker.color.b = 1;
+  cmarker.color.a = 1.0;
+
+  cmarker.pose = shape_.pose;
+
+  cob_3d_mapping::Polygon p;
+  cob_3d_mapping::fromROSMsg (shape_, p);
+
+  for(unsigned int i=0; i<p.contours_.size(); i++)
+  {
+    cmarker.id = (p.id_+1)*10+ctr;
+    ctr ++ ;
+    for(unsigned int j=0; j<p.contours_[i].size(); j++)
+    {
+      //pcl::PointCloud<pcl::PointXYZ> contour_3d;
+      //pcl::TranformPointCloud(p.contours_[i], contour_3d, p.pose_.cast<double>());
+      cmarker.points.resize(p.contours_[i].size()+1);
+      cmarker.points[j].x = p.contours_[i][j](0);
+      cmarker.points[j].y = p.contours_[i][j](1);
+      cmarker.points[j].z = 0;//p.contours_[i][j](2);
+    }
+    cmarker.points[p.contours_[i].size()].x = p.contours_[i][0](0);
+    cmarker.points[p.contours_[i].size()].y = p.contours_[i][0](1);
+    cmarker.points[p.contours_[i].size()].z = 0;//p.contours[i][0](2);
+    contour_marker_.markers.push_back(cmarker);
+  }
 }
 
 TPPLPoint
