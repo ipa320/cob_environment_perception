@@ -79,7 +79,8 @@ using namespace cob_3d_mapping;
 ShapeVisualization::ShapeVisualization () :
 	ctr_for_shape_indexes (0),
 	nh_("~"),
-	frame_id_("/map")
+	frame_id_("/map"),
+	show_contours_(false)
     {
       shape_array_sub_ = nh_.subscribe ("shape_array", 1, &ShapeVisualization::shapeArrayCallback, this);
       feedback_sub_ = nh_.subscribe("shape_i_marker/feedback",1,&ShapeVisualization::setShapePosition,this);
@@ -87,6 +88,7 @@ ShapeVisualization::ShapeVisualization () :
       marker_pub_ = nh_.advertise<visualization_msgs::MarkerArray> ("marker_array", 1);
       //      shape_pub_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_array", 1);
       //      get_table_subscriber_ = nh_.subscribe("shape_array", 1, &ShapeVisualization::findTables,this);
+      nh_.getParam("show_contours", show_contours_);
       im_server_.reset (new interactive_markers::InteractiveMarkerServer ("shape_i_marker", "", false));
       moreOptions() ;
     }
@@ -574,6 +576,22 @@ void ShapeVisualization::optionMenu() {
 void
 ShapeVisualization::shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr& sa)
 {
+  if(show_contours_)
+  {
+    visualization_msgs::MarkerArray dContourMarker;
+    for( unsigned int i=0; i<contour_ids_.size(); i++)
+    {
+      visualization_msgs::Marker marker;
+      marker.id = contour_ids_[i];
+      marker.header = sa->header;
+      marker.ns = "contours";
+      marker.action = visualization_msgs::Marker::DELETE;
+      dContourMarker.markers.push_back(marker);
+      ROS_DEBUG("Deleting contour marker %d", marker.id);
+    }
+    contour_ids_.clear();
+    marker_pub_.publish(dContourMarker);
+  }
   //  ctr_for_shape_indexes = 0 ;
   std::vector<unsigned int> new_ids;
   v_sm_.clear();
@@ -598,7 +616,13 @@ ShapeVisualization::shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr
     //marker_pub_.publish(sm->getMarker());
     if(sm->getMarker().points.size())
       ma.markers.push_back(sm->getMarker());
-
+    if(show_contours_)
+    {
+      visualization_msgs::MarkerArray contourMarker = sm->getContourMarker();
+      for( unsigned int j=0; j<contourMarker.markers.size(); j++)
+        contour_ids_.push_back(contourMarker.markers[j].id);
+      marker_pub_.publish(sm->getContourMarker());
+    }
   }
   //find markers to delete
   for( unsigned int i=0; i<marker_ids_.size(); i++)
