@@ -63,19 +63,52 @@
 #ifndef COB_MESH_TYPES_H
 #define COB_MESH_TYPES_H
 
+#include "cob_3d_meshing/slots.hpp"
 #include "cob_3d_meshing/mesh_property_types.h"
 
 namespace cob_3d_meshing
 {
-  /* TODO:
-   * Empty Base Class Optimization(EBCO) to remove storage overhead
-   * for empty properties */
-  template<typename PT1 = MeshProperties::NullT<>,
-           typename PT2 = MeshProperties::NullT<>,
-           typename PT3 = MeshProperties::NullT<>,
-           typename PT4 = MeshProperties::NullT<>,
-           typename PT5 = MeshProperties::NullT<>,
-           typename PT6 = MeshProperties::NullT<>,
+  /*** policy classes to access plugin functionalities ***
+   *
+   * "inline static void T::runPlugin(const PluginT&, ...)
+   * is called by slots.run<T>() for all defined plugins.
+   * it should just redirect to the desired function within the plugin.
+   *
+   */
+  template<typename MeshTraits = DefaultMeshTraits>
+  class SetVertex
+  {
+  public:
+    typedef typename MeshTraits::VertexHandle VertexHandle;
+
+    struct PluginArgs { VertexHandle vh; int idx; };
+
+    template<typename PluginT>
+    inline static void runPlugin(PluginT& plugin, const PluginArgs& args)
+    {
+      plugin.setVertex(args.vh, args.idx);
+    }
+  };
+
+  template<typename MeshTraits = DefaultMeshTraits>
+  class Init
+  {
+  public:
+    typedef typename MeshTraits::MeshT MeshT;
+
+    template<typename PluginT>
+    inline static void runPlugin(PluginT& plugin, MeshT* mesh)
+    {
+      plugin.init(mesh);
+    }
+  };
+
+
+  template<typename PT1 = NullT,
+           typename PT2 = NullT,
+           typename PT3 = NullT,
+           typename PT4 = NullT,
+           typename PT5 = NullT,
            typename MeshTraits = DefaultMeshTraits >
   class Mesh
   {
@@ -84,41 +117,31 @@ namespace cob_3d_meshing
     typedef typename MeshTraits::VertexHandle VertexHandle;
     typedef typename MeshTraits::FaceHandle FaceHandle;
 
+    // tie all properties together in one handler:
+    typedef Slots<PT1,PT2,PT3,PT4,PT5> Properties;
+
     template<typename U> friend class MeshDecimation;
 
     Mesh(const PT1& prop1 = PT1(),
          const PT2& prop2 = PT2(),
          const PT3& prop3 = PT3(),
          const PT4& prop4 = PT4(),
-         const PT5& prop5 = PT5(),
-         const PT6& prop6 = PT6())
+         const PT5& prop5 = PT5())
       : mesh_()
-      , prop1_(prop1)
-      , prop2_(prop2)
-      , prop3_(prop3)
-      , prop4_(prop4)
-      , prop5_(prop5)
-      , prop6_(prop6)
+      , prop_(prop1,prop2,prop3,prop4,prop5)
     {
-      prop1_.init(&mesh_);
-      prop2_.init(&mesh_);
-      prop3_.init(&mesh_);
-      prop4_.init(&mesh_);
-      prop5_.init(&mesh_);
-      prop6_.init(&mesh_);
+      // init all properites
+      runPolicy<Init<MeshTraits> >(prop_, &mesh_);
     }
 
     template<typename PointT>
     VertexHandle addVertex(int idx, const PointT& p)
     {
-      VertexHandle vh = mesh_.add_vertex(typename MeshT::Point(p.x,p.y,p.z));
-      prop1_.setVertex(vh,idx);
-      prop2_.setVertex(vh,idx);
-      prop3_.setVertex(vh,idx);
-      prop4_.setVertex(vh,idx);
-      prop5_.setVertex(vh,idx);
-      prop6_.setVertex(vh,idx);
-      return vh;
+      typename SetVertex<MeshTraits>::PluginArgs args;
+      args.vh = mesh_.add_vertex(typename MeshT::Point(p.x,p.y,p.z));
+      args.idx = idx;
+      runPolicy<SetVertex<MeshTraits> >(prop_,args);
+      return args.vh;
     }
 
     FaceHandle addFace(const VertexHandle& v1,
@@ -135,12 +158,8 @@ namespace cob_3d_meshing
 
   private:
     MeshT mesh_;
-    PT1 prop1_;
-    PT2 prop2_;
-    PT3 prop3_;
-    PT4 prop4_;
-    PT5 prop5_;
-    PT6 prop6_;
+    Properties prop_;
+
   };
 
 }

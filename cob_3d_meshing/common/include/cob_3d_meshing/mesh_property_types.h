@@ -79,22 +79,6 @@ namespace cob_3d_meshing
 
   namespace MeshProperties
   {
-    //______________________________ NullT ____________________________________
-    template<typename MeshTraits = DefaultMeshTraits>
-    class NullT
-    {
-    public:
-      typedef typename MeshTraits::MeshT MeshT;
-      typedef typename MeshTraits::VertexHandle VertexHandle;
-      typedef void DataPtrT;
-      typedef void PropT;
-
-      inline static std::string name() { return "Void"; }
-      inline void init(MeshT*) { return; }
-      inline void setVertex(const VertexHandle&, int idx) { return; }
-      //inline void setFace()
-    };
-
     //______________________________ Normals __________________________________
     template<typename PointNormalT,
              typename MeshTraits = DefaultMeshTraits>
