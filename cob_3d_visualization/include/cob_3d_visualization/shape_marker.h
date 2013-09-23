@@ -292,6 +292,8 @@ class ShapeMarker
     void hideID(int flag_untick);
 
     visualization_msgs::Marker& getMarker() {return marker;};
+    visualization_msgs::MarkerArray& getContourMarker() {return contour_marker_;};
+    visualization_msgs::MarkerArray& getDeleteContourMarker() {return delete_contour_marker_;};
 
 
 
@@ -301,6 +303,8 @@ class ShapeMarker
     visualization_msgs::InteractiveMarker imarker_ ;
     visualization_msgs::InteractiveMarker deleted_imarker_ ;
     visualization_msgs::Marker marker;
+    visualization_msgs::MarkerArray contour_marker_;
+    visualization_msgs::MarkerArray delete_contour_marker_;
 
     //    ros::NodeHandle nh_;
     //    ros::Subscriber feedback_sub_ ;
