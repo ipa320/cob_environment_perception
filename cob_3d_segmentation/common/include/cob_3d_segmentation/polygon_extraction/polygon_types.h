@@ -101,7 +101,7 @@ namespace cob_3d_segmentation
     {
       if(n && polys_.back().size() > n)
       {
-        polys_.back().erase( polys_.back().begin()+(polys_.back().size()-n-1), polys_.back().end() );
+        polys_.back().erase( polys_.back().begin()+(polys_.back().size()-n), polys_.back().end() );
       }
     }
 

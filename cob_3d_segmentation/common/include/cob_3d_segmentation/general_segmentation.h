@@ -77,6 +77,8 @@
 class GeneralSegmentation
 {
 public:
+  virtual ~GeneralSegmentation() {}
+
   /// sets preprocessed input cloud
   virtual void setInputCloud (const boost::shared_ptr<const pcl::PointCloud<Point> > &cloud) =0;
 

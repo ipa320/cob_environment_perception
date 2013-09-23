@@ -146,7 +146,7 @@ namespace cob_3d_segmentation
       clusters_ = graph_->clusters();
     }
 
-    ~FastSegmentation () { }
+    virtual ~FastSegmentation () { }
 
     virtual void setInputCloud(const PointCloudConstPtr& points) { surface_ = points; clusters_->setPointCloudIn(points); }
     virtual LabelCloudConstPtr getOutputCloud() { return labels_; }

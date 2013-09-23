@@ -3,6 +3,7 @@
   <!-- Input/Output Topics: -->
   <arg name="point_cloud_in" default="/cam3d/depth_registered/points"/>
   <arg name="segmented_cloud" default="/segmentation/segmented_cloud"/>
+  <arg name="classified_cloud" default="/segmentation/classified_cloud"/>
   <arg name="shape_array" default="/segmentation/shape_array"/>
   <arg name="enable_action_mode" default="False"/>
 
@@ -20,6 +21,7 @@
         args="load cob_3d_segmentation/SimpleSegmentationNodelet $(arg nodelet_manager)" output="screen">
     <remap from="point_cloud" to="$(arg point_cloud_in)"/>
     <remap from="segmented_cloud" to="$(arg segmented_cloud)"/>
+    <remap from="classified_cloud" to="$(arg classified_cloud)"/>
     <remap from="shape_array" to="$(arg shape_array)"/>
 
     <param name="centroid_passthrough" type="double" value="5.0"/>
