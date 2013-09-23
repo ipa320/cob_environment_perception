@@ -90,7 +90,7 @@ cob_3d_segmentation::DepthClusterHandler<LabelT,PointT,PointNT>::computeClusterC
   if ( eigenvalues(0) / (eigenvalues(0)+eigenvalues(1)+eigenvalues(2)) < 0.001 * centroid(2) * centroid(2) )
   {
     c->type = I_PLANE;
-    c->is_save_plane = true;
+    c->is_planar_ = true;
   }
   //std::cout << c->is_save_plane << std::endl;
 }

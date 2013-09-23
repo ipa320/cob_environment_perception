@@ -81,7 +81,7 @@ namespace cob_3d_segmentation
 
   class PolygonExtraction
   {
-    int *ch_; /// mark-array
+    int *ch_; // array of border points
     size_t ch_size_;
     bool *outline_check_;         ///needed for outline, no need to reallocate every time
     size_t outline_check_size_;    ///remember size for var. above
@@ -102,6 +102,7 @@ namespace cob_3d_segmentation
 
     template<typename TPoint, typename TPolygon>
     void outline(const int w, const int h, std::vector<TPoint> out, TPolygon &poly);
+    void ppm(const char *fn, const int w, const int h, const int *ch);
 
   };
 }
