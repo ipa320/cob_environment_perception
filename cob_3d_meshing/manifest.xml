@@ -13,7 +13,7 @@
   <depend package="cob_3d_mapping_filters"/>
   <depend package="cob_3d_features"/>
   <depend package="cob_3d_segmentation"/>
-  <depend package="libopenmesh"/>
+  <depend package="openmesh"/>
 
 </package>
 
