@@ -3,6 +3,12 @@ import matplotlib.path as mpath
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
 
+def make_affine(vectors):
+    return hstack((vectors,ones([len(vectors),1])))
+
+def transform(tf, vectors):
+    return vstack(([tf.dot(v) for v in vectors]))
+
 ### BEGIN CLASS -- Map ###
 class World:
 
@@ -19,42 +25,60 @@ class Sensor:
         self.dir = array(orientation) / linalg.norm(orientation)
 
         # Field of view properties;
-        fov = 49.0 / 180.0 * pi # fov angle
+        fov = self.fov = 49.0 / 180.0 * pi # fov angle
         tan_fov_2 = tan(fov * 0.5)
-        f = 10.0 # far plane
-        n = 1. # near plane
-        l = n * tan_fov_2 # right
-        r = -l # left
+        f = self.f = 10.0 # far plane
+        n = self.n = 1. # near plane
+        l = self.l = n * tan_fov_2 # right
+        r = self.r = -l # left
         self.frustum = array([[n,l,1], [f, f*tan_fov_2,1],
                               [f,-f*tan_fov_2,1], [n,r,1]])
 
         # perspectiv projection matrix:
-        mortho = array([ [-2./(f-n),0,(f+n)/(f-n)],
-                         [0,2./(r-l),-(r+l)/(r-l)],
-                         [0,0,1.] ])
-        txn1 = array([ [1.,0,n], [0,1.,0], [0,0,1.] ])
-        sxfn = array([ [f/n,0,0], [0,1.,0], [0,0,1.] ])
-        pxn = array([ [1.,0,0], [0,1.,0], [1./n,0,1.] ])
-        txn2 = array([ [1.,0,-n], [0,1.,0], [0,0,1.] ])
-        self.pp = mortho.dot(txn1).dot(sxfn).dot(pxn).dot(txn2)
+        depth = f - n # f > n
+        width = l - r # l > r
+        # scale rectangle to unit cube
+        us = array([[2./depth,0,0],
+                    [0,2./width,0],
+                    [0,0,1.]])
+        # translate rectangle center to origin
+        ut = array([[1,0,-(n+depth/2.)],
+                    [0,1,-(r+width/2.)],
+                    [0,0,1.]])
+        # translate back to position
+        txn1 = array([[1.,0,n],
+                      [0,1.,0],
+                      [0,0,1.]])
+        # scale to original size
+        sxfn = array([[f/n,0,0],
+                      [0,1.,0],
+                      [0,0,1.]])
+        # project frustum to rectangle
+        pxn = array([ [1.,0,0],
+                      [0,1.,0],
+                      [1./n,0,1.]])
+        # translate frustum to origin
+        txn2 = array([[1.,0,-n],
+                      [0,1.,0],
+                      [0,0,1.]])
+        # combine everything
+        self.pp = us.dot(ut).dot(txn1).dot(sxfn).dot(pxn).dot(txn2)
+        #self.pp = txn1.dot(sxfn).dot(pxn).dot(txn2)
 
         # rotation and translation matrix:
         phi = math.atan2(orientation[1], orientation[0])
-        self.tf_to_world = array([[cos(phi),-sin(phi), position[0]],
-                                  [sin(phi), cos(phi), position[1]],
+        sign = math.copysign(1,phi)
+        phi = fabs(phi)
+        self.tf_to_world = array([[cos(phi), -sign * sin(phi), position[0]],
+                                  [sign * sin(phi), cos(phi), position[1]],
                                   [0, 0, 1.]])
         self.tf_to_cam = linalg.inv(self.tf_to_world)
 
     def measure(self, world):
-        w = hstack((world.coords,ones([len(world.coords),1])))
-        for i in range(len(world.coords)):
-            w[i] = self.pp.dot(self.tf_to_cam).dot(w[i])
-            w[i] = w[i]/w[i][2]
-
-        #self.axis = plt.figure().add_subplot(111)
-        #self.axis.set_xlim(-1, 1)
-        #self.axis.set_ylim(-1, 1)
-        #self.axis.plot(w[:,0],w[:,1])
+        w = make_affine(world.coords)
+        self.world = transform(self.tf_to_cam,w)
+        w = transform(self.pp.dot(self.tf_to_cam), w)
+        w = vstack(v / v[-1] for v in w)
 
         y = array(range(-100,100,5)) * 0.01
         x = ones(len(y))*10
@@ -69,17 +93,20 @@ class Sensor:
                 if tmp > -1. and tmp < 1.:
                     x[i] = min(tmp, x[i])
 
+        self.axis = plt.figure().add_subplot(111)
+        self.axis.set_xlim(-1., 1.)
+        self.axis.set_ylim(-1, 1.)
+        self.axis.plot(w[:,0],w[:,1])
+        self.axis.plot(x,y,'x')
+
         back = linalg.inv(self.pp)
         vst = vstack(zip(x,y,ones(len(x))))
-        self.measurement = vstack([back.dot(v) for v in vst])
-        for i in range(len(self.measurement)):
-            self.measurement[i] /= self.measurement[i,2]
-        #disp(self.measurement)
+        self.measurement = vstack(v/v[-1] for v in transform(back,vst))
 
     def draw(self, axis):
         #x, y = zip(self.pos)
         #dx, dy = zip(self.dir)
-        vfrustum = vstack([self.tf_to_world.dot(v) for v in self.frustum[:]])[:,0:2]
+        vfrustum = transform(self.tf_to_world, self.frustum)[:,0:2]
         poly = mpatches.Polygon(vfrustum, alpha=0.2, fc=(0,.75,0))
         axis.add_patch(poly)
         axis.plot(self.pos[0],self.pos[1], 'o',
@@ -91,9 +118,10 @@ class Sensor:
     def showMeasurement(self):
         self.axis = plt.figure().add_subplot(111)
         self.axis.plot(self.measurement[:,0],self.measurement[:,1],'x')
+        #self.axis.plot(self.world[:,0],self.world[:,1])
 
     def showMeasurementInMap(self, axis):
-        transformed = vstack([self.tf_to_world.dot(v) for v in self.measurement])
+        transformed = transform(self.tf_to_world,self.measurement)
         axis.plot(transformed[:,0],transformed[:,1], 'x')
 
 ### END CLASS -- Map ###
@@ -117,9 +145,10 @@ m = World(array(
      [ 18., 10.],
      [ 12., 13.]]))
 
-sensors = [Sensor([-8, -7.],[1.,0.]),
+sensors = [Sensor([-8., -7.5],[1.,0.1]),
            Sensor([-7.5, -3.],[ 1.,-0.8]),
-           Sensor([-4.5, -0.5],[0.,-1.])]
+           Sensor([-4.5, -0.5],[0.,-1.]),
+           Sensor([ 3., -1.],[-1.,-1.])]
 
 
 fig = plt.figure(figsize=(1024.0/80, 768.0/80), dpi=80)
@@ -130,7 +159,8 @@ ax = fig.add_subplot(111)
 for s in sensors:
     s.draw(ax)
     s.measure(m)
-    s.showMeasurementInMap(ax)
+    #s.showMeasurement()
+    #s.showMeasurementInMap(ax)
 
 
 ax.plot(m.coords[:,0], m.coords[:,1], 'ko-')
