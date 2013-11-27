@@ -1,7 +1,12 @@
+#!/usr/bin/python
+
 from numpy import *
+from collections import namedtuple
 import matplotlib.path as mpath
 import matplotlib.patches as mpatches
 import matplotlib.pyplot as plt
+import CohenSutherlandClipping as csclip
+reload(csclip)
 
 def make_affine(vectors):
     return hstack((vectors,ones([len(vectors),1])))
@@ -80,24 +85,52 @@ class Sensor:
         w = transform(self.pp.dot(self.tf_to_cam), w)
         w = vstack(v / v[-1] for v in w)
 
+        # clip lines and sort for intersection computation:
+        c = csclip.Clipper(array([[-1,1],[-1,1]]))
         y = array(range(-100,100,5)) * 0.01
         x = ones(len(y))*10
-        p = empty([len(y)-1, 2]) # m_inv, t
+        p = [] # m_inv, t
+        ww = []
+        Edge = namedtuple('Edge','ymin ymax minv t')
         for i in range(len(w)-1):
-            d = w[i+1] - w[i]
-            p[i] = [d[0] / d[1], d[0] * w[i][1] / (d[1] * w[i][0])]
+            accepted, p0, p1 = c.clip(w[i], w[i+1])
+            if not accepted: continue
+            ww[len(ww):] = [p0, p1]
+            #print p0[0],p0[1]," | ",w[i][0],w[i][1]
+            #print p1[0],p1[1]," | ",w[i+1][0],w[i+1][1]
+            #disp(p1[0:2])
+            d = p1 - p0
+            m_inv = d[0] / d[1]
+            if d[0] == 0:
+                t = p0[0]
+            else:
+                t = p0[1] - d[1] / d[0] * p0[0]
+
+            if (p0[1] < p1[1]):
+                p[len(p):] = [ Edge(p0[1], p1[1], m_inv, t) ]
+            else:
+                p[len(p):] = [ Edge(p1[1], p0[1], m_inv, t) ]
+
+        #ww[len(ww):] = [p1]
+        ww = vstack(ww)
+        p.sort()
 
         for i in range(len(y)):
+            # remove all lines with smaller ymax than the current y
+            p[:] = [ pi for pi in p if pi.ymax >= y[i] ]
             for pi in p:
-                tmp = pi[0] * (y[i] - pi[1])
-                if tmp > -1. and tmp < 1.:
-                    x[i] = min(tmp, x[i])
+                if pi.ymin >= y[i]: break
+                if pi.minv == 0:
+                    x[i] = min(pi.t, x[i])
+                else:
+                    x[i] = min(pi.minv * (y[i] - pi.t), x[i])
 
-        self.axis = plt.figure().add_subplot(111)
-        self.axis.set_xlim(-1., 1.)
-        self.axis.set_ylim(-1, 1.)
-        self.axis.plot(w[:,0],w[:,1])
-        self.axis.plot(x,y,'x')
+        #self.axis = plt.figure().add_subplot(111)
+        #self.axis.set_xlim(-2., 2.)
+        #self.axis.set_ylim(-2., 2.)
+        #self.axis.plot(w[:,0],w[:,1],'r')
+        #self.axis.plot(ww[:,0],ww[:,1])
+        #self.axis.plot(x,y,'x')
 
         back = linalg.inv(self.pp)
         vst = vstack(zip(x,y,ones(len(x))))
@@ -157,13 +190,13 @@ ax = fig.add_subplot(111)
 #ax.plot(m.coords[:,0], m.coords[:,1], 'x-', lw=2, color='black', ms=10)
 
 for s in sensors:
-    s.draw(ax)
+    #s.draw(ax)
     s.measure(m)
     #s.showMeasurement()
-    #s.showMeasurementInMap(ax)
+    s.showMeasurementInMap(ax)
 
 
-ax.plot(m.coords[:,0], m.coords[:,1], 'ko-')
+#ax.plot(m.coords[:,0], m.coords[:,1], 'ko-')
 ax.axis('equal')
 ax.set_xlim(-20, 20)
 ax.set_ylim(-15, 15)
