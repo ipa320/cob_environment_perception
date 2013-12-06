@@ -126,6 +126,7 @@ class Sensor:
                     x[i] = min(pi.minv * (y[i] - pi.t), x[i])
 
         x = [ float('nan') if xi > 1. else xi for xi in x ]
+        x += random.randn(len(x)) * 0.002
 
         #self.axis = plt.figure().add_subplot(111)
         #self.axis.set_xlim(-2., 2.)
@@ -200,8 +201,8 @@ for s in sensors:
 
 #ax.plot(m.coords[:,0], m.coords[:,1], 'ko-')
 ax.axis('equal')
-ax.set_xlim(-20, 20)
-ax.set_ylim(-15, 15)
+ax.set_xlim(-10, 5)
+ax.set_ylim(-12, 0)
 ax.grid()
 
 plt.show()
