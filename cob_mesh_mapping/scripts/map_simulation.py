@@ -119,11 +119,13 @@ class Sensor:
             # remove all lines with smaller ymax than the current y
             p[:] = [ pi for pi in p if pi.ymax >= y[i] ]
             for pi in p:
-                if pi.ymin >= y[i]: break
+                if pi.ymin > y[i]: break
                 if pi.minv == 0:
                     x[i] = min(pi.t, x[i])
                 else:
                     x[i] = min(pi.minv * (y[i] - pi.t), x[i])
+
+        x = [ float('nan') if xi > 1. else xi for xi in x ]
 
         #self.axis = plt.figure().add_subplot(111)
         #self.axis.set_xlim(-2., 2.)
@@ -134,6 +136,7 @@ class Sensor:
 
         back = linalg.inv(self.pp)
         vst = vstack(zip(x,y,ones(len(x))))
+
         self.measurement = vstack(v/v[-1] for v in transform(back,vst))
 
     def draw(self, axis):
@@ -157,7 +160,7 @@ class Sensor:
         transformed = transform(self.tf_to_world,self.measurement)
         axis.plot(transformed[:,0],transformed[:,1], 'x')
 
-### END CLASS -- Map ###
+### END CLASS -- Sensor ###
 
 
 m = World(array(
@@ -181,16 +184,15 @@ m = World(array(
 sensors = [Sensor([-8., -7.5],[1.,0.1]),
            Sensor([-7.5, -3.],[ 1.,-0.8]),
            Sensor([-4.5, -0.5],[0.,-1.]),
-           Sensor([ 3., -1.],[-1.,-1.])]
+           Sensor([ 3., -0.5],[-1.,-1.])]
 
 
 fig = plt.figure(figsize=(1024.0/80, 768.0/80), dpi=80)
-fig
 ax = fig.add_subplot(111)
-#ax.plot(m.coords[:,0], m.coords[:,1], 'x-', lw=2, color='black', ms=10)
+ax.plot(m.coords[:,0], m.coords[:,1], 'x-', lw=2, color='black', ms=10)
 
 for s in sensors:
-    #s.draw(ax)
+    s.draw(ax)
     s.measure(m)
     #s.showMeasurement()
     s.showMeasurementInMap(ax)
