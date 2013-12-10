@@ -15,7 +15,7 @@ def spherical3d(p):
 
 class Normals2d:
 
-    def __init__(self, window_size):
+    def __init__(self, window_size, data_size):
         """w: window size"""
         r = window_size/2
         self.mask = range(-r,r+1)
@@ -24,6 +24,8 @@ class Normals2d:
         self.amin = 0. #-0.5*pi
         self.amax = pi #0.5*pi
         self.to_bin = self.hist_size/(self.amax - self.amin)
+        self.hist_avg = zeros([data_size, self.hist_size])
+        self.hist_inc = zeros([data_size, self.hist_size])
 
     def bin(self,angle):
         return int((angle - self.amin) * self.to_bin)
@@ -51,7 +53,8 @@ class Normals2d:
 
         #self.angles[i,0:len(angle)] = angle
         maxi = argmax(self.hist_inc[i,:])
-        return self.hist_avg[i,maxi] / float(self.hist_inc[i,maxi])
+        res = self.hist_avg[i,maxi] / float(self.hist_inc[i,maxi])
+        return [math.cos(res),math.sin(res)]
 
 
     def test(self):
@@ -80,11 +83,10 @@ class Normals2d:
         self.normals = empty(len(self.z))
         self.angles = empty([len(self.z), len(self.mask)])
         self.angles[:] = nan
-        self.hist_avg = zeros([len(self.z), self.hist_size])
-        self.hist_inc = zeros([len(self.z), self.hist_size])
+
         for i in range(len(self.z)):
             self.normals[i] = self.computeNormal(self.x,self.z,i)
 
 
-ne = Normals2d(9)
-ne.test()
+#ne = Normals2d(9)
+#ne.test()
