@@ -1,10 +1,12 @@
 from numpy import *
+import heapq
+from collections import namedtuple
 import matplotlib.pyplot as plt
 import normal_estimation
 reload(normal_estimation)
 
 class Vertex:
-    def __init__(self, x, y, q = matrix(empty([3,3])) ):
+    def __init__(self, x, y, q = zeros([3,3])):
         """ """
         self.x = x
         self.y = y
@@ -13,13 +15,17 @@ class Vertex:
         self.e2 = None
 
 
-    def init(self, nx, ny):
+    def addPlaneParam(self, nx, ny):
         """ """
-        self.nx = nx
-        self.ny = ny
+        #self.nx = nx
+        #self.ny = ny
         d = -(nx*self.x + ny*self.y)
         q = array([[nx],[ny],[d]])
-        self.Q = q.dot(q.T)
+        Q = q.dot(q.T)
+        #a = math.degrees(math.atan2(ny, nx))
+        #if a < 0: print a+180
+        #else: print a
+        self.Q = self.Q + Q
 
     def __repr__(self):
         return "(%3.2f %3.2f)" % (self.x, self.y)
@@ -29,10 +35,8 @@ class Edge:
         """ """
         self.v1 = v1
         self.v2 = v2
-        self.cost = None
         self.vnew = v1
         self.dirty = False
-        #disp(self.cost)
 
     def __repr__(self):
         return `self.v1.__repr__()` + "  <--->  "  + `self.v2.__repr__()`
@@ -73,6 +77,12 @@ class Mesh:
         self.V.remove(e.v2)
         self.E.remove(e)
 
+    def split(self, e):
+        pass
+
+    def move(self, v):
+        pass
+
     def draw(self, axis, options = 'ven'):
         """ options: n=normals, e=edges, v=vertices """
         if 'v' in options:
@@ -92,7 +102,7 @@ class Mesh:
                 y = [e.v1.y, e.v2.y]
                 axis.plot(x,y,'b')
 
-    def test(self):
+    def test_load(self):
         self.z = array([nan,         nan,         nan,  7.99356667,  7.82893667,
                    7.57826583,  7.24122648,  7.00702245,  6.80268191,  6.62213153,
                    6.39752627,  6.26145436,  6.0878814 ,  5.85069153,  5.75376865,
@@ -110,44 +120,156 @@ class Mesh:
                    0.91488623,  0.99029698,  1.06669404,  1.1932163 ,  1.31802234,
                    1.47029037,  1.62246692,  1.78785387,  1.95960917,  2.15922111])
 
-        ne = normal_estimation.Normals2d(9, len(self.z))
-        n = []
-        for i in range(len(self.z)):
-            n.append(ne.computeNormal(self.z,self.x,i))
 
-        v1 = self.add(self.z[0],self.x[0])
+        ne = normal_estimation.Normals2d(9, len(self.z))
+        self.n = empty([len(self.z),2])
+        for i in range(len(self.z)):
+            self.n[i] = ne.computeNormal(self.z,self.x,i)
+
+        for i in range(len(self.z)):
+            if not math.isnan(self.z[i]): break
+
+        v1 = self.add(self.z[i],self.x[i])
+
+        v1.addPlaneParam(self.n[i,0],self.n[i,1])
+
+        if(i-1<0 or math.isnan(self.z[i-1])):
+            # add perpendicular plane
+            v1.addPlaneParam(-self.n[i,1],self.n[i,0])
+        else:
+            # add normal of edge
+            dx = self.z[i-1] - self.z[i]
+            dy = self.x[i-1] - self.x[i]
+            l = 1./math.sqrt(dx**2+dy**2)
+            v1.addPlaneParam(-dy*l,dx*l)
+
+        if(i+1>=len(self.z) or math.isnan(self.z[i+1])):
+            # add perpendicular plane
+            v1.addPlaneParam(-self.n[i,1],self.n[i,0])
+        else:
+            # add normal of edge
+            dx = self.z[i+1] - self.z[i]
+            dy = self.x[i+1] - self.x[i]
+            l = 1./math.sqrt(dx**2+dy**2)
+            v1.addPlaneParam(-dy*l,dx*l)
+
+
         for j in range(i+1, len(self.z)):
             v2 = self.add(self.z[j],self.x[j])
-            v2.init(n[0],n[1])
+
+            v2.addPlaneParam(self.n[j,0],self.n[j,1])
+
+            if(j-1<0 or math.isnan(self.z[j-1])):
+                # add perpendicular plane
+                v2.addPlaneParam(-self.n[j,1],self.n[j,0])
+            else:
+                # add normal of edge
+                dx = self.z[j-1] - self.z[j]
+                dy = self.x[j-1] - self.x[j]
+                l = 1./math.sqrt(dx**2+dy**2)
+                v2.addPlaneParam(-dy*l,dx*l)
+
+            if(j+1>=len(self.z) or math.isnan(self.z[j+1])):
+                # add perpendicular plane
+                v2.addPlaneParam(-self.n[j,1],self.n[j,0])
+            else:
+                # add normal of edge
+                dx = self.z[j+1] - self.z[j]
+                dy = self.x[j+1] - self.x[j]
+                l = 1./math.sqrt(dx**2+dy**2)
+                v2.addPlaneParam(-dy*l,dx*l)
+
+
             e = self.connect(v1,v2)
             v1 = v2
 
+    def test_show(self):
         fig = plt.figure(figsize=(1024.0/80, 768.0/80), dpi=80)
         ax = fig.add_subplot(111)
         ax.axis('equal')
         self.draw(ax, 've')
 
+class Heap:
+    def __init__(self):
+        self.h = []
+
+    def push(self, cost, data, op):
+        Item = namedtuple('Item', 'cost, data, op')
+        heapq.heappush(self.h,Item(cost,data,op))
+
+    def pop(self):
+        return heapq.heappop(self.h)
 
 class Simplifier:
-    def __init__(self):
-        self.heap = 0
+    def __init__(self, mesh = None):
+        """vertices of mesh require normal information beforhand"""
+        self.heap = Heap()
+        if mesh is not None:
+            self.init(mesh)
 
-    def update(self, e):
-        Q = e.v1.Q + e.v2.Q
-        q = array(vstack([ Q[0:2,:], [0,0,1] ]))
-        v = linalg.inv(q).dot(array([[0],[0],[1]]))
-        e.cost = float(v.T.dot(Q).dot(v))
-        if e.cost > 0.001:
-            e.vnew = Vertex(float(v[0]),float(v[1]),Q)
-        else:
-            e.vnew = Vertex(0.5 * (e.v1.x + e.v2.x),
-                            0.5 * (e.v1.y + e.v2.y), Q)
+    def init(self, mesh):
+        self.mesh = mesh
+        for e in mesh.E:
+            c = self.compute_cost(e, 'EC')
+            self.heap.push(c,e,'EC')
 
+    def compute_cost(self, data, operation):
+        """
+        data: edge or vertex object
+        operation: [EC,ES,VM]
+        """
+        if operation is 'EC':
+            Q = data.v1.Q + data.v2.Q
+            q = array(vstack([ Q[0:2,:], [0,0,1.] ]))
+            #A = Q[:2,:2]
+            #B = Q[2,:2]
+            #C = Q[2,2]
+            det = fabs(linalg.det(q))
+            if det > 0.0001:
+                v = linalg.inv(q).dot(array([[0],[0],[1.]]))
+                #v = linalg.inv(A).dot(B)
+            else:
+                v = array([[0.5 * (data.v1.x + data.v2.x)],
+                           [0.5 * (data.v1.y + data.v2.y)],[1]])
 
-    def test(self):
-        pass
+            data.vnew = Vertex(float(v[0]),float(v[1]),Q)
+            #cost = float(v.T.dot(A).dot(v) + 2.*v.T.dot(B) + C)
+            cost = fabs(float(v.T.dot(Q).dot(v)))
+            print det, cost
+
+        elif operation is 'ES':
+            pass
+
+        elif operation is 'VM':
+            pass
+
+        data.dirty = False
+        return cost
+
+    def simplify(self, eps = 0.1, min_vertices = 6):
+        cost = 0.0
+        while(cost < eps ):#and len(self.mesh.V) > min_vertices):
+            disp(cost)
+            h = self.heap.pop()
+            if h.data.dirty:
+                c = self.compute_cost(h.data, h.op)
+                self.heap.push(c,h.data,h.op)
+            elif h.op is 'EC':
+                self.mesh.collapse(h.data)
+                cost = h.cost
+            elif h.op is 'ES':
+                self.mesh.split(h.data)
+                cost = h.cost
+            elif h.op is 'VM':
+                seld.mesh.move(h.data)
+                cost = h.cost
 
 
 m = Mesh()
-m.test()
+m.test_load()
+m.test_show()
+s = Simplifier()
+s.init(m)
+s.simplify()
+m.test_show()
 plt.show()
