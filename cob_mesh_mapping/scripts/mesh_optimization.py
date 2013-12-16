@@ -1,3 +1,4 @@
+#!/usr/bin/python
 from numpy import *
 import heapq
 from collections import namedtuple
