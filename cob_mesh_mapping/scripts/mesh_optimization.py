@@ -66,7 +66,6 @@ class Simplifier:
     def simplify(self, eps = 0.1, min_vertices = 6):
         cost = 0.0
         while(cost < eps ):#and len(self.mesh.V) > min_vertices):
-            disp(cost)
             h = self.heap.pop()
             if h.data.dirty:
                 c = self.compute_cost(h.data, h.op)
@@ -84,7 +83,7 @@ class Simplifier:
 
 m = ms.Mesh()
 m.test_load()
-#m.test_show()
+m.test_show()
 s = Simplifier()
 s.init(m)
 s.simplify()
