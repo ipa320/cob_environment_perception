@@ -36,8 +36,10 @@ class Simplifier:
         operation: [EC,ES,VM]
         """
         if operation is 'EC':
+            w = data.v1.w + data.v2.w
             Q = data.v1.Q + data.v2.Q
-            q = array(vstack([ Q[0:2,:], [0,0,1.] ]))
+            Qw = Q / w
+            q = array(vstack([ Qw[0:2,:], [0,0,1.] ]))
             #A = Q[:2,:2]
             #B = Q[2,:2]
             #C = Q[2,2]
@@ -49,10 +51,11 @@ class Simplifier:
                 v = array([[0.5 * (data.v1.x + data.v2.x)],
                            [0.5 * (data.v1.y + data.v2.y)],[1]])
 
-            data.vnew = ms.Vertex(float(v[0]),float(v[1]),Q)
+            data.vnew = ms.Vertex(float(v[0]),float(v[1]),Q,w)
             #cost = float(v.T.dot(A).dot(v) + 2.*v.T.dot(B) + C)
-            cost = fabs(float(v.T.dot(Q).dot(v)))
-            print det, cost
+            cost = fabs(float(v.T.dot(Qw).dot(v)))
+            #cost = fabs(float(v.T.dot(Q).dot(v)))
+            #print det, cost
 
         elif operation is 'ES':
             pass
@@ -63,22 +66,22 @@ class Simplifier:
         data.dirty = False
         return cost
 
-    def simplify(self, eps = 0.1, min_vertices = 6):
-        cost = 0.0
-        while(cost < eps ):#and len(self.mesh.V) > min_vertices):
-            h = self.heap.pop()
-            if h.data.dirty:
-                c = self.compute_cost(h.data, h.op)
-                self.heap.push(c,h.data,h.op)
-            elif h.op is 'EC':
+    def simplify(self, eps = 0.1, min_vertices = 3):
+        h = self.heap.pop()
+        while(h.cost < eps and len(self.mesh.V) > min_vertices):
+            if h.op is 'EC':
+                print h.cost, h.data.v1.w, h.data.v2.w
                 self.mesh.collapse(h.data)
-                cost = h.cost
             elif h.op is 'ES':
                 self.mesh.split(h.data)
-                cost = h.cost
             elif h.op is 'VM':
                 seld.mesh.move(h.data)
-                cost = h.cost
+
+            h = self.heap.pop()
+            while(h.data.dirty):
+                c = self.compute_cost(h.data, h.op)
+                self.heap.push(c,h.data,h.op)
+                h = self.heap.pop()
 
 
 m = ms.Mesh()
@@ -86,6 +89,6 @@ m.test_load()
 m.test_show()
 s = Simplifier()
 s.init(m)
-s.simplify()
+s.simplify(10.0,5)
 m.test_show()
 plt.show()

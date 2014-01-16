@@ -13,16 +13,17 @@ def computeNormal(x1,y1,x2,y2):
     return (-dy*l, dx*l)
 
 class Vertex:
-    def __init__(self, x, y, q = zeros([3,3])):
+    def __init__(self, x, y, q = zeros([3,3]), w = 0.0):
         """ """
         self.x = x
         self.y = y
-        self.Q = q
+        self.Q = w * q
+        self.w = w
         self.e1 = None
         self.e2 = None
 
 
-    def addPlaneParam(self, nx, ny):
+    def addPlaneParam(self, nx, ny, w = 1.0):
         """ """
         #self.nx = nx
         #self.ny = ny
@@ -32,7 +33,8 @@ class Vertex:
         #a = math.degrees(math.atan2(ny, nx))
         #if a < 0: print a+180
         #else: print a
-        self.Q = self.Q + Q
+        self.w = self.w + w
+        self.Q = self.Q + w*Q
 
     def __repr__(self):
         return "(%3.2f %3.2f)" % (self.x, self.y)
@@ -98,12 +100,14 @@ class Mesh:
         for i in range(len(x)):
             if not math.isnan(x[i]): break
 
+        pen=100.0
         v1 = self.add(x[i],y[i])
-        v1.addPlaneParam(nx[i],ny[i])
+        v1.addPlaneParam(nx[i],ny[i],2.0)
 
         if(i-1<0 or math.isnan(x[i-1])):
             # add perpendicular plane
-            v1.addPlaneParam(-ny[i],nx[i])
+            v1.addPlaneParam(-ny[i],nx[i],pen)
+            print v1, v1.w
         else:
             # add normal of edge
             nix,niy = computeNormal(x[i-1], x[i], y[i-1], y[i])
@@ -111,7 +115,8 @@ class Mesh:
 
         if(i+1>=len(x) or math.isnan(x[i+1])):
             # add perpendicular plane
-            v1.addPlaneParam(-ny[i],nx[i])
+            v1.addPlaneParam(-ny[i],nx[i],pen)
+            print v1, v1.w
         else:
             # add normal of edge
             nix,niy = computeNormal(x[i], x[i+1], y[i], y[i+1])
@@ -120,11 +125,12 @@ class Mesh:
 
         for j in range(i+1, len(x)):
             v2 = self.add(x[j],y[j])
-            v2.addPlaneParam(nx[j],ny[j])
+            v2.addPlaneParam(nx[j],ny[j],2.0)
 
             if(j-1<0 or math.isnan(x[j-1])):
                 # add perpendicular plane
-                v2.addPlaneParam(-ny[j],nx[j])
+                v2.addPlaneParam(-ny[j],nx[j],pen)
+                print v2, v2.w
             else:
                 # add normal of edge
                 nix,niy = computeNormal(x[j-1], x[j], y[j-1], y[j])
@@ -132,7 +138,8 @@ class Mesh:
 
             if(j+1>=len(x) or math.isnan(x[j+1])):
                 # add perpendicular plane
-                v2.addPlaneParam(-ny[j],nx[j])
+                v2.addPlaneParam(-ny[j],nx[j],pen)
+                print v2, v2.w
             else:
                 # add normal of edge
                 nix,niy = computeNormal(x[j], x[j+1], y[j], y[j+1])
