@@ -3,16 +3,19 @@
 from numpy import *
 
 class Clipper:
-
-    def __init__( self, lim = array([[-1,1],[-1,1]]) ):
-        self.lim = lim
-
+    '''
+    A more general clipper uses homogeneous coordinates.\n
+    Blinn, James F., and Martin E. Newell.\n
+    Clipping using homogeneous coordinates.\n
+    ACM SIGGRAPH Computer Graphics. Vol. 12. No. 3. ACM, 1978.\n
+    '''
     def compute_code(self, p):
         c = 0
-        for i in range(len(self.lim)):
-            if p[i] < self.lim[i][0]:
+        for i in range(len(p)-1):
+            # should be zero, but python is too accurate
+            if (p[-1] + p[i]) < -0.0001:
                 c |= 0b1 << 2*i
-            elif p[i] > self.lim[i][1]:
+            elif (p[-1] - p[i]) < -0.0001:
                 c |= 0b1 << 2*i+1
         return c
 
@@ -22,6 +25,7 @@ class Clipper:
 
     def clip_recursiv(self, p0, p1, c0):
         c1 = self.compute_code(p1)
+        #print p0, p1, bin(c0), bin(c1)
 
         # all zero => trivial accept:
         if not (c0 | c1): return (True, p0, p1)
@@ -33,22 +37,26 @@ class Clipper:
             cnew = c0
             cold = c1
             pold = p1
+            #w = p0[-1]
         else:
             cnew = c1
             cold = c0
             pold = p0
+            #w = p1[-1]
 
-        for i in range(len(self.lim)):
+        w0 = p0[-1]
+        w1 = p1[-1]
+        for i in range(len(p0)-1):
             if cnew & (0b1 << 2*i):
-                d = (self.lim[i][0] - p0[i]) / (p1[i] - p0[i])
-                pnew = (p1 - p0) * d + p0
-                pnew[i] = self.lim[i][0]
+                a = (w0 + p0[i]) / ((w0 + p0[i]) - (w1 + p1[i]))
+                pnew = (p1 - p0) * a + p0
                 break
             elif cnew & (0b1 << 2*i+1):
-                d = (self.lim[i][1] - p0[i]) / (p1[i] - p0[i])
-                pnew = (p1 - p0) * d + p0
-                pnew[i] = self.lim[i][1]
+                a = (w0 - p0[i]) / ((w0 - p0[i]) - (w1 - p1[i]))
+                pnew = (p1 - p0) * a + p0
                 break
+
+        #disp(pnew)
 
         return self.clip_recursiv(pold, pnew, cold)
 

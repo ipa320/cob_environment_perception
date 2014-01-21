@@ -22,7 +22,6 @@ class Vertex:
         self.e1 = None
         self.e2 = None
 
-
     def addPlaneParam(self, nx, ny, w = 1.0):
         """ """
         #self.nx = nx
