@@ -70,7 +70,7 @@ class Simplifier:
         h = self.heap.pop()
         while(h.cost < eps and len(self.mesh.V) > min_vertices):
             if h.op is 'EC':
-                print h.cost, h.data.v1.w, h.data.v2.w
+                #print h.cost, h.data.v1.w, h.data.v2.w
                 self.mesh.collapse(h.data)
             elif h.op is 'ES':
                 self.mesh.split(h.data)
@@ -84,11 +84,11 @@ class Simplifier:
                 h = self.heap.pop()
 
 
-m = ms.Mesh()
-m.test_load()
-m.test_show()
-s = Simplifier()
-s.init(m)
-s.simplify(10.0,5)
-m.test_show()
-plt.show()
+#m = ms.Mesh()
+#m.test_load()
+#m.test_show()
+#s = Simplifier()
+#s.init(m)
+#s.simplify(10.0,5)
+#m.test_show()
+#plt.show()

@@ -7,13 +7,23 @@ import matplotlib.pyplot as plt
 import CohenSutherlandClipping as csclip
 import camera_model as cm
 from tf_utils import *
-reload(cm)
-reload(csclip)
+from normal_estimation import *
+from mesh_structure import *
+from mesh_optimization import *
+import measurement_data as mdata
+
+#reload(mdata)
+#reload(cm)
+#reload(csclip)
 
 ### BEGIN CLASS -- Map ###
 class World:
     def __init__(self, coords):
         self.coords = coords
+
+    def draw(self, axis):
+        axis.plot(self.coords[:,0], self.coords[:,1],
+                  '-', lw=2, alpha=0.2, color='black', ms=10)
 
 ### END CLASS -- Map ###
 
@@ -147,25 +157,22 @@ class Sensor(cm.Camera2d):
 ### END CLASS -- Sensor ###
 
 
+
+###----------------------------------------------------------------------------
+#     provide simulation data (world, sensors, measurements)
+###----------------------------------------------------------------------------
+
+# create world model:
 angles = array(range(18))/18.0*(-pi)-pi
 circle = array([[cos(angles[i]),sin(angles[i])] for i in range(len(angles))])
 
-m = World(vstack(
-    [[-100.0,0],
-     [0  ,0],
-     [0  ,4.0],
-     [3.0,4.0],
-     [3.0,3.5],
-     [0.5,3.5],
-     [0.5,0],
-     [3.5,0],
-     [3.5,1.5],
-     [2.5,1.5],
-     [2.5,1.6],
-     [3.0,1.6],#]))#,
+world = World(vstack(
+    [[-100.0,0],[0,0],[0,4.0],[3.0,4.0],[3.0,3.5],[0.5,3.5],
+     [0.5,0],[3.5,0],[3.5,1.5],[2.5,1.5],[2.5,1.6],[3.0,1.6],#]))#,
      circle*0.2 + [3.2,1.9],
      [3.4,1.6],[4.6,1.6],[4.6,1.5],[3.6,1.5],[3.6,0],[100.0,0]]))
 
+# create sensors and measure world:
 s1 = [Sensor([4.0, 5.0],[-1.,-.5]),
       Sensor([5.0, 4.5],[-1.,-.5]),
       Sensor([6.0, 4.0],[-1.,-.5]),
@@ -175,35 +182,72 @@ s1 = [Sensor([4.0, 5.0],[-1.,-.5]),
       Sensor([3.0, 2.5],[-1.,-.5]),
       Sensor([2.0, 2.0],[-1.,-.5])]
 
-
-angles = array(range(12))/12.0*(3.0/2.0*pi)-pi/2
+circle_size = 12.0
+angles = array(range(int(circle_size)))/circle_size*(3.0/2.0*pi)-pi/2
 circle = array([[cos(angles[i]),sin(angles[i])] for i in range(len(angles))])
 s2 = [Sensor([1.5,1.3],[cos(angles[i]),sin(angles[i])])
       for i in range(len(angles))]
 
+sensors = hstack([s1,s2])
+for s in sensors: s.measure(world)
 
-fig = plt.figure(figsize=(1024.0/80, 768.0/80), dpi=80)
-ax = fig.add_subplot(111)
-ax.plot(m.coords[:,0], m.coords[:,1], '-', lw=2, color='black', ms=10)
-cm.drawPoses(hstack([s1,s2]),ax)
+###----------------------------------------------------------------------------
+#     process measurements and add to map
+###----------------------------------------------------------------------------
 
-for s in s1:
-    #s.drawFrustum(ax)
-    s.measure(m)
-    #s.showMeasurement()
-    s.showMeasurementInMap(ax)
+data = []
+colors = 'ym'
+iii = 0
+for s in sensors:
+    # normal estimation:
+    ii = len(s.measurement[:,0]) # number of measurement points
+    ne = Normals2d(9, ii)
+    n = empty([ii,2])
+    for i in range(ii):
+        n[i] = ne.computeNormal(s.measurement[:,0],s.measurement[:,1],i)
 
-for s in s2:
-    #s.drawFrustum(ax)
-    s.measure(m)
-    #s.showMeasurement()
-    s.showMeasurementInMap(ax)
+    # create mesh:
+    m = Mesh()
+    m.load(s.measurement[:,0],s.measurement[:,1],n[:,0],n[:,1])
+    #s.axis = plt.figure().add_subplot(111)
+    #m.draw(s.axis,'ven')
+
+    # simplify mesh:
+    ms = Simplifier()
+    ms.init(m)
+    ms.simplify(10.0)
+
+    #m.draw(s.axis,'ve', 'kr'+colors[iii%len(colors)])
+
+    # convert simplified mesh to input format for map optimization:
+    data[len(data):] = mdata.convertMeshToMeasurementData(m,s)
+    iii = iii+1
 
 
-#ax.plot(m.coords[:,0], m.coords[:,1], 'ko-')
-ax.axis('equal')
-ax.set_xlim(-.5, 6.5)
-ax.set_ylim(-.5, 4.5)
-ax.grid()
+
+###----------------------------------------------------------------------------
+#     visualize results
+###----------------------------------------------------------------------------
+
+fig1 = plt.figure(figsize=(1024.0/80, 768.0/80), dpi=80)
+fig2 = plt.figure(figsize=(1024.0/80, 768.0/80), dpi=80)
+ax1 = fig1.add_subplot(111)
+ax2 = fig2.add_subplot(111)
+
+world.draw(ax1)
+cm.drawPoses(sensors,ax1)
+cm.drawPoses(sensors,ax2)
+for s in sensors: s.showMeasurementInMap(ax1)
+for d in data: d.draw(ax2)
+
+ax1.axis('equal')
+ax1.set_xlim(-.5, 6.5)
+ax1.set_ylim(-.5, 4.5)
+ax1.grid()
+
+ax2.axis('equal')
+ax2.set_xlim(-.5, 6.5)
+ax2.set_ylim(-.5, 4.5)
+ax2.grid()
 
 plt.show()

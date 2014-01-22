@@ -24,8 +24,8 @@ class Vertex:
 
     def addPlaneParam(self, nx, ny, w = 1.0):
         """ """
-        #self.nx = nx
-        #self.ny = ny
+        self.nx = nx
+        self.ny = ny
         d = -(nx*self.x + ny*self.y)
         q = array([[nx],[ny],[d]])
         Q = q.dot(q.T)
@@ -106,7 +106,7 @@ class Mesh:
         if(i-1<0 or math.isnan(x[i-1])):
             # add perpendicular plane
             v1.addPlaneParam(-ny[i],nx[i],pen)
-            print v1, v1.w
+            #print v1, v1.w
         else:
             # add normal of edge
             nix,niy = computeNormal(x[i-1], x[i], y[i-1], y[i])
@@ -115,7 +115,7 @@ class Mesh:
         if(i+1>=len(x) or math.isnan(x[i+1])):
             # add perpendicular plane
             v1.addPlaneParam(-ny[i],nx[i],pen)
-            print v1, v1.w
+            #print v1, v1.w
         else:
             # add normal of edge
             nix,niy = computeNormal(x[i], x[i+1], y[i], y[i+1])
@@ -129,7 +129,7 @@ class Mesh:
             if(j-1<0 or math.isnan(x[j-1])):
                 # add perpendicular plane
                 v2.addPlaneParam(-ny[j],nx[j],pen)
-                print v2, v2.w
+                #print v2, v2.w
             else:
                 # add normal of edge
                 nix,niy = computeNormal(x[j-1], x[j], y[j-1], y[j])
@@ -138,7 +138,7 @@ class Mesh:
             if(j+1>=len(x) or math.isnan(x[j+1])):
                 # add perpendicular plane
                 v2.addPlaneParam(-ny[j],nx[j],pen)
-                print v2, v2.w
+                #print v2, v2.w
             else:
                 # add normal of edge
                 nix,niy = computeNormal(x[j], x[j+1], y[j], y[j+1])
@@ -148,24 +148,24 @@ class Mesh:
             v1 = v2
 
 
-    def draw(self, axis, options = 'ven'):
+    def draw(self, axis, options = 'ven', color = 'krb'):
         """ options: n=normals, e=edges, v=vertices """
         if 'v' in options:
             x = [ v.x for v in self.V ]
             y = [ v.y for v in self.V ]
-            axis.plot(x,y,'ok')
+            axis.plot(x,y,'o'+color[0])
 
         if 'n' in options:
             for v in self.V:
                 x = [v.x, v.x + v.nx]
                 y = [v.y, v.y + v.ny]
-                axis.plot(x,y,'r')
+                axis.plot(x,y,color[1])
 
         if 'e' in options:
             for e in self.E:
                 x = [e.v1.x, e.v2.x]
                 y = [e.v1.y, e.v2.y]
-                axis.plot(x,y,'b')
+                axis.plot(x,y,color[2])
 
     def test_load(self):
         self.z = array([nan,         nan,         nan,  7.99356667,  7.82893667,
