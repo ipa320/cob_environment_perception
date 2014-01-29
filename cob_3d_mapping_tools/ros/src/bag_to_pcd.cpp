@@ -134,7 +134,8 @@ int
 		  }
 		  // Transform it
 		  tf::StampedTransform transform;
-		  tf_listener.lookupTransform(cloud->header.frame_id, argv[4], cloud->header.stamp, transform);
+			//if(argv[4] != cloud->header.frame_id)
+		  	tf_listener.lookupTransform(cloud->header.frame_id, argv[4], cloud->header.stamp, transform);
 		  Eigen::Matrix4f out_mat;
 		  pcl_ros::transformAsMatrix (transform, out_mat);
 		  //pcl_ros::transformPointCloud ("/head_axis_link", *cloud, cloud_t, tf_listener);

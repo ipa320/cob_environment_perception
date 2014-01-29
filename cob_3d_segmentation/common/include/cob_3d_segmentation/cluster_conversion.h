@@ -180,7 +180,7 @@ namespace cob_3d_segmentation
         if(c->size() <= ceil(1.1f * (float)c->border_points.size())) continue;
 
         ch_->computeClusterComponents(c);
-        if(!c->is_save_plane) continue;
+        if(!c->is_planar_) continue;
 
         cob_3d_mapping::Polygon::Ptr p;
         if(clusterToPolygon(c, p)) {

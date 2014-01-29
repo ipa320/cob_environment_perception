@@ -76,7 +76,7 @@ template<typename PointT>
 void
 cob_3d_mapping_filters::SpeckleFilter<PointT>::applyFilter (pcl::PointIndices::Ptr points_to_remove)
 {
-  float newVal = 0;
+  float newVal = std::numeric_limits<float>::quiet_NaN();
   int width = input_->width, height = input_->height, npixels = width*height;
   size_t bufSize = npixels*(int)(sizeof(cv::Point_<short>) + sizeof(int) + sizeof(uchar));
 
@@ -101,7 +101,7 @@ cob_3d_mapping_filters::SpeckleFilter<PointT>::applyFilter (pcl::PointIndices::P
 
     for( j = 0; j < width; j++ )
     {
-      if( ds[j].y != newVal )    // not a bad disparity
+      if( !pcl_isnan(ds[j].y))// != newVal )    // not a bad disparity
       {
         if( ls[j] )             // has a label, check for bad label
         {
@@ -133,25 +133,25 @@ cob_3d_mapping_filters::SpeckleFilter<PointT>::applyFilter (pcl::PointIndices::P
             //cv::Vec3f dp = *dpp;
             int* lpp = labels + width*p.y + p.x;
 
-            if( p.x < width-1 && !lpp[+1] && dpp[+1].z != newVal && std::abs(dp.z - dpp[+1].z) <= speckle_range_ )
+            if( p.x < width-1 && !lpp[+1] && !pcl_isnan(dpp[+1].z) && std::abs(dp.z - dpp[+1].z) <= speckle_range_ )
             {
               lpp[+1] = curlabel;
               *ws++ = cv::Point_<short>(p.x+1, p.y);
             }
 
-            if( p.x > 0 && !lpp[-1] && dpp[-1].z != newVal && std::abs(dp.z - dpp[-1].z) <= speckle_range_ )
+            if( p.x > 0 && !lpp[-1] && !pcl_isnan(dpp[-1].z) && std::abs(dp.z - dpp[-1].z) <= speckle_range_ )
             {
               lpp[-1] = curlabel;
               *ws++ = cv::Point_<short>(p.x-1, p.y);
             }
 
-            if( p.y < height-1 && !lpp[+width] && dpp[+dstep].z != newVal && std::abs(dp.z - dpp[+dstep].z) <= speckle_range_ )
+            if( p.y < height-1 && !lpp[+width] && !pcl_isnan(dpp[+dstep].z) && std::abs(dp.z - dpp[+dstep].z) <= speckle_range_ )
             {
               lpp[+width] = curlabel;
               *ws++ = cv::Point_<short>(p.x, p.y+1);
             }
 
-            if( p.y > 0 && !lpp[-width] && dpp[-dstep].z != newVal && std::abs(dp.z - dpp[-dstep].z) <= speckle_range_ )
+            if( p.y > 0 && !lpp[-width] && !pcl_isnan(dpp[-dstep].z) && std::abs(dp.z - dpp[-dstep].z) <= speckle_range_ )
             {
               lpp[-width] = curlabel;
               *ws++ = cv::Point_<short>(p.x, p.y-1);
@@ -176,6 +176,8 @@ cob_3d_mapping_filters::SpeckleFilter<PointT>::applyFilter (pcl::PointIndices::P
             rtype[ls[j]] = 0;       // large region label
         }
       }
+			else
+        points_to_remove->indices.push_back(j+i*input_->width);
     }
   }
 
