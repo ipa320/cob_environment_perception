@@ -63,30 +63,91 @@
 #ifndef __SENSOR_MODEL_H__
 #define __SENSOR_MODEL_H__
 
+#include "cob_3d_mapping_common/polygon.h"
+#include <list>
 #include <algorithm>
 
 namespace cob_3d_mapping
 {
   class PrimeSense
   {
-    public:
+  public:
+    typedef Eigen::Map<const Eigen::Matrix<float,4,4,Eigen::RowMajor> > MatMap;
+
     PrimeSense() {}
     ~PrimeSense() {}
 
-    static bool areNeighbors(float query, float neighbor, float tolerance = 2.0f)
+    inline static bool areNeighbors(float query,
+                             float neighbor,
+                             float tolerance = 2.0f)
     {
       float dist_th = tolerance * 0.003f * query * query;
       //if (query < 1.2) dist_th += 0.01f;
       return (fabs(query - neighbor) < dist_th);
     }
 
-    static bool areNeighbors(const Eigen::Vector3f& query, const Eigen::Vector3f&  neighbor, float tolerance = 4.0f)
+    inline static bool areNeighbors(const Eigen::Vector3f& query,
+                             const Eigen::Vector3f&  neighbor,
+                             float tolerance = 4.0f)
     {
+      // += max( 0, 4-10*min(|x|,|y|) )
       tolerance += max( 0.0f, 1.0f * (4.0f - min(fabs(query(0)),fabs(query(1))) * 10.0f) );
       float dist_th =  tolerance * 0.003f * query(2) * query(2);
       return (fabs(query(2) - neighbor(2)) < dist_th);
     }
+
+    inline static Eigen::Matrix4f tf_unit_cube() { return MatMap(mat); }
+
+    // frustum parameters:
+    static const float fov_h; // fov horizontal (IR) , from wiki and ros.org
+    static const float fov_v; // fov vertical (IR)
+    static const float f; // far plane
+    static const float n; // near plane
+    static const float l; // left
+    static const float r; // right
+    static const float t; // top
+    static const float b; // bottom
+    static const float w;
+    static const float h;
+    static const float aspect;
+    static const float mat[]; // transformation from view frustum to unit cube
   };
+
+  const float PrimeSense::fov_h = 49.0f / 180.0f * M_PI;
+  const float PrimeSense::fov_v = 43.0f / 180.0f * M_PI;
+  const float PrimeSense::f = 5.0f;
+  const float PrimeSense::n = 0.5f;
+  const float PrimeSense::r = PrimeSense::n * tan(PrimeSense::fov_h * 0.5f);
+  const float PrimeSense::l = - PrimeSense::r;
+  const float PrimeSense::t = PrimeSense::n * tan(PrimeSense::fov_v * 0.5f);
+  const float PrimeSense::b = - PrimeSense::t;
+  const float PrimeSense::w = 640.0f;
+  const float PrimeSense::h = 480.0f;
+  const float PrimeSense::aspect = PrimeSense::w / PrimeSense::h;
+
+  const float PrimeSense::mat[] =
+  {
+    1.0f / ( PrimeSense::aspect * tan(0.5f * PrimeSense::fov_h) ),
+    0,
+    0,
+    0,
+
+    0,
+    1.0f / ( tan(0.5f * PrimeSense::fov_h) ),
+    0,
+    0,
+
+    0,
+    0,
+    (PrimeSense::n + PrimeSense::f) / (PrimeSense::n - PrimeSense::f),
+    -2.0f * PrimeSense::f * PrimeSense::n / (PrimeSense::n - PrimeSense::f),
+
+    0,
+    0,
+    1,
+    0
+  };
+
 }
 
 #endif

@@ -165,6 +165,8 @@ class ShapeVisualization
     cob_3d_mapping_msgs::ShapeArray modified_shapes_;
     std::string frame_id_;
     std::vector<unsigned int> marker_ids_;
+    std::vector<unsigned int> contour_ids_;
+    bool show_contours_;
 //    unsigned int deleted_ ;
 
 
