@@ -176,7 +176,7 @@ TEST_F(PolygonTest, creationWorks)
 {
   for(unsigned int i = 0; i < pd_.size(); i++)
   {
-    cob_3d_mapping::Polygon p(pd_[i]->id_, pd_[i]->normal_, pd_[i]->d_, pd_[i]->contours_3d_, pd_[i]->holes_, pd_[i]->color_);
+    cob_3d_mapping::Polygon p(pd_[i]->id_, pd_[i]->normal_, pd_[i]->origin_, pd_[i]->contours_3d_, pd_[i]->holes_, pd_[i]->color_);
     EXPECT_NEAR(pd_[i]->normal_.dot(p.normal_), 1.0, 0.001);
     EXPECT_NEAR(pd_[i]->d_, p.d_, 0.001);
     EXPECT_NEAR((p.pose_.rotation() * Eigen::Vector3f(0,0,1)).dot(pd_[i]->normal_), 1.0, 0.001);
@@ -197,9 +197,9 @@ TEST_F(PolygonTest, creationWorks)
 
 TEST_F(PolygonTest, mergeUnion)
 {
-  cob_3d_mapping::Polygon::Ptr p0(new cob_3d_mapping::Polygon(pd_[0]->id_, pd_[0]->normal_, pd_[0]->d_, pd_[0]->contours_3d_, pd_[0]->holes_, pd_[0]->color_));
+  cob_3d_mapping::Polygon::Ptr p0(new cob_3d_mapping::Polygon(pd_[0]->id_, pd_[0]->normal_, pd_[0]->origin_, pd_[0]->contours_3d_, pd_[0]->holes_, pd_[0]->color_));
   std::vector<cob_3d_mapping::Polygon::Ptr> p_vec;
-  cob_3d_mapping::Polygon::Ptr p1(new cob_3d_mapping::Polygon(pd_[1]->id_, pd_[1]->normal_, pd_[1]->d_, pd_[1]->contours_3d_, pd_[1]->holes_, pd_[1]->color_));
+  cob_3d_mapping::Polygon::Ptr p1(new cob_3d_mapping::Polygon(pd_[1]->id_, pd_[1]->normal_, pd_[1]->origin_, pd_[1]->contours_3d_, pd_[1]->holes_, pd_[1]->color_));
   p_vec.push_back(p1);
 
   p0->merge(p_vec);
@@ -219,7 +219,7 @@ TEST_F(PolygonTest, mergingWorks)
   std::vector<cob_3d_mapping::Polygon::Ptr> p_vec;
   for(unsigned int i = 0; i < pd_.size(); i++)
   {
-    cob_3d_mapping::Polygon::Ptr p(new cob_3d_mapping::Polygon(pd_[i]->id_, pd_[i]->normal_, pd_[i]->d_, pd_[i]->contours_3d_, pd_[i]->holes_, pd_[i]->color_));
+    cob_3d_mapping::Polygon::Ptr p(new cob_3d_mapping::Polygon(pd_[i]->id_, pd_[i]->normal_, pd_[i]->origin_, pd_[i]->contours_3d_, pd_[i]->holes_, pd_[i]->color_));
     p_vec.push_back(p);
   }
   //std::cout << pd_[0]->normal_.dot(pd_[1]->normal_);
@@ -264,7 +264,7 @@ TEST_F(PolygonTest, transformWorks)
   t.rotate(Eigen::AngleAxisf(0.5, Eigen::Vector3f(1,1,1)));
   for(unsigned int i = 0; i < pd_.size(); i++)
   {
-    cob_3d_mapping::Polygon::Ptr p(new cob_3d_mapping::Polygon(pd_[i]->id_, pd_[i]->normal_, pd_[i]->d_, pd_[i]->contours_3d_, pd_[i]->holes_, pd_[i]->color_));
+    cob_3d_mapping::Polygon::Ptr p(new cob_3d_mapping::Polygon(pd_[i]->id_, pd_[i]->normal_, pd_[i]->origin_, pd_[i]->contours_3d_, pd_[i]->holes_, pd_[i]->color_));
     Eigen::Affine3f p0 = p->pose_;
     p->transform(t);
     p->transform(t.inverse());
@@ -294,7 +294,7 @@ TEST_F(PolygonTest, msgConversionWorks)
 {
   for(unsigned int i = 0; i < pd_.size(); i++)
   {
-    cob_3d_mapping::Polygon::Ptr p(new cob_3d_mapping::Polygon(pd_[i]->id_, pd_[i]->normal_, pd_[i]->d_, pd_[i]->contours_3d_, pd_[i]->holes_, pd_[i]->color_));
+    cob_3d_mapping::Polygon::Ptr p(new cob_3d_mapping::Polygon(pd_[i]->id_, pd_[i]->normal_, pd_[i]->origin_, pd_[i]->contours_3d_, pd_[i]->holes_, pd_[i]->color_));
     cob_3d_mapping_msgs::Shape s;
     cob_3d_mapping::toROSMsg(*p, s);
     cob_3d_mapping::Polygon p1;

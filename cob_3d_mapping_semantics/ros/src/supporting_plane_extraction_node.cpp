@@ -286,6 +286,9 @@ public:
     cob_3d_mapping_msgs::Shape s;
     s.header = sa.header;
     toROSMsg(sp, s);
+    s.color.r = 1.0;
+    s.color.g = 0;
+    s.color.b = 0;
     /*for (unsigned int i = 0; i < sa.shapes.size (); i++)
     {
       if(id == sa.shapes[i].id)
