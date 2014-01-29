@@ -46,6 +46,7 @@ rosbuild_add_executable(pointcloud_bag_delayer ros/src/pointcloud_bag_delayer.cp
 rosbuild_link_boost(pointcloud_bag_delayer program_options)
 rosbuild_add_executable(shape_bag_delayer ros/src/shape_bag_delayer.cpp)
 rosbuild_link_boost(shape_bag_delayer program_options)
+rosbuild_add_executable(voxel_grid common/src/voxel_grid.cpp)
 
 rosbuild_add_executable(create_point_cloud common/src/create_point_cloud.cpp)
 rosbuild_add_executable(create_kitchen_point_cloud common/src/create_kitchen_point_cloud.cpp)
@@ -101,9 +102,9 @@ rosbuild_link_boost(sav_gol program_options)
 # some tools to generate fpfh, pc and rsd test data and evaluate various parameters
 rosbuild_add_executable(evaluate_test_data common/src/evaluate_test_data.cpp)
 rosbuild_link_boost(evaluate_test_data program_options)
-#rosbuild_add_executable(generate_test_data common/src/generate_test_data.cpp)
-#rosbuild_add_compile_flags(generate_test_data -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
-#rosbuild_link_boost(generate_test_data program_options)
+rosbuild_add_executable(generate_test_data common/src/generate_test_data.cpp)
+rosbuild_add_compile_flags(generate_test_data -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
+rosbuild_link_boost(generate_test_data program_options)
 
 # plane segmentation evaluation tool:
 #rosbuild_add_executable(evaluate_plane_segmentation common/src/evaluate_plane_segmentation.cpp)

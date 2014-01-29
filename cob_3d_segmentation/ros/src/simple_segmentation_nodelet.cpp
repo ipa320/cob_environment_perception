@@ -67,6 +67,7 @@
 #include <pcl/common/transforms.h>
 #include <pcl/filters/extract_indices.h>
 #include <pcl/surface/organized_fast_mesh.h>
+#include <pcl/PolygonMesh.h>
 #include <pcl/io/ply_io.h>
 #include <pcl/io/vtk_io.h>
 #include <pcl/io/pcd_io.h>
@@ -327,23 +328,32 @@ cob_3d_segmentation::SimpleSegmentationNodelet::computeTexture(
   ss2 << "/tmp/seg_" << id << "_dil.png";
   cv::imwrite(ss2.str(), img_dil);
 
+  PointCloud::Ptr segm(new PointCloud);
+  //pcl::copyPointCloud(*down_, copy);
+  pcl::ExtractIndices<pcl::PointXYZRGB> ei2;
+  ei2.setInputCloud(down_);
+  ei2.setIndices(ind_ptr);
+  ei2.setKeepOrganized(true);
+  ei2.filter(*segm);
+
   pcl::OrganizedFastMesh<pcl::PointXYZRGB> ofm;
   pcl::PolygonMesh pcl_mesh;
-  ofm.setInputCloud(down_);
+  ofm.setInputCloud(segm);
   //ofm.setIndices(ind_ptr);
   ofm.setTriangulationType(pcl::OrganizedFastMesh<pcl::PointXYZRGB>::TRIANGLE_ADAPTIVE_CUT);
   ofm.reconstruct(pcl_mesh);
-  try
+  /*try
   {
     std::stringstream ss3;
-    ss3 << "/tmp/mesh_" << id << ".vtk";
-    pcl::io::saveVTKFile(ss3.str(), pcl_mesh);
+    ss3 << "/tmp/mesh_" << id << ".ply";
+    //pcl::io::saveVTKFile(ss3.str(), pcl_mesh);
+    pcl::io::savePLYFile(ss3.str(), pcl_mesh);
   }
   catch( std::exception& x )
   {
     std::cerr << x.what() << std::endl;
     return;
-  }
+  }*/
 
 }
 
