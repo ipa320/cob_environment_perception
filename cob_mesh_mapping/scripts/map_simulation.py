@@ -11,6 +11,7 @@ from normal_estimation import *
 from mesh_structure import *
 from mesh_optimization import *
 import measurement_data as mdata
+import scanline_polygon_fill as sc
 
 #reload(mdata)
 #reload(cm)
@@ -82,18 +83,9 @@ class Sensor(cm.Camera2d):
                 if p01[-1] != 0: p1 = p01/p01[-1]
                 else: p1 = p01
 
-                ww[len(ww):] = [p0, p1]
-                d = p1 - p0
-                m_inv = d[0] / d[1]
-                if d[0] == 0:
-                    t = p0[0]
-                else:
-                    t = p0[1] - d[1] / d[0] * p0[0]
 
-                if (p0[1] < p1[1]):
-                    p[len(p):] = [ Edge(p0[1], p1[1], m_inv, t) ]
-                else:
-                    p[len(p):] = [ Edge(p1[1], p0[1], m_inv, t) ]
+                ww[len(ww):] = [p0, p1]
+                p[len(p):] = [ sc.Edge(p0, p1) ]
 
             if pass1:
                 if p10[-1] != 0: p0 = p10/p10[-1]
@@ -102,18 +94,7 @@ class Sensor(cm.Camera2d):
                 else: p1 = p11
 
                 ww[len(ww):] = [p0, p1]
-                d = p1 - p0
-                m_inv = d[0] / d[1]
-                if d[0] == 0:
-                    t = p0[0]
-                else:
-                    t = p0[1] - d[1] / d[0] * p0[0]
-
-                if (p0[1] < p1[1]):
-                    p[len(p):] = [ Edge(p0[1], p1[1], m_inv, t) ]
-                else:
-                    p[len(p):] = [ Edge(p1[1], p0[1], m_inv, t) ]
-
+                p[len(p):] = [ sc.Edge(p0, p1) ]
 
         #ww[len(ww):] = [p1]
         ww = vstack(ww)
@@ -124,10 +105,7 @@ class Sensor(cm.Camera2d):
             p[:] = [ pi for pi in p if pi.ymax >= y[i] ]
             for pi in p:
                 if pi.ymin > y[i]: break
-                if pi.minv == 0:
-                    x[i] = min(pi.t, x[i])
-                else:
-                    x[i] = min(pi.minv * (y[i] - pi.t), x[i])
+                x[i] = min(pi.intersect(y[i]), x[i])
 
         x = [ float('nan') if xi > 1. else xi for xi in x ]
         x += random.randn(len(x)) * 0.005

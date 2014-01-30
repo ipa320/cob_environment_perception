@@ -23,7 +23,7 @@ class MeasurementData(Camera2d):
     m1: measurement point 1
     m2: measurement point 2
     '''
-    def __init__(self, p, o, m1, m2):
+    def __init__(self, p, o, m1, m2): #orientiation is wrong here!
         self.m1 = m1
         self.m2 = m2
         lm1 = linalg.norm(m1)
