@@ -84,10 +84,11 @@ namespace cob_3d_mapping
   /* data structure used by ScanlinePolygonFill
    * represents a line of a 2D polygon
    */
+  template<typename T = int>
   class ScanlineEdge
   {
   public:
-    ScanlineEdge(int id_, float x1, float y1, float x2, float y2)
+    ScanlineEdge(T id_, float x1, float y1, float x2, float y2)
       : id(id_)
       , x1_(x1)
       , y1_(y1)
@@ -102,7 +103,7 @@ namespace cob_3d_mapping
 
     inline float intersection(float y) const { return mInv*(y-y1_)+x1_; }
 
-    int id;
+    T id;
     float ymin;
     float ymax;
     float mInv;
@@ -113,13 +114,24 @@ namespace cob_3d_mapping
     float y2_;
   };
 
-  inline const bool operator< (const ScanlineEdge& lhs, const ScanlineEdge& rhs)
+  template<typename T>
+  inline const bool operator< (const ScanlineEdge<T>& lhs,
+                               const ScanlineEdge<T>& rhs)
   { return lhs.ymin < rhs.ymin; }
-  inline const bool operator> (const ScanlineEdge& lhs, const ScanlineEdge& rhs)
+
+  template<typename T>
+  inline const bool operator> (const ScanlineEdge<T>& lhs,
+                               const ScanlineEdge<T>& rhs)
   { return  operator< (rhs, lhs); }
-  inline const bool operator<= (const ScanlineEdge& lhs, const ScanlineEdge& rhs)
+
+  template<typename T>
+  inline const bool operator<= (const ScanlineEdge<T>& lhs,
+                                const ScanlineEdge<T>& rhs)
   { return !operator> (lhs, rhs); }
-  inline const bool operator>= (const ScanlineEdge& lhs, const ScanlineEdge& rhs)
+
+  template<typename T>
+  inline const bool operator>= (const ScanlineEdge<T>& lhs,
+                                const ScanlineEdge<T>& rhs)
   { return !operator< (lhs, rhs); }
 
 
@@ -129,6 +141,7 @@ namespace cob_3d_mapping
    *         common practice in computer graphics
    * Output: image of which each pixel consists of a vector of ids
    */
+  template<typename T = int>
   class ScanlinePolygonFill
   {
   public:
@@ -144,12 +157,12 @@ namespace cob_3d_mapping
       , zthr( 0.2f)
     { }
 
-    inline void addEdge(int id, float x1, float y1, float x2, float y2)
+    inline void addEdge(T id, float x1, float y1, float x2, float y2)
     {
-      yque.push_back(ScanlineEdge(id,x1,y1,x2,y2));
+      yque.push_back(ScanlineEdge<T>(id,x1,y1,x2,y2));
     }
 
-    inline bool addPolygon(int id, const Eigen::Vector3f& normal, float d)
+    inline bool addPolygon(T id, const Eigen::Vector3f& normal, float d)
     {
       /*std::cout << "addPolygon: " << id <<": "<<normal(0)
         <<" x + "<<normal(1)<<" y + "<<normal(2)<<" z = "<<d<<std::endl;*/
@@ -167,10 +180,10 @@ namespace cob_3d_mapping
     }
 
     // only draws lines of polygons
-    void draw(std::vector<std::vector<int> >& out);
+    void draw(std::vector<std::vector<T> >& out);
 
     // fills areas of polygons
-    void fill(std::vector<std::vector<int> >& out);
+    void fill(std::vector<std::vector<T> >& out);
 
   private:
     int w;
@@ -182,8 +195,8 @@ namespace cob_3d_mapping
     float zmin;
     float zmax;
     float zthr;
-    std::list<ScanlineEdge> yque;
-    std::map<int,ScanlinePolygon> polys;
+    std::list<ScanlineEdge<T> > yque;
+    std::map<T,ScanlinePolygon> polys;
   };
 }
 

@@ -78,7 +78,7 @@ namespace cob_3d_mapping
 
     // transform polygons to clipping space and reject outliers
     // ( space: x,y,z E [-1,1] )
-    ScanlinePolygonFill spf(w,h);
+    ScanlinePolygonFill<> spf(w,h);
     Vec4 projected;
     float xprev, yprev, xcurr, ycurr;
     for(int i=0; i<polygons.size(); ++i)
