@@ -69,7 +69,8 @@
 
 namespace cob_3d_mapping
 {
-  void ScanlinePolygonFill::draw(std::vector<std::vector<int> >& out)
+  template<typename T>
+  void ScanlinePolygonFill<T>::draw(std::vector<std::vector<T> >& out)
   {
     out.resize(w*h);
     yque.sort();
@@ -80,8 +81,8 @@ namespace cob_3d_mapping
     {
       //std::cout << "Line: "<< y2h(y) <<" y="<< y << std::endl;
       int yidx = y2h(y)*w;
-      std::list<std::pair<float,int> > xque;
-      std::list<ScanlineEdge>::iterator ycurr = yque.begin();
+      std::list<std::pair<float,T> > xque;
+      typename std::list<ScanlineEdge<T> >::iterator ycurr = yque.begin();
       while (ycurr != yque.end() && ycurr->ymin < y)
       {
         if(ycurr->ymax <= y) {
@@ -98,7 +99,8 @@ namespace cob_3d_mapping
     }
   }
 
-  void ScanlinePolygonFill::fill(std::vector<std::vector<int> >& out)
+  template<typename T>
+  void ScanlinePolygonFill<T>::fill(std::vector<std::vector<T> >& out)
   {
     out.resize(w*h);
     yque.sort();
@@ -109,8 +111,8 @@ namespace cob_3d_mapping
     for(float y=ymin + 0.5f * ystep; y<ymax; y+=ystep)
     {
       int yidx = y2h(y)*w;
-      std::list<std::pair<float,int> > xque;
-      std::list<ScanlineEdge>::iterator ycurr = yque.begin();
+      std::list<std::pair<float,T> > xque;
+      typename std::list<ScanlineEdge<T> >::iterator ycurr = yque.begin();
 
       // compute intersections of all edges with the current row
       while (ycurr != yque.end() && ycurr->ymin < y)
@@ -119,19 +121,20 @@ namespace cob_3d_mapping
           ycurr = yque.erase(ycurr);
         }
         else {
-          xque.push_back(std::pair<float,int>(ycurr->intersection(y),ycurr->id));
+          xque.push_back(std::pair<float,T>(ycurr->intersection(y),ycurr->id));
           ++ycurr;
         }
       }
 
       xque.sort(); // create consecutive intersection pairs
-      std::list<std::pair<float,int> >::iterator xcurr = xque.begin();
-      std::list<std::pair<float,int> >::iterator xprev = xcurr++;
-      std::set<int> curr_ids;
+      typename std::list<std::pair<float,T> >::iterator xcurr = xque.begin();
+      typename std::list<std::pair<float,T> >::iterator xprev = xcurr++;
+      std::set<T> curr_ids;
 
       // run ahead until xcurr is in picture, ( x-clipping )
       while(xcurr->first < xmin && xcurr!=xque.end()) {
-        std::pair<std::set<int>::iterator, bool> res = curr_ids.insert(xprev->second);
+        std::pair<typename std::set<T>::iterator, bool> res
+          = curr_ids.insert(xprev->second);
         if( !res.second ) curr_ids.erase(res.first);
         xprev = xcurr++;
       }
@@ -140,7 +143,8 @@ namespace cob_3d_mapping
       // process each consecutive intersection pair
       while (xprev->first < xmax && xcurr!=xque.end())
       {
-        std::pair<std::set<int>::iterator, bool> res = curr_ids.insert(xprev->second);
+        std::pair<typename std::set<T>::iterator, bool> res
+          = curr_ids.insert(xprev->second);
         if( !res.second ) curr_ids.erase(res.first);
         if( curr_ids.size() )
         {
@@ -148,16 +152,17 @@ namespace cob_3d_mapping
           float xstop  = (xcurr->first>xmax ? xmax : xcurr->first);
           for(float x=xstart; x<=xstop; x+=xstep) // fill row
           {
-            std::list<std::pair<float,int> > zque;
+            std::list<std::pair<float,T> > zque;
 
             // find min z value at curr x,y ( + z-clipping )
-            for(std::set<int>::iterator id = curr_ids.begin(); id != curr_ids.end(); ++id) {
+            typename std::set<T>::iterator id = curr_ids.begin();
+            for(; id != curr_ids.end(); ++id) {
               float z = polys.find(*id)->second.intersection(x,y);
-              if(z > zmin && z < zmax) zque.push_back(std::pair<float,int>(z, *id));
+              if(z > zmin && z < zmax) zque.push_back(std::pair<float,T>(z, *id));
             }
 
             zque.sort();
-            std::list<std::pair<float,int> >::iterator zcurr = zque.begin();
+            typename std::list<std::pair<float,T> >::iterator zcurr = zque.begin();
 
             // add ids withing a threshold of min z
             while(zcurr != zque.end()) {
