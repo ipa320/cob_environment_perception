@@ -1,5 +1,8 @@
 #!/usr/bin/python
 
+#%load_ext autoreload
+#%autoreload 2
+
 from numpy import *
 from collections import namedtuple
 import matplotlib.path as mpath
@@ -12,6 +15,7 @@ from mesh_structure import *
 from mesh_optimization import *
 import measurement_data as mdata
 import scanline_rasterization as sl
+import iterative_mesh_learner as iml
 
 #reload(mdata)
 #reload(cm)
@@ -156,10 +160,11 @@ for s in sensors: s.measure(world)
 #     process measurements and add to map
 ###----------------------------------------------------------------------------
 
+learner = iml.IterativeMeshLearner()
 data = []
 colors = 'ym'
 iii = 0
-#sensors = [sensors[3], sensors[6]]
+sensors = [sensors[3], sensors[6], sensors[12]]
 for s in sensors:
     # normal estimation:
     ii = len(s.measurement[:,0]) # number of measurement points
@@ -177,12 +182,16 @@ for s in sensors:
     # simplify mesh:
     ms = Simplifier()
     ms.init(m)
-    ms.simplify(10.0)
+    ms.simplify(1.0)
 
     #m.draw(s.axis,'ve', 'kr'+colors[iii%len(colors)])
 
     # convert simplified mesh to input format for map optimization:
-    data[len(data):] = mdata.convertMeshToMeasurementData(m,s)
+    data_new = mdata.convertMeshToMeasurementData(m,s)
+    learner.initMesh(data_new[0])
+    learner.addMeasurement(data_new[1])
+    learner.addMeasurement(data_new[2])
+    data[len(data):] = [data_new[0],data_new[1],data_new[2]]
     iii = iii+1
 
 
@@ -201,7 +210,9 @@ cm.drawPoses(sensors,ax1)
 cm.drawPoses(sensors,ax2)
 for s in sensors: s.showMeasurementInMap(ax1)
 #for s in sensors: s.drawFrustum(ax1)
-for d in data: d.draw(ax2)
+for d in data:
+    d.draw(ax2)
+    d.drawBoundingBox(ax2,[.1,.1])
 
 ax1.axis('equal')
 ax1.set_xlim(-.5, 6.5)

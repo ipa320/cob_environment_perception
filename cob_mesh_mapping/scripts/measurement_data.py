@@ -33,5 +33,22 @@ class MeasurementData(Camera2d):
         Camera2d.__init__(self, fov, f, 0.4)
         Camera2d.setPose(self, p, o)
 
+    '''padding: space between bounding box and measurement'''
+    def getBoundingBox(self, padding = [0,0] ):
+        xmin = min(self.m1[0],self.m2[0])
+        xmax = max(self.m1[0],self.m2[0])
+        ymin = min(self.m1[1],self.m2[1])
+        ymax = max(self.m1[1],self.m2[1])
+        return [xmin - padding[0],
+                xmax + padding[0],
+                ymin - padding[1],
+                ymax + padding[1]]
+
     def draw(self, axis):
         axis.plot([self.m1[0], self.m2[0]], [self.m1[1], self.m2[1]], 'bx-')
+
+    def drawBoundingBox(self, axis, padding = [0,0]):
+        bb = self.getBoundingBox(padding)
+        x = [bb[0], bb[0], bb[1], bb[1], bb[0]]
+        y = [bb[2], bb[3], bb[3], bb[2], bb[2]]
+        axis.plot(x,y,'r')

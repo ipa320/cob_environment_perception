@@ -102,30 +102,37 @@ class ScanlineRasterization:
         ystep = cellsize[1]
         y = [ i*ystep for i in range(int(ymin/ystep), int(ymax/ystep)+1) ]
         x = [ i*xstep for i in range(int(xmin/xstep), int(xmax/xstep)+1) ]
-        grid = zeros([len(x), len(y)])
+        grid = zeros([len(y), len(x)])
 
         self.e.sort() # sort edges by ymin
         for yi in range(len(y)): # iterate lines starting with lowest y value
-            p = [ pi for pi in self.e if pi.ymax >= y[i] ]
+            p = [ pi for pi in self.e if pi.ymax >= y[yi] ]
+            yx = []
             for pi in p:
                 # calc all intersection at current line and the direction how
-                # the ray passes the edge
-                if pi.ymin > y[i]: break
-                yx[len(x):] = [ (pi.intersect(y[i]), pi.s) ]
+                # the ray passes an edge
+                if pi.ymin > y[yi]: break
+                intx = pi.intersect(y[yi])
+                if intx >= xmin:
+                    yx[len(yx):] = [ (intx, pi.s) ]
 
+            if len(yx) == 0:
+                for xi in range(len(x)):
+                    grid[yi][xi] = 0
+                continue
             yx.sort()
             yxi = 0
-            if len(yx) > 0 and yx[yxi][1] < 1:
+            if yx[yxi][1] < 0:
                 level = 1
             else:
                 level = 0
 
             for xi in range(len(x)):
-                if x[xi] < yx[yxi][0]:
-                    grid[xi][yi] = level
+                if x[xi] <= yx[yxi][0]:
+                    grid[yi][xi] = level
                 else:
                     level = level + yx[yxi][1]
                     yxi = yxi+1
-                    if yxi >= len(yxi): break
+                    if yxi >= len(yx): break
 
         return grid
