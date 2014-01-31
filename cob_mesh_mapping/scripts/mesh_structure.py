@@ -35,6 +35,10 @@ class Vertex:
         self.w = self.w + w
         self.Q = self.Q + w*Q
 
+    def getPos(self):
+        return array([self.x,self.y])
+
+
     def __repr__(self):
         return "(%3.2f %3.2f)" % (self.x, self.y)
 
