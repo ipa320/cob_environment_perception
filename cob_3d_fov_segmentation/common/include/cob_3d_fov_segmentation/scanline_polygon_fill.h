@@ -65,6 +65,7 @@
 
 namespace cob_3d_mapping
 {
+  /* used to perform z-calculations at each pixel */
   class ScanlinePolygon
   {
   public:
@@ -76,7 +77,8 @@ namespace cob_3d_mapping
       c(2) = n_(1) * invN2;
     }
 
-    inline float intersection(float x, float y) const { return c(0) - c(1)*x - c(2)*y; }
+    inline float intersection(float x, float y) const
+    { return c(0) - c(1)*x - c(2)*y; }
 
     Eigen::Vector3f c;
   };
