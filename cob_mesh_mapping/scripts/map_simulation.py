@@ -11,7 +11,7 @@ from normal_estimation import *
 from mesh_structure import *
 from mesh_optimization import *
 import measurement_data as mdata
-import scanline_polygon_fill as sc
+import scanline_rasterization as sl
 
 #reload(mdata)
 #reload(cm)
@@ -49,11 +49,9 @@ class Sensor(cm.Camera2d):
 
         # clip lines and sort for intersection computation:
         c = csclip.Clipper()
-        y = array(range(-100,100,5)) * 0.01
-        x = ones(len(y))*10
-        p = [] # m_inv, t
         ww = []
-        Edge = namedtuple('Edge','ymin ymax minv t')
+        scan = sl.ScanlineRasterization()
+
         for i in range(len(w)-1):
             # the problem with homogeneous coordinates on different sides
             # (w>0, w<0)
@@ -67,15 +65,10 @@ class Sensor(cm.Camera2d):
                 pass0, p00, p01 = c.clip(w[i],w[i+1]) #(+/+)
                 if w[i+1][-1] < 0:
                     pass1, p10,p11 = c.clip(-1.*w[i],-1.*w[i+1]) #(+/-)
-                    #print  '(+/-)', pass0, pass1
-                #else: print  '(+/+)', pass0
             else:
                 pass0, p00, p01 = c.clip(-1.*w[i],-1.*w[i+1]) #(-/-)
                 if w[i+1][-1] > 0:
                     pass1, p10, p11 = c.clip(w[i],w[i+1]) #(-/+)
-                    #print  '(-/+)', pass0, pass1
-                #else: print  '(-/-)', pass0
-
 
             if pass0:
                 if p00[-1] != 0: p0 = p00/p00[-1]
@@ -83,9 +76,8 @@ class Sensor(cm.Camera2d):
                 if p01[-1] != 0: p1 = p01/p01[-1]
                 else: p1 = p01
 
-
                 ww[len(ww):] = [p0, p1]
-                p[len(p):] = [ sc.Edge(p0, p1) ]
+                scan.addEdge(p0,p1)
 
             if pass1:
                 if p10[-1] != 0: p0 = p10/p10[-1]
@@ -94,20 +86,11 @@ class Sensor(cm.Camera2d):
                 else: p1 = p11
 
                 ww[len(ww):] = [p0, p1]
-                p[len(p):] = [ sc.Edge(p0, p1) ]
+                scan.addEdge(p0,p1)
 
-        #ww[len(ww):] = [p1]
         ww = vstack(ww)
-        p.sort()
-
-        for i in range(len(y)):
-            # remove all lines with smaller ymax than the current y
-            p[:] = [ pi for pi in p if pi.ymax >= y[i] ]
-            for pi in p:
-                if pi.ymin > y[i]: break
-                x[i] = min(pi.intersect(y[i]), x[i])
-
-        x = [ float('nan') if xi > 1. else xi for xi in x ]
+        x,y = scan.draw([-1.,1.,-1.,1.], [0.05,0.05])
+        x = [ float('nan') if xi >= 1. else xi for xi in x ]
         x += random.randn(len(x)) * 0.005
 
         #self.axis = plt.figure().add_subplot(111)
@@ -176,6 +159,7 @@ for s in sensors: s.measure(world)
 data = []
 colors = 'ym'
 iii = 0
+#sensors = [sensors[3], sensors[6]]
 for s in sensors:
     # normal estimation:
     ii = len(s.measurement[:,0]) # number of measurement points
@@ -216,6 +200,7 @@ world.draw(ax1)
 cm.drawPoses(sensors,ax1)
 cm.drawPoses(sensors,ax2)
 for s in sensors: s.showMeasurementInMap(ax1)
+#for s in sensors: s.drawFrustum(ax1)
 for d in data: d.draw(ax2)
 
 ax1.axis('equal')
