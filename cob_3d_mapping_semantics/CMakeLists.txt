@@ -1,53 +1,106 @@
-cmake_minimum_required(VERSION 2.4.6)
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+cmake_minimum_required(VERSION 2.8.3)
+project(cob_3d_mapping_semantics)
 
-# Set the build type.  Options are:
-#  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
-#  Debug          : w/ debug symbols, w/o optimization
-#  Release        : w/o debug symbols, w/ optimization
-#  RelWithDebInfo : w/ debug symbols, w/ optimization
-#  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
+## Find catkin macros and libraries
+## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
+## is used, also find other catkin packages
+find_package(catkin REQUIRED COMPONENTS
+  cob_3d_mapping_common
+  cob_3d_mapping_msgs
+  dynamic_reconfigure
+  pcl
+  pcl_ros
+  rosbag
+  roscpp
+  visualization_msgs
+)
 
-rosbuild_init()
+generate_dynamic_reconfigure_options(cfg/structure_extraction_node.cfg
+  cfg/supporting_plane_extraction_node.cfg
+  cfg/table_extraction_node.cfg
+)
 
-# add dynamic reconfigure api
-rosbuild_find_ros_package(dynamic_reconfigure)
-include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
-gencfg()
+###################################
+## catkin specific configuration ##
+###################################
+## The catkin_package macro generates cmake config files for your package
+## Declare things to be passed to dependent projects
+## INCLUDE_DIRS: uncomment this if you package contains header files
+## LIBRARIES: libraries you create in this project that dependent projects also need
+## CATKIN_DEPENDS: catkin_packages dependent projects also need
+## DEPENDS: system dependencies of this project that dependent projects also need
+catkin_package(
+  INCLUDE_DIRS
+    common/include
+  LIBRARIES
+    cob_3d_mapping_semantics
+  CATKIN_DEPENDS
+    cob_3d_mapping_common
+    cob_3d_mapping_msgs
+    dynamic_reconfigure
+    pcl
+    pcl_ros
+    rosbag
+    roscpp
+    visualization_msgs
+)
 
-#set the default path for built executables to the "bin" directory
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-#set the default path for built libraries to the "lib" directory
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+###########
+## Build ##
+###########
 
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
+## Specify additional locations of header files
+## Your package locations should be listed before other locations
+# include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+include_directories(
+  common/include
+  ${catkin_INCLUDE_DIRS}
+)
 
-#uncomment if you have defined messages
-#rosbuild_genmsg()
-#uncomment if you have defined services
-rosbuild_gensrv()
-rosbuild_add_library(cob_3d_mapping_semantics common/src/table_extraction.cpp
+## Declare a cpp library
+add_library(cob_3d_mapping_semantics 
+    common/src/table_extraction.cpp
     common/src/supporting_plane_extraction.cpp
-    common/src/structure_extraction.cpp)
+    common/src/structure_extraction.cpp
+)
 
-#rosbuild_add_executable(semantic_extraction common/src/semantic_extraction.cpp)
-rosbuild_add_executable(table_extraction_node ros/src/table_extraction_node.cpp)
-rosbuild_add_executable(supporting_plane_extraction_node ros/src/supporting_plane_extraction_node.cpp)
-rosbuild_add_executable(structure_extraction_node ros/src/structure_extraction_node.cpp)
-rosbuild_add_executable(get_tables_client ros/src/get_tables_client.cpp)
-#rosbuild_add_executable(move_to_table_node ros/src/move_to_table_node.cpp)
+## Declare a cpp executable
+add_executable(table_extraction_node 
+    ros/src/table_extraction_node.cpp
+)
+add_dependencies(table_extraction_node ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
-target_link_libraries(table_extraction_node cob_3d_mapping_semantics)
-target_link_libraries(supporting_plane_extraction_node cob_3d_mapping_semantics)
-target_link_libraries(structure_extraction_node cob_3d_mapping_semantics)
-#target_link_libraries(map_client cob_3d_mapping_semantics)
+add_executable(supporting_plane_extraction_node 
+    ros/src/supporting_plane_extraction_node.cpp
+)
+add_dependencies(supporting_plane_extraction_node ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
-#common commands for building c++ executables and libraries
-#rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
-#target_link_libraries(${PROJECT_NAME} another_library)
-#rosbuild_add_boost_directories()
-#rosbuild_link_boost(${PROJECT_NAME} thread)
-#rosbuild_add_executable(example examples/example.cpp)
-#target_link_libraries(example ${PROJECT_NAME})
-rosbuild_add_roslaunch_check(ros/launch)
+add_executable(structure_extraction_node 
+    ros/src/structure_extraction_node.cpp
+)
+add_dependencies(structure_extraction_node ${${PROJECT_NAME}_EXPORTED_TARGETS})
+
+add_executable(get_tables_client 
+    ros/src/get_tables_client.cpp
+)
+
+## Specify libraries to link a library or executable target against
+target_link_libraries(table_extraction_node 
+  cob_3d_mapping_semantics
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(supporting_plane_extraction_node 
+  cob_3d_mapping_semantics 
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(structure_extraction_node 
+  cob_3d_mapping_semantics 
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(get_tables_client 
+  ${catkin_LIBRARIES}
+)
+
