@@ -58,7 +58,6 @@
  ****************************************************************/
 //##################
 //#### includes ####
-
 // PCL includes
 #include "pcl/point_types.h"
 #include "pcl/impl/instantiate.hpp"
@@ -73,14 +72,13 @@
 #include <pcl/impl/pcl_base.hpp>
 #endif
 
-
 void
 cob_3d_mapping_filters::IntensityFilter<sensor_msgs::PointCloud2>::applyFilter (PointCloud2 &pc_out)
 {
   pc_out.header = input_->header;
   pc_out.fields = input_->fields;
   pc_out.point_step = input_->point_step;
-  pc_out.data.resize (input_->data.size());
+  pc_out.data.resize (input_->data.size ());
 
   //assumption: data order is always x->y->z in PC, datatype = float
   int c_offset = 0;
@@ -92,21 +90,21 @@ cob_3d_mapping_filters::IntensityFilter<sensor_msgs::PointCloud2>::applyFilter (
 
   int nr_p = 0;
   float intensity;
-  const unsigned int total_points = input_->width*input_->height;
+  const unsigned int total_points = input_->width * input_->height;
 
   for (unsigned int pc_msg_idx = 0; pc_msg_idx < total_points; pc_msg_idx++)
   {
     intensity = *(float*)&input_->data[pc_msg_idx * input_->point_step + c_offset];
-    if(intensity > intensity_min_threshold_  && intensity < intensity_max_threshold_ )
+    if (intensity > intensity_min_threshold_ && intensity < intensity_max_threshold_)
     {
-      memcpy(&pc_out.data[nr_p * pc_out.point_step], &input_->data[pc_msg_idx * pc_out.point_step],pc_out.point_step);
+      memcpy (&pc_out.data[nr_p * pc_out.point_step], &input_->data[pc_msg_idx * pc_out.point_step], pc_out.point_step);
       nr_p++;
     }
   }
 
   pc_out.width = nr_p;
   pc_out.height = 1;
-  pc_out.data.resize (nr_p*pc_out.point_step);
+  pc_out.data.resize (nr_p * pc_out.point_step);
   pc_out.is_dense = true;
 }
 
