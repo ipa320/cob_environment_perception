@@ -59,10 +59,8 @@
 
 //##################
 //#### includes ####
-
 // standard includes
 //--
-
 // ROS includes
 #include <ros/ros.h>
 
@@ -90,80 +88,59 @@
 //#### nodelet class####
 class JumpEdgeFilter : public nodelet::Nodelet
 {
-  public:
+public:
   // Constructor
-  JumpEdgeFilter()
-   :t_check(0)
-  {}
+  JumpEdgeFilter () :
+      t_check (0)
+  {
+  }
 
   // Destructor
-  ~ JumpEdgeFilter()
+  ~ JumpEdgeFilter ()
   {
     /// void
   }
 
-  void onInit()
+  void
+  onInit ()
   {
-    n_ = getNodeHandle();
+    n_ = getNodeHandle ();
 
-    point_cloud_sub_ = n_.subscribe("point_cloud2", 1, & JumpEdgeFilter::PointCloudSubCallback, this);
-    point_cloud_pub_= n_.advertise<sensor_msgs::PointCloud2>("point_cloud2_filtered",1);
+    point_cloud_sub_ = n_.subscribe ("point_cloud2", 1, &JumpEdgeFilter::pointCloudSubCallback, this);
+    point_cloud_pub_ = n_.advertise<sensor_msgs::PointCloud2> ("point_cloud2_filtered", 1);
 
-    n_.param("/jump_edge_filter_nodelet/upper_angle_deg", upper_angle_, 170.0);
-    //std::cout << "upper_angle_deg: " << upper_angle_<< std::endl;
+    n_.param ("/jump_edge_filter_nodelet/upper_angle_deg", upper_angle_, 170.0);
+    filter_.setUpperAngle (upper_angle_);
   }
 
-/*  void PointCloudSubCallback(const pcl::PointCloud<CPCPoint>::Ptr pc)
-  {
-    //ROS_INFO("PointCloudSubCallback");
-    cob_3d_mapping_filters::JumpEdgeFilter<CPCPoint> filter;
-    pcl::PointCloud<CPCPoint>::Ptr cloud_filtered(new pcl::PointCloud<CPCPoint> ());
-
-    filter.setInputCloud(pc);
-    filter.setUpperAngle(upper_angle_);
-    //std::cout << "  Upper angle threshold in degrees : "<<filter.getUpperAngle()  << std::endl;
-    filter.applyFilter(*cloud_filtered);
-    point_cloud_pub_.publish(cloud_filtered);
-    if(t_check==0)
-    {
-      ROS_INFO("Time elapsed (JumpEdgeFilter) : %f", t.elapsed());
-      t.restart();
-      t_check=1;
-    }
-  }*/
-
-  // Test specialized template for sensor_msgs::PointCloud2 point_type
-
   void
-  PointCloudSubCallback (pcl::PointCloud<pcl::PointXYZI>::ConstPtr pc)
+  pointCloudSubCallback (pcl::PointCloud<pcl::PointXYZI>::ConstPtr pc)
   {
-    //ROS_INFO("PointCloudSubCallback");
-    cob_3d_mapping_filters::JumpEdgeFilter<pcl::PointXYZI> filter;
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZI>());
+    pcl::PointCloud<pcl::PointXYZI> cloud_filtered;
 
-    filter.setInputCloud (pc);
-    filter.setUpperAngle(upper_angle_);
-    filter.filter (*cloud_filtered);
+    filter_.setInputCloud (pc);
+    filter_.filter (cloud_filtered);
     point_cloud_pub_.publish (cloud_filtered);
-    if (t_check == 0)
-    {
-      ROS_INFO("Time elapsed (JumpEdgeFilter) : %f", t.elapsed());
-      t.restart ();
-      t_check = 1;
-    }
+    /*if (t_check == 0)
+     {
+     ROS_INFO("Time elapsed (JumpEdgeFilter) : %f", t.elapsed());
+     t.restart ();
+     t_check = 1;
+     }*/
   }
 
   ros::NodeHandle n_;
   boost::timer t;
 
-  protected:
-    ros::Subscriber point_cloud_sub_;
-    ros::Publisher point_cloud_pub_;
+protected:
+  ros::Subscriber point_cloud_sub_;
+  ros::Publisher point_cloud_pub_;
 
-    double upper_angle_;
-    bool t_check;
-  };
+  cob_3d_mapping_filters::JumpEdgeFilter<pcl::PointXYZI> filter_;
 
-PLUGINLIB_DECLARE_CLASS(cob_3d_mapping_filters,  JumpEdgeFilter,  JumpEdgeFilter, nodelet::Nodelet)
+  double upper_angle_;
+  bool t_check;
+};
 
+PLUGINLIB_DECLARE_CLASS(cob_3d_mapping_filters, JumpEdgeFilter, JumpEdgeFilter, nodelet::Nodelet)
 

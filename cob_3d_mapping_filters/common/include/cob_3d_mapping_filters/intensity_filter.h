@@ -73,136 +73,135 @@ namespace cob_3d_mapping_filters
   /**
    * \Intensity Filter uses Intensity values of points to filter out pointcloud data
    */
-  template <typename PointT>
-  class IntensityFilter : public pcl::Filter<PointT>
-  {
-    using pcl::Filter<PointT>::input_;
-
-  public:
-    typedef typename pcl::Filter<PointT>::PointCloud PointCloud;
-    typedef typename PointCloud::Ptr PointCloudPtr;
-    typedef typename PointCloud::ConstPtr PointCloudConstPtr;
-
-    /** \constructor */
-    IntensityFilter()
-    : intensity_max_threshold_ (65000),
-      intensity_min_threshold_ (0),
-      negative_ (false)
-    {};
-
-    //virtual ~IntensityFilter();
-
-    /** \sets the filter limit */
-    inline void
-    setFilterLimits (double lim_min,double lim_max)
+  template<typename PointT>
+    class IntensityFilter : public pcl::Filter<PointT>
     {
-      intensity_min_threshold_ = lim_min;
-      intensity_max_threshold_ = lim_max;
-    }
+      using pcl::Filter<PointT>::input_;
 
-    /** \gets the filter minimum limit */
-    inline double
-    getFilterMinLimit ()
+    public:
+      typedef typename pcl::Filter<PointT>::PointCloud PointCloud;
+      typedef typename PointCloud::Ptr PointCloudPtr;
+      typedef typename PointCloud::ConstPtr PointCloudConstPtr;
+
+      /** \constructor */
+      IntensityFilter () :
+          intensity_max_threshold_ (65000), intensity_min_threshold_ (0), negative_ (false)
+      {
+      }
+      ;
+
+      //virtual ~IntensityFilter();
+
+      /** \sets the filter limit */
+      inline void
+      setFilterLimits (double lim_min, double lim_max)
+      {
+        intensity_min_threshold_ = lim_min;
+        intensity_max_threshold_ = lim_max;
+      }
+
+      /** \gets the filter minimum limit */
+      inline double
+      getFilterMinLimit ()
+      {
+        return intensity_min_threshold_;
+      }
+
+      /** \gets the filter maximum limit */
+      inline double
+      getFilterMaxLimit ()
+      {
+        return intensity_max_threshold_;
+      }
+      inline void
+      setNegative (bool negative)
+      {
+        negative_ = negative;
+      }
+
+      inline bool
+      getNegative ()
+      {
+        return (negative_);
+      }
+
+    public:
+
+      /** \Points with Intensity values above the filter limit will be discarded
+       *  \Points with Intensity values below the filter limit will be the output PointCloud
+       */
+      void
+      applyFilter (PointCloud &output);
+
+      /** \Points with Intensity values below the filter limit will be discarded
+       *  \Points with Intensity values above the filter limit will be the output PointCloud
+       */
+      void
+      negativeApplyFilter (PointCloud &output);
+
+      /** \filter limit */
+      int intensity_max_threshold_;
+      int intensity_min_threshold_;
+
+      bool negative_;
+    };
+
+  template<>
+    class IntensityFilter<sensor_msgs::PointCloud2> : public pcl::Filter<sensor_msgs::PointCloud2>
     {
-      return intensity_min_threshold_;
-    }
+      typedef sensor_msgs::PointCloud2 PointCloud2;
+      typedef PointCloud2::Ptr PointCloud2Ptr;
+      typedef PointCloud2::ConstPtr PointCloud2ConstPtr;
 
-    /** \gets the filter maximum limit */
-    inline double
-    getFilterMaxLimit ()
-    {
-      return intensity_max_threshold_;
-    }
-       inline void
-       setNegative (bool negative)
-       {
-         negative_ = negative;
-       }
- 
-       inline bool
-       getNegative ()
-       {
-         return (negative_);
-       }
+    public:
+      /** \constructor */
+      IntensityFilter () :
+          intensity_max_threshold_ (65000), intensity_min_threshold_ (0)
+      {
+      }
+      ;
 
+      //virtual ~IntensityFilter();
 
-  public:
+      /** \sets the filter limit */
+      inline void
+      setFilterLimits (double lim_min, double lim_max)
+      {
+        intensity_min_threshold_ = lim_min;
+        intensity_max_threshold_ = lim_max;
+      }
 
-    /** \Points with Intensity values above the filter limit will be discarded
-     *  \Points with Intensity values below the filter limit will be the output PointCloud
-     */
-    void
-    applyFilter (PointCloud &output);
+      /** \gets the filter minimum limit */
+      inline double
+      getFilterMinLimit ()
+      {
+        return intensity_min_threshold_;
+      }
 
-    /** \Points with Intensity values below the filter limit will be discarded
-     *  \Points with Intensity values above the filter limit will be the output PointCloud
-     */
-    void
-    negativeApplyFilter (PointCloud &output);
+      /** \gets the filter maximum limit */
+      inline double
+      getFilterMaxLimit ()
+      {
+        return intensity_max_threshold_;
+      }
 
+      /** \Points with Intensity values above the filter limit will be discarded
+       *  \Points with Intensity values below the filter limit will be the output PointCloud
+       */
+      void
+      applyFilter (PointCloud2 &output);
 
-    /** \filter limit */
-    int intensity_max_threshold_;
-    int intensity_min_threshold_;
+      /** \Points with Intensity values below the filter limit will be discarded
+       *  \Points with Intensity values above the filter limit will be the output PointCloud
+       */
+      void
+      negativeApplyFilter (PointCloud2 &output);
 
-    bool negative_;
-  };
-
-  template <>
-  class IntensityFilter<sensor_msgs::PointCloud2> : public pcl::Filter<sensor_msgs::PointCloud2>
-  {
-    typedef sensor_msgs::PointCloud2 PointCloud2;
-    typedef PointCloud2::Ptr PointCloud2Ptr;
-    typedef PointCloud2::ConstPtr PointCloud2ConstPtr;
-
-  public:
-    /** \constructor */
-    IntensityFilter()
-    : intensity_max_threshold_ (65000),
-      intensity_min_threshold_ (0)
-    { };
-
-    //virtual ~IntensityFilter();
-
-    /** \sets the filter limit */
-    inline void
-    setFilterLimits (double lim_min,double lim_max)
-    {
-      intensity_min_threshold_ = lim_min;
-      intensity_max_threshold_ = lim_max;
-    }
-
-    /** \gets the filter minimum limit */
-    inline double
-    getFilterMinLimit ()
-    {
-      return intensity_min_threshold_;
-    }
-
-    /** \gets the filter maximum limit */
-    inline double
-    getFilterMaxLimit ()
-    {
-      return intensity_max_threshold_;
-    }
-
-    /** \Points with Intensity values above the filter limit will be discarded
-     *  \Points with Intensity values below the filter limit will be the output PointCloud
-     */
-    void
-    applyFilter (PointCloud2 &output);
-
-    /** \Points with Intensity values below the filter limit will be discarded
-     *  \Points with Intensity values above the filter limit will be the output PointCloud
-     */
-    void
-    negativeApplyFilter (PointCloud2 &output);
-
-  protected:
-    /** \filter limit */
-    int intensity_max_threshold_;
-    int intensity_min_threshold_;
-  };
+    protected:
+      /** \filter limit */
+      int intensity_max_threshold_;
+      int intensity_min_threshold_;
+    };
 } // end namespace cob_3d_mapping_filters
 
 #endif /* INTENSITY_FILTER_H_ */

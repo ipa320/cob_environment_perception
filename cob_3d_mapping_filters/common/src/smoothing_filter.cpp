@@ -49,7 +49,6 @@
  ****************************************************************/
 //##################
 //#### includes ####
-
 // PCL includes
 #include "pcl/point_types.h"
 #include "pcl/impl/instantiate.hpp"
