@@ -58,7 +58,6 @@
  ****************************************************************/
 //##################
 //#### includes ####
-
 // PCL includes
 #include "pcl/point_types.h"
 #include "pcl/impl/instantiate.hpp"
@@ -79,37 +78,37 @@ cob_3d_mapping_filters::AmplitudeFilter<sensor_msgs::PointCloud2>::applyFilter (
   pc_out.header = input_->header;
   pc_out.fields = input_->fields;
   pc_out.point_step = input_->point_step;
-  pc_out.data.resize (input_->data.size());
+  pc_out.data.resize (input_->data.size ());
 
   int x_offset = 0, i_offset = 0;
-  for (size_t d = 0; d < input_->fields.size(); ++d)
+  for (size_t d = 0; d < input_->fields.size (); ++d)
   {
-    if(input_->fields[d].name == "x")
+    if (input_->fields[d].name == "x")
       x_offset = input_->fields[d].offset;
-    if(input_->fields[d].name == "amplitude")
+    if (input_->fields[d].name == "amplitude")
       i_offset = input_->fields[d].offset;
   }
   //std::cout<<" x_offset: "<<x_offset<<std::endl;
   //std::cout<<" i_offset: "<<i_offset<<std::endl;
 
-    int nr_p = 0;
-    float amplitude;
-    const unsigned int total_points = input_->width*input_->height;
+  int nr_p = 0;
+  float amplitude;
+  const unsigned int total_points = input_->width * input_->height;
 
-    for ( unsigned int pc_msg_idx = 0; pc_msg_idx < total_points; pc_msg_idx++)
+  for (unsigned int pc_msg_idx = 0; pc_msg_idx < total_points; pc_msg_idx++)
+  {
+    amplitude = *(float*)&input_->data[pc_msg_idx * input_->point_step + i_offset];
+    if (amplitude > amplitude_min_threshold_ && amplitude < amplitude_max_threshold_)
     {
-      amplitude = *(float*)&input_->data[pc_msg_idx * input_->point_step + i_offset];
-      if(amplitude > amplitude_min_threshold_  && amplitude < amplitude_max_threshold_ )
-      {
-        memcpy(&pc_out.data[nr_p * pc_out.point_step], &input_->data[pc_msg_idx * pc_out.point_step],pc_out.point_step);
-        nr_p++;
-      }
+      memcpy (&pc_out.data[nr_p * pc_out.point_step], &input_->data[pc_msg_idx * pc_out.point_step], pc_out.point_step);
+      nr_p++;
     }
+  }
 
-    pc_out.width = nr_p;
-    pc_out.height = 1;
-    pc_out.data.resize(nr_p*pc_out.point_step);
-    pc_out.is_dense = true;
+  pc_out.width = nr_p;
+  pc_out.height = 1;
+  pc_out.data.resize (nr_p * pc_out.point_step);
+  pc_out.is_dense = true;
 
 }
 

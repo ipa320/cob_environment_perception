@@ -59,10 +59,8 @@
 
 //##################
 //#### includes ####
-
 // standard includes
 //--
-
 // ROS includes
 #include <ros/ros.h>
 
@@ -91,7 +89,7 @@ class IntensityFilter : public nodelet::Nodelet
 public:
   // Constructor
   IntensityFilter () :
-    t_check (0)
+      t_check (0)
   {
     //
   }
@@ -107,55 +105,29 @@ public:
   {
     n_ = getNodeHandle ();
 
-    point_cloud_sub_ = n_.subscribe ("point_cloud2", 1, &IntensityFilter::PointCloudSubCallback, this);
+    point_cloud_sub_ = n_.subscribe ("point_cloud2", 1, &IntensityFilter::pointCloudSubCallback, this);
     point_cloud_pub_ = n_.advertise<sensor_msgs::PointCloud2> ("point_cloud2_filtered", 1);
 
     n_.param ("/intensity_filter_nodelet/intensity_min_threshold", lim_min_, 2000);
-    //std::cout << "intensity_min_threshold: " << lim_min_<< std::endl;
     n_.param ("/intensity_filter_nodelet/intensity_max_threshold", lim_max_, 60000);
-    //std::cout << "intensity_threshold: " << lim_<< std::endl;
+    filter_.setFilterLimits (lim_min_, lim_max_);
 
   }
 
-/*  void
-  PointCloudSubCallback (const pcl::PointCloud<CPCPoint>::Ptr pc)
-  {
-    //ROS_INFO("PointCloudSubCallback");
-    cob_3d_mapping_filters::IntensityFilter<CPCPoint> filter;
-    pcl::PointCloud<CPCPoint>::Ptr cloud_filtered (new pcl::PointCloud<CPCPoint> ());
-    filter.setInputCloud (pc);
-    filter.setFilterLimit (lim_);
-    //std::cout << "  Filter Limit: "<<filter.getFilterLimit()<< std::endl;
-    filter.applyFilter (*cloud_filtered);
-
-    point_cloud_pub_.publish (cloud_filtered);
-    if (t_check == 0)
-    {
-      ROS_INFO("Time elapsed (Intensity_Filter) : %f", t.elapsed());
-      t.restart ();
-      t_check = 1;
-    }
-  }*/
-  // Test specialized template for sensor_msgs::PointCloud2 point_type
-
   void
-  PointCloudSubCallback (pcl::PointCloud<pcl::PointXYZI>::ConstPtr pc)
+  pointCloudSubCallback (pcl::PointCloud<pcl::PointXYZI>::ConstPtr pc)
   {
-    //ROS_INFO("PointCloudSubCallback");
-    cob_3d_mapping_filters::IntensityFilter<pcl::PointXYZI> filter;
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZI>());
-    filter.setInputCloud (pc);
-    filter.setFilterLimits (lim_min_, lim_max_);
-    //std::cout << "  Filter Limit: "<<filter.getFilterLimit()<< std::endl;
-    filter.applyFilter (*cloud_filtered);
+    pcl::PointCloud<pcl::PointXYZI> cloud_filtered;
+    filter_.setInputCloud (pc);
+    filter_.filter (cloud_filtered);
 
     point_cloud_pub_.publish (cloud_filtered);
-    if (t_check == 0)
-    {
-      ROS_INFO("Time elapsed (Intensity_Filter) : %f", t.elapsed());
-      t.restart ();
-      t_check = 1;
-    }
+    /*if (t_check == 0)
+     {
+     ROS_INFO("Time elapsed (Intensity_Filter) : %f", t.elapsed());
+     t.restart ();
+     t_check = 1;
+     }*/
   }
 
   ros::NodeHandle n_;
@@ -164,6 +136,8 @@ public:
 protected:
   ros::Subscriber point_cloud_sub_;
   ros::Publisher point_cloud_pub_;
+
+  cob_3d_mapping_filters::IntensityFilter<pcl::PointXYZI> filter_;
 
   int lim_min_, lim_max_;
   bool t_check;
