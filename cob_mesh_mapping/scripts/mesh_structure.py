@@ -3,8 +3,6 @@
 from numpy import *
 import matplotlib.pyplot as plt
 import normal_estimation
-#reload(normal_estimation)
-
 
 def computeNormal(x1,y1,x2,y2):
     dx = x2 - x1
@@ -37,6 +35,12 @@ class Vertex:
 
     def getPos(self):
         return array([self.x,self.y])
+
+    def getPosAffine(self):
+        return array([self.x,self.y,1.])
+
+    def isDead(self):
+        return ( (self.e1 and self.e2) is None )
 
 
     def __repr__(self):
@@ -97,6 +101,28 @@ class Mesh:
     def move(self, v):
         """performs vertex move operation"""
         pass
+
+    def cleanup(self):
+        """removes all edges marked as dirty and
+        vertices with no edge assigned"""
+        tmp_e = []
+        tmp_v = []
+        for e in self.E:
+            if e.dirty:
+                if e.v1.e1 is e: e.v1.e1 = None
+                else:            e.v1.e2 = None
+
+                if e.v2.e1 is e: e.v2.e1 = None
+                else:            e.v2.e2 = None
+            else:
+                tmp_e.append(e)
+
+        for v in self.V:
+            if not v.isDead():
+                tmp_v.append(v)
+
+        self.V = tmp_v
+        self.E = tmp_e
 
     def load(self,x,y,nx,ny):
         """creates mesh from measurements and normals"""

@@ -17,9 +17,6 @@ import measurement_data as mdata
 import scanline_rasterization as sl
 import iterative_mesh_learner as iml
 
-#reload(mdata)
-#reload(cm)
-#reload(csclip)
 
 ### BEGIN CLASS -- Map ###
 class World:
@@ -93,7 +90,7 @@ class Sensor(cm.Camera2d):
                 scan.addEdge(p0,p1)
 
         ww = vstack(ww)
-        x,y = scan.draw([-1.,1.,-1.,1.], [0.05,0.05])
+        x,y = scan.draw([-1.,1.,-1.,1.], [2./self.res,2./self.res])
         x = [ float('nan') if xi >= 1. else xi for xi in x ]
         x += random.randn(len(x)) * 0.005
 

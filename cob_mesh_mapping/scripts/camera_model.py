@@ -15,8 +15,9 @@ def drawPoses(objects,axis):
 
 
 class Camera2d:
-    def __init__(self, fov, far, near):
+    def __init__(self, fov, far, near, res = 32.):
         tan_fov_2 = tan(fov*0.5)
+        self.res = res
         self.fov = fov
         self.f = f = far
         self.n = n = near
