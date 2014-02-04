@@ -127,9 +127,9 @@ TestProcessingTime ()
 void
 DoSampleRun ()
 {
-  cob_3d_mapping_filters::JumpEdgeFilter<PointXYZA> filter;
-  pcl::PointCloud<PointXYZA>::Ptr cloud (new pcl::PointCloud<PointXYZA> ());
-  pcl::PointCloud<PointXYZA>::Ptr cloud_out (new pcl::PointCloud<PointXYZA> ());
+  cob_3d_mapping_filters::JumpEdgeFilter<PointXYZ> filter;
+  pcl::PointCloud<PointXYZ>::Ptr cloud (new pcl::PointCloud<PointXYZ> ());
+  pcl::PointCloud<PointXYZ>::Ptr cloud_out (new pcl::PointCloud<PointXYZ> ());
   pcl::io::loadPCDFile ("/home/goa/Ubuntu One/diss/images/raw/filter_sequence_input2.pcd", *cloud);
   filter.setInputCloud (cloud);
   filter.filter (*cloud_out);
