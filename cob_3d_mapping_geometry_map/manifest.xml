@@ -12,15 +12,12 @@
   <depend package="pcl"/>
   <depend package="pcl_ros"/>
   <depend package="roscpp"/>
-  <depend package="rospy"/>
   <depend package="rosbag"/>
   <depend package="dynamic_reconfigure" />
-  <depend package="visualization_msgs"/>
+  <!--depend package="visualization_msgs"/-->
   <depend package="cob_3d_mapping_msgs"/>
   <depend package="cob_3d_mapping_common"/>
   <!-- depend package="cob_3d_mapping_slam"/-->
-
-  <rosdep name="libvtk"/>
 
 </package>
 
