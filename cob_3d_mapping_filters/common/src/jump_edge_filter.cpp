@@ -58,7 +58,6 @@
  ****************************************************************/
 //##################
 //#### includes ####
-
 // PCL includes
 #include "pcl/point_types.h"
 #include "pcl/impl/instantiate.hpp"
@@ -80,8 +79,8 @@ cob_3d_mapping_filters::JumpEdgeFilter<sensor_msgs::PointCloud2>::applyFilter (P
 {
   //pc_out.header = input_->header;
   /* pc_out.fields = input_->fields;
-  pc_out.point_step = input_->point_step;
-  pc_out.data.resize (input_->data.size ());*/
+   pc_out.point_step = input_->point_step;
+   pc_out.data.resize (input_->data.size ());*/
   pcl::PointIndices::Ptr points_to_remove (new pcl::PointIndices ());
   double upper_angle_thresh = upper_angle_deg_ / 180 * M_PI;
   double lower_angle_thresh = (180 - 170.0) / 180 * M_PI;
@@ -104,10 +103,11 @@ cob_3d_mapping_filters::JumpEdgeFilter<sensor_msgs::PointCloud2>::applyFilter (P
 
   for (unsigned int i = 0; i < total_points; i++)
   {
-    if (i < input_->width || i % input_->width == 0 || i % input_->width == (input_->height-1) || i > input_->width * (input_->height- 1))
+    if (i < input_->width || i % input_->width == 0 || i % input_->width == (input_->height - 1)
+        || i > input_->width * (input_->height - 1))
       continue; //skip border points
     Eigen::Vector3f v_m (*(float*)&input_->data[i * input_->point_step + x_offset],
-                         *(float*)&input_->data[i* input_->point_step + y_offset],
+                         *(float*)&input_->data[i * input_->point_step + y_offset],
                          *(float*)&input_->data[i * input_->point_step + z_offset]);
     Eigen::Vector3f v_m_n = v_m.normalized ();
     int index = i - input_->width - 1;
