@@ -15,6 +15,7 @@ class IterativeMeshLearner:
         v1 = self.mesh.add(measurement.m1[0],measurement.m1[1])
         v2 = self.mesh.add(measurement.m2[0],measurement.m2[1])
         self.mesh.connect(v1,v2)
+        self.data[len(self.data):]= [measurement]
 
 
     def addMeasurement(self, m):
@@ -22,9 +23,10 @@ class IterativeMeshLearner:
         scan = sl.ScanlineRasterization()
         scan.addEdge(m.m1,m.m2)
         for e in self.mesh.E:
+            #print e
             scan.addEdge(e.v1.getPos(),e.v2.getPos())
 
+        # rasterize bounding box
         lim = m.getBoundingBox([.1,.1])
-        print lim
         grid = scan.fill(lim, [.05,.05])
-        print grid
+        # marching cubes mesh reconstruction

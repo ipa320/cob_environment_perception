@@ -60,6 +60,9 @@ class Edge:
     def __cmp__(self,other):
         return cmp(self.ymin,other.ymin)
 
+    def __repr__(self):
+        return "("+`self.ymax` + ", " + `self.ymin` + ", " + `self.s`+")"
+
     def intersect(self, y):
         #if self.minv==0: return self.t
         #else: return self.minv*(y-self.t)
@@ -85,11 +88,11 @@ class ScanlineRasterization:
         self.e.sort() # sort edges by ymin
         for i in range(len(y)): # start with lowest y value
             # remove lines with ymax < current y
-            p = [ pi for pi in self.e if pi.ymax >= y[i] ]
-            for pi in p:
+            e = [ ei for ei in self.e if ei.ymax >= y[i] ]
+            for ei in e:
                 # stop as soon as lines start above current y
-                if pi.ymin > y[i]: break
-                x[i] = min(pi.intersect(y[i]),x[i])
+                if ei.ymin > y[i]: break
+                x[i] = min(ei.intersect(y[i]),x[i])
 
         return x,y
 
@@ -105,17 +108,19 @@ class ScanlineRasterization:
         grid = zeros([len(y), len(x)])
 
         self.e.sort() # sort edges by ymin
+        #print self.e
         for yi in range(len(y)): # iterate lines starting with lowest y value
-            p = [ pi for pi in self.e if pi.ymax >= y[yi] ]
+            e = [ ei for ei in self.e if ei.ymax >= y[yi] ]
             yx = []
-            for pi in p:
+            for ei in e:
                 # calc all intersection at current line and the direction how
                 # the ray passes an edge
-                if pi.ymin > y[yi]: break
-                intx = pi.intersect(y[yi])
-                if intx >= xmin:
-                    yx[len(yx):] = [ (intx, pi.s) ]
+                if ei.ymin > y[yi]: break
+                intx = ei.intersect(y[yi])
+                if intx >= xmin and intx <= xmax:
+                    yx[len(yx):] = [ (intx, ei.s) ]
 
+            #print yx
             if len(yx) == 0:
                 for xi in range(len(x)):
                     grid[yi][xi] = 0
@@ -128,11 +133,10 @@ class ScanlineRasterization:
                 level = 0
 
             for xi in range(len(x)):
-                if x[xi] <= yx[yxi][0]:
+                if yxi >= len(yx) or x[xi] <= yx[yxi][0]:
                     grid[yi][xi] = level
                 else:
                     level = level + yx[yxi][1]
                     yxi = yxi+1
-                    if yxi >= len(yx): break
 
         return grid
