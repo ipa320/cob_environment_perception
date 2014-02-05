@@ -49,6 +49,9 @@ class IterativeMeshLearner:
         for e in self.mesh.E:
             w0 = tf.dot(e.v1.getPosAffine()) # redundant transform
             w1 = tf.dot(e.v2.getPosAffine()) # TODO: do better!
+            # backface culling (this is just a quick and dirty workaround
+            # better: check face normal with some tolerance)
+            if (w1[1] - w0[1]) < -.001: continue
 
             pass0 = pass1 = False
             if w0[-1] > 0:
@@ -136,12 +139,14 @@ class IterativeMeshLearner:
             if math.isnan(m[j][0]): continue
 
             v2 = self.mesh.add(m[j][0],m[j][1])
-            self.mesh.connect(v1,v2)
+            if linalg.norm(v2.getPos() - v1.getPos()) < 0.3:
+                self.mesh.connect(v1,v2)
             v1 = v2
 
         if v_hooks[1][0] < 100.0:
             v2 = v_hooks[1][1]
-            self.mesh.connect(v1,v2)
+            if linalg.norm(v2.getPos() - v1.getPos()) < 0.3:
+                self.mesh.connect(v1,v2)
 
         #print "MESH.V:"
         #print self.mesh.V

@@ -161,7 +161,7 @@ learner = iml.IterativeMeshLearner()
 data = []
 colors = 'ym'
 iii = 0
-#sensors = [sensors[11], sensors[12], sensors[13]]
+#sensors = [sensors[1], sensors[10], sensors[12]]
 for s in sensors:
     learner.refineMesh(s.measurement, s)
 

@@ -42,7 +42,6 @@ class Vertex:
     def isDead(self):
         return ( (self.e1 and self.e2) is None )
 
-
     def __repr__(self):
         return "(%3.2f %3.2f)" % (self.x, self.y)
 
