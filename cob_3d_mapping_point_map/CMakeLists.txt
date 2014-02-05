@@ -1,55 +1,85 @@
-cmake_minimum_required(VERSION 2.4.6)
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
+cmake_minimum_required(VERSION 2.8.3)
+project(cob_3d_mapping_point_map)
 
-# Set the build type.  Options are:
-#  Coverage       : w/ debug symbols, w/o optimization, w/ code-coverage
-#  Debug          : w/ debug symbols, w/o optimization
-#  Release        : w/o debug symbols, w/ optimization
-#  RelWithDebInfo : w/ debug symbols, w/ optimization
-#  MinSizeRel     : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
+## Find catkin macros and libraries
+## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
+## is used, also find other catkin packages
+find_package(catkin REQUIRED COMPONENTS
+  actionlib
+  actionlib_msgs
+  cob_3d_mapping_common
+  cob_3d_mapping_msgs
+  cob_srvs
+  dynamic_reconfigure
+  nodelet
+  pcl
+  pcl_ros
+  roscpp
+)
 
-rosbuild_init()
+generate_dynamic_reconfigure_options(cfg/point_map_nodelet.cfg)
 
-# add dynamic reconfigure api
-rosbuild_find_ros_package(dynamic_reconfigure)
-include(${dynamic_reconfigure_PACKAGE_PATH}/cmake/cfgbuild.cmake)
-gencfg()
+###################################
+## catkin specific configuration ##
+###################################
+## The catkin_package macro generates cmake config files for your package
+## Declare things to be passed to dependent projects
+## INCLUDE_DIRS: uncomment this if you package contains header files
+## LIBRARIES: libraries you create in this project that dependent projects also need
+## CATKIN_DEPENDS: catkin_packages dependent projects also need
+## DEPENDS: system dependencies of this project that dependent projects also need
+catkin_package(
+  INCLUDE_DIRS
+    common/include
+  LIBRARIES
+    cob_3d_mapping_point_map_nodelets
+  CATKIN_DEPENDS
+    actionlib
+    actionlib_msgs
+    cob_3d_mapping_common
+    cob_3d_mapping_msgs
+    cob_srvs
+    dynamic_reconfigure
+    nodelet
+    pcl
+    pcl_ros
+    roscpp
+)
 
-#set the default path for built executables to the "bin" directory
-set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
-#set the default path for built libraries to the "lib" directory
-set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
+###########
+## Build ##
+###########
 
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
+## Specify additional locations of header files
+## Your package locations should be listed before other locations
+# include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
+include_directories(
+  common/include
+  ${catkin_INCLUDE_DIRS}
+)
 
+## Declare a cpp library
+add_library(cob_3d_mapping_point_map_nodelets 	
+  ros/src/point_map_nodelet.cpp
+  ros/src/difference_segmentation.cpp
+)
+add_dependencies(cob_3d_mapping_point_map_nodelets ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
-#uncomment if you have defined messages
-#rosbuild_genmsg()
-#uncomment if you have defined services
-#rosbuild_gensrv()
+target_link_libraries(cob_3d_mapping_point_map_nodelets
+  ${catkin_LIBRARIES}
+)
 
-rosbuild_check_for_sse()
+## Declare a cpp executable
+add_executable(set_point_map ros/src/set_point_map.cpp)
+add_executable(get_point_map ros/src/get_point_map.cpp)
 
-#rosbuild_add_library(cob_3d_mapping_point_map
-#	common/src/point_map.cpp)
+target_link_libraries(set_point_map
+  ${catkin_LIBRARIES}
+)
 
-rosbuild_add_library(cob_3d_mapping_point_map_nodelets
-	ros/src/point_map_nodelet.cpp
-	ros/src/difference_segmentation.cpp)
+target_link_libraries(get_point_map
+  ${catkin_LIBRARIES}
+)
 
-rosbuild_add_executable(set_point_map ros/src/set_point_map.cpp)
-rosbuild_add_executable(get_point_map ros/src/get_point_map.cpp)
-
-#rosbuild_add_compile_flags(cob_3d_mapping_point_map ${SSE_FLAGS})
-
-target_link_libraries(cob_3d_mapping_point_map_nodelets pcl_registration pcl_segmentation)
-#common commands for building c++ executables and libraries
-#rosbuild_add_library(${PROJECT_NAME} src/example.cpp)
-#target_link_libraries(${PROJECT_NAME} another_library)
-#rosbuild_add_boost_directories()
-#rosbuild_link_boost(${PROJECT_NAME} thread)
-#rosbuild_add_executable(example examples/example.cpp)
-#target_link_libraries(example ${PROJECT_NAME})
-rosbuild_add_roslaunch_check(ros/launch)
+#rosbuild_check_for_sse()
 

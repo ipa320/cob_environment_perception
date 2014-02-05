@@ -1,0 +1,54 @@
+<package>
+  <name>cob_3d_mapping_demonstrator</name>
+  <version>1.0.0</version>
+  
+  <description>
+     Package for operation of the 3D mapping demonstrator.
+  </description>
+  
+  <license>LGPL</license>
+  
+  <maintainer email="goa@ipa.fhg.de">Georg Arbeiter</maintainer>
+  <author>Georg Arbeiter</author>
+  
+  <url>http://wiki.ros.org/cob_3d_mapping_demonstrator</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>actionlib</build_depend>
+  <build_depend>brics_actuator</build_depend>
+  <build_depend>cob_3d_mapping_msgs</build_depend>
+  <!--build_depend>cob_dashboard</build_depend-->
+  <build_depend>cob_script_server</build_depend>
+  <build_depend>cob_srvs</build_depend>
+  <build_depend>diagnostic_msgs</build_depend>
+  <build_depend>libqt4</build_depend>
+  <!--build_depend>pr2_controllers_msgs</build_depend-->
+  <build_depend>roscpp</build_depend>
+  <build_depend>rviz</build_depend>
+  <build_depend>urdf</build_depend>
+
+  <run_depend>actionlib</run_depend>
+  <run_depend>brics_actuator</run_depend>
+  <run_depend>cob_3d_mapping_msgs</run_depend>
+  <run_depend>cob_3d_mapping_pipeline</run_depend>
+  <!--run_depend>cob_dashboard</run_depend-->
+  <run_depend>cob_script_server</run_depend>
+  <run_depend>cob_srvs</run_depend>
+  <run_depend>diagnostic_msgs</run_depend>
+  <run_depend>libqt4</run_depend>
+  <run_depend>nodelet</run_depend>
+  <run_depend>openni_launch</run_depend>
+  <!--run_depend>pr2_controllers_msgs</run_depend-->
+  <run_depend>robot_state_publisher</run_depend>
+  <run_depend>roscpp</run_depend>
+  <run_depend>rviz</run_depend>
+  <run_depend>urdf</run_depend>
+
+  <export>
+    <nodelet plugin="${prefix}/plugin_description.xml" />
+  </export>
+</package>
+
+
+
