@@ -10,9 +10,9 @@ import matplotlib.pyplot as plt
 import CohenSutherlandClipping as csclip
 import camera_model as cm
 from tf_utils import *
-from normal_estimation import *
-from mesh_structure import *
-from mesh_optimization import *
+import normal_estimation
+import mesh_structure as ms
+import mesh_optimization as mo
 import measurement_data as mdata
 import scanline_rasterization as sl
 import iterative_mesh_learner as iml
@@ -145,7 +145,7 @@ s1 = [Sensor([4.0, 5.0],[-1.,-.5]),
       Sensor([2.0, 2.0],[-1.,-.5])]
 
 circle_size = 12.0
-angles = array(range(int(circle_size)))/circle_size*(3.0/2.0*pi)-pi/2
+angles = array(range(int(circle_size)))/circle_size*(3.0/2.0*pi)-3.*pi/4.
 circle = array([[cos(angles[i]),sin(angles[i])] for i in range(len(angles))])
 s2 = [Sensor([1.5,1.3],[cos(angles[i]),sin(angles[i])])
       for i in range(len(angles))]
@@ -162,8 +162,6 @@ data = []
 colors = 'ym'
 iii = 0
 #sensors = [sensors[1], sensors[10], sensors[12]]
-for s in sensors:
-    learner.refineMesh(s.measurement, s)
 
 #for s in sensors:
     # normal estimation:
@@ -201,28 +199,55 @@ for s in sensors:
 ###----------------------------------------------------------------------------
 
 fig1 = plt.figure(figsize=(1024.0/80, 768.0/80), dpi=80)
-fig2 = plt.figure(figsize=(1024.0/80, 768.0/80), dpi=80)
-ax1 = fig1.add_subplot(111)
-ax2 = fig2.add_subplot(111)
+#fig2 = plt.figure(figsize=(1024.0/80, 768.0/80), dpi=80)
+#ax2 = fig2.add_subplot(111)
 
-world.draw(ax1)
-cm.drawPoses(sensors,ax1)
-cm.drawPoses(sensors,ax2)
-for s in sensors: s.showMeasurementInMap(ax1)
+#cm.drawPoses(sensors,ax1)
+#cm.drawPoses(sensors,ax2)
+#for s in sensors: s.showMeasurementInMap(ax1)
 #for s in sensors: s.drawFrustum(ax1)
-learner.mesh.draw(ax1, 've')
+
+fi = 0
+for s in sensors:
+    learner.refineMesh(s.measurement, s)
+
+    fig1.clf()
+    ax1 = fig1.add_subplot(111)
+    world.draw(ax1)
+    s.drawFrustum(ax1)
+    learner.mesh.draw(ax1, 've')
+
+    ax1.axis('equal')
+    ax1.set_xlim(-.5, 6.5)
+    ax1.set_ylim(-.5, 4.5)
+    ax1.grid()
+    fig1.savefig('img_out/mesh_learner_'+str(fi).zfill(3)+'a.png')
+
+
+    learner.simple.simplify(0.005)
+
+    fig1.clf()
+    ax1 = fig1.add_subplot(111)
+    world.draw(ax1)
+    s.drawFrustum(ax1)
+    learner.mesh.draw(ax1, 've')
+
+    ax1.axis('equal')
+    ax1.set_xlim(-.5, 6.5)
+    ax1.set_ylim(-.5, 4.5)
+    ax1.grid()
+    fig1.savefig('img_out/mesh_learner_'+str(fi).zfill(3)+'b.png')
+
+    fi = fi+1
 #for d in data:
 #    d.draw(ax2)
 #    d.drawBoundingBox(ax2,[.1,.1])
 
-ax1.axis('equal')
-ax1.set_xlim(-.5, 6.5)
-ax1.set_ylim(-.5, 4.5)
-ax1.grid()
 
-ax2.axis('equal')
-ax2.set_xlim(-.5, 6.5)
-ax2.set_ylim(-.5, 4.5)
-ax2.grid()
 
-plt.show()
+#ax2.axis('equal')
+#ax2.set_xlim(-.5, 6.5)
+#ax2.set_ylim(-.5, 4.5)
+#ax2.grid()
+
+#plt.show()
