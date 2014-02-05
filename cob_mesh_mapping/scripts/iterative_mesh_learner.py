@@ -36,8 +36,13 @@ class IterativeMeshLearner:
         # and reconstruct measurements based on current map
         # however: remember anchor vertices of map where
         # the refined mesh is going to be hooked up on
-        v_hooks = [(100.0, self.mesh.V[0]), # [0]: y<0 (bottom),
-                   (100.0, self.mesh.V[0])] # [1]: y>0 (top)
+        v_hooks = []
+        if len(self.mesh.V) != 0:
+            v_hooks = [(100.0, self.mesh.V[0]), # [0]: y<0 (bottom),
+                       (100.0, self.mesh.V[0])] # [1]: y>0 (top)
+        else:
+            v_hooks = [(100.0, None),(100.0, None)]
+
         c = csclip.Clipper()
         scan = sl.ScanlineRasterization()
         tf = cam.tf_to_unit_cube.dot(cam.tf_to_cam)
@@ -61,12 +66,12 @@ class IterativeMeshLearner:
                 if p01[-1] != 0: p1 = p01/p01[-1]
                 else: p1 = p01
 
-                if w0 != p00 and w0 != p01: # w0 got clipped
+                if w0 is not p00 and w0 is not p01: # w0 got clipped
                     # keep closest (smallest x) outer vertex
                     idx = int(p0[1]>0)
                     if p0[0] < v_hooks[idx][0]:
                         v_hooks[idx] = ( (p0[0], e.v1) )
-                if w1 != p00 and w1 != p01: # w1 got clipped
+                if w1 is not p00 and w1 is not p01: # w1 got clipped
                     # keep closest (smallest x) outer vertex
                     idx = int(p0[1]>0)
                     if p0[0] < v_hooks[idx][0]:
@@ -81,12 +86,12 @@ class IterativeMeshLearner:
                 if p11[-1] != 0: p1 = p11/p11[-1]
                 else: p1 = p11
 
-                if w0 != p10 and w0 != p11: # w0 got clipped
+                if w0 is not p10 and w0 is not p11: # w0 got clipped
                     # keep closest (smallest x) outer vertex
                     idx = int(p1[1]>0)
                     if p1[0] < v_hooks[idx][0]:
                         v_hooks[idx] = ( (p1[0], e.v1) )
-                if w1 != p10 and w1 != p11: # w1 got clipped
+                if w1 is not p10 and w1 is not p11: # w1 got clipped
                     # keep closest (smallest x) outer vertex
                     idx = int(p1[1]>0)
                     if p1[0] < v_hooks[idx][0]:
@@ -97,16 +102,27 @@ class IterativeMeshLearner:
         # END: for e in self.mesh.E:
 
         self.mesh.cleanup()
-        x,y = scan.draw([-1.,1.,-1.,1.], [2./cam.res,2./cam.res])
-        x = [ float('nan') if xi >= 1. else xi for xi in x ]
+        x,y = scan.contour([-1.,1.,-1.,1.], [2./cam.res,2./cam.res])
         vst = vstack(zip(x,y,ones(len(x))))
-        m = vstack(v/v[-1] for v in transform(cam.tf_to_frustum))
+        m = vstack(v/v[-1] for v in transform(cam.tf_to_frustum,vst))
 
         # second: combine real measurement data with virtually generated
         # and insert in existing mesh
-        ii = len(m[:,0])
+        ii = len(data[:,0])
         for i in range(ii):
-            m[i][0] = min(m[i][0], data[i][0])
+            if m[i][0] > data[i][0]:
+                m[i] = data[i]
+            elif m[i][0] >= (cam.f):
+                m[i][0] = float('nan')
+
+
+        #print m
+        #ax = plt.figure().add_subplot(111)
+        #ax.axis('equal')
+        #ax.plot(data[:,0],data[:,1],'xr')
+        #ax.plot(m[:,0],m[:,1],'xb')
+
+        m = transform(cam.tf_to_world,m)
 
         if v_hooks[0][0] < 100.0:
             v1 = v_hooks[0][1]
@@ -125,4 +141,7 @@ class IterativeMeshLearner:
 
         if v_hooks[1][0] < 100.0:
             v2 = v_hooks[1][1]
-            self.mesh.connect(v1.v2)
+            self.mesh.connect(v1,v2)
+
+        #print "MESH.V:"
+        #print self.mesh.V
