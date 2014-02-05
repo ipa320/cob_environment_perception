@@ -90,7 +90,7 @@ class Sensor(cm.Camera2d):
                 scan.addEdge(p0,p1)
 
         ww = vstack(ww)
-        x,y = scan.draw([-1.,1.,-1.,1.], [2./self.res,2./self.res])
+        x,y = scan.contour([-1.,1.,-1.,1.], [2./self.res,2./self.res])
         x = [ float('nan') if xi >= 1. else xi for xi in x ]
         x += random.randn(len(x)) * 0.005
 
@@ -161,35 +161,38 @@ learner = iml.IterativeMeshLearner()
 data = []
 colors = 'ym'
 iii = 0
-sensors = [sensors[3], sensors[6], sensors[12]]
+#sensors = [sensors[11], sensors[12], sensors[13]]
 for s in sensors:
+    learner.refineMesh(s.measurement, s)
+
+#for s in sensors:
     # normal estimation:
-    ii = len(s.measurement[:,0]) # number of measurement points
-    ne = Normals2d(9, ii)
-    n = empty([ii,2])
-    for i in range(ii):
-        n[i] = ne.computeNormal(s.measurement[:,0],s.measurement[:,1],i)
+    #ii = len(s.measurement[:,0]) # number of measurement points
+    #ne = Normals2d(9, ii)
+    #n = empty([ii,2])
+    #for i in range(ii):
+    #    n[i] = ne.computeNormal(s.measurement[:,0],s.measurement[:,1],i)
 
     # create mesh:
-    m = Mesh()
-    m.load(s.measurement[:,0],s.measurement[:,1],n[:,0],n[:,1])
+    #m = Mesh()
+    #m.load(s.measurement[:,0],s.measurement[:,1],n[:,0],n[:,1])
     #s.axis = plt.figure().add_subplot(111)
     #m.draw(s.axis,'ven')
 
     # simplify mesh:
-    ms = Simplifier()
-    ms.init(m)
-    ms.simplify(1.0)
+    #ms = Simplifier()
+    #ms.init(m)
+    #ms.simplify(1.0)
 
     #m.draw(s.axis,'ve', 'kr'+colors[iii%len(colors)])
 
     # convert simplified mesh to input format for map optimization:
-    data_new = mdata.convertMeshToMeasurementData(m,s)
-    learner.initMesh(data_new[0])
-    learner.addMeasurement(data_new[1])
-    learner.addMeasurement(data_new[2])
-    data[len(data):] = [data_new[0],data_new[1],data_new[2]]
-    iii = iii+1
+    #data_new = mdata.convertMeshToMeasurementData(m,s)
+    #learner.initMesh(data_new[0])
+    #learner.addMeasurement(data_new[1])
+    #learner.addMeasurement(data_new[2])
+    #data[len(data):] = [data_new[0],data_new[1],data_new[2]]
+    #iii = iii+1
 
 
 
@@ -207,9 +210,10 @@ cm.drawPoses(sensors,ax1)
 cm.drawPoses(sensors,ax2)
 for s in sensors: s.showMeasurementInMap(ax1)
 #for s in sensors: s.drawFrustum(ax1)
-for d in data:
-    d.draw(ax2)
-    d.drawBoundingBox(ax2,[.1,.1])
+learner.mesh.draw(ax1, 've')
+#for d in data:
+#    d.draw(ax2)
+#    d.drawBoundingBox(ax2,[.1,.1])
 
 ax1.axis('equal')
 ax1.set_xlim(-.5, 6.5)

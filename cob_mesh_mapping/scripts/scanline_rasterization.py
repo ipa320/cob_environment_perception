@@ -75,7 +75,7 @@ class ScanlineRasterization:
     def addEdge(self, p1, p2):
         self.e[len(self.e):] = [ Edge(p1,p2) ]
 
-    def draw(self, limits = [-1.,1.,-1.,1.], cellsize = [0.05,0.05]):
+    def contour(self, limits = [-1.,1.,-1.,1.], cellsize = [0.05,0.05]):
         xmin = limits[0]
         xmax = limits[1]
         xstep = cellsize[0]
