@@ -40,7 +40,10 @@ class Vertex:
         return array([self.x,self.y,1.])
 
     def isDead(self):
-        return ( (self.e1 and self.e2) is None )
+        return ( self.e1 is None and self.e2 is None )
+
+    def isBorder(self):
+        return ( self.e1 is None or self.e2 is None )
 
     def __repr__(self):
         return "(%3.2f %3.2f)" % (self.x, self.y)
@@ -52,6 +55,16 @@ class Edge:
         self.v2 = v2
         self.vnew = v1
         self.dirty = False
+
+    def updateNormal(self):
+        nx,ny = computeNormal(self.v1.x, self.v1.y, self.v2.x, self.v2.y)
+        self.v1.addPlaneParam(nx,ny)
+        self.v2.addPlaneParam(nx,ny)
+        # add perpendicular penalty planes:
+        if self.v1.isBorder():
+            self.v1.addPlaneParam(-ny,nx,100.)
+        if self.v2.isBorder():
+            self.v2.addPlaneParam(-ny,nx,100.)
 
     def __repr__(self):
         return `self.v1.__repr__()` + "  <--->  "  + `self.v2.__repr__()`

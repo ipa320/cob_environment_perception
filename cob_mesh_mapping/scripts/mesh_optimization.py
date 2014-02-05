@@ -4,7 +4,7 @@ import heapq
 from collections import namedtuple
 import mesh_structure as ms
 import matplotlib.pyplot as plt
-reload(ms)
+
 
 class Heap:
     def __init__(self):
@@ -29,6 +29,16 @@ class Simplifier:
         for e in mesh.E:
             c = self.compute_cost(e, 'EC')
             self.heap.push(c,e,'EC')
+
+    def reset(self):
+        for h in self.heap.h:
+            h.data.dirty = False
+
+        self.heap.__init__()
+
+    def markForUpdate(self, edge):
+        c = self.compute_cost(edge, 'EC')
+        self.heap.push(c,edge,'EC')
 
     def compute_cost(self, data, operation):
         """
@@ -75,7 +85,7 @@ class Simplifier:
             elif h.op is 'ES':
                 self.mesh.split(h.data)
             elif h.op is 'VM':
-                seld.mesh.move(h.data)
+                self.mesh.move(h.data)
 
             h = self.heap.pop()
             while(h.data.dirty):
