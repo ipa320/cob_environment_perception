@@ -114,7 +114,7 @@ class Sensor(cm.Camera2d):
 
     def showMeasurementInMap(self, axis):
         transformed = transform(self.tf_to_world,self.measurement)
-        axis.plot(transformed[:,0],transformed[:,1], 'x')
+        axis.plot(transformed[:,0],transformed[:,1], 'xr')
 
 ### END CLASS -- Sensor ###
 
@@ -209,13 +209,15 @@ fig1 = plt.figure(figsize=(1024.0/80, 768.0/80), dpi=80)
 
 fi = 0
 for s in sensors:
-    learner.refineMesh(s.measurement, s)
-
     fig1.clf()
     ax1 = fig1.add_subplot(111)
+    plt.title('Measurement')
+
     world.draw(ax1)
     s.drawFrustum(ax1)
+    s.drawPose(ax1)
     learner.mesh.draw(ax1, 've')
+    s.showMeasurementInMap(ax1)
 
     ax1.axis('equal')
     ax1.set_xlim(-.5, 6.5)
@@ -224,12 +226,13 @@ for s in sensors:
     fig1.savefig('img_out/mesh_learner_'+str(fi).zfill(3)+'a.png')
 
 
-    learner.simple.simplify(0.005)
-
+    learner.refineMesh(s.measurement, s)
     fig1.clf()
     ax1 = fig1.add_subplot(111)
+    plt.title('Mesh Refinement')
     world.draw(ax1)
     s.drawFrustum(ax1)
+    s.drawPose(ax1)
     learner.mesh.draw(ax1, 've')
 
     ax1.axis('equal')
@@ -237,6 +240,23 @@ for s in sensors:
     ax1.set_ylim(-.5, 4.5)
     ax1.grid()
     fig1.savefig('img_out/mesh_learner_'+str(fi).zfill(3)+'b.png')
+
+
+    learner.simple.simplify(0.005)
+    fig1.clf()
+    ax1 = fig1.add_subplot(111)
+    plt.title('Mesh Simplification')
+    world.draw(ax1)
+    s.drawFrustum(ax1)
+    s.drawPose(ax1)
+    learner.mesh.draw(ax1, 've')
+
+
+    ax1.axis('equal')
+    ax1.set_xlim(-.5, 6.5)
+    ax1.set_ylim(-.5, 4.5)
+    ax1.grid()
+    fig1.savefig('img_out/mesh_learner_'+str(fi).zfill(3)+'c.png')
 
     fi = fi+1
 #for d in data:
