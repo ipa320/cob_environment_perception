@@ -195,7 +195,7 @@ class Mesh:
         if 'v' in options:
             x = [ v.x for v in self.V ]
             y = [ v.y for v in self.V ]
-            axis.plot(x,y,'o'+color[0])
+            axis.plot(x,y,'x'+color[0])
 
         if 'n' in options:
             for v in self.V:
