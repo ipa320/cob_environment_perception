@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<launch>
+
+  <node pkg="nodelet" type="nodelet" name="pcl_manager"  args="manager" output="screen"/>
+  
+ <!-- Run jump edges filter  -->
+  <node pkg="nodelet" type="nodelet" name="jump_edge_filter_nodelet" args="load cob_3d_mapping_filters/JumpEdgeFilter pcl_manager" output="screen">
+  	<remap from="point_cloud2" to="/swissranger/pointcloud2_raw"/>
+  	<remap from="point_cloud2_filtered" to="/cob_3d_mapping_filters/point_cloud2_filtered_jumpedge"/>
+  	<param name = "upper_angle_deg" type="double" value="170.0"/>
+  </node> 
+  
+  <!-- node pkg="rosbag" type="play" name="bag_play" args="/home/goa/pcl_daten/table/fixed_pltf_neck_joystick_table.bag -l" output="screen" />
+  <node pkg="rviz" type="rviz" respawn="false" name="rviz" /-->
+
+</launch>

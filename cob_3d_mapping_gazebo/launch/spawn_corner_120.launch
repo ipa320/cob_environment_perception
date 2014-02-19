@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+
+	<!-- gazebo spawn_model -file `pwd`/corner_60.urdf -urdf -z 1 -model corner-->
+
+	<param name="corner" command="$(find xacro)/xacro.py $(find cob_3d_mapping_gazebo)/objects/corner_120.urdf" />
+	<!-- spawn model in gazebo -->
+	<node name="spawn_corner" pkg="gazebo" type="spawn_model" args="-urdf -param corner -x 0 -y 0 -z 1 -R 0 -P 0 -Y 0 -model corner" respawn="false" output="screen" />
+
+</launch>

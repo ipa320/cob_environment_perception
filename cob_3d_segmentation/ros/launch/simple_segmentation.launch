@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Input/Output Topics: -->
+  <arg name="point_cloud_in" default="/cam3d/depth_registered/points"/>
+  <arg name="segmented_cloud" default="/segmentation/segmented_cloud"/>
+  <arg name="classified_cloud" default="/segmentation/classified_cloud"/>
+  <arg name="shape_array" default="/segmentation/shape_array"/>
+  <arg name="enable_action_mode" default="False"/>
+
+  <arg name="debug_mode" default="false"/>
+  <arg name="start_manager" default="true"/>
+  <arg name="nodelet_manager" default="segmentation_nodelet_manager"/>
+
+  <group if="$(arg start_manager)">
+    <node if="$(arg debug_mode)" pkg="nodelet" type="nodelet" name="$(arg nodelet_manager)"  args="manager" output="screen"
+          launch-prefix="gdb -ex run --args"/>
+    <node unless="$(arg debug_mode)" pkg="nodelet" type="nodelet" name="$(arg nodelet_manager)"  args="manager" output="screen"/>
+  </group>
+
+  <node pkg="nodelet" type="nodelet" name="segmentation"
+        args="load cob_3d_segmentation/SimpleSegmentationNodelet $(arg nodelet_manager)" output="screen">
+    <remap from="point_cloud" to="$(arg point_cloud_in)"/>
+    <remap from="segmented_cloud" to="$(arg segmented_cloud)"/>
+    <remap from="classified_cloud" to="$(arg classified_cloud)"/>
+    <remap from="shape_array" to="$(arg shape_array)"/>
+
+    <param name="centroid_passthrough" type="double" value="5.0"/>
+    <param name="min_cluster_size" type="int" value="100"/>
+    <param name="filter" type="bool" value="True"/>
+    <param name="downsample" type="bool" value="True"/>
+    <param name="colorize" type="bool" value="True"/>
+    <param name="enable_action_mode" type="bool" value="$(arg enable_action_mode)"/>
+  </node>
+</launch>

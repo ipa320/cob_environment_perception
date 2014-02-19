@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<launch>
+
+
+    <arg name= "name" default = "cylinder"/>
+    <arg name= "x" default = "1.5"/>
+    <arg name= "y" default = "-1.5"/>
+    <arg name= "roll" default  = "0"/>
+    <arg name= "pitch" default = "0"/>
+    <arg name= "yaw" default   = "0"/>
+    
+	<param name="$(arg name)" command="$(find xacro)/xacro.py $(find cob_3d_mapping_gazebo)/objects/cylinder2.urdf" />
+	<!-- spawn model in gazebo -->
+	<node name="spawn_cylinder" pkg="gazebo" type="spawn_model" args="-urdf -param $(arg name) -x $(arg x) -y $(arg y) -z 1.1 -R $(arg roll) -P $(arg pitch) -Y $(arg yaw) -model $(arg name)" respawn="false" output="screen" />
+
+</launch>
