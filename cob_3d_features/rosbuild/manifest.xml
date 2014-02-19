@@ -1,0 +1,6 @@
+<launch>
+  <node name="qppf_node" pkg="cob_3d_segmentation" type="qppf_node">
+	<param name="filter" value="10000" />
+  </node>
+</launch>
+

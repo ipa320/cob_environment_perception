@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<launch>
+
+      <param name="algo" value="info" />
+      <param name="threshold_step" value="0.06" />
+      <param name="threshold_diff" value="0.06" />
+      <param name="min_info" value="1" />
+      <param name="max_info" value="17" />
+      <param name="always_relevant_changes" value="1" />
+
+</launch>

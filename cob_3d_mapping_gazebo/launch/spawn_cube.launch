@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+
+	gazebo spawn_model -file `pwd`/cube.urdf -urdf -z 1 -model cube
+
+	<param name="cube" command="$(find xacro)/xacro.py $(find cob_3d_mapping_gazebo)/objects/cube.urdf" />
+	<!-- spawn model in gazebo -->
+	<node name="spawn_cube" pkg="gazebo" type="spawn_model" args="-urdf -param cube -x 1 -y 1 -z 1 -R 0 -P 0 -Y 0 -model cube" respawn="false" output="screen" />
+
+</launch>

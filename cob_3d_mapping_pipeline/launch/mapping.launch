@@ -1,0 +1,60 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- start environment modelling -->
+  <arg name="mapping_manager" value="mapping_manager"/>
+  <arg name="points_in" default="/cam3d/depth_registered/points"/>
+  <arg name="enable_point_map" default="false"/>
+  <node pkg="nodelet" type="nodelet" name="$(arg mapping_manager)"  args="manager" output="screen"/>
+
+  <!-- Run a VoxelGrid filter to clean NaNs and downsample the data -->
+  <!--node pkg="nodelet" type="nodelet" name="voxel_grid1" args="load pcl/VoxelGrid pcl_manager" output="screen">
+    <remap from="~input" to="/outlier_removal/output" />
+    <rosparam>
+      filter_field_name: z
+      filter_limit_min: -0.1
+      filter_limit_max: 6
+      filter_limit_negative: False
+      leaf_size: 0.05
+    </rosparam>
+  </node-->
+
+    <!--node pkg="nodelet" type="nodelet" name="pass_through" args="load pcl/PassThrough pcl_manager" output="screen">
+    <remap from="~input" to="/cam3d/rgb/points" />
+    <rosparam>
+      filter_field_name: z
+      filter_limit_min: -10
+      filter_limit_max: 10
+    </rosparam>
+  </node-->
+
+  <include file="$(find cob_3d_registration)/ros/launch/registration.launch">
+    <arg name="start_manager" value="false"/>
+    <arg name="nodelet_manager" value="$(arg mapping_manager)"/>
+  </include>
+  <include if="$(arg enable_point_map)" file="$(find cob_3d_mapping_point_map)/ros/launch/point_map.launch">
+    <arg name="start_manager" value="false"/>
+    <arg name="nodelet_manager" value="$(arg mapping_manager)"/>
+  </include>
+  <include file="$(find cob_3d_segmentation)/ros/launch/simple_segmentation.launch">
+    <arg name="start_manager" value="false"/>
+    <arg name="nodelet_manager" value="$(arg mapping_manager)"/>
+    <arg name="point_cloud_in" value="/registration_pass_through/output"/>
+  </include>
+  <include file="$(find cob_3d_mapping_common)/ros/launch/transform_shape_array.launch">
+    <arg name="input" value="/segmentation/shape_array"/>
+    <arg name="output" value="/transformed/shape_array"/>
+  </include>
+  <include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch">
+    <arg name="shape_array_in" value="/transformed/shape_array"/>
+  </include>
+  <include file="$(find cob_3d_visualization)/launch/shape_visualization.launch">
+    <arg name="shape_array_in" value="/geometry_map/map_array"/>
+  </include>
+
+
+
+  <!--node pkg="rosbag" type="play" name="rosbag_play" cwd="node" respawn="false" output="screen" args="/home/goa/pcl_daten/table/fixed_pltf_neck_joystick_table.bag -k -q pause"/>
+  	<remap from="input" to="/outlier_removal/output"/>
+  </node-->
+</launch>
+

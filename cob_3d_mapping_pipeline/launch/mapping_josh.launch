@@ -1,0 +1,27 @@
+<?xml version="1.0"?>
+<launch>
+
+  <node pkg="cob_3d_segmentation" type="qppf_node" name="segmentation_qppf" output="screen" >
+  	<param name="filter" value="20000" />
+  	
+  	<remap from="/camera/rgb/points" to="/cam3d/rgb/points"/>
+  	<remap from="/camera/rgb/camera_info" to="/cam3d/rgb/camera_info"/>
+  	<remap from="/camera/depth/camera_info" to="/cam3d/depth/camera_info"/>
+  </node>
+
+  <node pkg="cob_3d_mapping_slam" type="slam_node" name="slam" output="screen" >
+  
+    <!-- ODOMETRY SETTINGS -->
+  	<param name="frame_id" value="/map" />
+  	<param name="world_id" value="/head_cam3d_link" />
+
+  	<param name="invert" value="true" />
+  	<param name="use_odometry" value="true" />
+  	
+    <!-- DEBUG SETTINGS -->
+  	<param name="dbg_show_grid" value="false" />
+
+  </node>
+  
+</launch>
+
