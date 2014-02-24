@@ -116,46 +116,6 @@ namespace cob_3d_mapping_filters
       double upper_angle_deg_;
     };
 
-  template<>
-    class JumpEdgeFilter<sensor_msgs::PointCloud2> : public pcl::Filter<sensor_msgs::PointCloud2>
-    {
-      typedef sensor_msgs::PointCloud2 PointCloud2;
-      typedef PointCloud2::Ptr PointCloud2Ptr;
-      typedef PointCloud2::ConstPtr PointCloud2ConstPtr;
-
-    public:
-      /** \constructor */
-      JumpEdgeFilter () :
-          upper_angle_deg_ (170.0)
-      {
-      }
-      ;
-
-      //virtual ~JumpEdgeFilter();
-
-      /** \sets upper angle threshold  */
-      inline void
-      setUpperAngle (double angle)
-      {
-        upper_angle_deg_ = angle;
-      }
-
-      /** \gets upper angle threshold  */
-      inline double
-      getUpperAngle ()
-      {
-        return upper_angle_deg_;
-      }
-
-    protected:
-
-      /** \Apply filter   */
-      void
-      applyFilter (PointCloud2 &output);
-
-      /** \upper angle threshold in degrees  */
-      double upper_angle_deg_;
-    };
 } // end namespace cob_3d_mapping_filters
 
 #endif /* JUMP_EDGE_FILTER_H_ */

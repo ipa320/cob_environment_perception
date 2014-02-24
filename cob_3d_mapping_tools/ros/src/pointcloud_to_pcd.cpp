@@ -37,6 +37,7 @@
 
 // ROS core
 #include <ros/ros.h>
+#include <pcl_conversions/pcl_conversions.h>
 // PCL includes
 #include <pcl/io/io.h>
 #include <pcl/io/pcd_io.h>
@@ -68,8 +69,10 @@ class PointCloudToPCD
     {
       if ((cloud->width * cloud->height) == 0)
         return;
+      pcl::PCLPointCloud2::Ptr cloud2(new pcl::PCLPointCloud2);
+      pcl_conversions::toPCL(*cloud, *cloud2);
 
-      ROS_INFO ("Received %d data points in frame %s with the following fields: %s", (int)cloud->width * cloud->height, cloud->header.frame_id.c_str (), pcl::getFieldsList (*cloud).c_str ());
+      ROS_INFO ("Received %d data points in frame %s with the following fields: %s", (int)cloud2->width * cloud2->height, cloud2->header.frame_id.c_str (), pcl::getFieldsList (*cloud2).c_str ());
 
       std::stringstream ss;
       // Check if there is a parameter on the server that sets the prefix for the output file
@@ -79,7 +82,7 @@ class PointCloudToPCD
       ss << "/home/goa-hh/pcl_daten/test/" << cloud->header.stamp << ".pcd";
       ROS_INFO ("Data saved to %s", ss.str ().c_str ());
 
-      pcl::io::savePCDFile (ss.str (), *cloud, Eigen::Vector4f::Zero (),
+      pcl::io::savePCDFile (ss.str (), *cloud2, Eigen::Vector4f::Zero (),
                             Eigen::Quaternionf::Identity (), false);
     }
 

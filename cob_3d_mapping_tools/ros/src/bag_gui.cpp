@@ -60,9 +60,13 @@
  *
  ****************************************************************/
 
+#include <ros/ros.h>
 #include <rosbag/bag.h>
 #include <rosbag/view.h>
 #include <sensor_msgs/PointCloud2.h>
+#include <pcl_conversions/pcl_conversions.h>
+
+#include <pcl/conversions.h>
 
 #include "cob_3d_mapping_common/point_types.h"
 #include "cob_3d_features/organized_normal_estimation_omp.h"
@@ -154,7 +158,10 @@ public:
 
       sensor_msgs::PointCloud2::ConstPtr last_msg = (*tl_it)->instantiate<sensor_msgs::PointCloud2>();
       std::cout << last_msg->header.stamp << std::endl;
-      pcl::fromROSMsg<PT>(*last_msg, *pc_);
+      pcl::PCLPointCloud2 pc2;
+      pcl_conversions::toPCL(*last_msg, pc2);
+      pcl::fromPCLPointCloud2(pc2, *pc_);
+      //pcl::fromROSMsg<PT>(*last_msg, *pc_);
       compute();
       r_rgb_->resourceChanged();
       r_seg_->resourceChanged();

@@ -15,7 +15,6 @@ find_package(catkin REQUIRED COMPONENTS
   dynamic_reconfigure
   eigen_conversions
   nodelet
-  pcl
   pcl_ros
   roscpp
 )
@@ -50,7 +49,6 @@ catkin_package(
     dynamic_reconfigure
     eigen_conversions
     nodelet
-    pcl
     pcl_ros
     roscpp
   DEPENDS

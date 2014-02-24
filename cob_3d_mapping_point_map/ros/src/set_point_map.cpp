@@ -71,6 +71,8 @@
 // PCL includes
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
+#include <pcl/conversions.h>
+#include <pcl_conversions/pcl_conversions.h>
 
 
 int main (int argc, char **argv)
@@ -98,7 +100,11 @@ int main (int argc, char **argv)
     return -1;
   }
 
-  pcl::toROSMsg(map,req.map);
+  pcl::PCLPointCloud2 map2;
+  pcl::toPCLPointCloud2(map, map2);
+  sensor_msgs::PointCloud2 cloud_msg;
+  pcl_conversions::fromPCL(map2, cloud_msg);
+  //pcl::toROSMsg(map,req.map);
   req.map.header.frame_id ="/map";
   cob_3d_mapping_msgs::SetPointMapResponse resp;
 

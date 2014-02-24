@@ -71,6 +71,7 @@
 #include <pcl/io/ply_io.h>
 #include <pcl/io/vtk_io.h>
 #include <pcl/io/pcd_io.h>
+#include <pcl_conversions/pcl_conversions.h>
 #include <opencv2/opencv.hpp>
 
 #include <cob_3d_mapping_msgs/ShapeArray.h>
@@ -195,8 +196,9 @@ cob_3d_segmentation::SimpleSegmentationNodelet::computeAndPublish()
   // --- start shape array publisher: ---
   PointCloud::Ptr hull(new PointCloud);
   cob_3d_mapping_msgs::ShapeArray sa;
-  sa.header = down_->header;
-  sa.header.frame_id = down_->header.frame_id.c_str();
+  pcl_conversions::fromPCL(down_->header, sa.header);
+  //sa.header = down_->header;
+  //sa.header.frame_id = down_->header.frame_id.c_str();
   //unsigned int id = 0;
   for (ClusterPtr c = seg_.clusters()->begin(); c != seg_.clusters()->end(); ++c)
   {
@@ -215,7 +217,8 @@ cob_3d_segmentation::SimpleSegmentationNodelet::computeAndPublish()
 
     sa.shapes.push_back(cob_3d_mapping_msgs::Shape());
     cob_3d_mapping_msgs::Shape* s = &sa.shapes.back();
-    s->header = down_->header;
+    pcl_conversions::fromPCL(down_->header, s->header);
+    //s->header = down_->header;
 
     //computeTexture(c, p->pose_, p->id_);
     cob_3d_mapping::toROSMsg(*p, *s);

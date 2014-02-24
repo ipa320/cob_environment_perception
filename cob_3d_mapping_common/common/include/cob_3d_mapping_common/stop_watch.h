@@ -63,6 +63,7 @@
 
 #include <ctime>
 #include <sstream>
+#include <sys/time.h>
 #ifdef _WIN32
 #include <Windows.h>
 #endif

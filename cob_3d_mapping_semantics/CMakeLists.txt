@@ -8,12 +8,13 @@ find_package(catkin REQUIRED COMPONENTS
   cob_3d_mapping_common
   cob_3d_mapping_msgs
   dynamic_reconfigure
-  pcl
   pcl_ros
   rosbag
   roscpp
   visualization_msgs
 )
+
+find_package(PCL REQUIRED)
 
 generate_dynamic_reconfigure_options(cfg/structure_extraction_node.cfg
   cfg/supporting_plane_extraction_node.cfg
@@ -38,11 +39,12 @@ catkin_package(
     cob_3d_mapping_common
     cob_3d_mapping_msgs
     dynamic_reconfigure
-    pcl
     pcl_ros
     rosbag
     roscpp
     visualization_msgs
+  DEPENDS
+    PCL
 )
 
 ###########
@@ -55,6 +57,7 @@ catkin_package(
 include_directories(
   common/include
   ${catkin_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
@@ -88,19 +91,23 @@ add_executable(get_tables_client
 target_link_libraries(table_extraction_node 
   cob_3d_mapping_semantics
   ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
 )
 
 target_link_libraries(supporting_plane_extraction_node 
   cob_3d_mapping_semantics 
   ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
 )
 
 target_link_libraries(structure_extraction_node 
   cob_3d_mapping_semantics 
   ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
 )
 
 target_link_libraries(get_tables_client 
   ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
 )
 

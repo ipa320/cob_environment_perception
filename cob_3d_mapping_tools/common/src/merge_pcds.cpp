@@ -103,9 +103,9 @@ void readOptions(int argc, char* argv[])
 int main(int argc, char** argv)
 {
   readOptions(argc, argv);
-  sensor_msgs::PointCloud2::Ptr cloud_out (new sensor_msgs::PointCloud2);
-  sensor_msgs::PointCloud2::Ptr cloud_in (new sensor_msgs::PointCloud2);
-  sensor_msgs::PointCloud2::Ptr cloud_tmp (new sensor_msgs::PointCloud2);
+  pcl::PCLPointCloud2 cloud_out;
+  pcl::PCLPointCloud2 cloud_in;
+  pcl::PCLPointCloud2 cloud_tmp;
   if (in_f != "") 
   {
     vector<string> tmp_in;
@@ -116,18 +116,18 @@ int main(int argc, char** argv)
     }
   }
   cout << "PCD files to merge: " << in_pcds.size() << endl;
-  io::loadPCDFile(in_pcds[0], *cloud_out);
+  io::loadPCDFile(in_pcds[0], cloud_out);
   for (size_t i=1; i<in_pcds.size(); i++)
   {
-    io::loadPCDFile(in_pcds[i], *cloud_in);
-    cout << "loaded " << cloud_in->width * cloud_in->height << " points..." << endl;
-    concatenatePointCloud (*cloud_in,*cloud_out,*cloud_tmp);
-    cout << "copied " << cloud_tmp->width * cloud_tmp->height << " points..." << endl;
-    *cloud_out = *cloud_tmp;
+    io::loadPCDFile(in_pcds[i], cloud_in);
+    cout << "loaded " << cloud_in.width * cloud_in.height << " points..." << endl;
+    concatenatePointCloud (cloud_in,cloud_out,cloud_tmp);
+    cout << "copied " << cloud_tmp.width * cloud_tmp.height << " points..." << endl;
+    cloud_out = cloud_tmp;
 
   }
-  io::savePCDFile(out, *cloud_out);
-  cout << "saved " << cloud_out->width * cloud_out->height << " points!" << endl;
+  io::savePCDFile(out, cloud_out);
+  cout << "saved " << cloud_out.width * cloud_out.height << " points!" << endl;
 
   return 0;
 }

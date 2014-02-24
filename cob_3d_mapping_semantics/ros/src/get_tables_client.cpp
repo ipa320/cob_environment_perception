@@ -75,6 +75,8 @@
 // PCL includes
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl/conversions.h>
 
 class TablesClient
 {
@@ -155,7 +157,10 @@ public:
             std::stringstream ss1;
             ss1 << file_path_ << "table_" << i << "_" << j << ".pcd";
             pcl::PointCloud<pcl::PointXYZ> p;
-            pcl::fromROSMsg (res.objects.shapes[i].points[j], p);
+            pcl::PCLPointCloud2 p2;
+            pcl_conversions::toPCL(res.objects.shapes[i].points[j], p2);
+            pcl::fromPCLPointCloud2(p2, p);
+            //pcl::fromROSMsg (res.objects.shapes[i].points[j], p);
             pcl::io::savePCDFile (ss1.str (), p, false);
             ROS_INFO("PCD file saved");
           }

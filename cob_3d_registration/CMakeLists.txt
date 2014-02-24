@@ -12,7 +12,6 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   nav_msgs
   nodelet
-  pcl
   pcl_ros
   tf
   tf_conversions
@@ -23,6 +22,7 @@ find_package(VTK REQUIRED COMPONENTS vtkCommon)
 #find_package(Boost REQUIRED COMPONENTS program_options)
 find_package(OpenCV REQUIRED)
 find_package(Eigen REQUIRED)
+find_package(PCL REQUIRED)
 #TODO: check for SSE
 
 #generate_dynamic_reconfigure_options(cfg/plane_extraction_nodelet.cfg
@@ -70,7 +70,6 @@ catkin_package(
     message_generation
     nav_msgs
     nodelet
-    pcl
     pcl_ros
     tf
     tf_conversions
@@ -78,6 +77,7 @@ catkin_package(
     VTK
     OpenCV
     Eigen
+    PCL
 )
 
 
@@ -95,6 +95,7 @@ include_directories(
   ${VTK_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
   ${Eigen_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
@@ -132,12 +133,14 @@ add_library(cob_3d_registration
 target_link_libraries(cob_3d_registration_lib 
   ${catkin_LIBRARIES}
   ${VTK_LIBRARIES}
+  ${PCL_LIBRARIES}
 )
 
 target_link_libraries(cob_3d_registration 
   cob_3d_registration_lib
   ${catkin_LIBRARIES}
   ${VTK_LIBRARIES}
+  ${PCL_LIBRARIES}
 )
 
 #target_link_libraries(png2img 
@@ -147,7 +150,8 @@ target_link_libraries(cob_3d_registration
 
 #target_link_libraries(registration ann  cob_vision_slam cob_sensor_fusion cob_camera_sensors cob_3d_mapping_features_omp)
 
-set_target_properties(cob_3d_registration PROPERTIES COMPILE_FLAGS "-D__LINUX__") #${SSE_FLAGS}
+set_target_properties(cob_3d_registration_lib PROPERTIES COMPILE_FLAGS -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
+set_target_properties(cob_3d_registration PROPERTIES COMPILE_FLAGS "-D__LINUX__ -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET") #${SSE_FLAGS}
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
 catkin_add_gtest(test_frir ros/test/test_frir.cpp)

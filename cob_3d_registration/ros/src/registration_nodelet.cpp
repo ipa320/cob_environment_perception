@@ -87,6 +87,7 @@
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_kdl.h>
 #include <pcl/io/pcd_io.h>
+#include <pcl_conversions/pcl_conversions.h>
 #include <visualization_msgs/Marker.h>
 #include "cob_3d_registration/RegistrationPCD.h"
 #include "cob_3d_registration/Parameterlist.h"
@@ -357,7 +358,9 @@ public:
       //std::cout<<reg_->getTransformation()<<"\n";
       tf::transformEigenToTF(af,transform);
       //std::cout << transform.stamp_ << std::endl;
-      tf_br_.sendTransform(tf::StampedTransform(transform, pc_in->header.stamp, world_id_, corrected_id_));
+      std_msgs::Header header;
+      pcl_conversions::fromPCL(pc_in->header, header);
+      tf_br_.sendTransform(tf::StampedTransform(transform, header.stamp, world_id_, corrected_id_));
 
       ROS_WARN("registration successful");
     }

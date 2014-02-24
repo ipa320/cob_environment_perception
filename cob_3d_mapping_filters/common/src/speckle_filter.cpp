@@ -76,32 +76,6 @@
 #include <pcl/impl/pcl_base.hpp>
 #endif
 
-void
-cob_3d_mapping_filters::SpeckleFilter<sensor_msgs::PointCloud2>::applyFilter (PointCloud2 &pc_out)
-{
-  pcl::PointCloud<pcl::PointXYZ> pc;
-  pcl::fromROSMsg (*input_, pc);
-
-  for (size_t i = 0; i < pc.size (); i++)
-    *((int*)&pc.points[i].data[3]) = i;
-
-  cob_3d_mapping_filters::SpeckleFilter<pcl::PointXYZ> filter;
-
-  filter.setFilterParam (speckle_size_, speckle_range_);
-  filter.setInputCloud (pc.makeShared ());
-
-  // Apply the actual filter
-  pcl::PointIndices::Ptr points_to_remove (new pcl::PointIndices ());
-  filter.applyFilter (points_to_remove);
-
-  pcl::ExtractIndices<sensor_msgs::PointCloud2> extractIndices;
-  extractIndices.setInputCloud (input_);
-  extractIndices.setNegative (true);
-  extractIndices.setIndices (points_to_remove);
-  extractIndices.filter (pc_out);
-
-}
-
 using namespace pcl;
 PCL_INSTANTIATE(SpeckleFilter, (PointXYZCI));
 PCL_INSTANTIATE(SpeckleFilter, PCL_XYZ_POINT_TYPES);

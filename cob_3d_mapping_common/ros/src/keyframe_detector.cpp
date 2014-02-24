@@ -69,7 +69,7 @@
 // ROS includes
 #include <ros/ros.h>
 #include <tf/transform_listener.h>
-#include <tf_conversions/tf_kdl.h>
+#include <tf_conversions/tf_eigen.h>
 
 // ROS message includes
 #include <sensor_msgs/CameraInfo.h>
@@ -136,15 +136,14 @@ public:
     {
       tf_listener_.waitForTransform("/map", frame_id_, ros::Time(0), ros::Duration(0.1));
       tf_listener_.lookupTransform("/map", frame_id_, ros::Time(0), transform);
-      KDL::Frame frame_KDL, frame_KDL_old;
-      tf::TransformTFToKDL(transform, frame_KDL);
-      tf::TransformTFToKDL(transform_old_, frame_KDL_old);
-      double r,p,y;
-      frame_KDL.M.GetRPY(r,p,y);
-      double r_old,p_old,y_old;
-      frame_KDL_old.M.GetRPY(r_old,p_old,y_old);
+      //KDL::Frame frame_KDL, frame_KDL_old;
+      Eigen::Affine3d trf_eigen, trf_eigen_old;
+      tf::transformTFToEigen(transform, trf_eigen);
+      tf::transformTFToEigen(transform_old_, trf_eigen_old);
+      Eigen::Vector3d rpy = trf_eigen.rotation().eulerAngles(2,1,0);
+      Eigen::Vector3d rpy_old = trf_eigen_old.rotation().eulerAngles(2,1,0);
 
-      if(trigger_always_ || first_ || fabs(r-r_old) > r_limit_ || fabs(p-p_old) > p_limit_ || fabs(y-y_old) > y_limit_ ||
+      if(trigger_always_ || first_ || fabs(rpy(0)-rpy_old(0)) > r_limit_ || fabs(rpy(1)-rpy_old(1)) > p_limit_ || fabs(rpy(2)-rpy_old(2)) > y_limit_ ||
           transform.getOrigin().distance(transform_old_.getOrigin()) > distance_limit_)
       {
         if(triggerKeyFrame()) {

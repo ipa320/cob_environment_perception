@@ -7,10 +7,12 @@ project(cob_3d_mapping_filters)
 find_package(catkin REQUIRED COMPONENTS
   cob_3d_mapping_common
   nodelet
-  pcl
-  pcl_ros
+  #pcl_ros
   roscpp
+  sensor_msgs
 )
+
+find_package(PCL REQUIRED)
 
 ###################################
 ## catkin specific configuration ##
@@ -30,9 +32,11 @@ catkin_package(
   CATKIN_DEPENDS
     cob_3d_mapping_common
     nodelet
-    pcl
-    pcl_ros
+    #pcl_ros
     roscpp
+    sensor_msgs
+  DEPENDS
+    PCL
 )
 
 ###########
@@ -45,6 +49,7 @@ catkin_package(
 include_directories(
   common/include
   ${catkin_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
@@ -68,28 +73,44 @@ add_executable(test_jump_edge_filter common/test/test_jump_edge_filter.cpp)
 add_executable(test_speckle_filter common/test/test_speckle_filter.cpp)
 add_executable(profile_filters common/test/profile_filters.cpp)
 
+target_link_libraries(cob_3d_mapping_filters 
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
+)
+
+target_link_libraries(cob_3d_mapping_filter_nodelets
+  cob_3d_mapping_filters
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
+)
+
 target_link_libraries(test_amplitude_filter 
   cob_3d_mapping_filters
   ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
 )
 
 target_link_libraries(test_intensity_filter 
   cob_3d_mapping_filters
   ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
 )
 
 target_link_libraries(test_jump_edge_filter 
   cob_3d_mapping_filters
   ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
 )
 
 target_link_libraries(test_speckle_filter 
   cob_3d_mapping_filters
   ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
 )
 
 target_link_libraries(profile_filters 
   cob_3d_mapping_filters
   ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
 )
 

@@ -67,6 +67,7 @@
 #include <pcl/point_cloud.h>
 
 #include <float.h>
+#include <iomanip>
 
 namespace cob_3d_mapping_tools
 {

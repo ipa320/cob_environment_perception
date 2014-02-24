@@ -173,7 +173,7 @@ int main(int argc, char** argv)
   PointCloud<PrincipalRadiiRSD>::Ptr f1b (new PointCloud<PrincipalRadiiRSD>);
   PointCloud<PrincipalCurvatures>::Ptr f2b (new PointCloud<PrincipalCurvatures>);
   PointCloud<FPFHSignature33>::Ptr f3b (new PointCloud<FPFHSignature33>);
-  sensor_msgs::PointCloud2::Ptr cloud (new sensor_msgs::PointCloud2);
+  pcl::PCLPointCloud2::Ptr cloud (new pcl::PCLPointCloud2);
 
   vector<int> idx_plane;
   vector<int> idx_edge;

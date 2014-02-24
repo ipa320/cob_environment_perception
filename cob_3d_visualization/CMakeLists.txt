@@ -9,8 +9,9 @@ find_package(catkin REQUIRED COMPONENTS
   cob_3d_mapping_msgs
   eigen_conversions
   interactive_markers
-  pcl
 )
+
+find_package(PCL REQUIRED)
 
 ###################################
 ## catkin specific configuration ##
@@ -44,6 +45,7 @@ find_package(catkin REQUIRED COMPONENTS
 include_directories(
   include
   ${catkin_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
 )
 
 ## Declare a cpp executable
@@ -59,9 +61,11 @@ add_executable(test_shape_array
 ## Specify libraries to link a library or executable target against
 target_link_libraries(shape_visualization
   ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
 )
 
 target_link_libraries(test_shape_array 
   ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
 )
 

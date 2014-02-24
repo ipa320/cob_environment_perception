@@ -63,6 +63,7 @@
 #include "cob_3d_segmentation/segmentation_visualizer.h"
 
 #include <pcl/visualization/point_cloud_handlers.h>
+#include <pcl_conversions/pcl_conversions.h>
 
 
 using namespace cob_3d_segmentation;
@@ -97,8 +98,11 @@ void
 SegmentationVisualizer::update_v1_cb(const sensor_msgs::PointCloud2::ConstPtr& cloud_in)
 {
   std::cout << "Received Segmented Cloud" << std::endl;
+  pcl::PCLPointCloud2 blob2;
+  pcl_conversions::toPCL(*cloud_in, blob2);
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr blob(new pcl::PointCloud<pcl::PointXYZRGB>);
-  pcl::fromROSMsg<pcl::PointXYZRGB>(*cloud_in,*blob);
+  pcl::fromPCLPointCloud2(blob2, *blob);
+  //pcl::fromROSMsg<pcl::PointXYZRGB>(*cloud_in,*blob);
   pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> col_hdl(blob);
   if (!v_.updatePointCloud<pcl::PointXYZRGB>(blob, col_hdl, "segmented"))
     v_.addPointCloud<pcl::PointXYZRGB>(blob, col_hdl, "segmented", v1_);
@@ -109,8 +113,11 @@ void
 SegmentationVisualizer::update_v2_cb(const sensor_msgs::PointCloud2::ConstPtr& cloud_in)
 {
   std::cout << "Received Classified Cloud" << std::endl;
+  pcl::PCLPointCloud2 blob2;
+  pcl_conversions::toPCL(*cloud_in, blob2);
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr blob(new pcl::PointCloud<pcl::PointXYZRGB>);
-  pcl::fromROSMsg<pcl::PointXYZRGB>(*cloud_in,*blob);
+  pcl::fromPCLPointCloud2(blob2, *blob);
+  //pcl::fromROSMsg<pcl::PointXYZRGB>(*cloud_in,*blob);
   pcl::visualization::PointCloudColorHandlerRGBField<pcl::PointXYZRGB> col_hdl(blob);
   if (!v_.updatePointCloud<pcl::PointXYZRGB>(blob, col_hdl, "classified"))
     v_.addPointCloud<pcl::PointXYZRGB>(blob, col_hdl, "classified", v2_);

@@ -74,6 +74,7 @@
 #include <pcl/point_types.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_cloud.h>
+#include <pcl_conversions/pcl_conversions.h>
 
 #include <cob_3d_segmentation/quad_regression/quad_regression.h>
 #include <cob_3d_mapping_msgs/CurvedPolygonArray.h>
@@ -227,7 +228,8 @@ public:
               std::cout<<"origin\n"<<origin<<"\n";
 
               geometry_msgs::PoseStamped p;
-              p.header = pc_in->header;
+              pcl_conversions::fromPCL(pc_in->header, p.header);
+              //p.header = pc_in->header;
               Eigen::Quaternionf Q(P);
               p.pose.orientation.x = Q.x();
               p.pose.orientation.y = Q.y();
@@ -246,22 +248,26 @@ public:
     {
       if(seg_.getPolygons().size()>0 && seg_.getPolygons()[0].img_) {
         sensor_msgs::Image img = *seg_.getPolygons()[0].img_;
-        img.header = pc_in->header;
+        pcl_conversions::fromPCL(pc_in->header, img.header);
+        //img.header = pc_in->header;
         image_pub_.publish(img);
       }
     }
     if(outline_pub_.getNumSubscribers()>0)
     {
       visualization_msgs::Marker m = seg_;
-      m.header = pc_in->header;
+      pcl_conversions::fromPCL(pc_in->header, m.header);
+      //m.header = pc_in->header;
       outline_pub_.publish(m);
     }
     if(shapes_pub_.getNumSubscribers()>0)
     {
       cob_3d_mapping_msgs::ShapeArray sa = seg_;
-      sa.header = pc_in->header;
+      pcl_conversions::fromPCL(pc_in->header, sa.header);
+      //sa.header = pc_in->header;
       for(size_t i=0; i<sa.shapes.size(); i++)
-        sa.shapes[i].header = pc_in->header;
+        pcl_conversions::fromPCL(pc_in->header, sa.shapes[i].header);
+        //sa.shapes[i].header = pc_in->header;
       shapes_pub_.publish(sa);
     }
     if(curved_pub_.getNumSubscribers()>0)
@@ -270,10 +276,13 @@ public:
       for(size_t i=0; i<seg_.getPolygons().size(); i++)
       {
         cob_3d_mapping_msgs::CurvedPolygon cp;
-        seg_.getPolygons()[i].toRosMsg(&cp,pc_in->header.stamp);
+        std_msgs::Header header;
+        pcl_conversions::fromPCL(pc_in->header, header);
+        seg_.getPolygons()[i].toRosMsg(&cp,header.stamp);
         cpa.polygons.push_back(cp);
       }
-      cpa.header = pc_in->header;
+      pcl_conversions::fromPCL(pc_in->header, cpa.header);
+      //cpa.header = pc_in->header;
       curved_pub_.publish(cpa);
     }
     if(rec_pub_.getNumSubscribers()>0) {

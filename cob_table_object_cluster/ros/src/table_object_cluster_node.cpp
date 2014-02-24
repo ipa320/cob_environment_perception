@@ -109,6 +109,7 @@
 
 #include <cob_3d_mapping_common/stop_watch.h>
 #include <pcl/filters/extract_indices.h>
+#include <pcl_conversions/pcl_conversions.h>
 
 using namespace cob_table_object_cluster;
 using namespace cob_3d_mapping;
@@ -255,7 +256,8 @@ public:
       ROS_INFO("extract clusters took %f seconds", sw.precisionStop());
       sw.precisionStart();
       pca.segments.clear();
-      pca.header = last_pc_->header;
+      pcl_conversions::fromPCL(last_pc_->header, pca.header);
+      //pca.header = last_pc_->header;
 
       Eigen::Vector3f normal(last_sa_->shapes[i].params[0],
                              last_sa_->shapes[i].params[1],
@@ -265,8 +267,9 @@ public:
                             last_sa_->shapes[i].pose.position.z);
 
       bba.detections.clear();
-      bba.header.stamp = last_pc_->header.stamp;
-      bba.header.frame_id = last_pc_->header.frame_id;
+      pcl_conversions::fromPCL(last_pc_->header, bba.header);
+      //bba.header.stamp = last_pc_->header.stamp;
+      //bba.header.frame_id = last_pc_->header.frame_id;
       pca.segments.resize(object_clusters.size());
       for(unsigned int j=0; j<object_clusters.size(); j++)
       {
@@ -277,19 +280,22 @@ public:
         toc.calculateBoundingBox(last_pc_, object_cluster_indices[j], normal, point, pos, rot, size);
 
         bba.detections.push_back(cob_object_detection_msgs::Detection());
-        bba.detections.back().header.stamp = last_pc_->header.stamp;
-        bba.detections.back().header.frame_id = last_pc_->header.frame_id;
+        pcl_conversions::fromPCL(last_pc_->header, bba.detections.back().header);
+        //bba.detections.back().header.stamp = last_pc_->header.stamp;
+        //bba.detections.back().header.frame_id = last_pc_->header.frame_id;
         bba.detections.back().label = "Object Cluster";
         bba.detections.back().detector = "BoundingBoxDetector";
         bba.detections.back().score = 0;
         //bba.detections.back().mask;
-        bba.detections.back().pose.header.stamp = last_pc_->header.stamp;
-        bba.detections.back().pose.header.frame_id = last_pc_->header.frame_id;
+        pcl_conversions::fromPCL(last_pc_->header, bba.detections.back().pose.header);
+        //bba.detections.back().pose.header.stamp = last_pc_->header.stamp;
+        //bba.detections.back().pose.header.frame_id = last_pc_->header.frame_id;
         cob_perception_common::EigenToROSMsg(pos,rot,bba.detections.back().pose.pose);
         cob_perception_common::EigenToROSMsg(size, bba.detections.back().bounding_box_lwh);
 
         pcl::toROSMsg(*object_clusters[j], pca.segments[j]);
-        pca.segments[j].header = last_pc_->header;
+        pcl_conversions::fromPCL(last_pc_->header, pca.segments[j].header);
+        //pca.segments[j].header = last_pc_->header;
 
 
         if(save_to_file_)
