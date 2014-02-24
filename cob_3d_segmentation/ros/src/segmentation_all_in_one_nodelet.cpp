@@ -76,6 +76,7 @@
   #endif
 
 #include <pcl_ros/point_cloud.h>
+#include <pcl_conversions/pcl_conversions.h>
 
 // Package includes
 #include <cob_3d_mapping_msgs/ShapeArray.h>
@@ -205,8 +206,9 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
   ST::CH::Ptr cluster_handler, PointCloud::ConstPtr cloud)
 {
   cob_3d_mapping_msgs::ShapeArray sa;
-  sa.header = cloud->header;
-  sa.header.frame_id = cloud->header.frame_id.c_str();
+  pcl_conversions::fromPCL(cloud->header, sa.header);
+  //sa.header = cloud->header;
+  //sa.header.frame_id = cloud->header.frame_id.c_str();
   //std::cout<<"[SN]-->CLOUD FRAME"<<cloud->header.frame_id.c_str()<<"\n";
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull_cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
   pcl::PointCloud<pcl::PointXYZRGB>::Ptr hull(new pcl::PointCloud<pcl::PointXYZRGB>);

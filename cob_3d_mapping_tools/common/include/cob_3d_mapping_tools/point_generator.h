@@ -64,12 +64,16 @@
 #define COB_3D_MAPPING_TOOLS_POINT_GENERATOR_H_
 
 #include <math.h>
+#include <iomanip>
 #include <Eigen/StdVector>
 #include <boost/random.hpp>
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
 #include <pcl/io/io.h>
+
+#include <sensor_msgs/PointField.h>
+#include <pcl/conversions.h>
 
 
 namespace cob_3d_mapping_tools
@@ -98,7 +102,8 @@ namespace cob_3d_mapping_tools
      */
     inline void setOutputCloud(PointCloudPtr & cloud)
     {
-      std::vector<sensor_msgs::PointField> fields;
+      //std::vector<sensor_msgs::PointField> field;
+      std::vector<pcl::PCLPointField> fields;
       rgba_index_ = -1;
       rgba_index_ = pcl::getFieldIndex(*cloud, "rgba", fields);
       if (rgba_index_ >= 0)

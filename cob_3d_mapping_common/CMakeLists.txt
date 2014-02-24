@@ -11,13 +11,15 @@ find_package(catkin REQUIRED COMPONENTS
   eigen_conversions
   interactive_markers
   nodelet
-  pcl
+  pcl_conversions
   pcl_ros
   roscpp
   tf
   tf_conversions
   visualization_msgs
 )
+
+find_package(PCL REQUIRED)
 
 generate_dynamic_reconfigure_options(cfg/keyframe_detector.cfg)
 
@@ -43,12 +45,14 @@ catkin_package(
     eigen_conversions
     interactive_markers
     nodelet
-    pcl
+    pcl_conversions
     pcl_ros
     roscpp
     tf
     tf_conversions
     visualization_msgs
+  DEPENDS
+    PCL
 )
 
 ###########
@@ -62,6 +66,7 @@ include_directories(
   ros/include
   common/include
   ${catkin_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
@@ -75,7 +80,6 @@ add_library(cob_3d_mapping_common
 
 ## Declare a cpp executable
 add_executable(keyframe_detector_node ros/src/keyframe_detector.cpp)
-add_dependencies(keyframe_detector_node ${${PROJECT_NAME}_EXPORTED_TARGETS})
 add_executable(transform_shape_array ros/src/transform_shape_array.cpp)
 add_executable(transform_pointcloud ros/src/transform_pointcloud.cpp)
 add_executable(test_minimal_rectangle common/test/test_minimal_rectangle.cpp)
@@ -83,6 +87,7 @@ add_executable(test_minimal_rectangle common/test/test_minimal_rectangle.cpp)
 ## Specify libraries to link a library or executable target against
 target_link_libraries(keyframe_detector_node 
   ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
 )
 
 target_link_libraries(transform_shape_array 
@@ -92,6 +97,7 @@ target_link_libraries(transform_shape_array
 
 target_link_libraries(transform_pointcloud 
   ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
 )
 
 target_link_libraries(test_minimal_rectangle 
@@ -113,5 +119,11 @@ target_link_libraries(test_cylinder
   gtest
   ${catkin_LIBRARIES}
 )
+
+
+add_dependencies(keyframe_detector_node ${catkin_EXPORTED_TARGETS} ${${PROJECT_NAME}_EXPORTED_TARGETS})
+add_dependencies(transform_shape_array ${catkin_EXPORTED_TARGETS})
+add_dependencies(test_polygon ${catkin_EXPORTED_TARGETS})
+add_dependencies(test_cylinder ${catkin_EXPORTED_TARGETS})
 
 #rosbuild_add_file_check(ros/launch)

@@ -15,7 +15,6 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   message_generation
   nodelet
-  pcl
   pcl_ros
   roscpp
   rosbag
@@ -25,6 +24,7 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(VTK REQUIRED COMPONENTS vtkCommon vtkFiltering vtkRendering)
 find_package(Boost REQUIRED COMPONENTS program_options)
 find_package(OpenCV REQUIRED)
+find_package(PCL REQUIRED)
 #TODO: check for SSE
 
 generate_dynamic_reconfigure_options(cfg/plane_extraction_nodelet.cfg
@@ -76,7 +76,6 @@ catkin_package(
     dynamic_reconfigure
     geometry_msgs
     nodelet
-    pcl
     pcl_ros
     roscpp
     rosbag
@@ -85,6 +84,7 @@ catkin_package(
     VTK
     Boost
     OpenCV
+    PCL
 )
 
 
@@ -100,10 +100,11 @@ include_directories(
   common/include
   ros/include
   ${catkin_INCLUDE_DIRS}
-  ${TinyXML_INCLUDE_DIRS}
+#  ${TinyXML_INCLUDE_DIRS}
   ${VTK_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
@@ -135,7 +136,7 @@ add_executable(segmentation_visualizer ros/src/segmentation_visualizer.cpp)
 add_executable(profile_depth_seg common/apps/profile_depth_seg.cpp)
 add_executable(profile_plane_extraction common/apps/profile_plane_extraction.cpp)
 add_executable(profile_multi_plane_seg common/apps/profile_multi_plane_seg.cpp)
-add_executable(test_segmentation ros/test/test_segmentation.cpp common/src/polypartition.cpp)
+#add_executable(test_segmentation ros/test/test_segmentation.cpp common/src/polypartition.cpp)
 add_executable(test_polygon_extraction ros/test/test_polygon_extraction.cpp)
 add_executable(test_plane_extraction common/apps/test_plane_extraction.cpp)
 add_executable(test_pcl_segmentation common/apps/test_pcl_segmentation.cpp)
@@ -143,11 +144,13 @@ add_executable(test_pcl_segmentation common/apps/test_pcl_segmentation.cpp)
 target_link_libraries(cob_3d_segmentation 
   ${catkin_LIBRARIES}
   ${OpenCV_LIBS}
+  ${PCL_LIBRARIES}
 )
 
 target_link_libraries(cob_3d_segmentation_nodelets 
   cob_3d_segmentation
   ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
 )
 
 target_link_libraries(segmentation_node
@@ -186,10 +189,10 @@ target_link_libraries(profile_plane_extraction
   ${VTK_LIBRARIES}
 )
 
-target_link_libraries(test_segmentation 
-  ${catkin_LIBRARIES}
-  gtest
-)
+#target_link_libraries(test_segmentation 
+#  ${catkin_LIBRARIES}
+#  gtest
+#)
 
 target_link_libraries(test_polygon_extraction
   cob_3d_segmentation

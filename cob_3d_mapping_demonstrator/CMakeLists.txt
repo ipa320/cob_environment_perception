@@ -80,7 +80,7 @@ add_library(cob_3d_mapping_demonstrator_rviz
         ros/src/rviz_title.cpp
         ${MOC_FILES}
 )
-add_dependencies(cob_3d_mapping_demonstrator_rviz ${catkin_EXPORTED_TARGETS})
+
 
 
 ## Declare a cpp executable
@@ -110,4 +110,9 @@ target_link_libraries(testClient
 target_link_libraries(testClientPOS 
   ${catkin_LIBRARIES}
 )
+
+add_dependencies(cob_3d_mapping_demonstrator_rviz ${catkin_EXPORTED_TARGETS})
+add_dependencies(cob_3d_mapping_demonstrator ${catkin_EXPORTED_TARGETS})
+add_dependencies(testClient ${catkin_EXPORTED_TARGETS})
+add_dependencies(testClientPOS ${catkin_EXPORTED_TARGETS})
 

@@ -133,50 +133,6 @@ namespace cob_3d_mapping_filters
       pcl::IndicesConstPtr pp_remove_;
     };
 
-  template<>
-    class SpeckleFilter<sensor_msgs::PointCloud2> : public pcl::Filter<sensor_msgs::PointCloud2>
-    {
-      typedef sensor_msgs::PointCloud2 PointCloud2;
-      typedef PointCloud2::Ptr PointCloud2Ptr;
-      typedef PointCloud2::ConstPtr PointCloud2ConstPtr;
-
-    public:
-      SpeckleFilter () :
-          speckle_size_ (40), speckle_range_ (0.2)
-      {
-        //
-      }
-      ;
-      //virtual ~SpeckleFilter();
-
-      inline void
-      setFilterParam (int speckle_s, float speckle_r)
-      {
-        speckle_size_ = speckle_s;
-        speckle_range_ = speckle_r;
-      }
-
-      inline int
-      getSpeckleSize ()
-      {
-        return speckle_size_;
-      }
-
-      inline int
-      getSpeckleRange ()
-      {
-        return speckle_range_;
-      }
-
-    protected:
-
-      void
-      applyFilter (PointCloud2 &output);
-
-      int speckle_size_;
-      double speckle_range_;
-
-    };
 } // end namespace cob_3d_mapping_filters
 
 #endif /* SPECKLE_FILTER_H_ */

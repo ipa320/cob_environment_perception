@@ -8,7 +8,6 @@ find_package(catkin REQUIRED COMPONENTS
   cob_3d_mapping_common
   cob_3d_mapping_msgs
   dynamic_reconfigure
-  pcl
   pcl_ros
   rosbag
   roscpp
@@ -35,7 +34,6 @@ catkin_package(
     cob_3d_mapping_common
     cob_3d_mapping_msgs
     dynamic_reconfigure
-    pcl
     pcl_ros
     rosbag
     roscpp

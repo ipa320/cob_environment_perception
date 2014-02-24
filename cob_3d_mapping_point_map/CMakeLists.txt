@@ -12,10 +12,11 @@ find_package(catkin REQUIRED COMPONENTS
   cob_srvs
   dynamic_reconfigure
   nodelet
-  pcl
-  pcl_ros
+  #pcl_ros
   roscpp
 )
+
+find_package(PCL REQUIRED)
 
 generate_dynamic_reconfigure_options(cfg/point_map_nodelet.cfg)
 
@@ -41,9 +42,10 @@ catkin_package(
     cob_srvs
     dynamic_reconfigure
     nodelet
-    pcl
-    pcl_ros
+    #pcl_ros
     roscpp
+  DEPENDS
+    PCL
 )
 
 ###########
@@ -56,17 +58,19 @@ catkin_package(
 include_directories(
   common/include
   ${catkin_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
 add_library(cob_3d_mapping_point_map_nodelets 	
   ros/src/point_map_nodelet.cpp
-  ros/src/difference_segmentation.cpp
+  #ros/src/difference_segmentation.cpp
 )
 add_dependencies(cob_3d_mapping_point_map_nodelets ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 target_link_libraries(cob_3d_mapping_point_map_nodelets
   ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
 )
 
 ## Declare a cpp executable
@@ -75,10 +79,12 @@ add_executable(get_point_map ros/src/get_point_map.cpp)
 
 target_link_libraries(set_point_map
   ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
 )
 
 target_link_libraries(get_point_map
   ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
 )
 
 #rosbuild_check_for_sse()

@@ -9,7 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   cob_3d_fov_segmentation
   cob_3d_mapping_common
   cob_3d_segmentation
-  pcl
+  pcl_conversions
   pcl_ros
   rosbag
 )
@@ -41,7 +41,7 @@ catkin_package(
     cob_3d_fov_segmentation
     cob_3d_mapping_common
     cob_3d_segmentation
-    pcl
+    pcl_conversions
     pcl_ros
     rosbag
   DEPENDS

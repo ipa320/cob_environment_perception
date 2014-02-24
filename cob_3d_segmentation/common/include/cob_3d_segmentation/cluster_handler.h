@@ -68,6 +68,7 @@
 #include "cob_3d_segmentation/cluster_types.h"
 
 #include <list>
+#include <iomanip>
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>

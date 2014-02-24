@@ -48,10 +48,12 @@ Cloud Data) format.
 #include <boost/filesystem.hpp>
 #include <rosbag/bag.h>
 #include <rosbag/view.h>
+#include <pcl/conversions.h>
 #include "pcl/io/io.h"
 #include "pcl/io/pcd_io.h"
-#include "pcl/ros/conversions.h"
+#include "pcl/conversions.h"
 #include "pcl_ros/transforms.h"
+#include <pcl_conversions/pcl_conversions.h>
 #include <tf/transform_listener.h>
 #include <tf/transform_broadcaster.h>
 
@@ -140,13 +142,15 @@ int
 		  pcl_ros::transformAsMatrix (transform, out_mat);
 		  //pcl_ros::transformPointCloud ("/head_axis_link", *cloud, cloud_t, tf_listener);
 		  pcl_ros::transformPointCloud (out_mat, *cloud, cloud_t);
+                  pcl::PCLPointCloud2 cloud_t2;
+                  pcl_conversions::toPCL(cloud_t, cloud_t2);
 
-		  std::cerr << "Got " << cloud_t.width * cloud_t.height << " data points in frame " << cloud_t.header.frame_id << " with the following fields: " << pcl::getFieldsList (cloud_t) << std::endl;
+		  std::cerr << "Got " << cloud_t2.width * cloud_t2.height << " data points in frame " << cloud_t2.header.frame_id << " with the following fields: " << pcl::getFieldsList (cloud_t2) << std::endl;
 
 		  std::stringstream ss;
-		  ss << output_dir << "/" << cloud_t.header.stamp << ".pcd";
+		  ss << output_dir << "/" << cloud_t2.header.stamp << ".pcd";
 		  std::cerr << "Data saved to " << ss.str () << std::endl;
-		  pcl::io::savePCDFile (ss.str (), cloud_t, Eigen::Vector4f::Zero (),
+		  pcl::io::savePCDFile (ss.str (), cloud_t2, Eigen::Vector4f::Zero (),
 								Eigen::Quaternionf::Identity (), false);
 		}
   	}

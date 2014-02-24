@@ -59,6 +59,7 @@
 
 // ROS includes
 #include <ros/ros.h>
+#include <pcl_conversions/pcl_conversions.h>
 
 // ROS message includes
 #include <std_msgs/String.h>
@@ -74,7 +75,7 @@
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <pcl/ros/conversions.h>
+#include <pcl/conversions.h>
 //####################
 //#### node class ####
 class noise_gen
@@ -201,7 +202,10 @@ public:
 
     sensor_msgs::PointCloud2 out_msg;
     pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud_work (new pcl::PointCloud<pcl::PointXYZRGB>);
-    pcl::fromROSMsg(cloud_in,*cloud_work);
+    //pcl::fromROSMsg(cloud_in,*cloud_work);
+    pcl::PCLPointCloud2 cloud_work2;
+    pcl_conversions::toPCL(out_msg, cloud_work2);
+    pcl::fromPCLPointCloud2(cloud_work2, *cloud_work);
 
 
 
@@ -230,7 +234,9 @@ public:
       }
 
     }
-    pcl::toROSMsg(*cloud_work,out_msg);
+    pcl::toPCLPointCloud2(*cloud_work, cloud_work2);
+    pcl_conversions::fromPCL(cloud_work2, out_msg);
+    //pcl::toROSMsg(*cloud_work,out_msg);
 
     pub_.publish(out_msg);
 

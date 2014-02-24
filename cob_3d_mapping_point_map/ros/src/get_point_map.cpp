@@ -69,6 +69,8 @@
 // PCL includes
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
+#include <pcl/conversions.h>
+#include <pcl_conversions/pcl_conversions.h>
 
 int main (int argc, char **argv)
 {
@@ -100,7 +102,10 @@ int main (int argc, char **argv)
   }
 
   pcl::PointCloud<pcl::PointXYZRGB> map;
-  pcl::fromROSMsg(resp.map, map);
+  pcl::PCLPointCloud2 map2;
+  pcl_conversions::toPCL(resp.map, map2);
+  pcl::fromPCLPointCloud2(map2, map);
+  //pcl::fromROSMsg(resp.map, map);
   pcl::io::savePCDFile(argv[1],map,false);
 
   //exit

@@ -101,6 +101,7 @@
 //#include <Eigen/StdVector>
 #include <pcl/common/eigen.h>
 #include <pcl/common/centroid.h>
+#include <pcl_conversions/pcl_conversions.h>
 #include <ros/console.h>
 
 
@@ -270,10 +271,13 @@ public:
       std::vector<pcl::ModelCoefficients> v_coefficients_plane;
       extractPlane(pc_trans.makeShared(), v_cloud_hull, v_hull_polygons, v_coefficients_plane);
 
-      publishShapeArray(v_cloud_hull, v_hull_polygons, v_coefficients_plane, pc_in->header);
+      std_msgs::Header header;
+      pcl_conversions::fromPCL(pc_in->header, header);
+      publishShapeArray(v_cloud_hull, v_hull_polygons, v_coefficients_plane, header);
       for(unsigned int i = 0; i < v_cloud_hull.size(); i++)
       {
-        publishMarker(v_cloud_hull[i], pc_in->header, 0, 0, 1);
+        pcl_conversions::fromPCL(pc_in->header, header);
+        publishMarker(v_cloud_hull[i], header, 0, 0, 1);
         ctr_++;
         //ROS_INFO("%d planes published so far", ctr_);
       }

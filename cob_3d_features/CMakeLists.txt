@@ -6,7 +6,6 @@ project(cob_3d_features)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   cob_3d_mapping_common
-  pcl
   pcl_ros
 )
 
@@ -14,6 +13,7 @@ find_package(OpenCV REQUIRED)
 find_package(VTK REQUIRED COMPONENTS vtkCommon vtkFiltering vtkRendering)
 find_package(Boost REQUIRED COMPONENTS program_options)
 find_package(OpenMP)
+find_package(PCL REQUIRED)
 
 ###################################
 ## catkin specific configuration ##
@@ -32,12 +32,12 @@ catkin_package(
     cob_3d_features_omp
   CATKIN_DEPENDS
     cob_3d_mapping_common
-    pcl
     pcl_ros
   DEPENDS
     OpenCV
     VTK
     Boost
+    PCL
 )
 
 
@@ -54,7 +54,8 @@ include_directories(
   ${catkin_INCLUDE_DIRS}
   ${VTK_INCLUDE_DIRS}
   ${OpenCV_INCLUDE_DIRS}
-  ${Boost_INCLUDE_DITS}
+  ${Boost_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
@@ -87,10 +88,12 @@ add_executable(profile_ne common/test/profile_ne.cpp)
 target_link_libraries(cob_3d_features 
   ${catkin_LIBRARIES}
   ${OpenCV_LIBS}
+  ${PCL_LIBRARIES}
 )
 
 target_link_libraries(cob_3d_features_omp
   ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
 )
 
 target_link_libraries(test_organized_curvature_estimation 

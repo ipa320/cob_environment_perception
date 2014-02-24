@@ -60,6 +60,8 @@
 #include <cob_3d_segmentation/eval.h>
 #include "../sub_structures/labeling.h"
 #include "../sub_structures/debug.h"
+#include <pcl/conversions.h>
+#include <pcl_conversions/pcl_conversions.h>
 
 #ifdef DO_NOT_DOWNSAMPLE_
 #define SHIFT   0
@@ -443,10 +445,13 @@
           }
         }
 
-        sensor_msgs::PointCloud2 pc2;
-        pcl::toROSMsg(pc,pc2);
+        pcl::PCLPointCloud2 pc2;
+        pcl::toPCLPointCloud2(pc, pc2);
+        sensor_msgs::PointCloud2 pc_msg;
+        pcl_conversions::fromPCL(pc2, pc_msg);   
+        //pcl::toROSMsg(pc,pc_msg);
 
-        s.points.push_back(pc2);
+        s.points.push_back(pc_msg);
         s.holes.push_back(j>0);
       }
 
