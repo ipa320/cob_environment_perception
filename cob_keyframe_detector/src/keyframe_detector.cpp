@@ -75,12 +75,10 @@
 #include <sensor_msgs/CameraInfo.h>
 #include <cob_srvs/Trigger.h>
 
-
 #include <dynamic_reconfigure/server.h>
-#include <cob_3d_mapping_common/keyframe_detectorConfig.h>
+#include <cob_keyframe_detector/keyframe_detectorConfig.h>
 
 using namespace tf;
-using namespace cob_3d_mapping_common;
 
 //####################
 //#### node class ####
@@ -94,7 +92,7 @@ public:
     trigger_always_(false)
   {
     config_server_.setCallback(boost::bind(&KeyframeDetector::dynReconfCallback, this, _1, _2));
-    point_cloud_sub_ = n_.subscribe("camera_info", 1, &KeyframeDetector::pointCloudSubCallback, this);
+    camera_info_sub_ = n_.subscribe("camera_info", 1, &KeyframeDetector::cameraInfoSubCallback, this);
     transform_sub_ = n_.subscribe("/tf", 1, &KeyframeDetector::transformSubCallback, this);
     keyframe_trigger_client_ = n_.serviceClient<cob_srvs::Trigger>("trigger_keyframe");
   }
@@ -106,7 +104,7 @@ public:
     /// void
   }
 
-  void dynReconfCallback(cob_3d_mapping_common::keyframe_detectorConfig &config, uint32_t level)
+  void dynReconfCallback(cob_keyframe_detector::keyframe_detectorConfig &config, uint32_t level)
   {
     r_limit_ = config.r_limit;
     p_limit_ = config.p_limit;
@@ -116,10 +114,9 @@ public:
   }
 
   void
-  pointCloudSubCallback(sensor_msgs::CameraInfo::ConstPtr pc_in)
+  cameraInfoSubCallback(sensor_msgs::CameraInfo::ConstPtr pc_in)
   {
     frame_id_ = pc_in->header.frame_id;
-    //point_cloud_sub_.shutdown();
   }
 
   void
@@ -143,12 +140,12 @@ public:
       Eigen::Vector3d rpy = trf_eigen.rotation().eulerAngles(2,1,0);
       Eigen::Vector3d rpy_old = trf_eigen_old.rotation().eulerAngles(2,1,0);
 
-      if(trigger_always_ || first_ || fabs(rpy(0)-rpy_old(0)) > r_limit_ || fabs(rpy(1)-rpy_old(1)) > p_limit_ || fabs(rpy(2)-rpy_old(2)) > y_limit_ ||
+      if(trigger_always_ || first_ || fabs(rpy(0) - rpy_old(0)) > r_limit_ || fabs(rpy(1) - rpy_old(1)) > p_limit_ || fabs(rpy(2) - rpy_old(2)) > y_limit_ ||
           transform.getOrigin().distance(transform_old_.getOrigin()) > distance_limit_)
       {
         if(triggerKeyFrame()) {
           transform_old_ = transform;
-          first_=false;
+          first_ = false;
         }
       }
     }
@@ -177,10 +174,10 @@ public:
 protected:
   ros::NodeHandle n_;
   ros::Time stamp_;
-  ros::Subscriber point_cloud_sub_, transform_sub_;             //subscriber for input pc
+  ros::Subscriber camera_info_sub_, transform_sub_;
   TransformListener tf_listener_;
   ros::ServiceClient keyframe_trigger_client_;
-  dynamic_reconfigure::Server<cob_3d_mapping_common::keyframe_detectorConfig> config_server_;
+  dynamic_reconfigure::Server<cob_keyframe_detector::keyframe_detectorConfig> config_server_;
 
   bool first_;
   bool trigger_always_;
@@ -188,7 +185,6 @@ protected:
   StampedTransform transform_old_;
 
   std::string frame_id_;
-
 
   double y_limit_;
   double distance_limit_;
@@ -206,11 +202,10 @@ int main (int argc, char** argv)
 
   KeyframeDetector kd;
 
-  ros::Rate loop_rate(10);
+  ros::Rate loop_rate(30);
   while (ros::ok())
   {
     ros::spinOnce ();
-    //fov.transformNormals();
     loop_rate.sleep();
   }
 }
