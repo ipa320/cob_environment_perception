@@ -6,6 +6,7 @@ project(cob_3d_features)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   cob_3d_mapping_common
+  cob_3d_mapping_tools
   pcl_ros
 )
 
@@ -35,7 +36,7 @@ catkin_package(
     pcl_ros
   DEPENDS
     OpenCV
-    VTK
+    #VTK
     Boost
     PCL
 )
@@ -52,10 +53,10 @@ catkin_package(
 include_directories(
   common/include
   ${catkin_INCLUDE_DIRS}
-  ${VTK_INCLUDE_DIRS}
-  ${OpenCV_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
+  ${OpenCV_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
+  ${VTK_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
@@ -84,7 +85,8 @@ add_executable(profile_fee_omp common/test/profile_fee_omp.cpp)
 add_executable(profile_fee common/test/profile_fee.cpp)
 add_executable(profile_ee common/test/profile_ee.cpp)
 add_executable(profile_ne common/test/profile_ne.cpp)
-
+# extracts pc from organized cloud and saves as ppm:
+add_executable(extract_organized_curvatures common/test/extract_organized_curvatures.cpp)
 target_link_libraries(cob_3d_features 
   ${catkin_LIBRARIES}
   ${OpenCV_LIBS}
@@ -168,6 +170,12 @@ target_link_libraries(profile_ne
   cob_3d_features 
   cob_3d_features_omp
   ${catkin_LIBRARIES}
+)
+
+target_link_libraries(extract_organized_curvatures
+  cob_3d_features
+  ${catkin_LIBRARIES}
+  ${Boost_LIBRARIES}
 )
 
 set_target_properties(cob_3d_features_omp PROPERTIES COMPILE_FLAGS "-fopenmp"

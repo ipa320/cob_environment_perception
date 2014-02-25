@@ -68,6 +68,7 @@
 #include <pcl/common/file_io.h>
 
 #include <opencv2/ml/ml.hpp>
+#include <sensor_msgs/PointCloud2.h>
 
 #include <cob_3d_mapping_common/label_defines.h>
 

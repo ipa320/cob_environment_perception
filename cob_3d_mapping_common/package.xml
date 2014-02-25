@@ -16,33 +16,15 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <build_depend>cob_3d_mapping_msgs</build_depend>
-  <!--build_depend>cob_srvs</build_depend-->
-  <build_depend>dynamic_reconfigure</build_depend>
   <build_depend>eigen_conversions</build_depend>
-  <build_depend>interactive_markers</build_depend>
-  <build_depend>nodelet</build_depend>
-  <!--build_depend>pcl</build_depend-->
+  <build_depend>libgpc</build_depend>
   <build_depend>pcl_conversions</build_depend>
-  <build_depend>pcl_ros</build_depend>
-  <build_depend>roscpp</build_depend>
-  <build_depend>tf</build_depend>
-  <build_depend>tf_conversions</build_depend>
-  <build_depend>visualization_msgs</build_depend>
 
-  <run_depend>boost</run_depend>
+  <!--run_depend>boost</run_depend-->
   <run_depend>cob_3d_mapping_msgs</run_depend>
-  <!--run_depend>cob_srvs</run_depend-->
-  <run_depend>dynamic_reconfigure</run_depend>
   <run_depend>eigen_conversions</run_depend>
-  <run_depend>interactive_markers</run_depend>
-  <run_depend>nodelet</run_depend>
-  <!--run_depend>pcl</run_depend-->
+  <run_depend>libgpc</run_depend>
   <run_depend>pcl_conversions</run_depend>
-  <run_depend>pcl_ros</run_depend>
-  <run_depend>roscpp</run_depend>
-  <run_depend>tf</run_depend>
-  <run_depend>tf_conversions</run_depend>
-  <run_depend>visualization_msgs</run_depend>
 </package>
 
 
