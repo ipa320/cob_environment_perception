@@ -67,7 +67,8 @@
 //cob includes
 #include "cob_3d_mapping_common/shape.h"
 #include "cob_3d_mapping_common/polygon.h"
-extern "C" {
+extern "C"
+{
 #include "gpc/gpc.h"
 }
 //boost includes
@@ -91,22 +92,28 @@ extern "C" {
 #include <pcl/exceptions.h>
 #include <pcl/common/common.h>
 
+namespace cob_3d_mapping
+{
 
-namespace cob_3d_mapping{
-
+  /**
+   * \brief Get the radius and origin of a point cloud representing a cylinder.
+   * \param[in] in_cloud The input point cloud.
+   * \param[in] indices The point indices representing the cylinder.
+   * \param[out] origin The origin of the cylinder.
+   * \param[in] sym_axis The symmetrie axis of the cylinder.
+   *
+   * \return The radius of the cylinder.
+   */
   double
-  radiusAndOriginFromCloud(pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud,
-                           std::vector<int>& indices,
-                           Eigen::Vector3f& origin,
-                           const Eigen::Vector3f& sym_axis);
-
+  radiusAndOriginFromCloud (pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr in_cloud, std::vector<int>& indices,
+                            Eigen::Vector3f& origin, const Eigen::Vector3f& sym_axis);
 
   /**
    * \brief Class representing Cylinder shapes.
    * \note Cylinder Parameter Estimation can be performed.
    * \note Cylinder Merging is handled.
    */
-  class Cylinder: public Polygon
+  class Cylinder : public Polygon
   {
 
   public:
@@ -116,37 +123,39 @@ namespace cob_3d_mapping{
      */
     typedef boost::shared_ptr<Cylinder> Ptr;
 
-
     /**
      * \brief Constructor of Cylinder object.
      */
-    Cylinder()
-    : Polygon()
+    Cylinder () :
+        Polygon ()
     {
     }
 
-    Cylinder(unsigned int id,
-             Eigen::Vector3f origin,
-             Eigen::Vector3f sym_axis,
-             double radius,
-             std::vector<std::vector<Eigen::Vector3f> >& contours_3d,
-             std::vector<bool> holes,
-             std::vector<float> color);
+    Cylinder (unsigned int id, Eigen::Vector3f origin, Eigen::Vector3f sym_axis, double radius,
+              std::vector<std::vector<Eigen::Vector3f> >& contours_3d, std::vector<bool> holes,
+              std::vector<float> color);
 
-    Cylinder(unsigned int id,
-             Eigen::Vector3f origin,
-             Eigen::Vector3f sym_axis,
-             double radius,
-             std::vector<pcl::PointCloud<pcl::PointXYZ> >& contours_3d,
-             std::vector<bool> holes,
-             std::vector<float> color);
+    Cylinder (unsigned int id, Eigen::Vector3f origin, Eigen::Vector3f sym_axis, double radius,
+              std::vector<pcl::PointCloud<pcl::PointXYZ> >& contours_3d, std::vector<bool> holes,
+              std::vector<float> color);
 
     //##############Methods to initialize cylinder and its paramers#########
 
-    //void computePose(Eigen::Vector3f origin);
+    /**
+     * \brief Set the 2D contours of the cylinder from 3D points.
+     *
+     * \param[in] contours_3d The 3D contour.
+     */
+    virtual void
+    setContours3D (std::vector<std::vector<Eigen::Vector3f> >& contours_3d);
 
-    virtual void setContours3D(std::vector<std::vector<Eigen::Vector3f> >& contours_3d);
-    virtual std::vector<std::vector<Eigen::Vector3f> > getContours3D();
+    /**
+     * \brief Get the contour of the cylinder as 3D points.
+     *
+     * \return The 3D contour.
+     */
+    virtual std::vector<std::vector<Eigen::Vector3f> >
+    getContours3D ();
 
     /**
      * \brief Compute Attributes (pose, sym axis) of cylinder.
@@ -156,52 +165,60 @@ namespace cob_3d_mapping{
      * \param[in] origin Origin of cylinder
      * \param[in] z_axis z axis of cylinder
      */
-    virtual void updateAttributes(const Eigen::Vector3f &sym_axis, const Eigen::Vector3f &origin, const Eigen::Vector3f &z_axis);
+    virtual void
+    updateAttributes (const Eigen::Vector3f &sym_axis, const Eigen::Vector3f &origin, const Eigen::Vector3f &z_axis);
 
     /**
-     * \brief Transform cylinder to target frame.
+     * \brief Transform the cylinder by tf.
      *
-     * \param[in] trafo Transformation from source frame to target frame.
+     * \param[in] tf Transformation to be applied.
      */
-    virtual void transform(Eigen::Affine3f & tf);
+    virtual void
+    transform (Eigen::Affine3f & tf);
 
     //################## methods for merging############################
     /**
-     * \brief Check for merge candidates.
+     * \brief Find merge candidates.
      *
-     * \details  Cylinders are checked, if they have to be merged with
-     * this cylinder under the given merge configuration.
-     * Parameters of the Cylinders are compared as well if their contours are
-     * intersected.
-     * \param[in] poly_vec Vector of cylinders, that are checked.
-     * \param[in] merge_config Conditions, under which merge will be performed
-     * \param[out] intersections Indices of merge candidates
+     * \param[in] cylinder_array The cylinders to be checked.
+     * \param[out] intersections Indices of merge candidates.
      */
-    virtual void getMergeCandidates(const std::vector<Polygon::Ptr >& cylinder_array, std::vector<int>& intersections);
+    virtual void
+    getMergeCandidates (const std::vector<Polygon::Ptr>& cylinder_array, std::vector<int>& intersections);
 
     /**
      * \brief Merge cylinders.
      *
-     * \details This cylinder is merged with cylinders in input array.
-     * Therefore cylinders are transformed to flat polygons. Then the
-     * Polygon merge process is applied.
-     * The result is weighted,merged cylinder.
-     * \param[in] c_array Array of cylinders, cylinder object is merged with.
-     * \see Polygon::merge()
+     *\param[in] poly_vec The cylinders to be merged with this.
      */
-    virtual void merge(std::vector<Polygon::Ptr>& poly_vec);
+    virtual void
+    merge (std::vector<Polygon::Ptr>& poly_vec);
 
-    virtual void setParamsFrom(Polygon::Ptr& p);
+    /**
+     * \brief Obtain the params of this from another cylinder.
+     *
+     * \param[in] p The cylinder the parameters are copied from.
+     */
+    virtual void
+    setParamsFrom (Polygon::Ptr& p);
 
+    /**
+     * \brief Compute the pose from origin and z axis.
+     *
+     * \param[in] origin The origin of the cylinder.
+     * \param[in] z_axis The z_axis (perpendicular to the sym_axis) of the cylinder.
+     */
+    void
+    computePose (Eigen::Vector3f origin, Eigen::Vector3f z_axis);
 
-    void computePose(Eigen::Vector3f origin, Eigen::Vector3f z_axis);
+    void
+    computePose (Eigen::Vector3f origin, std::vector<std::vector<Eigen::Vector3f> >& contours_3d);
 
-    void computePose(Eigen::Vector3f origin, std::vector<std::vector<Eigen::Vector3f> >& contours_3d);
+    void
+    computeHeight ();
 
-    void computeHeight();
-
-    void triangulate(list<TPPLPoly>& tri_list) const;
-
+    void
+    triangulate (list<TPPLPoly>& tri_list) const;
 
     //############## debugging methods ####################
     /**
@@ -209,32 +226,33 @@ namespace cob_3d_mapping{
      * \param[in] points Contour points of the Cylinder.
      * \param[in] name Name of the output file.
      */
-    void dbgOut(pcl::PointCloud<pcl::PointXYZRGB>::Ptr points,std::string& name);
-
+    void
+    dbgOut (pcl::PointCloud<pcl::PointXYZRGB>::Ptr points, std::string& name);
 
     /**
      * \brief Debug Output to terminal.
      * \param[in] name Name of the output file.
      */
-    void printAttributes(std::string & name);
-
+    void
+    printAttributes (std::string & name);
 
     /**
      * \brief Debug output of parameters to file.
      * \param[in] name Name of the output file.
      */
-    void dumpParams(std::string  name);
-
+    void
+    dumpParams (std::string name);
 
     //################# member variables########################
-    double r_;                       /**< Radius of cylinder. */
-    double h_min_;                   /**< Point at the bottom of cylinder.*/
-    double h_max_;                   /**< Point on top of cylinder */
-    Eigen::Vector3f sym_axis_;        /**< Symmetry axis of cylinder. Direction Vector of symmetry axis. */
+    double r_; /**< Radius of cylinder. */
+    double h_min_; /**< Point at the bottom of cylinder.*/
+    double h_max_; /**< Point on top of cylinder */
+    Eigen::Vector3f sym_axis_; /**< Symmetry axis of cylinder. Direction Vector of symmetry axis. */
     //Eigen::Vector3f origin_;         /**< Origin of cylinder. */
 
   protected:
-    virtual void computeAverage(const std::vector<Polygon::Ptr>& poly_vec, Polygon::Ptr& p_average);
+    virtual void
+    computeAverage (const std::vector<Polygon::Ptr>& poly_vec, Polygon::Ptr& p_average);
 
   };
 }

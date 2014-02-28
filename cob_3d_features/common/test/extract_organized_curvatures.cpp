@@ -73,7 +73,7 @@
 #include "cob_3d_mapping_common/stop_watch.h"
 #include "cob_3d_features/organized_normal_estimation.h"
 #include "cob_3d_features/organized_curvature_estimation.h"
-#include "cob_3d_mapping_tools/io.h"
+#include "cob_3d_mapping_common/io.h"
 
 using namespace std;
 using namespace pcl;
@@ -182,13 +182,13 @@ int main(int argc, char** argv)
     if (!pcl_isnan(pc->points[i].pc1))
     {
       grd_position = (pc->points[i].pc1 - min_pc1_) / (max_pc1_ - min_pc1_);
-      cob_3d_mapping_tools::getGradientColor(grd_position, rgb);
+      cob_3d_mapping_common::getGradientColor(grd_position, rgb);
       p->points[i].r = (int)rgb[0];
       p->points[i].g = (int)rgb[1];
       p->points[i].b = (int)rgb[2];
 
       grd_position = (pc->points[i].pc2 - min_pc2_) / (max_pc2_ - min_pc2_);
-      cob_3d_mapping_tools::getGradientColor(grd_position, rgb);
+      cob_3d_mapping_common::getGradientColor(grd_position, rgb);
       p2->points[i].r = (int)rgb[0];
       p2->points[i].g = (int)rgb[1];
       p2->points[i].b = (int)rgb[2];
@@ -205,7 +205,7 @@ int main(int argc, char** argv)
     }
   }
 
-  cob_3d_mapping_tools::PPMWriter ppmW;
+  cob_3d_mapping_common::PPMWriter ppmW;
   if (file_out_[0] != "")
     ppmW.writeRGB(file_out_[0], *p);
 

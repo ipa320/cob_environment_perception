@@ -58,7 +58,9 @@ add_library(cob_3d_mapping_common
 	common/src/polygon.cpp
 	common/src/cylinder.cpp
 	common/src/polypartition.cpp
-	common/src/dominant_color.cpp)
+	common/src/dominant_color.cpp
+        common/src/io.cpp
+)
 
 ## Declare a cpp executable
 add_executable(test_minimal_rectangle common/test/test_minimal_rectangle.cpp)

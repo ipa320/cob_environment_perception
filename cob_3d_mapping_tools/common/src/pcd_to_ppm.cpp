@@ -66,7 +66,7 @@
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
 
-#include "cob_3d_mapping_tools/io.h"
+#include "cob_3d_mapping_common/io.h"
 
 using namespace std;
 using namespace pcl;
@@ -125,7 +125,7 @@ int main(int argc, char** argv)
   
   cout << "Loaded pointcloud with " << p->width << " x " << p->height << " points." << endl;
 
-  cob_3d_mapping_tools::PPMWriter w;
+  cob_3d_mapping_common::PPMWriter w;
   if (w.writeRGB(file_o[0], *p) == -1) return(0);
   cout << "Extracted RGB image..." << endl;
 

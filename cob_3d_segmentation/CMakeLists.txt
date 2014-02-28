@@ -110,7 +110,6 @@ include_directories(
 ## Declare a cpp library
 add_library(cob_3d_segmentation
 	common/src/polygon_extraction.cpp
-	common/src/segmentation.cpp # Old segmentation
 	common/src/cluster_handler.cpp
 	common/src/edge_handler.cpp
 	common/src/cluster_graph_structure.cpp
@@ -140,6 +139,8 @@ add_executable(profile_multi_plane_seg common/apps/profile_multi_plane_seg.cpp)
 add_executable(test_polygon_extraction ros/test/test_polygon_extraction.cpp)
 add_executable(test_plane_extraction common/apps/test_plane_extraction.cpp)
 add_executable(test_pcl_segmentation common/apps/test_pcl_segmentation.cpp)
+# plane segmentation evaluation tool:
+#add_executable(evaluate_plane_segmentation common/apps/evaluate_plane_segmentation.cpp)
 
 target_link_libraries(cob_3d_segmentation 
   ${catkin_LIBRARIES}
@@ -206,6 +207,12 @@ target_link_libraries(test_plane_extraction
   ${VTK_LIBRARIES}
   ${Boost_LIBRARIES}
 )
+
+#target_link_libraries(evaluate_plane_segmentation
+#  cob_3d_mapping_tools
+#  ${catkin_LIBRARIES}
+#  ${Boost_LIBRARIES}
+#)
 
 set_target_properties(cob_3d_segmentation PROPERTIES COMPILE_FLAGS "-D__LINUX__ -DCOMPILE_NODELET")
 #set_target_properties(test_segmentation ${SSE_FLAGS})

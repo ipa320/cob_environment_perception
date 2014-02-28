@@ -74,7 +74,7 @@
 #include "cob_3d_segmentation/plane_extraction.h"
 #include "cob_3d_segmentation/polygon_extraction/polygon_types.h"
 #include "cob_3d_segmentation/polygon_extraction/polygon_extraction.h"
-#include "cob_3d_mapping_tools/io.h"
+#include "cob_3d_mapping_common/io.h"
 #include "cob_3d_mapping_tools/gui/impl/core.hpp"
 
 
@@ -587,7 +587,7 @@ public:
           ++it;
         }
         std::string file_out(wxString(this->argv[3]).mb_str());
-        cob_3d_mapping_tools::PPMWriter wppm;
+        cob_3d_mapping_common::PPMWriter wppm;
         wppm.writeRGB(file_out, *pc_pred);
       }
 
