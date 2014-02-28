@@ -19,7 +19,7 @@
   <build_depend>cgal</build_depend>
   <build_depend>cob_3d_mapping_msgs</build_depend>
   <build_depend>nav_msgs</build_depend>
-  <build_depend>nurbs++</build_depend>
+  <!--build_depend>nurbs++</build_depend-->
   <!--build_depend>pcl</build_depend-->
   <build_depend>pcl_ros</build_depend>
   <build_depend>roscpp</build_depend>
@@ -30,7 +30,7 @@
   <run_depend>cgal</run_depend>
   <run_depend>cob_3d_mapping_msgs</run_depend>
   <run_depend>nav_msgs</run_depend>
-  <run_depend>nurbs++</run_depend>
+  <!--run_depend>nurbs++</run_depend-->
   <!--run_depend>pcl</run_depend-->
   <run_depend>pcl_ros</run_depend>
   <run_depend>roscpp</run_depend>
