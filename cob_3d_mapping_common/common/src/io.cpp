@@ -12,9 +12,9 @@
  * \note
  *  Project name: care-o-bot
  * \note
- *  ROS stack name: cob_environment_perception_intern
+ *  ROS stack name: cob_environment_perception
  * \note
- *  ROS package name: cob_3d_mapping_tools
+ *  ROS package name: cob_3d_mapping_common
  *
  * \author
  *  Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
@@ -60,7 +60,7 @@
  *
  ****************************************************************/
 
-#include <cob_3d_mapping_tools/io.h>
+#include <cob_3d_mapping_common/io.h>
 #include <cob_3d_mapping_common/label_defines.h>
 
 #include <iostream>
@@ -69,7 +69,7 @@
 
 using namespace std;
 
-int cob_3d_mapping_tools::PPMReader::mapLabels(const string &file_name,
+int cob_3d_mapping_common::PPMReader::mapLabels(const string &file_name,
                                                pcl::PointCloud<pcl::PointXYZRGB> &cloud,
                                                bool remove_undef_points)
 {
@@ -169,7 +169,7 @@ int cob_3d_mapping_tools::PPMReader::mapLabels(const string &file_name,
   return 0;
 }
 
-int cob_3d_mapping_tools::PPMReader::mapRGB(const string &file_name,
+int cob_3d_mapping_common::PPMReader::mapRGB(const string &file_name,
                                             pcl::PointCloud<pcl::PointXYZRGB> &cloud,
                                             bool remove_undef_points)
 {
@@ -258,7 +258,7 @@ int cob_3d_mapping_tools::PPMReader::mapRGB(const string &file_name,
   return 0;
 }
 
-int cob_3d_mapping_tools::PPMWriter::writeRGB(const string &file_name,
+int cob_3d_mapping_common::PPMWriter::writeRGB(const string &file_name,
                                               const pcl::PointCloud<pcl::PointXYZRGB> &cloud)
 {
   ofstream ppmFile;
@@ -293,7 +293,7 @@ int cob_3d_mapping_tools::PPMWriter::writeRGB(const string &file_name,
   return 0;
 }
 
-int cob_3d_mapping_tools::PPMWriter::writeDepth(const string &file_name,
+int cob_3d_mapping_common::PPMWriter::writeDepth(const string &file_name,
                                                 const pcl::PointCloud<pcl::PointXYZRGB> &cloud)
 {
   ofstream ppmFile;
@@ -338,7 +338,7 @@ int cob_3d_mapping_tools::PPMWriter::writeDepth(const string &file_name,
 	  #endif
       {
         grd_position = (cloud.points[i].z - min_z_) / (max_z_ - min_z_);
-        cob_3d_mapping_tools::getGradientColor(grd_position, rgb);
+        cob_3d_mapping_common::getGradientColor(grd_position, rgb);
         ppmFile << (int)rgb[0] << " " << (int)rgb[1] << " " << (int)rgb[2] << "\n" ;
       }
       else
@@ -357,7 +357,7 @@ int cob_3d_mapping_tools::PPMWriter::writeDepth(const string &file_name,
   return 0;
 }
 
-int cob_3d_mapping_tools::PPMWriter::writeDepthLinear(
+int cob_3d_mapping_common::PPMWriter::writeDepthLinear(
   const string &file_name,
   const pcl::PointCloud<pcl::PointXYZRGB> &cloud)
 {
@@ -404,7 +404,7 @@ int cob_3d_mapping_tools::PPMWriter::writeDepthLinear(
 	  #endif
       {
         grd_position = ( round(1090.0 - (345.0 / cloud.points[i].z) ) - min_z) / (max_z - min_z);
-        cob_3d_mapping_tools::getGradientColor(grd_position, rgb);
+        cob_3d_mapping_common::getGradientColor(grd_position, rgb);
         ppmFile << (int)rgb[0] << " " << (int)rgb[1] << " " << (int)rgb[2] << "\n" ;
       }
       else
@@ -422,13 +422,13 @@ int cob_3d_mapping_tools::PPMWriter::writeDepthLinear(
   return 0;
 }
 
-void cob_3d_mapping_tools::PPMWriter::setMaxZ (const float &max)
+void cob_3d_mapping_common::PPMWriter::setMaxZ (const float &max)
 {
   fixed_max_ = true;
   max_z_ = max;
 }
 
-void cob_3d_mapping_tools::PPMWriter::setMinZ (const float &min)
+void cob_3d_mapping_common::PPMWriter::setMinZ (const float &min)
 {
   fixed_min_ = true;
   min_z_ = min;
@@ -438,7 +438,7 @@ void cob_3d_mapping_tools::PPMWriter::setMinZ (const float &min)
 // color is proportional to position
 // position  <0;1>
 // position means position of color in color gradient
-uint32_t cob_3d_mapping_tools::getGradientColor(double position, uint8_t rgb[])
+uint32_t cob_3d_mapping_common::getGradientColor(double position, uint8_t rgb[])
 {
 //  if (position > 1) position = position - int(position);
   if (position > 1) position = 1;

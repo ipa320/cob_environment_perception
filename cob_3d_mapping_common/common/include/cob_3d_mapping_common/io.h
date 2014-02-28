@@ -12,9 +12,9 @@
  * \note
  *  Project name: care-o-bot
  * \note
- *  ROS stack name: cob_environment_perception_intern
+ *  ROS stack name: cob_environment_perception
  * \note
- *  ROS package name: cob_3d_mapping_tools
+ *  ROS package name: cob_3d_mapping_common
  *
  * \author
  *  Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
@@ -60,8 +60,8 @@
  *
  ****************************************************************/
 
-#ifndef COB_3D_MAPPING_TOOLS_IO_H_
-#define COB_3D_MAPPING_TOOLS_IO_H_
+#ifndef COB_3D_MAPPING_COMMON_IO_H_
+#define COB_3D_MAPPING_COMMON_IO_H_
 
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
@@ -69,7 +69,7 @@
 #include <float.h>
 #include <iomanip>
 
-namespace cob_3d_mapping_tools
+namespace cob_3d_mapping_common
 {
   /*! @brief 2D image PPM file format reader.
    */
@@ -168,4 +168,4 @@ namespace cob_3d_mapping_tools
   }
 }
 
-#endif // #ifndef COB_3D_MAPPING_TOOLS_IO_H_
+#endif // #ifndef COB_3D_MAPPING_COMMON_IO_H_

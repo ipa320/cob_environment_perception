@@ -66,7 +66,7 @@
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
 
-#include "cob_3d_mapping_tools/io.h"
+#include "cob_3d_mapping_common/io.h"
 
 using namespace std;
 using namespace pcl;
@@ -130,7 +130,7 @@ int main(int argc, char** argv)
   copyPointCloud<PointXYZ, PointXYZRGB>(*p, *pc);
   pc->height = p->height;
   pc->width = p->width;
-  cob_3d_mapping_tools::PPMReader ppmR;
+  cob_3d_mapping_common::PPMReader ppmR;
   if (ppmR.mapRGB(file_i[0], *pc, remove_undef) == -1)
   {
     cout << "Mapping error" << endl;

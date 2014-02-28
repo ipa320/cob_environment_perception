@@ -6,7 +6,7 @@ project(cob_3d_features)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
   cob_3d_mapping_common
-  cob_3d_mapping_tools
+#  cob_3d_mapping_tools
   pcl_ros
 )
 
