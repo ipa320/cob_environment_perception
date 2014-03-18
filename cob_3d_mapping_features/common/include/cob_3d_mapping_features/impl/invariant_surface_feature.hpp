@@ -54,6 +54,7 @@
 #pragma once
 
 #include "cob_3d_mapping_features/invariant_surface_feature.h"
+#include <unsupported/Eigen/FFT>
 
 void cob_3d_mapping_features::InvariantSurfaceFeature<>::compute() {
   result_.reset(new ResultVector);
@@ -67,17 +68,24 @@ void cob_3d_mapping_features::InvariantSurfaceFeature<>::compute() {
     (*result_)[i].v = keypoints[i];
     (*result_)[i].ft.resize(radii_.size());
     for(size_t j=0; j<radii_.size(); j++) {
+		
       //generate sub map
       std::vector<Triangle> submap;
       subsample(keypoints[i], radii_[j], submap);
 
-	  Feature f; f.fill(0);
+	  //sum features
+	  FeatureComplex f; f.fill(0);
 	  for(size_t s=0; s<submap.size(); s++)
 		  f += submap[s].f_;
 
-	  //TODO: fft
-	  (*result_)[i].ft[j].fill(0);
-      (*result_)[i].ft[j];
+	  //calc. rotation invariant feature
+	  for(int r=0; r<num_radius_; r++) {
+		  FeatureAngleComplex t;
+		  FFT<Scalar> fft;
+		  fft.fwd(t,f[r].abs());	//becomes translation invariant
+		  (*result_)[i].ft[j][r] = t.abs();	//becomes rotation invariant
+	  }
+	  
     }
   }
 }
@@ -103,7 +111,7 @@ void cob_3d_mapping_features::InvariantSurfaceFeature<>::Triangle::compute() {
 			 * y=_radius*std::sin(_inclination)*std::sin(_azimuth);
 			 * z=_radius*std::cos(_inclination);
 			 */
-			f_[index(inclination, azimuth, radius)] += kernel();
+			f_[radius](inclination, azimuth) += kernel();
 		  }
 		}
 	}
@@ -161,40 +169,29 @@ void cob_3d_mapping_features::InvariantSurfaceFeature<>::setInput(PTSurfaceList 
 
 		  //fill polys
 		  for(size_t i=0; i<(*input_)[indx].segments_.size(); i++) {
-			pcl::PointCloud<pcl::PointXYZ> pc;
 			TPPLPoly poly;
-
 			poly.Init((*input_)[indx].segments_[i].size());
 			poly.SetHole(i!=0);
+			poly.SetOrientation(i!=0?TPPL_CW:TPPL_CCW);
 
 			for(size_t j=0; j<(*input_)[indx].segments_[i].size(); j++) {
 			  poly[j].x = (*input_)[indx].segments_[i][j](0);
 			  poly[j].y = (*input_)[indx].segments_[i][j](1);
 			}
-			if(i!=0)
-			  poly.SetOrientation(TPPL_CW);
-			else
-			  poly.SetOrientation(TPPL_CCW);
-
+			
 			polys.push_back(poly);
 		  }
 
 		  pp.Triangulate_EC(&polys,&result);
 
-		  TPPLPoint p1,p2,p3;
 		  Eigen::Vector3f v1,v2,v3;
 		  for(std::list<TPPLPoly>::iterator it=result.begin(); it!=result.end(); it++) {
 			if(it->GetNumPoints()!=3) continue;
 
-			p1 = it->GetPoint(0);
-			p2 = it->GetPoint(1);
-			p3 = it->GetPoint(2);
-
 			Triangle tr;
 			tr.model_ = &(*input_)[indx].model_;
-			Triangle::set(tr_.t_[0], p1);
-			Triangle::set(tr_.t_[1], p2);
-			Triangle::set(tr_.t_[2], p3);
+			for(int j=0; j<3; j++)
+				Triangle::set(tr_.t_[j], it->GetPoint(j));
 			tr.compute();
 			
 			triangulated_input_.push_back(tr);
