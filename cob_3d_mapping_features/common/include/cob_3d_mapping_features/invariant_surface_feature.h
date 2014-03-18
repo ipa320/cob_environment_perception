@@ -65,10 +65,11 @@ namespace cob_3d_mapping_features
   public:
     typedef std::vector<TSurface> TSurfaceList;
     typedef boost::shared_ptr<TSurfaceList> PTSurfaceList;
+    typedef Eigen::Matrix<Scalar, num_radius_*num_angle_*num_angle_, 1> Feature;
 
     struct ResultVector {
       TVector v;
-      std::vector<Eigen::Matrix<Scalar, num_radius_*num_angle_*num_angle_, 1> > ft;
+      std::vector<Feature> ft;
     };
     typedef std::vector<ResultVector> ResultVectorList;
     typedef boost::shared_ptr<ResultVectorList> PResultVectorList;
@@ -114,6 +115,7 @@ namespace cob_3d_mapping_features
     struct Triangle {
 		Eigen::Matrix<Scalar, 2, 1> p_[3];
 		Eigen::Matrix<Scalar, 3, 1> p3_[3];
+		Feature f_;
 		typename TSurface::Model *model_;
 		
 		inline static set(Eigen::Matrix<Scalar, 2, 1> &p, const TPPLPoint &tp) {
@@ -121,13 +123,11 @@ namespace cob_3d_mapping_features
 			p(1) = tp.y;
 		}
 		
-		void compute() {
-			for(int i=0; i<3; i++) {
-				p3_[i](0) = p_[i](0);
-				p3_[i](1) = p_[i](1);
-				p3_[i](2) = model_->model(p_[i](0), p_[i](1));
-			}
+		inline static int index(const int a1, const int a2, const int r) {
+			return a1 + a2*num_angle_ + r*num_angle_*num_angle_;
 		}
+		
+		void compute();
 	};
 	
     struct VectorWithParams {

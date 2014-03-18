@@ -67,34 +67,46 @@ void cob_3d_mapping_features::InvariantSurfaceFeature<>::compute() {
     (*result_)[i].v = keypoints[i];
     (*result_)[i].ft.resize(radii_.size());
     for(size_t j=0; j<radii_.size(); j++) {
-      (*result_)[i].ft[j].fill(0);
-
       //generate sub map
       std::vector<Triangle> submap;
       subsample(keypoints[i], radii_[j], submap);
 
-	  for(size_t s=0; s<submap.size(); s++) {
-		  for(int inclination=0; inclination<num_angle_; inclination++) {
-			Scalar _inclination = M_PI*inclination/num_angle_;
-			for(int azimuth=0; azimuth<num_angle_; azimuth++) {
-			  Scalar _azimuth = M_PI*azimuth/num_angle_;
-			  for(int radius=0; radius<num_radius_; radius++) {
-				Scalar _radius = radius*radii_[j]/num_radius_;
+	  Feature f; f.fill(0);
+	  for(size_t s=0; s<submap.size(); s++)
+		  f += submap[s].f_;
 
-				/*
-				 * x=_radius*std::sin(_inclination)*std::cos(_azimuth);
-				 * y=_radius*std::sin(_inclination)*std::sin(_azimuth);
-				 * z=_radius*std::cos(_inclination);
-				 */
-				(*result_)[i].ft[j] += kernel();
-			  }
-			}
-		  }
-	  }
-
+	  //TODO: fft
+	  (*result_)[i].ft[j].fill(0);
       (*result_)[i].ft[j];
     }
   }
+}
+		
+void cob_3d_mapping_features::InvariantSurfaceFeature<>::Triangle::compute() {
+	for(int i=0; i<3; i++) {
+		p3_[i](0) = p_[i](0);
+		p3_[i](1) = p_[i](1);
+		p3_[i](2) = model_->model(p_[i](0), p_[i](1));
+	}
+	
+	//generate now feature
+	f_.fill(0);
+	for(int radius=0; radius<num_radius_; radius++) {
+		Scalar _radius = radius*radii_[j]/num_radius_;
+		for(int inclination=0; inclination<num_angle_; inclination++) {
+			Scalar _inclination = M_PI*inclination/num_angle_;
+			for(int azimuth=0; azimuth<num_angle_; azimuth++) {
+			  Scalar _azimuth = M_PI*azimuth/num_angle_;
+
+			/*
+			 * x=_radius*std::sin(_inclination)*std::cos(_azimuth);
+			 * y=_radius*std::sin(_inclination)*std::sin(_azimuth);
+			 * z=_radius*std::cos(_inclination);
+			 */
+			f_[index(inclination, azimuth, radius)] += kernel();
+		  }
+		}
+	}
 }
 
 void cob_3d_mapping_features::InvariantSurfaceFeature<>::generateKeypoints(std::vector<TVector> &keypoints) {
@@ -129,10 +141,12 @@ void cob_3d_mapping_features::InvariantSurfaceFeature<>::subsample(const TVector
 		else if(n==2) {
 			Triangle tr = triangulated_input_[i];
 			//TODO:
+			tr.compute();
 		}
 		else if(n==1) {
 			Triangle tr = triangulated_input_[i];
 			//TODO:
+			tr.compute();
 		}
 	}
 }
