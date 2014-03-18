@@ -55,6 +55,7 @@
 
 #include "cob_3d_mapping_features/invariant_surface_feature.h"
 #include <unsupported/Eigen/FFT>
+#include <unsupported/Eigen/Polynomials>
 
 void cob_3d_mapping_features::InvariantSurfaceFeature<>::compute() {
   result_.reset(new ResultVector);
@@ -134,6 +135,32 @@ void cob_3d_mapping_features::InvariantSurfaceFeature<>::generateKeypoints(std::
 
 }
 
+TVector cob_3d_mapping_features::InvariantSurfaceFeature<>::subsample(const TVector &at, const Scalar r2, const Ei) {
+	Eigen::PolynomialSolver<Scalar, DegreeN> solver;	
+	p = model->transform;
+	p(1) += mx*mx;
+	p(2) += my*my;
+	solver.compute(p);
+	std::vector<Scalar> r;
+	solver.realRoots(r);
+	
+	assert(r.size()>0);
+	
+	size_t b=0;
+	for(size_t i=1;i<r.size();++i)
+	{
+		if( (r[b]-mid)*(r[b]-mid)>(r[i]-mid)*(r[i]-mid))
+			b=i;
+	}
+	
+	TVector v;
+	v(0) = ;
+	v(1) = ;
+	v(2) = ;
+	
+	return v;
+}
+	
 void cob_3d_mapping_features::InvariantSurfaceFeature<>::subsample(const TVector &at, const Scalar r2, std::vector<Triangle> &res) {
 	//brute force (for the start)
 	for(size_t i=0; i<triangulated_input_.size(); i++) {
