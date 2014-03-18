@@ -117,11 +117,34 @@ namespace intern {
  */
 template <int Degree>
 struct Model {
+  typedef Eigen::Matrix<float, 2*Degree+1, 1>    VectorU1D;
+  typedef Eigen::Matrix<float, 2*Degree+1, 2*Degree+1>    MatrixU1D;
+  
   Param<Degree> param;
   typename Param<Degree>::VectorU p;
 
   Model() {p.fill(0.f);}
   Model(const Param<Degree> &pa) {p.fill(0.f); *this+=pa;}
+  
+  /// transform parameters from 2D input f(x,y) to 1D input f(t) (from origin 0/0)
+  inline VectorU1D transformation_1D(const Eigen::Vector2f &dir) {
+	  typename Param<Degree>::VectorU t=p;
+      for(int i=0; i<=Degree; i++)
+        for(int j=0; j<=i; j++)
+			t(i*(i+1)/2+j) *= std::pow(dir(0),j)*std::pow(dir(1),i-j);
+			
+	  const typename Param<Degree>::MatrixU M = t*t.transpose();
+	  VectorU1D r;
+	  r.fill(0);
+	  
+      for(int i=0; i<=Degree; i++)
+        for(int j=0; j<=i; j++)
+		  for(int ii=0; ii<=Degree; ii++)
+			for(int jj=0; jj<=ii; jj++)
+				r(i+ii) += M(i*(i+1)/2+j, ii*(ii+1)/2+jj);
+	  
+      return r;
+  }
 
   /**
    * check in z-axis with theshold (thr)
