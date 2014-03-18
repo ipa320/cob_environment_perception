@@ -67,30 +67,32 @@ void cob_3d_mapping_features::InvariantSurfaceFeature<>::compute() {
     (*result_)[i].v = keypoints[i];
     (*result_)[i].ft.resize(radii_.size());
     for(size_t j=0; j<radii_.size(); j++) {
-      (*result_)[i].ft[j].resize(num_radius_*num_angle_*num_angle_,0);
+      (*result_)[i].ft[j].fill(0);
 
       //generate sub map
-      std::vector<VectorWithParams> pts;
-      subsample(keypoints[i], radii_[j], pts);
+      std::vector<Triangle> submap;
+      subsample(keypoints[i], radii_[j], submap);
 
-      for(int inclination=0; inclination<num_angle_; inclination++) {
-        Scalar _inclination = M_PI*inclination/num_angle_;
-        for(int azimuth=0; azimuth<num_angle_; azimuth++) {
-          Scalar _azimuth = M_PI*azimuth/num_angle_;
-          for(int radius=0; radius<num_radius_; radius++) {
-            Scalar _radius = radius*radii_[j]/num_radius_;
+	  for(size_t s=0; s<submap.size(); s++) {
+		  for(int inclination=0; inclination<num_angle_; inclination++) {
+			Scalar _inclination = M_PI*inclination/num_angle_;
+			for(int azimuth=0; azimuth<num_angle_; azimuth++) {
+			  Scalar _azimuth = M_PI*azimuth/num_angle_;
+			  for(int radius=0; radius<num_radius_; radius++) {
+				Scalar _radius = radius*radii_[j]/num_radius_;
 
-            /*
-             * x=_radius*std::sin(_inclination)*std::cos(_azimuth);
-             * y=_radius*std::sin(_inclination)*std::sin(_azimuth);
-             * z=_radius*std::cos(_inclination);
-             */
-            kernel();
-          }
-        }
-      }
+				/*
+				 * x=_radius*std::sin(_inclination)*std::cos(_azimuth);
+				 * y=_radius*std::sin(_inclination)*std::sin(_azimuth);
+				 * z=_radius*std::cos(_inclination);
+				 */
+				(*result_)[i].ft[j] += kernel();
+			  }
+			}
+		  }
+	  }
 
-      (*result_)[i].ft;
+      (*result_)[i].ft[j];
     }
   }
 }
@@ -112,8 +114,78 @@ void cob_3d_mapping_features::InvariantSurfaceFeature<>::generateKeypoints(std::
 
 }
 
-void cob_3d_mapping_features::InvariantSurfaceFeature<>::subsample(const TVector &at, std::vector<VectorWithParams> &pts) {
+void cob_3d_mapping_features::InvariantSurfaceFeature<>::subsample(const TVector &at, const Scalar r2, std::vector<Triangle> &res) {
+	//brute force (for the start)
+	for(size_t i=0; i<triangulated_input_.size(); i++) {
+		bool b[3];
+		int n=0;
+		for(int j=0; j<3; j++)
+			n+= (b[j] = ( (triangulated_input_[i].p3_[j]-at).squaredNorm()<=r2))?1:0;
+			
+		if(n==0)
+			continue;
+		else if(n==3)
+			res.push_back(triangulated_input_[i]);
+		else if(n==2) {
+			Triangle tr = triangulated_input_[i];
+			//TODO:
+		}
+		else if(n==1) {
+			Triangle tr = triangulated_input_[i];
+			//TODO:
+		}
+	}
+}
 
+void cob_3d_mapping_features::InvariantSurfaceFeature<>::setInput(PTSurfaceList surfs) {
+	input_=surfs;
+	triangulated_input_.clear();
+	
+	for(size_t indx=0; indx<input_->size(); indx++) {
+		  TPPLPartition pp;
+		  list<TPPLPoly> polys,result;
+
+		  //fill polys
+		  for(size_t i=0; i<(*input_)[indx].segments_.size(); i++) {
+			pcl::PointCloud<pcl::PointXYZ> pc;
+			TPPLPoly poly;
+
+			poly.Init((*input_)[indx].segments_[i].size());
+			poly.SetHole(i!=0);
+
+			for(size_t j=0; j<(*input_)[indx].segments_[i].size(); j++) {
+			  poly[j].x = (*input_)[indx].segments_[i][j](0);
+			  poly[j].y = (*input_)[indx].segments_[i][j](1);
+			}
+			if(i!=0)
+			  poly.SetOrientation(TPPL_CW);
+			else
+			  poly.SetOrientation(TPPL_CCW);
+
+			polys.push_back(poly);
+		  }
+
+		  pp.Triangulate_EC(&polys,&result);
+
+		  TPPLPoint p1,p2,p3;
+		  Eigen::Vector3f v1,v2,v3;
+		  for(std::list<TPPLPoly>::iterator it=result.begin(); it!=result.end(); it++) {
+			if(it->GetNumPoints()!=3) continue;
+
+			p1 = it->GetPoint(0);
+			p2 = it->GetPoint(1);
+			p3 = it->GetPoint(2);
+
+			Triangle tr;
+			tr.model_ = &(*input_)[indx].model_;
+			Triangle::set(tr_.t_[0], p1);
+			Triangle::set(tr_.t_[1], p2);
+			Triangle::set(tr_.t_[2], p3);
+			tr.compute();
+			
+			triangulated_input_.push_back(tr);
+		  }
+	}
 }
 //#define PCL_INSTANTIATE_OrganizedCurvatureEstimationOMP(T,NT,LabelT,OutT) template class PCL_EXPORTS cob_3d_mapping_features::OrganizedCurvatureEstimationOMP<T,NT,LabelT,OutT>;
 

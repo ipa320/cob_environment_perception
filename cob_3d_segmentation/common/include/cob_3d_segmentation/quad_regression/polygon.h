@@ -93,6 +93,8 @@ namespace Segmentation
 
   template<int Degree>
   struct S_POLYGON {
+	typedef SubStructure::Model<Degree> Model;
+	
     std::vector<std::vector<Eigen::Vector3f> >  segments_;
     std::vector<std::vector<Eigen::Vector2i> >  segments2d_;
 #ifdef USE_BOOST_POLYGONS_

@@ -68,7 +68,7 @@ namespace cob_3d_mapping_features
 
     struct ResultVector {
       TVector v;
-      std::vector<std::vector<Scalar> > ft;
+      std::vector<Eigen::Matrix<Scalar, num_radius_*num_angle_*num_angle_, 1> > ft;
     };
     typedef std::vector<ResultVector> ResultVectorList;
     typedef boost::shared_ptr<ResultVectorList> PResultVectorList;
@@ -89,7 +89,7 @@ namespace cob_3d_mapping_features
     /*! destructor */
     ~InvariantSurfaceFeature();
 
-    void setInput(PTSurfaceList surfs) {input_=surfs;}
+    void setInput(PTSurfaceList surfs);
     void compute();
 
     const TAffine &getTransformation() const {return transform_;}
@@ -99,7 +99,11 @@ namespace cob_3d_mapping_features
     void setInvarianceSettings(const EINVARAINCE &t) {invariance_=t;}
 
     const std::vector<float> &getRadii() const {return radii_;}
-    void setRadii(const std::vector<float> &t) {radii_=t;}
+    void addRadii(const float r) {	//insert sorted!
+		std::vector<float>::iterator it = radii_.begin();
+		while(it!=radii_.end() && *it>r) ++it;
+		radii_.insert(it, r);
+	}
 
     const int getNumRadius() const {return num_radius_;}
     void setNumRadius(const int t) {num_radius_=t;}
@@ -107,19 +111,41 @@ namespace cob_3d_mapping_features
     void setNumAngle(const int t) {num_angle_=t;}
 
   protected:
+    struct Triangle {
+		Eigen::Matrix<Scalar, 2, 1> p_[3];
+		Eigen::Matrix<Scalar, 3, 1> p3_[3];
+		typename TSurface::Model *model_;
+		
+		inline static set(Eigen::Matrix<Scalar, 2, 1> &p, const TPPLPoint &tp) {
+			p(0) = tp.x;
+			p(1) = tp.y;
+		}
+		
+		void compute() {
+			for(int i=0; i<3; i++) {
+				p3_[i](0) = p_[i](0);
+				p3_[i](1) = p_[i](1);
+				p3_[i](2) = model_->model(p_[i](0), p_[i](1));
+			}
+		}
+	};
+	
     struct VectorWithParams {
-      TVector v;
-      typename TSurface::TParam::VectorU *param;
+      TVector v_;
+      typename TSurface::TParam::VectorU *param_;
     };
-    TAffine transform_;
+    
     PTSurfaceList input_;
+    std::vector<Triangle> triangulated_input_;
+    
+    TAffine transform_;
     EINVARAINCE invariance_;
-    std::vector<float> radii_;
+    std::vector<float> radii_;	//descending sorted radius list (reuse of subsampled map)
     PResultVectorList result_;
     int num_radius_, num_angle_;
 
     void generateKeypoints(std::vector<TVector> &keypoints);
-    void subsample(const TVector &at, std::vector<VectorWithParams> &pts);
+    void subsample(const TVector &at, const Scalar r2, std::vector<Triangle> &res);
     void kernel();
   };
 }
