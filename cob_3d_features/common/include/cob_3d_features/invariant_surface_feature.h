@@ -134,6 +134,7 @@ namespace cob_3d_features
 		void subsample(const TVector &at, const Scalar r2, std::vector<Triangle> &res);
     private:
 		TVector intersection_on_line(const TVector &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b);
+        void kernel();
 	};
 	
     struct VectorWithParams {
@@ -152,6 +153,5 @@ namespace cob_3d_features
 
     void generateKeypoints(std::vector<TVector> &keypoints);
     void subsample(const TVector &at, const Scalar r2, std::vector<Triangle> &res);
-    void kernel();
   };
 }
