@@ -127,21 +127,31 @@ struct Model {
   Model(const Param<Degree> &pa) {p.fill(0.f); *this+=pa;}
   
   /// transform parameters from 2D input f(x,y) to 1D input f(t) (from origin 0/0)
-  inline VectorU1D transformation_1D(const Eigen::Vector2f &dir) {
-	  typename Param<Degree>::VectorU t=p;
+  inline VectorU1D transformation_1D(const Eigen::Vector2f &dir, const Eigen::Vector2f &off, const Eigen::Vector3f &at) {
+	  Eigen::Matrix<float, Degree, 1> t; t.fill(0);
+      typename Param<Degree>::VectorU pp = p;
+      pp(0) -= at(3);
+      
       for(int i=0; i<=Degree; i++)
         for(int j=0; j<=i; j++)
-			t(i*(i+1)/2+j) *= std::pow(dir(0),j)*std::pow(dir(1),i-j);
-			
-	  const typename Param<Degree>::MatrixU M = t*t.transpose();
+			for(int k=0; k<=j; k++)
+				for(int kk=0; kk<=i-j; kk++)
+					t(k+kk) += pp(i*(i+1)/2+j)*
+					boost::math::binomial_coefficient<float>(j, k)*   std::pow(dir(0),k)* std::pow(off(0),j-k)*
+					boost::math::binomial_coefficient<float>(i-j, kk)*std::pow(dir(1),kk)*std::pow(off(1),i-j-kk);
+
+	  const Eigen::Matrix<float, Degree, Degree> M = t*t.transpose();
 	  VectorU1D r;
 	  r.fill(0);
 	  
       for(int i=0; i<=Degree; i++)
-        for(int j=0; j<=i; j++)
 		  for(int ii=0; ii<=Degree; ii++)
-			for(int jj=0; jj<=ii; jj++)
-				r(i+ii) += M(i*(i+1)/2+j, ii*(ii+1)/2+jj);
+				r(i+ii) += M(i, ii);
+			
+	  const float x0=off(0)-at(0), y0=off(1)-at(1);	
+	  r(0) += x0*x0 + y0*y0;
+	  r(1) += 2*x0*dir(0) + 2*y0*dir(1);
+	  r(2) += dir(0)*dir(0) + dir(1)*dir(1);
 	  
       return r;
   }

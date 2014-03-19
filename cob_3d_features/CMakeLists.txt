@@ -92,6 +92,7 @@ rosbuild_link_boost(test_edge_estimation program_options)
 rosbuild_add_executable(test_edge_sharpening common/test/test_edge_sharpening.cpp)
 target_link_libraries(test_edge_sharpening cob_3d_features vtkCommon vtkRendering)
 rosbuild_link_boost(test_edge_sharpening program_options)
+rosbuild_add_executable(test_invariant_feature common/test/test_invariant_feature.cpp)
 
 # Profiling old EdgeEstimation and FastEdgeEstimation
 # Only computation, no visualization or output.

@@ -9,7 +9,7 @@
  *
  * Project name: care-o-bot
  * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_mapping_features
+ * ROS package name: cob_3d_features
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -53,11 +53,12 @@
 
 #pragma once
 
-#include "cob_3d_mapping_features/invariant_surface_feature.h"
+#include "cob_3d_features/invariant_surface_feature.h"
 #include <unsupported/Eigen/FFT>
 #include <unsupported/Eigen/Polynomials>
 
-void cob_3d_mapping_features::InvariantSurfaceFeature<>::compute() {
+template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
+void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::compute() {
   result_.reset(new ResultVector);
 
   //generate keypoints (e.g. reduce number of points by area)
@@ -82,7 +83,7 @@ void cob_3d_mapping_features::InvariantSurfaceFeature<>::compute() {
 	  //calc. rotation invariant feature
 	  for(int r=0; r<num_radius_; r++) {
 		  FeatureAngleComplex t;
-		  FFT<Scalar> fft;
+		  Eigen::FFT<Scalar> fft;
 		  fft.fwd(t,f[r].abs());	//becomes translation invariant
 		  (*result_)[i].ft[j][r] = t.abs();	//becomes rotation invariant
 	  }
@@ -90,8 +91,9 @@ void cob_3d_mapping_features::InvariantSurfaceFeature<>::compute() {
     }
   }
 }
-		
-void cob_3d_mapping_features::InvariantSurfaceFeature<>::Triangle::compute() {
+
+template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
+void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::Triangle::compute(const std::vector<float> &radii) {
 	for(int i=0; i<3; i++) {
 		p3_[i](0) = p_[i](0);
 		p3_[i](1) = p_[i](1);
@@ -99,26 +101,30 @@ void cob_3d_mapping_features::InvariantSurfaceFeature<>::Triangle::compute() {
 	}
 	
 	//generate now feature
-	f_.fill(0);
-	for(int radius=0; radius<num_radius_; radius++) {
-		Scalar _radius = radius*radii_[j]/num_radius_;
-		for(int inclination=0; inclination<num_angle_; inclination++) {
-			Scalar _inclination = M_PI*inclination/num_angle_;
-			for(int azimuth=0; azimuth<num_angle_; azimuth++) {
-			  Scalar _azimuth = M_PI*azimuth/num_angle_;
+	f_.resize(radii.size());
+	for(size_t j=0; j<radii.size(); j++) {
+		for(int radius=0; radius<num_radius_; radius++) {
+			f_[j][radius].fill(0);
+			Scalar _radius = radius*radii_[j]/num_radius_;
+			for(int inclination=0; inclination<num_angle_; inclination++) {
+				Scalar _inclination = M_PI*inclination/num_angle_;
+				for(int azimuth=0; azimuth<num_angle_; azimuth++) {
+				  Scalar _azimuth = M_PI*azimuth/num_angle_;
 
-			/*
-			 * x=_radius*std::sin(_inclination)*std::cos(_azimuth);
-			 * y=_radius*std::sin(_inclination)*std::sin(_azimuth);
-			 * z=_radius*std::cos(_inclination);
-			 */
-			f_[radius](inclination, azimuth) += kernel();
-		  }
+				/*
+				 * x=_radius*std::sin(_inclination)*std::cos(_azimuth);
+				 * y=_radius*std::sin(_inclination)*std::sin(_azimuth);
+				 * z=_radius*std::cos(_inclination);
+				 */
+				f_[j][radius](inclination, azimuth) += kernel();
+			  }
+			}
 		}
 	}
 }
 
-void cob_3d_mapping_features::InvariantSurfaceFeature<>::generateKeypoints(std::vector<TVector> &keypoints) {
+template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
+void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::generateKeypoints(std::vector<TVector> &keypoints) {
   //TODO: reduce points
 
   for(size_t i=0; i<input_->size(); i++) {                         //surfaces
@@ -135,33 +141,36 @@ void cob_3d_mapping_features::InvariantSurfaceFeature<>::generateKeypoints(std::
 
 }
 
-TVector cob_3d_mapping_features::InvariantSurfaceFeature<>::subsample(const TVector &at, const Scalar r2, const Ei) {
-	Eigen::PolynomialSolver<Scalar, DegreeN> solver;	
-	p = model->transform;
-	p(1) += mx*mx;
-	p(2) += my*my;
+template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
+typename cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::TVector
+cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::Triangle::intersection_on_line(const TVector &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b) {
+	Eigen::PolynomialSolver<Scalar, 2*TSurface::DEGREE+1> solver;	
+	typename TSurface::Model::VectorU1D p = model_->transformation_1D(a-b,a, at);
+	p(0) -= r2;
 	solver.compute(p);
+	
 	std::vector<Scalar> r;
 	solver.realRoots(r);
-	
 	assert(r.size()>0);
 	
-	size_t b=0;
+	const float mid = 0.5f;
+	size_t best=0;
 	for(size_t i=1;i<r.size();++i)
 	{
-		if( (r[b]-mid)*(r[b]-mid)>(r[i]-mid)*(r[i]-mid))
-			b=i;
+		if( (r[best]-mid)*(r[best]-mid)>(r[i]-mid)*(r[i]-mid))
+			best=i;
 	}
 	
 	TVector v;
-	v(0) = ;
-	v(1) = ;
-	v(2) = ;
+	v(0) = (a(0)-b(0))*r[best]+a(0);
+	v(1) = (a(1)-b(1))*r[best]+a(1);
+	v(2) = model_->model( v(0), v(1) );
 	
 	return v;
 }
 	
-void cob_3d_mapping_features::InvariantSurfaceFeature<>::subsample(const TVector &at, const Scalar r2, std::vector<Triangle> &res) {
+template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
+void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::Triangle::subsample(const TVector &at, const Scalar r2, std::vector<Triangle> &res) {
 	//brute force (for the start)
 	for(size_t i=0; i<triangulated_input_.size(); i++) {
 		bool b[3];
@@ -174,19 +183,34 @@ void cob_3d_mapping_features::InvariantSurfaceFeature<>::subsample(const TVector
 		else if(n==3)
 			res.push_back(triangulated_input_[i]);
 		else if(n==2) {
-			Triangle tr = triangulated_input_[i];
-			//TODO:
-			tr.compute();
+			Triangle tr1 = triangulated_input_[i];
+			Triangle tr2 = triangulated_input_[i];
+			const int ind = !b[0]?0:(!b[1]?1:2);
+			
+			tr1.p_[ind] = intersection_on_line(at, r2, tr1.p_[ind], tr1.p_[ (ind+2)%3 ]);
+			tr2.p_[(ind+1)%3] = intersection_on_line(at, r2, tr2.p_[ind], tr2.p_[ (ind+1)%3 ]);
+			tr2.p_[ind] = tr1.p_[ind];
+			
+			tr1.compute();
+			tr2.compute();
+			res.push_back(tr1);
+			res.push_back(tr2);
 		}
 		else if(n==1) {
 			Triangle tr = triangulated_input_[i];
-			//TODO:
+			const int ind = b[0]?0:(b[1]?1:2);
+			
+			tr.p_[(ind+1)%3] = intersection_on_line(at, r2, tr.p_[ind], tr.p_[ (ind+1)%3 ]);
+			tr.p_[(ind+2)%3] = intersection_on_line(at, r2, tr.p_[ind], tr.p_[ (ind+2)%3 ]);
+			
 			tr.compute();
+			res.push_back(tr);
 		}
 	}
 }
 
-void cob_3d_mapping_features::InvariantSurfaceFeature<>::setInput(PTSurfaceList surfs) {
+template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
+void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::setInput(PTSurfaceList surfs) {
 	input_=surfs;
 	triangulated_input_.clear();
 	
@@ -218,12 +242,12 @@ void cob_3d_mapping_features::InvariantSurfaceFeature<>::setInput(PTSurfaceList 
 			Triangle tr;
 			tr.model_ = &(*input_)[indx].model_;
 			for(int j=0; j<3; j++)
-				Triangle::set(tr_.t_[j], it->GetPoint(j));
+				Triangle::set(tr.t_[j], it->GetPoint(j));
 			tr.compute();
 			
 			triangulated_input_.push_back(tr);
 		  }
 	}
 }
-//#define PCL_INSTANTIATE_OrganizedCurvatureEstimationOMP(T,NT,LabelT,OutT) template class PCL_EXPORTS cob_3d_mapping_features::OrganizedCurvatureEstimationOMP<T,NT,LabelT,OutT>;
+//#define PCL_INSTANTIATE_OrganizedCurvatureEstimationOMP(T,NT,LabelT,OutT) template class PCL_EXPORTS cob_3d_features::OrganizedCurvatureEstimationOMP<T,NT,LabelT,OutT>;
 

@@ -70,7 +70,7 @@
 #include <eigen3/Eigen/Dense>
 #include <unsupported/Eigen/NonLinearOptimization>
 #include <cob_3d_mapping_msgs/CurvedPolygon.h>
-#include "sub_structures/polypartition.h"
+#include <cob_3d_mapping_common/polypartition.h>
 
 namespace Segmentation
 {
@@ -93,6 +93,7 @@ namespace Segmentation
 
   template<int Degree>
   struct S_POLYGON {
+	enum {DEGREE=Degree};
 	typedef SubStructure::Model<Degree> Model;
 	
     std::vector<std::vector<Eigen::Vector3f> >  segments_;
