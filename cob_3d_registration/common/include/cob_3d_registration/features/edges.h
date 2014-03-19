@@ -74,7 +74,7 @@
 #include <pcl/filters/extract_indices.h>
 
 #include <pcl/features/normal_3d.h>
-#include <cob_3d_mapping_features/fast_edge_estimation_3d_omp.h>
+#include <cob_3d_features/fast_edge_estimation_3d_omp.h>
 #include <cob_3d_mapping_common/point_types.h>
 #include <pcl/kdtree/kdtree.h>
 #include <pcl/features/integral_image_normal.h>

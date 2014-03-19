@@ -58,7 +58,8 @@
 
 #include <visualization_msgs/MarkerArray.h>
 
-#ifndef PCL_VERSION_COMPARE
+#if !defined(PCL_VERSION_COMPARE) || PCL_MINOR_VERSION < 6
+//#ifndef PCL_VERSION_COMPARE
 #define USE_GREEDY
 #endif
 

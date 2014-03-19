@@ -216,16 +216,15 @@ void printForFile(ClusterMap& exp, ClusterMap& pred)
     cob_3d_mapping::Polygon::Ptr p2 = match->second.poly;
     float area2 = p2->computeArea3d();
     float area_diff = 0;
-    gpc_polygon gpc_a, gpc_b, gpc_diff;
+    /*gpc_polygon gpc_a, gpc_b, gpc_diff;
     p1->getGpcStructure(p1->transform_from_world_to_plane, &gpc_a);
     p2->getGpcStructure(p2->transform_from_world_to_plane, &gpc_b);
-    gpc_polygon_clip(GPC_XOR, &gpc_a, &gpc_b, &gpc_diff);
+    gpc_polygon_clip(GPC_XOR, &gpc_a, &gpc_b, &gpc_diff);*/
 
     //cob_3d_mapping::Polygon::Ptr p_diff(new cob_3d_mapping::Polygon);
-    if(gpc_diff.num_contours != 0)
+    if(p1->isIntersectedWith(p2))
     {
-      p1->applyGpcStructure(p1->transform_from_world_to_plane, &gpc_diff);
-      area_diff = p1->computeArea3d();
+      area_diff = std::abs(area1 - area2);
     }
 
     std::cout << match->second.comp3[0] << "\t"
@@ -269,16 +268,9 @@ void compare(ClusterMap& exp, ClusterMap& pred)
     float area1 = p1->computeArea3d();
     float area2 = p2->computeArea3d();
     float area_diff = 0;
-    gpc_polygon gpc_a, gpc_b, gpc_diff;
-    p1->getGpcStructure(p1->transform_from_world_to_plane, &gpc_a);
-    p2->getGpcStructure(p2->transform_from_world_to_plane, &gpc_b);
-    gpc_polygon_clip(GPC_XOR, &gpc_a, &gpc_b, &gpc_diff);
-
-    //cob_3d_mapping::Polygon::Ptr p_diff(new cob_3d_mapping::Polygon);
-    if(gpc_diff.num_contours != 0)
+    if(p1->isIntersectedWith(p2))
     {
-      p1->applyGpcStructure(p1->transform_from_world_to_plane, &gpc_diff);
-      area_diff = p1->computeArea3d();
+      area_diff = std::abs(area1 - area2);
     }
 
     std::stringstream ss1, ss2;

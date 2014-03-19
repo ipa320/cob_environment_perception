@@ -73,7 +73,7 @@
 #include <Eigen/Geometry>
 
 //cob includes
-#include "cob_3d_mapping_geometry_map/vis/geometry_map_visualisation.h"
+//#include "cob_3d_mapping_geometry_map/vis/geometry_map_visualisation.h"
 #include "cob_3d_mapping_common/polygon.h"
 #include "cob_3d_mapping_common/cylinder.h"
 #include "cob_3d_mapping_common/shape_cluster.h"
@@ -148,7 +148,7 @@ public:
   * with existing shape clusters in map. Weighting and merging configuration are set.
   * \param[in] sc_ptr Shape Cluster, that is added to map.
   */
-  void addMapEntry(cob_3d_mapping::ShapeCluster::Ptr& sc_ptr);
+  //void addMapEntry(cob_3d_mapping::ShapeCluster::Ptr& sc_ptr);
 
   /**
   * \brief Transformation error is calculated.
@@ -159,8 +159,8 @@ public:
   * param[in] tf_old Original transformation
   * param[out] adjust_tf The correctional transformation, calculated by this function.
   */
-  bool
-  computeTfError(const std::vector<cob_3d_mapping::Polygon::Ptr>& list_polygon, const Eigen::Affine3f& tf_old, Eigen::Affine3f& adjust_tf);
+  //bool
+  //computeTfError(const std::vector<cob_3d_mapping::Polygon::Ptr>& list_polygon, const Eigen::Affine3f& tf_old, Eigen::Affine3f& adjust_tf);
 
 
   /**
@@ -223,17 +223,17 @@ public:
   * \brief Return Polygon map.
   * \return Polygon Pointer to array with Polygons contained in map.
   */
-  inline std::vector<cob_3d_mapping::Polygon::Ptr>* getMap_polygon() { return &(map_polygon_); }
+  inline std::vector<cob_3d_mapping::Polygon::Ptr>* getMapPolygon() { return &(map_polygon_); }
   /**
   * \brief Return Cylinder map.
   * \return Cylinder Pointer to array with Cylinders contained in map.
   */
-  inline std::vector<cob_3d_mapping::Cylinder::Ptr>* getMap_cylinder() { return &(map_cylinder_); }
+  inline std::vector<cob_3d_mapping::Polygon::Ptr>* getMapCylinder() { return &(map_cylinder_); }
   /**
   * \brief Return ShapeCluster map.
   * \return ShapeCluster Pointer to array with ShapeClusters contained in map.
   */
-  inline std::vector<cob_3d_mapping::ShapeCluster::Ptr>* getMap_shape_cluster() { return &(map_shape_cluster_); }
+  //inline std::vector<cob_3d_mapping::ShapeCluster::Ptr>* getMap_shape_cluster() { return &(map_shape_cluster_); }
 
 
   /**
@@ -278,7 +278,7 @@ public:
 
 protected:
   std::vector<cob_3d_mapping::Polygon::Ptr> map_polygon_; /**< Array containing all polygon structures. */
-  std::vector<cob_3d_mapping::Cylinder::Ptr> map_cylinder_; /**< Array containing all cylinder structures. */
+  std::vector<cob_3d_mapping::Polygon::Ptr> map_cylinder_; /**< Array containing all cylinder structures. */
   std::vector<cob_3d_mapping::ShapeCluster::Ptr> map_shape_cluster_; /**< Array containing all shape clusters. */
   unsigned int new_id_; /**< Counter for shape IDs*/
   //int counter_output;

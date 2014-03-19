@@ -86,8 +86,8 @@
 #include <pcl/point_cloud.h>
 #include <pcl/common/centroid.h>
 
-
-#include <cob_3d_mapping_slam/dof/tflink.h>
+#include <ros/console.h>
+//#include <cob_3d_mapping_slam/dof/tflink.h>
 #include "cob_3d_mapping_geometry_map/geometry_map.h"
 
 
@@ -99,22 +99,22 @@ GeometryMap::addMapEntry(Polygon::Ptr& p_ptr)
 {
   Polygon& p = *p_ptr;
 
-  cob_3d_mapping::merge_config  limits;
-  limits.d_thresh=d_;
-  limits.angle_thresh=cos_angle_;
+  cob_3d_mapping::MergeConfig  limits;
+  limits.d_thresh = d_;
+  limits.angle_thresh = cos_angle_;
   //	limits.weighting_method="COMBINED";
   limits.weighting_method="AREA";
   p.merge_settings_ = limits;
   p.assignWeight();
 
   std::vector<int> intersections;
-  if (map_polygon_.size()> 0)
+  if (map_polygon_.size() > 0)
   {
-    p.getMergeCandidates(map_polygon_,intersections);
-    if(intersections.size()>0) // if polygon has to be merged ...
+    p.getMergeCandidates(map_polygon_, intersections);
+    if(intersections.size() > 0) // if polygon has to be merged ...
     {
       std::vector<Polygon::Ptr> merge_candidates;
-      for(int i=intersections.size()-1; i>=0 ;--i)
+      for(int i = intersections.size()-1; i >= 0 ;--i)
       {
         // copies pointer to polygon
         merge_candidates.push_back(map_polygon_[intersections[i]]);
@@ -129,19 +129,19 @@ GeometryMap::addMapEntry(Polygon::Ptr& p_ptr)
     }
     else //if polygon does not have to be merged , add new polygon
     {
-      p.computeAttributes(p.normal,p.centroid);
-      p.assignWeight();
-      p.id = new_id_++;
-      p.frame_stamp = frame_counter_;
+      //p.computeAttributes(p.normal,p.centroid);
+      //p.assignWeight();
+      p.id_ = new_id_++;
+      p.frame_stamp_ = frame_counter_;
       map_polygon_.push_back(p_ptr);
     }
   }
   else
   {
-    p.computeAttributes(p.normal,p.centroid);
-    p.assignWeight();
-    p.id = new_id_++;
-    p.frame_stamp = frame_counter_;
+    //p.computeAttributes(p.normal,p.centroid);
+    //p.assignWeight();
+    p.id_ = new_id_++;
+    p.frame_stamp_ = frame_counter_;
     map_polygon_.push_back(p_ptr);
   }
   if(save_to_file_) saveMap(file_path_);
@@ -152,61 +152,62 @@ GeometryMap::addMapEntry(Cylinder::Ptr& c_ptr)
 {
   Cylinder& c = *c_ptr;
 
-  c.frame_stamp = frame_counter_;
-  cob_3d_mapping::merge_config  limits;
-  limits.d_thresh=d_;
-  limits.angle_thresh=cos_angle_;
+  //c.frame_stamp_ = frame_counter_;
+  cob_3d_mapping::MergeConfig  limits;
+  limits.d_thresh = d_;
+  limits.angle_thresh = cos_angle_;
   //limits.weighting_method="COUNTER";
-  limits.weighting_method="AREA";
+  limits.weighting_method = "AREA";
 
   c.merge_settings_ = limits;
-
   c.assignWeight();
 
-  // find out polygons, to merge with
   std::vector<int> intersections;
-  if (map_cylinder_.size()> 0 )
+  if (map_cylinder_.size() > 0)
   {
-    c.isMergeCandidate(map_cylinder_,limits,intersections);
-    // if polygon has to be merged ...
-    if(intersections.size()>0)
+    c.getMergeCandidates(map_cylinder_, intersections);
+    if(intersections.size() > 0) // if polygon has to be merged ...
     {
-      std::vector<Cylinder::Ptr> merge_candidates;
-
-      for(int i=intersections.size()-1; i>=0 ;--i)
+      std::vector<Polygon::Ptr> merge_candidates;
+      for(int i = intersections.size()-1; i >= 0 ;--i)
       {
-
+        // copies pointer to polygon
         merge_candidates.push_back(map_cylinder_[intersections[i]]);
+        // delete pointer in map, polygon still available. However there should be a better solution than
+        // copying and deleting pointers manually.
         map_cylinder_[intersections[i]] = map_cylinder_.back();
         map_cylinder_.pop_back();
-       }
-
-      c.merge(merge_candidates);
-      map_cylinder_.push_back(c_ptr);
+      }
+      // merge polygon with merge candidates
+      c.merge(merge_candidates); // merge all new candidates into p
+      map_cylinder_.push_back(c_ptr); // add p to map, candidates were dropped!
     }
-    //if polygon does not have to be merged , add new polygon
-    else
+    else //if polygon does not have to be merged , add new polygon
     {
-      c.computeAttributes(c.sym_axis,c.normal,c.origin_);
-      c.assignWeight();
-      c.id = new_id_++;
-      c.frame_stamp =frame_counter_;
+      //p.computeAttributes(p.normal,p.centroid);
+      //p.assignWeight();
+      c.id_ = new_id_++;
+      c.frame_stamp_ = frame_counter_;
       map_cylinder_.push_back(c_ptr);
     }
   }
   else
   {
-    c.computeAttributes(c.sym_axis,c.normal,c.origin_);
-    c.assignWeight();
-
-    c.id = new_id_++;
-    c.frame_stamp =frame_counter_;
+    std::cout << "adding first element" << std::endl;
+    for(unsigned int i=0; i<c.contours_[0].size(); i++)
+    {
+      std::cout << c.contours_[0][i](0) << "," << c.contours_[0][i](1) << std::endl;
+    }
+    //p.computeAttributes(p.normal,p.centroid);
+    //p.assignWeight();
+    c.id_ = new_id_++;
+    c.frame_stamp_ = frame_counter_;
     map_cylinder_.push_back(c_ptr);
   }
- 
+  if(save_to_file_) saveMap(file_path_);
 }
 
-void
+/*void
 GeometryMap::addMapEntry(ShapeCluster::Ptr& sc_ptr)
 {
   sc_ptr->computeAttributes();
@@ -241,9 +242,9 @@ GeometryMap::addMapEntry(ShapeCluster::Ptr& sc_ptr)
     sc_ptr->frame_stamp = frame_counter_;
     map_shape_cluster_.push_back(sc_ptr);
   }
-}
+}*/
 
-bool
+/*bool
 GeometryMap::computeTfError(const std::vector<Polygon::Ptr>& list_polygon, const Eigen::Affine3f& tf_old, Eigen::Affine3f& adjust_tf)
 {
   return false;
@@ -326,7 +327,7 @@ GeometryMap::computeTfError(const std::vector<Polygon::Ptr>& list_polygon, const
   last_tf_err_ = adjust_tf;
 
   return true;
-}
+}*/
 
 
 void
@@ -335,7 +336,8 @@ GeometryMap::cleanUp()
   int n_dropped = 0, m_dropped = 0, c_dropped=0;
   for(int idx = map_polygon_.size() - 1 ; idx >= 0; --idx)
   {
-    if (map_polygon_[idx]->merged <= 1 && (frame_counter_ - 3) > (int)map_polygon_[idx]->frame_stamp)
+    if (map_polygon_[idx]->merged_ <= 1 && (frame_counter_ - 3) > (int)map_polygon_[idx]->frame_stamp_
+        && (int)map_polygon_[idx]->frame_stamp_ > 1)
     {
       ROS_INFO("cleaning id %d",idx);
       map_polygon_[idx] = map_polygon_.back();
@@ -345,24 +347,24 @@ GeometryMap::cleanUp()
   }
 
 
-  for(int idx = map_cylinder_.size() - 1 ; idx >= 0; --idx)
+  /*for(int idx = map_cylinder_.size() - 1 ; idx >= 0; --idx)
   {
   bool drop_cyl=false;
-      ROS_DEBUG_STREAM("merged:"<<(int)map_cylinder_[idx]->merged<<" frame ctr:"<<frame_counter_<<" frame st:"<<(int)map_cylinder_[idx]->frame_stamp<<" size:"<<(int)map_cylinder_[idx]->contours[0].size());
+      ROS_DEBUG_STREAM("merged:"<<(int)map_cylinder_[idx]->merged_<<" frame ctr:"<<frame_counter_<<" frame st:"<<(int)map_cylinder_[idx]->frame_stamp_<<" size:"<<(int)map_cylinder_[idx]->contours_[0].size());
 
-    if (map_cylinder_[idx]->merged <= 1 && (frame_counter_ - 2) > (int)map_cylinder_[idx]->frame_stamp)
-        {
-        drop_cyl=true;
-        }
+    if (map_cylinder_[idx]->merged_ <= 1 && (frame_counter_ - 2) > (int)map_cylinder_[idx]->frame_stamp_)
+    {
+      drop_cyl=true;
+    }
     // TODO<<<<WATCH OUT<<<<< presentation configuration - hard coded limits >>>>>>>>>>>>>>>>>>
-    if ((int)map_cylinder_[idx]->contours[0].size()<30 && (int)map_cylinder_[idx]->merged <= 1)
-        {
-         drop_cyl=true;
-        }
+    if ((int)map_cylinder_[idx]->contours_[0].size()<30 && (int)map_cylinder_[idx]->merged_ <= 1)
+    {
+      drop_cyl=true;
+    }
     if (map_cylinder_[idx]->r_ < 0.1 || map_cylinder_[idx]->r_>0.2)
-        {
-        drop_cyl=true;
-        }
+    {
+      drop_cyl=true;
+    }
     if ( drop_cyl==true)
     {
       map_cylinder_[idx] = map_cylinder_.back();
@@ -372,14 +374,14 @@ GeometryMap::cleanUp()
   }
   for(int idx = map_shape_cluster_.size() - 1 ; idx >= 0; --idx)
   {
-    ROS_DEBUG_STREAM( map_shape_cluster_[idx]->merged <<", " << (frame_counter_ - 3) <<" > "<<(int)map_shape_cluster_[idx]->frame_stamp);
-    if (map_shape_cluster_[idx]->merged <= 1 && (frame_counter_ - 3) > (int)map_shape_cluster_[idx]->frame_stamp)
+    ROS_DEBUG_STREAM( map_shape_cluster_[idx]->merged_ <<", " << (frame_counter_ - 3) <<" > "<<(int)map_shape_cluster_[idx]->frame_stamp_);
+    if (map_shape_cluster_[idx]->merged_ <= 1 && (frame_counter_ - 3) > (int)map_shape_cluster_[idx]->frame_stamp_)
     {
       map_shape_cluster_[idx] = map_shape_cluster_.back();
       map_shape_cluster_.pop_back();
       ++m_dropped;
     }
-  }
+  }*/
   ROS_DEBUG_STREAM("Dropped " << n_dropped << " Polys, "<<c_dropped<<" Cyls, " << m_dropped << " Clusters" );
 }
 
@@ -391,20 +393,18 @@ GeometryMap::saveMapEntry(std::string path, int ctr, cob_3d_mapping::Polygon& p)
   ss << path << "polygon_" << ctr << ".pl";
   std::ofstream plane_file;
   plane_file.open (ss.str().c_str());
-  plane_file << p.normal(0) << " " << p.normal(1) << " " << p.normal(2) << " " << p.d;
+  plane_file << p.normal_(0) << " " << p.normal_(1) << " " << p.normal_(2) << " " << p.d_;
   ss.str("");
   ss.clear();
   plane_file.close();
-  for(int i=0; i< (int)p.contours.size(); i++)
+  for(int i=0; i< (int)p.contours_.size(); i++)
   {
     pcl::PointCloud<pcl::PointXYZ> pc;
     ss << path << "polygon_" << ctr << "_" << i << ".pcd";
-    for(int j=0; j< (int)p.contours[i].size(); j++)
+    for(int j=0; j< (int)p.contours_[i].size(); j++)
     {
       pcl::PointXYZ pt;
-      pt.x = p.contours[i][j](0);
-      pt.y = p.contours[i][j](1);
-      pt.z = p.contours[i][j](2);
+      pt.getVector3fMap() = Eigen::Vector3f(p.contours_[i][j](0), p.contours_[i][j](1), 0);
       pc.points.push_back(pt);
     }
     pcl::io::savePCDFileASCII (ss.str(), pc);
@@ -438,7 +438,7 @@ GeometryMap::clearMap()
 
 
 
-float
+/*float
 GeometryMap::rounding(float x)
 
 {
@@ -447,7 +447,7 @@ GeometryMap::rounding(float x)
   x = floor(x);
   x /= 10000;
   return x;
-}
+}*/
 
 
 
@@ -459,54 +459,54 @@ GeometryMap::colorizeMap()
   //coloring for polygon
   for(unsigned int i=0; i<map_polygon_.size(); i++)
   {
-    if(map_polygon_[i]->color[3] == 1.0f) continue;
-    if(fabs(map_polygon_[i]->normal[2]) < 0.1) //plane is vertical
+    if(map_polygon_[i]->color_[3] == 1.0f) continue;
+    if(fabs(map_polygon_[i]->normal_[2]) < 0.1) //plane is vertical
     {
-      map_polygon_[i]->color[0] = 0.75;
-      map_polygon_[i]->color[1] = 0.75;
-      map_polygon_[i]->color[2] = 0;
-      map_polygon_[i]->color[3] = 0.8;
+      map_polygon_[i]->color_[0] = 0.75;
+      map_polygon_[i]->color_[1] = 0.75;
+      map_polygon_[i]->color_[2] = 0;
+      map_polygon_[i]->color_[3] = 0.8;
     }
-    else if(fabs(map_polygon_[i]->normal[0]) < 0.12 && fabs(map_polygon_[i]->normal[1]) < 0.12 && fabs(map_polygon_[i]->normal[2]) > 0.9) //plane is horizontal
+    else if(fabs(map_polygon_[i]->normal_[0]) < 0.12 && fabs(map_polygon_[i]->normal_[1]) < 0.12 && fabs(map_polygon_[i]->normal_[2]) > 0.9) //plane is horizontal
     {
-      map_polygon_[i]->color[0] = 0;
-      map_polygon_[i]->color[1] = 0.5;
-      map_polygon_[i]->color[2] = 0;
-      map_polygon_[i]->color[3] = 0.8;
+      map_polygon_[i]->color_[0] = 0;
+      map_polygon_[i]->color_[1] = 0.5;
+      map_polygon_[i]->color_[2] = 0;
+      map_polygon_[i]->color_[3] = 0.8;
     }
     else
     {
-      map_polygon_[i]->color[0] = 0.75;
-      map_polygon_[i]->color[1] = 0.75;
-      map_polygon_[i]->color[2] = 0.75;
-      map_polygon_[i]->color[3] = 0.8;
+      map_polygon_[i]->color_[0] = 0.75;
+      map_polygon_[i]->color_[1] = 0.75;
+      map_polygon_[i]->color_[2] = 0.75;
+      map_polygon_[i]->color_[3] = 0.8;
     }
   }
 
   //coloring for cylinder
   for(unsigned int i=0; i<map_cylinder_.size(); i++)
   {
-    if(map_cylinder_[i]->color[3] == 1.0f) continue;
-    if(fabs(map_cylinder_[i]->normal[0]) < 0.1 && fabs(map_cylinder_[i]->normal[1]) < 0.1) //cylinder is vertical
+    if(map_cylinder_[i]->color_[3] == 1.0f) continue;
+    if(fabs(map_cylinder_[i]->normal_[0]) < 0.1 && fabs(map_cylinder_[i]->normal_[1]) < 0.1) //cylinder is vertical
     {
-      map_cylinder_[i]->color[0] = 0.5;
-      map_cylinder_[i]->color[1] = 0.5;
-      map_cylinder_[i]->color[2] = 0;
-      map_cylinder_[i]->color[3] = 1;
+      map_cylinder_[i]->color_[0] = 0.5;
+      map_cylinder_[i]->color_[1] = 0.5;
+      map_cylinder_[i]->color_[2] = 0;
+      map_cylinder_[i]->color_[3] = 1;
     }
-    else if(fabs(map_cylinder_[i]->normal[2]) < 0.12) //plane is horizontal
+    else if(fabs(map_cylinder_[i]->normal_[2]) < 0.12) //plane is horizontal
     {
-      map_cylinder_[i]->color[0] = 0;
-      map_cylinder_[i]->color[1] = 0.5;
-      map_cylinder_[i]->color[2] = 0;
-      map_cylinder_[i]->color[3] = 1;
+      map_cylinder_[i]->color_[0] = 0;
+      map_cylinder_[i]->color_[1] = 0.5;
+      map_cylinder_[i]->color_[2] = 0;
+      map_cylinder_[i]->color_[3] = 1;
     }
     else
     {
-      map_cylinder_[i]->color[0] = 1;
-      map_cylinder_[i]->color[1] = 1;
-      map_cylinder_[i]->color[2] = 1;
-      map_cylinder_[i]->color[3] = 1;
+      map_cylinder_[i]->color_[0] = 1;
+      map_cylinder_[i]->color_[1] = 1;
+      map_cylinder_[i]->color_[2] = 1;
+      map_cylinder_[i]->color_[3] = 1;
     }
   }
 
@@ -516,47 +516,3 @@ GeometryMap::colorizeMap()
 
 
 
-int main (int argc, char** argv)
-{
-  GeometryMap gm;
-  GeometryMapVisualisation gmv;
-
-
-  Eigen::Vector3f v;
-  std::vector<Eigen::Vector3f> vv;
-  Polygon::Ptr m_p1 = Polygon::Ptr(new Polygon());
-  m_p1->id = 1;
-  m_p1->normal << 0.000000,-1.000000,-0.000000;
-  m_p1->d = 0;
-  v << 0.500000,0.010000,0.500000;
-  vv.push_back(v);
-  v << 0.500000,0.010000,-0.500000;
-  vv.push_back(v);
-  v << -0.500000,0.010000,-0.500000;
-  vv.push_back(v);
-  v << -0.500000,0.010000,0.500000;
-  vv.push_back(v);
-  m_p1->contours.push_back(vv);
-  m_p1->holes.push_back(0);
-  gm.addMapEntry(m_p1);
-
-
-  vv.clear();
-  Polygon::Ptr m_p2 = Polygon::Ptr(new Polygon());
-  m_p2->id = 2;
-  m_p2->normal << -0.000000,1.000000,0.000000;
-  m_p2->d = 0;
-  v << 0.500000,-0.010000,0.500000;
-  vv.push_back(v);
-  v << 0.500000,-0.010000,-0.500000;
-  vv.push_back(v);
-  v << -0.500000,-0.010000,-0.500000;
-  vv.push_back(v);
-  v << -0.500000,-0.010000,0.500000;
-  vv.push_back(v);
-  m_p2->contours.push_back(vv);
-  m_p2->holes.push_back(0);
-  gm.addMapEntry(m_p2);
-
-  return 1;
-}

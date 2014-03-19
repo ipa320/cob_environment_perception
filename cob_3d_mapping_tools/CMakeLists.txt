@@ -37,8 +37,6 @@ rosbuild_add_library(cob_3d_mapping_tools
 	common/src/cob_3d_mapping_tools/io.cpp
 	common/src/cob_3d_mapping_tools/point_generator.cpp)
 
-rosbuild_add_executable(transform_pointcloud ros/src/transform_pointcloud.cpp)
-rosbuild_add_executable(transform_pointcloud_node ros/src/transform_pointcloud.cpp)
 rosbuild_add_executable(concat_fields_node ros/src/concat_fields.cpp)
 rosbuild_link_boost(concat_fields_node program_options signals)
 rosbuild_add_executable(bag_to_pcd ros/src/bag_to_pcd.cpp)
@@ -48,8 +46,7 @@ rosbuild_add_executable(pointcloud_bag_delayer ros/src/pointcloud_bag_delayer.cp
 rosbuild_link_boost(pointcloud_bag_delayer program_options)
 rosbuild_add_executable(shape_bag_delayer ros/src/shape_bag_delayer.cpp)
 rosbuild_link_boost(shape_bag_delayer program_options)
-
-rosbuild_add_compile_flags(transform_pointcloud -D__LINUX__ -DCOMPILE_NODELET)
+rosbuild_add_executable(voxel_grid common/src/voxel_grid.cpp)
 
 rosbuild_add_executable(create_point_cloud common/src/create_point_cloud.cpp)
 rosbuild_add_executable(create_kitchen_point_cloud common/src/create_kitchen_point_cloud.cpp)
@@ -60,7 +57,7 @@ rosbuild_link_boost(extract_feature_values program_options)
 
 # extracts pc from organized cloud and saves as ppm:
 rosbuild_add_executable(extract_organized_curvatures common/src/extract_organized_curvatures.cpp)
-target_link_libraries(extract_organized_curvatures cob_3d_mapping_tools cob_3d_mapping_features)
+target_link_libraries(extract_organized_curvatures cob_3d_mapping_tools cob_3d_features)
 rosbuild_link_boost(extract_organized_curvatures program_options)
 
 # some tools for fpfh training:
@@ -72,7 +69,7 @@ rosbuild_add_executable(merge_fpfh_training_data common/src/merge_fpfh_training_
 rosbuild_link_boost(merge_fpfh_training_data program_options)
 rosbuild_add_executable(reduce_fpfh_training_data common/src/reduce_fpfh_training_data.cpp)
 rosbuild_link_boost(reduce_fpfh_training_data program_options)
-target_link_libraries(reduce_fpfh_training_data cob_3d_mapping_features)
+target_link_libraries(reduce_fpfh_training_data cob_3d_features)
 rosbuild_add_executable(fpfh_primitives common/src/fpfh_primitives.cpp)
 target_link_libraries(fpfh_primitives cob_3d_mapping_tools vtkCommon vtkFiltering vtkRendering)
 rosbuild_link_boost(fpfh_primitives program_options)
@@ -110,28 +107,32 @@ rosbuild_add_compile_flags(generate_test_data -DEIGEN_YES_I_KNOW_SPARSE_MODULE_I
 rosbuild_link_boost(generate_test_data program_options)
 
 # plane segmentation evaluation tool:
-rosbuild_add_executable(evaluate_plane_segmentation common/src/evaluate_plane_segmentation.cpp)
-target_link_libraries(evaluate_plane_segmentation cob_3d_mapping_tools)
-rosbuild_link_boost(evaluate_plane_segmentation program_options)
+#rosbuild_add_executable(evaluate_plane_segmentation common/src/evaluate_plane_segmentation.cpp)
+#target_link_libraries(evaluate_plane_segmentation cob_3d_mapping_tools)
+#rosbuild_link_boost(evaluate_plane_segmentation program_options)
 
 # Gui:
-rosbuild_add_executable(test_gui common/src/test_wx_gui.cpp)
-target_link_libraries(test_gui ${wxWidgets_LIBRARIES} cob_3d_mapping_tools)
-rosbuild_link_boost(test_gui program_options signals)
+#rosbuild_add_executable(test_gui common/src/test_wx_gui.cpp)
+#target_link_libraries(test_gui ${wxWidgets_LIBRARIES} cob_3d_mapping_tools)
+#rosbuild_link_boost(test_gui program_options signals)
 
 rosbuild_add_executable(test_hsv_tool common/src/test_hsv_tool.cpp)
 target_link_libraries(test_hsv_tool ${wxWidgets_LIBRARIES} cob_3d_mapping_tools)
 rosbuild_link_boost(test_hsv_tool program_options signals)
 
 rosbuild_add_executable(bag_gui ros/src/bag_gui.cpp)
-target_link_libraries(bag_gui ${wxWidgets_LIBRARIES} cob_3d_mapping_tools)
+target_link_libraries(bag_gui ${wxWidgets_LIBRARIES} cob_3d_mapping_tools cob_3d_features_omp)
+rosbuild_link_boost(bag_gui signals)
 
 rosbuild_add_executable(gui_normals common/src/gui_normals.cpp)
-target_link_libraries(gui_normals ${wxWidgets_LIBRARIES} cob_3d_mapping_tools)
+target_link_libraries(gui_normals ${wxWidgets_LIBRARIES} cob_3d_mapping_tools cob_3d_features_omp)
 rosbuild_link_boost(gui_normals signals)
 
 rosbuild_add_executable(noise_gen ros/src/noise_gen.cpp)
 rosbuild_link_boost(noise_gen signals)
+
+
+rosbuild_add_executable(test_perspective_projection common/src/test_perspective_projection.cpp)
 
 #common commands for building c++ executables and libraries
 #rosbuild_add_library(${PROJECT_NAME} src/example.cpp)

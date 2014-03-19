@@ -65,7 +65,6 @@
 // cob_3d_mapping_filters includes
 #include "cob_3d_mapping_filters/amplitude_filter.h"
 
-
 template<typename PointT>
   void
   cob_3d_mapping_filters::AmplitudeFilter<PointT>::applyFilter (PointCloud &pc_out)
@@ -78,8 +77,8 @@ template<typename PointT>
     //Go through all points and discard points with amplitude outside filter limits
     for (unsigned int i = 0; i < input_->points.size (); i++)
     {
-      if (input_->points[i].amplitude > amplitude_min_threshold_ &&
-          input_->points[i].amplitude < amplitude_max_threshold_)
+      if (input_->points[i].amplitude > amplitude_min_threshold_
+          && input_->points[i].amplitude < amplitude_max_threshold_)
         pc_out.points[nr_p++] = input_->points[i];
     }
 
@@ -102,8 +101,8 @@ template<typename PointT>
     //Go through all points and discard points with amplitude inside filter limits
     for (unsigned int i = 0; i < input_->points.size (); i++)
     {
-      if (input_->points[i].amplitude <= amplitude_min_threshold_ ||
-          input_->points[i].amplitude >= amplitude_max_threshold_)
+      if (input_->points[i].amplitude <= amplitude_min_threshold_
+          || input_->points[i].amplitude >= amplitude_max_threshold_)
         pc_out.points[nr_p++] = input_->points[i];
     }
 

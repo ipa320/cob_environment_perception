@@ -15,7 +15,7 @@
 	<depend package="nodelet"/>
 	<depend package="dynamic_reconfigure"/>
 	<depend package="cob_3d_mapping_common"/>
-	<depend package="opencv2"/>
+	<!--depend package="opencv2"/-->
 
   <export>
   	<cpp cflags="-I${prefix}/common/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcob_3d_mapping_filters"/>

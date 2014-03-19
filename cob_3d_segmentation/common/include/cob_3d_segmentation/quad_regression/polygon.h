@@ -364,7 +364,7 @@ namespace Segmentation
       msg->polyline.clear();
       if(segments_.size()>0) {
         for(size_t i=0; i<segments_[0].size(); i++) {
-          cob_3d_mapping_msgs::polyline_point pt;
+          cob_3d_mapping_msgs::PolylinePoint pt;
           pt.x=segments_[0][i](0);
           pt.y=segments_[0][i](1);
           pt.edge_prob=segments_[0][i](2);
@@ -372,7 +372,7 @@ namespace Segmentation
         }
       }
 
-      cob_3d_mapping_msgs::feature ft;
+      cob_3d_mapping_msgs::Feature ft;
 
       //nearest point
       ft.ID = 1;
@@ -1006,7 +1006,7 @@ namespace Segmentation
       msg->polyline.clear();
       if(segments_.size()>0) {
         for(size_t i=0; i<segments_[0].size(); i++) {
-          cob_3d_mapping_msgs::polyline_point pt;
+          cob_3d_mapping_msgs::PolylinePoint pt;
           pt.x=segments_[0][i](0);
           pt.y=segments_[0][i](1);
           pt.edge_prob=segments_[0][i](2);
@@ -1014,7 +1014,7 @@ namespace Segmentation
         }
       }
 
-      cob_3d_mapping_msgs::feature ft;
+      cob_3d_mapping_msgs::Feature ft;
 
       //nearest point
       ft.ID = 1;

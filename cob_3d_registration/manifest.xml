@@ -8,10 +8,10 @@
   <license>BSD</license>
   <review status="unreviewed" notes=""/>
   <url>http://ros.org/wiki/registration</url>
-  <depend package="roscpp"/>
-  <depend package="nodelet"/>
   <depend package="pcl"/>
   <depend package="pcl_ros"/>
+  <depend package="roscpp"/>
+  <depend package="nodelet"/>
   <depend package="dynamic_reconfigure"/>
   <depend package="tf"/>
   <depend package="tf_conversions"/>
@@ -19,7 +19,7 @@
   <depend package="trajectory_msgs"/>
   <depend package="opencv2"/>
   <depend package="cv_bridge"/>
-  <depend package="gazebo"/>
+  <!--depend package="gazebo"/-->
   <depend package="cob_srvs"/>
 
   <!-- depend package="libwm4"/ -->
@@ -31,8 +31,8 @@
   <!-- depend package="cob_vision_features"/ -->
   <!-- depend package="cob_camera_sensors"/ -->
 
-  <depend package="cob_3d_mapping_features"/>
-  <depend package="cob_3d_segmentation"/>
+  <depend package="cob_3d_features"/>
+  <!--depend package="cob_3d_segmentation"/-->
   <depend package="cob_3d_mapping_common"/>
 
   <rosdep name="boost"/>

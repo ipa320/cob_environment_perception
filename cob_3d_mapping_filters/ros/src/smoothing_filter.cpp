@@ -50,10 +50,8 @@
 
 //##################
 //#### includes ####
-
 // standard includes
 //--
-
 // ROS includes
 #include <ros/ros.h>
 
@@ -66,8 +64,9 @@
 // pcl includes
 #include <pcl/point_types.h>
 #include <pluginlib/class_list_macros.h>
-#include <pcl_ros/pcl_nodelet.h>
+#include <nodelet/nodelet.h>
 #include <pcl/io/pcd_io.h>
+#include <pcl_ros/point_cloud.h>
 
 // cob_3d_mapping_filters includes
 #include <cob_3d_mapping_common/point_types.h>
@@ -76,12 +75,12 @@
 
 //######################
 //#### nodelet class####
-class SmoothingFilter : public pcl_ros::PCLNodelet
+class SmoothingFilter : public nodelet::Nodelet
 {
 public:
   // Constructor
   SmoothingFilter () :
-    t_check (0)
+      t_check (0)
   {
     //
   }
@@ -95,35 +94,32 @@ public:
   void
   onInit ()
   {
-    PCLNodelet::onInit ();
     n_ = getNodeHandle ();
 
-    point_cloud_sub_ = n_.subscribe ("point_cloud2", 1, &SmoothingFilter::PointCloudSubCallback, this);
+    point_cloud_sub_ = n_.subscribe ("point_cloud2", 1, &SmoothingFilter::pointCloudSubCallback, this);
     point_cloud_pub_ = n_.advertise<sensor_msgs::PointCloud2> ("point_cloud2_filtered", 1);
 
     n_.param ("/smoothing_filter_nodelet/edge_threshold", edge_threshold_, 0.05);
     n_.param ("/smoothing_filter_nodelet/smoothing_factor", smoothing_factor_, 0.25);
     n_.param ("/smoothing_filter_nodelet/integral_factor", integral_factor_, 0.25);
+    filter_.setFilterLimits (edge_threshold_, smoothing_factor_, integral_factor_);
 
   }
 
   void
-  PointCloudSubCallback (pcl::PointCloud<pcl::PointXYZI>::ConstPtr pc)
+  pointCloudSubCallback (pcl::PointCloud<pcl::PointXYZI>::ConstPtr pc)
   {
-    //ROS_INFO("PointCloudSubCallback");
-    cob_3d_mapping_filters::SmoothingFilter<pcl::PointXYZI> filter;
-    pcl::PointCloud<pcl::PointXYZI>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZI>());
-    filter.setInputCloud (pc);
-    filter.setFilterLimits (edge_threshold_, smoothing_factor_, integral_factor_);
-    filter.applyFilter (*cloud_filtered);
+    pcl::PointCloud<pcl::PointXYZI> cloud_filtered;
+    filter_.setInputCloud (pc);
+    filter_.filter (cloud_filtered);
 
     point_cloud_pub_.publish (cloud_filtered);
-    if (t_check == 0)
-    {
-      ROS_INFO("Time elapsed (Intensity_Filter) : %f", t.elapsed());
-      t.restart ();
-      t_check = 1;
-    }
+    /*if (t_check == 0)
+     {
+     ROS_INFO("Time elapsed (Intensity_Filter) : %f", t.elapsed());
+     t.restart ();
+     t_check = 1;
+     }*/
   }
 
   ros::NodeHandle n_;
@@ -132,6 +128,8 @@ public:
 protected:
   ros::Subscriber point_cloud_sub_;
   ros::Publisher point_cloud_pub_;
+
+  cob_3d_mapping_filters::SmoothingFilter<pcl::PointXYZI> filter_;
 
   /** \filter limit */
   double edge_threshold_;

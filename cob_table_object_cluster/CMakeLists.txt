@@ -31,11 +31,13 @@ rosbuild_add_boost_directories()
 #rosbuild_gensrv()
 
 rosbuild_add_library(cob_table_object_cluster
-	common/src/table_object_cluster.cpp)
+	common/src/table_object_cluster.cpp
+	ros/src/table_region_crop_nodelet.cpp)
 #rosbuild_add_library(cob_table_object_cluster_nodelets
 #	ros/src/r3cop_table_object_cluster_nodelet.cpp)
 
-rosbuild_add_executable(table_object_cluster_action_client ros/src/table_object_cluster_action_client.cpp)
+rosbuild_add_executable(table_object_cluster_action_client_test ros/src/table_object_cluster_action_client_test.cpp)
+rosbuild_add_executable(table_object_cluster_action_server_node ros/src/table_object_cluster_action_server_node.cpp)
 rosbuild_add_executable(table_object_cluster_node  ros/src/table_object_cluster_node.cpp)
 rosbuild_link_boost(table_object_cluster_node signals)
 

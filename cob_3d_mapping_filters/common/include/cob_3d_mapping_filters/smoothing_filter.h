@@ -64,75 +64,73 @@ namespace cob_3d_mapping_filters
   /**
    * \Intensity Filter uses Intensity values of points to filter out pointcloud data
    */
-  template <typename PointT>
-  class SmoothingFilter : public pcl::Filter<PointT>
-  {
-    using pcl::Filter<PointT>::input_;
-
-  public:
-    typedef typename pcl::Filter<PointT>::PointCloud PointCloud;
-    typedef typename PointCloud::Ptr PointCloudPtr;
-    typedef typename PointCloud::ConstPtr PointCloudConstPtr;
-
-    /** \constructor */
-    SmoothingFilter()
-    : edge_threshold_ (0.05),
-      smoothing_factor_ (0.25),
-      integral_factor_ (0.25)
-    {};
-
-    //virtual ~IntensityFilter();
-
-    /** \sets the filter limit */
-    inline void
-    setFilterLimits (double edge_threshold, double smoothing_factor, double integral_factor)
+  template<typename PointT>
+    class SmoothingFilter : public pcl::Filter<PointT>
     {
-      edge_threshold_ = edge_threshold;
-      smoothing_factor_ = smoothing_factor;
-      integral_factor_ = integral_factor;
-    }
+      using pcl::Filter<PointT>::input_;
 
-    /** \gets the filter minimum limit */
-    inline double
-    getEdgeThr ()
-    {
-      return edge_threshold_;
-    }
+    public:
+      typedef typename pcl::Filter<PointT>::PointCloud PointCloud;
+      typedef typename PointCloud::Ptr PointCloudPtr;
+      typedef typename PointCloud::ConstPtr PointCloudConstPtr;
 
-    /** \gets the filter maximum limit */
-    inline double
-    getSmoothingFactor ()
-    {
-      return smoothing_factor_;
-    }
+      /** \constructor */
+      SmoothingFilter () :
+          edge_threshold_ (0.05), smoothing_factor_ (0.25), integral_factor_ (0.25)
+      {
+      }
+      ;
 
-    /** \gets the filter integral */
-    inline double
-    getIntegralFactor ()
-    {
-      return integral_factor_;
-    }
+      //virtual ~IntensityFilter();
 
-  private:
+      /** \sets the filter limit */
+      inline void
+      setFilterLimits (double edge_threshold, double smoothing_factor, double integral_factor)
+      {
+        edge_threshold_ = edge_threshold;
+        smoothing_factor_ = smoothing_factor;
+        integral_factor_ = integral_factor;
+      }
 
-    PointCloud last_pc_;
+      /** \gets the filter minimum limit */
+      inline double
+      getEdgeThr ()
+      {
+        return edge_threshold_;
+      }
 
+      /** \gets the filter maximum limit */
+      inline double
+      getSmoothingFactor ()
+      {
+        return smoothing_factor_;
+      }
 
-  public:
+      /** \gets the filter integral */
+      inline double
+      getIntegralFactor ()
+      {
+        return integral_factor_;
+      }
 
-    /** \Points with Intensity values above the filter limit will be discarded
-     *  \Points with Intensity values below the filter limit will be the output PointCloud
-     */
-    void
-    applyFilter (PointCloud &output);
+    private:
 
+      PointCloud last_pc_;
 
-    /** \filter limit */
-    float edge_threshold_;
-    float smoothing_factor_;
-    float integral_factor_;
+    public:
 
-  };
+      /** \Points with Intensity values above the filter limit will be discarded
+       *  \Points with Intensity values below the filter limit will be the output PointCloud
+       */
+      void
+      applyFilter (PointCloud &output);
+
+      /** \filter limit */
+      float edge_threshold_;
+      float smoothing_factor_;
+      float integral_factor_;
+
+    };
 
 } // end namespace cob_3d_mapping_filters
 

@@ -70,6 +70,10 @@
 
 int main (int argc, char **argv)
 {
+  if(argc<1) {
+    ROS_ERROR("Please specify output file\nrosrun cob_3d_mapping_geometry_map set_map_client myfile.bag");
+    return -1;
+  }
   ros::init(argc, argv, "geometry_map_node");
   ros::NodeHandle nh;
 
@@ -79,7 +83,7 @@ int main (int argc, char **argv)
   ros::param::get("~file_path", file_path);
   cob_3d_mapping_msgs::ShapeArray::ConstPtr sa;
   rosbag::Bag bag;
-  bag.open(file_path, rosbag::bagmode::Read);
+  bag.open(argv[1]/*file_path*/, rosbag::bagmode::Read);
   rosbag::View view(bag, rosbag::TopicQuery("/geometry_map/map_array"));
   if(!view.size())
   {

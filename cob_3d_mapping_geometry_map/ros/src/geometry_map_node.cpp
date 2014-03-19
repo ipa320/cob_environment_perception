@@ -12,9 +12,9 @@
  * \note
  *  Project name: care-o-bot
  * \note
- *  ROS stack name: cob_vision
+ *  ROS stack name: cob_environment_perception_intern
  * \note
- *  ROS package name: cob_env_model
+ *  ROS package name: cob_3d_mapping_geometry_map
  *
  * \author
  *  Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
@@ -65,85 +65,36 @@
 //##################
 //#### includes ####
 
-// standard includes
-//--
-#include <sstream>
-#include <stdlib.h>
-#include <cmath>
-#include <iostream>
-#include <fstream>
-
-// ROS includes
-
-#include <pcl/io/pcd_io.h>
-#include <pcl/point_types.h>
-#include <pcl_ros/transforms.h>
-#include <pcl_ros/point_cloud.h>
-#ifdef PCL_VERSION_COMPARE
-#include <pcl/common/transforms.h>
-#else
-#include <pcl/common/transform.h>
-#endif
-#include <cob_3d_mapping_geometry_map/geometry_map_nodeConfig.h>
-#include "pcl/surface/convex_hull.h"
-#include "pcl/filters/project_inliers.h"
-
-
 // external includes
-#include <boost/timer.hpp>
 #include <cob_3d_mapping_common/ros_msg_conversions.h>
 
-#include <tf_conversions/tf_eigen.h>
-#include <tf/transform_listener.h>
-
-
 // internal includes
-#include "cob_3d_mapping_geometry_map/geometry_map_node.h"
+#include <cob_3d_mapping_geometry_map/geometry_map_nodeConfig.h>
+#include <cob_3d_mapping_geometry_map/geometry_map_node.h>
 
 using namespace cob_3d_mapping;
 
 GeometryMapNode::GeometryMapNode()
+: map_frame_id_("/map")
 {
-  enable_tf_=true;
-  map_frame_id_="/map";
   config_server_.setCallback(boost::bind(&GeometryMapNode::dynReconfCallback, this, _1, _2));
-  ctr_ = 0;
-  shape_sub_ = n_.subscribe("shape_array", 10, &GeometryMapNode::shapeCallback, this);
-  map_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("map_array",1);
-  //marker_pub_ = n_.advertise<visualization_msgs::Marker>("geometry_marker",100);
+  shape_sub_ = n_.subscribe("shape_array_in", 10, &GeometryMapNode::shapeCallback, this);
+  map_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray>("map",1);
   clear_map_server_ = n_.advertiseService("clear_map", &GeometryMapNode::clearMap, this);
   get_map_server_ = n_.advertiseService("get_map", &GeometryMapNode::getMap, this);
   set_map_server_ = n_.advertiseService("set_map", &GeometryMapNode::setMap, this);
   modify_map_server_ = n_.advertiseService("modify_map", &GeometryMapNode::modifyMap, this);
-  ros::param::param("~file_path" , file_path_ , std::string("/home/goa-tz/tmp/"));
-  ros::param::param("~save_to_file" , save_to_file_ , false);
-  //ros::param::param("~map_frame_id", map_frame_id_, "/map");
-  //ROS_DEBUG_STREAM(file_path_);
-  geometry_map_.setFilePath(file_path_);
-  geometry_map_.setSaveToFile(save_to_file_);
-
-  //primitive_pub_=n_.advertise<visualization_msgs::Marker>("primitives",100);
 }
 
-/**
- * @brief callback for dynamic reconfigure
- *
- * everytime the dynamic reconfiguration changes this function will be called
- *
- * @param inst instance of AggregatePointMap which parameters should be changed
- * @param config data of configuration
- * @param level bit descriptor which notifies which parameter changed
- *
- * @return nothing
- */
 void
 GeometryMapNode::dynReconfCallback(cob_3d_mapping_geometry_map::geometry_map_nodeConfig &config, uint32_t level)
 {
   ROS_INFO("[geometry_map]: received new parameters");
   geometry_map_.setSaveToFile( config.save_to_file );
+  geometry_map_.setFilePath(config.file_path);
   geometry_map_.setMergeThresholds(config.cos_angle, config.d);
   map_frame_id_ = config.map_frame_id;
-  enable_tf_ = config.enable_tf;
+  //enable_tf_ = config.enable_tf;
   enable_cyl_= config.enable_cyl;
   enable_poly_=config.enable_poly;
 }
@@ -151,30 +102,15 @@ GeometryMapNode::dynReconfCallback(cob_3d_mapping_geometry_map::geometry_map_nod
 void
 GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& sa)
 {
-  ROS_INFO("Adding %d new shapes",sa->shapes.size());
-  tf::StampedTransform trf_map;
-  Eigen::Affine3f af_orig = Eigen::Affine3f::Identity();
-
-  if(enable_tf_)
+  ROS_INFO("Adding %d new shapes", (int)sa->shapes.size());
+  if(sa->header.frame_id != map_frame_id_)
   {
-    try
-    {
-      tf_listener_.waitForTransform(map_frame_id_, sa->header.frame_id, sa->header.stamp, ros::Duration(0.2));
-      tf_listener_.lookupTransform(map_frame_id_, sa->header.frame_id, sa->header.stamp, trf_map);
-    }
-    catch (tf::TransformException ex) { ROS_ERROR("[geometry map node] : %s",ex.what()); return; }
-
-    Eigen::Affine3d ad;
-    tf::TransformTFToEigen(trf_map, ad);
-    af_orig = ad.cast<float>();
-    af_orig = geometry_map_.getLastError() * af_orig;
+    ROS_ERROR("Frame ID of incoming shape array does not match map frame ID, aborting...");
+    return;
   }
-
-  static int ctr=0;
 
   std::vector<Polygon::Ptr> polygon_list;
   std::vector<Cylinder::Ptr> cylinder_list;
-  std::map<int, ShapeCluster::Ptr> sc_map;
 
   for(size_t i=0; i<sa->shapes.size(); ++i)
   {
@@ -182,30 +118,18 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& 
     {
       case cob_3d_mapping_msgs::Shape::POLYGON:
       {
-        if(enable_poly_==false)continue;
+        if(!enable_poly_) continue;
         Polygon::Ptr p(new Polygon);
         fromROSMsg(sa->shapes[i], *p);
-        p->transform2tf(af_orig);
-        /*if(p->id != 0)
-        {
-          if (sc_map.find(p->id) == sc_map.end()) sc_map[p->id] = ShapeCluster::Ptr(new ShapeCluster);
-          sc_map[p->id]->insert(boost::static_pointer_cast<Shape>(p));
-        }
-        else {*/ polygon_list.push_back(p); //}
+        geometry_map_.addMapEntry(p);
         break;
       }
       case cob_3d_mapping_msgs::Shape::CYLINDER:
       {
-        if(enable_cyl_==false)continue;
+        if(!enable_cyl_) continue;
         Cylinder::Ptr c(new Cylinder);
         fromROSMsg(sa->shapes[i], *c);
-        c->transform2tf(af_orig);
-        /*if(c->id != 0)
-        {
-          if (sc_map.find(c->id) == sc_map.end()) sc_map[c->id] = ShapeCluster::Ptr(new ShapeCluster);
-          sc_map[c->id]->insert(boost::static_pointer_cast<Shape>(c));
-        }
-        else {*/ cylinder_list.push_back(c);// }
+        geometry_map_.addMapEntry(c);
         break;
       }
       default:
@@ -213,56 +137,19 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& 
     }
   }
 
-
-  Eigen::Affine3f af_new;
-  // currently turned off, always returns false
-  bool needs_adjustment = geometry_map_.computeTfError(polygon_list, af_orig, af_new);
-  int poly_merge_ctr=0, cyl_merge_ctr=0;
-  for (size_t i=0; i<polygon_list.size(); ++i)
-  {
-    //Eigen::Vector3f n = polygon_list[i]->normal;
-    if(needs_adjustment) polygon_list[i]->transform2tf(af_new);
-    //n = polygon_list[i]->normal;
-    int bf_size = geometry_map_.getMap_polygon()->size();
-    //polygon_list[i]->smoothPolygon();
-    geometry_map_.addMapEntry(polygon_list[i]);
-    poly_merge_ctr += bf_size - geometry_map_.getMap_polygon()->size() + 1;
-  }
-  for (size_t i=0; i<cylinder_list.size(); ++i)
-  {
-    if(needs_adjustment) cylinder_list[i]->transform2tf(af_new);
-    int bf_size = geometry_map_.getMap_cylinder()->size();
-    geometry_map_.addMapEntry(cylinder_list[i]);
-    cyl_merge_ctr += bf_size - geometry_map_.getMap_cylinder()->size() + 1;
-  }
-  for (std::map<int,ShapeCluster::Ptr>::iterator it=sc_map.begin(); it!=sc_map.end(); ++it)
-  {
-    if(needs_adjustment) it->second->transform2tf(af_new);
-    geometry_map_.addMapEntry(it->second);
-  }
-  ROS_DEBUG_STREAM("Map Size C="<<geometry_map_.getMap_cylinder()->size()
-               <<" , C_NEW="<<cylinder_list.size()
-               <<" , C_MERGED="<<cyl_merge_ctr<<"\n"
-               <<"Map Size P="<<geometry_map_.getMap_polygon()->size()
-               <<" , P_NEW="<<polygon_list.size()
-               <<" , P_MERGED="<<poly_merge_ctr);
-  //geometry_map_.cleanUp();
+  geometry_map_.cleanUp();
   geometry_map_.incrFrame();
 
-  //publishMapMarker();
   publishMap();
-  //publishPrimitives();
-  ctr_++;
 }
 
 bool
 GeometryMapNode::clearMap(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res)
 {
-  //TODO: add mutex
   ROS_INFO("Clearing geometry map...");
   geometry_map_.clearMap();
   cob_3d_mapping_msgs::ShapeArray map_msg;
-  map_msg.header.frame_id=map_frame_id_;
+  map_msg.header.frame_id = map_frame_id_;
   map_msg.header.stamp = ros::Time::now();
   map_pub_.publish(map_msg);
   return true;
@@ -271,12 +158,12 @@ GeometryMapNode::clearMap(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Re
 bool
 GeometryMapNode::getMap(cob_3d_mapping_msgs::GetGeometryMap::Request &req, cob_3d_mapping_msgs::GetGeometryMap::Response &res)
 {
-  std::vector<Polygon::Ptr>* map_polygon = geometry_map_.getMap_polygon();
-  std::vector<Cylinder::Ptr>* map_cylinder = geometry_map_.getMap_cylinder();
+  std::vector<Polygon::Ptr>* map_polygon = geometry_map_.getMapPolygon();
+  std::vector<Polygon::Ptr>* map_cylinder = geometry_map_.getMapCylinder();
 
   res.map.header.stamp = ros::Time::now();
   res.map.header.frame_id = map_frame_id_;
-  for(unsigned int i=0; i<map_polygon->size(); i++)
+  for(unsigned int i = 0; i < map_polygon->size(); i++)
   {
     Polygon& sm = *(map_polygon->at(i));
     cob_3d_mapping_msgs::Shape s;
@@ -285,9 +172,9 @@ GeometryMapNode::getMap(cob_3d_mapping_msgs::GetGeometryMap::Request &req, cob_3
     res.map.shapes.push_back(s);
   }
 
-  for(unsigned int i=0; i<map_cylinder->size(); i++)
+  for(unsigned int i = 0; i < map_cylinder->size(); i++)
   {
-    Cylinder& sm = *(map_cylinder->at(i));
+    Cylinder& sm = *(boost::dynamic_pointer_cast<Cylinder>(map_cylinder->at(i)));
     cob_3d_mapping_msgs::Shape s;
     toROSMsg(sm,s);
     s.header = res.map.header;
@@ -300,26 +187,25 @@ GeometryMapNode::getMap(cob_3d_mapping_msgs::GetGeometryMap::Request &req, cob_3
 bool
 GeometryMapNode::setMap(cob_3d_mapping_msgs::SetGeometryMap::Request &req, cob_3d_mapping_msgs::SetGeometryMap::Response &res)
 {
-  ROS_INFO("Setting map with %d shapes.",req.map.shapes.size());
+  ROS_INFO("Setting map with %d shapes.", (int)req.map.shapes.size());
   geometry_map_.clearMap();
-  std::vector<Polygon::Ptr>* map_polygon = geometry_map_.getMap_polygon();
-  std::vector<Cylinder::Ptr>* map_cylinder = geometry_map_.getMap_cylinder();
+  std::vector<Polygon::Ptr>* map_polygon = geometry_map_.getMapPolygon();
+  std::vector<Polygon::Ptr>* map_cylinder = geometry_map_.getMapCylinder();
 
-  //res.map.header.stamp = ros::Time::now();
-  //res.map.header.frame_id = map_frame_id_;
-  for(unsigned int i=0; i<req.map.shapes.size(); i++)
+  for(unsigned int i = 0; i < req.map.shapes.size(); i++)
   {
-    if(req.map.shapes[i].type==cob_3d_mapping_msgs::Shape::POLYGON)
+    if(req.map.shapes[i].type == cob_3d_mapping_msgs::Shape::POLYGON)
     {
       Polygon::Ptr p(new Polygon);
       fromROSMsg(req.map.shapes[i],*p);
-      p->merged = 9;
+      p->merged_ = 9;
       map_polygon->push_back(p);
     }
-    else if(req.map.shapes[i].type==cob_3d_mapping_msgs::Shape::CYLINDER)
+    else if(req.map.shapes[i].type == cob_3d_mapping_msgs::Shape::CYLINDER)
     {
       Cylinder::Ptr c(new Cylinder);
       fromROSMsg(req.map.shapes[i],*c);
+      c->merged_ = 9;
       map_cylinder->push_back(c);
     }
   }
@@ -327,87 +213,52 @@ GeometryMapNode::setMap(cob_3d_mapping_msgs::SetGeometryMap::Request &req, cob_3
   return true;
 }
 
+//TODO: refactor & test
 bool
 GeometryMapNode::modifyMap(cob_3d_mapping_msgs::ModifyMap::Request &req,
     cob_3d_mapping_msgs::ModifyMap::Response &res) {
 
   ROS_INFO ("Modifying the map...") ;
-  std::vector<Polygon::Ptr>* map_polygon = geometry_map_.getMap_polygon();
-  ROS_WARN("size of the map: %d", map_polygon->size()) ;
+  std::vector<Polygon::Ptr>* map_polygon = geometry_map_.getMapPolygon();
 
-  if(req.action == cob_3d_mapping_msgs::ModifyMapRequest::MODIFY){
-    ROS_INFO("modify action...") ;
-    res.OutMap.header.stamp = ros::Time::now();
-    res.OutMap.header.frame_id = "/map";
-    unsigned int moved(0);
-
-    for(unsigned int i=0; i<map_polygon->size(); i++)
+  if(req.action == cob_3d_mapping_msgs::ModifyMapRequest::MODIFY)
+  {
+    for(unsigned int i = 0; i < map_polygon->size(); i++)
     {
-      Polygon& sm = *(map_polygon->at(i));
-      cob_3d_mapping_msgs::Shape s;
-      toROSMsg(sm,s);
-      for(unsigned int j=0; j< req.InMap.shapes.size(); j++)
+      Polygon& pm = *(map_polygon->at(i));
+      for(unsigned int j = 0; j < req.shapes.shapes.size(); j++)
       {
-        if (s.id == req.InMap.shapes.at(j).id){
-          moved = j ;
+        if (pm.id_ == req.shapes.shapes[j].id)
+        {
+          Polygon poly;
+          fromROSMsg(req.shapes.shapes[j], poly);
+          //TODO: only apply transformation, using this, not all data is preserved
+          *(map_polygon->at(i)) = poly;
           break;
         }
-        else {
-          moved = req.InMap.shapes.size() ;
-        }
       }
-      if (moved!=req.InMap.shapes.size())
-      {
-        Polygon poly;
-        fromROSMsg(req.InMap.shapes.at(moved),poly);
-        *(map_polygon->at(i)) = poly;
-        req.InMap.header = res.OutMap.header ;
-        req.InMap.header.frame_id = "/map";
-        res.OutMap.shapes.push_back(req.InMap.shapes.at(moved)) ;
-      }
-      else
-      {
-        s.header = res.OutMap.header ;
-        s.header.frame_id = "/map";
-        res.OutMap.shapes.push_back(s);
-      }
-
     }
-    map_pub_.publish(res.OutMap);
+    publishMap();
   }
-  if(req.action == cob_3d_mapping_msgs::ModifyMapRequest::DELETE){
-    unsigned int deleted(0);
-
-    for(unsigned int i=0; i<map_polygon->size(); i++)
+  if(req.action == cob_3d_mapping_msgs::ModifyMapRequest::DELETE)
+  {
+    for(unsigned int i = 0; i < map_polygon->size(); i++)
     {
-      Polygon& sm = *(map_polygon->at(i));
-      cob_3d_mapping_msgs::Shape s;
-      toROSMsg(sm,s);
-      for(unsigned int j=0; j< req.InMap.shapes.size(); j++)
+      Polygon& pm = *(map_polygon->at(i));
+      for(unsigned int j = 0; j < req.shapes.shapes.size(); j++)
       {
-        if (s.id == req.InMap.shapes.at(j).id){
-          ROS_INFO("delete action...") ;
-          deleted = j;
+        if (pm.id_ == req.shapes.shapes[j].id)
+        {
+          Polygon poly;
+          fromROSMsg(req.shapes.shapes[j], poly);
+          //TODO: better implement a deleteEntry funtion in GeometryMap
+          map_polygon->erase(map_polygon->begin()+i);
           break;
         }
-        else{
-          deleted = req.InMap.shapes.size() ;
-        }
-      }
-      if (deleted!=req.InMap.shapes.size()){
-        Polygon poly;
-        *(map_polygon->at(i)) = poly ;
-      }
-      else{
-        s.header = res.OutMap.header ;
-        s.header.frame_id = "/map";
-        res.OutMap.shapes.push_back(s) ;
       }
     }
-    //        }
-    map_pub_.publish(res.OutMap);
+    publishMap();
   }
-  ROS_INFO("OutMap size is: %d" , res.OutMap.shapes.size());
   return true;
 }
 
@@ -415,48 +266,36 @@ GeometryMapNode::modifyMap(cob_3d_mapping_msgs::ModifyMap::Request &req,
 void
 GeometryMapNode::publishMap()
 {
-  //		if index = type 1 poly ptr , else cylinder ptr --> push back in shape vector?!
-
-  std::vector<Polygon::Ptr>* map_polygon = geometry_map_.getMap_polygon();
-  std::vector<Cylinder::Ptr>* map_cylinder = geometry_map_.getMap_cylinder();
-  ROS_WARN("Map polygon Size : %d", map_polygon->size()) ;
-
+  std::vector<Polygon::Ptr>* map_polygon = geometry_map_.getMapPolygon();
+  std::vector<Polygon::Ptr>* map_cylinder = geometry_map_.getMapCylinder();
+  ROS_INFO("Map polygon Size : %d", (int)map_polygon->size()) ;
+  ROS_INFO("Map cylinder Size : %d", (int)map_cylinder->size()) ;
 
   geometry_map_.colorizeMap();
-  //cob_3d_mapping_msgs::PolygonArrayArray map_msg;
   cob_3d_mapping_msgs::ShapeArray map_msg;
-  map_msg.header.frame_id=map_frame_id_;
+  map_msg.header.frame_id = map_frame_id_;
   map_msg.header.stamp = ros::Time::now();
 
-  //		polygons
-  for(unsigned int i=0; i<map_polygon->size(); i++)
+  for(unsigned int i = 0; i < map_polygon->size(); i++)
   {
     Polygon& sm = *(map_polygon->at(i));
-    //cob_3d_mapping_msgs::PolygonArray p;
     cob_3d_mapping_msgs::Shape s;
     toROSMsg(sm, s);
     s.header = map_msg.header;
-    //s.color.b = 1;
-    //s.color.a = 1;
-    //map_msg.polygon_array.push_back(p);
     map_msg.shapes.push_back(s);
   }
-  for(unsigned int i=0; i<map_cylinder->size(); i++)
+  for(unsigned int i = 0; i < map_cylinder->size(); i++)
   {
-    Cylinder& sm = *(map_cylinder->at(i));
-    //cob_3d_mapping_msgs::PolygonArray p;
+    Cylinder& sm = *(boost::dynamic_pointer_cast<Cylinder>(map_cylinder->at(i)));
     cob_3d_mapping_msgs::Shape s;
     toROSMsg(sm, s);
     s.header = map_msg.header;
-    //s.color.b = 1;
-    //s.color.a = 1;
-    //map_msg.polygon_array.push_back(p);
     map_msg.shapes.push_back(s);
   }
   map_pub_.publish(map_msg);
 }
 
-void
+/*void
 GeometryMapNode::fillMarker(Polygon::Ptr p, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t)
 { ROS_DEBUG( "not implemented yet" ); }
 
@@ -486,166 +325,6 @@ GeometryMapNode::fillMarker(ShapeCluster::Ptr sc, visualization_msgs::Marker& m,
   m.color.g = 0.95;
   m.color.b = 0.95;
   m.color.a = 0.5;
-}
-
-void
-GeometryMapNode::publishMapMarker()
-{
-  visualization_msgs::Marker marker, t_marker;
-  marker.action = visualization_msgs::Marker::ADD;
-  marker.type = visualization_msgs::Marker::LINE_STRIP;
-  marker.lifetime = ros::Duration();
-  marker.header.frame_id = map_frame_id_;
-
-  t_marker.action = visualization_msgs::Marker::ADD;
-  t_marker.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
-  t_marker.lifetime = ros::Duration();
-  t_marker.header.frame_id = map_frame_id_;
-
-  //create the marker in the table reference frame
-  //the caller is responsible for setting the pose of the marker to match
-
-  marker.scale.x = 0.005;
-  marker.scale.y = 0.005;
-  marker.scale.z = 1;
-  marker.color.r = 0;
-  marker.color.g = 0;
-  marker.color.b = 0;
-  marker.color.a = 1.0;
-
-  geometry_msgs::Point pt;
-
-
-  // now do the polygons:
-  std::vector<Polygon::Ptr>* map_polygon = geometry_map_.getMap_polygon();
-
-  int ctr=0, t_ctr=2000;
-  for(unsigned int i=0; i<map_polygon->size(); i++)
-  {
-    Polygon& pm = *(map_polygon->at(i));
-    /*
-    int color_ctr = i%5;
-    //marker.id = pm.id;
-    switch(color_ctr)
-    {
-    case 0:
-      marker.color.r = 0;
-      marker.color.g = 0;
-      marker.color.b = 1;
-      break;
-    case 1:
-      marker.color.r = 0;
-      marker.color.g = 1;
-      marker.color.b = 0;
-      break;
-    case 2:
-      marker.color.r = 0;
-      marker.color.g = 1;
-      marker.color.b = 1;
-      break;
-    case 3:
-      marker.color.r = 1;
-      marker.color.g = 1;
-      marker.color.b = 0;
-      break;
-    case 4:
-      marker.color.r = 1;
-      marker.color.g = 0;
-      marker.color.b = 1;
-      break;
-    }
-     */
-
-    for(unsigned int j=0; j<pm.contours.size(); j++)
-    {
-      //TODO: this is a workaround as the marker can't display more than one contour
-      marker.id = ctr;
-      /*if (pm.holes[j])
-      {
-        marker.color.r /= 2.0f;//static_cast<float>(j+2);
-        marker.color.g /= 2.0f;//static_cast<float>(j+2);
-        marker.color.b /= 2.0f;//static_cast<float>(j+2);
-        }*/
-
-      t_marker.id = t_ctr;
-      std::stringstream ss;
-      ss << ctr;
-      t_marker.text = ss.str();
-      ctr++;
-      t_ctr++;
-
-      marker.points.resize(pm.contours[j].size()+1);
-      for(unsigned int k=0; k<pm.contours[j].size(); k++)
-      {
-        /*pt.x = pm.contours[j][k](0);
-        pt.y = pm.contours[j][k](1);
-        pt.z = pm.contours[j][k](2);*/
-        marker.points[k].x = pm.contours[j][k](0);
-        marker.points[k].y = pm.contours[j][k](1);
-        marker.points[k].z = pm.contours[j][k](2);
-        //marker.points.push_back(pt);
-      }
-      marker.points[pm.contours[j].size()].x = pm.contours[j][0](0);
-      marker.points[pm.contours[j].size()].y = pm.contours[j][0](1);
-      marker.points[pm.contours[j].size()].z = pm.contours[j][0](2);
-      marker_pub_.publish(t_marker);
-      marker_pub_.publish(marker);
-    }
-  }
-
-  // now do the cylinders:
-  std::vector<Cylinder::Ptr>* map_cylinder = geometry_map_.getMap_cylinder();
-
-  ctr=0;
-  t_ctr=2000;
-
-  for(unsigned int i=0; i<map_cylinder->size(); i++)
-  {
-    Cylinder& cm = *(map_cylinder->at(i));
-    //marker.id = cm.id;
-    marker.color.r=1;
-    marker.color.g=0;
-    marker.color.b=0;
-
-    for(unsigned int j=0; j<cm.contours.size(); j++)
-    {
-      //TODO: this is a workaround as the marker can't display more than one contour
-      marker.id = ctr;
-      marker.color.r=1;
-      marker.color.g=0;
-      marker.color.b=0;
-
-      t_marker.id = t_ctr;
-      std::stringstream ss;
-      ss << ctr;
-      t_marker.text = ss.str();
-      ctr++;
-      t_ctr++;
-
-      marker.points.resize(cm.contours[j].size()+1);
-      for(unsigned int k=0; k<cm.contours[j].size(); k++)
-      {
-        marker.points[k].x = cm.contours[j][k](0);
-        marker.points[k].y = cm.contours[j][k](1);
-        marker.points[k].z = cm.contours[j][k](2);
-        //marker.points.push_back(pt);
-      }
-      marker.points[cm.contours[j].size()].x = cm.contours[j][0](0);
-      marker.points[cm.contours[j].size()].y = cm.contours[j][0](1);
-      marker.points[cm.contours[j].size()].z = cm.contours[j][0](2);
-      marker_pub_.publish(marker);
-      marker_pub_.publish(t_marker);
-    }
-  }
-
-  // now do the shape cluster:
-  std::vector<ShapeCluster::Ptr>* map_sc = geometry_map_.getMap_shape_cluster();
-  for(size_t i=0; i<map_sc->size(); ++i)
-  {
-    marker.id = i;
-    fillMarker( (*map_sc)[i], marker, t_marker);
-    marker_pub_.publish(marker);
-  }
 }
 
 void GeometryMapNode::publishPrimitives()
@@ -718,7 +397,7 @@ void GeometryMapNode::publishPrimitives()
     primitive_pub_.publish(marker);
 
   }
-}
+}*/
 
 int main (int argc, char** argv)
 {
@@ -733,6 +412,4 @@ int main (int argc, char** argv)
     loop_rate.sleep();
   }
 }
-
-//PLUGINLIB_DECLARE_CLASS(cob_env_model, FeatureMap, FeatureMap, nodelet::Nodelet)
 
