@@ -52,7 +52,7 @@ include_directories(
 )
 
 ## Declare a cpp library
-add_library(fov 
+add_library(fov
     common/src/field_of_view.cpp
     common/src/fov_segmentation.cpp)
 
@@ -60,15 +60,18 @@ add_library(fov
 add_executable(fov_node ros/src/field_of_view_node.cpp)
 add_dependencies(fov_node ${${PROJECT_NAME}_EXPORTED_TARGETS})
 add_executable(fov_segmentation_node ros/src/fov_segmentation_node.cpp)
-add_dependencies(fov_segmentation_node ${${PROJECT_NAME}_EXPORTED_TARGETS})
+add_dependencies(fov_segmentation_node
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(fov_node 
+target_link_libraries(fov_node
   fov
   ${catkin_LIBRARIES}
 )
 
-target_link_libraries(fov_segmentation_node 
+target_link_libraries(fov_segmentation_node
   fov
   ${catkin_LIBRARIES}
 )

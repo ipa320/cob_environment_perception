@@ -60,8 +60,10 @@ add_executable(geometry_map_node ros/src/geometry_map_node.cpp)
 add_dependencies(geometry_map_node ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 add_executable(set_geometry_map ros/src/set_geometry_map.cpp)
+add_dependencies(set_geometry_map ${catkin_EXPORTED_TARGETS})
 
 add_executable(get_geometry_map ros/src/get_geometry_map.cpp)
+add_dependencies(get_geometry_map ${catkin_EXPORTED_TARGETS})
 
 target_link_libraries(geometry_map_node 
   geometry_map

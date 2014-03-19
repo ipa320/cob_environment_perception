@@ -61,52 +61,62 @@ include_directories(
 )
 
 ## Declare a cpp library
-add_library(cob_3d_mapping_semantics 
+add_library(cob_3d_mapping_semantics
     common/src/table_extraction.cpp
     common/src/supporting_plane_extraction.cpp
     common/src/structure_extraction.cpp
 )
 
 ## Declare a cpp executable
-add_executable(table_extraction_node 
+add_executable(table_extraction_node
     ros/src/table_extraction_node.cpp
 )
-add_dependencies(table_extraction_node ${${PROJECT_NAME}_EXPORTED_TARGETS})
+add_dependencies(table_extraction_node
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
 
-add_executable(supporting_plane_extraction_node 
+add_executable(supporting_plane_extraction_node
     ros/src/supporting_plane_extraction_node.cpp
 )
-add_dependencies(supporting_plane_extraction_node ${${PROJECT_NAME}_EXPORTED_TARGETS})
+add_dependencies(supporting_plane_extraction_node
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
 
-add_executable(structure_extraction_node 
+add_executable(structure_extraction_node
     ros/src/structure_extraction_node.cpp
 )
-add_dependencies(structure_extraction_node ${${PROJECT_NAME}_EXPORTED_TARGETS})
-
-add_executable(get_tables_client 
-    ros/src/get_tables_client.cpp
+add_dependencies(structure_extraction_node
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
 )
 
+add_executable(get_tables_client
+    ros/src/get_tables_client.cpp
+)
+add_dependencies(get_tables_client ${catkin_EXPORTED_TARGETS})
+
 ## Specify libraries to link a library or executable target against
-target_link_libraries(table_extraction_node 
+target_link_libraries(table_extraction_node
   cob_3d_mapping_semantics
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
 )
 
-target_link_libraries(supporting_plane_extraction_node 
-  cob_3d_mapping_semantics 
+target_link_libraries(supporting_plane_extraction_node
+  cob_3d_mapping_semantics
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
 )
 
-target_link_libraries(structure_extraction_node 
-  cob_3d_mapping_semantics 
+target_link_libraries(structure_extraction_node
+  cob_3d_mapping_semantics
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
 )
 
-target_link_libraries(get_tables_client 
+target_link_libraries(get_tables_client
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
 )

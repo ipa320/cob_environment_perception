@@ -28,7 +28,7 @@
 
 using namespace std;
 
-#include <cob_3d_segmentation/quad_regression/sub_structures/polypartition.h>
+#include <polypartition/polypartition.h>
 
 #define TPPL_VERTEXTYPE_REGULAR 0
 #define TPPL_VERTEXTYPE_START 1

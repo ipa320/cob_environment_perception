@@ -49,14 +49,16 @@ include_directories(
 )
 
 ## Declare a cpp executable
-add_executable(shape_visualization 
+add_executable(shape_visualization
   src/shape_visualization.cpp
   src/shape_marker.cpp
 )
+add_dependencies(shape_visualization ${catkin_EXPORTED_TARGETS})
 
-add_executable(test_shape_array 
+add_executable(test_shape_array
   test/test_shape_array.cpp
 )
+add_dependencies(test_shape_array ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(shape_visualization
@@ -64,7 +66,7 @@ target_link_libraries(shape_visualization
   ${PCL_LIBRARIES}
 )
 
-target_link_libraries(test_shape_array 
+target_link_libraries(test_shape_array
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
 )

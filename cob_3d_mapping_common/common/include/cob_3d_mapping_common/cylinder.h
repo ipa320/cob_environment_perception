@@ -211,9 +211,18 @@ namespace cob_3d_mapping
     void
     computePose (Eigen::Vector3f origin, Eigen::Vector3f z_axis);
 
+    /**
+     * \brief Compute the pose from origin and a 3D contour.
+     *
+     * \param[in] origin The origin of the cylinder.
+     * \param[in] contours_3d The 3D contour of the cylinder.
+     */
     void
     computePose (Eigen::Vector3f origin, std::vector<std::vector<Eigen::Vector3f> >& contours_3d);
 
+    /**
+     * \brief Compute the height of the cylinder.
+     */
     void
     computeHeight ();
 
@@ -247,10 +256,16 @@ namespace cob_3d_mapping
     double r_; /**< Radius of cylinder. */
     double h_min_; /**< Point at the bottom of cylinder.*/
     double h_max_; /**< Point on top of cylinder */
-    Eigen::Vector3f sym_axis_; /**< Symmetry axis of cylinder. Direction Vector of symmetry axis. */
+    Eigen::Vector3f sym_axis_; /**< Symmetry axis of cylinder. Direction vector of symmetry axis. */
     //Eigen::Vector3f origin_;         /**< Origin of cylinder. */
 
   protected:
+    /*
+     * \brief Compute average cylinder from a set of cylinders.
+     *
+     * \param[in] poly_vec The set of cylinders.
+     * \param[out] p_averga The average cylinder.
+     */
     virtual void
     computeAverage (const std::vector<Polygon::Ptr>& poly_vec, Polygon::Ptr& p_average);
 

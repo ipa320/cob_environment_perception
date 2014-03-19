@@ -62,7 +62,7 @@ include_directories(
 )
 
 ## Declare a cpp library
-add_library(cob_3d_mapping_point_map_nodelets 	
+add_library(cob_3d_mapping_point_map_nodelets
   ros/src/point_map_nodelet.cpp
   #ros/src/difference_segmentation.cpp
 )
@@ -75,7 +75,9 @@ target_link_libraries(cob_3d_mapping_point_map_nodelets
 
 ## Declare a cpp executable
 add_executable(set_point_map ros/src/set_point_map.cpp)
+add_dependencies(set_point_map ${catkin_EXPORTED_TARGETS})
 add_executable(get_point_map ros/src/get_point_map.cpp)
+add_dependencies(get_point_map ${catkin_EXPORTED_TARGETS})
 
 target_link_libraries(set_point_map
   ${catkin_LIBRARIES}

@@ -1,16 +1,16 @@
 <package>
   <name>cob_3d_segmentation</name>
   <version>1.0.0</version>
-  
+
   <description>
      Segmentation algorithms.
   </description>
-  
+
   <license>LGPL</license>
-  
+
   <maintainer email="goa@ipa.fhg.de">Georg Arbeiter</maintainer>
   <author>Georg Arbeiter</author>
-  
+
   <url>http://wiki.ros.org/cob_3d_segmentation</url>
 
   <buildtool_depend>catkin</buildtool_depend>
@@ -24,12 +24,14 @@
   <build_depend>cob_3d_mapping_msgs</build_depend>
   <build_depend>dynamic_reconfigure</build_depend>
   <build_depend>geometry_msgs</build_depend>
+  <build_depend>libpcl-all-dev</build_depend>
   <build_depend>libvtk</build_depend>
   <build_depend>message_generation</build_depend>
   <build_depend>nodelet</build_depend>
   <build_depend>opencv2</build_depend>
   <!--build_depend>pcl</build_depend-->
   <build_depend>pcl_ros</build_depend>
+  <build_depend>polypartition</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>rosbag</build_depend>
 
@@ -42,12 +44,14 @@
   <run_depend>cob_3d_mapping_msgs</run_depend>
   <run_depend>dynamic_reconfigure</run_depend>
   <run_depend>geometry_msgs</run_depend>
+  <run_depend>libpcl-all-dev</run_depend>
   <run_depend>libvtk</run_depend>
   <run_depend>message_runtime</run_depend>
   <run_depend>nodelet</run_depend>
   <run_depend>opencv2</run_depend>
   <!--run_depend>pcl</run_depend-->
   <run_depend>pcl_ros</run_depend>
+  <run_depend>polypartition</run_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>rosbag</run_depend>
 
