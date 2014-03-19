@@ -79,56 +79,54 @@
 
 /* Methods for testing filters */
 
-double TestProcessingTimeOnce(unsigned int cloud_size, unsigned int iterations)
+double
+TestProcessingTimeOnce (unsigned int cloud_size, unsigned int iterations)
 {
   cob_3d_mapping_filters::IntensityFilter<PointXYZI> filter;
-    pcl::PointCloud<PointXYZI>::Ptr cloud(new pcl::PointCloud<PointXYZI> ());
-    pcl::PointCloud<PointXYZI>::Ptr cloud_out(new pcl::PointCloud<PointXYZI> ());
+  pcl::PointCloud<PointXYZI>::Ptr cloud (new pcl::PointCloud<PointXYZI> ());
+  pcl::PointCloud<PointXYZI>::Ptr cloud_out (new pcl::PointCloud<PointXYZI> ());
 
-    cloud->points.resize(cloud_size);
-    cloud->width = cloud_size;
-    cloud->height = 1;
-    for(unsigned int i=0; i<cloud_size; i++)
-    {
-      PointXYZI pt;
-      pt.x = pt.y = pt.z = pt.intensity = 1;
-      cloud->points[i] = pt;
-    }
-    filter.setInputCloud(cloud);
-    //boost::timer t;
-    double time=0;
-    for(unsigned int i=0; i<iterations; i++)
-    {
-      PrecisionStopWatch sw;
-      sw.precisionStart();
-      filter.filter(*cloud_out);
-      time += sw.precisionStop();
-    }
-    time /= iterations;
-    std::cout << "Cloud size " << cloud_size << ": " << time << " s" << std::endl;
-    return time;
+  cloud->points.resize (cloud_size);
+  cloud->width = cloud_size;
+  cloud->height = 1;
+  for (unsigned int i = 0; i < cloud_size; i++)
+  {
+    PointXYZI pt;
+    pt.x = pt.y = pt.z = pt.intensity = 1;
+    cloud->points[i] = pt;
+  }
+  filter.setInputCloud (cloud);
+  //boost::timer t;
+  double time = 0;
+  for (unsigned int i = 0; i < iterations; i++)
+  {
+    PrecisionStopWatch sw;
+    sw.precisionStart ();
+    filter.filter (*cloud_out);
+    time += sw.precisionStop ();
+  }
+  time /= iterations;
+  std::cout << "Cloud size " << cloud_size << ": " << time << " s" << std::endl;
+  return time;
 }
 
-void TestProcessingTime()
+void
+TestProcessingTime ()
 {
   std::ofstream file;
-  file.open("/home/goa/tmp/intensity_filter_timing.dat");
+  file.open ("/home/goa/tmp/intensity_filter_timing.dat");
   file << "#No. of points\ttime (s)\n";
-  for(unsigned int cloud_size = 40000; cloud_size <= 400000; cloud_size += 40000)
+  for (unsigned int cloud_size = 40000; cloud_size <= 400000; cloud_size += 40000)
   {
-    double time = TestProcessingTimeOnce(cloud_size,1000);
+    double time = TestProcessingTimeOnce (cloud_size, 1000);
     file << cloud_size << "\t" << time << "\n";
   }
-  file.close();
+  file.close ();
 }
 
-
-int main()
+int
+main ()
 {
-  TestProcessingTimeOnce(10000,1);
+  TestProcessingTimeOnce (10000, 1);
 }
-
-
-
-
 

@@ -73,10 +73,11 @@
 
 #define LISTMOD(a,b) ( ((a%b)+b)%b )
 
-template <typename PointT, typename PointNT, typename PointLabelT, typename SensorT, typename ClusterHdlT> void
-cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT,SensorT,ClusterHdlT>::createSeedPoints()
+template <typename PointT, typename PointNT, typename PointLabelT, typename OptionsT, typename SensorT, typename ClusterHdlT> void
+cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT,OptionsT,SensorT,ClusterHdlT>::createSeedPoints()
 {
   int n = labels_->width * labels_->height;
+  // make sure, image border are NANs
   for(size_t i = 0; i<labels_->width; ++i)
     (*labels_)[i].label = I_NAN;
   for(size_t i = labels_->size() - labels_->width; i<labels_->size(); ++i)
@@ -125,9 +126,15 @@ cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT,SensorT,Cluster
 }
 
 
-template <typename PointT, typename PointNT, typename PointLabelT, typename SensorT, typename ClusterHdlT> bool
-cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT,SensorT,ClusterHdlT>::compute()
+template <typename PointT, typename PointNT, typename PointLabelT, typename OptionsT, typename SensorT, typename ClusterHdlT> bool
+cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT,OptionsT,SensorT,ClusterHdlT>::compute()
 {
+  clusters_->setPointCloudIn(surface_);
+  clusters_->setNormalCloudIn(normals_);
+  clusters_->setLabelCloudInOut(labels_);
+  graph_->edges()->setPointCloudIn(surface_);
+  graph_->edges()->setLabelCloudIn(labels_);
+
   createSeedPoints();
 
   int w = labels_->width, h = labels_->height, s = 1;
@@ -138,13 +145,13 @@ cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT,SensorT,Cluster
   int mask_size = 3;
 
   clusters_->clear();
+  clusters_->createCluster(I_NAN);
   while(seeds_.size() != 0)
   {
     unsigned int idx = seeds_.front();
     seeds_.pop_front();
     ClusterPtr c = clusters_->createCluster();
-    //SegmentationQueue seg_q;
-    //seg_q.push( SeedPoint::Ptr(new SeedPoint(idx, 0, 0.0)) );
+
     std::list<SeedPoint::Ptr> seg_q;
     seg_q.push_back( SeedPoint::Ptr(new SeedPoint(idx, 0, 0.0)) );
     clusters_->addPoint(c, idx);
@@ -154,32 +161,25 @@ cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT,SensorT,Cluster
     {
       SeedPoint p = *seg_q.front();
       seg_q.pop_front();
-      //SeedPoint p = *seg_q.top();
-      //seg_q.pop();
 
       for(int i=0; i<mask_size; ++i)
       {
         int i_idx = p.idx + mask[p.i_came_from][i];
-        if (i_idx >= w*h) continue;
+        if (i_idx >= w*h || i_idx < 0) continue;
+
+        if(!SensorT::areNeighbors((*surface_)[p.idx].getVector3fMap(), (*surface_)[i_idx].getVector3fMap(),4.0f)) continue;
 
         int* p_label = &(labels_->points[ i_idx ]).label;
-        if(*p_label != I_UNDEF) continue;
+        if( hasLabel(*p_label, c->id(), i_idx, p.idx, OptionsT()) ) continue;
 
         Eigen::Vector3f i_n = c->getOrientation();
-        Eigen::Vector3f i_c = c->getCentroid();
-        //float d = ((*surface_)[i_idx].getVector3fMap() - i_c).dot(i_n);
-        if(!SensorT::areNeighbors((*surface_)[p.idx].getVector3fMap(), (*surface_)[i_idx].getVector3fMap(),4.0f)) continue;
-        //if(!SensorT::areNeighbors(i_c(2) + d, i_c(2), 6.0f)) { continue; }
+        //Eigen::Vector3f i_c = c->getCentroid();
+
         float dot_value = fabs( i_n.dot((*normals_)[i_idx].getNormalVector3fMap()) );
-        /*if(i_n(2) != i_n(2))
-          std::cout << "----------  NAN" << std::endl;
-        if( (*normals_)[i_idx].normal[2] != (*normals_)[i_idx].normal[2] )
-          std::cout << "----------  NAN  !!!!" << std::endl;
-        */
+
         if(dot_value > n_threshold(c->size()))
         {
           seg_q.push_back( SeedPoint::Ptr(new SeedPoint(i_idx, LISTMOD(i + p.i_came_from - 1, 4), dot_value)) );
-          //seg_q.push( SeedPoint::Ptr(new SeedPoint(i_idx, LISTMOD(i + p.i_came_from - 1, 4), dot_value)) );
           clusters_->addPoint(c,i_idx);
           seeds_.erase(p_seeds_[i_idx]);
           *p_label = c->id();
@@ -188,6 +188,7 @@ cob_3d_segmentation::FastSegmentation<PointT,PointNT,PointLabelT,SensorT,Cluster
     }
   }
   clusters_->addBorderIndicesToClusters();
+  return true;
 }
 
 #endif

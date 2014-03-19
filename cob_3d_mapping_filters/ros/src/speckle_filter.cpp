@@ -59,10 +59,8 @@
 
 //##################
 //#### includes ####
-
 // standard includes
 //--
-
 // ROS includes
 #include <ros/ros.h>
 
@@ -91,7 +89,7 @@ class SpeckleFilter : public nodelet::Nodelet
 public:
   // Constructor
   SpeckleFilter () :
-    t_check (0)
+      t_check (0)
   {
     //
   }
@@ -108,34 +106,32 @@ public:
     //PCLNodelet::onInit ();
     n_ = getNodeHandle ();
 
-    point_cloud_sub_ = n_.subscribe ("point_cloud2", 1, &SpeckleFilter::PointCloudSubCallback, this);
+    point_cloud_sub_ = n_.subscribe ("point_cloud2", 1, &SpeckleFilter::pointCloudSubCallback, this);
     point_cloud_pub_ = n_.advertise<sensor_msgs::PointCloud2> ("point_cloud2_filtered", 1);
 
     n_.param ("/speckle_filter_nodelet/speckle_size", speckle_size_, 50);
     //std::cout << "speckle_size: " << speckle_size_<< std::endl;
     n_.param ("/speckle_filter_nodelet/speckle_range", speckle_range_, 0.1);
-    std::cout << "speckle_range: " << speckle_range_<< std::endl;
+    filter_.setFilterParam (speckle_size_, speckle_range_);
   }
 
   void
-   PointCloudSubCallback (const pcl::PointCloud<pcl::PointXYZ>::Ptr pc)
-   {
-     //ROS_INFO("PointCloudSubCallback");
-     cob_3d_mapping_filters::SpeckleFilter<pcl::PointXYZ> filter;
-     pcl::PointCloud<pcl::PointXYZ>::Ptr cloud_filtered (new pcl::PointCloud<pcl::PointXYZ> ());
-     filter.setInputCloud (pc);
-     filter.setFilterParam(speckle_size_,speckle_range_);
-     //std::cout<< " SR : "<<filter.getSpeckleRange()<<std::endl;
-     //std::cout<< " SS : "<<filter.getSpeckleSize()<<std::endl;
-     filter.filter (*cloud_filtered);
-     point_cloud_pub_.publish (cloud_filtered);
-     if (t_check == 0)
+  pointCloudSubCallback (const pcl::PointCloud<pcl::PointXYZ>::Ptr pc)
+  {
+    //ROS_INFO("PointCloudSubCallback");
+    pcl::PointCloud<pcl::PointXYZ> cloud_filtered;
+    filter_.setInputCloud (pc);
+    //std::cout<< " SR : "<<filter.getSpeckleRange()<<std::endl;
+    //std::cout<< " SS : "<<filter.getSpeckleSize()<<std::endl;
+    filter_.filter (cloud_filtered);
+    point_cloud_pub_.publish (cloud_filtered);
+    /*if (t_check == 0)
      {
-       ROS_INFO("Time elapsed (SpeckleFilter) : %f", t.elapsed());
-       t.restart ();
-       t_check = 1;
-     }
-   }
+     ROS_INFO("Time elapsed (SpeckleFilter) : %f", t.elapsed());
+     t.restart ();
+     t_check = 1;
+     }*/
+  }
 
   ros::NodeHandle n_;
   boost::timer t;
@@ -144,6 +140,8 @@ public:
 protected:
   ros::Subscriber point_cloud_sub_;
   ros::Publisher point_cloud_pub_;
+
+  cob_3d_mapping_filters::SpeckleFilter<pcl::PointXYZ> filter_;
 
   int speckle_size_;
   double speckle_range_;

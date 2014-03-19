@@ -73,127 +73,129 @@ namespace cob_3d_mapping_filters
   /**
    * \Amplitude Filter uses intensity values of points to filter out pointcloud data
    */
-  template <typename PointT>
-  class AmplitudeFilter : public pcl::Filter<PointT>
-  {
-    using pcl::Filter<PointT>::input_;
-
-  public:
-    typedef typename pcl::Filter<PointT>::PointCloud PointCloud;
-    typedef typename PointCloud::Ptr PointCloudPtr;
-    typedef typename PointCloud::ConstPtr PointCloudConstPtr;
-
-    /** \constructor */
-    AmplitudeFilter ()
-    : amplitude_min_threshold_ (1000),
-      amplitude_max_threshold_ (60000)
-    { };
-
-    //virtual ~AmplitudeFilter();
-
-    /** \sets the filter limits */
-    inline void
-    setFilterLimits (double lim_min,double lim_max)
+  template<typename PointT>
+    class AmplitudeFilter : public pcl::Filter<PointT>
     {
-      amplitude_min_threshold_ = lim_min;
-      amplitude_max_threshold_ = lim_max;
-    }
+      using pcl::Filter<PointT>::input_;
 
-    /** \gets the filter minimum limit */
-    inline double
-    getFilterMinLimit ()
+    public:
+      typedef typename pcl::Filter<PointT>::PointCloud PointCloud;
+      typedef typename PointCloud::Ptr PointCloudPtr;
+      typedef typename PointCloud::ConstPtr PointCloudConstPtr;
+
+      /** \constructor */
+      AmplitudeFilter () :
+          amplitude_min_threshold_ (1000), amplitude_max_threshold_ (60000)
+      {
+      }
+      ;
+
+      //virtual ~AmplitudeFilter();
+
+      /** \sets the filter limits */
+      inline void
+      setFilterLimits (double lim_min, double lim_max)
+      {
+        amplitude_min_threshold_ = lim_min;
+        amplitude_max_threshold_ = lim_max;
+      }
+
+      /** \gets the filter minimum limit */
+      inline double
+      getFilterMinLimit ()
+      {
+        return amplitude_min_threshold_;
+      }
+
+      /** \gets the filter maximum limit */
+      inline double
+      getFilterMaxLimit ()
+      {
+        return amplitude_max_threshold_;
+      }
+
+      /** \Points with confidence values greater the filter limit will be discarded
+       *   \Points with in filter limits will be the output PointCloud
+       */
+      void
+      applyFilter (PointCloud &output);
+
+      /* Points that are inside the filter limits will be discarded
+       * Points outside the filter limits will be output PointCloud
+       */
+      void
+      negativeApplyFilter (PointCloud &output);
+
+    protected:
+      /** \minimum limit for the filter */
+      double amplitude_min_threshold_;
+
+      /** \maximum limit for the filter */
+      double amplitude_max_threshold_;
+    };
+
+  template<>
+    class AmplitudeFilter<sensor_msgs::PointCloud2> : public pcl::Filter<sensor_msgs::PointCloud2>
     {
-      return amplitude_min_threshold_;
-    }
+      using pcl::Filter<sensor_msgs::PointCloud2>::input_;
 
-    /** \gets the filter maximum limit */
-    inline double
-    getFilterMaxLimit ()
-    {
-      return amplitude_max_threshold_;
-    }
+    public:
+      typedef sensor_msgs::PointCloud2 PointCloud2;
+      typedef PointCloud2::Ptr PointCloud2Ptr;
+      typedef PointCloud2::ConstPtr PointCloud2ConstPtr;
 
-    /** \Points with confidence values greater the filter limit will be discarded
-     *   \Points with in filter limits will be the output PointCloud
-     */
-    void
-    applyFilter (PointCloud &output);
+      /** \constructor */
+      AmplitudeFilter () :
+          amplitude_min_threshold_ (1000), amplitude_max_threshold_ (60000)
+      {
+      }
+      ;
 
-    /* Points that are inside the filter limits will be discarded
-     * Points outside the filter limits will be output PointCloud
-     */
-    void
-    negativeApplyFilter (PointCloud &output);
+      //virtual ~AmplitudeFilter();
 
-  protected:
-    /** \minimum limit for the filter */
-    double amplitude_min_threshold_;
+      /** \sets the filter limits */
+      inline void
+      setFilterLimits (double lim_min, double lim_max)
+      {
+        amplitude_min_threshold_ = lim_min;
+        amplitude_max_threshold_ = lim_max;
+      }
 
-    /** \maximum limit for the filter */
-    double amplitude_max_threshold_;
-  };
+      /** \gets the filter minimum limit */
+      inline double
+      getFilterMinLimit ()
+      {
+        return amplitude_min_threshold_;
+      }
 
-  template <>
-  class AmplitudeFilter<sensor_msgs::PointCloud2> : public pcl::Filter<sensor_msgs::PointCloud2>
-  {
-    using pcl::Filter<sensor_msgs::PointCloud2>::input_;
+      /** \gets the filter maximum limit */
+      inline double
+      getFilterMaxLimit ()
+      {
+        return amplitude_max_threshold_;
+      }
 
-  public:
-    typedef sensor_msgs::PointCloud2 PointCloud2;
-    typedef PointCloud2::Ptr PointCloud2Ptr;
-    typedef PointCloud2::ConstPtr PointCloud2ConstPtr;
+    protected:
 
-    /** \constructor */
-    AmplitudeFilter()
-    : amplitude_min_threshold_ (1000),
-      amplitude_max_threshold_ (60000)
-    { };
+      /** \Points that are outside the filter limits will be discarded
+       *  \Points with in filter limits will be the output PointCloud2
+       */
+      void
+      applyFilter (PointCloud2 &output);
 
-    //virtual ~AmplitudeFilter();
+      /** \Points that are inside the filter limits will be discarded
+       *  \Points outside the filter limits will be output PointCloud2
+       */
+      void
+      negativeApplyFilter (PointCloud2 &output);
 
-    /** \sets the filter limits */
-    inline void
-    setFilterLimits (double lim_min,double lim_max)
-    {
-      amplitude_min_threshold_ = lim_min;
-      amplitude_max_threshold_ = lim_max;
-    }
+      /** \minimum limit for the filter */
+      double amplitude_min_threshold_;
 
-    /** \gets the filter minimum limit */
-    inline double
-    getFilterMinLimit ()
-    {
-      return amplitude_min_threshold_;
-    }
+      /** \maximum limit for the filter */
+      double amplitude_max_threshold_;
 
-    /** \gets the filter maximum limit */
-    inline double
-    getFilterMaxLimit ()
-    {
-      return amplitude_max_threshold_;
-    }
-
-  protected:
-
-    /** \Points that are outside the filter limits will be discarded
-     *  \Points with in filter limits will be the output PointCloud2
-     */
-    void
-    applyFilter (PointCloud2 &output);
-
-    /** \Points that are inside the filter limits will be discarded
-     *  \Points outside the filter limits will be output PointCloud2
-     */
-    void
-    negativeApplyFilter (PointCloud2 &output);
-
-    /** \minimum limit for the filter */
-    double amplitude_min_threshold_;
-
-    /** \maximum limit for the filter */
-    double amplitude_max_threshold_;
-
-  };
+    };
 } // end namespace cob_3d_mapping_filters
 
 #endif /* AMPLITUDE_FILTER_H_ */

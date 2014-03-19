@@ -79,67 +79,67 @@
 
 /* Methods for testing filters */
 
-double TestProcessingTimeOnce(unsigned int cloud_size, unsigned int iterations)
+double
+TestProcessingTimeOnce (unsigned int cloud_size, unsigned int iterations)
 {
   cob_3d_mapping_filters::JumpEdgeFilter<PointXYZ> filter;
-    pcl::PointCloud<PointXYZ>::Ptr cloud(new pcl::PointCloud<PointXYZ> ());
-    pcl::PointCloud<PointXYZ>::Ptr cloud_out(new pcl::PointCloud<PointXYZ> ());
+  pcl::PointCloud<PointXYZ>::Ptr cloud (new pcl::PointCloud<PointXYZ> ());
+  pcl::PointCloud<PointXYZ>::Ptr cloud_out (new pcl::PointCloud<PointXYZ> ());
 
-    cloud->points.resize(cloud_size);
-    cloud->width = sqrt(cloud_size);
-    cloud->height = sqrt(cloud_size);
-    for(unsigned int i=0; i<cloud_size; i++)
-    {
-      PointXYZ pt;
-      pt.x = pt.y = pt.z = 1;
-      cloud->points[i] = pt;
-    }
-    filter.setInputCloud(cloud);
-    //boost::timer t;
-    double time=0;
-    for(unsigned int i=0; i<iterations; i++)
-    {
-      PrecisionStopWatch sw;
-      sw.precisionStart();
-      filter.filter(*cloud_out);
-      time += sw.precisionStop();
-    }
-    time /= iterations;
-    std::cout << "Cloud size " << cloud_size << ": " << time << " s" << std::endl;
-    return time;
+  cloud->points.resize (cloud_size);
+  cloud->width = sqrt (cloud_size);
+  cloud->height = sqrt (cloud_size);
+  for (unsigned int i = 0; i < cloud_size; i++)
+  {
+    PointXYZ pt;
+    pt.x = pt.y = pt.z = 1;
+    cloud->points[i] = pt;
+  }
+  filter.setInputCloud (cloud);
+  //boost::timer t;
+  double time = 0;
+  for (unsigned int i = 0; i < iterations; i++)
+  {
+    PrecisionStopWatch sw;
+    sw.precisionStart ();
+    filter.filter (*cloud_out);
+    time += sw.precisionStop ();
+  }
+  time /= iterations;
+  std::cout << "Cloud size " << cloud_size << ": " << time << " s" << std::endl;
+  return time;
 }
 
-void TestProcessingTime()
+void
+TestProcessingTime ()
 {
   std::ofstream file;
-  file.open("/home/goa/tmp/jump_edge_filter_timing.dat");
+  file.open ("/home/goa/tmp/jump_edge_filter_timing.dat");
   file << "#No. of points\ttime (s)\n";
-  for(unsigned int cloud_size = 40000; cloud_size <= 400000; cloud_size += 40000)
+  for (unsigned int cloud_size = 40000; cloud_size <= 400000; cloud_size += 40000)
   {
-    double time = TestProcessingTimeOnce(cloud_size, 1000);
+    double time = TestProcessingTimeOnce (cloud_size, 1000);
     file << cloud_size << "\t" << time << "\n";
   }
-  file.close();
+  file.close ();
 }
 
-void DoSampleRun()
+void
+DoSampleRun ()
 {
-  cob_3d_mapping_filters::JumpEdgeFilter<PointXYZA> filter;
-  pcl::PointCloud<PointXYZA>::Ptr cloud(new pcl::PointCloud<PointXYZA> ());
-  pcl::PointCloud<PointXYZA>::Ptr cloud_out(new pcl::PointCloud<PointXYZA> ());
-  pcl::io::loadPCDFile("/home/goa/Ubuntu One/diss/images/raw/filter_sequence_input2.pcd", *cloud);
-  filter.setInputCloud(cloud);
-  filter.filter(*cloud_out);
-  pcl::io::savePCDFileASCII("/home/goa/Ubuntu One/diss/images/raw/filter_sequence_jumpedge2.pcd", *cloud_out);
+  cob_3d_mapping_filters::JumpEdgeFilter<PointXYZ> filter;
+  pcl::PointCloud<PointXYZ>::Ptr cloud (new pcl::PointCloud<PointXYZ> ());
+  pcl::PointCloud<PointXYZ>::Ptr cloud_out (new pcl::PointCloud<PointXYZ> ());
+  pcl::io::loadPCDFile ("/home/goa/Ubuntu One/diss/images/raw/filter_sequence_input2.pcd", *cloud);
+  filter.setInputCloud (cloud);
+  filter.filter (*cloud_out);
+  pcl::io::savePCDFileASCII ("/home/goa/Ubuntu One/diss/images/raw/filter_sequence_jumpedge2.pcd", *cloud_out);
 }
 
-int main()
+int
+main ()
 {
-  DoSampleRun();
+  DoSampleRun ();
   //TestProcessingTimeOnce(10000, 1);
 }
-
-
-
-
 

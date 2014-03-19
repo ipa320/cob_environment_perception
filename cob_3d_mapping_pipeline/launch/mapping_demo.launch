@@ -25,19 +25,33 @@
     </rosparam>
   </node-->
 
-  <include file="$(find cob_3d_registration)/ros/launch/registration_demo.launch">
+  <!--include file="$(find cob_3d_registration)/ros/launch/registration_demo.launch">
     <arg name="start_manager" value="false"/>
     <arg name="nodelet_manager" value="$(arg mapping_manager)"/>
+  </include-->
+    <!-- include file="$(find cob_3d_mapping_common)/ros/launch/transform_pointcloud.launch">
+    <arg name="input" value="/camera/depth_registered/points"/>
+    <arg name="output" value="/transformed/points"/>
   </include>
-	<include file="$(find cob_3d_mapping_point_map)/ros/launch/point_map.launch">
-		<arg name="start_manager" value="false"/>
-		<arg name="nodelet_manager" value="$(arg mapping_manager)"/>
-	</include>
-	<include file="$(find cob_3d_segmentation)/ros/launch/segmentation.launch">
-		<arg name="start_manager" value="false"/>
-		<arg name="nodelet_manager" value="$(arg mapping_manager)"/>
-	</include>
-	<include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch"/>
+  <include file="$(find cob_3d_mapping_point_map)/ros/launch/point_map.launch">
+    <arg name="start_manager" value="false"/>
+    <arg name="nodelet_manager" value="$(arg mapping_manager)"/>
+    <arg name="point_cloud" value="/transformed/points"/>
+  </include-->
+  <include file="$(find cob_3d_segmentation)/ros/launch/simple_segmentation.launch">
+    <arg name="start_manager" value="false"/>
+    <arg name="nodelet_manager" value="$(arg mapping_manager)"/>
+    <!-- arg name="point_cloud" value="/transformed/points"/-->
+    <arg name="point_cloud_in" value="/camera/depth_registered/points"/>
+    <arg name="enable_action_mode" value="True"/>
+  </include>
+  <include file="$(find cob_3d_mapping_common)/ros/launch/transform_shape_array.launch">
+    <arg name="input" value="/segmentation/shape_array"/>
+    <arg name="output" value="/transformed/shape_array"/>
+  </include>
+  <include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch">
+    <arg name="shape_array_in" value="/transformed/shape_array"/>
+  </include>
 
 
 

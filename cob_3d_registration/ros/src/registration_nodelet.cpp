@@ -121,7 +121,7 @@
 
 #include <cob_3d_registration/measurements/measure.h>
 #include <cob_srvs/Trigger.h>
-#include <cob_3d_mapping_msgs/TriggerMappingAction.h>
+#include <cob_3d_mapping_msgs/TriggerAction.h>
 
 #ifdef PCL_VERSION_COMPARE
   #include <pcl/point_traits.h>
@@ -265,7 +265,7 @@ public:
     camera_info_sub_ = n_.subscribe("camera_info", 1, &RegistrationNodelet::cameraInfoSubCallback, this);
     point_cloud_pub_aligned_ = n_.advertise<pcl::PointCloud<Point> >("point_cloud2_aligned",1);
     keyframe_trigger_server_ = n_.advertiseService("trigger_keyframe", &RegistrationNodelet::onKeyframeCallback, this);
-    as_= boost::shared_ptr<actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerMappingAction> >(new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerMappingAction>(n_, "trigger_mapping", boost::bind(&RegistrationNodelet::actionCallback, this, _1), false));
+    as_= boost::shared_ptr<actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerAction> >(new actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerAction>(n_, "trigger_mapping", boost::bind(&RegistrationNodelet::actionCallback, this, _1), false));
     as_->start();
     //point_cloud_pub_ = n_.advertise<pcl::PointCloud<Point> >("result_pc",1);
     marker_pub_ = n_.advertise<pcl::PointCloud<Point> >("result_marker",1);
@@ -355,7 +355,7 @@ public:
       Eigen::Affine3d af;
       af.matrix()=reg_->getTransformation().cast<double>();
       //std::cout<<reg_->getTransformation()<<"\n";
-      tf::TransformEigenToTF(af,transform);
+      tf::transformEigenToTF(af,transform);
       //std::cout << transform.stamp_ << std::endl;
       tf_br_.sendTransform(tf::StampedTransform(transform, pc_in->header.stamp, world_id_, corrected_id_));
 
@@ -408,7 +408,7 @@ public:
       ROS_DEBUG("Registering new point cloud");
 
       Eigen::Affine3d af;
-      tf::TransformTFToEigen(transform, af);
+      tf::transformTFToEigen(transform, af);
       reg_->setOdometry(af.matrix().cast<float>());
       reg_->setMoved(true);
 
@@ -433,9 +433,9 @@ public:
    * @return nothing
    */
   void
-  actionCallback(const cob_3d_mapping_msgs::TriggerMappingGoalConstPtr &goal)
+  actionCallback(const cob_3d_mapping_msgs::TriggerGoalConstPtr &goal)
   {
-    cob_3d_mapping_msgs::TriggerMappingResult result;
+    cob_3d_mapping_msgs::TriggerResult result;
     if(goal->start && !is_running_)
     {
       ROS_INFO("Starting mapping...");
@@ -1031,7 +1031,7 @@ protected:
   ros::Publisher point_cloud_pub_;              /// publisher for map
   ros::Publisher marker2_pub_;                  /// publish markers for visualization as pc
   ros::Publisher marker_pub_;                   /// publish markers for visualization
-  boost::shared_ptr<actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerMappingAction> > as_;
+  boost::shared_ptr<actionlib::SimpleActionServer<cob_3d_mapping_msgs::TriggerAction> > as_;
   unsigned int ctr_;
 
   /// parameter bag (containing max, min, step...)

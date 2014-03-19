@@ -4,7 +4,7 @@
   		Nodelet for point cloud filtering (by amplitude)
   	</description>
   </class>
-	
+
   <class name="cob_3d_mapping_filters/IntensityFilter" type="IntensityFilter" base_class_type="nodelet::Nodelet">
   	<description>
   		Nodelet for point cloud filtering (by intensity)

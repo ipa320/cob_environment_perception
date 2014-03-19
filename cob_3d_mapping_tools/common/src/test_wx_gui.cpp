@@ -62,9 +62,11 @@
 
 #include <pcl/features/integral_image_normal.h>
 
-#ifdef PCL_MINOR_VERSION >= 6
+#ifdef PCL_MINOR_VERSION
+#if PCL_MINOR_VERSION >= 6
 #include <pcl/segmentation/organized_multi_plane_segmentation.h>
 #include <pcl/segmentation/edge_aware_plane_comparator.h>
+#endif
 #endif
 
 #include "cob_3d_mapping_common/label_defines.h"
@@ -180,14 +182,14 @@ void printForFile(ClusterMap& exp, ClusterMap& pred)
     float area2 = p2->computeArea3d();
     float area_diff = 0;
     gpc_polygon gpc_a, gpc_b, gpc_diff;
-    p1->getGpcStructure(p1->transform_from_world_to_plane, &gpc_a);
-    p2->getGpcStructure(p2->transform_from_world_to_plane, &gpc_b);
+    p1->getGpcStructure(&gpc_a);
+    p2->getGpcStructure(&gpc_b);
     gpc_polygon_clip(GPC_XOR, &gpc_a, &gpc_b, &gpc_diff);
 
     //cob_3d_mapping::Polygon::Ptr p_diff(new cob_3d_mapping::Polygon);
     if(gpc_diff.num_contours != 0)
     {
-      p1->applyGpcStructure(p1->transform_from_world_to_plane, &gpc_diff);
+      p1->applyGpcStructure(&gpc_diff);
       area_diff = p1->computeArea3d();
     }
 
@@ -233,14 +235,14 @@ void compare(ClusterMap& exp, ClusterMap& pred)
     float area2 = p2->computeArea3d();
     float area_diff = 0;
     gpc_polygon gpc_a, gpc_b, gpc_diff;
-    p1->getGpcStructure(p1->transform_from_world_to_plane, &gpc_a);
-    p2->getGpcStructure(p2->transform_from_world_to_plane, &gpc_b);
+    p1->getGpcStructure(&gpc_a);
+    p2->getGpcStructure(&gpc_b);
     gpc_polygon_clip(GPC_XOR, &gpc_a, &gpc_b, &gpc_diff);
 
     //cob_3d_mapping::Polygon::Ptr p_diff(new cob_3d_mapping::Polygon);
     if(gpc_diff.num_contours != 0)
     {
-      p1->applyGpcStructure(p1->transform_from_world_to_plane, &gpc_diff);
+      p1->applyGpcStructure(&gpc_diff);
       area_diff = p1->computeArea3d();
     }
 
@@ -416,22 +418,23 @@ void createClustersUsingPlaneExtraction(PointCloud::Ptr cloud, ClusterMap& cmap)
     ClusterMap::iterator it = cmap.insert( std::pair<int,Cluster>(temp_ids[i], Cluster(temp_ids[i])) ).first;
     it->second.comp3 = Eigen::Vector3f(v_coef[i].values[0], v_coef[i].values[1], v_coef[i].values[2]);
     cob_3d_mapping::Polygon& p = *it->second.poly;
-    for(int c=0; c<3; c++) p.normal[c] = v_coef[i].values[c];
-    p.d = v_coef[i].values[3];
-    it->second.centroid = it->second.comp3 * p.d;
+    for(int c=0; c<3; c++) p.normal_[c] = v_coef[i].values[c];
+    p.d_ = v_coef[i].values[3];
+    it->second.centroid = it->second.comp3 * p.d_;
     std::vector<Eigen::Vector3f> pts;
     for(int j=0; j<v_hull_pc[i].size(); j++)
       pts.push_back(v_hull_pc[i].points[j].getVector3fMap());
 
-    p.contours.push_back(pts);
-    p.holes.push_back(false);
+    p.contours_.push_back(pts);
+    p.holes_.push_back(false);
     p.computeCentroid();
     p.computeAttributes(it->second.comp3, p.centroid);
   }
 }
 
 
-#ifdef PCL_VERSION_COMPARE
+#ifdef PCL_MINOR_VERSION
+#if PCL_MINOR_VERSION >= 6
 void createClustersUsingMultiPlaneSegmentation(PointCloud::Ptr cloud, ClusterMap& cmap)
 {
   pcl::PointCloud<pcl::Normal>::Ptr n(new pcl::PointCloud<pcl::Normal>);
@@ -498,6 +501,7 @@ void createClustersUsingMultiPlaneSegmentation(PointCloud::Ptr cloud, ClusterMap
     p.computeAttributes(it->second.comp3, p.centroid);
   }
 }
+#endif
 #endif
 
 
@@ -648,8 +652,13 @@ public:
     *pc_pred = *pc_exp;
     std::cout << pc_exp->width << " " << pc_exp->height << std::endl;
     createClusters(pc_exp, exp);
-    #ifdef PCL_VERSION_COMPARE
-    createClustersUsingMultiPlaneSegmentation(pc_pred, pred);
+
+    #ifdef PCL_MINOR_VERSION
+      #if PCL_MINOR_VERSION >= 6
+      createClustersUsingMultiPlaneSegmentation(pc_pred, pred);
+      #else
+      createClustersUsingPlaneExtraction(pc_pred, pred);
+      #endif
     #else
     createClustersUsingPlaneExtraction(pc_pred, pred);
     #endif

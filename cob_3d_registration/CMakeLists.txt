@@ -54,10 +54,10 @@ rosbuild_add_library(cob_3d_registration_lib
 	common/src/registration_icp_edges.cpp
 #	common/src/registration_correspondence.cpp
 	common/src/registration_info.cpp)
-	
-target_link_libraries(cob_3d_registration_lib vtkCommon cob_3d_mapping_features_omp)
 
-target_link_libraries(cob_3d_registration cob_3d_registration_lib cob_3d_mapping_features_omp vtkCommon)
+target_link_libraries(cob_3d_registration_lib vtkCommon)# cob_3d_mapping_features_omp)
+
+target_link_libraries(cob_3d_registration cob_3d_registration_lib vtkCommon)# cob_3d_mapping_features_omp vtkCommon)
 
 #rosbuild_add_executable(capture ros/src/capture.cpp)
 #rosbuild_add_executable(filter ros/src/filter.cpp)
