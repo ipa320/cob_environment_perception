@@ -66,8 +66,8 @@
 #ifndef SUB_STRUCTURES_H_
 #define SUB_STRUCTURES_H_
 
-
 #include <unsupported/Eigen/Polynomials>
+#include <boost/math/special_functions/binomial.hpp>
 
 namespace Segmentation
 {

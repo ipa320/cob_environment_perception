@@ -53,20 +53,24 @@
 
 #pragma once
 
-#include <pcl/point_cloud.h>
-#include <pcl/point_types.h>
-#include <pcl/kdtree/kdtree_flann.h>
+#include <complex>
+#include <vector>
+#include <boost/shared_ptr.hpp>
+#include <Eigen/Geometry>
+#include <cob_3d_mapping_common/polypartition.h>
 
-namespace cob_3d_mapping_features
+namespace cob_3d_features
 {
   /*! @brief feature generator for surfaces based on fourier transformation (rotation/translation invariant) */
-  template<typename TSurface, typename Scalar=float, typename TAffine=Eigen::Affine3f, typename TVector=Eigen::Vector3f> class InvariantSurfaceFeature
+  template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar=float, typename TAffine=Eigen::Affine3f>
+  class InvariantSurfaceFeature
   {
   public:
+    typedef Eigen::Matrix<Scalar, 3, 1> TVector;
     typedef std::vector<TSurface> TSurfaceList;
     typedef boost::shared_ptr<TSurfaceList> PTSurfaceList;
     typedef Eigen::Matrix<Scalar, num_angle_, num_angle_> FeatureAngle;
-    typedef Eigen::Matrix<complex<Scalar>, num_angle_, num_angle_> FeatureAngleComplex;
+    typedef Eigen::Matrix<std::complex<Scalar>, num_angle_, num_angle_> FeatureAngleComplex;
     typedef FeatureAngle Feature[num_radius_];
     typedef FeatureAngleComplex FeatureComplex[num_radius_];
 
@@ -85,13 +89,13 @@ namespace cob_3d_mapping_features
 
     /*! constructor */
     InvariantSurfaceFeature() :
-      invariance_(INVARAINCE_ALL), num_radius_(4), num_angle_(4)
+      invariance_(INVARAINCE_ALL)
     {
       //TODO: default radi
     }
 
     /*! destructor */
-    ~InvariantSurfaceFeature();
+    virtual ~InvariantSurfaceFeature() {}
 
     void setInput(PTSurfaceList surfs);
     void compute();
@@ -109,24 +113,27 @@ namespace cob_3d_mapping_features
 		radii_.insert(it, r);
 	}
 
-    const int getNumRadius() const {return num_radius_;}
+    /*const int getNumRadius() const {return num_radius_;}
     void setNumRadius(const int t) {num_radius_=t;}
     const int getNumAngle() const {return num_angle_;}
-    void setNumAngle(const int t) {num_angle_=t;}
+    void setNumAngle(const int t) {num_angle_=t;}*/
 
   protected:
     struct Triangle {
 		Eigen::Matrix<Scalar, 2, 1> p_[3];
 		Eigen::Matrix<Scalar, 3, 1> p3_[3];
-		FeatureComplex f_;
+		std::vector<FeatureComplex> f_;
 		typename TSurface::Model *model_;
 		
-		inline static set(Eigen::Matrix<Scalar, 2, 1> &p, const TPPLPoint &tp) {
+		inline static void set(Eigen::Matrix<Scalar, 2, 1> &p, const TPPLPoint &tp) {
 			p(0) = tp.x;
 			p(1) = tp.y;
 		}
 		
-		void compute();
+		void compute(const std::vector<float> &radii);
+		void subsample(const TVector &at, const Scalar r2, std::vector<Triangle> &res);
+    private:
+		TVector intersection_on_line(const TVector &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b);
 	};
 	
     struct VectorWithParams {
@@ -141,7 +148,7 @@ namespace cob_3d_mapping_features
     EINVARAINCE invariance_;
     std::vector<float> radii_;	//descending sorted radius list (reuse of subsampled map)
     PResultVectorList result_;
-    int num_radius_, num_angle_;
+    //int num_radius_, num_angle_;
 
     void generateKeypoints(std::vector<TVector> &keypoints);
     void subsample(const TVector &at, const Scalar r2, std::vector<Triangle> &res);
