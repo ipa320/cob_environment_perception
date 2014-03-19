@@ -21,7 +21,10 @@ set(EXECUTABLE_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/bin)
 #set the default path for built libraries to the "lib" directory
 set(LIBRARY_OUTPUT_PATH ${PROJECT_SOURCE_DIR}/lib)
 
-INCLUDE_DIRECTORIES(${PROJECT_SOURCE_DIR}/common/include)
+INCLUDE_DIRECTORIES(
+	${PROJECT_SOURCE_DIR}/common/include
+	../cob_3d_segmentation/common/include
+)
     #/usr/include/vtk-5.8)
 rosbuild_add_boost_directories()
 
