@@ -17,6 +17,7 @@ find_package(catkin REQUIRED COMPONENTS
   nodelet
   pcl_ros
   roscpp
+  tf_conversions
 )
 
 find_package(Boost REQUIRED COMPONENTS signals)
@@ -51,6 +52,7 @@ catkin_package(
     nodelet
     pcl_ros
     roscpp
+    tf_conversions
   DEPENDS
     Boost
 )
@@ -79,9 +81,11 @@ add_library(cob_table_object_cluster
 add_executable(table_object_cluster_node  ros/src/table_object_cluster_node.cpp)
 add_dependencies(table_object_cluster_node ${${PROJECT_NAME}_EXPORTED_TARGETS})
 add_executable(table_object_cluster_action_client_test ros/src/table_object_cluster_action_client_test.cpp)
+add_dependencies(table_object_cluster_action_client_test ${catkin_EXPORTED_TARGETS})
 add_executable(table_object_cluster_action_server_node ros/src/table_object_cluster_action_server_node.cpp)
+add_dependencies(table_object_cluster_action_server_node ${catkin_EXPORTED_TARGETS})
 
-target_link_libraries(table_object_cluster_node 
+target_link_libraries(table_object_cluster_node
   cob_table_object_cluster
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}

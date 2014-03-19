@@ -91,11 +91,8 @@ add_executable(sav_gol common/src/sav_gol_smoothing_filter.cpp)
 
 # Gui:
 #add_executable(test_gui common/src/test_wx_gui.cpp)
-add_executable(test_hsv_tool common/src/test_hsv_tool.cpp)
 add_executable(bag_gui ros/src/bag_gui.cpp)
 add_executable(gaussian_noise_generator_node ros/src/noise_gen.cpp)
-add_executable(test_perspective_projection common/src/test_perspective_projection.cpp)
-add_executable(gui_normals common/src/gui_normals.cpp)
 
 
 target_link_libraries(concat_fields_node
@@ -174,13 +171,6 @@ target_link_libraries(sav_gol
 #  ${wxWidgets_LIBRARIES}
 #)
 
-target_link_libraries(test_hsv_tool
-  cob_3d_mapping_tools
-  ${catkin_LIBRARIES}
-  ${Boost_LIBRARIES}
-  ${wxWidgets_LIBRARIES}
-)
-
 target_link_libraries(bag_gui
   cob_3d_mapping_tools
   ${catkin_LIBRARIES}
@@ -193,15 +183,5 @@ target_link_libraries(gaussian_noise_generator_node
   ${Boost_LIBRARIES}
 )
 
-target_link_libraries(test_perspective_projection
-  ${catkin_LIBRARIES}
-)
-
-target_link_libraries(gui_normals
-  cob_3d_mapping_tools
-  ${catkin_LIBRARIES}
-  ${Boost_LIBRARIES}
-  ${wxWidgets_LIBRARIES}
-)
 
 

@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
   message_generation
   nodelet
   pcl_ros
+  polypartition
   roscpp
   rosbag
 )
@@ -127,8 +128,8 @@ add_library(cob_3d_segmentation_nodelets
 add_dependencies(cob_3d_segmentation_nodelets ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 ## Declare a cpp executable
-add_executable(segmentation_node ros/src/segmentation_node.cpp common/src/polypartition.cpp)
-add_executable(qppf_node ros/src/qppf_node.cpp common/src/polypartition.cpp)
+add_executable(segmentation_node ros/src/segmentation_node.cpp)
+add_executable(qppf_node ros/src/qppf_node.cpp)
 add_executable(plane_extraction_action_client ros/src/plane_extraction_action_client.cpp)
 add_executable(test_depth_segmentation common/apps/test_depth_segmentation.cpp)
 add_executable(segmentation_visualizer ros/src/segmentation_visualizer.cpp)
@@ -142,13 +143,13 @@ add_executable(test_pcl_segmentation common/apps/test_pcl_segmentation.cpp)
 # plane segmentation evaluation tool:
 #add_executable(evaluate_plane_segmentation common/apps/evaluate_plane_segmentation.cpp)
 
-target_link_libraries(cob_3d_segmentation 
+target_link_libraries(cob_3d_segmentation
   ${catkin_LIBRARIES}
   ${OpenCV_LIBS}
   ${PCL_LIBRARIES}
 )
 
-target_link_libraries(cob_3d_segmentation_nodelets 
+target_link_libraries(cob_3d_segmentation_nodelets
   cob_3d_segmentation
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
@@ -167,7 +168,7 @@ target_link_libraries(plane_extraction_action_client
   ${catkin_LIBRARIES}
 )
 
-target_link_libraries(test_depth_segmentation 
+target_link_libraries(test_depth_segmentation
   cob_3d_segmentation
   ${catkin_LIBRARIES}
   ${VTK_LIBRARIES}
@@ -190,7 +191,7 @@ target_link_libraries(profile_plane_extraction
   ${VTK_LIBRARIES}
 )
 
-#target_link_libraries(test_segmentation 
+#target_link_libraries(test_segmentation
 #  ${catkin_LIBRARIES}
 #  gtest
 #)

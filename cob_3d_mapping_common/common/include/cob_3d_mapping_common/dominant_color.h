@@ -67,12 +67,31 @@
 
 namespace cob_3d_mapping
 {
+  /*
+   * \brief Computes the min value of three arguments.
+   *
+   * \param[in] a The first value.
+   * \param[in] b The second value.
+   * \param[in] c The third value.
+   *
+   * \return The min of a,b and c.
+   */
   template<typename T>
     inline T
     min3 (const T& a, const T& b, const T& c)
     {
       return (a < b ? std::min<T> (a, c) : std::min<T> (b, c));
     }
+
+  /*
+   * \brief Computes the max value of three arguments.
+   *
+   * \param[in] a The first value.
+   * \param[in] b The second value.
+   * \param[in] c The third value.
+   *
+   * \return The max of a,b and c.
+   */
   template<typename T>
     inline T
     max3 (const T& a, const T& b, const T& c)
@@ -80,6 +99,9 @@ namespace cob_3d_mapping
       return (a > b ? std::max<T> (a, c) : std::max<T> (b, c));
     }
 
+  /*
+   * \brief Representing a dominant color of a surface patch.
+   */
   class DominantColor
   {
   public:
@@ -93,18 +115,39 @@ namespace cob_3d_mapping
     {
     }
 
+    /*
+     * \brief Add the color value of a pixel in RGB.
+     *
+     * \param[in] r The red channel.
+     * \param[in] g The green channel.
+     * \param[in] b The blue channel.
+     * \param[in] weight The weight of this pixel.
+     */
     void
     addColor (uint8_t r, uint8_t g, uint8_t b, int weight = 1);
+
+    /*
+     * \brief Get the dominant color in RGB.
+     *
+     * \param[out] r The red channel.
+     * \param[out] g The green channel.
+     * \param[out] b The blue channel.
+     */
     void
     getColor (uint8_t& r, uint8_t& g, uint8_t& b) const;
+
     int
     incrBin (int h);
+
     int
     getMaxBin () const;
+
     void
     rgb2hsv (uint8_t r, uint8_t g, uint8_t b, int& h, int& s, int& v) const;
+
     void
     hsv2rgb (int h, int s, int v, uint8_t& r, uint8_t& g, uint8_t& b) const;
+
     void
     reset ();
 
