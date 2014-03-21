@@ -72,7 +72,7 @@ namespace cob_3d_features
     typedef Eigen::Matrix<Scalar, num_angle_, num_angle_> FeatureAngle;
     typedef Eigen::Matrix<std::complex<Scalar>, num_angle_, num_angle_> FeatureAngleComplex;
     typedef FeatureAngle Feature[num_radius_];
-    typedef FeatureAngleComplex FeatureComplex[num_radius_];
+    typedef struct {FeatureAngleComplex vals[num_radius_];} FeatureComplex;
 
     struct ResultVector {
       TVector v;
@@ -107,7 +107,7 @@ namespace cob_3d_features
     void setInvarianceSettings(const EINVARAINCE &t) {invariance_=t;}
 
     const std::vector<float> &getRadii() const {return radii_;}
-    void addRadii(const float r) {	//insert sorted!
+    void addRadius(const float r) {	//insert sorted!
 		std::vector<float>::iterator it = radii_.begin();
 		while(it!=radii_.end() && *it>r) ++it;
 		radii_.insert(it, r);
@@ -118,6 +118,9 @@ namespace cob_3d_features
     const int getNumAngle() const {return num_angle_;}
     void setNumAngle(const int t) {num_angle_=t;}*/
 
+
+    /* UNIT TESTS: available in invariant_surface_feature_unit_tests.hpp */
+    bool test_singleTriangle(const int num) const;
   protected:
     struct Triangle {
 		Eigen::Matrix<Scalar, 2, 1> p_[3];
@@ -132,9 +135,12 @@ namespace cob_3d_features
 		
 		void compute(const std::vector<float> &radii);
 		void subsample(const TVector &at, const Scalar r2, std::vector<Triangle> &res);
+		std::complex<Scalar> kernel(const Scalar m, const Scalar n, const Scalar p) const;
+
+		void print() const;
     private:
-		TVector intersection_on_line(const TVector &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b);
-        void kernel();
+		TVector intersection_on_line(const TVector &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b)  const;
+		std::complex<Scalar> sub_kernel(const Scalar m, const Scalar n, const Scalar p, const Scalar x0, const Scalar y0, const Scalar d1, const Scalar d2, const Scalar e) const;
 	};
 	
     struct VectorWithParams {
