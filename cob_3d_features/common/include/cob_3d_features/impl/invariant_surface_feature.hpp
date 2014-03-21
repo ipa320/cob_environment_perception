@@ -85,7 +85,7 @@ void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Sc
 		  FeatureAngleComplex t;
 		  Eigen::FFT<Scalar> fft;
 		  fft.fwd(t,f[r].abs());	//becomes translation invariant
-		  (*result_)[i].ft[j][r] = t.abs();	//becomes rotation invariant
+		  (*result_)[i].ft[j].vals[r] = t.abs();	//becomes rotation invariant
 	  }
 	  
     }
@@ -93,8 +93,38 @@ void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Sc
 }
 
 template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
-void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::Triangle::kernel() {
-	std::polar<Scalar>(1, -() );
+std::complex<Scalar> cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::Triangle::sub_kernel(const Scalar m, const Scalar n, const Scalar p, const Scalar x0, const Scalar y0, const Scalar d1, const Scalar d2, const Scalar e) const {
+//std::cout<<m<<" "<<n<<" "<<p<<" "<<d1<<" "<<d2<<" "<<e<<" "<<x0<<" "<<y0<<std::endl;
+	return std::polar<Scalar>(d2*e-d1*e, -(p*model_->model(x0,y0+e) + m*y0 + n*x0 + e*m));
+}
+
+template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
+std::complex<Scalar> cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::Triangle::kernel(const Scalar m, const Scalar n, const Scalar p) const {
+	/*
+		triangle -> two triangles
+		    *
+		   * *
+		  *---*
+		 *  * 
+		**
+	*/
+
+	int indx[3] = {0,1,2};
+	for(int i=0; i<2; i++)
+		if(p_[indx[i]](1)>p_[indx[i+1]](1))
+			std::swap(indx[i], indx[i+1]);
+
+	const Scalar delta1=p_[indx[1]](1)-p_[indx[0]](1);
+	const Scalar delta2=p_[indx[1]](1)-p_[indx[2]](1);
+
+	const Scalar x = (p_[indx[2]](0)-p_[indx[0]](0))*(p_[indx[1]](1)-p_[indx[0]](1))/(p_[indx[2]](1)-p_[indx[0]](1));
+	const Scalar left = std::min(x, p_[indx[1]](0));
+	const Scalar right= std::max(x, p_[indx[1]](0));
+
+std::cout<<left<<" "<<right<<std::endl;
+
+	return 	delta1?sub_kernel(m,n,p, p_[indx[0]](0),p_[indx[0]](1), (left-p_[indx[0]](0))/delta1, (right-p_[indx[0]](0))/delta1 ,delta1):0 -
+		delta2?sub_kernel(m,n,p, p_[indx[2]](0),p_[indx[2]](1), (p_[indx[2]](0)-left)/delta2, (p_[indx[2]](0)-right)/delta2 ,delta2):0;
 }
 
 template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
@@ -109,19 +139,18 @@ void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Sc
 	f_.resize(radii.size());
 	for(size_t j=0; j<radii.size(); j++) {
 		for(int radius=0; radius<num_radius_; radius++) {
-			f_[j][radius].fill(0);
-			Scalar _radius = radius*radii_[j]/num_radius_;
+			f_[j].vals[radius].fill(0);
+			Scalar _radius = radius*radii[j]/num_radius_;
 			for(int inclination=0; inclination<num_angle_; inclination++) {
 				Scalar _inclination = M_PI*inclination/num_angle_;
 				for(int azimuth=0; azimuth<num_angle_; azimuth++) {
 				  Scalar _azimuth = M_PI*azimuth/num_angle_;
 
-				/*
-				 * x=_radius*std::sin(_inclination)*std::cos(_azimuth);
-				 * y=_radius*std::sin(_inclination)*std::sin(_azimuth);
-				 * z=_radius*std::cos(_inclination);
-				 */
-				f_[j][radius](inclination, azimuth) += kernel();
+				const Scalar x=_radius*std::sin(_inclination)*std::cos(_azimuth);
+				const Scalar y=_radius*std::sin(_inclination)*std::sin(_azimuth);
+				const Scalar z=_radius*std::cos(_inclination);
+
+				f_[j].vals[radius](inclination, azimuth) += kernel(x,y,z);
 			  }
 			}
 		}
@@ -148,7 +177,7 @@ void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Sc
 
 template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
 typename cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::TVector
-cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::Triangle::intersection_on_line(const TVector &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b) {
+cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::Triangle::intersection_on_line(const TVector &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b) const {
 	Eigen::PolynomialSolver<Scalar, 2*TSurface::DEGREE+1> solver;	
 	typename TSurface::Model::VectorU1D p = model_->transformation_1D(a-b,a, at);
 	p(0) -= r2;
