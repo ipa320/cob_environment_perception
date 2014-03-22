@@ -95,7 +95,21 @@ void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Sc
 template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
 std::complex<Scalar> cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::Triangle::sub_kernel(const Scalar m, const Scalar n, const Scalar p, const Scalar x0, const Scalar y0, const Scalar d1, const Scalar d2, const Scalar e) const {
 //std::cout<<m<<" "<<n<<" "<<p<<" "<<d1<<" "<<d2<<" "<<e<<" "<<x0<<" "<<y0<<std::endl;
-	return std::polar<Scalar>(d2*e-d1*e, -(p*model_->model(x0,y0+e) + m*y0 + n*x0 + e*m));
+
+	/*
+	 * maxima eq.:
+	 *   ratsimp(diff(diff(diff(integrate(integrate(integrate(%e^(-%i*(n*x+m*y+p*z)),z,p(x,y),p(x,y)+c),x,x0+(y-y0)*d1*d,x0+(y-y0)*d2*d),y,y0,y0+e1*e),c),d),e));
+	 * with c=0, d=1, e=1 and e1 is e (below)
+	 */
+	 
+	const Scalar s1 = p*model_->model(x0+e*d1,y0+e);
+	const Scalar s2 = p*model_->model(x0+e*d2,y0+e);
+	const Scalar s  = p*model_->model(x0,y0+e);
+	
+	return
+		(
+		  std::polar<Scalar>(d2*e*e, s1+d1*e*n) - std::polar<Scalar>(d1*e*e, s2+d2*e*n)
+		) * std::polar<Scalar>(1, -(s1+s2-s + m*y0 + n*x0 + e*m + n*e*(d1+d2));
 }
 
 template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
@@ -107,6 +121,9 @@ std::complex<Scalar> cob_3d_features::InvariantSurfaceFeature<num_radius_,num_an
 		  *---*
 		 *  * 
 		**
+		
+		cut triangle in two with horizontal y-line and add them
+		kernel function is computed over ordered triangles
 	*/
 
 	int indx[3] = {0,1,2};
