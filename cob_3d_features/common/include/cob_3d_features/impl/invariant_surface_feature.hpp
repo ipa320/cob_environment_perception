@@ -175,7 +175,7 @@ void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Sc
 }
 
 template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
-void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::generateKeypoints(std::vector<TVector> &keypoints) {
+void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::generateKeypoints(std::vector<TVector> &keypoints) const {
   //TODO: reduce points
 
   for(size_t i=0; i<input_->size(); i++) {                         //surfaces
