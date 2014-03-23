@@ -121,6 +121,11 @@ namespace cob_3d_features
 
     /* UNIT TESTS: available in invariant_surface_feature_unit_tests.hpp */
     bool test_singleTriangle(const int num) const;
+	
+	/* DEBUG functions */
+    void dbg_mesu_of_subsamp(const TVector &at, const Scalar radius, std::vector<TVector> &pts, std::vector<int> &inds) const;
+    void dbg_keypoints(std::vector<TVector> &keypoints) const {generateKeypoints(keypoints);}
+	
   protected:
     struct Triangle {
 		Eigen::Matrix<Scalar, 2, 1> p_[3];
@@ -157,7 +162,7 @@ namespace cob_3d_features
     PResultVectorList result_;
     //int num_radius_, num_angle_;
 
-    void generateKeypoints(std::vector<TVector> &keypoints);
+    void generateKeypoints(std::vector<TVector> &keypoints) const;
     void subsample(const TVector &at, const Scalar r2, std::vector<Triangle> &res);
   };
 }
