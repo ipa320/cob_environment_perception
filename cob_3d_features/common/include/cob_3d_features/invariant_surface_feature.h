@@ -97,6 +97,7 @@ namespace cob_3d_features
     /*! destructor */
     virtual ~InvariantSurfaceFeature() {}
 
+	//resets the input (list of surfaces with holes) and computes initial fft
     void setInput(PTSurfaceList surfs);
     void compute();
 
