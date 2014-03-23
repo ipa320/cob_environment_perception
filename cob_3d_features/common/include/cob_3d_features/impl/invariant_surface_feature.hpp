@@ -157,13 +157,15 @@ void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Sc
 	//generate now feature
 	f_.resize(radii.size());
 	for(size_t j=0; j<radii.size(); j++) {
+		const Scalar = base = math.pow(radii[j]+1, 1./(num_radius_-1))
+		
 		for(int radius=0; radius<num_radius_; radius++) {
 			f_[j].vals[radius].fill(0);
-			Scalar _radius = radius*radii[j]/num_radius_;
+			const Scalar _radius = std::pow(base, radius-1)-1;
 			for(int inclination=0; inclination<num_angle_; inclination++) {
-				Scalar _inclination = M_PI*inclination/num_angle_;
+				const Scalar _inclination = M_PI*inclination/num_angle_;
 				for(int azimuth=0; azimuth<num_angle_; azimuth++) {
-				  Scalar _azimuth = M_PI*azimuth/num_angle_;
+				  const Scalar _azimuth = M_PI*azimuth/num_angle_;
 
 				const Scalar x=_radius*std::sin(_inclination)*std::cos(_azimuth);
 				const Scalar y=_radius*std::sin(_inclination)*std::sin(_azimuth);
