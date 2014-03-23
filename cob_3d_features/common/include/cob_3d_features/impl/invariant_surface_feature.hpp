@@ -140,8 +140,10 @@ std::complex<Scalar> cob_3d_features::InvariantSurfaceFeature<num_radius_,num_an
 
 std::cout<<left<<" "<<right<<std::endl;
 
-	return 	delta1?sub_kernel(m,n,p, p_[indx[0]](0),p_[indx[0]](1), (left-p_[indx[0]](0))/delta1, (right-p_[indx[0]](0))/delta1 ,delta1):0 -
-		delta2?sub_kernel(m,n,p, p_[indx[2]](0),p_[indx[2]](1), (p_[indx[2]](0)-left)/delta2, (p_[indx[2]](0)-right)/delta2 ,delta2):0;
+	return 	(
+		delta1?sub_kernel(m,n,p, p_[indx[0]](0),p_[indx[0]](1), (left-p_[indx[0]](0))/delta1, (right-p_[indx[0]](0))/delta1 ,delta1):0 -
+		delta2?sub_kernel(m,n,p, p_[indx[2]](0),p_[indx[2]](1), (p_[indx[2]](0)-left)/delta2, (p_[indx[2]](0)-right)/delta2 ,delta2):0)
+		;// / (); normalization?
 }
 
 template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
