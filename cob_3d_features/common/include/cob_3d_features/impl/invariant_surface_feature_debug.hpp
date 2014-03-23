@@ -54,7 +54,7 @@
 #pragma once
 
 template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
-void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::dbg_mesu_of_subsamp(const TVector &at, const Scalar radius, std::vector<TVector> &pts, std::vector<int> &inds)() const {
+void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::dbg_mesh_of_subsamp(const TVector &at, const Scalar radius, std::vector<TVector> &pts, std::vector<int> &inds)() const {
       std::vector<Triangle> submap;
       subsample(at, radius, submap);
 	  

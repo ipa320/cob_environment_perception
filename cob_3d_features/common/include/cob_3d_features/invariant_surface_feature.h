@@ -123,7 +123,7 @@ namespace cob_3d_features
     bool test_singleTriangle(const int num) const;
 	
 	/* DEBUG functions */
-    void dbg_mesu_of_subsamp(const TVector &at, const Scalar radius, std::vector<TVector> &pts, std::vector<int> &inds) const;
+    void dbg_mesh_of_subsamp(const TVector &at, const Scalar radius, std::vector<TVector> &pts, std::vector<int> &inds) const;
     void dbg_keypoints(std::vector<TVector> &keypoints) const {generateKeypoints(keypoints);}
 	
   protected:
