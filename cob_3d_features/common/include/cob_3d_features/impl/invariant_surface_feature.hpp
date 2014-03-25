@@ -92,6 +92,28 @@ void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Sc
   }
 }
 
+template<const int Degree=1, typename Scalar>
+Scalar area() {
+	return 0;
+}
+
+template<const int Degree=2, typename Scalar>
+Scalar area() {
+	Eigen::Matrix<Scalar, 6, 1> fact;
+	fact(0)=1;
+	fact(1)=0.5;
+	fact(2)=0.5;
+	fact(3)=1/3.;
+	fact(4)=0.25;
+	fact(5)=1/3.;
+}
+
+template<const int Degree, typename Scalar>
+Scalar area() {
+	//TODO
+	return 0;
+}
+
 template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
 std::complex<Scalar> cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::Triangle::sub_kernel(const Scalar m, const Scalar n, const Scalar p, const Scalar x0, const Scalar y0, const Scalar d1, const Scalar d2, const Scalar e) const {
 //std::cout<<m<<" "<<n<<" "<<p<<" "<<d1<<" "<<d2<<" "<<e<<" "<<x0<<" "<<y0<<std::endl;
