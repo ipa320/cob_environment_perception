@@ -96,6 +96,7 @@ template<const int num_radius_, const int num_angle_, typename TSurface, typenam
 std::complex<Scalar> cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::Triangle::sub_kernel(const Scalar m, const Scalar n, const Scalar p, const Scalar x0, const Scalar y0, const Scalar d1, const Scalar d2, const Scalar e) const {
 //std::cout<<m<<" "<<n<<" "<<p<<" "<<d1<<" "<<d2<<" "<<e<<" "<<x0<<" "<<y0<<std::endl;
 	return std::polar<Scalar>(d2*e-d1*e, -(p*model_->model(x0,y0+e) + m*y0 + n*x0 + e*m));
+//TODO: subsample
 }
 
 template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
