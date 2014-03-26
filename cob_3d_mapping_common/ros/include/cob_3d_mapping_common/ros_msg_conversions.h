@@ -72,7 +72,7 @@ namespace cob_3d_mapping
 {
   //TODO: purpose? where used? is this the correct place?
   // should work for cob_3d_mapping_msgs::Shape, Polygon, Cylinder
-  template<typename ShapeT>
+  /*template<typename ShapeT>
   inline int getHullIndex(const ShapeT& s)
   {
     int idx = -1;
@@ -94,17 +94,16 @@ namespace cob_3d_mapping
     pcl::fromPCLPointCloud2(hull2, hull);
     //pcl::fromROSMsg(s.points[idx], hull);
     return true;
-  }
+  }*/
 
   /**
-   * @brief writing to a ros message to convert a feature map
+   * \brief Convert a polygon to a shape message.
    *
-   * writing to a ros message to convert a feature map
    *
-   * @param p ros message containing polygons
-   * @param p input as feature map
+   * \param[in] p Polygon to be converted.
+   * \param[out] s The shape message.
    *
-   * @return nothing
+   * \return nothing
    */
   inline void
   toROSMsg(const Polygon& p, cob_3d_mapping_msgs::Shape& s)
@@ -155,14 +154,13 @@ namespace cob_3d_mapping
   }
 
   /**
-   * @brief writing to a ros message to convert a feature map
+   * \brief Convert a shape message to a polygon.
    *
-   * writing to a ros message to convert a feature map
    *
-   * @param p ros message containing polygons
-   * @param p input as feature map
+   * \param[in] s Shape message to be converted.
+   * \param[out] p The polygon.
    *
-   * @return nothing
+   * \return Conversion successful.
    */
   inline bool
   fromROSMsg(const cob_3d_mapping_msgs::Shape& s, Polygon& p)
@@ -216,6 +214,15 @@ namespace cob_3d_mapping
     return true;
   }
 
+  /**
+   * \brief Convert a cylinder to a shape message.
+   *
+   *
+   * \param[in] c Cylinder to be converted.
+   * \param[out] s The shape message.
+   *
+   * \return nothing
+   */
   inline void
   toROSMsg(const Cylinder& c, cob_3d_mapping_msgs::Shape& s)
   {
@@ -266,6 +273,15 @@ namespace cob_3d_mapping
     }
   }
 
+  /**
+   * \brief Convert a shape message to a cylinder.
+   *
+   *
+   * \param[in] s Shape message to be converted.
+   * \param[out] c The cylinder.
+   *
+   * \return Conversion successful.
+   */
   inline bool
   fromROSMsg(const cob_3d_mapping_msgs::Shape& s,Cylinder& c)
   {
