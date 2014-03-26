@@ -65,3 +65,17 @@ void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Sc
 		}
 	  }
 }
+
+template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
+pcl::PolygonMesh::Ptr cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::dbg_triangles2mesh(const std::vector<Triangle> &res) const {
+	pcl::PolygonMesh::Ptr mesh(new pcl::PolygonMesh);
+	pcl::PointCloud<pcl::PointXYZ> points;
+	for(size_t i=0; i<res.size(); i++) {
+		for(int j=0; j<3; j++) {
+			mesh->polygons.vertices.push_back(points.size());
+			points.push_back(res[i].p3_[j]);
+		}
+	}
+	cl::toROSMsg(points, mesh->cloud);
+	return mesh;
+}
