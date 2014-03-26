@@ -171,9 +171,7 @@ std::cout<<left<<" "<<right<<std::endl;
 template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
 void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::Triangle::compute(const std::vector<float> &radii) {
 	for(int i=0; i<3; i++) {
-		p3_[i](0) = p_[i](0);
-		p3_[i](1) = p_[i](1);
-		p3_[i](2) = model_->model(p_[i](0), p_[i](1));
+		p3_[i] = at(p_[i]);
 	}
 	
 	//generate now feature

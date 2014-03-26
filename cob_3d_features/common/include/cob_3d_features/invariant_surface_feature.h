@@ -147,6 +147,13 @@ namespace cob_3d_features
     private:
 		TVector intersection_on_line(const TVector &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b)  const;
 		std::complex<Scalar> sub_kernel(const Scalar m, const Scalar n, const Scalar p, const Scalar x0, const Scalar y0, const Scalar d1, const Scalar d2, const Scalar e) const;
+		
+		inline Eigen::Matrix<Scalar, 3, 1> at(const Eigen::Matrix<Scalar, 2, 1> &p) const {
+			Eigen::Matrix<Scalar, 3, 1> v;
+			v(0) = p(0); v(1) = p(1);
+			v(2) = model_->model(p(0),p(1));
+			return v;
+		}
 	};
 	
     struct VectorWithParams {
