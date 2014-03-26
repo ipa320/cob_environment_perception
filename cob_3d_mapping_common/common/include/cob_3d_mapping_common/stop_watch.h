@@ -69,20 +69,24 @@
 #endif
 
 
-// low resolution stop watch
+/**
+ * \brief Low resolution stop watch
+ */
 class SimpleStopWatch {
 	clock_t startClock;
 
 public:
-	// start time measurement at this moment
+	/** start time measurement at this moment */
 	void start() { startClock = clock(); };
 
-	// returns elapsed time since last start() in seconds
+	/** returns elapsed time since last start() in seconds */
 	double stop() { return ((double)(clock()-startClock))/(double)CLOCKS_PER_SEC; };
 };
 
 
-// high performance stop watch
+/**
+ * \brief High performance stop watch
+ */
 #ifdef _WIN32
 class PrecisionStopWatch {
 	LARGE_INTEGER precisionClock;
@@ -94,12 +98,12 @@ public:
 		if(!QueryPerformanceFrequency(&precisionFrequency)) printf("PrecisionStopWatch: Error: Frequency query failed.\n");
 	};
 
-	// start time measurement at this moment
+	/** start time measurement at this moment */
 	void precisionStart() {
 		if(!QueryPerformanceCounter(&precisionClock)) printf("PrecisionStopWatch: Error: precisionStart query failed.\n");
 	};
 
-	// returns elapsed time since last precisionStart() in seconds
+	/** returns elapsed time since last precisionStart() in seconds */
 	double precisionStop() {
 		LARGE_INTEGER precisionClockEnd;
 		if(!QueryPerformanceCounter(&precisionClockEnd)) printf("PrecisionStopWatch: Error: precisionStop query failed.\n");
@@ -107,7 +111,9 @@ public:
 	};
 };
 #else
-// Linux version of precision host timer. See http://www.informit.com/articles/article.aspx?p=23618&seqNum=8
+/*
+ * Linux version of precision host timer. See http://www.informit.com/articles/article.aspx?p=23618&seqNum=8
+ */
 class PrecisionStopWatch {
 	struct timeval precisionClock;
 

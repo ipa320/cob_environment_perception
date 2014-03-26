@@ -69,10 +69,12 @@
 
 namespace cob_3d_mapping
 {
+  /**
+   * \brief Class for computing a minimal rectangle in 2D.
+   * \details Ref: Solving Geometric Problems with the Rotating Calipers [Toussaint 1983] http://geomalgorithms.com/a08-_containers.html
+  */
   class MinimalRectangle2D
   {
-    // Ref: Solving Geometric Problems with the Rotating Calipers [Toussaint 1983]
-    // http://geomalgorithms.com/a08-_containers.html
     private:
     typedef Eigen::Vector2f PT;
 

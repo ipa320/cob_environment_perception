@@ -100,7 +100,7 @@ namespace cob_3d_mapping
    * \param[in] in_cloud The input point cloud.
    * \param[in] indices The point indices representing the cylinder.
    * \param[out] origin The origin of the cylinder.
-   * \param[in] sym_axis The symmetrie axis of the cylinder.
+   * \param[in] sym_axis The symmetry axis of the cylinder.
    *
    * \return The radius of the cylinder.
    */
@@ -124,17 +124,39 @@ namespace cob_3d_mapping
     typedef boost::shared_ptr<Cylinder> Ptr;
 
     /**
-     * \brief Constructor of Cylinder object.
+     * \brief Construct empty Cylinder object.
      */
     Cylinder () :
         Polygon ()
     {
     }
 
+    /**
+     * \brief Construct Cylinder object from parameters.
+     *
+     * \param[in] id A unique id.
+     * \param[in] origin The origin of the cylinder.
+     * \param[in] sym_axis The symmetry axis of the cylinder.
+     * \param[in] radius The radius of the cylinder.
+     * \param[in] contours_3d The 3D contour points of the cylinder (represented by separate contours).
+     * \param[in] holes A vector showing which contour is a hole.
+     * \param[in] color The color of the cylinder.
+     */
     Cylinder (unsigned int id, Eigen::Vector3f origin, Eigen::Vector3f sym_axis, double radius,
               std::vector<std::vector<Eigen::Vector3f> >& contours_3d, std::vector<bool> holes,
               std::vector<float> color);
 
+    /**
+     * \brief Construct Cylinder object from parameters.
+     *
+     * \param[in] id A unique id.
+     * \param[in] origin The origin of the cylinder.
+     * \param[in] sym_axis The symmetry axis of the cylinder.
+     * \param[in] radius The radius of the cylinder.
+     * \param[in] contours_3d The 3D contour points of the cylinder (represented by separate contours).
+     * \param[in] holes A vector showing which contour is a hole.
+     * \param[in] color The color of the cylinder.
+     */
     Cylinder (unsigned int id, Eigen::Vector3f origin, Eigen::Vector3f sym_axis, double radius,
               std::vector<pcl::PointCloud<pcl::PointXYZ> >& contours_3d, std::vector<bool> holes,
               std::vector<float> color);
@@ -144,15 +166,15 @@ namespace cob_3d_mapping
     /**
      * \brief Set the 2D contours of the cylinder from 3D points.
      *
-     * \param[in] contours_3d The 3D contour.
+     * \param[in] contours_3d The 3D contours.
      */
     virtual void
     setContours3D (std::vector<std::vector<Eigen::Vector3f> >& contours_3d);
 
     /**
-     * \brief Get the contour of the cylinder as 3D points.
+     * \brief Get the contours of the cylinder as 3D points.
      *
-     * \return The 3D contour.
+     * \return The 3D contours.
      */
     virtual std::vector<std::vector<Eigen::Vector3f> >
     getContours3D ();
@@ -226,6 +248,11 @@ namespace cob_3d_mapping
     void
     computeHeight ();
 
+    /**
+     * \brief Triangulate surface polygons from the contours.
+     *
+     * \param[out] tri_list The list of polygons.
+     */
     void
     triangulate (list<TPPLPoly>& tri_list) const;
 
@@ -264,7 +291,7 @@ namespace cob_3d_mapping
      * \brief Compute average cylinder from a set of cylinders.
      *
      * \param[in] poly_vec The set of cylinders.
-     * \param[out] p_averga The average cylinder.
+     * \param[out] p_average The average cylinder.
      */
     virtual void
     computeAverage (const std::vector<Polygon::Ptr>& poly_vec, Polygon::Ptr& p_average);

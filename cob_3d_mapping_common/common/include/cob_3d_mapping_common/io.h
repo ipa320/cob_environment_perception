@@ -160,6 +160,13 @@ namespace cob_3d_mapping_common
    */
   uint32_t getGradientColor(double position, uint8_t rgb[]);
 
+  /**
+   * \brief Convert a color value to human readable format.
+   *
+   * \param[in] id The color value to be converted.
+   *
+   * \return The human readable string.
+   */
   std::string colorHumanReadable(int id)
   {
     std::stringstream ss;
