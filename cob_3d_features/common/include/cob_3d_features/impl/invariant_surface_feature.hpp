@@ -92,6 +92,12 @@ void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Sc
   }
 }
 
+//transform triangle to parameterization
+const Eigen::Matrix<Scalar, 3, 1> v1=at(),v2=at(),v3=at();
+const Eigen::Matrix<Scalar, 3, 1> normal = ( (v2-v1).cross(v3-v1) ).normalized();
+const Scalar Px = Eigen::Matrix<Scalar, 3, 1>::UnitX().dot(normal), Py = Eigen::Matrix<Scalar, 3, 1>::UnitX().dot(normal);
+const Scalar P = v1(2) - (Px*v1(0) +  Py*v1(1));
+
 template<const int Degree=1, typename Scalar>
 Scalar area() {
 	return 0;
