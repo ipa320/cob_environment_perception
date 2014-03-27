@@ -56,12 +56,37 @@
 #include "invariant_surface_feature.hpp"
 
 template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
+pcl::PolygonMesh::Ptr cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::test_subsampling_of_Map(const int num, const Scalar r2) {
+	//generate random map
+	triangulated_input_.clear();
+	for(int i=0; i<num; i++) {
+		//some model
+		typename TSurface::Model model;
+		model.p = model.p.Random();
+
+		//generate random triangle
+		Triangle t;
+		for(int j=0; j<3; j++) t.p_[j] = t.p_[j].Random();
+		t.model_ = &model;
+		t.compute(radii_);
+		triangulated_input_.push_back(t);
+	}
+	
+	//select some point and generate mesh
+	std::vector<Triangle> res;
+    subsample(triangulated_input_[rand()%triangulated_input_.size()].p3_[rand()%3], r2, res);
+	
+	return dbg_triangles2mesh(res);
+}
+
+template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
 bool cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::test_singleTriangle(const int num) const {
 
 	for(int i=0; i<num; i++) {
 		//some model
 		typename TSurface::Model model;
 		model.p = model.p.Random();
+model.p.fill(0);
 
 		//generate random triangle
 		Triangle t;
@@ -77,6 +102,8 @@ t.p_[2](1)=1;
 
 		//t.print();
 
+Scalar m=1,n=0,p=0;
+
 		//subdivide triangle to 3 and re run
 		//sum should be equal to first triangle
 		Triangle t1 = t, t2=t, t3=t;
@@ -88,11 +115,18 @@ t.p_[2](1)=1;
 		t2.compute(radii_);
 		t3.compute(radii_);
 
-		std::cout<< t.kernel(0,0,0) <<std::endl;
-		std::cout<< t1.kernel(0,0,0) <<std::endl;
-		std::cout<< t2.kernel(0,0,0) <<std::endl;
-		std::cout<< t3.kernel(0,0,0) <<std::endl;
-		std::cout<< (t1.kernel(0,0,0)+t2.kernel(0,0,0)+t3.kernel(0,0,0)) <<std::endl;
+		std::complex<Scalar> c;
+
+		c = t1.kernel(m,n,p);
+		std::cout<< c<<" "<<std::abs(c) <<std::endl<<std::endl;
+		c = t2.kernel(m,n,p);
+		std::cout<< c<<" "<<std::abs(c) <<std::endl<<std::endl;
+		c = t3.kernel(m,n,p);
+		std::cout<< c<<" "<<std::abs(c) <<std::endl<<std::endl;
+		c = (t1.kernel(m,n,p)+t2.kernel(m,n,p)+t3.kernel(m,n,p));
+		std::cout<< c<<" "<<std::abs(c) <<std::endl<<std::endl;
+		c = t.kernel(m,n,p);
+		std::cout<< c<<" "<<std::abs(c) <<std::endl<<std::endl;
 
 t1.print();
 		/*t1.print();
