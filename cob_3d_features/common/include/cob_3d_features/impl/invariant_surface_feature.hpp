@@ -130,33 +130,68 @@ tt3(0)=x0+d2*(y1-y0);tt3(1)=y1;
 tt1(2)=tt2(2)=tt3(2)=0;
 std::cout<<"are: "<<(tt2-tt1).cross(tt3-tt1).norm()<<std::endl;
 
+
+	std::cout<<" d1 "<<d1<<" d2 "<<d2<<" x0 "<<x0<<" y0 "<<y0<<" y1 "<<y1<<std::endl;
+
 	if(m==0 && n==0 && p==0) {
 std::cout<<"-->\tval: "<<((d2-d1)*std::pow(y1-y0,2))/2<<std::endl;
 		return ((d2-d1)*std::pow(y1-y0,2))/2;
 	}
+	else if(p==0 && n==0) {
+		const std::complex<Scalar> r = std::polar<Scalar>(d1-d2, -m*(y1+y0))*( std::polar<Scalar>(1,m*y1) - std::complex<Scalar>(0,y1*m)*std::polar<Scalar>(1,m*y0) + std::complex<Scalar>(-1,m*y0)*std::polar<Scalar>(1,m*y0) )/(m*m);
+		std::cout<<"-->\tval: "<<r<<" "<<std::abs(r)<<std::endl;
+		return r;
+		//maxima: -(((d2-d1)*%e^(%i*m*y1)+(%i*d1-%i*d2)*m*%e^(%i*m*y0)*y1+((%i*d2-%i*d1)*m*y0-d2+d1)*%e^(%i*m*y0))*%e^(-%i*m*y1-%i*m*y0))/m^2
+	}
 	else if(m==0 && n==0) {
--(((d2-d1)*Px*%e^(%i*p*Py*y1+%i*d2*p*Px*y1+%i*d1*p*Px*y1)+(-Py-d2*Px)*%e^(%i*d2*p*Px*y1+%i*p*Py*y0+%i*d1*p*Px*y0)+(Py+d1*Px)*%e^(%i*d1*p*Px*y1+%i*p*Py*y0+%i*d2*p*Px*y0))*
-%e^(-%i*p*P-%i*p*Py*y1-%i*d2*p*Px*y1-%i*d1*p*Px*y1-%i*p*Py*y0-%i*p*Px*x0))/(p^2*Px*Py^2+(d2+d1)*p^2*Px^2*Py+d1*d2*p^2*Px^3)
+		const std::complex<Scalar> r = 
+			(
+			 std::polar<Scalar>((d2-d1)*Px, (Py+(d2+d1)*Px)*y1*p)
+			-std::polar<Scalar>(Py+d2*Px,   p*(d2*Px*y1+Py*y0+d1*Px*y0))
+			+std::polar<Scalar>(Py+d1*Px,   p*(d1*Px*y1+Py*y0+d2*Px*y0))
+			) * std::polar<Scalar>(1, -p*(P+(Py+(d2+d1)*Px)*y1+Py*y0+Px*x0) ) /
+			(p*p*Px*(Py+d1*Px)*(Py+d2*Px));
+		std::cout<<"-->\tval: "<<r<<" "<<std::abs(r)<<std::endl;
+		return r;
+
+		//maxima: -(((d2-d1)*Px*%e^(%i*p*Py*y1+%i*d2*p*Px*y1+%i*d1*p*Px*y1)+(-Py-d2*Px)*%e^(%i*d2*p*Px*y1+%i*p*Py*y0+%i*d1*p*Px*y0)+(Py+d1*Px)*%e^(%i*d1*p*Px*y1+%i*p*Py*y0+%i*d2*p*Px*y0))*%e^(-%i*p*P-%i*p*Py*y1-%i*d2*p*Px*y1-%i*d1*p*Px*y1-%i*p*Py*y0-%i*p*Px*x0))/(p^2*Px*Py^2+(d2+d1)*p^2*Px^2*Py+d1*d2*p^2*Px^3)
 	}
 	else if(m==0 && p==0) {
-((d1*%e^(%i*d1*n*y1+%i*d2*n*y0)+((d2-d1)*%e^(%i*d1*n*y1)-d2*%e^(%i*d1*n*y0))*%e^(%i*d2*n*y1))*%e^(-%i*d2*n*y1-%i*d1*n*y1-%i*n*x0))/(d1*d2*n^2)
+		const std::complex<Scalar> r = 
+			(
+			 std::polar<Scalar>(d1, n*(d1*y1+d2*y0))
+			 +(
+			  std::polar<Scalar>(d2-d1, d1*n*y1)
+			 -std::polar<Scalar>(d2,    d1*n*y0)
+			 )*std::polar<Scalar>(1, d2*n*y1)
+			) * std::polar<Scalar>(1,-n*(d2*y1+d1*y1+x0)) / (d1*d2*n*n);
+		std::cout<<"-->\tval: "<<r<<" "<<std::abs(r)<<std::endl;
+		return r;
+
+		//maxima: ((d1*%e^(%i*d1*n*y1+%i*d2*n*y0)+((d2-d1)*%e^(%i*d1*n*y1)-d2*%e^(%i*d1*n*y0))*%e^(%i*d2*n*y1))*%e^(-%i*d2*n*y1-%i*d1*n*y1-%i*n*x0))/(d1*d2*n^2)
 	}
-	else if(p==0 && n==0) {
--(((d2-d1)*%e^(%i*m*y1)+(%i*d1-%i*d2)*m*%e^(%i*m*y0)*y1+((%i*d2-%i*d1)*m*y0-d2+d1)*%e^(%i*m*y0))*%e^(-%i*m*y1-%i*m*y0))/m^2
-	}
-	else if(m==0) {
--((((d2-d1)*p*Px+(d2-d1)*n)*%e^(%i*p*Py*y1+%i*d2*p*Px*y1+%i*d1*p*Px*y1+%i*d2*n*y1+%i*d1*n*y1)+(-p*Py-d2*p*Px-d2*n)*%e^(%i*d2*p*Px*y1+%i*d2*n*y1+%i*p*Py*y0+%i*d1*p*Px*y0+%i*d1*n*y0)+
-(p*Py+d1*p*Px+d1*n)*%e^(%i*d1*p*Px*y1+%i*d1*n*y1+%i*p*Py*y0+%i*d2*p*Px*y0+%i*d2*n*y0))*%e^(-%i*p*P-%i*p*Py*y1-%i*d2*p*Px*y1-%i*d1*p*Px*y1-%i*d2*n*y1-%i*d1*n*y1-%i*p*Py*y0-%i*p*Px*x0-%i*n*x0))/(
-(p^3*Px+n*p^2)*Py^2+((d2+d1)*p^3*Px^2+(2*d2+2*d1)*n*p^2*Px+(d2+d1)*n^2*p)*Py+d1*d2*p^3*Px^3+3*d1*d2*n*p^2*Px^2+3*d1*d2*n^2*p*Px+d1*d2*n^3)
+	/*else if(m==0) {
+		const std::complex<Scalar> r = 
+		std::cout<<"-->\tval: "<<r<<" "<<std::abs(r)<<std::endl;
+		return r;
+
+		//maxima: -((((d2-d1)*p*Px+(d2-d1)*n)*%e^(%i*p*Py*y1+%i*d2*p*Px*y1+%i*d1*p*Px*y1+%i*d2*n*y1+%i*d1*n*y1)+(-p*Py-d2*p*Px-d2*n)*%e^(%i*d2*p*Px*y1+%i*d2*n*y1+%i*p*Py*y0+%i*d1*p*Px*y0+%i*d1*n*y0)+(p*Py+d1*p*Px+d1*n)*%e^(%i*d1*p*Px*y1+%i*d1*n*y1+%i*p*Py*y0+%i*d2*p*Px*y0+%i*d2*n*y0))*%e^(-%i*p*P-%i*p*Py*y1-%i*d2*p*Px*y1-%i*d1*p*Px*y1-%i*d2*n*y1-%i*d1*n*y1-%i*p*Py*y0-%i*p*Px*x0-%i*n*x0))/((p^3*Px+n*p^2)*Py^2+((d2+d1)*p^3*Px^2+(2*d2+2*d1)*n*p^2*Px+(d2+d1)*n^2*p)*Py+d1*d2*p^3*Px^3+3*d1*d2*n*p^2*Px^2+3*d1*d2*n^2*p*Px+d1*d2*n^3)
 	}
 	else if(n==0) {
--(((d2-d1)*p*Px*%e^(%i*p*Py*y1+%i*d2*p*Px*y1+%i*d1*p*Px*y1+%i*m*y1)+(-p*Py-d2*p*Px-m)*%e^(%i*d2*p*Px*y1+%i*p*Py*y0+%i*d1*p*Px*y0+%i*m*y0)+(p*Py+d1*p*Px+m)*
-%e^(%i*d1*p*Px*y1+%i*p*Py*y0+%i*d2*p*Px*y0+%i*m*y0))*%e^(-%i*p*P-%i*p*Py*y1-%i*d2*p*Px*y1-%i*d1*p*Px*y1-%i*m*y1-%i*p*Py*y0-%i*m*y0-%i*p*Px*x0))/(p^3*Px*Py^2+((d2+d1)*p^3*Px^2+2*m*p^2*Px)*Py+d1*d2*p^3*
-Px^3+(d2+d1)*m*p^2*Px^2+m^2*p*Px)
+		const std::complex<Scalar> r = 
+		std::cout<<"-->\tval: "<<r<<" "<<std::abs(r)<<std::endl;
+		return r;
+
+
+		//maxima: -(((d2-d1)*p*Px*%e^(%i*p*Py*y1+%i*d2*p*Px*y1+%i*d1*p*Px*y1+%i*m*y1)+(-p*Py-d2*p*Px-m)*%e^(%i*d2*p*Px*y1+%i*p*Py*y0+%i*d1*p*Px*y0+%i*m*y0)+(p*Py+d1*p*Px+m)*%e^(%i*d1*p*Px*y1+%i*p*Py*y0+%i*d2*p*Px*y0+%i*m*y0))*%e^(-%i*p*P-%i*p*Py*y1-%i*d2*p*Px*y1-%i*d1*p*Px*y1-%i*m*y1-%i*p*Py*y0-%i*m*y0-%i*p*Px*x0))/(p^3*Px*Py^2+((d2+d1)*p^3*Px^2+2*m*p^2*Px)*Py+d1*d2*p^3*Px^3+(d2+d1)*m*p^2*Px^2+m^2*p*Px)
 	}
 	else if(p==0) {
--((%e^(%i*d2*n*y1)*((d2-d1)*n*%e^(%i*d1*n*y1+%i*m*y1)+(-d2*n-m)*%e^(%i*d1*n*y0+%i*m*y0))+(d1*n+m)*%e^(%i*d1*n*y1+%i*d2*n*y0+%i*m*y0))*%e^(-%i*d2*n*y1-%i*d1*n*y1-%i*m*y1-%i*m*y0-%i*n*x0))/(d1*d2*n^3+(d2+d1)*m*n^2+m^2*n)
-	}
+		const std::complex<Scalar> r = 
+		std::cout<<"-->\tval: "<<r<<" "<<std::abs(r)<<std::endl;
+		return r;
+
+		//maxima: -((%e^(%i*d2*n*y1)*((d2-d1)*n*%e^(%i*d1*n*y1+%i*m*y1)+(-d2*n-m)*%e^(%i*d1*n*y0+%i*m*y0))+(d1*n+m)*%e^(%i*d1*n*y1+%i*d2*n*y0+%i*m*y0))*%e^(-%i*d2*n*y1-%i*d1*n*y1-%i*m*y1-%i*m*y0-%i*n*x0))/(d1*d2*n^3+(d2+d1)*m*n^2+m^2*n)
+	}*/
 
 	const std::complex<Scalar> tt = std::polar<Scalar>(1, -( p*P+(p*Py+(d2+d1)*p*Px+(d2+d1)*n+m)*y1+(p*Py+m)*y0+(p*Px+n)*x0 ));
 
@@ -175,8 +210,10 @@ template<const int num_radius_, const int num_angle_, typename TSurface, typenam
 std::complex<Scalar> cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::Triangle::kernel_lin_tri(const Scalar m, const Scalar n, const Scalar p, const Tri2D &tri) const {
 	int indx[3] = {0,1,2};
 	for(int i=0; i<2; i++)
-		if((*tri.p_[indx[i]])(1)>(*tri.p_[indx[i+1]])(1))
+		if((*tri.p_[indx[i]])(1)>(*tri.p_[indx[i+1]])(1)) {
 			std::swap(indx[i], indx[i+1]);
+			--i;
+		}
 
 	for(int i=0; i<3; i++) std::cout<<"PP "<<tri.p_[indx[i]]->transpose()<<std::endl;
 
