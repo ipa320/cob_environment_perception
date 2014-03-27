@@ -73,6 +73,8 @@ int main()
 
 	//tests
 	isf.test_singleTriangle(1);
+	isf.test_()->test_subsampling_of_Map(1000, 1.).savePLY("random_submap.ply");
+	isf.test_()->dbg_Mesh_of_Map().savePLY("random_map.ply");
 	
 	return 0;
 }

@@ -94,8 +94,16 @@ void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Sc
 
 template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
 std::complex<Scalar> cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::Triangle::kernel_lin(const Scalar m, const Scalar n, const Scalar p, const Scalar x0, const Scalar y0, const Scalar y1, const Scalar d1, const Scalar d2) const {
-	//Eigen::Matrix<Scalar, 3, 1>
-	const Scalar Px=0, Py=0, P=0;
+
+	//transform triangle to parameterization
+	const Eigen::Matrix<Scalar, 3, 1> v1=at(x0,y0),v2=at(x0+d1,y1),v3=at(x0+d2,y1);
+	const Eigen::Matrix<Scalar, 3, 1> normal = (v2-v1).cross(v3-v1);
+	const Scalar Px = -normal(0)/normal(2), Py = -normal(1)/normal(2);
+	const Scalar P = v1(2) - (Px*v1(0) +  Py*v1(1));
+
+	/*std::cout<<"Model:"<<std::endl;
+	std::cout<<model_->p.transpose()<<std::endl;
+	std::cout<<P<<" "<<Px<<" "<<Py<<std::endl;*/
 
 	/*MAXIMA:
 	p(x,y):=Px*x+Py*y+P;
@@ -111,8 +119,43 @@ std::complex<Scalar> cob_3d_features::InvariantSurfaceFeature<num_radius_,num_an
 	(d2+d1)*m*n^2+m^2*n)
 	*/
 
+	std::cout<<"p1 "<<x0<<" "<<y0<<std::endl;
+	std::cout<<"p2 "<<x0+d1*(y1-y0)<<" "<<y1<<std::endl;
+	std::cout<<"p3 "<<x0+d2*(y1-y0)<<" "<<y1<<std::endl;
+
+Eigen::Vector3f tt1,tt2,tt3;
+tt1(0)=x0;tt1(1)=y0;
+tt2(0)=x0+d1*(y1-y0);tt2(1)=y1;
+tt3(0)=x0+d2*(y1-y0);tt3(1)=y1;
+tt1(2)=tt2(2)=tt3(2)=0;
+std::cout<<"are: "<<(tt2-tt1).cross(tt3-tt1).norm()<<std::endl;
+
 	if(m==0 && n==0 && p==0) {
+std::cout<<"-->\tval: "<<((d2-d1)*std::pow(y1-y0,2))/2<<std::endl;
 		return ((d2-d1)*std::pow(y1-y0,2))/2;
+	}
+	else if(m==0 && n==0) {
+-(((d2-d1)*Px*%e^(%i*p*Py*y1+%i*d2*p*Px*y1+%i*d1*p*Px*y1)+(-Py-d2*Px)*%e^(%i*d2*p*Px*y1+%i*p*Py*y0+%i*d1*p*Px*y0)+(Py+d1*Px)*%e^(%i*d1*p*Px*y1+%i*p*Py*y0+%i*d2*p*Px*y0))*
+%e^(-%i*p*P-%i*p*Py*y1-%i*d2*p*Px*y1-%i*d1*p*Px*y1-%i*p*Py*y0-%i*p*Px*x0))/(p^2*Px*Py^2+(d2+d1)*p^2*Px^2*Py+d1*d2*p^2*Px^3)
+	}
+	else if(m==0 && p==0) {
+((d1*%e^(%i*d1*n*y1+%i*d2*n*y0)+((d2-d1)*%e^(%i*d1*n*y1)-d2*%e^(%i*d1*n*y0))*%e^(%i*d2*n*y1))*%e^(-%i*d2*n*y1-%i*d1*n*y1-%i*n*x0))/(d1*d2*n^2)
+	}
+	else if(p==0 && n==0) {
+-(((d2-d1)*%e^(%i*m*y1)+(%i*d1-%i*d2)*m*%e^(%i*m*y0)*y1+((%i*d2-%i*d1)*m*y0-d2+d1)*%e^(%i*m*y0))*%e^(-%i*m*y1-%i*m*y0))/m^2
+	}
+	else if(m==0) {
+-((((d2-d1)*p*Px+(d2-d1)*n)*%e^(%i*p*Py*y1+%i*d2*p*Px*y1+%i*d1*p*Px*y1+%i*d2*n*y1+%i*d1*n*y1)+(-p*Py-d2*p*Px-d2*n)*%e^(%i*d2*p*Px*y1+%i*d2*n*y1+%i*p*Py*y0+%i*d1*p*Px*y0+%i*d1*n*y0)+
+(p*Py+d1*p*Px+d1*n)*%e^(%i*d1*p*Px*y1+%i*d1*n*y1+%i*p*Py*y0+%i*d2*p*Px*y0+%i*d2*n*y0))*%e^(-%i*p*P-%i*p*Py*y1-%i*d2*p*Px*y1-%i*d1*p*Px*y1-%i*d2*n*y1-%i*d1*n*y1-%i*p*Py*y0-%i*p*Px*x0-%i*n*x0))/(
+(p^3*Px+n*p^2)*Py^2+((d2+d1)*p^3*Px^2+(2*d2+2*d1)*n*p^2*Px+(d2+d1)*n^2*p)*Py+d1*d2*p^3*Px^3+3*d1*d2*n*p^2*Px^2+3*d1*d2*n^2*p*Px+d1*d2*n^3)
+	}
+	else if(n==0) {
+-(((d2-d1)*p*Px*%e^(%i*p*Py*y1+%i*d2*p*Px*y1+%i*d1*p*Px*y1+%i*m*y1)+(-p*Py-d2*p*Px-m)*%e^(%i*d2*p*Px*y1+%i*p*Py*y0+%i*d1*p*Px*y0+%i*m*y0)+(p*Py+d1*p*Px+m)*
+%e^(%i*d1*p*Px*y1+%i*p*Py*y0+%i*d2*p*Px*y0+%i*m*y0))*%e^(-%i*p*P-%i*p*Py*y1-%i*d2*p*Px*y1-%i*d1*p*Px*y1-%i*m*y1-%i*p*Py*y0-%i*m*y0-%i*p*Px*x0))/(p^3*Px*Py^2+((d2+d1)*p^3*Px^2+2*m*p^2*Px)*Py+d1*d2*p^3*
+Px^3+(d2+d1)*m*p^2*Px^2+m^2*p*Px)
+	}
+	else if(p==0) {
+-((%e^(%i*d2*n*y1)*((d2-d1)*n*%e^(%i*d1*n*y1+%i*m*y1)+(-d2*n-m)*%e^(%i*d1*n*y0+%i*m*y0))+(d1*n+m)*%e^(%i*d1*n*y1+%i*d2*n*y0+%i*m*y0))*%e^(-%i*d2*n*y1-%i*d1*n*y1-%i*m*y1-%i*m*y0-%i*n*x0))/(d1*d2*n^3+(d2+d1)*m*n^2+m^2*n)
 	}
 
 	const std::complex<Scalar> tt = std::polar<Scalar>(1, -( p*P+(p*Py+(d2+d1)*p*Px+(d2+d1)*n+m)*y1+(p*Py+m)*y0+(p*Px+n)*x0 ));
@@ -122,6 +165,8 @@ std::complex<Scalar> cob_3d_features::InvariantSurfaceFeature<num_radius_,num_an
 	const std::complex<Scalar> t3 = std::polar<Scalar>( p*Py+d1*p*Px+d1*n+m,	(d1*p*Px+d1*n)*y1+(p*Py+d2*p*Px+d2*n+m)*y0);
 
 	const Scalar div = (p*Px+n)*(p*Py+d1*p*Px+d1*n+m)*(p*Py+d2*p*Px+d2*n+m);
+
+std::cout<<"val: "<<-((t1+t2+t3)*tt)/div<<std::endl;
 
 	return  -((t1+t2+t3)*tt)/div;
 }
@@ -133,18 +178,21 @@ std::complex<Scalar> cob_3d_features::InvariantSurfaceFeature<num_radius_,num_an
 		if((*tri.p_[indx[i]])(1)>(*tri.p_[indx[i+1]])(1))
 			std::swap(indx[i], indx[i+1]);
 
+	for(int i=0; i<3; i++) std::cout<<"PP "<<tri.p_[indx[i]]->transpose()<<std::endl;
+
 	const Scalar delta1=(*tri.p_[indx[1]])(1)-(*tri.p_[indx[0]])(1);
 	const Scalar delta2=(*tri.p_[indx[1]])(1)-(*tri.p_[indx[2]])(1);
 
-	const Scalar x = ((*tri.p_[indx[2]])(0)-(*tri.p_[indx[0]])(0))*((*tri.p_[indx[1]])(1)-(*tri.p_[indx[0]])(1))/((*tri.p_[indx[2]])(1)-(*tri.p_[indx[0]])(1));
+	const Scalar x = ((*tri.p_[indx[2]])(0)-(*tri.p_[indx[0]])(0))*((*tri.p_[indx[1]])(1)-(*tri.p_[indx[0]])(1))/((*tri.p_[indx[2]])(1)-(*tri.p_[indx[0]])(1)) + (*tri.p_[indx[0]])(0);
 	const Scalar left = std::min(x, (*tri.p_[indx[1]])(0));
 	const Scalar right= std::max(x, (*tri.p_[indx[1]])(0));
 
-std::cout<<left<<" "<<right<<std::endl;
+std::cout<<"l/r: "<<left<<" "<<right<<" "<<delta1<<" "<<delta2<<std::endl;
+//std::cout<<"val: "<<(kernel_lin(m,n,p, (*tri.p_[indx[0]])(0),(*tri.p_[indx[0]])(1),(*tri.p_[indx[1]])(1), (left-(*tri.p_[indx[0]])(0))/delta1, (right-(*tri.p_[indx[0]])(0))/delta1))<<" "<<(kernel_lin(m,n,p, (*tri.p_[indx[2]])(0),(*tri.p_[indx[2]])(1),(*tri.p_[indx[1]])(1), ((*tri.p_[indx[2]])(0)-left)/delta2, ((*tri.p_[indx[2]])(0)-right)/delta2))<<std::endl;
 
 	return 	(
-		delta1?kernel_lin(m,n,p, (*tri.p_[indx[0]])(0),(*tri.p_[indx[0]])(1),(*tri.p_[indx[1]])(1), (left-(*tri.p_[indx[0]])(0))/delta1, (right-(*tri.p_[indx[0]])(0))/delta1):0 -
-		delta2?kernel_lin(m,n,p, (*tri.p_[indx[2]])(0),(*tri.p_[indx[2]])(1),(*tri.p_[indx[1]])(1), ((*tri.p_[indx[2]])(0)-left)/delta2, ((*tri.p_[indx[2]])(0)-right)/delta2):0)
+		(delta1?kernel_lin(m,n,p, (*tri.p_[indx[0]])(0),(*tri.p_[indx[0]])(1),(*tri.p_[indx[1]])(1), (left-(*tri.p_[indx[0]])(0))/delta1, (right-(*tri.p_[indx[0]])(0))/delta1):0) -
+		(delta2?kernel_lin(m,n,p, (*tri.p_[indx[2]])(0),(*tri.p_[indx[2]])(1),(*tri.p_[indx[1]])(1), -((*tri.p_[indx[2]])(0)-left)/delta2, -((*tri.p_[indx[2]])(0)-right)/delta2):0))
 		;// / (); normalization?
 }
 
@@ -152,6 +200,7 @@ template<const int num_radius_, const int num_angle_, typename TSurface, typenam
 std::complex<Scalar> cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::Triangle::sub_kernel(const Scalar m, const Scalar n, const Scalar p, const Tri2D &tri) const {
 	//check if further sub-sampling is necessary?
 	if(area<TSurface::DEGREE>(tri)>0.05) {
+std::cout<<"subdivide"<<std::endl;
 		Eigen::Matrix<Scalar, 2, 1> ps[3];
 		for(int i=0; i<3; i++)
 			ps[i] = ((*tri.p_[i])+(*tri.p_[(i+1)%3]))/2;
@@ -236,7 +285,7 @@ void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Sc
 }
 
 template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
-typename cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::TVector
+Eigen::Matrix<Scalar, 2, 1>
 cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::Triangle::intersection_on_line(const TVector &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b) const {
 	Eigen::PolynomialSolver<Scalar, 2*TSurface::DEGREE+1> solver;	
 	typename TSurface::Model::VectorU1D p = model_->transformation_1D(a-b,a, at);
@@ -255,52 +304,56 @@ cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,
 			best=i;
 	}
 	
-	TVector v;
+	Eigen::Matrix<Scalar, 2, 1> v;
 	v(0) = (a(0)-b(0))*r[best]+a(0);
 	v(1) = (a(1)-b(1))*r[best]+a(1);
-	v(2) = model_->model( v(0), v(1) );
 	
 	return v;
 }
 	
 template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
-void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::Triangle::subsample(const TVector &at, const Scalar r2, std::vector<Triangle> &res) {
+void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::Triangle::subsample(const std::vector<float> &radii, const TVector &at, const Scalar r2, std::vector<Triangle> &res) const {
 	//brute force (for the start)
-	for(size_t i=0; i<triangulated_input_.size(); i++) {
-		bool b[3];
-		int n=0;
-		for(int j=0; j<3; j++)
-			n+= (b[j] = ( (triangulated_input_[i].p3_[j]-at).squaredNorm()<=r2))?1:0;
-			
-		if(n==0)
-			continue;
-		else if(n==3)
-			res.push_back(triangulated_input_[i]);
-		else if(n==2) {
-			Triangle tr1 = triangulated_input_[i];
-			Triangle tr2 = triangulated_input_[i];
-			const int ind = !b[0]?0:(!b[1]?1:2);
-			
-			tr1.p_[ind] = intersection_on_line(at, r2, tr1.p_[ind], tr1.p_[ (ind+2)%3 ]);
-			tr2.p_[(ind+1)%3] = intersection_on_line(at, r2, tr2.p_[ind], tr2.p_[ (ind+1)%3 ]);
-			tr2.p_[ind] = tr1.p_[ind];
-			
-			tr1.compute();
-			tr2.compute();
-			res.push_back(tr1);
-			res.push_back(tr2);
-		}
-		else if(n==1) {
-			Triangle tr = triangulated_input_[i];
-			const int ind = b[0]?0:(b[1]?1:2);
-			
-			tr.p_[(ind+1)%3] = intersection_on_line(at, r2, tr.p_[ind], tr.p_[ (ind+1)%3 ]);
-			tr.p_[(ind+2)%3] = intersection_on_line(at, r2, tr.p_[ind], tr.p_[ (ind+2)%3 ]);
-			
-			tr.compute();
-			res.push_back(tr);
-		}
+	bool b[3];
+	int n=0;
+	for(int j=0; j<3; j++)
+		n+= (b[j] = ( (p3_[j]-at).squaredNorm()<=r2))?1:0;
+		
+	if(n==0)
+		return;
+	else if(n==3)
+		res.push_back(*this);
+	else if(n==2) {
+		Triangle tr1 = *this;
+		Triangle tr2 = *this;
+		const int ind = !b[0]?0:(!b[1]?1:2);
+		
+		tr1.p_[ind] = intersection_on_line(at, r2, tr1.p_[ind], tr1.p_[ (ind+2)%3 ]);
+		tr2.p_[(ind+1)%3] = intersection_on_line(at, r2, tr2.p_[ind], tr2.p_[ (ind+1)%3 ]);
+		tr2.p_[ind] = tr1.p_[ind];
+		
+		tr1.compute(radii);
+		tr2.compute(radii);
+		res.push_back(tr1);
+		res.push_back(tr2);
 	}
+	else if(n==1) {
+		Triangle tr = *this;
+		const int ind = b[0]?0:(b[1]?1:2);
+		
+		tr.p_[(ind+1)%3] = intersection_on_line(at, r2, tr.p_[ind], tr.p_[ (ind+1)%3 ]);
+		tr.p_[(ind+2)%3] = intersection_on_line(at, r2, tr.p_[ind], tr.p_[ (ind+2)%3 ]);
+		
+		tr.compute(radii);
+		res.push_back(tr);
+	}
+}
+
+template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
+void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::subsample(const TVector &at, const Scalar r2, std::vector<Triangle> &res) const {
+	res.clear();
+	for(size_t i=0; i<triangulated_input_.size(); i++)
+		triangulated_input_[i].subsample(radii_, at, r2, res);
 }
 
 template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
