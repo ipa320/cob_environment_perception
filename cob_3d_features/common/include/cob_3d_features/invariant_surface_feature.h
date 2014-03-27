@@ -58,6 +58,7 @@
 #include <boost/shared_ptr.hpp>
 #include <Eigen/Geometry>
 #include <cob_3d_mapping_common/polypartition.h>
+#include <pcl/PolygonMesh.h>		//only used for debugging/test functions (perhaps put outside?)
 
 namespace cob_3d_features
 {
@@ -122,10 +123,12 @@ namespace cob_3d_features
 
     /* UNIT TESTS: available in invariant_surface_feature_unit_tests.hpp */
     bool test_singleTriangle(const int num) const;
+	pcl::PolygonMesh::Ptr test_subsampling_of_Map(const int num, const Scalar r2);
 	
 	/* DEBUG functions */
     void dbg_mesh_of_subsamp(const TVector &at, const Scalar radius, std::vector<TVector> &pts, std::vector<int> &inds) const;
     void dbg_keypoints(std::vector<TVector> &keypoints) const {generateKeypoints(keypoints);}
+	pcl::PolygonMesh::Ptr dbg_Mesh_of_Map() const {return dbg_triangles2mesh(triangulated_input_);}
 	
   protected:
     struct Triangle {
@@ -144,15 +147,28 @@ namespace cob_3d_features
 		}
 		
 		void compute(const std::vector<float> &radii);
-		void subsample(const TVector &at, const Scalar r2, std::vector<Triangle> &res);
+		void subsample(const std::vector<float> &radii, const TVector &at, const Scalar r2, std::vector<Triangle> &res) const;
 		std::complex<Scalar> kernel(const Scalar m, const Scalar n, const Scalar p) const;
 
 		void print() const;
     private:
-		TVector intersection_on_line(const TVector &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b)  const;
+		Eigen::Matrix<Scalar, 2, 1> intersection_on_line(const TVector &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b)  const;
 		std::complex<Scalar> sub_kernel(const Scalar m, const Scalar n, const Scalar p, const Tri2D &tri) const;
 		std::complex<Scalar> kernel_lin(const Scalar m, const Scalar n, const Scalar p, const Scalar x0, const Scalar y0, const Scalar y1, const Scalar d1, const Scalar d2) const;
 		std::complex<Scalar> kernel_lin_tri(const Scalar m, const Scalar n, const Scalar p, const Tri2D &tri) const;
+
+		inline Eigen::Matrix<Scalar, 3, 1> at(const Scalar x, const Scalar y) const {
+			Eigen::Matrix<Scalar, 2, 1> p;
+			p(0)=x;p(1)=y;
+			return at(p);
+		}
+
+		inline Eigen::Matrix<Scalar, 3, 1> at(const Eigen::Matrix<Scalar, 2, 1> &p) const {
+			Eigen::Matrix<Scalar, 3, 1> v;
+			v(0) = p(0); v(1) = p(1);
+			v(2) = model_->model(p(0),p(1));
+			return v;
+		}
 
 		template<const int Degree>
 		Scalar area(const Tri2D &tri) const {
@@ -184,6 +200,9 @@ namespace cob_3d_features
     //int num_radius_, num_angle_;
 
     void generateKeypoints(std::vector<TVector> &keypoints) const;
-    void subsample(const TVector &at, const Scalar r2, std::vector<Triangle> &res);
+    void subsample(const TVector &at, const Scalar r2, std::vector<Triangle> &res) const;
+	
+	/* DEBUG functions */
+	pcl::PolygonMesh::Ptr dbg_triangles2mesh(const std::vector<Triangle> &res) const;
   };
 }
