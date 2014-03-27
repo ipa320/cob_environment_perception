@@ -57,6 +57,7 @@
 
 #include <ros/ros.h>
 #include <pcl/point_types.h>
+#include <pcl/io/pcd_io.h>
 #include <sensor_msgs/Image.h>
 
 // Packages Includes:
