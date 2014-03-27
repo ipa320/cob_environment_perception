@@ -58,10 +58,12 @@
 #include <ros/ros.h>
 #include <pcl/point_types.h>
 #include <sensor_msgs/Image.h>
+#include <pcl/io/ply_io.h>
 
 // Packages Includes:
 #include "cob_3d_features/impl/invariant_surface_feature.hpp"
 #include "cob_3d_features/impl/invariant_surface_feature_unit_tests.hpp"
+#include "cob_3d_features/impl/invariant_surface_feature_debug.hpp"
 #include "cob_3d_segmentation/quad_regression/polygon.h"
 
 int main()
@@ -73,8 +75,8 @@ int main()
 
 	//tests
 	isf.test_singleTriangle(1);
-	isf.test_()->test_subsampling_of_Map(1000, 1.).savePLY("random_submap.ply");
-	isf.test_()->dbg_Mesh_of_Map().savePLY("random_map.ply");
+	//pcl::io::savePLYFile("random_submap.ply", 	*isf.test_subsampling_of_Map(1000, 1.));
+	//pcl::io::savePLYFile("random_map.ply", 		*isf.dbg_Mesh_of_Map());
 	
 	return 0;
 }
