@@ -54,7 +54,7 @@
 #pragma once
 
 template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
-void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::dbg_mesh_of_subsamp(const TVector &at, const Scalar radius, std::vector<TVector> &pts, std::vector<int> &inds)() const {
+void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::dbg_mesh_of_subsamp(const TVector &at, const Scalar radius, std::vector<TVector> &pts, std::vector<int> &inds) const {
       std::vector<Triangle> submap;
       subsample(at, radius, submap);
 	  
@@ -64,4 +64,21 @@ void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Sc
 			pts.push_back(submap[i].p3_[j]);
 		}
 	  }
+}
+
+template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
+pcl::PolygonMesh::Ptr cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::dbg_triangles2mesh(const std::vector<Triangle> &res) const {
+	pcl::PolygonMesh::Ptr mesh(new pcl::PolygonMesh);
+	pcl::PointCloud<pcl::PointXYZ> points;
+	for(size_t i=0; i<res.size(); i++) {
+		mesh->polygons.push_back(pcl::Vertices());
+		for(int j=0; j<3; j++) {
+			mesh->polygons.back().vertices.push_back(points.size());
+			pcl::PointXYZ pt;
+			pt.x=res[i].p3_[j](0);pt.y=res[i].p3_[j](1);pt.z=res[i].p3_[j](2);
+			points.push_back(pt);
+		}
+	}
+	pcl::toROSMsg(points, mesh->cloud);
+	return mesh;
 }
