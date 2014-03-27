@@ -128,13 +128,15 @@ std::complex<Scalar> cob_3d_features::InvariantSurfaceFeature<num_radius_,num_an
 
 	int indx[3] = {0,1,2};
 	for(int i=0; i<2; i++)
-		if(p_[indx[i]](1)>p_[indx[i+1]](1))
+		if(p_[indx[i]](1)>p_[indx[i+1]](1)) {
 			std::swap(indx[i], indx[i+1]);
+			--i;
+		}
 
 	const Scalar delta1=p_[indx[1]](1)-p_[indx[0]](1);
 	const Scalar delta2=p_[indx[1]](1)-p_[indx[2]](1);
 
-	const Scalar x = (p_[indx[2]](0)-p_[indx[0]](0))*(p_[indx[1]](1)-p_[indx[0]](1))/(p_[indx[2]](1)-p_[indx[0]](1));
+	const Scalar x = (p_[indx[2]](0)-p_[indx[0]](0))*(p_[indx[1]](1)-p_[indx[0]](1))/(p_[indx[2]](1)-p_[indx[0]](1))+p_[indx[0]](0);
 	const Scalar left = std::min(x, p_[indx[1]](0));
 	const Scalar right= std::max(x, p_[indx[1]](0));
 
@@ -157,7 +159,7 @@ void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Sc
 	//generate now feature
 	f_.resize(radii.size());
 	for(size_t j=0; j<radii.size(); j++) {
-		const Scalar = base = math.pow(radii[j]+1, 1./(num_radius_-1))
+		const Scalar base = std::pow(radii[j]+1, 1./(num_radius_-1));
 		
 		for(int radius=0; radius<num_radius_; radius++) {
 			f_[j].vals[radius].fill(0);
