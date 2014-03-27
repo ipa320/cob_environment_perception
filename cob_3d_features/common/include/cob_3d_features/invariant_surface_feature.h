@@ -129,6 +129,10 @@ namespace cob_3d_features
 	
   protected:
     struct Triangle {
+		struct Tri2D {
+			const Eigen::Matrix<Scalar, 2, 1> *p_[3];
+		};
+
 		Eigen::Matrix<Scalar, 2, 1> p_[3];
 		Eigen::Matrix<Scalar, 3, 1> p3_[3];
 		std::vector<FeatureComplex> f_;
@@ -146,7 +150,23 @@ namespace cob_3d_features
 		void print() const;
     private:
 		TVector intersection_on_line(const TVector &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b)  const;
-		std::complex<Scalar> sub_kernel(const Scalar m, const Scalar n, const Scalar p, const Scalar x0, const Scalar y0, const Scalar d1, const Scalar d2, const Scalar e) const;
+		std::complex<Scalar> sub_kernel(const Scalar m, const Scalar n, const Scalar p, const Tri2D &tri) const;
+		std::complex<Scalar> kernel_lin(const Scalar m, const Scalar n, const Scalar p, const Scalar x0, const Scalar y0, const Scalar y1, const Scalar d1, const Scalar d2) const;
+		std::complex<Scalar> kernel_lin_tri(const Scalar m, const Scalar n, const Scalar p, const Tri2D &tri) const;
+
+		template<const int Degree>
+		Scalar area(const Tri2D &tri) const {
+			//TODO: at the moment kind of "approximation"
+			const Eigen::Matrix<Scalar, 2, 1> mid2 = ((*tri.p_[0])+(*tri.p_[1])+(*tri.p_[2]))/3;
+			Eigen::Matrix<Scalar, 3, 1> mid23, mid3;
+
+			mid23(0) = mid2(0);
+			mid23(1) = mid2(1);
+			mid3 = mid23;
+			mid3(2) =  (model_->model((*tri.p_[0])(0), (*tri.p_[0])(1))+model_->model((*tri.p_[1])(0), (*tri.p_[0])(1))+model_->model((*tri.p_[1])(0), (*tri.p_[0])(1)))/3;
+			mid23(2) = model_->model(mid2(0),mid2(1));
+			return (mid3 - mid23).squaredNorm();
+		}
 	};
 	
     struct VectorWithParams {

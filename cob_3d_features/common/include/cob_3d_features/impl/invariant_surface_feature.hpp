@@ -92,46 +92,79 @@ void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Sc
   }
 }
 
-template<const int Degree=1, typename Scalar>
-Scalar area() {
-	return 0;
-}
+template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
+std::complex<Scalar> cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::Triangle::kernel_lin(const Scalar m, const Scalar n, const Scalar p, const Scalar x0, const Scalar y0, const Scalar y1, const Scalar d1, const Scalar d2) const {
+	//Eigen::Matrix<Scalar, 3, 1>
+	const Scalar Px=0, Py=0, P=0;
 
-template<const int Degree=2, typename Scalar>
-Scalar area() {
-	Eigen::Matrix<Scalar, 6, 1> fact;
-	fact(0)=1;
-	fact(1)=0.5;
-	fact(2)=0.5;
-	fact(3)=1/3.;
-	fact(4)=0.25;
-	fact(5)=1/3.;
-}
+	/*MAXIMA:
+	p(x,y):=Px*x+Py*y+P;
+	ratsimp(diff(diff(diff(integrate(integrate(integrate(%e^(-%i*(n*x+m*y+p*z)),z,p(x,y),p(x,y)+c),x,x0,x0+d),y,y0,y0+e),e),c),d));
+	ff(c,d,e,x0,y0):=%e^(-%i*p*P-%i*p*Py*y0-%i*m*y0-%i*p*Px*x0-%i*n*x0-%i*e*p*Py-%i*d*p*Px-%i*c*p-%i*d*n-%i*e*m);
+	ratsimp(integrate(integrate(ff(0,0,0,x,y),x,x0+(y-y0)*d1,x0+(y-y0)*d2),y,y0,y1));
 
-template<const int Degree, typename Scalar>
-Scalar area() {
-	//TODO
-	return 0;
+	result:
+	-((((d2-d1)*p*Px+(d2-d1)*n)*%e^(%i*p*Py*y1+%i*d2*p*Px*y1+%i*d1*p*Px*y1+%i*d2*n*y1+%i*d1*n*y1+%i*m*y1)+(-p*Py-d2*p*Px-d2*n-m)*
+	%e^(%i*d2*p*Px*y1+%i*d2*n*y1+%i*p*Py*y0+%i*d1*p*Px*y0+%i*d1*n*y0+%i*m*y0)+(p*Py+d1*p*Px+d1*n+m)*%e^(%i*d1*p*Px*y1+%i*d1*n*y1+%i*p*Py*y0+%i*d2*p*Px*y0+%i*d2*n*y0+%i*m*y0))*
+	%e^(-%i*p*P-%i*p*Py*y1-%i*d2*p*Px*y1-%i*d1*p*Px*y1-%i*d2*n*y1-%i*d1*n*y1-%i*m*y1-%i*p*Py*y0-%i*m*y0-%i*p*Px*x0-%i*n*x0))/((p^3*Px+n*p^2)*Py^2+
+	((d2+d1)*p^3*Px^2+((2*d2+2*d1)*n+2*m)*p^2*Px+((d2+d1)*n^2+2*m*n)*p)*Py+d1*d2*p^3*Px^3+(3*d1*d2*n+(d2+d1)*m)*p^2*Px^2+(3*d1*d2*n^2+(2*d2+2*d1)*m*n+m^2)*p*Px+d1*d2*n^3+
+	(d2+d1)*m*n^2+m^2*n)
+	*/
+
+	if(m==0 && n==0 && p==0) {
+		return ((d2-d1)*std::pow(y1-y0,2))/2;
+	}
+
+	const std::complex<Scalar> tt = std::polar<Scalar>(1, -( p*P+(p*Py+(d2+d1)*p*Px+(d2+d1)*n+m)*y1+(p*Py+m)*y0+(p*Px+n)*x0 ));
+
+	const std::complex<Scalar> t1 = std::polar<Scalar>( (d2-d1)*(p*Px+n), 		(p*Py+(d2+d1)*p*Px+(d2+d1)*n+m)*y1);
+	const std::complex<Scalar> t2 = std::polar<Scalar>( -(p*Py+d2*p*Px+d2*n+m), 	(d2*p*Px+d2*n)*y1+(p*Py+d1*p*Px+d1*n+m)*y0);
+	const std::complex<Scalar> t3 = std::polar<Scalar>( p*Py+d1*p*Px+d1*n+m,	(d1*p*Px+d1*n)*y1+(p*Py+d2*p*Px+d2*n+m)*y0);
+
+	const Scalar div = (p*Px+n)*(p*Py+d1*p*Px+d1*n+m)*(p*Py+d2*p*Px+d2*n+m);
+
+	return  -((t1+t2+t3)*tt)/div;
 }
 
 template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
-std::complex<Scalar> cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::Triangle::sub_kernel(const Scalar m, const Scalar n, const Scalar p, const Scalar x0, const Scalar y0, const Scalar d1, const Scalar d2, const Scalar e) const {
-//std::cout<<m<<" "<<n<<" "<<p<<" "<<d1<<" "<<d2<<" "<<e<<" "<<x0<<" "<<y0<<std::endl;
+std::complex<Scalar> cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::Triangle::kernel_lin_tri(const Scalar m, const Scalar n, const Scalar p, const Tri2D &tri) const {
+	int indx[3] = {0,1,2};
+	for(int i=0; i<2; i++)
+		if((*tri.p_[indx[i]])(1)>(*tri.p_[indx[i+1]])(1))
+			std::swap(indx[i], indx[i+1]);
 
-	/*
-	 * maxima eq.:
-	 *   ratsimp(diff(diff(diff(integrate(integrate(integrate(%e^(-%i*(n*x+m*y+p*z)),z,p(x,y),p(x,y)+c),x,x0+(y-y0)*d1*d,x0+(y-y0)*d2*d),y,y0,y0+e1*e),c),d),e));
-	 * with c=0, d=1, e=1 and e1 is e (below)
-	 */
-	 
-	const Scalar s1 = p*model_->model(x0+e*d1,y0+e);
-	const Scalar s2 = p*model_->model(x0+e*d2,y0+e);
-	const Scalar s  = p*model_->model(x0,y0+e);
-	
-	return
-		(
-		  std::polar<Scalar>(d2*e*e, s1+d1*e*n) - std::polar<Scalar>(d1*e*e, s2+d2*e*n)
-		) * std::polar<Scalar>(1, -(s1+s2-s + m*y0 + n*x0 + e*m + n*e*(d1+d2));
+	const Scalar delta1=(*tri.p_[indx[1]])(1)-(*tri.p_[indx[0]])(1);
+	const Scalar delta2=(*tri.p_[indx[1]])(1)-(*tri.p_[indx[2]])(1);
+
+	const Scalar x = ((*tri.p_[indx[2]])(0)-(*tri.p_[indx[0]])(0))*((*tri.p_[indx[1]])(1)-(*tri.p_[indx[0]])(1))/((*tri.p_[indx[2]])(1)-(*tri.p_[indx[0]])(1));
+	const Scalar left = std::min(x, (*tri.p_[indx[1]])(0));
+	const Scalar right= std::max(x, (*tri.p_[indx[1]])(0));
+
+std::cout<<left<<" "<<right<<std::endl;
+
+	return 	(
+		delta1?kernel_lin(m,n,p, (*tri.p_[indx[0]])(0),(*tri.p_[indx[0]])(1),(*tri.p_[indx[1]])(1), (left-(*tri.p_[indx[0]])(0))/delta1, (right-(*tri.p_[indx[0]])(0))/delta1):0 -
+		delta2?kernel_lin(m,n,p, (*tri.p_[indx[2]])(0),(*tri.p_[indx[2]])(1),(*tri.p_[indx[1]])(1), ((*tri.p_[indx[2]])(0)-left)/delta2, ((*tri.p_[indx[2]])(0)-right)/delta2):0)
+		;// / (); normalization?
+}
+
+template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
+std::complex<Scalar> cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::Triangle::sub_kernel(const Scalar m, const Scalar n, const Scalar p, const Tri2D &tri) const {
+	//check if further sub-sampling is necessary?
+	if(area<TSurface::DEGREE>(tri)>0.05) {
+		Eigen::Matrix<Scalar, 2, 1> ps[3];
+		for(int i=0; i<3; i++)
+			ps[i] = ((*tri.p_[i])+(*tri.p_[(i+1)%3]))/2;
+
+		Tri2D tris[3]={tri, tri, tri};
+		for(int i=0; i<3; i++) {
+			tris[i].p_[(i+1)%3] = &ps[i];
+			tris[i].p_[(i+2)%3] = &ps[(i+2)%3];
+		}
+
+		return kernel_lin_tri(m,n,p, tris[0])+kernel_lin_tri(m,n,p, tris[1])+kernel_lin_tri(m,n,p, tris[2]);
+	} else 
+		return kernel_lin_tri(m,n,p, tri);
 }
 
 template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
@@ -148,24 +181,8 @@ std::complex<Scalar> cob_3d_features::InvariantSurfaceFeature<num_radius_,num_an
 		kernel function is computed over ordered triangles
 	*/
 
-	int indx[3] = {0,1,2};
-	for(int i=0; i<2; i++)
-		if(p_[indx[i]](1)>p_[indx[i+1]](1))
-			std::swap(indx[i], indx[i+1]);
-
-	const Scalar delta1=p_[indx[1]](1)-p_[indx[0]](1);
-	const Scalar delta2=p_[indx[1]](1)-p_[indx[2]](1);
-
-	const Scalar x = (p_[indx[2]](0)-p_[indx[0]](0))*(p_[indx[1]](1)-p_[indx[0]](1))/(p_[indx[2]](1)-p_[indx[0]](1));
-	const Scalar left = std::min(x, p_[indx[1]](0));
-	const Scalar right= std::max(x, p_[indx[1]](0));
-
-std::cout<<left<<" "<<right<<std::endl;
-
-	return 	(
-		delta1?sub_kernel(m,n,p, p_[indx[0]](0),p_[indx[0]](1), (left-p_[indx[0]](0))/delta1, (right-p_[indx[0]](0))/delta1 ,delta1):0 -
-		delta2?sub_kernel(m,n,p, p_[indx[2]](0),p_[indx[2]](1), (p_[indx[2]](0)-left)/delta2, (p_[indx[2]](0)-right)/delta2 ,delta2):0)
-		;// / (); normalization?
+	const Tri2D tri = {&p_[0],&p_[1],&p_[2]};
+	return sub_kernel(m,n,p, tri);
 }
 
 template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
