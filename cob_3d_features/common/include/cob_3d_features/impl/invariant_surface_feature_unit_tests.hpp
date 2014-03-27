@@ -118,6 +118,7 @@ t1.print();
 
 template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
 void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::Triangle::print() const {
+	std::cout<< "Triangle" <<std::endl;
 	for(int i=0; i<3; i++)
 		std::cout<<p_[i].transpose()<<std::endl;
 /*	for(size_t i=0; i<f_.size(); i++) {
