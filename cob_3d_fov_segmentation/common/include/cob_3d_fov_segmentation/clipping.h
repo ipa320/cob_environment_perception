@@ -63,7 +63,7 @@
 #ifndef COB_3D_CLIPPING_H
 #define COB_3D_CLIPPING_H
 
-  /* 2D/3D line clipping algorithm
+  /** 2D/3D line clipping algorithm
    * Source: http://en.wikipedia.org/wiki/Cohen-Sutherland (did not find a paper about it)
    */
 namespace cob_3d_mapping

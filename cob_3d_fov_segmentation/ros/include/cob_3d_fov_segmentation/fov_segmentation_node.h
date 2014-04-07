@@ -78,60 +78,66 @@
 namespace cob_3d_mapping
 {
   /**
-  * @brief ROS node for FOV segmentation of a shape array.
-  * @details Node handles input Shape arrays and provides output Shape arrays.\n
-  * Input topics: /tf, /shape_array\n
-  * Output topics: /shape_array
-  */
+   * @brief ROS node for FOV segmentation of a shape array.
+   * @details Node handles input Shape arrays and provides output Shape arrays.\n
+   * Input topics: /tf, /shape_array\n
+   * Output topics: /shape_array
+   */
   class FOVSegmentationNode
   {
   public:
     /**
-    * @brief Constructor
-    */
-    FOVSegmentationNode();
+     * @brief Constructor
+     */
+    FOVSegmentationNode ();
     /**
-    * brief Destructor
-    */
-    ~FOVSegmentationNode() { };
+     * brief Destructor
+     */
+    ~FOVSegmentationNode ()
+    {
+    }
+    ;
 
     /**
-    * @brief callback for dynamic reconfigure
-    *
-    * everytime the dynamic reconfiguration changes this function will be called
-    *
-    * @param inst instance of AggregatePointMap which parameters should be changed
-    * @param config data of configuration
-    * @param level bit descriptor which notifies which parameter changed
-    *
-    * @return nothing
-    */
-    void dynReconfCallback(cob_3d_fov_segmentation::fov_segmentationConfig &config, uint32_t level);
-    void shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& sa);
+     * @brief Callback for dynamic reconfigure
+     *
+     * everytime the dynamic reconfiguration changes this function will be called
+     *
+     * @param inst instance of AggregatePointMap which parameters should be changed
+     * @param config data of configuration
+     * @param level bit descriptor which notifies which parameter changed
+     *
+     * @return nothing
+     */
+    void
+    dynReconfCallback (cob_3d_fov_segmentation::fov_segmentationConfig &config, uint32_t level);
 
+    /**
+     * \brief Callback for the shape subscriber.
+     *
+     * \param[in] The incoming shape array.
+     */
+    void
+    shapeCallback (const cob_3d_mapping_msgs::ShapeArray::ConstPtr& sa);
 
-    ros::NodeHandle n_;                         ///< Ros node handle.
+    ros::NodeHandle n_; ///< ROS node handle.
 
   protected:
-    ros::Subscriber shape_sub_;                 ///< Subscription to shape message to be processed.
-    ros::Publisher shape_pub_;                    ///< Publish Map array as shape message.
+    ros::Subscriber shape_sub_; ///< Subscription to shape message to be processed.
+    ros::Publisher shape_pub_; ///< Publish Map array as shape message.
 
-    tf::TransformListener tf_listener_;         ///< Retrieves transformations.
+    tf::TransformListener tf_listener_; ///< Retrieves transformations.
 
     /**
-    * @brief Dynamic Reconfigure server
-    */
+     * @brief Dynamic Reconfigure server
+     */
     dynamic_reconfigure::Server<cob_3d_fov_segmentation::fov_segmentationConfig> config_server_;
 
-    FieldOfView fov_;                   ///< Map containing geometrys (polygons,cylinders)
-    FOVSegmentation fov_seg_;
+    FieldOfView fov_; ///< Map containing geometrys (polygons,cylinders)
+    FOVSegmentation fov_seg_; ///< The FOV segmentation object.
 
-    std::string camera_frame_;
-    std::string target_frame_;
-    /*unsigned int ctr_;                          ///< Counter how many polygons are received.
-    std::string file_path_;                     ///< Path out output file.
-    bool save_to_file_;                         ///< True if file output is enabled.
-    std::string map_frame_id_;                  ///< Name of target frame.*/
+    std::string camera_frame_; ///< The camera frame.
+    std::string target_frame_; ///< The target frame.
   };
 }
 
