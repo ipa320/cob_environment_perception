@@ -63,7 +63,7 @@
 #include <cstdlib>
 
 #include <cob_3d_mapping_common/label_defines.h>
-#include <cob_3d_mapping_common/label_results.h>
+#include <cob_3d_evaluation_features/label_results.h>
 
 #include <boost/program_options.hpp>
 #include <fstream>
@@ -95,10 +95,10 @@ typedef visualization::PointCloudColorHandlerRGBField<PointXYZRGB> ColorHdlRGB;
 // The following global variables hold the boost::program_option option:
 float pass_depth_;
 
-bool rsd_enable_;          
-bool rsd_mls_enable_;      
-bool rsd_vox_enable_;      
-float rsd_vox_;          
+bool rsd_enable_;
+bool rsd_mls_enable_;
+bool rsd_vox_enable_;
+float rsd_vox_;
 float rsd_rn_;
 float rsd_rf_;
 
@@ -134,7 +134,7 @@ bool quiet_;
 
 string fl2label(const float & f, const size_t & precision=3)
 {
-  if (f == 0) 
+  if (f == 0)
     return string(precision, '0');
 
   stringstream ss;
@@ -153,7 +153,7 @@ void readOptions(int argc, char* argv[])
   string config_file;
   options_description cmd("Command line options");
   options_description cfg("Config file options");
-  
+
   cmd.add_options()
     ("help", "produce help message")
     ("config,c", value<string>(&config_file)->default_value("config/accuracy_evaluator.cfg"),
@@ -287,7 +287,7 @@ void processFPFH(const PointCloud<PointXYZRGB>::Ptr in,
     cout << "FPFH: flip normals (with " << ref_out->points.size() << " points)" << endl;
     for (size_t i = 0; i < ref_out->points.size(); ++i)
     {
-      flipNormalTowardsViewpoint(ref_out->points[i], 0.0f, 0.0f, 0.0f, 
+      flipNormalTowardsViewpoint(ref_out->points[i], 0.0f, 0.0f, 0.0f,
                                  n->points[i].normal[0],
                                  n->points[i].normal[1],
                                  n->points[i].normal[2]);
@@ -343,7 +343,7 @@ void processFPFH(const PointCloud<PointXYZRGB>::Ptr in,
       pre_rgb = LBL_EDGE;
       if (exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF) stats.fp[EVAL_EDGE]++;
       if (exp_rgb != LBL_COR && exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF) stats.fp[EVAL_EDGECORNER]++;
-      break; 
+      break;
     case SVM_COR:
       pre_rgb = LBL_COR;
       if (exp_rgb != LBL_COR && exp_rgb != LBL_UNDEF) stats.fp[EVAL_COR]++;
@@ -364,14 +364,14 @@ void processFPFH(const PointCloud<PointXYZRGB>::Ptr in,
       break;
     }
 
-    switch(exp_rgb) 
+    switch(exp_rgb)
     {
     case LBL_PLANE:
       if (pre_rgb != exp_rgb) stats.fn[EVAL_PLANE]++;
       stats.exp[EVAL_PLANE]++;
       break;
     case LBL_EDGE:
-      if (pre_rgb != exp_rgb) 
+      if (pre_rgb != exp_rgb)
       {
 	stats.fn[EVAL_EDGE]++;
 	if (pre_rgb != LBL_COR) stats.fn[EVAL_EDGECORNER]++;
@@ -398,7 +398,7 @@ void processFPFH(const PointCloud<PointXYZRGB>::Ptr in,
       stats.exp[EVAL_CURVED]++;
       break;
     case LBL_CYL:
-      if (pre_rgb != exp_rgb) 
+      if (pre_rgb != exp_rgb)
       {
 	stats.fn[EVAL_CYL]++;
 	if (pre_rgb != LBL_SPH) stats.fn[EVAL_CURVED]++;
@@ -421,7 +421,7 @@ void processPC(const PointCloud<PointXYZRGB>::Ptr in,
 {
   PointCloud<Normal>::Ptr n(new PointCloud<Normal>());
   PointCloud<PrincipalCurvatures>::Ptr pc(new PointCloud<PrincipalCurvatures>());
-  
+
   // passthrough filtering (needed to remove NaNs)
   cout << "PC: Pass (with " << in->points.size() << " points)" << endl;
   PassThrough<PointXYZRGB> pass;
@@ -468,7 +468,7 @@ void processPC(const PointCloud<PointXYZRGB>::Ptr in,
     cout << "PC: flip normals (with " << ref_out->points.size() << " points)" << endl;
     for (size_t i = 0; i < ref_out->points.size(); ++i)
     {
-      flipNormalTowardsViewpoint(ref_out->points[i], 0.0f, 0.0f, 0.0f, 
+      flipNormalTowardsViewpoint(ref_out->points[i], 0.0f, 0.0f, 0.0f,
 				 n->points[i].normal[0],
 				 n->points[i].normal[1],
 				 n->points[i].normal[2]);
@@ -512,7 +512,7 @@ void processPC(const PointCloud<PointXYZRGB>::Ptr in,
     exp_rgb = *reinterpret_cast<int*>(&ref_out->points[idx].rgb); // expected label
     c_max = pc->points[idx].pc1;
     c_min = pc->points[idx].pc2;
-		  
+
     if ( c_max < c_low )
     {
       pre_rgb = LBL_PLANE;
@@ -531,7 +531,7 @@ void processPC(const PointCloud<PointXYZRGB>::Ptr in,
 	if (exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF) stats.fp[EVAL_EDGE]++;
       }
       // special case:  combined class for corner and edge
-      if (exp_rgb != LBL_COR && exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF) 
+      if (exp_rgb != LBL_COR && exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF)
 	stats.fp[EVAL_EDGECORNER]++;
     }
     else
@@ -547,18 +547,18 @@ void processPC(const PointCloud<PointXYZRGB>::Ptr in,
 	if (exp_rgb != LBL_CYL && exp_rgb != LBL_UNDEF) stats.fp[EVAL_CYL]++;
       }
       // special case:  combined class for sphere and cylinder
-      if (exp_rgb != LBL_SPH && exp_rgb != LBL_CYL && exp_rgb != LBL_UNDEF) 
+      if (exp_rgb != LBL_SPH && exp_rgb != LBL_CYL && exp_rgb != LBL_UNDEF)
 	stats.fp[EVAL_CURVED]++;
     }
 
-    switch(exp_rgb) 
+    switch(exp_rgb)
     {
     case LBL_PLANE:
       if (pre_rgb != exp_rgb) stats.fn[EVAL_PLANE]++;
       stats.exp[EVAL_PLANE]++;
       break;
     case LBL_EDGE:
-      if (pre_rgb != exp_rgb) 
+      if (pre_rgb != exp_rgb)
       {
 	stats.fn[EVAL_EDGE]++;
 	if (pre_rgb != LBL_COR) stats.fn[EVAL_EDGECORNER]++;
@@ -585,7 +585,7 @@ void processPC(const PointCloud<PointXYZRGB>::Ptr in,
       stats.exp[EVAL_CURVED]++;
       break;
     case LBL_CYL:
-      if (pre_rgb != exp_rgb) 
+      if (pre_rgb != exp_rgb)
       {
 	stats.fn[EVAL_CYL]++;
 	if (pre_rgb != LBL_SPH) stats.fn[EVAL_CURVED]++;
@@ -602,7 +602,7 @@ void processPC(const PointCloud<PointXYZRGB>::Ptr in,
   cout << "PC:\n" << stats << endl << endl;
 }
 
-void processRSD(const PointCloud<PointXYZRGB>::Ptr in, 
+void processRSD(const PointCloud<PointXYZRGB>::Ptr in,
 		PointCloud<PointXYZRGB>::Ptr ref_out,
 		PointCloud<PointXYZRGB>::Ptr rsd_out)
 {
@@ -656,7 +656,7 @@ void processRSD(const PointCloud<PointXYZRGB>::Ptr in,
     cout << "RSD: flip normals (with " << ref_out->points.size() << " points)" << endl;
     for (size_t i = 0; i < ref_out->points.size(); ++i)
     {
-      flipNormalTowardsViewpoint(ref_out->points[i], 0.0f, 0.0f, 0.0f, 
+      flipNormalTowardsViewpoint(ref_out->points[i], 0.0f, 0.0f, 0.0f,
 				 n->points[i].normal[0],
 				 n->points[i].normal[1],
 				 n->points[i].normal[2]);
@@ -696,7 +696,7 @@ void processRSD(const PointCloud<PointXYZRGB>::Ptr in,
     exp_rgb = *reinterpret_cast<int*>(&ref_out->points[idx].rgb); // expected label
     r_max = rsd->points[idx].r_max;
     r_min = rsd->points[idx].r_min;
-		  
+
     if ( r_min > r_high )
     {
       pre_rgb = LBL_PLANE;
@@ -715,7 +715,7 @@ void processRSD(const PointCloud<PointXYZRGB>::Ptr in,
 	if (exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF) stats.fp[EVAL_EDGE]++;
       }
       // special case:  combined class for corner and edge
-      if (exp_rgb != LBL_COR && exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF) 
+      if (exp_rgb != LBL_COR && exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF)
 	stats.fp[EVAL_EDGECORNER]++;
     }
     else
@@ -731,18 +731,18 @@ void processRSD(const PointCloud<PointXYZRGB>::Ptr in,
 	if (exp_rgb != LBL_CYL && exp_rgb != LBL_UNDEF) stats.fp[EVAL_CYL]++;
       }
       // special case:  combined class for sphere and cylinder
-      if (exp_rgb != LBL_SPH && exp_rgb != LBL_CYL && exp_rgb != LBL_UNDEF) 
+      if (exp_rgb != LBL_SPH && exp_rgb != LBL_CYL && exp_rgb != LBL_UNDEF)
 	stats.fp[EVAL_CURVED]++;
     }
 
-    switch(exp_rgb) 
+    switch(exp_rgb)
     {
     case LBL_PLANE:
       if (pre_rgb != exp_rgb) stats.fn[EVAL_PLANE]++;
       stats.exp[EVAL_PLANE]++;
       break;
     case LBL_EDGE:
-      if (pre_rgb != exp_rgb) 
+      if (pre_rgb != exp_rgb)
       {
 	stats.fn[EVAL_EDGE]++;
 	if (pre_rgb != LBL_COR) stats.fn[EVAL_EDGECORNER]++;
@@ -769,7 +769,7 @@ void processRSD(const PointCloud<PointXYZRGB>::Ptr in,
       stats.exp[EVAL_CURVED]++;
       break;
     case LBL_CYL:
-      if (pre_rgb != exp_rgb) 
+      if (pre_rgb != exp_rgb)
       {
 	stats.fn[EVAL_CYL]++;
 	if (pre_rgb != LBL_SPH) stats.fn[EVAL_CURVED]++;
@@ -802,7 +802,7 @@ int main(int argc, char** argv)
   PCDReader r;
   if(r.read(file_in_, *p_raw) == -1)
     cout << "Could not read file " << file_in_ << endl;
-  cout << "Read pcd file \"" << file_in_ << "\" (Points: " << p_raw->points.size() << ", width: " 
+  cout << "Read pcd file \"" << file_in_ << "\" (Points: " << p_raw->points.size() << ", width: "
        << p_raw->width << ", height: " << p_raw->height << ")" << endl;
 
   cout << "Headline: \n\n"<< cob_3d_mapping_common::writeHeader() << endl << endl;
@@ -831,7 +831,7 @@ int main(int argc, char** argv)
 
 
   /* --- Viewports: ---
-   *  1y 
+   *  1y
    *    | 1 | 3 |
    * .5 ----+----
    *    | 2 | 4 |
@@ -850,14 +850,14 @@ int main(int argc, char** argv)
   v->createViewPort(0.0, 0.0, 0.5, 0.5, v2);
   v->setBackgroundColor(255,255,255, v2);
   v->addPointCloud<PointXYZRGB>(p_fpfh_out, col_hdl2, "fpfh", v2);
-  
+
   // 3:
   int v3(0);
   ColorHdlRGB col_hdl3(p_rsd_out);
   v->createViewPort(0.5, 0.5, 1.0, 1.0, v3);
   v->setBackgroundColor(255,255,255, v3);
   v->addPointCloud<PointXYZRGB>(p_rsd_out, col_hdl3, "rsd", v3);
-  
+
   // 4:
   int v4(0);
   ColorHdlRGB col_hdl4(p_pc_out);
