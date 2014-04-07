@@ -78,7 +78,7 @@ class RegKeypointCorrespondenceAbstract
 public:
   virtual boost::shared_ptr<pcl::PointCloud<Point> > getSourcePoints()=0;
   virtual boost::shared_ptr<pcl::PointCloud<Point> > getTargetPoints()=0;
-  
+
   #ifdef PCL_VERSION_COMPARE
     virtual void getCorrespondences(pcl::Correspondences &correspondences)=0;
   #else
@@ -145,7 +145,7 @@ protected:
   virtual bool compute_features();
   virtual bool compute_corrospondences();
   virtual bool compute_transformation();
-  
+
   #ifdef PCL_VERSION_COMPARE
     void rejectBadCorrespondences (const pcl::CorrespondencesPtr &all_correspondences,
                                  pcl::Correspondences &remaining_correspondences);
@@ -170,7 +170,7 @@ protected:
 }
 
 //keypoints...
-#include "features/segments.h"
+//#include "features/segments.h"
 #include "features/narf_kp.h"
 
 #endif /* REGISTRATION_CORRESPONDENCE_H_ */
