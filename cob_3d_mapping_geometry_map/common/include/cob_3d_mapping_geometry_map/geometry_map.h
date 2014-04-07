@@ -76,7 +76,6 @@
 //#include "cob_3d_mapping_geometry_map/vis/geometry_map_visualisation.h"
 #include "cob_3d_mapping_common/polygon.h"
 #include "cob_3d_mapping_common/cylinder.h"
-#include "cob_3d_mapping_common/shape_cluster.h"
 
 /**
 * \brief Class for GeometryMap
