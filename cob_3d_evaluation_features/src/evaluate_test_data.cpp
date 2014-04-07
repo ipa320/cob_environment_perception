@@ -67,7 +67,7 @@
 #include <pcl/common/file_io.h>
 #include <pcl/point_types.h>
 
-#include "cob_3d_mapping_common/label_results.h"
+#include <cob_3d_evaluation_features/label_results.h>
 
 using namespace pcl;
 using namespace std;
@@ -167,15 +167,15 @@ int main (int argc, char** argv)
     vector<string> pc_pcds, rsd_pcds;
     getAllPcdFilesInDirectory(folder_ + "0_pc/" + scenes_[i] + "/", pc_pcds);
     getAllPcdFilesInDirectory(folder_ + "0_rsd/" + scenes_[i] + "/", rsd_pcds);
-    
+
     cout << "Scene " << scenes_[i] << ": Found " << pc_pcds.size() << " pcd files for PC" << endl;
     cout << "Scene " << scenes_[i] << ": Found " << rsd_pcds.size() << " pcd files for RSD" << endl;
 
     if (en_pc)
     {
-      string logfile = folder_ + "results/" + scenes_[i] + "/res_pc_" + 
+      string logfile = folder_ + "results/" + scenes_[i] + "/res_pc_" +
 	cob_3d_mapping_common::createTimestamp() + ".csv";
-      
+
       cob_3d_mapping_common::writeHeader(logfile,"c_low","c_high","c_r1(cyl/sph)","c_r2(cor/edge)");
 
       for (size_t j = 0; j < pc_pcds.size(); j++)
@@ -210,7 +210,7 @@ int main (int argc, char** argv)
 		  exp_rgb = *reinterpret_cast<int*>(&p->points[idx].rgb); // expected label
 		  c_max = pc->points[idx].pc1;
 		  c_min = pc->points[idx].pc2;
-		  
+
 		  if ( c_max < c_low )
 		  {
 		    pre_rgb = LBL_PLANE;
@@ -229,7 +229,7 @@ int main (int argc, char** argv)
 		      if (exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF) stats.fp[EVAL_EDGE]++;
 		    }
 		    // special case:  combined class for corner and edge
-		    if (exp_rgb != LBL_COR && exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF) 
+		    if (exp_rgb != LBL_COR && exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF)
 		      stats.fp[EVAL_EDGECORNER]++;
 		  }
 		  else
@@ -245,18 +245,18 @@ int main (int argc, char** argv)
 		      if (exp_rgb != LBL_CYL && exp_rgb != LBL_UNDEF) stats.fp[EVAL_CYL]++;
 		    }
 		    // special case:  combined class for sphere and cylinder
-		    if (exp_rgb != LBL_SPH && exp_rgb != LBL_CYL && exp_rgb != LBL_UNDEF) 
+		    if (exp_rgb != LBL_SPH && exp_rgb != LBL_CYL && exp_rgb != LBL_UNDEF)
 		      stats.fp[EVAL_CURVED]++;
 		  }
 
-		  switch(exp_rgb) 
+		  switch(exp_rgb)
 		  {
 		  case LBL_PLANE:
 		    if (pre_rgb != exp_rgb) stats.fn[EVAL_PLANE]++;
 		    stats.exp[EVAL_PLANE]++;
 		    break;
 		  case LBL_EDGE:
-		    if (pre_rgb != exp_rgb) 
+		    if (pre_rgb != exp_rgb)
 		    {
 		      stats.fn[EVAL_EDGE]++;
 		      if (pre_rgb != LBL_COR) stats.fn[EVAL_EDGECORNER]++;
@@ -283,7 +283,7 @@ int main (int argc, char** argv)
 		    stats.exp[EVAL_CURVED]++;
 		    break;
 		  case LBL_CYL:
-		    if (pre_rgb != exp_rgb) 
+		    if (pre_rgb != exp_rgb)
 		    {
 		      stats.fn[EVAL_CYL]++;
 		      if (pre_rgb != LBL_SPH) stats.fn[EVAL_CURVED]++;
@@ -308,7 +308,7 @@ int main (int argc, char** argv)
 
     if (en_rsd)
     {
-      string logfile = folder_ + "results/" + scenes_[i] + "/res_rsd_" + 
+      string logfile = folder_ + "results/" + scenes_[i] + "/res_rsd_" +
 	cob_3d_mapping_common::createTimestamp() + ".csv";
       cob_3d_mapping_common::writeHeader(logfile,"r_low","r_high","r_r1(cyl/sph)","r_r2(cor/edge)");
 
@@ -343,7 +343,7 @@ int main (int argc, char** argv)
 		  exp_rgb = *reinterpret_cast<int*>(&p->points[idx].rgb); // expected label
 		  r_max = rsd->points[idx].r_max;
 		  r_min = rsd->points[idx].r_min;
-		  
+
 		  if ( r_min > r_high )
 		  {
 		    pre_rgb = LBL_PLANE;
@@ -362,7 +362,7 @@ int main (int argc, char** argv)
 		      if (exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF) stats.fp[EVAL_EDGE]++;
 		    }
 		    // special case:  combined class for corner and edge
-		    if (exp_rgb != LBL_COR && exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF) 
+		    if (exp_rgb != LBL_COR && exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF)
 		      stats.fp[EVAL_EDGECORNER]++;
 		  }
 		  else
@@ -378,18 +378,18 @@ int main (int argc, char** argv)
 		      if (exp_rgb != LBL_CYL && exp_rgb != LBL_UNDEF) stats.fp[EVAL_CYL]++;
 		    }
 		    // special case:  combined class for sphere and cylinder
-		    if (exp_rgb != LBL_SPH && exp_rgb != LBL_CYL && exp_rgb != LBL_UNDEF) 
+		    if (exp_rgb != LBL_SPH && exp_rgb != LBL_CYL && exp_rgb != LBL_UNDEF)
 		      stats.fp[EVAL_CURVED]++;
 		  }
 
-		  switch(exp_rgb) 
+		  switch(exp_rgb)
 		  {
 		  case LBL_PLANE:
 		    if (pre_rgb != exp_rgb) stats.fn[EVAL_PLANE]++;
 		    stats.exp[EVAL_PLANE]++;
 		    break;
 		  case LBL_EDGE:
-		    if (pre_rgb != exp_rgb) 
+		    if (pre_rgb != exp_rgb)
 		    {
 		      stats.fn[EVAL_EDGE]++;
 		      if (pre_rgb != LBL_COR) stats.fn[EVAL_EDGECORNER]++;
@@ -416,7 +416,7 @@ int main (int argc, char** argv)
 		    stats.exp[EVAL_CURVED]++;
 		    break;
 		  case LBL_CYL:
-		    if (pre_rgb != exp_rgb) 
+		    if (pre_rgb != exp_rgb)
 		    {
 		      stats.fn[EVAL_CYL]++;
 		      if (pre_rgb != LBL_SPH) stats.fn[EVAL_CURVED]++;

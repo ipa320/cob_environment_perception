@@ -69,7 +69,7 @@
 #include <pcl/visualization/pcl_visualizer.h>
 #include <pcl/visualization/point_cloud_handlers.h>
 
-#include "cob_3d_mapping_common/label_results.h"
+#include <cob_3d_evaluation_features/label_results.h>
 #include <opencv2/ml/ml.hpp>
 
 using namespace pcl;
@@ -137,7 +137,7 @@ int main (int argc, char** argv)
   cv::Mat fpfh_histo(1, 33, CV_32FC1);
 
   int exp_rgb, pre_rgb, predict;
-  
+
   // new instance class for holding evaluation results:
   cob_3d_mapping_common::LabelResults stats(rn,rf,is_mls);
   //cout << "start labeling" << endl;
@@ -159,7 +159,7 @@ int main (int argc, char** argv)
       pre_rgb = LBL_EDGE;
       if (exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF) stats.fp[EVAL_EDGE]++;
       if (exp_rgb != LBL_COR && exp_rgb != LBL_EDGE && exp_rgb != LBL_UNDEF) stats.fp[EVAL_EDGECORNER]++;
-      break; 
+      break;
     case SVM_COR:
       pre_rgb = LBL_COR;
       if (exp_rgb != LBL_COR && exp_rgb != LBL_UNDEF) stats.fp[EVAL_COR]++;
@@ -180,14 +180,14 @@ int main (int argc, char** argv)
       break;
     }
 
-    switch(exp_rgb) 
+    switch(exp_rgb)
     {
     case LBL_PLANE:
       if (pre_rgb != exp_rgb) stats.fn[EVAL_PLANE]++;
       stats.exp[EVAL_PLANE]++;
       break;
     case LBL_EDGE:
-      if (pre_rgb != exp_rgb) 
+      if (pre_rgb != exp_rgb)
       {
 	stats.fn[EVAL_EDGE]++;
 	if (pre_rgb != LBL_COR) stats.fn[EVAL_EDGECORNER]++;
@@ -214,7 +214,7 @@ int main (int argc, char** argv)
       stats.exp[EVAL_CURVED]++;
       break;
     case LBL_CYL:
-      if (pre_rgb != exp_rgb) 
+      if (pre_rgb != exp_rgb)
       {
 	stats.fn[EVAL_CYL]++;
 	if (pre_rgb != LBL_SPH) stats.fn[EVAL_CURVED]++;
@@ -233,7 +233,7 @@ int main (int argc, char** argv)
   //cout << "write stats" << endl;
   if (logfile_ != "")
     stats.writeToFile(logfile_, svm_);
-  else 
+  else
     cout << stats.writeToFile("", svm_) << endl;;
 
   if (vis_)

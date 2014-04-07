@@ -24,6 +24,7 @@ find_package(VTK REQUIRED COMPONENTS vtkCommon vtkFiltering vtkRendering)
 ## Your package locations should be listed before other locations
 # include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 include_directories(
+  include
   ${catkin_INCLUDE_DIRS}
   ${VTK_INCLUDE_DIRS}
   ${Boost_INCLUDE_DIRS}
