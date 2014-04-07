@@ -65,9 +65,7 @@ include_directories(
 ## Declare a cpp library
 add_library(cob_3d_features
   common/src/fast_edge_estimation_3d.cpp
-  common/src/edge_estimation_3d.cpp
   common/src/edge_estimation_2d.cpp
-  common/src/edge_extraction.cpp
   common/src/knn_classifier.cpp
   common/src/most_discriminating_data_points.cpp
   common/src/organized_curvature_estimation.cpp
@@ -81,16 +79,14 @@ add_library(cob_3d_features_omp
 ## Declare a cpp executable
 add_executable(test_organized_curvature_estimation common/test/test_organized_curvature_estimation.cpp)
 add_executable(test_surface_class_estimation common/test/test_surface_class_estimation.cpp)
-add_executable(test_edge_estimation common/test/test_edge_estimation.cpp)
 add_executable(test_edge_sharpening common/test/test_edge_sharpening.cpp)
 add_executable(profile_oce common/test/profile_oce.cpp)
 add_executable(profile_fee_omp common/test/profile_fee_omp.cpp)
 add_executable(profile_fee common/test/profile_fee.cpp)
-add_executable(profile_ee common/test/profile_ee.cpp)
 add_executable(profile_ne common/test/profile_ne.cpp)
 # extracts pc from organized cloud and saves as ppm:
 add_executable(extract_organized_curvatures common/test/extract_organized_curvatures.cpp)
-target_link_libraries(cob_3d_features 
+target_link_libraries(cob_3d_features
   ${catkin_LIBRARIES}
   ${OpenCV_LIBS}
   ${PCL_LIBRARIES}
@@ -101,76 +97,59 @@ target_link_libraries(cob_3d_features_omp
   ${PCL_LIBRARIES}
 )
 
-target_link_libraries(test_organized_curvature_estimation 
-  cob_3d_features 
-  cob_3d_features_omp 
+target_link_libraries(test_organized_curvature_estimation
+  cob_3d_features
+  cob_3d_features_omp
   ${catkin_LIBRARIES}
-  ${VTK_LIBRARIES} 
+  ${VTK_LIBRARIES}
   ${OpenCV_LIBS}
   ${Boost_LIBRARIES}
 )
 
-target_link_libraries(test_surface_class_estimation 
-  cob_3d_features 
+target_link_libraries(test_surface_class_estimation
+  cob_3d_features
   cob_3d_features_omp
   ${catkin_LIBRARIES}
-  ${VTK_LIBRARIES} 
+  ${VTK_LIBRARIES}
   ${OpenCV_LIBS}
   ${Boost_LIBRARIES}
 )
 
-target_link_libraries(test_edge_estimation 
-  cob_3d_features 
+target_link_libraries(test_edge_sharpening
+  cob_3d_features
   cob_3d_features_omp
   ${catkin_LIBRARIES}
-  ${VTK_LIBRARIES} 
+  ${VTK_LIBRARIES}
   ${OpenCV_LIBS}
   ${Boost_LIBRARIES}
 )
 
-target_link_libraries(test_edge_sharpening 
-  cob_3d_features 
+target_link_libraries(profile_oce
+  cob_3d_features
   cob_3d_features_omp
   ${catkin_LIBRARIES}
-  ${VTK_LIBRARIES} 
-  ${OpenCV_LIBS}
-  ${Boost_LIBRARIES}
-)
-
-target_link_libraries(profile_oce 
-  cob_3d_features 
-  cob_3d_features_omp
-  ${catkin_LIBRARIES}
-  ${VTK_LIBRARIES} 
+  ${VTK_LIBRARIES}
   ${OpenCV_LIBS}
 )
 
-target_link_libraries(profile_fee_omp 
-  cob_3d_features 
+target_link_libraries(profile_fee_omp
+  cob_3d_features
   cob_3d_features_omp
   ${catkin_LIBRARIES}
-  ${VTK_LIBRARIES} 
+  ${VTK_LIBRARIES}
   ${OpenCV_LIBS}
 )
 
-target_link_libraries(profile_fee 
-  cob_3d_features 
+target_link_libraries(profile_fee
+  cob_3d_features
   cob_3d_features_omp
   ${catkin_LIBRARIES}
-  ${VTK_LIBRARIES} 
+  ${VTK_LIBRARIES}
   ${OpenCV_LIBS}
 )
 
-target_link_libraries(profile_ee 
-  cob_3d_features 
-  cob_3d_features_omp
-  ${catkin_LIBRARIES}
-  ${VTK_LIBRARIES} 
-  ${OpenCV_LIBS}
-)
-
-target_link_libraries(profile_ne 
-  cob_3d_features 
+target_link_libraries(profile_ne
+  cob_3d_features
   cob_3d_features_omp
   ${catkin_LIBRARIES}
 )
