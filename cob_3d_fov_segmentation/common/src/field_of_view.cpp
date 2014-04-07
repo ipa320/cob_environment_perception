@@ -57,34 +57,33 @@
  *
  ****************************************************************/
 
-
 //##################
 //#### includes ####
-
 #include <cob_3d_fov_segmentation/field_of_view.h>
 
 using namespace cob_3d_mapping;
 
-void FieldOfView::computeFieldOfView()
+void
+FieldOfView::computeFieldOfView ()
 {
-  double fovHorFrac = sensor_fov_hor_/2;
-  double fovVerFrac = sensor_fov_ver_/2;
+  double fovHorFrac = sensor_fov_hor_ / 2;
+  double fovVerFrac = sensor_fov_ver_ / 2;
 
-  p_1_cam_(0) = p_0_(0) + tan(fovHorFrac)*sensor_max_range_;
-  p_1_cam_(1) = p_0_(1) -tan(fovVerFrac)*sensor_max_range_;
-  p_1_cam_(2) = p_0_(2) + sensor_max_range_;
+  p_1_cam_ (0) = p_0_ (0) + tan (fovHorFrac) * sensor_max_range_;
+  p_1_cam_ (1) = p_0_ (1) - tan (fovVerFrac) * sensor_max_range_;
+  p_1_cam_ (2) = p_0_ (2) + sensor_max_range_;
 
-  p_2_cam_(0) = -p_1_cam_(0);
-  p_2_cam_(1) = p_1_cam_(1);
-  p_2_cam_(2) = sensor_max_range_;
+  p_2_cam_ (0) = -p_1_cam_ (0);
+  p_2_cam_ (1) = p_1_cam_ (1);
+  p_2_cam_ (2) = sensor_max_range_;
 
-  p_3_cam_(0) = -p_1_cam_(0);
-  p_3_cam_(1) = -p_1_cam_(1);
-  p_3_cam_(2) = sensor_max_range_;
+  p_3_cam_ (0) = -p_1_cam_ (0);
+  p_3_cam_ (1) = -p_1_cam_ (1);
+  p_3_cam_ (2) = sensor_max_range_;
 
-  p_4_cam_(0) = p_1_cam_(0);
-  p_4_cam_(1) = -p_1_cam_(1);
-  p_4_cam_(2) = sensor_max_range_;
+  p_4_cam_ (0) = p_1_cam_ (0);
+  p_4_cam_ (1) = -p_1_cam_ (1);
+  p_4_cam_ (2) = sensor_max_range_;
 
   p_0_ = p_0_cam_;
   p_1_ = p_1_cam_;

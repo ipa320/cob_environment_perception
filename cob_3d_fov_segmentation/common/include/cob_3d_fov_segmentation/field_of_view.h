@@ -70,38 +70,71 @@
 namespace cob_3d_mapping
 {
 
-  //####################
-  //#### class ####
+  /*
+   * \brief Class to compute the field of view of a camera
+   */
   class FieldOfView
   {
   public:
-    // Constructor
-    FieldOfView() :
-      p_0_cam_(0,0,0)
+    /** Constructor */
+    FieldOfView () :
+        p_0_cam_ (0, 0, 0)
     {
-      computeFieldOfView();
+      computeFieldOfView ();
     }
 
-
-    // Destructor
-    ~FieldOfView()
+    /** Empty Destructor */
+    ~FieldOfView ()
     {
       /// void
     }
 
-    void setSensorFoV_hor(double val) {
-      sensor_fov_hor_ = val*M_PI/180;
+    /**
+     * \brief Set the horizontal FOV angle of the camera (degree).
+     *
+     * \param[in] val The angle in degree.
+     */
+    void
+    setSensorFoV_hor (double val)
+    {
+      sensor_fov_hor_ = val * M_PI / 180;
     }
 
-    void setSensorFoV_ver(double val) {
-      sensor_fov_ver_ = val*M_PI/180;
+    /**
+     * \brief Set the vertical FOV angle of the camera (degree).
+     *
+     * \param[in] val The angle in degree.
+     */
+    void
+    setSensorFoV_ver (double val)
+    {
+      sensor_fov_ver_ = val * M_PI / 180;
     }
 
-    void setSensorMaxRange(double val) {
+    /**
+     * \brief Set the maximum range of the camera (meter).
+     *
+     * \param[in] val The maximum range in meter.
+     */
+    void
+    setSensorMaxRange (double val)
+    {
       sensor_max_range_ = val;
     }
 
-    void getFOV(Eigen::Vector3d& p_0, Eigen::Vector3d& p_1, Eigen::Vector3d& p_2, Eigen::Vector3d& p_3, Eigen::Vector3d& p_4)
+    /**
+     * \brief Return the FOV.
+     *
+     * \param[out] p_0 Origin point.
+     * \param[out] p_1 First corner point of the frustum far plane.
+     * \param[out] p_2 Second corner point of the frustum far plane.
+     * \param[out] p_3 Third corner point of the frustum far plane.
+     * \param[out] p_4 Forth corner point of the frustum far plane.
+     *
+     */
+    void
+    getFOV (Eigen::Vector3d& p_0, Eigen::Vector3d& p_1, Eigen::Vector3d& p_2, Eigen::Vector3d& p_3,
+            Eigen::Vector3d& p_4)
     {
       p_0 = p_0_;
       p_1 = p_1_;
@@ -117,8 +150,8 @@ namespace cob_3d_mapping
      *
      * @return nothing
      */
-    void computeFieldOfView();
-
+    void
+    computeFieldOfView ();
 
     /**
      * @brief uses global transformation (of the robot) to recalculate the field of view
@@ -130,35 +163,34 @@ namespace cob_3d_mapping
      *
      * @return nothing
      */
-    void transformFOV(Eigen::Affine3d& t)
+    void
+    transformFOV (Eigen::Affine3d& t)
     {
-      p_0_ = t*p_0_cam_;
-      p_1_ = t*p_1_cam_;
-      p_2_ = t*p_2_cam_;
-      p_3_ = t*p_3_cam_;
-      p_4_ = t*p_4_cam_;
+      p_0_ = t * p_0_cam_;
+      p_1_ = t * p_1_cam_;
+      p_2_ = t * p_2_cam_;
+      p_3_ = t * p_3_cam_;
+      p_4_ = t * p_4_cam_;
     }
 
-
   protected:
-    double sensor_fov_hor_;       /// horizontal angle of sensor
-    double sensor_fov_ver_;       /// vertical angle of sensor
-    double sensor_max_range_;     /// maximum range of sensor
+    double sensor_fov_hor_; /// horizontal angle of sensor
+    double sensor_fov_ver_; /// vertical angle of sensor
+    double sensor_max_range_; /// maximum range of sensor
 
-    Eigen::Vector3d p_0_;       /// part of view frustum
-    Eigen::Vector3d p_1_;       /// part of view frustum
-    Eigen::Vector3d p_2_;       /// part of view frustum
-    Eigen::Vector3d p_3_;       /// part of view frustum
-    Eigen::Vector3d p_4_;       /// part of view frustum
+    Eigen::Vector3d p_0_; /// part of view frustum
+    Eigen::Vector3d p_1_; /// part of view frustum
+    Eigen::Vector3d p_2_; /// part of view frustum
+    Eigen::Vector3d p_3_; /// part of view frustum
+    Eigen::Vector3d p_4_; /// part of view frustum
 
-    Eigen::Vector3d p_0_cam_;       /// part of view frustum
-    Eigen::Vector3d p_1_cam_;       /// part of view frustum
-    Eigen::Vector3d p_2_cam_;       /// part of view frustum
-    Eigen::Vector3d p_3_cam_;       /// part of view frustum
-    Eigen::Vector3d p_4_cam_;       /// part of view frustum
+    Eigen::Vector3d p_0_cam_; /// part of view frustum
+    Eigen::Vector3d p_1_cam_; /// part of view frustum
+    Eigen::Vector3d p_2_cam_; /// part of view frustum
+    Eigen::Vector3d p_3_cam_; /// part of view frustum
+    Eigen::Vector3d p_4_cam_; /// part of view frustum
 
   };
-
 
 } //namespace
 
