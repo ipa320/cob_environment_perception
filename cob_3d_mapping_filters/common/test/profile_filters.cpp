@@ -64,7 +64,7 @@
  */
 
 //Filter
-#include <cob_3d_mapping_filters/amplitude_filter.h>
+//#include <cob_3d_mapping_filters/amplitude_filter.h>
 //#include <cob_3d_mapping_filters/impl/amplitude_filter.hpp>
 #include <cob_3d_mapping_filters/jump_edge_filter.h>
 //#include <cob_3d_mapping_filters/impl/jump_edge_filter.hpp>
@@ -87,7 +87,7 @@
 
 /* Methods for testing filters */
 
-double
+/*double
 TestProcessingTimeAmp (unsigned int cloud_size, unsigned int iterations)
 {
   cob_3d_mapping_filters::AmplitudeFilter<PointXYZA> filter;
@@ -116,7 +116,7 @@ TestProcessingTimeAmp (unsigned int cloud_size, unsigned int iterations)
   time /= iterations;
   std::cout << "Cloud size " << cloud_size << ": " << time << " s" << std::endl;
   return time;
-}
+}*/
 
 double
 TestProcessingTimeJe (unsigned int cloud_size, unsigned int iterations)
@@ -229,9 +229,9 @@ TestProcessingTime ()
   file << "pts\tamp\tje\tspk\tsor\n";
   for (unsigned int cloud_size = 40000; cloud_size <= 400000; cloud_size += 40000)
   {
-    double time = TestProcessingTimeAmp (cloud_size, 1000);
-    file << cloud_size << "\t" << time;
-    time = TestProcessingTimeJe (cloud_size, 1000);
+    //double time = TestProcessingTimeAmp (cloud_size, 1000);
+    //file << cloud_size << "\t" << time;
+    double time = TestProcessingTimeJe (cloud_size, 1000);
     file << "\t" << time;
     time = TestProcessingTimeSpk (cloud_size, 1000);
     file << "\t" << time;

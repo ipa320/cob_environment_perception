@@ -54,8 +54,6 @@ include_directories(
 
 ## Declare a cpp library
 add_library(cob_3d_mapping_filters
-	common/src/amplitude_filter.cpp
-	common/src/intensity_filter.cpp
 	common/src/jump_edge_filter.cpp
 	common/src/speckle_filter.cpp)
 
@@ -67,13 +65,11 @@ add_library(cob_3d_mapping_filter_nodelets
 	ros/src/speckle_filter.cpp)
 
 ## Declare a cpp executable
-add_executable(test_amplitude_filter common/test/test_amplitude_filter.cpp)
-add_executable(test_intensity_filter common/test/test_intensity_filter.cpp)
 add_executable(test_jump_edge_filter common/test/test_jump_edge_filter.cpp)
 add_executable(test_speckle_filter common/test/test_speckle_filter.cpp)
 add_executable(profile_filters common/test/profile_filters.cpp)
 
-target_link_libraries(cob_3d_mapping_filters 
+target_link_libraries(cob_3d_mapping_filters
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
 )
@@ -84,31 +80,19 @@ target_link_libraries(cob_3d_mapping_filter_nodelets
   ${PCL_LIBRARIES}
 )
 
-target_link_libraries(test_amplitude_filter 
+target_link_libraries(test_jump_edge_filter
   cob_3d_mapping_filters
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
 )
 
-target_link_libraries(test_intensity_filter 
+target_link_libraries(test_speckle_filter
   cob_3d_mapping_filters
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
 )
 
-target_link_libraries(test_jump_edge_filter 
-  cob_3d_mapping_filters
-  ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
-)
-
-target_link_libraries(test_speckle_filter 
-  cob_3d_mapping_filters
-  ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
-)
-
-target_link_libraries(profile_filters 
+target_link_libraries(profile_filters
   cob_3d_mapping_filters
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
