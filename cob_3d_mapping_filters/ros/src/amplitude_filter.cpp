@@ -76,11 +76,12 @@
 #include <pluginlib/class_list_macros.h>
 #include <nodelet/nodelet.h>
 #include <pcl/io/pcd_io.h>
+#include <pcl/filters/passthrough.h>
 
 // cob_3d_mapping_filters includes
 #include <cob_3d_mapping_common/point_types.h>
-#include <cob_3d_mapping_filters/amplitude_filter.h>
-#include <cob_3d_mapping_filters/impl/amplitude_filter.hpp>
+//#include <cob_3d_mapping_filters/amplitude_filter.h>
+//#include <cob_3d_mapping_filters/impl/amplitude_filter.hpp>
 
 //######################
 //#### nodelet class####
@@ -111,6 +112,7 @@ public:
     n_.param ("/amplitude_filter_nodelet/amplitude_min_threshold", lim_min_, 2000.0);
     n_.param ("/amplitude_filter_nodelet/amplitude_max_threshold", lim_max_, 60000.0);
     filter_.setFilterLimits (lim_min_, lim_max_);
+    filter_.setFilterFieldName ("amplitude");
   }
 
   void
@@ -135,7 +137,8 @@ protected:
   ros::Subscriber point_cloud_sub_;
   ros::Publisher point_cloud_pub_;
 
-  cob_3d_mapping_filters::AmplitudeFilter<PointXYZA> filter_;
+  //cob_3d_mapping_filters::AmplitudeFilter<PointXYZA> filter_;
+  pcl::PassThrough<PointXYZA> filter_;
 
   double lim_min_;
   double lim_max_;

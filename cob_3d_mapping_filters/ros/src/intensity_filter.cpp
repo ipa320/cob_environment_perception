@@ -76,11 +76,12 @@
 #include <nodelet/nodelet.h>
 #include <pcl/io/pcd_io.h>
 #include <pcl_ros/point_cloud.h>
+#include <pcl/filters/passthrough.h>
 
 // cob_3d_mapping_filters includes
-#include <cob_3d_mapping_common/point_types.h>
-#include <cob_3d_mapping_filters/intensity_filter.h>
-#include <cob_3d_mapping_filters/impl/intensity_filter.hpp>
+//#include <cob_3d_mapping_common/point_types.h>
+//#include <cob_3d_mapping_filters/intensity_filter.h>
+//#include <cob_3d_mapping_filters/impl/intensity_filter.hpp>
 
 //######################
 //#### nodelet class####
@@ -111,7 +112,7 @@ public:
     n_.param ("/intensity_filter_nodelet/intensity_min_threshold", lim_min_, 2000);
     n_.param ("/intensity_filter_nodelet/intensity_max_threshold", lim_max_, 60000);
     filter_.setFilterLimits (lim_min_, lim_max_);
-
+    filter_.setFilterFieldName ("intensity");
   }
 
   void
@@ -137,7 +138,8 @@ protected:
   ros::Subscriber point_cloud_sub_;
   ros::Publisher point_cloud_pub_;
 
-  cob_3d_mapping_filters::IntensityFilter<pcl::PointXYZI> filter_;
+  //cob_3d_mapping_filters::IntensityFilter<pcl::PointXYZI> filter_;
+  pcl::PassThrough<pcl::PointXYZI> filter_;
 
   int lim_min_, lim_max_;
   bool t_check;
