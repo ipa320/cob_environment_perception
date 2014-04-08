@@ -66,7 +66,7 @@
 #include "cob_3d_mapping_filters/speckle_filter.h"
 
 //TODO: get rid of opencv
-#include "opencv/cv.h"
+//#include "opencv/cv.h"
 #include "pcl/point_types.h"
 
 #include <pcl/filters/extract_indices.h>
@@ -74,20 +74,24 @@
 
 template<typename PointT>
   void
-  cob_3d_mapping_filters::SpeckleFilter<PointT>::applyFilter (pcl::PointIndices::Ptr points_to_remove)
+  cob_3d_mapping_filters::SpeckleFilter<PointT>::applyFilter (PointCloud &pc_out)
   {
+    pc_out.points.resize (input_->points.size ());
+    pc_out.header = input_->header;
+
+    points_to_remove_->indices.clear ();
     float newVal = std::numeric_limits<float>::quiet_NaN ();
     int width = input_->width, height = input_->height, npixels = width * height;
-    size_t bufSize = npixels * (int)(sizeof(cv::Point_<short>) + sizeof(int) + sizeof(uchar));
+    size_t bufSize = npixels * (int)(sizeof(Eigen::Vector2i) + sizeof(int) + sizeof(unsigned char));
 
-    uchar* buf = new uchar[bufSize];
-    uchar* rem_buf = buf;
+    unsigned char* buf = new unsigned char[bufSize];
+    unsigned char* rem_buf = buf;
     int i, j, dstep = input_->width;
     int* labels = (int*)buf;
     buf += npixels * sizeof(labels[0]);
-    cv::Point_<short>* wbuf = (cv::Point_<short>*)buf;
+    Eigen::Vector2i* wbuf = (Eigen::Vector2i*)buf;
     buf += npixels * sizeof(wbuf[0]);
-    uchar* rtype = (uchar*)buf;
+    unsigned char* rtype = (unsigned char*)buf;
     int curlabel = 0;
 
     // clear out label assignments
@@ -96,28 +100,24 @@ template<typename PointT>
     for (i = 0; i < height; i++)
     {
       const PointT * const ds = &input_->points[i * input_->width];
-      //PointT *outp = &pc_out.points[i*pc_out.width];
       int* ls = labels + width * i;
 
       for (j = 0; j < width; j++)
       {
-        if (!pcl_isnan(ds[j].y)) // != newVal )    // not a bad disparity
+        if (!pcl_isnan (ds[j].y)) // != newVal )    // not a bad disparity
         {
           if (ls[j]) // has a label, check for bad label
           {
             if (rtype[ls[j]]) // small region, zero out disparity
             {
-              points_to_remove->indices.push_back (j + i * input_->width);
-              /*outp[j].x = (float)newVal;
-               outp[j].y = (float)newVal;
-               outp[j].z = (float)newVal;*/
+              points_to_remove_->indices.push_back (j + i * input_->width);
             }
           }
           // no label, assign and propagate
           else
           {
-            cv::Point_<short>* ws = wbuf; // initialize wavefront
-            cv::Point_<short> p ((short)j, (short)i); // current pixel
+            Eigen::Vector2i* ws = wbuf; // initialize wavefront
+            Eigen::Vector2i p (j, i); // current pixel
             curlabel++; // next label
             int count = 0; // current region size
             ls[j] = curlabel;
@@ -127,36 +127,36 @@ template<typename PointT>
             {
               count++;
               // put neighbors onto wavefront
-              const PointT * const dpp = &input_->points[p.x + p.y * input_->width];
+              const PointT * const dpp = &input_->points[p(0) + p(1) * input_->width];
               const PointT dp = *dpp;
-              //cv::Vec3f* dpp = &img.at<cv::Vec3f>(p.y, p.x);
-              //cv::Vec3f dp = *dpp;
-              int* lpp = labels + width * p.y + p.x;
+              int* lpp = labels + width * p(1) + p(0);
 
-              if (p.x < width - 1 && !lpp[+1] && !pcl_isnan(dpp[+1].z) && std::abs (dp.z - dpp[+1].z) <= speckle_range_)
+              if (p(0) < width - 1 && !lpp[+1] && !pcl_isnan (dpp[+1].z)
+                  && std::abs (dp.z - dpp[+1].z) <= speckle_range_)
               {
                 lpp[+1] = curlabel;
-                *ws++ = cv::Point_<short> (p.x + 1, p.y);
+                *ws++ = Eigen::Vector2i (p(0) + 1, p(1));
+                //*ws++ = cv::Point_<short> (p.x + 1, p.y);
               }
 
-              if (p.x > 0 && !lpp[-1] && !pcl_isnan(dpp[-1].z) && std::abs (dp.z - dpp[-1].z) <= speckle_range_)
+              if (p(0) > 0 && !lpp[-1] && !pcl_isnan (dpp[-1].z) && std::abs (dp.z - dpp[-1].z) <= speckle_range_)
               {
                 lpp[-1] = curlabel;
-                *ws++ = cv::Point_<short> (p.x - 1, p.y);
+                *ws++ = Eigen::Vector2i (p(0) - 1, p(1));
               }
 
-              if (p.y < height - 1 && !lpp[+width] && !pcl_isnan(dpp[+dstep].z)
+              if (p(1) < height - 1 && !lpp[+width] && !pcl_isnan (dpp[+dstep].z)
                   && std::abs (dp.z - dpp[+dstep].z) <= speckle_range_)
               {
                 lpp[+width] = curlabel;
-                *ws++ = cv::Point_<short> (p.x, p.y + 1);
+                *ws++ = Eigen::Vector2i (p(0), p(1) + 1);
               }
 
-              if (p.y > 0 && !lpp[-width] && !pcl_isnan(dpp[-dstep].z)
+              if (p(1) > 0 && !lpp[-width] && !pcl_isnan (dpp[-dstep].z)
                   && std::abs (dp.z - dpp[-dstep].z) <= speckle_range_)
               {
                 lpp[-width] = curlabel;
-                *ws++ = cv::Point_<short> (p.x, p.y - 1);
+                *ws++ = Eigen::Vector2i (p(0), p(1) - 1);
               }
 
               // pop most recent and propagate
@@ -168,34 +168,22 @@ template<typename PointT>
             // assign label type
             if (count <= speckle_size_) // speckle region
             {
-              points_to_remove->indices.push_back (j + i * input_->width);
+              points_to_remove_->indices.push_back (j + i * input_->width);
               rtype[ls[j]] = 1; // small region label
-              /*outp[j].x = (float)newVal;
-               outp[j].y = (float)newVal;
-               outp[j].z = (float)newVal;*/
             }
             else
               rtype[ls[j]] = 0; // large region label
           }
         }
         else
-          points_to_remove->indices.push_back (j + i * input_->width);
+          points_to_remove_->indices.push_back (j + i * input_->width);
       }
     }
 
     delete[] rem_buf;
-  }
 
-template<typename PointT>
-  void
-  cob_3d_mapping_filters::SpeckleFilter<PointT>::applyFilter (PointCloud &pc_out)
-  {
-    pc_out.points.resize (input_->points.size ());
-    pc_out.header = input_->header;
-
-    points_to_remove_->indices.clear ();
-    applyFilter (points_to_remove_);
-
+    //TODO: add param to actually not remove the points
+    //TODO: add param to keep the point cloud ordered
     pcl::ExtractIndices<PointT> extractIndices;
     extractIndices.setInputCloud (input_);
     extractIndices.setIndices (points_to_remove_);
