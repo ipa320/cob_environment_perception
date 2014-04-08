@@ -78,10 +78,10 @@ template<typename PointT>
     pcl::PointIndices::Ptr points_to_remove (new pcl::PointIndices ());
 
     //upper angle threshold in radians
-    double upper_angle_thresh = upper_angle_deg_ / 180 * M_PI;
+    double upper_angle_thresh = angle_deg_ / 180 * M_PI;
 
     //Lower angle threshold in radians
-    double lower_angle_thresh = (180 - upper_angle_deg_) / 180 * M_PI;
+    double lower_angle_thresh = (180 - angle_deg_) / 180 * M_PI;
     for (unsigned int i = 0; i < input_->points.size (); i++)
     {
       if (i < input_->width || i % input_->width == 0 || i % input_->width == (input_->height - 1)

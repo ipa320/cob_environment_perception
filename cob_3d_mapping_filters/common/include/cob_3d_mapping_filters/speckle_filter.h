@@ -68,11 +68,16 @@
 #include <pcl/point_types.h>
 #include <pcl/filters/filter.h>
 
-//#define __LINUX__
-//#include <cob_environment_perception_intern_utils/VisionUtils.h>
-
 namespace cob_3d_mapping_filters
 {
+  /**
+   * \brief Outlier removal filter based on region growing (speckles).
+   * \details See Fischer, Jan ; Arbeiter, Georg ; Verl, Alexander:
+   * Combination of Time-of-Flight Depth and Stereo using Semiglobal Optimization
+   * In: IEEE / Robotics and Automation Society: 2011 IEEE International Conference on Robotics and Automation ICRA : Better Robots, Better Life.
+   * May 9-13, 2011, Shanghai, China. Piscataway, NJ, USA : IEEE Press, 2011, S. 3548-3553. - URN urn:nbn:de:0011-n-1901013
+   * for details.
+   */
   template<typename PointT>
     class SpeckleFilter : public pcl::Filter<PointT>
     {
@@ -87,13 +92,17 @@ namespace cob_3d_mapping_filters
           speckle_size_ (40), speckle_range_ (0.2)
       {
         points_to_remove_ = pcl::PointIndices::Ptr (new pcl::PointIndices ());
-        //pp_remove_ = pcl::IndicesConstPtr(&(points_to_remove_->indices));
-        //
       }
       ;
 
       //virtual ~SpeckleFilter();
 
+      /**
+       * \brief Set the filter parameters.
+       *
+       * \param[in] speckle_s The minimum speckle size.
+       * \param[in] speckle_r The minimum distance between speckles.
+       */
       inline void
       setFilterParam (int speckle_s, double speckle_r)
       {
@@ -101,21 +110,33 @@ namespace cob_3d_mapping_filters
         speckle_range_ = speckle_r;
       }
 
+      /**
+       * \brief Get the speckle size parameter.
+       *
+       * \return The minimum speckle size.
+       */
       inline int
       getSpeckleSize ()
       {
         return speckle_size_;
       }
 
+      /**
+       * \brief Get the speckle range parameter.
+       *
+       * \return The maximum distance between speckles.
+       */
       inline double
       getSpeckleRange ()
       {
         return speckle_range_;
       }
 
-      void
-      applyFilter (pcl::PointIndices::Ptr points_to_remove);
-
+      /**
+       * \brief Get the indices of the removed points.
+       *
+       * \return The indices.
+       */
       pcl::PointIndices::Ptr
       getRemovedIndices ()
       {
@@ -124,13 +145,17 @@ namespace cob_3d_mapping_filters
 
     protected:
 
+      /**
+       * \brief Apply the filter
+       *
+       * \param[out] output The filtered point cloud.
+       */
       void
       applyFilter (PointCloud &output);
 
-      int speckle_size_;
-      double speckle_range_;
-      pcl::PointIndices::Ptr points_to_remove_;
-      pcl::IndicesConstPtr pp_remove_;
+      int speckle_size_; ///< The minimum speckle size.
+      double speckle_range_; ///< The minimum distance between two speckles.
+      pcl::PointIndices::Ptr points_to_remove_; ///< The indices of the removed points.
     };
 
 } // end namespace cob_3d_mapping_filters

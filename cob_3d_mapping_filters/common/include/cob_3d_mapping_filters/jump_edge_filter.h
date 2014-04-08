@@ -71,7 +71,9 @@
 namespace cob_3d_mapping_filters
 {
   /**
-   * \Jump Edge Filter
+   * \brief Filter for removing jump edges that occur in TOF point clouds or during fast camera movement.
+   * \details Implements the method described in Stefan Fuchs and Stefan May: Calibration and Registration for Precise Surface Reconstruction,
+   * In Proceedings of the DAGM Dyn3D Workshop, September, 2007, Heidelberg, Germany
    */
   template<typename PointT>
     class JumpEdgeFilter : public pcl::Filter<PointT>
@@ -83,37 +85,49 @@ namespace cob_3d_mapping_filters
       typedef typename PointCloud::Ptr PointCloudPtr;
       typedef typename PointCloud::ConstPtr PointCloudConstPtr;
 
-      /** \constructor */
+      /** Empty Constructor */
       JumpEdgeFilter () :
-          upper_angle_deg_ (170.0)
+          angle_deg_ (170.0)
       {
       }
       ;
 
       //virtual ~JumpEdgeFilter();
 
-      /** \sets upper angle threshold  */
+      /**
+       * \brief Set the angle threshold.
+       *
+       * \param[in] angle The angle in degrees.
+       */
       inline void
-      setUpperAngle (double angle)
+      setAngleThreshold (double angle)
       {
-        upper_angle_deg_ = angle;
+        angle_deg_ = angle;
       }
 
-      /** \gets upper angle threshold  */
+      /**
+       * \brief Get the angle threshold.
+       *
+       * \return The angle threshold.
+       */
       inline double
-      getUpperAngle ()
+      getAngleThreshold ()
       {
-        return upper_angle_deg_;
+        return angle_deg_;
       }
 
     protected:
 
-      /** \Apply filter   */
+      /**
+       * \brief Apply the filter
+       *
+       * \param[out] output The filtered point cloud.
+       */
       void
       applyFilter (PointCloud &output);
 
-      /** \upper angle threshold in degrees  */
-      double upper_angle_deg_;
+      /** Angle threshold in degrees  */
+      double angle_deg_;
     };
 
 } // end namespace cob_3d_mapping_filters

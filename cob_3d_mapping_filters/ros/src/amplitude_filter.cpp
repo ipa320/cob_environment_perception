@@ -63,34 +63,29 @@
 //--
 // ROS includes
 #include <ros/ros.h>
-
-// ROS message includes
-#include <sensor_msgs/PointCloud2.h>
-
-// external includes
-#include <boost/timer.hpp>
-
-// pcl includes
-#include <pcl/point_types.h>
 #include <pcl_ros/point_cloud.h>
 #include <pluginlib/class_list_macros.h>
 #include <nodelet/nodelet.h>
-#include <pcl/io/pcd_io.h>
+
+// pcl includes
+#define PCL_NO_PRECOMPILE
 #include <pcl/filters/passthrough.h>
+#include <pcl/filters/impl/passthrough.hpp>
+#include <pcl/impl/pcl_base.hpp>
 
 // cob_3d_mapping_filters includes
 #include <cob_3d_mapping_common/point_types.h>
-//#include <cob_3d_mapping_filters/amplitude_filter.h>
-//#include <cob_3d_mapping_filters/impl/amplitude_filter.hpp>
 
 //######################
 //#### nodelet class####
 class AmplitudeFilter : public nodelet::Nodelet
 {
 public:
+  typedef PointXYZA PointT;
+  typedef pcl::PointCloud<PointT> PointCloud;
+
   // Constructor
-  AmplitudeFilter () :
-      t_check (0)
+  AmplitudeFilter ()
   {
     //
   }
@@ -104,45 +99,33 @@ public:
   void
   onInit ()
   {
-    n_ = getNodeHandle ();
+    n_ = getPrivateNodeHandle ();
 
-    point_cloud_sub_ = n_.subscribe ("point_cloud2", 1, &AmplitudeFilter::pointCloudSubCallback, this);
-    point_cloud_pub_ = n_.advertise<sensor_msgs::PointCloud2> ("point_cloud2_filtered", 1);
+    point_cloud_sub_ = n_.subscribe ("point_cloud_in", 1, &AmplitudeFilter::pointCloudSubCallback, this);
+    point_cloud_pub_ = n_.advertise<PointCloud> ("point_cloud_out", 1);
 
-    n_.param ("/amplitude_filter_nodelet/amplitude_min_threshold", lim_min_, 2000.0);
-    n_.param ("/amplitude_filter_nodelet/amplitude_max_threshold", lim_max_, 60000.0);
-    filter_.setFilterLimits (lim_min_, lim_max_);
+    int lim_min, lim_max;
+    n_.param ("amplitude_min_threshold", lim_min, 2000);
+    n_.param ("amplitude_max_threshold", lim_max, 60000);
+    filter_.setFilterLimits (lim_min, lim_max);
     filter_.setFilterFieldName ("amplitude");
   }
 
   void
-  pointCloudSubCallback (pcl::PointCloud<PointXYZA>::ConstPtr pc)
+  pointCloudSubCallback (PointCloud::ConstPtr pc)
   {
-    pcl::PointCloud<PointXYZA> cloud_filtered;
+    PointCloud cloud_filtered;
     filter_.setInputCloud (pc);
     filter_.filter (cloud_filtered);
     point_cloud_pub_.publish (cloud_filtered);
-    /*if (t_check == 0)
-     {
-     ROS_INFO("Time elapsed (Amplitude_Filter) : %f", t.elapsed());
-     t.restart ();
-     t_check = 1;
-     }*/
   }
 
-  ros::NodeHandle n_;
-  boost::timer t;
-
 protected:
+  ros::NodeHandle n_;
   ros::Subscriber point_cloud_sub_;
   ros::Publisher point_cloud_pub_;
 
-  //cob_3d_mapping_filters::AmplitudeFilter<PointXYZA> filter_;
-  pcl::PassThrough<PointXYZA> filter_;
-
-  double lim_min_;
-  double lim_max_;
-  bool t_check;
+  pcl::PassThrough<PointT> filter_;
 };
 
 PLUGINLIB_DECLARE_CLASS(cob_3d_mapping_filters, AmplitudeFilter, AmplitudeFilter, nodelet::Nodelet)

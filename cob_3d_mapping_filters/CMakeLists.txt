@@ -7,7 +7,7 @@ project(cob_3d_mapping_filters)
 find_package(catkin REQUIRED COMPONENTS
   cob_3d_mapping_common
   nodelet
-  #pcl_ros
+  pcl_ros
   roscpp
   sensor_msgs
 )
@@ -32,7 +32,7 @@ catkin_package(
   CATKIN_DEPENDS
     cob_3d_mapping_common
     nodelet
-    #pcl_ros
+    pcl_ros
     roscpp
     sensor_msgs
   DEPENDS
