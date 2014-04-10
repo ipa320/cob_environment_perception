@@ -69,8 +69,8 @@
 #include <cob_3d_mapping_msgs/ShapeArray.h>
 
 // PCL includes
-#include <pcl/io/pcd_io.h>
-#include <pcl/point_types.h>
+// #include <pcl/io/pcd_io.h>
+// #include <pcl/point_types.h>
 
 
 int main (int argc, char **argv)
@@ -79,7 +79,7 @@ int main (int argc, char **argv)
     ROS_ERROR("Please specify output file\nrosrun cob_3d_mapping_geometry_map get_map_client myfile.bag");
     return -1;
   }
-  ros::init(argc, argv, "get_geoemtry_map");
+  ros::init(argc, argv, "get_geometry_map");
 
   ros::NodeHandle nh;
 

@@ -9,7 +9,7 @@
  *
  * Project name: care-o-bot
  * ROS stack name: cob_environment_perception
- * ROS package name: cob_3d_mapping_pipeline_fake
+ * ROS package name: cob_3d_mapping_geometry_map
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
