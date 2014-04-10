@@ -83,7 +83,6 @@
 #include <pcl/point_cloud.h>
 #include <pcl/common/centroid.h>
 
-#include <ros/console.h>
 //#include <cob_3d_mapping_slam/dof/tflink.h>
 #include "cob_3d_mapping_geometry_map/geometry_map.h"
 
@@ -189,11 +188,11 @@ GeometryMap::addMapEntry (Cylinder::Ptr& c_ptr)
   }
   else
   {
-    std::cout << "adding first element" << std::endl;
+    /*std::cout << "adding first element" << std::endl;
     for (unsigned int i = 0; i < c.contours_[0].size (); i++)
     {
       std::cout << c.contours_[0][i] (0) << "," << c.contours_[0][i] (1) << std::endl;
-    }
+    }*/
     //p.computeAttributes(p.normal,p.centroid);
     //p.assignWeight();
     c.id_ = new_id_++;
@@ -335,7 +334,7 @@ GeometryMap::cleanUp ()
     if (map_polygon_[idx]->merged_ <= 1 && (frame_counter_ - 3) > (int)map_polygon_[idx]->frame_stamp_
         && (int)map_polygon_[idx]->frame_stamp_ > 1)
     {
-      ROS_INFO ("cleaning id %d", idx);
+      //ROS_INFO ("cleaning id %d", idx);
       map_polygon_[idx] = map_polygon_.back ();
       map_polygon_.pop_back ();
       ++n_dropped;
@@ -377,7 +376,7 @@ GeometryMap::cleanUp ()
    ++m_dropped;
    }
    }*/
-  ROS_DEBUG_STREAM ("Dropped " << n_dropped << " Polys, " << c_dropped << " Cyls, " << m_dropped << " Clusters");
+  //ROS_DEBUG_STREAM ("Dropped " << n_dropped << " Polys, " << c_dropped << " Cyls, " << m_dropped << " Clusters");
 }
 
 void
