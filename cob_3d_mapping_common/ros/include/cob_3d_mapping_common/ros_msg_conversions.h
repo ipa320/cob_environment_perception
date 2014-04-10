@@ -70,9 +70,9 @@
 
 namespace cob_3d_mapping
 {
-  //TODO: purpose? where used? is this the correct place?
+  //TODO: purpose? where used? is this the correct place? => cob_table_object_cluster
   // should work for cob_3d_mapping_msgs::Shape, Polygon, Cylinder
-  /*template<typename ShapeT>
+  template<typename ShapeT>
   inline int getHullIndex(const ShapeT& s)
   {
     int idx = -1;
@@ -94,7 +94,7 @@ namespace cob_3d_mapping
     pcl::fromPCLPointCloud2(hull2, hull);
     //pcl::fromROSMsg(s.points[idx], hull);
     return true;
-  }*/
+  }
 
   /**
    * \brief Convert a polygon to a shape message.
