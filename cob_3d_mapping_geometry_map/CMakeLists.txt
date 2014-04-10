@@ -13,6 +13,8 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
 )
 
+find_package(PCL REQUIRED)
+
 generate_dynamic_reconfigure_options(cfg/geometry_map_node.cfg)
 
 ###################################
@@ -24,20 +26,20 @@ generate_dynamic_reconfigure_options(cfg/geometry_map_node.cfg)
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
-catkin_package(
-  INCLUDE_DIRS
-    common/include
-    ros/include
-  LIBRARIES
-    geometry_map
-  CATKIN_DEPENDS
-    cob_3d_mapping_common
-    cob_3d_mapping_msgs
-    dynamic_reconfigure
-    pcl_ros
-    rosbag
-    roscpp
-)
+#catkin_package(
+#  INCLUDE_DIRS
+#    common/include
+#    ros/include
+#  LIBRARIES
+#    geometry_map
+#  CATKIN_DEPENDS
+#    cob_3d_mapping_common
+#    cob_3d_mapping_msgs
+#    dynamic_reconfigure
+#    pcl_ros
+#    rosbag
+#    roscpp
+#)
 
 ###########
 ## Build ##
@@ -50,6 +52,7 @@ include_directories(
   common/include
   ros/include
   ${catkin_INCLUDE_DIRS}
+  ${PCL_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
@@ -65,7 +68,12 @@ add_dependencies(set_geometry_map ${catkin_EXPORTED_TARGETS})
 add_executable(get_geometry_map ros/src/get_geometry_map.cpp)
 add_dependencies(get_geometry_map ${catkin_EXPORTED_TARGETS})
 
-target_link_libraries(geometry_map_node 
+target_link_libraries(geometry_map
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
+)
+
+target_link_libraries(geometry_map_node
   geometry_map
   ${catkin_LIBRARIES}
 )

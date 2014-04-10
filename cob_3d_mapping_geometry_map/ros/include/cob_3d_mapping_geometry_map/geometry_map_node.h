@@ -84,9 +84,6 @@ namespace cob_3d_mapping
 {
   /**
   * @brief Ros node for GeometryMap.
-  * @details Node handles input Shape arrays and provides output Shape arrays.\n
-  * Input topics: /tf, /shape_array\n
-  * Output topics: /map_array , /geometry_marker, /primitives
   */
   class GeometryMapNode
   {
@@ -106,7 +103,6 @@ namespace cob_3d_mapping
     *
     * everytime the dynamic reconfiguration changes this function will be called
     *
-    * @param inst instance of AggregatePointMap which parameters should be changed
     * @param config data of configuration
     * @param level bit descriptor which notifies which parameter changed
     *
@@ -124,51 +120,51 @@ namespace cob_3d_mapping
     void shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& sa);
 
     /**
-     * @brief clears map
+     * @brief Service callback for clearing the map.
      *
-     * deletes 3d map of the environment
+     * Deletes 3d map of the environment.
      *
-     * @param req not needed
-     * @param res not needed
+     * @param req The service request.
+     * @param res The service response.
      *
-     * @return nothing
+     * @return True, if clearing was successful.
      */
     bool clearMap(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res);
 
     /**
-     * @brief service callback for GetGeometricMap service
+     * @brief Service callback for getting the map.
      *
-     * Fills the service response of the GetGeometricMap service with the current point map
+     * Fills the service response of the GetGeometricMap service with the current map
      *
-     * @param req request to send map
-     * @param res the current geometric map
+     * @param req The service request.
+     * @param res The service response.
      *
-     * @return nothing
+     * @return True, if getting was successful.
      */
     bool getMap(cob_3d_mapping_msgs::GetGeometryMap::Request &req, cob_3d_mapping_msgs::GetGeometryMap::Response &res);
 
     /**
-     * @brief service callback for SetGeometryMap service
+     * @brief Service callback for setting the map.
      *
-     * Sets the GeometryMap with the service request
+     * Sets the map with the service request.
      *
-     * @param req request to set map
-     * @param res service response (empty)
+     * @param req The service request.
+     * @param res The service response.
      *
-     * @return true if successful
+     * @return True, if setting was successful.
      */
     bool
     setMap(cob_3d_mapping_msgs::SetGeometryMap::Request &req, cob_3d_mapping_msgs::SetGeometryMap::Response &res);
 
    /**
-    * @brief service callback for MofiyMap service
+    * @brief service callback for modifying the map.
     *
-    * Fills the service response of the ModifyMap service with the modified map
+    * Modifies the map with the shapes in the service request, returns the modified map in the response.
     *
-    * @param req request to modify map
-    * @param res the modified geometric map
+     * @param req The service request.
+     * @param res The service response.
     *
-    * @return nothing
+     * @return True, if modifying was successful.
     */
     bool modifyMap(cob_3d_mapping_msgs::ModifyMap::Request &req, cob_3d_mapping_msgs::ModifyMap::Response &res) ;
 
@@ -216,15 +212,15 @@ namespace cob_3d_mapping
     */
     //void fillMarker(ShapeCluster::Ptr sc, visualization_msgs::Marker& m, visualization_msgs::Marker& m_t);
 
-    ros::NodeHandle n_;                         ///< Ros node handle.
+    ros::NodeHandle n_;                         ///< ROS node handle.
 
   protected:
     ros::Subscriber shape_sub_;                 ///< Subscription to shape message to be processed.
     ros::Publisher map_pub_;                    ///< Publish Map array as shape message.
-    ros::ServiceServer clear_map_server_;
-    ros::ServiceServer get_map_server_;
-    ros::ServiceServer set_map_server_;
-    ros::ServiceServer modify_map_server_ ;
+    ros::ServiceServer clear_map_server_;       ///< The server for clearing the map.
+    ros::ServiceServer get_map_server_;         ///< The server for getting the map.
+    ros::ServiceServer set_map_server_;         ///< The server for setting the map.
+    ros::ServiceServer modify_map_server_ ;     ///< The server for modifying the map.
 
     bool enable_cyl_;                           ///< If true , processing of cylinders is activated.
     bool enable_poly_;                          ///< If true , processing of polygons is activated.
@@ -232,7 +228,7 @@ namespace cob_3d_mapping
     /**
     * @brief Dynamic Reconfigure server
     */
-    dynamic_reconfigure::Server<cob_3d_mapping_geometry_map::geometry_map_nodeConfig> config_server_;
+    dynamic_reconfigure::Server<cob_3d_mapping_geometry_map::geometry_map_nodeConfig> config_server_; ///< The dynamic reconfigure server.
 
     GeometryMap geometry_map_;                   ///< Map containing geometrys (polygons,cylinders)
     std::string map_frame_id_;                  ///< Name of target frame.
