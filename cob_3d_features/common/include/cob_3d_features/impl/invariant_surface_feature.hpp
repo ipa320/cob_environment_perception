@@ -119,7 +119,7 @@ std::complex<Scalar> cob_3d_features::InvariantSurfaceFeature<num_radius_,num_an
 	(d2+d1)*m*n^2+m^2*n)
 	*/
 
-	std::cout<<"p1 "<<x0<<" "<<y0<<std::endl;
+	/*std::cout<<"p1 "<<x0<<" "<<y0<<std::endl;
 	std::cout<<"p2 "<<x0+d1*(y1-y0)<<" "<<y1<<std::endl;
 	std::cout<<"p3 "<<x0+d2*(y1-y0)<<" "<<y1<<std::endl;
 
@@ -132,7 +132,7 @@ std::cout<<"are: "<<(tt2-tt1).cross(tt3-tt1).norm()<<std::endl;
 
 
 	std::cout<<" d1 "<<d1<<" d2 "<<d2<<" x0 "<<x0<<" y0 "<<y0<<" y1 "<<y1<<std::endl;
-
+*/
 	if(m==0 && n==0 && p==0) {
 std::cout<<"-->\tval: "<<((d2-d1)*std::pow(y1-y0,2))/2<<std::endl;
 		return ((d2-d1)*std::pow(y1-y0,2))/2;
@@ -215,7 +215,7 @@ std::complex<Scalar> cob_3d_features::InvariantSurfaceFeature<num_radius_,num_an
 			--i;
 		}
 
-	for(int i=0; i<3; i++) std::cout<<"PP "<<tri.p_[indx[i]]->transpose()<<std::endl;
+	//for(int i=0; i<3; i++) std::cout<<"PP "<<tri.p_[indx[i]]->transpose()<<std::endl;
 
 	const Scalar delta1=(*tri.p_[indx[1]])(1)-(*tri.p_[indx[0]])(1);
 	const Scalar delta2=(*tri.p_[indx[1]])(1)-(*tri.p_[indx[2]])(1);
