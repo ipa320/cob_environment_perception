@@ -133,6 +133,8 @@ std::cout<<"are: "<<(tt2-tt1).cross(tt3-tt1).norm()<<std::endl;
 
 	std::cout<<" d1 "<<d1<<" d2 "<<d2<<" x0 "<<x0<<" y0 "<<y0<<" y1 "<<y1<<std::endl;
 
+	static const std::complex<Scalar> I(0,1);
+		
 	if(m==0 && n==0 && p==0) {
 std::cout<<"-->\tval: "<<((d2-d1)*std::pow(y1-y0,2))/2<<std::endl;
 		return ((d2-d1)*std::pow(y1-y0,2))/2;
@@ -170,28 +172,21 @@ std::cout<<"-->\tval: "<<((d2-d1)*std::pow(y1-y0,2))/2<<std::endl;
 
 		//maxima: ((d1*%e^(%i*d1*n*y1+%i*d2*n*y0)+((d2-d1)*%e^(%i*d1*n*y1)-d2*%e^(%i*d1*n*y0))*%e^(%i*d2*n*y1))*%e^(-%i*d2*n*y1-%i*d1*n*y1-%i*n*x0))/(d1*d2*n^2)
 	}
-	/*else if(m==0) {
-		const std::complex<Scalar> r = 
-		std::cout<<"-->\tval: "<<r<<" "<<std::abs(r)<<std::endl;
-		return r;
+	else if(m==0) {
+		return -((Px*p*(-d1 + d2) + n*(-d1 + d2))*std::exp(I*Px*d1*p*y1 + I*Px*d2*p*y1 + I*Py*p*y1 + I*d1*n*y1 + I*d2*n*y1) + (Px*d1*p + Py*p + d1*n)*std::exp(I*Px*d1*p*y1 + I*Px*d2*p*y0 + I*Py*p*y0 + I*d1*n*y1 + I*d2*n*y0) + (-Px*d2*p - Py*p - d2*n)*std::exp(I*Px*d1*p*y0 + I*Px*d2*p*y1 + I*Py*p*y0 + I*d1*n*y0 + I*d2*n*y1))*std::exp(-I*P*p - I*Px*d1*p*y1 - I*Px*d2*p*y1 - I*Px*p*x0 - I*Py*p*y0 - I*Py*p*y1 - I*d1*n*y1 - I*d2*n*y1 - I*n*x0)/(std::pow(Px, 3)*d1*d2*std::pow(p, 3) + 3*std::pow(Px, 2)*d1*d2*n*std::pow(p, 2) + 3*Px*d1*d2*std::pow(n, 2)*p + std::pow(Py, 2)*(Px*std::pow(p, 3) + n*std::pow(p, 2)) + Py*(std::pow(Px, 2)*std::pow(p, 3)*(d1 + d2) + Px*n*std::pow(p, 2)*(2*d1 + 2*d2) + std::pow(n, 2)*p*(d1 + d2)) + d1*d2*std::pow(n, 3));
 
 		//maxima: -((((d2-d1)*p*Px+(d2-d1)*n)*%e^(%i*p*Py*y1+%i*d2*p*Px*y1+%i*d1*p*Px*y1+%i*d2*n*y1+%i*d1*n*y1)+(-p*Py-d2*p*Px-d2*n)*%e^(%i*d2*p*Px*y1+%i*d2*n*y1+%i*p*Py*y0+%i*d1*p*Px*y0+%i*d1*n*y0)+(p*Py+d1*p*Px+d1*n)*%e^(%i*d1*p*Px*y1+%i*d1*n*y1+%i*p*Py*y0+%i*d2*p*Px*y0+%i*d2*n*y0))*%e^(-%i*p*P-%i*p*Py*y1-%i*d2*p*Px*y1-%i*d1*p*Px*y1-%i*d2*n*y1-%i*d1*n*y1-%i*p*Py*y0-%i*p*Px*x0-%i*n*x0))/((p^3*Px+n*p^2)*Py^2+((d2+d1)*p^3*Px^2+(2*d2+2*d1)*n*p^2*Px+(d2+d1)*n^2*p)*Py+d1*d2*p^3*Px^3+3*d1*d2*n*p^2*Px^2+3*d1*d2*n^2*p*Px+d1*d2*n^3)
 	}
 	else if(n==0) {
-		const std::complex<Scalar> r = 
-		std::cout<<"-->\tval: "<<r<<" "<<std::abs(r)<<std::endl;
-		return r;
-
-
+		return -(Px*p*(-d1 + d2)*std::exp(I*Px*d1*p*y1 + I*Px*d2*p*y1 + I*Py*p*y1 + I*m*y1) + (Px*d1*p + Py*p + m)*std::exp(I*Px*d1*p*y1 + I*Px*d2*p*y0 + I*Py*p*y0 + I*m*y0) + (-Px*d2*p - Py*p - m)*std::exp(I*Px*d1*p*y0 + I*Px*d2*p*y1 + I*Py*p*y0 + I*m*y0))*std::exp(-I*P*p - I*Px*d1*p*y1 - I*Px*d2*p*y1 - I*Px*p*x0 - I*Py*p*y0 - I*Py*p*y1 - I*m*y0 - I*m*y1)/(std::pow(Px, 3)*d1*d2*std::pow(p, 3) + std::pow(Px, 2)*m*std::pow(p, 2)*(d1 + d2) + Px*std::pow(Py, 2)*std::pow(p, 3) + Px*std::pow(m, 2)*p + Py*(std::pow(Px, 2)*std::pow(p, 3)*(d1 + d2) + 2*Px*m*std::pow(p, 2)));
+		
 		//maxima: -(((d2-d1)*p*Px*%e^(%i*p*Py*y1+%i*d2*p*Px*y1+%i*d1*p*Px*y1+%i*m*y1)+(-p*Py-d2*p*Px-m)*%e^(%i*d2*p*Px*y1+%i*p*Py*y0+%i*d1*p*Px*y0+%i*m*y0)+(p*Py+d1*p*Px+m)*%e^(%i*d1*p*Px*y1+%i*p*Py*y0+%i*d2*p*Px*y0+%i*m*y0))*%e^(-%i*p*P-%i*p*Py*y1-%i*d2*p*Px*y1-%i*d1*p*Px*y1-%i*m*y1-%i*p*Py*y0-%i*m*y0-%i*p*Px*x0))/(p^3*Px*Py^2+((d2+d1)*p^3*Px^2+2*m*p^2*Px)*Py+d1*d2*p^3*Px^3+(d2+d1)*m*p^2*Px^2+m^2*p*Px)
 	}
 	else if(p==0) {
-		const std::complex<Scalar> r = 
-		std::cout<<"-->\tval: "<<r<<" "<<std::abs(r)<<std::endl;
-		return r;
+		return -((d1*n + m)*std::exp(I*d1*n*y1 + I*d2*n*y0 + I*m*y0) + (n*(-d1 + d2)*std::exp(I*d1*n*y1 + I*m*y1) + (-d2*n - m)*std::exp(I*d1*n*y0 + I*m*y0))*std::exp(I*d2*n*y1))*std::exp(-I*d1*n*y1 - I*d2*n*y1 - I*m*y0 - I*m*y1 - I*n*x0)/(d1*d2*std::pow(n, 3) + std::pow(m, 2)*n + m*std::pow(n, 2)*(d1 + d2));
 
 		//maxima: -((%e^(%i*d2*n*y1)*((d2-d1)*n*%e^(%i*d1*n*y1+%i*m*y1)+(-d2*n-m)*%e^(%i*d1*n*y0+%i*m*y0))+(d1*n+m)*%e^(%i*d1*n*y1+%i*d2*n*y0+%i*m*y0))*%e^(-%i*d2*n*y1-%i*d1*n*y1-%i*m*y1-%i*m*y0-%i*n*x0))/(d1*d2*n^3+(d2+d1)*m*n^2+m^2*n)
-	}*/
+	}
 
 	const std::complex<Scalar> tt = std::polar<Scalar>(1, -( p*P+(p*Py+(d2+d1)*p*Px+(d2+d1)*n+m)*y1+(p*Py+m)*y0+(p*Px+n)*x0 ));
 
