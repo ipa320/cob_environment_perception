@@ -75,7 +75,7 @@ int main()
 	isf.addRadius(1);
 
 	//tests
-	isf.test_singleTriangle(1);
+	EXPECT_TRUE( isf.test_singleTriangle(1) );
 	//pcl::io::savePLYFile("random_submap.ply", 	*isf.test_subsampling_of_Map(1000, 1.));
 	//pcl::io::savePLYFile("random_map.ply", 		*isf.dbg_Mesh_of_Map());
 	

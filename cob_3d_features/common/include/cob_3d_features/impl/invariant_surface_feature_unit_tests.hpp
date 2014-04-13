@@ -54,6 +54,8 @@
 #pragma once
 
 #include "invariant_surface_feature.hpp"
+#include "gtest/gtest.h"
+
 
 template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
 pcl::PolygonMesh::Ptr cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::test_subsampling_of_Map(const int num, const Scalar r2) {
@@ -82,27 +84,31 @@ pcl::PolygonMesh::Ptr cob_3d_features::InvariantSurfaceFeature<num_radius_,num_a
 template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
 bool cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::test_singleTriangle(const int num) const {
 
+	bool zero_model = false, random_triangles=true;
+	int test = 1;
+
 	for(int i=0; i<num; i++) {
 		//some model
 		typename TSurface::Model model;
-		model.p = model.p.Random();
-model.p.fill(0);
+		if(zero_model)
+			model.p.fill(0);
+		else
+			model.p = model.p.Random();
 
 		//generate random triangle
 		Triangle t;
-		for(int j=0; j<3; j++) t.p_[j] = t.p_[j].Random();
-t.p_[0](0)=0;
-t.p_[0](1)=0;
-t.p_[1](0)=0;
-t.p_[1](1)=1;
-t.p_[2](0)=1;
-t.p_[2](1)=1;
+		if(random_triangles) {
+			for(int j=0; j<3; j++) t.p_[j] = t.p_[j].Random();
+		} else {
+			t.p_[0](0)=0;
+			t.p_[0](1)=0;
+			t.p_[1](0)=0;
+			t.p_[1](1)=1;
+			t.p_[2](0)=1;
+			t.p_[2](1)=1;
+		}
 		t.model_ = &model;
 		t.compute(radii_);
-
-		//t.print();
-
-Scalar m=1,n=0,p=0;
 
 		//subdivide triangle to 3 and re run
 		//sum should be equal to first triangle
@@ -115,36 +121,56 @@ Scalar m=1,n=0,p=0;
 		t2.compute(radii_);
 		t3.compute(radii_);
 
-		std::complex<Scalar> c;
+		if(test==0) {
+			Scalar m=1,n=0,p=0;
 
-		c = t1.kernel(m,n,p);
-		std::cout<< c<<" "<<std::abs(c) <<std::endl<<std::endl;
-		c = t2.kernel(m,n,p);
-		std::cout<< c<<" "<<std::abs(c) <<std::endl<<std::endl;
-		c = t3.kernel(m,n,p);
-		std::cout<< c<<" "<<std::abs(c) <<std::endl<<std::endl;
-		c = (t1.kernel(m,n,p)+t2.kernel(m,n,p)+t3.kernel(m,n,p));
-		std::cout<< c<<" "<<std::abs(c) <<std::endl<<std::endl;
-		c = t.kernel(m,n,p);
-		std::cout<< c<<" "<<std::abs(c) <<std::endl<<std::endl;
+			for(m=0; m<=1; m++)
+			for(n=0; n<=1; n++)
+			for(p=0; p<=1; p++)
+			{
+				std::complex<Scalar> c, c2;
 
-t1.print();
-		/*t1.print();
-		t2.print();
-		t3.print();
+				std::cout<<"mnp "<<m<<" "<<n<<" "<<p <<"    ------------------------"<<std::endl;
+				c = t1.kernel(m,n,p);
+				std::cout<< c<<" "<<std::abs(c) <<std::endl<<std::endl;
+				c = t2.kernel(m,n,p);
+				std::cout<< c<<" "<<std::abs(c) <<std::endl<<std::endl;
+				c = t3.kernel(m,n,p);
+				std::cout<< c<<" "<<std::abs(c) <<std::endl<<std::endl;
+				c = (t1.kernel(m,n,p)+t2.kernel(m,n,p)+t3.kernel(m,n,p));
+				std::cout<< c<<" "<<std::abs(c) <<std::endl<<std::endl;
+				c2 = t.kernel(m,n,p);
+				std::cout<< c2<<" "<<std::abs(c) <<std::endl<<std::endl;
+				std::cout<<"----------------------------------------"<<std::endl;
 
-		FeatureAngleComplex sum1, sum2; sum1.fill(0); sum2.fill(0);
-		for(size_t j=0; j<radii_.size(); j++)
-			for(size_t k=0; k<num_radius_; k++) {
-				sum1 += t1.f_[j].vals[k]+t2.f_[j].vals[k]+t3.f_[j].vals[k];
-				sum2 += t.f_[j].vals[k];
-		std::cout<<std::endl<<(t1.f_[j].vals[k]+t2.f_[j].vals[k]+t3.f_[j].vals[k])<<std::endl;
-		std::cout<<t.f_[j].vals[k]<<std::endl;
+				EXPECT_NEAR(c.real(),c2.real(), 0.001);
+				EXPECT_NEAR(c.imag(),c2.imag(), 0.001);
+				EXPECT_TRUE(c==c);	//nan test
 			}
-		std::cout<<std::endl<<sum1<<std::endl<<std::endl;
-		std::cout<<sum2<<std::endl;
+		}
+		else if(test==1) {
+			FeatureAngleComplex sum1, sum2; sum1.fill(0); sum2.fill(0);
+			for(size_t j=0; j<radii_.size(); j++)
+				for(size_t k=0; k<num_radius_; k++) {
+					sum1 += t1.f_[j].vals[k]+t2.f_[j].vals[k]+t3.f_[j].vals[k];
+					sum2 += t.f_[j].vals[k];
 
-		if(sum1!=sum2) return false;*/
+					std::cout<<std::endl<<(t1.f_[j].vals[k]+t2.f_[j].vals[k]+t3.f_[j].vals[k])<<std::endl;
+					std::cout<<t.f_[j].vals[k]<<std::endl;
+				}
+
+			std::cout<<"----------------------------------------"<<std::endl;
+			std::cout<<std::endl<<sum1<<std::endl<<std::endl;
+			std::cout<<sum2<<std::endl;
+			std::cout<<"----------------------------------------"<<std::endl;
+			std::cout<<sum2-sum1<<std::endl;
+
+			EXPECT_TRUE( sum1.isApprox(sum2, 0.001) );
+			//EXPECT_TRUE( sum1.allFinite() );	//nan test
+
+			if(sum1!=sum2) return false;
+		}
+		else return false;
 	}
 
 	return true;
