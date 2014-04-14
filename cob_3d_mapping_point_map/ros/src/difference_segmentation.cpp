@@ -14,7 +14,7 @@
  * \note
  *  ROS stack name: cob_environment_perception
  * \note
- *  ROS package name: cob_3d_mapping_point_cloud
+ *  ROS package name: cob_3d_mapping_point_map
  *
  * \author
  *  Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
@@ -74,6 +74,7 @@
 #include <pcl_ros/point_cloud.h>
 #include <pcl/io/io.h>
 #include <pluginlib/class_list_macros.h>
+#include <pcl_conversions/pcl_conversions.h>
 
 #include <message_filters/subscriber.h>
 #include <message_filters/synchronizer.h>
@@ -81,15 +82,17 @@
 //#include <message_filters/sync_policies/approximate_time.h>
 #include <pcl/segmentation/segment_differences.h>
 #include <pcl/kdtree/kdtree_flann.h>
+#include <pcl/conversions.h>
 
 
-//####################
-//#### node class ####
+/**
+ * \brief Segments the difference of two point clouds (e.g. a point map and new sensor data) and publishes the difference.
+ */
 class DifferenceSegmentation : public nodelet::Nodelet//, protected Reconfigurable_Node<cob_3d_mapping_point_map::point_map_nodeletConfig>
 {
   typedef pcl::PointXYZRGB Point;
   typedef pcl::PointCloud<Point> PointCloud;
-  typedef message_filters::sync_policies::ExactTime<PointCloud, PointCloud > MySyncPolicy;
+  typedef message_filters::sync_policies::ExactTime<sensor_msgs::PointCloud2, sensor_msgs::PointCloud2 > MySyncPolicy;
 
 public:
   // Constructor
@@ -116,18 +119,12 @@ public:
     n_ = getNodeHandle();
 
     map_diff_pub_ = n_.advertise<PointCloud>("output",1);
-    //diff_maps_pub_ = n_.advertise<PointCloud >("diff_maps",1);
     map_sub_.subscribe(n_,"target",10);
     pc_aligned_sub_.subscribe(n_,"input",10);
     sync_.reset(new message_filters::Synchronizer<MySyncPolicy>(MySyncPolicy(10), map_sub_, pc_aligned_sub_));
-    //sync_->connectInput(map_sub_, pc_aligned_sub_);
     sync_->registerCallback(boost::bind(&DifferenceSegmentation::pointCloudSubCallback, this, _1, _2));
 
-#ifdef PCL_VERSION_COMPARE //fuerte
     pcl::search::KdTree<Point>::Ptr tree (new pcl::search::KdTree<Point> ());
-#else //electric
-    pcl::KdTreeFLANN<Point>::Ptr tree (new pcl::KdTreeFLANN<Point> ());
-#endif
     sd_.setSearchMethod(tree);
     //TODO: set to a value derived from the map resolution
     sd_.setDistanceThreshold(0.01);
@@ -144,24 +141,24 @@ public:
    * @return nothing
    */
   void
-  pointCloudSubCallback(const PointCloud::ConstPtr& map, const PointCloud::ConstPtr& pc_aligned)
+  pointCloudSubCallback(const sensor_msgs::PointCloud2::ConstPtr& map_msg, const sensor_msgs::PointCloud2::ConstPtr& pc_aligned_msg)
   {
-    if(pc_aligned->header.frame_id != map->header.frame_id)
+    if(pc_aligned_msg->header.frame_id != map_msg->header.frame_id)
     {
       ROS_ERROR("Frame ID of incoming point cloud does not match map frame ID, aborting...");
       return;
     }
     PointCloud::Ptr pc_diff(new PointCloud);
-    /*std::cout << "map size:" << map->size() << std::endl;
-    std::cout << map->header.stamp << std::endl;
-    std::cout << "pc_aligned size:" << pc_aligned->size() << std::endl;
-    std::cout << pc_aligned->header.stamp << std::endl;*/
-    /*if(map->header.frame_id != pc_aligned->header.frame_id)
-    {
-      ROS_ERROR("Frame IDs do not match, aborting...");
-      return;
-    }*/
-    //diff_maps_.header.frame_id=map->header.frame_id;
+    PointCloud::Ptr pc_aligned(new PointCloud);
+    PointCloud::Ptr map(new PointCloud);
+
+    pcl::PCLPointCloud2 pc_aligned2;
+    pcl_conversions::toPCL(*pc_aligned_msg, pc_aligned2);
+    pcl::fromPCLPointCloud2(pc_aligned2, *pc_aligned);
+    pcl::PCLPointCloud2 map2;
+    pcl_conversions::toPCL(*map_msg, map2);
+    pcl::fromPCLPointCloud2(map2, *map);
+
     sd_.setTargetCloud(map_.makeShared());
     sd_.setInputCloud(pc_aligned);
     sd_.segment(*pc_diff);
@@ -176,14 +173,12 @@ public:
 
 protected:
   ros::NodeHandle n_;
-  message_filters::Subscriber<PointCloud > map_sub_;
-  message_filters::Subscriber<PointCloud > pc_aligned_sub_;
+  message_filters::Subscriber<sensor_msgs::PointCloud2 > map_sub_;
+  message_filters::Subscriber<sensor_msgs::PointCloud2 > pc_aligned_sub_;
   ros::Publisher map_diff_pub_;		//publisher for map
-  //ros::Publisher diff_maps_pub_;
   boost::shared_ptr<message_filters::Synchronizer<MySyncPolicy> > sync_;
 
   pcl::PointCloud<Point> map_;
-  //pcl::PointCloud<Point> diff_maps_;
   pcl::SegmentDifferences<Point> sd_;
 };
 
