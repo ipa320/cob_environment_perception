@@ -30,8 +30,6 @@ generate_dynamic_reconfigure_options(cfg/point_map_nodelet.cfg)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS
-    common/include
   LIBRARIES
     cob_3d_mapping_point_map_nodelets
   CATKIN_DEPENDS
@@ -56,7 +54,6 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 include_directories(
-  common/include
   ${catkin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
 )
@@ -64,7 +61,7 @@ include_directories(
 ## Declare a cpp library
 add_library(cob_3d_mapping_point_map_nodelets
   ros/src/point_map_nodelet.cpp
-  #ros/src/difference_segmentation.cpp
+  ros/src/difference_segmentation.cpp
 )
 add_dependencies(cob_3d_mapping_point_map_nodelets ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
