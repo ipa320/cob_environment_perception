@@ -12,7 +12,7 @@
  * \note
  *  Project name: care-o-bot
  * \note
- *  ROS stack name: cob_environment_perception_intern
+ *  ROS stack name: cob_environment_perception
  * \note
  *  ROS package name: cob_3d_mapping_semantics
  *
@@ -89,6 +89,9 @@
 
 using namespace cob_3d_mapping;
 
+/**
+ * Classifies a polygon as floor, ceiling or wall in order to obtain the structure of the environment.
+ */
 class StructureExtraction
 {
 
@@ -97,9 +100,8 @@ public:
   /**
    * @brief Constructor
    */
-  StructureExtraction ()
-    : floor_height_(0.2),
-      ceiling_height_(2.2)
+  StructureExtraction () :
+      floor_height_ (0.2), ceiling_height_ (2.2)
   {
     /// void
   }
@@ -114,9 +116,9 @@ public:
   }
 
   /**
-   * @brief Set the height of the floor
+   * @brief Set the height of the floor.
    *
-   * @param height the floor height
+   * @param height The floor height.
    *
    */
   void
@@ -126,9 +128,9 @@ public:
   }
 
   /**
-   * @brief Set the height of the ceiling
+   * @brief Set the height of the ceiling.
    *
-   * @param height the ceiling height
+   * @param height The ceiling height.
    *
    */
   void
@@ -137,57 +139,57 @@ public:
     ceiling_height_ = height;
   }
 
-
   /**
-   * @brief sets the input polygon
+   * @brief Set the input polygon.
    *
-   * @param poly_ptr pointer to the polygon
+   * @param poly_ptr Pointer to the polygon.
    *
    */
-  void setInputPolygon(Polygon::Ptr poly_ptr)
+  void
+  setInputPolygon (Polygon::Ptr poly_ptr)
   {
     poly_ptr_ = poly_ptr;
   }
 
   /**
-   * @brief check if the polygon is a wall
+   * @brief Classify the polygon.
    *
-   * @return true or false
-   */
-  bool
-  isWall();
-
-  /**
-   * @brief check if the polygon is a floor
+   * \param[out] label The class of the polygon (ceiling = 1, floor = 2, wall = 3, other = 0).
    *
-   * @return true or false
-   */
-
-  bool
-  isFloor ();
-
-  /**
-   * @brief check if the polygon is a ceiling
-   *
-   * @return nothing
-   */
-
-  bool
-  isCeiling ();
-
-  /**
-   * @brief classify the Polygon
-   *
-   * @return nothing
+   * @return True if classification was possible.
    */
   bool
   classify (unsigned int& label);
 
 protected:
+  /**
+   * @brief Check if the polygon is a wall.
+   *
+   * @return True if it is a wall.
+   */
+  bool
+  isWall ();
 
-  double floor_height_, ceiling_height_;
+  /**
+   * @brief Check if the polygon is a floor.
+   *
+   * @return True if it is a floor.
+   */
+  bool
+  isFloor ();
 
-  Polygon::Ptr poly_ptr_;
+  /**
+   * @brief Check if the polygon is a ceiling.
+   *
+   * @return True if it is a ceiling.
+   */
+  bool
+  isCeiling ();
+
+  double floor_height_; ///< The floor height.
+  double ceiling_height_; ///< The ceiling height.
+
+  Polygon::Ptr poly_ptr_; ///< The pointer to the polygon to be classified.
 
 };
 

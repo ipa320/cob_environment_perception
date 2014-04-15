@@ -8,7 +8,7 @@
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
  * Project name: care-o-bot
- * ROS stack name: cob_environment_perception_intern
+ * ROS stack name: cob_environment_perception
  * ROS package name: cob_3d_mapping_semantics
  * Description:
  *
@@ -52,51 +52,45 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
-//internal include
+
 #include "cob_3d_mapping_semantics/supporting_plane_extraction.h"
-#include <ros/console.h>
 
 using namespace cob_3d_mapping;
 
 bool
-SupportingPlaneExtraction::getSupportingPlane(std::vector<Polygon::Ptr>& polys, Polygon& sp)
+SupportingPlaneExtraction::getSupportingPlane (std::vector<Polygon::Ptr>& polys, Polygon& sp)
 {
-  if(polys.size() == 0)
+  if (polys.size () == 0)
   {
-    ROS_ERROR("Input polygons not set, aborting...");
+    std::cerr << "Input polygons not set, aborting..." << std::endl;
     return false;
   }
   std::vector<Polygon::Ptr> cands;
-  for( unsigned int i=0; i<polys.size(); i++)
+  for (unsigned int i = 0; i < polys.size (); i++)
   {
-    double a = polys[i]->computeArea3d();
-    std::cout << "Poly " << i << " (id " << polys[i]->id_ << " has an area of " << a << std::endl;
-    if( a > area_min_ && a < area_max_)
+    double a = polys[i]->computeArea3d ();
+    if (a > area_min_ && a < area_max_)
     {
       std::cout << "\tadding" << std::endl;
-      cands.push_back(polys[i]);
+      cands.push_back (polys[i]);
     }
   }
-  if( cands.size() == 0) return false;
+  if (cands.size () == 0)
+    return false;
   int index = -1;
   double dist_min = distance_max_;
-  for( unsigned int i=0; i<cands.size(); i++)
+  for (unsigned int i = 0; i < cands.size (); i++)
   {
-    double d = cands[i]->computeDistanceFromViewpoint();
-    std::cout << "Cand " << i << " has a distance of " << d << std::endl;
-    if(d < distance_max_ && d > distance_min_ && d < dist_min)
+    double d = cands[i]->computeDistanceFromViewpoint ();
+    if (d < distance_max_ && d > distance_min_ && d < dist_min)
     {
       dist_min = d;
       index = i;
     }
   }
-  if( index == -1) return false;
-  //TODO: check distance
-  std::cout << cands[index]->computeArea3d() << ", " << cands[index]->computeDistanceFromViewpoint() << std::endl;
+  if (index == -1)
+    return false;
   sp = *cands[index];
-  return true;//polys[index]->id;
+  return true;
 }
-
-
-
 

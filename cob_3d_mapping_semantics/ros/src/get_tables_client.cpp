@@ -12,7 +12,7 @@
  * \note
  *  Project name: care-o-bot
  * \note
- *  ROS stack name: cob_environment_perception_intern
+ *  ROS stack name: cob_environment_perception
  * \note
  *  ROS package name: cob_3d_mapping_semantics
  *
@@ -194,11 +194,9 @@ public:
     std::stringstream ss1;
     ss1 << file_path_ << "table.bag";
     bag.open (ss1.str().c_str(), rosbag::bagmode::Write);
-    //bag.write("shape_array",ros::Time::now(),sa);
     bag.write ("/get_tables_client/shape_array", sa.header.stamp, sa);
     bag.close ();
     ROS_INFO("BAG file saved");
-    //std::cout << sa.header.stamp << std::endl;
   }
     else
       ROS_INFO("No table object : BAG file not saved");
