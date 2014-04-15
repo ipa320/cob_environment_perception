@@ -8,7 +8,7 @@
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
  * Project name: care-o-bot
- * ROS stack name: cob_environment_perception_intern
+ * ROS stack name: cob_environment_perception
  * ROS package name: cob_3d_mapping_semantics
  * Description:
  *
@@ -60,8 +60,6 @@
 // ROS includes
 #include <ros/ros.h>
 #include <rosbag/bag.h>
-//#include <tf_conversions/tf_eigen.h>
-//#include <tf/transform_listener.h>
 #include <dynamic_reconfigure/server.h>
 
 // ros message includes
@@ -80,11 +78,9 @@
 #include <cob_3d_mapping_msgs/GetGeometryMap.h>
 #include <cob_3d_mapping_msgs/GetObjectsOfClass.h>
 #include <cob_3d_mapping_msgs/GetTables.h>
-//#include <cob_3d_mapping_msgs/MoveToTable.h>
 #include <cob_3d_mapping_semantics/supporting_plane_extraction.h>
 #include <cob_3d_mapping_semantics/supporting_plane_extraction_nodeConfig.h>
 #include <cob_3d_mapping_common/ros_msg_conversions.h>
-//#include <tabletop_object_detector/TabletopDetection.h>
 
 using namespace cob_3d_mapping;
 
@@ -99,10 +95,7 @@ public:
     config_server_.setCallback(boost::bind(&SupportingPlaneExtractionNode::dynReconfCallback, this, _1, _2));
 
     sa_sub_ = n_.subscribe ("shape_array", 10, &SupportingPlaneExtractionNode::callbackShapeArray, this);
-    sa_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_array_pub", 1); //10
-    s_marker_pub_ = n_.advertise<visualization_msgs::Marker> ("marker", 10);
-
-    //get_server_ = n_.advertiseService ("get_objects_of_class", &SupportingPlaneExtractionNode::getTablesService, this);
+    sa_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_array_pub", 1);
   }
 
   // Destructor
@@ -145,7 +138,6 @@ public:
     cob_3d_mapping_msgs::ShapeArray sup_planes;
     sup_planes.header = sa_ptr->header;
     processShapeArray(*sa_ptr, sup_planes);
-    publishShapeMarker (sup_planes);
     sa_pub_.publish (sup_planes);
     //ROS_INFO("Found %u tables", (unsigned int)tables.shapes.size());
   }
@@ -169,7 +161,6 @@ public:
     if (getMapService (sa))
     {
       processShapeArray(sa, res.objects);
-      publishShapeMarker (res.objects);
       ROS_INFO("Found %u tables", (unsigned int)res.objects.shapes.size());
       return true;
     }
@@ -208,58 +199,6 @@ public:
     return true;
   }
 
-  /**
-   * @brief publishe markers to visualize shape in rviz
-   *
-   * @param s shape to be seen visually
-   *
-   * @return nothing
-   */
-  void
-  publishShapeMarker (const cob_3d_mapping_msgs::ShapeArray& sa)
-  {
-    for(unsigned int i=0; i<sa.shapes.size(); i++)
-    {
-      visualization_msgs::Marker marker;
-      marker.action = visualization_msgs::Marker::ADD;
-      marker.type = visualization_msgs::Marker::LINE_STRIP;
-      marker.lifetime = ros::Duration (2);
-      marker.header = sa.header;
-      marker.ns = "table_marker";
-			marker.pose = sa.shapes[i].pose;
-      //marker.header.stamp = ros::Time::now ();
-
-      marker.id = i;
-      marker.scale.x = 0.05;
-      marker.scale.y = 0.05;
-      marker.scale.z = 0;
-      marker.color.r = 0;//1;
-      marker.color.g = 0;
-      marker.color.b = 1;
-      marker.color.a = 1.0;
-
-
-      // sensor_msgs::PointCloud2 pc2;
-      pcl::PointCloud<pcl::PointXYZ> cloud;
-
-      pcl::fromROSMsg (sa.shapes[i].points[0], cloud);
-
-      geometry_msgs::Point p;
-      //marker.points.resize (cloud.size()+1);
-      for (unsigned int j = 0; j < cloud.size(); j++)
-      {
-        p.x = cloud[j].x;
-        p.y = cloud[j].y;
-        p.z = cloud[j].z;
-        marker.points.push_back(p);
-      }
-      p.x = cloud[0].x;
-      p.y = cloud[0].y;
-      p.z = cloud[0].z;
-      marker.points.push_back(p);
-      s_marker_pub_.publish (marker);
-    }
-  }
 
   /**
    * @brief processes a shape array in order to find tables
@@ -289,14 +228,6 @@ public:
     s.color.r = 1.0;
     s.color.g = 0;
     s.color.b = 0;
-    /*for (unsigned int i = 0; i < sa.shapes.size (); i++)
-    {
-      if(id == sa.shapes[i].id)
-      {
-        s = sa.shapes[i];
-        break;
-      }
-    }*/
     ROS_INFO("Found a supporting plane");
     sup_planes.shapes.push_back (s);
   }
@@ -306,10 +237,6 @@ public:
 protected:
   ros::Subscriber sa_sub_;
   ros::Publisher sa_pub_;
-  ros::Publisher pc2_pub_;
-  ros::Publisher s_marker_pub_;
-  //ros::ServiceServer get_tables_server_;
-  //tf::TransformListener tf_listener_;         ///< Retrieves transformations.
 
   /**
   * @brief Dynamic Reconfigure server
@@ -326,13 +253,5 @@ main (int argc, char** argv)
   ros::init (argc, argv, "supporting_plane_extraction_node");
 
   SupportingPlaneExtractionNode sem_exn_node;
-  //ros::spin ();
-
-  ros::Rate loop_rate (10);
-  while (ros::ok ())
-  {
-    ros::spinOnce ();
-    loop_rate.sleep ();
-  }
-
+  ros::spin ();
 }

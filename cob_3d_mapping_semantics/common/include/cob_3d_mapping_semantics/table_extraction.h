@@ -12,7 +12,7 @@
  * \note
  *  Project name: care-o-bot
  * \note
- *  ROS stack name: cob_environment_perception_intern
+ *  ROS stack name: cob_environment_perception
  * \note
  *  ROS package name: cob_3d_mapping_semantics
  *
@@ -27,7 +27,6 @@
  * Description:
  *
  * ToDo:
- * comments in doxygen style
  *
  *
  *
@@ -90,6 +89,9 @@
 
 using namespace cob_3d_mapping;
 
+/**
+ * \brief Extracts table tops from a polygon array.
+ */
 class TableExtraction
 {
 
@@ -98,17 +100,9 @@ public:
   /**
    * @brief Constructor
    */
-  TableExtraction ()
-  :norm_x_min_(-0.1),
-   norm_x_max_(0.1),
-   norm_y_min_(-0.1),
-   norm_y_max_(0.1),
-   norm_z_min_ (-0.99),
-   norm_z_max_ (0.99),
-   height_min_ (0.4),
-   height_max_ (1),
-   area_min_ (1),
-   area_max_ (3)
+  TableExtraction () :
+      norm_x_min_ (-0.1), norm_x_max_ (0.1), norm_y_min_ (-0.1), norm_y_max_ (0.1), norm_z_min_ (-0.99), norm_z_max_ (
+          0.99), height_min_ (0.4), height_max_ (1), area_min_ (1), area_max_ (3)
   {
     /// void
   }
@@ -122,103 +116,29 @@ public:
     /// void
   }
 
+  /**
+   * \brief Set the allowed normal vector bounds for a given tilt angle.
+   *
+   * \param[in] tilt_angle The allowed tilt angle (in degrees).
+   */
   void
   setNormalBounds (double tilt_angle)
   {
     static const double PI = 3.1415926;
     double ang_rad = tilt_angle * (PI / 180.0);
-    double norm = cos ((PI/2)-ang_rad);
-    setNormXMin (-norm);
-    setNormXMax (norm);
-    setNormYMin (-norm);
-    setNormYMax (norm);
-    setNormZMin (-cos (ang_rad));
-    setNormZMax (cos (ang_rad));
-    /*std::cout << "\n\t*tilt_angle = " << tilt_angle << std::endl;
-    std::cout << "\n\t*norm_x_min = " << norm_x_min_ << std::endl;
-    std::cout << "\n\t*norm_x_max = " << norm_x_max_ << std::endl;
-    std::cout << "\n\t*norm_y_min = " << norm_y_min_ << std::endl;
-    std::cout << "\n\t*norm_y_max = " << norm_y_max_ << std::endl;
-    std::cout << "\n\t*norm_z_min = " << norm_z_min_ << std::endl;
-    std::cout << "\n\t*norm_z_max = " << norm_z_max_ << std::endl;*/
+    double norm = cos ((PI / 2) - ang_rad);
+    norm_x_min_ = -norm;
+    norm_x_max_ = norm;
+    norm_y_min_ = -norm;
+    norm_y_max_ = norm;
+    norm_z_min_ = -cos (ang_rad);
+    norm_z_max_ = cos (ang_rad);
   }
 
   /**
-   * @brief Set Minimum threshold for x component of normal vector
+   * @brief Set the minimum height of the table top.
    *
-   * @param norm_x_min minimum threshold value
-   *
-   */
-  void
-  setNormXMin (double norm_x_min)
-  {
-    norm_x_min_ = norm_x_min;
-  }
-
-  /**
-   * @brief Set Maximum threshold for x component of normal vector
-   *
-   * @param norm_x_max maximum threshold value
-   *
-   */
-  void
-  setNormXMax (double norm_x_max)
-  {
-    norm_x_max_ = norm_x_max;
-  }
-
-  /**
-   * @brief Set Minimum threshold for y component of normal vector
-   *
-   * @param norm_y_min minimum threshold value
-   *
-   */
-  void
-  setNormYMin (double norm_y_min)
-  {
-    norm_y_min_ = norm_y_min;
-  }
-
-  /**
-   * @brief Set Maximum threshold for y component of normal vector
-   *
-   * @param norm_y_max maximum threshold value
-   *
-   */
-  void
-  setNormYMax (double norm_y_max)
-  {
-
-    norm_y_max_ = norm_y_max;
-  }
-
-  /**
-   * @brief Set Minimum threshold for z component of normal vector
-   *
-   * @param norm_z_min minimum threshold value
-   *
-   */
-  void
-  setNormZMin (double norm_z_min)
-  {
-    norm_z_min_ = norm_z_min;
-  }
-
-  /**
-   * @brief Set Maximum threshold for z component of normal vector
-   *
-   * @param norm_z_max maximum threshold value
-   *
-   */
-  void
-  setNormZMax (double norm_z_max)
-  {
-    norm_z_max_ = norm_z_max;
-  }
-  /**
-   * @brief Set Minimum threshold for height
-   *
-   * @param height_min minimum threshold value
+   * @param height_min The minimum height.
    *
    */
   void
@@ -228,9 +148,9 @@ public:
   }
 
   /**
-   * @brief Set Maximum threshold for height
+   * @brief Set the maximum height of the table top.
    *
-   * @param height_man maximum threshold value
+   * @param height_man The maximum height.
    *
    */
   void
@@ -238,10 +158,11 @@ public:
   {
     height_max_ = height_max;
   }
+
   /**
-   * @brief Set Minimum threshold for area of a polygon
+   * @brief Set the minimum area of the table top.
    *
-   * @param area_min minimum threshold value
+   * @param area_min The minimum area.
    *
    */
   void
@@ -251,9 +172,9 @@ public:
   }
 
   /**
-   * @brief Set Maximum threshold for area of a polygon
+   * @brief Set the maximum area of the table top.
    *
-   * @param area_max maximum threshold value
+   * @param area_max The maximum area.
    *
    */
   void
@@ -263,61 +184,67 @@ public:
   }
 
   /**
-   * @brief sets the input polygon
+   * @brief Set the input polygon.
    *
-   * @param poly_ptr pointer to the polygon
+   * @param poly_ptr Pointer to the polygon.
    *
    */
-  void setInputPolygon(Polygon::Ptr poly_ptr)
+  void
+  setInputPolygon (Polygon::Ptr poly_ptr)
   {
     poly_ptr_ = poly_ptr;
   }
 
   /**
-   * @brief check if the polygon is a table object candidate or not
+   * @brief Check if the polygon is a table top.
    *
-   * @return true or false
+   * @return True if it is a table top.
    */
   bool
-  isTable();
+  isTable ();
+
+protected:
 
   /**
-   * @brief check if the plane of the polygon is horizontal or not
+   * @brief Check if the plane of the polygon is horizontal.
    *
-   * @return true or false
+   * @return True if it is horizontal.
    */
 
   bool
   isHorizontal ();
 
   /**
-   * @brief check if the plane is high enough or not
+   * @brief Check if the height of the plane polygon is within bounds.
    *
-   * @return nothing
+   * @return True if it is within bounds.
    */
 
   bool
   isHeightOk ();
 
   /**
-   * @brief check if the area of the plane polygon is sufficient or not
+   * @brief Check if the area of the plane polygon is within bounds.
    *
-   * @return nothing
+   * @return True if it is within bounds.
    */
   bool
   isSizeOk ();
 
-protected:
+  double norm_x_min_; ///< The minimum x component of the plane normal.
+  double norm_x_max_; ///< The maximum x component of the plane normal.
+  double norm_y_min_; ///< The minimum y component of the plane normal.
+  double norm_y_max_; ///< The maximum y component of the plane normal.
+  double norm_z_min_; ///< The minimum z component of the plane normal.
+  double norm_z_max_; ///< The maximum z component of the plane normal.
 
-  double norm_x_min_, norm_x_max_;
-  double norm_y_min_, norm_y_max_;
-  double norm_z_min_, norm_z_max_;
+  double height_min_; ///< The minimum height of the table.
+  double height_max_; ///< The maximum height of the table.
 
-  double height_min_, height_max_;
+  double area_min_; ///< The minimum area of the table.
+  double area_max_; ///< The maximum area of the table.
 
-  double area_min_, area_max_;
-
-  Polygon::Ptr poly_ptr_;
+  Polygon::Ptr poly_ptr_; ///< The polygon to be evaluated.
 
 };
 
