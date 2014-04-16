@@ -92,7 +92,7 @@ namespace cob_3d_features
         ,inv_width_(0.0)
         ,skip_distant_point_threshold_(4.0)
         ,fake_surface_(true)
-        ,mask_changed(false)
+        ,mask_changed_(false)
       { };
 
       inline void
@@ -108,7 +108,7 @@ namespace cob_3d_features
         pixel_search_radius_ = size / 2;
         pixel_steps_ = pixel_steps;
         circle_steps_ = circle_steps;
-        mask_changed = true;
+        mask_changed_ = true;
       }
 
       inline void
@@ -117,7 +117,7 @@ namespace cob_3d_features
         pixel_search_radius_ = pixel_radius;
         pixel_steps_ = pixel_steps;
         circle_steps_ = circle_steps;
-        mask_changed = true;
+        mask_changed_ = true;
       }
 
       // Ignore points in window with high distance
@@ -176,7 +176,7 @@ namespace cob_3d_features
       float skip_distant_point_threshold_;
 
       bool fake_surface_;
-      bool mask_changed;
+      bool mask_changed_;
 
       std::string feature_name_;
 
