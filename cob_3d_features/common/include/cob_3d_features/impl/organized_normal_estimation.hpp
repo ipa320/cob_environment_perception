@@ -154,7 +154,7 @@ cob_3d_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>::recomp
   }
 
 
-  int idx, max_gab, gab, init_gab, n_normals = 0;
+  int idx, max_gap, gap, init_gap, n_normals = 0;
   int idx_x = index % cloud_in->width;
   int idx_y = index / cloud_in->width;
   int l_idx = label_in->points[index].label;
@@ -175,36 +175,36 @@ cob_3d_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>::recomp
   {
     for (it_c = mask_.begin(); it_c != mask_.end(); ++it_c) // iterate circles
     {
-      has_prev_point = false; init_gab = gab = 0; max_gab = 0.25 * (*it_c).size(); // reset loop
+      has_prev_point = false; init_gap = gap = 0; max_gap = 0.25 * (*it_c).size(); // reset loop
 
       for (it_ci = (*it_c).begin(); it_ci != (*it_c).end(); ++it_ci) // iterate current circle
       {
         idx = index + *it_ci;
         //std::cout << idx % cloud_in->width << " / " << idx / cloud_in->width << std::endl;
         Eigen::Vector3f p_i = cloud_in->points[idx].getVector3fMap();
-        if ( pcl_isnan(p_i(2)) || label_in->points[idx].label != l_idx) { ++gab; continue; } // count as gab point
-        if ( gab <= max_gab && has_prev_point ) // check gab is small enough and a previous point exists
+        if ( pcl_isnan(p_i(2)) || label_in->points[idx].label != l_idx) { ++gap; continue; } // count as gap point
+        if ( gap <= max_gap && has_prev_point ) // check gap is small enough and a previous point exists
         {
           p_curr = p_i - p;
           n_idx += (p_prev.cross(p_curr)).normalized(); // compute normal of p_prev and p_curr
           ++n_normals;
           p_prev = p_curr;
         }
-        else // current is first point in circle or just after a gab
+        else // current is first point in circle or just after a gap
         {
           p_prev = p_i - p;
           if (!has_prev_point)
           {
             p_first = p_prev; // remember the first valid point in circle
-            init_gab = gab; // save initial gab size
+            init_gap = gap; // save initial gap size
             has_prev_point = true;
           }
         }
-        gab = 0; // found valid point, reset gab counter
+        gap = 0; // found valid point, reset gap counter
       }
 
-      // close current circle (last and first point) if gab is small enough
-      if (gab + init_gab <= max_gab)
+      // close current circle (last and first point) if gap is small enough
+      if (gap + init_gap <= max_gap)
       {
         // compute normal of p_first and p_prev
         n_idx += (p_prev.cross(p_first)).normalized();
@@ -216,7 +216,7 @@ cob_3d_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>::recomp
   {
     for (it_c = mask_.begin(); it_c != mask_.end(); ++it_c) // iterate circles
     {
-      has_prev_point = false; init_gab = gab = 0; max_gab = 0.25 * (*it_c).size(); // reset loop
+      has_prev_point = false; init_gap = gap = 0; max_gap = 0.25 * (*it_c).size(); // reset loop
 
       for (it_ci = (*it_c).begin(); it_ci != (*it_c).end(); ++it_ci) // iterate current circle
       {
@@ -226,29 +226,29 @@ cob_3d_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>::recomp
         int v = idx * inv_width_; // calculate y coordinate in image, // check left, right border
         if ( v < 0 || v >= (int)cloud_in->height ) { continue; }
         Eigen::Vector3f p_i = cloud_in->points[idx].getVector3fMap();
-        if ( pcl_isnan(p_i(2)) || label_in->points[idx].label != l_idx) { ++gab; continue; } // count as gab point
-        if ( gab <= max_gab && has_prev_point ) // check gab is small enough and a previous point exists
+        if ( pcl_isnan(p_i(2)) || label_in->points[idx].label != l_idx) { ++gap; continue; } // count as gap point
+        if ( gap <= max_gap && has_prev_point ) // check gap is small enough and a previous point exists
         {
           p_curr = p_i - p;
           n_idx += (p_prev.cross(p_curr)).normalized(); // compute normal of p_prev and p_curr
           ++n_normals;
           p_prev = p_curr;
         }
-        else // current is first point in circle or just after a gab
+        else // current is first point in circle or just after a gap
         {
           p_prev = p_i - p;
           if (!has_prev_point)
           {
             p_first = p_prev; // remember the first valid point in circle
-            init_gab = gab; // save initial gab size
+            init_gap = gap; // save initial gap size
             has_prev_point = true;
           }
         }
-        gab = 0; // found valid point, reset gab counter
+        gap = 0; // found valid point, reset gap counter
       }
 
-      // close current circle (last and first point) if gab is small enough
-      if (gab + init_gab <= max_gab)
+      // close current circle (last and first point) if gap is small enough
+      if (gap + init_gap <= max_gap)
       {
         // compute normal of p_first and p_prev
         n_idx += (p_prev.cross(p_first)).normalized();
@@ -275,14 +275,14 @@ cob_3d_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>::comput
   int &label_out)
 {
   Eigen::Vector3f p = cloud.points[index].getVector3fMap();
-  if (pcl_isnan(p(2)))
+  if (p(2) != p(2)/*pcl_isnan(p(2))*/)
   {
     n_x = n_y = n_z = std::numeric_limits<float>::quiet_NaN();
     label_out = I_NAN;
     return;
   }
 
-  int idx, max_gab, gab, init_gab, n_normals = 0;
+  int idx, max_gap, gap, init_gap, n_normals = 0;
   int idx_x = index % input_->width;
   int idx_y = index * inv_width_;
 
@@ -290,7 +290,7 @@ cob_3d_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>::comput
 
   bool has_prev_point;
 
-  std::vector<int> range_border_counter(mask_.size(), 0);
+  //std::vector<int> range_border_counter(mask_.size(), 0);
   Eigen::Vector3f p_curr;
   Eigen::Vector3f p_prev(0,0,0);
   Eigen::Vector3f p_first(0,0,0);
@@ -298,44 +298,44 @@ cob_3d_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>::comput
 
   std::vector<std::vector<int> >::iterator it_c; // circle iterator
   std::vector<int>::iterator it_ci; // points in circle iterator
-  std::vector<int>::iterator it_rbc = range_border_counter.begin();
+  //std::vector<int>::iterator it_rbc = range_border_counter.begin();
 
   // check where query point is and use out-of-image validation for neighbors or not
   if (idx_y >= pixel_search_radius_ && idx_y < (int)cloud.height - pixel_search_radius_ &&
       idx_x >= pixel_search_radius_ && idx_x < (int)cloud.width - pixel_search_radius_)
   {
-    for (it_c = mask_.begin(); it_c != mask_.end(); ++it_c, ++it_rbc) // iterate circles
+    for (it_c = mask_.begin(); it_c != mask_.end(); ++it_c/*, ++it_rbc*/) // iterate circles
     {
-      has_prev_point = false; init_gab = gab = 0; max_gab = 0.25 * (*it_c).size(); // reset loop
+      has_prev_point = false; init_gap = gap = 0; max_gap = 0.25 * (*it_c).size(); // reset loop
 
       for (it_ci = (*it_c).begin(); it_ci != (*it_c).end(); ++it_ci) // iterate current circle
       {
         idx = index + *it_ci;
         Eigen::Vector3f p_i = cloud.points[idx].getVector3fMap();
-        if ( pcl_isnan(p_i(2)) )                        { ++gab; continue; }               // count as gab point
-        if ( fabs(p_i(2) - p(2)) > distance_threshold ) { ++gab; ++(*it_rbc); continue; }  // count as gab point
-        if ( gab <= max_gab && has_prev_point ) // check gab is small enough and a previous point exists
+        if ( p_i(2) != p_i(2)/*pcl_isnan(p_i(2))*/ || fabs(p_i(2) - p(2)) > distance_threshold ) { ++gap; continue; } // count as gap point
+        //if (  ) { ++gap; /*++(*it_rbc);*/ continue; }  // count as gap point
+        if ( gap <= max_gap && has_prev_point ) // check gap is small enough and a previous point exists
         {
           p_curr = p_i - p;
           n_idx += (p_prev.cross(p_curr)).normalized(); // compute normal of p_prev and p_curr
           ++n_normals;
           p_prev = p_curr;
         }
-        else // current is first point in circle or just after a gab
+        else // current is first point in circle or just after a gap
         {
           p_prev = p_i - p;
           if (!has_prev_point)
           {
             p_first = p_prev; // remember the first valid point in circle
-            init_gab = gab; // save initial gab size
+            init_gap = gap; // save initial gap size
             has_prev_point = true;
           }
         }
-        gab = 0; // found valid point, reset gab counter
+        gap = 0; // found valid point, reset gap counter
       }
 
-      // close current circle (last and first point) if gab is small enough
-      if (gab + init_gab <= max_gab)
+      // close current circle (last and first point) if gap is small enough
+      if (gap + init_gap <= max_gap)
       {
         // compute normal of p_first and p_prev
         n_idx += (p_prev.cross(p_first)).normalized();
@@ -345,41 +345,41 @@ cob_3d_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>::comput
   }
   else
   {
-    for (it_c = mask_.begin(); it_c != mask_.end(); ++it_c, ++it_rbc) // iterate circles
+    for (it_c = mask_.begin(); it_c != mask_.end(); ++it_c/*, ++it_rbc*/) // iterate circles
     {
-      has_prev_point = false; gab = 0; max_gab = 0.25 * (*it_c).size(); // reset circle loop
+      has_prev_point = false; gap = 0; max_gap = 0.25 * (*it_c).size(); // reset circle loop
 
       for (it_ci = (*it_c).begin(); it_ci != (*it_c).end(); ++it_ci) // iterate current circle
       {
         idx = index + *it_ci;
         // check top and bottom image border
-        if ( idx < 0 || idx >= (int)cloud.points.size() ) { ++gab; continue; } // count as gab point
+        if ( idx < 0 || idx >= (int)cloud.points.size() ) { ++gap; continue; } // count as gap point
         int v = idx * inv_width_; // calculate y coordinate in image, // check left, right border
-        if ( v < 0 || v >= (int)cloud.height || pcl_isnan(cloud.points[idx].z)) { ++gab; continue; } // count as gab point
+        if ( v < 0 || v >= (int)cloud.height || /*pcl_isnan(cloud.points[idx].z)*/cloud.points[idx].z != cloud.points[idx].z) { ++gap; continue; } // count as gap point
         Eigen::Vector3f p_i = cloud.points[idx].getVector3fMap();
-        if ( fabs(p_i(2) - p(2)) > distance_threshold ) { ++gab; ++(*it_rbc); continue; }  // count as gab point
-        if ( gab <= max_gab && has_prev_point) // check gab is small enough and a previous point exists
+        if ( fabs(p_i(2) - p(2)) > distance_threshold ) { ++gap; /*++(*it_rbc);*/ continue; }  // count as gap point
+        if ( gap <= max_gap && has_prev_point) // check gap is small enough and a previous point exists
         {
           p_curr = p_i - p;
           n_idx += (p_prev.cross(p_curr)).normalized(); // compute normal of p_prev and p_curr
           ++n_normals;
           p_prev = p_curr;
         }
-        else // current is first point in circle or just after a gab
+        else // current is first point in circle or just after a gap
         {
           p_prev = p_i - p;
           if (!has_prev_point)
           {
             p_first = p_prev; // remember the first valid point in circle
-            init_gab = gab; // save initial gab size
+            init_gap = gap; // save initial gap size
             has_prev_point = true;
           }
         }
-        gab = 0; // found valid point, reset gab counter
+        gap = 0; // found valid point, reset gap counter
       }
 
-      // close current circle (last and first point) if gab is small enough
-      if ( gab + init_gab <= max_gab)
+      // close current circle (last and first point) if gap is small enough
+      if ( gap + init_gap <= max_gap)
       {
         // compute normal of p_first and p_prev
         n_idx += (p_prev.cross(p_first)).normalized();
@@ -390,8 +390,9 @@ cob_3d_features::OrganizedNormalEstimation<PointInT,PointOutT,LabelOutT>::comput
 
   //if (range_border_counter[mask_.size()-1] > 0) label_out = I_BORDER;
 
-  n_idx /= (float)n_normals;
-  n_idx = n_idx.normalized();
+  //n_idx /= (float)n_normals;
+  //n_idx = n_idx.normalized();
+  n_idx.normalize();
   n_x = n_idx(0);
   n_y = n_idx(1);
   n_z = n_idx(2);

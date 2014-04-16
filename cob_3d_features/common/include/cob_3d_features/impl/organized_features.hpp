@@ -275,7 +275,7 @@ cob_3d_features::OrganizedFeatures<PointInT,PointOutT>::initCompute()
   else
   {
     inv_width_ = 1.0f / surface_->width;
-    if (mask_changed)
+    if (mask_changed_)
     {
       int num_circles = std::floor(pixel_search_radius_ / circle_steps_);
       n_points_ = pow(2 * pixel_search_radius_ + 1, 2);
@@ -377,7 +377,7 @@ cob_3d_features::OrganizedFeatures<PointInT,PointOutT>::computeMaskManually(int 
 
     mask_.push_back(new_circle);
   }
-  mask_changed = false;
+  mask_changed_ = false;
 }
 
 #endif

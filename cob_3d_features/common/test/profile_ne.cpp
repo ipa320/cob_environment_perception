@@ -134,7 +134,7 @@ main (int argc, char** argv)
   ne_omp.compute (*n);
   std::cout << t.precisionStop () << "s\t for organized normal estimation (OMP)" << std::endl;
   concatenateFields (*p, *n, p_n);
-  io::savePCDFileASCII (".ros/normals_organized.pcd", p_n);
+  io::savePCDFileASCII ("normals_organized.pcd", p_n);
 
   double good_thr = 0.97;
   unsigned int ctr = 0, nan_ctr = 0;
@@ -165,7 +165,7 @@ main (int argc, char** argv)
   ne2.compute (*n);
   std::cout << t.precisionStop () << "s\t for integral image normal estimation" << std::endl;
   concatenateFields (*p, *n, p_n);
-  io::savePCDFileASCII (".ros/normals_integral.pcd", p_n);
+  io::savePCDFileASCII ("normals_integral.pcd", p_n);
 
   ctr = 0;
   nan_ctr = 0;
@@ -195,7 +195,7 @@ main (int argc, char** argv)
   ne3.compute (*n);
   std::cout << t.precisionStop () << "s\t for vanilla normal estimation" << std::endl;
   concatenateFields (*p, *n, p_n);
-  io::savePCDFileASCII (".ros/normals_vanilla.pcd", p_n);
+  io::savePCDFileASCII ("normals_vanilla.pcd", p_n);
 
   ctr = 0;
   nan_ctr = 0;
