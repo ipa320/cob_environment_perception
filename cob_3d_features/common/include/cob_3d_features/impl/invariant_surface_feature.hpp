@@ -108,8 +108,10 @@ void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Sc
 template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
 std::complex<Scalar> cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::Triangle::kernel_lin(const Scalar m, const Scalar n, const Scalar p, const Scalar x0, const Scalar y0, const Scalar y1, const Scalar d1, const Scalar d2) const {
 
+	if(d1==d2 || y0==y1) return 0;
+
 	//transform triangle to parameterization
-	const Eigen::Matrix<Scalar, 3, 1> v1=at(x0,y0),v2=at(x0+d1,y1),v3=at(x0+d2,y1);
+	const Eigen::Matrix<Scalar, 3, 1> v1=at(x0,y0),v2=at(x0+d1*(y1-y0),y1),v3=at(x0+d2*(y1-y0),y1);
 	const Eigen::Matrix<Scalar, 3, 1> normal = (v2-v1).cross(v3-v1);
 	const Scalar Px = -normal(0)/normal(2), Py = -normal(1)/normal(2);
 	const Scalar P = v1(2) - (Px*v1(0) +  Py*v1(1));
