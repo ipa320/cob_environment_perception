@@ -67,12 +67,24 @@ namespace cob_3d_features
   class InvariantSurfaceFeature
   {
   public:
+    enum {NUM_RADIUS=num_radius_, NUM_ANGLE=num_angle_};
+
     typedef Eigen::Matrix<Scalar, 3, 1> TVector;
     typedef std::vector<TSurface> TSurfaceList;
     typedef boost::shared_ptr<TSurfaceList> PTSurfaceList;
     typedef Eigen::Matrix<Scalar, num_angle_, num_angle_> FeatureAngle;
     typedef Eigen::Matrix<std::complex<Scalar>, num_angle_, num_angle_> FeatureAngleComplex;
-    typedef FeatureAngle Feature[num_radius_];
+    //typedef FeatureAngle Feature[num_radius_];
+    struct Feature {
+	FeatureAngle vals[num_radius_];
+
+	Scalar operator-(const Feature &o) const {
+		Scalar r=0;
+		for(int i=0; i<num_radius_; i++)
+			r += (vals[i]-o.vals[i]).cwiseAbs().sum();
+		return r;
+	}
+    };
     typedef struct {FeatureAngleComplex vals[num_radius_];} FeatureComplex;
 
     struct ResultVector {
@@ -81,6 +93,7 @@ namespace cob_3d_features
     };
     typedef std::vector<ResultVector> ResultVectorList;
     typedef boost::shared_ptr<ResultVectorList> PResultVectorList;
+    typedef boost::shared_ptr<const ResultVectorList> PResultVectorListConst;
 
     typedef enum {
       INVARAINCE_X=1, INVARAINCE_Y=2, INVARAINCE_Z=4,
@@ -101,6 +114,8 @@ namespace cob_3d_features
 	//resets the input (list of surfaces with holes) and computes initial fft
     void setInput(PTSurfaceList surfs);
     void compute();
+
+    PResultVectorListConst getResult() const {return result_;}
 
     const TAffine &getTransformation() const {return transform_;}
     void setTransformation(const TAffine &t) {transform_=t;}
