@@ -59,7 +59,7 @@
 
 template<const int num_radius_, const int num_angle_, typename TSurface, typename Scalar, typename TAffine>
 void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Scalar,TAffine>::compute() {
-  result_.reset(new ResultVector);
+  result_.reset(new ResultVectorList);
 
   //generate keypoints (e.g. reduce number of points by area)
   std::vector<TVector> keypoints;
@@ -75,17 +75,30 @@ void cob_3d_features::InvariantSurfaceFeature<num_radius_,num_angle_,TSurface,Sc
       std::vector<Triangle> submap;
       subsample(keypoints[i], radii_[j], submap);
 
-	  //sum features
-	  FeatureComplex f; f.fill(0);
-	  for(size_t s=0; s<submap.size(); s++)
-		  f += submap[s].f_;
+	  FeatureComplex f;
 
 	  //calc. rotation invariant feature
 	  for(int r=0; r<num_radius_; r++) {
+		  //sum features
+	 	  f.vals[r].fill(0);
+		  for(size_t s=0; s<submap.size(); s++)
+			  f.vals[r] += submap[s].f_[j].vals[r];
+
 		  FeatureAngleComplex t;
 		  Eigen::FFT<Scalar> fft;
-		  fft.fwd(t,f[r].abs());	//becomes translation invariant
-		  (*result_)[i].ft[j].vals[r] = t.abs();	//becomes rotation invariant
+		  for(int k=0; k<f.vals[r].rows(); k++) {
+		  	Eigen::Matrix<std::complex<Scalar>, num_angle_, 1> tmpOut;
+		  	Eigen::Matrix<Scalar, num_angle_, 1> tmpIn = f.vals[r].row(k).cwiseAbs();
+			fft.fwd(tmpOut, tmpIn);
+			t.row(k) = tmpOut;
+		  }
+		  for(int k=0; k<f.vals[r].cols(); k++) {
+		  	Eigen::Matrix<std::complex<Scalar>, 1, num_angle_> tmpOut;
+			fft.fwd(tmpOut, t.col(k));
+			t.col(k) = tmpOut;
+		  }
+		  //fft.fwd(t,f.vals[r].cwiseAbs());	//becomes translation invariant
+		  (*result_)[i].ft[j].vals[r] = t.cwiseAbs();	//becomes rotation invariant
 	  }
 	  
     }
