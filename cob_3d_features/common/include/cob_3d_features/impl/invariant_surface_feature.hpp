@@ -115,11 +115,19 @@ std::complex<Scalar> cob_3d_features::InvariantSurfaceFeature<num_radius_,num_an
 	const Eigen::Matrix<Scalar, 3, 1> normal = (v2-v1).cross(v3-v1);
 	const Scalar Px = -normal(0)/normal(2), Py = -normal(1)/normal(2);
 	const Scalar P = v1(2) - (Px*v1(0) +  Py*v1(1));
-
-	/*std::cout<<"Model:"<<std::endl;
+/*
+	std::cout<<"Model:"<<std::endl;
 	std::cout<<model_->p.transpose()<<std::endl;
-	std::cout<<P<<" "<<Px<<" "<<Py<<std::endl;*/
+	std::cout<<P<<" "<<Px<<" "<<Py<<std::endl;
 
+	std::cout<<"p1 "<<x0<<" "<<y0<<" "<<(Px*x0+Py*y0+P)<<std::endl;
+	std::cout<<"p2 "<<x0+d1*(y1-y0)<<" "<<y1<<" "<<(Px*(x0+d1*(y1-y0))+Py*y1+P)<<std::endl;
+	std::cout<<"p3 "<<x0+d2*(y1-y0)<<" "<<y1<<" "<<(Px*(x0+d2*(y1-y0))+Py*y1+P)<<std::endl;
+
+	std::cout<<"v1 "<<v1.transpose()<<std::endl;
+	std::cout<<"v2 "<<v2.transpose()<<std::endl;
+	std::cout<<"v3 "<<v3.transpose()<<std::endl;
+*/
 	/*MAXIMA:
 	p(x,y):=Px*x+Py*y+P;
 	ratsimp(diff(diff(diff(integrate(integrate(integrate(%e^(-%i*(n*x+m*y+p*z)),z,p(x,y),p(x,y)+c),x,x0,x0+d),y,y0,y0+e),e),c),d));
@@ -133,7 +141,7 @@ std::complex<Scalar> cob_3d_features::InvariantSurfaceFeature<num_radius_,num_an
 	((d2+d1)*p^3*Px^2+((2*d2+2*d1)*n+2*m)*p^2*Px+((d2+d1)*n^2+2*m*n)*p)*Py+d1*d2*p^3*Px^3+(3*d1*d2*n+(d2+d1)*m)*p^2*Px^2+(3*d1*d2*n^2+(2*d2+2*d1)*m*n+m^2)*p*Px+d1*d2*n^3+
 	(d2+d1)*m*n^2+m^2*n)
 	*/
-
+/*
 	std::cout<<"p1 "<<x0<<" "<<y0<<std::endl;
 	std::cout<<"p2 "<<x0+d1*(y1-y0)<<" "<<y1<<std::endl;
 	std::cout<<"p3 "<<x0+d2*(y1-y0)<<" "<<y1<<std::endl;
@@ -146,7 +154,7 @@ tt1(2)=tt2(2)=tt3(2)=0;
 std::cout<<"are: "<<(tt2-tt1).cross(tt3-tt1).norm()<<std::endl;
 
 
-	std::cout<<" d1 "<<d1<<" d2 "<<d2<<" x0 "<<x0<<" y0 "<<y0<<" y1 "<<y1<<std::endl;
+	std::cout<<" d1 "<<d1<<" d2 "<<d2<<" x0 "<<x0<<" y0 "<<y0<<" y1 "<<y1<<std::endl;*/
 
 	static const std::complex<Scalar> I(0,1);
 		
