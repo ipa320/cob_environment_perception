@@ -2,7 +2,7 @@ all: installed
 
 VERSION = 2.4
 TARBALL = build/OpenMesh-$(VERSION).tar.gz
-TARBALL_URL = http://www.openmesh.org/fileadmin/openmesh-files/$(VERSION)/OpenMesh-$(VERSION).tar.gz
+TARBALL_URL = http://www.openmesh.org/media/Releases/$(VERSION)/OpenMesh-$(VERSION).tar.gz
 SOURCE_DIR = build/OpenMesh-$(VERSION)
 UNPACK_CMD = tar xzf
 
