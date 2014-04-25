@@ -63,7 +63,7 @@ add_library(cob_3d_mapping_point_map_nodelets
   ros/src/point_map_nodelet.cpp
   ros/src/difference_segmentation.cpp
 )
-add_dependencies(cob_3d_mapping_point_map_nodelets ${${PROJECT_NAME}_EXPORTED_TARGETS})
+add_dependencies(cob_3d_mapping_point_map_nodelets ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 target_link_libraries(cob_3d_mapping_point_map_nodelets
   ${catkin_LIBRARIES}
