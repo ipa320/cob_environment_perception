@@ -79,7 +79,7 @@ add_library(cob_table_object_cluster
 
 ## Declare a cpp executable
 add_executable(table_object_cluster_node  ros/src/table_object_cluster_node.cpp)
-add_dependencies(table_object_cluster_node ${${PROJECT_NAME}_EXPORTED_TARGETS})
+add_dependencies(table_object_cluster_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 add_executable(table_object_cluster_action_client_test ros/src/table_object_cluster_action_client_test.cpp)
 add_dependencies(table_object_cluster_action_client_test ${catkin_EXPORTED_TARGETS})
 add_executable(table_object_cluster_action_server_node ros/src/table_object_cluster_action_server_node.cpp)
