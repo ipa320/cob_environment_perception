@@ -65,6 +65,10 @@ add_library(cob_3d_mapping_common
     common/src/io.cpp
 )
 
+target_link_libraries(cob_3d_mapping_common
+  ${catkin_LIBRARIES}
+)
+
 ## Declare a cpp executable
 add_executable(test_minimal_rectangle common/test/test_minimal_rectangle.cpp)
 
