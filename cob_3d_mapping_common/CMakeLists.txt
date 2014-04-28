@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   libgpc
   pcl_conversions
   polypartition
+  roscpp
 )
 
 find_package(PCL REQUIRED)
@@ -36,6 +37,7 @@ catkin_package(
     libgpc
     pcl_conversions
     polypartition
+    roscpp
   DEPENDS
     PCL
 )
