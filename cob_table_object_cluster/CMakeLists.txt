@@ -77,6 +77,10 @@ add_library(cob_table_object_cluster
 	ros/src/table_region_crop_nodelet.cpp
 )
 
+target_link_libraries(cob_table_object_cluster
+  ${catkin_LIBRARIES}
+)
+
 ## Declare a cpp executable
 add_executable(table_object_cluster_node  ros/src/table_object_cluster_node.cpp)
 add_dependencies(table_object_cluster_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
