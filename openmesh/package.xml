@@ -1,0 +1,21 @@
+<package>
+  <name>openmesh</name>
+  <version>1.0.0</version>
+  
+  <description>
+     Package for (external) OpenMesh library.
+  </description>
+  
+  <license>LGPL</license>
+  
+  <maintainer email="goa@ipa.fhg.de">Georg Arbeiter</maintainer>
+  <author>Georg Arbeiter</author>
+  
+  <url>http://wiki.ros.org/openmesh</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <export>
+    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib/OpenMesh -lOpenMeshCore -lOpenMeshTools" />
+  </export>
+</package>

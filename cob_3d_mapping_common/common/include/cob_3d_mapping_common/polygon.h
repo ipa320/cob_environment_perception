@@ -67,9 +67,9 @@
 #include <boost/shared_ptr.hpp>
 #include <boost/enable_shared_from_this.hpp>
 extern "C" {
-#include "cob_3d_mapping_common/gpc.h"
+#include "gpc/gpc.h"
 }
-#include <cob_3d_mapping_common/polypartition.h>
+#include <polypartition/polypartition.h>
 #include <cob_3d_mapping_common/dominant_color.h>
 #include <fstream>
 #include <iostream>

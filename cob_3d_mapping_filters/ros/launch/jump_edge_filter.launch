@@ -1,0 +1,10 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- node pkg="nodelet" type="nodelet" name="pcl_manager"  args="manager" output="screen"/-->
+
+  <node pkg="nodelet" type="nodelet" name="jump_edge_filter"  args="standalone cob_3d_mapping_filters/JumpEdgeFilter" output="screen">
+    <remap from="~point_cloud_in" to="/camera/depth/points" />
+  	<param name = "upper_angle_deg" type="double" value="170.0"/>
+  </node>
+</launch>

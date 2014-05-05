@@ -66,17 +66,29 @@
 
 using namespace pcl;
 
+/**
+ * \brief Members: float x, y, z, confidence, intensity
+ * \details Point obtained from Swissranger devices
+ */
 struct PointXYZCI;
 
+/**
+ * \brief Members: float x, y, z, amplitude
+ */
 struct PointXYZA;
 
+/**
+ * \brief Members: float x, y, z, rgb, uint_8t isF
+ */
 struct PointXYZRGBF;
 
+/**
+ * \brief Members: int label
+ */
 struct PointLabel;
 
 #include "cob_3d_mapping_common/impl/point_types.hpp"
 
-//Point obtained from Swissranger devices, confidence only used for SR2
 POINT_CLOUD_REGISTER_POINT_STRUCT(
 	PointXYZCI,
   (float, x, x)

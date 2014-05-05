@@ -1,0 +1,17 @@
+<package>
+  <name>libgpc</name>
+  <version>1.0.0</version>
+  
+  <description>
+     Package for (external) GPC library.
+  </description>
+  
+  <license>LGPL</license>
+  
+  <maintainer email="goa@ipa.fhg.de">Georg Arbeiter</maintainer>
+  <author>Georg Arbeiter</author>
+  
+  <url>http://wiki.ros.org/libgpc</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+</package>

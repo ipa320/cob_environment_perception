@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- node pkg="nodelet" type="nodelet" name="pcl_manager"  args="manager" output="screen"/-->
+
+  <node pkg="nodelet" type="nodelet" name="intensity_filter"  args="standalone cob_3d_mapping_filters/IntensityFilter" output="screen">
+    <remap from="~point_cloud_in" to="/camera/depth/points" />
+  	<param name="intensity_min_threshold" type="int" value="2000" />
+	  <param name="intensity_max_threshold" type="int" value="60000" />
+  </node>
+</launch>

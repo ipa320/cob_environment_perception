@@ -1,0 +1,13 @@
+<library path="lib/libcob_3d_mapping_point_map_nodelets">
+  <class name="cob_3d_mapping_point_map/PointMapNodelet" type="PointMapNodelet" base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet for point map aggregation
+  </description>
+  </class>
+
+  <class name="cob_3d_mapping_point_map/DifferenceSegmentation" type="DifferenceSegmentation" base_class_type="nodelet::Nodelet">
+  <description>
+  Nodelet for finding the difference map
+  </description>
+  </class>
+</library>

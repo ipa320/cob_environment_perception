@@ -1,0 +1,24 @@
+group1:
+  group_name: Management
+  component_name: cob_3d_mapping_demonstrator
+  buttons: [[init,trigger,init],
+           [stop,trigger,stop],
+           [recover,trigger,recover]]
+#group2:
+#  group_name: Modes
+#  component_name: cob_3d_mapping_demonstrator
+#  buttons: [[position mode,mode,position],
+#           [velocity mode,mode,velocity]]
+group2:
+  group_name: Movement
+  component_name: cob_3d_mapping_demonstrator
+  buttons: [[Home,move,home],
+           [Look right,move,right],
+           [Look left,move,left],
+           [Look down,move,down],
+           [Look rightdown,move,rightdown],
+           [Look leftdown,move,leftdown],
+           [Look downhalf,move,downhalf],
+           [Look rightdownhalf,move,rightdownhalf],
+           [Look leftdownhalf,move,leftdownhalf],
+           [Look up,move,up]]

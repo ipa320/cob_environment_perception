@@ -72,43 +72,75 @@
 namespace cob_3d_mapping
 {
 
-  //####################
-  //#### class ####
+  /**
+   * \brief Class for segmenting a polygon array by the field of view of a camera.
+   */
   class FOVSegmentation
   {
   public:
     typedef std::vector<Polygon::Ptr>::iterator polygon_iterator;
-    // Constructor
+    /** Empty Constructor*/
     FOVSegmentation();
 
 
-    // Destructor
+    /** Empty Destructor*/
     ~FOVSegmentation()
     {
       /// void
     }
 
+    /**
+     * \brief Set the FOV.
+     *
+     * \param[in] fov Field of view.
+     */
     void setFOV(FieldOfView& fov) {
       fov_ = fov;
     }
 
+    /**
+     * \brief Set the polygon array.
+     *
+     * \param[in] polygons The polygon array.
+     */
     void setShapeArray(std::vector<Polygon::Ptr>& polygons)
     {
       polygons_in_ = polygons;
     }
 
 
+    /**
+     * \brief Compute an return the polygons inside the FOV frustum.
+     *
+     * \param[out] polygons The polygons inside the frustum.
+     */
     void compute(std::vector<Polygon::Ptr>& polygons);
 
 
 
   protected:
+    /**
+     * \brief Check if three points are sorted counterclockwise.
+     *
+     * \param[in] a The first point.
+     * \param[in] b The second point.
+     * \param[in] c The third point.
+     *
+     * \return True, if the points are counterclockwise.
+     */
     bool ccw(Eigen::Vector2f& a, Eigen::Vector2f& b, Eigen::Vector2f& c);
+
+    /**
+     * \brief Clip the FOV with a planar polygon.
+     *
+     * \param[in] poly The polygon to be clipped.
+     * \param[out] The intersection points between FOV and polygon.
+     */
     void clipFOVandPlane(Polygon::Ptr& poly, std::vector<Eigen::Vector3f>& intersections);
 
-    std::vector<Polygon::Ptr> polygons_in_;
-    std::vector<Polygon::Ptr> polygons_fov_;
-    FieldOfView fov_;
+    std::vector<Polygon::Ptr> polygons_in_; //!< The input polygon array.
+    //std::vector<Polygon::Ptr> polygons_fov_;
+    FieldOfView fov_; //!< The field of view.
 
   };
 
