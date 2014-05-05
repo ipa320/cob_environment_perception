@@ -1,21 +1,33 @@
-cmake_minimum_required(VERSION 2.4.6)
-include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
-include(FindPkgConfig)
-set(ROS_BUILD_TYPE Debug)
-rosbuild_init()
+cmake_minimum_required(VERSION 2.8.3)
+project(openmesh)
 
-#rosbuild_genmsg()
-#rosbuild_gensrv()
+message(STATUS "Project source dir: ${PROJECT_SOURCE_DIR}")
+add_custom_target(
+    build_openmesh24 ALL
+    COMMAND cmake -E chdir ${PROJECT_SOURCE_DIR} make -f Makefile.tarball)
 
-#rosbuild_add_boost_directories()
+#add_custom_target(
+#    copy_openmesh24 ALL
+#    COMMAND cmake -E copy ${PROJECT_SOURCE_DIR}/lib/OpenMesh/libOpenMeshCore.so ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_LIB_DESTINATION}/libOpenMeshCore.so
+#    COMMAND cmake -E copy ${PROJECT_SOURCE_DIR}/lib/OpenMesh/libOpenMeshTools.so ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_LIB_DESTINATION}/libOpenMeshTools.so
+#)
+add_custom_target(
+    copy_openmesh24 ALL
+    COMMAND cmake -E copy ${PROJECT_SOURCE_DIR}/lib/OpenMesh/libOpenMeshCore.so.2.4 ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_LIB_DESTINATION}/libOpenMeshCore.so.2.4
+    COMMAND ln -sf ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_LIB_DESTINATION}/libOpenMeshCore.so.2.4 ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_LIB_DESTINATION}/libOpenMeshCore.so
+    COMMAND cmake -E copy ${PROJECT_SOURCE_DIR}/lib/OpenMesh/libOpenMeshTools.so.2.4 ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_LIB_DESTINATION}/libOpenMeshTools.so.2.4
+    COMMAND ln -sf ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_LIB_DESTINATION}/libOpenMeshTools.so.2.4 ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_LIB_DESTINATION}/libOpenMeshTools.so
+)
+message(STATUS "Copying libs to ${CATKIN_DEVEL_PREFIX}/${CATKIN_GLOBAL_LIB_DESTINATION}")
 
-# Build openmesh
-#execute_process(COMMAND cmake -E chdir ${PROJECT_SOURCE_DIR} make -f Makefile
-#                RESULT_VARIABLE _make_failed)
-#if(_make_failed)
-#  message(FATAL_ERROR "Build of openmesh failed")
-#endif(_make_failed)
+add_library(openmesh24 SHARED)
+set_target_properties(openmesh24 PROPERTIES LINKER_LANGUAGE CXX)
 
-#set_directory_properties(PROPERTIES ADDITIONAL_MAKE_CLEAN_FILES openmesh-svn)
+#add_dependencies(copy_openmesh24 build_openmesh24)
+add_dependencies(copy_openmesh24 build_openmesh24)
+#add_dependencies(openmesh24 copy_openmesh24)
+add_dependencies(openmesh24 copy_openmesh24)
+
+
 
 

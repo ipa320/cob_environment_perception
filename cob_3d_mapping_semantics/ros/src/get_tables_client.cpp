@@ -12,7 +12,7 @@
  * \note
  *  Project name: care-o-bot
  * \note
- *  ROS stack name: cob_environment_perception_intern
+ *  ROS stack name: cob_environment_perception
  * \note
  *  ROS package name: cob_3d_mapping_semantics
  *
@@ -75,6 +75,8 @@
 // PCL includes
 #include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
+#include <pcl_conversions/pcl_conversions.h>
+#include <pcl/conversions.h>
 
 class TablesClient
 {
@@ -155,7 +157,10 @@ public:
             std::stringstream ss1;
             ss1 << file_path_ << "table_" << i << "_" << j << ".pcd";
             pcl::PointCloud<pcl::PointXYZ> p;
-            pcl::fromROSMsg (res.objects.shapes[i].points[j], p);
+            pcl::PCLPointCloud2 p2;
+            pcl_conversions::toPCL(res.objects.shapes[i].points[j], p2);
+            pcl::fromPCLPointCloud2(p2, p);
+            //pcl::fromROSMsg (res.objects.shapes[i].points[j], p);
             pcl::io::savePCDFile (ss1.str (), p, false);
             ROS_INFO("PCD file saved");
           }
@@ -189,11 +194,9 @@ public:
     std::stringstream ss1;
     ss1 << file_path_ << "table.bag";
     bag.open (ss1.str().c_str(), rosbag::bagmode::Write);
-    //bag.write("shape_array",ros::Time::now(),sa);
     bag.write ("/get_tables_client/shape_array", sa.header.stamp, sa);
     bag.close ();
     ROS_INFO("BAG file saved");
-    //std::cout << sa.header.stamp << std::endl;
   }
     else
       ROS_INFO("No table object : BAG file not saved");

@@ -69,14 +69,32 @@
 
 namespace cob_3d_mapping
 {
+  /**
+   * \brief Sensor model for PrimeSense cameras.
+   */
   class PrimeSense
   {
   public:
     typedef Eigen::Map<const Eigen::Matrix<float,4,4,Eigen::RowMajor> > MatMap;
 
+    /**
+     * \brief Empty constructor.
+     */
     PrimeSense() {}
+    /**
+     * \brief Empty destructor.
+     */
     ~PrimeSense() {}
 
+    /*
+     * \brief Check if two points are neighbors.
+     *
+     * \param[in] query The depth of the query point.
+     * \param[in] neighbor The depth of the potential neighbor.
+     * \param[in] tolerance The distance tolerance factor.
+     *
+     * \return True, if the points are neighbors.
+     */
     inline static bool areNeighbors(float query,
                              float neighbor,
                              float tolerance = 2.0f)
@@ -86,6 +104,15 @@ namespace cob_3d_mapping
       return (fabs(query - neighbor) < dist_th);
     }
 
+    /*
+     * \brief Check if two points are neighbors.
+     *
+     * \param[in] query The query point.
+     * \param[in] neighbor The potential neighbor.
+     * \param[in] tolerance The distance tolerance factor.
+     *
+     * \return True, if the points are neighbors.
+     */
     inline static bool areNeighbors(const Eigen::Vector3f& query,
                              const Eigen::Vector3f&  neighbor,
                              float tolerance = 4.0f)
@@ -99,14 +126,14 @@ namespace cob_3d_mapping
     inline static Eigen::Matrix4f tf_unit_cube() { return MatMap(mat); }
 
     // frustum parameters:
-    static const float fov_h; // fov horizontal (IR) , from wiki and ros.org
-    static const float fov_v; // fov vertical (IR)
-    static const float f; // far plane
-    static const float n; // near plane
-    static const float l; // left
-    static const float r; // right
-    static const float t; // top
-    static const float b; // bottom
+    static const float fov_h; //!< fov horizontal (IR) , from wiki and ros.org
+    static const float fov_v; //!< fov vertical (IR)
+    static const float f; //!< far plane
+    static const float n; //!< near plane
+    static const float l; //!< left
+    static const float r; //!< right
+    static const float t; //!< top
+    static const float b; //!< bottom
     static const float w;
     static const float h;
     static const float aspect;

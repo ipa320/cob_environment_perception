@@ -1,0 +1,9 @@
+<?xml version="1.0" ?>
+<launch>
+
+    <node pkg="registration" type="capture" name="capture" output="screen">
+      <param name="phase2_len" value="50" />
+      <param name="nick_rate" value="0.003" />
+      <param name="walk_vel" value="0.01" />
+
+

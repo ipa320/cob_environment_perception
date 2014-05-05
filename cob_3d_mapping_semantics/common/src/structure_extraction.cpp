@@ -62,15 +62,14 @@
  ****************************************************************/
 //internal include
 #include "cob_3d_mapping_semantics/structure_extraction.h"
-#include <ros/console.h>
 
 using namespace cob_3d_mapping;
 
 bool
-StructureExtraction::isWall()
+StructureExtraction::isWall ()
 {
   //Check if the plane spanned by the polygon is horizontal or not
-  if (fabs(poly_ptr_->normal_(2)) < 0.1 && poly_ptr_->computeArea3d() > 1)
+  if (fabs (poly_ptr_->normal_ (2)) < 0.1 && poly_ptr_->computeArea3d () > 1)
     return true;
   else
     return false;
@@ -79,7 +78,8 @@ StructureExtraction::isWall()
 bool
 StructureExtraction::isFloor ()
 {
-  if (fabs(poly_ptr_->normal_(0)) < 0.12 && fabs(poly_ptr_->normal_(1)) < 0.12 && fabs(poly_ptr_->normal_(2)) > 0.9 && poly_ptr_->pose_.translation()(2) <= floor_height_)
+  if (fabs (poly_ptr_->normal_ (0)) < 0.12 && fabs (poly_ptr_->normal_ (1)) < 0.12
+      && fabs (poly_ptr_->normal_ (2)) > 0.9 && poly_ptr_->pose_.translation () (2) <= floor_height_)
     return true;
   else
     return false;
@@ -88,27 +88,29 @@ StructureExtraction::isFloor ()
 bool
 StructureExtraction::isCeiling ()
 {
-  if (fabs(poly_ptr_->normal_(0)) < 0.12 && fabs(poly_ptr_->normal_(1)) < 0.12 && fabs(poly_ptr_->normal_(2)) > 0.9 && poly_ptr_->pose_.translation()(2) >= ceiling_height_)
+  if (fabs (poly_ptr_->normal_ (0)) < 0.12 && fabs (poly_ptr_->normal_ (1)) < 0.12
+      && fabs (poly_ptr_->normal_ (2)) > 0.9 && poly_ptr_->pose_.translation () (2) >= ceiling_height_)
     return true;
   else
     return false;
 }
 
-
 bool
 StructureExtraction::classify (unsigned int& label)
 {
-  if(!poly_ptr_)
+  if (!poly_ptr_)
   {
-    ROS_ERROR("Input polygon not set, aborting...");
+    std::cerr << "Input polygon not set, aborting..." << std::endl;
     return false;
   }
-  if( isCeiling()) label = 1;
-  else if( isFloor()) label = 2;
-  else if( isWall() ) label = 3;
-  else label = 0;
+  if (isCeiling ())
+    label = 1;
+  else if (isFloor ())
+    label = 2;
+  else if (isWall ())
+    label = 3;
+  else
+    label = 0;
+  return true;
 }
-
-
-
 

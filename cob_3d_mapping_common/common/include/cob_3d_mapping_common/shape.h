@@ -108,6 +108,11 @@ namespace cob_3d_mapping
     */
     virtual void transform(const Eigen::Affine3f& trafo)=0;
 
+    /**
+     * \brief Compute the distance of the shape from the view point (0,0,0)
+     *
+     * \return The distance.
+     */
     double computeDistanceFromViewpoint() {return pose_.translation().norm();}
 
     unsigned int id_;/**< ID of shape.*/

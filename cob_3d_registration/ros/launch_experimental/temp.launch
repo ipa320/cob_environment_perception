@@ -1,0 +1,20 @@
+<?xml version="1.0" ?>
+<launch>
+
+    <node pkg="registration" type="capture" name="capture" output="screen">
+      <param name="phase2_len" value="50" />
+      <param name="nick_rate" value="0.003" />
+      <param name="walk_vel" value="0.01" />
+
+
+<param name="prefix" value="/home/goa-jh/dat3/_/" />
+<param name="state_trans_x" value="false" />
+<param name="state_trans_y" value="false" />
+<param name="state_rot_z" value="false" />
+<param name="state_rot_x" value="false" />
+
+      
+    </node>
+</launch>
+
+

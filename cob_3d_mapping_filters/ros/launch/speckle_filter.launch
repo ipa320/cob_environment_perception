@@ -1,0 +1,11 @@
+<?xml version="1.0"?>
+<launch>
+
+  <!-- node pkg="nodelet" type="nodelet" name="pcl_manager"  args="manager" output="screen"/-->
+
+  <node pkg="nodelet" type="nodelet" name="speckle_filter"  args="standalone cob_3d_mapping_filters/SpeckleFilter" output="screen">
+    <remap from="~point_cloud_in" to="/camera/depth/points" />
+  	<param name="speckle_size" type="int" value="50"/>
+  	<param name="speckle_range" type="double" value="0.2"/>
+  </node>
+</launch>

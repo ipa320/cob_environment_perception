@@ -1,0 +1,9 @@
+filename	execution time in seconds
+kitchen01_close_raw.pcd	0.067405
+kitchen01_far_raw.pcd	0.0766771
+office01_close_raw.pcd	0.0767219
+office01_far_raw.pcd	0.0884581
+shelves01_close_raw.pcd	0.09424
+shelves01_far_raw.pcd	0.0917511
+table01_close1m_raw.pcd	0.093339
+table01_far_raw.pcd	0.077611

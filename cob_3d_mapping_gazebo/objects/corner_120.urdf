@@ -1,0 +1,82 @@
+<robot name="simple_corner">
+	<!-- dummy_link -->
+  <link name="dummy_link">
+    <inertial>
+      <origin xyz="0 0 0" />
+      <mass value="5.0" />
+      <inertia ixx="0.0" ixy="0.0" ixz="0.0" iyy="0.0" iyz="0.0" izz="0.0" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0" />
+      <geometry>
+        <box size="0.00 0.00 0.00" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0" />
+      <geometry>
+        <box size="0.00 0.00 0.00" />
+      </geometry>
+    </collision>
+  </link>
+
+  <link name="w0">
+    <inertial>
+      <origin xyz="0 0 0" /> 
+      <mass value="1.0" />
+      <inertia  ixx="1.0" ixy="0.0"  ixz="0.0"  iyy="100.0"  iyz="0.0"  izz="1.0" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0"/>
+      <geometry>
+        <box size="1 0.01 1" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0"/>
+      <geometry>
+        <box size="1 0.01 1" />
+      </geometry>
+    </collision>
+  </link>
+  <gazebo reference="w0">
+    <material>Gazebo/Red</material>
+  </gazebo>
+  
+  <joint name="joint_w0" type="fixed">
+    <origin xyz="0 -0.43 0" rpy="0 0 1.0472" />
+    <parent link="dummy_link" />
+    <child link="w0" />
+  </joint>
+  
+    <link name="w1">
+    <inertial>
+      <origin xyz="0 0 0" /> 
+      <mass value="1.0" />
+      <inertia  ixx="1.0" ixy="0.0"  ixz="0.0"  iyy="100.0"  iyz="0.0"  izz="1.0" />
+    </inertial>
+    <visual>
+      <origin xyz="0 0 0"/>
+      <geometry>
+        <box size="1 0.01 1" />
+      </geometry>
+    </visual>
+    <collision>
+      <origin xyz="0 0 0"/>
+      <geometry>
+        <box size="1 0.01 1" />
+      </geometry>
+    </collision>
+  </link>
+  <gazebo reference="w1">
+    <material>Gazebo/Red</material>
+  </gazebo>
+  
+  <joint name="joint_w1" type="fixed">
+    <origin xyz="0 0.43 0" rpy="0 0 -1.0472" />
+    <parent link="dummy_link" />
+    <child link="w1" />
+  </joint>
+  
+  
+</robot>

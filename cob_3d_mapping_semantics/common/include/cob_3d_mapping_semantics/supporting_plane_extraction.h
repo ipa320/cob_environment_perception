@@ -8,7 +8,7 @@
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
  *
  * Project name: care-o-bot
- * ROS stack name: cob_environment_perception_intern
+ * ROS stack name: cob_environment_perception
  * ROS package name: cob_3d_mapping_semantics
  * Description:
  *
@@ -79,6 +79,13 @@
 
 using namespace cob_3d_mapping;
 
+/**
+ * \brief Finds a supporting plane (e.g. a table top or a wall) in a polygon array.
+ *
+ * \details The supporting plane has an area the lies between a user-definied minimum and maximum value and
+ * has to be in a certain distance range from the view point. The algorithm only works if a dominant plane exists in the array.
+ * Works best with a polygon array defined in camera coordinates.
+ */
 class SupportingPlaneExtraction
 {
 
@@ -87,11 +94,8 @@ public:
   /**
    * @brief Constructor
    */
-  SupportingPlaneExtraction ()
-  :distance_min_ (0.4),
-   distance_max_ (3),
-   area_min_ (0.3),
-   area_max_ (3)
+  SupportingPlaneExtraction () :
+      distance_min_ (0.4), distance_max_ (3), area_min_ (0.3), area_max_ (3)
   {
     /// void
   }
@@ -105,11 +109,10 @@ public:
     /// void
   }
 
-
   /**
-   * @brief Set Minimum threshold for distance
+   * @brief Set the minimum threshold for the distance from the supporting plane to the view point.
    *
-   * @param distance_min minimum threshold value
+   * @param distance_min The minimum threshold.
    *
    */
   void
@@ -119,9 +122,9 @@ public:
   }
 
   /**
-   * @brief Set Maximum threshold for distance
+   * @brief Set the maximum threshold for the distance from the supporting plane to the view point.
    *
-   * @param distance_man maximum threshold value
+   * @param distance_man The maximum threshold.
    *
    */
   void
@@ -129,10 +132,11 @@ public:
   {
     distance_max_ = distance_max;
   }
+
   /**
-   * @brief Set Minimum threshold for area of a polygon
+   * @brief Set the minimum threshold for the area of the supporting plane.
    *
-   * @param area_min minimum threshold value
+   * @param area_min The minimum threshold.
    *
    */
   void
@@ -142,9 +146,9 @@ public:
   }
 
   /**
-   * @brief Set Maximum threshold for area of a polygon
+   * @brief Set the maximum threshold for the area of the supporting plane.
    *
-   * @param area_max maximum threshold value
+   * @param area_max The maximum threshold.
    *
    */
   void
@@ -153,21 +157,23 @@ public:
     area_max_ = area_max;
   }
 
-
   /**
-   * @brief extract the supporting plane
+   * @brief Extract the supporting plane from a polygon array.
    *
-   * @return ID of the support plane
+   * \param[in] polys The polygon array to be evaluated.
+   * \param[out] sp The supporting plane
+   *
+   * @return True if extraction was possible.
    */
   bool
-  getSupportingPlane(std::vector<Polygon::Ptr>& polys, Polygon& sp);
-
+  getSupportingPlane (std::vector<Polygon::Ptr>& polys, Polygon& sp);
 
 protected:
 
-  double distance_min_, distance_max_;
-  double area_min_, area_max_;
-
+  double distance_min_; ///< The minimum distance between supporting plane an view point.
+  double distance_max_; ///< The minimum distance between supporting plane an view point.
+  double area_min_; ///< The minimum area of the supporting plane.
+  double area_max_; ///< The maximum area of the supporting plane.
 
 };
 

@@ -60,6 +60,8 @@
 #ifndef COB_3D_MAPPING_ROS_MSG_CONV_H_
 #define COB_3D_MAPPING_ROS_MSG_CONV_H_
 
+#include <pcl/conversions.h>
+#include <pcl_conversions/pcl_conversions.h>
 #include <cob_3d_mapping_msgs/Shape.h>
 #include <cob_3d_mapping_msgs/ShapeArray.h>
 #include "cob_3d_mapping_common/polygon.h"
@@ -68,7 +70,7 @@
 
 namespace cob_3d_mapping
 {
-  //TODO: purpose? where used? is this the correct place?
+  //TODO: purpose? where used? is this the correct place? => cob_table_object_cluster
   // should work for cob_3d_mapping_msgs::Shape, Polygon, Cylinder
   template<typename ShapeT>
   inline int getHullIndex(const ShapeT& s)
@@ -87,19 +89,21 @@ namespace cob_3d_mapping
       std::cerr <<  "[shape2hull()]: ERROR! No positive contour!" << std::endl;
       return false;
     }
-    pcl::fromROSMsg(s.points[idx], hull);
+    pcl::PCLPointCloud2 hull2;
+    pcl_conversions::toPCL(s.points[idx], hull2);
+    pcl::fromPCLPointCloud2(hull2, hull);
+    //pcl::fromROSMsg(s.points[idx], hull);
     return true;
   }
 
   /**
-   * @brief writing to a ros message to convert a feature map
+   * \brief Convert a polygon to a shape message.
    *
-   * writing to a ros message to convert a feature map
    *
-   * @param p ros message containing polygons
-   * @param p input as feature map
+   * \param[in] p Polygon to be converted.
+   * \param[out] s The shape message.
    *
-   * @return nothing
+   * \return nothing
    */
   inline void
   toROSMsg(const Polygon& p, cob_3d_mapping_msgs::Shape& s)
@@ -140,21 +144,23 @@ namespace cob_3d_mapping
         s.points[i].points[j].y = p.contours[i][j](1);
         s.points[i].points[j].z = p.contours[i][j](2);*/
       }
+      pcl::PCLPointCloud2 cloud2;
+      pcl::toPCLPointCloud2(cloud, cloud2);
       sensor_msgs::PointCloud2 cloud_msg;
-      pcl::toROSMsg(cloud, cloud_msg);
+      pcl_conversions::fromPCL(cloud2, cloud_msg);
+      //pcl::toROSMsg(cloud, cloud_msg);
       s.points[i]= cloud_msg;
     }
   }
 
   /**
-   * @brief writing to a ros message to convert a feature map
+   * \brief Convert a shape message to a polygon.
    *
-   * writing to a ros message to convert a feature map
    *
-   * @param p ros message containing polygons
-   * @param p input as feature map
+   * \param[in] s Shape message to be converted.
+   * \param[out] p The polygon.
    *
-   * @return nothing
+   * \return Conversion successful.
    */
   inline bool
   fromROSMsg(const cob_3d_mapping_msgs::Shape& s, Polygon& p)
@@ -182,8 +188,11 @@ namespace cob_3d_mapping
       p.holes_.push_back(s.holes[i]);
       if(s.points[i].data.size())
       {
+        pcl::PCLPointCloud2 cloud2;
+        pcl_conversions::toPCL(s.points[i], cloud2);
         pcl::PointCloud<pcl::PointXYZ> cloud;
-        pcl::fromROSMsg(s.points[i], cloud);
+        pcl::fromPCLPointCloud2(cloud2, cloud);
+        //pcl::fromROSMsg(s.points[i], cloud);
         std::vector<Eigen::Vector2f> pts;
         pts.resize(cloud.points.size());
         for(unsigned int j=0; j<cloud.points.size(); j++)
@@ -205,6 +214,15 @@ namespace cob_3d_mapping
     return true;
   }
 
+  /**
+   * \brief Convert a cylinder to a shape message.
+   *
+   *
+   * \param[in] c Cylinder to be converted.
+   * \param[out] s The shape message.
+   *
+   * \return nothing
+   */
   inline void
   toROSMsg(const Cylinder& c, cob_3d_mapping_msgs::Shape& s)
   {
@@ -246,12 +264,24 @@ namespace cob_3d_mapping
         cloud.points.push_back(pt);
         //std::cout << pt.x << "," << pt.y << std::endl;
       }
+      pcl::PCLPointCloud2 cloud2;
+      pcl::toPCLPointCloud2(cloud, cloud2);
       sensor_msgs::PointCloud2 cloud_msg;
-      pcl::toROSMsg(cloud, cloud_msg);
+      pcl_conversions::fromPCL(cloud2, cloud_msg);
+      //pcl::toROSMsg(cloud, cloud_msg);
       s.points[i]= cloud_msg;
     }
   }
 
+  /**
+   * \brief Convert a shape message to a cylinder.
+   *
+   *
+   * \param[in] s Shape message to be converted.
+   * \param[out] c The cylinder.
+   *
+   * \return Conversion successful.
+   */
   inline bool
   fromROSMsg(const cob_3d_mapping_msgs::Shape& s,Cylinder& c)
   {
@@ -283,8 +313,11 @@ namespace cob_3d_mapping
       c.holes_.push_back(s.holes[i]);
       if(s.points[i].data.size())
       {
+        pcl::PCLPointCloud2 cloud2;
+        pcl_conversions::toPCL(s.points[i], cloud2);
         pcl::PointCloud<pcl::PointXYZ> cloud;
-        pcl::fromROSMsg(s.points[i], cloud);
+        pcl::fromPCLPointCloud2(cloud2, cloud);
+        //pcl::fromROSMsg(s.points[i], cloud);
         std::vector<Eigen::Vector2f> pts;
         pts.resize(cloud.points.size());
         for(unsigned int j=0; j<cloud.points.size(); j++)

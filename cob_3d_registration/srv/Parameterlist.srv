@@ -1,0 +1,5 @@
+string[] names
+string[] values
+string[] types
+---
+int64 success

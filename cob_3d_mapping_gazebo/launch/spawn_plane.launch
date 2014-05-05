@@ -1,0 +1,12 @@
+<?xml version="1.0"?>
+<launch>
+
+
+    <arg name= "name" default = "plane"/>
+    <arg name= "x" default = "3"/>
+    <arg name= "y" default = "0"/>
+	<param name="$(arg name)" command="$(find xacro)/xacro.py $(find cob_3d_mapping_gazebo)/objects/plane.urdf" />
+	<!-- spawn model in gazebo -->
+	<node name="spawn_cylinder" pkg="gazebo" type="spawn_model" args="-urdf -param $(arg name) -x $(arg x) -y $(arg y) -z 1.1 -R 0 -P 0 -Y 1 -model $(arg name)" respawn="false" output="screen" />
+
+</launch>

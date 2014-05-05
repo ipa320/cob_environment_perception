@@ -1,0 +1,24 @@
+<package>
+  <name>cob_3d_mapping_gazebo</name>
+  <version>1.0.0</version>
+  
+  <description>
+     Gazebo tools for mapping.
+  </description>
+  
+  <license>LGPL</license>
+  
+  <maintainer email="goa@ipa.fhg.de">Georg Arbeiter</maintainer>
+  <author>Georg Arbeiter</author>
+  
+  <url>http://wiki.ros.org/cob_3d_mapping_gazebo</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <run_depend>cob_gazebo_objects</run_depend>
+  <run_depend>cob_script_server</run_depend>
+  <run_depend>gazebo</run_depend>
+</package>
+
+
+

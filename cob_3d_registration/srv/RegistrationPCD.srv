@@ -1,0 +1,5 @@
+string pcd_fn
+string img_fn
+string depth_img_fn
+---
+int64 success

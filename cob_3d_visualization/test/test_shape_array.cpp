@@ -6,6 +6,8 @@
 #include <pcl/point_representation.h>
 #include <pcl/kdtree/kdtree_flann.h>
 #include <pcl/io/pcd_io.h>
+#include <pcl/conversions.h>
+#include <pcl_conversions/pcl_conversions.h>
 
 #include <sensor_msgs/PointCloud2.h>
 
@@ -28,7 +30,7 @@ firstShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f origin, Eigen::Vector
 {
   pcl::PointXYZ pt;
   pcl::PointCloud<pcl::PointXYZ> pc;
-  sensor_msgs::PointCloud2 pc2;
+  sensor_msgs::PointCloud2 pc_msg;
 
   s.id = 0;
 
@@ -74,8 +76,11 @@ firstShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f origin, Eigen::Vector
   pt.z = z;
   pc.push_back (pt);
 
-  pcl::toROSMsg (pc, pc2);
-  s.points.push_back (pc2);
+  pcl::PCLPointCloud2 pc2;
+  pcl::toPCLPointCloud2(pc, pc2);
+  pcl_conversions::fromPCL(pc2, pc_msg);
+  //pcl::toROSMsg (pc, pc2);
+  s.points.push_back (pc_msg);
 
   s.holes.push_back(false);
 }
@@ -85,7 +90,7 @@ secondShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f origin, Eigen::Vecto
 {
   pcl::PointXYZ pt;
   pcl::PointCloud<pcl::PointXYZ> pc, pc_h;
-  sensor_msgs::PointCloud2 pc2, pc2_h;
+  sensor_msgs::PointCloud2 pc_msg, pc_msg_h;
 
   s.id = 1;
 
@@ -132,11 +137,17 @@ secondShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f origin, Eigen::Vecto
   pt.y = 0.5;
   pc_h.push_back(pt);
 
-  pcl::toROSMsg (pc, pc2);
-  s.points.push_back (pc2);
+  pcl::PCLPointCloud2 pc2;
+  pcl::toPCLPointCloud2(pc, pc2);
+  pcl_conversions::fromPCL(pc2, pc_msg);
+  //pcl::toROSMsg (pc, pc2);
+  s.points.push_back (pc_msg);
 
-  pcl::toROSMsg (pc_h, pc2_h);
-  s.points.push_back (pc2_h);
+  pcl::PCLPointCloud2 pc2_h;
+  pcl::toPCLPointCloud2(pc_h, pc2_h);
+  pcl_conversions::fromPCL(pc2_h, pc_msg_h);
+  //pcl::toROSMsg (pc, pc2);
+  s.points.push_back (pc_msg_h);
 
   s.holes.push_back(false);
   s.holes.push_back(true);
@@ -147,7 +158,7 @@ thirdShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f origin, Eigen::Vector
 {
   pcl::PointXYZ pt;
   pcl::PointCloud<pcl::PointXYZ> pc;
-  sensor_msgs::PointCloud2 pc2;
+  sensor_msgs::PointCloud2 pc_msg;
 
   s.id = 2;
 
@@ -188,8 +199,11 @@ thirdShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f origin, Eigen::Vector
   s.centroid.y = centroid[1];
   s.centroid.z = centroid[2];*/
 
-  pcl::toROSMsg (pc, pc2);
-  s.points.push_back (pc2);
+  pcl::PCLPointCloud2 pc2;
+  pcl::toPCLPointCloud2(pc, pc2);
+  pcl_conversions::fromPCL(pc2, pc_msg);
+  //pcl::toROSMsg (pc, pc2);
+  s.points.push_back (pc_msg);
 
   s.holes.push_back(false);
 }
@@ -199,7 +213,7 @@ fourthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f origin, Eigen::Vecto
 {
   pcl::PointXYZ pt;
   pcl::PointCloud<pcl::PointXYZ> pc;
-  sensor_msgs::PointCloud2 pc2;
+  sensor_msgs::PointCloud2 pc_msg;
   /*
    Eigen::Vector3f v2 (1, 0, 0), v3 (0, 0, 0), v4;
    //cout << " v1 : \n" << v1 << endl;
@@ -294,8 +308,11 @@ fourthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f origin, Eigen::Vecto
   /*s.centroid.x = centroid[0];
   s.centroid.y = centroid[1];
   s.centroid.z = centroid[2];*/
-  pcl::toROSMsg (pc, pc2);
-  s.points.push_back (pc2);
+  pcl::PCLPointCloud2 pc2;
+  pcl::toPCLPointCloud2(pc, pc2);
+  pcl_conversions::fromPCL(pc2, pc_msg);
+  //pcl::toROSMsg (pc, pc2);
+  s.points.push_back (pc_msg);
 
   s.holes.push_back(false);
 }
@@ -305,7 +322,7 @@ fifthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f origin, Eigen::Vector
 {
   pcl::PointXYZ pt;
   pcl::PointCloud<pcl::PointXYZ> pc;
-  sensor_msgs::PointCloud2 pc2;
+  sensor_msgs::PointCloud2 pc_msg;
 
   s.id = 4;
 
@@ -409,8 +426,11 @@ fifthShape (cob_3d_mapping_msgs::Shape& s, Eigen::Vector3f origin, Eigen::Vector
   /*s.centroid.x = centroid[0];
   s.centroid.y = centroid[1];
   s.centroid.z = centroid[2];*/
-  pcl::toROSMsg (pc, pc2);
-  s.points.push_back (pc2);
+  pcl::PCLPointCloud2 pc2;
+  pcl::toPCLPointCloud2(pc, pc2);
+  pcl_conversions::fromPCL(pc2, pc_msg);
+  //pcl::toROSMsg (pc, pc2);
+  s.points.push_back (pc_msg);
 
   s.holes.push_back(false);
 }
