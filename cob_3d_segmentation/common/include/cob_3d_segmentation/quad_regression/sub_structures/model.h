@@ -128,9 +128,9 @@ struct Model {
   
   /// transform parameters from 2D input f(x,y) to 1D input f(t) (from origin 0/0)
   inline VectorU1D transformation_1D(const Eigen::Vector2f &dir, const Eigen::Vector2f &off, const Eigen::Vector3f &at) {
-	  Eigen::Matrix<float, Degree, 1> t; t.fill(0);
+	  Eigen::Matrix<float, Degree+1, 1> t; t.fill(0);
       typename Param<Degree>::VectorU pp = p;
-      pp(0) -= at(3);
+      pp(0) -= at(2);
       
       for(int i=0; i<=Degree; i++)
         for(int j=0; j<=i; j++)
@@ -140,7 +140,7 @@ struct Model {
 					boost::math::binomial_coefficient<float>(j, k)*   std::pow(dir(0),k)* std::pow(off(0),j-k)*
 					boost::math::binomial_coefficient<float>(i-j, kk)*std::pow(dir(1),kk)*std::pow(off(1),i-j-kk);
 
-	  const Eigen::Matrix<float, Degree, Degree> M = t*t.transpose();
+	  const Eigen::Matrix<float, Degree+1, Degree+1> M = t*t.transpose();
 	  VectorU1D r;
 	  r.fill(0);
 	  
@@ -234,8 +234,8 @@ struct Model {
         //if(i!=j) dy += p(i*(i+1)/2+j)*(j-1<=0?1:std::pow(x,j-1))*(i-j-1<=0?1:std::pow(y,i-j-1));        //not the correct derivate (on purpose)
         //if(j!=0) dx += p(i*(i+1)/2+j)*(j-1<=0?1:std::pow(x,j-1))*(i-j-1<=0?1:std::pow(y,i-j-1));
 
-        if(i!=j) dy += p(i*(i+1)/2+j)*std::pow(x,j) * std::pow(y,i-j-1);
-        if(j!=0) dx += p(i*(i+1)/2+j)*std::pow(y,i-j) * std::pow(x,j-1);
+        if(i!=j) dy += (i-j)*p(i*(i+1)/2+j)*std::pow(x,j) * std::pow(y,i-j-1);
+        if(j!=0) dx += i*p(i*(i+1)/2+j)*std::pow(y,i-j) * std::pow(x,j-1);
       }
 
     Eigen::Vector3f r;
@@ -352,7 +352,7 @@ struct Model {
   inline float z() const {return param.z_(0)/param.model_(0,0);}
 };
 
-
+#ifdef QPPF_SPECIALIZATION_2
 /**
  * specialization for second degree
  */
@@ -643,6 +643,6 @@ struct Model<2> {
   inline float y() const {return param.model_(0,3)/param.model_(0,0);}
   inline float z() const {return param.z_(0)/param.model_(0,0);}
 };
-
+#endif
 
 #endif /* MODEL_H_ */

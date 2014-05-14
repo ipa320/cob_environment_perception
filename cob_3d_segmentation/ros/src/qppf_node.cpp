@@ -63,7 +63,7 @@
  *      Author: josh
  */
 
-#ifndef SICK
+#if !defined(SICK) && !defined(ONLY_PLANES_DEPTH)
 #define USE_COLOR
 #endif
 
@@ -84,7 +84,7 @@
 #include <cob_3d_segmentation/ObjectWatchFeedback.h>
 #include <cob_3d_segmentation/ObjectWatchAction.h>
 #include <geometry_msgs/PoseStamped.h>
-#include <point_types.h>
+#include <cob_3d_segmentation/point_types.h>
 
 class As_Node
 {
@@ -130,7 +130,11 @@ class QPPF_Node : public Parent
 #ifdef SICK
   Segmentation::Segmentation_QuadRegression<Point, PointLabel, Segmentation::QPPF::QuadRegression<1, Point, Segmentation::QPPF::CameraModel_SR4500<Point> > > seg_;
 #else
+#ifdef ONLY_PLANES_DEPTH
+  Segmentation::Segmentation_QuadRegression<Point, PointLabel, Segmentation::QPPF::QuadRegression<1, Point, Segmentation::QPPF::CameraModel_Kinect<Point> > > seg_;
+#else
   Segmentation::Segmentation_QuadRegression<Point, PointLabel, Segmentation::QPPF::QuadRegression<2, Point, Segmentation::QPPF::CameraModel_Kinect<Point> > > seg_;
+#endif
 #endif
 
   //std::vector<cob_3d_mapping_msgs::FilterObject> filter_;
