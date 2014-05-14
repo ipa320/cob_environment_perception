@@ -597,3 +597,69 @@
   return false;
 #endif
   }
+
+
+  template <typename Point, typename PointLabel, typename Parent>
+  std::istream &Segmentation_QuadRegression<Point,PointLabel,Parent>::serialize(std::istream &is) {
+	this->polygons_.clear();
+
+	int degree=0; is.read((char*)&degree, sizeof(degree));
+	assert(degree==Parent::DEGREE);
+
+	size_t num_polygons=0;
+	is.read((char*)&num_polygons, sizeof(num_polygons));
+	this->polygons_.resize(num_polygons);
+	for(size_t i=0; i<num_polygons; i++) {
+		for(int j=0; j<this->polygons_[i].model_.param.NUM; j++) {
+			float f=0;
+			is.read((char*)&f, sizeof(f));
+			this->polygons_[i].model_.p[j] = f;
+		}
+		size_t num_hulls=0;
+		is.read((char*)&num_hulls, sizeof(num_hulls));
+		this->polygons_[i].segments_.resize(num_hulls);
+		for(size_t j=0; j<num_hulls; j++) {
+			size_t num_pts=0;
+			is.read((char*)&num_pts, sizeof(num_pts));
+			this->polygons_[i].segments_[j].resize(num_pts);
+			for(size_t k=0; k<num_pts; k++) {
+				for(int l=0; l<2; l++) {
+					float f=0;
+					is.read((char*)&f, sizeof(f));
+					this->polygons_[i].segments_[j][k](l) = f;
+				}
+			}
+		}
+	}
+
+	return is;
+   }
+
+  template <typename Point, typename PointLabel, typename Parent>
+  std::ostream &Segmentation_QuadRegression<Point,PointLabel,Parent>::serialize(std::ostream &os) const {
+	size_t num_polygons=this->polygons_.size();
+
+	int degree=Parent::DEGREE; os.write((const char*)&degree, sizeof(degree));
+
+	os.write((const char*)&num_polygons, sizeof(num_polygons));
+	for(size_t i=0; i<num_polygons; i++) {
+		for(int j=0; j<this->polygons_[i].model_.param.NUM; j++) {
+			float f=this->polygons_[i].model_.p[j];
+			os.write((const char*)&f, sizeof(f));
+		}
+		size_t num_hulls=this->polygons_[i].segments_.size();
+		os.write((const char*)&num_hulls, sizeof(num_hulls));
+		for(size_t j=0; j<num_hulls; j++) {
+			size_t num_pts=this->polygons_[i].segments_[j].size();
+			os.write((const char*)&num_pts, sizeof(num_pts));
+			for(size_t k=0; k<num_pts; k++) {
+				for(int l=0; l<2; l++) {
+					float f=this->polygons_[i].segments_[j][k](l);
+					os.write((const char*)&f, sizeof(f));
+				}
+			}
+		}
+	}
+
+	return os;
+   }
