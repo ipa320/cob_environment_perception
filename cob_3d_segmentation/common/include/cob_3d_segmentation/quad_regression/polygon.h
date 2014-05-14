@@ -650,7 +650,7 @@ namespace Segmentation
 
   };
 
-
+#ifdef QPPF_SPECIALIZATION_2
   template< >
   struct S_POLYGON<2> {
     Eigen::Matrix3f param_;
@@ -1285,6 +1285,7 @@ namespace Segmentation
     }
 
   };
+#endif
 }
 
 #endif /* POLYGON_H_ */
