@@ -403,6 +403,10 @@
           s.params.push_back(this->polygons_[i].model_.p(k));
       }
 
+      s.pose.position.x = this->polygons_[i].model_.x();
+      s.pose.position.y = this->polygons_[i].model_.y();
+      s.pose.position.z = this->polygons_[i].model_.z();
+      
       s.weight = this->polygons_[i].weight_;
 
       s.color.r=this->polygons_[i].color_[0];
