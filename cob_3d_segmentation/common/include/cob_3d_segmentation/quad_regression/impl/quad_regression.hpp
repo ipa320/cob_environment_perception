@@ -388,9 +388,9 @@
 
 
       if(this->getOnlyPlanes()) {
-        ROS_ASSERT( std::abs(this->polygons_[i].model_.p(2))<0.001f &&
+        /*ROS_ASSERT( std::abs(this->polygons_[i].model_.p(2))<0.001f &&
                     std::abs(this->polygons_[i].model_.p(4))<0.001f &&
-                    std::abs(this->polygons_[i].model_.p(5))<0.001f );
+                    std::abs(this->polygons_[i].model_.p(5))<0.001f );*/
 
         Eigen::Vector3f n = this->polygons_[i].model_.getNormal(0,0), v;
         v.fill(0);
