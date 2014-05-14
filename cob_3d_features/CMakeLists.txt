@@ -1,13 +1,20 @@
 cmake_minimum_required(VERSION 2.4.6)
 include($ENV{ROS_ROOT}/core/rosbuild/rosbuild.cmake)
 
+#OpenMP
+find_package(OpenMP)
+if (OPENMP_FOUND)
+    set (CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
+    set (CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
+endif()
+
 # Set the build type. Options are:
 # Coverage : w/ debug symbols, w/o optimization, w/ code-coverage
 # Debug : w/ debug symbols, w/o optimization
 # Release : w/o debug symbols, w/ optimization
 # RelWithDebInfo : w/ debug symbols, w/ optimization
 # MinSizeRel : w/o debug symbols, w/ optimization, stripped binaries
-#set(ROS_BUILD_TYPE RelWithDebInfo)
+set(ROS_BUILD_TYPE RelWithDebInfo)
 
 rosbuild_init()
 
@@ -87,6 +94,8 @@ rosbuild_add_executable(test_surface_class_estimation common/test/test_surface_c
 target_link_libraries(test_surface_class_estimation cob_3d_features cob_3d_features_omp vtkCommon vtkFiltering vtkRendering ${OpenCV_LIBS})
 rosbuild_link_boost(test_surface_class_estimation program_options)
 
+rosbuild_add_library(s2kit common/src/ShapeSPH/cospmls.cpp common/src/ShapeSPH/FST_semi_memo_fftw.cpp common/src/ShapeSPH/cospmls.cpp common/src/ShapeSPH/fft_grids.cpp common/src/ShapeSPH/FST_semi_memo.cpp common/src/ShapeSPH/FST_semi_memo_fftw.cpp common/src/ShapeSPH/naive_synthesis.cpp common/src/ShapeSPH/newFCT.cpp common/src/ShapeSPH/primitive.cpp common/src/ShapeSPH/primitive_FST.cpp common/src/ShapeSPH/seminaive.cpp common/src/ShapeSPH/seminaive_fftw.cpp common/src/ShapeSPH/FFTcode.cpp common/src/ShapeSPH/csecond.cpp common/src/ShapeSPH/weights.cpp common/src/ShapeSPH/OURperms.cpp common/src/ShapeSPH/oddweights.cpp common/src/ShapeSPH/OURmods.cpp  common/src/ShapeSPH/indextables.cpp)
+
 # Test program for 2D (on RGB or depth) and 3D EdgeEstimation + visualization
 rosbuild_add_executable(test_edge_estimation common/test/test_edge_estimation.cpp)
 rosbuild_add_compile_flags(test_edge_estimation -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
@@ -96,6 +105,12 @@ rosbuild_add_executable(test_edge_sharpening common/test/test_edge_sharpening.cp
 target_link_libraries(test_edge_sharpening cob_3d_features vtkCommon vtkRendering)
 rosbuild_link_boost(test_edge_sharpening program_options)
 rosbuild_add_executable(test_invariant_feature common/test/test_invariant_feature.cpp)
+target_link_libraries(test_invariant_feature fftw3 fftw3f s2kit)
+
+rosbuild_add_executable(eval_invariant_feature common/test/evaluate_invariant_feature.cpp)
+target_link_libraries(eval_invariant_feature s2kit fftw3 fftw3f)
+rosbuild_add_openmp_flags(eval_invariant_feature)
+rosbuild_link_boost(eval_invariant_feature program_options)
 
 # Profiling old EdgeEstimation and FastEdgeEstimation
 # Only computation, no visualization or output.
