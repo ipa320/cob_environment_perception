@@ -61,6 +61,9 @@ target_link_libraries(cob_3d_segmentation_nodelets cob_3d_segmentation) #cob_3d_
 rosbuild_add_executable(segmentation_node ros/src/segmentation_node.cpp common/src/polypartition.cpp)
 target_link_libraries(segmentation_node cob_3d_segmentation)
 rosbuild_add_executable(qppf_node ros/src/qppf_node.cpp common/src/polypartition.cpp)
+rosbuild_add_executable(qppf_node1 ros/src/qppf_node.cpp common/src/polypartition.cpp)
+set_target_properties(qppf_node1 PROPERTIES COMPILE_DEFINITIONS "ONLY_PLANES_DEPTH")
+rosbuild_add_compile_flags(qppf_node1 ${SSE_FLAGS})
 
 rosbuild_add_executable(plane_extraction_action_client ros/src/plane_extraction_action_client.cpp)
 target_link_libraries(plane_extraction_action_client ${OpenCV_LIBS})
@@ -100,3 +103,5 @@ target_link_libraries(test_plane_extraction cob_3d_segmentation vtkCommon vtkFil
 rosbuild_link_boost(test_plane_extraction program_options)
 
 rosbuild_add_executable(test_pcl_segmentation common/apps/test_pcl_segmentation.cpp)
+
+rosbuild_add_executable(tool_qppf2file common/src/tool_qppf2file.cpp)
