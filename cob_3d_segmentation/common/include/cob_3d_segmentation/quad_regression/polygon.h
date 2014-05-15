@@ -279,6 +279,31 @@ namespace Segmentation
       v(2) = model_.model(pt(0),pt(1));
       return v;
     }
+  
+  /**
+   * get orientation at center like:
+   *  - x --> normal
+   *  - y --> greatest eigenvalue
+   */
+   inline Eigen::Quaternionf get_orientation() const {
+	   Eigen::Vector2f mid, dir, mean; mid(0) = model_.x(); mid(1) = model_.y();
+	   mean(0) = model_.param.model_(0,1);
+	   mean(1) = model_.param.model_(0,2);
+	   Eigen::SelfAdjointEigenSolver<Eigen::Matrix2f> evd (model_.param.model_.block(1,1, 2,2)-mean*mean.transpose()/model_.param.model_(0,0));
+	   Eigen::Vector3f x = model_.getNormal(model_.x(), model_.y());
+	   dir(0) = evd.eigenvectors().col(1)(1);
+	   dir(1) = evd.eigenvectors().col(1)(0);
+
+	   Eigen::Vector3f y = project2world(0.1f*dir+mid)-project2world(mid);
+	   y.normalize();
+	   
+	   Eigen::Matrix3f M;
+	   M.col(0) = x;
+	   M.col(1) = y;
+	   M.col(2) = x.cross(y);
+	   
+	   return Eigen::Quaternionf(M);
+   }
 
     Eigen::Vector3f normalAt(const Eigen::Vector2f &v) const {
       return model_.getNormal(v(0),v(1));
