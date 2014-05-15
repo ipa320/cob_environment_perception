@@ -366,26 +366,6 @@
       Eigen::Vector3f mi, ma;
 
       s.params.clear();
-      //TODO: check: always zero?
-      //s.centroid.x=0;//(this->polygons_[i].param_.col(0)(0));
-      //s.centroid.y=0;//(this->polygons_[i].param_.col(0)(1));
-      //s.centroid.z=0;//(this->polygons_[i].param_.col(0)(2));
-
-      /*s.params.push_back(this->polygons_[i].param_.col(1)(0));
-      s.params.push_back(this->polygons_[i].param_.col(1)(1));
-
-      s.params.push_back(this->polygons_[i].param_.col(2)(0));
-      s.params.push_back(this->polygons_[i].param_.col(2)(1));
-      s.params.push_back(this->polygons_[i].param_.col(2)(2));
-
-      s.params.push_back(this->polygons_[i].proj2plane_.col(0)(0));
-      s.params.push_back(this->polygons_[i].proj2plane_.col(0)(1));
-      s.params.push_back(this->polygons_[i].proj2plane_.col(0)(2));
-
-      s.params.push_back(this->polygons_[i].proj2plane_.col(1)(0));
-      s.params.push_back(this->polygons_[i].proj2plane_.col(1)(1));
-      s.params.push_back(this->polygons_[i].proj2plane_.col(1)(2));*/
-
 
       if(this->getOnlyPlanes()) {
         /*ROS_ASSERT( std::abs(this->polygons_[i].model_.p(2))<0.001f &&
