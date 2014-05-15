@@ -410,27 +410,39 @@
         pcl::PointXYZ pt;
 
         for(size_t k=0; k<this->polygons_[i].segments_[j].size(); k++) {
-          pt.x=this->polygons_[i].segments_[j][k](0);
-          pt.y=this->polygons_[i].segments_[j][k](1);
-          pt.z=this->polygons_[i].segments_[j][k](2);
-          if(j==0) {
-            backs+=this->polygons_[i].segments_[j][k](2);
-            if(k==0)
-              mi = ma = this->polygons_[i].project2world( this->polygons_[i].segments_[j][k].head(2) );
-            else
-            {
-              Eigen::Vector3f t = this->polygons_[i].project2world( this->polygons_[i].segments_[j][k].head(2) );
-              mi(0) = std::min(t(0),mi(0));
-              mi(1) = std::min(t(1),mi(1));
-              mi(2) = std::min(t(2),mi(2));
-              ma(0) = std::max(t(0),ma(0));
-              ma(1) = std::max(t(1),ma(1));
-              ma(2) = std::max(t(2),ma(2));
-            }
-          }
-          if(pcl_isfinite(pt.x) && pcl_isfinite(pt.y)) {
-            pc.push_back(pt);
-          }
+			pt.x=this->polygons_[i].segments_[j][k](0);
+			pt.y=this->polygons_[i].segments_[j][k](1);
+			
+			//compatible to code of goa (e.g. visualization)
+			if(this->getOnlyPlanes()) {
+			  pt.z = this->polygons_[i].model_.model(pt.x, pt.y);
+			  
+			  if(pcl_isfinite(pt.x) && pcl_isfinite(pt.y)) {
+				pc.push_back(pt);
+			  }
+			}
+			else {
+			  pt.z=this->polygons_[i].segments_[j][k](2);
+			  if(j==0) {
+				backs+=this->polygons_[i].segments_[j][k](2);
+				if(k==0)
+				  mi = ma = this->polygons_[i].project2world( this->polygons_[i].segments_[j][k].head(2) );
+				else
+				{
+				  Eigen::Vector3f t = this->polygons_[i].project2world( this->polygons_[i].segments_[j][k].head(2) );
+				  mi(0) = std::min(t(0),mi(0));
+				  mi(1) = std::min(t(1),mi(1));
+				  mi(2) = std::min(t(2),mi(2));
+				  ma(0) = std::max(t(0),ma(0));
+				  ma(1) = std::max(t(1),ma(1));
+				  ma(2) = std::max(t(2),ma(2));
+				}
+			  }
+			  if(pcl_isfinite(pt.x) && pcl_isfinite(pt.y)) {
+				pc.push_back(pt);
+			  }
+		  }
+		  
         }
 
         sensor_msgs::PointCloud2 pc2;
