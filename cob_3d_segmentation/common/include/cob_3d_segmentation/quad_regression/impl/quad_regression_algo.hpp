@@ -94,11 +94,7 @@ QuadRegression<Degree, Point, CameraModel>::QuadRegression():
 #ifdef SICK
 MIN_LOD(4), FINAL_LOD(0), GO_DOWN_TO_LVL(4),
 #else
-#if 1
-MIN_LOD(8), FINAL_LOD(0), GO_DOWN_TO_LVL(4),
-#else
 MIN_LOD(8), FINAL_LOD(0), GO_DOWN_TO_LVL(3),
-#endif
 #endif
 ch_(NULL), outline_check_(0), outline_check_size_(0),
 filter_(-1.f), only_planes_(false)
@@ -481,13 +477,8 @@ void QuadRegression<Degree, Point, CameraModel>::grow(SubStructure::VISITED_LIST
 
               (levels_[i].data[getInd(i, x,y)].v_max_-levels_[i].data[getInd(i, x,y)].v_min_) <
               (model.get_max_gradient(levels_[i].data[getInd(i, x,y)])*d*(1<<i)/camera_.f
-#if 1
-                  +3*(camera_.std(levels_[i].data[getInd(i, x,y)].v_max_)
-                   +2*camera_.std(levels_[i].data[getInd(i, x,y)].v_min_)) )
-#else
                   +3*(camera_.std(levels_[i].data[getInd(i, x,y)].v_max_)
                       +camera_.std(levels_[i].data[getInd(i, x,y)].v_min_)) )
-#endif
 
 
                       //(levels_[i].data[getInd(i, x,y)].v_max_-levels_[i].data[getInd(i, x,y)].v_min_)< (model.get_max_gradient(levels_[i].data[getInd(i, x,y)])*d*(1<<i)/camera_.f+2*thr) /*std::min(0.5f,std::max(0.02f,0.05f*d))*/ //TODO: in anbhaengigkeit der steigung
