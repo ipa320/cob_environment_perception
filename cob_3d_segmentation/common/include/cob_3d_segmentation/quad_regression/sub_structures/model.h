@@ -167,6 +167,8 @@ struct Model {
    */
   bool isLinearAndTo()
   {
+    if(Degree==1) return true;
+    
     //Variance for both axis (spare small objects)
     const float Vx = x();
     const float Vy = y();
@@ -267,7 +269,7 @@ struct Model {
       p.head(Param<Degree>::NUM)=param.model_.topLeftCorner(Param<Degree>::NUM,Param<Degree>::NUM).fullPivLu().solve(param.z_.head(Param<Degree>::NUM));
 
       if(!pcl_isfinite(p(1))) {
-        p.head(Param<Degree>::NUM)=param.model_.topLeftCorner(Param<Degree>::NUM,Param<Degree>::NUM).fullPivLu().solve(param.z_.head(Param<Degree>::NUM));
+        p.head(Param<Degree>::NUM)=param.model_.topLeftCorner(Param<Degree>::NUM,Param<Degree>::NUM).ldlt().solve(param.z_.head(Param<Degree>::NUM));
 
         if(!pcl_isfinite(p(1))) {
           ROS_ERROR("failure 0x0176");
