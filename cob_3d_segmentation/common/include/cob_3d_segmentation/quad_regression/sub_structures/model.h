@@ -66,8 +66,6 @@
 #ifndef MODEL_H_
 #define MODEL_H_
 
-#define USE_SVD_
-
 namespace intern {
 
   /// ray cast surface with ray $z = (mx my 1)$ --> null points of polynomial equation (=roots)
@@ -267,10 +265,6 @@ struct Model {
     }
     else {
       p.head(Param<Degree>::NUM)=param.model_.topLeftCorner(Param<Degree>::NUM,Param<Degree>::NUM).fullPivLu().solve(param.z_.head(Param<Degree>::NUM));
-
-//      std::cerr<<"m\n"<<param.model_<<"\n";
-//      std::cerr<<"z\n"<<param.z_<<"\n";
-//      std::cerr<<"p\n"<<p<<"\n";
 
       if(!pcl_isfinite(p(1))) {
         p.head(Param<Degree>::NUM)=param.model_.topLeftCorner(Param<Degree>::NUM,Param<Degree>::NUM).fullPivLu().solve(param.z_.head(Param<Degree>::NUM));
@@ -480,61 +474,8 @@ struct Model<2> {
           std::cerr<<param.model_<<"\n";
           std::cerr<<param.z_<<"\n";
         }
-      }/*
-
-#ifdef USE_SVD_
-      bool bLDLT=false;
-      // compute the SVD:
-      Eigen::JacobiSVD<typename Param<2>::MatrixU> svd (param.model_, Eigen::ComputeFullU | Eigen::ComputeFullV);
-      const typename Param<2>::MatrixU& u = svd.matrixU(),
-          & v = svd.matrixV();
-      typename Param<2>::VectorU s = svd.singularValues();
-
-      const typename Param<2>::VectorU d = u.transpose()*param.z_;
-
-      //int index_map[6]={0,1,3,2,4,5};
-      // determine the effective rank r of A using singular values
-      int r = 0;
-      typename Param<2>::VectorU t = Param<2>::VectorU::Zero();
-      //while( r < Param<2>::NUM && s(r) >= 0.000025f )
-      while( r < Param<2>::NUM && s(r) >= 0.00025f )
-      {
-        t(r) = d(r) / s(r);
-        r++;
       }
-
-      p = v * t;
-
-#else
-//      std::cout<<"p\n"<<p<<"\n";
-//      std::cout<<"t\n"<<t<<"\n";
-//      std::cout<<"d\n"<<d<<"\n";
-//      std::cout<<"s\n"<<s<<"\n";
-//      std::cout<<"v\n"<<v<<"\n";
-
-      bool bLDLT=param.z_(0)/param.model_(0)<1.2f;
-
-      if(bLDLT)
-        p=param.model_.ldlt().solve(param.z_);
-      else
-        p=param.model_.fullPivLu().solve(param.z_);
-#endif
-
-      if(!pcl_isfinite(p(1))) {
-        if(bLDLT)
-          p.head<Param<2>::NUM>()=param.model_.topLeftCorner<Param<2>::NUM,Param<2>::NUM>().fullPivLu().solve(param.z_.head<Param<2>::NUM>());
-        else
-          p.head<Param<2>::NUM>()=param.model_.topLeftCorner<Param<2>::NUM,Param<2>::NUM>().ldlt().solve(param.z_.head<Param<2>::NUM>());
-
-
-        if(!pcl_isfinite(p(1))) {
-          ROS_ERROR("mist2");
-          std::cerr<<param.model_<<"\n";
-          std::cerr<<param.z_<<"\n";
-          getchar();
-        }
-      }
-       */
+      
     }
   }
 
