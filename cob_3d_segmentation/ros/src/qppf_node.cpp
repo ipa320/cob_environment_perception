@@ -63,7 +63,7 @@
  *      Author: josh
  */
 
-#if !defined(SICK) && !defined(ONLY_PLANES_DEPTH)
+#if !defined(SICK) //&& !defined(ONLY_PLANES_DEPTH)
 #define USE_COLOR
 #endif
 
@@ -206,6 +206,19 @@ public:
   pointCloudSubCallback(const boost::shared_ptr<const PointCloud>& pc_in)
   {
     ROS_DEBUG("segmentation: point cloud callback");
+    
+    const bool subscribers =
+		(image_pub_.getNumSubscribers()>0) || 
+		(outline_pub_.getNumSubscribers()>0) || 
+		(shapes_pub_.getNumSubscribers()>0) || 
+		(curved_pub_.getNumSubscribers()>0) || 
+		(rec_pub_.getNumSubscribers()>0) || 
+		(label_pub_.getNumSubscribers()>0);
+	
+	if(!subscribers) {
+		ROS_DEBUG("segmentation: no subscribers --> do nothing");
+		return;
+	}
 
     seg_.setInputCloud(pc_in);
     seg_.compute();
@@ -246,6 +259,7 @@ public:
       }
       as_.publishFeedback(feedback);
     }
+    
     if(image_pub_.getNumSubscribers()>0)
     {
       if(seg_.getPolygons().size()>0 && seg_.getPolygons()[0].img_) {
@@ -283,7 +297,7 @@ public:
     if(rec_pub_.getNumSubscribers()>0) {
       pcl::PointCloud<PointLabel> pc = *seg_.getReconstructedOutputCloud();
       pc.header = pc_in->header;
-      label_pub_.publish(pc);
+      rec_pub_.publish(pc);
     }
     if(label_pub_.getNumSubscribers()>0) {
       pcl::PointCloud<PointLabel> pc = *seg_.getOutputCloud();
