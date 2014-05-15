@@ -407,6 +407,12 @@
       s.pose.position.y = this->polygons_[i].model_.y();
       s.pose.position.z = this->polygons_[i].model_.z();
       
+      Eigen::Quaternionf orientation = this->polygons_[i].get_orientation();
+      s.pose.orientation.x = orientation.x();
+      s.pose.orientation.y = orientation.y();
+      s.pose.orientation.z = orientation.z();
+      s.pose.orientation.w = orientation.w();
+      
       s.weight = this->polygons_[i].weight_;
 
       s.color.r=this->polygons_[i].color_[0];
