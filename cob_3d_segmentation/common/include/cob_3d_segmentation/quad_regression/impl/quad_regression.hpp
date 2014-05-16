@@ -385,7 +385,7 @@
 
       s.pose.position.x = this->polygons_[i].model_.x();
       s.pose.position.y = this->polygons_[i].model_.y();
-      s.pose.position.z = this->polygons_[i].model_.z();
+      s.pose.position.z = this->polygons_[i].model_.z(); //perhaps from model?
       
       Eigen::Quaternionf orientation = this->polygons_[i].get_orientation();
       s.pose.orientation.x = orientation.x();
@@ -393,6 +393,11 @@
       s.pose.orientation.z = orientation.z();
       s.pose.orientation.w = orientation.w();
       
+      const Eigen::Affine3f T = (
+				Eigen::Translation3f(s.pose.position.x,s.pose.position.y,s.pose.position.z)*
+				orientation
+			).inverse();
+
       s.weight = this->polygons_[i].weight_;
 
       s.color.r=this->polygons_[i].color_[0];
@@ -415,11 +420,14 @@
 			
 			//compatible to code of goa (e.g. visualization)
 			if(this->getOnlyPlanes()) {
-			  pt.z = this->polygons_[i].model_.model(pt.x, pt.y);
+			  const Eigen::Vector3f p = T*this->polygons_[i].project2world( this->polygons_[i].segments_[j][k].head(2) );
 			  
-			  if(pcl_isfinite(pt.x) && pcl_isfinite(pt.y)) {
+			  pt.x = p(0);
+			  pt.y = p(1);
+			  pt.z = p(2);
+			  
+			  if(pcl_isfinite(pt.x) && pcl_isfinite(pt.y))
 				pc.push_back(pt);
-			  }
 			}
 			else {
 			  pt.z=this->polygons_[i].segments_[j][k](2);
