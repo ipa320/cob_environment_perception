@@ -298,9 +298,9 @@ namespace Segmentation
 	   y.normalize();
 	   
 	   Eigen::Matrix3f M;
-	   M.col(0) = x;
+	   M.col(0) = -x.cross(y).normalized();
 	   M.col(1) = y;
-	   M.col(2) = x.cross(y);
+	   M.col(2) = x;	//normal
 	   
 	   return Eigen::Quaternionf(M);
    }
