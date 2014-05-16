@@ -368,31 +368,11 @@
       Eigen::Vector3f mi, ma;
 
       s.params.clear();
-      //TODO: check: always zero?
-      //s.centroid.x=0;//(this->polygons_[i].param_.col(0)(0));
-      //s.centroid.y=0;//(this->polygons_[i].param_.col(0)(1));
-      //s.centroid.z=0;//(this->polygons_[i].param_.col(0)(2));
-
-      /*s.params.push_back(this->polygons_[i].param_.col(1)(0));
-      s.params.push_back(this->polygons_[i].param_.col(1)(1));
-
-      s.params.push_back(this->polygons_[i].param_.col(2)(0));
-      s.params.push_back(this->polygons_[i].param_.col(2)(1));
-      s.params.push_back(this->polygons_[i].param_.col(2)(2));
-
-      s.params.push_back(this->polygons_[i].proj2plane_.col(0)(0));
-      s.params.push_back(this->polygons_[i].proj2plane_.col(0)(1));
-      s.params.push_back(this->polygons_[i].proj2plane_.col(0)(2));
-
-      s.params.push_back(this->polygons_[i].proj2plane_.col(1)(0));
-      s.params.push_back(this->polygons_[i].proj2plane_.col(1)(1));
-      s.params.push_back(this->polygons_[i].proj2plane_.col(1)(2));*/
-
 
       if(this->getOnlyPlanes()) {
-        ROS_ASSERT( std::abs(this->polygons_[i].model_.p(2))<0.001f &&
+        /*ROS_ASSERT( std::abs(this->polygons_[i].model_.p(2))<0.001f &&
                     std::abs(this->polygons_[i].model_.p(4))<0.001f &&
-                    std::abs(this->polygons_[i].model_.p(5))<0.001f );
+                    std::abs(this->polygons_[i].model_.p(5))<0.001f );*/
 
         Eigen::Vector3f n = this->polygons_[i].model_.getNormal(0,0), v;
         v.fill(0);
@@ -404,6 +384,21 @@
         for(int k=0; k<SubStructure::Param<Parent::DEGREE>::NUM; k++)
           s.params.push_back(this->polygons_[i].model_.p(k));
       }
+
+      s.pose.position.x = this->polygons_[i].model_.x();
+      s.pose.position.y = this->polygons_[i].model_.y();
+      s.pose.position.z = this->polygons_[i].model_.z(); //perhaps from model?
+      
+      Eigen::Quaternionf orientation = this->polygons_[i].get_orientation();
+      s.pose.orientation.x = orientation.x();
+      s.pose.orientation.y = orientation.y();
+      s.pose.orientation.z = orientation.z();
+      s.pose.orientation.w = orientation.w();
+      
+      const Eigen::Affine3f T = (
+				Eigen::Translation3f(s.pose.position.x,s.pose.position.y,s.pose.position.z)*
+				orientation
+			).inverse();
 
       s.weight = this->polygons_[i].weight_;
 
@@ -422,27 +417,42 @@
         pcl::PointXYZ pt;
 
         for(size_t k=0; k<this->polygons_[i].segments_[j].size(); k++) {
-          pt.x=this->polygons_[i].segments_[j][k](0);
-          pt.y=this->polygons_[i].segments_[j][k](1);
-          pt.z=this->polygons_[i].segments_[j][k](2);
-          if(j==0) {
-            backs+=this->polygons_[i].segments_[j][k](2);
-            if(k==0)
-              mi = ma = this->polygons_[i].project2world( this->polygons_[i].segments_[j][k].head(2) );
-            else
-            {
-              Eigen::Vector3f t = this->polygons_[i].project2world( this->polygons_[i].segments_[j][k].head(2) );
-              mi(0) = std::min(t(0),mi(0));
-              mi(1) = std::min(t(1),mi(1));
-              mi(2) = std::min(t(2),mi(2));
-              ma(0) = std::max(t(0),ma(0));
-              ma(1) = std::max(t(1),ma(1));
-              ma(2) = std::max(t(2),ma(2));
-            }
-          }
-          if(pcl_isfinite(pt.x) && pcl_isfinite(pt.y)) {
-            pc.push_back(pt);
-          }
+			pt.x=this->polygons_[i].segments_[j][k](0);
+			pt.y=this->polygons_[i].segments_[j][k](1);
+			
+			//compatible to code of goa (e.g. visualization)
+			if(this->getOnlyPlanes()) {
+			  const Eigen::Vector3f p = T*this->polygons_[i].project2world( this->polygons_[i].segments_[j][k].head(2) );
+			  
+			  pt.x = p(0);
+			  pt.y = p(1);
+			  pt.z = p(2);
+			  
+			  if(pcl_isfinite(pt.x) && pcl_isfinite(pt.y))
+				pc.push_back(pt);
+			}
+			else {
+			  pt.z=this->polygons_[i].segments_[j][k](2);
+			  if(j==0) {
+				backs+=this->polygons_[i].segments_[j][k](2);
+				if(k==0)
+				  mi = ma = this->polygons_[i].project2world( this->polygons_[i].segments_[j][k].head(2) );
+				else
+				{
+				  Eigen::Vector3f t = this->polygons_[i].project2world( this->polygons_[i].segments_[j][k].head(2) );
+				  mi(0) = std::min(t(0),mi(0));
+				  mi(1) = std::min(t(1),mi(1));
+				  mi(2) = std::min(t(2),mi(2));
+				  ma(0) = std::max(t(0),ma(0));
+				  ma(1) = std::max(t(1),ma(1));
+				  ma(2) = std::max(t(2),ma(2));
+				}
+			  }
+			  if(pcl_isfinite(pt.x) && pcl_isfinite(pt.y)) {
+				pc.push_back(pt);
+			  }
+		  }
+		  
         }
 
         pcl::PCLPointCloud2 pc2;
@@ -598,3 +608,69 @@
   return false;
 #endif
   }
+
+
+  template <typename Point, typename PointLabel, typename Parent>
+  std::istream &Segmentation_QuadRegression<Point,PointLabel,Parent>::serialize(std::istream &is) {
+	this->polygons_.clear();
+
+	int degree=0; is.read((char*)&degree, sizeof(degree));
+	assert(degree==Parent::DEGREE);
+
+	size_t num_polygons=0;
+	is.read((char*)&num_polygons, sizeof(num_polygons));
+	this->polygons_.resize(num_polygons);
+	for(size_t i=0; i<num_polygons; i++) {
+		for(int j=0; j<this->polygons_[i].model_.param.NUM; j++) {
+			float f=0;
+			is.read((char*)&f, sizeof(f));
+			this->polygons_[i].model_.p[j] = f;
+		}
+		size_t num_hulls=0;
+		is.read((char*)&num_hulls, sizeof(num_hulls));
+		this->polygons_[i].segments_.resize(num_hulls);
+		for(size_t j=0; j<num_hulls; j++) {
+			size_t num_pts=0;
+			is.read((char*)&num_pts, sizeof(num_pts));
+			this->polygons_[i].segments_[j].resize(num_pts);
+			for(size_t k=0; k<num_pts; k++) {
+				for(int l=0; l<2; l++) {
+					float f=0;
+					is.read((char*)&f, sizeof(f));
+					this->polygons_[i].segments_[j][k](l) = f;
+				}
+			}
+		}
+	}
+
+	return is;
+   }
+
+  template <typename Point, typename PointLabel, typename Parent>
+  std::ostream &Segmentation_QuadRegression<Point,PointLabel,Parent>::serialize(std::ostream &os) const {
+	size_t num_polygons=this->polygons_.size();
+
+	int degree=Parent::DEGREE; os.write((const char*)&degree, sizeof(degree));
+
+	os.write((const char*)&num_polygons, sizeof(num_polygons));
+	for(size_t i=0; i<num_polygons; i++) {
+		for(int j=0; j<this->polygons_[i].model_.param.NUM; j++) {
+			float f=this->polygons_[i].model_.p[j];
+			os.write((const char*)&f, sizeof(f));
+		}
+		size_t num_hulls=this->polygons_[i].segments_.size();
+		os.write((const char*)&num_hulls, sizeof(num_hulls));
+		for(size_t j=0; j<num_hulls; j++) {
+			size_t num_pts=this->polygons_[i].segments_[j].size();
+			os.write((const char*)&num_pts, sizeof(num_pts));
+			for(size_t k=0; k<num_pts; k++) {
+				for(int l=0; l<2; l++) {
+					float f=this->polygons_[i].segments_[j][k](l);
+					os.write((const char*)&f, sizeof(f));
+				}
+			}
+		}
+	}
+
+	return os;
+   }
