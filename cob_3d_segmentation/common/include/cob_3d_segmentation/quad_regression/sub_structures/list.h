@@ -104,6 +104,11 @@ struct VISITED_LIST {
   }
 
   inline void add(const VALUE &v) {
+	for(int i=0; i<size; i++)	//prevent double entries
+		if(vals[i].v==v.v) {
+			vals[i].hops = std::min(vals[i].hops, v.hops);
+			return;
+		}
     if((size_t)size>=vals.size())
       vals.push_back(v);
     else
