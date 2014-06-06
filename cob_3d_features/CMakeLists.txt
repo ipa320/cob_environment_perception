@@ -15,8 +15,10 @@ endif()
 # RelWithDebInfo : w/ debug symbols, w/ optimization
 # MinSizeRel : w/o debug symbols, w/ optimization, stripped binaries
 set(ROS_BUILD_TYPE RelWithDebInfo)
+#set(ROS_BUILD_TYPE Debug)
 
 rosbuild_init()
+rosbuild_check_for_sse()
 
 # add dynamic reconfigure api
 #rosbuild_find_ros_package(dynamic_reconfigure)
@@ -95,6 +97,7 @@ target_link_libraries(test_surface_class_estimation cob_3d_features cob_3d_featu
 rosbuild_link_boost(test_surface_class_estimation program_options)
 
 rosbuild_add_library(s2kit common/src/ShapeSPH/cospmls.cpp common/src/ShapeSPH/FST_semi_memo_fftw.cpp common/src/ShapeSPH/cospmls.cpp common/src/ShapeSPH/fft_grids.cpp common/src/ShapeSPH/FST_semi_memo.cpp common/src/ShapeSPH/FST_semi_memo_fftw.cpp common/src/ShapeSPH/naive_synthesis.cpp common/src/ShapeSPH/newFCT.cpp common/src/ShapeSPH/primitive.cpp common/src/ShapeSPH/primitive_FST.cpp common/src/ShapeSPH/seminaive.cpp common/src/ShapeSPH/seminaive_fftw.cpp common/src/ShapeSPH/FFTcode.cpp common/src/ShapeSPH/csecond.cpp common/src/ShapeSPH/weights.cpp common/src/ShapeSPH/OURperms.cpp common/src/ShapeSPH/oddweights.cpp common/src/ShapeSPH/OURmods.cpp  common/src/ShapeSPH/indextables.cpp)
+rosbuild_add_compile_flags(s2kit ${SSE_FLAGS})
 
 # Test program for 2D (on RGB or depth) and 3D EdgeEstimation + visualization
 rosbuild_add_executable(test_edge_estimation common/test/test_edge_estimation.cpp)
@@ -106,6 +109,8 @@ target_link_libraries(test_edge_sharpening cob_3d_features vtkCommon vtkRenderin
 rosbuild_link_boost(test_edge_sharpening program_options)
 rosbuild_add_executable(test_invariant_feature common/test/test_invariant_feature.cpp)
 target_link_libraries(test_invariant_feature fftw3 fftw3f s2kit)
+rosbuild_add_compile_flags(test_invariant_feature ${SSE_FLAGS})
+rosbuild_add_openmp_flags(test_invariant_feature)
 
 rosbuild_add_executable(eval_invariant_feature common/test/evaluate_invariant_feature.cpp)
 target_link_libraries(eval_invariant_feature s2kit fftw3 fftw3f)
