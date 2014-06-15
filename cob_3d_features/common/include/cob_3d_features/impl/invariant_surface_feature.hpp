@@ -232,12 +232,13 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::gen
 	}
   }
 
-  //remove keypoints within range to each other
+  //remove keypoints which are not within FoV
   for(size_t i=0; i<keypoints.size(); i++) {
-	  for(size_t j=i+1; j<keypoints.size(); j++) {
-		  if( (keypoints[i]-keypoints[j]).squaredNorm()<radii_[0]*radii_[0]/8 ) {//TODO: set threshold
-			keypoints.erase(keypoints.begin()+j);
-			--j;
+	  for(size_t j=0; j<fov_.size(); j++) {
+		  if( fov_[j].head<3>().dot(keypoints[i].template cast<float>())-fov_[j](3)>-radii_[0] ) {
+			keypoints.erase(keypoints.begin()+i);
+			--i;
+			break;
 		  }
 	  }
   }
