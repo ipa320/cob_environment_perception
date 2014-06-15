@@ -54,7 +54,6 @@
 #pragma once
 
 #include <complex>
-#include <vector>
 #include <Eigen/Geometry>
 
 namespace cob_3d_features
@@ -104,6 +103,12 @@ namespace invariant_surface_feature
 			computed_ = false;
 		}
 		
+		inline void init() {
+			d1 = p3_[2]-p3_[1];
+			d2 = p3_[1]-p3_[0];
+			cr = d1.cross(d2).norm();
+		}
+		
 		void compute(const Samples &samples);
 		const Values &values() const {assert(computed_); return f_;}
 		operator const Values&() const {return values();}
@@ -111,7 +116,7 @@ namespace invariant_surface_feature
 
 		std::complex<Scalar> kernel_lin_tri(const Vector3 &at, const bool debug=false) const;
 
-		inline Scalar area() const {if(cr<0) print(); assert(computed_); assert(cr>=0); return cr/2;}
+		inline Scalar area() const {if(cr<0) print(); /*assert(computed_);*/ assert(cr>=0); return cr/2;}
 		inline Scalar getArea() const {return area();}
 		void print() const;
 	private:
