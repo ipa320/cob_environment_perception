@@ -76,7 +76,7 @@ namespace cob_3d_features
 	  
 	  const int num_radius_, num_angle_;
 	  S sr_;
-	  typename S::Samples samples_;
+	  typename S::Samples samples_, samples_origin_;
   public:
   
     typedef Eigen::Matrix<Scalar, 3, 1> TVector;
@@ -141,7 +141,8 @@ namespace cob_3d_features
 	  sr_((Real)num_radius, num_radius, num_angle),
       invariance_(INVARAINCE_ALL)
     {
-		sr_.getSamples(samples_);
+		sr_.getSamples(samples_origin_);
+		samples_ = samples_origin_;
 		//TODO: default radii
     }
 
@@ -168,6 +169,11 @@ namespace cob_3d_features
 		radii_.insert(it, r);
 	}
 
+	void rotateSamples(const Eigen::Matrix<Scalar,3,3> &R) {
+		for(size_t i=0; i<samples_.size(); i++)
+			for(size_t j=0; j<samples_[i].size(); j++)
+				samples_[i][j] = R*samples_origin_[i][j];
+	}
 
     /* UNIT TESTS: available in invariant_surface_feature_unit_tests.hpp */
     bool test_singleTriangle(const int num) const;
