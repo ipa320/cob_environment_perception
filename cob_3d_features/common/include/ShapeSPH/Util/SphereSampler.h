@@ -51,12 +51,13 @@ struct Sampler {
 	void initValues(Values &vals) {
 		vals.resize(radii_);
 		for( int i=0 ; i<radii_ ; i++ )
-			vals[i].resize(sphereResolution_*sphereResolution_);
+			vals[i].resize(sphereResolution_*sphereResolution_/2);
 	}
 
 	void operator+=(const Values &vals) {
 		assert((int)vals.size()==radii_);
 		for( int i=0 ; i<radii_ ; i++ ) {
+			assert(vals[i].size()==complex_vals_[i].size());
 			for(size_t j=0; j<vals[i].size(); j++)
 				complex_vals_[i][j] += vals[i][j];
 		}
@@ -89,10 +90,10 @@ struct Sampler {
 	{
 		samples.resize(radii_);
 		for(int l=0 ; l<radii_; l++ )
-			samples[l].resize(sphereResolution_*sphereResolution_);
+			samples[l].resize(sphereResolution_*sphereResolution_/2);
 
 		//#pragma omp parallel for num_threads( threads )
-		for( int i=0 ; i<sphereResolution_ ; i++ ) for( int j=0 ; j<sphereResolution_; j++ )
+		for( int i=0 ; i<sphereResolution_ ; i++ ) for( int j=0 ; j<sphereResolution_/2; j++ )
 		{
 			Eigen::Matrix<RealSampling, 3,1> v;
 			//TODO: check if this is valid for our case
@@ -118,9 +119,14 @@ struct Sampler {
 		for( int i=0 ; i<radii_ ; i++ ) {
 			vals_[i].resize(sphereResolution_*sphereResolution_);
 			const RealSampling scale = RealSampling( sqrt( 4*M_PI*std::pow(radius<RealSampling>(i),2) ) );
-			for(size_t j=0; j<vals_[i].size(); j++)
+			for(size_t j=0; j<complex_vals_[i].size(); j++) {
 				vals_[i][j] = std::abs(complex_vals_[i][j])*scale;
 				//vals_[i][j] = (std::abs(complex_vals_[i][j])+std::arg(complex_vals_[i][j]))*scale;
+				
+				vals_[i][(sphereResolution_*2-1-(j/(sphereResolution_/2)))*sphereResolution_/2+(j%(sphereResolution_/2))] = vals_[i][j];
+				//if(j<vals_[i].size()/2)
+				//std::cout<<std::abs(complex_vals_[i][j])<<" -> "<<std::abs(complex_vals_[i][(sphereResolution_*2-1-(j/(sphereResolution_/2)))*sphereResolution_/2+(j%(sphereResolution_/2))])<<std::endl;
+			}
 		}
 		
 		/*for( int l=0 ; l<radii_ ; l++ ) {
