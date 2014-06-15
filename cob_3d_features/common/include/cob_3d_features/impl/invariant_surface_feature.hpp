@@ -337,10 +337,10 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Tri
 	
 	//subsample further
 	int num=0;
-	while(num<5 && trs.size()>0) {
+	while(num<2 && trs.size()>0) {
 		++num;
 		const Scalar er = ( ((this->at( (trs.back()->p_[indA]+trs.back()->p_[indB])/2 ) - at).squaredNorm()/r2)-1 );
-		if( er > 0.05) { //TODO: set threshold
+		if( er > 0.1) { //TODO: set threshold
 			boost::shared_ptr<Triangle> a=trs.back(), b(new Triangle);
 			b->copy(*trs.back());
 			a->p_[indA]=b->p_[indB]=intersection_on_line(at, r2, a->p_[indA], a->p_[indB], success);
