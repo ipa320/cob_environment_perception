@@ -106,7 +106,7 @@ namespace cob_3d_features
 		}
 		
 		void normalize(const std::vector<float> &radii) {
-			std::cout<<"area: "<<area_<<std::endl;
+			//std::cout<<"area: "<<area_<<std::endl;
 			return;
 			/*for(size_t i=0; i<f_.size(); i++)
 				for(size_t j=0; j<(size_t)f_[i].size(); j++)
@@ -128,29 +128,6 @@ namespace cob_3d_features
     typedef std::vector<Feature> Result;
     typedef boost::shared_ptr<Result> PResult;
     typedef boost::shared_ptr<const Result> PResultConst;
-    
-    //typedef Eigen::Matrix<Scalar, num_angle_, num_angle_> FeatureAngle;
-    //typedef Eigen::Matrix<std::complex<Scalar>, num_angle_, num_angle_> FeatureAngleComplex;
-    //typedef FeatureAngle Feature[num_radius_];
-    /* Feature {
-	FeatureAngle vals[num_radius_];
-
-	Scalar operator-(const Feature &o) const {
-		Scalar r=0;
-		for(int i=0; i<num_radius_; i++)
-			r += (vals[i]-o.vals[i]).cwiseAbs().sum();
-		return r;
-	}
-    };
-    typedef struct {FeatureAngleComplex vals[num_radius_];} FeatureComplex;
-
-    struct ResultVector {
-      TVector v;
-      std::vector<Feature> ft;
-    };
-    typedef std::vector<ResultVector> ResultVectorList;
-    typedef boost::shared_ptr<ResultVectorList> PResultVectorList;
-    typedef boost::shared_ptr<const ResultVectorList> PResultVectorListConst;*/
 
     typedef enum {
       INVARAINCE_X=1, INVARAINCE_Y=2, INVARAINCE_Z=4,
@@ -190,11 +167,6 @@ namespace cob_3d_features
 		while(it!=radii_.end() && *it>r) ++it;
 		radii_.insert(it, r);
 	}
-
-    /*const int getNumRadius() const {return num_radius_;}
-    void setNumRadius(const int t) {num_radius_=t;}
-    const int getNumAngle() const {return num_angle_;}
-    void setNumAngle(const int t) {num_angle_=t;}*/
 
 
     /* UNIT TESTS: available in invariant_surface_feature_unit_tests.hpp */
