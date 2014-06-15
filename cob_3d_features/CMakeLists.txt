@@ -111,6 +111,7 @@ rosbuild_add_executable(test_invariant_feature common/test/test_invariant_featur
 target_link_libraries(test_invariant_feature fftw3 fftw3f s2kit)
 rosbuild_add_compile_flags(test_invariant_feature ${SSE_FLAGS})
 rosbuild_add_openmp_flags(test_invariant_feature)
+target_link_libraries(test_invariant_feature cob_3d_features cob_3d_features_omp)
 
 rosbuild_add_executable(eval_invariant_feature common/test/evaluate_invariant_feature.cpp)
 target_link_libraries(eval_invariant_feature s2kit fftw3 fftw3f)
