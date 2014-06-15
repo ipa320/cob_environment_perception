@@ -66,7 +66,7 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::com
 	result_->back().f_.resize(radii_.size());
   }
 	
-	static int dbg_stage=0;
+	static int dbg_stage=0, dbg_num=0;
 	++dbg_stage;
 	
   for(size_t j=0; j<radii_.size(); j++) {
@@ -76,9 +76,11 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::com
       std::vector<boost::shared_ptr<Triangle> > submap;
       subsample(keypoints_[i], radii_[j], submap);
       
-      char dbg_fn[128];
+      /*char dbg_fn[128];
       sprintf(dbg_fn,"/tmp/submap%d_%d_%d.ply", (int)i, (int)j, dbg_stage);
-	  pcl::io::savePLYFile(dbg_fn, *dbg_triangles2mesh(submap));
+	  pcl::io::savePLYFile(dbg_fn, *dbg_triangles2mesh(submap));*/
+	  std::cout<<"submap triangles: "<<submap.size()<<std::endl;
+	  dbg_num += submap.size();
 
       #pragma omp critical
       {
@@ -96,6 +98,8 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::com
 	  }
     }
   }
+  
+	std::cout<<"sum triangles: "<<dbg_num<<std::endl;
 }
 
 template<typename TSurface, typename Scalar, typename Real, typename TAffine>
@@ -114,7 +118,7 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Tri
 	
 	//check if further sub-sampling is necessary?
 	if(area<TSurface::DEGREE>()>0.0001/*||rand()%13==0||depth<4*/) {
-std::cout<<"subdivide "<<area<TSurface::DEGREE>()<<std::endl;
+//std::cout<<"subdivide "<<area<TSurface::DEGREE>()<<std::endl;
 		Eigen::Matrix<Scalar, 2, 1> ps[3];
 		for(int i=0; i<3; i++)
 			ps[i] = ((p_[i])+(p_[(i+1)%3]))/2;
