@@ -70,6 +70,7 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::com
 	++dbg_stage;
 	
   for(size_t j=0; j<radii_.size(); j++) {
+	#pragma omp parallel for num_threads( 4 )
 	for(size_t i=0; i<keypoints_.size(); i++) {		
       //generate sub map
       std::vector<boost::shared_ptr<Triangle> > submap;
@@ -79,17 +80,20 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::com
       sprintf(dbg_fn,"/tmp/submap%d_%d_%d.ply", (int)i, (int)j, dbg_stage);
 	  pcl::io::savePLYFile(dbg_fn, *dbg_triangles2mesh(submap));
 
-	  //calc. rotation invariant feature
-	  sr_.clear();
-	  //sum features
-	  //(*result_)[i].area_ = 0;
-	  for(size_t s=0; s<submap.size(); s++) {
-		  sr_ += *submap[s];
-		  (*result_)[i].area_ += submap[s]->getArea();
+      #pragma omp critical
+      {
+		  //calc. rotation invariant feature
+		  sr_.clear();
+		  //sum features
+		  //(*result_)[i].area_ = 0;
+		  for(size_t s=0; s<submap.size(); s++) {
+			  sr_ += *submap[s];
+			  (*result_)[i].area_ += submap[s]->getArea();
+		  }
+			  
+		  sr_.finish((*result_)[i].f_[j]);
+		  (*result_)[i].normalize(radii_);
 	  }
-		  
-	  sr_.finish((*result_)[i].f_[j]);
-	  (*result_)[i].normalize(radii_);
     }
   }
 }
