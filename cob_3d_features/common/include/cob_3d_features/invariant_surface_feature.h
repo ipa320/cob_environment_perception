@@ -168,6 +168,9 @@ namespace cob_3d_features
 		while(it!=radii_.end() && *it>r) ++it;
 		radii_.insert(it, r);
 	}
+	
+	void setFoV(const std::vector<Eigen::Vector4f> &fov) {fov_=fov;}
+	const std::vector<Eigen::Vector4f> &getFoV() const {return fov_;}
 
 	void rotateSamples(const Eigen::Matrix<Scalar,3,3> &R) {
 		for(size_t i=0; i<samples_.size(); i++)
@@ -307,6 +310,7 @@ namespace cob_3d_features
     EINVARAINCE invariance_;
     std::vector<float> radii_;	//descending sorted radius list (reuse of subsampled map)
     PResult result_;
+	std::vector<Eigen::Vector4f> fov_; /// [normalized normal vector of plane, offset]
 
     void generateKeypoints(std::vector<TVector> &keypoints) const;
     void subsample(const TVector &at, const Scalar r2, std::vector<boost::shared_ptr<Triangle> > &res) const;
