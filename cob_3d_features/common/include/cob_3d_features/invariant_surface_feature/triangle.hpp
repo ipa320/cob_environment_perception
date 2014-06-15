@@ -63,7 +63,7 @@ inline std::complex<T> dpi_polar(const T &a, const T &b) {
 template<class Scalar, class Samples, class Values>
 std::complex<Scalar> cob_3d_features::invariant_surface_feature::SingleTriangle<Scalar,Samples,Values>::kernel_lin_tri(const Vector3 &at, const bool debug) const {
 	static const Scalar BORDER = 0.00001;
-	
+
 	if(cr<BORDER*0.02 || cr!=cr) //quite small area
 		return 0;
 
@@ -76,6 +76,38 @@ std::complex<Scalar> cob_3d_features::invariant_surface_feature::SingleTriangle<
 	const Scalar dot0 = p3_[0].dot(at);
 	const Scalar dot1 = d1.dot(at);
 	const Scalar dot2 = d2.dot(at);
+
+	if(std::abs(dot1)<BORDER) {
+		//-((%e^(%i*dot2)-%i*dot2-1)*%e^(-%i*dot2-%i*dot0))/dot2^2
+		//if(debug) std::cout<<"LIMIT1 "<<(-cr*(-I*dot2 + std::exp(I*dot2) - std::complex<Scalar>(1,0))*std::exp(-I*dot0 - I*dot2)/std::pow(dot2, 2))<<std::endl;
+		return -cr*(-I*dot2 + std::exp(I*dot2) - std::complex<Scalar>(1,0))*std::exp(-I*dot0 - I*dot2)/std::pow(dot2, 2);
+		
+		//if(debug) std::cout<<"LIMIT1 "<<(cr*(B-C)/(dot2*dot2))<<std::endl;
+		/*if(std::abs(dot1)>0.00001) std::cout<<"HHHHHEEEERE"<<std::endl;
+		std::cout<<"look "<<(-(dot1*C-(dot1+dot2)*B+(dot2)*A))<<std::endl;
+		std::cout<<"look "<<(val)<<std::endl;
+		std::cout<<"look "<<(-(-(dot1+dot2)*B+(dot2)*A))<<std::endl;
+		std::cout<<"look "<<(-(dot1*C-(dot1+dot2)*A+(dot2)*A))<<std::endl;
+		std::cout<<"look "<<(-(dot1*C-(dot1+dot2)*B+(dot2)*B))<<std::endl;
+		std::cout<<"look "<<(-(dot1*C-(dot1+dot2+0.1)*B+(dot2+0.1)*A))<<std::endl;
+		return cr*(B-C)/(dot2*dot2);*/
+	}
+	else if(std::abs(dot2)<BORDER) {
+		//-(((%i*dot1-1)*%e^(%i*dot1)+1)*%e^(-%i*dot1-%i*dot0))/dot1^2
+		//if(debug) std::cout<<"LIMIT2 "<<(-cr*((I*dot1 - std::complex<Scalar>(1,0))*std::exp(I*dot1) + std::complex<Scalar>(1,0))*std::exp(-I*dot0 - I*dot1)/std::pow(dot1, 2))<<std::endl;
+		return -cr*((I*dot1 - std::complex<Scalar>(1,0))*std::exp(I*dot1) + std::complex<Scalar>(1,0))*std::exp(-I*dot0 - I*dot1)/std::pow(dot1, 2);
+		
+		//if(debug) std::cout<<"LIMIT2 "<<(cr*(C-A)/(dot1*dot1))<<std::endl;
+		//return cr*(C-A)/(dot1*dot1);
+	}
+	else if(std::abs(dot1+dot2)<BORDER) {
+		//-(((%i*dot2-1)*%e^(%i*dot2)+1)*%e^(-%i*dot2-%i*dot0))/dot2^2
+		//if(debug) std::cout<<"LIMIT3 "<<(-cr*((I*dot2 - std::complex<Scalar>(1,0))*std::exp(I*dot2) + std::complex<Scalar>(1,0))*std::exp(-I*dot0 - I*dot2)/std::pow(dot2, 2))<<std::endl;
+		return -cr*((I*dot2 - std::complex<Scalar>(1,0))*std::exp(I*dot2) + std::complex<Scalar>(1,0))*std::exp(-I*dot0 - I*dot2)/std::pow(dot2, 2);
+		
+		//if(debug) std::cout<<"LIMIT3 "<<(cr*(B-C)/(dot1*dot2))<<std::endl;
+		//return cr*(B-C)/(dot1*dot2);
+	}
 	
 //	const Scalar div = (d1(0)*n + d1(1)*m + d1(2)*p)*(d2(0)*n + d2(1)*m + d2(2)*p)*(d1(0)*n + d2(0)*n + d1(1)*m + d2(1)*m + d1(2)*p + d2(2)*p);
 	const Scalar div = dot1*dot2*(dot1+dot2);
@@ -111,7 +143,7 @@ polar_simp(d2(1)*m, d1(0)*n + d1(1)*m + d1(2)*p) - d2(1)*m + polar_simp(d1(2)*p,
 	/*if(std::abs(div)<BORDER) {
 	//if(std::abs(cr*val/div)>10) */
 	
-#if 1
+#if 0
 	const std::complex<Scalar> r = cr*val/div;
 	if(debug||r!=r) {
 		std::cout<<std::endl;
@@ -141,38 +173,6 @@ polar_simp(d2(1)*m, d1(0)*n + d1(1)*m + d1(2)*p) - d2(1)*m + polar_simp(d1(2)*p,
 	}
 #endif
 
-	if(std::abs(dot1)<BORDER) {
-		//-((%e^(%i*dot2)-%i*dot2-1)*%e^(-%i*dot2-%i*dot0))/dot2^2
-		if(debug) std::cout<<"LIMIT1 "<<(-cr*(-I*dot2 + std::exp(I*dot2) - std::complex<Scalar>(1,0))*std::exp(-I*dot0 - I*dot2)/std::pow(dot2, 2))<<std::endl;
-		return -cr*(-I*dot2 + std::exp(I*dot2) - std::complex<Scalar>(1,0))*std::exp(-I*dot0 - I*dot2)/std::pow(dot2, 2);
-		
-		if(debug) std::cout<<"LIMIT1 "<<(cr*(B-C)/(dot2*dot2))<<std::endl;
-		/*if(std::abs(dot1)>0.00001) std::cout<<"HHHHHEEEERE"<<std::endl;
-		std::cout<<"look "<<(-(dot1*C-(dot1+dot2)*B+(dot2)*A))<<std::endl;
-		std::cout<<"look "<<(val)<<std::endl;
-		std::cout<<"look "<<(-(-(dot1+dot2)*B+(dot2)*A))<<std::endl;
-		std::cout<<"look "<<(-(dot1*C-(dot1+dot2)*A+(dot2)*A))<<std::endl;
-		std::cout<<"look "<<(-(dot1*C-(dot1+dot2)*B+(dot2)*B))<<std::endl;
-		std::cout<<"look "<<(-(dot1*C-(dot1+dot2+0.1)*B+(dot2+0.1)*A))<<std::endl;*/
-		return cr*(B-C)/(dot2*dot2);
-	}
-	else if(std::abs(dot2)<BORDER) {
-		//-(((%i*dot1-1)*%e^(%i*dot1)+1)*%e^(-%i*dot1-%i*dot0))/dot1^2
-		if(debug) std::cout<<"LIMIT2 "<<(-cr*((I*dot1 - std::complex<Scalar>(1,0))*std::exp(I*dot1) + std::complex<Scalar>(1,0))*std::exp(-I*dot0 - I*dot1)/std::pow(dot1, 2))<<std::endl;
-		return -cr*((I*dot1 - std::complex<Scalar>(1,0))*std::exp(I*dot1) + std::complex<Scalar>(1,0))*std::exp(-I*dot0 - I*dot1)/std::pow(dot1, 2);
-		
-		if(debug) std::cout<<"LIMIT2 "<<(cr*(C-A)/(dot1*dot1))<<std::endl;
-		return cr*(C-A)/(dot1*dot1);
-	}
-	else if(std::abs(dot1+dot2)<BORDER) {
-		//-(((%i*dot2-1)*%e^(%i*dot2)+1)*%e^(-%i*dot2-%i*dot0))/dot2^2
-		if(debug) std::cout<<"LIMIT3 "<<(-cr*((I*dot2 - std::complex<Scalar>(1,0))*std::exp(I*dot2) + std::complex<Scalar>(1,0))*std::exp(-I*dot0 - I*dot2)/std::pow(dot2, 2))<<std::endl;
-		return -cr*((I*dot2 - std::complex<Scalar>(1,0))*std::exp(I*dot2) + std::complex<Scalar>(1,0))*std::exp(-I*dot0 - I*dot2)/std::pow(dot2, 2);
-		
-		if(debug) std::cout<<"LIMIT3 "<<(cr*(B-C)/(dot1*dot2))<<std::endl;
-		return cr*(B-C)/(dot1*dot2);
-	}
-
 	return cr*val/div;
 }
 
@@ -192,7 +192,6 @@ void cob_3d_features::invariant_surface_feature::SingleTriangle<Scalar,Samples,V
 	assert((p3_[1]-p3_[0]) == d2);*/
 	
 	f_.resize(samples.size());
-	#pragma omp parallel for num_threads( 4 )
 	for(size_t r=0; r<samples.size(); r++) {
 		f_[r].resize(samples[r].size());
 		for(size_t i=0; i<samples[r].size(); i++) {
