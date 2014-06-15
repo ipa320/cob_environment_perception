@@ -322,7 +322,7 @@ namespace cob_3d_features
     
     PTSurfaceList input_;
     std::vector<boost::shared_ptr<Triangle> > triangulated_input_;
-	std::vector<TVector> keypoints_;	//keep it here for debug purpose
+	std::vector<TVector> keypoints_, all_keypoints_;
     
     TAffine transform_;
     EINVARAINCE invariance_;

@@ -384,7 +384,22 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::set
 
 	//generate keypoints (e.g. reduce number of points by area)
 	keypoints_.clear();
-	generateKeypoints(keypoints_);
+	all_keypoints_.clear();
+	generateKeypoints(all_keypoints_);
+	
+	//filter keypoints (minimum distance to each other)
+	for(size_t i=0; i<all_keypoints_.size(); i++) {
+		bool ok=true;
+		for(size_t j=0; j<i; j++) {
+		  if( (all_keypoints_[i]-all_keypoints_[j]).squaredNorm()<radii_[0]*radii_[0]/8 ) {//TODO: set threshold
+			ok=false;
+			break;
+		  }
+		}
+		
+		if(ok) keypoints_.push_back(all_keypoints_[i]);
+	}
+  
 	std::cout<<"got "<<keypoints_.size()<<" keypoints"<<std::endl;
 	
 	for(size_t indx=0; indx<input_->size(); indx++) {
