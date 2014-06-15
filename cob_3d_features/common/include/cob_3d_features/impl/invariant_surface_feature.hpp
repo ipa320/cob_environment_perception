@@ -210,11 +210,6 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::gen
 			}
 		  }
 		  
-		  if(rem) continue;
-			  //std::cout<<"s "<<pts.size()<<" "<<(mit_n)<<std::endl;
-		  if( (!rem && remaining_area<area) || pts.size()<3) break;
-		  assert(mit!=pts.end());
-		  
 		  if(mi<min_area) {
 			  //TODO: improve
 			  for(size_t k=0; k<(*input_)[i].segments_[j].size(); k++)   //points
@@ -224,6 +219,11 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::gen
 					break;
 				}
 		  }
+		  
+		  if(rem) continue;
+			  //std::cout<<"s "<<pts.size()<<" "<<(mit_n)<<std::endl;
+		  if( (!rem && remaining_area<area) || pts.size()<3) break;
+		  assert(mit!=pts.end());
 		  
 		  pts.erase(mit);	//remove point with minimum weight --> increases weight of surroundings
 	  }
