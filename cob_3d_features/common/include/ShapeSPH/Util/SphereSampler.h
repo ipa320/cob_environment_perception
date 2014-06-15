@@ -1,19 +1,35 @@
 #ifndef SPHERE_SAMPLER_INCLUDED
 #define SPHERE_SAMPLER_INCLUDED
 
-#include <vector>
 #include <omp.h>
 #include "ShapeSPH/Util/Geometry.h"
 //#include "ShapeSPH/SignalProcessing/CubeGrid.h"
 #include "ShapeSPH/SignalProcessing/SphericalGrid.h"
 #include "ShapeSPH/SignalProcessing/Fourier.h"
 
+///replacement for vector which allows resizing without initialization
+template<class T>
+class uninit_vector {
+	T *data_;
+	size_t s_;
+	
+public:
+	uninit_vector():data_(0), s_(0) {}
+	~uninit_vector() {delete data_;}
+	
+	inline size_t size() const {return s_;}
+	inline void resize(const size_t s) {delete data_; data_ = new T[s];s_=s;}
+	inline void resize(const size_t s, const T &v) {delete data_; data_ = new T[s];s_=s;for(size_t i=0; i<s; i++) data_[i]=v;}
+	
+	inline T &operator[](const size_t i) {return data_[i];}
+	inline const T &operator[](const size_t i) const {return data_[i];}
+};
 
 template< class Real, class RealSampling >
 struct Sampler {
-	typedef std::vector< std::vector<Real> > RealValues;
-	typedef std::vector< std::vector<std::complex<RealSampling> > > Values;
-	typedef std::vector< std::vector<Eigen::Matrix<RealSampling, 3,1> > > Samples;
+	typedef std::vector< uninit_vector<Real> > RealValues;
+	typedef std::vector< uninit_vector<std::complex<RealSampling> > > Values;
+	typedef std::vector< uninit_vector<Eigen::Matrix<RealSampling, 3,1> > > Samples;
 
 	const Real maxRadius_;
 	const int radii_, sphereResolution_;
