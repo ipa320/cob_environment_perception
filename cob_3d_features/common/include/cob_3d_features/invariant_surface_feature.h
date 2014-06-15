@@ -69,7 +69,7 @@
 namespace cob_3d_features
 {
   /*! @brief feature generator for surfaces based on fourier transformation (rotation/translation invariant) */
-  template<typename TSurface, typename Scalar=double, typename Real=float, typename TAffine=Eigen::Affine3f>
+  template<typename TSurface, typename Scalar=double, typename Real=float, typename _TAffine=Eigen::Affine3f>
   class InvariantSurfaceFeature
   {
 	  typedef Sampler<Real, Scalar> S;
@@ -80,6 +80,7 @@ namespace cob_3d_features
   public:
   
     typedef Eigen::Matrix<Scalar, 3, 1> TVector;
+    typedef _TAffine TAffine;
     
 	struct Feature {
 		typedef std::vector<Signature< Real > > FeatureVector;
