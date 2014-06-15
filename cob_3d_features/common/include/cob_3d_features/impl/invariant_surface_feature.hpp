@@ -436,5 +436,7 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::set
 			triangulated_input_.push_back(tr);
 		  }
 	}
+	
+	std::cout<<"triangles: "<<triangulated_input_.size()<<std::endl;
 }
 
