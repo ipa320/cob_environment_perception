@@ -137,7 +137,7 @@ struct Param {
   inline float z() const {return z_(0)/model_(0,0);}            /// gets averaged z of current model (center point)
 };
 
-
+#ifdef QPPF_SPECIALIZATION_2
 /**
  * leaf of quad-tree
  * contains data for regression of 6 parameters
@@ -251,7 +251,7 @@ struct Param<2> {
   inline float y() const {return model_(0,3)/model_(0,0);}
   inline float z() const {return z_(0)/model_(0,0);}
 };
-
+#endif
 
 /**
  * contains level of quad-tree
