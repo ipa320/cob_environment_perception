@@ -91,21 +91,35 @@ namespace cob_3d_segmentation
   struct SeedPoint
   {
     typedef boost::shared_ptr<SeedPoint> Ptr;
-    SeedPoint(int idx_, int from_, float value_) : idx(idx_), i_came_from(from_), value(value_) { }
+    SeedPoint(int idx_, int from_, float value_)
+      : idx(idx_)
+      , i_came_from(from_)
+      , value(value_)
+    { }
+
     int idx;
     int i_came_from;
     float value;
   };
 
-  inline const bool operator<  (const SeedPoint& lhs, const SeedPoint& rhs) { return lhs.value < rhs.value; }
-  inline const bool operator>  (const SeedPoint& lhs, const SeedPoint& rhs) { return  operator< (rhs, lhs); }
-  inline const bool operator<= (const SeedPoint& lhs, const SeedPoint& rhs) { return !operator> (lhs, rhs); }
-  inline const bool operator>= (const SeedPoint& lhs, const SeedPoint& rhs) { return !operator< (lhs, rhs); }
+  inline const bool operator<  (const SeedPoint& lhs, const SeedPoint& rhs) {
+    return lhs.value < rhs.value; }
+
+  inline const bool operator>  (const SeedPoint& lhs, const SeedPoint& rhs) {
+    return  operator< (rhs, lhs); }
+
+  inline const bool operator<= (const SeedPoint& lhs, const SeedPoint& rhs) {
+    return !operator> (lhs, rhs); }
+
+  inline const bool operator>= (const SeedPoint& lhs, const SeedPoint& rhs) {
+    return !operator< (lhs, rhs); }
 
   struct ptr_deref
   {
     template<typename T>
-    bool operator() (const boost::shared_ptr<T>& lhs, const boost::shared_ptr<T>& rhs) const { return operator< (*lhs, *rhs); }
+    bool operator() (const boost::shared_ptr<T>& lhs,
+                     const boost::shared_ptr<T>& rhs) const {
+      return operator< (*lhs, *rhs); }
   };
 
 
@@ -115,7 +129,8 @@ namespace cob_3d_segmentation
     typename PointLabelT,
     typename OptionsT = cob_3d_segmentation::Options::WithoutGraph,
     typename SensorT = cob_3d_mapping::PrimeSense,
-    typename ClusterHdlT = cob_3d_segmentation::DepthClusterHandler<PointLabelT, PointT, PointNT>
+    typename ClusterHdlT = cob_3d_segmentation::DepthClusterHandler<
+      PointLabelT, PointT, PointNT>
     >
     class FastSegmentation : public GeneralSegmentation<PointT, PointLabelT>
   {
@@ -128,8 +143,10 @@ namespace cob_3d_segmentation
     typedef typename LabelCloud::Ptr LabelCloudPtr;
     typedef typename LabelCloud::ConstPtr LabelCloudConstPtr;
 
-    typedef cob_3d_segmentation::BoundaryPointsEdgeHandler<PointLabelT,PointT> EdgeHdlT;
-    typedef cob_3d_segmentation::ClusterGraphStructure<ClusterHdlT, EdgeHdlT> ClusterGraphT;
+    typedef cob_3d_segmentation::BoundaryPointsEdgeHandler<
+      PointLabelT,PointT> EdgeHdlT;
+    typedef cob_3d_segmentation::ClusterGraphStructure<
+      ClusterHdlT, EdgeHdlT> ClusterGraphT;
     typedef typename ClusterHdlT::Ptr ClusterHdlPtr;
     typedef typename ClusterHdlT::ClusterPtr ClusterPtr;
     typedef typename ClusterGraphT::Ptr ClusterGraphPtr;
@@ -139,7 +156,8 @@ namespace cob_3d_segmentation
     FastSegmentation ()
     : graph_(new ClusterGraphT)
     , min_angle_(cos(30.0f / 180.0f * M_PI))
-    , max_angle_(cos(45.0f / 180.0f * M_PI)) // threshold converges with increasing cluster size from max_angle_ to min_angle_
+      // threshold converges with increasing cluster size from max_angle_ to min_angle_
+    , max_angle_(cos(45.0f / 180.0f * M_PI))
     , min_cluster_size_(200)
     , seed_method_(SEED_LINEAR)
     {
@@ -148,27 +166,35 @@ namespace cob_3d_segmentation
 
     virtual ~FastSegmentation () { }
 
-    virtual void setInputCloud(const PointCloudConstPtr& points) { surface_ = points; clusters_->setPointCloudIn(points); }
+    virtual void setInputCloud(const PointCloudConstPtr& points) {
+      surface_ = points; clusters_->setPointCloudIn(points); }
     virtual LabelCloudConstPtr getOutputCloud() { return labels_; }
     virtual bool compute();
 
-    inline bool hasLabel(int label_new, int label_this, int idx_new, int idx_this, Options::ComputeGraph t)
+    inline bool hasLabel(int label_new, int label_this,
+                         int idx_new, int idx_this, Options::ComputeGraph t)
     {
       if (label_new == I_UNDEF) return false;
       if (label_new != label_this)
       {
-        graph_->edges()->updateProperties(graph_->connect(label_this, label_new), label_this, idx_this, label_new, idx_new);
+        graph_->edges()->updateProperties(
+          graph_->connect(label_this, label_new), label_this,
+          idx_this, label_new, idx_new);
       }
       return true;
     }
 
-    inline bool hasLabel(int label_new, int label_this, int idx_new, int idx_this, Options::WithoutGraph t) { return (label_new != I_UNDEF); }
+    inline bool hasLabel(int label_new, int label_this,
+                         int idx_new, int idx_this, Options::WithoutGraph t) {
+      return (label_new != I_UNDEF); }
 
     void setNormalCloudIn(const NormalCloudConstPtr& normals) { normals_ = normals; }
     void setLabelCloudInOut(const LabelCloudPtr & labels) { labels_ = labels; }
     void setSeedMethod(SeedMethod type) { seed_method_ = type; }
     void createSeedPoints();
-    void mapSegmentColor(pcl::PointCloud<PointXYZRGB>::Ptr color_cloud) { clusters_->mapClusterColor(color_cloud); }
+    void mapSegmentColor(pcl::PointCloud<PointXYZRGB>::Ptr color_cloud) {
+      clusters_->mapClusterColor(color_cloud); }
+
     ClusterHdlPtr clusters() { return clusters_; }
     ClusterGraphPtr graph() { return graph_; }
 
