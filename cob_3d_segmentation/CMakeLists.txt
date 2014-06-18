@@ -142,6 +142,7 @@ add_executable(profile_multi_plane_seg common/apps/profile_multi_plane_seg.cpp)
 add_executable(test_polygon_extraction ros/test/test_polygon_extraction.cpp)
 add_executable(test_plane_extraction common/apps/test_plane_extraction.cpp)
 add_executable(test_pcl_segmentation common/apps/test_pcl_segmentation.cpp)
+add_executable(tutorial_fast_segmentation common/apps/tutorial_fast_segmentation.cpp)
 # plane segmentation evaluation tool:
 #add_executable(evaluate_plane_segmentation common/apps/evaluate_plane_segmentation.cpp)
 
@@ -215,6 +216,11 @@ target_link_libraries(test_plane_extraction
   ${catkin_LIBRARIES}
   ${VTK_LIBRARIES}
   ${Boost_LIBRARIES}
+)
+
+target_link_libraries(tutorial_fast_segmentation
+  cob_3d_segmentation
+  ${catkin_LIBRARIES}
 )
 
 #target_link_libraries(evaluate_plane_segmentation
