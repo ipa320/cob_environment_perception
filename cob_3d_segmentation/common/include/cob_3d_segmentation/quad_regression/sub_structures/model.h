@@ -66,8 +66,6 @@
 #ifndef MODEL_H_
 #define MODEL_H_
 
-#define USE_SVD_
-
 namespace intern {
 
   /// ray cast surface with ray $z = (mx my 1)$ --> null points of polynomial equation (=roots)
@@ -117,11 +115,44 @@ namespace intern {
  */
 template <int Degree>
 struct Model {
+  typedef Eigen::Matrix<float, 2*Degree+1, 1>    VectorU1D;
+  typedef Eigen::Matrix<float, 2*Degree+1, 2*Degree+1>    MatrixU1D;
+  
   Param<Degree> param;
   typename Param<Degree>::VectorU p;
 
   Model() {p.fill(0.f);}
   Model(const Param<Degree> &pa) {p.fill(0.f); *this+=pa;}
+  
+  /// transform parameters from 2D input f(x,y) to 1D input f(t) (from origin 0/0)
+  inline VectorU1D transformation_1D(const Eigen::Vector2f &dir, const Eigen::Vector2f &off, const Eigen::Vector3f &at) {
+	  Eigen::Matrix<float, Degree+1, 1> t; t.fill(0);
+      typename Param<Degree>::VectorU pp = p;
+      pp(0) -= at(2);
+      
+      for(int i=0; i<=Degree; i++)
+        for(int j=0; j<=i; j++)
+			for(int k=0; k<=j; k++)
+				for(int kk=0; kk<=i-j; kk++)
+					t(k+kk) += pp(i*(i+1)/2+j)*
+					boost::math::binomial_coefficient<float>(j, k)*   std::pow(dir(0),k)* std::pow(off(0),j-k)*
+					boost::math::binomial_coefficient<float>(i-j, kk)*std::pow(dir(1),kk)*std::pow(off(1),i-j-kk);
+
+	  const Eigen::Matrix<float, Degree+1, Degree+1> M = t*t.transpose();
+	  VectorU1D r;
+	  r.fill(0);
+	  
+      for(int i=0; i<=Degree; i++)
+		  for(int ii=0; ii<=Degree; ii++)
+				r(i+ii) += M(i, ii);
+			
+	  const float x0=off(0)-at(0), y0=off(1)-at(1);	
+	  r(0) += x0*x0 + y0*y0;
+	  r(1) += 2*x0*dir(0) + 2*y0*dir(1);
+	  r(2) += dir(0)*dir(0) + dir(1)*dir(1);
+	  
+      return r;
+  }
 
   /**
    * check in z-axis with theshold (thr)
@@ -136,6 +167,8 @@ struct Model {
    */
   bool isLinearAndTo()
   {
+    if(Degree==1) return true;
+    
     //Variance for both axis (spare small objects)
     const float Vx = x();
     const float Vy = y();
@@ -201,8 +234,8 @@ struct Model {
         //if(i!=j) dy += p(i*(i+1)/2+j)*(j-1<=0?1:std::pow(x,j-1))*(i-j-1<=0?1:std::pow(y,i-j-1));        //not the correct derivate (on purpose)
         //if(j!=0) dx += p(i*(i+1)/2+j)*(j-1<=0?1:std::pow(x,j-1))*(i-j-1<=0?1:std::pow(y,i-j-1));
 
-        if(i!=j) dy += p(i*(i+1)/2+j)*std::pow(x,j) * std::pow(y,i-j-1);
-        if(j!=0) dx += p(i*(i+1)/2+j)*std::pow(y,i-j) * std::pow(x,j-1);
+        if(i!=j) dy += (i-j)*p(i*(i+1)/2+j)*std::pow(x,j) * std::pow(y,i-j-1);
+        if(j!=0) dx += i*p(i*(i+1)/2+j)*std::pow(y,i-j) * std::pow(x,j-1);
       }
 
     Eigen::Vector3f r;
@@ -235,12 +268,8 @@ struct Model {
     else {
       p.head(Param<Degree>::NUM)=param.model_.topLeftCorner(Param<Degree>::NUM,Param<Degree>::NUM).fullPivLu().solve(param.z_.head(Param<Degree>::NUM));
 
-//      std::cerr<<"m\n"<<param.model_<<"\n";
-//      std::cerr<<"z\n"<<param.z_<<"\n";
-//      std::cerr<<"p\n"<<p<<"\n";
-
       if(!pcl_isfinite(p(1))) {
-        p.head(Param<Degree>::NUM)=param.model_.topLeftCorner(Param<Degree>::NUM,Param<Degree>::NUM).fullPivLu().solve(param.z_.head(Param<Degree>::NUM));
+        p.head(Param<Degree>::NUM)=param.model_.topLeftCorner(Param<Degree>::NUM,Param<Degree>::NUM).ldlt().solve(param.z_.head(Param<Degree>::NUM));
 
         if(!pcl_isfinite(p(1))) {
           ROS_ERROR("failure 0x0176");
@@ -319,7 +348,7 @@ struct Model {
   inline float z() const {return param.z_(0)/param.model_(0,0);}
 };
 
-
+#ifdef QPPF_SPECIALIZATION_2
 /**
  * specialization for second degree
  */
@@ -447,61 +476,8 @@ struct Model<2> {
           std::cerr<<param.model_<<"\n";
           std::cerr<<param.z_<<"\n";
         }
-      }/*
-
-#ifdef USE_SVD_
-      bool bLDLT=false;
-      // compute the SVD:
-      Eigen::JacobiSVD<typename Param<2>::MatrixU> svd (param.model_, Eigen::ComputeFullU | Eigen::ComputeFullV);
-      const typename Param<2>::MatrixU& u = svd.matrixU(),
-          & v = svd.matrixV();
-      typename Param<2>::VectorU s = svd.singularValues();
-
-      const typename Param<2>::VectorU d = u.transpose()*param.z_;
-
-      //int index_map[6]={0,1,3,2,4,5};
-      // determine the effective rank r of A using singular values
-      int r = 0;
-      typename Param<2>::VectorU t = Param<2>::VectorU::Zero();
-      //while( r < Param<2>::NUM && s(r) >= 0.000025f )
-      while( r < Param<2>::NUM && s(r) >= 0.00025f )
-      {
-        t(r) = d(r) / s(r);
-        r++;
       }
-
-      p = v * t;
-
-#else
-//      std::cout<<"p\n"<<p<<"\n";
-//      std::cout<<"t\n"<<t<<"\n";
-//      std::cout<<"d\n"<<d<<"\n";
-//      std::cout<<"s\n"<<s<<"\n";
-//      std::cout<<"v\n"<<v<<"\n";
-
-      bool bLDLT=param.z_(0)/param.model_(0)<1.2f;
-
-      if(bLDLT)
-        p=param.model_.ldlt().solve(param.z_);
-      else
-        p=param.model_.fullPivLu().solve(param.z_);
-#endif
-
-      if(!pcl_isfinite(p(1))) {
-        if(bLDLT)
-          p.head<Param<2>::NUM>()=param.model_.topLeftCorner<Param<2>::NUM,Param<2>::NUM>().fullPivLu().solve(param.z_.head<Param<2>::NUM>());
-        else
-          p.head<Param<2>::NUM>()=param.model_.topLeftCorner<Param<2>::NUM,Param<2>::NUM>().ldlt().solve(param.z_.head<Param<2>::NUM>());
-
-
-        if(!pcl_isfinite(p(1))) {
-          ROS_ERROR("mist2");
-          std::cerr<<param.model_<<"\n";
-          std::cerr<<param.z_<<"\n";
-          getchar();
-        }
-      }
-       */
+      
     }
   }
 
@@ -610,6 +586,6 @@ struct Model<2> {
   inline float y() const {return param.model_(0,3)/param.model_(0,0);}
   inline float z() const {return param.z_(0)/param.model_(0,0);}
 };
-
+#endif
 
 #endif /* MODEL_H_ */

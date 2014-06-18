@@ -172,15 +172,6 @@ void QuadRegression<Degree, Point, CameraModel>::buildTree(const pcl::PointCloud
       int j = 0;
       for(size_t y=0; y<lvl->h; y++) {
         for(size_t x=0; x<lvl->w; x++) {
-          /*if(pcl_isfinite(pc[j].z))
-          {
-            lvl->data[j]=pc[j].getVector3fMap();
-          }
-          else
-          {
-            lvl->data[j]=Eigen::Vector3f::Zero();
-          }*/
-
           v(0) = pc[j].x;
           v(1) = pc[j].y;
           v(2) = pc[j].z;

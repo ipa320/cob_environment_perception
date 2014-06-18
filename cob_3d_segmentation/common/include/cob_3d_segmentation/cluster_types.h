@@ -161,10 +161,14 @@ namespace cob_3d_segmentation
     cob_3d_mapping::DominantColor color_;
   };
 
-  inline const bool operator< (const ClusterBase& lhs, const ClusterBase& rhs){return lhs.size() < rhs.size();}
-  inline const bool operator> (const ClusterBase& lhs, const ClusterBase& rhs){return  operator< (rhs, lhs);}
-  inline const bool operator<=(const ClusterBase& lhs, const ClusterBase& rhs){return !operator> (lhs, rhs);}
-  inline const bool operator>=(const ClusterBase& lhs, const ClusterBase& rhs){return !operator< (lhs, rhs);}
+  inline const bool operator< (const ClusterBase& lhs, const ClusterBase& rhs){
+    return lhs.size() < rhs.size();}
+  inline const bool operator> (const ClusterBase& lhs, const ClusterBase& rhs){
+    return  operator< (rhs, lhs);}
+  inline const bool operator<=(const ClusterBase& lhs, const ClusterBase& rhs){
+    return !operator> (lhs, rhs);}
+  inline const bool operator>=(const ClusterBase& lhs, const ClusterBase& rhs){
+    return !operator< (lhs, rhs);}
 }
 
 #endif
