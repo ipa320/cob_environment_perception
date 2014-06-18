@@ -295,11 +295,15 @@ namespace cob_3d_segmentation
       {
         if (c->type != I_CYL) continue;
         ints_centroids->points[i].getVector3fMap() = c->pca_inter_centroid;
-        comp1->points[i].getNormalVector3fMap() = c->pca_inter_comp1 * c->pca_inter_values(2);
-        comp2->points[i].getNormalVector3fMap() = c->pca_inter_comp2 * c->pca_inter_values(1);
-        comp3->points[i].getNormalVector3fMap() = c->pca_inter_comp3 * c->pca_inter_values(0);
+        comp1->points[i].getNormalVector3fMap()
+          = c->pca_inter_comp1 * c->pca_inter_values(2);
+        comp2->points[i].getNormalVector3fMap()
+          = c->pca_inter_comp2 * c->pca_inter_values(1);
+        comp3->points[i].getNormalVector3fMap()
+          = c->pca_inter_comp3 * c->pca_inter_values(0);
         centroids->points[i].getVector3fMap() = c->getCentroid();
-        connection->points[i].getNormalVector3fMap() = c->pca_inter_centroid - c->getCentroid();
+        connection->points[i].getNormalVector3fMap()
+          = c->pca_inter_centroid - c->getCentroid();
         ++i;
       }
     }

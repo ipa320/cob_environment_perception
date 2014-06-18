@@ -65,7 +65,7 @@
 
 
 #include <visualization_msgs/MarkerArray.h>
-#include <point_types.h>
+#include "../point_types.h"
 #include "quad_regression_algo.h"
 
 namespace Segmentation
@@ -120,6 +120,10 @@ namespace Segmentation
     /*** evaluation purposes ***/
     void compute_accuracy(float &mean, float &var, float &mean_weighted, float &var_weighted, size_t &used, size_t &mem, size_t &points, float &avg_dist, const boost::shared_ptr<const pcl::PointCloud<PointLabel> > &labeled_pc, double &true_positive, double &false_positive);
 
+    /// for easy testing purpose: serialize surfaces
+    std::istream &serialize(std::istream &is);
+    /// for easy testing purpose: serialize surfaces
+    std::ostream &serialize(std::ostream &is) const;
   };
 
 #include "impl/quad_regression.hpp"
