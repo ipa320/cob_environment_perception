@@ -174,6 +174,12 @@ namespace cob_3d_features
 		std::vector<float>::iterator it = radii_.begin();
 		while(it!=radii_.end() && *it>r) ++it;
 		radii_.insert(it, r);
+		
+		if(r==radii_.front()) {
+			sr_.setMaxRadius(num_radius_/r);
+			sr_.getSamples(samples_origin_);
+			samples_ = samples_origin_;
+		}
 	}
 	
 	void setFoV(const std::vector<Eigen::Vector4f> &fov) {fov_=fov;}
@@ -233,6 +239,7 @@ namespace cob_3d_features
 			model_ = o.model_;
 			for(int i=0; i<3; i++)
 				p_[i] = o.p_[i];
+			reset();
 		}
 		
 		void reset() {
