@@ -14,14 +14,12 @@
  * \note
  *  ROS stack name: TODO FILL IN STACK NAME HERE
  * \note
- *  ROS package name: TODO FILL IN PACKAGE NAME HERE
+ *  ROS package name: cob_3d_segmentation
  *
  * \author
- *  Author: TODO FILL IN AUTHOR NAME HERE
- * \author
- *  Supervised by: TODO FILL IN CO-AUTHOR NAME(S) HERE
+ *  Author: Joshua Hampp
  *
- * \date Date of creation: TODO FILL IN DATE HERE
+ * \date Date of creation: 21.07.2012
  *
  * \brief
  *
@@ -56,12 +54,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
-/*
- * qppf_node.cpp
- *
- *  Created on: 21.07.2012
- *      Author: josh
- */
 
 #if !defined(SICK) //&& !defined(ONLY_PLANES_DEPTH)
 #define USE_COLOR
