@@ -256,6 +256,7 @@ namespace cob_3d_features
 		void print() const;
     private:
 		Eigen::Matrix<Scalar, 2, 1> intersection_on_line(const TVector &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b, bool &success) const;
+		bool intersection_on_line(const TVector &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b, Eigen::Matrix<Scalar, 2, 1> &res1, Eigen::Matrix<Scalar, 2, 1> &res2, bool &res_b1, bool &res_b2) const;
 		//std::complex<Scalar> sub_kernel(const Scalar m, const Scalar n, const Scalar p, const Tri2D &tri, const int depth=0) const;
 		std::complex<Scalar> kernel_lin(const Scalar m, const Scalar n, const Scalar p, const Scalar x0, const Scalar y0, const Scalar y1, const Scalar d1, const Scalar d2) const;
 		//std::complex<Scalar> kernel_lin_tri(const Scalar m, const Scalar n, const Scalar p, const Tri2D &tri) const;
@@ -313,7 +314,7 @@ namespace cob_3d_features
 	std::vector<Eigen::Vector4f> fov_; /// [normalized normal vector of plane, offset]
 
     void generateKeypoints(std::vector<TVector> &keypoints) const;
-    void subsample(const TVector &at, const Scalar r2, std::vector<boost::shared_ptr<Triangle> > &res) const;
+    void subsample(const TVector &at, const Scalar r2, std::vector<boost::shared_ptr<Triangle> > &res, const std::vector<boost::shared_ptr<Triangle> > &map) const;
     
     //simple manhatten distance (for testing)
     Real distance(const Result &a, const Result &b) {
