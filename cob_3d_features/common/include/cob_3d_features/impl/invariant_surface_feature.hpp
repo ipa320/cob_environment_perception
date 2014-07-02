@@ -255,9 +255,10 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::gen
   }
 
   //remove keypoints which are not within FoV
+  const double R = (radii_[0]);
   for(size_t i=0; i<keypoints.size(); i++) {
 	  for(size_t j=0; j<fov_.size(); j++) {
-		  if( fov_[j].head<3>().dot(keypoints[i].template cast<float>())-fov_[j](3)>-radii_[0] ) {
+		  if( fov_[j].head<3>().dot(keypoints[i].template cast<float>())-fov_[j](3)>-R ) {
 			keypoints.erase(keypoints.begin()+i);
 			--i;
 			break;
