@@ -69,18 +69,22 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::com
 	static int dbg_stage=0, dbg_num=0;
 	++dbg_stage;
 	
-  for(size_t j=0; j<radii_.size(); j++) {
-	#pragma omp parallel for num_threads( 4 )
-	for(size_t i=0; i<keypoints_.size(); i++) {		
+  #pragma omp parallel for num_threads( 4 )
+  for(size_t i=0; i<keypoints_.size(); i++) {		
+    std::vector<boost::shared_ptr<Triangle> > submap_last;
+    for(size_t j=0; j<radii_.size(); j++) {
       //generate sub map
       std::vector<boost::shared_ptr<Triangle> > submap;
-      subsample(keypoints_[i], radii_[j], submap);
+      subsample(keypoints_[i], radii_[j], submap, j==0?triangulated_input_:submap_last);
+      
+      if(j+1<radii_.size())
+		submap_last = submap;
       
       /*char dbg_fn[128];
       sprintf(dbg_fn,"/tmp/submap%d_%d_%d.ply", (int)i, (int)j, dbg_stage);
-	  pcl::io::savePLYFile(dbg_fn, *dbg_triangles2mesh(submap));*/
-	  std::cout<<"submap triangles: "<<submap.size()<<std::endl;
-	  dbg_num += submap.size();
+	  pcl::io::savePLYFile(dbg_fn, *dbg_triangles2mesh(submap));
+	  //std::cout<<"submap triangles: "<<submap.size()<<std::endl;
+	  dbg_num += submap.size();*/
 
       #pragma omp critical
       {
@@ -99,7 +103,7 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::com
     }
   }
   
-	std::cout<<"sum triangles: "<<dbg_num<<std::endl;
+	//std::cout<<"sum triangles: "<<dbg_num<<std::endl;
 }
 
 template<typename TSurface, typename Scalar, typename Real, typename TAffine>
