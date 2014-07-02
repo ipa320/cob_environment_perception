@@ -561,7 +561,7 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::set
 		
 		bool ok=true;
 		for(size_t j=0; j<i; j++) {
-		  if( (all_keypoints_[i]-all_keypoints_[j]).squaredNorm()<radii_[0]*radii_[0]/8 ) {//TODO: set threshold
+		  if( (all_keypoints_[i]-all_keypoints_[j]).squaredNorm()<radii_[0]/8 ) {//TODO: set threshold
 			ok=false;
 			break;
 		  }
