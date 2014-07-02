@@ -557,6 +557,8 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::set
 	
 	//filter keypoints (minimum distance to each other)
 	for(size_t i=0; i<all_keypoints_.size(); i++) {
+		if(all_keypoints_[i].squaredNorm()>4.*4.) continue; //TODO: set threshold
+		
 		bool ok=true;
 		for(size_t j=0; j<i; j++) {
 		  if( (all_keypoints_[i]-all_keypoints_[j]).squaredNorm()<radii_[0]*radii_[0]/8 ) {//TODO: set threshold
