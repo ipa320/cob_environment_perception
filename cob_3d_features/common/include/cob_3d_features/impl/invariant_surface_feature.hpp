@@ -300,7 +300,132 @@ cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Triangle
 
 	return v;
 }
+
+template<typename TSurface, typename Scalar, typename Real, typename TAffine>
+bool
+cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Triangle::intersection_on_line(const TVector &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b, Eigen::Matrix<Scalar, 2, 1> &res1, Eigen::Matrix<Scalar, 2, 1> &res2, bool &res_b1, bool &res_b2) const {
+	Eigen::PolynomialSolver<typename TSurface::Model::VectorU1D::Scalar, 2*TSurface::DEGREE> solver;	
+	typename TSurface::Model::VectorU1D p = model_->transformation_1D( (b-a).template cast<typename TSurface::Model::VectorU1D::Scalar>(), a.template cast<typename TSurface::Model::VectorU1D::Scalar>(), at.template cast<typename TSurface::Model::VectorU1D::Scalar>());
+	p(0) -= r2;
+	solver.compute(p);
 	
+	std::vector<typename TSurface::Model::VectorU1D::Scalar> r;
+	solver.realRoots(r);
+	if(r.size()<2) return false;
+	
+	size_t best1=0, best2=0;
+	for(size_t i=1;i<r.size();++i)
+	{
+		if( r[best1]>r[i] )//&& std::abs(r[i])>0)
+			best1=i;
+		if( r[best2]<r[i] )//&& std::abs(r[i])<1)
+			best2=i;
+	}
+	
+	if( (r[best1]<=0&&r[best2]<=0) || (r[best1]>=1&&r[best2]>=1) )
+		return false;
+	
+	if(r[best1]<0) {r[best1] = 0;res_b1=true;} else res_b1=false;
+	if(r[best2]>1) {r[best2] = 1;res_b2=true;} else res_b2=false;
+	
+	//std::cout<<r[best1]<<" "<<r[best2]<<std::endl;
+	res1(0) = (b(0)-a(0))*r[best1]+a(0);
+	res1(1) = (b(1)-a(1))*r[best1]+a(1);
+	
+	res2(0) = (b(0)-a(0))*r[best2]+a(0);
+	res2(1) = (b(1)-a(1))*r[best2]+a(1);
+
+	return true;
+}
+
+template<typename TSurface, typename Scalar, typename Real, typename TAffine>
+void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Triangle::subsample(const boost::shared_ptr<Triangle> &_this, const typename S::Samples &samples, const TVector &at, const Scalar r2, std::vector<boost::shared_ptr<Triangle> > &res) const {
+	
+	if(0) {
+		int n=0;
+		for(int j=0; j<3; j++) {
+			n+= (( (this->p3_[j]-at).squaredNorm()<=r2))?1:0;
+		}
+		if(n) {
+			res.push_back(_this);
+			return;
+		}
+		return;
+	}
+	
+	std::vector<Eigen::Matrix<Scalar, 2, 1> > pts;
+	std::vector<bool> pts_ins;
+	
+	int n=-1;
+	for(int j=0; j<3; j++) {
+		bool rb1, rb2;
+		Eigen::Matrix<Scalar, 2, 1> rv1,rv2;
+		if(intersection_on_line(at, r2, p_[j], p_[ (j+1)%3 ], rv1,rv2, rb1, rb2)) {
+			pts.push_back(rv1);
+			pts.push_back(rv2);
+			pts_ins.push_back(rb1);
+			pts_ins.push_back(rb2);
+			n=j;
+		}
+	}
+	
+	size_t p=0;
+	
+	if(pts.size()<2) return;
+	else if(pts.size()==2) {
+		bool success;
+		pts.push_back( intersection_on_line(at, r2, (pts.front()+pts.back())/2, p_[ (n+2)%3 ], success) );
+		pts_ins.push_back(false);
+		assert(success);
+		++p;
+	}
+	
+	//subsample further
+	int num=0;
+	//std::cout<<"bef "<<pts.size()<<std::endl;
+	while(num<8 && p<pts.size()&&0) {
+		if(pts_ins[p] || pts_ins[(p+1)%pts.size()]) {
+			++p;
+			continue;
+		}
+		const Scalar er = std::abs( ((this->at( (pts[p]+pts[(p+1)%pts.size()])/2 ) - at).squaredNorm()/r2)-1 );
+	//std::cout<<"er "<<er<<std::endl;
+		if( er > 0.02) { //TODO: set threshold
+			bool success;
+			Eigen::Matrix<Scalar, 2, 1> s = at.head(2), m = (pts[p]+pts[(p+1)%pts.size()])/2;
+			Eigen::Matrix<Scalar, 2, 1> v=intersection_on_line(at, r2, (m-s)*2+s, s, success);
+			if(success) {
+				++num;
+				pts.insert(pts.begin()+(p+1), v);
+				pts_ins.insert(pts_ins.begin()+(p+1), false);
+			} else ++p;
+		}
+		else ++p;
+	}
+	//std::cout<<"aft "<<pts.size()<<std::endl;
+	
+	for(typename std::vector<Eigen::Matrix<Scalar, 2, 1> >::const_iterator it=++pts.begin(); ;) {
+		boost::shared_ptr<Triangle> tr(new Triangle);
+		tr->copy(*this);
+		tr->p_[0] = pts.front();
+		tr->p_[1] = *it;
+		it++;
+		if(it==pts.end()) break;
+		tr->p_[2] = *it;
+		
+		Eigen::Matrix<Scalar, 3, 1> a,b;
+		a.head(2) = tr->p_[1]-tr->p_[0];
+		b.head(2) = tr->p_[2]-tr->p_[0];
+		a(2)=b(2)=0;
+		if( a.cross(b).squaredNorm()<0.000001) continue;
+		
+		tr->reset();
+		tr->compute(samples);
+		res.push_back(tr);
+	}
+}
+
+#if 0
 template<typename TSurface, typename Scalar, typename Real, typename TAffine>
 void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Triangle::subsample(const boost::shared_ptr<Triangle> &_this, const typename S::Samples &samples, const TVector &at, const Scalar r2, std::vector<boost::shared_ptr<Triangle> > &res) const {
 	//brute force (for the start)
@@ -317,12 +442,31 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Tri
 	assert(this->computed_);
 	assert(_this.get()==this);
 	
-	if(n==0)
-		return;
+	if(n==0) {
+		//check if sphere intersects only partially
+		for(int j=0; j<3; j++) {
+			Eigen::Matrix<Scalar, 2, 1> rv1,rv2;
+			if(intersection_on_line(at, r2, p_[j], p_[ (j+1)%3 ], rv1,rv2)) {
+				boost::shared_ptr<Triangle> tr(new Triangle);
+				tr->copy(*this);
+				tr->p_[j]       = rv1;
+				tr->p_[(j+1)%3] = rv2;
+				tr->p_[(j+2)%3] = intersection_on_line(at, r2, (rv1+rv2)/2, p_[ (j+2)%3 ], success);
+				indA=j;
+				indB=(j+1)%3;
+				trs.push_back(tr);
+			}
+		}
+		if(trs.size()) std::cout<<trs.size()<<std::endl;
+		//assert(trs.size()<=1);
+		if(trs.empty()) return;
+	}
 	else if(n==3) {
 		res.push_back(_this);
 		return;
 	}
+	else if(this->getArea()<0.005*0.005) //ignore as it is too small
+		return;	//TODO: threshold
 	else if(n==2) {
 		boost::shared_ptr<Triangle> tr1(new Triangle), tr2(new Triangle);
 		tr1->copy(*this);
@@ -330,9 +474,9 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Tri
 		const int ind = !b[0]?0:(!b[1]?1:2);
 		
 		tr1->p_[ind] = intersection_on_line(at, r2, p_[ind], p_[ (ind+2)%3 ], success);
-		assert(success);
+		//assert(success);
 		tr2->p_[(ind+2)%3] = intersection_on_line(at, r2, p_[ind], p_[ (ind+1)%3 ], success);
-		assert(success);
+		//assert(success);
 		tr2->p_[ind] = tr1->p_[ind];
 		
 		trs.push_back(tr2);
@@ -349,9 +493,9 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Tri
 		const int ind = b[0]?0:(b[1]?1:2);
 		
 		tr->p_[(ind+1)%3] = intersection_on_line(at, r2, tr->p_[ind], tr->p_[ (ind+1)%3 ], success);
-		assert(success);
+		//assert(success);
 		tr->p_[(ind+2)%3] = intersection_on_line(at, r2, tr->p_[ind], tr->p_[ (ind+2)%3 ], success);
-		assert(success);
+		//assert(success);
 		
 		trs.push_back(tr);
 		indA=(ind+1)%3;
@@ -360,7 +504,7 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Tri
 	
 	//subsample further
 	int num=0;
-	while(num<2 && trs.size()>0) {
+	while(num<4 && trs.size()>0) {
 		++num;
 		const Scalar er = ( ((this->at( (trs.back()->p_[indA]+trs.back()->p_[indB])/2 ) - at).squaredNorm()/r2)-1 );
 		if( er > 0.1) { //TODO: set threshold
@@ -392,6 +536,7 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Tri
 		res.push_back(*it);
 	}
 }
+#endif
 
 template<typename TSurface, typename Scalar, typename Real, typename TAffine>
 void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::subsample(const TVector &at, const Scalar r2, std::vector<boost::shared_ptr<Triangle> > &res) const {
