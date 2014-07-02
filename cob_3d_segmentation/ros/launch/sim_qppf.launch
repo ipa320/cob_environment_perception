@@ -1,0 +1,7 @@
+<launch>
+  <node name="qppf_node" pkg="cob_3d_segmentation" type="qppf_node1" output="screen">
+	<remap from="/camera/rgb/points" to="/camera/depth/points_xyzrgb"/>
+	<param name="filter" value="100000" />
+  </node>
+</launch>
+
