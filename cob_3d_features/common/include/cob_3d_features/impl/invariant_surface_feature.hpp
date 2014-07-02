@@ -286,7 +286,7 @@ cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Triangle
 	size_t best=0;
 	for(size_t i=1;i<r.size();++i)
 	{
-		if( (r[best]-mid)*(r[best]-mid)>(r[i]-mid)*(r[i]-mid))
+		if( std::abs(r[best]-mid)>std::abs(r[i]-mid))
 			best=i;
 	}
 
