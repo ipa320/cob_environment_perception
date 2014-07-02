@@ -172,7 +172,7 @@ struct Sampler {
 				Real _norm2 = sKeys[i](b,0).squareNorm();
 				for( int j=1 ; j<=b ; j++ )
 					_norm2 += sKeys[i](b,j).squareNorm()*2;
-				sig[i*bw+b] = Real( sqrt(_norm2) );
+				sig[i*bw+b] = Real( sqrt(_norm2) )/(i+1);
 			}
 	}
 };
