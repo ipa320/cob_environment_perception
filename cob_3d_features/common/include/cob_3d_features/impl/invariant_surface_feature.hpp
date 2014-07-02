@@ -158,12 +158,12 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::gen
   for(size_t i=0; i<input_->size(); i++) {                         //surfaces
     for(size_t j=0; j<(*input_)[i].segments_.size(); j++) {        //outline/holes
     
-    std::cout<<"size bef "<<(*input_)[i].segments_[j].size()<<std::endl;
+      //std::cout<<"size bef "<<(*input_)[i].segments_[j].size()<<std::endl;
     
 	  typedef std::list<Eigen::Matrix<Real, 2, 1> > LIST;
 	  LIST pts;
 	  float area = 0.f, min_area;
-	  const Real FACTOR = 0.1f;
+	  const Real FACTOR = 0.05f;
 	  const Real FACTOR_MIN = 0.0025f;
 	  
       for(size_t k=0; k<(*input_)[i].segments_[j].size(); k++)   //points
@@ -175,15 +175,27 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::gen
 		  
 		  pts.push_back((*input_)[i].segments_[j][k].head(2));
 	  }
-	  min_area = std::max(area*FACTOR_MIN, (Real)(0.01*0.01)); //TODO: set threshold [cm^2]
+	  //assert(area>=0);
+	  area = std::abs(area);
+	  
+	  min_area = std::max(area*FACTOR_MIN, (Real)(0.02*0.02)); //TODO: set threshold [cm^2]
 	  area*=FACTOR;
-	  area = std::max(area, (Real)(0.05*0.05));	//TODO: set threshold [cm^2]
+	  area = std::max(area, (Real)(0.075*0.075));	//TODO: set threshold [cm^2]
 	  
 	  while(pts.size()>=3) {
 		  bool rem = false;	//if nothing was removed, calc. remaining area
-		  float mi = area;	//minimum weight
+		  float mi = std::numeric_limits<float>::max();	//minimum weight
 		  typename LIST::iterator mit = pts.end();	//iterator to minim weighted pt.
 		  float remaining_area = 0.f;	//if remaining area is already smaller than threshold --> break
+		  
+		  /*static int nnn=0;
+		  std::ofstream of( ("/tmp/poly"+boost::lexical_cast<std::string>(nnn++)+".svg").c_str() );
+		  of<<"<svg height=\"500\" width=\"500\"><polygon points=\"";
+		  for(typename LIST::iterator it=pts.begin(); it!=pts.end(); it++) {
+			  of<<(*it)(0)*300+200<<","<<(*it)(1)*300+200<<" ";
+		  }
+		  of<<"\" /></svg>";
+		  of.close();*/
 		  
 		  for(typename LIST::iterator it=pts.begin(); it!=pts.end(); it++) {
 			  typename LIST::iterator n1 = it, n2=it;
@@ -202,17 +214,29 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::gen
 				  remaining_area-=M.determinant()/2;
 			  }
 			  
-			  if(w>=area) {	//fulfills already our criteria
+			  /*if(w>=area) {	//fulfills already our criteria
 			  //std::cout<<"rem"<<std::endl;
 				  keypoints.push_back(this->at(*n1, (*input_)[i].model_));
 				  pts.erase(n1);
 				  it--;
 				  rem = true;
-			  } else if(w<mi) {
+			  } else*/ if(w<mi) {
 				mit = n1;
 				mi = w;
 			}
 		  }
+		  
+		  if(mi>area) {	//fulfills already our criteria
+			  //std::cout<<"add keypoints "<<pts.size()<<std::endl;
+			  for(typename LIST::const_iterator pit=pts.begin(); pit!=pts.end(); pit++) keypoints.push_back(this->at(*pit, (*input_)[i].model_));
+			  break;
+		  }
+		  
+		  //if(rem) continue;
+			  //std::cout<<"s "<<pts.size()<<" "<<(mit_n)<<std::endl;
+		  //if( (!rem && remaining_area<area) || pts.size()<3) break;
+		  assert(mit!=pts.end());
+		  
 		  
 		  if(mi<min_area) {
 			  //TODO: improve
@@ -223,16 +247,10 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::gen
 					break;
 				}
 		  }
-		  
-		  if(rem) continue;
-			  //std::cout<<"s "<<pts.size()<<" "<<(mit_n)<<std::endl;
-		  if( (!rem && remaining_area<area) || pts.size()<3) break;
-		  assert(mit!=pts.end());
-		  
 		  pts.erase(mit);	//remove point with minimum weight --> increases weight of surroundings
 	  }
 	  
-    std::cout<<"size aft "<<(*input_)[i].segments_[j].size()<<std::endl;
+      //std::cout<<"size aft "<<(*input_)[i].segments_[j].size()<<std::endl;
 	}
   }
 
