@@ -31,7 +31,7 @@ struct Sampler {
 	typedef std::vector< uninit_vector<std::complex<RealSampling> > > Values;
 	typedef std::vector< uninit_vector<Eigen::Matrix<RealSampling, 3,1> > > Samples;
 
-	const Real maxRadius_;
+	Real maxRadius_;
 	const int radii_, sphereResolution_;
 	RealValues vals_;
 	Values complex_vals_;
@@ -41,6 +41,8 @@ struct Sampler {
 		initValues(complex_vals_);
 		clear();
 	}
+	
+	void setMaxRadius(const Real maxRadius) {maxRadius_=maxRadius;}
 	
 	void clear() {
 		for( int i=0 ; i<radii_ ; i++ )
