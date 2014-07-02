@@ -191,11 +191,13 @@ void cob_3d_features::invariant_surface_feature::SingleTriangle<Scalar,Samples,V
 	assert((p3_[2]-p3_[1]) == d1);
 	assert((p3_[1]-p3_[0]) == d2);*/
 	
+	const Scalar weight = std::abs(Vector3::UnitZ().dot(d1.cross(d2))/cr)*0.8+0.2;
+	
 	f_.resize(samples.size());
 	for(size_t r=0; r<samples.size(); r++) {
 		f_[r].resize(samples[r].size());
 		for(size_t i=0; i<samples[r].size(); i++) {
-			f_[r][i] = kernel_lin_tri(samples[r][i]);
+			f_[r][i] = weight*kernel_lin_tri(samples[r][i]);
 			/*if(!std::isfinite(std::abs(f_[r][i]))||std::abs(f_[r][i])>20) {
 				kernel_lin_tri(samples[r][i], true);
 				print();
