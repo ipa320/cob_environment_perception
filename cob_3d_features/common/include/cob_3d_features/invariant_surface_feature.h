@@ -120,6 +120,13 @@ namespace cob_3d_features
 					//f_[i][j]/=f_[i][(j/N)*N]*(j/N+1);
 					//f_[i][j]/=(j/N+1);
 		}
+		
+		void toVector(std::vector<float> &res) const {
+			res.clear();
+			for(size_t i=0; i<f_.size(); i++)
+				for(size_t j=0; j<(size_t)f_[i].size(); j++)
+					res.push_back(f_[i][j]);
+		}
 	};
 
     typedef std::vector<TSurface> TSurfaceList;
