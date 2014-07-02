@@ -10,6 +10,7 @@
   <url>http://ros.org/wiki/cob_3d_features</url>
 
   <depend package="pcl"/>
+  <depend package="rosbag"/>
   <depend package="pcl_ros"/>
   <depend package="roscpp"/>
   <depend package="tf"/>
