@@ -539,10 +539,10 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Tri
 #endif
 
 template<typename TSurface, typename Scalar, typename Real, typename TAffine>
-void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::subsample(const TVector &at, const Scalar r2, std::vector<boost::shared_ptr<Triangle> > &res) const {
+void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::subsample(const TVector &at, const Scalar r2, std::vector<boost::shared_ptr<Triangle> > &res, const std::vector<boost::shared_ptr<Triangle> > &map) const {
 	res.clear();
-	for(size_t i=0; i<triangulated_input_.size(); i++)
-		triangulated_input_[i]->subsample(triangulated_input_[i], samples_, at, r2, res);
+	for(size_t i=0; i<map.size(); i++)
+		map[i]->subsample(map[i], samples_, at, r2, res);
 }
 
 template<typename TSurface, typename Scalar, typename Real, typename TAffine>
