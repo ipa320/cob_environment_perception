@@ -66,8 +66,8 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::com
 	result_->back().f_.resize(radii_.size());
   }
 	
-	static int dbg_stage=0, dbg_num=0;
-	++dbg_stage;
+	//static int dbg_stage=0, dbg_num=0;
+	//++dbg_stage;
 	
   #pragma omp parallel for num_threads( 4 )
   for(size_t i=0; i<keypoints_.size(); i++) {		
