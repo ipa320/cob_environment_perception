@@ -203,6 +203,7 @@ namespace cob_3d_features
 	pcl::PolygonMesh::Ptr dbg_Mesh_of_Map() const {return dbg_triangles2mesh(triangulated_input_);}
 	
 	const std::vector<TVector> &getKeypoints() const {return keypoints_;}
+	const std::vector<TVector> &getAllKeypoints() const {return keypoints_all_;}
   protected:
 
 	template<class Model>
