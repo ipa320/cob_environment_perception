@@ -1,6 +1,6 @@
 #pragma once
 
-#include <pcl/features/fpfh.h>
+#include <pcl/features/fpfh_omp.h>
 #include <pcl/features/shot_omp.h>
 #include <pcl/features/esf.h>
 #include <pcl/features/cvfh.h>
@@ -27,7 +27,7 @@ void _compute(typename pcl::PointCloud<Feature>::Ptr &features, const double rad
 template<>
 void _compute<pcl::FPFHSignature33>(pcl::PointCloud<pcl::FPFHSignature33>::Ptr &features, const double radius, pcl::IndicesPtr &indicies, pcl::PointCloud<pcl::PointNormal>::Ptr &p_n2) {
   // Create the FPFH estimation class, and pass the input dataset+normals to it
-  pcl::FPFHEstimation<pcl::PointNormal, pcl::PointNormal, pcl::FPFHSignature33> fpfh;
+  pcl::FPFHEstimationOMP<pcl::PointNormal, pcl::PointNormal, pcl::FPFHSignature33> fpfh;
   fpfh.setInputCloud (p_n2);
   fpfh.setInputNormals (p_n2);
   
