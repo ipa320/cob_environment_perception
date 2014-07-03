@@ -277,6 +277,58 @@ public:
 		cob_3d_visualization::RvizMarkerManager::get().publish();
 	}
 	
+	void evaluateKeypoints(const cob_3d_mapping_msgs::ShapeArray &msg, const sensor_msgs::PointCloud2ConstPtr &pc, std::ostream &out, const std::vector<std::vector<double> > &parameters) {
+		cb_eval(boost::make_shared<cob_3d_mapping_msgs::ShapeArray>(msg), pc); //debugging
+		
+		PrecisionStopWatch sw;
+		static const std::string DL="\t";
+		static const std::string NL="\n";
+				
+		//write header (timestamp for tf lookup)
+		out<<"header"<<DL<<pc->header.stamp;
+		out<<NL;
+		
+		{ //our keypoint selection
+			//input
+			ISF::PTSurfaceList input;
+			parseInput(msg, input);
+	  
+			//compute
+			for(size_t i=0; parameters.size(); i++) {
+				sw.precisionStart();
+				//compute keypoints
+				isf_.__evalKeypoints__setInput(input, parameters[i][0], parameters[i][1]);
+				const double took1 = sw.precisionStop();
+				
+				std::string name = "FSHD"+DL+boost::lexical_cast<std::string>(parameters[i][0])+DL+boost::lexical_cast<std::string>(parameters[i][1]);
+				
+				//write duration
+				out<<"took"<<DL<<name<<DL<<took1<<NL;
+				
+				//list of keypoints (ordered!)
+				for(size_t i=0; i<isf_.getKeypoints().size(); i++)
+					out<<"eval_keypoint"<<DL<<name<<DL<<isf_.getKeypoints()[i](0)<<DL<<isf_.getKeypoints()[i](1)<<DL<<isf_.getKeypoints()[i](2)<<NL;
+			}
+		}
+		
+		for(int keypoint_type=1; keypoint_type<=1; keypoint_type++) {
+			pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+			pcl::fromROSMsg (*pc, *cloud);
+			pcl::PointCloud<pcl::PointXYZI>::Ptr keypoints(new pcl::PointCloud<pcl::PointXYZI>);
+		
+			const double took1 = detectKeypoints(keypoint_type, cloud, keypoints);
+			
+			std::string name = "Keypoint"+DL+boost::lexical_cast<std::string>(keypoint_type)+DL+"0";
+			
+			//write duration
+			out<<"took"<<DL<<name<<DL<<took1<<NL;
+			
+			//list of keypoints (ordered!)
+			for(size_t i=0; i<keypoints->size(); i++)
+				out<<"eval_keypoint"<<DL<<name<<DL<<(*keypoints)[i].x<<DL<<(*keypoints)[i].y<<DL<<(*keypoints)[i].z<<NL;
+		}		
+	}
+	
 	void evaluate(const cob_3d_mapping_msgs::ShapeArray &msg, const sensor_msgs::PointCloud2ConstPtr &pc, std::ostream &out) {
 		cb_eval(boost::make_shared<cob_3d_mapping_msgs::ShapeArray>(msg), pc); //debugging
 		
@@ -540,9 +592,18 @@ void static_eval_cb(const cob_3d_mapping_msgs::ShapeArray &msg) {
 	std::cout<<"got shapes"<<std::endl;
 }
 
-void evaluation(const std::string &fn, const std::string &ofn, const double radius, const int num_radii=8, const int num_angles=32, int skip=0) {	
+void evaluation(const std::string &fn, const std::string &ofn, const double radius, const int num_radii=8, const int num_angles=32, int skip=0, const bool eval_kp=false) {	
 	if(skip<1) skip=1;
 	IFNode node(num_radii, num_angles, radius);
+	
+	std::vector<std::vector<double> > parameters;
+	for(double min_area=0.005; min_area<0.05; min_area+=0.005) {
+		parameters.push_back(std::vector<double>());
+		for(double area=0.025; area<=0.15; area+=0.025) {
+			parameters.back().push_back(min_area*min_area);
+			parameters.back().push_back(area*area);
+		}
+	}
 	
 	std::ofstream ofstr(ofn.c_str());
 	
@@ -604,7 +665,10 @@ void evaluation(const std::string &fn, const std::string &ofn, const double radi
 				}
 				
 				//do evaluation
-				node.evaluate(gl_shape_msg, pc, ofstr);
+				if(eval_kp)
+					node.evaluateKeypoints(gl_shape_msg, pc, ofstr, parameters);
+				else
+					node.evaluate(gl_shape_msg, pc, ofstr);
 				
 				ofstr.flush();	//safety
 			}
