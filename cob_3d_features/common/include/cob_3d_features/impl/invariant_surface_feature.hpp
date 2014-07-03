@@ -178,9 +178,9 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::gen
 	  //assert(area>=0);
 	  area = std::abs(area);
 	  
-	  min_area = std::max(area*FACTOR_MIN, (Real)(0.02*0.02)); //TODO: set threshold [cm^2]
+	  min_area = std::max(area*FACTOR_MIN, kp_min_area_); //TODO: set threshold [cm^2]
 	  area*=FACTOR;
-	  area = std::max(area, (Real)(0.075*0.075));	//TODO: set threshold [cm^2]
+	  area = std::max(area, kp_area_);	//TODO: set threshold [cm^2]
 	  
 	  while(pts.size()>=3) {
 		  bool rem = false;	//if nothing was removed, calc. remaining area
@@ -543,6 +543,20 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::sub
 	res.clear();
 	for(size_t i=0; i<map.size(); i++)
 		map[i]->subsample(map[i], samples_, at, r2, res);
+}
+
+template<typename TSurface, typename Scalar, typename Real, typename TAffine>
+void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::__evalKeypoints__setInput(PTSurfaceList surfs, const Real min_area, const Real area) {
+	kp_min_area_ = min_area;
+	kp_area_ = area;
+	
+	input_=surfs;
+	triangulated_input_.clear();
+
+	//generate keypoints (e.g. reduce number of points by area)
+	keypoints_.clear();
+	all_keypoints_.clear();
+	generateKeypoints(all_keypoints_);
 }
 
 template<typename TSurface, typename Scalar, typename Real, typename TAffine>

@@ -77,6 +77,8 @@ namespace cob_3d_features
 	  const int num_radius_, num_angle_;
 	  S sr_;
 	  typename S::Samples samples_, samples_origin_;
+	  
+	  Real kp_min_area_, kp_area_;
   public:
   
     typedef Eigen::Matrix<Scalar, 3, 1> TVector;
@@ -146,6 +148,7 @@ namespace cob_3d_features
     InvariantSurfaceFeature(const int num_radius, const int num_angle) :
 	  num_radius_(num_radius), num_angle_(num_angle),
 	  sr_((Real)num_radius, num_radius, num_angle),
+      kp_min_area_(0.02*0.02), kp_area_(0.075*0.075),
       invariance_(INVARAINCE_ALL)
     {
 		sr_.getSamples(samples_origin_);
@@ -159,6 +162,8 @@ namespace cob_3d_features
 	//resets the input (list of surfaces with holes) and computes initial fft
     void setInput(PTSurfaceList surfs);
     void compute();
+    
+    void __evalKeypoints__setInput(PTSurfaceList surfs, const Real min_area, const Real area);
 
     PResultConst getResult() const {return result_;}
 
