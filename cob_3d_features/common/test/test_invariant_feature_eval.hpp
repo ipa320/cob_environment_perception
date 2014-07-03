@@ -226,3 +226,75 @@ void serialize_feature<pcl::SHOT352>(const pcl::SHOT352 &ft, std::vector<float> 
 	for(int i=0; i<SIZE; i++)
 		res[i] = ft.descriptor[i];
 }
+
+
+////////////////////////////////// KEYPOINTS //////////////////////////////////////
+#include <pcl/keypoints/keypoint.h>
+//#include <pcl/keypoints/harris_3d.h>
+#include <pcl/keypoints/sift_keypoint.h>
+
+boost::shared_ptr<pcl::Keypoint<pcl::PointXYZRGB, pcl::PointXYZI> > createKeypointDetector(int keypoint_type) {
+  boost::shared_ptr<pcl::Keypoint<pcl::PointXYZRGB, pcl::PointXYZI> > keypoint_detector;
+
+  if (keypoint_type == 1)
+  {
+    pcl::SIFTKeypoint<pcl::PointXYZRGB, pcl::PointXYZI>* sift3D = new pcl::SIFTKeypoint<pcl::PointXYZRGB, pcl::PointXYZI>;
+    sift3D->setScales (0.01f, 3, 2);
+    sift3D->setMinimumContrast (0.0);
+    keypoint_detector.reset (sift3D);
+  }
+  else
+  {
+    /*pcl::HarrisKeypoint3D<pcl::PointXYZRGB,pcl::PointXYZI>* harris3D = new pcl::HarrisKeypoint3D<pcl::PointXYZRGB,pcl::PointXYZI> (pcl::HarrisKeypoint3D<pcl::PointXYZRGB,pcl::PointXYZI>::HARRIS);
+    harris3D->setNonMaxSupression (true);
+    harris3D->setRadius (0.01f);
+    harris3D->setRadiusSearch (0.01f);
+    keypoint_detector.reset (harris3D);*/
+    switch (keypoint_type)
+    {
+      /*case 2:
+        harris3D->setMethod(pcl::HarrisKeypoint3D<pcl::PointXYZRGB,pcl::PointXYZI>::HARRIS);
+      break;
+
+      case 3:
+        harris3D->setMethod(pcl::HarrisKeypoint3D<pcl::PointXYZRGB,pcl::PointXYZI>::TOMASI);
+      break;
+
+      case 4:
+        harris3D->setMethod(pcl::HarrisKeypoint3D<pcl::PointXYZRGB,pcl::PointXYZI>::NOBLE);
+      break;
+
+      case 5:
+        harris3D->setMethod(pcl::HarrisKeypoint3D<pcl::PointXYZRGB,pcl::PointXYZI>::LOWE);
+      break;
+
+      case 6:
+        harris3D->setMethod(pcl::HarrisKeypoint3D<pcl::PointXYZRGB,pcl::PointXYZI>::CURVATURE);
+      break;*/
+      default:
+        pcl::console::print_error("unknown key point detection method %d\n expecting values between 1 and 6", keypoint_type);
+        exit (1);
+        break;
+    }
+
+  }
+  
+  return keypoint_detector;
+}
+
+double detectKeypoints(int keypoint_type, typename pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr input, pcl::PointCloud<pcl::PointXYZI>::Ptr keypoints)
+{
+  std::cout << "keypoint detection..." << std::flush;
+  
+  PrecisionStopWatch sw;
+  sw.precisionStart();
+  
+  boost::shared_ptr<pcl::Keypoint<pcl::PointXYZRGB, pcl::PointXYZI> > keypoint_detector = createKeypointDetector(keypoint_type);
+  keypoint_detector->setInputCloud(input);
+  keypoint_detector->compute(*keypoints);
+  
+  const double r = sw.precisionStop();
+   
+  std::cout << "OK. keypoints found: " << keypoints->points.size() << " and took "<< r << std::endl;
+  return r;
+}
