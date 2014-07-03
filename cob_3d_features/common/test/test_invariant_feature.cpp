@@ -628,7 +628,7 @@ int main(int argc, char **argv)
 	}
 	else if(argc==4 && std::string(argv[1]).find(".bag")!=std::string::npos) {
 		std::cout<<"Evaluation Mode"<<std::endl;
-		evaluation(argv[1], argv[2], boost::lexical_cast<double>(argv[3]), 8, 32, 3);
+		evaluation(argv[1], argv[2], boost::lexical_cast<double>(argv[3]), 8, 32, 1);
 		return 0;
 	}
 	
