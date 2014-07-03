@@ -16,6 +16,10 @@ class uninit_vector {
 public:
 	uninit_vector():data_(0), s_(0) {}
 	~uninit_vector() {delete data_;}
+	uninit_vector(const uninit_vector &o) {
+		resize(o.size());
+		memcpy(data_, o.data_, s_);
+	}
 	
 	inline size_t size() const {return s_;}
 	inline void resize(const size_t s) {delete data_; data_ = new T[s];s_=s;}
