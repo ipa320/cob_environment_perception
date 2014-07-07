@@ -311,6 +311,7 @@ public:
 			}
 		}
 		
+		const static double colors[] = {0.3,1.,0.1, 0.1,1.,0.8};
 		for(int keypoint_type=1; keypoint_type<=1; keypoint_type++) {
 			pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
 			pcl::fromROSMsg (*pc, *cloud);
@@ -326,6 +327,13 @@ public:
 			//list of keypoints (ordered!)
 			for(size_t i=0; i<keypoints->size(); i++)
 				out<<"eval_keypoint"<<DL<<name<<DL<<(*keypoints)[i].x<<DL<<(*keypoints)[i].y<<DL<<(*keypoints)[i].z<<NL;
+
+			for(size_t i=0; i<keypoints->size(); i++)
+			{
+				cob_3d_visualization::RvizMarker scene;
+				scene.sphere((*keypoints)[i].getVector3fMap(), 0.05);
+				scene.color(colors[keypoint_type*3+0],colors[keypoint_type*3+1],colors[keypoint_type*3+2]);
+			}
 		}		
 	}
 	
