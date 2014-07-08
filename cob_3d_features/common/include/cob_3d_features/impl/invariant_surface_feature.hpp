@@ -613,7 +613,7 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::set
 			
 			poly.SetOrientation(i!=0?TPPL_CW:TPPL_CCW);
 			polys.push_back(poly);
-			break;
+			//break;
 		  }
 
 		  if(polys.size()<1) continue;
