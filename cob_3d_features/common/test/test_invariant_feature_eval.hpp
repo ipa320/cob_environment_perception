@@ -60,34 +60,59 @@ void _compute<pcl::SHOT352>(pcl::PointCloud<pcl::SHOT352>::Ptr &features, const 
 
 template<>
 void _compute<pcl::VFHSignature308>(pcl::PointCloud<pcl::VFHSignature308>::Ptr &features, const double radius, pcl::IndicesPtr &indicies, pcl::PointCloud<pcl::PointNormal>::Ptr &p_n2) {
-  pcl::CVFHEstimation<pcl::PointNormal, pcl::PointNormal, pcl::VFHSignature308> descr_est;
-  descr_est.setRadiusSearch (radius); //not used...
-  descr_est.setKSearch(0);
+  pcl::search::KdTree<pcl::PointNormal>::Ptr tree2 (new pcl::search::KdTree<pcl::PointNormal> ());
+  tree2->setInputCloud(p_n2);
 
-  pcl::search::KdTree<pcl::PointNormal>::Ptr tree (new pcl::search::KdTree<pcl::PointNormal> ());
-  descr_est.setSearchMethod (tree);
-  descr_est.setIndices(indicies);
-  
-  descr_est.setInputCloud (p_n2);
-  descr_est.setInputNormals (p_n2);
-  
-  descr_est.compute (*features);
+  for(size_t i=0; i<indicies->size(); i++) {
+	  std::vector< int > k_indices;
+	  std::vector< float > k_sqr_distances;
+	  tree2->radiusSearch((*p_n2)[(*indicies)[i]], radius, k_indices, k_sqr_distances);
+	  pcl::PointCloud<pcl::PointNormal>::Ptr cloud(new pcl::PointCloud<pcl::PointNormal>);
+	  for(size_t j=0; j<k_indices.size(); j++) cloud->push_back( (*p_n2)[k_indices[j]] );
+
+	  pcl::CVFHEstimation<pcl::PointNormal, pcl::PointNormal, pcl::VFHSignature308> descr_est;
+	  descr_est.setRadiusSearch (radius); //not used...
+	  descr_est.setKSearch(0);
+
+	  pcl::search::KdTree<pcl::PointNormal>::Ptr tree (new pcl::search::KdTree<pcl::PointNormal> ());
+	  descr_est.setSearchMethod (tree);
+	  //descr_est.setIndices(indicies);
+	  
+	  descr_est.setInputCloud (cloud);
+	  descr_est.setInputNormals (cloud);
+	  
+	  pcl::PointCloud<pcl::VFHSignature308> f;
+	  descr_est.compute (f);
+	  if(f.size()>0) features->push_back(f[0]);
+  }
 }
 
 template<>
 void _compute<pcl::ESFSignature640>(pcl::PointCloud<pcl::ESFSignature640>::Ptr &features, const double radius, pcl::IndicesPtr &indicies, pcl::PointCloud<pcl::PointNormal>::Ptr &p_n2) {
-  pcl::ESFEstimation<pcl::PointNormal, pcl::ESFSignature640> descr_est;
-  descr_est.setRadiusSearch (radius);
-  descr_est.setKSearch(0);
-  
-  descr_est.setInputCloud (p_n2);
-  
-  pcl::search::KdTree<pcl::PointNormal>::Ptr tree (new pcl::search::KdTree<pcl::PointNormal> ());
-  descr_est.setSearchMethod (tree);
-  descr_est.setSearchSurface (p_n2);
-  //descr_est.setIndices(indicies);
-  
-  descr_est.compute (*features);
+  pcl::search::KdTree<pcl::PointNormal>::Ptr tree2 (new pcl::search::KdTree<pcl::PointNormal> ());
+  tree2->setInputCloud(p_n2);
+
+  for(size_t i=0; i<indicies->size(); i++) {
+	  std::vector< int > k_indices;
+	  std::vector< float > k_sqr_distances;
+	  tree2->radiusSearch((*p_n2)[(*indicies)[i]], radius, k_indices, k_sqr_distances);
+	  pcl::PointCloud<pcl::PointNormal>::Ptr cloud(new pcl::PointCloud<pcl::PointNormal>);
+	  for(size_t j=0; j<k_indices.size(); j++) cloud->push_back( (*p_n2)[k_indices[j]] );
+
+	  pcl::ESFEstimation<pcl::PointNormal, pcl::ESFSignature640> descr_est;
+	  descr_est.setRadiusSearch (radius);
+	  descr_est.setKSearch(0);
+	  
+	  descr_est.setInputCloud (cloud);
+	  
+	  pcl::search::KdTree<pcl::PointNormal>::Ptr tree (new pcl::search::KdTree<pcl::PointNormal> ());
+	  descr_est.setSearchMethod (tree);
+	  descr_est.setSearchSurface (cloud);
+	  
+	  pcl::PointCloud<pcl::ESFSignature640> f;
+	  descr_est.compute (f);
+	  if(f.size()>0) features->push_back(f[0]);
+  }
 }
 
 double computeNormals(pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud, const std::vector<Eigen::Vector3d> &keypoints,
@@ -119,7 +144,7 @@ double computeNormals(pcl::PointCloud<pcl::PointXYZ>::ConstPtr cloud, const std:
   pcl::PointCloud<pcl::PointXYZ>::Ptr cloud2(new pcl::PointCloud<pcl::PointXYZ>);
   concatenateFields (*cloud, *normals, p_n);
   {
-	  const float leafSize = 0.00003f;
+	  const float leafSize = 0.02f;
 	std::vector<int> indicies;
 	pcl::removeNaNFromPointCloud(p_n, *p_n2, indicies);
 	
