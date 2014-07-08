@@ -359,8 +359,6 @@ public:
 			isf_.compute();
 			const double took2 = sw.precisionStop();
 			
-			//isf_.dbg_writeVolumeImage("/tmp/volume.json");
-			
 			if(isf_.getKeypoints().size()<1) return;	//no keypoints found...skipping
 		
 			//write header (timestamp for tf lookup)
@@ -482,6 +480,8 @@ public:
 		sw.precisionStart();
 		isf_.compute();
 		std::cout<<"compute "<<sw.precisionStop()<<"s"<<std::endl;
+			
+		isf_.dbg_writeVolumeImage("volume.json");
 		
 		ISF::PResultConst oldR = isf_.getResult();
 		std::cout<<"got result"<<std::endl;
