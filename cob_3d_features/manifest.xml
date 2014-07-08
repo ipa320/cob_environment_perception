@@ -23,11 +23,13 @@
   <depend package="image_transport"/>
   <depend package="cob_3d_mapping_msgs"/>
   <depend package="cob_3d_mapping_common"/>
+  <depend package="cob_3d_visualization"/>
 
   <depend package="visualization_msgs"/>
 
 	<!--rosdep name="pcl"/-->
 	<rosdep name="eigen"/>
+	<rosdep name="fftw3"/>
 
   <export>
   	<cpp cflags="-I${prefix}/common/include" lflags="-Wl,-rpath,${prefix}/lib -L${prefix}/lib -lcob_3d_features -lcob_3d_features_omp"/>
