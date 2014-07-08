@@ -359,6 +359,8 @@ public:
 			isf_.compute();
 			const double took2 = sw.precisionStop();
 			
+			//isf_.dbg_writeVolumeImage("/tmp/volume.json");
+			
 			if(isf_.getKeypoints().size()<1) return;	//no keypoints found...skipping
 		
 			//write header (timestamp for tf lookup)

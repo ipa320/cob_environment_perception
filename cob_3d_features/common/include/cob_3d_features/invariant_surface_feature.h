@@ -203,6 +203,7 @@ namespace cob_3d_features
 	void test_rotate(const Scalar angle);
 	
 	/* DEBUG functions */
+	void dbg_writeVolumeImage(const std::string &fn);
     void dbg_mesh_of_subsamp(const TVector &at, const Scalar radius, std::vector<TVector> &pts, std::vector<int> &inds) const;
     void dbg_keypoints(std::vector<TVector> &keypoints) const {generateKeypoints(keypoints);}
 	pcl::PolygonMesh::Ptr dbg_Mesh_of_Map() const {return dbg_triangles2mesh(triangulated_input_);}
