@@ -390,9 +390,12 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Tri
 	if(pts.size()<2) return;
 	else if(pts.size()==2) {
 		bool success;
-		pts.push_back( intersection_on_line(at, r2, (pts.front()+pts.back())/2, p_[ (n+2)%3 ], success) );
-		pts_ins.push_back(false);
-		assert(success);
+		Eigen::Matrix<Scalar, 2, 1> t=intersection_on_line(at, r2, (pts.front()+pts.back())/2, p_[ (n+2)%3 ], success);
+		if(success) {
+			pts.push_back(t);
+			pts_ins.push_back(false);
+		}
+		//assert(success);
 		++p;
 	}
 	
