@@ -639,7 +639,7 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::set
 		  }
 	}
 	
-	std::cout<<"triangles: "<<triangulated_input_.size()<<std::endl;
+	//std::cout<<"triangles: "<<triangulated_input_.size()<<std::endl;
 }
 
 
