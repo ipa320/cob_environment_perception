@@ -1,12 +1,23 @@
 #!/usr/bin/python
 
-import os, sys
+import os, sys, math
+from cgkit.cgtypes import vec3, vec4, quat
+from scipy.stats.mstats import mquantiles
 
+def dist(ft1, ft2, t):
+	assert(len(ft1)==len(ft2))
+	r=0
+	for i in xrange(len(ft1)):
+		#if t=="FSHD" and i%16==0: continue
+		#r += abs(ft1[i]-ft2[i])
+		r += pow(ft1[i]-ft2[i],2)
+	return math.sqrt(r)
 
-assert(len(sys.argv)==3)
+assert(len(sys.argv)==4)
 
 f_fts = open(sys.argv[1],'r')
 f_tfs = open(sys.argv[2],'r')
+fn_output = sys.argv[3]
 
 DL='\t'
 
@@ -19,24 +30,103 @@ for l in f_tfs:
 	if len(s)>0 and s[0]=="file": tfs_file = s[1]
 
 fts_file=""
+T=None
+keypoints=[]
+KPstart=0
+frames=0
 for l in f_fts:
 	s = l.split(DL)
 	if len(s)>0: s[len(s)-1] = s[len(s)-1][0:len(s[len(s)-1])-1]
 
 	if len(s)>0 and s[0]=="file": fts_file = s[1]
 	if len(s)>0 and s[0]=="header":
+		T=None
 		ts = float(s[1])
 		best=None
-		mi=0.05 #minimum
+		mi=0.075 #minimum
 		for t in tfs:
 			if abs(float(t[0])-ts)<mi:
 				mi = abs(float(t[0])-ts)
 				best = t
 		if best==None:
-			print "skipping frame as no valid tf was found"
+			#print "skipping frame as no valid tf was found"
 			continue
-		print mi
+		#print mi
 
+		T = [vec4(float(best[1]), float(best[2]), float(best[3]), 1.), quat(float(v) for v in best[4:])]
+		KPstart=len(keypoints)
+		KPtype=""
+		frames+=1
 
-print tfs_file
+	if len(s)==4 and s[0]=="keypoint" and T!=None:
+		pt = vec4(float(s[1]), float(s[2]), float(s[3]), 1.)
+		TT=T[1].toMat4().setColumn(3, T[0])
+		#pt = TT.inverse()*pt
+		pt = TT*pt
+		keypoints.append({"pt":pt})
+		#print pt
+	if len(s)>4 and s[0]=="keypoint" and T!=None:
+		if KPtype!=s[1]:
+			KPtype=s[1]
+			KP=KPstart
+		keypoints[KP][s[1]] = [float(v) for v in s[2:]]
+		KP += 1
+
+borders=[x/20. for x in range(1,31)]
+avg={}
+fts=[]
+for i in xrange(len(keypoints)):
+	kp1 = keypoints[i]
+	for j in range(i+1,len(keypoints)):
+		kp2 = keypoints[j]
+
+		L=(kp1["pt"]-kp2["pt"]).length()
+		#print L,"\t",
+		for ft in kp1:
+			if ft=="pt" or not ft in kp2: continue
+			D=dist(kp1[ft], kp2[ft], ft)
+			if D==0:
+				print i,j, kp1["pt"], kp2["pt"]
+				if i+1==j: continue
+			#print D,"\t",
+			if not ft in avg:
+				avg[ft]=0.
+				avg[ft+"num"]=0
+				avg[ft+"b"]=0.
+				avg[ft+"bnum"]=0
+				avg[ft+"ar"]=[]
+				avg[ft+"bar"]=[]
+				avg[ft+"border"]=[[] for x in xrange(len(borders))]
+				avg[ft+"bborder"]=[[] for x in xrange(len(borders))]
+				fts.append(ft)
+			p=""
+			if L>0.7/3: p="b"
+			avg[ft+p]+=D
+			avg[ft+p+"num"]+=1
+			avg[ft+p+"ar"].append(D)
+			for b in xrange(len(borders)):
+				pp=""
+				if L>borders[b]: pp="b"
+				avg[ft+pp+"border"][b].append(D)
+		#print ""
+
+print "frames ",frames
+for ft in fts:
+	print ft, avg[ft+"num"], avg[ft+"bnum"], avg[ft]/avg[ft+"num"], "  ", avg[ft+"b"]/avg[ft+"bnum"], "   ->  ", (avg[ft+"b"]/avg[ft+"bnum"])/(avg[ft]/avg[ft+"num"])
+	#print min(avg[ft+"ar"]),  mquantiles(avg[ft+"ar"]),  max(avg[ft+"ar"])
+	#print min(avg[ft+"bar"]), mquantiles(avg[ft+"bar"]), max(avg[ft+"bar"])
+	f_out = file(fn_output+"_"+ft+".csv", "w")
+	for pp in ["", "b"]:
+		for b in xrange(len(borders)):
+			f_out.write( str(borders[b])"\t" )
+			aa,bb,cc = mquantiles(avg[ft+pp+"border"][b])
+			f_out.write( str(min(avg[ft+pp+"border"][b]))+"\t")
+			f_out.write( str(aa)+"\t" )
+			f_out.write( str(bb)+"\t" )
+			f_out.write( str(cc)+"\t" )
+			f_out.write( str(max(avg[ft+pp+"border"][b]))+"\t" )
+			f_out.write( str(reduce(lambda x, y: x + y, avg[ft+pp+"border"][b]) / len(avg[ft+pp+"border"][b]) )) )
+			f_out.write("\n")
+		#print ""
+	f_out.close()
 assert(tfs_file==fts_file)
