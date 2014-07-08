@@ -168,20 +168,26 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::gen
 	  const Real FACTOR = 0.05f;
 	  const Real FACTOR_MIN = 0.0025f;
 	  
+      Eigen::Matrix<Scalar, 3,1> avg_pt;
+      avg_pt.fill(0);
       for(size_t k=0; k<(*input_)[i].segments_[j].size(); k++)   //points
       {
 		  Eigen::Matrix<Real, 2, 2> M;
-		  M.col(0) = (*input_)[i].segments_[j][k ].head(2);
+		  Eigen::Matrix<Real, 2, 1> pt2d = (*input_)[i].segments_[j][k ].head(2);
+		  M.col(0) = pt2d;
 		  M.col(1) = (*input_)[i].segments_[j][(k+1)%(*input_)[i].segments_[j].size()].head(2);
 		  area -= M.determinant()/2;
+
+		  avg_pt += this->at(pt2d, (*input_)[i].model_);
 		  
-		  pts.push_back((*input_)[i].segments_[j][k].head(2));
+		  pts.push_back(pt2d);
 		  pts_area.push_back(0);
 	  }
+	  avg_pt /= (*input_)[i].segments_[j].size();
 	  //assert(area>=0);
 	  area = std::abs(area);
 	  
-	  min_area = std::max(area*FACTOR_MIN, kp_min_area_); //TODO: set threshold [cm^2]
+	  min_area = std::max(area*FACTOR_MIN, kp_min_area_*std::max((Real)1, (Real)avg_pt.squaredNorm())); //TODO: set threshold [cm^2]
 	  area*=FACTOR;
 	  area = std::max(area, kp_area_);	//TODO: set threshold [cm^2]
 	  
