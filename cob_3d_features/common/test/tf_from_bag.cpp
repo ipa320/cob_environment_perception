@@ -57,14 +57,17 @@ int
     {
       tf_broadcaster.sendTransform (tf->transforms);
       ros::spinOnce ();
-      r.sleep ();
+	usleep(1000*33);
       
       tf::StampedTransform transform;
+	try {
       tf_listener.lookupTransform(argv[3], argv[4], ros::Time(0), transform);
       
       ofstr<<"tf"<<DL<<transform.stamp_<<DL
       <<transform.getOrigin().x()<<DL<<transform.getOrigin().y()<<DL<<transform.getOrigin().z()<<DL
       <<transform.getRotation().x()<<DL<<transform.getRotation().y()<<DL<<transform.getRotation().z()<<DL<<transform.getRotation().w()<<NL;
+      ofstr.flush();
+	} catch(...) {}
     }
     // Increment the iterator
     ++view_it;
