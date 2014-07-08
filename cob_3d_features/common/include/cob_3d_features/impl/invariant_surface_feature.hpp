@@ -645,14 +645,14 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::set
 
 template<typename TSurface, typename Scalar, typename Real, typename TAffine>
 void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::dbg_writeVolumeImage(const std::string &fn) {
-	std::ofstream of(fn);
+	std::ofstream of(fn.c_str());
 	of<<"[";
 	for(size_t i=0; i<sr_.vals_.size(); i++) {
 		if(i) of<<",";
 		of<<"[";
 		for(size_t j=0; j<sr_.vals_[i].size(); j++) {
 			if(j) of<<",";
-			of<<sr_.vals_[i];
+			of<<sr_.vals_[i][j];
 		}
 		of<<"]";
 	}
