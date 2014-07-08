@@ -600,8 +600,9 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::set
 		if(ok) keypoints_.push_back(all_keypoints_[i]);
 	}
   
-	std::cout<<"got "<<keypoints_.size()<<" keypoints"<<std::endl;
+	//std::cout<<"got "<<keypoints_.size()<<" keypoints"<<std::endl;
 	
+	#pragma omp parallel for num_threads( 16 )
 	for(size_t indx=0; indx<input_->size(); indx++) {
 		  TPPLPartition pp;
 		  std::list<TPPLPoly> polys, result;
@@ -633,6 +634,7 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::set
 			tr->set(&(*input_)[indx].model_, it->GetPoint(0), it->GetPoint(1), it->GetPoint(2));
 			tr->compute(samples_);
 			
+      			#pragma omp critical
 			triangulated_input_.push_back(tr);
 		  }
 	}
