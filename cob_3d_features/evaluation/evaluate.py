@@ -36,6 +36,7 @@ def run():
 	keypoints=[]
 	KPstart=0
 	frames=0
+	took={}
 	for l in f_fts:
 		s = l.split(DL)
 		if len(s)>0: s[len(s)-1] = s[len(s)-1][0:len(s[len(s)-1])-1]
@@ -59,6 +60,9 @@ def run():
 			KPstart=len(keypoints)
 			KPtype=""
 			frames+=1
+		if len(s)>0 and s[0]=="took":
+			if not s[1] in took: took[s[1]] = []
+			took[s[1]].append(reduce(lambda x, y: float(x) + float(y), s[2:]))
 
 		if len(s)==4 and s[0]=="keypoint" and T!=None:
 			pt = vec4(float(s[1]), float(s[2]), float(s[3]), 1.)
@@ -76,13 +80,31 @@ def run():
 
 	print "read input file ",len(keypoints)
 
+	f_out = file(fn_output+"_timing.csv", "w")
+	i=1
+	for ft in took:
+		aa,bb,cc = mquantiles(took[ft])
+		f_out.write( str(i)+"\t" )
+		f_out.write( str(min(took[ft]))+"\t")
+		f_out.write( str(aa)+"\t" )
+		f_out.write( str(bb)+"\t" )
+		f_out.write( str(cc)+"\t" )
+		f_out.write( str(max(took[ft]))+"\t" )
+		f_out.write( str(reduce(lambda x, y: x + y, took[ft]) / len(took[ft]) )+"\t" )
+		f_out.write( ft )
+		f_out.write("\n")
+		i+=1
+	f_out.close()
+	print "written timing output"
+
 	borders=[x/20. for x in range(1,31)]
 	avg={}
 	fts=[]
 	for i in xrange(len(keypoints)):
-		if (i)%(len(keypoints)/1000)==0:
-			print "#",
-			sys.stdout.flush()
+		if len(keypoints)>1000:
+			if (i)%(len(keypoints)/1000)==0:
+				print "#",
+				sys.stdout.flush()
 		#if i==3: exit()
 
 		kp1 = keypoints[i]
