@@ -114,10 +114,10 @@ rosbuild_add_openmp_flags(test_invariant_feature)
 target_link_libraries(test_invariant_feature cob_3d_features cob_3d_features_omp)
 rosbuild_add_executable(tf_from_bag common/test/tf_from_bag.cpp)
 
-rosbuild_add_executable(eval_invariant_feature common/test/evaluate_invariant_feature.cpp)
-target_link_libraries(eval_invariant_feature s2kit fftw3 fftw3f)
-rosbuild_add_openmp_flags(eval_invariant_feature)
-rosbuild_link_boost(eval_invariant_feature program_options)
+#rosbuild_add_executable(eval_invariant_feature common/test/evaluate_invariant_feature.cpp)
+#target_link_libraries(eval_invariant_feature s2kit fftw3 fftw3f)
+#rosbuild_add_openmp_flags(eval_invariant_feature)
+#rosbuild_link_boost(eval_invariant_feature program_options)
 
 # Profiling old EdgeEstimation and FastEdgeEstimation
 # Only computation, no visualization or output.
