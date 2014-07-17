@@ -35,7 +35,7 @@ def run():
 		if len(s)>0 and s[0]=="header":
 			T=None
 			ts = float(s[1])
-			radius = float(s[2])
+			radius = None
 			best=None
 			mi=0.075 #minimum
 			for t in tfs:
@@ -48,24 +48,24 @@ def run():
 
 			T = [vec4(float(best[1]), float(best[2]), float(best[3]), 1.), quat(float(v) for v in best[4:])]
 			frames.append({})
+		elif radius==None:
+			radius = float(s[1])
 
 		if len(s)>0 and s[0]=="took":
-			if not s[1] in took: took[s[1]] = []
 			name = '_'.join(s[1:4])
-			print name
+			if not name in took: took[name] = []
 			if not name in frames[len(frames)-1]: frames[len(frames)-1][name] = []
-			took[s[1]].append(reduce(lambda x, y: float(x) + float(y), s[4:]))
+			took[name].append(float(reduce(lambda x, y: float(x) + float(y), s[4:])))
 
-		if len(s)==4 and s[0]=="eval_keypoint" and T!=None:
+		if len(s)==7 and s[0]=="eval_keypoint" and T!=None:
 			name = '_'.join(s[1:4])
-			print name
 			pt = vec4(float(s[4]), float(s[5]), float(s[6]), 1.)
 			TT=T[1].toMat4().setColumn(3, T[0])
 			#pt = TT.inverse()*pt
 			pt = TT*pt
 			frames[len(frames)-1][name].append({"pt":pt})
 
-	print "read input file ",len(keypoints)
+	print "read input file "
 
 	f_out = file(fn_output+"_timing.csv", "w")
 	i=1
@@ -90,10 +90,13 @@ def run():
 
 	f_out = file(fn_output+".csv", "a")
 	for name in names:
+		print name
 		dist=[]
 		gtp=0
 		gfp=0
+		ges=0
 		for i in xrange(len(frames)):
+			ges+=len(frames[i][name])
 			for ii in xrange(len(frames[i][name])):
 				kp1 = frames[i][name][ii]
 				for j in range(i+1,len(frames)):
@@ -104,27 +107,32 @@ def run():
 						kp2 = frames[j][name][jj]
 
 						L2=(kp1["pt"]-kp2["pt"]).length()
-						if L2>radius/4:
-							fp+=1
-						else:
-							tp+=1
+						if L2<=radius/4:
+							if tp>0:
+								fp+=1
+							else:
+								tp+=1
 							mi = min(mi, L2)
 					if tp>0: dist.append(mi)
 					gtp+=tp
 					gfp+=fp
+		print ""
 
 		aa,bb,cc = mquantiles(dist)
 
 		f_out.write( str(name)+"\t" )
 		f_out.write( str(gtp)+"\t" )
 		f_out.write( str(gfp)+"\t" )
+		f_out.write( str(ges)+"\t" )
 		f_out.write( str(len(frames))+"\t" )
 		f_out.write( str(min(dist))+"\t")
 		f_out.write( str(aa)+"\t" )
 		f_out.write( str(bb)+"\t" )
 		f_out.write( str(cc)+"\t" )
 		f_out.write( str(max(dist))+"\t" )
-		f_out.write( str(reduce(lambda x, y: x + y, dist) / len(dist) ) )
+		f_out.write( str(reduce(lambda x, y: x + y, dist) / len(dist) )+"\t" )
+		f_out.write( str(max(dist))+"\n" )
+		f_out.flush()
 
 	assert(tfs_file==fts_file)
 
