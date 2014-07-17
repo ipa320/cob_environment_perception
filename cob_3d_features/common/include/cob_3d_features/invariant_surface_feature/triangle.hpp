@@ -189,12 +189,7 @@ void cob_3d_features::invariant_surface_feature::SingleTriangle<Scalar,Samples,V
 	print();
 	assert(cr == d1.cross(d2).norm());
 	assert((p3_[2]-p3_[1]) == d1);
-	assert((p3_[1]-p3_[0]) == d2);
-	
-	d1*=3;
-	d2*=3;
-	cr*=3;
-	p3_[0]*=3;*/
+	assert((p3_[1]-p3_[0]) == d2);*/
 	
 	const Scalar weight = std::abs(Vector3::UnitZ().dot(d1.cross(d2))/cr)*0.8+0.2;
 	
@@ -212,11 +207,6 @@ void cob_3d_features::invariant_surface_feature::SingleTriangle<Scalar,Samples,V
 			}*/
 		}
 	}
-	
-	/*d1/=3;
-	d2/=3;
-	cr/=3;
-	p3_[0]/=3;*/
 
 	computed_ = true;
 }

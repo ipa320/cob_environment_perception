@@ -661,7 +661,6 @@ int QuadRegression<Degree, Point, CameraModel>::getPos(int *ch, const int xx, co
   return p;
 }
 
-#include "../sub_structures/debug.h"
 template <int Degree, typename Point, typename CameraModel>
 void QuadRegression<Degree, Point, CameraModel>::outline(int *ch, const int w, const int h, std::vector<SubStructure::SXY> &out, const int i, S_POLYGON<Degree> &poly, const SubStructure::Model<Degree> &model, const int mark)
 {
@@ -753,34 +752,25 @@ void QuadRegression<Degree, Point, CameraModel>::outline(int *ch, const int w, c
 #ifdef EVALUATE
       if(std::abs(v)>6) {
 #else
-      if(std::abs(v)>5) {
+        if(std::abs(v)>3) {
 #endif
         v=0;
         Eigen::Vector2f tv;
         tv(0)=x;tv(1)=y;
         addPoint(i,x,y,mark, poly,model,back/(float)numb);
         numb=back=0;
-        
-        /*char buf[128];
-        sprintf(buf, "/tmp/p%d.ppm", (int)poly.segments_.back().size());
-		QQPF_Debug::ppm(buf,w,h,ch);*/
       }
     }
     if(poly.segments_.back().size()>0) poly.segments_.back()[0](2)=back/(float)numb;
 
-
-//std::cout<<"start "<<start_x<<" "<<start_y<<std::endl;
-//std::cout<<"end   "<<x<<" "<<y<<std::endl;
     if(poly.segments_.back().size()<3 || (std::abs(x-start_x)+std::abs(y-start_y))>10 ) {
       poly.segments_.erase(poly.segments_.end()-1);
+
 #if defined(USE_BOOST_POLYGONS_) || defined(BACK_CHECK_REPEAT)
       poly.segments2d_.erase(poly.segments2d_.end()-1);
 #endif
     }
-    /*assert(0);
-   if((std::abs(x-start_x)+std::abs(y-start_y))>10)
-QQPF_Debug::ppm("/tmp/polyX.ppm",w,h,ch);
-assert( (std::abs(x-start_x)+std::abs(y-start_y))<=20 );*/
+
 
   }
 
