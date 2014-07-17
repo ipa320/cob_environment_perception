@@ -17,13 +17,7 @@ public:
 	uninit_vector():data_(0), s_(0) {}
 	~uninit_vector() {delete data_;}
 	uninit_vector(const uninit_vector &o) {
-		data_ = new T[o.s_];
-		s_=o.s_;
-		memcpy(data_, o.data_, s_);
-	}
-
-	void operator=(const uninit_vector &o) {
-		resize(o.s_);
+		resize(o.size());
 		memcpy(data_, o.data_, s_);
 	}
 	
