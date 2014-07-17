@@ -39,49 +39,69 @@ rosbuild_genmsg()
 
 rosbuild_add_boost_directories()
 
-#rosbuild_add_library(cob_3d_segmentation
-#	common/src/polygon_extraction.cpp
-#	common/src/segmentation.cpp # Old segmentation
-#	common/src/cluster_handler.cpp
-#	common/src/edge_handler.cpp
-#	common/src/cluster_graph_structure.cpp
-#	common/src/depth_segmentation.cpp
-#	common/src/cluster_classifier.cpp
-#	common/src/plane_extraction.cpp)
+rosbuild_add_library(cob_3d_segmentation
+	common/src/polygon_extraction.cpp
+	common/src/segmentation.cpp # Old segmentation
+	common/src/cluster_handler.cpp
+	common/src/edge_handler.cpp
+	common/src/cluster_graph_structure.cpp
+	common/src/depth_segmentation.cpp
+	common/src/cluster_classifier.cpp
+	common/src/plane_extraction.cpp)
 
-#rosbuild_add_library(cob_3d_segmentation_nodelets
-#	ros/src/segmentation_all_in_one_nodelet.cpp
-#	ros/src/plane_extraction_nodelet.cpp
-#	ros/src/simple_segmentation_nodelet.cpp)
+rosbuild_add_library(cob_3d_segmentation_nodelets
+	ros/src/segmentation_all_in_one_nodelet.cpp
+	ros/src/plane_extraction_nodelet.cpp
+	ros/src/simple_segmentation_nodelet.cpp)
 
 #target_link_libraries(cob_3d_segmentation cob_3d_features cob_3d_features_omp)
-#target_link_libraries(cob_3d_segmentation_nodelets cob_3d_segmentation) #cob_3d_mapping_common)
+target_link_libraries(cob_3d_segmentation_nodelets cob_3d_segmentation) #cob_3d_mapping_common)
 
 
-#rosbuild_add_executable(segmentation_node ros/src/segmentation_node.cpp common/src/polypartition.cpp)
-#target_link_libraries(segmentation_node cob_3d_segmentation)
+rosbuild_add_executable(segmentation_node ros/src/segmentation_node.cpp common/src/polypartition.cpp)
+target_link_libraries(segmentation_node cob_3d_segmentation)
 rosbuild_add_executable(qppf_node ros/src/qppf_node.cpp common/src/polypartition.cpp)
 rosbuild_add_executable(qppf_node1 ros/src/qppf_node.cpp common/src/polypartition.cpp)
 set_target_properties(qppf_node1 PROPERTIES COMPILE_DEFINITIONS "ONLY_PLANES_DEPTH")
 rosbuild_add_compile_flags(qppf_node1 ${SSE_FLAGS})
 
-#rosbuild_add_executable(plane_extraction_action_client ros/src/plane_extraction_action_client.cpp)
-#target_link_libraries(plane_extraction_action_client ${OpenCV_LIBS})
+rosbuild_add_executable(plane_extraction_action_client ros/src/plane_extraction_action_client.cpp)
+target_link_libraries(plane_extraction_action_client ${OpenCV_LIBS})
 
 # segmentation app:
-#rosbuild_add_executable(test_depth_segmentation common/apps/test_depth_segmentation.cpp)
-#target_link_libraries(test_depth_segmentation cob_3d_segmentation vtkCommon vtkRendering)
-#rosbuild_link_boost(test_depth_segmentation program_options)
+rosbuild_add_executable(test_depth_segmentation common/apps/test_depth_segmentation.cpp)
+target_link_libraries(test_depth_segmentation cob_3d_segmentation vtkCommon vtkRendering)
+rosbuild_link_boost(test_depth_segmentation program_options)
 
 # node for segmentation visualization:
-#rosbuild_add_executable(segmentation_visualizer ros/src/segmentation_visualizer.cpp)
-#target_link_libraries(segmentation_visualizer vtkCommon vtkRendering)
+rosbuild_add_executable(segmentation_visualizer ros/src/segmentation_visualizer.cpp)
+target_link_libraries(segmentation_visualizer vtkCommon vtkRendering)
 
 # Executables for profiling:
-#rosbuild_add_executable(profile_depth_seg common/apps/profile_depth_seg.cpp)
-#target_link_libraries(profile_depth_seg cob_3d_segmentation)
+rosbuild_add_executable(profile_depth_seg common/apps/profile_depth_seg.cpp)
+target_link_libraries(profile_depth_seg cob_3d_segmentation)
  #cob_3d_features cob_3d_features_omp cob_3d_segmentation)
 
-#rosbuild_add_executable(profile_plane_extraction common/apps/profile_plane_extraction.cpp)
-#target_link_libraries(profile_plane_extraction cob_3d_segmentation vtkCommon vtkFiltering ${OpenCV_LIBS})
+rosbuild_add_executable(profile_plane_extraction common/apps/profile_plane_extraction.cpp)
+target_link_libraries(profile_plane_extraction cob_3d_segmentation vtkCommon vtkFiltering ${OpenCV_LIBS})
 
+rosbuild_add_executable(profile_multi_plane_seg common/apps/profile_multi_plane_seg.cpp)
+
+rosbuild_add_compile_flags(cob_3d_segmentation -D__LINUX__ -DCOMPILE_NODELET)
+rosbuild_add_roslaunch_check(ros/launch)
+
+#######################  TESTING  #######################
+rosbuild_add_executable(test_segmentation ros/test/test_segmentation.cpp common/src/polypartition.cpp)
+rosbuild_add_compile_flags(test_segmentation ${SSE_FLAGS})
+target_link_libraries(test_segmentation gtest ${PCL_LIBRARIES})
+
+rosbuild_add_executable(test_polygon_extraction ros/test/test_polygon_extraction.cpp)
+target_link_libraries(test_polygon_extraction cob_3d_segmentation gtest)
+
+rosbuild_add_executable(test_plane_extraction common/apps/test_plane_extraction.cpp)
+target_link_libraries(test_plane_extraction cob_3d_segmentation vtkCommon vtkFiltering)
+rosbuild_link_boost(test_plane_extraction program_options)
+
+rosbuild_add_executable(test_pcl_segmentation common/apps/test_pcl_segmentation.cpp)
+
+rosbuild_add_executable(tool_qppf2file common/src/tool_qppf2file.cpp)

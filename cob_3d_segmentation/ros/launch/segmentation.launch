@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <launch>
-  <arg name="point_cloud_in" default="/camera/depth/points_xyz"/>
+  <arg name="point_cloud_in" default="/registration/pc_aligned"/>
   <arg name="enable_action_mode" default="False"/>
   <arg name="debug_mode" default="false"/>
   <arg name="start_manager" default="true"/>
