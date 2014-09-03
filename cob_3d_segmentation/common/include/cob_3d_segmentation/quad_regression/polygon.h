@@ -70,7 +70,7 @@
 #include <eigen3/Eigen/Dense>
 #include <unsupported/Eigen/NonLinearOptimization>
 #include <cob_3d_mapping_msgs/CurvedPolygon.h>
-#include <cob_3d_mapping_common/polypartition.h>
+#include <polypartition/polypartition.h>
 
 namespace Segmentation
 {

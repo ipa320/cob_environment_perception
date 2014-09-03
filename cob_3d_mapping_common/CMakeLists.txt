@@ -67,6 +67,8 @@ add_library(cob_3d_mapping_common
 
 target_link_libraries(cob_3d_mapping_common
   ${catkin_LIBRARIES}
+  ${PCL}
+  pcl_sample_consensus pcl_segmentation
 )
 
 ## Declare a cpp executable
