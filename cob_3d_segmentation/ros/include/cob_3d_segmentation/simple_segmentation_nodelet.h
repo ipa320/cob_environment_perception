@@ -110,6 +110,7 @@ namespace cob_3d_segmentation
       , colorize_(true)
       , enable_action_mode_(false)
       , is_running_(false)
+      , skip_level_(0)
     { }
 
     ~SimpleSegmentationNodelet()
@@ -152,6 +153,7 @@ namespace cob_3d_segmentation
     bool colorize_;
     bool enable_action_mode_;
     bool is_running_;
+    unsigned int skip_level_;
   };
 }
 
