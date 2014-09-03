@@ -117,6 +117,7 @@ cob_3d_segmentation::SimpleSegmentationNodelet::configCallback(
   NODELET_INFO("[segmentation]: received new parameters");
   centroid_passthrough_ = config.centroid_passthrough;
   filter_ = config.filter;
+  skip_level_ = config.skip_level;
   min_cluster_size_ = config.min_cluster_size;
   downsample_ = config.downsample;
   colorize_ = config.colorize;
@@ -189,9 +190,11 @@ cob_3d_segmentation::SimpleSegmentationNodelet::computeAndPublish()
   //t.precisionStart();
   seg_.compute();
   //std::cout << "segmentation took " << t.precisionStop() << " s." << std::endl;
-  seg_.mapSegmentColor(segmented_);
 
-  pub_segmented_.publish(segmented_);
+  if(pub_segmented_.getNumSubscribers()>0) {
+    seg_.mapSegmentColor(segmented_);
+    pub_segmented_.publish(segmented_);
+  }
 
   // --- start shape array publisher: ---
   PointCloud::Ptr hull(new PointCloud);
@@ -213,7 +216,7 @@ cob_3d_segmentation::SimpleSegmentationNodelet::computeAndPublish()
     //std::cout << "cluster id " << c->id() << std::endl;
     conv_.setColor(colorize_);
     conv_.setInputCloud(down_);
-    if(!conv_.clusterToPolygon(c, p)) continue;
+    if(!conv_.clusterToPolygon(c, p, skip_level_)) continue;
 
     sa.shapes.push_back(cob_3d_mapping_msgs::Shape());
     cob_3d_mapping_msgs::Shape* s = &sa.shapes.back();
