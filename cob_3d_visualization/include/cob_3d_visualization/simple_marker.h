@@ -5,6 +5,11 @@
 #include <list>
 #include <string>
 
+/* 
+ * EXAMPLE USAGE:
+ * 
+ */
+
 namespace cob_3d_visualization {
 	
 	class RvizMarkerManager {
@@ -190,12 +195,47 @@ namespace cob_3d_visualization {
 		void sphere(const Vector &center, const float scale=0.1) {
 			primitive(center, scale, visualization_msgs::Marker::SPHERE);
 		}
+		template<class Vector>
+		void circle(const float radius_outer, const Vector &center, const float radius_inner=0.f, const int resolution=64) {
+			primitive(center, 1., visualization_msgs::Marker::TRIANGLE_LIST);
+
+			marker.points.resize (6*resolution);
 		
-		void color(const double r, const double g,  const double b, const double a=1.) {
+			for(int i=0; i<6*resolution;) {
+			  const float alpha1 = i*M_PI*2/resolution;
+			  const float alpha2 = ((i+1)%resolution)*M_PI*2/resolution;
+			  
+			  marker.points[i+3].x = marker.points[i].x = radius_inner*std::cos(alpha1);
+			  marker.points[i+3].y = marker.points[i].y = radius_inner*std::cos(alpha1);
+			  marker.points[i+3].z = marker.points[i].z = 0;
+			  ++i;
+			  
+			  marker.points[i+4].x = marker.points[i].x = radius_outer*std::cos(alpha2);
+			  marker.points[i+4].x = marker.points[i].y = radius_outer*std::cos(alpha2);
+			  marker.points[i+4].x = marker.points[i].z = 0;
+			  ++i;
+			  
+			  marker.points[i].x = radius_outer*std::cos(alpha1);
+			  marker.points[i].y = radius_outer*std::cos(alpha1);
+			  marker.points[i].z = 0;
+			  i+=2;
+			  
+			  marker.points[i].x = radius_inner*std::cos(alpha2);
+			  marker.points[i].y = radius_inner*std::cos(alpha2);
+			  marker.points[i].z = 0;
+			  i+=2;
+			}
+	    
+		}
+		
+		inline void color(const double r, const double g,  const double b, const double a=1.) {
 			marker_.color.a = a;
 			marker_.color.r = r;
 			marker_.color.g = g;
 			marker_.color.b = b;
+		}
+		inline void color(const std_msgs::ColorRGBA &col) {
+			marker_.color = col;
 		}
 		
 		template<class Vector>
