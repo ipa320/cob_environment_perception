@@ -21,7 +21,8 @@
   <node name="kill" type="kill_xtion.sh" pkg="cob_3d_mapping_demonstrator"/>
   <include file="$(find cob_3d_mapping_demonstrator)/ros/launch/openni.launch"/>
   <include file="$(find cob_3d_visualization)/launch/shape_visualization.launch">
-    <arg name="shape_array_in" value="segmentation/shape_array" />
+    <!--arg name="shape_array_in" value="segmentation/shape_array" /-->
+    <arg name="shape_array_in" value="geometry_map/map" />
   </include>
   <!-- node name="rviz" type="rviz" pkg="rviz" output="screen" args="$(find cob_3d_mapping_demonstrator)/rviz.vcg"/-->
 

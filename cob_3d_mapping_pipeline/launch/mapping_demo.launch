@@ -45,13 +45,13 @@
     <arg name="point_cloud_in" value="/camera/depth_registered/points"/>
     <arg name="enable_action_mode" value="True"/>
   </include>
-  <!--include file="$(find cob_3d_mapping_common)/ros/launch/transform_shape_array.launch">
+  <include file="$(find cob_3d_mapping_common)/ros/launch/transform_shape_array.launch">
     <arg name="input" value="/segmentation/shape_array"/>
     <arg name="output" value="/transformed/shape_array"/>
   </include>
   <include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch">
     <arg name="shape_array_in" value="/transformed/shape_array"/>
-  </include-->
+  </include>
 
 
 
