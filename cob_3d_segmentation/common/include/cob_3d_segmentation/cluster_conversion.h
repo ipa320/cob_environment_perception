@@ -99,7 +99,7 @@ namespace cob_3d_segmentation
     inline void setMaxCentroidDistance(float z_distance) { max_dist_ = z_distance; }
     inline void setColor(bool enable) { colorize_ = enable; }
 
-    bool clusterToPolygon(const ClusterPtr& c, cob_3d_mapping::Polygon::Ptr& pg)
+    bool clusterToPolygon(const ClusterPtr& c, cob_3d_mapping::Polygon::Ptr& pg, const int skip=0)
     {
       cob_3d_segmentation::PolygonContours<cob_3d_segmentation::PolygonPoint> poly;
       pe_.outline(p_->width,p_->height,c->border_points,poly);
@@ -132,14 +132,14 @@ namespace cob_3d_segmentation
         int n_points = poly.polys_[i].size();
         int reverse;
         pcl::PointCloud<pcl::PointXYZ> contour;
-        contour.resize(n_points);
         if (i == max_idx) { holes.push_back(false); reverse = 0; }
         else              { holes.push_back(true);  reverse = n_points - 1; }
 
-        for (int idx = 0; idx < n_points; ++idx)
+        for (int idx = 0; idx < n_points; idx+=skip+1)
         {
           PolygonPoint& pp = (poly.polys_[i])[abs(reverse - idx)];
-          contour[idx].getVector3fMap() = p_->points[ pp.x + pp.y * p_->width ].getVector3fMap();
+          contour.push_back(pcl::PointXYZ());
+          contour[contour.size()-1].getVector3fMap() = p_->points[ pp.x + pp.y * p_->width ].getVector3fMap();
         }
         contour.height = 1;
         contour.width = contour.size();
