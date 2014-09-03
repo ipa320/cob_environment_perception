@@ -228,7 +228,7 @@ class execute_button_commands():
     return True
 
   def execute_step(self):
-    sss.move("cob_3d_mapping_demonstrator",[[0, -0.5]])
+    sss.move("cob_3d_mapping_demonstrator",[[0, -0.3]])
     """if self.step==0.1:
       self.execute_clear()
     print "step"
