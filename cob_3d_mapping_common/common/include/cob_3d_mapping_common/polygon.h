@@ -246,6 +246,7 @@ namespace cob_3d_mapping
     */
     float computeSimilarity(const Polygon::Ptr& poly) const;
 
+	float getOverlap(const Polygon& poly);
 
     /**
     * \brief Merging of polygons.
