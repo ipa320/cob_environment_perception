@@ -7,6 +7,7 @@ project(cob_3d_mapping_geometry_map)
 find_package(catkin REQUIRED COMPONENTS
   cob_3d_mapping_common
   cob_3d_mapping_msgs
+  tf_conversions
   dynamic_reconfigure
   pcl_ros
   rosbag
@@ -56,7 +57,7 @@ include_directories(
 )
 
 ## Declare a cpp library
-add_library(geometry_map common/src/geometry_map.cpp)
+add_library(geometry_map common/src/geometry_map.cpp common/src/geometry_map_entry.cpp)
 
 ## Declare a cpp executable
 add_executable(geometry_map_node ros/src/geometry_map_node.cpp)

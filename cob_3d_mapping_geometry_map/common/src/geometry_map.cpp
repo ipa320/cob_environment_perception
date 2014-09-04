@@ -78,7 +78,6 @@
 #include <boost/tuple/tuple_comparison.hpp>
 #include <Eigen/Geometry>
 //#include <pcl/win32_macros.h> // not available anymore in pcl 1.7
-#include <pcl/io/pcd_io.h>
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 #include <pcl/common/centroid.h>
@@ -89,118 +88,50 @@
 using namespace cob_3d_mapping;
 
 void
-GeometryMap::addMapEntry (Polygon::Ptr& p_ptr)
+GeometryMap::addMapEntry (const GeometryMapEntry::Ptr& p)
 {
-  Polygon& p = *p_ptr;
-
-  cob_3d_mapping::MergeConfig limits;
-  limits.d_thresh = d_;
-  limits.angle_thresh = cos_angle_;
-  //	limits.weighting_method="COMBINED";
-  limits.weighting_method = "AREA";
-  p.merge_settings_ = limits;
-  p.assignWeight ();
-
-  std::vector<int> intersections;
-  if (map_polygon_.size () > 0)
-  {
-    p.getMergeCandidates (map_polygon_, intersections);
-    if (intersections.size () > 0) // if polygon has to be merged ...
-    {
-      std::vector<Polygon::Ptr> merge_candidates;
-      for (int i = intersections.size () - 1; i >= 0; --i)
-      {
-        // copies pointer to polygon
-        merge_candidates.push_back (map_polygon_[intersections[i]]);
-        // delete pointer in map, polygon still available. However there should be a better solution than
-        // copying and deleting pointers manually.
-        map_polygon_[intersections[i]] = map_polygon_.back ();
-        map_polygon_.pop_back ();
-      }
-      // merge polygon with merge candidates
-      p.merge (merge_candidates); // merge all new candidates into p
-      map_polygon_.push_back (p_ptr); // add p to map, candidates were dropped!
-    }
-    else //if polygon does not have to be merged , add new polygon
-    {
-      //p.computeAttributes(p.normal,p.centroid);
-      //p.assignWeight();
-      p.id_ = new_id_++;
-      p.frame_stamp_ = frame_counter_;
-      map_polygon_.push_back (p_ptr);
-    }
-  }
-  else
-  {
-    //p.computeAttributes(p.normal,p.centroid);
-    //p.assignWeight();
-    p.id_ = new_id_++;
-    p.frame_stamp_ = frame_counter_;
-    map_polygon_.push_back (p_ptr);
-  }
-  if (save_to_file_)
-    saveMap (file_path_);
+	cob_3d_mapping::MergeConfig limits;
+	limits.d_thresh = d_;
+	limits.angle_thresh = cos_angle_;
+	limits.weighting_method = "AREA";	//"COMBINED", "COUNTER"
+	p->setMergeSettings(limits);
+	
+	std::vector<size_t> intersections;
+	for(size_t i=0; i<map_entries_.size(); i++) {
+		if(p->isMergeCandidate(map_entries_[i]))
+			intersections.push_back(i);
+	}
+	for(size_t i=intersections.size()-1; i!=(size_t)-1; i--) {
+		p->merge(map_entries_[intersections[i]]);
+		map_entries_.erase(map_entries_.begin()+intersections[i]);
+	}
+	
+	if(intersections.size()==0) //if polygon does not have to be merged , add new polygon
+		p->setHeader(new_id_++, frame_counter_);
+	else
+		p->setHeader(p->getId(), frame_counter_);	//update timestamp to last merge
+	map_entries_.push_back(p);
+  
+	if (save_to_file_)
+		saveMap (file_path_);
 }
 
 void
-GeometryMap::addMapEntry (Cylinder::Ptr& c_ptr)
+GeometryMap::addMapEntry (const Polygon::Ptr& p_ptr, const bool merge)
 {
-  Cylinder& c = *c_ptr;
+	if(merge)
+		addMapEntry(GeometryMapEntry::Ptr(new GeometryMapEntry_Polygon(p_ptr)));
+	else
+		map_entries_.push_back(GeometryMapEntry::Ptr(new GeometryMapEntry_Polygon(p_ptr)));
+}
 
-  //c.frame_stamp_ = frame_counter_;
-  cob_3d_mapping::MergeConfig limits;
-  limits.d_thresh = d_;
-  limits.angle_thresh = cos_angle_;
-  //limits.weighting_method="COUNTER";
-  limits.weighting_method = "AREA";
-
-  c.merge_settings_ = limits;
-  c.assignWeight ();
-
-  std::vector<int> intersections;
-  if (map_cylinder_.size () > 0)
-  {
-    c.getMergeCandidates (map_cylinder_, intersections);
-    if (intersections.size () > 0) // if polygon has to be merged ...
-    {
-      std::vector<Polygon::Ptr> merge_candidates;
-      for (int i = intersections.size () - 1; i >= 0; --i)
-      {
-        // copies pointer to polygon
-        merge_candidates.push_back (map_cylinder_[intersections[i]]);
-        // delete pointer in map, polygon still available. However there should be a better solution than
-        // copying and deleting pointers manually.
-        map_cylinder_[intersections[i]] = map_cylinder_.back ();
-        map_cylinder_.pop_back ();
-      }
-      // merge polygon with merge candidates
-      c.merge (merge_candidates); // merge all new candidates into p
-      map_cylinder_.push_back (c_ptr); // add p to map, candidates were dropped!
-    }
-    else //if polygon does not have to be merged , add new polygon
-    {
-      //p.computeAttributes(p.normal,p.centroid);
-      //p.assignWeight();
-      c.id_ = new_id_++;
-      c.frame_stamp_ = frame_counter_;
-      map_cylinder_.push_back (c_ptr);
-    }
-  }
-  else
-  {
-    /*std::cout << "adding first element" << std::endl;
-    for (unsigned int i = 0; i < c.contours_[0].size (); i++)
-    {
-      std::cout << c.contours_[0][i] (0) << "," << c.contours_[0][i] (1) << std::endl;
-    }*/
-    //p.computeAttributes(p.normal,p.centroid);
-    //p.assignWeight();
-    c.id_ = new_id_++;
-    c.frame_stamp_ = frame_counter_;
-    map_cylinder_.push_back (c_ptr);
-  }
-  if (save_to_file_)
-    saveMap (file_path_);
+void
+GeometryMap::addMapEntry (const Cylinder::Ptr& c_ptr, const bool merge)
+{
+	if(merge)
+		addMapEntry(GeometryMapEntry::Ptr(new GeometryMapEntry_Cylinder(c_ptr)));
+	else
+		map_entries_.push_back(GeometryMapEntry::Ptr(new GeometryMapEntry_Polygon(c_ptr)));
 }
 
 /*void
@@ -329,14 +260,13 @@ void
 GeometryMap::cleanUp ()
 {
   int n_dropped = 0, m_dropped = 0, c_dropped = 0;
-  for (int idx = map_polygon_.size () - 1; idx >= 0; --idx)
+  for (int idx = map_entries_.size () - 1; idx >= 0; --idx)
   {
-    if (map_polygon_[idx]->merged_ <= 1 && (frame_counter_ - 3) > (int)map_polygon_[idx]->frame_stamp_
-        && (int)map_polygon_[idx]->frame_stamp_ > 1)
+    if(map_entries_[idx]->needsCleaning(frame_counter_))
     {
       //ROS_INFO ("cleaning id %d", idx);
-      map_polygon_[idx] = map_polygon_.back ();
-      map_polygon_.pop_back ();
+      map_entries_[idx] = map_entries_.back ();
+      map_entries_.pop_back ();
       ++n_dropped;
     }
   }
@@ -380,33 +310,6 @@ GeometryMap::cleanUp ()
 }
 
 void
-GeometryMap::saveMapEntry (std::string path, int ctr, cob_3d_mapping::Polygon& p)
-{
-  std::stringstream ss;
-  ss << path << "polygon_" << ctr << ".pl";
-  std::ofstream plane_file;
-  plane_file.open (ss.str ().c_str ());
-  plane_file << p.normal_ (0) << " " << p.normal_ (1) << " " << p.normal_ (2) << " " << p.d_;
-  ss.str ("");
-  ss.clear ();
-  plane_file.close ();
-  for (int i = 0; i < (int)p.contours_.size (); i++)
-  {
-    pcl::PointCloud<pcl::PointXYZ> pc;
-    ss << path << "polygon_" << ctr << "_" << i << ".pcd";
-    for (int j = 0; j < (int)p.contours_[i].size (); j++)
-    {
-      pcl::PointXYZ pt;
-      pt.getVector3fMap () = Eigen::Vector3f (p.contours_[i][j] (0), p.contours_[i][j] (1), 0);
-      pc.points.push_back (pt);
-    }
-    pcl::io::savePCDFileASCII (ss.str (), pc);
-    ss.str ("");
-    ss.clear ();
-  }
-}
-
-void
 GeometryMap::saveMap (std::string path)
 {
 
@@ -414,9 +317,11 @@ GeometryMap::saveMap (std::string path)
   static int ctr = 0;
   std::stringstream ss;
   ss << path << "/" << ctr << "_";
-  for (size_t i = 0; i < map_polygon_.size (); i++)
+  for (size_t i = 0; i < map_entries_.size (); i++)
   {
-    saveMapEntry (ss.str (), i, *map_polygon_[i]);
+	std::stringstream ss2;
+	ss2 << ss.str() << "map_entry_" << i;
+    map_entries_[i]->save(ss2.str());
   }
   ctr++;
 }
@@ -424,70 +329,41 @@ GeometryMap::saveMap (std::string path)
 void
 GeometryMap::clearMap ()
 {
-  map_polygon_.clear ();
-  map_cylinder_.clear ();
+  map_entries_.clear();
 }
 
 void
 GeometryMap::colorizeMap ()
 {
+	for(entry_iterator it = map_entries_.begin(); it!=map_entries_.end(); it++)
+		(*it)->colorize();
+}
 
-  //coloring for polygon
-  for (unsigned int i = 0; i < map_polygon_.size (); i++)
-  {
-    if (map_polygon_[i]->color_[3] == 1.0f)
-      continue;
-    if (fabs (map_polygon_[i]->normal_[2]) < 0.1) //plane is vertical
-    {
-      map_polygon_[i]->color_[0] = 0.75;
-      map_polygon_[i]->color_[1] = 0.75;
-      map_polygon_[i]->color_[2] = 0;
-      map_polygon_[i]->color_[3] = 0.8;
-    }
-    else if (fabs (map_polygon_[i]->normal_[0]) < 0.12 && fabs (map_polygon_[i]->normal_[1]) < 0.12
-        && fabs (map_polygon_[i]->normal_[2]) > 0.9) //plane is horizontal
-    {
-      map_polygon_[i]->color_[0] = 0;
-      map_polygon_[i]->color_[1] = 0.5;
-      map_polygon_[i]->color_[2] = 0;
-      map_polygon_[i]->color_[3] = 0.8;
-    }
-    else
-    {
-      map_polygon_[i]->color_[0] = 0.75;
-      map_polygon_[i]->color_[1] = 0.75;
-      map_polygon_[i]->color_[2] = 0.75;
-      map_polygon_[i]->color_[3] = 0.8;
-    }
-  }
+GeometryMapEntry::Ptr *GeometryMap::getMapEntry(const int id) {
+	for(entry_iterator it = map_entries_.begin(); it!=map_entries_.end(); it++)
+		if((*it)->getId()==id)
+			return &(*it);
+	return NULL;
+}
 
-  //coloring for cylinder
-  for (unsigned int i = 0; i < map_cylinder_.size (); i++)
-  {
-    if (map_cylinder_[i]->color_[3] == 1.0f)
-      continue;
-    if (fabs (map_cylinder_[i]->normal_[0]) < 0.1 && fabs (map_cylinder_[i]->normal_[1]) < 0.1) //cylinder is vertical
-    {
-      map_cylinder_[i]->color_[0] = 0.5;
-      map_cylinder_[i]->color_[1] = 0.5;
-      map_cylinder_[i]->color_[2] = 0;
-      map_cylinder_[i]->color_[3] = 1;
-    }
-    else if (fabs (map_cylinder_[i]->normal_[2]) < 0.12) //plane is horizontal
-    {
-      map_cylinder_[i]->color_[0] = 0;
-      map_cylinder_[i]->color_[1] = 0.5;
-      map_cylinder_[i]->color_[2] = 0;
-      map_cylinder_[i]->color_[3] = 1;
-    }
-    else
-    {
-      map_cylinder_[i]->color_[0] = 1;
-      map_cylinder_[i]->color_[1] = 1;
-      map_cylinder_[i]->color_[2] = 1;
-      map_cylinder_[i]->color_[3] = 1;
-    }
-  }
+void GeometryMap::eraseMapEntry(const int id) {
+	for(size_t i=map_entries_.size()-1; i!=(size_t)-1; i--)
+		if(map_entries_[i]->getId()==id)
+			map_entries_.erase(map_entries_.begin()+i);
+}
 
+void GeometryMap::checkVisibility(const Eigen::Affine3f &T, const Eigen::Vector3f &camera_params) {
+	const Eigen::Vector3f Z = Eigen::Vector3f::UnitZ();
+	
+	for (int idx = map_entries_.size () - 1; idx >= 0; --idx)
+	{
+		if( map_entries_[idx]->needsCleaning(frame_counter_) ||
+			(map_entries_[idx]->checkVisibility(T,camera_params,Z)&&map_entries_[idx]->needsCleaning(frame_counter_, false)) )
+		{
+		  //ROS_INFO ("cleaning id %d", idx);
+		  map_entries_[idx] = map_entries_.back ();
+		  map_entries_.pop_back ();
+		}
+	}
 }
 
