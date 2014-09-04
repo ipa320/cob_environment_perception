@@ -7,6 +7,7 @@ project(cob_3d_mapping_semantics)
 find_package(catkin REQUIRED COMPONENTS
   cob_3d_mapping_common
   cob_3d_mapping_msgs
+  cob_3d_visualization
   dynamic_reconfigure
   pcl_ros
   rosbag
@@ -76,6 +77,14 @@ add_dependencies(table_extraction_node
   ${catkin_EXPORTED_TARGETS}
 )
 
+add_executable(environment_monitoring_node
+    ros/src/environment_monitoring.cpp
+)
+add_dependencies(environment_monitoring_node
+  ${${PROJECT_NAME}_EXPORTED_TARGETS}
+  ${catkin_EXPORTED_TARGETS}
+)
+
 add_executable(supporting_plane_extraction_node
     ros/src/supporting_plane_extraction_node.cpp
 )
@@ -99,6 +108,12 @@ add_dependencies(get_tables_client ${catkin_EXPORTED_TARGETS})
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(table_extraction_node
+  cob_3d_mapping_semantics
+  ${catkin_LIBRARIES}
+  ${PCL_LIBRARIES}
+)
+
+target_link_libraries(environment_monitoring_node
   cob_3d_mapping_semantics
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}

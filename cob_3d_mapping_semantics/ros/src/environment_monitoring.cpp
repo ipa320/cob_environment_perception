@@ -88,29 +88,104 @@
 #include <cob_3d_mapping_semantics/table_extraction.h>
 #include <cob_3d_mapping_semantics/table_extraction_nodeConfig.h>
 #include <cob_3d_mapping_common/ros_msg_conversions.h>
+#include <cob_3d_visualization/simple_marker.h>
 
 using namespace cob_3d_mapping;
+using namespace cob_3d_visualization;
 
-class TableExtractionNode
+class EnvironmentMonitoringNode
 {
+	struct Area {
+		std_msgs::ColorRGBA color;
+		float r1, r2;
+	};
 public:
 
   // Constructor
-  TableExtractionNode () :
+  EnvironmentMonitoringNode () :
     target_frame_id_ ("/map")
   {
-    config_server_.setCallback(boost::bind(&TableExtractionNode::dynReconfCallback, this, _1, _2));
+    config_server_.setCallback(boost::bind(&EnvironmentMonitoringNode::dynReconfCallback, this, _1, _2));
 
-    sa_sub_ = n_.subscribe ("shape_array", 10, &TableExtractionNode::callbackShapeArray, this);
-    sa_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_array_pub", 1);
+    sa_sub_ = n_.subscribe ("shape_array", 10, &EnvironmentMonitoringNode::callbackShapeArray, this);
+    sa_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_tables_array_pub", 1);
+    sa_combined_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_combined_array_pub", 1);
+    
+    marker_vis_sub_ = n_.subscribe("vis_markers_sub", 10, &EnvironmentMonitoringNode::callbackVisMarkerArray, this);
+    marker_vis_pub_ = n_.advertise<visualization_msgs::MarkerArray>("vis_markers_pub",10);
 
-    get_tables_server_ = n_.advertiseService ("get_tables", &TableExtractionNode::getTablesService, this);
+    get_tables_server_ = n_.advertiseService ("get_tables", &EnvironmentMonitoringNode::getTablesService, this);
+    
+    color_table_.push_back(0);//r
+    color_table_.push_back(0);//g
+    color_table_.push_back(1);//b
+    color_table_.push_back(1);//a
+    
+    Area a;
+    a.r1 = 0;
+    a.r2 = 1.5;
+    a.color.r = 1;
+    a.color.a = 1;
+    areas_.push_back(a);
+    
+    a.r1 = 1.5;
+    a.r2 = 2.5;
+    a.color.g = 1;
+    areas_.push_back(a);
+    
+    publishAreas();
   }
 
   // Destructor
-  ~TableExtractionNode ()
+  ~EnvironmentMonitoringNode ()
   {
     /// void
+  }
+  
+  void callbackVisMarkerArray(visualization_msgs::MarkerArray ma) {
+	  const float blend = 0.5f;
+	  
+	  for(size_t i=0; i<ma.markers.size(); i++) {
+		  if(ma.markers[i].type != visualization_msgs::Marker::TRIANGLE_LIST) continue;
+		  if(ma.markers[i].pose.position.z < te_.getHeightMin()) continue; //floor
+		  
+		  ma.markers[i].colors.resize(ma.markers[i].points.size(), ma.markers[i].color);
+		  
+		  Eigen::Affine3d T;
+		  tf::poseMsgToEigen(ma.markers[i].pose, T);
+		  
+		  for(size_t j=0; j<ma.markers[i].points.size(); j++) {
+			  Eigen::Vector3d v;
+			  v(0) = ma.markers[i].points[j].x;
+			  v(1) = ma.markers[i].points[j].y;
+			  v(2) = ma.markers[i].points[j].z;
+			  Eigen::Affine3d T;
+			  tf::poseMsgToEigen(ma.markers[i].pose, T);
+			  v = (T*v).eval();
+			  v(2)=0;
+			  const double d = v.norm();
+			  
+			  for(size_t k=0; k<areas_.size(); k++)
+				  if(areas_[k].r1<=d && areas_[k].r2>d) {
+					  ma.markers[i].colors[j].r = areas_[k].color.r*blend + ma.markers[i].colors[j].r*(1-blend);
+					  ma.markers[i].colors[j].g = areas_[k].color.g*blend + ma.markers[i].colors[j].g*(1-blend);
+					  ma.markers[i].colors[j].b = areas_[k].color.b*blend + ma.markers[i].colors[j].b*(1-blend);
+					  ma.markers[i].colors[j].a = areas_[k].color.a*blend + ma.markers[i].colors[j].a*(1-blend);
+					  break;
+				  }
+				  
+		  }
+	  }
+	  marker_vis_pub_.publish(ma);
+  }
+  
+  void publishAreas() {
+	  for(size_t a=0; a<areas_.size(); a++) {
+		RvizMarker m;
+		m.circle(areas_[a].r2, Eigen::Vector3f::UnitZ()*0.05f, areas_[a].r1);
+		m.color(areas_[a].color).ns("area");
+	  }
+	  RvizMarkerManager::get().publish();
   }
 
   /**
@@ -144,18 +219,19 @@ public:
    */
 
   void
-  callbackShapeArray (const cob_3d_mapping_msgs::ShapeArray::ConstPtr sa_ptr)
+  callbackShapeArray (cob_3d_mapping_msgs::ShapeArray sa_ptr)
   {
-    if(sa_ptr->header.frame_id != target_frame_id_)
+    if(sa_ptr.header.frame_id != target_frame_id_)
     {
       ROS_ERROR("Frame IDs do not match, aborting...");
       return;
     }
     cob_3d_mapping_msgs::ShapeArray tables;
-    tables.header = sa_ptr->header;
+    tables.header = sa_ptr.header;
     tables.header.frame_id = target_frame_id_ ;
-    processMap(*sa_ptr, tables);
-    sa_pub_.publish (tables);
+    processMap(sa_ptr, tables);
+    sa_pub_.publish(tables);
+    sa_combined_pub_.publish(sa_ptr);
     ROS_INFO("Found %u tables", (unsigned int)tables.shapes.size());
   }
 
@@ -230,7 +306,7 @@ public:
    * @return nothing
    */
   void
-  processMap(const cob_3d_mapping_msgs::ShapeArray& sa, cob_3d_mapping_msgs::ShapeArray& tables)
+  processMap(cob_3d_mapping_msgs::ShapeArray& sa, cob_3d_mapping_msgs::ShapeArray& tables)
   {
     for (unsigned int i = 0; i < sa.shapes.size (); i++)
     {
@@ -239,16 +315,14 @@ public:
       te_.setInputPolygon(poly_ptr);
       if (te_.isTable())
       {
-        poly_ptr->color_[0] = 1;
-        poly_ptr->color_[1] = 0;
-        poly_ptr->color_[2] = 0;
-        poly_ptr->color_[3] = 1;
+        poly_ptr->color_ = color_table_;
         cob_3d_mapping_msgs::Shape s;
         s.header = sa.header;
         s.header.frame_id = target_frame_id_;
         toROSMsg(*poly_ptr,s);
         ROS_INFO("getTablesService: Polygon[%d] converted to shape",i);
         tables.shapes.push_back (s);
+        sa.shapes[i] = s;
       }
     }
   }
@@ -256,8 +330,8 @@ public:
   ros::NodeHandle n_;
 
 protected:
-  ros::Subscriber sa_sub_;
-  ros::Publisher sa_pub_;
+  ros::Subscriber sa_sub_, marker_vis_sub_;
+  ros::Publisher sa_pub_, sa_combined_pub_, marker_vis_pub_;
   ros::ServiceServer get_tables_server_;
 
   /**
@@ -268,13 +342,16 @@ protected:
   TableExtraction te_;
 
   std::string target_frame_id_;
+  std::vector<Area> areas_;
+  std::vector<float> color_table_;
 };
 
 int
 main (int argc, char** argv)
 {
   ros::init (argc, argv, "table_extraction_node");
+  RvizMarkerManager::get().createTopic("/extra_objects_marker").setFrameId("/map").clearOld();
 
-  TableExtractionNode sem_exn_node;
+  EnvironmentMonitoringNode sem_exn_node;
   ros::spin ();
 }
