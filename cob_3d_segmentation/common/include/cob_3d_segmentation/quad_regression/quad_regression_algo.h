@@ -91,7 +91,7 @@ namespace Segmentation
       /// calculate kinect parameters
       void getParams(const pcl::PointCloud<Point> &pc);
 
-      inline static float std(const float dist) {return 0.0075f+0.001425f*dist*dist;}   //after "Accuracy analysis of kinect depth data"
+      inline static float std(const float dist) {return 0.0075f+0.0020425f*dist*dist;}   //after "Accuracy analysis of kinect depth data"
 
       /** DEBUG **/
       template<typename APoint>
