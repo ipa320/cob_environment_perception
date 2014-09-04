@@ -454,6 +454,25 @@ getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
     return true;
   }
 
+  float
+  Polygon::getOverlap(const Polygon& poly)
+  {	  
+    std::vector<std::vector<Eigen::Vector2f> > contours_p;
+    projectContour(poly, contours_p);
+    gpc_polygon *gpc_a = new gpc_polygon(), *gpc_b = new gpc_polygon();
+    gpc_polygon *gpc_res_union = new gpc_polygon();
+    this->getGpcStructure(gpc_a, contours_);
+    poly.getGpcStructure(gpc_b, contours_p);
+    gpc_polygon_clip(GPC_INT, gpc_a, gpc_b, gpc_res_union);
+    
+    applyGpcStructure(gpc_res_union);
+
+    gpc_free_polygon(gpc_a);
+    gpc_free_polygon(gpc_b);
+    gpc_free_polygon(gpc_res_union);
+    return computeArea3d();
+  }
+
 
   float
   Polygon::computeSimilarity(const Polygon::Ptr& poly) const
