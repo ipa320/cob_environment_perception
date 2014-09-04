@@ -64,18 +64,7 @@
 #ifndef __GEOMETRY_MAP_H__
 #define __GEOMETRY_MAP_H__
 
-// external includes
-
-#include <Eigen/Core>
-#include <boost/shared_ptr.hpp>
-#include <boost/make_shared.hpp>
-#include <Eigen/Eigenvalues>
-#include <Eigen/Geometry>
-
-//cob includes
-//#include "cob_3d_mapping_geometry_map/vis/geometry_map_visualisation.h"
-#include "cob_3d_mapping_common/polygon.h"
-#include "cob_3d_mapping_common/cylinder.h"
+#include "geometry_map_entry.h"
 
 /**
  * \brief Class for GeometryMap
@@ -88,12 +77,8 @@ public:
   /**
    * \brief Polygon iterator.
    */
-  typedef std::vector<cob_3d_mapping::Polygon::Ptr>::iterator polygon_iterator;
-
-  /**
-   * \brief Cylinder iterator.
-   */
-  typedef std::vector<cob_3d_mapping::Polygon::Ptr>::iterator cylinder_iterator;
+  typedef std::vector<cob_3d_mapping::GeometryMapEntry::Ptr>::iterator entry_iterator;
+  typedef std::vector<cob_3d_mapping::GeometryMapEntry::Ptr>::const_iterator const_entry_iterator;
 
   /**
    * \brief Constructor for geometry map object.
@@ -120,7 +105,7 @@ public:
    * \param[in] p_ptr Polygon, that is added to map.
    */
   void
-  addMapEntry (cob_3d_mapping::Polygon::Ptr& p_ptr);
+  addMapEntry (const cob_3d_mapping::Polygon::Ptr& p_ptr, const bool merge=true);
 
   /**
    * \brief Add cylinder to map.
@@ -130,7 +115,7 @@ public:
    * \param[in] c_ptr Cylinder, that is added to map.
    */
   void
-  addMapEntry (cob_3d_mapping::Cylinder::Ptr& c_ptr);
+  addMapEntry (const cob_3d_mapping::Cylinder::Ptr& c_ptr, const bool merge=true);
 
   /**
    * \brief Add shape cluster to map.
@@ -170,14 +155,8 @@ public:
    */
   void
   cleanUp ();
-
-  /**
-   * \brief Debug output of polygon map to file.
-   * \param[in] path path Name of output file.
-   * \param[in] p Polygon that is saved.
-   */
-  void
-  saveMapEntry (std::string path, int ctr, cob_3d_mapping::Polygon& p);
+  
+  void checkVisibility(const Eigen::Affine3f &T, const Eigen::Vector3f &camera_params);
 
   /**
    * \brief Debug output of whole polygon map.
@@ -206,24 +185,22 @@ public:
   colorizeMap ();
 
   /**
-   * \brief Return Polygon map.
-   * \return Polygon Pointer to array with Polygons contained in map.
+   * \brief Return map entries.
+   * \return Pointer to array with entries contained in map.
    */
-  inline std::vector<cob_3d_mapping::Polygon::Ptr>*
-  getMapPolygon ()
+  inline std::vector<cob_3d_mapping::GeometryMapEntry::Ptr> &
+  getMapEntries()
   {
-    return &(map_polygon_);
+    return map_entries_;
   }
-
-  /**
-   * \brief Return Cylinder map.
-   * \return Cylinder Pointer to array with Cylinders contained in map.
-   */
-  inline std::vector<cob_3d_mapping::Polygon::Ptr>*
-  getMapCylinder ()
+  inline const std::vector<cob_3d_mapping::GeometryMapEntry::Ptr> &
+  getMapEntries() const
   {
-    return &(map_cylinder_);
+    return map_entries_;
   }
+  
+  cob_3d_mapping::GeometryMapEntry::Ptr *getMapEntry(const int id);
+  void eraseMapEntry(const int id);
 
   /**
    * \brief Return ShapeCluster map.
@@ -274,8 +251,7 @@ public:
   }
 
 protected:
-  std::vector<cob_3d_mapping::Polygon::Ptr> map_polygon_; /**< Array containing all polygon structures. */
-  std::vector<cob_3d_mapping::Polygon::Ptr> map_cylinder_; /**< Array containing all cylinder structures. */
+  std::vector<cob_3d_mapping::GeometryMapEntry::Ptr> map_entries_; /**< Array containing all map entries. */
   //std::vector<cob_3d_mapping::ShapeCluster::Ptr> map_shape_cluster_; /**< Array containing all shape clusters. */
   unsigned int new_id_; /**< Counter for shape IDs*/
   //int counter_output;
@@ -285,6 +261,17 @@ protected:
   double cos_angle_; /**< Angle limit, used during merging. */
   double d_; /**< Distance threshold, used during merging. */
   Eigen::Affine3f last_tf_err_; /**< Transformation error. */
+  
+  
+  /**
+   * \brief Add cylinder to map.
+   *
+   * \details Method adds new cylinder to map or initiates merge process
+   * with existing cylinders in map. Weighting and merging configuration are set.
+   * \param[in] c_ptr Cylinder, that is added to map.
+   */
+  void
+  addMapEntry (const cob_3d_mapping::GeometryMapEntry::Ptr& c_ptr);
 };
 
 #endif //__GEOMETRY_MAP_H__
