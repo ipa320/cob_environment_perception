@@ -22,18 +22,18 @@ find_package(PCL REQUIRED)
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
-#catkin_package(
-#  INCLUDE_DIRS
-#    common/include
-#  LIBRARIES
+catkin_package(
+  INCLUDE_DIRS
+    include
+  LIBRARIES
 #    cob_3d_mapping_semantics
-#  CATKIN_DEPENDS
+  CATKIN_DEPENDS
 #    cob_3d_mapping_common
 #    cob_3d_mapping_msgs
 #    eigen_conversions
-#    interactive_markers
+    interactive_markers
 #    pcl
-#)
+)
 
 ###########
 ## Build ##
