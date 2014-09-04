@@ -228,7 +228,8 @@ namespace cob_3d_visualization {
 		
 		void mesh(const pcl::PolygonMesh &mesh) {
 			pcl::PointCloud<pcl::PointXYZ> points;
-			pcl::fromROSMsg(mesh.cloud, points);
+			//pcl::fromROSMsg(mesh.cloud, points);
+			pcl::fromPCLPointCloud2(mesh.cloud, points);
 			for(size_t i=0; i<mesh.polygons.size(); i++)
 				for(int j=0; j<(int)mesh.polygons[i].vertices.size()-2; j++) {
 					addTriangle(
@@ -276,30 +277,30 @@ namespace cob_3d_visualization {
 		void circle(const float radius_outer, const Vector &center, const float radius_inner=0.f, const int resolution=64) {
 			primitive(center, 1., visualization_msgs::Marker::TRIANGLE_LIST);
 
-			marker.points.resize (6*resolution);
+			marker_.points.resize (6*resolution);
 		
 			for(int i=0; i<6*resolution;) {
-			  const float alpha1 = i*M_PI*2/resolution;
-			  const float alpha2 = ((i+1)%resolution)*M_PI*2/resolution;
+			  const float alpha1 = (i/6)*M_PI*2/resolution;
+			  const float alpha2 = (((i/6)+1)%resolution)*M_PI*2/resolution;
 			  
-			  marker.points[i+3].x = marker.points[i].x = radius_inner*std::cos(alpha1);
-			  marker.points[i+3].y = marker.points[i].y = radius_inner*std::cos(alpha1);
-			  marker.points[i+3].z = marker.points[i].z = 0;
+			  marker_.points[i+3].x = marker_.points[i].x = radius_inner*std::cos(alpha1);
+			  marker_.points[i+3].y = marker_.points[i].y = radius_inner*std::sin(alpha1);
+			  marker_.points[i+3].z = marker_.points[i].z = 0;
 			  ++i;
 			  
-			  marker.points[i+4].x = marker.points[i].x = radius_outer*std::cos(alpha2);
-			  marker.points[i+4].x = marker.points[i].y = radius_outer*std::cos(alpha2);
-			  marker.points[i+4].x = marker.points[i].z = 0;
+			  marker_.points[i+4].x = marker_.points[i].x = radius_outer*std::cos(alpha2);
+			  marker_.points[i+4].y = marker_.points[i].y = radius_outer*std::sin(alpha2);
+			  marker_.points[i+4].z = marker_.points[i].z = 0;
 			  ++i;
 			  
-			  marker.points[i].x = radius_outer*std::cos(alpha1);
-			  marker.points[i].y = radius_outer*std::cos(alpha1);
-			  marker.points[i].z = 0;
+			  marker_.points[i].x = radius_outer*std::cos(alpha1);
+			  marker_.points[i].y = radius_outer*std::sin(alpha1);
+			  marker_.points[i].z = 0;
 			  i+=2;
 			  
-			  marker.points[i].x = radius_inner*std::cos(alpha2);
-			  marker.points[i].y = radius_inner*std::cos(alpha2);
-			  marker.points[i].z = 0;
+			  marker_.points[i].x = radius_inner*std::cos(alpha2);
+			  marker_.points[i].y = radius_inner*std::sin(alpha2);
+			  marker_.points[i].z = 0;
 			  i+=2;
 			}
 	    
