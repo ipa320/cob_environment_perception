@@ -306,14 +306,20 @@ namespace cob_3d_visualization {
 	    
 		}
 		
-		inline void color(const double r, const double g,  const double b, const double a=1.) {
+		inline RvizMarker &color(const double r, const double g,  const double b, const double a=1.) {
 			marker_.color.a = a;
 			marker_.color.r = r;
 			marker_.color.g = g;
 			marker_.color.b = b;
+			return *this;
 		}
-		inline void color(const std_msgs::ColorRGBA &col) {
+		inline RvizMarker &color(const std_msgs::ColorRGBA &col) {
 			marker_.color = col;
+			return *this;
+		}
+		inline RvizMarker &ns(const std::string &sns) {
+			marker_.ns = sns;
+			return *this;
 		}
 		
 		template<class Vector>
