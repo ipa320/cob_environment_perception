@@ -476,8 +476,8 @@ void QuadRegression<Degree, Point, CameraModel>::grow(SubStructure::VISITED_LIST
               //+3sigma*(standard deviation at max./min.)
 
               (levels_[i].data[getInd(i, x,y)].v_max_-levels_[i].data[getInd(i, x,y)].v_min_) <
-              (model.get_max_gradient(levels_[i].data[getInd(i, x,y)])*d*(1<<i)/camera_.f
-                  +3*(camera_.std(levels_[i].data[getInd(i, x,y)].v_max_)
+              0.25f*(std::min(model.get_max_gradient(levels_[i].data[getInd(i, x,y)]), 2.f)*d*(1<<i)/camera_.f
+                  +2*(camera_.std(levels_[i].data[getInd(i, x,y)].v_max_)
                       +camera_.std(levels_[i].data[getInd(i, x,y)].v_min_)) )
 
 
