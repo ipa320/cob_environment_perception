@@ -189,7 +189,7 @@ cob_3d_segmentation::SimpleSegmentationNodelet::computeAndPublish()
   seg_.setInputCloud(down_);
   //t.precisionStart();
   seg_.compute();
-  //std::cout << "segmentation took " << t.precisionStop() << " s." << std::endl;
+  NODELET_INFO("Segmentation took %f s.", t.precisionStop());
 
   if(pub_segmented_.getNumSubscribers()>0) {
     seg_.mapSegmentColor(segmented_);

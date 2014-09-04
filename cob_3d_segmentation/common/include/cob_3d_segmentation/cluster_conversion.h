@@ -135,7 +135,7 @@ namespace cob_3d_segmentation
         if (i == max_idx) { holes.push_back(false); reverse = 0; }
         else              { holes.push_back(true);  reverse = n_points - 1; }
 
-        for (int idx = 0; idx < n_points; idx+=skip+1)
+        for (int idx = 0; idx < n_points; idx+=(skip+1))
         {
           PolygonPoint& pp = (poly.polys_[i])[abs(reverse - idx)];
           contour.push_back(pcl::PointXYZ());
