@@ -77,7 +77,7 @@
 using namespace cob_3d_mapping;
 
 GeometryMapNode::GeometryMapNode()
-: map_frame_id_("/map"), camera_frame_id_("/camera_depth_frame")
+: map_frame_id_("/map"), camera_frame_id_("/camera_depth_frame"), tf_listener_(ros::Duration(30.))
 {
   config_server_.setCallback(boost::bind(&GeometryMapNode::dynReconfCallback, this, _1, _2));
   shape_sub_ = n_.subscribe("shape_array_in", 10, &GeometryMapNode::shapeCallback, this);
@@ -100,6 +100,7 @@ GeometryMapNode::dynReconfCallback(cob_3d_mapping_geometry_map::geometry_map_nod
   //enable_tf_ = config.enable_tf;
   enable_cyl_= config.enable_cyl;
   enable_poly_=config.enable_poly;
+  colorize_ = config.colorize;
 }
 
 void
@@ -115,6 +116,7 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& 
   std::vector<Polygon::Ptr> polygon_list;
   std::vector<Cylinder::Ptr> cylinder_list;
 
+  ros::Time t = ros::Time::now();
   for(size_t i=0; i<sa->shapes.size(); ++i)
   {
     switch (sa->shapes[i].type)
@@ -140,6 +142,8 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& 
     }
   }
   
+  ROS_INFO("------------------------------------------>   Merge took %f", (ros::Time::now()-t).toSec());
+  
 	try{
 		tf::StampedTransform transform;
 		ROS_INFO("%s to %s", sa->header.frame_id.c_str(), camera_frame_id_.c_str());
@@ -147,9 +151,9 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& 
 							   sa->header.stamp, transform);
 		Eigen::Affine3d T;
 		tf::transformTFToEigen(transform, T);
-		const double focal_length = 580.; //TODO: dynamic
-		const double res_width = 640.-100.; //TODO: dynamic
-		const double res_height = 480.-80.; //TODO: dynamic
+		const double focal_length = 570.; //TODO: dynamic
+		const double res_width = 640.; //TODO: dynamic
+		const double res_height = 480.; //TODO: dynamic
 		
 		Eigen::Vector3f camera_params;
 		camera_params(0) = (float)(res_width/(2*focal_length));
@@ -271,7 +275,8 @@ GeometryMapNode::publishMap()
 {
   ROS_INFO("Map entry Size : %d", (int)geometry_map_.getMapEntries().size()) ;
 
-  geometry_map_.colorizeMap();
+  if(colorize_)
+	geometry_map_.colorizeMap();
   
   cob_3d_mapping_msgs::ShapeArray map_msg;
   map_msg.header.frame_id = map_frame_id_;
