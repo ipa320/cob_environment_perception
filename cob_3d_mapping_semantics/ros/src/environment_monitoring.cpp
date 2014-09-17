@@ -218,19 +218,8 @@ public:
 
   // Constructor
   EnvironmentMonitoringNode () :
-    target_frame_id_ ("/map")
+    target_frame_id_ ("/map"), blend_(0.5f)
   {
-    config_server_.setCallback(boost::bind(&EnvironmentMonitoringNode::dynReconfCallback, this, _1, _2));
-
-    sa_sub_ = n_.subscribe ("shape_array", 10, &EnvironmentMonitoringNode::callbackShapeArray, this);
-    sa_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_tables_array_pub", 1);
-    sa_combined_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_combined_array_pub", 1);
-    
-    marker_vis_sub_ = n_.subscribe("vis_markers_sub", 10, &EnvironmentMonitoringNode::callbackVisMarkerArray, this);
-    marker_vis_pub_ = n_.advertise<visualization_msgs::MarkerArray>("vis_markers_pub",10);
-
-    get_tables_server_ = n_.advertiseService ("get_tables", &EnvironmentMonitoringNode::getTablesService, this);
-    
     color_table_.push_back(0);//r
     color_table_.push_back(0);//g
     color_table_.push_back(1);//b
@@ -249,6 +238,17 @@ public:
     areas_.push_back(a);
     
     publishAreas();
+    
+    config_server_.setCallback(boost::bind(&EnvironmentMonitoringNode::dynReconfCallback, this, _1, _2));
+
+    sa_sub_ = n_.subscribe ("shape_array", 10, &EnvironmentMonitoringNode::callbackShapeArray, this);
+    sa_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_tables_array_pub", 1);
+    sa_combined_pub_ = n_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_combined_array_pub", 1);
+    
+    marker_vis_sub_ = n_.subscribe("vis_markers_sub", 10, &EnvironmentMonitoringNode::callbackVisMarkerArray, this);
+    marker_vis_pub_ = n_.advertise<visualization_msgs::MarkerArray>("vis_markers_pub",10);
+
+    get_tables_server_ = n_.advertiseService ("get_tables", &EnvironmentMonitoringNode::getTablesService, this);
   }
 
   // Destructor
@@ -257,37 +257,44 @@ public:
     /// void
   }
   
-  void callbackVisMarkerArray(visualization_msgs::MarkerArray ma) {
-	  const float blend = 0.5f;
-	  
+  void callbackVisMarkerArray(visualization_msgs::MarkerArray ma) {	  
 	  for(size_t i=0; i<ma.markers.size(); i++) {
 		  if(ma.markers[i].type != visualization_msgs::Marker::TRIANGLE_LIST) continue;
 		  if(ma.markers[i].pose.position.z < te_.getHeightMin()) continue; //floor
+		  if(ma.markers[i].color.r==color_table_[0] && ma.markers[i].color.g==color_table_[1] && ma.markers[i].color.b==color_table_[2] && ma.markers[i].color.a==color_table_[3])
+			continue;
 		  
-		  ma.markers[i].colors.resize(ma.markers[i].points.size(), ma.markers[i].color);
+		  while(ma.markers[i].colors.size()<ma.markers[i].points.size())
+			ma.markers[i].colors.push_back(ma.markers[i].color);
 		  
 		  Eigen::Affine3d T;
 		  tf::poseMsgToEigen(ma.markers[i].pose, T);
 		  
-		  for(size_t j=0; j<ma.markers[i].points.size(); j++) {
-			  Eigen::Vector3d v;
-			  v(0) = ma.markers[i].points[j].x;
-			  v(1) = ma.markers[i].points[j].y;
-			  v(2) = ma.markers[i].points[j].z;
-			  Eigen::Affine3d T;
-			  tf::poseMsgToEigen(ma.markers[i].pose, T);
-			  v = (T*v).eval();
-			  v(2)=0;
-			  const double d = v.norm();
-			  
-			  for(size_t k=0; k<areas_.size(); k++)
-				  if(areas_[k].r1<=d && areas_[k].r2>d) {
-					  ma.markers[i].colors[j].r = areas_[k].color.r*blend + ma.markers[i].colors[j].r*(1-blend);
-					  ma.markers[i].colors[j].g = areas_[k].color.g*blend + ma.markers[i].colors[j].g*(1-blend);
-					  ma.markers[i].colors[j].b = areas_[k].color.b*blend + ma.markers[i].colors[j].b*(1-blend);
-					  ma.markers[i].colors[j].a = areas_[k].color.a*blend + ma.markers[i].colors[j].a*(1-blend);
-					  break;
+		  for(size_t j=0; j<ma.markers[i].points.size(); j+=3) {
+			for(size_t k=0; k<areas_.size(); k++) {
+				  bool b = true;
+				  
+				  for(int jj=0; b&&jj<3; jj++) {
+					  Eigen::Vector3d v;
+					  v(0) = ma.markers[i].points[j+jj].x;
+					  v(1) = ma.markers[i].points[j+jj].y;
+					  v(2) = ma.markers[i].points[j+jj].z;
+					  v = (T*v).eval();
+					  v(2)=0;
+					  const double d = v.norm();
+				  
+					  b &= (/*areas_[k].r1<=d &&*/ areas_[k].r2>d);
+				 }
+				 if(!b) continue;
+				 
+				  for(int jj=0; jj<3; jj++) {
+							  ma.markers[i].colors[j+jj].r = areas_[k].color.r*blend_ + ma.markers[i].colors[j+jj].r*(1-blend_);
+							  ma.markers[i].colors[j+jj].g = areas_[k].color.g*blend_ + ma.markers[i].colors[j+jj].g*(1-blend_);
+							  ma.markers[i].colors[j+jj].b = areas_[k].color.b*blend_ + ma.markers[i].colors[j+jj].b*(1-blend_);
+							  ma.markers[i].colors[j+jj].a = areas_[k].color.a*blend_ + ma.markers[i].colors[j+jj].a*(1-blend_);
 				  }
+				  break;
+			  }
 				  
 		  }
 	  }
@@ -446,7 +453,16 @@ public:
         ROS_INFO("getTablesService: Polygon[%d] converted to shape",i);
         tables.shapes.push_back (s);
         sa.shapes[i] = s;
-      }
+      } else {
+		  ColorConversion::rgb col = {sa.shapes[i].color.r,sa.shapes[i].color.g,sa.shapes[i].color.b};
+		  ColorConversion::hsv hsv = ColorConversion::rgb2hsv(col);
+		  hsv.v = std::min(1., hsv.v+0.2);
+		  hsv.s = std::min(1., hsv.s+0.1);
+		  col = ColorConversion::hsv2rgb(hsv);
+		  sa.shapes[i].color.r = col.r;
+		  sa.shapes[i].color.g = col.g;
+		  sa.shapes[i].color.b = col.b;
+	  }
     }
   }
 
