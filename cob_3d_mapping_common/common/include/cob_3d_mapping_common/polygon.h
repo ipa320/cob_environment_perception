@@ -283,9 +283,21 @@ namespace cob_3d_mapping
     inline bool hasSimilarParametersWith(const Polygon::Ptr& poly) const
     {
       Eigen::Vector3f d = (this->pose_.translation() - poly->pose_.translation());
-      return ( fabs(poly->normal_.dot(this->normal_)) > this->merge_settings_.angle_thresh &&
-               fabs( d.dot(this->normal_) ) < this->merge_settings_.d_thresh &&
-               fabs( d.dot(poly->normal_) ) < this->merge_settings_.d_thresh );
+      const float fact = computeCentroid().squaredNorm()/(1.8f*1.8f);
+      const float fact2 = 0.5f + 0.5f*(1-std::max(std::abs(Eigen::Vector3f::UnitZ().dot(this->normal_)), std::abs(Eigen::Vector3f::UnitZ().dot(poly->normal_))));
+      return ( fabs(poly->normal_.dot(this->normal_)) > this->merge_settings_.angle_thresh*fact2 &&
+               fabs( d.dot(this->normal_) ) < this->merge_settings_.d_thresh*fact &&
+               fabs( d.dot(poly->normal_) ) < this->merge_settings_.d_thresh*fact );
+    }
+    
+    inline bool hasSimilarColorWith(const Polygon::Ptr& poly) const
+    {
+	  if(color_.size() == poly->color_.size()) {
+		  float cd=0;
+		  for(size_t i=0; i<color_.size(); i++) cd += std::pow(color_[i]-poly->color_[i],2);
+		  if(cd>0.15f) return false;
+	  }
+      return true;
     }
 
     //#######methods for calculation#####################
