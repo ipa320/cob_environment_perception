@@ -256,8 +256,7 @@ namespace Segmentation
       Eigen::Vector3f mv3;
       mv(0)=x;
       mv(1)=y;
-      float mz;
-      mz=model.intersect(mv(0), mv(1));
+      float mz = model.intersect(mv(0), mv(1));
 
       mv3(0) = mv(0)*mz;
       mv3(1) = mv(1)*mz;
