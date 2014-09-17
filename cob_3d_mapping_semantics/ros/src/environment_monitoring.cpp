@@ -180,10 +180,11 @@ public:
   }
   
   void publishAreas() {
+	  RvizMarkerManager::get().clear();
 	  for(size_t a=0; a<areas_.size(); a++) {
 		RvizMarker m;
 		m.circle(areas_[a].r2, Eigen::Vector3f::UnitZ()*0.05f, areas_[a].r1);
-		m.color(areas_[a].color).ns("area");
+		m.color(areas_[a].color);
 	  }
 	  RvizMarkerManager::get().publish();
   }
@@ -208,6 +209,13 @@ public:
     te_.setHeightMax (config.height_max);
     te_.setAreaMin (config.area_min);
     te_.setAreaMax (config.area_max);
+    blend_ = config.blend;
+    if(areas_.size()>1) {
+		areas_[1].r1 = areas_[0].r2 = config.radius_inner;
+		areas_[1].r2 = config.radius_outer;
+    }
+    
+    publishAreas();
   }
 
   /**
@@ -344,6 +352,7 @@ protected:
   std::string target_frame_id_;
   std::vector<Area> areas_;
   std::vector<float> color_table_;
+  float blend_;
 };
 
 int
