@@ -7,8 +7,6 @@
 
 #include "../sub_structures/poly2d.hpp"
 
-#include <cob_3d_mapping_common/stop_watch.h>
-
 // ------------- CAMERA MODEL -------------
 
 
@@ -566,6 +564,16 @@ void QuadRegression<Degree, Point, CameraModel>::grow(SubStructure::VISITED_LIST
       y= list.vals[j].v/levels_[i].w;
 
       if(x>0 && y>0 && x<(int)levels_[i].w && y<(int)levels_[i].h && isOccupied(i,x,y)==mark) continue;
+      
+      //check for occupation and non-occupation
+      int nonocc=0;
+      for(int xx=-1; xx<=1; xx++)
+		for(int yy=-1; yy<=1; yy++)
+			if(xx!=0||yy!=0) {
+				const bool b = filterOccupied(i,x+xx,y+yy,mark);
+				if(!b) nonocc++;
+			}
+	  if(nonocc<3) continue;
 
       pt.x=x;pt.y=y;
 #ifdef USE_MIN_MAX_RECHECK_
@@ -678,10 +686,12 @@ void QuadRegression<Degree, Point, CameraModel>::outline(int *ch, const int w, c
   int *bs = new int[w*h];
   memset(bs,0,w*h*4);
   for(size_t j=0; j<out.size(); j++) {
-    bs[ getInd(out[j].x,out[j].y) ]=-(out[j].back+1);
+    bs[ getInd(i, out[j].x,out[j].y) ]=255;//-(out[j].back+1);
   }
-  sprintf(buf,"/tmp/poly%d.ppm",polygons_.size());
-  QQPF_Debug::ppm(buf,w,h,bs);
+  sprintf(buf,"/tmp/poly%d.ppm",(int)polygons_.size());
+  std::cout<<"debug output to "<<buf<<std::endl;
+  //QQPF_Debug::ppm(buf,w,h,bs);
+  QQPF_Debug::ppm(buf,w,h,ch);
   delete [] bs;
   }
 #endif

@@ -66,6 +66,7 @@
 
 #include <visualization_msgs/MarkerArray.h>
 #include "../point_types.h"
+#include <cob_3d_mapping_common/stop_watch.h>
 #include "quad_regression_algo.h"
 
 namespace Segmentation

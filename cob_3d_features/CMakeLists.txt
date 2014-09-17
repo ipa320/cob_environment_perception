@@ -88,12 +88,20 @@ add_executable(profile_oce common/test/profile_oce.cpp)
 add_executable(profile_fee_omp common/test/profile_fee_omp.cpp)
 add_executable(profile_fee common/test/profile_fee.cpp)
 add_executable(profile_ne common/test/profile_ne.cpp)
+add_executable(eval_invariant_feature common/test/evaluate_invariant_feature.cpp)
+
 # extracts pc from organized cloud and saves as ppm:
 add_executable(extract_organized_curvatures common/test/extract_organized_curvatures.cpp)
 target_link_libraries(cob_3d_features
   ${catkin_LIBRARIES}
   ${OpenCV_LIBS}
   ${PCL_LIBRARIES}
+)
+
+target_link_libraries(eval_invariant_feature
+  s2kit
+  fftw3
+  fftw3f
 )
 
 target_link_libraries(cob_3d_features_omp
