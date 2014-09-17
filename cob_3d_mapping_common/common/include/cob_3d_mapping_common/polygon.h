@@ -428,7 +428,7 @@ namespace cob_3d_mapping
     */
     void assignID(const std::vector<Polygon::Ptr>& poly_vec);
 
-    DominantColor d_color_;
+    //DominantColor d_color_;
 
 
   };
