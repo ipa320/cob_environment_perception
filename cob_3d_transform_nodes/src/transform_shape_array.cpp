@@ -102,7 +102,7 @@ public:
 
       try
       {
-        tf_listener_.waitForTransform(target_frame_, sa_in->header.frame_id, sa_in->header.stamp, ros::Duration(2));
+        tf_listener_.waitForTransform(target_frame_, sa_in->header.frame_id, sa_in->header.stamp, ros::Duration(0.05));
         tf_listener_.lookupTransform(target_frame_, sa_in->header.frame_id, sa_in->header.stamp, trf_map);
       }
       catch (tf::TransformException& ex) { ROS_ERROR("[transform shape array] : %s",ex.what()); return; }
