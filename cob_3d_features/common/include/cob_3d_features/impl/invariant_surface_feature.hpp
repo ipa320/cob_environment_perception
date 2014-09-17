@@ -111,11 +111,8 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::com
 template<typename TSurface, typename Scalar, typename Real, typename TAffine>
 void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Triangle::compute(const typename S::Samples &samples) {		
 	if(this->cr<0 || !this->computed_) {	//if not already set
-		for(int i=0; i<3; i++) {
-			this->p3_[i](0) = p_[i](0);
-			this->p3_[i](1) = p_[i](1);
-			this->p3_[i](2) = model_->model(p_[i](0), p_[i](1));
-		}
+		for(int i=0; i<3; i++)
+			this->p3_[i] = (*descr_)[p_[i]];
 	
 		this->d1 = this->p3_[2]-this->p3_[1];
 		this->d2 = this->p3_[1]-this->p3_[0];
@@ -123,7 +120,7 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Tri
 	}
 	
 	//check if further sub-sampling is necessary?
-	if(area<TSurface::DEGREE>()>0.0001/*||rand()%13==0||depth<4*/) {
+	if(area()>0.0001/*||rand()%13==0||depth<4*/) {
 //std::cout<<"subdivide "<<area<TSurface::DEGREE>()<<std::endl;
 		Eigen::Matrix<Scalar, 2, 1> ps[3];
 		for(int i=0; i<3; i++)
@@ -142,7 +139,7 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Tri
 			this->f_[r].resize(samples[r].size(), 0);
 			
 		for(int i=0; i<4; i++) {
-			tris[i].model_ = model_;
+			tris[i].descr_ = descr_;
 			tris[i].compute(samples);
 			for(size_t j=0; j<samples.size(); j++)
 				for(size_t k=0; k<samples[j].size(); k++)
@@ -157,10 +154,32 @@ template<typename TSurface, typename Scalar, typename Real, typename TAffine>
 void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::generateKeypoints(std::vector<TVector> &keypoints) const {
   //reduce points by area weightning
 
-  for(size_t i=0; i<input_->size(); i++) {                         //surfaces
-    for(size_t j=0; j<(*input_)[i].segments_.size(); j++) {        //outline/holes
+  for(size_t i=0; i<input_->size(); i++)                         //surfaces
+	(*input_)[i].template generateKeypoints<TVector,Real>(keypoints, kp_min_area_, kp_area_);
+
+  //remove keypoints which are not within FoV
+  const double R = (radii_[0]);
+  for(size_t i=0; i<keypoints.size(); i++) {
+	  for(size_t j=0; j<fov_.size(); j++) {
+		  if( fov_[j].head<3>().dot(keypoints[i].template cast<float>())-fov_[j](3)>-R ) {
+			keypoints.erase(keypoints.begin()+i);
+			--i;
+			break;
+		  }
+	  }
+  }
+	
+	ROS_INFO("keypoints %zu",keypoints.size());
+}
+
+template<typename Shape>
+template<typename TVector, typename Real>
+void cob_3d_features::TriangleSurfaceHelper<Shape>::generateKeypoints(std::vector<TVector> &keypoints, const Real kp_min_area_, const Real kp_area_) {
+	typedef typename TVector::Scalar Scalar;
+	
+    for(size_t j=0; j<contours_.size(); j++) {        //outline/holes
     
-      //std::cout<<"size bef "<<(*input_)[i].segments_[j].size()<<std::endl;
+      //std::cout<<"size bef "<<contours_[j].size()<<std::endl;
     
 	  typedef std::list<Eigen::Matrix<Real, 2, 1> > LIST;
 	  typedef std::list<Real> LIST2;
@@ -170,22 +189,22 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::gen
 	  const Real FACTOR = 0.05f;
 	  const Real FACTOR_MIN = 0.0025f;
 	  
-      Eigen::Matrix<Scalar, 3,1> avg_pt;
+      TVector avg_pt;
       avg_pt.fill(0);
-      for(size_t k=0; k<(*input_)[i].segments_[j].size(); k++)   //points
+      for(size_t k=0; k<contours_[j].size(); k++)   //points
       {
 		  Eigen::Matrix<Real, 2, 2> M;
-		  Eigen::Matrix<Real, 2, 1> pt2d = (*input_)[i].segments_[j][k ].head(2);
+		  Eigen::Matrix<Real, 2, 1> pt2d = contours_[j][k ].head(2);
 		  M.col(0) = pt2d;
-		  M.col(1) = (*input_)[i].segments_[j][(k+1)%(*input_)[i].segments_[j].size()].head(2);
+		  M.col(1) = contours_[j][(k+1)%contours_[j].size()].head(2);
 		  area -= M.determinant()/2;
 
-		  avg_pt += this->at(pt2d, (*input_)[i].model_);
+		  avg_pt += (*this)[pt2d].template cast<typename TVector::Scalar>();
 		  
 		  pts.push_back(pt2d);
 		  pts_area.push_back(0);
 	  }
-	  avg_pt /= (*input_)[i].segments_[j].size();
+	  avg_pt /= contours_[j].size();
 	  //assert(area>=0);
 	  area = std::abs(area);
 	  
@@ -231,7 +250,7 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::gen
 			  
 			  /*if(w>=area) {	//fulfills already our criteria
 			  //std::cout<<"rem"<<std::endl;
-				  keypoints.push_back(this->at(*n1, (*input_)[i].model_));
+				  keypoints.push_back(this->at(*n1, model_));
 				  pts.erase(n1);
 				  it--;
 				  rem = true;
@@ -245,7 +264,7 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::gen
 		  
 		  if(mi>area) {	//fulfills already our criteria
 			  //std::cout<<"add keypoints "<<pts.size()<<std::endl;
-			  for(typename LIST::const_iterator pit=pts.begin(); pit!=pts.end(); pit++) keypoints.push_back(this->at(*pit, (*input_)[i].model_));
+			  for(typename LIST::const_iterator pit=pts.begin(); pit!=pts.end(); pit++) keypoints.push_back((*this)[*pit].template cast<typename TVector::Scalar>());
 			  break;
 		  }
 		  
@@ -256,9 +275,9 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::gen
 		  
 		  if(mi<min_area) {
 			  //TODO: improve
-			  for(size_t k=0; k<(*input_)[i].segments_[j].size(); k++)   //points
-				if((*input_)[i].segments_[j][k].head(2)==*mit) {
-					(*input_)[i].segments_[j].erase((*input_)[i].segments_[j].begin()+k);
+			  for(size_t k=0; k<contours_[j].size(); k++)   //points
+				if(contours_[j][k].head(2)==*mit) {
+					contours_[j].erase(contours_[j].begin()+k);
 					//std::cout<<"reduced by one point"<<std::endl;
 					break;
 				}
@@ -268,39 +287,199 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::gen
 		  pts_area.erase(mit2_old);
 	  }
 	  
-      //std::cout<<"size aft "<<(*input_)[i].segments_[j].size()<<std::endl;
+      //std::cout<<"size aft "<<contours_[j].size()<<std::endl;
 	}
-  }
-
-  //remove keypoints which are not within FoV
-  const double R = (radii_[0]);
-  for(size_t i=0; i<keypoints.size(); i++) {
-	  for(size_t j=0; j<fov_.size(); j++) {
-		  if( fov_[j].head<3>().dot(keypoints[i].template cast<float>())-fov_[j](3)>-R ) {
-			keypoints.erase(keypoints.begin()+i);
-			--i;
-			break;
-		  }
-	  }
-  }
 }
 
-template<typename TSurface, typename Scalar, typename Real, typename TAffine>
+template<typename PSurface>
+template<typename TVector, typename Real>
+void cob_3d_features::PolynomialSurfaceHelper<PSurface>::generateKeypoints(std::vector<TVector> &keypoints, const Real kp_min_area_, const Real kp_area_) {
+	typedef typename TVector::Scalar Scalar;
+	
+    for(size_t j=0; j<segments_.size(); j++) {        //outline/holes
+    
+      //std::cout<<"size bef "<<segments_[j].size()<<std::endl;
+    
+	  typedef std::list<Eigen::Matrix<Real, 2, 1> > LIST;
+	  typedef std::list<Real> LIST2;
+	  LIST pts;
+	  LIST2 pts_area;
+	  float area = 0.f, min_area;
+	  const Real FACTOR = 0.05f;
+	  const Real FACTOR_MIN = 0.0025f;
+	  
+      TVector avg_pt;
+      avg_pt.fill(0);
+      for(size_t k=0; k<segments_[j].size(); k++)   //points
+      {
+		  Eigen::Matrix<Real, 2, 2> M;
+		  Eigen::Matrix<Real, 2, 1> pt2d = segments_[j][k ].head(2);
+		  M.col(0) = pt2d;
+		  M.col(1) = segments_[j][(k+1)%segments_[j].size()].head(2);
+		  area -= M.determinant()/2;
+
+		  avg_pt += (*this)[pt2d].template cast<typename TVector::Scalar>();
+		  
+		  pts.push_back(pt2d);
+		  pts_area.push_back(0);
+	  }
+	  avg_pt /= segments_[j].size();
+	  //assert(area>=0);
+	  area = std::abs(area);
+	  
+	  min_area = std::max(area*FACTOR_MIN, kp_min_area_*std::max((Real)1, (Real)avg_pt.squaredNorm())); //TODO: set threshold [cm^2]
+	  area*=FACTOR;
+	  area = std::max(area, kp_area_);	//TODO: set threshold [cm^2]
+	  
+	  while(pts.size()>=3) {
+		  bool rem = false;	//if nothing was removed, calc. remaining area
+		  float mi = std::numeric_limits<float>::max();	//minimum weight
+		  typename LIST::iterator mit = pts.end();	//iterator to minim weighted pt.
+		  typename LIST2::iterator mit2_new = pts_area.end(), mit2_old = pts_area.end();
+		  //float remaining_area = 0.f;	//if remaining area is already smaller than threshold --> break
+		  
+		  /*static int nnn=0;
+		  std::ofstream of( ("/tmp/poly"+boost::lexical_cast<std::string>(nnn++)+".svg").c_str() );
+		  of<<"<svg height=\"500\" width=\"500\"><polygon points=\"";
+		  for(typename LIST::iterator it=pts.begin(); it!=pts.end(); it++) {
+			  of<<(*it)(0)*300+200<<","<<(*it)(1)*300+200<<" ";
+		  }
+		  of<<"\" /></svg>";
+		  of.close();*/
+		  
+		  typename LIST2::iterator it2=pts_area.begin();
+		  for(typename LIST::iterator it=pts.begin(); it!=pts.end(); it++, it2++) {
+			  typename LIST::iterator n1 = it, n2=it;
+			  n1++; n2++; if(n1==pts.end()) n1=n2=pts.begin();
+			  n2++; if(n2==pts.end()) n2=pts.begin();
+			  typename LIST2::iterator an1 = it2;
+			  an1++; if(an1==pts_area.end()) an1=pts_area.begin();
+			  
+			  Eigen::Matrix<Real, 2, 2> M;
+			  M.col(0) = (*it-*n1);
+			  M.col(1) = (*n2-*n1);
+			  const float w = std::abs(M.determinant()/2) + *it2 + *an1;
+			  //std::cout<<"w "<<w<<std::endl;
+			  
+			  /*if(!rem) {
+				  M.col(0) = *it;
+				  M.col(1) = *n1;
+				  remaining_area-=M.determinant()/2;
+			  }*/
+			  
+			  /*if(w>=area) {	//fulfills already our criteria
+			  //std::cout<<"rem"<<std::endl;
+				  keypoints.push_back(this->at(*n1, model_));
+				  pts.erase(n1);
+				  it--;
+				  rem = true;
+			  } else*/ if(w<mi) {
+				mit = n1;
+				mit2_new = it2;
+				mit2_old = an1;
+				mi = w;
+			}
+		  }
+		  
+		  if(mi>area) {	//fulfills already our criteria
+			  //std::cout<<"add keypoints "<<pts.size()<<std::endl;
+			  for(typename LIST::const_iterator pit=pts.begin(); pit!=pts.end(); pit++) keypoints.push_back((*this)[*pit].template cast<typename TVector::Scalar>());
+			  break;
+		  }
+		  
+		  //if(rem) continue;
+			  //std::cout<<"s "<<pts.size()<<" "<<(mit_n)<<std::endl;
+		  //if( (!rem && remaining_area<area) || pts.size()<3) break;
+		  assert(mit!=pts.end());
+		  
+		  if(mi<min_area) {
+			  //TODO: improve
+			  for(size_t k=0; k<segments_[j].size(); k++)   //points
+				if(segments_[j][k].head(2)==*mit) {
+					segments_[j].erase(segments_[j].begin()+k);
+					//std::cout<<"reduced by one point"<<std::endl;
+					break;
+				}
+		  }
+		  pts.erase(mit);	//remove point with minimum weight --> increases weight of surroundings
+		  *mit2_new += mi;
+		  pts_area.erase(mit2_old);
+	  }
+	  
+      //std::cout<<"size aft "<<segments_[j].size()<<std::endl;
+	}
+}
+
+template<typename Shape>
+template<typename Scalar>
 Eigen::Matrix<Scalar, 2, 1>
-cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Triangle::intersection_on_line(const TVector &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b, bool &success) const {
+cob_3d_features::TriangleSurfaceHelper<Shape>::intersection_on_line(const Eigen::Matrix<Scalar, 3, 1> &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b, bool &success) const {
 
 //assert((this->at(a)-at).squaredNorm()>r2 || (this->at(b)-at).squaredNorm()>r2);
 
-	Eigen::PolynomialSolver<typename TSurface::Model::VectorU1D::Scalar, 2*TSurface::DEGREE> solver;	
-	typename TSurface::Model::VectorU1D p = model_->transformation_1D( (b-a).template cast<typename TSurface::Model::VectorU1D::Scalar>(), a.template cast<typename TSurface::Model::VectorU1D::Scalar>(), at.template cast<typename TSurface::Model::VectorU1D::Scalar>());
+	const Eigen::Matrix<Scalar, 3, 1> p1 = (*this)[b], p2 = (*this)[a];
+	const Eigen::Matrix<Scalar, 3, 1> v = p1-p2, t = p2-at;
+	
+	const Scalar ma = v.squaredNorm(), mb = 2*v.dot(t), mc = t.squaredNorm()-r2;
+	
+	success = (mb*mb-4*ma*mc>0);
+	
+	Scalar mr1 = (-mb+std::sqrt(mb*mb-4*ma*mc))/(2*ma);
+	const Scalar mr2 = (-mb-std::sqrt(mb*mb-4*ma*mc))/(2*ma);
+	
+	const Scalar mid = 0.5f;
+	if( std::abs(mr1-mid)>std::abs(mr2-mid))
+		mr1 = mr2;
+
+	if(!(mr1>=0 && mr1<=1)) std::cout<<mr1<<std::endl;
+	//assert(mr1>=-0.0001 && mr1<=1.0001);
+	success &= (mr1>0 && mr1<1);
+
+	return (b-a)*mr1+a;
+}
+
+template<typename Shape>
+template<typename Scalar>
+bool cob_3d_features::TriangleSurfaceHelper<Shape>::intersection_on_line(const Eigen::Matrix<Scalar, 3, 1> &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b, Eigen::Matrix<Scalar, 2, 1> &res1, Eigen::Matrix<Scalar, 2, 1> &res2, bool &res_b1, bool &res_b2) const {
+	const Eigen::Matrix<Scalar, 3, 1> p1 = (*this)[b], p2 = (*this)[a];
+	const Eigen::Matrix<Scalar, 3, 1> v = p1-p2, t = p2-at;
+	
+	const Scalar ma = v.squaredNorm(), mb = 2*v.dot(t), mc = t.squaredNorm()-r2;
+	if(mb*mb-4*ma*mc<=0) return false;
+	
+	Scalar mr2 = (-mb+std::sqrt(mb*mb-4*ma*mc))/(2*ma);
+	Scalar mr1 = (-mb-std::sqrt(mb*mb-4*ma*mc))/(2*ma);
+	
+	if( (mr1<=0&&mr2<=0) || (mr1>=1&&mr2>=1) )
+		return false;
+	
+	if(mr1<0) {mr1 = 0;res_b1=true;} else res_b1=false;
+	if(mr2>1) {mr2 = 1;res_b2=true;} else res_b2=false;
+	
+	//std::cout<<r[best1]<<" "<<r[best2]<<std::endl;
+	res1 = (b-a)*mr1+a;
+	res2 = (b-a)*mr2+a;
+
+	return true;
+}
+
+template<typename PSurface>
+template<typename Scalar>
+Eigen::Matrix<Scalar, 2, 1>
+cob_3d_features::PolynomialSurfaceHelper<PSurface>::intersection_on_line(const Eigen::Matrix<Scalar, 3, 1> &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b, bool &success) const {
+
+//assert((this->at(a)-at).squaredNorm()>r2 || (this->at(b)-at).squaredNorm()>r2);
+
+	Eigen::PolynomialSolver<typename PSurface::Model::VectorU1D::Scalar, 2*PSurface::DEGREE> solver;	
+	typename PSurface::Model::VectorU1D p = model_.transformation_1D( (b-a).template cast<typename PSurface::Model::VectorU1D::Scalar>(), a.template cast<typename PSurface::Model::VectorU1D::Scalar>(), at.template cast<typename PSurface::Model::VectorU1D::Scalar>());
 	p(0) -= r2;
 	solver.compute(p);
 	
-	std::vector<typename TSurface::Model::VectorU1D::Scalar> r;
+	std::vector<typename PSurface::Model::VectorU1D::Scalar> r;
 	solver.realRoots(r);
 	assert(r.size()>0);
 	
-	const typename TSurface::Model::VectorU1D::Scalar mid = 0.5f;
+	const typename PSurface::Model::VectorU1D::Scalar mid = 0.5f;
 	size_t best=0;
 	for(size_t i=1;i<r.size();++i)
 	{
@@ -319,15 +498,15 @@ cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Triangle
 	return v;
 }
 
-template<typename TSurface, typename Scalar, typename Real, typename TAffine>
-bool
-cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Triangle::intersection_on_line(const TVector &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b, Eigen::Matrix<Scalar, 2, 1> &res1, Eigen::Matrix<Scalar, 2, 1> &res2, bool &res_b1, bool &res_b2) const {
-	Eigen::PolynomialSolver<typename TSurface::Model::VectorU1D::Scalar, 2*TSurface::DEGREE> solver;	
-	typename TSurface::Model::VectorU1D p = model_->transformation_1D( (b-a).template cast<typename TSurface::Model::VectorU1D::Scalar>(), a.template cast<typename TSurface::Model::VectorU1D::Scalar>(), at.template cast<typename TSurface::Model::VectorU1D::Scalar>());
+template<typename PSurface>
+template<typename Scalar>
+bool cob_3d_features::PolynomialSurfaceHelper<PSurface>::intersection_on_line(const Eigen::Matrix<Scalar, 3, 1> &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b, Eigen::Matrix<Scalar, 2, 1> &res1, Eigen::Matrix<Scalar, 2, 1> &res2, bool &res_b1, bool &res_b2) const {
+	Eigen::PolynomialSolver<typename PSurface::Model::VectorU1D::Scalar, 2*PSurface::DEGREE> solver;	
+	typename PSurface::Model::VectorU1D p = model_.transformation_1D( (b-a).template cast<typename PSurface::Model::VectorU1D::Scalar>(), a.template cast<typename PSurface::Model::VectorU1D::Scalar>(), at.template cast<typename PSurface::Model::VectorU1D::Scalar>());
 	p(0) -= r2;
 	solver.compute(p);
 	
-	std::vector<typename TSurface::Model::VectorU1D::Scalar> r;
+	std::vector<typename PSurface::Model::VectorU1D::Scalar> r;
 	solver.realRoots(r);
 	if(r.size()<2) return false;
 	
@@ -378,7 +557,7 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Tri
 	for(int j=0; j<3; j++) {
 		bool rb1, rb2;
 		Eigen::Matrix<Scalar, 2, 1> rv1,rv2;
-		if(intersection_on_line(at, r2, p_[j], p_[ (j+1)%3 ], rv1,rv2, rb1, rb2)) {
+		if(descr_->intersection_on_line(at, r2, p_[j], p_[ (j+1)%3 ], rv1,rv2, rb1, rb2)) {
 			pts.push_back(rv1);
 			pts_ins.push_back(rb1);
 			
@@ -387,6 +566,7 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Tri
 			
 			pts_opp.push_back(p_[ (j+2)%3 ]);
 			pts_opp.push_back(p_[ (j+2)%3 ]);
+			
 			n=j;
 		}
 	}
@@ -417,16 +597,17 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Tri
 			++p;
 			continue;
 		}
-		const Scalar er = std::abs( ((this->at( (pts[p]+pts[(p+1)%pts.size()])/2 ) - at).squaredNorm()/r2)-1 );
+		const Scalar er = std::abs( (((*descr_)[(Eigen::Matrix<Scalar, 2, 1>)( (pts[p]+pts[(p+1)%pts.size()])/2 )] - at).squaredNorm()/r2)-1 );
 	//std::cout<<"er "<<er<<std::endl;
 		if( er > 0.02) { //TODO: set threshold
 			bool success;
-			Eigen::Matrix<Scalar, 2, 1> s = at.head(2), m = (pts[p]+pts[(p+1)%pts.size()])/2;
-			Eigen::Matrix<Scalar, 2, 1> v=intersection_on_line(at, r2, (m-s)*2+s, s, success);
+			Eigen::Matrix<Scalar, 2, 1> s = pts_opp[p], m = (pts[p]+pts[(p+1)%pts.size()])/2;
+			Eigen::Matrix<Scalar, 2, 1> v = descr_->template intersection_on_line<Scalar>(at, r2, (m-s)*2+s, s, success);
 			if(success) {
 				++num;
 				pts.insert(pts.begin()+(p+1), v);
 				pts_ins.insert(pts_ins.begin()+(p+1), false);
+				pts_opp.insert(pts_opp.begin()+(p+1),pts_opp[p]);
 			} else ++p;
 		}
 		else ++p;
@@ -442,11 +623,7 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Tri
 		if(it==pts.end()) break;
 		tr->p_[2] = *it;
 		
-		Eigen::Matrix<Scalar, 3, 1> a,b;
-		a.head(2) = tr->p_[1]-tr->p_[0];
-		b.head(2) = tr->p_[2]-tr->p_[0];
-		a(2)=b(2)=0;
-		if( a.cross(b).squaredNorm()<0.000001) continue;
+		if( ((*descr_)[tr->p_[1]]-(*descr_)[tr->p_[0]]).cross((*descr_)[tr->p_[2]]-(*descr_)[tr->p_[0]]).squaredNorm()<0.000001) continue;
 		
 		tr->reset();
 		tr->compute(samples);
@@ -475,12 +652,12 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Tri
 		//check if sphere intersects only partially
 		for(int j=0; j<3; j++) {
 			Eigen::Matrix<Scalar, 2, 1> rv1,rv2;
-			if(intersection_on_line(at, r2, p_[j], p_[ (j+1)%3 ], rv1,rv2)) {
+			if(descr_->intersection_on_line(at, r2, p_[j], p_[ (j+1)%3 ], rv1,rv2)) {
 				boost::shared_ptr<Triangle> tr(new Triangle);
 				tr->copy(*this);
 				tr->p_[j]       = rv1;
 				tr->p_[(j+1)%3] = rv2;
-				tr->p_[(j+2)%3] = intersection_on_line(at, r2, (rv1+rv2)/2, p_[ (j+2)%3 ], success);
+				tr->p_[(j+2)%3] = descr_->intersection_on_line(at, r2, (rv1+rv2)/2, p_[ (j+2)%3 ], success);
 				indA=j;
 				indB=(j+1)%3;
 				trs.push_back(tr);
@@ -502,9 +679,9 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Tri
 		tr2->copy(*this);
 		const int ind = !b[0]?0:(!b[1]?1:2);
 		
-		tr1->p_[ind] = intersection_on_line(at, r2, p_[ind], p_[ (ind+2)%3 ], success);
+		tr1->p_[ind] = descr_->intersection_on_line(at, r2, p_[ind], p_[ (ind+2)%3 ], success);
 		//assert(success);
-		tr2->p_[(ind+2)%3] = intersection_on_line(at, r2, p_[ind], p_[ (ind+1)%3 ], success);
+		tr2->p_[(ind+2)%3] = descr_->intersection_on_line(at, r2, p_[ind], p_[ (ind+1)%3 ], success);
 		//assert(success);
 		tr2->p_[ind] = tr1->p_[ind];
 		
@@ -521,9 +698,9 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Tri
 		tr->copy(*this);
 		const int ind = b[0]?0:(b[1]?1:2);
 		
-		tr->p_[(ind+1)%3] = intersection_on_line(at, r2, tr->p_[ind], tr->p_[ (ind+1)%3 ], success);
+		tr->p_[(ind+1)%3] = descr_->intersection_on_line(at, r2, tr->p_[ind], tr->p_[ (ind+1)%3 ], success);
 		//assert(success);
-		tr->p_[(ind+2)%3] = intersection_on_line(at, r2, tr->p_[ind], tr->p_[ (ind+2)%3 ], success);
+		tr->p_[(ind+2)%3] = descr_->intersection_on_line(at, r2, tr->p_[ind], tr->p_[ (ind+2)%3 ], success);
 		//assert(success);
 		
 		trs.push_back(tr);
@@ -539,7 +716,7 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Tri
 		if( er > 0.1) { //TODO: set threshold
 			boost::shared_ptr<Triangle> a=trs.back(), b(new Triangle);
 			b->copy(*trs.back());
-			a->p_[indA]=b->p_[indB]=intersection_on_line(at, r2, a->p_[indA], a->p_[indB], success);
+			a->p_[indA]=b->p_[indB]=descr_->intersection_on_line(at, r2, a->p_[indA], a->p_[indB], success);
 			a->reset();
 			if(success) {
 				trs.push_back(b);
@@ -617,6 +794,13 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::set
 	
 	#pragma omp parallel for num_threads( NUM_THREADS )
 	for(size_t indx=0; indx<input_->size(); indx++) {
+		std::vector<boost::shared_ptr<Triangle> > trs = (*input_)[indx].template generateTriangles<Triangle>();
+		for(size_t l=0; l<trs.size(); l++)
+			trs[l]->compute(samples_);
+		
+      	#pragma omp critical
+      	triangulated_input_.insert(triangulated_input_.end(), trs.begin(), trs.end());
+      	/*
 		  TPPLPartition pp;
 		  std::list<TPPLPoly> polys, result;
 
@@ -649,7 +833,7 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::set
 			
       			#pragma omp critical
 			triangulated_input_.push_back(tr);
-		  }
+		  }*/
 	}
 	
 	//std::cout<<"triangles: "<<triangulated_input_.size()<<std::endl;
