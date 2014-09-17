@@ -114,9 +114,10 @@ public:
  */
 class GeometryMapEntry_Polygon : public GeometryMapEntry
 {
-	Polygon::Ptr polygon_;
+	Polygon::Ptr polygon_, polygon_org_;
+	std::vector<Polygon::Ptr> last_polygons_;
 public:
-	GeometryMapEntry_Polygon(const Polygon::Ptr &p) : polygon_(p) {}
+	GeometryMapEntry_Polygon(const Polygon::Ptr &p) : polygon_(p), polygon_org_(new Polygon(*p)) {}
 
 	virtual unsigned int getId() const {return polygon_->id_;}
 	virtual E_TYPE getType() const {return TYPE_POLYGON;}
