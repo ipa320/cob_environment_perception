@@ -11,8 +11,13 @@ bool GeometryMapEntry_Polygon::isMergeCandidate(const GeometryMapEntry::Ptr &o) 
 
 bool GeometryMapEntry_Polygon::merge(const GeometryMapEntry::Ptr &o) {
 	if(!o || o->getType()!=getType()) return false;
-	std::vector<Polygon::Ptr> tmp; tmp.push_back(((GeometryMapEntry_Polygon*)o.get())->polygon_);
-	polygon_->merge(tmp);
+	
+	if( !polygon_->hasSimilarColorWith( ((GeometryMapEntry_Polygon*)o.get())->polygon_ ) )
+		return false;
+	
+	std::vector<Polygon::Ptr> tmp;
+	tmp.push_back( ((GeometryMapEntry_Polygon*)o.get())->polygon_ );
+	polygon_->merge( tmp );
 	return true;
 }
 
@@ -23,7 +28,7 @@ void GeometryMapEntry_Polygon::setMergeSettings(const cob_3d_mapping::MergeConfi
 
 bool GeometryMapEntry_Polygon::needsCleaning(const int frame_counter, const bool persistent) const {
 	return (polygon_->merged_ <= 1 || !persistent)
-	 && (frame_counter - 6) > (int)polygon_->frame_stamp_ && (int)polygon_->frame_stamp_ > 1;
+	 && (frame_counter - 5) > (int)polygon_->frame_stamp_ && (int)polygon_->frame_stamp_ > 1;
 }
 
 void GeometryMapEntry_Polygon::save(const std::string &path) const
@@ -178,13 +183,11 @@ bool GeometryMapEntry_Polygon::checkVisibility(const Eigen::Affine3f &T, const E
 		area = clip.getOverlap(*polygon_);
 		//polygon_->setContours3D(contours_3d);
 		
-		if(area>=std::min(0.7*0.7, 0.7*polygon_->computeArea3d()))
 			polygon_->color_[0] = 1;
 		else
-			polygon_->color_[0] = 0;
 		//if(area>0.5*polygon_->computeArea3d())
 	}
 	
 	//ROS_INFO("area: %f of %f", area, polygon_->computeArea3d());
-	return area>=std::min(0.7*0.7, 0.7*polygon_->computeArea3d());
+	return area>=std::min(0.5*0.5, 0.3*polygon_->computeArea3d());
 }

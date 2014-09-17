@@ -95,6 +95,7 @@ GeometryMap::addMapEntry (const GeometryMapEntry::Ptr& p)
 	limits.angle_thresh = cos_angle_;
 	limits.weighting_method = "AREA";	//"COMBINED", "COUNTER"
 	p->setMergeSettings(limits);
+	p->setHeader(new_id_++, frame_counter_);
 	
 	std::vector<size_t> intersections;
 	for(size_t i=0; i<map_entries_.size(); i++) {
@@ -102,14 +103,11 @@ GeometryMap::addMapEntry (const GeometryMapEntry::Ptr& p)
 			intersections.push_back(i);
 	}
 	for(size_t i=intersections.size()-1; i!=(size_t)-1; i--) {
-		p->merge(map_entries_[intersections[i]]);
-		map_entries_.erase(map_entries_.begin()+intersections[i]);
+		if(p->merge(map_entries_[intersections[i]]))
+			map_entries_.erase(map_entries_.begin()+intersections[i]);
+		else
+			map_entries_[intersections[i]]->setHeader(map_entries_[intersections[i]]->getId(), frame_counter_);
 	}
-	
-	if(intersections.size()==0) //if polygon does not have to be merged , add new polygon
-		p->setHeader(new_id_++, frame_counter_);
-	else
-		p->setHeader(p->getId(), frame_counter_);	//update timestamp to last merge
 	map_entries_.push_back(p);
   
 	if (save_to_file_)
@@ -259,6 +257,23 @@ GeometryMap::addMapEntry (const Cylinder::Ptr& c_ptr, const bool merge)
 void
 GeometryMap::cleanUp ()
 {
+	for(size_t j=0; j<map_entries_.size(); j++) {
+		std::vector<size_t> intersections;
+		for(size_t i=j+1; i<map_entries_.size(); i++) {
+			if(map_entries_[j]->isMergeCandidate(map_entries_[i]))
+				intersections.push_back(i);
+		}
+		for(size_t i=intersections.size()-1; i!=(size_t)-1; i--) {
+			if(map_entries_[j]->merge(map_entries_[intersections[i]]))
+				map_entries_.erase(map_entries_.begin()+intersections[i]);
+			else
+				map_entries_[intersections[i]]->setHeader(map_entries_[intersections[i]]->getId(), frame_counter_);
+		}
+		
+		if(intersections.size()>0) 
+			map_entries_[j]->setHeader(map_entries_[j]->getId(), frame_counter_);	//update timestamp to last merge
+	}
+	
   int n_dropped = 0, m_dropped = 0, c_dropped = 0;
   for (int idx = map_entries_.size () - 1; idx >= 0; --idx)
   {
