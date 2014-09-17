@@ -79,6 +79,6 @@ pcl::PolygonMesh::Ptr cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,R
 			points.push_back(pt);
 		}
 	}
-	pcl::toROSMsg(points, mesh->cloud);
+	pcl::toPCLPointCloud2(points, mesh->cloud);
 	return mesh;
 }

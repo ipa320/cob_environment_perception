@@ -62,10 +62,12 @@
 #include <pcl/point_types.h>
 #include <pcl/common/pca.h>
 
+#include <pcl_conversions/pcl_conversions.h>
+
 #include <iostream>
 #include <Eigen/Geometry>
 
-#include <cob_3d_mapping_common/polypartition.h>
+#include <polypartition/polypartition.h>
 #include <pcl/PolygonMesh.h>
 
 #include "ShapeSPH/Util/Signature.h"
@@ -117,7 +119,7 @@ bool readOFF(const std::string &fn, pcl::PolygonMesh &mesh) {
 			points.push_back(pt);
 	}
 	if(points.size()!=no_verts) return false;
-	pcl::toROSMsg(points, mesh.cloud);
+	pcl::toPCLPointCloud2(points, mesh.cloud);
 	
 	for(; mesh.polygons.size()<no_faces && std::getline(in, line); )   //read stream line by line
 	{
@@ -183,7 +185,7 @@ int main(int argc, char **argv)
 	
 	//compute from mesh
 	pcl::PointCloud<pcl::PointXYZ> points;
-	pcl::fromROSMsg(mesh.cloud, points);
+	pcl::fromPCLPointCloud2(mesh.cloud, points);
 	
 	//scale
 	pcl::PCA<pcl::PointXYZ> pca;
@@ -257,7 +259,7 @@ int main(int argc, char **argv)
 		for(size_t i=0; i<sKeys.size(); i++)
 		{
 			char fn[512];
-			sprintf(fn, "/tmp/key1_%d", i);
+			sprintf(fn, "/tmp/key1_%zu", i);
 			sKeys[i].write(fn);
 		}
 	}	
