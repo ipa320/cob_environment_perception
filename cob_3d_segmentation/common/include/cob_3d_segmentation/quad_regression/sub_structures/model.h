@@ -125,7 +125,7 @@ struct Model {
   Model(const Param<Degree> &pa) {p.fill(0.f); *this+=pa;}
   
   /// transform parameters from 2D input f(x,y) to 1D input f(t) (from origin 0/0)
-  inline VectorU1D transformation_1D(const Eigen::Vector2f &dir, const Eigen::Vector2f &off, const Eigen::Vector3f &at) {
+  inline VectorU1D transformation_1D(const Eigen::Vector2f &dir, const Eigen::Vector2f &off, const Eigen::Vector3f &at) const {
 	  Eigen::Matrix<float, Degree+1, 1> t; t.fill(0);
       typename Param<Degree>::VectorU pp = p;
       pp(0) -= at(2);
