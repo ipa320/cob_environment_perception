@@ -57,6 +57,8 @@
 #include <unsupported/Eigen/FFT>
 #include <unsupported/Eigen/Polynomials>
 
+#define NUM_THREADS 1
+
 template<typename TSurface, typename Scalar, typename Real, typename TAffine>
 void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::compute() {
   result_.reset(new Result);
@@ -69,7 +71,7 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::com
 	//static int dbg_stage=0, dbg_num=0;
 	//++dbg_stage;
 	
-  #pragma omp parallel for num_threads( 4 )
+  #pragma omp parallel for num_threads( NUM_THREADS )
   for(size_t i=0; i<keypoints_.size(); i++) {		
     std::vector<boost::shared_ptr<Triangle> > submap_last;
     for(size_t j=0; j<radii_.size(); j++) {
@@ -369,7 +371,7 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Tri
 		return;
 	}
 	
-	std::vector<Eigen::Matrix<Scalar, 2, 1> > pts;
+	std::vector<Eigen::Matrix<Scalar, 2, 1> > pts, pts_opp;
 	std::vector<bool> pts_ins;
 	
 	int n=-1;
@@ -378,22 +380,30 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Tri
 		Eigen::Matrix<Scalar, 2, 1> rv1,rv2;
 		if(intersection_on_line(at, r2, p_[j], p_[ (j+1)%3 ], rv1,rv2, rb1, rb2)) {
 			pts.push_back(rv1);
-			pts.push_back(rv2);
 			pts_ins.push_back(rb1);
+			
+			pts.push_back(rv2);
 			pts_ins.push_back(rb2);
+			
+			pts_opp.push_back(p_[ (j+2)%3 ]);
+			pts_opp.push_back(p_[ (j+2)%3 ]);
 			n=j;
 		}
 	}
 	
 	size_t p=0;
 	
-	if(pts.size()<2) return;
+	if(pts.size()<2)
+		return;
+		
 	else if(pts.size()==2) {
 		bool success;
-		Eigen::Matrix<Scalar, 2, 1> t=intersection_on_line(at, r2, (pts.front()+pts.back())/2, p_[ (n+2)%3 ], success);
+		Eigen::Matrix<Scalar, 2, 1> t=descr_->template intersection_on_line<Scalar>(at, r2, (pts.front()+pts.back())/2, p_[ (n+2)%3 ], success);
 		if(success) {
 			pts.push_back(t);
 			pts_ins.push_back(false);
+			
+			pts_opp.push_back(p_[ (n+1)%3 ]);
 		}
 		//assert(success);
 		++p;
@@ -402,7 +412,7 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::Tri
 	//subsample further
 	int num=0;
 	//std::cout<<"bef "<<pts.size()<<std::endl;
-	while(num<8 && p<pts.size()&&0) {
+	while(num<8 && p<pts.size()&&1) {
 		if(pts_ins[p] || pts_ins[(p+1)%pts.size()]) {
 			++p;
 			continue;
@@ -605,7 +615,7 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::set
   
 	//std::cout<<"got "<<keypoints_.size()<<" keypoints"<<std::endl;
 	
-	#pragma omp parallel for num_threads( 16 )
+	#pragma omp parallel for num_threads( NUM_THREADS )
 	for(size_t indx=0; indx<input_->size(); indx++) {
 		  TPPLPartition pp;
 		  std::list<TPPLPoly> polys, result;
