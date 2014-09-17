@@ -9,7 +9,7 @@
  *
  * Project name: care-o-bot
  * ROS stack name: cob_environment_perception_intern
- * ROS package name: cob_3d_features
+ * ROS package name: cob_3d_mapping_features
  * Description:
  *
  * +++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -53,32 +53,75 @@
 
 #pragma once
 
-template<typename TSurface, typename Scalar, typename Real, typename TAffine>
-void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::dbg_mesh_of_subsamp(const TVector &at, const Scalar radius, std::vector<TVector> &pts, std::vector<int> &inds) const {
-      std::vector<Triangle> submap;
-      subsample(at, radius, submap);
-	  
-	  for(size_t i=0; i<submap.size(); i++) {
-		for(int j=0; j<3; j++) {
-			inds.push_back((int)inds.size());
-			pts.push_back(submap[i].p3_[j]);
-		}
-	  }
-}
+#include <complex>
+#include <Eigen/Geometry>
 
-template<typename TSurface, typename Scalar, typename Real, typename TAffine>
-pcl::PolygonMesh::Ptr cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::dbg_triangles2mesh(const std::vector<boost::shared_ptr<Triangle> > &res) const {
-	pcl::PolygonMesh::Ptr mesh(new pcl::PolygonMesh);
-	pcl::PointCloud<pcl::PointXYZ> points;
-	for(size_t i=0; i<res.size(); i++) {
-		mesh->polygons.push_back(pcl::Vertices());
-		for(int j=0; j<3; j++) {
-			mesh->polygons.back().vertices.push_back(points.size());
-			pcl::PointXYZ pt;
-			pt.x=(*res[i])[j](0);pt.y=(*res[i])[j](1);pt.z=(*res[i])[j](2);
-			points.push_back(pt);
+namespace cob_3d_features
+{
+namespace invariant_surface_feature
+{
+	template<class Scalar, class Samples, class Values>
+	class SingleTriangle {
+	protected:
+		typedef Eigen::Matrix<Scalar, 3, 1> Vector3;
+		typedef std::complex<Scalar> ScalarC;
+
+		Vector3 p3_[3];
+		Vector3 d1, d2;
+		Scalar cr;
+		Values f_;
+		bool computed_;
+		//int CONSTRUCT;
+		
+	public:
+		SingleTriangle(): cr(-1), computed_(false)
+		//, CONSTRUCT(11)
+		 {}
+		
+		/*SingleTriangle(const SingleTriangle &o) {
+			*this = o;
+			CONSTRUCT=33;
+		}*/
+		
+		SingleTriangle(const Vector3 &p1, const Vector3 &p2, const Vector3 &p3): computed_(false)
+		//, CONSTRUCT(22)
+		{
+			p3_[0] = p1;
+			p3_[1] = p2;
+			p3_[2] = p3;
+			d1 = p3_[2]-p3_[1];
+			d2 = p3_[1]-p3_[0];
+			cr = d1.cross(d2).norm();
 		}
-	}
-	pcl::toROSMsg(points, mesh->cloud);
-	return mesh;
+		
+		void copy(const SingleTriangle &o) {	//keeps f_ uninitialized!
+			for(int i=0; i<3; i++)
+				p3_[i] = o.p3_[i];
+			d1 = o.d1;
+			d2 = o.d2;
+			cr = o.cr;
+			computed_ = false;
+		}
+		
+		inline void init() {
+			d1 = p3_[2]-p3_[1];
+			d2 = p3_[1]-p3_[0];
+			cr = d1.cross(d2).norm();
+		}
+		
+		void compute(const Samples &samples);
+		const Values &values() const {assert(computed_); return f_;}
+		operator const Values&() const {return values();}
+		const Vector3 &operator[](const size_t ind) const {assert(ind<3); return p3_[ind];}
+
+		std::complex<Scalar> kernel_lin_tri(const Vector3 &at, const bool debug=false) const;
+
+		inline Scalar area() const {if(cr<0) print(); /*assert(computed_);*/ assert(cr>=0); return cr/2;}
+		inline Scalar getArea() const {return area();}
+		void print() const;
+	private:
+		std::complex<Scalar> kernel_lin(const Scalar m, const Scalar n, const Scalar p, const Scalar x0, const Scalar y0, const Scalar y1, const Scalar d1, const Scalar d2) const;
+
+	};
+}
 }

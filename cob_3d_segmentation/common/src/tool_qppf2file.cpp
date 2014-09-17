@@ -56,97 +56,52 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
-/*
- * list.h
- *
- *  Created on: 11.06.2012
- *      Author: josh
- */
 
-#ifndef LIST_H_
-#define LIST_H_
+#include <fstream>
+
+// ROS includes
+#include <ros/ros.h>
+#include <pluginlib/class_list_macros.h>
+#include <nodelet/nodelet.h>
+#include <pcl/point_types.h>
+#include <pcl_ros/point_cloud.h>
+#include <pcl/point_cloud.h>
+#include <pcl/io/pcd_io.h>
+
+#include <cob_3d_segmentation/quad_regression/quad_regression.h>
+#include <cob_3d_mapping_msgs/CurvedPolygonArray.h>
+
+#include <actionlib/server/simple_action_server.h>
+#include <cob_3d_segmentation/ObjectWatchGoal.h>
+#include <cob_3d_segmentation/ObjectWatchFeedback.h>
+#include <cob_3d_segmentation/ObjectWatchAction.h>
+#include <geometry_msgs/PoseStamped.h>
+#include <cob_3d_segmentation/point_types.h>
 
 
-
-
-/**
- * contains x,y coordinate alias index (v)
- * hops gives number of possible uses (rest)
- */
-struct SVALUE
-{
-  unsigned int v,hops;
-
-  SVALUE(){}
-
-  SVALUE(const unsigned int v, const unsigned int hops)
-  :v(v), hops(hops)
-  {}
-
-};
-
-/**
- * fast visited list (pre-allocate values)
- */
-template<typename VALUE>
-struct VISITED_LIST {
-  int size;
-  int pos;
-  std::vector<VALUE> vals;
-
-  VISITED_LIST():size(0),pos(-1), vals(1000) {
+int main(int argc, char **argv) {
+  if(argc<3) {
+    PCL_ERROR ("Arguments: [input pointcloud *.pcd] [output file]\n");
+    return (-1);
   }
 
-  inline void init()
+  ros::init(argc, argv, "qppf");
+  const std::string ifn=argv[1];
+  std::ofstream fos(argv[2]);
+
+  pcl::PointCloud<pcl::PointXYZ>::Ptr cloud (new pcl::PointCloud<pcl::PointXYZ>);
+
+  if (pcl::io::loadPCDFile<pcl::PointXYZ> (ifn, *cloud) == -1) //* load the file
   {
-    size=(0);
-    pos=(-1);
+    PCL_ERROR (("Couldn't read file "+ifn+" \n").c_str());
+    return (-1);
   }
 
-  inline void add(const VALUE &v) {
-	for(int i=0; i<size; i++)	//prevent double entries
-		if(vals[i].v==v.v) {
-			vals[i].hops = std::min(vals[i].hops, v.hops);
-			return;
-		}
-    if((size_t)size>=vals.size())
-      vals.push_back(v);
-    else
-      vals[size]=v;
-    ++size;
-  }
+  Segmentation::Segmentation_QuadRegression<pcl::PointXYZ, pcl::PointXYZRGB, Segmentation::QPPF::QuadRegression<2, pcl::PointXYZ, Segmentation::QPPF::CameraModel_Kinect<pcl::PointXYZ> > > seg;
+  seg.setInputCloud(cloud);
+  seg.compute();
+  seg.serialize(fos);
 
-  inline void move() {++pos;}
+  return 0;
+}
 
-  inline void remove() {
-    --size;
-    if(pos<size) vals[pos]=vals[size];
-    --pos;
-  }
-
-  inline void replace(const VALUE &v) {
-    vals[pos]=v;
-  }
-};
-
-
-/**
- * used as parameter for outline calculation
- * point with additional information if point was in front of other object
- */
-struct SXY {
-  int x,y;
-  bool back;
-};
-
-/**
- * sort 2D points from left to right, top to down
- */
-struct SXYcmp {
-  inline bool operator() (const SXY& lhs, const SXY& rhs) const
-  {if(lhs.y==rhs.y)
-    return lhs.x<rhs.x;
-  return lhs.y<rhs.y;}
-};
-
-#endif /* LIST_H_ */

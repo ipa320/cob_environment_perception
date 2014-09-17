@@ -329,7 +329,7 @@ poly.segments2d_.back().push_back(p2);
                                                model,v);
 #if 1
 	bool found = false;
-	const float thr = 9*camera_.std(p(2))*camera_.std(p(2));
+	const float thr = 25*camera_.std(p(2))*camera_.std(p(2));
         Eigen::Vector3f vp = poly.project2world(p.head<2>());
 
         static const int rel_motion_pattern[][2] = { {0,0}, {-1,-1}, {-1,0}, {-1,1}, {0,-1}, {0,1}, {1,-1}, {1,0}, {1,1}
