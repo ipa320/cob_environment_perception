@@ -68,8 +68,162 @@
 
 namespace cob_3d_features
 {
+  template<typename PSurface>
+  class PolynomialSurfaceHelper : public PSurface
+  {
+	  public:
+	  using PSurface::Model;
+	  using PSurface::segments_;
+	  using PSurface::model_;
+	  //typedef typename PSurface::Model Model;
+	  
+	  PolynomialSurfaceHelper(const PSurface &s) : PSurface(s) {}
+	  
+	  template<typename TVector, typename Real>
+	  void generateKeypoints(std::vector<TVector> &keypoints, const Real kp_min_area_, const Real kp_area_);
+	  
+	  template<typename Scalar>
+	  bool intersection_on_line(const Eigen::Matrix<Scalar, 3, 1> &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b, Eigen::Matrix<Scalar, 2, 1> &res1, Eigen::Matrix<Scalar, 2, 1> &res2, bool &res_b1, bool &res_b2) const;
+		  
+	  template<typename Scalar>
+      Eigen::Matrix<Scalar, 2, 1> intersection_on_line(const Eigen::Matrix<Scalar, 3, 1> &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b, bool &success) const;
+      
+      inline float operator()(const float x, const float y) const {return model_.model(x,y);}
+      template<typename S>
+      inline Eigen::Matrix<S, 3, 1> operator[](const Eigen::Matrix<S,2,1> &p) const {
+		  Eigen::Matrix<S, 3, 1> r;
+		  r(2) = (*this)(r(0)=p(0),r(1)=p(1));
+		  return r; 
+	  }
+	  
+	  static PolynomialSurfaceHelper parse(const cob_3d_mapping_msgs::Shape &shape) {
+			PSurface p;
+			assert((int)shape.params.size() <= (int)p.model_.p.size());
+			for(size_t j=0; j<shape.params.size(); j++)
+				p.model_.p(j) = shape.params[j];
+				
+			p.segments_.resize(shape.points.size());
+			for(size_t j=0; j<shape.points.size(); j++) {
+				//std::cout<<j<<" "<<(j!=0)<<" "<<(bool)shape.holes[j]<<std::endl;
+				//assert( (j!=0)==(bool)shape.holes[j] );
+				
+				pcl::PointCloud<pcl::PointXYZ> pc;
+				pcl::fromROSMsg(shape.points[j], pc);
+
+				for(size_t k=0; k<pc.size(); k++)
+					p.segments_[j].push_back(pc[k].getVector3fMap());
+			}
+			return p;
+		}
+      
+	  template<typename Triangle>
+	  std::vector<boost::shared_ptr<Triangle> > generateTriangles() {
+		  std::vector<boost::shared_ptr<Triangle> > ret;
+		  
+		  TPPLPartition pp;
+		  std::list<TPPLPoly> polys, result;
+
+		  //fill polys
+		  for(size_t i=0; i<segments_.size(); i++) {
+			TPPLPoly poly;
+			poly.Init(segments_[i].size());
+			poly.SetHole(i!=0);
+
+			for(size_t j=0; j<segments_[i].size(); j++) {
+			  poly[j].x = segments_[i][j](0);
+			  poly[j].y = segments_[i][j](1);
+			}
+			
+			poly.SetOrientation(i!=0?TPPL_CW:TPPL_CCW);
+			polys.push_back(poly);
+			//break;
+		  }
+
+		  if(polys.size()<1) return ret;
+		  pp.Triangulate_EC(&polys, &result);
+
+		  Eigen::Vector3f v1,v2,v3;
+		  for(std::list<TPPLPoly>::iterator it=result.begin(); it!=result.end(); it++) {
+			assert(it->GetNumPoints()==3);
+
+			boost::shared_ptr<Triangle> tr(new Triangle);
+			tr->set(this, it->GetPoint(0), it->GetPoint(1), it->GetPoint(2));			
+			ret.push_back(tr);
+		  }
+		  
+		  return ret;
+	  }
+  };
+  
+  template<typename Shape>
+  class TriangleSurfaceHelper : public Shape
+  {
+	  public:
+	  using Shape::contours_;
+	  
+	  struct Model {};
+	  
+	  template<typename Triangle>
+	  std::vector<boost::shared_ptr<Triangle> > generateTriangles() {
+		  std::vector<boost::shared_ptr<Triangle> > ret;
+		  
+		  TPPLPartition pp;
+		  std::list<TPPLPoly> polys, result;
+
+		  //fill polys
+		  for(size_t i=0; i<contours_.size(); i++) {
+			TPPLPoly poly;
+			poly.Init(contours_[i].size());
+			poly.SetHole(i!=0);
+
+			for(size_t j=0; j<contours_[i].size(); j++) {
+			  poly[j].x = contours_[i][j](0);
+			  poly[j].y = contours_[i][j](1);
+			}
+			
+			poly.SetOrientation(i!=0?TPPL_CW:TPPL_CCW);
+			polys.push_back(poly);
+			//break;
+		  }
+
+		  if(polys.size()<1) return ret;
+		  pp.Triangulate_EC(&polys, &result);
+
+		  Eigen::Vector3f v1,v2,v3;
+		  for(std::list<TPPLPoly>::iterator it=result.begin(); it!=result.end(); it++) {
+			assert(it->GetNumPoints()==3);
+
+			boost::shared_ptr<Triangle> tr(new Triangle);
+			tr->set(this, it->GetPoint(0), it->GetPoint(1), it->GetPoint(2));			
+			ret.push_back(tr);
+		  }
+		  
+		  return ret;
+	  }
+	  
+	  static TriangleSurfaceHelper parse(const cob_3d_mapping_msgs::Shape &shape) {
+		  TriangleSurfaceHelper r;
+		  fromROSMsg(shape, r);
+		  return r;
+	  }
+	  
+	  template<typename TVector, typename Real>
+	  void generateKeypoints(std::vector<TVector> &keypoints, const Real kp_min_area_, const Real kp_area_);
+	  
+	  template<typename Scalar>
+	  bool intersection_on_line(const Eigen::Matrix<Scalar, 3, 1> &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b, Eigen::Matrix<Scalar, 2, 1> &res1, Eigen::Matrix<Scalar, 2, 1> &res2, bool &res_b1, bool &res_b2) const;
+		  
+	  template<typename Scalar>
+      Eigen::Matrix<Scalar, 2, 1> intersection_on_line(const Eigen::Matrix<Scalar, 3, 1> &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b, bool &success) const;
+      
+      template<typename S>
+      inline Eigen::Matrix<S, 3, 1> operator[](const Eigen::Matrix<S,2,1> &p) const {
+		  return this->Shape::operator[](p.template cast<float>()).template cast<S>();
+	  }
+  };
+  
   /*! @brief feature generator for surfaces based on fourier transformation (rotation/translation invariant) */
-  template<typename TSurface, typename Scalar=double, typename Real=float, typename _TAffine=Eigen::Affine3f>
+  template<typename _TSurface, typename Scalar=double, typename Real=float, typename _TAffine=Eigen::Affine3f>
   class InvariantSurfaceFeature
   {
 	  typedef Sampler<Real, Scalar> S;
@@ -83,16 +237,17 @@ namespace cob_3d_features
   
     typedef Eigen::Matrix<Scalar, 3, 1> TVector;
     typedef _TAffine TAffine;
+    typedef _TSurface TSurface;
     
 	struct Feature {
 		typedef std::vector<Signature< Real > > FeatureVector;
 		FeatureVector f_;
 		TVector pt_;
-		typename TSurface::Model *model_;
+		TSurface *descr_;
 		Real area_;
 		
-		Feature(const TVector &pt, typename TSurface::Model *model=NULL) :
-			pt_(pt), model_(model), area_(0)
+		Feature(const TVector &pt, TSurface *descr=NULL) :
+			pt_(pt), descr_(descr), area_(0)
 		{}
 		
 		//simple manhatten distance (for testing)
@@ -207,7 +362,7 @@ namespace cob_3d_features
     void dbg_mesh_of_subsamp(const TVector &at, const Scalar radius, std::vector<TVector> &pts, std::vector<int> &inds) const;
     void dbg_keypoints(std::vector<TVector> &keypoints) const {generateKeypoints(keypoints);}
 	pcl::PolygonMesh::Ptr dbg_Mesh_of_Map() const {return dbg_triangles2mesh(triangulated_input_);}
-	
+
 	const std::vector<TVector> &getKeypoints() const {return keypoints_;}
 	const std::vector<TVector> &getAllKeypoints() const {return all_keypoints_;}
   protected:
@@ -231,7 +386,7 @@ namespace cob_3d_features
 	private:
 		typedef cob_3d_features::invariant_surface_feature::SingleTriangle<Scalar, typename S::Samples, typename S::Values> Base;
 		Eigen::Matrix<Scalar, 2, 1> p_[3];
-		typename TSurface::Model *model_;
+		TSurface *descr_;
 		
 	public:
 		typedef boost::shared_ptr<Triangle> Ptr;
@@ -243,7 +398,7 @@ namespace cob_3d_features
 		
 		void copy(const Triangle &o) {	//keeps f_ uninitialized!
 			this->Base::copy(o);
-			model_ = o.model_;
+			descr_ = o.descr_;
 			for(int i=0; i<3; i++)
 				p_[i] = o.p_[i];
 			reset();
@@ -254,16 +409,16 @@ namespace cob_3d_features
 			this->cr = -1;
 		}
 		
-		void set(typename TSurface::Model *model, const TPPLPoint &p1, const TPPLPoint &p2, const TPPLPoint &p3) {
-			model_ = model;
+		void set(TSurface *descr, const TPPLPoint &p1, const TPPLPoint &p2, const TPPLPoint &p3) {
+			descr_ = descr;
 			set(p_[0], p1);
 			set(p_[1], p2);
 			set(p_[2], p3);
 			reset();
 		}
 		
-		void set(typename TSurface::Model *model, const Eigen::Matrix<Scalar, 2, 1> &p1, const Eigen::Matrix<Scalar, 2, 1> &p2, const Eigen::Matrix<Scalar, 2, 1> &p3) {
-			model_ = model;
+		void set(TSurface *descr, const Eigen::Matrix<Scalar, 2, 1> &p1, const Eigen::Matrix<Scalar, 2, 1> &p2, const Eigen::Matrix<Scalar, 2, 1> &p3) {
+			descr_ = descr;
 			p_[0] = p1;
 			p_[1] = p2;
 			p_[2] = p3;
@@ -276,43 +431,32 @@ namespace cob_3d_features
 
 		void print() const;
     private:
-		Eigen::Matrix<Scalar, 2, 1> intersection_on_line(const TVector &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b, bool &success) const;
-		bool intersection_on_line(const TVector &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b, Eigen::Matrix<Scalar, 2, 1> &res1, Eigen::Matrix<Scalar, 2, 1> &res2, bool &res_b1, bool &res_b2) const;
+		//Eigen::Matrix<Scalar, 2, 1> intersection_on_line(const TVector &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b, bool &success) const;
+		//bool intersection_on_line(const TVector &at, const Scalar r2, const Eigen::Matrix<Scalar, 2, 1> &a, const Eigen::Matrix<Scalar, 2, 1> &b, Eigen::Matrix<Scalar, 2, 1> &res1, Eigen::Matrix<Scalar, 2, 1> &res2, bool &res_b1, bool &res_b2) const;
 		//std::complex<Scalar> sub_kernel(const Scalar m, const Scalar n, const Scalar p, const Tri2D &tri, const int depth=0) const;
 		std::complex<Scalar> kernel_lin(const Scalar m, const Scalar n, const Scalar p, const Scalar x0, const Scalar y0, const Scalar y1, const Scalar d1, const Scalar d2) const;
 		//std::complex<Scalar> kernel_lin_tri(const Scalar m, const Scalar n, const Scalar p, const Tri2D &tri) const;
 
 		inline Eigen::Matrix<Scalar, 3, 1> at(const Scalar x, const Scalar y) const {
-			Eigen::Matrix<Scalar, 2, 1> p;
-			p(0)=x;p(1)=y;
-			return at(p);
+			return at(Eigen::Matrix<Scalar, 2, 1>(x,y));
 		}
 
 		inline Eigen::Matrix<Scalar, 3, 1> at(const Eigen::Matrix<Scalar, 2, 1> &p) const {
-			Eigen::Matrix<Scalar, 3, 1> v;
-			v(0) = p(0); v(1) = p(1);
-			v(2) = model_->model(p(0),p(1));
-			return v;
+			return (*descr_)[p];
 		}
 
-		template<const int Degree>
 		Scalar area() const {
 			//TODO: at the moment kind of "approximation"
 			const Eigen::Matrix<Scalar, 2, 1> mid2 = ((p_[0])+(p_[1])+(p_[2]))/3;
 			Eigen::Matrix<Scalar, 3, 1> mid23, mid3, v1,v2,v3;
 
-			v1.template head<2>() = p_[0];
-			v2.template head<2>() = p_[1];
-			v3.template head<2>() = p_[2];
-			v1(2) = model_->model((p_[0])(0), (p_[0])(1));
-			v2(2) = model_->model((p_[1])(0), (p_[1])(1));
-			v3(2) = model_->model((p_[2])(0), (p_[2])(1));
+			v1 = (*descr_)[p_[0]];
+			v2 = (*descr_)[p_[1]];
+			v3 = (*descr_)[p_[2]];
 
-			mid23(0) = mid2(0);
-			mid23(1) = mid2(1);
+			mid23 = (*descr_)[mid2];
 			mid3 = mid23;
 			mid3(2) =  (v1(2)+v2(2)+v3(2))/3;
-			mid23(2) = model_->model(mid2(0),mid2(1));
 
 //std::cout<<"area "<<(mid3 - mid23).squaredNorm()<<" "<<mid23(2)<<" "<<mid3(2)<<std::endl;
 			return (mid3 - mid23).norm()*(v1-v2).cross(v3-v2).norm();
