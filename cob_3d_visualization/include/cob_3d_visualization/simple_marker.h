@@ -280,8 +280,8 @@ namespace cob_3d_visualization {
 			marker_.points.resize (6*resolution);
 		
 			for(int i=0; i<6*resolution;) {
-			  const float alpha1 = (i/6)*M_PI*2/resolution;
-			  const float alpha2 = (((i/6)+1)%resolution)*M_PI*2/resolution;
+			  const float alpha2 = (i/6)*M_PI*2/resolution;
+			  const float alpha1 = (((i/6)+1)%resolution)*M_PI*2/resolution;
 			  
 			  marker_.points[i+3].x = marker_.points[i].x = radius_inner*std::cos(alpha1);
 			  marker_.points[i+3].y = marker_.points[i].y = radius_inner*std::sin(alpha1);
@@ -317,6 +317,7 @@ namespace cob_3d_visualization {
 			marker_.color = col;
 			return *this;
 		}
+		/// Warning: deletion of markers with different namespace than parent is not handled correctly!
 		inline RvizMarker &ns(const std::string &sns) {
 			marker_.ns = sns;
 			return *this;
