@@ -178,8 +178,6 @@ polar_simp(d2(1)*m, d1(0)*n + d1(1)*m + d1(2)*p) - d2(1)*m + polar_simp(d1(2)*p,
 
 template<class Scalar, class Samples, class Values>
 void cob_3d_features::invariant_surface_feature::SingleTriangle<Scalar,Samples,Values>::compute(const Samples &samples) {
-	++g_num_computations;
-	
 	if(cr<0) {	//if not already set
 		d1 = p3_[2]-p3_[1];
 		d2 = p3_[1]-p3_[0];
