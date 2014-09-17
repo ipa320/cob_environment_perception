@@ -433,4 +433,3 @@ namespace cob_3d_mapping
 
   };
 }
-#endif /* POLYGON_H_ */
