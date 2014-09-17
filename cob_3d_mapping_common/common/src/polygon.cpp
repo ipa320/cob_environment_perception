@@ -257,18 +257,14 @@ getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
   }
 
   std::vector<std::vector<Eigen::Vector3f> >
-  Polygon::getContours3D()
+  Polygon::getContours3D() const
   {
     std::vector<std::vector<Eigen::Vector3f> > contours_3d;
     for(unsigned int i = 0; i < contours_.size(); i++)
     {
       std::vector<Eigen::Vector3f> c;
       for(unsigned int j = 0; j < contours_[i].size(); j++)
-      {
-        Eigen::Vector3f pt_2d(contours_[i][j](0), contours_[i][j](1), 0);
-        Eigen::Vector3f pt_3d = pose_*pt_2d;
-        c.push_back(pt_3d);
-      }
+        c.push_back((*this)[contours_[i][j]]);
       contours_3d.push_back(c);
     }
     return contours_3d;
@@ -788,7 +784,7 @@ Polygon::computePose()
   }
 
   Eigen::Vector3f
-  Polygon::computeCentroid()
+  Polygon::computeCentroid() const
   {
     std::vector<std::vector<Eigen::Vector3f> > contours_3d = getContours3D();
     return computeCentroid(contours_3d);
@@ -821,11 +817,13 @@ Polygon::computePose()
   }
 
   Eigen::Vector3f
-  Polygon::computeCentroid(std::vector<std::vector<Eigen::Vector3f> >& contours_3d)
+  Polygon::computeCentroid(std::vector<std::vector<Eigen::Vector3f> >& contours_3d) const
   {
+    if(contours_3d.size()<1) return Eigen::Vector3f::Zero();
+    
     //find largest non-hole contour
-    unsigned int idx = 0;
-    for (unsigned int i = 0; i < contours_3d.size (); i++)
+    size_t idx = 0;
+    for (size_t i = 0; i < contours_3d.size (); i++)
     {
       int max_pts = 0;
       if(!holes_[i])
@@ -838,7 +836,7 @@ Polygon::computePose()
       }
     }
     pcl::PointCloud<pcl::PointXYZ> poly_cloud;
-    for (unsigned int j = 0; j < contours_3d[idx].size () ; j++)
+    for(size_t j = 0; j < contours_3d[idx].size() ; j++)
     {
       pcl::PointXYZ p;
       p.getVector3fMap() = contours_3d[idx][j];

@@ -57,8 +57,7 @@
 *
 ****************************************************************/
 
-#ifndef POLYGON_H_
-#define POLYGON_H_
+#pragma once
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -168,11 +167,11 @@ namespace cob_3d_mapping
     }
 
     virtual void setContours3D(std::vector<std::vector<Eigen::Vector3f> >& contours_3d);
-    virtual std::vector<std::vector<Eigen::Vector3f> > getContours3D();
+    virtual std::vector<std::vector<Eigen::Vector3f> > getContours3D() const;
 
 
-    void setContours2D(std::vector<std::vector<Eigen::Vector2f> >& contours_2d) {contours_ = contours_2d;};
-    std::vector<std::vector<Eigen::Vector2f> > getContours2D() {return contours_;};
+    void setContours2D(const std::vector<std::vector<Eigen::Vector2f> >& contours_2d) {contours_ = contours_2d;};
+    const std::vector<std::vector<Eigen::Vector2f> > &getContours2D() const {return contours_;};
 
     //##########methods for instantiation##############
 
@@ -299,9 +298,9 @@ namespace cob_3d_mapping
     /**
     * \brief Computation of centroid of polygn
     */
-    Eigen::Vector3f computeCentroid();
+    Eigen::Vector3f computeCentroid() const;
 
-    Eigen::Vector3f computeCentroid(std::vector<std::vector<Eigen::Vector3f> >& contours_3d);
+    Eigen::Vector3f computeCentroid(std::vector<std::vector<Eigen::Vector3f> >& contours_3d) const;
 
 
     /**
@@ -330,6 +329,10 @@ namespace cob_3d_mapping
     * \param[out] max_pt Maximal boundary of bounding box.
     */
     //void computePoseAndBoundingBox(Eigen::Affine3f& pose, Eigen::Vector4f& min_pt, Eigen::Vector4f& max_pt);
+    
+    inline Eigen::Vector3f operator[](const Eigen::Vector2f &p) const {
+        return pose_*Eigen::Vector3f(p(0), p(1), 0);
+	}
 
 
 
