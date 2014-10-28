@@ -183,8 +183,10 @@ bool GeometryMapEntry_Polygon::checkVisibility(const Eigen::Affine3f &T, const E
 		area = clip.getOverlap(*polygon_);
 		//polygon_->setContours3D(contours_3d);
 		
+		/*if(area>=std::min(0.7*0.7, 0.7*polygon_->computeArea3d()))
 			polygon_->color_[0] = 1;
 		else
+			polygon_->color_[0] = 0;*/
 		//if(area>0.5*polygon_->computeArea3d())
 	}
 	
