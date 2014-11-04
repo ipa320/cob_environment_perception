@@ -73,14 +73,16 @@
  * contains x,y coordinate alias index (v)
  * hops gives number of possible uses (rest)
  */
+template<typename Point>
 struct SVALUE
 {
   unsigned int v,hops;
+  Point pt;
 
   SVALUE(){}
 
-  SVALUE(const unsigned int v, const unsigned int hops)
-  :v(v), hops(hops)
+  SVALUE(const unsigned int v, const unsigned int hops, const Point &pt)
+  :v(v), hops(hops), pt(pt)
   {}
 
 };
