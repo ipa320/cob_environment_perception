@@ -402,15 +402,15 @@ void QuadRegression<Degree, Point, CameraModel>::calc() {
 
 template <int Degree, typename Point, typename CameraModel>
 void QuadRegression<Degree, Point, CameraModel>::grow(SubStructure::Model<Degree> &model, const int i, const int x, const int y) {
-  static SubStructure::VISITED_LIST<SubStructure::SVALUE> list;
+  static SubStructure::VISITED_LIST<SubStructure::SVALUE<Point> > list;
   list.init();
-  list.add( SubStructure::SVALUE(getInd(i,x,y),levels_[i].w*levels_[i].h) );
+  list.add( SubStructure::SVALUE<Point>(getInd(i,x,y),levels_[i].w*levels_[i].h, levels_[i].data[getInd(i,x,y)].point()) );
 
   grow(list, model, i, polygons_.size(), true);
 }
 
 template <int Degree, typename Point, typename CameraModel>
-void QuadRegression<Degree, Point, CameraModel>::grow(SubStructure::VISITED_LIST<SubStructure::SVALUE> &list, SubStructure::Model<Degree> &model, const int i, const int mark, bool first_lvl) {
+void QuadRegression<Degree, Point, CameraModel>::grow(SubStructure::VISITED_LIST<SubStructure::SVALUE<Point> > &list, SubStructure::Model<Degree> &model, const int i, const int mark, bool first_lvl) {
   int x, y, hops, occ;
   unsigned int found=0;
   bool bNew,bNew2;
@@ -511,10 +511,10 @@ void QuadRegression<Degree, Point, CameraModel>::grow(SubStructure::VISITED_LIST
           model.get();
         bNew=bNew2;
 
-        list.add(SubStructure::SVALUE(getInd(i, x+1,y),hops-1));
-        list.add(SubStructure::SVALUE(getInd(i, x-1,y),hops-1));
-        list.add(SubStructure::SVALUE(getInd(i, x,y+1),hops-1));
-        list.add(SubStructure::SVALUE(getInd(i, x,y-1),hops-1));
+        list.add(SubStructure::SVALUE<Point> (getInd(i, x+1,y),hops-1, levels_[i].data[getInd(i,x,y)].point()));
+        list.add(SubStructure::SVALUE<Point> (getInd(i, x-1,y),hops-1, levels_[i].data[getInd(i,x,y)].point()));
+        list.add(SubStructure::SVALUE<Point> (getInd(i, x,y+1),hops-1, levels_[i].data[getInd(i,x,y)].point()));
+        list.add(SubStructure::SVALUE<Point> (getInd(i, x,y-1),hops-1, levels_[i].data[getInd(i,x,y)].point()));
 
       }
       else
@@ -610,7 +610,7 @@ void QuadRegression<Degree, Point, CameraModel>::grow(SubStructure::VISITED_LIST
   }
 
   //region growing
-  SubStructure::VISITED_LIST<SubStructure::SVALUE> list_lower;
+  SubStructure::VISITED_LIST<SubStructure::SVALUE<Point> > list_lower;
   for(int j=0; j<list.size; j++) {
     x= list.vals[j].v%levels_[i].w;
     y= list.vals[j].v/levels_[i].w;
@@ -629,17 +629,17 @@ void QuadRegression<Degree, Point, CameraModel>::grow(SubStructure::VISITED_LIST
       continue;
 
     if(above) {
-      list_lower.add(SubStructure::SVALUE(getInd(i-1, 2*x,2*y),hops/2));
-      list_lower.add(SubStructure::SVALUE(getInd(i-1, 2*x+1,2*y),hops/2));
+      list_lower.add(SubStructure::SVALUE<Point> (getInd(i-1, 2*x,2*y),hops/2, list.vals[j].pt));
+      list_lower.add(SubStructure::SVALUE<Point> (getInd(i-1, 2*x+1,2*y),hops/2, list.vals[j].pt));
     }
     if(below) {
-      list_lower.add(SubStructure::SVALUE(getInd(i-1, 2*x,2*y+1),hops/2));
-      list_lower.add(SubStructure::SVALUE(getInd(i-1, 2*x+1,2*y+1),hops/2));
+      list_lower.add(SubStructure::SVALUE<Point> (getInd(i-1, 2*x,2*y+1),hops/2, list.vals[j].pt));
+      list_lower.add(SubStructure::SVALUE<Point> (getInd(i-1, 2*x+1,2*y+1),hops/2, list.vals[j].pt));
     }
-    if(left && !above) list_lower.add(SubStructure::SVALUE(getInd(i-1, 2*x,2*y),hops/2));
-    if(left && !below) list_lower.add(SubStructure::SVALUE(getInd(i-1, 2*x,2*y+1),hops/2));
-    if(right && !above) list_lower.add(SubStructure::SVALUE(getInd(i-1, 2*x+1,2*y),hops/2));
-    if(right && !below) list_lower.add(SubStructure::SVALUE(getInd(i-1, 2*x+1,2*y+1),hops/2));
+    if(left && !above) list_lower.add(SubStructure::SVALUE<Point> (getInd(i-1, 2*x,2*y),hops/2, list.vals[j].pt));
+    if(left && !below) list_lower.add(SubStructure::SVALUE<Point> (getInd(i-1, 2*x,2*y+1),hops/2, list.vals[j].pt));
+    if(right && !above) list_lower.add(SubStructure::SVALUE<Point> (getInd(i-1, 2*x+1,2*y),hops/2, list.vals[j].pt));
+    if(right && !below) list_lower.add(SubStructure::SVALUE<Point> (getInd(i-1, 2*x+1,2*y+1),hops/2, list.vals[j].pt));
   }
 
   grow(list_lower, model, i-1, mark, false);
