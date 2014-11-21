@@ -82,7 +82,7 @@ cob_3d_features::OrganizedNormalEstimationOMP<PointInT,PointOutT,LabelOutT>::com
   for (size_t i=0; i < indices_->size(); ++i)
   {
     labels_->points[(*indices_)[i]].label = I_UNDEF;
-    computePointNormal(*surface_, (*indices_)[i],
+    this->computePointNormal(*surface_, (*indices_)[i],
 		       output.points[(*indices_)[i]].normal[0],
 		       output.points[(*indices_)[i]].normal[1],
 		       output.points[(*indices_)[i]].normal[2],
