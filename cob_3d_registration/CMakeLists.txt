@@ -5,6 +5,7 @@ project(cob_3d_registration)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
+  cmake_modules
   cob_3d_features
   cob_3d_mapping_common
   cob_srvs
