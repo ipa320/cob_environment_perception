@@ -17,11 +17,11 @@
  *  ROS package name: cob_3d_mapping_features
  *
  * \author
- *  Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
+ *  Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  * \author
  *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * \date Date of creation: 12/2011
+ * \date Date of creation: 10/2011
  *
  * \brief
  * Description:
@@ -60,37 +60,48 @@
  *
  ****************************************************************/
 
-#ifndef __IMPL_ORGANIZED_NORMAL_ESTIMATION_OMP_H__
-#define __IMPL_ORGANIZED_NORMAL_ESTIMATION_OMP_H__
+#ifndef __EDGE_EXTRACTION_H__
+#define __EDGE_EXTRACTION_H__
 
-#include "cob_3d_mapping_common/label_defines.h"
-#include "cob_3d_features/organized_normal_estimation_omp.h"
+#include <pcl/point_cloud.h>
 
-template <typename PointInT, typename PointOutT, typename LabelOutT> void
-cob_3d_features::OrganizedNormalEstimationOMP<PointInT,PointOutT,LabelOutT>::computeFeature (PointCloudOut &output)
+namespace cob_3d_features
 {
-  if (labels_->points.size() != input_->size())
+  template <typename PointInT, typename PointOutT>
+  class EdgeExtraction
   {
-    labels_->points.resize(input_->size());
-    labels_->height = input_->height;
-    labels_->width = input_->width;
-  }
+  public:
+    EdgeExtraction () : threshold_(0.0)
+    { };
+    ~EdgeExtraction () { };
 
-  int threadsize = 1;
+    typedef pcl::PointCloud<PointInT> PointCloudIn;
+    typedef boost::shared_ptr<PointCloudIn> PointCloudInPtr;
+    typedef boost::shared_ptr<const PointCloudIn> PointCloudInConstPtr;
+    typedef pcl::PointCloud<PointOutT> PointCloudOut;
 
-#pragma omp parallel for schedule (dynamic, threadsize)
-  for (size_t i=0; i < indices_->size(); ++i)
-  {
-    labels_->points[(*indices_)[i]].label = I_UNDEF;
-    this->computePointNormal(*surface_, (*indices_)[i],
-		       output.points[(*indices_)[i]].normal[0],
-		       output.points[(*indices_)[i]].normal[1],
-		       output.points[(*indices_)[i]].normal[2],
-		       labels_->points[(*indices_)[i]].label);
-  }
+    void setInput2DEdges (const PointCloudInConstPtr &cloud)
+    {
+      input_2d_ = cloud;
+    }
+
+    void setInput3DEdges (const PointCloudInConstPtr &cloud)
+    {
+      input_3d_ = cloud;
+    }
+
+    void setThreshold (const float &threshold)
+    {
+      threshold_ = threshold;
+    }
+    
+    void extractEdges (PointCloudOut &output);
+
+  protected:
+    PointCloudInConstPtr input_2d_;
+    PointCloudInConstPtr input_3d_;
+    float threshold_;
+  };
 }
 
-#define PCL_INSTANTIATE_OrganizedNormalEstimationOMP(T,OutT,LabelT) template class PCL_EXPORTS cob_3d_features::OrganizedNormalEstimationOMP<T,OutT,LabelT>;
-
 #endif
-

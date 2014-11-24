@@ -195,8 +195,9 @@ public:
     std::string bag_file(wxString(this->argv[1]).mb_str());
     std::string topic(wxString(this->argv[2]).mb_str());
 
-    char* av = "bag_gui";
-    ros::init(argc, &av, "bag_gui");
+    char const* av = "bag_gui";
+    char** av_ptr = (char**)&av;
+    ros::init(argc, av_ptr, "bag_gui");
     nh = new ros::NodeHandle();
     one_.setOutputLabels(labels_);
     one_.setPixelSearchRadius(8,2,2);

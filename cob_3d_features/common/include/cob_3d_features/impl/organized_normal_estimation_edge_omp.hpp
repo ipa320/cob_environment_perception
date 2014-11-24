@@ -17,7 +17,7 @@
  *  ROS package name: cob_3d_mapping_features
  *
  * \author
- *  Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
+ *  Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de, Richard Bormann
  * \author
  *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
@@ -60,37 +60,34 @@
  *
  ****************************************************************/
 
-#ifndef __IMPL_ORGANIZED_NORMAL_ESTIMATION_OMP_H__
-#define __IMPL_ORGANIZED_NORMAL_ESTIMATION_OMP_H__
+#ifndef __IMPL_ORGANIZED_NORMAL_ESTIMATION_EDGE_OMP_H__
+#define __IMPL_ORGANIZED_NORMAL_ESTIMATION_EDGE_OMP_H__
 
 #include "cob_3d_mapping_common/label_defines.h"
-#include "cob_3d_features/organized_normal_estimation_omp.h"
+#include "cob_3d_features/organized_normal_estimation_edge_omp.h"
 
-template <typename PointInT, typename PointOutT, typename LabelOutT> void
-cob_3d_features::OrganizedNormalEstimationOMP<PointInT,PointOutT,LabelOutT>::computeFeature (PointCloudOut &output)
+template<typename PointInT, typename PointOutT, typename LabelOutT> void cob_3d_features::OrganizedNormalEstimationEdgeOMP<PointInT, PointOutT, LabelOutT>::computeFeature(
+		PointCloudOut &output)
 {
-  if (labels_->points.size() != input_->size())
-  {
-    labels_->points.resize(input_->size());
-    labels_->height = input_->height;
-    labels_->width = input_->width;
-  }
+	if (labels_->points.size() != input_->size())
+	{
+		labels_->points.resize(input_->size());
+		labels_->height = input_->height;
+		labels_->width = input_->width;
+	}
 
-  int threadsize = 1;
+	const int threadsize = 1;
 
 #pragma omp parallel for schedule (dynamic, threadsize)
-  for (size_t i=0; i < indices_->size(); ++i)
-  {
-    labels_->points[(*indices_)[i]].label = I_UNDEF;
-    this->computePointNormal(*surface_, (*indices_)[i],
-		       output.points[(*indices_)[i]].normal[0],
-		       output.points[(*indices_)[i]].normal[1],
-		       output.points[(*indices_)[i]].normal[2],
-		       labels_->points[(*indices_)[i]].label);
-  }
+	for (size_t i = 0; i < indices_->size(); ++i)
+	{
+		labels_->points[(*indices_)[i]].label = I_UNDEF;
+		this->computePointNormal(*surface_, (*indices_)[i], output.points[(*indices_)[i]].normal[0], output.points[(*indices_)[i]].normal[1], output.points[(*indices_)[i]].normal[2],
+				labels_->points[(*indices_)[i]].label);
+	}
 }
 
-#define PCL_INSTANTIATE_OrganizedNormalEstimationOMP(T,OutT,LabelT) template class PCL_EXPORTS cob_3d_features::OrganizedNormalEstimationOMP<T,OutT,LabelT>;
+#define PCL_INSTANTIATE_OrganizedNormalEstimationEdgeOMP(T,OutT,LabelT) template class PCL_EXPORTS cob_3d_features::OrganizedNormalEstimationEdgeOMP<T,OutT,LabelT>;
 
 #endif
 
