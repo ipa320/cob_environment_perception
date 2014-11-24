@@ -24,6 +24,8 @@
     <remap from="classified_cloud" to="$(arg classified_cloud)"/>
     <remap from="shape_array" to="$(arg shape_array)"/>
 
+    <param name="skip_level" type="int" value="0"/>
+
     <param name="centroid_passthrough" type="double" value="5.0"/>
     <param name="min_cluster_size" type="int" value="100"/>
     <param name="filter" type="bool" value="True"/>

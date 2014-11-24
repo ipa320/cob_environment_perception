@@ -67,6 +67,7 @@
 // ROS includes
 #include <ros/ros.h>
 #include <dynamic_reconfigure/server.h>
+#include <tf/transform_listener.h>
 
 // ROS message includes
 //#include <visualization_msgs/Marker.h>
@@ -221,9 +222,11 @@ namespace cob_3d_mapping
     ros::ServiceServer get_map_server_;         ///< The server for getting the map.
     ros::ServiceServer set_map_server_;         ///< The server for setting the map.
     ros::ServiceServer modify_map_server_ ;     ///< The server for modifying the map.
+    tf::TransformListener tf_listener_;
 
     bool enable_cyl_;                           ///< If true , processing of cylinders is activated.
     bool enable_poly_;                          ///< If true , processing of polygons is activated.
+    bool colorize_;								///< If true, map will be colorized (vertical and horizontal planes...)
 
     /**
     * @brief Dynamic Reconfigure server
@@ -232,6 +235,7 @@ namespace cob_3d_mapping
 
     GeometryMap geometry_map_;                   ///< Map containing geometrys (polygons,cylinders)
     std::string map_frame_id_;                  ///< Name of target frame.
+    std::string camera_frame_id_;
   };
 }
 

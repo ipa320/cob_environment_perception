@@ -146,6 +146,8 @@ public:
   {
     height_min_ = height_min;
   }
+  
+  inline double getHeightMin() const {return height_min_;}
 
   /**
    * @brief Set the maximum height of the table top.
@@ -158,6 +160,8 @@ public:
   {
     height_max_ = height_max;
   }
+  
+  inline double getHeightMax() const {return height_max_;}
 
   /**
    * @brief Set the minimum area of the table top.

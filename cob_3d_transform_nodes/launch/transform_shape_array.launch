@@ -8,7 +8,7 @@
   <arg name="prefix" value="gdb -ex run --args" if="$(arg debug_mode)"/>
   <arg name="prefix" value="" unless="$(arg debug_mode)"/>
 
-  <node pkg="cob_3d_mapping_common" type="transform_shape_array" name="transform_shape_array" output="screen"  launch-prefix="$(arg prefix)">
+  <node pkg="cob_3d_transform_nodes" type="transform_shape_array" name="transform_shape_array" output="screen"  launch-prefix="$(arg prefix)">
     <remap from="~input" to="$(arg input)"/>
     <remap from="~output" to="$(arg output)"/>
 

@@ -1,0 +1,14 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Input/Output Topics: -->
+  <!--arg name="shape_array" default="/shapes_array_polynomial"/-->
+  <arg name="shape_array" default="shape_combined_array_pub"/>
+  <arg name="camera_info" default="/camera/depth/camera_info"/>
+
+  <arg name="debug_mode" default="false"/>
+
+  <node pkg="cob_3d_features" type="invariant_feature_node" name="invariant_feature_node" output="screen">
+    <!--remap from="/camera/depth/camera_info" to="$(arg camera_info)"/-->
+    <remap from="/shapes_array" to="$(arg shape_array)"/>
+  </node>
+</launch>

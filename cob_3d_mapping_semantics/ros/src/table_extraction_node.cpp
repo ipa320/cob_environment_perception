@@ -184,7 +184,7 @@ public:
     	}
       processMap(sa, res.tables);
       res.tables.header = sa.header;
-      ROS_INFO("Found %u tables", res.tables.shapes.size());
+      ROS_INFO("Found %zu tables", res.tables.shapes.size());
       return true;
     }
     else

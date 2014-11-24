@@ -1,0 +1,26 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- start environment modelling -->
+  <arg name="mapping_manager" value="mapping_manager"/>
+  <node pkg="nodelet" type="nodelet" name="$(arg mapping_manager)"  args="manager" output="screen"/>
+
+  <include file="$(find cob_3d_segmentation)/ros/launch/qppf_segmentation.launch">
+    <!-- arg name="point_cloud" value="/transformed/points"/-->
+    <arg name="point_cloud_in" value="/camera/depth_registered/points"/>
+  </include>
+
+  <include file="$(find cob_3d_transform_nodes)/launch/transform_shape_array.launch">
+    <arg name="input" value="/segmentation/shape_array"/>
+    <arg name="output" value="/transformed/shape_array"/>
+  </include>
+  <include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch">
+    <arg name="shape_array_in" value="/transformed/shape_array"/>
+  </include>
+
+
+
+  <!--node pkg="rosbag" type="play" name="rosbag_play" cwd="node" respawn="false" output="screen" args="/home/goa/pcl_daten/table/fixed_pltf_neck_joystick_table.bag -k -q pause"/>
+  	<remap from="input" to="/outlier_removal/output"/>
+  </node-->
+</launch>
+

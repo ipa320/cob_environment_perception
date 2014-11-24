@@ -448,7 +448,7 @@ ShapeMarker::createMarker (visualization_msgs::InteractiveMarkerControl& im_ctrl
     tri_list=refined_tri_list;*/
 
   }
-  if(shape_.type== cob_3d_mapping_msgs::Shape::POLYGON)
+  else if(shape_.type== cob_3d_mapping_msgs::Shape::POLYGON)
   {
     cob_3d_mapping::Polygon p;
 
@@ -494,6 +494,8 @@ ShapeMarker::createMarker (visualization_msgs::InteractiveMarkerControl& im_ctrl
     pp.Triangulate_EC (&polys, &tri_list);*/
 
   }//Polygon
+  else
+	ROS_WARN("Shape type is not supported %d", shape_.type);
 
   if(tri_list.size() == 0)
   {

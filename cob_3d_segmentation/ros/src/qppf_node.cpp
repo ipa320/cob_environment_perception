@@ -14,14 +14,12 @@
  * \note
  *  ROS stack name: TODO FILL IN STACK NAME HERE
  * \note
- *  ROS package name: TODO FILL IN PACKAGE NAME HERE
+ *  ROS package name: cob_3d_segmentation
  *
  * \author
- *  Author: TODO FILL IN AUTHOR NAME HERE
- * \author
- *  Supervised by: TODO FILL IN CO-AUTHOR NAME(S) HERE
+ *  Author: Joshua Hampp
  *
- * \date Date of creation: TODO FILL IN DATE HERE
+ * \date Date of creation: 21.07.2012
  *
  * \brief
  *
@@ -56,12 +54,6 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
-/*
- * qppf_node.cpp
- *
- *  Created on: 21.07.2012
- *      Author: josh
- */
 
 #if !defined(SICK) //&& !defined(ONLY_PLANES_DEPTH)
 #define USE_COLOR
@@ -126,7 +118,7 @@ class QPPF_Node : public Parent
   typedef pcl::PointCloud<Point> PointCloud;
 
   ros::Subscriber point_cloud_sub_;
-  ros::Publisher  curved_pub_, shapes_pub_, outline_pub_, image_pub_, label_pub_, rec_pub_;
+  ros::Publisher  curved_pub_, shapes_pub_, shapes_pub_poly_, outline_pub_, image_pub_, label_pub_, rec_pub_;
 
 #ifdef SICK
   Segmentation::Segmentation_QuadRegression<Point, PointLabel, Segmentation::QPPF::QuadRegression<1, Point, Segmentation::QPPF::CameraModel_SR4500<Point> > > seg_;
@@ -178,6 +170,9 @@ public:
     bool only_planes;
     if(this->n_.getParam("only_planes",only_planes))
       seg_.setOnlyPlanes(only_planes);
+      
+    if(seg_.getOnlyPlanes())
+		shapes_pub_poly_ = n->advertise<cob_3d_mapping_msgs::ShapeArray>("/shapes_array_polynomial", 1);
   }
 
   void setGoal(const cob_3d_segmentation::ObjectWatchGoalConstPtr &goal)
@@ -288,6 +283,16 @@ public:
         //sa.shapes[i].header = pc_in->header;
       shapes_pub_.publish(sa);
     }
+    if(seg_.getOnlyPlanes() && shapes_pub_poly_.getNumSubscribers()>0)
+    {
+		seg_.setOnlyPlanes(false);
+		cob_3d_mapping_msgs::ShapeArray sa = seg_;
+		seg_.setOnlyPlanes(true);
+		pcl_conversions::fromPCL(pc_in->header, sa.header);
+		for(size_t i=0; i<sa.shapes.size(); i++)
+			pcl_conversions::fromPCL(pc_in->header, sa.shapes[i].header);
+		shapes_pub_poly_.publish(sa);
+	}
     if(curved_pub_.getNumSubscribers()>0)
     {
       cob_3d_mapping_msgs::CurvedPolygonArray cpa;
