@@ -76,11 +76,11 @@ Gui::ViewBase::~ViewBase()
  /* --------- View ---------*/
 /* ------------------------*/
 template<typename RT, typename VT>
-boost::signals::connection Gui::View<RT,VT>::registerMouseCallback(boost::function<void (wxMouseEvent&, Resource<RT>*)> f)
+boost::signals2::connection Gui::View<RT,VT>::registerMouseCallback(boost::function<void (wxMouseEvent&, Resource<RT>*)> f)
 { return mouse_sig_.connect(f); }
 
 template<typename RT, typename VT>
-boost::signals::connection Gui::View<RT,VT>::registerKeyCallback(boost::function<void (wxKeyEvent&, Resource<RT>*)> f)
+boost::signals2::connection Gui::View<RT,VT>::registerKeyCallback(boost::function<void (wxKeyEvent&, Resource<RT>*)> f)
 { return key_sig_.connect(f); }
 
 template<typename RT, typename VT>

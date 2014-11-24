@@ -112,6 +112,7 @@ namespace cob_3d_segmentation
       , is_planar_(false)
       , max_curvature(0.0)
       , min_curvature(0.0)
+  	  , min_curvature_direction(0.0, 0.0, 0.0)
       , pca_point_comp1(0.0, 0.0, 0.0)
       , pca_point_comp2(0.0, 0.0, 0.0)
       , pca_point_comp3(0.0, 0.0, 0.0)
@@ -140,6 +141,7 @@ namespace cob_3d_segmentation
     bool is_planar_;
     float max_curvature;
     float min_curvature;
+    Eigen::Vector3f min_curvature_direction;
 
     Eigen::Vector3f pca_point_comp1;
     Eigen::Vector3f pca_point_comp2;

@@ -112,7 +112,7 @@ namespace cob_3d_features
     inline void
     setOutputLabels(LabelCloudOutPtr labels) { labels_ = labels; }
 
-    void
+    virtual void
     computePointNormal(
       const PointCloudIn &cloud,
       int index,

@@ -17,11 +17,11 @@
  *  ROS package name: cob_3d_mapping_features
  *
  * \author
- *  Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
+ *  Author: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  * \author
  *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
- * \date Date of creation: 12/2011
+ * \date Date of creation: 10/2011
  *
  * \brief
  * Description:
@@ -60,37 +60,42 @@
  *
  ****************************************************************/
 
-#ifndef __IMPL_ORGANIZED_NORMAL_ESTIMATION_OMP_H__
-#define __IMPL_ORGANIZED_NORMAL_ESTIMATION_OMP_H__
+#ifndef __IMPL_EDGE_EXTRACTION_H__
+#define __IMPL_EDGE_EXTRACTION_H__
 
+#include "cob_3d_mapping_common/point_types.h"
 #include "cob_3d_mapping_common/label_defines.h"
-#include "cob_3d_features/organized_normal_estimation_omp.h"
+#include "cob_3d_features/edge_extraction.h"
 
-template <typename PointInT, typename PointOutT, typename LabelOutT> void
-cob_3d_features::OrganizedNormalEstimationOMP<PointInT,PointOutT,LabelOutT>::computeFeature (PointCloudOut &output)
+template <typename PointInT, typename PointOutT> void
+cob_3d_features::EdgeExtraction<PointInT,PointOutT>::extractEdges(
+  PointCloudOut &output)
 {
-  if (labels_->points.size() != input_->size())
-  {
-    labels_->points.resize(input_->size());
-    labels_->height = input_->height;
-    labels_->width = input_->width;
-  }
+  output.height = input_3d_->height;
+  output.width = input_3d_->width;
+  output.points.resize(output.height * output.width);
 
-  int threadsize = 1;
+  float thresh = threshold_;// * 2;
 
-#pragma omp parallel for schedule (dynamic, threadsize)
-  for (size_t i=0; i < indices_->size(); ++i)
+  for (size_t i=0; i < output.size(); i++)
   {
-    labels_->points[(*indices_)[i]].label = I_UNDEF;
-    this->computePointNormal(*surface_, (*indices_)[i],
-		       output.points[(*indices_)[i]].normal[0],
-		       output.points[(*indices_)[i]].normal[1],
-		       output.points[(*indices_)[i]].normal[2],
-		       labels_->points[(*indices_)[i]].label);
+    if (input_3d_->points[i].strength > 1.0)
+    {
+      output.points[i].label = I_NAN;
+    }
+    //TODO: apply weight factor
+    else if (input_3d_->points[i].strength > thresh*2 || (input_2d_->points[i].strength+0.1) > thresh)
+    {
+      // add normalized 2D and 3D strength values and apply threshold
+      output.points[i].label = I_EDGE;
+    }
+    else
+    {
+      output.points[i].label = I_UNDEF;
+    }
   }
 }
 
-#define PCL_INSTANTIATE_OrganizedNormalEstimationOMP(T,OutT,LabelT) template class PCL_EXPORTS cob_3d_features::OrganizedNormalEstimationOMP<T,OutT,LabelT>;
+#define PCL_INSTANTIATE_EdgeExtraction(T,OutT) template class PCL_EXPORTS cob_3d_features::EdgeExtraction<T,OutT>;
 
 #endif
-

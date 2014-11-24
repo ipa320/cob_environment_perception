@@ -17,7 +17,7 @@
  *  ROS package name: cob_3d_mapping_features
  *
  * \author
- *  Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de
+ *  Author: Steffen Fuchs, email:georg.arbeiter@ipa.fhg.de, Richard Bormann
  * \author
  *  Supervised by: Georg Arbeiter, email:georg.arbeiter@ipa.fhg.de
  *
@@ -60,37 +60,39 @@
  *
  ****************************************************************/
 
-#ifndef __IMPL_ORGANIZED_NORMAL_ESTIMATION_OMP_H__
-#define __IMPL_ORGANIZED_NORMAL_ESTIMATION_OMP_H__
+#ifndef __ORGANIZED_NORMAL_ESTIMATION_EDGE_OMP_H__
+#define __ORGANIZED_NORMAL_ESTIMATION_EDGE_OMP_H__
 
-#include "cob_3d_mapping_common/label_defines.h"
-#include "cob_3d_features/organized_normal_estimation_omp.h"
+#include "cob_3d_features/organized_normal_estimation_edge.h"
 
-template <typename PointInT, typename PointOutT, typename LabelOutT> void
-cob_3d_features::OrganizedNormalEstimationOMP<PointInT,PointOutT,LabelOutT>::computeFeature (PointCloudOut &output)
+namespace cob_3d_features
 {
-  if (labels_->points.size() != input_->size())
-  {
-    labels_->points.resize(input_->size());
-    labels_->height = input_->height;
-    labels_->width = input_->width;
-  }
+template<typename PointInT, typename PointOutT, typename LabelOutT>
+class OrganizedNormalEstimationEdgeOMP: public OrganizedNormalEstimationEdge<PointInT, PointOutT, LabelOutT>
+{
+public:
 
-  int threadsize = 1;
+	using OrganizedFeatures<PointInT, PointOutT>::pixel_search_radius_;
+	using OrganizedFeatures<PointInT, PointOutT>::input_;
+	using OrganizedFeatures<PointInT, PointOutT>::indices_;
+	using OrganizedFeatures<PointInT, PointOutT>::surface_;
+	using OrganizedFeatures<PointInT, PointOutT>::feature_name_;
+	using OrganizedNormalEstimation<PointInT, PointOutT, LabelOutT>::labels_;
 
-#pragma omp parallel for schedule (dynamic, threadsize)
-  for (size_t i=0; i < indices_->size(); ++i)
-  {
-    labels_->points[(*indices_)[i]].label = I_UNDEF;
-    this->computePointNormal(*surface_, (*indices_)[i],
-		       output.points[(*indices_)[i]].normal[0],
-		       output.points[(*indices_)[i]].normal[1],
-		       output.points[(*indices_)[i]].normal[2],
-		       labels_->points[(*indices_)[i]].label);
-  }
+	typedef typename OrganizedNormalEstimation<PointInT, PointOutT, LabelOutT>::PointCloudOut PointCloudOut;
+
+	OrganizedNormalEstimationEdgeOMP()
+	{
+		feature_name_ = "OrganizedNormalEstimationEdgeOMP";
+	}
+	;
+
+protected:
+
+	void
+	computeFeature(PointCloudOut &output);
+
+};
 }
 
-#define PCL_INSTANTIATE_OrganizedNormalEstimationOMP(T,OutT,LabelT) template class PCL_EXPORTS cob_3d_features::OrganizedNormalEstimationOMP<T,OutT,LabelT>;
-
 #endif
-
