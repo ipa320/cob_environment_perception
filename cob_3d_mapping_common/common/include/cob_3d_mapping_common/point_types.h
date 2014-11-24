@@ -60,7 +60,7 @@
 #ifndef IPA_POINT_TYPES_H_
 #define IPA_POINT_TYPES_H_
 
-#include <pcl/ros/register_point_struct.h>
+#include <pcl/register_point_struct.h>
 #include <pcl/point_types.h>
 //#include <ros/ros.h>
 
