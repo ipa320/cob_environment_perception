@@ -66,6 +66,7 @@
 
 #include <visualization_msgs/MarkerArray.h>
 #include "../point_types.h"
+#include <cob_3d_mapping_common/stop_watch.h>
 #include "quad_regression_algo.h"
 
 namespace Segmentation
@@ -495,6 +496,7 @@ poly.segments2d_.back().push_back(p2);
 
     void setFilter(const float f) {filter_=f;}
     void setOnlyPlanes(const bool b) {only_planes_=b;}
+    bool getOnlyPlanes() const {return only_planes_;}
 
   };
 

@@ -57,8 +57,7 @@
 *
 ****************************************************************/
 
-#ifndef POLYGON_H_
-#define POLYGON_H_
+#pragma once
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
@@ -168,11 +167,11 @@ namespace cob_3d_mapping
     }
 
     virtual void setContours3D(std::vector<std::vector<Eigen::Vector3f> >& contours_3d);
-    virtual std::vector<std::vector<Eigen::Vector3f> > getContours3D();
+    virtual std::vector<std::vector<Eigen::Vector3f> > getContours3D() const;
 
 
-    void setContours2D(std::vector<std::vector<Eigen::Vector2f> >& contours_2d) {contours_ = contours_2d;};
-    std::vector<std::vector<Eigen::Vector2f> > getContours2D() {return contours_;};
+    void setContours2D(const std::vector<std::vector<Eigen::Vector2f> >& contours_2d) {contours_ = contours_2d;};
+    const std::vector<std::vector<Eigen::Vector2f> > &getContours2D() const {return contours_;};
 
     //##########methods for instantiation##############
 
@@ -246,6 +245,7 @@ namespace cob_3d_mapping
     */
     float computeSimilarity(const Polygon::Ptr& poly) const;
 
+	float getOverlap(const Polygon& poly);
 
     /**
     * \brief Merging of polygons.
@@ -283,9 +283,21 @@ namespace cob_3d_mapping
     inline bool hasSimilarParametersWith(const Polygon::Ptr& poly) const
     {
       Eigen::Vector3f d = (this->pose_.translation() - poly->pose_.translation());
-      return ( fabs(poly->normal_.dot(this->normal_)) > this->merge_settings_.angle_thresh &&
-               fabs( d.dot(this->normal_) ) < this->merge_settings_.d_thresh &&
-               fabs( d.dot(poly->normal_) ) < this->merge_settings_.d_thresh );
+      const float fact = computeCentroid().squaredNorm()/(1.8f*1.8f);
+      const float fact2 = 0.5f + 0.5f*(1-std::max(std::abs(Eigen::Vector3f::UnitZ().dot(this->normal_)), std::abs(Eigen::Vector3f::UnitZ().dot(poly->normal_))));
+      return ( fabs(poly->normal_.dot(this->normal_)) > this->merge_settings_.angle_thresh*fact2 &&
+               fabs( d.dot(this->normal_) ) < this->merge_settings_.d_thresh*fact &&
+               fabs( d.dot(poly->normal_) ) < this->merge_settings_.d_thresh*fact );
+    }
+    
+    inline bool hasSimilarColorWith(const Polygon::Ptr& poly) const
+    {
+	  if(color_.size() == poly->color_.size()) {
+		  float cd=0;
+		  for(size_t i=0; i<color_.size(); i++) cd += std::pow(color_[i]-poly->color_[i],2);
+		  if(cd>0.15f) return false;
+	  }
+      return true;
     }
 
     //#######methods for calculation#####################
@@ -298,9 +310,9 @@ namespace cob_3d_mapping
     /**
     * \brief Computation of centroid of polygn
     */
-    Eigen::Vector3f computeCentroid();
+    Eigen::Vector3f computeCentroid() const;
 
-    Eigen::Vector3f computeCentroid(std::vector<std::vector<Eigen::Vector3f> >& contours_3d);
+    Eigen::Vector3f computeCentroid(std::vector<std::vector<Eigen::Vector3f> >& contours_3d) const;
 
 
     /**
@@ -329,6 +341,10 @@ namespace cob_3d_mapping
     * \param[out] max_pt Maximal boundary of bounding box.
     */
     //void computePoseAndBoundingBox(Eigen::Affine3f& pose, Eigen::Vector4f& min_pt, Eigen::Vector4f& max_pt);
+    
+    inline Eigen::Vector3f operator[](const Eigen::Vector2f &p) const {
+        return pose_*Eigen::Vector3f(p(0), p(1), 0);
+	}
 
 
 
@@ -412,9 +428,8 @@ namespace cob_3d_mapping
     */
     void assignID(const std::vector<Polygon::Ptr>& poly_vec);
 
-    DominantColor d_color_;
+    //DominantColor d_color_;
 
 
   };
 }
-#endif /* POLYGON_H_ */

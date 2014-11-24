@@ -257,18 +257,14 @@ getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
   }
 
   std::vector<std::vector<Eigen::Vector3f> >
-  Polygon::getContours3D()
+  Polygon::getContours3D() const
   {
     std::vector<std::vector<Eigen::Vector3f> > contours_3d;
     for(unsigned int i = 0; i < contours_.size(); i++)
     {
       std::vector<Eigen::Vector3f> c;
       for(unsigned int j = 0; j < contours_[i].size(); j++)
-      {
-        Eigen::Vector3f pt_2d(contours_[i][j](0), contours_[i][j](1), 0);
-        Eigen::Vector3f pt_3d = pose_*pt_2d;
-        c.push_back(pt_3d);
-      }
+        c.push_back((*this)[contours_[i][j]]);
       contours_3d.push_back(c);
     }
     return contours_3d;
@@ -454,6 +450,25 @@ getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
     return true;
   }
 
+  float
+  Polygon::getOverlap(const Polygon& poly)
+  {	  
+    std::vector<std::vector<Eigen::Vector2f> > contours_p;
+    projectContour(poly, contours_p);
+    gpc_polygon *gpc_a = new gpc_polygon(), *gpc_b = new gpc_polygon();
+    gpc_polygon *gpc_res_union = new gpc_polygon();
+    this->getGpcStructure(gpc_a, contours_);
+    poly.getGpcStructure(gpc_b, contours_p);
+    gpc_polygon_clip(GPC_INT, gpc_a, gpc_b, gpc_res_union);
+    
+    applyGpcStructure(gpc_res_union);
+
+    gpc_free_polygon(gpc_a);
+    gpc_free_polygon(gpc_b);
+    gpc_free_polygon(gpc_res_union);
+    return computeArea3d();
+  }
+
 
   float
   Polygon::computeSimilarity(const Polygon::Ptr& poly) const
@@ -507,7 +522,7 @@ getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
   {
     //std::cout << "p_avg pose " << p_average->pose_.matrix() << std::endl;
     //if(this->id==0) std::cout << "\tthis rgb: " << this->color[0]*255 << "," << this->color[1]*255 << "," << this->color[2]*255 << std::endl;
-    d_color_.reset();
+    //d_color_.reset();
     //d_color_.setID(this->id_);
     std::vector<std::vector<Eigen::Vector2f> > contours;
     p_average->projectContour(*this, contours);
@@ -544,10 +559,10 @@ getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
       poly_vec[i]->getGpcStructure(gpc_B, contours_p);
       gpc_polygon_clip(GPC_UNION, gpc_B, gpc_C, gpc_C);
       gpc_free_polygon(gpc_B);
-      d_color_.addColor(poly_vec[i]->color_[0]*255,poly_vec[i]->color_[1]*255,poly_vec[i]->color_[2]*255, round(normalizer*poly_vec[i]->merge_weight_));
+      //d_color_.addColor(poly_vec[i]->color_[0]*255,poly_vec[i]->color_[1]*255,poly_vec[i]->color_[2]*255, round(normalizer*poly_vec[i]->merge_weight_));
       //if(id==0) std::cout << "\tm_weight " << poly_vec[i]->id << ": " << poly_vec[i]->merge_weight_ << "," << poly_vec[i]->computeArea3d() << std::endl;
     }
-    d_color_.addColor(this->color_[0]*255,this->color_[1]*255,this->color_[2]*255,round(normalizer*this->merge_weight_));
+    //d_color_.addColor(this->color_[0]*255,this->color_[1]*255,this->color_[2]*255,round(normalizer*this->merge_weight_));
     //if(id==0) std::cout << "\tm_weight " << this->merge_weight_ <<  "," << this->computeArea3d() << std::endl;
 
     /*std::cout << "####### Proj of Paverage ###########" << std::endl;
@@ -569,14 +584,16 @@ getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
     std::cout << contours_[0][i](0) << "," << contours_[0][i](1) << "," << std::endl;
   }*/
     //gpc_free_polygon(smoothed);
-    uint8_t r,g,b;
+    /*uint8_t r,g,b;
     d_color_.getColor(r,g,b);
     //std::cout << "\t" << (int)r << "," << (int)g << "," << (int)b << std::endl;
     float temp_inv = 1.0f/255.0f;
     //std::cout << r* temp_inv << "," << g* temp_inv << "," << b* temp_inv << std::endl;
     this->color_[0] = r * temp_inv;
     this->color_[1] = g * temp_inv;
-    this->color_[2] = b * temp_inv;
+    this->color_[2] = b * temp_inv;*/
+    
+    this->color_ = p_average->color_;
     //if(this->id==0) std::cout << "\tthis rgb: " << this->color[0]*255 << "," << this->color[1]*255 << "," << this->color[2]*255 << std::endl;
   }
 
@@ -634,6 +651,8 @@ getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
     double average_d = d_*merge_weight_;
     double sum_w = merge_weight_;
     unsigned int sum_merged = merged_;
+    std::vector<float> sum_color = color_;
+    BOOST_FOREACH(float &c, sum_color) {c*=merge_weight_;}
     //std::cout << "poly centroid" << pose_.translation()(0) << "," << pose_.translation()(1) << "," << pose_.translation()(2) << "," << std::endl;
     //std::cout << "poly normal" << normal_(0) << "," << normal_(1) << "," << normal_(2) << "," << std::endl;
     //std::cout << pose_.translation()*merge_weight_ << std::endl;
@@ -656,6 +675,8 @@ getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
       average_d += p_map1.merge_weight_ * p_map1.d_;
       sum_w += p_map1.merge_weight_;
       sum_merged += p_map1.merged_;
+      for(size_t i=0; p_map1.color_.size()==sum_color.size() && i<p_map1.color_.size(); i++)
+		sum_color[i] += p_map1.color_[i]*p_map1.merge_weight_;
     }
 
     average_normal = average_normal/sum_w;
@@ -671,6 +692,9 @@ getCoordinateSystemOnPlane(const Eigen::Vector3f &normal,
     {
       p_average->merged_ = merged_limit_;
     }
+    
+    p_average->color_ = sum_color;
+    BOOST_FOREACH(float &c, p_average->color_) {c/=sum_w;}
     //std::cout << "average centroid" << average_centroid(0) << "," << average_centroid(1) << "," << average_centroid(2) << "," << std::endl;
     //std::cout << "average_normal" << average_normal(0) << "," << average_normal(1) << "," << average_normal(2) << "," << std::endl;
     p_average->updateAttributes(average_normal, average_centroid);
@@ -769,7 +793,7 @@ Polygon::computePose()
   }
 
   Eigen::Vector3f
-  Polygon::computeCentroid()
+  Polygon::computeCentroid() const
   {
     std::vector<std::vector<Eigen::Vector3f> > contours_3d = getContours3D();
     return computeCentroid(contours_3d);
@@ -802,11 +826,13 @@ Polygon::computePose()
   }
 
   Eigen::Vector3f
-  Polygon::computeCentroid(std::vector<std::vector<Eigen::Vector3f> >& contours_3d)
+  Polygon::computeCentroid(std::vector<std::vector<Eigen::Vector3f> >& contours_3d) const
   {
+    if(contours_3d.size()<1) return Eigen::Vector3f::Zero();
+    
     //find largest non-hole contour
-    unsigned int idx = 0;
-    for (unsigned int i = 0; i < contours_3d.size (); i++)
+    size_t idx = 0;
+    for (size_t i = 0; i < contours_3d.size (); i++)
     {
       int max_pts = 0;
       if(!holes_[i])
@@ -819,7 +845,7 @@ Polygon::computePose()
       }
     }
     pcl::PointCloud<pcl::PointXYZ> poly_cloud;
-    for (unsigned int j = 0; j < contours_3d[idx].size () ; j++)
+    for(size_t j = 0; j < contours_3d[idx].size() ; j++)
     {
       pcl::PointXYZ p;
       p.getVector3fMap() = contours_3d[idx][j];

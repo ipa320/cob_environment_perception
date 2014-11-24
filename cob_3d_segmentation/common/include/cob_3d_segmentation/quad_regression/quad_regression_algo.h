@@ -91,7 +91,7 @@ namespace Segmentation
       /// calculate kinect parameters
       void getParams(const pcl::PointCloud<Point> &pc);
 
-      inline static float std(const float dist) {return 0.0075f+0.001425f*dist*dist;}   //after "Accuracy analysis of kinect depth data"
+      inline static float std(const float dist) {return 0.0075f+0.0020425f*dist*dist;}   //after "Accuracy analysis of kinect depth data"
 
       /** DEBUG **/
       template<typename APoint>
@@ -231,110 +231,21 @@ namespace Segmentation
       }
 
       inline void addPoint(const int i, const int x, const int y, const int mark, S_POLYGON<Degree> &poly, const SubStructure::Model<Degree> &model, const float v=0.f) {
-
-#if 0
-        for(int xx=-1; xx<2; xx++)
-          for(int yy=-1; yy<2; yy++)
-            if(x+xx>=0 && y+yy>=0 && x+xx<(int)levels_[i].w && y+yy<(int)levels_[i].h
-                && filterOccupied(i,x+xx,y+yy,mark) //&& (levels_[i].data[getInd(x+xx,y+yy)].occopied==mark||levels_[i+1].data[getInd3((x+xx)/2,(y+yy)/2)].occopied==mark)
-        //&& poly.model_.check_tangent(levels_[i].data[getInd(x+xx,y+yy)],0.02f)
-            ){
-              Eigen::Vector3f p;
-              p(0) = levels_[i].data[getInd(x+xx,y+yy)].model_(0,1)/levels_[i].data[getInd(x+xx,y+yy)].model_(0,0);
-              p(1) = levels_[i].data[getInd(x+xx,y+yy)].model_(0,3)/levels_[i].data[getInd(x+xx,y+yy)].model_(0,0);
-              p(2) = levels_[i].data[getInd(x+xx,y+yy)].z_(0)/levels_[i].data[getInd(x+xx,y+yy)].model_(0,0);
-
-
-              //            Eigen::Vector3f p = poly.project2plane(levels_[i].data[getInd(x+xx,y+yy)].model_(0,1)/levels_[i].data[getInd(x+xx,y+yy)].z_(0),
-              //                                                   levels_[i].data[getInd(x+xx,y+yy)].model_(0,3)/levels_[i].data[getInd(x+xx,y+yy)].z_(0),
-              //                                                   model,v);
-
-              p.head<2>() = poly.nextPoint(p);
-              /*
-Eigen::Vector2f vv;
-      vv(0) = (p-poly.param_.col(0)).dot(poly.proj2plane_.col(0))/poly.proj2plane_.col(0).squaredNorm();
-      vv(1) = (p-poly.param_.col(0)).dot(poly.proj2plane_.col(1))/poly.proj2plane_.col(1).squaredNorm();
-            p.head<2>() = vv;*/
-
-              if(!pcl_isfinite(p.sum())) continue;
-              p(2) = v;
-              poly.segments_.back().push_back(p);
-              return;
-            }
-        for(int xx=-1; xx<2; xx++)
-          for(int yy=-1; yy<2; yy++)
-            if(x+xx>=0 && y+yy>=0 && x+xx<(int)levels_[i].w && y+yy<(int)levels_[i].h
-                && poly.model_.check_tangent(levels_[i].data[getInd(x+xx,y+yy)],0.02f)){
-              Eigen::Vector3f p;
-              p(0) = levels_[i].data[getInd(x+xx,y+yy)].model_(0,1)/levels_[i].data[getInd(x+xx,y+yy)].model_(0,0);
-              p(1) = levels_[i].data[getInd(x+xx,y+yy)].model_(0,3)/levels_[i].data[getInd(x+xx,y+yy)].model_(0,0);
-              p(2) = levels_[i].data[getInd(x+xx,y+yy)].z_(0)/levels_[i].data[getInd(x+xx,y+yy)].model_(0,0);
-              /*            p.head<2>() = poly.nextPoint(p);
-
-Eigen::Vector2f vv;
-      vv(0) = (p-poly.param_.col(0)).dot(poly.proj2plane_.col(0))/poly.proj2plane_.col(0).squaredNorm();
-      vv(1) = (p-poly.param_.col(0)).dot(poly.proj2plane_.col(1))/poly.proj2plane_.col(1).squaredNorm();
-            p.head<2>() = vv;
-               */
-              if(!pcl_isfinite(p.sum())) continue;
-              p(2) = v;
-              poly.segments_.back().push_back(p);
-              return;
-            }
-
-        //      for(int xx=-2; xx<3; xx++)
-        //        for(int yy=-2; yy<3; yy++)
-        //          if(x+xx>=0 && y+yy>=0 && x+xx<levels_[i].w && y+yy<levels_[i].h && levels_[i].data[getInd(x+xx,y+yy)].occopied==mark){
-        //            Eigen::Vector3f p;
-        //            p(0) = levels_[i].data[getInd(x+xx,y+yy)].model_(0,1)/levels_[i].data[getInd(x+xx,y+yy)].model_(0,0);
-        //            p(1) = levels_[i].data[getInd(x+xx,y+yy)].model_(0,3)/levels_[i].data[getInd(x+xx,y+yy)].model_(0,0);
-        //            p(2) = levels_[i].data[getInd(x+xx,y+yy)].z_(0)/levels_[i].data[getInd(x+xx,y+yy)].model_(0,0);
-        //            //p.head<2>() = poly.nextPoint(p);
-        //
-        //            p.head<2>() -= poly.getCenter();
-        //            p(0)/=poly.proj2plane_(0,0);
-        //            p(1)/=poly.proj2plane_(1,1);
-        //
-        //            if(!pcl_isfinite(p.sum())) continue;
-        //            p(2) = v;
-        //            poly.segments_.back().push_back(p);
-        //            return;
-        //          }
-#endif
-
 #ifdef DO_NOT_DOWNSAMPLE_
-        const int fact=1;
+        const static int fact=1;
 #else
-        const int fact=2;
+        const static int fact=2;
 #endif
-
-        /*{
-        Eigen::Vector3f p = poly.project2plane(((x<<(i+fact-1))-kinect_params_.dx)/kinect_params_.f,
-                                               ((y<<(i+fact-1))-kinect_params_.dy)/kinect_params_.f,
-                                               model,v);
-      poly.segments_.back().push_back(p);
-#ifdef USE_BOOST_POLYGONS_
-poly.segments2d_.back().push_back(BoostPoint(x,y));
-#elif defined(BACK_CHECK_REPEAT)
-Eigen::Vector2i p2;
-p2(0) = x;
-p2(1) = y;
-poly.segments2d_.back().push_back(p2);
-#endif
-      }
-      return;*/
 
         Eigen::Vector3f p = poly.project2plane(((x<<(i+fact-1))-camera_.dx)/camera_.f,
                                                ((y<<(i+fact-1))-camera_.dy)/camera_.f,
                                                model,v);
-#if 1
+
 	bool found = false;
-	const float thr = 9*camera_.std(p(2))*camera_.std(p(2));
         Eigen::Vector3f vp = poly.project2world(p.head<2>());
 
         static const int rel_motion_pattern[][2] = { {0,0}, {-1,-1}, {-1,0}, {-1,1}, {0,-1}, {0,1}, {1,-1}, {1,0}, {1,1}
         , {-2,-2}, {-2,-1}, {-2,0}, {-2,1}, {-2,2}, {-1,-2}, {-1,2}, {0,-2}, {0,2}, {1,-2}, {1,2}, {2,-2}, {2,-1}, {2,0}, {2,1}, {2,2}
-        //, {-3,-3}, {-3,-2}, {-3,-1}, {-3,0}, {-3,1}, {-3,2}, {-3,3}, {-2,-3}, {-2,3}, {-1,-3}, {-1,3}, {0,-3}, {0,3}, {1,-3}, {1,3}, {2,-3}, {2,3}, {3,-3}, {3,-2}, {3,-1}, {3,0}, {3,1}, {3,2}, {3,3}, {-4,-4}, {-4,-3}, {-4,-2}, {-4,-1}, {-4,0}, {-4,1}, {-4,2}, {-4,3}, {-4,4}, {-3,-4}, {-3,4}, {-2,-4}, {-2,4}, {-1,-4}, {-1,4}, {0,-4}, {0,4}, {1,-4}, {1,4}, {2,-4}, {2,4}, {3,-4}, {3,4}, {4,-4}, {4,-3}, {4,-2}, {4,-1}, {4,0}, {4,1}, {4,2}, {4,3}, {4,4}
         };
 
         const pcl::PointCloud<Point> &pc = *input_;
@@ -342,10 +253,13 @@ poly.segments2d_.back().push_back(p2);
           int xx=rel_motion_pattern[j][0];
           int yy=rel_motion_pattern[j][1];
 
-          if(x+xx>=0 && y+yy>=0 && x+xx<(int)pc.width && y+yy<(int)pc.height) {
+          if(x+xx>=0 && y+yy>=0 && x+xx<(int)pc.width && y+yy<(int)pc.height && filterOccupied(i,x+xx,y+yy,mark)) {
 
-            if( (vp-pc(x+xx,y+yy).getVector3fMap()).squaredNorm() < thr )
+            Eigen::Vector3f vp2 = poly.project2world(pc(x+xx,y+yy).getVector3fMap().head(2));
+			const float thr = 25*camera_.std(vp2(2))*camera_.std(vp2(2));
+            if( (vp-pc(x+xx,y+yy).getVector3fMap()).squaredNorm() < thr && (vp2-pc(x+xx,y+yy).getVector3fMap()).squaredNorm() < thr )
             {
+			  p = pc(x+xx,y+yy).getVector3fMap();
               found = true;
               break;
             }
@@ -365,128 +279,7 @@ poly.segments2d_.back().push_back(p2);
           poly.segments2d_.back().push_back(p2);
 #endif
         }
-
-
-#else
-#ifndef EVALUATE
-
-#if 0
-        poly.segments_.back().push_back(p);
-#ifdef USE_BOOST_POLYGONS_
-        poly.segments2d_.back().push_back(BoostPoint(x,y));
-#elif defined(BACK_CHECK_REPEAT)
-        Eigen::Vector2i p2;
-        p2(0) = x;
-        p2(1) = y;
-        poly.segments2d_.back().push_back(p2);
-#endif
-
-        return;
-#endif
-
-        Eigen::Vector3f vp = poly.project2world(p.head<2>());
-
-        float d = poly.middle_(2);
-        d*=d;
-
-        static const int rel_motion_pattern[][2] = { {0,0}, {-1,-1}, {-1,0}, {-1,1}, {0,-1}, {0,1}, {1,-1}, {1,0}, {1,1}
-        //, {-2,-2}, {-2,-1}, {-2,0}, {-2,1}, {-2,2}, {-1,-2}, {-1,2}, {0,-2}, {0,2}, {1,-2}, {1,2}, {2,-2}, {2,-1}, {2,0}, {2,1}, {2,2}
-        //, {-3,-3}, {-3,-2}, {-3,-1}, {-3,0}, {-3,1}, {-3,2}, {-3,3}, {-2,-3}, {-2,3}, {-1,-3}, {-1,3}, {0,-3}, {0,3}, {1,-3}, {1,3}, {2,-3}, {2,3}, {3,-3}, {3,-2}, {3,-1}, {3,0}, {3,1}, {3,2}, {3,3}, {-4,-4}, {-4,-3}, {-4,-2}, {-4,-1}, {-4,0}, {-4,1}, {-4,2}, {-4,3}, {-4,4}, {-3,-4}, {-3,4}, {-2,-4}, {-2,4}, {-1,-4}, {-1,4}, {0,-4}, {0,4}, {1,-4}, {1,4}, {2,-4}, {2,4}, {3,-4}, {3,4}, {4,-4}, {4,-3}, {4,-2}, {4,-1}, {4,0}, {4,1}, {4,2}, {4,3}, {4,4}
-        };
-
-
-        const pcl::PointCloud<Point> &pc = *input_;
-        //      for(int xx=-4; xx<5; xx++)
-        //        for(int yy=-4; yy<5; yy++)
-        for(size_t j=0; j<sizeof(rel_motion_pattern)/sizeof(rel_motion_pattern[0]); j++) {
-          int xx=rel_motion_pattern[j][0];
-          int yy=rel_motion_pattern[j][1];
-
-          if(fact*x+xx>=0 && fact*y+yy>=0 && fact*x+xx<(int)pc.width && fact*y+yy<(int)pc.height) {
-            Eigen::Vector3f p = poly.project2plane((((fact*x+xx)<<(i))-camera_.dx)/camera_.f,
-                                                   (((fact*y+yy)<<(i))-camera_.dy)/camera_.f,
-                                                   model,v);
-
-            if( (poly.project2world(p.head<2>())-pc[getIndPC(pc.width, fact*x+xx,fact*y+yy)].getVector3fMap()).squaredNorm()<std::max(0.0005f,0.0005f*d)
-            && (poly.project2world(p.head<2>())-vp).squaredNorm()<0.02f)
-            {
-              poly.segments_.back().push_back(p);/*
-          Eigen::Vector2f p = poly.nextPoint(pc[getIndPC(fact*x+xx,fact*y+yy)].getVector3fMap());
-
-          if( (poly.project2world(p)-pc[getIndPC(fact*x+xx,fact*y+yy)].getVector3fMap()).squaredNorm()<std::max(0.0005f,0.0005f*d)
-          && (poly.project2world(p)-vp).squaredNorm()<0.02f
-          )
-          {
-            Eigen::Vector3f p3;
-            p3.head<2>()=p;
-            poly.segments_.back().push_back(p3);*/
-
-              //            std::cout<<"P\n"<<poly.project2world(p.head<2>())<<"\n";
-              //            std::cout<<"C\n"<<pc[getIndPC(2*x+xx,2*y+yy)].getVector3fMap()<<"\n";
-
-#ifdef USE_BOOST_POLYGONS_
-              poly.segments2d_.back().push_back(BoostPoint(x,y));
-#else
-              Eigen::Vector2i p2;
-              p2(0) = x+xx/fact;
-              p2(1) = y+yy/fact;
-              poly.segments2d_.back().push_back(p2);
-#endif
-
-              return;
-            }
-          }
-
-        }
-#if 0
-        for(int xx=-8; xx<9; xx++)
-          for(int yy=-8; yy<9; yy++)
-            if(fact*x+xx>=0 && fact*y+yy>=0 && fact*x+xx<(int)pc.width && fact*y+yy<(int)pc.height) {
-              Eigen::Vector3f p = poly.project2plane((((fact*x+xx)<<(i))-kinect_params_.dx)/kinect_params_.f,
-                                                     (((fact*y+yy)<<(i))-kinect_params_.dy)/kinect_params_.f,
-                                                     model,v);
-
-              if( (poly.project2world(p.head<2>())-pc[getIndPC(fact*x+xx,fact*y+yy)].getVector3fMap()).squaredNorm()<std::max(0.0005f,0.0005f*d)
-              && (poly.project2world(p.head<2>())-vp).squaredNorm()<0.02f)
-              {
-                poly.segments_.back().push_back(p);
-
-                //            std::cout<<"P\n"<<poly.project2world(p.head<2>())<<"\n";
-                //            std::cout<<"C\n"<<pc[getIndPC(2*x+xx,2*y+yy)].getVector3fMap()<<"\n";
-
-                //            std::cout<<"P\n"<<poly.project2world(p.head<2>())<<"\n";
-                //            std::cout<<"C\n"<<pc[getIndPC(2*x+xx,2*y+yy)].getVector3fMap()<<"\n";
-
-#ifdef USE_BOOST_POLYGONS_
-                poly.segments2d_.back().push_back(BoostPoint(x,y));
-#elif defined(BACK_CHECK_REPEAT)
-                Eigen::Vector2i p2;
-                p2(0) = x+xx/fact;
-                p2(1) = y+yy/fact;
-                poly.segments2d_.back().push_back(p2);
-#endif
-
-                return;
-              }
-            }
-#endif
-#endif
-
-const float zzz=poly.project2world(p.head<2>())(2);
-if(zzz>0.4f && zzz<8.f)
-        if(poly.normalAt(p.head<2>())(2)>0.35f)
-        {
-          poly.segments_.back().push_back(p);
-#ifdef USE_BOOST_POLYGONS_
-          poly.segments2d_.back().push_back(BoostPoint(x,y));
-#else
-          Eigen::Vector2i p2;
-          p2(0) = x;
-          p2(1) = y;
-          poly.segments2d_.back().push_back(p2);
-#endif
-        }
-#endif
+       
       }
 
       int getPos(int *ch, const int xx, const int yy, const int w, const int h);

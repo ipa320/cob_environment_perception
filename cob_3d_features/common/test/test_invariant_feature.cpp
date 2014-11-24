@@ -17,11 +17,9 @@
  *  ROS package name: TODO FILL IN PACKAGE NAME HERE
  *
  * \author
- *  Author: TODO FILL IN AUTHOR NAME HERE
- * \author
- *  Supervised by: TODO FILL IN CO-AUTHOR NAME(S) HERE
+ *  Author: Joshua Hampp
  *
- * \date Date of creation: TODO FILL IN DATE HERE
+ * \date Date of creation: 06/01/2014
  *
  * \brief
  *****************************************************************
@@ -55,25 +53,32 @@
  *
  ****************************************************************/
 
+int g_num_computations;
+
 #include <fstream>
+#include <iostream>
+
+//ros
 #include <ros/ros.h>
+#include <rosbag/bag.h>
+#include <rosbag/view.h>
+#include <tf/transform_listener.h>
+#include <message_filters/subscriber.h>
+#include <message_filters/time_synchronizer.h>
+#include <message_filters/sync_policies/approximate_time.h>
+#include <sensor_msgs/Image.h>
+#include <sensor_msgs/PointCloud2.h>
+
+//pcl
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>
-#include <sensor_msgs/Image.h>
 #include <pcl/io/ply_io.h>
 #include <pcl/io/vtk_lib_io.h>
 
-#include <iostream>
 #include <Eigen/Geometry>
 
-/*
-#include "ShapeSPH/Util/SphereSampler.h"
-#include "ShapeSPH/Util/Signature.h"
-#include "ShapeSPH/Util/lineqn.h"
-#include "ShapeSPH/Util/SphericalPolynomials.h"
-#include "cob_3d_features/invariant_surface_feature/triangle.hpp"
-*/
-
+#include <cob_3d_mapping_msgs/ShapeArray.h>
+#include <sensor_msgs/CameraInfo.h>
 
 // Packages Includes:
 #include "cob_3d_features/impl/invariant_surface_feature.hpp"
@@ -81,505 +86,634 @@
 #include "cob_3d_features/impl/invariant_surface_feature_debug.hpp"
 #include <cob_3d_segmentation/quad_regression/quad_regression.h>
 #include "cob_3d_segmentation/quad_regression/polygon.h"
- 
 
-template<class Samples, class Values>
-void simple_test(Eigen::Vector3d n, const Samples &samples, Values &vals) {
-	vals.resize(samples.size());
-double s=0;
-	for(size_t i=0; i<samples.size(); i++) {
-		for(size_t j=0; j<samples[i].size(); j++) {
-//			vals[i].push_back( (i==0&&j==3)?1:0 );
-//			vals[i].push_back(samples[i][j].dot(n)>0.4);
-			vals[i].push_back(std::complex<double>(samples[i][j].dot(n), 0));
-//std::cout<<samples[i][j].transpose()<<" = ";
-//std::cout<<vals[i].back()<<" ";
-s+=std::abs(vals[i].back());
-//if(j%8==7)
-//		std::cout<<std::endl;
-		}
-//		std::cout<<std::endl;
-	}
-std::cout<<"sum "<<s<<std::endl;
-}
+#include <cob_3d_mapping_common/stop_watch.h>
+#include <simple_marker.h>
 
-int main(int argc, char **argv)
-{
+#include "test_invariant_feature_eval.hpp"
 
-	std::string fn = "/home/josh/Downloads/MaleLow.obj";
-	//fn = "/home/josh/Downloads/batmobile.obj";
-	fn = "/home/josh/Downloads/bunny.ply";
-	//fn = "/home/josh/Downloads/Beautiful Girl.obj";
-	//fn = "/home/josh/Downloads/Sovereign 5.obj";
-	fn = "/home/josh/Downloads/cylinder.obj";
-	fn = "/home/josh/Downloads/sphere.obj";
-	//fn = "/home/josh/Downloads/prowler_c.obj";
-	//fn = "/home/josh/Downloads/skinner.obj";
-	std::string fn2 = "/home/josh/Downloads/Beautiful Girl.obj";
-	//fn2 = "/home/josh/Downloads/Sovereign 5.obj";
-	fn2 = "/home/josh/Downloads/sphere.obj";
-	//fn2 = "/home/josh/Downloads/skinner.obj";
-	//fn2 = "/home/josh/Downloads/cylinder.obj";
-
+class IFNode {
 	typedef float Real;
 	typedef double Scalar;
 	typedef Sampler<Real, Scalar> S;
-
-	srand(time(NULL));
-
-	const int num_radii = 8;
-	const int num_angles = 32;
-	S gedt((Real)num_radii , num_radii , num_angles);
-	S gedt2((Real)num_radii , num_radii , num_angles);
-	std::vector< FourierKeyS2< Real > > sKeys;
-	S::Samples samples;
-	gedt.getSamples(samples);
-
-	Eigen::Vector3d p1 = Eigen::Vector3d::Random(), p2 = Eigen::Vector3d::Random(), p3 = Eigen::Vector3d::Random(), off = Eigen::Vector3d::Random(), n1=Eigen::Vector3d::Random(),n2, off2;
-	Eigen::Vector3d p4 = Eigen::Vector3d::Random(), p5 = Eigen::Vector3d::Random(), p6 = Eigen::Vector3d::Random();
 	
-	off2(0)=off2(1)=off2(2)=0;
-
-//p1(0)=0;
-//p1(1)=0;
-//p1(2)=0;
-
-//p2(0)=1;
-//p2(1)=0;
-//p2(2)=1;
-
-//p3(0)=1;
-//p3(1)=1;
-//p3(2)=1;
-
-	Eigen::AngleAxisd rotA(0.33*M_PI, Eigen::Vector3d::Random().normalized());
-	Eigen::Matrix3d rot = rotA.matrix();
-//	Eigen::AngleAxisd rot(0.5*M_PI, Eigen::Vector3d::UnitX());
-	n2 = rot*n1;
-
-	if(1) {		
-		cob_3d_features::invariant_surface_feature::SingleTriangle<Scalar, S::Samples, S::Values> tri(p1, p2, p3);
-		cob_3d_features::invariant_surface_feature::SingleTriangle<Scalar, S::Samples, S::Values> tri_opp(-p1, -p2, -p3);
+	enum {DEGREE=1};	/// degree of polynomial surfaces (input data)
+	
+	typedef Segmentation::S_POLYGON<DEGREE> Polygon;
+	typedef cob_3d_features::InvariantSurfaceFeature<Polygon> ISF;
+	
+	ISF isf_;	/// computation unit
+	//boost::shared_ptr<ISF> isf_;
+	
+	//ros stuff
+	ros::Subscriber sub_, sub_camera_info_;
+	tf::TransformListener tf_listener_;
+	typedef message_filters::sync_policies::ApproximateTime<cob_3d_mapping_msgs::ShapeArray, sensor_msgs::PointCloud2> MySyncPolicy;
+	boost::shared_ptr<message_filters::Synchronizer<MySyncPolicy> > sync_;
+	//boost::shared_ptr<message_filters::TimeSynchronizer<cob_3d_mapping_msgs::ShapeArray, sensor_msgs::PointCloud2> > sync_;
+	std::string relative_frame_id_;
+	
+	ISF::PResultConst last_; /// features of last frame
+	pcl::PolygonMesh old_scene_; /// debug map of last frame
+	std::vector<Eigen::Vector4f> fov_; /// field of view (compatible to computation unit)
+	
+	bool getTransformation(const ros::Time &time, const std::string &frame_id, typename ISF::TAffine &tf) {
+		tf::StampedTransform transform;
+		try{
+		  tf_listener_.lookupTransform(relative_frame_id_, frame_id,
+								   time, transform);
+		}
+		catch (tf::TransformException ex){
+		  ROS_ERROR("%s",ex.what());
+		  return false;
+		}
 		
-		cob_3d_features::invariant_surface_feature::SingleTriangle<Scalar, S::Samples, S::Values> tri3(p4, p5, p6);
-		cob_3d_features::invariant_surface_feature::SingleTriangle<Scalar, S::Samples, S::Values> tri5(p4*2, p5, p6+p2);
-
-		//cob_3d_features::invariant_surface_feature::SingleTriangle<Scalar, S::Samples, S::Values> tri2(p1+off, p2+off, p3+off);
-		cob_3d_features::invariant_surface_feature::SingleTriangle<Scalar, S::Samples, S::Values> tri2(rot*p1+off, rot*p2+off, rot*p3+off);
-		cob_3d_features::invariant_surface_feature::SingleTriangle<Scalar, S::Samples, S::Values> tri4(rot*p4+off, rot*p5+off, rot*p6+off);
-		cob_3d_features::invariant_surface_feature::SingleTriangle<Scalar, S::Samples, S::Values> tri6(rot*(2*p4)+off, rot*p5+off, rot*(p6+p2)+off);
-
-		std::cout<<"nd1 "<<n1.dot(p1)<<std::endl;
-		std::cout<<"nd2 "<<n2.dot(rot*p1)<<std::endl;
-
-		std::cout<<"area "<<(p2-p1).cross(p3-p1).norm()/2<<std::endl;
-		std::cout<<"0 val. "<<std::abs(tri.kernel_lin_tri(Eigen::Vector3d::Zero())+tri3.kernel_lin_tri(Eigen::Vector3d::Zero())+tri5.kernel_lin_tri(Eigen::Vector3d::Zero()))<<std::endl;
-		std::cout<<"0 val. "<<std::abs(tri2.kernel_lin_tri(Eigen::Vector3d::Zero())+tri4.kernel_lin_tri(Eigen::Vector3d::Zero())+tri6.kernel_lin_tri(Eigen::Vector3d::Zero()))<<std::endl;
-
-		std::cout<<"single val. "<<std::abs(tri.kernel_lin_tri(n1)+tri3.kernel_lin_tri(n1)+tri5.kernel_lin_tri(n1))<<std::endl;
-		//std::cout<<"single val. "<<tri.kernel_lin_tri(n2)<<std::endl;
-		//std::cout<<"single val. "<<tri2.kernel_lin_tri(n1)<<std::endl;
-		std::cout<<"single val. "<<std::abs(tri2.kernel_lin_tri(n2)+tri4.kernel_lin_tri(n2)+tri6.kernel_lin_tri(n2))<<std::endl;
-
-		std::cout<<"single val. "<<std::abs( tri.kernel_lin_tri(n1,true))<<std::endl;
-		std::cout<<"single val. "<<std::abs( tri_opp.kernel_lin_tri(n1,true))<<std::endl;
-		std::cout<<"single val. "<<std::abs(tri2.kernel_lin_tri(n2,true))<<std::endl;
-		//std::cout<<"single val. "<<std::abs(tri2.kernel_lin_tri(n1,true))<<std::endl;
+		Eigen::Quaternion<typename ISF::TAffine::Scalar> q;
+		q.x() = transform.getRotation().x();
+		q.y() = transform.getRotation().y();
+		q.z() = transform.getRotation().z();
+		q.w() = transform.getRotation().w();
+		Eigen::Translation<typename ISF::TAffine::Scalar, 3> t;
+		t.x() = transform.getOrigin().x();
+		t.y() = transform.getOrigin().y();
+		t.z() = transform.getOrigin().z();
+		tf = q*t;
 		
-		std::cout<<"sum val. "<<std::abs( tri.kernel_lin_tri(n1)+tri_opp.kernel_lin_tri(n1))<<std::endl;
-		
-		std::cout<<"t "<<std::polar<float>(1,0)<<std::endl;
-		std::cout<<"t "<<std::polar<float>(1,PI)<<std::endl;
-		std::cout<<"t "<<std::polar<float>(1,0)+std::polar<float>(1,PI)<<std::endl;
-
-		tri.compute(samples);
-		tri2.compute(samples);
-		exit(0);
-	}
-
-	/*std::cout<<"off: "<<off.transpose()<<std::endl;
-	for(size_t i=0; i<((S::Values)tri).size(); i++) {
-		for(size_t j=0; j<((S::Values)tri)[i].size(); j++) {
-			std::complex<Scalar> a = ((S::Values)tri)[i][j], b = ((S::Values)tri2)[i][j];
-			if(std::abs(std::abs(a)-std::abs(b))>0.01) {
-				std::cout<<std::abs(a)<<"/"<<std::abs(b)<<" "<<std::endl;
-				std::cout<<(a)<<"/"<<(b)<<" "<<std::endl;
-				//assert(0);
-			}
-		}
-	}*/
-
-
-	const bool test=false;
-	const int M=atoi(argv[2]), Start=atoi(argv[1]);
-	if(!test) {
-		FILE *fp = fopen("/tmp/cmp_prec", "wb");
-		pcl::PolygonMesh mesh;
-		pcl::io::loadPolygonFile(fn, mesh);
-		std::cout<<"step 1 finished"<<std::endl;
-
-		pcl::PointCloud<pcl::PointXYZ> points;
-		pcl::fromROSMsg(mesh.cloud, points);
-		time_t start = time(0);
-		for(size_t i=Start; i<std::min(mesh.polygons.size(), (size_t)M); i++) {
-			for(int j=0; j<(int)mesh.polygons[i].vertices.size()-2; j++) {
-/*std::cout
-					<<(points[mesh.polygons[i].vertices[j  ]].getVector3fMap().cast<double>()+off2).transpose()<<std::endl
-					<<(points[mesh.polygons[i].vertices[j+1]].getVector3fMap().cast<double>()+off2).transpose()<<std::endl
-					<<(points[mesh.polygons[i].vertices[j+2]].getVector3fMap().cast<double>()+off2).transpose()<<std::endl
-<<std::endl;
-std::cout
-					<<(rot*points[mesh.polygons[i].vertices[j  ]].getVector3fMap().cast<double>()+off+off2).transpose()<<std::endl
-					<<(rot*points[mesh.polygons[i].vertices[j+1]].getVector3fMap().cast<double>()+off+off2).transpose()<<std::endl
-					<<(rot*points[mesh.polygons[i].vertices[j+2]].getVector3fMap().cast<double>()+off+off2).transpose()<<std::endl
-<<std::endl;*/
-
-
-				cob_3d_features::invariant_surface_feature::SingleTriangle<Scalar, S::Samples, S::Values> tri(
-					points[mesh.polygons[i].vertices[j  ]].getVector3fMap().cast<double>()+off2,
-					points[mesh.polygons[i].vertices[j+1]].getVector3fMap().cast<double>()+off2,
-					points[mesh.polygons[i].vertices[j+2]].getVector3fMap().cast<double>()+off2
-				);
-				tri.compute(samples);
-				gedt += tri;
-
-//std::cout<<"single val. "<<( tri.kernel_lin_tri(samples[7][42]))<<" "<<tri.area()<<std::endl;
-//std::cout<<"at 42 "<<gedt.complex_vals_[7][42]<<std::endl;
-
-				/*std::cout<<"single val. "<<std::abs( tri.kernel_lin_tri(n1))<<" "<<tri.area()<<std::endl;
-for(size_t l=0; l<((S::Values)tri)[7].size(); l++) {
-	std::cout<<std::abs(((S::Values)tri)[7][l])<<" ";
-}
-std::cout<<std::endl;*/
-			}
-		}
-for(size_t l=0; l<gedt.complex_vals_[7].size(); l++) {
-	double d;
-	d=std::abs(gedt.complex_vals_[7][l]);
-	fwrite(&d, sizeof(double), 1, fp);
-}
-fclose(fp);
-		std::cout<<"step 2 finished: "<<(time(0)-start)<<"s"<<std::endl;
-	}
-
-	if(test) {S::Values vals;
-	simple_test(n1, samples, vals);
-	gedt+=vals;}
-	gedt.sample(sKeys);
-
-	const int bw = sKeys[0].bandWidth();
-	Signature< Real > sig( (bw) * int( sKeys.size() ) );
-	for( int i=0 ; i<sKeys.size() ; i++ )
-	{
-		std::cout<<"Key:"<<std::endl;
-		for( int b=0 ; b<bw ; b++ )
-		{
-			Real _norm2 = sKeys[i](b,0).squareNorm();
-			//std::cout<<sKeys[i](b,0).squareNorm()<<" ";
-			for( int j=1 ; j<=b ; j++ ) {
-				_norm2 += sKeys[i](b,j).squareNorm()*2;
-				//std::cout<<sKeys[i](b,j).squareNorm()<<" ";
-			}
-			sig[i*bw+b] = Real( sqrt(_norm2) );
-			if(b%2==0)
-				std::cout<<sig[i*bw+b]<</*"/"<<sig[i*bw+b]/sig[i*bw]<<*/" ";
-		}
-		std::cout<<std::endl;
-	}
-	sig.write( "/tmp/sig1" /*, Binary.set*/ );
-
-	for(size_t i=0; i<sKeys.size(); i++)
-	{
-		char fn[512];
-		sprintf(fn, "/tmp/key1_%d", i);
-		sKeys[i].write(fn);
-	}
-
-
-	if(!test) {
-		FILE *fp = fopen("/tmp/cmp_prec2", "wb");
-		pcl::PolygonMesh mesh;
-		pcl::io::loadPolygonFile(fn2, mesh);
-		std::cout<<"step 1 finished"<<std::endl;
-
-		pcl::PointCloud<pcl::PointXYZ> points;
-		pcl::fromROSMsg(mesh.cloud, points);
-		time_t start = time(0);
-		for(size_t i=Start; i<std::min(mesh.polygons.size(), (size_t)M); i++) {
-			for(int j=0; j<(int)mesh.polygons[i].vertices.size()-2; j++) {
-				cob_3d_features::invariant_surface_feature::SingleTriangle<Scalar, S::Samples, S::Values> tri(
-					rot*points[mesh.polygons[i].vertices[j  ]].getVector3fMap().cast<double>()+off+off2,
-					rot*points[mesh.polygons[i].vertices[j+1]].getVector3fMap().cast<double>()+off+off2,
-					rot*points[mesh.polygons[i].vertices[j+2]].getVector3fMap().cast<double>()+off+off2
-				);
-				tri.compute(samples);
-				gedt2 += tri;
-
-//std::cout<<"single val. "<<( tri.kernel_lin_tri(samples[7][42]))<<" "<<tri.area()<<std::endl;
-//std::cout<<"at 42 "<<gedt2.complex_vals_[7][42]<<std::endl;
-
-				/*std::cout<<"single val. "<<std::abs( tri.kernel_lin_tri(n2))<<" "<<tri.area()<<std::endl;
-		std::cout<<"step 2 finished: "<<(time(0)-start)<<"s"<<std::endl;
-for(size_t l=0; l<((S::Values)tri)[7].size(); l++) std::cout<<std::abs( ((S::Values)tri)[7][l] )<<" ";
-std::cout<<std::endl;*/
-
-				/*cob_3d_features::invariant_surface_feature::SingleTriangle<Scalar, S::Samples, S::Values> tri2(
-					points[mesh.polygons[i].vertices[j  ]].getVector3fMap().cast<double>(),
-					points[mesh.polygons[i].vertices[j+1]].getVector3fMap().cast<double>(),
-					points[mesh.polygons[i].vertices[j+2]].getVector3fMap().cast<double>()
-				);
-				tri2.compute(samples);
-				for(size_t k=0; k<((S::Values)tri).size(); k++) for(size_t l=0; l<((S::Values)tri)[k].size(); l++)
-					if(std::abs( std::abs(((S::Values)tri)[k][l])-std::abs(((S::Values)tri2)[k][l]) )>0.0001) {
-						std::cout<<((S::Values)tri)[k][l]-((S::Values)tri2)[k][l]<<std::endl;
-						std::cout<<std::abs( std::abs(((S::Values)tri)[k][l])-std::abs(((S::Values)tri2)[k][l]) )<<std::endl;
-						tri.kernel_lin_tri(samples[k][l],true);
-						tri2.kernel_lin_tri(samples[k][l],true);
-						assert(0);
-					}*/
-			}
-		}
-for(size_t l=0; l<gedt2.complex_vals_[7].size(); l++) {
-	double d;
-	d=std::abs(gedt2.complex_vals_[7][l]);
-	fwrite(&d, sizeof(double), 1, fp);
-}
-fclose(fp);
-	}
-
-	if(test) {
-		FILE *fp1 = fopen("/tmp/cmp_prec", "rb");
-		FILE *fp2 = fopen("/tmp/cmp_prec2", "rb");
-		double m=0;
-		int i=0;
-		while(!feof(fp1) && !feof(fp2)) {
-			double d1,d2;
-			fread(&d1, sizeof(double), 1, fp1);
-			fread(&d2, sizeof(double), 1, fp2);
-			std::cout<<i<<":\t"<<d1-d2<<" "<<d1<<" "<<d2<<" \t    "<<samples[7][i++].transpose()<<"\n";
-			m = std::max(std::abs(d1-d2), m);
-		}
-		std::cout<<std::endl<<"MAX "<<m<<std::endl;
-		fclose(fp1);
-		fclose(fp2);
-	}
-
-
-	if(test) {S::Values vals;
-	simple_test(n2, samples, vals);
-	gedt2+=vals;}
-	gedt2.sample(sKeys);
-
-	/*for(int n=0; n<gedt.vals_.size(); n++) {
-		std::cout<<"DELTA"<<n<<"\n";
-		for(int i=0; i<gedt.vals_[n].size(); i++)
-			std::cout<<(gedt.vals_[n][i]-gedt2.vals_[n][i])<<" ";
-		std::cout<<std::endl;
-		std::cout<<"DELTA"<<n<<"\n";
-		for(int i=0; i<gedt.vals_[n].size(); i++)
-			std::cout<<(gedt.vals_[n][i])<<" "<<(gedt2.vals_[n][i])<<" "<<std::abs(gedt.complex_vals_[n][i])<<" "<<std::abs(gedt2.complex_vals_[n][i])<<" | ";
-			//std::cout<<(gedt.complex_vals_[n][i])<<" "<<(gedt2.complex_vals_[n][i])<<std::abs(gedt.complex_vals_[n][i])<<" "<<std::abs(gedt2.complex_vals_[n][i])<<" | ";
-		std::cout<<std::endl;
-	}*/
-
-	{
-	Signature< Real > sig( (bw) * int( sKeys.size() ) );
-	for( int i=0 ; i<sKeys.size() ; i++ )
-	{
-		std::cout<<"Key:"<<std::endl;
-		for( int b=0 ; b<bw ; b++ )
-		{
-			Real _norm2 = sKeys[i](b,0).squareNorm();
-			//std::cout<<sKeys[i](b,0).squareNorm()<<" ";
-			for( int j=1 ; j<=b ; j++ ) {
-				_norm2 += sKeys[i](b,j).squareNorm()*2;
-				//std::cout<<sKeys[i](b,j).squareNorm()<<" ";
-			}
-			sig[i*bw+b] = Real( sqrt(_norm2) );
-			if(b%2==0) std::cout<<sig[i*bw+b]<</*"/"<<sig[i*bw+b]/sig[i*bw]<<*/" ";
-		}
-		std::cout<<std::endl;
-	}
-	sig.write( "/tmp/sig2" /*, Binary.set*/ );}
-
-	for(size_t i=0; i<sKeys.size(); i++)
-	{
-		char fn[512];
-		sprintf(fn, "/tmp/key2_%d", i);
-		sKeys[i].write(fn);
+		return true;
 	}
 	
+public:
+	IFNode(const int num_radii, const int num_angles):
+		isf_(num_radii, num_angles)
 	{
-		enum {DEGREE=2};
-		typedef cob_3d_features::InvariantSurfaceFeature<Segmentation::S_POLYGON<DEGREE> > ISF;
-		ISF isf(16,16);
+		ros::NodeHandle n;
+		
+		sub_ = n.subscribe("/shapes_array", 1, &IFNode::cb, this);
+		
+		//alternative to sub_ for evaluation mode
+		message_filters::Subscriber<cob_3d_mapping_msgs::ShapeArray> *sa_sub = new message_filters::Subscriber<cob_3d_mapping_msgs::ShapeArray>(n, "shapes_array", 1);
+		message_filters::Subscriber<sensor_msgs::PointCloud2> *pc_sub = new message_filters::Subscriber<sensor_msgs::PointCloud2>(n, "camera/depth/points_xyzrgb", 1);
+
+		sync_.reset(new message_filters::Synchronizer<MySyncPolicy>(MySyncPolicy(10), *sa_sub, *pc_sub) );
+		//sync_.reset( new message_filters::TimeSynchronizer<cob_3d_mapping_msgs::ShapeArray, sensor_msgs::PointCloud2>(sa_sub, pc_sub, 5) );
+		sync_->registerCallback(boost::bind(&IFNode::cb_eval, this, _1, _2));
+
+		sub_camera_info_ = n.subscribe("/camera/depth/camera_info", 0, &IFNode::cb_camera_info, this);
 		
 		//parameters
-		isf.addRadius(0.25);
 		
-		//input
-		std::ifstream fis("/tmp/blub");
-		Segmentation::Segmentation_QuadRegression<pcl::PointXYZ, pcl::PointXYZRGB, Segmentation::QPPF::QuadRegression<DEGREE, pcl::PointXYZ, Segmentation::QPPF::CameraModel_Kinect<pcl::PointXYZ> > > seg;
-		seg.serialize(fis);
+		//TODO: make configurable
+		//isf_.addRadius(0.3);
+		//isf_.addRadius(0.4);
+		//isf_.addRadius(0.6);
+		isf_.addRadius(0.8);
 		
-		ISF::PTSurfaceList input(new ISF::TSurfaceList);
-		*input = seg.getPolygons();
-		std::cout<<"read data"<<std::endl;
-		
-		//compute
-		isf.setInput(input);
-		std::cout<<"setInput"<<std::endl;
-		isf.compute();
-		std::cout<<"compute"<<std::endl;
-		ISF::PResultConst oldR = isf.getResult();
-		std::cout<<"getResult"<<std::endl;
-		
-		pcl::io::savePLYFile("map1.ply", 		*isf.dbg_Mesh_of_Map());
+		n.param<std::string>("relative_frame_id", relative_frame_id_, "odom");
 	}
-}
-
-#if 0
-#include <fstream>
-#include <ros/ros.h>
-#include <pcl/point_types.h>
-#include <pcl/io/pcd_io.h>
-#include <sensor_msgs/Image.h>
-#include <pcl/io/ply_io.h>
-
-// Packages Includes:
-#include "cob_3d_features/impl/invariant_surface_feature.hpp"
-#include "cob_3d_features/impl/invariant_surface_feature_unit_tests.hpp"
-#include "cob_3d_features/impl/invariant_surface_feature_debug.hpp"
-#include <cob_3d_segmentation/quad_regression/quad_regression.h>
-#include "cob_3d_segmentation/quad_regression/polygon.h"
-
-
-TEST(InvariantSurfaceFeature, sampleSurfaces) {
-	typedef cob_3d_features::InvariantSurfaceFeature<4,4, Segmentation::S_POLYGON<2>, double, Eigen::Affine3d> ISF;
-
-	//read data
-	std::ifstream fis("/tmp/blub");
-	Segmentation::Segmentation_QuadRegression<pcl::PointXYZ, pcl::PointXYZRGB, Segmentation::QPPF::QuadRegression<2, pcl::PointXYZ, Segmentation::QPPF::CameraModel_Kinect<pcl::PointXYZ> > > seg;
-	seg.serialize(fis);
-	ISF::PTSurfaceList input(new ISF::TSurfaceList);
-	*input = seg.getPolygons();
-
-	//read data
-	std::ifstream fis2("/tmp/blub2");
-	seg.serialize(fis2);
-	ISF::PTSurfaceList input2(new ISF::TSurfaceList);
-	*input2 = seg.getPolygons();
-
-	ISF isf;
-
-	//parameters
-	//isf.addRadius(0.2);
-	isf.addRadius(0.5);
-	//isf.addRadius(1);
-
-	//compute
-	isf.setInput(input);
-	isf.compute();
-	ISF::PResultVectorListConst oldR = isf.getResult();
-	pcl::io::savePLYFile("map1.ply", 		*isf.dbg_Mesh_of_Map());
-
-	//compute
-	isf.setInput(input2);
-	isf.compute();
-	ISF::PResultVectorListConst newR = isf.getResult();
-	pcl::io::savePLYFile("map2.ply", 		*isf.dbg_Mesh_of_Map());
-
-	//analyse: distinctiveness within same data
-	Eigen::MatrixXd cor(oldR->size(),oldR->size());
-	for(size_t i=0; i<oldR->size(); i++) {
-		for(size_t k=0; k<oldR->size(); k++) {
-
-			cor(i,k)=0;
-			for(size_t j=0; j<(*oldR)[i].ft.size(); j++)
-				cor(i,k) += (*oldR)[i].ft[j]-(*oldR)[k].ft[j];
-
-		}
+	
+	//only for evaluation!
+	IFNode(const int num_radii, const int num_angles, const double radius):
+		isf_(num_radii, num_angles)
+	{
+		//TODO: set FoV!!!
+		
+		isf_.addRadius(radius);
 	}
-
-	std::cout<<"Correlation\n"<<cor<<std::endl;
-
-
-	//analyse: distinctiveness within same data
-	Eigen::MatrixXd cor2(oldR->size(),newR->size());
-	for(size_t i=0; i<oldR->size(); i++) {
-		for(size_t k=0; k<newR->size(); k++) {
-
-			cor2(i,k)=0;
-			for(size_t j=0; j<(*oldR)[i].ft.size(); j++)
-				cor2(i,k) += (*oldR)[i].ft[j]-(*newR)[k].ft[j];
-
-		}
+	
+	/// the field of view is received ONCE, after that this method will not be called any more
+	void cb_camera_info(const sensor_msgs::CameraInfo &ci) {
+		sub_camera_info_.shutdown();
+		
+		//calc. field of view (FoV)
+		fov_.clear();
+		
+		Eigen::Vector4f v;
+		Eigen::Vector3f o,a,b,c,d; //o is camera origin, rest are edges of VoF
+		
+		o = Eigen::Vector3f::Zero();
+		a=b=c=d = Eigen::Vector3f::UnitZ();
+		
+		a(0)=d(0) =  -1/ci.K[0]*ci.width/2;
+		b(0)=c(0) =   1/ci.K[0]*ci.width/2;
+		c(1)=d(1) =  -1/ci.K[4]*ci.height/2;
+		a(1)=b(1) =   1/ci.K[4]*ci.height/2;
+		
+		//normals looking to the outside
+		v.head<3>() = (a-o).cross(b-o).normalized();
+		v(3) = v.head<3>().dot(o);
+		fov_.push_back(v);
+		
+		v.head<3>() = (b-o).cross(c-o).normalized();
+		v(3) = v.head<3>().dot(o);
+		fov_.push_back(v);
+		
+		v.head<3>() = (c-o).cross(d-o).normalized();
+		v(3) = v.head<3>().dot(o);
+		fov_.push_back(v);
+		
+		v.head<3>() = (d-o).cross(a-o).normalized();
+		v(3) = v.head<3>().dot(o);
+		fov_.push_back(v);
+		
+		//set FoV to computation unit
+		isf_.setFoV(fov_);
+		
+		for(size_t i=0; i<fov_.size(); i++)
+			std::cout<<"fov "<<fov_[i].transpose()<<std::endl;
 	}
-
-	std::cout<<"Correlation\n"<<cor2<<std::endl;
-}
-
-/*TEST(InvariantSurfaceFeature, singleTriangle) {
-	typedef cob_3d_features::InvariantSurfaceFeature<4,4, Segmentation::S_POLYGON<1>, double, Eigen::Affine3d> ISF;
-	ISF isf;
-
-	//parameters
-	isf.addRadius(1);
-
-	//tests
-	//EXPECT_TRUE( isf.test_singleTriangle(100) );
-	//return;
-	pcl::io::savePLYFile("random_submap.ply", 	*isf.test_subsampling_of_Map(5, 0.5));
-	pcl::io::savePLYFile("random_map.ply", 		*isf.dbg_Mesh_of_Map());
-
-	isf.compute();
-	ISF::PResultVectorListConst oldR = isf.getResult();
-
-	//test translational invariance (for ease only in z direction for now)
-	double off = 1.781;
-	std::cout<<"moved in z-direction by "<<off<<std::endl;
-	//isf.test_addOffset(off*3, off*2, off);
-	isf.test_rotate(0.123+M_PI/4);
-	isf.compute();
-	ISF::PResultVectorListConst newR = isf.getResult();
-
-	pcl::io::savePLYFile("random_map_rotated.ply", 		*isf.dbg_Mesh_of_Map());
-
-	assert(oldR->size()==newR->size());
-	for(size_t i=0; i<oldR->size(); i++) {
-		assert((*oldR)[i].ft.size()==(*newR)[i].ft.size());
-
-		for(size_t j=0; j<(*oldR)[i].ft.size(); j++) {
-			for(size_t k=0; k<ISF::NUM_RADIUS; k++) {
-				//std::cout<<i<<" "<<j<<" "<<k<<" "<<oldR->size()<<" "<<newR->size()<<std::endl;
-				std::cout<<"dist "<<(*oldR)[i].ft[j]-(*newR)[i].ft[j]<<std::endl;
-				std::cout<<( (*oldR)[i].ft[j].vals[k])<<std::endl;
-				std::cout<<( (*newR)[i].ft[j].vals[k] )<<std::endl;
-				std::cout<<( (*oldR)[i].ft[j].vals[k]-         (*newR)[i].ft[j].vals[k] )<<std::endl<<std::endl;
-				EXPECT_TRUE( (*oldR)[i].ft[j].vals[k].isApprox((*newR)[i].ft[j].vals[k], 0.1) );
+	
+	//typedef pcl::FPFHSignature33 Feature;
+	typedef pcl::SHOT352 Feature;
+	//typedef pcl::ESFSignature640 Feature;
+	//typedef pcl::VFHSignature308 Feature;
+		
+	pcl::PointCloud<Feature>::Ptr fpfhs_old_;
+	std::vector<Eigen::Vector3d> keypoints_old_;
+	void cb_eval(const cob_3d_mapping_msgs::ShapeArrayConstPtr &msg, const sensor_msgs::PointCloud2ConstPtr &pc) {
+		std::cout<<"evaluation cb"<<std::endl;
+		
+		sub_.shutdown();
+		cb(*msg);
+		
+		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+		pcl::fromROSMsg (*pc, *cloud);
+		
+		pcl::IndicesPtr indicies;
+		pcl::PointCloud<pcl::PointNormal>::Ptr p_n2;
+		computeNormals(cloud, isf_.getKeypoints(), indicies,p_n2);
+		
+		pcl::PointCloud<Feature>::Ptr fpfhs;
+		computeFeatures<Feature>(indicies,p_n2, std::sqrt(isf_.getRadii()[0]), fpfhs);
+		
+		assert(fpfhs->size()==isf_.getKeypoints().size());
+		
+		if(fpfhs_old_ && fpfhs_old_->size()>0) {
+			std::cout<<"wait for key"<<std::endl;
+			getchar();
+			
+			pcl::search::KdTree<Feature>::Ptr tree (new pcl::search::KdTree<Feature> ());
+			tree->setInputCloud(fpfhs_old_);
+			for(size_t i=0; i<fpfhs->size(); i++) {
+				if(!pcl::DefaultPointRepresentation<Feature>().isValid((*fpfhs)[i])) continue;
+				
+			  std::vector< int > k_indices;
+			  std::vector< float > k_sqr_distances;
+			  tree->nearestKSearch( (*fpfhs)[i], 1, k_indices, k_sqr_distances);
+			  assert(k_indices.size()>0);
+			  
+			  int mii = k_indices[0];
+			  
+				cob_3d_visualization::RvizMarker arrow;
+				Eigen::Vector3d o = keypoints_old_[mii]; o(2)+=2;
+				arrow.arrow(isf_.getKeypoints()[i], o, 0.02);
+				//double d = std::min((double)(keypoints_old_[mii]-isf_.getKeypoints()[i]).norm()+0.3, 1.);
+				double d = (keypoints_old_[mii]-isf_.getKeypoints()[i]).norm()<std::sqrt(isf_.getRadii()[0])/2 ? 1.:0.3;
+				arrow.color( d, d, 0. );
 			}
 		}
+		
+		fpfhs_old_ = fpfhs;
+		keypoints_old_ = isf_.getKeypoints();
+		cob_3d_visualization::RvizMarkerManager::get().publish();
 	}
+	
+	void evaluateKeypoints(const cob_3d_mapping_msgs::ShapeArray &msg, const sensor_msgs::PointCloud2ConstPtr &pc, std::ostream &out, const std::vector<std::vector<double> > &parameters) {
+		cb_eval(boost::make_shared<cob_3d_mapping_msgs::ShapeArray>(msg), pc); //debugging
+		
+		PrecisionStopWatch sw;
+		static const std::string DL="\t";
+		static const std::string NL="\n";
+				
+		//write header (timestamp for tf lookup)
+		out<<"header"<<DL<<pc->header.stamp;
+		out<<NL;
+		
+		{ //our keypoint selection
+			//input
+			ISF::PTSurfaceList input;
+			parseInput(msg, input);
+	  
+			//compute
+			for(size_t i=0; parameters.size(); i++) {
+				sw.precisionStart();
+				//compute keypoints
+				isf_.__evalKeypoints__setInput(input, parameters[i][0], parameters[i][1]);
+				const double took1 = sw.precisionStop();
+				
+				std::string name = "FSHD"+DL+boost::lexical_cast<std::string>(parameters[i][0])+DL+boost::lexical_cast<std::string>(parameters[i][1]);
+				
+				//write duration
+				out<<"took"<<DL<<name<<DL<<took1<<NL;
+				
+				//list of keypoints (ordered!)
+				for(size_t i=0; i<isf_.getKeypoints().size(); i++)
+					out<<"eval_keypoint"<<DL<<name<<DL<<isf_.getKeypoints()[i](0)<<DL<<isf_.getKeypoints()[i](1)<<DL<<isf_.getKeypoints()[i](2)<<NL;
+			}
+		}
+		
+		const static double colors[] = {0.3,1.,0.1, 0.1,1.,0.8};
+		for(int keypoint_type=1; keypoint_type<=1; keypoint_type++) {
+			pcl::PointCloud<pcl::PointXYZRGB>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZRGB>);
+			pcl::fromROSMsg (*pc, *cloud);
+			pcl::PointCloud<pcl::PointXYZI>::Ptr keypoints(new pcl::PointCloud<pcl::PointXYZI>);
+		
+			const double took1 = detectKeypoints(keypoint_type, cloud, keypoints);
+			
+			std::string name = "Keypoint"+DL+boost::lexical_cast<std::string>(keypoint_type)+DL+"0";
+			
+			//write duration
+			out<<"took"<<DL<<name<<DL<<took1<<NL;
+			
+			//list of keypoints (ordered!)
+			for(size_t i=0; i<keypoints->size(); i++)
+				out<<"eval_keypoint"<<DL<<name<<DL<<(*keypoints)[i].x<<DL<<(*keypoints)[i].y<<DL<<(*keypoints)[i].z<<NL;
 
-	Eigen::MatrixXd cor(oldR->size(),oldR->size());
-	for(size_t i=0; i<oldR->size(); i++) {
-		for(size_t k=0; k<newR->size(); k++) {
+			for(size_t i=0; i<keypoints->size(); i++)
+			{
+				cob_3d_visualization::RvizMarker scene;
+				scene.sphere((*keypoints)[i].getVector3fMap(), 0.05);
+				scene.color(colors[keypoint_type*3+0],colors[keypoint_type*3+1],colors[keypoint_type*3+2]);
+			}
+		}		
+	}
+	
+	void evaluate(const cob_3d_mapping_msgs::ShapeArray &msg, const sensor_msgs::PointCloud2ConstPtr &pc, std::ostream &out) {
+		cb_eval(boost::make_shared<cob_3d_mapping_msgs::ShapeArray>(msg), pc); //debugging
+		
+		PrecisionStopWatch sw;
+		static const std::string DL="\t";
+		static const std::string NL="\n";
+		
+		{ //our descriptor
+			//input
+			ISF::PTSurfaceList input;
+			parseInput(msg, input);
+	  
+			//compute
+			sw.precisionStart();
+			isf_.setInput(input);
+			const double took1 = sw.precisionStop();
+			
+			//compute features
+			sw.precisionStart();
+			isf_.compute();
+			const double took2 = sw.precisionStop();
+			
+			if(isf_.getKeypoints().size()<1) return;	//no keypoints found...skipping
+		
+			//write header (timestamp for tf lookup)
+			out<<"header"<<DL<<pc->header.stamp;
+			for(size_t i=0; i<isf_.getRadii().size(); i++) out<<DL<<std::sqrt(isf_.getRadii()[i]);
+			out<<NL;
+			
+			//write duration
+			out<<"took"<<DL<<"FSHD"<<DL<<took1<<DL<<took2<<NL;
+			std::cout<<"took"<<DL<<"FSHD"<<DL<<took1<<DL<<took2<<NL;
+		}
+		
+		//list of keypoints (ordered!)
+		for(size_t i=0; i<isf_.getKeypoints().size(); i++)
+			out<<"keypoint"<<DL<<isf_.getKeypoints()[i](0)<<DL<<isf_.getKeypoints()[i](1)<<DL<<isf_.getKeypoints()[i](2)<<NL;
+			
+		//write out our results
+		{
+			ISF::PResultConst res = isf_.getResult();
+			assert(isf_.getKeypoints().size()==res->size());
+			for(size_t i=0; i<isf_.getKeypoints().size(); i++) {
+				out<<"keypoint"<<DL<<"FSHD";
+				std::vector<float> ftvec;
+				(*res)[i].toVector(ftvec);
+				for(size_t j=0; j<ftvec.size(); j++) out<<DL<<ftvec[j];
+				out<<NL;
+			}
+		}
+		
+		pcl::PointCloud<pcl::PointXYZ>::Ptr cloud(new pcl::PointCloud<pcl::PointXYZ>);
+		pcl::fromROSMsg (*pc, *cloud);
+		
+		pcl::IndicesPtr indicies;
+		pcl::PointCloud<pcl::PointNormal>::Ptr p_n2;
+		const double took_normal = computeNormals(cloud, isf_.getKeypoints(), indicies,p_n2);
+		
+		//evalFeatures<pcl::FPFHSignature33>	(indicies, p_n2, std::sqrt(isf_.getRadii()[0]), out, took_normal, "FPFH");
+		evalFeatures<pcl::SHOT352>			(indicies, p_n2, std::sqrt(isf_.getRadii()[0]), out, took_normal, "SHOT");
+		//evalFeatures<pcl::ESFSignature640>	(indicies, p_n2, std::sqrt(isf_.getRadii()[0]), out, took_normal, "ESF");
+		//evalFeatures<pcl::VFHSignature308>	(indicies, p_n2, std::sqrt(isf_.getRadii()[0]), out, took_normal, "VFH");
+		
+	}
+	
+	template<class FeatureT>
+	double evalFeatures(pcl::IndicesPtr &indicies, pcl::PointCloud<pcl::PointNormal>::Ptr &p_n2, const float radius, std::ostream &out, const double took1, const char *FeatureName) {
+		static const std::string DL="\t";
+		static const std::string NL="\n";
+		
+		typename pcl::PointCloud<FeatureT>::Ptr fpfhs;
+		const double r=computeFeatures<FeatureT>(indicies,p_n2, std::sqrt(isf_.getRadii()[0]), fpfhs);
+		std::cout<<"NUM"<<fpfhs->size()<<std::endl;
+		
+		//write duration
+		out<<"took"<<DL<<FeatureName<<DL<<took1<<DL<<r<<NL;
+		
+		//write out our results
+		{
+			assert(isf_.getKeypoints().size()==fpfhs->size());
+			for(size_t i=0; i<isf_.getKeypoints().size(); i++) {
+				out<<"keypoint"<<DL<<FeatureName;
+				std::vector<float> ftvec;
+				serialize_feature((*fpfhs)[i], ftvec);
+				for(size_t j=0; j<ftvec.size(); j++) out<<DL<<ftvec[j];
+				out<<NL;
+			}
+		}
+		return r;
+	}
+	
+	void parseInput(const cob_3d_mapping_msgs::ShapeArray &msg, ISF::PTSurfaceList &input) {
+		//input
+		input.reset(new ISF::TSurfaceList);
+		for(size_t i=0; i<msg.shapes.size(); i++) {
+			Polygon p;
+			assert((int)msg.shapes[i].params.size() <= (int)p.model_.p.size());
+			for(size_t j=0; j<msg.shapes[i].params.size(); j++)
+				p.model_.p(j) = msg.shapes[i].params[j];
+				
+			p.segments_.resize(msg.shapes[i].points.size());
+			for(size_t j=0; j<msg.shapes[i].points.size(); j++) {
+				//std::cout<<j<<" "<<(j!=0)<<" "<<(bool)msg.shapes[i].holes[j]<<std::endl;
+				//assert( (j!=0)==(bool)msg.shapes[i].holes[j] );
+				
+				pcl::PointCloud<pcl::PointXYZ> pc;
+				pcl::fromROSMsg(msg.shapes[i].points[j], pc);
 
-			cor(i,k)=0;
-			for(size_t j=0; j<(*oldR)[i].ft.size(); j++)
-				cor(i,k) += (*oldR)[i].ft[j]-(*newR)[k].ft[j];
-
+				for(size_t k=0; k<pc.size(); k++)
+					p.segments_[j].push_back(pc[k].getVector3fMap());
+			}
+			input->push_back(p);
 		}
 	}
+	
+	/// callback to shapes/surfaces --> input data of this feature
+	void cb(const cob_3d_mapping_msgs::ShapeArray &msg) {
+		static bool first=true;
+		if(!first) {
+			std::cout<<"wait for key"<<std::endl;
+			getchar();
+		}
+		first=false;
+			
+		//input
+		ISF::PTSurfaceList input;
+		parseInput(msg, input);
+		std::cout<<"read data "<<std::endl;
+		
+		PrecisionStopWatch sw;
+  
+		//compute
+		sw.precisionStart();
+		isf_.setInput(input);
+		std::cout<<"setInput "<<sw.precisionStop()<<"s"<<std::endl;
+		
+		//debug
+		pcl::io::savePLYFile("map1.ply", 		*isf_.dbg_Mesh_of_Map());
+		
+		//compute features
+		sw.precisionStart();
+		isf_.compute();
+		std::cout<<"compute "<<sw.precisionStop()<<"s"<<std::endl;
+			
+		isf_.dbg_writeVolumeImage("volume.json");
+		
+		ISF::PResultConst oldR = isf_.getResult();
+		std::cout<<"got result"<<std::endl;
+		
+		cob_3d_visualization::RvizMarkerManager::get().clear();
+		if(old_scene_.polygons.size()>0) {
+			cob_3d_visualization::RvizMarker scene;
+			scene.mesh(old_scene_);
+			scene.move(0, 0, 2.);
+			scene.color(1.,0.9,0.9,0.9);
+		}
+		{
+			cob_3d_visualization::RvizMarker scene;
+			scene.mesh(*isf_.dbg_Mesh_of_Map());
+		}
+		old_scene_ = *isf_.dbg_Mesh_of_Map();
+		
+		for(size_t i=0; i<isf_.getKeypoints().size(); i++)
+		{
+			cob_3d_visualization::RvizMarker scene;
+			scene.sphere(isf_.getKeypoints()[i], 0.05);
+			scene.color(0.1,1.,0.1);
+		}
+		
+		static int dbg_stage=0;
+		++dbg_stage;
+	
+		for(size_t i=0; i<oldR->size(); i++) {
+			for(size_t j=0; j<(*oldR)[i].f_.size(); j++) {
+			  char dbg_fn[128];
+			  sprintf(dbg_fn,"/tmp/ft%d_%d_%d.sig", (int)i, (int)j, dbg_stage);
+			  (*oldR)[i].f_[j].write(dbg_fn, false);
+			}
+		}
+		
+		//find next neighbour
+		const Real BORDER = 1000;
+		if(last_ && last_->size()>0 && oldR->size()>0) {
+			for(size_t i=0; i<oldR->size(); i++) {
+				Real mi=std::numeric_limits<Real>::max(), ma=0, mm=0;
+				size_t mii=0;
+#if 0
+				mii=last_->size()/2;
+				mi = ma = (*oldR)[i].distance((*last_)[mii]);
+				std::cout<<"min: "<<mi<<"/"<<ma<<" "<<((*oldR)[i].pt_-(*last_)[mii].pt_).norm()<<" "<<i<<" "<<mii<<std::endl;
+				
+				cob_3d_visualization::RvizMarker arrow;
+				Eigen::Vector3d o = (*last_)[mii].pt_; o(2)+=2;
+				arrow.arrow((*oldR)[i].pt_, o, 0.02);
+				mi = std::min((double)(mi)/(200.), 1.);
+				arrow.color(mi,mi,mi);
+#else
+				for(size_t j=0; j<last_->size(); j++) {
+					const Real d = (*oldR)[i].distance((*last_)[j]);
+					if(d<mi) {
+						mi=d;
+						mii=j;
+					}
+					ma = std::max(d, ma);
+					mm+= d;
+#if 0
+					const float A = ((*oldR)[i].area_+(*last_)[j].area_)/2;
+					if(d/A<BORDER) {
+						cob_3d_visualization::RvizMarker arrow, txt;
+						Eigen::Vector3d o = (*last_)[j].pt_; o(2)+=2;
+						arrow.arrow((*oldR)[i].pt_, o, 0.02);
+						double temp = std::min((double)d/BORDER, 1.);
+						arrow.color( std::min((double)((*oldR)[i].pt_-(*last_)[j].pt_).norm(), 1.) ,temp,temp);
+					}
+#endif
+				}
+				
+				if(mii>=last_->size()) continue;
+				
+				const float A = ((*oldR)[i].area_+(*last_)[mii].area_)/2;
+				std::cout<<"min: "<<mi<<"/"<<mm/last_->size()<<"/"<<ma<<" "<<((*oldR)[i].pt_-(*last_)[mii].pt_).norm()<<" "<<i<<" "<<mii<<std::endl;
+				std::cout<<"\tmin: "<<mi/A<<"/"<<mm/last_->size()/A<<"/"<<ma/A<<std::endl;
+				
+				//if(mi/A>BORDER) continue;
+				
+#if 1
+				cob_3d_visualization::RvizMarker arrow, txt2;
+				Eigen::Vector3d o = (*last_)[mii].pt_; o(2)+=2;
+				arrow.arrow((*oldR)[i].pt_, o, 0.02);
+				mi = std::min((double)mi/BORDER, 1.);
+				//arrow.color( std::min((double)((*oldR)[i].pt_-(*last_)[mii].pt_).norm(), 1.) ,mi,mi);
+				arrow.color( ((*oldR)[i].pt_-(*last_)[mii].pt_).norm()<std::sqrt(isf_.getRadii()[0])/2?1:0.3 ,mi,mi);
+				char buf[128];
+				sprintf(buf, "%d", (int) i);
+				txt2.text(buf);
+				txt2.move( (*oldR)[i].pt_ );
+				txt2.color(0,0,0);
+#endif
+#endif
+			}
+		}
+		for(size_t i=0; last_ && i<last_->size(); i++) {
+			cob_3d_visualization::RvizMarker txt;
+			char buf[128];
+			sprintf(buf, "%d", (int)i);
+			txt.text(buf);
+			txt.move( (*last_)[i].pt_+2*Eigen::Vector3d::UnitZ() );
+			txt.color(0,0,0);
+		}
+		
+		last_ = oldR;
+		cob_3d_visualization::RvizMarkerManager::get().publish();
+		
+		std::cout<<"g_num_computations "<<g_num_computations<<std::endl;
+	}
+};
 
-	std::cout<<"Correlation\n"<<cor<<std::endl;
-
+cob_3d_mapping_msgs::ShapeArray gl_shape_msg;
+bool gl_shape_msg_set = false;
+void static_eval_cb(const cob_3d_mapping_msgs::ShapeArray &msg) {
+	gl_shape_msg = msg;
+	gl_shape_msg_set=true;
+	std::cout<<"got shapes"<<std::endl;
 }
-*/
+
+void evaluation(const std::string &fn, const std::string &ofn, const double radius, const int num_radii=8, const int num_angles=32, int skip=0, const bool eval_kp=false) {	
+	if(skip<1) skip=1;
+	IFNode node(num_radii, num_angles, radius);
+	
+	std::vector<std::vector<double> > parameters;
+	for(double min_area=0.005; min_area<0.05; min_area+=0.005) {
+		parameters.push_back(std::vector<double>());
+		for(double area=0.025; area<=0.15; area+=0.025) {
+			parameters.back().push_back(min_area*min_area);
+			parameters.back().push_back(area*area);
+		}
+	}
+	
+	std::ofstream ofstr(ofn.c_str());
+	
+	ofstr<<"file\t"<<fn<<"\n";
+	ofstr<<"radius\t"<<radius<<"\n";
+	ofstr<<"num_radii\t"<<num_radii<<"\n";
+	ofstr<<"num_angles\t"<<num_angles<<"\n";
+	ofstr<<"skip\t"<<skip<<"\n";
+	
+	rosbag::Bag bag;
+    bag.open(fn, rosbag::bagmode::Read);
+
+	//here our only concern is the pointcloud
+    std::vector<std::string> topics;
+    topics.push_back(std::string("/camera/rgb/points"));
+    topics.push_back(std::string("/camera/depth/camera_info"));
+    
+    //we use ros publish/subscriber to transform pc to shape
+	ros::NodeHandle n;
+	ros::Subscriber sub = n.subscribe("/shapes_array", 1, &static_eval_cb);
+	ros::Publisher pub = n.advertise<sensor_msgs::PointCloud2>("/camera/depth/points_xyzrgb", 1);
+	
+	//wait till everything is up and running
+	while(pub.getNumSubscribers()<1)
+		sleep(1);
+
+    rosbag::View view(bag, rosbag::TopicQuery(topics));
+
+	rosbag::View::iterator view_it = view.begin();
+	//first set FoV
+    while(view_it!=view.end()&&ros::ok())
+    {
+        sensor_msgs::CameraInfo::ConstPtr ci = view_it->instantiate<sensor_msgs::CameraInfo>();
+        if (ci != NULL) {
+			std::cout<<"found camera info"<<std::endl;
+			node.cb_camera_info(*ci);
+			break;
+		}
+		view_it++;
+	}
+	assert(view_it!=view.end());
+	
+	std::cout<<"reading pointclouds"<<std::endl;
+	view_it = view.begin();
+	int num=0;
+    while(view_it!=view.end()&&ros::ok())
+    {
+        sensor_msgs::PointCloud2::Ptr pc = view_it->instantiate<sensor_msgs::PointCloud2>();
+        if (pc != NULL) {
+			++num;
+			if(num%skip==0) {
+				//transform pc to shape msg
+				gl_shape_msg_set = false;
+				pc->header.frame_id = "/camera_rgb_optical_frame";
+				pub.publish(pc);
+				while(!gl_shape_msg_set) {
+					ros::spinOnce();
+					if(!ros::ok()) return;
+				}
+				
+				//do evaluation
+				if(eval_kp)
+					node.evaluateKeypoints(gl_shape_msg, pc, ofstr, parameters);
+				else
+					node.evaluate(gl_shape_msg, pc, ofstr);
+				
+				ofstr.flush();	//safety
+			}
+		}
+		
+		view_it++;
+    }
+
+    bag.close();
+    ofstr.close();
+}
 
 int main(int argc, char **argv)
 {
-  ::testing::InitGoogleTest(&argc, argv);
-  return RUN_ALL_TESTS();
-}
+	ros::init(argc, argv, "invariant_feature");
+	cob_3d_visualization::RvizMarkerManager::get().createTopic("/marker").setFrameId("/camera_rgb_optical_frame").clearOld();
+	
+	if(argc>1 && std::string(argv[2])=="--help") {
+		std::cout<<"start either without arguments or with [bag file] [result file, csv] [radius]"<<std::endl;
+		return 0;
+	}
+	else if(argc==4 && std::string(argv[1]).find(".bag")!=std::string::npos) {
+		std::cout<<"Evaluation Mode"<<std::endl;
+		evaluation(argv[1], argv[2], boost::lexical_cast<double>(argv[3]), 8, 32, 1);
+		return 0;
+	}
+	
+#ifndef EIGEN_VECTORIZE
+	ROS_INFO("this would be faster if SIMD is enabled");
 #endif
+
+	int num_radii = 8;
+	int num_angles = 32;
+	
+	IFNode node(num_radii, num_angles);
+	
+	ros::spin();
+}

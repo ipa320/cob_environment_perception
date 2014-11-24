@@ -161,7 +161,7 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::receivedCloudCallback(PointClo
 {
   PrecisionStopWatch t;
   t.precisionStart();
-  NODELET_INFO("Start with segmentation .... ");
+  NODELET_INFO("Start with segmentation ... ");
   one_.setInputCloud(cloud);
   one_.compute(*normals_);
 
@@ -174,14 +174,15 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::receivedCloudCallback(PointClo
 
   //seg_.getPotentialObjects(objects, 500);
   //std::cout << "Found " << objects.size() << " potentail objects" << std::endl;
-  NODELET_INFO("Done with segmentation .... ");
-
+  //NODELET_INFO("Done with segmentation .... ");
 
   cc_.setPointCloudIn(cloud);
   cc_.classify();
   graph_->clusters()->mapTypeColor(classified_);
   graph_->clusters()->mapClusterBorders(classified_);
-  std::cout << "segmentation took " << t.precisionStop() << " s." << std::endl;
+  
+  NODELET_INFO("Segmentation took %f s.", t.precisionStop());
+  
   //NODELET_INFO("publish first cloud .... ");
   pub_segmented_.publish(segmented_);
   //NODELET_INFO("publish second cloud .... ");

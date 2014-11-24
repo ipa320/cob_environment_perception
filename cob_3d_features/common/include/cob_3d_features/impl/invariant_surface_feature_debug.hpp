@@ -67,7 +67,7 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::dbg
 }
 
 template<typename TSurface, typename Scalar, typename Real, typename TAffine>
-pcl::PolygonMesh::Ptr cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::dbg_triangles2mesh(const std::vector<Triangle> &res) const {
+pcl::PolygonMesh::Ptr cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::dbg_triangles2mesh(const std::vector<boost::shared_ptr<Triangle> > &res) const {
 	pcl::PolygonMesh::Ptr mesh(new pcl::PolygonMesh);
 	pcl::PointCloud<pcl::PointXYZ> points;
 	for(size_t i=0; i<res.size(); i++) {
@@ -75,10 +75,10 @@ pcl::PolygonMesh::Ptr cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,R
 		for(int j=0; j<3; j++) {
 			mesh->polygons.back().vertices.push_back(points.size());
 			pcl::PointXYZ pt;
-			pt.x=res[i][j](0);pt.y=res[i][j](1);pt.z=res[i][j](2);
+			pt.x=(*res[i])[j](0);pt.y=(*res[i])[j](1);pt.z=(*res[i])[j](2);
 			points.push_back(pt);
 		}
 	}
-	pcl::toROSMsg(points, mesh->cloud);
+	pcl::toPCLPointCloud2(points, mesh->cloud);
 	return mesh;
 }
