@@ -38,8 +38,8 @@
   <run_depend>cob_keyframe_detector</run_depend>
   <run_depend>cob_table_object_cluster</run_depend>
   <run_depend>libgpc</run_depend>
-  <run_depend>openmesh</run_depend>
-  <run_depend>polypartition</run_depend>
+  <run_depend>libopenmesh</run_depend>
+  <run_depend>libpolypartition</run_depend>
 
   <export>
     <metapackage/>

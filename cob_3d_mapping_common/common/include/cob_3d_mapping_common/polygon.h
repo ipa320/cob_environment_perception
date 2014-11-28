@@ -68,7 +68,7 @@
 extern "C" {
 #include "gpc/gpc.h"
 }
-#include <polypartition/polypartition.h>
+#include <libpolypartition/polypartition.h>
 #include <cob_3d_mapping_common/dominant_color.h>
 #include <fstream>
 #include <iostream>
