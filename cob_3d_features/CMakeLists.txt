@@ -1,15 +1,24 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(cob_3d_features)
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
-  cmake_modules
+set(catkin_RUN_PACKAGES
   cob_3d_mapping_common
 #  cob_3d_mapping_tools
   cob_3d_visualization
   pcl_ros
+  libpolypartition
+)
+
+set(catkin_BUILD_PACKAGES 
+	${catkin_RUN_PACKAGES}
+	cmake_modules
+)
+
+## Find catkin macros and libraries
+## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
+## is used, also find other catkin packages
+find_package(catkin REQUIRED COMPONENTS
+  ${catkin_BUILD_PACKAGES}
 )
 
 find_package(OpenCV REQUIRED)
@@ -41,8 +50,7 @@ catkin_package(
     cob_3d_features
     cob_3d_features_omp
   CATKIN_DEPENDS
-    cob_3d_mapping_common
-    pcl_ros
+    ${catkin_RUN_PACKAGES}
   DEPENDS
     OpenCV
     VTK

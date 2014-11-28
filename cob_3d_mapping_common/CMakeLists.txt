@@ -9,7 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   eigen_conversions
   libgpc
   pcl_conversions
-  polypartition
+  libpolypartition
   roscpp
 )
 
@@ -36,7 +36,7 @@ catkin_package(
     eigen_conversions
     libgpc
     pcl_conversions
-    polypartition
+    libpolypartition
     roscpp
   DEPENDS
     PCL

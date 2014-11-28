@@ -11,7 +11,7 @@
   <maintainer email="goa@ipa.fhg.de">Georg Arbeiter</maintainer>
   <author>Georg Arbeiter</author>
   
-  <url>http://wiki.ros.org/openmesh</url>
+  <url>http://wiki.ros.org/libopenmesh</url>
 
   <buildtool_depend>catkin</buildtool_depend>
 
