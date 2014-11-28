@@ -3,7 +3,7 @@
   <version>1.0.0</version>
   
   <description>
-     Package for (external) GPC library.
+     Wraps the (external) GPC library.
   </description>
   
   <license>LGPL</license>
