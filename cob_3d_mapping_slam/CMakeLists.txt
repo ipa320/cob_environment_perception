@@ -1,21 +1,28 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(cob_3d_mapping_slam)
 
+set(catkin_RUN_PACKAGES 
+  cob_3d_mapping_msgs
+  nav_msgs
+  pcl_ros
+  roscpp
+  tf
+  tf_conversions
+)
+
+set(catkin_BUILD_PACKAGES 
+	${catkin_RUN_PACKAGES}
+	cmake_modules
+)
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
-#find_package(catkin REQUIRED COMPONENTS
-#  arm_navigation_msgs
-#  cob_3d_mapping_msgs
-#  nav_msgs
-#  pcl
-#  pcl_ros
-#  roscpp
-#  tf
-#  tf_conversions
-#)
+find_package(catkin REQUIRED COMPONENTS
+  ${catkin_BUILD_PACKAGES}
+)
 
-#find_package(CGAL REQUIRED)
+find_package(CGAL REQUIRED)
 #find_package(nurbs++ REQUIRED)
 ##TODO: check for SSE
 
@@ -29,23 +36,16 @@ project(cob_3d_mapping_slam)
 ## LIBRARIES: libraries you create in this project that dependent projects also need
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
-#catkin_package(
-#  INCLUDE_DIRS
-#    common/include
-#    ros/include
-#  LIBRARIES
-#  CATKIN_DEPENDS
-#    arm_navigation_msgs
-#    cob_3d_mapping_msgs
-#    nav_msgs
-#    pcl
-#    pcl_ros
-#    roscpp
-#    tf
-#    tf_conversions
-#  DEPENDS
-#    CGAL
-#)
+catkin_package(
+  INCLUDE_DIRS
+    common/include
+    ros/include
+  LIBRARIES
+  CATKIN_DEPENDS
+    ${catkin_RUN_PACKAGES}
+  DEPENDS
+    CGAL
+)
 
 
 

@@ -164,7 +164,7 @@ namespace cob_3d_registration {
     setSettingsForICP(&icp_);
 #endif
 
-    icp->setInputCloud( this->input_);
+    icp->setInputSource(this->input_);
     //icp->setIndices(boost::make_shared<pcl::PointIndices>(indices));
     icp->setInputTarget(register_.makeShared());
     icp->setMaximumIterations(icp_max_iterations_);
