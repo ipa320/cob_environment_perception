@@ -1,7 +1,7 @@
 # - Add a given compiler flag to flags variables.
-# AddCompilerFlag(<flag> [<var>])
+# add_compiler_flag(<flag> [<var>])
 # or
-# AddCompilerFlag(<flag> [C_FLAGS <var>] [CXX_FLAGS <var>] [C_RESULT <var>]
+# add_compiler_flag(<flag> [C_FLAGS <var>] [CXX_FLAGS <var>] [C_RESULT <var>]
 #                        [CXX_RESULT <var>])
 
 #=============================================================================
@@ -41,7 +41,7 @@ include("${_currentDir}/CheckCXXCompilerFlag.cmake")
 include("${_currentDir}/CheckMicCCompilerFlag.cmake")
 include("${_currentDir}/CheckMicCXXCompilerFlag.cmake")
 
-macro(AddCompilerFlag _flag)
+macro(add_compiler_flag _flag)
    string(REGEX REPLACE "[-.+/:= ]" "_" _flag_esc "${_flag}")
 
    set(_c_flags "CMAKE_C_FLAGS")
@@ -53,7 +53,7 @@ macro(AddCompilerFlag _flag)
    set(_mic_c_result)
    set(_mic_cxx_result)
    if(${ARGC} EQUAL 2)
-      message(WARNING "Deprecated use of the AddCompilerFlag macro.")
+      message(WARNING "Deprecated use of the add_compiler_flag macro.")
       unset(_c_result)
       set(_cxx_result ${ARGV1})
    elseif(${ARGC} GREATER 2)
@@ -112,7 +112,7 @@ macro(AddCompilerFlag _flag)
          elseif(state EQUAL 8)
             set(_mic_cxx_flags "${_arg}")
          else()
-            message(FATAL_ERROR "Syntax error for AddCompilerFlag")
+            message(FATAL_ERROR "Syntax error for add_compiler_flag")
          endif()
       endforeach()
    endif()
@@ -173,4 +173,4 @@ macro(AddCompilerFlag _flag)
          set(${_mic_cxx_flags} "${${_mic_cxx_flags}} ${_flag}")
       endif()
    endif()
-endmacro(AddCompilerFlag)
+endmacro(add_compiler_flag)

@@ -37,9 +37,9 @@ macro(_my_find _list _value _ret)
    list(FIND ${_list} "${_value}" _found)
    if(_found EQUAL -1)
       set(${_ret} FALSE)
-   else(_found EQUAL -1)
+   else() # _found EQUAL -1
       set(${_ret} TRUE)
-   endif(_found EQUAL -1)
+   endif() # _found EQUAL -1
 endmacro(_my_find)
 
 macro(AutodetectHostArchitecture)
@@ -67,7 +67,7 @@ macro(AutodetectHostArchitecture)
       mark_as_advanced(_vendor_id _cpu_id)
       string(REGEX REPLACE ".* Family ([0-9]+) .*" "\\1" _cpu_family "${_cpu_id}")
       string(REGEX REPLACE ".* Model ([0-9]+) .*" "\\1" _cpu_model "${_cpu_id}")
-   endif(CMAKE_SYSTEM_NAME STREQUAL "Linux")
+   endif() # CMAKE_SYSTEM_NAME STREQUAL "Linux"
    if(_vendor_id STREQUAL "GenuineIntel")
       if(_cpu_family EQUAL 6)
          # Any recent Intel CPU except NetBurst
@@ -116,8 +116,8 @@ macro(AutodetectHostArchitecture)
          list(APPEND _available_vector_units_list "sse" "sse2")
          if(_cpu_model GREATER 2) # Not sure whether this must be 3 or even 4 instead
             list(APPEND _available_vector_units_list "sse" "sse2" "sse3")
-         endif(_cpu_model GREATER 2)
-      endif(_cpu_family EQUAL 6)
+         endif() # _cpu_model GREATER 2
+      endif() # _cpu_family EQUAL 6
    elseif(_vendor_id STREQUAL "AuthenticAMD")
       if(_cpu_family EQUAL 22) # 16h
          set(TARGET_ARCHITECTURE "AMD 16h")
@@ -136,9 +136,9 @@ macro(AutodetectHostArchitecture)
          set(TARGET_ARCHITECTURE "k8")
          if(_cpu_model GREATER 64) # I don't know the right number to put here. This is just a guess from the hardware I have access to
             set(TARGET_ARCHITECTURE "k8-sse3")
-         endif(_cpu_model GREATER 64)
+         endif() # _cpu_model GREATER 64
       endif()
-   endif(_vendor_id STREQUAL "GenuineIntel")
+   endif() # _vendor_id STREQUAL "GenuineIntel"
 endmacro()
 
 macro(OptimizeForArchitecture)
@@ -158,7 +158,7 @@ macro(OptimizeForArchitecture)
    if(TARGET_ARCHITECTURE STREQUAL "auto")
       AutodetectHostArchitecture()
       message(STATUS "Detected CPU: ${TARGET_ARCHITECTURE}")
-   endif(TARGET_ARCHITECTURE STREQUAL "auto")
+   endif() # TARGET_ARCHITECTURE STREQUAL "auto"
 
    if(TARGET_ARCHITECTURE STREQUAL "core")
       list(APPEND _march_flag_list "core2")
@@ -251,9 +251,9 @@ macro(OptimizeForArchitecture)
       list(APPEND _march_flag_list "generic")
    elseif(TARGET_ARCHITECTURE STREQUAL "none")
       # add this clause to remove it from the else clause
-   else(TARGET_ARCHITECTURE STREQUAL "core")
+   else() # TARGET_ARCHITECTURE STREQUAL "core"
       message(FATAL_ERROR "Unknown target architecture: \"${TARGET_ARCHITECTURE}\". Please set TARGET_ARCHITECTURE to a supported value.")
-   endif(TARGET_ARCHITECTURE STREQUAL "core")
+   endif() # TARGET_ARCHITECTURE STREQUAL "core"
 
    if(NOT TARGET_ARCHITECTURE STREQUAL "none")
       set(_disable_vector_unit_list)
@@ -265,7 +265,7 @@ macro(OptimizeForArchitecture)
       _my_find(_available_vector_units_list "sse4.2" SSE4_2_FOUND)
       _my_find(_available_vector_units_list "sse4a" SSE4a_FOUND)
       if(DEFINED Vc_AVX_INTRINSICS_BROKEN AND Vc_AVX_INTRINSICS_BROKEN)
-         UserWarning("AVX disabled per default because of old/broken compiler")
+         user_warning("AVX disabled per default because of old/broken compiler")
          set(AVX_FOUND false)
          set(XOP_FOUND false)
          set(FMA4_FOUND false)
@@ -273,19 +273,19 @@ macro(OptimizeForArchitecture)
       else()
          _my_find(_available_vector_units_list "avx" AVX_FOUND)
          if(DEFINED Vc_FMA4_INTRINSICS_BROKEN AND Vc_FMA4_INTRINSICS_BROKEN)
-            UserWarning("FMA4 disabled per default because of old/broken compiler")
+            user_warning("FMA4 disabled per default because of old/broken compiler")
             set(FMA4_FOUND false)
          else()
             _my_find(_available_vector_units_list "fma4" FMA4_FOUND)
          endif()
          if(DEFINED Vc_XOP_INTRINSICS_BROKEN AND Vc_XOP_INTRINSICS_BROKEN)
-            UserWarning("XOP disabled per default because of old/broken compiler")
+            user_warning("XOP disabled per default because of old/broken compiler")
             set(XOP_FOUND false)
          else()
             _my_find(_available_vector_units_list "xop" XOP_FOUND)
          endif()
          if(DEFINED Vc_AVX2_INTRINSICS_BROKEN AND Vc_AVX2_INTRINSICS_BROKEN)
-            UserWarning("AVX2 disabled per default because of old/broken compiler")
+            user_warning("AVX2 disabled per default because of old/broken compiler")
             set(AVX2_FOUND false)
          else()
             _my_find(_available_vector_units_list "avx2" AVX2_FOUND)
@@ -304,43 +304,43 @@ macro(OptimizeForArchitecture)
       mark_as_advanced(USE_SSE2 USE_SSE3 USE_SSSE3 USE_SSE4_1 USE_SSE4_2 USE_SSE4a USE_AVX USE_AVX2 USE_XOP USE_FMA4)
       if(USE_SSE2)
          list(APPEND _enable_vector_unit_list "sse2")
-      else(USE_SSE2)
+      else() # USE_SSE2
          list(APPEND _disable_vector_unit_list "sse2")
-      endif(USE_SSE2)
+      endif() # USE_SSE2
       if(USE_SSE3)
          list(APPEND _enable_vector_unit_list "sse3")
-      else(USE_SSE3)
+      else() # USE_SSE3
          list(APPEND _disable_vector_unit_list "sse3")
-      endif(USE_SSE3)
+      endif() # USE_SSE3
       if(USE_SSSE3)
          list(APPEND _enable_vector_unit_list "ssse3")
-      else(USE_SSSE3)
+      else() # USE_SSSE3
          list(APPEND _disable_vector_unit_list "ssse3")
-      endif(USE_SSSE3)
+      endif() # USE_SSSE3
       if(USE_SSE4_1)
          list(APPEND _enable_vector_unit_list "sse4.1")
-      else(USE_SSE4_1)
+      else() # USE_SSE4_1
          list(APPEND _disable_vector_unit_list "sse4.1")
-      endif(USE_SSE4_1)
+      endif() # USE_SSE4_1
       if(USE_SSE4_2)
          list(APPEND _enable_vector_unit_list "sse4.2")
-      else(USE_SSE4_2)
+      else() # USE_SSE4_2
          list(APPEND _disable_vector_unit_list "sse4.2")
-      endif(USE_SSE4_2)
+      endif() # USE_SSE4_2
       if(USE_SSE4a)
          list(APPEND _enable_vector_unit_list "sse4a")
-      else(USE_SSE4a)
+      else() # USE_SSE4a
          list(APPEND _disable_vector_unit_list "sse4a")
-      endif(USE_SSE4a)
+      endif() # USE_SSE4a
       if(USE_AVX)
          list(APPEND _enable_vector_unit_list "avx")
          # we want SSE intrinsics to result in instructions using the VEX prefix.
          # Otherwise integer ops (which require the older SSE intrinsics) would
          # always have a large penalty.
          list(APPEND _enable_vector_unit_list "sse2avx")
-      else(USE_AVX)
+      else() # USE_AVX
          list(APPEND _disable_vector_unit_list "avx")
-      endif(USE_AVX)
+      endif() # USE_AVX
       if(USE_XOP)
          list(APPEND _enable_vector_unit_list "xop")
       else()
@@ -362,77 +362,77 @@ macro(OptimizeForArchitecture)
          _my_find(_enable_vector_unit_list "avx" _avx)
          set(_avx_flag FALSE)
          if(_avx)
-            AddCompilerFlag("/arch:AVX" CXX_FLAGS Vc_ARCHITECTURE_FLAGS CXX_RESULT _avx_flag)
+            add_compiler_flag("/arch:AVX" CXX_FLAGS Vc_ARCHITECTURE_FLAGS CXX_RESULT _avx_flag)
          endif()
          if(NOT _avx_flag)
             _my_find(_enable_vector_unit_list "sse2" _found)
             if(_found)
-               AddCompilerFlag("/arch:SSE2" CXX_FLAGS Vc_ARCHITECTURE_FLAGS)
+               add_compiler_flag("/arch:SSE2" CXX_FLAGS Vc_ARCHITECTURE_FLAGS)
             endif()
          endif()
          foreach(_flag ${_enable_vector_unit_list})
             string(TOUPPER "${_flag}" _flag)
             string(REPLACE "." "_" _flag "__${_flag}__")
             add_definitions("-D${_flag}")
-         endforeach(_flag)
+         endforeach() # _flag
       elseif(CMAKE_CXX_COMPILER MATCHES "/(icpc|icc)$") # ICC (on Linux)
          _my_find(_available_vector_units_list "avx2"    _found)
          if(_found)
-            AddCompilerFlag("-xCORE-AVX2" CXX_FLAGS Vc_ARCHITECTURE_FLAGS)
-         else(_found)
+            add_compiler_flag("-xCORE-AVX2" CXX_FLAGS Vc_ARCHITECTURE_FLAGS)
+         else() # _found
             _my_find(_available_vector_units_list "f16c"    _found)
             if(_found)
-               AddCompilerFlag("-xCORE-AVX-I" CXX_FLAGS Vc_ARCHITECTURE_FLAGS)
-            else(_found)
+               add_compiler_flag("-xCORE-AVX-I" CXX_FLAGS Vc_ARCHITECTURE_FLAGS)
+            else() # _found
                _my_find(_available_vector_units_list "avx"    _found)
                if(_found)
-                  AddCompilerFlag("-xAVX" CXX_FLAGS Vc_ARCHITECTURE_FLAGS)
-               else(_found)
+                  add_compiler_flag("-xAVX" CXX_FLAGS Vc_ARCHITECTURE_FLAGS)
+               else() # _found
                   _my_find(_available_vector_units_list "sse4.2" _found)
                   if(_found)
-                     AddCompilerFlag("-xSSE4.2" CXX_FLAGS Vc_ARCHITECTURE_FLAGS)
-                  else(_found)
+                     add_compiler_flag("-xSSE4.2" CXX_FLAGS Vc_ARCHITECTURE_FLAGS)
+                  else() # _found
                      _my_find(_available_vector_units_list "sse4.1" _found)
                      if(_found)
-                        AddCompilerFlag("-xSSE4.1" CXX_FLAGS Vc_ARCHITECTURE_FLAGS)
-                     else(_found)
+                        add_compiler_flag("-xSSE4.1" CXX_FLAGS Vc_ARCHITECTURE_FLAGS)
+                     else() # _found
                         _my_find(_available_vector_units_list "ssse3"  _found)
                         if(_found)
-                           AddCompilerFlag("-xSSSE3" CXX_FLAGS Vc_ARCHITECTURE_FLAGS)
-                        else(_found)
+                           add_compiler_flag("-xSSSE3" CXX_FLAGS Vc_ARCHITECTURE_FLAGS)
+                        else() # _found
                            _my_find(_available_vector_units_list "sse3"   _found)
                            if(_found)
                               # If the target host is an AMD machine then we still want to use -xSSE2 because the binary would refuse to run at all otherwise
                               _my_find(_march_flag_list "barcelona" _found)
                               if(NOT _found)
                                  _my_find(_march_flag_list "k8-sse3" _found)
-                              endif(NOT _found)
+                              endif() # NOT _found
                               if(_found)
-                                 AddCompilerFlag("-xSSE2" CXX_FLAGS Vc_ARCHITECTURE_FLAGS)
-                              else(_found)
-                                 AddCompilerFlag("-xSSE3" CXX_FLAGS Vc_ARCHITECTURE_FLAGS)
-                              endif(_found)
-                           else(_found)
+                                 add_compiler_flag("-xSSE2" CXX_FLAGS Vc_ARCHITECTURE_FLAGS)
+                              else() # _found
+                                 add_compiler_flag("-xSSE3" CXX_FLAGS Vc_ARCHITECTURE_FLAGS)
+                              endif() # _found
+                           else() # _found
                               _my_find(_available_vector_units_list "sse2"   _found)
                               if(_found)
-                                 AddCompilerFlag("-xSSE2" CXX_FLAGS Vc_ARCHITECTURE_FLAGS)
-                              endif(_found)
-                           endif(_found)
-                        endif(_found)
-                     endif(_found)
-                  endif(_found)
-               endif(_found)
-            endif(_found)
-         endif(_found)
+                                 add_compiler_flag("-xSSE2" CXX_FLAGS Vc_ARCHITECTURE_FLAGS)
+                              endif() # _found
+                           endif() # _found
+                        endif() # _found
+                     endif() # _found
+                  endif() # _found
+               endif() # _found
+            endif() # _found
+         endif() # _found
       else() # not MSVC and not ICC => GCC, Clang, Open64
          foreach(_flag ${_march_flag_list})
-            AddCompilerFlag("-march=${_flag}" CXX_RESULT _good CXX_FLAGS Vc_ARCHITECTURE_FLAGS)
+            add_compiler_flag("-march=${_flag}" CXX_RESULT _good CXX_FLAGS Vc_ARCHITECTURE_FLAGS)
             if(_good)
                break()
-            endif(_good)
-         endforeach(_flag)
+            endif() # _good
+         endforeach() # _flag
          foreach(_flag ${_enable_vector_unit_list})
-            AddCompilerFlag("-m${_flag}" CXX_RESULT _result CXX_FLAGS Vc_ARCHITECTURE_FLAGS)
+            add_compiler_flag("-m${_flag}" CXX_RESULT _result CXX_FLAGS Vc_ARCHITECTURE_FLAGS)
             if(_result)
                set(_header FALSE)
                if(_flag STREQUAL "sse3")
@@ -457,7 +457,7 @@ macro(OptimizeForArchitecture)
                set(_resultVar "HAVE_${_header}")
                string(REPLACE "." "_" _resultVar "${_resultVar}")
                if(_header)
-                  CHECK_INCLUDE_FILE("${_header}" ${_resultVar} "-m${_flag}")
+                  check_include_file("${_header}" ${_resultVar} "-m${_flag}")
                   if(NOT ${_resultVar})
                      set(_useVar "USE_${_flag}")
                      string(TOUPPER "${_useVar}" _useVar)
@@ -471,10 +471,10 @@ macro(OptimizeForArchitecture)
                   set(Vc_ARCHITECTURE_FLAGS "${Vc_ARCHITECTURE_FLAGS} -m${_flag}")
                endif()
             endif()
-         endforeach(_flag)
+         endforeach() # _flag
          foreach(_flag ${_disable_vector_unit_list})
-            AddCompilerFlag("-mno-${_flag}" CXX_FLAGS Vc_ARCHITECTURE_FLAGS)
-         endforeach(_flag)
+            add_compiler_flag("-mno-${_flag}" CXX_FLAGS Vc_ARCHITECTURE_FLAGS)
+         endforeach() # _flag
       endif()
    endif()
-endmacro(OptimizeForArchitecture)
+endmacro() # OptimizeForArchitecture
