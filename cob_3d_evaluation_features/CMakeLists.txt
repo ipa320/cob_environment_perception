@@ -130,3 +130,20 @@ target_link_libraries(evaluation_fpfh_svm_trainer
 set_target_properties(evaluate_test_data PROPERTIES COMPILE_FLAGS -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
 set_target_properties(generate_test_data PROPERTIES COMPILE_FLAGS -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
 #set_target_properties(evaluation_features PROPERTIES COMPILE_FLAGS -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
+
+
+#############
+## Install ##
+#############
+## Mark executables and/or libraries for installation
+install(TARGETS merge_knn_training_data reduce_fpfh_training_data evaluation_fpfh_svm_trainer fpfh_primitives merge_fpfh_training_data extract_feature_values evaluation_features_fpfh
+	ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+	LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+	RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(DIRECTORY include/${PROJECT_NAME}/
+	DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+	FILES_MATCHING PATTERN "*.h"
+	PATTERN ".svn" EXCLUDE
+)
