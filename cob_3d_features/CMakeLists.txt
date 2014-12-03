@@ -206,14 +206,19 @@ target_link_libraries(extract_organized_curvatures
 ## Install ##
 #############
 ## Mark executables and/or libraries for installation
-#install(TARGETS ${PROJECT_NAME}
-#	ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#	LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
-#	RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
-#)
+install(TARGETS cob_3d_features_omp cob_3d_features s2kit profile_fee eval_invariant_feature extract_organized_curvatures profile_fee_omp invariant_feature_node profile_oce profile_ne
+	ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+	LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+	RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
-install(DIRECTORY common/include
+install(DIRECTORY common/include/${PROJECT_NAME}/
 	DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-#	FILES_MATCHING PATTERN "*.h"
+	FILES_MATCHING PATTERN "*.h"
+	PATTERN ".svn" EXCLUDE
+)
+
+install(DIRECTORY ros/launch
+	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/ros
 	PATTERN ".svn" EXCLUDE
 )

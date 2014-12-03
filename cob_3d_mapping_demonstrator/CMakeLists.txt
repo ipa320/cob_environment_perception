@@ -1,19 +1,28 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(cob_3d_mapping_demonstrator)
 
+set(catkin_RUN_PACKAGES
+	actionlib
+	brics_actuator
+	cob_3d_mapping_msgs
+	cob_script_server
+	cob_srvs
+	diagnostic_msgs
+	roscpp
+	rviz
+	urdf
+)
+
+set(catkin_BUILD_PACKAGES
+	${catkin_RUN_PACKAGES}
+	cmake_modules
+)
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  actionlib
-  brics_actuator
-  cob_3d_mapping_msgs
-  cob_script_server
-  cob_srvs
-  diagnostic_msgs
-  roscpp
-  rviz
-  urdf
+	${catkin_BUILD_PACKAGES}
 )
 
 find_package(Qt4 COMPONENTS QtCore QtGui REQUIRED)
@@ -38,15 +47,7 @@ catkin_package(
   LIBRARIES
     cob_3d_mapping_demonstrator_rviz
   CATKIN_DEPENDS
-    actionlib
-    brics_actuator
-    cob_3d_mapping_msgs
-    cob_script_server
-    cob_srvs
-    diagnostic_msgs
-    roscpp
-    rviz
-    urdf
+    ${catkin_RUN_PACKAGES}
   DEPENDS
     Qt4
 )
@@ -71,24 +72,22 @@ include_directories(
 ## Here we specify which header files need to be run through "moc",
 ## Qt's meta-object compiler.
 qt4_wrap_cpp(MOC_FILES
-  ros/include/cob_3d_mapping_demonstrator/rviz_title.h
-  ros/include/cob_3d_mapping_demonstrator/rviz_buttons.h
+	ros/include/cob_3d_mapping_demonstrator/rviz_title.h
+	ros/include/cob_3d_mapping_demonstrator/rviz_buttons.h
 )
 
 add_library(cob_3d_mapping_demonstrator_rviz 
-        ros/src/rviz_buttons.cpp
-        ros/src/rviz_title.cpp
-        ${MOC_FILES}
+	ros/src/rviz_buttons.cpp
+	ros/src/rviz_title.cpp
+	${MOC_FILES}
 )
-
-
 
 ## Declare a cpp executable
 add_executable(cob_3d_mapping_demonstrator 
-  ros/src/demonstrator_node.cpp 
-  common/src/demonstrator_control.cpp 
-  common/src/demonstrator_control_maestro.cpp 
-  common/src/serial_device.cpp
+	ros/src/demonstrator_node.cpp 
+	common/src/demonstrator_control.cpp 
+	common/src/demonstrator_control_maestro.cpp 
+	common/src/serial_device.cpp
 )
 
 add_executable(testClient ros/test/test_client.cpp)
@@ -116,3 +115,29 @@ add_dependencies(cob_3d_mapping_demonstrator ${catkin_EXPORTED_TARGETS})
 add_dependencies(testClient ${catkin_EXPORTED_TARGETS})
 add_dependencies(testClientPOS ${catkin_EXPORTED_TARGETS})
 
+
+#############
+## Install ##
+#############
+## Mark executables and/or libraries for installation
+install(TARGETS cob_3d_mapping_demonstrator_rviz cob_3d_mapping_demonstrator
+	ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+	LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+	RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(DIRECTORY common/include/${PROJECT_NAME}/ ros/include/${PROJECT_NAME}/
+	DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+	FILES_MATCHING PATTERN "*.h"
+	PATTERN ".svn" EXCLUDE
+)
+
+install(DIRECTORY ros/launch
+	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/ros
+	PATTERN ".svn" EXCLUDE
+)
+
+install(DIRECTORY common/files
+	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/common
+	PATTERN ".svn" EXCLUDE
+)
