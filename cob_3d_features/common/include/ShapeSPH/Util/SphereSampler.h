@@ -19,12 +19,16 @@ public:
 	uninit_vector(const uninit_vector &o) {
 		data_ = new T[o.s_];
 		s_=o.s_;
-		memcpy(data_, o.data_, s_);
+		//memcpy(data_, o.data_, s_);
+		for(size_t i=0; i<s_; i++)
+			data_[i] = o.data_[i];
 	}
 
 	void operator=(const uninit_vector &o) {
 		resize(o.s_);
-		memcpy(data_, o.data_, s_);
+		//memcpy(data_, o.data_, s_);
+		for(size_t i=0; i<s_; i++)
+			data_[i] = o.data_[i];
 	}
 	
 	inline size_t size() const {return s_;}
