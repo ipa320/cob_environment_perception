@@ -106,6 +106,7 @@ bool QuadRegression<Degree, Point, CameraModel>::compute() {
   polygons_.clear();
   this->buildTree(*input_);
   calc();
+  simplify();
   return true;
 }
 
@@ -835,4 +836,42 @@ break;
   execution_time_polyextraction_ += ssw.precisionStop();
 #endif
 
+}
+
+template <int Degree, typename Point, typename CameraModel>
+void QuadRegression<Degree, Point, CameraModel>::simplify() {	
+	for(size_t i=0; i<polygons_.size(); i++)
+		for(size_t j=0; j<polygons_[i].segments_.size(); j++) {
+			simplify(polygons_[i].segments_[j], polygons_[i].segments2d_[j]);
+			
+			if(polygons_[i].segments_[j].size()<3) {
+				if(j==0) {
+					polygons_.erase(polygons_.begin()+i);
+					--i;
+					break;
+				}
+				else {
+					polygons_[i].segments_.erase(polygons_[i].segments_.begin()+j);
+					--j;
+				}
+			}
+		}
+}
+
+template <int Degree, typename Point, typename CameraModel>
+void QuadRegression<Degree, Point, CameraModel>::simplify(std::vector<Eigen::Vector3f> &seg, std::vector<Eigen::Vector2i> &seg2d) {
+	bool found = (seg.size()>0);
+	while(found) {
+		found = false;
+		
+		for(size_t i=0; i<seg.size(); i++) {
+			//if(seg.size()<5) ROS_INFO("%f", (seg[(i+2)%seg.size()]-seg[(i+1)%seg.size()]).cross(seg[i]-seg[(i+1)%seg.size()]).squaredNorm());
+			if( (seg[(i+2)%seg.size()]-seg[(i+1)%seg.size()]).cross(seg[i]-seg[(i+1)%seg.size()]).squaredNorm() < 0.000001 ) {
+				seg.erase(seg.begin()+(i+1)%seg.size());
+				//seg2d.erase(seg2d.begin()+(i+1)%seg.size());
+				found = true;
+				break;
+			}
+		}
+	}
 }

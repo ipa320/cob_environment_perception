@@ -303,6 +303,8 @@ namespace Segmentation
 
       void outline(int *ch, const int w, const int h, std::vector<SubStructure::SXY<Eigen::Vector3f> > &out, const int i, S_POLYGON<Degree> &poly, const SubStructure::Model<Degree> &model, const int mark);
       
+      void simplify();
+      void simplify(std::vector<Eigen::Vector3f> &seg, std::vector<Eigen::Vector2i> &seg2d);      
 
     public:
       /// constructor, setups variables
