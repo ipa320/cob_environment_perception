@@ -508,7 +508,7 @@ void QuadRegression<Degree, Point, CameraModel>::grow(SubStructure::VISITED_LIST
               //+3sigma*(standard deviation at max./min.)
 
               (levels_[i].data[getInd(i, x,y)].v_max_-levels_[i].data[getInd(i, x,y)].v_min_) <
-              0.25f*(std::min(model.get_max_gradient(levels_[i].data[getInd(i, x,y)]), 2.f)*d*(1<<i)/camera_.f
+              (std::min(model.get_max_gradient(levels_[i].data[getInd(i, x,y)]), 2.f)*d*(1<<i)/camera_.f
                   +2*(camera_.std(levels_[i].data[getInd(i, x,y)].v_max_)
                       +camera_.std(levels_[i].data[getInd(i, x,y)].v_min_)) )
 
@@ -597,17 +597,17 @@ void QuadRegression<Degree, Point, CameraModel>::grow(SubStructure::VISITED_LIST
       x= list.vals[j].v%levels_[i].w;
       y= list.vals[j].v/levels_[i].w;
 
-      if(x>0 && y>0 && x<(int)levels_[i].w && y<(int)levels_[i].h && isOccupied(i,x,y)==mark) continue;
+      if(x>0 && y>0 && x<(int)levels_[i].w-1 && y<(int)levels_[i].h-1 && isOccupied(i,x,y)==mark) continue;
       
       //check for occupation and non-occupation
-      int nonocc=0;
+      /*int nonocc=0;
       for(int xx=-1; xx<=1; xx++)
 		for(int yy=-1; yy<=1; yy++)
 			if(xx!=0||yy!=0) {
 				const bool b = filterOccupied(i,x+xx,y+yy,mark);
 				if(!b) nonocc++;
 			}
-	  if(nonocc<3) continue;
+	  if(nonocc<3) continue;*/
 
       pt.x=x;pt.y=y;
       pt.pt = list.vals[j].pt;
