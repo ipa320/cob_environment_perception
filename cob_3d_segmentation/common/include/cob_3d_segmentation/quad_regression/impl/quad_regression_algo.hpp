@@ -110,6 +110,11 @@ bool QuadRegression<Degree, Point, CameraModel>::compute() {
 }
 
 
+/**
+ * real-time considerations:
+ *  - not critical
+ * 	- done once at startup
+ */
 template <int Degree, typename Point, typename CameraModel>
 void QuadRegression<Degree, Point, CameraModel>::prepare(const pcl::PointCloud<Point> &pc) {
   int w=input_->width;
@@ -132,6 +137,11 @@ void QuadRegression<Degree, Point, CameraModel>::prepare(const pcl::PointCloud<P
 }
 
 
+/**
+ * real-time considerations:
+ *  - not critical
+ * 	- done once at startup
+ */
 template <int Degree, typename Point, typename CameraModel>
 void QuadRegression_Downsampled<Degree, Point, CameraModel>::prepare(const pcl::PointCloud<Point> &pc) {
   int w=this->input_->width/2;
@@ -154,6 +164,14 @@ void QuadRegression_Downsampled<Degree, Point, CameraModel>::prepare(const pcl::
 }
 
 
+/**
+ * real-time considerations:
+ *  - not critical
+ * 	- done every time
+ *  - fixed computational complexity
+ * 
+ * O(w,h):  k_a \cdot   w \cdot  h  +  k_b \sum_{i=1}^l \frac{w \cdot  h}{4^i}
+ */
 template <int Degree, typename Point, typename CameraModel>
 void QuadRegression<Degree, Point, CameraModel>::buildTree(const pcl::PointCloud<Point> &pc) {
 #ifdef STOP_TIME
@@ -206,6 +224,14 @@ void QuadRegression<Degree, Point, CameraModel>::buildTree(const pcl::PointCloud
 }
 
 
+/**
+ * real-time considerations:
+ *  - not critical
+ * 	- done every time
+ *  - fixed computational complexity
+ * 
+ * O(w,h):  k_a \cdot   w \cdot  h  +  k_b \sum_{i=1}^l \frac{w \cdot  h}{4^i}
+ */
 template <int Degree, typename Point, typename CameraModel>
 void QuadRegression_Downsampled<Degree, Point, CameraModel>::buildTree(const pcl::PointCloud<Point> &pc) {
 #ifdef STOP_TIME
@@ -332,6 +358,14 @@ void QuadRegression_Downsampled<Degree, Point, CameraModel>::buildTree(const pcl
 }
 
 
+/**
+ * real-time considerations:
+ *  - critical
+ * 	- done every time
+ *  - non-fixed computational complexity
+ * 
+ * worst O(w,h):
+ */
 template <int Degree, typename Point, typename CameraModel>
 void QuadRegression<Degree, Point, CameraModel>::calc() {
 
