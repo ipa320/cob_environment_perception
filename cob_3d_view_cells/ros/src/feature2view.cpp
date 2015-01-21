@@ -57,19 +57,44 @@
 
 #include <cob_3d_mapping_common/node_skeleton.h>
 
+#include <message_filters/synchronizer.h>
+#include <message_filters/subscriber.h>
+#include <message_filters/sync_policies/approximate_time.h>
+
 #include <pcl/point_types.h>
 #include <pcl_ros/point_cloud.h>
 #include <pcl/point_cloud.h>
 
 #include <std_msgs/Int32.h>
 
+#include <cob_3d_mapping_common/point_types.h>
+
+template<typename ID>
+ID create_new_id() {
+	static ID nid = 0;
+	return nid++;
+}
+
+#include <cob_3d_view_cells/input.h>
+#include <cob_3d_view_cells/space.h>
+#include <cob_3d_view_cells/matcher.h>
+
 template <typename FeaturePoint, typename Parent>
 class Feature2View_Node : public Parent
 {
+  typedef pcl::PointXYZ SimplePoint;
+  typedef pcl::PointCloud<SimplePoint> SimplePointCloud;
   typedef pcl::PointCloud<FeaturePoint> PointCloud;
 
-  ros::Subscriber point_cloud_sub_;
+  typedef message_filters::sync_policies::ApproximateTime<sensor_msgs::PointCloud2, sensor_msgs::PointCloud2> PCSyncPolicy;
+
+  message_filters::Subscriber<sensor_msgs::PointCloud2> 			point_cloud_sub_;
+  message_filters::Subscriber<sensor_msgs::PointCloud2> 	keypoints_sub_;
   ros::Publisher  view_pub_;
+  boost::shared_ptr<message_filters::Synchronizer<PCSyncPolicy> > sync_pcs_;
+  
+  typedef SearchSpace<FeaturePoint> TSearchSpace;
+  TSearchSpace search_;
 
 public:
   // Constructor
@@ -84,8 +109,16 @@ public:
     this->start();
 
     ros::NodeHandle *n=&(this->n_);
-    point_cloud_sub_ = this->n_.subscribe("features_in", 1, &Feature2View_Node<FeaturePoint, Parent>::pointCloudSubCallback, this);
+    point_cloud_sub_.subscribe(this->n_, "/features", 1/*, &Feature2View_Node<FeaturePoint, Parent>::pointCloudSubCallback, this*/);
+    keypoints_sub_.subscribe(this->n_, "/keypoints", 1/*, &Feature2View_Node<FeaturePoint, Parent>::pointCloudSubCallback, this*/);
     view_pub_ = n->advertise<std_msgs::Int32>("view_id", 1);
+    
+    sync_pcs_.reset(new message_filters::Synchronizer<PCSyncPolicy>(PCSyncPolicy(2), point_cloud_sub_, keypoints_sub_));
+    sync_pcs_->registerCallback( boost::bind( &Feature2View_Node<FeaturePoint, Parent>::pointCloudSubCallback, this, _1, _2 ) );
+    
+    search_.setDistThreshold(200.f);
+    
+    g_dbg_reg = new DebugRegistration(n);
 
     /*double filter;
     if(this->n_.getParam("filter",filter))
@@ -93,9 +126,36 @@ public:
   }
 
   void
-  pointCloudSubCallback(const boost::shared_ptr<const PointCloud>& pc_in)
+  pointCloudSubCallback(const sensor_msgs::PointCloud2ConstPtr& pc_in2, const sensor_msgs::PointCloud2ConstPtr& kps_pc_in2)
   {
     ROS_DEBUG("view cells: point cloud callback");
+    PointCloud pc_in;
+    SimplePointCloud::Ptr kps_pc_in(new SimplePointCloud);
+	pcl::fromROSMsg(*pc_in2, pc_in);
+	pcl::fromROSMsg(*kps_pc_in2, *kps_pc_in);
+    
+    if(pc_in.size()<1) return;
+		
+	Matcher<typename TSearchSpace::TContent, SimplePoint> matcher;
+	matcher.setIntersectionThreshold(0.4f);
+	matcher.setKeypoints(kps_pc_in);
+	
+	std::vector<typename TSearchSpace::ContentPtr> cnts;
+	for(size_t i=0; i<pc_in.size(); i++) {
+		std::vector<typename TSearchSpace::ContentPtr> tmp = search_.lookup(pc_in[i]);
+		cnts.insert(cnts.end(), tmp.begin(),tmp.end());
+		matcher.push_back(tmp, pc_in[i]);
+	}
+	search_.finish();
+	
+	std_msgs::Int32 msg;
+	msg.data = matcher.get_id();
+	
+	for(size_t i=0; i<cnts.size(); i++)
+		ROS_INFO("c %d", (int)cnts[i]->size());
+	
+	ROS_INFO("--------------------------");
+	//getchar();
     
     const bool subscribers =
 		(view_pub_.getNumSubscribers()>0);
@@ -104,6 +164,8 @@ public:
 		ROS_DEBUG("view cells: no subscribers --> do nothing");
 		return;
 	}
+	
+	view_pub_.publish(msg);
   }
 };
 
@@ -118,7 +180,7 @@ PLUGINLIB_DECLARE_CLASS(cob_3d_view_cells, Feature2View_Nodelet_XYZ, nodelet::No
 int main(int argc, char **argv) {
   ros::init(argc, argv, "feature2view");
 
-  Feature2View_Node<pcl::PointXYZ,As_Node> sn;
+  Feature2View_Node<PointXYZFeature64,As_Node> sn;
   sn.onInit();
 
   ros::spin();
