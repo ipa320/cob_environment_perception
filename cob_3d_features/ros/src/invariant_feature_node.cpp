@@ -97,6 +97,8 @@ class IFNode {
 	typedef float Real;
 	typedef double Scalar;
 	typedef Sampler<Real, Scalar> S;
+	typedef PointXYZFeature64 FeaturePoint;
+	typedef PointXYZ SimplePoint;
 	
 	enum {DEGREE=1};	/// degree of polynomial surfaces (input data)
 	
@@ -412,7 +414,7 @@ public:
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "invariant_feature_node");
-	cob_3d_visualization::RvizMarkerManager::get().createTopic("invariant_feature_debug_markers").setFrameId("/openni_depth_optical_frame").clearOld();
+	cob_3d_visualization::RvizMarkerManager::get().createTopic("invariant_feature_debug_markers").setFrameId("/camera_depth_optical_frame").clearOld();
 	
 #ifndef EIGEN_VECTORIZE
 	ROS_INFO("this would be faster if SIMD is enabled");
