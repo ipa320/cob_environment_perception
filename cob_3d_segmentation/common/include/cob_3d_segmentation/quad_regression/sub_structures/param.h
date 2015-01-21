@@ -253,6 +253,9 @@ struct Param<2> {
   inline float x() const {return model_(0,1)/model_(0,0);}
   inline float y() const {return model_(0,3)/model_(0,0);}
   inline float z() const {return z_(0)/model_(0,0);}
+  
+  template<typename Point>
+  inline Point point() const {return Point(x(),y(),z());}
 };
 #endif
 

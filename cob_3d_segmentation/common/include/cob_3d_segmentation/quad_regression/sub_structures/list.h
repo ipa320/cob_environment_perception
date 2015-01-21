@@ -136,16 +136,19 @@ struct VISITED_LIST {
  * used as parameter for outline calculation
  * point with additional information if point was in front of other object
  */
+template<typename Point>
 struct SXY {
   int x,y;
   bool back;
+  Point pt;
 };
 
 /**
  * sort 2D points from left to right, top to down
  */
+template<typename Point>
 struct SXYcmp {
-  inline bool operator() (const SXY& lhs, const SXY& rhs) const
+  inline bool operator() (const SXY<Point>& lhs, const SXY<Point>& rhs) const
   {if(lhs.y==rhs.y)
     return lhs.x<rhs.x;
   return lhs.y<rhs.y;}
