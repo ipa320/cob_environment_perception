@@ -159,15 +159,18 @@ public:
 		
 		//parameters
 		
+		ros::NodeHandle pn("~");
 		double radius;
-		n.param<double>("radius", radius, 0.9);
+		pn.param<double>("radius", radius, 0.9);
 		//TODO: make configurable
 		//isf_.addRadius(0.3);
 		//isf_.addRadius(0.4);
 		//isf_.addRadius(0.6);
-		isf_.addRadius(0.4);
+		isf_.addRadius(radius);
 		
 		n.param<std::string>("relative_frame_id", relative_frame_id_, "odom");
+		
+		ROS_INFO("using radius %f", radius);
 	}
 	
 	//only for evaluation!
