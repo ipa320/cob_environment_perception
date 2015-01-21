@@ -109,6 +109,7 @@ class IFNode {
 	
 	//ros stuff
 	ros::Subscriber sub_, sub_camera_info_;
+	ros::Publisher  pub_features_, pub_keypoints_;
 	tf::TransformListener tf_listener_;
 	std::string relative_frame_id_;
 	
@@ -154,6 +155,8 @@ public:
 	{
 		ros::NodeHandle n;
 		
+		pub_features_ = n.advertise<sensor_msgs::PointCloud2>("features", 1);
+		pub_keypoints_= n.advertise<sensor_msgs::PointCloud2>("keypoints", 1);
 		sub_ = n.subscribe("/shapes_array", 1, &IFNode::cb, this);
 		sub_camera_info_ = n.subscribe("/camera/depth/camera_info", 0, &IFNode::cb_camera_info, this);
 		
@@ -279,6 +282,37 @@ public:
 			scene.sphere(isf_.getKeypoints()[i], 0.05);
 			scene.color(0.1,1.,0.1);
 		}
+		
+		//publish features
+		pcl::PointCloud<FeaturePoint> features;
+		for(size_t i=0; i<oldR->size(); i++) {
+			FeaturePoint pt;
+			pt.x = (*oldR)[i].pt_(0);
+			pt.y = (*oldR)[i].pt_(1);
+			pt.z = (*oldR)[i].pt_(2);
+			assert(FeaturePoint::DIMENSION*2==(*oldR)[i].f_[0].values.size());
+			for(size_t j=0; j<(*oldR)[i].f_[0].values.size(); j+=2)
+				pt.feature[j/2] = (*oldR)[i].f_[0].values[j];
+			features.push_back(pt);
+		}
+		sensor_msgs::PointCloud2 features2;
+		pcl::toROSMsg(features, features2);
+		features2.header = msg.header;
+		pub_features_.publish(features2);
+		
+		pcl::PointCloud<SimplePoint> keypoints;
+		for(size_t i=0; i<isf_.getAllKeypoints().size(); i++)
+		{
+			SimplePoint pt;
+			pt.x = isf_.getAllKeypoints()[i](0);
+			pt.y = isf_.getAllKeypoints()[i](1);
+			pt.z = isf_.getAllKeypoints()[i](2);
+			keypoints.push_back(pt);
+		}
+		sensor_msgs::PointCloud2 keypoints2;
+		pcl::toROSMsg(keypoints, keypoints2);
+		keypoints2.header = msg.header;
+		pub_keypoints_.publish(keypoints2);
 		
 		static int dbg_stage=0;
 		++dbg_stage;
