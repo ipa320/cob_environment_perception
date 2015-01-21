@@ -377,7 +377,7 @@ bool MapDemonCtrl::updatePositions()
   //m_sd->PutString("r\n");
   sd_->GetString(str);	/// Get next position str
 
-  str.resize(40, NULL);	// max Positions string size is 20 (5x3 ints, 2 commas, 'R' and ':'), resize for security to the double ensuring at least one can be read if present
+  str.resize(40, 0);	// max Positions string size is 20 (5x3 ints, 2 commas, 'R' and ':'), resize for security to the double ensuring at least one can be read if present
 
   char* cstr = new char (str.size()+1);
   strcpy(cstr, str.c_str());	// cstr point to found position
