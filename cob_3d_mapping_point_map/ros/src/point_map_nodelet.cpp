@@ -197,7 +197,7 @@ public:
     updateMap(pc);
     map_pub_.publish(map_);
 
-    ROS_DEBUG("[point_map] Updated map has %d points", map_.size());
+    ROS_DEBUG("[point_map] Updated map has %d points", (int)map_.size());
 
     if(save_)
     {
