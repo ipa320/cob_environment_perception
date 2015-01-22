@@ -118,6 +118,7 @@ add_library(cob_3d_segmentation
 	common/src/cluster_classifier.cpp
 	common/src/plane_extraction.cpp
 )
+add_dependencies(cob_3d_segmentation ${${PROJECT_NAME}_EXPORTED_TARGETS})
 
 add_library(cob_3d_segmentation_nodelets
 	ros/src/segmentation_all_in_one_nodelet.cpp
@@ -130,8 +131,11 @@ add_dependencies(cob_3d_segmentation_nodelets ${${PROJECT_NAME}_EXPORTED_TARGETS
 ## Declare a cpp executable
 add_executable(segmentation_node ros/src/segmentation_node.cpp)
 add_executable(qppf_node ros/src/qppf_node.cpp)
+add_dependencies(qppf_node ${${PROJECT_NAME}_EXPORTED_TARGETS})
 add_executable(qppf_node1 ros/src/qppf_node.cpp)
+add_dependencies(qppf_node1 ${${PROJECT_NAME}_EXPORTED_TARGETS})
 add_executable(plane_extraction_action_client ros/src/plane_extraction_action_client.cpp)
+add_dependencies(plane_extraction_action_client ${${PROJECT_NAME}_EXPORTED_TARGETS})
 add_executable(test_depth_segmentation common/apps/test_depth_segmentation.cpp)
 add_executable(segmentation_visualizer ros/src/segmentation_visualizer.cpp)
 add_executable(profile_depth_seg common/apps/profile_depth_seg.cpp)

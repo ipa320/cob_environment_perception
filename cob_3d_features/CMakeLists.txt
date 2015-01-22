@@ -5,6 +5,7 @@ set(catkin_RUN_PACKAGES
   cob_3d_mapping_common
 #  cob_3d_mapping_tools
   cob_3d_visualization
+  cob_3d_mapping_msgs
   pcl_ros
   libpolypartition
 )

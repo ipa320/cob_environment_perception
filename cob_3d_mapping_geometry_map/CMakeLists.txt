@@ -62,6 +62,7 @@ include_directories(
 
 ## Declare a cpp library
 add_library(geometry_map common/src/geometry_map.cpp common/src/geometry_map_entry.cpp)
+add_dependencies(geometry_map ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a cpp executable
 add_executable(geometry_map_node ros/src/geometry_map_node.cpp)
