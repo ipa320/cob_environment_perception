@@ -76,9 +76,9 @@ template<typename PointInT, typename PointOutT, typename LabelOutT> void cob_3d_
 		labels_->width = input_->width;
 	}
 
-	const int threadsize = 1;
+	//const int threadsize = 1;
 
-#pragma omp parallel for schedule (dynamic, threadsize)
+#pragma omp parallel for //schedule (dynamic, threadsize)
 	for (size_t i = 0; i < indices_->size(); ++i)
 	{
 		labels_->points[(*indices_)[i]].label = I_UNDEF;

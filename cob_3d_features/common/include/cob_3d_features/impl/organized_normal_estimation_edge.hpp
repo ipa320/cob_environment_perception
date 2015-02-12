@@ -111,15 +111,14 @@ template<typename PointInT, typename PointOutT, typename LabelOutT> void cob_3d_
 		{
 			if (du==0 && dv==0)
 				continue;
-			//if (edge_image_.at<uchar>(v+dv,u+du)==255)
-			if (*edge_ptr)
+			//if (edge_image_.at<uchar>(v+dv,u+du)!=0)
+			if (*edge_ptr != 0)
 			{
 				// nbh. pixel itself is an edge pixel -> not usable and all pixels in the same sector with longer distance as well
 				visibility[*angle_ptr] = std::min((float)du*du+dv*dv, visibility[*angle_ptr]);
 			}
 		}
 	}
-
 }
 
 template<typename PointInT, typename PointOutT, typename LabelOutT> void cob_3d_features::OrganizedNormalEstimationEdge<PointInT, PointOutT, LabelOutT>::computeNeighborhoodVisibility(int u, int v, bool* visibility)
@@ -147,7 +146,7 @@ template<typename PointInT, typename PointOutT, typename LabelOutT> void cob_3d_
 				continue;
 
 			int index = (dv+pixel_search_radius_)*step_width+du+pixel_search_radius_;
-			//if (edge_image_.at<uchar>(v+dv,u+du)==255)
+			//if (edge_image_.at<uchar>(v+dv,u+du)!=0)
 			if (*edge_ptr)
 			{
 				// nbh. pixel itself is an edge pixel -> not usable
@@ -184,7 +183,7 @@ template<typename PointInT, typename PointOutT, typename LabelOutT> void cob_3d_
 
 				for (int i=0; i<iterations; ++i)
 				{
-					if (edge_image_.at<uchar>(curr_v,curr_u)==255)
+					if (edge_image_.at<uchar>(curr_v,curr_u)!=0)
 					{
 						visibility[index] = false;
 						break;
@@ -199,7 +198,7 @@ template<typename PointInT, typename PointOutT, typename LabelOutT> void cob_3d_
 
 template<typename PointInT, typename PointOutT, typename LabelOutT> bool cob_3d_features::OrganizedNormalEstimationEdge<PointInT, PointOutT, LabelOutT>::computePointVisibility(const int u, const int v, const int du, const int dv)
 {
-	if (edge_image_.at<uchar>(v+dv,u+du)==255)
+	if (edge_image_.at<uchar>(v+dv,u+du)!=0)
 	{
 		// nbh. pixel itself is an edge pixel -> not usable
 		return false;
@@ -235,7 +234,7 @@ template<typename PointInT, typename PointOutT, typename LabelOutT> bool cob_3d_
 
 		for (int i=0; i<iterations; ++i)
 		{
-			if (edge_image_.at<uchar>(curr_v,curr_u)==255)
+			if (edge_image_.at<uchar>(curr_v,curr_u)!=0)
 			{
 				return false;
 			}
@@ -251,14 +250,14 @@ template<typename PointInT, typename PointOutT, typename LabelOutT> void cob_3d_
 		const PointCloudIn &cloud, int index, float &n_x, float &n_y, float &n_z, int &label_out)
 {
 	//two vectors computed in the tangential plane: origin of vectors = query point,
-	//end points are two points at the boundary of the neighbourhood.
+	//end points are two points at the boundary of the neighborhood.
 	//the normal is the cross product of those two vectors
 	//
 	//input: index - index of point in input_ cloud
 	//output: n_x, n_y, n_z - coordinates of normal vector
 	//---------------------------------------------------------------------------------------------------------
 
-	Eigen::Vector3f p = cloud.points[index].getVector3fMap();
+	const Eigen::Vector3f p = cloud.points[index].getVector3fMap();
 	if (pcl_isnan(p(2)))
 	{
 		n_x = n_y = n_z = std::numeric_limits<float>::quiet_NaN();
@@ -266,12 +265,11 @@ template<typename PointInT, typename PointOutT, typename LabelOutT> void cob_3d_
 		return;
 	}
 
-	int idx, max_gab, gab, init_gab, n_normals = 0;
-	int idx_x = index % input_->width;
-	int idx_y = index * inv_width_;
+	const int idx_x = index % input_->width;
+	const int idx_y = index * inv_width_;
 
 	//no normal estimation if point is directly on edge
-	if(!edge_image_.empty() && edge_image_.at<uchar>(idx_y,idx_x) == 255)
+	if(!edge_image_.empty() && edge_image_.at<uchar>(idx_y,idx_x) != 0)
 	{
 		n_x = n_y = n_z = std::numeric_limits<float>::quiet_NaN();
 		label_out = I_EDGE;
@@ -279,22 +277,17 @@ template<typename PointInT, typename PointOutT, typename LabelOutT> void cob_3d_
 	}
 
 	// verify validity of neighborhood points
-	const int step_width = 2*pixel_search_radius_+1;
-	const int step_width2 = step_width*step_width;
+//	const int step_width = 2*pixel_search_radius_+1;
+//	const int step_width2 = step_width*step_width;
 //	bool visibility[step_width2];
 //	computeNeighborhoodVisibility(idx_x, idx_y, visibility);
+	// verify validity of neighborhood points with angular sectors
 	float visibility[angular_bins_];
 	computeSectorVisibility(idx_x, idx_y, visibility);
 
+	const float distance_threshold = skip_distant_point_threshold_ * 0.003 * p(2) * p(2);
 
-	// verify validity of neighborhood points with angular sectors
-
-
-	float distance_threshold = skip_distant_point_threshold_ * 0.003 * p(2) * p(2);
-
-	bool has_prev_point;
-
-	std::vector<int> range_border_counter(mask_.size(), 0);
+	//std::vector<int> range_border_counter(mask_.size(), 0);
 	Eigen::Vector3f p_curr;
 	Eigen::Vector3f p_prev(0, 0, 0);
 	Eigen::Vector3f p_first(0, 0, 0);
@@ -302,140 +295,143 @@ template<typename PointInT, typename PointOutT, typename LabelOutT> void cob_3d_
 
 	std::vector<std::vector<int> >::iterator it_c; // circle iterator
 	std::vector<int>::iterator it_ci; // points in circle iterator
-	std::vector<int>::iterator it_rbc = range_border_counter.begin();
+	//std::vector<int>::iterator it_rbc = range_border_counter.begin();
+
+	//int n_normals = 0;
 
 	// check where query point is and use out-of-image validation for neighbors or not
 	if (idx_y >= pixel_search_radius_ && idx_y < (int)cloud.height - pixel_search_radius_ && idx_x >= pixel_search_radius_ && idx_x < (int)cloud.width - pixel_search_radius_)
 	{
-		//iterate over circles with decreasing radius (from pixel_search_radius to 0) -> cover entire circular neighbourhood from outside border to inside
+		//iterate over circles with decreasing radius (from pixel_search_radius to 0) -> cover entire circular neighborhood from outside border to inside
 		//compute normal for every pair of points on every circle (that is a specific distance to query point)
-		for (it_c = mask_.begin(); it_c != mask_.end(); ++it_c, ++it_rbc) // iterate circles
+		for (it_c = mask_.begin(); it_c != mask_.end(); ++it_c) //, ++it_rbc) // iterate circles
 		{
-			has_prev_point = false;
-			init_gab = gab = 0;
+			bool has_prev_point = false;
+			int init_gap = 0, gap = 0;
 			//don't compute cross product, if the two tangential vectors are more than a quarter circle apart (prevent cross product of parallel vectors)
-			max_gab = 0.25 * (*it_c).size(); // reset loop
+			const int max_gap = 0.25 * (*it_c).size(); // reset loop
 
 			for (it_ci = (*it_c).begin(); it_ci != (*it_c).end(); ++it_ci) // iterate current circle
 			{
-				idx = index + *it_ci;
-				Eigen::Vector3f p_i = cloud.points[idx].getVector3fMap();
+				const int idx = index + *it_ci;
+				const Eigen::Vector3f p_i = cloud.points[idx].getVector3fMap();
 				if (pcl_isnan(p_i(2)))
 				{
-					++gab;
+					++gap;
 					continue;
-				} // count as gab point
-				int idx_du = (idx % input_->width - idx_x);
-				int idx_dv = (idx * inv_width_ - idx_y);
+				} // count as gap point
+				const int idx_du = (idx % input_->width - idx_x);
+				const int idx_dv = (idx * inv_width_ - idx_y);
 //				int vis_idx = (idx_dv+pixel_search_radius_)*step_width+idx_du+pixel_search_radius_;
 				if (fabs(p_i(2) - p(2)) > distance_threshold ||		// todo: might be obsolete with edge image
 						//visibility[vis_idx] == false)
 						//computePointVisibility(idx_x, idx_y, idx_du, idx_dv) == false)
 						visibility[neighborhood_angles_.at<int>(idx_dv+pixel_search_radius_, idx_du+pixel_search_radius_)] <= idx_du*idx_du+idx_dv*idx_dv)
 				{
-					++gab;
-					++(*it_rbc);
+					++gap;
+					//++(*it_rbc);
 					continue;
 				} // count as gab point
-				if (gab <= max_gab && has_prev_point) // check gab is small enough and a previous point exists
+				if (gap <= max_gap && has_prev_point) // check gap is small enough and a previous point exists
 				{
 					p_curr = p_i - p;
 					n_idx += (p_prev.cross(p_curr)).normalized(); // compute normal of p_prev and p_curr
-					++n_normals;
+					//++n_normals;
 					p_prev = p_curr;
 				}
-				else // current is first point in circle or just after a gab
+				else // current is first point in circle or just after a gap
 				{
 					p_prev = p_i - p;
 					if (!has_prev_point)
 					{
 						p_first = p_prev; // remember the first valid point in circle
-						init_gab = gab; // save initial gab size
+						init_gap = gap; // save initial gap size
 						has_prev_point = true;
 					}
 				}
-				gab = 0; // found valid point, reset gab counter
+				gap = 0; // found valid point, reset gap counter
 			}
 
-			// close current circle (last and first point) if gab is small enough
-			if (gab + init_gab <= max_gab)
+			// close current circle (last and first point) if gap is small enough
+			if (gap + init_gap <= max_gap)
 			{
 				// compute normal of p_first and p_prev
 				n_idx += (p_prev.cross(p_first)).normalized();
-				++n_normals;
+				//++n_normals;
 			}
 		} // end loop of circles
 	}
 	else
 	{
-		for (it_c = mask_.begin(); it_c != mask_.end(); ++it_c, ++it_rbc) // iterate circles
+		for (it_c = mask_.begin(); it_c != mask_.end(); ++it_c) //, ++it_rbc) // iterate circles
 		{
-			has_prev_point = false;
-			gab = 0;
-			max_gab = 0.25 * (*it_c).size(); // reset circle loop
+			bool has_prev_point = false;
+			int init_gap = 0, gap = 0;
+			const int max_gap = 0.25 * (*it_c).size(); // reset circle loop
 
 			for (it_ci = (*it_c).begin(); it_ci != (*it_c).end(); ++it_ci) // iterate current circle
 			{
-				idx = index + *it_ci;
+				const int idx = index + *it_ci;
 				// check top and bottom image border
 				if (idx < 0 || idx >= (int)cloud.points.size())
 				{
-					++gab;
+					++gap;
 					continue;
 				} // count as gab point
-				int v = idx * inv_width_; // calculate y coordinate in image, // check left, right border
+				const int v = idx * inv_width_; // calculate y coordinate in image, // check left, right border
 				if (v < 0 || v >= (int)cloud.height || pcl_isnan(cloud.points[idx].z))
 				{
-					++gab;
+					++gap;
 					continue;
 				} // count as gab point
-				int idx_du = (idx % input_->width - idx_x);
-				int idx_dv = (v - idx_y);
+				const int idx_du = (idx % input_->width - idx_x);
+				const int idx_dv = (v - idx_y);
 //				int vis_idx = (idx_dv+pixel_search_radius_)*step_width+idx_du+pixel_search_radius_;
-				Eigen::Vector3f p_i = cloud.points[idx].getVector3fMap();
+				const Eigen::Vector3f p_i = cloud.points[idx].getVector3fMap();
 				if (fabs(p_i(2) - p(2)) > distance_threshold ||		// todo: might be obsolete to test when edge is used
 						//visibility[vis_idx] == false)
 						//computePointVisibility(idx_x, idx_y, idx_du, idx_dv) == false)
 						visibility[neighborhood_angles_.at<int>(idx_dv+pixel_search_radius_, idx_du+pixel_search_radius_)] <= idx_du*idx_du+idx_dv*idx_dv)
 				{
-					++gab;
-					++(*it_rbc);
+					++gap;
+					//++(*it_rbc);
 					continue;
 				} // count as gab point
-				if (gab <= max_gab && has_prev_point) // check gab is small enough and a previous point exists
+				if (gap <= max_gap && has_prev_point) // check gab is small enough and a previous point exists
 				{
 					p_curr = p_i - p;
 					n_idx += (p_prev.cross(p_curr)).normalized(); // compute normal of p_prev and p_curr
-					++n_normals;
+					//++n_normals;
 					p_prev = p_curr;
 				}
-				else // current is first point in circle or just after a gab
+				else // current is first point in circle or just after a gap
 				{
 					p_prev = p_i - p;
 					if (!has_prev_point)
 					{
 						p_first = p_prev; // remember the first valid point in circle
-						init_gab = gab; // save initial gab size
+						init_gap = gap; // save initial gab size
 						has_prev_point = true;
 					}
 				}
-				gab = 0; // found valid point, reset gab counter
+				gap = 0; // found valid point, reset gab counter
 			}
 
 			// close current circle (last and first point) if gab is small enough
-			if (gab + init_gab <= max_gab)
+			if (gap + init_gap <= max_gap)
 			{
 				// compute normal of p_first and p_prev
 				n_idx += (p_prev.cross(p_first)).normalized();
-				++n_normals;
+				//++n_normals;
 			}
 		} // end loop of circles
 	}
 
 	//if (range_border_counter[mask_.size()-1] > 0) label_out = I_BORDER;
 
-	n_idx /= (float)n_normals;
-	n_idx = n_idx.normalized();
+//	n_idx /= (float)n_normals;
+//	n_idx = n_idx.normalized();
+	n_idx.normalize();
 	n_x = n_idx(0);
 	n_y = n_idx(1);
 	n_z = n_idx(2);
