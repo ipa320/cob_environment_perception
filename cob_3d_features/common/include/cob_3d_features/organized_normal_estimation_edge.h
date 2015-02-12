@@ -121,6 +121,7 @@ public:
 
 	void computePointAngleLookupTable(int angular_bins=16);
 
+	// check all neighborhood pixels whether they are valid points for normal computation, i.e. no edge is on direct line of sight between nbh. pixel and central pixel
 	void computeSectorVisibility(int u, int v, float* visibility);
 
 	// labels all neighborhood pixels whether they are visible from the central pixel, i.e. no edges obstruct the direct line between neighbor point and central point
@@ -133,8 +134,8 @@ public:
 protected:
 
 	cv::Mat edge_image_;
-	cv::Mat neighborhood_angles_;  // stores the angle between a neighborhood point and its central point
-	int angular_bins_;
+	cv::Mat neighborhood_angles_;  // stores the angle between a neighborhood point and its central point encoded as a bin number among angular_bins_ number of bins in 360deg
+	int angular_bins_;		// 360deg are divided in this number of discrete angular bins
 };
 }
 
