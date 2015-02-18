@@ -227,6 +227,7 @@ namespace cob_3d_mapping
     bool enable_cyl_;                           ///< If true , processing of cylinders is activated.
     bool enable_poly_;                          ///< If true , processing of polygons is activated.
     bool colorize_;								///< If true, map will be colorized (vertical and horizontal planes...)
+    bool dynamic_map_;							///< If true, map will consider dynamic objects, e.g. by checking visibility and removing shapes
 
     /**
     * @brief Dynamic Reconfigure server

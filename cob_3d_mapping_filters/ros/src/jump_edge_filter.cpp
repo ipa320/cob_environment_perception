@@ -104,7 +104,10 @@ public:
 
     double angle;
     n_.param ("upper_angle_deg", angle, 170.0);
+    bool keep_organized;
+    n_.param ("keep_organized", keep_organized, false);
     filter_.setAngleThreshold (angle);
+    filter_.setKeepOrganized(keep_organized);
   }
 
   void

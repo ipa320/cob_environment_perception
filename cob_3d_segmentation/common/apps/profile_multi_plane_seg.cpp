@@ -62,7 +62,7 @@
 
 // PCL:
 
-#ifdef PCL_MINOR_VERSION >= 6
+#if PCL_MINOR_VERSION >= 6
 
 #include <pcl/point_types.h>
 #include <pcl/io/pcd_io.h>

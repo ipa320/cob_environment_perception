@@ -132,7 +132,7 @@ public:
   void
   saveTables (cob_3d_mapping_msgs::GetObjectsOfClass::Response &res)
   {
-    ROS_INFO("Table objects received : %d",res.objects.shapes.size ());
+    ROS_INFO("Table objects received : %d", (int)res.objects.shapes.size ());
     if (save_txt_file_ || save_pcd_file_)
     {
       for (unsigned int i = 0; i < res.objects.shapes.size (); i++)
