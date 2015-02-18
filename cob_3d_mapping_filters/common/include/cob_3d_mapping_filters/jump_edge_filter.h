@@ -87,7 +87,7 @@ namespace cob_3d_mapping_filters
 
       /** Empty Constructor */
       JumpEdgeFilter () :
-          angle_deg_ (170.0)
+          angle_deg_ (170.0), keep_organized_(false)
       {
       }
       ;
@@ -111,10 +111,22 @@ namespace cob_3d_mapping_filters
        * \return The angle threshold.
        */
       inline double
-      getAngleThreshold ()
+      getAngleThreshold () const
       {
         return angle_deg_;
       }
+      
+      inline bool
+      getKeepOrganized() const
+      {
+		  return keep_organized_;
+	  }
+      
+      inline void
+      setKeepOrganized(bool keep_organized)
+      {
+		  keep_organized_ = keep_organized;
+	  }
 
     protected:
 
@@ -128,6 +140,8 @@ namespace cob_3d_mapping_filters
 
       /** Angle threshold in degrees  */
       double angle_deg_;
+      
+      bool keep_organized_;
     };
 
 } // end namespace cob_3d_mapping_filters
