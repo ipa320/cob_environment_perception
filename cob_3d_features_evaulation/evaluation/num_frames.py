@@ -14,7 +14,7 @@ def num_frames(fn):
 
 	fts_file=""
 	T=None
-	keypoints=[]
+	keypoints=0
 	KPstart=0
 	frames=0
 	took={}
@@ -34,21 +34,10 @@ def num_frames(fn):
 			if not s[1] in took: took[s[1]] = []
 			took[s[1]].append(reduce(lambda x, y: float(x) + float(y), s[2:]))
 
-		if len(s)==4 and s[0]=="keypoint" and T!=None:
-			pt = vec4(float(s[1]), float(s[2]), float(s[3]), 1.)
-			TT=T[1].toMat4().setColumn(3, T[0])
-			#pt = TT.inverse()*pt
-			pt = TT*pt
-			keypoints.append({"pt":pt})
-			#print pt
-		if len(s)>4 and s[0]=="keypoint" and T!=None:
-			if KPtype!=s[1]:
-				KPtype=s[1]
-				KP=KPstart
-			keypoints[KP][s[1]] = [float(v) for v in s[2:]]
-			KP += 1
+		if len(s)>4 and s[0]=="keypoint":
+			keypoints+=1
 
 	#print "frames ",frames
-	return frames
+	return [frames, keypoints]
 
 #run(sys.argv[1])
