@@ -25,9 +25,8 @@ for ft in algos:
 		R=qual_matrix(subset_files,ft)
 		i=min(R, key=R.get)
 		D[param] = R[i]
-	gnuplot.add_data(D, ft)
-	gnuplot.add_attr('with linespoints"')
-gnuplot.add_attr('lc rgb "black"')
+	gnuplot.add_data(D, ft, 'linespoints')
+gnuplot.add_attr('lc rgb "black')
 gnuplot.close()
 
  
@@ -45,7 +44,6 @@ for ft in algos:
 		R=qual_matrix(subset_files,ft)
 		i=min(R, key=R.get)
 		D[param] = R[i]
-	gnuplot.add_data(D, ft)
-	gnuplot.add_attr('with linespoints"')
-gnuplot.add_attr('lc rgb "black"')
+	gnuplot.add_data(D, ft, 'linespoints')
+gnuplot.add_attr('lc rgb "black')
 gnuplot.close()
