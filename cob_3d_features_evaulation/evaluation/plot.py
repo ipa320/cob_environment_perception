@@ -38,23 +38,26 @@ class line_plot:
 		self.gnuplot.wl(s)
 		
 	def add_eq(self, eq):
-		if not first: self.gnuplot.write(", ")
+		if not self.first: self.gnuplot.write(", ")
 		else:
 			self.gnuplot.write("plot ")
-			first=False
+			self.first=False
 		self.gnuplot.write(eq)
 		
-	def add_data(self, R, title):
+	def add_data(self, R, title, style='lines'):
+		if len(R)<1:
+			print "WARNING: data empty for "+title
+			return
 		tmp = tempfile.NamedTemporaryFile(delete=False)
 		for i in sorted(R):
 			tmp.write(str(i)+"\t"+str(R[i])+"\n")
 		tmp.close()
 		self.mem.append(tmp.name)
 		
-		self.add_eq('"'+tmp.name+'" using 1:2 title "'+title+'" with lines')
+		self.add_eq('"'+tmp.name+'" using 1:2 title "'+title+'" with '+style)
 		
-	def set_attr(self, s):
-		self.write(' '+s)
+	def add_attr(self, s):
+		self.gnuplot.write(' '+s)
 		
 	def close(self):
 		self.gnuplot.wl('')
