@@ -9,8 +9,8 @@ algos=["FSHD","SHOT","VFH","ESF","FPFH"]
 files2=sys.argv[2:]
 files=[]
 for f in files2:
-	if f.find("freiburg2_desk")==-1 and f.find("freiburg2_large_no_loop")==-1:
-	#if True or f.find("pioneer")!=-1:
+	#if f.find("freiburg2_desk")==-1 and f.find("freiburg2_large_no_loop")==-1:
+	if f.find("pioneer")!=-1:
 		files.append(f)
 
 gnuplot=line_plot(sys.argv[1])
