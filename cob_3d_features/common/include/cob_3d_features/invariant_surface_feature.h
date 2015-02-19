@@ -263,6 +263,8 @@ namespace cob_3d_features
 		}
 		
 		void normalize(const std::vector<float> &radii) {
+			return;
+			
 			//std::cout<<"area: "<<area_<<std::endl;
 			//return;
 			/*for(size_t i=0; i<f_.size(); i++)
