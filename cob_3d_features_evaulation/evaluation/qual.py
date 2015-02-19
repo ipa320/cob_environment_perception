@@ -6,7 +6,7 @@ import os, sys, math
 
 def qual_matrix(files, ft):
 	MIN_DIST=0.25
-	FACTOR_IND=3
+	FACTOR_IND=6
 	radius="0.7"
 
 	R={}
@@ -31,7 +31,7 @@ def qual_matrix(files, ft):
 			print ft, "\t", M[5][3], "\t", frames, kp, "    ",fn
 			
 			for row in M:
-				v = frames * float(row[3])/float(M[len(M)-1][FACTOR_IND])
+				v = frames * float(row[6])/float(M[len(M)-1][FACTOR_IND])
 				i = float(row[0])
 				if i in R:
 					R[i] += v

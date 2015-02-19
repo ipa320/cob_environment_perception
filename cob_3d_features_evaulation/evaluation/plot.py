@@ -30,9 +30,9 @@ class line_plot:
 		if y2label!=None: self.gnuplot.wl('set y2label "'+y2label+'"')
 		
 	def set_tics(self, xtics, ytics=None, y2tics=None):
-		self.gnuplot.wl('set xlabel "'+str(xtics)+'"')
-		if ytics!=None: self.gnuplot.wl('set ylabel "'+str(ytics)+'"')
-		if y2tics!=None: self.gnuplot.wl('set y2label "'+str(y2tics)+'"')
+		self.gnuplot.wl('set xtics "'+str(xtics)+'"')
+		if ytics!=None: self.gnuplot.wl('set ytics "'+str(ytics)+'"')
+		if y2tics!=None: self.gnuplot.wl('set y2tics "'+str(y2tics)+'"')
 		
 	def add_user(self, s):
 		self.gnuplot.wl(s)
