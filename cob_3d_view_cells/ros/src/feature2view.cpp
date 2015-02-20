@@ -55,6 +55,10 @@
  *
  ****************************************************************/
 
+#include <rosbag/bag.h>
+#include <rosbag/view.h>
+#include <boost/foreach.hpp>
+    
 #include <cob_3d_mapping_common/node_skeleton.h>
 
 #include <message_filters/synchronizer.h>
@@ -95,6 +99,8 @@ class Feature2View_Node : public Parent
   
   typedef SearchSpace<FeaturePoint> TSearchSpace;
   TSearchSpace search_;
+  
+  double int_thr_;
 
 public:
   // Constructor
@@ -116,17 +122,51 @@ public:
     sync_pcs_.reset(new message_filters::Synchronizer<PCSyncPolicy>(PCSyncPolicy(2), point_cloud_sub_, keypoints_sub_));
     sync_pcs_->registerCallback( boost::bind( &Feature2View_Node<FeaturePoint, Parent>::pointCloudSubCallback, this, _1, _2 ) );
     
-    search_.setDistThreshold(200.f);
+    double dist_thr;
+    n->param<double>("dist_thr", dist_thr, 90.);
+    search_.setDistThreshold(dist_thr);
+    
+    n->param<double>("int_thr", int_thr_, 0.4);
     
     g_dbg_reg = new DebugRegistration(n);
 
     /*double filter;
     if(this->n_.getParam("filter",filter))
       seg_.setFilter((float)filter);*/
+      
+    ROS_INFO("using params: %f %f", dist_thr, int_thr_);
+  }
+  
+  /**
+   * function for evaluation (to speed up)
+   */
+  void readFromBag(rosbag::Bag &bag, rosbag::Bag &bag_out) {
+    rosbag::View view(bag);
+
+	sensor_msgs::PointCloud2ConstPtr last_pc, last_kp;
+    BOOST_FOREACH(rosbag::MessageInstance const m, view)
+    {
+		bag_out.write(m.getTopic(), m.getTime(), m, m.getConnectionHeader());
+		
+        sensor_msgs::PointCloud2ConstPtr pc  = m.instantiate<sensor_msgs::PointCloud2>();
+        if (pc != NULL) {
+			//ROS_INFO("stamp %f %s", pc->header.stamp.toSec(), m.getTopic().c_str());
+			if(m.getTopic()=="/keypoints") last_kp = pc;
+			else if(m.getTopic()=="/features") last_pc = pc;
+		}
+		
+		if(last_pc && last_kp && std::abs(last_pc->header.stamp.toSec()-last_kp->header.stamp.toSec())<0.002f) {
+			 std_msgs::Int32 msg;
+			 if(_pointCloudSubCallback(last_pc,last_kp, msg))
+				bag_out.write("/feature2view_eval/view_id",last_pc->header.stamp,msg);
+			 last_pc.reset();
+			 last_kp.reset();
+		}
+    }
   }
 
-  void
-  pointCloudSubCallback(const sensor_msgs::PointCloud2ConstPtr& pc_in2, const sensor_msgs::PointCloud2ConstPtr& kps_pc_in2)
+  bool
+  _pointCloudSubCallback(const sensor_msgs::PointCloud2ConstPtr& pc_in2, const sensor_msgs::PointCloud2ConstPtr& kps_pc_in2, std_msgs::Int32 &msg)
   {
     ROS_DEBUG("view cells: point cloud callback");
     PointCloud pc_in;
@@ -134,10 +174,10 @@ public:
 	pcl::fromROSMsg(*pc_in2, pc_in);
 	pcl::fromROSMsg(*kps_pc_in2, *kps_pc_in);
     
-    if(pc_in.size()<1) return;
+    if(pc_in.size()<1) return false;
 		
 	Matcher<typename TSearchSpace::TContent, SimplePoint> matcher;
-	matcher.setIntersectionThreshold(0.4f);
+	matcher.setIntersectionThreshold(int_thr_);
 	matcher.setKeypoints(kps_pc_in);
 	
 	std::vector<typename TSearchSpace::ContentPtr> cnts;
@@ -148,24 +188,30 @@ public:
 	}
 	search_.finish();
 	
-	std_msgs::Int32 msg;
 	msg.data = matcher.get_id();
 	
-	for(size_t i=0; i<cnts.size(); i++)
-		ROS_INFO("c %d", (int)cnts[i]->size());
+	//for(size_t i=0; i<cnts.size(); i++)
+	//	ROS_INFO("c %d", (int)cnts[i]->size());
 	
 	ROS_INFO("--------------------------");
 	//getchar();
-    
-    const bool subscribers =
-		(view_pub_.getNumSubscribers()>0);
+	return true;
+  }
 	
-	if(!subscribers) {
-		ROS_DEBUG("view cells: no subscribers --> do nothing");
-		return;
+  void
+  pointCloudSubCallback(const sensor_msgs::PointCloud2ConstPtr& pc_in2, const sensor_msgs::PointCloud2ConstPtr& kps_pc_in2) {
+	std_msgs::Int32 msg;
+	if(_pointCloudSubCallback(pc_in2, kps_pc_in2, msg)) {
+		const bool subscribers =
+			(view_pub_.getNumSubscribers()>0);
+		
+		if(!subscribers) {
+			ROS_DEBUG("view cells: no subscribers --> do nothing");
+			return;
+		}
+	
+		view_pub_.publish(msg);
 	}
-	
-	view_pub_.publish(msg);
   }
 };
 
@@ -177,13 +223,34 @@ PLUGINLIB_DECLARE_CLASS(cob_3d_view_cells, Feature2View_Nodelet_XYZ, nodelet::No
 
 #else
 
+#include <boost/program_options.hpp>
 int main(int argc, char **argv) {
-  ros::init(argc, argv, "feature2view");
+  ros::init(argc, argv, "feature2view_eval");
 
   Feature2View_Node<PointXYZFeature64,As_Node> sn;
   sn.onInit();
+  
+  namespace po = boost::program_options;
+  
+  // Declare the supported options.
+  po::options_description desc("Allowed options");
+  desc.add_options() ("bag", po::value<std::string>(), "set bag file to replay");
+  desc.add_options() ("bag_out", po::value<std::string>(), "set bag file to write");
 
-  ros::spin();
+  po::variables_map vm;
+  po::store(po::parse_command_line(argc, argv, desc), vm);
+  po::notify(vm);    
+
+  if(vm.count("bag") && vm.count("bag_out")) {
+	rosbag::Bag bag, bag_out;
+    bag.open(vm["bag"].as<std::string>(), rosbag::bagmode::Read);
+    bag_out.open(vm["bag_out"].as<std::string>(), rosbag::bagmode::Write);
+    bag_out.setCompression(rosbag::compression::BZ2);
+    sn.readFromBag(bag, bag_out);
+    bag.close();
+    bag_out.close();
+  }
+  else ros::spin();
 
   return 0;
 }
