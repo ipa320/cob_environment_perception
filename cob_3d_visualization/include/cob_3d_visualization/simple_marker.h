@@ -259,6 +259,24 @@ namespace cob_3d_visualization {
 			marker_.scale.z = 0;
 		}
 		
+		template<class Vector>
+		void line(const Vector &start, const Vector &end, const float scale=0) {
+			marker_.type = visualization_msgs::Marker::LINE_STRIP;
+			
+			marker_.points.clear();
+			marker_.points.push_back(_2geometry(start));
+			marker_.points.push_back(_2geometry(end));
+			
+			geometry_msgs::Point delta;
+			delta.x = marker_.points[0].x-marker_.points[1].x;
+			delta.y = marker_.points[0].y-marker_.points[1].y;
+			delta.z = marker_.points[0].z-marker_.points[1].z;
+			const float l = std::sqrt(delta.x*delta.x + delta.y*delta.y + delta.z*delta.z);
+			
+			marker_.scale.x = scale;
+			marker_.scale.y = marker_.scale.z = 0;
+		}
+		
 		void text(const std::string &txt, const float scale=0.1) {
 			marker_.type = visualization_msgs::Marker::TEXT_VIEW_FACING;
 			marker_.text = txt;
