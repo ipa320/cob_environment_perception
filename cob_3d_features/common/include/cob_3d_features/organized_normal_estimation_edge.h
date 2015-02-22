@@ -88,6 +88,8 @@ int sign(int x)
 	return 1;
 }
 
+//#define NEIGHBORHOOD_DISPLAY
+
 template<typename PointInT, typename PointOutT, typename LabelOutT>
 class OrganizedNormalEstimationEdge: public OrganizedNormalEstimation<PointInT, PointOutT, LabelOutT>
 {
@@ -129,7 +131,11 @@ public:
 
 	bool computePointVisibility(const int u, const int v, const int du, const int dv);
 
+#ifdef NEIGHBORHOOD_DISPLAY
+	void computePointNormal(const PointCloudIn &cloud, int index, float &n_x, float &n_y, float &n_z, int &label_out, cv::Mat& considered_neighborhood);
+#else
 	void computePointNormal(const PointCloudIn &cloud, int index, float &n_x, float &n_y, float &n_z, int &label_out);
+#endif
 
 protected:
 

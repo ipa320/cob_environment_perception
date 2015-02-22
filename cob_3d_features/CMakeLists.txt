@@ -101,6 +101,7 @@ add_library(cob_3d_features_omp
   common/src/fast_edge_estimation_3d_omp.cpp)
 target_link_libraries(cob_3d_features_omp
   ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
 #  ${PCL_LIBRARIES}
 )
 #set_target_properties(cob_3d_features_omp PROPERTIES COMPILE_FLAGS "-fopenmp"
