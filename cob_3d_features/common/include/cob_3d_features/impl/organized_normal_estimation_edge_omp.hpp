@@ -66,6 +66,10 @@
 #include "cob_3d_mapping_common/label_defines.h"
 #include "cob_3d_features/organized_normal_estimation_edge_omp.h"
 
+#ifdef NEIGHBORHOOD_DISPLAY
+#include <opencv/highgui.h>
+#endif
+
 template<typename PointInT, typename PointOutT, typename LabelOutT> void cob_3d_features::OrganizedNormalEstimationEdgeOMP<PointInT, PointOutT, LabelOutT>::computeFeature(
 		PointCloudOut &output)
 {
@@ -76,15 +80,55 @@ template<typename PointInT, typename PointOutT, typename LabelOutT> void cob_3d_
 		labels_->width = input_->width;
 	}
 
-	//const int threadsize = 1;
+#ifdef NEIGHBORHOOD_DISPLAY
+	// neighborhood display
+	cv::Mat neighborhood_display(input_->height, input_->width, CV_8UC3);
+	int index = 0;
+	for (int v=0; v<neighborhood_display.rows; ++v)
+		for (int u=0; u<neighborhood_display.cols; ++u, ++index)
+		{
+			//if (u!=neighborhood_display.cols-1 && v!=neighborhood_display.rows-1)
+			{
+				pcl::PointXYZRGB* point = (pcl::PointXYZRGB*)&(input_->at(index));
+				neighborhood_display.at<cv::Vec3b>(v,u) = cv::Vec3b(point->r, point->g, point->b);
+			}
+		}
+	std::cout << "a" << std::endl;
+#endif
 
+#ifndef NEIGHBORHOOD_DISPLAY
+	//const int threadsize = 1;
 #pragma omp parallel for //schedule (dynamic, threadsize)
+#endif
 	for (size_t i = 0; i < indices_->size(); ++i)
 	{
 		labels_->points[(*indices_)[i]].label = I_UNDEF;
+#ifndef NEIGHBORHOOD_DISPLAY
 		this->computePointNormal(*surface_, (*indices_)[i], output.points[(*indices_)[i]].normal[0], output.points[(*indices_)[i]].normal[1], output.points[(*indices_)[i]].normal[2],
 				labels_->points[(*indices_)[i]].label);
+#else
+		cv::Mat considered_neighborhood = cv::Mat::zeros(2*this->pixel_search_radius_+1, 2*this->pixel_search_radius_+1, CV_8UC1);
+		this->computePointNormal(*surface_, (*indices_)[i], output.points[(*indices_)[i]].normal[0], output.points[(*indices_)[i]].normal[1], output.points[(*indices_)[i]].normal[2],
+				labels_->points[(*indices_)[i]].label, considered_neighborhood);
+
+		int u = i%neighborhood_display.cols;
+		int v = i/neighborhood_display.cols;
+		if (u%(3*this->pixel_search_radius_)==0 && v%(3*this->pixel_search_radius_)==0 && u>this->pixel_search_radius_ && u<neighborhood_display.cols-this->pixel_search_radius_ && v>this->pixel_search_radius_ && v<neighborhood_display.rows-this->pixel_search_radius_)
+		{
+			for (int dv=-this->pixel_search_radius_; dv<=this->pixel_search_radius_; ++dv)
+				for (int du=-this->pixel_search_radius_; du<=this->pixel_search_radius_; ++du)
+					if (considered_neighborhood.at<uchar>(dv+this->pixel_search_radius_, du+this->pixel_search_radius_) != 0)
+						neighborhood_display.at<cv::Vec3b>(v+dv, u+du) = cv::Vec3b(neighborhood_display.at<cv::Vec3b>(v+dv, u+du).val[0], 255, neighborhood_display.at<cv::Vec3b>(v+dv, u+du).val[2]);
+			neighborhood_display.at<cv::Vec3b>(v, u) = cv::Vec3b(0, 0, 255);
+		}
+#endif
 	}
+
+#ifdef NEIGHBORHOOD_DISPLAY
+	std::cout << "b" << std::endl;
+	cv::imshow("neighborhoods", neighborhood_display);
+	cv::waitKey();
+#endif
 }
 
 #define PCL_INSTANTIATE_OrganizedNormalEstimationEdgeOMP(T,OutT,LabelT) template class PCL_EXPORTS cob_3d_features::OrganizedNormalEstimationEdgeOMP<T,OutT,LabelT>;

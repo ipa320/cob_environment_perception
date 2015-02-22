@@ -246,8 +246,13 @@ template<typename PointInT, typename PointOutT, typename LabelOutT> bool cob_3d_
 	return true;
 }
 
+#ifdef NEIGHBORHOOD_DISPLAY
+template<typename PointInT, typename PointOutT, typename LabelOutT> void cob_3d_features::OrganizedNormalEstimationEdge<PointInT, PointOutT, LabelOutT>::computePointNormal(
+		const PointCloudIn &cloud, int index, float &n_x, float &n_y, float &n_z, int &label_out, cv::Mat& considered_neighborhood)
+#else
 template<typename PointInT, typename PointOutT, typename LabelOutT> void cob_3d_features::OrganizedNormalEstimationEdge<PointInT, PointOutT, LabelOutT>::computePointNormal(
 		const PointCloudIn &cloud, int index, float &n_x, float &n_y, float &n_z, int &label_out)
+#endif
 {
 	//two vectors computed in the tangential plane: origin of vectors = query point,
 	//end points are two points at the boundary of the neighborhood.
@@ -264,6 +269,7 @@ template<typename PointInT, typename PointOutT, typename LabelOutT> void cob_3d_
 		label_out = I_NAN;
 		return;
 	}
+	const float distance_threshold = skip_distant_point_threshold_ * 0.003 * p(2) * p(2);
 
 	const int idx_x = index % input_->width;
 	const int idx_y = index * inv_width_;
@@ -284,8 +290,6 @@ template<typename PointInT, typename PointOutT, typename LabelOutT> void cob_3d_
 	// verify validity of neighborhood points with angular sectors
 	float visibility[angular_bins_];
 	computeSectorVisibility(idx_x, idx_y, visibility);
-
-	const float distance_threshold = skip_distant_point_threshold_ * 0.003 * p(2) * p(2);
 
 	//std::vector<int> range_border_counter(mask_.size(), 0);
 	Eigen::Vector3f p_curr;
@@ -331,7 +335,10 @@ template<typename PointInT, typename PointOutT, typename LabelOutT> void cob_3d_
 					++gap;
 					//++(*it_rbc);
 					continue;
-				} // count as gab point
+				} // count as gap point
+#ifdef NEIGHBORHOOD_DISPLAY
+				considered_neighborhood.at<uchar>(idx_dv+pixel_search_radius_, idx_du+pixel_search_radius_) = 255;
+#endif
 				if (gap <= max_gap && has_prev_point) // check gap is small enough and a previous point exists
 				{
 					p_curr = p_i - p;
@@ -377,13 +384,13 @@ template<typename PointInT, typename PointOutT, typename LabelOutT> void cob_3d_
 				{
 					++gap;
 					continue;
-				} // count as gab point
+				} // count as gap point
 				const int v = idx * inv_width_; // calculate y coordinate in image, // check left, right border
 				if (v < 0 || v >= (int)cloud.height || pcl_isnan(cloud.points[idx].z))
 				{
 					++gap;
 					continue;
-				} // count as gab point
+				} // count as gap point
 				const int idx_du = (idx % input_->width - idx_x);
 				const int idx_dv = (v - idx_y);
 //				int vis_idx = (idx_dv+pixel_search_radius_)*step_width+idx_du+pixel_search_radius_;
@@ -391,12 +398,16 @@ template<typename PointInT, typename PointOutT, typename LabelOutT> void cob_3d_
 				if (fabs(p_i(2) - p(2)) > distance_threshold ||		// todo: might be obsolete to test when edge is used
 						//visibility[vis_idx] == false)
 						//computePointVisibility(idx_x, idx_y, idx_du, idx_dv) == false)
+						idx_du < pixel_search_radius_ || idx_du+pixel_search_radius_ >= neighborhood_angles_.cols ||
 						visibility[neighborhood_angles_.at<int>(idx_dv+pixel_search_radius_, idx_du+pixel_search_radius_)] <= idx_du*idx_du+idx_dv*idx_dv)
 				{
 					++gap;
 					//++(*it_rbc);
 					continue;
 				} // count as gab point
+#ifdef NEIGHBORHOOD_DISPLAY
+				considered_neighborhood.at<uchar>(idx_dv+pixel_search_radius_, idx_du+pixel_search_radius_) = 0;
+#endif
 				if (gap <= max_gap && has_prev_point) // check gab is small enough and a previous point exists
 				{
 					p_curr = p_i - p;
