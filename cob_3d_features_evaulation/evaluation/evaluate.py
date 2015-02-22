@@ -4,19 +4,50 @@ import os, sys, math
 from cgkit.cgtypes import vec3, vec4, quat
 from scipy.stats.mstats import mquantiles
 
+def calc_pr(_cur,_dif, resolution=20):
+	Ts=[]
+	mi = 0#min(list(_dif))
+	ma = max(list(_dif))
+	for x in xrange(resolution):
+		Ts.append((ma-mi)*x/resolution+mi)
+		
+	R=[]
+	for T in Ts:
+		FN = N = 0
+		for x in _cur:
+			if x<=T: N+=1
+		for x in _dif:
+			if x>T: FN+=1
+			
+		precision = N/float(len(_cur))
+		recall = N/float(N+FN)
+		
+		R.append([T,precision,recall])
+	return R
+		
+
+num_radii=1
+num_angles=1
+
 def dist(ft1, ft2, t):
+	global num_angles, num_radii
 	assert(len(ft1)==len(ft2))
 	r=0
-	for i in xrange(len(ft1)):
-		#if t=="FSHD" and i%16==0: continue
+	if t=="FSHDxy":
+		for i in xrange(len(ft1)):
+			r += pow((ft1[i]-ft2[i])*pow(2, i%num_angles),2) #*pow(2, i%num_angles)
+	else:
+		for i in xrange(len(ft1)):
+			r += pow((ft1[i]-ft2[i]),2)
 		#r += abs(ft1[i]-ft2[i])
-		r += pow(ft1[i]-ft2[i],2)
+		#r += pow((ft1[i]-ft2[i]),2) #*pow(2, i%num_angles)
 	return math.sqrt(r)
 
 assert(len(sys.argv)==4)
 
 #@profile
 def run():
+	global num_radii,num_angles
 	f_fts = open(sys.argv[1],'r')
 	f_tfs = open(sys.argv[2],'r')
 	fn_output = sys.argv[3]
@@ -42,6 +73,8 @@ def run():
 		if len(s)>0: s[len(s)-1] = s[len(s)-1][0:len(s[len(s)-1])-1]
 
 		if len(s)>0 and s[0]=="file": fts_file = s[1]
+		if len(s)>0 and s[0]=="num_radii": num_radii = int(s[1])
+		if len(s)>0 and s[0]=="num_angles": num_angles = int(s[1])
 		if len(s)>0 and s[0]=="header":
 			T=None
 			ts = float(s[1])
@@ -166,7 +199,70 @@ def run():
 				f_out.write( str(cc*FACT)+"\t" )
 				f_out.write( str(max(avg[ft+pp+"border"][b])*FACT)+"\t" )
 				f_out.write( str(reduce(lambda x, y: x + y, avg[ft+pp+"border"][b]) / len(avg[ft+pp+"border"][b])*FACT ) )
+
+				_all=avg[ft+"border"][len(borders)-1]
+				_cur=avg[ft+pp+"border"][b]
+				_dif=set(_all).difference(_cur)
+				if len(_dif)<1:
+					precision=precisionM=0
+					recall=recallM=0
+				else:
+					T = sum(list(_dif))/len(_dif)
+					TM = mquantiles(list(_dif))[0]
+					N = 0
+					NM= 0
+					FN=FNM=0
+					for x in _cur:
+						if x<=T: N+=1
+						if x<=TM: NM+=1
+					for x in _dif:
+						if x>T: FN+=1
+						if x>TM: FNM+=1
+						
+					precision = N/float(len(_cur))
+					precisionM = NM/float(len(_cur))
+					recall = N/float(N+FN)
+					recallM = NM/float(NM+FNM)
+					
+					tnr = (len(_dif)-FN)/float(len(_dif))
+					acc = (len(_dif)-FN+N)/float(len(_all))
+					
+					tnrM = (len(_dif)-FNM)/float(len(_dif))
+					accM = (len(_dif)-FNM+NM)/float(len(_all))
+					
+				#precision
+				f_out.write( "\t"+str(precision) )
+				f_out.write( "\t"+str(precisionM) )
+				
+				#recall
+				f_out.write( "\t"+str(recall) )
+				f_out.write( "\t"+str(recallM) )
+				
+				#true negative rate
+				f_out.write( "\t"+str(tnr) )
+				f_out.write( "\t"+str(tnrM) )
+				
+				#accuracy
+				f_out.write( "\t"+str(acc) )
+				f_out.write( "\t"+str(accM) )
+				
+				#F-measure (IS NOT CORRECT AS FN IS JUST A SUBSET OF ALL!!!!)
+				if (recall+precision)>0: f_out.write( "\t"+str(recall*precision*2/(recall+precision)) )
+				else: f_out.write( "\t0" )
+				if (recallM+precisionM)>0: f_out.write( "\t"+str(recallM*precisionM*2/(recallM+precisionM)) )
+				else: f_out.write( "\t0" )
+				
 				f_out.write("\n")
+				
+				if borders[b]>=0.2 and borders[b]<=1:
+					f1 = file(fn_output+"_"+ft+"_pr_"+str(borders[b])+".csv", "w")
+					R = calc_pr(_cur,_dif)
+					for r in R:
+						f1.write( str(r[0]) )
+						f1.write( "\t"+str(r[1]) )
+						f1.write( "\t"+str(r[2]) )
+						f1.write("\n")
+					f1.close()
 			#print ""
 		f_out.close()
 	assert(tfs_file==fts_file)
