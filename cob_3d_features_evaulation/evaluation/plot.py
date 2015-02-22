@@ -34,6 +34,15 @@ class line_plot:
 		if ytics!=None: self.gnuplot.wl('set ytics "'+str(ytics)+'"')
 		if y2tics!=None: self.gnuplot.wl('set y2tics "'+str(y2tics)+'"')
 		
+	def set_range(self, axis, low, up):
+		self.gnuplot.wl('set '+axis+'range ['+str(low)+':'+str(up)+']')
+		
+	def set_logscale(self, axis='x', base=None):
+		if base==None:
+			self.gnuplot.wl('set logscale '+axis)
+		else:
+			self.gnuplot.wl('set logscale '+axis+' '+str(base))
+		
 	def add_user(self, s):
 		self.gnuplot.wl(s)
 		
