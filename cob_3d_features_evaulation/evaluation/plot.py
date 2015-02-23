@@ -65,6 +65,18 @@ class line_plot:
 		
 		self.add_eq('"'+tmp.name+'" using 1:2 title "'+title+'" with '+style)
 		
+	def add_data_matrix(self, R, title, i1, i2, style='lines'):
+		if len(R)<1:
+			print "WARNING: data empty for "+title
+			return
+		tmp = tempfile.NamedTemporaryFile(delete=False)
+		for i in xrange(len(R)):
+			tmp.write(str(R[i][i1])+"\t"+str(R[i][i2])+"\n")
+		tmp.close()
+		self.mem.append(tmp.name)
+		
+		self.add_eq('"'+tmp.name+'" using 1:2 title "'+title+'" with '+style)
+		
 	def add_attr(self, s):
 		self.gnuplot.write(' '+s)
 		

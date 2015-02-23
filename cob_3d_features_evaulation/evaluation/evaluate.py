@@ -3,13 +3,15 @@
 import os, sys, math
 from cgkit.cgtypes import vec3, vec4, quat
 from scipy.stats.mstats import mquantiles
+def calc_pr(_cur,_dif, resolution=100):
 
-def calc_pr(_cur,_dif, resolution=20):
 	Ts=[]
-	mi = 0#min(list(_dif))
-	ma = max(list(_dif))
+	_cur.sort()
+	mi = min(list(_cur))
+	ma = max(list(_cur))
 	for x in xrange(resolution):
-		Ts.append((ma-mi)*x/resolution+mi)
+		#Ts.append((ma-mi)*x/(resolution-1)+mi)
+		Ts.append(_cur[x*(len(_cur)-1)/(resolution-1)])
 		
 	R=[]
 	for T in Ts:
@@ -19,10 +21,24 @@ def calc_pr(_cur,_dif, resolution=20):
 		for x in _dif:
 			if x>T: FN+=1
 			
-		precision = N/float(len(_cur))
-		recall = N/float(N+FN)
+		_TP=N
+		_FN=len(_cur)-N
 		
-		R.append([T,precision,recall])
+		_FP=len(_dif)-FN
+		_TN=FN
+			
+		try:
+			precision = _TP/float(_TP+_FP)
+			if _TP==0: precision=1.
+			recall = _TP/float(_TP+_FN)
+			fpr = _FP/float(_FP+_TN)
+			tnr = _TN/float(_TN+_FP)
+			acc = (_TP+_TN)/float(_TN+_FP+_TP+_FN)
+			
+			R.append([T,precision,recall,fpr,tnr,acc, N,FN,len(_cur),len(_dif)])
+		except:
+			print "WARN: some error...", sys.exc_info()[0]
+			R.append([T,0,0,0,0,0, 0,0,0,0])
 	return R
 		
 
@@ -33,9 +49,28 @@ def dist(ft1, ft2, t):
 	global num_angles, num_radii
 	assert(len(ft1)==len(ft2))
 	r=0
-	if t=="FSHDxy":
+	if t=="FSHD":
+		nr = num_radii/2
+		#for i in xrange(len(ft1)):
+		#	if (i/2)%(num_angles/4)==0 and i%2==0: print
+		#	print ft1[i],
+		#print
 		for i in xrange(len(ft1)):
-			r += pow((ft1[i]-ft2[i])*pow(2, i%num_angles),2) #*pow(2, i%num_angles)
+			try:
+				r += pow((ft1[i]/ft1[(i/nr)*nr]-ft2[i]/ft2[(i/nr)*nr]),2)
+			except:
+				pass
+			try:
+				r += pow((ft1[i]/ft1[0]-ft2[i]/ft2[0]),2)
+			except:
+				pass
+			#if (i)%(num_angles/2)<num_angles/4: r += pow((ft1[i]-ft2[i]),2)
+			#r += pow((ft1[i]-ft2[i]),2) *pow((i/2)/(num_angles/4)+1, 1.3)
+			#r += abs(ft1[i]-ft2[i])
+			#if i%num_angles>num_angles/2: r += pow((ft1[i]-ft2[i]),2)
+			#if (i/2)%(num_angles/4)==0 and i%2==0: print
+		#	print ft1[i]*pow((i/2)/(num_angles/4)+1, 1.3),
+		#print
 	else:
 		for i in xrange(len(ft1)):
 			r += pow((ft1[i]-ft2[i]),2)
@@ -259,8 +294,8 @@ def run():
 					R = calc_pr(_cur,_dif)
 					for r in R:
 						f1.write( str(r[0]) )
-						f1.write( "\t"+str(r[1]) )
-						f1.write( "\t"+str(r[2]) )
+						for i in range(1,len(r)):
+							f1.write( "\t"+str(r[i]) )
 						f1.write("\n")
 					f1.close()
 			#print ""
