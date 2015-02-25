@@ -174,7 +174,7 @@ public:
 			 
 			 if(std::abs(pose.header.stamp.toSec()-last_kp->header.stamp.toSec())<0.002f) {
 			 	Eigen::Vector3f v(pose.pose.position.x,pose.pose.position.y,pose.pose.position.z);
-			 	Eigen::Quaternionf r(pose.pose.orientation.x,pose.pose.orientation.y,pose.pose.orientation.z,pose.pose.orientation.w);
+			 	Eigen::Quaternionf r(pose.pose.orientation.w,pose.pose.orientation.x,pose.pose.orientation.y,pose.pose.orientation.z);
 			 	if(id2pos.find(msg.data)!=id2pos.end()) {
 			 		std::cout<<(id2pos[msg.data]-v).norm()<<" "<<std::acos((r.toRotationMatrix()*).dot(id2rot[msg.data].toRotationMatrix()*Eigen::Vector3f::UnitZ()))<<std::endl;
 			 	} else {
