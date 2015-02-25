@@ -140,11 +140,13 @@ def run():
 			keypoints.append({"pt":pt})
 			#print pt
 		if len(s)>4 and s[0]=="keypoint" and T!=None:
-			if KPtype!=s[1]:
-				KPtype=s[1]
-				KP=KPstart
-			keypoints[KP][s[1]] = [float(v) for v in s[2:]]
-			KP += 1
+			vs = [float(v) for v in s[2:]]
+			if sum(vs)!=0:
+				if KPtype!=s[1]:
+					KPtype=s[1]
+					KP=KPstart
+				keypoints[KP][s[1]] = vs
+				KP += 1
 
 	print "read input file ",len(keypoints)
 
@@ -254,10 +256,10 @@ def run():
 						if x>T: FN+=1
 						if x>TM: FNM+=1
 						
-					precision = N/float(len(_cur))
-					precisionM = NM/float(len(_cur))
-					recall = N/float(N+FN)
-					recallM = NM/float(NM+FNM)
+					recall = N/float(len(_cur))
+					recallM = NM/float(len(_cur))
+					precision = N/float(N+len(_dif)-FN)
+					precisionM = NM/float(NM+len(_dif)-FNM)
 					
 					tnr = (len(_dif)-FN)/float(len(_dif))
 					acc = (len(_dif)-FN+N)/float(len(_all))
@@ -280,6 +282,12 @@ def run():
 				#accuracy
 				f_out.write( "\t"+str(acc) )
 				f_out.write( "\t"+str(accM) )
+				
+				#more
+				f_out.write( "\t"+str(len(_cur)) )
+				f_out.write( "\t"+str(len(_dif)) )
+				f_out.write( "\t"+str(N) )
+				f_out.write( "\t"+str(len(_dif)-FN) )
 				
 				#F-measure (IS NOT CORRECT AS FN IS JUST A SUBSET OF ALL!!!!)
 				if (recall+precision)>0: f_out.write( "\t"+str(recall*precision*2/(recall+precision)) )
