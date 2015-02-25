@@ -3,6 +3,8 @@
 import os, sys, math
 from cgkit.cgtypes import vec3, vec4, quat
 from scipy.stats.mstats import mquantiles
+import rosbag
+
 def calc_pr(_cur,_dif, resolution=100):
 
 	Ts=[]
@@ -86,6 +88,9 @@ def run():
 	f_fts = open(sys.argv[1],'r')
 	f_tfs = open(sys.argv[2],'r')
 	fn_output = sys.argv[3]
+	
+	bag = None
+	if len(sys.argv)>4: bag = rosbag.Bag(sys.argv[4],'w')
 
 	DL='\t'
 
@@ -139,6 +144,32 @@ def run():
 			pt = TT*pt
 			keypoints.append({"pt":pt})
 			#print pt
+			
+			if bag!=None:
+				pc = sensor_msgs.msg.PointCloud2()
+				pc.header = depth_image.header
+				pc.width = depth_image.width
+				pc.height  = 1
+				pc.fields.append(sensor_msgs.msg.PointField(
+				name = "x",offset = 0,datatype = sensor_msgs.msg.PointField.FLOAT32,count = 1 ))
+				depth_points.fields.append(sensor_msgs.msg.PointField(
+				name = "y",offset = 4,datatype = sensor_msgs.msg.PointField.FLOAT32,count = 1 ))
+				depth_points.fields.append(sensor_msgs.msg.PointField(
+				name = "z",offset = 8,datatype = sensor_msgs.msg.PointField.FLOAT32,count = 1 ))
+				depth_points.point_step = 16 
+				depth_points.row_step = depth_points.point_step * depth_points.width
+				buffer = []
+				buffer_rgb = []
+				for v in range(depth_image.height):
+				for u in range(depth_image.width):
+				    d = cv_depth_image[v,u]
+				    ptx = (u - centerX) * d / depthFocalLength;
+				    pty = (v - centerY) * d / depthFocalLength;
+				    ptz = d;
+				    buffer.append(struct.pack('ffff',ptx,pty,ptz,1.0))
+				depth_points.data = "".join(buffer)
+				
+				bag.write('/keypoints', pc)
 		if len(s)>4 and s[0]=="keypoint" and T!=None:
 			vs = [float(v) for v in s[2:]]
 			if sum(vs)!=0:
@@ -149,6 +180,7 @@ def run():
 				KP += 1
 
 	print "read input file ",len(keypoints)
+	if bag!=None: bag.close()
 
 	f_out = file(fn_output+"_timing.csv", "w")
 	i=1
