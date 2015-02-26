@@ -57,7 +57,10 @@
 
 #include <rosbag/bag.h>
 #include <rosbag/view.h>
+#include <tf/transform_listener.h>
+#include <tf/transform_broadcaster.h>
 #include <boost/foreach.hpp>
+#include <pcl/io/ply_io.h>
     
 #include <cob_3d_mapping_common/node_skeleton.h>
 
@@ -70,7 +73,6 @@
 #include <pcl/point_cloud.h>
 
 #include <std_msgs/Int32.h>
-#include <geometry_msgs/PoseStamped.h>
 
 #include <cob_3d_mapping_common/point_types.h>
 
@@ -143,20 +145,37 @@ public:
    */
   void readFromBag(rosbag::Bag &bag, rosbag::Bag &bag_out) {
     rosbag::View view(bag);
+    tf::TransformListener tf_listener;
+	tf::TransformBroadcaster tf_broadcaster;
 
 	sensor_msgs::PointCloud2ConstPtr last_pc, last_kp;
-	geometry_msgs::PoseStamped pose;
 	std::map<int, Eigen::Vector3f> id2pos;
 	std::map<int, Eigen::Quaternionf> id2rot;
+	std::vector<Eigen::Vector3f> list_pos;
+	std::vector<Eigen::Quaternionf> list_rot;
+	std::map<int, sensor_msgs::PointCloud2> id2pc;
+	std::map<int, double> id2ts;
+	
+	int stats[7]={};
+	enum {
+		STAT_FRAMES=0, STAT_FRAMES_WITH_TF=1, STAT_MATCH_SUCCESS=2, STAT_MATCH_FAILURE=3,
+		STAT_NO_MATCH=4, STAT_GS_MATCH=5, STAT_GS_NOMATCH=6};
+	
+	const float thr_dist = 0.6f, thr_rot = 0.1f;
+	double start=-1;
 	
     BOOST_FOREACH(rosbag::MessageInstance const m, view)
     {
 		bag_out.write(m.getTopic(), m.getTime(), m, m.getConnectionHeader());
 		
-        geometry_msgs::PoseStampedConstPtr pose_ptr  = m.instantiate<geometry_msgs::PoseStamped>();
-        if(pose_ptr!=NULL) {
-        	if(m.getTopic()=="/eval_pose") pose = *pose_ptr;
-        }
+		// Handle TF messages first
+		tf::tfMessage::ConstPtr tf = m.instantiate<tf::tfMessage> ();
+		if (tf != NULL)
+		{
+			tf_broadcaster.sendTransform (tf->transforms);
+			ros::spinOnce ();
+			usleep(1000*33);
+		}
 		
         sensor_msgs::PointCloud2ConstPtr pc  = m.instantiate<sensor_msgs::PointCloud2>();
         if (pc != NULL) {
@@ -166,25 +185,92 @@ public:
 		}
 		
 		if(last_pc && last_kp && std::abs(last_pc->header.stamp.toSec()-last_kp->header.stamp.toSec())<0.002f) {
+			if(start<0) start = last_kp->header.stamp.toSec();
+			
 			 std_msgs::Int32 msg;
-			 if(_pointCloudSubCallback(last_pc,last_kp, msg))
+			 if(_pointCloudSubCallback(last_pc,last_kp, msg)) {
 				bag_out.write("/feature2view_eval/view_id",last_pc->header.stamp,msg);
+				stats[STAT_FRAMES]++;
+			 
+				 tf::StampedTransform transform;
+				 try {
+					tf_listener.lookupTransform("/openni_camera", "/world", ros::Time(0), transform);
+					
+					if(std::abs(last_pc->header.stamp.toSec()-last_kp->header.stamp.toSec())<0.2f) {
+						stats[STAT_FRAMES_WITH_TF]++;
+						Eigen::Vector3f v(
+							transform.getOrigin().x(),
+							transform.getOrigin().y(),
+							transform.getOrigin().z());
+						Eigen::Quaternionf r(
+							transform.getRotation().w(),
+							transform.getRotation().x(),
+							transform.getRotation().y(),
+							transform.getRotation().z());
+							
+						if(id2pos.find(msg.data)!=id2pos.end()) std::cout<<"DDD "<<(id2pos[msg.data]-v).norm()<<" "<<((id2rot[msg.data].toRotationMatrix()*r.toRotationMatrix().transpose()).diagonal()-Eigen::Vector3f(1,1,1)).norm()<<std::endl;
+						
+						std::cout<<"TS: "<<last_kp->header.stamp.toSec()-start<<" "<<id2ts[msg.data]<<std::endl;
+						std::cout<<"RESULT: ";
+						if(id2pos.find(msg.data)!=id2pos.end()) {
+							float dC = (id2pos[msg.data]-v).norm();
+							float dR = ((id2rot[msg.data].toRotationMatrix()*r.toRotationMatrix().transpose()).diagonal()-Eigen::Vector3f(1,1,1)).norm();//std::acos((r.toRotationMatrix()*Eigen::Vector3f::UnitZ()).dot(id2rot[msg.data].toRotationMatrix()*Eigen::Vector3f::UnitZ()));
+							std::cout<<dC<<" "<<dR<<" "<<(dC<=thr_dist || dR<thr_rot);
+							stats[(dC<=thr_dist || dR<thr_rot)?STAT_MATCH_SUCCESS:STAT_MATCH_FAILURE]++;
+							
+							char fn[512];
+							{SimplePointCloud pc;
+							pcl::fromROSMsg(id2pc[msg.data],pc);
+							sprintf(fn,"/tmp/match%d_ref.pcd",msg.data);
+							pcl::io::savePCDFile(fn, pc);}
+							{SimplePointCloud pc;
+							pcl::fromROSMsg(*last_kp,pc);
+							sprintf(fn,"/tmp/match%d.pcd",msg.data);
+							pcl::io::savePCDFile(fn, pc);}
+						} else {
+							id2pos[msg.data] = v;
+							id2rot[msg.data] = r;
+							id2ts[msg.data] = last_kp->header.stamp.toSec()-start;
+							id2pc[msg.data] = *last_kp;
+							std::cout<<"-1 -1 "<<false;
+							stats[STAT_NO_MATCH]++;
+						}
+						
+						bool found=false;
+						size_t mm=0;
+						for(size_t i=0; !found && i+10<list_pos.size(); i++) {
+							float dC = (list_pos[i]-v).norm();
+							float dR = ((list_rot[i].toRotationMatrix()*r.toRotationMatrix().transpose()).diagonal()-Eigen::Vector3f(1,1,1)).norm();//std::acos((r.toRotationMatrix()*Eigen::Vector3f::UnitZ()).dot(list_rot[i].toRotationMatrix()*Eigen::Vector3f::UnitZ()));
+							//std::cout<<dC<<" "<<dR<<std::endl;
+							found = (dC<=thr_dist && dR<thr_rot);
+							mm=i;
+						}
+						std::cout<<" "<<found<<std::endl;
+						stats[found?STAT_GS_MATCH:STAT_GS_NOMATCH]++;
+						
+						std::cout<<"MATCH "<<mm<<" "<<list_pos.size()<<std::endl;
+						list_pos.push_back(v);
+						list_rot.push_back(r);
+						
+						if(found) std::cout<<"FFF "<<(list_pos[mm]-v).norm()<<" "<<((list_rot[mm].toRotationMatrix()*r.toRotationMatrix().transpose()).diagonal()-Eigen::Vector3f(1,1,1)).norm()<<std::endl;
+					} else {
+						std::cout<<"ERROR: timestamps to far appart"<<std::endl;
+					}
+				} 
+				catch (tf::TransformException ex){
+				  ROS_INFO("%s",ex.what());
+				}
+			}
+			
 			 last_pc.reset();
 			 last_kp.reset();
-			 
-			 if(std::abs(pose.header.stamp.toSec()-last_kp->header.stamp.toSec())<0.002f) {
-			 	Eigen::Vector3f v(pose.pose.position.x,pose.pose.position.y,pose.pose.position.z);
-			 	Eigen::Quaternionf r(pose.pose.orientation.w,pose.pose.orientation.x,pose.pose.orientation.y,pose.pose.orientation.z);
-			 	if(id2pos.find(msg.data)!=id2pos.end()) {
-			 		std::cout<<(id2pos[msg.data]-v).norm()<<" "<<std::acos((r.toRotationMatrix()*).dot(id2rot[msg.data].toRotationMatrix()*Eigen::Vector3f::UnitZ()))<<std::endl;
-			 	} else {
-			 		id2pos[msg.data] = v;
-			 		id2rot[msg.data] = r;
-			 		std::cout<<"-1 -1"<<std::endl;
-			 	}
-			 }
 		}
     }
+    
+    std::cout<<"STAT:";
+    for(int i=0; i<sizeof(stats)/sizeof(stats[0]); i++)
+		std::cout<<" "<<stats[i];
+	std::cout<<std::endl;
   }
 
   bool
