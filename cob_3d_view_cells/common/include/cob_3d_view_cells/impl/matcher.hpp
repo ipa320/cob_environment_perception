@@ -73,7 +73,7 @@ int Matcher<Content,SimplePoint,_ID>::get_id() {
 			for(typename std::vector<ContentPtr>::iterator it = it2->cnt_.begin(); it!=it2->cnt_.end(); it++) {
 				bool found = false;
 				for(typename Content::const_iterator jt = (*it)->begin(); jt!=(*it)->end(); jt++)
-					if(*jt==best->first) {
+					if(*jt==id) {
 						found=true;
 						break;
 					}
