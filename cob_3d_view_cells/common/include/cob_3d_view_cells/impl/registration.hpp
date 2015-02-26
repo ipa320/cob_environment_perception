@@ -100,7 +100,7 @@ Eigen::Matrix4f VRegistration::computeTF(bool *result) const
   
   if(g_dbg_reg) g_dbg_reg->publish(*pcA_,*pcB_,correspondeces_sac);
   
-  if(result) *result &= ( std::abs(transform_svd(2,3))<0.3f && transform_svd(0,0)>0.8f && transform_svd!=Eigen::Matrix4f::Identity() );
+  if(result) *result &= ( std::abs(transform_svd(2,3))<0.3f && transform_svd.col(3).head(3).squaredNorm()<0.8f*0.8f && transform_svd(0,0)>0.8f && transform_svd!=Eigen::Matrix4f::Identity() );
   
   return transform_svd;
 }
