@@ -20,8 +20,10 @@ int Matcher<Content,SimplePoint,_ID>::get_id() {
 			}
 		
 	//debug
-	//for(typename std::map<typename Content::value_type, size_t>::const_iterator it = intersection.begin(); it!=intersection.end(); it++)
-	//		ROS_INFO("node %d -> %f", (int)it->first, it->second/(float)num_found_);
+	/*for(typename std::map<typename Content::value_type, float>::const_iterator it = intersection.begin(); it!=intersection.end(); it++)
+			ROS_INFO("node %d -> %f", (int)it->first, it->second/(float)num_found_);
+	ROS_INFO("%d %d", (int)num_found_, (int)contents_.size());
+	if(best->second/(float)num_found_ > 1) while(1);*/
 			
 	static int stat_num=0, stat_found=0;
 	++stat_num;
