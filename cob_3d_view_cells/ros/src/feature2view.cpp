@@ -70,6 +70,7 @@
 #include <pcl/point_cloud.h>
 
 #include <std_msgs/Int32.h>
+#include <geometry_msgs/PoseStamped.h>
 
 #include <cob_3d_mapping_common/point_types.h>
 
@@ -144,9 +145,18 @@ public:
     rosbag::View view(bag);
 
 	sensor_msgs::PointCloud2ConstPtr last_pc, last_kp;
+	geometry_msgs::PoseStamped pose;
+	std::map<int, Eigen::Vector3f> id2pos;
+	std::map<int, Eigen::Quaternionf> id2rot;
+	
     BOOST_FOREACH(rosbag::MessageInstance const m, view)
     {
 		bag_out.write(m.getTopic(), m.getTime(), m, m.getConnectionHeader());
+		
+        geometry_msgs::PoseStampedConstPtr pose_ptr  = m.instantiate<geometry_msgs::PoseStamped>();
+        if(pose_ptr!=NULL) {
+        	if(m.getTopic()=="/eval_pose") pose = *pose_ptr;
+        }
 		
         sensor_msgs::PointCloud2ConstPtr pc  = m.instantiate<sensor_msgs::PointCloud2>();
         if (pc != NULL) {
@@ -161,6 +171,18 @@ public:
 				bag_out.write("/feature2view_eval/view_id",last_pc->header.stamp,msg);
 			 last_pc.reset();
 			 last_kp.reset();
+			 
+			 if(std::abs(pose.header.stamp.toSec()-last_kp->header.stamp.toSec())<0.002f) {
+			 	Eigen::Vector3f v(pose.pose.position.x,pose.pose.position.y,pose.pose.position.z);
+			 	Eigen::Quaternionf r(pose.pose.orientation.w,pose.pose.orientation.x,pose.pose.orientation.y,pose.pose.orientation.z);
+			 	if(id2pos.find(msg.data)!=id2pos.end()) {
+			 		std::cout<<(id2pos[msg.data]-v).norm()<<" "<<std::acos((r.toRotationMatrix()*).dot(id2rot[msg.data].toRotationMatrix()*Eigen::Vector3f::UnitZ()))<<std::endl;
+			 	} else {
+			 		id2pos[msg.data] = v;
+			 		id2rot[msg.data] = r;
+			 		std::cout<<"-1 -1"<<std::endl;
+			 	}
+			 }
 		}
     }
   }
