@@ -120,6 +120,7 @@ struct PointXYZFeature
 	enum {DIMENSION=N};
 		
 	PCL_ADD_POINT4D;
+	float area;
 	float feature[N];
 	
 	operator pcl::PointXYZ() const {

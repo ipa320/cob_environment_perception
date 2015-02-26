@@ -129,24 +129,28 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(
   (float, x, x)
   (float, y, y)
   (float, z, z)
+  (float, area, area)
   (float[16], feature, feature));
 POINT_CLOUD_REGISTER_POINT_STRUCT(
 	PointXYZFeature32,
   (float, x, x)
   (float, y, y)
   (float, z, z)
+  (float, area, area)
   (float[32], feature, feature));
 POINT_CLOUD_REGISTER_POINT_STRUCT(
 	PointXYZFeature64,
   (float, x, x)
   (float, y, y)
   (float, z, z)
+  (float, area, area)
   (float[64], feature, feature));
 POINT_CLOUD_REGISTER_POINT_STRUCT(
 	PointXYZFeature128,
   (float, x, x)
   (float, y, y)
   (float, z, z)
+  (float, area, area)
   (float[128], feature, feature));
 
 #endif /* IPA_POINT_TYPES_H_ */
