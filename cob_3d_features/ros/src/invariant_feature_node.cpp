@@ -273,7 +273,7 @@ public:
 		}
 		{
 			cob_3d_visualization::RvizMarker scene;
-			scene.mesh(*isf_.dbg_Mesh_of_Map());
+			scene.mesh(*isf_.dbg_Mesh_of_Map(),1.,1.,1.);
 			scene.color(0.98,0.1,0.1);
 		}*/
 		old_scene_ = *isf_.dbg_Mesh_of_Map();
