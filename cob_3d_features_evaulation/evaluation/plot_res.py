@@ -17,8 +17,8 @@ gnuplotT.set_labels("radii", "exec. time [s]")
 gnuplotT.set_logscale('x',2)
 
 gnuplot=line_plot(sys.argv[1]+"-RADII")
-gnuplot.set_labels("radii", "precision", "dim. of feature")
-gnuplot.set_range('y',0,1)
+gnuplot.set_labels("radii", "descriptor distance [L2]", "dim. of feature")
+gnuplot.set_range('y',0.5,0.8)
 gnuplot.set_logscale('x',2)
 gnuplot.set_logscale('x2',2)
 gnuplot.add_user('set grid x y2')
@@ -31,13 +31,14 @@ for ft in algos:
 		subset_files=[]
 		for f in files:
 			subset_files.append(f+"-timing-"+str(param)+"-32-"+date+"-eval.csv")
-		R=qual_matrix(subset_files,ft,7)
+		R=qual_matrix(subset_files,ft,3)
 		if len(R)<1: continue
 		i=min(R, key=R.get)
 		D[param] = R[i]
 		T[param] = time_matrix(subset_files)
 	gnuplot.add_data(D, ft, 'linespoints')
 	gnuplotT.add_data(T, ft)
+	print T
 gnuplot.add_attr('lc rgb "black')
 gnuplot.close()
 
@@ -49,7 +50,7 @@ gnuplotT.set_labels("angles", "exec. time [s]")
 gnuplotT.set_logscale('x',2)
 
 gnuplot=line_plot(sys.argv[1]+"-ANGLES")
-gnuplot.set_labels("angles", "precision", "dim. of feature")
+gnuplot.set_labels("angles", "descriptor distance [L2]", "dim. of feature")
 gnuplot.set_range('y',0,1)
 gnuplot.set_logscale('x',2)
 gnuplot.set_logscale('x2',2)
@@ -62,7 +63,7 @@ for ft in algos:
 		subset_files=[]
 		for f in files:
 			subset_files.append(f+"-timing-8-"+str(param)+"-"+date+"-eval.csv")
-		R=qual_matrix(subset_files,ft,7)
+		R=qual_matrix(subset_files,ft,3)
 		if len(R)<1: continue
 		i=min(R, key=R.get)
 		D[param] = R[i]
