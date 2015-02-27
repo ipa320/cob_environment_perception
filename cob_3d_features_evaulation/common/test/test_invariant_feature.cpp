@@ -97,6 +97,9 @@ int g_num_computations;
 
 #include "test_invariant_feature_eval.hpp"
 
+typedef PointXYZFeature64 FeaturePoint;
+typedef PointXYZ SimplePoint;
+	
 class IFNode {
 	typedef float Real;
 	typedef double Scalar;
@@ -346,7 +349,7 @@ public:
 		}		
 	}
 	
-	void evaluate(const cob_3d_mapping_msgs::ShapeArray &msg, const sensor_msgs::PointCloud2ConstPtr &pc, std::ostream &out) {
+	void evaluate(const cob_3d_mapping_msgs::ShapeArray &msg, const sensor_msgs::PointCloud2ConstPtr &pc, std::ostream &out, pcl::PointCloud<FeaturePoint> &pc_features, pcl::PointCloud<SimplePoint> &pc_kps) {
 		//cb_eval(boost::make_shared<cob_3d_mapping_msgs::ShapeArray>(msg), pc); //debugging
 		
 		PrecisionStopWatch sw;
@@ -396,6 +399,30 @@ public:
 				for(size_t j=0; j<ftvec.size(); j++) out<<DL<<ftvec[j];
 				out<<NL;
 			}
+			
+			pc_kps.clear();
+			for(size_t i=0; i<isf_.getAllKeypoints().size(); i++)
+			{
+				SimplePoint pt;
+				pt.x = isf_.getAllKeypoints()[i](0);
+				pt.y = isf_.getAllKeypoints()[i](1);
+				pt.z = isf_.getAllKeypoints()[i](2);
+				pc_kps.push_back(pt);
+			}
+		
+			pc_features.clear();
+			for(size_t i=0; i<res->size(); i++) {
+				FeaturePoint pt;
+				pt.x = (*res)[i].pt_(0);
+				pt.y = (*res)[i].pt_(1);
+				pt.z = (*res)[i].pt_(2);
+				pt.area = (*res)[i].area_;
+				assert(FeaturePoint::DIMENSION*2==(*res)[i].f_[0].values.size());
+				for(size_t j=0; j<(*res)[i].f_[0].values.size(); j+=2)
+					pt.feature[j/2] = (*res)[i].f_[0].values[j];
+				pc_features.push_back(pt);
+			}
+			
 		}
 		
 		return;
@@ -597,7 +624,7 @@ void static_eval_cb(const cob_3d_mapping_msgs::ShapeArray &msg) {
 	std::cout<<"got shapes"<<std::endl;
 }
 
-void evaluation(const std::string &fn, const std::string &ofn, const double radius, const int num_radii=8, const int num_angles=32, int skip=0, const bool eval_kp=false) {	
+void evaluation(const std::string &fn, const std::string &ofn, const double radius, const int num_radii=8, const int num_angles=32, int skip=0, const bool eval_kp=false, const std::string &ofn_bag="") {	
 	if(skip<1) skip=1;
 	IFNode node(num_radii, num_angles, radius);
 	
@@ -620,13 +647,16 @@ void evaluation(const std::string &fn, const std::string &ofn, const double radi
 	ofstr<<"num_angles\t"<<num_angles<<"\n";
 	ofstr<<"skip\t"<<skip<<"\n";
 	
-	rosbag::Bag bag;
+	rosbag::Bag bag, bag_out;
     bag.open(fn, rosbag::bagmode::Read);
+    if(ofn_bag.size()>0)
+		bag_out.open(ofn_bag, rosbag::bagmode::Write);
 
 	//here our only concern is the pointcloud
     std::vector<std::string> topics;
     topics.push_back(std::string("/camera/rgb/points"));
     topics.push_back(std::string("/camera/depth/camera_info"));
+    topics.push_back(std::string("/tf"));
     
     //we use ros publish/subscriber to transform pc to shape
 	ros::NodeHandle n;
@@ -676,11 +706,31 @@ void evaluation(const std::string &fn, const std::string &ofn, const double radi
 				//do evaluation
 				if(eval_kp)
 					node.evaluateKeypoints(gl_shape_msg, pc, ofstr, parameters);
-				else
-					node.evaluate(gl_shape_msg, pc, ofstr);
+				else {
+					pcl::PointCloud<FeaturePoint> features;
+					pcl::PointCloud<SimplePoint> keypoints;
+					
+					node.evaluate(gl_shape_msg, pc, ofstr, features, keypoints);
+					
+					if(ofn_bag.size()>0) {
+						sensor_msgs::PointCloud2 features2;
+						pcl::toROSMsg(features, features2);
+						features2.header = gl_shape_msg.header;
+						sensor_msgs::PointCloud2 keypoints2;
+						pcl::toROSMsg(keypoints, keypoints2);
+						keypoints2.header = gl_shape_msg.header;
+						bag_out.write("/keypoints",view_it->getTime(), keypoints2);
+						bag_out.write("/features", view_it->getTime(), features2);
+					}
+					
+				}
 				
 				ofstr.flush();	//safety
 			}
+		}
+		
+		if(ofn_bag.size()>0 && view_it->getTopic()=="/tf") {
+			bag_out.write(view_it->getTopic(), view_it->getTime(), *view_it, view_it->getConnectionHeader());
 		}
 		
 		view_it++;
@@ -688,6 +738,7 @@ void evaluation(const std::string &fn, const std::string &ofn, const double radi
 
     bag.close();
     ofstr.close();
+    bag_out.close();
 }
 
 int main(int argc, char **argv)
@@ -702,6 +753,11 @@ int main(int argc, char **argv)
 	else if(argc==4 && std::string(argv[1]).find(".bag")!=std::string::npos) {
 		std::cout<<"Evaluation Mode 1"<<std::endl;
 		evaluation(argv[1], argv[2], boost::lexical_cast<double>(argv[3]), 8, 32, 1);
+		return 0;
+	}
+	else if(argc==5 && std::string(argv[1]).find(".bag")!=std::string::npos) {
+		std::cout<<"Evaluation Mode 3"<<std::endl;
+		evaluation(argv[1], argv[2], boost::lexical_cast<double>(argv[3]), 8, 32, 1, false, argv[4]);
 		return 0;
 	}
 	else if(argc==6 && std::string(argv[1]).find(".bag")!=std::string::npos) {
