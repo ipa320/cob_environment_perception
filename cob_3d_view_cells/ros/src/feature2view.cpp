@@ -271,6 +271,7 @@ public:
     for(int i=0; i<sizeof(stats)/sizeof(stats[0]); i++)
 		std::cout<<" "<<stats[i];
 	std::cout<<std::endl;
+    ROS_INFO("using params: %f %f", search_.getDistThreshold(), int_thr_);
   }
 
   bool
@@ -355,6 +356,7 @@ int main(int argc, char **argv) {
     bag_out.open(vm["bag_out"].as<std::string>(), rosbag::bagmode::Write);
     bag_out.setCompression(rosbag::compression::BZ2);
     sn.readFromBag(bag, bag_out);
+    std::cout<<"FN: "<<vm["bag"].as<std::string>()<<std::endl;
     bag.close();
     bag_out.close();
   }
