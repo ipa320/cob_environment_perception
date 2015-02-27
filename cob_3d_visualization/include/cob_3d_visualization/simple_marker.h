@@ -146,7 +146,7 @@ namespace cob_3d_visualization {
 			clear();
 		}
 		
-		void clear() {
+		void clear(const ros::Time &stamp=ros::Time()) {
 			if(active_ids_.size()>0) {
 				ros::NodeHandle nh;
 				nh.setParam("/simple_marker/"+ns()+"/min", active_ids_.back());
@@ -155,7 +155,7 @@ namespace cob_3d_visualization {
 			while(active_ids_.size()>0) {
 				visualization_msgs::Marker marker;
 				marker.header.frame_id = frame_id();
-				marker.header.stamp = ros::Time();
+				marker.header.stamp = stamp;
 				marker.ns = ns();
 				marker.id = active_ids_.back();
 				marker.action = visualization_msgs::Marker::DELETE;
@@ -164,7 +164,7 @@ namespace cob_3d_visualization {
 				prepare(marker);
 			}
 			
-			publish();
+			publish(stamp);
 		}
 	};
 	
