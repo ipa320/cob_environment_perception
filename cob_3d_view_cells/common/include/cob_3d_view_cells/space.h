@@ -33,6 +33,8 @@ private:
 				dist += std::abs((*this)[i]-o[i]);
 			return dist;
 		}
+		
+		Eigen::Vector3f pos() const {return Eigen::Vector3f(ft_.x,ft_.y,ft_.z);}
 	  
 		inline float operator[](size_t const N) const { return ft_.feature[N]; }
 		typedef float value_type;
@@ -54,6 +56,7 @@ public:
 	
 	//configuration
 	void setDistThreshold(const Distance &dist) {dist_thr_ = dist;}
+	Distance getDistThreshold() const {return dist_thr_;}
 };
 
 #include "impl/space.hpp"

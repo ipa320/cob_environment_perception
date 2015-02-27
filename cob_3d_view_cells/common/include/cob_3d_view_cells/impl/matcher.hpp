@@ -28,7 +28,7 @@ int Matcher<Content,SimplePoint,_ID>::get_id() {
 	static int stat_num=0, stat_found=0;
 	++stat_num;
 	
-	if(best!=intersection.end() && (float)best->second>num_found_*int_thr_ && num_found_>20) {
+	if(best!=intersection.end() && (float)best->second>num_found_*int_thr_ && num_found_>15) {
 		ROS_INFO("found match %d with %f", (int)best->first, best->second/(float)num_found_);
 		//update id & validate with registration
 		VRegistration reg;
