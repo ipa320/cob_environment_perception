@@ -117,7 +117,9 @@ namespace cob_3d_visualization {
 			return *this;
 		}
 		void prepare(const visualization_msgs::Marker &marker) {markers_.markers.push_back(marker);}
-		void publish() {
+		void publish(const ros::Time &stamp=ros::Time()) {
+			for(size_t i=0; i<markers_.markers.size(); i++)
+				markers_.markers[i].header.stamp = stamp;
 			vis_pub_.publish(markers_);
 			markers_.markers.clear();
 			ros::NodeHandle nh;
@@ -237,6 +239,34 @@ namespace cob_3d_visualization {
 						points[mesh.polygons[i].vertices[j+1]].getVector3fMap(),
 						points[mesh.polygons[i].vertices[j+2]].getVector3fMap()
 					);
+			}
+		}
+		
+		void mesh(const pcl::PolygonMesh &mesh, const double r, const double g,  const double b, const double a=1., const Eigen::Vector3f dir=Eigen::Vector3f::UnitZ(), const float amb=0.2f) {
+			pcl::PointCloud<pcl::PointXYZ> points;
+			//pcl::fromROSMsg(mesh.cloud, points);
+			pcl::fromPCLPointCloud2(mesh.cloud, points);
+			for(size_t i=0; i<mesh.polygons.size(); i++)
+				for(int j=0; j<(int)mesh.polygons[i].vertices.size()-2; j++) {
+					addTriangle(
+						points[mesh.polygons[i].vertices[j  ]].getVector3fMap(),
+						points[mesh.polygons[i].vertices[j+1]].getVector3fMap(),
+						points[mesh.polygons[i].vertices[j+2]].getVector3fMap()
+					);
+					
+					Eigen::Vector3f normal = (points[mesh.polygons[i].vertices[j  ]].getVector3fMap()-points[mesh.polygons[i].vertices[j+1]].getVector3fMap())
+					.cross(points[mesh.polygons[i].vertices[j+2]].getVector3fMap()-points[mesh.polygons[i].vertices[j+1]].getVector3fMap()).normalized();
+					
+					float F = std::abs(normal.dot(dir))*(1-amb)+amb;
+					
+					std_msgs::ColorRGBA c;
+					c.a = a;
+					c.r = r*F;
+					c.g = g*F;
+					c.b = b*F;
+					marker_.colors.push_back(c);
+					marker_.colors.push_back(c);
+					marker_.colors.push_back(c);
 			}
 		}
 		
