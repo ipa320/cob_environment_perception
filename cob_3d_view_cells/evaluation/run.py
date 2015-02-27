@@ -33,6 +33,7 @@ def evaluate(fn,thr1,thr2):
 
 for fn in sys.argv[1:]:
 	print fn
-	for thr1 in range(70,131,10):#70
-		for thr2 in range(3,16,2):#3,16
+	for thr1 in [60,70]:#[50,60,70,80,90]:#[60]:#:#range(30,101,20):#70
+		for thr2 in [4,6]:#[2,3,4,5,6,10]:#[4]:#:#range(3,30,4):#3,16
 			evaluate(fn,thr1,thr2/100.)
+			print "Settings: ",thr1,thr2
