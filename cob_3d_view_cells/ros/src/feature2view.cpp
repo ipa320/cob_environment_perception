@@ -14,14 +14,12 @@
  * \note
  *  ROS stack name: TODO FILL IN STACK NAME HERE
  * \note
- *  ROS package name: TODO FILL IN PACKAGE NAME HERE
+ *  ROS package name: cob_3d_view_cells
  *
  * \author
- *  Author: TODO FILL IN AUTHOR NAME HERE
- * \author
- *  Supervised by: TODO FILL IN CO-AUTHOR NAME(S) HERE
+ *  Author: Joshua Hampp
  *
- * \date Date of creation: TODO FILL IN DATE HERE
+ * \date Date of creation: 31.10.2014
  *
  * \brief
  *
@@ -56,99 +54,76 @@
  * If not, see <http://www.gnu.org/licenses/>.
  *
  ****************************************************************/
-/*
- * list.h
- *
- *  Created on: 11.06.2012
- *      Author: josh
- */
 
-#ifndef LIST_H_
-#define LIST_H_
+#include <cob_3d_mapping_common/node_skeleton.h>
 
+#include <pcl/point_types.h>
+#include <pcl_ros/point_cloud.h>
+#include <pcl/point_cloud.h>
 
+#include <std_msgs/Int32.h>
 
-
-/**
- * contains x,y coordinate alias index (v)
- * hops gives number of possible uses (rest)
- */
-template<typename Point>
-struct SVALUE
+template <typename FeaturePoint, typename Parent>
+class Feature2View_Node : public Parent
 {
-  unsigned int v,hops;
-  Point pt;
+  typedef pcl::PointCloud<FeaturePoint> PointCloud;
 
-  SVALUE(){}
+  ros::Subscriber point_cloud_sub_;
+  ros::Publisher  view_pub_;
 
-  SVALUE(const unsigned int v, const unsigned int hops, const Point &pt)
-  :v(v), hops(hops), pt(pt)
+public:
+  // Constructor
+  Feature2View_Node()
+  {
+  }
+
+  virtual ~Feature2View_Node()
   {}
 
-};
+  void onInit() {
+    this->start();
 
-/**
- * fast visited list (pre-allocate values)
- */
-template<typename VALUE>
-struct VISITED_LIST {
-  int size;
-  int pos;
-  std::vector<VALUE> vals;
+    ros::NodeHandle *n=&(this->n_);
+    point_cloud_sub_ = this->n_.subscribe("features_in", 1, &Feature2View_Node<FeaturePoint, Parent>::pointCloudSubCallback, this);
+    view_pub_ = n->advertise<std_msgs::Int32>("view_id", 1);
 
-  VISITED_LIST():size(0),pos(-1), vals(1000) {
+    /*double filter;
+    if(this->n_.getParam("filter",filter))
+      seg_.setFilter((float)filter);*/
   }
 
-  inline void init()
+  void
+  pointCloudSubCallback(const boost::shared_ptr<const PointCloud>& pc_in)
   {
-    size=(0);
-    pos=(-1);
-  }
-
-  inline void add(const VALUE &v) {
-	for(int i=0; i<size; i++)	//prevent double entries
-		if(vals[i].v==v.v) {
-			vals[i].hops = std::min(vals[i].hops, v.hops);
-			return;
-		}
-    if((size_t)size>=vals.size())
-      vals.push_back(v);
-    else
-      vals[size]=v;
-    ++size;
-  }
-
-  inline void move() {++pos;}
-
-  inline void remove() {
-    --size;
-    if(pos<size) vals[pos]=vals[size];
-    --pos;
-  }
-
-  inline void replace(const VALUE &v) {
-    vals[pos]=v;
+    ROS_DEBUG("view cells: point cloud callback");
+    
+    const bool subscribers =
+		(view_pub_.getNumSubscribers()>0);
+	
+	if(!subscribers) {
+		ROS_DEBUG("view cells: no subscribers --> do nothing");
+		return;
+	}
   }
 };
 
+#ifdef COMPILE_NODELET
 
-/**
- * used as parameter for outline calculation
- * point with additional information if point was in front of other object
- */
-struct SXY {
-  int x,y;
-  bool back;
-};
+typedef Feature2View_Node<pcl::PointXYZRGB,As_Nodelet> Feature2View_Nodelet_XYZ;
 
-/**
- * sort 2D points from left to right, top to down
- */
-struct SXYcmp {
-  inline bool operator() (const SXY& lhs, const SXY& rhs) const
-  {if(lhs.y==rhs.y)
-    return lhs.x<rhs.x;
-  return lhs.y<rhs.y;}
-};
+PLUGINLIB_DECLARE_CLASS(cob_3d_view_cells, Feature2View_Nodelet_XYZ, nodelet::Nodelet)
 
-#endif /* LIST_H_ */
+#else
+
+int main(int argc, char **argv) {
+  ros::init(argc, argv, "feature2view");
+
+  Feature2View_Node<pcl::PointXYZ,As_Node> sn;
+  sn.onInit();
+
+  ros::spin();
+
+  return 0;
+}
+
+#endif
