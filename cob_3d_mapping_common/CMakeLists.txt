@@ -1,16 +1,25 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(cob_3d_mapping_common)
 
+set(catkin_RUN_PACKAGES
+	cob_3d_mapping_msgs
+	eigen_conversions
+	libgpc
+	pcl_conversions
+	libpolypartition
+	roscpp
+)
+
+set(catkin_BUILD_PACKAGES
+	${catkin_RUN_PACKAGES}
+	cmake_modules
+)
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  cob_3d_mapping_msgs
-  eigen_conversions
-  libgpc
-  pcl_conversions
-  polypartition
-  roscpp
+	${catkin_BUILD_PACKAGES}
 )
 
 find_package(PCL REQUIRED)
@@ -32,12 +41,7 @@ catkin_package(
   LIBRARIES
     cob_3d_mapping_common
   CATKIN_DEPENDS
-    cob_3d_mapping_msgs
-    eigen_conversions
-    libgpc
-    pcl_conversions
-    polypartition
-    roscpp
+    ${catkin_RUN_PACKAGES}
   DEPENDS
     PCL
 )
@@ -100,3 +104,19 @@ target_link_libraries(test_cylinder
 add_dependencies(test_polygon ${catkin_EXPORTED_TARGETS})
 add_dependencies(test_cylinder ${catkin_EXPORTED_TARGETS})
 
+
+#############
+## Install ##
+#############
+## Mark executables and/or libraries for installation
+install(TARGETS cob_3d_mapping_common
+	ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+	LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+	RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(DIRECTORY common/include/${PROJECT_NAME}/ ros/include/${PROJECT_NAME}/
+	DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+	FILES_MATCHING PATTERN "*.h"
+	PATTERN ".svn" EXCLUDE
+)

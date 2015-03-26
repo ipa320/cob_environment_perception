@@ -37,7 +37,7 @@ Copyright: (C) Advanced Interfaces Group,
 ===========================================================================
 */
 
-#include "gpc/gpc.h"
+#include "libgpc/gpc.h"
 #include <stdlib.h>
 #include <float.h>
 #include <math.h>

@@ -88,6 +88,8 @@ int sign(int x)
 	return 1;
 }
 
+//#define NEIGHBORHOOD_DISPLAY
+
 template<typename PointInT, typename PointOutT, typename LabelOutT>
 class OrganizedNormalEstimationEdge: public OrganizedNormalEstimation<PointInT, PointOutT, LabelOutT>
 {
@@ -121,6 +123,7 @@ public:
 
 	void computePointAngleLookupTable(int angular_bins=16);
 
+	// check all neighborhood pixels whether they are valid points for normal computation, i.e. no edge is on direct line of sight between nbh. pixel and central pixel
 	void computeSectorVisibility(int u, int v, float* visibility);
 
 	// labels all neighborhood pixels whether they are visible from the central pixel, i.e. no edges obstruct the direct line between neighbor point and central point
@@ -128,13 +131,17 @@ public:
 
 	bool computePointVisibility(const int u, const int v, const int du, const int dv);
 
+#ifdef NEIGHBORHOOD_DISPLAY
+	void computePointNormal(const PointCloudIn &cloud, int index, float &n_x, float &n_y, float &n_z, int &label_out, cv::Mat& considered_neighborhood);
+#else
 	void computePointNormal(const PointCloudIn &cloud, int index, float &n_x, float &n_y, float &n_z, int &label_out);
+#endif
 
 protected:
 
 	cv::Mat edge_image_;
-	cv::Mat neighborhood_angles_;  // stores the angle between a neighborhood point and its central point
-	int angular_bins_;
+	cv::Mat neighborhood_angles_;  // stores the angle between a neighborhood point and its central point encoded as a bin number among angular_bins_ number of bins in 360deg
+	int angular_bins_;		// 360deg are divided in this number of discrete angular bins
 };
 }
 

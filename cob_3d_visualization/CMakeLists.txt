@@ -1,14 +1,24 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(cob_3d_visualization)
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
+set(catkin_RUN_PACKAGES 
   cob_3d_mapping_common
   cob_3d_mapping_msgs
   eigen_conversions
   interactive_markers
+
+)
+
+set(catkin_BUILD_PACKAGES 
+	${catkin_RUN_PACKAGES}
+	cmake_modules
+)
+
+## Find catkin macros and libraries
+## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
+## is used, also find other catkin packages
+find_package(catkin REQUIRED COMPONENTS
+  ${catkin_BUILD_PACKAGES}
 )
 
 find_package(PCL REQUIRED)
@@ -28,11 +38,7 @@ catkin_package(
   LIBRARIES
 #    cob_3d_mapping_semantics
   CATKIN_DEPENDS
-#    cob_3d_mapping_common
-#    cob_3d_mapping_msgs
-#    eigen_conversions
-    interactive_markers
-#    pcl
+	${catkin_RUN_PACKAGES}
 )
 
 ###########

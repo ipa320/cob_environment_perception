@@ -90,7 +90,7 @@ template<typename Point> void
 TableObjectCluster<Point>::extractTableRoi(PointCloudPtr& hull,
                                     pcl::PointIndices& pc_roi)
 {
-  #ifdef PCL_MINOR_VERSION >= 6
+  #if PCL_MINOR_VERSION >= 6
   pcl::ConvexHull<Point> chull;
   chull.setDimension(2);
   chull.setInputCloud(hull);
@@ -108,7 +108,7 @@ TableObjectCluster<Point>::extractTableRoi(PointCloudPtr& hull,
   //pcl::PointIndices roi_indices;
   prism.setInputCloud(input_);
 
-  #ifdef PCL_MINOR_VERSION >= 6
+  #if PCL_MINOR_VERSION >= 6
   prism.setInputPlanarHull(conv_hull);
   #else
   prism.setInputPlanarHull(hull);
@@ -210,7 +210,7 @@ TableObjectCluster<Point>::calculateBoundingBox(
   }
 
   // create convex hull of projected points
-  #ifdef PCL_MINOR_VERSION >= 6
+  #if PCL_MINOR_VERSION >= 6
   pcl::PointCloud<pcl::PointXYZ>::Ptr conv_hull(new pcl::PointCloud<pcl::PointXYZ>);
   pcl::ConvexHull<pcl::PointXYZ> chull;
   chull.setDimension(2);

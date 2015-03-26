@@ -355,14 +355,14 @@ cob_3d_features::OrganizedFeatures<PointInT,PointOutT>::compute(PointCloudOut &o
 template <typename PointInT, typename PointOutT> void
 cob_3d_features::OrganizedFeatures<PointInT,PointOutT>::computeMaskManually(int cloud_width)
 {
-  int num_circles = std::floor(pixel_search_radius_ / circle_steps_);
-  n_points_ = pow(2 * pixel_search_radius_ + 1, 2);
   // create a new mask
   mask_.clear();
-  for (int circle = 0; circle < num_circles; circle++)
+  n_points_ = (2 * pixel_search_radius_ + 1) * (2 * pixel_search_radius_ + 1);
+  const int num_circles = std::floor(pixel_search_radius_ / circle_steps_);
+  for (int circle = 0; circle < num_circles; ++circle)
   {
-    int circle_size = pixel_search_radius_ - (circle*circle_steps_);
-    int dy = circle_size * cloud_width;
+    const int circle_size = pixel_search_radius_ - (circle*circle_steps_);
+    const int dy = circle_size * cloud_width;
 
     std::vector<int> new_circle;
 

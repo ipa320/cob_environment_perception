@@ -3,7 +3,7 @@
   <version>1.0.0</version>
   
   <description>
-     This package can be used to segment a point cloud by the field of view (FOV) of a camera.
+     Segments a point cloud by the field of view (FOV) of a camera.
   </description>
   
   <license>LGPL</license>

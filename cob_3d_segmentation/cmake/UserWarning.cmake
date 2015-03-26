@@ -1,4 +1,4 @@
-macro(UserWarning _msg)
+macro(user_warning _msg)
    if("$ENV{DASHBOARD_TEST_FROM_CTEST}" STREQUAL "")
       # developer (non-dashboard) build
       message(WARNING "${_msg}")
