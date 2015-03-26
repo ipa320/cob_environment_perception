@@ -1,20 +1,47 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(libgpc)
 
+set(catkin_RUN_PACKAGES
+)
+
+set(catkin_BUILD_PACKAGES 
+	${catkin_RUN_PACKAGES}
+	#cmake_modules
+)
+
+## Find catkin macros and libraries
+## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
+## is used, also find other catkin packages
+## Creates a bunch of environment variables that may be used later in the script
+## e.g. catkin_INCLUDE_DIRS
+find_package(catkin REQUIRED  # COMPONENTS
+	#${catkin_BUILD_PACKAGES}
+)
+
 catkin_package(
   INCLUDE_DIRS
-    include
+    common/include
   LIBRARIES
     gpc
 )
 
 include_directories(
-  include
+  common/include
 )
 
-add_library(gpc src/gpc.c)
+add_library(gpc common/src/gpc.c)
 
 
+#############
+## Install ##
+#############
+## Mark executables and/or libraries for installation
+install(TARGETS gpc
+	ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+	LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+	RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
 
-
-
+install(DIRECTORY common/include
+	DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}
+)

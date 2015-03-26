@@ -1,20 +1,48 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(cob_3d_evaluation_features)
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
+set(catkin_RUN_PACKAGES
   cob_3d_features
   cob_3d_mapping_common
   cob_3d_mapping_tools
   sensor_msgs
 )
 
+set(catkin_BUILD_PACKAGES 
+	${catkin_RUN_PACKAGES}
+	cmake_modules
+)
+
+## Find catkin macros and libraries
+## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
+## is used, also find other catkin packages
+find_package(catkin REQUIRED COMPONENTS
+  ${catkin_BUILD_PACKAGES}
+)
+
 find_package(Boost REQUIRED COMPONENTS filesystem program_options signals system)
 find_package(OpenCV REQUIRED)
 find_package(PCL REQUIRED)
 find_package(VTK REQUIRED COMPONENTS vtkCommon vtkFiltering vtkRendering)
+
+###################################
+## catkin specific configuration ##
+###################################
+## The catkin_package macro generates cmake config files for your package
+## Declare things to be passed to dependent projects
+## INCLUDE_DIRS: uncomment this if you package contains header files
+## LIBRARIES: libraries you create in this project that dependent projects also need
+## CATKIN_DEPENDS: catkin_packages dependent projects also need
+## DEPENDS: system dependencies of this project that dependent projects also need
+catkin_package(
+INCLUDE_DIRS
+	include
+LIBRARIES
+	${PROJECT_NAME}
+CATKIN_DEPENDS
+	${catkin_RUN_PACKAGES}
+DEPENDS
+)
 
 ###########
 ## Build ##
@@ -102,3 +130,20 @@ target_link_libraries(evaluation_fpfh_svm_trainer
 set_target_properties(evaluate_test_data PROPERTIES COMPILE_FLAGS -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
 set_target_properties(generate_test_data PROPERTIES COMPILE_FLAGS -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
 #set_target_properties(evaluation_features PROPERTIES COMPILE_FLAGS -DEIGEN_YES_I_KNOW_SPARSE_MODULE_IS_NOT_STABLE_YET)
+
+
+#############
+## Install ##
+#############
+## Mark executables and/or libraries for installation
+install(TARGETS merge_knn_training_data reduce_fpfh_training_data evaluation_fpfh_svm_trainer fpfh_primitives merge_fpfh_training_data extract_feature_values evaluation_features_fpfh
+	ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+	LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+	RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(DIRECTORY include/${PROJECT_NAME}/
+	DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+	FILES_MATCHING PATTERN "*.h"
+	PATTERN ".svn" EXCLUDE
+)

@@ -69,7 +69,7 @@
 #include "cob_3d_mapping_common/polygon.h"
 extern "C"
 {
-#include "gpc/gpc.h"
+#include "libgpc/gpc.h"
 }
 //boost includes
 #include <boost/shared_ptr.hpp>

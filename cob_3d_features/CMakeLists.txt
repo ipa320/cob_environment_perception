@@ -1,15 +1,25 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(cob_3d_features)
 
+set(catkin_RUN_PACKAGES
+  cob_3d_mapping_common
+#  cob_3d_mapping_tools
+  cob_3d_visualization
+  cob_3d_mapping_msgs
+  pcl_ros
+  libpolypartition
+)
+
+set(catkin_BUILD_PACKAGES 
+	${catkin_RUN_PACKAGES}
+	cmake_modules
+)
+
 ## Find catkin macros and libraries
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  cmake_modules
-  cob_3d_mapping_common
-#  cob_3d_mapping_tools
-  cob_3d_visualization
-  pcl_ros
+  ${catkin_BUILD_PACKAGES}
 )
 
 find_package(OpenCV REQUIRED)
@@ -41,8 +51,7 @@ catkin_package(
     cob_3d_features
     cob_3d_features_omp
   CATKIN_DEPENDS
-    cob_3d_mapping_common
-    pcl_ros
+    ${catkin_RUN_PACKAGES}
   DEPENDS
     OpenCV
     VTK
@@ -92,6 +101,7 @@ add_library(cob_3d_features_omp
   common/src/fast_edge_estimation_3d_omp.cpp)
 target_link_libraries(cob_3d_features_omp
   ${catkin_LIBRARIES}
+  ${OpenCV_LIBRARIES}
 #  ${PCL_LIBRARIES}
 )
 #set_target_properties(cob_3d_features_omp PROPERTIES COMPILE_FLAGS "-fopenmp"
@@ -192,4 +202,25 @@ target_link_libraries(extract_organized_curvatures
   cob_3d_features
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
+)
+
+#############
+## Install ##
+#############
+## Mark executables and/or libraries for installation
+install(TARGETS cob_3d_features_omp cob_3d_features s2kit profile_fee eval_invariant_feature extract_organized_curvatures profile_fee_omp invariant_feature_node profile_oce profile_ne
+	ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+	LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+	RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(DIRECTORY common/include/${PROJECT_NAME}/
+	DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+	FILES_MATCHING PATTERN "*.h"
+	PATTERN ".svn" EXCLUDE
+)
+
+install(DIRECTORY ros/launch
+	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/ros
+	PATTERN ".svn" EXCLUDE
 )

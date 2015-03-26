@@ -28,7 +28,7 @@
 
 using namespace std;
 
-#include <polypartition/polypartition.h>
+#include <libpolypartition/polypartition.h>
 
 #define TPPL_VERTEXTYPE_REGULAR 0
 #define TPPL_VERTEXTYPE_START 1
