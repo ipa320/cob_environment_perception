@@ -65,7 +65,7 @@
 
 
 #include <cob_3d_visualization/shape_marker.h>
-#include <cob_3d_visualization/table_marker.h>
+//#include <cob_3d_visualization/table_marker.h>
 #include <cob_3d_visualization/shape_visualization.h>
 #include <math.h>
 #include <stdlib.h>
