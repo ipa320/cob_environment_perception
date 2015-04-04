@@ -23,7 +23,6 @@ OptimizeForArchitecture()
 catkin_package(
   INCLUDE_DIRS
     common/include
-    ros/include
   LIBRARIES
   CATKIN_DEPENDS
     cob_3d_mapping_common

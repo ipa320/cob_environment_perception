@@ -26,7 +26,8 @@
   <build_depend>cob_3d_visualization</build_depend>
   <build_depend>libpolypartition</build_depend>
   <build_depend>libfftw3</build_depend>
-
+  <build_depend>libfftw3-dev</build_depend>
+  
   <run_depend>libopencv-dev</run_depend>
   <run_depend>boost</run_depend>
   <run_depend>cob_3d_mapping_common</run_depend>
