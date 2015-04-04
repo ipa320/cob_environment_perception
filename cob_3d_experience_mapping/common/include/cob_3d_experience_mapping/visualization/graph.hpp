@@ -10,17 +10,16 @@ namespace cob_3d_experience_mapping {
 		struct VisualizationHandler {
 			static void init() {
 				cob_3d_visualization::RvizMarkerManager::get()
-					.createTopic("invariant_feature_debug_markers")
-					.setFrameId("/openni_depth_optical_frame")
-					.clearOld();
+					.createTopic("expierience_mapping_marker")
+					.setFrameId("/map");
+					//.clearOld();
 			}
 			
 			VisualizationHandler() {
-				cob_3d_visualization::RvizMarkerManager::get().clear();
+				init();
 			}
 			
 			~VisualizationHandler() {
-				cob_3d_visualization::RvizMarkerManager::get().publish();
 			}
 			
 			typedef std::map<const TNode*, bool> TVisitedList;
@@ -49,6 +48,8 @@ namespace cob_3d_experience_mapping {
 				//only visited each node once
 				if(!act_node || depth==0 || visted.find(&act_node)!=visted.end())
 					return false;
+				cob_3d_visualization::RvizMarkerManager::get().clear();
+
 				visted[&act_node] = true;
 				
 				visualize_node(act_node, pos);
@@ -63,7 +64,8 @@ namespace cob_3d_experience_mapping {
 						scene.line(pos, new_pos);
 					}
 				}
-				
+
+				cob_3d_visualization::RvizMarkerManager::get().publish();
 				return true;
 			}
 		};

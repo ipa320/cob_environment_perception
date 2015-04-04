@@ -28,19 +28,19 @@ namespace cob_3d_experience_mapping {
 		typedef boost::shared_ptr<State> TPtr;
 	protected:
 		TEnergy energy_;
-		TNode *node_;
+		TNode node_;
 		
 	public:		
 		
 		//setter/getter
 		inline TEnergy &energy() {return energy_;}
 		inline const TEnergy &energy() const {return energy_;}
-		inline void set_node(const TNode *node) {node_ = node;}
-		inline TNode *node() {return node_;}
+		inline void set_node(const TNode &node) {node_ = node;}
+		inline TNode &node() {return node_;}
 	
 		//graph operations
 		inline TArcIterator edge_begin(const TGraph &graph) {
-			return TArcIterator(graph, *node_);
+			return TArcIterator(graph, node_);
 		}
 		
 		inline TArcIterator edge_end(const TGraph &graph) const {
@@ -48,7 +48,7 @@ namespace cob_3d_experience_mapping {
 		}
 		
 		inline TNode opposite_node(const TGraph &graph, const TArc &ait) {
-			return graph.oppositeNode(*node_, ait);
+			return graph.oppositeNode(node_, ait);
 		}
 		
 		//operators

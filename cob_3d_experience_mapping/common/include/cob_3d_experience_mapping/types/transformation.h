@@ -16,21 +16,44 @@ namespace cob_3d_experience_mapping {
 	private:
 		TLink link_;
 		TStatePtr src_;
+
+		template<int TInd>
+		inline static void helper_hystersis(TDist &d, const TDist &thr) {
+			if(d(TInd)<thr(TInd)) d(TInd) = 1-d(TInd)/thr(TInd);
+			else d(TInd) = 0;
+		}
 		
 	public:
 		
 		Transformation() : link_(TLink::Zero())
 		{}
 		
+		Transformation(const TStatePtr &state) :
+		link_(TLink::Zero()), src_(state)
+		{}
+
 		Transformation(const TLink &link, const TStatePtr &state) :
 		link_(link), src_(state)
 		{}
 		
-		Transformation directed(const TStatePtr &state) {
+		inline const TStatePtr &src() const {return src_;}
+		inline TStatePtr &src() {return src_;}
+
+		Transformation directed(const TStatePtr &state) const {
 			if(state==src_) return *this;
 			return Transformation(-1*link_, state);
 		}
 		
+		Transformation scale(const TDist &thr) const {
+			TLink tmp = link_;
+			TDist d = distance(Transformation());
+			for(int i=0; d(0) && i<NUM_TRANS; i++)
+				tmp(i) *= thr(0)/d(0);
+			for(int i=NUM_TRANS; d(1) && i<NUM_TRANS+NUM_ROT; i++)
+				tmp(i) *= thr(1)/d(1);
+			return Transformation(tmp, src_);
+		}
+
 		TDist distance(const Transformation &o) const {
 			TLink tmp = link_-o.link_;
 			TDist r = TDist::Zero();
@@ -45,6 +68,36 @@ namespace cob_3d_experience_mapping {
 			return r;
 		}
 		
+		void integrate(const Transformation &movement) {
+			BOOST_STATIC_ASSERT(NUM_TRANS==2);	//TODO: at the moment only implement for 2d case
+			BOOST_STATIC_ASSERT(NUM_ROT==1);
+
+			link_(2) += movement.link_(2);
+			//clip to 180 deg.
+			while(link_(2)<=-M_PI) link_(2) += 2*M_PI;
+			while(link_(2)>  M_PI) link_(2) -= 2*M_PI;
+			link_(0) += movement.link_(0) * std::cos(link_(2)) + movement.link_(1) * std::sin(link_(2));
+			link_(1) += movement.link_(0) * std::sin(link_(2)) - movement.link_(1) * std::cos(link_(2));
+		}
+
+		//TODO:
+		TType proximity_neg(const TDist &thr) const {
+			TDist d = distance(Transformation());
+			helper_hystersis<0>(d,thr);
+			helper_hystersis<1>(d,thr);
+			return -(1-d(0))*(1-d(1));
+		}
+
+		//TODO:
+		TType proximity_pos(const Transformation &o, const TDist &thr) const {
+			TDist d = distance(o);
+			printf("proximity_pos A %f %f\n", d(0),d(1));
+			helper_hystersis<0>(d,thr);
+			helper_hystersis<1>(d,thr);
+			printf("proximity_pos B %f %f\n", d(0),d(1));
+			return d(0)*d(1);
+		}
+
 		TDist proximity(const boost::math::normal distribution[2]) const {
 			return proximity(distribution, Transformation());
 		}
