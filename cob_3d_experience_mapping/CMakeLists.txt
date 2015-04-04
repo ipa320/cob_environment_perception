@@ -76,6 +76,13 @@ find_package(Eigen REQUIRED)
 #   std_msgs  # Or other packages containing msgs
 # )
 
+#add dynamic reconfigure api
+#find_package(catkin REQUIRED dynamic_reconfigure)
+generate_dynamic_reconfigure_options(
+  cfg/settings.cfg
+  cfg/visualization.cfg
+)
+
 ###################################
 ## catkin specific configuration ##
 ###################################
@@ -112,6 +119,9 @@ include_directories(SYSTEM ${EIGEN_INCLUDE_DIRS})
 
 ## Declare a cpp executable
 add_executable(cob_3d_experience_mapping_lemon_node src/exp_mapping_lemon.cpp)
+
+# make sure configure headers are built before any node using them
+add_dependencies(cob_3d_experience_mapping_lemon_node ${PROJECT_NAME}_gencfg)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
