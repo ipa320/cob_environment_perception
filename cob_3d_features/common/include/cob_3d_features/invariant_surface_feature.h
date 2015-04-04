@@ -57,7 +57,7 @@
 #include <vector>
 #include <boost/shared_ptr.hpp>
 #include <Eigen/Geometry>
-#include <polypartition/polypartition.h>
+#include <libpolypartition/polypartition.h>
 #include <pcl/PolygonMesh.h>		//only used for debugging/test functions (perhaps put outside?)
 
 #include "ShapeSPH/Util/Signature.h"

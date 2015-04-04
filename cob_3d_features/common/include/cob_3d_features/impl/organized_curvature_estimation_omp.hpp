@@ -95,7 +95,7 @@ cob_3d_features::OrganizedCurvatureEstimationOMP<PointInT,PointNT,PointLabelT,Po
     }
     else if (this->searchForNeighborsInRange((*indices_)[i], nn_indices, nn_distances) != -1)
     {
-      computePointCurvatures(*normals_, (*indices_)[i], nn_indices, nn_distances,
+      this->computePointCurvatures(*normals_, (*indices_)[i], nn_indices, nn_distances,
 			     output.points[(*indices_)[i]].principal_curvature[0],
 			     output.points[(*indices_)[i]].principal_curvature[1],
 			     output.points[(*indices_)[i]].principal_curvature[2],

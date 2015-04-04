@@ -67,7 +67,7 @@
 #include <iostream>
 #include <Eigen/Geometry>
 
-#include <polypartition/polypartition.h>
+#include <libpolypartition/polypartition.h>
 #include <pcl/PolygonMesh.h>
 
 #include "ShapeSPH/Util/Signature.h"

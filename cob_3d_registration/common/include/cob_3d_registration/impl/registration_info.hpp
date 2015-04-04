@@ -244,7 +244,7 @@ namespace cob_3d_registration {
       for(int i=0; i<(int)indices_neg2.size(); i++)
         tmp_pc_new.points.push_back(pc.points[indices_neg2[i]]);
 
-      icp.setInputCloud( tmp_pc_new.makeShared() );
+      icp.setInputSource( tmp_pc_new.makeShared() );
       //icp.setIndices(boost::make_shared<pcl::PointIndices>(indices));
       icp.setInputTarget(tmp_pc_old.makeShared());
       icp.setMaximumIterations(40);
@@ -304,7 +304,7 @@ namespace cob_3d_registration {
 
         if(bad>2) { // if error is ove 2% switch to ICP -> slower
           ModifiedICP<Point> icp;
-          icp.setInputCloud( tmp_pc_new.makeShared() );
+          icp.setInputSource( tmp_pc_new.makeShared() );
           //icp.setIndices(boost::make_shared<pcl::PointIndices>(indices));
           icp.setInputTarget(tmp_pc_old.makeShared());
           icp.setMaximumIterations(40);

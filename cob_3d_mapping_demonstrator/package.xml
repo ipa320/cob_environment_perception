@@ -3,7 +3,7 @@
   <version>1.0.0</version>
   
   <description>
-     Package for operation of the 3D mapping demonstrator.
+     Operates the 3D mapping demonstrator.
   </description>
   
   <license>LGPL</license>
@@ -15,6 +15,7 @@
 
   <buildtool_depend>catkin</buildtool_depend>
 
+  <build_depend>cmake_modules</build_depend>
   <build_depend>actionlib</build_depend>
   <build_depend>brics_actuator</build_depend>
   <build_depend>cob_3d_mapping_msgs</build_depend>
@@ -38,7 +39,7 @@
   <run_depend>diagnostic_msgs</run_depend>
   <run_depend>libqt4</run_depend>
   <run_depend>nodelet</run_depend>
-  <run_depend>openni_launch</run_depend>
+  <run_depend>openni2_launch</run_depend>
   <!--run_depend>pr2_controllers_msgs</run_depend-->
   <run_depend>robot_state_publisher</run_depend>
   <run_depend>roscpp</run_depend>

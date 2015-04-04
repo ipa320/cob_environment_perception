@@ -1,20 +1,30 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(cob_3d_registration)
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
+set(catkin_RUN_PACKAGES 
   cob_3d_features
   cob_3d_mapping_common
   cob_srvs
   cv_bridge
-  message_generation
   nav_msgs
   nodelet
   pcl_ros
+  roscpp
   tf
   tf_conversions
+)
+
+set(catkin_BUILD_PACKAGES 
+	${catkin_RUN_PACKAGES}
+	message_generation
+	cmake_modules
+)
+
+## Find catkin macros and libraries
+## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
+## is used, also find other catkin packages
+find_package(catkin REQUIRED COMPONENTS
+  ${catkin_BUILD_PACKAGES}
 )
 
 #find_package(TinyXML REQUIRED)
@@ -22,7 +32,7 @@ find_package(VTK REQUIRED COMPONENTS vtkCommon)
 #find_package(Boost REQUIRED COMPONENTS program_options)
 find_package(OpenCV REQUIRED)
 find_package(Eigen REQUIRED)
-find_package(PCL REQUIRED)
+#find_package(PCL REQUIRED)
 #TODO: check for SSE
 
 #generate_dynamic_reconfigure_options(cfg/plane_extraction_nodelet.cfg
@@ -63,23 +73,14 @@ catkin_package(
     cob_3d_registration
     cob_3d_registration_lib
   CATKIN_DEPENDS
-    cob_3d_features
-    cob_3d_mapping_common
-    cob_srvs
-    cv_bridge
-    message_generation
-    nav_msgs
-    nodelet
-    pcl_ros
-    tf
-    tf_conversions
+    ${catkin_RUN_PACKAGES}
+    message_runtime
   DEPENDS
     VTK
     OpenCV
     Eigen
-    PCL
+#    PCL
 )
-
 
 
 ###########
@@ -112,6 +113,8 @@ add_library(cob_3d_registration_lib
 add_library(cob_3d_registration
         ros/src/registration_nodelet.cpp
 )
+
+add_dependencies(cob_3d_registration ${PROJECT_NAME}_generate_messages_cpp)
 
 ## Declare a cpp executable
 #file(GLOB registration_SRC1

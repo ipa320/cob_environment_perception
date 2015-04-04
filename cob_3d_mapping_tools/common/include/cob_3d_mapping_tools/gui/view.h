@@ -67,7 +67,7 @@
 #include <iostream>
 #include <boost/shared_ptr.hpp>
 #include <boost/make_shared.hpp>
-#include <boost/signals.hpp>
+#include <boost/signals2.hpp>
 
 #include <wx/wx.h>
 #include <wx/rawbmp.h>
@@ -107,8 +107,8 @@ namespace Gui
 
     void show() { reloadData(RT(),VT()); show(VT()); }
     void onDataChanged() { reloadData(RT(),VT()); refresh(VT()); }
-    boost::signals::connection registerMouseCallback(boost::function<void (wxMouseEvent&, Resource<RT>*)>);
-    boost::signals::connection registerKeyCallback(boost::function<void (wxKeyEvent&, Resource<RT>*)>);
+    boost::signals2::connection registerMouseCallback(boost::function<void (wxMouseEvent&, Resource<RT>*)>);
+    boost::signals2::connection registerKeyCallback(boost::function<void (wxKeyEvent&, Resource<RT>*)>);
 
   protected:
     ~View() { std::cout << "View destroyed" << std::endl; }
@@ -122,8 +122,8 @@ namespace Gui
     template<typename PT, size_t Channel> void reloadData(ResourceTypes::OrganizedPointCloud<PT>, ViewTypes::Normal<Channel>);
 
     Resource<RT>* r_ptr;
-    boost::signal<void (wxMouseEvent&, Resource<RT>*)> mouse_sig_;
-    boost::signal<void (wxKeyEvent&, Resource<RT>*)> key_sig_;
+    boost::signals2::signal<void (wxMouseEvent&, Resource<RT>*)> mouse_sig_;
+    boost::signals2::signal<void (wxKeyEvent&, Resource<RT>*)> key_sig_;
 
     friend class WindowManager;
   };

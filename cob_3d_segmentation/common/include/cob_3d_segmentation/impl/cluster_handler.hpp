@@ -121,7 +121,7 @@ cob_3d_segmentation::DepthClusterHandler<LabelT,PointT,PointNT>::computeCurvatur
   pcl::eigen33(cov, eigenvectors, eigenvalues);
   c->max_curvature = eigenvalues(2) * num_p_inv;
   c->min_curvature = eigenvalues(1) * num_p_inv;
-  //c->min_curvature_direction = eigenvectors.col(1);
+  c->min_curvature_direction = eigenvectors.col(1);
 }
 
 template<typename LabelT, typename PointT, typename PointNT> void

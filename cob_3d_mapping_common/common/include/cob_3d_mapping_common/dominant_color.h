@@ -106,7 +106,7 @@ namespace cob_3d_mapping
   {
   public:
     DominantColor () :
-        sum_colors_ (0), sum_r_ (0), sum_g_ (0), sum_b_ (0), hue_histogram_ (HIST_SIZE, 0)
+        sum_colors_ (0), sum_r_ (0), sum_g_ (0), sum_b_ (0), hue_histogram_ (HIST_SIZE, 0), inv_bin_size(1.0f / 360.0f * HIST_SIZE)
     {
     }
 
@@ -200,7 +200,8 @@ namespace cob_3d_mapping
     std::vector<int> hue_histogram_; //!< The histogram for the hue value.
     //std::vector<int> sat_values_;
 
-    static const float inv_bin_size = 1.0f / 360.0f * HIST_SIZE;
+    const float inv_bin_size;
+    //static const float inv_bin_size = 1.0f / 360.0f * HIST_SIZE;
     //static const float bin_size = 360.0f / HIST_SIZE;
     //static const float bin_center = ((360.0f / HIST_SIZE) - 1.0f) * 0.5f;
   };

@@ -46,7 +46,6 @@ cob_3d_mapping_msgs/msg/TriggerSegmentationActionResult.msg
 cob_3d_mapping_msgs/msg/TriggerSegmentationFeedback.msg
 cob_3d_mapping_msgs/msg/TriggerSegmentationGoal.msg
 cob_3d_mapping_msgs/msg/TriggerSegmentationResult.msg
-openmesh/common
 cob_3d_mapping_features/src
 cob_3d_mapping_geometry_map/src
 cob_3d_mapping_point_map/src
