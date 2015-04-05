@@ -55,7 +55,7 @@ void path_integration(const TIter &begin, const TIter &end/*, const TEnergyFacto
 	ROS_ASSERT(ctxt.virtual_cell());
 	ROS_ASSERT(ctxt.virtual_transistion());
 
-	ctxt.virtual_transistion()->integrate(odom);
+	ctxt.virtual_transistion()->integrate(2*odom);
 	ctxt.virtual_cell()->energy() += ctxt.virtual_transistion()->scale(ctxt.param().prox_thr_).proximity_pos(odom, ctxt.param().prox_thr_) * ctxt.current_active_cell()->energy();
 
 #if 0
