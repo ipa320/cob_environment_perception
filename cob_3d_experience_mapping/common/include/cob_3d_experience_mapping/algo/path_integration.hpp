@@ -56,8 +56,8 @@ void path_integration(const TIter &begin, const TIter &end/*, const TEnergyFacto
 	ROS_ASSERT(ctxt.virtual_transistion());
 
 	ctxt.virtual_transistion()->integrate(2*odom);
-	ctxt.virtual_cell()->energy() += ctxt.virtual_transistion()->scale(ctxt.param().prox_thr_).proximity_pos(odom, ctxt.param().prox_thr_) * ctxt.current_active_cell()->energy();
-
+	ctxt.virtual_cell()->energy() += ctxt.dist2energyfactor(ctxt.virtual_transistion()->scale(ctxt.param().prox_thr_).proximity_pos(odom, ctxt.param().prox_thr_)) * ctxt.current_active_cell()->energy();
+//TODO: fix energy trans.
 #if 0
 	//if distance between last cell and new pose is greater than threshold
 	// -> generate new cell
@@ -100,14 +100,14 @@ void path_integration(const TIter &begin, const TIter &end/*, const TEnergyFacto
 			ROS_INFO("energy transistion by odom (pos): %f", trans[ait]->directed(*it).proximity_pos(odom, ctxt.param().prox_thr_) * (*it)->energy());
 			typename TIter::value_type opposite = cells[(*it)->opposite_node(graph, ait)];
 			result.push_back(typename TResultList::value_type(opposite,
-					trans[ait]->directed(*it).proximity_pos(odom, ctxt.param().prox_thr_) * (*it)->energy()
+					ctxt.dist2energyfactor(trans[ait]->directed(*it).proximity_pos(odom, ctxt.param().prox_thr_)) * (*it)->energy()
 			));
 		}
 
 		ROS_INFO("energy transistion by odom (neg): %f", odom.proximity_neg(ctxt.param().prox_thr_) * (*it)->energy());
 
 		//remove energy from this node as it would be ideally moved forward
-		result.push_back(typename TResultList::value_type(*it, odom.proximity_neg(ctxt.param().prox_thr_) * (*it)->energy()));
+		result.push_back(typename TResultList::value_type(*it, -ctxt.dist2energyfactor(odom.proximity_neg(ctxt.param().prox_thr_)= * (*it)->energy()));
 	}
 
 
