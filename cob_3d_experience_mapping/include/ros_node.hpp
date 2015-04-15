@@ -45,7 +45,7 @@ class ROS_Node : public Parent
 public:
 	typedef cob_3d_experience_mapping::State<cob_3d_experience_mapping::Empty, Scalar > State;
 	typedef cob_3d_experience_mapping::Transformation<Scalar, NUM_TRANS, NUM_ROT, typename State::TPtr> Transformation;
-	typedef cob_3d_experience_mapping::visualization::VisualizationHandler<typename State::TGraph, lemon::ListDigraph::NodeMap<typename State::TPtr>, typename State::TPtr, typename State::TArcIterator> VisualizationHandler;
+	typedef cob_3d_experience_mapping::visualization::VisualizationHandler<typename State::TGraph, lemon::ListDigraph::NodeMap<typename State::TPtr>, lemon::ListDigraph::ArcMap <typename Transformation::TPtr>, typename State::TPtr, typename State::TArcIterator> VisualizationHandler;
 	
 private:
 
@@ -107,7 +107,7 @@ public:
 		  cob_3d_experience_mapping::algorithms::step(graph_, ctxt_, cells_, trans_, action);
 
 		  if(vis_ && ctxt_.active_cells().size()>0) {
-			vis_->visualize(graph_, cells_, ctxt_.current_active_cell());
+			vis_->visualize(graph_, cells_, trans_, ctxt_.current_active_cell());
 		  }
 	  } else
 		  ROS_INFO("skipped odom");
