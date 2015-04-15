@@ -27,14 +27,25 @@ namespace cob_3d_experience_mapping {
 		typedef TGraph::OutArcIt TArcIterator;
 		typedef boost::shared_ptr<State> TPtr;
 	protected:
-		TEnergy energy_;
+		TEnergy energy_, loss_, outflow_, outflow_em_;
 		TNode node_;
 		
 	public:		
+		State(): energy_(0), loss_(0), outflow_(0), outflow_em_(0) {}
 		
 		//setter/getter
 		inline TEnergy &energy() {return energy_;}
 		inline const TEnergy &energy() const {return energy_;}
+		
+		inline TEnergy &loss() {return loss_;}
+		inline const TEnergy &loss() const {return loss_;}
+		
+		inline TEnergy &outflow() {return outflow_;}
+		inline const TEnergy &outflow() const {return outflow_;}
+		
+		inline TEnergy &outflow_em() {return outflow_em_;}
+		inline const TEnergy &outflow_em() const {return outflow_em_;}
+		
 		inline void set_node(const TNode &node) {node_ = node;}
 		inline TNode &node() {return node_;}
 	

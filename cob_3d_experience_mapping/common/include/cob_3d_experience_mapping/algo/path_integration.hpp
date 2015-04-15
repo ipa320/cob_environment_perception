@@ -113,7 +113,7 @@ void path_integration(const TIter &begin, const TIter &end/*, const TEnergyFacto
 
 	ROS_INFO("virtual energy: %f", ctxt.virtual_cell()->energy());
 
-	if(ctxt.current_active_cell()->energy() < ctxt.virtual_cell()->energy()) {
+	if(ctxt.virtual_transistion()>=) {//ctxt.current_active_cell()->energy() < ctxt.virtual_cell()->energy()) {
 		ROS_INFO("virtual cell is inserted to map");
 
 		insert_transistion(graph, trans, ctxt.virtual_cell(), ctxt.virtual_transistion());
@@ -121,4 +121,35 @@ void path_integration(const TIter &begin, const TIter &end/*, const TEnergyFacto
 		ctxt.virtual_cell().reset(new TState);
 		insert_cell(graph, cells, trans, ctxt.virtual_cell());
 	}
+	
+	//-----------------------------------------------
+	
+	//calc. loss (depends only on action)
+	ROS_ASSERT(odom.dist()>=0);
+	
+	for(TIter it=begin; it!=end; it++) {
+		it->loss() = it->energy()*(1 - 1/std::pow(4, odom.dist()));
+		it->outflow() = -1; //not set yet!
+	}
+		
+	//expected max. outflow
+	for(TIter it=begin; it!=end; it++) {
+		it->outflow_em() = 0;
+		for(TArcIter ait((*it)->edge_begin(graph)); ait!=(*it)->edge_end(graph); ++ait) {
+			typename TIter::value_type opposite = cells[(*it)->opposite_node(graph, ait)];
+			it->outflow_em() = std::max(it->outflow_em(), opposite->loss());
+		}
+		if(it->outflow_em()==0)
+			it->outflow() = 0;
+	}
+	
+	//todo...
+	
+	//calc. outflow
+	it->outflow() = std::max(0, it->loss()-it->inflow());
+	ROS_ASSERT( it->outflow()>=0 && it->outflow()<=1 );
+	
+	//calc. energy delta
+	it->energy() += it->inflow()-it->loss();
+	ROS_ASSERT( it->energy()>=0 && it->energy()<=1 );
 }
