@@ -49,7 +49,7 @@ namespace cob_3d_experience_mapping {
 					char buf[128];
 					sprintf(buf, "e=%.3f", e);
 					scene.text(buf);
-					scene.move(pos);
+					scene.move(pos+0.3*Eigen::Vector3f::UnitZ());
 				}
 				
 				//TODO: visualize orientation
