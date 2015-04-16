@@ -3,6 +3,8 @@
 #include <lemon/list_graph.h>
 #include <boost/shared_ptr.hpp>
 
+#include <ros/assert.h>
+
 namespace cob_3d_experience_mapping {
 	
 	struct Empty {};
@@ -49,23 +51,6 @@ namespace cob_3d_experience_mapping {
 		
 		inline void set_node(const TNode &node) {node_ = node;}
 		inline TNode &node() {return node_;}
-		
-		template<typename TCells, typename TAction>
-		TEnergy inflow(const TEnergy &offset, const TCells &cells, const TAction &odom) /*const*/ {
-			TEnergy I = 0;
-			for(TArcIter ait(edge_begin(graph)); ait!=edge_end(graph); ++ait) {
-				typename TIter::value_type opposite = cells[(*it)->opposite_node(graph, ait)];
-				ROS_ASSERT(opposite->outflow()>=0 && opposite->outflow()<=1);
-				
-				I = std::max(I, opposite->outflow()*transistion_factor);
-			}
-			I-=offset;
-			
-			//TODO: add sensor input here
-			//I += p*(1-energy());
-			
-			return I;
-		}
 	
 		//graph operations
 		inline TArcIterator edge_begin(const TGraph &graph) {

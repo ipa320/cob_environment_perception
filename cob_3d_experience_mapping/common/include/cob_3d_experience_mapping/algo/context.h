@@ -23,7 +23,8 @@ namespace cob_3d_experience_mapping {
 		typedef _TState TState;
 		typedef _TEnergyFactor TEnergyFactor;
 		typedef _TTransform TTransform;
-		typedef std::set<typename TState::TPtr> TActList; 
+		//typedef std::set<typename TState::TPtr> TActList; 
+		typedef std::vector<typename TState::TPtr> TActList; 
 		typedef typename TActList::iterator TActListIterator; 
 		typedef Parameter<TEnergyFactor, typename _TTransform::TDist> TParameter;
 		
@@ -52,7 +53,7 @@ namespace cob_3d_experience_mapping {
 		
 		//getter/setter
 		inline TActList &active_cells() {return active_cells_;}
-		inline const TParameter &param() {return param_;}
+		inline const TParameter &param() const {return param_;}
 		inline typename TState::TPtr current_active_cell() {return *active_cells_.begin();} //TODO: check
 		inline typename TState::TPtr &virtual_cell() {return virtual_cell_;}
 		inline typename TTransform::TPtr &virtual_transistion() {return virtual_transistion_;}
@@ -63,6 +64,8 @@ namespace cob_3d_experience_mapping {
 		inline const TEnergy &last_energy_max() const {return last_energy_max_;}
 		inline TEnergy &last_energy_max() {return last_energy_max_;}
 
+		inline void set_energy_max(const TEnergy &e) {energy_max_=e;}
+		
 		template<class TIter>
 		void apply_energy_change(const TIter &begin, const TIter &end)
 		{

@@ -15,6 +15,7 @@ namespace cob_3d_experience_mapping {
 		TEnergyFactor algo2_inhibition_constant_;
 		
 		TDist prox_thr_;
+		typename TDist::Scalar energy_const_;
 
 		//visualization
 		std_msgs::ColorRGBA vis_color_cell_;
@@ -34,6 +35,7 @@ namespace cob_3d_experience_mapping {
 			//algo2_inhibition_constant_ = config.algo2_inhibition_constant;
 			prox_thr_(0) = config.translation;
 			prox_thr_(1) = config.rotation;
+			energy_const_ = config.energy_constant;
 
 			ROS_INFO("updated settings");
 		}

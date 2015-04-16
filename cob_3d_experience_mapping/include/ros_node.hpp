@@ -112,6 +112,7 @@ public:
 	  } else
 		  ROS_INFO("skipped odom");
 	  time_last_odom_ = odom->header.stamp;
+	  printf("\n");
   }
 };
 

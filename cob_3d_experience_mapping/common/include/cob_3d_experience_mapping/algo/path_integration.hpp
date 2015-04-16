@@ -25,125 +25,134 @@ void init(TGraph &graph, TContext &ctxt, TMapCells &cells, TMapTransformations &
 
 	typename TContext::TState::TPtr cell(new TState);
 	cell->energy() = 1;
-	ctxt.active_cells().insert(cell);
+	ctxt.active_cells().push_back(cell);
 	insert_cell(graph, cells, trans, cell);
 
 	//ctxt.virtual_cell().reset(new TState);
 	//insert_cell<TTransformation>(graph, cells, trans, ctxt.virtual_cell(), ctxt.current_active_cell());
 }
+		
+template<typename TStatePtr, typename TEnergy, typename TContext, typename TGraph, typename TCells, typename TTrans, typename TAction>
+TEnergy inflow(TStatePtr &th, const TEnergy &offset, const TContext &ctxt, const TGraph &graph, const TCells &cells, const TTrans &trans, const TAction &odom) /*const*/ {
+	TEnergy I = 0;
+	for(typename TStatePtr::element_type::TArcIterator ait(th->edge_begin(graph)); ait!=th->edge_end(graph); ++ait) {
+		TStatePtr opposite = cells[th->opposite_node(graph, ait)];
+		const typename TAction::TType trans_fact = trans[ait]->directed(th).transition_factor_dbg(odom, ctxt.param().prox_thr_);
+		ROS_ASSERT_MSG(trans_fact==0 || (opposite->outflow()>=0 && opposite->outflow()<=1), "outflow %f out of bounds [0,1] (d=%f)", opposite->outflow(), trans_fact);
+		
+		I = std::max(I, trans_fact*opposite->outflow());
+	}
+	ROS_INFO("inflow %f", I);
+	I-=offset;
+	
+	//TODO: add sensor input here
+	//I += p*(1-energy());
+	
+	return I;
+}
 
-template<class TIter, class TEnergyFactor, class TArcIter, class TGraph, class TContext, class TResultList, class TMapCells, class TMapTransformations, class TTransformation>
-void path_integration(const TIter &begin, const TIter &end/*, const TEnergyFactor &weight*/, TGraph &graph, TContext &ctxt, TMapCells &cells, TMapTransformations &trans, const TTransformation &odom, TResultList &result)
+template<class TStatePtr>
+bool energy_order(const TStatePtr &a, const TStatePtr &b) {
+	return a->energy()>b->energy();
+}
+
+template<class TCellVector, class TEnergyFactor, class TArcIter, class TGraph, class TContext, class TResultList, class TMapCells, class TMapTransformations, class TTransformation>
+void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/, TGraph &graph, TContext &ctxt, TMapCells &cells, TMapTransformations &trans, const TTransformation &odom, TResultList &result)
 {
 	typedef typename TContext::TState TState;
+	typedef typename TCellVector::iterator TIter;
+	
+	//...
+	TIter begin = active_cells.begin();
+	TIter end   = active_cells.end();
+	/*for(TIter it=begin; it!=end; it++) {
+		if(!ctxt.current_active_cell() || ctxt.current_active_cell()->energy()<(*it)->energy())
+			ctxt.current_active_cell() = *it;
+	}*/
+	std::sort(begin, end, energy_order<typename TCellVector::value_type>);
+	ctxt.set_energy_max( ctxt.current_active_cell()->energy() );
+	//...
 	
 	ROS_ASSERT(ctxt.active_cells().size()>0);
 	ROS_ASSERT(ctxt.current_active_cell());
 
-	if(ctxt.last_active_cell()!=ctxt.current_active_cell() || ctxt.last_energy_max() < ctxt.energy_max()) {
-		ROS_INFO("resetting virtual cell");
+	if(!ctxt.virtual_cell() || ctxt.last_active_cell()!=ctxt.current_active_cell() || ctxt.last_energy_max() <= ctxt.energy_max()) {
+		ROS_INFO("resetting virtual cell %d %d (%f %f)",
+			(int)(ctxt.last_active_cell()!=ctxt.current_active_cell()),
+			(int)(ctxt.last_energy_max() <= ctxt.energy_max()),
+			ctxt.last_energy_max(), ctxt.energy_max()
+		);
+		
+		for(TIter it=active_cells.begin(); it!=active_cells.end(); it++)
+			if(*it == ctxt.virtual_cell())
+				active_cells.erase(it);
 
 		remove_cell(graph, ctxt.virtual_cell());
 		ctxt.virtual_cell().reset(new TState);
 		insert_cell(graph, cells, trans, ctxt.virtual_cell());
 		ctxt.virtual_transistion().reset(new TTransformation(ctxt.current_active_cell()));
+		insert_transistion(graph, trans, ctxt.virtual_cell(), ctxt.virtual_transistion());
 
 		ctxt.last_energy_max()  = ctxt.energy_max();
 		ctxt.last_active_cell() = ctxt.current_active_cell();
+		
+		active_cells.push_back(ctxt.virtual_cell());
 	}
+	
+	begin = active_cells.begin();
+	end   = active_cells.end();
 	
 	ROS_ASSERT(ctxt.virtual_cell());
 	ROS_ASSERT(ctxt.virtual_transistion());
 
-	ctxt.virtual_transistion()->integrate(2*odom);
-	ctxt.virtual_cell()->energy() += ctxt.dist2energyfactor(ctxt.virtual_transistion()->scale(ctxt.param().prox_thr_).proximity_pos(odom, ctxt.param().prox_thr_)) * ctxt.current_active_cell()->energy();
-//TODO: fix energy trans.
-#if 0
-	//if distance between last cell and new pose is greater than threshold
-	// -> generate new cell
+	ctxt.virtual_transistion()->integrate(odom);
 	
-	ctxt.relative_pose() = TTransformation::integrate_pose(ctxt.relative_pose(), odom);
-	if(std::abs(ctxt.relative_pose())>ctxt.param_step_threshold()) {
-		add_cell(ctxt.last_cell(), ctxt.relative_pose());
-		ctxt.relative_pose() = 0;
-	}
+	ctxt.virtual_transistion()->dbg();
+	ROS_INFO("virtual energy 1: %f", ctxt.virtual_cell()->energy());
 
-	// iterate through all states with e>0
-	// spread energy (dependent on distance)
+	if(ctxt.virtual_transistion()->dist(ctxt.param().prox_thr_)>=1) {
+		ROS_INFO("virtual cell is inserted to map (action dist.: %f)", ctxt.virtual_transistion()->dist(ctxt.param().prox_thr_));
 
-	typedef typename TTransformation::TDist TDist;
-	
-	std::vector<TDist> mem_dists;
-	for(TIter it=begin; it!=end; it++) {
-		TDist sum_dists = 0;
-		mem_dists.clear();
-		
-		for(TArcIter ait(it->edge_begin(graph)); ait!=it->edge_end(graph); ++ait) {			
-			typename TIter::value_type opposite = it->opposite_node(ait);
-			mem_dists.push_back(ait->directed(*it).proximity(odom));
-			sum_dists += mem_dists.back();
-		}
-		
-		typename std::vector<TDist>::const_iterator dit = mem_dists.begin();
-		for(TArcIter ait(it->edge_begin(graph)); ait!=it->edge_end(graph); ++ait, dit++) {
-			typename TIter::value_type opposite = it->opposite_node(ait);
-			result.push_back(opposite, weight* ((*dit)/sum_dists)  * it->energy());
-		}
-		
-	}
-#endif
-
-	for(TIter it=begin; it!=end; it++) {
-
-		//transfer energy from here to all connected cells
-		for(TArcIter ait((*it)->edge_begin(graph)); ait!=(*it)->edge_end(graph); ++ait) {
-			ROS_INFO("energy transistion by odom (pos): %f", trans[ait]->directed(*it).proximity_pos(odom, ctxt.param().prox_thr_) * (*it)->energy());
-			typename TIter::value_type opposite = cells[(*it)->opposite_node(graph, ait)];
-			result.push_back(typename TResultList::value_type(opposite,
-					ctxt.dist2energyfactor(trans[ait]->directed(*it).proximity_pos(odom, ctxt.param().prox_thr_)) * (*it)->energy()
-			));
-		}
-
-		ROS_INFO("energy transistion by odom (neg): %f", odom.proximity_neg(ctxt.param().prox_thr_) * (*it)->energy());
-
-		//remove energy from this node as it would be ideally moved forward
-		result.push_back(typename TResultList::value_type(*it, -ctxt.dist2energyfactor(odom.proximity_neg(ctxt.param().prox_thr_)= * (*it)->energy()));
-	}
-
-
-	ROS_INFO("virtual energy: %f", ctxt.virtual_cell()->energy());
-
-	if(ctxt.virtual_transistion()>=) {//ctxt.current_active_cell()->energy() < ctxt.virtual_cell()->energy()) {
-		ROS_INFO("virtual cell is inserted to map");
-
-		insert_transistion(graph, trans, ctxt.virtual_cell(), ctxt.virtual_transistion());
-		ctxt.last_active_cell() = ctxt.virtual_cell();
-		ctxt.virtual_cell().reset(new TState);
-		insert_cell(graph, cells, trans, ctxt.virtual_cell());
+		ctxt.virtual_cell().reset();
 	}
 	
 	//-----------------------------------------------
 	
 	//calc. loss (depends only on action)
-	ROS_ASSERT(odom.dist()>=0);
+	ROS_ASSERT(odom.dist(ctxt.param().prox_thr_)>=0);
 	
 	size_t remaining = 0;
 	for(TIter it=begin; it!=end; it++) {
-		(*it)->loss() = (*it)->energy()*(1 - 1/std::pow(4, odom.dist()));
+		(*it)->loss() = (*it)->energy()*(1 - 1/std::pow(4, odom.dist(ctxt.param().prox_thr_)));
 		(*it)->outflow() = -1; //not set yet!
 		++remaining;
+		
+		ROS_INFO("loss %f (from %f)", (*it)->loss(), (*it)->energy());
 	}
 		
 	while(remaining>0) {
 		TIter it_min=end;
 		//expected max. outflow
 		for(TIter it=begin; it!=end; it++) {
+			if((*it)->outflow()!=-1) continue;	//already done
+			
+			ROS_INFO("<<<<<<<<<<<<<<");
 			(*it)->outflow_em() = 0;
 			for(TArcIter ait((*it)->edge_begin(graph)); ait!=(*it)->edge_end(graph); ++ait) {
 				typename TIter::value_type opposite = cells[(*it)->opposite_node(graph, ait)];
+				
+				ROS_INFO("%f %f %f",
+					opposite->outflow(),
+					opposite->loss(),
+					trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_));
+				
 				if(opposite->outflow()==-1)
-					(*it)->outflow_em() = std::max((*it)->outflow_em(), opposite->loss()*transistion_factor);
+					(*it)->outflow_em() = std::max((*it)->outflow_em(),
+					trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_)
+					*opposite->loss());
 			}
+			ROS_INFO(">>>>>>>>>>>>>>>");
+			
 			if((*it)->outflow_em()==0) {
 				(*it)->outflow() = 0;
 				it_min = it;
@@ -154,9 +163,11 @@ void path_integration(const TIter &begin, const TIter &end/*, const TEnergyFacto
 				it_min = it;
 		}
 		
+		ROS_INFO("min. outflow em: %f", (*it_min)->outflow_em());
+		
 		//todo... improve speed by sorted map, now just proof of concept
 		
-		typename TState::TEnergy D = (*it_min)->loss()-(*it_min)->inflow((*it_min)->outflow_em(), cells, odom);
+		typename TState::TEnergy D = (*it_min)->loss()-inflow(*it_min, (*it_min)->outflow_em(), ctxt, graph, cells, trans, odom);
 		
 		//calc. outflow
 		(*it_min)->outflow() = std::max((typename TState::TEnergy)0, D);
@@ -164,8 +175,9 @@ void path_integration(const TIter &begin, const TIter &end/*, const TEnergyFacto
 		
 		//calc. energy delta
 		(*it_min)->energy() -= D;
-		ROS_ASSERT( (*it_min)->energy()>=0 && (*it_min)->energy()<=1 );
+		ROS_ASSERT_MSG( (*it_min)->energy()>=0 && (*it_min)->energy()<=1, "energy %f is out of bound [0,1]", (*it_min)->energy() );
 		
 		--remaining;
 	}
+
 }
