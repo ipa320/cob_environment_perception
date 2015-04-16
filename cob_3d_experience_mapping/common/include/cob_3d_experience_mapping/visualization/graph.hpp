@@ -6,7 +6,7 @@
 namespace cob_3d_experience_mapping {
 	namespace visualization {
 	
-		template<class TGraph, class TMapCells, class TNode, class TArcIter>
+		template<class TGraph, class TMapCells, class TMapTransformations, class TNode, class TArcIter>
 		struct VisualizationHandler {
 			static void init() {
 				cob_3d_visualization::RvizMarkerManager::get()
@@ -24,15 +24,17 @@ namespace cob_3d_experience_mapping {
 			
 			typedef std::map<const TNode*, bool> TVisitedList;
 			
-			void visualize(const TGraph &graph, const TMapCells &cells, const TNode &start_node) {
+			void visualize(const TGraph &graph, const TMapCells &cells, TMapTransformations &trans, const TNode &start_node) {
 				TVisitedList visited;
-				rec_vis(graph, cells, start_node, visited);
+				rec_vis(graph, cells, trans, start_node, visited);
 			}
 			
 		private:
 			template<class TMeta> static void visualize_meta(const TNode &act_node, const TMeta &meta, const Eigen::Vector3f &pos) {/*dummy*/}
 			
 			void visualize_node(const TNode &act_node, const Eigen::Vector3f &pos) {
+				ROS_INFO("visualize_node");
+
 				{
 					cob_3d_visualization::RvizMarker scene;
 					scene.sphere(pos);
@@ -44,10 +46,12 @@ namespace cob_3d_experience_mapping {
 				//visualize_meta(act_node, act_node.meta(), pos);
 			}
 			
-			bool rec_vis(const TGraph &graph, const TMapCells &cells, const TNode &act_node, TVisitedList &visted, const int depth=-1, const Eigen::Vector3f &pos=Eigen::Vector3f::Zero()) {
+			bool rec_vis(const TGraph &graph, const TMapCells &cells, TMapTransformations &trans, const TNode &act_node, TVisitedList &visted, const int depth=-1, const Eigen::Vector3f &pos=Eigen::Vector3f::Zero()) {
 				//only visited each node once
-				if(!act_node || depth==0 || visted.find(&act_node)!=visted.end())
+				if(!act_node || depth==0 || visted.find(&act_node)!=visted.end()) {
+					ROS_INFO("skip vis.");
 					return false;
+				}
 				cob_3d_visualization::RvizMarkerManager::get().clear();
 
 				visted[&act_node] = true;
@@ -58,8 +62,8 @@ namespace cob_3d_experience_mapping {
 				for(TArcIter ait(act_node->edge_begin(graph)); ait!=act_node->edge_end(graph); ++ait) {
 					TNode opposite = cells[act_node->opposite_node(graph, ait)];
 					
-					Eigen::Vector3f new_pos = pos;// + ;
-					if(rec_vis(graph, cells, opposite, visted, depth-1, new_pos)) {
+					Eigen::Vector3f new_pos = pos;// + trans[ait]->;
+					if(rec_vis(graph, cells, trans, opposite, visted, depth-1, new_pos)) {
 						cob_3d_visualization::RvizMarker scene;
 						scene.line(pos, new_pos);
 					}

@@ -113,12 +113,59 @@ void path_integration(const TIter &begin, const TIter &end/*, const TEnergyFacto
 
 	ROS_INFO("virtual energy: %f", ctxt.virtual_cell()->energy());
 
-	if(ctxt.current_active_cell()->energy() < ctxt.virtual_cell()->energy()) {
+	if(ctxt.virtual_transistion()>=) {//ctxt.current_active_cell()->energy() < ctxt.virtual_cell()->energy()) {
 		ROS_INFO("virtual cell is inserted to map");
 
 		insert_transistion(graph, trans, ctxt.virtual_cell(), ctxt.virtual_transistion());
 		ctxt.last_active_cell() = ctxt.virtual_cell();
 		ctxt.virtual_cell().reset(new TState);
 		insert_cell(graph, cells, trans, ctxt.virtual_cell());
+	}
+	
+	//-----------------------------------------------
+	
+	//calc. loss (depends only on action)
+	ROS_ASSERT(odom.dist()>=0);
+	
+	size_t remaining = 0;
+	for(TIter it=begin; it!=end; it++) {
+		(*it)->loss() = (*it)->energy()*(1 - 1/std::pow(4, odom.dist()));
+		(*it)->outflow() = -1; //not set yet!
+		++remaining;
+	}
+		
+	while(remaining>0) {
+		TIter it_min=end;
+		//expected max. outflow
+		for(TIter it=begin; it!=end; it++) {
+			(*it)->outflow_em() = 0;
+			for(TArcIter ait((*it)->edge_begin(graph)); ait!=(*it)->edge_end(graph); ++ait) {
+				typename TIter::value_type opposite = cells[(*it)->opposite_node(graph, ait)];
+				if(opposite->outflow()==-1)
+					(*it)->outflow_em() = std::max((*it)->outflow_em(), opposite->loss()*transistion_factor);
+			}
+			if((*it)->outflow_em()==0) {
+				(*it)->outflow() = 0;
+				it_min = it;
+				break;
+			}
+			
+			if(it_min==end || (*it_min)->outflow_em()>(*it)->outflow_em())
+				it_min = it;
+		}
+		
+		//todo... improve speed by sorted map, now just proof of concept
+		
+		typename TState::TEnergy D = (*it_min)->loss()-(*it_min)->inflow((*it_min)->outflow_em(), cells, odom);
+		
+		//calc. outflow
+		(*it_min)->outflow() = std::max((typename TState::TEnergy)0, D);
+		ROS_ASSERT( (*it_min)->outflow()>=0 && (*it_min)->outflow()<=1 );
+		
+		//calc. energy delta
+		(*it_min)->energy() -= D;
+		ROS_ASSERT( (*it_min)->energy()>=0 && (*it_min)->energy()<=1 );
+		
+		--remaining;
 	}
 }
