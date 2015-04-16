@@ -26,7 +26,9 @@ namespace cob_3d_experience_mapping {
 			
 			void visualize(const TGraph &graph, const TMapCells &cells, TMapTransformations &trans, const TNode &start_node) {
 				TVisitedList visited;
+				cob_3d_visualization::RvizMarkerManager::get().clear();
 				rec_vis(graph, cells, trans, start_node, visited);
+				cob_3d_visualization::RvizMarkerManager::get().publish();
 			}
 			
 		private:
@@ -35,10 +37,19 @@ namespace cob_3d_experience_mapping {
 			void visualize_node(const TNode &act_node, const Eigen::Vector3f &pos) {
 				ROS_INFO("visualize_node");
 
+				const double e = act_node->energy();
 				{
 					cob_3d_visualization::RvizMarker scene;
 					scene.sphere(pos);
-					scene.color(0.1,1.,0.1);
+					scene.color(1-e,e,0.);
+				}
+				
+				{
+					cob_3d_visualization::RvizMarker scene;
+					char buf[128];
+					sprintf(buf, "e=%.3f", e);
+					scene.text(buf);
+					scene.move(pos);
 				}
 				
 				//TODO: visualize orientation
@@ -52,24 +63,24 @@ namespace cob_3d_experience_mapping {
 					ROS_INFO("skip vis.");
 					return false;
 				}
-				cob_3d_visualization::RvizMarkerManager::get().clear();
 
 				visted[&act_node] = true;
 				
 				visualize_node(act_node, pos);
 				
-				 //go through all edges
+				//go through all edges
 				for(TArcIter ait(act_node->edge_begin(graph)); ait!=act_node->edge_end(graph); ++ait) {
 					TNode opposite = cells[act_node->opposite_node(graph, ait)];
 					
-					Eigen::Vector3f new_pos = pos;// + trans[ait]->;
+					Eigen::Vector2f off2d = trans[ait]->translation();
+					Eigen::Vector3f off; off(2)=0; off.head<2>() = off2d;
+					Eigen::Vector3f new_pos = pos + off;
 					if(rec_vis(graph, cells, trans, opposite, visted, depth-1, new_pos)) {
 						cob_3d_visualization::RvizMarker scene;
 						scene.line(pos, new_pos);
 					}
 				}
 
-				cob_3d_visualization::RvizMarkerManager::get().publish();
 				return true;
 			}
 		};
