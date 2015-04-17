@@ -83,11 +83,20 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 			ctxt.last_energy_max(), ctxt.energy_max()
 		);
 		
-		for(TIter it=active_cells.begin(); it!=active_cells.end(); it++)
-			if(*it == ctxt.virtual_cell())
-				active_cells.erase(it);
+		if(ctxt.current_active_cell()==ctxt.virtual_cell()) {
+			ROS_INFO("virtual cell is inserted to map (action dist.: %f)", ctxt.virtual_transistion()->dist(ctxt.param().prox_thr_));
+			ctxt.virtual_transistion()->dbg();
+		}
+		else {
+			for(TIter it=active_cells.begin(); it!=active_cells.end(); it++)
+				if(*it == ctxt.virtual_cell()) {
+					active_cells.erase(it);
+					break;
+				}
 
-		remove_cell(graph, ctxt.virtual_cell());
+			remove_cell(graph, ctxt.virtual_cell());
+		}
+		
 		ctxt.virtual_cell().reset(new TState);
 		insert_cell(graph, cells, trans, ctxt.virtual_cell());
 		ctxt.virtual_transistion().reset(new TTransformation(ctxt.current_active_cell()));
@@ -107,14 +116,17 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 
 	ctxt.virtual_transistion()->integrate(odom);
 	
+	ctxt.virtual_cell()->dbg().info_+="V ";
+	ctxt.current_active_cell()->dbg().info_+="C ";
+	
 	ctxt.virtual_transistion()->dbg();
 	ROS_INFO("virtual energy 1: %f", ctxt.virtual_cell()->energy());
 
-	if(ctxt.virtual_transistion()->dist(ctxt.param().prox_thr_)>=1) {
+	/*if(ctxt.virtual_transistion()->dist(ctxt.param().prox_thr_)>=1) {
 		ROS_INFO("virtual cell is inserted to map (action dist.: %f)", ctxt.virtual_transistion()->dist(ctxt.param().prox_thr_));
 
 		ctxt.virtual_cell().reset();
-	}
+	}*/
 	
 	//-----------------------------------------------
 	
@@ -123,11 +135,11 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 	
 	size_t remaining = 0;
 	for(TIter it=begin; it!=end; it++) {
-		(*it)->loss() = (*it)->energy()*(1 - 1/std::pow(4, odom.dist(ctxt.param().prox_thr_)));
+		(*it)->loss() = (*it)->energy()*(1 - 1/std::pow(2, odom.dist(ctxt.param().prox_thr_)));
 		(*it)->outflow() = -1; //not set yet!
 		++remaining;
 		
-		ROS_INFO("loss %f (from %f)", (*it)->loss(), (*it)->energy());
+		ROS_INFO("loss %f (from %f, d=%f)\t\t%s %s", (*it)->loss(), (*it)->energy(), odom.dist(ctxt.param().prox_thr_), (*it)->dbg().name_.c_str(), (*it)->dbg().info_.c_str());
 	}
 		
 	while(remaining>0) {
@@ -167,17 +179,35 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		
 		//todo... improve speed by sorted map, now just proof of concept
 		
-		typename TState::TEnergy D = (*it_min)->loss()-inflow(*it_min, (*it_min)->outflow_em(), ctxt, graph, cells, trans, odom);
+		typename TState::TEnergy I = inflow(*it_min, (*it_min)->outflow_em(), ctxt, graph, cells, trans, odom);
+		typename TState::TEnergy D = (*it_min)->loss();//-I;
 		
 		//calc. outflow
 		(*it_min)->outflow() = std::max((typename TState::TEnergy)0, D);
 		ROS_ASSERT( (*it_min)->outflow()>=0 && (*it_min)->outflow()<=1 );
 		
 		//calc. energy delta
-		(*it_min)->energy() -= D;
+		ROS_INFO("e=%f I=%f L=%f\t\t%s %s", (*it_min)->energy(), I, (*it_min)->loss(), (*it_min)->dbg().name_.c_str(), (*it_min)->dbg().info_.c_str());
+		if((*it_min)->loss()>I)
+			(*it_min)->energy() -= (*it_min)->loss();
+		else
+			(*it_min)->energy() += I;//-(*it_min)->outflow();
+		
+		/*if((*it_min)->loss()>2*I)
+			(*it_min)->energy() -= (*it_min)->loss();
+		else
+			(*it_min)->energy() += I;*/
+			
 		ROS_ASSERT_MSG( (*it_min)->energy()>=0 && (*it_min)->energy()<=1, "energy %f is out of bound [0,1]", (*it_min)->energy() );
 		
 		--remaining;
 	}
 
+	ROS_INFO("summary:");
+	double dbg_sum=0;
+	for(TIter it=begin; it!=end; it++) {
+		ROS_INFO("e=%f\t\t%s %s", (*it)->energy(), (*it)->dbg().name_.c_str(), (*it)->dbg().info_.c_str());
+		dbg_sum += (*it)->energy();
+	}
+	ROS_INFO("sum e=%f", dbg_sum);
 }

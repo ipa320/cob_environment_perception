@@ -15,6 +15,11 @@ namespace cob_3d_experience_mapping {
 		TMeta meta_;
 	};
 	
+	struct DbgInfo {
+		std::string name_;
+		std::string info_;
+	};
+	
 	/**
 	 * class: State
 	 * short description: current state + activation --> Artificial Neuron
@@ -32,9 +37,15 @@ namespace cob_3d_experience_mapping {
 	protected:
 		TEnergy energy_, loss_, outflow_, outflow_em_;
 		TNode node_;
+		DbgInfo dbg_;
 		
 	public:		
-		State(): energy_(0), loss_(0), outflow_(0), outflow_em_(0) {}
+		State(): energy_(0), loss_(0), outflow_(0), outflow_em_(0) {
+			static int no = 1;
+			char buf[128];
+			sprintf(buf, "%d", no++);
+			dbg_.name_ = buf;
+		}
 		
 		//setter/getter
 		inline TEnergy &energy() {return energy_;}
@@ -52,6 +63,9 @@ namespace cob_3d_experience_mapping {
 		inline void set_node(const TNode &node) {node_ = node;}
 		inline TNode &node() {return node_;}
 	
+		inline DbgInfo &dbg() {return dbg_;}
+		inline const DbgInfo &dbg() const {return dbg_;}
+		
 		//graph operations
 		inline TArcIterator edge_begin(const TGraph &graph) {
 			return TArcIterator(graph, node_);

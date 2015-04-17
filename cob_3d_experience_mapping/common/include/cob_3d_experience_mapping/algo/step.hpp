@@ -40,8 +40,10 @@ void step(TGraph &graph, TContext &context, TMapCells &cells, TMapTransformation
 
 	typedef std::vector<typename TState::TPtr> TCellVector;
 	context.active_cells().clear();
-	for(typename TGraph::NodeIt it(graph); it!=lemon::INVALID; ++it)
+	for(typename TGraph::NodeIt it(graph); it!=lemon::INVALID; ++it) {
 		context.active_cells().push_back(cells[it]);
+		cells[it]->dbg().info_="";
+	}
 
 	path_integration<
 		TCellVector, typename TContext::TEnergyFactor, typename TState::TArcIterator,
