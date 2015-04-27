@@ -35,12 +35,12 @@ namespace cob_3d_experience_mapping {
 		typedef TGraph::OutArcIt TArcIterator;
 		typedef boost::shared_ptr<State> TPtr;
 	protected:
-		TEnergy energy_, loss_, outflow_, outflow_em_;
+		TEnergy do_, dh_;
 		TNode node_;
 		DbgInfo dbg_;
 		
 	public:		
-		State(): energy_(0), loss_(0), outflow_(0), outflow_em_(0) {
+		State(): do_(0), dh_(0) {
 			static int no = 1;
 			char buf[128];
 			sprintf(buf, "%d", no++);
@@ -48,17 +48,15 @@ namespace cob_3d_experience_mapping {
 		}
 		
 		//setter/getter
-		inline TEnergy &energy() {return energy_;}
-		inline const TEnergy &energy() const {return energy_;}
+		inline TEnergy &dist_o() {return do_;}
+		inline const TEnergy &dist_o() const {return do_;}
 		
-		inline TEnergy &loss() {return loss_;}
-		inline const TEnergy &loss() const {return loss_;}
+		inline TEnergy &dist_h() {return dh_;}
+		inline const TEnergy &dist_h() const {return dh_;}
 		
-		inline TEnergy &outflow() {return outflow_;}
-		inline const TEnergy &outflow() const {return outflow_;}
+		inline TEnergy d() const {return std::sqrt(d2());}
 		
-		inline TEnergy &outflow_em() {return outflow_em_;}
-		inline const TEnergy &outflow_em() const {return outflow_em_;}
+		inline TEnergy d2() const {return do_*do_ + dh_*dh_;}
 		
 		inline void set_node(const TNode &node) {node_ = node;}
 		inline TNode &node() {return node_;}
@@ -81,7 +79,7 @@ namespace cob_3d_experience_mapping {
 		
 		//operators
 		inline bool operator>(const State &o) {
-			return energy()>o.energy();
+			return d2()<o.d2();
 		}
 	};
 	

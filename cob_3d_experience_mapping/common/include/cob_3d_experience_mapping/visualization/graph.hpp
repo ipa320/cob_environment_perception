@@ -37,7 +37,7 @@ namespace cob_3d_experience_mapping {
 			void visualize_node(const TNode &act_node, const Eigen::Vector3f &pos) {
 				ROS_INFO("visualize_node");
 
-				const double e = act_node->energy();
+				const double e = act_node->dist_h()*2;
 				{
 					cob_3d_visualization::RvizMarker scene;
 					scene.sphere(pos);

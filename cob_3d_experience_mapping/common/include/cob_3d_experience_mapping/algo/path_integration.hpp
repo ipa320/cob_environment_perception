@@ -24,7 +24,7 @@ void init(TGraph &graph, TContext &ctxt, TMapCells &cells, TMapTransformations &
 	typedef typename TContext::TState TState;
 
 	typename TContext::TState::TPtr cell(new TState);
-	cell->energy() = 1;
+	//cell->energy() = 1;
 	ctxt.active_cells().push_back(cell);
 	insert_cell(graph, cells, trans, cell);
 
@@ -53,7 +53,7 @@ TEnergy inflow(TStatePtr &th, const TEnergy &offset, const TContext &ctxt, const
 
 template<class TStatePtr>
 bool energy_order(const TStatePtr &a, const TStatePtr &b) {
-	return a->energy()>b->energy();
+	return a->d2() < b->d2();
 }
 
 template<class TCellVector, class TEnergyFactor, class TArcIter, class TGraph, class TContext, class TResultList, class TMapCells, class TMapTransformations, class TTransformation>
@@ -61,6 +61,99 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 {
 	typedef typename TContext::TState TState;
 	typedef typename TCellVector::iterator TIter;
+	
+	ROS_ASSERT(ctxt.active_cells().size()>0);
+	ROS_ASSERT(ctxt.current_active_cell());
+
+	if(!ctxt.virtual_cell() || (ctxt.last_active_cell()!=ctxt.current_active_cell()&&ctxt.current_active_cell()->dist_h()<=0) || ctxt.virtual_cell()->dist_h()<=0) {
+		ROS_INFO("resetting virtual cell %d (%f %f)",
+			(int)(ctxt.last_active_cell()!=ctxt.current_active_cell()),
+			ctxt.virtual_cell()?ctxt.virtual_cell()->dist_h():0., ctxt.virtual_cell()?ctxt.virtual_cell()->dist_o():0.
+		);
+		
+		if(ctxt.current_active_cell()==ctxt.virtual_cell()) {
+			ROS_INFO("virtual cell is inserted to map (action dist.: %f)", ctxt.virtual_transistion()->dist(ctxt.param().prox_thr_));
+			ctxt.virtual_transistion()->dbg();
+		}
+		else {
+			for(TIter it=active_cells.begin(); it!=active_cells.end(); it++)
+				if(*it == ctxt.virtual_cell()) {
+					active_cells.erase(it);
+					break;
+				}
+
+			remove_cell(graph, ctxt.virtual_cell());
+		}
+		
+		ctxt.virtual_cell().reset(new TState);
+		ctxt.virtual_cell()->dist_h() = ctxt.param().prox_thr_(0);	//TODO: check here
+		ctxt.virtual_cell()->dist_o() = ctxt.current_active_cell()->dist_o();
+		
+		insert_cell(graph, cells, trans, ctxt.virtual_cell());
+		ctxt.virtual_transistion().reset(new TTransformation(ctxt.current_active_cell()));
+		insert_transistion(graph, trans, ctxt.virtual_cell(), ctxt.virtual_transistion());
+
+		ctxt.last_active_cell() = ctxt.current_active_cell();
+		
+		active_cells.push_back(ctxt.virtual_cell());
+	}
+	
+	ROS_ASSERT(ctxt.virtual_cell());
+	ROS_ASSERT(ctxt.virtual_transistion());
+
+	ctxt.virtual_transistion()->integrate(odom);
+	
+	{ //DEBUG
+		ctxt.virtual_cell()->dbg().info_+="V ";
+		ctxt.current_active_cell()->dbg().info_+="C ";
+		
+		ctxt.virtual_transistion()->dbg();
+	} //DEBUG
+	
+	
+	TIter begin = active_cells.begin();
+	TIter end   = active_cells.end();
+	
+	//step 1: set min. dist.
+	for(TIter it=begin; it!=end; it++) {
+		typename TState::TEnergy dh_max = 0;
+		
+		for(TArcIter ait((*it)->edge_begin(graph)); ait!=(*it)->edge_end(graph); ++ait) {
+				typename TIter::value_type opposite = cells[(*it)->opposite_node(graph, ait)];
+				if(opposite->dist_h()>0) continue;
+				
+				if( trans[ait]!=ctxt.virtual_transistion() && 
+					std::pow(trans[ait]->dist(ctxt.param().prox_thr_),2) + std::pow(opposite->dist_o(),2)
+					<
+					(*it)->d2()
+				) {
+					ROS_INFO("setting dist from %f/%f to %f/%f",
+						(*it)->dist_h(), (*it)->dist_o(),
+						trans[ait]->dist(ctxt.param().prox_thr_), opposite->dist_o());
+						
+					(*it)->dist_h() = trans[ait]->dist(ctxt.param().prox_thr_);
+					(*it)->dist_o() = opposite->dist_o();
+				}
+		}
+	}
+	
+	//step 2: increase dist.
+	for(TIter it=begin; it!=end; it++) {
+		typename TState::TEnergy dh_max = 0;
+		
+		for(TArcIter ait((*it)->edge_begin(graph)); ait!=(*it)->edge_end(graph); ++ait) {
+			dh_max = std::max(dh_max, trans[ait]->directed(*it).transition_factor_dbg(odom, ctxt.param().prox_thr_) );
+		}
+		
+		const typename TState::TEnergy delta = std::min((*it)->dist_h(), dh_max);
+		(*it)->dist_h() -= delta;
+		(*it)->dist_o() += std::sqrt(std::pow(odom.dist(ctxt.param().prox_thr_),2)-delta*delta);
+		
+		ROS_INFO("changing dist(%f/%f) by (%f/%f)", (*it)->dist_h(),(*it)->dist_o(), delta, std::sqrt(std::pow(odom.dist(ctxt.param().prox_thr_),2)-delta*delta));
+		ROS_ASSERT((std::pow(odom.dist(ctxt.param().prox_thr_),2)-delta*delta)>=0);
+	}
+	
+#if 0
 	
 	//...
 	TIter begin = active_cells.begin();
@@ -210,4 +303,5 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		dbg_sum += (*it)->energy();
 	}
 	ROS_INFO("sum e=%f", dbg_sum);
+#endif
 }

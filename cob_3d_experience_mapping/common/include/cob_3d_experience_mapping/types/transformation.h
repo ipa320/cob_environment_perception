@@ -141,7 +141,8 @@ namespace cob_3d_experience_mapping {
 			
 			Eigen::Matrix<TType, NUM_TRANS, 1> A = link_.template head<NUM_TRANS>();
 			Eigen::Matrix<TType, NUM_TRANS, 1> B = o.link_.template head<NUM_TRANS>();
-			A.normalize(); B.normalize();
+			A.normalize();
+			//B.normalize();
 			r(0) = std::max((TType)0, -A.dot(B));
 			
 			//TODO:

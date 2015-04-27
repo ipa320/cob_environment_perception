@@ -59,17 +59,17 @@ namespace cob_3d_experience_mapping {
 		inline typename TTransform::TPtr &virtual_transistion() {return virtual_transistion_;}
 		inline typename TState::TPtr &last_active_cell() {return last_active_cell_;}
 		
-		inline const TEnergy &energy_sum() const {return energy_sum_;}
-		inline const TEnergy &energy_max() const {return energy_max_;}
-		inline const TEnergy &last_energy_max() const {return last_energy_max_;}
-		inline TEnergy &last_energy_max() {return last_energy_max_;}
+		//inline const TEnergy &energy_sum() const {return energy_sum_;}
+		//inline const TEnergy &energy_max() const {return energy_max_;}
+		//inline const TEnergy &last_energy_max() const {return last_energy_max_;}
+		//inline TEnergy &last_energy_max() {return last_energy_max_;}
 
-		inline void set_energy_max(const TEnergy &e) {energy_max_=e;}
+		//inline void set_energy_max(const TEnergy &e) {energy_max_=e;}
 		
 		template<class TIter>
 		void apply_energy_change(const TIter &begin, const TIter &end)
 		{
-			ROS_INFO("apply_energy_change");
+			/*ROS_INFO("apply_energy_change");
 
 			//remember all cells with (changed) energy
 			typedef std::map<typename TState::TPtr, typename TState::TPtr> TMem;
@@ -98,7 +98,7 @@ namespace cob_3d_experience_mapping {
 					
 			update_max_energy();
 
-			ROS_INFO("new max energy: %f", energy_max());
+			ROS_INFO("new max energy: %f", energy_max());*/
 		}
 		
 	};
