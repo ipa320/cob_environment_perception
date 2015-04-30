@@ -182,5 +182,13 @@ namespace cob_3d_experience_mapping {
 			printf("\n");
 		}
 		
+		typename Transform<TType,3,Eigen::Affine> affine() const {
+			BOOST_STATIC_ASSERT(NUM_TRANS<=3);
+			BOOST_STATIC_ASSERT(NUM_ROT==1);
+			
+			return Eigen::Translation<TType,NUM_TRANS>(link_.template head<NUM_TRANS>())
+					* Eigen::AngleAxis<TType> aa(link_.template tail<NUM_ROT  >()(0), Eigen::Matrix<TType, 3, 1>::UnitZ());
+		}
+		
 	};
 }
