@@ -65,7 +65,7 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 	ROS_ASSERT(ctxt.active_cells().size()>0);
 	ROS_ASSERT(ctxt.current_active_cell());
 
-	if(!ctxt.virtual_cell() || (ctxt.last_active_cell()!=ctxt.current_active_cell()&&ctxt.current_active_cell()->dist_h()<=0) || ctxt.virtual_cell()->dist_h()<=0) {
+	if(!ctxt.virtual_cell() || (ctxt.last_active_cell()!=ctxt.current_active_cell() /*&&ctxt.current_active_cell()->dist_h()<=0*/) || ctxt.current_active_cell()->d2()<ctxt.last_dist_min() || ctxt.virtual_cell()->dist_h()<=0) {
 		ROS_INFO("resetting virtual cell %d (%f %f)",
 			(int)(ctxt.last_active_cell()!=ctxt.current_active_cell()),
 			ctxt.virtual_cell()?ctxt.virtual_cell()->dist_h():0., ctxt.virtual_cell()?ctxt.virtual_cell()->dist_o():0.
@@ -86,7 +86,7 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		}
 		
 		ctxt.virtual_cell().reset(new TState);
-		ctxt.virtual_cell()->dist_h() = ctxt.param().prox_thr_(0);	//TODO: check here
+		ctxt.virtual_cell()->dist_h() = 1;
 		ctxt.virtual_cell()->dist_o() = ctxt.current_active_cell()->dist_o();
 		
 		insert_cell(graph, cells, trans, ctxt.virtual_cell());
@@ -94,6 +94,7 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		insert_transistion(graph, trans, ctxt.virtual_cell(), ctxt.virtual_transistion());
 
 		ctxt.last_active_cell() = ctxt.current_active_cell();
+		ctxt.last_dist_min() = ctxt.current_active_cell()->d2();
 		
 		active_cells.push_back(ctxt.virtual_cell());
 	}

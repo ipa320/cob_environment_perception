@@ -31,7 +31,7 @@ namespace cob_3d_experience_mapping {
 	private:
 		TActList active_cells_;
 		TParameter param_;
-		TEnergy energy_sum_, energy_max_, last_energy_max_;
+		TEnergy energy_sum_, energy_max_, last_dist_min_;
 		typename TState::TPtr last_active_cell_, virtual_cell_;
 		typename TTransform::TPtr virtual_transistion_;
 		
@@ -48,7 +48,7 @@ namespace cob_3d_experience_mapping {
 		}
 		
 	public:
-		Context() : energy_sum_(0), energy_max_(0), last_energy_max_(0) {
+		Context() : energy_sum_(0), energy_max_(0), last_dist_min_(0) {
 		}
 		
 		//getter/setter
@@ -61,8 +61,8 @@ namespace cob_3d_experience_mapping {
 		
 		//inline const TEnergy &energy_sum() const {return energy_sum_;}
 		//inline const TEnergy &energy_max() const {return energy_max_;}
-		//inline const TEnergy &last_energy_max() const {return last_energy_max_;}
-		//inline TEnergy &last_energy_max() {return last_energy_max_;}
+		inline const TEnergy &last_dist_min() const {return last_dist_min_;}
+		inline TEnergy &last_dist_min() {return last_dist_min_;}
 
 		//inline void set_energy_max(const TEnergy &e) {energy_max_=e;}
 		

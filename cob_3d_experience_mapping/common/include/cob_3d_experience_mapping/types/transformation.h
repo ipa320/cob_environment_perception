@@ -136,6 +136,16 @@ namespace cob_3d_experience_mapping {
 			return r.norm();
 		}
 		
+		template<typename T>
+		inline static T dist_rad(T v) {
+			for(int i=0; i<T::RowsAtCompileTime; i++) {
+				while(v(i)<0) v(i)+=2*M_PI;
+				while(v(i)>2*M_PI) v(i)-=2*M_PI;
+				while(v(i)>M_PI) v(i)=2*M_PI-v(i);
+			}
+			return v;
+		}
+		
 		TType transition_factor(const Transformation &o, const TDist &thr) const {
 			TDist r;
 			
@@ -143,14 +153,12 @@ namespace cob_3d_experience_mapping {
 			Eigen::Matrix<TType, NUM_TRANS, 1> B = o.link_.template head<NUM_TRANS>();
 			A.normalize();
 			//B.normalize();
-			r(0) = std::max((TType)0, -A.dot(B));
+			r(0) = std::max((TType)0, -A.dot(B))/thr(0);
 			
-			//TODO:
-			/*A = link_.template head<NUM_ROT>();
+			A = link_.template head<NUM_ROT>();
 			B = o.link_.template head<NUM_ROT>();
 			A.normalize();
-			r(1) = std::max((TType)0, -A.dot(B));*/
-			r(1) = 0;
+			r(1) = std::max((TType)0, dist_rad(A-B).norm())/thr(1);
 			
 			return r.norm();
 		}
