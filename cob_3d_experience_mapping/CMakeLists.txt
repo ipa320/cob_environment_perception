@@ -50,11 +50,11 @@ find_package(Eigen REQUIRED)
 ##   * add every package in MSG_DEP_SET to generate_messages(DEPENDENCIES ...)
 
 ## Generate messages in the 'msg' folder
-# add_message_files(
-#   FILES
-#   Message1.msg
-#   Message2.msg
-# )
+add_message_files(
+  FILES
+  SensorInfo.msg
+  SensorInfoArray.msg
+)
 
 ## Generate services in the 'srv' folder
 # add_service_files(
@@ -119,6 +119,7 @@ include_directories(SYSTEM ${EIGEN_INCLUDE_DIRS})
 
 ## Declare a cpp executable
 add_executable(cob_3d_experience_mapping_lemon_node src/exp_mapping_lemon.cpp)
+add_executable(sim_barks src/sim_barks.cpp)
 
 # make sure configure headers are built before any node using them
 add_dependencies(cob_3d_experience_mapping_lemon_node ${PROJECT_NAME}_gencfg)
