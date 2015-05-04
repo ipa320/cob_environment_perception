@@ -59,7 +59,7 @@ namespace cob_3d_experience_mapping {
 				//visualize_meta(act_node, act_node.meta(), pos);
 			}
 			
-			bool rec_vis(const TGraph &graph, const TMapCells &cells, TMapTransformations &trans, const TNode &act_node, TVisitedList &visted, const int depth=-1, const Eigen::Affine3f &pos=Eigen::Affine3f::Zero()) {
+			bool rec_vis(const TGraph &graph, const TMapCells &cells, TMapTransformations &trans, const TNode &act_node, TVisitedList &visted, const int depth=-1, const Eigen::Affine3f &pos=Eigen::Affine3f()) {
 				//only visited each node once
 				if(!act_node || depth==0 || visted.find(&act_node)!=visted.end()) {
 					ROS_INFO("skip vis.");
@@ -78,7 +78,7 @@ namespace cob_3d_experience_mapping {
 					Eigen::Affine3f new_pos = pos*trans[ait]->affine();
 					if(rec_vis(graph, cells, trans, opposite, visted, depth-1, new_pos)) {
 						cob_3d_visualization::RvizMarker scene;
-						scene.line(pos, new_pos);
+						scene.line((Eigen::Vector3f)pos.translation(), (Eigen::Vector3f)new_pos.translation());
 					}
 				}
 

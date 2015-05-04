@@ -136,12 +136,11 @@ namespace cob_3d_experience_mapping {
 			return r.norm();
 		}
 		
-		template<typename T>
-		inline static T dist_rad(T v) {
-			for(int i=0; i<T::RowsAtCompileTime; i++) {
+		inline static Eigen::Matrix<TType, NUM_ROT, 1> dist_rad(Eigen::Matrix<TType, NUM_ROT, 1> v) {
+			for(int i=0; i<NUM_ROT; i++) {
 				while(v(i)<0) v(i)+=2*M_PI;
 				while(v(i)>2*M_PI) v(i)-=2*M_PI;
-				while(v(i)>M_PI) v(i)=2*M_PI-v(i);
+				if(v(i)>M_PI) v(i)=2*M_PI-v(i);
 			}
 			return v;
 		}
@@ -149,16 +148,21 @@ namespace cob_3d_experience_mapping {
 		TType transition_factor(const Transformation &o, const TDist &thr) const {
 			TDist r;
 			
-			Eigen::Matrix<TType, NUM_TRANS, 1> A = link_.template head<NUM_TRANS>();
-			Eigen::Matrix<TType, NUM_TRANS, 1> B = o.link_.template head<NUM_TRANS>();
-			A.normalize();
-			//B.normalize();
-			r(0) = std::max((TType)0, -A.dot(B))/thr(0);
+			{
+				Eigen::Matrix<TType, NUM_TRANS, 1> A = link_.template head<NUM_TRANS>();
+				Eigen::Matrix<TType, NUM_TRANS, 1> B = o.link_.template head<NUM_TRANS>();
+				A.normalize();
+				//B.normalize();
+				r(0) = std::max((TType)0, -A.dot(B))/thr(0);
+				printf("trans %f %f\n", A.dot(B), -A.dot(B)/thr(0));
+			}
 			
-			A = link_.template head<NUM_ROT>();
-			B = o.link_.template head<NUM_ROT>();
-			A.normalize();
-			r(1) = std::max((TType)0, dist_rad(A-B).norm())/thr(1);
+			{
+				Eigen::Matrix<TType, NUM_ROT, 1> A = link_.template head<NUM_ROT>();
+				Eigen::Matrix<TType, NUM_ROT, 1> B = o.link_.template head<NUM_ROT>();
+				r(1) = std::max((TType)0, 1-dist_rad(A-B).norm()/thr(1));
+				printf("rot  %f %f\n", dist_rad(A-B).norm(), dist_rad(A-B).norm()/thr(0));
+			}
 			
 			return r.norm();
 		}
@@ -182,12 +186,15 @@ namespace cob_3d_experience_mapping {
 			printf("\n");
 		}
 		
-		typename Transform<TType,3,Eigen::Affine> affine() const {
+		typename Eigen::Transform<TType,3,Eigen::Affine> affine() const {
 			BOOST_STATIC_ASSERT(NUM_TRANS<=3);
 			BOOST_STATIC_ASSERT(NUM_ROT==1);
 			
-			return Eigen::Translation<TType,NUM_TRANS>(link_.template head<NUM_TRANS>())
-					* Eigen::AngleAxis<TType> aa(link_.template tail<NUM_ROT  >()(0), Eigen::Matrix<TType, 3, 1>::UnitZ());
+			Eigen::Matrix<TType, 3, 1> tr = Eigen::Matrix<TType, 3, 1>::Zero();
+			for(int i=0; i<NUM_TRANS; i++)
+				tr(i) = link_(i);
+			return Eigen::Translation<TType,3>(tr)
+					* Eigen::AngleAxis<TType>(link_.template tail<NUM_ROT>()(0), Eigen::Matrix<TType, 3, 1>::UnitZ());
 		}
 		
 	};

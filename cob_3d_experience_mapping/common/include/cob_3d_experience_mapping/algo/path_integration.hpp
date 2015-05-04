@@ -150,7 +150,7 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		(*it)->dist_h() -= delta;
 		(*it)->dist_o() += std::sqrt(std::pow(odom.dist(ctxt.param().prox_thr_),2)-delta*delta);
 		
-		ROS_INFO("changing dist(%f/%f) by (%f/%f)", (*it)->dist_h(),(*it)->dist_o(), delta, std::sqrt(std::pow(odom.dist(ctxt.param().prox_thr_),2)-delta*delta));
+		ROS_INFO("changing dist(%f/%f) by (%f/%f) %f", (*it)->dist_h(),(*it)->dist_o(), delta, std::sqrt(std::pow(odom.dist(ctxt.param().prox_thr_),2)-delta*delta), odom.dist(ctxt.param().prox_thr_));
 		ROS_ASSERT((std::pow(odom.dist(ctxt.param().prox_thr_),2)-delta*delta)>=0);
 	}
 	
