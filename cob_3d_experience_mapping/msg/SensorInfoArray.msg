@@ -1,0 +1,1 @@
+SensorInfo[] infos
