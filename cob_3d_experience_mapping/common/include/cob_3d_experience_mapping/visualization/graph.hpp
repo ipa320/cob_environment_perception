@@ -27,7 +27,8 @@ namespace cob_3d_experience_mapping {
 			void visualize(const TGraph &graph, const TMapCells &cells, TMapTransformations &trans, const TNode &start_node) {
 				TVisitedList visited;
 				cob_3d_visualization::RvizMarkerManager::get().clear();
-				rec_vis(graph, cells, trans, start_node, visited);
+				Eigen::Affine3f pos; pos = Eigen::Translation3f(0,0,0);
+				rec_vis(graph, cells, trans, start_node, visited, -1, pos);
 				cob_3d_visualization::RvizMarkerManager::get().publish();
 			}
 			
@@ -65,6 +66,8 @@ namespace cob_3d_experience_mapping {
 					ROS_INFO("skip vis.");
 					return false;
 				}
+				
+				std::cout<<"pos  "<<pos.translation().transpose()<<std::endl;
 
 				visted[&act_node] = true;
 				

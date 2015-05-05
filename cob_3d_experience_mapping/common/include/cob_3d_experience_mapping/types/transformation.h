@@ -130,6 +130,8 @@ namespace cob_3d_experience_mapping {
 			for(int i=NUM_TRANS; i<NUM_TRANS+NUM_ROT; i++)
 				r(1) += std::pow(link_(i), 2);
 				
+			printf("dist %f %f\n", std::sqrt(r(0)), std::sqrt(r(1)));
+			
 			r(0) = std::sqrt(r(0))/thr(0);
 			r(1) = std::sqrt(r(1))/thr(1);
 			
@@ -151,17 +153,17 @@ namespace cob_3d_experience_mapping {
 			{
 				Eigen::Matrix<TType, NUM_TRANS, 1> A = link_.template head<NUM_TRANS>();
 				Eigen::Matrix<TType, NUM_TRANS, 1> B = o.link_.template head<NUM_TRANS>();
-				A.normalize();
+				if(A.squaredNorm()) A.normalize();
 				//B.normalize();
 				r(0) = std::max((TType)0, -A.dot(B))/thr(0);
 				printf("trans %f %f\n", A.dot(B), -A.dot(B)/thr(0));
 			}
 			
 			{
-				Eigen::Matrix<TType, NUM_ROT, 1> A = link_.template head<NUM_ROT>();
-				Eigen::Matrix<TType, NUM_ROT, 1> B = o.link_.template head<NUM_ROT>();
+				Eigen::Matrix<TType, NUM_ROT, 1> A = link_.template tail<NUM_ROT>();
+				Eigen::Matrix<TType, NUM_ROT, 1> B = o.link_.template tail<NUM_ROT>();
 				r(1) = std::max((TType)0, 1-dist_rad(A-B).norm()/thr(1))*B.norm();
-				printf("rot  %f %f\n", dist_rad(A-B).norm(), dist_rad(A-B).norm()/thr(0));
+				printf("rot  %f %f %f %f\n", dist_rad(A-B).norm(), dist_rad(A-B).norm()/thr(0)*B.norm(), B.norm(), B(0));
 			}
 			
 			return r.norm();
@@ -171,10 +173,6 @@ namespace cob_3d_experience_mapping {
 			TType r = transition_factor(o,thr);
 			dbg();
 			o.dbg();
-			printf("transistion: %f %f -> %f\n",
-				-o.link_.template head<NUM_TRANS>().dot(link_.template head<NUM_TRANS>())/std::pow(thr(0),2),
-				-o.link_.template tail<NUM_ROT  >().dot(link_.template tail<NUM_ROT  >())/std::pow(thr(1),2),
-				r);
 				
 			return r;
 		}

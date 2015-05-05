@@ -62,10 +62,19 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 	typedef typename TContext::TState TState;
 	typedef typename TCellVector::iterator TIter;
 	
+	{
+		TIter begin = active_cells.begin();
+		TIter end   = active_cells.end();
+		std::sort(begin, end, energy_order<typename TCellVector::value_type>);
+		for(TIter it=begin; it!=end; it++) {
+			printf("cell %f %f\n", (*it)->dist_h(), (*it)->dist_o());
+		}
+	}
+	
 	ROS_ASSERT(ctxt.active_cells().size()>0);
 	ROS_ASSERT(ctxt.current_active_cell());
 
-	if(!ctxt.virtual_cell() || (ctxt.last_active_cell()!=ctxt.current_active_cell() /*&&ctxt.current_active_cell()->dist_h()<=0*/) || ctxt.current_active_cell()->d2()<ctxt.last_dist_min() || ctxt.virtual_cell()->dist_h()<=0) {
+	if(!ctxt.virtual_cell() || (ctxt.last_active_cell()!=ctxt.current_active_cell() &&ctxt.current_active_cell()->dist_h()<=0) || ctxt.current_active_cell()->d2()<ctxt.last_dist_min() || ctxt.virtual_cell()->dist_h()<=0) {
 		ROS_INFO("resetting virtual cell %d (%f %f)",
 			(int)(ctxt.last_active_cell()!=ctxt.current_active_cell()),
 			ctxt.virtual_cell()?ctxt.virtual_cell()->dist_h():0., ctxt.virtual_cell()?ctxt.virtual_cell()->dist_o():0.
@@ -152,6 +161,8 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		
 		ROS_INFO("changing dist(%f/%f) by (%f/%f) %f", (*it)->dist_h(),(*it)->dist_o(), delta, std::sqrt(std::pow(odom.dist(ctxt.param().prox_thr_),2)-delta*delta), odom.dist(ctxt.param().prox_thr_));
 		ROS_ASSERT((std::pow(odom.dist(ctxt.param().prox_thr_),2)-delta*delta)>=0);
+		ROS_ASSERT( (*it)->dist_h()==(*it)->dist_h() );
+		ROS_ASSERT( (*it)->dist_o()==(*it)->dist_o() );
 	}
 	
 #if 0
