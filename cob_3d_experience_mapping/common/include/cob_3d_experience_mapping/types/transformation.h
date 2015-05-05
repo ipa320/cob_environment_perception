@@ -160,7 +160,7 @@ namespace cob_3d_experience_mapping {
 			{
 				Eigen::Matrix<TType, NUM_ROT, 1> A = link_.template head<NUM_ROT>();
 				Eigen::Matrix<TType, NUM_ROT, 1> B = o.link_.template head<NUM_ROT>();
-				r(1) = std::max((TType)0, 1-dist_rad(A-B).norm()/thr(1));
+				r(1) = std::max((TType)0, 1-dist_rad(A-B).norm()/thr(1))*B.norm();
 				printf("rot  %f %f\n", dist_rad(A-B).norm(), dist_rad(A-B).norm()/thr(0));
 			}
 			
