@@ -71,10 +71,10 @@ add_message_files(
 # )
 
 ## Generate added messages and services with any dependencies listed here
-# generate_messages(
-#   DEPENDENCIES
-#   std_msgs  # Or other packages containing msgs
-# )
+generate_messages(
+  DEPENDENCIES
+  std_msgs  # Or other packages containing msgs
+)
 
 #add dynamic reconfigure api
 #find_package(catkin REQUIRED dynamic_reconfigure)
@@ -130,6 +130,9 @@ add_dependencies(cob_3d_experience_mapping_lemon_node ${PROJECT_NAME}_gencfg)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(cob_3d_experience_mapping_lemon_node
+  ${catkin_LIBRARIES}
+)
+target_link_libraries(sim_barks
   ${catkin_LIBRARIES}
 )
 

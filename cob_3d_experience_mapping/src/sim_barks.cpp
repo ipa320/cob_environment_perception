@@ -1,10 +1,15 @@
-#include <ros.h>
+#include <ros/ros.h>
 #include <cob_3d_experience_mapping/SensorInfoArray.h>
+#include <tf/transform_listener.h>
+
+#include <pcl/point_types.h>
+#include <pcl/io/pcd_io.h>
+#include <pcl/io/ply_io.h>
 #include <cob_3d_visualization/simple_marker.h>
 
 struct Bark {
-	float r,g,b;
-	float x,y,r;
+	double cr,cg,cb;
+	double x,y,r;
 	std::string name;
 };
 
@@ -15,15 +20,18 @@ void process(const float x, const float y)
 {
 	//vis
 	cob_3d_visualization::RvizMarkerManager::get().clear();
-	SensorInfoArray sia;
+	cob_3d_experience_mapping::SensorInfoArray sia;
 	
 	for(size_t i=0; i<g_barks.size(); i++)
 	{
+		cob_3d_experience_mapping::SensorInfo si;
+		si.id  = (int)i;
+		
 		if( std::pow(g_barks[i].x-x,2)+std::pow(g_barks[i].y-y,2) <= std::pow(g_barks[i].r,2) )
 			sia.infos.push_back(si);
 		
 		cob_3d_visualization::RvizMarker scene;
-		scene.color(1-e,e,0.);
+		scene.color(g_barks[i].cr,g_barks[i].cg,g_barks[i].cb);
 	}
 	
 	g_si_pub.publish(sia);
@@ -40,7 +48,7 @@ int main(int argc, char **argv) {
 		//.clearOld();
 		
 	XmlRpc::XmlRpcValue barks;
-	if (private_nh.getParam("barks", barks))
+	if (n.getParam("barks", barks))
 	{
 	  std::map<std::string, XmlRpc::XmlRpcValue>::iterator i;
 	  for (i = barks.begin(); i != barks.end(); i++)
@@ -49,9 +57,9 @@ int main(int argc, char **argv) {
 
 		b.name = i->first;
 		
-		b.r = i->second["r"];
-		b.g = i->second["g"];
-		b.b = i->second["b"];
+		b.cr = i->second["cr"];
+		b.cg = i->second["cg"];
+		b.cb = i->second["cb"];
 		
 		b.x = i->second["x"];
 		b.y = i->second["y"];
