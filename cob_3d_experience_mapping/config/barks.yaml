@@ -1,0 +1,28 @@
+barks:
+ -
+   x: 5.
+   y: 5.
+   r: 1.
+   ri: 0.
+   cr: 1.
+   cg: 0.
+   cb: 0.
+   name: "b1a"
+ -
+   x: 5.
+   y: 5.
+   r: 2.
+   ri: 1.
+   cr: 1.
+   cg: 1.
+   cb: 0.
+   name: "b1b"
+ -
+   x: 5.
+   y: 5.
+   r: 3.
+   ri: 2.
+   cr: 0.
+   cg: 1.
+   cb: 0.
+   name: "b1c"

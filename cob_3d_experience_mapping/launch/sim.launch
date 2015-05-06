@@ -1,0 +1,9 @@
+<launch>
+
+	 <node name="mapping" pkg="cob_3d_experience_mapping" type="cob_3d_experience_mapping_lemon_node" output="screen" />
+	 
+	  <node name="sim_barks" pkg="cob_3d_experience_mapping" type="sim_barks" output="screen">
+		<rosparam command="load" file="$(find cob_3d_experience_mapping)/config/barks.yaml" />
+	  </node>
+	  
+</launch>
