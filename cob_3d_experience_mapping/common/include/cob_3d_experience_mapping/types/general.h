@@ -81,6 +81,12 @@ namespace cob_3d_experience_mapping {
 		inline bool operator>(const State &o) {
 			return d2()<o.d2();
 		}
+		
+		void update(const int ts, const int no_conn, const int est_occ, const TEnergy prob=1) {			 
+			 do_ *= 1-prob/(no_conn+est_occ);
+			 
+			 ROS_INFO("injecting energy %f", 1-prob/(no_conn+est_occ));
+		}
 	};
 	
 	/**
@@ -104,23 +110,36 @@ namespace cob_3d_experience_mapping {
 	protected:
 	};
 	
-	template<class _TCellHandle, class TMeta>
+#if 0
+	template<class _TCellHandle, class _TType, class TMeta>
 	class VisualCell : public Object<TMeta> {
 	public:
 		typedef _TCellHandle TCellHandle;
+		typedef _TType TType;
 		typedef boost::shared_ptr<VisualCell> TPtr;
 		
 	protected:
 		TCellHandle h_;
 		int last_ts_;
+		TType improbability_;
 		
 	public:
-		VisualCell(TCellHandle h) : h_(h), last_ts_(-1)
+		VisualCell(TCellHandle h) : h_(h), last_ts_(-1), improbability_(1)
 		{}
 		
 		inline const TCellHandle &getHandle() const {return h_;}
+		
+		void update(const int ts, const int no_conn, const int est_occ, const TType prob=1) {
+			if(ts!=last_ts_) {
+				last_ts_ = ts;
+				improbability_ = 1;
+			 }
+			 
+			 improbability_ *= 1-prob/(no_conn+est_occ);
+		}
 	};
-	
+#endif
+
 	/**
 	 * class: Feature
 	 * short description: sensor input
@@ -128,21 +147,28 @@ namespace cob_3d_experience_mapping {
 	template<class TInjection, class TMeta>
 	class Feature : public Object<TMeta> {
 	public:
+		typedef int TID;
+		typedef boost::shared_ptr<Feature> TPtr;
 		typedef void* CellHandle;
+		typedef std::map<CellHandle, typename TInjection::TPtr> InjectionMap;
+		
 	protected:
-		int id_;
-		std::map<CellHandle, TInjection> injections_;
+		TID id_;
+		InjectionMap injections_;
 		
 	public:
-		Feature(const int id) : id_(id)
+		Feature(const TID id) : id_(id)
 		{}
 		
-		void visited(const CellHandle &h) {
-			injections_[h]++;
+		void visited(const CellHandle &h, typename TInjection::TPtr inj) {
+			if(injections_.find(h)==injections_.end())
+				injections_.insert(typename InjectionMap::value_type(h, inj));
 		}
 		
-		void inject(const int ts, const CellHandle &h) {
-			injections_[h]++;
+		void inject(const int ts, const int est_occ, const typename TInjection::TEnergy prob=1) {
+			for(typename InjectionMap::iterator it=injections_.begin(); it!=injections_.end(); it++) {
+				it->second->update(ts, (int)injections_.size(), est_occ, prob);
+			}
 		}
 		
 	};
