@@ -1,5 +1,6 @@
 
 #include <nav_msgs/Odometry.h>
+#include <cob_3d_experience_mapping/SensorInfoArray.h>
 
 class As_Node
 {
@@ -57,7 +58,7 @@ private:
 	
 	boost::shared_ptr<VisualizationHandler> vis_;
 	
-	ros::Subscriber sub_odometry_;
+	ros::Subscriber sub_odometry_, sub_sensor_info_;
 	ros::Time time_last_odom_;
 public:
   // Constructor
@@ -78,6 +79,8 @@ public:
 
 	sub_odometry_ = n->subscribe<nav_msgs::Odometry>("/odom", 0, boost::bind(&ROS_Node::on_odom, this, _1), ros::VoidConstPtr(),
                                                                     ros::TransportHints().tcpNoDelay());
+	sub_sensor_info_ = n->subscribe<cob_3d_experience_mapping::SensorInfoArray>("/sim_barks/sensor_info", 0, boost::bind(&ROS_Node::on_sensor_info, this, _1), ros::VoidConstPtr(),
+                                                                    ros::TransportHints().tcpNoDelay());
     bool visualization_enabled;
     n->param<bool>("visualization_enabled", visualization_enabled, true);                                                             
 	if(visualization_enabled)
@@ -88,6 +91,9 @@ public:
 	}*/
 
 	  cob_3d_experience_mapping::algorithms::init<Transformation>(graph_, ctxt_, cells_, trans_);
+  }
+  
+  void on_sensor_info(const cob_3d_experience_mapping::SensorInfoArray::ConstPtr &odom) {
   }
   
   void on_odom(const nav_msgs::Odometry::ConstPtr &odom) {
