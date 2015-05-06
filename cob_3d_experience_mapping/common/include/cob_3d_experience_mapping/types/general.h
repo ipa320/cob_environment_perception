@@ -104,12 +104,46 @@ namespace cob_3d_experience_mapping {
 	protected:
 	};
 	
+	template<class _TCellHandle, class TMeta>
+	class VisualCell : public Object<TMeta> {
+	public:
+		typedef _TCellHandle TCellHandle;
+		typedef boost::shared_ptr<VisualCell> TPtr;
+		
+	protected:
+		TCellHandle h_;
+		int last_ts_;
+		
+	public:
+		VisualCell(TCellHandle h) : h_(h), last_ts_(-1)
+		{}
+		
+		inline const TCellHandle &getHandle() const {return h_;}
+	};
+	
 	/**
 	 * class: Feature
 	 * short description: sensor input
 	 */
-	template<class TMeta>
+	template<class TInjection, class TMeta>
 	class Feature : public Object<TMeta> {
+	public:
+		typedef void* CellHandle;
 	protected:
+		int id_;
+		std::map<CellHandle, TInjection> injections_;
+		
+	public:
+		Feature(const int id) : id_(id)
+		{}
+		
+		void visited(const CellHandle &h) {
+			injections_[h]++;
+		}
+		
+		void inject(const int ts, const CellHandle &h) {
+			injections_[h]++;
+		}
+		
 	};
 }
