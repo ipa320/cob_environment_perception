@@ -74,7 +74,7 @@ int main(int argc, char **argv) {
 		ROS_WARN("barks parameter missing");
 
 	tf::TransformListener listener;
-	ros::Rate rate(4.0);
+	ros::Rate rate(10.0);
 	while(ros::ok()) {
 		tf::StampedTransform transform;
 		try{
