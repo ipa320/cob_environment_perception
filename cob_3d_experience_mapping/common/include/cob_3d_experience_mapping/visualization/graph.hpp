@@ -11,7 +11,7 @@ namespace cob_3d_experience_mapping {
 			static void init() {
 				cob_3d_visualization::RvizMarkerManager::get()
 					.createTopic("expierience_mapping_marker")
-					.setFrameId("/map");
+					.setFrameId("/base_link");
 					//.clearOld();
 			}
 			
@@ -36,11 +36,12 @@ namespace cob_3d_experience_mapping {
 			template<class TMeta> static void visualize_meta(const TNode &act_node, const TMeta &meta, const Eigen::Vector3f &pos) {/*dummy*/}
 			
 			void visualize_node(const TNode &act_node, const Eigen::Affine3f &aff) {
-				ROS_INFO("visualize_node");
+				if(act_node->dist_o()>30)
+					return;
 				
 				const Eigen::Vector3f pos = aff.translation();
 				
-				const Eigen::Vector3f pos_o = (aff*Eigen::Translation3f(0,0,act_node->dist_o()*0.1f)).translation();
+				const Eigen::Vector3f pos_o = (aff*Eigen::Translation3f(0,0,std::min(act_node->dist_o()*0.1f,3.f))).translation();
 				const Eigen::Vector3f pos_h = (aff*Eigen::Translation3f(act_node->dist_h(),0,0)).translation();
 
 				const double e = act_node->dist_h();
@@ -96,7 +97,7 @@ namespace cob_3d_experience_mapping {
 					TNode opposite = cells[act_node->opposite_node(graph, ait)];
 					
 					
-					Eigen::Affine3f new_pos = pos*trans[ait]->affine();
+					Eigen::Affine3f new_pos = pos*trans[ait]->affine().inverse();
 					if(rec_vis(graph, cells, trans, opposite, visted, depth-1, new_pos)) {
 						cob_3d_visualization::RvizMarker scene;
 						scene.line((Eigen::Vector3f)pos.translation(), (Eigen::Vector3f)new_pos.translation(), 0.025f);
