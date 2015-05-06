@@ -162,15 +162,23 @@ namespace cob_3d_experience_mapping {
 			{
 				Eigen::Matrix<TType, NUM_ROT, 1> A = link_.template tail<NUM_ROT>();
 				Eigen::Matrix<TType, NUM_ROT, 1> B = o.link_.template tail<NUM_ROT>();
-				r(1) = std::max((TType)0, 1-dist_rad(A-B).norm()/thr(1))*B.norm();
-				printf("rot  %f %f %f %f\n", dist_rad(A-B).norm(), dist_rad(A-B).norm()/thr(0)*B.norm(), B.norm(), B(0));
+				
+				//if(A.dot(B)>0)
+					r(1) = std::min((TType)1, A.norm()/thr(1)) * std::max((TType)0, 1-dist_rad(A+B).norm()/A.norm());
+				//else
+				//	r(1) = 0;
+				printf("rot  %f %f %f %f %f\n", r(1), A(0), B(0), std::min((TType)1, A.norm()/thr(1)), std::max((TType)0, 1-dist_rad(A+B).norm()/A.norm()));
+				/*r(1) = std::max((TType)0, 1-dist_rad(A-B).norm()/thr(1))*B.norm();
+				printf("rot  %f %f %f %f\n", dist_rad(A-B).norm(), dist_rad(A-B).norm()/thr(1)*B.norm(), B.norm(), B(0));*/
 			}
+			//std::cout<<"r "<<r.transpose()<<std::endl;
 			
 			return r.norm();
 		}
 		
 		TType transition_factor_dbg(const Transformation &o, const TDist &thr) const {
 			TType r = transition_factor(o,thr);
+			
 			dbg();
 			o.dbg();
 				

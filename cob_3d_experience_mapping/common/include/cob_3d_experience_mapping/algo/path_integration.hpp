@@ -157,10 +157,10 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		
 		const typename TState::TEnergy delta = std::min((*it)->dist_h(), dh_max);
 		(*it)->dist_h() -= delta;
-		(*it)->dist_o() += std::sqrt(std::pow(odom.dist(ctxt.param().prox_thr_),2)-delta*delta);
+		(*it)->dist_o() += std::sqrt(std::pow(odom.dist(ctxt.param().prox_thr_),2)-delta*delta + 0.000001f);
 		
-		ROS_INFO("changing dist(%f/%f) by (%f/%f) %f", (*it)->dist_h(),(*it)->dist_o(), delta, std::sqrt(std::pow(odom.dist(ctxt.param().prox_thr_),2)-delta*delta), odom.dist(ctxt.param().prox_thr_));
-		ROS_ASSERT((std::pow(odom.dist(ctxt.param().prox_thr_),2)-delta*delta)>=0);
+		ROS_INFO("changing dist(%f/%f) by (%f/%f) %f %f", (*it)->dist_h(),(*it)->dist_o(), delta, std::sqrt(std::pow(odom.dist(ctxt.param().prox_thr_),2)-delta*delta), odom.dist(ctxt.param().prox_thr_), std::pow(odom.dist(ctxt.param().prox_thr_),2)-delta*delta);
+		ROS_ASSERT((std::pow(odom.dist(ctxt.param().prox_thr_),2)-delta*delta + 0.000001f)>=0);
 		ROS_ASSERT( (*it)->dist_h()==(*it)->dist_h() );
 		ROS_ASSERT( (*it)->dist_o()==(*it)->dist_o() );
 	}
