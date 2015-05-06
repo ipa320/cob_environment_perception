@@ -16,17 +16,19 @@ namespace cob_3d_experience_mapping {
 		{}
 	};
 	
-	template<class _TEnergy, class _TState, class _TEnergyFactor, class _TTransform>
+	template<class _TEnergy, class _TState, class _TFeature, class _TEnergyFactor, class _TTransform>
 	class Context {
 	public:
 		typedef _TEnergy TEnergy;
 		typedef _TState TState;
+		typedef _TFeature TFeature;
 		typedef _TEnergyFactor TEnergyFactor;
 		typedef _TTransform TTransform;
 		//typedef std::set<typename TState::TPtr> TActList; 
 		typedef std::vector<typename TState::TPtr> TActList; 
 		typedef typename TActList::iterator TActListIterator; 
 		typedef Parameter<TEnergyFactor, typename _TTransform::TDist> TParameter;
+		typedef std::map<typename TFeature::TID, typename TFeature::TPtr> FeatureMap;
 		
 	private:
 		TActList active_cells_;
@@ -34,6 +36,7 @@ namespace cob_3d_experience_mapping {
 		TEnergy energy_sum_, energy_max_, last_dist_min_;
 		typename TState::TPtr last_active_cell_, virtual_cell_;
 		typename TTransform::TPtr virtual_transistion_;
+		FeatureMap features_;
 		
 		//helper functions
 		void update_overall_energy(const TEnergy &delta_energy) {
@@ -65,6 +68,14 @@ namespace cob_3d_experience_mapping {
 		inline TEnergy &last_dist_min() {return last_dist_min_;}
 
 		//inline void set_energy_max(const TEnergy &e) {energy_max_=e;}
+		
+		void add_feature(const typename TFeature::TID &id, const int ts) {
+			typename FeatureMap::iterator it = features_.find(id);
+			if(it==features_.end())
+				it = features_.insert(typename FeatureMap::value_type(id, typename TFeature::TPtr(new TFeature(id))) ).first;
+			it->second->visited(current_active_cell().get(), current_active_cell());
+			it->second->inject(ts, param().est_occ_);
+		}
 		
 		template<class TIter>
 		void apply_energy_change(const TIter &begin, const TIter &end)
