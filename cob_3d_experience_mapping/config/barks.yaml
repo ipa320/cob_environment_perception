@@ -26,3 +26,58 @@ barks:
    cg: 1.
    cb: 0.
    name: "b1c"
+ -
+   x: 0.
+   y: 0.
+   r: 1.
+   ri: 0.
+   cr: 1.
+   cg: 0.
+   cb: 0.
+   name: "b2a"
+ -
+   x: 0.
+   y: 0.
+   r: 2.
+   ri: 1.
+   cr: 1.
+   cg: 1.
+   cb: 0.
+   name: "b2b"
+ -
+   x: 0.
+   y: 0.
+   r: 3.
+   ri: 2.
+   cr: 0.
+   cg: 1.
+   cb: 0.
+   name: "b2c"
+ -
+   x: 0.
+   y: 10.
+   r: 1.
+   ri: 0.
+   cr: 1.
+   cg: 0.
+   cb: 0.
+   name: "b3a"
+ -
+   x: 0.
+   y: 10.
+   r: 2.
+   ri: 1.
+   cr: 1.
+   cg: 1.
+   cb: 0.
+   name: "b3b"
+ -
+   x: 0.
+   y: 10.
+   r: 3.
+   ri: 2.
+   cr: 0.
+   cg: 1.
+   cb: 0.
+   name: "b3c"
+
