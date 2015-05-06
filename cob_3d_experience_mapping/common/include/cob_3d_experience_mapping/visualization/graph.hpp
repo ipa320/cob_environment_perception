@@ -39,18 +39,36 @@ namespace cob_3d_experience_mapping {
 				ROS_INFO("visualize_node");
 				
 				const Eigen::Vector3f pos = aff.translation();
+				
+				const Eigen::Vector3f pos_o = (aff*Eigen::Translation3f(0,0,act_node->dist_o()*0.1f)).translation();
+				const Eigen::Vector3f pos_h = (aff*Eigen::Translation3f(act_node->dist_h(),0,0)).translation();
 
-				const double e = act_node->dist_h()*2;
+				const double e = act_node->dist_h();
 				{
 					cob_3d_visualization::RvizMarker scene;
 					scene.sphere(pos);
 					scene.color(1-e,e,0.);
 				}
+				{
+					cob_3d_visualization::RvizMarker scene;
+					scene.line(pos, pos_o,0.03f);
+					scene.color(0,0,1,0.5);
+				}
+				{
+					cob_3d_visualization::RvizMarker scene;
+					scene.line(pos, pos_h,0.03f);
+					scene.color(0,1,0,0.5);
+				}
+				{
+					cob_3d_visualization::RvizMarker scene;
+					scene.line(pos_h, pos_o,0.03f);
+					scene.color(1,1,1,0.5);
+				}
 				
 				{
 					cob_3d_visualization::RvizMarker scene;
 					char buf[128];
-					sprintf(buf, "%s %s e=%.3f", act_node->dbg().name_.c_str(), act_node->dbg().info_.c_str(), e);
+					sprintf(buf, "%s %s d=%.3f h=%.3f o=%.3f", act_node->dbg().name_.c_str(), act_node->dbg().info_.c_str(), act_node->d(), act_node->dist_h(), act_node->dist_o());
 					scene.text(buf);
 					scene.move(pos+0.3*Eigen::Vector3f::UnitZ());
 				}
@@ -81,7 +99,8 @@ namespace cob_3d_experience_mapping {
 					Eigen::Affine3f new_pos = pos*trans[ait]->affine();
 					if(rec_vis(graph, cells, trans, opposite, visted, depth-1, new_pos)) {
 						cob_3d_visualization::RvizMarker scene;
-						scene.line((Eigen::Vector3f)pos.translation(), (Eigen::Vector3f)new_pos.translation());
+						scene.line((Eigen::Vector3f)pos.translation(), (Eigen::Vector3f)new_pos.translation(), 0.025f);
+					scene.color(1,1,1,0.35);
 					}
 				}
 
