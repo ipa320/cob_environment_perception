@@ -16,6 +16,8 @@ namespace cob_3d_experience_mapping {
 		
 		TDist prox_thr_;
 		typename TDist::Scalar energy_const_;
+		
+		int est_occ_;
 
 		//visualization
 		std_msgs::ColorRGBA vis_color_cell_;
@@ -36,6 +38,7 @@ namespace cob_3d_experience_mapping {
 			prox_thr_(0) = config.translation;
 			prox_thr_(1) = config.rotation;
 			energy_const_ = config.energy_constant;
+			est_occ_ = config.est_occ;
 
 			ROS_INFO("updated settings");
 		}
