@@ -44,18 +44,19 @@ template <typename Parent, int NUM_TRANS=2, int NUM_ROT=1, typename Scalar=float
 class ROS_Node : public Parent
 {
 public:
-	typedef cob_3d_experience_mapping::State<cob_3d_experience_mapping::Empty, Scalar > State;
+	typedef lemon::ListGraph TGraph;
+	typedef cob_3d_experience_mapping::State<cob_3d_experience_mapping::Empty, Scalar, TGraph> State;
 	typedef cob_3d_experience_mapping::Feature<State, cob_3d_experience_mapping::Empty> Feature;
 	typedef cob_3d_experience_mapping::Transformation<Scalar, NUM_TRANS, NUM_ROT, typename State::TPtr> Transformation;
-	typedef cob_3d_experience_mapping::visualization::VisualizationHandler<typename State::TGraph, lemon::ListDigraph::NodeMap<typename State::TPtr>, lemon::ListDigraph::ArcMap <typename Transformation::TPtr>, typename State::TPtr, typename State::TArcIterator> VisualizationHandler;
+	typedef cob_3d_experience_mapping::visualization::VisualizationHandler<typename State::TGraph, lemon::ListGraph::NodeMap<typename State::TPtr>, lemon::ListGraph::EdgeMap <typename Transformation::TPtr>, typename State::TPtr, typename State::TArcIterator> VisualizationHandler;
 	
 private:
 
 	cob_3d_experience_mapping::Context<Scalar /*energy*/, State /*state*/, Feature, Eigen::Matrix<float,1,2>/*energy weight*/, Transformation/*tranformation*/> ctxt_;
 	
-	lemon::ListDigraph graph_;
-	lemon::ListDigraph::NodeMap<typename State::TPtr> cells_;
-	lemon::ListDigraph::ArcMap <typename Transformation::TPtr> trans_;
+	TGraph graph_;
+	TGraph::NodeMap<typename State::TPtr> cells_;
+	TGraph::EdgeMap <typename Transformation::TPtr> trans_;
 	
 	boost::shared_ptr<VisualizationHandler> vis_;
 	

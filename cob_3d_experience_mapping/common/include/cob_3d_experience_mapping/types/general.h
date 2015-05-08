@@ -24,23 +24,25 @@ namespace cob_3d_experience_mapping {
 	 * class: State
 	 * short description: current state + activation --> Artificial Neuron
 	 */
-	template<class TMeta, class _TEnergy>
+	template<class TMeta, class _TEnergy, class _TGraph>
 	class State : public Object<TMeta> {
 	public:
 		//types
 		typedef _TEnergy TEnergy;
-		typedef lemon::ListDigraph TGraph;
-		typedef TGraph::Arc TArc;
-		typedef TGraph::Node TNode;
-		typedef TGraph::OutArcIt TArcIterator;
+		typedef _TGraph TGraph;
+		typedef typename TGraph::Node TNode;
+		//typedef typename TGraph::Arc TArc;
+		typedef typename TGraph::Edge TArc;
+		//typedef typename TGraph::OutArcIt TArcIterator;
+		typedef typename TGraph::EdgeIt TArcIterator;
 		typedef boost::shared_ptr<State> TPtr;
 	protected:
-		TEnergy do_, dh_;
+		TEnergy do_, dh_, ft_imp_;
 		TNode node_;
 		DbgInfo dbg_;
 		
 	public:		
-		State(): do_(0), dh_(0) {
+		State(): do_(0), dh_(0), ft_imp_(1) {
 			static int no = 1;
 			char buf[128];
 			sprintf(buf, "%d", no++);
@@ -66,7 +68,8 @@ namespace cob_3d_experience_mapping {
 		
 		//graph operations
 		inline TArcIterator edge_begin(const TGraph &graph) {
-			return TArcIterator(graph, node_);
+			return TArcIterator(graph);
+			//return TArcIterator(graph, node_);
 		}
 		
 		inline TArcIterator edge_end(const TGraph &graph) const {
@@ -83,10 +86,12 @@ namespace cob_3d_experience_mapping {
 		}
 		
 		void update(const int ts, const int no_conn, const int est_occ, const TEnergy prob=1) {			 
-			 do_ *= 1-prob/(no_conn+est_occ);
-			 
-			 ROS_INFO("injecting energy %f", 1-prob/(no_conn+est_occ));
+			 ft_imp_ *= 1-prob/(no_conn+est_occ);
 		}
+		
+		inline TEnergy get_feature_prob() const {return 1-ft_imp_;}
+		
+		void reset_feature() {ft_imp_=1;}
 	};
 	
 	/**
@@ -169,6 +174,7 @@ namespace cob_3d_experience_mapping {
 			for(typename InjectionMap::iterator it=injections_.begin(); it!=injections_.end(); it++) {
 				it->second->update(ts, (int)injections_.size(), est_occ, prob);
 			}
+			printf("inject %d\n", (int)injections_.size());
 		}
 		
 	};

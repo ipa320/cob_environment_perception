@@ -3,6 +3,7 @@
 #include "../param.h"
 #include <set>
 #include <map>
+#include <boost/thread/mutex.hpp>
 
 namespace cob_3d_experience_mapping {
 	
@@ -37,6 +38,7 @@ namespace cob_3d_experience_mapping {
 		typename TState::TPtr last_active_cell_, virtual_cell_;
 		typename TTransform::TPtr virtual_transistion_;
 		FeatureMap features_;
+		boost::mutex mtx_;
 		
 		//helper functions
 		void update_overall_energy(const TEnergy &delta_energy) {
@@ -69,7 +71,11 @@ namespace cob_3d_experience_mapping {
 
 		//inline void set_energy_max(const TEnergy &e) {energy_max_=e;}
 		
+		boost::mutex &get_mutex() {return mtx_;}
+		
 		void add_feature(const typename TFeature::TID &id, const int ts) {
+			boost::lock_guard<boost::mutex> guard(mtx_);
+			
 			typename FeatureMap::iterator it = features_.find(id);
 			if(it==features_.end())
 				it = features_.insert(typename FeatureMap::value_type(id, typename TFeature::TPtr(new TFeature(id))) ).first;
