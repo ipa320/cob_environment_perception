@@ -93,7 +93,7 @@ namespace cob_3d_experience_mapping {
 				visualize_node(act_node, pos);
 				
 				//go through all edges
-				for(TArcIter ait(act_node->edge_begin(graph)); ait!=act_node->edge_end(graph); ++ait) {
+				for(TArcIter ait(act_node->template arc_flex_begin<TArcIter>(graph)); ait!=act_node->template arc_flex_end<TArcIter>(graph); ++ait) {
 					TNode opposite = cells[act_node->opposite_node(graph, ait)];
 					
 					

@@ -18,6 +18,7 @@ namespace cob_3d_experience_mapping {
 	struct DbgInfo {
 		std::string name_;
 		std::string info_;
+		int id_;
 	};
 	
 	/**
@@ -32,24 +33,28 @@ namespace cob_3d_experience_mapping {
 		typedef _TGraph TGraph;
 		typedef typename TGraph::Node TNode;
 		//typedef typename TGraph::Arc TArc;
-		typedef typename TGraph::Edge TArc;
+		//typedef typename TGraph::Edge TArc;
+		typedef typename TGraph::Arc TArc;
 		//typedef typename TGraph::OutArcIt TArcIterator;
-		typedef typename TGraph::EdgeIt TArcIterator;
+		//typedef typename TGraph::EdgeIt TArcIterator;
+		typedef typename TGraph::OutArcIt TArcOutIterator;
+		typedef typename TGraph::InArcIt TArcInIterator;
 		typedef boost::shared_ptr<State> TPtr;
 	protected:
-		TEnergy do_, dh_, ft_imp_;
+		TEnergy do_, dh_, ft_imp_, ft_imp_last_;
 		TNode node_;
 		DbgInfo dbg_;
 		
 	public:		
-		State(): do_(0), dh_(0), ft_imp_(1) {
+		State(): do_(0), dh_(0), ft_imp_(1), ft_imp_last_(1) {
 			static int no = 1;
 			char buf[128];
+			dbg_.id_ = no;
 			sprintf(buf, "%d", no++);
 			dbg_.name_ = buf;
 		}
 		
-		//setter/getter
+		//setter/getter		
 		inline TEnergy &dist_o() {return do_;}
 		inline const TEnergy &dist_o() const {return do_;}
 		
@@ -67,12 +72,27 @@ namespace cob_3d_experience_mapping {
 		inline const DbgInfo &dbg() const {return dbg_;}
 		
 		//graph operations
-		inline TArcIterator edge_begin(const TGraph &graph) {
-			return TArcIterator(graph);
-			//return TArcIterator(graph, node_);
+		inline TArcInIterator arc_in_begin(const TGraph &graph) {
+			return TArcInIterator(graph, node_);
+		}
+		inline TArcInIterator arc_in_end(const TGraph &graph) const {
+			return lemon::INVALID;
 		}
 		
-		inline TArcIterator edge_end(const TGraph &graph) const {
+		inline TArcOutIterator arc_out_begin(const TGraph &graph) {
+			return TArcOutIterator(graph, node_);
+		}
+		inline TArcOutIterator arc_out_end(const TGraph &graph) const {
+			return lemon::INVALID;
+		}
+		
+		//e.g. for visualization, where it's not necessary only one direction
+		template<typename _TArc_>
+		inline _TArc_ arc_flex_begin(const TGraph &graph) {
+			return _TArc_(graph, node_);
+		}
+		template<typename _TArc_>
+		inline _TArc_ arc_flex_end(const TGraph &graph) {
 			return lemon::INVALID;
 		}
 		
@@ -90,8 +110,9 @@ namespace cob_3d_experience_mapping {
 		}
 		
 		inline TEnergy get_feature_prob() const {return 1-ft_imp_;}
+		inline TEnergy get_last_feature_prob() const {return 1-ft_imp_last_;}
 		
-		void reset_feature() {ft_imp_=1;}
+		void reset_feature() {ft_imp_last_=ft_imp_; ft_imp_=1;}
 	};
 	
 	/**

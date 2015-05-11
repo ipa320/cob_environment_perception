@@ -3,7 +3,7 @@
 #include "../param.h"
 #include <set>
 #include <map>
-#include <boost/thread/mutex.hpp>
+#include <boost/thread.hpp>
 
 namespace cob_3d_experience_mapping {
 	

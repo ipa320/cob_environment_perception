@@ -46,7 +46,7 @@ void step(TGraph &graph, TContext &context, TMapCells &cells, TMapTransformation
 	}
 
 	path_integration<
-		TCellVector, typename TContext::TEnergyFactor, typename TState::TArcIterator,
+		TCellVector, typename TContext::TEnergyFactor,
 		TGraph, TContext, TResultList, TMapCells, TMapTransformations, TTransformation
 	>(context.active_cells(), graph, context, cells, trans, odom, result);
 	

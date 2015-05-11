@@ -9,8 +9,8 @@ void insert_cell(TGraph &graph, TMapCells &cells, TMapTransformations &trans, TS
 template<class TTransformation, class TGraph, class TMapTransformations, typename TState>
 void insert_transistion(TGraph &graph, TMapTransformations &trans, TState &new_cell, TTransformation &link) {
 	ROS_ASSERT(link->src());
-	//trans.set(graph.addArc(new_cell->node(), link->src()->node()), link);
-	trans.set(graph.addEdge(new_cell->node(), link->src()->node()), link);
+	trans.set(graph.addArc(new_cell->node(), link->src()->node()), link);
+	//trans.set(graph.addEdge(new_cell->node(), link->src()->node()), link);
 }
 
 template<class TGraph, typename TState>
@@ -57,11 +57,13 @@ bool energy_order(const TStatePtr &a, const TStatePtr &b) {
 	return a->d2() < b->d2();
 }
 
-template<class TCellVector, class TEnergyFactor, class TArcIter, class TGraph, class TContext, class TResultList, class TMapCells, class TMapTransformations, class TTransformation>
+template<class TCellVector, class TEnergyFactor, class TGraph, class TContext, class TResultList, class TMapCells, class TMapTransformations, class TTransformation>
 void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/, TGraph &graph, TContext &ctxt, TMapCells &cells, TMapTransformations &trans, const TTransformation &odom, TResultList &result)
 {
 	typedef typename TContext::TState TState;
 	typedef typename TCellVector::iterator TIter;
+	typedef typename TState::TArcOutIterator TArcIter_out;
+	typedef typename TState::TArcInIterator TArcIter_in;
 	
 	boost::lock_guard<boost::mutex> guard(ctxt.get_mutex());	//TODO: reduce locking area
 	
@@ -71,7 +73,10 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		std::sort(begin, end, energy_order<typename TCellVector::value_type>);
 		for(TIter it=begin; it!=end; it++) {
 			printf("cell %f %f\n", (*it)->dist_h(), (*it)->dist_o());
+			if(it+1!=end)
+				ROS_ASSERT( (*it)->d()<=(*(it+1))->d() );
 		}
+		ROS_ASSERT(ctxt.current_active_cell()==*begin);
 	}
 	
 	ROS_ASSERT(ctxt.active_cells().size()>0);
@@ -91,7 +96,7 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 			ctxt.virtual_transistion()->dbg();
 		}
 		else {
-			ROS_INFO("relocalized");
+			ROS_INFO("relocalized %d -> %d", ctxt.last_active_cell()?ctxt.last_active_cell()->dbg().id_:-1, ctxt.current_active_cell()?ctxt.current_active_cell()->dbg().id_:-1);
 			
 			for(TIter it=active_cells.begin(); it!=active_cells.end(); it++)
 				if(*it == ctxt.virtual_cell()) {
@@ -139,24 +144,34 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		//	continue;
 			
 		typename TState::TEnergy ft_prob = (*it)->get_feature_prob(), ft_prob_max=0;
+		typename TState::TEnergy prob_chang = ft_prob-(*it)->get_last_feature_prob(), ft_prob_ch_max=0;
 		
-		for(TArcIter ait((*it)->edge_begin(graph)); ait!=(*it)->edge_end(graph); ++ait) {
-			std::cout<<"x "<<(*it).get()<<std::endl;
+		for(TArcIter_out ait((*it)->arc_out_begin(graph)); ait!=(*it)->arc_out_end(graph); ++ait) {
+			std::cout<<"xo "<<(*it).get()<<" "<<((*it)->opposite_node(graph, ait)==lemon::INVALID)<<std::endl;
 			typename TIter::value_type opposite = cells[(*it)->opposite_node(graph, ait)];
 			ft_prob_max = std::max(ft_prob_max, opposite->get_feature_prob());
+			ft_prob_ch_max = std::max(ft_prob_ch_max, trans[ait]->directed(*it).transition_factor_dbg(odom, ctxt.param().prox_thr_)*(prob_chang-(opposite->get_feature_prob()-opposite->get_last_feature_prob()))/2);
+		}
+		for(TArcIter_in ait((*it)->arc_in_begin(graph)); ait!=(*it)->arc_in_end(graph); ++ait) {
+			std::cout<<"xi "<<(*it).get()<<" "<<((*it)->opposite_node(graph, ait)==lemon::INVALID)<<std::endl;
+			typename TIter::value_type opposite = cells[(*it)->opposite_node(graph, ait)];
+			ft_prob_max = std::max(ft_prob_max, opposite->get_feature_prob());
+			ft_prob_ch_max = std::max(ft_prob_ch_max, trans[ait]->directed(*it).transition_factor_dbg(odom, ctxt.param().prox_thr_)*(prob_chang-(opposite->get_feature_prob()-opposite->get_last_feature_prob()))/2);
 		}
 		
 		ft_prob = std::max((typename TState::TEnergy)0, ft_prob-ft_prob_max);
 	
-		ROS_INFO("injecting energy %f (feature probability)    %f %f", ft_prob, (*it)->get_feature_prob(), ft_prob_max);
-		(*it)->dist_o() *= 1-ft_prob;
+		if(ft_prob+ft_prob_ch_max)
+			ROS_INFO("injecting energy %f (feature probability)    %f %f %f    %f %f", ft_prob+ft_prob_ch_max, ft_prob, (*it)->get_feature_prob(), ft_prob_max, prob_chang, ft_prob_ch_max);
+			
+		(*it)->dist_o() *= std::max((typename TState::TEnergy)0, 1-ft_prob-ft_prob_ch_max);
 	}
 	
 	//step 1: set min. dist.
 	for(TIter it=begin; it!=end; it++) {
 		typename TState::TEnergy dh_max = 0;
 		
-		for(TArcIter ait((*it)->edge_begin(graph)); ait!=(*it)->edge_end(graph); ++ait) {
+		for(TArcIter_out ait((*it)->arc_out_begin(graph)); ait!=(*it)->arc_out_end(graph); ++ait) {
 				typename TIter::value_type opposite = cells[(*it)->opposite_node(graph, ait)];
 				if(opposite->dist_h()>0) continue;
 				
@@ -179,7 +194,7 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 	for(TIter it=begin; it!=end; it++) {
 		typename TState::TEnergy dh_max = 0;
 		
-		for(TArcIter ait((*it)->edge_begin(graph)); ait!=(*it)->edge_end(graph); ++ait)
+		for(TArcIter_out ait((*it)->arc_out_begin(graph)); ait!=(*it)->arc_out_end(graph); ++ait)
 			dh_max = std::max(dh_max, trans[ait]->directed(*it).transition_factor_dbg(odom, ctxt.param().prox_thr_) );
 		
 		const typename TState::TEnergy delta = std::min((*it)->dist_h(), dh_max);
@@ -192,6 +207,19 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		ROS_ASSERT( (*it)->dist_o()==(*it)->dist_o() );
 		
 		(*it)->reset_feature();
+	}
+	
+	
+	//debug
+	{
+		int i=0;
+		printf("distlist");
+		for(TIter it=begin; it!=end; it++) {
+			printf("\t %f:%d:%d", (*it)->d(), (*it)->dist_h()<=0, (*it)->dbg().id_);
+			++i;
+			if(i>3) break;
+		}
+		printf("\n");
 	}
 	
 #if 0
