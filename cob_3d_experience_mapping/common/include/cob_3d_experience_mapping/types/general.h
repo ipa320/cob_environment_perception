@@ -2,6 +2,7 @@
 
 #include <lemon/list_graph.h>
 #include <boost/shared_ptr.hpp>
+#include <Eigen/Core>
 
 #include <ros/assert.h>
 
@@ -19,6 +20,7 @@ namespace cob_3d_experience_mapping {
 		std::string name_;
 		std::string info_;
 		int id_;
+		Eigen::Vector3f pose_;
 	};
 	
 	/**

@@ -1,6 +1,6 @@
 
 template<class TGraph, class TContext, class TMapCells, class TMapTransformations, class TTransformation>
-void step(TGraph &graph, TContext &context, TMapCells &cells, TMapTransformations &trans, const TTransformation &odom) {
+void step(TGraph &graph, TContext &context, TMapCells &cells, TMapTransformations &trans, const TTransformation &odom, const Eigen::Vector3f &dbg_pose) {
 	typedef typename TContext::TState TState;
 	typedef std::vector<Result<typename TContext::TState, typename TContext::TEnergy> > TResultList;
 	TResultList result;
@@ -48,7 +48,7 @@ void step(TGraph &graph, TContext &context, TMapCells &cells, TMapTransformation
 	path_integration<
 		TCellVector, typename TContext::TEnergyFactor,
 		TGraph, TContext, TResultList, TMapCells, TMapTransformations, TTransformation
-	>(context.active_cells(), graph, context, cells, trans, odom, result);
+	>(context.active_cells(), graph, context, cells, trans, odom, result, dbg_pose);
 	
 	ROS_INFO("no. cells: %d", (int)context.active_cells().size());
 }

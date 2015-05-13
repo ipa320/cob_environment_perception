@@ -114,11 +114,17 @@ public:
 		  link(1) = odom->twist.twist.linear.y;
 		  link(2) = odom->twist.twist.angular.z;
 		  link *= (odom->header.stamp-time_last_odom_).toSec();
+		  
+		  Eigen::Vector3f dbg_pose;
+		  dbg_pose(0) = odom->pose.pose.position.x;
+		  dbg_pose(1) = odom->pose.pose.position.y;
+		  dbg_pose(2) = odom->pose.pose.orientation.w;
+		  
 
 		  ROS_INFO("odom: %f %f %f", link(0),link(1),link(2));
 
 		  Transformation action(link, ctxt_.current_active_cell());
-		  cob_3d_experience_mapping::algorithms::step(graph_, ctxt_, cells_, trans_, action);
+		  cob_3d_experience_mapping::algorithms::step(graph_, ctxt_, cells_, trans_, action, dbg_pose);
 
 		  if(vis_ && ctxt_.active_cells().size()>0) {
 			vis_->visualize(graph_, cells_, trans_, ctxt_.current_active_cell());

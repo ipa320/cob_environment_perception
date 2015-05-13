@@ -58,7 +58,7 @@ bool energy_order(const TStatePtr &a, const TStatePtr &b) {
 }
 
 template<class TCellVector, class TEnergyFactor, class TGraph, class TContext, class TResultList, class TMapCells, class TMapTransformations, class TTransformation>
-void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/, TGraph &graph, TContext &ctxt, TMapCells &cells, TMapTransformations &trans, const TTransformation &odom, TResultList &result)
+void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/, TGraph &graph, TContext &ctxt, TMapCells &cells, TMapTransformations &trans, const TTransformation &odom, TResultList &result, const Eigen::Vector3f &dbg_pose)
 {
 	typedef typename TContext::TState TState;
 	typedef typename TCellVector::iterator TIter;
@@ -101,6 +101,9 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 			if(ctxt.last_active_cell()!=ctxt.current_active_cell() && ctxt.last_active_cell() && ctxt.current_active_cell()) {
 				insert_transistion(graph, trans, ctxt.current_active_cell(), ctxt.virtual_transistion());
 				ROS_INFO("inserted new link");
+			
+				std::cout<<"old pose: "<<ctxt.last_active_cell()->dbg().pose_.transpose()<<std::endl;
+				std::cout<<"new pose: "<<ctxt.current_active_cell()->dbg().pose_.transpose()<<std::endl;
 			}
 			
 			for(TIter it=active_cells.begin(); it!=active_cells.end(); it++)
@@ -115,6 +118,8 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		ctxt.virtual_cell().reset(new TState);
 		ctxt.virtual_cell()->dist_h() = 1;
 		ctxt.virtual_cell()->dist_o() = ctxt.current_active_cell()->dist_o();
+		
+		ctxt.virtual_cell()->dbg().pose_ = dbg_pose;
 		
 		insert_cell(graph, cells, trans, ctxt.virtual_cell());
 		ctxt.virtual_transistion().reset(new TTransformation(ctxt.current_active_cell()));
