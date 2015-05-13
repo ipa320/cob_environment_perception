@@ -98,6 +98,11 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		else {
 			ROS_INFO("relocalized %d -> %d", ctxt.last_active_cell()?ctxt.last_active_cell()->dbg().id_:-1, ctxt.current_active_cell()?ctxt.current_active_cell()->dbg().id_:-1);
 			
+			if(ctxt.last_active_cell()!=ctxt.current_active_cell() && ctxt.last_active_cell() && ctxt.current_active_cell()) {
+				insert_transistion(graph, trans, ctxt.current_active_cell(), ctxt.virtual_transistion());
+				ROS_INFO("inserted new link");
+			}
+			
 			for(TIter it=active_cells.begin(); it!=active_cells.end(); it++)
 				if(*it == ctxt.virtual_cell()) {
 					active_cells.erase(it);
