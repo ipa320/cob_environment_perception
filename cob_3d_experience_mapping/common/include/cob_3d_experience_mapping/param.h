@@ -18,6 +18,7 @@ namespace cob_3d_experience_mapping {
 		typename TDist::Scalar energy_const_;
 		
 		int est_occ_;
+		int min_age_;
 
 		//visualization
 		std_msgs::ColorRGBA vis_color_cell_;
@@ -39,6 +40,7 @@ namespace cob_3d_experience_mapping {
 			prox_thr_(1) = config.rotation;
 			energy_const_ = config.energy_constant;
 			est_occ_ = config.est_occ;
+			min_age_ = config.min_age;
 
 			ROS_INFO("updated settings");
 		}
