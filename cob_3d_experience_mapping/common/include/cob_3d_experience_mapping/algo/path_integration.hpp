@@ -7,7 +7,7 @@ void insert_cell(TGraph &graph, TMapCells &cells, TMapTransformations &trans, TS
 }
 
 template<class TTransformation, class TGraph, class TMapTransformations, typename TState>
-void insert_transistion(TGraph &graph, TMapTransformations &trans, TState &new_cell, TTransformation &link) {
+void insert_transistion(TGraph &graph, TMapTransformations &trans, const TState &new_cell, TTransformation &link) {
 	ROS_ASSERT(link->src());
 	trans.set(graph.addArc(new_cell->node(), link->src()->node()), link);
 	//trans.set(graph.addEdge(new_cell->node(), link->src()->node()), link);
