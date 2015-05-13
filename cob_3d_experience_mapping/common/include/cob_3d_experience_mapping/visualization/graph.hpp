@@ -28,20 +28,20 @@ namespace cob_3d_experience_mapping {
 				TVisitedList visited;
 				cob_3d_visualization::RvizMarkerManager::get().clear();
 				Eigen::Affine3f pos; pos = Eigen::Translation3f(0,0,0);
-				rec_vis(graph, cells, trans, start_node, visited, -1, pos);
+				rec_vis(graph, cells, trans, start_node, visited, start_node->dist_o(), -1, pos);
 				cob_3d_visualization::RvizMarkerManager::get().publish();
 			}
 			
 		private:
 			template<class TMeta> static void visualize_meta(const TNode &act_node, const TMeta &meta, const Eigen::Vector3f &pos) {/*dummy*/}
 			
-			void visualize_node(const TNode &act_node, const Eigen::Affine3f &aff) {
-				if(act_node->dist_o()>30)
+			void visualize_node(const TNode &act_node, const Eigen::Affine3f &aff, const double max_dist_o) {
+				if(act_node->dist_o()/max_dist_o>30)
 					return;
 				
 				const Eigen::Vector3f pos = aff.translation();
 				
-				const Eigen::Vector3f pos_o = (aff*Eigen::Translation3f(0,0,std::min(act_node->dist_o()*0.1f,3.f))).translation();
+				const Eigen::Vector3f pos_o = (aff*Eigen::Translation3f(0,0,std::min(act_node->dist_o()/max_dist_o-1.,3.))).translation();
 				const Eigen::Vector3f pos_h = (aff*Eigen::Translation3f(act_node->dist_h(),0,0)).translation();
 
 				const double e = act_node->dist_h();
@@ -79,18 +79,14 @@ namespace cob_3d_experience_mapping {
 				//visualize_meta(act_node, act_node.meta(), pos);
 			}
 			
-			bool rec_vis(const TGraph &graph, const TMapCells &cells, TMapTransformations &trans, const TNode &act_node, TVisitedList &visted, const int depth=-1, const Eigen::Affine3f &pos=Eigen::Affine3f()) {
+			bool rec_vis(const TGraph &graph, const TMapCells &cells, TMapTransformations &trans, const TNode &act_node, TVisitedList &visted, const double max_dist_o, const int depth=-1, const Eigen::Affine3f &pos=Eigen::Affine3f()) {
 				//only visited each node once
-				if(!act_node || depth==0 || visted.find(act_node)!=visted.end()) {
-					ROS_INFO("skip vis.");
+				if(!act_node || depth==0 || visted.find(act_node)!=visted.end())
 					return false;
-				}
-				
-				std::cout<<"pos  "<<pos.translation().transpose()<<std::endl;
 
 				visted[act_node] = true;
 				
-				visualize_node(act_node, pos);
+				visualize_node(act_node, pos, max_dist_o);
 				
 				//go through all edges
 				for(TArcIter ait(act_node->template arc_flex_begin<TArcIter>(graph)); ait!=act_node->template arc_flex_end<TArcIter>(graph); ++ait) {
@@ -98,7 +94,7 @@ namespace cob_3d_experience_mapping {
 					
 					
 					Eigen::Affine3f new_pos = pos*trans[ait]->affine().inverse();
-					if(rec_vis(graph, cells, trans, opposite, visted, depth-1, new_pos)) {
+					if(rec_vis(graph, cells, trans, opposite, visted, max_dist_o, depth-1, new_pos)) {
 						cob_3d_visualization::RvizMarker scene;
 						scene.line((Eigen::Vector3f)pos.translation(), (Eigen::Vector3f)new_pos.translation(), 0.025f);
 					scene.color(1,1,1,0.35);
