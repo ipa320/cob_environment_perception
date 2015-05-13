@@ -140,8 +140,8 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 	
 	//step 0: update feature prob.
 	for(TIter it=begin; it!=end; it++) {
-		//if( (*it)==ctxt.virtual_cell() ) 	//BUG: virtual cell is not connected to graph probarbly
-		//	continue;
+		if( (*it)->dbg().id_ >= ctxt.virtual_cell()->dbg().id_-ctxt.param().min_age_ )
+			continue;
 			
 		typename TState::TEnergy ft_prob = (*it)->get_feature_prob(), ft_prob_max=0;
 		typename TState::TEnergy prob_chang = ft_prob-(*it)->get_last_feature_prob(), ft_prob_ch_max=0;
@@ -159,10 +159,10 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 			ft_prob_ch_max = std::max(ft_prob_ch_max, trans[ait]->directed(*it).transition_factor_dbg(odom, ctxt.param().prox_thr_)*(prob_chang-(opposite->get_feature_prob()-opposite->get_last_feature_prob()))/2);
 		}
 		
-		ft_prob = std::max((typename TState::TEnergy)0, ft_prob-ft_prob_max);
+		ft_prob = std::max((typename TState::TEnergy)0, ft_prob-ft_prob_max)*odom.dist(ctxt.param().prox_thr_);
 	
 		if(ft_prob+ft_prob_ch_max)
-			ROS_INFO("injecting energy %f (feature probability)    %f %f %f    %f %f", ft_prob+ft_prob_ch_max, ft_prob, (*it)->get_feature_prob(), ft_prob_max, prob_chang, ft_prob_ch_max);
+			ROS_INFO("%d: injecting energy %f (feature probability)    %f %f %f    %f %f", (*it)->dbg().id_, ft_prob+ft_prob_ch_max, ft_prob, (*it)->get_feature_prob(), ft_prob_max, prob_chang, ft_prob_ch_max);
 			
 		(*it)->dist_o() *= std::max((typename TState::TEnergy)0, 1-ft_prob-ft_prob_ch_max);
 	}
