@@ -5,7 +5,7 @@
 
 namespace cob_3d_experience_mapping {
 	
-	template<typename _TType, int NUM_TRANS, int NUM_ROT, class TStatePtr>
+	template<typename _TType, int NUM_TRANS, int NUM_ROT, class TStatePtr, _TType _DEVIATION=0.000001f>
 	class Transformation {
 	public:
 		typedef _TType TType;
@@ -136,6 +136,10 @@ namespace cob_3d_experience_mapping {
 			r(1) = std::sqrt(r(1))/thr(1);
 			
 			return r.norm();
+		}
+		
+		TType dist_uncertain(const TDist &thr) const {
+			return dist(thr) + _DEVIATION;
 		}
 		
 		inline static Eigen::Matrix<TType, NUM_ROT, 1> dist_rad(Eigen::Matrix<TType, NUM_ROT, 1> v) {
