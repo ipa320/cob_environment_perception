@@ -99,6 +99,8 @@ public:
 	  static int ts=0;
 	  ++ts;
 	  
+	   cob_3d_experience_mapping::algorithms::reset_features(ctxt_.active_cells());
+	  
 	  for(size_t i=0; i<infos->infos.size(); i++) {
 		  ctxt_.add_feature(infos->infos[i].id, ts);
 	  }
