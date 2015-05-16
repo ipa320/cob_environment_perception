@@ -21,6 +21,16 @@ namespace cob_3d_experience_mapping {
 		std::string info_;
 		int id_;
 		Eigen::Vector3f pose_;
+		
+		template<class Archive>
+		void serialize(Archive & ar, const unsigned int version)
+		{
+		    ROS_ASSERT(version==0); //TODO: version handling
+		    
+		   ar & name_;
+		   ar & info_;
+		   ar & id_;
+		}
 	};
 	
 	/**
@@ -115,6 +125,24 @@ namespace cob_3d_experience_mapping {
 		inline TEnergy get_last_feature_prob() const {return 1-ft_imp_last_;}
 		
 		void reset_feature() {ft_imp_last_=ft_imp_; ft_imp_=1;}
+		
+		template<class Archive, class ID, class Graph>
+		void serialize(Archive & ar, const unsigned int version, Graph &graph)
+		{
+		   ROS_ASSERT(version==0); //TODO: version handling
+		   
+		   std::vector<ID> ids;
+		   
+		   if(Archive::is_saving::value)
+		   	for(TArcOutIterator ait(arc_out_begin(graph)); ait!=arc_out_end(graph); ++ait)
+		   		ids.push_back( opposite_node(graph, ait)->id() );
+		   ar & ids;
+		   
+		   if(Archive::is_loading::value)
+		   	ROS_ERROR("todo");
+		   		
+		   ar & dbg_;
+		}
 	};
 	
 	/**
