@@ -215,8 +215,6 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		ROS_ASSERT((std::pow(odom.dist_uncertain(ctxt.param().prox_thr_),2)-delta*delta)>=0);
 		ROS_ASSERT( (*it)->dist_h()==(*it)->dist_h() );
 		ROS_ASSERT( (*it)->dist_o()==(*it)->dist_o() );
-		
-		(*it)->reset_feature();
 	}
 	
 	
@@ -233,3 +231,18 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 	}
 
 }
+
+template<class TCellVector>
+void reset_features(TCellVector &active_cells)
+{
+	typedef typename TCellVector::iterator TIter;
+	
+	TIter begin = active_cells.begin();
+	TIter end   = active_cells.end();
+	
+	//reset features
+	for(TIter it=begin; it!=end; it++) {
+		(*it)->reset_feature();
+	}
+}
+
