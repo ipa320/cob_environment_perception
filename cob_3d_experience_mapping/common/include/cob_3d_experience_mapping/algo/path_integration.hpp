@@ -153,7 +153,7 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		if( (*it)->dbg().id_ >= ctxt.virtual_cell()->dbg().id_-ctxt.param().min_age_ )
 			continue;
 			
-		typename TState::TEnergy ft_prob = (*it)->get_feature_prob(), ft_prob_max=0;
+		typename TState::TEnergy ft_prob = (*it)->get_feature_prob();/*, ft_prob_max=0;
 		typename TState::TEnergy prob_chang = ft_prob-(*it)->get_last_feature_prob(), ft_prob_ch_max=0;
 		
 		for(TArcIter_out ait((*it)->arc_out_begin(graph)); ait!=(*it)->arc_out_end(graph); ++ait) {
@@ -174,7 +174,13 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		if(ft_prob+ft_prob_ch_max)
 			ROS_INFO("%d: injecting energy %f (feature probability)    %f %f %f    %f %f", (*it)->dbg().id_, ft_prob+ft_prob_ch_max, ft_prob, (*it)->get_feature_prob(), ft_prob_max, prob_chang, ft_prob_ch_max);
 			
-		(*it)->dist_o() *= std::max((typename TState::TEnergy)0, 1-ft_prob-ft_prob_ch_max);
+		(*it)->dist_o() *= std::max((typename TState::TEnergy)0, 1-ft_prob-ft_prob_ch_max);*/
+		
+		ftprob *= odom.dist(ctxt.param().prox_thr_);
+		if(ft_prob)
+			ROS_INFO("%d: injecting energy %f (feature probability)    %f", (*it)->dbg().id_, ft_prob, (*it)->get_feature_prob());
+			
+		(*it)->dist_o() *= std::max((typename TState::TEnergy)0, 1-ft_prob);
 	}
 	
 	//step 1: set min. dist.
