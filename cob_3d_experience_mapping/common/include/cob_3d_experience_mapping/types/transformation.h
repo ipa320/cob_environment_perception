@@ -207,5 +207,20 @@ namespace cob_3d_experience_mapping {
 					* Eigen::AngleAxis<TType>(link_.template tail<NUM_ROT>()(0), Eigen::Matrix<TType, 3, 1>::UnitZ());
 		}
 		
+		template<class Archive, class ID, class Cells>
+		void serialize(Archive & ar, const unsigned int version, Cells &cells)
+		{
+		    ROS_ASSERT(version==0); //TODO: version handling
+		    
+		    for(int i=0; i<NUM_TRANS+NUM_ROT; i++)
+		    	ar & link_(i);
+		    	
+		    ID id;
+		    if(Archive::is_saving::value &&src_) id = src->id();
+		    ar & id;
+		    
+		    if(Archive::is_loading::value && id)
+		    	src_ = cells[id];
+		}
 	};
 }
