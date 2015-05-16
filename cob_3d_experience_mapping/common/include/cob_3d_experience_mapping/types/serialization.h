@@ -6,12 +6,10 @@
 namespace boost {
 namespace serialization {
 
-template<class Archive>
-void serialize(Archive & ar, gps_position & g, const unsigned int version)
+template<class Archive, class Type>
+void serialize(Archive & ar, Type & obj, const unsigned int version)
 {
-    ar & g.degrees;
-    ar & g.minutes;
-    ar & g.seconds;
+    obj.serialize(ar,version);
 }
 
 } // namespace serialization
