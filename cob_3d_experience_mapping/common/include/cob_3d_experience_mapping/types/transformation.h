@@ -5,7 +5,7 @@
 
 namespace cob_3d_experience_mapping {
 	
-	template<typename _TType, int NUM_TRANS, int NUM_ROT, class TStatePtr, _TType _DEVIATION=0.000001f>
+	template<typename _TType, int NUM_TRANS, int NUM_ROT, class TStatePtr>
 	class Transformation {
 	public:
 		typedef _TType TType;
@@ -16,6 +16,7 @@ namespace cob_3d_experience_mapping {
 	private:
 		TLink link_;
 		TStatePtr src_;
+		_TType _DEVIATION;
 
 		template<int TInd>
 		inline static void helper_hystersis(TDist &d, const TDist &thr) {
@@ -25,16 +26,18 @@ namespace cob_3d_experience_mapping {
 		
 	public:
 		
-		Transformation() : link_(TLink::Zero())
+		Transformation() : link_(TLink::Zero()), _DEVIATION(0.000001f)
 		{}
 		
 		Transformation(const TStatePtr &state) :
-		link_(TLink::Zero()), src_(state)
+		link_(TLink::Zero()), src_(state), _DEVIATION(0.000001f)
 		{}
 
 		Transformation(const TLink &link, const TStatePtr &state) :
-		link_(link), src_(state)
+		link_(link), src_(state), _DEVIATION(0.000001f)
 		{}
+		
+		inline _TType &deviation() {return _DEVIATION;}
 		
 		inline const TStatePtr &src() const {return src_;}
 		inline TStatePtr &src() {return src_;}

@@ -176,7 +176,7 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 			
 		(*it)->dist_o() *= std::max((typename TState::TEnergy)0, 1-ft_prob-ft_prob_ch_max);*/
 		
-		ftprob *= odom.dist(ctxt.param().prox_thr_);
+		ft_prob *= odom.dist(ctxt.param().prox_thr_);
 		if(ft_prob)
 			ROS_INFO("%d: injecting energy %f (feature probability)    %f", (*it)->dbg().id_, ft_prob, (*it)->get_feature_prob());
 			

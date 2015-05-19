@@ -126,6 +126,8 @@ public:
 		  ROS_INFO("odom: %f %f %f", link(0),link(1),link(2));
 
 		  Transformation action(link, ctxt_.current_active_cell());
+		  action.deviation() = 0.025f;
+		  
 		  cob_3d_experience_mapping::algorithms::step(graph_, ctxt_, cells_, trans_, action, dbg_pose);
 
 		  if(vis_ && ctxt_.active_cells().size()>0) {
