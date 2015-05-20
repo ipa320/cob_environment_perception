@@ -111,8 +111,23 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 			ROS_INFO("relocalized %d -> %d", ctxt.last_active_cell()?ctxt.last_active_cell()->dbg().id_:-1, ctxt.current_active_cell()?ctxt.current_active_cell()->dbg().id_:-1);
 			
 			if(ctxt.last_active_cell()!=ctxt.current_active_cell() && ctxt.last_active_cell() && ctxt.current_active_cell()) {
-				insert_transistion(graph, trans, ctxt.current_active_cell(), ctxt.virtual_transistion());
-				ROS_INFO("inserted new link");
+				
+				bool exist=false;
+				for(TArcIter_out ait(ctxt.current_active_cell()->arc_out_begin(graph)); ait!=ctxt.current_active_cell()->arc_out_end(graph); ++ait) {
+					typename TIter::value_type opposite = cells[ctxt.current_active_cell()->opposite_node(graph, ait)];
+					if(opposite==ctxt.virtual_transistion()->src()) {
+						exist=true;
+						break;
+					}
+				}
+				
+				if(exist) {
+					ROS_INFO("not inserted new link as exists already");
+				}
+				else {
+					insert_transistion(graph, trans, ctxt.current_active_cell(), ctxt.virtual_transistion());
+					ROS_INFO("inserted new link");
+				}
 			
 				std::cout<<"old pose: "<<ctxt.last_active_cell()->dbg().pose_.transpose()<<std::endl;
 				std::cout<<"new pose: "<<ctxt.current_active_cell()->dbg().pose_.transpose()<<std::endl;
