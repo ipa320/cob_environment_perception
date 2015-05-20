@@ -17,13 +17,10 @@ include_directories(
 include_directories(SYSTEM ${EIGEN_INCLUDE_DIRS})
 
 ## Declare a cpp executable
-add_executable(standalone_experience_mapping_lemon_node ../src/exp_mapping_lemon_standalone.cpp)
-
-# make sure configure headers are built before any node using them
-add_dependencies(standalone_experience_mapping_lemon_node ${PROJECT_NAME}_gencfg)
+add_library(standalone_experience_mapping SHARED ../src/exp_mapping_lemon_standalone.cpp)
 
 ## Specify libraries to link a library or executable target against
-target_link_libraries(standalone_experience_mapping_lemon_node
+target_link_libraries(standalone_experience_mapping
   ${catkin_LIBRARIES}
 )
 
