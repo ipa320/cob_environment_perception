@@ -71,12 +71,24 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		TIter begin = active_cells.begin();
 		TIter end   = active_cells.end();
 		std::sort(begin, end, energy_order<typename TCellVector::value_type>);
-		for(TIter it=begin; it!=end; it++) {
+		/*for(TIter it=begin; it!=end; it++) {
 			printf("cell %f %f\n", (*it)->dist_h(), (*it)->dist_o());
 			if(it+1!=end)
 				ROS_ASSERT( (*it)->d()<=(*(it+1))->d() );
-		}
+		}*/
 		ROS_ASSERT(ctxt.current_active_cell()==*begin);
+		
+		//debug
+		{
+			int i=0;
+			printf("current_list\n");
+			for(TIter it=begin; it!=end; it++) {
+				printf("%d:\t %f:%f\n", (*it)->dbg().id_, (*it)->d(), (*it)->dist_h());
+				++i;
+				//if(i>3) break;
+			}
+			printf("\n");
+		}
 	}
 	
 	ROS_ASSERT(ctxt.active_cells().size()>0);

@@ -132,8 +132,6 @@ namespace cob_3d_experience_mapping {
 				r(0) += std::pow(link_(i), 2);
 			for(int i=NUM_TRANS; i<NUM_TRANS+NUM_ROT; i++)
 				r(1) += std::pow(link_(i), 2);
-				
-			printf("dist %f %f\n", std::sqrt(r(0)), std::sqrt(r(1)));
 			
 			r(0) = std::sqrt(r(0))/thr(0);
 			r(1) = std::sqrt(r(1))/thr(1);
