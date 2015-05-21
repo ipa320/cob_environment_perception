@@ -1,0 +1,10 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<svg xmlns="http://www.w3.org/2000/svg" height="400" width="400">
+  <path fill="none" stroke="black" d="M0 400 L100 400 L100 300 L200 300 L200 200 L300 200">
+	  <animate dur="5s" repeatCount="indefinite" attributeName="d" values="M200 400 L200 400 L200 300 L200 300 L200 200 L200 200;
+	  M200 400 L200 400 L200 300 L200 300 L200 200 L100 200;
+	  M200 400 L200 400 L200 300 L200 300 L200 200 L300 200;
+	  M0 400 L100 400 L100 300 L200 300 L200 200 L300 200;
+	  M200 400 L200 400 L200 300 L200 300 L200 200 L200 200;"/>
+  </path>
+</svg>
