@@ -22,7 +22,7 @@ namespace cob_3d_experience_mapping {
 			~VisualizationHandler() {
 			}
 			
-			typedef std::map<const TNode, bool> TVisitedList;
+			typedef std::map<const TNode, Eigen::Affine3f> TVisitedList;
 			
 			void visualize(const TGraph &graph, const TMapCells &cells, TMapTransformations &trans, const TNode &start_node) {
 				TVisitedList visited;
@@ -81,10 +81,18 @@ namespace cob_3d_experience_mapping {
 			
 			bool rec_vis(const TGraph &graph, const TMapCells &cells, TMapTransformations &trans, const TNode &act_node, TVisitedList &visted, const double max_dist_o, const int depth=-1, const Eigen::Affine3f &pos=Eigen::Affine3f()) {
 				//only visited each node once
-				if(!act_node || depth==0 || visted.find(act_node)!=visted.end())
+				if(!act_node || depth==0)
 					return false;
+					
+				typename TVisitedList::const_iterator it = visted.find(act_node);
+				if(it!=visted.end()) {
+					cob_3d_visualization::RvizMarker scene;
+					scene.line((Eigen::Vector3f)pos.translation(), (Eigen::Vector3f)it->second.translation(), 0.025f);
+					scene.color(1,1,1,0.35);
+					return false;
+				}
 
-				visted[act_node] = true;
+				visted[act_node] = pos;
 				
 				visualize_node(act_node, pos, max_dist_o);
 				
