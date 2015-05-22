@@ -9,6 +9,7 @@ namespace cob_3d_experience_mapping {
 	namespace algorithms {
 		
 		#include "algo/path_integration.hpp"
+		#include "algo/shortest_path.hpp"
 		#include "algo/step.hpp"
 		
 	}

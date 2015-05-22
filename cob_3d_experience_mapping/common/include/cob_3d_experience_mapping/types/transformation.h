@@ -5,6 +5,25 @@
 
 namespace cob_3d_experience_mapping {
 	
+	template<class TTransformation>
+	class ActionSearchResult {
+		typename TTransformation::TPtr trans_;
+		bool found_;
+	public:
+	
+		ActionSearchResult(typename TTransformation::TPtr trans): found_(true), trans_(trans)
+		{}
+		
+		ActionSearchResult(const bool found): found_(found)
+		{}
+		
+		static ActionSearchResult None() {return ActionSearchResult(false);}
+		static ActionSearchResult Reached() {return ActionSearchResult(true);}
+		
+		bool found() {return found_;}
+		bool reached() {return found_ && !trans_;}
+	};
+	
 	template<typename _TType, int NUM_TRANS, int NUM_ROT, class TStatePtr>
 	class Transformation {
 	public:

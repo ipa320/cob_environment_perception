@@ -1,6 +1,7 @@
 #pragma once
 
 #include <lemon/list_graph.h>
+#include <lemon/dijkstra.h>
 #include <boost/shared_ptr.hpp>
 #include <Eigen/Core>
 
