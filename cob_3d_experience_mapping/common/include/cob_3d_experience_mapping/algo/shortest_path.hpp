@@ -2,9 +2,9 @@
 
 template<class TDijkstra, class TNode, class TGraph>
 boost::shared_ptr<typename TDijkstra::Path> graph_shortest_path(const TNode &src, const TNode &tgt, TGraph &graph) {
-	TDijkstra dijkstra(graph, length);
+	TDijkstra dijkstra(graph, typename TDijkstra::LengthMap());
 	//dijkstra.distMap(dist);
-	dijsktra.init();
+	dijkstra.init();
 	dijkstra.addSource(src);
 	dijkstra.start(tgt);
 	
@@ -15,15 +15,22 @@ boost::shared_ptr<typename TDijkstra::Path> graph_shortest_path(const TNode &src
 	
 	ROS_INFO("found path with dist %f", dijkstra.path(tgt).length());
 		
-	return boost::shared_ptr<TPath>(new TPath(dijkstra.path(tgt)));
+	return boost::shared_ptr<typename TDijkstra::Path>(new typename TDijkstra::Path(dijkstra.path(tgt)));
 }
 
-template<class TCell, class TGraph, class TContext, class TMapCells, class TMapTransformations, class TTransformation>
-void find_shortest_path(const TCell &src, const TCell &tgt, TGraph &graph, TContext &ctxt, TMapCells &cells, TMapTransformations &trans, const TTransformation &odom, TResultList &result, const Eigen::Vector3f &dbg_pose)
+template<class TAction, class TCell, class TGraph, class TContext, class TMapCells, class TMapTransformations, class TTransformation>
+TAction find_next_action(const TCell &src, const TCell &tgt, TGraph &graph, TContext &ctxt, TMapCells &cells, TMapTransformations &trans)
 {
-	typedef TPath;
+	typedef typename lemon::Dijkstra<TGraph>::Path TPath;
 	
-	boost::shared_ptr<TPath> path = graph_shortest_path<lemon::Dijkstra>(src->node(), tgt->node(), graph);
-	if(!path) return;
+	boost::shared_ptr<TPath> path = graph_shortest_path<lemon::Dijkstra<TGraph> >(src->node(), tgt->node(), graph);
+	if(!path) return TAction::None();
+	if(path->length()<=1) return TAction::Reached();
+	
+	return TAction(trans[path->nthIt(0)]);
+	
+	/*for(int i=0; i<path->length(); i++) {
+		typename TPath::ArcIt it = path->nthIt(i);
+	}*/
 }
 
