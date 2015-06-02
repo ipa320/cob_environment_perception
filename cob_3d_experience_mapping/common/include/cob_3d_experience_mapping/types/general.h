@@ -28,9 +28,9 @@ namespace cob_3d_experience_mapping {
 		{
 		    ROS_ASSERT(version==0); //TODO: version handling
 		    
-		   ar & name_;
-		   ar & info_;
-		   ar & id_;
+		   ar & BOOST_SERIALIZATION_NVP(name_);
+		   ar & BOOST_SERIALIZATION_NVP(info_);
+		   ar & BOOST_SERIALIZATION_NVP(id_);
 		}
 	};
 	
@@ -127,22 +127,62 @@ namespace cob_3d_experience_mapping {
 		
 		void reset_feature() {ft_imp_last_=ft_imp_; ft_imp_=1;}
 		
-		template<class Archive, class ID, class Graph>
-		void serialize(Archive & ar, const unsigned int version, Graph &graph)
+		template<class Archive>
+		void serialize_single(Archive & ar, const unsigned int version)
 		{
 		   ROS_ASSERT(version==0); //TODO: version handling
 		   
-		   std::vector<ID> ids;
+		   dbg_.serialize(ar, version);
+		}
+		
+		template<class ID, class Archive, class Graph, class TMapCells, class TMapTransformations>
+		void serialize_trans(Archive & ar, const unsigned int version, Graph &graph, TMapCells &cells, TMapTransformations &trans)
+		{
+			ROS_ASSERT(version==0); //TODO: version handling
 		   
-		   if(Archive::is_saving::value)
-		   	for(TArcOutIterator ait(arc_out_begin(graph)); ait!=arc_out_end(graph); ++ait)
-		   		ids.push_back( opposite_node(graph, ait)->id() );
-		   ar & ids;
+			size_t num=0;
 		   
-		   if(Archive::is_loading::value)
-		   	ROS_ERROR("todo");
-		   		
-		   ar & dbg_;
+			if(Archive::is_saving::value) {
+				for(TArcOutIterator ait(arc_out_begin(graph)); ait!=arc_out_end(graph); ++ait)
+					++num;
+					//ids.push_back( cells[opposite_node(graph, ait)]->dbg().id_ );
+			}
+			ar & BOOST_SERIALIZATION_NVP(num);
+		   
+			if(Archive::is_loading::value) {
+				TPtr th;
+				for(typename TGraph::NodeIt it(graph); it!=lemon::INVALID; ++it)
+					if(cells[it]->dbg().id_==dbg().id_) {
+						th = cells[it];
+						break;
+					}
+				ROS_ASSERT(th);
+				
+				for(size_t i=0; i<num; i++) {
+					ID id;
+					ar & BOOST_SERIALIZATION_NVP(id);
+					
+					//find cell
+					typename TGraph::NodeIt it(graph);
+					for(; it!=lemon::INVALID; ++it) {
+						if(cells[it]->dbg().id_==id) {
+							typename TMapTransformations::Value link(new typename TMapTransformations::Value::element_type());
+							link->serialize(ar, version);
+							link->src() = th;
+							trans.set(graph.addArc(th->node(), cells[it]->node()), link);
+							break;
+						}
+					}
+					ROS_ASSERT(it!=lemon::INVALID);
+				}
+				
+			}
+			else {	//saving...
+				for(TArcOutIterator ait(arc_out_begin(graph)); ait!=arc_out_end(graph); ++ait) {
+					ar & BOOST_SERIALIZATION_NVP(cells[opposite_node(graph, ait)]->dbg().id_);
+					trans[ait]->serialize(ar, version);
+				}
+			}
 		}
 	};
 	

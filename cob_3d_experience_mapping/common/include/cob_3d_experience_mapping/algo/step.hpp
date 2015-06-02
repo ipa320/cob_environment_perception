@@ -25,4 +25,6 @@ void step(TGraph &graph, TContext &context, TMapCells &cells, TMapTransformation
 	//ActionSearchResult<TTransformation> action = find_next_action<ActionSearchResult<TTransformation>, typename TState::TPtr, TGraph, TContext, TMapCells, TMapTransformations, TTransformation>
 	//(context.virtual_cell(), context.current_active_cell(), graph, context, cells, trans);
 	//ROS_INFO("test shortest path: %d %d", (int)action.found(), (int)action.reached());
+	
+	save_schedule(ContextContainer<TContext,TGraph,TMapCells,TMapTransformations>(context, graph, cells, trans), "/tmp/exp_mapping.xml");
 }

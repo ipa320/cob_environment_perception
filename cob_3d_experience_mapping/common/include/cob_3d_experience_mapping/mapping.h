@@ -1,5 +1,6 @@
 #pragma once
 
+#include "types/serialization.h"
 #include "types/general.h"
 #include "types/transformation.h"
 #include "algo/context.h"

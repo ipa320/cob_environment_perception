@@ -117,7 +117,59 @@ namespace cob_3d_experience_mapping {
 
 			ROS_INFO("new max energy: %f", energy_max());*/
 		}
-		
+				
+		template<class Archive>
+		void serialize(Archive & ar, const unsigned int version)
+		{
+		    ROS_ASSERT(version==0); //TODO: version handling
+		    
+		    param_.serialize(ar, version);
+		}
 	};
 	
+	
+	template<class TContext, class TGraph, class TMapCells, class TMapTransformations>
+	class ContextContainer {
+		TContext &ctxt_;
+		TGraph &graph_;
+		TMapCells &cells_;
+		TMapTransformations &trans_;
+		
+	public:
+		
+		ContextContainer(TContext &ctxt, TGraph &graph, TMapCells &cells, TMapTransformations &trans) :
+		 ctxt_(ctxt), graph_(graph), cells_(cells), trans_(trans)
+		 {}
+		    	
+		template<class Archive>
+		void serialize(Archive & ar, const unsigned int version)
+		{
+		    ROS_ASSERT(version==0); //TODO: version handling
+		    
+		    ctxt_.serialize(ar, version);
+		    
+			size_t num=0;
+		    if(Archive::is_loading::value) {
+				ar & BOOST_SERIALIZATION_NVP(num);
+				for(size_t i=0; i<num; i++) {
+					typename TContext::TState::TPtr c(new typename TContext::TState);
+					c->set_node(graph_.addNode());
+					cells_.set(c->node(), c);
+					c->serialize_single(ar, version);
+				}
+			}
+			else { //saving...
+				for(typename TGraph::NodeIt it(graph_); it!=lemon::INVALID; ++it)
+					++num;
+					
+				ar & BOOST_SERIALIZATION_NVP(num);
+				for(typename TGraph::NodeIt it(graph_); it!=lemon::INVALID; ++it)
+					cells_[it]->serialize_single(ar, version);
+			}
+			
+			for(typename TGraph::NodeIt it(graph_); it!=lemon::INVALID; ++it)
+				cells_[it]->template serialize_trans<int>(ar, version, graph_, cells_, trans_);
+		}
+			
+	};
 }

@@ -1,9 +1,11 @@
 #pragma once
 
+#include <fstream>
+#include <boost/serialization/nvp.hpp>
 #include <boost/archive/xml_iarchive.hpp>
 #include <boost/archive/xml_oarchive.hpp>
 
-namespace boost {
+/*namespace boost {
 namespace serialization {
 
 template<class Archive, class Type>
@@ -13,11 +15,11 @@ void serialize(Archive & ar, Type & obj, const unsigned int version)
 }
 
 } // namespace serialization
-} // namespace boost
+} // namespace boost*/
 
 
-
-void save_schedule(const bus_schedule &s, const char * filename){
+template<class TContent>
+void save_schedule(const TContent &s, const char * filename){
     // make an archive
     std::ofstream ofs(filename);
     assert(ofs.good());
@@ -25,8 +27,9 @@ void save_schedule(const bus_schedule &s, const char * filename){
     oa << BOOST_SERIALIZATION_NVP(s);
 }
 
+template<class TContent>
 void
-restore_schedule(bus_schedule &s, const char * filename)
+restore_schedule(TContent &s, const char * filename)
 {
     // open the archive
     std::ifstream ifs(filename);
