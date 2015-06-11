@@ -29,5 +29,8 @@ void step(TGraph &graph, TContext &context, TMapCells &cells, TMapTransformation
 	(context.virtual_cell(), context.current_active_cell(), graph, context, cells, trans);
 	ROS_INFO("test shortest path: %d %d", (int)action.found(), (int)action.reached());
 	
-	save_schedule(ContextContainer<TContext,TGraph,TMapCells,TMapTransformations>(context, graph, cells, trans), "/tmp/exp_mapping.xml");
+	save_content(ContextContainer<TContext,TGraph,TMapCells,TMapTransformations>(context, graph, cells, trans), "/tmp/exp_mapping.xml");
+	
+	//ContextContainer<TContext,TGraph,TMapCells,TMapTransformations> container(context, graph, cells, trans);
+	//restore_content(container, "/tmp/exp_mapping.xml");
 }

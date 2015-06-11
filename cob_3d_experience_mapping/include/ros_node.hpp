@@ -49,14 +49,16 @@ public:
 	typedef cob_3d_experience_mapping::Feature<State, cob_3d_experience_mapping::Empty> Feature;
 	typedef cob_3d_experience_mapping::Transformation<Scalar, NUM_TRANS, NUM_ROT, typename State::TPtr> Transformation;
 	typedef cob_3d_experience_mapping::visualization::VisualizationHandler<typename State::TGraph, typename TGraph::NodeMap<typename State::TPtr>, typename TGraph::ArcMap <typename Transformation::TPtr>, typename State::TPtr, typename State::TArcOutIterator> VisualizationHandler;
+	typedef cob_3d_experience_mapping::Context<Scalar /*energy*/, State /*state*/, Feature, Eigen::Matrix<float,1,2>/*energy weight*/, Transformation/*tranformation*/> TContext;
+	typedef TGraph::NodeMap<typename State::TPtr> TMapCells;
+	typedef TGraph::ArcMap <typename Transformation::TPtr> TMapTransformations;
 	
 private:
-
-	cob_3d_experience_mapping::Context<Scalar /*energy*/, State /*state*/, Feature, Eigen::Matrix<float,1,2>/*energy weight*/, Transformation/*tranformation*/> ctxt_;
 	
+	TContext ctxt_;	
 	TGraph graph_;
-	TGraph::NodeMap<typename State::TPtr> cells_;
-	TGraph::ArcMap <typename Transformation::TPtr> trans_;
+	TMapCells cells_;
+	TMapTransformations trans_;
 	boost::mutex mtx_;
 	
 	boost::shared_ptr<VisualizationHandler> vis_;

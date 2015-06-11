@@ -190,12 +190,18 @@ namespace cob_3d_experience_mapping {
 		    
 			size_t num=0;
 		    if(Archive::is_loading::value) {
+				//clear everything
+				graph_.clear();
+				ctxt_.active_cells().clear();
+				
 				ar & BOOST_SERIALIZATION_NVP(num);
 				for(size_t i=0; i<num; i++) {
 					typename TContext::TState::TPtr c(new typename TContext::TState);
 					c->set_node(graph_.addNode());
 					cells_.set(c->node(), c);
 					c->serialize_single(ar, version);
+					
+					ctxt_.active_cells().push_back(c);
 				}
 			}
 			else { //saving...

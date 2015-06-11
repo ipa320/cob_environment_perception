@@ -19,7 +19,7 @@ void serialize(Archive & ar, Type & obj, const unsigned int version)
 
 
 template<class TContent>
-void save_schedule(const TContent &s, const char * filename){
+void save_content(const TContent &s, const char * filename){
     // make an archive
     std::ofstream ofs(filename);
     assert(ofs.good());
@@ -29,7 +29,7 @@ void save_schedule(const TContent &s, const char * filename){
 
 template<class TContent>
 void
-restore_schedule(TContent &s, const char * filename)
+restore_content(TContent &s, const char * filename)
 {
     // open the archive
     std::ifstream ifs(filename);
