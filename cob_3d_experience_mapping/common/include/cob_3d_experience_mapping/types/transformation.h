@@ -232,8 +232,11 @@ namespace cob_3d_experience_mapping {
 		{
 		    ROS_ASSERT(version==0); //TODO: version handling
 		    
-		    for(int i=0; i<NUM_TRANS+NUM_ROT; i++)
-		    	ar & BOOST_SERIALIZATION_NVP(link_(i));
+		    for(int i=0; i<NUM_TRANS+NUM_ROT; i++) {
+				char buf[16];
+				sprintf(buf, "link_%d", i);
+		    	ar & boost::serialization::make_nvp(buf, link_(i));
+			}
 		}
 	};
 }

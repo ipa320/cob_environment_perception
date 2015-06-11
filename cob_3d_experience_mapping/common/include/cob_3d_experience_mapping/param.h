@@ -33,8 +33,11 @@ namespace cob_3d_experience_mapping {
 		    ROS_ASSERT(version==0); //TODO: version handling
 		    
 		    for(int i=0; i<prox_thr_.rows(); i++)
-				for(int j=0; j<prox_thr_.cols(); j++)
-					ar & BOOST_SERIALIZATION_NVP(prox_thr_(i,j));
+				for(int j=0; j<prox_thr_.cols(); j++) {
+					char buf[16];
+					sprintf(buf, "prox_thr_%d_%d", i,j);
+					ar & boost::serialization::make_nvp(buf, prox_thr_(i,j));
+				}
 		    ar & BOOST_SERIALIZATION_NVP(est_occ_);
 		    ar & BOOST_SERIALIZATION_NVP(min_age_);
 		    ar & BOOST_SERIALIZATION_NVP(max_active_cells_);

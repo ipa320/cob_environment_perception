@@ -28,7 +28,7 @@ namespace cob_3d_experience_mapping {
 				TVisitedList visited;
 				cob_3d_visualization::RvizMarkerManager::get().clear();
 				Eigen::Affine3f pos; pos = Eigen::Translation3f(0,0,0);
-				rec_vis(graph, cells, trans, start_node, visited, start_node->dist_o(), -1, pos);
+				rec_vis(graph, cells, trans, start_node, visited, start_node->dist_o(), 20, pos);
 				cob_3d_visualization::RvizMarkerManager::get().publish();
 			}
 			
@@ -68,7 +68,7 @@ namespace cob_3d_experience_mapping {
 				
 				{
 					cob_3d_visualization::RvizMarker scene;
-					char buf[128];
+					char buf[256];
 					sprintf(buf, "%s %s d=%.3f h=%.3f o=%.3f", act_node->dbg().name_.c_str(), act_node->dbg().info_.c_str(), act_node->d(), act_node->dist_h(), act_node->dist_o());
 					scene.text(buf);
 					scene.move(pos+0.3*Eigen::Vector3f::UnitZ());

@@ -57,6 +57,7 @@ private:
 	TGraph graph_;
 	TGraph::NodeMap<typename State::TPtr> cells_;
 	TGraph::ArcMap <typename Transformation::TPtr> trans_;
+	boost::mutex mtx_;
 	
 	boost::shared_ptr<VisualizationHandler> vis_;
 	
@@ -96,6 +97,8 @@ public:
   }
   
   void on_sensor_info(const cob_3d_experience_mapping::SensorInfoArray::ConstPtr &infos) {
+	  boost::lock_guard<boost::mutex> guard(mtx_);
+	  
 	  static int ts=0;
 	  ++ts;
 	  
@@ -107,6 +110,8 @@ public:
   }
   
   void on_odom(const nav_msgs::Odometry::ConstPtr &odom) {
+	  boost::lock_guard<boost::mutex> guard(mtx_);
+	  
 	  ROS_INFO("-------------------------------");
 	  if(time_last_odom_.isValid() && (odom->header.stamp-time_last_odom_)<ros::Duration(10)) {
 		  ROS_INFO("on odom.");
@@ -134,7 +139,7 @@ public:
 			vis_->visualize(graph_, cells_, trans_, ctxt_.current_active_cell());
 		  }
 	  } else
-		  ROS_INFO("skipped odom");
+		  ROS_INFO("skipped odom %f", (odom->header.stamp-time_last_odom_).toSec());
 	  time_last_odom_ = odom->header.stamp;
 	  printf("\n");
   }

@@ -57,9 +57,10 @@ namespace cob_3d_experience_mapping {
 		TEnergy do_, dh_, ft_imp_, ft_imp_last_;
 		TNode node_;
 		DbgInfo dbg_;
+		bool still_exists_;
 		
 	public:		
-		State(): do_(0), dh_(0), ft_imp_(1), ft_imp_last_(1) {
+		State(): do_(0), dh_(0), ft_imp_(1), ft_imp_last_(1), still_exists_(true) {
 			static int no = 1;
 			char buf[128];
 			dbg_.id_ = no;
@@ -68,6 +69,9 @@ namespace cob_3d_experience_mapping {
 		}
 		
 		//setter/getter		
+		inline bool &still_exists() {return still_exists_;}
+		inline bool  still_exists() const {return still_exists_;}
+		
 		inline TEnergy &dist_o() {return do_;}
 		inline const TEnergy &dist_o() const {return do_;}
 		
@@ -159,8 +163,11 @@ namespace cob_3d_experience_mapping {
 				ROS_ASSERT(th);
 				
 				for(size_t i=0; i<num; i++) {
+					char buf[16];
+					sprintf(buf, "id%d", (int)i);
+					
 					ID id;
-					ar & BOOST_SERIALIZATION_NVP(id);
+					ar & boost::serialization::make_nvp(buf, id);
 					
 					//find cell
 					typename TGraph::NodeIt it(graph);
@@ -178,8 +185,12 @@ namespace cob_3d_experience_mapping {
 				
 			}
 			else {	//saving...
+				int i=0;
 				for(TArcOutIterator ait(arc_out_begin(graph)); ait!=arc_out_end(graph); ++ait) {
-					ar & BOOST_SERIALIZATION_NVP(cells[opposite_node(graph, ait)]->dbg().id_);
+					char buf[16];
+					sprintf(buf, "id%d", i);
+					++i;
+					ar & boost::serialization::make_nvp(buf, cells[opposite_node(graph, ait)]->dbg().id_);
 					trans[ait]->serialize(ar, version);
 				}
 			}
@@ -258,13 +269,25 @@ namespace cob_3d_experience_mapping {
 		{}
 		
 		void visited(const CellHandle &h, typename TInjection::TPtr inj) {
-			if(injections_.find(h)==injections_.end())
+			if(injections_.find(h)==injections_.end()) {
 				injections_.insert(typename InjectionMap::value_type(h, inj));
+				
+				//debug
+				char buf[32];
+				sprintf(buf,"ft%d ", id_);
+				inj->dbg().info_ += buf;
+			}
 		}
 		
-		void inject(const int ts, const int est_occ, const typename TInjection::TEnergy prob=1) {
+		template<typename TContext>
+		void inject(TContext *ctxt, const int ts, const int est_occ, const typename TInjection::TEnergy prob=1) {
 			for(typename InjectionMap::iterator it=injections_.begin(); it!=injections_.end(); it++) {
+				if(!it->second->still_exists()) continue;
+				
 				it->second->update(ts, (int)injections_.size(), est_occ, prob);
+			
+				//check if feature is in active list --> add
+				ctxt->add_to_active(it->second);
 			}
 			printf("inject %d\n", (int)injections_.size());
 		}

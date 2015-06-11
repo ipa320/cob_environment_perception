@@ -6,6 +6,11 @@
 #include <boost/thread.hpp>
 
 namespace cob_3d_experience_mapping {
+
+	template<class TStatePtr>
+	bool energy_order(const TStatePtr &a, const TStatePtr &b) {
+		return a->d2() < b->d2();
+	}
 	
 	template<class TState, class TEnergy>
 	struct Result {
@@ -56,6 +61,40 @@ namespace cob_3d_experience_mapping {
 		Context() : energy_sum_(0), energy_max_(0), last_dist_min_(0) {
 		}
 		
+		void add_to_active(typename TState::TPtr &cell) {
+			for(size_t i=0; i<active_cells_.size(); i++)
+				if(active_cells_[i]==cell) return;
+			cell->dist_o() = param().energy_max_;
+			//if(active_cells_.size()>0) cell->dist_o() += active_cells_.back()->dist_o();
+			cell->dist_h() = 0;
+			//active_cells_.insert(active_cells_.begin()+(active_cells_.size()-1), cell);
+			active_cells_.push_back(cell);
+			ROS_INFO("DBG: added");
+		}
+		
+		void remove_cell(typename TState::TPtr &cell) {
+			ROS_INFO("DBG: remove_cell");
+			if(!cell) return;
+			
+			cell->still_exists() = false;
+			for(size_t i=0; i<active_cells_.size(); i++)
+				if(active_cells_[i]==cell)
+					active_cells_.erase(active_cells_.begin()+i);
+		}
+		
+		void clean_active_list() {
+			std::sort(active_cells_.begin(), active_cells_.end(), energy_order<typename TState::TPtr>);
+			if(active_cells_.size()>param().max_active_cells_) {
+				ROS_INFO("DBG: removing");
+				active_cells_.erase(active_cells_.begin()+param().max_active_cells_, active_cells_.end());
+			}
+			if(active_cells_.size()>0 && active_cells_.back()->dist_o()>param().energy_max_) {
+				ROS_INFO("DBG: rescaling");
+				for(size_t i=0; i<active_cells_.size(); i++)
+					active_cells_[i]->dist_o() *= param().energy_max_/active_cells_.back()->dist_o();
+			}
+		}
+		
 		//getter/setter
 		inline TActList &active_cells() {return active_cells_;}
 		inline const TParameter &param() const {return param_;}
@@ -80,9 +119,9 @@ namespace cob_3d_experience_mapping {
 			if(it==features_.end())
 				it = features_.insert(typename FeatureMap::value_type(id, typename TFeature::TPtr(new TFeature(id))) ).first;
 			it->second->visited(current_active_cell().get(), current_active_cell());
-			it->second->inject(ts, param().est_occ_);
+			it->second->inject(this, ts, param().est_occ_);
 		}
-		
+#if 0		
 		template<class TIter>
 		void apply_energy_change(const TIter &begin, const TIter &end)
 		{
@@ -117,7 +156,8 @@ namespace cob_3d_experience_mapping {
 
 			ROS_INFO("new max energy: %f", energy_max());*/
 		}
-				
+#endif
+
 		template<class Archive>
 		void serialize(Archive & ar, const unsigned int version)
 		{

@@ -52,11 +52,6 @@ TEnergy inflow(TStatePtr &th, const TEnergy &offset, const TContext &ctxt, const
 	return I;
 }
 
-template<class TStatePtr>
-bool energy_order(const TStatePtr &a, const TStatePtr &b) {
-	return a->d2() < b->d2();
-}
-
 template<class TCellVector, class TEnergyFactor, class TGraph, class TContext, class TResultList, class TMapCells, class TMapTransformations, class TTransformation>
 void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/, TGraph &graph, TContext &ctxt, TMapCells &cells, TMapTransformations &trans, const TTransformation &odom, TResultList &result, const Eigen::Vector3f &dbg_pose)
 {
@@ -133,12 +128,14 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 				std::cout<<"new pose: "<<ctxt.current_active_cell()->dbg().pose_.transpose()<<std::endl;
 			}
 			
+			/*ctxt.virtual_cell()->still_exists() = false;
 			for(TIter it=active_cells.begin(); it!=active_cells.end(); it++)
 				if(*it == ctxt.virtual_cell()) {
 					active_cells.erase(it);
 					break;
-				}
+				}*/
 
+			ctxt.remove_cell(ctxt.virtual_cell());
 			remove_cell(graph, ctxt.virtual_cell());
 		}
 		
@@ -165,8 +162,8 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 	ctxt.virtual_transistion()->integrate(odom);
 	
 	{ //DEBUG
-		ctxt.virtual_cell()->dbg().info_+="V ";
-		ctxt.current_active_cell()->dbg().info_+="C ";
+		if(ctxt.virtual_cell()->dbg().info_.find("V")==std::string::npos) ctxt.virtual_cell()->dbg().info_ +="V ";
+		if(ctxt.current_active_cell()->dbg().info_.find("C")==std::string::npos) ctxt.current_active_cell()->dbg().info_+="C ";
 		
 		ctxt.virtual_transistion()->dbg();
 	} //DEBUG
