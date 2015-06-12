@@ -21,11 +21,13 @@ namespace cob_3d_experience_mapping {
 		int min_age_;
 		int max_active_cells_;
 
+#ifdef VIS_
 		//visualization
 		std_msgs::ColorRGBA vis_color_cell_;
 
 		dynamic_reconfigure::Server<cob_3d_experience_mapping::SettingsConfig> server_settings_;
 		dynamic_reconfigure::Server<cob_3d_experience_mapping::Vis_SettingsConfig> server_vis_settings_;
+#endif
 		
 		template<class Archive>
 		void serialize(Archive & ar, const unsigned int version)
@@ -46,11 +48,13 @@ namespace cob_3d_experience_mapping {
 
 		Parameter() {
 			//TODO: read from parameter server
-
+#ifdef VIS_
 			server_settings_.setCallback(boost::bind(&Parameter<TEnergyFactor, TDist>::cb_settings, this, _1, _2));
 			server_vis_settings_.setCallback(boost::bind(&Parameter<TEnergyFactor, TDist>::cb_vis_settings, this, _1, _2));
+#endif
 		}
 
+#ifdef VIS_
 		void cb_settings(cob_3d_experience_mapping::SettingsConfig &config, uint32_t level) {
 			prox_thr_(0) = config.translation;
 			prox_thr_(1) = config.rotation;
@@ -70,6 +74,7 @@ namespace cob_3d_experience_mapping {
 
 			ROS_INFO("updated vis. settings");
 		}
+#endif
 		
 	};
 	

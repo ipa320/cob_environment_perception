@@ -31,7 +31,7 @@ void export_content(const TContent &s, std::ostream &ostr){
 }
 
 template<class TArchive, class TContent>
-void import_content(TContent &s, std::ostream &istr)
+void import_content(TContent &s, std::istream &istr)
 {
     TArchive ia(istr);
 
@@ -50,7 +50,7 @@ void export_content_compr(const TContent &s, std::ostream &_ostr){
 }
 
 template<class TArchive, class TContent>
-void import_content_compr(TContent &s, std::ostream &_istr)
+void import_content_compr(TContent &s, std::istream &_istr)
 {
 	boost::iostreams::filtering_istream istr;
     istr.push(boost::iostreams::zlib_decompressor());

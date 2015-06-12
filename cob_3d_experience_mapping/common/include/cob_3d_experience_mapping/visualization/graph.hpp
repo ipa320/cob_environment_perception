@@ -1,5 +1,8 @@
 #pragma once
 
+//visualization is enabled
+#define VIS_
+
 //includes
 #include <cob_3d_visualization/simple_marker.h>
 

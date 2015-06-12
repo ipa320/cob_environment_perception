@@ -120,6 +120,7 @@ include_directories(SYSTEM ${EIGEN_INCLUDE_DIRS})
 ## Declare a cpp executable
 add_executable(cob_3d_experience_mapping_lemon_node src/exp_mapping_lemon.cpp)
 add_executable(sim_barks src/sim_barks.cpp)
+add_executable(convert src/convert.cpp)
 
 # make sure configure headers are built before any node using them
 add_dependencies(cob_3d_experience_mapping_lemon_node ${PROJECT_NAME}_gencfg)
@@ -133,6 +134,9 @@ target_link_libraries(cob_3d_experience_mapping_lemon_node
   ${catkin_LIBRARIES}
 )
 target_link_libraries(sim_barks
+  ${catkin_LIBRARIES}
+)
+target_link_libraries(convert
   ${catkin_LIBRARIES}
 )
 

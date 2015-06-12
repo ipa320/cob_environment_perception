@@ -1,6 +1,7 @@
 
 #include <nav_msgs/Odometry.h>
 #include <cob_3d_experience_mapping/SensorInfoArray.h>
+//#include <tf/transform_listener.h>
 
 class As_Node
 {
@@ -48,7 +49,9 @@ public:
 	typedef cob_3d_experience_mapping::State<cob_3d_experience_mapping::Empty, Scalar, TGraph> State;
 	typedef cob_3d_experience_mapping::Feature<State, cob_3d_experience_mapping::Empty> Feature;
 	typedef cob_3d_experience_mapping::Transformation<Scalar, NUM_TRANS, NUM_ROT, typename State::TPtr> Transformation;
+#ifdef VIS_
 	typedef cob_3d_experience_mapping::visualization::VisualizationHandler<typename State::TGraph, typename TGraph::NodeMap<typename State::TPtr>, typename TGraph::ArcMap <typename Transformation::TPtr>, typename State::TPtr, typename State::TArcOutIterator> VisualizationHandler;
+#endif
 	typedef cob_3d_experience_mapping::Context<Scalar /*energy*/, State /*state*/, Feature, Eigen::Matrix<float,1,2>/*energy weight*/, Transformation/*tranformation*/> TContext;
 	typedef TGraph::NodeMap<typename State::TPtr> TMapCells;
 	typedef TGraph::ArcMap <typename Transformation::TPtr> TMapTransformations;
@@ -61,9 +64,11 @@ private:
 	TMapTransformations trans_;
 	boost::mutex mtx_;
 	
+#ifdef VIS_
 	boost::shared_ptr<VisualizationHandler> vis_;
-	
-	ros::Subscriber sub_odometry_, sub_sensor_info_;
+#endif
+
+	ros::Subscriber sub_odometry_, sub_sensor_info_, sub_view_template_;
 	ros::Time time_last_odom_;
 public:
   // Constructor
@@ -86,6 +91,7 @@ public:
                                                                     ros::TransportHints().tcpNoDelay());
 	sub_sensor_info_ = n->subscribe<cob_3d_experience_mapping::SensorInfoArray>("/sim_barks/sensor_info", 0, boost::bind(&ROS_Node::on_sensor_info, this, _1), ros::VoidConstPtr(),
                                                                     ros::TransportHints().tcpNoDelay());
+#ifdef VIS_
     bool visualization_enabled;
     n->param<bool>("visualization_enabled", visualization_enabled, true);                                                             
 	if(visualization_enabled)
@@ -94,6 +100,7 @@ public:
 	/*if(vis_) {
 		vis_->init();
 	}*/
+#endif
 
 	  cob_3d_experience_mapping::algorithms::init<Transformation>(graph_, ctxt_, cells_, trans_);
   }
@@ -137,9 +144,11 @@ public:
 		  
 		  cob_3d_experience_mapping::algorithms::step(graph_, ctxt_, cells_, trans_, action, dbg_pose);
 
+#ifdef VIS_
 		  if(vis_ && ctxt_.active_cells().size()>0) {
 			vis_->visualize(graph_, cells_, trans_, ctxt_.current_active_cell());
 		  }
+#endif
 	  } else
 		  ROS_INFO("skipped odom %f", (odom->header.stamp-time_last_odom_).toSec());
 	  time_last_odom_ = odom->header.stamp;
