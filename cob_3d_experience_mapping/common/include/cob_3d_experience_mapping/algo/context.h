@@ -69,11 +69,11 @@ namespace cob_3d_experience_mapping {
 			cell->dist_h() = 0;
 			//active_cells_.insert(active_cells_.begin()+(active_cells_.size()-1), cell);
 			active_cells_.push_back(cell);
-			ROS_INFO("DBG: added");
+			DBG_PRINTF("DBG: added");
 		}
 		
 		void remove_cell(typename TState::TPtr &cell) {
-			ROS_INFO("DBG: remove_cell");
+			DBG_PRINTF("DBG: remove_cell");
 			if(!cell) return;
 			
 			cell->still_exists() = false;
@@ -85,11 +85,11 @@ namespace cob_3d_experience_mapping {
 		void clean_active_list() {
 			std::sort(active_cells_.begin(), active_cells_.end(), energy_order<typename TState::TPtr>);
 			if(active_cells_.size()>param().max_active_cells_) {
-				ROS_INFO("DBG: removing");
+				DBG_PRINTF("DBG: removing");
 				active_cells_.erase(active_cells_.begin()+param().max_active_cells_, active_cells_.end());
 			}
 			if(active_cells_.size()>0 && active_cells_.back()->dist_o()>param().energy_max_) {
-				ROS_INFO("DBG: rescaling");
+				DBG_PRINTF("DBG: rescaling");
 				for(size_t i=0; i<active_cells_.size(); i++)
 					active_cells_[i]->dist_o() *= param().energy_max_/active_cells_.back()->dist_o();
 			}
@@ -125,7 +125,7 @@ namespace cob_3d_experience_mapping {
 		template<class TIter>
 		void apply_energy_change(const TIter &begin, const TIter &end)
 		{
-			/*ROS_INFO("apply_energy_change");
+			/*DBG_PRINTF("apply_energy_change");
 
 			//remember all cells with (changed) energy
 			typedef std::map<typename TState::TPtr, typename TState::TPtr> TMem;
@@ -135,7 +135,7 @@ namespace cob_3d_experience_mapping {
 				mem[*it] = *it;
 			
 			for(TIter it=begin; it!=end; it++) {
-				ROS_INFO("energy old: %f", it->state_->energy());
+				DBG_PRINTF("energy old: %f", it->state_->energy());
 
 				it->delta_energy_ = std::max(it->delta_energy_, -it->state_->energy());	// at least 0
 				it->state_->energy() += it->delta_energy_;
@@ -144,7 +144,7 @@ namespace cob_3d_experience_mapping {
 				
 				mem[it->state_] = it->state_;
 
-				ROS_INFO("energy new: %f", it->state_->energy());
+				DBG_PRINTF("energy new: %f", it->state_->energy());
 			}
 			
 			active_cells_.clear();
@@ -154,7 +154,7 @@ namespace cob_3d_experience_mapping {
 					
 			update_max_energy();
 
-			ROS_INFO("new max energy: %f", energy_max());*/
+			DBG_PRINTF("new max energy: %f", energy_max());*/
 		}
 #endif
 
