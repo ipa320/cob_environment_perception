@@ -289,7 +289,7 @@ namespace cob_3d_experience_mapping {
 				//check if feature is in active list --> add
 				ctxt->add_to_active(it->second);
 			}
-			printf("inject %d\n", (int)injections_.size());
+			DBG_PRINTF("inject %d\n", (int)injections_.size());
 		}
 		
 	};
