@@ -94,6 +94,8 @@ target_link_libraries(cob_3d_features
 #  ${PCL_LIBRARIES}
 )
 
+add_dependencies(cob_3d_features cob_3d_mapping_msgs_gencpp)
+
 add_library(cob_3d_features_omp
   common/src/organized_curvature_estimation_omp.cpp
   common/src/organized_normal_estimation_omp.cpp
