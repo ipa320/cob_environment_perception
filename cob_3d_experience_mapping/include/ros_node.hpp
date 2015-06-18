@@ -103,6 +103,8 @@ public:
 #endif
 
 	  cob_3d_experience_mapping::algorithms::init<Transformation>(graph_, ctxt_, cells_, trans_);
+	  
+	  ROS_INFO("init done");
   }
   
   void on_sensor_info(const cob_3d_experience_mapping::SensorInfoArray::ConstPtr &infos) {
