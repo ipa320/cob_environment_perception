@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
 import csv, sys
-import rosbag
-from cob_3d_experience_mapping.msg import SensorInfoArray
+import rosbag, rospy
+from cob_3d_experience_mapping.msg import SensorInfoArray, SensorInfo
 from nav_msgs.msg import Odometry
 
 print "convert.py wifi.csv steps.csv out.bag"
@@ -17,6 +17,10 @@ no=0
 
 bag = rosbag.Bag(sys.argv[3], 'w')
 
+dbg_si=0
+dbg_od=0
+
+print "reading file wifi"
 with open(sys.argv[1], 'rb') as csvfile:
 	spamreader = csv.reader(csvfile, delimiter=';', quotechar='|')
 	for row in spamreader:
@@ -35,15 +39,17 @@ with open(sys.argv[1], 'rb') as csvfile:
 			for w in wifis:
 				msg.infos.append(SensorInfo(id=w[1]))
 			bag.write('/sim_barks/sensor_info', msg, rospy.Time.from_sec(wifis[0][0]/1000.))
-			wifis.clear()
+			wifis=[]
+			dbg_si+=1
 		
 		wifis.append( [ts, ssid, level] )
 
+print "reading file steps"
 with open(sys.argv[2], 'rb') as csvfile:
 	spamreader = csv.reader(csvfile, delimiter=';', quotechar='|')
 	for row in spamreader:
 		ts = int(row[0]) #timestamp
-		step = int(row[1])
+		step = (row[1]=='true')
 		ori = float(row[2])
 		lo = float(row[3])
 		la = float(row[4])
@@ -59,7 +65,12 @@ with open(sys.argv[2], 'rb') as csvfile:
 			#msg.pose.pose.orientation.w = ori
 			
 			bag.write('/odom', msg, rospy.Time.from_sec(ts/1000.))
-			steps.clear()
+			steps=[]
+			dbg_od+=1
 		
 		if step: steps.append( [ts, step, ori, lo, la, acc] )
 		
+bag.close()
+
+print "generated ",dbg_si," sensor and ",dbg_od," odometry messages"
+print "DONE"
