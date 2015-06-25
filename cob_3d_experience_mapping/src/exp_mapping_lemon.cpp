@@ -1,3 +1,7 @@
+
+//visualization is enabled
+#define VIS_
+
 #include <cob_3d_experience_mapping/mapping.h>
 
 #include <pcl/point_types.h>
