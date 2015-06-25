@@ -129,8 +129,12 @@ namespace cob_3d_experience_mapping {
 			return d2()<o.d2();
 		}
 		
-		void update(const int ts, const int no_conn, const int est_occ, const TEnergy prob=1) {			 
-			 ft_imp_ *= 1-prob/(no_conn+est_occ);
+		void update(const int ts, const int no_conn, const int est_occ, const TEnergy prob=1) {
+					 
+			ft_imp_ -= ft_imp_*prob/(no_conn+est_occ);
+			
+			 //ft_imp_ *= 1-prob/(no_conn+est_occ);
+			 //DBG_PRINTF("upd %d  %f\n", id(), get_feature_prob());
 		}
 		
 		inline TEnergy get_feature_prob() const {return 1-ft_imp_;}
