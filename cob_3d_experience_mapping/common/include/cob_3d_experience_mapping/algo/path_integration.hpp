@@ -201,7 +201,8 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 			
 		(*it)->dist_o() *= std::max((typename TState::TEnergy)0, 1-ft_prob-ft_prob_ch_max);*/
 		
-		ft_prob *= odom.dist(ctxt.param().prox_thr_);
+		ft_prob *= std::min(odom.dist(ctxt.param().prox_thr_), (typename TState::TEnergy)1);	//limit travelled distance to 1 step
+		//ft_prob *= std::exp( (*it)->dbg().hops_/3. );
 		if(ft_prob)
 			DBG_PRINTF("%d: injecting energy %f (feature probability)    %f*%f\n", (*it)->id(), ft_prob, (*it)->get_feature_prob(), odom.dist(ctxt.param().prox_thr_));
 			
