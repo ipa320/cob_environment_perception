@@ -21,7 +21,6 @@ namespace cob_3d_experience_mapping {
 	struct DbgInfo {
 		std::string name_;
 		std::string info_;
-		int id_;
 		Eigen::Vector3f pose_;
 		int hops_;
 		
@@ -32,7 +31,6 @@ namespace cob_3d_experience_mapping {
 		    
 		   ar & BOOST_SERIALIZATION_NVP(name_);
 		   ar & BOOST_SERIALIZATION_NVP(info_);
-		   ar & BOOST_SERIALIZATION_NVP(id_);
 		}
 	};
 	
@@ -55,9 +53,11 @@ namespace cob_3d_experience_mapping {
 		typedef typename TGraph::OutArcIt TArcOutIterator;
 		typedef typename TGraph::InArcIt TArcInIterator;
 		typedef boost::shared_ptr<State> TPtr;
+		typedef int ID;
 	protected:
 		TEnergy do_, dh_, ft_imp_, ft_imp_last_;
 		TNode node_;
+		ID id_;
 		DbgInfo dbg_;
 		bool still_exists_;
 		
@@ -65,7 +65,7 @@ namespace cob_3d_experience_mapping {
 		State(): do_(0), dh_(0), ft_imp_(1), ft_imp_last_(1), still_exists_(true) {
 			static int no = 1;
 			char buf[128];
-			dbg_.id_ = no;
+			id_ = no;
 			sprintf(buf, "%d", no++);
 			dbg_.name_ = buf;
 			
@@ -73,6 +73,9 @@ namespace cob_3d_experience_mapping {
 		}
 		
 		//setter/getter		
+		//inline ID &id() {return id_;}
+		inline ID  id() const {return id_;}
+		
 		inline bool &still_exists() {return still_exists_;}
 		inline bool  still_exists() const {return still_exists_;}
 		
@@ -140,6 +143,8 @@ namespace cob_3d_experience_mapping {
 		{
 		   ROS_ASSERT(version==0); //TODO: version handling
 		   
+		   ar & BOOST_SERIALIZATION_NVP(id_);
+		   
 		   dbg_.serialize(ar, version);
 		}
 		
@@ -160,7 +165,7 @@ namespace cob_3d_experience_mapping {
 			if(Archive::is_loading::value) {
 				TPtr th;
 				for(typename TGraph::NodeIt it(graph); it!=lemon::INVALID; ++it)
-					if(cells[it]->dbg().id_==dbg().id_) {
+					if(cells[it]->id_==id_) {
 						th = cells[it];
 						break;
 					}
@@ -176,7 +181,7 @@ namespace cob_3d_experience_mapping {
 					//find cell
 					typename TGraph::NodeIt it(graph);
 					for(; it!=lemon::INVALID; ++it) {
-						if(cells[it]->dbg().id_==id) {
+						if(cells[it]->id_==id) {
 							typename TMapTransformations::Value link(new typename TMapTransformations::Value::element_type());
 							link->serialize(ar, version);
 							link->src() = th;
@@ -194,7 +199,7 @@ namespace cob_3d_experience_mapping {
 					char buf[16];
 					sprintf(buf, "id%d", i);
 					++i;
-					ar & boost::serialization::make_nvp(buf, cells[opposite_node(graph, ait)]->dbg().id_);
+					ar & boost::serialization::make_nvp(buf, cells[opposite_node(graph, ait)]->id_);
 					trans[ait]->serialize(ar, version);
 				}
 			}

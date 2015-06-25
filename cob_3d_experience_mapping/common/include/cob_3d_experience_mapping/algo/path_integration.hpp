@@ -78,7 +78,7 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 			int i=0;
 			DBG_PRINTF("current_list\n");
 			for(TIter it=begin; it!=end; it++) {
-				DBG_PRINTF("%d:\t %f:%f\n", (*it)->dbg().id_, (*it)->d(), (*it)->dist_h());
+				DBG_PRINTF("%d:\t %f:%f\n", (*it)->id(), (*it)->d(), (*it)->dist_h());
 				++i;
 				//if(i>3) break;
 			}
@@ -93,17 +93,18 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 	//	ctxt.virtual_cell()->dist_o() = ctxt.current_active_cell()->dist_o();
 
 	if(!ctxt.virtual_cell() || (ctxt.last_active_cell()!=ctxt.current_active_cell() &&ctxt.current_active_cell()->dist_h()<=0) || (ctxt.current_active_cell()!=ctxt.virtual_cell() && ctxt.current_active_cell()->d2()<ctxt.last_dist_min() && ctxt.current_active_cell()->dist_h()<=0) || ctxt.virtual_cell()->dist_h()<=0) {
-		DBG_PRINTF("resetting virtual cell %d (%f %f)",
+		DBG_PRINTF("resetting virtual cell %d (%f %f)\n",
 			(int)(ctxt.last_active_cell()!=ctxt.current_active_cell()),
 			ctxt.virtual_cell()?ctxt.virtual_cell()->dist_h():0., ctxt.virtual_cell()?ctxt.virtual_cell()->dist_o():0.
 		);
 		
 		if(ctxt.current_active_cell()==ctxt.virtual_cell()) {
-			DBG_PRINTF("virtual cell is inserted to map (action dist.: %f)", ctxt.virtual_transistion()->dist(ctxt.param().prox_thr_));
+			DBG_PRINTF("virtual cell is inserted to map (action dist.: %f)\n", ctxt.virtual_transistion()->dist(ctxt.param().prox_thr_));
 			ctxt.virtual_transistion()->dbg();
 		}
 		else {
-			DBG_PRINTF("relocalized %d -> %d", ctxt.last_active_cell()?ctxt.last_active_cell()->dbg().id_:-1, ctxt.current_active_cell()?ctxt.current_active_cell()->dbg().id_:-1);
+			DBG_PRINTF("relocalized %d -> %d with %d hops\n", ctxt.last_active_cell()?ctxt.last_active_cell()->id():-1, ctxt.current_active_cell()?ctxt.current_active_cell()->id():-1,
+			ctxt.current_active_cell()?ctxt.current_active_cell()->dbg().hops_:0);
 			
 			if(ctxt.last_active_cell()!=ctxt.current_active_cell() && ctxt.last_active_cell() && ctxt.current_active_cell()) {
 				
@@ -117,7 +118,7 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 				}
 				
 				if(exist) {
-					DBG_PRINTF("not inserted new link as exists already");
+					DBG_PRINTF("not inserted new link as exists already\n");
 				}
 				else {
 					insert_transistion(graph, trans, ctxt.current_active_cell(), ctxt.virtual_transistion());
@@ -174,7 +175,7 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 	
 	//step 0: update feature prob.
 	for(TIter it=begin; it!=end; it++) {
-		if( (*it)->dbg().id_ >= ctxt.virtual_cell()->dbg().id_-ctxt.param().min_age_ )
+		if( (*it)->id() >= ctxt.virtual_cell()->id()-ctxt.param().min_age_ )
 			continue;
 			
 		typename TState::TEnergy ft_prob = (*it)->get_feature_prob();/*, ft_prob_max=0;
@@ -196,13 +197,13 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		ft_prob = std::max((typename TState::TEnergy)0, ft_prob-ft_prob_max)*odom.dist(ctxt.param().prox_thr_);
 	
 		if(ft_prob+ft_prob_ch_max)
-			DBG_PRINTF("%d: injecting energy %f (feature probability)    %f %f %f    %f %f", (*it)->dbg().id_, ft_prob+ft_prob_ch_max, ft_prob, (*it)->get_feature_prob(), ft_prob_max, prob_chang, ft_prob_ch_max);
+			DBG_PRINTF("%d: injecting energy %f (feature probability)    %f %f %f    %f %f", (*it)->id(), ft_prob+ft_prob_ch_max, ft_prob, (*it)->get_feature_prob(), ft_prob_max, prob_chang, ft_prob_ch_max);
 			
 		(*it)->dist_o() *= std::max((typename TState::TEnergy)0, 1-ft_prob-ft_prob_ch_max);*/
 		
 		ft_prob *= odom.dist(ctxt.param().prox_thr_);
 		if(ft_prob)
-			DBG_PRINTF("%d: injecting energy %f (feature probability)    %f", (*it)->dbg().id_, ft_prob, (*it)->get_feature_prob());
+			DBG_PRINTF("%d: injecting energy %f (feature probability)    %f*%f\n", (*it)->id(), ft_prob, (*it)->get_feature_prob(), odom.dist(ctxt.param().prox_thr_));
 			
 		(*it)->dist_o() *= std::max((typename TState::TEnergy)0, 1-ft_prob);
 	}
@@ -243,7 +244,7 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		(*it)->dist_h() -= delta;
 		(*it)->dist_o() += std::sqrt(std::pow(odom.dist_uncertain(ctxt.param().prox_thr_),2)-delta*delta);
 		
-		DBG_PRINTF("changing dist(%f/%f) by (%f/%f) %f %f", (*it)->dist_h(),(*it)->dist_o(), delta, std::sqrt(std::pow(odom.dist_uncertain(ctxt.param().prox_thr_),2)-delta*delta), odom.dist(ctxt.param().prox_thr_), std::pow(odom.dist(ctxt.param().prox_thr_),2)-delta*delta);
+		DBG_PRINTF("changing dist(%f/%f) by (%f/%f) %f %f\n", (*it)->dist_h(),(*it)->dist_o(), delta, std::sqrt(std::pow(odom.dist_uncertain(ctxt.param().prox_thr_),2)-delta*delta), odom.dist(ctxt.param().prox_thr_), std::pow(odom.dist(ctxt.param().prox_thr_),2)-delta*delta);
 		ROS_ASSERT((std::pow(odom.dist_uncertain(ctxt.param().prox_thr_),2)-delta*delta)>=0);
 		ROS_ASSERT( (*it)->dist_h()==(*it)->dist_h() );
 		ROS_ASSERT( (*it)->dist_o()==(*it)->dist_o() );
@@ -255,7 +256,7 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		int i=0;
 		DBG_PRINTF("distlist");
 		for(TIter it=begin; it!=end; it++) {
-			DBG_PRINTF("\t %f:%d:%d", (*it)->d(), (*it)->dist_h()<=0, (*it)->dbg().id_);
+			DBG_PRINTF("\t %f:%d:%d", (*it)->d(), (*it)->dist_h()<=0, (*it)->id());
 			++i;
 			if(i>3) break;
 		}
