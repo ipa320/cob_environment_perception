@@ -70,6 +70,8 @@ private:
 
 	ros::Subscriber sub_odometry_, sub_sensor_info_, sub_view_template_;
 	ros::Time time_last_odom_;
+	
+	bool step_mode_;
 public:
   // Constructor
   ROS_Node():
@@ -102,9 +104,11 @@ public:
 	}*/
 #endif
 
+    n->param<bool>("step_mode", step_mode_, false);    
+
 	  cob_3d_experience_mapping::algorithms::init<Transformation>(graph_, ctxt_, cells_, trans_);
 	  
-	  ROS_INFO("init done");
+	  printf("init done\n");
   }
   
   void on_sensor_info(const cob_3d_experience_mapping::SensorInfoArray::ConstPtr &infos) {
@@ -131,7 +135,7 @@ public:
 		  link(0) = odom->twist.twist.linear.x;
 		  link(1) = odom->twist.twist.linear.y;
 		  link(2) = odom->twist.twist.angular.z;
-		  link *= (odom->header.stamp-time_last_odom_).toSec();
+		  if(!step_mode_) link *= (odom->header.stamp-time_last_odom_).toSec();
 		  
 		  Eigen::Vector3f dbg_pose;
 		  dbg_pose(0) = odom->pose.pose.position.x;
