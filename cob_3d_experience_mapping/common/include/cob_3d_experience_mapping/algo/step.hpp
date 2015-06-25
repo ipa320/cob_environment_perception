@@ -25,7 +25,7 @@ void step(TGraph &graph, TContext &context, TMapCells &cells, TMapTransformation
 	context.clean_active_list();
 	DBG_PRINTF("no. cells: %d", (int)context.active_cells().size());
 	
-	typename TState::TPtr tgt = context.active_cells()[rand()%context.active_cells().size()];
+	/*typename TState::TPtr tgt = context.active_cells()[rand()%context.active_cells().size()];
 	ActionSearchResult<TTransformation> action = find_next_action<ActionSearchResult<TTransformation>, typename TState::TPtr, TGraph, TContext, TMapCells, TMapTransformations, TTransformation>
 	(context.virtual_cell(), tgt, graph, context, cells, trans);
 	DBG_PRINTF("test shortest path: %d %d", (int)action.found(), (int)action.reached());
@@ -37,5 +37,5 @@ void step(TGraph &graph, TContext &context, TMapCells &cells, TMapTransformation
 	cob_3d_experience_mapping::serialization::save_content<boost::archive::binary_oarchive>(ContextContainer<TContext,TGraph,TMapCells,TMapTransformations>(context, graph, cells, trans), "/tmp/exp_mapping.xml.zip", true);
 	
 	//ContextContainer<TContext,TGraph,TMapCells,TMapTransformations> container(context, graph, cells, trans);
-	//restore_content(container, "/tmp/exp_mapping.xml");
+	//restore_content(container, "/tmp/exp_mapping.xml");*/
 }
