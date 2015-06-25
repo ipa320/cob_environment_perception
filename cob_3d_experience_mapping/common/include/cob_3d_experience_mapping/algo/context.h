@@ -67,6 +67,8 @@ namespace cob_3d_experience_mapping {
 			cell->dist_o() = param().energy_max_;
 			//if(active_cells_.size()>0) cell->dist_o() += active_cells_.back()->dist_o();
 			cell->dist_h() = 0;
+			cell->dbg().hops_ = 0;
+			cell->reset_feature();
 			//active_cells_.insert(active_cells_.begin()+(active_cells_.size()-1), cell);
 			active_cells_.push_back(cell);
 			DBG_PRINTF("DBG: added");

@@ -219,13 +219,15 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 					std::pow(trans[ait]->dist(ctxt.param().prox_thr_),2) + std::pow(opposite->dist_o(),2)
 					<
 					(*it)->d2()
-				) {
-					DBG_PRINTF("setting dist from %f/%f to %f/%f",
-						(*it)->dist_h(), (*it)->dist_o(),
-						trans[ait]->dist(ctxt.param().prox_thr_), opposite->dist_o());
-						
+				) {						
 					(*it)->dist_h() = trans[ait]->dist(ctxt.param().prox_thr_);
 					(*it)->dist_o() = opposite->dist_o();
+					
+					(*it)->dbg().hops_ = 1+opposite->dbg().hops_;
+					
+					DBG_PRINTF("setting dist from %f/%f to %f/%f with %d hops\n",
+						(*it)->dist_h(), (*it)->dist_o(),
+						trans[ait]->dist(ctxt.param().prox_thr_), opposite->dist_o(), (*it)->dbg().hops_);
 				}
 		}
 	}

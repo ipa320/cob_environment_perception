@@ -23,6 +23,7 @@ namespace cob_3d_experience_mapping {
 		std::string info_;
 		int id_;
 		Eigen::Vector3f pose_;
+		int hops_;
 		
 		template<class Archive>
 		void serialize(Archive & ar, const unsigned int version)
@@ -67,6 +68,8 @@ namespace cob_3d_experience_mapping {
 			dbg_.id_ = no;
 			sprintf(buf, "%d", no++);
 			dbg_.name_ = buf;
+			
+			dbg_.hops_ = 0;
 		}
 		
 		//setter/getter		
