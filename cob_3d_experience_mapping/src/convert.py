@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-import csv, sys
+import csv, sys, math
 import rosbag, rospy
 from cob_3d_experience_mapping.msg import SensorInfoArray, SensorInfo
 from nav_msgs.msg import Odometry
@@ -20,55 +20,74 @@ bag = rosbag.Bag(sys.argv[3], 'w')
 dbg_si=0
 dbg_od=0
 
+def asRadians(degrees):
+    return degrees * math.pi / 180
+
+def getXYpos(relativeNullPoint, p):
+    """ Calculates X and Y distances in meters.
+    """
+    deltaLatitude = p['latitude'] - relativeNullPoint['latitude']
+    deltaLongitude = p['longitude'] - relativeNullPoint['longitude']
+    latitudeCircumference = 40075160 * math.cos(asRadians(relativeNullPoint['latitude']))
+    resultX = deltaLongitude * latitudeCircumference / 360
+    resultY = deltaLatitude * 40008000 / 360
+    return resultX, resultY
+
 print "reading file wifi"
 with open(sys.argv[1], 'rb') as csvfile:
 	spamreader = csv.reader(csvfile, delimiter=';', quotechar='|')
 	for row in spamreader:
 		ts = int(row[0]) #timestamp
-		ssid = row[1]
-		level = int(row[2])
-		if ssid in bssid:
-			ssid = bssid[ssid]
-		else:
-			bssid[ssid] = no
-			ssid = no
-			no += 1
+		if len(row)>2:
+			level = int(row[2])
+			ssid = row[1]+str(level/20)
+			if ssid in bssid:
+				ssid = bssid[ssid]
+			else:
+				bssid[ssid] = no
+				ssid = no
+				no += 1
+			wifis.append( [ts, ssid, level] )
 			
-		if len(wifis)>0 and wifis[0][0]!=ts:
+		if len(row)>1 and row[1]=="E":
 			msg = SensorInfoArray()
 			for w in wifis:
 				msg.infos.append(SensorInfo(id=w[1]))
-			bag.write('/sim_barks/sensor_info', msg, rospy.Time.from_sec(wifis[0][0]/1000.))
+			bag.write('/sim_barks/sensor_info', msg, rospy.Time.from_sec(ts/1000.))
 			wifis=[]
 			dbg_si+=1
-		
-		wifis.append( [ts, ssid, level] )
 
 print "reading file steps"
+null_point=False
 with open(sys.argv[2], 'rb') as csvfile:
 	spamreader = csv.reader(csvfile, delimiter=';', quotechar='|')
 	for row in spamreader:
 		ts = int(row[0]) #timestamp
-		step = (row[1]=='true')
-		ori = float(row[2])
-		lo = float(row[3])
-		la = float(row[4])
-		acc = float(row[5])
+		if len(row)>2:
+			step = (row[1]=='true')
+			ori = float(row[2])
+			lo = float(row[4])
+			la = float(row[5])
+			acc = float(row[6])
 			
-		if len(steps)>0 and step:
-			msg = Odometry()
-			msg.twist.twist.linear.x = step_length
-			msg.twist.twist.angular.z = ori-steps[len(steps)-1][2]
+			if len(steps)>0 and step:
+				msg = Odometry()
+				msg.header.stamp = rospy.Time.from_sec(ts/1000.)
+				msg.twist.twist.linear.x = step_length
+				msg.twist.twist.angular.z = ori-steps[len(steps)-1][2]
+				
+				if not null_point:
+					null_point = {'latitude': la, 'longitude': lo}
+				x,y = getXYpos(null_point, {'latitude': la, 'longitude': lo})
+				msg.pose.pose.position.x = x
+				msg.pose.pose.position.y = y
+				msg.pose.pose.orientation.w = acc
+				
+				bag.write('/odom', msg, rospy.Time.from_sec(ts/1000.))
+				#steps=[]
+				dbg_od+=1
 			
-			msg.pose.pose.position.x = lo
-			msg.pose.pose.position.y = la
-			#msg.pose.pose.orientation.w = ori
-			
-			bag.write('/odom', msg, rospy.Time.from_sec(ts/1000.))
-			steps=[]
-			dbg_od+=1
-		
-		if step: steps.append( [ts, step, ori, lo, la, acc] )
+			if step: steps.append( [ts, step, ori, lo, la, acc] )
 		
 bag.close()
 
