@@ -47,6 +47,19 @@ namespace cob_3d_experience_mapping {
 		}
 
 		Parameter() {
+			prox_thr_(0) = 1.2;
+			prox_thr_(1) = 0.5;
+			energy_max_ = 2;
+			est_occ_ = 30;
+			min_age_ = 10;
+			max_active_cells_ = 1000;
+			
+#ifdef VIS_
+			vis_color_cell_.r = 0.5;
+			vis_color_cell_.g = 0.5;
+			vis_color_cell_.b = 0.5;
+			vis_color_cell_.a = 0.5;
+#endif
 			//TODO: read from parameter server
 #ifdef VIS_
 			server_settings_.setCallback(boost::bind(&Parameter<TEnergyFactor, TDist>::cb_settings, this, _1, _2));
