@@ -128,7 +128,7 @@ public:
 	  boost::lock_guard<boost::mutex> guard(mtx_);
 	  
 	  ROS_INFO("-------------------------------");
-	  if(time_last_odom_.isValid() && (odom->header.stamp-time_last_odom_)<ros::Duration(10)) {
+	  if(/*time_last_odom_.isValid() &&*/ (odom->header.stamp-time_last_odom_)<ros::Duration(100)) {
 		  ROS_INFO("on odom.");
 
 		  typename Transformation::TLink link;
