@@ -180,7 +180,7 @@ namespace cob_3d_experience_mapping {
 				if(A.squaredNorm()) A.normalize();
 				//B.normalize();
 				r(0) = std::max((TType)0, -A.dot(B))/thr(0);
-				DBG_PRINTF("trans %f %f\n", A.dot(B), -A.dot(B)/thr(0));
+				//DBG_PRINTF("trans %f %f\n", A.dot(B), -A.dot(B)/thr(0));
 			}
 			
 			{
@@ -191,7 +191,7 @@ namespace cob_3d_experience_mapping {
 					r(1) = std::min((TType)1, A.norm()/thr(1)) * std::max((TType)0, 1-dist_rad(A+B).norm()/A.norm());
 				//else
 				//	r(1) = 0;
-				DBG_PRINTF("rot  %f %f %f %f %f\n", r(1), A(0), B(0), std::min((TType)1, A.norm()/thr(1)), std::max((TType)0, 1-dist_rad(A+B).norm()/A.norm()));
+				//DBG_PRINTF("rot  %f %f %f %f %f\n", r(1), A(0), B(0), std::min((TType)1, A.norm()/thr(1)), std::max((TType)0, 1-dist_rad(A+B).norm()/A.norm()));
 				/*r(1) = std::max((TType)0, 1-dist_rad(A-B).norm()/thr(1))*B.norm();
 				DBG_PRINTF("rot  %f %f %f %f\n", dist_rad(A-B).norm(), dist_rad(A-B).norm()/thr(1)*B.norm(), B.norm(), B(0));*/
 			}

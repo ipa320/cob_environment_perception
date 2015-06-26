@@ -38,7 +38,7 @@ TEnergy inflow(TStatePtr &th, const TEnergy &offset, const TContext &ctxt, const
 	TEnergy I = 0;
 	for(typename TStatePtr::element_type::TArcIterator ait(th->edge_begin(graph)); ait!=th->edge_end(graph); ++ait) {
 		TStatePtr opposite = cells[th->opposite_node(graph, ait)];
-		const typename TAction::TType trans_fact = trans[ait]->directed(th).transition_factor_dbg(odom, ctxt.param().prox_thr_);
+		const typename TAction::TType trans_fact = trans[ait]->directed(th).transition_factor(odom, ctxt.param().prox_thr_);
 		ROS_ASSERT_MSG(trans_fact==0 || (opposite->outflow()>=0 && opposite->outflow()<=1), "outflow %f out of bounds [0,1] (d=%f)", opposite->outflow(), trans_fact);
 		
 		I = std::max(I, trans_fact*opposite->outflow());
@@ -92,7 +92,7 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 	//if(ctxt.virtual_cell() && ctxt.current_active_cell()!=ctxt.virtual_cell())
 	//	ctxt.virtual_cell()->dist_o() = ctxt.current_active_cell()->dist_o();
 
-	if(!ctxt.virtual_cell() || (ctxt.last_active_cell()!=ctxt.current_active_cell() &&ctxt.current_active_cell()->dist_h()<=0) || (ctxt.current_active_cell()!=ctxt.virtual_cell() && ctxt.current_active_cell()->d2()<ctxt.last_dist_min() && ctxt.current_active_cell()->dist_h()<=0) || ctxt.virtual_cell()->dist_h()<=0) {
+	if(!ctxt.virtual_cell() || (ctxt.last_active_cell()!=ctxt.current_active_cell() && ctxt.current_active_cell()->dist_h()<=0) || (ctxt.current_active_cell()!=ctxt.virtual_cell() && ctxt.current_active_cell()->d2()<ctxt.last_dist_min() && ctxt.current_active_cell()->dist_h()<=0) || ctxt.virtual_cell()->dist_h()<=0) {
 		DBG_PRINTF("resetting virtual cell %d (%f %f)\n",
 			(int)(ctxt.last_active_cell()!=ctxt.current_active_cell()),
 			ctxt.virtual_cell()?ctxt.virtual_cell()->dist_h():0., ctxt.virtual_cell()?ctxt.virtual_cell()->dist_o():0.
@@ -239,7 +239,7 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		typename TState::TEnergy dh_max = 0;
 		
 		for(TArcIter_out ait((*it)->arc_out_begin(graph)); ait!=(*it)->arc_out_end(graph); ++ait)
-			dh_max = std::max(dh_max, trans[ait]->directed(*it).transition_factor_dbg(odom, ctxt.param().prox_thr_) );
+			dh_max = std::max(dh_max, trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_) );
 		
 		const typename TState::TEnergy delta = std::min((*it)->dist_h(), dh_max);
 		(*it)->dist_h() -= delta;
