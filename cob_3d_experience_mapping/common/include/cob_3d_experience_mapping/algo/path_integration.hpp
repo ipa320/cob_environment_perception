@@ -212,26 +212,53 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 	//step 1: set min. dist.
 	for(TIter it=begin; it!=end; it++) {
 		typename TState::TEnergy dh_max = 0;
+		int hops = -1;
 		
 		for(TArcIter_out ait((*it)->arc_out_begin(graph)); ait!=(*it)->arc_out_end(graph); ++ait) {
 				typename TIter::value_type opposite = cells[(*it)->opposite_node(graph, ait)];
 				if(opposite->dist_h()>0) continue;
 				
 				if( trans[ait]!=ctxt.virtual_transistion() && 
-					std::pow(trans[ait]->dist(ctxt.param().prox_thr_),2) + std::pow(opposite->dist_o(),2)
+					opposite->dist_o() < (*it)->dist_o()
+					/*std::pow(trans[ait]->dist(ctxt.param().prox_thr_),2) + std::pow(opposite->dist_o(),2)
 					<
-					(*it)->d2()
+					(*it)->d2()*/
 				) {						
 					(*it)->dist_h() = trans[ait]->dist(ctxt.param().prox_thr_);
 					(*it)->dist_o() = opposite->dist_o();
 					
-					(*it)->dbg().hops_ = 1+opposite->dbg().hops_;
+					hops = std::max(opposite->dbg().hops_, hops);
 					
-					DBG_PRINTF("setting dist from %f/%f to %f/%f with %d hops\n",
+					DBG_PRINTF("1 %d:%d setting dist %f/%f with %d hops\n",
+						(*it)->id(), opposite->id(),
 						(*it)->dist_h(), (*it)->dist_o(),
-						trans[ait]->dist(ctxt.param().prox_thr_), opposite->dist_o(), (*it)->dbg().hops_);
+						(*it)->dbg().hops_);
 				}
 		}
+		
+		/*for(TArcIter_in ait((*it)->arc_in_begin(graph)); ait!=(*it)->arc_in_end(graph); ++ait) {
+				typename TIter::value_type opposite = cells[(*it)->opposite_node(graph, ait)];
+				if(opposite->dist_h()>0) continue;
+				
+				if( trans[ait]!=ctxt.virtual_transistion() && 
+					opposite->dist_o() < (*it)->dist_o()
+					/*std::pow(trans[ait]->dist(ctxt.param().prox_thr_),2) + std::pow(opposite->dist_o(),2)
+					<
+					(*it)->d2()*
+				) {						
+					(*it)->dist_h() = trans[ait]->dist(ctxt.param().prox_thr_);
+					(*it)->dist_o() = opposite->dist_o();
+					
+					hops = std::max(opposite->dbg().hops_, hops);
+					
+					DBG_PRINTF("2 %d:%d setting dist %f/%f with %d hops\n",
+						(*it)->id(), opposite->id(),
+						(*it)->dist_h(), (*it)->dist_o(),
+						(*it)->dbg().hops_);
+				}
+		}*/
+					
+		if(hops>=0) (*it)->dbg().hops_ = 1+hops;
 	}
 	
 	//step 2: increase dist.
@@ -240,6 +267,8 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		
 		for(TArcIter_out ait((*it)->arc_out_begin(graph)); ait!=(*it)->arc_out_end(graph); ++ait)
 			dh_max = std::max(dh_max, trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_) );
+		//for(TArcIter_in ait((*it)->arc_in_begin(graph)); ait!=(*it)->arc_in_end(graph); ++ait)
+		//	dh_max = std::max(dh_max, trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_) );
 		
 		const typename TState::TEnergy delta = std::min((*it)->dist_h(), dh_max);
 		(*it)->dist_h() -= delta;
