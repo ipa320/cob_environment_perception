@@ -78,7 +78,7 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 			int i=0;
 			DBG_PRINTF("current_list\n");
 			for(TIter it=begin; it!=end; it++) {
-				DBG_PRINTF("%d:\t %f:%f\n", (*it)->id(), (*it)->d(), (*it)->dist_h());
+				DBG_PRINTF("%d:\t %f:%f:%d\n", (*it)->id(), (*it)->d(), (*it)->dist_h(), (*it)->dbg().hops_);
 				++i;
 				//if(i>3) break;
 			}
@@ -91,6 +91,8 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 	
 	//if(ctxt.virtual_cell() && ctxt.current_active_cell()!=ctxt.virtual_cell())
 	//	ctxt.virtual_cell()->dist_o() = ctxt.current_active_cell()->dist_o();
+	
+	DBG_PRINTF("current id %d\n", ctxt.current_active_cell()->id());
 
 	if(!ctxt.virtual_cell() || (ctxt.last_active_cell()!=ctxt.current_active_cell() && ctxt.current_active_cell()->dist_h()<=0) || (ctxt.current_active_cell()!=ctxt.virtual_cell() && ctxt.current_active_cell()->d2()<ctxt.last_dist_min() && ctxt.current_active_cell()->dist_h()<=0) || ctxt.virtual_cell()->dist_h()<=0) {
 		DBG_PRINTF("resetting virtual cell %d (%f %f)\n",
