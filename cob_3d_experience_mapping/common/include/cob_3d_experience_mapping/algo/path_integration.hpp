@@ -218,7 +218,7 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		
 		for(TArcIter_out ait((*it)->arc_out_begin(graph)); ait!=(*it)->arc_out_end(graph); ++ait) {
 				typename TIter::value_type opposite = cells[(*it)->opposite_node(graph, ait)];
-				if(opposite->dist_h()>0) continue;
+				if( opposite->dist_h()>0 || (*it)->id() >= ctxt.virtual_cell()->id()-ctxt.param().min_age_ ) continue;
 				
 				if( trans[ait]!=ctxt.virtual_transistion() && 
 					opposite->dist_o() < (*it)->dist_o()
@@ -240,7 +240,7 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		
 		/*for(TArcIter_in ait((*it)->arc_in_begin(graph)); ait!=(*it)->arc_in_end(graph); ++ait) {
 				typename TIter::value_type opposite = cells[(*it)->opposite_node(graph, ait)];
-				if(opposite->dist_h()>0) continue;
+				if( opposite->dist_h()>0 || (*it)->id() >= ctxt.virtual_cell()->id()-ctxt.param().min_age_ ) continue;
 				
 				if( trans[ait]!=ctxt.virtual_transistion() && 
 					opposite->dist_o() < (*it)->dist_o()
