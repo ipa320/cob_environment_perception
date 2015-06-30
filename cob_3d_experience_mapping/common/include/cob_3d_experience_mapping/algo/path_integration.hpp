@@ -180,8 +180,8 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		if( (*it)->id() >= ctxt.virtual_cell()->id()-ctxt.param().min_age_ )
 			continue;
 			
-		typename TState::TEnergy ft_prob = (*it)->get_feature_prob();/*, ft_prob_max=0;
-		typename TState::TEnergy prob_chang = ft_prob-(*it)->get_last_feature_prob(), ft_prob_ch_max=0;
+		typename TState::TEnergy ft_prob = (*it)->get_feature_prob(), ft_prob_max = (*it)->get_feature_prob();
+		/*typename TState::TEnergy prob_chang = ft_prob-(*it)->get_last_feature_prob(), ft_prob_ch_max=0;
 		
 		for(TArcIter_out ait((*it)->arc_out_begin(graph)); ait!=(*it)->arc_out_end(graph); ++ait) {
 			std::cout<<"xo "<<(*it).get()<<" "<<((*it)->opposite_node(graph, ait)==lemon::INVALID)<<std::endl;
@@ -202,6 +202,38 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 			DBG_PRINTF("%d: injecting energy %f (feature probability)    %f %f %f    %f %f", (*it)->id(), ft_prob+ft_prob_ch_max, ft_prob, (*it)->get_feature_prob(), ft_prob_max, prob_chang, ft_prob_ch_max);
 			
 		(*it)->dist_o() *= std::max((typename TState::TEnergy)0, 1-ft_prob-ft_prob_ch_max);*/
+		
+		#if 1
+		for(TArcIter_out ait((*it)->arc_out_begin(graph)); ait!=(*it)->arc_out_end(graph); ++ait) {
+			typename TIter::value_type opposite = cells[(*it)->opposite_node(graph, ait)];
+			
+			DBG_PRINTF("%f ",opposite->get_feature_prob());
+			
+			ft_prob_max = std::min(ft_prob_max,
+				std::max(ft_prob-opposite->get_feature_prob(), (typename TState::TEnergy)0)
+			);
+			/*ft_prob_max = std::max(ft_prob_max,
+				std::max(ft_prob-opposite->get_feature_prob(), (typename TState::TEnergy)0)
+				*std::min(trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_), (typename TState::TEnergy)1)
+			);*/
+		}
+		for(TArcIter_in ait((*it)->arc_in_begin(graph)); ait!=(*it)->arc_in_end(graph); ++ait) {
+			typename TIter::value_type opposite = cells[(*it)->opposite_node(graph, ait)];
+			
+			DBG_PRINTF("%f ",opposite->get_feature_prob());
+		
+			ft_prob_max = std::min(ft_prob_max,
+				std::max(ft_prob-opposite->get_feature_prob(), (typename TState::TEnergy)0)
+			);
+			/*ft_prob_max = std::max(ft_prob_max,
+				std::max(ft_prob-opposite->get_feature_prob(), (typename TState::TEnergy)0)
+				*std::min(trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_), (typename TState::TEnergy)1)
+			);*/
+		}
+		DBG_PRINTF("\n");
+		
+		ft_prob = std::pow(ft_prob_max, 1/(1+std::min(3., (*it)->dbg().hops_/5.) ));
+		#endif
 		
 		ft_prob *= std::min(odom.dist(ctxt.param().prox_thr_), (typename TState::TEnergy)1);	//limit travelled distance to 1 step
 		//ft_prob *= std::exp( (*it)->dbg().hops_/3. );
