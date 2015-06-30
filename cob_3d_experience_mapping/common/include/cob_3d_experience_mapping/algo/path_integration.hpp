@@ -136,6 +136,11 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 			
 				std::cout<<"old pose: "<<ctxt.last_active_cell()->dbg().pose_.transpose()<<std::endl;
 				std::cout<<"new pose: "<<ctxt.current_active_cell()->dbg().pose_.transpose()<<std::endl;
+				
+				DBG_PRINTF("pose match %f ", (ctxt.last_active_cell()->dbg().pose_.template head<2>()-ctxt.current_active_cell()->dbg().pose_.template head<2>()).norm() );
+				DBG_PRINTF( (ctxt.last_active_cell()->dbg().pose_.template head<2>()-ctxt.current_active_cell()->dbg().pose_.template head<2>()).norm()<=(ctxt.last_active_cell()->dbg().pose_(2)+ctxt.current_active_cell()->dbg().pose_(2))?
+					"SUCCESS\n":"FAILED\n"
+				);
 			}
 			
 			/*ctxt.virtual_cell()->still_exists() = false;
