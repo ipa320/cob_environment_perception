@@ -238,7 +238,7 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 				}
 		}
 		
-		/*for(TArcIter_in ait((*it)->arc_in_begin(graph)); ait!=(*it)->arc_in_end(graph); ++ait) {
+		for(TArcIter_in ait((*it)->arc_in_begin(graph)); ait!=(*it)->arc_in_end(graph); ++ait) {
 				typename TIter::value_type opposite = cells[(*it)->opposite_node(graph, ait)];
 				if( opposite->dist_h()>0 || (*it)->id() >= ctxt.virtual_cell()->id()-ctxt.param().min_age_ ) continue;
 				
@@ -246,7 +246,7 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 					opposite->dist_o() < (*it)->dist_o()
 					/*std::pow(trans[ait]->dist(ctxt.param().prox_thr_),2) + std::pow(opposite->dist_o(),2)
 					<
-					(*it)->d2()*
+					(*it)->d2()*/
 				) {						
 					(*it)->dist_h() = trans[ait]->dist(ctxt.param().prox_thr_);
 					(*it)->dist_o() = opposite->dist_o();
@@ -258,7 +258,7 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 						(*it)->dist_h(), (*it)->dist_o(),
 						(*it)->dbg().hops_);
 				}
-		}*/
+		}
 					
 		if(hops>=0) (*it)->dbg().hops_ = 1+hops;
 	}
