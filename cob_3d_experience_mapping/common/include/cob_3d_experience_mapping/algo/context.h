@@ -87,13 +87,18 @@ namespace cob_3d_experience_mapping {
 		void clean_active_list() {
 			std::sort(active_cells_.begin(), active_cells_.end(), energy_order<typename TState::TPtr>);
 			if(active_cells_.size()>param().max_active_cells_) {
-				DBG_PRINTF("DBG: removing");
+				DBG_PRINTF("DBG: removing\n");
 				active_cells_.erase(active_cells_.begin()+param().max_active_cells_, active_cells_.end());
 			}
 			if(active_cells_.size()>0 && active_cells_.back()->dist_o()>param().energy_max_) {
-				DBG_PRINTF("DBG: rescaling");
-				for(size_t i=0; i<active_cells_.size(); i++)
+				DBG_PRINTF("DBG: rescaling %f\n", param().energy_max_/active_cells_.back()->dist_o());
+				for(size_t i=0; i<active_cells_.size(); i++) {
+					
+					if(active_cells_[i]->dist_o()>=param().energy_max_)
+						active_cells_[i]->dbg().hops_ = 0;
+						
 					active_cells_[i]->dist_o() *= param().energy_max_/active_cells_.back()->dist_o();
+				}
 			}
 		}
 		
