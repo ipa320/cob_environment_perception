@@ -118,6 +118,13 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 						break;
 					}
 				}
+				for(TArcIter_in ait(ctxt.current_active_cell()->arc_in_begin(graph)); (!exist) && ait!=ctxt.current_active_cell()->arc_in_end(graph); ++ait) {
+					typename TIter::value_type opposite = cells[ctxt.current_active_cell()->opposite_node(graph, ait)];
+					if(opposite==ctxt.virtual_transistion()->src()) {
+						exist=true;
+						break;
+					}
+				}
 				
 				if(exist) {
 					DBG_PRINTF("not inserted new link as exists already\n");
