@@ -7,7 +7,7 @@
 
 #else
 
-#define DBG_PRINTF(str, ...) printf(str, ##__VA_ARGS__)
+#define DBG_PRINTF(str, ...) {printf(str, ##__VA_ARGS__);fflush(stdout);}
 #define ERROR_PRINTF(str, ...) ROS_ERROR(str, ##__VA_ARGS__)
 
 #endif
