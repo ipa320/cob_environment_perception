@@ -265,19 +265,30 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 	
 	//step 2: increase dist.
 	for(TIter it=begin; it!=end; it++) {
-		typename TState::TEnergy dh_max = 0;
 		
-		for(TArcIter_out ait((*it)->arc_out_begin(graph)); ait!=(*it)->arc_out_end(graph); ++ait)
-			dh_max = std::max(dh_max, trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_) );
-		//for(TArcIter_in ait((*it)->arc_in_begin(graph)); ait!=(*it)->arc_in_end(graph); ++ait)
-		//	dh_max = std::max(dh_max, trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_) );
+		if( (*it)==ctxt.virtual_cell()) {
+			const typename TState::TEnergy du = odom.dist_uncertain(ctxt.param().prox_thr_), dc = odom.dist(ctxt.param().prox_thr_);
+			(*it)->dist_h() -=  std::min((*it)->dist_h(), dc);
+			(*it)->dist_o() += du-dc;
+			
+			DBG_PRINTF("%d changing dist V (%f/%f) by (%f/%f)\n", (*it)->id(), (*it)->dist_h(),(*it)->dist_o(), std::min((*it)->dist_h(), dc), du-dc);
+		}
+		else {
+			typename TState::TEnergy dh_max = 0;
+			
+			for(TArcIter_out ait((*it)->arc_out_begin(graph)); ait!=(*it)->arc_out_end(graph); ++ait)
+				dh_max = std::max(dh_max, trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_) );
+			for(TArcIter_in ait((*it)->arc_in_begin(graph)); ait!=(*it)->arc_in_end(graph); ++ait)
+				dh_max = std::max(dh_max, trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_) );
+			
+			const typename TState::TEnergy delta = std::min((*it)->dist_h(), dh_max);
+			(*it)->dist_h() -= delta;
+			(*it)->dist_o() += std::sqrt(std::pow(odom.dist_uncertain(ctxt.param().prox_thr_),2)-dh_max*dh_max);
 		
-		const typename TState::TEnergy delta = std::min((*it)->dist_h(), dh_max);
-		(*it)->dist_h() -= delta;
-		(*it)->dist_o() += std::sqrt(std::pow(odom.dist_uncertain(ctxt.param().prox_thr_),2)-delta*delta);
+			DBG_PRINTF("%d changing dist(%f/%f) by (%f/%f) %f %f\n", (*it)->id(), (*it)->dist_h(),(*it)->dist_o(), delta, std::sqrt(std::pow(odom.dist_uncertain(ctxt.param().prox_thr_),2)-dh_max*dh_max), odom.dist(ctxt.param().prox_thr_), std::pow(odom.dist(ctxt.param().prox_thr_),2)-dh_max*dh_max);
+			ROS_ASSERT((std::pow(odom.dist_uncertain(ctxt.param().prox_thr_),2)-dh_max*dh_max)>=0);
+		}
 		
-		DBG_PRINTF("changing dist(%f/%f) by (%f/%f) %f %f\n", (*it)->dist_h(),(*it)->dist_o(), delta, std::sqrt(std::pow(odom.dist_uncertain(ctxt.param().prox_thr_),2)-delta*delta), odom.dist(ctxt.param().prox_thr_), std::pow(odom.dist(ctxt.param().prox_thr_),2)-delta*delta);
-		ROS_ASSERT((std::pow(odom.dist_uncertain(ctxt.param().prox_thr_),2)-delta*delta)>=0);
 		ROS_ASSERT( (*it)->dist_h()==(*it)->dist_h() );
 		ROS_ASSERT( (*it)->dist_o()==(*it)->dist_o() );
 	}
