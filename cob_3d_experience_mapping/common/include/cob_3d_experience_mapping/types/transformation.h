@@ -197,7 +197,7 @@ namespace cob_3d_experience_mapping {
 			}
 			//std::cout<<"r "<<r.transpose()<<std::endl;
 			
-			return r.norm();
+			return r.norm() + _DEVIATION;
 		}
 		
 		TType transition_factor_dbg(const Transformation &o, const TDist &thr) const {
