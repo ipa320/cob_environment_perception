@@ -135,6 +135,8 @@ public:
 		  link(0) = odom->twist.twist.linear.x;
 		  link(1) = odom->twist.twist.linear.y;
 		  link(2) = odom->twist.twist.angular.z;
+		  if(link(2)>M_PI)  link(2) -= 2*M_PI;
+		  if(link(2)<-M_PI) link(2) += 2*M_PI;
 		  if(!step_mode_) link *= (odom->header.stamp-time_last_odom_).toSec();
 		  
 		  Eigen::Vector3f dbg_pose;
