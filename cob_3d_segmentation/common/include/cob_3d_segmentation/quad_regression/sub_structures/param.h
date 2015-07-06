@@ -135,6 +135,9 @@ struct Param {
   inline float x() const {return model_(0,2)/model_(0,0);}      /// gets averaged x of current model (center point)
   inline float y() const {return model_(0,1)/model_(0,0);}      /// gets averaged y of current model (center point)
   inline float z() const {return z_(0)/model_(0,0);}            /// gets averaged z of current model (center point)
+  
+  template<typename Point>
+  inline Point point() const {return Point(x(),y(),z());}
 };
 
 #ifdef QPPF_SPECIALIZATION_2
