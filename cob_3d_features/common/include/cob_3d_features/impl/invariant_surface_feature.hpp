@@ -156,18 +156,6 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::gen
 
   for(size_t i=0; i<input_->size(); i++)                         //surfaces
 	(*input_)[i].template generateKeypoints<TVector,Real>(keypoints, kp_min_area_, kp_area_);
-
-  //remove keypoints which are not within FoV
-  const double R = (radii_[0]);
-  for(size_t i=0; i<keypoints.size(); i++) {
-	  for(size_t j=0; j<fov_.size(); j++) {
-		  if( fov_[j].head<3>().dot(keypoints[i].template cast<float>())-fov_[j](3)>-R ) {
-			keypoints.erase(keypoints.begin()+i);
-			--i;
-			break;
-		  }
-	  }
-  }
 	
 	ROS_INFO("keypoints %zu",keypoints.size());
 }
@@ -774,15 +762,24 @@ void cob_3d_features::InvariantSurfaceFeature<TSurface,Scalar,Real,TAffine>::set
 	keypoints_.clear();
 	all_keypoints_.clear();
 	generateKeypoints(all_keypoints_);
-	
-	//filter keypoints (minimum distance to each other)
+
+	//remove keypoints which are not within FoV
+	//and filter keypoints (minimum distance to each other)
+	const double R = (radii_[0]);	
 	for(size_t i=0; i<all_keypoints_.size(); i++) {
 		if(all_keypoints_[i].squaredNorm()>4.*4.) continue; //TODO: set threshold
 		
 		bool ok=true;
 		for(size_t j=0; j<i; j++) {
-		  if( (all_keypoints_[i]-all_keypoints_[j]).squaredNorm()<radii_[0]/8 ) {//TODO: set threshold
+		  if( (all_keypoints_[i]-all_keypoints_[j]).squaredNorm()<0.6f /*HACK*/ /8 ) {//TODO: set threshold
 			ok=false;
+			break;
+		  }
+		}
+		
+		for(size_t j=0; ok && j<fov_.size(); j++) {
+		  if( fov_[j].head<3>().dot(all_keypoints_[i].template cast<float>())-fov_[j](3)>-R ) {
+			ok = false;
 			break;
 		  }
 		}
