@@ -186,7 +186,7 @@ namespace Segmentation
       bool only_planes_;                /// filter option
 
       void grow(SubStructure::Model<Degree> &model, const int i, const int x, const int y);
-      void grow(SubStructure::VISITED_LIST<SubStructure::SVALUE> &list, SubStructure::Model<Degree> &model, const int i, const int mark, bool first_lvl);
+      void grow(SubStructure::VISITED_LIST<SubStructure::SVALUE<Eigen::Vector3f> > &list, SubStructure::Model<Degree> &model, const int i, const int mark, bool first_lvl);
 
       inline bool filterOccupied(const int i, const int x, const int y, const int mark) const {
         if(i>=(int)levels_.size())
@@ -230,12 +230,29 @@ namespace Segmentation
             model.check_tangent(levels_[i-1].data[getInd(i-1,2*x+1,2*y+1)], 1.5f*camera_.std(levels_[i-1].data[getInd(i-1,2*x+1,2*y+1)].z_(0)/levels_[i-1].data[getInd(i-1,2*x+1,2*y+1)].model_(0,0)));
       }
 
-      inline void addPoint(const int i, const int x, const int y, const int mark, S_POLYGON<Degree> &poly, const SubStructure::Model<Degree> &model, const float v=0.f) {
+      inline void addPoint(const int i, const int x, const int y, const int mark, S_POLYGON<Degree> &poly, const SubStructure::Model<Degree> &model, const Eigen::Vector3f &p) {
 #ifdef DO_NOT_DOWNSAMPLE_
         const static int fact=1;
 #else
         const static int fact=2;
 #endif
+
+        Eigen::Vector3f vp = poly.project2world(p.head<2>());
+        
+        if((p-vp).squaredNorm()>0.01f /*|| (poly.segments_.back().size()>0 && (poly.segments_.back().back()-vp).squaredNorm()<0.01f)*/ ) {
+			return;
+		}
+          poly.segments_.back().push_back(p);
+#ifdef USE_BOOST_POLYGONS_
+          poly.segments2d_.back().push_back(BoostPoint(x,y));
+#else
+          Eigen::Vector2i p2;
+          p2(0) = x;
+          p2(1) = y;
+          poly.segments2d_.back().push_back(p2);
+#endif
+
+#if 0
 
         Eigen::Vector3f p = poly.project2plane(((x<<(i+fact-1))-camera_.dx)/camera_.f,
                                                ((y<<(i+fact-1))-camera_.dy)/camera_.f,
@@ -279,12 +296,15 @@ namespace Segmentation
           poly.segments2d_.back().push_back(p2);
 #endif
         }
-       
+#endif       
       }
 
       int getPos(int *ch, const int xx, const int yy, const int w, const int h);
 
-      void outline(int *ch, const int w, const int h, std::vector<SubStructure::SXY> &out, const int i, S_POLYGON<Degree> &poly, const SubStructure::Model<Degree> &model, const int mark);
+      void outline(int *ch, const int w, const int h, std::vector<SubStructure::SXY<Eigen::Vector3f> > &out, const int i, S_POLYGON<Degree> &poly, const SubStructure::Model<Degree> &model, const int mark);
+      
+      void simplify();
+      void simplify(std::vector<Eigen::Vector3f> &seg, std::vector<Eigen::Vector2i> &seg2d);      
 
     public:
       /// constructor, setups variables

@@ -201,7 +201,7 @@ template<> void __IFFTW_2D__< double >( int r , void* iValues , void* oValues )
 template< class Real >
 int FourierTransform< Real >::InverseFourier( FourierKey2D< Real >& key , SquareGrid< Real >& g )
 {
-#pragma message ( "[WARNING] 2D inverse fourier will over-write the key" )
+//#pragma message ( "[WARNING] 2D inverse fourier will over-write the key" )
 	if( key.resolution()!=g.resolution() ) g.resize( key.resolution() );
 	__IFFTW_2D__< Real >( g.resolution() , &key(0,0) , g[0] );
 	Real n = Real( 1. / (2.0*PI) );
