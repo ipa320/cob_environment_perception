@@ -40,21 +40,23 @@
   <!-- Use test_depend for packages you need only for testing: -->
   <!--   <test_depend>gtest</test_depend> -->
   <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>cmake_modules</build_depend>
   <build_depend>lemon</build_depend>
   <build_depend>roscpp</build_depend>
   <build_depend>rospy</build_depend>
   <build_depend>cob_3d_visualization</build_depend>
   <build_depend>pcl_ros</build_depend>
   <build_depend>cob_3d_mapping_common</build_depend>
+  <build_depend>eigen</build_depend>
   
+  <run_depend>cmake_modules</run_depend>
   <run_depend>lemon</run_depend>
   <run_depend>roscpp</run_depend>
   <run_depend>rospy</run_depend>
   <run_depend>cob_3d_visualization</run_depend>
   <run_depend>pcl_ros</run_depend>
   <run_depend>cob_3d_mapping_common</run_depend>
-
-  <build_depend>eigen</build_depend>
   <run_depend>eigen</run_depend>
 
   <!-- The export tag contains other, unspecified, tags -->
