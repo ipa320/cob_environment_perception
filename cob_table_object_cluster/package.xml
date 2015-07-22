@@ -21,7 +21,7 @@
   <build_depend>cob_3d_mapping_msgs</build_depend>
   <build_depend>cob_object_detection_msgs</build_depend>
   <build_depend>cob_perception_msgs</build_depend>
-  <build_depend>cob_srvs</build_depend>
+  <build_depend>std_srvs</build_depend>
   <build_depend>cob_vision_utils</build_depend>
   <build_depend>dynamic_reconfigure</build_depend>
   <build_depend>eigen_conversions</build_depend>
@@ -37,7 +37,7 @@
   <run_depend>cob_3d_mapping_msgs</run_depend>
   <run_depend>cob_object_detection_msgs</run_depend>
   <run_depend>cob_perception_msgs</run_depend>
-  <run_depend>cob_srvs</run_depend>
+  <run_depend>std_srvs</run_depend>
   <run_depend>cob_vision_utils</run_depend>
   <run_depend>dynamic_reconfigure</run_depend>
   <run_depend>eigen_conversions</run_depend>

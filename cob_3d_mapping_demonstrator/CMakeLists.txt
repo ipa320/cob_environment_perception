@@ -6,6 +6,7 @@ set(catkin_RUN_PACKAGES
 	brics_actuator
 	cob_3d_mapping_msgs
 	cob_script_server
+	std_srvs
 	cob_srvs
 	diagnostic_msgs
 	roscpp

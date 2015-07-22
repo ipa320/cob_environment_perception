@@ -76,7 +76,7 @@
 #include <cob_3d_mapping_msgs/SetGeometryMap.h>
 #include <cob_3d_mapping_msgs/ModifyMap.h>
 #include <cob_3d_mapping_msgs/ShapeArray.h>
-#include <cob_srvs/Trigger.h>
+#include <std_srvs/Trigger.h>
 
 #include "cob_3d_mapping_common/polygon.h"
 #include "cob_3d_mapping_geometry_map/geometry_map.h"
@@ -130,7 +130,7 @@ namespace cob_3d_mapping
      *
      * @return True, if clearing was successful.
      */
-    bool clearMap(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res);
+    bool clearMap(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res);
 
     /**
      * @brief Service callback for getting the map.

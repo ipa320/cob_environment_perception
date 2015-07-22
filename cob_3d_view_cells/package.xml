@@ -48,6 +48,8 @@
   <build_depend>dynamic_reconfigure</build_depend>
   <build_depend>cob_3d_mapping_msgs</build_depend>
   <build_depend>cob_3d_visualization</build_depend>
+  <build_depend>libkdtree++-dev</build_depend>
+  
   <run_depend>boost</run_depend>
   <run_depend>cob_3d_mapping_common</run_depend>
   <run_depend>pcl_ros</run_depend>
@@ -56,6 +58,7 @@
   <run_depend>dynamic_reconfigure</run_depend>
   <run_depend>cob_3d_mapping_msgs</run_depend>
   <run_depend>cob_3d_visualization</run_depend>
+  <run_depend>libkdtree++-dev</run_depend>
 
 
   <!-- The export tag contains other, unspecified, tags -->
