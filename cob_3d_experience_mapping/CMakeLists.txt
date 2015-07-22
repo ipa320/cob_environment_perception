@@ -4,7 +4,6 @@ project(cob_3d_experience_mapping)
 set(catkin_RUN_PACKAGES 
   roscpp
   rospy
-  lemon
   cob_3d_visualization
   pcl_ros
   cob_3d_mapping_common
@@ -23,6 +22,8 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(Eigen REQUIRED)
+
+find_package(lemon REQUIRED)
 
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
