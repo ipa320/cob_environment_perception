@@ -9,7 +9,7 @@ namespace cob_3d_experience_mapping {
 
 	template<class TStatePtr>
 	bool energy_order(const TStatePtr &a, const TStatePtr &b) {
-		return a->d2() < b->d2();
+		return a->dist_o() < b->dist_o();
 	}
 	
 	template<class TState, class TEnergy>
