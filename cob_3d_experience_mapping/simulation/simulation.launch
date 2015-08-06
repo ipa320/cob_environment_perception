@@ -1,0 +1,25 @@
+<launch>
+
+  <!--include file="$(find stdr_launchers)/launch/server_with_map_and_gui_plus_robot.launch" /-->
+	
+	<include file="$(find stdr_robot)/launch/robot_manager.launch" />
+	
+	<node type="stdr_server_node" pkg="stdr_server" name="stdr_server" output="screen" args="$(find stdr_resources)/maps/sparse_obstacles.yaml"/>
+
+	<node pkg="tf" type="static_transform_publisher" name="world2map" args="0 0 0 0 0 0  world map 100" />
+	
+	<include if="$(arg gui)" file="$(find stdr_gui)/launch/stdr_gui.launch"/>
+	
+	<node pkg="stdr_robot" type="robot_handler" name="$(anon robot_spawn)" args="add $(find stdr_resources)/resources/robots/pandora_robot.yaml 1 2 0" />
+	
+
+  <!-- turtlebot_teleop_key already has its own built in velocity smoother -->
+  <node pkg="turtlebot_teleop" type="turtlebot_teleop_key" name="turtlebot_teleop_keyboard"  output="screen">
+    <param name="scale_linear" value="0.5" type="double"/>
+    <param name="scale_angular" value="1.5" type="double"/>
+    <remap from="turtlebot_teleop_keyboard/cmd_vel" to="robot0/cmd_vel"/>
+  </node>
+  
+  <node pkg="cob_3d_experience_mapping" type="beam.py" name="beam"  output="screen" />
+  
+</launch>
