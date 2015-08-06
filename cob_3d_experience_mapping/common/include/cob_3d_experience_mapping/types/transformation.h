@@ -24,17 +24,16 @@ namespace cob_3d_experience_mapping {
 		bool reached() {return found_ && !trans_;}
 	};
 	
-	template<typename _TType, int NUM_TRANS, int NUM_ROT, class TStatePtr>
-	class Transformation {
+	template<typename _TType, int NUM_TRANS, int NUM_ROT>
+	class TransformationLink {
 	public:
 		typedef _TType TType;
 		typedef Eigen::Matrix<TType, NUM_TRANS+NUM_ROT, 1> TLink;
 		typedef Eigen::Matrix<TType, 2, 1> TDist;
-		typedef boost::shared_ptr<Transformation> TPtr;
+		typedef boost::shared_ptr<TransformationLink> TPtr;
 		
-	private:
+	protected:
 		TLink link_;
-		TStatePtr src_;
 		_TType _DEVIATION;
 
 		template<int TInd>
@@ -45,38 +44,23 @@ namespace cob_3d_experience_mapping {
 		
 	public:
 		
-		Transformation() : link_(TLink::Zero()), _DEVIATION(0.000001f)
-		{}
-		
-		Transformation(const TStatePtr &state) :
-		link_(TLink::Zero()), src_(state), _DEVIATION(0.000001f)
-		{}
-
-		Transformation(const TLink &link, const TStatePtr &state) :
-		link_(link), src_(state), _DEVIATION(0.000001f)
+		TransformationLink() : link_(TLink::Zero()), _DEVIATION(0.000001f)
 		{}
 		
 		inline _TType &deviation() {return _DEVIATION;}
-		
-		inline const TStatePtr &src() const {return src_;}
-		inline TStatePtr &src() {return src_;}
+		inline _TType deviation() const {return _DEVIATION;}
 
-		Transformation directed(const TStatePtr &state) const {
-			if(state==src_) return *this;
-			return Transformation(-1*link_, state);
-		}
-		
-		Transformation scale(const TDist &thr) const {
+		TransformationLink scale(const TDist &thr) const {
 			TLink tmp = link_;
-			TDist d = distance(Transformation());
+			TDist d = distance(TransformationLink());
 			for(int i=0; d(0) && i<NUM_TRANS; i++)
 				tmp(i) *= thr(0)/d(0);
 			for(int i=NUM_TRANS; d(1) && i<NUM_TRANS+NUM_ROT; i++)
 				tmp(i) *= thr(1)/d(1);
-			return Transformation(tmp, src_);
+			return TransformationLink(tmp);
 		}
 
-		TDist distance(const Transformation &o) const {
+		TDist distance(const TransformationLink &o) const {
 			TLink tmp = link_-o.link_;
 			TDist r = TDist::Zero();
 			
@@ -109,7 +93,7 @@ namespace cob_3d_experience_mapping {
 			return r.norm();
 		}*/
 		
-		void integrate(const Transformation &movement) {
+		void integrate(const TransformationLink &movement) {
 			BOOST_STATIC_ASSERT(NUM_TRANS==2);	//TODO: at the moment only implement for 2d case
 			BOOST_STATIC_ASSERT(NUM_ROT==1);
 
@@ -127,15 +111,15 @@ namespace cob_3d_experience_mapping {
 		}
 
 		//TODO:
-		TType proximity_pos(const Transformation &o, const TDist &thr, const TType &k) const {
+		TType proximity_pos(const TransformationLink &o, const TDist &thr, const TType &k) const {
 			return factor(energy_distance(o-link_, thr));
 		}
 
 		TDist proximity(const boost::math::normal distribution[2]) const {
-			return proximity(distribution, Transformation());
+			return proximity(distribution, TransformationLink());
 		}
 		
-		TDist proximity(const boost::math::normal distribution[2], const Transformation &o) const {
+		TDist proximity(const boost::math::normal distribution[2], const TransformationLink &o) const {
 			TDist r = distance(o);
 			r(0) = boost::math::cdf(distribution[0], r(0));
 			r(1) = boost::math::cdf(distribution[1], r(1));
@@ -171,7 +155,7 @@ namespace cob_3d_experience_mapping {
 			return v;
 		}
 		
-		TType transition_factor(const Transformation &o, const TDist &thr) const {
+		TType transition_factor(const TransformationLink &o, const TDist &thr) const {
 			TDist r;
 			
 			{
@@ -197,10 +181,14 @@ namespace cob_3d_experience_mapping {
 			}
 			//std::cout<<"r "<<r.transpose()<<std::endl;
 			
-			return r.norm() + _DEVIATION;
+			/*TType ret = r.norm();
+			if(ret<1)
+				return std::min(ret+_DEVIATION, (TType)1);
+			return std::max(ret-_DEVIATION, (TType)1);*/
+			return r.norm() + o.deviation();
 		}
 		
-		TType transition_factor_dbg(const Transformation &o, const TDist &thr) const {
+		TType transition_factor_dbg(const TransformationLink &o, const TDist &thr) const {
 			TType r = transition_factor(o,thr);
 			
 			dbg();
@@ -237,6 +225,53 @@ namespace cob_3d_experience_mapping {
 				sprintf(buf, "link_%d", i);
 		    	ar & boost::serialization::make_nvp(buf, link_(i));
 			}
+		}
+	};
+	
+	
+	template<class _TransformationLink, class TStatePtr>
+	class Transformation : public _TransformationLink {
+	public:
+		typedef boost::shared_ptr<Transformation> TPtr;
+		typedef typename _TransformationLink::TLink TLink;
+		typedef typename _TransformationLink::TDist TDist;
+		
+	protected:
+		TStatePtr src_;
+		
+		using typename _TransformationLink::link_;
+		
+	public:
+		
+		Transformation()
+		{}
+		
+		Transformation(const TStatePtr &state) :
+			src_(state)
+		{}
+
+		Transformation(const TLink &link, const TStatePtr &state) :
+			src_(state)
+		{
+			link_ = link;
+		}
+
+		/*Transformation scale(const TDist &thr) const {
+			TLink tmp = link_;
+			TDist d = distance(Transformation());
+			for(int i=0; d(0) && i<NUM_TRANS; i++)
+				tmp(i) *= thr(0)/d(0);
+			for(int i=NUM_TRANS; d(1) && i<NUM_TRANS+NUM_ROT; i++)
+				tmp(i) *= thr(1)/d(1);
+			return Transformation(tmp, src_);
+		}*/
+		
+		inline const TStatePtr &src() const {return src_;}
+		inline TStatePtr &src() {return src_;}
+
+		Transformation directed(const TStatePtr &state) const {
+			if(state==src_) return *this;
+			return Transformation(-1*link_, state);
 		}
 	};
 }

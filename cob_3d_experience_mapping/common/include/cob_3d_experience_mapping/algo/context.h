@@ -66,7 +66,8 @@ namespace cob_3d_experience_mapping {
 				if(active_cells_[i]==cell) return;
 			cell->dist_o() = param().energy_max_;
 			//if(active_cells_.size()>0) cell->dist_o() += active_cells_.back()->dist_o();
-			cell->dist_h() = 0;
+			cell->dist_h_in()  = 0;
+			cell->dist_h_out() = 0;
 			cell->dbg().hops_ = 0;
 			cell->reset_feature();
 			//active_cells_.insert(active_cells_.begin()+(active_cells_.size()-1), cell);
@@ -94,8 +95,12 @@ namespace cob_3d_experience_mapping {
 				DBG_PRINTF("DBG: rescaling %f\n", param().energy_max_/active_cells_.back()->dist_o());
 				for(size_t i=0; i<active_cells_.size(); i++) {
 					
-					if(active_cells_[i]->dist_o()>=param().energy_max_)
+					if(active_cells_[i]->dist_o()>=param().energy_max_) {
 						active_cells_[i]->dbg().hops_ = 0;
+						active_cells_[i]->dist_h_in()  = 1;
+						active_cells_[i]->dist_h_out() = 0;
+						active_cells_[i]->reset_feature();
+					}
 						
 					active_cells_[i]->dist_o() *= param().energy_max_/active_cells_.back()->dist_o();
 				}
@@ -121,6 +126,9 @@ namespace cob_3d_experience_mapping {
 		
 		void add_feature(const typename TFeature::TID &id, const int ts) {
 			boost::lock_guard<boost::mutex> guard(mtx_);
+			
+			//if( current_active_cell() && virtual_cell() && current_active_cell()->id() < virtual_cell()->id()-(param().min_age_+1) )
+			//	return;
 			
 			typename FeatureMap::iterator it = features_.find(id);
 			if(it==features_.end())

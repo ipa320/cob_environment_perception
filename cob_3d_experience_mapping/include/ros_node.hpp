@@ -46,9 +46,10 @@ class ROS_Node : public Parent
 {
 public:
 	typedef lemon::ListDigraph TGraph;
-	typedef cob_3d_experience_mapping::State<cob_3d_experience_mapping::Empty, Scalar, TGraph> State;
+	typedef cob_3d_experience_mapping::TransformationLink<Scalar, NUM_TRANS, NUM_ROT> TTransformationLink;
+	typedef cob_3d_experience_mapping::State<cob_3d_experience_mapping::Empty, Scalar, TGraph, TTransformationLink> State;
 	typedef cob_3d_experience_mapping::Feature<State, cob_3d_experience_mapping::Empty> Feature;
-	typedef cob_3d_experience_mapping::Transformation<Scalar, NUM_TRANS, NUM_ROT, typename State::TPtr> Transformation;
+	typedef cob_3d_experience_mapping::Transformation<TTransformationLink, typename State::TPtr> Transformation;
 #ifdef VIS_
 	typedef cob_3d_experience_mapping::visualization::VisualizationHandler<typename State::TGraph, typename TGraph::NodeMap<typename State::TPtr>, typename TGraph::ArcMap <typename Transformation::TPtr>, typename State::TPtr, typename State::TArcOutIterator> VisualizationHandler;
 #endif
@@ -127,6 +128,11 @@ public:
   void on_odom(const nav_msgs::Odometry::ConstPtr &odom) {
 	  boost::lock_guard<boost::mutex> guard(mtx_);
 	  
+	  Eigen::Vector3f dbg_pose;
+	  dbg_pose(0) = odom->pose.pose.position.x;
+	  dbg_pose(1) = odom->pose.pose.position.y;
+	  dbg_pose(2) = odom->pose.pose.orientation.w;
+	  
 	  ROS_INFO("-------------------------------");
 	  if(/*time_last_odom_.isValid() &&*/ (odom->header.stamp-time_last_odom_)<ros::Duration(100)) {
 		  ROS_INFO("on odom.");
@@ -139,12 +145,10 @@ public:
 		  if(link(2)<-M_PI) link(2) += 2*M_PI;
 		  if(!step_mode_) link *= (odom->header.stamp-time_last_odom_).toSec();
 		  
-		  Eigen::Vector3f dbg_pose;
-		  dbg_pose(0) = odom->pose.pose.position.x;
-		  dbg_pose(1) = odom->pose.pose.position.y;
-		  dbg_pose(2) = odom->pose.pose.orientation.w;
+		  else if(std::abs(link(2))>0.4) link(2) *= 0.4/std::abs(link(2)); //TODO: TESTING ONLY!!!
 		  
 
+		  ROS_INFO("debug pose: %f %f %f", dbg_pose(0),dbg_pose(1),dbg_pose(2));
 		  ROS_INFO("odom: %f %f %f", link(0),link(1),link(2));
 
 		  Transformation action(link, ctxt_.current_active_cell());
@@ -157,8 +161,10 @@ public:
 			vis_->visualize(graph_, cells_, trans_, ctxt_.current_active_cell());
 		  }
 #endif
-	  } else
-		  ROS_INFO("skipped odom %f", (odom->header.stamp-time_last_odom_).toSec());
+	  } else {
+		  ctxt_.current_active_cell()->dbg().pose_ = dbg_pose;
+		  ROS_INFO("skipped odom %f %d", (odom->header.stamp-time_last_odom_).toSec(), (int)time_last_odom_.isValid());
+	  }
 	  time_last_odom_ = odom->header.stamp;
 	  printf("\n");
   }

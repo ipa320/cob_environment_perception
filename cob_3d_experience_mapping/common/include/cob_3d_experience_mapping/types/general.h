@@ -38,7 +38,7 @@ namespace cob_3d_experience_mapping {
 	 * class: State
 	 * short description: current state + activation --> Artificial Neuron
 	 */
-	template<class TMeta, class _TEnergy, class _TGraph>
+	template<class TMeta, class _TEnergy, class _TGraph, class _TLink >
 	class State : public Object<TMeta> {
 	public:
 		//types
@@ -55,14 +55,14 @@ namespace cob_3d_experience_mapping {
 		typedef boost::shared_ptr<State> TPtr;
 		typedef int ID;
 	protected:
-		TEnergy do_, dh_, ft_imp_, ft_imp_last_;
+		TEnergy do_, dh_in_, dh_out_, ft_imp_, ft_imp_last_;
 		TNode node_;
 		ID id_;
 		DbgInfo dbg_;
 		bool still_exists_;
 		
 	public:		
-		State(): do_(0), dh_(0), ft_imp_(1), ft_imp_last_(1), still_exists_(true) {
+		State(): do_(0), dh_in_(0), dh_out_(0), ft_imp_(1), ft_imp_last_(1), still_exists_(true) {
 			static int no = 1;
 			char buf[128];
 			id_ = no;
@@ -82,12 +82,13 @@ namespace cob_3d_experience_mapping {
 		inline TEnergy &dist_o() {return do_;}
 		inline const TEnergy &dist_o() const {return do_;}
 		
-		inline TEnergy &dist_h() {return dh_;}
-		inline const TEnergy &dist_h() const {return dh_;}
+		inline TEnergy &dist_h_in() {return dh_in_;}
+		inline TEnergy &dist_h_out() {return dh_out_;}
+		inline const TEnergy &dist_h() const {return std::max(dh_in_, dh_out_);}
 		
 		inline TEnergy d() const {return std::sqrt(d2());}
 		
-		inline TEnergy d2() const {return do_*do_ + dh_*dh_;}
+		inline TEnergy d2() const {return do_*do_ + dist_h()*dist_h();}
 		
 		inline void set_node(const TNode &node) {node_ = node;}
 		inline TNode &node() {return node_;}
@@ -289,6 +290,8 @@ namespace cob_3d_experience_mapping {
 				char buf[32];
 				sprintf(buf,"ft%d ", id_);
 				inj->dbg().info_ += buf;
+				
+				DBG_PRINTF("add feature %d -> %d\n", id_, inj->id());
 			}
 		}
 		
@@ -298,6 +301,8 @@ namespace cob_3d_experience_mapping {
 				if(!it->second->still_exists()) continue;
 				
 				it->second->update(ts, (int)injections_.size(), est_occ, prob);
+				
+				DBG_PRINTF("injectXYZ %d -> %d with %d\n", id_, it->second->id(), (int)(injections_.size()+est_occ));
 			
 				//check if feature is in active list --> add
 				ctxt->add_to_active(it->second);

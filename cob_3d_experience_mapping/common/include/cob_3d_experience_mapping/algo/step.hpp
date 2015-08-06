@@ -20,10 +20,10 @@ void step(TGraph &graph, TContext &context, TMapCells &cells, TMapTransformation
 		TGraph, TContext, TResultList, TMapCells, TMapTransformations, TTransformation
 	>(context.active_cells(), graph, context, cells, trans, odom, result, dbg_pose);
 	
-	DBG_PRINTF("no. cells: %d", (int)context.active_cells().size());
+	DBG_PRINTF("no. cells: %d\n", (int)context.active_cells().size());
 	
 	context.clean_active_list();
-	DBG_PRINTF("no. cells: %d", (int)context.active_cells().size());
+	DBG_PRINTF("no. cells: %d\n", (int)context.active_cells().size());
 	
 	/*typename TState::TPtr tgt = context.active_cells()[rand()%context.active_cells().size()];
 	ActionSearchResult<TTransformation> action = find_next_action<ActionSearchResult<TTransformation>, typename TState::TPtr, TGraph, TContext, TMapCells, TMapTransformations, TTransformation>
