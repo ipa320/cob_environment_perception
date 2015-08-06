@@ -16,6 +16,7 @@ steps=[]
 no=0
 
 bag = rosbag.Bag(sys.argv[3], 'w')
+vis = open(sys.argv[4], "w")
 
 dbg_si=0
 dbg_od=0
@@ -26,6 +27,7 @@ def asRadians(degrees):
 def getXYpos(relativeNullPoint, p):
     """ Calculates X and Y distances in meters.
     """
+    return p['longitude'], p['latitude']
     deltaLatitude = p['latitude'] - relativeNullPoint['latitude']
     deltaLongitude = p['longitude'] - relativeNullPoint['longitude']
     latitudeCircumference = 40075160 * math.cos(asRadians(relativeNullPoint['latitude']))
@@ -33,14 +35,27 @@ def getXYpos(relativeNullPoint, p):
     resultY = deltaLatitude * 40008000 / 360
     return resultX, resultY
 
+locs=[]
+with open(sys.argv[2], 'rb') as csvfile:
+	spamreader = csv.reader(csvfile, delimiter=';', quotechar='|')
+	for row in spamreader:
+		ts = int(row[0]) #timestamp
+		if len(row)>2:
+			lo = (row[4])
+			la = (row[5])
+			
+			locs.append([ts,lo,la])
+
 print "reading file wifi"
 with open(sys.argv[1], 'rb') as csvfile:
 	spamreader = csv.reader(csvfile, delimiter=';', quotechar='|')
 	for row in spamreader:
 		ts = int(row[0]) #timestamp
-		if len(row)>2:
+		if len(row)>2:			
 			level = int(row[2])
-			ssid = row[1]+str(level/20)
+			if level<-75: continue
+			#ssid = row[1]+str(level/2)
+			ssid = row[1]
 			if ssid in bssid:
 				ssid = bssid[ssid]
 			else:
@@ -48,6 +63,12 @@ with open(sys.argv[1], 'rb') as csvfile:
 				ssid = no
 				no += 1
 			wifis.append( [ts, ssid, level] )
+			
+			best_l = locs[0]
+			for l in locs:
+				if abs(best_l[0]-ts)>abs(l[0]-ts):
+					best_l = l
+			vis.write(str(ssid)+";"+best_l[1]+";"+best_l[2]+"\n")
 			
 		if len(row)>1 and row[1]=="E":
 			msg = SensorInfoArray()
@@ -78,6 +99,7 @@ with open(sys.argv[2], 'rb') as csvfile:
 				
 				if not null_point:
 					null_point = {'latitude': la, 'longitude': lo}
+					print "null_point", null_point
 				x,y = getXYpos(null_point, {'latitude': la, 'longitude': lo})
 				msg.pose.pose.position.x = x
 				msg.pose.pose.position.y = y
@@ -90,6 +112,7 @@ with open(sys.argv[2], 'rb') as csvfile:
 			if step: steps.append( [ts, step, ori, lo, la, acc] )
 		
 bag.close()
+vis.close()
 
 print "generated ",dbg_si," sensor and ",dbg_od," odometry messages"
 print "DONE"
