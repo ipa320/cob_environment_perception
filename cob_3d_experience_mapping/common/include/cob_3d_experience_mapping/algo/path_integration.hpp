@@ -351,8 +351,8 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 					<
 					(*it)->d2()*/
 				) {						
-					(*it)->dist_h_in() = trans[ait]->dist(ctxt.param().prox_thr_);
-					(*it)->dist_h_out() = std::max((typename TState::TEnergy)0, 1-(*it)->dist_h_in());
+					(*it)->dist_h_in()  = std::max((typename TState::TEnergy)0, trans[ait]->dist(ctxt.param().prox_thr_)-opposite->dist_h_out());
+					(*it)->dist_h_out() = std::max((typename TState::TEnergy)0, -(trans[ait]->dist(ctxt.param().prox_thr_)-opposite->dist_h_out()) );
 					(*it)->dist_o() = opposite->dist_o();
 					
 					hops = std::max(opposite->dbg().hops_, hops);
@@ -377,8 +377,8 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 					<
 					(*it)->d2()*/
 				) {						
-					(*it)->dist_h_in() = trans[ait]->dist(ctxt.param().prox_thr_);
-					(*it)->dist_h_out() = std::max((typename TState::TEnergy)0, 1-(*it)->dist_h_in());
+					(*it)->dist_h_in()  = std::max((typename TState::TEnergy)0, trans[ait]->dist(ctxt.param().prox_thr_)-opposite->dist_h_out());
+					(*it)->dist_h_out() = std::max((typename TState::TEnergy)0, -(trans[ait]->dist(ctxt.param().prox_thr_)-opposite->dist_h_out()) );
 					(*it)->dist_o() = opposite->dist_o();
 					
 					hops = std::max(opposite->dbg().hops_, hops);
