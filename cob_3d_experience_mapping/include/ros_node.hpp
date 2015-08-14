@@ -152,7 +152,10 @@ public:
 		  ROS_INFO("odom: %f %f %f", link(0),link(1),link(2));
 
 		  Transformation action(link, ctxt_.current_active_cell());
-		  action.deviation() = 0.025f;
+		  if(step_mode_)
+			action.deviation() = 0.075f;
+		  else
+			action.deviation() = 0.075f*odom->twist.twist.linear.x;
 		  
 		  cob_3d_experience_mapping::algorithms::step(graph_, ctxt_, cells_, trans_, action, dbg_pose);
 

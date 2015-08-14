@@ -228,10 +228,11 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 				else
 					(*it)->dist_h_out() = std::min((typename TState::TEnergy)1, (*it)->dist_h_out()+odom.dist(ctxt.param().prox_thr_));
 					
-				delta += dh_max*0.707106781f;
+				delta += dh_max+odom.deviation();// *0.707106781f;
 				
 				//(*it)->dist_o() += std::sqrt( std::max((typename TState::TEnergy)0, std::pow(odom.dist(ctxt.param().prox_thr_)-odom.deviation(),2)-delta*delta) );
-				(*it)->dist_o() += std::sqrt( std::max((typename TState::TEnergy)0, std::pow(odom.dist(ctxt.param().prox_thr_)+odom.deviation(),2)-delta*delta) );
+				//(*it)->dist_o() += std::sqrt( std::max((typename TState::TEnergy)0, std::pow(odom.dist(ctxt.param().prox_thr_)+odom.deviation(),2)-delta*delta) );
+				(*it)->dist_o() += std::sqrt( std::max((typename TState::TEnergy)0, std::pow(odom.dist(ctxt.param().prox_thr_),2)-delta*delta) );
 				
 				//(*it)->dist_o() += std::sqrt( std::max((typename TState::TEnergy)0, std::pow(odom.dist(ctxt.param().prox_thr_),2)-delta*delta) )*(1-(*it)->get_feature_prob());
 				//(*it)->dist_o() += std::sqrt(std::pow(odom.dist_uncertain(ctxt.param().prox_thr_),2)-delta*delta)*(1-(*it)->get_feature_prob());
@@ -341,7 +342,7 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		
 		for(TArcIter_out ait((*it)->arc_out_begin(graph)); ait!=(*it)->arc_out_end(graph); ++ait) {
 				typename TIter::value_type opposite = cells[(*it)->opposite_node(graph, ait)];
-				if( opposite->dist_h_in()>trans[ait]->deviation() || (*it)->id() >= ctxt.virtual_cell()->id()-ctxt.param().min_age_ || opposite->dist_h_out()<0.5 ) continue;
+				if( opposite->dist_h_in()>trans[ait]->deviation() || (*it)->id() >= ctxt.virtual_cell()->id()-ctxt.param().min_age_ || opposite->dist_h_out()<0.5-odom.deviation()-trans[ait]->deviation() ) continue;
 				
 				if( trans[ait]!=ctxt.virtual_transistion() && 
 					opposite->dist_o() < (*it)->dist_o()
@@ -367,7 +368,7 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 #ifdef BEDIRECTIONAL
 		for(TArcIter_in ait((*it)->arc_in_begin(graph)); ait!=(*it)->arc_in_end(graph); ++ait) {
 				typename TIter::value_type opposite = cells[(*it)->opposite_node(graph, ait)];
-				if( opposite->dist_h_in()>trans[ait]->deviation() || (*it)->id() >= ctxt.virtual_cell()->id()-ctxt.param().min_age_ || opposite->dist_h_out()<0.5 ) continue;
+				if( opposite->dist_h_in()>trans[ait]->deviation() || (*it)->id() >= ctxt.virtual_cell()->id()-ctxt.param().min_age_ || opposite->dist_h_out()<0.5-odom.deviation()-trans[ait]->deviation() ) continue;
 				
 				if( trans[ait]!=ctxt.virtual_transistion() && 
 					opposite->dist_o() < (*it)->dist_o()

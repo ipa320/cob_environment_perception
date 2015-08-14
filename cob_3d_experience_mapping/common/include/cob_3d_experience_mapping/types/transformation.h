@@ -103,6 +103,8 @@ namespace cob_3d_experience_mapping {
 			while(link_(2)>  M_PI) link_(2) -= 2*M_PI;
 			link_(0) += movement.link_(0) * std::cos(link_(2)) + movement.link_(1) * std::sin(link_(2));
 			link_(1) += movement.link_(0) * std::sin(link_(2)) - movement.link_(1) * std::cos(link_(2));
+			
+			_DEVIATION += movement._DEVIATION;
 		}
 
 		//TODO:
@@ -185,7 +187,7 @@ namespace cob_3d_experience_mapping {
 			if(ret<1)
 				return std::min(ret+_DEVIATION, (TType)1);
 			return std::max(ret-_DEVIATION, (TType)1);*/
-			return r.norm() + o.deviation();
+			return r.norm();// + o.deviation();
 		}
 		
 		TType transition_factor_dbg(const TransformationLink &o, const TDist &thr) const {

@@ -2,7 +2,9 @@
 
 	<param name="use_sim_time" value="true" />
 
-	 <node name="mapping" pkg="cob_3d_experience_mapping" type="cob_3d_experience_mapping_lemon_node" output="screen" launch-prefix="gdb -ex run --args" />
+	 <node name="mapping" pkg="cob_3d_experience_mapping" type="cob_3d_experience_mapping_lemon_node" output="screen" >
+		<param name="step_mode" value="true" />
+	 </node>
 	 
 	  <!--node name="sim_barks" pkg="cob_3d_experience_mapping" type="sim_barks" output="screen">
 		<rosparam command="load" file="$(find cob_3d_experience_mapping)/config/barks.yaml" />
