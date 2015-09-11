@@ -1,0 +1,13 @@
+<launch>
+
+	<param name="use_sim_time" value="true" />
+
+	 <node name="mapping" pkg="cob_3d_experience_mapping" type="cob_3d_experience_mapping_lemon_node" output="screen" >
+		<param name="step_mode" value="false" />
+		<remap from="/odom" to="/irat_red/odom" />
+		<remap from="/PoseCell/TopologicalAction" to="/irat_red/PoseCell/TopologicalAction" />
+	 </node>
+	 
+	  <node name="exp2ft" pkg="cob_3d_experience_mapping" type="exp2ft.py" output="screen" />
+	  
+</launch>

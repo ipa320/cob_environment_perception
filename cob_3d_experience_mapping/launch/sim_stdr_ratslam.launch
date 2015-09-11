@@ -1,0 +1,16 @@
+<launch>
+
+	<param name="use_sim_time" value="true" />
+
+	<node name="RatSLAMPoseCells" pkg="ratslam_ros" type="ratslam_pc" args="$(find ratslam_ros)/config/config_irataus.txt _image_transport:=compressed" cwd="node" required="true" output="screen">
+		<remap from="/irat_red/odom" to="/robot0/odom" />
+	 </node>
+	 
+	  <node name="sim_features" pkg="cob_3d_experience_mapping" type="sim_features.py" output="screen">
+	  </node>
+
+		<include file="$(find ratslam_ros)/launch/irataus_cast2.launch" />
+	 
+	<node pkg="rosbag" type="play" name="play" args="'/media/My Passport/office_odom.bag' -d 0.5 -r 4 -s 0">
+	</node>
+</launch>
