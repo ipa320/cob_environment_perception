@@ -179,6 +179,7 @@ namespace cob_3d_experience_mapping {
 		//getter/setter
 		inline TActList &active_cells() {return active_cells_;}
 		inline const TParameter &param() const {return param_;}
+		inline TParameter &param_rw() {return param_;}
 		inline typename TState::TPtr current_active_cell() {return *active_cells_.begin();} //TODO: check
 		inline typename TState::TPtr &virtual_cell() {return virtual_cell_;}
 		inline typename TTransform::TPtr &virtual_transistion() {return virtual_transistion_;}
