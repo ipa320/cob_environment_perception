@@ -22,6 +22,19 @@ namespace cob_3d_experience_mapping {
 		{}
 	};
 	
+	template <class ForwardIterator, class Compare>
+	bool is_sorted (ForwardIterator first, ForwardIterator last, Compare comp)
+	{
+		if (first==last) return true;
+		ForwardIterator next = first;
+		while (++next!=last) {
+		if (comp(*next,*first))     // or, if (comp(*next,*first)) for version (2)
+		  return false;
+		++first;
+		}
+		return true;
+	}
+	
 	template<class _TEnergy, class _TState, class _TFeature, class _TEnergyFactor, class _TTransform>
 	class Context {
 	public:
@@ -86,7 +99,9 @@ namespace cob_3d_experience_mapping {
 		}
 		
 		void clean_active_list() {
-			std::sort(active_cells_.begin(), active_cells_.end(), energy_order<typename TState::TPtr>);
+			//std::sort(active_cells_.begin(), active_cells_.end(), energy_order<typename TState::TPtr>);
+			ROS_ASSERT( is_sorted(active_cells_.begin(),active_cells_.end(), energy_order<typename TState::TPtr>) );
+			
 			if(active_cells_.size()>param().max_active_cells_) {
 				DBG_PRINTF("DBG: removing\n");
 				active_cells_.erase(active_cells_.begin()+param().max_active_cells_, active_cells_.end());
