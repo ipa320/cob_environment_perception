@@ -121,9 +121,11 @@ include_directories(SYSTEM ${EIGEN_INCLUDE_DIRS})
 add_executable(cob_3d_experience_mapping_lemon_node src/exp_mapping_lemon.cpp)
 add_executable(sim_barks src/sim_barks.cpp)
 add_executable(convert src/convert.cpp)
+add_executable(cob_3d_experience_mapping_lemon_eval evaluation/exp_mapping_lemon_eval.cpp)
 
 # make sure configure headers are built before any node using them
 add_dependencies(cob_3d_experience_mapping_lemon_node ${PROJECT_NAME}_gencfg)
+add_dependencies(cob_3d_experience_mapping_lemon_eval ${PROJECT_NAME}_gencfg)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
@@ -137,6 +139,10 @@ target_link_libraries(sim_barks
   ${catkin_LIBRARIES}
 )
 target_link_libraries(convert
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(cob_3d_experience_mapping_lemon_eval
   ${catkin_LIBRARIES}
 )
 
