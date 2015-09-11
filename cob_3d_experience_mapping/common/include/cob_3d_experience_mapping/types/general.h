@@ -54,12 +54,14 @@ namespace cob_3d_experience_mapping {
 		typedef typename TGraph::InArcIt TArcInIterator;
 		typedef boost::shared_ptr<State> TPtr;
 		typedef int ID;
+		typedef _TLink TLink;
 	protected:
 		TEnergy do_, dh_in_, dh_out_, ft_imp_, ft_imp_last_;
 		TNode node_;
 		ID id_;
 		DbgInfo dbg_;
 		bool still_exists_;
+		TLink trans_in_;
 		
 	public:		
 		State(): do_(0), dh_in_(0), dh_out_(0), ft_imp_(1), ft_imp_last_(1), still_exists_(true) {
