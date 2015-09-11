@@ -136,14 +136,10 @@ namespace cob_3d_experience_mapping {
 		inline Eigen::Matrix<TType, NUM_ROT, 1> rotation() const {return link_.template tail<NUM_ROT>();}
 		
 		TType dist(const TDist &thr) const {
-			TDist r = TDist::Zero();
-			for(int i=0; i<NUM_TRANS; i++)
-				r(0) += std::pow(link_(i), 2);
-			for(int i=NUM_TRANS; i<NUM_TRANS+NUM_ROT; i++)
-				r(1) += std::pow(link_(i), 2);
+			TDist r;
 			
-			r(0) = std::sqrt(r(0))/thr(0);
-			r(1) = std::sqrt(r(1))/thr(1);
+			r(0) = link_.template head<NUM_TRANS>().norm()/thr(0);
+			r(1) = link_.template tail<NUM_ROT>  ().norm()/thr(1);
 			
 			return r.norm();
 		}
