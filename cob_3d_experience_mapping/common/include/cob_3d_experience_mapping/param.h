@@ -16,6 +16,7 @@ namespace cob_3d_experience_mapping {
 		
 		TDist prox_thr_;
 		typename TDist::Scalar energy_max_;
+		typename TDist::Scalar deviation_factor_;
 		
 		int est_occ_;
 		int min_age_;
@@ -47,12 +48,13 @@ namespace cob_3d_experience_mapping {
 		}
 
 		Parameter() {
-			prox_thr_(0) = 1.2;
-			prox_thr_(1) = 0.5;
-			energy_max_ = 2;
-			est_occ_ = 30;
-			min_age_ = 10;
-			max_active_cells_ = 1000;
+			prox_thr_(0) = 0.5;
+			prox_thr_(1) = 0.35;
+			energy_max_ = 3;//1.25;
+			est_occ_ = 5;
+			min_age_ = 3;
+			max_active_cells_ = 200;
+			deviation_factor_ = 0.1;
 			
 #ifdef VIS_
 			vis_color_cell_.r = 0.5;
@@ -75,6 +77,7 @@ namespace cob_3d_experience_mapping {
 			est_occ_ = config.est_occ;
 			min_age_ = config.min_age;
 			max_active_cells_ = config.max_active_cells;
+			deviation_factor_ = config.deviation_factor;
 
 			ROS_INFO("updated settings");
 		}
