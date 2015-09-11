@@ -66,7 +66,10 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 	{
 		TIter begin = active_cells.begin();
 		TIter end   = active_cells.end();
-		std::sort(begin, end, energy_order<typename TCellVector::value_type>);
+		if(ctxt.needs_sort())
+			std::sort(begin, end, energy_order<typename TCellVector::value_type>);
+		ROS_ASSERT( is_sorted(begin, end, energy_order<typename TCellVector::value_type>) );
+		
 		/*for(TIter it=begin; it!=end; it++) {
 			DBG_PRINTF("cell %f %f\n", (*it)->dist_h(), (*it)->dist_o());
 			if(it+1!=end)
