@@ -159,7 +159,52 @@ namespace cob_3d_experience_mapping {
 		
 		TType transition_factor(const TransformationLink &o, const TDist &thr) const {
 			TDist r;
+			TLink tmp;
 			
+			if(link_.squaredNorm())
+				tmp = o.link_.norm()/link_.norm()*link_ + o.link_;
+			else
+				tmp = o.link_;
+			
+			r(0) = tmp.template head<NUM_TRANS>().norm()/thr(0);
+			r(1) = tmp.template tail<NUM_ROT>  ().norm()/thr(1);
+			
+			//std::cout<<"transition_factor "<<r.transpose()<<" = "<<o.dist(thr)-r.norm()<<std::endl;
+			
+			return o.dist(thr)-r.norm();
+			
+#if 0
+			TDist r;
+			
+			{
+				Eigen::Matrix<TType, 3, 1> A = Eigen::Matrix<TType, 3, 1>::Zero();
+				Eigen::Matrix<TType, 3, 1> B = Eigen::Matrix<TType, 3, 1>::Zero();
+				A.template head<NUM_TRANS>() = link_.template head<NUM_TRANS>();
+				B.template head<NUM_TRANS>() = o.link_.template head<NUM_TRANS>();
+				
+				if(A.squaredNorm()) 
+					r(0) = A.cross(B).norm()/(A.norm()*thr(0)); //distance of point to line
+				else
+					r(0) = 0;
+			}
+			
+			{
+				Eigen::Matrix<TType, NUM_ROT, 1> A = link_.template tail<NUM_ROT>();
+				Eigen::Matrix<TType, NUM_ROT, 1> B = o.link_.template tail<NUM_ROT>();
+				
+				r(1) = dist_rad(A+B).norm()/thr(1);
+			}
+			
+			TLink l = link_;
+			l.template head<NUM_TRANS>() /= thr(0);
+			l.template tail<NUM_ROT>()   /= thr(1);
+			
+			std::cout<<"transition_factor "<<l.transpose()<<" : "<<r.transpose()<<" = "<<r.norm()/l.norm()<<std::endl;
+			
+			return std::max((TType)0, (1-r.norm()/l.norm())*r.norm() );// + o.deviation();
+#endif
+			
+			#if 0
 			{
 				Eigen::Matrix<TType, NUM_TRANS, 1> A = link_.template head<NUM_TRANS>();
 				Eigen::Matrix<TType, NUM_TRANS, 1> B = o.link_.template head<NUM_TRANS>();
@@ -181,6 +226,7 @@ namespace cob_3d_experience_mapping {
 				/*r(1) = std::max((TType)0, 1-dist_rad(A-B).norm()/thr(1))*B.norm();
 				DBG_PRINTF("rot  %f %f %f %f\n", dist_rad(A-B).norm(), dist_rad(A-B).norm()/thr(1)*B.norm(), B.norm(), B(0));*/
 			}
+			#endif
 			//std::cout<<"r "<<r.transpose()<<std::endl;
 			
 			/*TType ret = r.norm();
