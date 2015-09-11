@@ -106,7 +106,7 @@ namespace cob_3d_experience_mapping {
 				DBG_PRINTF("DBG: removing\n");
 				active_cells_.erase(active_cells_.begin()+param().max_active_cells_, active_cells_.end());
 			}
-			if(active_cells_.size()>0 && active_cells_.back()->dist_o()>param().energy_max_) {
+			if(false && active_cells_.size()>0 && active_cells_.back()->dist_o()>param().energy_max_) {
 				DBG_PRINTF("DBG: rescaling %f\n", param().energy_max_/active_cells_.back()->dist_o());
 				for(size_t i=0; i<active_cells_.size(); i++) {
 					
@@ -114,10 +114,47 @@ namespace cob_3d_experience_mapping {
 						active_cells_[i]->dbg().hops_ = 0;
 						active_cells_[i]->dist_h_in()  = 1;
 						active_cells_[i]->dist_h_out() = 0;
+						active_cells_[i]->reset_trans_in();
 						active_cells_[i]->reset_feature();
+						
+						/*active_cells_.erase(active_cells_.begin()+i);
+						--i;*/
 					}
 						
 					active_cells_[i]->dist_o() *= param().energy_max_/active_cells_.back()->dist_o();
+				}
+			}
+			
+			if(false && active_cells_.size()>0 && active_cells_.back()->dist_o()>param().energy_max_) {
+				DBG_PRINTF("DBG: rescaling %f\n", param().energy_max_/active_cells_.back()->dist_o());
+				const bool cut = (active_cells_.front()->dist_o()>param().energy_max_/2);
+				for(size_t i=0; i<active_cells_.size(); i++) {
+					
+					if(active_cells_[i]->dist_o()>=2*param().energy_max_) {
+						if(!cut) {
+							active_cells_.erase(active_cells_.begin()+i);
+							--i;
+						}
+					}
+						
+					if(cut)
+						active_cells_[i]->dist_o() -= param().energy_max_/2;
+				}
+			}
+			
+			
+			if(active_cells_.size()>0 && active_cells_.front()->dist_o()>10*param().energy_max_) {
+				DBG_PRINTF("DBG: rescaling \n");
+				for(size_t i=0; i<active_cells_.size(); i++)
+					active_cells_[i]->dist_o() -= param().energy_max_;
+			}
+			if(active_cells_.size()>0) {
+				for(size_t i=1; i<active_cells_.size(); i++) {
+					
+					if(active_cells_[i]->dist_h_in()<=0 && active_cells_[i]->dist_h_out()>=1) {
+						active_cells_.erase(active_cells_.begin()+i);
+						--i;
+					}
 				}
 			}
 		}
