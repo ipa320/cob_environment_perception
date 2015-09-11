@@ -62,6 +62,7 @@ namespace cob_3d_experience_mapping {
 		FeatureMap features_;
 		FeatureBuffer last_features_;
 		boost::mutex mtx_;
+		bool needs_sort_;
 		
 		//helper functions
 		void update_overall_energy(const TEnergy &delta_energy) {
@@ -76,7 +77,13 @@ namespace cob_3d_experience_mapping {
 		}
 		
 	public:
-		Context() : energy_sum_(0), energy_max_(0), last_dist_min_(0) {
+		Context() : energy_sum_(0), energy_max_(0), last_dist_min_(0), last_features_(10), needs_sort_(true) {
+		}
+		
+		bool needs_sort() {
+			bool tmp = needs_sort_;
+			needs_sort_=false;
+			return tmp;
 		}
 		
 		void add_to_active(typename TState::TPtr &cell) {
