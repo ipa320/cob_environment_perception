@@ -296,11 +296,11 @@ namespace cob_3d_experience_mapping {
 		}
 		
 		template<typename TContext>
-		void inject(TContext *ctxt, const int ts, const int est_occ, const typename TInjection::TEnergy prob=1) {
+		void inject(TContext *ctxt, const int ts, const int est_occ, const int max_occ, const typename TInjection::TEnergy prob=1) {
 			for(typename InjectionMap::iterator it=injections_.begin(); it!=injections_.end(); it++) {
 				if(!it->second->still_exists()) continue;
 				
-				it->second->update(ts, (int)injections_.size(), est_occ, prob);
+				it->second->update(ts, std::min(max_occ, (int)injections_.size()), est_occ, prob);
 				
 				DBG_PRINTF("injectXYZ %d -> %d with %d\n", id_, it->second->id(), (int)(injections_.size()+est_occ));
 			
