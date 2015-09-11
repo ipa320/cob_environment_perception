@@ -76,6 +76,8 @@ namespace cob_3d_experience_mapping {
 		//inline ID &id() {return id_;}
 		inline ID  id() const {return id_;}
 		
+		inline TLink &trans_in() {return trans_in_;}
+		
 		inline bool &still_exists() {return still_exists_;}
 		inline bool  still_exists() const {return still_exists_;}
 		
@@ -142,6 +144,8 @@ namespace cob_3d_experience_mapping {
 		inline TEnergy get_last_feature_prob() const {return 1-ft_imp_last_;}
 		
 		void reset_feature() {ft_imp_last_=ft_imp_; ft_imp_=1;}
+		
+		inline void reset_trans_in() {trans_in_ = TLink();}
 		
 		template<class Archive>
 		void serialize_single(Archive & ar, const unsigned int version)
