@@ -4,6 +4,7 @@
 #include <set>
 #include <map>
 #include <boost/thread.hpp>
+#include <boost/circular_buffer.hpp>
 
 namespace cob_3d_experience_mapping {
 
@@ -48,6 +49,7 @@ namespace cob_3d_experience_mapping {
 		typedef typename TActList::iterator TActListIterator; 
 		typedef Parameter<TEnergyFactor, typename _TTransform::TDist> TParameter;
 		typedef std::map<typename TFeature::TID, typename TFeature::TPtr> FeatureMap;
+		typedef boost::circular_buffer<typename TFeature::TID> FeatureBuffer;
 		
 	private:
 		TActList active_cells_;
@@ -56,6 +58,7 @@ namespace cob_3d_experience_mapping {
 		typename TState::TPtr last_active_cell_, virtual_cell_;
 		typename TTransform::TPtr virtual_transistion_;
 		FeatureMap features_;
+		FeatureBuffer last_features_;
 		boost::mutex mtx_;
 		
 		//helper functions
@@ -179,14 +182,20 @@ namespace cob_3d_experience_mapping {
 		void add_feature(const typename TFeature::TID &id, const int ts) {
 			boost::lock_guard<boost::mutex> guard(mtx_);
 			
-			//if( current_active_cell() && virtual_cell() && current_active_cell()->id() < virtual_cell()->id()-(param().min_age_+1) )
+			//if( current_active_cell() && virtual_cell() && current_active_cell()->id() < virtual_cell()->id()-(param().min_age_+3) )
 			//	return;
+			
+			for(typename FeatureBuffer::iterator it = last_features_.begin(); it!=last_features_.end(); it++)
+				if(*it == id)
+					return;
+			last_features_.push_back(id);
 			
 			typename FeatureMap::iterator it = features_.find(id);
 			if(it==features_.end())
 				it = features_.insert(typename FeatureMap::value_type(id, typename TFeature::TPtr(new TFeature(id))) ).first;
-			it->second->visited(current_active_cell().get(), current_active_cell());
-			it->second->inject(this, ts, param().est_occ_);
+			if( !(current_active_cell() && virtual_cell() && current_active_cell()->id() < virtual_cell()->id()-(param().min_age_+3) ) )
+				it->second->visited(current_active_cell().get(), current_active_cell());
+			it->second->inject(this, ts, param().est_occ_, param().max_active_cells_);
 		}
 #if 0		
 		template<class TIter>
