@@ -26,7 +26,7 @@ void init(TGraph &graph, TContext &ctxt, TMapCells &cells, TMapTransformations &
 	typedef typename TContext::TState TState;
 
 	typename TContext::TState::TPtr cell(new TState);
-	//cell->energy() = 1;
+	cell->dist_o() = 5*ctxt.param().energy_max_;
 	ctxt.active_cells().push_back(cell);
 	insert_cell(graph, cells, trans, cell);
 
@@ -111,6 +111,12 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 #endif
 
 	if(!ctxt.virtual_cell() || (ctxt.last_active_cell()!=ctxt.current_active_cell() && ctxt.current_active_cell()->dist_h_in()<=0) || (ctxt.current_active_cell()!=ctxt.virtual_cell() && ctxt.current_active_cell()->d2()<ctxt.last_dist_min() && ctxt.current_active_cell()->dist_h_in()<=0) || ctxt.virtual_cell()->dist_h_in()<=0) {
+		
+		if(ctxt.virtual_cell()) {
+			ctxt.current_active_cell()->trans_in().dbg();
+			ctxt.virtual_transistion()->dbg();
+		}
+	
 		DBG_PRINTF("resetting virtual cell %d (%f %f)\n",
 			(int)(ctxt.last_active_cell()!=ctxt.current_active_cell()),
 			ctxt.virtual_cell()?ctxt.virtual_cell()->dist_h_in():0., ctxt.virtual_cell()?ctxt.virtual_cell()->dist_o():0.
@@ -121,7 +127,7 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 			ctxt.virtual_transistion()->dbg();
 		}
 		else {
-			DBG_PRINTF("relocalized %d -> %d with %d hops\n", ctxt.last_active_cell()?ctxt.last_active_cell()->id():-1, ctxt.current_active_cell()?ctxt.current_active_cell()->id():-1,
+			DBG_PRINTF_URGENT("relocalized %d -> %d with %d hops\n", ctxt.last_active_cell()?ctxt.last_active_cell()->id():-1, ctxt.current_active_cell()?ctxt.current_active_cell()->id():-1,
 			ctxt.current_active_cell()?ctxt.current_active_cell()->dbg().hops_:0);
 			
 			if(ctxt.last_active_cell()!=ctxt.current_active_cell() && ctxt.last_active_cell() && ctxt.current_active_cell()) {
@@ -213,7 +219,10 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		
 		//step 2: increase dist.
 		for(TIter it=begin; it!=end; it++) {
-			DBG_PRINTF("%d before dist (%f/%f)\n", (*it)->id(), (*it)->dist_h(),(*it)->dist_o());
+			//if( (*it)->id() < ctxt.virtual_cell()->id()-ctxt.param().min_age_ && (*it)->get_feature_prob()>0)
+			//	continue;
+			
+			DBG_PRINTF("%d before dist (%f/%f) h:%f,%f\n", (*it)->id(), (*it)->dist_h(),(*it)->dist_o(), (*it)->dist_h_in(), (*it)->dist_h_out());
 			
 	(*it)->trans_in().integrate(odom);
 	
@@ -228,38 +237,99 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 				DBG_PRINTF("%d changing dist V (%f/%f) by (%f/%f)\n", (*it)->id(), (*it)->dist_h(),(*it)->dist_o(), dc, du-dc);
 			}
 			else {
-				typename TState::TEnergy dh_max = 0;
+				typename TState::TEnergy dh_max = 0, dev_max = 1, tmp;
 				typename TState::TEnergy delta  = 0;
 				
 				if((*it)->dist_h_in()>0) {
-					for(TArcIter_out ait((*it)->arc_out_begin(graph)); ait!=(*it)->arc_out_end(graph); ++ait)
-						dh_max = std::max(dh_max, trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_) );
+					if( (*it)->id() < ctxt.virtual_cell()->id()-ctxt.param().min_age_ && (*it)->get_feature_prob()>0)
+						odom.dbg();
+						
+					for(TArcIter_out ait((*it)->arc_out_begin(graph)); ait!=(*it)->arc_out_end(graph); ++ait) {
+						tmp = trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_);
+						if(dh_max<tmp) {
+							dh_max = tmp;
+							dev_max= trans[ait]->deviation();
+						}
+						
+						if( (*it)->id() < ctxt.virtual_cell()->id()-ctxt.param().min_age_ && (*it)->get_feature_prob()>0) {
+							trans[ait]->directed(*it).dbg();
+							DBG_PRINTF("t-factor: %f\n",trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_));
+							
+							/*typename TIter::value_type opposite = cells[(*it)->opposite_node(graph, ait)];
+							trans[ait]->directed(opposite).dbg();
+							std::cout<<"t-factor: "<<trans[ait]->directed(opposite).transition_factor(odom, ctxt.param().prox_thr_)<<std::endl;*/
+						}
+					}
 #ifdef BEDIRECTIONAL
 					for(TArcIter_in ait((*it)->arc_in_begin(graph)); ait!=(*it)->arc_in_end(graph); ++ait)
 						dh_max = std::max(dh_max, trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_) );
 #endif
-
-					delta = std::min((*it)->dist_h_in(), dh_max);
+					
+					delta = std::min((*it)->dist_h_in(), dh_max/*+odom.deviation()*/);
 					(*it)->dist_h_in() -= delta;
 				}
-				else
-					(*it)->dist_h_out() = std::min((typename TState::TEnergy)1, (*it)->dist_h_out()+odom.dist(ctxt.param().prox_thr_));
+				else {
+					/*if( (*it)->id() < ctxt.virtual_cell()->id()-ctxt.param().min_age_ && (*it)->get_feature_prob()>0)
+						odom.dbg();
+						
+					for(TArcIter_in ait((*it)->arc_in_begin(graph)); ait!=(*it)->arc_in_end(graph); ++ait) {
+						tmp = trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_);
+						if(dh_max<tmp) {
+							dh_max = tmp;
+							dev_max= trans[ait]->deviation();
+						}
+						
+						if( (*it)->id() < ctxt.virtual_cell()->id()-ctxt.param().min_age_ && (*it)->get_feature_prob()>0) {
+							trans[ait]->directed(*it).dbg();
+							std::cout<<"t-factor2: "<<trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_)<<std::endl;
+							
+							/*typename TIter::value_type opposite = cells[(*it)->opposite_node(graph, ait)];
+							trans[ait]->directed(opposite).dbg();
+							std::cout<<"t-factor: "<<trans[ait]->directed(opposite).transition_factor(odom, ctxt.param().prox_thr_)<<std::endl;*
+						}
+					}*/
 					
-				delta += dh_max+odom.deviation();// *0.707106781f;
+					//const typename TState::TEnergy old = (*it)->dist_h_out();
+					(*it)->dist_h_out() = std::min((typename TState::TEnergy)1, (*it)->dist_h_out()+odom.dist(ctxt.param().prox_thr_));
+					//delta = (*it)->dist_h_out()-old;
+					
+					/*dh_max = std::max(odom.deviation(), dh_max);
+					
+					if((*it)->dist_h_out()>=1)
+						dh_max = 0;*/
+				}
+					
+				//delta += dh_max+odom.deviation();// *0.707106781f;
+				delta = dh_max-odom.deviation()*(1-dh_max/odom.dist(ctxt.param().prox_thr_));
+				if(delta<0) delta=0;
 				
 				//(*it)->dist_o() += std::sqrt( std::max((typename TState::TEnergy)0, std::pow(odom.dist(ctxt.param().prox_thr_)-odom.deviation(),2)-delta*delta) );
 				//(*it)->dist_o() += std::sqrt( std::max((typename TState::TEnergy)0, std::pow(odom.dist(ctxt.param().prox_thr_)+odom.deviation(),2)-delta*delta) );
-				(*it)->dist_o() += std::sqrt( std::max((typename TState::TEnergy)0, std::pow(odom.dist(ctxt.param().prox_thr_),2)-delta*delta) );
+				
+				//(*it)->dist_o() += std::sqrt( std::max((typename TState::TEnergy)0, std::pow(odom.dist(ctxt.param().prox_thr_),2)-delta*delta) );
+				
+				dev_max = 0.02;
+				const typename TState::TEnergy travel = odom.dist(ctxt.param().prox_thr_);
+				const typename TState::TEnergy dist = std::abs(travel-dh_max);
+				const typename TState::TEnergy odom_dev = 0.02;
+				//(*it)->dist_o() += dist+odom.deviation()*(1-(*it)->get_feature_prob()*dh_max/travel);
+				(*it)->dist_o() += dist+odom.deviation()*std::exp(-(*it)->dbg().hops_/5.f);
+				
+				//(*it)->dist_o() += dist+odom.deviation()*(1-1.f/(ctxt.param().est_occ_+1)*std::exp(-dist*dist/(2*travel*travel*(dev_max*dev_max+odom_dev*odom_dev))));
+				//(*it)->dist_o() += dist+odom.deviation();
+				//(*it)->dist_o() *= 1-std::sqrt(2*M_PI)*odom_dev*dev_max*std::exp(-dist*dist/(2*(dev_max*dev_max+odom_dev*odom_dev)))/std::sqrt(dev_max*dev_max+odom_dev*odom_dev);
 				
 				//(*it)->dist_o() += std::sqrt( std::max((typename TState::TEnergy)0, std::pow(odom.dist(ctxt.param().prox_thr_),2)-delta*delta) )*(1-(*it)->get_feature_prob());
 				//(*it)->dist_o() += std::sqrt(std::pow(odom.dist_uncertain(ctxt.param().prox_thr_),2)-delta*delta)*(1-(*it)->get_feature_prob());
 			
-				DBG_PRINTF("%d changing dist(%f/%f) by (%f/%f) %f %f %f\n",
+				DBG_PRINTF("%d changing dist(%f/%f) by (%f/%f) %f %f %f\nfeature factor: %f/%f from %f %f %f %f\n",
 					(*it)->id(),
 					(*it)->dist_h(),(*it)->dist_o(),
 					delta, std::sqrt(std::pow(odom.dist_uncertain(ctxt.param().prox_thr_),2)-delta*delta),
 					odom.dist(ctxt.param().prox_thr_)+odom.deviation(), std::pow(odom.dist(ctxt.param().prox_thr_),2)-delta*delta,
-					(*it)->get_feature_prob());
+					(*it)->get_feature_prob(),
+					(1-1.f/(ctxt.param().est_occ_+1)*std::exp(-dist*dist/(2*travel*travel*(dev_max*dev_max+odom_dev*odom_dev)))), 1-std::sqrt(2*M_PI)*odom_dev*dev_max*std::exp(-dist*dist/(2*(dev_max*dev_max+odom_dev*odom_dev)))/std::sqrt(dev_max*dev_max+odom_dev*odom_dev),
+					odom_dev, dev_max, dist, travel);
 				//ROS_ASSERT((std::pow(odom.dist(ctxt.param().prox_thr_)+odom.deviation(),2)-delta*delta)>=-0.000001);
 			}
 			
@@ -282,6 +352,99 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 	
 	TIter begin = active_cells.begin();
 	TIter end   = active_cells.end();
+	
+	std::list<typename TIter::value_type> to_be_added;
+	
+	//step 1: set min. dist.
+	for(TIter it=begin; it!=end; it++) {
+		typename TState::TEnergy dh_max = 0;
+		int hops = -1;
+		
+		for(TArcIter_in ait((*it)->arc_in_begin(graph)); ait!=(*it)->arc_in_end(graph); ++ait) {
+				typename TIter::value_type opposite = cells[(*it)->opposite_node(graph, ait)];
+				if( (*it)->dist_h_in()>0.35/*trans[ait]->deviation()*/ || opposite->id() >= ctxt.virtual_cell()->id()-ctxt.param().min_age_ /*|| (*it)->dist_h_out()<0.5-odom.deviation()-trans[ait]->deviation()*/ ) continue;
+				
+				if( trans[ait]!=ctxt.virtual_transistion() && 
+					opposite->dist_o() > (*it)->dist_o()
+					//&& trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_)>odom.deviation()
+					/*std::pow(trans[ait]->dist(ctxt.param().prox_thr_),2) + std::pow(opposite->dist_o(),2)
+					<
+					(*it)->d2()*/
+				) {	
+					to_be_added.push_back(opposite);
+										
+					opposite->dist_h_in()  = std::min((typename TState::TEnergy)1, std::max((typename TState::TEnergy)0, trans[ait]->dist(ctxt.param().prox_thr_)-(*it)->dist_h_out()));
+					opposite->dist_h_out() = std::max((typename TState::TEnergy)0, -(trans[ait]->dist(ctxt.param().prox_thr_)-(*it)->dist_h_out()) );
+					opposite->dist_o() = (*it)->dist_o();
+					opposite->reset_trans_in();
+					opposite->dbg().hops_ = std::max(opposite->dbg().hops_, 1+(*it)->dbg().hops_);
+					
+					DBG_PRINTF("1 %d:%d setting dist %f/%f with %d hops (dir %f)\n",
+						opposite->id(), (*it)->id(),
+						opposite->dist_h(), opposite->dist_o(),
+						opposite->dbg().hops_,
+						trans[ait]->directed(opposite).transition_factor(odom, ctxt.param().prox_thr_));
+				}
+		}
+		
+#if 0
+		for(TArcIter_out ait((*it)->arc_out_begin(graph)); ait!=(*it)->arc_out_end(graph); ++ait) {
+				typename TIter::value_type opposite = cells[(*it)->opposite_node(graph, ait)];
+				if( opposite->dist_h_in()>trans[ait]->deviation() || (*it)->id() >= ctxt.virtual_cell()->id()-ctxt.param().min_age_ || opposite->dist_h_out()<0.5-odom.deviation()-trans[ait]->deviation() ) continue;
+				
+				if( trans[ait]!=ctxt.virtual_transistion() && 
+					opposite->dist_o() < (*it)->dist_o()
+					//&& trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_)>odom.deviation()
+					/*std::pow(trans[ait]->dist(ctxt.param().prox_thr_),2) + std::pow(opposite->dist_o(),2)
+					<
+					(*it)->d2()*/
+				) {						
+					(*it)->dist_h_in()  = std::max((typename TState::TEnergy)0, trans[ait]->dist(ctxt.param().prox_thr_)-opposite->dist_h_out());
+					(*it)->dist_h_out() = std::max((typename TState::TEnergy)0, -(trans[ait]->dist(ctxt.param().prox_thr_)-opposite->dist_h_out()) );
+					(*it)->dist_o() = opposite->dist_o();
+					(*it)->reset_trans_in();
+					
+					hops = std::max(opposite->dbg().hops_, hops);
+					
+					DBG_PRINTF("1 %d:%d setting dist %f/%f with %d hops (dir %f)\n",
+						(*it)->id(), opposite->id(),
+						(*it)->dist_h(), (*it)->dist_o(),
+						(*it)->dbg().hops_,
+						trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_));
+				}
+		}
+		
+#ifdef BEDIRECTIONAL
+		for(TArcIter_in ait((*it)->arc_in_begin(graph)); ait!=(*it)->arc_in_end(graph); ++ait) {
+				typename TIter::value_type opposite = cells[(*it)->opposite_node(graph, ait)];
+				if( opposite->dist_h_in()>trans[ait]->deviation() || (*it)->id() >= ctxt.virtual_cell()->id()-ctxt.param().min_age_ || opposite->dist_h_out()<0.5-odom.deviation()-trans[ait]->deviation() ) continue;
+				
+				if( trans[ait]!=ctxt.virtual_transistion() && 
+					opposite->dist_o() < (*it)->dist_o()
+					//&& trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_)>odom.deviation()
+					/*std::pow(trans[ait]->dist(ctxt.param().prox_thr_),2) + std::pow(opposite->dist_o(),2)
+					<
+					(*it)->d2()*/
+				) {						
+					(*it)->dist_h_in()  = std::max((typename TState::TEnergy)0, trans[ait]->dist(ctxt.param().prox_thr_)-opposite->dist_h_out());
+					(*it)->dist_h_out() = std::max((typename TState::TEnergy)0, -(trans[ait]->dist(ctxt.param().prox_thr_)-opposite->dist_h_out()) );
+					(*it)->dist_o() = opposite->dist_o();
+					(*it)->reset_trans_in();
+					
+					hops = std::max(opposite->dbg().hops_, hops);
+					
+					DBG_PRINTF("2 %d:%d setting dist %f/%f with %d hops (dir %f)\n",
+						(*it)->id(), opposite->id(),
+						(*it)->dist_h(), (*it)->dist_o(),
+						(*it)->dbg().hops_,
+						trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_));
+				}
+		}
+#endif
+					
+		if(hops>=0) (*it)->dbg().hops_ = 1+hops;
+#endif
+	}
 	
 	//step 0: update feature prob.
 	for(TIter it=begin; it!=end; it++) {
@@ -343,76 +506,29 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		DBG_PRINTF("\n");
 		
 		ft_prob = std::pow(ft_prob_max, 1/(1+std::min(3., (*it)->dbg().hops_/5.) ));
+		//ft_prob = ft_prob_max;
 		#endif
 		
-		ft_prob *= std::min(odom.dist(ctxt.param().prox_thr_), (typename TState::TEnergy)1);	//limit travelled distance to 1 step
+		//ft_prob *= std::min(odom.dist(ctxt.param().prox_thr_)+odom.deviation(), (typename TState::TEnergy)1);	//limit travelled distance to 1 step
+		
 		//ft_prob *= std::exp( (*it)->dbg().hops_/3. );
 		if(ft_prob)
-			DBG_PRINTF("%d: injecting energy %f (feature probability)    %f*%f\n", (*it)->id(), ft_prob, (*it)->get_feature_prob(), odom.dist(ctxt.param().prox_thr_));
+			DBG_PRINTF("%d: injecting energy %f (feature probability)    %f*%f  %d hops  %f %f\n", (*it)->id(), ft_prob, (*it)->get_feature_prob(), odom.dist(ctxt.param().prox_thr_), (*it)->dbg().hops_, (*it)->dist_o(), (*begin)->dist_o());
 			
 		(*it)->dist_o() *= std::max((typename TState::TEnergy)0, 1-ft_prob);
+		if(ft_prob)
+			DBG_PRINTF("%d: new energy %f\n", (*it)->id(), (*it)->dist_o());
 	}
 	
-	//step 1: set min. dist.
-	for(TIter it=begin; it!=end; it++) {
-		typename TState::TEnergy dh_max = 0;
-		int hops = -1;
-		
-		for(TArcIter_out ait((*it)->arc_out_begin(graph)); ait!=(*it)->arc_out_end(graph); ++ait) {
-				typename TIter::value_type opposite = cells[(*it)->opposite_node(graph, ait)];
-				if( opposite->dist_h_in()>trans[ait]->deviation() || (*it)->id() >= ctxt.virtual_cell()->id()-ctxt.param().min_age_ || opposite->dist_h_out()<0.5-odom.deviation()-trans[ait]->deviation() ) continue;
-				
-				if( trans[ait]!=ctxt.virtual_transistion() && 
-					opposite->dist_o() < (*it)->dist_o()
-					//&& trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_)>odom.deviation()
-					/*std::pow(trans[ait]->dist(ctxt.param().prox_thr_),2) + std::pow(opposite->dist_o(),2)
-					<
-					(*it)->d2()*/
-				) {						
-					(*it)->dist_h_in()  = std::max((typename TState::TEnergy)0, trans[ait]->dist(ctxt.param().prox_thr_)-opposite->dist_h_out());
-					(*it)->dist_h_out() = std::max((typename TState::TEnergy)0, -(trans[ait]->dist(ctxt.param().prox_thr_)-opposite->dist_h_out()) );
-					(*it)->dist_o() = opposite->dist_o();
-					
-					hops = std::max(opposite->dbg().hops_, hops);
-					
-					DBG_PRINTF("1 %d:%d setting dist %f/%f with %d hops (dir %f)\n",
-						(*it)->id(), opposite->id(),
-						(*it)->dist_h(), (*it)->dist_o(),
-						(*it)->dbg().hops_,
-						trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_));
-				}
-		}
-		
-#ifdef BEDIRECTIONAL
-		for(TArcIter_in ait((*it)->arc_in_begin(graph)); ait!=(*it)->arc_in_end(graph); ++ait) {
-				typename TIter::value_type opposite = cells[(*it)->opposite_node(graph, ait)];
-				if( opposite->dist_h_in()>trans[ait]->deviation() || (*it)->id() >= ctxt.virtual_cell()->id()-ctxt.param().min_age_ || opposite->dist_h_out()<0.5-odom.deviation()-trans[ait]->deviation() ) continue;
-				
-				if( trans[ait]!=ctxt.virtual_transistion() && 
-					opposite->dist_o() < (*it)->dist_o()
-					//&& trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_)>odom.deviation()
-					/*std::pow(trans[ait]->dist(ctxt.param().prox_thr_),2) + std::pow(opposite->dist_o(),2)
-					<
-					(*it)->d2()*/
-				) {						
-					(*it)->dist_h_in()  = std::max((typename TState::TEnergy)0, trans[ait]->dist(ctxt.param().prox_thr_)-opposite->dist_h_out());
-					(*it)->dist_h_out() = std::max((typename TState::TEnergy)0, -(trans[ait]->dist(ctxt.param().prox_thr_)-opposite->dist_h_out()) );
-					(*it)->dist_o() = opposite->dist_o();
-					
-					hops = std::max(opposite->dbg().hops_, hops);
-					
-					DBG_PRINTF("2 %d:%d setting dist %f/%f with %d hops (dir %f)\n",
-						(*it)->id(), opposite->id(),
-						(*it)->dist_h(), (*it)->dist_o(),
-						(*it)->dbg().hops_,
-						trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_));
-				}
-		}
-#endif
-					
-		if(hops>=0) (*it)->dbg().hops_ = 1+hops;
-	}
+	for(typename std::list<typename TIter::value_type>::iterator it=to_be_added.begin(); it!=to_be_added.end(); it++)
+		ctxt.add_to_active(*it);
 	
+	//sort again
+	{
+		begin = active_cells.begin();
+		end   = active_cells.end();
+		std::sort(begin, end, energy_order<typename TCellVector::value_type>);
+	}
 	
 #ifndef NDEBUG
 	//debug
