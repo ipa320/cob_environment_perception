@@ -2,6 +2,9 @@
 #include <nav_msgs/Odometry.h>
 #include <cob_3d_experience_mapping/SensorInfoArray.h>
 //#include <tf/transform_listener.h>
+#include <ratslam_ros/TopologicalAction.h>
+#include <std_msgs/Int32.h>
+#include <Eigen/Geometry> 
 
 class As_Node
 {
@@ -69,7 +72,8 @@ private:
 	boost::shared_ptr<VisualizationHandler> vis_;
 #endif
 
-	ros::Subscriber sub_odometry_, sub_sensor_info_, sub_view_template_;
+	ros::Subscriber sub_odometry_, sub_sensor_info_, sub_view_template_, sub_view_id_;
+	ros::Publisher pub_top_action_;
 	ros::Time time_last_odom_;
 	
 	bool step_mode_;
@@ -94,6 +98,12 @@ public:
                                                                     ros::TransportHints().tcpNoDelay());
 	sub_sensor_info_ = n->subscribe<cob_3d_experience_mapping::SensorInfoArray>("/sim_barks/sensor_info", 0, boost::bind(&ROS_Node::on_sensor_info, this, _1), ros::VoidConstPtr(),
                                                                     ros::TransportHints().tcpNoDelay());
+                           
+	sub_view_id_ = n->subscribe<std_msgs::Int32>("/feature2view_eval/view_id", 0, boost::bind(&ROS_Node::on_view_id, this, _1), ros::VoidConstPtr(),
+                                                                    ros::TransportHints().tcpNoDelay());
+                                                                    
+	pub_top_action_ = n->advertise<ratslam_ros::TopologicalAction>("/PoseCell/TopologicalAction", 10);
+	
 #ifdef VIS_
     bool visualization_enabled;
     n->param<bool>("visualization_enabled", visualization_enabled, true);                                                             
@@ -125,6 +135,16 @@ public:
 	  }
   }
   
+  void on_view_id(const std_msgs::Int32::ConstPtr &vid) {
+	  boost::lock_guard<boost::mutex> guard(mtx_);
+	  
+	  static int ts=0;
+	  ++ts;
+	  
+	   cob_3d_experience_mapping::algorithms::reset_features(ctxt_.active_cells());
+	   ctxt_.add_feature(vid->data, ts);
+  }
+  
   void on_odom(const nav_msgs::Odometry::ConstPtr &odom) {
 	  boost::lock_guard<boost::mutex> guard(mtx_);
 	  
@@ -147,6 +167,7 @@ public:
 		  
 		  else if(std::abs(link(2))>0.4) link(2) *= 0.4/std::abs(link(2)); //TODO: TESTING ONLY!!!
 		  
+		  if(link.squaredNorm()<=0) return;
 
 		  ROS_INFO("debug pose: %f %f %f", dbg_pose(0),dbg_pose(1),dbg_pose(2));
 		  ROS_INFO("odom: %f %f %f", link(0),link(1),link(2));
@@ -155,9 +176,45 @@ public:
 		  if(step_mode_)
 			action.deviation() = 0.075f;
 		  else
-			action.deviation() = 0.075f*odom->twist.twist.linear.x;
+			action.deviation() = 0.025f*action.dist(ctxt_.param().prox_thr_);
+		  
+		  //cob_3d_experience_mapping::algorithms::step(graph_, ctxt_, cells_, trans_, action, dbg_pose);
+		  
+		  ratslam_ros::TopologicalAction rs_action;
+		  rs_action.header = odom->header;
+		  rs_action.action = ratslam_ros::TopologicalAction::CREATE_NODE;
+		  rs_action.src_id = ctxt_.active_cells().size()>0 ? ctxt_.current_active_cell()->id()-1 : -1;
 		  
 		  cob_3d_experience_mapping::algorithms::step(graph_, ctxt_, cells_, trans_, action, dbg_pose);
+		  
+		  static int biggest=0;
+		  static std::map<int,int> rs_ids;
+		  if(biggest==0) {
+			rs_action.dest_id = 0;
+			pub_top_action_.publish(rs_action);
+		  }
+		  rs_action.dest_id = ctxt_.active_cells().size()>0 ? ctxt_.current_active_cell()->id()-1 : -1;
+		  
+		  if(rs_ids.find(rs_action.src_id)==rs_ids.end())
+			rs_ids[rs_action.src_id] = rs_ids.size()-1;
+		  if(rs_ids.find(rs_action.dest_id)==rs_ids.end())
+			rs_ids[rs_action.dest_id] = rs_ids.size()-1;
+		  rs_action.dest_id = rs_ids[rs_action.dest_id];
+		  rs_action.src_id = rs_ids[rs_action.src_id];
+			
+		  if(rs_action.dest_id>biggest) {
+			pub_top_action_.publish(rs_action);
+			biggest = rs_action.dest_id;
+		  }
+		  else if(rs_action.src_id!=-1 && rs_action.src_id!=rs_action.dest_id) {
+			rs_action.action = ratslam_ros::TopologicalAction::CREATE_EDGE;
+			pub_top_action_.publish(rs_action);
+		  }
+		  else {
+			rs_action.action = ratslam_ros::TopologicalAction::SET_NODE;
+			pub_top_action_.publish(rs_action);
+		  }
+		  
 
 #ifdef VIS_
 		  if(vis_ && ctxt_.active_cells().size()>0) {
