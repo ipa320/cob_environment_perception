@@ -86,19 +86,24 @@ namespace cob_3d_experience_mapping {
 			return tmp;
 		}
 		
-		void add_to_active(typename TState::TPtr &cell) {
+		void add_to_active(typename TState::TPtr &cell, const bool already_set=false) {
 			for(size_t i=0; i<active_cells_.size(); i++)
 				if(active_cells_[i]==cell) return;
-			cell->dist_o() = param().energy_max_;
-			//if(active_cells_.size()>0) cell->dist_o() += active_cells_.back()->dist_o();
-			cell->dist_h_in()  = 0;
-			cell->dist_h_out() = 0;
-			cell->dbg().hops_ = 0;
+			if(!already_set) {
+				cell->dist_o() = virtual_cell()->dist_o()+param().energy_max_;
+				//if(active_cells_.size()>0) cell->dist_o() += active_cells_.back()->dist_o();
+				cell->dist_h_in()  = 0.5;
+				cell->dist_h_out() = 0;
+				cell->dbg().hops_ = 0;
+				cell->reset_trans_in();
+			}
 			cell->reset_feature();
 			//active_cells_.insert(active_cells_.begin()+(active_cells_.size()-1), cell);
 			active_cells_.push_back(cell);
 			DBG_PRINTF("DBG: added");
-		}
+			
+			needs_sort_ = true;
+		}		
 		
 		void remove_cell(typename TState::TPtr &cell) {
 			DBG_PRINTF("DBG: remove_cell");
