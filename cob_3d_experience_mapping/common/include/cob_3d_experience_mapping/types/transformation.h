@@ -94,6 +94,7 @@ namespace cob_3d_experience_mapping {
 		}*/
 		
 		void integrate(const TransformationLink &movement) {
+#if 0
 			BOOST_STATIC_ASSERT(NUM_TRANS==2);	//TODO: at the moment only implement for 2d case
 			BOOST_STATIC_ASSERT(NUM_ROT==1);
 
@@ -103,6 +104,9 @@ namespace cob_3d_experience_mapping {
 			while(link_(2)>  M_PI) link_(2) -= 2*M_PI;
 			link_(0) += movement.link_(0) * std::cos(link_(2)) + movement.link_(1) * std::sin(link_(2));
 			link_(1) += movement.link_(0) * std::sin(link_(2)) - movement.link_(1) * std::cos(link_(2));
+#else
+			link_ += movement.link_;
+#endif
 			
 			_DEVIATION += movement._DEVIATION;
 		}
