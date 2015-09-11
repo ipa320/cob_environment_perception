@@ -77,17 +77,23 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		}*/
 		ROS_ASSERT(ctxt.current_active_cell()==*begin);
 		
+#ifndef NDEBUG
 		//debug
 		{
 			int i=0;
 			DBG_PRINTF("current_list\n");
 			for(TIter it=begin; it!=end; it++) {
-				DBG_PRINTF("%d:\t %f:%f:%f:%d   %f\n", (*it)->id(), (*it)->d(), (*it)->dist_h_in(), (*it)->dist_h_out(), (*it)->dbg().hops_, (*it)->trans_in().dist(ctxt.param().prox_thr_));
+				bool gt = (dbg_pose.template head<2>()-(*it)->dbg().pose_.template head<2>()).norm()<ctxt.param().prox_thr_(0);
+				gt &= (dbg_pose.template tail<1>()-(*it)->dbg().pose_.template tail<1>()).norm()<ctxt.param().prox_thr_(1);
+				DBG_PRINTF("%d:\t %f:%f:%f:%f:%d   %f   %s\n", (*it)->id(), (*it)->dist_o(), (*it)->d(), (*it)->dist_h_in(), (*it)->dist_h_out(), (*it)->dbg().hops_, (*it)->trans_in().dist(ctxt.param().prox_thr_),
+					gt?"MATCH_GT":""
+				);
 				++i;
 				//if(i>3) break;
 			}
 			DBG_PRINTF("\n");
 		}
+#endif
 	}
 	
 	ROS_ASSERT(ctxt.active_cells().size()>0);
@@ -98,10 +104,12 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 	
 	DBG_PRINTF("current id %d\n", ctxt.current_active_cell()->id());
 
+#ifndef NDEBUG
 	static Debug_GPX gpx("/tmp/reloc.gpx");
 	
 	gpx.add_pt(ctxt.current_active_cell()->dbg().pose_(1), ctxt.current_active_cell()->dbg().pose_(0));
-	
+#endif
+
 	if(!ctxt.virtual_cell() || (ctxt.last_active_cell()!=ctxt.current_active_cell() && ctxt.current_active_cell()->dist_h_in()<=0) || (ctxt.current_active_cell()!=ctxt.virtual_cell() && ctxt.current_active_cell()->d2()<ctxt.last_dist_min() && ctxt.current_active_cell()->dist_h_in()<=0) || ctxt.virtual_cell()->dist_h_in()<=0) {
 		DBG_PRINTF("resetting virtual cell %d (%f %f)\n",
 			(int)(ctxt.last_active_cell()!=ctxt.current_active_cell()),
@@ -144,19 +152,25 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 					DBG_PRINTF("inserted new link");
 				}
 			
+#ifndef NDEBUG
 				std::cout<<"old pose: "<<ctxt.last_active_cell()->dbg().pose_.transpose()<<std::endl;
 				std::cout<<"new pose: "<<ctxt.current_active_cell()->dbg().pose_.transpose()<<std::endl;
 				std::cout<<"cur pose: "<<dbg_pose.transpose()<<std::endl;
 				
-				DBG_PRINTF("pose match %f %f "
+				bool gt = (dbg_pose.template head<2>()-ctxt.current_active_cell()->dbg().pose_.template head<2>()).norm()<=ctxt.param().prox_thr_(0)*2;
+				gt &= (dbg_pose.template tail<1>()-ctxt.current_active_cell()->dbg().pose_.template tail<1>()).norm()<=ctxt.param().prox_thr_(1)*2;
+				
+				DBG_PRINTF_URGENT("pose match %f %f "
 					, (dbg_pose.template head<2>()-ctxt.current_active_cell()->dbg().pose_.template head<2>()).norm() * 40008000 / 360 
 					, (ctxt.last_active_cell()->dbg().pose_.template head<2>()-ctxt.current_active_cell()->dbg().pose_.template head<2>()).norm() * 40008000 / 360 );
-				DBG_PRINTF( (dbg_pose.template head<2>()-ctxt.current_active_cell()->dbg().pose_.template head<2>()).norm() * 40008000 / 360<=(dbg_pose(2)+ctxt.current_active_cell()->dbg().pose_(2))?
-					"SUCCESS  ":"FAILED  "
+				DBG_PRINTF_URGENT( (dbg_pose.template head<2>()-ctxt.current_active_cell()->dbg().pose_.template head<2>()).norm() * 40008000 / 360<=(dbg_pose(2)+ctxt.current_active_cell()->dbg().pose_(2))?
+					"SUCCESS1  ":"FAILED1  "
 				);
-				DBG_PRINTF( (ctxt.last_active_cell()->dbg().pose_.template head<2>()-ctxt.current_active_cell()->dbg().pose_.template head<2>()).norm() * 40008000 / 360<=(ctxt.last_active_cell()->dbg().pose_(2)+ctxt.current_active_cell()->dbg().pose_(2))?
-					"SUCCESS\n":"FAILED\n"
+				DBG_PRINTF_URGENT( (ctxt.last_active_cell()->dbg().pose_.template head<2>()-ctxt.current_active_cell()->dbg().pose_.template head<2>()).norm() * 40008000 / 360<=(ctxt.last_active_cell()->dbg().pose_(2)+ctxt.current_active_cell()->dbg().pose_(2))?
+					"SUCCESS2 ":"FAILED2 "
 				);
+				DBG_PRINTF_URGENT( gt ? "SUCCESS3\n":"FAILED3\n"	);
+#endif
 			}
 			
 			/*ctxt.virtual_cell()->still_exists() = false;
@@ -257,13 +271,14 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		}
 	}
 	
+#ifndef NDEBUG
 	{ //DEBUG
 		if(ctxt.virtual_cell()->dbg().info_.find("V")==std::string::npos) ctxt.virtual_cell()->dbg().info_ +="V ";
 		if(ctxt.current_active_cell()->dbg().info_.find("C")==std::string::npos) ctxt.current_active_cell()->dbg().info_+="C ";
 		
 		ctxt.virtual_transistion()->dbg();
 	} //DEBUG
-	
+#endif
 	
 	TIter begin = active_cells.begin();
 	TIter end   = active_cells.end();
@@ -399,6 +414,7 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 	}
 	
 	
+#ifndef NDEBUG
 	//debug
 	{
 		int i=0;
@@ -410,7 +426,7 @@ void path_integration(TCellVector &active_cells/*, const TEnergyFactor &weight*/
 		}
 		DBG_PRINTF("\n");
 	}
-
+#endif
 }
 
 template<class TCellVector>
