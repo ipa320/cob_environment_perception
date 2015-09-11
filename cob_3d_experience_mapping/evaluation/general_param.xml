@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8" standalone="yes" ?>
+<!DOCTYPE boost_serialization>
+<boost_serialization signature="serialization::archive" version="9">
+<settings class_id="0" tracking_level="0" version="0">
+	<prox_thr_0_0>$THR_TRA</prox_thr_0_0>
+	<prox_thr_1_0>$THR_ROT</prox_thr_1_0>
+	<est_occ_>$ESTO</est_occ_>
+	<min_age_>3</min_age_>
+	<max_active_cells_>$NUMC</max_active_cells_>
+	<energy_max_>$MAXE</energy_max_>
+	<deviation_factor_>$DEV</deviation_factor_>
+</settings>
+</boost_serialization>
+
