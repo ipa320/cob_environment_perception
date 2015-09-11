@@ -151,7 +151,12 @@ public:
 	  Eigen::Vector3f dbg_pose;
 	  dbg_pose(0) = odom->pose.pose.position.x;
 	  dbg_pose(1) = odom->pose.pose.position.y;
-	  dbg_pose(2) = odom->pose.pose.orientation.w;
+	  if(step_mode_) 
+		dbg_pose(2) = odom->pose.pose.orientation.w;
+	  else {
+		  Eigen::Quaternionf q(odom->pose.pose.orientation.w, odom->pose.pose.orientation.x,odom->pose.pose.orientation.y,odom->pose.pose.orientation.z);
+		  dbg_pose(2) = q.toRotationMatrix().eulerAngles(2,0,2)(2);
+	  }
 	  
 	  ROS_INFO("-------------------------------");
 	  if(/*time_last_odom_.isValid() &&*/ (odom->header.stamp-time_last_odom_)<ros::Duration(100)) {
