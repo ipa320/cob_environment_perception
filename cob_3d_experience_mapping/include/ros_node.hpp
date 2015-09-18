@@ -57,16 +57,17 @@ public:
 	typedef cob_3d_experience_mapping::visualization::VisualizationHandler<typename State::TGraph, typename TGraph::NodeMap<typename State::TPtr>, typename TGraph::ArcMap <typename Transformation::TPtr>, typename State::TPtr, typename State::TArcOutIterator> VisualizationHandler;
 #endif
 	typedef cob_3d_experience_mapping::Context<Scalar /*energy*/, State /*state*/, Feature, Eigen::Matrix<float,1,2>/*energy weight*/, Transformation/*tranformation*/> TContext;
-	typedef TGraph::NodeMap<typename State::TPtr> TMapCells;
+	typedef TGraph::NodeMap<typename State::TPtr> TMapStates;
 	typedef TGraph::ArcMap <typename Transformation::TPtr> TMapTransformations;
 	
 private:
 	
 	TContext ctxt_;	
 	TGraph graph_;
-	TMapCells cells_;
+	TMapStates states_;
 	TMapTransformations trans_;
 	boost::mutex mtx_;
+	std::ofstream file_gpx_;
 	
 #ifdef VIS_
 	boost::shared_ptr<VisualizationHandler> vis_;
@@ -80,13 +81,16 @@ private:
 public:
   // Constructor
   ROS_Node():
-	cells_(graph_),
+	states_(graph_),
 	trans_(graph_)
   {
   }
 
   virtual ~ROS_Node()
-  {}
+  {
+	  file_gpx_<< "</trkseg></trk></gpx>";
+	  file_gpx_.close();
+  }
 
   //TODO: use dyn. reconfig.
   void onInit() {
@@ -116,8 +120,11 @@ public:
 #endif
 
     n->param<bool>("step_mode", step_mode_, false);    
+    
+    file_gpx_.open("/tmp/path.gpx");
+    file_gpx_ << "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\r\n<gpx xmlns=\"http://www.topografix.com/GPX/1/1\" version=\"1.1\" creator=\"Wikipedia\"\r\n    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n    xsi:schemaLocation=\"http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd\"><trk><name>Trackname2</name><trkseg>";
 
-	  cob_3d_experience_mapping::algorithms::init<Transformation>(graph_, ctxt_, cells_, trans_);
+	  cob_3d_experience_mapping::algorithms::init<Transformation>(graph_, ctxt_, states_, trans_);
 	  
 	  printf("init done\n");
   }
@@ -128,7 +135,7 @@ public:
 	  static int ts=0;
 	  ++ts;
 	  
-	   cob_3d_experience_mapping::algorithms::reset_features(ctxt_.active_cells());
+	   cob_3d_experience_mapping::algorithms::reset_features(ctxt_.active_states());
 	  
 	  for(size_t i=0; i<infos->infos.size(); i++) {
 		  ctxt_.add_feature(infos->infos[i].id, ts);
@@ -141,7 +148,7 @@ public:
 	  static int ts=0;
 	  ++ts;
 	  
-	   cob_3d_experience_mapping::algorithms::reset_features(ctxt_.active_cells());
+	   cob_3d_experience_mapping::algorithms::reset_features(ctxt_.active_states());
 	   ctxt_.add_feature(vid->data, ts);
   }
   
@@ -177,20 +184,20 @@ public:
 		  ROS_INFO("debug pose: %f %f %f", dbg_pose(0),dbg_pose(1),dbg_pose(2));
 		  ROS_INFO("odom: %f %f %f", link(0),link(1),link(2));
 
-		  Transformation action(link, ctxt_.current_active_cell());
+		  Transformation action(link, ctxt_.current_active_state());
 		  if(step_mode_)
-			action.deviation() = 0.075f;
+			action.deviation() = ctxt_.param().deviation_factor_;
 		  else
-			action.deviation() = 0.025f*action.dist(ctxt_.param().prox_thr_);
+			action.deviation() = ctxt_.param().deviation_factor_*action.dist(ctxt_.param().prox_thr_);
 		  
-		  //cob_3d_experience_mapping::algorithms::step(graph_, ctxt_, cells_, trans_, action, dbg_pose);
+		  //cob_3d_experience_mapping::algorithms::step(graph_, ctxt_, states_, trans_, action, dbg_pose);
 		  
 		  ratslam_ros::TopologicalAction rs_action;
 		  rs_action.header = odom->header;
 		  rs_action.action = ratslam_ros::TopologicalAction::CREATE_NODE;
-		  rs_action.src_id = ctxt_.active_cells().size()>0 ? ctxt_.current_active_cell()->id()-1 : -1;
+		  rs_action.src_id = ctxt_.active_states().size()>0 ? ctxt_.current_active_state()->id()-1 : -1;
 		  
-		  cob_3d_experience_mapping::algorithms::step(graph_, ctxt_, cells_, trans_, action, dbg_pose);
+		  cob_3d_experience_mapping::algorithms::step(graph_, ctxt_, states_, trans_, action, dbg_pose);
 		  
 		  static int biggest=0;
 		  static std::map<int,int> rs_ids;
@@ -198,7 +205,7 @@ public:
 			rs_action.dest_id = 0;
 			pub_top_action_.publish(rs_action);
 		  }
-		  rs_action.dest_id = ctxt_.active_cells().size()>0 ? ctxt_.current_active_cell()->id()-1 : -1;
+		  rs_action.dest_id = ctxt_.active_states().size()>0 ? ctxt_.current_active_state()->id()-1 : -1;
 		  
 		  if(rs_ids.find(rs_action.src_id)==rs_ids.end())
 			rs_ids[rs_action.src_id] = rs_ids.size()-1;
@@ -220,18 +227,23 @@ public:
 			pub_top_action_.publish(rs_action);
 		  }
 		  
+		  file_gpx_ << "<trkpt lat=\""<<ctxt_.current_active_state()->dbg().pose_(1)<<"\" lon=\""<<ctxt_.current_active_state()->dbg().pose_(0)<<"\">\r\n  <time>2011-01-15T23:59:01Z</time></trkpt>";
+		  //file_gpx_ << "<trkpt lat=\""<<dbg_pose(1)<<"\" lon=\""<<dbg_pose(0)<<"\">\r\n  <time>2011-01-15T23:59:01Z</time></trkpt>";
+		  file_gpx_.flush();
 
 #ifdef VIS_
-		  if(vis_ && ctxt_.active_cells().size()>0) {
-			vis_->visualize(graph_, cells_, trans_, ctxt_.current_active_cell());
+		  if(vis_ && ctxt_.active_states().size()>0) {
+			vis_->visualize(graph_, states_, trans_, ctxt_.current_active_state());
 		  }
 #endif
 	  } else {
-		  ctxt_.current_active_cell()->dbg().pose_ = dbg_pose;
+		  ctxt_.current_active_state()->dbg().pose_ = dbg_pose;
 		  ROS_INFO("skipped odom %f %d", (odom->header.stamp-time_last_odom_).toSec(), (int)time_last_odom_.isValid());
 	  }
 	  time_last_odom_ = odom->header.stamp;
 	  printf("\n");
+	  
+	  //cob_3d_experience_mapping::algorithms::reset_features(ctxt_.active_states());
   }
 };
 

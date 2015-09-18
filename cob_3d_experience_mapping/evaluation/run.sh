@@ -6,10 +6,11 @@ RT="0.35"
 for NUM in 10 100
 do
 	DIR="result/run_${TR}_${RT}_${NUM}"
-	./run_tests.py /media/My\ Passport/office_odom.bag $TR $RT $NUM
+	./run_tests.py result/office_odom.bag $TR $RT $NUM
 	mkdir $DIR
 	mv result/eval_em_* $DIR
 
+	echo "generating summary..."
 	echo "" > $DIR/summary.csv
 	for F in `ls $DIR/*csv`
 	do

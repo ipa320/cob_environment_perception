@@ -21,8 +21,8 @@ namespace cob_3d_experience_mapping {
 	struct DbgInfo {
 		std::string name_;
 		std::string info_;
+		//int id_;
 		Eigen::Vector3f pose_;
-		int hops_;
 		
 		template<class Archive>
 		void serialize(Archive & ar, const unsigned int version)
@@ -31,6 +31,7 @@ namespace cob_3d_experience_mapping {
 		    
 		   ar & BOOST_SERIALIZATION_NVP(name_);
 		   ar & BOOST_SERIALIZATION_NVP(info_);
+		   //ar & BOOST_SERIALIZATION_NVP(id_);
 		}
 	};
 	
@@ -56,48 +57,61 @@ namespace cob_3d_experience_mapping {
 		typedef int ID;
 		typedef _TLink TLink;
 	protected:
-		TEnergy do_, dh_in_, dh_out_, ft_imp_, ft_imp_last_;
+		TEnergy dist_dev_, dist_trv_, ft_imp_, ft_imp_last_;
 		TNode node_;
 		ID id_;
+		int hops_;
 		DbgInfo dbg_;
-		bool still_exists_;
-		TLink trans_in_;
+		bool still_exists_, is_active_;
 		
 	public:		
-		State(): do_(0), dh_in_(0), dh_out_(0), ft_imp_(1), ft_imp_last_(1), still_exists_(true) {
+		State(): dist_dev_(0), dist_trv_(0), ft_imp_(1), ft_imp_last_(1), hops_(0), still_exists_(true), is_active_(false) {
 			static int no = 1;
 			char buf[128];
 			id_ = no;
 			sprintf(buf, "%d", no++);
 			dbg_.name_ = buf;
-			
-			dbg_.hops_ = 0;
 		}
 		
 		//setter/getter		
-		//inline ID &id() {return id_;}
+		
+		//!< getter for identifier
 		inline ID  id() const {return id_;}
-		
-		inline TLink &trans_in() {return trans_in_;}
-		
+
+		//!< setter/getter for existance flag
 		inline bool &still_exists() {return still_exists_;}
+		//!< getter for existance flag
 		inline bool  still_exists() const {return still_exists_;}
+
+		//!< setter/getter for flag if in active state list
+		inline bool &is_active() {return is_active_;}
+		//!< getter for flag if in active state list
+		inline bool  is_active() const {return is_active_;}
 		
-		inline TEnergy &dist_o() {return do_;}
-		inline const TEnergy &dist_o() const {return do_;}
+		//!< setter/getter for deviation distance
+		inline TEnergy &dist_dev() {return dist_dev_;}
+		//!< getter for deviation distance
+		inline const TEnergy &dist_dev() const {return dist_dev_;}
 		
-		inline TEnergy &dist_h_in() {return dh_in_;}
-		inline TEnergy &dist_h_out() {return dh_out_;}
-		inline const TEnergy &dist_h() const {return std::max(dh_in_, dh_out_);}
+		//!< setter/getter for travel distance
+		inline TEnergy &dist_trv() {return dist_trv_;}
+		//!< getter for travel distance
+		inline const TEnergy &dist_trv() const {return dist_trv_;}
+		
+		//!< setter/getter for hop counter
+		inline int &hops() {return hops_;}
+		//!< getter for hop counter
+		inline int  hops() const {return hops_;}
 		
 		inline TEnergy d() const {return std::sqrt(d2());}
-		
-		inline TEnergy d2() const {return do_*do_ + dist_h()*dist_h();}
+		inline TEnergy d2() const {return dist_dev()*dist_dev() + dist_trv()*dist_trv();}
 		
 		inline void set_node(const TNode &node) {node_ = node;}
 		inline TNode &node() {return node_;}
 	
+		//!< setter/getter for debug information
 		inline DbgInfo &dbg() {return dbg_;}
+		//!< getter for debug information
 		inline const DbgInfo &dbg() const {return dbg_;}
 		
 		//graph operations
@@ -147,8 +161,6 @@ namespace cob_3d_experience_mapping {
 		
 		void reset_feature() {ft_imp_last_=ft_imp_; ft_imp_=1;}
 		
-		inline void reset_trans_in() {trans_in_ = TLink();}
-		
 		template<class Archive>
 		void serialize_single(Archive & ar, const unsigned int version)
 		{
@@ -159,8 +171,8 @@ namespace cob_3d_experience_mapping {
 		   dbg_.serialize(ar, version);
 		}
 		
-		template<class ID, class Archive, class Graph, class TMapCells, class TMapTransformations>
-		void serialize_trans(Archive & ar, const unsigned int version, Graph &graph, TMapCells &cells, TMapTransformations &trans)
+		template<class ID, class Archive, class Graph, class TMapStates, class TMapTransformations>
+		void serialize_trans(Archive & ar, const unsigned int version, Graph &graph, TMapStates &states, TMapTransformations &trans)
 		{
 			ROS_ASSERT(version==0); //TODO: version handling
 		   
@@ -169,15 +181,15 @@ namespace cob_3d_experience_mapping {
 			if(Archive::is_saving::value) {
 				for(TArcOutIterator ait(arc_out_begin(graph)); ait!=arc_out_end(graph); ++ait)
 					++num;
-					//ids.push_back( cells[opposite_node(graph, ait)]->dbg().id_ );
+					//ids.push_back( states[opposite_node(graph, ait)]->dbg().id_ );
 			}
 			ar & BOOST_SERIALIZATION_NVP(num);
 		   
 			if(Archive::is_loading::value) {
 				TPtr th;
 				for(typename TGraph::NodeIt it(graph); it!=lemon::INVALID; ++it)
-					if(cells[it]->id_==id_) {
-						th = cells[it];
+					if(states[it]->id_==id_) {
+						th = states[it];
 						break;
 					}
 				ROS_ASSERT(th);
@@ -189,14 +201,14 @@ namespace cob_3d_experience_mapping {
 					ID id;
 					ar & boost::serialization::make_nvp(buf, id);
 					
-					//find cell
+					//find state
 					typename TGraph::NodeIt it(graph);
 					for(; it!=lemon::INVALID; ++it) {
-						if(cells[it]->id_==id) {
+						if(states[it]->id_==id) {
 							typename TMapTransformations::Value link(new typename TMapTransformations::Value::element_type());
 							link->serialize(ar, version);
 							link->src() = th;
-							trans.set(graph.addArc(th->node(), cells[it]->node()), link);
+							trans.set(graph.addArc(th->node(), states[it]->node()), link);
 							break;
 						}
 					}
@@ -210,7 +222,7 @@ namespace cob_3d_experience_mapping {
 					char buf[16];
 					sprintf(buf, "id%d", i);
 					++i;
-					ar & boost::serialization::make_nvp(buf, cells[opposite_node(graph, ait)]->id_);
+					ar & boost::serialization::make_nvp(buf, states[opposite_node(graph, ait)]->id_);
 					trans[ait]->serialize(ar, version);
 				}
 			}
@@ -239,23 +251,23 @@ namespace cob_3d_experience_mapping {
 	};
 	
 #if 0
-	template<class _TCellHandle, class _TType, class TMeta>
-	class VisualCell : public Object<TMeta> {
+	template<class _TStateHandle, class _TType, class TMeta>
+	class VisualState : public Object<TMeta> {
 	public:
-		typedef _TCellHandle TCellHandle;
+		typedef _TStateHandle TStateHandle;
 		typedef _TType TType;
-		typedef boost::shared_ptr<VisualCell> TPtr;
+		typedef boost::shared_ptr<VisualState> TPtr;
 		
 	protected:
-		TCellHandle h_;
+		TStateHandle h_;
 		int last_ts_;
 		TType improbability_;
 		
 	public:
-		VisualCell(TCellHandle h) : h_(h), last_ts_(-1), improbability_(1)
+		VisualState(TStateHandle h) : h_(h), last_ts_(-1), improbability_(1)
 		{}
 		
-		inline const TCellHandle &getHandle() const {return h_;}
+		inline const TStateHandle &getHandle() const {return h_;}
 		
 		void update(const int ts, const int no_conn, const int est_occ, const TType prob=1) {
 			if(ts!=last_ts_) {
@@ -277,8 +289,8 @@ namespace cob_3d_experience_mapping {
 	public:
 		typedef int TID;
 		typedef boost::shared_ptr<Feature> TPtr;
-		typedef void* CellHandle;
-		typedef std::map<CellHandle, typename TInjection::TPtr> InjectionMap;
+		typedef void* StateHandle;
+		typedef std::map<StateHandle, typename TInjection::TPtr> InjectionMap;
 		
 	protected:
 		TID id_;
@@ -288,7 +300,7 @@ namespace cob_3d_experience_mapping {
 		Feature(const TID id) : id_(id)
 		{}
 		
-		void visited(const CellHandle &h, typename TInjection::TPtr inj) {
+		void visited(const StateHandle &h, typename TInjection::TPtr inj) {
 			if(injections_.find(h)==injections_.end()) {
 				injections_.insert(typename InjectionMap::value_type(h, inj));
 				

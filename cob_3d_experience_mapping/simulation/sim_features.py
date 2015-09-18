@@ -15,14 +15,14 @@ def callback(msg):
 	global pub_si
 	global pub_vt
 
-	NUM_FEATURES=100
+	NUM_FEATURES=1000
 	
 	x = msg.pose.pose.position.x
 	y = msg.pose.pose.position.y
 	(r, p, yaw) = tf.transformations.euler_from_quaternion([msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w])
 	
-	RESOLUTION_metric=0.75
-	RESOLUTION_angle=0.3
+	RESOLUTION_metric=0.5
+	RESOLUTION_angle=0.35
 	
 	ix = int(x/RESOLUTION_metric)
 	iy = int(y/RESOLUTION_metric)

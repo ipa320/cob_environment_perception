@@ -26,7 +26,7 @@ typedef cob_3d_experience_mapping::State<cob_3d_experience_mapping::Empty, Scala
 typedef cob_3d_experience_mapping::Feature<State, cob_3d_experience_mapping::Empty> Feature;
 typedef cob_3d_experience_mapping::Transformation<TTransformationLink, typename State::TPtr> Transformation;
 typedef cob_3d_experience_mapping::Context<Scalar /*energy*/, State /*state*/, Feature, Eigen::Matrix<float,1,2>/*energy weight*/, Transformation/*tranformation*/> TContext;
-typedef TGraph::NodeMap<typename State::TPtr> TMapCells;
+typedef TGraph::NodeMap<typename State::TPtr> TMapStates;
 typedef TGraph::ArcMap <typename Transformation::TPtr> TMapTransformations;
 	
 struct cmpByEigenVector {
@@ -81,7 +81,7 @@ int main(int argc, char **argv) {
 	
 	TContext ctxt_;	
 	TGraph graph_;
-	TMapCells cells_(graph_);
+	TMapStates states_(graph_);
 	TMapTransformations trans_(graph_);
 	int ts=0;
 	ros::Time time_last_odom_;
@@ -112,7 +112,7 @@ int main(int argc, char **argv) {
 	
 	rosbag::View view(bag, rosbag::TopicQuery(topics));
 	
-	cob_3d_experience_mapping::algorithms::init<Transformation>(graph_, ctxt_, cells_, trans_);
+	cob_3d_experience_mapping::algorithms::init<Transformation>(graph_, ctxt_, states_, trans_);
 	
 	rosbag::View::iterator view_it = view.begin();
     while(view_it!=view.end()&&ros::ok())
@@ -123,7 +123,7 @@ int main(int argc, char **argv) {
 		{
 			++ts;
 	  
-			cob_3d_experience_mapping::algorithms::reset_features(ctxt_.active_cells());
+			cob_3d_experience_mapping::algorithms::reset_features(ctxt_.active_states());
 			ctxt_.add_feature(vid->current_id, ts);
 		}
 		
@@ -155,7 +155,7 @@ int main(int argc, char **argv) {
 			  }
 			  
 			  ++ts;
-			  cob_3d_experience_mapping::algorithms::reset_features(ctxt_.active_cells());
+			  cob_3d_experience_mapping::algorithms::reset_features(ctxt_.active_states());
 			  ctxt_.add_feature(it->second, ts);
 		  }
 		  
@@ -171,30 +171,30 @@ int main(int argc, char **argv) {
 			  
 			  if(link.squaredNorm()>0) {
 			  
-				  Transformation action(link, ctxt_.current_active_cell());
+				  Transformation action(link, ctxt_.current_active_state());
 				  action.deviation() = ctxt_.param().deviation_factor_*action.dist(ctxt_.param().prox_thr_);
 				  
 				  PrecisionStopWatch sw;
-				  cob_3d_experience_mapping::algorithms::step(graph_, ctxt_, cells_, trans_, action, dbg_pose);
+				  cob_3d_experience_mapping::algorithms::step(graph_, ctxt_, states_, trans_, action, dbg_pose);
 				  double time = time = sw.precisionStop();
 				  
 				  bool match_gt = true;
 				  int hops = 0;
 				  Eigen::Vector3f cur_pose(0,0,0);
-				  if(ctxt_.active_cells().size()>0) {
-					  cur_pose = ctxt_.current_active_cell()->dbg().pose_;
-					  hops = ctxt_.current_active_cell()->dbg().hops_;
+				  if(ctxt_.active_states().size()>0) {
+					  cur_pose = ctxt_.current_active_state()->dbg().pose_;
+					  hops = ctxt_.current_active_state()->hops();
 					match_gt &= (dbg_pose.head<2>()-cur_pose.head<2>()).norm()<ctxt_.param().prox_thr_(0);
 					match_gt &= (dbg_pose.tail<1>()-cur_pose.tail<1>()).norm()<ctxt_.param().prox_thr_(1);
 				  }
 				  
-				  ofs_result<<time<<";"<<match_gt<<";"<<(ctxt_.active_cells().size()>0 ? ctxt_.current_active_cell()->id()-1 : -1)
+				  ofs_result<<time<<";"<<match_gt<<";"<<(ctxt_.active_states().size()>0 ? ctxt_.current_active_state()->id()-1 : -1)
 					<<";"<<dbg_pose(0)<<";"<<dbg_pose(1)<<";"<<dbg_pose(2) <<";"<<cur_pose(0)<<";"<<cur_pose(1)<<";"<<cur_pose(2)
 					<<";"<<hops <<std::endl;
 				}
 			  
 		  } else {
-			  ctxt_.current_active_cell()->dbg().pose_ = dbg_pose;
+			  ctxt_.current_active_state()->dbg().pose_ = dbg_pose;
 		  }
 		  time_last_odom_ = odom->header.stamp;
 		}
@@ -206,7 +206,7 @@ int main(int argc, char **argv) {
 	
 	if(vm.count("output")>0)
 		cob_3d_experience_mapping::serialization::save_content<boost::archive::binary_oarchive>(
-			cob_3d_experience_mapping::ContextContainer<TContext,TGraph,TMapCells,TMapTransformations>(ctxt_, graph_, cells_, trans_),
+			cob_3d_experience_mapping::ContextContainer<TContext,TGraph,TMapStates,TMapTransformations>(ctxt_, graph_, states_, trans_),
 			fn_out.c_str(), true);
 	
 	return 0;

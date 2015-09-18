@@ -6,9 +6,10 @@
 namespace cob_3d_experience_mapping {
 	namespace visualization {
 	
-		template<class TGraph, class TMapCells, class TMapTransformations, class TNode, class TArcIter>
+		template<class TGraph, class TMapStates, class TMapTransformations, class TNode, class TArcIter>
 		struct VisualizationHandler {
 			static void init() {
+	std::cout<<"init vis"<<std::endl;
 				cob_3d_visualization::RvizMarkerManager::get()
 					.createTopic("expierience_mapping_marker")
 					.setFrameId("/base_link");
@@ -24,27 +25,31 @@ namespace cob_3d_experience_mapping {
 			
 			typedef std::map<const TNode, Eigen::Affine3f> TVisitedList;
 			
-			void visualize(const TGraph &graph, const TMapCells &cells, TMapTransformations &trans, const TNode &start_node) {
+			void visualize(const TGraph &graph, const TMapStates &states, TMapTransformations &trans, const TNode &start_node) {
 				TVisitedList visited;
 				cob_3d_visualization::RvizMarkerManager::get().clear();
 				Eigen::Affine3f pos; pos = Eigen::Translation3f(0,0,0);
-				rec_vis(graph, cells, trans, start_node, visited, start_node->dist_o(), 20, pos);
+				rec_vis(graph, states, trans, start_node, visited, start_node->dist_dev(), 20, pos);
 				cob_3d_visualization::RvizMarkerManager::get().publish();
 			}
 			
 		private:
 			template<class TMeta> static void visualize_meta(const TNode &act_node, const TMeta &meta, const Eigen::Vector3f &pos) {/*dummy*/}
 			
-			void visualize_node(const TNode &act_node, const Eigen::Affine3f &aff, const double max_dist_o) {
-				if(act_node->dist_o()/max_dist_o>30)
+			void visualize_node(const TNode &act_node, const Eigen::Affine3f &aff, const double max_dist_dev) {
+				if(act_node->dist_dev()/max_dist_dev>30)
 					return;
 				
-				const Eigen::Vector3f pos = aff.translation();
+				Eigen::Vector3f pos = aff.translation();
 				
-				const Eigen::Vector3f pos_o = (aff*Eigen::Translation3f(0,0,std::min(act_node->dist_o()/max_dist_o-1.,3.))).translation();
-				const Eigen::Vector3f pos_h = (aff*Eigen::Translation3f(act_node->dist_h(),0,0)).translation();
+				//if pose is available
+				//pos(0) = act_node->dbg().pose_(0);
+				//pos(1) = act_node->dbg().pose_(1);
+				
+				const Eigen::Vector3f pos_o = (aff*Eigen::Translation3f(0,0,std::min(act_node->dist_dev()/max_dist_dev-1.,3.))).translation();
+				const Eigen::Vector3f pos_h = (aff*Eigen::Translation3f(act_node->dist_trv(),0,0)).translation();
 
-				const double e = act_node->dist_h();
+				const double e = act_node->dist_trv();
 				{
 					cob_3d_visualization::RvizMarker scene;
 					scene.sphere(pos);
@@ -69,7 +74,7 @@ namespace cob_3d_experience_mapping {
 				{
 					cob_3d_visualization::RvizMarker scene;
 					char buf[256];
-					sprintf(buf, " d=%.3f h=%.3f o=%.3f", act_node->d(), act_node->dist_h(), act_node->dist_o());
+					sprintf(buf, " d=%.3f h=%.3f o=%.3f", act_node->d(), act_node->dist_trv(), act_node->dist_dev());
 					scene.text(act_node->dbg().name_+" "+act_node->dbg().info_+buf);
 					scene.move(pos+0.3*Eigen::Vector3f::UnitZ());
 				}
@@ -79,7 +84,7 @@ namespace cob_3d_experience_mapping {
 				//visualize_meta(act_node, act_node.meta(), pos);
 			}
 			
-			bool rec_vis(const TGraph &graph, const TMapCells &cells, TMapTransformations &trans, const TNode &act_node, TVisitedList &visted, const double max_dist_o, const int depth=-1, const Eigen::Affine3f &pos=Eigen::Affine3f()) {
+			bool rec_vis(const TGraph &graph, const TMapStates &states, TMapTransformations &trans, const TNode &act_node, TVisitedList &visted, const double max_dist_dev, const int depth=-1, const Eigen::Affine3f &pos=Eigen::Affine3f()) {
 				//only visited each node once
 				if(!act_node || depth==0)
 					return false;
@@ -94,15 +99,15 @@ namespace cob_3d_experience_mapping {
 
 				visted[act_node] = pos;
 				
-				visualize_node(act_node, pos, max_dist_o);
+				visualize_node(act_node, pos, max_dist_dev);
 				
 				//go through all edges
 				for(TArcIter ait(act_node->template arc_flex_begin<TArcIter>(graph)); ait!=act_node->template arc_flex_end<TArcIter>(graph); ++ait) {
-					TNode opposite = cells[act_node->opposite_node(graph, ait)];
+					TNode opposite = states[act_node->opposite_node(graph, ait)];
 					
 					
 					Eigen::Affine3f new_pos = pos*trans[ait]->affine().inverse();
-					if(rec_vis(graph, cells, trans, opposite, visted, max_dist_o, depth-1, new_pos)) {
+					if(rec_vis(graph, states, trans, opposite, visted, max_dist_dev, depth-1, new_pos)) {
 						cob_3d_visualization::RvizMarker scene;
 						scene.line((Eigen::Vector3f)pos.translation(), (Eigen::Vector3f)new_pos.translation(), 0.025f);
 					scene.color(1,1,1,0.35);

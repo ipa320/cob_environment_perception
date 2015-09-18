@@ -12,10 +12,10 @@ int main(int argc, char **argv) {
 	
 	ns::TContext ctxt_;	
 	ns::TGraph graph_;
-	ns::TMapCells cells_(graph_);
+	ns::TMapStates cells_(graph_);
 	ns::TMapTransformations trans_(graph_);
 	
-	cob_3d_experience_mapping::ContextContainer<ns::TContext, ns::TGraph, ns::TMapCells, ns::TMapTransformations> container(ctxt_, graph_, cells_, trans_);
+	cob_3d_experience_mapping::ContextContainer<ns::TContext, ns::TGraph, ns::TMapStates, ns::TMapTransformations> container(ctxt_, graph_, cells_, trans_);
 	
 	cob_3d_experience_mapping::serialization::restore_content<boost::archive::binary_iarchive>(container, argv[1], true);
 	cob_3d_experience_mapping::serialization::save_content<boost::archive::xml_oarchive>(container, argv[2], false);

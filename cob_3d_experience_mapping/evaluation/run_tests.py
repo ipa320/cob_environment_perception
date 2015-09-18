@@ -14,7 +14,7 @@ exe = "/home/josh/catkin_ws/devel/lib/cob_3d_experience_mapping/cob_3d_experienc
 
 gs_tr=sys.argv[2]
 gs_rt=sys.argv[3]
-gs_ft=sys.argv[4]
+gs_num=sys.argv[4]
 
 def repl(s):
     global thr_tra, thr_rot, dev, max_e, num_cells
