@@ -132,12 +132,16 @@ namespace cob_3d_experience_mapping {
 			assert( sorting::is_sorted(active_states_.begin(),active_states_.end(), sorting::energy_order<typename TState::TPtr>) );
 			
 			if(active_states_.size()>param().max_active_states_) {
+				for(size_t i=param().max_active_states_; i<active_states_.size(); i++)
+					active_states_[i]->is_active() = false;
+					
 				active_states_.erase(active_states_.begin()+param().max_active_states_, active_states_.end());
 				
 				DBG_PRINTF("DBG: removing\n");
 			}
 			
 			if(active_states_.size()>0) {
+				//skip current active state
 				for(size_t i=1; i<active_states_.size(); i++) {
 					
 					if(active_states_[i]->dist_trv()<=-1) {
