@@ -1,6 +1,6 @@
 #pragma once
 
-#include "log.h"
+#include "helpers/log.h"
 #include "types/serialization.h"
 #include "types/general.h"
 #include "types/transformation.h"
