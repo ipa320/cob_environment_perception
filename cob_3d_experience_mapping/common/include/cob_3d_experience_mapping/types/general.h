@@ -153,13 +153,21 @@ namespace cob_3d_experience_mapping {
 		
 		void reset_feature() {ft_imp_last_=ft_imp_; ft_imp_=1;}
 		
-		UNIVERSAL_SERIALIZE()
+		UNIVERSAL_SERIALIZE_EXT(US_COMMA class ID US_COMMA class Graph US_COMMA class TMapStates US_COMMA class TMapTransformations, US_COMMA ID US_COMMA Graph US_COMMA TMapStates US_COMMA TMapTransformations, US_COMMA Graph US_REF graph US_COMMA TMapStates US_REF states US_COMMA TMapTransformations US_REF trans, US_COMMA graph US_COMMA states US_COMMA trans)
 		{
 		   ROS_ASSERT(version==0); //TODO: version handling
 		   
-		   ar & BOOST_SERIALIZATION_NVP(id_);
+		   ar & UNIVERSAL_SERIALIZATION_NVP(id_);
 		   
 		   dbg_.serialize<Archive, make_nvp>(ar, version);
+		   
+		   std::vector<int> trans_ids;
+		   /*for(TArcOutIterator ait(arc_out_begin(graph)); ait!=arc_out_end(graph); ++ait) {
+			   trans_ids.p
+				ar & boost::serialization::make_nvp(buf, states[opposite_node(graph, ait)]->id_);
+				trans[ait]->serialize(ar, version);
+			}*/
+		   ar & UNIVERSAL_SERIALIZATION_NVP(trans_ids);
 		}
 		
 		template<class ID, class Archive, class Graph, class TMapStates, class TMapTransformations>

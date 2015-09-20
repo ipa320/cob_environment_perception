@@ -241,7 +241,7 @@ namespace cob_3d_experience_mapping {
 					
 				ar & BOOST_SERIALIZATION_NVP(num);
 				for(typename TGraph::NodeIt it(graph_); it!=lemon::INVALID; ++it)
-					states_[it]->serialize_single(ar, version);
+					states_[it]->serialize(ar, version);
 			}
 			
 			for(typename TGraph::NodeIt it(graph_); it!=lemon::INVALID; ++it)
