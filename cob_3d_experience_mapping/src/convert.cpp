@@ -7,15 +7,16 @@ int main(int argc, char **argv) {
 		DBG_PRINTF("specify input and output file\n");
 		return 0;
 	}
-	
+
 	typedef ROS_Node<As_Node> ns;
+	typedef cob_3d_experience_mapping::ContextContainer<ns::TContext, ns::TGraph, ns::TMapStates, ns::TMapTransformations> CtxtContainer;
 	
 	ns::TContext ctxt_;	
 	ns::TGraph graph_;
 	ns::TMapStates cells_(graph_);
 	ns::TMapTransformations trans_(graph_);
 	
-	cob_3d_experience_mapping::ContextContainer<ns::TContext, ns::TGraph, ns::TMapStates, ns::TMapTransformations> container(ctxt_, graph_, cells_, trans_);
+	CtxtContainer container(ctxt_, graph_, cells_, trans_);
 	
 	cob_3d_experience_mapping::serialization::restore_content<boost::archive::binary_iarchive>(container, argv[1], true);
 	cob_3d_experience_mapping::serialization::save_content<boost::archive::xml_oarchive>(container, argv[2], false);

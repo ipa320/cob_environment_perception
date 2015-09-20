@@ -62,74 +62,17 @@ namespace cob_3d_experience_mapping {
 
 		TDist distance(const TransformationLink &o) const {
 			TLink tmp = link_-o.link_;
-			TDist r = TDist::Zero();
+			TDist r;
 			
-			for(int i=0; i<NUM_TRANS; i++)
-				r(0) += std::pow(tmp(i), 2);
-			for(int i=NUM_TRANS; i<NUM_TRANS+NUM_ROT; i++)
-				r(1) += std::pow(tmp(i), 2);
-				
-			r(0) = std::sqrt(r(0));
-			r(1) = std::sqrt(r(1));
+			r(0) = tmp.template head<NUM_TRANS>().norm();
+			r(1) = tmp.template tail<NUM_ROT>  ().norm();
+			
 			return r;
 		}
-
-		/*TDist energy_distance(const Transformation &tmp, const TDist &thr) const {
-			TDist r = TDist::Zero();
-			TDist l = TDist::Zero();
-			
-			for(int i=0; i<NUM_TRANS; i++) {
-				r(0) += std::pow(tmp(i), 2);
-				l(0) += std::pow(link_(i), 2);
-			}
-			for(int i=NUM_TRANS; i<NUM_TRANS+NUM_ROT; i++) {
-				r(1) += std::pow(tmp(i), 2);
-				l(1) += std::pow(link_(i), 2);
-			}
-				
-			r(0) = std::sqrt(r(0))/std::max(std::sqrt(l(0), thr(0));
-			r(1) = std::sqrt(r(1))/std::max(std::sqrt(l(1), thr(1));
-			
-			return r.norm();
-		}*/
 		
 		void integrate(const TransformationLink &movement) {
-#if 0
-			BOOST_STATIC_ASSERT(NUM_TRANS==2);	//TODO: at the moment only implement for 2d case
-			BOOST_STATIC_ASSERT(NUM_ROT==1);
-
-			link_(2) += movement.link_(2);
-			//clip to 180 deg.
-			while(link_(2)<=-M_PI) link_(2) += 2*M_PI;
-			while(link_(2)>  M_PI) link_(2) -= 2*M_PI;
-			link_(0) += movement.link_(0) * std::cos(link_(2)) + movement.link_(1) * std::sin(link_(2));
-			link_(1) += movement.link_(0) * std::sin(link_(2)) - movement.link_(1) * std::cos(link_(2));
-#else
 			link_ += movement.link_;
-#endif
-			
 			_DEVIATION += movement._DEVIATION;
-		}
-
-		//TODO:
-		TType proximity_neg(const TDist &thr, const TType &k) const {
-			return -1+factor(energy_distance(link_, thr));
-		}
-
-		//TODO:
-		TType proximity_pos(const TransformationLink &o, const TDist &thr, const TType &k) const {
-			return factor(energy_distance(o-link_, thr));
-		}
-
-		TDist proximity(const boost::math::normal distribution[2]) const {
-			return proximity(distribution, TransformationLink());
-		}
-		
-		TDist proximity(const boost::math::normal distribution[2], const TransformationLink &o) const {
-			TDist r = distance(o);
-			r(0) = boost::math::cdf(distribution[0], r(0));
-			r(1) = boost::math::cdf(distribution[1], r(1));
-			return r;
 		}
 		
 		inline Eigen::Matrix<TType, NUM_TRANS, 1> translation() const {return link_.template head<NUM_TRANS>();}
@@ -169,71 +112,13 @@ namespace cob_3d_experience_mapping {
 			r(0) = tmp.template head<NUM_TRANS>().norm()/thr(0);
 			r(1) = tmp.template tail<NUM_ROT>  ().norm()/thr(1);
 			
-			//std::cout<<"transition_factor "<<r.transpose()<<" = "<<o.dist(thr)-r.norm()<<std::endl;
+			dbg();
+			o.dbg();
+			std::cout<<"t "<<tmp.transpose()<<std::endl;
+			std::cout<<"r "<<r.transpose()<<std::endl;
+			std::cout<<"--> "<<o.dist(thr)<<"  "<<r.norm()<<std::endl;
 			
 			return o.dist(thr)-r.norm();
-			
-#if 0
-			TDist r;
-			
-			{
-				Eigen::Matrix<TType, 3, 1> A = Eigen::Matrix<TType, 3, 1>::Zero();
-				Eigen::Matrix<TType, 3, 1> B = Eigen::Matrix<TType, 3, 1>::Zero();
-				A.template head<NUM_TRANS>() = link_.template head<NUM_TRANS>();
-				B.template head<NUM_TRANS>() = o.link_.template head<NUM_TRANS>();
-				
-				if(A.squaredNorm()) 
-					r(0) = A.cross(B).norm()/(A.norm()*thr(0)); //distance of point to line
-				else
-					r(0) = 0;
-			}
-			
-			{
-				Eigen::Matrix<TType, NUM_ROT, 1> A = link_.template tail<NUM_ROT>();
-				Eigen::Matrix<TType, NUM_ROT, 1> B = o.link_.template tail<NUM_ROT>();
-				
-				r(1) = dist_rad(A+B).norm()/thr(1);
-			}
-			
-			TLink l = link_;
-			l.template head<NUM_TRANS>() /= thr(0);
-			l.template tail<NUM_ROT>()   /= thr(1);
-			
-			std::cout<<"transition_factor "<<l.transpose()<<" : "<<r.transpose()<<" = "<<r.norm()/l.norm()<<std::endl;
-			
-			return std::max((TType)0, (1-r.norm()/l.norm())*r.norm() );// + o.deviation();
-#endif
-			
-			#if 0
-			{
-				Eigen::Matrix<TType, NUM_TRANS, 1> A = link_.template head<NUM_TRANS>();
-				Eigen::Matrix<TType, NUM_TRANS, 1> B = o.link_.template head<NUM_TRANS>();
-				if(A.squaredNorm()) A.normalize();
-				//B.normalize();
-				r(0) = std::max((TType)0, -A.dot(B))/thr(0);
-				//DBG_PRINTF("trans %f %f\n", A.dot(B), -A.dot(B)/thr(0));
-			}
-			
-			{
-				Eigen::Matrix<TType, NUM_ROT, 1> A = link_.template tail<NUM_ROT>();
-				Eigen::Matrix<TType, NUM_ROT, 1> B = o.link_.template tail<NUM_ROT>();
-				
-				//if(A.dot(B)>0)
-					r(1) = std::min((TType)1, A.norm()/thr(1)) * std::max((TType)0, 1-dist_rad(A+B).norm()/A.norm());
-				//else
-				//	r(1) = 0;
-				//DBG_PRINTF("rot  %f %f %f %f %f\n", r(1), A(0), B(0), std::min((TType)1, A.norm()/thr(1)), std::max((TType)0, 1-dist_rad(A+B).norm()/A.norm()));
-				/*r(1) = std::max((TType)0, 1-dist_rad(A-B).norm()/thr(1))*B.norm();
-				DBG_PRINTF("rot  %f %f %f %f\n", dist_rad(A-B).norm(), dist_rad(A-B).norm()/thr(1)*B.norm(), B.norm(), B(0));*/
-			}
-			#endif
-			//std::cout<<"r "<<r.transpose()<<std::endl;
-			
-			/*TType ret = r.norm();
-			if(ret<1)
-				return std::min(ret+_DEVIATION, (TType)1);
-			return std::max(ret-_DEVIATION, (TType)1);*/
-			return r.norm();// + o.deviation();
 		}
 		
 		TType transition_factor_dbg(const TransformationLink &o, const TDist &thr) const {
@@ -301,25 +186,15 @@ namespace cob_3d_experience_mapping {
 		Transformation(const TLink &link, const TStatePtr &state) :
 			src_(state)
 		{
-			link_ = link;
+			this->link_ = link;
 		}
-
-		/*Transformation scale(const TDist &thr) const {
-			TLink tmp = link_;
-			TDist d = distance(Transformation());
-			for(int i=0; d(0) && i<NUM_TRANS; i++)
-				tmp(i) *= thr(0)/d(0);
-			for(int i=NUM_TRANS; d(1) && i<NUM_TRANS+NUM_ROT; i++)
-				tmp(i) *= thr(1)/d(1);
-			return Transformation(tmp, src_);
-		}*/
 		
 		inline const TStatePtr &src() const {return src_;}
 		inline TStatePtr &src() {return src_;}
 
 		Transformation directed(const TStatePtr &state) const {
 			if(state==src_) return *this;
-			return Transformation(-1*link_, state);
+			return Transformation(-1*this->link_, state);
 		}
 	};
 }

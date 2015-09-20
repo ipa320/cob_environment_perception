@@ -86,8 +86,12 @@ void path_integration(TStateVector &active_states/*, const TEnergyFactor &weight
 			for(TIter it=begin; it!=end; it++) {
 				bool gt = (dbg_pose.template head<2>()-(*it)->dbg().pose_.template head<2>()).norm()<ctxt.param().prox_thr_(0);
 				gt &= (dbg_pose.template tail<1>()-(*it)->dbg().pose_.template tail<1>()).norm()<ctxt.param().prox_thr_(1);
-				DBG_PRINTF("%d:\t %f:%f:%f:%d   %s\n", (*it)->id(), (*it)->dist_dev(), (*it)->d(), (*it)->dist_trv(), (*it)->hops(),
-					gt?"MATCH_GT":""
+				
+				bool gti = ctxt.virtual_state() && (*it)->id() < ctxt.virtual_state()->id()-ctxt.param().min_age_;
+				gti &= (dbg_pose.template head<2>()-(*it)->dbg().pose_.template head<2>()).norm()<2*ctxt.param().prox_thr_(0);
+				gti &= (dbg_pose.template tail<1>()-(*it)->dbg().pose_.template tail<1>()).norm()<2*ctxt.param().prox_thr_(1);
+				DBG_PRINTF("%d:\t %f:%f:%d   %s %s\n", (*it)->id(), (*it)->dist_dev(), (*it)->dist_trv(), (*it)->hops(),
+					gt?"MATCH_GT ":" ", gti?"INTEREST":""
 				);
 				++i;
 				//if(i>3) break;
@@ -111,7 +115,7 @@ void path_integration(TStateVector &active_states/*, const TEnergyFactor &weight
 	gpx.add_pt(ctxt.current_active_state()->dbg().pose_(1), ctxt.current_active_state()->dbg().pose_(0));
 #endif
 
-	if(!ctxt.virtual_state() || (ctxt.last_active_state()!=ctxt.current_active_state() && ctxt.current_active_state()->dist_trv()<=0) || (ctxt.current_active_state()!=ctxt.virtual_state() && ctxt.current_active_state()->d2()<ctxt.last_dist_min() && ctxt.current_active_state()->dist_trv()<=0) || ctxt.virtual_state()->dist_trv()<=0) {
+	if(!ctxt.virtual_state() || (ctxt.last_active_state()!=ctxt.current_active_state() && ctxt.current_active_state()->dist_trv()<=0) || (ctxt.current_active_state()!=ctxt.virtual_state() && ctxt.current_active_state()->dist_dev()<ctxt.last_dist_min() && ctxt.current_active_state()->dist_trv()<=0) || ctxt.virtual_state()->dist_trv()<=0) {
 		
 		if(ctxt.virtual_state()) {
 			ctxt.virtual_transistion()->dbg();
@@ -140,15 +144,6 @@ void path_integration(TStateVector &active_states/*, const TEnergyFactor &weight
 						break;
 					}
 				}
-#ifdef BEDIRECTIONAL
-				for(TArcIter_in ait(ctxt.current_active_state()->arc_in_begin(graph)); (!exist) && ait!=ctxt.current_active_state()->arc_in_end(graph); ++ait) {
-					typename TIter::value_type opposite = states[ctxt.current_active_state()->opposite_node(graph, ait)];
-					if(opposite==ctxt.virtual_transistion()->src()) {
-						exist=true;
-						break;
-					}
-				}
-#endif
 				
 				if(exist) {
 					DBG_PRINTF("not inserted new link as exists already\n");
@@ -205,7 +200,7 @@ void path_integration(TStateVector &active_states/*, const TEnergyFactor &weight
 		active_states.push_back(ctxt.virtual_state());
 	}
 	
-	ctxt.last_dist_min() = ctxt.current_active_state()->d2();
+	ctxt.last_dist_min() = ctxt.current_active_state()->dist_dev();
 	
 	ROS_ASSERT(ctxt.virtual_state());
 	ROS_ASSERT(ctxt.virtual_transistion());
@@ -267,19 +262,10 @@ void path_integration(TStateVector &active_states/*, const TEnergyFactor &weight
 				const typename TState::TEnergy travel = odom.dist(ctxt.param().prox_thr_);
 				const typename TState::TEnergy dist = std::abs(travel-dh_max);
 				
-				(*it)->dist_dev() += dist+odom.deviation()*std::exp(-(*it)->hops()/5.f);
+				(*it)->dist_dev() += std::max((typename TState::TEnergy)0, dist + odom.deviation()*(2*std::exp(-5*(*it)->hops()/(float)active_states.size())-1) );
 				
-				DBG_PRINTF("%d changing dist(%f/%f)\n", (*it)->id(),
-					(*it)->dist_trv(),(*it)->dist_dev());
-				/*DBG_PRINTF("%d changing dist(%f/%f) by (%f/%f) %f %f %f\nfeature factor: %f/%f from %f %f %f %f\n",
-					(*it)->id(),
-					(*it)->dist_h(),(*it)->dist_dev(),
-					delta, std::sqrt(std::pow(odom.dist_uncertain(ctxt.param().prox_thr_),2)-delta*delta),
-					odom.dist(ctxt.param().prox_thr_)+odom.deviation(), std::pow(odom.dist(ctxt.param().prox_thr_),2)-delta*delta,
-					(*it)->get_feature_prob(),
-					(1-1.f/(ctxt.param().est_occ_+1)*std::exp(-dist*dist/(2*travel*travel*(dev_max*dev_max+odom_dev*odom_dev)))), 1-std::sqrt(2*M_PI)*odom_dev*dev_max*std::exp(-dist*dist/(2*(dev_max*dev_max+odom_dev*odom_dev)))/std::sqrt(dev_max*dev_max+odom_dev*odom_dev),
-					odom_dev, dev_max, dist, travel);*/
-					
+				DBG_PRINTF("%d changing dist(%f/%f) %f\n", (*it)->id(),
+					(*it)->dist_trv(),(*it)->dist_dev(), dh_max);					
 			}
 			
 			assert( (*it)->dist_trv()==(*it)->dist_trv() );
@@ -301,6 +287,25 @@ void path_integration(TStateVector &active_states/*, const TEnergyFactor &weight
 	
 	std::list<typename TIter::value_type> to_be_added;
 	
+	//step 0: update feature prob.
+	for(TIter it=begin; it!=end; it++) {
+		if( (*it)->id() >= ctxt.virtual_state()->id()-ctxt.param().min_age_ )
+			continue;
+			
+		typename TState::TEnergy ft_prob = (*it)->get_feature_prob();
+		(*it)->reset_feature();
+			
+		assert(ft_prob>=0 && ft_prob<=1);
+		
+		if(ft_prob)
+			DBG_PRINTF("%d: injecting energy %f (feature probability)    %f*%f  %d hops  %f %f\n", (*it)->id(), ft_prob, (*it)->get_feature_prob(), odom.dist(ctxt.param().prox_thr_), (*it)->hops(), (*it)->dist_dev(), (*begin)->dist_dev());
+		
+		(*it)->dist_dev() -= std::min((typename TState::TEnergy)1, (*it)->dist_dev()) * std::min((typename TState::TEnergy)1, ft_prob);
+		
+		if(ft_prob)
+			DBG_PRINTF("%d: new energy %f\n", (*it)->id(), (*it)->dist_dev());
+	}
+	
 	//step 1: set min. dist.
 	for(TIter it=begin; it!=end; it++) {
 		typename TState::TEnergy dh_max = 0;
@@ -308,10 +313,10 @@ void path_integration(TStateVector &active_states/*, const TEnergyFactor &weight
 		
 		for(TArcIter_in ait((*it)->arc_in_begin(graph)); ait!=(*it)->arc_in_end(graph); ++ait) {
 				typename TIter::value_type opposite = states[(*it)->opposite_node(graph, ait)];
-				if( (*it)->dist_trv()>0.35/*trans[ait]->deviation()*/ || opposite->id() >= ctxt.virtual_state()->id()-ctxt.param().min_age_ /*|| (*it)->dist_h_out()<0.5-odom.deviation()-trans[ait]->deviation()*/ ) continue;
+				if( (*it)->dist_trv()>ctxt.param().deviation_factor_/*trans[ait]->deviation()*/ || opposite->id() >= ctxt.virtual_state()->id()-ctxt.param().min_age_ /*|| (*it)->dist_h_out()<0.5-odom.deviation()-trans[ait]->deviation()*/ ) continue;
 				
 				if( trans[ait]!=ctxt.virtual_transistion() && 
-					(!opposite->is_active() || opposite->dist_dev() > (*it)->dist_dev())
+					( (!opposite->is_active()&&(*it)->dist_dev()<ctxt.virtual_state()->dist_dev()+1+ctxt.param().deviation_factor_*(*it)->hops()) || opposite->dist_dev() > (*it)->dist_dev())
 					//&& trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_)>odom.deviation()
 					/*std::pow(trans[ait]->dist(ctxt.param().prox_thr_),2) + std::pow(opposite->dist_dev(),2)
 					<
@@ -333,26 +338,8 @@ void path_integration(TStateVector &active_states/*, const TEnergyFactor &weight
 		
 	}
 	
-	//step 0: update feature prob.
-	for(TIter it=begin; it!=end; it++) {
-		if( (*it)->id() >= ctxt.virtual_state()->id()-ctxt.param().min_age_ )
-			continue;
-			
-		typename TState::TEnergy ft_prob = (*it)->get_feature_prob();
-			
-		assert(ft_prob>=0 && ft_prob<=1);
-		
-		if(ft_prob)
-			DBG_PRINTF("%d: injecting energy %f (feature probability)    %f*%f  %d hops  %f %f\n", (*it)->id(), ft_prob, (*it)->get_feature_prob(), odom.dist(ctxt.param().prox_thr_), (*it)->hops(), (*it)->dist_dev(), (*begin)->dist_dev());
-		
-		(*it)->dist_dev() -= std::min((typename TState::TEnergy)1, (*it)->dist_dev()) * std::min((typename TState::TEnergy)1, ft_prob);
-		
-		if(ft_prob)
-			DBG_PRINTF("%d: new energy %f\n", (*it)->id(), (*it)->dist_dev());
-	}
-	
 	for(typename std::list<typename TIter::value_type>::iterator it=to_be_added.begin(); it!=to_be_added.end(); it++)
-		ctxt.add_to_active(*it);
+		ctxt.add_to_active(*it, true);
 	
 	//sort again
 	{
@@ -367,7 +354,7 @@ void path_integration(TStateVector &active_states/*, const TEnergyFactor &weight
 		int i=0;
 		DBG_PRINTF("distlist");
 		for(TIter it=begin; it!=end; it++) {
-			DBG_PRINTF("\t %f:%d:%d", (*it)->d(), (*it)->dist_trv()<=0, (*it)->id());
+			DBG_PRINTF("\t %f:%d:%d", (*it)->dist_dev(), (*it)->dist_trv()<=0, (*it)->id());
 			++i;
 			if(i>3) break;
 		}

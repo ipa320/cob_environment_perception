@@ -21,6 +21,8 @@
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/zlib.hpp>
 
+#include "../helpers/db_serialization.h"
+
 namespace cob_3d_experience_mapping{
 namespace serialization {
 

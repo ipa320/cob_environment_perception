@@ -135,7 +135,7 @@ public:
 	  static int ts=0;
 	  ++ts;
 	  
-	   cob_3d_experience_mapping::algorithms::reset_features(ctxt_.active_states());
+	   //cob_3d_experience_mapping::algorithms::reset_features(ctxt_.active_states());
 	  
 	  for(size_t i=0; i<infos->infos.size(); i++) {
 		  ctxt_.add_feature(infos->infos[i].id, ts);
@@ -148,7 +148,7 @@ public:
 	  static int ts=0;
 	  ++ts;
 	  
-	   cob_3d_experience_mapping::algorithms::reset_features(ctxt_.active_states());
+	   //cob_3d_experience_mapping::algorithms::reset_features(ctxt_.active_states());
 	   ctxt_.add_feature(vid->data, ts);
   }
   
@@ -242,8 +242,6 @@ public:
 	  }
 	  time_last_odom_ = odom->header.stamp;
 	  printf("\n");
-	  
-	  //cob_3d_experience_mapping::algorithms::reset_features(ctxt_.active_states());
   }
 };
 
