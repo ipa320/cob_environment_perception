@@ -206,7 +206,7 @@ int main(int argc, char **argv) {
 	
 	if(vm.count("output")>0)
 		cob_3d_experience_mapping::serialization::save_content<boost::archive::binary_oarchive>(
-			cob_3d_experience_mapping::ContextContainer<TContext,TGraph,TMapStates,TMapTransformations>(ctxt_, graph_, states_, trans_),
+			cob_3d_experience_mapping::ContextContainer<TContext,TGraph,TMapStates,TMapTransformations>(&ctxt_, &graph_, &states_, &trans_),
 			fn_out.c_str(), true);
 	
 	return 0;

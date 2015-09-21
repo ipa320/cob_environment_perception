@@ -1,5 +1,6 @@
 #pragma once
 
+#include "../defs.h"
 #include "../param.h"
 #include <set>
 #include <map>
@@ -81,6 +82,8 @@ namespace cob_3d_experience_mapping {
 			needs_sort_ = false;
 			return tmp;
 		}
+		
+		FeatureMap &get_features() {return features_;}
 		
 		//!< add a state to the active state list + init. variables + (init. distances if needed)
 		void add_to_active(typename TState::TPtr &state, const bool already_set=false) {
@@ -193,62 +196,116 @@ namespace cob_3d_experience_mapping {
 			it->second->inject(this, ts, param().est_occ_, param().max_active_states_);
 		}
 
-		template<class Archive>
-		void serialize(Archive & ar, const unsigned int version)
+		UNIVERSAL_SERIALIZE()
 		{
-		    assert(version==0); //TODO: version handling
+		    assert(version==CURRENT_SERIALIZATION_VERSION);;
 		    
-		    param_.serialize(ar, version);
+		    ar & UNIVERSAL_SERIALIZATION_NVP(param_);
 		}
 	};
 	
 	
 	template<class TContext, class TGraph, class TMapStates, class TMapTransformations>
 	class ContextContainer {
-		TContext &ctxt_;
-		TGraph &graph_;
-		TMapStates &states_;
-		TMapTransformations &trans_;
+		TContext *ctxt_;
+		TGraph *graph_;
+		TMapStates *states_;
+		TMapTransformations *trans_;
+		bool incremental_;
 		
-	public:		
-		ContextContainer(TContext &ctxt, TGraph &graph, TMapStates &states, TMapTransformations &trans) :
-		 ctxt_(ctxt), graph_(graph), states_(states), trans_(trans)
+	public:			
+		ContextContainer() :
+		 ctxt_(NULL), graph_(NULL), states_(NULL), trans_(NULL), incremental_(false)
 		 {}
+		 
+		ContextContainer(TContext *ctxt, TGraph *graph, TMapStates *states, TMapTransformations *trans, const bool incremental=false) :
+		 ctxt_(ctxt), graph_(graph), states_(states), trans_(trans), incremental_(incremental)
+		 {}
+		 
+		bool is_incremental() const {return incremental_;}
+		void set_incremental(const bool inc) {incremental_=inc;}
 		    	
-		template<class Archive>
-		void serialize(Archive & ar, const unsigned int version)
+		UNIVERSAL_SERIALIZE()
 		{
-		    ROS_ASSERT(version==0); //TODO: version handling
+		    assert(version==CURRENT_SERIALIZATION_VERSION);
 		    
-		    ctxt_.serialize(ar, version);
+		    //we have to lock everything for consistency
+			boost::mutex mtx_tmp;
+			boost::lock_guard<boost::mutex> guard(ctxt_ ? ctxt_->get_mutex() : mtx_tmp);
 		    
-			size_t num=0;
-		    if(Archive::is_loading::value) {
-				//clear everything
-				graph_.clear();
-				ctxt_.active_states().clear();
-				
-				ar & BOOST_SERIALIZATION_NVP(num);
-				for(size_t i=0; i<num; i++) {
-					typename TContext::TState::TPtr c(new typename TContext::TState);
-					c->set_node(graph_.addNode());
-					states_.set(c->node(), c);
-					c->serialize(ar, version);
-					
-					ctxt_.active_states().push_back(c);
+		    if(!incremental_) {
+				if(ctxt_)
+				 ar & UNIVERSAL_SERIALIZATION_NVP_NAMED("ctxt", *ctxt_);
+				else {
+					TContext tmp;
+					ar & UNIVERSAL_SERIALIZATION_NVP_NAMED("ctxt", tmp);
 				}
 			}
-			else { //saving...
-				for(typename TGraph::NodeIt it(graph_); it!=lemon::INVALID; ++it)
-					++num;
-					
-				ar & BOOST_SERIALIZATION_NVP(num);
-				for(typename TGraph::NodeIt it(graph_); it!=lemon::INVALID; ++it)
-					states_[it]->serialize(ar, version);
-			}
+		    
+			std::vector<typename TContext::TState> states;	//we should use references to the state to spare memory/speed up
+			std::vector<typename TContext::TState::TransitionSerialization> trans;
+		    std::vector<typename TContext::TFeature::FeatureSerialization> fts;
 			
-			for(typename TGraph::NodeIt it(graph_); it!=lemon::INVALID; ++it)
-				states_[it]->template serialize_trans<int>(ar, version, graph_, states_, trans_);
+			//on saving
+		    if(graph_ && states_ && trans_ && UNIVERSAL_CHECK<Archive>::is_saving(ar)) {
+				
+				for(typename TGraph::NodeIt it(*graph_); it!=lemon::INVALID; ++it) {
+					states.push_back(*(*states_)[it]);
+					(*states_)[it]->get_trans(trans, *graph_, *states_, *trans_);
+				}
+
+				for(typename TContext::FeatureMap::iterator it = ctxt_->get_features().begin(); it!=ctxt_->get_features().end(); it++) {
+					fts.push_back( it->second->get_serialization() );
+				}
+			}
+		    
+		    ar & UNIVERSAL_SERIALIZATION_NVP(fts);
+			ar & UNIVERSAL_SERIALIZATION_NVP(states);
+			ar & UNIVERSAL_SERIALIZATION_NVP(trans);
+			
+			//on loading
+		    if(graph_ && states_ && trans_ && UNIVERSAL_CHECK<Archive>::is_loading(ar)) {
+				if(!incremental_) {
+					//clear everything
+					graph_->clear();
+					ctxt_->active_states().clear();
+				}
+				
+				//insert states
+				for(size_t i=0; i<states.size(); i++) {
+					if(incremental_) {	//look if state already exists
+						bool found = false;
+						for(typename TGraph::NodeIt it(*graph_); it!=lemon::INVALID; ++it) {
+							if( (*states_)[it]->id() == states[i].id() ) {
+								*(*states_)[it] = states[i];
+								found = true;
+								break;
+							}
+						}
+							
+						if(found) continue;
+					}
+					
+					typename TContext::TState::TPtr c(new typename TContext::TState(states[i]));
+					
+					c->set_node(graph_->addNode());
+					states_->set(c->node(), c);
+					//ctxt_.active_states().push_back(states[i]);
+				}
+				
+				//insert transitions (TODO: speed up)
+				for(typename TGraph::NodeIt it(*graph_); it!=lemon::INVALID; ++it)
+					(*states_)[it]->set_trans(trans, *graph_, *states_, *trans_);
+					
+				//insert features
+				for(size_t i=0; i<fts.size(); i++) {
+					typename TContext::TFeature *tmp = new typename TContext::TFeature(fts[i].ft_.id());
+					tmp->set_serialization(fts[i], *graph_, *states_);
+					
+					ctxt_->get_features().insert(typename TContext::FeatureMap::value_type(fts[i].ft_.id(), typename TContext::TFeature::TPtr(tmp)) );
+				}
+				
+			}
 		}
 			
 	};

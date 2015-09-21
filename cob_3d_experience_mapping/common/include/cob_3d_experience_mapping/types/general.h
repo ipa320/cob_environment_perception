@@ -153,131 +153,82 @@ namespace cob_3d_experience_mapping {
 		
 		void reset_feature() {ft_imp_last_=ft_imp_; ft_imp_=1;}
 		
-		UNIVERSAL_SERIALIZE_EXT(US_COMMA class ID US_COMMA class Graph US_COMMA class TMapStates US_COMMA class TMapTransformations, US_COMMA ID US_COMMA Graph US_COMMA TMapStates US_COMMA TMapTransformations, US_COMMA Graph US_REF graph US_COMMA TMapStates US_REF states US_COMMA TMapTransformations US_REF trans, US_COMMA graph US_COMMA states US_COMMA trans)
+		UNIVERSAL_SERIALIZE()
 		{
-		   ROS_ASSERT(version==0); //TODO: version handling
+		   assert(version==0); //TODO: version handling
 		   
 		   ar & UNIVERSAL_SERIALIZATION_NVP(id_);
 		   
 		   dbg_.serialize<Archive, make_nvp>(ar, version);
-		   
-		   std::vector<int> trans_ids;
-		   /*for(TArcOutIterator ait(arc_out_begin(graph)); ait!=arc_out_end(graph); ++ait) {
-			   trans_ids.p
-				ar & boost::serialization::make_nvp(buf, states[opposite_node(graph, ait)]->id_);
-				trans[ait]->serialize(ar, version);
-			}*/
-		   ar & UNIVERSAL_SERIALIZATION_NVP(trans_ids);
 		}
 		
-		template<class ID, class Archive, class Graph, class TMapStates, class TMapTransformations>
-		void serialize_trans(Archive & ar, const unsigned int version, Graph &graph, TMapStates &states, TMapTransformations &trans)
-		{
-			ROS_ASSERT(version==0); //TODO: version handling
-		   
-			size_t num=0;
-		   
-			if(Archive::is_saving::value) {
-				for(TArcOutIterator ait(arc_out_begin(graph)); ait!=arc_out_end(graph); ++ait)
-					++num;
-					//ids.push_back( states[opposite_node(graph, ait)]->dbg().id_ );
+		/**
+		 * class: TransitionSerialization
+		 * helper structure for serialization of all transitions of a state
+		 */
+		struct TransitionSerialization {
+			ID src_, dst_;
+			TLink link_;
+			
+			TransitionSerialization()
+			{}
+			
+			TransitionSerialization(const ID &src, const ID &dst, const TLink &link) : src_(src), dst_(dst), link_(link)
+			{}
+			
+			UNIVERSAL_SERIALIZE()
+			{
+				assert(version==0); //TODO: version handling
+				
+				ar & UNIVERSAL_SERIALIZATION_NVP(src_);
+				ar & UNIVERSAL_SERIALIZATION_NVP(dst_);
+				ar & UNIVERSAL_SERIALIZATION_NVP(link_);
 			}
-			ar & BOOST_SERIALIZATION_NVP(num);
-		   
-			if(Archive::is_loading::value) {
-				TPtr th;
-				for(typename TGraph::NodeIt it(graph); it!=lemon::INVALID; ++it)
-					if(states[it]->id_==id_) {
-						th = states[it];
+		};
+		
+		template<class Graph, class TMapStates, class TMapTransformations>
+		void get_trans(std::vector<TransitionSerialization> &trans_list, Graph &graph, TMapStates &states, TMapTransformations &trans)
+		{
+			for(TArcOutIterator ait(arc_out_begin(graph)); ait!=arc_out_end(graph); ++ait)
+				trans_list.push_back( TransitionSerialization(id(), states[opposite_node(graph, ait)]->id(), *trans[ait]) );
+		}
+		
+		template<class Graph, class TMapStates, class TMapTransformations>
+		void set_trans(const std::vector<TransitionSerialization> &trans_list, Graph &graph, TMapStates &states, TMapTransformations &trans)
+		{
+			for(size_t i=0; i<trans_list.size(); i++) {
+				if(trans_list[i].src_!=id()) continue;
+				
+				//check fo existing trans.
+				bool found = false;
+				for(TArcOutIterator ait(arc_out_begin(graph)); ait!=arc_out_end(graph); ++ait) {
+					if(trans_list[i].dst_ == states[opposite_node(graph, ait)]->id()) {
+						*trans[ait] = typename TMapTransformations::Value::element_type(trans_list[i].link_, trans[ait]->src());
+						found = true;
 						break;
 					}
-				ROS_ASSERT(th);
+				}
+				if(found) continue;
 				
-				for(size_t i=0; i<num; i++) {
-					char buf[16];
-					sprintf(buf, "id%d", (int)i);
-					
-					ID id;
-					ar & boost::serialization::make_nvp(buf, id);
-					
-					//find state
-					typename TGraph::NodeIt it(graph);
-					for(; it!=lemon::INVALID; ++it) {
-						if(states[it]->id_==id) {
-							typename TMapTransformations::Value link(new typename TMapTransformations::Value::element_type());
-							link->serialize(ar, version);
-							link->src() = th;
-							trans.set(graph.addArc(th->node(), states[it]->node()), link);
-							break;
-						}
-					}
-					ROS_ASSERT(it!=lemon::INVALID);
+				TPtr p_dst, p_src;
+				for(typename TGraph::NodeIt it(graph); it!=lemon::INVALID && !p_dst && !p_src; ++it) {
+					if(states[it]->id_==trans_list[i].dst_)
+						p_dst = states[it];
+					if(states[it]->id_==trans_list[i].src_)
+						p_src = states[it];
 				}
 				
-			}
-			else {	//saving...
-				int i=0;
-				for(TArcOutIterator ait(arc_out_begin(graph)); ait!=arc_out_end(graph); ++ait) {
-					char buf[16];
-					sprintf(buf, "id%d", i);
-					++i;
-					ar & boost::serialization::make_nvp(buf, states[opposite_node(graph, ait)]->id_);
-					trans[ait]->serialize(ar, version);
-				}
+				assert(p_dst);
+				assert(p_src);
+				
+				trans.set(graph.addArc(p_dst->node(), node()), typename TMapTransformations::Value(
+					new typename TMapTransformations::Value::element_type(trans_list[i].link_, p_dst)
+				));
 			}
 		}
+		
 	};
 	
-	/**
-	 * class: Transition
-	 * short description: describes transformation of 2 "State"s, costs (e.g. distance), time of create and last update
-	 */
-	template<class TMeta, class TPtrState, class TTransformation, class TTime>
-	class Transition : public Object<TMeta> {
-	protected:
-		TPtrState src_, dst_;
-		TTransformation trans_;
-		TTime ts_creation_, ts_update_;
-	};
-	
-	/**
-	 * class: Injection
-	 * short description: weighted link between sensor input layer and state layer
-	 */
-	template<class TMeta>
-	class Injection : public Object<TMeta> {
-	protected:
-	};
-	
-#if 0
-	template<class _TStateHandle, class _TType, class TMeta>
-	class VisualState : public Object<TMeta> {
-	public:
-		typedef _TStateHandle TStateHandle;
-		typedef _TType TType;
-		typedef boost::shared_ptr<VisualState> TPtr;
-		
-	protected:
-		TStateHandle h_;
-		int last_ts_;
-		TType improbability_;
-		
-	public:
-		VisualState(TStateHandle h) : h_(h), last_ts_(-1), improbability_(1)
-		{}
-		
-		inline const TStateHandle &getHandle() const {return h_;}
-		
-		void update(const int ts, const int no_conn, const int est_occ, const TType prob=1) {
-			if(ts!=last_ts_) {
-				last_ts_ = ts;
-				improbability_ = 1;
-			 }
-			 
-			 improbability_ *= 1-prob/(no_conn+est_occ);
-		}
-	};
-#endif
 
 	/**
 	 * class: Feature
@@ -298,6 +249,8 @@ namespace cob_3d_experience_mapping {
 	public:
 		Feature(const TID id) : id_(id)
 		{}
+		
+		inline TID id() const {return id_;}
 		
 		void visited(const StateHandle &h, typename TInjection::TPtr inj) {
 			if(injections_.find(h)==injections_.end()) {
@@ -325,6 +278,63 @@ namespace cob_3d_experience_mapping {
 				DBG_PRINTF("injectXYZ %d -> %d with %d\n", id_, it->second->id(), (int)(injections_.size()+est_occ));
 			}
 			DBG_PRINTF("inject %d\n", (int)injections_.size());
+		}
+		
+		/**
+		 * class: FeatureSerialization
+		 * helper structure for serialization of a feature
+		 */
+		struct FeatureSerialization {
+			Feature ft_;
+		    std::vector<typename TInjection::ID> injs_;
+			
+			FeatureSerialization() : ft_(-1)
+			{}
+			
+			FeatureSerialization(const Feature &ft) : ft_(ft)
+			{}
+			
+			UNIVERSAL_SERIALIZE()
+			{
+				assert(version==CURRENT_SERIALIZATION_VERSION);
+				
+				ar & UNIVERSAL_SERIALIZATION_NVP(ft_);
+				ar & UNIVERSAL_SERIALIZATION_NVP(injs_);
+			}
+		};
+		
+		UNIVERSAL_SERIALIZE()
+		{
+		    assert(version==CURRENT_SERIALIZATION_VERSION);
+		    
+		    ar & UNIVERSAL_SERIALIZATION_NVP(id_);
+		}
+		
+		FeatureSerialization get_serialization() const {
+			FeatureSerialization fs(*this);
+			
+			for(typename InjectionMap::const_iterator it=injections_.begin(); it!=injections_.end(); it++) {
+				if(!it->second->still_exists()) continue;
+				
+				fs.injs_.push_back(it->second->id());
+			}
+			
+			return fs;
+		}
+		
+		template<class TGraph, class TMapStates>
+		void set_serialization(const FeatureSerialization &fs, TGraph &graph, TMapStates &states) {
+			id_ = fs.ft_.id();
+			
+			//reconnect features with states
+			for(size_t i=0; i<fs.injs_.size(); i++) {
+				for(typename TGraph::NodeIt it(graph); it!=lemon::INVALID; ++it)
+					if(states[it]->id()==fs.injs_[i]) {
+						injections_.insert(typename InjectionMap::value_type(states[it].get(), states[it]));
+						break;
+					}
+					
+			}
 		}
 		
 	};

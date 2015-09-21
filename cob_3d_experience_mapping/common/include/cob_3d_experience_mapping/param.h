@@ -64,22 +64,21 @@ namespace cob_3d_experience_mapping {
 #endif
 		}
 		
-		//!< (de)serialization function for boost
-		template<class Archive>
-		void serialize(Archive & ar, const unsigned int version)
+		//!< (de)serialization function for boost/hiberlite
+		UNIVERSAL_SERIALIZE()
 		{
-		    ROS_ASSERT(version==0); //TODO: version handling
+		    assert(version==CURRENT_SERIALIZATION_VERSION);
 		    
 		    for(int i=0; i<prox_thr_.rows(); i++)
 				for(int j=0; j<prox_thr_.cols(); j++) {
 					char buf[16];
 					sprintf(buf, "prox_thr_%d_%d", i,j);
-					ar & boost::serialization::make_nvp(buf, prox_thr_(i,j));
+					ar & UNIVERSAL_SERIALIZATION_NVP_NAMED(buf, prox_thr_(i,j));
 				}
-		    ar & BOOST_SERIALIZATION_NVP(est_occ_);
-		    ar & BOOST_SERIALIZATION_NVP(min_age_);
-		    ar & BOOST_SERIALIZATION_NVP(max_active_states_);
-		    ar & BOOST_SERIALIZATION_NVP(deviation_factor_);
+		    ar & UNIVERSAL_SERIALIZATION_NVP(est_occ_);
+		    ar & UNIVERSAL_SERIALIZATION_NVP(min_age_);
+		    ar & UNIVERSAL_SERIALIZATION_NVP(max_active_states_);
+		    ar & UNIVERSAL_SERIALIZATION_NVP(deviation_factor_);
 		}
 
 #ifdef VIS_

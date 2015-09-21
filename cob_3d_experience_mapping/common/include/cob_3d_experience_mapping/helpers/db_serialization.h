@@ -1,25 +1,25 @@
 #pragma once
 
+#include "../defs.h"
 #include "../../../../libs/hiberlite/include/hiberlite.h"
+#include <boost/utility/enable_if.hpp>
 
 
-#define UNIVERSAL_SERIALIZE_EXT(ext, ext_args, args_types, args) \
+#define UNIVERSAL_SERIALIZE_SHORT()  \
 	friend class hiberlite::access;\
 	\
-	template<class Archive ext>\
-	void hibernate(Archive & ar args_types)\
-	{		serialize<Archive, hiberlite::sql_nvp ext_args>(ar,0 args); }\
+	template<class Archive>\
+	void hibernate(Archive & ar)\
+	{		serialize<Archive, hiberlite::sql_nvp>(ar, CURRENT_SERIALIZATION_VERSION); }\
 	\
-	template<class Archive ext>\
-	void serialize(Archive & ar, const unsigned int version args_types)\
-	{		serialize<Archive, boost::serialization::nvp ext_args>(ar,version args); }\
-	template<class Archive, template <class> class make_nvp ext>\
-	void serialize(Archive & ar, const unsigned int version args_types)
+	template<class Archive>\
+	void serialize(Archive & ar, const unsigned int version)\
+	{		serialize<Archive, boost::serialization::nvp>(ar,version); }
 	
-#define US_COMMA ,
-#define US_REF &
-
-#define UNIVERSAL_SERIALIZE() UNIVERSAL_SERIALIZE_EXT(,,,)
+#define UNIVERSAL_SERIALIZE()  \
+	UNIVERSAL_SERIALIZE_SHORT()\
+	template<class Archive, template <class> class make_nvp>\
+	void serialize(Archive & ar, const unsigned int version)
 
 
 #ifndef BOOST_NO_FUNCTION_TEMPLATE_ORDERING
@@ -28,12 +28,43 @@
 #define UNIVERSAL_SERIALIZATION_NVP_MODIFIER 
 #endif
 
-#if (defined _MSC_VER && _MSC_VER< 1600)
+
 #include <boost/typeof/typeof.hpp>
 #define UNIVERSAL_SERIALIZATION_NVP(Field) ((UNIVERSAL_SERIALIZATION_NVP_MODIFIER make_nvp< BOOST_TYPEOF(Field) >) make_nvp< BOOST_TYPEOF(Field) >(BOOST_PP_STRINGIZE(Field),Field))
-#else
-#define UNIVERSAL_SERIALIZATION_NVP(Field) ((UNIVERSAL_SERIALIZATION_NVP_MODIFIER make_nvp< decltype(Field) >) make_nvp< decltype(Field) >(BOOST_PP_STRINGIZE(Field),Field))
-#endif
+#define UNIVERSAL_SERIALIZATION_NVP_NAMED(Name, Field) ((UNIVERSAL_SERIALIZATION_NVP_MODIFIER make_nvp< BOOST_TYPEOF(Field) >) make_nvp< BOOST_TYPEOF(Field) >(Name,Field))
+
+//some template matching to get loading/saving value for boost and hiberlite
+template<class Archive, typename Enable = void>
+struct UNIVERSAL_CHECK {
+	static bool is_loading(Archive &ar) {
+		return ar.is_loading();
+	}
+	static bool is_saving(Archive &ar) {
+		return ar.is_saving();
+	}
+};
+
+template<class Archive>
+struct UNIVERSAL_CHECK<Archive, typename boost::enable_if<std::is_base_of<boost::archive::detail::basic_oarchive, Archive>>::type> {
+	static bool is_loading(Archive &ar) {
+		return Archive::is_loading::value;
+	}
+	static bool is_saving(Archive &ar) {
+		return Archive::is_saving::value;
+	}
+};
+
+template<class Archive>
+struct UNIVERSAL_CHECK<Archive, typename boost::enable_if<std::is_base_of<boost::archive::detail::basic_iarchive, Archive>>::type> {
+	static bool is_loading(Archive &ar) {
+		return Archive::is_loading::value;
+	}
+	static bool is_saving(Archive &ar) {
+		return Archive::is_saving::value;
+	}
+};
+//template magic ended...
+
 
 /*
  * an example for member function:
@@ -44,6 +75,8 @@ UNIVERSAL_SERIALIZE()
 	ar & UNIVERSAL_SERIALIZATION_NVP(num);
 	float bb=0;
 	ar & UNIVERSAL_SERIALIZATION_NVP(bb);
+
+	UNIVERSAL_CHECK<Archive>::is_loading(ar);
 }
  * 
  */

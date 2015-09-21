@@ -47,6 +47,9 @@ namespace cob_3d_experience_mapping {
 		TransformationLink() : link_(TLink::Zero()), _DEVIATION(0.000001f)
 		{}
 		
+		
+		inline const TLink &get_data() const {return link_;}
+		
 		inline _TType &deviation() {return _DEVIATION;}
 		inline _TType deviation() const {return _DEVIATION;}
 
@@ -148,16 +151,17 @@ namespace cob_3d_experience_mapping {
 					* Eigen::AngleAxis<TType>(link_.template tail<NUM_ROT>()(0), Eigen::Matrix<TType, 3, 1>::UnitZ());
 		}
 		
-		template<class Archive>
-		void serialize(Archive & ar, const unsigned int version)
+		UNIVERSAL_SERIALIZE()
 		{
-		    ROS_ASSERT(version==0); //TODO: version handling
+		    assert(version==0); //TODO: version handling
 		    
 		    for(int i=0; i<NUM_TRANS+NUM_ROT; i++) {
 				char buf[16];
 				sprintf(buf, "link_%d", i);
-		    	ar & boost::serialization::make_nvp(buf, link_(i));
+		    	ar & UNIVERSAL_SERIALIZATION_NVP_NAMED(buf, link_(i));
 			}
+			
+			ar & UNIVERSAL_SERIALIZATION_NVP(_DEVIATION);
 		}
 	};
 	
@@ -187,6 +191,13 @@ namespace cob_3d_experience_mapping {
 			src_(state)
 		{
 			this->link_ = link;
+		}
+
+		Transformation(const _TransformationLink &o, const TStatePtr &state) :
+			src_(state)
+		{
+			this->link_ = o.get_data();
+			this->_DEVIATION = o.deviation();
 		}
 		
 		inline const TStatePtr &src() const {return src_;}
