@@ -16,6 +16,19 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(Eigen REQUIRED)
 
+add_custom_target(build_hiberlite ALL COMMAND make WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/libs/hiberlite)
+
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+if(COMPILER_SUPPORTS_CXX11)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+elseif(COMPILER_SUPPORTS_CXX0X)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++0x")
+else()
+        message(STATUS "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+endif()
+
 ## System dependencies are found with CMake's conventions
 # find_package(Boost REQUIRED COMPONENTS system)
 
@@ -111,6 +124,7 @@ include_directories(
   common/include
 )
 include_directories(SYSTEM ${EIGEN_INCLUDE_DIRS})
+link_directories(${PROJECT_SOURCE_DIR}/libs/hiberlite)
 
 ## Declare a cpp library
 # add_library(cob_3d_experience_mapping
@@ -121,6 +135,7 @@ include_directories(SYSTEM ${EIGEN_INCLUDE_DIRS})
 add_executable(cob_3d_experience_mapping_lemon_node src/exp_mapping_lemon.cpp)
 add_executable(sim_barks src/sim_barks.cpp)
 add_executable(convert src/convert.cpp)
+add_executable(server src/server.cpp)
 add_executable(cob_3d_experience_mapping_lemon_eval evaluation/exp_mapping_lemon_eval.cpp)
 
 # make sure configure headers are built before any node using them
@@ -140,6 +155,9 @@ target_link_libraries(sim_barks
 )
 target_link_libraries(convert
   ${catkin_LIBRARIES}
+)
+target_link_libraries(server
+  ${catkin_LIBRARIES} hiberlite dl
 )
 
 target_link_libraries(cob_3d_experience_mapping_lemon_eval

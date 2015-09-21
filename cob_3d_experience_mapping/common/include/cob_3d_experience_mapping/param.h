@@ -42,13 +42,13 @@ namespace cob_3d_experience_mapping {
 			max_active_states_ = 200;
 			deviation_factor_ = 0.1;
 			
-			prox_thr_(0) = 0.4;
-			prox_thr_(1) = 0.4;
+			prox_thr_(0) = 0.5;
+			prox_thr_(1) = 0.7;
 			//energy_max_ = 1;//1.25;
 			est_occ_ = 1;
 			min_age_ = 3;
-			max_active_states_ = 500;
-			deviation_factor_ = 0.025;
+			max_active_states_ = 100;
+			deviation_factor_ = 0.065;
 			
 #ifdef VIS_
 			vis_color_state_.r = 0.5;

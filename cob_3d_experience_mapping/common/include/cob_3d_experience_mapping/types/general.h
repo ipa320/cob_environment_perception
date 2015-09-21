@@ -21,17 +21,14 @@ namespace cob_3d_experience_mapping {
 	struct DbgInfo {
 		std::string name_;
 		std::string info_;
-		//int id_;
 		Eigen::Vector3f pose_;
 		
-		template<class Archive>
-		void serialize(Archive & ar, const unsigned int version)
+		UNIVERSAL_SERIALIZE()
 		{
 		    ROS_ASSERT(version==0); //TODO: version handling
 		    
-		   ar & BOOST_SERIALIZATION_NVP(name_);
-		   ar & BOOST_SERIALIZATION_NVP(info_);
-		   //ar & BOOST_SERIALIZATION_NVP(id_);
+		   ar & UNIVERSAL_SERIALIZATION_NVP(name_);
+		   ar & UNIVERSAL_SERIALIZATION_NVP(info_);
 		}
 	};
 	
@@ -103,8 +100,8 @@ namespace cob_3d_experience_mapping {
 		//!< getter for hop counter
 		inline int  hops() const {return hops_;}
 		
-		inline TEnergy d() const {return std::sqrt(d2());}
-		inline TEnergy d2() const {return dist_dev()*dist_dev() + dist_trv()*dist_trv();}
+		//inline TEnergy d() const {return std::sqrt(d2());}
+		//inline TEnergy d2() const {return dist_dev()*dist_dev() + dist_trv()*dist_trv();}
 		
 		inline void set_node(const TNode &node) {node_ = node;}
 		inline TNode &node() {return node_;}
@@ -143,11 +140,6 @@ namespace cob_3d_experience_mapping {
 			return graph.oppositeNode(node_, ait);
 		}
 		
-		//operators
-		inline bool operator>(const State &o) {
-			return d2()<o.d2();
-		}
-		
 		void update(const int ts, const int no_conn, const int est_occ, const TEnergy prob=1) {
 					 
 			ft_imp_ -= ft_imp_*prob/(no_conn+est_occ);
@@ -161,14 +153,21 @@ namespace cob_3d_experience_mapping {
 		
 		void reset_feature() {ft_imp_last_=ft_imp_; ft_imp_=1;}
 		
-		template<class Archive>
-		void serialize_single(Archive & ar, const unsigned int version)
+		UNIVERSAL_SERIALIZE_EXT(US_COMMA class ID US_COMMA class Graph US_COMMA class TMapStates US_COMMA class TMapTransformations, US_COMMA ID US_COMMA Graph US_COMMA TMapStates US_COMMA TMapTransformations, US_COMMA Graph US_REF graph US_COMMA TMapStates US_REF states US_COMMA TMapTransformations US_REF trans, US_COMMA graph US_COMMA states US_COMMA trans)
 		{
 		   ROS_ASSERT(version==0); //TODO: version handling
 		   
-		   ar & BOOST_SERIALIZATION_NVP(id_);
+		   ar & UNIVERSAL_SERIALIZATION_NVP(id_);
 		   
-		   dbg_.serialize(ar, version);
+		   dbg_.serialize<Archive, make_nvp>(ar, version);
+		   
+		   std::vector<int> trans_ids;
+		   /*for(TArcOutIterator ait(arc_out_begin(graph)); ait!=arc_out_end(graph); ++ait) {
+			   trans_ids.p
+				ar & boost::serialization::make_nvp(buf, states[opposite_node(graph, ait)]->id_);
+				trans[ait]->serialize(ar, version);
+			}*/
+		   ar & UNIVERSAL_SERIALIZATION_NVP(trans_ids);
 		}
 		
 		template<class ID, class Archive, class Graph, class TMapStates, class TMapTransformations>
@@ -317,13 +316,13 @@ namespace cob_3d_experience_mapping {
 		void inject(TContext *ctxt, const int ts, const int est_occ, const int max_occ, const typename TInjection::TEnergy prob=1) {
 			for(typename InjectionMap::iterator it=injections_.begin(); it!=injections_.end(); it++) {
 				if(!it->second->still_exists()) continue;
+			
+				//check if feature is in active list --> add
+				ctxt->add_to_active(it->second);
 				
 				it->second->update(ts, std::min(max_occ, (int)injections_.size()), est_occ, prob);
 				
 				DBG_PRINTF("injectXYZ %d -> %d with %d\n", id_, it->second->id(), (int)(injections_.size()+est_occ));
-			
-				//check if feature is in active list --> add
-				ctxt->add_to_active(it->second);
 			}
 			DBG_PRINTF("inject %d\n", (int)injections_.size());
 		}

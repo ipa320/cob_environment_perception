@@ -2,14 +2,27 @@
 
 #include "../include/ros_node.hpp"
 
+typedef ROS_Node<As_Node> ns;
+typedef cob_3d_experience_mapping::ContextContainer<ns::TContext, ns::TGraph, ns::TMapStates, ns::TMapTransformations> CtxtContainer;
+
+typedef ns::State State;
+
+HIBERLITE_EXPORT_CLASS(State)
+
 int main(int argc, char **argv) {
 	if(argc<3) {
 		DBG_PRINTF("specify input and output file\n");
 		return 0;
 	}
-
-	typedef ROS_Node<As_Node> ns;
-	typedef cob_3d_experience_mapping::ContextContainer<ns::TContext, ns::TGraph, ns::TMapStates, ns::TMapTransformations> CtxtContainer;
+	
+	
+	hiberlite::Database db("sample.db");
+	//register bean classes
+	db.registerBeanClass<State>();
+	//drop all tables beans will use
+	db.dropModel();
+	//create those tables again with proper schema
+	db.createModel();
 	
 	ns::TContext ctxt_;	
 	ns::TGraph graph_;

@@ -100,7 +100,7 @@ namespace cob_3d_experience_mapping {
 			//somebody else will set this variables from outside
 			if(!already_set) {
 				state->dist_dev() 	= virtual_state()->dist_dev()+1;
-				state->dist_trv()  	= 0.5;	//we are approaching state (assume half way)
+				state->dist_trv()  	= 0;	//we are approaching state (assume half way)
 				state->hops() 		= 0;
 			}
 			
@@ -112,8 +112,6 @@ namespace cob_3d_experience_mapping {
 			active_states_.push_back(state);
 			
 			needs_sort_ = true;
-			
-			DBG_PRINTF("DBG: added");
 		}		
 		
 		//!< remove state completely
@@ -133,13 +131,15 @@ namespace cob_3d_experience_mapping {
 			
 			//limit size of list
 			if(active_states_.size()>param().max_active_states_) {
+				for(size_t i=param().max_active_states_; i<active_states_.size(); i++)
+					active_states_[i]->is_active() = false;
+					
 				active_states_.erase(active_states_.begin()+param().max_active_states_, active_states_.end());
-				
-				DBG_PRINTF("DBG: removing\n");
 			}
 			
 			//remove all departed states
 			if(active_states_.size()>0) {
+				//skip current active state
 				for(size_t i=1; i<active_states_.size(); i++) {
 					
 					if(active_states_[i]->dist_trv()<=-1) {
@@ -179,8 +179,10 @@ namespace cob_3d_experience_mapping {
 			//	return;
 			
 			for(typename FeatureBuffer::iterator it = last_features_.begin(); it!=last_features_.end(); it++)
-				if(*it == id)
+				if(*it == id) {
+					DBG_PRINTF("feature %d already set\n", id);
 					return;
+				}
 			last_features_.push_back(id);
 			
 			typename FeatureMap::iterator it = features_.find(id);
@@ -194,7 +196,7 @@ namespace cob_3d_experience_mapping {
 		template<class Archive>
 		void serialize(Archive & ar, const unsigned int version)
 		{
-		    ROS_ASSERT(version==0); //TODO: version handling
+		    assert(version==0); //TODO: version handling
 		    
 		    param_.serialize(ar, version);
 		}
@@ -208,8 +210,7 @@ namespace cob_3d_experience_mapping {
 		TMapStates &states_;
 		TMapTransformations &trans_;
 		
-	public:
-		
+	public:		
 		ContextContainer(TContext &ctxt, TGraph &graph, TMapStates &states, TMapTransformations &trans) :
 		 ctxt_(ctxt), graph_(graph), states_(states), trans_(trans)
 		 {}
@@ -232,7 +233,7 @@ namespace cob_3d_experience_mapping {
 					typename TContext::TState::TPtr c(new typename TContext::TState);
 					c->set_node(graph_.addNode());
 					states_.set(c->node(), c);
-					c->serialize_single(ar, version);
+					c->serialize(ar, version);
 					
 					ctxt_.active_states().push_back(c);
 				}
@@ -243,7 +244,7 @@ namespace cob_3d_experience_mapping {
 					
 				ar & BOOST_SERIALIZATION_NVP(num);
 				for(typename TGraph::NodeIt it(graph_); it!=lemon::INVALID; ++it)
-					states_[it]->serialize_single(ar, version);
+					states_[it]->serialize(ar, version);
 			}
 			
 			for(typename TGraph::NodeIt it(graph_); it!=lemon::INVALID; ++it)

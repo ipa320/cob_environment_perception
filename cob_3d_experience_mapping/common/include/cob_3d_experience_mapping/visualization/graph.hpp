@@ -74,7 +74,7 @@ namespace cob_3d_experience_mapping {
 				{
 					cob_3d_visualization::RvizMarker scene;
 					char buf[256];
-					sprintf(buf, " d=%.3f h=%.3f o=%.3f", act_node->d(), act_node->dist_trv(), act_node->dist_dev());
+					sprintf(buf, " h=%.3f o=%.3f", act_node->dist_trv(), act_node->dist_dev());
 					scene.text(act_node->dbg().name_+" "+act_node->dbg().info_+buf);
 					scene.move(pos+0.3*Eigen::Vector3f::UnitZ());
 				}
