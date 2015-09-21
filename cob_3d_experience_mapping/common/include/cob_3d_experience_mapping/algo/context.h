@@ -131,12 +131,14 @@ namespace cob_3d_experience_mapping {
 		void clean_active_list() {
 			assert( sorting::is_sorted(active_states_.begin(),active_states_.end(), sorting::energy_order<typename TState::TPtr>) );
 			
+			//limit size of list
 			if(active_states_.size()>param().max_active_states_) {
 				active_states_.erase(active_states_.begin()+param().max_active_states_, active_states_.end());
 				
 				DBG_PRINTF("DBG: removing\n");
 			}
 			
+			//remove all departed states
 			if(active_states_.size()>0) {
 				for(size_t i=1; i<active_states_.size(); i++) {
 					
@@ -152,23 +154,24 @@ namespace cob_3d_experience_mapping {
 		}
 		
 		//getter/setter
+		//!< settter/getter for active state list
 		inline TActList &active_states() {return active_states_;}
+		//!< getter for parameters
 		inline const TParameter &param() const {return param_;}
+		//!< settter/getter for parameters
 		inline TParameter &param_rw() {return param_;}
 		inline typename TState::TPtr current_active_state() {return *active_states_.begin();} //TODO: check
 		inline typename TState::TPtr &virtual_state() {return virtual_state_;}
 		inline typename TTransform::TPtr &virtual_transistion() {return virtual_transistion_;}
 		inline typename TState::TPtr &last_active_state() {return last_active_state_;}
 		
-		//inline const TEnergy &energy_sum() const {return energy_sum_;}
-		//inline const TEnergy &energy_max() const {return energy_max_;}
 		inline const TEnergy &last_dist_min() const {return last_dist_min_;}
 		inline TEnergy &last_dist_min() {return last_dist_min_;}
-
-		//inline void set_energy_max(const TEnergy &e) {energy_max_=e;}
 		
+		//!< settter/getter for mutex
 		boost::mutex &get_mutex() {return mtx_;}
 		
+		//!< if a feature was seen we connect the active state with the feature and update all connected states
 		void add_feature(const typename TFeature::TID &id, const int ts) {
 			boost::lock_guard<boost::mutex> guard(mtx_);
 			
