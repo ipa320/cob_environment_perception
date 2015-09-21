@@ -47,11 +47,12 @@ namespace cob_3d_experience_mapping {
 		 - feature lookup to state
 		 - some variables for algorithms
 	*/
-	template<class _TEnergy, class _TState, class _TFeature, class _TEnergyFactor, class _TTransform>
+	template<class _TEnergy, class _TState, class _TFeature, class _TEnergyFactor, class _TTransform, class _TIdTsGenerator = SimpleIdTsGenerator<_TState, _TFeature> >
 	class Context {
 	public:
 		typedef _TEnergy TEnergy;
 		typedef _TState TState;
+		typedef _TIdTsGenerator TIdTsGenerator;
 		typedef _TFeature TFeature;
 		typedef _TEnergyFactor TEnergyFactor;
 		typedef _TTransform TTransform;
@@ -64,6 +65,7 @@ namespace cob_3d_experience_mapping {
 	private:
 		TActList active_states_;		//!< active state list
 		TParameter param_;			//!< parameter storage
+		TIdTsGenerator id_generator_;
 		TEnergy last_dist_min_;		//!< 
 		typename TState::TPtr last_active_state_, virtual_state_;
 		typename TTransform::TPtr virtual_transistion_;
@@ -84,6 +86,7 @@ namespace cob_3d_experience_mapping {
 		}
 		
 		FeatureMap &get_features() {return features_;}
+		TIdTsGenerator &id_generator() {return id_generator_;}
 		
 		//!< add a state to the active state list + init. variables + (init. distances if needed)
 		void add_to_active(typename TState::TPtr &state, const bool already_set=false) {
@@ -123,6 +126,8 @@ namespace cob_3d_experience_mapping {
 			
 			state->still_exists() = false;
 			state->is_active() = false;
+			id_generator().register_removal(state);
+			
 			for(size_t i=0; i<active_states_.size(); i++)
 				if(active_states_[i]==state)
 					active_states_.erase(active_states_.begin()+i);
@@ -188,12 +193,18 @@ namespace cob_3d_experience_mapping {
 				}
 			last_features_.push_back(id);
 			
+			bool modified = false;
 			typename FeatureMap::iterator it = features_.find(id);
-			if(it==features_.end())
+			if(it==features_.end()) {
 				it = features_.insert(typename FeatureMap::value_type(id, typename TFeature::TPtr(new TFeature(id))) ).first;
+				modified = true;
+			}
 			if( !(current_active_state() && virtual_state() && current_active_state()->id() < virtual_state()->id()-(param().min_age_+3) ) )
-				it->second->visited(current_active_state().get(), current_active_state());
+				modified |= it->second->visited(current_active_state().get(), current_active_state());
 			it->second->inject(this, ts, param().est_occ_, param().max_active_states_);
+			
+			if(modified)
+				id_generator().register_modification(it->second);
 		}
 
 		UNIVERSAL_SERIALIZE()

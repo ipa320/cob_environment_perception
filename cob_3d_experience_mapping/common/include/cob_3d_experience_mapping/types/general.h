@@ -12,6 +12,33 @@ namespace cob_3d_experience_mapping {
 	
 	struct Empty {};
 	
+	template<class _TState, class _TFeature>
+	class SimpleIdTsGenerator {
+	public:
+		typedef int ID;
+		typedef _TState TState;
+		typedef _TFeature TFeature;
+		
+	private:
+		ID running_id_;
+		/*
+		 * std::map<ID, TModification>
+		 */
+		
+	public:
+		SimpleIdTsGenerator() : running_id_(1)
+		{}
+		
+		ID new_id() {return running_id_++;}
+		
+		void register_modification(const typename TState::TPtr &state)
+		{ }
+		void register_modification(const typename TFeature::TPtr &state)
+		{ }
+		void register_removal(const typename TState::TPtr &state)
+		{ }
+	};
+	
 	template<class TMeta>
 	class Object {
 	protected:
@@ -36,7 +63,7 @@ namespace cob_3d_experience_mapping {
 	 * class: State
 	 * short description: current state + activation --> Artificial Neuron
 	 */
-	template<class TMeta, class _TEnergy, class _TGraph, class _TLink >
+	template<class TMeta, class _TEnergy, class _TGraph, class _TLink>
 	class State : public Object<TMeta> {
 	public:
 		//types
@@ -62,11 +89,13 @@ namespace cob_3d_experience_mapping {
 		bool still_exists_, is_active_;
 		
 	public:		
-		State(): dist_dev_(0), dist_trv_(0), ft_imp_(1), ft_imp_last_(1), hops_(0), still_exists_(true), is_active_(false) {
-			static int no = 1;
+		State(): dist_dev_(0), dist_trv_(0), ft_imp_(1), ft_imp_last_(1), id_(-1), hops_(0), still_exists_(true), is_active_(false) {
+			dbg_.name_ = "INVALID";
+		}
+		
+		State(const ID &id): dist_dev_(0), dist_trv_(0), ft_imp_(1), ft_imp_last_(1), id_(id), hops_(0), still_exists_(true), is_active_(false) {
 			char buf[128];
-			id_ = no;
-			sprintf(buf, "%d", no++);
+			sprintf(buf, "%d", id_);
 			dbg_.name_ = buf;
 		}
 		
@@ -252,7 +281,7 @@ namespace cob_3d_experience_mapping {
 		
 		inline TID id() const {return id_;}
 		
-		void visited(const StateHandle &h, typename TInjection::TPtr inj) {
+		bool visited(const StateHandle &h, typename TInjection::TPtr inj) {
 			if(injections_.find(h)==injections_.end()) {
 				injections_.insert(typename InjectionMap::value_type(h, inj));
 				
@@ -262,7 +291,11 @@ namespace cob_3d_experience_mapping {
 				inj->dbg().info_ += buf;
 				
 				DBG_PRINTF("add feature %d -> %d\n", id_, inj->id());
+				
+				return true;
 			}
+			
+			return false;
 		}
 		
 		template<typename TContext>

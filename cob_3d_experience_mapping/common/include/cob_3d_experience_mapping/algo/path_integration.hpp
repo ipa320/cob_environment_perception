@@ -9,9 +9,9 @@ void insert_state(TGraph &graph, TMapStates &states, TMapTransformations &trans,
 
 template<class TTransformation, class TGraph, class TMapTransformations, typename TState>
 void insert_transistion(TGraph &graph, TMapTransformations &trans, const TState &new_state, TTransformation &link) {
-	ROS_ASSERT(link->src());
+	assert(link->src());
+	
 	trans.set(graph.addArc(new_state->node(), link->src()->node()), link);
-	//trans.set(graph.addEdge(new_state->node(), link->src()->node()), link);
 }
 
 template<class TGraph, typename TState>
@@ -25,32 +25,15 @@ void init(TGraph &graph, TContext &ctxt, TMapStates &states, TMapTransformations
 {
 	typedef typename TContext::TState TState;
 
-	typename TContext::TState::TPtr state(new TState);
+	typename TContext::TState::TPtr state(new TState(ctxt.id_generator().new_id()));
 	state->dist_dev() = 1;
 	ctxt.active_states().push_back(state);
 	insert_state(graph, states, trans, state);
+	
+	ctxt.id_generator().register_modification(state);
 
 	//ctxt.virtual_state().reset(new TState);
 	//insert_state<TTransformation>(graph, states, trans, ctxt.virtual_state(), ctxt.current_active_state());
-}
-		
-template<typename TStatePtr, typename TEnergy, typename TContext, typename TGraph, typename TStates, typename TTrans, typename TAction>
-TEnergy inflow(TStatePtr &th, const TEnergy &offset, const TContext &ctxt, const TGraph &graph, const TStates &states, const TTrans &trans, const TAction &odom) /*const*/ {
-	TEnergy I = 0;
-	for(typename TStatePtr::element_type::TArcIterator ait(th->edge_begin(graph)); ait!=th->edge_end(graph); ++ait) {
-		TStatePtr opposite = states[th->opposite_node(graph, ait)];
-		const typename TAction::TType trans_fact = trans[ait]->directed(th).transition_factor(odom, ctxt.param().prox_thr_);
-		ROS_ASSERT_MSG(trans_fact==0 || (opposite->outflow()>=0 && opposite->outflow()<=1), "outflow %f out of bounds [0,1] (d=%f)", opposite->outflow(), trans_fact);
-		
-		I = std::max(I, trans_fact*opposite->outflow());
-	}
-	DBG_PRINTF("inflow %f", I);
-	I-=offset;
-	
-	//TODO: add sensor input here
-	//I += p*(1-energy());
-	
-	return I;
 }
 
 template<class TStateVector, class TEnergyFactor, class TGraph, class TContext, class TMapStates, class TMapTransformations, class TTransformation>
@@ -150,6 +133,8 @@ void path_integration(TStateVector &active_states/*, const TEnergyFactor &weight
 				}
 				else {
 					insert_transistion(graph, trans, ctxt.current_active_state(), ctxt.virtual_transistion());
+					ctxt.id_generator().register_modification(ctxt.current_active_state());
+	
 					DBG_PRINTF("inserted new link");
 				}
 			
@@ -185,9 +170,11 @@ void path_integration(TStateVector &active_states/*, const TEnergyFactor &weight
 			remove_state(graph, ctxt.virtual_state());
 		}
 		
-		ctxt.virtual_state().reset(new TState);
+		ctxt.virtual_state().reset(new TState(ctxt.id_generator().new_id()));
 		ctxt.virtual_state()->dist_trv()  = 1;
 		ctxt.virtual_state()->dist_dev() = ctxt.current_active_state()->dist_dev();
+		
+		ctxt.id_generator().register_modification(ctxt.virtual_state());
 		
 		ctxt.virtual_state()->dbg().pose_ = dbg_pose;
 		
