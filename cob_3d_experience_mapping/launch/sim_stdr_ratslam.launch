@@ -11,6 +11,6 @@
 
 		<include file="$(find ratslam_ros)/launch/irataus_cast2.launch" />
 	 
-	<node pkg="rosbag" type="play" name="play" args="'/media/My Passport/office_odom.bag' -d 0.5 -r 4 -s 0">
+	<node pkg="rosbag" type="play" name="play" args="'/media/INTENSO/Datasets/ratslam/office_odom.bag' -d 0.5 -r 1 -s 0">
 	</node>
 </launch>

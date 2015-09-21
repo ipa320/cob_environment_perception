@@ -15,7 +15,7 @@ def callback(msg):
 	global pub_si
 	global pub_vt
 
-	NUM_FEATURES=1000
+	NUM_FEATURES=100
 	
 	x = msg.pose.pose.position.x
 	y = msg.pose.pose.position.y
