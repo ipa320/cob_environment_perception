@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(Eigen REQUIRED)
 
+add_custom_target(init_submodules ALL COMMAND cd ${PROJECT_SOURCE_DIR}/libs && git submodule update --init --recursive)
 add_custom_target(build_hiberlite ALL COMMAND make WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/libs/hiberlite)
 
 include(CheckCXXCompilerFlag)
@@ -64,6 +65,8 @@ endif()
 
 ## Generate messages in the 'msg' folder
 add_message_files(
+  DIRECTORY
+    msg
   FILES
   SensorInfo.msg
   SensorInfoArray.msg
