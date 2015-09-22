@@ -16,14 +16,15 @@ namespace serialization {
 		TClientId client_;
 		TID ts_states_;
 		TID ts_fts_;
+		TID ts_trans_;
 		bool compression_;
 		
 		NetworkHeader():
-			client_((TClientId)-1), ts_states_((TID)-1) ts_fts_((TID)-1), compression_(true)
+			client_((TClientId)-1), ts_states_((TID)-1), ts_fts_((TID)-1), ts_trans_((TID)-1), compression_(true)
 		{ }
 		
 		NetworkHeader(const TClientId &client, const TID &ts_states, const TID &ts_fts, const bool compression = true):
-			client_(client), ts_states_(ts_states), ts_fts_(ts_fts), compression_(compression)
+			client_(client), ts_states_(ts_states), ts_fts_(ts_fts), ts_trans_(ts_trans), compression_(compression)
 		{ }
 		
 		UNIVERSAL_SERIALIZE()
@@ -33,6 +34,7 @@ namespace serialization {
 		   ar & UNIVERSAL_SERIALIZATION_NVP(client_);
 		   ar & UNIVERSAL_SERIALIZATION_NVP(ts_states);
 		   ar & UNIVERSAL_SERIALIZATION_NVP(ts_fts_);
+		   ar & UNIVERSAL_SERIALIZATION_NVP(ts_trans);
 		   ar & UNIVERSAL_SERIALIZATION_NVP(compression_);
 		}
 		   
