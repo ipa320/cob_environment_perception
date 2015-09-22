@@ -37,7 +37,7 @@ void init(TGraph &graph, TContext &ctxt, TMapStates &states, TMapTransformations
 }
 
 template<class TStateVector, class TEnergyFactor, class TGraph, class TContext, class TMapStates, class TMapTransformations, class TTransformation>
-void path_integration(TStateVector &active_states/*, const TEnergyFactor &weight*/, TGraph &graph, TContext &ctxt, TMapStates &states, TMapTransformations &trans, const TTransformation &odom, const Eigen::Vector3f &dbg_pose)
+void path_integration(TStateVector &active_states, TGraph &graph, TContext &ctxt, TMapStates &states, TMapTransformations &trans, const TTransformation &odom, const Eigen::Vector3f &dbg_pose)
 {
 	typedef typename TContext::TState TState;
 	typedef typename TStateVector::iterator TIter;
@@ -82,17 +82,12 @@ void path_integration(TStateVector &active_states/*, const TEnergyFactor &weight
 			DBG_PRINTF("\n");
 		}
 	}
-#endif
 	
-	ROS_ASSERT(ctxt.active_states().size()>0);
-	ROS_ASSERT(ctxt.current_active_state());
-	
-	//if(ctxt.virtual_state() && ctxt.current_active_state()!=ctxt.virtual_state())
-	//	ctxt.virtual_state()->dist_dev() = ctxt.current_active_state()->dist_dev();
+	assert(ctxt.active_states().size()>0);
+	assert(ctxt.current_active_state());
 	
 	DBG_PRINTF("current id %d\n", ctxt.current_active_state()->id());
 
-#ifndef NDEBUG
 	static Debug_GPX gpx("/tmp/reloc.gpx");
 	
 	gpx.add_pt(ctxt.current_active_state()->dbg().pose_(1), ctxt.current_active_state()->dbg().pose_(0));
@@ -110,8 +105,10 @@ void path_integration(TStateVector &active_states/*, const TEnergyFactor &weight
 		);
 		
 		if(ctxt.current_active_state()==ctxt.virtual_state()) {
+#ifndef NDEBUG
 			DBG_PRINTF("virtual state is inserted to map (action dist.: %f)\n", ctxt.virtual_transistion()->dist(ctxt.param().prox_thr_));
 			ctxt.virtual_transistion()->dbg();
+#endif
 		}
 		else {
 			DBG_PRINTF_URGENT("relocalized %d -> %d with %d hops\n", ctxt.last_active_state()?ctxt.last_active_state()->id():-1, ctxt.current_active_state()?ctxt.current_active_state()->id():-1,
@@ -158,13 +155,6 @@ void path_integration(TStateVector &active_states/*, const TEnergyFactor &weight
 				DBG_PRINTF_URGENT( gt ? "SUCCESS3\n":"FAILED3\n"	);
 #endif
 			}
-			
-			/*ctxt.virtual_state()->still_exists() = false;
-			for(TIter it=active_states.begin(); it!=active_states.end(); it++)
-				if(*it == ctxt.virtual_state()) {
-					active_states.erase(it);
-					break;
-				}*/
 
 			ctxt.remove_state(ctxt.virtual_state());
 			remove_state(graph, ctxt.virtual_state());
@@ -189,8 +179,8 @@ void path_integration(TStateVector &active_states/*, const TEnergyFactor &weight
 	
 	ctxt.last_dist_min() = ctxt.current_active_state()->dist_dev();
 	
-	ROS_ASSERT(ctxt.virtual_state());
-	ROS_ASSERT(ctxt.virtual_transistion());
+	assert(ctxt.virtual_state());
+	assert(ctxt.virtual_transistion());
 
 	ctxt.virtual_transistion()->integrate(odom);
 	

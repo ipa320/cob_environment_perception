@@ -4,9 +4,11 @@ void step(TGraph &graph, TContext &context, TMapStates &states, TMapTransformati
 	typedef typename TContext::TState TState;
 	typedef std::vector<typename TState::TPtr> TStateVector;
 
+	//integrate action into map
 	path_integration<	TStateVector, typename TContext::TEnergyFactor,
 						TGraph, TContext, TMapStates, TMapTransformations, TTransformation>
 	(context.active_states(), graph, context, states, trans, odom, dbg_pose);
 	
+	//clean up afterwards to keep active state list clean
 	context.clean_active_list();
 }
