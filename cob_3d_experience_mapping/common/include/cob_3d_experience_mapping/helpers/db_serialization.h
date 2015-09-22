@@ -9,15 +9,24 @@
 	friend class hiberlite::access;\
 	\
 	template<class Archive>\
+	/*\
+	 * @brief serialization for hiberlite (SQLite)\
+	 */\
 	void hibernate(Archive & ar)\
 	{		serialize<Archive, hiberlite::sql_nvp>(ar, CURRENT_SERIALIZATION_VERSION); }\
 	\
 	template<class Archive>\
+	/*\
+	 * @brief serialization for boost\
+	 */\
 	void serialize(Archive & ar, const unsigned int version)\
 	{		serialize<Archive, boost::serialization::nvp>(ar,version); }
 	
 #define UNIVERSAL_SERIALIZE()  \
 	UNIVERSAL_SERIALIZE_SHORT()\
+	/*\
+	 * @brief universal serialization function for boost and hiberlite\
+	 */\
 	template<class Archive, template <class> class make_nvp>\
 	void serialize(Archive & ar, const unsigned int version)
 

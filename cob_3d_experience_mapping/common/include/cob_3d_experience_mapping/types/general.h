@@ -8,16 +8,22 @@
 
 #include <ros/assert.h>
 
+
+//! interfaces and implementations of cob_3d_experience_mapping
 namespace cob_3d_experience_mapping {
 	
+	/**
+	 * class: Empty
+	 * parent class which is used by default if no meta data is needed for states (see Object)
+	 */
 	struct Empty {};
 	
 	template<class _TState, class _TFeature>
 	class SimpleIdTsGenerator {
 	public:
-		typedef int ID;
 		typedef _TState TState;
 		typedef _TFeature TFeature;
+		typedef typename TState::ID ID;
 		
 	private:
 		ID running_id_;
@@ -39,6 +45,10 @@ namespace cob_3d_experience_mapping {
 		{ }
 	};
 	
+	/**
+	 * class: Object
+	 * parent class for a state to keep meta data like additonal map information (laser scans ...)
+	 */
 	template<class TMeta>
 	class Object {
 	protected:
@@ -52,7 +62,7 @@ namespace cob_3d_experience_mapping {
 		
 		UNIVERSAL_SERIALIZE()
 		{
-		    ROS_ASSERT(version==0); //TODO: version handling
+		    ROS_ASSERT(version==CURRENT_SERIALIZATION_VERSION);
 		    
 		   ar & UNIVERSAL_SERIALIZATION_NVP(name_);
 		   ar & UNIVERSAL_SERIALIZATION_NVP(info_);
@@ -63,37 +73,35 @@ namespace cob_3d_experience_mapping {
 	 * class: State
 	 * short description: current state + activation --> Artificial Neuron
 	 */
-	template<class TMeta, class _TEnergy, class _TGraph, class _TLink>
+	template<class TMeta, class _TEnergy, class _TGraph, class _TLink, class _TID>
 	class State : public Object<TMeta> {
 	public:
 		//types
 		typedef _TEnergy TEnergy;
 		typedef _TGraph TGraph;
 		typedef typename TGraph::Node TNode;
-		//typedef typename TGraph::Arc TArc;
-		//typedef typename TGraph::Edge TArc;
 		typedef typename TGraph::Arc TArc;
-		//typedef typename TGraph::OutArcIt TArcIterator;
-		//typedef typename TGraph::EdgeIt TArcIterator;
 		typedef typename TGraph::OutArcIt TArcOutIterator;
 		typedef typename TGraph::InArcIt TArcInIterator;
 		typedef boost::shared_ptr<State> TPtr;
-		typedef int ID;
+		typedef _TID ID;
 		typedef _TLink TLink;
+		
 	protected:
-		TEnergy dist_dev_, dist_trv_, ft_imp_, ft_imp_last_;
+		TEnergy dist_dev_, dist_trv_, ft_imp_;
 		TNode node_;
 		ID id_;
 		int hops_;
-		DbgInfo dbg_;
-		bool still_exists_, is_active_;
+		DbgInfo dbg_;		//!< some debug information like name and additional description (info)
+		bool still_exists_;	//!< flag: false if removed from map completely
+		bool is_active_;	//!< flag: true if present in active state list
 		
 	public:		
-		State(): dist_dev_(0), dist_trv_(0), ft_imp_(1), ft_imp_last_(1), id_(-1), hops_(0), still_exists_(true), is_active_(false) {
+		State(): dist_dev_(0), dist_trv_(0), ft_imp_(1), id_(-1), hops_(0), still_exists_(true), is_active_(false) {
 			dbg_.name_ = "INVALID";
 		}
 		
-		State(const ID &id): dist_dev_(0), dist_trv_(0), ft_imp_(1), ft_imp_last_(1), id_(id), hops_(0), still_exists_(true), is_active_(false) {
+		State(const ID &id): dist_dev_(0), dist_trv_(0), ft_imp_(1), id_(id), hops_(0), still_exists_(true), is_active_(false) {
 			char buf[128];
 			sprintf(buf, "%d", id_);
 			dbg_.name_ = buf;
@@ -129,10 +137,10 @@ namespace cob_3d_experience_mapping {
 		//!< getter for hop counter
 		inline int  hops() const {return hops_;}
 		
-		//inline TEnergy d() const {return std::sqrt(d2());}
-		//inline TEnergy d2() const {return dist_dev()*dist_dev() + dist_trv()*dist_trv();}
-		
+		//!< setter for graph node
 		inline void set_node(const TNode &node) {node_ = node;}
+		
+		//!< setter/getter for graph node
 		inline TNode &node() {return node_;}
 	
 		//!< setter/getter for debug information
@@ -140,35 +148,44 @@ namespace cob_3d_experience_mapping {
 		//!< getter for debug information
 		inline const DbgInfo &dbg() const {return dbg_;}
 		
+		
 		//graph operations
+		//!< iterator operation for incoming transitions
 		inline TArcInIterator arc_in_begin(const TGraph &graph) {
 			return TArcInIterator(graph, node_);
 		}
+		//!< iterator operation for incoming transitions
 		inline TArcInIterator arc_in_end(const TGraph &graph) const {
 			return lemon::INVALID;
 		}
 		
+		//!< iterator operation for outgoing transitions
 		inline TArcOutIterator arc_out_begin(const TGraph &graph) {
 			return TArcOutIterator(graph, node_);
 		}
+		//!< iterator operation for outgoing transitions
 		inline TArcOutIterator arc_out_end(const TGraph &graph) const {
 			return lemon::INVALID;
 		}
 		
-		//e.g. for visualization, where it's not necessary only one direction
+		//!< iterator operation for transitions; e.g. for visualization, where it's not necessary only one direction
 		template<typename _TArc_>
 		inline _TArc_ arc_flex_begin(const TGraph &graph) {
 			return _TArc_(graph, node_);
 		}
+		//!< iterator operation for transitions; e.g. for visualization, where it's not necessary only one direction
 		template<typename _TArc_>
 		inline _TArc_ arc_flex_end(const TGraph &graph) {
 			return lemon::INVALID;
 		}
 		
+		//!< getter to retrieve connected node of state by transition "ait" in "graph"
 		inline TNode opposite_node(const TGraph &graph, const TArc &ait) {
 			return graph.oppositeNode(node_, ait);
 		}
 		
+		
+		//!< if a connected feature to this state was visited, we update the feature probability
 		void update(const int ts, const int no_conn, const int est_occ, const TEnergy prob=1) {
 					 
 			ft_imp_ -= ft_imp_*prob/(no_conn+est_occ);
@@ -177,16 +194,17 @@ namespace cob_3d_experience_mapping {
 			 //DBG_PRINTF("upd %d  %f\n", id(), get_feature_prob());
 		}
 		
+		//!< getter for feature probability
 		inline TEnergy get_feature_prob() const {return 1-ft_imp_;}
-		inline TEnergy get_last_feature_prob() const {return 1-ft_imp_last_;}
 		
-		void reset_feature() {ft_imp_last_=ft_imp_; ft_imp_=1;}
+		//!< reset feature probability to default (no feature present)
+		void reset_feature() {ft_imp_=1;}
 		
 		UNIVERSAL_SERIALIZE()
 		{
-		   assert(version==0); //TODO: version handling
+		   assert(version==CURRENT_SERIALIZATION_VERSION);
 		   
-		   ar & UNIVERSAL_SERIALIZATION_NVP(id_);
+		   ar & UNIVERSAL_SERIALIZATION_NVP_NAMED("id", id_);
 		   
 		   dbg_.serialize<Archive, make_nvp>(ar, version);
 		}
@@ -207,10 +225,10 @@ namespace cob_3d_experience_mapping {
 			
 			UNIVERSAL_SERIALIZE()
 			{
-				assert(version==0); //TODO: version handling
+				assert(version==CURRENT_SERIALIZATION_VERSION);
 				
-				ar & UNIVERSAL_SERIALIZATION_NVP(src_);
-				ar & UNIVERSAL_SERIALIZATION_NVP(dst_);
+				ar & UNIVERSAL_SERIALIZATION_NVP_NAMED("src", src_);
+				ar & UNIVERSAL_SERIALIZATION_NVP_NAMED("dst", dst_);
 				ar & UNIVERSAL_SERIALIZATION_NVP(link_);
 			}
 		};
@@ -263,10 +281,10 @@ namespace cob_3d_experience_mapping {
 	 * class: Feature
 	 * short description: sensor input
 	 */
-	template<class TInjection, class TMeta>
+	template<class TInjection, class TMeta, class _TID>
 	class Feature : public Object<TMeta> {
 	public:
-		typedef int TID;
+		typedef _TID TID;
 		typedef boost::shared_ptr<Feature> TPtr;
 		typedef void* StateHandle;
 		typedef std::map<StateHandle, typename TInjection::TPtr> InjectionMap;
@@ -303,8 +321,9 @@ namespace cob_3d_experience_mapping {
 			for(typename InjectionMap::iterator it=injections_.begin(); it!=injections_.end(); it++) {
 				if(!it->second->still_exists()) continue;
 			
-				//check if feature is in active list --> add
-				ctxt->add_to_active(it->second);
+				//check if feature is in active list --> add if we not too ambiguous (50% of max. size of active state list)
+				if(2*injections_.size() < ctxt->param().max_active_states_)
+					ctxt->add_to_active(it->second);
 				
 				it->second->update(ts, std::min(max_occ, (int)injections_.size()), est_occ, prob);
 				
@@ -340,7 +359,7 @@ namespace cob_3d_experience_mapping {
 		{
 		    assert(version==CURRENT_SERIALIZATION_VERSION);
 		    
-		    ar & UNIVERSAL_SERIALIZATION_NVP(id_);
+		    ar & UNIVERSAL_SERIALIZATION_NVP_NAMED("id", id_);
 		}
 		
 		FeatureSerialization get_serialization() const {

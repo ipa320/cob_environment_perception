@@ -6,7 +6,7 @@
 #include <map>
 #include <boost/thread.hpp>
 #include <boost/circular_buffer.hpp>
-
+#include "../helpers/network.h"
 
 //! interfaces and implementations of cob_3d_experience_mapping
 namespace cob_3d_experience_mapping {
@@ -218,23 +218,20 @@ namespace cob_3d_experience_mapping {
 	
 	template<class TContext, class TGraph, class TMapStates, class TMapTransformations>
 	class ContextContainer {
+	protected:
 		TContext *ctxt_;
 		TGraph *graph_;
 		TMapStates *states_;
 		TMapTransformations *trans_;
-		bool incremental_;
 		
 	public:			
 		ContextContainer() :
-		 ctxt_(NULL), graph_(NULL), states_(NULL), trans_(NULL), incremental_(false)
+		 ctxt_(NULL), graph_(NULL), states_(NULL), trans_(NULL)
 		 {}
 		 
-		ContextContainer(TContext *ctxt, TGraph *graph, TMapStates *states, TMapTransformations *trans, const bool incremental=false) :
-		 ctxt_(ctxt), graph_(graph), states_(states), trans_(trans), incremental_(incremental)
+		ContextContainer(TContext *ctxt, TGraph *graph, TMapStates *states, TMapTransformations *trans) :
+		 ctxt_(ctxt), graph_(graph), states_(states), trans_(trans)
 		 {}
-		 
-		bool is_incremental() const {return incremental_;}
-		void set_incremental(const bool inc) {incremental_=inc;}
 		    	
 		UNIVERSAL_SERIALIZE()
 		{
@@ -244,13 +241,11 @@ namespace cob_3d_experience_mapping {
 			boost::mutex mtx_tmp;
 			boost::lock_guard<boost::mutex> guard(ctxt_ ? ctxt_->get_mutex() : mtx_tmp);
 		    
-		    if(!incremental_) {
-				if(ctxt_)
-				 ar & UNIVERSAL_SERIALIZATION_NVP_NAMED("ctxt", *ctxt_);
-				else {
-					TContext tmp;
-					ar & UNIVERSAL_SERIALIZATION_NVP_NAMED("ctxt", tmp);
-				}
+			if(ctxt_)
+			 ar & UNIVERSAL_SERIALIZATION_NVP_NAMED("ctxt", *ctxt_);
+			else {
+				TContext tmp;
+				ar & UNIVERSAL_SERIALIZATION_NVP_NAMED("ctxt", tmp);
 			}
 		    
 			std::vector<typename TContext::TState> states;	//we should use references to the state to spare memory/speed up
@@ -276,27 +271,12 @@ namespace cob_3d_experience_mapping {
 			
 			//on loading
 		    if(graph_ && states_ && trans_ && UNIVERSAL_CHECK<Archive>::is_loading(ar)) {
-				if(!incremental_) {
-					//clear everything
-					graph_->clear();
-					ctxt_->active_states().clear();
-				}
+				//clear everything
+				graph_->clear();
+				ctxt_->active_states().clear();
 				
 				//insert states
 				for(size_t i=0; i<states.size(); i++) {
-					if(incremental_) {	//look if state already exists
-						bool found = false;
-						for(typename TGraph::NodeIt it(*graph_); it!=lemon::INVALID; ++it) {
-							if( (*states_)[it]->id() == states[i].id() ) {
-								*(*states_)[it] = states[i];
-								found = true;
-								break;
-							}
-						}
-							
-						if(found) continue;
-					}
-					
 					typename TContext::TState::TPtr c(new typename TContext::TState(states[i]));
 					
 					c->set_node(graph_->addNode());
@@ -319,5 +299,177 @@ namespace cob_3d_experience_mapping {
 			}
 		}
 			
+	};
+	
+	
+	template<class _TState, class _TFeature, class _TClientId>
+	class ClientIdTsGenerator {
+	public:
+		typedef _TState TState;
+		typedef _TFeature TFeature;
+		typedef typename TState::ID ID;
+		typedef _TClientId TClientId;
+		
+	private:
+		ID running_id_;
+		TClientId client_id_;
+		
+		std::map<ID, typename TState::TPtr>   modification_states_;
+		std::map<ID, typename TFeature::TPtr> modification_fts_;
+		
+	public:
+		ClientIdTsGenerator() : running_id_(1), client_id_(0)
+		{}
+		
+		void set_client_id(const TClientId &id) {client_id_=id;}
+		TClientId get_client_id() const {return client_id_;}
+		
+		ID new_id() {return (running_id_++)<<8 | client_id_;}
+		
+		void register_modification(const typename TState::TPtr &state)
+		{
+			assert(state);
+			modification_states_[state->id()] = state;
+		}
+		void register_modification(const typename TFeature::TPtr &ft)
+		{
+			assert(ft);
+			modification_fts_[ft->id()] = ft;
+		}
+		void register_removal(const typename TState::TPtr &state)
+		{
+			assert(state);
+			modification_states_[state->id()] = state;
+		}
+		
+		void clear() {
+			modification_states_.clear();
+			modification_fts_.clear();
+		}
+		
+		void get_lists(std::vector<serialization::serializable_shared_ptr<TState> > updated_states, std::vector<ID> &removed_states, std::vector<typename TFeature::TPtr> &updated_fts)
+		{
+			for(typename std::map<ID, typename TState::TPtr>::iterator it = modification_states_.begin(); it!=modification_states_.end(); it++) {
+				if( it->second->still_exists() )
+					updated_states.push_back( serialization::serializable_shared_ptr<TState>(it->second) );
+				else
+					removed_states.push_back( it->first );
+			}
+			
+			for(typename std::map<ID, typename TFeature::TPtr>::iterator it = modification_fts_.begin(); it!=modification_fts_.end(); it++)
+				updated_fts.push_back( it->second );
+		}
+		
+	};
+	
+	template<class TContext, class TGraph, class TMapStates, class TMapTransformations, class TArchiveIn = boost::archive::binary_iarchive, class TArchiveOut = boost::archive::binary_oarchive>
+	class IncrementalContextContainer : public ContextContainer<TContext, TGraph, TMapStates, TMapTransformations> {
+		
+	public:
+		typedef typename TContext::TIdTsGenerator::TClientId TClientId;
+		typedef typename TContext::TState TState;
+		typedef typename TContext::TFeature TFeature;
+		typedef typename TState::ID ID;
+		typedef serialization::NetworkHeader<TClientId, ID> NetworkHeader;
+		
+		IncrementalContextContainer() :
+		 ContextContainer<TContext, TGraph, TMapStates, TMapTransformations>()
+		 {}
+		 
+		IncrementalContextContainer(TContext *ctxt, TGraph *graph, TMapStates *states, TMapTransformations *trans, const TClientId &client_id) :
+		 ContextContainer<TContext, TGraph, TMapStates, TMapTransformations>(ctxt, graph, states, trans)
+		{
+			 if(ctxt) ctxt->id_generator().set_client_id(client_id);
+		}
+		
+		NetworkHeader get_network_header() {
+			return NetworkHeader();
+		}
+		
+		void set_network_header(const NetworkHeader &nh) {
+		}
+		
+		void upload(const char * addr, const char * port, const int timeout_secs=120) {
+			serialization::sync_content_client<TArchiveIn, TArchiveOut> (*this, addr, port, timeout_secs);
+		}
+		    	
+		UNIVERSAL_SERIALIZE()
+		{
+		    //we have to lock everything for consistency
+			boost::mutex mtx_tmp;
+			boost::lock_guard<boost::mutex> guard(this->ctxt_ ? this->ctxt_->get_mutex() : mtx_tmp);
+			
+			std::vector<serialization::serializable_shared_ptr<TState> > updated_states;
+			std::vector<ID> removed_states;
+			std::vector<typename TFeature::TPtr> updated_fts;
+			std::vector<typename TContext::TState::TransitionSerialization> trans;
+		    std::vector<typename TContext::TFeature::FeatureSerialization> fts;
+			
+			if(this->ctxt_ && this->graph_ && this->states_ && this->trans_ && UNIVERSAL_CHECK<Archive>::is_saving(ar)) {
+				this->ctxt_->id_generator().get_lists(updated_states, removed_states, updated_fts);
+				
+				for(size_t i=0; i<updated_states.size(); i++)
+					updated_states[i]->get_trans(trans, *this->graph_, *this->states_, *this->trans_);
+
+				for(size_t i=0; i<updated_fts.size(); i++)
+					fts.push_back( updated_fts[i]->get_serialization() );
+			}
+			
+		    ar & UNIVERSAL_SERIALIZATION_NVP(fts);
+		    ar & UNIVERSAL_SERIALIZATION_NVP(updated_states);
+		    ar & UNIVERSAL_SERIALIZATION_NVP(removed_states);
+		    ar & UNIVERSAL_SERIALIZATION_NVP(trans);
+		    
+			if(this->ctxt_ && this->graph_ && this->states_ && this->trans_ && UNIVERSAL_CHECK<Archive>::is_loading(ar)) {
+				
+				//insert states
+				for(size_t i=0; i<updated_states.size(); i++) {
+					bool found = false;
+					for(typename TGraph::NodeIt it(*this->graph_); it!=lemon::INVALID; ++it) {
+						if( (*this->states_)[it]->id() == updated_states[i]->id() ) {
+							*(*this->states_)[it] = *updated_states[i];
+							found = true;
+							break;
+						}
+					}
+						
+					if(found) continue;
+					
+					typename TContext::TState::TPtr c(updated_states[i]);
+					
+					c->set_node(this->graph_->addNode());
+					this->states_->set(c->node(), c);
+				}
+				
+				for(size_t i=0; i<removed_states.size(); i++) {
+					bool found = false;
+					for(typename TGraph::NodeIt it(*this->graph_); it!=lemon::INVALID; ++it) {
+						if( (*this->states_)[it]->id() == removed_states[i] ) {
+							this->ctxt_->remove_state( (*this->states_)[it] );
+							found = true;
+							break;
+						}
+					}
+					
+					if(!found)
+						DBG_PRINTF_URGENT("WARNING: could not find state to be removed\n");
+				}
+				
+				//insert transitions (TODO: speed up)
+				for(typename TGraph::NodeIt it(*this->graph_); it!=lemon::INVALID; ++it)
+					(*this->states_)[it]->set_trans(trans, *this->graph_, *this->states_, *this->trans_);
+				
+				//insert features
+				for(size_t i=0; i<fts.size(); i++) {
+					typename TContext::TFeature *tmp = new typename TContext::TFeature(fts[i].ft_.id());
+					tmp->set_serialization(fts[i], *this->graph_, *this->states_);
+					
+					this->ctxt_->get_features().insert(typename TContext::FeatureMap::value_type(fts[i].ft_.id(), typename TContext::TFeature::TPtr(tmp)) );
+				}
+				
+			}
+			
+		}
+		
 	};
 }

@@ -24,7 +24,9 @@
 
 #include "../helpers/db_serialization.h"
 
+//! interfaces and implementations of cob_3d_experience_mapping
 namespace cob_3d_experience_mapping{
+//! interfaces and implementations needed to serialize map with boost
 namespace serialization {
 
 template<class TArchive, class TContent>
@@ -100,6 +102,23 @@ template<class TContent>
 void restore_content(TContent &s, const char * filename, const bool compression=false) {
 	restore_content<boost::archive::xml_iarchive>(s,filename,compression);
 }
+
+template<class T>
+class serializable_shared_ptr : public boost::shared_ptr<T>
+{
+	public:
+		serializable_shared_ptr() {}
+		
+		serializable_shared_ptr(const boost::shared_ptr<T> &o) :
+			boost::shared_ptr<T>(o)
+		{}
+		
+		UNIVERSAL_SERIALIZE()
+		{
+			if(this->get())
+				this->get()->serialize<Archive, make_nvp>(ar, version);
+		}
+};
 
 
 }	//namespaces

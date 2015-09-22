@@ -44,14 +44,16 @@ public:
 };
 #endif
 
-template <typename Parent, int NUM_TRANS=2, int NUM_ROT=1, typename Scalar=float>
+template <typename Parent, int NUM_TRANS=2, int NUM_ROT=1, typename _Scalar=float>
 class ROS_Node : public Parent
 {
 public:
+	typedef int TID;
+	typedef _Scalar Scalar;
 	typedef lemon::ListDigraph TGraph;
 	typedef cob_3d_experience_mapping::TransformationLink<Scalar, NUM_TRANS, NUM_ROT> TTransformationLink;
-	typedef cob_3d_experience_mapping::State<cob_3d_experience_mapping::Empty, Scalar, TGraph, TTransformationLink> State;
-	typedef cob_3d_experience_mapping::Feature<State, cob_3d_experience_mapping::Empty> Feature;
+	typedef cob_3d_experience_mapping::State<cob_3d_experience_mapping::Empty /*meta data*/, Scalar, TGraph, TTransformationLink, TID> State;
+	typedef cob_3d_experience_mapping::Feature<State, cob_3d_experience_mapping::Empty /*meta data*/, TID> Feature;
 	typedef cob_3d_experience_mapping::Transformation<TTransformationLink, typename State::TPtr> Transformation;
 #ifdef VIS_
 	typedef cob_3d_experience_mapping::visualization::VisualizationHandler<typename State::TGraph, typename TGraph::NodeMap<typename State::TPtr>, typename TGraph::ArcMap <typename Transformation::TPtr>, typename State::TPtr, typename State::TArcOutIterator> VisualizationHandler;

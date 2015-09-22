@@ -20,10 +20,11 @@
 #define NUM_ROT		1
 
 typedef float Scalar;
+typedef int TID;
 typedef lemon::ListDigraph TGraph;
 typedef cob_3d_experience_mapping::TransformationLink<Scalar, NUM_TRANS, NUM_ROT> TTransformationLink;
-typedef cob_3d_experience_mapping::State<cob_3d_experience_mapping::Empty, Scalar, TGraph, TTransformationLink> State;
-typedef cob_3d_experience_mapping::Feature<State, cob_3d_experience_mapping::Empty> Feature;
+typedef cob_3d_experience_mapping::State<cob_3d_experience_mapping::Empty, Scalar, TGraph, TTransformationLink, TID> State;
+typedef cob_3d_experience_mapping::Feature<State, cob_3d_experience_mapping::Empty, TID> Feature;
 typedef cob_3d_experience_mapping::Transformation<TTransformationLink, typename State::TPtr> Transformation;
 typedef cob_3d_experience_mapping::Context<Scalar /*energy*/, State /*state*/, Feature, Eigen::Matrix<float,1,2>/*energy weight*/, Transformation/*tranformation*/> TContext;
 typedef TGraph::NodeMap<typename State::TPtr> TMapStates;
