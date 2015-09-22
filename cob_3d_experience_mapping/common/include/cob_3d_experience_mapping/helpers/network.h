@@ -70,7 +70,7 @@ void sync_content_client(const TContent &s, const char * addr, const char * port
 }
 	
 template<class TArchiveIn, class TArchiveOut, class TContent>
-void sync_content_server(TContent &s, std::iostream &stream){    
+void sync_content_server_import(TContent &s, std::iostream &stream){    
     assert(stream.good());
     
     //retrieve request header without compression
@@ -81,8 +81,12 @@ void sync_content_server(TContent &s, std::iostream &stream){
 		import_content_compr<TArchiveIn>(s, stream);
 	else
 		import_content<TArchiveIn>(s, stream);
-		
+}
 	
+template<class TArchiveIn, class TArchiveOut, class TContent>
+void sync_content_server_export(TContent &s, std::iostream &stream){    
+    assert(stream.good());
+    
     //send request header without compression
     typename TContent::TNetworkHeader request_header = s.get_network_header();
 	export_content<TArchiveOut>(request_header, stream);
