@@ -370,7 +370,12 @@ namespace cob_3d_experience_mapping {
 		typedef typename TContext::TState TState;
 		typedef typename TContext::TFeature TFeature;
 		typedef typename TState::ID ID;
-		typedef serialization::NetworkHeader<TClientId, ID> NetworkHeader;
+		typedef serialization::NetworkHeader<TClientId, sqlid_t> NetworkHeader;
+		
+	private:
+		NetworkHeader net_header_;
+		
+	public:
 		
 		IncrementalContextContainer() :
 		 ContextContainer<TContext, TGraph, TMapStates, TMapTransformations>()
