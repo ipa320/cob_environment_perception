@@ -108,29 +108,14 @@ namespace cob_3d_experience_mapping {
 			TLink tmp;
 			
 			if(link_.squaredNorm())
-				tmp = o.link_.norm()/link_.norm()*link_ + o.link_;
+				tmp = std::sqrt(o.link_.squaredNorm()/link_.squaredNorm())*link_ + o.link_;
 			else
 				tmp = o.link_;
 			
 			r(0) = tmp.template head<NUM_TRANS>().norm()/thr(0);
 			r(1) = tmp.template tail<NUM_ROT>  ().norm()/thr(1);
 			
-			dbg();
-			o.dbg();
-			std::cout<<"t "<<tmp.transpose()<<std::endl;
-			std::cout<<"r "<<r.transpose()<<std::endl;
-			std::cout<<"--> "<<o.dist(thr)<<"  "<<r.norm()<<std::endl;
-			
 			return o.dist(thr)-r.norm();
-		}
-		
-		TType transition_factor_dbg(const TransformationLink &o, const TDist &thr) const {
-			TType r = transition_factor(o,thr);
-			
-			dbg();
-			o.dbg();
-				
-			return r;
 		}
 		
 		void dbg() const {
