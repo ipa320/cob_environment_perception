@@ -104,6 +104,7 @@ void path_integration(TStateVector &active_states, TGraph &graph, TContext &ctxt
 			ctxt.virtual_state()?ctxt.virtual_state()->dist_trv():0.
 		);
 		
+		typename TState::TEnergy offset = 0;
 		if(ctxt.current_active_state()==ctxt.virtual_state()) {
 #ifndef NDEBUG
 			DBG_PRINTF("virtual state is inserted to map (action dist.: %f)\n", ctxt.virtual_transistion()->dist(ctxt.param().prox_thr_));
@@ -111,6 +112,9 @@ void path_integration(TStateVector &active_states, TGraph &graph, TContext &ctxt
 #endif
 		}
 		else {
+			if(ctxt.last_active_state())
+				offset = 1-ctxt.param().deviation_factor_;
+			
 			DBG_PRINTF_URGENT("relocalized %d -> %d with %d hops\n", ctxt.last_active_state()?ctxt.last_active_state()->id():-1, ctxt.current_active_state()?ctxt.current_active_state()->id():-1,
 			ctxt.current_active_state()?ctxt.current_active_state()->hops():0);
 			
@@ -162,7 +166,7 @@ void path_integration(TStateVector &active_states, TGraph &graph, TContext &ctxt
 		
 		ctxt.virtual_state().reset(new TState(ctxt.id_generator().new_id()));
 		ctxt.virtual_state()->dist_trv()  = 1;
-		ctxt.virtual_state()->dist_dev() = ctxt.current_active_state()->dist_dev();
+		ctxt.virtual_state()->dist_dev() = ctxt.current_active_state()->dist_dev() + offset;
 		
 		ctxt.id_generator().register_modification(ctxt.virtual_state());
 		
