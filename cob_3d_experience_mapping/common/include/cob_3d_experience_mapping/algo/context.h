@@ -199,7 +199,8 @@ namespace cob_3d_experience_mapping {
 				it = features_.insert(typename FeatureMap::value_type(id, typename TFeature::TPtr(new TFeature(id))) ).first;
 				modified = true;
 			}
-			if( !(current_active_state() && virtual_state() && current_active_state()->id() < virtual_state()->id()-(param().min_age_+3) ) )
+			//if( !(current_active_state() && virtual_state() && current_active_state()->id() < virtual_state()->id()-(param().min_age_+3) ) )
+			if( !(current_active_state() && virtual_state() && current_active_state() != virtual_state()) )
 				modified |= it->second->visited(current_active_state().get(), current_active_state());
 			it->second->inject(this, ts, param().est_occ_, param().max_active_states_);
 			

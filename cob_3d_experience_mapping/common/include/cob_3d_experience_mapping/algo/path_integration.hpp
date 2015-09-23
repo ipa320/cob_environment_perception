@@ -70,7 +70,7 @@ void path_integration(TStateVector &active_states, TGraph &graph, TContext &ctxt
 				bool gt = (dbg_pose.template head<2>()-(*it)->dbg().pose_.template head<2>()).norm()<ctxt.param().prox_thr_(0);
 				gt &= (dbg_pose.template tail<1>()-(*it)->dbg().pose_.template tail<1>()).norm()<ctxt.param().prox_thr_(1);
 				
-				bool gti = ctxt.virtual_state() && (*it)->id() < ctxt.virtual_state()->id()-ctxt.param().min_age_;
+				bool gti = true;//ctxt.virtual_state() && (*it)->id() < ctxt.virtual_state()->id()-ctxt.param().min_age_;
 				gti &= (dbg_pose.template head<2>()-(*it)->dbg().pose_.template head<2>()).norm()<2*ctxt.param().prox_thr_(0);
 				gti &= (dbg_pose.template tail<1>()-(*it)->dbg().pose_.template tail<1>()).norm()<2*ctxt.param().prox_thr_(1);
 				DBG_PRINTF("%d:\t %f:%f:%d   %s %s\n", (*it)->id(), (*it)->dist_dev(), (*it)->dist_trv(), (*it)->hops(),
@@ -266,7 +266,8 @@ void path_integration(TStateVector &active_states, TGraph &graph, TContext &ctxt
 	
 	//step 0: update feature prob.
 	for(TIter it=begin; it!=end; it++) {
-		if( (*it)->id() >= ctxt.virtual_state()->id()-ctxt.param().min_age_ )
+		//if( (*it)->id() >= ctxt.virtual_state()->id()-ctxt.param().min_age_ )
+		if( (*it) != ctxt.virtual_state())
 			continue;
 			
 		typename TState::TEnergy ft_prob = (*it)->get_feature_prob();
@@ -290,7 +291,8 @@ void path_integration(TStateVector &active_states, TGraph &graph, TContext &ctxt
 		
 		for(TArcIter_in ait((*it)->arc_in_begin(graph)); ait!=(*it)->arc_in_end(graph); ++ait) {
 				typename TIter::value_type opposite = states[(*it)->opposite_node(graph, ait)];
-				if( (*it)->dist_trv()>ctxt.param().deviation_factor_/*trans[ait]->deviation()*/ || opposite->id() >= ctxt.virtual_state()->id()-ctxt.param().min_age_ /*|| (*it)->dist_h_out()<0.5-odom.deviation()-trans[ait]->deviation()*/ ) continue;
+				//if( (*it)->dist_trv()>ctxt.param().deviation_factor_/*trans[ait]->deviation()*/ || opposite->id() >= ctxt.virtual_state()->id()-ctxt.param().min_age_ /*|| (*it)->dist_h_out()<0.5-odom.deviation()-trans[ait]->deviation()*/ ) continue;
+				if( (*it)->dist_trv()>ctxt.param().deviation_factor_/*trans[ait]->deviation()*/ || opposite == ctxt.virtual_state() ) continue;
 				
 				if( trans[ait]!=ctxt.virtual_transistion() && 
 					( (!opposite->is_active()&&(*it)->dist_dev()<ctxt.virtual_state()->dist_dev()+1+ctxt.param().deviation_factor_*(*it)->hops()) || opposite->dist_dev() > (*it)->dist_dev())
