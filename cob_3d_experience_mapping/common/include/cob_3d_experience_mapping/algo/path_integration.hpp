@@ -271,7 +271,7 @@ void path_integration(TStateVector &active_states, TGraph &graph, TContext &ctxt
 	//step 0: update feature prob.
 	for(TIter it=begin; it!=end; it++) {
 		//if( (*it)->id() >= ctxt.virtual_state()->id()-ctxt.param().min_age_ )
-		if( (*it) != ctxt.virtual_state())
+		if( (*it) == ctxt.virtual_state())
 			continue;
 			
 		typename TState::TEnergy ft_prob = (*it)->get_feature_prob();
