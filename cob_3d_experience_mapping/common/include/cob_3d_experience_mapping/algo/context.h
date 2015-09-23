@@ -249,7 +249,7 @@ namespace cob_3d_experience_mapping {
 				ar & UNIVERSAL_SERIALIZATION_NVP_NAMED("ctxt", tmp);
 			}
 		    
-			std::vector<typename TContext::TState> states;	//we should use references to the state to spare memory/speed up
+			std::vector<serialization::serializable_shared_ptr<typename TContext::TState> > states;
 			std::vector<typename TContext::TState::TransitionSerialization> trans;
 		    std::vector<typename TContext::TFeature::FeatureSerialization> fts;
 			
@@ -257,7 +257,7 @@ namespace cob_3d_experience_mapping {
 		    if(graph_ && states_ && trans_ && UNIVERSAL_CHECK<Archive>::is_saving(ar)) {
 				
 				for(typename TGraph::NodeIt it(*graph_); it!=lemon::INVALID; ++it) {
-					states.push_back(*(*states_)[it]);
+					states.push_back((*states_)[it]);
 					(*states_)[it]->get_trans(trans, *graph_, *states_, *trans_);
 				}
 
@@ -278,7 +278,7 @@ namespace cob_3d_experience_mapping {
 				
 				//insert states
 				for(size_t i=0; i<states.size(); i++) {
-					typename TContext::TState::TPtr c(new typename TContext::TState(states[i]));
+					typename TContext::TState::TPtr c = states[i];
 					
 					c->set_node(graph_->addNode());
 					states_->set(c->node(), c);
@@ -371,10 +371,15 @@ namespace cob_3d_experience_mapping {
 		typedef typename TContext::TState TState;
 		typedef typename TContext::TFeature TFeature;
 		typedef typename TState::ID ID;
-		typedef serialization::NetworkHeader<TClientId, sqlid_t> NetworkHeader;
+		typedef serialization::NetworkHeader<TClientId, hiberlite::sqlid_t> TNetworkHeader;
 		
 	private:
-		NetworkHeader net_header_;
+		TNetworkHeader net_header_;
+		boost::shared_ptr<hiberlite::Database> server_;
+		
+		std::vector<serialization::serializable_shared_ptr<TState> > copy_updated_states_;
+		std::vector<typename TContext::TFeature::FeatureSerialization> copy_fts_;
+		std::vector<typename TContext::TState::TransitionSerialization> copy_trans_;
 		
 	public:
 		
@@ -383,36 +388,61 @@ namespace cob_3d_experience_mapping {
 		 {}
 		 
 		IncrementalContextContainer(TContext *ctxt, TGraph *graph, TMapStates *states, TMapTransformations *trans, const TClientId &client_id) :
-		 ContextContainer<TContext, TGraph, TMapStates, TMapTransformations>(ctxt, graph, states, trans)
+		 ContextContainer<TContext, TGraph, TMapStates, TMapTransformations>(ctxt, graph, states, trans), server_(false)
 		{
 			 if(ctxt) ctxt->id_generator().set_client_id(client_id);
 		}
 		
-		NetworkHeader get_network_header() {
-			return NetworkHeader(this->ctxt->id_generator().get_client_id());
+		TNetworkHeader get_network_header() {
+			return net_header_;
 		}
 		
-		void set_network_header(const NetworkHeader &nh) {
+		void set_network_header(const TNetworkHeader &nh) {
+			net_header_ = nh;
+			
+			if(server_) {
+				copy_updated_states_.clear();
+				copy_fts_.clear();
+				copy_trans_.clear();
+				
+				std::vector< hiberlite::bean_ptr<TState> > v_s = server_->getAllBeanAfter<TState>(nh.ts_states_);
+				for(size_t i=0; i<v_s.size(); i++)
+					copy_updated_states_.push_back(boost::make_shared(*v_s[i]));
+				
+				std::vector< hiberlite::bean_ptr<typename TContext::TFeature::FeatureSerialization> > v_f = server_->getAllBeanAfter<typename TContext::TFeature::FeatureSerialization>(nh.ts_fts_);
+				for(size_t i=0; i<v_f.size(); i++)
+					copy_fts_.push_back(v_f[i]);
+				
+				std::vector< hiberlite::bean_ptr<typename TContext::TState::TransitionSerialization> > v_t = server_->getAllBeanAfter<typename TContext::TState::TransitionSerialization>(nh.ts_trans_);
+				for(size_t i=0; i<v_t.size(); i++)
+					copy_trans_.push_back(v_t[i]);
+			}
 		}
 		
 		void upload(const char * addr, const char * port, const int timeout_secs=120) {
 			serialization::sync_content_client<TArchiveIn, TArchiveOut> (*this, addr, port, timeout_secs);
+			this->ctxt_->id_generator().clear();
 		}
 		
 		void on_client(std::iostream &stream) {
+			if(!server_) {
+				server_.reset( new hiberlite::Database("sample.db") );
+				
+				server_->registerBeanClass<TState>();
+				server_->registerBeanClass<typename TContext::TState::TransitionSerialization>();
+				server_->registerBeanClass<typename TContext::TFeature::FeatureSerialization>();
+				
+				server_->createModel();
+			}
+			
 			serialization::sync_content_server_import<TArchiveIn, TArchiveOut> (*this, stream);
 			
-			//load from ts to now
-			
-			//remove old or modified entries
-			//TODO: do this
-			
-			//save to db
+			serialization::sync_content_server_export<TArchiveIn, TArchiveOut> (*this, stream);
 			
 			//ok, now set the loaded content to the list and export it
-			this->ctxt_->id_generator().clear();
-			
-			serialization::sync_content_server_export<TArchiveIn, TArchiveOut> (*this, stream);
+			copy_updated_states_.clear();
+			copy_fts_.clear();
+			copy_trans_.clear();
 		}
 		  
 		UNIVERSAL_SERIALIZE()
@@ -423,18 +453,14 @@ namespace cob_3d_experience_mapping {
 			
 			std::vector<serialization::serializable_shared_ptr<TState> > updated_states;
 			std::vector<ID> removed_states;
-			std::vector<typename TFeature::TPtr> updated_fts;
 			std::vector<typename TContext::TState::TransitionSerialization> trans;
 		    std::vector<typename TContext::TFeature::FeatureSerialization> fts;
 			
 			if(this->ctxt_ && this->graph_ && this->states_ && this->trans_ && UNIVERSAL_CHECK<Archive>::is_saving(ar)) {
-				this->ctxt_->id_generator().get_lists(updated_states, removed_states, updated_fts);
-				
-				for(size_t i=0; i<updated_states.size(); i++)
-					updated_states[i]->get_trans(trans, *this->graph_, *this->states_, *this->trans_);
-
-				for(size_t i=0; i<updated_fts.size(); i++)
-					fts.push_back( updated_fts[i]->get_serialization() );
+				if(server_)
+					get_lists_server(updated_states, fts, trans, removed_states);
+				else
+					get_lists_client(updated_states, fts, trans, removed_states);
 			}
 			
 		    ar & UNIVERSAL_SERIALIZATION_NVP(fts);
@@ -443,59 +469,123 @@ namespace cob_3d_experience_mapping {
 		    ar & UNIVERSAL_SERIALIZATION_NVP(trans);
 		    
 			if(this->ctxt_ && this->graph_ && this->states_ && this->trans_ && UNIVERSAL_CHECK<Archive>::is_loading(ar)) {
-				
-				//insert states
-				for(size_t i=0; i<updated_states.size(); i++) {
-					bool found = false;
-					for(typename TGraph::NodeIt it(*this->graph_); it!=lemon::INVALID; ++it) {
-						if( (*this->states_)[it]->id() == updated_states[i]->id() ) {
-							*(*this->states_)[it] = *updated_states[i];
-							found = true;
-							break;
-						}
-					}
-						
-					if(found) continue;
-					
-					typename TContext::TState::TPtr c(updated_states[i]);
-					
-					c->set_node(this->graph_->addNode());
-					this->states_->set(c->node(), c);
-				}
-				
-				for(size_t i=0; i<removed_states.size(); i++) {
-					bool found = false;
-					for(typename TGraph::NodeIt it(*this->graph_); it!=lemon::INVALID; ++it) {
-						if( (*this->states_)[it]->id() == removed_states[i] ) {
-							this->ctxt_->remove_state( (*this->states_)[it] );
-							found = true;
-							break;
-						}
-					}
-					
-					if(!found)
-						DBG_PRINTF_URGENT("WARNING: could not find state to be removed\n");
-				}
-				
-				//insert transitions (TODO: speed up)
-				for(typename TGraph::NodeIt it(*this->graph_); it!=lemon::INVALID; ++it)
-					(*this->states_)[it]->set_trans(trans, *this->graph_, *this->states_, *this->trans_);
-				
-				//insert features
-				for(size_t i=0; i<fts.size(); i++) {
-					typename TContext::TFeature *tmp = new typename TContext::TFeature(fts[i].ft_.id());
-					tmp->set_serialization(fts[i], *this->graph_, *this->states_);
-					
-					this->ctxt_->get_features().insert(typename TContext::FeatureMap::value_type(fts[i].ft_.id(), typename TContext::TFeature::TPtr(tmp)) );
-				}
-				
-			}
-			
-			if(UNIVERSAL_CHECK<Archive>::is_saving(ar)) {
-				this->ctxt_->id_generator().clear();
+				if(server_)
+					on_loaded_server(updated_states, fts, trans, removed_states);
+				else
+					on_loaded_client(updated_states, fts, trans, removed_states);
 			}
 			
 		}
 		
+		virtual void get_lists_server(
+			std::vector<serialization::serializable_shared_ptr<TState> > &updated_states,
+			std::vector<typename TContext::TFeature::FeatureSerialization> &fts, 
+			std::vector<typename TContext::TState::TransitionSerialization> &trans,
+			std::vector<ID> &removed_states
+		) {
+			updated_states = copy_updated_states_;
+			fts = copy_fts_;
+			trans = copy_trans_;
+			removed_states.clear();
+		}
+		
+		virtual void get_lists_client(
+			std::vector<serialization::serializable_shared_ptr<TState> > &updated_states,
+			std::vector<typename TContext::TFeature::FeatureSerialization> &fts, 
+			std::vector<typename TContext::TState::TransitionSerialization> &trans,
+			std::vector<ID> &removed_states
+		) {
+			std::vector<typename TFeature::TPtr> updated_fts;
+			
+			this->ctxt_->id_generator().get_lists(updated_states, removed_states, updated_fts);
+			
+			for(size_t i=0; i<updated_states.size(); i++)
+				updated_states[i]->get_trans(trans, *this->graph_, *this->states_, *this->trans_);
+
+			for(size_t i=0; i<updated_fts.size(); i++)
+				fts.push_back( updated_fts[i]->get_serialization() );
+		}
+		
+		virtual void on_loaded_server(
+			const std::vector<serialization::serializable_shared_ptr<TState> > &updated_states,
+			const std::vector<typename TContext::TFeature::FeatureSerialization> &fts, 
+			const std::vector<typename TContext::TState::TransitionSerialization> &trans,
+			const std::vector<ID> &removed_states
+		) {
+			assert(server_);
+			
+			//remove old or modified entries
+			//TODO: do this
+			
+			//save to db			
+			for(size_t i=0; i<updated_states.size(); i++) {
+				hiberlite::bean_ptr<TState> p=server_->copyBean(*updated_states[i]);
+				net_header_.ts_states_ = std::max(p.get_id(), net_header_.ts_states_);
+			}
+			
+			for(size_t i=0; i<trans.size(); i++) {
+				hiberlite::bean_ptr<typename TContext::TState::TransitionSerialization> p=server_->copyBean(trans[i]);
+				net_header_.ts_trans_ = std::max(p.get_id(), net_header_.ts_trans_);
+			}
+			
+			for(size_t i=0; i<fts.size(); i++) {
+				hiberlite::bean_ptr<typename TContext::TFeature::FeatureSerialization> p=server_->copyBean(fts[i]);
+				net_header_.ts_fts_ = std::max(p.get_id(), net_header_.ts_fts_);
+			}
+		}
+		
+		virtual void on_loaded_client(
+			const std::vector<serialization::serializable_shared_ptr<TState> > &updated_states,
+			const std::vector<typename TContext::TFeature::FeatureSerialization> &fts, 
+			const std::vector<typename TContext::TState::TransitionSerialization> &trans,
+			const std::vector<ID> &removed_states
+		) {
+			//insert states
+			for(size_t i=0; i<updated_states.size(); i++) {
+				bool found = false;
+				for(typename TGraph::NodeIt it(*this->graph_); it!=lemon::INVALID; ++it) {
+					if( (*this->states_)[it]->id() == updated_states[i]->id() ) {
+						*(*this->states_)[it] = *updated_states[i];
+						found = true;
+						break;
+					}
+				}
+					
+				if(found) continue;
+				
+				typename TContext::TState::TPtr c(updated_states[i]);
+				
+				c->set_node(this->graph_->addNode());
+				this->states_->set(c->node(), c);
+			}
+			
+			for(size_t i=0; i<removed_states.size(); i++) {
+				bool found = false;
+				for(typename TGraph::NodeIt it(*this->graph_); it!=lemon::INVALID; ++it) {
+					if( (*this->states_)[it]->id() == removed_states[i] ) {
+						this->ctxt_->remove_state( (*this->states_)[it] );
+						found = true;
+						break;
+					}
+				}
+				
+				if(!found)
+					DBG_PRINTF_URGENT("WARNING: could not find state to be removed\n");
+			}
+			
+			//insert transitions (TODO: speed up)
+			for(typename TGraph::NodeIt it(*this->graph_); it!=lemon::INVALID; ++it)
+				(*this->states_)[it]->set_trans(trans, *this->graph_, *this->states_, *this->trans_);
+			
+			//insert features
+			for(size_t i=0; i<fts.size(); i++) {
+				typename TContext::TFeature *tmp = new typename TContext::TFeature(fts[i].ft_.id());
+				tmp->set_serialization(fts[i], *this->graph_, *this->states_);
+				
+				this->ctxt_->get_features().insert(typename TContext::FeatureMap::value_type(fts[i].ft_.id(), typename TContext::TFeature::TPtr(tmp)) );
+			}
+		}
+		
 	};
+	
 }

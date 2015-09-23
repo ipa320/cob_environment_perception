@@ -23,7 +23,7 @@ namespace serialization {
 			client_((TClientId)-1), ts_states_((TID)-1), ts_fts_((TID)-1), ts_trans_((TID)-1), compression_(true)
 		{ }
 		
-		NetworkHeader(const TClientId &client, const TID &ts_states, const TID &ts_fts, const bool compression = true):
+		NetworkHeader(const TClientId &client, const TID &ts_states, const TID &ts_fts, const TID &ts_trans, const bool compression = true):
 			client_(client), ts_states_(ts_states), ts_fts_(ts_fts), ts_trans_(ts_trans), compression_(compression)
 		{ }
 		
@@ -32,9 +32,9 @@ namespace serialization {
 		   assert(version==CURRENT_SERIALIZATION_VERSION);
 		   
 		   ar & UNIVERSAL_SERIALIZATION_NVP(client_);
-		   ar & UNIVERSAL_SERIALIZATION_NVP(ts_states);
+		   ar & UNIVERSAL_SERIALIZATION_NVP(ts_states_);
 		   ar & UNIVERSAL_SERIALIZATION_NVP(ts_fts_);
-		   ar & UNIVERSAL_SERIALIZATION_NVP(ts_trans);
+		   ar & UNIVERSAL_SERIALIZATION_NVP(ts_trans_);
 		   ar & UNIVERSAL_SERIALIZATION_NVP(compression_);
 		}
 		   
