@@ -49,10 +49,11 @@ class ROS_Node : public Parent
 {
 public:
 	typedef int TID;
+	typedef int TFeatureClass;
 	typedef _Scalar Scalar;
 	typedef lemon::ListDigraph TGraph;
 	typedef cob_3d_experience_mapping::TransformationLink<Scalar, NUM_TRANS, NUM_ROT> TTransformationLink;
-	typedef cob_3d_experience_mapping::State<cob_3d_experience_mapping::Empty /*meta data*/, Scalar, TGraph, TTransformationLink, TID> State;
+	typedef cob_3d_experience_mapping::State<cob_3d_experience_mapping::Empty /*meta data*/, Scalar, TGraph, TTransformationLink, TID, TFeatureClass> State;
 	typedef cob_3d_experience_mapping::Feature<State, cob_3d_experience_mapping::Empty /*meta data*/, TID> Feature;
 	typedef cob_3d_experience_mapping::Transformation<TTransformationLink, typename State::TPtr> Transformation;
 #ifdef VIS_
@@ -138,9 +139,10 @@ public:
 	  ++ts;
 	  
 	   //cob_3d_experience_mapping::algorithms::reset_features(ctxt_.active_states());
+	  ctxt_.visited_feature_class(0);
 	  
 	  for(size_t i=0; i<infos->infos.size(); i++) {
-		  ctxt_.add_feature(infos->infos[i].id, ts);
+		  ctxt_.add_feature(infos->infos[i].id, ts, 0);
 	  }
   }
   
@@ -151,7 +153,8 @@ public:
 	  ++ts;
 	  
 	   //cob_3d_experience_mapping::algorithms::reset_features(ctxt_.active_states());
-	   ctxt_.add_feature(vid->data, ts);
+	   ctxt_.visited_feature_class(0);
+	   ctxt_.add_feature(vid->data, ts, 0);
   }
   
   void on_odom(const nav_msgs::Odometry::ConstPtr &odom) {

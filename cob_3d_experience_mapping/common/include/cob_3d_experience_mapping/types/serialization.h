@@ -3,6 +3,7 @@
 #include <fstream>
 #include <boost/serialization/nvp.hpp>
 #include <boost/serialization/vector.hpp>
+#include <boost/serialization/map.hpp>
 
 #include <boost/archive/xml_iarchive.hpp>
 #include <boost/archive/xml_oarchive.hpp>

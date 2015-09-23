@@ -73,7 +73,7 @@ namespace cob_3d_experience_mapping {
 	 * class: State
 	 * short description: current state + activation --> Artificial Neuron
 	 */
-	template<class TMeta, class _TEnergy, class _TGraph, class _TLink, class _TID>
+	template<class TMeta, class _TEnergy, class _TGraph, class _TLink, class _TID, class _TFeatureClass>
 	class State : public Object<TMeta> {
 	public:
 		//types
@@ -85,11 +85,14 @@ namespace cob_3d_experience_mapping {
 		typedef typename TGraph::InArcIt TArcInIterator;
 		typedef boost::shared_ptr<State> TPtr;
 		typedef _TID ID;
+		typedef _TFeatureClass TFeatureClass;
 		typedef _TLink TLink;
+		typedef std::map<TFeatureClass, uint32_t /*counter*/> TFeatureClassMap;
 		
 	protected:
 		TEnergy dist_dev_, dist_trv_, ft_imp_;
 		TNode node_;
+		TFeatureClassMap ft_class_occurences_;
 		ID id_;
 		int hops_;
 		DbgInfo dbg_;		//!< some debug information like name and additional description (info)
@@ -186,12 +189,24 @@ namespace cob_3d_experience_mapping {
 		
 		
 		//!< if a connected feature to this state was visited, we update the feature probability
-		void update(const int ts, const int no_conn, const int est_occ, const TEnergy prob=1) {
+		void update(const int ts, const int no_conn, const int est_occ, const uint32_t counter, const TFeatureClass &ft_cl, const TEnergy prob=1) {
+			DBG_PRINTF("update for %d: %d, %d", id(), ft_cl, counter);
+			assert(ft_class_occurences_.find(ft_cl)!=ft_class_occurences_.end());
+			DBG_PRINTF(" %d\n", ft_class_occurences_[ft_cl]);
+			assert(counter<=ft_class_occurences_[ft_cl]);
 					 
-			ft_imp_ -= ft_imp_*prob/(no_conn+est_occ);
+			ft_imp_ -= ft_imp_*prob*counter/((no_conn+est_occ)*ft_class_occurences_[ft_cl]);
 			
 			 //ft_imp_ *= 1-prob/(no_conn+est_occ);
 			 //DBG_PRINTF("upd %d  %f\n", id(), get_feature_prob());
+		}
+		
+		void visited_featuer_class(const TFeatureClass &ft_cl) {
+			typedef typename TFeatureClassMap::iterator I;
+			std::pair<I,bool> const& r=ft_class_occurences_.insert(typename TFeatureClassMap::value_type(ft_cl,1));
+			if (!r.second)
+				r.first->second++;
+			DBG_PRINTF("visited_featuer_class for %d: %d\n", id(), r.first->second);
 		}
 		
 		//!< getter for feature probability
@@ -205,6 +220,7 @@ namespace cob_3d_experience_mapping {
 		   assert(version==CURRENT_SERIALIZATION_VERSION);
 		   
 		   ar & UNIVERSAL_SERIALIZATION_NVP_NAMED("id", id_);
+		   ar & UNIVERSAL_SERIALIZATION_NVP(ft_class_occurences_);
 		   
 		   dbg_.serialize<Archive, make_nvp>(ar, version);
 		}
@@ -287,7 +303,18 @@ namespace cob_3d_experience_mapping {
 		typedef _TID TID;
 		typedef boost::shared_ptr<Feature> TPtr;
 		typedef void* StateHandle;
-		typedef std::map<StateHandle, typename TInjection::TPtr> InjectionMap;
+		typedef typename TInjection::TFeatureClass TFeatureClass;
+		
+		struct Connection {
+			typename TInjection::TPtr state_;
+			uint32_t counter_;
+			
+			Connection(typename TInjection::TPtr &s, uint32_t c):
+				state_(s), counter_(c)
+			{}
+		};
+		
+		typedef std::map<StateHandle, Connection> InjectionMap;
 		
 	protected:
 		TID id_;
@@ -300,8 +327,9 @@ namespace cob_3d_experience_mapping {
 		inline TID id() const {return id_;}
 		
 		bool visited(const StateHandle &h, typename TInjection::TPtr inj) {
-			if(injections_.find(h)==injections_.end()) {
-				injections_.insert(typename InjectionMap::value_type(h, inj));
+			typename InjectionMap::iterator it = injections_.find(h);
+			if(it==injections_.end()) {
+				injections_.insert(typename InjectionMap::value_type(h, Connection(inj, 1)));
 				
 				//debug
 				char buf[32];
@@ -312,22 +340,25 @@ namespace cob_3d_experience_mapping {
 				
 				return true;
 			}
+			else
+				it->second.counter_++;
 			
 			return false;
 		}
 		
 		template<typename TContext>
-		void inject(TContext *ctxt, const int ts, const int est_occ, const int max_occ, const typename TInjection::TEnergy prob=1) {
+		void inject(TContext *ctxt, const int ts, const int est_occ, const int max_occ, const TFeatureClass &ft_cl, const typename TInjection::TEnergy prob=1) {
 			for(typename InjectionMap::iterator it=injections_.begin(); it!=injections_.end(); it++) {
-				if(!it->second->still_exists()) continue;
+				//if state is already killed or still to be created --> skip injecting activation by external sensors
+				if(!it->second.state_->still_exists() || it->second.state_==ctxt->virtual_state()) continue;
 			
 				//check if feature is in active list --> add if we not too ambiguous (50% of max. size of active state list)
 				if(2*injections_.size() < ctxt->param().max_active_states_)
-					ctxt->add_to_active(it->second);
+					ctxt->add_to_active(it->second.state_);
 				
-				it->second->update(ts, std::min(max_occ, (int)injections_.size()), est_occ, prob);
+				it->second.state_->update(ts, std::min(max_occ, (int)injections_.size()), est_occ, it->second.counter_, ft_cl, prob);
 				
-				DBG_PRINTF("injectXYZ %d -> %d with %d\n", id_, it->second->id(), (int)(injections_.size()+est_occ));
+				DBG_PRINTF("injectXYZ %d -> %d with %d\n", id_, it->second.state_->id(), (int)(injections_.size()+est_occ));
 			}
 			DBG_PRINTF("inject %d\n", (int)injections_.size());
 		}
@@ -339,6 +370,7 @@ namespace cob_3d_experience_mapping {
 		struct FeatureSerialization {
 			Feature ft_;
 		    std::vector<typename TInjection::ID> injs_;
+		    std::vector<uint32_t> cnts_;
 			
 			FeatureSerialization() : ft_(-1)
 			{}
@@ -352,6 +384,7 @@ namespace cob_3d_experience_mapping {
 				
 				ar & UNIVERSAL_SERIALIZATION_NVP(ft_);
 				ar & UNIVERSAL_SERIALIZATION_NVP(injs_);
+				ar & UNIVERSAL_SERIALIZATION_NVP(cnts_);
 			}
 		};
 		
@@ -366,9 +399,10 @@ namespace cob_3d_experience_mapping {
 			FeatureSerialization fs(*this);
 			
 			for(typename InjectionMap::const_iterator it=injections_.begin(); it!=injections_.end(); it++) {
-				if(!it->second->still_exists()) continue;
+				if(!it->second.state_->still_exists()) continue;
 				
-				fs.injs_.push_back(it->second->id());
+				fs.injs_.push_back(it->second.state_->id());
+				fs.cnts_.push_back(it->second.counter_);
 			}
 			
 			return fs;
@@ -382,7 +416,7 @@ namespace cob_3d_experience_mapping {
 			for(size_t i=0; i<fs.injs_.size(); i++) {
 				for(typename TGraph::NodeIt it(graph); it!=lemon::INVALID; ++it)
 					if(states[it]->id()==fs.injs_[i]) {
-						injections_.insert(typename InjectionMap::value_type(states[it].get(), states[it]));
+						injections_.insert(typename InjectionMap::value_type(states[it].get(), Connection(states[it], fs.cnts_[i])));
 						break;
 					}
 					

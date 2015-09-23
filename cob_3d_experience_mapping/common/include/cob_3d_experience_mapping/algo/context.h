@@ -179,17 +179,24 @@ namespace cob_3d_experience_mapping {
 		//!< settter/getter for mutex
 		boost::mutex &get_mutex() {return mtx_;}
 		
+		void visited_feature_class(const typename TState::TFeatureClass &ft_class) {
+			if( !(current_active_state() && virtual_state() && current_active_state() != virtual_state()) )
+				current_active_state()->visited_featuer_class(ft_class);
+		}
+		
 		//!< if a feature was seen we connect the active state with the feature and update all connected states
-		void add_feature(const typename TFeature::TID &id, const int ts) {
+		void add_feature(const typename TFeature::TID &id, const int ts, const typename TState::TFeatureClass &ft_class) {
 			boost::lock_guard<boost::mutex> guard(mtx_);
 			
 			//if( current_active_state() && virtual_state() && current_active_state()->id() < virtual_state()->id()-(param().min_age_+3) )
 			//	return;
 			
+			bool inject = true;
 			for(typename FeatureBuffer::iterator it = last_features_.begin(); it!=last_features_.end(); it++)
 				if(*it == id) {
 					DBG_PRINTF("feature %d already set\n", id);
-					return;
+					inject = false;
+					break;
 				}
 			last_features_.push_back(id);
 			
@@ -200,9 +207,10 @@ namespace cob_3d_experience_mapping {
 				modified = true;
 			}
 			//if( !(current_active_state() && virtual_state() && current_active_state()->id() < virtual_state()->id()-(param().min_age_+3) ) )
-			if( !(current_active_state() && virtual_state() && current_active_state() != virtual_state()) )
+			if( current_active_state() )
 				modified |= it->second->visited(current_active_state().get(), current_active_state());
-			it->second->inject(this, ts, param().est_occ_, param().max_active_states_);
+			if(inject)
+				it->second->inject(this, ts, param().est_occ_, param().max_active_states_, ft_class);
 			
 			if(modified)
 				id_generator().register_modification(it->second);
