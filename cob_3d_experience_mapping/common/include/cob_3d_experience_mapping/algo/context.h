@@ -388,7 +388,7 @@ namespace cob_3d_experience_mapping {
 		}
 		
 		NetworkHeader get_network_header() {
-			return NetworkHeader();
+			return NetworkHeader(this->ctxt->id_generator().get_client_id());
 		}
 		
 		void set_network_header(const NetworkHeader &nh) {
@@ -397,7 +397,23 @@ namespace cob_3d_experience_mapping {
 		void upload(const char * addr, const char * port, const int timeout_secs=120) {
 			serialization::sync_content_client<TArchiveIn, TArchiveOut> (*this, addr, port, timeout_secs);
 		}
-		    	
+		
+		void on_client(std::iostream &stream) {
+			serialization::sync_content_server_import<TArchiveIn, TArchiveOut> (*this, stream);
+			
+			//load from ts to now
+			
+			//remove old or modified entries
+			//TODO: do this
+			
+			//save to db
+			
+			//ok, now set the loaded content to the list and export it
+			this->ctxt_->id_generator().clear();
+			
+			serialization::sync_content_server_export<TArchiveIn, TArchiveOut> (*this, stream);
+		}
+		  
 		UNIVERSAL_SERIALIZE()
 		{
 		    //we have to lock everything for consistency
@@ -472,6 +488,10 @@ namespace cob_3d_experience_mapping {
 					this->ctxt_->get_features().insert(typename TContext::FeatureMap::value_type(fts[i].ft_.id(), typename TContext::TFeature::TPtr(tmp)) );
 				}
 				
+			}
+			
+			if(UNIVERSAL_CHECK<Archive>::is_saving(ar)) {
+				this->ctxt_->id_generator().clear();
 			}
 			
 		}
