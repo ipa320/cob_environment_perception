@@ -113,7 +113,7 @@ void path_integration(TStateVector &active_states, TGraph &graph, TContext &ctxt
 		}
 		else {
 			if(ctxt.last_active_state())
-				offset = 1-ctxt.param().deviation_factor_;
+				offset = 2*ctxt.param().deviation_factor_;	//TODO: user-defined factor, change...
 			
 			DBG_PRINTF_URGENT("relocalized %d -> %d with %d hops\n", ctxt.last_active_state()?ctxt.last_active_state()->id():-1, ctxt.current_active_state()?ctxt.current_active_state()->id():-1,
 			ctxt.current_active_state()?ctxt.current_active_state()->hops():0);
