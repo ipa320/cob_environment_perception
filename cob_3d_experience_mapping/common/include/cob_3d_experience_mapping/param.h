@@ -50,10 +50,10 @@ namespace cob_3d_experience_mapping {
 			prox_thr_(0) = 0.5;
 			prox_thr_(1) = 0.5;
 			//energy_max_ = 1;//1.25;
-			est_occ_ = 1;
+			est_occ_ = 3;
 			min_age_ = 3;
 			max_active_states_ = 100;
-			deviation_factor_ = 0.075;
+			deviation_factor_ = 0.1;
 			
 #ifdef CLOUD_
 			cloud_addr_ = "";
@@ -90,6 +90,12 @@ namespace cob_3d_experience_mapping {
 		    ar & UNIVERSAL_SERIALIZATION_NVP(max_active_states_);
 		    ar & UNIVERSAL_SERIALIZATION_NVP(deviation_factor_);
 		}
+		
+#ifdef CLOUD_
+		//!< deserialization function for dynamic reocnfigure (settings needed for algo.)
+		//void cb_cloud_settings(cob_3d_experience_mapping::CloudConfig &config, uint32_t level) {
+		//}
+#endif
 
 #ifdef VIS_
 		//!< deserialization function for dynamic reocnfigure (settings needed for algo.)

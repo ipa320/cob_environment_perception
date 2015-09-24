@@ -62,7 +62,8 @@ public:
 	typedef cob_3d_experience_mapping::Context<Scalar /*energy*/, State /*state*/, Feature, Eigen::Matrix<float,1,2>/*energy weight*/, Transformation/*tranformation*/> TContext;
 	typedef TGraph::NodeMap<typename State::TPtr> TMapStates;
 	typedef TGraph::ArcMap <typename Transformation::TPtr> TMapTransformations;
-	
+	typedef cob_3d_experience_mapping::IncrementalContextContainer<TContext, TGraph, TMapStates, TMapTransformations> TContextContainer;
+		
 private:
 	
 	TContext ctxt_;	
@@ -136,7 +137,7 @@ public:
 	  printf("init done\n");
 	  
 #ifdef CLOUD_
-	cloud_sync_timer_ = n->createTimer(ros::Duration(0.1), boost::bind(&ROS_Node::sync_cloud, this, _1));
+	cloud_sync_timer_ = n->createTimer(ros::Duration(ctxt_.param().cloud_sync_interval_), boost::bind(&ROS_Node::sync_cloud, this, _1));
 #endif
   }
   
