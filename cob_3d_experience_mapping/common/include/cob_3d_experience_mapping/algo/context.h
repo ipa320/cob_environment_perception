@@ -371,11 +371,11 @@ namespace cob_3d_experience_mapping {
 		
 	};
 	
-	template<class TContext, class TGraph, class TMapStates, class TMapTransformations, class TArchiveIn = boost::archive::binary_iarchive, class TArchiveOut = boost::archive::binary_oarchive>
+	template<class TContext, class TGraph, class TMapStates, class TMapTransformations, class _TClientId, class TArchiveIn = boost::archive::binary_iarchive, class TArchiveOut = boost::archive::binary_oarchive>
 	class IncrementalContextContainer : public ContextContainer<TContext, TGraph, TMapStates, TMapTransformations> {
 		
 	public:
-		typedef typename TContext::TIdTsGenerator::TClientId TClientId;
+		typedef typename _TClientId TClientId;
 		typedef typename TContext::TState TState;
 		typedef typename TContext::TFeature TFeature;
 		typedef typename TState::ID ID;
@@ -398,7 +398,7 @@ namespace cob_3d_experience_mapping {
 		IncrementalContextContainer(TContext *ctxt, TGraph *graph, TMapStates *states, TMapTransformations *trans, const TClientId &client_id) :
 		 ContextContainer<TContext, TGraph, TMapStates, TMapTransformations>(ctxt, graph, states, trans), server_(false)
 		{
-			 if(ctxt) ctxt->id_generator().set_client_id(client_id);
+			 //if(ctxt) ctxt->id_generator().set_client_id(client_id);
 		}
 		
 		TNetworkHeader get_network_header() {
@@ -432,7 +432,7 @@ namespace cob_3d_experience_mapping {
 			this->ctxt_->id_generator().clear();
 		}
 		
-		void on_client(std::iostream &stream) {
+		void on_client(std::iostream &stream, TClientId &running_client_id) {
 			if(!server_) {
 				server_.reset( new hiberlite::Database("sample.db") );
 				
