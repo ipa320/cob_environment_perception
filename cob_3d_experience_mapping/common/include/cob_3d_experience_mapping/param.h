@@ -25,6 +25,11 @@ namespace cob_3d_experience_mapping {
 		int min_age_;			//!< minmal age before a feature can be "seen" and influence a state (in number of newly created states)
 		int max_active_states_;	//!< size active state list
 
+#ifdef CLOUD_
+		std::string cloud_addr_;		//!< address of server for cloud synchronsization, e.g. localhost:12345
+		float cloud_sync_interval_;		//!< synchronization interval in seconds to update map data with server
+#endif
+
 #ifdef VIS_
 		//visualization
 		std_msgs::ColorRGBA vis_color_state_;	//!< visualization: color of a state (Marker)
@@ -43,13 +48,18 @@ namespace cob_3d_experience_mapping {
 			deviation_factor_ = 0.1;
 			
 			prox_thr_(0) = 0.5;
-			prox_thr_(1) = 0.7;
+			prox_thr_(1) = 0.5;
 			//energy_max_ = 1;//1.25;
 			est_occ_ = 1;
 			min_age_ = 3;
 			max_active_states_ = 100;
-			deviation_factor_ = 0.065;
+			deviation_factor_ = 0.075;
 			
+#ifdef CLOUD_
+			cloud_addr_ = "";
+			cloud_sync_interval_ = 10.f;
+#endif
+
 #ifdef VIS_
 			vis_color_state_.r = 0.5;
 			vis_color_state_.g = 0.5;

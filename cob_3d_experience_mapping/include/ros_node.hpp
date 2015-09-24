@@ -72,6 +72,10 @@ private:
 	boost::mutex mtx_;
 	std::ofstream file_gpx_;
 	
+#ifdef CLOUD_
+	ros::Timer cloud_sync_timer_;
+#endif
+
 #ifdef VIS_
 	boost::shared_ptr<VisualizationHandler> vis_;
 #endif
@@ -130,8 +134,20 @@ public:
 	  cob_3d_experience_mapping::algorithms::init<Transformation>(graph_, ctxt_, states_, trans_);
 	  
 	  printf("init done\n");
+	  
+#ifdef CLOUD_
+	cloud_sync_timer_ = n->createTimer(ros::Duration(0.1), boost::bind(&ROS_Node::sync_cloud, this, _1));
+#endif
   }
   
+#ifdef CLOUD_
+  void sync_cloud(const ros::TimerEvent& event) {
+	  if(ctxt_.param().cloud_addr_.size()<1) return; //if no server specified skip
+	  
+	  ROS_DEBUG("syncing with cloud server");
+  }
+#endif
+
   void on_sensor_info(const cob_3d_experience_mapping::SensorInfoArray::ConstPtr &infos) {
 	  boost::lock_guard<boost::mutex> guard(mtx_);
 	  
