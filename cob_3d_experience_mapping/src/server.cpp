@@ -4,9 +4,9 @@
 #include "../include/ros_node.hpp"
 
 typedef ROS_Node<As_Node> ns;
-typedef cob_3d_experience_mapping::ClientIdTsGenerator<ns::State, ns::Feature, uint8_t /*client id*/> TClientIdGenerator;
-typedef cob_3d_experience_mapping::Context<ns::Scalar /*energy*/, ns::State /*state*/, ns::Feature, Eigen::Matrix<float,1,2>/*energy weight*/, ns::Transformation/*tranformation*/, TClientIdGenerator > TContext;
-typedef cob_3d_experience_mapping::IncrementalContextContainer<TContext, ns::TGraph, ns::TMapStates, ns::TMapTransformations> CtxtContainer;
+//typedef cob_3d_experience_mapping::ClientIdTsGenerator<ns::State, ns::Feature, uint8_t /*client id*/> TClientIdGenerator;
+typedef cob_3d_experience_mapping::Context<ns::Scalar /*energy*/, ns::State /*state*/, ns::Feature, Eigen::Matrix<float,1,2>/*energy weight*/, ns::Transformation/*tranformation*/ > TContext;
+typedef cob_3d_experience_mapping::IncrementalContextContainer<TContext, ns::TGraph, ns::TMapStates, ns::TMapTransformations, uint8_t /*client id*/> CtxtContainer;
 
 typedef ns::State State;
 typedef typename ns::State::TransitionSerialization TransitionSerialization;
@@ -23,7 +23,7 @@ int main(int argc, char **argv) {
     boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::tcp::v4(), 12347);
     boost::asio::ip::tcp::acceptor acceptor(io_service, endpoint);
     	
-	
+	typename CtxtContainer::TClientId running_client_id_ = 0;
 	TContext ctxt_;	
 	ns::TGraph graph_;
 	ns::TMapStates states_(graph_);
@@ -38,7 +38,7 @@ int main(int argc, char **argv) {
       acceptor.accept(*stream.rdbuf(), ec);
       if (!ec)
       {
-		  container.on_client(stream);
+		  container.on_client(stream, running_client_id_);
       }
     }
 	
