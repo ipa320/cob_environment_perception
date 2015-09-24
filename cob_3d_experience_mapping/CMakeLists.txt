@@ -16,6 +16,7 @@ find_package(catkin REQUIRED COMPONENTS
 
 find_package(Eigen REQUIRED)
 
+#add_custom_target(init_submodules_and_build ALL COMMAND cd ${PROJECT_SOURCE_DIR}/libs && git submodule update --init --recursive && make WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/libs/hiberlite)
 add_custom_target(init_submodules ALL COMMAND cd ${PROJECT_SOURCE_DIR}/libs && git submodule update --init --recursive)
 add_custom_target(build_hiberlite ALL COMMAND make WORKING_DIRECTORY ${PROJECT_SOURCE_DIR}/libs/hiberlite)
 
@@ -136,6 +137,7 @@ link_directories(${PROJECT_SOURCE_DIR}/libs/hiberlite)
 
 ## Declare a cpp executable
 add_executable(cob_3d_experience_mapping_lemon_node src/exp_mapping_lemon.cpp)
+add_executable(cob_3d_experience_mapping_lemon_cloud_node src/exp_mapping_lemon.cpp)
 add_executable(sim_barks src/sim_barks.cpp)
 add_executable(convert src/convert.cpp)
 add_executable(server src/server.cpp)
@@ -145,12 +147,17 @@ add_executable(cob_3d_experience_mapping_lemon_eval evaluation/exp_mapping_lemon
 add_dependencies(cob_3d_experience_mapping_lemon_node ${PROJECT_NAME}_gencfg)
 add_dependencies(cob_3d_experience_mapping_lemon_eval ${PROJECT_NAME}_gencfg)
 
+target_compile_definitions(cob_3d_experience_mapping_lemon_cloud_node PRIVATE CLOUD_=1)
+
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes
 # add_dependencies(cob_3d_experience_mapping_node cob_3d_experience_mapping_generate_messages_cpp)
 
 ## Specify libraries to link a library or executable target against
 target_link_libraries(cob_3d_experience_mapping_lemon_node
+  ${catkin_LIBRARIES}
+)
+target_link_libraries(cob_3d_experience_mapping_lemon_cloud_node
   ${catkin_LIBRARIES}
 )
 target_link_libraries(sim_barks
