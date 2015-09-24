@@ -90,14 +90,14 @@ namespace cob_3d_experience_mapping {
 		
 		//!< add a state to the active state list + init. variables + (init. distances if needed)
 		void add_to_active(typename TState::TPtr &state, const bool already_set=false) {
-			if(!virtual_state() && !already_set)
+			if(!current_active_state() && !already_set)
 				return;
 			
 			//if already present in active list -> skip
 			for(size_t i=0; i<active_states_.size(); i++)
 				if(active_states_[i]==state) {
 					if(!already_set) {
-						state->dist_dev() 	= std::min(state->dist_dev(), virtual_state()->dist_dev()+1);
+						state->dist_dev() 	= std::min(state->dist_dev(), current_active_state()->dist_dev()+1);
 						needs_sort_ = true;
 					}
 					return;
@@ -105,7 +105,7 @@ namespace cob_3d_experience_mapping {
 				
 			//somebody else will set this variables from outside
 			if(!already_set) {
-				state->dist_dev() 	= virtual_state()->dist_dev()+1;
+				state->dist_dev() 	= current_active_state()->dist_dev()+1;
 				state->dist_trv()  	= 0;	//we are approaching state (assume half way)
 				state->hops() 		= 0;
 			}
