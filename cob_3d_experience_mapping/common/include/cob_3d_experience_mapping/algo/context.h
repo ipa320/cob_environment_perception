@@ -180,7 +180,7 @@ namespace cob_3d_experience_mapping {
 		boost::mutex &get_mutex() {return mtx_;}
 		
 		void visited_feature_class(const typename TState::TFeatureClass &ft_class) {
-			if( !(current_active_state() && virtual_state() && current_active_state() != virtual_state()) )
+			if(current_active_state())
 				current_active_state()->visited_featuer_class(ft_class);
 		}
 		
