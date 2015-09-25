@@ -32,8 +32,10 @@ namespace serialization {
 
 template<class TArchive, class TContent>
 void export_content(const TContent &s, std::ostream &ostr){
-    TArchive oa(ostr);
-    oa << BOOST_SERIALIZATION_NVP(s);
+    {
+		TArchive oa(ostr);
+		oa << BOOST_SERIALIZATION_NVP(s);
+	}
     ostr.flush();
 }
 
@@ -48,13 +50,15 @@ void import_content(TContent &s, std::istream &istr)
 
 template<class TArchive, class TContent>
 void export_content_compr(const TContent &s, std::ostream &_ostr){
-	boost::iostreams::filtering_ostream ostr;
-    ostr.push(boost::iostreams::zlib_compressor());
-    ostr.push(_ostr);
+    {
+		boost::iostreams::filtering_ostream ostr;
+		ostr.push(boost::iostreams::zlib_compressor());
+		ostr.push(_ostr);
     
-    TArchive oa(ostr);
-    oa << BOOST_SERIALIZATION_NVP(s);
-    ostr.flush();
+		TArchive oa(ostr);
+		oa << BOOST_SERIALIZATION_NVP(s);
+	}
+    _ostr.flush();
 }
 
 template<class TArchive, class TContent>

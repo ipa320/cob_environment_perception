@@ -62,21 +62,21 @@ void sync_content_client(TContent &s, const char * addr, const char * port, cons
     else
 		export_content<TArchiveOut>(s, stream);
 		
-	DBG_PRINTF("sent data");
+	DBG_PRINTF("sent data\n");
 		
     //retrieve request header without compression
     typename TContent::TNetworkHeader response_header;
 	import_content<TArchiveIn>(response_header, stream);
 	s.set_network_header(response_header);
 	
-	DBG_PRINTF("got header");
+	DBG_PRINTF("got header\n");
 	
     if(response_header.compression_)
 		import_content_compr<TArchiveIn>(s, stream);
 	else
 		import_content<TArchiveIn>(s, stream);
 		
-	DBG_PRINTF("got data");
+	DBG_PRINTF("got data\n");
 }
 	
 template<class TArchiveIn, class TArchiveOut, class TContent>
@@ -92,13 +92,15 @@ void sync_content_server_import_header(TContent &s, std::iostream &stream){
 template<class TArchiveIn, class TArchiveOut, class TContent>
 void sync_content_server_import(TContent &s, std::iostream &stream){    
     assert(stream.good());
+    
+	DBG_PRINTF("waiting for data\n");
 	
     if(s.get_network_header().compression_)
 		import_content_compr<TArchiveIn>(s, stream);
 	else
 		import_content<TArchiveIn>(s, stream);
 		
-	DBG_PRINTF("got data");
+	DBG_PRINTF("got data\n");
 }
 	
 template<class TArchiveIn, class TArchiveOut, class TContent>
@@ -109,14 +111,14 @@ void sync_content_server_export(TContent &s, std::iostream &stream){
     typename TContent::TNetworkHeader request_header = s.get_network_header();
 	export_content<TArchiveOut>(request_header, stream);
 	
-	DBG_PRINTF("sent header");
+	DBG_PRINTF("sent header\n");
 		
     if(request_header.compression_)
 		export_content_compr<TArchiveOut>(s, stream);	
     else
 		export_content<TArchiveOut>(s, stream);
 		
-	DBG_PRINTF("sent data");
+	DBG_PRINTF("sent data\n");
 }
 
 }
