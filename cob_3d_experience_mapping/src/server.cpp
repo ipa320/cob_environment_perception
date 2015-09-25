@@ -4,10 +4,9 @@
 #include "../include/ros_node.hpp"
 
 typedef ROS_Node<As_Node> ns;
-//typedef cob_3d_experience_mapping::ClientIdTsGenerator<ns::State, ns::Feature, uint8_t /*client id*/> TClientIdGenerator;
-typedef cob_3d_experience_mapping::Context<ns::Scalar /*energy*/, ns::State /*state*/, ns::Feature, Eigen::Matrix<float,1,2>/*energy weight*/, ns::Transformation/*tranformation*/ > TContext;
-typedef cob_3d_experience_mapping::IncrementalContextContainer<TContext, ns::TGraph, ns::TMapStates, ns::TMapTransformations, uint8_t /*client id*/> CtxtContainer;
 
+typedef ns::TContext TContext;
+typedef ns::TContextContainer CtxtContainer;
 typedef ns::State State;
 typedef typename ns::State::TransitionSerialization TransitionSerialization;
 typedef typename ns::Feature::FeatureSerialization FeatureSerialization;
@@ -29,7 +28,7 @@ int main(int argc, char **argv) {
 	ns::TMapStates states_(graph_);
 	ns::TMapTransformations trans_(graph_);
 	
-	CtxtContainer container(&ctxt_, &graph_, &states_, &trans_, 1);
+	CtxtContainer container(&ctxt_, &graph_, &states_, &trans_);
 
     for (;;)
     {

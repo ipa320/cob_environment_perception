@@ -53,16 +53,26 @@ public:
 	typedef _Scalar Scalar;
 	typedef lemon::ListDigraph TGraph;
 	typedef cob_3d_experience_mapping::TransformationLink<Scalar, NUM_TRANS, NUM_ROT> TTransformationLink;
-	typedef cob_3d_experience_mapping::State<cob_3d_experience_mapping::Empty /*meta data*/, Scalar, TGraph, TTransformationLink, TID, TFeatureClass> State;
+	typedef cob_3d_experience_mapping::State<cob_3d_experience_mapping::Empty /*meta data*/, Scalar, TGraph, TTransformationLink, TID, TFeatureClass
+	> State;
 	typedef cob_3d_experience_mapping::Feature<State, cob_3d_experience_mapping::Empty /*meta data*/, TID> Feature;
 	typedef cob_3d_experience_mapping::Transformation<TTransformationLink, typename State::TPtr> Transformation;
 #ifdef VIS_
 	typedef cob_3d_experience_mapping::visualization::VisualizationHandler<typename State::TGraph, typename TGraph::NodeMap<typename State::TPtr>, typename TGraph::ArcMap <typename Transformation::TPtr>, typename State::TPtr, typename State::TArcOutIterator> VisualizationHandler;
 #endif
-	typedef cob_3d_experience_mapping::Context<Scalar /*energy*/, State /*state*/, Feature, Eigen::Matrix<float,1,2>/*energy weight*/, Transformation/*tranformation*/> TContext;
+#ifdef CLOUD_
+	typedef cob_3d_experience_mapping::ClientIdTsGenerator<State, Feature> TClientIdGenerator;
+#endif
+	typedef cob_3d_experience_mapping::Context<Scalar /*energy*/, State /*state*/, Feature, Eigen::Matrix<float,1,2>/*energy weight*/, Transformation/*tranformation*/
+#ifdef CLOUD_
+	,TClientIdGenerator
+#endif
+	> TContext;
 	typedef TGraph::NodeMap<typename State::TPtr> TMapStates;
 	typedef TGraph::ArcMap <typename Transformation::TPtr> TMapTransformations;
-	typedef cob_3d_experience_mapping::IncrementalContextContainer<TContext, TGraph, TMapStates, TMapTransformations> TContextContainer;
+#ifdef CLOUD_
+	typedef cob_3d_experience_mapping::IncrementalContextContainer<TContext, TGraph, TMapStates, TMapTransformations, uint8_t /*client id*/> TContextContainer;
+#endif
 		
 private:
 	
@@ -71,10 +81,11 @@ private:
 	TMapStates states_;
 	TMapTransformations trans_;
 	boost::mutex mtx_;
-	std::ofstream file_gpx_;
+	//std::ofstream file_gpx_;
 	
 #ifdef CLOUD_
-	ros::Timer cloud_sync_timer_;
+	ros::WallTimer cloud_sync_timer_;
+	TContextContainer ctxt_container_;
 #endif
 
 #ifdef VIS_
@@ -91,13 +102,16 @@ public:
   ROS_Node():
 	states_(graph_),
 	trans_(graph_)
+#ifdef CLOUD_
+	,ctxt_container_(&ctxt_, &graph_, &states_, &trans_)
+#endif
   {
   }
 
   virtual ~ROS_Node()
   {
-	  file_gpx_<< "</trkseg></trk></gpx>";
-	  file_gpx_.close();
+	  //file_gpx_<< "</trkseg></trk></gpx>";
+	  //file_gpx_.close();
   }
 
   //TODO: use dyn. reconfig.
@@ -127,25 +141,38 @@ public:
 	}*/
 #endif
 
-    n->param<bool>("step_mode", step_mode_, false);    
+#ifdef CLOUD_
+    n->getParam("cloud_server", ctxt_.param_rw().cloud_addr_);
+#endif
     
-    file_gpx_.open("/tmp/path.gpx");
-    file_gpx_ << "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\r\n<gpx xmlns=\"http://www.topografix.com/GPX/1/1\" version=\"1.1\" creator=\"Wikipedia\"\r\n    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n    xsi:schemaLocation=\"http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd\"><trk><name>Trackname2</name><trkseg>";
+    n->param<bool>("step_mode", step_mode_, false);
+    
+    //file_gpx_.open("/tmp/path.gpx");
+    //file_gpx_ << "<?xml version=\"1.0\" encoding=\"UTF-8\" standalone=\"no\" ?>\r\n<gpx xmlns=\"http://www.topografix.com/GPX/1/1\" version=\"1.1\" creator=\"Wikipedia\"\r\n    xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\"\r\n    xsi:schemaLocation=\"http://www.topografix.com/GPX/1/1 http://www.topografix.com/GPX/1/1/gpx.xsd\"><trk><name>Trackname2</name><trkseg>";
 
 	  cob_3d_experience_mapping::algorithms::init<Transformation>(graph_, ctxt_, states_, trans_);
 	  
 	  printf("init done\n");
 	  
 #ifdef CLOUD_
-	cloud_sync_timer_ = n->createTimer(ros::Duration(ctxt_.param().cloud_sync_interval_), boost::bind(&ROS_Node::sync_cloud, this, _1));
+	//we use wall timer which also works with sim_time
+	cloud_sync_timer_ = n->createWallTimer(ros::WallDuration(ctxt_.param().cloud_sync_interval_), boost::bind(&ROS_Node::sync_cloud, this, _1));
 #endif
   }
   
 #ifdef CLOUD_
-  void sync_cloud(const ros::TimerEvent& event) {
+  void sync_cloud(const ros::WallTimerEvent& event) {
 	  if(ctxt_.param().cloud_addr_.size()<1) return; //if no server specified skip
 	  
-	  ROS_DEBUG("syncing with cloud server");
+	  ROS_INFO("syncing with cloud server");
+	  
+	  //get server address and port from string (separated by ":")
+	  const std::string &adr = ctxt_.param().cloud_addr_;
+	  std::size_t found = adr.find_last_of(":");
+	  if(found==std::string::npos)
+	  	ctxt_container_.upload(adr.c_str(), "12347");
+	  else
+	  	ctxt_container_.upload(std::string(adr.begin(), adr.begin()+found).c_str(), std::string(adr.begin()+(found+1), adr.end()).c_str());
   }
 #endif
 
@@ -249,9 +276,9 @@ public:
 			pub_top_action_.publish(rs_action);
 		  }
 		  
-		  file_gpx_ << "<trkpt lat=\""<<ctxt_.current_active_state()->dbg().pose_(1)<<"\" lon=\""<<ctxt_.current_active_state()->dbg().pose_(0)<<"\">\r\n  <time>2011-01-15T23:59:01Z</time></trkpt>";
+		  //file_gpx_ << "<trkpt lat=\""<<ctxt_.current_active_state()->dbg().pose_(1)<<"\" lon=\""<<ctxt_.current_active_state()->dbg().pose_(0)<<"\">\r\n  <time>2011-01-15T23:59:01Z</time></trkpt>";
 		  //file_gpx_ << "<trkpt lat=\""<<dbg_pose(1)<<"\" lon=\""<<dbg_pose(0)<<"\">\r\n  <time>2011-01-15T23:59:01Z</time></trkpt>";
-		  file_gpx_.flush();
+		  //file_gpx_.flush();
 
 #ifdef VIS_
 		  if(vis_ && ctxt_.active_states().size()>0) {

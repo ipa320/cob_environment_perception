@@ -114,6 +114,9 @@ namespace cob_3d_experience_mapping {
 		
 		//!< getter for identifier
 		inline ID  id() const {return id_;}
+		
+		//!< setter for identifier
+		inline void set_id(const ID &id) {id_ = id;}
 
 		//!< setter/getter for existance flag
 		inline bool &still_exists() {return still_exists_;}
@@ -325,6 +328,9 @@ namespace cob_3d_experience_mapping {
 		{}
 		
 		inline TID id() const {return id_;}
+		
+		//!< setter for identifier
+		inline void set_id(const TID &id) {id_ = id;}
 		
 		bool visited(const StateHandle &h, typename TInjection::TPtr inj) {
 			typename InjectionMap::iterator it = injections_.find(h);

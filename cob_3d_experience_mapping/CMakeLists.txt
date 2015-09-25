@@ -148,6 +148,7 @@ add_dependencies(cob_3d_experience_mapping_lemon_node ${PROJECT_NAME}_gencfg)
 add_dependencies(cob_3d_experience_mapping_lemon_eval ${PROJECT_NAME}_gencfg)
 
 target_compile_definitions(cob_3d_experience_mapping_lemon_cloud_node PRIVATE CLOUD_=1)
+target_compile_definitions(server PRIVATE CLOUD_=1 SERVER_=1)
 
 ## Add cmake target dependencies of the executable/library
 ## as an example, message headers may need to be generated before nodes

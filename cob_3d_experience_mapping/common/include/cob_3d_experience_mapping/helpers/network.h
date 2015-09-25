@@ -41,7 +41,7 @@ namespace serialization {
 	};
 	
 template<class TArchiveIn, class TArchiveOut, class TContent>
-void sync_content_client(const TContent &s, const char * addr, const char * port, const int timeout_secs=120){
+void sync_content_client(TContent &s, const char * addr, const char * port, const int timeout_secs=120){
     // make an archive
     boost::asio::ip::tcp::iostream stream;
     
@@ -62,29 +62,43 @@ void sync_content_client(const TContent &s, const char * addr, const char * port
     else
 		export_content<TArchiveOut>(s, stream);
 		
+	DBG_PRINTF("sent data");
+		
     //retrieve request header without compression
     typename TContent::TNetworkHeader response_header;
 	import_content<TArchiveIn>(response_header, stream);
 	s.set_network_header(response_header);
 	
+	DBG_PRINTF("got header");
+	
     if(response_header.compression_)
 		import_content_compr<TArchiveIn>(s, stream);
 	else
 		import_content<TArchiveIn>(s, stream);
+		
+	DBG_PRINTF("got data");
 }
 	
 template<class TArchiveIn, class TArchiveOut, class TContent>
-void sync_content_server_import(TContent &s, std::iostream &stream){    
+void sync_content_server_import_header(TContent &s, std::iostream &stream){    
     assert(stream.good());
     
     //retrieve request header without compression
     typename TContent::TNetworkHeader response_header;
 	import_content<TArchiveIn>(response_header, stream);
+	s.set_network_header(response_header);
+}
 	
-    if(response_header.compression_)
+template<class TArchiveIn, class TArchiveOut, class TContent>
+void sync_content_server_import(TContent &s, std::iostream &stream){    
+    assert(stream.good());
+	
+    if(s.get_network_header().compression_)
 		import_content_compr<TArchiveIn>(s, stream);
 	else
 		import_content<TArchiveIn>(s, stream);
+		
+	DBG_PRINTF("got data");
 }
 	
 template<class TArchiveIn, class TArchiveOut, class TContent>
@@ -94,11 +108,15 @@ void sync_content_server_export(TContent &s, std::iostream &stream){
     //send request header without compression
     typename TContent::TNetworkHeader request_header = s.get_network_header();
 	export_content<TArchiveOut>(request_header, stream);
+	
+	DBG_PRINTF("sent header");
 		
     if(request_header.compression_)
 		export_content_compr<TArchiveOut>(s, stream);	
     else
 		export_content<TArchiveOut>(s, stream);
+		
+	DBG_PRINTF("sent data");
 }
 
 }

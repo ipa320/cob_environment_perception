@@ -57,7 +57,7 @@ namespace cob_3d_experience_mapping {
 			
 #ifdef CLOUD_
 			cloud_addr_ = "";
-			cloud_sync_interval_ = 10.f;
+			cloud_sync_interval_ = 5.f;
 #endif
 
 #ifdef VIS_

@@ -34,6 +34,7 @@ template<class TArchive, class TContent>
 void export_content(const TContent &s, std::ostream &ostr){
     TArchive oa(ostr);
     oa << BOOST_SERIALIZATION_NVP(s);
+    ostr.flush();
 }
 
 template<class TArchive, class TContent>
@@ -53,6 +54,7 @@ void export_content_compr(const TContent &s, std::ostream &_ostr){
     
     TArchive oa(ostr);
     oa << BOOST_SERIALIZATION_NVP(s);
+    ostr.flush();
 }
 
 template<class TArchive, class TContent>
