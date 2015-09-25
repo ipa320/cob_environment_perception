@@ -1,0 +1,20 @@
+<launch>
+
+	<param name="use_sim_time" value="true" />
+
+	 <node name="mapping" pkg="cob_3d_experience_mapping" type="cob_3d_experience_mapping_lemon_cloud_node" output="screen" >
+		<param name="step_mode" value="false" />
+		<param name="cloud_server" value="localhost:12347" />
+		
+		<remap from="/odom" to="/robot0/odom" />
+		<remap from="/PoseCell/TopologicalAction" to="/irat_red/PoseCell/TopologicalAction" />
+	 </node>
+	 
+	  <node name="sim_features" pkg="cob_3d_experience_mapping" type="sim_features.py" output="screen">
+	  </node>
+
+		<include file="$(find ratslam_ros)/launch/irataus_cast2.launch" />
+	 
+	<node pkg="rosbag" type="play" name="play" args="$(find cob_3d_experience_mapping)/evaluation/datasets/office_odom.bag -d 0.5 -r 4 -s 0">
+	</node>
+</launch>
