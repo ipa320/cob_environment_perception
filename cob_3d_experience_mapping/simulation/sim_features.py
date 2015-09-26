@@ -10,19 +10,20 @@ ids={}
 pub_si = None
 pub_vt = None
 
+NUM_FEATURES=100
+
 def callback(msg):
 	global ids
 	global pub_si
 	global pub_vt
-
-	NUM_FEATURES=100
+	global NUM_FEATURES
 	
 	x = msg.pose.pose.position.x
 	y = msg.pose.pose.position.y
 	(r, p, yaw) = tf.transformations.euler_from_quaternion([msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w])
 	
-	RESOLUTION_metric=0.5
-	RESOLUTION_angle=0.35
+	RESOLUTION_metric=1.5
+	RESOLUTION_angle=0.5
 	
 	ix = int(x/RESOLUTION_metric)
 	iy = int(y/RESOLUTION_metric)
@@ -35,7 +36,7 @@ def callback(msg):
 	else:
 		ids[name] = no
 		
-	if no>NUM_FEATURES:
+	if NUM_FEATURES>0 and no>NUM_FEATURES:
 		random.seed(no)
 		no = random.randint(0,NUM_FEATURES)
 		
@@ -51,10 +52,13 @@ def callback(msg):
 def listener():
 	global pub_si
 	global pub_vt
+	global NUM_FEATURES
 	
 	robot="robot0"
 	
 	rospy.init_node('sim_features')
+	NUM_FEATURES = rospy.get_param('~NUM_FEATURES', NUM_FEATURES)
+	
 	rospy.Subscriber(robot+"/odom", Odometry, callback)
 	pub_si = rospy.Publisher('/sim_barks/sensor_info', SensorInfoArray, queue_size=10)
 	pub_vt = rospy.Publisher('/irat_red/LocalView/Template', ViewTemplate, queue_size=10)

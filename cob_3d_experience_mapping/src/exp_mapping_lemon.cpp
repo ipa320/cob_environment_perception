@@ -16,7 +16,8 @@ int main(int argc, char **argv) {
 	ROS_Node<As_Node> sn;
 	sn.onInit();
 
-	ros::spin();
+	ros::MultiThreadedSpinner spinner(2);
+	spinner.spin();
 	
 	return 0;
 }

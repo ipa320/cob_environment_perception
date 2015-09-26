@@ -138,7 +138,7 @@ namespace cob_3d_experience_mapping {
 		
 		UNIVERSAL_SERIALIZE()
 		{
-		    assert(version==0); //TODO: version handling
+		    assert(version==CURRENT_SERIALIZATION_VERSION);
 		    
 		    for(int i=0; i<NUM_TRANS+NUM_ROT; i++) {
 				char buf[16];

@@ -57,9 +57,9 @@ void sync_content_client(TContent &s, const char * addr, const char * port, cons
     typename TContent::TNetworkHeader request_header = s.get_network_header();
 	export_content<TArchiveOut>(request_header, stream);
 		
-    if(request_header.compression_)
+    /*if(request_header.compression_)
 		export_content_compr<TArchiveOut>(s, stream);	
-    else
+    else*/
 		export_content<TArchiveOut>(s, stream);
 		
 	DBG_PRINTF("sent data\n");
@@ -71,9 +71,9 @@ void sync_content_client(TContent &s, const char * addr, const char * port, cons
 	
 	DBG_PRINTF("got header\n");
 	
-    if(response_header.compression_)
+    /*if(response_header.compression_)
 		import_content_compr<TArchiveIn>(s, stream);
-	else
+	else*/
 		import_content<TArchiveIn>(s, stream);
 		
 	DBG_PRINTF("got data\n");
@@ -95,9 +95,9 @@ void sync_content_server_import(TContent &s, std::iostream &stream){
     
 	DBG_PRINTF("waiting for data\n");
 	
-    if(s.get_network_header().compression_)
+    /*if(s.get_network_header().compression_)
 		import_content_compr<TArchiveIn>(s, stream);
-	else
+	else*/
 		import_content<TArchiveIn>(s, stream);
 		
 	DBG_PRINTF("got data\n");
@@ -113,9 +113,9 @@ void sync_content_server_export(TContent &s, std::iostream &stream){
 	
 	DBG_PRINTF("sent header\n");
 		
-    if(request_header.compression_)
+    /*if(request_header.compression_)
 		export_content_compr<TArchiveOut>(s, stream);	
-    else
+    else*/
 		export_content<TArchiveOut>(s, stream);
 		
 	DBG_PRINTF("sent data\n");

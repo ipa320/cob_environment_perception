@@ -180,8 +180,10 @@ namespace cob_3d_experience_mapping {
 		boost::mutex &get_mutex() {return mtx_;}
 		
 		void visited_feature_class(const typename TState::TFeatureClass &ft_class) {
-			if(current_active_state())
-				current_active_state()->visited_featuer_class(ft_class);
+			if(current_active_state()) {
+				current_active_state()->visited_feature_class(ft_class);
+				id_generator().register_modification(current_active_state());
+			}
 		}
 		
 		//!< if a feature was seen we connect the active state with the feature and update all connected states
@@ -214,6 +216,15 @@ namespace cob_3d_experience_mapping {
 			
 			if(modified)
 				id_generator().register_modification(it->second);
+			id_generator().register_modification(current_active_state());
+		}
+		
+		void merge_feature(const typename TFeature::TID &id, const typename TFeature::TPtr &ft) {
+			typename FeatureMap::iterator it = features_.find(id);
+			if(it==features_.end())
+				it = features_.insert(typename FeatureMap::value_type(id, ft) ).first;
+			else
+				it->second->merge(ft);
 		}
 
 		UNIVERSAL_SERIALIZE()
@@ -351,7 +362,7 @@ namespace cob_3d_experience_mapping {
 			modification_fts_.clear();
 		}
 		
-		void get_lists(std::vector<serialization::serializable_shared_ptr<TState> > updated_states, std::vector<ID> &removed_states, std::vector<typename TFeature::TPtr> &updated_fts)
+		void get_lists(std::vector<serialization::serializable_shared_ptr<TState> > &updated_states, std::vector<ID> &removed_states, std::vector<typename TFeature::TPtr> &updated_fts)
 		{
 			for(typename std::map<ID, typename TState::TPtr>::iterator it = modification_states_.begin(); it!=modification_states_.end(); it++) {
 				if( it->second->still_exists() )
@@ -414,6 +425,8 @@ namespace cob_3d_experience_mapping {
 		
 #ifdef SERVER_
 		void on_client(std::iostream &stream, TClientId &running_client_id) {
+			clock_t begin = clock();
+			
 			if(!server_) {
 				server_.reset( new hiberlite::Database("sample.db") );
 				
@@ -424,43 +437,54 @@ namespace cob_3d_experience_mapping {
 				server_->createModel();
 			}
 			
+			DBG_PRINTF("took_1 %f\n", double(clock() - begin) / CLOCKS_PER_SEC);
+			
 			serialization::sync_content_server_import_header<TArchiveIn, TArchiveOut> (*this, stream);
 			
 			if(net_header_.client_==(TClientId)-1) {
-				net_header_.client_ = (++running_client_id);
+				net_header_.client_ = running_client_id;
 				
 				DBG_PRINTF("got new client, setting id to %d\n", net_header_.client_);
 			}
+			
+			//update next client id
+			running_client_id = std::max(running_client_id, (TClientId)(net_header_.client_+1));
 			
 			copy_updated_states_.clear();
 			copy_fts_.clear();
 			copy_trans_.clear();
 			
+			DBG_PRINTF("took_2 %f\n", double(clock() - begin) / CLOCKS_PER_SEC);
+			
 			std::vector< hiberlite::bean_ptr<TState> > v_s = server_->getAllBeanAfter<TState>(net_header_.ts_states_);
 			for(size_t i=0; i<v_s.size(); i++) {
 				copy_updated_states_.push_back( serialization::serializable_shared_ptr<TState>(v_s[i].shared_ptr()));
-				copy_updated_states_.back()->set_id( (copy_updated_states_.back()->id()<<8) | net_header_.client_ );
 				net_header_.ts_states_ = std::max(v_s[i].get_id(), net_header_.ts_states_);
 			}
 			
 			std::vector< hiberlite::bean_ptr<typename TContext::TFeature::FeatureSerialization> > v_f = server_->getAllBeanAfter<typename TContext::TFeature::FeatureSerialization>(net_header_.ts_fts_);
 			for(size_t i=0; i<v_f.size(); i++) {
 				copy_fts_.push_back(*v_f[i]);
-				copy_fts_.back().ft_.set_id( (copy_fts_.back().ft_.id()<<8) | net_header_.client_ );
 				net_header_.ts_fts_ = std::max(v_f[i].get_id(), net_header_.ts_fts_);
+				v_f[i].shared_ptr(); //prevent db update
 			}
 			
 			std::vector< hiberlite::bean_ptr<typename TContext::TState::TransitionSerialization> > v_t = server_->getAllBeanAfter<typename TContext::TState::TransitionSerialization>(net_header_.ts_trans_);
 			for(size_t i=0; i<v_t.size(); i++) {
 				copy_trans_.push_back(*v_t[i]);
-				copy_trans_.back().src_ = (copy_trans_.back().src_<<8) | net_header_.client_;
-				copy_trans_.back().dst_ = (copy_trans_.back().dst_<<8) | net_header_.client_;
 				net_header_.ts_trans_ = std::max(v_t[i].get_id(), net_header_.ts_trans_);
+				v_t[i].shared_ptr(); //prevent db update
 			}
+			
+			DBG_PRINTF("took_3 %f\n", double(clock() - begin) / CLOCKS_PER_SEC);
 				
 			serialization::sync_content_server_import<TArchiveIn, TArchiveOut> (*this, stream);
 			
+			DBG_PRINTF("took_4 %f\n", double(clock() - begin) / CLOCKS_PER_SEC);
+			
 			serialization::sync_content_server_export<TArchiveIn, TArchiveOut> (*this, stream);
+			
+			DBG_PRINTF("took_5 %f\n", double(clock() - begin) / CLOCKS_PER_SEC);
 			
 			//ok, now set the loaded content to the list and export it
 			copy_updated_states_.clear();
@@ -471,14 +495,14 @@ namespace cob_3d_experience_mapping {
 		  
 		UNIVERSAL_SERIALIZE()
 		{
-		    //we have to lock everything for consistency
-			boost::mutex mtx_tmp;
-			boost::lock_guard<boost::mutex> guard(this->ctxt_ ? this->ctxt_->get_mutex() : mtx_tmp);
+			clock_t begin = clock();
 			
 			std::vector<serialization::serializable_shared_ptr<TState> > updated_states;
 			std::vector<ID> removed_states;
 			std::vector<typename TContext::TState::TransitionSerialization> trans;
 		    std::vector<typename TContext::TFeature::FeatureSerialization> fts;
+		    
+			DBG_PRINTF("took_A1 %f\n", double(clock() - begin) / CLOCKS_PER_SEC);
 			
 			if(this->ctxt_ && this->graph_ && this->states_ && this->trans_ && UNIVERSAL_CHECK<Archive>::is_saving(ar)) {
 #ifdef SERVER_
@@ -487,11 +511,16 @@ namespace cob_3d_experience_mapping {
 					get_lists_client(updated_states, fts, trans, removed_states);
 #endif
 			}
+		    
+			DBG_PRINTF("took_A2 %f\n", double(clock() - begin) / CLOCKS_PER_SEC);
 			
 		    ar & UNIVERSAL_SERIALIZATION_NVP(fts);
 		    ar & UNIVERSAL_SERIALIZATION_NVP(updated_states);
 		    ar & UNIVERSAL_SERIALIZATION_NVP(removed_states);
 		    ar & UNIVERSAL_SERIALIZATION_NVP(trans);
+		    
+			DBG_PRINTF("took_A3 %f\n", double(clock() - begin) / CLOCKS_PER_SEC);
+			DBG_PRINTF("serialize size %d %d %d\n", (int)updated_states.size(), (int)trans.size(), (int)removed_states.size());
 		    
 			if(this->ctxt_ && this->graph_ && this->states_ && this->trans_ && UNIVERSAL_CHECK<Archive>::is_loading(ar)) {
 #ifdef SERVER_
@@ -501,6 +530,8 @@ namespace cob_3d_experience_mapping {
 					on_loaded_client(updated_states, fts, trans, removed_states);
 #endif
 			}
+		    
+			DBG_PRINTF("took_A4 %f\n", double(clock() - begin) / CLOCKS_PER_SEC);
 			
 		}
 		
@@ -522,6 +553,10 @@ namespace cob_3d_experience_mapping {
 			std::vector<typename TContext::TState::TransitionSerialization> &trans,
 			std::vector<ID> &removed_states
 		) {
+		    //we have to lock everything for consistency
+			boost::mutex mtx_tmp;
+			boost::lock_guard<boost::mutex> guard(this->ctxt_ ? this->ctxt_->get_mutex() : mtx_tmp);
+			
 			std::vector<typename TFeature::TPtr> updated_fts;
 			
 			this->ctxt_->id_generator().get_lists(updated_states, removed_states, updated_fts);
@@ -535,9 +570,9 @@ namespace cob_3d_experience_mapping {
 		
 #ifdef SERVER_
 		virtual void on_loaded_server(
-			const std::vector<serialization::serializable_shared_ptr<TState> > &updated_states,
-			const std::vector<typename TContext::TFeature::FeatureSerialization> &fts, 
-			const std::vector<typename TContext::TState::TransitionSerialization> &trans,
+			std::vector<serialization::serializable_shared_ptr<TState> > &updated_states,
+			std::vector<typename TContext::TFeature::FeatureSerialization> &fts, 
+			std::vector<typename TContext::TState::TransitionSerialization> &trans,
 			const std::vector<ID> &removed_states
 		) {
 			assert(server_);
@@ -545,21 +580,45 @@ namespace cob_3d_experience_mapping {
 			//remove old or modified entries
 			//TODO: do this
 			
-			//save to db			
+			std::vector< hiberlite::bean_ptr<typename TContext::TFeature::FeatureSerialization> > v_f = server_->getAllBeans<typename TContext::TFeature::FeatureSerialization>();
+			for(size_t i=0; i<v_f.size(); i++) {
+				DBG_PRINTF("ft %d %d\n", (int)i, (int)(v_f[i].operator->()!=NULL));
+				if(v_f[i].operator->()==NULL) continue;
+				
+				bool found = false;
+				for(size_t j=0; j<fts.size(); j++) {
+					if(v_f[i]->ft_.id()==fts[j].ft_.id()) {
+						DBG_PRINTF("removed old feature from db\n");
+						v_f[i].destroy();	//remove old one
+						found = true;
+						break;
+					}
+				}
+				if(!found) v_f[i].shared_ptr(); //prevent db update
+			}
+			
+			//save to db	
+			server_->begin_transaction();
 			for(size_t i=0; i<updated_states.size(); i++) {
+				updated_states[i]->set_id( (updated_states[i]->id()<<8) | net_header_.client_ );
 				hiberlite::bean_ptr<TState> p=server_->copyBean(*updated_states[i]);
 				net_header_.ts_states_ = std::max(p.get_id(), net_header_.ts_states_);
 			}
 			
 			for(size_t i=0; i<trans.size(); i++) {
+				trans[i].src_ = (trans[i].src_<<8) | net_header_.client_;
+				trans[i].dst_ = (trans[i].dst_<<8) | net_header_.client_;
 				hiberlite::bean_ptr<typename TContext::TState::TransitionSerialization> p=server_->copyBean(trans[i]);
 				net_header_.ts_trans_ = std::max(p.get_id(), net_header_.ts_trans_);
 			}
 			
 			for(size_t i=0; i<fts.size(); i++) {
+				for(size_t j=0; j<fts[i].injs_.size(); j++)
+					fts[i].injs_[j] = (fts[i].injs_[j]<<8) | net_header_.client_;
 				hiberlite::bean_ptr<typename TContext::TFeature::FeatureSerialization> p=server_->copyBean(fts[i]);
 				net_header_.ts_fts_ = std::max(p.get_id(), net_header_.ts_fts_);
 			}
+			server_->commit_transaction();
 		}
 #endif
 		
@@ -569,11 +628,17 @@ namespace cob_3d_experience_mapping {
 			const std::vector<typename TContext::TState::TransitionSerialization> &trans,
 			const std::vector<ID> &removed_states
 		) {
+		    //we have to lock everything for consistency
+			boost::mutex mtx_tmp;
+			boost::lock_guard<boost::mutex> guard(this->ctxt_ ? this->ctxt_->get_mutex() : mtx_tmp);
+			
 			//insert states
 			for(size_t i=0; i<updated_states.size(); i++) {
+				DBG_PRINTF("load state %d", (int)updated_states[i]->id());
 				bool found = false;
 				for(typename TGraph::NodeIt it(*this->graph_); it!=lemon::INVALID; ++it) {
 					if( (*this->states_)[it]->id() == updated_states[i]->id() ) {
+						DBG_PRINTF(": updated\n");
 						*(*this->states_)[it] = *updated_states[i];
 						found = true;
 						break;
@@ -581,6 +646,7 @@ namespace cob_3d_experience_mapping {
 				}
 					
 				if(found) continue;
+				DBG_PRINTF("\n");
 				
 				typename TContext::TState::TPtr c(updated_states[i]);
 				
@@ -611,7 +677,7 @@ namespace cob_3d_experience_mapping {
 				typename TContext::TFeature *tmp = new typename TContext::TFeature(fts[i].ft_.id());
 				tmp->set_serialization(fts[i], *this->graph_, *this->states_);
 				
-				this->ctxt_->get_features().insert(typename TContext::FeatureMap::value_type(fts[i].ft_.id(), typename TContext::TFeature::TPtr(tmp)) );
+				this->ctxt_->merge_feature(fts[i].ft_.id(), typename TContext::TFeature::TPtr(tmp));
 			}
 		}
 		

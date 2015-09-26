@@ -122,8 +122,9 @@ class serializable_shared_ptr : public boost::shared_ptr<T>
 		
 		UNIVERSAL_SERIALIZE()
 		{
-			if(this->get())
-				this->get()->serialize<Archive, make_nvp>(ar, version);
+			if(!this->get())
+				this->reset(new T());
+			this->get()->serialize<Archive, make_nvp>(ar, version);
 		}
 };
 
