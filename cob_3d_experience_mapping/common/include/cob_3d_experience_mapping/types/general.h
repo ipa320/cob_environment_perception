@@ -192,7 +192,8 @@ namespace cob_3d_experience_mapping {
 		
 		uint32_t get_feature_class_counter(const TFeatureClass &ft_cl) const {
 			typename TFeatureClassMap::const_iterator it = ft_class_occurences_.find(ft_cl);
-			assert(it!=ft_class_occurences_.end());
+			if(it==ft_class_occurences_.end())
+				return 0;
 			return it->second;
 		}
 		
@@ -376,8 +377,13 @@ namespace cob_3d_experience_mapping {
 				
 				return true;
 			}
-			else
+			else {
 				it->second.counter_++;
+#ifdef DEBUG_
+				DBG_PRINTF("check ft (%d) cnt: %d <= %d for %d\n", id_, it->second.counter_, it->second.state_->get_feature_class_counter(0), it->second.state_->id());
+				assert(it->second.counter_<=it->second.state_->get_feature_class_counter(0));
+#endif
+			}
 			
 			return false;
 		}
@@ -422,6 +428,22 @@ namespace cob_3d_experience_mapping {
 				ar & UNIVERSAL_SERIALIZATION_NVP(injs_);
 				ar & UNIVERSAL_SERIALIZATION_NVP(cnts_);
 			}
+			
+			void merge(const FeatureSerialization &o) {
+				for(size_t j=0; j<o.injs_.size(); j++) {
+					bool found=false;
+					for(size_t i=0; i<injs_.size(); i++) {
+						if(injs_[i]!=o.injs_[j]) continue;
+						cnts_[i] = std::max(cnts_[i], o.cnts_[j]);
+						found = true;
+						break;
+					}
+					if(!found) {
+						injs_.push_back(o.injs_[j]);
+						cnts_.push_back(o.cnts_[j]);
+					}
+				}
+			}
 		};
 		
 		UNIVERSAL_SERIALIZE()
@@ -439,6 +461,9 @@ namespace cob_3d_experience_mapping {
 				
 				fs.injs_.push_back(it->second.state_->id());
 				fs.cnts_.push_back(it->second.counter_);
+				
+				DBG_PRINTF("send ft (%d) cnt: %d <= %d for %d\n", id_, fs.cnts_.back(), it->second.state_->get_feature_class_counter(0), fs.injs_.back());
+				assert(fs.cnts_.back()<=it->second.state_->get_feature_class_counter(0));
 			}
 			
 			return fs;

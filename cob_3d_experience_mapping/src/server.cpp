@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
     boost::asio::ip::tcp::endpoint endpoint(boost::asio::ip::tcp::v4(), 12347);
     boost::asio::ip::tcp::acceptor acceptor(io_service, endpoint);
     	
-	typename CtxtContainer::TClientId running_client_id_ = 0;
+	typename CtxtContainer::TClientId running_client_id_ = 1;
 	TContext ctxt_;	
 	ns::TGraph graph_;
 	ns::TMapStates states_(graph_);
