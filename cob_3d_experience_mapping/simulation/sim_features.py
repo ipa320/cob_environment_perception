@@ -11,11 +11,11 @@ pub_si = None
 pub_vt = None
 
 NUM_FEATURES=100
-
 def callback(msg):
 	global ids
 	global pub_si
 	global pub_vt
+
 	global NUM_FEATURES
 	
 	x = msg.pose.pose.position.x
@@ -23,7 +23,7 @@ def callback(msg):
 	(r, p, yaw) = tf.transformations.euler_from_quaternion([msg.pose.pose.orientation.x, msg.pose.pose.orientation.y, msg.pose.pose.orientation.z, msg.pose.pose.orientation.w])
 	
 	RESOLUTION_metric=1.5
-	RESOLUTION_angle=0.5
+	RESOLUTION_angle=0.75
 	
 	ix = int(x/RESOLUTION_metric)
 	iy = int(y/RESOLUTION_metric)
@@ -31,6 +31,8 @@ def callback(msg):
 	
 	name = str(ix)+","+str(iy)+","+str(iyaw)
 	no=len(ids)
+	if NUM_FEATURES<=0:
+		no = (ix*1000+iy)*100+iyaw
 	if name in ids:
 		no = ids[name]
 	else:

@@ -81,6 +81,10 @@ namespace cob_3d_experience_mapping {
 		inline Eigen::Matrix<TType, NUM_TRANS, 1> translation() const {return link_.template head<NUM_TRANS>();}
 		inline Eigen::Matrix<TType, NUM_ROT, 1> rotation() const {return link_.template tail<NUM_ROT>();}
 		
+		inline TType dist() const {
+			return link_.norm();
+		}
+		
 		TType dist(const TDist &thr) const {
 			TDist r;
 			
@@ -88,6 +92,10 @@ namespace cob_3d_experience_mapping {
 			r(1) = link_.template tail<NUM_ROT>  ().norm()/thr(1);
 			
 			return r.norm();
+		}
+		
+		inline TType dist(const TLink &thr) const {
+			return link_.cwiseProduct(thr.cwiseInverse()).norm();
 		}
 		
 		TType dist_uncertain(const TDist &thr) const {
@@ -103,7 +111,7 @@ namespace cob_3d_experience_mapping {
 			return v;
 		}
 		
-		TType transition_factor(const TransformationLink &o, const TDist &thr) const {
+		/*TType transition_factor(const TransformationLink &o, const TDist &thr) const {
 			TDist r;
 			TLink tmp;
 			
@@ -116,6 +124,20 @@ namespace cob_3d_experience_mapping {
 			r(1) = tmp.template tail<NUM_ROT>  ().norm()/thr(1);
 			
 			return o.dist(thr)-r.norm();
+		}*/
+		
+		void transition_factor(const TransformationLink &o, const TLink &thr, TType &sim, TType &dev) const {
+			TLink tmp1 =   link_.cwiseProduct(thr.cwiseInverse());
+			TLink tmp2 = o.link_.cwiseProduct(thr.cwiseInverse());
+			
+			if(tmp1.squaredNorm()) {
+				sim =  std::max((TType)0, tmp1.dot( -tmp2 )/tmp1.squaredNorm());
+				dev = std::sqrt( std::max((TType)0, tmp2.squaredNorm() - sim*tmp1.dot( -tmp2 )) );
+			}
+			else
+				dev = sim = 0;
+			
+			DBG_PRINTF("tr f %f %f\n", sim, dev);
 		}
 		
 		void dbg() const {

@@ -47,14 +47,14 @@ public:
   }
   
   void on_odom(const double stamp, const typename Transformation::TLink &link) {
-	  if(time_last_odom_>=0 && (stamp-time_last_odom_)<10) {
-		  link *= stamp-time_last_odom_;
-		  
+	  if(time_last_odom_>=0 && (stamp-time_last_odom_)<10) {		  
 		  Eigen::Vector3f dbg_pose;
-		  Transformation action(link, ctxt_.current_active_cell());
+		  Transformation action(link*(stamp-time_last_odom_), ctxt_.current_active_cell());
 		  action.deviation() = 0.0025f;
+		  Transformation action_derv(link, ctxt_.current_active_cell());
+		  action_derv.deviation() = 0.0025f;
 		  
-		  cob_3d_experience_mapping::algorithms::step(graph_, ctxt_, cells_, trans_, action, dbg_pose);
+		  cob_3d_experience_mapping::algorithms::step(graph_, ctxt_, cells_, trans_, action, action_derv, dbg_pose);
 	  }
 	  time_last_odom_ = stamp;
   }

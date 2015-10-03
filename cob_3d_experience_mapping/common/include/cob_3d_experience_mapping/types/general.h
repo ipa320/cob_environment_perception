@@ -110,6 +110,13 @@ namespace cob_3d_experience_mapping {
 			dbg_.name_ = buf;
 		}
 		
+		
+		void update(const State &o) {
+			ft_class_occurences_ = o.ft_class_occurences_;
+			id_ = o.id_;
+			dbg_ = o.dbg_;
+		}
+		
 		//setter/getter		
 		
 		//!< getter for identifier
@@ -295,8 +302,9 @@ namespace cob_3d_experience_mapping {
 						p_dst = states[it];
 				}
 				
-				//assert(p_dst);
+				assert(p_dst);
 				
+				DBG_PRINTF("add arc %d %d\n", trans_list[i].src_, trans_list[i].dst_);
 				if(p_dst && p_dst->still_exists())
 					trans.set(graph.addArc(p_dst->node(), node()), typename TMapTransformations::Value(
 						new typename TMapTransformations::Value::element_type(trans_list[i].link_, p_dst)

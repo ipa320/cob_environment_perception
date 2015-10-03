@@ -6,6 +6,7 @@
 #include <map>
 #include <boost/thread.hpp>
 #include <boost/circular_buffer.hpp>
+#include <boost/math/distributions/binomial.hpp>
 #include "../helpers/network.h"
 
 //! interfaces and implementations of cob_3d_experience_mapping
@@ -62,6 +63,99 @@ namespace cob_3d_experience_mapping {
 		typedef std::map<typename TFeature::TID, typename TFeature::TPtr> FeatureMap;
 		typedef boost::circular_buffer<typename TFeature::TID> FeatureBuffer;
 		
+		typedef std::vector<typename TFeature::TID> FeaturePerceivedSet;
+		typedef std::vector<FeaturePerceivedSet> FeaturePerceivedHistory;
+		
+		static bool ft_perceived_in(const typename TFeature::TID &ft_id, const FeaturePerceivedSet &slot) {
+			for(size_t i=0; i<slot.size(); i++)
+				if(slot[i]==ft_id) return true;
+			return false;
+		}
+		
+		static TEnergy ft_slot_match(const FeaturePerceivedSet &slotA, const FeaturePerceivedSet &slotB) {
+			TEnergy res = 0;
+			for(size_t i=0; i<slotA.size(); i++)
+				res += (ft_perceived_in(slotA[i], slotB)?1:0);
+			return res/std::max((size_t)1, std::max(slotA.size(), slotB.size()));
+		}
+		
+		TEnergy ft_current_slot_similiarity() const {
+			if(ft_slots_.size()<=1)
+				return 1;
+			TEnergy sim=0;
+			boost::math::binomial_distribution<TEnergy> distribution(ft_slots_.size()-1,0.5);
+			for(size_t i=1; i<ft_slots_.size(); i++)
+				sim += boost::math::pdf(distribution, i-1)*ft_slot_match(ft_slots_[i], ft_slots_[0]);
+			return sim;
+		}
+		
+		TEnergy ft_chance_to_see(const typename TFeature::TID &ft_id) {
+			size_t num=0;
+			for(size_t i=1; i<ft_slots_.size(); i++)
+				if(ft_perceived_in(ft_id, ft_slots_[i])) ++num;
+			return num/(TEnergy)(ft_slots_.size()-1);
+		}
+		
+		void ft_add_features() {
+			
+			DBG_PRINTF("debug the seq.:\n");
+			TEnergy sim_sum = 0, dev_sum=0;
+			for(size_t i=0; virtual_state() && i<action_seq_.size(); i++) {
+				TEnergy sim, dev;
+				virtual_transistion()->transition_factor(TTransform(-action_seq_[i], virtual_state()), normalization_factor(), sim, dev);
+				sim_sum += sim;
+				dev_sum += dev;
+				DBG_PRINTF("  sim/dev: %f %f\n", sim, dev);
+			}
+			DBG_PRINTF("sim sum: %f %f\n", sim_sum, dev_sum);
+			
+			boost::math::binomial_distribution<TEnergy> distribution(ft_slots_.size()-1,0.5);
+			DBG_PRINTF("debug ft slots:\n");
+			for(size_t i=1; i<ft_slots_.size(); i++) {
+				DBG_PRINTF("ft slot %d (%f):  \t", (int)i, boost::math::pdf(distribution, i-1));
+				for(size_t j=0; j<ft_slots_[i].size(); j++)
+					DBG_PRINTF("%d\t", ft_slots_[i][j]);
+				DBG_PRINTF("\n");
+			}
+			
+			std::map<typename TFeature::TID, bool> did_already;
+			TEnergy prob_max = 0;
+			bool registered = false;
+			typename TFeature::TID id_max = -1;
+			for(size_t i=1; i<ft_slots_.size(); i++) {
+				for(size_t j=0; j<ft_slots_[i].size(); j++) {
+					if(did_already.find(ft_slots_[i][j])!=did_already.end()) continue;
+					
+					const TEnergy prob = ft_chance_to_see(ft_slots_[i][j]);
+					did_already[ft_slots_[i][j]] = true;
+				
+					if(prob>0.5) {
+						features_[ft_slots_[i][j]]->visited(current_active_state().get(), current_active_state());
+						id_generator().register_modification(features_[ft_slots_[i][j]]);
+						if(!registered) id_generator().register_modification(current_active_state());
+						registered = true;
+					}
+					if(prob>prob_max) {
+						prob_max = prob;
+						id_max = ft_slots_[i][j];
+					}
+				}
+			}
+			
+			DBG_PRINTF("prob_max %f\n", prob_max);
+			
+			if(prob_max>0 && prob_max<=0.5) {
+				features_[id_max]->visited(current_active_state().get(), current_active_state());
+			
+				id_generator().register_modification(features_[id_max]);
+				if(!registered) id_generator().register_modification(current_active_state());
+			}
+		}
+		
+		void ft_new_slot() {
+			ft_slots_.insert(ft_slots_.begin(), FeaturePerceivedSet());
+		}
+		
 	private:
 		TActList active_states_;		//!< active state list
 		TParameter param_;			//!< parameter storage
@@ -74,8 +168,19 @@ namespace cob_3d_experience_mapping {
 		boost::mutex mtx_;
 		bool needs_sort_;
 		
+		typename TTransform::TLink action_sum_, action_num_;
+		std::vector<typename TTransform::TLink> action_seq_;
+		FeaturePerceivedHistory ft_slots_;
+		
 	public:
 		Context() : last_dist_min_(0), last_features_(10), needs_sort_(true) {
+			action_num_.fill(0);
+			action_sum_.fill(0);
+			
+			action_num_(0) = 20;
+			action_num_(2) = 20;
+			action_sum_(0) = 20*0.5;
+			action_sum_(2) = 20*0.4;
 		}
 		
 		//!< check if sorting is needed (because feature was seen) and resets flag
@@ -88,6 +193,93 @@ namespace cob_3d_experience_mapping {
 		FeatureMap &get_features() {return features_;}
 		TIdTsGenerator &id_generator() {return id_generator_;}
 		
+		void on_new_virtual_state() {
+			if(action_seq_.size()>1) {
+				const typename TTransform::TLink tmp = action_seq_.back();
+				action_seq_.clear();
+				action_seq_.push_back(tmp);
+			}
+			if(ft_slots_.size()>1) {	//keep current set
+				ft_slots_.erase(ft_slots_.begin()+1, ft_slots_.end());
+			}
+		}
+		
+		TEnergy add_odom(const typename TTransform::TLink &odom, const typename TTransform::TLink &odom_derv) {
+			typename TTransform::TLink tmp = odom_derv.cwiseAbs();
+			typename TTransform::TLink w = normalize(tmp);
+			action_sum_ += w.cwiseProduct(tmp);
+			action_num_ += w;
+			
+			TEnergy dev_sum_bef=0, dev_sum_aft=0;
+			for(size_t i=0; virtual_transistion() && i<action_seq_.size(); i++) {
+				TEnergy sim, dev;
+				virtual_transistion()->transition_factor(TTransform(-action_seq_[i], virtual_state()), normalization_factor(), sim, dev);
+				dev_sum_bef += dev;
+			}
+			DBG_PRINTF("dev sum bef: %f\n", dev_sum_bef);
+			action_seq_.push_back(odom);
+			for(size_t i=0; virtual_transistion() && i<action_seq_.size(); i++) {
+				TEnergy sim, dev;
+				virtual_transistion()->transition_factor(TTransform(-action_seq_[i], virtual_state()), normalization_factor(), sim, dev);
+				dev_sum_aft += dev;
+			}
+			DBG_PRINTF("dev sum aft: %f\n", dev_sum_aft);
+			
+			TEnergy running_dist = 0;
+			for(size_t i=0; i<action_seq_.size(); i++) {
+				DBG_PRINTF("seq:          %f %f %f\n", action_seq_[i](0), action_seq_[i](1), action_seq_[i](2));
+				running_dist += normalize(action_seq_[i]).norm();
+			}
+			
+			DBG_PRINTF("action_sum_:          %f %f %f\n", action_sum_(0), action_sum_(1), action_sum_(2));
+			DBG_PRINTF("action_num_:          %f %f %f\n", action_num_(0), action_num_(1), action_num_(2));
+			DBG_PRINTF("running_dist:         %f\n", running_dist);
+			DBG_PRINTF("normalization_factor: %f %f %f\n", normalization_factor()(0), normalization_factor()(1), normalization_factor()(2));
+			if(ft_slots_.size()>0) DBG_PRINTF("ft_current_slot:      %f\n", ft_current_slot_similiarity());
+			
+			return dev_sum_aft-dev_sum_bef;
+			
+			if(!virtual_transistion()) return 0;
+			
+			DBG_PRINTF("trans:          %f %f %f\n", virtual_transistion()->get_data()(0), virtual_transistion()->get_data()(1), virtual_transistion()->get_data()(2));
+			DBG_PRINTF("go for: %f <-> %f\n", running_dist, normalize(virtual_transistion()->get_data()+odom).norm());
+			
+			TEnergy sim, dev;
+			virtual_transistion()->transition_factor(TTransform(-odom, virtual_state()), normalization_factor(), sim, dev);
+			
+			return dev;
+			
+			return std::log(
+					running_dist
+					/
+					normalize(virtual_transistion()->get_data()+odom).norm()
+				) / std::log(odom.rows());
+		}
+		
+		typename TTransform::TLink normalization_factor() const {
+			typename TTransform::TLink tmp = action_sum_;
+			for(int i=0; i<tmp.rows(); i++)
+				if(action_num_(i)==0) tmp(i)=1;
+				else tmp(i) /= action_num_(i);
+			return tmp;
+		}
+		
+		typename TTransform::TLink normalize2(const typename TTransform::TLink &link) const {
+			typename TTransform::TLink tmp = action_num_.cwiseProduct(action_num_);
+			for(int i=0; i<tmp.rows(); i++)
+				if(action_sum_(i)==0) tmp(i)=1;
+				else tmp(i) /= action_sum_(i)*action_sum_(i);
+			return link.cwiseProduct(tmp);
+		}
+		
+		typename TTransform::TLink normalize(const typename TTransform::TLink &link) const {
+			typename TTransform::TLink tmp = action_num_;
+			for(int i=0; i<tmp.rows(); i++)
+				if(action_sum_(i)==0) tmp(i)=1;
+				else tmp(i) /= action_sum_(i);
+			return link.cwiseProduct(tmp);
+		}
+		
 		//!< add a state to the active state list + init. variables + (init. distances if needed)
 		void add_to_active(typename TState::TPtr &state, const bool already_set=false) {
 			if(!current_active_state() && !already_set)
@@ -97,7 +289,7 @@ namespace cob_3d_experience_mapping {
 			for(size_t i=0; i<active_states_.size(); i++)
 				if(active_states_[i]==state) {
 					if(!already_set) {
-						state->dist_dev() 	= std::min(state->dist_dev(), current_active_state()->dist_dev()+1);
+						state->dist_dev() 	= std::min(state->dist_dev(), current_active_state()->dist_dev()+0.2f);
 						needs_sort_ = true;
 					}
 					return;
@@ -105,10 +297,11 @@ namespace cob_3d_experience_mapping {
 				
 			//somebody else will set this variables from outside
 			if(!already_set) {
-				state->dist_dev() 	= current_active_state()->dist_dev()+1;
-				state->dist_trv()  	= 0;	//we are approaching state (assume half way)
+				state->dist_dev() 	= current_active_state()->dist_dev()+0.2f;
 				state->hops() 		= 0;
 			}
+			
+			state->dist_trv()  	= 1;	//we are approaching state (assume half way)
 			
 			//reset feature proability
 			state->is_active() = true;
@@ -126,6 +319,7 @@ namespace cob_3d_experience_mapping {
 			
 			state->still_exists() = false;
 			state->is_active() = false;
+			state->hops() = 0;
 			id_generator().register_removal(state);
 			
 			for(size_t i=0; i<active_states_.size(); i++)
@@ -209,8 +403,14 @@ namespace cob_3d_experience_mapping {
 				modified = true;
 			}
 			//if( !(current_active_state() && virtual_state() && current_active_state()->id() < virtual_state()->id()-(param().min_age_+3) ) )
-			if( current_active_state() )
-				modified |= it->second->visited(current_active_state().get(), current_active_state());
+			if( current_active_state() ) {
+				if(current_active_state()==virtual_state()) {
+					if(!ft_perceived_in(id, ft_slots_.front()))
+						ft_slots_.front().push_back(id);
+				}
+				else
+					modified |= it->second->visited(current_active_state().get(), current_active_state());
+			}
 			if(inject)
 				it->second->inject(this, ts, param().est_occ_, param().max_active_states_, ft_class);
 			
@@ -427,8 +627,7 @@ namespace cob_3d_experience_mapping {
 		typedef std::map<TClientId, TMapID_ID > TMapClientID_ID;
 		//typedef std::map<typename TFeature::TID, sqlid_t> TMapFtID_DbID;
 		
-		TMapID_ID id_conv_map;
-		TMapClientID_ID id_conv_map_client;
+		TMapClientID_ID id_conv_map_2server, id_conv_map_client;
 		//hiberlite::bean_ptr<TMapFtID_DbID> id_conv_ft_;
 		
 		ID convert2client_id(const ID id) const {
@@ -436,6 +635,16 @@ namespace cob_3d_experience_mapping {
 			if(itc==id_conv_map_client.end()) return id;
 			typename TMapID_ID::const_iterator it = itc->second.find(id);
 			if(it==itc->second.end()) return id;
+			return it->second;
+		}
+		
+		ID convert2server_id(const ID id) const {
+			if(id<0) return id;
+			
+			typename TMapClientID_ID::const_iterator itc = id_conv_map_2server.find(net_header_.client_);
+			assert(itc!=id_conv_map_2server.end());
+			typename TMapID_ID::const_iterator it = itc->second.find(id);
+			assert(it!=itc->second.end());
 			return it->second;
 		}
 		
@@ -485,8 +694,13 @@ namespace cob_3d_experience_mapping {
 				net_header_.ts_fts_ = std::max(v_f[i].get_id(), net_header_.ts_fts_);
 				v_f[i].shared_ptr(); //prevent db update
 				
-				for(size_t j=0; j<copy_fts_.back().injs_.size(); j++)
+				DBG_PRINTF("sending ft %d\n", copy_fts_.back().ft_.id());
+				
+				for(size_t j=0; j<copy_fts_.back().injs_.size(); j++) {
+					assert(copy_fts_.back().injs_[j]<0);
+					DBG_PRINTF("sending injs %d -> %d\n", copy_fts_.back().injs_[j], convert2client_id(copy_fts_.back().injs_[j]));
 					copy_fts_.back().injs_[j] = convert2client_id(copy_fts_.back().injs_[j]);
+				}
 			}
 			
 			std::vector< hiberlite::bean_ptr<typename TContext::TState::TransitionSerialization> > v_t = server_->getAllBeanAfter<typename TContext::TState::TransitionSerialization>(net_header_.ts_trans_);
@@ -625,8 +839,9 @@ namespace cob_3d_experience_mapping {
 			server_->begin_transaction();
 			for(size_t i=0; i<updated_states.size(); i++) {
 				hiberlite::bean_ptr<TState> p=server_->copyBean(*updated_states[i]);
+				
 				if(updated_states[i]->id()>0) {
-					id_conv_map[updated_states[i]->id()] = -(ID)p.get_id();
+					id_conv_map_2server[net_header_.client_][updated_states[i]->id()] = -(ID)p.get_id();
 					id_conv_map_client[net_header_.client_][-(ID)p.get_id()] = updated_states[i]->id();
 					p->set_id( -(ID)p.get_id() );
 				}
@@ -635,9 +850,13 @@ namespace cob_3d_experience_mapping {
 				net_header_.ts_states_ = std::max(p.get_id(), net_header_.ts_states_);
 			}
 			
-			for(size_t i=0; i<fts.size(); i++)
-				for(size_t j=0; j<fts[i].injs_.size(); j++)
-					if(fts[i].injs_[j]>0) fts[i].injs_[j] = id_conv_map[fts[i].injs_[j]];
+			for(size_t i=0; i<fts.size(); i++) {
+				DBG_PRINTF("new ftA %d\n", fts[i].ft_.id());
+				for(size_t j=0; j<fts[i].injs_.size(); j++) {
+					DBG_PRINTF("\tstateA %d / %d: %d\n", fts[i].injs_[j], convert2server_id(fts[i].injs_[j]), fts[i].cnts_[j]);
+					if(fts[i].injs_[j]>0) fts[i].injs_[j] = convert2server_id(fts[i].injs_[j]);
+				}
+			}
 			
 			std::vector< hiberlite::bean_ptr<typename TContext::TFeature::FeatureSerialization> > v_f = server_->getAllBeans<typename TContext::TFeature::FeatureSerialization>();
 			for(size_t i=0; i<v_f.size(); i++) {
@@ -653,7 +872,7 @@ namespace cob_3d_experience_mapping {
 						
 						for(size_t k=0; k<copy_fts_.size(); k++)
 							if(copy_fts_[k].ft_.id()==fts[j].ft_.id())
-								assert(0);//copy_fts_[k].merge(fts[j]);
+								copy_fts_[k].merge(fts[j]);
 						break;
 					}
 				}
@@ -661,19 +880,19 @@ namespace cob_3d_experience_mapping {
 			}
 			
 			for(size_t i=0; i<trans.size(); i++) {
-				if(trans[i].src_>0) trans[i].src_ = id_conv_map[trans[i].src_];
-				if(trans[i].dst_>0) trans[i].dst_ = id_conv_map[trans[i].dst_];
+				if(trans[i].src_>0) trans[i].src_ = convert2server_id(trans[i].src_);
+				if(trans[i].dst_>0) trans[i].dst_ = convert2server_id(trans[i].dst_);
 				DBG_PRINTF("new trans %d %d\n", trans[i].src_, trans[i].dst_);
 				hiberlite::bean_ptr<typename TContext::TState::TransitionSerialization> p=server_->copyBean(trans[i]);
 				net_header_.ts_trans_ = std::max(p.get_id(), net_header_.ts_trans_);
 			}
 			
 			for(size_t i=0; i<fts.size(); i++) {
-				for(size_t j=0; j<fts[i].injs_.size(); j++) {
-					if(fts[i].injs_[j]>0) fts[i].injs_[j] = id_conv_map[fts[i].injs_[j]];
-					DBG_PRINTF("\tstate %d: %d\n", fts[i].injs_[j], fts[i].cnts_[j]);
-				}
 				DBG_PRINTF("new ft %d\n", fts[i].ft_.id());
+				for(size_t j=0; j<fts[i].injs_.size(); j++) {
+					DBG_PRINTF("\tstate %d / %d: %d\n", fts[i].injs_[j], convert2server_id(fts[i].injs_[j]), fts[i].cnts_[j]);
+					if(fts[i].injs_[j]>0) fts[i].injs_[j] = convert2server_id(fts[i].injs_[j]);
+				}
 				hiberlite::bean_ptr<typename TContext::TFeature::FeatureSerialization> p=server_->copyBean(fts[i]);
 				net_header_.ts_fts_ = std::max(p.get_id(), net_header_.ts_fts_);
 			}
@@ -698,7 +917,7 @@ namespace cob_3d_experience_mapping {
 				for(typename TGraph::NodeIt it(*this->graph_); it!=lemon::INVALID; ++it) {
 					if( (*this->states_)[it]->id() == updated_states[i]->id() ) {
 						DBG_PRINTF(": updated\n");
-						*(*this->states_)[it] = *updated_states[i];
+						(*this->states_)[it]->update( *updated_states[i] );
 						found = true;
 						break;
 					}

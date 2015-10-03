@@ -18,8 +18,8 @@ namespace cob_3d_experience_mapping {
 	*/
 	template<class TEnergyFactor, class TDist>
 	struct Parameter {		
-		TDist 					prox_thr_;	//!< transformation dependent normalization factor(s): normalized_action = N(action)
-		typename TDist::Scalar 	deviation_factor_;	//!< deviation factor of normalized action if not present by input
+		TDist 					debugging_prox_thr_;	//!< transformation dependent normalization factor(s): normalized_action = N(action)
+		typename TDist::Scalar 	default_deviation_factor_;	//!< deviation factor of normalized action if not present by input
 		
 		int est_occ_;			//!< number of estimated minimal occurances of a feature
 		int min_age_;			//!< minmal age before a feature can be "seen" and influence a state (in number of newly created states)
@@ -39,21 +39,21 @@ namespace cob_3d_experience_mapping {
 #endif
 
 		Parameter() {
-			prox_thr_(0) = 0.5;
-			prox_thr_(1) = 0.35;
+			//prox_thr_(0) = 0.5;
+			//prox_thr_(1) = 0.35;
 			//energy_max_ = 3;//1.25;
 			est_occ_ = 5;
 			min_age_ = 3;
 			max_active_states_ = 200;
-			deviation_factor_ = 0.1;
+			//deviation_factor_ = 0.1;
 			
-			prox_thr_(0) = 0.5;
-			prox_thr_(1) = 0.5;
+			debugging_prox_thr_(0) = 0.5;
+			debugging_prox_thr_(1) = 0.5;
 			//energy_max_ = 1;//1.25;
 			est_occ_ = 3;
 			min_age_ = 3;
 			max_active_states_ = 100;
-			deviation_factor_ = 0.1;
+			default_deviation_factor_ = 0.1;
 			
 #ifdef CLOUD_
 			cloud_addr_ = "";
@@ -79,16 +79,16 @@ namespace cob_3d_experience_mapping {
 		{
 		    assert(version==CURRENT_SERIALIZATION_VERSION);
 		    
-		    for(int i=0; i<prox_thr_.rows(); i++)
-				for(int j=0; j<prox_thr_.cols(); j++) {
+		    for(int i=0; i<debugging_prox_thr_.rows(); i++)
+				for(int j=0; j<debugging_prox_thr_.cols(); j++) {
 					char buf[16];
 					sprintf(buf, "prox_thr_%d_%d", i,j);
-					ar & UNIVERSAL_SERIALIZATION_NVP_NAMED(buf, prox_thr_(i,j));
+					ar & UNIVERSAL_SERIALIZATION_NVP_NAMED(buf, debugging_prox_thr_(i,j));
 				}
 		    ar & UNIVERSAL_SERIALIZATION_NVP(est_occ_);
 		    ar & UNIVERSAL_SERIALIZATION_NVP(min_age_);
 		    ar & UNIVERSAL_SERIALIZATION_NVP(max_active_states_);
-		    ar & UNIVERSAL_SERIALIZATION_NVP(deviation_factor_);
+		    ar & UNIVERSAL_SERIALIZATION_NVP(default_deviation_factor_);
 		}
 		
 #ifdef CLOUD_
@@ -100,12 +100,12 @@ namespace cob_3d_experience_mapping {
 #ifdef VIS_
 		//!< deserialization function for dynamic reocnfigure (settings needed for algo.)
 		void cb_settings(cob_3d_experience_mapping::SettingsConfig &config, uint32_t level) {
-			prox_thr_(0) = config.translation;
-			prox_thr_(1) = config.rotation;
+			debugging_prox_thr_(0) = config.translation;
+			debugging_prox_thr_(1) = config.rotation;
 			est_occ_ = config.est_occ;
 			min_age_ = config.min_age;
 			max_active_states_ = config.max_active_states;
-			deviation_factor_ = config.deviation_factor;
+			default_deviation_factor_ = config.deviation_factor;
 		}
 
 		//!< deserialization function for dynamic reocnfigure (optional visualization configuration)

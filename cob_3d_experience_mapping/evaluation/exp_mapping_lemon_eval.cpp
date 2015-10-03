@@ -171,15 +171,17 @@ int main(int argc, char **argv) {
 			  link(2) = odom->twist.twist.angular.z;
 			  if(link(2)>M_PI)  link(2) -= 2*M_PI;
 			  if(link(2)<-M_PI) link(2) += 2*M_PI;
+			  
+			  Transformation action_derv(link, ctxt_.current_active_state());
 			  link *= (odom->header.stamp-time_last_odom_).toSec();
 			  
 			  if(link.squaredNorm()>0) {
 			  
 				  Transformation action(link, ctxt_.current_active_state());
-				  action.deviation() = ctxt_.param().deviation_factor_*action.dist(ctxt_.param().prox_thr_);
+				  action.deviation() = ctxt_.param().default_deviation_factor_*action.dist();
 				  
 				  PrecisionStopWatch sw;
-				  cob_3d_experience_mapping::algorithms::step(graph_, ctxt_, states_, trans_, action, dbg_pose);
+				  cob_3d_experience_mapping::algorithms::step(graph_, ctxt_, states_, trans_, action, action_derv, dbg_pose);
 				  double time = time = sw.precisionStop();
 				  
 				  bool match_gt = true;
@@ -188,8 +190,8 @@ int main(int argc, char **argv) {
 				  if(ctxt_.active_states().size()>0) {
 					  cur_pose = ctxt_.current_active_state()->dbg().pose_;
 					  hops = ctxt_.current_active_state()->hops();
-					match_gt &= (dbg_pose.head<2>()-cur_pose.head<2>()).norm()<ctxt_.param().prox_thr_(0);
-					match_gt &= (dbg_pose.tail<1>()-cur_pose.tail<1>()).norm()<ctxt_.param().prox_thr_(1);
+					match_gt &= (dbg_pose.head<2>()-cur_pose.head<2>()).norm()<ctxt_.param().debugging_prox_thr_(0);
+					match_gt &= (dbg_pose.tail<1>()-cur_pose.tail<1>()).norm()<ctxt_.param().debugging_prox_thr_(1);
 				  }
 				  
 				  ofs_result<<time<<";"<<match_gt<<";"<<(ctxt_.active_states().size()>0 ? ctxt_.current_active_state()->id()-1 : -1)

@@ -224,6 +224,9 @@ public:
 		  link(2) = odom->twist.twist.angular.z;
 		  if(link(2)>M_PI)  link(2) -= 2*M_PI;
 		  if(link(2)<-M_PI) link(2) += 2*M_PI;
+		  
+		  Transformation action_derv(link, ctxt_.current_active_state());
+		  
 		  if(!step_mode_) link *= (odom->header.stamp-time_last_odom_).toSec();
 		  
 		  else if(std::abs(link(2))>0.4) link(2) *= 0.4/std::abs(link(2)); //TODO: TESTING ONLY!!!
@@ -235,9 +238,9 @@ public:
 
 		  Transformation action(link, ctxt_.current_active_state());
 		  if(step_mode_)
-			action.deviation() = ctxt_.param().deviation_factor_;
+			action.deviation() = ctxt_.param().default_deviation_factor_;
 		  else
-			action.deviation() = ctxt_.param().deviation_factor_*action.dist(ctxt_.param().prox_thr_);
+			action.deviation() = ctxt_.param().default_deviation_factor_*action.dist();
 		  
 		  //cob_3d_experience_mapping::algorithms::step(graph_, ctxt_, states_, trans_, action, dbg_pose);
 		  
@@ -246,11 +249,11 @@ public:
 		  rs_action.action = ratslam_ros::TopologicalAction::CREATE_NODE;
 		  rs_action.src_id = ctxt_.active_states().size()>0 ? ctxt_.current_active_state()->id()-1 : -1;
 		  
-		  cob_3d_experience_mapping::algorithms::step(graph_, ctxt_, states_, trans_, action, dbg_pose);
+		  cob_3d_experience_mapping::algorithms::step(graph_, ctxt_, states_, trans_, action, action_derv, dbg_pose);
 		  
 		  static int biggest=0;
 		  static std::map<int,int> rs_ids;
-		  if(biggest==0) {
+		  if(biggest==0 && rs_ids.size()==0) {
 			rs_action.dest_id = 0;
 			pub_top_action_.publish(rs_action);
 		  }
