@@ -109,6 +109,15 @@ namespace cob_3d_experience_mapping {
 			}
 			DBG_PRINTF("sim sum: %f %f\n", sim_sum, dev_sum);
 			
+			{
+				TEnergy relation = 0, w;
+				if(dev_sum) relation = dev_sum/sim_sum;
+				w = 1;//relation/distance_relation();
+				distance_relation_sum_ += w*relation;
+				distance_relation_num_ += w;
+			}
+			DBG_PRINTF("distance_relation %f\n", distance_relation());
+			
 			boost::math::binomial_distribution<TEnergy> distribution(ft_slots_.size()-1,0.5);
 			DBG_PRINTF("debug ft slots:\n");
 			for(size_t i=1; i<ft_slots_.size(); i++) {
@@ -167,6 +176,7 @@ namespace cob_3d_experience_mapping {
 		FeatureBuffer last_features_;
 		boost::mutex mtx_;
 		bool needs_sort_;
+		TEnergy distance_relation_, distance_relation_sum_, distance_relation_num_;
 		
 		typename TTransform::TLink action_sum_, action_num_;
 		std::vector<typename TTransform::TLink> action_seq_;
@@ -176,11 +186,20 @@ namespace cob_3d_experience_mapping {
 		Context() : last_dist_min_(0), last_features_(10), needs_sort_(true) {
 			action_num_.fill(0);
 			action_sum_.fill(0);
+			distance_relation_sum_ = distance_relation_num_ = 0;
 			
-			action_num_(0) = 20;
+			/*action_num_(0) = 20;
 			action_num_(2) = 20;
 			action_sum_(0) = 20*0.5;
-			action_sum_(2) = 20*0.4;
+			action_sum_(2) = 20*0.4;*/
+			
+			distance_relation_ = 0.1f;
+		}
+		
+		//TEnergy distance_relation() const {return distance_relation_;}
+		TEnergy distance_relation() const {
+			if(!distance_relation_num_) return 1;
+			return distance_relation_sum_/distance_relation_num_;
 		}
 		
 		//!< check if sorting is needed (because feature was seen) and resets flag
@@ -289,7 +308,7 @@ namespace cob_3d_experience_mapping {
 			for(size_t i=0; i<active_states_.size(); i++)
 				if(active_states_[i]==state) {
 					if(!already_set) {
-						state->dist_dev() 	= std::min(state->dist_dev(), current_active_state()->dist_dev()+0.2f);
+						state->dist_dev() 	= std::min(state->dist_dev(), current_active_state()->dist_dev()+distance_relation_);
 						needs_sort_ = true;
 					}
 					return;
@@ -297,7 +316,7 @@ namespace cob_3d_experience_mapping {
 				
 			//somebody else will set this variables from outside
 			if(!already_set) {
-				state->dist_dev() 	= current_active_state()->dist_dev()+0.2f;
+				state->dist_dev() 	= current_active_state()->dist_dev()+distance_relation_;
 				state->hops() 		= 0;
 			}
 			
