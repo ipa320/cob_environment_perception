@@ -127,17 +127,24 @@ namespace cob_3d_experience_mapping {
 		}*/
 		
 		void transition_factor(const TransformationLink &o, const TLink &thr, TType &sim, TType &dev) const {
+			TType rel;
+			transition_factor(o, thr, sim, dev, rel);
+		}
+		void transition_factor(const TransformationLink &o, const TLink &thr, TType &sim, TType &dev, TType &rel) const {
 			TLink tmp1 =   link_.cwiseProduct(thr.cwiseInverse());
 			TLink tmp2 = o.link_.cwiseProduct(thr.cwiseInverse());
 			
 			if(tmp1.squaredNorm()) {
-				sim =  std::max((TType)0, tmp1.dot( -tmp2 )/tmp1.squaredNorm());
+				sim =  tmp1.dot( -tmp2 )/tmp1.squaredNorm();
 				dev = std::sqrt( std::max((TType)0, tmp2.squaredNorm() - sim*tmp1.dot( -tmp2 )) );
+				if(sim>1) sim = 1-sim;
+				sim = std::max((TType)0, sim);
+				rel = sim*tmp1.norm()/tmp2.norm();
 			}
 			else
-				dev = sim = 0;
+				rel = dev = sim = 0;
 			
-			DBG_PRINTF("tr f %f %f\n", sim, dev);
+			DBG_PRINTF("tr f %f %f %f\t\t\t%f %f\n", sim, dev, rel, link_(0), link_(2));
 		}
 		
 		void dbg() const {
