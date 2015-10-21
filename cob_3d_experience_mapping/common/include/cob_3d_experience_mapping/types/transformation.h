@@ -34,7 +34,7 @@ namespace cob_3d_experience_mapping {
 		
 	protected:
 		TLink link_;
-		_TType _DEVIATION;
+		TLink deviation_;
 
 		template<int TInd>
 		inline static void helper_hystersis(TDist &d, const TDist &thr) {
@@ -44,14 +44,14 @@ namespace cob_3d_experience_mapping {
 		
 	public:
 		
-		TransformationLink() : link_(TLink::Zero()), _DEVIATION(0.000001f)
+		TransformationLink() : link_(TLink::Zero()), deviation_(TLink::Zero())
 		{}
 		
 		
 		inline const TLink &get_data() const {return link_;}
 		
-		inline _TType &deviation() {return _DEVIATION;}
-		inline _TType deviation() const {return _DEVIATION;}
+		inline TLink &deviation() {return deviation_;}
+		inline TLink deviation() const {return deviation_;}
 
 		TransformationLink scale(const TDist &thr) const {
 			TLink tmp = link_;
@@ -75,7 +75,7 @@ namespace cob_3d_experience_mapping {
 		
 		void integrate(const TransformationLink &movement) {
 			link_ += movement.link_;
-			_DEVIATION += movement._DEVIATION;
+			//_DEVIATION += movement._DEVIATION;
 		}
 		
 		inline Eigen::Matrix<TType, NUM_TRANS, 1> translation() const {return link_.template head<NUM_TRANS>();}
@@ -98,9 +98,9 @@ namespace cob_3d_experience_mapping {
 			return link_.cwiseProduct(thr.cwiseInverse()).norm();
 		}
 		
-		TType dist_uncertain(const TDist &thr) const {
+		/*TType dist_uncertain(const TDist &thr) const {
 			return dist(thr) + _DEVIATION;
-		}
+		}*/
 		
 		inline static Eigen::Matrix<TType, NUM_ROT, 1> dist_rad(Eigen::Matrix<TType, NUM_ROT, 1> v) {
 			for(int i=0; i<NUM_ROT; i++) {
@@ -126,25 +126,80 @@ namespace cob_3d_experience_mapping {
 			return o.dist(thr)-r.norm();
 		}*/
 		
-		void transition_factor(const TransformationLink &o, const TLink &thr, TType &sim, TType &dev) const {
+		void transition_factor(const TransformationLink &o, const TLink &thr, TType &sim, TType &dev, TLink &er) const {
 			TType rel;
-			transition_factor(o, thr, sim, dev, rel);
+			transition_factor(o, thr, sim, dev, er, rel);
 		}
-		void transition_factor(const TransformationLink &o, const TLink &thr, TType &sim, TType &dev, TType &rel) const {
+		void transition_factor(const TransformationLink &o, const TLink &thr, TType &sim, TType &dev, TLink &er, TType &rel) const {
 			TLink tmp1 =   link_.cwiseProduct(thr.cwiseInverse());
 			TLink tmp2 = o.link_.cwiseProduct(thr.cwiseInverse());
 			
 			if(tmp1.squaredNorm()) {
 				sim =  tmp1.dot( -tmp2 )/tmp1.squaredNorm();
 				dev = std::sqrt( std::max((TType)0, tmp2.squaredNorm() - sim*tmp1.dot( -tmp2 )) );
+				
 				if(sim>1) sim = 1-sim;
 				sim = std::max((TType)0, sim);
 				rel = sim*tmp1.norm()/tmp2.norm();
+				
+				er = (tmp2+sim*tmp1).cwiseAbs().cwiseProduct(thr);
+			}
+			else {
+				rel = dev = sim = 0;
+				er.fill(0);
+			}
+			
+			DBG_PRINTF("tr f %f %f %f\t\t\t%f %f  \t\t   %f %f\n", sim, dev, rel, link_(0), link_(2), er(0), er(2));
+			DBG_PRINTF("links  %f %f\n", o.link_(0), o.link_(2));
+			
+			//assert(er.norm() <= 2*o.link_.norm()+0.00001f);
+		}
+		void transition_factor2(const TransformationLink &o, const TLink &thr, const TType relation_factor, TType &sim, TType &dev, TType &rel) const {
+			TLink tmp1 =   link_.cwiseProduct(thr.cwiseInverse());
+			TLink tmp2 = o.link_.cwiseProduct(thr.cwiseInverse());
+			TLink dev1 = deviation_.cwiseProduct(thr.cwiseInverse());
+			
+			if(tmp1.squaredNorm()) {
+				sim =  tmp1.dot( -tmp2 )/tmp1.squaredNorm();
+				dev = std::sqrt( std::max((TType)0, tmp2.squaredNorm() - sim*tmp1.dot( -tmp2 )) );
+				
+				if(sim>1) sim = 1-sim;
+				sim = std::max((TType)0, sim);
+				rel = sim*tmp1.norm()/tmp2.norm();
+				
+				TLink er = (tmp2+sim*tmp1).cwiseAbs();
+				
+				DBG_PRINTF("error1 %f (allowed %f %f)   \t%f %f\n", dev, (dev1*tmp2.norm()/tmp1.norm())(0), (dev1*tmp2.norm()/tmp1.norm())(2), er(0), er(2));
+				
+				er-= dev1*tmp2.norm()/tmp1.norm();
+				//er-= tmp2.cwiseAbs()*0.1f;
+				er = er.cwiseMax(TLink::Zero());
+				
+				//dev = relation_factor*(std::pow(1/relation_factor, er.norm()/dev1.norm())-1);
+				//dev = relation_factor*(std::exp(er.norm()/dev1.norm())-1);
+				//dev = std::max((TType)0, er.sum()-relation_factor*tmp2.norm());
+				//dev = er.sum();
+				dev = er.sum()/tmp1.norm();
+				//dev = relation_factor*er.sum()/tmp2.norm();
+				
+				//allowed dev. for odom:
+				const TType allowed = dev1.norm()*tmp2.norm()/tmp1.norm();
+				
+				DBG_PRINTF("error2 %f (allowed %f)   \t%f %f\n", dev, allowed, er(0), er(2));
+				
+				//if(dev<allowed) dev = 0;
+				//else dev = relation_factor*(dev-allowed); //dev = (relation_factor/deviation())*(dev-allowed);
+				
+				if(dev!=dev) dev = tmp1.norm();
 			}
 			else
 				rel = dev = sim = 0;
-			
-			DBG_PRINTF("tr f %f %f %f\t\t\t%f %f\n", sim, dev, rel, link_(0), link_(2));
+			DBG_PRINTF("dev %f %f\n", dev1(0), dev1(2));
+			DBG_PRINTF("link %f %f\n", tmp1(0), tmp1(2));
+			DBG_PRINTF("odom %f %f\n", tmp2(0), tmp2(2));
+			DBG_PRINTF("link %f %f\n", link_(0), link_(2));
+			DBG_PRINTF("odom %f %f\n", o.link_(0), o.link_(2));
+			DBG_PRINTF("tr f2 %f %f %f\t\t\t%f %f %f (f: %f)\n", sim, dev, rel, link_(0), link_(2), deviation().norm(), (relation_factor/dev1.norm()));
 		}
 		
 		void dbg() const {
@@ -174,8 +229,12 @@ namespace cob_3d_experience_mapping {
 				sprintf(buf, "link_%d", i);
 		    	ar & UNIVERSAL_SERIALIZATION_NVP_NAMED(buf, link_(i));
 			}
-			
-			ar & UNIVERSAL_SERIALIZATION_NVP(_DEVIATION);
+		    
+		    for(int i=0; i<NUM_TRANS+NUM_ROT; i++) {
+				char buf[16];
+				sprintf(buf, "dev_%d", i);
+		    	ar & UNIVERSAL_SERIALIZATION_NVP_NAMED(buf, deviation_(i));
+			}
 		}
 	};
 	
@@ -186,6 +245,7 @@ namespace cob_3d_experience_mapping {
 		typedef boost::shared_ptr<Transformation> TPtr;
 		typedef typename _TransformationLink::TLink TLink;
 		typedef typename _TransformationLink::TDist TDist;
+		typedef typename _TransformationLink::TType TType;
 		
 	protected:
 		TStatePtr src_;
@@ -201,17 +261,18 @@ namespace cob_3d_experience_mapping {
 			src_(state)
 		{}
 
-		Transformation(const TLink &link, const TStatePtr &state) :
+		Transformation(const TLink &link, const TLink &dev, const TStatePtr &state) :
 			src_(state)
 		{
 			this->link_ = link;
+			this->deviation_ = dev;
 		}
 
 		Transformation(const _TransformationLink &o, const TStatePtr &state) :
 			src_(state)
 		{
 			this->link_ = o.get_data();
-			this->_DEVIATION = o.deviation();
+			this->deviation_ = o.deviation();
 		}
 		
 		inline const TStatePtr &src() const {return src_;}
@@ -219,7 +280,7 @@ namespace cob_3d_experience_mapping {
 
 		Transformation directed(const TStatePtr &state) const {
 			if(state==src_) return *this;
-			return Transformation(-1*this->link_, state);
+			return Transformation(-1*this->link_, this->deviation_, state);
 		}
 	};
 }

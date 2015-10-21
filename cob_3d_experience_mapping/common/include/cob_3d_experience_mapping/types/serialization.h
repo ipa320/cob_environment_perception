@@ -22,6 +22,8 @@
  
 #include <boost/iostreams/filtering_stream.hpp>
 #include <boost/iostreams/filter/zlib.hpp>
+#include <boost/iostreams/filter/bzip2.hpp>
+#include <boost/iostreams/filter/gzip.hpp>
 
 #include "../helpers/db_serialization.h"
 
@@ -52,7 +54,7 @@ template<class TArchive, class TContent>
 void export_content_compr(const TContent &s, std::ostream &_ostr){
     {
 		boost::iostreams::filtering_ostream ostr;
-		ostr.push(boost::iostreams::zlib_compressor());
+		ostr.push(boost::iostreams::gzip_compressor());
 		ostr.push(_ostr);
     
 		TArchive oa(ostr);
@@ -65,7 +67,7 @@ template<class TArchive, class TContent>
 void import_content_compr(TContent &s, std::istream &_istr)
 {
 	boost::iostreams::filtering_istream istr;
-    istr.push(boost::iostreams::zlib_decompressor());
+    istr.push(boost::iostreams::gzip_decompressor());
     istr.push(_istr);
     
     TArchive ia(istr);
