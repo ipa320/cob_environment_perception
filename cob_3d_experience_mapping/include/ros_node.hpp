@@ -215,7 +215,7 @@ public:
 	  }
 	  
 	  ROS_INFO("-------------------------------");
-	  if(/*time_last_odom_.isValid() &&*/ (odom->header.stamp-time_last_odom_)<ros::Duration(100)) {
+	  if(/*time_last_odom_.isValid() &&*/ (odom->header.stamp-time_last_odom_)<ros::Duration(100) && (odom->header.stamp-time_last_odom_)>ros::Duration(0)) {
 		  ROS_INFO("on odom.");
 
 		  typename Transformation::TLink link;
@@ -225,7 +225,7 @@ public:
 		  if(link(2)>M_PI)  link(2) -= 2*M_PI;
 		  if(link(2)<-M_PI) link(2) += 2*M_PI;
 		  
-		  Transformation action_derv(link, ctxt_.current_active_state());
+		  Transformation action_derv(link, Eigen::Vector3f::Zero(), ctxt_.current_active_state());
 		  
 		  if(!step_mode_) link *= (odom->header.stamp-time_last_odom_).toSec();
 		  
@@ -236,11 +236,11 @@ public:
 		  ROS_INFO("debug pose: %f %f %f", dbg_pose(0),dbg_pose(1),dbg_pose(2));
 		  ROS_INFO("odom: %f %f %f", link(0),link(1),link(2));
 
-		  Transformation action(link, ctxt_.current_active_state());
+		  Transformation action(link, Eigen::Vector3f::Zero(), ctxt_.current_active_state());
 		  if(step_mode_)
-			action.deviation() = ctxt_.param().default_deviation_factor_;
+			action.deviation() = ctxt_.param().default_deviation_factor_*link/action.dist();
 		  else
-			action.deviation() = ctxt_.param().default_deviation_factor_*action.dist();
+			action.deviation() = ctxt_.param().default_deviation_factor_*link;
 		  
 		  //cob_3d_experience_mapping::algorithms::step(graph_, ctxt_, states_, trans_, action, dbg_pose);
 		  

@@ -172,13 +172,12 @@ int main(int argc, char **argv) {
 			  if(link(2)>M_PI)  link(2) -= 2*M_PI;
 			  if(link(2)<-M_PI) link(2) += 2*M_PI;
 			  
-			  Transformation action_derv(link, ctxt_.current_active_state());
+			  Transformation action_derv(link, Eigen::Vector3f::Zero(), ctxt_.current_active_state());
 			  link *= (odom->header.stamp-time_last_odom_).toSec();
 			  
 			  if(link.squaredNorm()>0) {
 			  
-				  Transformation action(link, ctxt_.current_active_state());
-				  action.deviation() = ctxt_.param().default_deviation_factor_*action.dist();
+				  Transformation action(link, ctxt_.param().default_deviation_factor_*link, ctxt_.current_active_state());
 				  
 				  PrecisionStopWatch sw;
 				  cob_3d_experience_mapping::algorithms::step(graph_, ctxt_, states_, trans_, action, action_derv, dbg_pose);

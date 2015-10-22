@@ -80,12 +80,14 @@ namespace cob_3d_experience_mapping {
 		}
 		
 		TEnergy ft_current_slot_similiarity() const {
-			if(ft_slots_.size()<=1)
+			if(ft_slots_.size()<=2)
+				return 1;
+			if(ft_slots_[0].size()<1)
 				return 1;
 			TEnergy sim=0;
-			boost::math::binomial_distribution<TEnergy> distribution(ft_slots_.size()-1,0.5);
-			for(size_t i=1; i<ft_slots_.size(); i++)
-				sim += boost::math::pdf(distribution, i-1)*ft_slot_match(ft_slots_[i], ft_slots_[0]);
+			//boost::math::binomial_distribution<TEnergy> distribution(ft_slots_.size()-1,0.5);
+			for(size_t i=2; i<ft_slots_.size(); i++)
+				sim += (float)(i-1)*2/((ft_slots_.size()-1)*(ft_slots_.size()-2)) * /*boost::math::pdf(distribution, i-1)*/ ft_slot_match(ft_slots_[i], ft_slots_[0]);
 			return sim;
 		}
 		
@@ -102,7 +104,8 @@ namespace cob_3d_experience_mapping {
 			TEnergy sim_sum = 0, dev_sum=0;
 			for(size_t i=0; virtual_state() && i<action_seq_.size(); i++) {
 				TEnergy sim, dev;
-				virtual_transistion()->transition_factor(TTransform(-action_seq_[i], virtual_state()), normalization_factor(), sim, dev);
+				typename TTransform::TLink er;
+				virtual_transistion()->transition_factor(TTransform(-action_seq_[i], typename TTransform::TLink(), virtual_state()), normalization_factor(), sim, dev, er);
 				sim_sum += sim;
 				dev_sum += dev;
 				DBG_PRINTF("  sim/dev: %f %f\n", sim, dev);
@@ -118,10 +121,10 @@ namespace cob_3d_experience_mapping {
 			}
 			DBG_PRINTF("distance_relation %f\n", distance_relation());
 			
-			boost::math::binomial_distribution<TEnergy> distribution(ft_slots_.size()-1,0.5);
+			//boost::math::binomial_distribution<TEnergy> distribution(ft_slots_.size()-1,0.5);
 			DBG_PRINTF("debug ft slots:\n");
 			for(size_t i=1; i<ft_slots_.size(); i++) {
-				DBG_PRINTF("ft slot %d (%f):  \t", (int)i, boost::math::pdf(distribution, i-1));
+				DBG_PRINTF("ft slot %d (%f):  \t", (int)i, (float)(i-1)*2/((ft_slots_.size()-1)*ft_slots_.size()));//boost::math::pdf(distribution, i-1));
 				for(size_t j=0; j<ft_slots_[i].size(); j++)
 					DBG_PRINTF("%d\t", ft_slots_[i][j]);
 				DBG_PRINTF("\n");
@@ -138,7 +141,7 @@ namespace cob_3d_experience_mapping {
 					const TEnergy prob = ft_chance_to_see(ft_slots_[i][j]);
 					did_already[ft_slots_[i][j]] = true;
 				
-					if(prob>0.5) {
+					if(prob>=0.5) {
 						features_[ft_slots_[i][j]]->visited(current_active_state().get(), current_active_state());
 						id_generator().register_modification(features_[ft_slots_[i][j]]);
 						if(!registered) id_generator().register_modification(current_active_state());
@@ -162,7 +165,8 @@ namespace cob_3d_experience_mapping {
 		}
 		
 		void ft_new_slot() {
-			ft_slots_.insert(ft_slots_.begin(), FeaturePerceivedSet());
+			if(ft_slots_.size()<1 || ft_slots_.front().size()>0)
+				ft_slots_.insert(ft_slots_.begin(), FeaturePerceivedSet());
 		}
 		
 	private:
@@ -176,7 +180,7 @@ namespace cob_3d_experience_mapping {
 		FeatureBuffer last_features_;
 		boost::mutex mtx_;
 		bool needs_sort_;
-		TEnergy distance_relation_, distance_relation_sum_, distance_relation_num_;
+		TEnergy distance_relation_sum_, distance_relation_num_;
 		
 		typename TTransform::TLink action_sum_, action_num_;
 		std::vector<typename TTransform::TLink> action_seq_;
@@ -191,9 +195,13 @@ namespace cob_3d_experience_mapping {
 			/*action_num_(0) = 20;
 			action_num_(2) = 20;
 			action_sum_(0) = 20*0.5;
-			action_sum_(2) = 20*0.4;*/
+			action_sum_(2) = 20*0.4;
 			
-			distance_relation_ = 0.1f;
+			distance_relation_ = 0.1f;*/
+		}
+		
+		inline TEnergy initial_distance() const {
+			return distance_relation();
 		}
 		
 		//TEnergy distance_relation() const {return distance_relation_;}
@@ -225,21 +233,30 @@ namespace cob_3d_experience_mapping {
 		
 		TEnergy add_odom(const typename TTransform::TLink &odom, const typename TTransform::TLink &odom_derv) {
 			typename TTransform::TLink tmp = odom_derv.cwiseAbs();
-			typename TTransform::TLink w = normalize(tmp);
+			//typename TTransform::TLink w = normalize(tmp);
+			typename TTransform::TLink w;w.fill(1);
 			action_sum_ += w.cwiseProduct(tmp);
 			action_num_ += w;
 			
 			TEnergy dev_sum_bef=0, dev_sum_aft=0;
+			typename TTransform::TLink vec_dev_sum_bef, vec_dev_sum_aft;
+			vec_dev_sum_bef.fill(0);
+			vec_dev_sum_aft.fill(0);
+			
 			for(size_t i=0; virtual_transistion() && i<action_seq_.size(); i++) {
 				TEnergy sim, dev;
-				virtual_transistion()->transition_factor(TTransform(-action_seq_[i], virtual_state()), normalization_factor(), sim, dev);
+				typename TTransform::TLink er;
+				virtual_transistion()->transition_factor(TTransform(-action_seq_[i], typename TTransform::TLink(), virtual_state()), normalization_factor(), sim, dev, er);
+				vec_dev_sum_bef += er;
 				dev_sum_bef += dev;
 			}
 			DBG_PRINTF("dev sum bef: %f\n", dev_sum_bef);
 			action_seq_.push_back(odom);
 			for(size_t i=0; virtual_transistion() && i<action_seq_.size(); i++) {
 				TEnergy sim, dev;
-				virtual_transistion()->transition_factor(TTransform(-action_seq_[i], virtual_state()), normalization_factor(), sim, dev);
+				typename TTransform::TLink er;
+				virtual_transistion()->transition_factor(TTransform(-action_seq_[i], typename TTransform::TLink(), virtual_state()), normalization_factor(), sim, dev, er);
+				vec_dev_sum_aft += er;
 				dev_sum_aft += dev;
 			}
 			DBG_PRINTF("dev sum aft: %f\n", dev_sum_aft);
@@ -256,9 +273,15 @@ namespace cob_3d_experience_mapping {
 			DBG_PRINTF("normalization_factor: %f %f %f\n", normalization_factor()(0), normalization_factor()(1), normalization_factor()(2));
 			if(ft_slots_.size()>0) DBG_PRINTF("ft_current_slot:      %f\n", ft_current_slot_similiarity());
 			
+			if(virtual_transistion()) {
+				virtual_transistion()->deviation() = vec_dev_sum_bef;
+				DBG_PRINTF("dev vec %f %f\n", virtual_transistion()->deviation()(0), virtual_transistion()->deviation()(2));
+			}
+
 			return dev_sum_aft-dev_sum_bef;
-			
+			/*
 			if(!virtual_transistion()) return 0;
+			
 			
 			DBG_PRINTF("trans:          %f %f %f\n", virtual_transistion()->get_data()(0), virtual_transistion()->get_data()(1), virtual_transistion()->get_data()(2));
 			DBG_PRINTF("go for: %f <-> %f\n", running_dist, normalize(virtual_transistion()->get_data()+odom).norm());
@@ -272,13 +295,13 @@ namespace cob_3d_experience_mapping {
 					running_dist
 					/
 					normalize(virtual_transistion()->get_data()+odom).norm()
-				) / std::log(odom.rows());
+				) / std::log(odom.rows());*/
 		}
 		
 		typename TTransform::TLink normalization_factor() const {
 			typename TTransform::TLink tmp = action_sum_;
 			for(int i=0; i<tmp.rows(); i++)
-				if(action_num_(i)==0) tmp(i)=1;
+				if(tmp(i)==0 || action_num_(i)==0) tmp(i)=1;
 				else tmp(i) /= action_num_(i);
 			return tmp;
 		}
@@ -308,7 +331,11 @@ namespace cob_3d_experience_mapping {
 			for(size_t i=0; i<active_states_.size(); i++)
 				if(active_states_[i]==state) {
 					if(!already_set) {
-						state->dist_dev() 	= std::min(state->dist_dev(), current_active_state()->dist_dev()+distance_relation_);
+						//TODO: think about this correction
+						//if(state->dist_trv()<0)
+						//	state->dist_trv() = distance_relation()/2;
+						//state->dist_trv() = (1+state->dist_trv())/2;
+						state->dist_dev() 	= std::min(state->dist_dev(), current_active_state()->dist_dev()+initial_distance());
 						needs_sort_ = true;
 					}
 					return;
@@ -316,7 +343,7 @@ namespace cob_3d_experience_mapping {
 				
 			//somebody else will set this variables from outside
 			if(!already_set) {
-				state->dist_dev() 	= current_active_state()->dist_dev()+distance_relation_;
+				state->dist_dev() 	= current_active_state()->dist_dev()+initial_distance();
 				state->hops() 		= 0;
 			}
 			
@@ -362,8 +389,9 @@ namespace cob_3d_experience_mapping {
 			if(active_states_.size()>0) {
 				//skip current active state
 				for(size_t i=1; i<active_states_.size(); i++) {
+					//if(i==0 && active_states_[i]==virtual_state()) continue;
 					
-					if(active_states_[i]->dist_trv()<=-1) {
+					if(active_states_[i]->dist_trv()<=-1 || active_states_[i]->dist_dev()-active_states_.front()->dist_dev() > 10*initial_distance()) {
 						active_states_[i]->is_active() = false;
 						active_states_.erase(active_states_.begin()+i);
 						--i;
@@ -430,8 +458,8 @@ namespace cob_3d_experience_mapping {
 				else
 					modified |= it->second->visited(current_active_state().get(), current_active_state());
 			}
-			if(inject)
-				it->second->inject(this, ts, param().est_occ_, param().max_active_states_, ft_class);
+			
+			it->second->inject(this, ts, param().est_occ_, param().max_active_states_, ft_class, inject);
 			
 			if(modified)
 				id_generator().register_modification(it->second);

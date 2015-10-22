@@ -397,7 +397,7 @@ namespace cob_3d_experience_mapping {
 		}
 		
 		template<typename TContext>
-		void inject(TContext *ctxt, const int ts, const int est_occ, const int max_occ, const TFeatureClass &ft_cl, const typename TInjection::TEnergy prob=1) {
+		void inject(TContext *ctxt, const int ts, const int est_occ, const int max_occ, const TFeatureClass &ft_cl, const bool update, const typename TInjection::TEnergy prob=1) {
 			for(typename InjectionMap::iterator it=injections_.begin(); it!=injections_.end(); it++) {
 				//if state is already killed or still to be created --> skip injecting activation by external sensors
 				if(!it->second.state_->still_exists() || it->second.state_==ctxt->virtual_state()) continue;
@@ -406,7 +406,8 @@ namespace cob_3d_experience_mapping {
 				if(2*injections_.size() < ctxt->param().max_active_states_)
 					ctxt->add_to_active(it->second.state_);
 				
-				it->second.state_->update(ts, std::min(max_occ, (int)injections_.size()), est_occ, it->second.counter_, ft_cl, prob);
+				if(update)
+					it->second.state_->update(ts, std::min(max_occ, (int)injections_.size()), est_occ, it->second.counter_, ft_cl, prob);
 				
 				DBG_PRINTF("injectXYZ %d -> %d with %d\n", id_, it->second.state_->id(), (int)(injections_.size()+est_occ));
 			}
