@@ -142,6 +142,7 @@ add_executable(sim_barks src/sim_barks.cpp)
 add_executable(convert src/convert.cpp)
 add_executable(server src/server.cpp)
 add_executable(cob_3d_experience_mapping_lemon_eval evaluation/exp_mapping_lemon_eval.cpp)
+add_executable(local_path_planning tools/local_path_planning.cpp)
 
 # make sure configure headers are built before any node using them
 add_dependencies(cob_3d_experience_mapping_lemon_node ${PROJECT_NAME}_gencfg)
@@ -172,6 +173,10 @@ target_link_libraries(server
 )
 
 target_link_libraries(cob_3d_experience_mapping_lemon_eval
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(local_path_planning
   ${catkin_LIBRARIES}
 )
 
