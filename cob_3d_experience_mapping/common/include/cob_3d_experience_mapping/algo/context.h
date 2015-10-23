@@ -456,8 +456,8 @@ namespace cob_3d_experience_mapping {
 					if(!ft_perceived_in(id, ft_slots_.front()))
 						ft_slots_.front().push_back(id);
 				}
-				else
-					modified |= it->second->visited(current_active_state().get(), current_active_state());
+				//else
+				//	modified |= it->second->visited(current_active_state().get(), current_active_state());
 			}
 			
 			it->second->inject(this, ts, param().est_occ_, param().max_active_states_, ft_class, inject);
