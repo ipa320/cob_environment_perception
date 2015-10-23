@@ -90,7 +90,7 @@ namespace cob_3d_experience_mapping {
 		typedef std::map<TFeatureClass, uint32_t /*counter*/> TFeatureClassMap;
 		
 	protected:
-		TEnergy dist_dev_, dist_trv_, ft_imp_;
+		TEnergy dist_dev_, dist_trv_, dist_trv_var_, ft_imp_;
 		TNode node_;
 		TFeatureClassMap ft_class_occurences_;
 		ID id_;
@@ -100,11 +100,11 @@ namespace cob_3d_experience_mapping {
 		bool is_active_;	//!< flag: true if present in active state list
 		
 	public:		
-		State(): dist_dev_(0), dist_trv_(0), ft_imp_(1), id_(-1), hops_(0), still_exists_(true), is_active_(false) {
+		State(): dist_dev_(0), dist_trv_(0), dist_trv_var_(1), ft_imp_(1), id_(-1), hops_(0), still_exists_(true), is_active_(false) {
 			dbg_.name_ = "INVALID";
 		}
 		
-		State(const ID &id): dist_dev_(0), dist_trv_(0), ft_imp_(1), id_(id), hops_(0), still_exists_(true), is_active_(false) {
+		State(const ID &id): dist_dev_(0), dist_trv_(0), dist_trv_var_(1), ft_imp_(1), id_(id), hops_(0), still_exists_(true), is_active_(false) {
 			char buf[128];
 			sprintf(buf, "%d", id_);
 			dbg_.name_ = buf;
@@ -144,6 +144,16 @@ namespace cob_3d_experience_mapping {
 		inline TEnergy &dist_trv() {return dist_trv_;}
 		//!< getter for travel distance
 		inline const TEnergy &dist_trv() const {return dist_trv_;}
+		
+		inline void merge_trv(const TEnergy &pos, const TEnergy &var) {
+			dist_trv_ 		= (var*var*dist_trv_ + dist_trv_var_*dist_trv_var_*pos) / (var*var+dist_trv_var_*dist_trv_var_);
+			dist_trv_var_ 	= std::sqrt(1/(1/(dist_trv_var_*dist_trv_var_) + 1/(var*var)));
+		}
+		
+		//!< setter/getter for travel distance variance
+		inline TEnergy &dist_trv_var() {return dist_trv_var_;}
+		//!< getter for travel distance
+		inline const TEnergy &dist_trv_var() const {return dist_trv_var_;}
 		
 		//!< setter/getter for hop counter
 		inline int &hops() {return hops_;}
@@ -405,6 +415,7 @@ namespace cob_3d_experience_mapping {
 				//check if feature is in active list --> add if we not too ambiguous (50% of max. size of active state list)
 				if(2*injections_.size() < ctxt->param().max_active_states_)
 					ctxt->add_to_active(it->second.state_);
+				it->second.state_->merge_trv(1, 4);
 				
 				if(update)
 					it->second.state_->update(ts, std::min(max_occ, (int)injections_.size()), est_occ, it->second.counter_, ft_cl, prob);
