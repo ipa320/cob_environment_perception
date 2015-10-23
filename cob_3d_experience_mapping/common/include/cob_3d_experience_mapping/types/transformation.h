@@ -179,11 +179,13 @@ namespace cob_3d_experience_mapping {
 				//dev = relation_factor*(std::exp(er.norm()/dev1.norm())-1);
 				//dev = std::max((TType)0, er.sum()-relation_factor*tmp2.norm());
 				//dev = er.sum();
-				dev = er.sum()/tmp1.norm();
+				//dev = er.sum()/tmp1.norm();
+				dev = er.sum();
 				//dev = relation_factor*er.sum()/tmp2.norm();
 				
 				//allowed dev. for odom:
-				const TType allowed = dev1.norm()*tmp2.norm()/tmp1.norm();
+				//const TType allowed = dev1.norm()*tmp2.norm()/tmp1.norm();
+				const TType allowed = dev1.norm()*tmp2.norm();
 				
 				DBG_PRINTF("error2 %f (allowed %f)   \t%f %f\n", dev, allowed, er(0), er(2));
 				
