@@ -1,0 +1,37 @@
+<package>
+  <name>cob_3d_mapping_geometry_map_v2</name>
+  <version>1.0.0</version>
+
+  <description>
+     Package for creating a geometric map of the environment.
+  </description>
+
+  <license>LGPL</license>
+
+  <maintainer email="joshua.hampp@ipa.fraunhofer.de">Joshua Hampp</maintainer>
+  <author>Joshua Hampp</author>
+
+  <url>http://wiki.ros.org/cob_3d_mapping_geometry_map_v2</url>
+
+  <buildtool_depend>catkin</buildtool_depend>
+
+  <build_depend>cmake_modules</build_depend>
+  <build_depend>cob_3d_mapping_common</build_depend>
+  <build_depend>cob_3d_mapping_msgs</build_depend>
+  <build_depend>dynamic_reconfigure</build_depend>
+  <build_depend>libpcl-all</build_depend>
+  <build_depend>pcl_ros</build_depend>
+  <build_depend>rosbag</build_depend>
+  <build_depend>tf_conversions</build_depend>
+  <build_depend>roscpp</build_depend>
+
+  <run_depend>cob_3d_mapping_common</run_depend>
+  <run_depend>cob_3d_mapping_msgs</run_depend>
+  <run_depend>dynamic_reconfigure</run_depend>
+  <run_depend>libpcl-all</run_depend>
+  <run_depend>pcl_ros</run_depend>
+  <run_depend>rosbag</run_depend>
+  <run_depend>tf_conversions</run_depend>
+  <run_depend>roscpp</run_depend>
+</package>
+
