@@ -132,15 +132,15 @@ void path_integration(TStateVector &active_states, TGraph &graph, TContext &ctxt
 			//	offset = 2*ctxt.param().deviation_factor_;	//TODO: user-defined factor, change...
 			offset = 0.5f*ctxt.distance_relation();
 
-//TODO: check for connected states			
-			TIter begin = active_states.begin();
+			//TODO: check for connected states			
+			/*TIter begin = active_states.begin();
 			TIter end   = active_states.end();
 			for(TIter it=begin+1; it!=end; it++) {
 				if(*it != ctxt.virtual_state()) {
 					offset = std::min(offset, (*it)->dist_dev()-ctxt.current_active_state()->dist_dev());
 					break;
 				}
-			}
+			}*/
 			
 			DBG_PRINTF_URGENT("relocalized %d -> %d with %d hops\n", ctxt.last_active_state()?ctxt.last_active_state()->id():-1, ctxt.current_active_state()?ctxt.current_active_state()->id():-1,
 			ctxt.current_active_state()?ctxt.current_active_state()->hops():0);
