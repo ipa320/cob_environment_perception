@@ -394,7 +394,7 @@ void path_integration(TStateVector &active_states, TGraph &graph, TContext &ctxt
 					to_be_added.push_back(opposite);
 					
 					if(!opposite->is_active() || (*it)->dist_trv_var()<opposite->dist_trv_var()) {
-						opposite->dist_trv() = 1+(*it)->dist_trv();
+						opposite->dist_trv() = std::min((typename TState::TEnergy)1, 1+(*it)->dist_trv());
 						opposite->dist_trv_var() = (*it)->dist_trv_var();
 					}
 					//opposite->dist_trv()  = std::min((typename TState::TEnergy)1, std::max((typename TState::TEnergy)-1, trans[ait]->dist(ctxt.param().prox_thr_)+(*it)->dist_trv()));
