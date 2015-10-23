@@ -114,7 +114,8 @@ namespace cob_3d_experience_mapping {
 			
 			{
 				TEnergy relation = 0, w;
-				if(dev_sum) relation = dev_sum/sim_sum;
+				if(dev_sum>0) relation = dev_sum/sim_sum;
+				if(relation!=relation || std::isinf(relation)) relation=0;
 				w = 1;//relation/distance_relation();
 				distance_relation_sum_ += w*relation;
 				distance_relation_num_ += w;
@@ -345,9 +346,9 @@ namespace cob_3d_experience_mapping {
 			if(!already_set) {
 				state->dist_dev() 	= current_active_state()->dist_dev()+initial_distance();
 				state->hops() 		= 0;
+				state->dist_trv()  		= 1;	//we are approaching state (assume half way)
+				state->dist_trv_var()  	= 1;
 			}
-			
-			state->dist_trv()  	= 1;	//we are approaching state (assume half way)
 			
 			//reset feature proability
 			state->is_active() = true;
