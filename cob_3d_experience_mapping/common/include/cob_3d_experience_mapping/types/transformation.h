@@ -171,7 +171,9 @@ namespace cob_3d_experience_mapping {
 				
 				DBG_PRINTF("error1 %f (allowed %f %f)   \t%f %f\n", dev, (dev1*tmp2.norm()/tmp1.norm())(0), (dev1*tmp2.norm()/tmp1.norm())(2), er(0), er(2));
 				
-				er-= dev1*tmp2.norm()/tmp1.norm();
+				//er-= dev1*tmp2.norm()/tmp1.norm();
+				er-= dev1*tmp2.norm();
+				
 				//er-= tmp2.cwiseAbs()*0.1f;
 				er = er.cwiseMax(TLink::Zero());
 				

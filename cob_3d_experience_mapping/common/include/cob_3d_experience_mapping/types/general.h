@@ -415,7 +415,7 @@ namespace cob_3d_experience_mapping {
 				//check if feature is in active list --> add if we not too ambiguous (50% of max. size of active state list)
 				if(2*injections_.size() < ctxt->param().max_active_states_)
 					ctxt->add_to_active(it->second.state_);
-				it->second.state_->merge_trv(1, 4);
+				it->second.state_->merge_trv(1, 1);
 				
 				if(update)
 					it->second.state_->update(ts, std::min(max_occ, (int)injections_.size()), est_occ, it->second.counter_, ft_cl, prob);

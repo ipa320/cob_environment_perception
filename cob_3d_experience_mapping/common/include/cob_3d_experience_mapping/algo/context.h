@@ -276,7 +276,6 @@ namespace cob_3d_experience_mapping {
 			
 			if(virtual_transistion()) {
 				virtual_transistion()->deviation() = vec_dev_sum_bef;
-				DBG_PRINTF("dev vec %f %f\n", virtual_transistion()->deviation()(0), virtual_transistion()->deviation()(2));
 			}
 
 			return dev_sum_aft-dev_sum_bef;
@@ -336,7 +335,7 @@ namespace cob_3d_experience_mapping {
 						//if(state->dist_trv()<0)
 						//	state->dist_trv() = distance_relation()/2;
 						//state->dist_trv() = (1+state->dist_trv())/2;
-						state->dist_dev() 	= std::min(state->dist_dev(), current_active_state()->dist_dev()+initial_distance());
+						state->dist_dev() 	= std::min(state->dist_dev(), virtual_state()->dist_dev()+initial_distance());
 						needs_sort_ = true;
 					}
 					return;
@@ -344,7 +343,7 @@ namespace cob_3d_experience_mapping {
 				
 			//somebody else will set this variables from outside
 			if(!already_set) {
-				state->dist_dev() 	= current_active_state()->dist_dev()+initial_distance();
+				state->dist_dev() 	= virtual_state()->dist_dev()+initial_distance();
 				state->hops() 		= 0;
 				state->dist_trv()  		= 1;	//we are approaching state (assume half way)
 				state->dist_trv_var()  	= 1;
@@ -392,7 +391,7 @@ namespace cob_3d_experience_mapping {
 				for(size_t i=1; i<active_states_.size(); i++) {
 					//if(i==0 && active_states_[i]==virtual_state()) continue;
 					
-					if(active_states_[i]->dist_trv()<=-1 || active_states_[i]->dist_dev()-active_states_.front()->dist_dev() > 10*initial_distance()) {
+					if(active_states_[i]->dist_trv()-active_states_[i]->dist_trv_var()<=-1 || active_states_[i]->dist_dev()-active_states_.front()->dist_dev() > 10*initial_distance()) {
 						active_states_[i]->is_active() = false;
 						active_states_.erase(active_states_.begin()+i);
 						--i;
