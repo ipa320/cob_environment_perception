@@ -278,12 +278,13 @@ void path_integration(TStateVector &active_states, TGraph &graph, TContext &ctxt
 						if(dev_min<0 || dev<dev_min || (dev_min==dev && sim>sim_best)) {
 							dev_min = dev;
 							sim_best= sim;
-							E = dev_min/trans[ait]->deviation().norm();
+							E = dev_min/trans[ait]->get_data().norm();
 							if(E!=E) E=0;
 						}
 					}
 					
 					if((*it)->dist_trv()<0) {
+						E/=10;
 						//E = E / ctxt.distance_relation();
 						for(TArcIter_in ait((*it)->arc_in_begin(graph)); ait!=(*it)->arc_in_end(graph); ++ait) {
 							typename TIter::value_type opposite = states[(*it)->opposite_node(graph, ait)];
@@ -379,7 +380,6 @@ void path_integration(TStateVector &active_states, TGraph &graph, TContext &ctxt
 			continue;
 			
 		typename TState::TEnergy ft_prob = (*it)->get_feature_prob();
-		(*it)->reset_feature();
 			
 		assert(ft_prob>=0 && ft_prob<=1);
 		
@@ -394,8 +394,7 @@ void path_integration(TStateVector &active_states, TGraph &graph, TContext &ctxt
 	
 	//step 1: set min. dist.
 	for(TIter it=begin; it!=end; it++) {
-		typename TState::TEnergy R = std::pow(1-1.f/(typename TState::TEnergy)active_states.size(), (typename TState::TEnergy)(*it)->hops());
-		if((*it)->dist_trv_var()>R*0.75+0.25 || (*it)->dist_trv()>(*it)->dist_trv_var())
+		if((*it)->dist_trv_var()>0.5 || (/*!(*it)->seen()&&*/(*it)->dist_trv()>(*it)->dist_trv_var()) )
 			continue;
 			
 		typename TState::TEnergy dh_max = 0;
@@ -408,8 +407,8 @@ void path_integration(TStateVector &active_states, TGraph &graph, TContext &ctxt
 				if( /*ctxt.distance_relation()trans[ait]->deviation()*/ opposite == ctxt.virtual_state() ) continue;
 				
 				if( trans[ait]!=ctxt.virtual_transistion() && 
-					( (!opposite->is_active()&&(*it)->dist_dev()<ctxt.virtual_state()->dist_dev()+1*ctxt.initial_distance()/*+ctxt.param().deviation_factor_*(*it)->hops()*/)
-					 || (opposite->dist_dev() > (*it)->dist_dev()&&(*it)->dist_trv_var()<opposite->dist_trv_var()) )
+					( (!opposite->is_active()&& (opposite->seen()||(*it)->dist_dev()<ctxt.virtual_state()->dist_dev()+1*ctxt.initial_distance())/*+ctxt.param().deviation_factor_*(*it)->hops()*/)
+					 || (opposite->dist_dev() > (*it)->dist_dev()/*&&(*it)->dist_trv_var()<opposite->dist_trv_var()*/) )
 					//&& trans[ait]->directed(*it).transition_factor(odom, ctxt.param().prox_thr_)>odom.deviation()
 					/*std::pow(trans[ait]->dist(ctxt.param().prox_thr_),2) + std::pow(opposite->dist_dev(),2)
 					<
@@ -435,6 +434,9 @@ void path_integration(TStateVector &active_states, TGraph &graph, TContext &ctxt
 		}
 		
 	}
+	
+	for(TIter it=begin; it!=end; it++)
+		(*it)->reset_feature();
 	
 	for(typename std::list<typename TIter::value_type>::iterator it=to_be_added.begin(); it!=to_be_added.end(); it++)
 		ctxt.add_to_active(*it, true);

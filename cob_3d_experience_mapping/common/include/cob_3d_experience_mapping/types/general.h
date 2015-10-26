@@ -98,13 +98,14 @@ namespace cob_3d_experience_mapping {
 		DbgInfo dbg_;		//!< some debug information like name and additional description (info)
 		bool still_exists_;	//!< flag: false if removed from map completely
 		bool is_active_;	//!< flag: true if present in active state list
+		bool seen_;
 		
 	public:		
-		State(): dist_dev_(0), dist_trv_(0), dist_trv_var_(1), ft_imp_(1), id_(-1), hops_(0), still_exists_(true), is_active_(false) {
+		State(): dist_dev_(0), dist_trv_(0), dist_trv_var_(1), ft_imp_(1), id_(-1), hops_(0), still_exists_(true), is_active_(false), seen_(false) {
 			dbg_.name_ = "INVALID";
 		}
 		
-		State(const ID &id): dist_dev_(0), dist_trv_(0), dist_trv_var_(1), ft_imp_(1), id_(id), hops_(0), still_exists_(true), is_active_(false) {
+		State(const ID &id): dist_dev_(0), dist_trv_(0), dist_trv_var_(1), ft_imp_(1), id_(id), hops_(0), still_exists_(true), is_active_(false), seen_(false) {
 			char buf[128];
 			sprintf(buf, "%d", id_);
 			dbg_.name_ = buf;
@@ -154,6 +155,11 @@ namespace cob_3d_experience_mapping {
 		inline TEnergy &dist_trv_var() {return dist_trv_var_;}
 		//!< getter for travel distance
 		inline const TEnergy &dist_trv_var() const {return dist_trv_var_;}
+		
+		//!< setter/getter for hop counter
+		inline bool &seen() {return seen_;}
+		//!< getter for hop counter
+		inline bool  seen() const {return seen_;}
 		
 		//!< setter/getter for hop counter
 		inline int &hops() {return hops_;}
@@ -239,7 +245,7 @@ namespace cob_3d_experience_mapping {
 		inline TEnergy get_feature_prob() const {return 1-ft_imp_;}
 		
 		//!< reset feature probability to default (no feature present)
-		void reset_feature() {ft_imp_=1;}
+		void reset_feature() {ft_imp_=1;seen_=false;}
 		
 		UNIVERSAL_SERIALIZE()
 		{
@@ -419,6 +425,7 @@ namespace cob_3d_experience_mapping {
 				
 				if(update)
 					it->second.state_->update(ts, std::min(max_occ, (int)injections_.size()), est_occ, it->second.counter_, ft_cl, prob);
+				it->second.state_->seen() = true;
 				
 				DBG_PRINTF("injectXYZ %d -> %d with %d\n", id_, it->second.state_->id(), (int)(injections_.size()+est_occ));
 			}
