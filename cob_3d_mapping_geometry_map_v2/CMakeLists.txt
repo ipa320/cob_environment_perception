@@ -41,7 +41,7 @@ catkin_package(
     common/include
     ros/include
   LIBRARIES
-    geometry_map
+    #geometry_map2
   CATKIN_DEPENDS
     ${catkin_RUN_PACKAGES}
 )
@@ -65,10 +65,5 @@ include_directories(
 #add_dependencies(geometry_map ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a cpp executable
-add_executable(geometry_map_node ros/src/geometry_map_node.cpp)
-add_dependencies(geometry_map_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
-
-target_link_libraries(geometry_map_node
-  geometry_map
-  ${catkin_LIBRARIES}
-)
+add_executable(geometry_map2_node ros/src/geometry_map_node.cpp)
+add_dependencies(geometry_map2_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
