@@ -61,34 +61,14 @@ include_directories(
 )
 
 ## Declare a cpp library
-add_library(geometry_map common/src/geometry_map.cpp common/src/geometry_map_entry.cpp)
-add_dependencies(geometry_map ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+#add_library(geometry_map common/src/geometry_map.cpp common/src/geometry_map_entry.cpp)
+#add_dependencies(geometry_map ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a cpp executable
 add_executable(geometry_map_node ros/src/geometry_map_node.cpp)
 add_dependencies(geometry_map_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
-add_executable(set_geometry_map ros/src/set_geometry_map.cpp)
-add_dependencies(set_geometry_map ${catkin_EXPORTED_TARGETS})
-
-add_executable(get_geometry_map ros/src/get_geometry_map.cpp)
-add_dependencies(get_geometry_map ${catkin_EXPORTED_TARGETS})
-
-target_link_libraries(geometry_map
-  ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
-)
-
 target_link_libraries(geometry_map_node
   geometry_map
   ${catkin_LIBRARIES}
 )
-
-target_link_libraries(set_geometry_map
-  ${catkin_LIBRARIES}
-)
-
-target_link_libraries(get_geometry_map
-  ${catkin_LIBRARIES}
-)
-
