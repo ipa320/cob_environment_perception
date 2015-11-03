@@ -59,7 +59,7 @@
 #include "../general_segmentation.h"
 
 #define USE_MIN_MAX_RECHECK_
-#define STOP_TIME
+//#define STOP_TIME
 //#define BACK_CHECK_REPEAT
 #define DO_NOT_DOWNSAMPLE_
 //#define SIMULATION_
