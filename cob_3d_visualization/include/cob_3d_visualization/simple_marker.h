@@ -228,6 +228,7 @@ namespace cob_3d_visualization {
 			return *this;
 		}
 		
+#ifdef PCL_VERSION
 		void mesh(const pcl::PolygonMesh &mesh) {
 			pcl::PointCloud<pcl::PointXYZ> points;
 			//pcl::fromROSMsg(mesh.cloud, points);
@@ -269,6 +270,7 @@ namespace cob_3d_visualization {
 					marker_.colors.push_back(c);
 			}
 		}
+#endif
 		
 		template<class Vector>
 		void arrow(const Vector &start, const Vector &end, const float scale=0) {
