@@ -4,8 +4,10 @@ project(cob_3d_mapping_geometry_map_v2)
 set(catkin_RUN_PACKAGES 
   cob_3d_mapping_common
   cob_3d_mapping_msgs
+  cob_3d_visualization
   tf_conversions
   dynamic_reconfigure
+  eigen_conversions
   pcl_ros
   rosbag
   roscpp
@@ -22,8 +24,6 @@ set(catkin_BUILD_PACKAGES
 find_package(catkin REQUIRED COMPONENTS
   ${catkin_BUILD_PACKAGES}
 )
-
-#find_package(PCL REQUIRED)
 
 generate_dynamic_reconfigure_options(cfg/geometry_map_node.cfg)
 
@@ -50,14 +50,27 @@ catkin_package(
 ## Build ##
 ###########
 
+include(CheckCXXCompilerFlag)
+CHECK_CXX_COMPILER_FLAG("-std=c++11" COMPILER_SUPPORTS_CXX11)
+CHECK_CXX_COMPILER_FLAG("-std=c++0x" COMPILER_SUPPORTS_CXX0X)
+if(COMPILER_SUPPORTS_CXX11)
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++11")
+else()
+    message(MESSAGE "The compiler ${CMAKE_CXX_COMPILER} has no C++11 support. Please use a different C++ compiler.")
+endif()
+
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 # include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 include_directories(
   common/include
   ros/include
+  libs/angelscript/include
   ${catkin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
+)
+link_directories(
+  libs/angelscript/lib
 )
 
 ## Declare a cpp library
@@ -65,5 +78,13 @@ include_directories(
 #add_dependencies(geometry_map ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 ## Declare a cpp executable
-add_executable(geometry_map2_node ros/src/geometry_map_node.cpp)
+add_executable(geometry_map2_node ros/src/geometry_map_node.cpp
+	common/src/object.cpp common/src/context.cpp common/src/script.cpp
+	libs/angelscript-code/sdk/add_on/scriptstdstring/scriptstdstring.cpp
+)
 add_dependencies(geometry_map2_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+
+
+target_link_libraries(geometry_map2_node
+  ${catkin_LIBRARIES} angelscript
+)

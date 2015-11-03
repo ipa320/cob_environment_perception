@@ -1,5 +1,12 @@
-#include <cob_3d_mapping_geometry_map_v2/types/plane.h>
+#include <mapping_node.h>
 
-int main() {
-	return 0;
+
+int main(int argc, char** argv)
+{
+  ros::init(argc, argv, "geometry_map_v2");
+
+
+  ros::spin();
+
+  return 0;
 }

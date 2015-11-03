@@ -1,73 +1,76 @@
 #pragma once
 
-#include "object.h"
+#include "image.h"
+
+//boost polygon, geometry
 #include <boost/polygon/polygon.hpp>
+#include <boost/geometry/geometry.hpp>
+#include <boost/geometry/geometries/register/point.hpp>
+#include <boost/geometry/geometries/register/ring.hpp>
+
+#include <libpolypartition/polypartition.h>
+
+//ros
+#include <eigen_conversions/eigen_msg.h>
+
+//ros message types
+#include <cob_3d_mapping_msgs/Plane.h>
 
 
 namespace cob_3d_geometry_map {
 	
-class Point {
+class Plane_Point {
 public:
     typedef float coordinate_type;
+    typedef Eigen::Matrix<coordinate_type, 2,1> Vector2;
     
-    coordinate_type x, y;
-    coordinate_type tex_x[2], tex_y[2];
+    Vector2 pos, tex;
     Eigen::Matrix3f var_;
+    
+    Plane_Point() {}
+    Plane_Point(const cob_3d_mapping_msgs::Point2D &);
     
 private:
 	
 };
 
-}
+struct Plane_Ring : std::deque<Plane_Point>
+{
+	Plane_Ring() {}
+	
+	Plane_Ring(const cob_3d_mapping_msgs::Polygon &poly) {
+		insert(begin(), poly.points.begin(), poly.points.end());
+	}
+	
+	Plane_Ring &from(const cob_3d_mapping_msgs::Polygon &poly) {
+		clear();
+		insert(begin(), poly.points.begin(), poly.points.end());
+		return *this;
+	}
+};
 
-//First we register it as a point with boost polygon
-namespace boost { namespace polygon {
-    template <>
-    struct geometry_concept<cob_3d_geometry_map::Point> { typedef point_concept type; };
- 
-    
-    //Then we specialize the gtl point traits for our point type
-    template <>
-    struct point_traits<cob_3d_geometry_map::Point> {
-        typedef Point::coordinate_type coordinate_type;
-    
-        static inline coordinate_type get(const cob_3d_geometry_map::Point& point, orientation_2d orient) {
-            if(orient == HORIZONTAL)
-                return point.x;
-            return point.y;
-        }
-    };
-    
-    template <>
-    struct point_mutable_traits<cob_3d_geometry_map::Point> {
-        typedef Point::coordinate_type coordinate_type;
-
-        static inline void set(cob_3d_geometry_map::Point& point, orientation_2d orient, coordinate_type value) {
-            if(orient == HORIZONTAL)
-                point.x = value;
-            else
-            point.y = value;
-        }
-        static inline cob_3d_geometry_map::Point construct(coordinate_type x_value, coordinate_type y_value) {
-            cob_3d_geometry_map::Point retval;
-            retval.x = x_value;
-            retval.y = y_value; 
-            return retval;
-        }
-    };
-} }
-
-namespace cob_3d_geometry_map {
 /*
  * a polygon consists of:
  *  - points
  *  - texture ids
  */
-class Polygon {
-	typedef std::list<CPoint> Polygon;
+class Plane_Polygon {
+public:
+	typedef std::vector<Plane_Ring> THoles;
 	
-	Polygon poly_;
-	Image::Ptr img_[2];
+private:
+	Plane_Ring boundary_;
+	THoles holes_;
+	std::vector<Image::Ptr> imgs_;
+	
+public:
+	Plane_Polygon(const std::vector<cob_3d_mapping_msgs::Polygon> &);
+
+	const Plane_Ring &boundary() const {return boundary_;}
+	Plane_Ring &boundary() {return boundary_;}
+	
+	const THoles &holes() const {return holes_;}
+	THoles &holes() {return holes_;}
 };
 
 /*
@@ -76,10 +79,20 @@ class Polygon {
  *  - a pose to captured view point
  *  - plane parameters (normal + offset)
  */
-class Plane : public Object {
-	std::vector<Polygon> polygons_;
+class Plane : public ObjectVolume {
+	std::vector<Plane_Polygon> polygons_;
 	Eigen::Vector3f offset_, normal_;
+	
+public:
+
+	Plane(const ContextPtr &ctxt, const cob_3d_mapping_msgs::Plane &);
 };
 
+}
+
+#include "impl/plane_boost_traits.h"
+
+namespace cob_3d_geometry_map {
+	#include "impl/plane.hpp"
 }
 
