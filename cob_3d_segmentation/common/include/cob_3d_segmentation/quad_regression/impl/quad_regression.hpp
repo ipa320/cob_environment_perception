@@ -674,3 +674,60 @@
 
 	return os;
    }
+
+  template <typename Point, typename PointLabel, typename Parent>
+  Segmentation_QuadRegression<Point,PointLabel,Parent>::operator cob_3d_mapping_msgs::PlaneScene() const {
+    cob_3d_mapping_msgs::PlaneScene ps;
+
+    for(size_t i=0; i<this->polygons_.size(); i++) {
+      if(this->polygons_[i].segments_.size()<1) continue;
+      
+      cob_3d_mapping_msgs::Plane plane;
+
+      plane.pose.position.x = this->polygons_[i].model_.x();
+      plane.pose.position.y = this->polygons_[i].model_.y();
+      plane.pose.position.z = this->polygons_[i].model_.z(); //perhaps from model?
+      
+      Eigen::Quaternionf orientation = this->polygons_[i].get_orientation();
+      plane.pose.orientation.x = orientation.x();
+      plane.pose.orientation.y = orientation.y();
+      plane.pose.orientation.z = orientation.z();
+      plane.pose.orientation.w = orientation.w();
+      
+      const Eigen::Affine3f T = (
+				Eigen::Translation3f(plane.pose.position.x,plane.pose.position.y,plane.pose.position.z)*
+				orientation
+			).inverse();
+
+      plane.weight = this->polygons_[i].weight_;
+
+      plane.color.r=this->polygons_[i].color_[0];
+      plane.color.g=this->polygons_[i].color_[1];
+      plane.color.b=this->polygons_[i].color_[2];
+      plane.color.a=1.f;
+      
+      for(size_t j=0; j<this->polygons_[i].segments_.size(); j++) {
+        cob_3d_mapping_msgs::Polygon poly;
+        
+        for(size_t k=0; k<this->polygons_[i].segments_[j].size(); k++) {
+          const Eigen::Vector3f p = T*this->polygons_[i].project2world( this->polygons_[i].segments_[j][k].head(2) );
+          cob_3d_mapping_msgs::Point2D pt;
+			  
+          pt.x = p(0);
+          pt.y = p(1);
+          
+          //TODO:
+          //pt.tex_x = this->polygons_[i].segments2d_[j][k];
+          //pt.var
+          
+          poly.points.push_back(pt);
+        }
+        plane.polygons.push_back(poly);
+      }
+      
+      ps.planes.push_back(plane);
+    }
+    
+    return ps;
+  }
+  
