@@ -6,4 +6,4 @@ float32 y
 float32 tex_x
 float32 tex_y
 
-float32[9] var
+float32 var

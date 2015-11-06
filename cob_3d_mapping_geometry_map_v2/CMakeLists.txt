@@ -66,11 +66,13 @@ include_directories(
   common/include
   ros/include
   libs/angelscript/include
+  libs/nuklei/include
   ${catkin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
 )
 link_directories(
   libs/angelscript/lib
+  libs/nuklei/lib
 )
 
 ## Declare a cpp library
@@ -79,12 +81,12 @@ link_directories(
 
 ## Declare a cpp executable
 add_executable(geometry_map2_node ros/src/geometry_map_node.cpp
-	common/src/object.cpp common/src/context.cpp common/src/script.cpp
+	common/src/object.cpp common/src/context.cpp common/src/script.cpp common/src/vis_obj.cpp common/src/plane.cpp common/src/classifier.cpp
 	libs/angelscript-code/sdk/add_on/scriptstdstring/scriptstdstring.cpp
 )
 add_dependencies(geometry_map2_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
 
 target_link_libraries(geometry_map2_node
-  ${catkin_LIBRARIES} angelscript
+  ${catkin_LIBRARIES} angelscript nuklei CGAL
 )

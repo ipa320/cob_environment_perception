@@ -1,6 +1,7 @@
 #pragma once
 
 #include "object.h"
+#include "classifier.h"
 #include <unsupported/Eigen/BVH>
 #include <angelscript.h>
 #include <cob_3d_mapping_msgs/PlaneScene.h>
@@ -28,19 +29,27 @@ public:
 	void add_scene(const Ptr &this_ctxt, const cob_3d_mapping_msgs::PlaneScene &);
 
 	void add(const Object::Ptr &);
+	void visualize(std::vector<boost::shared_ptr<Visualization::Object> > &vis_objs);
 };
 
 class GlobalContext {
 	asIScriptEngine* script_engine_;
 
-	std::vector<Context::Ptr> locals_;
-	Context::Ptr global_;
+	Context::Ptr scene_;
+	
+	typedef std::vector<Classifier::Ptr> ClassifierSet;
+	
+	ClassifierSet classifiers_;
 	
 public:
 
 	GlobalContext();
 	
 	void add_scene(const cob_3d_mapping_msgs::PlaneScene &);
+	
+	void visualize_markers();
+	
+	bool registerClassifier(Classifier *c);
 };
 
 }

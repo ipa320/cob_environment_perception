@@ -4,4 +4,4 @@ Header header
 Plane[] planes
 
 #camera of input data
-sensor_msgs/CameraInfo camera_info
+#sensor_msgs/CameraInfo camera_info

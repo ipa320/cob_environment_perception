@@ -10,18 +10,16 @@
  *****************************************************************
  *
  * \note
- *  Project name: TODO FILL IN PROJECT NAME HERE
+ *  Project name: cob_3d_segmenation
  * \note
- *  ROS stack name: TODO FILL IN STACK NAME HERE
+ *  ROS stack name: cob_3d_environment_perception
  * \note
- *  ROS package name: TODO FILL IN PACKAGE NAME HERE
+ *  ROS package name: cob_3d_segmenation
  *
  * \author
- *  Author: TODO FILL IN AUTHOR NAME HERE
- * \author
- *  Supervised by: TODO FILL IN CO-AUTHOR NAME(S) HERE
+ *  Author: Joshua Hampp (joshua.hampp@ipa.fraunhofer.de)
  *
- * \date Date of creation: TODO FILL IN DATE HERE
+ * \date 2015
  *
  * \brief
  *
@@ -678,6 +676,7 @@
   template <typename Point, typename PointLabel, typename Parent>
   Segmentation_QuadRegression<Point,PointLabel,Parent>::operator cob_3d_mapping_msgs::PlaneScene() const {
     cob_3d_mapping_msgs::PlaneScene ps;
+    const float pixel_var = 2;
 
     for(size_t i=0; i<this->polygons_.size(); i++) {
       if(this->polygons_[i].segments_.size()<1) continue;
@@ -710,15 +709,26 @@
         cob_3d_mapping_msgs::Polygon poly;
         
         for(size_t k=0; k<this->polygons_[i].segments_[j].size(); k++) {
-          const Eigen::Vector3f p = T*this->polygons_[i].project2world( this->polygons_[i].segments_[j][k].head(2) );
+          const Eigen::Vector3f o = this->polygons_[i].project2world( this->polygons_[i].segments_[j][k].head(2) );
+          const Eigen::Vector3f p = T*o;
           cob_3d_mapping_msgs::Point2D pt;
 			  
           pt.x = p(0);
           pt.y = p(1);
           
           //TODO:
-          //pt.tex_x = this->polygons_[i].segments2d_[j][k];
-          //pt.var
+          pt.tex_x = this->polygons_[i].segments2d_[j][k](0)/(float)this->levels_[0].w;
+          pt.tex_y = this->polygons_[i].segments2d_[j][k](1)/(float)this->levels_[0].h;
+          
+          pt.var = this->camera_.std(o(2));
+          
+          Eigen::Vector3f t;
+          
+          pt.var = std::max(pt.var, (this->polygons_[i].project2world( this->polygons_[i].segments_[j][k].head(2)+Eigen::Vector2f(pixel_var*o(2)/this->camera_.f, 0.f) )-o).norm());
+          pt.var = std::max(pt.var, (this->polygons_[i].project2world( this->polygons_[i].segments_[j][k].head(2)+Eigen::Vector2f(-pixel_var*o(2)/this->camera_.f, 0.f) )-o).norm());
+          
+          pt.var = std::max(pt.var, (this->polygons_[i].project2world( this->polygons_[i].segments_[j][k].head(2)+Eigen::Vector2f(0.f, pixel_var*o(2)/this->camera_.f) )-o).norm());
+          pt.var = std::max(pt.var, (this->polygons_[i].project2world( this->polygons_[i].segments_[j][k].head(2)+Eigen::Vector2f(0.f, -pixel_var*o(2)/this->camera_.f) )-o).norm());
           
           poly.points.push_back(pt);
         }
