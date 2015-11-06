@@ -10,18 +10,16 @@
  *****************************************************************
  *
  * \note
- *  Project name: TODO FILL IN PROJECT NAME HERE
+ *  Project name: cob_3d_segmenation
  * \note
- *  ROS stack name: TODO FILL IN STACK NAME HERE
+ *  ROS stack name: cob_3d_environment_perception
  * \note
- *  ROS package name: TODO FILL IN PACKAGE NAME HERE
+ *  ROS package name: cob_3d_segmenation
  *
  * \author
- *  Author: TODO FILL IN AUTHOR NAME HERE
- * \author
- *  Supervised by: TODO FILL IN CO-AUTHOR NAME(S) HERE
+ *  Author: Joshua Hampp (joshua.hampp@ipa.fraunhofer.de)
  *
- * \date Date of creation: TODO FILL IN DATE HERE
+ * \date 2015
  *
  * \brief
  *

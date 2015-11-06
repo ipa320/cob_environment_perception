@@ -161,6 +161,7 @@ namespace Segmentation
       boost::shared_ptr<const pcl::PointCloud<Point> > input_;          ///input point cloud (no need for color)
       std::vector<SubStructure::ParamC<Degree> > levels_;               ///quad-tree levels/stages
       std::vector<Segmentation::S_POLYGON<Degree> > polygons_;          ///result of surface reconstruction
+      CameraModel camera_;              /// camera model
 
 #ifdef STOP_TIME
       // evaluation variables
@@ -176,7 +177,6 @@ namespace Segmentation
       const unsigned int GO_DOWN_TO_LVL;/// search down to ...
 
       //------------MEMBERS---------------
-      CameraModel camera_;              /// camera model
 
       int *ch_; /// mark-array
 
