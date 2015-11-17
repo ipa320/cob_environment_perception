@@ -263,6 +263,8 @@ namespace cob_3d_features
 		}
 		
 		void normalize(const std::vector<float> &radii) {
+			return;
+			
 			//std::cout<<"area: "<<area_<<std::endl;
 			//return;
 			/*for(size_t i=0; i<f_.size(); i++)
@@ -303,7 +305,7 @@ namespace cob_3d_features
     InvariantSurfaceFeature(const int num_radius, const int num_angle) :
 	  num_radius_(num_radius), num_angle_(num_angle),
 	  sr_((Real)num_radius, num_radius, num_angle),
-      kp_min_area_(0.02*0.02), kp_area_(0.075*0.075),
+      kp_min_area_(0.02*0.02), kp_area_(0.05*0.05),
       invariance_(INVARAINCE_ALL)
     {
 		sr_.getSamples(samples_origin_);

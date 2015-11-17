@@ -2,7 +2,7 @@ cmake_minimum_required(VERSION 2.8.3)
 project(cob_keyframe_detector)
 
 set(catkin_RUN_PACKAGES 
-  cob_srvs
+  std_srvs
   dynamic_reconfigure
   roscpp
   sensor_msgs

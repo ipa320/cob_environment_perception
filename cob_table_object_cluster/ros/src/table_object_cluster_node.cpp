@@ -224,7 +224,7 @@ public:
       // get points above table
       toc.extractTableRoi(hull, *pc_roi);
       ROS_INFO("ROI took %f seconds", sw.precisionStop());
-      ROS_INFO("ROI has %d points", pc_roi->indices.size());
+      ROS_INFO("ROI has %d points", (int)pc_roi->indices.size());
       if(!pc_roi->indices.size()) return;
 
       std::stringstream ss;
@@ -313,7 +313,7 @@ public:
         }
       }
       ROS_INFO("BB took %f seconds", sw.precisionStop());
-      ROS_INFO("Computed %d bounding boxes", object_clusters.size());
+      ROS_INFO("Computed %d bounding boxes", (int)object_clusters.size());
     }
   }
 
@@ -376,7 +376,7 @@ public:
     *last_pc_ = *pc; // deep copy, required for removing points later on
     last_sa_ = sa; // copy shape array pointer
 
-    ROS_INFO("Saved new PointCloud and %d potential tables", sa->shapes.size());
+    ROS_INFO("Saved new PointCloud and %d potential tables", (int)sa->shapes.size());
 
     if(enable_action_mode_) { return; }
 

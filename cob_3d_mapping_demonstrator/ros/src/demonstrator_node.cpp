@@ -11,8 +11,8 @@
 #include <control_msgs/FollowJointTrajectoryAction.h>
 
 //ROS Service Includes
-#include <cob_srvs/Trigger.h>
-#include <cob_srvs/SetOperationMode.h>
+#include <std_srvs/Trigger.h>
+#include <cob_srvs/SetString.h>
 
 //Own includes
 #include <cob_3d_mapping_demonstrator/demonstrator_params.h>
@@ -448,7 +448,7 @@ public:
     }
   }*/
 
-  bool srvCallbackInit(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res)
+  bool srvCallbackInit(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
   {
     if (!initialized_)
     {
@@ -458,24 +458,24 @@ public:
       if (md_ctrl_->init(md_params_))
       {
         initialized_ = true;
-        res.success.data = true;	//Trigger.srv response
+        res.success = true;	//Trigger.srv response
         ROS_INFO("...initializing COB3DMD successful");
       }
       else
       {
         error_ = true;
         error_msg_ = md_ctrl_->getErrorMessage();
-        res.success.data = false;
-        res.error_message.data = md_ctrl_->getErrorMessage();
-        ROS_ERROR("...initializing COB3DMD unsuccessful. Error: %s", res.error_message.data.c_str());
+        res.success = false;
+        res.message = md_ctrl_->getErrorMessage();
+        ROS_ERROR("...initializing COB3DMD unsuccessful. Error: %s", res.message.c_str());
       }
     }
     else
     {
       error_ = false;
-      res.success.data = false;
-      res.error_message.data = "COB3DMD already initialized";
-      ROS_WARN("...initializing COB3DMD unsuccessful. Warn: %s", res.error_message.data.c_str());
+      res.success = false;
+      res.message = "COB3DMD already initialized";
+      ROS_WARN("...initializing COB3DMD unsuccessful. Warn: %s", res.message.c_str());
     }
 
     return true;
@@ -483,7 +483,7 @@ public:
   /*!
    * \brief Stops robot immediately
    */
-  bool srvCallbackStop(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res)
+  bool srvCallbackStop(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
   {
     if( initialized_ )
     {
@@ -491,34 +491,34 @@ public:
       if( md_ctrl_->stop() )
       {
         ROS_INFO("Stopping COB3DMD successful");
-        res.success.data = true;	//Trigger.srv response
+        res.success = true;	//Trigger.srv response
         //stopped_ = true;
       }
       else
       {
-        res.success.data = false;
+        res.success = false;
         md_ctrl_->getErrorMessage();
-        ROS_ERROR("!!...stopping COB3DMD unsuccessful. Error: %s", res.error_message.data.c_str());
+        ROS_ERROR("!!...stopping COB3DMD unsuccessful. Error: %s", res.message.c_str());
       }
     }
     else
     {
-      res.success.data = false;
-      res.error_message.data = "Not initialized";
-      ROS_WARN("...stopping COB3DMD unsuccessful. Warn: %s", res.error_message.data.c_str());
+      res.success = false;
+      res.message = "Not initialized";
+      ROS_WARN("...stopping COB3DMD unsuccessful. Warn: %s", res.message.c_str());
     }
     return true;
   }
 
-  bool srvCallbackRecover(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res)
+  bool srvCallbackRecover(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
   {
     ROS_WARN("Attempting to recover...");
 
     if (!initialized_)
     {
       error_msg_ = "Not Initialized";
-      res.success.data = false;
-      res.error_message.data = error_msg_;
+      res.success = false;
+      res.message = error_msg_;
       ROS_ERROR("...recovering COB3DMD unsuccessful. Error: %s", error_msg_.c_str());
       return false;
     }
@@ -529,24 +529,24 @@ public:
       {
         error_ = true;
         error_msg_ = md_ctrl_->getErrorMessage();
-        res.success.data = false;
-        res.error_message.data = md_ctrl_->getErrorMessage();
-        ROS_ERROR("...recovering COB3DMD unsuccessful. Error: %s", res.error_message.data.c_str());
+        res.success = false;
+        res.message = md_ctrl_->getErrorMessage();
+        ROS_ERROR("...recovering COB3DMD unsuccessful. Error: %s", res.message.c_str());
         return false;
       }
       else
       {
         error_ = false;
         error_msg_ = "";
-        res.success.data = true;
-        res.error_message.data = error_msg_;
+        res.success = true;
+        res.message = error_msg_;
         ROS_INFO("...recovering COB3DMD successful");
         return true;
       }
     }
   }
 
-  /*bool srvCallbackSetOperationMode(cob_srvs::SetOperationMode::Request &req, cob_srvs::SetOperationMode::Response &res)
+  /*bool srvCallbackSetOperationMode(cob_srvs::SetString::Request &req, cob_srvs::SetString::Response &res)
   {
     if (req.operation_mode.data == "velocity")
     {

@@ -63,7 +63,7 @@
 #include <pcl/point_types.h>
 #include <pcl_ros/point_cloud.h>
 
-#include <cob_srvs/Trigger.h>
+#include <std_srvs/Trigger.h>
 #include <cob_object_detection_msgs/DetectionArray.h>
 #include <cob_3d_mapping_msgs/SetBoundingBoxes.h>
 #include <cob_3d_mapping_msgs/TableObjectClusterAction.h>
@@ -97,7 +97,7 @@ public:
     as.start();
   }
 
-  bool startPCSub(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res)
+  bool startPCSub(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
   {
     if(!subscribed_)
     {

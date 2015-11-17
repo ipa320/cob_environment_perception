@@ -94,7 +94,7 @@
 // ROS message includes
 #include <cob_3d_mapping_msgs/SetPointMap.h>
 #include <cob_3d_mapping_msgs/GetPointMap.h>
-#include <cob_srvs/Trigger.h>
+#include <std_srvs/Trigger.h>
 
 
 //####################
@@ -197,7 +197,7 @@ public:
     updateMap(pc);
     map_pub_.publish(map_);
 
-    ROS_DEBUG("[point_map] Updated map has %d points", map_.size());
+    ROS_DEBUG("[point_map] Updated map has %d points", (int)map_.size());
 
     if(save_)
     {
@@ -262,8 +262,8 @@ public:
    * @return nothing
    */
   bool
-  clearMap(cob_srvs::Trigger::Request &req,
-           cob_srvs::Trigger::Response &res)
+  clearMap(std_srvs::Trigger::Request &req,
+           std_srvs::Trigger::Response &res)
   {
     //TODO: add mutex
     ROS_INFO("Clearing point map...");

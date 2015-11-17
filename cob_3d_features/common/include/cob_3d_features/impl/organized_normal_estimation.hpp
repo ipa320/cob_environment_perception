@@ -115,7 +115,7 @@ cob_3d_features::OrganizedNormalEstimationHelper::computeSegmentNormal(
     }*/
   if (accu[0] == 0 && accu[3] == 0 && accu[5] == 0)
   {
-    std::cout <<"[NormalEstimation]: null normal!" << std::endl;
+    //std::cout <<"[NormalEstimation]: null normal!" << std::endl;
     normal_out(0) = normal_out(1) = normal_out(2) = std::numeric_limits<float>::quiet_NaN();
     return;
   }

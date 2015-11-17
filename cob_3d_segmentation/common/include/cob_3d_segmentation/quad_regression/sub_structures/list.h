@@ -73,14 +73,16 @@
  * contains x,y coordinate alias index (v)
  * hops gives number of possible uses (rest)
  */
+template<typename Point>
 struct SVALUE
 {
   unsigned int v,hops;
+  Point pt;
 
   SVALUE(){}
 
-  SVALUE(const unsigned int v, const unsigned int hops)
-  :v(v), hops(hops)
+  SVALUE(const unsigned int v, const unsigned int hops, const Point &pt)
+  :v(v), hops(hops), pt(pt)
   {}
 
 };
@@ -134,16 +136,19 @@ struct VISITED_LIST {
  * used as parameter for outline calculation
  * point with additional information if point was in front of other object
  */
+template<typename Point>
 struct SXY {
   int x,y;
   bool back;
+  Point pt;
 };
 
 /**
  * sort 2D points from left to right, top to down
  */
+template<typename Point>
 struct SXYcmp {
-  inline bool operator() (const SXY& lhs, const SXY& rhs) const
+  inline bool operator() (const SXY<Point>& lhs, const SXY<Point>& rhs) const
   {if(lhs.y==rhs.y)
     return lhs.x<rhs.x;
   return lhs.y<rhs.y;}

@@ -9,7 +9,7 @@ find_package(catkin REQUIRED COMPONENTS
   actionlib_msgs
   cob_3d_mapping_common
   cob_3d_mapping_msgs
-  cob_srvs
+  std_srvs
   dynamic_reconfigure
   nodelet
   #pcl_ros
@@ -37,7 +37,7 @@ catkin_package(
     actionlib_msgs
     cob_3d_mapping_common
     cob_3d_mapping_msgs
-    cob_srvs
+    std_srvs
     dynamic_reconfigure
     nodelet
     #pcl_ros
