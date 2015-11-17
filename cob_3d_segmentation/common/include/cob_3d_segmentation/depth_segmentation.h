@@ -166,6 +166,9 @@ namespace cob_3d_segmentation
     /// convert to ROS message
     virtual operator cob_3d_mapping_msgs::ShapeArray() const {ROS_ERROR("TODO: do it"); return cob_3d_mapping_msgs::ShapeArray();}
 
+    void setMinClusterSize(const int min_cluster_size) { min_cluster_size_ = min_cluster_size; }
+    int getMinClusterSize() { return min_cluster_size_; }
+
   private:
     void addIfIsValid(int u, int v, int idx, int idx_prev, float dist_th, float p_z, Eigen::Vector3f& n,
                       SegmentationQueue& seg_queue, ClusterPtr c);

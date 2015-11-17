@@ -104,11 +104,18 @@ public:
     point_cloud_sub_ = n_.subscribe ("point_cloud_in", 1, &AmplitudeFilter::pointCloudSubCallback, this);
     point_cloud_pub_ = n_.advertise<PointCloud> ("point_cloud_out", 1);
 
-    int lim_min, lim_max;
-    n_.param ("amplitude_min_threshold", lim_min, 2000);
-    n_.param ("amplitude_max_threshold", lim_max, 60000);
+    double lim_min, lim_max;
+    n_.param ("amplitude_min_threshold", lim_min, 2000.);
+    n_.param ("amplitude_max_threshold", lim_max, 60000.);
+    bool keep_organized;
+    n_.param ("keep_organized", keep_organized, false);
+    
+    std::string field="amplitude";
+    n_.getParam("field", field);
+    
     filter_.setFilterLimits (lim_min, lim_max);
-    filter_.setFilterFieldName ("amplitude");
+    filter_.setFilterFieldName (field);
+    filter_.setKeepOrganized(keep_organized);
   }
 
   void

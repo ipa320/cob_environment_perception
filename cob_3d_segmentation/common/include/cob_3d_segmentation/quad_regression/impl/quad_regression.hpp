@@ -487,7 +487,7 @@
     m.pose.orientation.y = 0.0;
     m.pose.orientation.z = 0.0;
     m.pose.orientation.w = 1.0;
-    m.scale.x = 0.02;
+    m.scale.x = 0.002;
     m.scale.y = 0.1;
     m.scale.z = 0.1;
     m.color.a = 1.0;
