@@ -77,7 +77,7 @@
 using namespace cob_3d_mapping;
 
 GeometryMapNode::GeometryMapNode()
-: map_frame_id_("/map"), camera_frame_id_("/camera_depth_frame"), tf_listener_(ros::Duration(30.))
+: map_frame_id_("/map"), camera_frame_id_("/camera_depth_frame"), tf_listener_(ros::Duration(30.)), dynamic_map_(false)
 {
   config_server_.setCallback(boost::bind(&GeometryMapNode::dynReconfCallback, this, _1, _2));
   shape_sub_ = n_.subscribe("shape_array_in", 10, &GeometryMapNode::shapeCallback, this);
@@ -101,6 +101,7 @@ GeometryMapNode::dynReconfCallback(cob_3d_mapping_geometry_map::geometry_map_nod
   enable_cyl_= config.enable_cyl;
   enable_poly_=config.enable_poly;
   colorize_ = config.colorize;
+  dynamic_map_ = config.dynamic_map;
 }
 
 void
@@ -144,27 +145,29 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& 
   
   ROS_INFO("------------------------------------------>   Merge took %f", (ros::Time::now()-t).toSec());
   
-	try{
-		tf::StampedTransform transform;
-		ROS_INFO("%s to %s", sa->header.frame_id.c_str(), camera_frame_id_.c_str());
-		tf_listener_.lookupTransform(sa->header.frame_id, camera_frame_id_,
-							   sa->header.stamp, transform);
-		Eigen::Affine3d T;
-		tf::transformTFToEigen(transform, T);
-		const double focal_length = 570.; //TODO: dynamic
-		const double res_width = 640.; //TODO: dynamic
-		const double res_height = 480.; //TODO: dynamic
-		
-		Eigen::Vector3f camera_params;
-		camera_params(0) = (float)(res_width/(2*focal_length));
-		camera_params(1) = (float)(res_height/(2*focal_length));
-		camera_params(2) = 1;
-		
-		geometry_map_.checkVisibility(T.cast<float>(), camera_params);
-	}
-	catch (tf::TransformException &ex) {
-		ROS_ERROR("%s",ex.what());
-		geometry_map_.cleanUp();
+  if(dynamic_map_) {
+		try{
+			tf::StampedTransform transform;
+			ROS_INFO("%s to %s", sa->header.frame_id.c_str(), camera_frame_id_.c_str());
+			tf_listener_.lookupTransform(sa->header.frame_id, camera_frame_id_,
+								   sa->header.stamp, transform);
+			Eigen::Affine3d T;
+			tf::transformTFToEigen(transform, T);
+			const double focal_length = 570.; //TODO: dynamic
+			const double res_width = 640.; //TODO: dynamic
+			const double res_height = 480.; //TODO: dynamic
+			
+			Eigen::Vector3f camera_params;
+			camera_params(0) = (float)(res_width/(2*focal_length));
+			camera_params(1) = (float)(res_height/(2*focal_length));
+			camera_params(2) = 1;
+			
+			geometry_map_.checkVisibility(T.cast<float>(), camera_params);
+		}
+		catch (tf::TransformException &ex) {
+			ROS_ERROR("%s",ex.what());
+			geometry_map_.cleanUp();
+		}
 	}
 
   geometry_map_.incrFrame();
@@ -173,7 +176,7 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& 
 }
 
 bool
-GeometryMapNode::clearMap(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res)
+GeometryMapNode::clearMap(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
 {
   ROS_INFO("Clearing geometry map...");
   geometry_map_.clearMap();

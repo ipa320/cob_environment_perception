@@ -21,6 +21,7 @@
   <build_depend>cob_3d_mapping_msgs</build_depend>
   <!--build_depend>cob_dashboard</build_depend-->
   <build_depend>cob_script_server</build_depend>
+  <build_depend>std_srvs</build_depend>
   <build_depend>cob_srvs</build_depend>
   <build_depend>diagnostic_msgs</build_depend>
   <build_depend>libqt4</build_depend>
@@ -35,6 +36,7 @@
   <run_depend>cob_3d_mapping_pipeline</run_depend>
   <!--run_depend>cob_dashboard</run_depend-->
   <run_depend>cob_script_server</run_depend>
+  <run_depend>std_srvs</run_depend>
   <run_depend>cob_srvs</run_depend>
   <run_depend>diagnostic_msgs</run_depend>
   <run_depend>libqt4</run_depend>

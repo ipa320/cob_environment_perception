@@ -1,0 +1,18 @@
+<launch>
+
+	<node pkg="cob_3d_view_cells" type="feature2view" name="feature2view" output="screen" required="true">
+		<param name="dist_thr" value="80" />
+		<param name="int_thr" value="0.05" />
+		
+		<!--param name="dist_thr" value="80" />
+		<param name="int_thr" value="0.075" /-->
+		
+		<!--
+		<param name="dist_thr" value="130" />
+		<param name="int_thr" value="0.7" />
+		-->
+	</node>
+	
+	<include file="$(find ratslam_ros)/launch/ft.launch" />
+
+</launch>
