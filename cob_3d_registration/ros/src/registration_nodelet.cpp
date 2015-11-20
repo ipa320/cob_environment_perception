@@ -121,7 +121,7 @@
 #include <sys/stat.h>
 
 #include <cob_3d_registration/measurements/measure.h>
-#include <cob_srvs/Trigger.h>
+#include <std_srvs/Trigger.h>
 #include <cob_3d_mapping_msgs/TriggerAction.h>
 
 #ifdef PCL_VERSION_COMPARE
@@ -292,8 +292,8 @@ public:
    * @return nothing
    */
   bool
-  reset(cob_srvs::Trigger::Request &req,
-        cob_srvs::Trigger::Response &res)
+  reset(std_srvs::Trigger::Request &req,
+        std_srvs::Trigger::Response &res)
   {
     //TODO: add mutex
     ROS_INFO("Resetting transformation...");
@@ -393,10 +393,10 @@ public:
    *
    * @return nothing
    */
-  bool onKeyframeCallback(cob_srvs::Trigger::Request &req,
-                          cob_srvs::Trigger::Response &res)
+  bool onKeyframeCallback(std_srvs::Trigger::Request &req,
+                          std_srvs::Trigger::Response &res)
   {
-    res.success.data = false;
+    res.success = false;
 
     if(reg_==0 || pc_frame_id_.size()<1 || !is_running_)
       return true;
@@ -422,7 +422,7 @@ public:
       return false;
     }
 
-    res.success.data = true;
+    res.success = true;
     return true;
   }
 

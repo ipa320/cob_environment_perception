@@ -14,6 +14,7 @@
   <url>http://wiki.ros.org/libopenmesh</url>
 
   <buildtool_depend>catkin</buildtool_depend>
+  <buildtool_depend>roslib</buildtool_depend>
 
   <!--export>
     <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib/OpenMesh -lOpenMeshCore -lOpenMeshTools" />

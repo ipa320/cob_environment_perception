@@ -8,6 +8,7 @@ set(catkin_RUN_PACKAGES
   dynamic_reconfigure
   pcl_ros
   rosbag
+  std_srvs
   roscpp
 )
 

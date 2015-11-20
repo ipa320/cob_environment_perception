@@ -81,17 +81,20 @@ ShapeVisualization::ShapeVisualization () :
 	nh_("~"),
 	frame_id_("/map"),
 	show_contours_(false)
-    {
-      shape_array_sub_ = nh_.subscribe ("shape_array", 1, &ShapeVisualization::shapeArrayCallback, this);
-      feedback_sub_ = nh_.subscribe("shape_i_marker/feedback",1,&ShapeVisualization::setShapePosition,this);
-      //marker_pub_ = nh_.advertise<visualization_msgs::Marker> ("marker", 100);
-      marker_pub_ = nh_.advertise<visualization_msgs::MarkerArray> ("marker_array", 1);
-      //      shape_pub_ = nh_.advertise<cob_3d_mapping_msgs::ShapeArray> ("shape_array", 1);
-      //      get_table_subscriber_ = nh_.subscribe("shape_array", 1, &ShapeVisualization::findTables,this);
-      nh_.getParam("show_contours", show_contours_);
-      im_server_.reset (new interactive_markers::InteractiveMarkerServer ("shape_i_marker", "", false));
-      moreOptions() ;
-    }
+{
+  feedback_sub_ = nh_.subscribe("shape_i_marker/feedback",1,&ShapeVisualization::setShapePosition,this);
+  marker_pub_ = nh_.advertise<visualization_msgs::MarkerArray> ("marker_array", 1, boost::bind(&ShapeVisualization::on_subscriber, this, _1));
+  nh_.getParam("show_contours", show_contours_);
+  im_server_.reset (new interactive_markers::InteractiveMarkerServer ("shape_i_marker", "", false));
+  moreOptions() ;
+}
+
+void ShapeVisualization::on_subscriber(const ros::SingleSubscriberPublisher& pub)
+{
+	if(shape_array_sub_)
+		return;
+	shape_array_sub_ = nh_.subscribe ("shape_array", 1, &ShapeVisualization::shapeArrayCallback, this);
+}
 
 void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)//,const cob_3d_mapping_msgs::Shape& shape)
 {
@@ -576,6 +579,11 @@ void ShapeVisualization::optionMenu() {
 void
 ShapeVisualization::shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr& sa)
 {
+	if(marker_pub_.getNumSubscribers()<1) {
+		shape_array_sub_.shutdown();
+		return;
+	}
+	
   if(show_contours_)
   {
     visualization_msgs::MarkerArray dContourMarker;
@@ -597,7 +605,7 @@ ShapeVisualization::shapeArrayCallback (const cob_3d_mapping_msgs::ShapeArrayPtr
   v_sm_.clear();
   sha.shapes.clear() ;
   im_server_->applyChanges();
-  ROS_INFO("shape array with %d shapes received", sa->shapes.size());
+  ROS_INFO("shape array with %d shapes received", (int)sa->shapes.size());
   frame_id_ = sa->header.frame_id;
   visualization_msgs::MarkerArray ma;
 

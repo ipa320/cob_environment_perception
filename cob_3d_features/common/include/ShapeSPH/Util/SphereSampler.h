@@ -19,12 +19,16 @@ public:
 	uninit_vector(const uninit_vector &o) {
 		data_ = new T[o.s_];
 		s_=o.s_;
-		memcpy(data_, o.data_, s_);
+		//memcpy(data_, o.data_, s_);
+		for(size_t i=0; i<s_; i++)
+			data_[i] = o.data_[i];
 	}
 
 	void operator=(const uninit_vector &o) {
 		resize(o.s_);
-		memcpy(data_, o.data_, s_);
+		//memcpy(data_, o.data_, s_);
+		for(size_t i=0; i<s_; i++)
+			data_[i] = o.data_[i];
 	}
 	
 	inline size_t size() const {return s_;}
@@ -80,7 +84,11 @@ struct Sampler {
 		//if(i<8)
 		//return ( R(i)/radii_ ) * maxRadius_ + R(std::pow(1.5, i));
 		//return R(std::pow(2, i));
-		return R(std::pow(1.7, i)*maxRadius_/std::pow(1.7, radii_));//( R(i+1.)/radii_ ) * maxRadius_;
+		/*std::cout
+		<<"1. "<<R(std::pow(1.7, i)*maxRadius_/std::pow(1.7, radii_))<<std::endl
+		<<"2. "<<R(( R(i+1.)/radii_ ) * maxRadius_)<<std::endl
+		<<"3. "<<R(std::pow(1.7, i))<<std::endl;*/
+		//return R(std::pow(1.7, i)*maxRadius_/std::pow(1.7, radii_));//( R(i+1.)/radii_ ) * maxRadius_;
 		return ( R(i+1.)/radii_ ) * maxRadius_;
 		return R(std::pow(1.7, i));//( R(i+1.)/radii_ ) * maxRadius_;
 	}

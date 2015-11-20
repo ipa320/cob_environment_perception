@@ -147,7 +147,6 @@ cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>
       } // end while
 
       // merge small clusters
-      /*
       if (c->size() < min_cluster_size_)
       {
         std::vector<ClusterPtr> adj_list;
@@ -164,7 +163,6 @@ cob_3d_segmentation::DepthSegmentation<ClusterGraphT,PointT,PointNT,PointLabelT>
           graph_->merge( c->id(), max_cluster_id );
         }
       }
-      */
     }
     else if(labels_->points[i].label <= I_EDGE)
     {
