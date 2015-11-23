@@ -46,17 +46,17 @@ public:
 		enum {CLASSIFIER_FLOOR=1};
 		
 		class Classifier_Floor : public Classifier {
-			nuklei::kernel::se3 floor_params_;
+			nuklei::kernel::r3xs2 floor_params_;
 			
 		public:
-			Classifier_Floor(const Eigen::Quaternionf &normal, const Eigen::Vector3f &offset, const float bandwith_off, const float bandwith_normal) {
+			Classifier_Floor(const Eigen::Vector3f &normal, const Eigen::Vector3f &offset, const float bandwith_off, const float bandwith_normal) {
 				assert(bandwith_off>=0);
 				assert(bandwith_normal>=0 && bandwith_normal<=M_PI);
 				
 				floor_params_.loc_ = cast(offset);
-				floor_params_.ori_ = cast(normal.normalized());
+				floor_params_.dir_ = cast(normal.normalized());
 				floor_params_.loc_h_ = bandwith_off;
-				floor_params_.ori_h_ = bandwith_normal;
+				floor_params_.dir_h_ = bandwith_normal;
 			}
 
 			virtual int class_id() const {return CLASSIFIER_FLOOR;}

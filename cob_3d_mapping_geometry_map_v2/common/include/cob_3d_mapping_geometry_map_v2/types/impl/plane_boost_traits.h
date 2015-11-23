@@ -1,5 +1,7 @@
 
 // We can conveniently use macro's to register point and ring
+//that's so cool
+BOOST_GEOMETRY_REGISTER_POINT_2D(cob_3d_geometry_map::Plane_Point::Ptr, cob_3d_geometry_map::Plane_Point::coordinate_type, cs::cartesian, get()->pos(0), get()->pos(1))
 BOOST_GEOMETRY_REGISTER_POINT_2D(cob_3d_geometry_map::Plane_Point, cob_3d_geometry_map::Plane_Point::coordinate_type, cs::cartesian, pos(0), pos(1))
 BOOST_GEOMETRY_REGISTER_RING(cob_3d_geometry_map::Plane_Ring)
 

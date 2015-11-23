@@ -27,8 +27,12 @@ class GeometryNode {
 	{
 	  ROS_INFO("callback2");
 	  
+	  cob_3d_visualization::RvizMarkerManager::get().setFrameId(scene->header.frame_id);
+	  
 	  ctxt_.add_scene(*scene);
 	  ctxt_.visualize_markers();
+	  
+	  system("read x");
 	}
 
 	void cb_camera_info(const sensor_msgs::CameraInfoConstPtr& camera_info)
@@ -37,6 +41,18 @@ class GeometryNode {
 	  
 	  camera_info_ = *camera_info;
 	  sub_camera_info_.shutdown();	//just get one message (assume camera does not change while running)
+	  
+	  Eigen::Matrix3d P;
+	  std::copy(camera_info_.K.begin(), camera_info_.K.end(), P.data());
+	  P = P.transpose().eval();
+	  std::cout<<"P\n"<<P<<std::endl;
+	  std::cout<<"Pi\n"<<P.inverse()<<std::endl;
+	  P.row(0) /= camera_info_.width;
+	  P.row(1) /= camera_info_.height;
+	  
+	  ctxt_.set_projection(P);
+	  
+	  start();
 	}
 	
 	typedef message_filters::sync_policies::ApproximateTime<cob_3d_mapping_msgs::PlaneScene, sensor_msgs::Image> TSyncPolicy;
@@ -52,15 +68,13 @@ class GeometryNode {
 	void init_context() {
 		//register default classifiers
 		
-		Eigen::Vector3f floor_offset;
-		Eigen::Quaternionf floor_orientation;
-		floor_orientation = Eigen::AngleAxis<float>(0.f, Eigen::Vector3f());
+		Eigen::Vector3f floor_offset(0,0.5f,0);
+		Eigen::Vector3f floor_orientation = Eigen::Vector3f::UnitY();
 		
 		ctxt_.registerClassifier(new cob_3d_geometry_map::DefaultClassifier::Classifier_Floor(floor_orientation, floor_offset, 0.1f, 0.1f));
 	}
 	
-public:
-	GeometryNode() {
+	void start() {
 		init_context();
 		
 		//now start the ROS stuff
@@ -68,11 +82,16 @@ public:
 		sub_col_img_.reset(new message_filters::Subscriber<sensor_msgs::Image>(nh_, "color_image", 1));
 		
 		sub_scene2_ = nh_.subscribe("scene", 1, &GeometryNode::callback2, this);
-		sub_camera_info_ = nh_.subscribe("camera_info", 1, &GeometryNode::cb_camera_info, this);
 		 
 		// ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
 		sync_.reset(new message_filters::Synchronizer<TSyncPolicy>(TSyncPolicy(10), *sub_scene_, *sub_col_img_));
 		sync_->registerCallback(boost::bind(&GeometryNode::callback, this, _1, _2));
+	}
+	
+public:
+
+	GeometryNode() {
+		sub_camera_info_ = nh_.subscribe("camera_info", 1, &GeometryNode::cb_camera_info, this);
 	}
 
 

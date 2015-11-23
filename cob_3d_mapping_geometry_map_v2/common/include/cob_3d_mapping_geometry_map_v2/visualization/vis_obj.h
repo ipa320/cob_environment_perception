@@ -68,6 +68,18 @@ namespace cob_3d_geometry_map {
 			virtual void serialize(Marker &stream);
 		};
 		
+		class Box : public Object {
+			Eigen::Affine3f pose_;
+			Eigen::AlignedBox<float,3> bb_;
+			
+		public:
+			Box(const std::string &name, const Eigen::Affine3f &pose, const Eigen::AlignedBox<float,3> &bb) :
+				Object(name), pose_(pose), bb_(bb)
+			{}
+			
+			virtual void serialize(Marker &stream);
+		};
+		
 	}
 	
 }

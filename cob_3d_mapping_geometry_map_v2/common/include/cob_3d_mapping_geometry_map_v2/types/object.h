@@ -79,6 +79,13 @@ public:
 	virtual void visualization(std::vector<boost::shared_ptr<Visualization::Object> > &) {}
 	
 	std::string vis_name(const std::string &prefix) const;
+	
+	bool has_class(const int id) const;
+	void add_class(const boost::shared_ptr<Class> &cl);
+	
+	virtual bool can_merge_fast(const Object &o) const {return false;}
+	virtual bool can_merge(const Object &o) const {return false;}
+	virtual void merge(const Object &o) {}
 };
 
 class Object3D : public Object {
@@ -87,6 +94,7 @@ protected:
 	
 public:
 	typedef Object Parent;
+	typedef boost::shared_ptr<Object3D> Ptr;
 	
 	Object3D(const ContextPtr &ctxt) : Object(ctxt)
 	{}
@@ -100,19 +108,28 @@ public:
 };
 
 class ObjectVolume : public Object3D {
-protected:
+public:
 	typedef Eigen::AlignedBox<float,3> TBB;
 	
-	//bounding box
+protected:
+	
+	//bounding box in pose frame
 	TBB bb_;
 public:
 	typedef Object3D Parent;
+	typedef boost::shared_ptr<ObjectVolume> Ptr;
 	
 	ObjectVolume(const ContextPtr &ctxt) : Object3D(ctxt)
 	{}
 
 	//<getter for pose
-	const TBB &bb() const {return bb_;}
+	const TBB &bb_in_pose() const {return bb_;}
+	TBB bb_in_context() const {
+		TBB bb;
+		bb.extend(cast(pose_)*bb_.min());
+		bb.extend(cast(pose_)*bb_.max());
+		return bb;
+	}
 	
 	virtual std::string type() {return "ObjectVolume";}
 	
