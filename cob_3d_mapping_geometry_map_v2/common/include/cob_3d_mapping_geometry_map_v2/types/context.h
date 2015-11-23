@@ -58,6 +58,13 @@ public:
 	
 	inline std::vector<Object::Ptr>::iterator begin() {return objs_.begin();}
 	inline std::vector<Object::Ptr>::iterator end() {return objs_.end();}
+	inline void erase(Object::Ptr ptr) {
+		for(size_t i=0; i<objs_.size(); i++)
+			if(objs_[i]==ptr) {
+				objs_.erase(objs_.begin()+i);
+				--i;
+			}
+	}
 };
 
 class Context2D {

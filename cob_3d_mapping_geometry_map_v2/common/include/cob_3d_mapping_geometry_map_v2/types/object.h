@@ -85,7 +85,7 @@ public:
 	
 	virtual bool can_merge_fast(const Object &o) const {return false;}
 	virtual bool can_merge(const Object &o) const {return false;}
-	virtual void merge(const Object &o) {}
+	virtual bool merge(const Object &o, const double relation) {return true;}
 };
 
 class Object3D : public Object {

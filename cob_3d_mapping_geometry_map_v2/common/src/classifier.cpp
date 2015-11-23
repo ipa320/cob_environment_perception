@@ -17,8 +17,11 @@ Class::Ptr Classifier_Floor::classifiy(Object::Ptr obj, ContextPtr ctxt)
 		
 		//std::cout<<"Classifier_Floor: "<<dist.first<<" "<<dist.second<<std::endl<<std::endl;
 		
-		if(dist<std::make_pair(floor_params_.loc_h_+params.loc_h_, floor_params_.dir_h_+params.dir_h_))
+		if(dist.first<=floor_params_.loc_h_+params.loc_h_ && dist.second<=floor_params_.dir_h_+params.dir_h_) {
+			std::cout<<"Classifier_Floor: dist "<<dist.first<<" "<<dist.second<<std::endl<<std::endl;
+			std::cout<<"Classifier_Floor: band "<<params.loc_h_<<" "<<params.dir_h_<<std::endl<<std::endl;
 			return Class::Ptr(new Class_Simple(this));
+		}
 	}
 	
 	return Class::Ptr();

@@ -57,7 +57,7 @@ void GlobalContext::add_scene(const cob_3d_mapping_msgs::PlaneScene &scene)
 		
 		scene_->build();
 		classify(scene_);
-		//scene_->optimize(scene_);
+		scene_->optimize(scene_);
 	}
 	
 }
@@ -101,7 +101,11 @@ void Context::add_scene(const Context::Ptr &this_ctxt, const cob_3d_mapping_msgs
 	//TODO: add image first
 	
 	for(size_t i=0; i<scene.planes.size(); i++) {
-		add(Object::Ptr( new Plane(this_ctxt, scene.planes[i]) ));
+		Plane *plane = new Plane(this_ctxt, scene.planes[i]);
+		if(!plane->simplify_by_area(0.02*0.02))
+			delete plane;
+		else
+			add(Object::Ptr( plane ));
 	}
 	
 	build();
@@ -196,6 +200,8 @@ void Context::intersects(const Intersection_Volume &search_param, std::vector<Ob
 	volume_search_in_volume(search_param.bb(), tmp);
 	volume_search_in_points(search_param.bb(), tmp);
 	
+	std::cout<<"Context::intersects stage1 "<<tmp.size()<<" from "<<objs_.size()<<std::endl;
+	
 	for(size_t i=0; i<tmp.size(); i++)
 		if(search_param.intersects(tmp[i].get())) {
 			bool found=false;
@@ -256,7 +262,7 @@ Context2D::Context2D(const Context::Ptr &ctxt, const Eigen::Matrix3f &proj, cons
 		fc
 	), result);
 	
-	std::cout<<"Context2D: "<<result.size()<<std::endl;
+	std::cout<<"Context2D: "<<result.size()<<" from "<<(ctxt->end()-ctxt->begin())<<std::endl;
 	for(size_t i=0; i<result.size(); i++) {
 		insert(result[i], proj);
 	
@@ -266,6 +272,11 @@ Context2D::Context2D(const Context::Ptr &ctxt, const Eigen::Matrix3f &proj, cons
 	//get area for each object
     for(RTREE::const_iterator it=rtree_.begin(); it!=rtree_.end(); it++)
 		area_[it->second->obj_].area += boost::geometry::area(*it->second->poly_);
+	
+	static int n=0;
+	char buf[256];
+	sprintf(buf, "/tmp/Context2D_%d.svg", n++);
+	save_as_svg(buf);
 }
 
 class Projector_Viewport : public Projector {
@@ -499,6 +510,13 @@ void Context2D::insert(Object::Ptr _obj, const Eigen::Matrix3f &proj)
 	
 	CAST_TO_END;
 }
+			
+struct Candidate {
+	Plane* p;
+	double relation;
+	
+	Candidate(Plane *p, double r) : p(p), relation(r) {}
+};
 
 void Context2D::merge(const Context::Ptr &ctxt, const Eigen::Matrix3f &proj, const Eigen::Matrix3f &proj_inv, const double fc)
 {
@@ -511,15 +529,18 @@ void Context2D::merge(const Context::Ptr &ctxt, const Eigen::Matrix3f &proj, con
 	
 	for(std::vector<Object::Ptr>::iterator it_obj=ctxt->begin(); it_obj!=ctxt->end(); it_obj++) {
 			CAST_TO(Plane, (*it_obj), obj);
-			
-				std::map<Object::Ptr, std::vector<Plane*> > candidates;
+				
+				std::map<Object::Ptr, std::vector<Candidate> > candidates, candidates_neg;
+				int unknown=0;
 				std::vector<Plane_Polygon::Ptr> polys;
 				obj->project(projector, polys);
 				
 				std::map<Object::Ptr, std::vector<value> > ints;
 				std::vector<value> result;
 				box bb;
-				for(size_t j=0; j<polys.size(); j++)
+				if(polys.size()>0)
+					bb=ProjectedPolygon::get_box(polys[0]);
+				for(size_t j=1; j<polys.size(); j++)
 					boost::geometry::expand(bb, ProjectedPolygon::get_box(polys[j]));
 					
 				std::vector<value> result_n;
@@ -529,7 +550,29 @@ void Context2D::merge(const Context::Ptr &ctxt, const Eigen::Matrix3f &proj, con
 					ints[result_n[k].second->obj_].push_back(result_n[k]);
 				
 				for(std::map<Object::Ptr, std::vector<value> >::iterator it=ints.begin(); it!=ints.end(); it++) {
-					if(!obj->can_merge_fast(*it->first) || !it->first->can_merge_fast(*obj)) continue;
+					{
+						double area_in=boost::geometry::area(bb), area_map=0, area_union = 0;
+						box bb_tmp;
+						for(size_t k=0; k<it->second.size(); k++) {
+							area_map += boost::geometry::area(it->second[k].second->get_box());
+							if(k==0)
+								bb_tmp = it->second[k].second->get_box();
+							else
+								boost::geometry::expand(bb_tmp, it->second[k].second->get_box());
+						}
+							
+						Eigen::Vector2d a(
+							std::max(boost::geometry::get<boost::geometry::min_corner, 0>(bb), boost::geometry::get<boost::geometry::min_corner, 0>(bb_tmp)),
+							std::max(boost::geometry::get<boost::geometry::min_corner, 1>(bb), boost::geometry::get<boost::geometry::min_corner, 1>(bb_tmp)) );
+						Eigen::Vector2d b(
+							std::min(boost::geometry::get<boost::geometry::max_corner, 0>(bb), boost::geometry::get<boost::geometry::max_corner, 0>(bb_tmp)),
+							std::min(boost::geometry::get<boost::geometry::max_corner, 1>(bb), boost::geometry::get<boost::geometry::max_corner, 1>(bb_tmp)) );
+						area_union += (b-a)(0)*(b-a)(1);
+						
+						std::cout<<"areas approx "<<100*area_union/std::min(area_in,area_map)<<"% "<<100*area_union/std::max(area_in,area_map)<<"% "<<area_in<<" "<<area_map<<" "<<area_union<<std::endl;
+						
+						if(area_union/std::min(area_in,area_map) < 0.3f) continue;
+					}
 					
 					double area_in=0, area_map=0, area_union=0;
 					{
@@ -565,27 +608,37 @@ void Context2D::merge(const Context::Ptr &ctxt, const Eigen::Matrix3f &proj, con
 						it->second[k].second->poly_->save_as_svg(mapper);
 					}
 		
-					assert(area_union<=area_in);
-					assert(area_union<=area_map);
+					assert(area_union<=area_in+0.00001);
+					assert(area_union<=area_map+0.00001);
 					
-					if( area_union/std::min(area_in,area_map)>0.8f && area_union/std::max(area_in,area_map)>0.4f &&
-						obj->can_merge(*it->first) && it->first->can_merge(*obj) )
-						candidates[it->first].push_back(obj);
+					if( area_union/std::min(area_in,area_map)>0.7f && area_union/std::max(area_in,area_map)>0.2f ) {
+						if(	obj->can_merge_fast(*it->first) && it->first->can_merge_fast(*obj) &&
+							obj->can_merge(*it->first) && it->first->can_merge(*obj))
+							candidates[it->first].push_back(Candidate(obj, area_union/std::max(area_in,area_map) ));
+						else
+							candidates_neg[it->first].push_back(Candidate(obj, area_union/std::max(area_in,area_map) ));
+					}
+					else
+						unknown++;
 					
 				}
 				
 			
-				std::cout<<"merge candidates "<<candidates.size()<<std::endl;
-				for(std::map<Object::Ptr, std::vector<Plane*> >::iterator it=candidates.begin(); it!=candidates.end(); it++) {
-					for(size_t i=0; i<it->second.size(); i++)
-						it->first->merge(*it->second[i]);
+				std::cout<<"merge candidates "<<candidates.size()<<" / "<<candidates_neg.size()<<" / "<<unknown<<std::endl;
+				size_t bad_ones=0;
+				for(std::map<Object::Ptr, std::vector<Candidate> >::iterator it=candidates.begin(); it!=candidates.end(); it++) {
+					for(size_t i=0; i<it->second.size(); i++) {
+						if(!it->first->merge(*it->second[i].p, it->second[i].relation)) {
+							scene_->erase(it->first);
+							++bad_ones;
+							break;
+						}
+					}
 				}
 				
-				if(candidates.size()==0)
+				if(candidates.size()==bad_ones && candidates_neg.size()==0)
 					scene_->add(*it_obj);
 				
 			CAST_TO_END;
 	}
-
-//void Plane::complex_projection(Plane::Ptr plane_out, const Plane::Ptr plane_in1, const Plane::Ptr plane_in2, const size_t ind1, const size_t ind2)	
 }

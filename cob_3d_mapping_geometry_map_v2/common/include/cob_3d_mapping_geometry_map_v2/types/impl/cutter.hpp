@@ -44,11 +44,21 @@ class Intersection_Volume_Viewport : public Intersection_Volume {
 	}
 	
 	inline bool intersects(const Eigen::Vector3f &pti, const Eigen::Vector3f &pta) const {
-		if((pti(2)<=0&&pta(2)<=0) || (pti(2)>=far_clipping_&&pta(2)>=far_clipping_)) return false;
+		if((pti(2)<=0&&pta(2)<=0) || (pti(2)>=far_clipping_&&pta(2)>=far_clipping_)) {
+			std::cout<<"Intersection_Volume_Viewport: int1"<<std::endl;
+			return false;
+		}
 		
 		Eigen::Vector2f ti = (proj_*pti).head<2>();
 		Eigen::Vector2f ta = (proj_*pta).head<2>();
 		
+		assert(ti(0)<=ta(0));
+		assert(ti(1)<=ta(1));
+		
+		if(!(ti(0)<=1 && ta(0)>=0 && ti(1)<=1 && ta(1)>=0)) {
+			std::cout<<"Intersection_Volume_Viewport: int2\n"<<ti.transpose()<<" -- "<<ta.transpose()<<std::endl;
+		}
+		return true;//TODO: fix
 		return ti(0)<=1 && ta(0)>=0 && ti(1)<=1 && ta(1)>=0;
 	}
 	

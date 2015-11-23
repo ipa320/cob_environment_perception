@@ -95,6 +95,7 @@ struct Plane_Ring : std::deque<Plane_Point::Ptr>
 		return m;
 	}
 	
+	void simplify_by_area(const double min_area2);
 };
 
 /*
@@ -167,13 +168,14 @@ public:
 		return Plane_Point::Vector2(t.X(), t.Y());
 	}
 	
+	bool simplify_by_area(const double min_area);
 	double polygon_distance(const Plane_Point &pt) const;
 	
 	void clone(const Plane_Polygon &o, const Projector &proj, const nuklei::kernel::se3 &pose);
 	
 	//helpers
-	void save_as_svg(const std::string &fn) const;
-	void save_as_svg(boost::geometry::svg_mapper<Plane_Point::Ptr> &mapper) const;
+	void save_as_svg(const std::string &fn, const bool check=true) const;
+	void save_as_svg(boost::geometry::svg_mapper<Plane_Point::Ptr> &mapper, const int color_b=0, const int color_g=0) const;
 	
 	std::vector<Plane_Polygon> operator-(const Plane_Polygon &o) const ;
 	std::vector<Plane_Polygon> operator+(const Plane_Polygon &o) const ;
@@ -227,10 +229,12 @@ public:
 	
 	virtual bool can_merge_fast(const Object &o) const;
 	virtual bool can_merge(const Object &o) const;
-	virtual void merge(const Object &o);
+	virtual bool merge(const Object &o, const double relation);
+	
+	bool simplify_by_area(const double min_area);
 	
 	void insert(const Plane* origin, const std::vector<Plane_Polygon> &polys) {
-		polygons_.clear();
+		//polygons_.clear();
 		for(size_t i=0; i<polys.size(); i++) {
 			if(!boost::geometry::is_valid(polys[i])) continue;
 			polygons_.push_back(Plane_Polygon::Ptr(new Plane_Polygon(polys[i])));
@@ -240,6 +244,10 @@ public:
 	}
 	
 	static void complex_projection(Plane* plane_out, const Plane* plane_in1, const Plane* plane_in2, const size_t ind1, const size_t ind2);
+	static void simple_projection(Plane* plane_out, const Plane* plane_in1, const Plane* plane_in2, const size_t ind1, const size_t ind2);
+	
+	void save_as_svg(const std::string &fn) const;
+	void save_as_svg(boost::geometry::svg_mapper<Plane_Point::Ptr> &mapper, const int color_g=0) const;
 };
 
 }

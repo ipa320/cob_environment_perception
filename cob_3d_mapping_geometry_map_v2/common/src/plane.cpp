@@ -68,7 +68,7 @@ Plane_Polygon::Plane_Polygon(const std::vector<cob_3d_mapping_msgs::Polygon> &po
 	}
 }
 
-void Plane_Polygon::save_as_svg(const std::string &fn) const
+void Plane_Polygon::save_as_svg(const std::string &fn, const bool check) const
 {	
 	{
 		std::ofstream svg(fn.c_str());
@@ -77,19 +77,22 @@ void Plane_Polygon::save_as_svg(const std::string &fn) const
 		save_as_svg(mapper);
 	}
 	
-	assert( boost::geometry::is_valid(*this) );
-	assert( !boost::geometry::intersects(*this) );
+	assert( !check||boost::geometry::is_valid(*this) );
+	assert( !check||!boost::geometry::intersects(*this) );
 }
 
-void Plane_Polygon::save_as_svg(boost::geometry::svg_mapper<Plane_Point::Ptr> &mapper) const
-{	
+void Plane_Polygon::save_as_svg(boost::geometry::svg_mapper<Plane_Point::Ptr> &mapper, const int color_b, const int color_g) const
+{
+	char buf[512];
+	sprintf(buf, "fill:none;stroke:rgb(0,%d,%d);stroke-width:5", color_g, color_b);
     // Add geometries such that all these geometries fit on the map
     mapper.add(boundary_);
-    mapper.map(boundary_, "fill:none;stroke:rgb(0,0,0);stroke-width:5");
+    mapper.map(boundary_, buf);
     
 	for(size_t i=0; i<holes_.size(); i++) {
 		mapper.add(holes_[i]);
-		mapper.map(holes_[i], "fill:none;stroke:rgb(255,0,0);stroke-width:5");
+		sprintf(buf, "fill:none;stroke:rgb(255,%d,%d);stroke-width:5", color_g, color_b);
+		mapper.map(holes_[i], buf);
 	}
 }
 
@@ -104,9 +107,6 @@ Plane::Plane(const ContextPtr &ctxt, const cob_3d_mapping_msgs::Plane &inp) :
 	boost::geometry::correct(*polygons_.back());
 	
 	buildBB();
-	
-	pose_.loc_h_ = polygons_.back()->max_var();
-	pose_.ori_h_ = std::atan2(pose_.loc_h_, (bb_.max()-bb_.min()).norm()/2);
 }
 
 void Plane::buildBB()
@@ -115,6 +115,12 @@ void Plane::buildBB()
 	
 	for(size_t i=0; i<polygons_.size(); i++)
 		polygons_[i]->buildBB(bb_);
+	
+	if(polygons_.size()>0) {
+		pose_.loc_h_ = polygons_.back()->max_var();
+		pose_.ori_h_ = std::atan2(pose_.loc_h_, (bb_.max()-bb_.min()).norm()/2);
+		
+	}
 }
 
 void Plane_Polygon::buildBB(ObjectVolume::TBB &bb)
@@ -182,7 +188,7 @@ bool Plane::snap(const Plane &other)
 	return cut(VolumeCut_Snapper(other));
 }
 
-bool  Plane::cut(const VolumeCut &cutter)
+bool Plane::cut(const VolumeCut &cutter)
 {
 	for(size_t i=0; i<polygons_.size(); i++) {
 		if(polygons_[i]->cut(cutter, pose_)) {
@@ -270,6 +276,45 @@ bool Plane_Polygon::cut(const VolumeCut &cutter, const nuklei::kernel::se3 &pose
 	return inp.size()<4;
 }
 
+double area2(const Plane_Point::Vector2 &a, const Plane_Point::Vector2 &b) {
+	return std::pow(a(0)*b(1)-a(1)*b(0), 2);
+}
+
+void Plane_Ring::simplify_by_area(const double min_area2) {
+	erase(end()-1);
+	
+	std::cout<<"simplify_by_area: "<<size()<<" -> ";
+	for(size_t i=0; i<size(); i++) {
+		const size_t ind_1 = (i+1)%size();
+		const size_t ind_2 = (i+2)%size();
+		
+		const double area = area2( (*this)[ind_1]->pos-(*this)[i]->pos, (*this)[ind_2]->pos-(*this)[ind_1]->pos);
+		
+		if(area<=min_area2) {
+			erase(begin()+ind_1);
+			if(ind_1<i) break;
+		}
+	}
+	std::cout<<size()<<std::endl;
+	
+	if(size()>0)
+		push_back(front());	//close
+}
+
+bool Plane_Polygon::simplify_by_area(const double min_area) {
+	boundary_.simplify_by_area(min_area*min_area);
+	for(size_t i=0; i<holes_.size(); i++) {
+		holes_[i].simplify_by_area(min_area*min_area);
+		if(holes_[i].size()<4) {
+			holes_.erase(holes_.begin()+i);
+			--i;
+			continue;
+		}
+	}
+	
+	return boundary_.size()>3;	//4 points for triangle (with closing point)
+}
+
 void Plane_Polygon::clone(const Plane_Polygon &o, const Projector &proj, const nuklei::kernel::se3 &pose) {
 	boundary_.clone(o.boundary_, proj, pose);
 	holes_.resize(o.holes_.size());
@@ -316,9 +361,12 @@ std::vector<Plane_Polygon> Plane_Polygon::operator-(const Plane_Polygon &o) cons
 	}
 	
 	for(size_t i=0; i<rs.size(); i++) {
-		if(!boost::geometry::is_valid(rs[i]) || boost::geometry::intersects(rs[i]) ) {
+		const bool sim_res = rs[i].simplify_by_area(0.000001); //remove double lines
+		
+		if(!sim_res || !boost::geometry::is_valid(rs[i]) || boost::geometry::intersects(rs[i]) ) {
 			ROS_ERROR("invalid result from op-");
-			//rs[i].save_as_svg("/tmp/res.svg");
+			rs[i].save_as_svg("/tmp/res.svg", false);
+	  if(sim_res) system("read x");
 			rs.erase(rs.begin()+i);
 			--i; continue;
 		}
@@ -407,6 +455,7 @@ std::vector<Plane_Polygon> Plane_Polygon::operator&(const Plane_Polygon &o) cons
 	for(size_t i=0; i<rs.size(); i++) {
 		if(!boost::geometry::is_valid(rs[i])) {
 			ROS_ERROR("invalid result from op&");
+	  system("read x");
 			//rs[i].save_as_svg("/tmp/res.svg");
 			rs.erase(rs.begin()+i);
 			--i; continue;
@@ -428,7 +477,7 @@ bool Plane::can_merge_fast(const Object &o) const {
 		
 		std::cout<<"can_merge_fast "<<dist.first<<" "<<dist.second<<" -- "<<params1.loc_h_+params2.loc_h_<<" "<<params1.dir_h_+params2.dir_h_<<std::endl;
 		
-		if(dist<std::make_pair(params1.loc_h_+params2.loc_h_, params1.dir_h_+params2.dir_h_))
+		if(dist.first<=params1.loc_h_+params2.loc_h_ && dist.second<=params1.dir_h_+params2.dir_h_)
 			return true;
 	}
 	
@@ -441,14 +490,14 @@ bool Plane::can_merge(const Object &o) const {
 	return true;
 }
 
-void Plane::merge(const Object &o) {
+bool Plane::merge(const Object &o, const double relation) {
 	Plane const *plane = dynamic_cast<Plane const*>(&o);
 	if(plane) {
 		Plane copy = *this;
 		polygons_.clear();
 		
 		//1. get new pose
-		pose_ = copy.pose_.linearInterpolation(plane->pose_, 0.5);	//TODO: weightning
+		pose_ = copy.pose_.linearInterpolation(plane->pose_, (plane->pose_.ori_h_+plane->pose_.loc_h_)/(copy.pose_.ori_h_+copy.pose_.loc_h_ + plane->pose_.ori_h_+plane->pose_.loc_h_) );	//TODO: weightning
 		
 		std::cout<<"THIS\n"<<normal_eigen().transpose()<<"\n"<<offset_eigen().transpose()<<std::endl;
 		std::cout<<"COPY\n"<<copy.normal_eigen().transpose()<<"\n"<<copy.offset_eigen().transpose()<<std::endl;
@@ -461,7 +510,10 @@ void Plane::merge(const Object &o) {
 		
 		for(size_t i=0; i<copy.polygons_.size(); i++) {
 			for(size_t j=0; j<plane->polygons_.size(); j++)
-				complex_projection(this, &copy, plane, i, j);
+				if(relation<0.5)
+					complex_projection(this, &copy, plane, i, j);
+				else
+					simple_projection(this, &copy, plane, i, j);
 			copy.polygons_[i]->save_as_svg(mapper2);
 		}
 				
@@ -475,7 +527,11 @@ void Plane::merge(const Object &o) {
 		}
 		
 		buildBB();
+		
+		return simplify_by_area(0.02*0.02);
 	}
+	
+	return true;
 }
 
 class Projector_Plane : public Projector {
@@ -496,6 +552,19 @@ public:
 
 void Plane::complex_projection(Plane* plane_out, const Plane* plane_in1, const Plane* plane_in2, const size_t ind1, const size_t ind2)
 {
+	assert(plane_in1);
+	assert(plane_in2);
+	
+	static int n=0;
+	char buf[256];
+	
+	sprintf(buf, "/tmp/merge_%d_%d_%d_%d.svg", n++, plane_in1->id(), plane_in2->id(), plane_out->id());
+	std::ofstream svg(buf);
+	boost::geometry::svg_mapper<Plane_Point::Ptr> mapper(svg, 800, 800);
+	
+	plane_in1->save_as_svg(mapper, 100);
+	plane_in2->save_as_svg(mapper, 200);
+	
 	Projector_Plane projector(plane_out);
 	
 	//split into 3 parts
@@ -606,4 +675,68 @@ void Plane::complex_projection(Plane* plane_out, const Plane* plane_in1, const P
 		else
 			plane_out->insert(plane_in2, p_union);
 	}
+	
+	plane_out->save_as_svg(mapper);
+}
+
+void Plane::save_as_svg(const std::string &fn) const
+{	
+	{
+		std::ofstream svg(fn.c_str());
+		boost::geometry::svg_mapper<Plane_Point::Ptr> mapper(svg, 800, 800);
+
+		save_as_svg(mapper);
+	}
+	
+	for(size_t i=0; i<polygons_.size(); i++) {
+		assert( boost::geometry::is_valid(*polygons_[i]) );
+		assert( !boost::geometry::intersects(*polygons_[i]) );
+	}
+}
+
+void Plane::save_as_svg(boost::geometry::svg_mapper<Plane_Point::Ptr> &mapper, const int color) const
+{	
+	char buf[128];
+	sprintf(buf, "id: %d", id());
+//	if(polygons_.size()>0)
+//		mapper.text(boost::geometry::return_centroid<Plane_Point>(*polygons_[0]), buf, "fill:none;stroke:rgb(0,255,0);stroke-width:5");
+	for(size_t i=0; i<polygons_.size(); i++)
+		polygons_[i]->save_as_svg(mapper, (i*77)%256, color);
+}
+
+bool Plane::simplify_by_area(const double min_area) {
+	bool ok=false;
+	for(size_t i=0; i<polygons_.size(); i++) {
+		const bool r = polygons_[i]->simplify_by_area(min_area);
+		if(!r) {
+			polygons_.erase(polygons_.begin()+i);
+			--i;
+		}
+		ok |= r;
+	}
+	return ok;
+}
+
+
+void Plane::simple_projection(Plane* plane_out, const Plane* plane_in1, const Plane* plane_in2, const size_t ind1, const size_t ind2)
+{
+	assert(plane_in1);
+	assert(plane_in2);
+	
+	static int n=0;
+	char buf[256];
+	
+	sprintf(buf, "/tmp/merge_%d_%d_%d_%d.svg", n++, plane_in1->id(), plane_in2->id(), plane_out->id());
+	std::ofstream svg(buf);
+	boost::geometry::svg_mapper<Plane_Point::Ptr> mapper(svg, 800, 800);
+	
+	plane_in1->save_as_svg(mapper, 100);
+	plane_in2->save_as_svg(mapper, 200);
+	
+	Projector_Plane projector(plane_out);
+	
+	plane_out->insert(NULL, projector(*plane_in2, *plane_in2->polygons_[ind2]) + projector(*plane_in1, *plane_in1->polygons_[ind1]));
+	
+	
+	plane_out->save_as_svg(mapper);
 }
