@@ -1,3 +1,5 @@
+Travis-CI: [![Build Status](https://travis-ci.org/ipa320/cob_environment_perception.svg?branch=indigo_dev)](https://travis-ci.org/ipa320/cob_environment_perception)
+
 PCL 1.7 and electric compatibility:
 
 -> use: svn co http://svn.pointclouds.org/ros/branches/electric/perception_pcl_unstable perception_pcl_unstable
