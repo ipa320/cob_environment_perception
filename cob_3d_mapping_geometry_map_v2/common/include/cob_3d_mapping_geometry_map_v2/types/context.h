@@ -48,7 +48,7 @@ public:
 	void add(const Object::Ptr &);
 	void visualize(std::vector<boost::shared_ptr<Visualization::Object> > &vis_objs);
 	
-	void classify(const Context::Ptr &ctxt, const Classifier::Ptr &classifier);
+	void classify(const Context::Ptr &ctxt, const Classifier::Ptr &classifier, const bool single_shot);
 	void optimize(const Context::Ptr &ctxt);
 	
 	void volume_search_in_volume(const Eigen::AlignedBox<Scalar, Dim> &bb, std::vector<Object::Ptr> &result);
@@ -64,6 +64,26 @@ public:
 				objs_.erase(objs_.begin()+i);
 				--i;
 			}
+	}
+};
+
+
+class Projector_Viewport : public Projector {
+	Eigen::Matrix4f T_;
+public:
+	Projector_Viewport() {}
+	Projector_Viewport(const Eigen::Matrix4f &T) : T_(T) {
+	}
+	
+	void setT(const Eigen::Matrix4f &T) {T_ = T;}
+	
+	virtual Plane_Point::Vector2 operator()(const nuklei_wmf::Vector3<double> &pt3) const {
+		Eigen::Vector4f v;
+		v.head<3>() = cast(pt3);
+		v(3) = 1;
+		v = T_*v;
+		v/= v(2);
+		return v.head<2>();
 	}
 };
 
@@ -106,8 +126,9 @@ private:
 	RTREE rtree_;
 	TAreaMap area_;
 	Context::Ptr scene_;
+	Projector_Viewport projector_;
 	
-	void insert(Object::Ptr obj, const Eigen::Matrix3f &proj);
+	void insert(Object::Ptr obj);
 	void insert(Object::Ptr obj, const Plane_Polygon &p);
 	void insert(Object::Ptr obj, const std::vector<Plane_Polygon> &ps);
 	void _insert(Object::Ptr obj, const std::vector<Plane_Polygon> &ps);
@@ -115,9 +136,11 @@ private:
 public:
 	Context2D(const Context::Ptr &ctxt, const Eigen::Matrix3f &proj, const Eigen::Matrix3f &proj_inv, const double far_clipping=4.);
 	
-	void merge(const Context::Ptr &ctxt, const Eigen::Matrix3f &proj, const Eigen::Matrix3f &proj_inv, const double far_clipping=4.);
+	void merge(const Context::Ptr &ctxt);
 	
 	void save_as_svg(const std::string &fn) const;
+	
+	bool fitModel(Object::Ptr model, double score_coverage, double score_matching);
 };
 
 class GlobalContext {
@@ -132,7 +155,7 @@ class GlobalContext {
 	
 	ClassifierSet classifiers_;
 	
-	void classify(const Context::Ptr &ctxt);
+	void classify(const Context::Ptr &ctxt, const bool single_shot);
 public:
 
 	GlobalContext();

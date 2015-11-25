@@ -284,17 +284,24 @@ void Plane_Ring::simplify_by_area(const double min_area2) {
 	erase(end()-1);
 	
 	std::cout<<"simplify_by_area: "<<size()<<" -> ";
-	for(size_t i=0; i<size(); i++) {
-		const size_t ind_1 = (i+1)%size();
-		const size_t ind_2 = (i+2)%size();
+	
+	size_t last;
+	do {
+		last = size();
 		
-		const double area = area2( (*this)[ind_1]->pos-(*this)[i]->pos, (*this)[ind_2]->pos-(*this)[ind_1]->pos);
-		
-		if(area<=min_area2) {
-			erase(begin()+ind_1);
-			if(ind_1<i) break;
+		for(size_t i=0; i<size(); i++) {
+			const size_t ind_1 = (i+1)%size();
+			const size_t ind_2 = (i+2)%size();
+			
+			const double area = area2( (*this)[ind_1]->pos-(*this)[i]->pos, (*this)[ind_2]->pos-(*this)[ind_1]->pos);
+			
+			if(area<=min_area2) {
+				erase(begin()+ind_1);
+				if(ind_1<i) break;
+			}
 		}
-	}
+	} while(size()!=last);
+	
 	std::cout<<size()<<std::endl;
 	
 	if(size()>0)
@@ -328,7 +335,7 @@ void Plane::project(const Projector &proj, std::vector<Plane_Polygon::Ptr> &res)
 	for(size_t i=0; i<polygons_.size(); i++) {
 		res[i].reset(new Plane_Polygon(*polygons_[i], proj, pose()));
 		boost::geometry::correct(*res[i]);
-		res[i]->save_as_svg("/tmp/proj.svg");
+		res[i]->save_as_svg("/tmp/proj.svg", false);
 	}
 }
 
@@ -361,7 +368,9 @@ std::vector<Plane_Polygon> Plane_Polygon::operator-(const Plane_Polygon &o) cons
 	}
 	
 	for(size_t i=0; i<rs.size(); i++) {
-		const bool sim_res = rs[i].simplify_by_area(0.000001); //remove double lines
+		rs[i].save_as_svg("/tmp/res_bef.svg", false);
+		const bool sim_res = rs[i].simplify_by_area(0.01*0.01); //remove double lines
+		boost::geometry::correct(rs[i]);
 		
 		if(!sim_res || !boost::geometry::is_valid(rs[i]) || boost::geometry::intersects(rs[i]) ) {
 			ROS_ERROR("invalid result from op-");
@@ -453,9 +462,13 @@ std::vector<Plane_Polygon> Plane_Polygon::operator&(const Plane_Polygon &o) cons
 	}
 	
 	for(size_t i=0; i<rs.size(); i++) {
-		if(!boost::geometry::is_valid(rs[i])) {
+		rs[i].save_as_svg("/tmp/res_bef.svg", false);
+		const bool sim_res = rs[i].simplify_by_area(0.01*0.01); //remove double lines
+		boost::geometry::correct(rs[i]);
+		
+		if(!sim_res || !boost::geometry::is_valid(rs[i])) {
 			ROS_ERROR("invalid result from op&");
-	  system("read x");
+	  if(sim_res) system("read x");
 			//rs[i].save_as_svg("/tmp/res.svg");
 			rs.erase(rs.begin()+i);
 			--i; continue;
@@ -510,7 +523,7 @@ bool Plane::merge(const Object &o, const double relation) {
 		
 		for(size_t i=0; i<copy.polygons_.size(); i++) {
 			for(size_t j=0; j<plane->polygons_.size(); j++)
-				if(relation<0.5)
+				if(relation>0.5)
 					complex_projection(this, &copy, plane, i, j);
 				else
 					simple_projection(this, &copy, plane, i, j);
@@ -548,6 +561,13 @@ public:
 	virtual Plane_Polygon operator()(const Plane &plane_other, const Plane_Polygon &poly) const {
 		return Plane_Polygon(poly, *this, plane_other.pose());
 	}
+	
+	virtual std::vector<Plane_Polygon> operator()(const Plane &plane_other, const std::vector<Plane_Polygon::Ptr> &poly) const {
+		std::vector<Plane_Polygon> r(poly.size());
+		for(size_t i=0; i<poly.size();  i++)
+			r[i] = Plane_Polygon(*poly[i], *this, plane_other.pose());
+		return r;
+	}
 };
 
 void Plane::complex_projection(Plane* plane_out, const Plane* plane_in1, const Plane* plane_in2, const size_t ind1, const size_t ind2)
@@ -558,7 +578,7 @@ void Plane::complex_projection(Plane* plane_out, const Plane* plane_in1, const P
 	static int n=0;
 	char buf[256];
 	
-	sprintf(buf, "/tmp/merge_%d_%d_%d_%d.svg", n++, plane_in1->id(), plane_in2->id(), plane_out->id());
+	sprintf(buf, "/tmp/complex_merge_%d_%d_%d_%d.svg", n++, plane_in1->id(), plane_in2->id(), plane_out->id());
 	std::ofstream svg(buf);
 	boost::geometry::svg_mapper<Plane_Point::Ptr> mapper(svg, 800, 800);
 	
@@ -736,7 +756,6 @@ void Plane::simple_projection(Plane* plane_out, const Plane* plane_in1, const Pl
 	Projector_Plane projector(plane_out);
 	
 	plane_out->insert(NULL, projector(*plane_in2, *plane_in2->polygons_[ind2]) + projector(*plane_in1, *plane_in1->polygons_[ind1]));
-	
 	
 	plane_out->save_as_svg(mapper);
 }

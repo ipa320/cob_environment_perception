@@ -48,6 +48,12 @@ inline Eigen::Affine3f cast(const nuklei::kernel::se3 &v) {
 	return Eigen::Translation3f(cast(v.loc_))*cast(v.ori_);
 }
 
+typedef Eigen::Matrix<float, 2,1> Vector2;
+	
+class Projector {
+public:
+	virtual Vector2 operator()(const nuklei_wmf::Vector3<double> &pt3) const = 0;
+};
 
 	
 class Object {
@@ -86,6 +92,7 @@ public:
 	virtual bool can_merge_fast(const Object &o) const {return false;}
 	virtual bool can_merge(const Object &o) const {return false;}
 	virtual bool merge(const Object &o, const double relation) {return true;}
+	virtual bool in_front_of(const Object &o) const {return false;}
 };
 
 class Object3D : public Object {
@@ -101,6 +108,7 @@ public:
 
 	//<getter for pose
 	const nuklei::kernel::se3 &pose() const {return pose_;}
+	nuklei::kernel::se3 &pose() {return pose_;}
 	
 	virtual std::string type() {return "Object3D";}
 	
@@ -115,6 +123,8 @@ protected:
 	
 	//bounding box in pose frame
 	TBB bb_;
+	
+	bool _overlaps(const ObjectVolume &o) const;
 public:
 	typedef Object3D Parent;
 	typedef boost::shared_ptr<ObjectVolume> Ptr;
@@ -122,18 +132,36 @@ public:
 	ObjectVolume(const ContextPtr &ctxt) : Object3D(ctxt)
 	{}
 
+	TBB &_bb() {return bb_;}
+	
 	//<getter for pose
 	const TBB &bb_in_pose() const {return bb_;}
 	TBB bb_in_context() const {
 		TBB bb;
-		bb.extend(cast(pose_)*bb_.min());
-		bb.extend(cast(pose_)*bb_.max());
+		bb.setEmpty();		
+		for(int i=0; i<8; i++)
+			bb.extend(cast(pose_)*bb_.corner( (TBB::CornerType)i ));
 		return bb;
 	}
 	
 	virtual std::string type() {return "ObjectVolume";}
 	
 	virtual void visualization(std::vector<boost::shared_ptr<Visualization::Object> > &);
+	
+	
+	bool overlaps(const ObjectVolume &o) const;
+	bool contains(const ObjectVolume &o) const;
+	
+	virtual bool in_front_of(const Object &o) const {
+		const ObjectVolume *vol = dynamic_cast<const ObjectVolume*>(&o);
+		if(vol) return in_front_of(*vol);
+		
+		return false;
+	}
+	
+	virtual bool in_front_of(const ObjectVolume &o) const {
+		return (cast(pose_).inverse()*cast(o.pose_)*o.bb_.center())(2)>=0;
+	}
 };
 
 }

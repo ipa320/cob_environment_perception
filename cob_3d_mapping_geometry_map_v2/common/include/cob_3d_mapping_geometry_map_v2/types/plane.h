@@ -43,7 +43,7 @@ public:
 	};
 	
     typedef float coordinate_type;
-    typedef Eigen::Matrix<coordinate_type, 2,1> Vector2;
+    typedef Eigen::Matrix<coordinate_type, 2,1> Vector2;	//TODO: use definition from object.h
 	typedef CustomSharedPtr Ptr;
     
     Vector2 pos, tex;
@@ -51,16 +51,11 @@ public:
     
     Plane_Point() : var(0) {}
     Plane_Point(const double x, const double y) : pos(x,y), var(0) {}
-    Plane_Point(const Vector2 &p) : pos(p), var(0) {}
+    Plane_Point(const Vector2 &p) : pos(p), var(0.01) {}	//TODO: get correct value from init.
     Plane_Point(const cob_3d_mapping_msgs::Point2D &);
     
 private:
 	
-};
-	
-class Projector {
-public:
-	virtual Plane_Point::Vector2 operator()(const nuklei_wmf::Vector3<double> &pt3) const = 0;
 };
 
 struct Plane_Ring : std::deque<Plane_Point::Ptr>
@@ -211,13 +206,17 @@ public:
 		return nuklei_wmf::Plane3<Real>(pose_.ori_.Rotate(nuklei_wmf::Vector3<double>::UNIT_Z), pose_.loc_);
 	}
 	
-	inline nuklei::kernel::r3xs2 plane_params() const {
+	static inline nuklei::kernel::r3xs2 plane_params(const nuklei::kernel::se3 &pose_) {
 		nuklei::kernel::r3xs2 params;
 		params.loc_ = pose_.loc_;
 		params.dir_ = pose_.ori_.Rotate(nuklei_wmf::Vector3<double>::UNIT_Z);
 		params.loc_h_ = pose_.loc_h_;
 		params.dir_h_ = pose_.ori_h_;
 		return params;
+	}
+	
+	inline nuklei::kernel::r3xs2 plane_params() const {
+		return plane_params(pose_);
 	}
 	
 	bool snap(const Plane &other);
@@ -237,6 +236,18 @@ public:
 		//polygons_.clear();
 		for(size_t i=0; i<polys.size(); i++) {
 			if(!boost::geometry::is_valid(polys[i])) continue;
+			
+			//check overlap
+			bool ignore=false;
+			for(size_t j=0; j<i; j++) {
+				if(boost::geometry::overlaps(polys[i], polys[j])) {
+					ignore=true;
+					insert(origin, polys[i]-polys[j]);
+					break;
+				}
+			}
+			if(ignore) continue;
+			
 			polygons_.push_back(Plane_Polygon::Ptr(new Plane_Polygon(polys[i])));
 			boost::geometry::correct(*polygons_.back());
 			//boost::geometry::simplify(*polygons_[polygons_.size()-polys.size()+i], *polygons_[polygons_.size()-polys.size()+i], 0.05);

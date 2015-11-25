@@ -42,21 +42,23 @@ void GlobalContext::add_scene(const cob_3d_mapping_msgs::PlaneScene &scene)
 {
 	Context::Ptr ctxt = boost::make_shared<Context>();
 	ctxt->add_scene(ctxt, scene);
-	classify(ctxt);
+	classify(ctxt, true);
 	ctxt->optimize(ctxt);
 	
 	//TODO: register
 	
-	if(!scene_)
+	if(!scene_) {
 		scene_ = ctxt;	//at the moment just replacing
+		classify(scene_, false);
+	}
 	else {
 		scene_2d_.reset(new Context2D(scene_, proj_.cast<float>(), proj_.inverse().cast<float>()));
-		scene_2d_->merge(ctxt, proj_.cast<float>(), proj_.inverse().cast<float>());
+		scene_2d_->merge(ctxt);
 		
 		std::cout<<"scene_ "<<scene_->end()-scene_->begin()<<std::endl;
 		
 		scene_->build();
-		classify(scene_);
+		classify(scene_, false);
 		scene_->optimize(scene_);
 	}
 	
@@ -75,10 +77,12 @@ bool GlobalContext::registerClassifier(Classifier *c) {
 	classifiers_.push_back(Classifier::Ptr(c));
 }
 
-void GlobalContext::classify(const Context::Ptr &ctxt)
+void GlobalContext::classify(const Context::Ptr &ctxt, const bool single_shot)
 {
 	for(ClassifierSet::iterator it=classifiers_.begin(); it!=classifiers_.end(); it++) {
-		ctxt->classify(ctxt, *it);
+		(*it)->start(ctxt);
+		ctxt->classify(ctxt, *it, single_shot);
+		(*it)->end(ctxt);
 	}
 }
 
@@ -90,6 +94,8 @@ void GlobalContext::visualize_markers() {
 		
 	std::vector<boost::shared_ptr<Visualization::Object> > vis_objs;
 	scene_->visualize(vis_objs);
+	for(ClassifierSet::iterator it=classifiers_.begin(); it!=classifiers_.end(); it++)
+		(*it)->visualize(scene_);
 	
 	Visualization::Marker stream;
 	for(size_t i=0; i<vis_objs.size(); i++)
@@ -140,14 +146,14 @@ void Context::build()
 	search_point_ .init(points.begin(), points.end());
 }
 
-void Context::classify(const Context::Ptr &ctxt, const Classifier::Ptr &classifier)
+void Context::classify(const Context::Ptr &ctxt, const Classifier::Ptr &classifier, const bool single_shot)
 {
 	assert(ctxt.get()==this);
 	
 	for(size_t i=0; i<objs_.size(); i++) {
 		if(objs_[i]->has_class(classifier->class_id())) continue;
 		
-		Class::Ptr cl = classifier->classifiy(objs_[i], ctxt);
+		Class::Ptr cl = classifier->classifiy(objs_[i], ctxt, single_shot);
 		
 		if(cl) {
 			objs_[i]->add_class(cl);
@@ -255,6 +261,10 @@ Context2D::Context2D(const Context::Ptr &ctxt, const Eigen::Matrix3f &proj, cons
 	rtree_.clear();
 	area_.clear();
 	
+	Eigen::Matrix4f proj4 = Eigen::Matrix4f::Identity();
+	proj4.topLeftCorner<3,3>() = proj;
+	projector_.setT(proj4);
+	
 	std::vector<Object::Ptr> result;
 	ctxt->intersects(Intersection_Volume_Viewport(
 		Eigen::Vector3f::Zero(),
@@ -264,7 +274,7 @@ Context2D::Context2D(const Context::Ptr &ctxt, const Eigen::Matrix3f &proj, cons
 	
 	std::cout<<"Context2D: "<<result.size()<<" from "<<(ctxt->end()-ctxt->begin())<<std::endl;
 	for(size_t i=0; i<result.size(); i++) {
-		insert(result[i], proj);
+		insert(result[i]);
 	
 		save_as_svg("/tmp/Context2D.svg");
 	}
@@ -278,22 +288,6 @@ Context2D::Context2D(const Context::Ptr &ctxt, const Eigen::Matrix3f &proj, cons
 	sprintf(buf, "/tmp/Context2D_%d.svg", n++);
 	save_as_svg(buf);
 }
-
-class Projector_Viewport : public Projector {
-	Eigen::Matrix4f T_;
-public:
-	Projector_Viewport(const Eigen::Matrix4f &T) : T_(T) {
-	}
-	
-	virtual Plane_Point::Vector2 operator()(const nuklei_wmf::Vector3<double> &pt3) const {
-		Eigen::Vector4f v;
-		v.head<3>() = cast(pt3);
-		v(3) = 1;
-		v = T_*v;
-		v/= v(2);
-		return v.head<2>();
-	}
-};
 
 void Context2D::insert(Object::Ptr obj, const std::vector<Plane_Polygon> &ps) {
 	//limit to viewport
@@ -363,16 +357,13 @@ void Context2D::save_as_svg(const std::string &fn) const
 		it->second->poly_->save_as_svg(mapper);
 }
 
-void Context2D::insert(Object::Ptr _obj, const Eigen::Matrix3f &proj)
+void Context2D::insert(Object::Ptr _obj)
 {
 	CAST_TO(Plane, _obj, obj);
 	
 	//1. project polygon to view plane
-	Eigen::Matrix4f proj4 = Eigen::Matrix4f::Identity();
-	proj4.topLeftCorner<3,3>() = proj;
-	Projector_Viewport projector(proj4);
 	std::vector<Plane_Polygon::Ptr> polys;
-	obj->project(projector, polys);
+	obj->project(projector_, polys);
 	
 	std::cout<<"Context2D: polys "<<polys.size()<<std::endl;
 		
@@ -432,10 +423,10 @@ void Context2D::insert(Object::Ptr _obj, const Eigen::Matrix3f &proj)
 					assert( std::abs( (p+line_normal-obj->offset_eigen()).dot(obj->normal_eigen()) )<0.001f );
 					assert( std::abs( (p+line_normal-matched_plane->offset_eigen()).dot(matched_plane->normal_eigen()) )<0.001f );
 					
-					Plane_Point::Vector2 p1 = projector(cast(p));
-					Plane_Point::Vector2 p2 = projector(cast((Eigen::Vector3f)(p+line_normal)));
+					Plane_Point::Vector2 p1 = projector_(cast(p));
+					Plane_Point::Vector2 p2 = projector_(cast((Eigen::Vector3f)(p+line_normal)));
 					
-					Plane_Point::Vector2 p_test = projector(cast((Eigen::Vector3f)(p+proj_normal)));
+					Plane_Point::Vector2 p_test = projector_(cast((Eigen::Vector3f)(p+proj_normal)));
 					
 					std::cout<<"p1 "<<p1.transpose()<<std::endl;
 					std::cout<<"p2 "<<p2.transpose()<<std::endl;
@@ -518,22 +509,21 @@ struct Candidate {
 	Candidate(Plane *p, double r) : p(p), relation(r) {}
 };
 
-void Context2D::merge(const Context::Ptr &ctxt, const Eigen::Matrix3f &proj, const Eigen::Matrix3f &proj_inv, const double fc)
+void Context2D::merge(const Context::Ptr &ctxt)
 {
 	std::cout<<"merge: "<<std::endl;
 	
 	//1. project polygon to view plane
-	Eigen::Matrix4f proj4 = Eigen::Matrix4f::Identity();
-	proj4.topLeftCorner<3,3>() = proj;
-	Projector_Viewport projector(proj4);
 	
 	for(std::vector<Object::Ptr>::iterator it_obj=ctxt->begin(); it_obj!=ctxt->end(); it_obj++) {
 			CAST_TO(Plane, (*it_obj), obj);
+			
+				obj->save_as_svg("/tmp/merge_input.svg");
 				
 				std::map<Object::Ptr, std::vector<Candidate> > candidates, candidates_neg;
 				int unknown=0;
 				std::vector<Plane_Polygon::Ptr> polys;
-				obj->project(projector, polys);
+				obj->project(projector_, polys);
 				
 				std::map<Object::Ptr, std::vector<value> > ints;
 				std::vector<value> result;
@@ -614,9 +604,9 @@ void Context2D::merge(const Context::Ptr &ctxt, const Eigen::Matrix3f &proj, con
 					if( area_union/std::min(area_in,area_map)>0.7f && area_union/std::max(area_in,area_map)>0.2f ) {
 						if(	obj->can_merge_fast(*it->first) && it->first->can_merge_fast(*obj) &&
 							obj->can_merge(*it->first) && it->first->can_merge(*obj))
-							candidates[it->first].push_back(Candidate(obj, area_union/std::max(area_in,area_map) ));
+							candidates[it->first].push_back(Candidate(obj, std::min(area_in-area_union, area_map-area_union)/std::max(area_in,area_map) ));
 						else
-							candidates_neg[it->first].push_back(Candidate(obj, area_union/std::max(area_in,area_map) ));
+							candidates_neg[it->first].push_back(Candidate(obj, std::min(area_in-area_union, area_map-area_union)/std::max(area_in,area_map) ));
 					}
 					else
 						unknown++;
@@ -625,8 +615,12 @@ void Context2D::merge(const Context::Ptr &ctxt, const Eigen::Matrix3f &proj, con
 				
 			
 				std::cout<<"merge candidates "<<candidates.size()<<" / "<<candidates_neg.size()<<" / "<<unknown<<std::endl;
+				if(candidates.size()>1)
+					system("read x");
+					
 				size_t bad_ones=0;
 				for(std::map<Object::Ptr, std::vector<Candidate> >::iterator it=candidates.begin(); it!=candidates.end(); it++) {
+					std::cout<<"    candidates "<<it->second.size()<<std::endl;
 					for(size_t i=0; i<it->second.size(); i++) {
 						if(!it->first->merge(*it->second[i].p, it->second[i].relation)) {
 							scene_->erase(it->first);
@@ -641,4 +635,78 @@ void Context2D::merge(const Context::Ptr &ctxt, const Eigen::Matrix3f &proj, con
 				
 			CAST_TO_END;
 	}
+}
+
+bool Context2D::fitModel(Object::Ptr model, double score_coverage, double score_matching)
+{	
+	score_coverage = 0;
+	score_matching = 0;
+	
+	CAST_TO(Plane, model, plane_model);
+	
+	//project model in viewport space
+	std::vector<Plane_Polygon::Ptr> polys;
+	plane_model->project(projector_, polys);
+	double area_in = 0;
+	for(size_t j=0; j<polys.size(); j++)
+		area_in += boost::geometry::area(*polys[j]);
+	
+	//get bounding box of projected model for query
+	box bb;
+	if(polys.size()>0)
+		bb=ProjectedPolygon::get_box(polys[0]);
+	for(size_t j=1; j<polys.size(); j++)
+		boost::geometry::expand(bb, ProjectedPolygon::get_box(polys[j]));
+	
+	//query
+	std::vector<value> result_n;
+	rtree_.query(boost::geometry::index::intersects(bb), std::back_inserter(result_n));
+	
+	for(size_t k=0; k<result_n.size(); k++)
+	{
+		double area_map = boost::geometry::area(*result_n[k].second->poly_), area_union=0;
+		for(size_t j=0; j<polys.size(); j++) {
+			std::vector<Plane_Polygon> u=*polys[j] & *result_n[k].second->poly_;
+			for(size_t n=0; n<u.size(); n++)
+				area_union += boost::geometry::area(u[n]);
+		}
+		
+		std::cout<<"areas "<<100*area_union/std::min(area_in,area_map)<<"% "<<100*area_union/std::max(area_in,area_map)<<"% "<<area_in<<" "<<area_map<<" "<<area_union<<std::endl;
+		
+		
+		{std::ofstream svg("/tmp/m1.svg");
+		boost::geometry::svg_mapper<Plane_Point::Ptr> mapper(svg, 800, 800);
+		
+		for(size_t j=0; j<polys.size(); j++)
+			polys[j]->save_as_svg(mapper);
+		}
+		{std::ofstream svg("/tmp/m2.svg");
+		boost::geometry::svg_mapper<Plane_Point::Ptr> mapper(svg, 800, 800);
+		
+		result_n[k].second->poly_->save_as_svg(mapper);
+		}
+
+		assert(area_union<=area_in+0.00001);
+		assert(area_union<=area_map+0.00001);
+		
+		//decide wether model is in front, behind or the same as perceived surfaces
+		//case: same
+		if(	plane_model->can_merge_fast(*result_n[k].second->obj_) && result_n[k].second->obj_->can_merge_fast(*plane_model) &&
+				plane_model->can_merge(*result_n[k].second->obj_) && result_n[k].second->obj_->can_merge(*plane_model) ) {
+			score_matching += area_union/area_in;
+			score_coverage += area_union/area_in;
+		}
+		//case: behind
+		else if(result_n[k].second->obj_->in_front_of(*plane_model))
+			score_coverage += area_union/area_in;
+	}
+		
+	assert(score_matching<=1);
+	assert(score_coverage<=1);
+	assert(score_matching<=score_coverage);
+	
+	return true;
+	CAST_TO_END;
+	
+	return false;
 }
