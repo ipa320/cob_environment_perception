@@ -90,3 +90,8 @@ add_dependencies(geometry_map2_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin
 target_link_libraries(geometry_map2_node
   ${catkin_LIBRARIES} angelscript nuklei CGAL
 )
+
+catkin_add_gtest(utest ros/src/test.cpp common/src/object.cpp common/src/vis_obj.cpp)
+target_link_libraries(utest
+  ${catkin_LIBRARIES} angelscript nuklei CGAL
+)
