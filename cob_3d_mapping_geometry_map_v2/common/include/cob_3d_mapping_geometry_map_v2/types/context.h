@@ -13,6 +13,8 @@
 
 namespace cob_3d_geometry_map {
 	
+class Context2D;
+
 class Context {
 public:
 	typedef float Scalar;
@@ -35,13 +37,17 @@ private:
 	BVH_Volume search_volume_;
 	BVH_Point  search_point_;
 	
+	Context2D *ctxt2d_;
+	
 	asIScriptEngine* script_engine_;
 	
 public:
 	typedef boost::shared_ptr<Context> Ptr;
 	
-	Context() {}
+	Context() : ctxt2d_(NULL) {}
 	void build();
+	
+	void set_context_2d(Context2D *ctxt2d) {ctxt2d_=ctxt2d;}
 	
 	void add_scene(const Ptr &this_ctxt, const cob_3d_mapping_msgs::PlaneScene &);
 
@@ -65,6 +71,8 @@ public:
 				--i;
 			}
 	}
+	
+	bool fitModel(const Object &model, double &score_coverage, double &score_matching);
 };
 
 
@@ -140,7 +148,7 @@ public:
 	
 	void save_as_svg(const std::string &fn) const;
 	
-	bool fitModel(Object::Ptr model, double score_coverage, double score_matching);
+	bool fitModel(const Object &model, double &score_coverage, double &score_matching);
 };
 
 class GlobalContext {
@@ -157,6 +165,7 @@ class GlobalContext {
 	
 	void classify(const Context::Ptr &ctxt, const bool single_shot);
 public:
+	typedef boost::shared_ptr<GlobalContext> Ptr;
 
 	GlobalContext();
 	

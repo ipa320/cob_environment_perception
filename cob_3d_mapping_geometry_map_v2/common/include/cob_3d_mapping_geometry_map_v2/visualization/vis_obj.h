@@ -75,7 +75,9 @@ namespace cob_3d_geometry_map {
 		public:
 			Box(const std::string &name, const Eigen::Affine3f &pose, const Eigen::AlignedBox<float,3> &bb) :
 				Object(name), pose_(pose), bb_(bb)
-			{}
+			{
+				color_ = Eigen::Vector4f(1,0,0,0.5f);
+			}
 			
 			virtual void serialize(Marker &stream);
 		};

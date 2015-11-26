@@ -22,7 +22,6 @@ void Box::serialize(Marker &stream)
 	
 	cob_3d_visualization::RvizMarker scene;
 	_serialize(scene);
-	scene.color(1,0,0,0.5f);
 	scene.box(pose_, bb_, 0.025f);
 }
 

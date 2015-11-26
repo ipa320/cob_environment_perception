@@ -67,6 +67,7 @@ include_directories(
   ros/include
   libs/angelscript/include
   libs/nuklei/include
+  libs/geometry/include
   ${catkin_INCLUDE_DIRS}
   ${PCL_INCLUDE_DIRS}
 )

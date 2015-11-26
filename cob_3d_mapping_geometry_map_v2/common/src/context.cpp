@@ -53,6 +53,7 @@ void GlobalContext::add_scene(const cob_3d_mapping_msgs::PlaneScene &scene)
 	}
 	else {
 		scene_2d_.reset(new Context2D(scene_, proj_.cast<float>(), proj_.inverse().cast<float>()));
+		scene_->set_context_2d(scene_2d_.get());
 		scene_2d_->merge(ctxt);
 		
 		std::cout<<"scene_ "<<scene_->end()-scene_->begin()<<std::endl;
@@ -95,7 +96,7 @@ void GlobalContext::visualize_markers() {
 	std::vector<boost::shared_ptr<Visualization::Object> > vis_objs;
 	scene_->visualize(vis_objs);
 	for(ClassifierSet::iterator it=classifiers_.begin(); it!=classifiers_.end(); it++)
-		(*it)->visualize(scene_);
+		(*it)->visualize(scene_, vis_objs);
 	
 	Visualization::Marker stream;
 	for(size_t i=0; i<vis_objs.size(); i++)
@@ -637,12 +638,24 @@ void Context2D::merge(const Context::Ptr &ctxt)
 	}
 }
 
-bool Context2D::fitModel(Object::Ptr model, double score_coverage, double score_matching)
+bool Context::fitModel(const Object &model, double &score_coverage, double &score_matching)
+{
+	score_coverage = 0;
+	score_matching = 0;
+	
+	if(ctxt2d_)
+		return ctxt2d_->fitModel(model, score_coverage, score_matching);
+	
+	return false;
+}
+
+bool Context2D::fitModel(const Object &model, double &score_coverage, double &score_matching)
 {	
 	score_coverage = 0;
 	score_matching = 0;
 	
-	CAST_TO(Plane, model, plane_model);
+	const Plane *plane_model = dynamic_cast<const Plane*>(&model);
+	if(plane_model) {
 	
 	//project model in viewport space
 	std::vector<Plane_Polygon::Ptr> polys;
@@ -706,7 +719,7 @@ bool Context2D::fitModel(Object::Ptr model, double score_coverage, double score_
 	assert(score_matching<=score_coverage);
 	
 	return true;
-	CAST_TO_END;
+	}
 	
 	return false;
 }

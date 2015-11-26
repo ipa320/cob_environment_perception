@@ -56,9 +56,9 @@ class Intersection_Volume_Viewport : public Intersection_Volume {
 		assert(ti(1)<=ta(1));
 		
 		if(!(ti(0)<=1 && ta(0)>=0 && ti(1)<=1 && ta(1)>=0)) {
-			std::cout<<"Intersection_Volume_Viewport: int2\n"<<ti.transpose()<<" -- "<<ta.transpose()<<std::endl;
+			std::cout<<"Intersection_Volume_Viewport: int2\n"<<(proj_*pti).transpose()<<" -- "<<(proj_*pta).transpose()<<std::endl;
 		}
-		return true;//TODO: fix
+		
 		return ti(0)<=1 && ta(0)>=0 && ti(1)<=1 && ta(1)>=0;
 	}
 	

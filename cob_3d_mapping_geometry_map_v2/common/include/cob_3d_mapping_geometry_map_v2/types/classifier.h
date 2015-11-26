@@ -28,7 +28,7 @@ public:
 	
 	virtual void start(ContextPtr ctxt) {}
 	virtual void end(ContextPtr ctxt) {}
-	virtual void visualize(ContextPtr ctxt) {}
+	virtual void visualize(ContextPtr ctxt, std::vector<boost::shared_ptr<Visualization::Object> > &objs) {}
 };
 
 class Class_Simple : public Class {
@@ -45,6 +45,8 @@ public:
 	virtual int class_id() const {return classifier_->class_id();}
 	virtual std::string name() const {return classifier_->name();}
 };
+
+	class Plane;
 
 	namespace DefaultClassifier {
 		enum {CLASSIFIER_FLOOR=1, CLASSIFIER_WALL=2};
@@ -82,6 +84,7 @@ public:
 			virtual std::string name() const {return "floor";}
 			
 			virtual Class::Ptr classifiy(Object::Ptr obj, ContextPtr ctxt, const bool single_shot);
+			virtual void visualize(ContextPtr ctxt, std::vector<boost::shared_ptr<Visualization::Object> > &objs);
 			
 			const std::vector<double> &get_rays() const {return rays_;}
 			inline float max_range() const {return 5.f;}
@@ -90,21 +93,77 @@ public:
 	
 	
 	namespace CustomClassifier {
-		enum {CLASSIFIER_CARTON=-100};
+		enum {CLASSIFIER_CARTON_SIDE=-100, CLASSIFIER_CARTON_FRONT=-101};
 		
 		class Classifier_Carton : public Classifier {
+			struct Classification {
+				Plane* plane_;
+				double width_;
+				
+				Classification(Plane *p, double w=-1) : plane_(p), width_(w) {}
+			};
+			
+			//parameters
 			ObjectVolume interest_volume_;
+			std::vector<double> widths_;
+			Classifier_Carton *classifier_front_;
+			
+			std::vector<Classification> classified_planes_;
+			
+			Class::Ptr classifiy_front(Plane *plane, ContextPtr ctxt, const bool single_shot);
+			Class::Ptr classifiy_side(Plane *plane, ContextPtr ctxt, const bool single_shot);
+	
+			ObjectVolume generate_shelf() const {
+				ObjectVolume shelf = interest_volume_;
+				Eigen::Vector3f vi=interest_volume_.bb_in_pose().min(), va=interest_volume_.bb_in_pose().max();
+				va(2) = vi(2)+0.04; //4cm
+				shelf._bb() = ObjectVolume::TBB(vi, va);
+				return shelf;
+			}
+			
+			ObjectVolume generate_over_shelf() const {
+				ObjectVolume over_shelf = interest_volume_;
+				over_shelf._bb().min()(0) -= 0.2; //20cm
+				over_shelf._bb().min()(1) -= 0.06; //cm
+				over_shelf._bb().min()(2) -= 0.06; //cm
+				over_shelf._bb().max()(0) += 0.2; //20cm
+				over_shelf._bb().max()(1) += 0.06; //cm
+				over_shelf._bb().max()(2) += 0.06; //cm
+				return over_shelf;
+			}
 			
 		public:
-			Classifier_Carton() :
-				interest_volume_(ContextPtr())
+			Classifier_Carton(const Eigen::Affine3f &pose, const Eigen::Vector3f &sizes, const std::vector<double> &widths, const double bandwith_orientation=0.2) :
+				interest_volume_(ContextPtr()), widths_(widths), classifier_front_(NULL)
+			{
+				interest_volume_.pose() = cast(pose);
+				interest_volume_.pose().ori_h_ = bandwith_orientation;
+				interest_volume_.pose().loc_h_ = sizes.maxCoeff();
+				
+				interest_volume_._bb().min().fill(0);
+				interest_volume_._bb().max() = sizes;
+				
+				std::sort(widths_.begin(), widths_.end());
+				assert(widths_.front()<=widths_.back());
+			}
+			
+			Classifier_Carton(Classifier_Carton *cl_front) : 
+				interest_volume_(cl_front->interest_volume_), widths_(cl_front->widths_), classifier_front_(cl_front)
 			{
 			}
+			
+			virtual void start(ContextPtr ctxt) {
+				classified_planes_.clear();
+			}
+			
+			virtual void end(ContextPtr ctxt) {
+			}
 
-			virtual int class_id() const {return CLASSIFIER_CARTON;}
-			virtual std::string name() const {return "carton";}
+			virtual int class_id() const {return classifier_front_?CLASSIFIER_CARTON_SIDE:CLASSIFIER_CARTON_FRONT;}
+			virtual std::string name() const {return classifier_front_?"carton_side":"carton_front";}
 			
 			virtual Class::Ptr classifiy(Object::Ptr obj, ContextPtr ctxt, const bool single_shot);
+			virtual void visualize(ContextPtr ctxt, std::vector<boost::shared_ptr<Visualization::Object> > &objs);
 		};
 		
 	}

@@ -7,6 +7,8 @@
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/register/point.hpp>
 #include <boost/geometry/geometries/register/ring.hpp>
+namespace bg = boost::geometry;	//nedded due error in geometry/extensions
+#include <boost/geometry/extensions/algorithms/dissolve.hpp>
 
 #include <libpolypartition/polypartition.h>
 
@@ -196,6 +198,7 @@ public:
 	typedef boost::shared_ptr<Plane> Ptr;
 
 	Plane(const ContextPtr &ctxt, const cob_3d_mapping_msgs::Plane &);
+	Plane(const ContextPtr &ctxt, const Plane_Polygon::Ptr &inp, const nuklei::kernel::se3 &pose);
 	
 	virtual void visualization(std::vector<boost::shared_ptr<Visualization::Object> > &);
 	
@@ -259,6 +262,29 @@ public:
 	
 	void save_as_svg(const std::string &fn) const;
 	void save_as_svg(boost::geometry::svg_mapper<Plane_Point::Ptr> &mapper, const int color_g=0) const;
+};
+
+class Projector_Plane : public Projector {
+	Plane* plane_;
+	
+public:
+	Projector_Plane(Plane* plane) : plane_(plane) {
+	}
+	
+	virtual Plane_Point::Vector2 operator()(const nuklei_wmf::Vector3<double> &pt3) const {
+		return Plane_Polygon::to2D(pt3, plane_->pose());
+	}
+	
+	virtual Plane_Polygon operator()(const Plane &plane_other, const Plane_Polygon &poly) const {
+		return Plane_Polygon(poly, *this, plane_other.pose());
+	}
+	
+	virtual std::vector<Plane_Polygon> operator()(const Plane &plane_other, const std::vector<Plane_Polygon::Ptr> &poly) const {
+		std::vector<Plane_Polygon> r(poly.size());
+		for(size_t i=0; i<poly.size();  i++)
+			r[i] = Plane_Polygon(*poly[i], *this, plane_other.pose());
+		return r;
+	}
 };
 
 }

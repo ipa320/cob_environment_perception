@@ -109,6 +109,17 @@ Plane::Plane(const ContextPtr &ctxt, const cob_3d_mapping_msgs::Plane &inp) :
 	buildBB();
 }
 
+Plane::Plane(const ContextPtr &ctxt, const Plane_Polygon::Ptr &inp, const nuklei::kernel::se3 &pose) :
+	ObjectVolume(ctxt)
+{
+	pose_ = pose;
+	
+	polygons_.push_back(inp);
+	boost::geometry::correct(*polygons_.back());
+	
+	buildBB();
+}
+
 void Plane::buildBB()
 {
 	bb_.setEmpty();
@@ -370,7 +381,15 @@ std::vector<Plane_Polygon> Plane_Polygon::operator-(const Plane_Polygon &o) cons
 	for(size_t i=0; i<rs.size(); i++) {
 		rs[i].save_as_svg("/tmp/res_bef.svg", false);
 		const bool sim_res = rs[i].simplify_by_area(0.01*0.01); //remove double lines
-		boost::geometry::correct(rs[i]);
+		std::vector<Plane_Polygon> rs_tmp;
+		boost::geometry::dissolve(rs[i], rs_tmp);
+		
+		std::cout<<"got "<<rs_tmp.size()<<" after correction"<<std::endl;
+		
+		if(rs_tmp.size()<1) continue;
+		rs[i] = rs_tmp[0];
+		if(rs_tmp.size()>1)
+			rs.insert(rs.end(), rs_tmp.begin()+1, rs_tmp.end());
 		
 		if(!sim_res || !boost::geometry::is_valid(rs[i]) || boost::geometry::intersects(rs[i]) ) {
 			ROS_ERROR("invalid result from op-");
@@ -464,10 +483,20 @@ std::vector<Plane_Polygon> Plane_Polygon::operator&(const Plane_Polygon &o) cons
 	for(size_t i=0; i<rs.size(); i++) {
 		rs[i].save_as_svg("/tmp/res_bef.svg", false);
 		const bool sim_res = rs[i].simplify_by_area(0.01*0.01); //remove double lines
-		boost::geometry::correct(rs[i]);
+		
+		std::vector<Plane_Polygon> rs_tmp;
+		boost::geometry::dissolve(rs[i], rs_tmp);
+		
+		std::cout<<"got "<<rs_tmp.size()<<" after correction"<<std::endl;
+		
+		if(rs_tmp.size()<1) continue;
+		rs[i] = rs_tmp[0];
+		if(rs_tmp.size()>1)
+			rs.insert(rs.end(), rs_tmp.begin()+1, rs_tmp.end());
 		
 		if(!sim_res || !boost::geometry::is_valid(rs[i])) {
-			ROS_ERROR("invalid result from op&");
+			if(sim_res) ROS_ERROR("invalid result from op&");
+			rs[i].save_as_svg("/tmp/res.svg", false);
 	  if(sim_res) system("read x");
 			//rs[i].save_as_svg("/tmp/res.svg");
 			rs.erase(rs.begin()+i);
@@ -546,29 +575,6 @@ bool Plane::merge(const Object &o, const double relation) {
 	
 	return true;
 }
-
-class Projector_Plane : public Projector {
-	Plane* plane_;
-	
-public:
-	Projector_Plane(Plane* plane) : plane_(plane) {
-	}
-	
-	virtual Plane_Point::Vector2 operator()(const nuklei_wmf::Vector3<double> &pt3) const {
-		return Plane_Polygon::to2D(pt3, plane_->pose());
-	}
-	
-	virtual Plane_Polygon operator()(const Plane &plane_other, const Plane_Polygon &poly) const {
-		return Plane_Polygon(poly, *this, plane_other.pose());
-	}
-	
-	virtual std::vector<Plane_Polygon> operator()(const Plane &plane_other, const std::vector<Plane_Polygon::Ptr> &poly) const {
-		std::vector<Plane_Polygon> r(poly.size());
-		for(size_t i=0; i<poly.size();  i++)
-			r[i] = Plane_Polygon(*poly[i], *this, plane_other.pose());
-		return r;
-	}
-};
 
 void Plane::complex_projection(Plane* plane_out, const Plane* plane_in1, const Plane* plane_in2, const size_t ind1, const size_t ind2)
 {
