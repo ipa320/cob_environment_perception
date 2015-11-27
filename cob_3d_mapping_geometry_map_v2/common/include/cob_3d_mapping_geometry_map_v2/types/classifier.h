@@ -120,6 +120,14 @@ public:
 				shelf._bb() = ObjectVolume::TBB(vi, va);
 				return shelf;
 			}
+	
+			ObjectVolume generate_floor_shelf() const {
+				ObjectVolume shelf = interest_volume_;
+				Eigen::Vector3f vi=interest_volume_.bb_in_pose().min(), va=interest_volume_.bb_in_pose().max();
+				vi(1) = va(1)-0.03; //3cm
+				shelf._bb() = ObjectVolume::TBB(vi, va);
+				return shelf;
+			}
 			
 			ObjectVolume generate_over_shelf() const {
 				ObjectVolume over_shelf = interest_volume_;
@@ -145,6 +153,10 @@ public:
 				
 				std::sort(widths_.begin(), widths_.end());
 				assert(widths_.front()<=widths_.back());
+				
+				//opposite direction
+				for(size_t i=0; i<widths.size(); i++)
+					widths_.push_back(-widths_[i]);
 			}
 			
 			Classifier_Carton(Classifier_Carton *cl_front) : 
@@ -164,6 +176,8 @@ public:
 			
 			virtual Class::Ptr classifiy(Object::Ptr obj, ContextPtr ctxt, const bool single_shot);
 			virtual void visualize(ContextPtr ctxt, std::vector<boost::shared_ptr<Visualization::Object> > &objs);
+			
+			std::vector<ObjectVolume> get_cartons() const;
 		};
 		
 	}

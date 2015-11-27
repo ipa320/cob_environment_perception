@@ -19,6 +19,8 @@ Vector2 Classifier_Floor::operator()(const nuklei_wmf::Vector3<double> &pt3) con
 
 Class::Ptr Classifier_Floor::classifiy(Object::Ptr obj, ContextPtr ctxt, const bool single_shot)
 {
+	obj->rem_class(class_id());
+	
 	Plane *plane = dynamic_cast<Plane*>(obj.get());
 	if(plane) {		
 		//std::cout<<"normal: "<<plane->normal_eigen().transpose()<<std::endl;
@@ -85,6 +87,8 @@ void Classifier_Floor::visualize(ContextPtr ctxt, std::vector<boost::shared_ptr<
 
 Class::Ptr Classifier_Carton::classifiy(Object::Ptr obj, ContextPtr ctxt, const bool single_shot)
 {
+	obj->rem_class(class_id());
+	
 	if(obj->has_class(CLASSIFIER_FLOOR) || obj->has_class(CLASSIFIER_WALL))
 		return Class::Ptr();
 	
@@ -102,7 +106,7 @@ Class::Ptr Classifier_Carton::classifiy(Object::Ptr obj, ContextPtr ctxt, const 
 Class::Ptr Classifier_Carton::classifiy_front(Plane *plane, ContextPtr ctxt, const bool single_shot)
 {
 	//1. contact to shelf panel? (intersection)
-	if(!generate_shelf().overlaps(*plane))
+	if(!generate_floor_shelf().overlaps(*plane))
 		return Class::Ptr();
 	
 	//2. in box of front  (contains with big margin)
@@ -124,8 +128,16 @@ Class::Ptr Classifier_Carton::classifiy_front(Plane *plane, ContextPtr ctxt, con
 	return Class::Ptr();
 }
 
+bool CmpSmallestX(const Plane_Point::Ptr &a, const Plane_Point::Ptr &b) {
+	return a->pos(0)<b->pos(0);
+}
+
 bool CmpSmallestY(const Plane_Point::Ptr &a, const Plane_Point::Ptr &b) {
 	return a->pos(1)<b->pos(1);
+}
+
+bool CmpSmallestZ(const Plane_Point::Ptr &a, const Plane_Point::Ptr &b) {
+	return a->pos(2)<b->pos(2);
 }
 		
 Class::Ptr Classifier_Carton::classifiy_side(Plane *plane, ContextPtr ctxt, const bool single_shot)
@@ -212,6 +224,7 @@ Class::Ptr Classifier_Carton::classifiy_side(Plane *plane, ContextPtr ctxt, cons
 		last_w = widths_[i];
 		
 		ctxt->fitModel(rect_obj, score_coverage, score_matching);
+		std::cout<<"SIDE2 "<<score_coverage<<" "<<score_matching<<std::endl;
 		if(score_coverage>=0.8) {
 			classified_planes_.push_back(Classification(plane, widths_[i]));
 			return Class::Ptr(new Class_Simple(this));
@@ -219,6 +232,82 @@ Class::Ptr Classifier_Carton::classifiy_side(Plane *plane, ContextPtr ctxt, cons
 	}
 	
 	return Class::Ptr();
+}
+
+std::vector<ObjectVolume> Classifier_Carton::get_cartons() const {
+	Projector_Volume projector_front(&interest_volume_, Projector_Volume::FRONT);
+	
+	if(classifier_front_) {
+		std::vector<ObjectVolume> r = classifier_front_->get_cartons();
+		
+		if(classified_planes_.size()<1)
+			return r;
+			
+		if(r.size()==0)
+			r.push_back(interest_volume_);
+		
+		std::vector<double> offsets;
+		for(size_t i=0; i<classified_planes_.size(); i++) {
+			offsets.push_back(projector_front(cast((Eigen::Vector3f)classified_planes_[i].plane_->bb_in_pose().center()))(0));
+			offsets.push_back(offsets.back()+classified_planes_[i].width_);
+		}
+			
+		std::sort(offsets.begin(), offsets.end());
+		
+		std::vector<ObjectVolume> r2;
+		double min_width = (widths_.size()>0?widths_[0]:0)+0.01; //+toleracne=1cm
+		size_t i=0;
+		while(i<offsets.size()) {
+			//clustering
+			size_t n=i+1;
+			while(n<offsets.size() && offsets[i]+min_width<offsets[n]) {
+				++n;
+			}
+			
+			for(size_t j=0; j<r.size(); j++) {
+				r2.push_back(r[j]);
+				r2.back()._bb().min()(0) = offsets[i];
+				r2.back()._bb().max()(0) = offsets[n];
+			}
+			
+			i = n;
+		}
+		
+		return r2;
+	}
+	
+	if(classified_planes_.size()<0)
+		return std::vector<ObjectVolume>();
+	
+	
+	Eigen::Vector3f Pleft3 = interest_volume_.bb_in_pose().max(), Pright3 = interest_volume_.bb_in_pose().min();
+	
+	//find most left and right points of front
+	for(size_t i=0; i<classified_planes_.size(); i++) {
+		std::vector<Plane_Polygon::Ptr> res;
+		classified_planes_[i].plane_->project(projector_front, res);
+		for(size_t j=0; j<res.size(); j++) {
+			Plane_Point::Ptr pts = *std::max_element(res[j]->boundary().begin(), res[j]->boundary().end(), CmpSmallestX);
+			if(pts->pos(0)<Pleft3(0))
+				Pleft3.head<2>() = pts->pos;
+				
+			Plane_Point::Ptr ptr = *std::min_element(res[j]->boundary().begin(), res[j]->boundary().end(), CmpSmallestX);
+			if(ptr->pos(0)>Pright3(0))
+				Pright3.head<2>() = ptr->pos;
+		}
+	}
+		
+	std::cout<<"Pleft3 "<<Pleft3.transpose()<<std::endl;
+	std::cout<<"Pright3 "<<Pright3.transpose()<<std::endl;
+		
+	ObjectVolume r = interest_volume_;
+	
+	ObjectVolume::TBB bb;
+	bb.extend(Pleft3);
+	bb.extend(Pright3);
+	r._bb() = bb;
+	
+	return std::vector<ObjectVolume>(1,r);
 }
 
 void Classifier_Carton::visualize(ContextPtr ctxt, std::vector<boost::shared_ptr<Visualization::Object> > &objs)
@@ -235,6 +324,10 @@ void Classifier_Carton::visualize(ContextPtr ctxt, std::vector<boost::shared_ptr
 	
 	box = new Visualization::Box("Classifier::"+name()+"::interest_over_shelf", cast(interest_volume_.pose()), generate_over_shelf().bb_in_pose());
 	box->color() = Eigen::Vector4f(0.25,0.75,0.25,0.5);
+	objs.push_back( Visualization::Object::Ptr(box) );
+	
+	box = new Visualization::Box("Classifier::"+name()+"::interest_floor_shelf", cast(interest_volume_.pose()), generate_floor_shelf().bb_in_pose());
+	box->color() = Eigen::Vector4f(0.25,0.25,0.75,0.5);
 	objs.push_back( Visualization::Object::Ptr(box) );
 	
 	

@@ -21,6 +21,12 @@ void Object::add_class(const boost::shared_ptr<Class> &cl) {
 	classes_[cl->class_id()] = cl;
 }
 
+void Object::rem_class(const int id) {
+	ClassList::iterator it = classes_.find(id);
+	if(it!=classes_.end())
+		classes_.erase(it);
+}
+
 std::string Object::vis_name(const std::string &prefix) const {
 	std::string r=prefix;
 	for(ClassList::const_iterator it=classes_.begin(); it!=classes_.end(); it++)

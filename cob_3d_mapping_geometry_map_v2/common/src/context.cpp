@@ -23,7 +23,7 @@ void DbgMessageCallback(const asSMessageInfo *msg)
 	std::cout<<msg->section<<" ("<<msg->row<<", "<<msg->col<<") : "<<msgType<<" : "<<msg->message<<std::endl;
 }
 
-GlobalContext::GlobalContext() {
+GlobalContext::GlobalContext() : scene_(new Context) {
 	script_engine_ = asCreateScriptEngine();
 	
 	// Set the message callback to receive information on errors in human readable form.
@@ -38,7 +38,7 @@ GlobalContext::GlobalContext() {
 	cob_3d_visualization::RvizMarkerManager::get().createTopic("/marker").setFrameId("/camera_depth_frame").clearOld();
 }
 
-void GlobalContext::add_scene(const cob_3d_mapping_msgs::PlaneScene &scene)
+void GlobalContext::add_scene(const cob_3d_mapping_msgs::PlaneScene &scene, const Eigen::Affine3d &tf)
 {
 	Context::Ptr ctxt = boost::make_shared<Context>();
 	ctxt->add_scene(ctxt, scene);
@@ -47,22 +47,17 @@ void GlobalContext::add_scene(const cob_3d_mapping_msgs::PlaneScene &scene)
 	
 	//TODO: register
 	
-	if(!scene_) {
-		scene_ = ctxt;	//at the moment just replacing
-		classify(scene_, false);
-	}
-	else {
-		scene_2d_.reset(new Context2D(scene_, proj_.cast<float>(), proj_.inverse().cast<float>()));
-		scene_->set_context_2d(scene_2d_.get());
-		scene_2d_->merge(ctxt);
-		
-		std::cout<<"scene_ "<<scene_->end()-scene_->begin()<<std::endl;
-		
-		scene_->build();
-		classify(scene_, false);
-		scene_->optimize(scene_);
-	}
+	assert(scene_);
 	
+	scene_2d_.reset(new Context2D(scene_, proj_.cast<float>(), proj_.inverse().cast<float>()));
+	scene_->set_context_2d(scene_2d_.get());
+	scene_2d_->merge(ctxt);
+	
+	std::cout<<"scene_ "<<scene_->end()-scene_->begin()<<std::endl;
+	
+	scene_->build();
+	classify(scene_, false);
+	scene_->optimize(scene_);
 }
 
 bool GlobalContext::registerClassifier(Classifier *c) {
@@ -630,6 +625,7 @@ void Context2D::merge(const Context::Ptr &ctxt)
 						}
 					}
 				}
+				std::cout<<"Xmerge candidates "<<candidates.size()<<" / "<<candidates_neg.size()<<" / "<<unknown<<" / "<<bad_ones<<std::endl;
 				
 				if(candidates.size()==bad_ones && candidates_neg.size()==0)
 					scene_->add(*it_obj);

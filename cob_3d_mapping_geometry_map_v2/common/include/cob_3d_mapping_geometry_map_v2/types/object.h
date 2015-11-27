@@ -88,6 +88,7 @@ public:
 	
 	bool has_class(const int id) const;
 	void add_class(const boost::shared_ptr<Class> &cl);
+	void rem_class(const int id);
 	
 	virtual bool can_merge_fast(const Object &o) const {return false;}
 	virtual bool can_merge(const Object &o) const {return false;}
@@ -161,6 +162,69 @@ public:
 	
 	virtual bool in_front_of(const ObjectVolume &o) const {
 		return (cast(pose_).inverse()*cast(o.pose_)*o.bb_.center())(2)>=0;
+	}
+};
+
+class Projector_Volume : public Projector {
+public:
+	enum ESide {FRONT, BACK, LEFT, RIGHT, TOP, BOTTOM};
+	
+private:
+	const ObjectVolume* vol_;
+	ESide side_;
+	
+	nuklei::kernel::se3 _pose() const {
+		nuklei::kernel::se3 pose = vol_->pose();
+		nuklei_wmf::Quaternion<double> q;
+		
+		switch(side_) {
+			case FRONT:
+				pose.loc_ -= cast(vol_->bb_in_pose().min());
+			break;
+			case BACK:
+				pose.loc_ -= cast(vol_->bb_in_pose().max());
+			break;
+			
+			case LEFT:
+				pose.loc_ -= cast(vol_->bb_in_pose().min());
+				q.FromAxisAngle(nuklei_wmf::Vector3<double>::UNIT_Y, M_PI_2);
+				pose.ori_ = q*pose.ori_;
+			break;
+			case RIGHT:
+				pose.loc_ -= cast(vol_->bb_in_pose().max());
+				q.FromAxisAngle(nuklei_wmf::Vector3<double>::UNIT_Y, M_PI_2);
+				pose.ori_ = q*pose.ori_;
+			break;
+			
+			case TOP:
+				pose.loc_ -= cast(vol_->bb_in_pose().min());
+				q.FromAxisAngle(nuklei_wmf::Vector3<double>::UNIT_X, M_PI_2);
+				pose.ori_ = q*pose.ori_;
+			break;
+			case BOTTOM:
+				pose.loc_ -= cast(vol_->bb_in_pose().max());
+				q.FromAxisAngle(nuklei_wmf::Vector3<double>::UNIT_X, M_PI_2);
+				pose.ori_ = q*pose.ori_;
+			break;
+		}
+		
+		return pose;
+	}
+	
+public:
+	Projector_Volume(const ObjectVolume* v, const ESide side) : vol_(v), side_(side) {
+	}
+	
+	virtual Vector2 operator()(const nuklei_wmf::Vector3<double> &pt3) const {
+		const nuklei::kernel::se3 pose_inv = _pose().inverseTransformation();
+		nuklei_wmf::Vector3<double> t = nuklei::la::transform(pose_inv.loc_, pose_inv.ori_, pt3);
+		return Vector2(t.X(), t.Y());
+	}
+	
+	virtual nuklei_wmf::Vector3<double> operator()(const Vector2 &pt2) const {
+		nuklei_wmf::Vector3<double> pt3(pt2(0), pt2(1), 0);
+		const nuklei::kernel::se3 pose = _pose();
+		return nuklei::la::transform(pose.loc_, pose.ori_, pt3);
 	}
 };
 

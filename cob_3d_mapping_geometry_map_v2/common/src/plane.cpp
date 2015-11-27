@@ -519,7 +519,8 @@ bool Plane::can_merge_fast(const Object &o) const {
 		
 		std::cout<<"can_merge_fast "<<dist.first<<" "<<dist.second<<" -- "<<params1.loc_h_+params2.loc_h_<<" "<<params1.dir_h_+params2.dir_h_<<std::endl;
 		
-		if(dist.first<=params1.loc_h_+params2.loc_h_ && dist.second<=params1.dir_h_+params2.dir_h_)
+		//if(dist.first<=params1.loc_h_+params2.loc_h_ && dist.second<=params1.dir_h_+params2.dir_h_)
+		if(dist.first<=params1.loc_h_ && dist.second<=params1.dir_h_)
 			return true;
 	}
 	

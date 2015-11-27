@@ -13,35 +13,103 @@
 #include <sensor_msgs/LaserScan.h>
 #include <sensor_msgs/CameraInfo.h>
 
+#include <cob_object_detection_msgs/DetectionArray.h>
+
 #include <cob_srvs/Trigger.h>
+
+#include <tf/transform_listener.h>
+#include <tf_conversions/tf_eigen.h>
 
 class GeometryNode {
 	ros::NodeHandle nh_;
 	cob_3d_geometry_map::GlobalContext::Ptr ctxt_;
 	cob_3d_geometry_map::DefaultClassifier::Classifier_Floor *classifier_floor_;
+	std::vector<cob_3d_geometry_map::CustomClassifier::Classifier_Carton*> classifier_cartons_;
+	
+	std::string target_frame_;
 
 	void callback(const cob_3d_mapping_msgs::PlaneSceneConstPtr& scene, const sensor_msgs::ImageConstPtr& color_img)
 	{
 	  ROS_INFO("callback");
 	  
-	  ctxt_->add_scene(*scene);
 	}
 
 	void callback2(const cob_3d_mapping_msgs::PlaneSceneConstPtr& scene)
 	{
 	  ROS_INFO("callback2");
 	  
-	  cob_3d_visualization::RvizMarkerManager::get().setFrameId(scene->header.frame_id);
+	  //if not set we keep in input frame
+	  if(target_frame_.empty())
+		target_frame_ = scene->header.frame_id;
+		
+	  //lookup transformation to for our geometry map
+	  tf::StampedTransform transform;
+	  try{
+		  tf_listener_.lookupTransform(target_frame_, scene->header.frame_id,
+								   scene->header.stamp, transform);
+	  }
+	  catch (tf::TransformException ex){
+		  ROS_ERROR("%s --> SKIPPING!",ex.what());
+		  return;
+	  }
 	  
-	  ctxt_->add_scene(*scene);
+	  Eigen::Affine3d tf2target;
+	  tf::transformTFToEigen(transform, tf2target);
+	  
+	  //update visualization frame information
+	  cob_3d_visualization::RvizMarkerManager::get().setFrameId(target_frame_);
+	  
+	  //now do the mapping stuff
+	  ctxt_->add_scene(*scene, tf2target);
+	  
+	  //visualize it
 	  ctxt_->visualize_markers();
 	  
+	  //some additional features
 	  publish_scan(scene->header);
+	  publish_cartons(scene->header);
 	  
 	  system("read x");
 	}
 	
+	void publish_cartons(const std_msgs::Header &header) {
+		if(pub_cartons_.getNumSubscribers()<1) return;
+		cob_object_detection_msgs::DetectionArray array;
+		array.header = header;
+		array.header.frame_id = target_frame_;
+		
+		for(size_t i=0; i<classifier_cartons_.size(); i++) {
+			std::vector<cob_3d_geometry_map::ObjectVolume> cartons = classifier_cartons_[i]->get_cartons();
+			for(size_t j=0; j<cartons.size(); j++) {
+				cob_object_detection_msgs::Detection msg;
+				msg.header = array.header;
+				msg.detector = "geometry_map::Classsifier::carton";
+				
+				msg.label = classifier_cartons_[i]->name();
+				msg.id = classifier_cartons_[i]->class_id();
+				
+				msg.pose.pose.position.x = cartons[j].pose().loc_.X();
+				msg.pose.pose.position.y = cartons[j].pose().loc_.Y();
+				msg.pose.pose.position.z = cartons[j].pose().loc_.Z();
+				
+				msg.pose.pose.orientation.x = cartons[j].pose().ori_.X();
+				msg.pose.pose.orientation.y = cartons[j].pose().ori_.Y();
+				msg.pose.pose.orientation.z = cartons[j].pose().ori_.Z();
+				msg.pose.pose.orientation.w = cartons[j].pose().ori_.W();
+				
+				msg.bounding_box_lwh.x = cartons[j].bb_in_pose().sizes()(2);
+				msg.bounding_box_lwh.y = cartons[j].bb_in_pose().sizes()(0);
+				msg.bounding_box_lwh.z = cartons[j].bb_in_pose().sizes()(1);
+				
+				array.detections.push_back(msg);
+			}
+		}
+		
+		pub_cartons_.publish(array);
+	}
+	
 	void publish_scan(const std_msgs::Header &header) {
+		if(pub_scan_.getNumSubscribers()<1) return;
 		assert(classifier_floor_);
 		
 		sensor_msgs::LaserScan msg;
@@ -88,9 +156,11 @@ class GeometryNode {
 	ros::ServiceServer reset_server_;
 	
 	ros::Subscriber sub_scene2_, sub_camera_info_;
-	ros::Publisher pub_scan_;
+	ros::Publisher pub_scan_, pub_cartons_;
 	
 	sensor_msgs::CameraInfo camera_info_;
+	
+	tf::TransformListener tf_listener_;
 	
 	void init_context() {
 		ctxt_.reset(new cob_3d_geometry_map::GlobalContext);
@@ -126,12 +196,15 @@ class GeometryNode {
 		widths.push_back(0.2);
 		widths.push_back(0.25);
 		widths.push_back(0.3);
-		cob_3d_geometry_map::CustomClassifier::Classifier_Carton *carton_front;
+		cob_3d_geometry_map::CustomClassifier::Classifier_Carton *carton_front, *carton_side;
 		ctxt_->registerClassifier( carton_front=new cob_3d_geometry_map::CustomClassifier::Classifier_Carton(Eigen::AngleAxisf(0,carton_orientation)*Eigen::Translation3f(carton_offset), Eigen::Vector3f(0.4,0.25, 0.2), widths) );
-		ctxt_->registerClassifier( new cob_3d_geometry_map::CustomClassifier::Classifier_Carton(carton_front) );
+		ctxt_->registerClassifier( carton_side=new cob_3d_geometry_map::CustomClassifier::Classifier_Carton(carton_front) );
+		classifier_cartons_.push_back(carton_side);
 	}
 	
-	void start() {		
+	void start() {
+		 nh_.param<std::string>("target_frame", target_frame_, "");
+		 
 		//now start the ROS stuff
 		sub_scene_.reset(new message_filters::Subscriber<cob_3d_mapping_msgs::PlaneScene>(nh_, "scene", 1));
 		sub_col_img_.reset(new message_filters::Subscriber<sensor_msgs::Image>(nh_, "color_image", 1));
@@ -163,6 +236,7 @@ public:
 	GeometryNode() : classifier_floor_(NULL) {
 		sub_camera_info_ = nh_.subscribe("camera_info", 1, &GeometryNode::cb_camera_info, this);
 		pub_scan_ = nh_.advertise<sensor_msgs::LaserScan>("scan", 10);
+		pub_cartons_ = nh_.advertise<cob_object_detection_msgs::DetectionArray>("cartons", 10);
 		reset_server_ = nh_.advertiseService("reset", &GeometryNode::reset, this);
 	}
 

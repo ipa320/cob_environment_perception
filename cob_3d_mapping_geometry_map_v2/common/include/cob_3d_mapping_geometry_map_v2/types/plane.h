@@ -154,13 +154,13 @@ public:
 	}
 	
 	inline static Plane_Point::Vector2 to2D(const nuklei::kernel::r3 &pt, const nuklei::kernel::se3 &pose) {
-		const nuklei::kernel::se3 &pose_inv = pose.inverseTransformation();
+		const nuklei::kernel::se3 pose_inv = pose.inverseTransformation();
 		nuklei_wmf::Vector3<double> t = nuklei::la::transform(pose_inv.loc_, pose_inv.ori_, pt.loc_);
 		return Plane_Point::Vector2(t.X(), t.Y());
 	}
 	
 	inline static Plane_Point::Vector2 to2D(const nuklei_wmf::Vector3<double> &pt, const nuklei::kernel::se3 &pose) {
-		const nuklei::kernel::se3 &pose_inv = pose.inverseTransformation();
+		const nuklei::kernel::se3 pose_inv = pose.inverseTransformation();
 		nuklei_wmf::Vector3<double> t = nuklei::la::transform(pose_inv.loc_, pose_inv.ori_, pt);
 		return Plane_Point::Vector2(t.X(), t.Y());
 	}

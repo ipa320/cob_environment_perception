@@ -169,7 +169,7 @@ public:
 
 	GlobalContext();
 	
-	void add_scene(const cob_3d_mapping_msgs::PlaneScene &);
+	void add_scene(const cob_3d_mapping_msgs::PlaneScene &, const Eigen::Affine3d &tf);
 	
 	void visualize_markers();
 	
