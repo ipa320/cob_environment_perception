@@ -322,8 +322,7 @@ namespace cob_3d_visualization {
 				scale = 0.1f*l;
 			}
 			
-			marker_.scale.x = scale;
-			marker_.scale.y = marker_.scale.z = 0;
+			marker_.scale.y = marker_.scale.z = marker_.scale.x = scale;
 		}
 		
 		template<class Affine, class Box>
@@ -362,8 +361,7 @@ namespace cob_3d_visualization {
 				scale = 0.1f*l;
 			}
 			
-			marker_.scale.x = scale;
-			marker_.scale.y = marker_.scale.z = 0;
+			marker_.scale.y = marker_.scale.z = marker_.scale.x = scale;
 		}
 		
 		void text(const std::string &txt, const float scale=0.1) {
