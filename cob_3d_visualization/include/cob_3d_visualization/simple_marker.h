@@ -62,6 +62,11 @@
 #include <list>
 #include <string>
 
+#include <pcl/pcl_base.h>
+#include <pcl/point_types.h>
+#include <pcl/PolygonMesh.h>
+#include <pcl_conversions/pcl_conversions.h>
+
 /* 
  * EXAMPLE USAGE:
  * 
