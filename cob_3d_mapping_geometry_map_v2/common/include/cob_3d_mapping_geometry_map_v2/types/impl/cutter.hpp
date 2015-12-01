@@ -32,7 +32,7 @@ public:
 
 
 class Intersection_Volume_Viewport : public Intersection_Volume {
-	Eigen::Vector3f origin_;
+	Eigen::Affine3f tf_;
 	Eigen::Matrix3f proj_;
 	ObjectVolume::TBB bb_;
 	float far_clipping_;
@@ -43,7 +43,7 @@ class Intersection_Volume_Viewport : public Intersection_Volume {
 		return std::min(tmp(0),tmp(1))>=0 && std::max(tmp(0),tmp(1))<=1;
 	}
 	
-	inline bool intersects(const Eigen::Vector3f &pti, const Eigen::Vector3f &pta) const {
+	inline bool intersects(const Eigen::Vector3f &pti, const Eigen::Vector3f &pta) const {return true;
 		if((pti(2)<=0&&pta(2)<=0) || (pti(2)>=far_clipping_&&pta(2)>=far_clipping_)) {
 			std::cout<<"Intersection_Volume_Viewport: int1"<<std::endl;
 			return false;
@@ -73,23 +73,24 @@ class Intersection_Volume_Viewport : public Intersection_Volume {
 	
 public:
 	Intersection_Volume_Viewport(
-		const Eigen::Vector3f &origin,
+		const Eigen::Affine3f &tf,
 		const Eigen::Matrix3f &proj,
-		const Eigen::Matrix3f &proj_inv,
 		const float far_clipping
 		) :
-		origin_(origin), proj_(proj), far_clipping_(far_clipping)
+		tf_(tf), proj_(proj), far_clipping_(far_clipping)
 	{
-		bb_.extend(origin);
-		bb_.extend(origin+far_clipping*proj_inv*Eigen::Vector3f::UnitZ());
-		bb_.extend(origin+far_clipping*proj_inv*Eigen::Vector3f(1,1,1));
+		const Eigen::Matrix3f proj_inv = proj.inverse();
+		
+		bb_.extend(tf_*Eigen::Vector3f::Zero());
+		bb_.extend(tf_*(far_clipping*proj_inv*Eigen::Vector3f::UnitZ()));
+		bb_.extend(tf_*(far_clipping*proj_inv*Eigen::Vector3f(1,1,1)));
 	}
 	
 	virtual ObjectVolume::TBB bb() const {
 		return bb_;
 	}
 	
-	virtual bool intersects(const Object *obj) const {
+	virtual bool intersects(const Object *obj) const {return true;
 		/*const Plane *plane = dynamic_cast<const Plane*>(obj);
 		if(plane) {
 		}*/
@@ -107,7 +108,7 @@ public:
 		return false;
 	}
 	
-	virtual bool contains(const Object *obj) const {
+	virtual bool contains(const Object *obj) const {return true;
 		const ObjectVolume *volume = dynamic_cast<const ObjectVolume*>(obj);
 		if(volume) {
 			ObjectVolume::TBB bb = volume->bb_in_context();

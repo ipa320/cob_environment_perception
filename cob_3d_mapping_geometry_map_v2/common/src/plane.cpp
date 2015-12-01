@@ -677,7 +677,7 @@ void Plane::complex_projection(Plane* plane_out, const Plane* plane_in1, const P
 		
 		if( 
 			(p_test-p1).dot(edge3_1-p1) * 
-			( (p+proj_normal)(2) - Plane_Polygon::to3Dvar(Plane_Polygon::to2D(cast((Eigen::Vector3f)(p+proj_normal)), plane_out->pose()),plane_out->pose()).loc_.Z())
+			( ((p+proj_normal) - cast(Plane_Polygon::to3Dvar(Plane_Polygon::to2D(cast((Eigen::Vector3f)(p+proj_normal)), plane_out->pose()),plane_out->pose()).loc_) ).dot(plane_out->normal_eigen()) )
 			< 0
 		 ) {						
 			std::swap(cut1.boundary().back(), cut2.boundary().back());
@@ -697,7 +697,7 @@ void Plane::complex_projection(Plane* plane_out, const Plane* plane_in1, const P
 		}
 	}
 	else {
-		if( (plane_in2->offset_eigen()-plane_in1->offset_eigen()).dot(Eigen::Vector3f::UnitZ())>0 )
+		if( (plane_in2->offset_eigen()-plane_in1->offset_eigen()).dot( plane_out->normal_eigen() )>0 )
 			plane_out->insert(plane_in1, p_union);
 		else
 			plane_out->insert(plane_in2, p_union);

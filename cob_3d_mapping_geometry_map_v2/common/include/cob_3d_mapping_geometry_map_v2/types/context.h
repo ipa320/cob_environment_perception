@@ -43,6 +43,7 @@ private:
 	
 public:
 	typedef boost::shared_ptr<Context> Ptr;
+	typedef boost::shared_ptr<const Context> ConstPtr;
 	
 	Context() : ctxt2d_(NULL) {}
 	void build();
@@ -73,6 +74,12 @@ public:
 	}
 	
 	bool fitModel(const Object &model, double &score_coverage, double &score_matching);
+};
+
+class TransformationEstimator {
+public:
+
+	virtual bool register_scene(const Context::ConstPtr &new_scene, const Context::ConstPtr &map, nuklei::kernel::se3 &tf_out) = 0;
 };
 
 
@@ -135,6 +142,7 @@ private:
 	TAreaMap area_;
 	Context::Ptr scene_;
 	Projector_Viewport projector_;
+	nuklei::kernel::se3 tf_;
 	
 	void insert(Object::Ptr obj);
 	void insert(Object::Ptr obj, const Plane_Polygon &p);
@@ -142,7 +150,7 @@ private:
 	void _insert(Object::Ptr obj, const std::vector<Plane_Polygon> &ps);
 	
 public:
-	Context2D(const Context::Ptr &ctxt, const Eigen::Matrix3f &proj, const Eigen::Matrix3f &proj_inv, const double far_clipping=4.);
+	Context2D(const Context::Ptr &ctxt, const Eigen::Matrix3f &proj, const nuklei::kernel::se3 &tf, const double far_clipping=4.);
 	
 	void merge(const Context::Ptr &ctxt);
 	
@@ -169,7 +177,7 @@ public:
 
 	GlobalContext();
 	
-	void add_scene(const cob_3d_mapping_msgs::PlaneScene &, const Eigen::Affine3d &tf);
+	void add_scene(const cob_3d_mapping_msgs::PlaneScene &, TransformationEstimator * const tf_est);
 	
 	void visualize_markers();
 	

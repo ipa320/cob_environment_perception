@@ -20,13 +20,30 @@
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_eigen.h>
 
-class GeometryNode {
+
+struct SCarton {
+	int id_;
+	Eigen::Vector3d pos_, dim_;
+	
+	SCarton(XmlRpc::XmlRpcValue &item) {
+		id_ = item["volume_index"];
+		pos_(0) = item["x"];
+		pos_(1) = item["y"];
+		pos_(2) = item["z"];
+		dim_(0) = item["w"];
+		dim_(1) = item["h"];
+		dim_(2) = item["d"];
+	}
+};
+
+class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 	ros::NodeHandle nh_;
 	cob_3d_geometry_map::GlobalContext::Ptr ctxt_;
 	cob_3d_geometry_map::DefaultClassifier::Classifier_Floor *classifier_floor_;
 	std::vector<cob_3d_geometry_map::CustomClassifier::Classifier_Carton*> classifier_cartons_;
 	
 	std::string target_frame_;
+	Eigen::Affine3d tf2target_;
 
 	void callback(const cob_3d_mapping_msgs::PlaneSceneConstPtr& scene, const sensor_msgs::ImageConstPtr& color_img)
 	{
@@ -41,26 +58,26 @@ class GeometryNode {
 	  //if not set we keep in input frame
 	  if(target_frame_.empty())
 		target_frame_ = scene->header.frame_id;
-		
+	  
+	  //update visualization frame information
+	  cob_3d_visualization::RvizMarkerManager::get().setFrameId(target_frame_);
+	  
 	  //lookup transformation to for our geometry map
 	  tf::StampedTransform transform;
 	  try{
 		  tf_listener_.lookupTransform(target_frame_, scene->header.frame_id,
-								   scene->header.stamp, transform);
+								   (ros::Time::now()-scene->header.stamp)>ros::Duration(5*60) ? ros::Time(0) : scene->header.stamp,	//assume we're replaying a bag file
+								   transform);
 	  }
 	  catch (tf::TransformException ex){
 		  ROS_ERROR("%s --> SKIPPING!",ex.what());
 		  return;
 	  }
-	  
-	  Eigen::Affine3d tf2target;
-	  tf::transformTFToEigen(transform, tf2target);
-	  
-	  //update visualization frame information
-	  cob_3d_visualization::RvizMarkerManager::get().setFrameId(target_frame_);
+
+	  tf::transformTFToEigen(transform, tf2target_);
 	  
 	  //now do the mapping stuff
-	  ctxt_->add_scene(*scene, tf2target);
+	  ctxt_->add_scene(*scene, this);
 	  
 	  //visualize it
 	  ctxt_->visualize_markers();
@@ -166,44 +183,53 @@ class GeometryNode {
 		ctxt_.reset(new cob_3d_geometry_map::GlobalContext);
 		//register default classifiers
 		
-		Eigen::Vector3f floor_offset(0,0.5f,0);
+		Eigen::Vector3f floor_offset(0,0,0);
 		Eigen::Vector3f floor_orientation = Eigen::Vector3f::UnitY();
 		
 		ctxt_->registerClassifier(classifier_floor_ = new cob_3d_geometry_map::DefaultClassifier::Classifier_Floor(floor_orientation, floor_offset, 0.1f, 0.1f, 128));
 		
-		/*XmlRpc::XmlRpcValue topicList;
-		std::vector<std::string> topics;
-
-		if (private_nh.getParam("region_of_in_terests", topicList))
+		double carton_tolerance_left_right = 0.05;
+		double carton_tolerance_top = 0.03;
+		
+		XmlRpc::XmlRpcValue cartonList;
+		if (nh_.getParam("/roi", cartonList))
 		{
-		  std::map<std::string, XmlRpc::XmlRpcValue>::iterator i;
-		  for (i = topicList.begin(); i != topicList.end(); i++)
+		  for(int i=0; i<cartonList.size(); i++)
 		  {
-			std::string topic_name;
-			std::string topic_type;
-
-			topic_name = i->first;
-			topic_type.assign(i->second["topic_type"]);
-
-			topics.push_back(topic_name);
+			SCarton carton(cartonList[i]);
+		
+			Eigen::Vector3f carton_offset = carton.pos_.cast<float>();
+			Eigen::Vector3f carton_orientation = Eigen::Vector3f::UnitY();
+			Eigen::Vector3f carton_size = carton.dim_.cast<float>();
+			
+			carton_offset(0) -= carton_tolerance_left_right;
+			carton_size(0) += 2*carton_tolerance_left_right;
+			
+			carton_offset(1) -= carton_tolerance_top;
+			carton_size(1) += carton_tolerance_top;
+			
+			std::vector<double> widths;
+			widths.push_back(carton.dim_(0));
+			
+			cob_3d_geometry_map::CustomClassifier::Classifier_Carton *carton_front, *carton_side;
+			ctxt_->registerClassifier( carton_front=new cob_3d_geometry_map::CustomClassifier::Classifier_Carton(carton.id_, Eigen::AngleAxisf(0,carton_orientation)*Eigen::Translation3f(carton_offset), carton_size, widths) );
+			ctxt_->registerClassifier( carton_side=new cob_3d_geometry_map::CustomClassifier::Classifier_Carton(carton_front) );
+			classifier_cartons_.push_back(carton_side);
+			
+			ROS_INFO("added carton %d", carton.id_);
 		  }
-		}*/
-		
-		Eigen::Vector3f carton_offset(-0.1,0.05f,1.19);
-		Eigen::Vector3f carton_orientation = Eigen::Vector3f::UnitY();
-		
-		std::vector<double> widths;
-		widths.push_back(0.2);
-		widths.push_back(0.25);
-		widths.push_back(0.3);
-		cob_3d_geometry_map::CustomClassifier::Classifier_Carton *carton_front, *carton_side;
-		ctxt_->registerClassifier( carton_front=new cob_3d_geometry_map::CustomClassifier::Classifier_Carton(Eigen::AngleAxisf(0,carton_orientation)*Eigen::Translation3f(carton_offset), Eigen::Vector3f(0.4,0.25, 0.2), widths) );
-		ctxt_->registerClassifier( carton_side=new cob_3d_geometry_map::CustomClassifier::Classifier_Carton(carton_front) );
-		classifier_cartons_.push_back(carton_side);
+		}
 	}
 	
 	void start() {
-		 nh_.param<std::string>("target_frame", target_frame_, "");
+		//load params
+		ros::NodeHandle pn("~");
+		pn.param<std::string>("target_frame", target_frame_, "");
+		
+		ROS_INFO("loaded parameters:");
+		ROS_INFO("target_frame:\t%s", target_frame_.c_str());
+		
+		cob_3d_visualization::RvizMarkerManager::get().createTopic("marker").setFrameId(target_frame_).clearOld();
 		 
 		//now start the ROS stuff
 		sub_scene_.reset(new message_filters::Subscriber<cob_3d_mapping_msgs::PlaneScene>(nh_, "scene", 1));
@@ -231,9 +257,14 @@ class GeometryNode {
 		sub_camera_info_ = nh_.subscribe("camera_info", 1, &GeometryNode::cb_camera_info, this);
 	}
 	
+	virtual bool register_scene(const cob_3d_geometry_map::Context::ConstPtr &new_scene, const cob_3d_geometry_map::Context::ConstPtr &map, nuklei::kernel::se3 &tf_out) {
+		tf_out = cob_3d_geometry_map::cast(tf2target_);
+		return true;
+	}
+	
 public:
 
-	GeometryNode() : classifier_floor_(NULL) {
+	GeometryNode() : classifier_floor_(NULL), tf2target_(Eigen::Translation3d(0,0,0)) {
 		sub_camera_info_ = nh_.subscribe("camera_info", 1, &GeometryNode::cb_camera_info, this);
 		pub_scan_ = nh_.advertise<sensor_msgs::LaserScan>("scan", 10);
 		pub_cartons_ = nh_.advertise<cob_object_detection_msgs::DetectionArray>("cartons", 10);

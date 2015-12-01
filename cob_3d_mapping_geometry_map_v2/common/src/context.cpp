@@ -34,22 +34,25 @@ GlobalContext::GlobalContext() : scene_(new Context) {
 	
 	// Register the function that we want the scripts to call 
 	//r = script_engine_->RegisterGlobalFunction("void print(const string &in)", asFUNCTION(print), asCALL_CDECL); assert( r >= 0 );
-		
-	cob_3d_visualization::RvizMarkerManager::get().createTopic("/marker").setFrameId("/camera_depth_frame").clearOld();
 }
 
-void GlobalContext::add_scene(const cob_3d_mapping_msgs::PlaneScene &scene, const Eigen::Affine3d &tf)
+void GlobalContext::add_scene(const cob_3d_mapping_msgs::PlaneScene &scene, TransformationEstimator * const tf_est)
 {
 	Context::Ptr ctxt = boost::make_shared<Context>();
 	ctxt->add_scene(ctxt, scene);
 	classify(ctxt, true);
 	ctxt->optimize(ctxt);
 	
-	//TODO: register
-	
 	assert(scene_);
 	
-	scene_2d_.reset(new Context2D(scene_, proj_.cast<float>(), proj_.inverse().cast<float>()));
+	nuklei::kernel::se3 tf;
+	if(tf_est)
+		if(!tf_est->register_scene(ctxt, scene_, tf)) {
+			ROS_WARN("failed to register scene --> SKIPPING!");
+			return;
+		}
+	
+	scene_2d_.reset(new Context2D(scene_, proj_.cast<float>(), tf));
 	scene_->set_context_2d(scene_2d_.get());
 	scene_2d_->merge(ctxt);
 	
@@ -146,8 +149,9 @@ void Context::classify(const Context::Ptr &ctxt, const Classifier::Ptr &classifi
 {
 	assert(ctxt.get()==this);
 	
+	const bool once = classifier->once();
 	for(size_t i=0; i<objs_.size(); i++) {
-		if(objs_[i]->has_class(classifier->class_id())) continue;
+		if(once && objs_[i]->has_class(classifier->class_id())) continue;
 		
 		Class::Ptr cl = classifier->classifiy(objs_[i], ctxt, single_shot);
 		
@@ -251,21 +255,20 @@ void Context::optimize(const Context::Ptr &ctxt) {
 	build();
 }
 
-Context2D::Context2D(const Context::Ptr &ctxt, const Eigen::Matrix3f &proj, const Eigen::Matrix3f &proj_inv, const double fc):
-	scene_(ctxt)
+Context2D::Context2D(const Context::Ptr &ctxt, const Eigen::Matrix3f &proj, const nuklei::kernel::se3 &tf, const double fc):
+	scene_(ctxt), tf_(tf)
 {
 	rtree_.clear();
 	area_.clear();
 	
 	Eigen::Matrix4f proj4 = Eigen::Matrix4f::Identity();
 	proj4.topLeftCorner<3,3>() = proj;
-	projector_.setT(proj4);
+	projector_.setT(proj4*cast(tf).inverse().matrix());
 	
 	std::vector<Object::Ptr> result;
 	ctxt->intersects(Intersection_Volume_Viewport(
-		Eigen::Vector3f::Zero(),
-		proj, proj_inv,
-		fc
+		cast(tf),
+		proj, fc
 	), result);
 	
 	std::cout<<"Context2D: "<<result.size()<<" from "<<(ctxt->end()-ctxt->begin())<<std::endl;
@@ -460,7 +463,7 @@ void Context2D::insert(Object::Ptr _obj)
 					
 					if( 
 						(p_test-p1).dot(edge3_1-p1) * 
-						( (p+proj_normal)(2) - Plane_Polygon::to3Dvar(Plane_Polygon::to2D(cast((Eigen::Vector3f)(p+proj_normal)), obj->pose()),obj->pose()).loc_.Z())
+						( ((p+proj_normal) - cast(Plane_Polygon::to3Dvar(Plane_Polygon::to2D(cast((Eigen::Vector3f)(p+proj_normal)), obj->pose()),obj->pose()).loc_)).dot(cast(tf_)*Eigen::Vector3f::UnitZ()) )
 						< 0
 					 ) {						
 						std::swap(cut1.boundary().back(), cut2.boundary().back());
@@ -480,7 +483,7 @@ void Context2D::insert(Object::Ptr _obj)
 					}
 				}
 				else {
-					if( (matched_plane->offset_eigen()-obj->offset_eigen()).dot(Eigen::Vector3f::UnitZ())>0 )
+					if( (matched_plane->offset_eigen()-obj->offset_eigen()).dot(obj->normal_eigen())>0 )
 						insert(_obj, p_union);
 					else
 						insert(result_n[i].second->obj_, p_union);
@@ -515,6 +518,8 @@ void Context2D::merge(const Context::Ptr &ctxt)
 			CAST_TO(Plane, (*it_obj), obj);
 			
 				obj->save_as_svg("/tmp/merge_input.svg");
+				
+				obj->pose().makeTransformWith(tf_);
 				
 				std::map<Object::Ptr, std::vector<Candidate> > candidates, candidates_neg;
 				int unknown=0;

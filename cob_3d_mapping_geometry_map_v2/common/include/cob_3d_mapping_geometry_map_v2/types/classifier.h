@@ -1,7 +1,7 @@
 #pragma once
 
 #include "object.h"
-
+#include <boost/lexical_cast.hpp>
 
 namespace cob_3d_geometry_map {
 	
@@ -22,6 +22,7 @@ protected:
 public:
 	typedef boost::shared_ptr<Classifier> Ptr;
 
+	virtual bool once() const {return false;}
 	virtual int class_id() const = 0;
 	virtual std::string name() const = 0;
 	virtual Class::Ptr classifiy(Object::Ptr obj, ContextPtr ctxt, const bool single_shot) = 0;
@@ -104,6 +105,7 @@ public:
 			};
 			
 			//parameters
+			const int id_;
 			ObjectVolume interest_volume_;
 			std::vector<double> widths_;
 			Classifier_Carton *classifier_front_;
@@ -132,17 +134,17 @@ public:
 			ObjectVolume generate_over_shelf() const {
 				ObjectVolume over_shelf = interest_volume_;
 				over_shelf._bb().min()(0) -= 0.2; //20cm
-				over_shelf._bb().min()(1) -= 0.06; //cm
+				over_shelf._bb().min()(1) -= 0.1; //cm
 				over_shelf._bb().min()(2) -= 0.06; //cm
 				over_shelf._bb().max()(0) += 0.2; //20cm
-				over_shelf._bb().max()(1) += 0.06; //cm
+				over_shelf._bb().max()(1) += 0.2; //cm
 				over_shelf._bb().max()(2) += 0.06; //cm
 				return over_shelf;
 			}
 			
 		public:
-			Classifier_Carton(const Eigen::Affine3f &pose, const Eigen::Vector3f &sizes, const std::vector<double> &widths, const double bandwith_orientation=0.2) :
-				interest_volume_(ContextPtr()), widths_(widths), classifier_front_(NULL)
+			Classifier_Carton(const int id, const Eigen::Affine3f &pose, const Eigen::Vector3f &sizes, const std::vector<double> &widths, const double bandwith_orientation=0.2) :
+				id_(CLASSIFIER_CARTON_FRONT - id*1000), interest_volume_(ContextPtr()), widths_(widths), classifier_front_(NULL)
 			{
 				interest_volume_.pose() = cast(pose);
 				interest_volume_.pose().ori_h_ = bandwith_orientation;
@@ -160,19 +162,20 @@ public:
 			}
 			
 			Classifier_Carton(Classifier_Carton *cl_front) : 
-				interest_volume_(cl_front->interest_volume_), widths_(cl_front->widths_), classifier_front_(cl_front)
+				id_(cl_front->id_+1), interest_volume_(cl_front->interest_volume_), widths_(cl_front->widths_), classifier_front_(cl_front)
 			{
 			}
 			
 			virtual void start(ContextPtr ctxt) {
+				std::cout<<name()<<": "<<classified_planes_.size()<<std::endl;
 				classified_planes_.clear();
 			}
 			
 			virtual void end(ContextPtr ctxt) {
 			}
 
-			virtual int class_id() const {return classifier_front_?CLASSIFIER_CARTON_SIDE:CLASSIFIER_CARTON_FRONT;}
-			virtual std::string name() const {return classifier_front_?"carton_side":"carton_front";}
+			virtual int class_id() const {return id_;}
+			virtual std::string name() const {return (classifier_front_?"carton_side":"carton_front")+boost::lexical_cast<std::string>( (CLASSIFIER_CARTON_FRONT-id_)/1000 );}
 			
 			virtual Class::Ptr classifiy(Object::Ptr obj, ContextPtr ctxt, const bool single_shot);
 			virtual void visualize(ContextPtr ctxt, std::vector<boost::shared_ptr<Visualization::Object> > &objs);

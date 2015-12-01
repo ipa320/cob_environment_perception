@@ -19,6 +19,10 @@ Vector2 Classifier_Floor::operator()(const nuklei_wmf::Vector3<double> &pt3) con
 
 Class::Ptr Classifier_Floor::classifiy(Object::Ptr obj, ContextPtr ctxt, const bool single_shot)
 {
+	//only on map data (otherwise pose won't match)
+	if(single_shot)
+		return Class::Ptr();
+		
 	obj->rem_class(class_id());
 	
 	Plane *plane = dynamic_cast<Plane*>(obj.get());
@@ -87,6 +91,10 @@ void Classifier_Floor::visualize(ContextPtr ctxt, std::vector<boost::shared_ptr<
 
 Class::Ptr Classifier_Carton::classifiy(Object::Ptr obj, ContextPtr ctxt, const bool single_shot)
 {
+	//only on map data (otherwise pose won't match)
+	if(single_shot)
+		return Class::Ptr();
+	
 	obj->rem_class(class_id());
 	
 	if(obj->has_class(CLASSIFIER_FLOOR) || obj->has_class(CLASSIFIER_WALL))
@@ -276,7 +284,7 @@ std::vector<ObjectVolume> Classifier_Carton::get_cartons() const {
 		return r2;
 	}
 	
-	if(classified_planes_.size()<0)
+	if(classified_planes_.size()<1)
 		return std::vector<ObjectVolume>();
 	
 	
@@ -286,14 +294,19 @@ std::vector<ObjectVolume> Classifier_Carton::get_cartons() const {
 	for(size_t i=0; i<classified_planes_.size(); i++) {
 		std::vector<Plane_Polygon::Ptr> res;
 		classified_planes_[i].plane_->project(projector_front, res);
+		std::cout<<"res size "<<res.size()<<std::endl;
 		for(size_t j=0; j<res.size(); j++) {
-			Plane_Point::Ptr pts = *std::max_element(res[j]->boundary().begin(), res[j]->boundary().end(), CmpSmallestX);
-			if(pts->pos(0)<Pleft3(0))
+			Plane_Point::Ptr pts = *std::min_element(res[j]->boundary().begin(), res[j]->boundary().end(), CmpSmallestX);
+			if(pts->pos(0)<Pleft3(0)) {
 				Pleft3.head<2>() = pts->pos;
+				Pleft3(0) = std::max(Pleft3(0), interest_volume_.bb_in_pose().min()(0));
+			}
 				
-			Plane_Point::Ptr ptr = *std::min_element(res[j]->boundary().begin(), res[j]->boundary().end(), CmpSmallestX);
-			if(ptr->pos(0)>Pright3(0))
+			Plane_Point::Ptr ptr = *std::max_element(res[j]->boundary().begin(), res[j]->boundary().end(), CmpSmallestX);
+			if(ptr->pos(0)>Pright3(0)) {
 				Pright3.head<2>() = ptr->pos;
+				Pright3(0) = std::min(Pright3(0), interest_volume_.bb_in_pose().max()(0));
+			}
 		}
 	}
 		
@@ -330,5 +343,12 @@ void Classifier_Carton::visualize(ContextPtr ctxt, std::vector<boost::shared_ptr
 	box->color() = Eigen::Vector4f(0.25,0.25,0.75,0.5);
 	objs.push_back( Visualization::Object::Ptr(box) );
 	
-	
+	if(classifier_front_) {
+		std::vector<ObjectVolume> boxes = get_cartons();
+		for(size_t i=0; i<boxes.size(); i++) {
+			box = new Visualization::Box("Classifier::"+name()+"::carton", cast(boxes[i].pose()), boxes[i].bb_in_pose());
+			box->color() = Eigen::Vector4f(0,0,0,0.75);
+			objs.push_back( Visualization::Object::Ptr(box) );
+		}
+	}
 }
