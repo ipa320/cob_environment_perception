@@ -182,7 +182,7 @@ Class::Ptr Classifier_Carton::classifiy_side(Plane *plane, ContextPtr ctxt, cons
 		std::vector<Plane_Polygon::Ptr> res;
 		classifier_front_->classified_planes_[i].plane_->project(projector, res);
 		for(size_t j=0; j<res.size(); j++) {
-			Plane_Point::Ptr pt = *std::max_element(res[j]->boundary().begin(), res[j]->boundary().end(), CmpSmallestY);
+			Plane_Point::Ptr pt = *std::min_element(res[j]->boundary().begin(), res[j]->boundary().end(), CmpSmallestY);
 			if(pt->pos(1)<Tf(1))
 				Tf = pt->pos;
 		}
@@ -211,6 +211,11 @@ Class::Ptr Classifier_Carton::classifiy_side(Plane *plane, ContextPtr ctxt, cons
 	rect->boundary().push_back(new Plane_Point(Tb));
 	rect->boundary().push_back(new Plane_Point(Bb));
 	
+	std::cout<<Bb.transpose()<<std::endl;
+	std::cout<<Bf.transpose()<<std::endl;
+	std::cout<<Tf.transpose()<<std::endl;
+	std::cout<<Tb.transpose()<<std::endl;
+	
 	Plane rect_obj(ctxt, rect, plane->pose());	
 	
 	rect_obj.save_as_svg("/tmp/rect.svg");
@@ -218,11 +223,14 @@ Class::Ptr Classifier_Carton::classifiy_side(Plane *plane, ContextPtr ctxt, cons
 	//3.6 union
 	rect_obj.merge(*plane, 0);
 	
+	const double min_coverage1_ = 0.7;
+	const double min_coverage2_ = 0.5;
+	
 	//3.7 model fitting
 	double score_coverage, score_matching;
 	ctxt->fitModel(rect_obj, score_coverage, score_matching);
 	std::cout<<"SIDE "<<score_coverage<<" "<<score_matching<<std::endl;
-	if(score_coverage<0.8)
+	if(score_coverage<min_coverage1_)
 		return Class::Ptr();
 	
 	//3.8 move by width
@@ -233,7 +241,7 @@ Class::Ptr Classifier_Carton::classifiy_side(Plane *plane, ContextPtr ctxt, cons
 		
 		ctxt->fitModel(rect_obj, score_coverage, score_matching);
 		std::cout<<"SIDE2 "<<score_coverage<<" "<<score_matching<<std::endl;
-		if(score_coverage>=0.8) {
+		if(score_coverage>=min_coverage2_) {
 			classified_planes_.push_back(Classification(plane, widths_[i]));
 			return Class::Ptr(new Class_Simple(this));
 		}
@@ -261,6 +269,8 @@ std::vector<ObjectVolume> Classifier_Carton::get_cartons() const {
 		}
 			
 		std::sort(offsets.begin(), offsets.end());
+		for(size_t i=0; i<offsets.size(); i++)
+			std::cout<<"offset "<<offsets[i]<<std::endl;
 		
 		std::vector<ObjectVolume> r2;
 		double min_width = (widths_.size()>0?widths_[0]:0)+0.01; //+toleracne=1cm
@@ -271,11 +281,13 @@ std::vector<ObjectVolume> Classifier_Carton::get_cartons() const {
 			while(n<offsets.size() && offsets[i]+min_width<offsets[n]) {
 				++n;
 			}
+			if(n>=offsets.size()) break;
 			
+			std::cout<<"offset n "<<n<<std::endl;
 			for(size_t j=0; j<r.size(); j++) {
 				r2.push_back(r[j]);
-				r2.back()._bb().min()(0) = offsets[i];
-				r2.back()._bb().max()(0) = offsets[n];
+				r2.back()._bb().min()(0) = -offsets[i];
+				r2.back()._bb().max()(0) = -offsets[n];
 			}
 			
 			i = n;
