@@ -8,7 +8,9 @@ using namespace cob_3d_geometry_map;
 
 void Plane_Polygon::visualization(const std::string &name, std::vector<boost::shared_ptr<Visualization::Object> > &objs, const Eigen::Affine3f &pose)
 {
+#ifdef DEBUG_
 	save_as_svg("/tmp/debug.svg");
+#endif
 	
 	std::list<TPPLPoly> polys,result;
 	
@@ -64,7 +66,9 @@ Plane_Polygon::Plane_Polygon(const std::vector<cob_3d_mapping_msgs::Polygon> &po
 		for(size_t j=0; j<poly[i].points.size() && ok; j++)
 			ok &= boost::geometry::within(Plane_Point(poly[i].points[j]), *this);
 		if(ok) holes_.push_back(poly[i]);
+#ifdef DEBUG_
 		else ROS_WARN("hole in polygon is invalid as its outside");
+#endif		
 	}
 }
 
@@ -114,9 +118,14 @@ Plane::Plane(const ContextPtr &ctxt, const Plane_Polygon::Ptr &inp, const nuklei
 {
 	pose_ = pose;
 	
+	/*std::vector<Plane_Polygon> rs_tmp;
+	boost::geometry::dissolve(*inp, rs_tmp);
+	for(size_t i=0; i<rs_tmp.size(); i++)
+		polygons_.push_back(Plane_Polygon::Ptr(new Plane_Polygon(rs_tmp[i])));*/
+	
 	polygons_.push_back(inp);
 	boost::geometry::correct(*polygons_.back());
-	
+		
 	buildBB();
 }
 
@@ -140,8 +149,6 @@ void Plane_Polygon::buildBB(ObjectVolume::TBB &bb)
 	for(size_t j=0; j<boundary_.size(); j++) {
 		Eigen::Vector3f pt = Eigen::Vector3f(boundary_[j]->pos(0), boundary_[j]->pos(1), 0.f);
 		
-		std::cout<<"v "<<boundary_[j]->var<<std::endl;
-		
 		bb.extend(pt + boundary_[j]->var*Eigen::Vector3f::UnitX());
 		bb.extend(pt - boundary_[j]->var*Eigen::Vector3f::UnitX());
 		bb.extend(pt + boundary_[j]->var*Eigen::Vector3f::UnitY());
@@ -153,9 +160,6 @@ void Plane_Polygon::buildBB(ObjectVolume::TBB &bb)
 
 void Plane_Polygon::internal_add_triangulation(const Plane_Ring &inp, std::list<TPPLPoly> &polys, const bool hole)
 {
-	//std::cout<<"order "<<hole<<" "<<boost::geometry::point_order<Plane_Ring>::value<<std::endl;
-	//std::cout<< boost::geometry::dsv(inp) <<std::endl;
-	
 	TPPLPoly poly;
 
 	poly.Init(inp.size()-1);
@@ -230,21 +234,17 @@ bool Plane_Polygon::cut(const VolumeCut &cutter, const nuklei::kernel::se3 &pose
 			--i;
 		}
 	}
-	
-	/*std::cout<<"valid: "<<boost::geometry::is_valid(boundary_)<<std::endl;
-	for(size_t i=0; i<holes_.size(); i++)
-		std::cout<<"valid: "<<boost::geometry::is_valid( holes_[i])<<std::endl;
-	std::vector<boost::shared_ptr<Visualization::Object> > objs;
-	visualization("safd", objs, cast(pose));
-	assert(boost::geometry::is_valid(boundary_));*/
 		
 	return !boost::geometry::is_valid(boundary_);
 }
 
 bool Plane_Polygon::cut(const VolumeCut &cutter, const nuklei::kernel::se3 &pose, Plane_Ring &inp)
 {
+#ifdef DEBUG_
 	ROS_INFO("cut--------------");
 	//save_as_svg("/tmp/debug_bef.svg");
+#endif
+
 	inp.erase(inp.end()-1);
 	
 	std::vector<bool> changes(inp.size(), false);
@@ -265,23 +265,23 @@ bool Plane_Polygon::cut(const VolumeCut &cutter, const nuklei::kernel::se3 &pose
 		const size_t n2  = (i+1)%inp.size();
 		
 		if(changes[i] && changes[n] && changes[n2]) {
+#ifdef DEBUG_
 			ROS_INFO("cutting out point %d/%d", (int)i, (int)inp.size());
+#endif
 			inp.erase(inp.begin()+i);
 			changes.erase(changes.begin()+i);	//TODO: optimize
 			--i;
 		}
 		else if(changes[i]) {
 			inp[i]->pos = to2D(cutter.cutting_point(to3Dvar(inp[i], pose)), pose);
+#ifdef DEBUG_
 			ROS_INFO("update point %d", (int)n);
+#endif
 		}
 	}
 	
 	if(inp.size()>0) {
 		inp.push_back(inp.front());
-		/*std::cout<<"valid: "<<boost::geometry::is_valid(inp)<<std::endl;
-		std::vector<boost::shared_ptr<Visualization::Object> > objs;
-		visualization("safd", objs, cast(pose));
-		assert(boost::geometry::is_valid(inp));*/
 	}
 		
 	return inp.size()<4;
@@ -294,7 +294,9 @@ double area2(const Plane_Point::Vector2 &a, const Plane_Point::Vector2 &b) {
 void Plane_Ring::simplify_by_area(const double min_area2) {
 	erase(end()-1);
 	
+#ifdef DEBUG_
 	std::cout<<"simplify_by_area: "<<size()<<" -> ";
+#endif
 	
 	size_t last;
 	do {
@@ -313,7 +315,9 @@ void Plane_Ring::simplify_by_area(const double min_area2) {
 		}
 	} while(size()!=last);
 	
+#ifdef DEBUG_
 	std::cout<<size()<<std::endl;
+#endif
 	
 	if(size()>0)
 		push_back(front());	//close
@@ -346,21 +350,26 @@ void Plane::project(const Projector &proj, std::vector<Plane_Polygon::Ptr> &res)
 	for(size_t i=0; i<polygons_.size(); i++) {
 		res[i].reset(new Plane_Polygon(*polygons_[i], proj, pose()));
 		boost::geometry::correct(*res[i]);
+#ifdef DEBUG_
 		res[i]->save_as_svg("/tmp/proj.svg", false);
+#endif
 	}
 }
 
 std::vector<Plane_Polygon> Plane_Polygon::operator-(const Plane_Polygon &o) const
 {	
-		save_as_svg("/tmp/in1.svg");
-		o.save_as_svg("/tmp/in2.svg");
-		
-		std::cout<<"-i1 "<<holes_.size()<<std::endl;
-		std::cout<<"-i2 "<<o.holes_.size()<<std::endl;
+#ifdef DEBUG_
+	save_as_svg("/tmp/in1.svg");
+	o.save_as_svg("/tmp/in2.svg");
+	
+	std::cout<<"-i1 "<<holes_.size()<<std::endl;
+	std::cout<<"-i2 "<<o.holes_.size()<<std::endl;
+#endif
 		
 	std::vector<Plane_Polygon> rs;
 	boost::geometry::difference(*this,o, rs);
 	
+#ifdef DEBUG_
 	{	
 		std::cout<<"-size "<<rs.size()<<std::endl;
 		
@@ -377,14 +386,19 @@ std::vector<Plane_Polygon> Plane_Polygon::operator-(const Plane_Polygon &o) cons
 			mapper.map(rs[i].boundary_, buf);
 		}
 	}
+#endif
 	
 	for(size_t i=0; i<rs.size(); i++) {
+#ifdef DEBUG_
 		rs[i].save_as_svg("/tmp/res_bef.svg", false);
+#endif
 		const bool sim_res = rs[i].simplify_by_area(0.01*0.01); //remove double lines
 		std::vector<Plane_Polygon> rs_tmp;
 		boost::geometry::dissolve(rs[i], rs_tmp);
 		
+#ifdef DEBUG_
 		std::cout<<"got "<<rs_tmp.size()<<" after correction"<<std::endl;
+#endif
 		
 		if(rs_tmp.size()<1) continue;
 		rs[i] = rs_tmp[0];
@@ -392,13 +406,17 @@ std::vector<Plane_Polygon> Plane_Polygon::operator-(const Plane_Polygon &o) cons
 			rs.insert(rs.end(), rs_tmp.begin()+1, rs_tmp.end());
 		
 		if(!sim_res || !boost::geometry::is_valid(rs[i]) || boost::geometry::intersects(rs[i]) ) {
+#ifdef DEBUG_
 			ROS_ERROR("invalid result from op-");
 			rs[i].save_as_svg("/tmp/res.svg", false);
-	  if(sim_res) system("read x");
+			if(sim_res) system("read x");
+#endif
 			rs.erase(rs.begin()+i);
 			--i; continue;
 		}
+#ifdef DEBUG_
 		rs[i].save_as_svg("/tmp/res.svg");
+#endif
 		
 		rs[i].color_ = color_;
 		rs[i].imgs_ = imgs_; //TODO: check for o
@@ -412,6 +430,7 @@ std::vector<Plane_Polygon> Plane_Polygon::operator+(const Plane_Polygon &o) cons
 	std::vector<Plane_Polygon> rs;
 	boost::geometry::union_(*this,o, rs);
 	
+#ifdef DEBUG_
 	save_as_svg("/tmp/in1.svg");
 	o.save_as_svg("/tmp/in2.svg");
 	
@@ -431,6 +450,7 @@ std::vector<Plane_Polygon> Plane_Polygon::operator+(const Plane_Polygon &o) cons
 		char buf[512]; sprintf(buf, "fill:none;stroke:rgb(%d,0,0);stroke-width:5", (int)i*100);
 		mapper.map(rs[i].boundary_, buf);
 	}
+#endif
 	
 	//assert(rs.size()>=1);
 	
@@ -446,6 +466,7 @@ std::vector<Plane_Polygon> Plane_Polygon::operator+(const Plane_Polygon &o) cons
 
 std::vector<Plane_Polygon> Plane_Polygon::operator&(const Plane_Polygon &o) const
 {
+#ifdef DEBUG_
 	std::cout<<"&i1 "<<holes_.size()<<std::endl;
 	std::cout<<"&i2 "<<o.holes_.size()<<std::endl;
 	
@@ -457,11 +478,13 @@ std::vector<Plane_Polygon> Plane_Polygon::operator&(const Plane_Polygon &o) cons
 		save_as_svg(mapper);
 		o.save_as_svg(mapper);
 	}
+#endif
 	
 	std::vector<Plane_Polygon> rs;
 	//if( boost::geometry::overlaps(o, *this) )
 		boost::geometry::intersection(*this,o, rs);
 	
+#ifdef DEBUG_
 	std::cout<<"&size "<<rs.size()<<std::endl;
 	
     {
@@ -479,26 +502,32 @@ std::vector<Plane_Polygon> Plane_Polygon::operator&(const Plane_Polygon &o) cons
 		}
 		
 	}
-	
+#endif
+
 	for(size_t i=0; i<rs.size(); i++) {
+#ifdef DEBUG_
 		rs[i].save_as_svg("/tmp/res_bef.svg", false);
+#endif
 		const bool sim_res = rs[i].simplify_by_area(0.01*0.01); //remove double lines
 		
 		std::vector<Plane_Polygon> rs_tmp;
 		boost::geometry::dissolve(rs[i], rs_tmp);
 		
+#ifdef DEBUG_
 		std::cout<<"got "<<rs_tmp.size()<<" after correction"<<std::endl;
-		
+#endif
 		if(rs_tmp.size()<1) continue;
 		rs[i] = rs_tmp[0];
 		if(rs_tmp.size()>1)
 			rs.insert(rs.end(), rs_tmp.begin()+1, rs_tmp.end());
 		
 		if(!sim_res || !boost::geometry::is_valid(rs[i])) {
+#ifdef DEBUG_
 			if(sim_res) ROS_ERROR("invalid result from op&");
 			rs[i].save_as_svg("/tmp/res.svg", false);
-	  if(sim_res) system("read x");
+			if(sim_res) system("read x");
 			//rs[i].save_as_svg("/tmp/res.svg");
+#endif
 			rs.erase(rs.begin()+i);
 			--i; continue;
 		}
@@ -517,8 +546,10 @@ bool Plane::can_merge_fast(const Object &o) const {
 		const nuklei::kernel::r3xs2 params2 = plane->plane_params();
 		nuklei::coord_pair dist( std::abs( (params1.loc_-params2.loc_).Dot(params1.dir_) ), 1-std::abs(params2.dir_.Dot(params1.dir_)) );
 		
+#ifdef DEBUG_
 		std::cout<<"can_merge_fast "<<dist.first<<" "<<dist.second<<" -- "<<params1.loc_h_+params2.loc_h_<<" "<<params1.dir_h_+params2.dir_h_<<std::endl;
-		
+#endif
+
 		//if(dist.first<=params1.loc_h_+params2.loc_h_ && dist.second<=params1.dir_h_+params2.dir_h_)
 		if(dist.first<=params1.loc_h_ && dist.second<=params1.dir_h_)
 			return true;
@@ -542,14 +573,18 @@ bool Plane::merge(const Object &o, const double relation) {
 		//1. get new pose
 		pose_ = copy.pose_.linearInterpolation(plane->pose_, (plane->pose_.ori_h_+plane->pose_.loc_h_)/(copy.pose_.ori_h_+copy.pose_.loc_h_ + plane->pose_.ori_h_+plane->pose_.loc_h_) );	//TODO: weightning
 		
+#ifdef DEBUG_
 		std::cout<<"THIS\n"<<normal_eigen().transpose()<<"\n"<<offset_eigen().transpose()<<std::endl;
 		std::cout<<"COPY\n"<<copy.normal_eigen().transpose()<<"\n"<<copy.offset_eigen().transpose()<<std::endl;
 		std::cout<<"OTHER\n"<<plane->normal_eigen().transpose()<<"\n"<<plane->offset_eigen().transpose()<<std::endl;
-		
+#endif
+
 		//2. project to new pose
 		//3. split into 3 parts
+#ifdef DEBUG_
 		std::ofstream svg2("/tmp/merged_bef.svg");
 		boost::geometry::svg_mapper<Plane_Point::Ptr> mapper2(svg2, 800, 800);
+#endif
 		
 		for(size_t i=0; i<copy.polygons_.size(); i++) {
 			for(size_t j=0; j<plane->polygons_.size(); j++)
@@ -557,9 +592,12 @@ bool Plane::merge(const Object &o, const double relation) {
 					complex_projection(this, &copy, plane, i, j);
 				else
 					simple_projection(this, &copy, plane, i, j);
+#ifdef DEBUG_
 			copy.polygons_[i]->save_as_svg(mapper2);
+#endif
 		}
 				
+#ifdef DEBUG_
 		std::ofstream svg("/tmp/merged.svg");
 		boost::geometry::svg_mapper<Plane_Point::Ptr> mapper(svg, 800, 800);
 
@@ -568,6 +606,7 @@ bool Plane::merge(const Object &o, const double relation) {
 			polygons_[i]->save_as_svg(mapper);
 			polygons_[i]->save_as_svg(buf);
 		}
+#endif
 		
 		buildBB();
 		
@@ -582,6 +621,7 @@ void Plane::complex_projection(Plane* plane_out, const Plane* plane_in1, const P
 	assert(plane_in1);
 	assert(plane_in2);
 	
+#ifdef DEBUG_
 	static int n=0;
 	char buf[256];
 	
@@ -591,6 +631,7 @@ void Plane::complex_projection(Plane* plane_out, const Plane* plane_in1, const P
 	
 	plane_in1->save_as_svg(mapper, 100);
 	plane_in2->save_as_svg(mapper, 200);
+#endif
 	
 	Projector_Plane projector(plane_out);
 	
@@ -611,6 +652,7 @@ void Plane::complex_projection(Plane* plane_out, const Plane* plane_in1, const P
 	
 	if(proj_normal.squaredNorm()>0.001f) {
 	
+#ifdef DEBUG_
 		std::cout<<"n1 "<<proj_normal.transpose()<<std::endl;
 		std::cout<<"n2 "<<plane_in2->normal_eigen().transpose()<<std::endl;
 		std::cout<<"n3 "<<plane_in1->normal_eigen().transpose()<<std::endl;
@@ -621,6 +663,7 @@ void Plane::complex_projection(Plane* plane_out, const Plane* plane_in1, const P
 		<< (p+line_normal-plane_in1->offset_eigen()).dot(plane_in1->normal_eigen()) <<" "
 		<< (p+line_normal-plane_in2->offset_eigen()).dot(plane_in2->normal_eigen()) <<" "
 		<<std::endl;
+#endif
 		
 		assert(p(0)==p(0));
 		assert( std::abs( (p-plane_in1->offset_eigen()).dot(plane_in1->normal_eigen()) )<0.001f );
@@ -633,8 +676,10 @@ void Plane::complex_projection(Plane* plane_out, const Plane* plane_in1, const P
 		
 		Plane_Point::Vector2 p_test = projector(cast((Eigen::Vector3f)(p+proj_normal)));
 		
+#ifdef DEBUG_
 		std::cout<<"p1 "<<p1.transpose()<<std::endl;
 		std::cout<<"p2 "<<p2.transpose()<<std::endl;
+#endif
 		
 		assert(p1!=p2);
 		
@@ -667,6 +712,7 @@ void Plane::complex_projection(Plane* plane_out, const Plane* plane_in1, const P
 		cut2.boundary().push_back(new Plane_Point(edge2));
 		cut2.boundary().push_back(new Plane_Point(edge3_2));
 			
+#ifdef DEBUG_
 		for(size_t l=0; l<cut1.boundary().size(); l++) {
 			std::cout<<"e1 "<<cast(Plane_Polygon::to3Dvar(cut1.boundary()[l], plane_in1->pose()).loc_).transpose()<<std::endl;
 			std::cout<<"e1 "<<cast(Plane_Polygon::to3Dvar(cut1.boundary()[l], plane_in2->pose()).loc_).transpose()<<std::endl;
@@ -674,7 +720,8 @@ void Plane::complex_projection(Plane* plane_out, const Plane* plane_in1, const P
 		
 		std::cout<<"e2 "<<cast(Plane_Polygon::to3Dvar(cut2.boundary().back(), plane_in1->pose()).loc_).transpose()<<std::endl;
 		std::cout<<"e2 "<<cast(Plane_Polygon::to3Dvar(cut2.boundary().back(), plane_in2->pose()).loc_).transpose()<<std::endl;
-		
+#endif
+
 		if( 
 			(p_test-p1).dot(edge3_1-p1) * 
 			( ((p+proj_normal) - cast(Plane_Polygon::to3Dvar(Plane_Polygon::to2D(cast((Eigen::Vector3f)(p+proj_normal)), plane_out->pose()),plane_out->pose()).loc_) ).dot(plane_out->normal_eigen()) )
@@ -688,8 +735,10 @@ void Plane::complex_projection(Plane* plane_out, const Plane* plane_in1, const P
 		//boost::geometry::simplify(cut1, cut1, 0.05);
 		//boost::geometry::simplify(cut2, cut2, 0.05);
 		
+#ifdef DEBUG_
 		cut1.save_as_svg("/tmp/cut1.svg");					
 		cut2.save_as_svg("/tmp/cut2.svg");
+#endif
 		
 		for(size_t k=0; k<p_union.size(); k++) {
 			plane_out->insert(plane_in1, p_union[k]-cut1 );
@@ -703,7 +752,9 @@ void Plane::complex_projection(Plane* plane_out, const Plane* plane_in1, const P
 			plane_out->insert(plane_in2, p_union);
 	}
 	
+#ifdef DEBUG_
 	plane_out->save_as_svg(mapper);
+#endif
 }
 
 void Plane::save_as_svg(const std::string &fn) const
@@ -750,6 +801,7 @@ void Plane::simple_projection(Plane* plane_out, const Plane* plane_in1, const Pl
 	assert(plane_in1);
 	assert(plane_in2);
 	
+#ifdef DEBUG_
 	static int n=0;
 	char buf[256];
 	
@@ -759,10 +811,13 @@ void Plane::simple_projection(Plane* plane_out, const Plane* plane_in1, const Pl
 	
 	plane_in1->save_as_svg(mapper, 100);
 	plane_in2->save_as_svg(mapper, 200);
-	
+#endif
+
 	Projector_Plane projector(plane_out);
 	
 	plane_out->insert(NULL, projector(*plane_in2, *plane_in2->polygons_[ind2]) + projector(*plane_in1, *plane_in1->polygons_[ind1]));
-	
+
+#ifdef DEBUG_	
 	plane_out->save_as_svg(mapper);
+#endif
 }

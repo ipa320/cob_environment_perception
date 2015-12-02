@@ -18,8 +18,6 @@ void Sphere::serialize(Marker &stream)
 
 void Box::serialize(Marker &stream)
 {
-	std::cout<<"BBOX "<<bb_.max().transpose()<<"  /  "<<bb_.min().transpose()<<std::endl;
-	
 	cob_3d_visualization::RvizMarker scene;
 	_serialize(scene);
 	scene.box(pose_, bb_, 0.025f);
