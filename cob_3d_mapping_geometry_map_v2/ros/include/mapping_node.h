@@ -77,7 +77,9 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 	  tf::transformTFToEigen(transform, tf2target_);
 	  
 	  //now do the mapping stuff
+	  ros::Time start = ros::Time::now();
 	  ctxt_->add_scene(*scene, this);
+	  ROS_INFO("took %f", (ros::Time::now()-start).toSec());
 	  
 	  //visualize it
 	  ctxt_->visualize_markers();
@@ -149,8 +151,8 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 	  camera_info_ = *camera_info;
 	  sub_camera_info_.shutdown();	//just get one message (assume camera does not change while running)
 	  
-	  Eigen::Matrix3d P;
-	  std::copy(camera_info_.K.begin(), camera_info_.K.end(), P.data());
+	  Eigen::Matrix4d P = Eigen::Matrix4d::Identity();
+	  std::copy(camera_info_.P.begin(), camera_info_.P.end(), P.data());
 	  P = P.transpose().eval();
 	  std::cout<<"P\n"<<P<<std::endl;
 	  std::cout<<"Pi\n"<<P.inverse()<<std::endl;
@@ -159,7 +161,7 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 	  
 	  init_context();
 	  
-	  ctxt_->set_projection(P);
+	  ctxt_->set_projection(P.topLeftCorner<3,3>());
 	  
 	  start();
 	}
