@@ -118,9 +118,9 @@ namespace cob_3d_mapping
                              float tolerance = 4.0f)
     {
       // += max( 0, 4-10*min(|x|,|y|) )
-      tolerance += max( 0.0f, 1.0f * (4.0f - min(fabs(query(0)),fabs(query(1))) * 10.0f) );
+      tolerance += std::max( 0.0f, 1.0f * (4.0f - std::min(std::abs(query(0)),std::abs(query(1))) * 10.0f) );
       float dist_th =  tolerance * 0.003f * query(2) * query(2);
-      return (fabs(query(2) - neighbor(2)) < dist_th);
+      return (std::abs(query(2) - neighbor(2)) < dist_th);
     }
 
     inline static Eigen::Matrix4f tf_unit_cube() { return MatMap(mat); }
