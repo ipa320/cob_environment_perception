@@ -92,7 +92,11 @@ QuadRegression<Degree, Point, CameraModel>::QuadRegression():
 #ifdef SICK
 MIN_LOD(4), FINAL_LOD(0), GO_DOWN_TO_LVL(4),
 #else
+#ifdef CAMERA_ENSENSO
+MIN_LOD(7), FINAL_LOD(0), GO_DOWN_TO_LVL(3),
+#else
 MIN_LOD(8), FINAL_LOD(0), GO_DOWN_TO_LVL(3),
+#endif
 #endif
 ch_(NULL), outline_check_(0), outline_check_size_(0),
 filter_(-1.f), only_planes_(false)
@@ -103,7 +107,7 @@ filter_(-1.f), only_planes_(false)
 
 template <int Degree, typename Point, typename CameraModel>
 bool QuadRegression<Degree, Point, CameraModel>::compute() {
-  polygons_.clear();
+  polygons_.clear();  
   this->buildTree(*input_);
   calc();
   simplify();

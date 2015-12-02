@@ -616,7 +616,7 @@ namespace Segmentation
     float area() const {
 
       TPPLPartition pp;
-      list<TPPLPoly> polys,result;
+      std::list<TPPLPoly> polys,result;
 
       //std::cout << "id: " << new_message->id << std::endl;
       //std::cout << new_message->centroid << std::endl;
@@ -1252,7 +1252,7 @@ namespace Segmentation
     float area() const {
 
       TPPLPartition pp;
-      list<TPPLPoly> polys,result;
+      std::list<TPPLPoly> polys,result;
 
       //std::cout << "id: " << new_message->id << std::endl;
       //std::cout << new_message->centroid << std::endl;

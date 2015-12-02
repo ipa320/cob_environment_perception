@@ -104,10 +104,10 @@ public:
   }
 
   ///for debugging
-  friend std::ostream &operator<<(ostream &os, const BinaryClassification &bc);
+  friend std::ostream &operator<<(std::ostream &os, const BinaryClassification &bc);
 };
 
-std::ostream &operator<<(ostream &os, const BinaryClassification &bc) {
+std::ostream &operator<<(std::ostream &os, const BinaryClassification &bc) {
   os<<"Num Labels: "<<bc.stat_label.size()<<"\n";
 
   for(std::map<int, BinaryClassification::Data>::const_iterator it = bc.stat_label.begin(); it!=bc.stat_label.end(); it++) {

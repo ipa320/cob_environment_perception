@@ -55,9 +55,11 @@
  *
  ****************************************************************/
 
-#if !defined(SICK) //&& !defined(ONLY_PLANES_DEPTH)
+#if !defined(SICK) && !defined(CAMERA_ENSENSO)
 #define USE_COLOR
 #endif
+
+#define STOP_TIME
 
 // ROS includes
 #include <ros/ros.h>
@@ -123,10 +125,16 @@ class QPPF_Node : public Parent
 #ifdef SICK
   Segmentation::Segmentation_QuadRegression<Point, PointLabel, Segmentation::QPPF::QuadRegression<1, Point, Segmentation::QPPF::CameraModel_SR4500<Point> > > seg_;
 #else
+
+#ifdef CAMERA_ENSENSO
+  Segmentation::Segmentation_QuadRegression<Point, PointLabel, Segmentation::QPPF::QuadRegression<1, Point, Segmentation::QPPF::CameraModel_Ensenso<Point> > > seg_;
+
+#else
 #ifdef ONLY_PLANES_DEPTH
   Segmentation::Segmentation_QuadRegression<Point, PointLabel, Segmentation::QPPF::QuadRegression<1, Point, Segmentation::QPPF::CameraModel_Kinect<Point> > > seg_;
 #else
   Segmentation::Segmentation_QuadRegression<Point, PointLabel, Segmentation::QPPF::QuadRegression<2, Point, Segmentation::QPPF::CameraModel_Kinect<Point> > > seg_;
+#endif
 #endif
 #endif
 

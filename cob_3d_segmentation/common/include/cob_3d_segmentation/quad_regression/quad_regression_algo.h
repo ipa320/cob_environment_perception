@@ -95,7 +95,7 @@ namespace Segmentation
 
       /** DEBUG **/
       template<typename APoint>
-      friend std::ostream &operator<<(ostream &os, const CameraModel_Kinect<APoint> &cmk);
+      friend std::ostream &operator<<(std::ostream &os, const CameraModel_Kinect<APoint> &cmk);
     };
 
     /**
@@ -111,19 +111,33 @@ namespace Segmentation
 
       CameraModel_SR4500(): f(0.f) {}
 
-      /// calculate kinect parameters
+      /// calculate parameters
       void getParams(const pcl::PointCloud<Point> &pc);
 
       inline static float std(const float dist) {return 0.00015f+0.00015f*dist;}   //after "Accuracy analysis of kinect depth data"
 
       /** DEBUG **/
       template<typename APoint>
-      friend std::ostream &operator<<(ostream &os, const CameraModel_Kinect<APoint> &cmk);
+      friend std::ostream &operator<<(std::ostream &os, const CameraModel_Kinect<APoint> &cmk);
+    };
+
+    /**
+     * camera model for Kinect
+     *
+     *  - extracts parameters from pc
+     *  - states standard deviation for a given distance
+     */
+    template<typename Point>
+    class CameraModel_Ensenso : public CameraModel_Kinect<Point> {
+    public:
+      CameraModel_Ensenso(){}
+
+      inline static float std(const float dist) {return 0.009666969f*dist*dist;}
     };
 
     template<typename Point>
-    std::ostream &operator<<(ostream &os, const CameraModel_Kinect<Point> &cmk) {
-      os<<"Kinect Camera\n";
+    std::ostream &operator<<(std::ostream &os, const CameraModel_Kinect<Point> &cmk) {
+      os<<"Ensenso Camera\n";
       os<<"f = "<<cmk.f<<std::endl;
       os<<"dx = "<<cmk.dx<<std::endl;
       os<<"dy = "<<cmk.dy<<std::endl;
