@@ -4,7 +4,6 @@
 #include "plane.h"
 #include "classifier.h"
 #include <unsupported/Eigen/BVH>
-#include <angelscript.h>
 #include <cob_3d_mapping_msgs/PlaneScene.h>
 
 #include <boost/geometry.hpp>
@@ -38,8 +37,6 @@ private:
 	BVH_Point  search_point_;
 	
 	Context2D *ctxt2d_;
-	
-	asIScriptEngine* script_engine_;
 	
 public:
 	typedef boost::shared_ptr<Context> Ptr;
@@ -136,10 +133,8 @@ private:
 	};
 	
 	typedef boost::geometry::index::rtree< value, boost::geometry::index::quadratic<16> > RTREE;
-	typedef std::map<Object::Ptr, ObjInfo> TAreaMap;
 	
 	RTREE rtree_;
-	TAreaMap area_;
 	Context::Ptr scene_;
 	Projector_Viewport projector_;
 	nuklei::kernel::se3 tf_;
@@ -160,8 +155,6 @@ public:
 };
 
 class GlobalContext {
-	asIScriptEngine* script_engine_;
-
 	Context::Ptr scene_;
 	Context2D::Ptr scene_2d_;
 	

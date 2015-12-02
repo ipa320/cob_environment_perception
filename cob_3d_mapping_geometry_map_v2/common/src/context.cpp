@@ -1,7 +1,5 @@
 #include <cob_3d_mapping_geometry_map_v2/types/context.h>
 #include <cob_3d_mapping_geometry_map_v2/types/impl/bvh_query.hpp>
-#include <scriptstdstring.h>
-#include <scriptbuilder.h>
 #include <iostream>
 #include <boost/make_shared.hpp>
 
@@ -13,27 +11,8 @@
 
 using namespace cob_3d_geometry_map;
 
-void DbgMessageCallback(const asSMessageInfo *msg)
-{
-	const char *msgType = 0;
-	if( msg->type == 0 ) msgType = "Error  ";
-	if( msg->type == 1 ) msgType = "Warning";
-	if( msg->type == 2 ) msgType = "Info   ";
-
-	std::cout<<msg->section<<" ("<<msg->row<<", "<<msg->col<<") : "<<msgType<<" : "<<msg->message<<std::endl;
-}
 
 GlobalContext::GlobalContext() : scene_(new Context) {
-	script_engine_ = asCreateScriptEngine();
-	
-	// Set the message callback to receive information on errors in human readable form.
-	int r = script_engine_->SetMessageCallback(asFUNCTION(DbgMessageCallback), 0, asCALL_CDECL);
-	assert( r >= 0 );
-	
-	RegisterStdString(script_engine_);
-	
-	// Register the function that we want the scripts to call 
-	//r = script_engine_->RegisterGlobalFunction("void print(const string &in)", asFUNCTION(print), asCALL_CDECL); assert( r >= 0 );
 }
 
 void GlobalContext::add_scene(const cob_3d_mapping_msgs::PlaneScene &scene, TransformationEstimator * const tf_est)
@@ -259,7 +238,6 @@ Context2D::Context2D(const Context::Ptr &ctxt, const Eigen::Matrix3f &proj, cons
 	scene_(ctxt), tf_(tf)
 {
 	rtree_.clear();
-	area_.clear();
 	
 	Eigen::Matrix4f proj4 = Eigen::Matrix4f::Identity();
 	proj4.topLeftCorner<3,3>() = proj;
@@ -277,10 +255,6 @@ Context2D::Context2D(const Context::Ptr &ctxt, const Eigen::Matrix3f &proj, cons
 	
 		save_as_svg("/tmp/Context2D.svg");
 	}
-	
-	//get area for each object
-    for(RTREE::const_iterator it=rtree_.begin(); it!=rtree_.end(); it++)
-		area_[it->second->obj_].area += boost::geometry::area(*it->second->poly_);
 	
 	static int n=0;
 	char buf[256];
