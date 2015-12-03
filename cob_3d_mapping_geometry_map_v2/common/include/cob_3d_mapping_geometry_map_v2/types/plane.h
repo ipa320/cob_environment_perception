@@ -140,6 +140,14 @@ public:
 	void buildBB(ObjectVolume::TBB &bb);
 	bool cut(const VolumeCut &cutter, const nuklei::kernel::se3 &pose);
 	
+	inline static nuklei_wmf::Vector3<double> to3D(const Vector2 &pt, const nuklei::kernel::se3 &pose) {
+		nuklei_wmf::Vector3<double> r;
+		r.X() = pt(0);
+		r.Y() = pt(1);
+		r.Z() = 0;
+		return nuklei::la::transform(pose.loc_, pose.ori_, r);
+	}
+	
 	inline static nuklei::kernel::r3 to3Dvar(const Plane_Point &pt, const nuklei::kernel::se3 &pose) {
 		nuklei::kernel::r3 r;
 		r.loc_.X() = pt.pos(0);
@@ -273,6 +281,10 @@ public:
 	
 	virtual Plane_Point::Vector2 operator()(const nuklei_wmf::Vector3<double> &pt3) const {
 		return Plane_Polygon::to2D(pt3, plane_->pose());
+	}
+	
+	virtual nuklei_wmf::Vector3<double> operator()(const Vector2 &pt2) const {
+		return Plane_Polygon::to3D(pt2, plane_->pose());
 	}
 	
 	virtual Plane_Polygon operator()(const Plane &plane_other, const Plane_Polygon &poly) const {

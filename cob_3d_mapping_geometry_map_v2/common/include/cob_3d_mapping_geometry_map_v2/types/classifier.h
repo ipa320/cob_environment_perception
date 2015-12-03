@@ -175,7 +175,8 @@ public:
 			}
 
 			virtual int class_id() const {return id_;}
-			virtual std::string name() const {return (classifier_front_?"carton_side":"carton_front")+boost::lexical_cast<std::string>( (CLASSIFIER_CARTON_FRONT-id_)/1000 );}
+			inline int carton_id() const {return (CLASSIFIER_CARTON_SIDE-id_)/1000;}
+			virtual std::string name() const {return (classifier_front_?"carton_side":"carton_front")+boost::lexical_cast<std::string>( carton_id() );}
 			
 			virtual Class::Ptr classifiy(Object::Ptr obj, ContextPtr ctxt, const bool single_shot);
 			virtual void visualize(ContextPtr ctxt, std::vector<boost::shared_ptr<Visualization::Object> > &objs);

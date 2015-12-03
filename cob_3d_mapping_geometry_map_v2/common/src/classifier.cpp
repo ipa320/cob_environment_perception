@@ -136,17 +136,18 @@ Class::Ptr Classifier_Carton::classifiy_front(Plane *plane, ContextPtr ctxt, con
 	return Class::Ptr();
 }
 
-bool CmpSmallestX(const Plane_Point::Ptr &a, const Plane_Point::Ptr &b) {
-	return a->pos(0)<b->pos(0);
-}
-
-bool CmpSmallestY(const Plane_Point::Ptr &a, const Plane_Point::Ptr &b) {
-	return a->pos(1)<b->pos(1);
-}
-
-bool CmpSmallestZ(const Plane_Point::Ptr &a, const Plane_Point::Ptr &b) {
-	return a->pos(2)<b->pos(2);
-}
+struct CmpSmallestAxis {
+	const Vector2 dir_;
+	CmpSmallestAxis(const Vector2 &d) : dir_(d) {}
+	
+	bool operator()(const Plane_Point::Ptr &a, const Plane_Point::Ptr &b) {
+		return a->pos.dot(dir_)<b->pos.dot(dir_);
+	}
+	
+	bool operator()(const Plane_Point::Ptr &a, const Vector2 &b) {
+		return a->pos.dot(dir_)<b.dot(dir_);
+	}
+};
 		
 Class::Ptr Classifier_Carton::classifiy_side(Plane *plane, ContextPtr ctxt, const bool single_shot)
 {
@@ -155,6 +156,9 @@ Class::Ptr Classifier_Carton::classifiy_side(Plane *plane, ContextPtr ctxt, cons
 	if(!interest_volume_.overlaps(*plane))
 		return Class::Ptr();
 	
+//	std::cout<<"SIDEarea "<<plane->bb_in_pose().sizes()(2)*plane->bb_in_pose().sizes()(1)<<std::endl;
+//if(plane->bb_in_pose().sizes()(2)*plane->bb_in_pose().sizes()(1)<0.001) return Class::Ptr();
+
 	//1. check pose
 	const nuklei::kernel::r3xs2 params = plane->plane_params();
 
@@ -170,27 +174,30 @@ Class::Ptr Classifier_Carton::classifiy_side(Plane *plane, ContextPtr ctxt, cons
 		return Class::Ptr();
 		
 	//2. within region of interest
-	if(!generate_over_shelf().contains(*plane))
-		return Class::Ptr();
-		
+	//if(!generate_over_shelf().contains(*plane))
+	//	return Class::Ptr();
+
 	//3. generate model
 	Projector_Plane projector(plane);
+	Projector_Volume projector_bottom(&interest_volume_, Projector_Volume::BOTTOM);
+	//Projector_Volume projector_top(&interest_volume_, Projector_Volume::TOP);
 	Vector2 Tf(0,0), Bf, Tb, Bb; //top point of front
 	
 	//3.1 find top point of front
+	CmpSmallestAxis cmpY(projector(cast((Eigen::Vector3f)Eigen::Vector3f::Zero()))-projector(cast((Eigen::Vector3f)Eigen::Vector3f::UnitY())));
 	for(size_t i=0; i<classifier_front_->classified_planes_.size(); i++) {
 		std::vector<Plane_Polygon::Ptr> res;
 		classifier_front_->classified_planes_[i].plane_->project(projector, res);
 		for(size_t j=0; j<res.size(); j++) {
-			Plane_Point::Ptr pt = *std::min_element(res[j]->boundary().begin(), res[j]->boundary().end(), CmpSmallestY);
-			if(pt->pos(1)<Tf(1))
+			Plane_Point::Ptr pt = *std::min_element(res[j]->boundary().begin(), res[j]->boundary().end(), cmpY);
+			if(cmpY(pt,Tf))
 				Tf = pt->pos;
 		}
 	}
+	//Tf = projector( projector_top(projector_top( projector(Tf) )) );
 	
 	//3.2 find bottom point of front by projecting top point of front to ground
-	Bf = projector( nuklei::la::transform(interest_volume_.pose().loc_, interest_volume_.pose().ori_, cast(interest_volume_.bb_in_pose().min()) ) );
-	Bf(0) = Tf(0);
+	Bf = projector( projector_bottom(projector_bottom( projector(Tf) )) );
 	
 	//3.3 find top point of "back"
 	{
@@ -200,32 +207,46 @@ Class::Ptr Classifier_Carton::classifiy_side(Plane *plane, ContextPtr ctxt, cons
 	}
 	
 	//3.4 find bottom point of "back" by projecting top point of "back" to ground
-	Bb = projector( nuklei::la::transform(interest_volume_.pose().loc_, interest_volume_.pose().ori_, cast((Eigen::Vector3f)(interest_volume_.bb_in_pose().min()+Eigen::Vector3f(0,0,interest_volume_.bb_in_pose().sizes()(2)) )) ) );
-	Bb = (Bb-Bf).dot(Tb-Bf)/(Bb-Bf).squaredNorm()*(Bb-Bf) + Bf;
+	Bb = projector( projector_bottom(projector_bottom( projector(Tb) )) );
+	//Bb = projector( nuklei::la::transform(interest_volume_.pose().loc_, interest_volume_.pose().ori_, cast((Eigen::Vector3f)(interest_volume_.bb_in_pose().min()+Eigen::Vector3f(0,0,interest_volume_.bb_in_pose().sizes()(2)) )) ) );
+	//Bb = (Bb-Bf).dot(Tb-Bf)/(Bb-Bf).squaredNorm()*(Bb-Bf) + Bf;
 	
 	//3.5 create rectangle
 	Plane_Polygon::Ptr rect(new Plane_Polygon);
 	rect->boundary().push_back(new Plane_Point(Bb));
 	rect->boundary().push_back(new Plane_Point(Bf));
 	rect->boundary().push_back(new Plane_Point(Tf));
-	rect->boundary().push_back(new Plane_Point(Tb));
+	//rect->boundary().push_back(new Plane_Point(Tb));
 	rect->boundary().push_back(new Plane_Point(Bb));
 	
-	std::cout<<Bb.transpose()<<std::endl;
-	std::cout<<Bf.transpose()<<std::endl;
-	std::cout<<Tf.transpose()<<std::endl;
-	std::cout<<Tb.transpose()<<std::endl;
+	std::cout<<cmpY.dir_.transpose()<<std::endl;
+	std::cout<<"bot back  "<<Bb.transpose()<<std::endl;
+	std::cout<<"bot front "<<Bf.transpose()<<std::endl;
+	std::cout<<"top front "<<Tf.transpose()<<std::endl;
+	std::cout<<"top back  "<<Tb.transpose()<<std::endl;
+	
+	std::cout<<"bot back  "<<cast(projector(Bb)).transpose()<<std::endl;
+	std::cout<<"bot front "<<cast(projector(Bf)).transpose()<<std::endl;
+	std::cout<<"top front "<<cast(projector(Tf)).transpose()<<std::endl;
+	std::cout<<"top back  "<<cast(projector(Tb)).transpose()<<std::endl;
+	
+	for(int i=0; i<8; i++)
+		std::cout<<"edge  "<<(cast(plane->pose())*plane->bb_in_pose().corner((ObjectVolume::TBB::CornerType)i)).transpose()<<std::endl;
 	
 	Plane rect_obj(ctxt, rect, plane->pose());	
 	
-	rect_obj.save_as_svg("/tmp/rect.svg");
+	static int n=0;
+	++n;
+	rect_obj.save_as_svg("/tmp/rect"+boost::lexical_cast<std::string>(n)+".svg");
 	
 	//3.6 union
 	rect_obj.merge(*plane, 0);
 	
+	rect_obj.save_as_svg("/tmp/rect"+boost::lexical_cast<std::string>(n)+"_2.svg");
+	
 	const double min_coverage1_ = 0.7;
 	const double min_coverage2_ = 0.5;
-	
+
 	//3.7 model fitting
 	double score_coverage, score_matching;
 	ctxt->fitModel(rect_obj, score_coverage, score_matching);
@@ -236,8 +257,12 @@ Class::Ptr Classifier_Carton::classifiy_side(Plane *plane, ContextPtr ctxt, cons
 	//3.8 move by width
 	double last_w=0;
 	for(size_t i=0; i<widths_.size(); i++) {
-		rect_obj.pose().loc_ += (widths_[i]-last_w)*interest_volume_.pose().ori_.Rotate(nuklei_wmf::Vector3<double>::UNIT_X);
+		//rect_obj.pose().loc_ += (widths_[i]-last_w)*plane->pose().ori_.Rotate(nuklei_wmf::Vector3<double>::UNIT_X);
+		//rect_obj.pose().loc_ += (widths_[i]-last_w)*interest_volume_.pose().ori_.Rotate(nuklei_wmf::Vector3<double>::UNIT_X);
+		rect_obj.pose().loc_ += (widths_[i]-last_w)*(nuklei_wmf::Vector3<double>::UNIT_X);
 		last_w = widths_[i];
+		
+		//classified_planes_.push_back(Classification(new Plane(rect_obj), widths_[i]));
 		
 		ctxt->fitModel(rect_obj, score_coverage, score_matching);
 		std::cout<<"SIDE2 "<<score_coverage<<" "<<score_matching<<std::endl;
@@ -286,8 +311,8 @@ std::vector<ObjectVolume> Classifier_Carton::get_cartons() const {
 			std::cout<<"offset n "<<n<<std::endl;
 			for(size_t j=0; j<r.size(); j++) {
 				r2.push_back(r[j]);
-				r2.back()._bb().min()(0) = -offsets[i];
-				r2.back()._bb().max()(0) = -offsets[n];
+				r2.back()._bb().min()(0) = offsets[i];
+				r2.back()._bb().max()(0) = offsets[n];
 			}
 			
 			i = n;
@@ -303,22 +328,19 @@ std::vector<ObjectVolume> Classifier_Carton::get_cartons() const {
 	Eigen::Vector3f Pleft3 = interest_volume_.bb_in_pose().max(), Pright3 = interest_volume_.bb_in_pose().min();
 	
 	//find most left and right points of front
+	CmpSmallestAxis cmpX(projector_front(cast((Eigen::Vector3f)Eigen::Vector3f::UnitX()))-projector_front(cast((Eigen::Vector3f)Eigen::Vector3f::Zero())));
 	for(size_t i=0; i<classified_planes_.size(); i++) {
 		std::vector<Plane_Polygon::Ptr> res;
 		classified_planes_[i].plane_->project(projector_front, res);
 		std::cout<<"res size "<<res.size()<<std::endl;
 		for(size_t j=0; j<res.size(); j++) {
-			Plane_Point::Ptr pts = *std::min_element(res[j]->boundary().begin(), res[j]->boundary().end(), CmpSmallestX);
-			if(pts->pos(0)<Pleft3(0)) {
-				Pleft3.head<2>() = pts->pos;
-				Pleft3(0) = std::max(Pleft3(0), interest_volume_.bb_in_pose().min()(0));
-			}
+			Plane_Point::Ptr pts = *std::min_element(res[j]->boundary().begin(), res[j]->boundary().end(), cmpX);
+			if(cmpX(pts,Pleft3.head<2>()))
+				Pleft3(0) = std::max(pts->pos(0), interest_volume_.bb_in_pose().min()(0));
 				
-			Plane_Point::Ptr ptr = *std::max_element(res[j]->boundary().begin(), res[j]->boundary().end(), CmpSmallestX);
-			if(ptr->pos(0)>Pright3(0)) {
-				Pright3.head<2>() = ptr->pos;
-				Pright3(0) = std::min(Pright3(0), interest_volume_.bb_in_pose().max()(0));
-			}
+			Plane_Point::Ptr ptr = *std::max_element(res[j]->boundary().begin(), res[j]->boundary().end(), cmpX);
+			if(!cmpX(ptr,Pright3.head<2>()))
+				Pright3(0) = std::min(ptr->pos(0), interest_volume_.bb_in_pose().max()(0));
 		}
 	}
 		
@@ -363,4 +385,9 @@ void Classifier_Carton::visualize(ContextPtr ctxt, std::vector<boost::shared_ptr
 			objs.push_back( Visualization::Object::Ptr(box) );
 		}
 	}
+	
+	/*for(size_t i=0; i<classified_planes_.size(); i++) {
+		if(!classified_planes_[i].plane_->has_class(class_id())) classified_planes_[i].plane_->add_class(Class::Ptr(new Class_Simple(this)));
+		classified_planes_[i].plane_->visualization(objs);
+	}*/
 }

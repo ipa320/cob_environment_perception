@@ -87,8 +87,6 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 	  //some additional features
 	  publish_scan(scene->header);
 	  publish_cartons(scene->header);
-	  
-	  system("read x");
 	}
 	
 	void publish_cartons(const std_msgs::Header &header) {
@@ -105,10 +103,10 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 				msg.detector = "geometry_map::Classsifier::carton";
 				
 				msg.label = classifier_cartons_[i]->name();
-				msg.id = classifier_cartons_[i]->class_id();
+				msg.id = classifier_cartons_[i]->carton_id();
 				
 				msg.pose.pose.position.x = cartons[j].pose().loc_.X();
-				msg.pose.pose.position.y = cartons[j].pose().loc_.Y();
+				msg.pose.pose.position.y = cartons[j].pose().loc_.Y();//+cartons[j].bb_in_pose().sizes()(1);
 				msg.pose.pose.position.z = cartons[j].pose().loc_.Z();
 				
 				msg.pose.pose.orientation.x = cartons[j].pose().ori_.X();
@@ -194,7 +192,7 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 		double carton_tolerance_top = 0.03;
 		
 		XmlRpc::XmlRpcValue cartonList;
-		if (nh_.getParam("/roi", cartonList))
+		if (nh_.getParam("/item_list", cartonList))
 		{
 		  for(int i=0; i<cartonList.size(); i++)
 		  {

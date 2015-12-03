@@ -161,7 +161,7 @@ public:
 	}
 	
 	virtual bool in_front_of(const ObjectVolume &o) const {
-		return (cast(pose_).inverse()*cast(o.pose_)*o.bb_.center())(2)>=0;
+		return (cast(pose_).inverse()*cast(o.pose_)*o.bb_.center())(2)>=-(pose_.loc_h_+o.pose_.loc_h_);
 	}
 };
 
@@ -179,30 +179,30 @@ private:
 		
 		switch(side_) {
 			case FRONT:
-				pose.loc_ -= cast(vol_->bb_in_pose().min());
+				pose.loc_ -= cast(cast(pose)*vol_->bb_in_pose().min());
 			break;
 			case BACK:
-				pose.loc_ -= cast(vol_->bb_in_pose().max());
+				pose.loc_ -= cast(cast(pose)*vol_->bb_in_pose().max());
 			break;
 			
 			case LEFT:
-				pose.loc_ -= cast(vol_->bb_in_pose().min());
+				pose.loc_ -= cast(cast(pose)*vol_->bb_in_pose().min());
 				q.FromAxisAngle(nuklei_wmf::Vector3<double>::UNIT_Y, M_PI_2);
 				pose.ori_ = q*pose.ori_;
 			break;
 			case RIGHT:
-				pose.loc_ -= cast(vol_->bb_in_pose().max());
+				pose.loc_ -= cast(cast(pose)*vol_->bb_in_pose().max());
 				q.FromAxisAngle(nuklei_wmf::Vector3<double>::UNIT_Y, M_PI_2);
 				pose.ori_ = q*pose.ori_;
 			break;
 			
 			case TOP:
-				pose.loc_ -= cast(vol_->bb_in_pose().min());
+				pose.loc_ -= cast(cast(pose)*vol_->bb_in_pose().min());
 				q.FromAxisAngle(nuklei_wmf::Vector3<double>::UNIT_X, M_PI_2);
 				pose.ori_ = q*pose.ori_;
 			break;
 			case BOTTOM:
-				pose.loc_ -= cast(vol_->bb_in_pose().max());
+				pose.loc_ -= cast(cast(pose)*vol_->bb_in_pose().max());
 				q.FromAxisAngle(nuklei_wmf::Vector3<double>::UNIT_X, M_PI_2);
 				pose.ori_ = q*pose.ori_;
 			break;

@@ -65,7 +65,12 @@ Plane_Polygon::Plane_Polygon(const std::vector<cob_3d_mapping_msgs::Polygon> &po
 		bool ok=true;
 		for(size_t j=0; j<poly[i].points.size() && ok; j++)
 			ok &= boost::geometry::within(Plane_Point(poly[i].points[j]), *this);
-		if(ok) holes_.push_back(poly[i]);
+		if(ok) {
+			holes_.push_back(poly[i]);
+			holes_.back().simplify_by_area(0.01*0.01);	//remove "clutter" holes
+			if(!holes_.back().size()<4)
+				holes_.erase(holes_.begin()+(holes_.size()-1));
+		}
 #ifdef DEBUG_
 		else ROS_WARN("hole in polygon is invalid as its outside");
 #endif		
@@ -107,10 +112,16 @@ Plane::Plane(const ContextPtr &ctxt, const cob_3d_mapping_msgs::Plane &inp) :
 	tf::poseMsgToEigen(inp.pose, pose);
 	pose_ = cast(pose);
 	
-	polygons_.push_back(Plane_Polygon::Ptr(new Plane_Polygon(inp.polygons, Eigen::Vector3f(inp.color.r,inp.color.g,inp.color.b) )));
-	boost::geometry::correct(*polygons_.back());
+	std::vector<Plane_Polygon> rs_tmp;
+	boost::geometry::dissolve(Plane_Polygon(inp.polygons, Eigen::Vector3f(inp.color.r,inp.color.g,inp.color.b) ), rs_tmp);
+	for(size_t i=0; i<rs_tmp.size(); i++)
+		polygons_.push_back(Plane_Polygon::Ptr(new Plane_Polygon(rs_tmp[i])));
 	
 	buildBB();
+	
+#ifdef DEBUG_
+	save_as_svg("/tmp/input.svg");
+#endif
 }
 
 Plane::Plane(const ContextPtr &ctxt, const Plane_Polygon::Ptr &inp, const nuklei::kernel::se3 &pose) :
