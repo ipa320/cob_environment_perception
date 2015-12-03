@@ -122,7 +122,7 @@ namespace Segmentation
     };
 
     /**
-     * camera model for Kinect
+     * camera model for Ensenso
      *
      *  - extracts parameters from pc
      *  - states standard deviation for a given distance
@@ -132,7 +132,7 @@ namespace Segmentation
     public:
       CameraModel_Ensenso(){}
 
-      inline static float std(const float dist) {return 0.009666969f*dist*dist;}
+      inline static float std(const float dist) {return 0.009666969f*0.5f*dist*dist;}
     };
 
     template<typename Point>
@@ -186,6 +186,7 @@ namespace Segmentation
 
     private:
       //-----------CONSTANTS-------------
+      const unsigned int NUM_LOD;
       const unsigned int MIN_LOD;       /// minimum of nodes for a segment
       const unsigned int FINAL_LOD;     /// lowest level = 0
       const unsigned int GO_DOWN_TO_LVL;/// search down to ...
@@ -272,7 +273,7 @@ namespace Segmentation
     void outline(int *ch, const int w, const int h, std::vector<SubStructure::SXY<Eigen::Vector3f> > &out, const int i, S_POLYGON<Degree> &poly, const SubStructure::Model<Degree> &model, const int mark);
     
     void simplify();
-    void simplify(std::vector<Eigen::Vector3f> &seg, std::vector<Eigen::Vector2i> &seg2d);      
+    void simplify(const float scale, std::vector<Eigen::Vector3f> &seg, std::vector<Eigen::Vector2i> &seg2d);      
 
   public:
     /// constructor, setups variables
