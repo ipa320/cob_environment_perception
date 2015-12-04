@@ -233,6 +233,8 @@ public:
 	bool snap(const Plane &other);
 	bool cut(const VolumeCut &other);
 	
+	const std::vector<Plane_Polygon::Ptr> &polygons() const {return polygons_;}
+	
 	double polygon_distance(const Plane_Point &pt) const;
 	
 	void project(const Projector &proj, std::vector<Plane_Polygon::Ptr> &res) const;
@@ -270,6 +272,15 @@ public:
 	
 	void save_as_svg(const std::string &fn) const;
 	void save_as_svg(boost::geometry::svg_mapper<Plane_Point::Ptr> &mapper, const int color_g=0) const;
+	
+	
+	inline nuklei_wmf::Vector3<double> to3D(const Vector2 &pt) const {
+		nuklei_wmf::Vector3<double> r;
+		r.X() = pt(0);
+		r.Y() = pt(1);
+		r.Z() = 0;
+		return nuklei::la::transform(pose_.loc_, pose_.ori_, r);
+	}
 };
 
 class Projector_Plane : public Projector {
@@ -296,6 +307,19 @@ public:
 		for(size_t i=0; i<poly.size();  i++)
 			r[i] = Plane_Polygon(*poly[i], *this, plane_other.pose());
 		return r;
+	}
+};
+
+struct CmpSmallestAxis {
+	const Vector2 dir_;
+	CmpSmallestAxis(const Vector2 &d) : dir_(d) {}
+	
+	bool operator()(const Plane_Point::Ptr &a, const Plane_Point::Ptr &b) const {
+		return a->pos.dot(dir_)<b->pos.dot(dir_);
+	}
+	
+	bool operator()(const Plane_Point::Ptr &a, const Vector2 &b) const {
+		return a->pos.dot(dir_)<b.dot(dir_);
 	}
 };
 

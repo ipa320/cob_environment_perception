@@ -6,6 +6,7 @@
 namespace cob_3d_geometry_map {
 	
 class Context;
+class CmpSmallestAxis;
 
 class Class {
 public:
@@ -133,14 +134,20 @@ public:
 			
 			ObjectVolume generate_over_shelf() const {
 				ObjectVolume over_shelf = interest_volume_;
-				over_shelf._bb().min()(0) -= 0.2; //20cm
+				over_shelf._bb().min()(0) -= 0.15; //20cm
 				over_shelf._bb().min()(1) -= 0.1; //cm
-				over_shelf._bb().min()(2) -= 0.06; //cm
-				over_shelf._bb().max()(0) += 0.2; //20cm
-				over_shelf._bb().max()(1) += 0.2; //cm
-				over_shelf._bb().max()(2) += 0.06; //cm
+				over_shelf._bb().min()(2) -= 0.1; //cm
+				over_shelf._bb().max()(0) += 0.15; //20cm
+				over_shelf._bb().max()(1) += 0.15; //cm
+				over_shelf._bb().max()(2) += 0.15; //cm
 				return over_shelf;
 			}
+			
+			bool find_extrema(const Projector &projector, const CmpSmallestAxis &cmp, Vector2 &ex1, Vector2 &ex2) const;
+			
+			Eigen::Vector3f meanNormal() const;
+			void extend(ObjectVolume &vol) const;
+			std::vector<ObjectVolume> get_cartons(const ObjectVolume &volume) const;
 			
 		public:
 			Classifier_Carton(const int id, const Eigen::Affine3f &pose, const Eigen::Vector3f &sizes, const std::vector<double> &widths, const double bandwith_orientation=0.2) :

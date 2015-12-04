@@ -115,8 +115,10 @@ Plane::Plane(const ContextPtr &ctxt, const cob_3d_mapping_msgs::Plane &inp) :
 	std::vector<Plane_Polygon> rs_tmp;
 	boost::geometry::dissolve(Plane_Polygon(inp.polygons, Eigen::Vector3f(inp.color.r,inp.color.g,inp.color.b) ), rs_tmp);
 	for(size_t i=0; i<rs_tmp.size(); i++)
-		polygons_.push_back(Plane_Polygon::Ptr(new Plane_Polygon(rs_tmp[i])));
+		if(boost::geometry::is_valid(rs_tmp[i]))
+			polygons_.push_back(Plane_Polygon::Ptr(new Plane_Polygon(rs_tmp[i])));
 	
+	simplify_by_area(0.01*0.01);
 	buildBB();
 	
 #ifdef DEBUG_
@@ -621,7 +623,7 @@ bool Plane::merge(const Object &o, const double relation) {
 		
 		buildBB();
 		
-		return simplify_by_area(0.02*0.02);
+		return simplify_by_area(0.01*0.01);
 	}
 	
 	return true;

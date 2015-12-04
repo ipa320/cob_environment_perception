@@ -163,6 +163,10 @@ public:
 	virtual bool in_front_of(const ObjectVolume &o) const {
 		return (cast(pose_).inverse()*cast(o.pose_)*o.bb_.center())(2)>=-(pose_.loc_h_+o.pose_.loc_h_);
 	}
+	
+	inline Eigen::Vector3f local2global(const Eigen::Vector3f &pt3_local) const {
+		return cast(pose_)*pt3_local;
+	}
 };
 
 class Projector_Volume : public Projector {
@@ -174,41 +178,41 @@ private:
 	ESide side_;
 	
 	nuklei::kernel::se3 _pose() const {
-		nuklei::kernel::se3 pose = vol_->pose();
-		nuklei_wmf::Quaternion<double> q;
+		nuklei::kernel::se3 T;
 		
 		switch(side_) {
 			case FRONT:
-				pose.loc_ -= cast(cast(pose)*vol_->bb_in_pose().min());
+				T.ori_ = nuklei_wmf::Quaternion<double>::IDENTITY;
+				T.loc_ = cast(vol_->bb_in_pose().min());
 			break;
 			case BACK:
-				pose.loc_ -= cast(cast(pose)*vol_->bb_in_pose().max());
+				T.ori_ = nuklei_wmf::Quaternion<double>::IDENTITY;
+				T.loc_ = cast(vol_->bb_in_pose().max());
 			break;
 			
 			case LEFT:
-				pose.loc_ -= cast(cast(pose)*vol_->bb_in_pose().min());
-				q.FromAxisAngle(nuklei_wmf::Vector3<double>::UNIT_Y, M_PI_2);
-				pose.ori_ = q*pose.ori_;
+				T.ori_.FromAxisAngle(nuklei_wmf::Vector3<double>::UNIT_Y, M_PI_2);
+				T.loc_ = cast(vol_->bb_in_pose().min());
 			break;
 			case RIGHT:
-				pose.loc_ -= cast(cast(pose)*vol_->bb_in_pose().max());
-				q.FromAxisAngle(nuklei_wmf::Vector3<double>::UNIT_Y, M_PI_2);
-				pose.ori_ = q*pose.ori_;
+				T.ori_.FromAxisAngle(nuklei_wmf::Vector3<double>::UNIT_Y, M_PI_2);
+				T.loc_ = cast(vol_->bb_in_pose().max());
 			break;
 			
-			case TOP:
-				pose.loc_ -= cast(cast(pose)*vol_->bb_in_pose().min());
-				q.FromAxisAngle(nuklei_wmf::Vector3<double>::UNIT_X, M_PI_2);
-				pose.ori_ = q*pose.ori_;
-			break;
 			case BOTTOM:
-				pose.loc_ -= cast(cast(pose)*vol_->bb_in_pose().max());
-				q.FromAxisAngle(nuklei_wmf::Vector3<double>::UNIT_X, M_PI_2);
-				pose.ori_ = q*pose.ori_;
+				T.ori_.FromAxisAngle(nuklei_wmf::Vector3<double>::UNIT_X, -M_PI_2);
+				T.loc_ = cast(vol_->bb_in_pose().min());
+			break;
+			case TOP:
+				T.ori_.FromAxisAngle(nuklei_wmf::Vector3<double>::UNIT_X, -M_PI_2);
+				T.loc_ = cast(vol_->bb_in_pose().max());
 			break;
 		}
 		
-		return pose;
+		T.ori_ = vol_->pose().ori_*T.ori_;
+		T.loc_ = nuklei::la::transform(vol_->pose().loc_, vol_->pose().ori_, T.loc_);
+		
+		return T;
 	}
 	
 public:

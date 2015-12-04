@@ -15,7 +15,7 @@ public:
 #ifdef DEBUG_
 		std::cout<<"pt in plane "<<cast(pt_in_plane.loc_).transpose()<<" +- "<<pt.loc_h_<<"+"<<plane_.bb_in_pose().exteriorDistance(cast(pt_in_plane.loc_))<<std::endl;
 #endif
-		if(plane_.bb_in_pose().exteriorDistance(cast(pt_in_plane.loc_)) <= pt.loc_h_) {
+		if(plane_.bb_in_pose().exteriorDistance(cast(pt_in_plane.loc_)) <= 2*pt.loc_h_) {
 			//inside?
 			return true;//plane_.polygon_distance(Plane_Point(pt_in_plane.loc_.X(), pt_in_plane.loc_.Y())) <= pt.loc_h_;
 		}
