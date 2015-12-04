@@ -1,7 +1,0 @@
-<library path="lib/libcob_table_object_cluster">
-  <class name="cob_table_object_cluster/TableRegionCropNodelet" type="cob_table_object_cluster::TableRegionCropNodelet" base_class_type="nodelet::Nodelet">
-    <description>
-      Nodelet for cropping a region above a table
-    </description>
-  </class>
-</library>

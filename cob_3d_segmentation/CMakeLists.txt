@@ -134,6 +134,8 @@ add_executable(qppf_node ros/src/qppf_node.cpp)
 add_dependencies(qppf_node ${${PROJECT_NAME}_EXPORTED_TARGETS})
 add_executable(qppf_node1 ros/src/qppf_node.cpp)
 add_dependencies(qppf_node1 ${${PROJECT_NAME}_EXPORTED_TARGETS})
+add_executable(qppf_node_ensenso ros/src/qppf_node.cpp)
+add_dependencies(qppf_node_ensenso ${${PROJECT_NAME}_EXPORTED_TARGETS})
 add_executable(plane_extraction_action_client ros/src/plane_extraction_action_client.cpp)
 add_dependencies(plane_extraction_action_client ${${PROJECT_NAME}_EXPORTED_TARGETS})
 add_executable(test_depth_segmentation common/apps/test_depth_segmentation.cpp)
@@ -150,6 +152,7 @@ add_executable(tutorial_fast_segmentation common/apps/tutorial_fast_segmentation
 #add_executable(evaluate_plane_segmentation common/apps/evaluate_plane_segmentation.cpp)
 
 set_target_properties(qppf_node1 PROPERTIES COMPILE_DEFINITIONS "ONLY_PLANES_DEPTH")
+set_target_properties(qppf_node_ensenso PROPERTIES COMPILE_DEFINITIONS "CAMERA_ENSENSO")
 
 target_link_libraries(cob_3d_segmentation
   ${catkin_LIBRARIES}
@@ -173,6 +176,10 @@ target_link_libraries(qppf_node
 )
 
 target_link_libraries(qppf_node1
+  ${catkin_LIBRARIES}
+)
+
+target_link_libraries(qppf_node_ensenso
   ${catkin_LIBRARIES}
 )
 

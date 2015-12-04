@@ -254,7 +254,7 @@ namespace cob_3d_mapping
      * \param[out] tri_list The list of polygons.
      */
     void
-    triangulate (list<TPPLPoly>& tri_list) const;
+    triangulate (std::list<TPPLPoly>& tri_list) const;
 
     //############## debugging methods ####################
     /**
