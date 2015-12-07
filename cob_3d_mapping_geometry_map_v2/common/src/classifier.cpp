@@ -233,6 +233,7 @@ Class::Ptr Classifier_Carton::classifiy_side(Plane *plane, ContextPtr ctxt, cons
 	rect->boundary().push_back(new Plane_Point(Tb));
 	rect->boundary().push_back(new Plane_Point(Bb));
 	
+#ifdef DEBUG_
 	std::cout<<cmpY.dir_.transpose()<<std::endl;
 	std::cout<<"bot back  "<<Bb.transpose()<<std::endl;
 	std::cout<<"bot front "<<Bf.transpose()<<std::endl;
@@ -246,7 +247,8 @@ Class::Ptr Classifier_Carton::classifiy_side(Plane *plane, ContextPtr ctxt, cons
 	
 	for(int i=0; i<8; i++)
 		std::cout<<"edge  "<<(cast(plane->pose())*plane->bb_in_pose().corner((ObjectVolume::TBB::CornerType)i)).transpose()<<std::endl;
-	
+#endif
+
 	Plane rect_obj(ctxt, rect, plane->pose());	
 	
 	static int n=0;
@@ -256,7 +258,9 @@ Class::Ptr Classifier_Carton::classifiy_side(Plane *plane, ContextPtr ctxt, cons
 	//3.6 union
 	rect_obj.merge(*plane, 0);
 	
+#ifdef DEBUG_
 	rect_obj.save_as_svg("/tmp/rect"+boost::lexical_cast<std::string>(n)+"_2.svg");
+#endif
 
 	//3.7 model fitting
 	double score_coverage, score_matching;
@@ -265,7 +269,9 @@ Class::Ptr Classifier_Carton::classifiy_side(Plane *plane, ContextPtr ctxt, cons
 	if(score_coverage<min_coverage_seeing_)
 		return Class::Ptr();
 	
+#ifdef DEBUG_
 	std::cout<<"SIDEarea "<<plane->bb_in_pose().sizes()(2)*plane->bb_in_pose().sizes()(1)<<std::endl;
+#endif
 	
 	//3.8 move by width
 	double last_w=0;
@@ -390,17 +396,17 @@ std::vector<ObjectVolume> Classifier_Carton::get_cartons(const ObjectVolume &vol
 			Plane_Point::Ptr pts = *std::min_element(res[j]->boundary().begin(), res[j]->boundary().end(), cmpX);
 			if(cmpX(pts,Pleft3.head<2>()))
 				Pleft3(0) = std::max(pts->pos(0), volume.bb_in_pose().min()(0));
-	std::cout<<"Pleft  "<<pts->pos(0)<<" "<<Pleft3(0)<<std::endl;
 				
 			Plane_Point::Ptr ptr = *std::max_element(res[j]->boundary().begin(), res[j]->boundary().end(), cmpX);
 			if(!cmpX(ptr,Pright3.head<2>()))
 				Pright3(0) = std::min(ptr->pos(0), volume.bb_in_pose().max()(0));
-	std::cout<<"Pright "<<ptr->pos(0)<<" "<<Pright3(0)<<std::endl;
 		}
 	}
 		
+#ifdef DEBUG_
 	std::cout<<"Pleft3 "<<Pleft3.transpose()<<std::endl;
 	std::cout<<"Pright3 "<<Pright3.transpose()<<std::endl;
+#endif
 		
 	ObjectVolume r = volume;
 	
