@@ -15,7 +15,7 @@
 
 #include <cob_object_detection_msgs/DetectionArray.h>
 
-#include <cob_srvs/Trigger.h>
+#include <std_srvs/Trigger.h>
 
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_eigen.h>
@@ -282,8 +282,8 @@ public:
 	* @return nothing
 	*/
 	bool
-	reset(cob_srvs::Trigger::Request &req,
-		cob_srvs::Trigger::Response &res)
+	reset(std_srvs::Trigger::Request &req,
+		std_srvs::Trigger::Response &res)
 	{
 		//TODO: add mutex
 		ROS_INFO("Resetting...");
