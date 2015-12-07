@@ -99,7 +99,6 @@ void Context::add_scene(const Context::Ptr &this_ctxt, const cob_3d_mapping_msgs
 
 namespace Eigen {
      namespace internal {
-         Eigen::AlignedBox<float,3> bounding_box(const Context::BVH_Volume::Object &bb) { return bb.pos_; }
          Eigen::AlignedBox<float,3> bounding_box(const Context::BVH_Point::Object &v) { return Eigen::AlignedBox<float,3>(v.pos_); }
      }
 }

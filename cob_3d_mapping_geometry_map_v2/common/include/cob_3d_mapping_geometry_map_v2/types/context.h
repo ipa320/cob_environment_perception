@@ -3,6 +3,14 @@
 #include "object.h"
 #include "plane.h"
 #include "classifier.h"
+
+namespace Eigen {
+     namespace internal {
+		 template<class T>
+         Eigen::AlignedBox<float,3> bounding_box(const T &bb) { return bb.pos_; }
+     }
+}
+
 #include <unsupported/Eigen/BVH>
 #include <cob_3d_mapping_msgs/PlaneScene.h>
 
