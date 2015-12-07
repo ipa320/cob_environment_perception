@@ -4,7 +4,7 @@ project(cob_3d_experience_mapping)
 set(catkin_RUN_PACKAGES 
   roscpp
   rospy
-  lemon
+  liblemon
   cob_3d_visualization
   pcl_ros
   cob_3d_mapping_common

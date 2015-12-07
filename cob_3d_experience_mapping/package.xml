@@ -42,7 +42,7 @@
   <buildtool_depend>catkin</buildtool_depend>
 
   <depend>cmake_modules</depend>
-  <depend>lemon</depend>
+  <depend>liblemon</depend>
   <depend>roscpp</depend>
   <depend>rospy</depend>
   <depend>cob_3d_visualization</depend>

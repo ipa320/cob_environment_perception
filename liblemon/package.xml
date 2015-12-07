@@ -1,6 +1,6 @@
 <?xml version="1.0"?>
 <package>
-  <name>lemon</name>
+  <name>liblemon</name>
   <version>0.0.0</version>
   <description>The lemon package</description>
 
