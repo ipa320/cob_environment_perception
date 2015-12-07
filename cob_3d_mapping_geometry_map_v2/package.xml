@@ -22,6 +22,7 @@
   <depend>cob_3d_visualization</depend>
   <depend>dynamic_reconfigure</depend>
   <depend>eigen_conversions</depend>
+  <depend>libnuklei</depend>
   <depend>libpcl-all</depend>
   <depend>pcl_ros</depend>
   <depend>rosbag</depend>
@@ -29,4 +30,3 @@
   <depend>tf_conversions</depend>
   
 </package>
-
