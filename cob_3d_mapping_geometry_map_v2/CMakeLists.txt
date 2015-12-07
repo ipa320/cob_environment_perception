@@ -1,10 +1,10 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(cob_3d_mapping_geometry_map_v2)
 
-find_package(Boost 1.59.0)
-if(Boost_FOUND)
+#find_package(Boost 1.59.0)
+#if(Boost_FOUND)
   include_directories(libs/boost_1_59)
-endif() 
+#endif() 
 
 set(catkin_RUN_PACKAGES 
   cob_3d_mapping_common
