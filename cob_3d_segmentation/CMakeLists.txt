@@ -242,5 +242,5 @@ target_link_libraries(tutorial_fast_segmentation
 set_target_properties(cob_3d_segmentation PROPERTIES COMPILE_FLAGS "-D__LINUX__ -DCOMPILE_NODELET")
 #set_target_properties(test_segmentation ${SSE_FLAGS})
 
-
+set(CMAKE_BUILD_TYPE Release)
 

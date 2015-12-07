@@ -8,6 +8,7 @@ find_package(catkin REQUIRED COMPONENTS
   geometry_msgs
   sensor_msgs
   std_msgs
+  actionlib
   actionlib_msgs
   cob_object_detection_msgs
   message_generation
@@ -92,6 +93,7 @@ catkin_package(
     geometry_msgs
     sensor_msgs
     std_msgs
+    actionlib
     actionlib_msgs
     cob_object_detection_msgs
     message_runtime

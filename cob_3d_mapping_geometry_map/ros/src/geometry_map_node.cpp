@@ -176,7 +176,7 @@ GeometryMapNode::shapeCallback(const cob_3d_mapping_msgs::ShapeArray::ConstPtr& 
 }
 
 bool
-GeometryMapNode::clearMap(cob_srvs::Trigger::Request &req, cob_srvs::Trigger::Response &res)
+GeometryMapNode::clearMap(std_srvs::Trigger::Request &req, std_srvs::Trigger::Response &res)
 {
   ROS_INFO("Clearing geometry map...");
   geometry_map_.clearMap();

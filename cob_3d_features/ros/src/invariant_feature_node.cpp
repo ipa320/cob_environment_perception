@@ -88,6 +88,7 @@ int g_num_computations;
 //#include <cob_3d_segmentation/quad_regression/quad_regression.h>
 #include "../../../cob_3d_segmentation/common/include/cob_3d_segmentation/quad_regression/polygon.h"
 #include <cob_3d_mapping_common/ros_msg_conversions.h>
+#include <cob_3d_mapping_common/point_types.h>
 
 #include <cob_3d_mapping_common/stop_watch.h>
 #include <cob_3d_visualization/simple_marker.h>

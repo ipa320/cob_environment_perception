@@ -4,7 +4,7 @@ project(cob_3d_registration)
 set(catkin_RUN_PACKAGES 
   cob_3d_features
   cob_3d_mapping_common
-  cob_srvs
+  std_srvs
   cv_bridge
   nav_msgs
   nodelet

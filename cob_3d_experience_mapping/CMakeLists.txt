@@ -1,17 +1,18 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(cob_3d_experience_mapping)
 
-## Find catkin macros and libraries
-## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
-## is used, also find other catkin packages
-find_package(catkin REQUIRED COMPONENTS
+set(catkin_RUN_PACKAGES 
   roscpp
   rospy
   lemon
   cob_3d_visualization
   pcl_ros
   cob_3d_mapping_common
-  cmake_modules
+)
+
+set(catkin_BUILD_PACKAGES 
+	${catkin_RUN_PACKAGES}
+	cmake_modules
 )
 
 find_package(Eigen REQUIRED)
@@ -95,7 +96,8 @@ generate_dynamic_reconfigure_options(
 catkin_package(
 #  INCLUDE_DIRS include
 #  LIBRARIES cob_3d_experience_mapping
-  CATKIN_DEPENDS lemon roscpp rospy cob_3d_visualization pcl_ros cob_3d_mapping_common
+  CATKIN_DEPENDS
+	${catkin_RUN_PACKAGES}
 #  DEPENDS system_lib
 )
 

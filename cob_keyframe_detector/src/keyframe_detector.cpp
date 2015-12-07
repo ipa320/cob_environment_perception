@@ -73,7 +73,7 @@
 
 // ROS message includes
 #include <sensor_msgs/CameraInfo.h>
-#include <cob_srvs/Trigger.h>
+#include <std_srvs/Trigger.h>
 
 #include <dynamic_reconfigure/server.h>
 #include <cob_keyframe_detector/keyframe_detectorConfig.h>
@@ -94,7 +94,7 @@ public:
     config_server_.setCallback(boost::bind(&KeyframeDetector::dynReconfCallback, this, _1, _2));
     camera_info_sub_ = n_.subscribe("camera_info", 1, &KeyframeDetector::cameraInfoSubCallback, this);
     transform_sub_ = n_.subscribe("/tf", 1, &KeyframeDetector::transformSubCallback, this);
-    keyframe_trigger_client_ = n_.serviceClient<cob_srvs::Trigger>("trigger_keyframe");
+    keyframe_trigger_client_ = n_.serviceClient<std_srvs::Trigger>("trigger_keyframe");
   }
 
 
@@ -156,18 +156,18 @@ public:
   }
 
   bool triggerKeyFrame() {
-    cob_srvs::Trigger::Request req;
-    cob_srvs::Trigger::Response res;
+    std_srvs::Trigger::Request req;
+    std_srvs::Trigger::Response res;
     if(keyframe_trigger_client_.call(req,res))
     {
       ROS_DEBUG("KeyFrame service called [OK].");
     }
     else
     {
-      ROS_WARN("KeyFrame service called [FAILED].", res.success.data);
+      ROS_WARN("KeyFrame service called [FAILED].", res.success);
       return false;
     }
-    return res.success.data;
+    return res.success;
   }
 
 
