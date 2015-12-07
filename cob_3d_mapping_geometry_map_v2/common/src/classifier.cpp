@@ -257,15 +257,12 @@ Class::Ptr Classifier_Carton::classifiy_side(Plane *plane, ContextPtr ctxt, cons
 	rect_obj.merge(*plane, 0);
 	
 	rect_obj.save_as_svg("/tmp/rect"+boost::lexical_cast<std::string>(n)+"_2.svg");
-	
-	const double min_coverage1_ = 0.8;
-	const double min_coverage2_ = 0.8;
 
 	//3.7 model fitting
 	double score_coverage, score_matching;
 	ctxt->fitModel(rect_obj, score_coverage, score_matching);
 	std::cout<<"SIDE "<<score_coverage<<" "<<score_matching<<std::endl;
-	if(score_coverage<min_coverage1_)
+	if(score_coverage<min_coverage_seeing_)
 		return Class::Ptr();
 	
 	std::cout<<"SIDEarea "<<plane->bb_in_pose().sizes()(2)*plane->bb_in_pose().sizes()(1)<<std::endl;
@@ -282,7 +279,7 @@ Class::Ptr Classifier_Carton::classifiy_side(Plane *plane, ContextPtr ctxt, cons
 		
 		ctxt->fitModel(rect_obj, score_coverage, score_matching);
 		std::cout<<"SIDE2 "<<score_coverage<<" "<<score_matching<<std::endl;
-		if(score_coverage>=min_coverage2_) {
+		if(score_coverage>=min_coverage_expecting_) {
 			classified_planes_.push_back(Classification(plane, widths_[i]));
 			return Class::Ptr(new Class_Simple(this));
 		}

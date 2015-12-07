@@ -107,6 +107,8 @@ public:
 			
 			//parameters
 			const int id_;
+			double min_coverage_seeing_;
+			double min_coverage_expecting_;
 			ObjectVolume interest_volume_;
 			std::vector<double> widths_;
 			Classifier_Carton *classifier_front_;
@@ -150,8 +152,8 @@ public:
 			std::vector<ObjectVolume> get_cartons(const ObjectVolume &volume) const;
 			
 		public:
-			Classifier_Carton(const int id, const Eigen::Affine3f &pose, const Eigen::Vector3f &sizes, const std::vector<double> &widths, const double bandwith_orientation=0.2) :
-				id_(CLASSIFIER_CARTON_FRONT - id*1000), interest_volume_(ContextPtr()), widths_(widths), classifier_front_(NULL)
+			Classifier_Carton(const int id, const Eigen::Affine3f &pose, const Eigen::Vector3f &sizes, const std::vector<double> &widths, const double min_coverage_seeing, const double min_coverage_expecting, const double bandwith_orientation=0.2) :
+				id_(CLASSIFIER_CARTON_FRONT - id*1000), min_coverage_seeing_(min_coverage_seeing), min_coverage_expecting_(min_coverage_expecting), interest_volume_(ContextPtr()), widths_(widths), classifier_front_(NULL)
 			{
 				interest_volume_.pose() = cast(pose);
 				interest_volume_.pose().ori_h_ = bandwith_orientation;
@@ -169,7 +171,7 @@ public:
 			}
 			
 			Classifier_Carton(Classifier_Carton *cl_front) : 
-				id_(cl_front->id_+1), interest_volume_(cl_front->interest_volume_), widths_(cl_front->widths_), classifier_front_(cl_front)
+				id_(cl_front->id_+1), min_coverage_seeing_(cl_front->min_coverage_seeing_), min_coverage_expecting_(cl_front->min_coverage_expecting_), interest_volume_(cl_front->interest_volume_), widths_(cl_front->widths_), classifier_front_(cl_front)
 			{
 			}
 			

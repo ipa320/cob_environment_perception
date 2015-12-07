@@ -184,16 +184,27 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 	tf::TransformListener tf_listener_;
 	
 	void init_context() {
+		ros::NodeHandle pn("~");
+		
 		ctxt_.reset(new cob_3d_geometry_map::GlobalContext);
 		//register default classifiers
+		double floor_height=0;
 		
-		Eigen::Vector3f floor_offset(0,0,0);
+		pn.param<double>("floor_height", floor_height, floor_height);
+		
+		Eigen::Vector3f floor_offset(0,floor_height,0);
 		Eigen::Vector3f floor_orientation = Eigen::Vector3f::UnitY();
 		
 		ctxt_->registerClassifier(classifier_floor_ = new cob_3d_geometry_map::DefaultClassifier::Classifier_Floor(floor_orientation, floor_offset, 0.1f, 0.1f, 128));
 		
 		double carton_tolerance_left_right = 0.05;
 		double carton_tolerance_top = 0.03;
+		
+		double min_coverage_seeing=0.8, min_coverage_expecting=0.8, bandwith_orientation=0.2;
+		
+		pn.param<double>("carton_min_coverage_seeing", min_coverage_seeing, min_coverage_seeing);
+		pn.param<double>("carton_min_coverage_expecting", min_coverage_expecting, min_coverage_expecting);
+		pn.param<double>("carton_bandwith_orientation", bandwith_orientation, bandwith_orientation);
 		
 		XmlRpc::XmlRpcValue cartonList;
 		if (nh_.getParam("/item_list", cartonList))
@@ -216,7 +227,7 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 			widths.push_back(carton.dim_(0));
 			
 			cob_3d_geometry_map::CustomClassifier::Classifier_Carton *carton_front, *carton_side;
-			ctxt_->registerClassifier( carton_front=new cob_3d_geometry_map::CustomClassifier::Classifier_Carton(carton.id_, Eigen::AngleAxisf(0,carton_orientation)*Eigen::Translation3f(carton_offset), carton_size, widths) );
+			ctxt_->registerClassifier( carton_front=new cob_3d_geometry_map::CustomClassifier::Classifier_Carton(carton.id_, Eigen::AngleAxisf(0,carton_orientation)*Eigen::Translation3f(carton_offset), carton_size, widths, min_coverage_seeing, min_coverage_expecting, bandwith_orientation));
 			ctxt_->registerClassifier( carton_side=new cob_3d_geometry_map::CustomClassifier::Classifier_Carton(carton_front) );
 			classifier_cartons_.push_back(carton_side);
 			
