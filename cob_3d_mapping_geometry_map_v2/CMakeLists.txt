@@ -90,7 +90,9 @@ add_dependencies(geometry_map2_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin
 target_link_libraries(geometry_map2_node
   ${catkin_LIBRARIES} nuklei CGAL
 )
-set_target_properties(geometry_map2_node PROPERTIES COMPILE_DEFINITIONS "DEBUG_")
+if (CMAKE_BUILD_TYPE STREQUAL "Debug")
+	set_target_properties(geometry_map2_node PROPERTIES COMPILE_DEFINITIONS "DEBUG_")
+endif()
 
 catkin_add_gtest(utest ros/src/test.cpp common/src/object.cpp common/src/vis_obj.cpp)
 target_link_libraries(utest
