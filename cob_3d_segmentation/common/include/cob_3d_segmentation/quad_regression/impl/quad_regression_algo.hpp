@@ -691,8 +691,7 @@ void QuadRegression<Degree, Point, CameraModel>::grow(SubStructure::VISITED_LIST
     replaceOccupied(i,x-1,y+1,mark);
     replaceOccupied(i,x+1,y+1,mark);   
   }
-	
-  }
+
   for(int j=0; j<list_lower.size; j++)
     levels_[i-1].data[list_lower.vals[j].v].occopied = -1;
 	
