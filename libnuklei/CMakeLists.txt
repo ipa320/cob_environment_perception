@@ -6,6 +6,8 @@ project(libnuklei)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
 )
+find_package(LAPACK REQUIRED)
+#find_package(GSL REQUIRED)
 
 message(STATUS "Project source dir: ${PROJECT_SOURCE_DIR}")
 add_custom_target(
