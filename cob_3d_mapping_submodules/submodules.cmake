@@ -1,4 +1,8 @@
-if(EXISTS "${PROJECT_SOURCE_DIR}/.gitmodules")
+
+message(STATUS "submodules: ${PROJECT_SOURCE_DIR}/../.gitmodules")
+
+
+if(EXISTS "${PROJECT_SOURCE_DIR}/../.gitmodules")
 message(STATUS "Updating submodules to their latest/fixed versions")
 message(STATUS "(this can take a while, please be patient)")
 
@@ -18,14 +22,14 @@ set(GIT_SUBMODULE_VERSION_make_unique   1.0.0)
 if(${GIT_SUBMODULES_CHECKOUT_QUIET})
     execute_process(
         COMMAND             git submodule update --init --recursive
-        WORKING_DIRECTORY   ${PROJECT_SOURCE_DIR}
+        WORKING_DIRECTORY   ${PROJECT_SOURCE_DIR}/..
         OUTPUT_QUIET
         ERROR_QUIET
     )
 else()
     execute_process(
         COMMAND             git submodule update --init --recursive
-        WORKING_DIRECTORY   ${PROJECT_SOURCE_DIR}
+        WORKING_DIRECTORY   ${PROJECT_SOURCE_DIR}/..
     )
 endif()
 
@@ -42,7 +46,7 @@ foreach(GIT_SUBMODULE ${GIT_SUBMODULES})
     if(${GIT_SUBMODULES_CHECKOUT_QUIET})
         execute_process(
             COMMAND             git checkout ${GIT_SUBMODULE_VERSION_${GIT_SUBMODULE}}
-            WORKING_DIRECTORY   ${PROJECT_SOURCE_DIR}/${GIT_SUBMODULES_DIRECTORY}/${GIT_SUBMODULE}
+            WORKING_DIRECTORY   ${PROJECT_SOURCE_DIR}/../${GIT_SUBMODULES_DIRECTORY}/${GIT_SUBMODULE}
             OUTPUT_QUIET
             ERROR_QUIET
         )
@@ -50,7 +54,7 @@ foreach(GIT_SUBMODULE ${GIT_SUBMODULES})
         message(STATUS "checking out ${GIT_SUBMODULE}'s commit/tag ${GIT_SUBMODULE_VERSION_${GIT_SUBMODULE}}")
         execute_process(
             COMMAND             git checkout ${GIT_SUBMODULE_VERSION_${GIT_SUBMODULE}}
-            WORKING_DIRECTORY   ${PROJECT_SOURCE_DIR}/${GIT_SUBMODULES_DIRECTORY}/${GIT_SUBMODULE}
+            WORKING_DIRECTORY   ${PROJECT_SOURCE_DIR}/../${GIT_SUBMODULES_DIRECTORY}/${GIT_SUBMODULE}
         )
     endif()
 
