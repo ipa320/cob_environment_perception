@@ -15,7 +15,11 @@
 
 #include <cob_object_detection_msgs/DetectionArray.h>
 
+#if ROS_VERSION_MINIMUM(1, 11, 0)
 #include <std_srvs/Trigger.h>
+#else
+#include <cob_srvs/Trigger.h>
+#endif
 
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_eigen.h>
@@ -282,8 +286,13 @@ public:
 	* @return nothing
 	*/
 	bool
+#if ROS_VERSION_MINIMUM(1, 11, 0)
 	reset(std_srvs::Trigger::Request &req,
 		std_srvs::Trigger::Response &res)
+#else
+	reset(cob_srvs::Trigger::Request &req,
+		cob_srvs::Trigger::Response &res)
+#endif
 	{
 		//TODO: add mutex
 		ROS_INFO("Resetting...");
