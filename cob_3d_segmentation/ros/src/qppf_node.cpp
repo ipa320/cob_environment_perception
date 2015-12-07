@@ -230,6 +230,12 @@ public:
     seg_.compute();
     seg_.extractImages();
 
+#ifdef STOP_TIME
+	double quadtree, growing, extraction;
+    seg_.getExecutionTimes(quadtree, growing, extraction);
+    ROS_INFO("took %f %f %f", quadtree, growing, extraction);
+#endif
+
     if(goal_)
     {
       cob_3d_segmentation::ObjectWatchFeedback feedback;
