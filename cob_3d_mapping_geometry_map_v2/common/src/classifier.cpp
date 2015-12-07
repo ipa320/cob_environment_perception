@@ -190,7 +190,6 @@ Class::Ptr Classifier_Carton::classifiy_side(Plane *plane, ContextPtr ctxt, cons
 	//3. generate model
 	Projector_Plane projector(plane);
 	Projector_Volume projector_bottom(&interest_volume_, Projector_Volume::BOTTOM);
-	//Projector_Volume projector_top(&interest_volume_, Projector_Volume::TOP);
 	Vector2 Tf(0,0), Bf, Tb, Bb; //top point of front
 	bool any=false;
 	
@@ -219,6 +218,9 @@ Class::Ptr Classifier_Carton::classifiy_side(Plane *plane, ContextPtr ctxt, cons
 			Tb = pt->pos;
 		any=true;
 	}
+	//move point to edge of expected carton by adding depth (equals projection to back)
+	Projector_Volume projector_top(&interest_volume_, Projector_Volume::BACK);
+	Tb = projector( projector_bottom(projector_bottom( projector(Tb) )) );
 	
 	//3.4 find bottom point of "back" by projecting top point of "back" to ground
 	Bb = projector( projector_bottom(projector_bottom( projector(Tb) )) );
