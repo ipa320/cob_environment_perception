@@ -311,8 +311,12 @@ void Classifier_Carton::extend(ObjectVolume &vol) const {
 }
 
 std::vector<ObjectVolume> Classifier_Carton::get_cartons() const {
-	if(classifier_front_ && classified_planes_.size()>0) {
-		Eigen::Vector3f n_side = meanNormal();
+	if(classifier_front_ && classifier_front_->classified_planes_.size()>0) {
+		Eigen::Vector3f n_side;
+		if(classified_planes_.size()>0)
+			n_side = meanNormal();
+		else
+			n_side = cast(interest_volume_.pose()).matrix().col(1).head<3>();
 		Eigen::Vector3f n_front= classifier_front_->meanNormal();
 		ObjectVolume vol = interest_volume_;
 		Eigen::Matrix3f M;
@@ -322,8 +326,10 @@ std::vector<ObjectVolume> Classifier_Carton::get_cartons() const {
 		
 		vol.pose().ori_ = cast(Eigen::Quaternionf(M));
 		
-		vol._bb().setEmpty();
-		extend(vol);
+		if(classified_planes_.size()>0) {
+			vol._bb().setEmpty();
+			extend(vol);
+		}
 		classifier_front_->extend(vol);
 		
 		return get_cartons(vol);
