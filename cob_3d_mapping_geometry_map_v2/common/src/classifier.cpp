@@ -219,8 +219,8 @@ Class::Ptr Classifier_Carton::classifiy_side(Plane *plane, ContextPtr ctxt, cons
 		any=true;
 	}
 	//move point to edge of expected carton by adding depth (equals projection to back)
-	Projector_Volume projector_top(&interest_volume_, Projector_Volume::BACK);
-	Tb = projector( projector_bottom(projector_bottom( projector(Tb) )) );
+	Projector_Volume projector_back(&interest_volume_, Projector_Volume::BACK);
+	Tb = projector( projector_back(projector_back( projector(Tb) )) );
 	
 	//3.4 find bottom point of "back" by projecting top point of "back" to ground
 	Bb = projector( projector_bottom(projector_bottom( projector(Tb) )) );
@@ -316,7 +316,7 @@ std::vector<ObjectVolume> Classifier_Carton::get_cartons() const {
 		if(classified_planes_.size()>0)
 			n_side = meanNormal();
 		else
-			n_side = cast(interest_volume_.pose()).matrix().col(1).head<3>();
+			n_side = cast(interest_volume_.pose()).matrix().col(0).head<3>();
 		Eigen::Vector3f n_front= classifier_front_->meanNormal();
 		ObjectVolume vol = interest_volume_;
 		Eigen::Matrix3f M;
@@ -357,21 +357,28 @@ std::vector<ObjectVolume> Classifier_Carton::get_cartons(const ObjectVolume &vol
 		}
 			
 		std::sort(offsets.begin(), offsets.end());
+		
+#ifdef DEBUG_
 		for(size_t i=0; i<offsets.size(); i++)
 			std::cout<<"offset "<<offsets[i]<<std::endl;
+		for(size_t i=0; i<widths_.size(); i++)
+			std::cout<<"widths_ "<<widths_[i]<<std::endl;
+#endif
 		
 		std::vector<ObjectVolume> r2;
-		double min_width = (widths_.size()>0?widths_[0]:0)+0.01; //+toleracne=1cm
+		double min_width = std::abs((widths_.size()>0?widths_[0]:0))-0.02; //+toleracne=2cm
 		size_t i=0;
 		while(i<offsets.size()) {
 			//clustering
 			size_t n=i+1;
-			while(n<offsets.size() && offsets[i]+min_width<offsets[n]) {
+			while(n<offsets.size() && offsets[i]+min_width>offsets[n]) {
 				++n;
 			}
 			if(n>=offsets.size()) break;
 			
+#ifdef DEBUG_
 			std::cout<<"offset n "<<n<<std::endl;
+#endif
 			for(size_t j=0; j<r.size(); j++) {
 				r2.push_back(r[j]);
 				r2.back()._bb().min()(0) = offsets[i];
