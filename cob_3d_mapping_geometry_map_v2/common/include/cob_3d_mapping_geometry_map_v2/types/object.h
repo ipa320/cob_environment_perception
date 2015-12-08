@@ -5,6 +5,7 @@
 #include <Eigen/Geometry>
 #include <vector>
 #include <map>
+#pragma GCC diagnostic ignored "-Wdeprecated-declarations"
 #include <nuklei/Kernel.h>
 #include <nuklei/LinearAlgebra.h>
 
