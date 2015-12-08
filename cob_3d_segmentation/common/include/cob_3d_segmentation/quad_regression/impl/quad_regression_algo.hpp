@@ -519,9 +519,15 @@ void QuadRegression<Degree, Point, CameraModel>::grow(SubStructure::VISITED_LIST
               //+3sigma*(standard deviation at max./min.)
 
               (levels_[i].data[getInd(i, x,y)].v_max_-levels_[i].data[getInd(i, x,y)].v_min_) <
+#ifndef CAMERA_ENSENSO
               (std::min(model.get_max_gradient(levels_[i].data[getInd(i, x,y)]), 2.f)*d*(1<<i)/camera_.f
                   +2*(camera_.std(levels_[i].data[getInd(i, x,y)].v_max_)
-                      +camera_.std(levels_[i].data[getInd(i, x,y)].v_min_)) )
+                      +camera_.std(levels_[i].data[getInd(i, x,y)].v_min_))
+#else
+              (std::min(model.get_max_gradient(levels_[i].data[getInd(i, x,y)]), 2.f)*d/camera_.f
+                      +camera_.std(levels_[i].data[getInd(i, x,y)].v_min_)
+#endif
+                      )
 
 
                       //(levels_[i].data[getInd(i, x,y)].v_max_-levels_[i].data[getInd(i, x,y)].v_min_)< (model.get_max_gradient(levels_[i].data[getInd(i, x,y)])*d*(1<<i)/camera_.f+2*thr) /*std::min(0.5f,std::max(0.02f,0.05f*d))*/ //TODO: in anbhaengigkeit der steigung
