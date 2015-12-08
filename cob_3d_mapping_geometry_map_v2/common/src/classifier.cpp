@@ -265,9 +265,11 @@ Class::Ptr Classifier_Carton::classifiy_side(Plane *plane, ContextPtr ctxt, cons
 	//3.7 model fitting
 	double score_coverage, score_matching;
 	ctxt->fitModel(rect_obj, score_coverage, score_matching);
-	std::cout<<"SIDE "<<score_coverage<<" "<<score_matching<<std::endl;
+	std::cout<<"SIDE "<<n<<"  "<<score_coverage<<" "<<score_matching<<std::endl;
 	if(score_coverage<min_coverage_seeing_)
 		return Class::Ptr();
+	
+	//classified_planes_.push_back(Classification(new Plane(rect_obj), 0));
 	
 #ifdef DEBUG_
 	std::cout<<"SIDEarea "<<plane->bb_in_pose().sizes()(2)*plane->bb_in_pose().sizes()(1)<<std::endl;
