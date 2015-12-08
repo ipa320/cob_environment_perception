@@ -161,7 +161,7 @@ public:
 	}
 	
 	virtual bool in_front_of(const ObjectVolume &o) const {
-		return (cast(pose_).inverse()*cast(o.pose_)*o.bb_.center())(2)>=-(pose_.loc_h_+o.pose_.loc_h_);
+		return (o.bb_.center()-cast(o.pose_).inverse()*cast(pose_)*bb_.center())(2)>=-(pose_.loc_h_+o.pose_.loc_h_);
 	}
 	
 	inline Eigen::Vector3f local2global(const Eigen::Vector3f &pt3_local) const {
