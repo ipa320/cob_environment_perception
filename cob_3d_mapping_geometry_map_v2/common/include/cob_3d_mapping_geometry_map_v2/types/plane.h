@@ -3,6 +3,7 @@
 #include "image.h"
 
 //boost polygon, geometry
+#include <geometry_overlay/intersections_points.hpp>
 #include <boost/polygon/polygon.hpp>
 #include <boost/geometry.hpp>
 #include <boost/geometry/geometries/register/point.hpp>
