@@ -197,8 +197,8 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 		
 		ctxt_->registerClassifier(classifier_floor_ = new cob_3d_geometry_map::DefaultClassifier::Classifier_Floor(floor_orientation, floor_offset, 0.1f, 0.1f, 128));
 		
-		double carton_tolerance_left_right = 0.05;
-		double carton_tolerance_top = 0.03;
+		double carton_tolerance_left_right = 0.0;
+		double carton_tolerance_top = 0.0;
 		
 		double min_coverage_seeing=0.8, min_coverage_expecting=0.8, bandwith_orientation=0.2;
 		
