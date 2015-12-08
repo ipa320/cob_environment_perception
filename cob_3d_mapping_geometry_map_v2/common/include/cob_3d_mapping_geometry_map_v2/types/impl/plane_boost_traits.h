@@ -55,4 +55,24 @@ template<> struct interior_rings<cob_3d_geometry_map::Plane_Polygon>
     }
 };
 
+template<typename coordinate_type> struct intersection_interpolation<cob_3d_geometry_map::Plane_Point::Ptr, coordinate_type>
+{	
+	typedef cob_3d_geometry_map::Plane_Point::Ptr Point;
+	
+	static void interpolate(Point &point, const Point &p1, const Point &p2, const coordinate_type relation)
+	{
+		point->var = relation*p2->var + (1-relation)*p1->var;
+	}
+};
+
+template<typename coordinate_type> struct intersection_interpolation<cob_3d_geometry_map::Plane_Point, coordinate_type>
+{	
+	typedef cob_3d_geometry_map::Plane_Point Point;
+	
+	static void interpolate(Point &point, const Point &p1, const Point &p2, const coordinate_type relation)
+	{
+		point.var = relation*p2.var + (1-relation)*p1.var;
+	}
+};
+
 }}} // namespace boost::geometry::traits
