@@ -63,11 +63,6 @@
 #include <string>
 #include <Eigen/Geometry>
 
-//#include <pcl/pcl_base.h>
-//#include <pcl/point_types.h>
-//#include <pcl/PolygonMesh.h>
-//#include <pcl_conversions/pcl_conversions.h>
-
 /* 
  * EXAMPLE USAGE:
  * 
@@ -99,11 +94,11 @@ namespace cob_3d_visualization {
 		struct S_ACTIVE {
 			int id;
 			std::string ns;
-
+			
 			S_ACTIVE() {}
 			S_ACTIVE(const int id, const std::string &ns) : id(id), ns(ns) {}
 		};
-
+		
 		std::string ns_, frame_id_;
 		int id_;
 		std::list<S_ACTIVE> active_ids_;
@@ -134,7 +129,7 @@ namespace cob_3d_visualization {
 		void publish(const ros::Time &stamp=ros::Time()) {
 			for(size_t i=0; i<markers_.markers.size(); i++) {
 				markers_.markers[i].header.stamp = stamp;
-				active_ids_.push_back(S_ACTIVE(markers_.markers[i].id, markers_.markers[i].ns));
+				active_ids_.push_back(S_ACTIVE(markers_.markers[i].id, markers_.markers[i].ns)); 
 			}
 			vis_pub_.publish(markers_);
 			markers_.markers.clear();
@@ -163,7 +158,7 @@ namespace cob_3d_visualization {
 		}
 		
 		bool needed() const {return vis_pub_.getNumSubscribers()>0;}
-
+		
 		void clear(const ros::Time &stamp=ros::Time()) {
 			if(active_ids_.size()>0) {
 				ros::NodeHandle nh;
@@ -323,46 +318,46 @@ namespace cob_3d_visualization {
 				delta.y = marker_.points[0].y-marker_.points[1].y;
 				delta.z = marker_.points[0].z-marker_.points[1].z;
 				const float l = std::sqrt(delta.x*delta.x + delta.y*delta.y + delta.z*delta.z);
-
+				
 				scale = 0.1f*l;
 			}
-
+			
 			marker_.scale.y = marker_.scale.z = marker_.scale.x = scale;
 		}
-
+		
 		template<class Affine, class Box>
 		void box(const Affine &pose, const Box &bb, float scale=0) {
 			marker_.type = visualization_msgs::Marker::LINE_STRIP;
-
+			
 			marker_.points.clear();
-
+			
 			marker_.points.push_back(_2geometry(pose*bb.corner(Box::BottomLeftCeil)));
 			marker_.points.push_back(_2geometry(pose*bb.corner(Box::BottomLeftFloor)));
 			marker_.points.push_back(_2geometry(pose*bb.corner(Box::BottomRightFloor)));
 			marker_.points.push_back(_2geometry(pose*bb.corner(Box::BottomRightCeil)));
-
+			
 			marker_.points.push_back(_2geometry(pose*bb.corner(Box::TopRightCeil)));
 			marker_.points.push_back(_2geometry(pose*bb.corner(Box::TopRightFloor)));
 			marker_.points.push_back(_2geometry(pose*bb.corner(Box::TopLeftFloor)));
 			marker_.points.push_back(_2geometry(pose*bb.corner(Box::TopLeftCeil)));
-
+			
 			marker_.points.push_back(_2geometry(pose*bb.corner(Box::BottomLeftCeil)));
 			marker_.points.push_back(_2geometry(pose*bb.corner(Box::BottomRightCeil)));
 			marker_.points.push_back(_2geometry(pose*bb.corner(Box::BottomRightFloor)));
 			marker_.points.push_back(_2geometry(pose*bb.corner(Box::TopRightFloor)));
-
+			
 			marker_.points.push_back(_2geometry(pose*bb.corner(Box::TopRightCeil)));
 			marker_.points.push_back(_2geometry(pose*bb.corner(Box::TopLeftCeil)));
 			marker_.points.push_back(_2geometry(pose*bb.corner(Box::TopLeftFloor)));
 			marker_.points.push_back(_2geometry(pose*bb.corner(Box::BottomLeftFloor)));
-
+			
 			if(scale==0) {
 				geometry_msgs::Point delta;
 				delta.x = marker_.points[0].x-marker_.points[1].x;
 				delta.y = marker_.points[0].y-marker_.points[1].y;
 				delta.z = marker_.points[0].z-marker_.points[1].z;
 				const float l = std::sqrt(delta.x*delta.x + delta.y*delta.y + delta.z*delta.z);
-
+				
 				scale = 0.1f*l;
 			}
 			

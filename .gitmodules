@@ -1,0 +1,9 @@
+[submodule "cob_3d_experience_mapping/libs/hiberlite"]
+	path = cob_3d_experience_mapping/libs/hiberlite
+	url = https://github.com/ipa-josh/hiberlite.git
+[submodule "cob_3d_mapping_geometry_map_v2/libs/geometry"]
+	path = cob_3d_mapping_geometry_map_v2/libs/geometry
+	url = https://github.com/boostorg/geometry.git
+[submodule "libnuklei/nuklei-code"]
+	path = libnuklei/nuklei-code
+	url = git://git.code.sf.net/p/nuklei/code

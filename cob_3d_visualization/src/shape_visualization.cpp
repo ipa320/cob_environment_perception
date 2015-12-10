@@ -65,7 +65,7 @@
 
 
 #include <cob_3d_visualization/shape_marker.h>
-#include <cob_3d_visualization/table_marker.h>
+//#include <cob_3d_visualization/table_marker.h>
 #include <cob_3d_visualization/shape_visualization.h>
 #include <math.h>
 #include <stdlib.h>
@@ -105,7 +105,7 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
 
   int shape_id,index;
   index=-1;
-  stringstream name(feedback->marker_name);
+  std::stringstream name(feedback->marker_name);
 
   Eigen::Quaternionf quat;
 
@@ -169,7 +169,7 @@ void ShapeVisualization::setShapePosition(const visualization_msgs::InteractiveM
       //string strName(feedback->marker_name);
       //strName.erase(strName.begin(),strName.begin()+7);
 //      stringstream name(strName);
-	stringstream name(feedback->marker_name);
+	  std::stringstream name(feedback->marker_name);
 
       /* the name of the marker is arrows_shape_.id, we need to erase the "arrows_" part */
       //      int test ;
@@ -276,7 +276,7 @@ void ShapeVisualization::applyModifications(const visualization_msgs::Interactiv
   cob_3d_mapping_msgs::ModifyMap::Request req ;
   cob_3d_mapping_msgs::ModifyMap::Response res;
   visualization_msgs::InteractiveMarker imarker;
-  stringstream aa;
+  std::stringstream aa;
   int index ;
 
   /*****Modify shapes*****/
@@ -348,7 +348,7 @@ void ShapeVisualization::applyModifications(const visualization_msgs::Interactiv
 
 void ShapeVisualization::resetAll(const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
 {
-  stringstream aa;
+  std::stringstream aa;
   modified_shapes_.shapes.clear() ;
   //  std::cout <<"interacted_shapes_.size() = " << interacted_shapes_.size() <<"\n" ;
 

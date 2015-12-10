@@ -21,7 +21,7 @@
 #pragma once
 
 #include <list>
-using namespace std;
+#include <set>
 
 typedef double tppl_float;
 
@@ -182,12 +182,12 @@ protected:
 	struct DPState2 {
 		bool visible;
 		long weight;
-		list<Diagonal> pairs;
+            std::list<Diagonal> pairs;
 	};
 
 	//edge that intersects the scanline
 	struct ScanLineEdge {
-		long index;
+            mutable long index;
 		TPPLPoint p1;
 		TPPLPoint p2;
 
@@ -221,10 +221,12 @@ protected:
 
 	//helper functions for MonotonePartition
 	bool Below(TPPLPoint &p1, TPPLPoint &p2);
-	void AddDiagonal(MonotoneVertex *vertices, long *numvertices, long index1, long index2);
+        void AddDiagonal(MonotoneVertex *vertices, long *numvertices, long index1, long index2,
+            char *vertextypes, std::set<ScanLineEdge>::iterator *edgeTreeIterators,
+            std::set<ScanLineEdge> *edgeTree, long *helpers);
 
 	//triangulates a monotone polygon, used in Triangulate_MONO
-	int TriangulateMonotone(TPPLPoly *inPoly, list<TPPLPoly> *triangles);
+        int TriangulateMonotone(TPPLPoly *inPoly, std::list<TPPLPoly> *triangles);
 
 public:
 
@@ -238,7 +240,7 @@ public:
 	//             vertices of all hole polys have to be in clockwise order
 	//   outpolys : a list of polygons without holes
 	//returns 1 on success, 0 on failure
-	int RemoveHoles(list<TPPLPoly> *inpolys, list<TPPLPoly> *outpolys);
+        int RemoveHoles(std::list<TPPLPoly> *inpolys, std::list<TPPLPoly> *outpolys);
 
 	//triangulates a polygon by ear clipping
 	//time complexity O(n^2), n is the number of vertices
@@ -248,7 +250,7 @@ public:
 	//          vertices have to be in counter-clockwise order
 	//   triangles : a list of triangles (result)
 	//returns 1 on success, 0 on failure
-	int Triangulate_EC(TPPLPoly *poly, list<TPPLPoly> *triangles);
+        int Triangulate_EC(TPPLPoly *poly, std::list<TPPLPoly> *triangles);
 
 	//triangulates a list of polygons that may contain holes by ear clipping algorithm
 	//first calls RemoveHoles to get rid of the holes, and then Triangulate_EC for each resulting polygon
@@ -260,7 +262,7 @@ public:
 	//             vertices of all hole polys have to be in clockwise order
 	//   triangles : a list of triangles (result)
 	//returns 1 on success, 0 on failure
-	int Triangulate_EC(list<TPPLPoly> *inpolys, list<TPPLPoly> *triangles);
+        int Triangulate_EC(std::list<TPPLPoly> *inpolys, std::list<TPPLPoly> *triangles);
 
 	//creates an optimal polygon triangulation in terms of minimal edge length
 	//time complexity: O(n^3), n is the number of vertices
@@ -270,7 +272,7 @@ public:
 	//          vertices have to be in counter-clockwise order
 	//   triangles : a list of triangles (result)
 	//returns 1 on success, 0 on failure
-	int Triangulate_OPT(TPPLPoly *poly, list<TPPLPoly> *triangles);
+        int Triangulate_OPT(TPPLPoly *poly, std::list<TPPLPoly> *triangles);
 
 	//triangulates a polygons by firstly partitioning it into monotone polygons
 	//time complexity: O(n*log(n)), n is the number of vertices
@@ -280,7 +282,7 @@ public:
 	//          vertices have to be in counter-clockwise order
 	//   triangles : a list of triangles (result)
 	//returns 1 on success, 0 on failure
-	int Triangulate_MONO(TPPLPoly *poly, list<TPPLPoly> *triangles);
+        int Triangulate_MONO(TPPLPoly *poly, std::list<TPPLPoly> *triangles);
 
 	//triangulates a list of polygons by firstly partitioning them into monotone polygons
 	//time complexity: O(n*log(n)), n is the number of vertices
@@ -291,7 +293,7 @@ public:
 	//             vertices of all hole polys have to be in clockwise order
 	//   triangles : a list of triangles (result)
 	//returns 1 on success, 0 on failure
-	int Triangulate_MONO(list<TPPLPoly> *inpolys, list<TPPLPoly> *triangles);
+        int Triangulate_MONO(std::list<TPPLPoly> *inpolys, std::list<TPPLPoly> *triangles);
 
 	//creates a monotone partition of a list of polygons that can contain holes
 	//time complexity: O(n*log(n)), n is the number of vertices
@@ -302,7 +304,7 @@ public:
 	//             vertices of all hole polys have to be in clockwise order
 	//   monotonePolys : a list of monotone polygons (result)
 	//returns 1 on success, 0 on failure
-	int MonotonePartition(list<TPPLPoly> *inpolys, list<TPPLPoly> *monotonePolys);
+        int MonotonePartition(std::list<TPPLPoly> *inpolys, std::list<TPPLPoly> *monotonePolys);
 
 	//partitions a polygon into convex polygons by using Hertel-Mehlhorn algorithm
 	//the algorithm gives at most four times the number of parts as the optimal algorithm
@@ -315,7 +317,7 @@ public:
 	//          vertices have to be in counter-clockwise order
 	//   parts : resulting list of convex polygons
 	//returns 1 on success, 0 on failure
-	int ConvexPartition_HM(TPPLPoly *poly, list<TPPLPoly> *parts);
+        int ConvexPartition_HM(TPPLPoly *poly, std::list<TPPLPoly> *parts);
 
 	//partitions a list of polygons into convex parts by using Hertel-Mehlhorn algorithm
 	//the algorithm gives at most four times the number of parts as the optimal algorithm
@@ -329,7 +331,7 @@ public:
 	//             vertices of all hole polys have to be in clockwise order
 	//   parts : resulting list of convex polygons
 	//returns 1 on success, 0 on failure
-	int ConvexPartition_HM(list<TPPLPoly> *inpolys, list<TPPLPoly> *parts);
+        int ConvexPartition_HM(std::list<TPPLPoly> *inpolys, std::list<TPPLPoly> *parts);
 
 	//optimal convex partitioning (in terms of number of resulting convex polygons)
 	//using the Keil-Snoeyink algorithm
@@ -340,5 +342,5 @@ public:
 	//          vertices have to be in counter-clockwise order
 	//   parts : resulting list of convex polygons
 	//returns 1 on success, 0 on failure
-	int ConvexPartition_OPT(TPPLPoly *poly, list<TPPLPoly> *parts);
+        int ConvexPartition_OPT(TPPLPoly *poly, std::list<TPPLPoly> *parts);
 };

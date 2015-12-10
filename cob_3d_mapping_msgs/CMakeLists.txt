@@ -42,6 +42,11 @@ add_message_files(
     ShapeArray.msg
     Shape.msg
     SimilarityScore.msg
+    
+    Point2D.msg
+    Polygon.msg
+    Plane.msg
+    PlaneScene.msg
 )
 
 ## Generate services in the 'srv' folder
