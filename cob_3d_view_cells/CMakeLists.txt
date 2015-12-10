@@ -10,6 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   roscpp
   cob_3d_mapping_msgs
   dynamic_reconfigure
+  cob_3d_visualization
   nodelet
 )
 
@@ -28,6 +29,7 @@ catkin_package(
     cob_3d_mapping_common
     cob_3d_mapping_msgs
     dynamic_reconfigure
+    cob_3d_visualization
     nodelet
     pcl_ros
     roscpp
@@ -114,6 +116,7 @@ catkin_package(
 # include_directories(include)
 include_directories(
   ${catkin_INCLUDE_DIRS}
+  common/include
 )
 
 ## Declare a cpp library

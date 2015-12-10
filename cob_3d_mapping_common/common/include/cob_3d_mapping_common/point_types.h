@@ -87,6 +87,9 @@ struct PointXYZRGBF;
  */
 struct PointLabel;
 
+template<int N>
+struct PointXYZFeature;
+
 #include "cob_3d_mapping_common/impl/point_types.hpp"
 
 POINT_CLOUD_REGISTER_POINT_STRUCT(
@@ -116,5 +119,38 @@ POINT_CLOUD_REGISTER_POINT_STRUCT(
 POINT_CLOUD_REGISTER_POINT_STRUCT(
 	PointLabel,
   (int, label, label));
+  
+typedef PointXYZFeature<16> PointXYZFeature16;
+typedef PointXYZFeature<32> PointXYZFeature32;
+typedef PointXYZFeature<64> PointXYZFeature64;
+typedef PointXYZFeature<128> PointXYZFeature128;
+POINT_CLOUD_REGISTER_POINT_STRUCT(
+	PointXYZFeature16,
+  (float, x, x)
+  (float, y, y)
+  (float, z, z)
+  (float, area, area)
+  (float[16], feature, feature));
+POINT_CLOUD_REGISTER_POINT_STRUCT(
+	PointXYZFeature32,
+  (float, x, x)
+  (float, y, y)
+  (float, z, z)
+  (float, area, area)
+  (float[32], feature, feature));
+POINT_CLOUD_REGISTER_POINT_STRUCT(
+	PointXYZFeature64,
+  (float, x, x)
+  (float, y, y)
+  (float, z, z)
+  (float, area, area)
+  (float[64], feature, feature));
+POINT_CLOUD_REGISTER_POINT_STRUCT(
+	PointXYZFeature128,
+  (float, x, x)
+  (float, y, y)
+  (float, z, z)
+  (float, area, area)
+  (float[128], feature, feature));
 
 #endif /* IPA_POINT_TYPES_H_ */

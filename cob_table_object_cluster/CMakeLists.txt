@@ -10,7 +10,7 @@ find_package(catkin REQUIRED COMPONENTS
   cob_3d_mapping_msgs
   cob_object_detection_msgs
   cob_perception_msgs
-  cob_srvs
+  std_srvs
   cob_vision_utils
   dynamic_reconfigure
   eigen_conversions
@@ -45,7 +45,7 @@ catkin_package(
     cob_3d_mapping_msgs
     cob_object_detection_msgs
     cob_perception_msgs
-    cob_srvs
+    std_srvs
     cob_vision_utils
     dynamic_reconfigure
     eigen_conversions

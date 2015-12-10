@@ -87,6 +87,7 @@ int g_num_computations;
 //#include <cob_3d_segmentation/quad_regression/quad_regression.h>
 #include "../../../cob_3d_segmentation/common/include/cob_3d_segmentation/quad_regression/polygon.h"
 #include <cob_3d_mapping_common/ros_msg_conversions.h>
+#include <cob_3d_mapping_common/point_types.h>
 
 #include <cob_3d_mapping_common/stop_watch.h>
 #include <cob_3d_visualization/simple_marker.h>
@@ -97,6 +98,8 @@ class IFNode {
 	typedef float Real;
 	typedef double Scalar;
 	typedef Sampler<Real, Scalar> S;
+	typedef PointXYZFeature64 FeaturePoint;
+	typedef PointXYZ SimplePoint;
 	
 	enum {DEGREE=1};	/// degree of polynomial surfaces (input data)
 	
@@ -109,6 +112,7 @@ class IFNode {
 	
 	//ros stuff
 	ros::Subscriber sub_, sub_camera_info_;
+	ros::Publisher  pub_features_, pub_keypoints_;
 	tf::TransformListener tf_listener_;
 	std::string relative_frame_id_;
 	
@@ -154,20 +158,25 @@ public:
 	{
 		ros::NodeHandle n;
 		
+		pub_features_ = n.advertise<sensor_msgs::PointCloud2>("features", 1);
+		pub_keypoints_= n.advertise<sensor_msgs::PointCloud2>("keypoints", 1);
 		sub_ = n.subscribe("/shapes_array", 1, &IFNode::cb, this);
 		sub_camera_info_ = n.subscribe("/camera/depth/camera_info", 0, &IFNode::cb_camera_info, this);
 		
 		//parameters
 		
+		ros::NodeHandle pn("~");
 		double radius;
-		n.param<double>("radius", radius, 0.9);
+		pn.param<double>("radius", radius, 0.9);
 		//TODO: make configurable
 		//isf_.addRadius(0.3);
 		//isf_.addRadius(0.4);
 		//isf_.addRadius(0.6);
-		isf_.addRadius(0.4);
+		isf_.addRadius(radius);
 		
 		n.param<std::string>("relative_frame_id", relative_frame_id_, "odom");
+		
+		ROS_INFO("using radius %f", radius);
 	}
 	
 	//only for evaluation!
@@ -265,7 +274,7 @@ public:
 		}
 		{
 			cob_3d_visualization::RvizMarker scene;
-			scene.mesh(*isf_.dbg_Mesh_of_Map());
+			scene.mesh(*isf_.dbg_Mesh_of_Map(),1.,1.,1.);
 			scene.color(0.98,0.1,0.1);
 		}*/
 		old_scene_ = *isf_.dbg_Mesh_of_Map();
@@ -276,6 +285,37 @@ public:
 			scene.sphere(isf_.getKeypoints()[i], 0.05);
 			scene.color(0.1,1.,0.1);
 		}
+		
+		//publish features
+		pcl::PointCloud<FeaturePoint> features;
+		for(size_t i=0; i<oldR->size(); i++) {
+			FeaturePoint pt;
+			pt.x = (*oldR)[i].pt_(0);
+			pt.y = (*oldR)[i].pt_(1);
+			pt.z = (*oldR)[i].pt_(2);
+			assert(FeaturePoint::DIMENSION*2==(*oldR)[i].f_[0].values.size());
+			for(size_t j=0; j<(*oldR)[i].f_[0].values.size(); j+=2)
+				pt.feature[j/2] = (*oldR)[i].f_[0].values[j];
+			features.push_back(pt);
+		}
+		sensor_msgs::PointCloud2 features2;
+		pcl::toROSMsg(features, features2);
+		features2.header = msg.header;
+		pub_features_.publish(features2);
+		
+		pcl::PointCloud<SimplePoint> keypoints;
+		for(size_t i=0; i<isf_.getAllKeypoints().size(); i++)
+		{
+			SimplePoint pt;
+			pt.x = isf_.getAllKeypoints()[i](0);
+			pt.y = isf_.getAllKeypoints()[i](1);
+			pt.z = isf_.getAllKeypoints()[i](2);
+			keypoints.push_back(pt);
+		}
+		sensor_msgs::PointCloud2 keypoints2;
+		pcl::toROSMsg(keypoints, keypoints2);
+		keypoints2.header = msg.header;
+		pub_keypoints_.publish(keypoints2);
 		
 		static int dbg_stage=0;
 		++dbg_stage;
@@ -375,7 +415,7 @@ public:
 int main(int argc, char **argv)
 {
 	ros::init(argc, argv, "invariant_feature_node");
-	cob_3d_visualization::RvizMarkerManager::get().createTopic("invariant_feature_debug_markers").setFrameId("/openni_depth_optical_frame").clearOld();
+	cob_3d_visualization::RvizMarkerManager::get().createTopic("invariant_feature_debug_markers").setFrameId("/camera_depth_optical_frame").clearOld();
 	
 #ifndef EIGEN_VECTORIZE
 	ROS_INFO("this would be faster if SIMD is enabled");

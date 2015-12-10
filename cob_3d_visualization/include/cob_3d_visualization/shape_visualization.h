@@ -182,6 +182,7 @@ class ShapeVisualization
 
     boost::shared_ptr<interactive_markers::InteractiveMarkerServer> im_server_; // server for interactive markers
 
+	void on_subscriber(const ros::SingleSubscriberPublisher& pub);
 };
 
 

@@ -61,6 +61,12 @@
 #include <visualization_msgs/MarkerArray.h>
 #include <list>
 #include <string>
+#include <Eigen/Geometry>
+
+//#include <pcl/pcl_base.h>
+//#include <pcl/point_types.h>
+//#include <pcl/PolygonMesh.h>
+//#include <pcl_conversions/pcl_conversions.h>
 
 /* 
  * EXAMPLE USAGE:
@@ -90,9 +96,17 @@
 namespace cob_3d_visualization {
 	
 	class RvizMarkerManager {
+		struct S_ACTIVE {
+			int id;
+			std::string ns;
+
+			S_ACTIVE() {}
+			S_ACTIVE(const int id, const std::string &ns) : id(id), ns(ns) {}
+		};
+
 		std::string ns_, frame_id_;
 		int id_;
-		std::list<int> active_ids_;
+		std::list<S_ACTIVE> active_ids_;
 		ros::Publisher vis_pub_;
 		visualization_msgs::MarkerArray markers_;
 		
@@ -109,7 +123,7 @@ namespace cob_3d_visualization {
 		RvizMarkerManager &setFrameId(const std::string &frame_id) {frame_id_=frame_id;return *this;}
 		const std::string &frame_id() const {return frame_id_;}
 		const std::string &ns() const {return ns_;}
-		int newId() {active_ids_.push_back(id_); return id_++;}
+		int newId() {return id_++;}
 		
 		RvizMarkerManager &createTopic(const std::string &topic_name) {
 			ros::NodeHandle nh;
@@ -117,7 +131,11 @@ namespace cob_3d_visualization {
 			return *this;
 		}
 		void prepare(const visualization_msgs::Marker &marker) {markers_.markers.push_back(marker);}
-		void publish() {
+		void publish(const ros::Time &stamp=ros::Time()) {
+			for(size_t i=0; i<markers_.markers.size(); i++) {
+				markers_.markers[i].header.stamp = stamp;
+				active_ids_.push_back(S_ACTIVE(markers_.markers[i].id, markers_.markers[i].ns));
+			}
 			vis_pub_.publish(markers_);
 			markers_.markers.clear();
 			ros::NodeHandle nh;
@@ -131,7 +149,7 @@ namespace cob_3d_visualization {
 			nh.param<int>("/simple_marker/"+ns()+"/max", ma, 0);
 			ROS_INFO("clearing old markers from %d to %d", mi, ma);
 			for(; mi<ma; mi++)
-				active_ids_.push_back(mi);
+				active_ids_.push_back(S_ACTIVE(mi,""));
 				
 			ros::Rate poll_rate(20);
 			int num = 0;
@@ -144,25 +162,27 @@ namespace cob_3d_visualization {
 			clear();
 		}
 		
-		void clear() {
+		bool needed() const {return vis_pub_.getNumSubscribers()>0;}
+
+		void clear(const ros::Time &stamp=ros::Time()) {
 			if(active_ids_.size()>0) {
 				ros::NodeHandle nh;
-				nh.setParam("/simple_marker/"+ns()+"/min", active_ids_.back());
+				nh.setParam("/simple_marker/"+ns()+"/min", active_ids_.back().id);
 			}
 			
 			while(active_ids_.size()>0) {
 				visualization_msgs::Marker marker;
 				marker.header.frame_id = frame_id();
-				marker.header.stamp = ros::Time();
-				marker.ns = ns();
-				marker.id = active_ids_.back();
+				marker.header.stamp = stamp;
+				marker.ns = active_ids_.back().ns;
+				marker.id = active_ids_.back().id;
 				marker.action = visualization_msgs::Marker::DELETE;
 				
 				active_ids_.pop_back();
 				prepare(marker);
 			}
 			
-			publish();
+			publish(stamp);
 		}
 	};
 	
@@ -226,6 +246,7 @@ namespace cob_3d_visualization {
 			return *this;
 		}
 		
+#ifdef PCL_VERSION
 		void mesh(const pcl::PolygonMesh &mesh) {
 			pcl::PointCloud<pcl::PointXYZ> points;
 			//pcl::fromROSMsg(mesh.cloud, points);
@@ -239,6 +260,35 @@ namespace cob_3d_visualization {
 					);
 			}
 		}
+		
+		void mesh(const pcl::PolygonMesh &mesh, const double r, const double g,  const double b, const double a=1., const Eigen::Vector3f dir=Eigen::Vector3f::UnitZ(), const float amb=0.2f) {
+			pcl::PointCloud<pcl::PointXYZ> points;
+			//pcl::fromROSMsg(mesh.cloud, points);
+			pcl::fromPCLPointCloud2(mesh.cloud, points);
+			for(size_t i=0; i<mesh.polygons.size(); i++)
+				for(int j=0; j<(int)mesh.polygons[i].vertices.size()-2; j++) {
+					addTriangle(
+						points[mesh.polygons[i].vertices[j  ]].getVector3fMap(),
+						points[mesh.polygons[i].vertices[j+1]].getVector3fMap(),
+						points[mesh.polygons[i].vertices[j+2]].getVector3fMap()
+					);
+					
+					Eigen::Vector3f normal = (points[mesh.polygons[i].vertices[j  ]].getVector3fMap()-points[mesh.polygons[i].vertices[j+1]].getVector3fMap())
+					.cross(points[mesh.polygons[i].vertices[j+2]].getVector3fMap()-points[mesh.polygons[i].vertices[j+1]].getVector3fMap()).normalized();
+					
+					float F = std::abs(normal.dot(dir))*(1-amb)+amb;
+					
+					std_msgs::ColorRGBA c;
+					c.a = a;
+					c.r = r*F;
+					c.g = g*F;
+					c.b = b*F;
+					marker_.colors.push_back(c);
+					marker_.colors.push_back(c);
+					marker_.colors.push_back(c);
+			}
+		}
+#endif
 		
 		template<class Vector>
 		void arrow(const Vector &start, const Vector &end, const float scale=0) {
@@ -257,6 +307,66 @@ namespace cob_3d_visualization {
 			marker_.scale.x = (scale?scale:0.1*l);
 			marker_.scale.y = 2*marker_.scale.x;
 			marker_.scale.z = 0;
+		}
+		
+		template<class Vector>
+		void line(const Vector &start, const Vector &end, float scale=0) {
+			marker_.type = visualization_msgs::Marker::LINE_STRIP;
+			
+			marker_.points.clear();
+			marker_.points.push_back(_2geometry(start));
+			marker_.points.push_back(_2geometry(end));
+			
+			if(scale==0) {
+				geometry_msgs::Point delta;
+				delta.x = marker_.points[0].x-marker_.points[1].x;
+				delta.y = marker_.points[0].y-marker_.points[1].y;
+				delta.z = marker_.points[0].z-marker_.points[1].z;
+				const float l = std::sqrt(delta.x*delta.x + delta.y*delta.y + delta.z*delta.z);
+
+				scale = 0.1f*l;
+			}
+
+			marker_.scale.y = marker_.scale.z = marker_.scale.x = scale;
+		}
+
+		template<class Affine, class Box>
+		void box(const Affine &pose, const Box &bb, float scale=0) {
+			marker_.type = visualization_msgs::Marker::LINE_STRIP;
+
+			marker_.points.clear();
+
+			marker_.points.push_back(_2geometry(pose*bb.corner(Box::BottomLeftCeil)));
+			marker_.points.push_back(_2geometry(pose*bb.corner(Box::BottomLeftFloor)));
+			marker_.points.push_back(_2geometry(pose*bb.corner(Box::BottomRightFloor)));
+			marker_.points.push_back(_2geometry(pose*bb.corner(Box::BottomRightCeil)));
+
+			marker_.points.push_back(_2geometry(pose*bb.corner(Box::TopRightCeil)));
+			marker_.points.push_back(_2geometry(pose*bb.corner(Box::TopRightFloor)));
+			marker_.points.push_back(_2geometry(pose*bb.corner(Box::TopLeftFloor)));
+			marker_.points.push_back(_2geometry(pose*bb.corner(Box::TopLeftCeil)));
+
+			marker_.points.push_back(_2geometry(pose*bb.corner(Box::BottomLeftCeil)));
+			marker_.points.push_back(_2geometry(pose*bb.corner(Box::BottomRightCeil)));
+			marker_.points.push_back(_2geometry(pose*bb.corner(Box::BottomRightFloor)));
+			marker_.points.push_back(_2geometry(pose*bb.corner(Box::TopRightFloor)));
+
+			marker_.points.push_back(_2geometry(pose*bb.corner(Box::TopRightCeil)));
+			marker_.points.push_back(_2geometry(pose*bb.corner(Box::TopLeftCeil)));
+			marker_.points.push_back(_2geometry(pose*bb.corner(Box::TopLeftFloor)));
+			marker_.points.push_back(_2geometry(pose*bb.corner(Box::BottomLeftFloor)));
+
+			if(scale==0) {
+				geometry_msgs::Point delta;
+				delta.x = marker_.points[0].x-marker_.points[1].x;
+				delta.y = marker_.points[0].y-marker_.points[1].y;
+				delta.z = marker_.points[0].z-marker_.points[1].z;
+				const float l = std::sqrt(delta.x*delta.x + delta.y*delta.y + delta.z*delta.z);
+
+				scale = 0.1f*l;
+			}
+			
+			marker_.scale.y = marker_.scale.z = marker_.scale.x = scale;
 		}
 		
 		void text(const std::string &txt, const float scale=0.1) {

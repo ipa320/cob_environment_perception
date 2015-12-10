@@ -93,6 +93,7 @@ target_link_libraries(cob_3d_features
   ${OpenCV_LIBRARIES}
 #  ${PCL_LIBRARIES}
 )
+add_dependencies(cob_3d_features ${catkin_EXPORTED_TARGETS} cob_3d_mapping_msgs_gencpp)
 
 add_library(cob_3d_features_omp
   common/src/organized_curvature_estimation_omp.cpp
@@ -104,12 +105,14 @@ target_link_libraries(cob_3d_features_omp
   ${OpenCV_LIBRARIES}
 #  ${PCL_LIBRARIES}
 )
+add_dependencies(cob_3d_features_omp ${catkin_EXPORTED_TARGETS})
 #set_target_properties(cob_3d_features_omp PROPERTIES COMPILE_FLAGS "-fopenmp"
 #  LINK_FLAGS "-fopenmp"
 #)
 
 
 add_library(s2kit common/src/ShapeSPH/cospmls.cpp common/src/ShapeSPH/FST_semi_memo_fftw.cpp common/src/ShapeSPH/cospmls.cpp common/src/ShapeSPH/fft_grids.cpp common/src/ShapeSPH/FST_semi_memo.cpp common/src/ShapeSPH/FST_semi_memo_fftw.cpp common/src/ShapeSPH/naive_synthesis.cpp common/src/ShapeSPH/newFCT.cpp common/src/ShapeSPH/primitive.cpp common/src/ShapeSPH/primitive_FST.cpp common/src/ShapeSPH/seminaive.cpp common/src/ShapeSPH/seminaive_fftw.cpp common/src/ShapeSPH/FFTcode.cpp common/src/ShapeSPH/csecond.cpp common/src/ShapeSPH/weights.cpp common/src/ShapeSPH/OURperms.cpp common/src/ShapeSPH/oddweights.cpp common/src/ShapeSPH/OURmods.cpp common/src/ShapeSPH/indextables.cpp)
+add_dependencies(s2kit ${catkin_EXPORTED_TARGETS})
 
 ## Declare a cpp executable
 add_executable(test_organized_curvature_estimation common/test/test_organized_curvature_estimation.cpp)
@@ -121,6 +124,7 @@ target_link_libraries(test_organized_curvature_estimation
   ${OpenCV_LIBRARIES}
   ${Boost_LIBRARIES}
 )
+add_dependencies(test_organized_curvature_estimation ${catkin_EXPORTED_TARGETS})
 
 # Test Surface Classification using organized principal curvatures
 add_executable(test_surface_class_estimation common/test/test_surface_class_estimation.cpp)
@@ -132,6 +136,7 @@ target_link_libraries(test_surface_class_estimation
   ${OpenCV_LIBRARIES}
   ${Boost_LIBRARIES}
 )
+add_dependencies(test_surface_class_estimation ${catkin_EXPORTED_TARGETS})
 
 # Test program for 2D (on RGB or depth) and 3D EdgeEstimation + visualization
 add_executable(test_edge_sharpening common/test/test_edge_sharpening.cpp)
@@ -143,6 +148,7 @@ target_link_libraries(test_edge_sharpening
   ${OpenCV_LIBRARIES}
   ${Boost_LIBRARIES}
 )
+add_dependencies(test_edge_sharpening ${catkin_EXPORTED_TARGETS})
 
 add_executable(profile_oce common/test/profile_oce.cpp)
 target_link_libraries(profile_oce
@@ -152,6 +158,7 @@ target_link_libraries(profile_oce
   ${VTK_LIBRARIES}
   ${OpenCV_LIBRARIES}
 )
+add_dependencies(profile_oce ${catkin_EXPORTED_TARGETS})
 
 add_executable(profile_fee_omp common/test/profile_fee_omp.cpp)
 target_link_libraries(profile_fee_omp
@@ -161,6 +168,7 @@ target_link_libraries(profile_fee_omp
   ${VTK_LIBRARIES}
   ${OpenCV_LIBRARIES}
 )
+add_dependencies(profile_fee_omp ${catkin_EXPORTED_TARGETS})
 
 add_executable(profile_fee common/test/profile_fee.cpp)
 target_link_libraries(profile_fee
@@ -170,6 +178,7 @@ target_link_libraries(profile_fee
   ${VTK_LIBRARIES}
   ${OpenCV_LIBRARIES}
 )
+add_dependencies(profile_fee ${catkin_EXPORTED_TARGETS})
 
 add_executable(profile_ne common/test/profile_ne.cpp)
 target_link_libraries(profile_ne
@@ -177,6 +186,7 @@ target_link_libraries(profile_ne
   cob_3d_features_omp
   ${catkin_LIBRARIES}
 )
+add_dependencies(profile_ne ${catkin_EXPORTED_TARGETS})
 
 add_executable(eval_invariant_feature common/test/evaluate_invariant_feature.cpp)
 target_link_libraries(eval_invariant_feature
@@ -186,6 +196,7 @@ target_link_libraries(eval_invariant_feature
   ${catkin_LIBRARIES}
 #  ${PCL_LIBRARIES}
 )
+add_dependencies(eval_invariant_feature ${catkin_EXPORTED_TARGETS})
 
 add_executable(invariant_feature_node ros/src/invariant_feature_node.cpp)
 target_link_libraries(invariant_feature_node
@@ -195,6 +206,7 @@ target_link_libraries(invariant_feature_node
   ${catkin_LIBRARIES}
 #  ${PCL_LIBRARIES}
 )
+add_dependencies(invariant_feature_node ${catkin_EXPORTED_TARGETS})
 
 # extracts pc from organized cloud and saves as ppm:
 add_executable(extract_organized_curvatures common/test/extract_organized_curvatures.cpp)
@@ -203,6 +215,7 @@ target_link_libraries(extract_organized_curvatures
   ${catkin_LIBRARIES}
   ${Boost_LIBRARIES}
 )
+add_dependencies(extract_organized_curvatures ${catkin_EXPORTED_TARGETS})
 
 #############
 ## Install ##

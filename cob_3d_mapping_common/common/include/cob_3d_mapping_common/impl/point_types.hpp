@@ -114,6 +114,20 @@ struct PointLabel
 	int label;
 };
 
+template<int N>
+struct PointXYZFeature
+{
+	enum {DIMENSION=N};
+		
+	PCL_ADD_POINT4D;
+	float area;
+	float feature[N];
+	
+	operator pcl::PointXYZ() const {
+		return pcl::PointXYZ(x,y,z);
+	}
+} EIGEN_ALIGN16;
+
 
 
 #endif /* IPA_POINT_TYPES_HPP_ */

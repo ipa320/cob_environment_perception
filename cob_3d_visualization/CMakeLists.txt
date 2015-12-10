@@ -6,6 +6,7 @@ set(catkin_RUN_PACKAGES
   cob_3d_mapping_msgs
   eigen_conversions
   interactive_markers
+  pcl_conversions
 
 )
 
