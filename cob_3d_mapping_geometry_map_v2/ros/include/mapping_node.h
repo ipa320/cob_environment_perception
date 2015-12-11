@@ -69,6 +69,7 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 	  //lookup transformation to for our geometry map
 	  tf::StampedTransform transform;
 	  try{
+		  tf_listener_.waitForTransform(target_frame_, scene->header.frame_id, (ros::Time::now()-scene->header.stamp)>ros::Duration(5*60) ? ros::Time(0) : scene->header.stamp, ros::Duration(10));
 		  tf_listener_.lookupTransform(target_frame_, scene->header.frame_id,
 								   (ros::Time::now()-scene->header.stamp)>ros::Duration(5*60) ? ros::Time(0) : scene->header.stamp,	//assume we're replaying a bag file
 								   transform);
@@ -79,7 +80,6 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 	  }
 
 	  tf::transformTFToEigen(transform, tf2target_);
-	  tf2target_ = Eigen::AngleAxisd(M_PI_2, Eigen::Vector3d::UnitY())*tf2target_;
 	  
 	  //now do the mapping stuff
 	  ros::Time start = ros::Time::now();
