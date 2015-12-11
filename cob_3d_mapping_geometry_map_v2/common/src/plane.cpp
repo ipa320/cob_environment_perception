@@ -51,7 +51,7 @@ void Plane_Polygon::visualization(const std::string &name, std::vector<boost::sh
 
 //convert from ros msg
 Plane_Point::Plane_Point(const cob_3d_mapping_msgs::Point2D &pt) :
- pos(pt.x, pt.y), tex(pt.tex_x, pt.tex_y), var(pt.var)
+ pos(pt.x, pt.y), var(pt.var)
 {
 }
 
@@ -300,7 +300,7 @@ bool Plane_Polygon::cut(const VolumeCut &cutter, const nuklei::kernel::se3 &pose
 	return inp.size()<4;
 }
 
-double area2(const Plane_Point::Vector2 &a, const Plane_Point::Vector2 &b) {
+double area2(const Vector2 &a, const Vector2 &b) {
 	return std::pow(a(0)*b(1)-a(1)*b(0), 2);
 }
 
@@ -684,10 +684,10 @@ void Plane::complex_projection(Plane* plane_out, const Plane* plane_in1, const P
 		assert( std::abs( (p+line_normal-plane_in1->offset_eigen()).dot(plane_in1->normal_eigen()) )<0.001f );
 		assert( std::abs( (p+line_normal-plane_in2->offset_eigen()).dot(plane_in2->normal_eigen()) )<0.001f );
 		
-		Plane_Point::Vector2 p1 = projector(cast(p));
-		Plane_Point::Vector2 p2 = projector(cast((Eigen::Vector3f)(p+line_normal)));
+		Vector2 p1 = projector(cast(p));
+		Vector2 p2 = projector(cast((Eigen::Vector3f)(p+line_normal)));
 		
-		Plane_Point::Vector2 p_test = projector(cast((Eigen::Vector3f)(p+proj_normal)));
+		Vector2 p_test = projector(cast((Eigen::Vector3f)(p+proj_normal)));
 		
 #ifdef DEBUG_
 		std::cout<<"p1 "<<p1.transpose()<<std::endl;

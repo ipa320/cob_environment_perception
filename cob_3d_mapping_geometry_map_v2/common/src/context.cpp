@@ -421,10 +421,10 @@ void Context2D::insert(Object::Ptr _obj)
 					assert( std::abs( (p+line_normal-obj->offset_eigen()).dot(obj->normal_eigen()) )<0.001f );
 					assert( std::abs( (p+line_normal-matched_plane->offset_eigen()).dot(matched_plane->normal_eigen()) )<0.001f );
 					
-					Plane_Point::Vector2 p1 = projector_(cast(p));
-					Plane_Point::Vector2 p2 = projector_(cast((Eigen::Vector3f)(p+line_normal)));
+					Vector2 p1 = projector_(cast(p));
+					Vector2 p2 = projector_(cast((Eigen::Vector3f)(p+line_normal)));
 					
-					Plane_Point::Vector2 p_test = projector_(cast((Eigen::Vector3f)(p+proj_normal)));
+					Vector2 p_test = projector_(cast((Eigen::Vector3f)(p+proj_normal)));
 					
 #ifdef DEBUG_
 					std::cout<<"p1 "<<p1.transpose()<<std::endl;

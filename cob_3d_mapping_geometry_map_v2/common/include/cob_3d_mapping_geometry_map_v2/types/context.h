@@ -97,7 +97,7 @@ public:
 	
 	void setT(const Eigen::Matrix4f &T) {T_ = T;}
 	
-	virtual Plane_Point::Vector2 operator()(const nuklei_wmf::Vector3<double> &pt3) const {
+	virtual Vector2 operator()(const nuklei_wmf::Vector3<double> &pt3) const {
 		Eigen::Vector4f v;
 		v.head<3>() = cast(pt3);
 		v(3) = 1;
