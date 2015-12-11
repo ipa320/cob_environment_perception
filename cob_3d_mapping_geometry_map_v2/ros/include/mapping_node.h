@@ -79,6 +79,7 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 	  }
 
 	  tf::transformTFToEigen(transform, tf2target_);
+	  tf2target_ = Eigen::AngleAxisd(M_PI_2, Eigen::Vector3d::UnitY())*tf2target_;
 	  
 	  //now do the mapping stuff
 	  ros::Time start = ros::Time::now();
