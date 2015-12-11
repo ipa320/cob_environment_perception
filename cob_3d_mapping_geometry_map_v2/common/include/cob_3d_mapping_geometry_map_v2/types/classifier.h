@@ -140,7 +140,7 @@ public:
 				over_shelf._bb().min()(1) -= 0.1; //cm
 				over_shelf._bb().min()(2) -= 0.1; //cm
 				over_shelf._bb().max()(0) += 0.15; //20cm
-				over_shelf._bb().max()(1) += 0.15; //cm
+				over_shelf._bb().max()(1) += 0.075; //cm
 				over_shelf._bb().max()(2) += 0.15; //cm
 				return over_shelf;
 			}
