@@ -119,9 +119,13 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 				msg.pose.pose.orientation.z = cartons[j].pose().ori_.Z();
 				msg.pose.pose.orientation.w = cartons[j].pose().ori_.W();
 				
-				msg.bounding_box_lwh.x = cartons[j].bb_in_pose().sizes()(2);
-				msg.bounding_box_lwh.y = cartons[j].bb_in_pose().sizes()(0);
-				msg.bounding_box_lwh.z = cartons[j].bb_in_pose().sizes()(1);
+				// todo: why in this weird order??????????????????
+//				msg.bounding_box_lwh.x = cartons[j].bb_in_pose().sizes()(2);
+//				msg.bounding_box_lwh.y = cartons[j].bb_in_pose().sizes()(0);
+//				msg.bounding_box_lwh.z = cartons[j].bb_in_pose().sizes()(1);
+				msg.bounding_box_lwh.x = cartons[j].bb_in_pose().sizes()(0);
+				msg.bounding_box_lwh.y = cartons[j].bb_in_pose().sizes()(1);
+				msg.bounding_box_lwh.z = cartons[j].bb_in_pose().sizes()(2);
 				
 				array.detections.push_back(msg);
 			}
