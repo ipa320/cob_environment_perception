@@ -285,10 +285,12 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 public:
 
 	GeometryNode() : classifier_floor_(NULL), tf2target_(Eigen::Translation3d(0,0,0)) {
+		ros::NodeHandle pn("~");
+		
 		sub_camera_info_ = nh_.subscribe("camera_info", 1, &GeometryNode::cb_camera_info, this);
 		pub_scan_ = nh_.advertise<sensor_msgs::LaserScan>("scan", 10);
 		pub_cartons_ = nh_.advertise<cob_object_detection_msgs::DetectionArray>("cartons", 10);
-		reset_server_ = nh_.advertiseService("reset", &GeometryNode::reset, this);
+		reset_server_ = pn.advertiseService("reset", &GeometryNode::reset, this);
 	}
 
 	/**
