@@ -315,6 +315,8 @@ public:
 		//TODO: add mutex
 		ROS_INFO("Resetting...");
 		reset();
+		res.success.data = true;
+		
 		return true;
 	}
 
