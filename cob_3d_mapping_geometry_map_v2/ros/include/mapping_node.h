@@ -252,14 +252,14 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 		cob_3d_visualization::RvizMarkerManager::get().createTopic("marker").setFrameId(target_frame_).clearOld();
 		 
 		//now start the ROS stuff
-		sub_scene_.reset(new message_filters::Subscriber<cob_3d_mapping_msgs::PlaneScene>(nh_, "scene", 1));
-		sub_col_img_.reset(new message_filters::Subscriber<sensor_msgs::Image>(nh_, "color_image", 1));
+		//sub_scene_.reset(new message_filters::Subscriber<cob_3d_mapping_msgs::PlaneScene>(nh_, "scene", 1));
+		//sub_col_img_.reset(new message_filters::Subscriber<sensor_msgs::Image>(nh_, "color_image", 1));
 		
 		sub_scene2_ = nh_.subscribe("scene", 1, &GeometryNode::callback2, this);
 		 
 		// ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
-		sync_.reset(new message_filters::Synchronizer<TSyncPolicy>(TSyncPolicy(10), *sub_scene_, *sub_col_img_));
-		sync_->registerCallback(boost::bind(&GeometryNode::callback, this, _1, _2));
+		//sync_.reset(new message_filters::Synchronizer<TSyncPolicy>(TSyncPolicy(10), *sub_scene_, *sub_col_img_));
+		//sync_->registerCallback(boost::bind(&GeometryNode::callback, this, _1, _2));
 	}
 	
 	void reset() {
@@ -267,9 +267,9 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 		if(sub_scene_) sub_scene_->unsubscribe();
 		if(sub_col_img_) sub_col_img_->unsubscribe();
 		
-		sub_scene_.reset();
+		/*sub_scene_.reset();
 		sub_col_img_.reset();
-		sync_.reset();
+		sync_.reset();*/
 		
 		classifier_floor_ = NULL;
 		ctxt_.reset();
