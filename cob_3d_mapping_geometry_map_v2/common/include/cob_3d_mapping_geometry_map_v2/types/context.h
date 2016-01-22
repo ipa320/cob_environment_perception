@@ -18,6 +18,7 @@ namespace Eigen {
 #include <boost/geometry/geometries/geometries.hpp>
 #include <boost/geometry/index/rtree.hpp>
 
+//! interfaces of cob_3d_geometry_map (v2)
 namespace cob_3d_geometry_map {
 	
 class Context2D;

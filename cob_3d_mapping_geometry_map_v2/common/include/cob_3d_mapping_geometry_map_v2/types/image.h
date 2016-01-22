@@ -4,6 +4,7 @@
 #include <string>
 
 
+//! interfaces of cob_3d_geometry_map (v2)
 namespace cob_3d_geometry_map {
 	
 class FileImage : public Object {

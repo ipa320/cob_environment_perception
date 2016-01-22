@@ -3,6 +3,7 @@
 #include "object.h"
 #include <boost/lexical_cast.hpp>
 
+//! interfaces of cob_3d_geometry_map (v2)
 namespace cob_3d_geometry_map {
 	
 class Context;

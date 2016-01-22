@@ -7,3 +7,6 @@
 [submodule "libnuklei/nuklei-code"]
 	path = libnuklei/nuklei-code
 	url = git://git.code.sf.net/p/nuklei/code
+[submodule "cob_3d_mapping_geometry_map_v2/libs/boost-python"]
+	path = cob_3d_mapping_geometry_map_v2/libs/boost-python
+	url = https://github.com/boostorg/python.git
