@@ -69,6 +69,7 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 	  //lookup transformation to for our geometry map
 	  tf::StampedTransform transform;
 	  try{
+		  tf_listener_.waitForTransform(target_frame_, scene->header.frame_id, (ros::Time::now()-scene->header.stamp)>ros::Duration(5*60) ? ros::Time(0) : scene->header.stamp, ros::Duration(10));
 		  tf_listener_.lookupTransform(target_frame_, scene->header.frame_id,
 								   (ros::Time::now()-scene->header.stamp)>ros::Duration(5*60) ? ros::Time(0) : scene->header.stamp,	//assume we're replaying a bag file
 								   transform);
@@ -79,7 +80,6 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 	  }
 
 	  tf::transformTFToEigen(transform, tf2target_);
-	  tf2target_ = Eigen::AngleAxisd(M_PI_2, Eigen::Vector3d::UnitY())*tf2target_;
 	  
 	  //now do the mapping stuff
 	  ros::Time start = ros::Time::now();
@@ -119,9 +119,13 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 				msg.pose.pose.orientation.z = cartons[j].pose().ori_.Z();
 				msg.pose.pose.orientation.w = cartons[j].pose().ori_.W();
 				
-				msg.bounding_box_lwh.x = cartons[j].bb_in_pose().sizes()(2);
-				msg.bounding_box_lwh.y = cartons[j].bb_in_pose().sizes()(0);
-				msg.bounding_box_lwh.z = cartons[j].bb_in_pose().sizes()(1);
+				// todo: why in this weird order??????????????????
+//				msg.bounding_box_lwh.x = cartons[j].bb_in_pose().sizes()(2);
+//				msg.bounding_box_lwh.y = cartons[j].bb_in_pose().sizes()(0);
+//				msg.bounding_box_lwh.z = cartons[j].bb_in_pose().sizes()(1);
+				msg.bounding_box_lwh.x = cartons[j].bb_in_pose().sizes()(0);
+				msg.bounding_box_lwh.y = cartons[j].bb_in_pose().sizes()(1);
+				msg.bounding_box_lwh.z = cartons[j].bb_in_pose().sizes()(2);
 				
 				array.detections.push_back(msg);
 			}
@@ -281,10 +285,12 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 public:
 
 	GeometryNode() : classifier_floor_(NULL), tf2target_(Eigen::Translation3d(0,0,0)) {
+		ros::NodeHandle pn("~");
+		
 		sub_camera_info_ = nh_.subscribe("camera_info", 1, &GeometryNode::cb_camera_info, this);
 		pub_scan_ = nh_.advertise<sensor_msgs::LaserScan>("scan", 10);
 		pub_cartons_ = nh_.advertise<cob_object_detection_msgs::DetectionArray>("cartons", 10);
-		reset_server_ = nh_.advertiseService("reset", &GeometryNode::reset, this);
+		reset_server_ = pn.advertiseService("reset", &GeometryNode::reset, this);
 	}
 
 	/**

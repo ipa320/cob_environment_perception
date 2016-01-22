@@ -92,7 +92,6 @@ add_executable(sav_gol common/src/sav_gol_smoothing_filter.cpp)
 
 # Gui:
 #add_executable(test_gui common/src/test_wx_gui.cpp)
-add_executable(bag_gui ros/src/bag_gui.cpp)
 add_executable(gaussian_noise_generator_node ros/src/noise_gen.cpp)
 
 
@@ -172,12 +171,6 @@ target_link_libraries(sav_gol
 #  ${wxWidgets_LIBRARIES}
 #)
 
-target_link_libraries(bag_gui
-  cob_3d_mapping_tools
-  ${catkin_LIBRARIES}
-  ${Boost_LIBRARIES}
-  ${wxWidgets_LIBRARIES}
-)
 
 target_link_libraries(gaussian_noise_generator_node
   ${catkin_LIBRARIES}
