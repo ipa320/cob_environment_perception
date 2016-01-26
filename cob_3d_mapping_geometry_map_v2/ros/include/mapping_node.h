@@ -195,6 +195,8 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 		//register default classifiers
 		double floor_height=0;
 		
+		pn.param<bool>("merge_enabled", ctxt_->merge_enabled(), true);
+		
 		pn.param<double>("floor_height", floor_height, floor_height);
 		
 		Eigen::Vector3f floor_offset(0,floor_height,0);

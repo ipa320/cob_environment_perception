@@ -156,7 +156,7 @@ private:
 public:
 	Context2D(const Context::Ptr &ctxt, const Eigen::Matrix3f &proj, const nuklei::kernel::se3 &tf, const double far_clipping=4.);
 	
-	void merge(const Context::Ptr &ctxt);
+	void merge(const Context::Ptr &ctxt, const bool merge_enabled=true);
 	
 	void save_as_svg(const std::string &fn) const;
 	
@@ -168,6 +168,8 @@ class GlobalContext {
 	Context2D::Ptr scene_2d_;
 	
 	Eigen::Matrix3d proj_;
+	
+	bool merge_enabled_;
 	
 	typedef std::vector<Classifier::Ptr> ClassifierSet;
 	
@@ -184,6 +186,8 @@ public:
 	void visualize_markers();
 	
 	bool registerClassifier(Classifier *c);
+	
+	bool &merge_enabled() {return merge_enabled_;}
 	
 	inline void set_projection(const Eigen::Matrix3d &proj) {
 		proj_ = proj;

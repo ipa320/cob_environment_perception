@@ -12,7 +12,7 @@
 using namespace cob_3d_geometry_map;
 
 
-GlobalContext::GlobalContext() : scene_(new Context) {
+GlobalContext::GlobalContext() : scene_(new Context), merge_enabled_(true) {
 }
 
 void GlobalContext::add_scene(const cob_3d_mapping_msgs::PlaneScene &scene, TransformationEstimator * const tf_est)
@@ -30,10 +30,10 @@ void GlobalContext::add_scene(const cob_3d_mapping_msgs::PlaneScene &scene, Tran
 			ROS_WARN("failed to register scene --> SKIPPING!");
 			return;
 		}
-	
+		
 	scene_2d_.reset(new Context2D(scene_, proj_.cast<float>(), tf));
 	scene_->set_context_2d(scene_2d_.get());
-	scene_2d_->merge(ctxt);
+	scene_2d_->merge(ctxt, merge_enabled_);
 	
 #ifdef DEBUG_
 	std::cout<<"scene_ "<<scene_->end()-scene_->begin()<<std::endl;
@@ -513,10 +513,10 @@ struct Candidate {
 	Candidate(Plane *p, double r) : p(p), relation(r) {}
 };
 
-void Context2D::merge(const Context::Ptr &ctxt)
+void Context2D::merge(const Context::Ptr &ctxt, const bool merge_enabled)
 {
 #ifdef DEBUG_
-	std::cout<<"merge: "<<std::endl;
+	std::cout<<"merge: "<<merge_enabled<<std::endl;
 #endif
 
 	//1. project polygon to view plane
@@ -530,128 +530,131 @@ void Context2D::merge(const Context::Ptr &ctxt)
 
 				obj->pose().makeTransformWith(tf_);
 				
+				size_t bad_ones=0;
 				std::map<Object::Ptr, std::vector<Candidate> > candidates, candidates_neg;
-				int unknown=0;
-				std::vector<Plane_Polygon::Ptr> polys;
-				obj->project(projector_, polys);
 				
-				std::map<Object::Ptr, std::vector<value> > ints;
-				std::vector<value> result;
-				box bb;
-				if(polys.size()>0)
-					bb=ProjectedPolygon::get_box(polys[0]);
-				for(size_t j=1; j<polys.size(); j++)
-					boost::geometry::expand(bb, ProjectedPolygon::get_box(polys[j]));
+				if(merge_enabled) {
+					int unknown=0;
+					std::vector<Plane_Polygon::Ptr> polys;
+					obj->project(projector_, polys);
 					
-				std::vector<value> result_n;
-				rtree_.query(boost::geometry::index::intersects(bb), std::back_inserter(result_n));
-				
-				for(size_t k=0; k<result_n.size(); k++)
-					ints[result_n[k].second->obj_].push_back(result_n[k]);
-				
-				for(std::map<Object::Ptr, std::vector<value> >::iterator it=ints.begin(); it!=ints.end(); it++) {	
-#ifdef DEBUG_
-					{
-						double area_in=boost::geometry::area(bb), area_map=0, area_union = 0;
-						box bb_tmp;
-						for(size_t k=0; k<it->second.size(); k++) {
-							area_map += boost::geometry::area(it->second[k].second->get_box());
-							if(k==0)
-								bb_tmp = it->second[k].second->get_box();
-							else
-								boost::geometry::expand(bb_tmp, it->second[k].second->get_box());
-						}
-							
-						Eigen::Vector2d a(
-							std::max(boost::geometry::get<boost::geometry::min_corner, 0>(bb), boost::geometry::get<boost::geometry::min_corner, 0>(bb_tmp)),
-							std::max(boost::geometry::get<boost::geometry::min_corner, 1>(bb), boost::geometry::get<boost::geometry::min_corner, 1>(bb_tmp)) );
-						Eigen::Vector2d b(
-							std::min(boost::geometry::get<boost::geometry::max_corner, 0>(bb), boost::geometry::get<boost::geometry::max_corner, 0>(bb_tmp)),
-							std::min(boost::geometry::get<boost::geometry::max_corner, 1>(bb), boost::geometry::get<boost::geometry::max_corner, 1>(bb_tmp)) );
-						area_union += (b-a)(0)*(b-a)(1);
+					std::map<Object::Ptr, std::vector<value> > ints;
+					std::vector<value> result;
+					box bb;
+					if(polys.size()>0)
+						bb=ProjectedPolygon::get_box(polys[0]);
+					for(size_t j=1; j<polys.size(); j++)
+						boost::geometry::expand(bb, ProjectedPolygon::get_box(polys[j]));
+						
+					std::vector<value> result_n;
+					rtree_.query(boost::geometry::index::intersects(bb), std::back_inserter(result_n));
 					
-						std::cout<<"areas approx "<<100*area_union/std::min(area_in,area_map)<<"% "<<100*area_union/std::max(area_in,area_map)<<"% "<<area_in<<" "<<area_map<<" "<<area_union<<std::endl;
-
-						if(area_union/std::min(area_in,area_map) < 0.3f) continue;
-					}
-#endif
-
-					double area_in=0, area_map=0, area_union=0;
-					{
-#ifdef DEBUG_
-						std::ofstream svg("/tmp/m3.svg");
-						boost::geometry::svg_mapper<Plane_Point::Ptr> mapper(svg, 800, 800);
-#endif
-
-						for(size_t j=0; j<polys.size(); j++) {
-							area_in += boost::geometry::area(*polys[j]);
+					for(size_t k=0; k<result_n.size(); k++)
+						ints[result_n[k].second->obj_].push_back(result_n[k]);
+					
+					for(std::map<Object::Ptr, std::vector<value> >::iterator it=ints.begin(); it!=ints.end(); it++) {	
+	#ifdef DEBUG_
+						{
+							double area_in=boost::geometry::area(bb), area_map=0, area_union = 0;
+							box bb_tmp;
 							for(size_t k=0; k<it->second.size(); k++) {
-								area_map += boost::geometry::area(*it->second[k].second->poly_);
-								std::vector<Plane_Polygon> u=*polys[j] & *it->second[k].second->poly_;
-								for(size_t n=0; n<u.size(); n++) {
-									area_union += boost::geometry::area(u[n]);	
-#ifdef DEBUG_
-									u[n].save_as_svg(mapper);
-#endif
+								area_map += boost::geometry::area(it->second[k].second->get_box());
+								if(k==0)
+									bb_tmp = it->second[k].second->get_box();
+								else
+									boost::geometry::expand(bb_tmp, it->second[k].second->get_box());
+							}
+								
+							Eigen::Vector2d a(
+								std::max(boost::geometry::get<boost::geometry::min_corner, 0>(bb), boost::geometry::get<boost::geometry::min_corner, 0>(bb_tmp)),
+								std::max(boost::geometry::get<boost::geometry::min_corner, 1>(bb), boost::geometry::get<boost::geometry::min_corner, 1>(bb_tmp)) );
+							Eigen::Vector2d b(
+								std::min(boost::geometry::get<boost::geometry::max_corner, 0>(bb), boost::geometry::get<boost::geometry::max_corner, 0>(bb_tmp)),
+								std::min(boost::geometry::get<boost::geometry::max_corner, 1>(bb), boost::geometry::get<boost::geometry::max_corner, 1>(bb_tmp)) );
+							area_union += (b-a)(0)*(b-a)(1);
+						
+							std::cout<<"areas approx "<<100*area_union/std::min(area_in,area_map)<<"% "<<100*area_union/std::max(area_in,area_map)<<"% "<<area_in<<" "<<area_map<<" "<<area_union<<std::endl;
+
+							if(area_union/std::min(area_in,area_map) < 0.3f) continue;
+						}
+	#endif
+
+						double area_in=0, area_map=0, area_union=0;
+						{
+	#ifdef DEBUG_
+							std::ofstream svg("/tmp/m3.svg");
+							boost::geometry::svg_mapper<Plane_Point::Ptr> mapper(svg, 800, 800);
+	#endif
+
+							for(size_t j=0; j<polys.size(); j++) {
+								area_in += boost::geometry::area(*polys[j]);
+								for(size_t k=0; k<it->second.size(); k++) {
+									area_map += boost::geometry::area(*it->second[k].second->poly_);
+									std::vector<Plane_Polygon> u=*polys[j] & *it->second[k].second->poly_;
+									for(size_t n=0; n<u.size(); n++) {
+										area_union += boost::geometry::area(u[n]);	
+	#ifdef DEBUG_
+										u[n].save_as_svg(mapper);
+	#endif
+									}
 								}
 							}
 						}
-					}
+							
+	#ifdef DEBUG_
+						std::cout<<"areas "<<100*area_union/std::min(area_in,area_map)<<"% "<<100*area_union/std::max(area_in,area_map)<<"% "<<area_in<<" "<<area_map<<" "<<area_union<<std::endl;
 						
-#ifdef DEBUG_
-					std::cout<<"areas "<<100*area_union/std::min(area_in,area_map)<<"% "<<100*area_union/std::max(area_in,area_map)<<"% "<<area_in<<" "<<area_map<<" "<<area_union<<std::endl;
-					
-					{std::ofstream svg("/tmp/m1.svg");
-					boost::geometry::svg_mapper<Plane_Point::Ptr> mapper(svg, 800, 800);
-					
-					for(size_t j=0; j<polys.size(); j++)
-						polys[j]->save_as_svg(mapper);
-					}
-					{std::ofstream svg("/tmp/m2.svg");
-					boost::geometry::svg_mapper<Plane_Point::Ptr> mapper(svg, 800, 800);
-					
-					for(size_t k=0; k<it->second.size(); k++)
-						it->second[k].second->poly_->save_as_svg(mapper);
-					}
-#endif
-		
-					assert(area_union<=area_in+0.00001);
-					assert(area_union<=area_map+0.00001);
-					
-					if( area_union/std::min(area_in,area_map)>0.7f && area_union/std::max(area_in,area_map)>0.2f ) {
-						if(	obj->can_merge_fast(*it->first) && it->first->can_merge_fast(*obj) &&
-							obj->can_merge(*it->first) && it->first->can_merge(*obj))
-							candidates[it->first].push_back(Candidate(obj, std::min(area_in-area_union, area_map-area_union)/std::max(area_in,area_map) ));
-						else
-							candidates_neg[it->first].push_back(Candidate(obj, std::min(area_in-area_union, area_map-area_union)/std::max(area_in,area_map) ));
-					}
-					else
-						unknown++;
-					
-				}
-
-#ifdef DEBUG_
-				std::cout<<"merge candidates "<<candidates.size()<<" / "<<candidates_neg.size()<<" / "<<unknown<<std::endl;
-				if(candidates.size()>1)
-					system("read x");
-#endif
-
-				size_t bad_ones=0;
-				for(std::map<Object::Ptr, std::vector<Candidate> >::iterator it=candidates.begin(); it!=candidates.end(); it++) {
-#ifdef DEBUG_
-					std::cout<<"    candidates "<<it->second.size()<<std::endl;
-#endif
-					for(size_t i=0; i<it->second.size(); i++) {
-						if(!it->first->merge(*it->second[i].p, it->second[i].relation)) {
-							scene_->erase(it->first);
-							++bad_ones;
-							break;
+						{std::ofstream svg("/tmp/m1.svg");
+						boost::geometry::svg_mapper<Plane_Point::Ptr> mapper(svg, 800, 800);
+						
+						for(size_t j=0; j<polys.size(); j++)
+							polys[j]->save_as_svg(mapper);
 						}
+						{std::ofstream svg("/tmp/m2.svg");
+						boost::geometry::svg_mapper<Plane_Point::Ptr> mapper(svg, 800, 800);
+						
+						for(size_t k=0; k<it->second.size(); k++)
+							it->second[k].second->poly_->save_as_svg(mapper);
+						}
+	#endif
+			
+						//assert(area_union<=area_in+0.00001);
+						//assert(area_union<=area_map+0.00001);
+						
+						if( area_union/std::min(area_in,area_map)>0.7f && area_union/std::max(area_in,area_map)>0.2f ) {
+							if(	obj->can_merge_fast(*it->first) && it->first->can_merge_fast(*obj) &&
+								obj->can_merge(*it->first) && it->first->can_merge(*obj))
+								candidates[it->first].push_back(Candidate(obj, std::min(area_in-area_union, area_map-area_union)/std::max(area_in,area_map) ));
+							else
+								candidates_neg[it->first].push_back(Candidate(obj, std::min(area_in-area_union, area_map-area_union)/std::max(area_in,area_map) ));
+						}
+						else
+							unknown++;
+						
 					}
-				}	
-#ifdef DEBUG_
-				std::cout<<"Xmerge candidates "<<candidates.size()<<" / "<<candidates_neg.size()<<" / "<<unknown<<" / "<<bad_ones<<std::endl;
-#endif
+
+	#ifdef DEBUG_
+					std::cout<<"merge candidates "<<candidates.size()<<" / "<<candidates_neg.size()<<" / "<<unknown<<std::endl;
+					if(candidates.size()>1)
+						system("read x");
+	#endif
+
+					for(std::map<Object::Ptr, std::vector<Candidate> >::iterator it=candidates.begin(); it!=candidates.end(); it++) {
+	#ifdef DEBUG_
+						std::cout<<"    candidates "<<it->second.size()<<std::endl;
+	#endif
+						for(size_t i=0; i<it->second.size(); i++) {
+							if(!it->first->merge(*it->second[i].p, it->second[i].relation)) {
+								scene_->erase(it->first);
+								++bad_ones;
+								break;
+							}
+						}
+					}	
+	#ifdef DEBUG_
+					std::cout<<"Xmerge candidates "<<candidates.size()<<" / "<<candidates_neg.size()<<" / "<<unknown<<" / "<<bad_ones<<std::endl;
+	#endif
+				}
 				
 				if(candidates.size()==bad_ones && candidates_neg.size()==0)
 					scene_->add(*it_obj);
