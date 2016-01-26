@@ -38,14 +38,14 @@ void Object3D::visualization(std::vector<boost::shared_ptr<Visualization::Object
 {
 	Parent::visualization(objs);
 	
-	objs.push_back( Visualization::Object::Ptr( new Visualization::Sphere(vis_name("Object3D"), cast(pose_.loc_), 0.1f) ) );
+	//objs.push_back( Visualization::Object::Ptr( new Visualization::Sphere(vis_name("Object3D"), cast(pose_.loc_), 0.05f) ) );
 }
 
 void ObjectVolume::visualization(std::vector<boost::shared_ptr<Visualization::Object> > &objs)
 {
 	Parent::visualization(objs);
 	
-	objs.push_back( Visualization::Object::Ptr( new Visualization::Box(vis_name("ObjectVolume"), cast(pose_), bb_) ) );
+	//objs.push_back( Visualization::Object::Ptr( new Visualization::Box(vis_name("ObjectVolume"), cast(pose_), bb_) ) );
 }
 
 bool ObjectVolume::contains(const ObjectVolume &o) const {
