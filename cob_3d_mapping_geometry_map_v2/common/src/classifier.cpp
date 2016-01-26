@@ -163,6 +163,9 @@ Class::Ptr Classifier_Carton::classifiy_side(Plane *plane, ContextPtr ctxt, cons
 {
 	assert(classifier_front_);
 	
+	//disabled side recognition
+	return Class::Ptr();
+	
 	if(!interest_volume_.overlaps(*plane))
 		return Class::Ptr();
 	
