@@ -224,6 +224,8 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 			Eigen::Vector3f carton_orientation = Eigen::Vector3f::UnitY();
 			Eigen::Vector3f carton_size = carton.dim_.cast<float>();
 			
+			carton_offset(1) -= 0.025;
+			
 			carton_offset(0) -= carton_tolerance_left_right;
 			carton_size(0) += 2*carton_tolerance_left_right;
 			
