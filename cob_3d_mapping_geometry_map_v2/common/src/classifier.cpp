@@ -445,19 +445,19 @@ void Classifier_Carton::visualize(ContextPtr ctxt, std::vector<boost::shared_ptr
 	Visualization::Box *box;
 	
 	box = new Visualization::Box("Classifier::"+name()+"::interest", cast(interest_volume_.pose()), interest_volume_.bb_in_pose());
-	box->color() = Eigen::Vector4f(0.5,0.5,0.5,0.5);
+	box->color() = Eigen::Vector4f(0.5,0.5,0.5,0.15);
 	objs.push_back( Visualization::Object::Ptr(box) );
 	
 	box = new Visualization::Box("Classifier::"+name()+"::interest_shelf", cast(interest_volume_.pose()), generate_shelf().bb_in_pose());
-	box->color() = Eigen::Vector4f(0.75,0.25,0.25,0.5);
+	box->color() = Eigen::Vector4f(0.75,0.25,0.25,0.05);
 	objs.push_back( Visualization::Object::Ptr(box) );
 	
 	box = new Visualization::Box("Classifier::"+name()+"::interest_over_shelf", cast(interest_volume_.pose()), generate_over_shelf().bb_in_pose());
-	box->color() = Eigen::Vector4f(0.25,0.75,0.25,0.5);
+	box->color() = Eigen::Vector4f(0.25,0.75,0.25,0.05);
 	objs.push_back( Visualization::Object::Ptr(box) );
 	
 	box = new Visualization::Box("Classifier::"+name()+"::interest_floor_shelf", cast(interest_volume_.pose()), generate_floor_shelf().bb_in_pose());
-	box->color() = Eigen::Vector4f(0.25,0.25,0.75,0.5);
+	box->color() = Eigen::Vector4f(0.25,0.25,0.75,0.25);
 	objs.push_back( Visualization::Object::Ptr(box) );
 	
 	if(classifier_front_) {
