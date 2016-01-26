@@ -130,18 +130,21 @@ public:
 			ObjectVolume generate_floor_shelf() const {
 				ObjectVolume shelf = interest_volume_;
 				Eigen::Vector3f vi=interest_volume_.bb_in_pose().min(), va=interest_volume_.bb_in_pose().max();
+				vi(0) += 0.03;
+				va(0) -= 0.03;
 				vi(1) = va(1)-0.03; //3cm
+				va(2) = vi(2)+0.06;
 				shelf._bb() = ObjectVolume::TBB(vi, va);
 				return shelf;
 			}
 			
 			ObjectVolume generate_over_shelf() const {
 				ObjectVolume over_shelf = interest_volume_;
-				over_shelf._bb().min()(0) -= 0.15; //20cm
-				over_shelf._bb().min()(1) -= 0.1; //cm
+				over_shelf._bb().min()(0) -= 0.35; //20cm
+				over_shelf._bb().min()(1) -= 0.05; //cm
 				over_shelf._bb().min()(2) -= 0.1; //cm
-				over_shelf._bb().max()(0) += 0.15; //20cm
-				over_shelf._bb().max()(1) += 0.075; //cm
+				over_shelf._bb().max()(0) += 0.35; //20cm
+				over_shelf._bb().max()(1) += 0.035; //cm
 				over_shelf._bb().max()(2) += 0.15; //cm
 				return over_shelf;
 			}
