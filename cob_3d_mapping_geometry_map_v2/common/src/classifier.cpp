@@ -323,6 +323,11 @@ std::vector<ObjectVolume> Classifier_Carton::get_cartons() const {
 		else
 			n_side = cast(interest_volume_.pose()).matrix().col(0).head<3>();
 		Eigen::Vector3f n_front= classifier_front_->meanNormal();
+		
+		//correct box orientation...
+		n_front(1) = 0;
+		n_front.normalize();
+		
 		ObjectVolume vol = interest_volume_;
 		Eigen::Matrix3f M;
 		M.col(1) = n_front.cross(n_side);
