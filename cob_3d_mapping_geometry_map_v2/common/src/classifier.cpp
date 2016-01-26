@@ -118,7 +118,7 @@ Class::Ptr Classifier_Carton::classifiy_front(Plane *plane, ContextPtr ctxt, con
 		return Class::Ptr();
 	
 	//2. in box of front  (contains with big margin)
-	if(!generate_over_shelf().contains(*plane))
+	if(!plane->is_contained(generate_over_shelf()))
 		return Class::Ptr();
 	
 	//3. check pose

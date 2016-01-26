@@ -834,3 +834,17 @@ void Plane::simple_projection(Plane* plane_out, const Plane* plane_in1, const Pl
 	plane_out->save_as_svg(mapper);
 #endif
 }
+
+bool Plane::is_contained(const ObjectVolume &o) const
+{
+	Eigen::Affine3f pose = cast(o.pose()).inverse()*cast(pose_);
+	for(size_t i=0; i<polygons_.size(); i++) {
+		for(size_t j=0; j<polygons_[i]->boundary().size(); j++) {
+			
+			if(!o.bb_in_pose().contains( pose*Eigen::Vector3f(polygons_[i]->boundary()[j]->pos(0), polygons_[i]->boundary()[j]->pos(1), 0.f) ))
+				return false;
+		}
+	}
+	
+	return true;
+}

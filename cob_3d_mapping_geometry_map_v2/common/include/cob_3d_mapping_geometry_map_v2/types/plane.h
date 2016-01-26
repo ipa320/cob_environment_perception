@@ -243,6 +243,8 @@ public:
 	inline Eigen::Vector3f offset_eigen() const {return cast(pose_.loc_);}
 	inline Eigen::Vector3f normal_eigen() const {return cast(pose_.ori_)*Eigen::Vector3f::UnitZ();}
 	
+	bool is_contained(const ObjectVolume &o) const;
+	
 	inline nuklei_wmf::Plane3<Real> plane() const {
 		return nuklei_wmf::Plane3<Real>(pose_.ori_.Rotate(nuklei_wmf::Vector3<double>::UNIT_Z), pose_.loc_);
 	}
