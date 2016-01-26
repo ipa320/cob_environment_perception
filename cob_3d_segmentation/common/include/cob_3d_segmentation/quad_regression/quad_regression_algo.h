@@ -132,7 +132,7 @@ namespace Segmentation
     public:
       CameraModel_Ensenso(){}
 
-      inline static float std(const float dist) {return 0.009666969f*0.33f*dist*dist;}
+      inline static float std(const float dist) {return 0.009666969f*0.5f*dist*dist;}
     };
 
     template<typename Point>

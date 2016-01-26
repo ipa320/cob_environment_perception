@@ -93,7 +93,7 @@ QuadRegression<Degree, Point, CameraModel>::QuadRegression():
 NUM_LOD(5), MIN_LOD(4), FINAL_LOD(0), GO_DOWN_TO_LVL(4),
 #else
 #ifdef CAMERA_ENSENSO
-NUM_LOD(9), MIN_LOD(16), FINAL_LOD(0), GO_DOWN_TO_LVL(NUM_LOD-2),
+NUM_LOD(10), MIN_LOD(16), FINAL_LOD(0), GO_DOWN_TO_LVL(NUM_LOD-1),
 #else
 NUM_LOD(5), MIN_LOD(8), FINAL_LOD(0), GO_DOWN_TO_LVL(3),
 #endif
@@ -521,7 +521,7 @@ void QuadRegression<Degree, Point, CameraModel>::grow(SubStructure::VISITED_LIST
               (levels_[i].data[getInd(i, x,y)].v_max_-levels_[i].data[getInd(i, x,y)].v_min_) <
 #ifndef CAMERA_ENSENSO
               (std::min(model.get_max_gradient(levels_[i].data[getInd(i, x,y)]), 2.f)*d*(1<<i)/camera_.f
-                  +2*(camera_.std(levels_[i].data[getInd(i, x,y)].v_max_)
+                  +(camera_.std(levels_[i].data[getInd(i, x,y)].v_max_)
                       +camera_.std(levels_[i].data[getInd(i, x,y)].v_min_))
 #else
               (std::min(model.get_max_gradient(levels_[i].data[getInd(i, x,y)]), 2.f)*d/camera_.f
