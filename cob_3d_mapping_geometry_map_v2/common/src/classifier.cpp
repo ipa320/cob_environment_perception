@@ -114,7 +114,10 @@ Class::Ptr Classifier_Carton::classifiy(Object::Ptr obj, ContextPtr ctxt, const 
 Class::Ptr Classifier_Carton::classifiy_front(Plane *plane, ContextPtr ctxt, const bool single_shot)
 {
 	//1. contact to shelf panel? (intersection)
-	if(!generate_floor_shelf().overlaps(*plane))
+	if( //hack
+		!(interest_volume_.pose().loc_.Y()>-0.5 || interest_volume_.pose().loc_.Y()<-1.7)
+		&&
+		!generate_floor_shelf().overlaps(*plane))
 		return Class::Ptr();
 	
 	//2. in box of front  (contains with big margin)
