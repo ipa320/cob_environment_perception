@@ -319,7 +319,11 @@ public:
 		//TODO: add mutex
 		ROS_INFO("Resetting...");
 		reset();
+#if ROS_VERSION_MINIMUM(1, 11, 0)
+		res.success = true;
+#else
 		res.success.data = true;
+#endif
 		
 		return true;
 	}
