@@ -133,7 +133,7 @@ public:
 				vi(0) += 0.03;
 				va(0) -= 0.03;
 				vi(1) = va(1)-0.03; //3cm
-				va(2) = vi(2)+0.06;
+				va(2) = vi(2)+0.15;
 				shelf._bb() = ObjectVolume::TBB(vi, va);
 				return shelf;
 			}
