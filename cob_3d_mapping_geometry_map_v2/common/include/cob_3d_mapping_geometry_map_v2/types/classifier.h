@@ -139,11 +139,17 @@ public:
 			}
 			
 			ObjectVolume generate_over_shelf() const {
+				double lr = 0.35;
+				if( //hack
+					interest_volume_.pose().loc_.Y()>-0.5 || interest_volume_.pose().loc_.Y()<-1.7
+				)
+				  lr = 0.035;
+				
 				ObjectVolume over_shelf = interest_volume_;
-				over_shelf._bb().min()(0) -= 0.35; //20cm
+				over_shelf._bb().min()(0) -= lr; //20cm
 				over_shelf._bb().min()(1) -= 0.05; //cm
 				over_shelf._bb().min()(2) -= 0.1; //cm
-				over_shelf._bb().max()(0) += 0.35; //20cm
+				over_shelf._bb().max()(0) += lr; //20cm
 				over_shelf._bb().max()(1) += 0.035; //cm
 				over_shelf._bb().max()(2) += 0.15; //cm
 				return over_shelf;
