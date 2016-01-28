@@ -129,7 +129,8 @@ namespace cob_3d_visualization {
 		void publish(const ros::Time &stamp=ros::Time()) {
 			for(size_t i=0; i<markers_.markers.size(); i++) {
 				markers_.markers[i].header.stamp = stamp;
-				active_ids_.push_back(S_ACTIVE(markers_.markers[i].id, markers_.markers[i].ns)); 
+				if(markers_.markers[i].action!=visualization_msgs::Marker::DELETE)
+					active_ids_.push_back(S_ACTIVE(markers_.markers[i].id, markers_.markers[i].ns)); 
 			}
 			vis_pub_.publish(markers_);
 			markers_.markers.clear();
