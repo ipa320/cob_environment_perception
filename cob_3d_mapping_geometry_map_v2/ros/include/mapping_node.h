@@ -28,15 +28,17 @@
 struct SCarton {
 	int id_;
 	Eigen::Vector3d pos_, dim_;
+	int box_count_horizontal_;
 	
 	SCarton(XmlRpc::XmlRpcValue &item) {
 		id_ = item["volume_index"];
 		pos_(0) = item["x"];
-		pos_(1) = item["y"];
+		pos_(1) = (double)item["y"]-((double)item["H"]-(double)item["h"]);
 		pos_(2) = item["z"];
 		dim_(0) = item["w"];
-		dim_(1) = item["h"];
+		dim_(1) = item["H"];	//we use shelf height instead of height of volume
 		dim_(2) = item["d"];
+		box_count_horizontal_ = std::max(1, (int)item["box_count_horizontal"]);
 	}
 };
 
@@ -58,6 +60,8 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 	void callback2(const cob_3d_mapping_msgs::PlaneSceneConstPtr& scene)
 	{
 	  ROS_INFO("callback2");
+	  
+	  if(!ctxt_) return;
 	  
 	  //if not set we keep in input frame
 	  if(target_frame_.empty())
@@ -81,17 +85,23 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 
 	  tf::transformTFToEigen(transform, tf2target_);
 	  
-	  //now do the mapping stuff
-	  ros::Time start = ros::Time::now();
-	  ctxt_->add_scene(*scene, this);
-	  ROS_INFO("took %f", (ros::Time::now()-start).toSec());
-	  
-	  //visualize it
-	  ctxt_->visualize_markers();
-	  
-	  //some additional features
-	  publish_scan(scene->header);
-	  publish_cartons(scene->header);
+	  try {
+		  //now do the mapping stuff
+		  ros::Time start = ros::Time::now();
+		  ctxt_->add_scene(*scene, this);
+		  ROS_INFO("took %f", (ros::Time::now()-start).toSec());
+		  
+		  //visualize it
+		  ctxt_->visualize_markers();
+		  
+		  //some additional features
+		  publish_scan(scene->header);
+		  publish_cartons(scene->header);
+	  }
+	  catch(...) {
+		  ROS_ERROR("some error in geometry_map_v2, resetting...");
+		  reset();
+	  }
 	}
 	
 	void publish_cartons(const std_msgs::Header &header) {
@@ -108,7 +118,7 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 				msg.detector = "geometry_map::Classsifier::carton";
 				
 				msg.label = classifier_cartons_[i]->name();
-				msg.id = classifier_cartons_[i]->carton_id();
+				msg.id = classifier_cartons_[i]->carton_id();		//ids with leading n*100 is a virtual box, so correct id to match the planogram
 				
 				msg.pose.pose.position.x = cartons[j].pose().loc_.X();
 				msg.pose.pose.position.y = cartons[j].pose().loc_.Y();//+cartons[j].bb_in_pose().sizes()(1);
@@ -218,29 +228,37 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 		{
 		  for(int i=0; i<cartonList.size(); i++)
 		  {
-			SCarton carton(cartonList[i]);
-		
-			Eigen::Vector3f carton_offset = carton.pos_.cast<float>();
-			Eigen::Vector3f carton_orientation = Eigen::Vector3f::UnitY();
-			Eigen::Vector3f carton_size = carton.dim_.cast<float>();
+			  SCarton carton(cartonList[i]);
+			  
+			  for(int n=0; n<carton.box_count_horizontal_; n++)
+			  {
 			
-			carton_offset(1) -= 0.025;
-			
-			carton_offset(0) -= carton_tolerance_left_right;
-			carton_size(0) += 2*carton_tolerance_left_right;
-			
-			carton_offset(1) -= carton_tolerance_top;
-			carton_size(1) += carton_tolerance_top;
-			
-			std::vector<double> widths;
-			widths.push_back(carton.dim_(0));
-			
-			cob_3d_geometry_map::CustomClassifier::Classifier_Carton *carton_front, *carton_side;
-			ctxt_->registerClassifier( carton_front=new cob_3d_geometry_map::CustomClassifier::Classifier_Carton(carton.id_, Eigen::AngleAxisf(0,carton_orientation)*Eigen::Translation3f(carton_offset), carton_size, widths, min_coverage_seeing, min_coverage_expecting, bandwith_orientation));
-			ctxt_->registerClassifier( carton_side=new cob_3d_geometry_map::CustomClassifier::Classifier_Carton(carton_front) );
-			classifier_cartons_.push_back(carton_side);
-			
-			ROS_INFO("added carton %d", carton.id_);
+				Eigen::Vector3f carton_offset = carton.pos_.cast<float>();
+				Eigen::Vector3f carton_orientation = Eigen::Vector3f::UnitY();
+				Eigen::Vector3f carton_size = carton.dim_.cast<float>();
+					
+				//generate virtual boxes
+				carton_size(0)   /= carton.box_count_horizontal_;
+				carton_offset(0) += n*carton_size(0);
+				
+				carton_offset(1) -= 0.033;
+				
+				carton_offset(0) -= carton_tolerance_left_right;
+				carton_size(0) += 2*carton_tolerance_left_right;
+				
+				carton_offset(1) -= carton_tolerance_top;
+				carton_size(1) += carton_tolerance_top;
+				
+				std::vector<double> widths;
+				widths.push_back(carton.dim_(0)/carton.box_count_horizontal_);
+				
+				cob_3d_geometry_map::CustomClassifier::Classifier_Carton *carton_front, *carton_side;
+				ctxt_->registerClassifier( carton_front=new cob_3d_geometry_map::CustomClassifier::Classifier_Carton(carton.id_+n*100, Eigen::AngleAxisf(0,carton_orientation)*Eigen::Translation3f(carton_offset), carton_size, widths, min_coverage_seeing, min_coverage_expecting, bandwith_orientation));
+				ctxt_->registerClassifier( carton_side=new cob_3d_geometry_map::CustomClassifier::Classifier_Carton(carton_front) );
+				classifier_cartons_.push_back(carton_side);
+			  }
+				
+			  ROS_INFO("added carton %d  (%d x)", carton.id_, carton.box_count_horizontal_);
 		  }
 		}
 	}
@@ -253,7 +271,7 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 		ROS_INFO("loaded parameters:");
 		ROS_INFO("target_frame:\t%s", target_frame_.c_str());
 		
-		cob_3d_visualization::RvizMarkerManager::get().createTopic("marker").setFrameId(target_frame_).clearOld();
+		cob_3d_visualization::RvizMarkerManager::get().createTopic("marker").setFrameId(target_frame_);//.clearOld();
 		 
 		//now start the ROS stuff
 		//sub_scene_.reset(new message_filters::Subscriber<cob_3d_mapping_msgs::PlaneScene>(nh_, "scene", 1));
@@ -277,6 +295,7 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 		
 		classifier_floor_ = NULL;
 		ctxt_.reset();
+		classifier_cartons_.clear();
 		
 		sub_camera_info_ = nh_.subscribe("camera_info", 1, &GeometryNode::cb_camera_info, this);
 	}

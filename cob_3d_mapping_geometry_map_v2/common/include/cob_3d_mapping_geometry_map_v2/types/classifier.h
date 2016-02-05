@@ -134,23 +134,24 @@ public:
 				va(0) -= 0.03;
 				vi(1) = va(1)-0.03; //3cm
 				va(2) = vi(2)+0.15;
+				vi(2)-= 0.03;
 				shelf._bb() = ObjectVolume::TBB(vi, va);
 				return shelf;
 			}
 			
 			ObjectVolume generate_over_shelf() const {
-				double lr = 0.35;
+				double lr = 0.1;
 				if( //hack
-					interest_volume_.pose().loc_.Y()>-0.5 || interest_volume_.pose().loc_.Y()<-1.7
+					interest_volume_.pose().loc_.Y()>-0.7 || interest_volume_.pose().loc_.Y()<-1.3
 				)
-				  lr = 0.035;
+				  lr = 0.05;
 				
 				ObjectVolume over_shelf = interest_volume_;
 				over_shelf._bb().min()(0) -= lr; //20cm
-				over_shelf._bb().min()(1) -= 0.05; //cm
+				over_shelf._bb().min()(1) -= 0.0; //cm
 				over_shelf._bb().min()(2) -= 0.1; //cm
 				over_shelf._bb().max()(0) += lr; //20cm
-				over_shelf._bb().max()(1) += 0.035; //cm
+				over_shelf._bb().max()(1) += 0.05; //cm
 				over_shelf._bb().max()(2) += 0.15; //cm
 				return over_shelf;
 			}
@@ -158,6 +159,7 @@ public:
 			bool find_extrema(const Projector &projector, const CmpSmallestAxis &cmp, Vector2 &ex1, Vector2 &ex2) const;
 			
 			Eigen::Vector3f meanNormal() const;
+			Eigen::Vector3f meanNormalFront() const;
 			void extend(ObjectVolume &vol) const;
 			std::vector<ObjectVolume> get_cartons(const ObjectVolume &volume) const;
 			

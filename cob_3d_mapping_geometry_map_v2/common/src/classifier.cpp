@@ -115,7 +115,7 @@ Class::Ptr Classifier_Carton::classifiy_front(Plane *plane, ContextPtr ctxt, con
 {
 	//1. contact to shelf panel? (intersection)
 	if( //hack
-		!(interest_volume_.pose().loc_.Y()>-0.5 || interest_volume_.pose().loc_.Y()<-1.7)
+		!(interest_volume_.pose().loc_.Y()>-0.7 || interest_volume_.pose().loc_.Y()<-1.3)
 		&&
 		!generate_floor_shelf().overlaps(*plane))
 		return Class::Ptr();
@@ -129,7 +129,7 @@ Class::Ptr Classifier_Carton::classifiy_front(Plane *plane, ContextPtr ctxt, con
 	const nuklei::kernel::r3xs2 box_params = Plane::plane_params(interest_volume_.pose());
 	nuklei::coord_pair dist( std::abs( (box_params.loc_-params.loc_).Dot(box_params.dir_) ), 1-std::abs(params.dir_.Dot(box_params.dir_)) );
 	
-	if(dist.first<=box_params.loc_h_+params.loc_h_ && dist.second<=box_params.dir_h_+params.dir_h_) {
+	if(/*dist.first<=box_params.loc_h_+params.loc_h_ && */dist.second<=box_params.dir_h_+params.dir_h_) {
 		//4. then add to part of shelf (for width calculation)
 		classified_planes_.push_back(Classification(plane));
 		
@@ -309,6 +309,34 @@ Eigen::Vector3f Classifier_Carton::meanNormal() const {
 	return n.normalized();
 }
 
+Eigen::Vector3f Classifier_Carton::meanNormalFront() const {
+	float z = interest_volume_.bb_in_pose().max()(2);
+	for(size_t i=0; i<classified_planes_.size(); i++) {
+		z = std::min(z, (cast(interest_volume_.pose()).inverse()*cast(classified_planes_[i].plane_->pose())*classified_planes_[i].plane_->bb_in_pose().center())(2));
+	}
+	
+	Eigen::Vector3f n = Eigen::Vector3f::Zero();
+	for(size_t i=0; i<classified_planes_.size(); i++) {
+		if( std::abs( (cast(interest_volume_.pose()).inverse()*cast(classified_planes_[i].plane_->pose())*classified_planes_[i].plane_->bb_in_pose().center())(2)-z )> 0.02 )
+			continue;
+		n+=classified_planes_[i].plane_->normal_eigen();
+	}
+	return n.normalized();
+}
+
+/*Eigen::Vector3f Classifier_Carton::mostFrontPt() const {
+	Projector_Volume projector(&volume, Projector_Volume::SIDE);
+	CmpSmallestAxis cmpZ(projector_front(cast((Eigen::Vector3f)Eigen::Vector3f::UnitZ()))-projector_front(cast((Eigen::Vector3f)Eigen::Vector3f::Zero())));
+	
+	Eigen::Vector3f pt = Eigen::Vector3f::Zero();
+	for(size_t i=0; i<classified_planes_.size(); i++) {
+		Plane_Point::Ptr pts = *std::min_element(res[j]->boundary().begin(), res[j]->boundary().end(), cmpZ);
+		if(cmpZ(pts,Pleft3.head<2>()))
+			pt(2) = std::max(pts->pos(0), volume.bb_in_pose().min()(0));
+	}
+	return pt;
+}*/
+
 void Classifier_Carton::extend(ObjectVolume &vol) const {
 	const nuklei::kernel::se3 pose = vol.pose().inverseTransformation();
 	for(size_t i=0; i<classified_planes_.size(); i++) {
@@ -325,7 +353,8 @@ std::vector<ObjectVolume> Classifier_Carton::get_cartons() const {
 			n_side = meanNormal();
 		else
 			n_side = cast(interest_volume_.pose()).matrix().col(0).head<3>();
-		Eigen::Vector3f n_front= classifier_front_->meanNormal();
+		Eigen::Vector3f n_front= classifier_front_->meanNormalFront();
+		//Eigen::Vector3f pt_front= classifier_front_->mostFrontPt();
 		
 		//correct box orientation...
 		n_front(1) = 0;
@@ -338,6 +367,7 @@ std::vector<ObjectVolume> Classifier_Carton::get_cartons() const {
 		M.col(2) = M.col(0).cross(M.col(1));
 		
 		vol.pose().ori_ = cast(Eigen::Quaternionf(M));
+		//vol.pose().loc_.Z() = pt_front(2);
 		
 		if(classified_planes_.size()>0) {
 			vol._bb().setEmpty();
@@ -357,7 +387,7 @@ std::vector<ObjectVolume> Classifier_Carton::get_cartons(const ObjectVolume &vol
 	if(classifier_front_) {
 		std::vector<ObjectVolume> r = classifier_front_->get_cartons(volume);
 		
-		if(classified_planes_.size()<1)
+		//if(classified_planes_.size()<1)
 			return r;
 			
 		if(r.size()==0)
@@ -412,6 +442,15 @@ std::vector<ObjectVolume> Classifier_Carton::get_cartons(const ObjectVolume &vol
 	
 	Eigen::Vector3f Pleft3 = volume.bb_in_pose().max(), Pright3 = volume.bb_in_pose().min();
 	
+	Pright3(2) = Pleft3(2);
+	for(size_t i=0; i<classified_planes_.size(); i++) {
+		Pright3(2) = std::min(Pright3(2), (cast(volume.pose()).inverse()*cast(classified_planes_[i].plane_->pose())*classified_planes_[i].plane_->bb_in_pose().center())(2));
+	}
+	
+	//hack
+	if(interest_volume_.pose().loc_.Y()>-0.7)
+		Pright3(2) += 0.05;
+	
 	//find most left and right points of front
 	CmpSmallestAxis cmpX(projector_front(cast((Eigen::Vector3f)Eigen::Vector3f::UnitX()))-projector_front(cast((Eigen::Vector3f)Eigen::Vector3f::Zero())));
 	for(size_t i=0; i<classified_planes_.size(); i++) {
@@ -441,7 +480,7 @@ std::vector<ObjectVolume> Classifier_Carton::get_cartons(const ObjectVolume &vol
 	r._bb().extend(Pright3);
 	
 	for(size_t i=0; i<widths_.size(); i++) {
-		if( std::abs(std::abs(Pleft3(0)-Pright3(0))-widths_[i]) < 0.07f )
+		if( std::abs(std::abs(Pleft3(0)-Pright3(0))-widths_[i]) < 0.09f )
 			return std::vector<ObjectVolume>(1,r);
 	}
 	
