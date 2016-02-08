@@ -124,6 +124,10 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 				msg.pose.pose.position.y = cartons[j].pose().loc_.Y();//+cartons[j].bb_in_pose().sizes()(1);
 				msg.pose.pose.position.z = cartons[j].pose().loc_.Z();
 				
+				msg.pose.pose.position.x += cartons[j].bb_in_pose().min()(0);
+				msg.pose.pose.position.y += cartons[j].bb_in_pose().min()(1);
+				msg.pose.pose.position.z += cartons[j].bb_in_pose().min()(2);
+				
 				msg.pose.pose.orientation.x = cartons[j].pose().ori_.X();
 				msg.pose.pose.orientation.y = cartons[j].pose().ori_.Y();
 				msg.pose.pose.orientation.z = cartons[j].pose().ori_.Z();
@@ -241,7 +245,7 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 				carton_size(0)   /= carton.box_count_horizontal_;
 				carton_offset(0) += n*carton_size(0);
 				
-				carton_offset(1) -= 0.033;
+				carton_offset(1) -= 0.01;
 				
 				carton_offset(0) -= carton_tolerance_left_right;
 				carton_size(0) += 2*carton_tolerance_left_right;

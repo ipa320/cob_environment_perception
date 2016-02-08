@@ -126,14 +126,14 @@ namespace cob_3d_visualization {
 			return *this;
 		}
 		void prepare(const visualization_msgs::Marker &marker) {markers_.markers.push_back(marker);}
-		void publish(const ros::Time &stamp=ros::Time()) {
+		void publish(const ros::Time &stamp=ros::Time(), const bool keep = false) {
 			for(size_t i=0; i<markers_.markers.size(); i++) {
 				markers_.markers[i].header.stamp = stamp;
 				if(markers_.markers[i].action!=visualization_msgs::Marker::DELETE)
 					active_ids_.push_back(S_ACTIVE(markers_.markers[i].id, markers_.markers[i].ns)); 
 			}
 			vis_pub_.publish(markers_);
-			markers_.markers.clear();
+			if(!keep) markers_.markers.clear();
 			ros::NodeHandle nh;
 			nh.setParam("/simple_marker/"+ns()+"/max", id_);
 		}
