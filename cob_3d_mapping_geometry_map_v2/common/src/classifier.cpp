@@ -479,10 +479,10 @@ std::vector<ObjectVolume> Classifier_Carton::get_cartons(const ObjectVolume &vol
 	r._bb().extend(Pleft3);
 	r._bb().extend(Pright3);
 	
-	if( //hack
-		interest_volume_.pose().loc_.Y()<-1.3
-	)
-		return std::vector<ObjectVolume>(1,r);
+//	if( //hack
+//		interest_volume_.pose().loc_.Y()<-1.3
+//	)
+//		return std::vector<ObjectVolume>(1,r);
 	
 	for(size_t i=0; i<widths_.size(); i++) {
 		if( std::abs(std::abs(Pleft3(0)-Pright3(0))-widths_[i]) < 0.09f )
