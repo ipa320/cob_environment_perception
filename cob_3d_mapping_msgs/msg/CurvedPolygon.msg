@@ -1,9 +1,0 @@
-time stamp
-uint32 ID
-float32[6] parameter
-#float32[][3] polyline
-SimilarityScore[] score
-PolylinePoint[] polyline
-Feature[] features
-string energy
-float32 weight
