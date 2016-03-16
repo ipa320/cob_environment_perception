@@ -1,9 +1,0 @@
-#Trigger Table Object Cluster
-#goal definition
-cob_object_detection_msgs/DetectionArray known_objects
----
-#result definition
-cob_object_detection_msgs/DetectionArray bounding_boxes
----
-#feedback
-std_msgs/String currentStep
