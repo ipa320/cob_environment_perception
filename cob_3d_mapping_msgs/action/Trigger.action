@@ -1,9 +1,0 @@
-#Trigger
-#goal definition
-bool start
----
-#result definition
-std_msgs/String message
----
-#feedback
-std_msgs/String currentStep
