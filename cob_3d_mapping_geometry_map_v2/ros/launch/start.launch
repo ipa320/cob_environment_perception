@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<launch>
+  <!-- Input/Output Topics: -->
+  <arg name="point_cloud_in" default="/camera/depth/points"/>
+  <arg name="segmented_cloud" default="/segmentation/segmented_cloud"/>
+  <arg name="classified_cloud" default="/segmentation/classified_cloud"/>
+  <arg name="shape_array" default="/segmentation/shape_array"/>
+
+  <node pkg="cob_3d_segmentation" type="qppf_node_ensenso" name="qppf_node_ensenso" respawn="true">
+    <remap from="/camera/depth/points" to="$(arg point_cloud_in)"/>
+    <remap from="/labeled_pc" to="$(arg segmented_cloud)"/>
+    <!--remap from="classified_cloud" to="$(arg classified_cloud)"/-->
+    <remap from="/shapes_array" to="$(arg shape_array)"/>
+
+    <param name="filter" type="int" value="-1"/>
+    <param name="only_planes" type="bool" value="True"/>
+  </node>
+  
+  <node pkg="cob_3d_mapping_geometry_map_v2" type="geometry_map2_node" name="geometry_map2_node" respawn="true">
+    <remap from="scene" to="/plane_scene"/>
+    <remap from="camera_info" to="/camera/depth/camera_info"/>
+    
+    <param name="target_frame" value="geometry_map_frame" />
+    <param name="floor_height" value="0.0" />
+    <param name="carton_min_coverage_seeing" value="0.8" />
+    <param name="carton_min_coverage_expecting" value="0.8" />
+    <param name="carton_bandwith_orientation" value="0.15" />
+  </node>
+  
+</launch>
