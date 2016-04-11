@@ -56,7 +56,7 @@ public:
 	
 	void set_context_2d(Context2D *ctxt2d) {ctxt2d_=ctxt2d;}
 	
-	void add_scene(const Ptr &this_ctxt, const cob_3d_mapping_msgs::PlaneScene &);
+	void add_scene(const Ptr &this_ctxt, const cob_3d_mapping_msgs::PlaneScene &, const std::vector<Image::Ptr> &);
 
 	void add(const Object::Ptr &);
 	void visualize(std::vector<boost::shared_ptr<Visualization::Object> > &vis_objs);
@@ -181,7 +181,7 @@ public:
 
 	GlobalContext();
 	
-	void add_scene(const cob_3d_mapping_msgs::PlaneScene &, TransformationEstimator * const tf_est);
+	void add_scene(const cob_3d_mapping_msgs::PlaneScene &, TransformationEstimator * const tf_est, const sensor_msgs::ImageConstPtr& color_img=sensor_msgs::ImageConstPtr(), const sensor_msgs::ImageConstPtr& depth_img=sensor_msgs::ImageConstPtr());
 	
 	void visualize_markers();
 	

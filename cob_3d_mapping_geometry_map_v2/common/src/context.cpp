@@ -15,10 +15,16 @@ using namespace cob_3d_geometry_map;
 GlobalContext::GlobalContext() : scene_(new Context), merge_enabled_(true) {
 }
 
-void GlobalContext::add_scene(const cob_3d_mapping_msgs::PlaneScene &scene, TransformationEstimator * const tf_est)
+void GlobalContext::add_scene(const cob_3d_mapping_msgs::PlaneScene &scene, TransformationEstimator * const tf_est, const sensor_msgs::ImageConstPtr& color_img, const sensor_msgs::ImageConstPtr& depth_img)
 {
+	const std::vector<Image::Ptr> imgs;
+	if(color_img)
+		imgs.push_back(ImageFile::get(color_img));
+	if(depth_img)
+		imgs.push_back(ImageFile::get(depth_img));
+		
 	Context::Ptr ctxt = boost::make_shared<Context>();
-	ctxt->add_scene(ctxt, scene);
+	ctxt->add_scene(ctxt, scene, imgs);
 	classify(ctxt, true);
 	ctxt->optimize(ctxt);
 	
@@ -82,7 +88,7 @@ void GlobalContext::visualize_markers() {
 		vis_objs[i]->serialize(stream);
 }
 
-void Context::add_scene(const Context::Ptr &this_ctxt, const cob_3d_mapping_msgs::PlaneScene &scene)
+void Context::add_scene(const Context::Ptr &this_ctxt, const cob_3d_mapping_msgs::PlaneScene &scene, const std::vector<Image::Ptr> &imgs)
 {
 	//TODO: add image first
 	
