@@ -17,13 +17,15 @@ GlobalContext::GlobalContext() : scene_(new Context), merge_enabled_(true) {
 
 void GlobalContext::add_scene(const cob_3d_mapping_msgs::PlaneScene &scene, TransformationEstimator * const tf_est, const sensor_msgs::ImageConstPtr& color_img, const sensor_msgs::ImageConstPtr& depth_img)
 {
-	const std::vector<Image::Ptr> imgs;
-	if(color_img)
-		imgs.push_back(ImageFile::get(color_img));
-	if(depth_img)
-		imgs.push_back(ImageFile::get(depth_img));
 		
 	Context::Ptr ctxt = boost::make_shared<Context>();
+	
+	std::vector<Image::Ptr> imgs;
+	if(color_img)
+		imgs.push_back(ImageFile::get(ctxt, color_img, Image::TYPE_COLOR));
+	if(depth_img)
+		imgs.push_back(ImageFile::get(ctxt, depth_img, Image::TYPE_DEPTH));
+		
 	ctxt->add_scene(ctxt, scene, imgs);
 	classify(ctxt, true);
 	ctxt->optimize(ctxt);

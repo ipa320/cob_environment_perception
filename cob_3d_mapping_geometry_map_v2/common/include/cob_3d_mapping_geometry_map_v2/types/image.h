@@ -2,6 +2,7 @@
 
 #include "object.h"
 #include <string>
+#include <sensor_msgs/Image.h>
 
 
 //! interfaces of cob_3d_geometry_map (v2)
@@ -11,7 +12,7 @@ class Image : public Object {
 public:
 	typedef boost::shared_ptr<Image> Ptr;
 	
-	enum TImgType {TYPE_COLOR, TYPE_DEPTH};
+	enum TImgType {TYPE_NONE, TYPE_COLOR, TYPE_DEPTH};
 	
 private:
 	int width_, height_;
@@ -19,6 +20,9 @@ private:
 	float resolution_;	//<depth resolution of depth image
 
 public:
+
+	Image(const ContextPtr &ctxt) : Object(ctxt), width_(0), height_(0), type_(TYPE_NONE), resolution_(0) {}
+	Image(const ContextPtr &ctxt, const TImgType &type) : Object(ctxt), width_(0), height_(0), type_(type), resolution_(0) {}
 
 	//getters
 	inline int width() const {return width_;}
@@ -37,44 +41,14 @@ private:
 	
 public:
 
+	ImageFile(const ContextPtr &ctxt);
+	ImageFile(const ContextPtr &ctxt, const TImgType &type);
+
 	const std::string &filename() const {return filename_;}
 	
-	static Ptr get(const sensor_msgs::ImageConstPtr &img);	//< convert sensor msg to Image object
+	static Ptr get(const ContextPtr &ctxt, const sensor_msgs::ImageConstPtr &img, const TImgType &type);	//< convert sensor msg to Image object
 };
 
 //typedef FileImage Image;
 
-}
-
-void SaveImageAsPPM( const sensor_msgs::ImageConstPtr& msg, const char* filename )
-{
-  if ( msg->encoding != "rgb8" )
-  {
-    return;  // Can only handle the rgb8 encoding
-  }
-
-  FILE* file = fopen( filename, "w" );
-
-  fprintf( file, "P3\n" );
-  fprintf( file, "%i %i\n", msg->width, msg->height );
-  fprintf( file, "255\n" );
-
-  for ( uint32_t y = 0; y < msg->height; y++ )
-  {
-    for ( uint32_t x = 0; x < msg->width; x++ )
-    {
-      // Get indices for the pixel components
-      uint32_t redByteIdx = y*msg->step + 3*x;
-      uint32_t greenByteIdx = redByteIdx + 1;
-      uint32_t blueByteIdx = redByteIdx + 2;
-
-      fprintf( file, "%i %i %i ", 
-        msg->data[ redByteIdx ], 
-        msg->data[ greenByteIdx ], 
-        msg->data[ blueByteIdx ] );
-    }
-    fprintf( file, "\n" );
-  }
-
-  fclose( file );
 }

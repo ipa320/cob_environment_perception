@@ -82,7 +82,7 @@ include_directories(
 
 ## Declare a cpp executable
 add_executable(geometry_map2_node ros/src/geometry_map_node.cpp
-	common/src/object.cpp common/src/context.cpp common/src/script.cpp common/src/vis_obj.cpp common/src/plane.cpp common/src/classifier.cpp
+	common/src/object.cpp common/src/context.cpp common/src/script.cpp common/src/vis_obj.cpp common/src/plane.cpp common/src/classifier.cpp common/src/image.cpp
 )
 add_dependencies(geometry_map2_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 
