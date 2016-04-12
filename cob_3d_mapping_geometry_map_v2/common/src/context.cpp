@@ -98,8 +98,10 @@ void Context::add_scene(const Context::Ptr &this_ctxt, const cob_3d_mapping_msgs
 		Plane *plane = new Plane(this_ctxt, scene.planes[i]);
 		if(!plane->simplify_by_area(0.01*0.01))
 			delete plane;
-		else
+		else {
+			plane->addImgs(imgs);
 			add(Object::Ptr( plane ));
+		}
 	}
 	
 	build();
