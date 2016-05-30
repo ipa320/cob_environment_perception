@@ -5,6 +5,9 @@
   <arg name="segmented_cloud" default="/segmentation/segmented_cloud"/>
   <arg name="classified_cloud" default="/segmentation/classified_cloud"/>
   <arg name="shape_array" default="/segmentation/shape_array"/>
+  <arg name="color_remap" default="/camera/rgb/image_raw"/>
+  <arg name="depth_remap" default="/camera/depth/image_raw"/>
+  <arg name="target_frame" default="base"/>
 
   <node pkg="cob_3d_segmentation" type="qppf_node_ensenso" name="qppf_node_ensenso" respawn="true">
     <remap from="/camera/depth/points" to="$(arg point_cloud_in)"/>
@@ -19,8 +22,9 @@
   <node pkg="cob_3d_mapping_geometry_map_v2" type="geometry_map2_node" name="geometry_map2_node" respawn="true">
     <remap from="scene" to="/plane_scene"/>
     <remap from="camera_info" to="/camera/depth/camera_info"/>
-    
-    <param name="target_frame" value="geometry_map_frame" />
+    <remap from="/color_image" to="$(arg color_remap)"/>
+    <remap from="/depth_image" to="$(arg depth_remap)"/>
+    <param name="target_frame" value="$(arg target_frame)" />
     <param name="floor_height" value="0.0" />
     <param name="carton_min_coverage_seeing" value="0.8" />
     <param name="carton_min_coverage_expecting" value="0.8" />

@@ -21,4 +21,8 @@ group2:
            [Look downhalf,move,downhalf],
            [Look rightdownhalf,move,rightdownhalf],
            [Look leftdownhalf,move,leftdownhalf],
-           [Look up,move,up]]
+           [Look up,move,up],
+           [Look uphalf,move,uphalf],
+           [Look leftuphalf,move,leftuphalf],
+           [Look rightuphalf,move,rightuphalf],
+           [Full map,move,mapfull]]
