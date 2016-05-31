@@ -7,19 +7,21 @@
   <arg name="shape_array" default="/segmentation/shape_array"/>
   <arg name="color_remap" default="/camera/rgb/image_raw"/>
   <arg name="depth_remap" default="/camera/depth/image_raw"/>
-  <arg name="target_frame" default="base"/>
+  <!-- target frame for the display of classifiers in the map -->
+  <arg name="target_frame" default="map"/>
 
-  <node pkg="cob_3d_segmentation" type="qppf_node_ensenso" name="qppf_node_ensenso" respawn="true">
-    <remap from="/camera/depth/points" to="$(arg point_cloud_in)"/>
-    <remap from="/labeled_pc" to="$(arg segmented_cloud)"/>
-    <!--remap from="classified_cloud" to="$(arg classified_cloud)"/-->
-    <remap from="/shapes_array" to="$(arg shape_array)"/>
+  <!-- <node pkg="cob_3d_segmentation" type="qppf_node_ensenso" name="qppf_node_ensenso" respawn="true"> -->
+  <!--   <remap from="/camera/depth/points" to="$(arg point_cloud_in)"/> -->
+  <!--   <remap from="/labeled_pc" to="$(arg segmented_cloud)"/> -->
+  <!--remap from="classified_cloud" to="$(arg classified_cloud)" -->
+  <!--   <remap from="/shapes_array" to="$(arg shape_array)"/> -->
 
-    <param name="filter" type="int" value="-1"/>
-    <param name="only_planes" type="bool" value="True"/>
-  </node>
-  
-  <node pkg="cob_3d_mapping_geometry_map_v2" type="geometry_map2_node" name="geometry_map2_node" respawn="true">
+  <!--   <param name="filter" type="int" value="-1"/> -->
+  <!--   <param name="only_planes" type="bool" value="True"/> -->
+  <!-- </node> -->
+
+  <node pkg="cob_3d_mapping_geometry_map_v2" type="geometry_map2_node"
+	name="geometry_map2_node" respawn="true" output="screen">
     <remap from="scene" to="/plane_scene"/>
     <remap from="camera_info" to="/camera/depth/camera_info"/>
     <remap from="/color_image" to="$(arg color_remap)"/>
@@ -29,6 +31,8 @@
     <param name="carton_min_coverage_seeing" value="0.8" />
     <param name="carton_min_coverage_expecting" value="0.8" />
     <param name="carton_bandwith_orientation" value="0.15" />
+    <!-- use the plane scene/image/depthimage callback instead of the basic one (experimental functionality) -->
+    <param name="image_callback" value="false"/>
   </node>
   
 </launch>

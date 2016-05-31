@@ -270,25 +270,29 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 	void start() {
 		//load params
 		ros::NodeHandle pn("~");
+		bool use_image_cb;
 		pn.param<std::string>("target_frame", target_frame_, "");
+		pn.param<bool>("image_callback", use_image_cb, false);
 		
 		ROS_INFO("loaded parameters:");
 		ROS_INFO("target_frame:\t%s", target_frame_.c_str());
 		
 		cob_3d_visualization::RvizMarkerManager::get().createTopic("marker").setFrameId(target_frame_);//.clearOld();
-		 
-		//now start the ROS stuff
-		sub_scene_.reset(new message_filters::Subscriber<cob_3d_mapping_msgs::PlaneScene>(nh_, "scene", 1));
-		sub_col_img_.reset(new message_filters::Subscriber<sensor_msgs::Image>(nh_, "color_image", 1));
-		sub_dep_img_.reset(new message_filters::Subscriber<sensor_msgs::Image>(nh_, "depth_image", 1));
-		
-		//sub_scene2_ = nh_.subscribe("scene", 1, &GeometryNode::callback2, this);
-		 
-		// ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
-		sync_.reset(new message_filters::Synchronizer<TSyncPolicy>(TSyncPolicy(10), *sub_scene_, *sub_col_img_, *sub_dep_img_));
-		sync_->registerCallback(boost::bind(&GeometryNode::callback, this, _1, _2, _3));
+
+		if (use_image_cb){
+		  //now start the ROS stuff (experimental)
+		  sub_scene_.reset(new message_filters::Subscriber<cob_3d_mapping_msgs::PlaneScene>(nh_, "scene", 1));
+		  sub_col_img_.reset(new message_filters::Subscriber<sensor_msgs::Image>(nh_, "color_image", 1));
+		  sub_dep_img_.reset(new message_filters::Subscriber<sensor_msgs::Image>(nh_, "depth_image", 1));
+		  //ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
+		  sync_.reset(new message_filters::Synchronizer<TSyncPolicy>(TSyncPolicy(10), *sub_scene_, *sub_col_img_, *sub_dep_img_));
+		  sync_->registerCallback(boost::bind(&GeometryNode::callback, this, _1, _2, _3));
+		} else {
+		  // basic scene subscriber
+		  sub_scene2_ = nh_.subscribe("scene", 1, &GeometryNode::callback2, this);
+		}
 	}
-	
+
 	void reset() {
 		sub_scene2_.shutdown();
 		if(sub_scene_) sub_scene_->unsubscribe();
