@@ -51,13 +51,12 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 	std::string target_frame_;
 	Eigen::Affine3d tf2target_;
 
-	void callback(const cob_3d_mapping_msgs::PlaneSceneConstPtr& scene, const sensor_msgs::ImageConstPtr& color_img, const sensor_msgs::ImageConstPtr& depth_img)
+	void callback2(const cob_3d_mapping_msgs::PlaneSceneConstPtr& scene)
 	{
-	  ROS_INFO("callback");
-	  
+	  callback(scene);
 	}
 
-	void callback2(const cob_3d_mapping_msgs::PlaneSceneConstPtr& scene)
+	void callback(const cob_3d_mapping_msgs::PlaneSceneConstPtr& scene, const sensor_msgs::ImageConstPtr& color_img=sensor_msgs::ImageConstPtr(), const sensor_msgs::ImageConstPtr& depth_img=sensor_msgs::ImageConstPtr())
 	{
 	  ROS_INFO("callback2");
 	  
@@ -88,7 +87,8 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 	  try {
 		  //now do the mapping stuff
 		  ros::Time start = ros::Time::now();
-		  ctxt_->add_scene(*scene, this);
+		  
+		  ctxt_->add_scene(*scene, this, color_img, depth_img);
 		  ROS_INFO("took %f", (ros::Time::now()-start).toSec());
 		  
 		  //visualize it
