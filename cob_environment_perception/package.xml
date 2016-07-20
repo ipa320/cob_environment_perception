@@ -24,7 +24,6 @@
   <run_depend>cob_3d_mapping_filters</run_depend>
   <run_depend>cob_3d_mapping_gazebo</run_depend>
   <run_depend>cob_3d_mapping_geometry_map</run_depend>
-  <run_depend>cob_3d_mapping_msgs</run_depend>
   <run_depend>cob_3d_mapping_pipeline</run_depend>
   <run_depend>cob_3d_mapping_point_map</run_depend>
   <run_depend>cob_3d_mapping_semantics</run_depend>
