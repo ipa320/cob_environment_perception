@@ -59,7 +59,7 @@ include_directories(
 add_executable(test_meshing
   common/src/test_meshing.cpp
 )
-
+add_dependencies(test_meshing ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_meshing
 	${catkin_LIBRARIES}
 	${Boost_LIBRARIES}
