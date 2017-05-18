@@ -17,7 +17,7 @@ installed: $(SOURCE_DIR)/unpacked
 	mkdir -p common/include
 
 	cd $(SOURCE_DIR) && mkdir -p build
-	cd $(SOURCE_DIR)/build && cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_APPS=OFF -DCMAKE_INSTALL_PREFIX=$(SOURCE_DIR)/../../common      #/home/ipa/catkin_ws/src/cob_environment_perception/libopenmesh/common
+	cd $(SOURCE_DIR)/build && cmake .. -DCMAKE_BUILD_TYPE=Release -DBUILD_APPS=OFF -DCMAKE_INSTALL_PREFIX=$(shell rospack find libopenmesh)/common
 	cd $(SOURCE_DIR)/build && make && make install
 	
 clean:
