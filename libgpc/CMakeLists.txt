@@ -6,7 +6,7 @@ set(catkin_RUN_PACKAGES
 
 set(catkin_BUILD_PACKAGES 
 	${catkin_RUN_PACKAGES}
-	#cmake_modules
+	cmake_modules
 )
 
 ## Find catkin macros and libraries
@@ -15,7 +15,7 @@ set(catkin_BUILD_PACKAGES
 ## Creates a bunch of environment variables that may be used later in the script
 ## e.g. catkin_INCLUDE_DIRS
 find_package(catkin REQUIRED  # COMPONENTS
-	#${catkin_BUILD_PACKAGES}
+	${catkin_BUILD_PACKAGES}
 )
 
 catkin_package(
@@ -30,7 +30,8 @@ include_directories(
 )
 
 add_library(gpc common/src/gpc.c)
-
+add_dependencies(gpc ${catkin_EXPORTED_TARGETS})
+target_link_libraries(gpc ${catkin_LIBRARIES})
 
 #############
 ## Install ##

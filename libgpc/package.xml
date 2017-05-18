@@ -14,4 +14,5 @@
   <url>http://wiki.ros.org/libgpc</url>
 
   <buildtool_depend>catkin</buildtool_depend>
+  <build_depend>cmake_modules</build_depend>
 </package>

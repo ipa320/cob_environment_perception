@@ -68,7 +68,7 @@ add_library(cob_3d_mapping_common
 	common/src/dominant_color.cpp
     common/src/io.cpp
 )
-
+add_dependencies(cob_3d_mapping_common ${catkin_EXPORTED_TARGETS})
 target_link_libraries(cob_3d_mapping_common
   ${catkin_LIBRARIES}
   ${PCL}
@@ -77,16 +77,14 @@ target_link_libraries(cob_3d_mapping_common
 
 ## Declare a cpp executable
 add_executable(test_minimal_rectangle common/test/test_minimal_rectangle.cpp)
-
-## Specify libraries to link a library or executable target against
+add_dependencies(test_minimal_rectangle ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_minimal_rectangle
   ${catkin_LIBRARIES}
 )
 
 #Unit tests
 add_executable(test_polygon common/test/test_polygon.cpp)
-add_executable(test_cylinder common/test/test_cylinder.cpp)
-
+add_dependencies(test_polygon ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_polygon
   cob_3d_mapping_common
   gtest
@@ -94,15 +92,14 @@ target_link_libraries(test_polygon
   ${PCL_LIBRARIES}
 )
 
+add_executable(test_cylinder common/test/test_cylinder.cpp)
+add_dependencies(test_cylinder ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_cylinder
   cob_3d_mapping_common
   gtest
   ${catkin_LIBRARIES}
   ${PCL_LIBRARIES}
 )
-
-add_dependencies(test_polygon ${catkin_EXPORTED_TARGETS})
-add_dependencies(test_cylinder ${catkin_EXPORTED_TARGETS})
 
 
 #############

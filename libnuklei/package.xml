@@ -44,6 +44,7 @@
   <depend>libblas-dev</depend>
   <depend>liblapack-dev</depend>
   <depend>libgsl</depend>
+  <depend>scons</depend>
   
   <!-- The export tag contains other, unspecified, tags -->
   <export>
