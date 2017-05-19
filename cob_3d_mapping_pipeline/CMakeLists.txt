@@ -2,18 +2,18 @@ cmake_minimum_required(VERSION 2.8.3)
 project(cob_3d_mapping_pipeline)
 
 set(catkin_RUN_PACKAGES 
-  cob_3d_mapping_common
-  cob_3d_mapping_geometry_map
-  cob_3d_mapping_msgs
-  cob_3d_mapping_point_map
-  cob_3d_registration
-  cob_3d_segmentation
-  cob_script_server
-  nodelet
-  #pcl_ros
-  rosbag
-  smach
-  smach_ros
+	cob_3d_mapping_common
+	cob_3d_mapping_geometry_map
+	cob_3d_mapping_msgs
+	cob_3d_mapping_point_map
+	cob_3d_registration
+	cob_3d_segmentation
+	cob_script_server
+	nodelet
+	#pcl_ros
+	rosbag
+	smach
+	smach_ros
 )
 
 set(catkin_BUILD_PACKAGES 

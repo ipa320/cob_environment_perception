@@ -119,6 +119,11 @@ install(TARGETS cob_3d_mapping_filters cob_3d_mapping_filter_nodelets test_jump_
 
 install(DIRECTORY common/include/${PROJECT_NAME}/
 	DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-	FILES_MATCHING PATTERN "*.h"
+	FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+	PATTERN ".svn" EXCLUDE
+)
+
+install(DIRECTORY ros/launch
+	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/ros
 	PATTERN ".svn" EXCLUDE
 )

@@ -2,8 +2,8 @@ cmake_minimum_required(VERSION 2.8.3)
 project(cob_3d_mapping_gazebo)
 
 set(catkin_RUN_PACKAGES 
-  cob_gazebo_objects
-  cob_script_server
+	cob_gazebo_objects
+	cob_script_server
 )
 
 set(catkin_BUILD_PACKAGES 
@@ -16,7 +16,7 @@ set(catkin_BUILD_PACKAGES
 ## is used, also find other catkin packages
 ## Creates a bunch of environment variables that may be used later in the script
 ## e.g. catkin_INCLUDE_DIRS
-find_package(catkin REQUIRED  # COMPONENTS
+find_package(catkin REQUIRED	# COMPONENTS
 	#${catkin_BUILD_PACKAGES}
 )
 

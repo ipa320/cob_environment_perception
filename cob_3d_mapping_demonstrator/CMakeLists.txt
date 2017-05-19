@@ -6,11 +6,11 @@ set(catkin_RUN_PACKAGES
 	brics_actuator
 	cob_3d_mapping_msgs
 	cob_script_server
-	std_srvs
 	cob_srvs
 	diagnostic_msgs
 	roscpp
 	rviz
+	std_srvs
 	urdf
 )
 
@@ -42,15 +42,15 @@ add_definitions(-DQT_NO_KEYWORDS)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS
-    common/include
-    ros/include
-  LIBRARIES
-    cob_3d_mapping_demonstrator_rviz
-  CATKIN_DEPENDS
-    ${catkin_RUN_PACKAGES}
-  DEPENDS
-    Qt4
+	INCLUDE_DIRS
+		common/include
+		ros/include
+	LIBRARIES
+		cob_3d_mapping_demonstrator_rviz
+	CATKIN_DEPENDS
+		${catkin_RUN_PACKAGES}
+	DEPENDS
+		Qt4
 )
 
 
@@ -63,10 +63,10 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 include_directories(
-  common/include
-  ros/include
-  ${catkin_INCLUDE_DIRS}
-  ${QT_INCLUDE_DIRS}
+	common/include
+	ros/include
+	${catkin_INCLUDE_DIRS}
+	${QT_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
@@ -82,6 +82,11 @@ add_library(cob_3d_mapping_demonstrator_rviz
 	ros/src/rviz_title.cpp
 	${MOC_FILES}
 )
+target_link_libraries(cob_3d_mapping_demonstrator_rviz	
+	${catkin_LIBRARIES}
+	${QT_LIBRARIES}
+)
+add_dependencies(cob_3d_mapping_demonstrator_rviz ${catkin_EXPORTED_TARGETS})
 
 ## Declare a cpp executable
 add_executable(cob_3d_mapping_demonstrator 
@@ -90,30 +95,21 @@ add_executable(cob_3d_mapping_demonstrator
 	common/src/demonstrator_control_maestro.cpp 
 	common/src/serial_device.cpp
 )
+target_link_libraries(cob_3d_mapping_demonstrator 
+	${catkin_LIBRARIES}
+)
+add_dependencies(cob_3d_mapping_demonstrator ${catkin_EXPORTED_TARGETS})
 
 add_executable(testClient ros/test/test_client.cpp)
-add_executable(testClientPOS ros/test/test_clientPOS.cpp)
-
-target_link_libraries(cob_3d_mapping_demonstrator_rviz  
-  ${catkin_LIBRARIES}
-  ${QT_LIBRARIES}
-)
-
-target_link_libraries(cob_3d_mapping_demonstrator 
-  ${catkin_LIBRARIES}
-)
-
 target_link_libraries(testClient 
-  ${catkin_LIBRARIES}
+	${catkin_LIBRARIES}
 )
-
-target_link_libraries(testClientPOS 
-  ${catkin_LIBRARIES}
-)
-
-add_dependencies(cob_3d_mapping_demonstrator_rviz ${catkin_EXPORTED_TARGETS})
-add_dependencies(cob_3d_mapping_demonstrator ${catkin_EXPORTED_TARGETS})
 add_dependencies(testClient ${catkin_EXPORTED_TARGETS})
+
+add_executable(testClientPOS ros/test/test_clientPOS.cpp)
+target_link_libraries(testClientPOS 
+	${catkin_LIBRARIES}
+)
 add_dependencies(testClientPOS ${catkin_EXPORTED_TARGETS})
 
 
