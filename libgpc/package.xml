@@ -1,4 +1,5 @@
-<package>
+<?xml version="1.0"?>
+<package format="2">
 	<name>libgpc</name>
 	<version>1.0.0</version>
 	
@@ -14,5 +15,5 @@
 	<url>http://wiki.ros.org/libgpc</url>
 
 	<buildtool_depend>catkin</buildtool_depend>
-	<build_depend>cmake_modules</build_depend>
+	<depend>cmake_modules</depend>
 </package>
