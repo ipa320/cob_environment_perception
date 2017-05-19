@@ -19,17 +19,17 @@ find_package(catkin REQUIRED  COMPONENTS
 )
 
 catkin_package(
-  INCLUDE_DIRS
-    common/include
-  LIBRARIES
-    gpc
-  CATKIN_DEPENDS
-    ${catkin_RUN_PACKAGES}
-  DEPENDS
+	INCLUDE_DIRS
+		common/include
+	LIBRARIES
+		gpc
+	CATKIN_DEPENDS
+		${catkin_RUN_PACKAGES}
+	DEPENDS
 )
 
 include_directories(
-  common/include
+	common/include
 )
 
 add_library(gpc common/src/gpc.c)

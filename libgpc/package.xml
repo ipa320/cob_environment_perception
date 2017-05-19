@@ -1,18 +1,18 @@
 <package>
-  <name>libgpc</name>
-  <version>1.0.0</version>
-  
-  <description>
-     Wraps the (external) GPC library.
-  </description>
-  
-  <license>LGPL</license>
-  
-  <maintainer email="goa@ipa.fhg.de">Georg Arbeiter</maintainer>
-  <author>Georg Arbeiter</author>
-  
-  <url>http://wiki.ros.org/libgpc</url>
+	<name>libgpc</name>
+	<version>1.0.0</version>
+	
+	<description>
+		Wraps the (external) GPC library.
+	</description>
+	
+	<license>LGPL</license>
+	
+	<maintainer email="goa@ipa.fhg.de">Georg Arbeiter</maintainer>
+	<author>Georg Arbeiter</author>
+	
+	<url>http://wiki.ros.org/libgpc</url>
 
-  <buildtool_depend>catkin</buildtool_depend>
-  <build_depend>cmake_modules</build_depend>
+	<buildtool_depend>catkin</buildtool_depend>
+	<build_depend>cmake_modules</build_depend>
 </package>
