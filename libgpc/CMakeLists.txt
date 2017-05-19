@@ -14,7 +14,7 @@ set(catkin_BUILD_PACKAGES
 ## is used, also find other catkin packages
 ## Creates a bunch of environment variables that may be used later in the script
 ## e.g. catkin_INCLUDE_DIRS
-find_package(catkin REQUIRED  # COMPONENTS
+find_package(catkin REQUIRED  COMPONENTS
 	${catkin_BUILD_PACKAGES}
 )
 
@@ -23,6 +23,9 @@ catkin_package(
     common/include
   LIBRARIES
     gpc
+  CATKIN_DEPENDS
+    ${catkin_RUN_PACKAGES}
+  DEPENDS
 )
 
 include_directories(
@@ -43,6 +46,6 @@ install(TARGETS gpc
 	RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 )
 
-install(DIRECTORY common/include
-	DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}
+install(DIRECTORY common/include/${PROJECT_NAME}/
+	DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 )
