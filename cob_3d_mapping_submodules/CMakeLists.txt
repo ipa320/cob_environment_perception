@@ -6,4 +6,6 @@ project(cob_3d_mapping_submodules)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED)
 
+catkin_package()
+
 include(submodules.cmake)

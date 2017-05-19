@@ -1,32 +1,32 @@
+<?xml version="1.0"?>
 <package format="2">
-  <name>cob_3d_mapping_geometry_map_v2</name>
-  <version>1.0.0</version>
+	<name>cob_3d_mapping_geometry_map_v2</name>
+	<version>1.0.0</version>
 
-  <description>
-     Package for creating a geometric map of the environment.
-  </description>
+	<description>
+		Package for creating a geometric map of the environment.
+	</description>
 
-  <license>LGPL</license>
+	<license>LGPL</license>
 
-  <maintainer email="joshua.hampp@ipa.fraunhofer.de">Joshua Hampp</maintainer>
-  <author>Joshua Hampp</author>
+	<maintainer email="joshua.hampp@ipa.fraunhofer.de">Joshua Hampp</maintainer>
+	<author>Joshua Hampp</author>
 
-  <url>http://wiki.ros.org/cob_3d_mapping_geometry_map_v2</url>
+	<url>http://wiki.ros.org/cob_3d_mapping_geometry_map_v2</url>
 
-  <buildtool_depend>catkin</buildtool_depend>
+	<buildtool_depend>catkin</buildtool_depend>
 
-  <depend>cmake_modules</depend>
-  <depend>cob_3d_mapping_common</depend>
-  <depend>cob_3d_mapping_msgs</depend>
-  <depend>cob_3d_mapping_submodules</depend>
-  <depend>cob_3d_visualization</depend>
-  <depend>dynamic_reconfigure</depend>
-  <depend>eigen_conversions</depend>
-  <depend>libnuklei</depend>
-  <depend>libpcl-all</depend>
-  <depend>pcl_ros</depend>
-  <depend>rosbag</depend>
-  <depend>roscpp</depend>
-  <depend>tf_conversions</depend>
-  
+	<depend>cmake_modules</depend>
+	<depend>cob_3d_mapping_common</depend>
+	<depend>cob_3d_mapping_msgs</depend>
+	<depend>cob_3d_mapping_submodules</depend>
+	<depend>cob_3d_visualization</depend>
+	<depend>dynamic_reconfigure</depend>
+	<depend>eigen_conversions</depend>
+	<depend>libnuklei</depend>
+	<depend>libpcl-all</depend>
+	<depend>pcl_ros</depend>
+	<depend>rosbag</depend>
+	<depend>roscpp</depend>
+	<depend>tf_conversions</depend>
 </package>

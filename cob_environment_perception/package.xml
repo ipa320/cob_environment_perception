@@ -28,6 +28,7 @@
   <run_depend>cob_3d_mapping_point_map</run_depend>
   <run_depend>cob_3d_mapping_semantics</run_depend>
   <run_depend>cob_3d_mapping_slam</run_depend>
+  <run_depend>cob_3d_mapping_submodules</run_depend>
   <run_depend>cob_3d_mapping_tools</run_depend>
   <run_depend>cob_3d_meshing</run_depend>
   <run_depend>cob_3d_registration</run_depend>
@@ -37,6 +38,8 @@
   <run_depend>cob_keyframe_detector</run_depend>
   <run_depend>cob_table_object_cluster</run_depend>
   <run_depend>libgpc</run_depend>
+  <run_depend>liblemon</run_depend>
+  <run_depend>libnuklei</run_depend>
   <run_depend>libopenmesh</run_depend>
   <run_depend>libpolypartition</run_depend>
 
