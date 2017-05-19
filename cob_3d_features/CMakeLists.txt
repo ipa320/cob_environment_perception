@@ -228,7 +228,7 @@ install(TARGETS cob_3d_features_omp cob_3d_features s2kit profile_fee eval_invar
 
 install(DIRECTORY common/include/${PROJECT_NAME}/
 	DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
-	FILES_MATCHING PATTERN "*.h"
+	FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 	PATTERN ".svn" EXCLUDE
 )
 
