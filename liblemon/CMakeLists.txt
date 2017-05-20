@@ -57,8 +57,6 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-	CFG_EXTRAS
-		liblemon-extras.cmake
 	INCLUDE_DIRS
 		include
 #	LIBRARIES lemon
@@ -89,8 +87,8 @@ include_directories(
 #	RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 #)
 
-install(DIRECTORY include/
-	DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+install(DIRECTORY include/lemon/
+	DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}/../lemon
 	FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 	PATTERN ".svn" EXCLUDE
 )
