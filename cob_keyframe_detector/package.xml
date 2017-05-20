@@ -1,32 +1,26 @@
-<package>
-  <name>cob_keyframe_detector</name>
-  <version>1.0.0</version>
-  
-  <description>
-     Node that listens to TF, detects a robot movement and triggers a service.
-  </description>
-  
-  <license>LGPL</license>
-  
-  <maintainer email="goa@ipa.fhg.de">Georg Arbeiter</maintainer>
-  <author>Georg Arbeiter</author>
-  
-  <url>http://wiki.ros.org/cob_keyframe_detector</url>
+<?xml version="1.0"?>
+<package format="2">
+	<name>cob_keyframe_detector</name>
+	<version>1.0.0</version>
 
-  <buildtool_depend>catkin</buildtool_depend>
+	<description>
+		Node that listens to TF, detects a robot movement and triggers a service.
+	</description>
 
-  <build_depend>cmake_modules</build_depend>
-  <build_depend>std_srvs</build_depend>
-  <build_depend>dynamic_reconfigure</build_depend>
-  <build_depend>roscpp</build_depend>
-  <build_depend>sensor_msgs</build_depend>
-  <build_depend>tf</build_depend>
-  <build_depend>tf_conversions</build_depend>
+	<license>LGPL</license>
 
-  <run_depend>std_srvs</run_depend>
-  <run_depend>dynamic_reconfigure</run_depend>
-  <run_depend>roscpp</run_depend>
-  <run_depend>sensor_msgs</run_depend>
-  <run_depend>tf</run_depend>
-  <run_depend>tf_conversions</run_depend>
+	<maintainer email="goa@ipa.fhg.de">Georg Arbeiter</maintainer>
+	<author>Georg Arbeiter</author>
+
+	<url>http://wiki.ros.org/cob_keyframe_detector</url>
+
+	<buildtool_depend>catkin</buildtool_depend>
+
+	<depend>cmake_modules</depend>
+	<depend>dynamic_reconfigure</depend>
+	<depend>roscpp</depend>
+	<depend>sensor_msgs</depend>
+	<depend>std_srvs</depend>
+	<depend>tf</depend>
+	<depend>tf_conversions</depend>
 </package>

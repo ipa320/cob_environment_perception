@@ -14,7 +14,7 @@ set(catkin_BUILD_PACKAGES
 ## is used, also find other catkin packages
 ## Creates a bunch of environment variables that may be used later in the script
 ## e.g. catkin_INCLUDE_DIRS
-find_package(catkin REQUIRED   COMPONENTS
+find_package(catkin REQUIRED COMPONENTS
 	${catkin_BUILD_PACKAGES}
 )
 
@@ -48,4 +48,6 @@ install(TARGETS polypartition
 
 install(DIRECTORY common/include/${PROJECT_NAME}/
 	DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+	FILES_MATCHING PATTERN "*.h"
+	PATTERN ".svn" EXCLUDE
 )

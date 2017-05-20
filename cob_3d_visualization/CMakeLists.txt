@@ -39,6 +39,8 @@ catkin_package(
 #		cob_3d_mapping_semantics
 	CATKIN_DEPENDS
 		${catkin_RUN_PACKAGES}
+	DEPENDS
+		PCL
 )
 
 ###########
@@ -90,7 +92,7 @@ install(DIRECTORY include/${PROJECT_NAME}/
 	PATTERN ".svn" EXCLUDE
 )
 
-install(DIRECTORY ros/launch
-	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/ros
+install(DIRECTORY launch
+	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}
 	PATTERN ".svn" EXCLUDE
 )
