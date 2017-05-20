@@ -17,7 +17,6 @@ ExternalProject_Add(EP_${PROJECT_NAME}
 
 	CONFIGURE_COMMAND ""
 	BUILD_COMMAND COMMAND ${CMAKE_COMMAND} -E chdir ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-src ./scons.py use_cgal=yes prefix=${PROJECT_BINARY_DIR}/${PROJECT_NAME}-build install
-	
 		# copy headers to devel space (catkin does not like headers in source space)
 		COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-build/include ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 		# copy libs, set-up soname chain

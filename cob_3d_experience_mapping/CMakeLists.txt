@@ -27,8 +27,8 @@ find_package(Eigen REQUIRED)
 
 
 generate_dynamic_reconfigure_options(
-	cfg/settings.cfg
-	cfg/visualization.cfg
+	cfg/Settings.cfg
+	cfg/VisualizationSettings.cfg
 )
 
 ###################################

@@ -1,6 +1,35 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(liblemon)
 
+#find_package(catkin REQUIRED)
+
+#catkin_destinations() # set-up destination variables
+#file(MAKE_DIRECTORY ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_INCLUDE_DESTINATION})
+
+#include(ExternalProject)
+#ExternalProject_Add(EP_${PROJECT_NAME}
+#	URL ${PROJECT_SOURCE_DIR}/lemon
+#
+#	SOURCE_DIR ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-src
+#
+#	CONFIGURE_COMMAND ""
+#	BUILD_COMMAND ""
+#		# copy headers to devel space (catkin does not like headers in source space)
+#		COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-src/lemon ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+#	INSTALL_COMMAND ""
+#)
+
+#catkin_package(
+#	CFG_EXTRAS liblemon-extras.cmake # catkin_package does not support artifacts in devel space
+#	EXPORTED_TARGETS EP_${PROJECT_NAME}
+#)
+
+#install(DIRECTORY ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_INCLUDE_DESTINATION}/
+#	DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+#)
+
+
+
 set(catkin_RUN_PACKAGES
 	roscpp
 )
@@ -28,8 +57,10 @@ find_package(catkin REQUIRED COMPONENTS
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
+	CFG_EXTRAS
+		liblemon-extras.cmake
 	INCLUDE_DIRS
-		.
+		include
 #	LIBRARIES lemon
 	CATKIN_DEPENDS
 		${catkin_RUN_PACKAGES}
@@ -43,7 +74,7 @@ catkin_package(
 ## Specify additional locations of header files
 ## Your package locations should be listed before other locations
 include_directories(
-	.
+	include
 	${catkin_INCLUDE_DIRS}
 )
 
@@ -58,7 +89,7 @@ include_directories(
 #	RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
 #)
 
-install(DIRECTORY lemon/
+install(DIRECTORY include/
 	DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
 	FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
 	PATTERN ".svn" EXCLUDE

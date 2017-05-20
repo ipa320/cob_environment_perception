@@ -160,7 +160,7 @@ catkin_add_gtest(test_frir ros/test/test_frir.cpp)
 ## Install ##
 #############
 ## Mark executables and/or libraries for installation
-install(TARGETS cob_3d_registration_lib cob_3d_registration test_frir
+install(TARGETS cob_3d_registration_lib cob_3d_registration
 	ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 	LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
 	RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}

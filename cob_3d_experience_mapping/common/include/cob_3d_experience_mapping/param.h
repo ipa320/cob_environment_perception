@@ -3,7 +3,7 @@
 #include <std_msgs/ColorRGBA.h>
 #include <dynamic_reconfigure/server.h>
 #include <cob_3d_experience_mapping/SettingsConfig.h>
-#include <cob_3d_experience_mapping/Vis_SettingsConfig.h>
+#include <cob_3d_experience_mapping/VisualizationSettingsConfig.h>
 
 namespace cob_3d_experience_mapping {
 	
@@ -21,7 +21,7 @@ namespace cob_3d_experience_mapping {
 		std_msgs::ColorRGBA vis_color_cell_;
 
 		dynamic_reconfigure::Server<cob_3d_experience_mapping::SettingsConfig> server_settings_;
-		dynamic_reconfigure::Server<cob_3d_experience_mapping::Vis_SettingsConfig> server_vis_settings_;
+		dynamic_reconfigure::Server<cob_3d_experience_mapping::VisualizationSettingsConfig> server_vis_settings_;
 
 		Parameter() {
 			//TODO: read from parameter server
@@ -40,7 +40,7 @@ namespace cob_3d_experience_mapping {
 			ROS_INFO("updated settings");
 		}
 
-		void cb_vis_settings(cob_3d_experience_mapping::Vis_SettingsConfig &config, uint32_t level) {
+		void cb_vis_settings(cob_3d_experience_mapping::VisualizationSettingsConfig &config, uint32_t level) {
 			vis_color_cell_.r = config.groups.cell_color.r;
 			vis_color_cell_.g = config.groups.cell_color.g;
 			vis_color_cell_.b = config.groups.cell_color.b;
