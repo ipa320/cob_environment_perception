@@ -50,6 +50,7 @@ catkin_package(
 	LIBRARIES
 		cob_3d_features
 		cob_3d_features_omp
+		s2kit
 	CATKIN_DEPENDS
 		${catkin_RUN_PACKAGES}
 	DEPENDS
