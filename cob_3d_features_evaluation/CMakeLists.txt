@@ -77,7 +77,6 @@ include_directories(
 add_executable(test_invariant_feature common/test/test_invariant_feature.cpp)
 add_dependencies(test_invariant_feature ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_invariant_feature
-	s2kit
 	fftw3
 	fftw3f
 	${catkin_LIBRARIES}
