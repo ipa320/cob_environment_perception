@@ -35,8 +35,9 @@ find_package(VTK REQUIRED COMPONENTS vtkCommon vtkFiltering vtkRendering)
 find_package(Boost REQUIRED COMPONENTS program_options)
 find_package(OpenCV REQUIRED)
 #find_package(PCL REQUIRED)
-include(cmake/OptimizeForArchitecture.cmake)
-OptimizeForArchitecture()
+
+#include(cmake/OptimizeForArchitecture.cmake)
+#OptimizeForArchitecture()
 
 generate_dynamic_reconfigure_options(cfg/plane_extraction_nodelet.cfg
 	cfg/segmentation_nodelet.cfg)
