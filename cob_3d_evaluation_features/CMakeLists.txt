@@ -93,7 +93,6 @@ target_link_libraries(reduce_fpfh_training_data
 add_executable(fpfh_primitives src/fpfh_primitives.cpp)
 add_dependencies(fpfh_primitives ${catkin_EXPORTED_TARGETS})
 target_link_libraries(fpfh_primitives
-	cob_3d_mapping_tools
 	${catkin_LIBRARIES}
 	${Boost_LIBRARIES}
 	${VTK_LIBRARIES}
