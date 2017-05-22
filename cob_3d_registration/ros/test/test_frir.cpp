@@ -76,10 +76,10 @@
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_kdl.h>
 #include <pcl/io/pcd_io.h>
-#include <registration/general_registration.h>
-#include <registration/registration_info.h>
+#include <cob_3d_registration/general_registration.h>
+#include <cob_3d_registration/registration_info.h>
 
-#include <registration/measurements/measure.h>
+#include <cob_3d_registration/measurements/measure.h>
 #include <boost/progress.hpp>
 
 #include <gtest/gtest.h>
