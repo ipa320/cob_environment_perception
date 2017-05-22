@@ -107,7 +107,7 @@
 
 //#include <registration/registration_fastslam.h>
 //#include <cob_vision_utils/VisionUtils.h>
-#include <opencv/cv.h>
+#include <opencv2/opencv.hpp>
 
 #include <cob_3d_registration/registration_icp_edges.h>
 #include <cob_3d_registration/registration_info.h>
