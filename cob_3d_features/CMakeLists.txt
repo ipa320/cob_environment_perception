@@ -233,10 +233,8 @@ install(DIRECTORY common/include/${PROJECT_NAME}/
 	PATTERN ".svn" EXCLUDE
 )
 
-install(DIRECTORY common/include/ShapeSPH/
-	DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}/../ShapeSPH
-	FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp" PATTERN "*.inl"
-	PATTERN ".svn" EXCLUDE
+install(DIRECTORY common/include/ShapeSPH
+	DESTINATION ${CATKIN_GLOBAL_INCLUDE_DESTINATION}
 )
 
 install(DIRECTORY ros/launch

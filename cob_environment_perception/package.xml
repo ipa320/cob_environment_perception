@@ -16,6 +16,7 @@
 
 	<buildtool_depend>catkin</buildtool_depend>
 
+	<exec_depend>brics_actuator</exec_depend>
 	<exec_depend>cob_3d_evaluation_features</exec_depend>
 	<exec_depend>cob_3d_experience_mapping</exec_depend>
 	<exec_depend>cob_3d_features</exec_depend>

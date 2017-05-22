@@ -1,12 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(cob_3d_mapping_geometry_map_v2)
 
-#find_package(Boost 1.59.0)
-#if(Boost_FOUND)
-	include_directories(libs/boost_1_59)
-#endif() 
-
-set(catkin_RUN_PACKAGES 
+set(catkin_RUN_PACKAGES
 	cob_3d_mapping_common
 	cob_3d_mapping_msgs
 	cob_3d_mapping_submodules
@@ -31,6 +26,13 @@ set(catkin_BUILD_PACKAGES
 find_package(catkin REQUIRED COMPONENTS
 	${catkin_BUILD_PACKAGES}
 )
+
+#find_package(Boost REQUIRED)
+#find_package(Boost 1.59.0)
+#if(Boost_FOUND)
+#	include_directories(libs/boost_1_59)
+#endif() 
+
 
 generate_dynamic_reconfigure_options(cfg/geometry_map_node.cfg)
 
@@ -72,9 +74,11 @@ endif()
 include_directories(
 	common/include
 	ros/include
+	libs/boost_1_59
 	libs/geometry/include
 	${catkin_INCLUDE_DIRS}
 	${PCL_INCLUDE_DIRS}
+#	${Boost_INCLUDE_DIRS}
 )
 
 ## Declare a cpp executable
@@ -83,7 +87,8 @@ add_executable(geometry_map2_node ros/src/geometry_map_node.cpp
 )
 add_dependencies(geometry_map2_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(geometry_map2_node
-	${catkin_LIBRARIES} CGAL
+	${catkin_LIBRARIES}
+	CGAL
 )
 if (CMAKE_BUILD_TYPE STREQUAL "Debug")
 	set_target_properties(geometry_map2_node PROPERTIES COMPILE_DEFINITIONS "DEBUG_")
@@ -92,7 +97,8 @@ endif()
 catkin_add_gtest(utest ros/src/test.cpp common/src/object.cpp common/src/vis_obj.cpp)
 add_dependencies(utest ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(utest
-	${catkin_LIBRARIES} CGAL
+	${catkin_LIBRARIES}
+	CGAL
 )
 
 
