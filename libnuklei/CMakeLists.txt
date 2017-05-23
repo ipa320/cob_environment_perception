@@ -1,7 +1,7 @@
 cmake_minimum_required(VERSION 2.8.3)
 project(libnuklei)
 
-find_package(catkin REQUIRED)
+find_package(catkin REQUIRED COMPONENTS cmake_modules)
 find_package(LAPACK REQUIRED)
 find_package(Eigen REQUIRED)
 #find_package(GSL REQUIRED)
@@ -33,6 +33,7 @@ catkin_package(
 include_directories(
 	${catkin_INCLUDE_DIRS}
 	${Eigen_INCLUDE_DIRS}
+)
 
 install(DIRECTORY ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_INCLUDE_DESTINATION}/
 	DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
