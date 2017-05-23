@@ -322,9 +322,9 @@ TEST(Registration_FRIF, many_tfs){
 }
 
 int main(int argc, char **argv) {
-  ROS_INFO("EVALUATION_MODE_ is %d", (int)EVALUATION_MODE_);
-  ROS_INFO("DEBUG_SWITCH_ is %d", (int)DEBUG_SWITCH_);
-  ROS_INFO("USED_ODO_ is %d", (int)USED_ODO_);
+//  ROS_INFO("EVALUATION_MODE_ is %d", EVALUATION_MODE_);
+//  ROS_INFO("DEBUG_SWITCH_ is %d", DEBUG_SWITCH_);
+//  ROS_INFO("USED_ODO_ is %d", USED_ODO_);
 
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

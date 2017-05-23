@@ -3,6 +3,7 @@ project(libnuklei)
 
 find_package(catkin REQUIRED)
 find_package(LAPACK REQUIRED)
+find_package(Eigen REQUIRED)
 #find_package(GSL REQUIRED)
 
 catkin_destinations() # set-up destination variables
@@ -28,6 +29,10 @@ catkin_package(
 	CFG_EXTRAS libnuklei-extras.cmake # catkin_package does not support artifacts in devel space
 	EXPORTED_TARGETS EP_${PROJECT_NAME}
 )
+
+include_directories(
+	${catkin_INCLUDE_DIRS}
+	${Eigen_INCLUDE_DIRS}
 
 install(DIRECTORY ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_INCLUDE_DESTINATION}/
 	DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}

@@ -14,6 +14,7 @@
 
 	<buildtool_depend>catkin</buildtool_depend>
 	<depend>cob_3d_mapping_submodules</depend>
+	<depend>eigen</depend>
 	<depend>libblas-dev</depend>
 	<depend>libgsl</depend>
 	<depend>liblapack-dev</depend>
