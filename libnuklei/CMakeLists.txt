@@ -3,7 +3,7 @@ project(libnuklei)
 
 find_package(catkin REQUIRED COMPONENTS cmake_modules)
 find_package(LAPACK REQUIRED)
-find_package(Eigen REQUIRED)
+#find_package(Eigen REQUIRED)
 #find_package(GSL REQUIRED)
 
 catkin_destinations() # set-up destination variables
@@ -17,6 +17,8 @@ ExternalProject_Add(EP_${PROJECT_NAME}
 	BINARY_DIR ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-build
 
 	CONFIGURE_COMMAND ""
+	CMAKE_ARGS -DCMAKE_PROJECT_${PROJECT_NAME}_INCLUDE=${CMAKE_SOURCE_DIR}/eigen-external-project.cmake
+	
 	BUILD_COMMAND COMMAND ${CMAKE_COMMAND} -E chdir ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-src ./scons.py use_cgal=yes prefix=${PROJECT_BINARY_DIR}/${PROJECT_NAME}-build install
 		# copy headers to devel space (catkin does not like headers in source space)
 		COMMAND ${CMAKE_COMMAND} -E copy_directory ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-build/include ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_INCLUDE_DESTINATION}
@@ -28,11 +30,6 @@ ExternalProject_Add(EP_${PROJECT_NAME}
 catkin_package(
 	CFG_EXTRAS libnuklei-extras.cmake # catkin_package does not support artifacts in devel space
 	EXPORTED_TARGETS EP_${PROJECT_NAME}
-)
-
-include_directories(
-	${catkin_INCLUDE_DIRS}
-	${Eigen_INCLUDE_DIRS}
 )
 
 install(DIRECTORY ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_INCLUDE_DESTINATION}/

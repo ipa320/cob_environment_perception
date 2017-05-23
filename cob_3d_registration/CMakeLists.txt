@@ -154,7 +154,14 @@ set_target_properties(cob_3d_registration PROPERTIES COMPILE_FLAGS "-D__LINUX__ 
 #set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -pthread")
 
 catkin_add_gtest(test_frir ros/test/test_frir.cpp)
-
+add_dependencies(test_frir ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(test_frir 
+	cob_3d_registration
+	${catkin_LIBRARIES}
+	${Boost_LIBRARIES}
+	${VTK_LIBRARIES}
+	${PCL_LIBRARIES}
+)
 
 #############
 ## Install ##
