@@ -8,6 +8,9 @@ find_package(LAPACK REQUIRED)
 catkin_destinations() # set-up destination variables
 file(MAKE_DIRECTORY ${CATKIN_DEVEL_PREFIX}/${CATKIN_PACKAGE_INCLUDE_DESTINATION})
 
+message("##################################")
+message(${PROJECT_SOURCE_DIR})
+
 include(ExternalProject)
 ExternalProject_Add(EP_${PROJECT_NAME}
 	URL ${PROJECT_SOURCE_DIR}/nuklei-code
@@ -16,7 +19,7 @@ ExternalProject_Add(EP_${PROJECT_NAME}
 	BINARY_DIR ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-build
 
 	CONFIGURE_COMMAND ""
-	CMAKE_ARGS -DCMAKE_PROJECT_${PROJECT_NAME}_INCLUDE=${CMAKE_SOURCE_DIR}/eigen-external-project.cmake
+	CMAKE_ARGS -DCMAKE_PROJECT_${PROJECT_NAME}_INCLUDE=${PROJECT_SOURCE_DIR}/cmake/eigen-external-project.cmake
 	
 	BUILD_COMMAND COMMAND ${CMAKE_COMMAND} -E chdir ${PROJECT_BINARY_DIR}/${PROJECT_NAME}-src ./scons.py use_cgal=yes prefix=${PROJECT_BINARY_DIR}/${PROJECT_NAME}-build install
 		# copy headers to devel space (catkin does not like headers in source space)
