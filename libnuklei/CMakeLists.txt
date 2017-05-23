@@ -3,7 +3,6 @@ project(libnuklei)
 
 find_package(catkin REQUIRED COMPONENTS cmake_modules)
 find_package(LAPACK REQUIRED)
-#find_package(Eigen REQUIRED)
 #find_package(GSL REQUIRED)
 
 catkin_destinations() # set-up destination variables
