@@ -228,6 +228,7 @@ class Plane : public ObjectVolume {
 		
 	std::vector<Plane_Polygon::Ptr> polygons_;
 	Eigen::Vector3f offset_, normal_;
+	std::vector<Image::Ptr> imgs_;
 	
 	void buildBB();
 	
@@ -237,6 +238,8 @@ public:
 
 	Plane(const ContextPtr &ctxt, const cob_3d_mapping_msgs::Plane &);
 	Plane(const ContextPtr &ctxt, const Plane_Polygon::Ptr &inp, const nuklei::kernel::se3 &pose);
+	
+	void addImgs(const std::vector<Image::Ptr> &imgs) {imgs_ = imgs;}
 	
 	virtual void visualization(std::vector<boost::shared_ptr<Visualization::Object> > &);
 	

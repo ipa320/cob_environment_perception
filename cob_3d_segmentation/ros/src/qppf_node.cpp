@@ -233,7 +233,7 @@ public:
 #ifdef STOP_TIME
 	double quadtree, growing, extraction;
     seg_.getExecutionTimes(quadtree, growing, extraction);
-    ROS_INFO("took %f %f %f", quadtree, growing, extraction);
+    ROS_INFO("took quadtree: %f,  growing: %f, extraction: %f", quadtree, growing, extraction);
 #endif
 
     if(goal_)

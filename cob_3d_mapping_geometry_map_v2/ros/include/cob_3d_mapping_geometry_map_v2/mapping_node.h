@@ -51,13 +51,12 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 	std::string target_frame_;
 	Eigen::Affine3d tf2target_;
 
-	void callback(const cob_3d_mapping_msgs::PlaneSceneConstPtr& scene, const sensor_msgs::ImageConstPtr& color_img)
+	void callback2(const cob_3d_mapping_msgs::PlaneSceneConstPtr& scene)
 	{
-	  ROS_INFO("callback");
-	  
+	  callback(scene);
 	}
 
-	void callback2(const cob_3d_mapping_msgs::PlaneSceneConstPtr& scene)
+	void callback(const cob_3d_mapping_msgs::PlaneSceneConstPtr& scene, const sensor_msgs::ImageConstPtr& color_img=sensor_msgs::ImageConstPtr(), const sensor_msgs::ImageConstPtr& depth_img=sensor_msgs::ImageConstPtr())
 	{
 	  ROS_INFO("callback2");
 	  
@@ -88,7 +87,8 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 	  try {
 		  //now do the mapping stuff
 		  ros::Time start = ros::Time::now();
-		  ctxt_->add_scene(*scene, this);
+		  
+		  ctxt_->add_scene(*scene, this, color_img, depth_img);
 		  ROS_INFO("took %f", (ros::Time::now()-start).toSec());
 		  
 		  //visualize it
@@ -187,10 +187,10 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 	  start();
 	}
 	
-	typedef message_filters::sync_policies::ApproximateTime<cob_3d_mapping_msgs::PlaneScene, sensor_msgs::Image> TSyncPolicy;
+	typedef message_filters::sync_policies::ApproximateTime<cob_3d_mapping_msgs::PlaneScene, sensor_msgs::Image, sensor_msgs::Image> TSyncPolicy;
 	
 	boost::shared_ptr<message_filters::Subscriber<cob_3d_mapping_msgs::PlaneScene> > sub_scene_;
-	boost::shared_ptr<message_filters::Subscriber<sensor_msgs::Image> > sub_col_img_;
+	boost::shared_ptr<message_filters::Subscriber<sensor_msgs::Image> > sub_col_img_, sub_dep_img_;
 	boost::shared_ptr<message_filters::Synchronizer<TSyncPolicy> > sync_;
 	
 	ros::ServiceServer reset_server_;
@@ -270,32 +270,38 @@ class GeometryNode : public cob_3d_geometry_map::TransformationEstimator {
 	void start() {
 		//load params
 		ros::NodeHandle pn("~");
+		bool use_image_cb;
 		pn.param<std::string>("target_frame", target_frame_, "");
+		pn.param<bool>("image_callback", use_image_cb, false);
 		
 		ROS_INFO("loaded parameters:");
 		ROS_INFO("target_frame:\t%s", target_frame_.c_str());
 		
 		cob_3d_visualization::RvizMarkerManager::get().createTopic("marker").setFrameId(target_frame_);//.clearOld();
-		 
-		//now start the ROS stuff
-		//sub_scene_.reset(new message_filters::Subscriber<cob_3d_mapping_msgs::PlaneScene>(nh_, "scene", 1));
-		//sub_col_img_.reset(new message_filters::Subscriber<sensor_msgs::Image>(nh_, "color_image", 1));
-		
-		sub_scene2_ = nh_.subscribe("scene", 1, &GeometryNode::callback2, this);
-		 
-		// ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
-		//sync_.reset(new message_filters::Synchronizer<TSyncPolicy>(TSyncPolicy(10), *sub_scene_, *sub_col_img_));
-		//sync_->registerCallback(boost::bind(&GeometryNode::callback, this, _1, _2));
+
+		if (use_image_cb){
+		  //now start the ROS stuff (experimental)
+		  sub_scene_.reset(new message_filters::Subscriber<cob_3d_mapping_msgs::PlaneScene>(nh_, "scene", 1));
+		  sub_col_img_.reset(new message_filters::Subscriber<sensor_msgs::Image>(nh_, "color_image", 1));
+		  sub_dep_img_.reset(new message_filters::Subscriber<sensor_msgs::Image>(nh_, "depth_image", 1));
+		  //ApproximateTime takes a queue size as its constructor argument, hence MySyncPolicy(10)
+		  sync_.reset(new message_filters::Synchronizer<TSyncPolicy>(TSyncPolicy(10), *sub_scene_, *sub_col_img_, *sub_dep_img_));
+		  sync_->registerCallback(boost::bind(&GeometryNode::callback, this, _1, _2, _3));
+		} else {
+		  // basic scene subscriber
+		  sub_scene2_ = nh_.subscribe("scene", 1, &GeometryNode::callback2, this);
+		}
 	}
-	
+
 	void reset() {
 		sub_scene2_.shutdown();
 		if(sub_scene_) sub_scene_->unsubscribe();
 		if(sub_col_img_) sub_col_img_->unsubscribe();
+		if(sub_dep_img_) sub_dep_img_->unsubscribe();
 		
-		/*sub_scene_.reset();
+		sub_scene_.reset();
 		sub_col_img_.reset();
-		sync_.reset();*/
+		sync_.reset();
 		
 		classifier_floor_ = NULL;
 		ctxt_.reset();
