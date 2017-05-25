@@ -4,6 +4,7 @@
         <!-- send ROBOT parameters to parameter server -->
         <!--rosparam command="load" ns="/script_server/base" file="$(find cob_3d_mapping_demonstrator)/config/joint_configurations.yaml"/-->
         <rosparam command="load" ns="/script_server/cob_3d_mapping_demonstrator" file="$(find cob_3d_mapping_demonstrator)/config/joint_configurations.yaml"/>
+        <rosparam command="load" ns="/script_server/cob_3d_mapping_demonstrator" file="$(find cob_3d_mapping_demonstrator)/config/topics.yaml"/>
 
 </launch>
 
