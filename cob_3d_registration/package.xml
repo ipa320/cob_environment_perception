@@ -1,64 +1,42 @@
-<package>
-  <name>cob_3d_registration</name>
-  <version>1.0.0</version>
-  
-  <description>
-     Registration algorithms.
-  </description>
-  
-  <license>LGPL</license>
-  
-  <maintainer email="josh@ipa.fhg.de">Joshua Hampp</maintainer>
-  <author>Joshua Hampp</author>
-  
-  <url>http://wiki.ros.org/cob_3d_registration</url>
+<?xml version="1.0"?>
+<package format="2">
+	<name>cob_3d_registration</name>
+	<version>1.0.0</version>
 
-  <buildtool_depend>catkin</buildtool_depend>
+	<description>
+		Registration algorithms.
+	</description>
 
-  <build_depend>cmake_modules</build_depend>
-  <!--build_depend>boost</build_depend-->  
-  <build_depend>cob_3d_features</build_depend>
-  <build_depend>cob_3d_mapping_common</build_depend>
-  <build_depend>std_srvs</build_depend>
-  <build_depend>cv_bridge</build_depend>
-  <!--build_depend>dynamic_reconfigure</build_depend-->
-  <build_depend>eigen</build_depend>
-  <build_depend>libvtk</build_depend>
-  <build_depend>message_generation</build_depend>
-  <build_depend>nav_msgs</build_depend>
-  <build_depend>nodelet</build_depend>
-  <build_depend>libopencv-dev</build_depend>
-  <!--build_depend>pcl</build_depend-->
-  <build_depend>pcl_ros</build_depend>
-  <build_depend>roscpp</build_depend>
-  <build_depend>tf</build_depend>
-  <build_depend>tf_conversions</build_depend>
-  <!--build_depend>tinyxml</build_depend>
-  <build_depend>trajectory_msgs</build_depend-->
+	<license>LGPL</license>
 
-  <!--run_depend>boost</run_depend-->  
-  <run_depend>cob_3d_features</run_depend>
-  <run_depend>cob_3d_mapping_common</run_depend>
-  <run_depend>std_srvs</run_depend>
-  <run_depend>cv_bridge</run_depend>
-  <!--run_depend>dynamic_reconfigure</run_depend-->
-  <run_depend>eigen</run_depend>
-  <run_depend>libvtk</run_depend>
-  <run_depend>message_runtime</run_depend>
-  <run_depend>nav_msgs</run_depend>
-  <run_depend>nodelet</run_depend>
-  <run_depend>libopencv-dev</run_depend>
-  <!--run_depend>pcl</run_depend-->
-  <run_depend>pcl_ros</run_depend>
-  <run_depend>roscpp</run_depend>
-  <run_depend>tf</run_depend>
-  <run_depend>tf_conversions</run_depend>
-  <!--run_depend>tinyxml</run_depend>
-  <run_depend>trajectory_msgs</run_depend-->
-  <run_depend>message_runtime</run_depend>
+	<maintainer email="josh@ipa.fhg.de">Joshua Hampp</maintainer>
+	<author>Joshua Hampp</author>
 
-  <!--export>
-    <nodelet plugin="${prefix}/nodelet_plugins.xml" />
-  </export-->
+	<url>http://wiki.ros.org/cob_3d_registration</url>
+
+	<buildtool_depend>catkin</buildtool_depend>
+
+	<!--depend>boost</depend-->
+	<depend>cmake_modules</depend>
+	<depend>cob_3d_features</depend>
+	<depend>cob_3d_mapping_common</depend>
+	<depend>cv_bridge</depend>
+	<!--depend>dynamic_reconfigure</depend-->
+	<depend>eigen</depend>
+	<depend>libvtk</depend>
+	<depend>message_generation</depend>
+	<depend>nav_msgs</depend>
+	<depend>nodelet</depend>
+	<depend>libopencv-dev</depend>
+	<!--depend>pcl</depend-->
+	<depend>pcl_ros</depend>
+	<depend>roscpp</depend>
+	<depend>std_srvs</depend>
+	<depend>tf</depend>
+	<depend>tf_conversions</depend>
+	<!--depend>tinyxml</depend>
+	<depend>trajectory_msgs</depend-->
+
+	<exec_depend>message_runtime</exec_depend>
 </package>
 

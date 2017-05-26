@@ -2,11 +2,11 @@ cmake_minimum_required(VERSION 2.8.3)
 project(cob_3d_meshing)
 
 set(catkin_RUN_PACKAGES 
-  cob_3d_features
-  cob_3d_segmentation
-  cob_3d_mapping_common
-  cob_3d_mapping_filters
-  libopenmesh
+	cob_3d_features
+	cob_3d_mapping_common
+	cob_3d_mapping_filters
+	cob_3d_segmentation
+	libopenmesh
 )
 
 set(catkin_BUILD_PACKAGES 
@@ -57,10 +57,26 @@ include_directories(
 )
 
 add_executable(test_meshing
-  common/src/test_meshing.cpp
+	common/src/test_meshing.cpp
 )
-
+add_dependencies(test_meshing ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
 target_link_libraries(test_meshing
 	${catkin_LIBRARIES}
 	${Boost_LIBRARIES}
+)
+
+#############
+## Install ##
+#############
+## Mark executables and/or libraries for installation
+install(TARGETS test_meshing
+	ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+	LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+	RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(DIRECTORY common/include/${PROJECT_NAME}/ ros/include/${PROJECT_NAME}/
+	DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+	FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+	PATTERN ".svn" EXCLUDE
 )

@@ -67,7 +67,7 @@
 #include "cob_3d_features/organized_normal_estimation_edge_omp.h"
 
 #ifdef NEIGHBORHOOD_DISPLAY
-#include <opencv/highgui.h>
+#include <opencv2/highgui/highgui.hpp>
 #endif
 
 template<typename PointInT, typename PointOutT, typename LabelOutT> void cob_3d_features::OrganizedNormalEstimationEdgeOMP<PointInT, PointOutT, LabelOutT>::computeFeature(

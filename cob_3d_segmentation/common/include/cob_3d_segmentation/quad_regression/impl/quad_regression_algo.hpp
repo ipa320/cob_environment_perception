@@ -90,9 +90,13 @@ void CameraModel_SR4500<Point>::getParams(const pcl::PointCloud<Point> &pc) {
 template <int Degree, typename Point, typename CameraModel>
 QuadRegression<Degree, Point, CameraModel>::QuadRegression():
 #ifdef SICK
-MIN_LOD(4), FINAL_LOD(0), GO_DOWN_TO_LVL(4),
+NUM_LOD(5), MIN_LOD(4), FINAL_LOD(0), GO_DOWN_TO_LVL(4),
 #else
-MIN_LOD(8), FINAL_LOD(0), GO_DOWN_TO_LVL(3),
+#ifdef CAMERA_ENSENSO
+NUM_LOD(10), MIN_LOD(16), FINAL_LOD(0), GO_DOWN_TO_LVL(NUM_LOD-1),
+#else
+NUM_LOD(5), MIN_LOD(8), FINAL_LOD(0), GO_DOWN_TO_LVL(3),
+#endif
 #endif
 ch_(NULL), outline_check_(0), outline_check_size_(0),
 filter_(-1.f), only_planes_(false)
@@ -103,7 +107,7 @@ filter_(-1.f), only_planes_(false)
 
 template <int Degree, typename Point, typename CameraModel>
 bool QuadRegression<Degree, Point, CameraModel>::compute() {
-  polygons_.clear();
+  polygons_.clear();  
   this->buildTree(*input_);
   calc();
   simplify();
@@ -126,7 +130,7 @@ void QuadRegression<Degree, Point, CameraModel>::prepare(const pcl::PointCloud<P
     return;
   }
 
-  for(int i=0; i<5; i++){
+  for(int i=0; i<NUM_LOD; i++){
     levels_.push_back(SubStructure::ParamC<Degree>(w,h));
 
     w/=2;
@@ -439,10 +443,15 @@ template <int Degree, typename Point, typename CameraModel>
 void QuadRegression<Degree, Point, CameraModel>::grow(SubStructure::Model<Degree> &model, const int i, const int x, const int y) {
   static SubStructure::VISITED_LIST<SubStructure::SVALUE<Eigen::Vector3f> > list;
   list.init();
-  list.add( SubStructure::SVALUE<Eigen::Vector3f>(getInd(i,x,y),levels_[i].w*levels_[i].h, levels_[i].data[getInd(i,x,y)].template point<Eigen::Vector3f>()) );
+  list.add( SubStructure::SVALUE<Eigen::Vector3f>(getInd(i,x,y),std::max(levels_[i].w,levels_[i].h), levels_[i].data[getInd(i,x,y)].template point<Eigen::Vector3f>()) );
 
+  size_t num = polygons_.size();
   grow(list, model, i, polygons_.size(), true);
+  if(num==polygons_.size())
+    polygons_.push_back(S_POLYGON<Degree>());
 }
+
+#include "../sub_structures/debug.h"
 
 template <int Degree, typename Point, typename CameraModel>
 void QuadRegression<Degree, Point, CameraModel>::grow(SubStructure::VISITED_LIST<SubStructure::SVALUE<Eigen::Vector3f> > &list, SubStructure::Model<Degree> &model, const int i, const int mark, bool first_lvl) {
@@ -464,12 +473,13 @@ void QuadRegression<Degree, Point, CameraModel>::grow(SubStructure::VISITED_LIST
       y= list.vals[list.pos].v/levels_[i].w;
       hops = list.vals[list.pos].hops;
 
-      occ = isOccupied(i,x,y);
-      if(occ==mark) {
-        if(list.pos>last_size&&hops) list.remove();
+      if(levels_[i].data[list.vals[list.pos].v].occopied==mark) {
+        if(list.pos>last_size&&hops)
+			list.remove();
         continue;
       }
-      else if(occ!=-1) {
+      occ = otherOccupied(i,x,y,mark);
+      if(occ!=-1) {
 #ifdef CHECK_CONNECTIVITY
         if(/*i==FINAL_LOD && */checkModelAt(model, i,x,y,
                                             0.02)) { //TODO: check threshold
@@ -509,9 +519,15 @@ void QuadRegression<Degree, Point, CameraModel>::grow(SubStructure::VISITED_LIST
               //+3sigma*(standard deviation at max./min.)
 
               (levels_[i].data[getInd(i, x,y)].v_max_-levels_[i].data[getInd(i, x,y)].v_min_) <
+#ifndef CAMERA_ENSENSO
               (std::min(model.get_max_gradient(levels_[i].data[getInd(i, x,y)]), 2.f)*d*(1<<i)/camera_.f
-                  +2*(camera_.std(levels_[i].data[getInd(i, x,y)].v_max_)
-                      +camera_.std(levels_[i].data[getInd(i, x,y)].v_min_)) )
+                  +(camera_.std(levels_[i].data[getInd(i, x,y)].v_max_)
+                      +camera_.std(levels_[i].data[getInd(i, x,y)].v_min_))
+#else
+              (std::min(model.get_max_gradient(levels_[i].data[getInd(i, x,y)]), 2.f)*d/camera_.f
+                      +camera_.std(levels_[i].data[getInd(i, x,y)].v_min_)
+#endif
+                      )
 
 
                       //(levels_[i].data[getInd(i, x,y)].v_max_-levels_[i].data[getInd(i, x,y)].v_min_)< (model.get_max_gradient(levels_[i].data[getInd(i, x,y)])*d*(1<<i)/camera_.f+2*thr) /*std::min(0.5f,std::max(0.02f,0.05f*d))*/ //TODO: in anbhaengigkeit der steigung
@@ -542,7 +558,7 @@ void QuadRegression<Degree, Point, CameraModel>::grow(SubStructure::VISITED_LIST
         ++found;
         levels_[i].data[getInd(i,x,y)].occopied=mark;
         model+=levels_[i].data[getInd(i,x,y)];
-        if(hops>10 || found%20==0)
+        if(hops>10 || found%20==0 || (first_lvl && found<MIN_LOD))
           model.get();
         bNew=bNew2;
 
@@ -567,6 +583,18 @@ void QuadRegression<Degree, Point, CameraModel>::grow(SubStructure::VISITED_LIST
     }
     return;
   }
+  
+  list.pos=-1;
+  while(list.pos+1<list.size) {
+    list.move();
+    
+    x = list.vals[list.pos].v%levels_[i].w;
+    y = list.vals[list.pos].v/levels_[i].w;
+    
+    if(levels_[i].data[list.vals[list.pos].v].occopied==mark)
+    list.remove();
+  }
+  
 
   // if finished then create polygon
   if(i==(int)FINAL_LOD) {
@@ -583,8 +611,6 @@ void QuadRegression<Degree, Point, CameraModel>::grow(SubStructure::VISITED_LIST
     poly=model;
     poly.mark_ = mark;
 
-    //std::cout<<model.p<<"\n";
-
 #ifdef CHECK_CONNECTIVITY
     poly.connectivity_=connectivity;
 #endif
@@ -598,8 +624,6 @@ void QuadRegression<Degree, Point, CameraModel>::grow(SubStructure::VISITED_LIST
       x= list.vals[j].v%levels_[i].w;
       y= list.vals[j].v/levels_[i].w;
 
-      if(x>0 && y>0 && x<(int)levels_[i].w-1 && y<(int)levels_[i].h-1 && isOccupied(i,x,y)==mark) continue;
-      
       //check for occupation and non-occupation
       /*int nonocc=0;
       for(int xx=-1; xx<=1; xx++)
@@ -644,36 +668,39 @@ void QuadRegression<Degree, Point, CameraModel>::grow(SubStructure::VISITED_LIST
 
   //region growing
   SubStructure::VISITED_LIST<SubStructure::SVALUE<Eigen::Vector3f> > list_lower;
-  for(int j=0; j<list.size; j++) {
-    x= list.vals[j].v%levels_[i].w;
-    y= list.vals[j].v/levels_[i].w;
 
-    hops=9;     // max. allowed movement in inner nodes
-
-    if(filterOccupied(i,x,y,mark))
-      continue;
-
-    bool above = y>0 &&                    filterOccupied(i,x,y-1,mark);
-    bool below = y+1<(int)levels_[i].h &&  filterOccupied(i,x,y+1,mark);
-    bool left  = x>0 &&                    filterOccupied(i,x-1,y,mark);
-    bool right = x+1<(int)levels_[i].w &&  filterOccupied(i,x+1,y,mark);
-
-    if(above&&below&&left&&right)
-      continue;
-
-    if(above) {
-      list_lower.add(SubStructure::SVALUE<Eigen::Vector3f> (getInd(i-1, 2*x,2*y),hops/2, list.vals[j].pt));
-      list_lower.add(SubStructure::SVALUE<Eigen::Vector3f> (getInd(i-1, 2*x+1,2*y),hops/2, list.vals[j].pt));
+  for(int j=0; j<list.size; j++) {		
+    x = list.vals[j].v%levels_[i].w;
+    y = list.vals[j].v/levels_[i].w;
+    
+    hops = list.vals[j].hops;
+    
+    if(replaceOccupied(i,x,y-1,mark)) {
+      list_lower.add(SubStructure::SVALUE<Eigen::Vector3f> (getInd(i-1, 2*x,2*y-1),hops, list.vals[j].pt));
+      list_lower.add(SubStructure::SVALUE<Eigen::Vector3f> (getInd(i-1, 2*x+1,2*y-1),hops, list.vals[j].pt));
     }
-    if(below) {
-      list_lower.add(SubStructure::SVALUE<Eigen::Vector3f> (getInd(i-1, 2*x,2*y+1),hops/2, list.vals[j].pt));
-      list_lower.add(SubStructure::SVALUE<Eigen::Vector3f> (getInd(i-1, 2*x+1,2*y+1),hops/2, list.vals[j].pt));
+    if(replaceOccupied(i,x,y+1,mark)) {
+      list_lower.add(SubStructure::SVALUE<Eigen::Vector3f> (getInd(i-1, 2*x,2*y+2),hops, list.vals[j].pt));
+      list_lower.add(SubStructure::SVALUE<Eigen::Vector3f> (getInd(i-1, 2*x+1,2*y+2),hops, list.vals[j].pt));
     }
-    if(left && !above) list_lower.add(SubStructure::SVALUE<Eigen::Vector3f> (getInd(i-1, 2*x,2*y),hops/2, list.vals[j].pt));
-    if(left && !below) list_lower.add(SubStructure::SVALUE<Eigen::Vector3f> (getInd(i-1, 2*x,2*y+1),hops/2, list.vals[j].pt));
-    if(right && !above) list_lower.add(SubStructure::SVALUE<Eigen::Vector3f> (getInd(i-1, 2*x+1,2*y),hops/2, list.vals[j].pt));
-    if(right && !below) list_lower.add(SubStructure::SVALUE<Eigen::Vector3f> (getInd(i-1, 2*x+1,2*y+1),hops/2, list.vals[j].pt));
+    if(replaceOccupied(i,x-1,y,mark)) {
+      list_lower.add(SubStructure::SVALUE<Eigen::Vector3f> (getInd(i-1, 2*x-1,2*y),hops, list.vals[j].pt));
+      list_lower.add(SubStructure::SVALUE<Eigen::Vector3f> (getInd(i-1, 2*x-1,2*y+1),hops, list.vals[j].pt));
+    }
+    if(replaceOccupied(i,x+1,y,mark)) {
+      list_lower.add(SubStructure::SVALUE<Eigen::Vector3f> (getInd(i-1, 2*x+2,2*y),hops, list.vals[j].pt));
+      list_lower.add(SubStructure::SVALUE<Eigen::Vector3f> (getInd(i-1, 2*x+2,2*y+1),hops, list.vals[j].pt));
+    }
+    
+    replaceOccupied(i,x-1,y-1,mark);
+    replaceOccupied(i,x+1,y-1,mark);
+    replaceOccupied(i,x-1,y+1,mark);
+    replaceOccupied(i,x+1,y+1,mark);   
   }
+
+  for(int j=0; j<list_lower.size; j++)
+    levels_[i-1].data[list_lower.vals[j].v].occopied = -1;
+	
 
   grow(list_lower, model, i-1, mark, false);
 }
@@ -693,8 +720,6 @@ int QuadRegression<Degree, Point, CameraModel>::getPos(int *ch, const int xx, co
   }
   return p;
 }
-
-#include "../sub_structures/debug.h"
 
 template <int Degree, typename Point, typename CameraModel>
 void QuadRegression<Degree, Point, CameraModel>::outline(int *ch, const int w, const int h, std::vector<SubStructure::SXY<Eigen::Vector3f> > &out, const int i, S_POLYGON<Degree> &poly, const SubStructure::Model<Degree> &model, const int mark)
@@ -717,13 +742,14 @@ void QuadRegression<Degree, Point, CameraModel>::outline(int *ch, const int w, c
   }
 
 #if DEBUG_LEVEL>200
+  static int num=0;
   {  char buf[128];
   int *bs = new int[w*h];
   memset(bs,0,w*h*4);
   for(size_t j=0; j<out.size(); j++) {
     bs[ getInd(i, out[j].x,out[j].y) ]=255;//-(out[j].back+1);
   }
-  sprintf(buf,"/tmp/poly%d.ppm",(int)polygons_.size());
+  sprintf(buf,"/tmp/poly_%d_%d.ppm",(int)polygons_.size(),num++);
   std::cout<<"debug output to "<<buf<<std::endl;
   //QQPF_Debug::ppm(buf,w,h,bs);
   QQPF_Debug::ppm(buf,w,h,ch);
@@ -761,22 +787,39 @@ void QuadRegression<Degree, Point, CameraModel>::outline(int *ch, const int w, c
     addPoint(i,x,y,mark, poly,model, out[n].pt);
     int num=0,numb=0;
 
+    std::vector<Eigen::Vector2i> branch;
     while(1) {
 
-      if(x<0 || y<0 || x>=w || y>=h || ch[ getInd(i,x,y) ]<1) {
+      if(x<0 || y<0 || x>=w || y>=h || ch[ getInd(i,x,y) ]<1)
         break;
-      }
 
       back+=out[ch[ getInd(i,x,y) ]-1].back?1:0;
       ++numb;
       outline_check_[ch[ getInd(i,x,y) ]-1]=true;
+      int temp_ind = ch[ getInd(i,x,y) ];
       ch[ getInd(i,x,y) ]=-2;
       int p=getPos(ch,x,y,w,h);
-
+      
+      if((std::abs(x-start_x)+std::abs(y-start_y))<3 && poly.segments_.back().size()>=3) break;
+        
       if(p==0|| (!Contour2D::g_Splines[bf][p].x&&!Contour2D::g_Splines[bf][p].y) )
       {
-        break;
+        if((std::abs(x-start_x)+std::abs(y-start_y))>2 && branch.size()>0 ) {
+	    ROS_ASSERT(branch.size()>0);
+	    x = out[branch.back()(0)].x;
+	    y = out[branch.back()(0)].y;
+	    poly.segments_.back().resize(branch.back()(1));
+	    poly.segments2d_.back().resize(branch.back()(1));
+	    ch[ getInd(i,x,y) ] = branch.back()(0);
+	    branch.pop_back();
+	    
+	    continue;
+	  }
+	  else break;
       }
+      
+      if(Contour2D::g_Splines[bf][p].multiple)
+	branch.push_back(Eigen::Vector2i(temp_ind,poly.segments_.back().size()));
 
       v+=v+Contour2D::g_Splines[bf][p].v;
       x+=Contour2D::g_Splines[bf][p].x;
@@ -788,37 +831,30 @@ void QuadRegression<Degree, Point, CameraModel>::outline(int *ch, const int w, c
         v=0;
         Eigen::Vector2f tv;
         tv(0)=x;tv(1)=y;
-        addPoint(i,x,y,mark, poly,model, out[ch[ getInd(i,x,y) ]-1].pt);
+        if(!addPoint(i,x,y,mark, poly,model, out[ch[ getInd(i,x,y) ]-1].pt)) {
+	  poly.segments_.clear();
+	  poly.segments2d_.clear();
+	  break;
+	}
         numb=back=0;
       }
     }
+    
+    if(poly.segments_.size()==0) break;
+	  
     if(poly.segments_.back().size()>0) poly.segments_.back()[0](2)=back/(float)numb;
 
-    if(poly.segments_.back().size()<3 || (std::abs(x-start_x)+std::abs(y-start_y))>10 ) {
+    if(poly.segments_.back().size()<3) {
+
       poly.segments_.erase(poly.segments_.end()-1);
 
 #if defined(USE_BOOST_POLYGONS_) || defined(BACK_CHECK_REPEAT) || 1
       poly.segments2d_.erase(poly.segments2d_.end()-1);
 #endif
-
-	  if(poly.segments_.size()==0) {
-  {  char buf[128];
-  int *bs = new int[w*h];
-  memset(bs,0,w*h*4);
-  for(size_t j=0; j<out.size(); j++) {
-    bs[ getInd(i, out[j].x,out[j].y) ]=255;//-(out[j].back+1);
-  }
-  sprintf(buf,"/tmp/poly%d.ppm",(int)polygons_.size());
-  std::cout<<"debug output to "<<buf<<std::endl;
-  //QQPF_Debug::ppm(buf,w,h,bs);
-  QQPF_Debug::ppm(buf,w,h,ch);
-  delete [] bs;
-  }
-		  break;
-	  }
 	  
+      if(poly.segments_.size()==0) break;
     }
-break;
+//break;
   }
 
   //    for(size_t j=0; j<poly.segments_.size(); j++)
@@ -842,7 +878,8 @@ template <int Degree, typename Point, typename CameraModel>
 void QuadRegression<Degree, Point, CameraModel>::simplify() {	
 	for(size_t i=0; i<polygons_.size(); i++)
 		for(size_t j=0; j<polygons_[i].segments_.size(); j++) {
-			simplify(polygons_[i].segments_[j], polygons_[i].segments2d_[j]);
+			//TODO: this is only true for planes!
+			simplify(1/std::abs(polygons_[i].normalAt(Eigen::Vector2f(0,0))(2)), polygons_[i].segments_[j], polygons_[i].segments2d_[j]);
 			
 			if(polygons_[i].segments_[j].size()<3) {
 				if(j==0) {
@@ -859,14 +896,17 @@ void QuadRegression<Degree, Point, CameraModel>::simplify() {
 }
 
 template <int Degree, typename Point, typename CameraModel>
-void QuadRegression<Degree, Point, CameraModel>::simplify(std::vector<Eigen::Vector3f> &seg, std::vector<Eigen::Vector2i> &seg2d) {
+void QuadRegression<Degree, Point, CameraModel>::simplify(const float scale, std::vector<Eigen::Vector3f> &seg, std::vector<Eigen::Vector2i> &seg2d) {
 	bool found = (seg.size()>0);
 	while(found) {
 		found = false;
 		
 		for(size_t i=0; i<seg.size(); i++) {
 			//if(seg.size()<5) ROS_INFO("%f", (seg[(i+2)%seg.size()]-seg[(i+1)%seg.size()]).cross(seg[i]-seg[(i+1)%seg.size()]).squaredNorm());
-			if( (seg[(i+2)%seg.size()]-seg[(i+1)%seg.size()]).cross(seg[i]-seg[(i+1)%seg.size()]).squaredNorm() < 0.000001 ) {
+			const Eigen::Vector2f v1 = seg[(i+2)%seg.size()].head<2>()-seg[(i+1)%seg.size()].head<2>();
+			const Eigen::Vector2f v2 = seg[i].head<2>()-seg[(i+1)%seg.size()].head<2>();
+			const float area = scale * std::abs(v1(0)*v2(1)-v1(1)*v2(0));
+			if( area < 0.00001f ) {	// 10 [mm*mm]
 				seg.erase(seg.begin()+(i+1)%seg.size());
 				//seg2d.erase(seg2d.begin()+(i+1)%seg.size());
 				found = true;

@@ -2,14 +2,14 @@ cmake_minimum_required(VERSION 2.8.3)
 project(cob_3d_mapping_geometry_map)
 
 set(catkin_RUN_PACKAGES 
-  cob_3d_mapping_common
-  cob_3d_mapping_msgs
-  tf_conversions
-  dynamic_reconfigure
-  pcl_ros
-  rosbag
-  std_srvs
-  roscpp
+	cob_3d_mapping_common
+	cob_3d_mapping_msgs
+	dynamic_reconfigure
+	pcl_ros
+	rosbag
+	roscpp
+	std_srvs
+	tf_conversions
 )
 
 set(catkin_BUILD_PACKAGES 
@@ -21,7 +21,7 @@ set(catkin_BUILD_PACKAGES
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  ${catkin_BUILD_PACKAGES}
+	${catkin_BUILD_PACKAGES}
 )
 
 #find_package(PCL REQUIRED)
@@ -38,13 +38,13 @@ generate_dynamic_reconfigure_options(cfg/geometry_map_node.cfg)
 ## CATKIN_DEPENDS: catkin_packages dependent projects also need
 ## DEPENDS: system dependencies of this project that dependent projects also need
 catkin_package(
-  INCLUDE_DIRS
-    common/include
-    ros/include
-  LIBRARIES
-    geometry_map
-  CATKIN_DEPENDS
-    ${catkin_RUN_PACKAGES}
+	INCLUDE_DIRS
+		common/include
+		ros/include
+	LIBRARIES
+		geometry_map
+	CATKIN_DEPENDS
+		${catkin_RUN_PACKAGES}
 )
 
 ###########
@@ -55,41 +55,57 @@ catkin_package(
 ## Your package locations should be listed before other locations
 # include_directories(include ${catkin_INCLUDE_DIRS} ${Boost_INCLUDE_DIRS})
 include_directories(
-  common/include
-  ros/include
-  ${catkin_INCLUDE_DIRS}
-  ${PCL_INCLUDE_DIRS}
+	common/include
+	ros/include
+	${catkin_INCLUDE_DIRS}
+	${PCL_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
 add_library(geometry_map common/src/geometry_map.cpp common/src/geometry_map_entry.cpp)
 add_dependencies(geometry_map ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(geometry_map
+	${catkin_LIBRARIES}
+	${PCL_LIBRARIES}
+)
 
 ## Declare a cpp executable
 add_executable(geometry_map_node ros/src/geometry_map_node.cpp)
 add_dependencies(geometry_map_node ${${PROJECT_NAME}_EXPORTED_TARGETS} ${catkin_EXPORTED_TARGETS})
+target_link_libraries(geometry_map_node
+	geometry_map
+	${catkin_LIBRARIES}
+)
 
 add_executable(set_geometry_map ros/src/set_geometry_map.cpp)
 add_dependencies(set_geometry_map ${catkin_EXPORTED_TARGETS})
+target_link_libraries(set_geometry_map
+	${catkin_LIBRARIES}
+)
 
 add_executable(get_geometry_map ros/src/get_geometry_map.cpp)
 add_dependencies(get_geometry_map ${catkin_EXPORTED_TARGETS})
-
-target_link_libraries(geometry_map
-  ${catkin_LIBRARIES}
-  ${PCL_LIBRARIES}
-)
-
-target_link_libraries(geometry_map_node
-  geometry_map
-  ${catkin_LIBRARIES}
-)
-
-target_link_libraries(set_geometry_map
-  ${catkin_LIBRARIES}
-)
-
 target_link_libraries(get_geometry_map
-  ${catkin_LIBRARIES}
+	${catkin_LIBRARIES}
 )
 
+#############
+## Install ##
+#############
+## Mark executables and/or libraries for installation
+install(TARGETS geometry_map geometry_map_node set_geometry_map get_geometry_map
+	ARCHIVE DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+	LIBRARY DESTINATION ${CATKIN_PACKAGE_LIB_DESTINATION}
+	RUNTIME DESTINATION ${CATKIN_PACKAGE_BIN_DESTINATION}
+)
+
+install(DIRECTORY common/include/${PROJECT_NAME}/ ros/include/${PROJECT_NAME}/
+	DESTINATION ${CATKIN_PACKAGE_INCLUDE_DESTINATION}
+	FILES_MATCHING PATTERN "*.h" PATTERN "*.hpp"
+	PATTERN ".svn" EXCLUDE
+)
+
+install(DIRECTORY ros/launch
+	DESTINATION ${CATKIN_PACKAGE_SHARE_DESTINATION}/ros
+	PATTERN ".svn" EXCLUDE
+)

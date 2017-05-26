@@ -333,10 +333,10 @@ void
   }
 
   void
-  Cylinder::triangulate(list<TPPLPoly>& tri_list) const
+  Cylinder::triangulate(std::list<TPPLPoly>& tri_list) const
   {
     TPPLPartition pp;
-    list<TPPLPoly> polys;
+    std::list<TPPLPoly> polys;
     TPPLPoly poly;
     TPPLPoint pt;
 

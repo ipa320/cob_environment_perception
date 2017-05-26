@@ -1,33 +1,28 @@
-<package>
-  <name>cob_3d_transform_nodes</name>
-  <version>1.0.0</version>
-  
-  <description>
-     Transform nodes for point clouds and shape arrays.
-  </description>
-  
-  <license>LGPL</license>
-  
-  <maintainer email="goa@ipa.fhg.de">Georg Arbeiter</maintainer>
-  <author>Georg Arbeiter</author>
-  
-  <url>http://wiki.ros.org/cob_3d_transform_nodes</url>
+<?xml version="1.0"?>
+<package format="2">
+	<name>cob_3d_transform_nodes</name>
+	<version>1.0.0</version>
 
-  <buildtool_depend>catkin</buildtool_depend>
+	<description>
+		Transform nodes for point clouds and shape arrays.
+	</description>
 
-  <build_depend>cob_3d_mapping_common</build_depend>
-  <build_depend>cob_3d_mapping_msgs</build_depend>
-  <build_depend>pcl_ros</build_depend>
-  <build_depend>roscpp</build_depend>
-  <build_depend>tf</build_depend>
-  <build_depend>tf_conversions</build_depend>
+	<license>LGPL</license>
 
-  <run_depend>cob_3d_mapping_common</run_depend>
-  <run_depend>cob_3d_mapping_msgs</run_depend>
-  <run_depend>pcl_ros</run_depend>
-  <run_depend>roscpp</run_depend>
-  <run_depend>tf</run_depend>
-  <run_depend>tf_conversions</run_depend>
+	<maintainer email="goa@ipa.fhg.de">Georg Arbeiter</maintainer>
+	<author>Georg Arbeiter</author>
+ 
+	<url>http://wiki.ros.org/cob_3d_transform_nodes</url>
+
+	<buildtool_depend>catkin</buildtool_depend>
+
+	<depend>cmake_modules</depend>
+	<depend>cob_3d_mapping_common</depend>
+	<depend>cob_3d_mapping_msgs</depend>
+	<depend>pcl_ros</depend>
+	<depend>roscpp</depend>
+	<depend>tf</depend>
+	<depend>tf_conversions</depend>
 </package>
 
 

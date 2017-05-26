@@ -76,10 +76,10 @@
 #include <tf/transform_listener.h>
 #include <tf_conversions/tf_kdl.h>
 #include <pcl/io/pcd_io.h>
-#include <registration/general_registration.h>
-#include <registration/registration_info.h>
+#include <cob_3d_registration/general_registration.h>
+#include <cob_3d_registration/registration_info.h>
 
-#include <registration/measurements/measure.h>
+#include <cob_3d_registration/measurements/measure.h>
 #include <boost/progress.hpp>
 
 #include <gtest/gtest.h>
@@ -170,7 +170,7 @@ void test_null_ptrs() {
   ROS_INFO("init test_null_ptrs with %d",ti);
   srand(ti);
 
-  Registration_Infobased<pcl::PointXYZ> frir;
+  cob_3d_registration::Registration_Infobased<pcl::PointXYZ> frir;
   frir.compute();
 }
 
@@ -180,7 +180,7 @@ void test_nans() {
   generateNaNOrderedPC_Kinect(640,480, pc1);
 
   //register
-  Registration_Infobased<pcl::PointXYZ> frir;
+  cob_3d_registration::Registration_Infobased<pcl::PointXYZ> frir;
   frir.setKinectParameters(500,320,240);
   frir.setInputOginalCloud(pc1.makeShared());
   frir.compute();
@@ -203,7 +203,7 @@ void test_many_random_pcs() {
     generateRandomOrderedPC_Kinect(640,480, pc2);
 
     //register
-    Registration_Infobased<pcl::PointXYZ> frir;
+    cob_3d_registration::Registration_Infobased<pcl::PointXYZ> frir;
     frir.setKinectParameters(500,320,240);
     frir.setInputOginalCloud(pc1.makeShared());
     frir.compute();
@@ -245,7 +245,7 @@ void test_many_tfs() {
       reproject(pc1,pc2,tf);
 
       //register
-      Registration_Infobased<pcl::PointXYZ> frir;
+      cob_3d_registration::Registration_Infobased<pcl::PointXYZ> frir;
       frir.setKinectParameters(500,320,240);
       frir.setInputOginalCloud(pc1.makeShared());
       frir.compute();
@@ -275,7 +275,7 @@ void test_many_tfs() {
       //pcl::io::savePCDFile("b.pcd",pc2);
 
       //register
-      Registration_Infobased<pcl::PointXYZ> frir;
+      cob_3d_registration::Registration_Infobased<pcl::PointXYZ> frir;
       frir.setKinectParameters(500,320,240);
       frir.setInputOginalCloud(pc1.makeShared());
       frir.compute();
@@ -322,9 +322,9 @@ TEST(Registration_FRIF, many_tfs){
 }
 
 int main(int argc, char **argv) {
-  ROS_INFO("EVALUATION_MODE_ is %d", EVALUATION_MODE_);
-  ROS_INFO("DEBUG_SWITCH_ is %d", DEBUG_SWITCH_);
-  ROS_INFO("USED_ODO_ is %d", USED_ODO_);
+//  ROS_INFO("EVALUATION_MODE_ is %d", EVALUATION_MODE_);
+//  ROS_INFO("DEBUG_SWITCH_ is %d", DEBUG_SWITCH_);
+//  ROS_INFO("USED_ODO_ is %d", USED_ODO_);
 
   testing::InitGoogleTest(&argc, argv);
   return RUN_ALL_TESTS();

@@ -1,42 +1,32 @@
-<package>
-  <name>cob_3d_mapping_slam</name>
-  <version>0.0.1</version>
-  
-  <description>
-     3D SLAM algorithms.
-  </description>
-  
-  <license>LGPL</license>
-  
-  <maintainer email="josh@ipa.fhg.de">Joshua Hampp</maintainer>
-  <author>Joshua Hampp</author>
-  
-  <url>http://wiki.ros.org/cob_3d_mapping_slam</url>
+<?xml version="1.0"?>
+<package format="2">
+	<name>cob_3d_mapping_slam</name>
+	<version>0.0.1</version>
 
-  <buildtool_depend>catkin</buildtool_depend>
+	<description>
+		3D SLAM algorithms.
+	</description>
 
-  <build_depend>cmake_modules</build_depend>
-  <!--build_depend>arm_navigation_msgs</build_depend-->
-  <build_depend>cgal</build_depend>
-  <build_depend>cob_3d_mapping_msgs</build_depend>
-  <build_depend>nav_msgs</build_depend>
-  <!--build_depend>nurbs++</build_depend-->
-  <!--build_depend>pcl</build_depend-->
-  <build_depend>pcl_ros</build_depend>
-  <build_depend>roscpp</build_depend>
-  <build_depend>tf</build_depend>
-  <build_depend>tf_conversions</build_depend>
+	<license>LGPL</license>
 
-  <!--run_depend>arm_navigation_msgs</run_depend-->
-  <run_depend>cgal</run_depend>
-  <run_depend>cob_3d_mapping_msgs</run_depend>
-  <run_depend>nav_msgs</run_depend>
-  <!--run_depend>nurbs++</run_depend-->
-  <!--run_depend>pcl</run_depend-->
-  <run_depend>pcl_ros</run_depend>
-  <run_depend>roscpp</run_depend>
-  <run_depend>tf</run_depend>
-  <run_depend>tf_conversions</run_depend>
+	<maintainer email="josh@ipa.fhg.de">Joshua Hampp</maintainer>
+	<author>Joshua Hampp</author>
+
+	<url>http://wiki.ros.org/cob_3d_mapping_slam</url>
+
+	<buildtool_depend>catkin</buildtool_depend>
+
+	<!--depend>arm_navigation_msgs</depend-->
+	<depend>cgal</depend>
+	<depend>cmake_modules</depend>
+	<depend>cob_3d_mapping_msgs</depend>
+	<depend>nav_msgs</depend>
+	<!--depend>nurbs++</depend-->
+	<!--depend>pcl</depend-->
+	<depend>pcl_ros</depend>
+	<depend>roscpp</depend>
+	<depend>tf</depend>
+	<depend>tf_conversions</depend>
 </package>
 
 

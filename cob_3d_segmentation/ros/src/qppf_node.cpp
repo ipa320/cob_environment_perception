@@ -55,9 +55,11 @@
  *
  ****************************************************************/
 
-#if !defined(SICK) //&& !defined(ONLY_PLANES_DEPTH)
+#if !defined(SICK) && !defined(CAMERA_ENSENSO)
 #define USE_COLOR
 #endif
+
+#define STOP_TIME
 
 // ROS includes
 #include <ros/ros.h>
@@ -118,15 +120,21 @@ class QPPF_Node : public Parent
   typedef pcl::PointCloud<Point> PointCloud;
 
   ros::Subscriber point_cloud_sub_;
-  ros::Publisher  curved_pub_, shapes_pub_, shapes_pub_poly_, outline_pub_, image_pub_, label_pub_, rec_pub_;
+  ros::Publisher  curved_pub_, shapes_pub_, shapes_pub_poly_, outline_pub_, image_pub_, label_pub_, rec_pub_, scene_pub_;
 
 #ifdef SICK
   Segmentation::Segmentation_QuadRegression<Point, PointLabel, Segmentation::QPPF::QuadRegression<1, Point, Segmentation::QPPF::CameraModel_SR4500<Point> > > seg_;
+#else
+
+#ifdef CAMERA_ENSENSO
+  Segmentation::Segmentation_QuadRegression<Point, PointLabel, Segmentation::QPPF::QuadRegression<1, Point, Segmentation::QPPF::CameraModel_Ensenso<Point> > > seg_;
+
 #else
 #ifdef ONLY_PLANES_DEPTH
   Segmentation::Segmentation_QuadRegression<Point, PointLabel, Segmentation::QPPF::QuadRegression<1, Point, Segmentation::QPPF::CameraModel_Kinect<Point> > > seg_;
 #else
   Segmentation::Segmentation_QuadRegression<Point, PointLabel, Segmentation::QPPF::QuadRegression<2, Point, Segmentation::QPPF::CameraModel_Kinect<Point> > > seg_;
+#endif
 #endif
 #endif
 
@@ -160,6 +168,7 @@ public:
     image_pub_  = n->advertise<sensor_msgs::Image>("/image1", 1);
     label_pub_  = n->advertise< pcl::PointCloud<PointLabel> >("/labeled_pc", 1);
     rec_pub_  = n->advertise< pcl::PointCloud<PointLabel> >("/reconstructed_pc", 1);
+    scene_pub_  = n->advertise<cob_3d_mapping_msgs::PlaneScene>("/plane_scene", 1);
 
     as_.start();
 
@@ -201,7 +210,7 @@ public:
   void
   pointCloudSubCallback(const boost::shared_ptr<const PointCloud>& pc_in)
   {
-    ROS_DEBUG("segmentation: point cloud callback");
+    ROS_INFO("segmentation: point cloud callback");
     
     const bool subscribers =
 		(image_pub_.getNumSubscribers()>0) || 
@@ -209,7 +218,8 @@ public:
 		(shapes_pub_.getNumSubscribers()>0) || 
 		(curved_pub_.getNumSubscribers()>0) || 
 		(rec_pub_.getNumSubscribers()>0) || 
-		(label_pub_.getNumSubscribers()>0);
+		(label_pub_.getNumSubscribers()>0) ||
+		(scene_pub_.getNumSubscribers()>0);
 	
 	if(!subscribers) {
 		ROS_DEBUG("segmentation: no subscribers --> do nothing");
@@ -219,6 +229,12 @@ public:
     seg_.setInputCloud(pc_in);
     seg_.compute();
     seg_.extractImages();
+
+#ifdef STOP_TIME
+	double quadtree, growing, extraction;
+    seg_.getExecutionTimes(quadtree, growing, extraction);
+    ROS_INFO("took quadtree: %f,  growing: %f, extraction: %f", quadtree, growing, extraction);
+#endif
 
     if(goal_)
     {
@@ -282,6 +298,12 @@ public:
         pcl_conversions::fromPCL(pc_in->header, sa.shapes[i].header);
         //sa.shapes[i].header = pc_in->header;
       shapes_pub_.publish(sa);
+    }
+    if(scene_pub_.getNumSubscribers()>0)
+    {
+      cob_3d_mapping_msgs::PlaneScene ps = seg_;
+      pcl_conversions::fromPCL(pc_in->header, ps.header);
+      scene_pub_.publish(ps);
     }
     if(seg_.getOnlyPlanes() && shapes_pub_poly_.getNumSubscribers()>0)
     {

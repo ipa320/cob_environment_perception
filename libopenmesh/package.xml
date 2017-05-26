@@ -1,22 +1,19 @@
-<package>
-  <name>libopenmesh</name>
-  <version>1.0.0</version>
-  
-  <description>
-     Wraps the (external) OpenMesh library.
-  </description>
-  
-  <license>LGPL</license>
-  
-  <maintainer email="goa@ipa.fhg.de">Georg Arbeiter</maintainer>
-  <author>Georg Arbeiter</author>
-  
-  <url>http://wiki.ros.org/libopenmesh</url>
+<?xml version="1.0"?>
+<package format="2">
+	<name>libopenmesh</name>
+	<version>1.0.0</version>
 
-  <buildtool_depend>catkin</buildtool_depend>
-  <buildtool_depend>roslib</buildtool_depend>
+	<description>
+		 Wraps the (external) OpenMesh library.
+	</description>
 
-  <!--export>
-    <cpp cflags="-I${prefix}/include" lflags="-L${prefix}/lib/OpenMesh -lOpenMeshCore -lOpenMeshTools" />
-  </export-->
+	<license>LGPL</license>
+
+	<maintainer email="goa@ipa.fhg.de">Georg Arbeiter</maintainer>
+	<author>Georg Arbeiter</author>
+
+	<url>http://wiki.ros.org/libopenmesh</url>
+
+	<buildtool_depend>catkin</buildtool_depend>
+	<buildtool_depend>roslib</buildtool_depend>
 </package>
