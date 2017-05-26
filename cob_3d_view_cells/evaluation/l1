@@ -1,3 +1,0 @@
-<launch>
-
-	<node pkg="cob_3d_view_cells" type="feature2view" name="feature2view" output="screen" required="true" cwd="node" 
