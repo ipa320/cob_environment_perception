@@ -1,62 +1,46 @@
+*.tar*
+cmake_install.cmake
+
+# default .gitignore file for ipa320 repositories
+# master file can be found in https://github.com/ipa320/care-o-bot/blob/indigo_dev/.gitignore
+
+build/
+bin/
+lib/
+
+# generated docs
+*.dox
+*.wikidoc
+
+# eclipse
 .project
 .cproject
 .pydevproject
+
+# qcreator
+qtcreator-*
+*.user
+
+# Emacs
+.#*
+
+# VI/VIM
+*.swp
+
+# python files
+*.pcd
 *.pyc
-*.tar*
+*.pco
+
+# temporary files
+*~
+
+# merge conflict files
 *.orig
-bin
-lib
-build
-docs
-doc
-srv_gen
-msg_gen
-cmake_install.cmake
-*.cfgc
-*/cfg/cpp
-cob_3d_mapping_common/src
-cob_3d_mapping_msgs/src
-cob_3d_mapping_semantics/src
-cob_3d_fov_segmentation/src
-cob_3d_mapping_msgs/msg/PlaneExtractionAction.msg
-cob_3d_mapping_msgs/msg/PlaneExtractionActionFeedback.msg
-cob_3d_mapping_msgs/msg/PlaneExtractionActionGoal.msg
-cob_3d_mapping_msgs/msg/PlaneExtractionActionResult.msg
-cob_3d_mapping_msgs/msg/PlaneExtractionFeedback.msg
-cob_3d_mapping_msgs/msg/PlaneExtractionGoal.msg
-cob_3d_mapping_msgs/msg/PlaneExtractionResult.msg
-cob_3d_mapping_msgs/msg/TableObjectClusterAction.msg
-cob_3d_mapping_msgs/msg/TableObjectClusterActionFeedback.msg
-cob_3d_mapping_msgs/msg/TableObjectClusterActionGoal.msg
-cob_3d_mapping_msgs/msg/TableObjectClusterActionResult.msg
-cob_3d_mapping_msgs/msg/TableObjectClusterFeedback.msg
-cob_3d_mapping_msgs/msg/TableObjectClusterGoal.msg
-cob_3d_mapping_msgs/msg/TableObjectClusterResult.msg
-cob_3d_mapping_msgs/msg/TriggerAction.msg
-cob_3d_mapping_msgs/msg/TriggerActionFeedback.msg
-cob_3d_mapping_msgs/msg/TriggerActionGoal.msg
-cob_3d_mapping_msgs/msg/TriggerActionResult.msg
-cob_3d_mapping_msgs/msg/TriggerFeedback.msg
-cob_3d_mapping_msgs/msg/TriggerGoal.msg
-cob_3d_mapping_msgs/msg/TriggerResult.msg
-cob_3d_mapping_msgs/msg/TriggerSegmentationAction.msg
-cob_3d_mapping_msgs/msg/TriggerSegmentationActionFeedback.msg
-cob_3d_mapping_msgs/msg/TriggerSegmentationActionGoal.msg
-cob_3d_mapping_msgs/msg/TriggerSegmentationActionResult.msg
-cob_3d_mapping_msgs/msg/TriggerSegmentationFeedback.msg
-cob_3d_mapping_msgs/msg/TriggerSegmentationGoal.msg
-cob_3d_mapping_msgs/msg/TriggerSegmentationResult.msg
-cob_3d_mapping_features/src
-cob_3d_mapping_geometry_map/src
-cob_3d_mapping_point_map/src
-cob_3d_registration/src
-cob_3d_segmentation/src
-cob_table_object_cluster/src
-ROS_NOBUILD
-cob_3d_segmentation/msg/ObjectWatchAction.msg
-cob_3d_segmentation/msg/ObjectWatchActionFeedback.msg
-cob_3d_segmentation/msg/ObjectWatchActionGoal.msg
-cob_3d_segmentation/msg/ObjectWatchActionResult.msg
-cob_3d_segmentation/msg/ObjectWatchFeedback.msg
-cob_3d_segmentation/msg/ObjectWatchGoal.msg
-cob_3d_segmentation/msg/ObjectWatchResult.msg
+*BACKUP*
+*BASE*
+*LOCAL*
+*REMOTE*
+
+# Catkin custom files
+CATKIN_IGNORE
