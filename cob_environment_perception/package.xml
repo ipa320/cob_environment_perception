@@ -16,35 +16,26 @@
 
 	<buildtool_depend>catkin</buildtool_depend>
 
-	<exec_depend>brics_actuator</exec_depend>
 	<exec_depend>cob_3d_evaluation_features</exec_depend>
-	<exec_depend>cob_3d_experience_mapping</exec_depend>
 	<exec_depend>cob_3d_features</exec_depend>
 	<exec_depend>cob_3d_features_evaluation</exec_depend>
 	<exec_depend>cob_3d_fov_segmentation</exec_depend>
 	<exec_depend>cob_3d_mapping_common</exec_depend>
-	<exec_depend>cob_3d_mapping_demonstrator</exec_depend>
 	<exec_depend>cob_3d_mapping_filters</exec_depend>
-	<exec_depend>cob_3d_mapping_gazebo</exec_depend>
 	<exec_depend>cob_3d_mapping_geometry_map</exec_depend>
-	<exec_depend>cob_3d_mapping_geometry_map_v2</exec_depend>
 	<exec_depend>cob_3d_mapping_pipeline</exec_depend>
 	<exec_depend>cob_3d_mapping_point_map</exec_depend>
 	<exec_depend>cob_3d_mapping_semantics</exec_depend>
 	<exec_depend>cob_3d_mapping_slam</exec_depend>
-	<exec_depend>cob_3d_mapping_submodules</exec_depend>
 	<exec_depend>cob_3d_mapping_tools</exec_depend>
 	<exec_depend>cob_3d_meshing</exec_depend>
 	<exec_depend>cob_3d_registration</exec_depend>
 	<exec_depend>cob_3d_segmentation</exec_depend>
 	<exec_depend>cob_3d_transform_nodes</exec_depend>
-	<exec_depend>cob_3d_view_cells</exec_depend>
 	<exec_depend>cob_3d_visualization</exec_depend>
 	<exec_depend>cob_keyframe_detector</exec_depend>
 	<exec_depend>cob_table_object_cluster</exec_depend>
 	<exec_depend>libgpc</exec_depend>
-	<exec_depend>liblemon</exec_depend>
-	<exec_depend>libnuklei</exec_depend>
 	<exec_depend>libopenmesh</exec_depend>
 	<exec_depend>libpolypartition</exec_depend>
 
