@@ -55,9 +55,7 @@
  *
  ****************************************************************/
 // OpenCV:
-#include <opencv2/core/core.hpp>
-#include <cv.h>
-#include <highgui.h>
+#include <opencv2/opencv.hpp>
 
 #include <boost/program_options.hpp>
 // PCL:

@@ -1,31 +1,27 @@
-<package>
-  <name>cob_3d_visualization</name>
-  <version>1.0.0</version>
-  
-  <description>
-     Visualization of 3D environment data using mainly interactive markers.
-  </description>
-  
-  <license>LGPL</license>
-  
-  <maintainer email="goa@ipa.fhg.de">Georg Arbeiter</maintainer>
-  <author>Georg Arbeiter</author>
-  
-  <url>http://wiki.ros.org/cob_3d_visualization</url>
+<?xml version="1.0"?>
+<package format="2">
+	<name>cob_3d_visualization</name>
+	<version>1.0.0</version>
 
-  <buildtool_depend>catkin</buildtool_depend>
+	<description>
+		Visualization of 3D environment data using mainly interactive markers.
+	</description>
 
-  <build_depend>cmake_modules</build_depend>
-  <build_depend>cob_3d_mapping_common</build_depend>
-  <build_depend>cob_3d_mapping_msgs</build_depend>
-  <build_depend>eigen_conversions</build_depend>
-  <build_depend>interactive_markers</build_depend>
-  <!--build_depend>pcl</build_depend-->
+	<license>LGPL</license>
 
-  <run_depend>cob_3d_mapping_common</run_depend>
-  <run_depend>cob_3d_mapping_msgs</run_depend>
-  <run_depend>eigen_conversions</run_depend>
-  <run_depend>interactive_markers</run_depend>
-  <!--run_depend>pcl</run_depend-->
+	<maintainer email="goa@ipa.fhg.de">Georg Arbeiter</maintainer>
+	<author>Georg Arbeiter</author>
+
+	<url>http://wiki.ros.org/cob_3d_visualization</url>
+
+	<buildtool_depend>catkin</buildtool_depend>
+
+	<depend>cmake_modules</depend>
+	<depend>cob_3d_mapping_common</depend>
+	<depend>cob_3d_mapping_msgs</depend>
+	<depend>eigen_conversions</depend>
+	<depend>interactive_markers</depend>
+	<depend>libpcl-all-dev</depend>
+	<depend>pcl_conversions</depend>
 </package>
 

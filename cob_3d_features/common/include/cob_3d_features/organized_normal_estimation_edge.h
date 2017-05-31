@@ -65,7 +65,7 @@
 
 #include "cob_3d_features/organized_features.h"
 #include "cob_3d_features/organized_normal_estimation.h"
-#include "opencv/cv.h"
+#include <opencv2/opencv.hpp>
 
 namespace cob_3d_features
 {

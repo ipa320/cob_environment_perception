@@ -1,35 +1,26 @@
-<package>
-  <name>cob_3d_mapping_common</name>
-  <version>1.0.0</version>
+<?xml version="1.0"?>
+<package format="2">
+	<name>cob_3d_mapping_common</name>
+	<version>1.0.0</version>
 
-  <description>
-     Common classes and nodes for 3D environment perception.
-  </description>
+	<description>
+		Common classes and nodes for 3D environment perception.
+	</description>
 
-  <license>LGPL</license>
+	<license>LGPL</license>
 
-  <maintainer email="goa@ipa.fhg.de">Georg Arbeiter</maintainer>
-  <author>Georg Arbeiter</author>
+	<maintainer email="goa@ipa.fhg.de">Georg Arbeiter</maintainer>
+	<author>Georg Arbeiter</author>
 
-  <url>http://wiki.ros.org/cob_3d_mapping_common</url>
+	<url>http://wiki.ros.org/cob_3d_mapping_common</url>
 
-  <buildtool_depend>catkin</buildtool_depend>
+	<buildtool_depend>catkin</buildtool_depend>
 
-  <build_depend>cmake_modules</build_depend>
-  <build_depend>cob_3d_mapping_msgs</build_depend>
-  <build_depend>eigen_conversions</build_depend>
-  <build_depend>libgpc</build_depend>
-  <build_depend>pcl_conversions</build_depend>
-  <build_depend>libpolypartition</build_depend>
-  <build_depend>roscpp</build_depend>
-
-  <!--run_depend>boost</run_depend-->
-  <run_depend>cob_3d_mapping_msgs</run_depend>
-  <run_depend>eigen_conversions</run_depend>
-  <run_depend>libgpc</run_depend>
-  <run_depend>pcl_conversions</run_depend>
-  <run_depend>libpolypartition</run_depend>
-  <run_depend>roscpp</run_depend>
+	<depend>cmake_modules</depend>
+	<depend>cob_3d_mapping_msgs</depend>
+	<depend>eigen_conversions</depend>
+	<depend>libgpc</depend>
+	<depend>libpolypartition</depend>
+	<depend>pcl_conversions</depend>
+	<depend>roscpp</depend>
 </package>
-
-

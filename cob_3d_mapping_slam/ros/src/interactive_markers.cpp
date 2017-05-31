@@ -64,7 +64,7 @@
  */
 
 
-#include "interactive_markers.h"
+#include "cob_3d_mapping_slam/interactive_markers.h"
 
 using namespace Slam;
 

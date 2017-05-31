@@ -122,7 +122,7 @@ class ShapeMarker
     {
       if(im_server_->erase(marker_.name)){
         //        ROS_INFO("Marker %s erased",marker_.name.c_str());
-        stringstream ss;
+        std::stringstream ss;
         ss << "normal_" << shape_.id;
         im_server_->erase(ss.str());
         ss.str("");
@@ -140,7 +140,7 @@ class ShapeMarker
      * @param[out] o_list Output triangle list.
      * @return nothing
      */
-    void triangle_refinement(list<TPPLPoly>& i_list,list<TPPLPoly>& o_list);
+    void triangle_refinement(std::list<TPPLPoly>& i_list, std::list<TPPLPoly>& o_list);
     void getShape (cob_3d_mapping_msgs::Shape& shape);
     /**
      * @brief returns the global variable arrows_

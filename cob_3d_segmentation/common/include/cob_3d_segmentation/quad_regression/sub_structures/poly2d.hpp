@@ -62,7 +62,8 @@ namespace Contour2D {
 
   struct spline2D {
     int v, x,y, bf;
-    spline2D():v(0),x(0),y(0),bf(0) {}
+    bool multiple;
+    spline2D():v(0),x(0),y(0),bf(0), multiple(false) {}
   };
 
   /// global spline pattern (computed once, 8 for each direction + 1 for start)
@@ -80,9 +81,13 @@ namespace Contour2D {
 
     for(int i=0; i<256; i++) {
       bool b[8];
-      for(int j=0; j<8; j++)
+      int num = 0;
+      for(int j=0; j<8; j++) {
         b[j]=i&(1<<j);
+        if(b[j]) ++num;
+      }
       spline2D s;
+      s.multiple = (num>2);
       if(!i) {
         g_Splines[8][i]=s;
         continue;
@@ -124,9 +129,13 @@ namespace Contour2D {
 
       for(int i=0; i<256; i++) {
         bool b[8];
-        for(int j=0; j<8; j++)
+        int num = 0;
+        for(int j=0; j<8; j++) {
           b[j]=i&(1<<j);
+          if(b[j]) ++num;
+        }
         spline2D s;
+        s.multiple = (num>1);
         if(!i) {
           g_Splines[a][i]=s;
           continue;

@@ -1,0 +1,22 @@
+<?xml version="1.0"?>
+<package format="2">
+	<name>cob_3d_features_evaluation</name>
+	<version>0.0.0</version>
+	<description>The cob_3d_features_evaluation package</description>
+
+	<maintainer email="josh@todo.todo">josh</maintainer>
+	<!-- <author email="jane.doe@example.com">Jane Doe</author> -->
+
+	<license>TODO</license>
+
+	<!-- <url type="website">http://wiki.ros.org/cob_3d_features_evaluation</url> -->
+
+	<buildtool_depend>catkin</buildtool_depend>
+	<depend>boost</depend>
+	<depend>cob_3d_features</depend>
+	<depend>cob_3d_mapping_common</depend>
+	<depend>cob_3d_segmentation</depend>
+	<depend>cob_3d_visualization</depend>
+	<depend>roscpp</depend>
+	<depend>pcl_ros</depend>
+</package>

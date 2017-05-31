@@ -66,7 +66,7 @@
 #include "cob_3d_mapping_filters/speckle_filter.h"
 
 //TODO: get rid of opencv
-//#include "opencv/cv.h"
+//#include <opencv2/opencv.hpp>
 #include "pcl/point_types.h"
 
 #include <pcl/filters/extract_indices.h>

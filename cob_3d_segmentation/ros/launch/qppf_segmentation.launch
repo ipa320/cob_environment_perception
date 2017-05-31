@@ -5,9 +5,9 @@
   <arg name="segmented_cloud" default="/segmentation/segmented_cloud"/>
   <arg name="classified_cloud" default="/segmentation/classified_cloud"/>
   <arg name="shape_array" default="/segmentation/shape_array"/>
-
   <arg name="debug_mode" default="false"/>
-
+  
+  <!-- <node pkg="cob_3d_segmentation" type="qppf_node1" name="qppf_node1" output="screen" launch-prefix="$(arg launch-prefix)"> -->
   <node pkg="cob_3d_segmentation" type="qppf_node1" name="qppf_node1" output="screen">
     <remap from="/camera/rgb/points" to="$(arg point_cloud_in)"/>
     <remap from="/labeled_pc" to="$(arg segmented_cloud)"/>

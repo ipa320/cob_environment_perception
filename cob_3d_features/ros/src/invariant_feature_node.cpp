@@ -81,6 +81,7 @@ int g_num_computations;
 #include <sensor_msgs/CameraInfo.h>
 
 // Packages Includes:
+#include <cob_3d_mapping_common/point_types.h>
 #include "cob_3d_features/impl/invariant_surface_feature.hpp"
 //#include "cob_3d_features/impl/invariant_surface_feature_unit_tests.hpp"
 #include "cob_3d_features/impl/invariant_surface_feature_debug.hpp"

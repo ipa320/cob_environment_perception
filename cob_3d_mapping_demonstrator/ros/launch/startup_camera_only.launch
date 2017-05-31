@@ -1,8 +1,0 @@
-<?xml version="1.0"?>
-
-<!--Launchfile for MappingDemon-->
-
-<launch>
-  <node name="kill" type="kill_xtion.sh" pkg="cob_3d_mapping_demonstrator"/>
-	<include file="$(find cob_3d_mapping_demonstrator)/ros/launch/openni.launch"/>
-</launch>

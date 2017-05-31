@@ -862,7 +862,7 @@ Polygon::computePose()
   {
     double area = 0;
 
-    list<TPPLPoly> tri_list;
+    std::list<TPPLPoly> tri_list;
     triangulate(tri_list);
     for (std::list<TPPLPoly>::iterator it = tri_list.begin (); it != tri_list.end (); it++)
     {
@@ -875,10 +875,10 @@ Polygon::computePose()
   }
 
   void
-  Polygon::triangulate(list<TPPLPoly>& tri_list) const
+  Polygon::triangulate(std::list<TPPLPoly>& tri_list) const
   {
     TPPLPartition pp;
-    list<TPPLPoly> polys;
+    std::list<TPPLPoly> polys;
     TPPLPoly poly;
     TPPLPoint pt;
 

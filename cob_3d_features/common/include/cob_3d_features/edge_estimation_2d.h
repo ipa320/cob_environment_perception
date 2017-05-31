@@ -65,7 +65,7 @@
 
 #include <pcl/point_cloud.h>
 #include <pcl/point_types.h>
-#include <cv.h>
+#include <opencv2/opencv.hpp>
 
 namespace cob_3d_features
 {

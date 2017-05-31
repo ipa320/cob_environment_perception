@@ -1,32 +1,33 @@
-<package>
-  <name>cob_3d_mapping_pipeline</name>
-  <version>1.0.0</version>
-  
-  <description>
-     Launch files for mapping pipeline.
-  </description>
-  
-  <license>LGPL</license>
-  
-  <maintainer email="goa@ipa.fhg.de">Georg Arbeiter</maintainer>
-  <author>Georg Arbeiter</author>
-  
-  <url>http://wiki.ros.org/cob_3d_mapping_pipeline</url>
+<?xml version="1.0"?>
+<package format="2">
+	<name>cob_3d_mapping_pipeline</name>
+	<version>1.0.0</version>
+	
+	<description>
+		 Launch files for mapping pipeline.
+	</description>
+	
+	<license>LGPL</license>
+	
+	<maintainer email="goa@ipa.fhg.de">Georg Arbeiter</maintainer>
+	<author>Georg Arbeiter</author>
+	
+	<url>http://wiki.ros.org/cob_3d_mapping_pipeline</url>
 
-  <buildtool_depend>catkin</buildtool_depend>
+	<buildtool_depend>catkin</buildtool_depend>
 
-  <run_depend>cob_3d_mapping_common</run_depend>
-  <run_depend>cob_3d_mapping_geometry_map</run_depend>
-  <run_depend>cob_3d_mapping_msgs</run_depend>
-  <run_depend>cob_3d_mapping_point_map</run_depend>
-  <run_depend>cob_3d_registration</run_depend>
-  <run_depend>cob_3d_segmentation</run_depend>
-  <run_depend>cob_script_server</run_depend>
-  <run_depend>nodelet</run_depend>
-  <!--run_depend>pcl_ros</run_depend-->
-  <run_depend>rosbag</run_depend>
-  <run_depend>smach</run_depend>
-  <run_depend>smach_ros</run_depend>
+	<exec_depend>cob_3d_mapping_common</exec_depend>
+	<exec_depend>cob_3d_mapping_geometry_map</exec_depend>
+	<exec_depend>cob_3d_mapping_msgs</exec_depend>
+	<exec_depend>cob_3d_mapping_point_map</exec_depend>
+	<exec_depend>cob_3d_registration</exec_depend>
+	<exec_depend>cob_3d_segmentation</exec_depend>
+	<exec_depend>cob_script_server</exec_depend>
+	<exec_depend>nodelet</exec_depend>
+	<!--exec_depend>pcl_ros</exec_depend-->
+	<exec_depend>rosbag</exec_depend>
+	<exec_depend>smach</exec_depend>
+	<exec_depend>smach_ros</exec_depend>
 </package>
 
 

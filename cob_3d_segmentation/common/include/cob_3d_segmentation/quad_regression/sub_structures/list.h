@@ -95,6 +95,7 @@ struct VISITED_LIST {
   int size;
   int pos;
   std::vector<VALUE> vals;
+  std::set<int> lookup;
 
   VISITED_LIST():size(0),pos(-1), vals(1000) {
   }
@@ -106,27 +107,33 @@ struct VISITED_LIST {
   }
 
   inline void add(const VALUE &v) {
-	for(int i=0; i<size; i++)	//prevent double entries
-		if(vals[i].v==v.v) {
-			vals[i].hops = std::min(vals[i].hops, v.hops);
-			return;
-		}
+    if(lookup.find(v.v)!=lookup.end()) {
+      for(int i=0; i<size; i++)	//prevent double entries
+        if(vals[i].v==v.v) {
+          vals[i].hops = std::max(vals[i].hops, v.hops);
+          return;
+        }
+    }
     if((size_t)size>=vals.size())
       vals.push_back(v);
     else
       vals[size]=v;
     ++size;
+    lookup.insert(v.v);
   }
 
   inline void move() {++pos;}
 
   inline void remove() {
     --size;
+    lookup.erase(vals[pos].v);
     if(pos<size) vals[pos]=vals[size];
     --pos;
   }
 
   inline void replace(const VALUE &v) {
+    lookup.erase(vals[pos].v);
+    lookup.insert(v.v);
     vals[pos]=v;
   }
 };

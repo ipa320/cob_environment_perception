@@ -1,48 +1,45 @@
 <?xml version="1.0"?>
-<package>
+<package format="2">
 
-  <name>cob_environment_perception</name>
+	<name>cob_environment_perception</name>
 
-  <description>
-    Metapackage for 3D environment perception algorithms.
-  </description>
+	<description>
+		Metapackage for 3D environment perception algorithms.
+	</description>
 
-  <version>1.0.0</version>
-  <license>LGPL</license>
+	<version>1.0.0</version>
+	<license>LGPL</license>
 
-  <maintainer email="goa@ipa.fhg.de">Georg Arbeiter</maintainer>
-  
-  <url>http://wiki.ros.org/cob_environment_perception</url>
-  
-  <buildtool_depend>catkin</buildtool_depend>
-    
-  <run_depend>cob_3d_evaluation_features</run_depend>
-  <run_depend>cob_3d_features</run_depend>
-  <run_depend>cob_3d_fov_segmentation</run_depend>
-  <run_depend>cob_3d_mapping_common</run_depend>
-  <run_depend>cob_3d_mapping_demonstrator</run_depend>
-  <run_depend>cob_3d_mapping_filters</run_depend>
-  <run_depend>cob_3d_mapping_gazebo</run_depend>
-  <run_depend>cob_3d_mapping_geometry_map</run_depend>
-  <run_depend>cob_3d_mapping_pipeline</run_depend>
-  <run_depend>cob_3d_mapping_point_map</run_depend>
-  <run_depend>cob_3d_mapping_semantics</run_depend>
-  <run_depend>cob_3d_mapping_slam</run_depend>
-  <run_depend>cob_3d_mapping_tools</run_depend>
-  <run_depend>cob_3d_meshing</run_depend>
-  <run_depend>cob_3d_registration</run_depend>
-  <run_depend>cob_3d_segmentation</run_depend>
-  <run_depend>cob_3d_transform_nodes</run_depend>
-  <run_depend>cob_3d_visualization</run_depend>
-  <run_depend>cob_keyframe_detector</run_depend>
-  <run_depend>cob_table_object_cluster</run_depend>
-  <run_depend>libgpc</run_depend>
-  <run_depend>libopenmesh</run_depend>
-  <run_depend>libpolypartition</run_depend>
+	<maintainer email="goa@ipa.fhg.de">Georg Arbeiter</maintainer>
 
-  <export>
-    <metapackage/>
-  </export>
+	<url>http://wiki.ros.org/cob_environment_perception</url>
 
+	<buildtool_depend>catkin</buildtool_depend>
 
+	<exec_depend>cob_3d_evaluation_features</exec_depend>
+	<exec_depend>cob_3d_features</exec_depend>
+	<exec_depend>cob_3d_features_evaluation</exec_depend>
+	<exec_depend>cob_3d_fov_segmentation</exec_depend>
+	<exec_depend>cob_3d_mapping_common</exec_depend>
+	<exec_depend>cob_3d_mapping_filters</exec_depend>
+	<exec_depend>cob_3d_mapping_geometry_map</exec_depend>
+	<exec_depend>cob_3d_mapping_pipeline</exec_depend>
+	<exec_depend>cob_3d_mapping_point_map</exec_depend>
+	<exec_depend>cob_3d_mapping_semantics</exec_depend>
+	<exec_depend>cob_3d_mapping_slam</exec_depend>
+	<exec_depend>cob_3d_mapping_tools</exec_depend>
+	<exec_depend>cob_3d_meshing</exec_depend>
+	<exec_depend>cob_3d_registration</exec_depend>
+	<exec_depend>cob_3d_segmentation</exec_depend>
+	<exec_depend>cob_3d_transform_nodes</exec_depend>
+	<exec_depend>cob_3d_visualization</exec_depend>
+	<exec_depend>cob_keyframe_detector</exec_depend>
+	<exec_depend>cob_table_object_cluster</exec_depend>
+	<exec_depend>libgpc</exec_depend>
+	<exec_depend>libopenmesh</exec_depend>
+	<exec_depend>libpolypartition</exec_depend>
+
+	<export>
+		<metapackage/>
+	</export>
 </package>

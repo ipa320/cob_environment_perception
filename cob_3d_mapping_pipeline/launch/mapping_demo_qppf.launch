@@ -13,14 +13,27 @@
     <arg name="input" value="/segmentation/shape_array"/>
     <arg name="output" value="/transformed/shape_array"/>
   </include>
-  <include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch">
-    <arg name="shape_array_in" value="/transformed/shape_array"/>
-  </include>
-
-
+  <arg name="geom_v2" default="false" doc="if true, use v2 of geometry mapping"/>
+  <group unless="$(arg geom_v2)">
+    <include file="$(find cob_3d_mapping_geometry_map)/ros/launch/geometry_map.launch">
+      <arg name="shape_array_in" value="/transformed/shape_array"/>
+    </include>
+  </group>
+  <group if="$(arg geom_v2)">
+    <node name="carton_params" pkg="lidl_parser" type="upload_item_list" args="$(find cob_3d_mapping_demonstrator)/config/cartons.txt" output="screen"/>
+    <!-- Broadcast a static transform from a geom_map frame which is in the same
+	 position as the map frame, but whose coordinate system is rotated to
+	 match the camera -->
+    <node pkg="tf" type="static_transform_publisher" name="geom_map_broadcaster" args="0 -0.05 0 3.14 1.57 -1.57 geom_map map 10"/>
+    <include file="$(find cob_3d_mapping_geometry_map_v2)/ros/launch/start.launch">
+      <!-- <arg name="shape_array" value="/transformed/shape_array"/> -->
+      <arg name="color_remap" value="/camera/rgb/image_raw"/>
+      <arg name="depth_remap" value="/camera/depth/image_raw"/>
+      <arg name="target_frame" value="geom_map"/>
+    </include>
+  </group>
 
   <!--node pkg="rosbag" type="play" name="rosbag_play" cwd="node" respawn="false" output="screen" args="/home/goa/pcl_daten/table/fixed_pltf_neck_joystick_table.bag -k -q pause"/>
   	<remap from="input" to="/outlier_removal/output"/>
   </node-->
 </launch>
-

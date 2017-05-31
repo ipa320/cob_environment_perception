@@ -332,7 +332,7 @@ namespace cob_3d_mapping
     double computeArea3d() const;
 
 
-    virtual void triangulate(list<TPPLPoly>& tri_list) const;
+    virtual void triangulate(std::list<TPPLPoly>& tri_list) const;
 
     /**
     * \brief Computation of bounding box and pose of structure.

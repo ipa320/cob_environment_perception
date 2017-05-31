@@ -68,11 +68,10 @@
 #include "pcl_ros/transforms.h"
 #include <registration/registration_rgbdslam.h>
 #include <cv_bridge/CvBridge.h>
-#include <opencv2/imgproc/imgproc.hpp>
 #include <iostream>
 #include <sstream>
 #include <string>
-#include <cv.h>
+#include <opencv2/opencv.hpp>
 #include <ctime>
 #include "node.h"
 #include <sensor_msgs/PointCloud2.h>

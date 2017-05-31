@@ -128,7 +128,9 @@ struct Param {
     z_+=p.z_;
 #ifdef USE_MIN_MAX_RECHECK_
     if((p.v_min_!=0.f && p.v_min_<v_min_)||v_min_==0.f) v_min_=p.v_min_;
+#ifndef CAMERA_ENSENSO
     if(p.v_max_>v_max_||v_max_==0.f) v_max_=p.v_max_;
+#endif
 #endif
   }
 

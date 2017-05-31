@@ -59,7 +59,7 @@
 #include "../general_segmentation.h"
 
 #define USE_MIN_MAX_RECHECK_
-#define STOP_TIME
+//#define STOP_TIME
 //#define BACK_CHECK_REPEAT
 #define DO_NOT_DOWNSAMPLE_
 //#define SIMULATION_
@@ -95,7 +95,7 @@ namespace Segmentation
 
       /** DEBUG **/
       template<typename APoint>
-      friend std::ostream &operator<<(ostream &os, const CameraModel_Kinect<APoint> &cmk);
+      friend std::ostream &operator<<(std::ostream &os, const CameraModel_Kinect<APoint> &cmk);
     };
 
     /**
@@ -111,19 +111,33 @@ namespace Segmentation
 
       CameraModel_SR4500(): f(0.f) {}
 
-      /// calculate kinect parameters
+      /// calculate parameters
       void getParams(const pcl::PointCloud<Point> &pc);
 
       inline static float std(const float dist) {return 0.00015f+0.00015f*dist;}   //after "Accuracy analysis of kinect depth data"
 
       /** DEBUG **/
       template<typename APoint>
-      friend std::ostream &operator<<(ostream &os, const CameraModel_Kinect<APoint> &cmk);
+      friend std::ostream &operator<<(std::ostream &os, const CameraModel_Kinect<APoint> &cmk);
+    };
+
+    /**
+     * camera model for Ensenso
+     *
+     *  - extracts parameters from pc
+     *  - states standard deviation for a given distance
+     */
+    template<typename Point>
+    class CameraModel_Ensenso : public CameraModel_Kinect<Point> {
+    public:
+      CameraModel_Ensenso(){}
+
+      inline static float std(const float dist) {return 0.009666969f*0.5f*dist*dist;}
     };
 
     template<typename Point>
-    std::ostream &operator<<(ostream &os, const CameraModel_Kinect<Point> &cmk) {
-      os<<"Kinect Camera\n";
+    std::ostream &operator<<(std::ostream &os, const CameraModel_Kinect<Point> &cmk) {
+      os<<"Ensenso Camera\n";
       os<<"f = "<<cmk.f<<std::endl;
       os<<"dx = "<<cmk.dx<<std::endl;
       os<<"dy = "<<cmk.dy<<std::endl;
@@ -161,6 +175,7 @@ namespace Segmentation
       boost::shared_ptr<const pcl::PointCloud<Point> > input_;          ///input point cloud (no need for color)
       std::vector<SubStructure::ParamC<Degree> > levels_;               ///quad-tree levels/stages
       std::vector<Segmentation::S_POLYGON<Degree> > polygons_;          ///result of surface reconstruction
+      CameraModel camera_;              /// camera model
 
 #ifdef STOP_TIME
       // evaluation variables
@@ -171,12 +186,12 @@ namespace Segmentation
 
     private:
       //-----------CONSTANTS-------------
+      const unsigned int NUM_LOD;
       const unsigned int MIN_LOD;       /// minimum of nodes for a segment
       const unsigned int FINAL_LOD;     /// lowest level = 0
       const unsigned int GO_DOWN_TO_LVL;/// search down to ...
 
       //------------MEMBERS---------------
-      CameraModel camera_;              /// camera model
 
       int *ch_; /// mark-array
 
@@ -199,158 +214,112 @@ namespace Segmentation
       inline int otherOccupied(const int i, const int x, const int y, const int mark) const {
         if(i>=(int)levels_.size() || x<0 || y<0 || x>=(int)levels_[i].w || y>=(int)levels_[i].h)
           return -1;
-        if(levels_[i].data[getInd(x,y)].occopied>=0 && levels_[i].data[getInd(x,y)].occopied!=mark)
-          return levels_[i].data[getInd(x,y)].occopied;
+        if(levels_[i].data[getInd(i,x,y)].occopied>=0 && levels_[i].data[getInd(i,x,y)].occopied!=mark)
+          return levels_[i].data[getInd(i,x,y)].occopied;
         return otherOccupied(i+1,x/2,y/2,mark);
       }
 
-      /*inline bool criternion(const SubStructure::Model<Degree> &model, const SubStructure::Param<Degree> &data, const int i) const {
-        f
-      }*/
-
-      /*inline bool checkModelAt(const SubStructure::Model<Degree> &model, const int i, const int x, const int y, const float thr) const {
-        if(i==0)
-          return model.check_tangent(levels_[i].data[getInd(i,x,y)], thr);
-
-        return //model.check(levels_[i].data[getInd(x,y)], thr) &&
-            model.check_tangent(levels_[i-1].data[getInd(i-1,2*x,2*y)], thr) &&
-            model.check_tangent(levels_[i-1].data[getInd(i-1,2*x,2*y+1)], thr) &&
-            model.check_tangent(levels_[i-1].data[getInd(i-1,2*x+1,2*y)], thr) &&
-            model.check_tangent(levels_[i-1].data[getInd(i-1,2*x+1,2*y+1)], thr);
-      }*/
-
-      inline bool checkModelAt(const SubStructure::Model<Degree> &model, const int i, const int x, const int y) const {
-        if(i==0)
-          return model.check_tangent(levels_[0].data[getInd(0,x,y)], 1.5f*camera_.std(levels_[0].data[getInd(0,x,y)].z_(0)/levels_[0].data[getInd(0,x,y)].model_(0,0)));
-
-        return //model.check(levels_[i].data[getInd(x,y)], thr) &&
-            model.check_tangent(levels_[i-1].data[getInd(i-1,2*x,2*y)], 1.5f*camera_.std(levels_[i-1].data[getInd(i-1,2*x,2*y)].z_(0)/levels_[i-1].data[getInd(i-1,2*x,2*y)].model_(0,0))) &&
-            model.check_tangent(levels_[i-1].data[getInd(i-1,2*x,2*y+1)], 1.5f*camera_.std(levels_[i-1].data[getInd(i-1,2*x,2*y+1)].z_(0)/levels_[i-1].data[getInd(i-1,2*x,2*y+1)].model_(0,0))) &&
-            model.check_tangent(levels_[i-1].data[getInd(i-1,2*x+1,2*y)], 1.5f*camera_.std(levels_[i-1].data[getInd(i-1,2*x+1,2*y)].z_(0)/levels_[i-1].data[getInd(i-1,2*x+1,2*y)].model_(0,0))) &&
-            model.check_tangent(levels_[i-1].data[getInd(i-1,2*x+1,2*y+1)], 1.5f*camera_.std(levels_[i-1].data[getInd(i-1,2*x+1,2*y+1)].z_(0)/levels_[i-1].data[getInd(i-1,2*x+1,2*y+1)].model_(0,0)));
-      }
-
-      inline void addPoint(const int i, const int x, const int y, const int mark, S_POLYGON<Degree> &poly, const SubStructure::Model<Degree> &model, const Eigen::Vector3f &p) {
-#ifdef DO_NOT_DOWNSAMPLE_
-        const static int fact=1;
-#else
-        const static int fact=2;
-#endif
-
-        Eigen::Vector3f vp = poly.project2world(p.head<2>());
-        
-        if((p-vp).squaredNorm()>0.01f /*|| (poly.segments_.back().size()>0 && (poly.segments_.back().back()-vp).squaredNorm()<0.01f)*/ ) {
-			return;
-		}
-          poly.segments_.back().push_back(p);
-#ifdef USE_BOOST_POLYGONS_
-          poly.segments2d_.back().push_back(BoostPoint(x,y));
-#else
-          Eigen::Vector2i p2;
-          p2(0) = x;
-          p2(1) = y;
-          poly.segments2d_.back().push_back(p2);
-#endif
-
-#if 0
-
-        Eigen::Vector3f p = poly.project2plane(((x<<(i+fact-1))-camera_.dx)/camera_.f,
-                                               ((y<<(i+fact-1))-camera_.dy)/camera_.f,
-                                               model,v);
-
-	bool found = false;
-        Eigen::Vector3f vp = poly.project2world(p.head<2>());
-
-        static const int rel_motion_pattern[][2] = { {0,0}, {-1,-1}, {-1,0}, {-1,1}, {0,-1}, {0,1}, {1,-1}, {1,0}, {1,1}
-        , {-2,-2}, {-2,-1}, {-2,0}, {-2,1}, {-2,2}, {-1,-2}, {-1,2}, {0,-2}, {0,2}, {1,-2}, {1,2}, {2,-2}, {2,-1}, {2,0}, {2,1}, {2,2}
-        };
-
-        const pcl::PointCloud<Point> &pc = *input_;
-        for(size_t j=0; j<sizeof(rel_motion_pattern)/sizeof(rel_motion_pattern[0]); j++) {
-          int xx=rel_motion_pattern[j][0];
-          int yy=rel_motion_pattern[j][1];
-
-          if(x+xx>=0 && y+yy>=0 && x+xx<(int)pc.width && y+yy<(int)pc.height && filterOccupied(i,x+xx,y+yy,mark)) {
-
-            Eigen::Vector3f vp2 = poly.project2world(pc(x+xx,y+yy).getVector3fMap().head(2));
-			const float thr = 25*camera_.std(vp2(2))*camera_.std(vp2(2));
-            if( (vp-pc(x+xx,y+yy).getVector3fMap()).squaredNorm() < thr && (vp2-pc(x+xx,y+yy).getVector3fMap()).squaredNorm() < thr )
-            {
-			  p = pc(x+xx,y+yy).getVector3fMap();
-              found = true;
-              break;
-            }
-          }
-        }
-
-
-        if(found)
-        {
-          poly.segments_.back().push_back(p);
-#ifdef USE_BOOST_POLYGONS_
-          poly.segments2d_.back().push_back(BoostPoint(x,y));
-#else
-          Eigen::Vector2i p2;
-          p2(0) = x;
-          p2(1) = y;
-          poly.segments2d_.back().push_back(p2);
-#endif
-        }
-#endif       
-      }
-
-      int getPos(int *ch, const int xx, const int yy, const int w, const int h);
-
-      void outline(int *ch, const int w, const int h, std::vector<SubStructure::SXY<Eigen::Vector3f> > &out, const int i, S_POLYGON<Degree> &poly, const SubStructure::Model<Degree> &model, const int mark);
+    inline bool replaceOccupied(const int i, const int x, const int y, const int mark) const {
+      if(i>=(int)levels_.size() || x<0 || y<0 || x>=(int)levels_[i].w || y>=(int)levels_[i].h)
+        return false;
+      if(levels_[i].data[getInd(i,x,y)].occopied!=mark)
+        return false;
       
-      void simplify();
-      void simplify(std::vector<Eigen::Vector3f> &seg, std::vector<Eigen::Vector2i> &seg2d);      
+      levels_[i-1].data[getInd(i-1, 2*x,  2*y)].occopied   = mark;
+      levels_[i-1].data[getInd(i-1, 2*x+1,2*y)].occopied   = mark;
+      levels_[i-1].data[getInd(i-1, 2*x+1,2*y+1)].occopied = mark;
+      levels_[i-1].data[getInd(i-1, 2*x,  2*y+1)].occopied = mark;
+      
+      return true;
+    }
+    
+    inline bool checkModelAt(const SubStructure::Model<Degree> &model, const int i, const int x, const int y) const {
+      if(i==0)
+        return model.check_tangent(levels_[0].data[getInd(0,x,y)], 1.5f*camera_.std(levels_[0].data[getInd(0,x,y)].z_(0)/levels_[0].data[getInd(0,x,y)].model_(0,0)));
 
-    public:
-      /// constructor, setups variables
-      QuadRegression();
+      return //model.check(levels_[i].data[getInd(x,y)], thr) &&
+        model.check_tangent(levels_[i-1].data[getInd(i-1,2*x,2*y)], 1.5f*camera_.std(levels_[i-1].data[getInd(i-1,2*x,2*y)].z_(0)/levels_[i-1].data[getInd(i-1,2*x,2*y)].model_(0,0))) &&
+        model.check_tangent(levels_[i-1].data[getInd(i-1,2*x,2*y+1)], 1.5f*camera_.std(levels_[i-1].data[getInd(i-1,2*x,2*y+1)].z_(0)/levels_[i-1].data[getInd(i-1,2*x,2*y+1)].model_(0,0))) &&
+        model.check_tangent(levels_[i-1].data[getInd(i-1,2*x+1,2*y)], 1.5f*camera_.std(levels_[i-1].data[getInd(i-1,2*x+1,2*y)].z_(0)/levels_[i-1].data[getInd(i-1,2*x+1,2*y)].model_(0,0))) &&
+        model.check_tangent(levels_[i-1].data[getInd(i-1,2*x+1,2*y+1)], 1.5f*camera_.std(levels_[i-1].data[getInd(i-1,2*x+1,2*y+1)].z_(0)/levels_[i-1].data[getInd(i-1,2*x+1,2*y+1)].model_(0,0)));
+    }
 
-      /// destructor
-      virtual ~QuadRegression() {
-        delete [] ch_;
-        delete [] outline_check_;
-      }
+    inline bool addPoint(const int i, const int x, const int y, const int mark, S_POLYGON<Degree> &poly, const SubStructure::Model<Degree> &model, const Eigen::Vector3f &p) {
+#ifdef DO_NOT_DOWNSAMPLE_
+      const static int fact=1;
+#else
+      const static int fact=2;
+#endif
 
-      /// sets preprocessed input cloud
-      virtual void setInputCloud (const boost::shared_ptr<const pcl::PointCloud<Point> > &cloud)
-      {
-        input_ = cloud;
-        if(levels_.size()==0)
-          prepare(*cloud);
-        camera_.getParams(*cloud);
-      }
+      Eigen::Vector3f vp = poly.project2plane(((x<<(i+fact-1))-camera_.dx)/camera_.f,
+                                               ((y<<(i+fact-1))-camera_.dy)/camera_.f,
+                                               model,0.f);
+      poly.segments_.back().push_back(vp);
+#ifdef USE_BOOST_POLYGONS_
+      poly.segments2d_.back().push_back(BoostPoint(x,y));
+#else
+      Eigen::Vector2i p2;
+      p2(0) = x;
+      p2(1) = y;
+      poly.segments2d_.back().push_back(p2);
+#endif
 
-      virtual bool compute();
+      const float thr = 25*camera_.std(vp(2))*camera_.std(vp(2)) + 0.01f;
+      return (p-vp).squaredNorm()<thr;
+    }
 
-      /// get polygons
-      const std::vector<Segmentation::S_POLYGON<Degree> > &getPolygons() const {return polygons_;}
+    int getPos(int *ch, const int xx, const int yy, const int w, const int h);
 
-      void setFilter(const float f) {filter_=f;}                /// setter for filter parameter (pixels/area)
-      void setOnlyPlanes(const bool b) {only_planes_=b;}        /// setter for "only planes"-option (limits higher polynomials to planes afterwards)
+    void outline(int *ch, const int w, const int h, std::vector<SubStructure::SXY<Eigen::Vector3f> > &out, const int i, S_POLYGON<Degree> &poly, const SubStructure::Model<Degree> &model, const int mark);
+    
+    void simplify();
+    void simplify(const float scale, std::vector<Eigen::Vector3f> &seg, std::vector<Eigen::Vector2i> &seg2d);      
 
-      bool getFilter() const {return filter_;}                  /// getter for filter parameter (pixels/area)
-      bool getOnlyPlanes() const {return only_planes_;}         /// getter for "only planes"-option (limits higher polynomials to planes afterwards)
+  public:
+    /// constructor, setups variables
+    QuadRegression();
 
-      virtual void prepare(const pcl::PointCloud<Point> &pc);   /// setup level size
-      virtual void buildTree(const pcl::PointCloud<Point> &pc); /// build quad-tree
-      void calc();                                              /// segmentation on quad-tree
-      void back_check_repeat();                                 /// repeat back check on model
+    /// destructor
+    virtual ~QuadRegression() {
+      delete [] ch_;
+      delete [] outline_check_;
+    }
+
+    /// sets preprocessed input cloud
+    virtual void setInputCloud (const boost::shared_ptr<const pcl::PointCloud<Point> > &cloud)
+    {
+      input_ = cloud;
+      if(levels_.size()==0)
+        prepare(*cloud);
+      camera_.getParams(*cloud);
+    }
+
+    virtual bool compute();
+
+    /// get polygons
+    const std::vector<Segmentation::S_POLYGON<Degree> > &getPolygons() const {return polygons_;}
+
+    void setFilter(const float f) {filter_=f;}                /// setter for filter parameter (pixels/area)
+    void setOnlyPlanes(const bool b) {only_planes_=b;}        /// setter for "only planes"-option (limits higher polynomials to planes afterwards)
+
+    bool getFilter() const {return filter_;}                  /// getter for filter parameter (pixels/area)
+    bool getOnlyPlanes() const {return only_planes_;}         /// getter for "only planes"-option (limits higher polynomials to planes afterwards)
+
+    virtual void prepare(const pcl::PointCloud<Point> &pc);   /// setup level size
+    virtual void buildTree(const pcl::PointCloud<Point> &pc); /// build quad-tree
+    void calc();                                              /// segmentation on quad-tree
+    void back_check_repeat();                                 /// repeat back check on model
 
 #ifdef STOP_TIME
-      // for evaluation purposes
-      void getExecutionTimes(double &quadtree, double &growing, double &extraction)
-      {
-        quadtree = execution_time_quadtree_;
-        extraction = execution_time_polyextraction_;
-        growing = execution_time_growing_ - extraction;
-      }
+    // for evaluation purposes
+    void getExecutionTimes(double &quadtree, double &growing, double &extraction)
+    {
+      quadtree = execution_time_quadtree_;
+      extraction = execution_time_polyextraction_;
+      growing = execution_time_growing_ - extraction;
+    }
 #endif
-    };
+  };
 
 
     /**

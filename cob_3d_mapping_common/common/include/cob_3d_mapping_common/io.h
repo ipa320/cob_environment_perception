@@ -66,6 +66,7 @@
 #include <pcl/point_types.h>
 #include <pcl/point_cloud.h>
 
+#include <stdint.h>
 #include <float.h>
 #include <iomanip>
 

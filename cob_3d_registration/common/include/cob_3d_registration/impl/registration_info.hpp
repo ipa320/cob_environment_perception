@@ -53,8 +53,6 @@
  *
  ****************************************************************/
 
-namespace cob_3d_registration {
-
   // organized access to pointcloud
 #define getInd(x, y) ((x)+(y)*pc.width)
 
@@ -67,6 +65,8 @@ namespace cob_3d_registration {
   // using odometry to determine keyframes -> set to one was workaround for "standing"-check
 #define USED_ODO_ 1
 
+
+namespace cob_3d_registration {
 
   template <typename Point>
   bool Registration_Infobased<Point>::compute_features()

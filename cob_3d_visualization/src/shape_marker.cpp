@@ -81,7 +81,7 @@ ShapeMarker::ShapeMarker(boost::shared_ptr<interactive_markers::InteractiveMarke
 }
 
 void
-ShapeMarker::triangle_refinement(list<TPPLPoly>& i_list,list<TPPLPoly>& o_list){
+ShapeMarker::triangle_refinement(std::list<TPPLPoly>& i_list, std::list<TPPLPoly>& o_list){
   int n_circle = 20;
 
   TPPLPoly tri_new,tri_temp;
@@ -153,7 +153,7 @@ void ShapeMarker::deleteMarker(const visualization_msgs::InteractiveMarkerFeedba
 
   deleted_ = true ;
 
-  stringstream ss;
+  std::stringstream ss;
   ss << shape_.id ;// ctr_ ;
   deleted_markers_indices_.push_back(shape_.id) ;
 
@@ -258,8 +258,8 @@ void ShapeMarker::hideArrows(int untick)
 
 {
   arrows_ = false ;
-  stringstream ss;
-  stringstream aa;
+  std::stringstream ss;
+  std::stringstream aa;
   std::vector<unsigned int>::iterator iter;
 
   /**delete the arrows**/
@@ -295,8 +295,8 @@ void ShapeMarker::hideArrows(int untick)
 void ShapeMarker::resetMarker()
 {
 
-  stringstream aa;
-  stringstream ss;
+  std::stringstream aa;
+  std::stringstream ss;
 
   hideNormal(0);
   hideCentroid(0);
@@ -394,7 +394,7 @@ ShapeMarker::createMarker (visualization_msgs::InteractiveMarkerControl& im_ctrl
 
   /* transform shape points to 2d and store 2d point in triangle list */
   TPPLPartition pp;
-  list<TPPLPoly> polys, tri_list;
+  std::list<TPPLPoly> polys, tri_list;
 
   Eigen::Vector3f v, normal, origin;
 
@@ -646,7 +646,7 @@ ShapeMarker::createInteractiveMarker ()
   visualization_msgs::InteractiveMarker imarker ;
   // ROS_INFO("\tcreating interactive marker for shape < %d >", shape_.id);
 
-  stringstream ss;
+  std::stringstream ss;
   if(!arrows_ && !deleted_) {
     ss.str("");
     ss.clear() ;
@@ -824,7 +824,7 @@ void ShapeMarker::displayNormal(){
 
   std::vector<unsigned int>::iterator iter;
   visualization_msgs::InteractiveMarker imarker;
-  stringstream ss;
+  std::stringstream ss;
 
   ss << "normal_" << shape_.id;
   imarker.name = ss.str();
@@ -873,7 +873,7 @@ void ShapeMarker::displayNormal(){
 
 void ShapeMarker::hideNormal(int untick){
 
-  stringstream ss;
+  std::stringstream ss;
   std::vector<unsigned int>::iterator iter;
 
   ss << "normal_" << shape_.id;
@@ -999,7 +999,7 @@ ShapeMarker::displayOriginCB (const visualization_msgs::InteractiveMarkerFeedbac
 void
 ShapeMarker::displayCentroidCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
 {
-  stringstream ss;
+  std::stringstream ss;
   interactive_markers::MenuHandler::CheckState check_state;
   menu_handler_.getCheckState (feedback->menu_entry_id, check_state);
   if (check_state == interactive_markers::MenuHandler::UNCHECKED)
@@ -1025,7 +1025,7 @@ void ShapeMarker::displayCentroid(){
   ROS_INFO(" displayCentroidCB from shape[ %d ]...", shape_.id);
   std::vector<unsigned int>::iterator iter;
 
-  stringstream ss;
+  std::stringstream ss;
   ss.clear();
   ss.str("");
   visualization_msgs::InteractiveMarker imarker;
@@ -1069,7 +1069,7 @@ void ShapeMarker::displayCentroid(){
 }
 
 void ShapeMarker::hideCentroid(int untick){
-  stringstream ss;
+  std::stringstream ss;
   std::vector<unsigned int>::iterator iter;
 
   ss.clear();
@@ -1117,8 +1117,8 @@ void ShapeMarker::displayContour(){
   ROS_INFO(" displayContourCB from shape[ %d ]...", shape_.id);
   std::vector<unsigned int>::iterator iter ;
 
-  stringstream aa;
-  stringstream ss;
+  std::stringstream aa;
+  std::stringstream ss;
   int ctr = 0;
 
   visualization_msgs::Marker marker;
@@ -1180,7 +1180,7 @@ void ShapeMarker::displayContour(){
 }
 
 void ShapeMarker::hideContour(int untick){
-  stringstream ss;
+  std::stringstream ss;
   std::vector<unsigned int>::iterator iter;
 
   ss.clear() ;
@@ -1231,7 +1231,7 @@ void ShapeMarker::displaySymAxis(){
   ROS_INFO(" displaySymAxis from shape[ %d ]...", shape_.id);
 
   visualization_msgs::InteractiveMarker imarker;
-  stringstream ss;
+  std::stringstream ss;
 
   ss << "symaxis_" << shape_.id;
   imarker.name = ss.str();
@@ -1284,7 +1284,7 @@ void ShapeMarker::displaySymAxis(){
 
 void ShapeMarker::hideSymAxis(int untick){
 
-  stringstream ss;
+  std::stringstream ss;
   std::vector<unsigned int>::iterator iter;
 
   ss << "symaxis_" << shape_.id;
@@ -1308,7 +1308,7 @@ void ShapeMarker::hideSymAxis(int untick){
 void
 ShapeMarker::displayOriginCB (const visualization_msgs::InteractiveMarkerFeedbackConstPtr& feedback)
 {
-  stringstream ss;
+  std::stringstream ss;
   interactive_markers::MenuHandler::CheckState check_state;
   menu_handler_.getCheckState (feedback->menu_entry_id, check_state);
   if (check_state == interactive_markers::MenuHandler::UNCHECKED)
@@ -1334,7 +1334,7 @@ void ShapeMarker::displayOrigin(){
   ROS_INFO(" displayOriginCB from shape[ %d ]...", shape_.id);
   std::vector<unsigned int>::iterator iter;
 
-  stringstream ss;
+  std::stringstream ss;
   ss.clear();
   ss.str("");
   visualization_msgs::InteractiveMarker imarker;
@@ -1381,7 +1381,7 @@ void ShapeMarker::displayOrigin(){
 }
 
 void ShapeMarker::hideOrigin(int untick){
-  stringstream ss;
+  std::stringstream ss;
   std::vector<unsigned int>::iterator iter;
 
   ss.clear();
@@ -1431,8 +1431,8 @@ void ShapeMarker::displayID()
   ROS_INFO(" displayID from shape[ %d ]...", shape_.id);
   std::vector<unsigned int>::iterator iter ;
 
-  stringstream aa;
-  stringstream ss;
+  std::stringstream aa;
+  std::stringstream ss;
   int ctr = 0;
 
   visualization_msgs::Marker marker;
@@ -1478,7 +1478,7 @@ void ShapeMarker::displayID()
 
 void ShapeMarker::hideID(int untick)
 {
-  stringstream ss;
+  std::stringstream ss;
   std::vector<unsigned int>::iterator iter;
 
   ss.clear() ;

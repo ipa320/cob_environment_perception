@@ -143,6 +143,7 @@ namespace cob_3d_mapping
       // process each consecutive intersection pair
       while (xprev->first < xmax && xcurr!=xque.end())
       {
+        // add on first encounter, remove on second
         std::pair<typename std::set<T>::iterator, bool> res
           = curr_ids.insert(xprev->second);
         if( !res.second ) curr_ids.erase(res.first);

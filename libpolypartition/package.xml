@@ -1,14 +1,16 @@
-<package>
-  <name>libpolypartition</name>
-  <version>1.0.0</version>
-  <description>Wraps the polypartition library to use it as a ROS dependency</description>
+<?xml version="1.0"?>
+<package format="2">
+	<name>libpolypartition</name>
+	<version>1.0.0</version>
+	<description>Wraps the polypartition library to use it as a ROS dependency</description>
 
-  <license>LGPL</license>
+	<license>LGPL</license>
 
-  <url type="website">http://ros.org/wiki/libpolypartition</url>
-  <maintainer email="goab@ipa.fhg.de">Georg Arbeiter</maintainer>
-  <author>Georg Arbeiter</author>
+	<url type="website">http://ros.org/wiki/libpolypartition</url>
+	<maintainer email="goab@ipa.fhg.de">Georg Arbeiter</maintainer>
+	<author>Georg Arbeiter</author>
 
-  <buildtool_depend>catkin</buildtool_depend>
-  
+	<buildtool_depend>catkin</buildtool_depend>
+	<depend>cmake_modules</depend>
+	
 </package>
