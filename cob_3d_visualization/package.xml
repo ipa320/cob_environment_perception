@@ -15,8 +15,7 @@
 	<url>http://wiki.ros.org/cob_3d_visualization</url>
 
 	<buildtool_depend>catkin</buildtool_depend>
-
-	<depend>cmake_modules</depend>
+	
 	<depend>cob_3d_mapping_common</depend>
 	<depend>cob_3d_mapping_msgs</depend>
 	<depend>eigen_conversions</depend>

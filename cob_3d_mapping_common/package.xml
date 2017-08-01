@@ -16,7 +16,6 @@
 
 	<buildtool_depend>catkin</buildtool_depend>
 
-	<depend>cmake_modules</depend>
 	<depend>cob_3d_mapping_msgs</depend>
 	<depend>eigen_conversions</depend>
 	<depend>libgpc</depend>

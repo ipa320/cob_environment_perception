@@ -16,7 +16,6 @@
 
 	<buildtool_depend>catkin</buildtool_depend>
 
-	<depend>cmake_modules</depend>
 	<depend>cob_3d_mapping_common</depend>
 	<depend>dynamic_reconfigure</depend>
 	<depend>tf_conversions</depend>

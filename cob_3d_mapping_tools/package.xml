@@ -17,12 +17,10 @@
 	<buildtool_depend>catkin</buildtool_depend>
 
 	<depend>boost</depend>
-	<depend>cmake_modules</depend>
 	<depend>cob_3d_features</depend>
 	<depend>cob_3d_fov_segmentation</depend>
 	<depend>cob_3d_mapping_common</depend>
 	<depend>cob_3d_segmentation</depend>
-	<depend>eigen</depend>
 	<depend>libopencv-dev</depend>
 	<depend>libpcl-all-dev</depend>
 	<depend>libvtk</depend>

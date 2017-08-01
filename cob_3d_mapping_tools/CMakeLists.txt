@@ -12,9 +12,8 @@ set(catkin_RUN_PACKAGES
 	sensor_msgs
 )
 
-set(catkin_BUILD_PACKAGES 
+set(catkin_BUILD_PACKAGES
 	${catkin_RUN_PACKAGES}
-	cmake_modules
 )
 
 ## Find catkin macros and libraries
@@ -27,7 +26,6 @@ find_package(catkin REQUIRED COMPONENTS
 #find_package(TinyXML REQUIRED)
 find_package(VTK REQUIRED COMPONENTS vtkCommon vtkFiltering vtkRendering)
 find_package(Boost REQUIRED COMPONENTS filesystem program_options signals system)
-find_package(Eigen REQUIRED)
 find_package(OpenCV REQUIRED)
 find_package(PCL REQUIRED)
 find_package(wxWidgets REQUIRED)
@@ -51,7 +49,6 @@ catkin_package(
 		${catkin_RUN_PACKAGES}
 	DEPENDS
 		Boost
-		Eigen
 		PCL
 )
 
@@ -68,7 +65,6 @@ include_directories(
 	${catkin_INCLUDE_DIRS}
 	${VTK_INCLUDE_DIRS}
 	${Boost_INCLUDE_DIRS}
-	${Eigen_INCLUDE_DIRS}
 	${OpenCV_INCLUDE_DIRS}
 	${wxWidgets_INCLUDE_DIRS}
 )

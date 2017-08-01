@@ -17,9 +17,8 @@ set(catkin_RUN_PACKAGES
 	tf_conversions
 )
 
-set(catkin_BUILD_PACKAGES 
+set(catkin_BUILD_PACKAGES
 	${catkin_RUN_PACKAGES}
-	cmake_modules
 )
 
 ## Find catkin macros and libraries

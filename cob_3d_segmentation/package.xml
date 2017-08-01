@@ -19,7 +19,6 @@
 	<depend>actionlib</depend>
 	<depend>actionlib_msgs</depend>
 	<depend>boost</depend>
-	<depend>cmake_modules</depend>
 	<depend>cob_3d_features</depend>
 	<depend>cob_3d_mapping_common</depend>
 	<depend>cob_3d_mapping_filters</depend>
