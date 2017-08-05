@@ -108,7 +108,7 @@ namespace cob_3d_features
      * @param th_max Maximum range threshold (default 0.0).
      */
     void
-    getRangeImage(cv::Mat& range_image, const float &th_min, const float &th_max);
+    getRangeImage(cv::Mat& range_image, const float &th_min=0.0f, const float &th_max=0.0f);
     /**
      * @brief Extracts Sobel edges channel-wise
      *
