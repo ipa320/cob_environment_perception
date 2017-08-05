@@ -22,7 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 find_package(OpenCV REQUIRED)
-#find_package(VTK REQUIRED COMPONENTS vtkCommon vtkFiltering vtkRendering)
+find_package(VTK REQUIRED COMPONENTS vtkCommon vtkFiltering vtkRendering)
 find_package(Boost REQUIRED COMPONENTS program_options)
 #find_package(PCL REQUIRED)
 
@@ -54,7 +54,7 @@ catkin_package(
 		${catkin_RUN_PACKAGES}
 	DEPENDS
 		OpenCV
-#		VTK
+		VTK
 		Boost
 #		PCL
 )
@@ -73,7 +73,7 @@ include_directories(
 	${Boost_INCLUDE_DIRS}
 	${OpenCV_INCLUDE_DIRS}
 #	${PCL_INCLUDE_DIRS}
-#	${VTK_INCLUDE_DIRS}
+	${VTK_INCLUDE_DIRS}
 )
 
 ## Declare a cpp library
@@ -119,7 +119,7 @@ target_link_libraries(test_organized_curvature_estimation
 	cob_3d_features
 	cob_3d_features_omp
 	${catkin_LIBRARIES}
-#	${VTK_LIBRARIES}
+	${VTK_LIBRARIES}
 	${OpenCV_LIBRARIES}
 	${Boost_LIBRARIES}
 )
@@ -131,7 +131,7 @@ target_link_libraries(test_surface_class_estimation
 	cob_3d_features
 	cob_3d_features_omp
 	${catkin_LIBRARIES}
-#	${VTK_LIBRARIES}
+	${VTK_LIBRARIES}
 	${OpenCV_LIBRARIES}
 	${Boost_LIBRARIES}
 )
@@ -143,7 +143,7 @@ target_link_libraries(test_edge_sharpening
 	cob_3d_features
 	cob_3d_features_omp
 	${catkin_LIBRARIES}
-#	${VTK_LIBRARIES}
+	${VTK_LIBRARIES}
 	${OpenCV_LIBRARIES}
 	${Boost_LIBRARIES}
 )
@@ -154,7 +154,7 @@ target_link_libraries(profile_oce
 	cob_3d_features
 	cob_3d_features_omp
 	${catkin_LIBRARIES}
-#	${VTK_LIBRARIES}
+	${VTK_LIBRARIES}
 	${OpenCV_LIBRARIES}
 )
 add_dependencies(profile_oce ${catkin_EXPORTED_TARGETS})
@@ -164,7 +164,7 @@ target_link_libraries(profile_fee_omp
 	cob_3d_features
 	cob_3d_features_omp
 	${catkin_LIBRARIES}
-#	${VTK_LIBRARIES}
+	${VTK_LIBRARIES}
 	${OpenCV_LIBRARIES}
 )
 add_dependencies(profile_fee_omp ${catkin_EXPORTED_TARGETS})
@@ -174,7 +174,7 @@ target_link_libraries(profile_fee
 	cob_3d_features
 	cob_3d_features_omp
 	${catkin_LIBRARIES}
-#	${VTK_LIBRARIES}
+	${VTK_LIBRARIES}
 	${OpenCV_LIBRARIES}
 )
 add_dependencies(profile_fee ${catkin_EXPORTED_TARGETS})

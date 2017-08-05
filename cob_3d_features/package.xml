@@ -24,6 +24,6 @@
 	<depend>libopencv-dev</depend>
 	<depend>libpcl-all-dev</depend>
 	<depend>libpolypartition</depend>
-	<!--depend>libvtk</depend-->
+	<depend>libvtk</depend>
 	<depend>pcl_ros</depend>
 </package>
