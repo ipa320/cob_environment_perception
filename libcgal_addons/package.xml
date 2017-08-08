@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+<package format="2">
+	<name>libcgal_addons</name>
+	<version>1.0.0</version>
+
+	<description>
+		Installs some additional CGAL dependencies for ROS Kinetic.
+	</description>
+
+	<license>LGPL</license>
+
+	<maintainer email="rmb@ipa.fhg.de">Richard Bormann</maintainer>
+	<author>Richard Bormann</author>
+
+	<buildtool_depend>catkin</buildtool_depend>
+	
+	<depend>cgal-qt5-dev</depend>
+	<depend>roscpp</depend>
+</package>

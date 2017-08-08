@@ -3,6 +3,7 @@ project(cob_3d_mapping_slam)
 
 set(catkin_RUN_PACKAGES 
 	cob_3d_mapping_msgs
+	libcgal_addons
 	nav_msgs
 	pcl_ros
 	roscpp
