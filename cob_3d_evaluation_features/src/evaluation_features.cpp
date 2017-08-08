@@ -321,8 +321,12 @@ void processFPFH(const PointCloud<PointXYZRGB>::Ptr in,
   cout << "FPFH: classification " << endl;
   *fpfh_out = *ref_out;
 
+#if CV_MAJOR_VERSION == 2
   CvSVM svm;
   svm.load(fpfh_svm_model_.c_str());
+#else
+  cv::Ptr<cv::ml::SVM> svm = cv::ml::SVM::load(fpfh_svm_model_.c_str());
+#endif
   cv::Mat fpfh_histo(1, 33, CV_32FC1);
 
   int exp_rgb, pre_rgb, predict;
@@ -331,7 +335,11 @@ void processFPFH(const PointCloud<PointXYZRGB>::Ptr in,
   {
     exp_rgb = *reinterpret_cast<int*>(&ref_out->points[idx].rgb); // expected label
     memcpy(fpfh_histo.ptr<float>(0), fpfh->points[idx].histogram, sizeof(fpfh->points[idx].histogram));
+#if CV_MAJOR_VERSION == 2
     predict = (int)svm.predict(fpfh_histo);
+#else
+    predict = (int)svm->predict(fpfh_histo);
+#endif
     //cout << predict << endl;
     switch(predict)
     {

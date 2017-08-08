@@ -132,8 +132,12 @@ int main (int argc, char** argv)
   io::loadPCDFile<FPFHSignature33>(fpfh_, *fpfh);
   *p_out = *p;
   //cout << "load svm" << endl;
+#if CV_MAJOR_VERSION == 2
   CvSVM svm;
   svm.load(svm_.c_str());
+#else
+  cv::Ptr<cv::ml::SVM> svm = cv::ml::SVM::load(svm_.c_str());
+#endif
   cv::Mat fpfh_histo(1, 33, CV_32FC1);
 
   int exp_rgb, pre_rgb, predict;
@@ -147,7 +151,12 @@ int main (int argc, char** argv)
     exp_rgb = *reinterpret_cast<int*>(&p->points[idx].rgb); // expected label
     //cout << exp_rgb << " / ";
     memcpy(fpfh_histo.ptr<float>(0), fpfh->points[idx].histogram, sizeof(fpfh->points[idx].histogram));
+#if CV_MAJOR_VERSION == 2
     predict = (int)svm.predict(fpfh_histo);
+#else
+    predict = (int)svm->predict(fpfh_histo);
+#endif
+
     //cout << predict << endl;
     switch(predict)
     {

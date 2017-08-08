@@ -68,6 +68,7 @@
 #include <pcl/common/file_io.h>
 
 #include <opencv2/ml/ml.hpp>
+#include <opencv2/core/version.hpp>
 #include <sensor_msgs/PointCloud2.h>
 
 #include <cob_3d_mapping_common/label_defines.h>
@@ -252,11 +253,12 @@ int main(int argc, char** argv)
     }
   }
 
-  cout << "Begin training..." << endl;
-  CvSVM svm;
-  CvSVMParams params;
-  params.svm_type = CvSVM::C_SVC;//NU_SVC;//C_SVC;
-  params.kernel_type = CvSVM::RBF;
+  std::cout << "Begin training..." << std::endl;
+#if CV_MAJOR_VERSION == 2
+  cv::SVM svm;
+  cv::SVMParams params;
+  params.svm_type = cv::SVM::C_SVC;//NU_SVC;//C_SVC;
+  params.kernel_type = cv::SVM::RBF;
   params.nu = 0.5;
   params.C = svm_c;
   params.gamma = svm_gamma;
@@ -264,13 +266,33 @@ int main(int argc, char** argv)
   params.term_crit.type = CV_TERMCRIT_ITER | CV_TERMCRIT_EPS;
   params.term_crit.max_iter = 1000;
   params.term_crit.epsilon = 0.00001;
-  cout << "Starting training process with " << sample_count << " samples." << endl;
+  std::cout << "Starting training process with " << sample_count << " samples." << std::endl;
   if(svm_k == 0) 
     svm.train(train_data, train_data_classes, cv::Mat(), cv::Mat(), params);
   else 
     svm.train_auto(train_data, train_data_classes, cv::Mat(), cv::Mat(), params, svm_k);
   string file_xml = file_folder + "SVM_fpfh_rng_g_c.xml";
   svm.save(file_xml.c_str());
+#else
+  cv::Ptr<cv::ml::SVM> svm = cv::ml::SVM::create();
+  svm->setType(cv::ml::SVM::C_SVC);	//NU_SVC;//C_SVC;
+  svm->setKernel(cv::ml::SVM::RBF);
+  svm->setNu(0.5);
+  svm->setC(svm_c);
+  svm->setGamma(svm_gamma);
+  // Define iteration termination criteria:
+  cv::TermCriteria term_crit(CV_TERMCRIT_ITER | CV_TERMCRIT_EPS, 1000, 0.00001);
+  svm->setTermCriteria(term_crit);
+  std::cout << "Starting training process with " << sample_count << " samples." << std::endl;
+  cv::Ptr<cv::ml::TrainData> train_data_and_labels = cv::ml::TrainData::create(train_data, cv::ml::ROW_SAMPLE, train_data_classes);
+  if(svm_k == 0)
+    svm->train(train_data_and_labels);
+  else
+    svm->trainAuto(train_data_and_labels, svm_k);
+  string file_xml = file_folder + "SVM_fpfh_rng_g_c.xml";
+  svm->save(file_xml.c_str());
+
+#endif
   //cout << "C: " << params.C << " - Gamma: " << svm_gamma << " / " << params.gamma << endl;
   cout << "Training process completed." << endl;
 }

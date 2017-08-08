@@ -30,7 +30,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 #find_package(TinyXML REQUIRED)
-find_package(VTK REQUIRED COMPONENTS vtkCommon vtkFiltering vtkRendering)
+find_package(VTK REQUIRED) # COMPONENTS vtkCommon vtkFiltering vtkRendering)
 find_package(Boost REQUIRED COMPONENTS program_options)
 find_package(OpenCV REQUIRED)
 #find_package(PCL REQUIRED)

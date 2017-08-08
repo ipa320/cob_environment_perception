@@ -67,6 +67,8 @@
 #define EDGES_H_
 
 
+#include <pcl/visualization/cloud_viewer.h>
+
 #include "pcl/range_image/range_image.h"
 #include "pcl/features/range_image_border_extractor.h"
 #include "pcl/keypoints/narf_keypoint.h"
@@ -78,8 +80,6 @@
 #include <cob_3d_mapping_common/point_types.h>
 #include <pcl/kdtree/kdtree.h>
 #include <pcl/features/integral_image_normal.h>
-
-#include <pcl/visualization/cloud_viewer.h>
 
 namespace cob_3d_registration {
 
