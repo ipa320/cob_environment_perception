@@ -3,6 +3,7 @@ project(cob_3d_mapping_slam)
 
 set(catkin_RUN_PACKAGES 
 	cob_3d_mapping_msgs
+	libcgal_addons
 	nav_msgs
 	pcl_ros
 	roscpp
@@ -10,9 +11,8 @@ set(catkin_RUN_PACKAGES
 	tf_conversions
 )
 
-set(catkin_BUILD_PACKAGES 
+set(catkin_BUILD_PACKAGES
 	${catkin_RUN_PACKAGES}
-	cmake_modules
 )
 
 ## Find catkin macros and libraries
@@ -25,6 +25,23 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(CGAL REQUIRED)
 #find_package(nurbs++ REQUIRED)
 ##TODO: check for SSE
+
+find_package(Eigen3)
+if(NOT EIGEN3_FOUND)
+	# Fallback to cmake_modules
+	find_package(cmake_modules REQUIRED)
+	find_package(Eigen REQUIRED)
+	set(EIGEN3_INCLUDE_DIRS ${EIGEN_INCLUDE_DIRS})
+	set(EIGEN3_LIBRARIES ${EIGEN_LIBRARIES})  # Not strictly necessary as Eigen is head only
+	set(EIGEN3_DEFINITIONS ${EIGEN_DEFINITIONS})
+	set(EIGEN3_DEPENDS Eigen)
+	# Possibly map additional variables to the EIGEN3_ prefix.
+else()
+	set(EIGEN3_INCLUDE_DIRS ${EIGEN3_INCLUDE_DIR})
+	set(EIGEN3_DEPENDS Eigen3)
+endif()
+add_definitions(${EIGEN3_DEFINITIONS})
+# do not forget: include_directories(${EIGEN3_INCLUDE_DIRS})
 
 
 ###################################
@@ -48,7 +65,6 @@ catkin_package(
 )
 
 
-
 ###########
 ## Build ##
 ###########
@@ -60,6 +76,7 @@ catkin_package(
 #	common/include
 #	ros/include
 #	${CGAL_INCLUDE_DIR}
+#	${EIGEN3_INCLUDE_DIRS}
 #)
 
 

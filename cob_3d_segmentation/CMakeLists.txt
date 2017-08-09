@@ -17,9 +17,8 @@ set(catkin_RUN_PACKAGES
 	roscpp
 )
 
-set(catkin_BUILD_PACKAGES 
+set(catkin_BUILD_PACKAGES
 	${catkin_RUN_PACKAGES}
-	cmake_modules
 	message_generation
 )
 
@@ -31,7 +30,7 @@ find_package(catkin REQUIRED COMPONENTS
 )
 
 #find_package(TinyXML REQUIRED)
-find_package(VTK REQUIRED COMPONENTS vtkCommon vtkFiltering vtkRendering)
+find_package(VTK REQUIRED) # COMPONENTS vtkCommon vtkFiltering vtkRendering)
 find_package(Boost REQUIRED COMPONENTS program_options)
 find_package(OpenCV REQUIRED)
 #find_package(PCL REQUIRED)

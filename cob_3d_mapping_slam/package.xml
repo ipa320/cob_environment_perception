@@ -16,9 +16,11 @@
 
 	<buildtool_depend>catkin</buildtool_depend>
 
+	<build_depend>cmake_modules</build_depend>
+
 	<!--depend>arm_navigation_msgs</depend-->
 	<depend>cgal</depend>
-	<depend>cmake_modules</depend>
+	<depend>libcgal_addons</depend>
 	<depend>cob_3d_mapping_msgs</depend>
 	<depend>nav_msgs</depend>
 	<!--depend>nurbs++</depend-->

@@ -17,7 +17,6 @@
 	<buildtool_depend>catkin</buildtool_depend>
 
 	<depend>boost</depend>
-	<depend>cmake_modules</depend>
 	<depend>cob_3d_mapping_common</depend>
 	<depend>cob_3d_mapping_msgs</depend>
 	<depend>cob_3d_visualization</depend>

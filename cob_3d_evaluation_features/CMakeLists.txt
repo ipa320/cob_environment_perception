@@ -23,7 +23,7 @@ find_package(catkin REQUIRED COMPONENTS
 find_package(Boost REQUIRED COMPONENTS filesystem program_options signals system)
 find_package(OpenCV REQUIRED)
 find_package(PCL REQUIRED)
-find_package(VTK REQUIRED COMPONENTS vtkCommon vtkFiltering vtkRendering)
+find_package(VTK REQUIRED) # COMPONENTS vtkCommon vtkFiltering vtkRendering)
 
 ###################################
 ## catkin specific configuration ##

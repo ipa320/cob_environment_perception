@@ -170,7 +170,7 @@ void OpenNIListener::cameraCallback (const sensor_msgs::ImageConstPtr& visual_im
   //emit newDepthImage(cvMat2QImage(depth_mono8_img_));//overwrites last cvMat2QImage
 }
 
-using namespace cv;
+//using namespace cv;
 FeatureDetector* OpenNIListener::createDetector( const string& detectorType ) {
     FeatureDetector* fd = 0;
     if( !detectorType.compare( "FAST" ) ) {
