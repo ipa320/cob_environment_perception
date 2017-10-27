@@ -435,4 +435,4 @@ cob_3d_segmentation::SegmentationAllInOneNodelet::publishShapeArray(
 }
 
 
-PLUGINLIB_DECLARE_CLASS(cob_3d_segmentation, SegmentationAllInOneNodelet, cob_3d_segmentation::SegmentationAllInOneNodelet, nodelet::Nodelet);
+PLUGINLIB_EXPORT_CLASS(cob_3d_segmentation::SegmentationAllInOneNodelet, nodelet::Nodelet);

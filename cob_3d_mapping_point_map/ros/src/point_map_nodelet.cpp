@@ -357,5 +357,5 @@ protected:
 
 };
 
-PLUGINLIB_DECLARE_CLASS(cob_3d_mapping_point_map, PointMapNodelet, PointMapNodelet, nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS(PointMapNodelet, nodelet::Nodelet);
 

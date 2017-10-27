@@ -348,7 +348,7 @@ public:
 typedef QPPF_Node<pcl::PointXYZ,pcl::PointXYZRGB,As_Nodelet> QPPF_XYZ;
 typedef QPPF_Node<pcl::PointXYZRGB,pcl::PointXYZRGB,As_Nodelet> QPPF_XYZRGB;
 
-PLUGINLIB_DECLARE_CLASS(cob_3d_segmentation, QPPF_XYZRGB, QPPF_Node_XYZ, nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS(QPPF_Node_XYZ, nodelet::Nodelet);
 
 #else
 

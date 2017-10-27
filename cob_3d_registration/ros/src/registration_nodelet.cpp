@@ -1223,5 +1223,5 @@ int main(int argc, char **argv) {
   return 0;
 }*/
 
-PLUGINLIB_DECLARE_CLASS(cob_3d_registration, RegistrationNodelet, RegistrationNodelet, nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS(RegistrationNodelet, nodelet::Nodelet);
 

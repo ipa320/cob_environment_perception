@@ -128,5 +128,5 @@ protected:
   cob_3d_mapping_filters::JumpEdgeFilter<PointT> filter_;
 };
 
-PLUGINLIB_DECLARE_CLASS(cob_3d_mapping_filters, JumpEdgeFilter, JumpEdgeFilter, nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS(JumpEdgeFilter, nodelet::Nodelet);
 
