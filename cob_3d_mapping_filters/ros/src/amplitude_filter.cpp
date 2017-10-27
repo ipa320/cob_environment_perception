@@ -135,5 +135,5 @@ protected:
   pcl::PassThrough<PointT> filter_;
 };
 
-PLUGINLIB_DECLARE_CLASS(cob_3d_mapping_filters, AmplitudeFilter, AmplitudeFilter, nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS(AmplitudeFilter, nodelet::Nodelet);
 

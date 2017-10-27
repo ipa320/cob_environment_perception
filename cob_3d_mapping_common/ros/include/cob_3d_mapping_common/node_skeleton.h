@@ -116,7 +116,7 @@ class MyNode : public Parent
 
 typedef MyNode<As_Nodelet> MyNode_Nodelet;
 
-PLUGINLIB_DECLARE_CLASS(cob_3d_view_cells, MyNode_Nodelet, nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS(MyNode_Nodelet, nodelet::Nodelet);
 
 #else
 

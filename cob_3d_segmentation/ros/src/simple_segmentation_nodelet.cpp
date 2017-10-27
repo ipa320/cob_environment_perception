@@ -363,6 +363,4 @@ cob_3d_segmentation::SimpleSegmentationNodelet::computeTexture(
 
 }
 
-PLUGINLIB_DECLARE_CLASS(cob_3d_segmentation, SimpleSegmentationNodelet,
-                        cob_3d_segmentation::SimpleSegmentationNodelet,
-                        nodelet::Nodelet);
+PLUGINLIB_EXPORT_CLASS(cob_3d_segmentation::SimpleSegmentationNodelet, nodelet::Nodelet);

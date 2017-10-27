@@ -124,5 +124,5 @@ protected:
   pcl::PassThrough<PointT> filter_;
 };
 
-PLUGINLIB_DECLARE_CLASS(cob_3d_mapping_filters, IntensityFilter, IntensityFilter, nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS(IntensityFilter, nodelet::Nodelet);
 

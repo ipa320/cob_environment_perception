@@ -202,6 +202,6 @@ protected:
 };
 }
 
-PLUGINLIB_DECLARE_CLASS(cob_table_object_cluster, TableRegionCropNodelet, cob_table_object_cluster::TableRegionCropNodelet, nodelet::Nodelet);
+PLUGINLIB_EXPORT_CLASS(cob_table_object_cluster::TableRegionCropNodelet, nodelet::Nodelet);
 
 

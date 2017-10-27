@@ -291,4 +291,4 @@ protected:
 
 };
 
-PLUGINLIB_DECLARE_CLASS(cob_env_model, TableObjectClusterNodelet, TableObjectClusterNodelet, nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS(TableObjectClusterNodelet, nodelet::Nodelet);

@@ -121,5 +121,5 @@ protected:
   cob_3d_mapping_filters::SmoothingFilter<PointT> filter_;
 };
 
-PLUGINLIB_DECLARE_CLASS(cob_3d_mapping_filters, SmoothingFilter, SmoothingFilter, nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS(SmoothingFilter, nodelet::Nodelet);
 
