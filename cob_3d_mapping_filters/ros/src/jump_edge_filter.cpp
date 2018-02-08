@@ -80,7 +80,7 @@
 class JumpEdgeFilter : public nodelet::Nodelet
 {
 public:
-  typedef pcl::PointXYZI PointT;
+  typedef pcl::PointXYZRGB PointT;
   typedef pcl::PointCloud<PointT> PointCloud;
 
   // Constructor
@@ -111,7 +111,7 @@ public:
   }
 
   void
-  pointCloudSubCallback (pcl::PointCloud<pcl::PointXYZI>::ConstPtr pc)
+  pointCloudSubCallback (pcl::PointCloud<pcl::PointXYZRGB>::ConstPtr pc)
   {
     PointCloud cloud_filtered;
 

@@ -80,7 +80,7 @@
 class SpeckleFilter : public nodelet::Nodelet
 {
 public:
-  typedef pcl::PointXYZ PointT;
+  typedef pcl::PointXYZRGB PointT;
   typedef pcl::PointCloud<PointT> PointCloud;
 
   // Constructor
