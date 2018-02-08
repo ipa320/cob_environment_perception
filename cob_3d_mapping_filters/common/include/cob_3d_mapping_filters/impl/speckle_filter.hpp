@@ -182,13 +182,23 @@ template<typename PointT>
 
     delete[] rem_buf;
 
-    //TODO: add param to actually not remove the points
-    //TODO: add param to keep the point cloud ordered
-    pcl::ExtractIndices<PointT> extractIndices;
-    extractIndices.setInputCloud (input_);
-    extractIndices.setIndices (points_to_remove_);
-    extractIndices.setNegative (true);
-    extractIndices.filter (pc_out);
+    if (&pc_out != input_.get ())
+      pc_out = *input_;
+
+    for (size_t i = 0; i < points_to_remove->indices.size (); i++)
+    {
+      size_t j = points_to_remove->indices[i];
+      pc_out[j].x = pc_out[j].y = pc_out[j].z = std::numeric_limits<float>::quiet_NaN ();
+    }
+    points_to_remove->indices.clear ();
+
+//    //TODO: add param to actually not remove the points
+//    //TODO: add param to keep the point cloud ordered
+//    pcl::ExtractIndices<PointT> extractIndices;
+//    extractIndices.setInputCloud (input_);
+//    extractIndices.setIndices (points_to_remove_);
+//    extractIndices.setNegative (true);
+//    extractIndices.filter (pc_out);
 
   }
 
