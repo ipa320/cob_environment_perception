@@ -3,7 +3,7 @@ project(cob_3d_mapping_slam)
 
 set(catkin_RUN_PACKAGES 
 	cob_3d_mapping_msgs
-	libcgal_addons
+	#libcgal_addons   # todo: reactivate this line: for now deactivated because it causes Travis to fail for kinetic
 	nav_msgs
 	pcl_ros
 	roscpp
@@ -22,7 +22,7 @@ find_package(catkin REQUIRED COMPONENTS
 	${catkin_BUILD_PACKAGES}
 )
 
-find_package(CGAL REQUIRED)
+#find_package(CGAL REQUIRED)  # todo: reactivate this line: for now deactivated because it causes Travis to fail for kinetic
 #find_package(nurbs++ REQUIRED)
 ##TODO: check for SSE
 
@@ -61,7 +61,7 @@ catkin_package(
 	CATKIN_DEPENDS
 		${catkin_RUN_PACKAGES}
 	DEPENDS
-		CGAL
+		#CGAL   # todo: reactivate this line: for now deactivated because it causes Travis to fail for kinetic
 )
 
 
