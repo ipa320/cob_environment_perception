@@ -182,5 +182,5 @@ protected:
   pcl::SegmentDifferences<Point> sd_;
 };
 
-PLUGINLIB_DECLARE_CLASS(cob_3d_mapping_point_map, DifferenceSegmentation, DifferenceSegmentation, nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS(DifferenceSegmentation, nodelet::Nodelet);
 

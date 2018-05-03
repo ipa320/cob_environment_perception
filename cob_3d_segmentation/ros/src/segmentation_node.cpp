@@ -180,7 +180,7 @@ public:
 
 typedef Segmentation_Node<pcl::PointXYZ,pcl::PointXYZRGB,As_Nodelet> Segmentation_Node_XYZ;
 
-PLUGINLIB_DECLARE_CLASS(cob_3d_segmentation, Segmentation_Node_XYZ, Segmentation_Node_XYZ, nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS(Segmentation_Node_XYZ, nodelet::Nodelet);
 
 #else
 

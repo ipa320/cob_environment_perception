@@ -128,5 +128,5 @@ protected:
   cob_3d_mapping_filters::SpeckleFilter<PointT> filter_;
 };
 
-PLUGINLIB_DECLARE_CLASS(cob_3d_mapping_filters, SpeckleFilter, SpeckleFilter, nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS(SpeckleFilter, nodelet::Nodelet);
 

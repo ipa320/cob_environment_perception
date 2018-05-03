@@ -567,4 +567,4 @@ protected:
   double passthrough_max_z_;
 };
 
-PLUGINLIB_DECLARE_CLASS(cob_3d_segmentation, PlaneExtractionNodelet, PlaneExtractionNodelet, nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS(PlaneExtractionNodelet, nodelet::Nodelet);

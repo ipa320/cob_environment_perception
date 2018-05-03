@@ -85,7 +85,7 @@ cob_3d_features::EdgeEstimation2D<PointInT,PointOutT>::getColorImage(
 
 template <typename PointInT, typename PointOutT> void
 cob_3d_features::EdgeEstimation2D<PointInT,PointOutT>::getRangeImage(
-  cv::Mat &range_image, const float &th_min=0.0f, const float &th_max=0.0f)
+  cv::Mat &range_image, const float &th_min, const float &th_max)
 {
   range_image.create(input_->height, input_->width, CV_32FC1);
   float* r_ptr = 0;

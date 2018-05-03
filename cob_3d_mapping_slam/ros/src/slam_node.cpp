@@ -795,7 +795,7 @@ private:
 
 typedef SLAM_Node<pcl::PointXYZ,pcl::PointXYZRGB,As_Nodelet> _SLAM_Nodelet;
 
-PLUGINLIB_DECLARE_CLASS(cob_3d_mapping_slam, _SLAM_Nodelet, _SLAM_Nodelet, nodelet::Nodelet)
+PLUGINLIB_EXPORT_CLASS(_SLAM_Nodelet, nodelet::Nodelet);
 
 #else
 
