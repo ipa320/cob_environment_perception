@@ -19,8 +19,8 @@
 	<build_depend>cmake_modules</build_depend>
 
 	<!--depend>arm_navigation_msgs</depend-->
-	<depend>cgal</depend>
-	<depend>libcgal_addons</depend>
+	<!--depend>cgal</depend-->   <!-- reactivate if needed: for now it causes Travis to fail for kinetic -->
+	<!--depend>libcgal_addons</depend-->   <!-- reactivate if needed: for now it causes Travis to fail for kinetic -->
 	<depend>cob_3d_mapping_msgs</depend>
 	<depend>nav_msgs</depend>
 	<!--depend>nurbs++</depend-->
