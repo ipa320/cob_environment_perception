@@ -4,7 +4,7 @@
 <launch>
 
   <node pkg="cob_keyframe_detector" type="keyframe_detector_node" name="keyframe_detector_node" output="screen">
-    <remap from="camera_info" to="/cam3d/rgb/camera_info"/>
+    <remap from="camera_info" to="camera/color/camera_info"/>
 
     <param name="r_limit_" type="double" value="0.013" />
     <param name="p_limit_" type="double" value="0.013" />
@@ -16,7 +16,7 @@
   <!-- Start registration point map -->
   <arg name="start_manager" default="true"/>
   <arg name="nodelet_manager" default="registration_manager"/>
-  <arg name="points_in" default="/cam3d/depth_registered/points"/>
+  <arg name="points_in" default="camera/depth/color/points"/>
   <!-- start nodelet manager -->
   <node if="$(arg start_manager)" pkg="nodelet" type="nodelet" name="$(arg nodelet_manager)"  args="manager" output="screen"/>
 
@@ -32,15 +32,18 @@
 
   <node pkg="nodelet" type="nodelet" name="registration_nodelet" args="load cob_3d_registration/RegistrationNodelet $(arg nodelet_manager)" output="screen">
 
-    <remap from="camera_info" to="/cam3d/rgb/camera_info"/>
+    <remap from="camera_info" to="camera/color/camera_info"/>
     <!--remap from="point_cloud2" to="/cam3d/rgb/points"/-->
     <remap from="point_cloud2" to="/registration_pass_through/output"/>
     <remap from="point_cloud2_aligned" to="registration/pc_aligned"/>
     <remap from="reset" to="/registration/reset"/>
 
-	<arg name="algo" value="frir" />
-	<include  file="$(find cob_3d_registration)/ros/config/$(arg algo).xml" />
-
+    <param name="algo" value="info" />
+    <param name="threshold_step" value="0.06" />
+    <param name="threshold_diff" value="0.06" />
+    <param name="min_info" value="1" />
+    <param name="max_info" value="17" />
+    <param name="always_relevant_changes" value="1" />
   </node>
 
 </launch>

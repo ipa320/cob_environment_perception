@@ -18,7 +18,7 @@
     </rosparam>
   </node>
 
-  <node pkg="cob_3d_mapping_common" type="keyframe_detector_node" name="keyframe_detector_node" output="screen">
+  <node pkg="cob_keyframe_detector" type="keyframe_detector_node" name="keyframe_detector_node" output="screen">
     <remap from="camera_info" to="/cam3d/rgb/camera_info"/>
 
     <param name="r_limit_" type="double" value="0.013" />
