@@ -20,7 +20,7 @@
     </rosparam>
   </node-->
 
-  <node pkg="nodelet" type="nodelet" name="plane_extraction" args="load cob_3d_features/PlaneExtractionNodelet $(arg nodelet_manager)" output="screen">
+  <node pkg="nodelet" type="nodelet" name="plane_extraction" args="load cob_3d_segmentation/PlaneExtractionNodelet $(arg nodelet_manager)" output="screen">
     <remap from="point_cloud2" to="registration/pc_aligned"/>
     <!-- remap from="point_cloud2" to="/cam3d/rgb/points"/-->
     <remap from="chull" to="plane_extraction/chull"/>
